@@ -933,7 +933,7 @@ beside `FAMILY_LABELS` in `lib/scopeGroups.ts`.
 
 Glossary and rights ledger in `docs/web-copy-desk-translation-glossary.md`; drafts in
 `web/copydesk/drafts/<locale>/<scope>.yaml`; one new command, `npm run copy:propose`.
-**EN pass 1 complete: 428 of 428 keys across all six pages.** FR and both second passes remain.
+**EN pass 1 complete: 428 of 428 keys across all six pages.** Pass 2 is §6k; FR remains.
 
 **The opening question — desk or overlay — is settled by one line of the backend, not by taste.**
 `CopySegment.source_hash` has exactly one door: `mark_applied`, reached through an ACCEPTED
@@ -1002,6 +1002,72 @@ Gibbons himself set, and his is the one psalm printed in its own English) but sh
 against a Polish gloss written in modern Polish — Florent's to overturn. And the German carol's
 French: "Dans une étable obscure" is an adaptation rather than a translation, so the ledger offers
 it rather than assuming it.
+
+### §6k Stage E — what EN pass 2 found (2026-09-03)
+
+Read from the files, not from the pass that wrote them: the Polish of all 428 keys in reading order
+out of `copydesk/segments.json`, the English beside it, one page at a time, with the termbase and
+the register checked **between** concerts rather than inside one. **Twenty-four corrections and
+eight restored quotation marks**, and the diff of `copydesk/drafts/en/` is the whole evidence that
+the pass happened. Five kinds of defect, and the first is the one only a second pass can see.
+
+- **One Polish word doing two jobs, answered with two English words.** `wołanie` names the
+  concert *The Call of the Mountains*, its first act and the piece the evening is named after —
+  and the act was called "Cry" while everything around it said "call", so the English reader lost
+  a thread the Polish reader cannot miss. Same shape three more times: `różdżka` was rod three
+  times and rose once (`wcielenie`), `róg` was trumpet twice and horn once, `zawierzenie` was
+  "Commendation" as an act and "entrustment" in both lines that lead to it (`aeternam`). All four
+  are now single words and are in the glossary as such, with the page each one bites on.
+- **Facts that drifted in translation, which is the failure a fluent paragraph hides best.**
+  "the coffin of the Princess of Wales" — that title belongs to a living person; the Polish says
+  Diana. The Coventry Carol's shadow fell "across the stable", an image the Polish does not have,
+  in place of the Massacre of the Innocents, which it does. The Hejnał became "a bugle call". The
+  Ukrainian prayer asked for "the light of freedom and of day" where both the Polish and the
+  Ukrainian say a *ray* of freedom and light. Patrick's legend changed sides: it is the king's men
+  who see deer.
+- **A poster fact that says more in English than in Polish.** `Pamięć Ukrainy` had become "In
+  memory of Ukraine" — which in English is what one writes about a country that is gone. It reads
+  "Remembrance for Ukraine".
+- **A note that answered only half of its Polish sentence.** `9-kart.textNote` said where the
+  *English* comes from and dropped the clause saying the texts follow the concert programme —
+  the half that is a fact about the evening rather than about a language. §6j's rule that these
+  fields are not translations of themselves cuts both ways: the sentence still has to say
+  everything its Polish says.
+- **Punctuation the Polish marks and the English silently dropped.** Eight `„…"` pairs — the film,
+  the mystery play, the Lorica, "lullaby of death", `Jäger` glossed as "hunter" — where the same
+  drafts had faithfully kept the quotes around collection titles. Mirroring the Polish is the rule;
+  a check that counts `·`, `„`, em dashes and line breaks per key now runs over the drafts and is
+  clean.
+
+**Two things pass 2 deliberately did not change, because they are not its call.** `9-kart.title`
+spells "Nine Leaves" where the Polish poster prints `9 Kart` and every `facts` row keeps its
+numeral — but that title is a value the repository already held, and overturning an existing
+editorial choice on a matter of style is Florent's, not a pass's. It goes to him with the psalm
+register (§8). And the English's habit of turning a Polish comma into an em dash stays: it is
+idiomatic in the target language, which is the whole point of not translating word for word.
+
+**A second correction to a value the repository already held,** on top of §6j's title: `toward` in
+`aeternam.about.blurb` is the American form on an `en-GB` site. One word, and the `git diff` shows
+it beside the other.
+
+**Why the drafts now carry comments.** A translation that took a decision — a published version
+used and why that one, a word the whole page has to keep using, a form avoided because it is under
+copyright — carries the reason as a `#` line above the key. The proposal's `comment` column
+already exists end to end (model, DTO, serializer, the editor's *Uwaga* box, rendered back in
+`ProposalVerdict`), but it is the wrong home for this: it lives only in the database, never appears
+in the `git diff` that is the actual review, and belongs to ONE proposal — a terminal proposal is
+never edited, so the next value for that segment starts with no reason attached. The drafts are in
+git, sit beside the value, and are what a translator opens. The desk's comment stays what it is:
+a note from an editor to a reviewer about one proposal.
+
+**Two gaps this pass hit that belong to stage F.** `wcielenie` and `aeternam` have no `textNote`
+key in the corpus at all, so the pages that use Baker's and Neale's public-domain translations have
+nowhere to credit them; the ledger in the glossary is the record until the field exists. And
+`src/pages/koncerty/[id].astro` imports no i18n at all — about seventeen section labels are
+hardcoded Polish (`Próg wieczoru`, `Program koncertu`, `Głosy wieczoru`, `Tekst i przekład`, the
+`Zapis słowa wprowadzającego…` note). Translating the corpus does not by itself produce an English
+concert page, and flipping a `TRANSLATED_ROUTES` entry before that template is localized would
+publish English copy inside Polish furniture.
 
 ## §7 Traps
 

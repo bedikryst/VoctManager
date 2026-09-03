@@ -1,8 +1,10 @@
-# concert.wcielenie — EN draft (stage E, pass 1).
+# concert.wcielenie — EN draft (stage E).
 # `= original` means the sung text is already English: `copy:propose` fills the slot from the
 # corpus and the page prints the pair only once (glossFor).
 # The three about/title values are copied verbatim from concerts.en.yaml so this file is the whole
 # page; `copy:propose` reports them as already in the repository.
+# Comments below carry the reasoning for choices a later reader could not reconstruct from the
+# Polish alone — a published translation used, or a word the page has to keep using.
 
 concert.wcielenie.title: "Contemplation of the Incarnation"
 concert.wcielenie.metaPlace: "Sacred Heart Basilica, Kraków"
@@ -72,7 +74,9 @@ concert.wcielenie.verbum.text: |-
   We give ourselves over entirely to a suspension of awareness and let ourselves be moved
   only as the waves of a boundless ocean are moved. We listen, and let nothing in us be
   active but our attentiveness to the spirit. And so let us welcome tonight's performers.
-concert.wcielenie.verbum.bridge: "Then the murmur dies away, and out of the winter half-light Sandström's rose rises."
+# `różdżka` is one word in Polish and has to be one word here: the Isaiah inscription, the act, the
+# bridge and the note all say "rod", even though Baker's carol below calls the same thing a rose.
+concert.wcielenie.verbum.bridge: "Then the murmur dies away, and out of the winter half-light rises Sandström's rod."
 
 concert.wcielenie.reflection: "The Incarnation is something unutterable, which with the passing of time often becomes ordinary to us. When we grasp what this mystery means, we can recover our sense of God's presence in our lives."
 concert.wcielenie.reflectionAttribution: "Florent de Bazelaire · 20 January 2024"
@@ -93,6 +97,9 @@ concert.wcielenie.movements.laus.gloss: "Praise"
 concert.wcielenie.movements.laus.line: "All that remains is a new song and joy: Christ is born."
 
 concert.wcielenie.program.0.inscriptioGloss: "And there shall come forth a rod out of the stem of Jesse"
+# The Polish note names the Polish reception of the carol ("Cudowna różdżka wzrosła", Sikora 1912);
+# the English one has to name the English reception instead, or it states a fact about a language
+# this reader is not reading. Baker 1894 is public domain and is the version quoted below.
 concert.wcielenie.program.0.note: "A German carol from the end of the sixteenth century (Trier, 1587), first printed in a Jesuit hymnal from Speyer (1599). Its twenty-three stanzas run through the whole of sacred history, from Isaiah's prophecy to the adoration of the Magi: the very road this programme is about to travel. In English it is known as “Lo, how a rose e'er blooming”, in Theodore Baker's translation of 1894. Sandström weaves the old chorale around a quartet of soloists floating above it."
 concert.wcielenie.program.0.textGloss: |-
   Lo, how a rose e'er blooming
@@ -107,7 +114,7 @@ concert.wcielenie.program.1.inscriptioGloss: "Shepherds keeping watch over their
 concert.wcielenie.program.1.note: "The cry of shepherds keeping watch over their flock by night. In Vivancos it is a lost melody of solitude which, listening into the “echo of silence”, is transformed into beauty. Twelve voices written out across the whole space of the nave."
 
 concert.wcielenie.program.2.inscriptioGloss: "Blow the trumpet in Zion · Behold, God our Saviour shall come"
-concert.wcielenie.program.2.note: "An Advent motet for five voices on words of the prophet Zechariah. The Renaissance counterpoint of Gallus, a Slovene from the circle of imperial music, announces the coming like the sound of a horn: “Behold, God our Saviour shall come”."
+concert.wcielenie.program.2.note: "An Advent motet for five voices on words of the prophet Zechariah. The Renaissance counterpoint of Gallus, a Slovene from the circle of imperial music, announces the coming like the sound of a trumpet: “Behold, God our Saviour shall come”."
 concert.wcielenie.program.2.textGloss: |-
   Blow the trumpet in Zion, call the nations,
   proclaim it to the peoples and say:
@@ -119,6 +126,8 @@ concert.wcielenie.program.2.textGloss: |-
 concert.wcielenie.program.3.inscriptioGloss: "text: H. M. MacGill (1876)"
 concert.wcielenie.program.3.note: "A simple contemporary carol for four voices, to a poem by H. M. MacGill of 1876. After the prophecies comes the birth itself."
 
+# "Gracious" for `alma`: ICEL's "Loving Mother of the Redeemer" is under copyright, and Caswall's
+# verse version is a hymn rather than a gloss of the incipit.
 concert.wcielenie.program.4.inscriptioGloss: "Gracious Mother of the Redeemer · Marian antiphon"
 concert.wcielenie.program.4.note: "The Marian antiphon of Advent, sung from 1 December to 2 February. Victoria's motet for eight voices: eight independent lines hold a dialogue akin to the Venetian coro spezzato, although the composer himself left no instruction about placing the choir in space."
 
@@ -129,11 +138,13 @@ concert.wcielenie.program.6.inscriptioGloss: "a contemporary arrangement of a Po
 concert.wcielenie.program.6.note: "A Polish carol arranged by Mariusz Kramarz: a native voice in this international programme, immediately after the contemporary nativity."
 
 concert.wcielenie.program.7.inscriptioGloss: "a mother's lullaby for a condemned child · Mt 2:16"
-concert.wcielenie.program.7.note: "The Coventry Carol comes from the sixteenth-century mystery play of the Shearmen and Tailors. It is a lullaby sung from the mother's side over a condemned child: the shadow that falls across the stable immediately after the birth. Stopford clothed it in cool contemporary harmony in 2008."
+concert.wcielenie.program.7.note: "The Coventry Carol comes from the sixteenth-century mystery play “The Shearmen and Tailors”. It is a lullaby sung in the mother's voice over a condemned child: the shadow of the Massacre of the Innocents, falling immediately after the birth. Stopford clothed it in cool contemporary harmony in 2008."
 concert.wcielenie.program.7.textGloss: "= original"
 
 concert.wcielenie.program.8.inscriptioGloss: "Lord, now lettest thou thy servant depart in peace · the Canticle of Simeon"
 concert.wcielenie.program.8.note: "The Canticle of Simeon from the Presentation in the temple: “mine eyes have seen thy salvation”. In Pärt, in his tintinnabuli, it is the fulfilment of the promise the evening began with; the old man may depart in peace."
+# Book of Common Prayer, which is public domain and is the wording an English ear knows; the
+# modern missal's Nunc dimittis is not free to reprint.
 concert.wcielenie.program.8.textGloss: |-
   Lord, now lettest thou thy servant depart in peace,
   according to thy word.
@@ -189,7 +200,7 @@ concert.wcielenie.gallery.kd-wcielenie-1.alt: "VoctEnsemble rehearsing for Conte
 concert.wcielenie.gallery.kd-wcielenie-2.alt: "VoctEnsemble rehearsing for Contemplation of the Incarnation"
 concert.wcielenie.gallery.kd-wcielenie-3.alt: "VoctEnsemble performing Contemplation of the Incarnation in the Sacred Heart Basilica"
 concert.wcielenie.gallery.kd-wcielenie-4.alt: "VoctEnsemble performing Contemplation of the Incarnation in the Sacred Heart Basilica"
-concert.wcielenie.gallery.kd-wcielenie-5.alt: "The nave during VoctEnsemble's Contemplation of the Incarnation in the Sacred Heart Basilica"
+concert.wcielenie.gallery.kd-wcielenie-5.alt: "The main nave during VoctEnsemble's Contemplation of the Incarnation in the Sacred Heart Basilica"
 concert.wcielenie.gallery.kd-wcielenie-6.alt: "VoctEnsemble performing Contemplation of the Incarnation in the Sacred Heart Basilica"
 concert.wcielenie.gallery.kd-wcielenie-7.alt: "VoctEnsemble after Contemplation of the Incarnation in the Sacred Heart Basilica"
 concert.wcielenie.gallery.kd-wcielenie-8.alt: "VoctEnsemble after Contemplation of the Incarnation in the Sacred Heart Basilica"

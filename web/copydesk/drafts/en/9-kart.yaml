@@ -1,7 +1,12 @@
-# concert.9-kart — EN draft (stage E, pass 1).
+# concert.9-kart — EN draft (stage E).
 # Psalm texts follow the Book of Common Prayer psalter (Coverdale) — the psalter Gibbons himself
 # set, and the one piece on this page printed in its own English. `= original` marks the two works
 # whose sung text is already English. `title` and `about.*` are copied from concerts.en.yaml.
+# Two consequences of the Coverdale choice, both deliberate: the English reads three centuries
+# older than the modern Polish beside it (Florent's to overturn — §8), and where Coverdale's
+# wording has gone opaque ("we have wished you good luck") the Authorised Version stands in.
+# The title spells its numeral where the Polish poster prints "9"; it is a value the repository
+# already held, so pass 2 left it and put the question to Florent instead.
 
 concert.9-kart.title: "Nine Leaves from the Book of Psalms"
 concert.9-kart.metaPlace: "Rybnik · Łódź · Sacred Heart Basilica, Kraków"
@@ -146,7 +151,7 @@ concert.9-kart.program.8.textGloss: |-
   sing unto the Lord, and praise his Name;
   for he hath done marvellous things.
   Be glad and rejoice, and sing praises
-  upon the harp and with the sound of the psaltery,
+  upon the harp and with the voice of a psalm,
   for he hath done marvellous things.
 concert.9-kart.program.8.clasp: "Miserere — part IX + epilogue"
 concert.9-kart.program.8.claspTextGloss: |-
@@ -163,7 +168,7 @@ concert.9-kart.program.9.note: "A poem by Phineas Fletcher — printed only in 1
 concert.9-kart.program.9.textGloss: "= original"
 
 concert.9-kart.programNote: "The line-up of thirteen singers is recorded for the Kraków evening (16 November 2024); the ensemble had performed the same programme, in the same order, in Rybnik and in Łódź."
-concert.9-kart.textNote: "The English of the psalms follows the Book of Common Prayer psalter — Coverdale's, the psalter Gibbons himself set — with the Authorised Version where Coverdale's wording has drifted out of use."
+concert.9-kart.textNote: "The texts follow the concert programme. The English of the psalms follows the Book of Common Prayer psalter — Coverdale's, the psalter Gibbons himself set — with the Authorised Version where Coverdale's wording has drifted out of use."
 
 concert.9-kart.credits.0.role: "Conductor"
 concert.9-kart.credits.1.role: "Introductory word"

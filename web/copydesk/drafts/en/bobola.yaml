@@ -1,4 +1,6 @@
 # concert.bobola — EN draft (stage E). Same flat shape as the overlay it will become.
+# `facts.1` renders its date by hand because the corpus bakes "16 maja 2026" into a translatable
+# string; it will drift from `date` until stage F splits the five fields that do this.
 # Not the overlay: `npm run copy:propose --locale en` carries these in as proposals, which is the
 # only door that stamps the provenance hash the stale state is computed from.
 

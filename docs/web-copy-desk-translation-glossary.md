@@ -104,9 +104,19 @@ only where it removes an ambiguity.
 | antyfona / responsorium | antiphon / responsory |
 | klamra | clasp *(the site's own word for the seam between works — keep it)* |
 | akt (movements) | act |
-| Zapowiedź · Narodziny · Cień · Spełnienie · Uwielbienie · Wołanie · Orędowniczka · Tajemnica ołtarza · Gwiazdy · Lot · Powrót · Na wejście · Żałoba · Zbroja · Nad grobem · Światłość · Epitafium · Lament niewinnych · Modlitwa o pokój · Obraz męki · Schronienie · Zawierzenie | Prophecy · Nativity · Shadow · Fulfilment · Praise · Cry · Advocate · Mystery of the altar · Stars · Flight · Return · Entrance · Mourning · Breastplate · At the grave · Light · Epitaph · Lament of the innocents · Prayer for peace · Image of the Passion · Refuge · Commendation |
+| Zapowiedź · Narodziny · Cień · Spełnienie · Uwielbienie · Wołanie · Orędowniczka · Tajemnica ołtarza · Gwiazdy · Lot · Powrót · Na wejście · Żałoba · Zbroja · Nad grobem · Światłość · Epitafium · Lament niewinnych · Modlitwa o pokój · Obraz męki · Schronienie · Zawierzenie | Prophecy · Nativity · Shadow · Fulfilment · Praise · Call · Advocate · Mystery of the altar · Stars · Flight · Return · Entrance · Mourning · Breastplate · At the grave · Light · Epitaph · Lament of the innocents · Prayer for peace · Image of the Passion · Refuge · Commendation |
 | Miserere — część I | Miserere — part I |
 | Przerwa | Interval |
+
+**Four words each page has to keep using**, settled by pass 2 because a page that says the same
+thing twice in Polish must not say it two ways in English.
+
+| Polish | English | where it bites |
+|---|---|---|
+| wołanie / krzyk | call / cry | `wolanie-gor` — `wołanie` names the concert, the first act and the piece the evening is named after, so the act is **Call**, not "Cry", and `krzyk` keeps "cry" for itself. |
+| różdżka | rod | `wcielenie` — the Isaiah inscription, the act, the bridge and the note all say rod, even where Baker's carol beside them says rose. |
+| róg (Canite tuba) | trumpet | `wcielenie` — one instrument in three places; "horn" in one of them broke the thread. |
+| zawierzenie | commendation | `aeternam` — the act, both lines and the note. It is the word the funeral rite uses for this act; "entrustment" says it a second way. |
 
 ## §3 French
 

@@ -1,15 +1,21 @@
-# concert.aeternam — EN draft (stage E, pass 1).
+# concert.aeternam — EN draft (stage E).
 # `= original` = the sung text is already English (Shaw, and both Taveners).
 # Vexilla regis follows J. M. Neale's translation of 1851 (public domain); the Requiem introit,
-# the Da pacem versicle and the Creed follow the traditional English forms.
-# `title` and `about.*` are copied verbatim from concerts.en.yaml.
+# the Da pacem versicle and the Creed follow the traditional English forms. This page has no
+# `textNote` field in the corpus, so nothing on it can credit Neale — the ledger in
+# docs/web-copy-desk-translation-glossary.md §4 is the record until stage F adds the field.
+# `zawierzenie` is "commendation" throughout — the act, the lines and the note — because that is
+# the English the funeral rite uses for exactly this act; "entrustment" would say it twice over.
+# `title` and `about.place` are copied verbatim from concerts.en.yaml; `about.blurb` is that value
+# with one word corrected — "toward" is the American form and this site is en-GB — so
+# `copy:propose` reports it as a change rather than as already in the repository.
 
 concert.aeternam.title: "Aeternam — Epitaph for Gaza"
 concert.aeternam.metaPlace: "Mistrzejowice, Kraków · Niedzica"
 concert.aeternam.dateLabel: "autumn 2025"
 concert.aeternam.inscriptioGloss: "Eternal rest grant unto them, O Lord, and let perpetual light shine upon them"
 concert.aeternam.inscriptioRef.source: "Requiem Introit"
-concert.aeternam.essence: "Faced with the suffering of the people of Gaza we chose the language of compassion, not of commentary. The programme led from Vivancos's Aeternam and the lament Vox in Rama, through prayers for peace by Pärt, Havrylets and Gjeilo and Lotti's image of the Passion, towards Shaw's refuge and Tavener's act of entrustment."
+concert.aeternam.essence: "Faced with the suffering of the people of Gaza we chose the language of compassion, not of commentary. The programme led from Vivancos's Aeternam and the lament Vox in Rama, through prayers for peace by Pärt, Havrylets and Gjeilo and Lotti's image of the Passion, towards Shaw's refuge and Tavener's act of commendation."
 concert.aeternam.facts.0: "4 / 8 / 12 voices"
 concert.aeternam.facts.1: "Lament and prayer"
 concert.aeternam.facts.2: "Kraków · Niedzica"
@@ -18,7 +24,7 @@ concert.aeternam.prologue: "The fourteenth of September 2025, the lower church i
 
 concert.aeternam.reflection: "“Epitaph for Gaza” is an act of prayer and a gesture of solidarity with wounded humanity in Gaza. Standing before the suffering of its people, we look in music for the purest language of compassion — believing that contemplation, silence and song can carry both the pain and the light of hope where words are no longer enough."
 concert.aeternam.reflectionAttribution: "VoctEnsemble · September 2025"
-concert.aeternam.reflectionNote: "The programme takes a road Christianity has known for centuries: from the prayer at the grave, through a mother's lament and a plea for peace, through the image of the Passion, to the entrustment of everything to the one who stood beneath the cross."
+concert.aeternam.reflectionNote: "The programme takes a road Christianity has known for centuries: from the prayer at the grave, through a mother's lament and a plea for peace, through the image of the Passion, to the commending of everything to her who stood beneath the cross."
 
 concert.aeternam.programLede: "A prayer in music: nine links and an encore"
 concert.aeternam.programArc: "The order here is a prayer. The evening opens with the words the Church sings over a grave, and immediately afterwards it goes as low as one can go: to a mother's cry over her killed children. From there it leads through three pleas for peace and through the weight of the cross, as far as the place where even the swallow has a nest, and to the last refrain, in which all creation rejoices."
@@ -35,7 +41,7 @@ concert.aeternam.movements.passio.interlude.gloss: "When he beheld the city, he 
 concert.aeternam.movements.refugium.gloss: "Refuge"
 concert.aeternam.movements.refugium.line: "After the Passion the smallest image the Psalter knows returns: the sparrow and the swallow that find a nest beside the altar."
 concert.aeternam.movements.commendatio.gloss: "Commendation"
-concert.aeternam.movements.commendatio.line: "What remains is the entrustment of everything to the one who stood beneath the cross, and the promise the last refrain carries."
+concert.aeternam.movements.commendatio.line: "What remains is the commending of everything to her who stood beneath the cross, and the promise the last refrain carries."
 
 concert.aeternam.program.0.inscriptioGloss: "the Introit of the Mass for the dead"
 concert.aeternam.program.0.note: "A movement from the Requiem of the Catalan composer, for years attached to the Escolania de Montserrat boys' choir. Its foundation is the Introit of the Mass for the dead, words said over graves for centuries. Vivancos sets contemporary heterophony beside the plainness of old chant."
@@ -78,7 +84,7 @@ concert.aeternam.program.4.textGloss: |-
   to overcome the enemies who have fallen upon us.
 
 concert.aeternam.program.5.inscriptioGloss: "from the Creed of the Mass"
-concert.aeternam.program.5.note: "A fragment of the Creed from Lotti's mass, the composer having worked in Venice at the turn of the seventeenth and eighteenth centuries. Many settings of this text by him survive, for various forces; the eight-voice version is among the most affecting. The chromatic movement of the voices and the dense texture make an image of the weight of the cross: Baroque expression subordinated to the theology of the Passion."
+concert.aeternam.program.5.note: "A fragment of the Creed from a mass by Lotti, who worked in Venice at the turn of the seventeenth and eighteenth centuries. Many settings of this text by him survive, for various forces; the eight-voice version is among the most affecting. The chromatic movement of the voices and the dense texture make an image of the weight of the cross: Baroque expression subordinated to the theology of the Passion."
 concert.aeternam.program.5.textGloss: |-
   And was crucified also for us under Pontius Pilate:
   he suffered and was buried.
@@ -87,11 +93,11 @@ concert.aeternam.program.6.note: "The American composer, a Pulitzer Prize winner
 concert.aeternam.program.6.textGloss: "= original"
 
 concert.aeternam.program.7.inscriptioGloss: "text: Mikhail Lermontov"
-concert.aeternam.program.7.note: "Part of the monumental cycle The Veil of the Temple, first performed at the Temple Church in London in 2003; the text comes from the poetry of Mikhail Lermontov. The music stands completely still, without a climax, like an icon in sound. In this programme the stillness is the climax: a gesture entrusting the victims of Gaza."
+concert.aeternam.program.7.note: "Part of the monumental cycle The Veil of the Temple, first performed at the Temple Church in London in 2003; the text comes from the poetry of Mikhail Lermontov. The music stands completely still, without a climax, like an icon in sound. In this programme the silence is the climax: a gesture commending the victims of Gaza."
 concert.aeternam.program.7.textGloss: "= original"
 
 concert.aeternam.program.8.inscriptioGloss: "a text from the Byzantine liturgy"
-concert.aeternam.program.8.note: "One of Tavener's best known choral works, written in memory of his mother, to a text from the Byzantine liturgy. The composer sets two six-voice choirs against one another, and their overlapping phrases create resonance and space: a dialogue between earth and heaven. The last refrain carries the evening from pain towards a promise."
+concert.aeternam.program.8.note: "One of Tavener's best known choral works, written in memory of his mother, to a text from the Byzantine liturgy. The composer sets two six-voice choirs side by side, and their overlapping phrases create resonance and space: a dialogue between earth and heaven. The last refrain carries the evening from pain towards a promise."
 concert.aeternam.program.8.textGloss: "= original"
 
 concert.aeternam.program.9.inscriptioGloss: "from the hymn Vexilla regis · Venantius Fortunatus (6th century)"
@@ -142,4 +148,4 @@ concert.aeternam.links.0.label: "Press coverage ↗"
 concert.aeternam.links.1.label: "Onet / KAI ↗"
 
 concert.aeternam.about.place: "Mistrzejowice · Niedzica"
-concert.aeternam.about.blurb: "A programme of memory and compassion before the suffering of civilians: Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti and Tavener leading from lament toward prayer."
+concert.aeternam.about.blurb: "A programme of memory and compassion before the suffering of civilians: Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti and Tavener leading from lament towards prayer."

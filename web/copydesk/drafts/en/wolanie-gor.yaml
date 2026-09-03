@@ -1,6 +1,8 @@
-# concert.wolanie-gor — EN draft (stage E, pass 1).
+# concert.wolanie-gor — EN draft (stage E).
 # `= original` = the sung text is already English (Teasdale, Meredith, Steven); the script fills it
 # from the corpus. `title` and `about.blurb` are copied verbatim from concerts.en.yaml.
+# `wołanie` is the evening's own word — it names the concert, the first act and the piece the
+# concert is named after — so it is "call" everywhere on this page, and `krzyk` is "cry".
 
 concert.wolanie-gor.title: "The Call of the Mountains"
 concert.wolanie-gor.metaPlace: "Dworek Gościnny, Szczawnica"
@@ -13,12 +15,12 @@ concert.wolanie-gor.facts.2: "From the Pyrenees to Indonesia"
 
 concert.wolanie-gor.prologue: "The first of June 2024, the Dworek Gościnny in Szczawnica. The one evening of this cycle held outside a church. A programme about the calling of the mountains sounded in the mountains: the Pieniny beyond the windows. Twelve voices, Radu Ropotan's violin, two halves and an interval."
 
-concert.wolanie-gor.reflectionNote: "The mountains teach listening: a voice sent out into space comes back changed. This programme listens for what the echo does to a human cry — whether it stays a shout, or becomes a prayer, a flight, a song. And whether a solitary voice can count on an answer."
+concert.wolanie-gor.reflectionNote: "The mountains teach listening: a voice sent out into space comes back changed. This programme listens for what the echo does to a human call — whether it stays a cry, or becomes a prayer, a flight, a song. And whether a solitary voice can count on an answer."
 
 concert.wolanie-gor.programLede: "Twelve songs of the mountains and an encore"
 concert.wolanie-gor.programArc: "The order leads upwards and back again. The evening opens with a wordless call, the shepherds' “Eee-Ooo” from the Pyrenees, and immediately afterwards that same call is given words: the Salve Regina of the shepherds of Rouergue, “Ad te clamamus”, to thee do we cry. From here the programme climbs through an Ave Maria and three hymns sung before the Blessed Sacrament, up to Ešenvalds's night sky; the interval falls there. The second half begins low and human, with a village fiddler, and then attempts flight three times: Monteverdi's bird, Bach, and Vaughan Williams's lark, which is lost in the light. What remains is the return to earth: ice on the Prosna. And an encore, in which the light comes down from its throne back towards us."
 
-concert.wolanie-gor.movements.clamor.gloss: "Cry"
+concert.wolanie-gor.movements.clamor.gloss: "Call"
 concert.wolanie-gor.movements.clamor.line: "The shepherds' call thrown back from the slopes: still without words, a voice alone in space."
 concert.wolanie-gor.movements.advocata.gloss: "Advocate"
 concert.wolanie-gor.movements.advocata.line: "The call finds someone to address: the Mother the banished cry out to, and the women whose work keeps the world turning."
@@ -36,6 +38,8 @@ concert.wolanie-gor.program.0.note: "The call of shepherds in the Pyrenees; the 
 
 concert.wolanie-gor.program.1.inscriptioGloss: "Hail, holy Queen, Mother of mercy · Marian antiphon"
 concert.wolanie-gor.program.1.note: "The Marian antiphon in the version of the shepherds of Rouergue — a historic region of what is now Occitania — and the monks of the small town of Estaing. Austere, plain polyphony close to the Corsican tradition: here many voices are a form of community. From it comes the sentence that stands as the inscription over the whole evening: “Ad te clamamus”, to thee do we cry. The wordless call of the first piece is given words here. In recordings of this version the antiphon is closed by a Hail Mary recited in the Occitan dialect — “Adiu, Maria, siás tot de gràcia…” — a prayer in the speech the shepherds actually used."
+# The traditional "Hail, holy Queen", which is public domain; the ICEL text now sung in English
+# churches is not, and its wording is close enough that using it would be a copy, not a coincidence.
 concert.wolanie-gor.program.1.textGloss: |-
   Hail, holy Queen, Mother of mercy,
   our life, our sweetness and our hope, hail!
@@ -53,6 +57,8 @@ concert.wolanie-gor.program.2.note: "The Canadian composer wrote it while gather
 
 concert.wolanie-gor.program.3.inscriptioGloss: "Down in adoration falling before so great a Sacrament · from the hymn Pange lingua"
 concert.wolanie-gor.program.3.note: "Corsican polyphony from the Franciscan tradition. The text is the last two stanzas of the hymn Pange lingua by St Thomas Aquinas (13th century), sung at adoration and most often at Benediction, as the Blessed Sacrament returns to the tabernacle."
+# Caswall 1849 for both Aquinas hymns (this one and program.4): the version English adoration is
+# actually sung to, and out of copyright. `textNote` credits him, which is what using it requires.
 concert.wolanie-gor.program.3.textGloss: |-
   Down in adoration falling,
   lo, the sacred Host we hail;
@@ -119,7 +125,7 @@ concert.wolanie-gor.program.9.inscriptioGloss: "from the Partita for solo violin
 concert.wolanie-gor.program.9.note: "From the third partita, part of the set of six sonatas and partitas for solo violin completed in 1720, masterpieces of the violin literature. Pure energy and lightness: the second moment in this programme when the violin is left alone, and the bridge between Monteverdi's bird and Vaughan Williams's lark."
 
 concert.wolanie-gor.program.10.inscriptioGloss: "text: George Meredith · arr. for violin and choir: Paul Drayton"
-concert.wolanie-gor.program.10.note: "A pastoral poem for violin, written in 1914 and revised in 1920; it waited six years for its first performance because the war had broken out. Its inspiration was George Meredith's poem about a lark rising towards the sky; the melodic line rises and falls in imitation of the flight. Paul Drayton rewrote the piece for violin and choir, so that Meredith's words — in the original only written above the notes — can here actually be heard."
+concert.wolanie-gor.program.10.note: "A pastoral tone poem for violin, written in 1914 and revised in 1920; it waited six years for its first performance because the war had broken out. Its inspiration was George Meredith's poem about a lark rising towards the sky; the melodic line rises and falls in imitation of the flight. Paul Drayton rewrote the piece for violin and choir, so that Meredith's words — in the original only written above the notes — can here actually be heard."
 concert.wolanie-gor.program.10.textGloss: "= original"
 
 concert.wolanie-gor.program.11.inscriptioGloss: "a song in a folk idiom · words written to an existing vocalise"
