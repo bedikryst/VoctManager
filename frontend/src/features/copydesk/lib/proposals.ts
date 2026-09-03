@@ -31,18 +31,16 @@ export interface CopyDeskCell {
   /** Somebody else's open proposal on the same field. */
   readonly others: readonly CopyDeskProposal[];
   /**
-   * The most recent verdict on the caller's OWN wording, if they have ever had
-   * one here.
+   * The verdict on the caller's OWN wording that is still news to them.
    *
    * A verdict is feedback to the person who wrote the words: "accepted" tells
    * an editor their sentence stood, "rejected" tells them it did not, and both
-   * belong on the cell where they are looking. Somebody else's settled decision
-   * is not news about this field — once it has been written into the repository
-   * it simply IS the text the site holds, which the cell is already showing. The
-   * distinction is load-bearing rather than cosmetic: a bulk translation import
-   * arrives as one accepted proposal per cell, and counting those as verdicts
-   * would hang a chip on every translated field in the corpus, in a surface
-   * whose resting state is meant to say nothing at all.
+   * belong on the cell where they are looking. Somebody else's decision is not
+   * news about this field — once it has been written into the repository it
+   * simply IS the text the site holds, which the cell is already showing.
+   *
+   * Authorship alone does not make it news, though, which is why this is
+   * narrowed further by `isStandingVerdict`.
    */
   readonly settled: CopyDeskProposal | null;
   /**
@@ -60,6 +58,33 @@ export interface CopyDeskCell {
   readonly awaiting: CopyDeskProposal | null;
 }
 
+/**
+ * Whether the last verdict on the caller's own wording still describes the row.
+ *
+ * The two verdicts are not symmetrical, and reading them as one fact is what
+ * hangs "Przyjęte" over fields where nothing has been accepted. REJECTED is an
+ * event about an attempt — it can only ever mean "the words you sent were
+ * turned down", so it stands until a reviewer says something else, including
+ * while the editor is rewriting in answer to it. ACCEPTED reads as a STATE of
+ * the field, and a state has to still be true; it stops being so in three ways:
+ *
+ * - once `apply-copy` has written it, the field itself is the evidence, and the
+ *   chip becomes decoration on every row that sentence ever touched — for the
+ *   account that ran the bulk translation import, one accepted proposal per
+ *   cell across the whole translated corpus, every one of them its own;
+ * - once the editor has started writing again, it is a verdict on the previous
+ *   round while the field on screen holds words nobody has reviewed;
+ * - and while a decided sentence waits for the repository, the gold panel under
+ *   the field already says exactly that, with the decided text in it.
+ */
+const isStandingVerdict = (
+  settled: CopyDeskProposal,
+  mine: CopyDeskProposal | null,
+  awaiting: CopyDeskProposal | null,
+): boolean =>
+  settled.status !== "ACCEPTED" ||
+  (mine === null && settled.applied_at === null && settled.id !== awaiting?.id);
+
 export const readCell = (segment: CopyDeskSegment): CopyDeskCell => {
   let mine: CopyDeskProposal | null = null;
   const others: CopyDeskProposal[] = [];
@@ -67,7 +92,10 @@ export const readCell = (segment: CopyDeskSegment): CopyDeskCell => {
   let awaiting: CopyDeskProposal | null = null;
 
   // The payload arrives newest first, so the first settled row found is the
-  // last decision made about this field.
+  // last decision made about this field. Whether it is still worth showing is
+  // decided afterwards and never here: a scan that skipped the rows
+  // `isStandingVerdict` rejects would fall through to an older decision and
+  // report a rejection the editor has already had accepted since.
   for (const proposal of segment.proposals) {
     if (isOpen(proposal)) {
       if (proposal.is_mine) mine ??= proposal;
@@ -85,7 +113,16 @@ export const readCell = (segment: CopyDeskSegment): CopyDeskCell => {
     }
   }
 
-  return { segment, mine, others, settled, awaiting };
+  return {
+    segment,
+    mine,
+    others,
+    settled:
+      settled !== null && isStandingVerdict(settled, mine, awaiting)
+        ? settled
+        : null,
+    awaiting,
+  };
 };
 
 /**

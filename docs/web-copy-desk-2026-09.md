@@ -321,7 +321,7 @@ French month/day capitalization does not survive naive formatting (see the proje
 | D3 | reviewer mode: old → new, accept / reject / edit further — **done, §6i** | the patch gets made |
 | E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 — **EN pass 1 done, §6j** | Florent's first sitting |
 | F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang — **done, §6o** | the pages exist |
-| G | static pages extracted into content modules (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing | the rest of the corpus enters the desk |
+| G | static pages extracted into content modules (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing — **shape in §6q, not built** | the rest of the corpus enters the desk |
 
 ### §6a Stage A — what shipped (2026-09-02)
 
@@ -1318,8 +1318,130 @@ returning the Polish URL rather than a 404. And the footer's `tempusLiturgicus` 
 prints its Polish gloss in every locale; it is chrome nobody has translated yet, and it is on every
 page, not just these.
 
+### §6p After F — the rail that was never sticky, and reading marks per page (2026-09-03)
+
+Two post-stage-F items, and the first one is a reminder that a computed style is not a behaviour.
+
+**The rail was `position: sticky` and it scrolled away anyway.** Measured on the device rather than
+read off the file (`vm-shot/kd-desk-rail.cjs`, 390×844 and 1440×900): computed `position: sticky`,
+`top: 0px`, and `getBoundingClientRect().top` reporting **−2000 at scrollY 2000**. The cause was two
+levels above the desk — `<body class="… overflow-x-hidden …">` in `frontend/index.html`. A box with
+one axis `hidden` and the other `visible` computes the visible axis to `auto`, so the body became a
+scroll container while the document went on scrolling on `html`; a sticky element inside it then
+resolves against a scrollport that never moves. The fix is `overflow-x: clip` (which clips
+identically and creates no scroll container), declared in `panel.css` under a `hidden` fallback for
+engines that do not know `clip`, and the utility removed from `index.html` so the rule lives with
+its reasoning. Verified by the same harness: `rectTop: 0` at every scroll position, both viewports.
+
+Three things worth carrying from it.
+
+- **It was never a copy-desk bug.** `DashboardLayout` has no inner scroll container either, so
+  every page-level `sticky` in the panel was dead — including `Schedule`'s tab pill, whose own
+  comment says it exists so the view control "stays reachable", and the `sticky top-0` group
+  headers in `CastTab`, `CrewTab` and `RehearsalsTab`. They now do what they were written to do.
+  The desk is simply where it showed, because it is the surface whose ONE affordance was the thing
+  scrolling away.
+- **The bar was also unreadable once it stayed.** `bg-ethereal-canvas/90` with no blur let the body
+  text travel visibly through it — invisible as a defect for as long as the bar itself was
+  invisible. It is `/92` plus `backdrop-blur-md` now; a flat opaque fill would have printed a lid
+  across the ambient layer's wash, which is at its strongest under exactly that band.
+- **The desk now has two exits.** §6g's step-back-one-level is right about where an editor wants to
+  go from a page of text, and wrong that "the panel is one click further" is acceptable in a
+  takeover with no other doors. The rail carries `← Spis treści` on the left and `Panel` opposite it
+  on any page below the index; on the index the left link IS the panel, so the slot names the room
+  instead. The decorative `Redakcja` eyebrow was hidden below `sm` anyway — nothing load-bearing was
+  displaced.
+
+**And `copy_desk_seen_at` is gone, replaced by `copydesk.CopyScopeVisit` — one watermark per reader
+per page.** The single profile-wide stamp answered "when were you last on the desk", which is not
+the question the surface asks: opening one page of a corpus declared the whole of it read,
+permanently, and nothing anywhere could put a page back. The new model is a table of
+`(user, scope, seen_at)` and everything the contents list shows is a **comparison** against it —
+never a stored state, which is what keeps the split free of tick-boxes.
+
+- `new` = created after the mark. **No mark at all means every row is new**, which is the state a
+  first reading is actually in; the old code reported zero new to a first-time visitor, silently.
+- `changed` = already there at the mark, and the published value has moved since. Never overlaps
+  `new`; the two partition the page.
+- The split is `new + changed > 0`, or no mark. `stale` is deliberately **not** part of it: it does
+  not clear by being read, so a page carrying it could never leave the pending half however often
+  it was reviewed. It stays a count on the row, on whichever side that row sits.
+
+**The one act that writes a mark is a button at the foot of the page**, and the placement is the
+argument. `SittingClosure` sits in the rail because it belongs to the sitting rather than to any one
+page and because nobody loses anything by missing it. This one is the reader's own claim that they
+read a page, so it goes where that claim becomes true — a control in the rail would be pressable
+from the first paragraph and would mean nothing. The header states the same fact for orientation on
+arrival, read from the same summary so the two cannot disagree. Nothing stamps on arrival or on
+departure any more, and the shell no longer stamps at all.
+
+**No data migration, deliberately.** There is no honest way to turn one desk-wide timestamp into per-page
+marks, and the tempting one — stamping every scope that existed at that moment — would assert a review
+that never happened for exactly the pages the split exists to find. The stamps start empty, so the first
+load after this ships puts the whole corpus under "do przejrzenia". For a surface nobody has reviewed
+yet that is the correct starting state, not a regression.
+
+**It forced one change with a wider blast radius, and that change was overdue.** `upsert_segments`
+used `update_or_create`, which saves unconditionally, so `updated_at` (`auto_now`) meant "when the
+extractor last ran" rather than "when this text moved" — and `changed` is computed from exactly that
+column. The ingest now compares and writes only rows that actually differ. Two consequences beyond
+this feature: a no-op `copy:sync` reports `0 updated` instead of 830, and `CopySegment.updated_at`
+becomes load-bearing — anything that saves a segment for an unrelated reason will tell every reader
+their page moved.
+
+**A layout defect the same harness found**, which is the case for measuring rather than reasoning
+twice in one session: a contents row can now carry three chips, and beside a 390px title they took
+the whole line and truncated the page's name to `Konte…` — on the one row where the title vanished
+outright. Rows stack below `sm` now; the title keeps the full measure and the marks sit under it.
+
+### §6q Stage G — the shape, not yet built
+
+The corpus the desk holds today is `concerts.yaml` and nothing else. Stage G is the rest of the
+site's text: `kontakt`, the `/koncerty` index, `/obrazy`, `/kolofon` and the chrome, then the
+landing. Measured, so the stage is sized honestly rather than optimistically: `kontakt.astro` 419
+lines, `koncerty.astro` 821, `obrazy.astro` 856, `kolofon.astro` 940, `index.astro` 189 over eleven
+landing partials — roughly 3 200 lines of Astro to read copy out of, against a stage F whose whole
+chrome was forty.
+
+Four things that make it a different job from F rather than a bigger one.
+
+- **There is no `concerts.yaml` to extract from.** A concert's copy is already a structured data
+  file; a static page's copy is interleaved with its composition. The output of this stage is a
+  content module per page (`i18n/content/kontakt.ts`, the `o-nas.ts` pattern) plus contract entries,
+  and the extraction is a judgement call per string — which is why §5's rule about accounting for
+  every field in one of the two tables matters more here than it did for the corpus.
+- **This is where `HTML` segments and the `contenteditable` sanitizer first fire.** `contract.mjs`
+  says so in as many words: every segment in today's corpus is plain text, and the static pages
+  bring inline `<em>/<strong>/<a>` with them. §7's sanitizer trap has not been exercised once yet.
+- **`TRANSLATED_ROUTES` owes the ordering contract again.** The concert pages are exempt because
+  `src/pages/{en,fr}/koncerty/[id].astro` filter their own `getStaticPaths` through the set. Every
+  page in this stage is hand-written, so each one is: both route files first, then the entry.
+- **Each page still owes §2's two passes per locale.** The word count is smaller than stage E's
+  ~8 700 per locale, but the rule is a floor and not a schedule.
+
+Three open items ride along with it and are **not to be settled without Florent** — all three are
+contract or editorial decisions rather than code: the psalm register in English (§8), `9
+Kart`'s `program.4.textGloss` in the singular, and the honorific in `credits[].name` (§6o's closing
+paragraph — splitting the honorific off the name is a `contract.mjs` change).
+
 ## §7 Traps
 
+- **`overflow-x: hidden` on the body kills every page-level `position: sticky`.** One axis `hidden`
+  and the other `visible` computes the visible axis to `auto`, so the body becomes a scroll
+  container while the document scrolls on `html`, and a sticky element resolves against a scrollport
+  that never moves. It is `clip` in `panel.css` now (§6p) — but the trap is the diagnosis, not the
+  fix: the computed style says `sticky`, the element is in the flow, and nothing anywhere reports an
+  error. Measure `getBoundingClientRect().top` after a scroll; anything but ~0 means it is not
+  sticking, whatever the computed style claims.
+- **A watermark is written by an act, never by a visit.** The desk's reading marks are per page
+  (`CopyScopeVisit`) and only the control at the foot of a page writes one. Stamping on arrival or
+  on departure looks like a convenience and is a lie the surface cannot walk back: it declares a
+  213-row concert reviewed because somebody opened it to check a line, and nothing puts a page back.
+  The single `copy_desk_seen_at` did exactly this for the whole corpus.
+- **`CopySegment.updated_at` means "this text moved", and only the ingest can break that.**
+  `upsert_segments` compares before it saves for this reason; an unconditional `update_or_create`
+  makes the column mean "when the extractor last ran" and tells every reader the whole corpus
+  changed after any `copy:sync` at all.
 - **Every editor who is `is_staff` is a REVIEWER.** `user_is_copy_reviewer` tests staff and nothing
   else, and `copy_desk_reviewers` mails the digest to every active staff account. So an editor who
   was made staff for some unrelated admin errand can accept their own proposals and receives the
