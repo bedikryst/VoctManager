@@ -77,7 +77,10 @@ export const ScopeReviewMark = ({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-hairline pt-3">
+    // Stacked on a phone: beside the button the sentence gets about half the
+    // measure and wraps to four ragged lines, and it is the sentence that has to
+    // explain what pressing the button does.
+    <div className="flex flex-col items-start gap-2 border-t border-hairline pt-3 sm:flex-row sm:items-center sm:gap-4">
       {pending ? (
         <>
           <Button

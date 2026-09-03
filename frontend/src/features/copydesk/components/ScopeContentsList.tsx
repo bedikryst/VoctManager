@@ -154,9 +154,14 @@ const ScopeRow = ({ scope, language }: ScopeRowProps): React.JSX.Element => {
       {/* The whole row is the way in — a per-row button would be chrome
           competing with the titles it lists, and the titles are what an editor
           is scanning for. */}
+      {/* Stacked on a phone, and that is not a cosmetic choice: a row can now
+          carry three chips at once, and beside a 390px title they take the line
+          and leave the page's own name truncated to nothing. The title is what
+          an editor is scanning for, so it keeps the full measure and the marks
+          sit under it until there is room for both. */}
       <Link
         to={`/redakcja/${scope.scope}`}
-        className="flex items-start justify-between gap-4 px-5 py-4 transition-colors hover:bg-ethereal-gold/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold/40"
+        className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-ethereal-gold/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold/40 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
       >
         <div className="flex min-w-0 flex-col gap-1.5">
           <div className="flex min-w-0 items-center gap-2">
@@ -185,7 +190,7 @@ const ScopeRow = ({ scope, language }: ScopeRowProps): React.JSX.Element => {
         </div>
 
         {(scope.new > 0 || scope.changed > 0 || scope.stale > 0) && (
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 sm:shrink-0 sm:justify-end">
             {scope.new > 0 && (
               <Badge variant="incense">
                 {t("copy_desk.contents.new_badge", "{{count}} nowych", {
