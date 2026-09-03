@@ -12,9 +12,9 @@
     "audit:registers": "node audit/index.mjs",
     "test:audit": "node --test audit/audit.test.mjs",
     "copy:extract": "node copydesk/index.mjs",
-    "copy:sync": "node copydesk/sync.mjs",
-    "copy:propose": "node copydesk/propose.mjs",
-    "copy:apply": "node copydesk/apply.mjs",
+    "copy:sync": "node --env-file-if-exists=.env copydesk/sync.mjs",
+    "copy:propose": "node --env-file-if-exists=.env copydesk/propose.mjs",
+    "copy:apply": "node --env-file-if-exists=.env copydesk/apply.mjs",
     "test:copydesk": "node --test copydesk/copydesk.test.mjs",
     "photos:proxy": "node downscale-photos.mjs",
     "rite:render": "node rite/render.mjs"

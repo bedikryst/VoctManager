@@ -1121,6 +1121,45 @@ incipit says "Śpiewajcie" and Bach's German is plural ("Singet dem Herrn"). Bot
 render it plural, because the sung text is what a gloss glosses; the Polish is the odd one out and
 the corpus is not ours to correct.
 
+### §6m Stage E — running the loop, and the credentials it needs (2026-09-03)
+
+**There is no API key and there is no separate copy-desk account.** The three commands that leave
+the checkout sign in at `POST /api/token/` with an email and a password, exactly as a browser does,
+because Postgres publishes no host port and HTTP is the only door from a checkout to the mirror
+(§6e). The account must be `is_staff`: `IsCopyReviewer` gates accepting a proposal and reading the
+accepted patch, and accepting *is* the decision to commit (`copydesk/permissions.py`). The
+developer's own superuser is that account. The request goes to `http://localhost:8000` — the panel
+in the developer's own Docker — so nothing leaves the machine.
+
+**Where the credentials live: `web/.env`, gitignored, never the shell profile.** The three scripts
+run under `node --env-file-if-exists=.env`, so the file is read at start-up and no `setx` is needed;
+`--if-exists` keeps the commands working when the values come from the environment instead.
+`web/.env.example` is the committed template. A password in `setx` is a password in the user's
+registry for every process on the machine, which is a worse trade than a gitignored file next to the
+code that reads it.
+
+**The six commands, and which of them can be run without the stack.**
+
+```
+make up                              # and `make migrate` — nothing applies migrations for you
+cd web
+npm run copy:sync                    # extract + ingest; REFUSES a dirty src/content/
+npm run copy:propose -- --locale en --write
+npm run copy:propose -- --locale fr --write
+npm run copy:apply                   # dry run — reads the patch, writes nothing
+npm run copy:apply -- --write        # writes the overlays, stamps applied
+git diff -- src/content/concerts.en.yaml src/content/concerts.fr.yaml
+```
+
+`copy:propose` without `--write` and `copy:sync --dry-run` are pure local reads and need neither the
+stack nor the credentials — they are the way to check coverage offline. **`copy:apply`'s dry run is
+not**: the patch it prints comes from the server, so it signs in like the rest.
+
+**Three failures worth recognising on sight.** A sign-in that returns 401 is the password; a 403 on
+the first real request is an account that is not `is_staff`; and a 500 or a missing-table error from
+`copy:sync` is the dev database being older than the copy-desk migrations — `make migrate` is a
+separate manual step in every environment.
+
 ## §7 Traps
 
 - **`contenteditable` injects markup.** The browser will produce `<div>`, `<br>` and styled `<span>`
