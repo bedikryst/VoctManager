@@ -1,0 +1,234 @@
+# concert.wcielenie — FR draft (stage E).
+# Translated from the Polish, never from the English: the two foreign columns are siblings, not a
+# relay, and a French value rendered from an English one would carry the English pass's decisions.
+#
+# NO `= original` rows exist in French — none of the forty-two sung texts is French — so every
+# gloss here is written. They are OUR OWN, including the psalms: the ledger offered Crampon (1923)
+# where a public-domain French exists, but a source may be credited only if it is actually
+# reproduced, and pass 1 could not verify Crampon line by line. `textNote` therefore says "les
+# nôtres", which has the side benefit of matching the plain modern Polish beside it rather than
+# reading three centuries older, as the English psalter does (§8).
+#
+# Never type a hard space: `lib/typo.ts` inserts the narrow no-break space before `? ! : ;` and
+# around the guillemets at build time, and a hand-typed one doubles up.
+
+concert.wcielenie.title: "Contemplation de l'Incarnation"
+concert.wcielenie.metaPlace: "Basilique du Sacré-Cœur, Cracovie"
+concert.wcielenie.inscriptioGloss: "Un rameau sortira du tronc de Jessé"
+concert.wcielenie.essence: "Une tentative d'entrer dans le mystère de l'Incarnation : de l'annonce d'Isaïe au cantique de Siméon, dans une musique qui va de Sandström à Monteverdi."
+concert.wcielenie.facts.0: "4 / 8 / 12 voix"
+concert.wcielenie.facts.1: "Renaissance — XXIe siècle"
+concert.wcielenie.facts.2: "Les débuts du cycle"
+
+concert.wcielenie.prologue: "Le vingt janvier, le soir, basilique du Sacré-Cœur-de-Jésus à Cracovie. Vingt jours après la naissance de l'ensemble. Avant que retentisse le premier son, le P. Jarek Naliwajko SJ introduit l'assistance au mystère de l'Incarnation."
+
+concert.wcielenie.verbum.speaker: "P. Jarek Naliwajko SJ"
+concert.wcielenie.verbum.quote: "Découvrir un mystère finit toujours de la même façon. Cela conduit à un autre mystère. Sinon, ce n'est pas un mystère, mais du savoir, ou de la routine."
+concert.wcielenie.verbum.text: |-
+  Bonsoir à tous, que Dieu vous bénisse. Je salue cordialement tous ceux qui sont venus dans
+  notre église, dans la basilique du Sacré-Cœur-de-Jésus.
+
+  Mesdames et Messieurs, ce soir, avec ce concert inaugural, les interprètes veulent nous
+  inviter dans le monde toujours inquiétant de l'esprit — un monde qui les presse eux-mêmes,
+  les interprètes, les auteurs de cette rencontre, vers un certain mouvement intérieur,
+  jusqu'à rejeter hors d'eux cette inquiétude : c'est-à-dire vers la nécessité de dire le
+  mystère de l'esprit.
+
+  Car pour le moment — c'est-à-dire depuis quelque deux cent mille ans — l'humanité n'a pas
+  trouvé de meilleur mot pour cette part intrigante, et jamais tout à fait reconnue, de notre
+  immersion dans le temps. On n'a pas inventé de meilleur mot qu'esprit. Ils veulent nous
+  livrer un mystère. Pourtant, découvrir un mystère finit toujours de la même façon. Cela
+  conduit à un autre mystère. Sinon, ce n'est pas un mystère, mais du savoir, ou de la
+  routine — tant adorée par certains, et si souvent confondue avec la vie.
+
+  Mais commençons par l'affiche de ce concert — elle devrait s'afficher sur nos écrans. Un
+  fond cobalt, et sur lui des rayons blancs qui s'écartent — remarquez-le — ou bien qui
+  convergent, des rayons faits de lettres qui forment des mots. Ils convergent, ils sortent
+  ou ils entrent, mais c'est celui qui regarde qui décide du sens, car dans la vie ou bien
+  l'on descend vers le centre, ou bien l'on en sort, on s'éloigne de ce centre où il n'y a
+  rien que ce fond cobalt ou indigo derrière une petite tache blanche — comme sur cette
+  affiche.
+
+  Et ces trois couleurs sont associées au symbole de la spiritualité la plus haute — ainsi,
+  par exemple, dans l'anthropologie indienne : l'indigo est le chakra le plus élevé, celui
+  qui relie à l'esprit de l'univers, comme le blanc dans notre tradition, attribué à
+  l'Absolu. En suivant cette piste : l'indigo et le cobalt servaient à teindre les vêtements
+  royaux, et donc ceux des oints du Seigneur.
+
+  La démocratie — hélas et heureusement — nous a tous rendus égaux ; en réalité c'est la
+  routine de la démocratie, ou plutôt : la démocratie est une routine. Ce soir pourtant, les
+  interprètes désirent nous faire sortir du confort du quotidien, où la routine s'est emparée
+  de nous en nous donnant l'illusion de la sécurité, d'une certaine égalité — car la routine
+  est bien la sœur de l'oubli du monde de l'esprit.
+
+  Les interprètes nous proposent de rencontrer une fois encore l'Incarnation. Ils nous font
+  sortir de la routine pour nous conduire à l'Incarnation. Et pourtant, à l'instant où je
+  prononce ce mot et où il devient une onde sonore, je dépouille l'Incarnation de toute son
+  immensité. Elle devient apparemment compréhensible, et par là entièrement fausse, et
+  sûrement brouillée, car on lui a ôté son mystère. L'Incarnation jaillit et afflue tout
+  ensemble — comme ces rayons sur l'affiche : de la source elle jaillit vers nous, et avec
+  nous elle reflue vers le centre.
+
+  Un concert spirituel — c'est le sous-titre que les auteurs ont donné à tout ce cycle, dont
+  nous serons non seulement les témoins mais, en un sens, les auteurs — en est le premier
+  tableau. Ce soir n'est rien d'autre qu'une rencontre avec soi-même, pour peu que nous
+  consentions à ce mouvement intérieur, et que nous découvrions ainsi que nous ne sommes pas
+  seuls, ni en nous ni autour de nous, et que la plénitude cherche à se dire d'une manière
+  qui franchit les frontières au lieu de les effacer, et qu'elle y parvient précisément par
+  la musique.
+
+  Et pour finir — une demande des interprètes : ne pas applaudir pendant le programme. Nous
+  nous abandonnons entièrement à une suspension de la conscience et nous nous laissons mouvoir
+  comme les vagues d'un océan sans fin. Nous écoutons, et que rien ne soit actif en nous que
+  notre attention à l'esprit. Accueillons donc les interprètes de ce soir.
+# `różdżka` est un seul mot en polonais et doit l'être ici : l'inscription d'Isaïe, l'acte, le
+# passage et la note disent tous « rameau ».
+concert.wcielenie.verbum.bridge: "Puis le murmure s'apaise et, de la pénombre d'hiver, s'élève le rameau de Sandström."
+
+concert.wcielenie.reflection: "L'Incarnation est quelque chose d'indicible, qui avec le temps nous devient souvent banal. Lorsque nous prenons conscience de ce que signifie ce mystère, nous pouvons retrouver le sens de la présence de Dieu dans nos vies."
+concert.wcielenie.reflectionAttribution: "Florent de Bazelaire · 20 janvier 2024"
+
+concert.wcielenie.programLede: "Dix regards et un bis"
+concert.wcielenie.programArc: "L'ordre fait ici partie de la composition. La soirée suit le cours de l'histoire du salut : du rameau de la prophétie d'Isaïe à la naissance même, en passant par la veille nocturne des bergers et la trompette de l'Avent de Gallus. Vient ensuite une contemplation mariale, puis une ombre soudaine : la berceuse d'une mère sur un enfant condamné par Hérode. Le cantique de Siméon la referme au Temple : « mes yeux ont vu ton salut ». C'est l'accomplissement de la promesse par laquelle le programme a commencé ; à partir de là il ne reste que la louange et la joie du bis."
+
+concert.wcielenie.movements.prophetia.gloss: "Annonce"
+concert.wcielenie.movements.prophetia.line: "Avant qu'un mot soit dit de l'Enfant, la promesse retentit : un rameau sorti du tronc de Jessé, le cri des bergers dans la nuit, la trompette de l'Avent qui annonce la venue."
+concert.wcielenie.movements.nativitas.gloss: "Nativité"
+concert.wcielenie.movements.nativitas.line: "L'Enfant vient. Autour de lui se rassemble la contemplation de sa Mère : l'Espagne de la Renaissance et un noël polonais."
+concert.wcielenie.movements.umbra.gloss: "Ombre"
+concert.wcielenie.movements.umbra.line: "Juste après la naissance, une ombre tombe : la berceuse d'une mère sur un enfant qu'Hérode a condamné."
+concert.wcielenie.movements.umbra.interlude.gloss: "Une voix a été entendue dans Rama, des pleurs et une grande plainte : Rachel pleure ses enfants."
+concert.wcielenie.movements.impletio.gloss: "Accomplissement"
+concert.wcielenie.movements.impletio.line: "Au Temple, Siméon prend l'Enfant dans ses bras : « mes yeux ont vu ton salut ». La promesse du début de la soirée s'accomplit."
+concert.wcielenie.movements.laus.gloss: "Louange"
+concert.wcielenie.movements.laus.line: "Il ne reste plus qu'un chant nouveau et la joie : le Christ est né."
+
+concert.wcielenie.program.0.inscriptioGloss: "Un rameau sortira du tronc de Jessé"
+# La note polonaise nomme la réception polonaise du cantique ; la française doit nommer la
+# française, sinon elle énonce un fait sur une langue que ce lecteur ne lit pas. « Dans une étable
+# obscure » est une adaptation et non une traduction — proposée à Florent, jamais présupposée.
+concert.wcielenie.program.0.note: "Un noël allemand de la fin du XVIe siècle (Trèves, 1587), publié pour la première fois dans un recueil jésuite de Spire (1599). Ses vingt-trois strophes parcourent toute l'histoire sainte, de la prophétie d'Isaïe à l'adoration des Mages : le chemin même que ce programme va prendre. Le français chante sur cette mélodie « Dans une étable obscure », qui en est une adaptation plutôt qu'une traduction. Sandström tisse l'ancien choral autour d'un quatuor de solistes qui plane au-dessus de lui."
+concert.wcielenie.program.0.textGloss: |-
+  Un rameau a poussé
+  d'une tendre racine,
+  comme le chantaient les anciens —
+  de la lignée de Jessé ;
+  et il a donné une fleur
+  au milieu de l'hiver glacé,
+  à l'heure de minuit.
+
+concert.wcielenie.program.1.inscriptioGloss: "Des bergers veillant la nuit sur leur troupeau"
+concert.wcielenie.program.1.note: "Le cri des bergers qui veillent la nuit sur leur troupeau. Chez Vivancos, c'est un chant perdu de la solitude qui, à l'écoute de l'« écho du silence », se change en beauté. Douze voix réparties dans tout l'espace de la nef."
+
+concert.wcielenie.program.2.inscriptioGloss: "Sonnez de la trompette dans Sion · Voici que vient Dieu, notre Sauveur"
+concert.wcielenie.program.2.note: "Un motet de l'Avent à cinq voix sur des paroles du prophète Zacharie. Le contrepoint Renaissance de Gallus, un Slovène issu du cercle de la musique impériale, annonce la venue comme un son de trompette : « Voici que vient Dieu, notre Sauveur »."
+concert.wcielenie.program.2.textGloss: |-
+  Sonnez de la trompette dans Sion, convoquez les nations,
+  annoncez-le aux peuples et dites :
+  Voici que vient Dieu, notre Sauveur.
+  Annoncez et proclamez,
+  dites et criez :
+  Voici que vient Dieu, notre Sauveur.
+
+concert.wcielenie.program.3.inscriptioGloss: "texte : H. M. MacGill (1876)"
+concert.wcielenie.program.3.note: "Un noël contemporain, simple, à quatre voix, sur un poème de H. M. MacGill de 1876. Après les annonces vient la naissance elle-même."
+
+concert.wcielenie.program.4.inscriptioGloss: "Auguste Mère du Rédempteur · antienne mariale"
+concert.wcielenie.program.4.note: "L'antienne mariale du temps de l'Avent, chantée du 1er décembre au 2 février. Le motet à huit voix de Victoria : huit lignes indépendantes tiennent un dialogue proche du coro spezzato vénitien, même si le compositeur lui-même n'a laissé aucune indication sur la disposition du chœur dans l'espace."
+
+concert.wcielenie.program.5.inscriptioGloss: "Ô la plus glorieuse des vierges"
+concert.wcielenie.program.5.note: "Penderecki a écrit cette pièce en 2009 pour les soixante-dix ans de José Antonio Abreu, fondateur d'El Sistema au Venezuela. Elle a été créée à Caracas sous la direction du compositeur lui-même ; la première polonaise a suivi quelques jours plus tard."
+
+concert.wcielenie.program.6.inscriptioGloss: "arrangement contemporain d'un noël polonais"
+concert.wcielenie.program.6.note: "Un noël polonais arrangé par Mariusz Kramarz : une voix du pays dans ce programme international, juste après la nativité contemporaine."
+
+concert.wcielenie.program.7.inscriptioGloss: "berceuse d'une mère pour un enfant condamné · Mt 2, 16"
+concert.wcielenie.program.7.note: "Le Coventry Carol vient d'un mystère du XVIe siècle, « The Shearmen and Tailors ». C'est une berceuse chantée par la voix de la mère au-dessus d'un enfant condamné : l'ombre du massacre des Innocents, qui tombe juste après la naissance. Stopford l'a revêtue en 2008 d'une harmonie contemporaine et froide."
+concert.wcielenie.program.7.textGloss: |-
+  Lully, lullay, petit enfant,
+  bye, bye, lully, lullay.
+  Lullay, petit enfant,
+  bye, bye, lully, lullay.
+
+  Ô mes sœurs, que devons-nous faire
+  pour sauver en ce jour
+  le pauvre petit à qui nous chantons :
+  bye, bye, lully, lullay ?
+
+  Hérode, le roi, dans sa fureur
+  a ordonné aujourd'hui
+  à ses hommes d'armes, sous ses propres yeux,
+  de tuer tous les petits enfants.
+
+  Malheur à moi, pauvre enfant, je te pleure !
+  Sans cesse je pleurerai et je soupirerai ;
+  pour ton départ — pas un mot, pas un chant :
+  bye, bye, lully, lullay.
+
+concert.wcielenie.program.8.inscriptioGloss: "Maintenant, ô Maître, laisse ton serviteur s'en aller · cantique de Siméon"
+concert.wcielenie.program.8.note: "Le cantique de Siméon, à la Présentation au Temple : « mes yeux ont vu ton salut ». Chez Pärt, dans son tintinnabuli, c'est l'accomplissement de la promesse par laquelle la soirée a commencé ; le vieillard peut s'en aller en paix."
+concert.wcielenie.program.8.textGloss: |-
+  Maintenant, ô Maître, laisse ton serviteur
+  s'en aller en paix, selon ta parole,
+  car mes yeux ont vu ton salut,
+  que tu as préparé à la face de tous les peuples :
+  lumière pour éclairer les nations
+  et gloire de ton peuple, Israël.
+
+concert.wcielenie.program.9.inscriptioGloss: "Chantez au Seigneur un chant nouveau"
+concert.wcielenie.program.9.note: "Un motet à six voix, publié en 1620 dans un recueil de Giulio Cesare Bianchi. Une mesure ternaire joyeuse l'ouvre : quatre voix d'abord, puis aussitôt les six. Il parcourt des versets entrelacés des psaumes 96 et 98 — un appel au chant nouveau dont la joie s'entend dans la texture même."
+
+concert.wcielenie.program.10.inscriptioGloss: "Réjouissez-vous ! Le Christ est né"
+concert.wcielenie.program.10.note: "Un noël du recueil de chants sacrés finno-suédois Piae Cantiones (1582), dans un arrangement de Brian Kay. La joie en guise de bis : « le Christ est né », dernier mot de la soirée."
+concert.wcielenie.program.10.textGloss: |-
+  Réjouissez-vous, réjouissez-vous ! Le Christ est né
+  de la Vierge Marie, réjouissez-vous !
+
+  Le temps de la grâce est venu,
+  celui que nous désirions ;
+  offrons pieusement
+  des chants de joie.
+
+  Dieu s'est fait homme,
+  la nature s'en étonne ;
+  le monde a été renouvelé
+  par le Christ Roi.
+
+  La porte close d'Ézéchiel
+  a été franchie ;
+  là d'où la lumière s'est levée,
+  là se trouve le salut.
+
+  Que notre assemblée
+  chante donc dans la clarté ;
+  qu'elle bénisse le Seigneur :
+  honneur à notre Roi.
+
+concert.wcielenie.credits.0.role: "Direction"
+concert.wcielenie.credits.1.role: "Parole d'introduction"
+
+concert.wcielenie.roster.groups.0.voice: "Sopranos"
+concert.wcielenie.roster.groups.1.voice: "Altos"
+concert.wcielenie.roster.groups.2.voice: "Ténors"
+concert.wcielenie.roster.groups.3.voice: "Basses"
+concert.wcielenie.roster.groups.4.voice: "Quatuor de solistes"
+concert.wcielenie.roster.groups.4.detail: "Le quatuor qui plane au-dessus du choral dans Es ist ein Ros' entsprungen ; dans Le cri des bergers il complète les douze voix."
+concert.wcielenie.roster.note: "Ni les interprètes ni les organisateurs n'ont reçu d'honoraires pour cette soirée ; ces débuts ont été soutenus par une collecte lancée autour de l'ensemble naissant."
+
+concert.wcielenie.video.caption: "Extraits choisis du concert « Contemplation de l'Incarnation » · VoctEnsemble 2024"
+
+concert.wcielenie.gallery.kd-wcielenie-0.alt: "VoctEnsemble en répétition pour le concert Contemplation de l'Incarnation"
+concert.wcielenie.gallery.kd-wcielenie-1.alt: "VoctEnsemble en répétition pour le concert Contemplation de l'Incarnation"
+concert.wcielenie.gallery.kd-wcielenie-2.alt: "VoctEnsemble en répétition pour le concert Contemplation de l'Incarnation"
+concert.wcielenie.gallery.kd-wcielenie-3.alt: "VoctEnsemble pendant le concert Contemplation de l'Incarnation dans la basilique du Sacré-Cœur"
+concert.wcielenie.gallery.kd-wcielenie-4.alt: "VoctEnsemble pendant le concert Contemplation de l'Incarnation dans la basilique du Sacré-Cœur"
+concert.wcielenie.gallery.kd-wcielenie-5.alt: "La nef principale pendant le concert Contemplation de l'Incarnation de VoctEnsemble dans la basilique du Sacré-Cœur"
+concert.wcielenie.gallery.kd-wcielenie-6.alt: "VoctEnsemble pendant le concert Contemplation de l'Incarnation dans la basilique du Sacré-Cœur"
+concert.wcielenie.gallery.kd-wcielenie-7.alt: "VoctEnsemble après le concert Contemplation de l'Incarnation dans la basilique du Sacré-Cœur"
+concert.wcielenie.gallery.kd-wcielenie-8.alt: "VoctEnsemble après le concert Contemplation de l'Incarnation dans la basilique du Sacré-Cœur"
+
+concert.wcielenie.posterAlt: "Affiche du concert Contemplation de l'Incarnation"
+concert.wcielenie.realizacja: "Réalisation : Ars Sonora Studio"
+
+concert.wcielenie.about.place: "Basilique du Sacré-Cœur · Cracovie"
+concert.wcielenie.about.blurb: "Les débuts du cycle des Concerts Spirituels : Renaissance, baroque et création contemporaine réunis autour du mystère de la Nativité et de l'Incarnation."

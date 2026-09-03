@@ -1,0 +1,177 @@
+# concert.aeternam — FR draft (stage E). Translated from the Polish, not from the English.
+# `zawierzenie` est « recommandation » partout — l'acte, les deux lignes qui y mènent et la note :
+# c'est le mot que le rite des funérailles emploie pour ce geste précis.
+# Cette page n'a pas de champ `textNote` dans le corpus : rien n'y peut créditer une source, ce qui
+# n'est pas un problème en français, où toutes les traductions sont les nôtres.
+
+concert.aeternam.title: "Aeternam — Épitaphe pour Gaza"
+concert.aeternam.metaPlace: "Mistrzejowice, Cracovie · Niedzica"
+concert.aeternam.dateLabel: "automne 2025"
+concert.aeternam.inscriptioGloss: "Donne-leur, Seigneur, le repos éternel, et que la lumière éternelle brille sur eux"
+concert.aeternam.inscriptioRef.source: "Introït du Requiem"
+concert.aeternam.essence: "Devant la souffrance des habitants de Gaza, nous avons choisi la langue de la compassion, non celle du commentaire. Le programme menait de l'Aeternam de Vivancos et de la lamentation Vox in Rama, par les prières pour la paix de Pärt, Havrylets et Gjeilo et par l'image de la Passion de Lotti, jusqu'au refuge de Shaw et à l'acte de recommandation de Tavener."
+concert.aeternam.facts.0: "4 / 8 / 12 voix"
+concert.aeternam.facts.1: "Lamentation et prière"
+concert.aeternam.facts.2: "Cracovie · Niedzica"
+
+concert.aeternam.prologue: "Le quatorze septembre 2025, l'église basse de Mistrzejowice. La fête de l'Exaltation de la Sainte Croix, la veille de la mémoire de Notre-Dame des Douleurs. L'ensemble demande une seule chose : que la soirée résonne dans le silence, comme une seule œuvre."
+
+concert.aeternam.reflection: "« Épitaphe pour Gaza » est l'expression d'une prière et un geste de solidarité envers l'humanité blessée à Gaza. Devant la souffrance de ses habitants, nous cherchons dans la musique la langue la plus pure de la compassion — croyant que la contemplation, le silence et le chant peuvent porter à la fois la douleur et la lumière de l'espérance là où les mots ne suffisent plus."
+concert.aeternam.reflectionAttribution: "VoctEnsemble · septembre 2025"
+concert.aeternam.reflectionNote: "Le programme suit un chemin que le christianisme connaît depuis des siècles : de la prière sur la tombe, par la lamentation d'une mère et la demande de paix, par l'image de la Passion, jusqu'à la recommandation à celle qui se tenait au pied de la croix."
+
+concert.aeternam.programLede: "Une prière en musique : neuf maillons et un bis"
+concert.aeternam.programArc: "L'ordre est ici une prière. La soirée s'ouvre sur les mots que l'Église chante au-dessus d'une tombe, et aussitôt après elle descend aussi bas qu'on peut descendre : jusqu'au cri d'une mère sur ses enfants tués. De là elle conduit par trois demandes de paix et par le poids de la croix, jusqu'au lieu où même l'hirondelle a son nid, et jusqu'au dernier refrain, où toute la création se réjouit."
+
+concert.aeternam.movements.epitaphium.gloss: "Épitaphe"
+concert.aeternam.movements.epitaphium.line: "La soirée commence là où finit la parole : par des mots chantés au-dessus des tombes depuis des siècles."
+concert.aeternam.movements.ploratus.gloss: "Lamentation des innocents"
+concert.aeternam.movements.ploratus.line: "Rachel pleure ses enfants : dans la tradition biblique, la figure de toute mère à qui l'on a pris son enfant."
+concert.aeternam.movements.oratio.gloss: "Prière pour la paix"
+concert.aeternam.movements.oratio.line: "Trois demandes venues de trois côtés de l'Europe : une antienne écrite après les attentats de Madrid, un apaisement norvégien avec violoncelle, un appel ukrainien à la Mère de Dieu."
+concert.aeternam.movements.passio.gloss: "Image de la Passion"
+concert.aeternam.movements.passio.line: "Au milieu de la soirée : le poids de la croix, écrit dans le chromatisme de huit voix."
+concert.aeternam.movements.passio.interlude.gloss: "À la vue de la ville, il pleura sur elle : Si toi aussi tu avais connu ce qui te donne la paix !"
+concert.aeternam.movements.refugium.gloss: "Refuge"
+concert.aeternam.movements.refugium.line: "Après la Passion revient la plus petite image que connaisse le Psautier : le passereau et l'hirondelle qui trouvent un nid auprès de l'autel."
+concert.aeternam.movements.commendatio.gloss: "Recommandation"
+concert.aeternam.movements.commendatio.line: "Reste la recommandation à celle qui se tenait au pied de la croix, et la promesse que porte le dernier refrain."
+
+concert.aeternam.program.0.inscriptioGloss: "l'introït de la messe des morts"
+concert.aeternam.program.0.note: "Une partie du Requiem du compositeur catalan, longtemps lié au chœur de garçons de l'Escolania de Montserrat. Le fondement en est l'introït de la messe des morts, des mots dits au-dessus des tombes depuis des siècles. Vivancos place une hétérophonie contemporaine à côté de la simplicité du chant ancien."
+concert.aeternam.program.0.textGloss: |-
+  Donne-leur, Seigneur, le repos éternel,
+  et que la lumière éternelle brille sur eux.
+
+concert.aeternam.program.1.note: "Un motet du recueil Communiones totius anni, publié à Venise en 1611. Zieleński a mis en musique ce texte — un verset de Jérémie repris dans l'Évangile de Matthieu — de telle sorte que les voix superposées deviennent elles-mêmes un cri. Rachel, mère de Joseph et de Benjamin, est dans la tradition biblique la figure de la mère qui pleure toutes les victimes innocentes ; le motet se chantait dans la liturgie des saints Innocents."
+concert.aeternam.program.1.textGloss: |-
+  Une voix a été entendue dans Rama,
+  des pleurs et une grande plainte.
+  Rachel pleure ses enfants
+  et refuse d'être consolée, car ils ne sont plus.
+
+concert.aeternam.program.2.inscriptioGloss: "antienne médiévale"
+concert.aeternam.program.2.note: "Écrite à la demande de Jordi Savall trois jours après les attentats de Madrid du 11 mars 2004. Pärt a inscrit une antienne médiévale dans son style tintinnabuli, trouvé après dix ans de silence créateur. La formule simple revient ici comme une respiration : elle dure au lieu de conduire à un sommet."
+concert.aeternam.program.2.textGloss: |-
+  Donne-nous la paix, Seigneur, en nos jours,
+  car il n'y a personne
+  qui combatte pour nous,
+  sinon toi, notre Dieu.
+
+concert.aeternam.program.3.inscriptioGloss: "répons de Noël"
+concert.aeternam.program.3.note: "Le compositeur norvégien a écrit le répons O magnum mysterium pour chœur et violoncelle solo. La voix de l'instrument, qu'on compare à la voix humaine, tient avec le chœur un dialogue intime. Le texte parle d'une naissance ; dans ce programme, de la naissance du Prince de la Paix."
+concert.aeternam.program.3.textGloss: |-
+  Ô grand mystère
+  et admirable sacrement,
+  que des animaux aient vu le Seigneur nouveau-né,
+  couché dans une crèche.
+  Ô Vierge bienheureuse, dont le sein a mérité de porter
+  le Christ Seigneur.
+  Alléluia.
+
+concert.aeternam.program.4.inscriptioGloss: "Prière à la Très Sainte Mère de Dieu"
+concert.aeternam.program.4.note: "La compositrice, élève de Myroslav Skoryk, était l'une des figures majeures de la musique ukrainienne contemporaine. Elle est morte à Kyiv en 2022, dans les premiers jours de l'invasion russe, quand l'accès aux soins était limité. Sa prière à la Mère de Dieu, bâtie sur des lignes mélodiques simples, sonne aujourd'hui comme un témoignage."
+concert.aeternam.program.4.textGloss: |-
+  Très Sainte Mère de Dieu, exauce-nous.
+  Très Sainte Mère de Dieu, sois notre avocate.
+  De ta main toute-puissante, aide-nous
+  à vaincre les ennemis qui nous ont attaqués.
+
+concert.aeternam.program.5.inscriptioGloss: "du Credo de la messe"
+concert.aeternam.program.5.note: "Un fragment du Credo d'une messe de Lotti, compositeur actif à Venise au tournant des XVIIe et XVIIIe siècles. Il subsiste de lui de nombreuses mises en musique de ce texte, pour des effectifs variés ; la version à huit voix est l'une des plus poignantes. La conduite chromatique des voix et la texture dense font l'image du poids de la croix : une expression baroque soumise à la théologie de la Passion."
+concert.aeternam.program.5.textGloss: |-
+  Crucifié aussi pour nous sous Ponce Pilate,
+  il a souffert et il a été enseveli.
+
+concert.aeternam.program.6.note: "La compositrice américaine, lauréate du prix Pulitzer, a écrit cette pièce à la demande du Nederlands Kamerkoor pour le cycle « 150 Psalms ». Son effectif de chambre et sa texture légère la distinguent du reste du programme : au lieu d'une lamentation vient l'image des plus petites créatures, qui trouvent un nid auprès de l'autel. C'est par ce même psaume que l'ensemble a refermé l'annonce de la soirée : par l'espoir qu'un jour vienne où chacun pourra dire « Que tes demeures sont aimables, Seigneur »."
+concert.aeternam.program.6.textGloss: |-
+  Que tes demeures sont aimables, Seigneur des armées !
+  Mon âme désire et languit [après les parvis du Seigneur.]
+  Mon cœur et ma chair crient de joie [vers le Dieu vivant.]
+
+  Le passereau même trouve une maison
+  et l'hirondelle un nid
+  où déposer ses petits.
+
+  Traversant la vallée de Baka,
+  ils la changent en source,
+  et la pluie précoce la couvre de bénédiction.
+
+concert.aeternam.program.7.inscriptioGloss: "texte : Mikhaïl Lermontov"
+concert.aeternam.program.7.note: "Une partie du cycle monumental The Veil of the Temple (Le Voile du Temple), créé à la Temple Church de Londres en 2003 ; le texte vient de la poésie de Mikhaïl Lermontov. La musique se tient dans une immobilité complète, sans sommet, comme une icône en sons. Dans ce programme, le silence est le sommet : un geste de recommandation des victimes de Gaza."
+concert.aeternam.program.7.textGloss: |-
+  Mère de Dieu, me voici en prière
+  devant l'icône de ta lumière.
+  Je ne demande pas d'être sauvé du champ de bataille,
+  je ne rends pas grâce, je n'implore pas le pardon
+  des péchés de mon âme ni de toutes les âmes,
+  engourdies, sans joie, abandonnées sur la terre.
+  Mais seulement pour EUX, que je te remets tout entiers.
+
+concert.aeternam.program.8.inscriptioGloss: "texte de la liturgie byzantine"
+concert.aeternam.program.8.note: "L'une des œuvres chorales les plus connues de Tavener, écrite à la mémoire de sa mère, sur un texte de la liturgie byzantine. Le compositeur place côte à côte deux chœurs à six voix, dont les phrases superposées créent une résonance et un espace : un dialogue de la terre et du ciel. Le dernier refrain fait passer la soirée de la douleur à la promesse."
+concert.aeternam.program.8.textGloss: |-
+  En toi, ô Femme pleine de grâce,
+  les chœurs des anges et le genre humain
+  — toute la création se réjouit.
+  Ô temple sanctifié, paradis mystique,
+  gloire des vierges,
+  en toi Dieu s'est fait chair
+  et s'est fait Enfant,
+  lui qui est notre Dieu depuis toujours.
+  Il a fait de ton sein un trône
+  et l'a rendu plus vaste que les cieux.
+  En toi, ô Femme pleine de grâce,
+  toute la création se réjouit.
+  Gloire à toi.
+
+concert.aeternam.program.9.inscriptioGloss: "de l'hymne Vexilla regis · Venance Fortunat (VIe siècle)"
+concert.aeternam.program.9.note: "Le compositeur letton a mis en musique un fragment de l'hymne Vexilla regis de Venance Fortunat (VIe siècle). C'est l'hymne de la fête de l'Exaltation de la Sainte Croix, le jour même où l'ensemble a chanté ce programme pour la première fois. Une texture simple, presque archaïque, referme la soirée par une demande de pardon."
+concert.aeternam.program.9.textGloss: |-
+  Salut, ô Croix, unique espérance,
+  en ce temps de la Passion du Seigneur ;
+  accrois la justice des fidèles
+  et accorde le pardon aux coupables.
+
+concert.aeternam.programNote: "Les interludes instrumentaux différaient d'une soirée à l'autre : à Mistrzejowice, un quatuor à cordes a joué le Psalom d'Arvo Pärt ; à Niedzica, Joanna Indyk a joué des mouvements des suites pour violoncelle de Bach. La liste ci-dessus reprend les maillons communs aux deux exécutions."
+
+concert.aeternam.credits.0.role: "Direction"
+concert.aeternam.credits.1.role: "Violoncelle"
+concert.aeternam.credits.2.role: "Quatuor à cordes"
+
+concert.aeternam.pullQuote.text: "Là où des civils, des enfants et des familles portent sur eux les traces de la guerre, nous demandons : que sont aujourd'hui la justice, la mémoire et la miséricorde ? Quelle inscription graver sur la tombe de Gaza ?"
+concert.aeternam.pullQuote.attribution: "VoctEnsemble"
+concert.aeternam.pullQuote.about: "extrait de l'annonce du concert"
+
+concert.aeternam.roster.groups.0.voice: "Soprano I"
+concert.aeternam.roster.groups.1.voice: "Soprano II"
+concert.aeternam.roster.groups.2.voice: "Alto I"
+concert.aeternam.roster.groups.3.voice: "Alto II"
+concert.aeternam.roster.groups.4.voice: "Alto III"
+concert.aeternam.roster.groups.5.voice: "Ténor I"
+concert.aeternam.roster.groups.6.voice: "Ténor II"
+concert.aeternam.roster.groups.7.voice: "Ténor III"
+concert.aeternam.roster.groups.8.voice: "Basse I"
+concert.aeternam.roster.groups.9.voice: "Basse II"
+concert.aeternam.roster.note: "L'effectif de la soirée à Mistrzejowice, le 14 septembre 2025, d'après le communiqué de l'ensemble."
+
+concert.aeternam.video.caption: "Extrait du concert « Aeternam — Épitaphe pour Gaza » · VoctEnsemble 2025"
+concert.aeternam.video.note: "C. Shaw — and the swallow (psaume 84) · captation depuis la nef · son direct"
+
+concert.aeternam.gallery.kd-aeternam-0.alt: "VoctEnsemble pendant le concert Épitaphe pour Gaza à Mistrzejowice"
+concert.aeternam.gallery.kd-aeternam-1.alt: "VoctEnsemble pendant le concert Épitaphe pour Gaza à Mistrzejowice"
+concert.aeternam.gallery.kd-aeternam-2.alt: "VoctEnsemble pendant le concert Épitaphe pour Gaza à Mistrzejowice"
+concert.aeternam.gallery.kd-aeternam-5.alt: "VoctEnsemble pendant le concert Épitaphe pour Gaza à Niedzica"
+concert.aeternam.gallery.kd-aeternam-3.alt: "VoctEnsemble pendant le concert Épitaphe pour Gaza à Niedzica"
+concert.aeternam.gallery.kd-aeternam-7.alt: "VoctEnsemble pendant le concert Épitaphe pour Gaza à Niedzica"
+concert.aeternam.gallery.kd-aeternam-6.alt: "VoctEnsemble pendant le concert Épitaphe pour Gaza à Niedzica"
+concert.aeternam.gallery.kd-aeternam-4.alt: "VoctEnsemble pendant le concert Épitaphe pour Gaza à Niedzica"
+concert.aeternam.gallery.kd-aeternam-8.alt: "VoctEnsemble pendant le concert Épitaphe pour Gaza à Niedzica"
+
+concert.aeternam.posterAlt: "Affiche du concert Aeternam — Épitaphe pour Gaza"
+
+concert.aeternam.links.0.label: "Revue de presse ↗"
+concert.aeternam.links.1.label: "Onet / KAI ↗"
+
+concert.aeternam.about.place: "Mistrzejowice · Niedzica"
+concert.aeternam.about.blurb: "Un programme de mémoire et de compassion face à la souffrance des civils : Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti et Tavener menant de la lamentation vers la prière."

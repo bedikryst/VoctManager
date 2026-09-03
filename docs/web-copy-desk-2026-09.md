@@ -1069,6 +1069,58 @@ hardcoded Polish (`Próg wieczoru`, `Program koncertu`, `Głosy wieczoru`, `Teks
 concert page, and flipping a `TRANSLATED_ROUTES` entry before that template is localized would
 publish English copy inside Polish furniture.
 
+### §6l Stage E — French, both passes (2026-09-03)
+
+**428 of 428 keys, written from the Polish and never from the English.** The relay is the failure
+this ordering exists to prevent: a French value rendered from an English one inherits every
+decision the English pass took — its em dashes, its `9 Leaves`, its Book of Common Prayer register —
+and none of them is a fact about French. Pass 2 then read the Polish beside the French from the
+files, page by page, exactly as §6k did.
+
+**French has no `= original` rows at all.** Thirteen of the sung texts are English and one is
+Polish, so the English drafts inherited fourteen slots they did not have to write; French inherits
+none. Every one of the forty-two glosses is written here, which is why this locale is the larger
+piece of work despite having the same key count.
+
+**And every one of them is ours.** The ledger offered Crampon (1923) for the psalms and the
+biblical passages, and pass 1 declined it: a `textNote` that credits a source is an assertion about
+what is printed above it, and the pass could not verify Crampon's wording line by line. Writing our
+own adds no new category of use — §4's principle — and it buys the thing the English psalms lost:
+the French reads in the same register as the modern Polish beside it, where Coverdale reads three
+centuries older (§8). The glossary's French column is now labelled *offered*, not shipped.
+
+**What pass 2 found — the same five shapes as English, in French clothing.** `zawierzenie` used
+alone ("la recommandation de Tavener") reads in French as an endorsement rather than a liturgical
+act, and needed its supporting noun. Fauré's *Pie Jesu* was written "pour une voix d'enfant" where
+the Polish says a boy's. `Nimrod` had John Cameron placing the communion text "dessous" in a
+construction no French sentence would use. The Psalm 47 incipit dropped its "all" ("Vous tous,
+peuples"). `retour sur la terre` had to lose its article to become the idiom the Polish means.
+The Vivancos title, contracted into "du Cri des bergers", would have recapitalised a title §1 says
+never changes. And the gallery alt texts needed the support noun French requires before a bare
+title ("pendant le concert *Contemplation de l'Incarnation*"), which the Polish gets free from its
+case endings.
+
+**Two French-only traps, both held.** No hard space is typed anywhere — `lib/typo.ts` inserts the
+narrow no-break space before `? ! : ;` and around the guillemets at build time, and a check over
+the drafts confirms not one U+00A0 or U+202F reached them. And `„…"` became `«…»` in all 48 places
+across 39 keys, with the counts checked per key rather than per file.
+
+**The French overlay already held fourteen values, and the dry run is what found the collisions.**
+Five of them differed from the draft: four `about.blurb` renderings that were merely *different*
+("des pièces d'Allegri" against "la musique d'Allegri", "face à" against "devant"), and one that
+the repository had right and the draft had wrong —
+`L'Appel des montagnes` capitalises the noun after the article, as a French title does. The four
+were adopted from the repository and the capital was taken into the eleven places the draft names
+the title, so the French side of this commit overturns nothing: `copy:propose` now reports 414 new
+and **14 already in the repository**. The rule this settles for stage G: a value the repository
+already holds is changed only for a defect, and the defect is named in the diff.
+
+**One thing the translation found in the Polish, which is Florent's to decide.**
+`9-kart.program.4.textGloss` opens "Śpiewaj Panu nową pieśń" — singular — where the same page's
+incipit says "Śpiewajcie" and Bach's German is plural ("Singet dem Herrn"). Both foreign columns
+render it plural, because the sung text is what a gloss glosses; the Polish is the odd one out and
+the corpus is not ours to correct.
+
 ## §7 Traps
 
 - **`contenteditable` injects markup.** The browser will produce `<div>`, `<br>` and styled `<span>`

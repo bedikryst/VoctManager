@@ -1,0 +1,180 @@
+# concert.hymn-poleglym — FR draft (stage E). Translated from the Polish, not from the English.
+# Le titre polonais est le nom polonais de l'œuvre de John Williams dont la soirée tire son nom ;
+# « Hymne aux morts » est ce que cette page doit dire, et program.8 le rappelle.
+# La prière de Rutter est traduite par nous : sa propre version chantée appartient à son éditeur.
+# Le hejnał de la tour n'est pas nommé — un lecteur français n'a pas le mot ; c'est la sonnerie de
+# trompette interrompue qui porte le sens.
+
+concert.hymn-poleglym.title: "Hymne aux morts"
+concert.hymn-poleglym.metaPlace: "Basilique Sainte-Marie, Cracovie"
+concert.hymn-poleglym.inscriptioGloss: "Dieu grand et unique, garde-nous l'Ukraine"
+concert.hymn-poleglym.inscriptioRef.source: "Prière pour l'Ukraine"
+concert.hymn-poleglym.essence: "Un hommage à ceux qui ont donné leur vie pour défendre l'Ukraine, et une prière pour la paix de ceux qui portent plus loin le poids de la guerre. Au sommet de la soirée, le retable de la basilique Sainte-Marie ouvert, une improvisation d'orgue sur l'hymne ukrainien a retenti."
+concert.hymn-poleglym.facts.0: "Basilique Sainte-Marie"
+concert.hymn-poleglym.facts.1: "Une prière pour la paix"
+concert.hymn-poleglym.facts.2: "Mémoire de l'Ukraine"
+
+concert.hymn-poleglym.prologue: "Le vingt-deux février 2025, un samedi, à vingt heures. La basilique Sainte-Marie à Cracovie, deux jours avant le troisième anniversaire de l'invasion à grande échelle de l'Ukraine. Avant que tombe le premier mot, l'orgue emplit l'église ; puis l'archiprêtre de la basilique introduit l'assemblée à la prière."
+
+concert.hymn-poleglym.reflection: "Le concert est une expression de mémoire, de solidarité et de soutien envers ceux que le conflit a touchés directement — les familles, les amis, et aussi ceux qui luttent encore pour leur liberté et leur dignité."
+concert.hymn-poleglym.reflectionAttribution: "VoctEnsemble · février 2025"
+
+concert.hymn-poleglym.programLede: "Une prière pour la paix : treize maillons et un bis"
+concert.hymn-poleglym.programArc: "L'ordre est ici un rite. La soirée commence par l'orgue, et le premier mot prononcé est en ukrainien. Puis le programme descend là où le deuil habite vraiment : vers une litanie pour la paix, vers les fleuves de Babylone où les exilés ont suspendu leurs instruments, et vers un psaume qui demande sans détour : jusqu'à quand ? De là il conduit par deux prières de protection et par un enterrement, jusqu'à l'hymne sans paroles dont la soirée tire son nom. Ce n'est qu'à la fin qu'il est permis de parler de lumière, et alors se produit la seule chose qui ne peut pas se chanter : le retable s'ouvre."
+
+concert.hymn-poleglym.movements.introitus.gloss: "Entrée"
+concert.hymn-poleglym.movements.introitus.line: "D'abord l'espace seul : le grand orgue de la basilique Sainte-Marie. Le premier mot prononcé ce soir-là est une prière en ukrainien."
+concert.hymn-poleglym.movements.luctus.gloss: "Deuil"
+concert.hymn-poleglym.movements.luctus.line: "La prière part de ce qui est : une litanie pour la paix, les fleuves de Babylone où les exilés ont suspendu leurs instruments, et un psaume qui demande sans détour : jusqu'à quand ?"
+concert.hymn-poleglym.movements.lorica.gloss: "Cuirasse"
+concert.hymn-poleglym.movements.lorica.line: "Deux prières de protection : la cuirasse de saint Patrick, où le Christ se tient de tous les côtés, et un hymne où les fidèles demandent la force, car « une guerre cruelle » les presse."
+concert.hymn-poleglym.movements.exsequiae.gloss: "Sur la tombe"
+concert.hymn-poleglym.movements.exsequiae.line: "Quatre maillons d'un enterrement : le vol des anges au-dessus de la tombe, un hymne aux morts sans un seul mot, un appel à l'âme pour qu'elle ne s'effraie pas, et une demande de repos."
+concert.hymn-poleglym.movements.lux.gloss: "Lumière"
+concert.hymn-poleglym.movements.lux.line: "Ce n'est que maintenant qu'il est permis de parler de lumière, et alors le retable s'ouvre."
+concert.hymn-poleglym.movements.lux.interlude.gloss: "Ils forgeront leurs épées en socs de charrue ; et ils n'apprendront plus la guerre."
+
+concert.hymn-poleglym.program.0.note: "La « grande » fantaisie et fugue en sol mineur, associée au voyage de Bach à Hambourg en 1720 — celui-là même pendant lequel il improvisa une demi-heure sur le choral « An Wasserflüssen Babylon », et où le vieux Reincken aurait dit qu'il croyait cet art déjà mort. La fantaisie est presque d'opéra : récitatif, suspensions, un chromatisme sans fond. Krzysztof Michałek l'a jouée en guise d'entrée, avant que tombe le premier mot de la soirée ; les fleuves de Babylone reviendront ici dans un instant, chez Palestrina."
+
+concert.hymn-poleglym.program.1.inscriptioGloss: "Dieu grand et unique, garde-nous l'Ukraine"
+concert.hymn-poleglym.program.1.inscriptioRef.source: "Prière pour l'Ukraine · O. Konysky, 1885"
+concert.hymn-poleglym.program.1.note: "Rutter l'a écrite dans les premières semaines après l'invasion russe de 2022 et l'a mise gratuitement à la disposition des chœurs, demandant en échange un soutien aux victimes de la guerre. Le texte est la « Prière pour l'Ukraine » d'Oleksandr Konysky, que Mykola Lyssenko a mise en musique en 1885 ; on la chante aujourd'hui encore comme l'hymne spirituel de l'Ukraine. Le premier mot de cette soirée est donc une supplication dans la langue de ceux pour qui l'on prie."
+concert.hymn-poleglym.program.1.textGloss: |-
+  Dieu grand et unique,
+  garde-nous l'Ukraine,
+  du rayon de la liberté et de la lumière
+  illumine-la.
+
+  De la lumière de la science et du savoir
+  illumine-nous, tes enfants,
+  et dans l'amour pur du pays
+  élève-nous, ô Dieu.
+
+  Nous prions, Dieu unique,
+  garde-nous l'Ukraine,
+  toutes tes grâces et ta largesse
+  tourne-les vers notre peuple.
+concert.hymn-poleglym.program.1.clasp: "Introduction à la prière · Mgr Dariusz Raś"
+
+concert.hymn-poleglym.program.2.inscriptioGloss: "de la Liturgie de saint Jean Chrysostome · réponses du chœur"
+concert.hymn-poleglym.program.2.note: "La grande ecténie ouvre la Divine Liturgie orthodoxe ; on l'appelle aussi ecténie de la paix, car les premières demandes du diacre sont pour la paix d'en haut et pour la paix du monde entier. Le chœur n'y répond que par deux phrases. Rachmaninov a écrit sa Liturgie de saint Jean Chrysostome en 1910, en moins de trois semaines. C'était sa première œuvre d'église ; sept ans plus tard il quittait la Russie pour toujours. Ce soir-là, sa demande pour la paix du monde entier a retenti juste après la prière pour l'Ukraine."
+concert.hymn-poleglym.program.2.textGloss: |-
+  Seigneur, prends pitié.
+  À toi, Seigneur.
+
+concert.hymn-poleglym.program.3.inscriptioGloss: "Au bord des fleuves de Babylone, nous étions assis et nous pleurions"
+concert.hymn-poleglym.program.3.note: "Un motet à quatre voix publié en 1581. Le psaume 137, chant des exilés qui ont déposé la musique au bord des fleuves de Babylone : ils ont suspendu leurs instruments aux saules, car ils ne savaient pas chanter le chant du Seigneur sur une terre étrangère. Palestrina conduit les quatre voix dans un calme complet ; le deuil est ici dans ce qui s'est tu."
+concert.hymn-poleglym.program.3.textGloss: |-
+  Au bord des fleuves de Babylone —
+  là nous étions assis et nous pleurions,
+  au souvenir de Sion.
+  Aux saules de ce pays
+  nous avons suspendu nos instruments.
+
+concert.hymn-poleglym.program.4.inscriptioGloss: "transcription pour orgue du choral · paraphrase du psaume 6"
+concert.hymn-poleglym.program.4.note: "Une transcription pour orgue du choral sur la mélodie que le monde connaît aujourd'hui comme le choral de la Passion, « O Haupt voll Blut und Wunden », celle-là même que Bach a rappelée cinq fois dans la Passion selon saint Matthieu. Le texte du choral est lui-même une paraphrase du psaume 6, le premier des psaumes de pénitence, où l'âme demande sans détour : jusqu'à quand ? Ici il n'y avait pas de paroles. Michał Piechnik les a jouées à l'orgue ; qui connaît la mélodie les a entendues."
+
+concert.hymn-poleglym.program.5.inscriptioGloss: "de « La cuirasse de saint Patrick » (Lorica)"
+concert.hymn-poleglym.program.5.note: "Pärt l'a écrite à la demande de la Louth Contemporary Music Society, en Irlande. Le texte est un fragment de « La cuirasse de saint Patrick », la prière que le saint aurait récitée en allant convertir le roi de Tara ; les hommes du roi virent alors, à la place de voyageurs, un troupeau de cerfs — d'où l'autre nom : le cri du cerf. C'est une prière de protection : le Christ se place de tous les côtés de celui qui parle. Pärt, dans son tintinnabuli, la répète comme on répète une prière dont on a vraiment besoin."
+concert.hymn-poleglym.program.5.textGloss: |-
+  Le Christ avec moi, le Christ devant moi,
+  le Christ derrière moi, le Christ en moi,
+  le Christ sous moi, le Christ au-dessus de moi,
+  le Christ à ma droite, le Christ à ma gauche,
+  le Christ quand je me couche, le Christ quand je m'assieds,
+  le Christ en moi, le Christ quand je me lève,
+  le Christ dans le cœur de tous ceux qui pensent à moi,
+  le Christ dans la bouche de tous ceux qui parlent de moi,
+  le Christ dans tout œil qui me voit,
+  le Christ dans toute oreille qui m'entend.
+  Le Christ avec moi.
+
+concert.hymn-poleglym.program.6.inscriptioGloss: "Ô Hostie salutaire, qui ouvres la porte du ciel · de l'hymne Verbum supernum prodiens"
+concert.hymn-poleglym.program.6.note: "Le même hymne qui a retenti dans « L'appel des montagnes » : les deux dernières strophes du Verbum supernum prodiens de saint Thomas d'Aquin, chantées à l'exposition du Saint-Sacrement. Ici pourtant on y entend autre chose : « bella premunt hostilia, da robur, fer auxilium », c'est-à-dire une guerre cruelle presse les tiens, donne la force, envoie ton secours. Un hymne eucharistique du XIIIe siècle parle de la guerre sans détour ; c'est le seul texte de la soirée que l'ensemble ait imprimé en entier dans le programme."
+concert.hymn-poleglym.program.6.textGloss: |-
+  Ô Hostie salutaire, digne d'honneur,
+  toi qui mènes le peuple aux portes du ciel.
+  Une guerre cruelle presse les tiens,
+  donne-nous la force, envoie-nous ton secours.
+
+  Au Dieu unique en trois personnes, Maître des terres,
+  que la gloire soit rendue en tout temps ;
+  que par sa vie éternelle
+  il nous comble dans la patrie du ciel.
+  Amen.
+
+concert.hymn-poleglym.program.7.inscriptioGloss: "texte : mère Thekla · Shakespeare et l'office orthodoxe des défunts"
+concert.hymn-poleglym.program.7.note: "Tavener l'a écrit après la mort d'Athene Hariades, jeune actrice et amie de la famille, tuée dans un accident de vélo. Le texte a été composé par mère Thekla, moniale orthodoxe et longtemps collaboratrice du compositeur : elle y tresse les mots d'Horatio dans « Hamlet » (« que le vol des anges te porte à ton repos ») et l'office orthodoxe des défunts. Sous le chœur court en permanence un bourdon immobile des basses : l'ison. Le monde a entendu cette œuvre en 1997, quand on a porté, au son de cette musique, le cercueil de Diana, princesse de Galles, hors de l'abbaye de Westminster."
+concert.hymn-poleglym.program.7.textGloss: |-
+  Alléluia. Que le vol des anges te porte à ton repos.
+  Alléluia. Souviens-toi de moi, Seigneur, quand tu viendras dans ton royaume.
+  Alléluia. Donne le repos, Seigneur, à ta servante qui s'est endormie.
+  Alléluia. Le chœur des saints a trouvé la source de la vie
+  et la porte du paradis.
+  Alléluia. La vie — une ombre et un songe.
+  Alléluia. Les pleurs sur la tombe deviennent un chant : Alléluia.
+  Alléluia. Venez, recevez les récompenses et les couronnes que je vous ai préparées.
+
+concert.hymn-poleglym.program.8.inscriptioGloss: "de la musique du film « Il faut sauver le soldat Ryan » · chœur sans paroles"
+concert.hymn-poleglym.program.8.note: "De la musique du film de Steven Spielberg « Il faut sauver le soldat Ryan ». Le chœur n'y chante pas un seul mot : une pure vocalise ; Williams ne l'a pas écrite pour une scène précise, mais comme un hymne pour les morts. Sans noms et sans langue, donc sans frontières. C'est de cette pièce que la soirée tire son nom."
+
+concert.hymn-poleglym.program.9.inscriptioGloss: "paroles : K. von Schlegel (1752), traduction anglaise de J. Borthwick · strophe III"
+concert.hymn-poleglym.program.9.note: "La mélodie vient du finale du poème symphonique Finlandia, que Sibelius a écrit en 1899, quand la Russie tsariste a réduit l'autonomie de la Finlande et imposé la censure à la presse finlandaise. On jouait alors l'œuvre sous des titres inventés pour contourner l'interdiction ; elle est devenue le chant de résistance d'un peuple qui n'avait pas encore d'État. On a plus tard ajouté à cette mélodie l'hymne de Katharina von Schlegel de 1752, dans la traduction anglaise de Jane Borthwick : ne crains pas, mon âme. Dans un concert pour les morts de l'Ukraine a donc retenti une mélodie finlandaise de la liberté sur des paroles d'apaisement."
+concert.hymn-poleglym.program.9.textGloss: |-
+  Ne crains pas, mon âme : l'heure approche
+  où nous serons pour toujours avec le Seigneur ;
+  quand auront passé la déception, la douleur et la peur,
+  la tristesse cédera et la joie pure de l'amour reviendra.
+  Ne crains pas, mon âme : quand les changements et les larmes auront cessé,
+  en sûreté et bénis, nous nous retrouverons enfin.
+
+concert.hymn-poleglym.program.10.inscriptioGloss: "Miséricordieux Seigneur Jésus, donne-leur le repos · du Requiem op. 48"
+concert.hymn-poleglym.program.10.note: "Le quatrième mouvement du Requiem de Fauré, le seul confié à un soliste, écrit pour une voix de garçon. Dans toute sa messe des morts, Fauré a renoncé à la séquence Dies irae, qui dans les autres requiem occupe le plus de place : il n'y a ici ni jugement ni effroi. On a appelé cette œuvre une « berceuse de la mort » ; le compositeur n'a pas discuté, c'est ainsi qu'il voyait la mort. Le texte tient en deux phrases : prends pitié et donne-leur le repos."
+concert.hymn-poleglym.program.10.textGloss: |-
+  Miséricordieux Seigneur Jésus,
+  donne-leur le repos,
+  donne-leur le repos éternel.
+
+concert.hymn-poleglym.program.11.inscriptioGloss: "Que la lumière éternelle luise pour eux, Seigneur · communion de la messe des morts"
+concert.hymn-poleglym.program.11.note: "Nimrod est la neuvième des Variations Enigma : le portrait d'August Jaeger, éditeur et ami qui, à un moment de doute, a convaincu Elgar de ne pas cesser d'écrire. Jäger signifie « chasseur » en allemand, et Nimrod était le chasseur de la Bible : de là le nom. La Grande-Bretagne joue cette musique au-dessus des tombes, chaque année devant le Cénotaphe de Londres, le dimanche du Souvenir. John Cameron a placé sous cette musique la communion de la messe des morts : la lumière éternelle."
+concert.hymn-poleglym.program.11.rubric: "Pendant cette pièce, le retable de Veit Stoss a été ouvert"
+concert.hymn-poleglym.program.11.textGloss: |-
+  Que la lumière éternelle luise pour eux, Seigneur,
+  avec tes saints à jamais,
+  car tu es miséricordieux.
+
+concert.hymn-poleglym.program.12.inscriptioGloss: "hymne de l'Ukraine · paroles : P. Tchoubynsky (1862), mélodie : l'abbé M. Verbytsky"
+concert.hymn-poleglym.program.12.note: "L'hymne de l'Ukraine : paroles de Pavlo Tchoubynsky de 1862, mélodie de l'abbé Mykhaïlo Verbytsky, prêtre grec-catholique : « l'Ukraine n'est pas encore morte, ni sa gloire, ni sa liberté ». L'organiste titulaire de la basilique Sainte-Marie a improvisé sur ce thème, le retable déjà ouvert. Du haut de la tour de cette même église, une sonnerie de trompette est jouée chaque heure et s'interrompt au milieu d'une note, en mémoire d'une invasion."
+concert.hymn-poleglym.program.12.clasp: "Bénédiction · Mgr Dariusz Raś"
+
+concert.hymn-poleglym.program.13.inscriptioGloss: "du Cantique des cantiques"
+concert.hymn-poleglym.program.13.note: "Bairstow a été pendant trente-trois ans organiste de la cathédrale d'York ; ce court anthem se chante d'ordinaire après la communion, et son texte vient du Cantique des cantiques. Après une soirée qui s'est refermée sur l'hymne d'un peuple en guerre, le dernier mot revient à un autre étendard."
+concert.hymn-poleglym.program.13.textGloss: |-
+  À son ombre désirée je me suis assise,
+  et son fruit est doux à mon palais.
+  Il m'a fait entrer dans la maison du vin
+  et il a déployé sur moi son Amour comme un étendard.
+
+concert.hymn-poleglym.programNote: "Outre les pièces d'orgue inscrites au programme, Michał Piechnik, organiste titulaire de la basilique Sainte-Marie, a improvisé entre les maillons de la soirée ; dans l'annonce du concert, l'ensemble a appelé ces interludes « une narration parallèle, qui rend présent le visage tragique de la guerre »."
+concert.hymn-poleglym.textNote: "Les textes originaux suivent le programme du concert et les livres dont ils viennent ; le programme imprimé de la soirée les donnait abrégés. Les traductions françaises, y compris celles des hymnes, des antiennes et des passages bibliques, sont les nôtres."
+
+concert.hymn-poleglym.credits.0.role: "Direction"
+concert.hymn-poleglym.credits.1.role: "Parole et bénédiction"
+concert.hymn-poleglym.credits.2.role: "Chantre de la basilique"
+
+concert.hymn-poleglym.pullQuote.text: "C'est la première fois que nous nous engageons dans un projet qui, au-delà de sa dimension spirituelle, touche aussi directement à la plus grande aspiration humaine — la liberté et l'autodétermination. Nous souhaitons que ce concert ne soit pas seulement un acte de mémoire, mais aussi un don d'apaisement pour ceux qui ont connu la perte, et l'expression de notre solidarité avec le peuple ukrainien."
+concert.hymn-poleglym.pullQuote.attribution: "Anna Kaczka-Marcisz"
+concert.hymn-poleglym.pullQuote.about: "manager de VoctEnsemble, extrait de l'annonce du concert"
+
+concert.hymn-poleglym.gallery.kd-hymn-0.alt: "VoctEnsemble pendant le concert Hymne aux morts dans la basilique Sainte-Marie à Cracovie"
+concert.hymn-poleglym.gallery.kd-hymn-1.alt: "VoctEnsemble pendant le concert Hymne aux morts dans la basilique Sainte-Marie à Cracovie"
+concert.hymn-poleglym.gallery.kd-hymn-2.alt: "VoctEnsemble pendant le concert Hymne aux morts dans la basilique Sainte-Marie à Cracovie"
+concert.hymn-poleglym.gallery.kd-hymn-3.alt: "VoctEnsemble pendant le concert Hymne aux morts dans la basilique Sainte-Marie à Cracovie"
+concert.hymn-poleglym.gallery.kd-hymn-4.alt: "VoctEnsemble pendant le concert Hymne aux morts dans la basilique Sainte-Marie à Cracovie"
+concert.hymn-poleglym.gallery.kd-hymn-5.alt: "VoctEnsemble pendant le concert Hymne aux morts dans la basilique Sainte-Marie à Cracovie"
+
+concert.hymn-poleglym.posterAlt: "Affiche du concert Hymne aux morts"
+concert.hymn-poleglym.realizacja: "Orgue : Michał Piechnik · Krzysztof Michałek"
+
+concert.hymn-poleglym.about.place: "Basilique Sainte-Marie · Cracovie"
+concert.hymn-poleglym.about.blurb: "Un concert spirituel en hommage à ceux qui ont donné leur vie pour la liberté, et une prière pour la paix — pour l'Ukraine et pour les générations à venir."

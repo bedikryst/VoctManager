@@ -155,6 +155,14 @@ English `9 psalms` stands alone, French takes `Neuf psaumes`.
 | Dyrygent | Direction |
 | Przerwa | Entracte |
 | Kraków · Łódź | Cracovie · Łódź *(only cities with a settled French exonym are translated)* |
+| Zapowiedź · Narodziny · Cień · Spełnienie · Uwielbienie · Wołanie · Orędowniczka · Tajemnica ołtarza · Gwiazdy · Lot · Powrót · Na wejście · Żałoba · Zbroja · Nad grobem · Światłość · Epitafium · Lament niewinnych · Modlitwa o pokój · Obraz męki · Schronienie · Zawierzenie | Annonce · Nativité · Ombre · Accomplissement · Louange · Appel · Avocate · Mystère de l'autel · Étoiles · Envol · Retour · Entrée · Deuil · Cuirasse · Sur la tombe · Lumière · Épitaphe · Lamentation des innocents · Prière pour la paix · Image de la Passion · Refuge · Recommandation |
+| ogniwo · klamra · realizacja | le maillon · l'agrafe · la réalisation |
+| suma · hejnał | la grand-messe · *(pas de mot français — « une sonnerie de trompette », décrite, pas nommée)* |
+| Reżyseria światła · Słowo wprowadzające · Kantor bazyliki | Création lumière · Parole d'introduction · Chantre de la basilique |
+
+**`zawierzenie` est « recommandation » et rien d'autre** — le mot du rite des funérailles pour ce
+geste exact. Seul piège : employé seul (« la recommandation de Tavener »), il se lit comme un avis
+favorable ; il lui faut son substantif d'appui, « l'acte de recommandation ».
 
 ## §4 The rights ledger
 
@@ -176,7 +184,16 @@ is not.
 (`glossFor`) and nothing is written. *own* — our own literal gloss, the same status the Polish one
 already has. *PD:…* — a public-domain published translation, used and credited in `textNote`.
 
-| concert · work | original | EN | FR |
+**What the French column actually shipped, and why it differs from what it offers.** The `PD:`
+entries below were *available* to French, not taken: **every French gloss written in stage E is our
+own**, and each page's `textNote` says so. A source may be credited only where it is reproduced,
+and pass 1 could not verify Crampon's wording line by line — crediting it would have made the
+`textNote` false in the one field whose whole job is provenance. The English column is unaffected;
+its `PD:` entries were reproduced and are credited. One consequence is worth noting in French's
+favour: our own modern French keeps the same register as the modern Polish beside it, and so
+avoids the objection §8 of the plan raises against the English psalter.
+
+| concert · work | original | EN (shipped) | FR (offered; stage E wrote its own) |
 |---|---|---|---|
 | wcielenie · Sandström, *Es ist ein Ros'* | German, Speyer 1599 | PD: Baker 1894, "Lo, how a rose e'er blooming" | own *(the French carol "Dans une étable obscure" is an adaptation, not a translation — offer it to Florent, do not assume it)* |
 | wcielenie · Handl, *Canite tuba* | Latin, Advent responsory | own (Douay basis) | own (Crampon basis) |

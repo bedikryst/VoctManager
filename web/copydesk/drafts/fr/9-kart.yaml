@@ -1,0 +1,217 @@
+# concert.9-kart — FR draft (stage E). Translated from the Polish, not from the English.
+# Les psaumes sont traduits par nous, en français d'aujourd'hui. Le ledger proposait Crampon
+# (1923), mais une source ne se crédite que si elle est réellement reproduite — et le français y
+# gagne ce que l'anglais y perd : il reste dans le même registre que le polonais qu'il accompagne,
+# au lieu de sonner trois siècles plus vieux comme le psautier de Coverdale (§8).
+# Le titre écrit son nombre en toutes lettres : en français le registre nominal l'exige, là où
+# l'anglais garde « 9 psalms » dans les `facts`.
+
+concert.9-kart.title: "Neuf feuillets du Livre des Psaumes"
+concert.9-kart.metaPlace: "Rybnik · Łódź · Basilique du Sacré-Cœur, Cracovie"
+concert.9-kart.dateLabel: "2024"
+concert.9-kart.inscriptioGloss: "Aie pitié de moi, ô Dieu, dans ta bonté"
+concert.9-kart.essence: "Le psaume est le lieu où l'homme n'a pas à se simplifier devant Dieu. Le Miserere d'Allegri, partagé en neuf parties, enlaçait toute la soirée ; entre ses strophes de pénitence entraient tour à tour des psaumes d'action de grâce, de sagesse et de joie."
+concert.9-kart.facts.0: "Neuf psaumes"
+concert.9-kart.facts.1: "6 / 8 / 9 / 12 voix"
+concert.9-kart.facts.2: "Le Miserere en guise d'agrafe"
+
+concert.9-kart.prologue: "Le seize novembre 2024, basilique du Sacré-Cœur à Cracovie. La troisième soirée de ce programme, après Rybnik et Łódź. Avant que retentisse le premier son, le P. Przemysław Wysogląd SJ situe les psaumes, et la lumière d'Ada Bystrzycka sculpte l'espace. L'ensemble demande une seule chose : ne pas applaudir les pièces une à une et garder le silence entre elles."
+
+concert.9-kart.reflectionNote: "Le Psautier met les sentiments côte à côte : la plainte voisine avec l'action de grâce, la demande de pitié avec l'appel à la danse. Les neuf feuillets de cette soirée ont été choisis précisément pour cet écart, et agrafés par une seule prière de pénitence qui revient neuf fois."
+
+concert.9-kart.programLede: "Neuf psaumes, enlacés par le Miserere"
+concert.9-kart.programArc: "À côté de la liste des œuvres, l'ensemble avait ajouté deux mots : « l'ordre compte ». La soirée commence par la pénitence — le Miserere d'Allegri, psaume 51 — et l'interrompt aussitôt : le psaume est coupé en neuf parties, et entre elles entrent tour à tour la gloire, la sagesse, la loi, la joie, le trône, l'action de grâce et le chant nouveau. Le pénitent n'achèvera pas sa prière tant que toutes les autres voix du Psautier n'auront pas retenti ; ce n'est qu'après la dernière qu'il revient une neuvième fois et la dit jusqu'au bout. Comme dans la vie, où le regret et la joie s'entrelacent."
+
+concert.9-kart.program.0.inscriptioGloss: "Aie pitié de moi, ô Dieu, dans ta bonté"
+concert.9-kart.program.0.note: "Un psaume de pénitence chanté à la chapelle Sixtine pendant les Ténèbres de la Semaine sainte. Le Vatican gardait cette musique : emporter une copie exposait à l'excommunication, et les lignes ornées des solistes se transmettaient de bouche à oreille, de génération en génération. Mozart, à quatorze ans, l'a entendue en 1770 et l'a notée de mémoire. Ici l'œuvre a été partagée en neuf parties qui enlacent les autres psaumes : un chœur à cinq voix conduit verset après verset, et quatre solistes lui répondent de loin ; de là l'écho."
+concert.9-kart.program.0.clasp: "Miserere — partie I"
+concert.9-kart.program.0.claspTextGloss: |-
+  Aie pitié de moi, ô Dieu, dans ta bonté,
+  dans ta grande miséricorde efface mon péché.
+  Lave-moi tout entier de ma faute
+  et purifie-moi de mon péché.
+
+concert.9-kart.program.1.inscriptioGloss: "Louez le Seigneur, toutes les nations"
+concert.9-kart.program.1.note: "Le psaume 117 est le plus court de tout le Psautier : deux versets, un appel adressé à toutes les nations. Lassus — un Flamand attaché depuis 1556 à la cour de Bavière, à Munich, et auteur de plus de deux mille œuvres — les a écrits pour douze voix en chœurs qui dialoguent : le texte le plus court de la soirée reçoit son plus grand effectif. Après la première partie du Miserere, le pénitent se tait et c'est la terre entière qui prend la parole."
+concert.9-kart.program.1.textGloss: |-
+  Louez le Seigneur, toutes les nations,
+  célébrez-le, tous les peuples,
+  car sa bonté envers nous est puissante,
+  et la fidélité du Seigneur demeure à jamais.
+concert.9-kart.program.1.clasp: "Miserere — partie II"
+concert.9-kart.program.1.claspTextGloss: |-
+  Car je reconnais mon péché,
+  et ma faute est sans cesse devant moi.
+  Contre toi seul j'ai péché, j'ai fait ce qui est mal à tes yeux,
+  afin que tu sois juste dans ta sentence et droit dans ton jugement.
+
+concert.9-kart.program.2.inscriptioGloss: "La bouche du juste proclame la sagesse"
+concert.9-kart.program.2.note: "Un graduel écrit pour Ignaz Traumihler, maître de chapelle de l'abbaye de Saint-Florian — celle dans la crypte de laquelle Bruckner s'est fait plus tard enterrer, sous les orgues. Le compositeur s'est imposé une règle aussi stricte que la loi dont parle le psaume : pas un dièse, pas un bémol, aucun accord de septième, tout dans le mode lydien pur. Il s'en est vanté auprès de Traumihler dans une lettre. Après la deuxième partie du Miserere, où le pénitent reconnaît sa faute, entre l'image de l'homme juste."
+concert.9-kart.program.2.textGloss: |-
+  La bouche du juste proclame la sagesse
+  et sa langue dit ce qui est droit.
+  La loi de son Dieu est dans son cœur
+  et ses pas ne chancellent pas.
+  Alléluia.
+concert.9-kart.program.2.clasp: "Miserere — partie III"
+concert.9-kart.program.2.claspTextGloss: |-
+  Voici que je suis né dans la faute
+  et que ma mère m'a conçu pécheur.
+  Mais toi, tu aimes la vérité cachée,
+  enseigne-moi les secrets de la sagesse.
+
+concert.9-kart.program.3.inscriptioGloss: "Heureux ceux dont la voie est sans reproche"
+concert.9-kart.program.3.note: "Le psaume 119 est le plus long du Psautier : cent soixante-seize versets sur la Loi de Dieu. Stanford n'en prend qu'un, le premier. Le motet a été écrit pour le chœur de Trinity College à Cambridge, où le compositeur était organiste, et a paru en 1905 dans un recueil de trois motets latins. Six voix se partagent en deux groupes de trois qui se passent la même phrase ; la voie dont il est question s'entend ici."
+concert.9-kart.program.3.textGloss: |-
+  Heureux ceux dont la voie est sans reproche,
+  qui marchent selon la loi du Seigneur.
+concert.9-kart.program.3.clasp: "Miserere — partie IV"
+concert.9-kart.program.3.claspTextGloss: |-
+  Asperge-moi d'hysope et je serai pur,
+  lave-moi et je serai plus blanc que la neige.
+  Fais-moi entendre la joie et l'allégresse,
+  qu'ils dansent, les os que tu as broyés.
+
+concert.9-kart.program.4.inscriptioGloss: "Chantez au Seigneur un chant nouveau"
+concert.9-kart.program.4.note: "Le plus connu des motets de Bach, né à Leipzig. Deux chœurs à quatre voix se renvoient les versets du psaume comme une balle ; le compositeur y tresse le psaume 149, un choral luthérien et des versets du psaume 150. C'est le maillon le plus joyeux et le plus difficile de la soirée, placé exactement en face de la pénitence du Miserere. Quand Mozart entendit ce motet à Saint-Thomas de Leipzig en 1789, il se serait écrié : « Voilà enfin quelque chose dont on peut apprendre », et il demanda qu'on lui déploie les parties."
+concert.9-kart.program.4.textGloss: |-
+  Chantez au Seigneur un chant nouveau,
+  que l'assemblée des fidèles le loue.
+  Qu'Israël se réjouisse en celui qui l'a fait,
+  que les fils de Sion exultent en leur Roi,
+  qu'ils louent son nom par la danse ;
+  qu'ils jouent pour lui du tambourin et de la harpe.
+concert.9-kart.program.4.clasp: "Miserere — partie V"
+concert.9-kart.program.4.claspTextGloss: |-
+  Détourne ta face de mes péchés
+  et efface toutes mes fautes.
+  Crée en moi, ô Dieu, un cœur pur
+  et renouvelle en moi la force de l'esprit.
+
+concert.9-kart.program.5.inscriptioGloss: "Vous tous, peuples, battez des mains"
+concert.9-kart.program.5.note: "Gibbons, organiste de la Chapel Royal, a écrit cet anthem à huit voix en 1622 comme travail de doctorat pour Oxford ; le texte vient du psautier anglican de Coverdale. Le psaume 47 fait asseoir Dieu sur un trône au milieu des acclamations et des trompettes, et le chœur se divise en huit voix pour que cette foule s'entende."
+concert.9-kart.program.5.textGloss: |-
+  Vous tous, peuples, battez des mains,
+  acclamez Dieu par des cris de joie,
+  car le Seigneur est le Très-Haut, redoutable,
+  le grand Roi sur toute la terre.
+  Il nous soumet les nations
+  et met les peuples sous nos pieds.
+  Il choisit pour nous notre héritage —
+  l'orgueil de Jacob, qu'il aime.
+concert.9-kart.program.5.clasp: "Miserere — partie VI"
+concert.9-kart.program.5.claspTextGloss: |-
+  Ne me rejette pas loin de ta face
+  et ne me retire pas ton esprit saint.
+  Rends-moi la joie de ton salut
+  et affermis-moi par un esprit généreux.
+
+concert.9-kart.program.6.inscriptioGloss: "Béni soit celui qui vient au nom du Seigneur"
+concert.9-kart.program.6.note: "Rossi était juif à la cour des Gonzague à Mantoue ; le duc l'a dispensé du signe jaune que les autres devaient porter. Dans le recueil « Ha-shirim asher li-Shlomo » (Venise), il a le premier appliqué la polyphonie de la Renaissance à des textes liturgiques hébreux ; la préface, qui défend le chant à plusieurs voix à la synagogue, lui a été écrite par le rabbin Léon de Modène. Ici, dans un programme fait de psaumes latins, allemands et anglais, revient leur langue première."
+concert.9-kart.program.6.textGloss: |-
+  Béni soit celui qui vient au nom du Seigneur !
+  Nous vous bénissons de la maison du Seigneur.
+  Le Seigneur est Dieu : qu'il nous illumine !
+  Serrez les rangs, les rameaux à la main, jusqu'aux cornes de l'autel.
+  Tu es mon Dieu, je veux te rendre grâce :
+  mon Dieu, je veux t'exalter.
+  Célébrez le Seigneur, car il est bon ;
+  car sa grâce demeure à jamais.
+concert.9-kart.program.6.clasp: "Miserere — partie VII"
+concert.9-kart.program.6.claspTextGloss: |-
+  J'enseignerai tes voies aux égarés
+  et les pécheurs reviendront vers toi.
+  Délivre-moi, ô Dieu, du sang versé, Dieu mon Sauveur,
+  et ma langue chantera ta justice.
+
+concert.9-kart.program.7.inscriptioGloss: "Acclamez le Seigneur, terre entière"
+concert.9-kart.program.7.note: "Du recueil « Psalmen Davids » (Dresde, 1619), première grande œuvre de Schütz après son retour de Venise, où il avait étudié auprès de Giovanni Gabrieli. Il en a rapporté l'écriture à plusieurs chœurs et l'a appliquée au psautier allemand de Luther. Schütz est né exactement cent ans avant Bach ; dans ce programme leurs deux psaumes sonnent en allemand et à deux chœurs, et le siècle qui les sépare s'entend."
+concert.9-kart.program.7.textGloss: |-
+  Acclamez le Seigneur, terre entière ;
+  servez le Seigneur dans la joie !
+  Venez devant lui avec des cris d'allégresse !
+  Sachez que le Seigneur est Dieu :
+  c'est lui qui nous a faits, nous sommes à lui,
+  nous sommes son peuple, les brebis de son pâturage.
+  Entrez par ses portes en rendant grâce,
+  dans ses parvis avec des hymnes ;
+  louez-le et bénissez son nom !
+  Car le Seigneur est bon,
+  sa bonté demeure à jamais
+  et sa fidélité d'âge en âge.
+
+  Gloire au Père et au Fils et au Saint-Esprit,
+  comme il était au commencement, maintenant et toujours,
+  et dans les siècles des siècles. Amen.
+concert.9-kart.program.7.clasp: "Miserere — partie VIII"
+concert.9-kart.program.7.claspTextGloss: |-
+  Seigneur, ouvre mes lèvres,
+  et ma bouche annoncera ta louange.
+  Car tu ne prends pas plaisir au sacrifice,
+  et si j'offrais un holocauste, tu n'en voudrais pas.
+
+concert.9-kart.program.8.inscriptioGloss: "Chantez au Seigneur un chant nouveau"
+concert.9-kart.program.8.note: "Un motet à six voix publié dans le recueil milanais de Giulio Cesare Bianchi. Le texte est tressé de deux psaumes (des versets du 98 s'entrelacent avec un verset du 96), et l'appel par lequel il commence s'était déjà entendu ce soir-là chez Bach : chantez au Seigneur un chant nouveau. C'est par ce même motet que l'ensemble avait refermé le programme de « Contemplation de l'Incarnation », par laquelle le cycle a commencé ; ici, c'est le dernier mot de louange avant la neuvième partie du Miserere."
+concert.9-kart.program.8.textGloss: |-
+  Chantez au Seigneur un chant nouveau,
+  chantez au Seigneur, bénissez son nom,
+  car il a fait des merveilles.
+  Réjouissez-vous, exultez et jouez
+  sur la cithare et au son de la harpe,
+  car il a fait des merveilles.
+concert.9-kart.program.8.clasp: "Miserere — partie IX + épilogue"
+concert.9-kart.program.8.claspTextGloss: |-
+  Ô Dieu, mon sacrifice, c'est un esprit brisé,
+  tu ne méprises pas, ô Dieu, un cœur humble et broyé.
+  Seigneur, fais à Sion la grâce de ta bonté,
+  relève les murs de Jérusalem.
+
+  Alors tu accepteras les sacrifices justes : les offrandes et les holocaustes,
+  alors on offrira des taureaux sur ton autel.
+
+concert.9-kart.program.9.inscriptioGloss: "paroles : Phineas Fletcher"
+concert.9-kart.program.9.note: "Un poème de Phineas Fletcher (imprimé seulement en 1633, bien qu'il ait circulé avant) sur une mélodie de Gibbons tirée du recueil de chants d'église de George Wither. La même main qui a donné à cette soirée son psaume le plus triomphal lui laisse son dernier mot, et le plus silencieux. L'ensemble avait demandé que le texte polonais soit projeté sur les écrans pendant le bis : après neuf parties du Miserere, ces larmes devaient être comprises."
+concert.9-kart.program.9.textGloss: |-
+  Coulez, coulez, larmes lentes,
+  lavez ces beaux pieds
+  qui ont apporté du ciel la nouvelle de la Paix,
+  et le Prince de la Paix dans sa gloire.
+
+  Ne cessez pas, yeux baignés de tristesse,
+  implorez sa miséricorde ;
+  criez pour obtenir le pardon,
+  car le péché ne cesse pas dans sa malice.
+
+  Dans les profonds ruisseaux de mes larmes
+  noyez toutes les fautes et toutes les craintes,
+  que son œil ne voie pas le péché,
+  sinon à travers les larmes.
+
+concert.9-kart.programNote: "L'effectif de treize chanteurs est celui de la soirée de Cracovie (16 novembre 2024) ; l'ensemble avait donné le même programme, dans le même ordre, à Rybnik et à Łódź."
+concert.9-kart.textNote: "Les textes suivent le programme du concert ; les traductions françaises sont les nôtres."
+
+concert.9-kart.credits.0.role: "Direction"
+concert.9-kart.credits.1.role: "Parole d'introduction"
+concert.9-kart.credits.2.role: "Création lumière"
+
+concert.9-kart.gallery.kd-9-kart-6.alt: "VoctEnsemble pendant le concert Neuf feuillets dans la basilique de Rybnik"
+concert.9-kart.gallery.kd-9-kart-7.alt: "VoctEnsemble pendant le concert Neuf feuillets dans la basilique de Rybnik"
+concert.9-kart.gallery.kd-9-kart-8.alt: "VoctEnsemble pendant le concert Neuf feuillets dans la basilique de Rybnik"
+concert.9-kart.gallery.kd-9-kart-13.alt: "VoctEnsemble après le concert Neuf feuillets dans la basilique de Rybnik"
+concert.9-kart.gallery.kd-9-kart-9.alt: "VoctEnsemble pendant le concert Neuf feuillets dans la cathédrale de Łódź"
+concert.9-kart.gallery.kd-9-kart-10.alt: "VoctEnsemble pendant le concert Neuf feuillets dans la cathédrale de Łódź"
+concert.9-kart.gallery.kd-9-kart-11.alt: "VoctEnsemble pendant le concert Neuf feuillets dans la cathédrale de Łódź"
+concert.9-kart.gallery.kd-9-kart-12.alt: "VoctEnsemble après le concert Neuf feuillets dans la cathédrale de Łódź"
+concert.9-kart.gallery.kd-9-kart-0.alt: "Le programme du Concert Spirituel Neuf feuillets du Livre des Psaumes"
+concert.9-kart.gallery.kd-9-kart-1.alt: "VoctEnsemble pendant le concert Neuf feuillets dans la basilique du Sacré-Cœur à Cracovie"
+concert.9-kart.gallery.kd-9-kart-2.alt: "VoctEnsemble pendant le concert Neuf feuillets dans la basilique du Sacré-Cœur à Cracovie"
+concert.9-kart.gallery.kd-9-kart-3.alt: "VoctEnsemble pendant le concert Neuf feuillets dans la basilique du Sacré-Cœur à Cracovie"
+concert.9-kart.gallery.kd-9-kart-4.alt: "VoctEnsemble pendant le concert Neuf feuillets dans la basilique du Sacré-Cœur à Cracovie"
+concert.9-kart.gallery.kd-9-kart-5.alt: "VoctEnsemble pendant le concert Neuf feuillets dans la basilique du Sacré-Cœur à Cracovie"
+concert.9-kart.gallery.kd-9-kart-15.alt: "VoctEnsemble avec son chef pendant le concert Neuf feuillets dans la basilique du Sacré-Cœur à Cracovie"
+concert.9-kart.gallery.kd-9-kart-14.alt: "VoctEnsemble après le concert Neuf feuillets dans la basilique du Sacré-Cœur à Cracovie"
+
+concert.9-kart.posterAlt: "Affiche du concert Neuf feuillets du Livre des Psaumes"
+
+concert.9-kart.about.place: "Rybnik · Łódź · Cracovie"
+concert.9-kart.about.blurb: "Un programme bâti sur les psaumes : de la pénitence et de l'action de grâce à la joie de la louange, avec des pièces d'Allegri, Bach, Rossi, Bruckner et Stanford."

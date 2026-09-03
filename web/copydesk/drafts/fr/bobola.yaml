@@ -1,0 +1,14 @@
+# concert.bobola — FR draft (stage E). Translated from the Polish, not from the English.
+# `facts.1` rend la date à la main : le corpus a « 16 maja 2026 » à l'intérieur d'une chaîne
+# traduisible, et elle dérivera de `date` jusqu'à ce que l'étape F sépare les cinq champs concernés.
+
+concert.bobola.title: "Solennité de saint André Bobola"
+concert.bobola.metaPlace: "Sanctuaire national Saint-André-Bobola, Varsovie"
+concert.bobola.essence: "Ici la musique servait la liturgie. Pour le centenaire des deux provinces polonaises de la Compagnie de Jésus, le chant s'inscrivait dans le rite, présidé par Mgr Adrian Galbas, archevêque ; l'homélie a été prononcée par le P. Arturo Sosa SJ."
+concert.bobola.facts.0: "Varsovie"
+concert.bobola.facts.1: "16 mai 2026"
+concert.bobola.facts.2: "Centenaire des provinces jésuites"
+concert.bobola.links.0.label: "Retransmission de la messe ↗"
+concert.bobola.links.1.label: "Reportage photo (Episkopat) ↗"
+concert.bobola.about.place: "Sanctuaire national Saint-André-Bobola · Varsovie"
+concert.bobola.about.blurb: "L'accompagnement musical de la liturgie au jour du centenaire des provinces jésuites polonaises, pendant la messe célébrée par Mgr Adrian Galbas, archevêque, avec l'homélie du P. Arturo Sosa SJ."

@@ -1,0 +1,241 @@
+# concert.wolanie-gor — FR draft (stage E). Translated from the Polish, not from the English.
+# `wołanie` est le mot propre de cette soirée — il nomme le concert, le premier acte et l'œuvre
+# dont la soirée tire son nom — donc « appel » partout sur cette page, et `krzyk` garde « cri ».
+# Les traductions des textes chantés sont les nôtres, `textNote` compris : aucune version publiée
+# n'est reprise ici, et la version AELF du Salve Regina est sous droits.
+
+concert.wolanie-gor.title: "L'Appel des montagnes"
+concert.wolanie-gor.metaPlace: "Dworek Gościnny, Szczawnica"
+concert.wolanie-gor.inscriptioGloss: "Vers vous nous crions, exilés, enfants d'Ève"
+concert.wolanie-gor.inscriptioRef.source: "Salve Regina"
+concert.wolanie-gor.essence: "Les montagnes étaient la respiration de ce programme. Douze voix et le violon de Radu Ropotan menaient de la polyphonie sacrée vers des chants où un paysage devient la mémoire d'une communauté."
+concert.wolanie-gor.facts.0: "Douze voix et violon"
+concert.wolanie-gor.facts.1: "Les Pieniny"
+concert.wolanie-gor.facts.2: "Des Pyrénées à l'Indonésie"
+
+concert.wolanie-gor.prologue: "Le premier juin 2024, au Dworek Gościnny de Szczawnica. La seule soirée de ce cycle donnée hors d'une église. Un programme sur l'appel des montagnes a retenti dans les montagnes : les Pieniny derrière les fenêtres. Douze voix, le violon de Radu Ropotan, deux parties et un entracte."
+
+concert.wolanie-gor.reflectionNote: "Les montagnes apprennent à écouter : une voix lancée dans l'espace revient changée. Ce programme écoute ce que l'écho fait d'un appel humain : reste-t-il un cri, ou devient-il prière, envol, chant ? Et une voix solitaire peut-elle compter sur une réponse ?"
+
+concert.wolanie-gor.programLede: "Douze chants des montagnes et un bis"
+concert.wolanie-gor.programArc: "L'ordre mène vers le haut, puis ramène. La soirée s'ouvre sur un appel sans paroles, le « Eee-Ooo » des bergers des Pyrénées, et aussitôt après ce même appel reçoit des mots : le Salve Regina des bergers du Rouergue, « Ad te clamamus », vers vous nous crions. De là le programme monte par un Ave Maria et trois hymnes chantés devant le Saint-Sacrement jusqu'au ciel nocturne d'Ešenvalds ; c'est là que tombe l'entracte. La seconde partie commence bas et humaine, avec un ménétrier de village, puis tente trois fois l'envol : l'oiseau de Monteverdi, Bach, et l'alouette de Vaughan Williams qui se perd dans la lumière. Reste le retour sur terre : la glace sur la Prosna. Et un bis, où la lumière descend de son trône pour revenir vers nous."
+
+concert.wolanie-gor.movements.clamor.gloss: "Appel"
+concert.wolanie-gor.movements.clamor.line: "L'appel des bergers renvoyé par les pentes : encore sans paroles, une voix seule dans l'espace."
+concert.wolanie-gor.movements.advocata.gloss: "Avocate"
+concert.wolanie-gor.movements.advocata.line: "L'appel trouve à qui s'adresser : la Mère vers qui crient les exilés, et les femmes dont le travail tient le monde en marche."
+concert.wolanie-gor.movements.sacramentum.gloss: "Mystère de l'autel"
+concert.wolanie-gor.movements.sacramentum.line: "Trois hymnes devant le Saint-Sacrement : deux sur des paroles de saint Thomas d'Aquin — une fois en polyphonie corse, une fois chez un Letton d'aujourd'hui — et un chant polonais de Górecki."
+concert.wolanie-gor.movements.astra.gloss: "Étoiles"
+concert.wolanie-gor.movements.astra.line: "Le point le plus haut de la première partie : une nuit solitaire sous des étoiles que les éons ne parviennent ni à attrister ni à lasser."
+concert.wolanie-gor.movements.volatus.gloss: "Envol"
+concert.wolanie-gor.movements.volatus.line: "Après l'entracte, la terre et l'air : un ménétrier de village, un oiseau amoureux, Bach, et l'alouette qui s'élève jusqu'à se perdre dans la lumière."
+concert.wolanie-gor.movements.reditus.gloss: "Retour"
+concert.wolanie-gor.movements.reditus.line: "Du ciel de nouveau vers la terre : une rivière gelée, une jeune fille près du moulin. Et une lumière qui descend pour se lever de nouveau demain."
+
+concert.wolanie-gor.program.0.inscriptioGloss: "Des bergers veillant la nuit sur leur troupeau"
+concert.wolanie-gor.program.0.note: "L'appel des bergers des Pyrénées ; le seul « texte » de cette pièce est le cri « Eee-Ooo ». Vivancos, longtemps lié à l'Escolania de Montserrat, tisse autour de lui douze voix réparties dans tout l'espace de la salle. C'est de cet appel sans paroles que toute la soirée tire son nom."
+
+concert.wolanie-gor.program.1.inscriptioGloss: "Salut, ô Reine, Mère de miséricorde · antienne mariale"
+concert.wolanie-gor.program.1.note: "L'antienne mariale dans la version des bergers du Rouergue — ancienne province de l'Occitanie d'aujourd'hui — et des moines du bourg d'Estaing. Une polyphonie rude et simple, proche de la corse : le chant à plusieurs voix y est une forme de communauté. C'est de là que vient la phrase inscrite au-dessus de toute la soirée : « Ad te clamamus », vers vous nous crions. L'appel sans paroles de la première pièce reçoit ici des mots. Dans les enregistrements de cette version, l'antienne se referme sur un Je vous salue Marie récité en dialecte occitan — « Adiu, Maria, siás tot de gràcia… » — une prière dans la langue que les bergers parlaient vraiment."
+# La nôtre, et volontairement dans le registre traditionnel du « vous » : le texte de l'AELF que
+# chantent aujourd'hui les églises francophones est sous droits.
+concert.wolanie-gor.program.1.textGloss: |-
+  Salut, ô Reine, Mère de miséricorde,
+  notre vie, notre douceur et notre espérance, salut !
+  Vers vous nous crions, exilés, enfants d'Ève ;
+  vers vous nous soupirons, gémissant et pleurant
+  dans cette vallée de larmes.
+  Ô vous donc, notre avocate,
+  tournez vers nous vos regards de miséricorde,
+  et Jésus, le fruit béni de vos entrailles,
+  après cet exil, montrez-le-nous.
+  Ô clémente, ô miséricordieuse, ô douce Vierge Marie !
+
+concert.wolanie-gor.program.2.inscriptioGloss: "pour six voix aiguës · un point d'orgue de silence à la fin"
+concert.wolanie-gor.program.2.note: "Le compositeur canadien l'a écrite en rassemblant des matériaux pour un opéra sur les événements de Medjugorje, dans une Bosnie alors en guerre : six enfants à qui, à partir de juin 1981, la Mère de Dieu serait apparue chaque jour, et la foule qui récitait le rosaire pendant ce temps. De là les six voix : six enfants, six parties ; une pièce pour voix aiguës seules. Le point d'orgue sur la dernière mesure, silencieuse, est dans l'esprit de MacIntyre le moment de l'apparition."
+
+concert.wolanie-gor.program.3.inscriptioGloss: "Devant un si grand Sacrement, prosternons-nous · de l'hymne Pange lingua"
+concert.wolanie-gor.program.3.note: "Polyphonie corse de tradition franciscaine. Le texte, ce sont les deux dernières strophes de l'hymne Pange lingua de saint Thomas d'Aquin (XIIIe siècle), chantées à l'adoration, le plus souvent à la reposition, quand le Saint-Sacrement retourne au tabernacle."
+concert.wolanie-gor.program.3.textGloss: |-
+  Devant un si grand Sacrement,
+  prosternons-nous tous ensemble,
+  que devant le Testament nouveau
+  le temps des anciens rites s'efface :
+  ce que les sens ne peuvent saisir,
+  que la foi en nous l'achève.
+
+  À Dieu le Père et au Fils
+  portons l'hommage de tous nos jours :
+  que les siècles se transmettent
+  l'hymne du triomphe, l'action de grâce et l'honneur ;
+  et qu'à l'Esprit, leur égal,
+  retentisse une gloire éternelle.
+  Amen.
+
+concert.wolanie-gor.program.4.inscriptioGloss: "Ô Hostie salutaire, qui ouvres la porte du ciel · de l'hymne Verbum supernum prodiens"
+concert.wolanie-gor.program.4.note: "De nouveau saint Thomas d'Aquin : les deux dernières strophes de l'hymne Verbum supernum prodiens, écrite pour la Fête-Dieu et chantée à l'exposition du Saint-Sacrement. Le même rite qu'à l'instant, dans une langue de sept siècles plus jeune : chez Ešenvalds, des harmonies en couches et des grappes chorales."
+concert.wolanie-gor.program.4.textGloss: |-
+  Ô Hostie salutaire, digne d'honneur,
+  toi qui mènes le peuple aux portes du ciel.
+  Une guerre cruelle presse les tiens,
+  donne-nous la force, envoie-nous ton secours.
+
+  Au Dieu unique en trois personnes, Maître des terres,
+  que la gloire soit rendue en tout temps ;
+  que par sa vie éternelle
+  il nous comble dans la patrie du ciel.
+  Amen.
+
+concert.wolanie-gor.program.5.inscriptioGloss: "du cycle des Chants d'église op. 84 · original polonais : Święty, święty, święty"
+concert.wolanie-gor.program.5.note: "Du cycle des vingt et un Chants d'église op. 84 que Górecki a écrits à Katowice en 1986, en les appuyant sur des mélodies du recueil de l'abbé Jan Siedlecki, celui-là même dont les églises polonaises chantent depuis des générations. Des moyens minimaux, un effet maximal. L'original est polonais et dit « Jésus, tu es insondable » ; ici a retenti la version latine, où le même vers dit « Jésus, tu viens à nous »."
+concert.wolanie-gor.program.5.textGloss: |-
+  Saint, Saint, Saint,
+  Saint à jamais Saint,
+  Jésus, tu viens à nous
+  dans le Très Saint Sacrement.
+
+concert.wolanie-gor.program.6.inscriptioGloss: "texte : Sara Teasdale"
+concert.wolanie-gor.program.6.note: "Un poème de la poétesse américaine Sara Teasdale sur une nuit solitaire sous les étoiles. Ešenvalds a ajouté au chœur des harmonicas de verre (des verres accordés que l'on frotte d'un doigt mouillé) pour qu'ils sonnent comme un scintillement. Les harmonies sont ouvertes et spacieuses ; c'est le point le plus haut de la soirée, et la première partie s'y achève."
+concert.wolanie-gor.program.6.textGloss: |-
+  Seul dans la nuit
+  sur une colline sombre,
+  parmi les pins
+  odorants et silencieux,
+
+  et au-dessus de ma tête
+  un ciel plein d'étoiles —
+  blanches, couleur de topaze
+  et voilées de rouge ;
+
+  des myriades au cœur
+  battant de feu,
+  que les éons
+  ne sauraient attrister ni lasser ;
+
+  vers le haut de la voûte du ciel,
+  comme sur une grande colline,
+  je regarde leur marche,
+  majestueuse et calme,
+
+  et je sais que j'ai
+  l'honneur d'être
+  le témoin
+  d'une si grande majesté.
+concert.wolanie-gor.program.6.clasp: "Entracte"
+
+concert.wolanie-gor.program.7.inscriptioGloss: "du cycle Impressions d'enfance op. 28 · le ménétrier du village"
+concert.wolanie-gor.program.7.note: "La première des dix miniatures du cycle Impressions d'enfance op. 28, souvenirs d'enfance rangés selon le cours d'une journée : du violoneux au grillon et au vent dans la cheminée, puis à l'orage nocturne et au lever du soleil. Le ménétrier, c'est le violoneux du village, celui des noces. Il ouvre la seconde partie de la soirée ; c'est Radu Ropotan qui joue : comme Enescu, un Roumain."
+
+concert.wolanie-gor.program.8.inscriptioGloss: "Ce petit oiseau qui chante si doucement · du quatrième livre de madrigaux"
+concert.wolanie-gor.program.8.note: "Un madrigal du quatrième livre de madrigaux à cinq voix, publié à Venise en 1603, au seuil du passage de la polyphonie Renaissance au baroque, quand la musique se met à peindre les affects. L'oiseau qui chante « si doucement » est la métaphore d'un cœur amoureux : s'il avait une âme humaine, il dirait « je brûle d'amour », et un second oiseau lui répond."
+concert.wolanie-gor.program.8.textGloss: |-
+  Ce petit oiseau qui chante
+  si doucement
+  et vole avec une légèreté espiègle
+  tantôt au sapin, tantôt au hêtre,
+  et puis au myrte —
+  s'il avait un esprit humain,
+  il dirait : Je brûle d'amour, je brûle d'amour !
+  Mais il brûle dans son cœur
+  et appelle son désir,
+  qui lui répond : Et moi aussi je brûle d'amour !
+  Sois béni,
+  aimant, délicat et bel oiseau !
+
+concert.wolanie-gor.program.9.inscriptioGloss: "de la Partita pour violon seul no 3 en mi majeur"
+concert.wolanie-gor.program.9.note: "De la troisième partita, tirée du recueil de six sonates et partitas pour violon seul achevé en 1720, chefs-d'œuvre de la littérature du violon. Énergie pure et légèreté : le deuxième moment de ce programme où le violon reste seul, et le pont entre l'oiseau de Monteverdi et l'alouette de Vaughan Williams."
+
+concert.wolanie-gor.program.10.inscriptioGloss: "texte : George Meredith · arr. pour violon et chœur : Paul Drayton"
+concert.wolanie-gor.program.10.note: "Un poème symphonique pastoral pour violon, écrit en 1914 et révisé en 1920 ; il a attendu six ans sa création, car la guerre avait éclaté. Il s'inspire du poème de George Meredith sur l'alouette qui monte vers le ciel ; la ligne mélodique monte et retombe en imitant le vol. Paul Drayton a récrit la pièce pour violon et chœur, si bien que les mots de Meredith, dans l'original seulement inscrits au-dessus des notes, s'entendent ici pour de bon."
+concert.wolanie-gor.program.10.textGloss: |-
+  Il s'élève et se met à tracer des cercles,
+  il laisse tomber une chaîne d'argent sonore
+  aux mille anneaux, sans interruption,
+  en gazouillis, en sifflements, en glissades et en trilles.
+
+  Car il chante jusqu'à ce que son ciel soit comble —
+  c'est l'amour de la terre qu'il greffe en nous ;
+  et montant toujours plus haut,
+  notre vallée est sa coupe d'or,
+  et lui le vin qui déborde,
+  pour nous emporter avec lui quand il s'en va.
+
+  Jusqu'à ce qu'il se perde dans ses cercles d'air,
+  dans la lumière — et c'est alors que chante l'imagination.
+
+concert.wolanie-gor.program.11.inscriptioGloss: "chant d'idiome populaire · paroles ajoutées à une vocalise"
+concert.wolanie-gor.program.11.note: "Sykulski l'a écrit à la demande d'Agnieszka Franków-Żelazny pour le Chœur national polonais des jeunes : comme une vocalise, sans paroles. Il y manquait pourtant quelque chose : « la pièce ne portait aucun message ». Le compositeur a donc envoyé la partition à un ami, qui en une seule nuit y a écrit toute une histoire, si bien ajustée qu'il n'a pas fallu changer une note. Une jeune fille de Podzamcze pleure sur la Prosna gelée, le moulin est arrêté, il n'y aura pas de pain, et Jean Népomucène, patron des ponts et des rivières, se tient auprès d'elle."
+concert.wolanie-gor.program.11.textGloss: |-
+  La glace est prise sur la Prosna,
+  elle est prise près du moulin —
+  voilà cinq ans que vient ici
+  la jeune fille de Podzamcze.
+
+  Elle se tient là et gémit,
+  un fichu caché dans les mains,
+  saint Roch appelle à la grand-messe
+  pour la consoler.
+
+  Oj dana, oj dana…
+
+  Le moulin est là, mais qui donc
+  fera claquer sa roue ?
+  Il n'y a pas de farine, il n'y en a pas,
+  et il n'y aura pas de pain.
+
+  Dana, dana… na na, na na…
+
+  La glace est prise sur la Prosna,
+  le temps coule sous la glace,
+  et Jean Népomucène
+  se tient auprès de la jeune fille.
+
+  Dana, dana… na na…
+
+concert.wolanie-gor.program.12.inscriptioGloss: "poème du compositeur · les syllabes chantées n'ont pas de sens"
+concert.wolanie-gor.program.12.note: "Le compositeur indonésien a fondé la pièce sur la gamme Melayu, et les syllabes chantées ne signifient rien : c'est une pure exploration des couleurs de la voix humaine. Le point de départ est un poème que Steven a écrit lui-même. Dans la partition, il demande au chœur d'ajouter dans les premières mesures des bruits d'animaux nocturnes (un grillon, une chouette), puis, de plus en plus denses, des chants d'oiseaux ; à la fin tout revient et s'apaise."
+concert.wolanie-gor.program.12.textGloss: |-
+  C'était une nuit calme
+  — quand le regard de la lumière s'est lentement posé sur le ciel.
+
+  Éveillant les âmes endormies
+  — qui chantent joyeusement
+  — qui dansent dans un rayon de lumière
+  — et lentement
+
+  elle descendra de nouveau de son trône puissant.
+
+concert.wolanie-gor.programNote: "La soirée a duré une heure trois quarts, avec un entracte ; le concert était accueilli par le Dworek Gościnny et le Pieniny Resort & SPA."
+concert.wolanie-gor.textNote: "Les textes latins et originaux proviennent des programmes de l'ensemble ; les traductions françaises, y compris celles des hymnes et des antiennes, sont les nôtres."
+
+concert.wolanie-gor.credits.0.role: "Direction"
+
+concert.wolanie-gor.pullQuote.text: "Le cri des bergers est un chant de solitude — un cri d'effroi, de souffrance et d'incertitude ; un chant perdu qui résonne au-dedans de chacun de nous. Si nous savons écouter son « écho du silence », nous pouvons changer le silence en magie, la magie en son, et le son en beauté. Alors la solitude trouve un compagnon, l'effroi se change en paix, la souffrance en joie — et le chant perdu reçoit une réponse de la même force."
+concert.wolanie-gor.pullQuote.attribution: "Bernat Vivancos"
+# Le titre reste intact : contracter l'article (« du Cri des bergers ») le recapitaliserait.
+concert.wolanie-gor.pullQuote.about: "à propos de l'œuvre Le cri des bergers, qui a donné son nom à la soirée"
+
+concert.wolanie-gor.roster.groups.0.voice: "Sopranos"
+concert.wolanie-gor.roster.groups.1.voice: "Altos"
+concert.wolanie-gor.roster.groups.2.voice: "Ténors"
+concert.wolanie-gor.roster.groups.3.voice: "Basses"
+concert.wolanie-gor.roster.note: "L'effectif de la soirée à Szczawnica, le 1er juin 2024 ; au violon, Radu Ropotan."
+
+concert.wolanie-gor.video.caption: "Extrait du concert « L'Appel des montagnes » · VoctEnsemble 2024"
+concert.wolanie-gor.video.note: "J. Sykulski — Stoi lód na Prośnie · captation depuis la salle · son direct"
+
+concert.wolanie-gor.gallery.kd-wolanie-0.alt: "VoctEnsemble en répétition pour le concert L'Appel des montagnes"
+concert.wolanie-gor.gallery.kd-wolanie-1.alt: "VoctEnsemble en répétition pour le concert L'Appel des montagnes"
+concert.wolanie-gor.gallery.kd-wolanie-2.alt: "VoctEnsemble en répétition pour le concert L'Appel des montagnes"
+concert.wolanie-gor.gallery.kd-wolanie-3.alt: "VoctEnsemble en répétition pour le concert L'Appel des montagnes"
+concert.wolanie-gor.gallery.kd-wolanie-4.alt: "VoctEnsemble pendant le concert L'Appel des montagnes au Dworek Gościnny de Szczawnica"
+concert.wolanie-gor.gallery.kd-wolanie-5.alt: "VoctEnsemble pendant le concert L'Appel des montagnes au Dworek Gościnny de Szczawnica"
+concert.wolanie-gor.gallery.kd-wolanie-6.alt: "VoctEnsemble saluant après le concert L'Appel des montagnes au Dworek Gościnny de Szczawnica"
+concert.wolanie-gor.gallery.kd-wolanie-7.alt: "VoctEnsemble après le concert L'Appel des montagnes au Dworek Gościnny de Szczawnica"
+
+concert.wolanie-gor.posterAlt: "Affiche du concert L'Appel des montagnes"
+concert.wolanie-gor.realizacja: "Violon : Radu Ropotan"
+
+concert.wolanie-gor.about.place: "Dworek Gościnny · Szczawnica"
+concert.wolanie-gor.about.blurb: "Un concert pour douze voix et violon avec Radu Ropotan : musique sacrée, nature et chants enracinés dans le paysage des Pieniny."
