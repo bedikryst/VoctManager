@@ -1,9 +1,10 @@
 // @ts-check
 /**
  * @file sync.mjs
- * @description `npm run copy:sync` — the whole read direction as one command: extract the corpus,
- *  then post it to `POST /api/copydesk/segments/ingest/`, which reconciles the desk's mirror of git
- *  and retires the keys the extractor no longer emits.
+ * @description `npm run copy:sync` — the whole read direction as one command: extract the corpora,
+ *  then post them to `POST /api/copydesk/segments/ingest/`, which reconciles the desk's mirror of
+ *  git and retires the keys the extractor no longer emits. What it posts is gated by namespace —
+ *  see `SYNCED_NAMESPACES` below, which is the throttle a new corpus is opened through.
  *
  *  An HTTP door rather than a management command because the loop then runs from the repository on
  *  any machine with a checkout, which is also how `apply-copy` must already reach the database:
@@ -28,6 +29,18 @@ import { pathToFileURL } from "node:url";
 import { apiBase, authenticate, credentials, postJson } from "./client.mjs";
 import { extractToFile } from "./index.mjs";
 import { CONTENT_DIR, describeTree } from "./tree.mjs";
+
+/**
+ * The key namespaces this run posts — every corpus the extractor walks, now that both ends of the
+ * `page.` round trip exist: `backend/copydesk/services.sanitize_for_kind` rebuilds a submitted value
+ * from §7's whitelist on the way in, so an `HTML` segment can only ever store the inline vocabulary
+ * the site's prose uses, and `copy:apply` writes a page's Polish and its overlays on the way out.
+ *
+ * It stays a set rather than becoming nothing, because it is also the throttle: a corpus whose
+ * extractor works before its writer does is added here LAST, or the desk collects accepted
+ * proposals that nothing can carry into the repository.
+ */
+const SYNCED_NAMESPACES = new Set(["concert", "page"]);
 
 /**
  * @param {object} args
@@ -92,7 +105,16 @@ async function main() {
     return;
   }
 
-  const { segments } = await extractToFile({});
+  const { segments: extracted } = await extractToFile({});
+  const segments = extracted.filter((row) => SYNCED_NAMESPACES.has(row.key.split(".")[0]));
+  const held = extracted.length - segments.length;
+  if (held) {
+    console.log(
+      `[copydesk] ${held} row(s) extracted but not posted: their namespace is not in ` +
+        `SYNCED_NAMESPACES yet. See the note on it in this file.`,
+    );
+  }
+
   if (dryRun) {
     console.log(`[copydesk] dry run at ${revision}: ${segments.length} rows not posted.`);
     return;

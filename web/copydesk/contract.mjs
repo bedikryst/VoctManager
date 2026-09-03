@@ -35,16 +35,6 @@
  * @module copydesk/contract
  */
 
-/** Mirrors `SiteLocale` on the backend and `LOCALES` in `src/i18n/config.ts`. */
-export const SITE_LOCALES = /** @type {const} */ (["pl", "en", "fr"]);
-
-/**
- * Every segment in this corpus is plain text: `grep` finds no `<em>`, `<strong>` or `<a>` anywhere
- * in `concerts.yaml`. The `HTML` kind and §7's `contenteditable` sanitizer trap arrive with stage
- * G, where the static pages bring inline markup with them.
- */
-const TEXT = "TEXT";
-
 /**
  * @typedef {object} Field
  * @property {string|null} path Path to the value inside the list entry; `null` means the entry

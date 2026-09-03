@@ -9,10 +9,11 @@
  *    fresh, and nothing else says so.
  *  - **Reversibility.** §4 requires a key to work in both directions. Every emitted key resolves
  *    back to the exact string it was read from, so `apply-copy` can address the same scalar.
- *  - **Complete accounting.** Every path in the YAML is either copy or explicitly not copy. A new
- *    field cannot enter the corpus without somebody deciding which — the trap §7 records as
- *    "a key named `pl` under a foreign original".
- *  - **Determinism.** Two runs over an unchanged corpus are byte-identical, so a diff of the
+ *  - **Complete accounting.** Every path in the YAML is either copy or explicitly not copy — in
+ *    BOTH corpora, `concerts.yaml` and every `content/pages/<page>.yaml`. A new field cannot enter
+ *    one without somebody deciding which, the trap §7 records as "a key named `pl` under a foreign
+ *    original".
+ *  - **Determinism.** Two runs over unchanged corpora are byte-identical, so a diff of the
  *    artifact is a diff of the site's text and nothing else.
  * @architecture Astro islands 2026
  * @module copydesk/copydesk.test
@@ -26,14 +27,17 @@ import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 
 import { collapse, plan } from "./apply.mjs";
-import { CONCERT_CONTRACT, NOT_COPY, SITE_LOCALES } from "./contract.mjs";
+import { CONCERT_CONTRACT, NOT_COPY } from "./contract.mjs";
 import { extractAll } from "./extract.mjs";
+import { extractAllPages, extractPage, PAGE_SPECS, pageSource, readPage } from "./extractPages.mjs";
 import { normalizeForHash, sourceHash } from "./normalize.mjs";
 import { OVERLAY_LOCALES, parseOverlay, renderOverlay } from "./overlay.mjs";
+import { SITE_LOCALES } from "./segment.mjs";
 import { collectScalars, commentLines, detectEol, replaceScalars } from "./yamlEdit.mjs";
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
-const CORPUS = new URL("../src/content/concerts.yaml", import.meta.url);
+const CONCERTS = "src/content/concerts.yaml";
+const CORPUS = new URL(`../${CONCERTS}`, import.meta.url);
 /** @param {string} locale */
 const overlayUrl = (locale) => new URL(`../src/content/concerts.${locale}.yaml`, import.meta.url);
 
@@ -297,13 +301,171 @@ test("no path is claimed as copy and as not-copy at once", async (t) => {
 });
 
 // --------------------------------------------------------------------------------------------- //
+// The second corpus — the static pages                                                            //
+// --------------------------------------------------------------------------------------------- //
+
+/**
+ * The shape paths one page's contract claims. A page's lists are keyed by an explicit `id` (§6r)
+ * rather than by position, but the SHAPE of a list field is the same `<list>[].<field>` the corpus
+ * uses, so `collectLeaves` above serves both.
+ *
+ * @param {import("./extractPages.mjs").PageSpec} spec
+ * @returns {Set<string>}
+ */
+function pageContractPaths(spec) {
+  /** @type {Set<string>} */
+  const covered = new Set();
+  for (const entry of spec.contract) {
+    if (entry.kind === "field") {
+      covered.add(entry.path);
+      continue;
+    }
+    for (const field of entry.fields) covered.add(`${entry.path}[].${field.path}`);
+  }
+  return covered;
+}
+
+/**
+ * The paths in a page's parsed YAML that neither of its two tables names.
+ *
+ * @param {import("./extractPages.mjs").PageSpec} spec
+ * @param {unknown} data
+ * @returns {string[]}
+ */
+function unaccountedPaths(spec, data) {
+  /** @type {Set<string>} */
+  const present = new Set();
+  collectLeaves(data, "", present);
+  const covered = pageContractPaths(spec);
+  return [...present].filter((p) => !covered.has(p) && !(p in spec.notCopy)).sort();
+}
+
+test("every path in a page's YAML is either copy or explicitly not copy", async () => {
+  // The same accounting the corpus gets, and it is NOT made redundant by the page's zod schema.
+  // `.strict()` refuses a field the schema does not know about; this refuses a field the schema
+  // DOES know about that nobody has classified — a new line of prose that renders on the page and
+  // is invisible to the desk, so no editor is ever offered it and no locale ever gets it.
+  for (const spec of PAGE_SPECS) {
+    assert.deepEqual(
+      unaccountedPaths(spec, await readPage(spec)),
+      [],
+      `${pageSource(spec.id)}: a field nobody has decided about — add it to the page's contract or to its notCopy table, with the reason`,
+    );
+  }
+});
+
+test("the accounting names an unclassified field rather than passing over it", async () => {
+  // The test above can only ever go green on a file somebody has already accounted for, so this is
+  // what says it would go RED. Both shapes, because they reach `collectLeaves` differently: a plain
+  // field arrives as its own path, a list field as one `[]` path standing for every entry.
+  const spec = PAGE_SPECS[0];
+  const data = /** @type {any} */ (await readPage(spec));
+  const doctored = structuredClone(data);
+  doctored.coda.farewell = "Do zobaczenia.";
+  doctored.channels.items[0].tagline = "Nowa linijka, której nikt nie sklasyfikował.";
+
+  assert.deepEqual(unaccountedPaths(spec, doctored), ["channels.items[].tagline", "coda.farewell"]);
+});
+
+test("a page declares no path as copy and as not-copy at once, and keys its lists by a non-copy field", async (t) => {
+  for (const spec of PAGE_SPECS) {
+    const covered = pageContractPaths(spec);
+    const contradictions = Object.keys(spec.notCopy).filter((p) => covered.has(p));
+    assert.deepEqual(contradictions, [], `${spec.id}: a field cannot be both translatable and not`);
+
+    // The rule `copySpec.ts` states in prose: a list's `keyBy` is its identity, and an identity an
+    // editor is about to translate is not one. Nothing but this asserts it.
+    for (const entry of spec.contract) {
+      if (entry.kind !== "list") continue;
+      const path = `${entry.path}[].${entry.keyBy}`;
+      assert.ok(path in spec.notCopy, `${spec.id}: ${path} keys a list and is not declared not-copy`);
+    }
+
+    // Reported rather than asserted, for the reason the corpus's version gives: an OPTIONAL field
+    // a page has not used yet is a legitimate declaration ahead of the data, and only the zod
+    // schema knows which of these has actually been removed.
+    /** @type {Set<string>} */
+    const present = new Set();
+    collectLeaves(await readPage(spec), "", present);
+    const declaredButUnused = [...covered, ...Object.keys(spec.notCopy)]
+      .filter((p) => !present.has(p))
+      .sort();
+    t.diagnostic(`${spec.id}: declared but unused: ${declaredButUnused.join(", ") || "none"}`);
+  }
+});
+
+test("every page key resolves back to the exact string it was read from", async () => {
+  for (const spec of PAGE_SPECS) {
+    const data = await readPage(spec);
+    const { segments, paths } = extractPage(spec, data);
+
+    for (const segment of segments) {
+      if (segment.locale !== "pl") continue;
+      const record = paths[segment.key];
+      assert.ok(record, `${segment.key}: no path recorded`);
+      assert.equal(record.source, pageSource(spec.id), `${segment.key}: names the wrong file`);
+
+      let node = /** @type {any} */ (data);
+      for (const step of record.pl) node = node?.[step];
+      assert.equal(
+        node,
+        segment.value,
+        `${segment.key}: path [${record.pl.join(", ")}] does not lead back to the emitted value`,
+      );
+    }
+  }
+});
+
+test("a page's keys are scoped to the page, carry the three locales, and take their kind from the field's name", async () => {
+  const { segments } = await extractAllPages();
+  const labels = new Map(PAGE_SPECS.map((spec) => [`page.${spec.id}`, spec.label]));
+  /** @type {Map<string, string[]>} */
+  const byKey = new Map();
+
+  for (const segment of segments) {
+    const scope = segment.key.split(".").slice(0, 2).join(".");
+    assert.ok(labels.has(scope), `${segment.key}: scope ${scope} is not a registered page`);
+    assert.equal(segment.scope_label, labels.get(scope), `${segment.key}: scope label`);
+    // The whole markup contract in one line: the `…Html` suffix IS the kind, so a field cannot
+    // render through `set:html` while the desk edits it as plain text, or the reverse.
+    assert.equal(
+      segment.kind,
+      segment.key.endsWith("Html") ? "HTML" : "TEXT",
+      `${segment.key}: kind does not follow the field's name`,
+    );
+    byKey.set(segment.key, [...(byKey.get(segment.key) ?? []), segment.locale]);
+  }
+  for (const [key, locales] of byKey) {
+    assert.deepEqual([...locales].sort(), [...SITE_LOCALES].sort(), `${key}: locale set`);
+  }
+
+  // Without this the assertion above would also pass on a corpus with no markup in it at all —
+  // and these are the rows §7's sanitizer exists for.
+  assert.ok(
+    segments.some((segment) => segment.kind === "HTML"),
+    "the pages corpus should hold the HTML segments the concerts corpus never had",
+  );
+});
+
+test("the two corpora share a key space and no key", async () => {
+  // `lib/copyOverlay` refuses at module load a key that two overlays both translate; this is the
+  // same rule one step earlier, where the key is minted rather than read.
+  const concerts = extractAll(await readCorpus());
+  const pages = await extractAllPages();
+  const shared = Object.keys(pages.paths).filter((key) => key in concerts.paths);
+  assert.deepEqual(shared, [], "a key both corpora claim would be one fact with two homes");
+});
+
+// --------------------------------------------------------------------------------------------- //
 // Determinism                                                                                     //
 // --------------------------------------------------------------------------------------------- //
 
-test("two runs over an unchanged corpus are byte-identical", async () => {
-  const first = extractAll(await readCorpus());
-  const second = extractAll(await readCorpus());
-  assert.equal(JSON.stringify(first), JSON.stringify(second));
+test("two runs over unchanged corpora are byte-identical", async () => {
+  assert.equal(
+    JSON.stringify(extractAll(await readCorpus())),
+    JSON.stringify(extractAll(await readCorpus())),
+  );
+  assert.equal(JSON.stringify(await extractAllPages()), JSON.stringify(await extractAllPages()));
 });
 
 // --------------------------------------------------------------------------------------------- //
@@ -482,7 +644,12 @@ test("a patch is planned into a Polish write, an overlay write, and a refusal", 
   const { winners, superseded } = collapse(rows);
   assert.equal(superseded.length, 0);
 
-  const planned = plan(winners, { paths, index, overlays, corpus });
+  const planned = plan(winners, {
+    paths,
+    index,
+    overlays: { concerts: overlays, pages: {} },
+    documents: { [CONCERTS]: corpus },
+  });
   assert.equal(planned.scalarEdits.length, 1, "one Polish edit");
   assert.equal(planned.overlayEdits.length, 2, "two translations");
   assert.equal(planned.problems.length, 2, "the retired key and the stale pre-image");
@@ -514,4 +681,87 @@ test("an overlay is sorted and deterministic", () => {
   const twice = renderOverlay("fr", new Map([...entries].reverse()), "\r\n");
   assert.equal(once, twice, "key order in the map must not reach the file");
   assert.ok(once.indexOf("concert.a.x") < once.indexOf("concert.b.x"));
+});
+
+// --------------------------------------------------------------------------------------------- //
+// The write direction over the SECOND corpus — the branch a page's row takes                      //
+// --------------------------------------------------------------------------------------------- //
+
+test("a page's Polish goes to the page's own file, and its translation to the pages overlay", async () => {
+  // The defect this closes: before it, `plan` built its paths from the concerts extractor alone, so
+  // a `page.` row was refused with "the corpus has no such key" — a true sentence about the wrong
+  // corpus, which would have sent a reviewer to restore a field that never left.
+  const spec = PAGE_SPECS[0];
+  const source = pageSource(spec.id);
+  const raw = await readFile(new URL(`../${source}`, import.meta.url), "utf8");
+  const data = await readPage(spec);
+  const { paths } = extractPage(spec, data);
+
+  const key = `page.${spec.id}.hero.lede`;
+  const at = paths[key].pl;
+  const rows = [
+    patchRow({ id: "pl", key, locale: "pl", value: "Nowe zaproszenie.", base_value: valueAt(data, at) }),
+    patchRow({ id: "en", key, locale: "en", value: "A new invitation.", base_value: "" }),
+  ];
+
+  const planned = plan(rows, {
+    paths,
+    index: new Map(),
+    overlays: { concerts: {}, pages: {} },
+    documents: { [source]: data },
+  });
+
+  assert.deepEqual(planned.problems, []);
+  assert.equal(planned.scalarEdits.length, 1);
+  assert.equal(planned.scalarEdits[0].source, source, "a page's Polish must never reach concerts.yaml");
+  assert.deepEqual(planned.overlayEdits.map((edit) => edit.corpus), ["pages"]);
+
+  // And the write itself is the same splice the corpus gets, over a much smaller file.
+  const { text } = replaceScalars(raw, planned.scalarEdits);
+  assert.equal(valueAt(YAML.parse(text), at), "Nowe zaproszenie.");
+});
+
+test("a path record that contradicts its key's namespace is refused, not written to the other corpus", async () => {
+  // `paths` tells the corpora apart by SHAPE and the key tells them apart by NAMESPACE. They agree
+  // by construction, which is why the disagreement is worth catching: a `segments.json` older than
+  // this stage carries page records with no `source`, and guessing would splice a paragraph into
+  // whichever file happened to have something at that path.
+  const spec = PAGE_SPECS[0];
+  const source = pageSource(spec.id);
+  const data = await readPage(spec);
+  const { paths } = extractPage(spec, data);
+  const key = `page.${spec.id}.hero.lede`;
+
+  const stripped = { ...paths, [key]: { pl: paths[key].pl } };
+  const planned = plan(
+    [patchRow({ key, locale: "pl", value: "x", base_value: valueAt(data, paths[key].pl) })],
+    { paths: stripped, index: new Map(), overlays: { concerts: {}, pages: {} }, documents: { [source]: data } },
+  );
+
+  assert.equal(planned.scalarEdits.length, 0);
+  assert.deepEqual(planned.writable, []);
+  assert.match(planned.problems[0], /names no file/u);
+});
+
+test("each corpus's overlay header names its own Polish source", () => {
+  // The four overlays are the same shape and are written by the same run, so the header is the only
+  // thing that tells them apart — and it is what an emergency edit reads before touching a file.
+  const pages = renderOverlay("en", new Map([["page.kontakt.hero.lede", "A line."]]), "\n", "pages");
+  const concerts = renderOverlay("en", new Map([["concert.x.essence", "A line."]]), "\n", "concerts");
+
+  assert.match(pages, /^# pages\.en\.yaml — the EN overlay over .*src\/content\/pages\/\./u);
+  assert.match(concerts, /^# concerts\.en\.yaml — the EN overlay over src\/content\/concerts\.yaml\./u);
+  assert.ok(
+    !pages.includes("concerts.yaml"),
+    "a pages overlay must not send an emergency edit to the concert corpus",
+  );
+  assert.throws(
+    () => renderOverlay("en", new Map(), "\n", "koncerty"),
+    /not a corpus this desk overlays/u,
+  );
+
+  // The one thing a French overlay has to say that an English one does not (§7): `lib/typo.ts`
+  // inserts the narrow no-break spaces at build, so a hand-typed hard space doubles up.
+  assert.match(renderOverlay("fr", new Map(), "\n", "pages"), /narrow no-break/u);
+  assert.doesNotMatch(pages, /narrow no-break/u);
 });

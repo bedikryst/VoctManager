@@ -1507,6 +1507,136 @@ a defect: route files first, the set afterwards, once the prose is genuinely tra
 prose in TypeScript. It should move to `content/pages/o-nas.yaml` with today's reviewed EN/FR going
 into the overlays — otherwise the desk will hold every page but the one it was modelled on.
 
+### §6s Stage G2 — the pages reach the extractor, and what still holds them at the door (2026-09-03)
+
+G1 settled where a page's words live and moved `kontakt` into it. G2 is the walk that turns those
+words into segments: `copy:extract` now carries **two corpora**, and the second one is the first to
+produce `HTML` rows at all.
+
+**What shipped.**
+
+- `copydesk/extractPages.mjs` — the page walk. It imports `walkCopy` and each page's spec straight
+  from `src/i18n/content/`, which Node reads by stripping the types with no build step: the rule
+  that turns a field into a key exists once and is executed by both ends, exactly as §6r requires.
+  `PAGE_SPECS` is the registry — adding a page is that line plus its content module.
+- `copydesk/segment.mjs` — the segment itself, lifted out from under the concerts extractor:
+  `SITE_LOCALES`, the DTO ceilings and `KEY_PATTERN` mirrored from the backend, the three-locale row
+  builder, and the guard that refuses a row the ingest would reject. Two corpora, one segment; a
+  second copy of the ceilings would drift the expensive way, as a 400 three thousand rows into a
+  batch.
+- `segments.json` carries both, and `paths` says which corpus a record addresses by its SHAPE: a
+  page's record names the file it lives in, a concert's is a location inside `concerts.yaml` that
+  still wants its concert's index in front of it. The write direction has to branch on that anyway.
+  Merging refuses a key both corpora claim — the same rule `lib/copyOverlay` enforces at module
+  load, one step earlier, where the key is minted rather than read.
+- Overlay READS learned the corpus (`pages.{en,fr}.yaml`); the write side did not, deliberately —
+  `renderOverlay` would give a pages overlay a header naming `concerts.yaml`, and the run that
+  writes it belongs to the stage that can sanitize what an editor submits.
+- The extractor validates a page through its own zod schema before walking it, so `.strict()` fires
+  here too: a hand-added `en:` in `kontakt.yaml` stops the extraction rather than being dropped.
+
+**Measured:** 464 keys · 1 392 rows across both corpora, of which `kontakt` is 36 keys — four of
+them `HTML`, which are the first four segments in this system that §7's sanitizer has any work to
+do on. Two consecutive `copy:extract` runs are byte-identical.
+
+**Accounting is mechanical for a page now, in both directions.** Every leaf of `kontakt.yaml` is
+either in the page's contract or in its `notCopy` table, and a test proves the walk goes RED on a
+field in neither — the positive test can only ever run against a file somebody already accounted
+for, so the negative one is what says the guard bites. The zod schema does NOT make this redundant:
+`.strict()` refuses a field the schema does not know about, and this refuses a field the schema does
+know about that nobody classified — a line of prose that renders on the page and is invisible to
+the desk, so no editor is ever offered it and no locale ever gets it. A third rule that was prose in
+`copySpec.ts` and is now asserted: a list's `keyBy` must be declared not-copy, because an identity
+an editor is about to translate is not an identity.
+
+**What deliberately does NOT reach the desk yet.** `sync.mjs` posts by namespace —
+`SYNCED_NAMESPACES` holds `concert` and not `page`. Extraction is complete regardless; that one line
+is the door. Until the desk rebuilds a submitted value from §7's whitelist, showing an editor an
+`HTML` row would be offering an edit the repository cannot safely take back: `contenteditable`
+submits `<div>`, `<br>` and styled `<span>` into a field whose value is written into a content file
+the guardrails keep free of presentation.
+
+**What G3 owes**, in the order the door opens: the sanitizer wired end to end (the backend module
+exists; nothing calls it on this path yet), then the pages overlay WRITER — `renderOverlay`'s header
+per corpus and `apply.mjs` branching on the key's namespace to write a page's Polish scalar through
+`yamlEdit.mjs` — then `SYNCED_NAMESPACES`. `TRANSLATED_ROUTES` stays last, per §6q's ordering
+contract: route files, then real translations, then the set.
+
+### §6t Stage G3 — the door opens, and the sanitizer trap was never the one we wrote down (2026-09-03)
+
+G2 held the pages at the door with one line and named three things G3 owed, in order. The first of
+them was already built, and finding that out changed what the stage was.
+
+**The sanitizer was wired from the first copydesk commit.** §6s says "the backend module exists;
+nothing calls it on this path yet". `services.sanitize_for_kind` is the one entry point into
+`CopySegment.value`, and both write paths have always gone through it: `save_proposal` at the moment
+an editor's autosave lands, and `review_proposal` when the reviewer rewrites the wording on the way
+to accepting it. What was genuinely missing was proof of the second one and of a stronger property
+than "hostile markup is removed":
+
+- **A reviewer's own rewrite is the second way a value reaches the repository, and it is the one
+  nothing else guards.** `apply-copy` writes `proposal.value` verbatim into a content file; if the
+  reviewer's edit skipped the whitelist, the guardrails' rule that content files carry no
+  presentation would be enforced against the editor and not against the person who overrules them.
+  Asserted now.
+- **The whitelist has to be a SUPERSET of the markup the corpus already holds.** An editor's first
+  proposal on an `html` field is that field's own markup with one word changed, and it is rebuilt on
+  the way in — so anything the site authored that the pass does not recognise is stripped in
+  silence, and what the editor sees is their sentence accepted with the link simply gone. The four
+  constructions in `kontakt.yaml` (`<em>`, an internal `<a href>`, a `mailto:` one) are asserted to
+  survive untouched, and to survive a second pass over the first pass's output — an escape that is
+  not idempotent corrupts the field a little more with every edit.
+
+**And the trap §7 records is not the one this desk has.** There is no `contenteditable` anywhere in
+`features/copydesk`: the editor is a `GrowingTextarea`, `kind` reaches the frontend DTO and nothing
+reads it, and no value is ever rendered as markup. So an `HTML` field is edited as its own source —
+the editor sees `<em>Wyrosła</em>` and types `<em>`. That is safe on both ends (React escapes what
+it renders, the whitelist rebuilds what it stores) and it is the honest shape while the vocabulary
+is three tags, but it is a DECISION rather than the absence of one, and the desk currently says
+nothing about it. The sanitizer's real job here is narrower and still worth its existence: a paste
+carries markup as text into a plain field, and `text` segments have no markup path at all.
+
+**What shipped, in the order the door opens.**
+
+- `copydesk/overlay.mjs` takes the corpus as a parameter rather than assuming the evenings.
+  `renderOverlay` and `writeOverlay` now write either pair, and the header — the only prose in a
+  machine-written file — names its own Polish source, because it is what an emergency edit reads
+  before touching anything. Two paragraphs the hand-written `pages.{en,fr}.yaml` stubs carried are
+  now produced for all four files rather than lost to the first machine write: the per-field
+  fallback rule, and (in French only) §7's warning that `lib/typo.ts` inserts the narrow no-break
+  spaces at build and a hand-typed one doubles up.
+- `copydesk/apply.mjs` branches on the key's namespace. It reads every Polish corpus up front —
+  `concerts.yaml` and each registered page — plans every file's rewrite in full before a byte is
+  written, and rolls all of them back together if the on-disk verification fails. A page's Polish
+  goes through the same `yamlEdit.mjs` splice with the same four proofs; nothing about that
+  operation is page-specific, which is the whole argument §6r made against a TypeScript writer.
+- `SYNCED_NAMESPACES` gained `page`. It stays a set rather than becoming nothing: it is the throttle
+  a corpus is opened through, and a corpus whose extractor works before its writer does belongs
+  outside it, or the desk collects accepted proposals nothing can carry into the repository.
+
+**Two invariants asserted rather than trusted.** `paths` tells the corpora apart by SHAPE and a key
+tells them apart by NAMESPACE, and they agree by construction — so the writer checks them against
+each other and refuses the row when they disagree. A `segments.json` older than this stage carries
+page records with no file in them, and guessing would splice a paragraph into whichever corpus
+happened to have something at that path. The second is the one G2 left standing: before this, `plan`
+built its paths from the concerts extractor alone, so a `page.` row was refused with "the corpus has
+no such key" — a true sentence about the wrong corpus, which would have sent a reviewer to restore a
+field that never left.
+
+**Proved end to end, not only in units.** `copy:apply --write` was run against a stub panel serving a
+four-row patch — a concert's Polish, a concert's English, a page's Polish, a page's English — and it
+wrote `concerts.yaml`, `concerts.en.yaml`, `pages/kontakt.yaml` and `pages.en.yaml` in one run, each
+verified from disk. The two hand-written corpora came back with their comment lines and scalar
+counts intact, all four files pure CRLF, and `git diff` showed one changed line in each Polish file.
+The site then built with a populated pages overlay. The tree was restored afterwards; nothing of the
+rehearsal is committed.
+
+**What is still owed, and by whom.** `TRANSLATED_ROUTES` stays last, per §6q — route files, then
+real translations, then the set; `/kontakt` is written and its prose is still Polish. `o-nas.ts` is
+still the one page holding prose in TypeScript (§6r's named debt). And the desk owes an `HTML` row
+one sentence saying what the editor is looking at, in the same place §7 says French punctuation
+spacing has to be said.
+
 ## §7 Traps
 
 - **`overflow-x: hidden` on the body kills every page-level `position: sticky`.** One axis `hidden`
@@ -1531,11 +1661,19 @@ into the overlays — otherwise the desk will hold every page but the one it was
   reviewer's digest — the two-iteration rule quietly loses its second iteration, and nothing on
   screen says so. Grant `can_edit_site_copy` and leave staff alone; if an editor genuinely needs the
   Django admin, the reviewer test has to move to a narrower predicate before they get it.
-- **`contenteditable` injects markup.** The browser will produce `<div>`, `<br>` and styled `<span>`
-  inside an edited `html` segment. The export path must whitelist `<em> <strong> <a>` and flatten
-  everything else, and `text` segments must be edited as plain text with no HTML path at all. This
-  is the same failure mode as the annotation payload sanitizer: a serializer that rebuilds its
-  payload silently drops whatever is not on the list.
+- **A whitelist that is not a superset of the corpus destroys the corpus, one edit at a time.**
+  `sanitize_for_kind` rebuilds every submitted value from `<em> <strong> <a href>` on both write
+  paths — the editor's autosave and the reviewer's rewrite — which is the right guard and is the
+  same failure mode as the annotation payload sanitizer: a serializer that rebuilds its payload
+  silently drops whatever is not on the list. The trap is which direction that cuts. An editor's
+  first proposal on an `html` field is that field's own markup with one word changed, so a
+  construction the site authored and the list does not know is stripped on the way in, and what the
+  editor sees is their sentence accepted with the link gone. Before adding a tag to a content file,
+  add it to `ALLOWED_TAGS`; the test that asserts `kontakt.yaml`'s four shapes survive untouched —
+  and survive a second pass over the first pass's output — is what says the two still agree.
+  The original wording of this trap named `contenteditable`, and this desk has none (§6t): the
+  editor is a plain textarea, an `HTML` field is edited as its own source, and nothing renders a
+  segment as markup. `text` segments have no markup path at all in either reading.
 - **A module the extractor imports may not reach for the bundler.** `i18n/content/copySpec.ts` and
   each page's `i18n/content/<page>.ts` are imported by Node directly — type-stripping, no build step
   — so that the key a translation is stored under is the same expression as the key the page looks

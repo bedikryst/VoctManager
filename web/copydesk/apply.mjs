@@ -11,11 +11,18 @@
  *  written is a hand-made file whose comments are half its value and whose prose nobody can
  *  reconstruct from the database.
  *
- *  TWO DESTINATIONS, AND ONLY ONE OF THEM IS DANGEROUS. Polish goes into `concerts.yaml` through
- *  `yamlEdit.mjs`, which replaces a scalar in place and proves four things about the result before
- *  a byte is written (see that file). English and French go into the overlays, which are machine
- *  written, carry no comments, and are rewritten whole. That asymmetry is the whole point of §8's
- *  overlay decision: the operation that could destroy the corpus never has to insert a key.
+ *  TWO KINDS OF DESTINATION, AND ONLY ONE OF THEM IS DANGEROUS. Polish goes into a hand-written
+ *  Polish corpus — `concerts.yaml` for an evening, `content/pages/<page>.yaml` for a static page —
+ *  through `yamlEdit.mjs`, which replaces a scalar in place and proves four things about the result
+ *  before a byte is written (see that file). English and French go into the overlays, which are
+ *  machine written, carry no comments, and are rewritten whole. That asymmetry is the whole point of
+ *  §8's overlay decision: the operation that could destroy a corpus never has to insert a key.
+ *
+ *  THE KEY'S NAMESPACE SAYS WHICH CORPUS, and `paths` says where inside it. The two records have
+ *  different shapes on purpose (`index.mjs`): a page's names the file it lives in, a concert's is a
+ *  location inside `concerts.yaml` that still wants its concert's index in front of it. Both are
+ *  checked against the namespace rather than trusted, because the silent version of that
+ *  disagreement is a page's prose spliced into the concerts corpus.
  *
  *  WHAT A ROW HAS TO PROVE BEFORE IT IS WRITTEN. Its `base_value` — the value the desk believes the
  *  repository currently holds — must be exactly what the file holds. A mismatch means the tree and
@@ -24,7 +31,7 @@
  *
  *  AND AFTER WRITING, the files are read back FROM DISK and checked again — every edited value
  *  where it should be, every untouched field byte-identical, the comment count unchanged. A write
- *  that fails that check is rolled back to the bytes it started from.
+ *  that fails that check is rolled back to the bytes it started from, every file of it.
  * @architecture Astro islands 2026
  * @module copydesk/apply
  */
@@ -37,13 +44,20 @@ import YAML from "yaml";
 
 import { apiBase, authenticate, credentials, getJson, postJson } from "./client.mjs";
 import { extractAll } from "./extract.mjs";
-import { readConcerts } from "./index.mjs";
+import { extractAllPages, PAGE_SPECS, pageSource, readPage } from "./extractPages.mjs";
+import { mergePaths, readConcerts } from "./index.mjs";
 import { OVERLAY_LOCALES, overlaySource, readOverlay, writeOverlay } from "./overlay.mjs";
 import { CONTENT_DIR, describeTree } from "./tree.mjs";
 import { collectScalars, commentLines, detectEol, replaceScalars } from "./yamlEdit.mjs";
 
 const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
-const SOURCE = "src/content/concerts.yaml";
+const CONCERTS = "src/content/concerts.yaml";
+
+/** Which corpus a key belongs to, from the namespace it opens with. */
+const CORPUS_OF_NAMESPACE = /** @type {Record<string, string>} */ ({
+  concert: "concerts",
+  page: "pages",
+});
 
 /** How much of a value a report line shows before it stops being readable. */
 const PREVIEW = 90;
@@ -51,6 +65,14 @@ const PREVIEW = 90;
 /** @param {string} value */
 const preview = (value) =>
   JSON.stringify(value.length > PREVIEW ? `${value.slice(0, PREVIEW)}…` : value);
+
+/**
+ * @param {unknown} tree
+ * @param {readonly (string|number)[]} at
+ * @returns {unknown}
+ */
+const valueAt = (tree, at) =>
+  at.reduce((node, step) => /** @type {any} */ (node)?.[step], /** @type {any} */ (tree));
 
 /**
  * @typedef {object} PatchRow
@@ -90,15 +112,62 @@ export function collapse(rows) {
 }
 
 /**
+ * @typedef {object} PlanState
+ * @property {Record<string, any>} paths Both corpora's path records, merged by `mergePaths`.
+ * @property {Map<string, number>} index Concert id → its position in `concerts.yaml`.
+ * @property {Record<string, Record<string, Map<string, string>>>} overlays corpus → locale → overlay.
+ * @property {Record<string, unknown>} documents Polish source (relative to `web/`) → its parsed tree.
+ */
+
+/**
+ * Which file a Polish row is written into, and where inside it — or the reason it cannot be.
+ *
+ * The two path-record shapes are checked against the key's namespace rather than sniffed, because
+ * the failure mode of guessing is silent and expensive: a page's paragraph spliced into a concert,
+ * or a concert's title written to a file that has no such path and so refuses the whole run.
+ *
+ * @param {PatchRow} row
+ * @param {string} corpus
+ * @param {any} record
+ * @param {Map<string, number>} index
+ * @returns {{source: string, at: (string|number)[]} | {problem: string}}
+ */
+function locate(row, corpus, record, index) {
+  const namesAFile = typeof record.source === "string";
+  if (corpus === "pages") {
+    if (!namesAFile) {
+      return {
+        problem:
+          `${row.key}: a page key whose path record names no file. The extractor and the writer ` +
+          "disagree about which corpus this key belongs to; re-run `npm run copy:extract`.",
+      };
+    }
+    return { source: record.source, at: [...record.pl] };
+  }
+  if (namesAFile) {
+    return {
+      problem:
+        `${row.key}: a concert key whose path record names ${record.source}. The extractor and ` +
+        "the writer disagree about which corpus this key belongs to; re-run `npm run copy:extract`.",
+    };
+  }
+  const concert = index.get(row.key.split(".")[1]);
+  if (concert === undefined) {
+    return { problem: `${row.key}: names a concert that is not in the corpus.` };
+  }
+  return { source: CONCERTS, at: [concert, ...record.pl] };
+}
+
+/**
  * Sort the patch into what each destination has to do, refusing nothing quietly.
  *
  * @param {PatchRow[]} rows
- * @param {{paths: Record<string, {pl: (string|number)[]}>, index: Map<string, number>, overlays: Record<string, Map<string, string>>, corpus: unknown}} state
+ * @param {PlanState} state
  */
 export function plan(rows, state) {
-  /** @type {{path: (string|number)[], expected: string, value: string, label: string}[]} */
+  /** @type {{source: string, path: (string|number)[], expected: string, value: string, label: string}[]} */
   const scalarEdits = [];
-  /** @type {{locale: string, key: string, value: string, before: string}[]} */
+  /** @type {{corpus: string, locale: string, key: string, value: string, before: string}[]} */
   const overlayEdits = [];
   /** @type {PatchRow[]} */
   const unchanged = [];
@@ -108,29 +177,35 @@ export function plan(rows, state) {
   const writable = [];
 
   for (const row of rows) {
+    const namespace = row.key.split(".")[0];
+    const corpus = CORPUS_OF_NAMESPACE[namespace];
+    if (corpus === undefined) {
+      problems.push(
+        `${row.key} [${row.locale}]: \`${namespace}\` is not a corpus this repository holds. ` +
+          "Nothing can be written for it; reject the proposal.",
+      );
+      continue;
+    }
+
     const record = state.paths[row.key];
     if (!record) {
       problems.push(
-        `${row.key} [${row.locale}]: the corpus has no such key. It was retired from the site ` +
-          "after this proposal was accepted; reject the proposal or restore the field.",
+        `${row.key} [${row.locale}]: the ${corpus} corpus has no such key. It was retired from ` +
+          "the site after this proposal was accepted; reject the proposal or restore the field.",
       );
       continue;
     }
 
     if (row.locale === "pl") {
-      const concert = state.index.get(row.key.split(".")[1]);
-      if (concert === undefined) {
-        problems.push(`${row.key}: names a concert that is not in the corpus.`);
+      const placed = locate(row, corpus, record, state.index);
+      if ("problem" in placed) {
+        problems.push(placed.problem);
         continue;
       }
-      const at = [concert, ...record.pl];
-      const inFile = at.reduce(
-        (node, step) => /** @type {any} */ (node)?.[step],
-        /** @type {any} */ (state.corpus),
-      );
+      const inFile = valueAt(state.documents[placed.source], placed.at);
       if (inFile !== row.base_value) {
         problems.push(
-          `${row.key}: concerts.yaml does not hold the value the desk recorded.\n` +
+          `${row.key}: ${placed.source} does not hold the value the desk recorded.\n` +
             `      in the file: ${preview(String(inFile))}\n` +
             `      on the desk: ${preview(row.base_value)}`,
         );
@@ -142,7 +217,8 @@ export function plan(rows, state) {
         continue;
       }
       scalarEdits.push({
-        path: at,
+        source: placed.source,
+        path: placed.at,
         expected: row.base_value,
         value: row.value,
         label: row.key,
@@ -150,11 +226,11 @@ export function plan(rows, state) {
       continue;
     }
 
-    const before = state.overlays[row.locale]?.get(row.key) ?? "";
+    const before = state.overlays[corpus]?.[row.locale]?.get(row.key) ?? "";
     if (before !== row.base_value) {
       problems.push(
-        `${row.key} [${row.locale}]: ${overlaySource(row.locale)} does not hold the value the ` +
-          `desk recorded.\n      in the file: ${preview(before)}\n      on the desk: ${preview(row.base_value)}`,
+        `${row.key} [${row.locale}]: ${overlaySource(row.locale, corpus)} does not hold the value ` +
+          `the desk recorded.\n      in the file: ${preview(before)}\n      on the desk: ${preview(row.base_value)}`,
       );
       continue;
     }
@@ -163,54 +239,59 @@ export function plan(rows, state) {
       unchanged.push(row);
       continue;
     }
-    overlayEdits.push({ locale: row.locale, key: row.key, value: row.value, before });
+    overlayEdits.push({ corpus, locale: row.locale, key: row.key, value: row.value, before });
   }
 
   return { scalarEdits, overlayEdits, unchanged, problems, writable };
 }
 
 /**
- * Read the corpus and the overlays back FROM DISK and prove the write did what it said.
+ * Read every file this run touched back FROM DISK and prove the write did what it said.
  *
- * The in-memory proofs in `yamlEdit.mjs` run before the file is opened; this one runs after it is
+ * The in-memory proofs in `yamlEdit.mjs` run before a file is opened; this one runs after it is
  * closed, and it is the one that would catch a truncated write, a mangled encoding, or a stray
  * serializer having been let anywhere near the file.
  *
- * @param {{raw: string, expectedText: string, expectedOverlays: Record<string, Map<string, string>>}} promised
+ * @param {{raws: Record<string, string>, rewrites: Record<string, {text: string, changes: unknown[]}>, expectedOverlays: Record<string, Record<string, Map<string, string>>>}} promised
  */
-async function verifyOnDisk({ raw, expectedText, expectedOverlays }) {
-  const written = await readFile(path.join(WEB_ROOT, SOURCE), "utf8");
-  if (written !== expectedText) {
-    throw new Error(`[copydesk] ${SOURCE} on disk is not what was written.`);
-  }
+async function verifyOnDisk({ raws, rewrites, expectedOverlays }) {
+  for (const [source, rewrite] of Object.entries(rewrites)) {
+    if (!rewrite.changes.length) continue;
 
-  const before = commentLines(raw);
-  const after = commentLines(written);
-  if (
-    before.length !== after.length ||
-    before.some((/** @type {string} */ line, /** @type {number} */ i) => line !== after[i])
-  ) {
-    throw new Error(
-      `[copydesk] ${SOURCE}: comment lines went from ${before.length} to ${after.length}.`,
-    );
-  }
-
-  const leavesBefore = collectScalars(YAML.parse(raw));
-  const leavesAfter = collectScalars(YAML.parse(written));
-  if (leavesBefore.size !== leavesAfter.size) {
-    throw new Error(`[copydesk] ${SOURCE}: the number of fields changed.`);
-  }
-
-  for (const locale of OVERLAY_LOCALES) {
-    const expected = expectedOverlays[locale];
-    if (!expected) continue;
-    const readBack = await readOverlay(locale);
-    if (readBack.size !== expected.size) {
-      throw new Error(`[copydesk] ${overlaySource(locale)}: ${readBack.size} values, expected ${expected.size}.`);
+    const written = await readFile(path.join(WEB_ROOT, source), "utf8");
+    if (written !== rewrite.text) {
+      throw new Error(`[copydesk] ${source} on disk is not what was written.`);
     }
-    for (const [key, value] of expected) {
-      if (readBack.get(key) !== value) {
-        throw new Error(`[copydesk] ${overlaySource(locale)}: ${key} is not what was written.`);
+
+    const before = commentLines(raws[source]);
+    const after = commentLines(written);
+    if (
+      before.length !== after.length ||
+      before.some((/** @type {string} */ line, /** @type {number} */ i) => line !== after[i])
+    ) {
+      throw new Error(
+        `[copydesk] ${source}: comment lines went from ${before.length} to ${after.length}.`,
+      );
+    }
+
+    const leavesBefore = collectScalars(YAML.parse(raws[source]));
+    const leavesAfter = collectScalars(YAML.parse(written));
+    if (leavesBefore.size !== leavesAfter.size) {
+      throw new Error(`[copydesk] ${source}: the number of fields changed.`);
+    }
+  }
+
+  for (const [corpus, byLocale] of Object.entries(expectedOverlays)) {
+    for (const [locale, expected] of Object.entries(byLocale)) {
+      const source = overlaySource(locale, corpus);
+      const readBack = await readOverlay(locale, { corpus });
+      if (readBack.size !== expected.size) {
+        throw new Error(`[copydesk] ${source}: ${readBack.size} values, expected ${expected.size}.`);
+      }
+      for (const [key, value] of expected) {
+        if (readBack.get(key) !== value) {
+          throw new Error(`[copydesk] ${source}: ${key} is not what was written.`);
+        }
       }
     }
   }
@@ -235,28 +316,56 @@ async function main() {
     return;
   }
 
-  const raw = await readFile(path.join(WEB_ROOT, SOURCE), "utf8");
-  const eol = detectEol(raw);
-  const corpus = await readConcerts();
-  /** @type {Record<string, Map<string, string>>} */
-  const overlays = {};
-  for (const locale of OVERLAY_LOCALES) overlays[locale] = await readOverlay(locale);
-  const { paths, orphans } = extractAll(corpus, overlays);
-  const index = new Map(corpus.map((/** @type {any} */ concert, i) => [concert.id, i]));
+  // Every Polish file the writer may touch, as the exact bytes on disk and as a tree to read the
+  // pre-image out of. Read once, up front: the pre-image check is only worth something if every
+  // row of the patch is measured against the same snapshot of the repository.
+  /** @type {Record<string, string>} */
+  const raws = { [CONCERTS]: await readFile(path.join(WEB_ROOT, CONCERTS), "utf8") };
+  /** @type {Record<string, unknown>} */
+  const documents = { [CONCERTS]: await readConcerts() };
+  for (const spec of PAGE_SPECS) {
+    const source = pageSource(spec.id);
+    raws[source] = await readFile(path.join(WEB_ROOT, source), "utf8");
+    documents[source] = await readPage(spec);
+  }
+  const eol = detectEol(raws[CONCERTS]);
+
+  /** @type {Record<string, Record<string, Map<string, string>>>} */
+  const overlays = { concerts: {}, pages: {} };
+  for (const locale of OVERLAY_LOCALES) {
+    overlays.concerts[locale] = await readOverlay(locale, { corpus: "concerts" });
+    overlays.pages[locale] = await readOverlay(locale, { corpus: "pages" });
+  }
+
+  const concerts = extractAll(
+    /** @type {Record<string, unknown>[]} */ (documents[CONCERTS]),
+    overlays.concerts,
+  );
+  const pages = await extractAllPages(overlays.pages);
+  const paths = mergePaths(concerts.paths, pages.paths);
+  const index = new Map(
+    /** @type {any[]} */ (documents[CONCERTS]).map((concert, i) => [concert.id, i]),
+  );
 
   const { winners, superseded } = collapse(proposals);
   const { scalarEdits, overlayEdits, unchanged, problems, writable } = plan(winners, {
     paths,
     index,
     overlays,
-    corpus,
+    documents,
   });
 
-  // The Polish rewrite is planned in full — and proved in full — before anything is written, so a
-  // single unrenderable value stops the run rather than leaving half a patch in the file.
-  const { text, changes } = scalarEdits.length
-    ? replaceScalars(raw, scalarEdits)
-    : { text: raw, changes: [] };
+  // Every Polish rewrite is planned in full — and proved in full — before anything is written, so a
+  // single unrenderable value stops the run rather than leaving half a patch in one of the files.
+  /** @type {Record<string, {text: string, changes: any[]}>} */
+  const rewrites = {};
+  for (const source of Object.keys(raws)) {
+    const edits = scalarEdits.filter((edit) => edit.source === source);
+    rewrites[source] = edits.length
+      ? replaceScalars(raws[source], edits)
+      : { text: raws[source], changes: [] };
+  }
+  const changes = Object.values(rewrites).flatMap((rewrite) => rewrite.changes);
 
   console.log(
     `[copydesk] patch: ${proposals.length} accepted proposal(s) → ` +
@@ -265,12 +374,12 @@ async function main() {
   );
   const styleOf = new Map(changes.map((change) => [change.label, change.style]));
   for (const edit of scalarEdits) {
-    console.log(`  pl  ${edit.label} [${styleOf.get(edit.label)}]`);
+    console.log(`  pl  ${edit.label} [${styleOf.get(edit.label)}] → ${edit.source}`);
     console.log(`      − ${preview(edit.expected)}`);
     console.log(`      + ${preview(edit.value)}`);
   }
   for (const edit of overlayEdits) {
-    console.log(`  ${edit.locale}  ${edit.key}`);
+    console.log(`  ${edit.locale}  ${edit.key} → ${overlaySource(edit.locale, edit.corpus)}`);
     if (edit.before) console.log(`      − ${preview(edit.before)}`);
     console.log(`      + ${preview(edit.value)}`);
   }
@@ -283,11 +392,13 @@ async function main() {
     console.log(`  ·   ${row.key} [${row.locale}]: superseded by a later decision; stamped anyway.`);
   }
   for (const problem of problems) console.warn(`[copydesk] REFUSED ${problem}`);
-  for (const [locale, keys] of Object.entries(orphans)) {
-    console.warn(
-      `[copydesk] ${overlaySource(locale)} holds ${keys.length} value(s) for keys the corpus no ` +
-        `longer has: ${keys.join(", ")}`,
-    );
+  for (const [corpus, orphans] of [["concerts", concerts.orphans], ["pages", pages.orphans]]) {
+    for (const [locale, keys] of Object.entries(/** @type {Record<string, string[]>} */ (orphans))) {
+      console.warn(
+        `[copydesk] ${overlaySource(locale, String(corpus))} holds ${keys.length} value(s) for ` +
+          `keys the corpus no longer has: ${keys.join(", ")}`,
+      );
+    }
   }
 
   // A refused row is a patch that did not fully land, and the exit code says so: the reviewer has
@@ -313,32 +424,43 @@ async function main() {
     return;
   }
 
-  /** @type {Record<string, Map<string, string>>} */
+  /** @type {Record<string, Record<string, Map<string, string>>>} */
   const nextOverlays = {};
   for (const edit of overlayEdits) {
-    const entries = nextOverlays[edit.locale] ?? new Map(overlays[edit.locale]);
+    const byLocale = nextOverlays[edit.corpus] ?? {};
+    const entries = byLocale[edit.locale] ?? new Map(overlays[edit.corpus][edit.locale]);
     entries.set(edit.key, edit.value);
-    nextOverlays[edit.locale] = entries;
+    byLocale[edit.locale] = entries;
+    nextOverlays[edit.corpus] = byLocale;
   }
 
-  if (changes.length) await writeFile(path.join(WEB_ROOT, SOURCE), text, "utf8");
-  for (const [locale, entries] of Object.entries(nextOverlays)) {
-    await writeOverlay(locale, entries, { eol });
+  const rewritten = Object.keys(rewrites).filter((source) => rewrites[source].changes.length);
+  for (const source of rewritten) {
+    await writeFile(path.join(WEB_ROOT, source), rewrites[source].text, "utf8");
+  }
+  for (const [corpus, byLocale] of Object.entries(nextOverlays)) {
+    for (const [locale, entries] of Object.entries(byLocale)) {
+      await writeOverlay(locale, entries, { eol, corpus });
+    }
   }
 
   try {
-    await verifyOnDisk({ raw, expectedText: text, expectedOverlays: nextOverlays });
+    await verifyOnDisk({ raws, rewrites, expectedOverlays: nextOverlays });
   } catch (error) {
-    // Put the corpus back the way it was. The overlays are regenerated from the desk on the next
-    // run, so the file that cannot be reconstructed is the only one worth restoring.
-    await writeFile(path.join(WEB_ROOT, SOURCE), raw, "utf8");
-    console.error(`[copydesk] ${SOURCE} restored — the write did not verify.`);
+    // Put every Polish corpus back the way it was. The overlays are regenerated from the desk on
+    // the next run, so the hand-written files are the only ones worth restoring.
+    for (const source of rewritten) {
+      await writeFile(path.join(WEB_ROOT, source), raws[source], "utf8");
+    }
+    console.error(`[copydesk] ${rewritten.join(", ")} restored — the write did not verify.`);
     throw error;
   }
 
   const touched = [
-    ...(changes.length ? [SOURCE] : []),
-    ...Object.keys(nextOverlays).map(overlaySource),
+    ...rewritten,
+    ...Object.entries(nextOverlays).flatMap(([corpus, byLocale]) =>
+      Object.keys(byLocale).map((locale) => overlaySource(locale, corpus)),
+    ),
   ];
   console.log(`[copydesk] wrote ${touched.join(", ") || "nothing"} — verified on disk.`);
 

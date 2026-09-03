@@ -212,6 +212,28 @@ class SanitizerTests(TestCase):
             "Bazylika NSPJ",
         )
 
+    def test_the_markup_the_static_pages_actually_use_survives_untouched(self):
+        """The whitelist has to be a superset of what the corpus already holds.
+
+        An editor's FIRST proposal on an `html` field arrives as the field's own
+        markup with one word changed, and it is sanitized on the way in. Anything
+        the site authored that this pass does not recognise would be stripped
+        silently — the editor sees their sentence accepted and the link, or the
+        emphasis, is simply gone from the page. These four shapes are every
+        construction in `src/content/pages/kontakt.yaml`.
+        """
+        for value in (
+            "do <em>nas.</em>",
+            "Pod wszystkimi trzema są <em>te same trzy osoby</em> — zarząd fundacji.",
+            'w <a href="/press">materiałach prasowych →</a>',
+            '<a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>.',
+        ):
+            with self.subTest(value=value):
+                self.assertEqual(sanitize_html(value), value)
+                # And again over its own output: a pass that escapes what it just
+                # emitted would corrupt the field a little more on every edit.
+                self.assertEqual(sanitize_html(sanitize_html(value)), value)
+
 
 class StalenessTests(TestCase):
     """§2 made mechanical. A translation whose Polish moved looks fine on screen."""
@@ -412,6 +434,29 @@ class ProposalLifecycleTests(TestCase):
         )
         self.assertNotEqual(first.id, second.id)
         self.assertEqual(CopyProposal.objects.filter(segment=self.segment).count(), 2)
+
+    def test_a_reviewer_s_own_wording_is_sanitized_on_the_same_terms(self):
+        # The review endpoint is the second way a value reaches the repository —
+        # §4's "accept / reject / edit further" as one act — and it is the one
+        # nothing else guards: `apply-copy` writes `proposal.value` verbatim into
+        # a content file the guardrails keep free of presentation.
+        html_segment = make_segment(
+            "page.kontakt.after.pressHtml", SiteLocale.POLISH, "", kind=SegmentKind.HTML,
+        )
+        proposal = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=html_segment.id, value="<em>materiały</em>"),
+            author=self.editor,
+        )
+        CopyDeskService.review_proposal(
+            proposal_id=proposal.id,
+            dto=ProposalReviewDTO(
+                status=ProposalStatus.ACCEPTED,
+                value='<span style="color:red">materiały <em>prasowe</em></span>',
+            ),
+            reviewer=self.reviewer,
+        )
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.value, "materiały <em>prasowe</em>")
 
     def test_a_reviewer_edit_is_recorded_on_the_row_that_gets_committed(self):
         proposal = CopyDeskService.save_proposal(

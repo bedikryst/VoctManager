@@ -1,11 +1,18 @@
 // @ts-check
 /**
  * @file index.mjs
- * @description `npm run copy:extract` — reads `src/content/concerts.yaml` plus the two locale
- *  overlays and writes the copy desk's view of them. The output is the input to stage C2's ingest,
- *  and it is DETERMINISTIC on purpose: no timestamp, keys in reading order, so two runs over an
- *  unchanged corpus produce a byte-identical file and any difference between them is a real change
- *  to the site's text.
+ * @description `npm run copy:extract` — reads BOTH Polish corpora, `src/content/concerts.yaml` and
+ *  every `src/content/pages/<page>.yaml`, plus the four locale overlays, and writes the copy desk's
+ *  view of them. The output is the input to stage C2's ingest, and it is DETERMINISTIC on purpose:
+ *  no timestamp, keys in reading order, so two runs over unchanged corpora produce a byte-identical
+ *  file and any difference between them is a real change to the site's text.
+ *
+ *  ONE KEY SPACE, TWO WALKS. The corpora share nothing but the key space (`concert.` and `page.` are
+ *  the namespaces) and are extracted by their own modules — a list of evenings against the table in
+ *  `contract.mjs`, a page's prose against the contract in its own content module. They meet here,
+ *  and `paths` says which by SHAPE: a page's record names the file it addresses, a concert's is a
+ *  location inside `concerts.yaml` that still wants its concert's index in front of it. The write
+ *  direction has to branch on that anyway.
  *
  *  `segments` is exactly the shape `SegmentUpsertDTO` accepts — that DTO forbids extra fields, so
  *  the paths the apply script needs travel beside it in `paths` rather than inside the rows.
@@ -20,7 +27,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import YAML from "yaml";
 
 import { extractAll } from "./extract.mjs";
-import { OVERLAY_LOCALES, readOverlay } from "./overlay.mjs";
+import { extractAllPages, PAGE_SPECS, pageSource } from "./extractPages.mjs";
+import { OVERLAY_LOCALES, overlaySource, readOverlay } from "./overlay.mjs";
 
 const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SOURCE = "src/content/concerts.yaml";
@@ -47,7 +55,43 @@ export async function readConcerts() {
 }
 
 /**
- * Read the corpus, write the desk's view of it, and hand the payload back. Exported so that
+ * Both corpora's path records in one map, refusing a key they both claim. The namespaces make that
+ * impossible today, which is exactly why it is worth an assertion: a collision would mean somebody
+ * changed one of them, and the loser would be a segment the write direction addresses to the wrong
+ * file.
+ *
+ * Exported because `copy:apply` merges the same two maps to decide where a row is written, and the
+ * rule that says a key belongs to exactly one corpus has to be the same one in both directions.
+ *
+ * @param {Record<string, object>} concerts
+ * @param {Record<string, object>} pages
+ * @returns {Record<string, object>}
+ */
+export function mergePaths(concerts, pages) {
+  for (const key of Object.keys(pages)) {
+    if (key in concerts) throw new Error(`[copydesk] ${key} is claimed by both corpora.`);
+  }
+  return { ...concerts, ...pages };
+}
+
+/**
+ * An overlay value whose key has left its corpus: reported, never deleted here. `extract.mjs` and
+ * `extractPages.mjs` say why each of them keeps its own.
+ *
+ * @param {string} corpus
+ * @param {Record<string, string[]>} orphans
+ */
+function warnOrphans(corpus, orphans) {
+  for (const [locale, keys] of Object.entries(orphans)) {
+    console.warn(
+      `[copydesk] ${overlaySource(locale, corpus)} holds ${keys.length} value(s) for keys the ` +
+        `corpus no longer has: ${keys.join(", ")}`,
+    );
+  }
+}
+
+/**
+ * Read both corpora, write the desk's view of them, and hand the payload back. Exported so that
  * `copy:sync` runs the SAME extraction it then posts, rather than reading a file somebody may
  * have generated from a different tree.
  *
@@ -55,25 +99,40 @@ export async function readConcerts() {
  */
 export async function extractToFile({ out = DEFAULT_OUT, quiet = false } = {}) {
   /** @type {Record<string, Map<string, string>>} */
-  const overlays = {};
-  for (const locale of OVERLAY_LOCALES) overlays[locale] = await readOverlay(locale);
+  const concertOverlays = {};
+  /** @type {Record<string, Map<string, string>>} */
+  const pageOverlays = {};
+  for (const locale of OVERLAY_LOCALES) {
+    concertOverlays[locale] = await readOverlay(locale);
+    pageOverlays[locale] = await readOverlay(locale, { corpus: "pages" });
+  }
 
-  const { segments, paths, orphans, stats } = extractAll(await readConcerts(), overlays);
+  const concerts = extractAll(await readConcerts(), concertOverlays);
+  const pages = await extractAllPages(pageOverlays);
 
-  const payload = { source: SOURCE, stats, segments, paths };
+  const payload = {
+    sources: [SOURCE, ...PAGE_SPECS.map((spec) => pageSource(spec.id))],
+    stats: {
+      concerts: concerts.stats.concerts,
+      pages: pages.stats.pages,
+      keys: concerts.stats.keys + pages.stats.keys,
+      rows: concerts.stats.rows + pages.stats.rows,
+      translated: concerts.stats.translated + pages.stats.translated,
+    },
+    segments: [...concerts.segments, ...pages.segments],
+    paths: mergePaths(concerts.paths, pages.paths),
+  };
   await writeFile(path.join(WEB_ROOT, out), `${JSON.stringify(payload, null, 2)}\n`, "utf8");
 
   if (!quiet) {
+    const { stats } = payload;
     console.log(`[copydesk] ${out}`);
     console.log(
-      `  ${stats.concerts} concerts · ${stats.keys} keys · ${stats.rows} rows · ${stats.translated} already translated`,
+      `  ${stats.concerts} concerts · ${stats.pages} page(s) · ${stats.keys} keys · ` +
+        `${stats.rows} rows · ${stats.translated} already translated`,
     );
-    for (const [locale, keys] of Object.entries(orphans)) {
-      console.warn(
-        `[copydesk] concerts.${locale}.yaml holds ${keys.length} value(s) for keys the corpus no ` +
-          `longer has: ${keys.join(", ")}`,
-      );
-    }
+    warnOrphans("concerts", concerts.orphans);
+    warnOrphans("pages", pages.orphans);
   }
   return payload;
 }

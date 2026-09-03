@@ -22,28 +22,11 @@
  * @module copydesk/extract
  */
 
-import { CONCERT_CONTRACT, SITE_LOCALES } from "./contract.mjs";
-
-/** Mirrors `KEY_PATTERN` in `backend/copydesk/models.py`, which is the source of truth. */
-const KEY_PATTERN = /^[a-z][a-z0-9]*(?:\.[A-Za-z0-9_-]+)+$/u;
-
-/** Mirrors the ceilings in `backend/copydesk/dtos.py`, so a rejected row is caught here first. */
-const MAX_VALUE_LENGTH = 20_000;
-const MAX_LABEL_LENGTH = 200;
+import { CONCERT_CONTRACT } from "./contract.mjs";
+import { guardSegments, localeRows, TEXT } from "./segment.mjs";
 
 /** The namespace every concert key opens with; the first two parts are the scope. */
 const NAMESPACE = "concert";
-
-/**
- * @typedef {object} Segment
- * @property {string} key
- * @property {string} locale
- * @property {string} kind
- * @property {string} value
- * @property {string} scope_label
- * @property {string} label
- * @property {number} order
- */
 
 /**
  * @typedef {object} SegmentPath
@@ -51,10 +34,8 @@ const NAMESPACE = "concert";
  * @property {"plain"|"map"} shape
  */
 
-/**
- * @typedef {Partial<Record<string, Map<string, string>>>} Overlays The translations the repository
- *  holds, per locale, keyed by segment key.
- */
+/** @typedef {import("./segment.mjs").Overlays} Overlays */
+/** @typedef {import("./segment.mjs").Segment} Segment */
 
 /**
  * Walk a dotted path, returning the value and the concrete location it was found at.
@@ -87,32 +68,6 @@ function resolve(root, path, base = []) {
 function asCopy(value, key) {
   if (typeof value === "string") return value.length > 0 ? value : null;
   throw new Error(`[copydesk] ${key}: expected a string in a copy slot, found ${typeof value}.`);
-}
-
-/**
- * One key in all three locales. Polish carries the corpus's value; the other two carry whatever the
- * overlay holds for that key, which is an empty string until somebody translates it — the desk
- * needs the empty column in order to offer it for editing.
- *
- * @param {object} args
- * @param {string} args.key
- * @param {string} args.plValue
- * @param {Overlays} args.overlays
- * @param {string} args.scopeLabel
- * @param {string} args.label
- * @param {number} args.order
- * @returns {Segment[]}
- */
-function localeRows({ key, plValue, overlays, scopeLabel, label, order }) {
-  return SITE_LOCALES.map((locale) => ({
-    key,
-    locale,
-    kind: "TEXT",
-    value: locale === "pl" ? plValue : (overlays[locale]?.get(key) ?? ""),
-    scope_label: scopeLabel,
-    label,
-    order,
-  }));
 }
 
 /**
@@ -191,7 +146,10 @@ export function extractConcert(concert, overlays = {}) {
     if (plValue === null) return;
 
     if (entry.shape === "map") refuseStrayTranslation(concert, key, hit.at);
-    segments.push(...localeRows({ key, plValue, overlays, scopeLabel, label, order }));
+    // Every value in this corpus is plain text — `grep` finds no `<em>`, `<strong>` or `<a>`
+    // anywhere in `concerts.yaml`. Inline markup enters the desk through the static pages, whose
+    // extractor takes the kind from the field's name instead.
+    segments.push(...localeRows({ key, kind: TEXT, plValue, overlays, scopeLabel, label, order }));
     paths[key] = { pl: hit.at, shape: entry.shape ?? "plain" };
     order += 1;
   };
@@ -228,9 +186,8 @@ export function extractConcert(concert, overlays = {}) {
 }
 
 /**
- * Extract the whole corpus, and refuse to hand back anything the backend would reject: a key the
- * pattern does not accept, a duplicate key, a value or label over the DTO's ceiling. Every one of
- * those is cheaper to find here than as a 400 in the middle of an ingest run.
+ * Extract the whole corpus, and refuse to hand back anything the backend would reject: a duplicate
+ * key here, and everything `guardSegments` names.
  *
  * @param {Record<string, unknown>[]} concerts
  * @param {Overlays} [overlays]
@@ -251,19 +208,7 @@ export function extractAll(concerts, overlays = {}) {
     Object.assign(paths, one.paths);
   }
 
-  for (const segment of segments) {
-    if (!KEY_PATTERN.test(segment.key)) {
-      throw new Error(`[copydesk] key rejected by KEY_PATTERN: ${segment.key}`);
-    }
-    if (segment.value.length > MAX_VALUE_LENGTH) {
-      throw new Error(
-        `[copydesk] ${segment.key} [${segment.locale}] is ${segment.value.length} characters; the DTO stops at ${MAX_VALUE_LENGTH}.`,
-      );
-    }
-    if (segment.label.length > MAX_LABEL_LENGTH || segment.scope_label.length > MAX_LABEL_LENGTH) {
-      throw new Error(`[copydesk] ${segment.key}: label over ${MAX_LABEL_LENGTH} characters.`);
-    }
-  }
+  guardSegments(segments);
 
   // An overlay value whose key has left the corpus. Reported rather than deleted: the same
   // positional keying that makes an inserted programme entry re-key its neighbours (§6d) would
