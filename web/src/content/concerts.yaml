@@ -1011,6 +1011,38 @@
         stoi przy dziewczynie.
 
         Dana, dana… na na…
+      # The only sung text in the corpus whose original is Polish, so its vernacular gloss
+      # repeats it verbatim. The slot exists because a gloss is "this text in the reader's
+      # language", and an English or French reader needs one here exactly as a Polish reader
+      # needs one under a Latin incipit; the page prints a gloss identical to its original only
+      # once (glossFor, i18n/config.ts).
+      textGloss:
+        pl: |-
+          Stoi lód na Prośnie,
+          stoi koło młyna —
+          pięć lat tu przychodzi
+          z Podzamcza dziewczyna.
+
+          Stoi dziewcze, kwili,
+          w dłoniach fular skrywa,
+          Święty Roch na sumę
+          ku pociesze wzywa.
+
+          Oj dana, oj dana…
+
+          Stoi młyn, lecz któż ma
+          koło rozklekotać?
+          Nie ma mąki, nie ma
+          i nie będzie chleba.
+
+          Dana, dana… na na, na na…
+
+          Stoi lód na Prośnie,
+          czas pod lodem płynie,
+          a Jan Nepomucen
+          stoi przy dziewczynie.
+
+          Dana, dana… na na…
     - composer: "Ken Steven"
       years: "ur. 1993"
       work: "Dawn and Dusk"

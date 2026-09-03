@@ -1,0 +1,14 @@
+# concert.bobola — EN draft (stage E). Same flat shape as the overlay it will become.
+# Not the overlay: `npm run copy:propose --locale en` carries these in as proposals, which is the
+# only door that stamps the provenance hash the stale state is computed from.
+
+concert.bobola.about.blurb: "Music for the liturgy on the centenary of the Polish Jesuit provinces, at a Mass celebrated by Archbishop Adrian Galbas with a homily by Fr Arturo Sosa SJ."
+concert.bobola.about.place: "National Shrine of St Andrew Bobola · Warsaw"
+concert.bobola.essence: "Here the music served the liturgy. On the centenary of both Polish provinces of the Society of Jesus, the singing took its place within the rite, presided over by Archbishop Adrian Galbas, with the homily preached by Fr Arturo Sosa SJ."
+concert.bobola.facts.0: "Warsaw"
+concert.bobola.facts.1: "16 May 2026"
+concert.bobola.facts.2: "Centenary of the Jesuit provinces"
+concert.bobola.links.0.label: "Broadcast of the Mass ↗"
+concert.bobola.links.1.label: "Photo report (Episkopat) ↗"
+concert.bobola.metaPlace: "National Shrine of St Andrew Bobola, Warsaw"
+concert.bobola.title: "The Solemnity of St Andrew Bobola"

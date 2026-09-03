@@ -544,14 +544,25 @@ class CopyDeskService:
         current_hashes = cls.effective_source_hashes({s.key for s in segments})
         seen_at = getattr(getattr(user, "profile", None), "copy_desk_seen_at", None)
 
+        # The two figures answer different questions, which is why one counts
+        # everybody's proposals and the other only the reader's. TOUCHED is a
+        # state the page is in — work standing on it right now, whoever is doing
+        # it — and an editor who cannot see that a colleague is mid-way through a
+        # page loses a real fact. ACCEPTED is a verdict, and a verdict is feedback
+        # to the person whose words were settled; somebody else's, once written
+        # into the repository, is simply the text the site holds. Without the
+        # split, a bulk translation import — one accepted proposal per cell —
+        # would report a permanent "142 accepted" on every page of the corpus,
+        # against work the reader never did and cannot act on.
+        viewer_id = getattr(user, "id", None)
         touched_ids: set[UUID] = set()
         accepted_ids: set[UUID] = set()
-        for segment_id, proposal_status in CopyProposal.objects.values_list(
-            "segment_id", "status"
+        for segment_id, proposal_status, author_id in CopyProposal.objects.values_list(
+            "segment_id", "status", "author_id"
         ):
             if proposal_status in OPEN_STATUSES:
                 touched_ids.add(segment_id)
-            elif proposal_status == ProposalStatus.ACCEPTED:
+            elif proposal_status == ProposalStatus.ACCEPTED and author_id == viewer_id:
                 accepted_ids.add(segment_id)
 
         summaries: dict[str, _ScopeCounts] = {}

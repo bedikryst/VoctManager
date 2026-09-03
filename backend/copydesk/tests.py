@@ -736,6 +736,40 @@ class ContentsListTests(TestCase):
         self.assertEqual(summary.accepted, 1)
         self.assertEqual(summary.stale, 1)
 
+    def test_someone_elses_verdict_is_not_my_work(self):
+        """`touched` is a state the page is in; `accepted` is feedback to an author.
+
+        Without the split a bulk translation import — one accepted proposal per
+        cell — would report a permanent count of decisions against every page,
+        for work this reader never did.
+        """
+        florent = make_user("florent@example.com", editor=True)
+        ania = make_user("ania@example.com", editor=True)
+        reviewer = make_user("dev@example.com", staff=True)
+        essence = make_segment("concert.wcielenie.essence", SiteLocale.POLISH, "Treść")
+        about = make_segment(
+            "concert.wcielenie.about", SiteLocale.POLISH, "O koncercie", order=1
+        )
+
+        hers = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=essence.id, value="Jej treść"),
+            author=ania,
+        )
+        CopyDeskService.review_proposal(
+            proposal_id=hers.id,
+            dto=ProposalReviewDTO(status=ProposalStatus.ACCEPTED),
+            reviewer=reviewer,
+        )
+        CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=about.id, value="Jej druga myśl"),
+            author=ania,
+        )
+
+        summary = CopyDeskService.scope_summaries(user=florent)[0]
+        self.assertEqual(summary.accepted, 0)
+        self.assertEqual(summary.touched, 1)
+        self.assertEqual(CopyDeskService.scope_summaries(user=ania)[0].accepted, 1)
+
 
 class ReviewQueueTests(TestCase):
     """The reviewer's read: what is waiting anywhere, and what has been decided

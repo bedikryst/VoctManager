@@ -1,0 +1,201 @@
+# concert.wcielenie — EN draft (stage E, pass 1).
+# `= original` means the sung text is already English: `copy:propose` fills the slot from the
+# corpus and the page prints the pair only once (glossFor).
+# The three about/title values are copied verbatim from concerts.en.yaml so this file is the whole
+# page; `copy:propose` reports them as already in the repository.
+
+concert.wcielenie.title: "Contemplation of the Incarnation"
+concert.wcielenie.metaPlace: "Sacred Heart Basilica, Kraków"
+concert.wcielenie.inscriptioGloss: "And there shall come forth a rod out of the stem of Jesse"
+concert.wcielenie.essence: "An attempt to enter the mystery of the Incarnation: from Isaiah's prophecy to the Canticle of Simeon, in music from Sandström to Monteverdi."
+concert.wcielenie.facts.0: "4 / 8 / 12 voices"
+concert.wcielenie.facts.1: "Renaissance — 21st century"
+concert.wcielenie.facts.2: "The cycle's debut"
+
+concert.wcielenie.prologue: "The twentieth of January, evening, the Basilica of the Sacred Heart of Jesus in Kraków. Twenty days after the ensemble came into being. Before the first sound, Fr Jarek Naliwajko SJ leads the audience into the mystery of the Incarnation."
+
+concert.wcielenie.verbum.speaker: "Fr Jarek Naliwajko SJ"
+concert.wcielenie.verbum.quote: "Uncovering a mystery always ends the same way. It leads to another mystery. Otherwise it is not a mystery at all, but knowledge, or routine."
+concert.wcielenie.verbum.text: |-
+  Good evening, and God bless you. I warmly welcome everyone who has come to our church,
+  to the Basilica of the Sacred Heart of Jesus.
+
+  Ladies and gentlemen, this evening, with this inaugural concert, the performers wish to
+  invite us into the still unsettling world of the spirit — a world which urges the
+  performers themselves, the authors of tonight's meeting, towards a kind of inner
+  movement, towards casting that disquiet out of themselves: that is, towards the
+  necessity of telling of the mystery of the spirit.
+
+  Because for the time being — that is, for some two hundred thousand years — humanity has
+  come up with no better word for that intriguing part of our own immersion in time, the
+  part we have never fully recognised. No better word than spirit has been invented. They
+  want to let us in on a mystery. And yet uncovering a mystery always ends the same way.
+  It leads to another mystery. Otherwise it is not a mystery at all, but knowledge, or
+  routine — so adored by some, and so often mistaken for life.
+
+  But let us begin with the poster for tonight's concert; it should be showing on our
+  screens. A cobalt ground, and across it white rays spreading outwards — do notice this —
+  or else converging inwards, rays made of letters that form words. They are converging or
+  departing, or arriving, but the direction is the viewer's to decide, because in life one
+  either descends towards the centre or goes out, moves away from the centre, in which
+  there is nothing but that very cobalt or indigo ground behind a small white spot — as on
+  this poster.
+
+  And these three colours are associated with the symbol of the highest spirituality — in
+  Indian anthropology, for instance: indigo is the highest chakra, the one that joins us to
+  the spirit of the universe, just as white does in our own tradition, where it belongs to
+  the Absolute. Following that thread further: indigo and cobalt were used to dye royal
+  robes, and so the robes of the anointed of God.
+
+  Democracy — unfortunately and fortunately — has made us all equal; though what has really
+  done it is the routine of democracy, or rather: democracy is routine. Tonight, however,
+  the performers wish to lead us out of the comfort of the everyday, in which routine has
+  taken us over and given us an illusory sense of safety, of a certain equality — because
+  routine is surely the sister of forgetting the world of the spirit.
+
+  The performers are proposing that we meet the Incarnation once again. They lead us out of
+  routine in order to lead us into the Incarnation. And yet in the moment I speak that word
+  and it turns into a sound wave, I strip the Incarnation of all its boundlessness. It
+  becomes apparently comprehensible, and by that entirely untrue — blurred, certainly,
+  because it has been stripped of its mystery. The Incarnation flows out and flows in at
+  once — like those rays on the poster: from the source it flows out to us, and with us it
+  flows back into the centre.
+
+  A spiritual concert — for that is the subtitle its authors have given to this whole cycle,
+  of which we too will be not only witnesses but, in some sense, makers — is the first
+  scene. Tonight is nothing other than a meeting with oneself, if only we consent to that
+  inner movement of ours, and so discover that we are not alone, neither within ourselves
+  nor around us, and that fullness is trying to find an utterance which crosses boundaries
+  rather than blurring them, and finds it precisely through music.
+
+  And finally, a request from the performers: please do not applaud during the programme.
+  We give ourselves over entirely to a suspension of awareness and let ourselves be moved
+  only as the waves of a boundless ocean are moved. We listen, and let nothing in us be
+  active but our attentiveness to the spirit. And so let us welcome tonight's performers.
+concert.wcielenie.verbum.bridge: "Then the murmur dies away, and out of the winter half-light Sandström's rose rises."
+
+concert.wcielenie.reflection: "The Incarnation is something unutterable, which with the passing of time often becomes ordinary to us. When we grasp what this mystery means, we can recover our sense of God's presence in our lives."
+concert.wcielenie.reflectionAttribution: "Florent de Bazelaire · 20 January 2024"
+
+concert.wcielenie.programLede: "Ten glances and an encore"
+concert.wcielenie.programArc: "The order is part of the composition here. The evening runs like the history of salvation: from the rod of Isaiah's prophecy, through the shepherds' night watch and Gallus's Advent trumpet, to the birth itself. Then a Marian contemplation, and after it a sudden shadow: a mother's lullaby over a child condemned by Herod. The Canticle of Simeon closes it in the temple: “mine eyes have seen thy salvation”. This is the fulfilment of the promise the programme began with; from here there is only praise, and the joy of the encore."
+
+concert.wcielenie.movements.prophetia.gloss: "Prophecy"
+concert.wcielenie.movements.prophetia.line: "Before a word is said of the Child, the promise sounds: a rod from the stem of Jesse, the shepherds' cry in the night, the Advent trumpet announcing the coming."
+concert.wcielenie.movements.nativitas.gloss: "Nativity"
+concert.wcielenie.movements.nativitas.line: "The Child comes. Around him gathers his Mother's contemplation: Renaissance Spain and a Polish carol."
+concert.wcielenie.movements.umbra.gloss: "Shadow"
+concert.wcielenie.movements.umbra.line: "Just after the birth a shadow falls: a mother's lullaby over a child Herod has condemned."
+concert.wcielenie.movements.umbra.interlude.gloss: "In Rama was there a voice heard, lamentation and great mourning: Rachel weeping for her children."
+concert.wcielenie.movements.impletio.gloss: "Fulfilment"
+concert.wcielenie.movements.impletio.line: "In the temple Simeon takes the Child in his arms: “mine eyes have seen thy salvation”. The promise from the start of the evening is fulfilled."
+concert.wcielenie.movements.laus.gloss: "Praise"
+concert.wcielenie.movements.laus.line: "All that remains is a new song and joy: Christ is born."
+
+concert.wcielenie.program.0.inscriptioGloss: "And there shall come forth a rod out of the stem of Jesse"
+concert.wcielenie.program.0.note: "A German carol from the end of the sixteenth century (Trier, 1587), first printed in a Jesuit hymnal from Speyer (1599). Its twenty-three stanzas run through the whole of sacred history, from Isaiah's prophecy to the adoration of the Magi: the very road this programme is about to travel. In English it is known as “Lo, how a rose e'er blooming”, in Theodore Baker's translation of 1894. Sandström weaves the old chorale around a quartet of soloists floating above it."
+concert.wcielenie.program.0.textGloss: |-
+  Lo, how a rose e'er blooming
+  from tender stem hath sprung,
+  of Jesse's lineage coming
+  as men of old have sung.
+  It came, a flow'ret bright,
+  amid the cold of winter,
+  when half spent was the night.
+
+concert.wcielenie.program.1.inscriptioGloss: "Shepherds keeping watch over their flock by night"
+concert.wcielenie.program.1.note: "The cry of shepherds keeping watch over their flock by night. In Vivancos it is a lost melody of solitude which, listening into the “echo of silence”, is transformed into beauty. Twelve voices written out across the whole space of the nave."
+
+concert.wcielenie.program.2.inscriptioGloss: "Blow the trumpet in Zion · Behold, God our Saviour shall come"
+concert.wcielenie.program.2.note: "An Advent motet for five voices on words of the prophet Zechariah. The Renaissance counterpoint of Gallus, a Slovene from the circle of imperial music, announces the coming like the sound of a horn: “Behold, God our Saviour shall come”."
+concert.wcielenie.program.2.textGloss: |-
+  Blow the trumpet in Zion, call the nations,
+  proclaim it to the peoples and say:
+  Behold, God our Saviour shall come.
+  Proclaim it and make it known,
+  speak and cry aloud:
+  Behold, God our Saviour shall come.
+
+concert.wcielenie.program.3.inscriptioGloss: "text: H. M. MacGill (1876)"
+concert.wcielenie.program.3.note: "A simple contemporary carol for four voices, to a poem by H. M. MacGill of 1876. After the prophecies comes the birth itself."
+
+concert.wcielenie.program.4.inscriptioGloss: "Gracious Mother of the Redeemer · Marian antiphon"
+concert.wcielenie.program.4.note: "The Marian antiphon of Advent, sung from 1 December to 2 February. Victoria's motet for eight voices: eight independent lines hold a dialogue akin to the Venetian coro spezzato, although the composer himself left no instruction about placing the choir in space."
+
+concert.wcielenie.program.5.inscriptioGloss: "O most glorious of virgins"
+concert.wcielenie.program.5.note: "Penderecki wrote this piece in 2009 for the seventieth birthday of José Antonio Abreu, founder of Venezuela's El Sistema. It was first performed in Caracas under the composer's own baton; the Polish premiere followed a few days later."
+
+concert.wcielenie.program.6.inscriptioGloss: "a contemporary arrangement of a Polish carol"
+concert.wcielenie.program.6.note: "A Polish carol arranged by Mariusz Kramarz: a native voice in this international programme, immediately after the contemporary nativity."
+
+concert.wcielenie.program.7.inscriptioGloss: "a mother's lullaby for a condemned child · Mt 2:16"
+concert.wcielenie.program.7.note: "The Coventry Carol comes from the sixteenth-century mystery play of the Shearmen and Tailors. It is a lullaby sung from the mother's side over a condemned child: the shadow that falls across the stable immediately after the birth. Stopford clothed it in cool contemporary harmony in 2008."
+concert.wcielenie.program.7.textGloss: "= original"
+
+concert.wcielenie.program.8.inscriptioGloss: "Lord, now lettest thou thy servant depart in peace · the Canticle of Simeon"
+concert.wcielenie.program.8.note: "The Canticle of Simeon from the Presentation in the temple: “mine eyes have seen thy salvation”. In Pärt, in his tintinnabuli, it is the fulfilment of the promise the evening began with; the old man may depart in peace."
+concert.wcielenie.program.8.textGloss: |-
+  Lord, now lettest thou thy servant depart in peace,
+  according to thy word.
+  For mine eyes have seen thy salvation,
+  which thou hast prepared before the face of all people;
+  to be a light to lighten the Gentiles,
+  and to be the glory of thy people Israel.
+
+concert.wcielenie.program.9.inscriptioGloss: "O sing unto the Lord a new song"
+concert.wcielenie.program.9.note: "A motet for six voices, published in 1620 in a collection by Giulio Cesare Bianchi. A joyful triple metre opens it: four voices first, then at once the full six. It runs through interwoven verses of Psalms 96 and 98 — a call to a new song whose joy is audible in the texture itself."
+
+concert.wcielenie.program.10.inscriptioGloss: "Rejoice! Christ is born"
+concert.wcielenie.program.10.note: "A carol from the Finnish-Swedish collection of sacred songs Piae Cantiones (1582), arranged by Brian Kay. Joy as an encore: “Christ is born”, the last word of the evening."
+concert.wcielenie.program.10.textGloss: |-
+  Rejoice, rejoice! Christ is born
+  of the Virgin Mary, rejoice!
+
+  The time of grace has come
+  that we have longed for;
+  let us render songs of joy
+  in devotion.
+
+  God is made man,
+  and nature marvels;
+  the world is renewed
+  by Christ the King.
+
+  The closed gate of Ezekiel
+  has been passed through;
+  whence the light has risen,
+  there salvation is found.
+
+  Therefore let our assembly
+  sing now in brightness;
+  let it bless the Lord:
+  honour to our King.
+
+concert.wcielenie.credits.0.role: "Conductor"
+concert.wcielenie.credits.1.role: "Introductory word"
+
+concert.wcielenie.roster.groups.0.voice: "Sopranos"
+concert.wcielenie.roster.groups.1.voice: "Altos"
+concert.wcielenie.roster.groups.2.voice: "Tenors"
+concert.wcielenie.roster.groups.3.voice: "Basses"
+concert.wcielenie.roster.groups.4.voice: "Solo quartet"
+concert.wcielenie.roster.groups.4.detail: "The quartet floating above the chorale in Es ist ein Ros' entsprungen; in Le cri des bergers it completes the twelve voices."
+concert.wcielenie.roster.note: "Neither the performers nor the organisers took a fee for this evening; the debut was supported by a public collection raised around the newly formed ensemble."
+
+concert.wcielenie.video.caption: "Selected excerpts from “Contemplation of the Incarnation” · VoctEnsemble 2024"
+
+concert.wcielenie.gallery.kd-wcielenie-0.alt: "VoctEnsemble rehearsing for Contemplation of the Incarnation"
+concert.wcielenie.gallery.kd-wcielenie-1.alt: "VoctEnsemble rehearsing for Contemplation of the Incarnation"
+concert.wcielenie.gallery.kd-wcielenie-2.alt: "VoctEnsemble rehearsing for Contemplation of the Incarnation"
+concert.wcielenie.gallery.kd-wcielenie-3.alt: "VoctEnsemble performing Contemplation of the Incarnation in the Sacred Heart Basilica"
+concert.wcielenie.gallery.kd-wcielenie-4.alt: "VoctEnsemble performing Contemplation of the Incarnation in the Sacred Heart Basilica"
+concert.wcielenie.gallery.kd-wcielenie-5.alt: "The nave during VoctEnsemble's Contemplation of the Incarnation in the Sacred Heart Basilica"
+concert.wcielenie.gallery.kd-wcielenie-6.alt: "VoctEnsemble performing Contemplation of the Incarnation in the Sacred Heart Basilica"
+concert.wcielenie.gallery.kd-wcielenie-7.alt: "VoctEnsemble after Contemplation of the Incarnation in the Sacred Heart Basilica"
+concert.wcielenie.gallery.kd-wcielenie-8.alt: "VoctEnsemble after Contemplation of the Incarnation in the Sacred Heart Basilica"
+
+concert.wcielenie.posterAlt: "Poster for the concert Contemplation of the Incarnation"
+concert.wcielenie.realizacja: "Production: Ars Sonora Studio"
+
+concert.wcielenie.about.place: "Sacred Heart Basilica · Kraków"
+concert.wcielenie.about.blurb: "The debut of the Spiritual Concerts cycle: Renaissance, Baroque and the present day arranged around the mystery of the Nativity and the Incarnation."

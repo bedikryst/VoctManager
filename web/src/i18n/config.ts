@@ -31,6 +31,30 @@ export function pickLocale(text: LocalizedText, locale: Locale): string {
   return text[locale] ?? text.pl;
 }
 
+/**
+ * The gloss to print beside a sung original, or `null` when there is nothing to print.
+ *
+ * A gloss is the sung text IN THE READER'S LANGUAGE, so it collapses into the original whenever
+ * the two are the same language — thirteen of this corpus's forty-two sung texts are English
+ * already, and one ("Stoi lód na Prośnie") is Polish. The slot is filled in every locale
+ * regardless, because an empty one falls back to Polish and would print a Polish stanza under an
+ * English original; it is the PAGE that decides not to say the same thing twice.
+ *
+ * Compared on collapsed whitespace: the original and its gloss are hand-wrapped block scalars
+ * written at different times, and a line break is not a difference in what was sung.
+ */
+export function glossFor(
+  original: string | undefined,
+  gloss: LocalizedText | undefined,
+  locale: Locale,
+): string | null {
+  if (!gloss) return null;
+  const value = pickLocale(gloss, locale);
+  if (!value.trim()) return null;
+  const flatten = (text: string) => text.replace(/\s+/gu, " ").trim();
+  return original && flatten(original) === flatten(value) ? null : value;
+}
+
 /** Canonical origin — the single owner of the production URL for build-time absolute links
  *  (canonical, og:url, hreflang, JSON-LD @id). Mirrors astro.config `site`; import this rather
  *  than re-hardcoding the host in every page component. */

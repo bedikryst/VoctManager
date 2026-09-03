@@ -9,6 +9,10 @@ dist-verify/
 # regenerated on demand and ingested over the API, so committing it would put the same text in
 # git twice and double the diff on every copy change.
 copydesk/segments.json
+# Rendered brand-animation masters (`npm run rite:render`) — ProRes/PNG sequences in the
+# hundreds of MB, regenerated from rite.html on demand and handed to video collaborators
+# out-of-band. The SOURCE (rite/rite.html, rite/render.mjs) is committed; its output is not.
+rite/out/
 # deps
 node_modules/
 # env & local

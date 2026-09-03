@@ -34,7 +34,7 @@ import { absolute, musicEvent } from "../../lib/eventSchema";
 import { videoAsset, videoAssetAv1 } from "../../lib/videos";
 import { longDate } from "../../lib/dates";
 import { formatRef } from "../../lib/scriptureRef";
-import { pickLocale, type Locale } from "../../i18n/config";
+import { glossFor, pickLocale, type Locale } from "../../i18n/config";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
 import { ImageLightbox } from "../../islands/landing/ImageLightbox";
 import { VideoPlayer } from "../../islands/landing/video/VideoPlayer";
@@ -155,6 +155,21 @@ const conductorCredit = c.credits.find((cr) => /dyrygent/i.test(cr.role));
 // lives in the returns rather than in the work rows — prints its text. The provenance line hangs
 // off this, so a clasp-only page must still own up to where its texts come from.
 const hasText = c.program.some((p) => p.text || p.textGloss || p.claspText || p.claspTextGloss);
+
+// ── A gloss is the sung text in the READER'S language, so it collapses into the original wherever
+// the two are already the same one: thirteen of the corpus's sung texts are English and one is
+// Polish. Their slots are still filled in every locale — an empty one falls back to Polish and
+// would print a Polish stanza under an English original — so it is the page that declines to say
+// the same thing twice. Resolved once per work, since each row asks about it three times.
+const sungGloss = new Map(
+  c.program.map((p) => [
+    p,
+    {
+      text: glossFor(p.text, p.textGloss, lang),
+      clasp: glossFor(p.claspText, p.claspTextGloss, lang),
+    },
+  ]),
+);
 
 // ── `realizacja` is a free-text credit line owned by the /koncerty listing, and each evening fills
 // it with whatever extra hand it had: "Realizacja: Ars Sonora Studio", "Skrzypce: Radu Ropotan",
@@ -635,15 +650,22 @@ const jsonLd =
                       </p>
                     )}
                     {p.note && <p class="kd-program-note-work">{p.note}</p>}
-                    {(p.text || p.textGloss) && (
+                    {(p.text || sungGloss.get(p)?.text) && (
                       <details class="kd-text">
                         <summary>
                           <span class="kd-text-cue">Tekst i przekład</span>
                           <span class="kd-text-icon" aria-hidden="true"></span>
                         </summary>
-                        <div class:list={["kd-text-cols", { "is-single": !(p.text && p.textGloss) }]}>
+                        <div
+                          class:list={[
+                            "kd-text-cols",
+                            { "is-single": !(p.text && sungGloss.get(p)?.text) },
+                          ]}
+                        >
                           {p.text && <p class="kd-text-orig">{p.text}</p>}
-                          {p.textGloss && <p class="kd-text-pl">{pickLocale(p.textGloss, lang)}</p>}
+                          {sungGloss.get(p)?.text && (
+                            <p class="kd-text-pl">{sungGloss.get(p)?.text}</p>
+                          )}
                         </div>
                       </details>
                     )}
@@ -653,11 +675,16 @@ const jsonLd =
                         it brings words back (9 Kart — Psalm 51 returning between the psalms). It is
                         content either way, so it stays in the accessibility tree. */}
                     {p.clasp && (
-                      <li class:list={["kd-clasp", { "is-sung": p.claspText || p.claspTextGloss }]}>
+                      <li
+                        class:list={[
+                          "kd-clasp",
+                          { "is-sung": p.claspText || sungGloss.get(p)?.clasp },
+                        ]}
+                      >
                         <span class="kd-clasp-rule reveal"><span>{p.clasp}</span></span>
                         {p.claspText && <p class="kd-clasp-lat reveal">{p.claspText}</p>}
-                        {p.claspTextGloss && (
-                          <p class="kd-clasp-pl reveal" data-d="1">{pickLocale(p.claspTextGloss, lang)}</p>
+                        {sungGloss.get(p)?.clasp && (
+                          <p class="kd-clasp-pl reveal" data-d="1">{sungGloss.get(p)?.clasp}</p>
                         )}
                       </li>
                     )}

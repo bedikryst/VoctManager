@@ -1,0 +1,192 @@
+# concert.9-kart — EN draft (stage E, pass 1).
+# Psalm texts follow the Book of Common Prayer psalter (Coverdale) — the psalter Gibbons himself
+# set, and the one piece on this page printed in its own English. `= original` marks the two works
+# whose sung text is already English. `title` and `about.*` are copied from concerts.en.yaml.
+
+concert.9-kart.title: "Nine Leaves from the Book of Psalms"
+concert.9-kart.metaPlace: "Rybnik · Łódź · Sacred Heart Basilica, Kraków"
+concert.9-kart.dateLabel: "2024"
+concert.9-kart.inscriptioGloss: "Have mercy upon me, O God, after thy great goodness"
+concert.9-kart.essence: "A psalm is the place where one need not simplify oneself before God. Allegri's Miserere, divided into nine parts, was wound around the whole evening; between its penitential stanzas came psalms of thanksgiving, of wisdom and of joy in turn."
+concert.9-kart.facts.0: "9 psalms"
+concert.9-kart.facts.1: "6 / 8 / 9 / 12 voices"
+concert.9-kart.facts.2: "The Miserere as a clasp"
+
+concert.9-kart.prologue: "The sixteenth of November 2024, the Sacred Heart Basilica in Kraków. The third evening of this programme, after Rybnik and Łódź. Before the first sound, Fr Przemysław Wysogląd SJ sets out the context of the psalms, and Ada Bystrzycka's light sculpts the space. The ensemble asks for one thing: not to applaud the individual pieces, and to keep the silence between them."
+
+concert.9-kart.reflectionNote: "The Psalter lays feelings side by side: a complaint next to a thanksgiving, a plea for mercy next to a summons to dance. The nine leaves of this evening were chosen for exactly that span, and clasped together by one penitential prayer that returns nine times."
+
+concert.9-kart.programLede: "Nine psalms, entwined with the Miserere"
+concert.9-kart.programArc: "Beside the list of works the ensemble added two words: “order matters”. The evening begins with penitence — Allegri's Miserere, Psalm 51 — and immediately interrupts it: the psalm is cut into nine parts, and between them come glory, wisdom, the law, joy, the throne, thanksgiving and a new song, each in turn. The penitent will not finish his prayer until every other voice of the Psalter has sounded; only after the last does he return for the ninth time and say it to the end. As in a life, in which sorrow and joy are interwoven."
+
+concert.9-kart.program.0.inscriptioGloss: "Have mercy upon me, O God, after thy great goodness"
+concert.9-kart.program.0.note: "A penitential psalm sung in the Sistine Chapel at Tenebrae in Holy Week. The Vatican guarded this music: taking a copy out carried the threat of excommunication, and the soloists' ornamented lines were passed on by ear, from one generation to the next. The fourteen-year-old Mozart heard it in 1770 and wrote it down from memory. Here the work is divided into nine parts which wind around the other psalms: a five-voice choir leads verse by verse, and four soloists answer it from a distance — hence the echo."
+concert.9-kart.program.0.clasp: "Miserere — part I"
+concert.9-kart.program.0.claspTextGloss: |-
+  Have mercy upon me, O God, after thy great goodness:
+  according to the multitude of thy mercies do away mine offences.
+  Wash me throughly from my wickedness:
+  and cleanse me from my sin.
+
+concert.9-kart.program.1.inscriptioGloss: "O praise the Lord, all ye nations"
+concert.9-kart.program.1.note: "Psalm 117 is the shortest in the whole Psalter: two verses, a summons addressed to all the nations. Lassus — a Fleming attached from 1556 to the Bavarian court in Munich, and the author of more than two thousand works — set them for twelve voices in choirs that answer one another: the shortest text of the evening is given its largest forces. After the first part of the Miserere the penitent falls silent, and the whole earth speaks."
+concert.9-kart.program.1.textGloss: |-
+  O praise the Lord, all ye nations:
+  praise him, all ye peoples.
+  For his merciful kindness is ever more and more towards us:
+  and the truth of the Lord endureth for ever.
+concert.9-kart.program.1.clasp: "Miserere — part II"
+concert.9-kart.program.1.claspTextGloss: |-
+  For I acknowledge my faults:
+  and my sin is ever before me.
+  Against thee only have I sinned, and done this evil in thy sight:
+  that thou mightest be justified in thy saying, and clear when thou art judged.
+
+concert.9-kart.program.2.inscriptioGloss: "The mouth of the righteous is exercised in wisdom"
+concert.9-kart.program.2.note: "A gradual written for Ignaz Traumihler, choirmaster of the abbey of St Florian — the abbey in whose crypt, beneath the organ, Bruckner later asked to be buried. The composer set himself a rule as strict as the law the psalm speaks of: not one sharp, not one flat, no seventh chords, everything in the pure Lydian mode. He boasted of it to Traumihler in a letter. After the second part of the Miserere, in which the penitent acknowledges his fault, comes the portrait of a righteous man."
+concert.9-kart.program.2.textGloss: |-
+  The mouth of the righteous is exercised in wisdom:
+  and his tongue will be talking of judgement.
+  The law of his God is in his heart:
+  and his goings shall not slide.
+  Alleluia.
+concert.9-kart.program.2.clasp: "Miserere — part III"
+concert.9-kart.program.2.claspTextGloss: |-
+  Behold, I was shapen in wickedness:
+  and in sin hath my mother conceived me.
+  But lo, thou requirest truth in the inward parts:
+  and shalt make me to understand wisdom secretly.
+
+concert.9-kart.program.3.inscriptioGloss: "Blessed are those that are undefiled in the way"
+concert.9-kart.program.3.note: "Psalm 119 is the longest in the Psalter: a hundred and seventy-six verses about the Law of God. Stanford takes one of them, the first. The motet was written for the choir of Trinity College, Cambridge, where the composer was organist, and appeared in 1905 in a set of three Latin motets. Six voices divide into two groups of three which hand the same phrase to one another; the way the psalm speaks of can be heard here."
+concert.9-kart.program.3.textGloss: |-
+  Blessed are those that are undefiled in the way:
+  and walk in the law of the Lord.
+concert.9-kart.program.3.clasp: "Miserere — part IV"
+concert.9-kart.program.3.claspTextGloss: |-
+  Thou shalt purge me with hyssop, and I shall be clean:
+  thou shalt wash me, and I shall be whiter than snow.
+  Thou shalt make me hear of joy and gladness:
+  that the bones which thou hast broken may rejoice.
+
+concert.9-kart.program.4.inscriptioGloss: "O sing unto the Lord a new song"
+concert.9-kart.program.4.note: "The best known of Bach's motets, written in Leipzig. Two four-voice choirs pass the verses of the psalm between them like a ball; the composer weaves together Psalm 149, a Lutheran chorale and verses of Psalm 150. It is the most joyful and the most difficult link of the evening, set exactly opposite the penitence of the Miserere. When Mozart heard this motet at St Thomas's in Leipzig in 1789 he is said to have exclaimed: “Now here at last is something one can learn from”, and asked for the parts to be laid out for him."
+concert.9-kart.program.4.textGloss: |-
+  O sing unto the Lord a new song:
+  let the congregation of saints praise him.
+  Let Israel rejoice in him that made him:
+  and let the children of Sion be joyful in their King.
+  Let them praise his Name in the dance:
+  let them sing praises unto him with tabret and harp.
+concert.9-kart.program.4.clasp: "Miserere — part V"
+concert.9-kart.program.4.claspTextGloss: |-
+  Turn thy face from my sins:
+  and put out all my misdeeds.
+  Make me a clean heart, O God:
+  and renew a right spirit within me.
+
+concert.9-kart.program.5.inscriptioGloss: "O clap your hands together, all ye people"
+concert.9-kart.program.5.note: "Gibbons, organist of the Chapel Royal, wrote this anthem for eight voices in 1622 as his doctoral exercise for Oxford; the text comes from Coverdale's psalter, the psalter of the English Prayer Book. Psalm 47 seats God on a throne amid shouting and trumpets, and the choir breaks into eight voices so that the crowd can be heard."
+concert.9-kart.program.5.textGloss: "= original"
+concert.9-kart.program.5.clasp: "Miserere — part VI"
+concert.9-kart.program.5.claspTextGloss: |-
+  Cast me not away from thy presence:
+  and take not thy holy Spirit from me.
+  O give me the comfort of thy help again:
+  and stablish me with thy free Spirit.
+
+concert.9-kart.program.6.inscriptioGloss: "Blessed be he that cometh in the Name of the Lord"
+concert.9-kart.program.6.note: "Rossi was a Jew at the Gonzaga court in Mantua; the duke released him from the obligation to wear the yellow badge the others had to wear. In the collection “Ha-shirim asher li-Shlomo” (Venice) he was the first to apply Renaissance polyphony to Hebrew liturgical texts; the preface, defending part-singing in the synagogue, was written for him by Rabbi Leon of Modena. Here, in a programme built from psalms in Latin, German and English, their original language returns."
+concert.9-kart.program.6.textGloss: |-
+  Blessed be he that cometh in the Name of the Lord!
+  We have blessed you out of the house of the Lord.
+  God is the Lord who hath shewed us light:
+  bind the sacrifice with cords, yea, even unto the horns of the altar.
+  Thou art my God, and I will thank thee:
+  thou art my God, and I will exalt thee.
+  O give thanks unto the Lord, for he is gracious:
+  and his mercy endureth for ever.
+concert.9-kart.program.6.clasp: "Miserere — part VII"
+concert.9-kart.program.6.claspTextGloss: |-
+  Then shall I teach thy ways unto the wicked:
+  and sinners shall be converted unto thee.
+  Deliver me from blood-guiltiness, O God, thou that art the God of my health:
+  and my tongue shall sing of thy righteousness.
+
+concert.9-kart.program.7.inscriptioGloss: "O be joyful in the Lord, all ye lands"
+concert.9-kart.program.7.note: "From the collection “Psalmen Davids” (Dresden, 1619), the first great work Schütz wrote after returning from Venice, where he had studied with Giovanni Gabrieli. He brought polychoral writing back with him and applied it to Luther's German psalter. Schütz was born exactly a hundred years before Bach; in this programme both their psalms sound in German and for two choirs, and the century between them can be heard."
+concert.9-kart.program.7.textGloss: |-
+  O be joyful in the Lord, all ye lands:
+  serve the Lord with gladness,
+  and come before his presence with a song.
+  Be ye sure that the Lord he is God:
+  it is he that hath made us, and not we ourselves;
+  we are his people, and the sheep of his pasture.
+  O go your way into his gates with thanksgiving,
+  and into his courts with praise:
+  be thankful unto him, and speak good of his Name.
+  For the Lord is gracious,
+  his mercy is everlasting:
+  and his truth endureth from generation to generation.
+
+  Glory be to the Father, and to the Son, and to the Holy Ghost;
+  as it was in the beginning, is now, and ever shall be,
+  world without end. Amen.
+concert.9-kart.program.7.clasp: "Miserere — part VIII"
+concert.9-kart.program.7.claspTextGloss: |-
+  Thou shalt open my lips, O Lord:
+  and my mouth shall shew thy praise.
+  For thou desirest no sacrifice, else would I give it thee:
+  but thou delightest not in burnt-offerings.
+
+concert.9-kart.program.8.inscriptioGloss: "O sing unto the Lord a new song"
+concert.9-kart.program.8.note: "A motet for six voices published in Giulio Cesare Bianchi's Milanese collection. The text is woven from two psalms — verses of 98 interlacing with a verse of 96 — and the summons it opens with had already been heard that evening, in Bach: O sing unto the Lord a new song. The ensemble closed the programme of “Contemplation of the Incarnation”, the concert the cycle began with, using this same motet; here it is the last word of praise before the ninth part of the Miserere."
+concert.9-kart.program.8.textGloss: |-
+  O sing unto the Lord a new song:
+  sing unto the Lord, and praise his Name;
+  for he hath done marvellous things.
+  Be glad and rejoice, and sing praises
+  upon the harp and with the sound of the psaltery,
+  for he hath done marvellous things.
+concert.9-kart.program.8.clasp: "Miserere — part IX + epilogue"
+concert.9-kart.program.8.claspTextGloss: |-
+  The sacrifice of God is a troubled spirit:
+  a broken and contrite heart, O God, shalt thou not despise.
+  O be favourable and gracious unto Sion:
+  build thou the walls of Jerusalem.
+
+  Then shalt thou be pleased with the sacrifice of righteousness, with the burnt-offerings and oblations:
+  then shall they offer young bullocks upon thine altar.
+
+concert.9-kart.program.9.inscriptioGloss: "words: Phineas Fletcher"
+concert.9-kart.program.9.note: "A poem by Phineas Fletcher — printed only in 1633, though it had circulated earlier — set to a melody by Gibbons from George Wither's book of church songs. The same hand that gave this evening its most triumphant psalm leaves it its last and quietest word. The ensemble asked for the Polish text to be shown on the screens during the encore: after nine parts of the Miserere, these tears were meant to be understood."
+concert.9-kart.program.9.textGloss: "= original"
+
+concert.9-kart.programNote: "The line-up of thirteen singers is recorded for the Kraków evening (16 November 2024); the ensemble had performed the same programme, in the same order, in Rybnik and in Łódź."
+concert.9-kart.textNote: "The English of the psalms follows the Book of Common Prayer psalter — Coverdale's, the psalter Gibbons himself set — with the Authorised Version where Coverdale's wording has drifted out of use."
+
+concert.9-kart.credits.0.role: "Conductor"
+concert.9-kart.credits.1.role: "Introductory word"
+concert.9-kart.credits.2.role: "Lighting design"
+
+concert.9-kart.gallery.kd-9-kart-6.alt: "VoctEnsemble during the concert Nine Leaves in the basilica in Rybnik"
+concert.9-kart.gallery.kd-9-kart-7.alt: "VoctEnsemble during the concert Nine Leaves in the basilica in Rybnik"
+concert.9-kart.gallery.kd-9-kart-8.alt: "VoctEnsemble during the concert Nine Leaves in the basilica in Rybnik"
+concert.9-kart.gallery.kd-9-kart-13.alt: "VoctEnsemble after the concert Nine Leaves in the basilica in Rybnik"
+concert.9-kart.gallery.kd-9-kart-9.alt: "VoctEnsemble during the concert Nine Leaves in Łódź Cathedral"
+concert.9-kart.gallery.kd-9-kart-10.alt: "VoctEnsemble during the concert Nine Leaves in Łódź Cathedral"
+concert.9-kart.gallery.kd-9-kart-11.alt: "VoctEnsemble during the concert Nine Leaves in Łódź Cathedral"
+concert.9-kart.gallery.kd-9-kart-12.alt: "VoctEnsemble after the concert Nine Leaves in Łódź Cathedral"
+concert.9-kart.gallery.kd-9-kart-0.alt: "The programme of the Spiritual Concert Nine Leaves from the Book of Psalms"
+concert.9-kart.gallery.kd-9-kart-1.alt: "VoctEnsemble during the concert Nine Leaves in the Sacred Heart Basilica in Kraków"
+concert.9-kart.gallery.kd-9-kart-2.alt: "VoctEnsemble during the concert Nine Leaves in the Sacred Heart Basilica in Kraków"
+concert.9-kart.gallery.kd-9-kart-3.alt: "VoctEnsemble during the concert Nine Leaves in the Sacred Heart Basilica in Kraków"
+concert.9-kart.gallery.kd-9-kart-4.alt: "VoctEnsemble during the concert Nine Leaves in the Sacred Heart Basilica in Kraków"
+concert.9-kart.gallery.kd-9-kart-5.alt: "VoctEnsemble during the concert Nine Leaves in the Sacred Heart Basilica in Kraków"
+concert.9-kart.gallery.kd-9-kart-15.alt: "VoctEnsemble with its conductor during the concert Nine Leaves in the Sacred Heart Basilica in Kraków"
+concert.9-kart.gallery.kd-9-kart-14.alt: "VoctEnsemble after the concert Nine Leaves in the Sacred Heart Basilica in Kraków"
+
+concert.9-kart.posterAlt: "Poster for the concert Nine Leaves from the Book of Psalms"
+
+concert.9-kart.about.place: "Rybnik · Łódź · Kraków"
+concert.9-kart.about.blurb: "A programme built from the psalms: from penitence and thanksgiving to the joy of praise, with music by Allegri, Bach, Rossi, Bruckner and Stanford."

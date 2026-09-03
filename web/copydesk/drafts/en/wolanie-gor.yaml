@@ -1,0 +1,189 @@
+# concert.wolanie-gor — EN draft (stage E, pass 1).
+# `= original` = the sung text is already English (Teasdale, Meredith, Steven); the script fills it
+# from the corpus. `title` and `about.blurb` are copied verbatim from concerts.en.yaml.
+
+concert.wolanie-gor.title: "The Call of the Mountains"
+concert.wolanie-gor.metaPlace: "Dworek Gościnny, Szczawnica"
+concert.wolanie-gor.inscriptioGloss: "To thee do we cry, poor banished children of Eve"
+concert.wolanie-gor.inscriptioRef.source: "Salve Regina"
+concert.wolanie-gor.essence: "The mountains were this programme's breath. Twelve voices and the violin of Radu Ropotan led from sacred polyphony towards songs in which a landscape becomes the memory of a community."
+concert.wolanie-gor.facts.0: "12 voices and violin"
+concert.wolanie-gor.facts.1: "The Pieniny"
+concert.wolanie-gor.facts.2: "From the Pyrenees to Indonesia"
+
+concert.wolanie-gor.prologue: "The first of June 2024, the Dworek Gościnny in Szczawnica. The one evening of this cycle held outside a church. A programme about the calling of the mountains sounded in the mountains: the Pieniny beyond the windows. Twelve voices, Radu Ropotan's violin, two halves and an interval."
+
+concert.wolanie-gor.reflectionNote: "The mountains teach listening: a voice sent out into space comes back changed. This programme listens for what the echo does to a human cry — whether it stays a shout, or becomes a prayer, a flight, a song. And whether a solitary voice can count on an answer."
+
+concert.wolanie-gor.programLede: "Twelve songs of the mountains and an encore"
+concert.wolanie-gor.programArc: "The order leads upwards and back again. The evening opens with a wordless call, the shepherds' “Eee-Ooo” from the Pyrenees, and immediately afterwards that same call is given words: the Salve Regina of the shepherds of Rouergue, “Ad te clamamus”, to thee do we cry. From here the programme climbs through an Ave Maria and three hymns sung before the Blessed Sacrament, up to Ešenvalds's night sky; the interval falls there. The second half begins low and human, with a village fiddler, and then attempts flight three times: Monteverdi's bird, Bach, and Vaughan Williams's lark, which is lost in the light. What remains is the return to earth: ice on the Prosna. And an encore, in which the light comes down from its throne back towards us."
+
+concert.wolanie-gor.movements.clamor.gloss: "Cry"
+concert.wolanie-gor.movements.clamor.line: "The shepherds' call thrown back from the slopes: still without words, a voice alone in space."
+concert.wolanie-gor.movements.advocata.gloss: "Advocate"
+concert.wolanie-gor.movements.advocata.line: "The call finds someone to address: the Mother the banished cry out to, and the women whose work keeps the world turning."
+concert.wolanie-gor.movements.sacramentum.gloss: "Mystery of the altar"
+concert.wolanie-gor.movements.sacramentum.line: "Three hymns before the Blessed Sacrament: two to words of St Thomas Aquinas — once in Corsican polyphony, once in a contemporary Latvian setting — and a Polish hymn by Górecki."
+concert.wolanie-gor.movements.astra.gloss: "Stars"
+concert.wolanie-gor.movements.astra.line: "The highest point of the first half: a solitary night beneath stars that no aeon can sadden or tire."
+concert.wolanie-gor.movements.volatus.gloss: "Flight"
+concert.wolanie-gor.movements.volatus.line: "After the interval, earth and air: a village fiddler, a bird in love, Bach, and the lark that rises until it is lost in the light."
+concert.wolanie-gor.movements.reditus.gloss: "Return"
+concert.wolanie-gor.movements.reditus.line: "From the sky back down to earth: a frozen river, a girl beside the mill. And a light that descends in order to rise again tomorrow."
+
+concert.wolanie-gor.program.0.inscriptioGloss: "Shepherds keeping watch over their flock by night"
+concert.wolanie-gor.program.0.note: "The call of shepherds in the Pyrenees; the only “text” of this piece is the cry “Eee-Ooo”. Vivancos, for years attached to the Escolania de Montserrat, weaves twelve voices around it, written out across the whole space of the hall. The whole evening takes its name from this wordless call."
+
+concert.wolanie-gor.program.1.inscriptioGloss: "Hail, holy Queen, Mother of mercy · Marian antiphon"
+concert.wolanie-gor.program.1.note: "The Marian antiphon in the version of the shepherds of Rouergue — a historic region of what is now Occitania — and the monks of the small town of Estaing. Austere, plain polyphony close to the Corsican tradition: here many voices are a form of community. From it comes the sentence that stands as the inscription over the whole evening: “Ad te clamamus”, to thee do we cry. The wordless call of the first piece is given words here. In recordings of this version the antiphon is closed by a Hail Mary recited in the Occitan dialect — “Adiu, Maria, siás tot de gràcia…” — a prayer in the speech the shepherds actually used."
+concert.wolanie-gor.program.1.textGloss: |-
+  Hail, holy Queen, Mother of mercy,
+  our life, our sweetness and our hope, hail!
+  To thee do we cry, poor banished children of Eve;
+  to thee do we send up our sighs,
+  mourning and weeping in this vale of tears.
+  Turn then, most gracious advocate,
+  thine eyes of mercy towards us,
+  and after this our exile
+  show unto us the blessed fruit of thy womb, Jesus.
+  O clement, O loving, O sweet Virgin Mary!
+
+concert.wolanie-gor.program.2.inscriptioGloss: "for six high voices · a fermata of silence at the close"
+concert.wolanie-gor.program.2.note: "The Canadian composer wrote it while gathering material for an opera about the events at Medjugorje, in a Bosnia then at war: six children to whom, from June 1981, the Mother of God was said to appear daily, and the crowd praying the rosary while it happened. Hence the six voices: six children, six parts, a piece for high voices alone. The fermata on the last, quiet bar is, in MacIntyre's conception, the moment of the apparition."
+
+concert.wolanie-gor.program.3.inscriptioGloss: "Down in adoration falling before so great a Sacrament · from the hymn Pange lingua"
+concert.wolanie-gor.program.3.note: "Corsican polyphony from the Franciscan tradition. The text is the last two stanzas of the hymn Pange lingua by St Thomas Aquinas (13th century), sung at adoration and most often at Benediction, as the Blessed Sacrament returns to the tabernacle."
+concert.wolanie-gor.program.3.textGloss: |-
+  Down in adoration falling,
+  lo, the sacred Host we hail;
+  lo, o'er ancient forms departing,
+  newer rites of grace prevail;
+  faith for all defects supplying,
+  where the feeble senses fail.
+
+  To the everlasting Father,
+  and the Son who reigns on high,
+  with the Holy Ghost proceeding
+  forth from each eternally,
+  be salvation, honour, blessing,
+  might and endless majesty.
+  Amen.
+
+concert.wolanie-gor.program.4.inscriptioGloss: "O saving Victim, opening wide the gate of heaven · from the hymn Verbum supernum prodiens"
+concert.wolanie-gor.program.4.note: "St Thomas Aquinas again: the last two stanzas of the hymn Verbum supernum prodiens, written for Corpus Christi and sung at the exposition of the Blessed Sacrament. The same rite as a moment ago, in a language seven centuries younger: in Ešenvalds, layered harmonies and choral clusters."
+concert.wolanie-gor.program.4.textGloss: |-
+  O saving Victim, opening wide
+  the gate of heaven to man below;
+  our foes press on from every side,
+  thine aid supply, thy strength bestow.
+
+  To thy great name be endless praise,
+  immortal Godhead, One in Three;
+  O grant us endless length of days
+  in our true native land with thee.
+  Amen.
+
+concert.wolanie-gor.program.5.inscriptioGloss: "from the cycle Church Songs op. 84 · Polish original: Święty, święty, święty"
+concert.wolanie-gor.program.5.note: "From the cycle of twenty-one Church Songs op. 84, which Górecki wrote in Katowice in 1986 on melodies from Fr Jan Siedlecki's hymnal, the book Polish churches have sung from for generations. Minimal means, maximal effect. The original is Polish and says “Jesus, you are beyond understanding”; here the Latin version was sung, in which the same line says “Jesus, you come to us”."
+concert.wolanie-gor.program.5.textGloss: |-
+  Holy, holy, holy,
+  holy, ever holy,
+  Jesus, you come to us
+  in the Blessed Sacrament.
+
+concert.wolanie-gor.program.6.inscriptioGloss: "text: Sara Teasdale"
+concert.wolanie-gor.program.6.note: "A poem by the American poet Sara Teasdale about a solitary night beneath the stars. To the choir Ešenvalds added glass harmonicas — tuned glasses played with a wet finger — so that they would sound like a shimmer. The harmonies are open and spacious; this is the highest point of the evening, and the first half ends on it."
+concert.wolanie-gor.program.6.textGloss: "= original"
+concert.wolanie-gor.program.6.clasp: "Interval"
+
+concert.wolanie-gor.program.7.inscriptioGloss: "from the cycle Impressions d'enfance op. 28 · the village fiddler"
+concert.wolanie-gor.program.7.note: "The first of the ten miniatures of Impressions d'enfance op. 28, childhood memories arranged by the course of a day: from the fiddler, through the cricket and the wind in the chimney, to the night storm and the sunrise. The ménétrier is the village fiddler, the one who plays at weddings. It opens the second half of the evening; the player is Radu Ropotan — like Enescu, a Romanian."
+
+concert.wolanie-gor.program.8.inscriptioGloss: "That little bird that sings so sweetly · from the fourth book of madrigals"
+concert.wolanie-gor.program.8.note: "A madrigal from the fourth book of five-voice madrigals, published in Venice in 1603, on the threshold between Renaissance polyphony and the Baroque, as music begins to paint the affections. The bird that sings “so sweetly” is a metaphor for a heart in love: had it a human soul it would say “I burn with love”, and a second bird answers it."
+concert.wolanie-gor.program.8.textGloss: |-
+  That little bird that sings
+  so sweetly,
+  and flies so lightly and wantonly
+  now to the fir, now to the beech,
+  and then to the myrtle —
+  had it a human spirit
+  it would say: I burn with love, I burn with love!
+  But it burns in its heart
+  and calls out its desire,
+  which answers back: And I burn with love!
+  Blessed be you,
+  loving, gentle, lovely little bird!
+
+concert.wolanie-gor.program.9.inscriptioGloss: "from the Partita for solo violin no. 3 in E major"
+concert.wolanie-gor.program.9.note: "From the third partita, part of the set of six sonatas and partitas for solo violin completed in 1720, masterpieces of the violin literature. Pure energy and lightness: the second moment in this programme when the violin is left alone, and the bridge between Monteverdi's bird and Vaughan Williams's lark."
+
+concert.wolanie-gor.program.10.inscriptioGloss: "text: George Meredith · arr. for violin and choir: Paul Drayton"
+concert.wolanie-gor.program.10.note: "A pastoral poem for violin, written in 1914 and revised in 1920; it waited six years for its first performance because the war had broken out. Its inspiration was George Meredith's poem about a lark rising towards the sky; the melodic line rises and falls in imitation of the flight. Paul Drayton rewrote the piece for violin and choir, so that Meredith's words — in the original only written above the notes — can here actually be heard."
+concert.wolanie-gor.program.10.textGloss: "= original"
+
+concert.wolanie-gor.program.11.inscriptioGloss: "a song in a folk idiom · words written to an existing vocalise"
+concert.wolanie-gor.program.11.note: "Sykulski wrote it to a commission from Agnieszka Franków-Żelazny for the Polish National Youth Choir: as a vocalise, without words. Something was missing from it, though — “the piece carried no message”. So the composer sent the score to a friend, who in the course of a single night wrote a whole story into it, fitted so exactly that not one note had to change. A girl from Podzamcze weeps over the frozen Prosna, the mill has stopped, there will be no bread, and John of Nepomuk, patron of bridges and rivers, stands beside her."
+concert.wolanie-gor.program.11.textGloss: |-
+  Ice stands on the Prosna,
+  stands beside the mill —
+  five years the girl from Podzamcze
+  has been coming here.
+
+  The girl stands and whimpers,
+  a kerchief hidden in her hands;
+  St Roch is calling her
+  to high Mass, for comfort.
+
+  Oj dana, oj dana…
+
+  The mill stands — but who is there
+  to set its wheel rattling?
+  There is no flour, none at all,
+  and there will be no bread.
+
+  Dana, dana… na na, na na…
+
+  Ice stands on the Prosna,
+  time flows on beneath the ice,
+  and John of Nepomuk
+  stands beside the girl.
+
+  Dana, dana… na na…
+
+concert.wolanie-gor.program.12.inscriptioGloss: "the composer's own poem · the sung syllables carry no meaning"
+concert.wolanie-gor.program.12.note: "The Indonesian composer built the piece on the Melayu scale, and the syllables sung mean nothing: it is a pure exploration of the colours of the human voice. Its starting point is a poem Steven wrote himself. In the score he asks the choir to add the sounds of night animals in the opening bars — a cricket, an owl — and then, more and more densely, birdsong; at the end everything returns and falls quiet."
+concert.wolanie-gor.program.12.textGloss: "= original"
+
+concert.wolanie-gor.programNote: "The evening ran for an hour and three quarters, with an interval; the concert was hosted by the Dworek Gościnny and Pieniny Resort & SPA."
+concert.wolanie-gor.textNote: "The Latin and original-language texts come from the ensemble's own programmes. The English of the hymns and antiphons follows the traditional versions — Edward Caswall's, of 1849, for the two hymns of St Thomas Aquinas — and the remaining translations are our own."
+
+concert.wolanie-gor.credits.0.role: "Conductor"
+
+concert.wolanie-gor.pullQuote.text: "Le cri des bergers is a song of solitude — a cry of dread, of suffering and uncertainty; a lost song that resonates inside each of us. If we know how to listen into its “echo of silence”, we can turn silence into magic, magic into sound, and sound into beauty. Then solitude finds a companion, dread turns into peace and suffering into joy — and the lost song receives an answer of the same force."
+concert.wolanie-gor.pullQuote.attribution: "Bernat Vivancos"
+concert.wolanie-gor.pullQuote.about: "on Le cri des bergers, the piece the evening was named after"
+
+concert.wolanie-gor.roster.groups.0.voice: "Sopranos"
+concert.wolanie-gor.roster.groups.1.voice: "Altos"
+concert.wolanie-gor.roster.groups.2.voice: "Tenors"
+concert.wolanie-gor.roster.groups.3.voice: "Basses"
+concert.wolanie-gor.roster.note: "The line-up of the evening in Szczawnica, 1 June 2024; violin, Radu Ropotan."
+
+concert.wolanie-gor.video.caption: "An excerpt from the concert “The Call of the Mountains” · VoctEnsemble 2024"
+concert.wolanie-gor.video.note: "J. Sykulski — Stoi lód na Prośnie · recorded from the audience · live sound"
+
+concert.wolanie-gor.gallery.kd-wolanie-0.alt: "VoctEnsemble rehearsing for the concert The Call of the Mountains"
+concert.wolanie-gor.gallery.kd-wolanie-1.alt: "VoctEnsemble rehearsing for the concert The Call of the Mountains"
+concert.wolanie-gor.gallery.kd-wolanie-2.alt: "VoctEnsemble rehearsing for the concert The Call of the Mountains"
+concert.wolanie-gor.gallery.kd-wolanie-3.alt: "VoctEnsemble rehearsing for the concert The Call of the Mountains"
+concert.wolanie-gor.gallery.kd-wolanie-4.alt: "VoctEnsemble performing The Call of the Mountains at the Dworek Gościnny in Szczawnica"
+concert.wolanie-gor.gallery.kd-wolanie-5.alt: "VoctEnsemble performing The Call of the Mountains at the Dworek Gościnny in Szczawnica"
+concert.wolanie-gor.gallery.kd-wolanie-6.alt: "VoctEnsemble taking a bow after The Call of the Mountains at the Dworek Gościnny in Szczawnica"
+concert.wolanie-gor.gallery.kd-wolanie-7.alt: "VoctEnsemble after The Call of the Mountains at the Dworek Gościnny in Szczawnica"
+
+concert.wolanie-gor.posterAlt: "Poster for the concert The Call of the Mountains"
+concert.wolanie-gor.realizacja: "Violin: Radu Ropotan"
+
+concert.wolanie-gor.about.place: "Dworek Gościnny · Szczawnica"
+concert.wolanie-gor.about.blurb: "A concert for twelve voices and violin with Radu Ropotan: sacred music, nature and songs rooted in the landscape of the Pieniny mountains."

@@ -30,7 +30,20 @@ export interface CopyDeskCell {
   readonly mine: CopyDeskProposal | null;
   /** Somebody else's open proposal on the same field. */
   readonly others: readonly CopyDeskProposal[];
-  /** The most recent settled verdict, if this field has ever had one. */
+  /**
+   * The most recent verdict on the caller's OWN wording, if they have ever had
+   * one here.
+   *
+   * A verdict is feedback to the person who wrote the words: "accepted" tells
+   * an editor their sentence stood, "rejected" tells them it did not, and both
+   * belong on the cell where they are looking. Somebody else's settled decision
+   * is not news about this field — once it has been written into the repository
+   * it simply IS the text the site holds, which the cell is already showing. The
+   * distinction is load-bearing rather than cosmetic: a bulk translation import
+   * arrives as one accepted proposal per cell, and counting those as verdicts
+   * would hang a chip on every translated field in the corpus, in a surface
+   * whose resting state is meant to say nothing at all.
+   */
   readonly settled: CopyDeskProposal | null;
 }
 
@@ -45,7 +58,7 @@ export const readCell = (segment: CopyDeskSegment): CopyDeskCell => {
     if (isOpen(proposal)) {
       if (proposal.is_mine) mine ??= proposal;
       else others.push(proposal);
-    } else if (settled === null) {
+    } else if (settled === null && proposal.is_mine) {
       settled = proposal;
     }
   }

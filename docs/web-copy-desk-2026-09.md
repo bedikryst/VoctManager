@@ -309,8 +309,8 @@ French month/day capitalization does not survive naive formatting (see the proje
 | C3 | `apply-copy` (write direction) + the `en`/`fr` overlay files — **done, §6f** | proposals can reach git |
 | D1 | panel: `/redakcja/*` shell + contents list — **done, §6g** | a way in |
 | D2 | the editor: reading-order column, locale switch, inline edit, autosave — **done, §6h** | the desk |
-| D3 | reviewer mode: old → new, accept / reject / edit further | the patch gets made |
-| E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 | Florent's first sitting |
+| D3 | reviewer mode: old → new, accept / reject / edit further — **done, §6i** | the patch gets made |
+| E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 — **EN pass 1 done, §6j** | Florent's first sitting |
 | F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang | the pages exist |
 | G | static pages extracted into content modules (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing | the rest of the corpus enters the desk |
 
@@ -844,6 +844,165 @@ language the desk's own chrome is in: it is advice to the hands typing, not chro
 - **No field-to-field keyboard motion, and 71 fields render at once.** Both are judgments to make on
   the built surface rather than in advance; the column is the thing to look at first.
 
+### §6i Stage D3 — what shipped (2026-09-03)
+
+The reviewer's queue at `/redakcja/przeglad`: `pages/copydesk/CopyDeskReviewPage.tsx` rewritten,
+`features/copydesk/` (`lib/wordDiff` + its test, `lib/queue`, `components/DiffText`,
+`components/ProposalVerdict`, `components/QueueField`, `components/PatchBand`,
+`components/GrowingTextarea`), the queue read and the verdict write. On the backend, one addition:
+`GET /api/copydesk/proposals/queue/` with `CopyDeskService.review_queue` and `patch_summary`.
+
+**The queue needed a read of its own, and that was the first thing to settle.** Nothing could
+answer "what is waiting" from the endpoints that existed: the contents list counts touched segments
+per page and names none of them, and the editor's endpoint is one page at a time — so composing the
+queue meant six requests pulling 1 281 rows to find the four that were waiting, growing a request
+per page every time the corpus does. The new read is narrow (reviewer-only, open proposals only)
+and deliberately returns the SAME shape the editor's page returns: a queue entry is a segment
+carrying its proposals, so one set of types, one `readCell`, one reading of what a cell is in,
+serve both surfaces.
+
+**Six decisions worth carrying.**
+
+- **The old → new is a word-level diff, and that is the whole surface.** §1 measured the editing to
+  expect — nuance, word choice, clause order — and printing a three-hundred-word `note` twice to
+  report a changed conjunction is six hundred words of reading for a verdict about one. `wordDiff`
+  trims the common head and tail, aligns only what differs, and the test asserts the property that
+  makes it safe to trust: `same + removed` rebuilds the original, `same + added` rebuilds the
+  proposal — the same reconstruction proof stage A demanded of every `apply-copy` transform. Three
+  shapes, chosen from the change rather than from a control: nothing to compare (a first
+  translation) prints the proposal alone, a replacement (under 30 % of the letters surviving) prints
+  both texts whole, everything else is one paragraph with two marks. Gold for what arrives,
+  graphite struck for what leaves — a deletion is not an alarm.
+- **"Edit further" is not a fourth state, and the diff follows the working value.** Correcting the
+  wording and accepting is ONE act (the endpoint has taken an optional `value` since stage B), so
+  the moment the reviewer touches a word the diff shows what will actually land in the file rather
+  than what was proposed. A chip says the wording on screen is theirs and one control puts the
+  author's back. The text swaps into a field on demand here — the opposite of the editor's cell and
+  for the opposite reason: there the resting state is editable across seventy fields, here the
+  resting state is a diff, which no textarea can hold.
+- **A note without a rewrite is told apart before it is drawn.** `isNoteOnly` compares the proposal
+  to the value the repository holds; where they are equal there is no diff at all, a `Tylko uwaga`
+  chip stands in its place, and the text is printed once as what it is — the value the site is
+  serving, which the note is about. Otherwise the reviewer would read an old → new whose two halves
+  are the same paragraph and conclude the desk was broken.
+- **Accepting one of two competing proposals does not close the other, and the field says so.**
+  `review_proposal` leaves competitors alone by design (§6b), so the sentence appears exactly where
+  the decision is made, only when there is more than one, and both wordings are readable in full —
+  which is the D2 gap this screen closes, since the editor's cell names the other person without
+  showing their words.
+- **The patch band is what keeps the screen from reading as publication.** Accepting writes nothing
+  anywhere, so a queue that simply emptied as things were settled would imply a site that had
+  changed. The band states what is accepted and unwritten, which pages it touches, how long the
+  oldest decision has waited, and the two commands in the order they are run — a dry run is the
+  default and `--write` is the whole difference between looking and writing. It counts FIELDS, not
+  decisions: two accepted proposals competing for one field collapse to one write, and promising a
+  diff twice its real size is the same defect as any other figure that does not match its set.
+- **A verdict refetches where the autosave patches.** The autosave moves one field of 213 and knows
+  exactly what changed; a verdict moves three things at once, two of them the server's arithmetic
+  (accepting a Polish value restates which translations are stale). A hand-rolled second answer is
+  how the queue would start disagreeing with the band above it, and the read it costs is the queue
+  — only ever as long as the work waiting.
+
+**Three shapes lifted out rather than retyped**, each because this stage would have been the second
+copy: `GrowingTextarea` (the mirror-span field, now shared with the editor's cell, which owns the
+type and padding so the field and its mirror cannot drift), `formatRelativeTime` in
+`shared/lib/time/intl.ts` (the notification bell had the only copy, privately), and `familyIcon`
+beside `FAMILY_LABELS` in `lib/scopeGroups.ts`.
+
+**Left standing, deliberately.**
+
+- **The reviewer's `comment` is never sent, and that is a hole worth naming.** The endpoint accepts
+  one, but it writes the SAME column the editor wrote their note in — so a rejection reason would
+  replace the editor's own words — and no surface renders a reviewer's comment back to the person
+  who proposed the change. A reason typed here would erase something and reach nobody. Giving the
+  reviewer a voice on the row means a second column and a place for it on the editor's cell; until
+  then the channel is the messaging feature.
+- **A verdict is one click both ways, and there is no undo.** `ACCEPTED`/`REJECTED` are terminal by
+  design (§6b), so nothing on this screen can be taken back. Arming only the refusal was considered
+  and rejected: it would make rejecting feel graver than accepting, when accepting is the one that
+  ends in a commit. What actually protects each is different and already there — an acceptance
+  passes a `git diff` before anybody reads it, and a rejection shows on the editor's own cell, which
+  is where the person who cares is looking.
+- **No filter, no keyboard motion, and the group order is recency.** The queue is grouped by page,
+  most recently worked page first — deliberately not the contents list's title order, because a
+  contents list is a map of the site and a queue is a record of what arrived. Whether it wants a
+  filter by page, locale or author is a judgment to make on a queue that has actually been long
+  once, not in advance.
+
+### §6j Stage E — the route in, and what pass 1 delivered (2026-09-03)
+
+Glossary and rights ledger in `docs/web-copy-desk-translation-glossary.md`; drafts in
+`web/copydesk/drafts/<locale>/<scope>.yaml`; one new command, `npm run copy:propose`.
+**EN pass 1 complete: 428 of 428 keys across all six pages.** FR and both second passes remain.
+
+**The opening question — desk or overlay — is settled by one line of the backend, not by taste.**
+`CopySegment.source_hash` has exactly one door: `mark_applied`, reached through an ACCEPTED
+proposal (§6e). `upsert_segments` refuses that column by design and a test enforces the refusal. So
+translations typed straight into `concerts.en.yaml` would leave all 854 rows reporting
+`source_known=False` for ever: Florent edits the Polish and NOTHING ever lights up stale, on any
+row, and no later run can repair it — a row gains provenance only by being proposed and applied.
+That is §6c's second defect re-entering by the back door. The visibility argument cuts both ways
+(the extractor reads the overlays, so the desk shows the values either route) and is therefore not
+the deciding one; provenance is.
+
+**Six decisions worth carrying.**
+
+- **A verdict is feedback to its author, and the desk now says so.** The import arrives as one
+  accepted proposal per cell, so before this stage's amendment every translated cell would have
+  worn a green *Przyjęte* and every page would have reported ~142 accepted for ever — against a
+  surface whose resting state is meant to say nothing (§6h). `readCell` now takes the settled
+  verdict from the reader's OWN proposals, and `scope_summaries` counts `accepted` the same way.
+  `touched` deliberately keeps counting everybody's: an open proposal is a state the page is IN,
+  and an editor who cannot see that a colleague is mid-way through a page loses a real fact.
+- **`copy:propose` refuses unless the desk's Polish equals the checkout's Polish.** The hash the run
+  is about to stamp asserts "this translation renders that source"; a mirror older than the corpus
+  would make the assertion false while everything looked healthy. Proposals are posted as DRAFT,
+  not PROPOSED, because the sitting digest reports PROPOSED only and an import has no sitting to
+  announce to the person who ran it. Coverage is reported per page, and the remaining keys are
+  named once a page is within twelve of finished — which is the checklist a skipped line shows up in.
+- **A gloss is the sung text in the READER's language, so it collapses into the original when the
+  two are the same language.** Thirteen of the forty-two sung texts here are English; one is Polish.
+  Their slots are filled in every locale regardless — an empty one falls back to Polish and would
+  print a Polish stanza under an English original, and `apply-copy` refuses an empty value — and it
+  is the PAGE that declines to print the pair (`glossFor`, `i18n/config.ts`). A draft says
+  `= original` and `copy:propose` fills it from the corpus: copying a stanza by hand into a second
+  field is how a transcription error enters a text nobody proofreads twice.
+- **The corpus had one hole this rule exposed, and it is now closed.** `wolanie-gor.program.11`
+  ("Stoi lód na Prośnie") is the only sung text whose original is Polish, so it had NO `textGloss`
+  key at all — the extractor emits what the Polish needs — and its English and French had nowhere
+  to go. It now carries `textGloss.pl` repeating the song verbatim; the corpus is 428 keys, and the
+  Polish page prints it once, exactly as it prints the thirteen English ones once.
+- **The rights ledger is short because of what it does NOT govern.** The site already publishes a
+  Polish gloss of every one of these texts, so an English or French one we write adds no new
+  category of use. What the ledger controls is pasting somebody else's PUBLISHED translation, and
+  its trap is that "the author died over 70 years ago" is insufficient for liturgical texts: ICEL
+  2010 and AELF are under copyright although the Latin is ancient. Public-domain layer instead —
+  BCP/Coverdale, Douay, the Authorised Version; Crampon and Segond — and never a composer's own
+  singing version (Rutter's English of the Ukrainian prayer is his publisher's).
+- **Three fields are not translations of themselves, and reading them as such would have been the
+  quiet failure.** `textNote` states where the printed glosses come from, so its English has to be a
+  true sentence about the ENGLISH ones — it is written last, after the ledger settles for that page.
+  A note about the Polish reception ("known in Polish as…, tr. 1912") becomes the equivalent
+  sentence about the target language's. And `inscriptioGloss` is a gloss on 34 works and a
+  standalone editorial note on 26 — measured, not estimated.
+
+**One correction proposed to a value the repository already held.** `concert.hymn-poleglym.title`
+reads "Hymn for the Fallen" in `concerts.en.yaml`; the work the evening is named after is John
+Williams's **"Hymn to the Fallen"**, and program.8's note says the evening took its name from it, so
+the near-miss breaks the link. It is proposed as a change, and the `git diff` will show it.
+
+**Two more dates baked into copy, on top of §6d's two.** `concert.bobola.facts.1` is literally
+"16 maja 2026", and `roster.note` carries "1 czerwca 2024" / "14 września 2025" inside a
+translatable sentence. Rendered by hand for now, and they will drift from `date` exactly as
+`reflectionAttribution` does. Stage F's sweep should take all five together.
+
+**Open for pass 2, and stated so the next pass does not have to rediscover them.** The psalm
+register: 9 Kart uses the Book of Common Prayer psalter, which is defensible (it is the psalter
+Gibbons himself set, and his is the one psalm printed in its own English) but shifts register
+against a Polish gloss written in modern Polish — Florent's to overturn. And the German carol's
+French: "Dans une étable obscure" is an adaptation rather than a translation, so the ledger offers
+it rather than assuming it.
+
 ## §7 Traps
 
 - **`contenteditable` injects markup.** The browser will produce `<div>`, `<br>` and styled `<span>`
@@ -913,5 +1072,17 @@ language the desk's own chrome is in: it is advice to the hands typing, not chro
   will eventually be written.
 - **Whether accepted proposals auto-commit.** Currently manual (`apply-copy` → developer commits).
   A bot commit is a later convenience and needs no model change.
-- **Copyright on canonical hymn translations** (§5). Needs the same treatment the site already gives
-  ZAiKS: identify, then decide, rather than paste.
+- **Whether the reviewer gets a voice on the row.** Raised by D3 (§6i): `comment` is one column with
+  two possible authors, so a reviewer's note would overwrite the editor's, and nothing renders it
+  back to them anyway. Either a second column plus a place on the editor's cell, or the answer stays
+  "say it in a message" — decide when somebody actually wants to explain a rejection.
+- ~~**Copyright on canonical hymn translations**~~ **Settled 2026-09-03 — canonical only where it is
+  public domain, our own everywhere else. The ledger is `docs/web-copy-desk-translation-glossary.md`
+  §4; the reasoning and the ICEL/AELF trap are in §6j.** The framing that made it short: the site
+  already publishes a Polish gloss of every one of these texts, so a gloss WE write in another
+  language adds no new category of use, and the only thing needing control is pasting somebody
+  else's published translation.
+- **The psalm register in English** (raised by §6j). 9 Kart follows the Book of Common Prayer
+  psalter, which is what the repertoire is sung from and what Gibbons himself set — and which reads
+  three centuries older than the modern Polish beside it. A decision for Florent on the desk, not
+  one to take for him.

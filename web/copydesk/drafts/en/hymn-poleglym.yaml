@@ -1,0 +1,155 @@
+# concert.hymn-poleglym — EN draft (stage E, pass 1).
+#
+# ONE DELIBERATE CHANGE to a value already in concerts.en.yaml: the title reads "Hymn for the
+# Fallen" there, and the work the evening is named after is John Williams's "Hymn to the Fallen".
+# The Polish title IS that work's Polish name, and program.8's note says the evening took its name
+# from it — so the near-miss breaks the link. `copy:propose` will report this as a change, not as
+# a value already in the repository, and the git diff will show it.
+#
+# `= original` = the sung text is already English (Pärt, Tavener, Sibelius, Bairstow).
+# Rutter's own English of the Ukrainian prayer is his publisher's; ours is our own.
+
+concert.hymn-poleglym.title: "Hymn to the Fallen"
+concert.hymn-poleglym.metaPlace: "St Mary's Basilica, Kraków"
+concert.hymn-poleglym.inscriptioGloss: "Great and only God, preserve Ukraine for us"
+concert.hymn-poleglym.inscriptioRef.source: "Prayer for Ukraine"
+concert.hymn-poleglym.essence: "A tribute to those who gave their lives in defence of Ukraine, and a prayer for peace for those who carry the weight of the war onwards. At its climax, with the altarpiece of St Mary's Basilica opened, an organ improvisation on the Ukrainian anthem sounded."
+concert.hymn-poleglym.facts.0: "St Mary's Basilica"
+concert.hymn-poleglym.facts.1: "A prayer for peace"
+concert.hymn-poleglym.facts.2: "In memory of Ukraine"
+
+concert.hymn-poleglym.prologue: "The twenty-second of February 2025, a Saturday, eight in the evening. St Mary's Basilica in Kraków, two days before the third anniversary of the full-scale invasion of Ukraine. Before the first word is spoken, the organ fills the church; then the archpriest of the basilica leads the congregation into prayer."
+
+concert.hymn-poleglym.reflection: "The concert is an expression of remembrance, of solidarity and of support for those the conflict has touched directly — families, friends, and also those who are still fighting for their freedom and their dignity."
+concert.hymn-poleglym.reflectionAttribution: "VoctEnsemble · February 2025"
+
+concert.hymn-poleglym.programLede: "A prayer for peace: thirteen links and an encore"
+concert.hymn-poleglym.programArc: "The order here is a rite. The evening begins with the organ, and the first word spoken is in Ukrainian. Then the programme goes down to where mourning actually lives: to a litany for peace, to the rivers of Babylon on which the exiles hung up their instruments, and to a psalm that asks outright: how long? From there it leads through two prayers for shelter and through a burial, as far as the wordless hymn the evening is named after. Only at the end is it permitted to speak of light, and then the one thing that cannot be sung takes place: the altarpiece is opened."
+
+concert.hymn-poleglym.movements.introitus.gloss: "Entrance"
+concert.hymn-poleglym.movements.introitus.line: "First the space alone: the great organ of St Mary's Basilica. The first word spoken this evening is a prayer in Ukrainian."
+concert.hymn-poleglym.movements.luctus.gloss: "Mourning"
+concert.hymn-poleglym.movements.luctus.line: "The prayer starts from what is: a litany for peace, the rivers of Babylon on which the exiles hung up their instruments, and a psalm that asks outright: how long?"
+concert.hymn-poleglym.movements.lorica.gloss: "Breastplate"
+concert.hymn-poleglym.movements.lorica.line: "Two prayers for shelter: the breastplate of St Patrick, in which Christ stands on every side, and a hymn in which the faithful ask for strength, because “the fierce battle” presses upon them."
+concert.hymn-poleglym.movements.exsequiae.gloss: "At the grave"
+concert.hymn-poleglym.movements.exsequiae.line: "Four links of a burial: the flight of angels over the grave, a hymn to the fallen without a single word, a summons to the soul not to be afraid, and a plea for rest."
+concert.hymn-poleglym.movements.lux.gloss: "Light"
+concert.hymn-poleglym.movements.lux.line: "Only now is it permitted to speak of light, and then the altarpiece is opened."
+concert.hymn-poleglym.movements.lux.interlude.gloss: "They shall beat their swords into plowshares; neither shall they learn war any more."
+
+concert.hymn-poleglym.program.0.note: "The “great” fantasia and fugue in G minor, associated with Bach's visit to Hamburg in 1720 — the same visit during which he improvised for half an hour on the chorale “An Wasserflüssen Babylon”, and the aged Reincken is said to have remarked that he had thought this art already dead. The fantasia is almost operatic: recitative, suspensions, a chromaticism with no floor to it. Krzysztof Michałek played it at the entrance, before the first word of the evening was spoken; the rivers of Babylon will return here shortly, in Palestrina."
+
+concert.hymn-poleglym.program.1.inscriptioGloss: "Great and only God, preserve Ukraine for us"
+concert.hymn-poleglym.program.1.inscriptioRef.source: "Prayer for Ukraine · O. Konysky, 1885"
+concert.hymn-poleglym.program.1.note: "Rutter wrote it in the first weeks after the Russian invasion of 2022 and made it available to choirs free of charge, asking in return for support for the victims of the war. The text is Oleksandr Konysky's “Prayer for Ukraine”, which Mykola Lysenko set in 1885; it is sung to this day as Ukraine's spiritual anthem. The first word of this evening is therefore a plea in the language of those it prays for."
+concert.hymn-poleglym.program.1.textGloss: |-
+  Great and only God,
+  preserve Ukraine for us,
+  with the light of freedom and of day
+  do thou illumine her.
+
+  With the light of learning and of knowledge
+  illumine us, thy children,
+  and in pure love of our land
+  bring us up, O God.
+
+  We pray to thee, O only God,
+  preserve Ukraine for us,
+  turn all thy graces and thy bounty
+  upon our people.
+concert.hymn-poleglym.program.1.clasp: "Introduction to the prayer · Mgr Dariusz Raś"
+
+concert.hymn-poleglym.program.2.inscriptioGloss: "from the Liturgy of St John Chrysostom · the choir's responses"
+concert.hymn-poleglym.program.2.note: "The great litany opens the Orthodox Divine Liturgy; it is also called the litany of peace, because the deacon's first petitions are for the peace from on high and for the peace of the whole world. The choir answers them with two sentences only. Rachmaninov wrote his Liturgy of St John Chrysostom in 1910 in under three weeks. It was his first church work; seven years later he left Russia for good. That evening his petition for the peace of the whole world sounded immediately after the prayer for Ukraine."
+concert.hymn-poleglym.program.2.textGloss: |-
+  Lord, have mercy.
+  To thee, O Lord.
+
+concert.hymn-poleglym.program.3.inscriptioGloss: "By the waters of Babylon we sat down and wept"
+concert.hymn-poleglym.program.3.note: "A motet for four voices published in 1581. Psalm 137, the song of the exiles who laid music aside by the rivers of Babylon: they hung their instruments on the willows, because they could not sing the Lord's song in a strange land. Palestrina leads the four voices with complete calm; the mourning here is in what has fallen silent."
+concert.hymn-poleglym.program.3.textGloss: |-
+  By the waters of Babylon —
+  there we sat down and wept,
+  when we remembered Sion.
+  Upon the willows of that land
+  we hanged up our instruments.
+
+concert.hymn-poleglym.program.4.inscriptioGloss: "an organ setting of the chorale · a paraphrase of Psalm 6"
+concert.hymn-poleglym.program.4.note: "An organ setting of the chorale on the melody the world now knows as the Passion chorale, “O Haupt voll Blut und Wunden”, the one Bach called upon five times in the St Matthew Passion. The chorale text is itself a paraphrase of Psalm 6, the first of the penitential psalms, in which the soul asks outright: how long? Here there were no words. Michał Piechnik played them on the organ; anyone who knows the melody heard them."
+
+concert.hymn-poleglym.program.5.inscriptioGloss: "from the Breastplate of St Patrick (Lorica)"
+concert.hymn-poleglym.program.5.note: "Pärt wrote it to a commission from the Irish Louth Contemporary Music Society. The text is a fragment of the Breastplate of St Patrick, the prayer the saint is said to have recited as he went to convert the king of Tara; his men were seen at that moment not as travellers but as a herd of deer, hence the second name: the deer's cry. It is a prayer of protection: Christ places himself on every side of the one who speaks. Pärt, in his tintinnabuli, repeats it the way a prayer one genuinely needs is repeated."
+concert.hymn-poleglym.program.5.textGloss: "= original"
+
+concert.hymn-poleglym.program.6.inscriptioGloss: "O saving Victim, opening wide the gate of heaven · from the hymn Verbum supernum prodiens"
+concert.hymn-poleglym.program.6.note: "The same hymn that sounded in “The Call of the Mountains”: the last two stanzas of St Thomas Aquinas's Verbum supernum prodiens, sung at the exposition of the Blessed Sacrament. Here, though, something else is audible in it: “bella premunt hostilia, da robur, fer auxilium” — the fierce battle presses upon thy faithful, give strength, send help. A thirteenth-century eucharistic hymn speaks of war outright; it is the only text of the evening the ensemble printed in the programme in full."
+concert.hymn-poleglym.program.6.textGloss: |-
+  O saving Victim, opening wide
+  the gate of heaven to man below;
+  our foes press on from every side,
+  thine aid supply, thy strength bestow.
+
+  To thy great name be endless praise,
+  immortal Godhead, One in Three;
+  O grant us endless length of days
+  in our true native land with thee.
+  Amen.
+
+concert.hymn-poleglym.program.7.inscriptioGloss: "text: Mother Thekla · Shakespeare and the Orthodox funeral service"
+concert.hymn-poleglym.program.7.note: "Tavener wrote it after the death of Athene Hariades, a young actress and a friend of the family, who was killed in a cycling accident. The text was assembled by Mother Thekla, an Orthodox nun and for many years the composer's collaborator: she interweaves Horatio's words from Hamlet — “may flights of angels sing thee to thy rest” — with the Orthodox funeral service. Beneath the choir a motionless drone of basses runs throughout: the ison. The world heard the piece in 1997, when the coffin of the Princess of Wales was carried out of Westminster Abbey to its sound."
+concert.hymn-poleglym.program.7.textGloss: "= original"
+
+concert.hymn-poleglym.program.8.inscriptioGloss: "from the score of the film Saving Private Ryan · choir without words"
+concert.hymn-poleglym.program.8.note: "From the score of Steven Spielberg's Saving Private Ryan. The choir does not sing a single word in it: pure vocalise. Williams wrote it not for a particular scene but as a hymn for the fallen. Without names and without a language, and so without borders. The evening took its name from this piece."
+
+concert.hymn-poleglym.program.9.inscriptioGloss: "words: K. von Schlegel (1752), English translation by J. Borthwick · third stanza"
+concert.hymn-poleglym.program.9.note: "The melody comes from the finale of the tone poem Finlandia, which Sibelius wrote in 1899, when tsarist Russia curtailed Finland's autonomy and imposed censorship on the Finnish press. The piece was then performed under invented titles to get round the ban; it became the song of resistance of a nation that did not yet have a state. Katharina von Schlegel's hymn of 1752, in Jane Borthwick's English translation, was later fitted to that melody: be still, my soul. So at a concert for Ukraine's fallen, a Finnish melody of freedom sounded to words of consolation."
+concert.hymn-poleglym.program.9.textGloss: "= original"
+
+concert.hymn-poleglym.program.10.inscriptioGloss: "Merciful Lord Jesus, grant them rest · from the Requiem op. 48"
+concert.hymn-poleglym.program.10.note: "The fourth and only solo movement of Fauré's Requiem, written for a boy's voice. Across his whole requiem Fauré gave up the Dies irae sequence, which in other settings takes up the most room: there is no judgement here and no terror. The work has been called a lullaby of death; the composer did not argue, that was how he saw death. The text is two sentences: have mercy, and grant them rest."
+concert.hymn-poleglym.program.10.textGloss: |-
+  Merciful Lord Jesus,
+  grant them rest,
+  grant them rest everlasting.
+
+concert.hymn-poleglym.program.11.inscriptioGloss: "Let light eternal shine upon them, O Lord · the communion of the Requiem Mass"
+concert.hymn-poleglym.program.11.note: "Nimrod is the ninth of the Enigma Variations: a portrait of August Jaeger, the publisher and friend who, at a moment of doubt, persuaded Elgar not to stop writing. Jäger is German for hunter, and Nimrod was the hunter of the Bible: hence the name. Britain plays this music over graves, every year at the Cenotaph in London on Remembrance Sunday. John Cameron set the communion of the Requiem Mass beneath it: light eternal."
+concert.hymn-poleglym.program.11.rubric: "During this piece the Veit Stoss altarpiece was opened"
+concert.hymn-poleglym.program.11.textGloss: |-
+  Let light eternal shine upon them, O Lord,
+  with thy saints for ever,
+  for thou art merciful.
+
+concert.hymn-poleglym.program.12.inscriptioGloss: "the anthem of Ukraine · words: P. Chubynsky (1862), melody: Fr M. Verbytsky"
+concert.hymn-poleglym.program.12.note: "The anthem of Ukraine: words by Pavlo Chubynsky of 1862, melody by Fr Mykhailo Verbytsky, a Greek Catholic priest — “Ukraine has not yet perished, nor her glory, nor her freedom”. The titular organist of St Mary's Basilica improvised on the theme with the altarpiece already open. From the tower of the same church a bugle call is played every hour, breaking off mid-note in memory of an invasion."
+concert.hymn-poleglym.program.12.clasp: "Blessing · Mgr Dariusz Raś"
+
+concert.hymn-poleglym.program.13.inscriptioGloss: "from the Song of Songs"
+concert.hymn-poleglym.program.13.note: "Bairstow was organist of York Minster for thirty-three years; this short anthem is usually sung after communion, and its text comes from the Song of Songs. After an evening that closed with the anthem of a nation at war, the last word belongs to a different banner."
+concert.hymn-poleglym.program.13.textGloss: "= original"
+
+concert.hymn-poleglym.programNote: "Besides the organ works listed in the programme, Michał Piechnik, titular organist of St Mary's Basilica, improvised between the links of the evening; in its announcement the ensemble called these interludes “a parallel narration, giving substance to the tragic face of war”."
+concert.hymn-poleglym.textNote: "The original texts follow the concert programme and the books they come from; the printed programme of the evening carried them abridged. The English of the hymns, antiphons and biblical passages follows the traditional versions — the Book of Common Prayer and the Authorised Version, and Edward Caswall's of 1849 for the hymn of St Thomas Aquinas — and the remaining translations are our own."
+
+concert.hymn-poleglym.credits.0.role: "Conductor"
+concert.hymn-poleglym.credits.1.role: "Word and blessing"
+concert.hymn-poleglym.credits.2.role: "Cantor of the basilica"
+
+concert.hymn-poleglym.pullQuote.text: "This is the first time we have taken part in a project which, beyond its spiritual dimension, speaks so directly to the greatest of human aspirations — freedom and self-determination. We want this concert to be not only an act of remembrance, but also a gift of solace to those who have suffered loss, and an expression of our solidarity with the Ukrainian people."
+concert.hymn-poleglym.pullQuote.attribution: "Anna Kaczka-Marcisz"
+concert.hymn-poleglym.pullQuote.about: "manager of VoctEnsemble, from the announcement of the concert"
+
+concert.hymn-poleglym.gallery.kd-hymn-0.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
+concert.hymn-poleglym.gallery.kd-hymn-1.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
+concert.hymn-poleglym.gallery.kd-hymn-2.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
+concert.hymn-poleglym.gallery.kd-hymn-3.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
+concert.hymn-poleglym.gallery.kd-hymn-4.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
+concert.hymn-poleglym.gallery.kd-hymn-5.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
+
+concert.hymn-poleglym.posterAlt: "Poster for the concert Hymn to the Fallen"
+concert.hymn-poleglym.realizacja: "Organ: Michał Piechnik · Krzysztof Michałek"
+
+concert.hymn-poleglym.about.place: "St Mary's Basilica · Kraków"
+concert.hymn-poleglym.about.blurb: "A spiritual concert in tribute to those who gave their lives in defence of freedom, and a prayer for peace — for Ukraine and for the generations to come."
