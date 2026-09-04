@@ -94,6 +94,7 @@ const hrefHome = localizePath("/", lang);
 const hrefAbout = localizePath("/o-nas", lang);
 const hrefConcerts = localizePath("/koncerty", lang);
 const hrefContact = localizePath("/kontakt", lang);
+const hrefColophon = localizePath("/kolofon", lang);
 
 /* Language switcher: hidden globally for now (LANG_SWITCHER_ENABLED) — EN/FR stay reachable by
    direct link only. When on, it shows only where the page has a real alternate (more than Polish);
@@ -396,7 +397,9 @@ const langOptions = showLang
             (nave-menu.css). /press stays out on purpose: a noindex press kit is addressed to
             journalists, not to a reader opening the menu. */}
         <span class="nave-fine">
-          <a href="/kolofon" aria-current={current === "/kolofon" ? "page" : undefined}>Kolofon</a>
+          <a href={hrefColophon} aria-current={current === "/kolofon" ? "page" : undefined}>
+            {t.footer.colophon}
+          </a>
         </span>
         {
           showLang && (
