@@ -293,7 +293,7 @@ export function StickyHeader({
   const hrefColophon = localizePath("/kolofon", lang);
 
   return (
-    <Typo>
+    <Typo locale={lang}>
       <header
         className={`chrome${onDark ? " is-on-dark" : ""}${active ? " is-active" : ""}${menuOpen ? " menu-open" : ""}${menuClosing ? " menu-closing" : ""}`}
         aria-label={t.nav.ariaHeader}

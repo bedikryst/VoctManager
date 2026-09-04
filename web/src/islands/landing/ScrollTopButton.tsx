@@ -11,6 +11,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import type { Locale } from "../../i18n/config";
 import { UI } from "../../i18n/ui";
 import { useDocumentLocale } from "./hooks/useDocumentLocale";
 import { Typo } from "./lib/Typo";
@@ -19,11 +20,22 @@ interface LenisLike {
   scrollTo: (target: number, opts?: { duration?: number }) => void;
 }
 
-export function ScrollTopButton(): React.JSX.Element {
+interface ScrollTopButtonProps {
+  /** The language of the page this render belongs to — the SERVER's half of the answer below. */
+  readonly lang: Locale;
+}
+
+export function ScrollTopButton({ lang }: ScrollTopButtonProps): React.JSX.Element {
   const [visible, setVisible] = useState(false);
-  // Read from the document, never from a prop: BaseLayout mounts this one `transition:persist`,
-  // so the instance outlives the swap that changes the site's language under it.
-  const t = UI[useDocumentLocale()].scrollTop;
+  // BOTH, and neither alone would do. The prop is the page's own language and is what the SERVER
+  // renders with — without it this island shipped Polish markup on every English and French page
+  // and corrected it at hydration, which is a mismatch React answers by discarding the server DOM.
+  // The subscription owns every value after the first, which is what a `transition:persist` island
+  // needs: its instance survives the swap that rewrites `<html lang>` under it. The typographic
+  // pass below takes the same value — `<Typo>`'s own default is Polish, and a default that is
+  // Polish is invisible when it is wrong.
+  const locale = useDocumentLocale(lang);
+  const t = UI[locale].scrollTop;
 
   useEffect(() => {
     let raf: number | null = null;
@@ -54,7 +66,7 @@ export function ScrollTopButton(): React.JSX.Element {
   }, []);
 
   return (
-    <Typo>
+    <Typo locale={locale}>
       <button
         type="button"
         className={`scroll-top${visible ? " is-visible" : ""}`}

@@ -10,6 +10,13 @@
  *
  *  `useState` + effect rather than `useSyncExternalStore`: the value is stable between navigations
  *  and there is no tearing to guard against, so the simpler hook is the honest one.
+ *
+ *  PASS `initial` FROM A SERVER-RENDERED ISLAND, and the two halves of that are not in tension.
+ *  `documentLocale()` has no document during SSR and answers Polish, so an island rendered on an
+ *  English page shipped Polish markup and then corrected it on the client — a hydration mismatch,
+ *  which React answers by discarding the server DOM. The page's own `lang` as the initial value
+ *  makes both renders agree; the subscription still owns every value after the first, which is
+ *  what a `transition:persist` island needs and what a prop alone could never give it.
  * @architecture Astro islands 2026
  * @module islands/global/hooks/useDocumentLocale
  */
@@ -19,8 +26,8 @@ import { useEffect, useState } from "react";
 import { documentLocale } from "../../../i18n/documentLocale";
 import type { Locale } from "../../../i18n/config";
 
-export function useDocumentLocale(): Locale {
-  const [locale, setLocale] = useState<Locale>(documentLocale);
+export function useDocumentLocale(initial?: Locale): Locale {
+  const [locale, setLocale] = useState<Locale>(() => initial ?? documentLocale());
 
   useEffect(() => {
     const sync = (): void => setLocale(documentLocale());

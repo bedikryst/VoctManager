@@ -260,7 +260,7 @@ const breadcrumbLd = breadcrumb ? breadcrumbList(breadcrumb, lang) : undefined;
   <body class={bodyClass}>
     <slot />
     <SiteCursor client:load transition:persist="site-cursor" />
-    <ScrollTopButton client:idle transition:persist="scroll-top" />
+    <ScrollTopButton client:idle transition:persist="scroll-top" lang={lang} />
 
     <script>
       // The canvas colour drives the bands iOS Safari opens above and below a fixed header —

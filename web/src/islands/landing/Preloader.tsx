@@ -65,6 +65,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { Locale } from "../../i18n/config";
 import type { LandingChrome, LandingCopy } from "../../i18n/content/landing";
 import { BrandGlyph } from "./BrandGlyph";
 import { useAudioChoice, type AudioChoice } from "./hooks/useAudioChoice";
@@ -208,9 +209,12 @@ interface PreloaderProps {
    * leave a legal document citing a control that does not exist on the page it describes.
    */
   readonly chrome: LandingChrome;
+  /** The page's language — the typographic pass this rite's words are set with, and a prop for
+   *  the same reason the words are: the overlay is server-rendered. */
+  readonly lang: Locale;
 }
 
-export function Preloader({ copy, chrome }: PreloaderProps): React.JSX.Element | null {
+export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Element | null {
   // Initial state is deterministic ("hold") so SSR and the first client render agree —
   // hydration mismatches would strand a dead SSR overlay. The session/choice decision
   // happens in the mount effect below; CSS gated on `html.preloader-skip` /
@@ -387,7 +391,7 @@ export function Preloader({ copy, chrome }: PreloaderProps): React.JSX.Element |
   if (phase === "hiding") classes.push("is-hidden");
 
   return (
-    <Typo>
+    <Typo locale={lang}>
       <div
         ref={overlayRef}
         className={classes.join(" ")}

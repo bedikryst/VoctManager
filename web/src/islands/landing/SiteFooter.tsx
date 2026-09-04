@@ -75,7 +75,7 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
   const hrefColophon = localizePath("/kolofon", lang);
 
   return (
-    <Typo>
+    <Typo locale={lang}>
       <footer className="site-footer" aria-label={chrome.footerAria}>
         <div className="site-footer-inner">
           {/* The footer had no entrance at all while every block above it was written into

@@ -345,9 +345,12 @@ smallness is the material's range, not a mistuning to chase.
 invitations, not a hierarchy. The one place they are a real hierarchy is `.final-actions`, which
 has its own candle-gold rule. Do not "fix" the hero to match.
 
-**`public/polityka-prywatnosci.html` is outside the Astro pipeline.** It carries its own
-`@font-face`, preloads and tokens. Any font or asset change must touch it by hand — deleting the
-old font files without it silently drops that page to a system font.
+~~**`public/polityka-prywatnosci.html` is outside the Astro pipeline.**~~ **Gone since 2026-09-04.**
+The file carried its own `@font-face`, preloads and tokens, so every font change had to touch it by
+hand — and because it was outside the build, no locale of it could ever be rendered while the
+footer of every English and French page linked to it. It is a route now
+(`components/pages/PrivacyPage.astro`, three one-liners) and it composes its own shell rather than
+`BaseLayout`, deliberately: a legal leaf is read, not navigated. See copy-desk spec §6cc.
 
 **`--sans` and `--ease-slow` are each declared in two files**: `styles/tokens.css` and
 `styles/landing/01-foundation.css`, both on `:root` with identical values, so which one wins is
@@ -616,8 +619,8 @@ the Bobola Mass in the register would falsify the roman numbering. *The subpages
 site map*: that middle column is the only wayfinding at the foot of a subpage, and the landing
 needs none because the page IS the navigation. *And the shared footer is the TRANSLATED one* —
 `lang` selects twelve strings and localizes every route, `/en/o-nas` and `/fr/o-nas` are built
-pages, while the landing's island is Polish in the markup; the swap would be a regression no
-design win pays for. One more, for the palette specifically: **the night plate is information only
+pages. Since 2026-09-04 the landing's island is translated too (stage K), which removes that third
+count but not the first two — and the swap would still be a regression no design win pays for. One more, for the palette specifically: **the night plate is information only
 because the landing's default is parchment.** On a footer that is always dark, `--nox` has nothing
 to say.
 

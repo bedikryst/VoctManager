@@ -632,7 +632,7 @@ export function VideoPlayer({
     .join(" ");
 
   return (
-    <Typo>
+    <Typo locale={lang ?? documentLang}>
       <figure className={classes} ref={rootRef}>
         <div className="vplayer-stage">
           {glow && (

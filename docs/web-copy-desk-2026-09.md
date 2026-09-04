@@ -15,7 +15,7 @@ for it, and §1 of the board-feedback file points here.
 - **§5 `concerts.yaml`** — the measured corpus and the `*Pl` trap that blocks three locales.
 - **§6 Order of work** — stages, and what each one delivers. **§6a** and **§6b** record what stages
   A and B shipped; **§6c** splits stage C and states the four defects that forced the split. Each
-  later stage has its own record, **§6d** through **§6cc**; read the one you need, never the run.
+  later stage has its own record, **§6d** through **§6dd**; read the one you need, never the run.
 - **§7 Traps** — things that look correct and ship wrong.
 - **§8 Open decisions.**
 
@@ -326,11 +326,13 @@ French month/day capitalization does not survive naive formatting (see the proje
 | H | `o-nas.ts` → YAML + overlays (§6r's named debt) — **done, §6aa; the desk now holds every page the site has** | the desk holds every page |
 | I | the donation vault (~1 870 lines: the invitation, the validation, the regulamin) — **done, §6bb; two desk pages, and the gateway now follows the reader** | the "Support us" every foreign page already offers |
 | J | the privacy policy (2 116 words, a static file in `public/`) — **done, §6cc; it is a route in three locales and the static file is gone** | the RODO notice the footer already links in three locales |
-| K | the landing (index + eleven partials) + `TRANSLATED_ROUTES` "/" — **not started; the only stage left** | the site is translated |
+| K | the landing (index + eleven partials) + `TRANSLATED_ROUTES` "/" — **done, §6dd; every page the site has now lives in three locales** | the site is translated |
 
-**H, I and J are through; K is the only stage left.** The ordering below is what put them in that
-sequence, and it held: each of the three closed a gap a foreign reader could already reach, and the
-landing is last because it is the one they cannot.
+**A through K are through. The site is translated**, and what is left is not a stage of this plan
+but §2's obligation over it: every locale of the landing owes a second pass, read end to end beside
+the Polish, by someone who did not draft it. The ordering below is what put H–K in their sequence,
+and it held: each of the first three closed a gap a foreign reader could already reach, and the
+landing was last because it is the one they could not.
 
 **H–K in that order, decided 2026-09-04, and the ordering is against intuition on purpose.** The
 landing is the biggest block of prose left and it is LAST, because it is the only one of the four
@@ -2408,8 +2410,160 @@ hydration, `UI.footer.donationNote` still says "charitable purposes" where every
 and the statute link's screen-reader note still disagrees with `footer.statuteAria`. `/press` joins
 the desk after Etap 3 recuts it.
 
+### §6dd Stage K — the landing, and the Polish default nobody could see (2026-09-04)
+
+The last page, and the only one a foreign reader could not reach at all: `/en` did not exist, so
+every English and French page on the site pointed its brand link at a Polish document. **The site
+is translated.**
+
+**What shipped.** `src/content/pages/landing.yaml` (89 copy fields),
+`src/i18n/content/landing.ts` (schema, contract, and a 27-key chrome triple),
+`components/pages/LandingPage.astro` with three one-line routes, and `TRANSLATED_ROUTES` "/".
+`PAGE_SPECS` gained the page — **912 keys · 2 736 rows** (+89 keys, +267 rows). The whole loop:
+`copy:sync` (267 created, **4 updated** — the privacy edits below — **0 retired**),
+`copy:propose --write` twice (**89 / 89 per locale**, with 820 already in the repository),
+`copy:apply --write` (184 translations, **0 Polish edits, 0 refused**), then the route entry.
+
+**Seven decisions worth carrying.**
+
+- **A CONCERT NAMES ITSELF ONCE, AND THE LANDING HELD FIVE SECOND NAMES.** `data/landing/paths.ts`
+  carried `title`, `place`, `note`, `tag`, `credit` and `video.note` for each evening — and `title`
+  was character for character the concert's own, which the desk has translated since stage E. The
+  register, the Imagines band and the litany's readout read it from `concerts.yaml` through the
+  overlay now; the landing's own editorial layer (tag, place line, lead, credit) moved to
+  `landing.yaml`. §6y's rule, applied to a whole section rather than to one label: a name printed
+  twice is READ twice, and the drift would have appeared the first time either was edited.
+- **The register's five `place` lines are a THIRD form of a venue, and they stay.** `concerts.yaml`
+  says "Bazylika NSPJ, Kraków", `about.place` says "Bazylika NSPJ · Kraków" and the register says
+  "Bazylika NSPJ w Krakowie" — three registers of one fact, and only the last is prose. Named
+  rather than harmonised, like §6aa's `Via`: they may read differently, they may never name
+  different buildings.
+- **`frameDate` was a Polish month inside a data file.** "styczeń MMXXIV" would have printed under
+  the English plate with nothing reporting an error — §5's ban, in the one place nobody had looked.
+  It is an ISO `YYYY-MM` now and `lib/dates.photographMoment` formats the month per locale while
+  keeping the year roman, which is the register's own voice; `romanYear` is beside it because a
+  roman year is locale-neutral by construction and that is half the reason the landing dates in it.
+- **THE THRESHOLD'S TWO BUTTONS ARE CHROME, AND ANOTHER DOCUMENT IS WHY.** §6r's test asks whether
+  completeness can be demanded; here a second predicate answers first. `polityka-prywatnosci` § 3
+  quotes the gate by name in all three languages ("Enter with voice" / "Entrer en silence"), so a
+  locale falling back to Polish would leave a legal text citing a control that does not exist on
+  the page it describes. They are a typed triple, the privacy drafts' named dependency is
+  discharged, and the two files say so in each other's headers.
+- **Where a landmark's name is a heading the page already prints, the landmark READS that
+  heading.** §6cc's rule the other way round (the privacy page reads its name off the chrome
+  because thirty footers print it). The director section, the Vox moment, the Imagines band and the
+  register take their `aria-label` from their own visible copy; only the five sections whose name a
+  reader never sees are keyed in the chrome. The one visible consequence is in the proof below:
+  the register's landmark gained the full stop its heading carries.
+- **A `class` cannot survive a proposal, so a rule that depends on one is already dead.**
+  `hero.strapHtml` is a copy field with an `<a>` in it, and the sanitizer rebuilds a submitted
+  value from `<em> <strong> <a href>` — `class="hero-strap-name"` would be stripped by the
+  editor's first edit and the link would lose its underline, its gold and its `white-space: nowrap`
+  in silence. The sheet targets `.hero-strap a` now. That `nowrap` is also what binds the
+  director's name, which is why no hard space is typed into a field an editor edits.
+- **The landing brought NO new tag and no new attribute**, which is the first time that has been
+  checked before the loop rather than after it. Its five `HTML` fields use `<em>` and one `<a>`
+  whose href is a FRAGMENT — `_safe_href` already passes `#…` unchanged — so the whitelist needed
+  nothing and the deploy was not on the critical path. The corpus-shapes test gained the three
+  shapes anyway, the fragment one included, because that is what says the two still agree.
+
+**THE DEFECT THE STAGE WAS NOT LOOKING FOR, and it had been shipping for a month.** `<Typo>` —
+the pass that gives island copy its micro-typography — **defaults to Polish**, and five islands
+took the default. So every French page on the site set `« Contemplation de l'Incarnation »` with an
+ordinary, breakable space inside its guillemets, and the build's own typography integration had
+been printing the warning for three concert pages the whole time, filed as "the HTML pass cannot
+touch island markup". That is true and is a different trap: this one is `<Typo>`'s own `locale`
+prop, defaulting to `DEFAULT_LOCALE`, exactly the shape §7 already records for `SiteFooter`'s
+`lang`. Now that every island takes its language the fix is one prop each, and **all six warnings
+are gone** — three of them on pages this stage never touched.
+
+**And the standing item from §6bb is discharged, in the shape that reconciles its two halves.**
+`ScrollTopButton` is `transition:persist`, so a prop freezes at the language the tab opened on —
+which is why it read the document — but `documentLocale()` has no document during SSR and answers
+Polish, so it SHIPPED "wróć w ciszę" in the markup of every English and French page and corrected
+it at hydration, which is a mismatch React answers by discarding the server DOM.
+`useDocumentLocale(initial)` takes the page's own `lang` as the first value and keeps the
+subscription for every value after it: the server and the first client render agree, and a swap
+still moves the island. `VideoPlayer` takes the same prop from `ConcertPage`, `VoxMoment` and
+`VideoLightbox`, which closes the same mismatch on ten concert pages.
+
+**The proof, on the Polish landing: 2 729 words in the same order before and after** — the only
+difference is the footer's build-time clock, which is the page reading itself. All 2 186 attribute
+values were compared too (§6y: a word-stream proof is blind to them) and **six differ, every one
+of them intended**: the brand link's accessible name is now the chrome's own (`VoctEnsemble —
+strona główna`, which every subpage already printed), `class="hero-strap-name"` is gone,
+`data-copied="Skopiowano"` was added to the two IBAN buttons (one script, three locales — the
+/kontakt precedent), the scoped stylesheet and script renamed `index.*` → `LandingPage.*`, and the
+register's landmark gained its heading's full stop. Seventeen more appeared when `/` entered
+`TRANSLATED_ROUTES`, and they are the hreflang graph and the two `og:locale:alternate` tags.
+**`/press` is byte-identical in both streams** — 3 002 words, 1 446 attributes — although it had to
+change: it read five of the fields that moved, so it now joins the same three sources the landing's
+own register does, in Polish, and prints exactly what it printed before.
+
+**Two Polish editorial findings, named rather than harmonised**, and both are questions for the
+desk in the SOURCE language. `ensemble.title1` + `title2` ("Zaczęło się / od tęsknoty.") is the
+same sentence /o-nas prints as its own hero title — one line, two files, and an edit to either
+leaves the site saying it two ways; both drafts follow /o-nas's published rendering so the two
+agree today. And `register.title` ("Co już zabrzmiało.") is the **fourth** Polish wording of one
+section: /koncerty calls it "Droga koncertów", /o-nas "Co już wybrzmiało", the landing's own rubric
+"Z drogi". §6aa filed this for the rubric `Via`; this is it again with one more variant, and French
+cannot see the difference between the two verbs at all — its rendering of this line and of /o-nas's
+come out identical, which is itself the evidence that the Polish carries a distinction nothing else
+does.
+
+**The privacy policy's two small repairs, carried in the same loop** (they are the four rows
+`copy:sync` reported as updated). § 4 said the foundation "pośredniczy w transmisji danych
+płatniczych" where § 11 says "Nasz serwer nie pośredniczy" — one verb, two opposite claims, seven
+sections apart, in a document whose whole point is that card data never touches these servers; § 4
+now says the operator handles the payment, which is what § 11 has described since 1.1, and version
+1.2's history entry records the correction rather than rewriting a published sentence in silence.
+§ 9 addressed the reader as "Państwo" and now says "Ty" like the other eleven sections. **The
+consequence worth naming: the two § 9 rows are translated already and correctly** — English and
+French cannot see the difference — so their EN and FR values did not change, and `copy:propose`
+does not re-propose an unchanged value. Those four rows will report **stale** on the desk until
+their next real edit, which is the staleness machinery telling the truth (the Polish moved) with no
+door to walk back through.
+
+**And the `<code>` that came back damaged in §6cc came back whole.** The backend deploy had
+landed by the time this loop ran: `s3.audio.p1Html` re-proposed once per locale, as §6cc predicted
+it would on every run until then, and both overlays now hold the tag. That item is closed.
+
+**What is still owed.** Nothing in this plan's own table — A through K are through and every page
+the site has lives in three locales. What stands outside it: §2's SECOND PASS over the landing's
+English and French, which is a separate sitting by construction and is the next thing to do;
+`AXEPTA_RETURN_URL`'s locale prefix, which this stage unblocks by giving `/en` and `/fr` a root;
+`UI.footer.donationNote`, still saying "charitable purposes" where everything else says "statutory
+purposes"; `dates[].venue` on the concert pages, still the fuller Polish legal string (§6x); the
+statute link's screen-reader note, still disagreeing with `footer.statuteAria` (§6y); and
+`program[].composer`, which prints "Anonim / aranż. Brian Kay" and "Polifonia korsykańska" on the
+English and French landings because a composer credit is not on the desk at all — a corpus
+question, not a landing one. `/press` joins the desk after Etap 3 recuts it.
+
 ## §7 Traps
 
+- **`<Typo>` DEFAULTS TO POLISH, and a default that is Polish is invisible when it is wrong.**
+  The island typography wrapper takes an optional `locale` and falls back to `DEFAULT_LOCALE`, so
+  five islands that never passed one set French copy with the Polish rules: `« … »` shipped with an
+  ordinary, breakable space inside the guillemets on every French page carrying a film, for a
+  month. The build's own integration was printing the warning and it was read as the neighbouring
+  trap ("the HTML pass cannot touch island markup"), which is true and is about a different field.
+  Whenever an island learns its language, `<Typo locale={…}>` moves with it in the same edit
+  (§6dd). It is the same shape as `SiteFooter`'s `lang` below, one layer down.
+- **An `initial` is not a prop and not a read — it is both, and a `transition:persist` island needs
+  both.** `documentLocale()` answers Polish during SSR, so an island that reads it ships Polish
+  markup on a foreign page and corrects it at hydration; a `lang` prop fixes the server and then
+  freezes for the life of the tab, because the ClientRouter keeps the instance across the swap that
+  rewrites `<html lang>`. `useDocumentLocale(initial)` takes the page's own language as the FIRST
+  value and keeps the subscription for every value after it. `ScrollTopButton` needed exactly that
+  and had had one half of it since §6z (§6dd).
+- **A `class` in an `HTML` copy field is already gone; a CSS rule that depends on one is a
+  time-bomb with the editor's first edit as its fuse.** `sanitize_for_kind` rebuilds a submitted
+  value from `<em> <strong> <a href lang>` — `class` is not on the list and never will be, because
+  it is presentation. So a selector like `.hero-strap-name`, correct the day the markup was
+  written, stops matching the moment the sentence around it becomes desk copy and somebody edits
+  it: no error, no failed build, just a link that has lost its underline and its gold. Target the
+  PARENT (`.hero-strap a`) when you move a sentence with markup in it onto the desk, and grep the
+  sheets for every class the field used to carry (§6dd).
 - **`overflow-x: hidden` on the body kills every page-level `position: sticky`.** One axis `hidden`
   and the other `visible` computes the visible axis to `auto`, so the body becomes a scroll
   container while the document scrolls on `html`, and a sticky element resolves against a scrollport

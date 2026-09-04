@@ -43,7 +43,7 @@ export function VoxMoment({
   lang,
 }: VoxMomentProps): React.JSX.Element {
   return (
-    <Typo>
+    <Typo locale={lang}>
       <section className="vox" aria-label={eyebrow}>
         <div className="vox-inner">
           {/* The ink register reaches into this island: both classNames are constant strings, so

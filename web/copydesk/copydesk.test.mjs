@@ -700,6 +700,7 @@ test("a page's Polish goes to the page's own file, and its translation to the pa
   // page added at the front of it turned both of these tests red for addressing a field it has
   // not got. The test means THIS page.
   const spec = PAGE_SPECS.find((s) => s.id === "o-nas");
+  assert.ok(spec, "o-nas is the page this test addresses");
   const source = pageSource(spec.id);
   const raw = await readFile(new URL(`../${source}`, import.meta.url), "utf8");
   const data = await readPage(spec);
@@ -738,6 +739,7 @@ test("a path record that contradicts its key's namespace is refused, not written
   // page added at the front of it turned both of these tests red for addressing a field it has
   // not got. The test means THIS page.
   const spec = PAGE_SPECS.find((s) => s.id === "o-nas");
+  assert.ok(spec, "o-nas is the page this test addresses");
   const source = pageSource(spec.id);
   const data = await readPage(spec);
   const { paths } = extractPage(spec, data);
