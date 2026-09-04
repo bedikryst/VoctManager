@@ -113,6 +113,7 @@ export const TRANSLATED_ROUTES: ReadonlySet<string> = new Set<string>([
   "/o-nas",
   "/kontakt",
   "/koncerty",
+  "/obrazy",
   "/koncerty/wcielenie",
   "/koncerty/wolanie-gor",
   "/koncerty/9-kart",
