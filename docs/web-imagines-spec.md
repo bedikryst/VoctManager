@@ -306,6 +306,15 @@ Route: `/obrazy`. **No `TRANSLATED_ROUTES` entry** — that set holds `/o-nas` a
 `localizePath` correctly returns the Polish URL for untranslated routes. It joins when it is
 translated, not before.
 
+**It joined, 2026-09-04.** The archive is `/obrazy`, `/en/obrazy` and `/fr/obrazy` over one shared
+`components/pages/ObrazyPage.astro`, its nine copy fields are on the copy desk and translated, and
+the entrances above localize themselves — the footer's Index column and the register's closing line
+now point a foreign reader at their own archive. Two things came with it: a venue's name is a label
+this site publishes in three languages (`i18n/content/miejsca.ts`), which also fixed the Polish run
+heads every foreign concert page had carried since its own fork; and the scale line's nouns decline
+per locale. Recorded in docs/web-copy-desk-2026-09.md §6x. **"No nav slot" still holds** — nothing
+about being translated makes the archive a fifth voice in the bar.
+
 ## 8. Stage 4 — the `Imagines` band on the landing — SHIPPED
 
 `components/landing/ImaginesBand.astro` + `styles/landing/14-imagines.css`.

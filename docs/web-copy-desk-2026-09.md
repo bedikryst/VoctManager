@@ -321,7 +321,7 @@ French month/day capitalization does not survive naive formatting (see the proje
 | D3 | reviewer mode: old → new, accept / reject / edit further — **done, §6i** | the patch gets made |
 | E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 — **EN pass 1 done, §6j** | Florent's first sitting |
 | F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang — **done, §6o** | the pages exist |
-| G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing — **`kontakt` (§6r–§6u) and `koncerty` (§6v, §6w) are both through the whole loop and live in three locales; `obrazy`, `kolofon`, the chrome and the landing are still Polish-only** | the rest of the corpus enters the desk |
+| G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing — **`kontakt` (§6r–§6u), `koncerty` (§6v, §6w) and `obrazy` (§6x) are through the whole loop and live in three locales; `kolofon`, the chrome and the landing are still Polish-only** | the rest of the corpus enters the desk |
 
 ### §6a Stage A — what shipped (2026-09-02)
 
@@ -1838,6 +1838,57 @@ carrying `lang` still loses it, so the two English fields keep the stripped form
 `copy:propose` will report those four rows (two per locale) as "to propose" on every run, because
 the drafts carry the attribute and the repository does not. After the deploy: `copy:propose --write`
 for both locales, `copy:apply --write`, one four-row diff, done.
+
+### §6x Stage G6 — `/obrazy`, the page that is mostly not words (2026-09-04)
+
+The third page, and the one where the desk's share of a page is smallest: **nine copy fields**
+standing around 48 photographs. Everything else a reader meets was already owned by something —
+which made the stage's work deciding what each of those things is, rather than writing prose.
+
+**What shipped.** `/obrazy` renders from a shared component in three locales:
+`src/content/pages/obrazy.yaml` (9 fields), `src/i18n/content/obrazy.ts` (schema, contract, chrome,
+declensions), `src/i18n/content/miejsca.ts` (seven venues in three languages),
+`components/pages/ObrazyPage.astro` and three one-line routes. `PAGE_SPECS` gained the page — **504
+keys · 1 512 rows**. Both drafts went through §2's two passes, then the whole loop: `copy:sync` (27
+rows created), `copy:propose --write` (9 + 9), `copy:apply --write` (18 translations, 0 Polish
+edits, 0 refused), `TRANSLATED_ROUTES`. **The proof the move changed no Polish: 1 499 words, in the
+same order, before and after** — the only markup differences the ones moving a file is allowed to
+make.
+
+**Four decisions worth carrying.**
+
+- **A venue's NAME is a label, and this page prints it as a heading — so it left the corpus the way
+  the era names did.** `concerts.yaml`'s `venue` is `schema.org` `Place.name`, declared not-copy in
+  the desk's own table, and it cannot also be the name a reader meets in three languages without
+  one field meaning two things. `i18n/content/miejsca.ts` names the seven buildings,
+  `placeName(venue, locale)` throws on a room nobody named, and `galleryRuns` titles a run through
+  it. **This fixed a defect the stage did not introduce**: every foreign concert page has headed its
+  gallery runs `Bazylika NSPJ, Kraków` since stage F, under a dateline reading `Sacred Heart
+  Basilica, Kraków` — one building under two names inside one document, which is precisely what §6u
+  set the rule against. The renderings are the site's own, taken from the overlays and the alt text,
+  not freshly invented.
+- **A noun that must agree with a computed number is chrome, not prose.** "48 fotografii · 5
+  wieczorów · 6 miejsc" is counted at build, and Polish declines 2–4 apart from 5-and-up, so the
+  three nouns take `Record<Locale, …>` with `few` present only where a language has that category.
+  Nobody reviews a plural form; a missing one is a broken line. Same test as a landmark, so the same
+  shape.
+- **The page's own name comes from the entrance that leads to it.** The footer's Index column has
+  said `Images` in English since the column existed, and `koncert.ts` already calls one evening an
+  `Image`. So the h1 is `Images` in both foreign locales and the breadcrumb prints the h1 rather
+  than a chrome string of its own — a reader must land on the page they pressed, and one word may
+  not have two homes.
+- **`meta.description` loses its count on the contract's own instruction.** The Polish says "z
+  pięciu Koncertów Duchowych" while the page beside it counts the evenings at build. The number is
+  a lie waiting for the sixth gallery, so the note tells the translator to render it count-free
+  rather than faithfully — the same call §6v's `/koncerty` description already made, arriving here
+  as an editorial decision the desk now owns.
+
+**What is still owed by this page.** The tour list on a concert page prints `dates[].venue`, which
+is deliberately the fuller legal string — a street address in one case, "(dolny kościół)" in
+another — so it stayed Polish on the foreign pages. That is a decision about whether an itinerary
+prints a NAME or an ADDRESS, not a translation, and it belongs to whoever makes it rather than to
+this stage. And the four `lang="fr"` rows from §6w re-propose on every run until the sanitizer fix
+is deployed; they apply as no-ops in the meantime.
 
 ## §7 Traps
 
