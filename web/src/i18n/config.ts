@@ -110,6 +110,10 @@ export const LOCALE_META: Record<Locale, LocaleMeta> = {
  * its own: a concert enters when its translation is reviewed, not when the section is.
  */
 export const TRANSLATED_ROUTES: ReadonlySet<string> = new Set<string>([
+  // The landing, and with it the site's ROOT in each locale: `localizePath` turns "/" into "/en"
+  // and "/fr" rather than prefixing a path, which is what finally gives every foreign page a home
+  // to point its brand link at.
+  "/",
   "/o-nas",
   "/kontakt",
   "/koncerty",
