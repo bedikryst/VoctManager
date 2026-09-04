@@ -322,7 +322,7 @@ French month/day capitalization does not survive naive formatting (see the proje
 | E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 — **EN pass 1 done, §6j** | Florent's first sitting |
 | F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang — **done, §6o** | the pages exist |
 | G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome, `/404`), then landing — **`kontakt` (§6r–§6u), `koncerty` (§6v, §6w), `obrazy` (§6x), `kolofon` (§6y) and the chrome + `/404` (§6z) are through the whole loop and live in three locales** | the rest of the corpus enters the desk |
-| H | `o-nas.ts` → YAML + overlays (§6r's named debt) — **not started** | the desk holds every page |
+| H | `o-nas.ts` → YAML + overlays (§6r's named debt) — **the page is on the desk and the mirror; the loop stopped mid-run on a production outage, §6aa** | the desk holds every page |
 | I | the donation vault (~1 870 lines: the invitation, the validation, the regulamin) — **not started** | the "Support us" every foreign page already offers |
 | J | the privacy policy (2 116 words, today a static file in `public/`) — **not started** | the RODO notice the footer already links in three locales |
 | K | the landing (index + eleven partials) + `TRANSLATED_ROUTES` "/" — **not started** | the site is translated |
@@ -2093,6 +2093,73 @@ did not create: the statute link's screen-reader note still says "otwiera się w
 the fuller Polish legal string (§6x). And one this stage inspected and left standing on purpose:
 the footer's postal address prints "ul. Św. Filipa 23/3" in every locale, because an address is
 written the way it must be written on an envelope.
+
+### §6aa Stage H — `/o-nas` onto the desk, and the loop stopped half-way (2026-09-04)
+
+**Unfinished, and the unfinished half is visible on the site.** Read this before touching /o-nas or
+deploying `web/`.
+
+**What is done and proved.** `o-nas.ts` was the last page holding prose in TypeScript — §6r's named
+debt, and the one page whose translations no editor could reach, because `copy:apply` splices a
+YAML scalar and rewrites an overlay and can write a `.ts` file by no means at all. Its 73 copy
+fields are now `src/content/pages/o-nas.yaml`, its ten landmark names a `Record<Locale, …>` beside
+them, and its eight Latin rubrics and four stanza numerals are in the markup where the rest of the
+site keeps its locale-neutral tier. `PAGE_SPECS` has the page: **636 keys · 1 908 rows** (+73, +219),
+and `copy:sync` put those 219 rows into production's mirror — **0 updated, 0 retired**, so nothing
+else in the corpus moved. Both drafts are written (`copydesk/drafts/{en,fr}/o-nas.yaml`, 73 fields
+each) and `copy:propose`'s dry run reports **73 / 73 in both locales with 563 already in the
+repository and nothing re-proposing**.
+
+**Where it stopped.** `copy:propose --locale en --write` failed at sign-in: a connect timeout, then
+`POST /api/token/` answering with the marketing site's HTML — which is nginx's miss cascade
+reporting that Django did not answer at all. Probed directly, every path proxied to the panel
+(`/api/`, `/api/token/`, `/api/copydesk/segments/`) hangs to a full timeout while everything nginx
+serves statically (the site, `/panel/`'s shell) returns 200. That is the whole panel down, not the
+copy desk, and it did not recover over several minutes of watching. `copy:sync` had succeeded
+against the same host a minute earlier, so the ingest is the last thing the worker answered — one
+request carrying ~1 900 rows, on the one-vCPU droplet §6n already caught this shape on.
+
+**So the repository is one commit short of correct, and the shortfall is a regression.** /o-nas is
+in `TRANSLATED_ROUTES` and has been since stage F, so unlike every earlier page of stage G this one
+was already live in three languages before the move. With the overlays still empty, `/en/o-nas` and
+`/fr/o-nas` build with English and French chrome around **Polish prose**. Nothing deploys itself
+here, and that is the whole margin: **do not deploy `web/` until the loop finishes.** Verified by
+building both trees and comparing: the Polish page is unchanged at **2 225 words in the same order**,
+and the two foreign pages fall back per field exactly as `lib/pageCopy` promises — correctly, and to
+the wrong language for a reader.
+
+**To finish it**, from the laptop's checkout in `web/`, once the panel answers again:
+`npm run copy:propose -- --locale en --write`, the same for `fr`, then `npm run copy:apply --write`,
+then commit `src/content/pages.{en,fr}.yaml`. `copy:propose` is resumable (§6n) and its dry run is a
+pure local read, so re-running it costs only what did not land. `TRANSLATED_ROUTES` needs no edit —
+this is the first page of the whole stage that was already in it.
+
+**Three findings worth carrying, none of which needed the panel.**
+
+- **The board's roles were paired to faces BY POSITION.** `boardMembers` is a hard-coded triple in
+  the component and the roles were `c.governance.roles[i]`, which was safe while both lists lived in
+  one TypeScript file and stopped being safe the moment the roles became a desk list an editor can
+  reorder. They carry an `id` now and the component looks a remit up by it, throwing rather than
+  rendering a card with a name, a face and no role — and the empty string would have gone into the
+  portrait's alt text, where nobody would have seen it.
+- **The statutory-purposes list was carrying its own section's `aria-label`.** `<ol class="goals">`
+  and the `<section>` around it both read `c.foundation.aria`, so a screen reader met two things
+  called "Fundacja VoctFoundation" on one screen with no way to tell which had just been entered. It
+  is `goalsAria` now — the one attribute the before/after comparison shows changing on the Polish
+  page, and the reason that comparison reads attributes at all (§6y: a word-stream proof is blind to
+  them).
+- **The Latin rubric `Via` has two different POLISH glosses.** /koncerty calls it "Droga koncertów"
+  and /o-nas calls it "Co już wybrzmiało", so the English and French follow their own Polish and
+  print "The path of the concerts" on one page and "What has sounded" on the other. §6y's rule —
+  one rubric, one gloss — is broken here in the source language, which makes it Florent's editorial
+  question rather than a translation defect, and both drafts say so in their headers rather than
+  harmonising it unasked. Note the chrome already agrees: /o-nas's `milestonesAria` is exactly
+  /koncerty's published gloss.
+
+**And one thing this stage did NOT do.** The field names took the convention the later pages settled
+on (`lede`, `title1`, `p2`) instead of the `…Text` suffix that predated deriving the segment kind
+from `…Html`. That is free only because the keys were being minted in the same commit; it is not a
+precedent for renaming a field that already carries proposals, which re-keys it and loses them.
 
 ## §7 Traps
 
