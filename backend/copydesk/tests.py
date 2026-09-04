@@ -177,10 +177,31 @@ class SanitizerTests(TestCase):
     def test_contenteditable_divs_become_line_breaks_not_fused_words(self):
         self.assertEqual(sanitize_html("<div>pierwszy</div><div>drugi</div>"), "pierwszy\ndrugi")
 
-    def test_attributes_are_dropped_except_href(self):
+    def test_attributes_are_dropped_except_href_and_lang(self):
         self.assertEqual(
             sanitize_html('<a href="/koncerty" class="x" target="_blank">Koncerty</a>'),
             '<a href="/koncerty">Koncerty</a>',
+        )
+
+    def test_lang_survives_because_the_corpus_writes_it(self):
+        # The phrase is French inside Polish prose, and that is meaning rather
+        # than presentation: the screen reader and the hyphenator both read it.
+        self.assertEqual(
+            sanitize_html('dawnych <em lang="fr">Concerts Spirituels</em>'),
+            'dawnych <em lang="fr">Concerts Spirituels</em>',
+        )
+
+    def test_an_unparseable_lang_is_dropped_and_the_words_stay(self):
+        self.assertEqual(
+            sanitize_html('<em lang="français, je crois">Concerts</em>'), "<em>Concerts</em>"
+        )
+
+    def test_both_allowed_attributes_survive_on_one_tag(self):
+        # The emit accumulates: an earlier version overwrote its own rendering
+        # per attribute, so the last one recognised was the only one kept.
+        self.assertEqual(
+            sanitize_html('<a href="/press" lang="en" class="x">press kit</a>'),
+            '<a href="/press" lang="en">press kit</a>',
         )
 
     def test_javascript_href_is_removed_leaving_the_words(self):
@@ -219,14 +240,25 @@ class SanitizerTests(TestCase):
         markup with one word changed, and it is sanitized on the way in. Anything
         the site authored that this pass does not recognise would be stripped
         silently — the editor sees their sentence accepted and the link, or the
-        emphasis, is simply gone from the page. These four shapes are every
-        construction in `src/content/pages/kontakt.yaml`.
+        emphasis, is simply gone from the page.
+
+        THE LIST IS BY HAND AND THAT IS THE MAINTENANCE COST: every construction
+        in every `…Html` field of `src/content/pages/`. It outgrew itself once
+        already — `/koncerty` arrived carrying `<em lang="fr">` and the desk
+        stripped the attribute out of both translations before anyone read the
+        patch — so a page joining the corpus adds its shapes here in the same
+        commit.
         """
         for value in (
+            # kontakt.yaml
             "do <em>nas.</em>",
             "Pod wszystkimi trzema są <em>te same trzy osoby</em> — zarząd fundacji.",
             'w <a href="/press">materiałach prasowych →</a>',
             '<a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>.',
+            # koncerty.yaml
+            "<em>Duchowe.</em>",
+            'To współczesna forma dawnych <em lang="fr">Concerts Spirituels</em> — chodź po nich '
+            "po kolei.",
         ):
             with self.subTest(value=value):
                 self.assertEqual(sanitize_html(value), value)

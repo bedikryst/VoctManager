@@ -21,10 +21,20 @@ from html.parser import HTMLParser
 #: content file the guardrails keep free of it.
 ALLOWED_TAGS: frozenset[str] = frozenset({"em", "strong", "a"})
 
-#: `href` is the only attribute that survives, and only on `<a>`. Everything
-#: else an editor's browser attaches (class, style, dir, data-*) is layout or
-#: provenance, not copy.
-ALLOWED_ATTRIBUTES: dict[str, frozenset[str]] = {"a": frozenset({"href"})}
+#: The attributes that survive: `href` on `<a>`, and `lang` wherever the inline
+#: vocabulary goes. Everything else an editor's browser attaches (class, style,
+#: dir, data-*) is layout or provenance, not copy.
+#:
+#: `lang` is here because the corpus writes it: /koncerty names the old
+#: `<em lang="fr">Concerts Spirituels</em>` in Polish prose, and an attribute the
+#: list does not know is one the round trip through a proposal deletes in
+#: silence. It says which language a phrase is in — meaning, not presentation —
+#: and a screen reader and the hyphenator both read it.
+ALLOWED_ATTRIBUTES: dict[str, frozenset[str]] = {
+    "a": frozenset({"href", "lang"}),
+    "em": frozenset({"lang"}),
+    "strong": frozenset({"lang"}),
+}
 
 #: Schemes a link may carry. `javascript:` and `data:` are absent deliberately:
 #: these values are rendered into a public static site, and a proposal is
@@ -49,6 +59,10 @@ _MAX_NESTING = 8
 _BLANK_RUN = re.compile(r"\n{3,}")
 _TRAILING_SPACES = re.compile(r"[ \t]+\n")
 
+#: A language tag the shape BCP 47 gives one: subtags of letters and digits
+#: joined by hyphens (`fr`, `pt-BR`, `zh-Hant`).
+_LANGUAGE_TAG = re.compile(r"^[A-Za-z]{1,8}(?:-[A-Za-z0-9]{1,8})*$")
+
 
 def _safe_href(value: str | None) -> str | None:
     """The href to keep, or None to drop the attribute and leave a bare `<a>`.
@@ -70,6 +84,24 @@ def _safe_href(value: str | None) -> str | None:
     return href if scheme.lower() in _ALLOWED_SCHEMES else None
 
 
+def _safe_lang(value: str | None) -> str | None:
+    """The language tag to keep, or None to drop the attribute.
+
+    Dropped rather than escaped: a `lang` no parser recognises annotates
+    nothing, and leaving it in would put a paste's leftovers on the page.
+    """
+    if value is None:
+        return None
+    tag = value.strip()
+    return tag if _LANGUAGE_TAG.match(tag) else None
+
+
+#: How each allowed attribute's value is checked. An attribute named in
+#: ALLOWED_ATTRIBUTES and missing here is a programming error, and the emit
+#: below drops it rather than trusting an unchecked value onto a static site.
+_ATTRIBUTE_GUARDS = {"href": _safe_href, "lang": _safe_lang}
+
+
 class _InlineHtmlSanitizer(HTMLParser):
     """Re-emits a fragment keeping only ALLOWED_TAGS, correctly nested.
 
@@ -89,14 +121,22 @@ class _InlineHtmlSanitizer(HTMLParser):
             self._parts.append("\n")
         if tag not in ALLOWED_TAGS or len(self._open) >= _MAX_NESTING:
             return
-        rendered = tag
-        for name, value in attrs:
-            if name.lower() not in ALLOWED_ATTRIBUTES.get(tag, frozenset()):
+        allowed = ALLOWED_ATTRIBUTES.get(tag, frozenset())
+        rendered = [tag]
+        seen: set[str] = set()
+        for raw_name, value in attrs:
+            name = raw_name.lower()
+            if name not in allowed or name in seen:
+                # A repeated attribute is a paste artefact: the first wins, as a
+                # browser's own parser would have it.
                 continue
-            href = _safe_href(value)
-            if href is not None:
-                rendered = f'{tag} {name.lower()}="{escape(href, quote=True)}"'
-        self._parts.append(f"<{rendered}>")
+            guard = _ATTRIBUTE_GUARDS.get(name)
+            kept = guard(value) if guard else None
+            if kept is None:
+                continue
+            seen.add(name)
+            rendered.append(f'{name}="{escape(kept, quote=True)}"')
+        self._parts.append(f"<{' '.join(rendered)}>")
         self._open.append(tag)
 
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:

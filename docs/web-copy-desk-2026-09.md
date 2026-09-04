@@ -321,7 +321,7 @@ French month/day capitalization does not survive naive formatting (see the proje
 | D3 | reviewer mode: old → new, accept / reject / edit further — **done, §6i** | the patch gets made |
 | E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 — **EN pass 1 done, §6j** | Florent's first sitting |
 | F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang — **done, §6o** | the pages exist |
-| G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing — **`kontakt` is through the whole loop and live in three locales (§6r, §6s, §6t, §6u); `koncerty` is on the desk with its three routes built and both drafts written, awaiting the loop (§6v); `obrazy`, `kolofon`, the chrome and the landing are still Polish-only** | the rest of the corpus enters the desk |
+| G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing — **`kontakt` (§6r–§6u) and `koncerty` (§6v, §6w) are both through the whole loop and live in three locales; `obrazy`, `kolofon`, the chrome and the landing are still Polish-only** | the rest of the corpus enters the desk |
 
 ### §6a Stage A — what shipped (2026-09-02)
 
@@ -1793,6 +1793,52 @@ landing. `o-nas.ts` is still the one page holding prose in TypeScript (§6r's na
 one page whose translations no editor can reach. The donation vault's terms still print Polish in
 every locale on every page carrying the island.
 
+### §6w Stage G5 — the loop run, and the attribute the desk was eating (2026-09-04)
+
+The second page all the way through, and the run is unremarkable: `copy:sync` at `88f6a9a` put
+**93 rows into the mirror** (31 keys × 3 locales, 0 updated, 0 retired — the desk now holds 495
+keys); `copy:propose --write` posted and accepted **31 EN and 31 FR**, `page.koncerty 31 / 31` in
+both; `copy:apply --write` wrote **62 translations, 0 Polish edits, 0 refused** into `pages.en.yaml`
+and `pages.fr.yaml` and stamped every one. Then `/koncerty` entered `TRANSLATED_ROUTES`. Verified in
+`dist/`: three titles, three h1s, a complete hreflang graph with a self-canonical on each, the five
+concert pages and `/o-nas` linking to the reader's own index, and — the check §6v's fix earns —
+`h1[data-astro-cid-…] em{color:var(--candle)}` in the emitted CSS, the scope-free `em` that means
+the injected emphasis takes the gold.
+
+**And a third defect the loop found rather than a test: the desk was silently eating an attribute
+the corpus writes.** `sanitize_for_kind` rebuilds every submitted value from
+`<em> <strong> <a href>`, and `href` on `<a>` was the whole of `ALLOWED_ATTRIBUTES` — so
+`<em lang="fr">Concerts Spirituels</em>`, which is how this page names the eighteenth-century
+series in all three languages, came back as `<em>`. It is visible in the applied patch and it is
+now in both overlays: `intro.noteHtml` and `rites.ledeHtml`, where English prose has lost the one
+marker saying that phrase is French (in the French overlay the attribute was redundant anyway).
+Nothing warned. That is §7's own trap — *a whitelist that is not a superset of the corpus destroys
+the corpus, one edit at a time* — arriving through the half the trap did not spell out: it says
+"before adding a TAG to a content file, add it to `ALLOWED_TAGS`", and an attribute cuts exactly
+the same way. The corpus authored the `lang` before the desk ever saw the page, so the first thing
+through the door lost it.
+
+- **`lang` is meaning, not presentation, which is why it belongs on the list** beside `href` and
+  nowhere near `class` or `style`: a screen reader changes voice on it and the hyphenator changes
+  language. It is whitelisted on `em`, `strong` and `a`, its value checked against BCP 47's shape
+  and dropped — not escaped — when it does not parse.
+- **The emit had a latent bug that only a second allowed attribute could show.** It rebuilt the
+  whole tag string per attribute rather than accumulating, so of two recognised attributes only the
+  last survived. One allowed attribute made it unobservable. It accumulates now, first occurrence
+  wins on a repeat.
+- **The test that should have caught this is a hand-written list of the corpus's shapes**, and it
+  named `kontakt.yaml` only, because that was the whole page corpus when it was written. It now
+  carries `koncerty.yaml`'s two as well and says in its own docstring that a page joining the corpus
+  adds its shapes in the same commit. A test that enumerates a moving corpus by hand is worth
+  keeping only if the rule for extending it is written where it is read.
+
+**What this owes, and it is the developer's:** the fix is backend code, and the desk that stripped
+the attribute is **production's**. Until `backend/copydesk/sanitizers.py` is deployed, a proposal
+carrying `lang` still loses it, so the two English fields keep the stripped form — and
+`copy:propose` will report those four rows (two per locale) as "to propose" on every run, because
+the drafts carry the attribute and the repository does not. After the deploy: `copy:propose --write`
+for both locales, `copy:apply --write`, one four-row diff, done.
+
 ## §7 Traps
 
 - **`overflow-x: hidden` on the body kills every page-level `position: sticky`.** One axis `hidden`
@@ -1837,9 +1883,12 @@ every locale on every page carrying the island.
   silently drops whatever is not on the list. The trap is which direction that cuts. An editor's
   first proposal on an `html` field is that field's own markup with one word changed, so a
   construction the site authored and the list does not know is stripped on the way in, and what the
-  editor sees is their sentence accepted with the link gone. Before adding a tag to a content file,
-  add it to `ALLOWED_TAGS`; the test that asserts `kontakt.yaml`'s four shapes survive untouched —
-  and survive a second pass over the first pass's output — is what says the two still agree.
+  editor sees is their sentence accepted with the link gone. Before adding a tag OR AN ATTRIBUTE to
+  a content file, add it to `ALLOWED_TAGS` / `ALLOWED_ATTRIBUTES`; the test that asserts the page
+  corpus's own shapes survive untouched — and survive a second pass over the first pass's output —
+  is what says the two still agree, and it is a hand-written list that a new page has to extend in
+  its own commit. The attribute half is not hypothetical: `<em lang="fr">` reached both overlays
+  stripped before anyone read the patch (§6w).
   The original wording of this trap named `contenteditable`, and this desk has none (§6t): the
   editor is a plain textarea, an `HTML` field is edited as its own source, and nothing renders a
   segment as markup. `text` segments have no markup path at all in either reading.
