@@ -1,0 +1,57 @@
+# The editorial text of /obrazy — Polish, and Polish only.
+#
+# WHAT IS AND IS NOT HERE. This page is mostly not words: it is 48 photographs in the order they
+# were taken. What it says around them is here — the head that opens the archive, the two rubrics,
+# and the colophon's closing note. Everything else a reader meets on the page comes from somewhere
+# that already owns it:
+#
+#   an evening's TITLE and its frames' ALT TEXT → `concerts.yaml` through the desk's overlay,
+#     exactly as /koncerty/[id] reads them;
+#   a run's PLACE → `src/i18n/content/miejsca.ts`, because a building's name is a label and two
+#     pages print it;
+#   the SCALE line ("48 fotografii · 5 wieczorów …") → counted at build, never typed, with its
+#     nouns declined in `src/i18n/content/obrazy.ts`;
+#   the photographers' names and "fot." → `lib/photoCredit`, which has held all three locales
+#     since the frame's protocol shipped.
+#
+# WHY THIS IS YAML AND NOT A TypeScript MODULE, and where the chrome went instead: the same line
+# every page on the desk draws — completeness can be demanded of a landmark, not of a paragraph.
+# docs/web-copy-desk-2026-09.md §6r.
+#
+# TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under this page's desk
+# key — `page.obrazy.` + the dotted path below — and are read through `lib/copyOverlay`.
+#
+# NO TYPOGRAPHY. Write the prose plainly: `lib/typo.ts` pins Polish orphans and French punctuation
+# spacing in the rendered HTML at build.
+
+meta:
+  title: "Obrazy — fotografie Koncertów Duchowych · VoctEnsemble"
+  # "pięciu" is a count of the evenings that have photographs, and it is hand-written where the
+  # page itself counts: it will be a lie the day a sixth gallery lands. Left as it stands because
+  # the words were not this stage's to change — the desk's first editorial decision on this page.
+  description: >-
+    Archiwum fotografii VoctEnsemble. Dokumentalne zdjęcia z pięciu Koncertów Duchowych,
+    w kolejności, w jakiej się odbyły.
+  # The name the JSON-LD gives the gallery: the title without the site's own name after it, which
+  # a search result prints for itself.
+  galleryName: "Obrazy — fotografie Koncertów Duchowych"
+
+head:
+  # Vernacular gloss of the Latin rubric `Imagines`, which stands beside it unchanged in every
+  # locale.
+  eyebrow: "Archiwum fotografii"
+  title: "Obrazy"
+  lede: >-
+    To jest wszystko, co zostało z tych wieczorów poza dźwiękiem. Fotografie idą
+    w kolejności, w jakiej powstały — od pierwszej próby do ostatniego koncertu.
+
+colophon:
+  # The vernacular tier of the rubric `Photographi`, and it is not a translation of it: the Latin
+  # names the photographers, this names the photographs, and together they say what the band is.
+  # The one press outlet in the list below carries its own label in its row.
+  eyebrow: "Fotografie"
+  # Printed only where some frame in the archive names nobody, which is most of them. It is the
+  # sentence that keeps the list above from reading as a claim over every photograph here.
+  note: "Pozostałe fotografie pochodzą z archiwum zespołu."
+  # The way out of a 15 000px document, back to the cycle these evenings belong to.
+  back: "Wróć do Koncertów Duchowych"

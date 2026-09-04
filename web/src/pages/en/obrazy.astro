@@ -1,0 +1,15 @@
+---
+/**
+ * @file en/obrazy.astro
+ * @description English image archive (/en/obrazy). Structure lives in the shared ObrazyPage
+ *  component; this route only selects the locale. The chrome is translated in
+ *  i18n/content/obrazy.ts and the places in i18n/content/miejsca.ts, while the page's own prose and
+ *  each evening's title and alt text fall back per field to their Polish until the copy desk's
+ *  English lands in content/pages.en.yaml and content/concerts.en.yaml.
+ * @architecture Astro islands 2026
+ * @module pages/en/obrazy
+ */
+import ObrazyPage from "../../components/pages/ObrazyPage.astro";
+---
+
+<ObrazyPage lang="en" />

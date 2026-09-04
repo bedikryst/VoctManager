@@ -21,6 +21,7 @@
  */
 import { longDate } from "./dates";
 import type { Locale } from "../i18n/config";
+import { placeName } from "../i18n/content/miejsca";
 
 /** What a run is drawn from. Callers bring their own fields (image, alt, aspect) on top. */
 export interface RunnableShot {
@@ -56,8 +57,7 @@ export interface GalleryRun<T> {
 }
 
 /** The rehearsal's own name. It stands where a place would, because a rehearsal room is the one
- *  thing this archive never recorded — see the note in concerts.yaml above Wcielenie's gallery.
- *  It is the run head's ONLY translatable part: every other title is a venue, which is a name. */
+ *  thing this archive never recorded — see the note in concerts.yaml above Wcielenie's gallery. */
 const REHEARSAL_TITLE: Record<Locale, string> = {
   pl: "Próba",
   en: "Rehearsal",
@@ -79,8 +79,11 @@ const singleVenue = (venue: string | undefined): string | undefined =>
  * were not recorded, and handing it the concert's own would state a room and a day this archive
  * has no grounds for.
  *
- * `locale` reaches only the two things a head can say in a language: the rehearsal's name and the
- * date's format. `/obrazy` is still Polish-only and passes `"pl"`; the concert page passes its own.
+ * `locale` reaches everything a head says: the rehearsal's name, the date's format and the venue's
+ * own name, which is a label this site publishes in three languages (`i18n/content/miejsca`) rather
+ * than a string to print as it stands. It used to reach the first two only, and every foreign
+ * concert page therefore headed its runs in Polish under a dateline that named the same building in
+ * English.
  */
 export function galleryRuns<T extends RunnableShot>(
   shots: readonly T[],
@@ -100,7 +103,7 @@ export function galleryRuns<T extends RunnableShot>(
       key = next;
       runs.push({
         moment: shot.moment,
-        title: rehearsal ? REHEARSAL_TITLE[locale] : (venue ?? ""),
+        title: rehearsal ? REHEARSAL_TITLE[locale] : venue ? placeName(venue, locale) : "",
         ...(iso ? { date: longDate(iso, locale) } : {}),
         credits: [],
         sources: [],
