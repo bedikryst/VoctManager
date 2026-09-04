@@ -193,8 +193,8 @@ page.landing.support.tiers.t2500.amount: "2,500 zł"
 page.landing.support.tiers.t2500.text: "helps make the cycle's next evening"
 page.landing.support.bank.recipient: "Recipient: Fundacja VoctFoundation"
 # The LABEL is the donation vault's own, for the identical Polish ("Tytuł przelewu",
-# `skarbiecChrome.ts` → `fieldTransferTitle`). The same donor meets both beside the same account
-# number, one click apart.
+# `skarbiecChrome.ts` → `fieldTransferTitle`) — and the vault island renders ON THIS PAGE, so the
+# two spellings stood in one section over one account number.
 page.landing.support.bank.transferTitle: "Transfer title: Darowizna na cele statutowe VoctFoundation"
 page.landing.support.contactLabel: "Contact the artistic direction"
 page.landing.support.supportCta: "Support us"

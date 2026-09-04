@@ -2542,9 +2542,9 @@ question, not a landing one. `/press` joins the desk after Etap 3 recuts it.
 ### §6ee After K — §2's second pass over the landing, and the label a donor reads twice (2026-09-04)
 
 Not a stage: the obligation §2 places on every locale this project writes, discharged for the last
-page. **Twenty-two corrections — eight English, fourteen French** — and the answer to "does the
+page. **Twenty-three corrections — eight English, fifteen French** — and the answer to "does the
 second pass still earn its sitting when the page is only 89 keys" is that **sixteen of the
-twenty-two are invisible from inside the landing**. They were found by the half of the pass §6aa
+twenty-three are invisible from inside the landing**. They were found by the half of the pass §6aa
 invented: reading the 89 values beside the REST of the site. The landing is the last page
 translated, so every term it shares with /o-nas, /skarbiec, /koncerty or a concert page already had
 a published English and French word, and where the two differed the site was saying one Polish
@@ -2554,11 +2554,13 @@ thing two ways. §6aa checked seven terms and found one wrong; this page shares 
 the line under the IBAN telling a donor what to type in the transfer reference, and its Polish
 label — `Tytuł przelewu` — is character for character the donation vault's own
 (`skarbiecChrome.ts` → `fieldTransferTitle`). The vault publishes **Transfer title** /
-**Intitulé du virement**; the landing had invented *Payment reference* / *Motif du virement*. One
-donor, one account number, two pages a single click apart, two names for the field they copy from.
-`Odbiorca` beside it had come out right in both locales, which is why nothing flagged it: the pair
-agreed on one label and disagreed on the other. This is §6k's shape landing on the highest-stakes
-field type the site has.
+**Intitulé du virement**; the landing had invented *Payment reference* / *Motif du virement*.
+**And the vault island renders on the landing** — `grep` over the built page finds both labels in
+the same section — so this was not a drift between two pages a click apart: the English landing
+printed *Transfer title* and *Payment reference:* on one screen, and the French printed *Intitulé
+du virement* and *Motif du virement :*, over one account number. `Odbiorca` beside it had come out
+right in both locales, which is why nothing flagged it: the pair agreed on one label and disagreed
+on the other. This is §6k's shape landing on the highest-stakes field type the site has.
 
 **Four more of the same shape, each answered by the value the repository already holds.**
 `Program koncertu` is the concert page's *The concert programme* / *Le programme du concert*

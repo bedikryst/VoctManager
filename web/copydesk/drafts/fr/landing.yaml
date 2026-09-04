@@ -1,7 +1,7 @@
 # page.landing — FR draft (stage K, pass 2). Same flat shape as the overlay it will become.
 #
 # WHAT PASS 2 CHANGED, and why it could not be seen from inside the sentence that wrote it (§2):
-# fourteen values, most of them found by reading these 89 beside the REST of the site rather than
+# fifteen values, most of them found by reading these 89 beside the REST of the site rather than
 # beside the Polish. The landing was the last page translated, so every term it shares with
 # /o-nas, /skarbiec, /koncerty or a concert page already had a published French word. Two video
 # notes the corpus prints word for word, the vault's transfer label, the concert page's programme
@@ -201,8 +201,8 @@ page.landing.support.tiers.t2500.amount: "2 500 zł"
 page.landing.support.tiers.t2500.text: "contribue à créer la prochaine soirée du cycle"
 page.landing.support.bank.recipient: "Bénéficiaire : Fundacja VoctFoundation"
 # L'ÉTIQUETTE est celle du coffre des dons, pour le polonais identique (« Tytuł przelewu »,
-# `skarbiecChrome.ts` → `fieldTransferTitle`). Le même donateur rencontre les deux à côté du même
-# numéro de compte, à un clic d'écart.
+# `skarbiecChrome.ts` → `fieldTransferTitle`) — et l'îlot du coffre s'affiche SUR CETTE PAGE : les
+# deux graphies se tenaient dans une même section, au-dessus d'un même numéro de compte.
 page.landing.support.bank.transferTitle: "Intitulé du virement : Darowizna na cele statutowe VoctFoundation"
 page.landing.support.contactLabel: "Contact avec la direction artistique"
 page.landing.support.supportCta: "Nous soutenir"
