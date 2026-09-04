@@ -1,4 +1,14 @@
-# page.landing — EN draft (stage K, pass 1). Same flat shape as the overlay it will become.
+# page.landing — EN draft (stage K, pass 2). Same flat shape as the overlay it will become.
+#
+# WHAT PASS 2 CHANGED, and why it could not be seen from inside the sentence that wrote it (§2):
+# eight values, six of them found by reading these 89 beside the REST of the site rather than
+# beside the Polish. The landing was the last page translated, so every term it shares with
+# /o-nas, /skarbiec, /koncerty or a concert page already had a published English word, and where
+# the two differed the site was saying one Polish thing twice. Two quoted sentences /o-nas prints
+# verbatim, the vault's transfer label, the concert page's programme label, the Mariacki
+# altarpiece, the Canticle of Simeon — plus two the Polish itself named: an evening is performed
+# rather than sung (a violin plays in one of them), and "stałe miejsce" is not "swoje miejsce".
+# The reasons sit above the keys they belong to.
 #
 # 89 FIELDS, AND WHAT IS DELIBERATELY NOT AMONG THEM:
 #   - the five evenings' TITLES. The register and the Imagines band read them from
@@ -15,13 +25,21 @@
 # THE RENDERINGS THE SITE HAS ALREADY PUBLISHED, followed rather than invented:
 #   Koncert Duchowy / cykl      → Spiritual Concert / the Spiritual Concerts cycle
 #   anachoreci · tęsknota       → anchorites · longing        (page.o-nas.letter.stanzas.I, hero)
-#   „zostaje w duszy niczym     → "stays in the soul like a living organism"  (the same founding
-#    żywy organizm"                text, quoted at length on /o-nas and condensed here)
+#   W ciszy rodzi się muzyka.   → "In silence, music is born."  (word-identical Polish on both
+#   Tak powstał Voct              pages → word-identical English; /o-nas stanza II)
+#                               → "So Voct came to be"
+#   „zostaje w duszy niczym     → "stays in the soul like a living organism" — NOT /o-nas's
+#    żywy organizm"                "finding a place in the soul", because the landing's Polish
+#                                 condensed "znajdując miejsce" to "zostaje"
 #   „słowo i muzyka są swoimi   → "word and music are each other's mirror image"
 #    lustrzanymi odbiciami"        (page.o-nas.cantus.lead)
 #   Bazylika NSPJ · Mariacka    → Sacred Heart Basilica · St Mary's Basilica
 #   Archikatedra w Łodzi        → Łódź Cathedral               (page.kontakt.hero.lede)
 #   Zapowiedź · zawierzenie     → Prophecy · commendation      (glossary §2)
+#   Tytuł przelewu · Odbiorca   → Transfer title · Recipient   (skarbiecChrome.ts, the vault this
+#                                 section links to — same two labels, same account number)
+#   Program koncertu            → The concert programme        (koncert.ts, the same programme)
+#   ołtarz Mariacki             → the altarpiece of St Mary's Basilica (concert.hymn-poleglym)
 #   VII wieków repertuaru       → seven centuries              (page.koncerty.repertoire.eyebrow)
 #   Fundacja Carpe Diem         → the Carpe Diem Foundation    (page.o-nas.ensemble.collabText)
 #
@@ -79,8 +97,12 @@ page.landing.hero.videoMeta: "· 4 min"
 page.landing.hero.concertsLink: "Spiritual Concerts"
 page.landing.hero.cue: "Go deeper"
 
+# The same founding sentence /o-nas prints inside stanza II, word for word in Polish — so it is
+# word for word here (`page.o-nas.letter.stanzas.II.paraHtml`). A quotation said two ways is not
+# a quotation.
+
 page.landing.manifest.label: "Manifesto"
-page.landing.manifest.lines.silentium.text: "Music is born in silence."
+page.landing.manifest.lines.silentium.text: "In silence, music is born."
 page.landing.manifest.lines.contemplatio.text: "Music is the soul's contemplation in time."
 page.landing.manifest.statement: "The sacred does not adorn."
 page.landing.manifest.answer: "It unveils."
@@ -91,7 +113,10 @@ page.landing.litany.moreLink: "The full repertoire →"
 page.landing.ensemble.eyebrow: "Where did we come from?"
 page.landing.ensemble.title1: "It began"
 page.landing.ensemble.title2: "with longing."
-page.landing.ensemble.origin: "Like anchorites — in seclusion, far from the clamour — we came to long for music that enfolds a person, reaches into them and stays in the soul like a living organism. That is how Voct began: out of silence and contemplation."
+# The closing clause is another sentence /o-nas prints unchanged ("Tak powstał Voct"), so it takes
+# that page's published words. Only the middle differs on purpose: the landing's Polish condenses
+# "znajdując miejsce w duszy" to "zostaje", and stays/finds a place are two verbs, not one.
+page.landing.ensemble.origin: "Like anchorites — in seclusion, far from the clamour — we came to long for music that enfolds a person, reaches into them and stays in the soul like a living organism. So Voct came to be: out of silence and contemplation."
 page.landing.ensemble.p2: "There are more than forty of us today; twelve voices usually go on stage. We adore heterophony, polytonality and polyphony — we weave our programmes out of works in which word and music are each other's mirror image."
 page.landing.ensemble.facts.singers.label: "singers in the community · twelve voices on stage"
 page.landing.ensemble.facts.debut.label: "debut · Contemplation of the Incarnation · Sacred Heart Basilica"
@@ -100,7 +125,10 @@ page.landing.ensemble.facts.evenings.label: "evenings"
 page.landing.director.role: "Artistic direction"
 page.landing.director.p1: "The cycle takes its name from Paris in 1725: the Concert Spirituel sang on the evenings when the opera fell silent. Three hundred years later Florent de Bazelaire takes up that tradition in the basilicas of Kraków and Łódź, in Szczawnica and Niedzica."
 page.landing.director.p2Html: "He builds every programme around a single intention. <em>Contemplation of the Incarnation</em> for the debut (2024), nine leaves from the Book of Psalms, a prayer for peace in St Mary's Basilica, an epitaph for Gaza."
-page.landing.director.p3: "Alongside it he leads the VoctFoundation. The foundation exists to give this music a place of its own."
+# "stałe miejsce" here and "swoje miejsce" in `support.title` are two different Polish phrases, and
+# both had become "a place of its own". This one is about permanence — /o-nas renders the same idea
+# as "a form that lets music endure".
+page.landing.director.p3: "Alongside it he leads the VoctFoundation. The foundation exists to give this music a lasting place."
 page.landing.director.portraitAlt: "Florent de Bazelaire conducting VoctEnsemble"
 
 page.landing.vox.eyebrow: "Watch and listen"
@@ -114,13 +142,17 @@ page.landing.imagines.allLink: "All the images"
 
 page.landing.register.label: "From the path"
 page.landing.register.title: "What has already sounded."
-page.landing.register.lede: "Every evening of the cycle had a single intention. We set them down in the order in which they were sung."
+# "wykonane", not "śpiewane": one of these evenings was twelve voices AND a violin, and the entry
+# that says so is four rows below.
+page.landing.register.lede: "Every evening of the cycle had a single intention. We set them down in the order in which they were performed."
 page.landing.register.videoLabel: "Watch an excerpt"
-page.landing.register.programLabel: "Concert programme"
+# The concert page's own chrome for the identical Polish label — `koncert.ts`, `program` — and this
+# widget unfolds that same programme.
+page.landing.register.programLabel: "The concert programme"
 
 page.landing.register.entries.wcielenie.tag: "Spiritual Concert · debut"
 page.landing.register.entries.wcielenie.place: "Sacred Heart Basilica in Kraków"
-page.landing.register.entries.wcielenie.note: "An entrance into the mystery of the Incarnation, from Isaiah's prophecy to the canticle of Simeon. Renaissance polyphony, Pärt, Vivancos."
+page.landing.register.entries.wcielenie.note: "An entrance into the mystery of the Incarnation, from Isaiah's prophecy to the Canticle of Simeon. Renaissance polyphony, Pärt, Vivancos."
 page.landing.register.entries.wcielenie.credit: "Recording: Jakub Garbacz, Ars Sonora Studio. Reprise under the auspices of the Carpe Diem Foundation."
 
 page.landing.register.entries.wolanie-gor.tag: "12 voices and violin"
@@ -134,7 +166,9 @@ page.landing.register.entries.9-kart.note: "Nine psalms: penitence, lament, prai
 
 page.landing.register.entries.hymn-poleglym.tag: "A prayer for peace"
 page.landing.register.entries.hymn-poleglym.place: "St Mary's Basilica in Kraków"
-page.landing.register.entries.hymn-poleglym.note: "A tribute to those who gave their lives defending Ukraine. At the climax, as the Mariacki altarpiece was opened, the anthem of Ukraine sounded."
+# "ołtarz Mariacki" is the concert page's "the altarpiece of St Mary's Basilica"; "Mariacki" is a
+# Polish adjective an English reader cannot parse, two lines under a `place` that says the name.
+page.landing.register.entries.hymn-poleglym.note: "A tribute to those who gave their lives defending Ukraine. At the climax, as the altarpiece of St Mary's Basilica was opened, the anthem of Ukraine sounded."
 
 page.landing.register.entries.aeternam.tag: "An epitaph · 4, 8 and 12 voices"
 page.landing.register.entries.aeternam.place: "Mistrzejowice · Niedzica"
@@ -158,7 +192,10 @@ page.landing.support.tiers.t500.text: "supports rehearsals and scores between co
 page.landing.support.tiers.t2500.amount: "2,500 zł"
 page.landing.support.tiers.t2500.text: "helps make the cycle's next evening"
 page.landing.support.bank.recipient: "Recipient: Fundacja VoctFoundation"
-page.landing.support.bank.transferTitle: "Payment reference: Darowizna na cele statutowe VoctFoundation"
+# The LABEL is the donation vault's own, for the identical Polish ("Tytuł przelewu",
+# `skarbiecChrome.ts` → `fieldTransferTitle`). The same donor meets both beside the same account
+# number, one click apart.
+page.landing.support.bank.transferTitle: "Transfer title: Darowizna na cele statutowe VoctFoundation"
 page.landing.support.contactLabel: "Contact the artistic direction"
 page.landing.support.supportCta: "Support us"
 page.landing.support.writeCta: "Write to us"

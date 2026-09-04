@@ -2539,6 +2539,98 @@ statute link's screen-reader note, still disagreeing with `footer.statuteAria` (
 English and French landings because a composer credit is not on the desk at all — a corpus
 question, not a landing one. `/press` joins the desk after Etap 3 recuts it.
 
+### §6ee After K — §2's second pass over the landing, and the label a donor reads twice (2026-09-04)
+
+Not a stage: the obligation §2 places on every locale this project writes, discharged for the last
+page. **Twenty-two corrections — eight English, fourteen French** — and the answer to "does the
+second pass still earn its sitting when the page is only 89 keys" is that **sixteen of the
+twenty-two are invisible from inside the landing**. They were found by the half of the pass §6aa
+invented: reading the 89 values beside the REST of the site. The landing is the last page
+translated, so every term it shares with /o-nas, /skarbiec, /koncerty or a concert page already had
+a published English and French word, and where the two differed the site was saying one Polish
+thing two ways. §6aa checked seven terms and found one wrong; this page shares far more.
+
+**The one worth naming first, because of what it sits next to.** `support.bank.transferTitle` is
+the line under the IBAN telling a donor what to type in the transfer reference, and its Polish
+label — `Tytuł przelewu` — is character for character the donation vault's own
+(`skarbiecChrome.ts` → `fieldTransferTitle`). The vault publishes **Transfer title** /
+**Intitulé du virement**; the landing had invented *Payment reference* / *Motif du virement*. One
+donor, one account number, two pages a single click apart, two names for the field they copy from.
+`Odbiorca` beside it had come out right in both locales, which is why nothing flagged it: the pair
+agreed on one label and disagreed on the other. This is §6k's shape landing on the highest-stakes
+field type the site has.
+
+**Four more of the same shape, each answered by the value the repository already holds.**
+`Program koncertu` is the concert page's *The concert programme* / *Le programme du concert*
+(`koncert.ts`) and the landing's disclosure widget unfolds that very programme — it had *Concert
+programme* / *Programme du concert*. `ołtarz Mariacki` is *the altarpiece of St Mary's Basilica*
+in the corpus and had become *the Mariacki altarpiece* — a Polish adjective in English prose, two
+lines under a `place` line that prints the name in full. French had the mirror of it, *le retable
+de Sainte-Marie*, which without its supporting noun reads as a saint's. And both French video
+notes were re-worded copies of strings `concert.wolanie-gor.video.note` and
+`concert.aeternam.video.note` publish verbatim — *capté depuis la salle* against the corpus's
+*captation depuis la salle*, and *(Psaume 84)* where French writes *(psaume 84)*. **English had
+copied those two notes exactly and French had not**, which is the pass's own control: where one
+locale matches the corpus and the other does not, the one that does not is the one that drifted.
+
+**The quotations, which are the finding this page was most exposed to.** Two sentences of the
+founding text stand word for word in both `landing.yaml` and `o-nas.yaml`, and both had two
+renderings per locale. `W ciszy rodzi się muzyka.` is /o-nas's *In silence, music is born.* /
+*Dans le silence naît la musique.*, and the landing had *Music is born in silence.* /
+*La musique naît du silence.* The French one was the worse of the two: **it borrowed the hero's own
+preposition** — `Du silence, une voix` — and so collapsed two different figures, the hero's ablative
+and the manifest's locative, into one. `Tak powstał Voct` was /o-nas's *So Voct came to be* in
+French already and *That is how Voct began* in English. A line the contract marks VERBATIM FOUNDING
+TEXT cannot be a quotation and be said two ways.
+
+**And the opposite error, which the same reading catches.** `ensemble.origin` condenses /o-nas's
+`znajdując miejsce w duszy` to plain `zostaje` — so the two pages' Polish DIFFERS here, and French
+had imported /o-nas's verb anyway (*trouve place*), flattening a distinction English had kept. It
+is `demeure dans l'âme` now, which is the verb the site's own French already uses for silence
+between the pieces. The rule both halves obey: **follow the published rendering where the Polish is
+the same sentence, and refuse it where the Polish is not.**
+
+**Three the POLISH named, once the fluent paragraph was read against the fact.** `register.lede`
+says the evenings are set down in the order `w jakiej zostały wykonane` — *performed* — and both
+locales had *sung* / *chantées*, four lines above an entry that names Radu Ropotan's violin.
+`stałe miejsce` (director) and `swoje miejsce` (support) are two different Polish phrases and both
+had become *a place of its own* / *un lieu qui lui soit propre*; the first is about permanence,
+which /o-nas renders as *a form that lets music endure*. And the Canticle of Simeon is capitalised
+on the concert page and was not here.
+
+**What French had that English could not have.** `debiut` is *les débuts* in the corpus and
+`director.p2Html` already said so, while the tag and the ledger tile said `début` — one word, two
+forms, one page. Generic building nouns were capitalised mid-value (`à la Basilique Sainte-Marie`,
+`· Basilique du Sacré-Cœur`) where the site's own prose has lowercased them since /koncerty and the
+landing's own `aeternam.credit` already writes `commune de` · `centre culturel de` · `château de`;
+the fix is one rule — **capital at the head of a value, lowercase everywhere else** — and
+`9-kart.place` was contradicting itself inside a single field, capitalising two `Basilique`s beside
+a lowercase `cathédrale`. `contribue à faire la prochaine soirée` was the one register trap:
+*faire une soirée* is to throw a party. And `hero.cue` was the bare `Descendez` where the Polish
+`Zejdź w głąb` and the English *Go deeper* both carry the depth — the only scroll cue on the site
+reduced to a direction.
+
+**One correction outside the 89, and the second pass is exactly where it surfaced.**
+`UI.footer.donationNote` said the English donations serve the foundation's *charitable* purposes
+where five published values say **statutory** — and the footer prints one screen under the transfer
+block whose contract note reads "the footer states the same purpose in one clause — keep the two
+saying one thing". French had `buts statutaires` already. It is chrome, so it needed no proposal;
+§6dd's standing item is closed.
+
+**Two checks that came back clean, and they are worth the same sentence as the findings.** The
+three-reprise frame survived both locales intact — `Out of silence / a voice.` → `Out of that
+silence — a voice.` → `Out of that voice — memory.`, and `Du silence / une voix.` → `De ce
+silence — une voix.` → `De cette voix — la mémoire.` — each line still handing its last word to the
+next. And **not one U+00A0 or U+202F reached either draft**: `lib/typo.ts` does that work, and a
+per-key comparison of middots, em dashes, colons, semicolons and quotation pairs against the Polish
+found no drift in any of the 89 either.
+
+**One Polish question this pass adds to §6dd's two**, named rather than harmonised because it is
+the source language's to answer: `director.p1` says the tradition is taken up `w bazylikach Krakowa
+i Łodzi`, while /koncerty's own coda separates them — "Śpiewaliśmy w bazylikach, katedrze i
+wiejskim kościele" — and Łódź's venue is the archcathedral everywhere else on the site, including
+the `place` line four sections below. Both locales reproduce the landing's Polish faithfully.
+
 ## §7 Traps
 
 - **`<Typo>` DEFAULTS TO POLISH, and a default that is Polish is invisible when it is wrong.**

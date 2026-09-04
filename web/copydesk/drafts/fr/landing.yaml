@@ -1,4 +1,16 @@
-# page.landing — FR draft (stage K, pass 1). Same flat shape as the overlay it will become.
+# page.landing — FR draft (stage K, pass 2). Same flat shape as the overlay it will become.
+#
+# WHAT PASS 2 CHANGED, and why it could not be seen from inside the sentence that wrote it (§2):
+# fourteen values, most of them found by reading these 89 beside the REST of the site rather than
+# beside the Polish. The landing was the last page translated, so every term it shares with
+# /o-nas, /skarbiec, /koncerty or a concert page already had a published French word. Two video
+# notes the corpus prints word for word, the vault's transfer label, the concert page's programme
+# label, the altarpiece's supporting noun, the debut in the plural the corpus uses — plus what the
+# Polish itself named: an evening is `donnée`, not `chantée` (a violin plays in one of them),
+# "stałe miejsce" is not "swoje miejsce", "zostaje w duszy" is not "znajduje miejsce", and the
+# manifest's locative is not the hero's ablative. French also lowercases a building's generic noun
+# anywhere but the head of a value — `basilique`, `cathédrale` — which the site's own prose has
+# done since /koncerty. The reasons sit above the keys they belong to.
 #
 # 89 FIELDS, AND WHAT IS DELIBERATELY NOT AMONG THEM:
 #   - the five evenings' TITLES. The register and the Imagines band read them from
@@ -17,14 +29,24 @@
 # THE RENDERINGS THE SITE HAS ALREADY PUBLISHED, followed rather than invented:
 #   Koncert Duchowy / cykl      → Concert Spirituel / le cycle des Concerts Spirituels
 #   anachoreci · tęsknota       → anachorètes · nostalgie      (page.o-nas.letter.stanzas.I, hero)
-#   „zostaje w duszy niczym     → « trouvant place en son âme comme un organisme vivant »
-#    żywy organizm"                (the same founding text, quoted at length on /o-nas)
+#   W ciszy rodzi się muzyka.   → « Dans le silence naît la musique. »  (le polonais est identique
+#   Tak powstał Voct              sur les deux pages → le français aussi ; /o-nas strophe II)
+#                               → « Ainsi est né Voct »
+#   „zostaje w duszy niczym     → « demeure dans l'âme comme un organisme vivant » — et NON le
+#    żywy organizm"                « trouvant place en son âme » de /o-nas, dont le polonais dit
+#                                 « znajdując miejsce » là où le landing dit « zostaje »
 #   „słowo i muzyka są swoimi   → « le mot et la musique sont l'image l'un de l'autre »
 #    lustrzanymi odbiciami"        (page.o-nas.cantus.lead)
 #   Bazylika NSPJ · Mariacka    → Basilique du Sacré-Cœur · Basilique Sainte-Marie
 #   Archikatedra w Łodzi        → la cathédrale de Łódź        (page.kontakt.hero.lede)
 #   Kraków                      → Cracovie · Łódź stays itself (glossary §3)
 #   Zapowiedź · zawierzenie     → Annonce · Recommandation     (glossary §3)
+#   Tytuł przelewu · Odbiorca   → Intitulé du virement · Bénéficiaire  (skarbiecChrome.ts, le
+#                                 coffre vers lequel cette section renvoie — mêmes deux étiquettes,
+#                                 même numéro de compte)
+#   Program koncertu            → Le programme du concert      (koncert.ts, le même programme)
+#   zapis z widowni / z nawy    → captation depuis la salle / depuis la nef  (concert.*.video.note)
+#   debiut                      → les débuts                   (concert.wcielenie.about.blurb)
 #   VII wieków repertuaru       → sept siècles                 (page.koncerty.repertoire.eyebrow)
 #   Fundacja Carpe Diem         → la Fondation Carpe Diem      (page.o-nas.ensemble.collabText)
 #
@@ -77,10 +99,13 @@ page.landing.hero.strapHtml: "Le concert comme un seuil : on entre depuis la rue
 page.landing.hero.videoLabel: "Voir et entendre"
 page.landing.hero.videoMeta: "· 4 min"
 page.landing.hero.concertsLink: "Concerts Spirituels"
-page.landing.hero.cue: "Descendez"
+page.landing.hero.cue: "Descendez plus profond"
 
 page.landing.manifest.label: "Manifeste"
-page.landing.manifest.lines.silentium.text: "La musique naît du silence."
+# La même phrase fondatrice que /o-nas imprime dans la strophe II, mot pour mot en polonais — donc
+# mot pour mot ici (`page.o-nas.letter.stanzas.II.paraHtml`). « naît du silence » disait autre
+# chose : c'est la préposition du hero (« Du silence, une voix »), et le manifeste est locatif.
+page.landing.manifest.lines.silentium.text: "Dans le silence naît la musique."
 page.landing.manifest.lines.contemplatio.text: "La musique est la contemplation de l'âme dans le temps."
 page.landing.manifest.statement: "Le sacré n'orne pas."
 page.landing.manifest.answer: "Il dévoile."
@@ -91,16 +116,22 @@ page.landing.litany.moreLink: "Le répertoire complet →"
 page.landing.ensemble.eyebrow: "D'où venons-nous ?"
 page.landing.ensemble.title1: "Tout a commencé"
 page.landing.ensemble.title2: "par la nostalgie."
-page.landing.ensemble.origin: "Comme des anachorètes — dans le retrait, loin du vacarme — nous est venue la nostalgie d'une musique qui enveloppe, qui pénètre et qui trouve place en l'âme comme un organisme vivant. Ainsi est né Voct : du silence et de la contemplation."
+# « zostaje w duszy », et non « znajduje miejsce » : le polonais du landing condense ce que /o-nas
+# développe, et « demeurer » — le verbe que le site emploie déjà pour le silence entre les pièces —
+# garde la distinction que « trouver place » effaçait.
+page.landing.ensemble.origin: "Comme des anachorètes — dans le retrait, loin du vacarme — nous est venue la nostalgie d'une musique qui enveloppe, qui pénètre et qui demeure dans l'âme comme un organisme vivant. Ainsi est né Voct : du silence et de la contemplation."
 page.landing.ensemble.p2: "Nous sommes aujourd'hui plus de quarante ; sur scène montent d'ordinaire douze voix. Nous adorons l'hétérophonie, la polytonalité et la polyphonie — nous tissons nos programmes d'œuvres où le mot et la musique sont l'image l'un de l'autre."
 page.landing.ensemble.facts.singers.label: "chanteurs dans la communauté · douze voix sur scène"
-page.landing.ensemble.facts.debut.label: "début · Contemplation de l'Incarnation · Basilique du Sacré-Cœur"
+page.landing.ensemble.facts.debut.label: "débuts · Contemplation de l'Incarnation · basilique du Sacré-Cœur"
 page.landing.ensemble.facts.evenings.label: "soirées"
 
 page.landing.director.role: "Direction artistique"
 page.landing.director.p1: "Le nom du cycle remonte au Paris de 1725 : le Concert Spirituel chantait les soirs où l'opéra se taisait. Trois cents ans plus tard, Florent de Bazelaire reprend cette tradition dans les basiliques de Cracovie et de Łódź, à Szczawnica et à Niedzica."
-page.landing.director.p2Html: "Il bâtit chaque programme autour d'une seule intention. <em>Contemplation de l'Incarnation</em> pour les débuts (2024), neuf feuillets du Livre des Psaumes, une prière pour la paix à la Basilique Sainte-Marie, une épitaphe pour Gaza."
-page.landing.director.p3: "Parallèlement, il dirige la Fondation VoctFoundation. La fondation doit donner à cette musique un lieu qui lui soit propre."
+page.landing.director.p2Html: "Il bâtit chaque programme autour d'une seule intention. <em>Contemplation de l'Incarnation</em> pour les débuts (2024), neuf feuillets du Livre des Psaumes, une prière pour la paix à la basilique Sainte-Marie, une épitaphe pour Gaza."
+# « stałe miejsce » ici et « swoje miejsce » dans `support.title` sont deux formules polonaises
+# différentes, rendues toutes deux par « un lieu qui lui soit propre ». Celle-ci parle de durée —
+# /o-nas la rend par « une forme qui permet à la musique de durer ».
+page.landing.director.p3: "Parallèlement, il dirige la Fondation VoctFoundation. La fondation doit donner à cette musique un lieu permanent."
 page.landing.director.portraitAlt: "Florent de Bazelaire dirigeant VoctEnsemble"
 
 page.landing.vox.eyebrow: "Voir et entendre"
@@ -114,11 +145,17 @@ page.landing.imagines.allLink: "Toutes les images"
 
 page.landing.register.label: "Du chemin"
 page.landing.register.title: "Ce qui a déjà résonné."
-page.landing.register.lede: "Chaque soirée du cycle avait une seule intention. Nous les consignons dans l'ordre où elles ont été chantées."
+# « wykonane », et non « chantées » : l'une de ces soirées était douze voix ET un violon, et
+# l'entrée qui le dit est quatre lignes plus bas.
+page.landing.register.lede: "Chaque soirée du cycle avait une seule intention. Nous les consignons dans l'ordre où elles ont été données."
 page.landing.register.videoLabel: "Voir un extrait"
-page.landing.register.programLabel: "Programme du concert"
+# Le chrome de la page de concert pour l'étiquette polonaise identique (`koncert.ts`, `program`) —
+# et ce volet déplie ce même programme.
+page.landing.register.programLabel: "Le programme du concert"
 
-page.landing.register.entries.wcielenie.tag: "Concert Spirituel · début"
+# « débuts » au pluriel, comme le corpus l'a publié (`concert.wcielenie.about.blurb` : « Les débuts
+# du cycle des Concerts Spirituels ») et comme `director.p2Html` le dit déjà sur cette page.
+page.landing.register.entries.wcielenie.tag: "Concert Spirituel · débuts"
 page.landing.register.entries.wcielenie.place: "Basilique du Sacré-Cœur à Cracovie"
 page.landing.register.entries.wcielenie.note: "Une entrée dans le mystère de l'Incarnation, de l'annonce d'Isaïe au cantique de Siméon. Polyphonie de la Renaissance, Pärt, Vivancos."
 page.landing.register.entries.wcielenie.credit: "Enregistrement : Jakub Garbacz, Ars Sonora Studio. Reprise sous les auspices de la Fondation Carpe Diem."
@@ -126,21 +163,26 @@ page.landing.register.entries.wcielenie.credit: "Enregistrement : Jakub Garbacz,
 page.landing.register.entries.wolanie-gor.tag: "12 voix et violon"
 page.landing.register.entries.wolanie-gor.place: "Dworek Gościnny · Szczawnica"
 page.landing.register.entries.wolanie-gor.note: "Un programme pour lequel les montagnes étaient le souffle. Polyphonie sacrée et chants populaires de Pologne, de Corse, de France et des îles Britanniques, avec le violon de Radu Ropotan."
-page.landing.register.entries.wolanie-gor.videoNote: "J. Sykulski — Stoi lód na Prośnie · capté depuis la salle · son direct"
+# Mot pour mot `concert.wolanie-gor.video.note` : c'est la même note sur le même fragment, et
+# « capté » en était une seconde version.
+page.landing.register.entries.wolanie-gor.videoNote: "J. Sykulski — Stoi lód na Prośnie · captation depuis la salle · son direct"
 
 page.landing.register.entries.9-kart.tag: "Cycle de psaumes · 6–12 voix"
-page.landing.register.entries.9-kart.place: "Basilique Saint-Antoine à Rybnik · cathédrale de Łódź · Basilique du Sacré-Cœur à Cracovie"
+page.landing.register.entries.9-kart.place: "Basilique Saint-Antoine à Rybnik · cathédrale de Łódź · basilique du Sacré-Cœur à Cracovie"
 page.landing.register.entries.9-kart.note: "Neuf psaumes : pénitence, lamentation, louange. Le Miserere d'Allegri, divisé en neuf parties, enlace toute la soirée."
 
 page.landing.register.entries.hymn-poleglym.tag: "Prière pour la paix"
 page.landing.register.entries.hymn-poleglym.place: "Basilique Sainte-Marie à Cracovie"
-page.landing.register.entries.hymn-poleglym.note: "Un hommage à ceux qui ont donné leur vie pour défendre l'Ukraine. Au point culminant, à l'ouverture du retable de Sainte-Marie, l'hymne de l'Ukraine a retenti."
+# « le retable de la basilique Sainte-Marie », comme `concert.hymn-poleglym.essence` : sans son
+# substantif, « le retable de Sainte-Marie » se lit comme celui d'une sainte.
+page.landing.register.entries.hymn-poleglym.note: "Un hommage à ceux qui ont donné leur vie pour défendre l'Ukraine. Au point culminant, à l'ouverture du retable de la basilique Sainte-Marie, l'hymne de l'Ukraine a retenti."
 
 page.landing.register.entries.aeternam.tag: "Épitaphe · 4, 8 et 12 voix"
 page.landing.register.entries.aeternam.place: "Mistrzejowice · Niedzica"
 page.landing.register.entries.aeternam.note: "Une soirée pour les habitants de Gaza. Aeternam de Vivancos, les deux Tavener, la recommandation des victimes à la Mère de Dieu."
 page.landing.register.entries.aeternam.credit: "Partenaires : commune de Łapsze Niżne · centre culturel de Łapsze Niżne · ZEW Niedzica · château de Dunajec · ACN — Aide à l'Église en Détresse. Partenaires médias : Gość Niedzielny · Radio Alex · Tygodnik Podhalański."
-page.landing.register.entries.aeternam.videoNote: "C. Shaw — and the swallow (Psaume 84) · capté depuis la nef · son direct"
+# Mot pour mot `concert.aeternam.video.note`, minuscule comprise : le français écrit « psaume 84 ».
+page.landing.register.entries.aeternam.videoNote: "C. Shaw — and the swallow (psaume 84) · captation depuis la nef · son direct"
 
 page.landing.register.next.tag: "en attente d'une invitation"
 page.landing.register.next.title: "La sixième soirée."
@@ -156,9 +198,12 @@ page.landing.support.tiers.t100.text: "va à la prochaine soirée du cycle"
 page.landing.support.tiers.t500.amount: "500 zł"
 page.landing.support.tiers.t500.text: "soutient les répétitions et les partitions entre les concerts"
 page.landing.support.tiers.t2500.amount: "2 500 zł"
-page.landing.support.tiers.t2500.text: "contribue à faire la prochaine soirée du cycle"
+page.landing.support.tiers.t2500.text: "contribue à créer la prochaine soirée du cycle"
 page.landing.support.bank.recipient: "Bénéficiaire : Fundacja VoctFoundation"
-page.landing.support.bank.transferTitle: "Motif du virement : Darowizna na cele statutowe VoctFoundation"
+# L'ÉTIQUETTE est celle du coffre des dons, pour le polonais identique (« Tytuł przelewu »,
+# `skarbiecChrome.ts` → `fieldTransferTitle`). Le même donateur rencontre les deux à côté du même
+# numéro de compte, à un clic d'écart.
+page.landing.support.bank.transferTitle: "Intitulé du virement : Darowizna na cele statutowe VoctFoundation"
 page.landing.support.contactLabel: "Contact avec la direction artistique"
 page.landing.support.supportCta: "Nous soutenir"
 page.landing.support.writeCta: "Écrivez-nous"

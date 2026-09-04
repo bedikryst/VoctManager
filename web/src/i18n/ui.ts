@@ -228,7 +228,7 @@ export const UI: Record<Locale, UIStrings> = {
       statute: "Foundation statute",
       statuteAria: "Statute of the VoctFoundation — PDF document, opens in a new tab",
       dataProtection: "GDPR",
-      donationNote: "Donations serve the foundation's charitable purposes.",
+      donationNote: "Donations serve the foundation's statutory purposes.",
       realizedBy: "Built by",
     },
     lightbox: {
