@@ -1,0 +1,30 @@
+# page.404 — EN draft (stage G8). Same flat shape as the overlay it will become.
+#
+# FOUR FIELDS. The rest of what a reader meets on this page is not copy and is not here: the five
+# Latin rubrics (Vacat, Limen, Concentus, Vocatio, Epistula) are locale-neutral, `404` is a number,
+# and each way's vernacular name is read from the chrome that already prints it — see
+# `i18n/content/notFound.ts`.
+#
+# THE REGISTER IS BIBLIOGRAPHIC, NOT APOLOGETIC. `vacat` is the term for a leaf a book leaves
+# blank; the page names the blank and points back into the volume. "Sorry, page not found" is not
+# a translation of this, it is a different page.
+#
+# THE RENDERINGS THE SITE HAS ALREADY PUBLISHED, followed rather than invented:
+#   karta   → leaf     (`9 Kart` is published as "Nine Leaves from the Book of Psalms" in
+#                       concerts.en.yaml — the site's own word for a leaf of a book, and it is
+#                       also what makes `Vacat` above it legible)
+#   nawa    → nave     (the architectural word, which English has; the site's own name for its
+#                       front, and the image the whole lede turns on)
+#
+# "Strona" IS DELIBERATELY NOT "leaf" IN THE LEDE. The Polish says "karta" of the blank and
+# "strona" of the thing that moved — the leaf is this physical blank, the page is the document
+# that used to be here. Two words, two objects, kept apart in English too.
+#
+# Not the overlay: `npm run copy:propose --locale en` carries these in as proposals, which is the
+# only door that stamps the provenance hash the stale state is computed from.
+
+page.404.meta.title: "This leaf is blank — VoctEnsemble"
+page.404.meta.description: "There is no page at this address. Return to the nave — concerts, the ensemble, contact."
+
+page.404.head.title: "This leaf is blank."
+page.404.head.lede: "Nothing stands at this address — the page has been moved, or it was never here. The nave is a few steps away."

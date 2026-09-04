@@ -1,0 +1,40 @@
+# The editorial text of the not-found page — Polish, and Polish only.
+#
+# FOUR FIELDS, AND THE ACCOUNTING IS THE POINT. What a reader meets on this page is a Latin
+# rubric, a number, two sentences and four ways out; only the two sentences and the two metadata
+# lines are copy. Everything else belongs to something that already owns it:
+#
+#   `Vacat` and the four rubrics (Limen, Concentus, Vocatio, Epistula) → locale-neutral Latin,
+#     set in the markup like every other rubric on this site;
+#   `404` → a number, the same in every language;
+#   the four ways' vernacular names → they are the SAME four names the chrome already prints.
+#     "Strona główna", "O nas" and "Kontakt" are `i18n/ui.ts`; "Koncerty Duchowe" is the cycle's
+#     name, which `i18n/content/koncert.ts` owns for the breadcrumb. A way out of a blank leaf
+#     must be called what the nav calls it — a reader who cannot match the two is being offered a
+#     fifth destination. docs/web-copy-desk-2026-09.md §6y: printed twice, read twice.
+#
+# THE REGISTER IS `vacat` — the bibliographic term for a leaf a book leaves blank. The page does
+# not apologise and does not explain the error; it names the blank and points back into the
+# volume. A translation that turns this into "Oops! Page not found" has not translated it.
+#
+# TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under this page's desk
+# key — `page.404.` + the dotted path below — and are read through `lib/copyOverlay`.
+#
+# NO TYPOGRAPHY. Write the prose plainly: `lib/typo.ts` pins Polish orphans and French punctuation
+# spacing in the rendered HTML at build.
+
+meta:
+  title: "Ta karta jest pusta — VoctEnsemble"
+  # Read in a browser tab and by a crawler, never on the page. The page is `noindex,follow`, so
+  # this is not competing for a search result — it names the blank and points at the way out.
+  description: "Nie ma tu strony pod tym adresem. Wróć do nawy — koncerty, zespół, kontakt."
+
+head:
+  # Set at up to 104px, the largest type on the site outside a concert hero. It is a statement
+  # about the LEAF, not about the reader: nothing here was done wrong.
+  title: "Ta karta jest pusta."
+  # Two clauses and a direction. The second sentence is the whole point of the page — the reader
+  # is a few steps from the nave, not lost.
+  lede: >-
+    Pod tym adresem nic nie stoi — strona została przeniesiona albo nigdy jej tu
+    nie było. Nawa jest kilka kroków stąd.

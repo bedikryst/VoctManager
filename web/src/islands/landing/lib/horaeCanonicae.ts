@@ -7,6 +7,8 @@
  * @module features/landing/lib/horaeCanonicae
  */
 
+import type { Locale } from "../../../i18n/config";
+
 /**
  * Which of the two grounds the page's last plate is printed on. It is a property of the OFFICE,
  * not of the sky: the hours' own glosses below claim the light ("świt wstępuje", "południe
@@ -28,19 +30,68 @@ export type Lumen = "dies" | "nox";
 export interface CanonicalHour {
   readonly from: number;
   readonly name: string;
-  readonly poem: string;
+  /**
+   * What the hour says beside its name, in the reader's own tongue — the antiphon's second half
+   * in the mobile card, and the sentence `lumen` above is reading when it claims the light.
+   *
+   * Complete in three languages by the copy desk's own test (spec §6r): eight hours is a closed
+   * table walked by the clock, so a missing locale is not a line awaiting review — it is a French
+   * card printing Polish at whatever hour the reader happens to open it. Each is one clause,
+   * present tense, subject first: the hour is doing something, not being described.
+   */
+  readonly poem: Record<Locale, string>;
   readonly lumen: Lumen;
 }
 
 export const HORAE_CANONICAE: readonly CanonicalHour[] = [
-  { from: 0, name: "Matutinum", poem: "noc czuwa", lumen: "nox" },
-  { from: 3, name: "Laudes", poem: "świt wstępuje", lumen: "dies" },
-  { from: 6, name: "Prima", poem: "dzień się otwiera", lumen: "dies" },
-  { from: 9, name: "Tertia", poem: "ranek dojrzewa", lumen: "dies" },
-  { from: 12, name: "Sexta", poem: "południe gęstnieje", lumen: "dies" },
-  { from: 15, name: "Nona", poem: "cień się wydłuża", lumen: "dies" },
-  { from: 18, name: "Vesperae", poem: "światło opada", lumen: "dies" },
-  { from: 21, name: "Completorium", poem: "noc się zamyka", lumen: "nox" },
+  {
+    from: 0,
+    name: "Matutinum",
+    poem: { pl: "noc czuwa", en: "the night keeps watch", fr: "la nuit veille" },
+    lumen: "nox",
+  },
+  {
+    from: 3,
+    name: "Laudes",
+    poem: { pl: "świt wstępuje", en: "dawn ascends", fr: "l'aube monte" },
+    lumen: "dies",
+  },
+  {
+    from: 6,
+    name: "Prima",
+    poem: { pl: "dzień się otwiera", en: "the day opens", fr: "le jour s'ouvre" },
+    lumen: "dies",
+  },
+  {
+    from: 9,
+    name: "Tertia",
+    poem: { pl: "ranek dojrzewa", en: "the morning ripens", fr: "le matin mûrit" },
+    lumen: "dies",
+  },
+  {
+    from: 12,
+    name: "Sexta",
+    poem: { pl: "południe gęstnieje", en: "noon thickens", fr: "midi s'épaissit" },
+    lumen: "dies",
+  },
+  {
+    from: 15,
+    name: "Nona",
+    poem: { pl: "cień się wydłuża", en: "the shadow lengthens", fr: "l'ombre s'allonge" },
+    lumen: "dies",
+  },
+  {
+    from: 18,
+    name: "Vesperae",
+    poem: { pl: "światło opada", en: "the light falls", fr: "la lumière décline" },
+    lumen: "dies",
+  },
+  {
+    from: 21,
+    name: "Completorium",
+    poem: { pl: "noc się zamyka", en: "the night closes", fr: "la nuit se referme" },
+    lumen: "nox",
+  },
 ];
 
 /** Length of one canonical slice, in hours. The table above is this constant, eight times. */

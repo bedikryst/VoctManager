@@ -46,7 +46,9 @@ import {
   navigateFromOverlay,
   pushOverlayEntry,
 } from "../../lib/overlayHistory";
+import { UI } from "../../i18n/ui";
 import { useBodyClass } from "./hooks/useBodyClass";
+import { useDocumentLocale } from "./hooks/useDocumentLocale";
 import { useFocusTrap } from "./hooks/useFocusTrap";
 
 /** Stable empty set, so the effects below don't re-run on every render of a closed frame. */
@@ -72,6 +74,9 @@ export function ImageLightbox(): React.JSX.Element | null {
   const [index, setIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  // The locale comes off the document, the way every island on this site reaches it — this one
+  // remounts per page and would survive a prop, but one mechanism beats two.
+  const t = UI[useDocumentLocale()].lightbox;
   const imgRef = useRef<HTMLImageElement>(null);
   const touchRef = useRef<{ x: number; y: number } | null>(null);
   // A swipe that lifts off over one of the two nav buttons can also fire that button's click —
@@ -222,19 +227,19 @@ export function ImageLightbox(): React.JSX.Element | null {
   if (!set || !current) return null;
 
   return (
-    <div className="image-lightbox" role="dialog" aria-modal="true" aria-label="Powiększone zdjęcie">
+    <div className="image-lightbox" role="dialog" aria-modal="true" aria-label={t.dialogAria}>
       {/* data-cursor="no-snap": full-viewport surface — the magnetic cursor snap would
           yank the cursor toward the screen centre everywhere around the frame. */}
       <button
         type="button"
         className="image-lightbox-backdrop"
-        aria-label="Zamknij"
+        aria-label={t.close}
         data-cursor="no-snap"
         onClick={dismiss}
         tabIndex={-1}
       />
       <div className="image-lightbox-panel" data-lenis-prevent ref={panelRef}>
-        <button type="button" className="image-lightbox-close" aria-label="Zamknij" onClick={dismiss}>
+        <button type="button" className="image-lightbox-close" aria-label={t.close} onClick={dismiss}>
           ✕
         </button>
         <figure className="image-lightbox-figure">
@@ -298,7 +303,7 @@ export function ImageLightbox(): React.JSX.Element | null {
                   type="button"
                   className="image-lightbox-nav is-prev"
                   data-cursor="frame-prev"
-                  aria-label="Poprzedni kadr"
+                  aria-label={t.previous}
                   onClick={() => step(-1)}
                 >
                   <span className="image-lightbox-chevron" aria-hidden="true" />
@@ -307,7 +312,7 @@ export function ImageLightbox(): React.JSX.Element | null {
                   type="button"
                   className="image-lightbox-nav is-next"
                   data-cursor="frame-next"
-                  aria-label="Następny kadr"
+                  aria-label={t.next}
                   onClick={() => step(1)}
                 >
                   <span className="image-lightbox-chevron" aria-hidden="true" />

@@ -1,0 +1,35 @@
+# page.404 — FR draft (stage G8). Same flat shape as the overlay it will become.
+#
+# FOUR FIELDS. The rest of what a reader meets on this page is not copy and is not here: the five
+# Latin rubrics (Vacat, Limen, Concentus, Vocatio, Epistula) are locale-neutral, `404` is a number,
+# and each way's vernacular name is read from the chrome that already prints it — see
+# `i18n/content/notFound.ts`.
+#
+# THE REGISTER IS BIBLIOGRAPHIC, NOT APOLOGETIC. `vacat` is the term for a leaf a book leaves
+# blank; the page names the blank and points back into the volume. « Oups, page introuvable » is
+# not a translation of this, it is a different page.
+#
+# THE RENDERINGS THE SITE HAS ALREADY PUBLISHED, followed rather than invented:
+#   karta   → feuillet  (`9 Kart` is published as "Neuf feuillets du Livre des Psaumes" in
+#                        concerts.fr.yaml — the site's own word for a leaf of a book, and what
+#                        makes `Vacat` above it legible)
+#   nawa    → nef       (the architectural word; the site's own name for its front, and the image
+#                        the whole lede turns on)
+#
+# "vierge" RATHER THAN "blanche": it is the bibliographic word for an unwritten leaf, which is
+# what `Vacat` names. "Blanche" would be a statement about the colour of the paper.
+#
+# THE READER IS ADDRESSED FORMALLY ("Revenez"), as everywhere else on this site — see
+# `page.kontakt.legal.rodoHtml`, which is the register the whole French site keeps.
+#
+# NO PUNCTUATION SPACING BY HAND: `lib/typo.ts` inserts the narrow no-break spaces before
+# ? ! : ; at build. Typed here they would double up.
+#
+# Not the overlay: `npm run copy:propose --locale fr` carries these in as proposals, which is the
+# only door that stamps the provenance hash the stale state is computed from.
+
+page.404.meta.title: "Ce feuillet est vierge — VoctEnsemble"
+page.404.meta.description: "Aucune page à cette adresse. Revenez dans la nef — concerts, ensemble, contact."
+
+page.404.head.title: "Ce feuillet est vierge."
+page.404.head.lede: "Rien ne se tient à cette adresse — la page a été déplacée, ou elle n'a jamais été là. La nef est à quelques pas."

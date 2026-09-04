@@ -38,6 +38,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AV1_MIME } from "../../../lib/videos";
+import { UI } from "../../../i18n/ui";
+import { useDocumentLocale } from "../hooks/useDocumentLocale";
 import { formatTime } from "./formatTime";
 import { clearPosition, readPosition, savePosition } from "./resumeStore";
 import { Typo } from "../lib/Typo";
@@ -106,6 +108,11 @@ export function VideoPlayer({
     idRef.current = `vplayer-${playerIdSequence}`;
   }
   const id = idRef.current;
+  // The player's own controls, in the document's language. `joiner` is pulled out because
+  // `paintProgress` closes over it to write the scrubber's `aria-valuetext` imperatively —
+  // "3:20 z 8:04" is Polish grammar, not punctuation.
+  const t = UI[useDocumentLocale()].player;
+  const joiner = t.ofDuration;
   const [playing, setPlaying] = useState(false);
   const [buffering, setBuffering] = useState(false);
   const [scrubbing, setScrubbing] = useState(false);
@@ -141,12 +148,15 @@ export function VideoPlayer({
     if (scrub && Number.isFinite(duration) && duration > 0) {
       scrub.style.setProperty("--p", String(Math.min(1, Math.max(0, time / duration))));
       scrub.setAttribute("aria-valuenow", String(Math.round(time)));
-      scrub.setAttribute("aria-valuetext", `${formatTime(time)} z ${formatTime(duration)}`);
+      scrub.setAttribute(
+        "aria-valuetext",
+        `${formatTime(time)} ${joiner} ${formatTime(duration)}`,
+      );
     }
     if (timeRef.current) {
       timeRef.current.textContent = `${formatTime(time)} / ${formatTime(duration)}`;
     }
-  }, []);
+  }, [joiner]);
 
   const pause = useCallback((): void => {
     const video = videoRef.current;
@@ -643,7 +653,7 @@ export function VideoPlayer({
             <button
               type="button"
               className={`vplayer-btn${playing ? " is-quiet" : ""}`}
-              aria-label={playing ? "Zatrzymaj odtwarzanie" : "Odtwórz wideo"}
+              aria-label={playing ? t.pause : t.play}
               aria-pressed={playing}
               onClick={toggle}
             >
@@ -668,7 +678,7 @@ export function VideoPlayer({
           type="button"
           role="slider"
           className="vplayer-scrub"
-          aria-label="Oś czasu wideo"
+          aria-label={t.timeline}
           aria-valuemin={0}
           data-cursor="seek"
           disabled={failed}
@@ -686,7 +696,7 @@ export function VideoPlayer({
         </button>
         <div className="vplayer-side">
           {failed ? (
-            <span className="vplayer-error">Materiał chwilowo niedostępny</span>
+            <span className="vplayer-error">{t.unavailable}</span>
           ) : (
             <span className="vplayer-time" ref={timeRef} aria-hidden="true">
               0:00 / 0:00
@@ -695,7 +705,7 @@ export function VideoPlayer({
           <button
             type="button"
             className="vplayer-fs"
-            aria-label={fullscreen ? "Zamknij pełny ekran" : "Pełny ekran"}
+            aria-label={fullscreen ? t.fullscreenExit : t.fullscreen}
             onClick={onFullscreen}
             disabled={failed}
           >

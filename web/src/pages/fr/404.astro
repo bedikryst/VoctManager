@@ -1,0 +1,15 @@
+---
+/**
+ * @file fr/404.astro
+ * @description French not-found page (/fr/404). Structure lives in the shared NotFoundPage
+ *  component; this route only selects the locale. Reached by nginx's `error_page` for the `/fr/`
+ *  prefix, never by a link — which is why the path stays out of `TRANSLATED_ROUTES` (see the
+ *  component's header). Its prose falls back per field to Polish until the copy desk's French
+ *  lands in content/pages.fr.yaml.
+ * @architecture Astro islands 2026
+ * @module pages/fr/404
+ */
+import NotFoundPage from "../../components/pages/NotFoundPage.astro";
+---
+
+<NotFoundPage lang="fr" />

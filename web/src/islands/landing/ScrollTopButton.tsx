@@ -2,7 +2,7 @@
  * @file ScrollTopButton.tsx
  * @description Discrete scroll-to-top button — global, available on every page. Appears after
  *  scrolling past 1.5 viewport heights, sits bottom-right as a thin gold hairline with a small
- *  chevron above. Hover/focus reveals the "wróć w ciszę" hint to the left. Uses Lenis if
+ *  chevron above. Hover/focus reveals the hint to the left (i18n/ui `scrollTop`). Uses Lenis if
  *  available for the smooth scroll back (matches the rest of the site's scroll lifecycle),
  *  falls back to native smooth scroll otherwise. Gold (--candle) reads on parchment and dark
  *  alike, so no blend-mode tricks are needed.
@@ -11,6 +11,8 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { UI } from "../../i18n/ui";
+import { useDocumentLocale } from "./hooks/useDocumentLocale";
 import { Typo } from "./lib/Typo";
 
 interface LenisLike {
@@ -19,6 +21,9 @@ interface LenisLike {
 
 export function ScrollTopButton(): React.JSX.Element {
   const [visible, setVisible] = useState(false);
+  // Read from the document, never from a prop: BaseLayout mounts this one `transition:persist`,
+  // so the instance outlives the swap that changes the site's language under it.
+  const t = UI[useDocumentLocale()].scrollTop;
 
   useEffect(() => {
     let raf: number | null = null;
@@ -53,10 +58,10 @@ export function ScrollTopButton(): React.JSX.Element {
       <button
         type="button"
         className={`scroll-top${visible ? " is-visible" : ""}`}
-        aria-label="Wróć na początek strony"
+        aria-label={t.action}
         onClick={onClick}
       >
-        <span className="scroll-top-hint" aria-hidden="true">wróć w ciszę</span>
+        <span className="scroll-top-hint" aria-hidden="true">{t.hint}</span>
         <span className="scroll-top-mark" aria-hidden="true">
           <svg viewBox="0 0 12 40" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
             <path d="M2 6 L6 2 L10 6 M6 2 V38" strokeWidth="1" />

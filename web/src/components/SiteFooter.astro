@@ -33,6 +33,7 @@ const { lang = DEFAULT_LOCALE } = Astro.props;
 const t = UI[lang].footer;
 const year = new Date().getFullYear();
 const tempus = tempusForDate(new Date());
+const tempusGloss = tempus.gloss[lang];
 ---
 
 <footer class="site-foot">
@@ -128,10 +129,14 @@ const tempus = tempusForDate(new Date());
     </div>
   </div>
 
-  <p class="foot-incipit reveal" data-d="4" aria-label={`${tempus.incipit} — ${tempus.pl}`}>
+  {/* The season, named in stone and glossed in speech — the same two-voice rubric the columns
+      above use, which is why the gloss takes their minuscule: the accessible name below carries
+      the authored case, so "Eastertide" is only lowercased where it is SET, never where it is
+      read aloud. */}
+  <p class="foot-incipit reveal" data-d="4" aria-label={`${tempus.incipit} — ${tempusGloss}`}>
     <em>{tempus.incipit}</em>
     <span class="foot-incipit-dot" aria-hidden="true">·</span>
-    <span class="foot-incipit-pl">{tempus.pl}</span>
+    <span class="foot-incipit-gloss">{tempusGloss}</span>
   </p>
 
   {/* INK + LEAD, the one pair the register language allows: this band's top border is the only
@@ -192,7 +197,9 @@ const tempus = tempusForDate(new Date());
   .foot-incipit { max-width: 1180px; margin: clamp(40px, 5vw, 60px) auto 0; padding: 0; text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: rgba(244, 241, 233, .42); }
   .foot-incipit em { font-family: var(--serif); font-style: italic; font-size: 15px; letter-spacing: .02em; color: rgba(244, 241, 233, .68); margin-right: 10px; }
   .foot-incipit-dot { margin: 0 8px; color: rgba(244, 241, 233, .28); }
-  .foot-incipit-pl { text-transform: lowercase; letter-spacing: .12em; }
+  /* Minuscule because it is a GLOSS, exactly as the column heads' `.gloss` is — the house's
+     second voice under a Latin capital, in every language it speaks. */
+  .foot-incipit-gloss { text-transform: lowercase; letter-spacing: .12em; }
   .foot-base { max-width: 1180px; margin: clamp(22px, 3vw, 36px) auto 0; padding-top: 22px; border-top: 1px solid rgba(244, 241, 233, .12); display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: rgba(244, 241, 233, .46); }
   .foot-base a { color: inherit; transition: color .3s var(--ease); }
   .foot-base a:hover { color: var(--candle); }

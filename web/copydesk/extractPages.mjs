@@ -36,6 +36,7 @@ import { walkCopy } from "../src/i18n/content/copySpec.ts";
 import { KOLOFON_PAGE } from "../src/i18n/content/kolofon.ts";
 import { KONCERTY_PAGE } from "../src/i18n/content/koncerty.ts";
 import { KONTAKT_PAGE } from "../src/i18n/content/kontakt.ts";
+import { NOT_FOUND_PAGE } from "../src/i18n/content/notFound.ts";
 import { OBRAZY_PAGE } from "../src/i18n/content/obrazy.ts";
 import { guardSegments, localeRows } from "./segment.mjs";
 
@@ -57,7 +58,13 @@ const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
  *
  * @type {readonly PageSpec[]}
  */
-export const PAGE_SPECS = [KONTAKT_PAGE, KONCERTY_PAGE, OBRAZY_PAGE, KOLOFON_PAGE];
+export const PAGE_SPECS = [
+  KONTAKT_PAGE,
+  KONCERTY_PAGE,
+  OBRAZY_PAGE,
+  KOLOFON_PAGE,
+  NOT_FOUND_PAGE,
+];
 
 /**
  * Where a page's Polish prose lives, relative to `web/`. Mirrors the glob `lib/pageCopy` reads.

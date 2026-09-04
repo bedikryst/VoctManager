@@ -95,6 +95,7 @@ const hrefAbout = localizePath("/o-nas", lang);
 const hrefConcerts = localizePath("/koncerty", lang);
 const hrefContact = localizePath("/kontakt", lang);
 const hrefColophon = localizePath("/kolofon", lang);
+const hrefImages = localizePath("/obrazy", lang);
 
 /* Language switcher: hidden globally for now (LANG_SWITCHER_ENABLED) — EN/FR stay reachable by
    direct link only. When on, it shows only where the page has a real alternate (more than Polish);
@@ -162,12 +163,13 @@ const langOptions = showLang
           }
           {/* The register's closing line — the archive of every evening's photographs, filed
               under the section it belongs to. Deliberately NOT a sixth ribbon (registrum.css):
-              no numeral, no silk, no leader. The URL stays Polish, as the page is untranslated;
-              its NAME is still this locale's, because a reader of the English chrome has to be
-              able to tell what the link is before they follow it into a Polish page. */}
+              no numeral, no silk, no leader. Destination through `localizePath` like every other
+              link in this bar: the archive is translated, and a hand-written URL here sent a
+              reader of the English register into the Polish page while the footer's Index column
+              beside it offered `/en/obrazy`. */}
           <a
             class="registrum-all"
-            href="/obrazy"
+            href={hrefImages}
             aria-current={current === "/obrazy" ? "page" : undefined}
           >
             <span class="registrum-all-word">{t.nav.archive}</span>
@@ -343,8 +345,10 @@ const langOptions = showLang
         {/* THE VIA — the concert register (nave-menu.css): the site's own depth printed in the
             card, and the phone's only road to the pages the desktop hangs under KONCERTY.
             Rows are the desktop register's grammar one step down (roman · title · leader ·
-            date), all of it derived from concerts.yaml. Concert pages stay Polish-only, so the
-            hrefs are NOT localized — same rule as the desktop ribbons. The label counts as the
+            date), all of it derived from concerts.yaml. Every href goes through `localizePath`,
+            exactly as the desktop ribbons do — this register is the ONLY road to a concert from
+            a phone, so an un-localized href here strands a foreign reader in Polish with no
+            other way through. The label counts as the
             register's first --vrow (see GEOMETRY), which is why row k sits at --vr: k + 1.5.
             That one number is load-bearing twice over: it places the ribbon's tip on the row AND
             paces the register's entrance, since (--vr − 0.5) is the row's ordinal in the run
@@ -356,7 +360,7 @@ const langOptions = showLang
             ribbons.map((r, i) => (
               <a
                 class="via-row"
-                href={r.href}
+                href={localizePath(r.href, lang)}
                 style={`--vb: 5; --vr: ${i + 1.5}`}
                 aria-current={current === r.href ? "page" : undefined}
               >
@@ -372,11 +376,11 @@ const langOptions = showLang
               `.via-row`, so the ribbon runs to it and the swap is held the same beat. */}
           <a
             class="via-row via-all"
-            href="/obrazy"
+            href={hrefImages}
             style={`--vb: 5; --vr: ${ribbons.length + 1.5}`}
             aria-current={current === "/obrazy" ? "page" : undefined}
           >
-            <span class="via-title">Obrazy</span>
+            <span class="via-title">{t.nav.archive}</span>
             <span class="via-lead" aria-hidden="true"></span>
             <span class="via-lat">Imagines</span>
           </a>
@@ -639,6 +643,7 @@ const langOptions = showLang
 <script>
   import { navigate } from "astro:transitions/client";
 
+  import { documentLocale } from "../i18n/documentLocale";
   import { horaForWarsaw } from "../islands/landing/lib/horaeCanonicae";
   import {
     dismissOverlayEntry,
@@ -709,11 +714,14 @@ const langOptions = showLang
       document.body.classList.add("nav-open");
       setPageInert(true);
       // The antiphon names its hour: fill the page's opening line with the live canonical hour.
+      // The locale is READ FROM THE DOCUMENT, not closed over: this script binds once per tab and
+      // outlives every page it acts on, so it has to ask which language the card is opening in at
+      // the moment it opens. The Latin name is the same in all three; only the gloss turns.
       const hora = horaForWarsaw(new Date());
       const name = document.getElementById("naveHoraName");
       const poem = document.getElementById("naveHoraPoem");
       if (name) name.textContent = hora.name;
-      if (poem) poem.textContent = hora.poem;
+      if (poem) poem.textContent = hora.poem[documentLocale()];
       window.requestAnimationFrame(() => {
         document.getElementById("menuClose")?.focus({ preventScroll: true });
       });

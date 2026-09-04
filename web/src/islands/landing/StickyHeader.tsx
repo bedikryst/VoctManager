@@ -22,6 +22,7 @@ import {
 } from "../../lib/overlayHistory";
 import type { RibbonEntry } from "../../lib/registrum";
 import { useAudioChoice } from "./hooks/useAudioChoice";
+import { useDocumentLocale } from "./hooks/useDocumentLocale";
 import { useFocusTrap } from "./hooks/useFocusTrap";
 import { horaForWarsaw } from "./lib/horaeCanonicae";
 import { Typo } from "./lib/Typo";
@@ -265,6 +266,7 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
   // The antiphon names its hour — computed only while the menu is open, so the SSG snapshot
   // ships the neutral placeholder instead of a build-time hour (no hydration mismatch).
   const hora = menuOpen ? horaForWarsaw(new Date()) : null;
+  const locale = useDocumentLocale();
 
   return (
     <Typo>
@@ -428,7 +430,7 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                   only while open, so the SSG snapshot ships the neutral placeholder). */}
               <span className="nave-antiphon">
                 <span>{hora?.name ?? "Hora"}</span>
-                <em>{hora?.poem ?? "canonica"}</em>
+                <em>{hora ? hora.poem[locale] : "canonica"}</em>
               </span>
               {/* Each voice is one index entry — word · leader · incipit (nave-menu.css); the
                   leader is drawn furniture, hence aria-hidden. "Główna" is an in-page jump

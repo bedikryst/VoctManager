@@ -48,11 +48,15 @@
  * @module widgets/landing/SiteFooter
  */
 
+import { useDocumentLocale } from "./hooks/useDocumentLocale";
 import { useLiturgicalClock } from "./hooks/useLiturgicalClock";
 import { Typo } from "./lib/Typo";
 
 export function SiteFooter(): React.JSX.Element {
   const clock = useLiturgicalClock();
+  // Polish today — the landing is the last page the copy desk reaches — but read rather than
+  // assumed, so the hour's gloss turns with the document on the day it is translated.
+  const locale = useDocumentLocale();
 
   return (
     <Typo>
@@ -140,7 +144,7 @@ export function SiteFooter(): React.JSX.Element {
                   {clock.hora.name}
                 </em>
                 <span className="dateline-gloss" suppressHydrationWarning>
-                  {clock.hora.poem}
+                  {clock.hora.poem[locale]}
                 </span>
               </span>
               <span className="dateline-sep" aria-hidden="true">

@@ -1,8 +1,14 @@
 /**
  * @file ui.ts
- * @description Chrome dictionary — the short, cross-page UI strings shared by SiteChrome and
- *  SiteFooter (nav labels, menu affordances, footer headings, the language switcher). These are
+ * @description Chrome dictionary — the short, cross-page UI strings the site carries onto every
+ *  page: SiteChrome and SiteFooter (nav labels, menu affordances, footer headings, the language
+ *  switcher), and the three client islands mounted above them (the photograph lightbox, the film
+ *  player, the scroll-to-top control). These are
  *  ATOMIC labels, so they live as keyed strings, complete in every locale because the type says so.
+ *
+ *  THE ISLANDS DO NOT TAKE THEIR LOCALE AS A PROP — they read it from the document
+ *  (`i18n/documentLocale`), because one of them is `transition:persist` and would otherwise hold
+ *  the locale of whichever page the tab opened on. The header of that module carries the reasoning.
  *  Page PROSE does not belong here: it is the copy desk's, held in Polish under
  *  `src/content/pages/<page>.yaml` and translated per field through the overlay (`lib/pageCopy`).
  *  A page's OWN chrome — its landmark names, its affordances — sits beside that page's schema in
@@ -46,18 +52,14 @@ export interface UIStrings {
      * and the footer already carry that one, and a reader meeting two navigations both called
      * "contents" cannot tell which is which. Hence "of this page" in every locale.
      *
-     * Both pages that carry a tabula today are Polish-only (`/obrazy` by the decision in
-     * docs/web-imagines-spec.md §7, the concert pages because concert content is not translated),
-     * so only the Polish string is reachable right now. It is written in all three anyway, because
-     * this component renders on `/o-nas` and `/kontakt` too and the day one of them passes an
-     * index the string has to already be there — a missing locale would surface as a Polish
-     * landmark label in a French document, which is exactly the kind of gap that ships.
+     * Both pages that carry a tabula — `/obrazy` and the concert pages — are read in all three
+     * locales, so all three strings are live.
      */
     readonly tabulaAria: string;
     /** The photograph archive (/obrazy) as the registrum's closing line names it, plus the gloss
-        under it. The page itself is Polish-only, so the LINK stays a Polish URL — but a reader of
-        the English or French chrome still has to be able to tell where it goes before following
-        it, which is why the name is translated and the destination is not. */
+        under it. Both surfaces that print it (the desktop register's closing line, the Via's
+        closing row) send the reader through `localizePath`, so the name and the destination
+        agree — they did not while the page was Polish-only and the hrefs were hand-written. */
     readonly archive: string;
     readonly archiveGloss: string;
   };
@@ -76,8 +78,7 @@ export interface UIStrings {
     readonly home: string;
     readonly about: string;
     readonly concerts: string;
-    /** The photograph archive (/obrazy). Polish-only as a page, so the label is translated while
-        `localizePath` keeps returning the Polish URL — see i18n/config TRANSLATED_ROUTES. */
+    /** The photograph archive (/obrazy). */
     readonly images: string;
     readonly contact: string;
     readonly support: string;
@@ -93,6 +94,41 @@ export interface UIStrings {
     readonly donationNote: string;
     /** "Built by" credit label in the footer base row. */
     readonly realizedBy: string;
+  };
+  /**
+   * The lightbox over a photograph (`islands/ImageLightbox`), open on /obrazy, /kolofon and every
+   * concert page. All four are accessible names — a surface with no visible text of its own.
+   */
+  readonly lightbox: {
+    readonly dialogAria: string;
+    readonly close: string;
+    readonly previous: string;
+    readonly next: string;
+  };
+  /** The film player on a concert page (`islands/video/VideoPlayer`). The landing's own
+      `VideoLightbox` is not here: it mounts on `/` alone, which the copy desk has not reached. */
+  readonly player: {
+    readonly play: string;
+    readonly pause: string;
+    readonly timeline: string;
+    readonly fullscreen: string;
+    readonly fullscreenExit: string;
+    /** Shown in place of the film when the source will not load. The one VISIBLE string here. */
+    readonly unavailable: string;
+    /** Joins elapsed and total in the scrubber's `aria-valuetext` ("3:20 of 8:04"). One word,
+        and it is a word: Polish "z" and French "sur" are not interchangeable with English "of". */
+    readonly ofDuration: string;
+  };
+  /**
+   * The scroll-to-top control (`islands/ScrollTopButton`), which BaseLayout mounts on every page
+   * of the site. `hint` is VISIBLE on hover and is the one line of this dictionary that is closer
+   * to a phrase than to a label — it is kept here regardless, because the control appears on
+   * pages the copy desk does not hold and a missing locale would print Polish under a French
+   * cursor.
+   */
+  readonly scrollTop: {
+    readonly action: string;
+    readonly hint: string;
   };
 }
 
@@ -134,6 +170,25 @@ export const UI: Record<Locale, UIStrings> = {
       donationNote: "Darowizna na cele statutowe.",
       realizedBy: "Realizacja",
     },
+    lightbox: {
+      dialogAria: "Powiększone zdjęcie",
+      close: "Zamknij",
+      previous: "Poprzedni kadr",
+      next: "Następny kadr",
+    },
+    player: {
+      play: "Odtwórz wideo",
+      pause: "Zatrzymaj odtwarzanie",
+      timeline: "Oś czasu wideo",
+      fullscreen: "Pełny ekran",
+      fullscreenExit: "Zamknij pełny ekran",
+      unavailable: "Materiał chwilowo niedostępny",
+      ofDuration: "z",
+    },
+    scrollTop: {
+      action: "Wróć na początek strony",
+      hint: "wróć w ciszę",
+    },
   },
   en: {
     skipToContent: "Skip to content",
@@ -172,6 +227,25 @@ export const UI: Record<Locale, UIStrings> = {
       donationNote: "Donations serve the foundation's charitable purposes.",
       realizedBy: "Built by",
     },
+    lightbox: {
+      dialogAria: "Enlarged photograph",
+      close: "Close",
+      previous: "Previous frame",
+      next: "Next frame",
+    },
+    player: {
+      play: "Play the film",
+      pause: "Pause the film",
+      timeline: "Film timeline",
+      fullscreen: "Full screen",
+      fullscreenExit: "Exit full screen",
+      unavailable: "Temporarily unavailable",
+      ofDuration: "of",
+    },
+    scrollTop: {
+      action: "Back to the top of the page",
+      hint: "back into the silence",
+    },
   },
   fr: {
     skipToContent: "Aller au contenu",
@@ -209,6 +283,25 @@ export const UI: Record<Locale, UIStrings> = {
       dataProtection: "RGPD",
       donationNote: "Les dons servent les buts statutaires de la fondation.",
       realizedBy: "Réalisation",
+    },
+    lightbox: {
+      dialogAria: "Photographie agrandie",
+      close: "Fermer",
+      previous: "Photographie précédente",
+      next: "Photographie suivante",
+    },
+    player: {
+      play: "Lire la vidéo",
+      pause: "Mettre la vidéo en pause",
+      timeline: "Barre de progression de la vidéo",
+      fullscreen: "Plein écran",
+      fullscreenExit: "Quitter le plein écran",
+      unavailable: "Momentanément indisponible",
+      ofDuration: "sur",
+    },
+    scrollTop: {
+      action: "Revenir en haut de la page",
+      hint: "retour au silence",
     },
   },
 };
