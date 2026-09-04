@@ -1,0 +1,35 @@
+# page.obrazy — EN draft (stage G6). Same flat shape as the overlay it will become.
+#
+# THE PAGE ONLY, not the evenings and not the photographs. Every plate on /obrazy prints its
+# evening's title and its frames' alt text, and those are already translated under `concert.<id>.*`
+# in `concerts.en.yaml`. The places are named in `i18n/content/miejsca.ts`, the credits by
+# `lib/photoCredit`, and the counted line's nouns by `i18n/content/obrazy.ts` — none of them are
+# here. What is here is what the PAGE says.
+#
+# THE RENDERINGS THE SITE HAS ALREADY PUBLISHED, followed rather than invented:
+#   Obrazy             → Images                        (ui.ts footer.images — the entrance that
+#                        leads here, so the page it opens must carry the same name; and
+#                        koncert.ts `station`, which calls one evening an Image)
+#   Koncerty Duchowe   → Spiritual Concerts            (koncert.ts, o-nas.ts, concerts.en.yaml)
+#   archiwum zespołu   → the ensemble's own archive    (photoCredit CREDIT_LABELS.en.ownArchive —
+#                        the colophon's note and the run credits state one fact and must not
+#                        state it in two wordings)
+#
+# `meta.description` LOSES THE COUNT, on the contract's own instruction: the Polish says "z pięciu
+# Koncertów Duchowych" and the page beside it counts the evenings at build, so the number will be
+# wrong the day a sixth gallery lands. A count-free rendering is better than a faithful one.
+#
+# Not the overlay: `npm run copy:propose --locale en` carries these in as proposals, which is the
+# only door that stamps the provenance hash the stale state is computed from.
+
+page.obrazy.meta.title: "Images — photographs of the Spiritual Concerts · VoctEnsemble"
+page.obrazy.meta.description: "VoctEnsemble's photographic archive. Documentary photographs of the Spiritual Concerts, in the order the evenings happened."
+page.obrazy.meta.galleryName: "Images — photographs of the Spiritual Concerts"
+
+page.obrazy.head.eyebrow: "Photographic archive"
+page.obrazy.head.title: "Images"
+page.obrazy.head.lede: "This is everything left of those evenings apart from the sound. The photographs run in the order they were taken — from the first rehearsal to the last concert."
+
+page.obrazy.colophon.eyebrow: "Photographs"
+page.obrazy.colophon.note: "The remaining photographs come from the ensemble's own archive."
+page.obrazy.colophon.back: "Back to the Spiritual Concerts"

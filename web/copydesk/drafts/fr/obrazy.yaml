@@ -1,0 +1,38 @@
+# page.obrazy — FR draft (stage G6). Same flat shape as the overlay it will become.
+#
+# THE PAGE ONLY, not the evenings and not the photographs. Every plate on /obrazy prints its
+# evening's title and its frames' alt text, and those are already translated under `concert.<id>.*`
+# in `concerts.fr.yaml`. The places are named in `i18n/content/miejsca.ts`, the credits by
+# `lib/photoCredit`, and the counted line's nouns by `i18n/content/obrazy.ts` — none of them are
+# here. What is here is what the PAGE says.
+#
+# NO PUNCTUATION SPACING. `lib/typo.ts` inserts the narrow no-break spaces before `? ! : ;` and
+# inside `« »` at build. A hand-typed one doubles up, so write an ordinary space and let the build
+# do it.
+#
+# THE RENDERINGS THE SITE HAS ALREADY PUBLISHED, followed rather than invented:
+#   Obrazy             → Images                        (ui.ts footer.images — the entrance that
+#                        leads here; and koncert.ts `station`, which calls one evening an Image)
+#   Koncerty Duchowe   → Concerts Spirituels           (koncert.ts, concerts.fr.yaml)
+#   archiwum zespołu   → archives de l'ensemble        (photoCredit CREDIT_LABELS.fr.ownArchive —
+#                        the colophon's note and the run credits state one fact and must not
+#                        state it in two wordings)
+#
+# `meta.description` LOSES THE COUNT, on the contract's own instruction: the Polish says "z pięciu
+# Koncertów Duchowych" and the page beside it counts the evenings at build, so the number will be
+# wrong the day a sixth gallery lands.
+#
+# Not the overlay: `npm run copy:propose --locale fr` carries these in as proposals, which is the
+# only door that stamps the provenance hash the stale state is computed from.
+
+page.obrazy.meta.title: "Images — photographies des Concerts Spirituels · VoctEnsemble"
+page.obrazy.meta.description: "Les archives photographiques de VoctEnsemble. Des photographies documentaires des Concerts Spirituels, dans l'ordre où les soirées ont eu lieu."
+page.obrazy.meta.galleryName: "Images — photographies des Concerts Spirituels"
+
+page.obrazy.head.eyebrow: "Archives photographiques"
+page.obrazy.head.title: "Images"
+page.obrazy.head.lede: "C'est tout ce qui reste de ces soirées en dehors du son. Les photographies se suivent dans l'ordre où elles ont été prises — de la première répétition au dernier concert."
+
+page.obrazy.colophon.eyebrow: "Photographies"
+page.obrazy.colophon.note: "Les autres photographies proviennent des archives de l'ensemble."
+page.obrazy.colophon.back: "Retour aux Concerts Spirituels"
