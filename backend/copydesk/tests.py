@@ -263,6 +263,12 @@ class SanitizerTests(TestCase):
             # tag is on the list at all: a storage key is a literal, and an editor's first
             # proposal on this paragraph would otherwise return it with the key as plain prose.
             "przeglądarki (<em>localStorage</em>) pod kluczem <code>voct.demo.audio</code>.",
+            # landing.yaml — the first FRAGMENT href in the corpus. It is an in-page jump to the
+            # director's section, so it carries no scheme to check and must survive whole.
+            'Cykl Koncertów Duchowych prowadzi <a href="#dyrygent">Florent de Bazelaire</a>.',
+            "Z tej ciszy — <em>głos.</em>",
+            "Każdy program układa wokół jednej intencji. <em>Kontemplacja Wcielenia</em> na "
+            "debiut (2024).",
         ):
             with self.subTest(value=value):
                 self.assertEqual(sanitize_html(value), value)

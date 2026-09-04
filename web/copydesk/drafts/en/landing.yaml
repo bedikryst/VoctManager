@@ -1,0 +1,166 @@
+# page.landing — EN draft (stage K, pass 1). Same flat shape as the overlay it will become.
+#
+# 89 FIELDS, AND WHAT IS DELIBERATELY NOT AMONG THEM:
+#   - the five evenings' TITLES. The register and the Imagines band read them from
+#     `concerts.en.yaml` through the copy overlay, so this page holds no second name for a night;
+#   - the threshold's two BUTTONS ("Enter with voice" / "Enter in silence"). They are chrome, a
+#     complete triple in `i18n/content/landing.ts`, because § 3 and § 10 of the privacy policy
+#     quote them by name in all three languages — two documents on one site may not call one
+#     button two things, and a locale falling back to Polish here would leave a legal text citing
+#     a control that does not exist;
+#   - the Latin tier (Lumen Christi, Vox memoriae, Sustinete nos, Imagines, Vox, Repertorium,
+#     Introitus, De nobis, Via, Scribe nobis, tacet.) and `Concerts Spirituels`, the French name of
+#     the historical form, which stays itself on every page of this site.
+#
+# THE RENDERINGS THE SITE HAS ALREADY PUBLISHED, followed rather than invented:
+#   Koncert Duchowy / cykl      → Spiritual Concert / the Spiritual Concerts cycle
+#   anachoreci · tęsknota       → anchorites · longing        (page.o-nas.letter.stanzas.I, hero)
+#   „zostaje w duszy niczym     → "stays in the soul like a living organism"  (the same founding
+#    żywy organizm"                text, quoted at length on /o-nas and condensed here)
+#   „słowo i muzyka są swoimi   → "word and music are each other's mirror image"
+#    lustrzanymi odbiciami"        (page.o-nas.cantus.lead)
+#   Bazylika NSPJ · Mariacka    → Sacred Heart Basilica · St Mary's Basilica
+#   Archikatedra w Łodzi        → Łódź Cathedral               (page.kontakt.hero.lede)
+#   Zapowiedź · zawierzenie     → Prophecy · commendation      (glossary §2)
+#   VII wieków repertuaru       → seven centuries              (page.koncerty.repertoire.eyebrow)
+#   Fundacja Carpe Diem         → the Carpe Diem Foundation    (page.o-nas.ensemble.collabText)
+#
+# ONE FRAME HELD ACROSS THREE SECTIONS, and it is the page's spine rather than a stylistic
+# preference: the hero's "Z ciszy / głos.", the Vox moment's "Z tej ciszy — głos." and the
+# Imagines band's "Z tego głosu — pamięć." are one figure said three times, each handing the last
+# word to the next. English keeps the frame — "Out of silence / a voice." → "Out of that
+# silence — a voice." → "Out of that voice — memory." — because a rendering that varies the
+# preposition turns a reprise into three unrelated lines.
+#
+# THE TRANSFER LINES KEEP THEIR POLISH, and only their LABELS are rendered. "Fundacja
+# VoctFoundation" is the foundation's registered name and "Darowizna na cele statutowe
+# VoctFoundation" is the reference a donor copies into a Polish bank's form — translating either
+# would hand a reader words to type that the receiving bank does not expect. It is the same rule
+# the footer's postal address already keeps: an address is written the way it must be written on
+# an envelope.
+#
+# `zł` STAYS `zł` IN EVERY LOCALE. The site already publishes "50, 100 or 200 zł" in English
+# (page.skarbiec.mecenat.howHtml); what does change is the thousands separator, which English
+# writes with a comma.
+#
+# TWO EDITORIAL FINDINGS, NAMED RATHER THAN HARMONISED — both are questions for the desk, in the
+# SOURCE language, and neither is a translation defect:
+#   1. `ensemble.title1` + `title2` ("Zaczęło się / od tęsknoty.") is the SAME Polish sentence
+#      /o-nas prints as its own hero title. One line, two files: an edit to either leaves the
+#      site saying it two ways. The English here follows /o-nas's published rendering so that the
+#      two agree today.
+#   2. `register.title` ("Co już zabrzmiało.") is the fourth Polish wording of one section:
+#      /koncerty calls it "Droga koncertów", /o-nas "Co już wybrzmiało", the landing's own chrome
+#      calls it "Z drogi". §6aa filed the same finding for the rubric `Via`; this is it again with
+#      one more variant. The English follows THIS Polish rather than /o-nas's, which is why the
+#      two read "What has already sounded." and "What has sounded".
+#
+# Not the overlay: `npm run copy:propose --locale en` carries these in as proposals, which is the
+# only door that stamps the provenance hash the stale state is computed from.
+
+page.landing.meta.title: "VoctEnsemble — Out of silence, a voice. Spiritual Concerts"
+page.landing.meta.description: "VoctEnsemble: twelve voices in a stone nave, from Victoria to Pärt. The Spiritual Concerts cycle, directed by Florent de Bazelaire."
+page.landing.meta.ensembleDescription: "A vocal ensemble performing sacred music. The Spiritual Concerts cycle, directed by Florent de Bazelaire. Resident ensemble of the VoctFoundation."
+
+page.landing.rite.word1: "twelve voices"
+page.landing.rite.word2: "a stone nave"
+page.landing.rite.kicker: "VoctEnsemble · vocal ensemble · Kraków"
+page.landing.rite.title1: "This page"
+page.landing.rite.title2: "can sing."
+page.landing.rite.subtitle: "Quietly, in the background — in the ensemble's own voice. You can change your mind at any time."
+
+page.landing.hero.announceLabel: "Next"
+page.landing.hero.title1: "Out of silence"
+page.landing.hero.title2: "a voice."
+page.landing.hero.response: "Twelve voices in a stone nave: from Victoria to Pärt."
+page.landing.hero.strapHtml: "A concert as a threshold: you come in from the street and leave quieter. The Spiritual Concerts cycle is led by <a href=\"#dyrygent\">Florent de Bazelaire</a>."
+page.landing.hero.videoLabel: "Watch and listen"
+page.landing.hero.videoMeta: "· 4 min"
+page.landing.hero.concertsLink: "Spiritual Concerts"
+page.landing.hero.cue: "Go deeper"
+
+page.landing.manifest.label: "Manifesto"
+page.landing.manifest.lines.silentium.text: "Music is born in silence."
+page.landing.manifest.lines.contemplatio.text: "Music is the soul's contemplation in time."
+page.landing.manifest.statement: "The sacred does not adorn."
+page.landing.manifest.answer: "It unveils."
+
+page.landing.litany.inCatalogue: "In the repertoire"
+page.landing.litany.moreLink: "The full repertoire →"
+
+page.landing.ensemble.eyebrow: "Where did we come from?"
+page.landing.ensemble.title1: "It began"
+page.landing.ensemble.title2: "with longing."
+page.landing.ensemble.origin: "Like anchorites — in seclusion, far from the clamour — we came to long for music that enfolds a person, reaches into them and stays in the soul like a living organism. That is how Voct began: out of silence and contemplation."
+page.landing.ensemble.p2: "There are more than forty of us today; twelve voices usually go on stage. We adore heterophony, polytonality and polyphony — we weave our programmes out of works in which word and music are each other's mirror image."
+page.landing.ensemble.facts.singers.label: "singers in the community · twelve voices on stage"
+page.landing.ensemble.facts.debut.label: "debut · Contemplation of the Incarnation · Sacred Heart Basilica"
+page.landing.ensemble.facts.evenings.label: "evenings"
+
+page.landing.director.role: "Artistic direction"
+page.landing.director.p1: "The cycle takes its name from Paris in 1725: the Concert Spirituel sang on the evenings when the opera fell silent. Three hundred years later Florent de Bazelaire takes up that tradition in the basilicas of Kraków and Łódź, in Szczawnica and Niedzica."
+page.landing.director.p2Html: "He builds every programme around a single intention. <em>Contemplation of the Incarnation</em> for the debut (2024), nine leaves from the Book of Psalms, a prayer for peace in St Mary's Basilica, an epitaph for Gaza."
+page.landing.director.p3: "Alongside it he leads the VoctFoundation. The foundation exists to give this music a place of its own."
+page.landing.director.portraitAlt: "Florent de Bazelaire conducting VoctEnsemble"
+
+page.landing.vox.eyebrow: "Watch and listen"
+page.landing.vox.lineHtml: "Out of that silence — <em>a voice.</em>"
+page.landing.vox.videoCaption: "Selected excerpts from the concert “Contemplation of the Incarnation” · VoctEnsemble 2024"
+
+page.landing.imagines.rubric: "Images of the evenings"
+page.landing.imagines.lineHtml: "Out of that voice — <em>memory.</em>"
+page.landing.imagines.caption: "Photographs of the cycle's evenings"
+page.landing.imagines.allLink: "All the images"
+
+page.landing.register.label: "From the path"
+page.landing.register.title: "What has already sounded."
+page.landing.register.lede: "Every evening of the cycle had a single intention. We set them down in the order in which they were sung."
+page.landing.register.videoLabel: "Watch an excerpt"
+page.landing.register.programLabel: "Concert programme"
+
+page.landing.register.entries.wcielenie.tag: "Spiritual Concert · debut"
+page.landing.register.entries.wcielenie.place: "Sacred Heart Basilica in Kraków"
+page.landing.register.entries.wcielenie.note: "An entrance into the mystery of the Incarnation, from Isaiah's prophecy to the canticle of Simeon. Renaissance polyphony, Pärt, Vivancos."
+page.landing.register.entries.wcielenie.credit: "Recording: Jakub Garbacz, Ars Sonora Studio. Reprise under the auspices of the Carpe Diem Foundation."
+
+page.landing.register.entries.wolanie-gor.tag: "12 voices and violin"
+page.landing.register.entries.wolanie-gor.place: "Dworek Gościnny · Szczawnica"
+page.landing.register.entries.wolanie-gor.note: "A programme for which the mountains were the breath. Sacred polyphony and folk songs from Poland, Corsica, France and the British Isles, with Radu Ropotan's violin."
+page.landing.register.entries.wolanie-gor.videoNote: "J. Sykulski — Stoi lód na Prośnie · recorded from the audience · live sound"
+
+page.landing.register.entries.9-kart.tag: "A cycle of psalms · 6–12 voices"
+page.landing.register.entries.9-kart.place: "St Anthony's Basilica in Rybnik · Łódź Cathedral · Sacred Heart Basilica in Kraków"
+page.landing.register.entries.9-kart.note: "Nine psalms: penitence, lament, praise. Allegri's Miserere, divided into nine parts, is woven through the whole evening."
+
+page.landing.register.entries.hymn-poleglym.tag: "A prayer for peace"
+page.landing.register.entries.hymn-poleglym.place: "St Mary's Basilica in Kraków"
+page.landing.register.entries.hymn-poleglym.note: "A tribute to those who gave their lives defending Ukraine. At the climax, as the Mariacki altarpiece was opened, the anthem of Ukraine sounded."
+
+page.landing.register.entries.aeternam.tag: "An epitaph · 4, 8 and 12 voices"
+page.landing.register.entries.aeternam.place: "Mistrzejowice · Niedzica"
+page.landing.register.entries.aeternam.note: "An evening for the people of Gaza. Vivancos's Aeternam, the two Taveners, the commendation of the victims to the Mother of God."
+page.landing.register.entries.aeternam.credit: "Partners: Łapsze Niżne Commune · Łapsze Niżne Cultural Centre · ZEW Niedzica · Dunajec Castle · ACN — Aid to the Church in Need. Media patrons: Gość Niedzielny · Radio Alex · Tygodnik Podhalański."
+page.landing.register.entries.aeternam.videoNote: "C. Shaw — and the swallow (Psalm 84) · recorded from the nave · live sound"
+
+page.landing.register.next.tag: "awaiting an invitation"
+page.landing.register.next.title: "The sixth evening."
+page.landing.register.next.place: "Place and date still open"
+page.landing.register.next.summary: "The programme takes shape in rehearsal. The date will appear here once there is a host for the evening and the means to pay the singers. Every donation brings it closer."
+page.landing.register.next.cta: "Help it ring out"
+
+page.landing.support.eyebrow: "Patronage · donation · partnership"
+page.landing.support.title: "Let the music have a place of its own."
+page.landing.support.lede: "The largest cost of a concert is the singers' fees; then scores, sound, lighting and travel. That is what donations go to. You can also invite us to you: we sing concerts and liturgies, wedding Masses, anniversaries."
+page.landing.support.tiers.t100.amount: "100 zł"
+page.landing.support.tiers.t100.text: "goes towards the cycle's next evening"
+page.landing.support.tiers.t500.amount: "500 zł"
+page.landing.support.tiers.t500.text: "supports rehearsals and scores between concerts"
+page.landing.support.tiers.t2500.amount: "2,500 zł"
+page.landing.support.tiers.t2500.text: "helps make the cycle's next evening"
+page.landing.support.bank.recipient: "Recipient: Fundacja VoctFoundation"
+page.landing.support.bank.transferTitle: "Payment reference: Darowizna na cele statutowe VoctFoundation"
+page.landing.support.contactLabel: "Contact the artistic direction"
+page.landing.support.supportCta: "Support us"
+page.landing.support.writeCta: "Write to us"
+
+page.landing.coda.captionHtml: "The silence <em>sounds on.</em>"

@@ -156,7 +156,11 @@
     line-height: 1.4;
   }
 
-  .hero-strap-name {
+  /* The strap is a copy field now, so its link carries no class of its own: a `class` on an
+     editor's proposal is stripped by the desk's sanitizer, and a rule that depended on one would
+     go dead the first time the sentence was edited. `white-space: nowrap` is also what binds the
+     name — no hard space is ever typed into a field an editor edits. */
+  .hero-strap a {
     white-space: nowrap;
     color: var(--paper);
     text-decoration: none;
@@ -164,8 +168,8 @@
     padding-bottom: 2px;
     transition: color 0.35s var(--ease), border-color 0.35s var(--ease);
   }
-  .hero-strap-name:hover,
-  .hero-strap-name:focus-visible {
+  .hero-strap a:hover,
+  .hero-strap a:focus-visible {
     color: var(--candle);
     border-bottom-color: var(--candle);
   }

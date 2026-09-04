@@ -20,6 +20,15 @@ import { getCollection } from "astro:content";
 import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
 import { PATHS } from "../../data/landing/paths";
+import type { LandingCopy } from "../../i18n/content/landing";
+
+interface Props {
+  copy: LandingCopy["ensemble"];
+  /** The section's name for a screen reader; the heading beside it is the ensemble's own line
+      rather than its name. */
+  aria: string;
+}
+const { copy, aria } = Astro.props;
 
 const ensemble = bleedPair("chor-nawa");
 
@@ -60,14 +69,24 @@ const places = [
  * The one agreement left in the label is "wieczorów", the genitive plural Polish takes from five
  * upward — it turns back into "wieczory" at twenty-two, which is the number to watch.
  */
-const FACTS = [
-  { num: "44", label: "śpiewaków we wspólnocie · na scenie dwanaście głosów" },
-  { num: "2024", label: "debiut · Kontemplacja Wcielenia · Bazylika NSPJ" },
-  { num: String(venues.length), label: `wieczorów · ${places.join(" · ")}` },
-] as const;
+const NUMERALS: Readonly<Record<string, string>> = {
+  singers: "44",
+  debut: "2024",
+  evenings: String(venues.length),
+};
+/** The places follow the third tile's line, derived; the other two tiles carry no tail. */
+const TAILS: Readonly<Record<string, string>> = { evenings: places.join(" · ") };
+
+const facts = copy.facts.map((fact) => {
+  const num = NUMERALS[fact.id];
+  // Loud rather than blank: a renamed id would otherwise print a tile with a line and no numeral.
+  if (num === undefined) throw new Error(`[ensemble] no numeral for fact tile "${fact.id}".`);
+  const tail = TAILS[fact.id];
+  return { num, label: tail ? `${fact.label} · ${tail}` : fact.label };
+});
 ---
 
-<section class="ensemble" id="zespol" aria-label="Zespół">
+<section class="ensemble" id="zespol" aria-label={aria}>
   <div class="ensemble-media" aria-hidden="true">
     <BleedImage desktop={ensemble.desktop} mobile={ensemble.mobile} alt="" position="center 32%" />
   </div>
@@ -81,25 +100,16 @@ const FACTS = [
         the whole column resolving at once on the phone. */}
     <div class="ensemble-copy">
       <div class="ensemble-lede reveal">
-        <div class="micro titulus">Skąd się wzięliśmy?</div>
-        <h2 class="ink-press">Zaczęło się<br />od tęsknoty.</h2>
+        <div class="micro titulus">{copy.eyebrow}</div>
+        <h2 class="ink-press">{copy.title1}<br />{copy.title2}</h2>
       </div>
       {/* The founding testimony's gold marginal rule is drawn down the margin, then the
           quotation is inked beside it. */}
-      <p class="ensemble-origin reveal reveal-rule-v">
-        Jak anachoreci — w odosobnieniu, z daleka od zgiełku — zatęskniliśmy
-        za muzyką, która otula, przenika i zostaje w duszy niczym żywy
-        organizm. Tak powstał Voct: z ciszy i kontemplacji.
-      </p>
-      <p class="reveal">
-        Dziś jest nas ponad czterdzieścioro; na koncert wychodzi zwykle dwanaście
-        głosów. Ubóstwiamy heterofonię, politonalność i polifonię — programy tkamy
-        z utworów, w których słowo i muzyka są swoimi lustrzanymi
-        odbiciami.
-      </p>
+      <p class="ensemble-origin reveal reveal-rule-v">{copy.origin}</p>
+      <p class="reveal">{copy.p2}</p>
       <div class="ensemble-facts reveal reveal-rule">
         {
-          FACTS.map((fact) => (
+          facts.map((fact) => (
             <div class="fact">
               <span class="fact-num">{fact.num}</span>
               <span class="fact-label">{fact.label}</span>

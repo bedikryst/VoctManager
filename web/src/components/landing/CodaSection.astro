@@ -27,9 +27,18 @@
  * @architecture Astro islands 2026
  * @module components/landing/CodaSection
  */
+import type { LandingCopy } from "../../i18n/content/landing";
+
+interface Props {
+  copy: LandingCopy["coda"];
+  /** The plain-text twin of the caption, for the landmark: the caption itself carries markup and
+      cannot stand in an attribute. */
+  aria: string;
+}
+const { copy, aria } = Astro.props;
 ---
 
-<section class="coda" aria-label="Cisza brzmi dalej">
+<section class="coda" aria-label={aria}>
   <div class="coda-score reveal-cue">
     <div class="aether-knot coda-knot" aria-hidden="true">
       <svg
@@ -75,6 +84,6 @@
       </svg>
     </div>
 
-    <p class="coda-caption">Cisza <em>brzmi dalej.</em></p>
+    <p class="coda-caption" set:html={copy.captionHtml} />
   </div>
 </section>

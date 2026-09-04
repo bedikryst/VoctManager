@@ -33,6 +33,8 @@ import SiteFooter from "../components/SiteFooter.astro";
 import { photo, bleedPair } from "../lib/photos";
 import { viaMoment } from "../lib/dates";
 import { PATHS } from "../data/landing/paths";
+import { pageCopy } from "../lib/pageCopy";
+import { LANDING_PAGE } from "../i18n/content/landing";
 import { MODAL_VIDEO } from "../data/landing/video";
 import { DEFAULT_LOCALE } from "../i18n/config";
 import VaultMount from "../components/VaultMount.astro";
@@ -238,16 +240,24 @@ const FACTS = [
   { num: "Kraków", label: "siedziba · Fundacja VoctFoundation" },
 ] as const;
 
-// Register rows join the landing's editorial layer (PATHS) with the concerts collection
-// (SSoT for the roman numeral + the real year) and resolve each entry's poster for the
-// player. `video` passes through untouched — rows without footage render NO player
-// (paths.ts rule: "omit when no footage exists, never fabricate").
+// Register rows join THREE sources, exactly as the landing's own register does: the structure
+// (PATHS), the landing's editorial layer for that evening (`landing.yaml` through the copy desk —
+// the tag, the place line, the lead, the fragment's provenance note) and the concerts collection,
+// which is SSoT for the roman numeral, the real year and the evening's TITLE. This page is
+// Polish-only and noindex, so it asks for the Polish and nothing else. `video` passes through
+// untouched — rows without footage render NO player (paths.ts rule: "omit when no footage exists,
+// never fabricate").
 const concertData = new Map((await getCollection("concerts")).map((c) => [c.id, c.data]));
+const landing = pageCopy(LANDING_PAGE, DEFAULT_LOCALE);
 const register = await Promise.all(
   PATHS.map(async (p) => {
     const meta = concertData.get(p.concertId);
+    const words = landing.register.entries.find((entry) => entry.id === p.concertId);
+    if (!words) throw new Error(`[press] no register copy for the evening "${p.concertId}".`);
     return {
       ...p,
+      ...words,
+      title: meta?.title ?? "",
       roman: meta?.roman ?? "",
       yearLabel: meta?.date?.slice(0, 4) ?? (meta ? viaMoment(meta, "pl").match(/\d{4}/)?.[0] : undefined) ?? "",
       posterSrc: p.video
@@ -456,7 +466,7 @@ const jsonLd = {
                     poster={p.posterSrc}
                     portrait={p.video.portrait}
                     caption={`${p.title} · ${p.yearLabel}`}
-                    note={p.video.note}
+                    note={p.videoNote}
                   />
                 </div>
               )}

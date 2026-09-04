@@ -34,6 +34,7 @@ import YAML from "yaml";
 
 import { walkCopy } from "../src/i18n/content/copySpec.ts";
 import { KOLOFON_PAGE } from "../src/i18n/content/kolofon.ts";
+import { LANDING_PAGE } from "../src/i18n/content/landing.ts";
 import { KONCERTY_PAGE } from "../src/i18n/content/koncerty.ts";
 import { KONTAKT_PAGE } from "../src/i18n/content/kontakt.ts";
 import { NOT_FOUND_PAGE } from "../src/i18n/content/notFound.ts";
@@ -63,6 +64,7 @@ const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
  * @type {readonly PageSpec[]}
  */
 export const PAGE_SPECS = [
+  LANDING_PAGE,
   ABOUT_PAGE,
   KONTAKT_PAGE,
   KONCERTY_PAGE,

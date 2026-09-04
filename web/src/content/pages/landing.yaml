@@ -1,0 +1,230 @@
+# Landing (`/`) — the site's Polish source text.
+#
+# THE SHAPE IS `src/i18n/content/landing.ts` (zod, `.strict()`), the key contract is there too, and
+# the translations live in `src/content/pages.{en,fr}.yaml` under `page.landing.*`, falling back per
+# field. Never add an `en:` beside a value here — the schema refuses it, which is the point.
+#
+# WHAT IS NOT HERE, and each absence is a decision rather than an oversight:
+#   - the Latin tier (Lumen Christi, Vox memoriae, Sustinete nos, Imagines, Vox, Repertorium,
+#     Introitus, De nobis, Via, Scribe nobis, tacet.) — locale-neutral, and it stands in the markup
+#     with the rest of the site's Latin;
+#   - `Concerts Spirituels`, the French name of the historical form, which stays itself everywhere
+#     (the same decision /o-nas and /koncerty already record);
+#   - proper names — Florent de Bazelaire, the board, VoctFoundation, the bank accounts, the
+#     registry numbers, the typeface names;
+#   - every CONCERT's own words. The register and the Imagines band print five evenings, and their
+#     titles come from `concerts.yaml` through the copy desk's overlay: a title printed twice would
+#     be read twice and would drift the first time one of them was edited (spec §6y). What the
+#     landing owns about an evening is its own editorial layer — the rail's tag, the register's
+#     place line, its lead and its provenance credit;
+#   - the numbers. `44` and `2024` in the ledger are figures, the evening count and the places are
+#     derived from `concerts.yaml`, and the photographs' months are formatted per locale from an ISO
+#     value in `data/landing/paths.ts` (spec §5: a date is never typed into copy).
+#
+# THE AFFORDANCES ARE NOT HERE EITHER — landmark names, the audio pill, the copy button, the
+# threshold's two buttons — because a missing locale there is a broken page rather than a paragraph
+# awaiting review. They are a complete triple in `i18n/content/landing.ts` (spec §6r).
+
+meta:
+  title: "VoctEnsemble — Z ciszy głos. Koncerty Duchowe"
+  # Kept under ~160 characters: Google truncates past that, and a description that spends its
+  # visible half on a second slogan buries the one fact a searcher needs (who sings what).
+  description: >-
+    VoctEnsemble: dwanaście głosów w kamiennej nawie, od Victorii po Pärta. Cykl Koncertów
+    Duchowych pod dyrekcją Florenta de Bazelaire.
+  # The MusicGroup entity's own description in the JSON-LD graph — the ensemble as an entity, not
+  # this page. /o-nas points at the same `@id` and states no description of its own, so this is the
+  # only one search engines see.
+  ensembleDescription: >-
+    Zespół wokalny wykonujący muzykę sakralną. Cykl Koncerty Duchowe pod dyrekcją Florenta
+    de Bazelaire. Rezydujący zespół Fundacji VoctFoundation.
+
+# ── The threshold rite (islands/landing/Preloader) ────────────────────────────────────────────
+rite:
+  # The two display words of the hold loop, surfacing and sinking on the diagonal. They are the
+  # best type on the site and they carry the ensemble itself, so the answer to "who is this"
+  # arrives half a second in rather than after the cadence.
+  word1: "dwanaście głosów"
+  word2: "kamienna nawa"
+  kicker: "VoctEnsemble · zespół wokalny · Kraków"
+  # Set as two lines; the break is compositional.
+  title1: "Ta strona"
+  title2: "może śpiewać."
+  subtitle: "Cicho, w tle — głosem zespołu. Wybór zmienisz w każdej chwili."
+
+# ── I. The threshold ──────────────────────────────────────────────────────────────────────────
+hero:
+  # The standing "next concert" pill, dormant until `concerts.yaml` carries a future date. The
+  # evening's own title and moment are appended by the component.
+  announceLabel: "Najbliżej"
+  title1: "Z ciszy"
+  title2: "głos."
+  response: "Dwanaście głosów w kamiennej nawie: od Victorii po Pärta."
+  strapHtml: >-
+    Koncert jako próg: wchodzi się z ulicy, wychodzi się cichszym. Cykl Koncertów Duchowych
+    prowadzi <a href="#dyrygent">Florent de Bazelaire</a>.
+  videoLabel: "Zobacz i usłysz"
+  videoMeta: "· 4 min"
+  concertsLink: "Koncerty Duchowe"
+  cue: "Zejdź w głąb"
+
+manifest:
+  label: "Manifest"
+  # VERBATIM FOUNDING TEXT — quoted from "Skąd się wzięliśmy?", Florent's vision document. The
+  # manifest quotes the founders; it does not paraphrase them.
+  lines:
+    - id: silentium
+      text: "W ciszy rodzi się muzyka."
+    - id: contemplatio
+      text: "Muzyka jest kontemplacją duszy w czasie."
+  # The page's own figure, and the ONE not-X-but-Y on the whole site (guardrails §1). Statement and
+  # answer are one utterance: the layout sets them as a single block and the reply is not a third
+  # thesis.
+  statement: "Sacrum nie zdobi."
+  answer: "Odsłania."
+
+litany:
+  # What the readout prints for a catalogued composer none of the register's programmes records.
+  # A positive statement, true of every name on the plate.
+  inCatalogue: "W repertuarze"
+  moreLink: "Pełny repertuar →"
+
+ensemble:
+  eyebrow: "Skąd się wzięliśmy?"
+  title1: "Zaczęło się"
+  title2: "od tęsknoty."
+  origin: >-
+    Jak anachoreci — w odosobnieniu, z daleka od zgiełku — zatęskniliśmy za muzyką, która otula,
+    przenika i zostaje w duszy niczym żywy organizm. Tak powstał Voct: z ciszy i kontemplacji.
+  p2: >-
+    Dziś jest nas ponad czterdzieścioro; na koncert wychodzi zwykle dwanaście głosów. Ubóstwiamy
+    heterofonię, politonalność i polifonię — programy tkamy z utworów, w których słowo i muzyka są
+    swoimi lustrzanymi odbiciami.
+  # The ledger reads WHO · WHEN · WHERE. Each tile's numeral is data (two figures and one derived
+  # count) and only the line beside it is copy.
+  facts:
+    - id: singers
+      label: "śpiewaków we wspólnocie · na scenie dwanaście głosów"
+    - id: debut
+      label: "debiut · Kontemplacja Wcielenia · Bazylika NSPJ"
+    - id: evenings
+      label: "wieczorów"
+
+director:
+  role: "Kierownictwo artystyczne"
+  p1: >-
+    Nazwa cyklu sięga Paryża roku 1725: Concert Spirituel śpiewał w te wieczory, w które milkła
+    opera. Trzysta lat później Florent de Bazelaire podejmuje tę tradycję w bazylikach Krakowa
+    i Łodzi, w Szczawnicy i Niedzicy.
+  p2Html: >-
+    Każdy program układa wokół jednej intencji. <em>Kontemplacja Wcielenia</em> na debiut (2024),
+    dziewięć kart z Księgi Psalmów, modlitwa o pokój w Bazylice Mariackiej, epitafium dla Gazy.
+  p3: "Równolegle prowadzi VoctFoundation. Fundacja ma dać tej muzyce stałe miejsce."
+  portraitAlt: "Florent de Bazelaire prowadzący VoctEnsemble"
+
+# ── II. Vox memoriae ──────────────────────────────────────────────────────────────────────────
+vox:
+  eyebrow: "Zobacz i usłysz"
+  lineHtml: "Z tej ciszy — <em>głos.</em>"
+  # Printed under the frame and inside the lightbox — the same film in both.
+  videoCaption: "Wybrane fragmenty koncertu „Kontemplacja Wcielenia” · VoctEnsemble 2024"
+
+imagines:
+  rubric: "Obrazy wieczorów"
+  lineHtml: "Z tego głosu — <em>pamięć.</em>"
+  # The plate's own caption; the component appends the span of years the five frames cover.
+  caption: "Fotografie wieczorów cyklu"
+  allLink: "Wszystkie obrazy"
+
+register:
+  label: "Z drogi"
+  title: "Co już zabrzmiało."
+  lede: >-
+    Każdy wieczór cyklu miał jedną intencję. Zapisujemy je w kolejności, w jakiej zostały
+    wykonane.
+  videoLabel: "Zobacz fragment"
+  programLabel: "Program koncertu"
+  # One entry per evening, keyed by the concert's own id in `concerts.yaml`. The TITLE is not here:
+  # it belongs to the concert and is read through the overlay, so the register and the concert page
+  # can never print two names for one evening.
+  entries:
+    - id: wcielenie
+      tag: "Koncert Duchowy · debiut"
+      place: "Bazylika NSPJ w Krakowie"
+      note: >-
+        Wejście w tajemnicę Wcielenia, od zapowiedzi Izajasza po kantyk Symeona. Renesansowa
+        polifonia, Pärt, Vivancos.
+      credit: >-
+        Rejestracja: Jakub Garbacz, Ars Sonora Studio. Reprise pod auspicjami Fundacji Carpe Diem.
+    - id: wolanie-gor
+      tag: "12 głosów i skrzypce"
+      place: "Dworek Gościnny · Szczawnica"
+      note: >-
+        Program, dla którego góry były oddechem. Sakralna polifonia i pieśni ludowe Polski,
+        Korsyki, Francji i Wysp Brytyjskich, ze skrzypcami Radu Ropotana.
+      videoNote: "J. Sykulski — Stoi lód na Prośnie · zapis z widowni · dźwięk na żywo"
+    - id: 9-kart
+      tag: "Cykl psalmów · 6–12 głosów"
+      place: "Bazylika św. Antoniego w Rybniku · Archikatedra w Łodzi · Bazylika NSPJ w Krakowie"
+      note: >-
+        Dziewięć psalmów: pokuta, lament, uwielbienie. Miserere Allegriego, podzielone na dziewięć
+        części, oplata cały wieczór.
+    - id: hymn-poleglym
+      tag: "Modlitwa o pokój"
+      place: "Bazylika Mariacka w Krakowie"
+      note: >-
+        Hołd tym, którzy oddali życie w obronie Ukrainy. W kulminacji, przy otwarciu ołtarza
+        Mariackiego, zabrzmiał hymn Ukrainy.
+    - id: aeternam
+      tag: "Epitafium · 4, 8 i 12 głosów"
+      place: "Mistrzejowice · Niedzica"
+      note: >-
+        Wieczór za mieszkańców Gazy. Aeternam Vivancosa, dwaj Tavenerowie, zawierzenie ofiar Matce
+        Bożej.
+      videoNote: "C. Shaw — and the swallow (Psalm 84) · zapis z nawy · dźwięk na żywo"
+      credit: >-
+        Partnerzy: Gmina Łapsze Niżne · GOK Łapsze Niżne · ZEW Niedzica · Zamek Dunajec · ACN —
+        Pomoc Kościołowi w Potrzebie. Patroni medialni: Gość Niedzielny · Radio Alex · Tygodnik
+        Podhalański.
+  # The register's open card — the numeral continues the sequence and the card states the two real
+  # preconditions for the next evening. When a date is agreed this card becomes its announcement.
+  next:
+    tag: "czeka na zaproszenie"
+    title: "Szósty wieczór."
+    place: "Miejsce i termin wciąż otwarte"
+    summary: >-
+      Program powstaje na próbach. Data pojawi się tutaj, gdy znajdzie się gospodarz wieczoru
+      i środki na honoraria dla śpiewaków. Każda darowizna ją przybliża.
+    cta: "Pomóż mu wybrzmieć"
+
+# ── III. Sustinete nos ────────────────────────────────────────────────────────────────────────
+support:
+  eyebrow: "Patronat · darowizna · partnerstwo"
+  title: "Niech muzyka ma swoje miejsce."
+  lede: >-
+    Największy koszt koncertu to honoraria śpiewaków; potem partytury, dźwięk, światło i dojazdy.
+    Na to idą darowizny. Można też zaprosić nas do siebie: śpiewamy koncerty i liturgie, msze
+    ślubne, jubileusze.
+  # Three tiers, and they stay QUALITATIVE: what a gift does, never a rate card. The amount the
+  # vault opens at is data (`data-vault-open`), not copy.
+  tiers:
+    - id: t100
+      amount: "100 zł"
+      text: "dokłada się do najbliższego wieczoru cyklu"
+    - id: t500
+      amount: "500 zł"
+      text: "wspiera próby i partytury między koncertami"
+    - id: t2500
+      amount: "2 500 zł"
+      text: "współtworzy następny wieczór cyklu"
+  bank:
+    # Transfer data only. The seat and the registry numbers belong to the foundation's identity,
+    # which the footer states in full one screen below.
+    recipient: "Odbiorca: Fundacja VoctFoundation"
+    transferTitle: "Tytuł przelewu: Darowizna na cele statutowe VoctFoundation"
+  contactLabel: "Kontakt do kierownictwa artystycznego"
+  supportCta: "Wesprzyj"
+  writeCta: "Napisz do nas"
+
+coda:
+  captionHtml: "Cisza <em>brzmi dalej.</em>"

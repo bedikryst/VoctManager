@@ -1,7 +1,14 @@
 /**
  * @file Preloader.tsx
  * @description The single opening rite: a dark threshold whose FINAL BEAT is the audio
- *  choice ("Ta strona może śpiewać."). One overlay, one decision.
+ *  choice. One overlay, one decision.
+ *
+ *  ITS WORDS ARRIVE AS PROPS, in two kinds. The hold's two display words, the kicker, the title
+ *  and the subtitle are PROSE and come from the copy desk; the two BUTTONS are chrome, complete in
+ *  every locale by type, because `polityka-prywatnosci` quotes them by name — two documents on one
+ *  site may not call one button two things. A prop rather than a hook because this island is
+ *  server-rendered: a locale read from the document is Polish during SSR, and React answers the
+ *  mismatch by discarding the server DOM.
  *
  *  WHAT THIS SCREEN ACTUALLY ASKS is whether to play the ensemble quietly in the
  *  background, and every word on it has to earn its size against that. The rite used to
@@ -58,6 +65,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { LandingChrome, LandingCopy } from "../../i18n/content/landing";
 import { BrandGlyph } from "./BrandGlyph";
 import { useAudioChoice, type AudioChoice } from "./hooks/useAudioChoice";
 import { useBodyClass } from "./hooks/useBodyClass";
@@ -191,7 +199,18 @@ function wantsRiteSkipFromUrl(): boolean {
 
 type Phase = "hold" | "cadence" | "choice" | "hiding" | "removed";
 
-export function Preloader(): React.JSX.Element | null {
+interface PreloaderProps {
+  /** The rite's own prose, from the copy desk. */
+  readonly copy: LandingCopy["rite"];
+  /**
+   * The two buttons and their hints. THEY ARE CHROME, and the privacy policy is why: § 3 and § 10
+   * quote them by name in all three languages, so a locale falling back to Polish here would
+   * leave a legal document citing a control that does not exist on the page it describes.
+   */
+  readonly chrome: LandingChrome;
+}
+
+export function Preloader({ copy, chrome }: PreloaderProps): React.JSX.Element | null {
   // Initial state is deterministic ("hold") so SSR and the first client render agree —
   // hydration mismatches would strand a dead SSR overlay. The session/choice decision
   // happens in the mount effect below; CSS gated on `html.preloader-skip` /
@@ -385,8 +404,8 @@ export function Preloader(): React.JSX.Element | null {
 
         <div className="preloader-hold" aria-hidden="true">
           <span className="preloader-spark" />
-          <span className="preloader-word w1">dwanaście głosów</span>
-          <span className="preloader-word w2">kamienna nawa</span>
+          <span className="preloader-word w1">{copy.word1}</span>
+          <span className="preloader-word w2">{copy.word2}</span>
         </div>
 
         <div className="rite" ref={riteRef} aria-hidden="true">
@@ -427,26 +446,24 @@ export function Preloader(): React.JSX.Element | null {
                 readable line of the whole site and the only place before the hero where a
                 reader can learn what they have walked into; a bare wordmark at 11px and
                 half opacity names something without saying what it is. */}
-            <div className="threshold-kicker micro">
-              VoctEnsemble · zespół wokalny · Kraków
-            </div>
+            <div className="threshold-kicker micro">{copy.kicker}</div>
             {/* Intentionally NOT an <h1>: the page's h1 is the hero title. DECLARATIVE, and
                 that is the whole point of it — this gate asks for consent to play audio, so
                 the largest type on the screen has to state the fact the two buttons answer.
                 Put as a question it read as a rhetorical opening from a stranger, and left
                 the functional content ("cicho, głosem zespołu") to a hint under a button. */}
             <p className="threshold-title" id="threshold-title">
-              Ta strona<br />może śpiewać.
+              {copy.title1}
+              <br />
+              {copy.title2}
             </p>
-            <p className="threshold-subtitle">
-              Cicho, w tle — głosem zespołu. Wybór zmienisz w każdej chwili.
-            </p>
+            <p className="threshold-subtitle">{copy.subtitle}</p>
             <div className="threshold-actions">
               <button
                 type="button"
                 className="threshold-btn plausible-event-name=enterSilence"
                 data-choice="silence"
-                aria-label="Wejdź w ciszę — strona bez dźwięku"
+                aria-label={chrome.enterSilenceAria}
                 onClick={() => pick("silence")}
               >
                 <span className="threshold-btn-dots" aria-hidden="true">
@@ -454,14 +471,14 @@ export function Preloader(): React.JSX.Element | null {
                   <span className="threshold-dot" />
                   <span className="threshold-dot" />
                 </span>
-                <span className="threshold-btn-label">Wejdź w ciszę</span>
-                <span className="threshold-btn-hint">tak jak teraz</span>
+                <span className="threshold-btn-label">{chrome.enterSilence}</span>
+                <span className="threshold-btn-hint">{chrome.enterSilenceHint}</span>
               </button>
               <button
                 type="button"
                 className="threshold-btn plausible-event-name=enterVoice"
                 data-choice="voice"
-                aria-label="Wejdź z głosem — cichy śpiew zespołu"
+                aria-label={chrome.enterVoiceAria}
                 onClick={() => pick("voice")}
               >
                 <span className="threshold-btn-dots" aria-hidden="true">
@@ -469,8 +486,8 @@ export function Preloader(): React.JSX.Element | null {
                   <span className="threshold-dot is-live" />
                   <span className="threshold-dot is-live" />
                 </span>
-                <span className="threshold-btn-label">Wejdź z głosem</span>
-                <span className="threshold-btn-hint">śpiew zespołu · cicho</span>
+                <span className="threshold-btn-label">{chrome.enterVoice}</span>
+                <span className="threshold-btn-hint">{chrome.enterVoiceHint}</span>
               </button>
             </div>
           </div>

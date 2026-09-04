@@ -222,8 +222,7 @@ s4:
       textHtml: >-
         <strong>Realizacja darowizny</strong> — art. 6 ust. 1 lit. b RODO (niezbędność do wykonania
         umowy darowizny) oraz lit. c (obowiązki prawne w zakresie księgowości i sprawozdawczości
-        fundacji). W tym zakresie pośredniczymy w transmisji danych płatniczych do bramki Axepta
-        BNP Paribas / PayU.
+        fundacji). W tym zakresie płatność obsługuje operator Axepta BNP Paribas / PayU.
     - id: receipt
       textHtml: >-
         <strong>Wystawienie zaświadczenia o darowiźnie</strong> — art. 6 ust. 1 lit. c RODO,
@@ -381,14 +380,14 @@ s8:
 s9:
   title: "Statystyki odwiedzin"
   p1Html: >-
-    W celu optymalizacji strony oraz zrozumienia, jakie treści są dla Państwa interesujące,
+    W celu optymalizacji strony oraz zrozumienia, jakie treści są dla Ciebie interesujące,
     korzystamy z narzędzia <strong>Plausible Analytics</strong>. Jest to rozwiązanie skoncentrowane
     na prywatności:
   items:
     - id: cookieless
       textHtml: >-
         <strong>Brak ciasteczek:</strong> Narzędzie nie wykorzystuje plików cookies i nie zapisuje
-        żadnych danych w pamięci Państwa przeglądarki.
+        żadnych danych w pamięci Twojej przeglądarki.
     - id: anonymous
       textHtml: >-
         <strong>Pełna anonimowość:</strong> Nie zbieramy adresów IP, danych lokalizacyjnych ani
@@ -532,7 +531,9 @@ history:
       date: "2026-09-04"
       note: >-
         Dodano § 12: Polityka jest publikowana także w tłumaczeniu na język angielski i francuski,
-        przy czym wersją wiążącą pozostaje wersja polska.
+        przy czym wersją wiążącą pozostaje wersja polska. Doprecyzowano § 4: płatność obsługuje
+        operator — wcześniejsze brzmienie mówiło o pośrednictwie Fundacji w transmisji danych
+        płatniczych, co przeczyło § 11.
     - id: "v1-1"
       version: "1.1"
       date: "2026-06-03"

@@ -13,6 +13,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { MODAL_VIDEO } from "../../data/landing/video";
+import { UI } from "../../i18n/ui";
+import type { Locale } from "../../i18n/config";
 import { dismissOverlayEntry, isOverlayEntry, pushOverlayEntry } from "../../lib/overlayHistory";
 import { useBodyClass } from "./hooks/useBodyClass";
 import { useFocusTrap } from "./hooks/useFocusTrap";
@@ -31,11 +33,21 @@ interface OpenDetail {
 }
 
 interface VideoLightboxProps {
-  /** Optimized poster for the default reel (computed by index.astro via astro:assets). */
+  /** Optimized poster for the default reel (computed by LandingPage.astro via astro:assets). */
   readonly poster: string;
+  /** The default reel's caption. It is the Vox moment's copy — one film, one caption — and it
+   *  arrives as a prop because a content file cannot be reached from a client island. */
+  readonly caption: string;
+  /** The page's language. Taken rather than read: this island renders on the server too, and a
+   *  locale read from the document is Polish there. */
+  readonly lang: Locale;
 }
 
-export function VideoLightbox({ poster }: VideoLightboxProps): React.JSX.Element | null {
+export function VideoLightbox({
+  poster,
+  caption,
+  lang,
+}: VideoLightboxProps): React.JSX.Element | null {
   const [open, setOpen] = useState<OpenDetail | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -95,26 +107,32 @@ export function VideoLightbox({ poster }: VideoLightboxProps): React.JSX.Element
   // different film. Hence the pairing on `open.src`, not two independent `??`.
   const src = open.src ?? MODAL_VIDEO.src;
   const srcAv1 = open.src ? open.srcAv1 : MODAL_VIDEO.srcAv1;
+  const t = UI[lang];
 
   return (
     <div
       className="video-lightbox"
       role="dialog"
       aria-modal="true"
-      aria-label="Wideo z koncertu"
+      aria-label={t.player.dialogAria}
     >
       {/* data-cursor="no-snap": full-viewport surface — the magnetic cursor snap would
           yank the cursor toward the screen centre everywhere around the panel. */}
       <button
         type="button"
         className="video-lightbox-backdrop"
-        aria-label="Zamknij"
+        aria-label={t.lightbox.close}
         data-cursor="no-snap"
         onClick={dismiss}
         tabIndex={-1}
       />
       <div className="video-lightbox-panel" data-lenis-prevent ref={panelRef}>
-        <button type="button" className="video-lightbox-close" aria-label="Zamknij" onClick={dismiss}>
+        <button
+          type="button"
+          className="video-lightbox-close"
+          aria-label={t.lightbox.close}
+          onClick={dismiss}
+        >
           ✕
         </button>
         {/* tone="dark" flips the chrome for the night room; idleHide fades it after
@@ -123,13 +141,14 @@ export function VideoLightbox({ poster }: VideoLightboxProps): React.JSX.Element
           src={src}
           srcAv1={srcAv1}
           poster={src === MODAL_VIDEO.src ? poster : undefined}
-          caption={open.caption ?? MODAL_VIDEO.caption}
+          caption={open.caption ?? caption}
           note={open.note}
           portrait={open.portrait}
           autoPlay
           tone="dark"
           idleHide
           glow
+          lang={lang}
         />
       </div>
     </div>

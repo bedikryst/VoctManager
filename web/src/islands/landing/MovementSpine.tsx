@@ -35,7 +35,13 @@ const MOVEMENTS: readonly Movement[] = [
   { key: "sustinete", roman: "III", latin: "Sustinete nos" },
 ];
 
-export function MovementSpine(): React.JSX.Element {
+interface MovementSpineProps {
+  /** The index's own name for a screen reader. Everything it prints is Latin and locale-neutral,
+   *  so this is the only string it needs. */
+  readonly aria: string;
+}
+
+export function MovementSpine({ aria }: MovementSpineProps): React.JSX.Element {
   const [active, setActive] = useState(-1);
   const [visible, setVisible] = useState(false);
   const [veiled, setVeiled] = useState(false);
@@ -113,7 +119,7 @@ export function MovementSpine(): React.JSX.Element {
   return (
     <nav
       className={`movement-spine${visible ? " is-visible" : ""}${veiled ? " is-veiled" : ""}`}
-      aria-label="Części"
+      aria-label={aria}
     >
       <ul>
         {MOVEMENTS.map((m, i) => (

@@ -5,25 +5,40 @@
  *  donation tiers that ARE the vault triggers, a bank-card with copyable IBANs (PLN + EUR), and
  *  the direct-contact card. Every `[data-vault-open]` here dispatches `voct:open-vault` through
  *  the delegated handler in scripts/landing.ts; IBAN copy is delegated the same way (`data-copy`).
+ *
+ *  The words are on the copy desk (`landing.yaml`); the ACCOUNTS, the addresses and the amount
+ *  each tier opens the vault at are data and stay here. The copy button's two states are chrome —
+ *  a control that loses a locale says nothing at all when it is pressed.
  * @architecture Astro islands 2026
  * @module components/landing/FinalSupportSection
  */
 import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
+import type { LandingChrome, LandingCopy } from "../../i18n/content/landing";
+
+interface Props {
+  copy: LandingCopy["support"];
+  chrome: LandingChrome;
+}
+const { copy, chrome } = Astro.props;
 
 const bg = bleedPair("swiatlo-krzyz");
 
-/* `value` is what the vault opens at. The vault's own picker offers 50/100/200 PLN, so 500 and
-   2 500 land in its custom-amount field (GiveForm's `preselect`) — deliberate: this ladder is
-   the section's argument about what a gift DOES, and it is not the gateway's preset list. */
-const ROWS = [
-  { value: 100, amount: "100 zł", text: "dokłada się do najbliższego wieczoru cyklu" },
-  { value: 500, amount: "500 zł", text: "wspiera próby i partytury między koncertami" },
-  { value: 2500, amount: "2 500 zł", text: "współtworzy następny wieczór cyklu" },
-] as const;
+/* What the vault opens at, per tier. The vault's own picker offers 50/100/200 PLN, so 500 and
+   2 500 land in its custom-amount field (GiveForm's `preselect`) — deliberate: the ladder above is
+   the section's argument about what a gift DOES, and it is not the gateway's preset list. The
+   amounts a reader SEES are copy; these are the numbers the island is handed. */
+const OPENS_AT: Readonly<Record<string, number>> = { t100: 100, t500: 500, t2500: 2500 };
+
+const tiers = copy.tiers.map((tier) => {
+  const value = OPENS_AT[tier.id];
+  // Loud rather than silent: a tier whose id was renamed would open the vault at nothing.
+  if (value === undefined) throw new Error(`[support] no vault amount for the tier "${tier.id}".`);
+  return { ...tier, value };
+});
 ---
 
-<section class="final-support" id="wesprzyj" aria-label="Wesprzyj VoctEnsemble">
+<section class="final-support" id="wesprzyj" aria-label={chrome.supportAria}>
   {/* No light register here, and the measurement says why: the photograph itself is fine —
       swiatlo-krzyz reads p90 64, which the veil would move 32 levels, comfortably above the bar
       the rest of the site clears. What spends it is this section's OWN 0.78–0.88 gradient, which
@@ -64,18 +79,14 @@ const ROWS = [
             the landing runs the queue rather than `data-d`. The hero can stage its own kicker
             and title 140ms apart because its trigger is the clock, not the scroll position. */}
         <div class="final-lede-head reveal">
-          <div class="micro titulus">Patronat · darowizna · partnerstwo</div>
-          <h2 class="ink-press">Niech muzyka ma swoje miejsce.</h2>
+          <div class="micro titulus">{copy.eyebrow}</div>
+          <h2 class="ink-press">{copy.title}</h2>
         </div>
         {/* Names the real cost structure instead of a metaphor: the singers are the
             largest item, and saying so is the honest case for a donation. Deliberately
             no amounts per item — the tiers stay qualitative, because published
             rates for musicians would be both volatile and indiscreet. */}
-        <p class="reveal">
-          Największy koszt koncertu to honoraria śpiewaków; potem partytury, dźwięk,
-          światło i dojazdy. Na to idą darowizny. Można też zaprosić nas do
-          siebie: śpiewamy koncerty i liturgie, msze ślubne, jubileusze.
-        </p>
+        <p class="reveal">{copy.lede}</p>
       </div>
 
       <div class="donation-list">
@@ -84,20 +95,20 @@ const ROWS = [
             under it in turn. */}
         <div class="donation-rows reveal-rule">
           {
-            ROWS.map((row) => (
+            tiers.map((tier) => (
               <button
                 type="button"
-                class={`donation-row reveal plausible-event-name=transza+${row.value}`}
-                data-vault-open={row.value}
+                class={`donation-row reveal plausible-event-name=transza+${tier.value}`}
+                data-vault-open={tier.value}
               >
-                <strong>{row.amount}</strong>
-                <span>{row.text}</span>
+                <strong>{tier.amount}</strong>
+                <span>{tier.text}</span>
               </button>
             ))
           }
         </div>
 
-        <div class="bank-card reveal-rule" id="przelew" aria-label="Dane do przelewu">
+        <div class="bank-card reveal-rule" id="przelew" aria-label={chrome.bankAria}>
           <div class="bank-row reveal">
             <span class="currency">PLN</span>
             <span class="iban">PL26 1600 1013 1724 4184 1000 0001</span>
@@ -105,8 +116,9 @@ const ROWS = [
               type="button"
               class="copy-account plausible-event-name=przelew+copy+PLN"
               data-copy="PL26160010131724418410000001"
+              data-copied={chrome.copied}
             >
-              Kopiuj
+              {chrome.copy}
             </button>
           </div>
           <div class="bank-row reveal">
@@ -116,17 +128,18 @@ const ROWS = [
               type="button"
               class="copy-account plausible-event-name=przelew+copy+EUR"
               data-copy="PL96160010131724418410000002"
+              data-copied={chrome.copied}
             >
-              Kopiuj
+              {chrome.copy}
             </button>
           </div>
           {/* Transfer data only. The registry numbers and the seat belong to the foundation's
               identity, which the footer states in full one screen below; repeating them here
               closes the page's last movement on a REGON number. */}
           <div class="foundation-data reveal">
-            Odbiorca: Fundacja VoctFoundation
+            {copy.bank.recipient}
             <br />
-            Tytuł przelewu: Darowizna na cele statutowe VoctFoundation
+            {copy.bank.transferTitle}
           </div>
         </div>
       </div>
@@ -136,7 +149,7 @@ const ROWS = [
           can see and spends three onsets of the queue's budget doing it. The ledger's rows earn
           theirs: 61–73px each, which is a fifth of a second at reading pace. */}
       <div class="final-contact reveal reveal-rule">
-        <span class="micro titulus">Kontakt do kierownictwa artystycznego</span>
+        <span class="micro titulus">{copy.contactLabel}</span>
         <a
           class="final-contact-name plausible-event-name=florent+mail"
           href="mailto:florent.de.bazelaire@voctensemble.com?subject=Patronat%20VoctEnsemble"
@@ -161,13 +174,13 @@ const ROWS = [
           data-no-lenis
           data-vault-open="100"
         >
-          Wesprzyj
+          {copy.supportCta}
         </a>
         <a
           class="secondary-link plausible-event-name=napisz+do+nas+dol"
           href="mailto:patronat@voctensemble.com?subject=Patronat%20VoctEnsemble"
         >
-          Napisz do nas
+          {copy.writeCta}
         </a>
       </div>
     </div>

@@ -430,9 +430,11 @@ function setupInteractions(root: HTMLElement): void {
     if (copyBtn) {
       const value = copyBtn.dataset.copy ?? "";
       void navigator.clipboard?.writeText(value).then(() => {
-        const original = copyBtn.dataset.label ?? copyBtn.textContent ?? "Kopiuj";
+        // The confirmation is read off the button, the way /kontakt's channels do it: one script
+        // serves three locales, so the word cannot be a literal here.
+        const original = copyBtn.dataset.label ?? copyBtn.textContent ?? "";
         copyBtn.dataset.label = original;
-        copyBtn.textContent = "Skopiowano";
+        copyBtn.textContent = copyBtn.dataset.copied ?? original;
         window.setTimeout(() => {
           copyBtn.textContent = original;
         }, 1600);

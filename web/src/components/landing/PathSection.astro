@@ -8,31 +8,63 @@
  *  Hairline rules separate entries. No poster images — the rite doesn't market itself by face.
  *  Each entry's native <details> snap open/close is upgraded to an animated, exclusive
  *  accordion by scripts/landing.ts (same `.path-card-detail` hook so the JS contract holds).
+ *
+ *  THREE SOURCES MEET IN ONE ROW, and the split is the point. `data/landing/paths` carries the
+ *  structure (the numbering, the year, the video files); `landing.yaml` carries this register's
+ *  own editorial layer (tag, place line, lead, credit) through the copy desk; and the TITLE and
+ *  the programme come from `concerts.yaml` through the concert overlay, because an evening names
+ *  itself once and every surface reads that name. The section's accessible name is the heading it
+ *  already prints.
  * @architecture Astro islands 2026
  * @module components/landing/PathSection
  */
 import { getCollection } from "astro:content";
 import { PATHS, ROMAN } from "../../data/landing/paths";
+import { concertKey, overlayValue } from "../../lib/copyOverlay";
+import { localizePath, type Locale } from "../../i18n/config";
+import type { LandingChrome, LandingCopy } from "../../i18n/content/landing";
+
+interface Props {
+  copy: LandingCopy["register"];
+  chrome: LandingChrome;
+  lang: Locale;
+}
+const { copy, chrome, lang } = Astro.props;
 
 // SSoT: program lists live in the `concerts` collection (src/content/concerts.yaml) —
 // the same source the /koncerty stations and concert pages read. The register derives
 // each card's repertoire from it by concert id, so there is no second copy to drift.
 const concerts = await getCollection("concerts");
-const programById = new Map(concerts.map((c) => [c.id, c.data.program] as const));
-const programFor = (id: string) => programById.get(id) ?? [];
+const byId = new Map(concerts.map((c) => [c.id, c.data] as const));
+const hrefConcerts = localizePath("/koncerty", lang);
+
+// One row per evening, with its three sources joined. A structural entry whose editorial copy has
+// been removed is loud rather than blank: the row would otherwise print a numeral, a year and
+// nothing else, and nothing in the build would say why.
+const entries = PATHS.map((path, i) => {
+  const words = copy.entries.find((entry) => entry.id === path.concertId);
+  if (!words) throw new Error(`[path] no register copy for the evening "${path.concertId}".`);
+  return {
+    ...path,
+    ...words,
+    roman: ROMAN[i],
+    title:
+      overlayValue(concertKey(path.concertId, "title"), lang) ??
+      byId.get(path.concertId)?.title ??
+      "",
+    program: byId.get(path.concertId)?.program ?? [],
+  };
+});
 ---
 
-<section class="section path" id="droga" aria-label="Co już zabrzmiało">
+<section class="section path" id="droga" aria-label={copy.title}>
   <div class="section-grid">
-    <div class="section-label micro titulus"><span>Z drogi</span></div>
+    <div class="section-label micro titulus"><span>{copy.label}</span></div>
     <div class="path-body">
       {/* No hard break: three short words split by <br> leave a lopsided two-word
           first line. Let the title set on one line and wrap only if it must. */}
-      <h2 class="section-title reveal ink-press">Co już zabrzmiało.</h2>
-      <p class="path-lede reveal">
-        Każdy wieczór cyklu miał jedną intencję. Zapisujemy je w kolejności,
-        w jakiej zostały wykonane.
-      </p>
+      <h2 class="section-title reveal ink-press">{copy.title}</h2>
+      <p class="path-lede reveal">{copy.lede}</p>
 
       {/* Every entry rules its own opening hairline as it arrives — including the register's
           first line, which is the first entry's own top rule (the <ol> carries no border and
@@ -47,14 +79,14 @@ const programFor = (id: string) => programById.get(id) ?? [];
           its own, so the entry is written down the page the way it is read. The controls below
           stay out of the register — a control that is half-ink is a control you are not sure
           you are allowed to press yet. */}
-      <ol class="path-register" aria-label="Wcześniejsze koncerty cyklu">
+      <ol class="path-register" aria-label={chrome.registerListAria}>
         {
-          PATHS.map((path, i) => (
+          entries.map((entry) => (
             <li class="path-entry reveal-rule">
               <div class="path-entry-rail reveal">
-                <span class="path-entry-roman">{ROMAN[i]}</span>
-                <span class="path-entry-year">{path.year}</span>
-                <span class="path-entry-tag">{path.tag}</span>
+                <span class="path-entry-roman">{entry.roman}</span>
+                <span class="path-entry-year">{entry.year}</span>
+                <span class="path-entry-tag">{entry.tag}</span>
               </div>
               <div class="path-entry-body" data-cursor="no-snap">
                 {/* The anchor sits INSIDE the heading rather than replacing it: `.path-entry-title`
@@ -65,34 +97,34 @@ const programFor = (id: string) => programById.get(id) ?? [];
                 <h3 class="path-entry-title reveal">
                   <a
                     class="path-entry-link plausible-event-name=path+concert"
-                    href={`/koncerty/${path.concertId}`}
-                  >{path.title}</a>
+                    href={`${hrefConcerts}/${entry.concertId}`}
+                  >{entry.title}</a>
                 </h3>
-                <p class="path-entry-place reveal">{path.place}</p>
-                <p class="path-entry-summary reveal">{path.note}</p>
-                {path.video && (
+                <p class="path-entry-place reveal">{entry.place}</p>
+                <p class="path-entry-summary reveal">{entry.note}</p>
+                {entry.video && (
                   <button
                     type="button"
                     class="path-entry-video plausible-event-name=path+fragment"
                     data-video-open
-                    data-video-src={path.video.src}
-                    data-video-src-av1={path.video.srcAv1}
-                    data-video-caption={`${path.title} · ${path.year}`}
-                    data-video-portrait={path.video.portrait ? "true" : undefined}
-                    data-video-note={path.video.note}
+                    data-video-src={entry.video.src}
+                    data-video-src-av1={entry.video.srcAv1}
+                    data-video-caption={`${entry.title} · ${entry.year}`}
+                    data-video-portrait={entry.video.portrait ? "true" : undefined}
+                    data-video-note={entry.videoNote}
                   >
                     <span class="path-entry-video-glyph" aria-hidden="true">▸</span>
-                    Zobacz fragment
+                    {copy.videoLabel}
                   </button>
                 )}
                 <details class="path-card-detail path-entry-detail">
                   <summary>
-                    <span>Program koncertu</span>
+                    <span>{copy.programLabel}</span>
                     <span class="path-detail-icon" aria-hidden="true" />
                   </summary>
-                  {programFor(path.concertId).length > 0 && (
+                  {entry.program.length > 0 && (
                     <ol class="path-works">
-                      {programFor(path.concertId).map((p, i) => (
+                      {entry.program.map((p, i) => (
                         <li class:list={[{ "path-works-bis": p.bis }]} style={`--i:${i}`}>
                           <span class="path-works-n" aria-hidden="true">{p.bis ? "—" : String(i + 1).padStart(2, "0")}</span>
                           {p.composer} · <em>{p.work}{p.year ? ` · ${p.year}` : ""}</em>
@@ -100,7 +132,7 @@ const programFor = (id: string) => programById.get(id) ?? [];
                       ))}
                     </ol>
                   )}
-                  {path.credit && <p class="path-works-note">{path.credit}</p>}
+                  {entry.credit && <p class="path-works-note">{entry.credit}</p>}
                 </details>
               </div>
             </li>
@@ -115,27 +147,23 @@ const programFor = (id: string) => programById.get(id) ?? [];
           singers. The ensemble does not book venues on its own, so promising a date here
           would be false. When one is agreed, this card becomes its announcement (title,
           date, place) and a new open one takes its seat. */}
-      <aside class="path-entry path-next reveal-rule" aria-label="Następny koncert cyklu">
+      <aside class="path-entry path-next reveal-rule" aria-label={chrome.nextAria}>
         <div class="path-entry-rail reveal">
           <span class="path-entry-roman">{ROMAN[PATHS.length]}</span>
           <span class="path-entry-year">MMXXVI</span>
-          <span class="path-entry-tag">czeka na zaproszenie</span>
+          <span class="path-entry-tag">{copy.next.tag}</span>
         </div>
         <div class="path-entry-body">
-          <h3 class="path-entry-title reveal">Szósty wieczór.</h3>
-          <p class="path-entry-place reveal">Miejsce i termin wciąż otwarte</p>
-          <p class="path-entry-summary reveal">
-            Program powstaje na próbach. Data pojawi się tutaj, gdy znajdzie się
-            gospodarz wieczoru i środki na honoraria dla śpiewaków. Każda
-            darowizna ją przybliża.
-          </p>
+          <h3 class="path-entry-title reveal">{copy.next.title}</h3>
+          <p class="path-entry-place reveal">{copy.next.place}</p>
+          <p class="path-entry-summary reveal">{copy.next.summary}</p>
           <a
             class="primary-link path-next-cta plausible-event-name=path+next+wesprzyj"
             href="#wesprzyj"
             data-no-lenis
             data-vault-open="100"
           >
-            Pomóż mu wybrzmieć
+            {copy.next.cta}
           </a>
         </div>
       </aside>

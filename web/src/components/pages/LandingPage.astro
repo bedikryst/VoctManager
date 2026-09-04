@@ -1,0 +1,232 @@
+---
+/**
+ * @file LandingPage.astro
+ * @description Locale-agnostic body of the landing. It reads as a partytura: metadata, jsonLd,
+ *  then the rite as three movements braided by AetherInterlude (I · Lumen, II · Vox,
+ *  III · Sustinete). The three route files (`/`, `/en`, `/fr`) are one-liners that differ only in
+ *  `lang`.
+ *
+ *  ITS WORDS COME FROM TWO PLACES, and the split is the copy desk's: the PROSE is Polish in
+ *  `src/content/pages/landing.yaml` with per-field translations from the overlay (lib/pageCopy),
+ *  and the AFFORDANCES — landmark names, the audio pill, the copy button, the threshold's two
+ *  buttons — are a complete triple in `i18n/content/landing.ts`, because a missing one is a broken
+ *  page rather than a paragraph awaiting review. The Latin tier (the movements, `Imagines`, `Vox`,
+ *  `Repertorium`, `tacet.`) is locale-neutral and stands in the markup.
+ *
+ *  EVERY ISLAND HERE TAKES ITS LOCALE AS A PROP. All four are server-rendered, and
+ *  `documentLocale()` has no document during SSR — it answers Polish, so a foreign landing would
+ *  ship a Polish bar, a Polish threshold and a Polish footer, and React would answer the mismatch
+ *  by discarding the server DOM. That last consequence is not cosmetic on this page: the reveal
+ *  observer would be left holding nodes that are no longer in the document, which is exactly how
+ *  the footer's entrance failed once before (guardrails §2).
+ *
+ *  The `rite` flag declares the once-per-session preloader to the shell, which decides the
+ *  `preloader-skip` / `voct-motion` gates for this page (DocumentGates) — they cannot be armed
+ *  from here, because on a navigation into "/" it is the outgoing page that has to arm them.
+ * @architecture Astro islands 2026
+ * @module components/pages/LandingPage
+ */
+import { getImage } from "astro:assets";
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { bleedPair, photo } from "../../lib/photos";
+import { toRibbons } from "../../lib/registrum";
+import { pageCopy } from "../../lib/pageCopy";
+import { typographyHtml } from "../../lib/typoHtml";
+import "../../styles/landing.css";
+
+import HeroSection from "../landing/HeroSection.astro";
+import ManifestSection from "../landing/ManifestSection.astro";
+import AetherInterlude from "../landing/AetherInterlude.astro";
+import LitanySection from "../landing/LitanySection.astro";
+import EnsembleSection from "../landing/EnsembleSection.astro";
+import DirectorSection from "../landing/DirectorSection.astro";
+import ImaginesBand from "../landing/ImaginesBand.astro";
+import PathSection from "../landing/PathSection.astro";
+import SilenceMoment from "../landing/SilenceMoment.astro";
+import FinalSupportSection from "../landing/FinalSupportSection.astro";
+import CodaSection from "../landing/CodaSection.astro";
+import VaultBuffer from "../landing/VaultBuffer.astro";
+
+import { AudioController } from "../../islands/landing/AudioController";
+import { Preloader } from "../../islands/landing/Preloader";
+import { StickyHeader } from "../../islands/landing/StickyHeader";
+import { SiteFooter } from "../../islands/landing/SiteFooter";
+import { pageI18n, SITE, type Locale } from "../../i18n/config";
+import { UI } from "../../i18n/ui";
+import { LANDING_CHROME, LANDING_PAGE } from "../../i18n/content/landing";
+import VaultMount from "../VaultMount.astro";
+import { VoxMoment } from "../../islands/landing/VoxMoment";
+import { VideoLightbox } from "../../islands/landing/VideoLightbox";
+import { MovementSpine } from "../../islands/landing/MovementSpine";
+
+interface Props {
+  /** Which language this render is. Drives the copy, the chrome, the URL and the hreflang graph. */
+  lang: Locale;
+}
+const { lang } = Astro.props;
+
+const c = pageCopy(LANDING_PAGE, lang);
+const t = LANDING_CHROME[lang];
+const ui = UI[lang];
+// One base path → this render's own URL and its hreflang graph.
+const { path, alternates } = pageI18n("/", lang);
+
+const ogImage = (
+  await getImage({ src: bleedPair("hero-landing").desktop, width: 1200, format: "webp" })
+).src;
+
+// Desktop "registrum" ribbons for the StickyHeader island — derived here because a client
+// island cannot read the concerts collection itself (see lib/registrum). Their hrefs are
+// canonical Polish base paths; the island localizes each one.
+const ribbons = toRibbons(await getCollection("concerts"), lang);
+
+// Poster for the concert reel (Vox moment + lightbox) — a still from the film itself, which is
+// what `concerts.yaml` already declares for it (`wcielenie.video.poster`). It used to reuse the
+// nave frame that now carries the litany, so one photograph stood twice on this page: once as a
+// wordless statement and once as the poster for a film it is not a frame of.
+const voxPoster = (await getImage({ src: photo("kd-wcielenie-5"), width: 1600, format: "webp" }))
+  .src;
+
+// An `HTML` field handed to an island meets NO typographic pass otherwise: `lib/typoHtml` copies
+// `<astro-island>` subtrees through byte for byte (rewriting them desynchronises hydration) and
+// `<Typo>` pins string leaves, which an injected field does not have. So the French narrow
+// no-break spaces go in here, at build, on the string that will be injected (spec §7).
+const voxLineHtml = typographyHtml(c.vox.lineHtml, lang);
+
+// TODO (when structured video metadata is approved — MODAL_VIDEO/VOX_VIDEO in
+// data/landing/video.ts): add a `video` VideoObject member here so Google can show a video
+// rich result. Deliberately absent until real footage ships. See landing-vox-video-spec Part J.
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "MusicGroup",
+  // Shared entity ids — /o-nas declares an AboutPage graph pointing at the SAME
+  // ensemble/foundation nodes, so search engines see one entity, not per-page twins.
+  "@id": "https://voctensemble.com/#ensemble",
+  name: "VoctEnsemble",
+  url: SITE,
+  genre: ["Sacred music", "Choral music", "Polifonia"],
+  description: c.meta.ensembleDescription,
+  founder: { "@type": "Person", name: "Florent de Bazelaire" },
+  funder: {
+    "@type": "NGO",
+    "@id": "https://voctensemble.com/#foundation",
+    name: "VoctFoundation",
+    identifier: "KRS 0001237252",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "Św. Filipa 23/3",
+      postalCode: "31-150",
+      addressLocality: "Kraków",
+      addressCountry: "PL",
+    },
+  },
+  sameAs: [
+    "https://www.instagram.com/voctensemble/",
+    "https://www.facebook.com/voctensemble/",
+    "https://www.youtube.com/@VoctEnsemble-nb7gh",
+  ],
+};
+---
+
+<BaseLayout
+  title={c.meta.title}
+  description={c.meta.description}
+  path={path}
+  image={ogImage}
+  bodyClass="theme-marketing"
+  reveal={false}
+  lang={lang}
+  alternates={alternates}
+  rite
+>
+  <Fragment slot="head">
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <VaultBuffer />
+  </Fragment>
+
+  <div class="voct-landing">
+    <a class="skip-link" href="#main">{ui.skipToContent}</a>
+
+    <Preloader client:load copy={c.rite} chrome={t} />
+    <AudioController client:load />
+
+    <StickyHeader client:load ribbons={ribbons} lang={lang} chrome={t} />
+    <MovementSpine client:idle aria={t.spineAria} />
+
+    <main id="main">
+      <HeroSection copy={c.hero} videoCaption={c.vox.videoCaption} lang={lang} />
+      <ManifestSection copy={c.manifest} aria={t.manifestAria} />
+
+      {/* Movement inscriptions are real liturgical Latin, never coined: "Lumen Christi" is the
+          Easter Vigil acclamation sung as the paschal candle enters a dark church — the exact
+          rite this movement's interlude performs (parchment cut to night, one flame). Keep any
+          replacement short: the spine label is hidden below 1440px because the gutter is narrow
+          (13-spine.css), and a longer inscription pushes that breakpoint up. */}
+      <section class="movement" id="ruch-i" data-movement="lumen" aria-label="I · Lumen Christi">
+        <AetherInterlude variant="passage" roman="I" latin="Lumen Christi" />
+        <LitanySection copy={c.litany} lang={lang} />
+        <EnsembleSection copy={c.ensemble} aria={t.ensembleAria} />
+        <DirectorSection copy={c.director} />
+      </section>
+
+      <section class="movement" id="ruch-ii" data-movement="vox" aria-label="II · Vox memoriae">
+        <AetherInterlude variant="memory" roman="II" latin="Vox memoriae" />
+        <SilenceMoment aria={t.silenceAria} />
+        <VoxMoment
+          client:visible
+          poster={voxPoster}
+          eyebrow={c.vox.eyebrow}
+          lineHtml={voxLineHtml}
+          caption={c.vox.videoCaption}
+          lang={lang}
+        />
+        {/* Movement II is named memoriae and visual memory is the one register it lacked: the
+            band announces the five evenings in photographs, the register unfolds them in words
+            directly below. The "no poster images" rule this appears to bend is about REGISTER
+            ENTRIES — see docs/web-landing-guardrails.md §1, where the reading is recorded. */}
+        <ImaginesBand copy={c.imagines} lang={lang} />
+        <PathSection copy={c.register} chrome={t} lang={lang} />
+      </section>
+
+      <section class="movement" id="ruch-iii" data-movement="sustinete" aria-label="III · Sustinete nos">
+        <AetherInterlude variant="offering" roman="III" latin="Sustinete nos" />
+        <FinalSupportSection copy={c.support} chrome={t} />
+      </section>
+
+      <CodaSection copy={c.coda} aria={t.codaAria} />
+    </main>
+
+    <SiteFooter client:visible lang={lang} chrome={t} />
+
+    <VaultMount lang={lang} />
+    <VideoLightbox client:idle poster={voxPoster} caption={c.vox.videoCaption} lang={lang} />
+  </div>
+
+  <style is:global>
+    /* The landing's own no-motion un-gate used to live here, three `!important` rules deep.
+       It is gone because every one of them became a restatement: the registers are declared
+       inside `html.voct-motion` (styles/registers.css), so without that class the ink is
+       un-hidden by base.css, the lead's pseudo-rule is never created and the veil rests at
+       opacity 0. An `!important` that only repeats what the cascade already says is a trap
+       for whoever next tries to change the thing it pins. */
+
+    /* Once-per-session preloader skip: hide the SSR'd overlay BEFORE first paint for
+       returning visitors (and for reduced motion, which never gets the rite). The
+       body.preload-open scroll-lock is also neutralised so the page is immediately
+       interactive on a ClientRouter return to "/". EXCEPTION: when the rite resolves into
+       the threshold choice (`.is-choice` — e.g. the saved choice expired mid-session), the
+       overlay must show despite the session skip; its scroll lock is `threshold-open`,
+       which this neutralisation deliberately doesn't touch.
+       `.is-hidden` belongs in the same exception: dismissing that choice drops `.is-choice`,
+       so without it the overlay hit `display: none` in the same frame and the 700ms
+       dissolve never played — the question just vanished. */
+    html.preloader-skip .preloader { display: none !important; }
+    html.preloader-skip .preloader:is(.is-choice, .is-hidden) { display: grid !important; }
+    html.preloader-skip body.preload-open { overflow: visible !important; }
+  </style>
+
+  <script>
+    import "../../scripts/landing.ts";
+  </script>
+</BaseLayout>

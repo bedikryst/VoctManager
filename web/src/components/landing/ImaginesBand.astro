@@ -89,6 +89,17 @@ import { getCollection } from "astro:content";
 import { PATHS, ROMAN } from "../../data/landing/paths";
 import { croppedShot, type CroppedShot } from "../../lib/croppedShot";
 import { photoOptional } from "../../lib/photos";
+import { concertKey, overlayValue } from "../../lib/copyOverlay";
+import { localizePath, type Locale } from "../../i18n/config";
+import { photographMoment, romanYear } from "../../lib/dates";
+import type { LandingCopy } from "../../i18n/content/landing";
+
+interface Props {
+  copy: LandingCopy["imagines"];
+  /** The evenings' own editorial layer, so a panel can be joined to the register's row. */
+  lang: Locale;
+}
+const { copy, lang } = Astro.props;
 
 /** The panel's shape, and it must agree with `aspect-ratio` in 14-imagines.css — the renditions
  *  are cut to this, so a sheet that changed alone would letterbox every frame in the line. */
@@ -106,8 +117,10 @@ const PANEL_WIDTHS = [360, 480, 640, 960];
 
 interface BandFrame {
   readonly roman: string;
-  /** The night this photograph was taken, printed in the readout ("wrzesień MMXXIV"). */
+  /** The night this photograph was taken, as the readout prints it in this locale. */
   readonly date: string;
+  /** The same night as an ISO `YYYY-MM`, which the plate's span is derived from. */
+  readonly month: string;
   /** This panel's corrections to the shared grade as inline custom properties, or "" for a panel
    *  the line's own grade already fits. Assembled here rather than in the markup because both
    *  levers are optional and independent, and an empty `style` attribute is not. */
@@ -144,16 +157,24 @@ for (const [i, path] of PATHS.entries()) {
   // An evening with no photographs simply has no frame — the numbering then has an honest gap
   // rather than a placeholder.
   if (!entry || !img) continue;
+  // The evening names itself, in this locale, from its own entry in the corpus. The landing holds
+  // no second copy of a concert's title, so the panel and the register's row below it can never
+  // print two names for one night.
+  const title =
+    overlayValue(concertKey(path.concertId, "title"), lang) ??
+    byId.get(path.concertId)?.title ??
+    "";
   frames.push({
     roman: ROMAN[i],
-    date: path.frameDate,
+    date: photographMoment(path.frameMonth, lang),
+    month: path.frameMonth,
     grade: [
       path.frameSaturation === undefined ? null : `--panel-sat:${path.frameSaturation}`,
       path.frameLift === undefined ? null : `--panel-lift:${path.frameLift}`,
     ]
       .filter(Boolean)
       .join(";"),
-    title: path.title,
+    title,
     concertId: path.concertId,
     alt: entry.alt ?? "",
     panel: await croppedShot(img, {
@@ -170,13 +191,17 @@ for (const [i, path] of PATHS.entries()) {
 // of these five evenings share a year there. A set collapses the range when one year holds all of
 // them. It states the genre rather than the count: "five" over five visible panels is the reader's
 // own arithmetic read back to them, and it would need re-declining the moment a sixth arrives.
-const years = frames.map((f) => f.date.split(" ").at(-1) ?? "");
+//
+// Read off the ISO month rather than off the formatted readout: the year is the last word of
+// "styczeń MMXXIV" in all three locales today, and a formatter that ever put it anywhere else
+// would break this silently.
+const years = frames.map((f) => romanYear(Number(f.month.slice(0, 4))));
 const plateSpan = [...new Set([years[0], years.at(-1)])].filter(Boolean).join("–");
 ---
 
 {
   frames.length > 0 && (
-    <section class="imagines" aria-label="Obrazy wieczorów" data-spine-clear>
+    <section class="imagines" aria-label={copy.rubric} data-spine-clear>
       {/* One box carries the page's measure for everything in the band, the way `.path` does one
           section below. The plate and the foot take that measure whole; the head divides it on
           `.section-grid`, which is the register's own skeleton and the reason the two sections
@@ -190,7 +215,7 @@ const plateSpan = [...new Set([years[0], years.at(-1)])].filter(Boolean).join("�
               rail is a register's rhythm, and it carries no `.reveal` for the same reason that
               one does not — the rail is the page's furniture, the voice beside it is the arrival. */}
           <div class="section-label micro titulus">
-            <span><span class="lat">Imagines</span> · Obrazy wieczorów</span>
+            <span><span class="lat">Imagines</span>{` · ${copy.rubric}`}</span>
           </div>
           {/* The band's voice. Every other surface on this landing sets one line — even the
               wordless photograph section ("Światło prowadzi słuchacza.") — and a surface that says
@@ -210,9 +235,7 @@ const plateSpan = [...new Set([years[0], years.at(-1)])].filter(Boolean).join("�
               different axes at different sizes with a 495px film between them, which is not a
               distich to any reader. The line's job is to carry this section, not to complete the
               one before it. */}
-          <p class="imagines-line reveal">
-            Z tego głosu — <em>pamięć.</em>
-          </p>
+          <p class="imagines-line reveal" set:html={copy.lineHtml} />
         </div>
 
         {/* `no-snap`: the magnetic pull toward a target's centre used to be off here by
@@ -225,7 +248,7 @@ const plateSpan = [...new Set([years[0], years.at(-1)])].filter(Boolean).join("�
             <figure class="imagines-frame">
               <a
                 class="imagines-media plausible-event-name=imagines+wieczor"
-                href={`/koncerty/${f.concertId}`}
+                href={`${localizePath("/koncerty", lang)}/${f.concertId}`}
               >
                 {/* A plain `<img>`, not `<Image>`: the renditions are cut to the panel's square up
                     in the frontmatter, and the component has no way to ask for a crop and a ladder
@@ -302,12 +325,12 @@ const plateSpan = [...new Set([years[0], years.at(-1)])].filter(Boolean).join("�
             the readout is positioned into it from inside the plate, so the two are siblings on one
             baseline rather than one box that swaps its text. */}
         <div class="imagines-foot">
-          <p class="imagines-caption">Fotografie wieczorów cyklu · {plateSpan}</p>
+          <p class="imagines-caption">{`${copy.caption} · ${plateSpan}`}</p>
           <a
             class="imagines-all plausible-event-name=imagines+wszystkie"
-            href="/obrazy"
+            href={localizePath("/obrazy", lang)}
           >
-            Wszystkie obrazy
+            {copy.allLink}
           </a>
         </div>
       </div>

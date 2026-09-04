@@ -3,10 +3,15 @@
  * @file HeroSection.astro
  * @description Opening threshold — full-bleed sacred fresco via <BleedImage> (art-directed
  *  AVIF/WebP, Ken Burns, parallax). hero-grid holds the optional "next concert" pill → kicker
- *  → h1 → response → strap braid; hero-rail holds the CTA anchors (the "Zobacz i usłysz" reel +
+ *  → h1 → response → strap braid; hero-rail holds the CTA anchors (the film reel +
  *  koncerty) + downward cue. The
  *  kinetic "breath" on .hero-title is driven
  *  by scripts/landing.ts; the dark dimming filter is applied in landing.css (.hero-media .bleed img).
+ *
+ *  Its words come from `landing.yaml` through the copy desk (lib/pageCopy); `Concerts Spirituels`
+ *  is the French name of the historical form and stays in the markup with the site's other
+ *  locale-neutral tier. Every text node that stands beside an expression writes its own space —
+ *  Astro drops the whitespace between the two, and a word-stream proof cannot see it.
  * @architecture Astro islands 2026
  * @module components/landing/HeroSection
  */
@@ -14,9 +19,22 @@ import { getCollection } from "astro:content";
 import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
 import { viaMoment } from "../../lib/dates";
+import { concertKey, overlayValue } from "../../lib/copyOverlay";
+import { localizePath, type Locale } from "../../i18n/config";
+import type { LandingCopy } from "../../i18n/content/landing";
 import { MODAL_VIDEO } from "../../data/landing/video";
 
+interface Props {
+  copy: LandingCopy["hero"];
+  /** The film's caption, which belongs to the Vox moment and travels with the trigger: the button
+      here opens the same reel, and one film may not carry two captions. */
+  videoCaption: string;
+  lang: Locale;
+}
+const { copy, videoCaption, lang } = Astro.props;
+
 const hero = bleedPair("hero-landing");
+const hrefConcerts = localizePath("/koncerty", lang);
 
 // Announcement pill — dormant by design. A standing "next concert" line shows ONLY when
 // concerts.yaml carries an entry whose `date` is still in the future; every current entry is
@@ -28,6 +46,11 @@ const upcoming = (await getCollection("concerts"))
   .map((c) => ({ c, t: c.data.date ? new Date(c.data.date).getTime() : Number.NaN }))
   .filter((x) => !Number.isNaN(x.t) && x.t >= now)
   .sort((a, b) => a.t - b.t)[0]?.c;
+// The evening names itself, in this locale, from its own entry in the corpus — never from a
+// second copy on the landing.
+const upcomingTitle = upcoming
+  ? (overlayValue(concertKey(upcoming.id, "title"), lang) ?? upcoming.data.title)
+  : "";
 ---
 
 <section class="hero" id="top" aria-label="VoctEnsemble">
@@ -40,25 +63,21 @@ const upcoming = (await getCollection("concerts"))
       {upcoming && (
         <a
           class="hero-announce intro-stage plausible-event-name=hero+najblizej"
-          href={upcoming.data.hasPage ? `/koncerty/${upcoming.id}` : "/koncerty"}
+          href={upcoming.data.hasPage ? `${hrefConcerts}/${upcoming.id}` : hrefConcerts}
         >
           <span class="hero-announce-dot" aria-hidden="true"></span>
-          <span>Najbliżej — <strong>{upcoming.data.title}</strong> · {viaMoment(upcoming.data, "pl")}</span>
+          <span>{`${copy.announceLabel} — `}<strong>{upcomingTitle}</strong>{` · ${viaMoment(upcoming.data, lang)}`}</span>
         </a>
       )}
       <div class="hero-kicker micro intro-stage">Concerts Spirituels</div>
       <h1 class="hero-title">
-        <span class="intro-stage s2">Z ciszy</span>
-        <span class="intro-stage s3"><em>głos.</em></span>
+        <span class="intro-stage s2">{copy.title1}</span>
+        <span class="intro-stage s3"><em>{copy.title2}</em></span>
       </h1>
-      <p class="hero-response intro-stage s4">
-        Dwanaście głosów w kamiennej nawie: od Victorii po Pärta.
-      </p>
-      <p class="hero-strap intro-stage s5">
-        Koncert jako próg: wchodzi się z ulicy, wychodzi się cichszym. Cykl Koncertów
-        Duchowych prowadzi
-        <a class="hero-strap-name" href="#dyrygent">Florent&nbsp;de&nbsp;Bazelaire</a>.
-      </p>
+      <p class="hero-response intro-stage s4">{copy.response}</p>
+      {/* The link inside the strap is the copy's own — the name is bound by the sheet
+          (`white-space: nowrap`), so no hard space is ever typed into a field an editor edits. */}
+      <p class="hero-strap intro-stage s5" set:html={copy.strapHtml} />
     </div>
 
     <div class="hero-rail intro-stage s6">
@@ -73,22 +92,22 @@ const upcoming = (await getCollection("concerts"))
           data-video-open
           data-video-src={MODAL_VIDEO.src}
           data-video-src-av1={MODAL_VIDEO.srcAv1}
-          data-video-caption={MODAL_VIDEO.caption}
+          data-video-caption={videoCaption}
         >
           {/* The runtime is part of the invitation, not a footnote to it: "I do not know what is
               behind this" is answered by saying what it costs, and a number in the label does that
               where the play mark alone only says "a film". One flex item, so the mid-dot keeps its
               own spacing instead of taking the label-to-mark gap. */}
           <span>
-            Zobacz i usłysz
-            <span class="primary-link-meta">· 4 min</span>
+            {copy.videoLabel}{" "}
+            <span class="primary-link-meta">{copy.videoMeta}</span>
           </span>
         </button>
-        <a class="secondary-link plausible-event-name=hero+koncerty" href="/koncerty">
-          Koncerty Duchowe
+        <a class="secondary-link plausible-event-name=hero+koncerty" href={hrefConcerts}>
+          {copy.concertsLink}
         </a>
       </div>
-      <span class="hero-cue" aria-hidden="true">Zejdź w głąb</span>
+      <span class="hero-cue" aria-hidden="true">{copy.cue}</span>
     </div>
   </div>
 </section>

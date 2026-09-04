@@ -69,3 +69,52 @@ export const viaMoment = (
     : moment.dateLabel
       ? pickLocale(moment.dateLabel, locale)
       : "";
+
+/** Descending value/glyph pairs — enough for any year this site will print. */
+const ROMAN: readonly (readonly [number, string])[] = [
+  [1000, "M"],
+  [900, "CM"],
+  [500, "D"],
+  [400, "CD"],
+  [100, "C"],
+  [90, "XC"],
+  [50, "L"],
+  [40, "XL"],
+  [10, "X"],
+  [9, "IX"],
+  [5, "V"],
+  [4, "IV"],
+  [1, "I"],
+];
+
+/**
+ * A year in roman numerals — the register's own way of dating an evening ("MMXXIV"), and
+ * locale-neutral by construction, which is half the reason the landing dates in it at all.
+ */
+export function romanYear(year: number): string {
+  let rest = year;
+  let out = "";
+  for (const [value, glyph] of ROMAN) {
+    while (rest >= value) {
+      out += glyph;
+      rest -= value;
+    }
+  }
+  return out;
+}
+
+/**
+ * A photograph's night as the Imagines band prints it — "styczeń MMXXIV" / "January MMXXIV" /
+ * "janvier MMXXIV". The month is formatted per locale from an ISO `YYYY-MM`; the year stays roman
+ * because that is the register's voice and the band's numerals answer the register's.
+ *
+ * It replaces a hand-written `frameDate` that carried a Polish month inside a data string, which
+ * is the fault §5 of the copy-desk spec bans outright: it would have printed "styczeń" under the
+ * English plate with nothing anywhere reporting an error.
+ */
+export const photographMoment = (isoMonth: string, locale: Locale): string => {
+  const month = new Date(`${isoMonth}-01T00:00:00`).toLocaleDateString(INTL_LOCALE[locale], {
+    month: "long",
+  });
+  return `${month} ${romanYear(Number(isoMonth.slice(0, 4)))}`;
+};

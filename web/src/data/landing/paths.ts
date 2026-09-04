@@ -1,11 +1,19 @@
 /**
  * @file paths.ts
- * @description Past Concerts Spirituels — content for the "Co już zabrzmiało" register.
- *  Each entry maps to a single path card. This file holds only the landing-specific editorial
- *  layer (tag, lead note, provenance credit, video fragment); the repertoire itself is NOT stored
- *  here — every card's expandable "Program koncertu" derives its work list from the `concerts`
- *  collection via `concertId` (SSoT), edited in exactly one place. `poster` is the bare asset name under
- *  src/assets/photos (resolved with `photo()` → optimized <Picture>), not a public URL.
+ * @description Past Concerts Spirituels — the STRUCTURE of the "Co już zabrzmiało" register.
+ *  Each entry maps to a single path card, and this file holds only what is not words: the join to
+ *  the concert, the poster, the video files, the band's frame and its grade. Nothing here is
+ *  translated, because nothing here is read.
+ *
+ *  THE WORDS LIVE IN `src/content/pages/landing.yaml` under `register.entries`, keyed by this
+ *  entry's `concertId` — the tag, the place line, the lead and the provenance credit are the
+ *  landing's own editorial layer and are on the copy desk with the rest of the page. The TITLE is
+ *  in neither place: it belongs to the evening, and every surface reads it from `concerts.yaml`
+ *  through the copy overlay, so the register and the concert page can never print two names for
+ *  one night. The repertoire is the same story — a card's expandable programme derives its work
+ *  list from the `concerts` collection via `concertId` (SSoT), edited in exactly one place.
+ *  `poster` is the bare asset name under src/assets/photos (resolved with `photo()` → optimized
+ *  <Picture>), not a public URL.
  * @architecture Astro islands 2026
  * @module data/landing/paths
  */
@@ -21,26 +29,19 @@ export interface PathVideo {
   readonly srcAv1: string;
   /** Phone-shot 9:16 document — the player switches to a portrait, height-driven frame. */
   readonly portrait?: boolean;
-  /** Honest provenance line under the lightbox caption (piece credit · recording origin). */
-  readonly note?: string;
 }
 
 export interface Path {
   readonly slug: string;
-  /** Concert id in the `concerts` collection — the SSoT the program list is read from. */
+  /** Concert id in the `concerts` collection — the SSoT the program list and the title are read
+   *  from, and the key this evening's editorial copy is filed under in `landing.yaml`. */
   readonly concertId: string;
   readonly year: string;
-  readonly tag: string;
-  readonly title: string;
-  readonly place: string;
-  /** The lead — one honest sentence shown in the closed register row. */
-  readonly note: string;
   /** Bare asset name under src/assets/photos (no extension), resolved via photo(). */
   readonly poster: string;
-  /** Curated video fragment; omit when no footage exists (never fabricate). */
+  /** Curated video fragment; omit when no footage exists (never fabricate). The provenance line
+   *  under its caption is copy and lives in `landing.yaml` as this entry's `videoNote`. */
   readonly video?: PathVideo;
-  /** Optional provenance footnote (recording credit / partners) shown under the program. */
-  readonly credit?: string;
   /** The one photograph that stands for this evening in the Imagines band, named by its `img`
    *  in the concert's own `gallery` (so alt, caption and credit come with it). Omit to take the
    *  gallery's first entry — set it only where that first entry documents something other than
@@ -124,12 +125,18 @@ export interface Path {
    */
   readonly frameAsset?: string;
   /**
-   * The date printed in the band's readout, beside the evening's name. It dates the PHOTOGRAPH's
-   * own night, which for a programme that toured is not the same as `year` — the register dates
-   * the programme, the band dates the evening it is showing. Written out because the register's
-   * bare year is not a chronology here: three of five panels read MMXXIV.
+   * The month printed in the band's readout, beside the evening's name, as an ISO `YYYY-MM`. It
+   * dates the PHOTOGRAPH's own night, which for a programme that toured is not the same as `year`
+   * — the register dates the programme, the band dates the evening it is showing. Written out
+   * rather than left to the bare year because the register's year is not a chronology here: three
+   * of five panels read MMXXIV.
+   *
+   * STRUCTURED, NOT WRITTEN. It used to be "styczeń MMXXIV", a Polish month inside a data string,
+   * which would have printed Polish under the English plate with nothing reporting an error.
+   * `lib/dates.photographMoment` formats the month per locale and keeps the year roman, which is
+   * the register's own voice.
    */
-  readonly frameDate: string;
+  readonly frameMonth: string;
 }
 
 /** The register's numbering, by position. Shared with the Imagines band so the band's numerals
@@ -142,15 +149,11 @@ export const PATHS: readonly Path[] = [
     slug: "kontemplacja-wcielenia",
     concertId: "wcielenie",
     year: "MMXXIV",
-    tag: "Koncert Duchowy · debiut",
-    title: "Kontemplacja Wcielenia",
-    place: "Bazylika NSPJ w Krakowie",
-    note: "Wejście w tajemnicę Wcielenia, od zapowiedzi Izajasza po kantyk Symeona. Renesansowa polifonia, Pärt, Vivancos.",
     poster: "poster-wcielenie",
     // The gallery opens on three rehearsal frames; the band announces the evening, so it takes
     // the first one shot at the concert itself.
     frame: "kd-wcielenie-6",
-    frameDate: "styczeń MMXXIV",
+    frameMonth: "2024-01",
     frameLift: 0.96,
     // Damped because this basilica's own walls are terracotta and the evening was lit for
     // Christmas, so the frame arrives at 0.594 mean chroma against ~0.34 for the other four and
@@ -168,21 +171,16 @@ export const PATHS: readonly Path[] = [
     // Same file as the hero modal (MODAL_VIDEO in video.ts), so cache and resume position
     // are shared only across this exact MP4.
     video: { src: videoAsset("landing-modal"), srcAv1: videoAssetAv1("landing-modal") },
-    credit: "Rejestracja: Jakub Garbacz, Ars Sonora Studio. Reprise pod auspicjami Fundacji Carpe Diem.",
   },
   {
     slug: "wolanie-gor",
     concertId: "wolanie-gor",
     year: "MMXXIV",
-    tag: "12 głosów i skrzypce",
-    title: "Wołanie Gór",
-    place: "Dworek Gościnny · Szczawnica",
-    note: "Program, dla którego góry były oddechem. Sakralna polifonia i pieśni ludowe Polski, Korsyki, Francji i Wysp Brytyjskich, ze skrzypcami Radu Ropotana.",
     poster: "poster-wolanie",
     // Same as Wcielenie: entries 0–3 are the rehearsal in Szczawnica, not the evening — and they
     // are monochrome, so the band's frame can only come from 4 upward whatever else changes.
     frame: "kd-wolanie-4",
-    frameDate: "czerwiec MMXXIV",
+    frameMonth: "2024-06",
     // NO LIFT AND NO DAMP, which is the only panel of five that needs neither: at the crop it
     // measures 0.335 lit-mean and 10.2% of its area above mid-luma, against 0.215–0.283 and
     // 1.6–11.1% for the graded rest. The arithmetic asks for 0.97 and that is inside the noise of
@@ -222,17 +220,12 @@ export const PATHS: readonly Path[] = [
       src: videoAsset("landing-wolanie"),
       srcAv1: videoAssetAv1("landing-wolanie"),
       portrait: true,
-      note: "J. Sykulski — Stoi lód na Prośnie · zapis z widowni · dźwięk na żywo",
     },
   },
   {
     slug: "9-kart-z-ksiegi-psalmow",
     concertId: "9-kart",
     year: "MMXXIV",
-    tag: "Cykl psalmów · 6–12 głosów",
-    title: "9 Kart z Księgi Psalmów",
-    place: "Bazylika św. Antoniego w Rybniku · Archikatedra w Łodzi · Bazylika NSPJ w Krakowie",
-    note: "Dziewięć psalmów: pokuta, lament, uwielbienie. Miserere Allegriego, podzielone na dziewięć części, oplata cały wieczór.",
     poster: "poster-9-kart",
     // Chosen on SUBJECT SCALE and on HUE RANGE, which are the two statistics the panels in this
     // line stand or fall on. Scale first: `kd-9-kart-2` once stood here with the ensemble behind a
@@ -261,7 +254,7 @@ export const PATHS: readonly Path[] = [
     frame: "kd-9-kart-15",
     // The programme toured Rybnik → Łódź → Kraków; this frame is the Kraków evening (16 XI), so
     // the band's date moves with the photograph. The register still dates the programme.
-    frameDate: "listopad MMXXIV",
+    frameMonth: "2024-11",
     // 0.95 rather than none: at 1.00 the panel puts 12.9% of its area above mid-luma, which is the
     // most in the line, and the excess is all altar cloth and chrysanthemums rather than subject.
     // Damped it measures 0.246 lit-mean, between I and V where a middle panel belongs.
@@ -271,10 +264,6 @@ export const PATHS: readonly Path[] = [
     slug: "hymn-poleglym",
     concertId: "hymn-poleglym",
     year: "MMXXV",
-    tag: "Modlitwa o pokój",
-    title: "Hymn Poległym",
-    place: "Bazylika Mariacka w Krakowie",
-    note: "Hołd tym, którzy oddali życie w obronie Ukrainy. W kulminacji, przy otwarciu ołtarza Mariackiego, zabrzmiał hymn Ukrainy.",
     poster: "poster-hymn",
     // THE DARKEST EVENING IN THE ARCHIVE, and for four frames that was a wall rather than a mood:
     // `kd-hymn-0` stood here at the grade's ceiling and still measured a MEDIAN of 0.004 with 81.8%
@@ -284,7 +273,8 @@ export const PATHS: readonly Path[] = [
     // blue and puts the singers a speck at the far end, `-3` is the audience with a face in the
     // foreground — outside the consent scope, which covers singers.
     //
-    // This frame is the evening's culmination, which is also what `note` above describes: the
+    // This frame is the evening's culmination, which is also what this entry's `note` in
+    // `landing.yaml` describes: the
     // Mariacki altarpiece open and lit while the anthem sounds. Graded it measures a median of
     // 0.115 and 0.8% under 6% luma, with the widest hue range in the line at 38.0°. It stays the
     // darkest panel of the five and that is honest; it is no longer an empty one.
@@ -298,7 +288,7 @@ export const PATHS: readonly Path[] = [
     // as delivered, mat and mark intact; the text credit beside it in concerts.yaml is the
     // attribution that travels with the photograph everywhere else on the site.
     frameAsset: "kd-hymn-4-imagines",
-    frameDate: "luty MMXXV",
+    frameMonth: "2025-02",
     // 1.25, and the limit is the CHROMA rather than the luminance this time: the altarpiece is lit
     // red, so the red channel is the first thing to clip. At 1.25 it clips over 1.1% of the panel
     // and the retable keeps its drawing; at 1.35 that is 2.38% and the pentaptych flattens into one
@@ -309,10 +299,6 @@ export const PATHS: readonly Path[] = [
     slug: "aeternam-epitafium-dla-gazy",
     concertId: "aeternam",
     year: "MMXXV",
-    tag: "Epitafium · 4, 8 i 12 głosów",
-    title: "Aeternam — Epitafium dla Gazy",
-    place: "Mistrzejowice · Niedzica",
-    note: "Wieczór za mieszkańców Gazy. Aeternam Vivancosa, dwaj Tavenerowie, zawierzenie ofiar Matce Bożej.",
     poster: "poster-aeternam",
     // `-3` stood here and read the altar over the conductor's shoulder from behind the ensemble —
     // the architecture carried, the singers as backs. This one is the same altar from in front:
@@ -320,7 +306,7 @@ export const PATHS: readonly Path[] = [
     // the site claims on every other surface (twelve voices in a stone nave).
     frame: "kd-aeternam-5",
     // Two evenings, Mistrzejowice and Niedzica; this frame is Niedzica (18 X).
-    frameDate: "październik MMXXV",
+    frameMonth: "2025-10",
     // THE "DO NOT DAMP AETERNAM" EXEMPTION DOES NOT SURVIVE THE CHANGE OF FRAME, and carrying it
     // over was a straight error. It was measured on `-3`, where the gilt is background at a
     // distance and dimming it cost the whole point of the panel. On `-5` the altar is close and
@@ -333,8 +319,6 @@ export const PATHS: readonly Path[] = [
       src: videoAsset("landing-aeternam"),
       srcAv1: videoAssetAv1("landing-aeternam"),
       portrait: true,
-      note: "C. Shaw — and the swallow (Psalm 84) · zapis z nawy · dźwięk na żywo",
     },
-    credit: "Partnerzy: Gmina Łapsze Niżne · GOK Łapsze Niżne · ZEW Niedzica · Zamek Dunajec · ACN — Pomoc Kościołowi w Potrzebie. Patroni medialni: Gość Niedzielny · Radio Alex · Tygodnik Podhalański.",
   },
 ];

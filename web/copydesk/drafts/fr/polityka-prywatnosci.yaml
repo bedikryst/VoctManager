@@ -37,10 +37,12 @@
 # mêmes mots pour « fait foi » et « prévaut ». Deux documents d'un même site ne peuvent pas
 # répondre à la même question sur deux tons.
 #
-# UNE DÉPENDANCE, NOMMÉE : les § 3 et § 10 citent le seuil d'entrée de la page d'accueil —
-# « Entrer avec la voix » / « Entrer en silence ». Ces deux boutons sont encore codés en dur en
-# polonais dans `Preloader.tsx`, la page d'accueil étant l'étape K. Quand l'étape K les traduira,
-# ces deux phrases devront être vérifiées contre ce que le seuil imprime réellement.
+# UNE DÉPENDANCE, LEVÉE À L'ÉTAPE K : les § 3 et § 10 citent le seuil d'entrée de la page
+# d'accueil — « Entrer avec la voix » / « Entrer en silence ». Ces deux boutons relèvent désormais
+# du chrome (`LANDING_CHROME` dans `i18n/content/landing.ts`), complet par typage, et impriment
+# exactement ces deux noms. C'est cette citation qui en fait du chrome plutôt que du texte de
+# rédaction : un repli vers le polonais laisserait un texte juridique citer une commande qui
+# n'existe pas. Modifier l'un impose de déplacer l'autre dans le même commit.
 #
 # PAS D'ESPACES FINES À LA MAIN : `lib/typo.ts` insère les espaces insécables devant `? ! : ;` et
 # à l'intérieur des guillemets au moment du build. Une espace tapée ici se doublerait.
@@ -100,7 +102,7 @@ page.polityka-prywatnosci.s3.audio.p1Html: "Après le choix « Entrer avec la vo
 page.polityka-prywatnosci.s4.title: "Finalités et bases légales"
 page.polityka-prywatnosci.s4.p1: "Nous traitons vos données aux finalités suivantes et sur les bases légales suivantes du RGPD :"
 page.polityka-prywatnosci.s4.items.hosting.textHtml: "<strong>Fonctionnement et sécurité du site</strong> (journaux du serveur) — art. 6, § 1, f) RGPD, l'intérêt légitime du responsable du traitement à assurer la continuité et la sécurité du site."
-page.polityka-prywatnosci.s4.items.donation.textHtml: "<strong>Réalisation d'un don</strong> — art. 6, § 1, b) RGPD (nécessité à l'exécution du contrat de donation) ainsi que c) (obligations légales en matière de comptabilité et de reporting d'une fondation). À ce titre, nous servons d'intermédiaire dans la transmission des données de paiement vers la passerelle Axepta BNP Paribas / PayU."
+page.polityka-prywatnosci.s4.items.donation.textHtml: "<strong>Réalisation d'un don</strong> — art. 6, § 1, b) RGPD (nécessité à l'exécution du contrat de donation) ainsi que c) (obligations légales en matière de comptabilité et de reporting d'une fondation). À ce titre, le paiement est traité par l'opérateur Axepta BNP Paribas / PayU."
 page.polityka-prywatnosci.s4.items.receipt.textHtml: "<strong>Établissement d'une attestation de don</strong> — art. 6, § 1, c) RGPD, exécution d'obligations résultant du droit fiscal."
 page.polityka-prywatnosci.s4.items.patronage.textHtml: "<strong>Contact au sujet du mécénat</strong> — art. 6, § 1, a) RGPD (le consentement que vous donnez dans le formulaire). Vous pouvez le retirer à tout moment en écrivant à <a href=\"mailto:rodo@voctensemble.com\">rodo@voctensemble.com</a> ; le retrait n'affecte pas la licéité du traitement effectué avant celui-ci."
 page.polityka-prywatnosci.s4.items.claims.textHtml: "<strong>Constatation, exercice ou défense de droits</strong> — art. 6, § 1, f) RGPD, l'intérêt légitime de la Fondation (à l'occasion d'un versement erroné ou d'un litige, par exemple)."
@@ -176,7 +178,7 @@ page.polityka-prywatnosci.s12.title: "Modifications de la politique"
 page.polityka-prywatnosci.s12.p1: "Nous actualisons la politique lorsque la manière dont nous traitons les données change — par exemple lorsque nous ouvrons de nouveaux moyens de paiement, ajoutons des formulaires ou modifions notre infrastructure technique. Chaque modification porte un nouveau numéro de version et une date d'entrée en vigueur (en tête de ce document)."
 page.polityka-prywatnosci.s12.p2: "La présente politique est publiée en polonais, ainsi qu'en traduction anglaise et française. La version polonaise est celle qui fait foi ; les traductions n'ont qu'une valeur informative et, en cas de divergence entre les versions linguistiques, c'est le texte polonais qui prévaut."
 page.polityka-prywatnosci.history.label: "Historique des versions"
-page.polityka-prywatnosci.history.entries.v1-2.note: "Ajout du § 12 : la politique est également publiée en traduction anglaise et française, la version polonaise restant celle qui fait foi."
+page.polityka-prywatnosci.history.entries.v1-2.note: "Ajout du § 12 : la politique est également publiée en traduction anglaise et française, la version polonaise restant celle qui fait foi. Précision au § 4 : le paiement est traité par l'opérateur — la rédaction antérieure évoquait une intermédiation de la Fondation dans la transmission des données de paiement, ce qui contredisait le § 11."
 page.polityka-prywatnosci.history.entries.v1-1.note: "Précision du déroulement d'un paiement en ligne : le paiement suit une redirection vers la page hébergée par l'opérateur, et les données de paiement complètes ne transitent pas par les serveurs de la Fondation. Ajout d'une mention des virements récurrents (virements permanents) comme forme de soutien régulier. Ajout de la prise en charge du formulaire de mécénat (enregistrement des demandes : prénom, nom, e-mail — sur la base du consentement ; données conservées sur des serveurs situés dans l'Union européenne)."
 page.polityka-prywatnosci.history.entries.v1-0.note: "Version initiale de la politique, publiée avec le lancement du site voctensemble.com."
 page.polityka-prywatnosci.s12.p3Html: "Vous pouvez à tout moment obtenir l'historique complet des modifications en écrivant à <a href=\"mailto:rodo@voctensemble.com\">rodo@voctensemble.com</a>."

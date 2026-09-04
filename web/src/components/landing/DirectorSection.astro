@@ -8,19 +8,29 @@
  *  Copy policy: only verified public facts (the 1725 Concert Spirituel history, the
  *  cycle's real venues and intentions). Florent's personal biography (Warsaw, studies,
  *  Jesuit years) is deliberately ABSENT until he supplies an authorized biogram — never
- *  publish unconfirmed life details.
+ *  publish unconfirmed life details. The words are on the copy desk (`landing.yaml`); the NAME
+ *  in the heading is not, because a name is never translated.
+ *
+ *  The section's accessible name is the rubric it already prints. A name printed twice is read
+ *  twice and drifts on the first edit, so `aria-label` reads the copy rather than restating it.
  * @architecture Astro islands 2026
  * @module components/landing/DirectorSection
  */
 import { Picture } from "astro:assets";
 import { photo } from "../../lib/photos";
+import type { LandingCopy } from "../../i18n/content/landing";
+
+interface Props {
+  copy: LandingCopy["director"];
+}
+const { copy } = Astro.props;
 
 const florent = photo("florent");
 ---
 
 {/* `.reveal-cue` on the section drives one thing only: the gold hairline at its top edge
     (`.director-dark::after`), which is ruled outward from the centre as the dark room opens. */}
-<section id="dyrygent" class="section director-dark reveal-cue" aria-label="Kierownictwo artystyczne">
+<section id="dyrygent" class="section director-dark reveal-cue" aria-label={copy.role}>
   <div class="director-grid">
     <div class="portrait">
       {/* `width` is the top of the `widths` ladder: it makes the fallback image the widest
@@ -31,7 +41,7 @@ const florent = photo("florent");
         widths={[480, 760, 1040]}
         width={1040}
         sizes="(max-width: 980px) 100vw, 46vw"
-        alt="Florent de Bazelaire prowadzący VoctEnsemble"
+        alt={copy.portraitAlt}
         loading="lazy"
         decoding="async"
       />
@@ -44,23 +54,12 @@ const florent = photo("florent");
         column at once. */}
     <div class="director-copy">
       <div class="director-lede reveal">
-        <div class="role micro titulus">Kierownictwo artystyczne</div>
+        <div class="role micro titulus">{copy.role}</div>
         <h2>Florent<br />de Bazelaire</h2>
       </div>
-      <p class="reveal">
-        Nazwa cyklu sięga Paryża roku 1725: Concert Spirituel śpiewał w te
-        wieczory, w które milkła opera. Trzysta lat później Florent de Bazelaire
-        podejmuje tę tradycję w bazylikach Krakowa i Łodzi,
-        w Szczawnicy i Niedzicy.
-      </p>
-      <p class="reveal">
-        Każdy program układa wokół jednej intencji. <em>Kontemplacja Wcielenia</em>
-        na debiut (2024), dziewięć kart z Księgi Psalmów, modlitwa o pokój
-        w Bazylice Mariackiej, epitafium dla Gazy.
-      </p>
-      <p class="reveal">
-        Równolegle prowadzi VoctFoundation. Fundacja ma dać tej muzyce stałe miejsce.
-      </p>
+      <p class="reveal">{copy.p1}</p>
+      <p class="reveal" set:html={copy.p2Html} />
+      <p class="reveal">{copy.p3}</p>
     </div>
   </div>
 </section>

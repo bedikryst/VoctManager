@@ -696,7 +696,10 @@ test("a page's Polish goes to the page's own file, and its translation to the pa
   // The defect this closes: before it, `plan` built its paths from the concerts extractor alone, so
   // a `page.` row was refused with "the corpus has no such key" — a true sentence about the wrong
   // corpus, which would have sent a reviewer to restore a field that never left.
-  const spec = PAGE_SPECS[0];
+  // Named rather than taken by position: the registry is a reading order for the desk, and the
+  // page added at the front of it turned both of these tests red for addressing a field it has
+  // not got. The test means THIS page.
+  const spec = PAGE_SPECS.find((s) => s.id === "o-nas");
   const source = pageSource(spec.id);
   const raw = await readFile(new URL(`../${source}`, import.meta.url), "utf8");
   const data = await readPage(spec);
@@ -731,7 +734,10 @@ test("a path record that contradicts its key's namespace is refused, not written
   // by construction, which is why the disagreement is worth catching: a `segments.json` older than
   // this stage carries page records with no `source`, and guessing would splice a paragraph into
   // whichever file happened to have something at that path.
-  const spec = PAGE_SPECS[0];
+  // Named rather than taken by position: the registry is a reading order for the desk, and the
+  // page added at the front of it turned both of these tests red for addressing a field it has
+  // not got. The test means THIS page.
+  const spec = PAGE_SPECS.find((s) => s.id === "o-nas");
   const source = pageSource(spec.id);
   const data = await readPage(spec);
   const { paths } = extractPage(spec, data);

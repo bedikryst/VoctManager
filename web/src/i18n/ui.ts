@@ -105,9 +105,12 @@ export interface UIStrings {
     readonly previous: string;
     readonly next: string;
   };
-  /** The film player on a concert page (`islands/video/VideoPlayer`). The landing's own
-      `VideoLightbox` is not here: it mounts on `/` alone, which the copy desk has not reached. */
+  /** The film player, on a concert page and on the landing, plus the full-screen room the landing
+      opens it in (`islands/landing/VideoLightbox`) — one object, one set of names. The lightbox's
+      ✕ and its backdrop read `lightbox.close`, which says the same word for the same act. */
   readonly player: {
+    /** Accessible name of the landing's full-screen projection dialog. */
+    readonly dialogAria: string;
     readonly play: string;
     readonly pause: string;
     readonly timeline: string;
@@ -177,6 +180,7 @@ export const UI: Record<Locale, UIStrings> = {
       next: "Następny kadr",
     },
     player: {
+      dialogAria: "Wideo z koncertu",
       play: "Odtwórz wideo",
       pause: "Zatrzymaj odtwarzanie",
       timeline: "Oś czasu wideo",
@@ -234,6 +238,7 @@ export const UI: Record<Locale, UIStrings> = {
       next: "Next frame",
     },
     player: {
+      dialogAria: "Concert film",
       play: "Play the film",
       pause: "Pause the film",
       timeline: "Film timeline",
@@ -291,6 +296,7 @@ export const UI: Record<Locale, UIStrings> = {
       next: "Photographie suivante",
     },
     player: {
+      dialogAria: "Film du concert",
       play: "Lire la vidéo",
       pause: "Mettre la vidéo en pause",
       timeline: "Barre de progression de la vidéo",

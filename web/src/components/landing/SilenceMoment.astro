@@ -19,9 +19,15 @@
  * @architecture Astro islands 2026
  * @module components/landing/SilenceMoment
  */
+interface Props {
+  /** The section's name for a screen reader. The only word on screen is `tacet.`, a musical
+      instruction that is the same in every language and stays in the markup. */
+  aria: string;
+}
+const { aria } = Astro.props;
 ---
 
-<section class="silence-moment" aria-label="Chwila ciszy">
+<section class="silence-moment" aria-label={aria}>
   <div class="silence-inner reveal-cue">
     <svg
       class="silence-ornament"

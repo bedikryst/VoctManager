@@ -39,6 +39,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AV1_MIME } from "../../../lib/videos";
 import { UI } from "../../../i18n/ui";
+import type { Locale } from "../../../i18n/config";
 import { useDocumentLocale } from "../hooks/useDocumentLocale";
 import { formatTime } from "./formatTime";
 import { clearPosition, readPosition, savePosition } from "./resumeStore";
@@ -69,6 +70,16 @@ interface VideoPlayerProps {
   readonly portrait?: boolean;
   /** Keep playback position in sessionStorage for other players using the same media src. */
   readonly resume?: boolean;
+  /**
+   * The language of the page this player stands on.
+   *
+   * TAKE IT, DO NOT READ IT. This island is SERVER-RENDERED wherever it is placed in markup, and
+   * `documentLocale()` has no document during SSR — it answers Polish, so an English page shipped
+   * Polish control names and React answered the mismatch by discarding the server DOM and
+   * re-rendering the whole player in front of the reader. A caller that omits it keeps the old
+   * behaviour (read at hydration), which is right only for a surface mounted after first paint.
+   */
+  readonly lang?: Locale;
 }
 
 /** Same dip ListenMoment used — the choir bed recedes under the video, never dies. */
@@ -101,6 +112,7 @@ export function VideoPlayer({
   glow = false,
   portrait = false,
   resume = true,
+  lang,
 }: VideoPlayerProps): React.JSX.Element {
   const idRef = useRef<string | null>(null);
   if (idRef.current === null) {
@@ -111,7 +123,8 @@ export function VideoPlayer({
   // The player's own controls, in the document's language. `joiner` is pulled out because
   // `paintProgress` closes over it to write the scrubber's `aria-valuetext` imperatively —
   // "3:20 z 8:04" is Polish grammar, not punctuation.
-  const t = UI[useDocumentLocale()].player;
+  const documentLang = useDocumentLocale();
+  const t = UI[lang ?? documentLang].player;
   const joiner = t.ofDuration;
   const [playing, setPlaying] = useState(false);
   const [buffering, setBuffering] = useState(false);

@@ -61,17 +61,25 @@ import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
 import { PATHS } from "../../data/landing/paths";
 import { litanyBands } from "../../lib/litany";
-import { DEFAULT_LOCALE } from "../../i18n/config";
+import { concertKey, overlayValue } from "../../lib/copyOverlay";
+import { localizePath, type Locale } from "../../i18n/config";
+import type { LandingCopy } from "../../i18n/content/landing";
+
+interface Props {
+  copy: LandingCopy["litany"];
+  lang: Locale;
+}
+const { copy, lang } = Astro.props;
 
 /** What the slot prints for a catalogued composer none of the register's programmes records —
  *  five of the forty-three today (Josquin, Händel, Mozart, Frisina, Kusz), most likely sung at
  *  the Bobola liturgy, whose `program` the collection does not carry. It is a positive statement
  *  and true of every name here; read against the thirty-eight that name an evening it says
- *  exactly what it means, which "no evening on record" would have to say by negation. */
-const IN_CATALOGUE = "W repertuarze";
-
-/** What the slot prints for one name. */
-const readout = (at: readonly string[]): string => (at.length > 0 ? at.join(" · ") : IN_CATALOGUE);
+ *  exactly what it means, which "no evening on record" would have to say by negation.
+ *
+ *  What the slot prints for one name: the evenings it sounded at, or that. */
+const readout = (at: readonly string[]): string =>
+  at.length > 0 ? at.join(" · ") : copy.inCatalogue;
 
 const nave = bleedPair("chor-spot");
 const concerts = new Map((await getCollection("concerts")).map((entry) => [entry.id, entry.data] as const));
@@ -80,12 +88,17 @@ const concerts = new Map((await getCollection("concerts")).map((entry) => [entry
 // and it is what keeps the Bobola liturgy out of a landing that deliberately does not number it
 // (docs/web-landing-guardrails §1).
 const evenings = PATHS.map((path) => ({
-  title: path.title,
+  // The evening names itself from the corpus, in this locale — the readout may not invent a
+  // second title for a night the concert pages already name.
+  title:
+    overlayValue(concertKey(path.concertId, "title"), lang) ??
+    concerts.get(path.concertId)?.title ??
+    "",
   composers: (concerts.get(path.concertId)?.program ?? []).map((item) => item.composer),
 }));
-// The landing exists in Polish only, so the era headings are asked for by name rather than
-// inherited: the plate is the one surface here that reads a per-locale label.
-const bands = litanyBands(await getCollection("repertoire"), evenings, DEFAULT_LOCALE);
+// The era headings are per locale — the plate is the one surface here that reads a localized
+// label, and `i18n/content/repertuar.ts` holds all three.
+const bands = litanyBands(await getCollection("repertoire"), evenings, lang);
 ---
 
 <section class="litany" id="litania" aria-labelledby="litania-head">
@@ -163,8 +176,8 @@ const bands = litanyBands(await getCollection("repertoire"), evenings, DEFAULT_L
         may follow. It names its destination and stops — "Pełny katalog: utwory i daty" itemised
         what the reader would find there, which is the head's old fault in the foot's voice. */}
     <p class="litany-more">
-      <a class="litany-more-link" href="/koncerty#repertuar">
-        Pełny repertuar →
+      <a class="litany-more-link" href={`${localizePath("/koncerty", lang)}#repertuar`}>
+        {copy.moreLink}
       </a>
     </p>
   </div>

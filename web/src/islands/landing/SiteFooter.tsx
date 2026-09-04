@@ -48,19 +48,35 @@
  * @module widgets/landing/SiteFooter
  */
 
-import { useDocumentLocale } from "./hooks/useDocumentLocale";
+import { localizePath, type Locale } from "../../i18n/config";
+import { UI } from "../../i18n/ui";
+import type { LandingChrome } from "../../i18n/content/landing";
 import { useLiturgicalClock } from "./hooks/useLiturgicalClock";
 import { Typo } from "./lib/Typo";
 
-export function SiteFooter(): React.JSX.Element {
+interface SiteFooterProps {
+  /**
+   * The page's language. TAKEN, NOT READ, and this plate is the reason the rule is worth stating
+   * twice: the island is server-rendered, so a locale read from the document is Polish during SSR
+   * — and React answers a hydration mismatch by discarding the server DOM, which strands every
+   * class the shared reveal observer had already set on nodes that are no longer in the document.
+   * That is exactly how this footer's entrance failed once before (guardrails §2).
+   */
+  readonly lang: Locale;
+  /** The landing footer's own glosses and landmark names. */
+  readonly chrome: LandingChrome;
+}
+
+export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element {
   const clock = useLiturgicalClock();
-  // Polish today — the landing is the last page the copy desk reaches — but read rather than
-  // assumed, so the hour's gloss turns with the document on the day it is translated.
-  const locale = useDocumentLocale();
+  const t = UI[lang];
+  const hrefContact = localizePath("/kontakt", lang);
+  const hrefPrivacy = localizePath("/polityka-prywatnosci", lang);
+  const hrefColophon = localizePath("/kolofon", lang);
 
   return (
     <Typo>
-      <footer className="site-footer" aria-label="Stopka">
+      <footer className="site-footer" aria-label={chrome.footerAria}>
         <div className="site-footer-inner">
           {/* The footer had no entrance at all while every block above it was written into
               being — and it is not chrome: it numbers itself IV, continuing the interludes'
@@ -144,7 +160,7 @@ export function SiteFooter(): React.JSX.Element {
                   {clock.hora.name}
                 </em>
                 <span className="dateline-gloss" suppressHydrationWarning>
-                  {clock.hora.poem[locale]}
+                  {clock.hora.poem[lang]}
                 </span>
               </span>
               <span className="dateline-sep" aria-hidden="true">
@@ -180,7 +196,7 @@ export function SiteFooter(): React.JSX.Element {
                   ·
                 </span>
                 <span className="latin">Fundatio</span>
-                <span className="pl">fundacja</span>
+                <span className="pl">{chrome.stanzaFoundation}</span>
               </span>
               <div className="foundation-mark">
                 <em className="foundation-title">VoctFoundation</em>
@@ -191,7 +207,7 @@ export function SiteFooter(): React.JSX.Element {
                   </span>
                   31-150 Kraków
                 </p>
-                <ul className="foundation-legal" aria-label="Numery rejestrowe">
+                <ul className="foundation-legal" aria-label={chrome.registryAria}>
                   <li>
                     <span className="key">KRS</span>
                     <span className="val">0001237252</span>
@@ -214,7 +230,7 @@ export function SiteFooter(): React.JSX.Element {
                   ·
                 </span>
                 <span className="latin">Consilium</span>
-                <span className="pl">zarząd</span>
+                <span className="pl">{chrome.stanzaBoard}</span>
               </span>
               <ul className="foundation-consilium-list">
                 <li>Florent de Bazelaire</li>
@@ -229,7 +245,7 @@ export function SiteFooter(): React.JSX.Element {
                   ·
                 </span>
                 <span className="latin">Corpus</span>
-                <span className="pl">dokumenty</span>
+                <span className="pl">{chrome.stanzaDocuments}</span>
               </span>
               <ul className="foundation-corpus-list">
                 <li>
@@ -238,17 +254,17 @@ export function SiteFooter(): React.JSX.Element {
                     className="plausible-event-name=statut+fundacji"
                     target="_blank"
                     rel="noopener"
-                    aria-label="Statut Fundacji VoctFoundation — dokument PDF, otwiera się w nowej karcie"
+                    aria-label={t.footer.statuteAria}
                   >
-                    Statut fundacji{" "}
+                    {t.footer.statute}{" "}
                     <span className="doc-tag" aria-hidden="true">
                       PDF
                     </span>
                   </a>
                 </li>
                 <li>
-                  <a href="/polityka-prywatnosci" className="plausible-event-name=polityka+prywatnosci">
-                    Polityka prywatności
+                  <a href={hrefPrivacy} className="plausible-event-name=polityka+prywatnosci">
+                    {t.footer.privacy}
                   </a>
                 </li>
               </ul>
@@ -260,22 +276,22 @@ export function SiteFooter(): React.JSX.Element {
                   ·
                 </span>
                 <span className="latin">Vox</span>
-                <span className="pl">kontakt</span>
+                <span className="pl">{chrome.stanzaContact}</span>
               </span>
               <ul className="foundation-vox-list">
                 <li>
-                  <a href="/kontakt" className="plausible-event-name=kontakt">
-                    napisz do nas
+                  <a href={hrefContact} className="plausible-event-name=kontakt">
+                    {chrome.voxWrite}
                   </a>
                 </li>
                 <li>
                   <a href="mailto:booking@voctensemble.com" className="plausible-event-name=booking">
-                    booking
+                    {chrome.voxBooking}
                   </a>
                 </li>
                 <li>
                   <a href="mailto:patronat@voctensemble.com" className="plausible-event-name=patronat">
-                    patronat
+                    {chrome.voxPatronage}
                   </a>
                 </li>
                 <li>
@@ -283,12 +299,12 @@ export function SiteFooter(): React.JSX.Element {
                     href="mailto:florent.de.bazelaire@voctensemble.com"
                     className="plausible-event-name=dyrekcja"
                   >
-                    dyrekcja artystyczna
+                    {chrome.voxDirection}
                   </a>
                 </li>
               </ul>
               <p className="foundation-vox-rodo">
-                <span className="key">RODO</span>
+                <span className="key">{t.footer.dataProtection}</span>
                 <a href="mailto:rodo@voctensemble.com" className="plausible-event-name=rodo+mail">
                   rodo@voctensemble.com
                 </a>
@@ -301,7 +317,7 @@ export function SiteFooter(): React.JSX.Element {
               and the rule runs out to that same edge. Between two rules it was centred, which
               made it a third axis in a footer whose every other band starts at the left margin.
               Rule AFTER the list in the source, not just in the grid: it is the band's tail. */}
-          <div className="footer-ribbon reveal" aria-label="Obecność w sieci">
+          <div className="footer-ribbon reveal" aria-label={chrome.presenceAria}>
             <ul className="footer-ribbon-list">
               <li>
                 <a
@@ -341,8 +357,8 @@ export function SiteFooter(): React.JSX.Element {
             <div className="footer-colophon-fonts micro">
               <a
                 className="footer-colophon-label"
-                href="/kolofon"
-                aria-label="Kolofon — fonty, prawa, autorzy"
+                href={hrefColophon}
+                aria-label={chrome.colophonAria}
               >
                 Colophon <span aria-hidden="true">↗</span>
               </a>

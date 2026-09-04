@@ -30,10 +30,12 @@
 # construction, same words for "binding" and "prevails". Two documents on one site may not answer
 # the same question in two voices.
 #
-# ONE DEPENDENCY, NAMED: § 3 and § 10 quote the landing's entrance gate — "Enter with voice" /
-# "Enter in silence". Those two buttons are still hard-coded Polish in `Preloader.tsx`, because the
-# landing is stage K. When stage K translates them, these two sentences must be checked against
-# what the gate actually prints (spec §6y: a name printed twice is read twice).
+# ONE DEPENDENCY, DISCHARGED IN STAGE K: § 3 and § 10 quote the landing's entrance gate — "Enter
+# with voice" / "Enter in silence". Those two buttons are CHROME now (`LANDING_CHROME` in
+# `i18n/content/landing.ts`), a complete triple by type, and they print exactly these two names.
+# The reason they are chrome rather than desk copy is this quotation: a locale falling back to
+# Polish would leave a legal text citing a control that does not exist. Change one and the other
+# moves in the same commit (spec §6y: a name printed twice is read twice).
 #
 # Not the overlay: `npm run copy:propose --locale en` carries these in as proposals, which is the
 # only door that stamps the provenance hash the stale state is computed from.
@@ -90,7 +92,7 @@ page.polityka-prywatnosci.s3.audio.p1Html: "When you choose “Enter with voice�
 page.polityka-prywatnosci.s4.title: "Purposes and legal bases"
 page.polityka-prywatnosci.s4.p1: "We process your data for the following purposes and on the following legal bases under the GDPR:"
 page.polityka-prywatnosci.s4.items.hosting.textHtml: "<strong>Keeping the site running and secure</strong> (server logs) — art. 6(1)(f) GDPR, the controller's legitimate interest in the continuity and security of the site."
-page.polityka-prywatnosci.s4.items.donation.textHtml: "<strong>Carrying out a donation</strong> — art. 6(1)(b) GDPR (necessary for the performance of the donation contract) together with (c) (legal obligations relating to a foundation's accounts and reporting). To that extent we act as an intermediary in transmitting payment data to the Axepta BNP Paribas / PayU gateway."
+page.polityka-prywatnosci.s4.items.donation.textHtml: "<strong>Carrying out a donation</strong> — art. 6(1)(b) GDPR (necessary for the performance of the donation contract) together with (c) (legal obligations relating to a foundation's accounts and reporting). To that extent the payment is handled by the operator Axepta BNP Paribas / PayU."
 page.polityka-prywatnosci.s4.items.receipt.textHtml: "<strong>Issuing a donation certificate</strong> — art. 6(1)(c) GDPR, in performance of obligations arising from tax law."
 page.polityka-prywatnosci.s4.items.patronage.textHtml: "<strong>Contact about patronage</strong> — art. 6(1)(a) GDPR (the consent you give in the form). You may withdraw that consent at any time by writing to <a href=\"mailto:rodo@voctensemble.com\">rodo@voctensemble.com</a>; withdrawal does not affect the lawfulness of processing carried out before it."
 page.polityka-prywatnosci.s4.items.claims.textHtml: "<strong>Establishing, pursuing or defending claims</strong> — art. 6(1)(f) GDPR, the Foundation's legitimate interest (in connection with a mistaken payment or a dispute, for instance)."
@@ -166,7 +168,7 @@ page.polityka-prywatnosci.s12.title: "Changes to this policy"
 page.polityka-prywatnosci.s12.p1: "We update the policy whenever the way we process data changes — when we add a payment method, add a form, or change our technical infrastructure. Every change carries a new version number and a date from which it applies (at the head of this document)."
 page.polityka-prywatnosci.s12.p2: "This policy is published in Polish, and also in English and French translation. The Polish version is the binding one; the translations are for information only, and in the event of any discrepancy between the language versions the Polish wording prevails."
 page.polityka-prywatnosci.history.label: "Version history"
-page.polityka-prywatnosci.history.entries.v1-2.note: "Added § 12: the policy is also published in English and French translation, the Polish version remaining the binding one."
+page.polityka-prywatnosci.history.entries.v1-2.note: "Added § 12: the policy is also published in English and French translation, the Polish version remaining the binding one. Clarified § 4: the payment is handled by the operator — the earlier wording spoke of the Foundation acting as an intermediary in transmitting payment data, which contradicted § 11."
 page.polityka-prywatnosci.history.entries.v1-1.note: "Clarified how an online payment proceeds: payment follows a redirect onto the operator's hosted page, and full payment details do not pass through the Foundation's servers. Added an account of recurring transfers (standing orders) as a form of regular support. Added the handling of the patronage form (submissions recorded: first name, surname, e-mail — on the basis of consent; data held on servers in the European Union)."
 page.polityka-prywatnosci.history.entries.v1-0.note: "The original version of the policy, published together with the launch of the voctensemble.com site."
 page.polityka-prywatnosci.s12.p3Html: "You may always obtain the full history of changes by writing to <a href=\"mailto:rodo@voctensemble.com\">rodo@voctensemble.com</a>."

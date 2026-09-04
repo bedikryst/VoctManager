@@ -21,8 +21,10 @@ import {
   pushOverlayEntry,
 } from "../../lib/overlayHistory";
 import type { RibbonEntry } from "../../lib/registrum";
+import { localizePath, type Locale } from "../../i18n/config";
+import { UI } from "../../i18n/ui";
+import type { LandingChrome } from "../../i18n/content/landing";
 import { useAudioChoice } from "./hooks/useAudioChoice";
-import { useDocumentLocale } from "./hooks/useDocumentLocale";
 import { useFocusTrap } from "./hooks/useFocusTrap";
 import { horaForWarsaw } from "./lib/horaeCanonicae";
 import { Typo } from "./lib/Typo";
@@ -43,11 +45,24 @@ const RIBBON_PULL_MS = 220;
 
 export interface StickyHeaderProps {
   /** The desktop "registrum" — one register ribbon per page-bearing concert, derived by
-      lib/registrum in index.astro (islands can't read the collection themselves). */
+      lib/registrum in LandingPage.astro (islands can't read the collection themselves). Its
+      `href` is the canonical Polish base path, which this component localizes. */
   ribbons?: readonly RibbonEntry[];
+  /**
+   * The page's language. TAKEN, NOT READ: this island is server-rendered, and `documentLocale()`
+   * has no document there — it answers Polish, so an English landing would ship a Polish bar and
+   * React would answer the mismatch by discarding the server DOM in front of the reader.
+   */
+  lang: Locale;
+  /** The landing's own affordances; everything else here is the site-wide chrome dictionary. */
+  chrome: LandingChrome;
 }
 
-export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Element {
+export function StickyHeader({
+  ribbons = [],
+  lang,
+  chrome,
+}: StickyHeaderProps): React.JSX.Element {
   const { read } = useAudioChoice();
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuClosing, setMenuClosing] = useState(false);
@@ -266,13 +281,22 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
   // The antiphon names its hour — computed only while the menu is open, so the SSG snapshot
   // ships the neutral placeholder instead of a build-time hour (no hydration mismatch).
   const hora = menuOpen ? horaForWarsaw(new Date()) : null;
-  const locale = useDocumentLocale();
+  const t = UI[lang];
+  // Every destination is a base path localized here. A literal that was correct when it was typed
+  // does not announce itself when the file around it learns a locale — this bar shipped five of
+  // them on the subpages (spec §6z), and the phone's Via was the worst of them, sending every
+  // concert row to the Polish page on the only road a phone has to a concert at all.
+  const hrefAbout = localizePath("/o-nas", lang);
+  const hrefConcerts = localizePath("/koncerty", lang);
+  const hrefContact = localizePath("/kontakt", lang);
+  const hrefImages = localizePath("/obrazy", lang);
+  const hrefColophon = localizePath("/kolofon", lang);
 
   return (
     <Typo>
       <header
         className={`chrome${onDark ? " is-on-dark" : ""}${active ? " is-active" : ""}${menuOpen ? " menu-open" : ""}${menuClosing ? " menu-closing" : ""}`}
-        aria-label="Nawigacja"
+        aria-label={t.nav.ariaHeader}
       >
         {/* The brand fades through the dark threshold with the page root (transitions.css) — no
             shared-element morph, which only produced artifacts across the differing header states.
@@ -282,7 +306,7 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
         <a
           className="brand"
           href="#top"
-          aria-label="VoctEnsemble"
+          aria-label={t.nav.brandAria}
           onClick={() => closeMenu(false)}
         >
           <span className="brand-glyph-wrap" aria-hidden="true">
@@ -299,10 +323,10 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
             aria-pressed={audioOn}
             onClick={toggleAudio}
           >
-            {audioOn ? "Głos" : "Cisza"}
+            {audioOn ? chrome.audioOn : chrome.audioOff}
           </button>
-          <a className="support-link plausible-event-name=o+nas" href="/o-nas">
-            O nas
+          <a className="support-link plausible-event-name=o+nas" href={hrefAbout}>
+            {t.nav.about}
           </a>
           {/* "Registrum" — mute breviary register silks + ink index under KONCERTY
               (registrum.css); same markup + CSS choreography as the Astro SiteChrome on
@@ -316,8 +340,8 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
               (document.activeElement as HTMLElement | null)?.blur();
             }}
           >
-            <a className="support-link plausible-event-name=koncerty" href="/koncerty">
-              Koncerty
+            <a className="support-link plausible-event-name=koncerty" href={hrefConcerts}>
+              {t.nav.concerts}
             </a>
             {ribbons.length > 0 && (
               <>
@@ -334,7 +358,7 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                       <a
                         key={r.id}
                         className="ribbon"
-                        href={r.href}
+                        href={localizePath(r.href, lang)}
                         style={{ "--rib": r.accent, "--i": i } as React.CSSProperties}
                         onClick={commitRibbon}
                       >
@@ -355,17 +379,17 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                         sixth ribbon (registrum.css): no numeral, no silk, no leader. It takes
                         no pull beat either — the beat exists to let a bookmark be YANKED, and
                         this line has no silk to yank. */}
-                    <a className="registrum-all" href="/obrazy">
-                      <span className="registrum-all-word">Obrazy</span>
-                      <span className="registrum-all-gloss">wszystkie fotografie</span>
+                    <a className="registrum-all" href={hrefImages}>
+                      <span className="registrum-all-word">{t.nav.archive}</span>
+                      <span className="registrum-all-gloss">{t.nav.archiveGloss}</span>
                     </a>
                   </div>
                 </div>
               </>
             )}
           </div>
-          <a className="support-link plausible-event-name=kontakt" href="/kontakt">
-            Kontakt
+          <a className="support-link plausible-event-name=kontakt" href={hrefContact}>
+            {t.nav.contact}
           </a>
           <a
             className="support-link plausible-event-name=skarbiec+menu"
@@ -376,7 +400,7 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
               openVault(100);
             }}
           >
-            Wesprzyj
+            {t.nav.support}
           </a>
           <button
             className="nav-toggle"
@@ -384,7 +408,7 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
             type="button"
             aria-expanded={menuOpen}
             aria-controls="navMenu"
-            aria-label="Menu"
+            aria-label={t.nav.menu}
             onClick={openMenu}
           />
         </div>
@@ -397,7 +421,7 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
             persists above it — so its top row is just "Zamknij" (also the focus trap's initial
             target). commitVoice retargets the one ribbon's `--vi` and holds the swap a beat so
             the run reads. */}
-        <nav className="nave" id="navMenu" aria-label="Nawigacja główna" ref={navRef}>
+        <nav className="nave" id="navMenu" aria-label={t.nav.ariaPrimary} ref={navRef}>
           <div className="nave-veil" />
 
           <div className="nave-inner">
@@ -406,10 +430,10 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                 className="nave-close"
                 id="menuClose"
                 type="button"
-                aria-label="Zamknij menu"
+                aria-label={t.nav.closeAria}
                 onClick={dismiss}
               >
-                Zamknij
+                {t.nav.close}
               </button>
             </div>
 
@@ -430,7 +454,7 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                   only while open, so the SSG snapshot ships the neutral placeholder). */}
               <span className="nave-antiphon">
                 <span>{hora?.name ?? "Hora"}</span>
-                <em>{hora ? hora.poem[locale] : "canonica"}</em>
+                <em>{hora ? hora.poem[lang] : "canonica"}</em>
               </span>
               {/* Each voice is one index entry — word · leader · incipit (nave-menu.css); the
                   leader is drawn furniture, hence aria-hidden. "Główna" is an in-page jump
@@ -443,37 +467,37 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                 style={{ "--i": 0, "--vb": 1.5, "--vr": 0 } as React.CSSProperties}
                 onClick={() => closeMenu(false)}
               >
-                <span className="voice-gloss">Główna</span>
+                <span className="voice-gloss">{t.nav.home}</span>
                 <span className="voice-lead" aria-hidden="true" />
                 <span className="voice-lat">Introitus</span>
               </a>
               <a
                 className="voice"
-                href="/o-nas"
+                href={hrefAbout}
                 style={{ "--i": 1, "--vb": 2.5, "--vr": 0 } as React.CSSProperties}
                 onClick={commitVoice}
               >
-                <span className="voice-gloss">O nas</span>
+                <span className="voice-gloss">{t.nav.about}</span>
                 <span className="voice-lead" aria-hidden="true" />
                 <span className="voice-lat">De nobis</span>
               </a>
               <a
                 className="voice"
-                href="/koncerty"
+                href={hrefConcerts}
                 style={{ "--i": 2, "--vb": 3.5, "--vr": 0 } as React.CSSProperties}
                 onClick={commitVoice}
               >
-                <span className="voice-gloss">Koncerty</span>
+                <span className="voice-gloss">{t.nav.concerts}</span>
                 <span className="voice-lead" aria-hidden="true" />
                 <span className="voice-lat">Via</span>
               </a>
               <a
                 className="voice"
-                href="/kontakt"
+                href={hrefContact}
                 style={{ "--i": 3, "--vb": 4.5, "--vr": 0 } as React.CSSProperties}
                 onClick={commitVoice}
               >
-                <span className="voice-gloss">Kontakt</span>
+                <span className="voice-gloss">{t.nav.contact}</span>
                 <span className="voice-lead" aria-hidden="true" />
                 <span className="voice-lat">Scribe nobis</span>
               </a>
@@ -493,7 +517,7 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                     <a
                       key={r.id}
                       className="via-row"
-                      href={r.href}
+                      href={localizePath(r.href, lang)}
                       style={{ "--vb": 5, "--vr": i + 1.5 } as React.CSSProperties}
                       onClick={commitVoice}
                     >
@@ -508,11 +532,11 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                       the `--vb`/`--vr` off the element, so the ribbon runs to it too. */}
                   <a
                     className="via-row via-all"
-                    href="/obrazy"
+                    href={hrefImages}
                     style={{ "--vb": 5, "--vr": ribbons.length + 1.5 } as React.CSSProperties}
                     onClick={commitVoice}
                   >
-                    <span className="via-title">Obrazy</span>
+                    <span className="via-title">{t.nav.archive}</span>
                     <span className="via-lead" aria-hidden="true" />
                     <span className="via-lat">Imagines</span>
                   </a>
@@ -533,7 +557,7 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                   openVault(100);
                 }}
               >
-                <span className="nave-cta-word">Wesprzyj</span>
+                <span className="nave-cta-word">{t.nav.support}</span>
                 <span className="voice-lead" aria-hidden="true" />
                 <em className="voice-lat">Sustinete nos</em>
               </a>
@@ -541,8 +565,8 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                   phone (nave-menu.css). A cross-page link, but not an index entry: it closes
                   the card rather than running the ribbon. */}
               <span className="nave-fine">
-                <a href="/kolofon" onClick={() => closeMenu(false)}>
-                  Kolofon
+                <a href={hrefColophon} onClick={() => closeMenu(false)}>
+                  {t.footer.colophon}
                 </a>
               </span>
             </div>

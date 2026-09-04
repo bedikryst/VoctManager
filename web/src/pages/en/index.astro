@@ -1,0 +1,12 @@
+---
+/**
+ * @file en/index.astro
+ * @description English landing (`/en`). Structure + copy live in the shared LandingPage
+ *  component; this route only selects the locale. English copy is in src/content/pages.en.yaml.
+ * @architecture Astro islands 2026
+ * @module pages/en/index
+ */
+import LandingPage from "../../components/pages/LandingPage.astro";
+---
+
+<LandingPage lang="en" />
