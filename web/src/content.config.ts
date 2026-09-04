@@ -486,12 +486,13 @@ const concerts = defineCollection({
   }),
 });
 
+/** The catalogue holds no copy: composers, work titles and datings are names and structure. An
+ *  era's heading and span are labels printed by two surfaces (/koncerty and the landing's litany
+ *  plate) and live in `i18n/content/repertuar.ts` in all three locales — `eraName(id, locale)`. */
 const repertoire = defineCollection({
   loader: file("src/content/repertoire.yaml"),
   schema: z.object({
     order: z.number(),
-    title: z.string(),
-    span: z.string(),
     entries: z.array(
       z.object({
         composer: z.string(),

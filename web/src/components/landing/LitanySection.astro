@@ -61,6 +61,7 @@ import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
 import { PATHS } from "../../data/landing/paths";
 import { litanyBands } from "../../lib/litany";
+import { DEFAULT_LOCALE } from "../../i18n/config";
 
 /** What the slot prints for a catalogued composer none of the register's programmes records —
  *  five of the forty-three today (Josquin, Händel, Mozart, Frisina, Kusz), most likely sung at
@@ -82,7 +83,9 @@ const evenings = PATHS.map((path) => ({
   title: path.title,
   composers: (concerts.get(path.concertId)?.program ?? []).map((item) => item.composer),
 }));
-const bands = litanyBands(await getCollection("repertoire"), evenings);
+// The landing exists in Polish only, so the era headings are asked for by name rather than
+// inherited: the plate is the one surface here that reads a per-locale label.
+const bands = litanyBands(await getCollection("repertoire"), evenings, DEFAULT_LOCALE);
 ---
 
 <section class="litany" id="litania" aria-labelledby="litania-head">

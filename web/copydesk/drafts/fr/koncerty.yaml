@@ -1,0 +1,67 @@
+# page.koncerty — FR draft (stage G5). Same flat shape as the overlay it will become.
+#
+# THE PAGE ONLY, not the evenings. Every station on /koncerty prints its concert's own title,
+# essence, dateline and facts, and those are already translated under `concert.<id>.*` in
+# `concerts.fr.yaml`. What is here is what the PAGE says around them.
+#
+# NO PUNCTUATION SPACING. `lib/typo.ts` inserts the narrow no-break spaces before `? ! : ;` and
+# inside `« »` at build. A hand-typed one doubles up, so write an ordinary space and let the build
+# do it.
+#
+# THE RENDERINGS THE SITE HAS ALREADY PUBLISHED, followed rather than invented:
+#   Koncerty Duchowe   → Concerts Spirituels             (koncert.ts, concerts.fr.yaml)
+#   Droga koncertów    → Le chemin des concerts          (koncert.ts coda.aria)
+#   Bazylika NSPJ      → la basilique du Sacré-Cœur      (concert.9-kart.metaPlace)
+#   Bazylika Mariacka  → Basilique Sainte-Marie          (concert.hymn-poleglym.metaPlace)
+#   archikatedra Łódź  → la cathédrale de Łódź           (concert.9-kart.gallery.*.alt)
+#   Kraków             → Cracovie · Warszawa → Varsovie  (concerts.fr.yaml, throughout)
+#   „kolejność ważna”  → « l'ordre compte »              (concert.wcielenie.programArc) — so the
+#                        longer marginal note here reads as its fuller sibling
+#   o. X SJ            → le P. X SJ                      (concert.9-kart.prologue)
+#   Wesprzyj fundację  → Soutenir la fondation           (page.kontakt.coda.supportLink)
+#
+# `intro.title1` / `title2Html` are the h1's two lines and the break is compositional. French keeps
+# the Polish order — noun, then adjective — so the gold falls on the adjective exactly as it does in
+# Polish. `lang="fr"` inside the two prose fields is redundant on a French page and harmless; it is
+# part of the field's own markup and stays.
+#
+# Not the overlay: `npm run copy:propose --locale fr` carries these in as proposals, which is the
+# only door that stamps the provenance hash the stale state is computed from.
+
+page.koncerty.meta.title: "Concerts Spirituels — VoctEnsemble"
+page.koncerty.meta.description: "Les programmes des Concerts Spirituels de VoctEnsemble — de la Contemplation de l'Incarnation à la liturgie de saint André Bobola — et un répertoire de sept siècles de musique sacrée."
+
+page.koncerty.intro.eyebrow: "Le chemin des concerts"
+page.koncerty.intro.title1: "Concerts"
+page.koncerty.intro.title2Html: "<em>Spirituels.</em>"
+page.koncerty.intro.lede: "Chaque soirée de ce cycle a son intention propre — et son propre programme, qui en naît."
+page.koncerty.intro.noteHtml: "C'est une forme contemporaine des anciens <em lang=\"fr\">Concerts Spirituels</em> — parcourez-les dans l'ordre, vers celui qui n'a pas encore eu lieu."
+page.koncerty.intro.scrollCue: "Entrez sur le chemin"
+
+page.koncerty.next.title: "Un concert sans date."
+page.koncerty.next.meta: "La date et l'espace seront fixés par les donateurs"
+page.koncerty.next.essence: "Ce concert existe déjà dans les partitions et les répétitions — il ne lui manque que l'espace où résonner. Les dons rapprochent sa date."
+page.koncerty.next.cta: "Aidez-le à résonner →"
+
+page.koncerty.rites.eyebrow: "Les règles de la soirée"
+page.koncerty.rites.h2: "Les quatre mêmes règles conduisent chaque soirée."
+page.koncerty.rites.ledeHtml: "Quand l'opéra se taisait à Paris au XVIIIe siècle pour le temps des fêtes, on donnait dans une salle du palais des Tuileries des <em lang=\"fr\">Concerts Spirituels</em> — de la musique sacrée hors du cadre de l'office. Nous revenons à cette tradition."
+
+page.koncerty.rites.items.slowo.title: "La parole"
+page.koncerty.rites.items.slowo.text: "Avant que la musique n'entre, quelqu'un nomme l'intention de la soirée. Chaque concert est précédé d'une brève introduction — le plus souvent par un jésuite, comme le P. Jarek Naliwajko ou le P. Przemysław Wysogląd."
+page.koncerty.rites.items.porzadek.title: "L'ordre"
+page.koncerty.rites.items.porzadek.text: "L'ordre des pièces fait partie de la composition. La même note revient à côté de chaque programme dans les notes de l'ensemble : « l'ordre compte beaucoup »."
+page.koncerty.rites.items.cisza.title: "Le silence"
+page.koncerty.rites.items.cisza.text: "Le silence demeure entre les pièces. Nous le demandons explicitement, imprimé dans le programme — y compris celui qui suit le dernier accord."
+page.koncerty.rites.items.swiatlo.title: "La lumière"
+page.koncerty.rites.items.swiatlo.text: "La lumière a sa propre partition : les fondus et les entrées se règlent avec le programme. Ada Bystrzycka a veillé sur la mise en lumière de bien des soirées."
+
+page.koncerty.repertoire.eyebrow: "Sept siècles"
+page.koncerty.repertoire.h2: "Le répertoire dont nous faisons nos programmes."
+page.koncerty.repertoire.lede: "La polyphonie de la Renaissance, le baroque et le minimalisme contemporain se tiennent côte à côte dans une même soirée. Nous construisons le programme à partir de la tension entre eux."
+
+page.koncerty.coda.h2: "Nous avons chanté dans des basiliques, dans une cathédrale et dans une église de village."
+page.koncerty.coda.lede: "Les basiliques du Sacré-Cœur et Sainte-Marie à Cracovie, Saint-Antoine à Rybnik, la cathédrale de Łódź, le sanctuaire de Varsovie, le manoir thermal de Szczawnica, l'église de Niedzica. Chaque fois, nous avons recomposé le programme — pour ce lieu et pour cette occasion. Nous préparerons un concert spirituel, la musique d'une liturgie ou d'une célébration."
+page.koncerty.coda.contactLink: "Écrivez-nous"
+page.koncerty.coda.aboutLink: "Découvrez l'ensemble"
+page.koncerty.coda.supportLink: "Soutenir la fondation"

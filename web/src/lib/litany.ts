@@ -28,6 +28,9 @@
  */
 import type { CollectionEntry } from "astro:content";
 
+import { eraName } from "../i18n/content/repertuar";
+import type { Locale } from "../i18n/config";
+
 /** One name on the plate: what is inscribed, and where the page can say it sounded. */
 export interface LitanyName {
   /** Surname, as the plate prints it. */
@@ -39,9 +42,9 @@ export interface LitanyName {
 
 export interface LitanyBand {
   id: string;
-  /** Era name — the catalogue's own, e.g. "Renesans". */
+  /** Era heading in the requested locale, e.g. "Renesans" (i18n/content/repertuar). */
   title: string;
-  /** Era span — the catalogue's own, e.g. "XV–XVI w.". */
+  /** The centuries it spans, in the same locale, e.g. "XV–XVI w.". */
   span: string;
   /** Names, in catalogue order. */
   names: LitanyName[];
@@ -133,6 +136,7 @@ function sungAt(surnames: readonly string[], evenings: readonly LitanyEvening[])
 export function litanyBands(
   eras: CollectionEntry<"repertoire">[],
   evenings: readonly LitanyEvening[],
+  locale: Locale,
 ): LitanyBand[] {
   const ordered = eras.slice().sort((a, b) => a.data.order - b.data.order);
   const surnames = ordered.flatMap((era) =>
@@ -145,8 +149,7 @@ export function litanyBands(
   return ordered
     .map((era) => ({
       id: era.id,
-      title: era.data.title,
-      span: era.data.span,
+      ...eraName(era.id, locale),
       names: era.data.entries
         .filter((entry) => !ANONYMOUS.test(entry.composer))
         .map((entry) => {

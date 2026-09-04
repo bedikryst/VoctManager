@@ -289,7 +289,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8,8,7,.48) 0%, rgba(8,8,7,.12) 40%, rgba(8,8,7,.8) 100%), linear-gradient(72deg, rgba(8,8,7,.72) 0%, rgba(8,8,7,.22) 46%, transparent 72%); }
   .hero-inner { max-width: 1180px; width: 100%; margin: 0 auto; padding: 0; }
   .hero h1 { font-family: var(--serif); font-weight: 300; line-height: .98; font-size: clamp(48px, 8.4vw, 116px); letter-spacing: -.01em; margin: 16px 0 0; }
-  .hero h1 em { color: var(--candle); }
+  /* `:global(em)` because this `em` arrives from an HTML copy field through `set:html`, and Astro
+     scopes a rule by appending its cid attribute to EVERY compound — an injected element carries
+     none, so `.hero h1 em` compiled to `em[data-astro-cid-…]` and silently matched nothing from
+     G1 until this was found. The text still rendered; only the gold went. Every rule below that
+     reaches INTO a `…Html` field is global for the same reason. */
+  .hero h1 :global(em) { color: var(--candle); }
   .hero-lede { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(19px, 2.2vw, 28px); line-height: 1.42; max-width: 36ch; margin: 22px 0 0; color: rgba(244, 241, 233, .9); }
   .scroll-cue { margin-top: 34px; font-family: var(--capitalis); font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: rgba(244,241,233,.62); display: inline-flex; align-items: center; gap: 10px; }
   .scroll-cue::after { content: ""; width: 38px; height: 1px; background: currentColor; opacity: .6; animation: cuepulse 3.4s var(--ease-slow) infinite; }
@@ -306,7 +311,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .channels-section { padding: clamp(72px, 11vw, 150px) var(--gutter); --lat-ink: var(--candle-ink); }
   .channels-wrap { max-width: 920px; margin: 0 auto; }
   .contact-intro { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(19px, 2vw, 25px); line-height: 1.5; color: var(--ink-soft); max-width: 40ch; margin: 18px 0 0; }
-  .contact-intro em { color: var(--candle-ink); }
+  .contact-intro :global(em) { color: var(--candle-ink); }
 
   .channels { margin: clamp(40px, 5vw, 64px) 0 0; }
   .channel { display: grid; gap: 12px; padding: clamp(26px, 3.6vw, 40px) 0; border-top: 1px solid var(--line); }
@@ -324,8 +329,8 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   /* After channels — languages, rhythm, media pointer */
   .after-channels { margin: clamp(34px, 5vw, 54px) 0 0; display: grid; gap: 16px; }
   .after-channels p { max-width: 62ch; font-size: clamp(14.5px, 1.15vw, 16px); line-height: 1.72; color: var(--ink-soft); }
-  .after-channels a { border-bottom: 1px solid var(--line-strong); transition: color .3s var(--ease), border-color .3s var(--ease); }
-  .after-channels a:hover { color: var(--candle-blue); border-color: var(--candle-blue); }
+  .after-channels :global(a) { border-bottom: 1px solid var(--line-strong); transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .after-channels :global(a:hover) { color: var(--candle-blue); border-color: var(--candle-blue); }
 
   /* Three voices — honest signature */
   .voices { margin: clamp(40px, 5vw, 60px) 0 0; padding-top: clamp(28px, 3.6vw, 40px); border-top: 1px solid var(--line); }
@@ -357,8 +362,8 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .rodo-admin { font-family: var(--mono); font-size: 11px; line-height: 1.85; letter-spacing: .03em; color: var(--ink-muted); margin: 0 0 14px; }
   .rodo-admin-label { display: block; font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--candle-ink); margin-bottom: 6px; }
   .rodo-note { margin: 0; font-family: var(--mono); font-size: 10.5px; line-height: 1.85; letter-spacing: .02em; color: var(--ink-muted); max-width: 78ch; }
-  .rodo-note a { border-bottom: 1px solid var(--line); transition: color .3s var(--ease), border-color .3s var(--ease); }
-  .rodo-note a:hover { color: var(--ink); border-color: var(--line-strong); }
+  .rodo-note :global(a) { border-bottom: 1px solid var(--line); transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .rodo-note :global(a:hover) { color: var(--ink); border-color: var(--line-strong); }
 
   /* Coda — the page wybrzmiewa. No divider line: the paper-soft → paper step and the gold
      aura carry the turn, so nothing reads as a stray rule floating in space. */

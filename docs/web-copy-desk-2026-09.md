@@ -321,7 +321,7 @@ French month/day capitalization does not survive naive formatting (see the proje
 | D3 | reviewer mode: old → new, accept / reject / edit further — **done, §6i** | the patch gets made |
 | E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 — **EN pass 1 done, §6j** | Florent's first sitting |
 | F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang — **done, §6o** | the pages exist |
-| G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing — **`kontakt` is through the whole loop and live in three locales (§6r, §6s, §6t, §6u); `koncerty`, `obrazy`, `kolofon`, the chrome and the landing are still Polish-only** | the rest of the corpus enters the desk |
+| G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing — **`kontakt` is through the whole loop and live in three locales (§6r, §6s, §6t, §6u); `koncerty` is on the desk with its three routes built and both drafts written, awaiting the loop (§6v); `obrazy`, `kolofon`, the chrome and the landing are still Polish-only** | the rest of the corpus enters the desk |
 
 ### §6a Stage A — what shipped (2026-09-02)
 
@@ -1716,6 +1716,83 @@ donation vault's terms (`Regulamin darowizn`, and the privacy link beside it) pr
 locale on every page that carries the island — legal copy, so a decision rather than an oversight,
 but it is the one Polish text left on a finished English page.
 
+### §6v Stage G5 — `/koncerty`, three sources on one route, and the gold missing since G1 (2026-09-04)
+
+The second page, and the first one where the desk's corpus is not the only thing the page reads.
+`/kontakt` says everything it says; `/koncerty` prints six concerts' worth of the OTHER corpus
+between its own hero and its own coda, so the stage's real work was drawing the line three ways
+rather than two.
+
+**What shipped.** `/koncerty` renders from a shared component in three locales, with no word
+changed: `src/content/pages/koncerty.yaml` (31 copy fields), `src/i18n/content/koncerty.ts` (schema,
+contract, chrome), `src/i18n/content/repertuar.ts` (the era names), `components/pages/KoncertyPage.astro`
+and three one-line routes. `PAGE_SPECS` gained the page — **495 keys · 1 485 rows across both
+corpora**, of which `koncerty` is 31. Both drafts are written and through §2's two passes
+(`copydesk/drafts/{en,fr}/koncerty.yaml`); the loop itself — `copy:sync`, `copy:propose --write`,
+accept, `copy:apply --write`, `TRANSLATED_ROUTES` — is the developer's to run, because it writes to
+the live panel.
+
+**Four decisions worth carrying.**
+
+- **Three sources meet on this route and each keeps its own door.** What the PAGE says is the
+  desk's prose. What a CONCERT says goes through `withOverlay(concertKey(id, field), lang, polish)`
+  — the same `say()` the detail page uses, and never `pickLocale`, which §7 says returns Polish in
+  every locale on a Polish-only corpus. Thirteen fields per station travel that way (title,
+  essence, `metaPlace`, `dateLabel`, both incipit halves, every `facts[i]`, every `links[i].label`,
+  `posterAlt`, `realizacja`), so the English index reads its evenings in English without a single
+  new translation being written. The chrome is the third door.
+- **An era's NAME is a label, not prose — and it left the catalogue because two pages print it.**
+  `repertoire.yaml` held `title` and `span` in Polish; /koncerty prints them and so does the
+  landing's litany plate. §6r's test decides it: completeness CAN be demanded of a one-word band
+  heading — a band whose head is missing in French is a broken page, not a page waiting for review
+  — so they take `Record<Locale, …>` in `i18n/content/repertuar.ts`, and `eraName(id, locale)`
+  THROWS on an era nobody named. The catalogue now holds no copy at all, which is a rule that can
+  be stated: composers, work titles and datings are names and structure.
+- **The dating qualifiers are named, not translated.** Twelve `works[].year` values carry a Polish
+  word — "ok. 1727", "pocz. XVI w.", "aranż. współczesna", "trad. Oksytania" — and they print
+  Polish in every locale. A dating is never copy on this site (stage A's rule, which is why
+  `viaDate` and `inscriptioRef` became structural), so the fix is structural and belongs with
+  whoever does that; pretending it is copy would put a formatting convention on the desk for
+  Florent to review. Recorded in the file's own header and here, rather than left to be discovered.
+- **The h1's break moved and the gold moved with it.** `intro.title1`/`title2Html` are two composed
+  lines; the Polish breaks "Koncerty / Duchowe." English reverses noun and adjective, so the split
+  is "Spiritual / Concerts." and the emphasis — which is the gold — lands on the noun instead of
+  the adjective. French keeps the Polish order and the gold lands where Polish put it. That is the
+  contract's own licence about the break, and it is worth stating that the licence moves a COLOUR,
+  not only a line ending.
+
+**The defect the proof found, and it was not on this page.** `/koncerty` was built before the
+refactor and after it and the two renders compared: **the word stream is identical, 2 915 words to
+2 915**, and the only markup differences are the ones moving a file is allowed to make — the scoped
+stylesheet and the two page scripts renamed with their component, the island's `uid`,
+`"inLanguage":"pl"` added to the JSON-LD, and block-scalar folding where the source had a newline.
+The landing's litany is byte-identical but for the build clock. What the comparison surfaced was
+one difference it could not explain: **`<em>` inside a `set:html` field carries no scope
+attribute.**
+
+Astro scopes a rule by appending its cid attribute to EVERY compound, so `.hero h1 em` compiles to
+`h1[cid] em[cid]` — and an element the page injected as a string has no cid. The rule matches
+nothing, silently, and the text still renders. Measured: **`/kontakt` has printed its title's
+emphasised word without the candle gold since G1 shipped**, along with the gold `<em>` in the
+channels intro and the underline on both prose links; `/o-nas` has printed nine `<strong>` at the
+browser's default weight instead of the `.prose strong` 500 since long before the desk existed.
+Five rules across three components are `:global(…)` now, and the emitted CSS was checked for the
+bare descendant rather than trusted. This is the recorded "Astro scoped styles do not reach
+injected DOM" trap arriving through a door nobody had it filed under: not `innerHTML` from a
+script, but the page's own copy.
+
+**One thing for the editor rather than for the code.** `rites.items.porzadek.text` quotes the
+ensemble's marginal note in FRENCH guillemets — «kolejność jest bardzo ważna» — where Polish
+typography takes „ ” and where the corpus itself uses „kolejność ważna" (`concert.wcielenie.programArc`).
+Left exactly as it stood, because the byte-for-byte proof depends on not touching the Polish and
+because it is now the desk's to change; both translations follow the corpus's rendering of that
+note rather than this one's punctuation.
+
+**What is still owed.** The loop for this page, then `/obrazy`, `/kolofon` and the chrome, then the
+landing. `o-nas.ts` is still the one page holding prose in TypeScript (§6r's named debt) and the
+one page whose translations no editor can reach. The donation vault's terms still print Polish in
+every locale on every page carrying the island.
+
 ## §7 Traps
 
 - **`overflow-x: hidden` on the body kills every page-level `position: sticky`.** One axis `hidden`
@@ -1798,6 +1875,16 @@ but it is the one Polish text left on a finished English page.
 - **Astro scoped styles do not reach injected DOM**, and delegated clicks must capture, not bubble,
   because of the ClientRouter. Both are recorded project traps and both apply to any preview the
   desk renders using site markup.
+- **AN `HTML` COPY FIELD IS INJECTED DOM, which is the same trap wearing the desk's clothes.** Astro
+  scopes a rule by appending its cid attribute to EVERY compound, so `.hero h1 em` ships as
+  `h1[data-astro-cid-…] em[data-astro-cid-…]` — and the `<em>` inside a `set:html` field has no cid,
+  because the page handed the browser a string. The rule matches nothing, in silence, and the text
+  renders perfectly in the wrong colour or weight. It shipped three times: `/kontakt`'s title lost
+  its candle gold for the whole of G1–G4, so did the `<em>` in its channels intro, so did the
+  underline on both of its prose links, and `/o-nas`'s nine `<strong>` have been at the browser's
+  default weight since before the desk existed (§6v). Any rule reaching INTO a `…Html` field needs
+  `:global(…)` on the injected compound — and the check is the emitted CSS, not the source: grep
+  `dist/_astro/*.css` for the bare descendant. The build cannot tell you, and neither can the page.
 - **Alt text is translatable copy.** `gallery[].alt` is 621 words. It is not decoration; leaving it
   Polish on the English page is an accessibility regression, not a cosmetic one.
 - **A key named `pl` under a foreign original is the `*Pl` trap wearing a different hat.** The

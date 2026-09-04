@@ -33,6 +33,7 @@ import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 
 import { walkCopy } from "../src/i18n/content/copySpec.ts";
+import { KONCERTY_PAGE } from "../src/i18n/content/koncerty.ts";
 import { KONTAKT_PAGE } from "../src/i18n/content/kontakt.ts";
 import { guardSegments, localeRows } from "./segment.mjs";
 
@@ -54,7 +55,7 @@ const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
  *
  * @type {readonly PageSpec[]}
  */
-export const PAGE_SPECS = [KONTAKT_PAGE];
+export const PAGE_SPECS = [KONTAKT_PAGE, KONCERTY_PAGE];
 
 /**
  * Where a page's Polish prose lives, relative to `web/`. Mirrors the glob `lib/pageCopy` reads.

@@ -3,8 +3,20 @@
 # the order listed. `works` is a list of { title, year? } so the year keeps its own styling.
 # Note: titles/years are quoted because many contain commas (YAML flow-map separators).
 #
-# SEVEN IS THE COUNT OF THESE `span`s, XV to XXI inclusive, and every "siedem wieków" on the site
-# (/koncerty, /press, /o-nas, the landing plate) is that number. It is not the age of the oldest
+# THIS FILE HOLDS NO COPY. Composers, work titles and datings are names and structure, printed
+# unchanged in every locale. An era's heading and its span were here, in Polish, and moved to
+# `src/i18n/content/repertuar.ts` — two surfaces print them (this catalogue on /koncerty and the
+# landing's litany plate), a heading missing in one locale is a broken page rather than a page
+# waiting for review, and one fact may have only one home. Adding an era below without naming it
+# there fails the build, which is the only place that can say so.
+#
+# STILL POLISH IN EVERY LOCALE, named rather than buried: twelve `year` values carry a Polish
+# qualifier ("ok. 1727", "pocz. XVI w.", "aranż. współczesna", "trad. Oksytania"). A dating is
+# never copy on this site, so the fix is structural — the treatment `inscriptioRef` got in stage A
+# — and not a translation. See docs/web-copy-desk-2026-09.md.
+#
+# SEVEN IS THE COUNT OF THE `span`s in that module, XV to XXI inclusive, and every "siedem wieków"
+# on the site (/koncerty, /press, /o-nas, the landing plate) is that number. It is not the age of the oldest
 # thing sung: O Virgo Splendens comes from the XIV-c. Llibre Vermell, which sits under `tradycja`
 # — the one era whose span names no century, because an anonymous attribution has no dates to
 # span. So the XIV date belongs to that PIECE and is printed with it; the moment it is written
@@ -15,8 +27,6 @@
 
 - id: renesans
   order: 1
-  title: Renesans
-  span: XV–XVI w.
   entries:
     - composer: "Gibbons, Orlando"
       years: "1583–1625"
@@ -50,8 +60,6 @@
 
 - id: barok
   order: 2
-  title: Barok
-  span: XVII – poł. XVIII w.
   entries:
     - composer: "Allegri, Gregorio"
       years: "1582–1652"
@@ -85,8 +93,6 @@
 
 - id: klasycyzm-romantyzm
   order: 3
-  title: Klasycyzm i romantyzm
-  span: XVIII – pocz. XX w.
   entries:
     - composer: "Bairstow, Edward C."
       years: "1874–1946"
@@ -127,8 +133,6 @@
 
 - id: wspolczesnosc
   order: 4
-  title: Współczesność
-  span: XX–XXI w.
   entries:
     - composer: "Dubra, Rihards"
       years: "ur. 1964"
@@ -219,8 +223,6 @@
 
 - id: tradycja
   order: 5
-  title: Tradycja
-  span: anonim · ludowe
   entries:
     - composer: "Anonim / tradycyjne"
       works:

@@ -1,0 +1,114 @@
+# The editorial text of /koncerty — Polish, and Polish only.
+#
+# WHAT IS AND IS NOT HERE. This file holds what the PAGE says: the hero it opens with, the four
+# rules of the evening, the two section heads, the unwritten station and the closing invitation.
+# What a CONCERT says — its title, its essence, its dateline, its incipit, its facts — is
+# `src/content/concerts.yaml` read through the copy desk's overlay by concert key, exactly as
+# /koncerty/[id] reads it. The catalogue of composers under "Repertuar" is `repertoire.yaml`, which
+# holds no copy at all: an era's NAME is a label and lives in `src/i18n/content/repertuar.ts`,
+# because the landing's litany prints it too and one fact may have only one home.
+#
+# WHY THIS IS YAML AND NOT A TypeScript MODULE. Page prose arrives one field at a time, through
+# review, over months: the copy desk proposes, a reviewer accepts, `copy:apply` writes. That write
+# is the one operation in the whole system that can destroy hand-made text, and it already exists,
+# proven, for YAML (`copydesk/yamlEdit.mjs`, four reconstruction proofs). The page's CHROME went
+# the other way, to `src/i18n/content/koncerty.ts`, and the line between them is not "prose vs
+# label" but whether completeness can be demanded. See docs/web-copy-desk-2026-09.md §6r.
+#
+# TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under this page's desk
+# key — `page.koncerty.` + the dotted path below — and are read through `lib/copyOverlay`.
+#
+# NO TYPOGRAPHY. Write the prose plainly: `lib/typo.ts` pins Polish orphans, the "św." binding and
+# French punctuation spacing in the rendered HTML at build.
+
+meta:
+  title: "Koncerty Duchowe — VoctEnsemble"
+  # Count-free on purpose: the old "Sześć programów…" became a lie the moment a seventh concert
+  # lands. The "od … po …" framing stays hand-written so it reads natively in each language.
+  description: >-
+    Programy cyklu Koncerty Duchowe VoctEnsemble — od Kontemplacji Wcielenia po liturgię
+    św. Andrzeja Boboli — oraz repertuar siedmiu wieków muzyki sakralnej.
+
+intro:
+  # Vernacular gloss of the Latin rubric `Via`, which stands beside it unchanged in every locale.
+  eyebrow: "Droga koncertów"
+  # The title is set as two lines and the break is compositional, not grammatical — a translation
+  # decides its own split rather than reproducing this one word for word.
+  title1: "Koncerty"
+  title2Html: "<em>Duchowe.</em>"
+  lede: >-
+    Każdy wieczór tego cyklu ma osobną intencję — i osobny program, który
+    z niej wyrasta.
+  noteHtml: >-
+    To współczesna forma dawnych <em lang="fr">Concerts Spirituels</em> —
+    przejdź je po kolei, w stronę tego, który jeszcze się nie wydarzył.
+  scrollCue: "Wejdź na drogę"
+
+# The unwritten station — the Via's payoff. We promise no concert that does not exist; we say
+# plainly that the next one waits on patrons. Its numeral and its Latin name (`Nondum`) are drawn
+# by the page, not stored.
+next:
+  title: "Koncert bez daty."
+  meta: "Termin i przestrzeń wyznaczą darczyńcy"
+  essence: >-
+    Ten koncert istnieje już w partyturach i próbach — brakuje mu tylko przestrzeni,
+    w której wybrzmi. Darowizny przybliżają jego datę.
+  cta: "Pomóż mu wybrzmieć →"
+
+# The evening's four rules, read AFTER the walk like a programme-book essay. Documented practice
+# from the ensemble's own programme books, not an invented framework: the Jesuit introduction, the
+# "kolejność jest bardzo ważna" note, the printed request for silence, Ada Bystrzycka's light
+# direction.
+rites:
+  # Gloss of the French rubric `Concert spirituel`.
+  eyebrow: "Reguły wieczoru"
+  h2: "Wieczory prowadzą te same cztery reguły."
+  ledeHtml: >-
+    Gdy w XVIII-wiecznym Paryżu na czas świąt milkła opera, w sali pałacu Tuileries
+    grano <em lang="fr">Concerts Spirituels</em> — muzykę sakralną poza ramą nabożeństwa.
+    Wracamy do tej tradycji.
+  # `id` is what the desk keys a rule by, so reordering the four re-keys none of them. Their
+  # numerals are drawn from position and are not stored.
+  items:
+    - id: "slowo"
+      title: "Słowo"
+      text: >-
+        Zanim wejdzie muzyka, ktoś nazywa intencję wieczoru. Każdy koncert poprzedza krótkie
+        wprowadzenie — najczęściej jezuity, jak o. Jarek Naliwajko czy o. Przemysław Wysogląd.
+    - id: "porzadek"
+      title: "Porządek"
+      text: >-
+        Kolejność utworów jest częścią kompozycji. Przy każdym programie w notatkach zespołu
+        wraca ten sam dopisek: «kolejność jest bardzo ważna».
+    - id: "cisza"
+      title: "Cisza"
+      text: >-
+        Między utworami zostaje cisza. Prosimy o nią wprost, drukiem w programie — również
+        o tę po ostatnim akordzie.
+    - id: "swiatlo"
+      title: "Światło"
+      text: >-
+        Światło ma własną partyturę: ściemnienia i wejścia ustalamy razem z programem.
+        Nad reżyserią wielu wieczorów czuwała Ada Bystrzycka.
+
+repertoire:
+  # Gloss of the Latin rubric `Repertorium`. Seven is the count of the catalogue's era spans, XV to
+  # XXI inclusive — see the header of repertoire.yaml before changing this number anywhere.
+  eyebrow: "Siedem wieków"
+  h2: "Repertuar, z którego budujemy programy."
+  lede: >-
+    Renesansowa polifonia, barok i współczesny minimalizm stają obok siebie
+    w jednym wieczorze. Program układamy z napięcia między nimi.
+
+coda:
+  h2: "Śpiewaliśmy w bazylikach, katedrze i wiejskim kościele."
+  # Names buildings the site already renders elsewhere. A translation follows the rendering the
+  # corpus has already published rather than inventing a second name for one church.
+  lede: >-
+    Bazyliki NSPJ i Mariacka w Krakowie, św. Antoniego w Rybniku, archikatedra w Łodzi,
+    sanktuarium w Warszawie, dworek zdrojowy w Szczawnicy, kościół w Niedzicy. Za każdym
+    razem program układaliśmy od nowa — pod to miejsce i tę okazję. Przygotujemy koncert
+    duchowy, oprawę liturgii albo uroczystość.
+  contactLink: "Napisz do nas"
+  aboutLink: "Poznaj zespół"
+  supportLink: "Wesprzyj fundację"
