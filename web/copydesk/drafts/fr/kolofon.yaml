@@ -1,0 +1,105 @@
+# page.kolofon — FR draft (stage G7). Same flat shape as the overlay it will become.
+#
+# THE PAGE ONLY. The colophon prints four typefaces, six collaborators, six photographers, a board
+# of three and a registry of numbers, and none of them is here: a name and a number are the same in
+# every language. What is here is what a language renders — the vernacular tier of each Latin
+# rubric, the four sentences the page is set by, the materials, the type notes, and the roles.
+#
+# The foundation's MISSION is not here either: /kolofon reads /kontakt's `locus.mission`, so the
+# French it prints is the one already in this overlay under that key.
+#
+# THE RENDERINGS THE SITE HAS ALREADY PUBLISHED, followed rather than invented:
+#   Koncerty Duchowe        → Concerts Spirituels      (koncert.ts, o-nas.ts, concerts.fr.yaml)
+#   Fundacja (rubryka)      → La fondation             (page.kontakt.locus.eyebrow — one rubric,
+#                             one gloss, because `Fundatio` stands over both pages)
+#   Fotografie (rubryka)    → Photographies            (page.obrazy.colophon.eyebrow — same)
+#   Zarząd                  → Conseil                  (page.kontakt.voices.note, "Le conseil de
+#                             la Fondation VoctFoundation")
+#   archiwum zespołu        → archives de l'ensemble   (photoCredit CREDIT_LABELS.fr.ownArchive)
+#   Statut Fundacji …       → Statuts de la Fondation VoctFoundation  (ui.ts footer.statuteAria)
+#   Obrazy (materiał)       → Images                   (ui.ts footer.images)
+#   reżyseria świateł       → création lumière         (concert.9-kart.credits.2.role)
+#   realizacja              → réalisation              (concert.wcielenie.realizacja)
+#   skrzypce · organy       → violon · orgue           (concert.*.realizacja)
+#   Wołanie Gór · Hymn Poległym · Kontemplacja Wcielenia
+#                           → L'Appel des montagnes · Hymne aux morts ·
+#                             Contemplation de l'Incarnation   (concerts.fr.yaml titles)
+#
+# ONE WORD FOR ONE THING: `kroje pisma` is « caractères » in the rubric AND in the privacy row, so
+# the page does not name its own type twice. `fonty wariacyjne` stays « polices variables » — the
+# Polish itself uses two registers there (the material vs the technical feature) and French keeps
+# the same pair. `sans-serif` and `monospace` stay as the Polish keeps them: loanwords in a type
+# note, not Vox classifications to be turned into « linéale ».
+#
+# THE REGULA IS FOUR INSCRIPTIONS, not four sentences of prose: one clause each, no explanation
+# added. The page demonstrates every one of them, which is why none of them may be glossed here.
+#
+# NEVER TYPE A HARD SPACE before `; : ? !` — `lib/typo.ts` inserts the narrow no-break space at
+# build and a hand-typed one doubles up (glossary §3). Not the overlay:
+# `npm run copy:propose --locale fr` carries these in as proposals, which is the only door that
+# stamps the provenance hash the stale state is computed from.
+
+page.kolofon.meta.title: "Colophon — VoctEnsemble · VoctFoundation"
+page.kolofon.meta.description: "Le colophon du site de VoctEnsemble — caractères, construction, photographies, fondation, artisans."
+
+page.kolofon.hero.eyebrow: "Le sceau du métier"
+page.kolofon.hero.title: "Colophon."
+page.kolofon.hero.lede: "Une brève inscription à la fin d'un livre, où l'imprimeur consignait le lieu et la date, et qui avait publié l'ouvrage."
+
+page.kolofon.sigillum.eyebrow: "Le sceau de la visite"
+page.kolofon.sigillum.caption: "le même tant que vous êtes là · un autre à votre retour · disparu quand vous fermez cette page"
+
+page.kolofon.regula.eyebrow: "La règle"
+page.kolofon.regula.lead: "La page est composée selon quatre phrases."
+page.kolofon.regula.items.blado.text: "Tout attend, inscrit à l'encre pâle, avant d'être écrit tout à fait."
+page.kolofon.regula.items.liniowanie.text: "Le feuillet est réglé avant la première lettre."
+page.kolofon.regula.items.swiatlo.text: "C'est la lumière qui révèle la photographie."
+page.kolofon.regula.items.litera.text: "La lettre reste là où on l'a posée."
+
+page.kolofon.constructio.eyebrow: "Construction"
+page.kolofon.constructio.lead: "Le site est construit avec Astro : HTML statique, et les îlots React n'interviennent que là où un état côté client est nécessaire. Le CSS est écrit à la main, page par page."
+page.kolofon.constructio.items.framework.term: "Framework"
+page.kolofon.constructio.items.framework.value: "Astro · HTML statique + îlots React hydratés"
+page.kolofon.constructio.items.scroll.term: "Fluidité du défilement"
+page.kolofon.constructio.items.scroll.value: "Lenis · servi depuis notre domaine"
+page.kolofon.constructio.items.motion.term: "Animation"
+page.kolofon.constructio.items.motion.value: "CSS, polices variables et IntersectionObserver"
+page.kolofon.constructio.items.data.term: "Données"
+page.kolofon.constructio.items.data.value: "Astro Content Collections · YAML validé par Zod"
+page.kolofon.constructio.items.images.term: "Images"
+page.kolofon.constructio.items.images.value: "AVIF et WebP en plusieurs tailles, générés à la compilation"
+page.kolofon.constructio.items.video.term: "Vidéo"
+page.kolofon.constructio.items.video.value: "AV1 et H.264 · notre propre lecteur, fichiers servis depuis notre domaine"
+page.kolofon.constructio.items.analytics.term: "Mesure"
+page.kolofon.constructio.items.analytics.value: "Plausible · anonyme, sans cookies, serveurs dans l'UE"
+page.kolofon.constructio.items.privacy.term: "Confidentialité"
+page.kolofon.constructio.items.privacy.value: "tout le code et tous les caractères proviennent de ce domaine ; Plausible est la seule exception"
+
+page.kolofon.typi.eyebrow: "Caractères"
+page.kolofon.typi.items.cormorant.meta: "Christian Thalmann · une garalde pour les titres et le texte"
+page.kolofon.typi.items.cinzel.meta: "Natanael Gama · une capitale inscriptionnelle pour les rubriques et les chiffres romains"
+page.kolofon.typi.items.sans.meta: "Mike Abbink et Bold Monday pour IBM · un sans-serif pour la lecture"
+page.kolofon.typi.items.plex.meta: "Mike Abbink et Bold Monday pour IBM · un monospace pour les métadonnées et les dates"
+page.kolofon.typi.license: "Tous les quatre sous licence SIL Open Font License · servis depuis notre domaine en woff2"
+
+page.kolofon.imagines.eyebrow: "Photographies"
+page.kolofon.imagines.lead: "Photographies des Concerts Spirituels. Les photographies sans mention — ici comme dans tout le site — proviennent des archives de l'ensemble et appartiennent à la fondation."
+
+page.kolofon.fundatio.eyebrow: "La fondation"
+page.kolofon.fundatio.seatLabel: "Siège"
+page.kolofon.fundatio.boardLabel: "Conseil"
+page.kolofon.fundatio.statuteLabel: "Statuts"
+page.kolofon.fundatio.statuteLink: "Statuts de la Fondation VoctFoundation (PDF)"
+page.kolofon.fundatio.policyLabel: "Politique"
+
+page.kolofon.auctor.eyebrow: "Auteur"
+page.kolofon.auctor.role: "conception · code"
+
+page.kolofon.gratia.eyebrow: "Remerciements"
+page.kolofon.gratia.lead: "Celles et ceux dont le travail a fait, l'un après l'autre, les Concerts Spirituels — les noms des affiches et des programmes."
+page.kolofon.gratia.items.garbacz.role: "réalisation des enregistrements · Contemplation de l'Incarnation, 2024"
+page.kolofon.gratia.items.bystrzycka.role: "création lumière · certains concerts 2024–2025"
+page.kolofon.gratia.items.kuzma.role: "animation visuelle · certains concerts 2024–2025"
+page.kolofon.gratia.items.ropotan.role: "violon · L'Appel des montagnes, 2024"
+page.kolofon.gratia.items.organy.role: "orgue · Hymne aux morts, 2025"
+page.kolofon.gratia.items.carpediem.role: "coorganisation · certains événements"
