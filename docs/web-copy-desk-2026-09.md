@@ -321,7 +321,7 @@ French month/day capitalization does not survive naive formatting (see the proje
 | D3 | reviewer mode: old → new, accept / reject / edit further — **done, §6i** | the patch gets made |
 | E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 — **EN pass 1 done, §6j** | Florent's first sitting |
 | F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang — **done, §6o** | the pages exist |
-| G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing — **`kontakt` (§6r–§6u), `koncerty` (§6v, §6w) and `obrazy` (§6x) are through the whole loop and live in three locales; `kolofon`, the chrome and the landing are still Polish-only** | the rest of the corpus enters the desk |
+| G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing — **`kontakt` (§6r–§6u), `koncerty` (§6v, §6w), `obrazy` (§6x) and `kolofon` (§6y) are through the whole loop and live in three locales; the chrome and the landing are still Polish-only** | the rest of the corpus enters the desk |
 
 ### §6a Stage A — what shipped (2026-09-02)
 
@@ -1890,6 +1890,88 @@ prints a NAME or an ADDRESS, not a translation, and it belongs to whoever makes 
 this stage. And the four `lang="fr"` rows from §6w re-propose on every run until the sanitizer fix
 is deployed; they apply as no-ops in the meantime.
 
+### §6y Stage G7 — `/kolofon`, the page that is mostly other people's names (2026-09-04)
+
+The fourth page, and the one where the desk's share was decided almost entirely by accounting
+rather than by writing: **55 copy fields** standing among four typefaces, six collaborators, six
+photographers, a board of three, a registry of numbers and nine Latin rubrics — none of which is
+copy. A name and a number are the same in every language, and the Latin is the same in every
+language on purpose, so what a language actually renders here is the vernacular tier of each
+rubric, the four sentences the page is set by, the materials, the type notes and the roles.
+
+**§6w's owed item is discharged and did not need doing again.** The sanitizer fix reached
+production and `eea4fd6` applied the four `lang="fr"` rows; this stage's `copy:propose` reported
+`55 to propose · 504 already in the repository` in both locales, with nothing re-proposing.
+
+**What shipped.** `/kolofon` renders from a shared component in three locales:
+`src/content/pages/kolofon.yaml` (55 copy fields), `src/i18n/content/kolofon.ts` (schema, contract,
+chrome), `components/pages/KolofonPage.astro` and three one-line routes. `PAGE_SPECS` gained the
+page — **559 keys · 1 677 rows**. Both drafts went through §2's two passes, then the whole loop:
+`copy:sync` (165 rows created, 0 updated, 0 retired), `copy:propose --write` (55 + 55),
+`copy:apply --write` (110 translations, 0 Polish edits, 0 refused), `TRANSLATED_ROUTES`. **The proof
+the move changed no Polish: 1 724 words, in the same order, before and after**, with 19 markup lines
+differing and every one of them a difference moving a file is allowed to make.
+
+**Four decisions worth carrying.**
+
+- **One paragraph, one home — and the page READS the other page's field rather than holding its
+  own.** The foundation's mission stands verbatim on `/kontakt` and in `Fundatio` here, so
+  `KolofonPage` calls `pageCopy(KONTAKT_PAGE, lang).locus.mission`. Two desk rows carrying one
+  paragraph is exactly the drift §7 says the machinery cannot see: an editor moves one, nothing
+  marks the other stale, and the two pages state the foundation's purpose differently in the same
+  locale — which is precisely how `concert.wcielenie.programLede` shipped a French encore that no
+  longer existed (§6u). The price is real and is the point: an edit on `/kontakt` changes the
+  colophon, and `kontakt.ts`'s contract entry says so in capitals so that nobody discovers it from
+  a diff. This is the first cross-page read on the desk; the rule it sets is that a paragraph
+  printed twice is read twice, never written twice.
+- **A phrase that must agree with a computed date is chrome, not prose.** "Złożono i odbito 4
+  września 2026" takes the same test /obrazy's counted nouns took (§6x): French demands the article
+  before the date, Polish demands none, English demands neither, and nobody reviews a preposition.
+  So `impressio` is a `Record<Locale, …>` prefix and the date is formatted by `lib/dates` — the
+  site's one long-date formatter, which also retires a hand-rolled `Intl` call and gives the line
+  the register every dateline has. It is composed from the LOCAL calendar day rather than
+  `toISOString`, because a build after 22:00 in a positive-offset zone would otherwise date the
+  impression tomorrow.
+- **The frame count is /obrazy's declension, imported rather than restated.** `Imagines` prints
+  "8 fot." beside a photographer's name and the archive prints the same number three screens away
+  on another page; the file's own comment already demanded they agree, and this stage made the
+  agreement mechanical by calling `counted(n, OBRAZY_CHROME[lang].figure, lang)`. The evenings come
+  through the desk's overlay by concert key and the places through `i18n/content/miejsca`, so the
+  foreign colophon names each building and each evening as the rest of the site names them — with
+  no new translation written for any of it.
+- **The `&nbsp;` the markup carried does not follow the words into the corpus.** The page had
+  fifteen hand-pinned bindings; nine of them are made by `lib/typo.ts`'s own rules (every one-letter
+  Polish conjunction), and six are not ("bez cookies", "na licencji", "po stronie", "ta sama", "tu
+  jesteś", "gdy wrócisz"). Those six are given up rather than written into YAML as a literal U+00A0,
+  which an editor cannot see in a textarea and would delete without knowing. The precedent was
+  already set and is worth stating: `kontakt.yaml` holds the same mission sentence with "na cele
+  statutowe" unpinned. The corpus carries words; `lib/typo.ts` carries the breaks.
+
+**Two defects found by running the page, not by writing new code. Neither is in the copy desk.**
+
+- **Astro drops the whitespace between an expression and whatever stands next to it**, and the
+  word-stream proof is blind to exactly that. `{copy.fundatio.statuteLink} <span>↗</span>` shipped
+  the arrow hard against the document's name, and `{t.impressio} {impressioLabel}` shipped
+  "odbito4 września". The proof could not see either, because it replaces every tag with a space
+  before counting words — so "…(PDF)" and "↗" read as two words whether or not a space separated
+  them. It was the normalized MARKUP hunks that caught it, which is the whole reason §6r says the
+  hunks are read rather than counted. The fix is `{" "}` and one template literal; the lesson is
+  that a word-stream proof answers "did a word move", never "did a space".
+- **The nave card's fine print linked "Kolofon" — the Polish word, at the Polish URL — from every
+  English and French page on the site.** `ui.ts` has carried `footer.colophon` in three locales
+  since the chrome was translated; nothing read it, because that one link was hand-written before
+  `SiteChrome` learned `lang` and nobody grepped the callers afterwards. Same shape as the Polish
+  footer under ten English concert pages (§6u), one component further in, and the same lesson: when
+  a shared component learns `lang`, the literals already inside it are the thing to sweep.
+
+**What is still owed.** The chrome, then the landing. `o-nas.ts` is still the one page holding prose
+in TypeScript (§6r's named debt) and the one page whose translations no editor can reach. The
+donation vault's terms still print Polish in every locale on every page carrying the island.
+`dates[].venue` on the concert pages is still the fuller legal string in Polish (§6x). And one
+small divergence this page did not create and did not fix: the statute link's screen-reader note
+says "otwiera się w nowym oknie" where the footer's `statuteAria` says "nowej karcie" — one fact,
+two wordings, and changing the Polish was not this stage's to do.
+
 ## §7 Traps
 
 - **`overflow-x: hidden` on the body kills every page-level `position: sticky`.** One axis `hidden`
@@ -1912,6 +1994,18 @@ is deployed; they apply as no-ops in the meantime.
   for the migration and lethal afterwards: `ConcertPage` never passed it, and ten English and French
   concert pages shipped a Polish site map for the whole of stage F with nothing failing. When a
   shared component learns `lang`, grep every caller in the same pass; the build cannot tell you.
+  The other half is INSIDE the component: `SiteChrome` has taken `lang` since the chrome was
+  translated and still linked a hand-written `<a href="/kolofon">Kolofon</a>` from its nave card,
+  so every English and French page on the site offered the colophon in Polish (§6y). A literal that
+  was correct when it was typed does not announce itself when the file around it learns a locale.
+- **Astro drops the whitespace between an expression and whatever stands beside it**, and a
+  word-stream proof cannot see it. `{copy.link} <span>↗</span>` renders with the arrow hard against
+  the link, and `{t.impressio} {impressioLabel}` renders "odbito4 września" — silently, in a page
+  that builds and reads correctly everywhere else. Moving copy out of markup turns every text node
+  that sat beside a tag into exactly this shape, so it is a migration trap rather than an authoring
+  one. Write the space into the expression (`{" "}`, or one template literal), and read the
+  normalized markup hunks: a proof that strips tags to spaces before counting words answers "did a
+  word move", never "did a space".
 - **A watermark is written by an act, never by a visit.** The desk's reading marks are per page
   (`CopyScopeVisit`) and only the control at the foot of a page writes one. Stamping on arrival or
   on departure looks like a convenience and is a lie the surface cannot walk back: it declares a
