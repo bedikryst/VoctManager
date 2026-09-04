@@ -37,6 +37,7 @@ import { KOLOFON_PAGE } from "../src/i18n/content/kolofon.ts";
 import { KONCERTY_PAGE } from "../src/i18n/content/koncerty.ts";
 import { KONTAKT_PAGE } from "../src/i18n/content/kontakt.ts";
 import { NOT_FOUND_PAGE } from "../src/i18n/content/notFound.ts";
+import { ABOUT_PAGE } from "../src/i18n/content/o-nas.ts";
 import { OBRAZY_PAGE } from "../src/i18n/content/obrazy.ts";
 import { guardSegments, localeRows } from "./segment.mjs";
 
@@ -59,6 +60,7 @@ const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
  * @type {readonly PageSpec[]}
  */
 export const PAGE_SPECS = [
+  ABOUT_PAGE,
   KONTAKT_PAGE,
   KONCERTY_PAGE,
   OBRAZY_PAGE,

@@ -358,7 +358,12 @@ test("the accounting names an unclassified field rather than passing over it", a
   // The test above can only ever go green on a file somebody has already accounted for, so this is
   // what says it would go RED. Both shapes, because they reach `collectLeaves` differently: a plain
   // field arrives as its own path, a list field as one `[]` path standing for every entry.
-  const spec = PAGE_SPECS[0];
+  //
+  // The page is named rather than taken by position: the doctored paths below are `kontakt`'s own
+  // shape, so a registry that grew a page at the front would break this on a change that has
+  // nothing to do with the accounting it is testing.
+  const spec = PAGE_SPECS.find((s) => s.id === "kontakt");
+  assert.ok(spec, "kontakt is the page this test doctors");
   const data = /** @type {any} */ (await readPage(spec));
   const doctored = structuredClone(data);
   doctored.coda.farewell = "Do zobaczenia.";

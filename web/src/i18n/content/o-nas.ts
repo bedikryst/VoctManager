@@ -1,591 +1,447 @@
 /**
  * @file o-nas.ts
- * @description Per-locale copy for the About page (the reference translation). This is the model
- *  for the whole site's i18n: PAGE PROSE lives in a typed content module (one object per locale),
- *  the shared component (components/pages/AboutPage.astro) renders it, and the atomic chrome
- *  labels stay in i18n/ui.ts. Polish is the source of truth and is copied VERBATIM from the
- *  pre-i18n o-nas.astro — including the founder's-letter stanzas, which are quoted founding text,
- *  not copywriting (see the letter comment). English and French are literary translations that
- *  keep the contemplative register; proper names (people, venues, works, the ensemble/foundation)
- *  are never translated.
+ * @description Everything about /o-nas except its words: the shape its Polish prose must have
+ *  (zod, `.strict()`), the copy desk's key contract over that prose, and the page's chrome in all
+ *  three locales.
  *
- *  FIELD CONVENTION — two kinds of field:
- *   • plain text (…Text, labels, headings): author WITHOUT markup.
- *   • rich HTML (…Html): rendered with `set:html`, so inline <em>/<strong> are authored inline.
+ *  THIS FILE USED TO BE THE MODEL AND WAS THE LAST PAGE TO FOLLOW IT. It held three locales of
+ *  prose in TypeScript literals from before the desk existed, which made /o-nas the one page whose
+ *  translations no editor could reach: `copy:apply` splices a YAML scalar and rewrites an overlay,
+ *  and it can write a `.ts` file by no means at all. The prose now lives in
+ *  `src/content/pages/o-nas.yaml` with its translations in `src/content/pages.{en,fr}.yaml`,
+ *  falling back per field.
  *
- *  Neither kind carries typography. Write the prose plainly, in any locale: the build pass
- *  (lib/typo.ts, applied to the finished page) pins Polish orphans and French punctuation
- *  spacing in the rendered HTML, tags and URLs untouched. Spell `&nbsp;` here only for a binding
- *  those rules do not make.
+ *  THE LINE IS NOT "PROSE VS LABEL" but whether COMPLETENESS CAN BE DEMANDED. An aria-label has to
+ *  exist in every locale or the page is broken for somebody, and `Record<Locale, …>` makes the
+ *  compiler say so — so the ten landmark names live here and adding a section without naming it
+ *  cannot build. A paragraph is the opposite: it arrives one field at a time through review, and
+ *  the English page has to stand with English chrome around Polish prose for as long as that
+ *  takes. Reasoning in docs/web-copy-desk-2026-09.md §6r.
+ *
+ *  THIS FILE IS IMPORTED BY NODE, not only by Vite: the desk's extractor reads the contract below
+ *  straight from here (type-stripping, no build step), so that the key a translation is stored
+ *  under and the key the page looks up are the same expression. Keep it free of `?raw`,
+ *  `astro:assets` and anything else only a bundler can resolve.
+ *
+ *  Chrome carries no typography either — `lib/typo.ts` gives each locale its own at build.
  * @architecture Astro islands 2026
  * @module i18n/content/o-nas
  */
 
+import { z } from "astro/zod";
+
 import type { Locale } from "../config";
+import type { CopyEntry, PageCopySpec } from "./copySpec";
 
-/** Eyebrow = a locale-neutral Latin rubric + its vernacular gloss. */
-export interface Eyebrow {
-  readonly lat: string;
-  readonly label: string;
-}
+// ── The prose, as a shape ─────────────────────────────────────────────────────────────────────
 
-/** One "Co robimy" activity card. `cta`, when present, links to the concerts path (card 0 only). */
-export interface DoingCard {
-  readonly k: string;
-  readonly p: string;
-  readonly cta?: string;
-}
+/**
+ * `.strict()` throughout: a hand-added `en:` beside a Polish value would otherwise be dropped in
+ * silence by zod's default and the translation would simply never appear. Translations belong in
+ * the overlay, and this is what says so.
+ */
+const aboutCopySchema = z
+  .object({
+    meta: z.object({ title: z.string(), description: z.string() }).strict(),
+    hero: z
+      .object({
+        eyebrow: z.string(),
+        title1: z.string(),
+        title2Html: z.string(),
+        lede: z.string(),
+        scrollCue: z.string(),
+      })
+      .strict(),
+    letter: z
+      .object({
+        eyebrow: z.string(),
+        h2: z.string(),
+        leadHtml: z.string(),
+        stanzas: z
+          .array(z.object({ num: z.string(), label: z.string(), paraHtml: z.string() }).strict())
+          .min(1),
+        signatureMeta: z.string(),
+        portraitAlt: z.string(),
+        portraitCaption: z.string(),
+      })
+      .strict(),
+    ensemble: z
+      .object({
+        eyebrow: z.string(),
+        h2: z.string(),
+        lead: z.string(),
+        p2: z.string(),
+        p3Html: z.string(),
+        collabLabel: z.string(),
+        collabText: z.string(),
+      })
+      .strict(),
+    plate: z.object({ quote: z.string() }).strict(),
+    doings: z
+      .object({
+        eyebrow: z.string(),
+        h2: z.string(),
+        lead: z.string(),
+        cards: z
+          .array(
+            z
+              .object({
+                id: z.string(),
+                title: z.string(),
+                body: z.string(),
+                cta: z.string().optional(),
+              })
+              .strict(),
+          )
+          .min(1),
+      })
+      .strict(),
+    cantus: z
+      .object({
+        eyebrow: z.string(),
+        h2: z.string(),
+        lead: z.string(),
+        p2: z.string(),
+        p3: z.string(),
+        moreLink: z.string(),
+      })
+      .strict(),
+    milestones: z
+      .object({ eyebrow: z.string(), h2: z.string(), cardLink: z.string(), moreLink: z.string() })
+      .strict(),
+    foundation: z
+      .object({
+        eyebrow: z.string(),
+        h2: z.string(),
+        lead: z.string(),
+        p2Html: z.string(),
+        goals: z.array(z.object({ id: z.string(), text: z.string() }).strict()).min(1),
+        legalNote: z.string(),
+        statuteLabel: z.string(),
+      })
+      .strict(),
+    governance: z
+      .object({
+        eyebrow: z.string(),
+        h2: z.string(),
+        intro: z.string(),
+        roles: z.array(z.object({ id: z.string(), role: z.string() }).strict()).min(1),
+      })
+      .strict(),
+    cta: z
+      .object({
+        h2: z.string(),
+        lede: z.string(),
+        write: z.string(),
+        concerts: z.string(),
+        support: z.string(),
+      })
+      .strict(),
+  })
+  .strict();
 
-/** A board member's translatable field — the name and portrait are structural (kept in the
-    component); only the role line is translated. In board order.
-    Deliberately a domain, not a job description: a three-person board reads as an improvised
-    org chart the moment its cards start listing duties. */
-export interface BoardRole {
-  readonly role: string;
-}
+export type AboutCopy = z.infer<typeof aboutCopySchema>;
 
-export interface AboutCopy {
-  readonly meta: { readonly title: string; readonly description: string };
-  readonly hero: {
-    readonly aria: string;
-    readonly eyebrow: Eyebrow;
-    readonly titleLine1: string;
-    readonly titleLine2Html: string;
-    readonly ledeText: string;
-    readonly scrollCue: string;
-  };
-  readonly letter: {
-    readonly aria: string;
-    readonly eyebrow: Eyebrow;
-    readonly h2: string;
-    readonly leadHtml: string;
-    readonly stanzas: readonly { readonly lat: string; readonly label: string; readonly paraHtml: string }[];
-    readonly signatureMeta: string;
-    readonly portraitAlt: string;
-    readonly portraitCaption: string;
-  };
-  readonly ensemble: {
-    readonly aria: string;
-    readonly eyebrow: Eyebrow;
-    readonly h2: string;
-    readonly leadText: string;
-    readonly p2Text: string;
-    readonly p3Html: string;
-    readonly collabLabel: string;
-    readonly collabText: string;
-  };
-  readonly plate: { readonly aria: string; readonly quote: string };
-  readonly doings: {
-    readonly aria: string;
-    readonly eyebrow: Eyebrow;
-    readonly h2: string;
-    readonly leadText: string;
-    readonly cards: readonly DoingCard[];
-  };
-  readonly cantus: {
-    readonly aria: string;
-    readonly eyebrow: Eyebrow;
-    readonly h2: string;
-    readonly leadText: string;
-    readonly p2Text: string;
-    readonly p3Text: string;
-    readonly moreLink: string;
-  };
-  readonly milestones: {
-    readonly aria: string;
-    readonly eyebrow: Eyebrow;
-    readonly h2: string;
-    /** Per-row control; rendered only for concerts that actually have a detail page. */
-    readonly cardLink: string;
-    readonly moreLink: string;
-  };
-  readonly foundation: {
-    readonly aria: string;
-    readonly eyebrow: Eyebrow;
-    readonly h2: string;
-    readonly leadText: string;
-    readonly p2Html: string;
-    readonly goals: readonly string[];
-    readonly legalNote: string;
-    readonly statuteLabel: string;
-  };
-  readonly governance: {
-    readonly aria: string;
-    readonly eyebrow: Eyebrow;
-    readonly h2: string;
-    readonly intro: string;
-    readonly roles: readonly BoardRole[];
-  };
-  readonly cta: {
-    readonly aria: string;
-    readonly h2: string;
-    readonly p: string;
-    readonly write: string;
-    readonly concerts: string;
-    readonly support: string;
-  };
-}
+// ── The desk contract ─────────────────────────────────────────────────────────────────────────
 
-const pl: AboutCopy = {
-  meta: {
-    title: "O nas — VoctEnsemble | Fundacja VoctFoundation",
-    description:
-      "VoctEnsemble — krakowska formacja wokalna i zespół-rezydent Fundacji VoctFoundation. Koncerty duchowe, liturgie i muzyka sakralna od średniowiecznej polifonii po współczesny minimalizm.",
+/**
+ * DECLARATION ORDER IS READING ORDER — the desk renders this page in the sequence a reader meets
+ * it, hero to coda, because `order` is a counter over this list. Re-ordering it re-orders the desk
+ * and never changes a key.
+ */
+const ABOUT_CONTRACT: readonly CopyEntry[] = [
+  // ── Metadane ──────────────────────────────────────────────────────────────────────────────
+  {
+    kind: "field",
+    path: "meta.title",
+    label: "Metadane · tytuł strony",
+    note: "Read in a search result and a browser tab, not on the page. Keep the ensemble and the foundation in it.",
   },
-  hero: {
-    aria: "O nas",
-    eyebrow: { lat: "De nobis", label: "O nas" },
-    titleLine1: "Zaczęło się",
-    titleLine2Html: "od <em>tęsknoty.</em>",
-    ledeText:
-      "VoctEnsemble — krakowska formacja wokalna i zespół-rezydent Fundacji VoctFoundation. Zaczynamy od trzech pytań: skąd się wzięliśmy, co robimy i co śpiewamy.",
-    scrollCue: "Przeczytaj list",
+  { kind: "field", path: "meta.description", label: "Metadane · opis strony" },
+
+  // ── Hero ──────────────────────────────────────────────────────────────────────────────────
+  {
+    kind: "field",
+    path: "hero.eyebrow",
+    label: "Hero · rubryka",
+    note: "The vernacular of `De nobis`, which stands above it unchanged in every locale.",
   },
-  letter: {
-    aria: "List Florenta",
-    eyebrow: { lat: "Initium", label: "List założyciela" },
-    h2: "Skąd się wzięliśmy?",
-    // Names the writer and stops. The stanza rubrics below (Z tęsknoty … Kruchość) are the
-    // letter's own contents page, so a lead that counts or summarises them prints it twice.
-    leadHtml: "Odpowiada Florent de Bazelaire.",
-    // VERBATIM founding text — stanzas I/II from Florent's "Skąd się wzięliśmy?", III from the
-    // Kontemplacja Wcielenia booklet, IV from "Co śpiewamy?". Never rewrite the Polish; the
-    // EN/FR renderings translate it while keeping its meditative register.
-    stanzas: [
-      {
-        lat: "I",
-        label: "Z tęsknoty",
-        paraHtml:
-          "Z tęsknoty, natchnienia i marzenia. Jak anachoreci, w odosobnieniu, z daleka od zgiełku i muzyki zatęskniono za muzyką. Wizja muzyki jako powiew ducha, który przemienia świat swoją polifonią, otulając i przenikając do głębi człowieka — rezonując i znajdując miejsce w jego duszy niczym żywy organizm.",
-      },
-      {
-        lat: "II",
-        label: "W ciszy",
-        paraHtml:
-          "W ciszy rodzi się muzyka. W ciszy się kontempluje. Muzyka jest kontemplacją duszy w czasie. Tak powstał Voct — z ciszy i kontemplacji.",
-      },
-      {
-        lat: "III",
-        label: "Wymiana",
-        paraHtml:
-          "Wymiana myśli i próba zanurzenia się w interpretację drugiego człowieka pobudzała inwencję muzyczną, otwierając na nowe ścieżki interpretacyjne. Interpretacja opiera się na wymianie ludzkich umiejętności i intuicji, które dynamicznie splatają się, by odkryć głębie ukryte w utworze.",
-      },
-      {
-        lat: "IV",
-        label: "Kruchość",
-        paraHtml:
-          "Nie czulibyśmy się sobą, śpiewając muzykę, która nie obejmowałaby całego człowieka, dotykała jego głębi i próbowała urzec go pięknem mimo jego złożoności i kruchości.",
-      },
-    ],
-    signatureMeta: "kierownictwo artystyczne · 2024",
-    portraitAlt: "Florent de Bazelaire prowadzący VoctEnsemble",
-    portraitCaption: "Florent de Bazelaire · kierownictwo artystyczne",
+  {
+    kind: "field",
+    path: "hero.title1",
+    label: "Hero · tytuł, wers 1",
+    note: "The title is set as two lines and the break is compositional: split the sentence where the target language wants it, not where Polish did.",
   },
-  ensemble: {
-    aria: "Kim jesteśmy",
-    eyebrow: { lat: "Voces", label: "Zespół" },
-    h2: "Krakowski zespół wokalny prowadzony jak kameralna wspólnota.",
-    leadText:
-      "Na scenie spotyka się zwykle dwanaście głosów — profesjonalnych i pre-profesjonalnych muzyków. W zależności od utworu śpiewamy w czwórkę, w ósemkę albo pełnym składem.",
-    p2Text:
-      "Skład jest żywy: wokół stałego rdzenia obsada zmienia się z projektu na projekt — głosy dobieramy do programu i do przestrzeni, w której ma zabrzmieć.",
-    p3Html:
-      "Pod kierownictwem Florenta de Bazelaire budujemy brzmienie, w którym dyscyplina i czułość trzymają się razem. Nazwa łączy <em>voces</em> (głosy), <em>octo</em> (osiem) i <em>ensemble</em> — obietnicę głosów, które słuchają siebie nawzajem.",
-    collabLabel: "Współpraca",
-    collabText:
-      "Na scenie i przy realizacjach spotykamy się m.in. z reżyserką świateł Adą Bystrzycką, realizatorem dźwięku Jakubem Garbaczem (Ars Sonora Studio), Sebastianem Kuźmą (animacja wizualna) i skrzypkiem Radu Ropotanem; instytucjonalnie — z Fundacją Carpe Diem i Ośrodkiem Kultury Norwida w krakowskich Mistrzejowicach.",
+  {
+    kind: "field",
+    path: "hero.title2Html",
+    label: "Hero · tytuł, wers 2",
+    note: "The emphasised word takes the candle gold; it is the page's own subject, so the emphasis moves with the sense rather than staying on the last word.",
   },
-  plate: { aria: "Idea", quote: "Nade wszystko, dzielimy się." },
-  doings: {
-    aria: "Co robimy",
-    eyebrow: { lat: "Operatio", label: "Co robimy?" },
-    h2: "Koncerty duchowe, liturgia, ważne uroczystości.",
-    leadText:
-      "Głównym nurtem są autorskie Koncerty Duchowe — współczesna forma dawnych Concerts Spirituels. Poza nimi śpiewamy w liturgii: mszach, świętach i uroczystościach, na które nas zapraszają.",
-    cards: [
-      {
-        k: "Koncerty Duchowe",
-        p: "Autorski cykl — współczesna forma dawnych Concerts Spirituels. Wieczór po wieczorze, wokół osobnych intencji.",
-        cta: "Zobacz drogę koncertów →",
-      },
-      {
-        k: "Liturgia i uroczystości",
-        // Celebrant and homilist stay out: the milestones register lower on this page
-        // prints them in full, from concerts.yaml. The card names the occasion, not the rite.
-        p: "Oprawa mszy i kościelnych świąt. Ostatnio — liturgia w uroczystość św. Andrzeja Boboli w Warszawie, w 100-lecie polskich prowincji jezuickich.",
-      },
-      {
-        k: "Dialog tradycji",
-        p: "Śpiewaliśmy podczas 28. Dnia Judaizmu w Kościele katolickim, w krakowskiej Kaplicy św. Doroty, i wystąpiliśmy w Synagodze Tempel — muzyka jako miejsce spotkania.",
-      },
-      {
-        k: "Śluby i sakramenty",
-        p: "Oprawialiśmy liturgie ślubne w Kolegiacie św. Anny w Krakowie i w Opactwie Benedyktynów w Tyńcu. Jesteśmy dyspozycyjni dla takich uroczystości.",
-      },
+  { kind: "field", path: "hero.lede", label: "Hero · lede" },
+  { kind: "field", path: "hero.scrollCue", label: "Hero · zachęta" },
+
+  // ── List założyciela ──────────────────────────────────────────────────────────────────────
+  { kind: "field", path: "letter.eyebrow", label: "List · rubryka", note: "The vernacular of `Initium`." },
+  { kind: "field", path: "letter.h2", label: "List · nagłówek" },
+  {
+    kind: "field",
+    path: "letter.leadHtml",
+    label: "List · zapowiedź",
+    note: "Names the writer and stops. The four stanza rubrics under it are the letter's own contents page, so a lead that summarises them prints it twice.",
+  },
+  {
+    kind: "list",
+    path: "letter.stanzas",
+    keyBy: "num",
+    label: "Strofa",
+    note: "VERBATIM FOUNDING TEXT — the Polish is quoted from Florent's own writing, not written for the site. It is here so a translation can be reviewed against it, never so the Polish can be rewritten. A rendering keeps the meditative register and follows the sentence.",
+    fields: [
+      { path: "label", label: "rubryka" },
+      { path: "paraHtml", label: "strofa" },
     ],
   },
-  cantus: {
-    aria: "Co śpiewamy",
-    eyebrow: { lat: "Cantus", label: "Co śpiewamy?" },
-    h2: "Muzyka jako odbicie duszy słowa.",
-    leadText:
-      "Dzielimy się śpiewem i przemyślanymi narracjami — utkanymi z utworów, w których muzyka i słowo są swoimi lustrzanymi odbiciami.",
-    p2Text:
-      "Interesuje nas świat: widzialny — przyroda i całe stworzenie — oraz ten niematerialny, którego szukamy i próbujemy zrozumieć. Muzyka sakralna jest w tej wędrówce dobrą towarzyszką.",
-    p3Text:
-      "Czerpie z geniuszu ludzkiego, z Biblii i z mądrości przodków, po którą kompozytorzy wciąż sięgają, by wyrazić na wskroś osobisty sposób to, co przeżywają i co ich najbardziej dotyka.",
-    // Not "od Llibre Vermell": that manuscript is XIV-c. and the seven counted here are the
-    // catalogue's era spans, XV to XXI (src/content/repertoire.yaml). The two together said eight.
-    moreLink: "Repertuar siedmiu wieków — od renesansowej polifonii po współczesność →",
+  {
+    kind: "field",
+    path: "letter.signatureMeta",
+    label: "List · podpis",
+    note: "Under the signature, which is the name itself and is structural. The year is when the letter was written — a fixed fact with no structured date behind it, so it stays inside the string.",
   },
-  milestones: {
-    aria: "Droga koncertów",
-    eyebrow: { lat: "Via", label: "Co już wybrzmiało" },
-    h2: "Krótka droga, ale już zapisana miejscami i intencjami.",
-    cardLink: "Karta koncertu →",
-    moreLink: "Zobacz repertuar i szczegóły koncertów →",
+  {
+    kind: "field",
+    path: "letter.portraitAlt",
+    label: "List · opis portretu",
+    note: "Alt text, read aloud rather than seen. Translate it: leaving it Polish on the English page is an accessibility regression, not a cosmetic one.",
   },
-  foundation: {
-    aria: "Fundacja VoctFoundation",
-    eyebrow: { lat: "Fundatio", label: "Fundacja" },
-    h2: "Forma, która pozwala muzyce mieć ciągłość.",
-    leadText:
-      "VoctFoundation jest prawnym i organizacyjnym zapleczem działalności artystycznej. To dzięki niej zespół może myśleć nie tylko o kolejnym koncercie, ale o archiwum, edukacji, produkcji i długim trwaniu repertuaru.",
-    p2Html:
-      "Statutowo Fundacja działa w obszarze <strong>kultury, sztuki, ochrony dóbr kultury i dziedzictwa narodowego</strong>. Może prowadzić projekty artystyczne i interdyscyplinarne, utrwalać nagrania, wspierać młodych artystów oraz działać przez stały zespół artystyczny w formule zespołu-rezydenta.",
-    goals: [
-      "Twórczość muzyczna: produkcja, koprodukcja, organizacja i prezentacja projektów w kraju i za granicą.",
-      "Dziedzictwo: dokumentowanie, archiwizowanie i udostępnianie muzyki oraz praktyk wykonawczych.",
-      "Edukacja i dostępność: popularyzowanie kultury oraz wspieranie uczestnictwa w niej.",
-      "Młodzi artyści: rozwój, promocja, mentoring, rezydencje i projekty wykonawcze.",
-      "Współpraca: praca z artystami, instytucjami kultury, uczelniami, mediami i organizacjami społecznymi.",
+  { kind: "field", path: "letter.portraitCaption", label: "List · podpis portretu" },
+
+  // ── Zespół ────────────────────────────────────────────────────────────────────────────────
+  { kind: "field", path: "ensemble.eyebrow", label: "Zespół · rubryka", note: "The vernacular of `Voces`." },
+  { kind: "field", path: "ensemble.h2", label: "Zespół · nagłówek" },
+  { kind: "field", path: "ensemble.lead", label: "Zespół · lead" },
+  { kind: "field", path: "ensemble.p2", label: "Zespół · akapit 2" },
+  {
+    kind: "field",
+    path: "ensemble.p3Html",
+    label: "Zespół · akapit 3",
+    note: "`voces`, `octo` and `ensemble` are the name's own etymology and stay themselves in every locale; only the glosses in brackets after them are translated.",
+  },
+  { kind: "field", path: "ensemble.collabLabel", label: "Zespół · etykieta współpracy" },
+  {
+    kind: "field",
+    path: "ensemble.collabText",
+    label: "Zespół · współpraca",
+    note: "Every person and institution here is a proper name and stays itself. The ROLES beside them are what a language renders, and /kolofon publishes the same ones in its credits — keep the two saying one thing.",
+  },
+
+  // ── Tablica ───────────────────────────────────────────────────────────────────────────────
+  {
+    kind: "field",
+    path: "plate.quote",
+    label: "Tablica · cytat",
+    note: "Set alone over a photograph at up to 64px, four words in Polish. A rendering that needs a subordinate clause is not this line.",
+  },
+
+  // ── Co robimy ─────────────────────────────────────────────────────────────────────────────
+  { kind: "field", path: "doings.eyebrow", label: "Co robimy · rubryka", note: "The vernacular of `Operatio`." },
+  { kind: "field", path: "doings.h2", label: "Co robimy · nagłówek" },
+  {
+    kind: "field",
+    path: "doings.lead",
+    label: "Co robimy · lead",
+    note: "`Concerts Spirituels` is the French name of the historical form and stays itself. /koncerty italicises it and marks it `lang=\"fr\"`; this field is plain text and cannot, so it simply stands unmarked.",
+  },
+  {
+    kind: "list",
+    path: "doings.cards",
+    keyBy: "id",
+    label: "Karta",
+    note: "Each card names a category and then one real occasion. The example is what keeps the block from reading as a services list — keep the named event, and name it as the rest of the site names it.",
+    fields: [
+      { path: "title", label: "nagłówek" },
+      { path: "body", label: "opis" },
+      { path: "cta", label: "odnośnik", note: "Keep the trailing arrow." },
     ],
-    legalNote:
-      "Dochody Fundacji przeznaczane są w całości na realizację celów statutowych. Nie podlegają podziałowi między fundatora, członków organów ani osoby związane z Fundacją; działalność gospodarcza, jeżeli jest prowadzona, pozostaje pomocnicza wobec misji statutowej.",
-    statuteLabel: "Statut fundacji ↗",
   },
-  governance: {
-    aria: "Zarząd fundacji",
-    eyebrow: { lat: "Consilium", label: "Zarząd" },
-    h2: "Odpowiedzialność rozpisana na trzy głosy.",
-    intro:
-      "Kierunek artystyczny wyznacza jedna osoba, decyzje fundacji zapadają większością głosów — tak stanowi statut. Ci sami ludzie stoją potem za kulisami w dniu koncertu.",
-    roles: [
-      { role: "Kierownictwo artystyczne · dyrygent" },
-      { role: "Organizacja · komunikacja" },
-      { role: "Technologia · narzędzia" },
-    ],
+
+  // ── Co śpiewamy ───────────────────────────────────────────────────────────────────────────
+  { kind: "field", path: "cantus.eyebrow", label: "Co śpiewamy · rubryka", note: "The vernacular of `Cantus`." },
+  { kind: "field", path: "cantus.h2", label: "Co śpiewamy · nagłówek" },
+  { kind: "field", path: "cantus.lead", label: "Co śpiewamy · lead" },
+  { kind: "field", path: "cantus.p2", label: "Co śpiewamy · akapit 2" },
+  { kind: "field", path: "cantus.p3", label: "Co śpiewamy · akapit 3" },
+  {
+    kind: "field",
+    path: "cantus.moreLink",
+    label: "Co śpiewamy · odnośnik",
+    note: "Seven centuries is the repertoire catalogue's span, and /koncerty prints the same count as its own rubric — one span, one number, both pages. Keep the trailing arrow.",
   },
-  cta: {
-    aria: "Zaproszenie do kontaktu",
-    h2: "Zaproście nas do przestrzeni, która potrzebuje głosu.",
-    p: "Koncert duchowy, oprawa liturgii, ważna uroczystość, mecenat albo współpraca artystyczna. Czekamy na Wasz kontakt.",
-    write: "Napisz do nas",
-    concerts: "Koncerty Duchowe",
-    support: "Wesprzyj fundację",
+
+  // ── Co już wybrzmiało ─────────────────────────────────────────────────────────────────────
+  {
+    kind: "field",
+    path: "milestones.eyebrow",
+    label: "Droga · rubryka",
+    note: "The vernacular of `Via`. The rows under it are the concerts' own words and are on the desk under their own scopes.",
   },
+  { kind: "field", path: "milestones.h2", label: "Droga · nagłówek" },
+  {
+    kind: "field",
+    path: "milestones.cardLink",
+    label: "Droga · odnośnik wiersza",
+    note: "One control per row, five rows: it names the destination and the component appends the concert's own title visually hidden. Keep the trailing arrow.",
+  },
+  { kind: "field", path: "milestones.moreLink", label: "Droga · odnośnik", note: "Keep the trailing arrow." },
+
+  // ── Fundacja ──────────────────────────────────────────────────────────────────────────────
+  {
+    kind: "field",
+    path: "foundation.eyebrow",
+    label: "Fundacja · rubryka",
+    note: "The vernacular of `Fundatio` — the same rubric /kontakt and /kolofon carry, so one gloss serves all three and none of them may invent a second.",
+  },
+  { kind: "field", path: "foundation.h2", label: "Fundacja · nagłówek" },
+  {
+    kind: "field",
+    path: "foundation.lead",
+    label: "Fundacja · czym jest",
+    note: "THE FULL ACCOUNT. /kontakt carries a two-sentence summary of the same fact (`page.kontakt.locus.mission`) — different registers for different surfaces, like `about.blurb` beside `essence`. They may read differently; they may never say different things.",
+  },
+  {
+    kind: "field",
+    path: "foundation.p2Html",
+    label: "Fundacja · zakres statutowy",
+    note: "The emphasised span is the statute's own field of activity, quoted from the founding document. Render it in the terms the jurisdiction uses, not word for word.",
+  },
+  {
+    kind: "list",
+    path: "foundation.goals",
+    keyBy: "id",
+    label: "Cel statutowy",
+    note: "Category, colon, then what the Foundation may do inside it — a shape the statute itself uses and a rendering should keep. The component numbers them.",
+    fields: [{ path: "text", label: "treść" }],
+  },
+  {
+    kind: "field",
+    path: "foundation.legalNote",
+    label: "Fundacja · nota prawna",
+    note: "The non-distribution clause, in the statute's own terms. /kontakt states the same fact in one clause; this is the full form.",
+  },
+  {
+    kind: "field",
+    path: "foundation.statuteLabel",
+    label: "Fundacja · statut",
+    note: "Names the same PDF the footer and /kolofon name; the three may read differently, they may not name two documents. The trailing arrow is part of the label.",
+  },
+
+  // ── Zarząd ────────────────────────────────────────────────────────────────────────────────
+  {
+    kind: "field",
+    path: "governance.eyebrow",
+    label: "Zarząd · rubryka",
+    note: "The vernacular of `Consilium`. The site already publishes this word — /kontakt's signature note and /kolofon's registry margin both name the board.",
+  },
+  { kind: "field", path: "governance.h2", label: "Zarząd · nagłówek" },
+  { kind: "field", path: "governance.intro", label: "Zarząd · wprowadzenie" },
+  {
+    kind: "list",
+    path: "governance.roles",
+    keyBy: "id",
+    label: "Rola",
+    note: "A DOMAIN, NOT A JOB DESCRIPTION: a three-person board reads as an improvised org chart the moment its cards start listing duties. Two words each, and the middot is the site's own separator rather than punctuation to translate.",
+    fields: [{ path: "role", label: "rola" }],
+  },
+
+  // ── Zaproszenie ───────────────────────────────────────────────────────────────────────────
+  { kind: "field", path: "cta.h2", label: "Zaproszenie · nagłówek" },
+  { kind: "field", path: "cta.lede", label: "Zaproszenie · zdanie" },
+  {
+    kind: "field",
+    path: "cta.write",
+    label: "Zaproszenie · przycisk kontaktu",
+    note: "Three buttons, and the chrome names two of the same destinations more briefly (`ui.ts` nav). Keep the register; do not copy the shorter labels.",
+  },
+  { kind: "field", path: "cta.concerts", label: "Zaproszenie · przycisk koncertów" },
+  { kind: "field", path: "cta.support", label: "Zaproszenie · przycisk wsparcia" },
+];
+
+/** Everything else in `o-nas.yaml`, with the reason it is not text a reader is meant to read. */
+const ABOUT_NOT_COPY: Readonly<Record<string, string>> = {
+  "letter.stanzas[].num": "a Roman numeral — the stanza's number, the same in every language, and its key part",
+  "doings.cards[].id": "identity — it is this card's key part",
+  "foundation.goals[].id": "identity — it is this goal's key part",
+  "governance.roles[].id":
+    "identity — it is this role's key part, and the component pairs the portrait to it",
 };
 
-const en: AboutCopy = {
-  meta: {
-    title: "About — VoctEnsemble | VoctFoundation",
-    description:
-      "VoctEnsemble — a Kraków vocal ensemble and the resident ensemble of the VoctFoundation. Spiritual concerts, liturgies and sacred music from medieval polyphony to contemporary minimalism.",
-  },
-  hero: {
-    aria: "About us",
-    eyebrow: { lat: "De nobis", label: "About" },
-    titleLine1: "It began",
-    titleLine2Html: "with <em>longing.</em>",
-    ledeText:
-      "VoctEnsemble — a Kraków vocal ensemble and the resident ensemble of the VoctFoundation. We begin with three questions: where we came from, what we do, and what we sing.",
-    scrollCue: "Read the letter",
-  },
-  letter: {
-    aria: "Florent's letter",
-    eyebrow: { lat: "Initium", label: "Founder's letter" },
-    h2: "Where did we come from?",
-    leadHtml: "Florent de Bazelaire answers.",
-    stanzas: [
-      {
-        lat: "I",
-        label: "Out of longing",
-        paraHtml:
-          "Out of longing, inspiration and a dream. Like anchorites, in seclusion, far from the clamour and from music, a longing for music was born. A vision of music as a breath of the spirit that transforms the world with its polyphony, enfolding a person and reaching into their depths — resonating and finding a place in the soul like a living organism.",
-      },
-      {
-        lat: "II",
-        label: "In silence",
-        paraHtml:
-          "In silence, music is born. In silence, one contemplates. Music is the soul's contemplation in time. So Voct came to be — out of silence and contemplation.",
-      },
-      {
-        lat: "III",
-        label: "Exchange",
-        paraHtml:
-          "The exchange of thought, and the attempt to immerse oneself in another person's reading, kindled musical invention and opened new paths of interpretation. Interpretation rests on an exchange of human skills and intuitions that weave together, dynamically, to uncover the depths hidden within a work.",
-      },
-      {
-        lat: "IV",
-        label: "Fragility",
-        paraHtml:
-          "We would not feel ourselves singing music that did not embrace the whole person, touch their depths, and try to enthral them with beauty in spite of their complexity and fragility.",
-      },
-    ],
-    signatureMeta: "artistic direction · 2024",
-    portraitAlt: "Florent de Bazelaire conducting VoctEnsemble",
-    portraitCaption: "Florent de Bazelaire · artistic direction",
-  },
-  ensemble: {
-    aria: "Who we are",
-    eyebrow: { lat: "Voces", label: "The ensemble" },
-    h2: "A Kraków vocal ensemble led as a chamber community.",
-    leadText:
-      "On stage there are usually twelve voices — professional and pre-professional musicians. Depending on the piece, we sing as a quartet, as an octet, or at full strength.",
-    p2Text:
-      "The line-up is alive: around a stable core, the roster changes from project to project — we choose the voices to fit the programme and the space it has to sound in.",
-    p3Html:
-      "Under the direction of Florent de Bazelaire we build a sound in which discipline and tenderness hold together. The name joins <em>voces</em> (voices), <em>octo</em> (eight) and <em>ensemble</em> — a promise of voices that listen to one another.",
-    collabLabel: "Collaboration",
-    collabText:
-      "On stage and in production we work with, among others, lighting director Ada Bystrzycka, sound engineer Jakub Garbacz (Ars Sonora Studio), Sebastian Kuźma (visual animation) and violinist Radu Ropotan; and, institutionally, with the Carpe Diem Foundation and the Norwid Cultural Centre in Kraków's Mistrzejowice district.",
-  },
-  plate: { aria: "Idea", quote: "Above all, we share." },
-  doings: {
-    aria: "What we do",
-    eyebrow: { lat: "Operatio", label: "What we do" },
-    h2: "Spiritual concerts, liturgy, occasions that matter.",
-    leadText:
-      "Our main current is the Spiritual Concerts — a contemporary form of the old Concerts Spirituels. Beyond them we sing in the liturgy: Masses, feasts and celebrations we are invited to.",
-    cards: [
-      {
-        k: "Spiritual Concerts",
-        p: "Our own cycle — a contemporary form of the old Concerts Spirituels. Evening after evening, built around separate intentions.",
-        cta: "See the path of the concerts →",
-      },
-      {
-        k: "Liturgy and celebrations",
-        p: "Music for Mass and church feasts. Most recently — the liturgy for the feast of St Andrew Bobola in Warsaw, marking the centenary of the Polish Jesuit provinces.",
-      },
-      {
-        k: "A dialogue of traditions",
-        p: "We sang during the 28th Day of Judaism in the Catholic Church, in Kraków's Chapel of St Dorothy, and performed at the Tempel Synagogue — music as a meeting place.",
-      },
-      {
-        k: "Weddings and sacraments",
-        p: "We have provided music for wedding liturgies at St Anne's Collegiate Church in Kraków and at the Benedictine Abbey in Tyniec. We are available for such occasions.",
-      },
-    ],
-  },
-  cantus: {
-    aria: "What we sing",
-    eyebrow: { lat: "Cantus", label: "What we sing" },
-    h2: "Music as a reflection of the soul of the word.",
-    leadText:
-      "We share song and carefully considered narratives — woven from works in which music and word are each other's mirror image.",
-    p2Text:
-      "The world interests us: the visible one — nature and all creation — and the immaterial one we seek and try to understand. Sacred music is a good companion on that journey.",
-    p3Text:
-      "It draws on human genius, on the Bible and on the wisdom of our forebears — to which composers still reach in order to express, in a wholly personal way, what they live through and what touches them most.",
-    moreLink: "Seven centuries of repertoire — from Renaissance polyphony to the present day →",
-  },
-  milestones: {
-    aria: "The path of the concerts",
-    eyebrow: { lat: "Via", label: "What has sounded" },
-    h2: "A short road, but already marked by places and intentions.",
-    cardLink: "Concert page →",
-    moreLink: "See the repertoire and concert details →",
-  },
-  foundation: {
-    aria: "The VoctFoundation",
-    eyebrow: { lat: "Fundatio", label: "The foundation" },
-    h2: "A form that lets music endure.",
-    leadText:
-      "The VoctFoundation is the legal and organisational backbone of the artistic work. It is what lets the ensemble think not only about the next concert, but about an archive, education, production and the long life of the repertoire.",
-    p2Html:
-      "By its statute, the Foundation works in the field of <strong>culture, the arts, and the protection of cultural goods and national heritage</strong>. It may run artistic and interdisciplinary projects, make recordings, support young artists, and act through a permanent artistic ensemble in a resident-ensemble arrangement.",
-    goals: [
-      "Musical creation: production, co-production, organisation and presentation of projects at home and abroad.",
-      "Heritage: documenting, archiving and sharing music and performance practice.",
-      "Education and access: fostering culture and supporting participation in it.",
-      "Young artists: development, promotion, mentoring, residencies and performance projects.",
-      "Collaboration: working with artists, cultural institutions, universities, media and civil-society organisations.",
-    ],
-    legalNote:
-      "The Foundation's income is devoted entirely to its statutory purposes. It is not distributed among the founder, the members of its bodies, or persons connected with the Foundation; any economic activity, if conducted, remains ancillary to the statutory mission.",
-    statuteLabel: "Foundation statute ↗",
-  },
-  governance: {
-    aria: "The foundation's board",
-    eyebrow: { lat: "Consilium", label: "The board" },
-    h2: "Responsibility scored for three voices.",
-    intro:
-      "Artistic direction is set by one person; the foundation's decisions are taken by majority vote — that is what the statute provides. The same people then stand backstage on the night of the concert.",
-    roles: [
-      { role: "Artistic direction · conductor" },
-      { role: "Organisation · communication" },
-      { role: "Technology · tools" },
-    ],
-  },
-  cta: {
-    aria: "An invitation to get in touch",
-    h2: "Invite us into a space that needs a voice.",
-    p: "A spiritual concert, music for a liturgy, an important celebration, patronage or an artistic collaboration. We look forward to hearing from you.",
-    write: "Write to us",
-    concerts: "Spiritual Concerts",
-    support: "Support the foundation",
-  },
+/** What `lib/pageCopy` needs to read this page, and the extractor to key it. */
+export const ABOUT_PAGE: PageCopySpec<AboutCopy> = {
+  id: "o-nas",
+  label: "O nas",
+  schema: aboutCopySchema,
+  contract: ABOUT_CONTRACT,
+  notCopy: ABOUT_NOT_COPY,
 };
 
-const fr: AboutCopy = {
-  meta: {
-    title: "À propos — VoctEnsemble | Fondation VoctFoundation",
-    description:
-      "VoctEnsemble — un ensemble vocal cracovien et l'ensemble en résidence de la Fondation VoctFoundation. Concerts spirituels, liturgies et musique sacrée, de la polyphonie médiévale au minimalisme contemporain.",
+// ── The chrome ────────────────────────────────────────────────────────────────────────────────
+
+export interface AboutChrome {
+  /** Landmark names for the ten sections. They are read instead of the heading, so they name the
+      section rather than repeat its first line. */
+  readonly heroAria: string;
+  readonly letterAria: string;
+  readonly ensembleAria: string;
+  readonly plateAria: string;
+  readonly doingsAria: string;
+  readonly cantusAria: string;
+  readonly milestonesAria: string;
+  readonly foundationAria: string;
+  readonly governanceAria: string;
+  readonly ctaAria: string;
+  /** The statutory-purposes list, which sits INSIDE the foundation section and needs a name of its
+      own: sharing the section's would give a screen reader two things called the same thing on one
+      screen, with no way to tell which one was just entered. */
+  readonly goalsAria: string;
+}
+
+export const ABOUT_CHROME: Record<Locale, AboutChrome> = {
+  pl: {
+    heroAria: "O nas",
+    letterAria: "List Florenta",
+    ensembleAria: "Kim jesteśmy",
+    plateAria: "Idea",
+    doingsAria: "Co robimy",
+    cantusAria: "Co śpiewamy",
+    milestonesAria: "Droga koncertów",
+    foundationAria: "Fundacja VoctFoundation",
+    governanceAria: "Zarząd fundacji",
+    ctaAria: "Zaproszenie do kontaktu",
+    goalsAria: "Cele statutowe",
   },
-  hero: {
-    aria: "À propos",
-    eyebrow: { lat: "De nobis", label: "À propos" },
-    titleLine1: "Tout a commencé",
-    titleLine2Html: "par la <em>nostalgie.</em>",
-    ledeText:
-      "VoctEnsemble — un ensemble vocal cracovien et l'ensemble en résidence de la Fondation VoctFoundation. Nous commençons par trois questions : d'où nous venons, ce que nous faisons et ce que nous chantons.",
-    scrollCue: "Lire la lettre",
+  en: {
+    heroAria: "About us",
+    letterAria: "Florent's letter",
+    ensembleAria: "Who we are",
+    plateAria: "Idea",
+    doingsAria: "What we do",
+    cantusAria: "What we sing",
+    milestonesAria: "The path of the concerts",
+    foundationAria: "The VoctFoundation",
+    governanceAria: "The foundation's board",
+    ctaAria: "An invitation to get in touch",
+    goalsAria: "Statutory purposes",
   },
-  letter: {
-    aria: "La lettre de Florent",
-    eyebrow: { lat: "Initium", label: "Lettre du fondateur" },
-    h2: "D'où venons-nous ?",
-    leadHtml: "Florent de Bazelaire répond.",
-    stanzas: [
-      {
-        lat: "I",
-        label: "De la nostalgie",
-        paraHtml:
-          "De la nostalgie, de l'inspiration et d'un rêve. Comme des anachorètes, dans le retrait, loin du vacarme et de la musique, une nostalgie de la musique est née. Une vision de la musique comme un souffle de l'esprit qui transforme le monde par sa polyphonie, enveloppant l'être humain et le pénétrant jusqu'au plus profond — résonnant et trouvant place en son âme comme un organisme vivant.",
-      },
-      {
-        lat: "II",
-        label: "Dans le silence",
-        paraHtml:
-          "Dans le silence naît la musique. Dans le silence, on contemple. La musique est la contemplation de l'âme dans le temps. Ainsi est né Voct — du silence et de la contemplation.",
-      },
-      {
-        lat: "III",
-        label: "L'échange",
-        paraHtml:
-          "L'échange des pensées et l'effort de se plonger dans l'interprétation de l'autre éveillaient l'invention musicale et ouvraient de nouvelles voies d'interprétation. L'interprétation repose sur un échange de savoir-faire et d'intuitions humaines qui s'entrelacent, dynamiquement, pour découvrir les profondeurs cachées dans une œuvre.",
-      },
-      {
-        lat: "IV",
-        label: "La fragilité",
-        paraHtml:
-          "Nous ne nous sentirions pas nous-mêmes à chanter une musique qui n'embrasserait pas l'être tout entier, ne toucherait pas ses profondeurs et ne chercherait pas à le charmer par la beauté, malgré sa complexité et sa fragilité.",
-      },
-    ],
-    signatureMeta: "direction artistique · 2024",
-    portraitAlt: "Florent de Bazelaire dirigeant VoctEnsemble",
-    portraitCaption: "Florent de Bazelaire · direction artistique",
-  },
-  ensemble: {
-    aria: "Qui nous sommes",
-    eyebrow: { lat: "Voces", label: "L'ensemble" },
-    h2: "Un ensemble vocal cracovien mené comme une communauté de chambre.",
-    leadText:
-      "Sur scène se rencontrent d'ordinaire douze voix — des musiciens professionnels et pré-professionnels. Selon l'œuvre, nous chantons à quatre, à huit ou au grand complet.",
-    p2Text:
-      "L'effectif est vivant : autour d'un noyau stable, la distribution change de projet en projet — nous choisissons les voix selon le programme et selon le lieu où il doit sonner.",
-    p3Html:
-      "Sous la direction de Florent de Bazelaire, nous bâtissons une sonorité où la discipline et la tendresse tiennent ensemble. Le nom réunit <em>voces</em> (les voix), <em>octo</em> (huit) et <em>ensemble</em> — la promesse de voix qui s'écoutent les unes les autres.",
-    collabLabel: "Collaboration",
-    collabText:
-      "Sur scène et en production, nous collaborons notamment avec la conceptrice lumière Ada Bystrzycka, l'ingénieur du son Jakub Garbacz (Ars Sonora Studio), Sebastian Kuźma (animation visuelle) et le violoniste Radu Ropotan ; et, sur le plan institutionnel, avec la Fondation Carpe Diem et le Centre culturel Norwid, dans le quartier de Mistrzejowice à Cracovie.",
-  },
-  plate: { aria: "Idée", quote: "Par-dessus tout, nous partageons." },
-  doings: {
-    aria: "Ce que nous faisons",
-    eyebrow: { lat: "Operatio", label: "Ce que nous faisons" },
-    h2: "Concerts spirituels, liturgie, grandes célébrations.",
-    leadText:
-      "Notre courant principal, ce sont les Concerts Spirituels — une forme contemporaine des concerts spirituels d'autrefois. Au-delà, nous chantons dans la liturgie : messes, fêtes et célébrations auxquelles on nous invite.",
-    cards: [
-      {
-        k: "Concerts Spirituels",
-        p: "Notre propre cycle — une forme contemporaine des concerts spirituels d'autrefois. Soir après soir, autour d'intentions distinctes.",
-        cta: "Voir le chemin des concerts →",
-      },
-      {
-        k: "Liturgie et célébrations",
-        p: "La musique de la messe et des fêtes de l'Église. Récemment — la liturgie de la fête de saint André Bobola à Varsovie, pour le centenaire des provinces jésuites polonaises.",
-      },
-      {
-        k: "Dialogue des traditions",
-        p: "Nous avons chanté lors de la 28ᵉ Journée du judaïsme dans l'Église catholique, dans la chapelle Sainte-Dorothée à Cracovie, et nous nous sommes produits à la synagogue Tempel — la musique comme lieu de rencontre.",
-      },
-      {
-        k: "Mariages et sacrements",
-        p: "Nous avons assuré la musique de liturgies de mariage à la collégiale Sainte-Anne de Cracovie et à l'abbaye bénédictine de Tyniec. Nous sommes disponibles pour de telles célébrations.",
-      },
-    ],
-  },
-  cantus: {
-    aria: "Ce que nous chantons",
-    eyebrow: { lat: "Cantus", label: "Ce que nous chantons" },
-    h2: "La musique comme reflet de l'âme du mot.",
-    leadText:
-      "Nous partageons le chant et des récits mûrement pensés — tissés d'œuvres où la musique et le mot sont l'image l'un de l'autre.",
-    p2Text:
-      "Le monde nous intéresse : le visible — la nature et toute la création — et l'immatériel, que nous cherchons et tentons de comprendre. La musique sacrée est une bonne compagne sur ce chemin.",
-    p3Text:
-      "Elle puise dans le génie humain, dans la Bible et dans la sagesse des anciens, vers laquelle les compositeurs se tournent encore pour exprimer, de façon tout intime, ce qu'ils vivent et ce qui les touche le plus.",
-    moreLink: "Sept siècles de répertoire — de la polyphonie de la Renaissance à aujourd'hui →",
-  },
-  milestones: {
-    aria: "Le chemin des concerts",
-    eyebrow: { lat: "Via", label: "Ce qui a déjà résonné" },
-    h2: "Un chemin court, mais déjà inscrit dans des lieux et des intentions.",
-    cardLink: "Page du concert →",
-    moreLink: "Voir le répertoire et le détail des concerts →",
-  },
-  foundation: {
-    aria: "La Fondation VoctFoundation",
-    eyebrow: { lat: "Fundatio", label: "La fondation" },
-    h2: "Une forme qui permet à la musique de durer.",
-    leadText:
-      "La Fondation VoctFoundation est le socle juridique et organisationnel de l'activité artistique. C'est grâce à elle que l'ensemble peut penser non seulement au prochain concert, mais à un archivage, à l'éducation, à la production et à la longue vie du répertoire.",
-    p2Html:
-      "Selon ses statuts, la Fondation agit dans le domaine de <strong>la culture, des arts et de la protection des biens culturels et du patrimoine national</strong>. Elle peut mener des projets artistiques et interdisciplinaires, réaliser des enregistrements, soutenir de jeunes artistes et agir par un ensemble artistique permanent, en résidence.",
-    goals: [
-      "Création musicale : production, coproduction, organisation et présentation de projets en Pologne et à l'étranger.",
-      "Patrimoine : documenter, archiver et rendre accessibles la musique et les pratiques d'interprétation.",
-      "Éducation et accessibilité : diffuser la culture et soutenir la participation à celle-ci.",
-      "Jeunes artistes : développement, promotion, mentorat, résidences et projets d'interprétation.",
-      "Coopération : travailler avec des artistes, des institutions culturelles, des universités, des médias et des organisations de la société civile.",
-    ],
-    legalNote:
-      "Les revenus de la Fondation sont intégralement affectés à la réalisation de ses buts statutaires. Ils ne sont pas répartis entre le fondateur, les membres des organes ou les personnes liées à la Fondation ; l'activité économique, si elle est exercée, demeure accessoire à la mission statutaire.",
-    statuteLabel: "Statuts de la fondation ↗",
-  },
-  governance: {
-    aria: "Le conseil de la fondation",
-    eyebrow: { lat: "Consilium", label: "Le conseil" },
-    h2: "La responsabilité répartie sur trois voix.",
-    intro:
-      "La direction artistique revient à une personne ; les décisions de la fondation se prennent à la majorité — ainsi le veulent les statuts. Ce sont les mêmes personnes qui se tiennent ensuite en coulisses le soir du concert.",
-    roles: [
-      { role: "Direction artistique · chef de chœur" },
-      { role: "Organisation · communication" },
-      { role: "Technologie · outils" },
-    ],
-  },
-  cta: {
-    aria: "Une invitation à nous contacter",
-    h2: "Invitez-nous dans un espace qui a besoin d'une voix.",
-    p: "Un concert spirituel, la musique d'une liturgie, une célébration importante, un mécénat ou une collaboration artistique. Nous attendons votre message.",
-    write: "Écrivez-nous",
-    concerts: "Concerts Spirituels",
-    support: "Soutenir la fondation",
+  fr: {
+    heroAria: "À propos",
+    letterAria: "La lettre de Florent",
+    ensembleAria: "Qui nous sommes",
+    plateAria: "Idée",
+    doingsAria: "Ce que nous faisons",
+    cantusAria: "Ce que nous chantons",
+    milestonesAria: "Le chemin des concerts",
+    foundationAria: "La Fondation VoctFoundation",
+    governanceAria: "Le conseil de la fondation",
+    ctaAria: "Une invitation à nous contacter",
+    goalsAria: "Buts statutaires",
   },
 };
-
-export const ABOUT: Record<Locale, AboutCopy> = { pl, en, fr };

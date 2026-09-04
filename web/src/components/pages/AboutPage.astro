@@ -1,12 +1,15 @@
 ---
 /**
  * @file AboutPage.astro
- * @description Locale-agnostic body of the "About us" page — the reference i18n component. It owns
- *  ALL the structure, styles and JSON-LD; every word comes from the per-locale copy module
- *  (i18n/content/o-nas.ts) via the `lang` prop, so the three route files (/o-nas, /en/o-nas,
- *  /fr/o-nas) are one-liners that differ only in `lang`. Rich fields (…Html) render with `set:html`,
- *  plain ones as text; neither carries typography — the build-time pass (lib/typo.ts) gives every
- *  locale its own. The milestone list still derives from the `concerts` collection (SSoT with
+ * @description Locale-agnostic body of the "About us" page. It owns ALL the structure, styles and
+ *  JSON-LD; the three route files (/o-nas, /en/o-nas, /fr/o-nas) are one-liners that differ only in
+ *  `lang`. Its words come from two places, and the split is the copy desk's: the PROSE is Polish in
+ *  src/content/pages/o-nas.yaml with per-field translations from the overlay (lib/pageCopy), and
+ *  the ten LANDMARK NAMES are a complete triple in i18n/content/o-nas.ts, because a missing
+ *  aria-label is a broken page rather than a paragraph awaiting review. The Latin rubrics and the
+ *  stanza numerals are locale-neutral and stand in the markup here. Rich fields (…Html) render with
+ *  `set:html`, plain ones as text; neither carries typography — the build-time pass (lib/typo.ts)
+ *  gives every locale its own. The milestone list derives from the `concerts` collection (SSoT with
  *  /koncerty), reading its translations from the per-locale overlay (lib/copyOverlay) and falling
  *  back per field to the Polish the corpus holds. The donation
  *  Vault is a shared island that is still Polish-only (a later pass) — the one deliberate seam.
@@ -23,7 +26,8 @@ import { photo, photoOptional, bleedPair } from "../../lib/photos";
 import { concertKey, overlayValue } from "../../lib/copyOverlay";
 import { viaMoment } from "../../lib/dates";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
-import { ABOUT } from "../../i18n/content/o-nas";
+import { ABOUT_CHROME, ABOUT_PAGE } from "../../i18n/content/o-nas";
+import { pageCopy } from "../../lib/pageCopy";
 import { UI } from "../../i18n/ui";
 import { localizePath, pageI18n, pickLocale, SITE, type Locale } from "../../i18n/config";
 import "../../styles/vault.css";
@@ -34,7 +38,8 @@ interface Props {
 }
 const { lang } = Astro.props;
 
-const c = ABOUT[lang];
+const c = pageCopy(ABOUT_PAGE, lang);
+const t = ABOUT_CHROME[lang];
 // One base path → this render's own URL, its hreflang graph, and the locales the switcher offers.
 const { path, alternates, available } = pageI18n("/o-nas", lang);
 const hrefConcerts = localizePath("/koncerty", lang);
@@ -69,14 +74,21 @@ const milestones = concerts.map((entry, i) => {
   };
 });
 
-// Board — names + portraits are structural (proper names, never translated); the role line and
-// one-sentence remit come from the copy module, in board order.
+// Board — names + portraits are structural (proper names, never translated); the role line comes
+// from the copy, paired BY ID rather than by position: the roles are a desk list keyed by `id`, so
+// an editor reordering them in the YAML cannot slide somebody else's remit under a face.
 const boardMembers = [
-  { name: "Florent de Bazelaire", img: photoOptional("o-nas-florent") },
-  { name: "Anna Marcisz", img: photoOptional("o-nas-ania") },
-  { name: "Krystian Bugalski", img: photoOptional("o-nas-krystian") },
+  { id: "florent", name: "Florent de Bazelaire", img: photoOptional("o-nas-florent") },
+  { id: "ania", name: "Anna Marcisz", img: photoOptional("o-nas-ania") },
+  { id: "krystian", name: "Krystian Bugalski", img: photoOptional("o-nas-krystian") },
 ] as const;
-const board = boardMembers.map((b, i) => ({ ...b, ...c.governance.roles[i] }));
+const board = boardMembers.map((b) => {
+  const entry = c.governance.roles.find((r) => r.id === b.id);
+  // Loud rather than blank: a renamed `id` would otherwise print a card with a name, a face and no
+  // remit, and put the empty string into the portrait's alt text where nobody would see it.
+  if (!entry) throw new Error(`[o-nas] no governance role for board member "${b.id}".`);
+  return { ...b, role: entry.role };
+});
 // Portraits are all-or-nothing: with only some files present the three-card grid goes ragged.
 const boardPortraitsComplete = board.every((b) => b.img);
 
@@ -156,27 +168,29 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
   <main id="tresc">
     {/* ── Hero ─────────────────────────────────────────────────────────── */}
-    <section class="hero" aria-label={c.hero.aria}>
+    <section class="hero" aria-label={t.heroAria}>
       <div class="hero-media" aria-hidden="true">
         <BleedImage desktop={hero.desktop} mobile={hero.mobile} alt="" position="center 30%" eager animate />
       </div>
       <div class="hero-inner">
-        <p class="eyebrow reveal"><span class="lat">{c.hero.eyebrow.lat}</span>  ·  {c.hero.eyebrow.label}</p>
+        {/* The Latin tier of every rubric on this page stands in the markup: it is the same in all
+            three locales, exactly as the nav's Latin is, so only the gloss beside it is copy. */}
+        <p class="eyebrow reveal"><span class="lat">De nobis</span>  ·  {c.hero.eyebrow}</p>
         <h1>
-          <span class="line"><span class="reveal ink-press">{c.hero.titleLine1}</span></span>
-          <span class="line"><span class="reveal ink-press" data-d="1" set:html={c.hero.titleLine2Html} /></span>
+          <span class="line"><span class="reveal ink-press">{c.hero.title1}</span></span>
+          <span class="line"><span class="reveal ink-press" data-d="1" set:html={c.hero.title2Html} /></span>
         </h1>
-        <p class="hero-lede reveal" data-d="2">{c.hero.ledeText}</p>
+        <p class="hero-lede reveal" data-d="2">{c.hero.lede}</p>
         <span class="scroll-cue reveal" data-d="3">{c.hero.scrollCue}</span>
       </div>
     </section>
 
     {/* ── List założyciela — the single origin statement. VERBATIM founding text (Polish),
-          translated for EN/FR while keeping the register. See i18n/content/o-nas.ts. ──────── */}
-    <section class="band letter" aria-label={c.letter.aria}>
+          translated for EN/FR while keeping the register. See src/content/pages/o-nas.yaml. ─── */}
+    <section class="band letter" aria-label={t.letterAria}>
       <div class="wrap letter-wrap">
         <div class="section-head letter-head reveal">
-          <span class="eyebrow"><span class="lat">{c.letter.eyebrow.lat}</span>  ·  {c.letter.eyebrow.label}</span>
+          <span class="eyebrow"><span class="lat">Initium</span>  ·  {c.letter.eyebrow}</span>
           <h2 class="ink-press">{c.letter.h2}</h2>
           <p class="letter-lead" set:html={c.letter.leadHtml}></p>
         </div>
@@ -185,7 +199,10 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           {
             c.letter.stanzas.map((s, i) => (
               <div class="letter-stanza reveal" data-d={String(i + 1)}>
-                <p class="letter-mark"><span class="lat">{s.lat}</span> · {s.label}</p>
+                {/* The numeral takes the Latin tier because that is the type it is set in, not
+                    because it is Latin: I–IV are the same in every language, so they are the
+                    stanza's key on the desk rather than anything to translate. */}
+                <p class="letter-mark"><span class="lat">{s.num}</span> · {s.label}</p>
                 <p class="letter-para" set:html={s.paraHtml}></p>
               </div>
             ))
@@ -220,15 +237,15 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     </section>
 
     {/* ── Ensemble — prose only (the roster rotates per project). ─────── */}
-    <section class="band band-soft" id="zespol" aria-label={c.ensemble.aria}>
+    <section class="band band-soft" id="zespol" aria-label={t.ensembleAria}>
       <div class="wrap">
         <div class="section-head reveal measure">
-          <span class="eyebrow"><span class="lat">{c.ensemble.eyebrow.lat}</span>  ·  {c.ensemble.eyebrow.label}</span>
+          <span class="eyebrow"><span class="lat">Voces</span>  ·  {c.ensemble.eyebrow}</span>
           <h2 class="ink-press">{c.ensemble.h2}</h2>
         </div>
         <div class="prose measure reveal" data-d="1">
-          <p class="lead">{c.ensemble.leadText}</p>
-          <p>{c.ensemble.p2Text}</p>
+          <p class="lead">{c.ensemble.lead}</p>
+          <p>{c.ensemble.p2}</p>
           <p set:html={c.ensemble.p3Html}></p>
         </div>
         <div class="voces-collab reveal" data-d="2">
@@ -239,7 +256,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     </section>
 
     {/* ── Pull-quote plate — thesis of "Co śpiewamy?". ─────── */}
-    <section class="plate" aria-label={c.plate.aria}>
+    <section class="plate" aria-label={t.plateAria}>
       <div class="plate-media" aria-hidden="true">
         {/* A band, not a hero, so it cannot afford the default drift speed: the room is ±10% of
             the plate and the plate is well under a viewport tall, so 0.16 spends it in the first
@@ -262,21 +279,21 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     </section>
 
     {/* ── Co robimy — real activities and named events. ───────────────────────────── */}
-    <section class="band band-soft" aria-label={c.doings.aria}>
+    <section class="band band-soft" aria-label={t.doingsAria}>
       <div class="wrap">
         <div class="section-head reveal measure">
-          <span class="eyebrow"><span class="lat">{c.doings.eyebrow.lat}</span>  ·  {c.doings.eyebrow.label}</span>
+          <span class="eyebrow"><span class="lat">Operatio</span>  ·  {c.doings.eyebrow}</span>
           <h2 class="ink-press">{c.doings.h2}</h2>
         </div>
         <div class="prose measure reveal" data-d="1">
-          <p class="lead">{c.doings.leadText}</p>
+          <p class="lead">{c.doings.lead}</p>
         </div>
         <div class="doings-grid">
           {
             c.doings.cards.map((d, i) => (
               <article class="doing reveal" data-d={String((i % 3) + 1)}>
-                <h3>{d.k}</h3>
-                <p>{d.p}</p>
+                <h3>{d.title}</h3>
+                <p>{d.body}</p>
                 {d.cta && (
                   <a class="inline" href={hrefConcerts}>
                     {d.cta}
@@ -290,16 +307,16 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     </section>
 
     {/* ── Co śpiewamy — the credo; repertoire catalog lives on /koncerty#repertuar. ─────── */}
-    <section class="band" aria-label={c.cantus.aria}>
+    <section class="band" aria-label={t.cantusAria}>
       <div class="wrap">
         <div class="section-head reveal measure">
-          <span class="eyebrow"><span class="lat">{c.cantus.eyebrow.lat}</span>  ·  {c.cantus.eyebrow.label}</span>
+          <span class="eyebrow"><span class="lat">Cantus</span>  ·  {c.cantus.eyebrow}</span>
           <h2 class="ink-press">{c.cantus.h2}</h2>
         </div>
         <div class="prose measure reveal" data-d="1">
-          <p class="lead">{c.cantus.leadText}</p>
-          <p>{c.cantus.p2Text}</p>
-          <p>{c.cantus.p3Text}</p>
+          <p class="lead">{c.cantus.lead}</p>
+          <p>{c.cantus.p2}</p>
+          <p>{c.cantus.p3}</p>
           <p class="cantus-more">
             <a class="inline" href={`${hrefConcerts}#repertuar`}>{c.cantus.moreLink}</a>
           </p>
@@ -308,10 +325,10 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     </section>
 
     {/* ── Milestones — rendered from the `concerts` collection ─────────── */}
-    <section class="band band-soft" aria-label={c.milestones.aria}>
+    <section class="band band-soft" aria-label={t.milestonesAria}>
       <div class="wrap">
         <div class="section-head reveal measure">
-          <span class="eyebrow"><span class="lat">{c.milestones.eyebrow.lat}</span>  ·  {c.milestones.eyebrow.label}</span>
+          <span class="eyebrow"><span class="lat">Via</span>  ·  {c.milestones.eyebrow}</span>
           <h2 class="ink-press">{c.milestones.h2}</h2>
         </div>
         <ol class="milestones">
@@ -360,22 +377,25 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     </section>
 
     {/* ── Foundation ───────────────────────────────────────────────────── */}
-    <section class="band" id="fundacja" aria-label={c.foundation.aria}>
+    <section class="band" id="fundacja" aria-label={t.foundationAria}>
       <div class="wrap">
         <div class="section-head reveal measure">
-          <span class="eyebrow"><span class="lat">{c.foundation.eyebrow.lat}</span>  ·  {c.foundation.eyebrow.label}</span>
+          <span class="eyebrow"><span class="lat">Fundatio</span>  ·  {c.foundation.eyebrow}</span>
           <h2 class="ink-press">{c.foundation.h2}</h2>
         </div>
         <div class="prose measure reveal" data-d="1">
-          <p class="lead">{c.foundation.leadText}</p>
+          <p class="lead">{c.foundation.lead}</p>
           <p set:html={c.foundation.p2Html}></p>
         </div>
-        <ol class="goals reveal" data-d="2" aria-label={c.foundation.aria}>
+        {/* Its own name, not the section's: the list sits INSIDE that section, and giving both the
+            same one leaves a screen reader with two things called "Fundacja VoctFoundation" on one
+            screen and no way to tell which was just entered. */}
+        <ol class="goals reveal" data-d="2" aria-label={t.goalsAria}>
           {
             c.foundation.goals.map((g, i) => (
               <li>
                 <span class="g-num">{String(i + 1).padStart(2, "0")}</span>
-                <span>{g}</span>
+                <span>{g.text}</span>
               </li>
             ))
           }
@@ -398,10 +418,10 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     </section>
 
     {/* ── Governance ───────────────────────────────────────────────────── */}
-    <section class="band band-deep" id="zarzad" aria-label={c.governance.aria}>
+    <section class="band band-deep" id="zarzad" aria-label={t.governanceAria}>
       <div class="wrap">
         <div class="section-head reveal">
-          <span class="eyebrow"><span class="lat">{c.governance.eyebrow.lat}</span>  ·  {c.governance.eyebrow.label}</span>
+          <span class="eyebrow"><span class="lat">Consilium</span>  ·  {c.governance.eyebrow}</span>
           <h2 class="ink-press">{c.governance.h2}</h2>
         </div>
         <p class="board-intro reveal" data-d="1">{c.governance.intro}</p>
@@ -439,11 +459,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     </section>
 
     {/* ── CTA — closed by the votive glyph ──── */}
-    <section class="band cta-band" aria-label={c.cta.aria}>
+    <section class="band cta-band" aria-label={t.ctaAria}>
       <div class="wrap">
         <span class="cta-glyph reveal" aria-hidden="true"></span>
         <h2 class="reveal" data-d="1">{c.cta.h2}</h2>
-        <p class="reveal" data-d="2">{c.cta.p}</p>
+        <p class="reveal" data-d="2">{c.cta.lede}</p>
         {/* Controls out of the register — see the station actions on /koncerty. */}
         <div class="btn-row">
           <a class="btn btn-gold" href={hrefContact}>{c.cta.write}</a>

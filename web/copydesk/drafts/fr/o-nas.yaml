@@ -1,0 +1,113 @@
+# page.o-nas — FR draft (stage H). Same flat shape as the overlay it will become.
+#
+# THESE WORDS ARE NOT NEW. They are the French that has been on /fr/o-nas since the page was forked,
+# lifted out of the TypeScript literal it lived in and carried in through the desk instead. The
+# stage moves prose between files; it writes none. What it DOES owe is the pass the words never had:
+# they were written before the rest of the site was translated, so every term they share with a page
+# that has since been published had to be checked against what that page prints.
+#
+# THE RENDERINGS THE SITE HAS SINCE PUBLISHED, checked and already agreeing:
+#   Koncerty Duchowe        → Concerts Spirituels      (koncert.ts, concerts.fr.yaml, /obrazy)
+#   Fundacja (rubryka)      → La fondation             (page.kontakt.locus.eyebrow — one rubric,
+#                             one gloss, and `Fundatio` stands over three pages now)
+#   Zarząd                  → le conseil               (page.kontakt.voices.note)
+#   siedem wieków           → sept siècles             (page.koncerty.repertoire.eyebrow)
+#   św. Andrzej Bobola      → saint André Bobola       (page.koncerty.meta.description)
+#   Synagoga Tempel         → la synagogue Tempel      (page.kontakt.hero.lede)
+#   Tyniec                  → l'abbaye de Tyniec       (page.kontakt.hero.lede; here it carries the
+#                             order as well, because the Polish does)
+#
+# AND ONE DIVERGENCE THAT IS POLISH, NOT FRENCH: the Latin rubric `Via` carries a different
+# vernacular on the two pages that use it — "Droga koncertów" on /koncerty ("Le chemin des
+# concerts") and "Co już wybrzmiało" here. The French follows its own Polish, as it must. Whether
+# one rubric may have two glosses is Florent's question, and it is asked in the Polish.
+#
+# NO HARD SPACES. `lib/typo.ts` inserts the narrow no-break space before `? ! : ;` at build; one
+# typed here doubles up. Write an ordinary space and let the build set it.
+#
+# Not the overlay: `npm run copy:propose --locale fr` carries these in as proposals, which is the
+# only door that stamps the provenance hash the stale state is computed from.
+
+page.o-nas.meta.title: "À propos — VoctEnsemble | Fondation VoctFoundation"
+page.o-nas.meta.description: "VoctEnsemble — un ensemble vocal cracovien et l'ensemble en résidence de la Fondation VoctFoundation. Concerts spirituels, liturgies et musique sacrée, de la polyphonie médiévale au minimalisme contemporain."
+
+page.o-nas.hero.eyebrow: "À propos"
+page.o-nas.hero.title1: "Tout a commencé"
+page.o-nas.hero.title2Html: "par la <em>nostalgie.</em>"
+page.o-nas.hero.lede: "VoctEnsemble — un ensemble vocal cracovien et l'ensemble en résidence de la Fondation VoctFoundation. Nous commençons par trois questions : d'où nous venons, ce que nous faisons et ce que nous chantons."
+page.o-nas.hero.scrollCue: "Lire la lettre"
+
+page.o-nas.letter.eyebrow: "Lettre du fondateur"
+page.o-nas.letter.h2: "D'où venons-nous ?"
+page.o-nas.letter.leadHtml: "Florent de Bazelaire répond."
+page.o-nas.letter.stanzas.I.label: "De la nostalgie"
+page.o-nas.letter.stanzas.I.paraHtml: "De la nostalgie, de l'inspiration et d'un rêve. Comme des anachorètes, dans le retrait, loin du vacarme et de la musique, une nostalgie de la musique est née. Une vision de la musique comme un souffle de l'esprit qui transforme le monde par sa polyphonie, enveloppant l'être humain et le pénétrant jusqu'au plus profond — résonnant et trouvant place en son âme comme un organisme vivant."
+page.o-nas.letter.stanzas.II.label: "Dans le silence"
+page.o-nas.letter.stanzas.II.paraHtml: "Dans le silence naît la musique. Dans le silence, on contemple. La musique est la contemplation de l'âme dans le temps. Ainsi est né Voct — du silence et de la contemplation."
+page.o-nas.letter.stanzas.III.label: "L'échange"
+page.o-nas.letter.stanzas.III.paraHtml: "L'échange des pensées et l'effort de se plonger dans l'interprétation de l'autre éveillaient l'invention musicale et ouvraient de nouvelles voies d'interprétation. L'interprétation repose sur un échange de savoir-faire et d'intuitions humaines qui s'entrelacent, dynamiquement, pour découvrir les profondeurs cachées dans une œuvre."
+page.o-nas.letter.stanzas.IV.label: "La fragilité"
+page.o-nas.letter.stanzas.IV.paraHtml: "Nous ne nous sentirions pas nous-mêmes à chanter une musique qui n'embrasserait pas l'être tout entier, ne toucherait pas ses profondeurs et ne chercherait pas à le charmer par la beauté, malgré sa complexité et sa fragilité."
+page.o-nas.letter.signatureMeta: "direction artistique · 2024"
+page.o-nas.letter.portraitAlt: "Florent de Bazelaire dirigeant VoctEnsemble"
+page.o-nas.letter.portraitCaption: "Florent de Bazelaire · direction artistique"
+
+page.o-nas.ensemble.eyebrow: "L'ensemble"
+page.o-nas.ensemble.h2: "Un ensemble vocal cracovien mené comme une communauté de chambre."
+page.o-nas.ensemble.lead: "Sur scène se rencontrent d'ordinaire douze voix — des musiciens professionnels et pré-professionnels. Selon l'œuvre, nous chantons à quatre, à huit ou au grand complet."
+page.o-nas.ensemble.p2: "L'effectif est vivant : autour d'un noyau stable, la distribution change de projet en projet — nous choisissons les voix selon le programme et selon le lieu où il doit sonner."
+page.o-nas.ensemble.p3Html: "Sous la direction de Florent de Bazelaire, nous bâtissons une sonorité où la discipline et la tendresse tiennent ensemble. Le nom réunit <em>voces</em> (les voix), <em>octo</em> (huit) et <em>ensemble</em> — la promesse de voix qui s'écoutent les unes les autres."
+page.o-nas.ensemble.collabLabel: "Collaboration"
+page.o-nas.ensemble.collabText: "Sur scène et en production, nous collaborons notamment avec la conceptrice lumière Ada Bystrzycka, l'ingénieur du son Jakub Garbacz (Ars Sonora Studio), Sebastian Kuźma (animation visuelle) et le violoniste Radu Ropotan ; et, sur le plan institutionnel, avec la Fondation Carpe Diem et le Centre culturel Norwid, dans le quartier de Mistrzejowice à Cracovie."
+
+page.o-nas.plate.quote: "Par-dessus tout, nous partageons."
+
+page.o-nas.doings.eyebrow: "Ce que nous faisons"
+page.o-nas.doings.h2: "Concerts spirituels, liturgie, grandes célébrations."
+page.o-nas.doings.lead: "Notre courant principal, ce sont les Concerts Spirituels — une forme contemporaine des concerts spirituels d'autrefois. Au-delà, nous chantons dans la liturgie : messes, fêtes et célébrations auxquelles on nous invite."
+page.o-nas.doings.cards.koncerty.title: "Concerts Spirituels"
+page.o-nas.doings.cards.koncerty.body: "Notre propre cycle — une forme contemporaine des concerts spirituels d'autrefois. Soir après soir, autour d'intentions distinctes."
+page.o-nas.doings.cards.koncerty.cta: "Voir le chemin des concerts →"
+page.o-nas.doings.cards.liturgia.title: "Liturgie et célébrations"
+page.o-nas.doings.cards.liturgia.body: "La musique de la messe et des fêtes de l'Église. Récemment — la liturgie de la fête de saint André Bobola à Varsovie, pour le centenaire des provinces jésuites polonaises."
+page.o-nas.doings.cards.dialog.title: "Dialogue des traditions"
+page.o-nas.doings.cards.dialog.body: "Nous avons chanté lors de la 28ᵉ Journée du judaïsme dans l'Église catholique, dans la chapelle Sainte-Dorothée à Cracovie, et nous nous sommes produits à la synagogue Tempel — la musique comme lieu de rencontre."
+page.o-nas.doings.cards.sluby.title: "Mariages et sacrements"
+page.o-nas.doings.cards.sluby.body: "Nous avons assuré la musique de liturgies de mariage à la collégiale Sainte-Anne de Cracovie et à l'abbaye bénédictine de Tyniec. Nous sommes disponibles pour de telles célébrations."
+
+page.o-nas.cantus.eyebrow: "Ce que nous chantons"
+page.o-nas.cantus.h2: "La musique comme reflet de l'âme du mot."
+page.o-nas.cantus.lead: "Nous partageons le chant et des récits mûrement pensés — tissés d'œuvres où la musique et le mot sont l'image l'un de l'autre."
+page.o-nas.cantus.p2: "Le monde nous intéresse : le visible — la nature et toute la création — et l'immatériel, que nous cherchons et tentons de comprendre. La musique sacrée est une bonne compagne sur ce chemin."
+page.o-nas.cantus.p3: "Elle puise dans le génie humain, dans la Bible et dans la sagesse des anciens, vers laquelle les compositeurs se tournent encore pour exprimer, de façon tout intime, ce qu'ils vivent et ce qui les touche le plus."
+page.o-nas.cantus.moreLink: "Sept siècles de répertoire — de la polyphonie de la Renaissance à aujourd'hui →"
+
+page.o-nas.milestones.eyebrow: "Ce qui a déjà résonné"
+page.o-nas.milestones.h2: "Un chemin court, mais déjà inscrit dans des lieux et des intentions."
+page.o-nas.milestones.cardLink: "Page du concert →"
+page.o-nas.milestones.moreLink: "Voir le répertoire et le détail des concerts →"
+
+page.o-nas.foundation.eyebrow: "La fondation"
+page.o-nas.foundation.h2: "Une forme qui permet à la musique de durer."
+page.o-nas.foundation.lead: "La Fondation VoctFoundation est le socle juridique et organisationnel de l'activité artistique. C'est grâce à elle que l'ensemble peut penser non seulement au prochain concert, mais à un archivage, à l'éducation, à la production et à la longue vie du répertoire."
+page.o-nas.foundation.p2Html: "Selon ses statuts, la Fondation agit dans le domaine de <strong>la culture, des arts et de la protection des biens culturels et du patrimoine national</strong>. Elle peut mener des projets artistiques et interdisciplinaires, réaliser des enregistrements, soutenir de jeunes artistes et agir par un ensemble artistique permanent, en résidence."
+page.o-nas.foundation.goals.tworczosc.text: "Création musicale : production, coproduction, organisation et présentation de projets en Pologne et à l'étranger."
+page.o-nas.foundation.goals.dziedzictwo.text: "Patrimoine : documenter, archiver et rendre accessibles la musique et les pratiques d'interprétation."
+page.o-nas.foundation.goals.edukacja.text: "Éducation et accessibilité : diffuser la culture et soutenir la participation à celle-ci."
+page.o-nas.foundation.goals.mlodzi.text: "Jeunes artistes : développement, promotion, mentorat, résidences et projets d'interprétation."
+page.o-nas.foundation.goals.wspolpraca.text: "Coopération : travailler avec des artistes, des institutions culturelles, des universités, des médias et des organisations de la société civile."
+page.o-nas.foundation.legalNote: "Les revenus de la Fondation sont intégralement affectés à la réalisation de ses buts statutaires. Ils ne sont pas répartis entre le fondateur, les membres des organes ou les personnes liées à la Fondation ; l'activité économique, si elle est exercée, demeure accessoire à la mission statutaire."
+page.o-nas.foundation.statuteLabel: "Statuts de la fondation ↗"
+
+page.o-nas.governance.eyebrow: "Le conseil"
+page.o-nas.governance.h2: "La responsabilité répartie sur trois voix."
+page.o-nas.governance.intro: "La direction artistique revient à une personne ; les décisions de la fondation se prennent à la majorité — ainsi le veulent les statuts. Ce sont les mêmes personnes qui se tiennent ensuite en coulisses le soir du concert."
+page.o-nas.governance.roles.florent.role: "Direction artistique · chef de chœur"
+page.o-nas.governance.roles.ania.role: "Organisation · communication"
+page.o-nas.governance.roles.krystian.role: "Technologie · outils"
+
+page.o-nas.cta.h2: "Invitez-nous dans un espace qui a besoin d'une voix."
+page.o-nas.cta.lede: "Un concert spirituel, la musique d'une liturgie, une célébration importante, un mécénat ou une collaboration artistique. Nous attendons votre message."
+page.o-nas.cta.write: "Écrivez-nous"
+page.o-nas.cta.concerts: "Concerts Spirituels"
+page.o-nas.cta.support: "Soutenir la fondation"

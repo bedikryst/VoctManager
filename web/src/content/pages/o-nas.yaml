@@ -1,0 +1,271 @@
+# The editorial text of /o-nas — Polish, and Polish only.
+#
+# THIS IS THE PAGE THE WHOLE PATTERN WAS MODELLED ON, and it was the last one to move into it.
+# `o-nas.ts` held all three locales in TypeScript literals from before the copy desk existed, which
+# left the site's founding text as the one page no editor could reach and no reviewer could accept
+# a word of: `copy:apply` writes YAML and rewrites overlays, and it has never been able to write a
+# `.ts` file at all. See docs/web-copy-desk-2026-09.md §6r and the stage that closed it.
+#
+# WHAT IS NOT HERE, because something else already owns it:
+#
+#   the LATIN rubrics (De nobis, Initium, Voces, Operatio, Cantus, Via, Fundatio, Consilium) and
+#     the stanza numerals I–IV — locale-neutral, so they stay in the markup exactly as the nav's
+#     Latin does; only the vernacular tier beside them is below;
+#   the MILESTONE ROWS — every year, place, title and blurb in "Co już wybrzmiało" is derived from
+#     `concerts.yaml` at build and read through the desk's overlay by concert key, so a concert
+#     added to the corpus reaches this page with no second edit;
+#   the BOARD'S NAMES and the foundation's REGISTRY DATA (KRS, NIP, REGON, the address) — proper
+#     names and numbers, printed identically in every locale, in the component;
+#   the LANDMARK NAMES of the ten sections — an aria-label must exist in all three locales or the
+#     page is broken for somebody, which is the test that makes a thing chrome
+#     (`src/i18n/content/o-nas.ts`) rather than prose.
+#
+# THE FOUNDATION IS DESCRIBED TWICE ON THIS SITE AND THAT IS DELIBERATE. /kontakt carries a
+# two-sentence summary (`page.kontakt.locus.mission`) and this page carries the full account —
+# `foundation.lead`, `foundation.p2Html` and `foundation.legalNote`. They are different registers
+# for different surfaces, in the way `about.blurb` differs from `essence` in the concert corpus,
+# and they are NOT the one-paragraph-two-homes case /kolofon's `Fundatio` is. They must never
+# contradict each other; they are not expected to match word for word.
+#
+# WHY THIS IS YAML AND NOT A TypeScript MODULE, and where the chrome went instead: the line every
+# page on the desk draws — completeness can be demanded of a landmark, never of a paragraph.
+#
+# TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under this page's desk
+# key — `page.o-nas.` + the dotted path below — and are read through `lib/copyOverlay`.
+#
+# NO TYPOGRAPHY. Write the prose plainly: `lib/typo.ts` pins Polish orphans and French punctuation
+# spacing in the rendered HTML at build.
+
+meta:
+  title: "O nas — VoctEnsemble | Fundacja VoctFoundation"
+  description: >-
+    VoctEnsemble — krakowska formacja wokalna i zespół-rezydent Fundacji VoctFoundation. Koncerty
+    duchowe, liturgie i muzyka sakralna od średniowiecznej polifonii po współczesny minimalizm.
+
+hero:
+  # Vernacular gloss of the Latin rubric `De nobis`, which stands beside it unchanged in every
+  # locale.
+  eyebrow: "O nas"
+  # The title is set as two lines and the break is compositional, not grammatical — a translation
+  # decides its own split rather than reproducing this one word for word.
+  title1: "Zaczęło się"
+  title2Html: "od <em>tęsknoty.</em>"
+  lede: >-
+    VoctEnsemble — krakowska formacja wokalna i zespół-rezydent Fundacji VoctFoundation. Zaczynamy
+    od trzech pytań: skąd się wzięliśmy, co robimy i co śpiewamy.
+  scrollCue: "Przeczytaj list"
+
+letter:
+  # Gloss of `Initium`.
+  eyebrow: "List założyciela"
+  h2: "Skąd się wzięliśmy?"
+  # Names the writer and stops. The stanza rubrics below (Z tęsknoty … Kruchość) are the letter's
+  # own contents page, so a lead that counts or summarises them prints it twice.
+  leadHtml: "Odpowiada Florent de Bazelaire."
+  # VERBATIM FOUNDING TEXT. Stanzas I and II come from Florent's "Skąd się wzięliśmy?", III from
+  # the Kontemplacja Wcielenia booklet, IV from "Co śpiewamy?". The Polish is quoted, not written:
+  # it is on the desk so that a translation can be reviewed against it, NOT so that it can be
+  # rewritten. A rendering keeps the meditative register and follows the sentence.
+  #
+  # `num` is the numeral the page prints in the Latin tier and the part the desk keys a stanza by,
+  # so reordering them re-keys nothing.
+  stanzas:
+    - num: "I"
+      label: "Z tęsknoty"
+      paraHtml: >-
+        Z tęsknoty, natchnienia i marzenia. Jak anachoreci, w odosobnieniu, z daleka od zgiełku
+        i muzyki zatęskniono za muzyką. Wizja muzyki jako powiew ducha, który przemienia świat
+        swoją polifonią, otulając i przenikając do głębi człowieka — rezonując i znajdując miejsce
+        w jego duszy niczym żywy organizm.
+    - num: "II"
+      label: "W ciszy"
+      paraHtml: >-
+        W ciszy rodzi się muzyka. W ciszy się kontempluje. Muzyka jest kontemplacją duszy w czasie.
+        Tak powstał Voct — z ciszy i kontemplacji.
+    - num: "III"
+      label: "Wymiana"
+      paraHtml: >-
+        Wymiana myśli i próba zanurzenia się w interpretację drugiego człowieka pobudzała inwencję
+        muzyczną, otwierając na nowe ścieżki interpretacyjne. Interpretacja opiera się na wymianie
+        ludzkich umiejętności i intuicji, które dynamicznie splatają się, by odkryć głębie ukryte
+        w utworze.
+    - num: "IV"
+      label: "Kruchość"
+      paraHtml: >-
+        Nie czulibyśmy się sobą, śpiewając muzykę, która nie obejmowałaby całego człowieka, dotykała
+        jego głębi i próbowała urzec go pięknem mimo jego złożoności i kruchości.
+  # Stands under the signature, which is the name itself and is structural. The year is when the
+  # letter was written — a fixed fact with no structured date behind it to drift from.
+  signatureMeta: "kierownictwo artystyczne · 2024"
+  portraitAlt: "Florent de Bazelaire prowadzący VoctEnsemble"
+  portraitCaption: "Florent de Bazelaire · kierownictwo artystyczne"
+
+ensemble:
+  # Gloss of `Voces`.
+  eyebrow: "Zespół"
+  h2: "Krakowski zespół wokalny prowadzony jak kameralna wspólnota."
+  lead: >-
+    Na scenie spotyka się zwykle dwanaście głosów — profesjonalnych i pre-profesjonalnych muzyków.
+    W zależności od utworu śpiewamy w czwórkę, w ósemkę albo pełnym składem.
+  p2: >-
+    Skład jest żywy: wokół stałego rdzenia obsada zmienia się z projektu na projekt — głosy
+    dobieramy do programu i do przestrzeni, w której ma zabrzmieć.
+  # The three Latin words are the name's own etymology and stay themselves in every locale; only
+  # the glosses in brackets after them are translated.
+  p3Html: >-
+    Pod kierownictwem Florenta de Bazelaire budujemy brzmienie, w którym dyscyplina i czułość
+    trzymają się razem. Nazwa łączy <em>voces</em> (głosy), <em>octo</em> (osiem) i <em>ensemble</em>
+    — obietnicę głosów, które słuchają siebie nawzajem.
+  collabLabel: "Współpraca"
+  # Every name in this sentence is a proper name and stays itself; the roles beside them are what a
+  # language renders, and the site publishes them elsewhere too (the colophon's credits).
+  collabText: >-
+    Na scenie i przy realizacjach spotykamy się m.in. z reżyserką świateł Adą Bystrzycką,
+    realizatorem dźwięku Jakubem Garbaczem (Ars Sonora Studio), Sebastianem Kuźmą (animacja
+    wizualna) i skrzypkiem Radu Ropotanem; instytucjonalnie — z Fundacją Carpe Diem i Ośrodkiem
+    Kultury Norwida w krakowskich Mistrzejowicach.
+
+plate:
+  # The thesis of "Co śpiewamy?", set alone over a photograph at up to 64px. Four words in Polish:
+  # a rendering that needs a subordinate clause is not this line.
+  quote: "Nade wszystko, dzielimy się."
+
+doings:
+  # Gloss of `Operatio`.
+  eyebrow: "Co robimy?"
+  h2: "Koncerty duchowe, liturgia, ważne uroczystości."
+  lead: >-
+    Głównym nurtem są autorskie Koncerty Duchowe — współczesna forma dawnych Concerts Spirituels.
+    Poza nimi śpiewamy w liturgii: mszach, świętach i uroczystościach, na które nas zapraszają.
+  # `id` is what the desk keys a card by, so reordering them re-keys nothing. Each card names a
+  # category and then one real occasion — the concrete example is what keeps the block from
+  # reading as a services list.
+  cards:
+    - id: "koncerty"
+      title: "Koncerty Duchowe"
+      body: >-
+        Autorski cykl — współczesna forma dawnych Concerts Spirituels. Wieczór po wieczorze, wokół
+        osobnych intencji.
+      cta: "Zobacz drogę koncertów →"
+    - id: "liturgia"
+      title: "Liturgia i uroczystości"
+      # Celebrant and homilist stay out: the milestones register lower on this page prints them in
+      # full, from concerts.yaml. The card names the occasion, not the rite.
+      body: >-
+        Oprawa mszy i kościelnych świąt. Ostatnio — liturgia w uroczystość św. Andrzeja Boboli
+        w Warszawie, w 100-lecie polskich prowincji jezuickich.
+    - id: "dialog"
+      title: "Dialog tradycji"
+      body: >-
+        Śpiewaliśmy podczas 28. Dnia Judaizmu w Kościele katolickim, w krakowskiej Kaplicy
+        św. Doroty, i wystąpiliśmy w Synagodze Tempel — muzyka jako miejsce spotkania.
+    - id: "sluby"
+      title: "Śluby i sakramenty"
+      body: >-
+        Oprawialiśmy liturgie ślubne w Kolegiacie św. Anny w Krakowie i w Opactwie Benedyktynów
+        w Tyńcu. Jesteśmy dyspozycyjni dla takich uroczystości.
+
+cantus:
+  # Gloss of `Cantus`.
+  eyebrow: "Co śpiewamy?"
+  h2: "Muzyka jako odbicie duszy słowa."
+  lead: >-
+    Dzielimy się śpiewem i przemyślanymi narracjami — utkanymi z utworów, w których muzyka i słowo
+    są swoimi lustrzanymi odbiciami.
+  p2: >-
+    Interesuje nas świat: widzialny — przyroda i całe stworzenie — oraz ten niematerialny, którego
+    szukamy i próbujemy zrozumieć. Muzyka sakralna jest w tej wędrówce dobrą towarzyszką.
+  p3: >-
+    Czerpie z geniuszu ludzkiego, z Biblii i z mądrości przodków, po którą kompozytorzy wciąż
+    sięgają, by wyrazić na wskroś osobisty sposób to, co przeżywają i co ich najbardziej dotyka.
+  # Not "od Llibre Vermell": that manuscript is XIV-c. and the seven counted here are the
+  # catalogue's era spans, XV to XXI (src/content/repertoire.yaml). The two together said eight.
+  # /koncerty prints the same count as its own rubric — one span, one number, both pages.
+  moreLink: "Repertuar siedmiu wieków — od renesansowej polifonii po współczesność →"
+
+milestones:
+  # Gloss of `Via`. The rows under it are the concerts themselves and are not on this page's desk.
+  eyebrow: "Co już wybrzmiało"
+  h2: "Krótka droga, ale już zapisana miejscami i intencjami."
+  # One control per row, five rows in the list, so it names the destination and the concert's own
+  # title is appended visually hidden by the component.
+  cardLink: "Karta koncertu →"
+  moreLink: "Zobacz repertuar i szczegóły koncertów →"
+
+foundation:
+  # Gloss of `Fundatio` — the same rubric /kontakt and /kolofon carry, so one gloss serves all
+  # three and none of them may invent a second.
+  eyebrow: "Fundacja"
+  h2: "Forma, która pozwala muzyce mieć ciągłość."
+  lead: >-
+    VoctFoundation jest prawnym i organizacyjnym zapleczem działalności artystycznej. To dzięki niej
+    zespół może myśleć nie tylko o kolejnym koncercie, ale o archiwum, edukacji, produkcji i długim
+    trwaniu repertuaru.
+  # The emphasised span is the statute's own field of activity, quoted from the founding document.
+  p2Html: >-
+    Statutowo Fundacja działa w obszarze <strong>kultury, sztuki, ochrony dóbr kultury i dziedzictwa
+    narodowego</strong>. Może prowadzić projekty artystyczne i interdyscyplinarne, utrwalać nagrania,
+    wspierać młodych artystów oraz działać przez stały zespół artystyczny w formule
+    zespołu-rezydenta.
+  # The statutory purposes, numbered by the component. Each is a category, then a colon, then what
+  # the Foundation may do inside it — a shape the statute itself uses and a rendering should keep.
+  # `id` is what the desk keys a goal by, so reordering them re-keys nothing.
+  goals:
+    - id: "tworczosc"
+      text: >-
+        Twórczość muzyczna: produkcja, koprodukcja, organizacja i prezentacja projektów w kraju
+        i za granicą.
+    - id: "dziedzictwo"
+      text: >-
+        Dziedzictwo: dokumentowanie, archiwizowanie i udostępnianie muzyki oraz praktyk
+        wykonawczych.
+    - id: "edukacja"
+      text: "Edukacja i dostępność: popularyzowanie kultury oraz wspieranie uczestnictwa w niej."
+    - id: "mlodzi"
+      text: "Młodzi artyści: rozwój, promocja, mentoring, rezydencje i projekty wykonawcze."
+    - id: "wspolpraca"
+      text: >-
+        Współpraca: praca z artystami, instytucjami kultury, uczelniami, mediami i organizacjami
+        społecznymi.
+  # The non-distribution clause, in the statute's own terms. /kontakt states the same fact in one
+  # clause ("Dochód przeznaczamy w całości na cele statutowe"); this is the full form, and the two
+  # may read differently but may never say different things.
+  legalNote: >-
+    Dochody Fundacji przeznaczane są w całości na realizację celów statutowych. Nie podlegają
+    podziałowi między fundatora, członków organów ani osoby związane z Fundacją; działalność
+    gospodarcza, jeżeli jest prowadzona, pozostaje pomocnicza wobec misji statutowej.
+  # Names the same PDF the footer and /kolofon name; the three may read differently, they may not
+  # name two documents. The trailing arrow is part of the label — the site draws it no other way.
+  statuteLabel: "Statut fundacji ↗"
+
+governance:
+  # Gloss of `Consilium`.
+  eyebrow: "Zarząd"
+  h2: "Odpowiedzialność rozpisana na trzy głosy."
+  intro: >-
+    Kierunek artystyczny wyznacza jedna osoba, decyzje fundacji zapadają większością głosów — tak
+    stanowi statut. Ci sami ludzie stoją potem za kulisami w dniu koncertu.
+  # A DOMAIN, NOT A JOB DESCRIPTION: a three-person board reads as an improvised org chart the
+  # moment its cards start listing duties. Two words each, and the middot is the site's own
+  # separator rather than punctuation to translate.
+  #
+  # `id` matches the portrait the component holds for each member, so the role and the face cannot
+  # drift apart the way a positional pairing would.
+  roles:
+    - id: "florent"
+      role: "Kierownictwo artystyczne · dyrygent"
+    - id: "ania"
+      role: "Organizacja · komunikacja"
+    - id: "krystian"
+      role: "Technologia · narzędzia"
+
+cta:
+  h2: "Zaproście nas do przestrzeni, która potrzebuje głosu."
+  lede: >-
+    Koncert duchowy, oprawa liturgii, ważna uroczystość, mecenat albo współpraca artystyczna.
+    Czekamy na Wasz kontakt.
+  # Three buttons. The first two name the pages they open and the site's chrome names those pages
+  # too — keep them in the same register as `ui.ts` without copying its shorter labels.
+  write: "Napisz do nas"
+  concerts: "Koncerty Duchowe"
+  support: "Wesprzyj fundację"
