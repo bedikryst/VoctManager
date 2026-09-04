@@ -1,0 +1,40 @@
+---
+/**
+ * @file VaultMount.astro
+ * @description The one place the donation vault is mounted. Every surface that offers "Wesprzyj" —
+ *  the landing, /press and all six shared page components — renders this, and it resolves the
+ *  vault's prose for the page's locale before handing it to the island.
+ *
+ *  IT EXISTS SO THAT THE RESOLUTION HAPPENS ONCE. `lib/vaultCopy` reads YAML through Vite and can
+ *  only run at build; eight call sites each doing that themselves is eight chances for one of them
+ *  to pass the wrong locale, which is exactly how ten English and French concert pages shipped a
+ *  Polish site map for the whole of stage F (spec §7).
+ *
+ *  `lang` IS REQUIRED AND THE THROW IS THE POINT. A default of Polish is invisible when it is
+ *  wrong: the page builds, the sheet renders, and an English reader is quietly offered Polish. The
+ *  build does not typecheck `.astro` frontmatter — `astro check` is a separate script — so the
+ *  guard has to be a runtime one, and a build that dies naming the caller is the cheapest possible
+ *  version of that failure.
+ * @architecture Astro islands 2026
+ * @module components/VaultMount
+ */
+import type { Locale } from "../i18n/config";
+import { VaultIsland } from "../islands/landing/VaultIsland";
+import { vaultCopy } from "../lib/vaultCopy";
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+if (!lang) {
+  throw new Error(
+    "<VaultMount> needs `lang`: the vault's prose and its terms are resolved per locale, and a " +
+      "missing one would silently serve Polish to every reader of this page.",
+  );
+}
+
+const copy = vaultCopy(lang);
+---
+
+<VaultIsland client:idle lang={lang} copy={copy} />

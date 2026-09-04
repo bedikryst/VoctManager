@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { BrandGlyph } from "../BrandGlyph";
 import { useLenisLock } from "../hooks/useLenisLock";
+import { useVaultCopy } from "./copyContext";
 import { Typo } from "../lib/Typo";
 
 function waitForUI(showNow: () => void): () => void {
@@ -35,6 +36,7 @@ function waitForUI(showNow: () => void): () => void {
 }
 
 export function GratitudeModal(): React.JSX.Element | null {
+  const { lang, vault, t } = useVaultCopy();
   const [visible, setVisible] = useState(false);
 
   useLenisLock(visible);
@@ -67,7 +69,7 @@ export function GratitudeModal(): React.JSX.Element | null {
   }, [visible, close]);
 
   return (
-    <Typo>
+    <Typo locale={lang}>
       <div
         className={`gratitude${visible ? " is-visible" : ""}`}
         id="gratitude"
@@ -84,16 +86,16 @@ export function GratitudeModal(): React.JSX.Element | null {
             <span className="gratitude-mark-halo" />
             <BrandGlyph />
           </div>
-          <div className="gratitude-kicker micro">VoctEnsemble · cykl MMXXVI</div>
+          <div className="gratitude-kicker micro">{vault.result.kicker}</div>
           {/* Not an <h1>: the page's h1 is the hero title — overlays must not add more. */}
           <p className="gratitude-title" id="gratitude-title">
-            Twój głos<br />dołączył do chóru.
+            {vault.gratitude.title1}
+            <br />
+            {vault.gratitude.title2}
           </p>
-          <p className="gratitude-strap">
-            Dziękujemy. Niech ta muzyka wybrzmiewa dalej — także dzięki Tobie.
-          </p>
+          <p className="gratitude-strap">{vault.gratitude.strap}</p>
           <button type="button" className="gratitude-close" onClick={close}>
-            Wróć do strony
+            {t.gratitudeClose}
           </button>
         </div>
       </div>

@@ -1,0 +1,84 @@
+# page.skarbiec — brouillon FR (étape I). Traduit du polonais, jamais de l'anglais.
+#
+# LE SKARBIEC SE LIT SUR TOUTES LES PAGES DU SITE, et non sur une page à lui : le bouton « Nous
+# soutenir » de la barre l'ouvre sur place. C'est ce qui en faisait la plus grande lacune restée
+# ouverte après l'étape G — la barre dit « Nous soutenir » depuis l'étape F et le panneau derrière
+# elle répondait en polonais.
+#
+# CE QUI N'EST PAS ICI, parce que ce n'est pas de la copie : les affordances, les libellés de
+# formulaire et les messages de validation forment un triplet typé
+# (`i18n/content/skarbiecChrome.ts`) ; le numéro de compte, le registre de la fondation et
+# l'intitulé du virement sont des constantes — l'intitulé reste POLONAIS dans toutes les langues,
+# c'est la chaîne que le relevé bancaire de la fondation doit porter ; Zrzutka.pl, Axepta BNP
+# Paribas, BLIK, Apple et Google Pay ainsi que les six banques sous le QR sont des marques.
+#
+# LE NOM DU CYCLE, ET UNE QUESTION À POSER À FLORENT. Le polonais de cette page appelle le cycle
+# « Concerts Spirituels » — le nom FRANÇAIS — là où /koncerty l'appelle « Koncerty Duchowe ». Le
+# français reprend le nom que le site publie en français, « le cycle des Concerts Spirituels »
+# (`i18n/content/koncert.ts`) ; la divergence est dans la langue SOURCE, c'est donc une question
+# éditoriale et non un défaut de traduction (§6aa a trouvé la même forme dans le `Via` de /o-nas).
+#
+# LA CARTE QR VISE UN COMPTE POLONAIS, et ses banques sont nommées sur la carte elle-même. Le code
+# 2D polonais (KIR) qu'elle imprime n'est lu que par les applications bancaires polonaises ; le
+# libellé « Virement QR » reste donc proche de celui de ces applications.
+#
+# PAS D'ESPACES INSÉCABLES TAPÉES À LA MAIN : `lib/typo.ts` les insère au build avant « ? ! : ; »
+# et autour des guillemets. Les guillemets polonais „…" deviennent « … ».
+#
+# DEUX FRAGMENTS SONT LA MOITIÉ D'UNE PHRASE, par construction — l'autre moitié est un lien que le
+# pupitre ne peut pas porter. `online.consentLead` se termine par l'article du titre qui le suit ;
+# `mecenat.confirmContact` se termine en pointant vers une adresse.
+
+page.skarbiec.head.kicker: "Trésor de musique · cycle MMXXVI"
+page.skarbiec.head.title: "Soutenir le cycle"
+
+page.skarbiec.progress.open: "Collecte ouverte"
+page.skarbiec.progress.awaiting: "le cycle des Concerts Spirituels"
+
+page.skarbiec.methods.label: "Choisissez votre voie"
+
+page.skarbiec.online.tag: "immédiat · sécurisé"
+page.skarbiec.online.title: "Faire un don en ligne"
+page.skarbiec.online.note: "Directement sur le compte de la Fondation — par la passerelle Axepta BNP Paribas. Sans intermédiaire, sans création de compte."
+page.skarbiec.online.consentLead: "J'ai lu et j'accepte le"
+page.skarbiec.online.methodsNotePln: "Les paiements en PLN passent par BLIK, les cartes de paiement, Apple/Google Pay et les virements bancaires instantanés."
+page.skarbiec.online.methodsNoteEur: "Les paiements en EUR passent uniquement par les cartes de paiement et Apple/Google Pay."
+
+page.skarbiec.zrzutka.tag: "communauté · instantané"
+page.skarbiec.zrzutka.note: "BLIK, carte, Apple Pay, Google Pay. Dons réguliers possibles. Rejoignez la communauté des auditeurs."
+
+page.skarbiec.qr.tag: "sans commission"
+page.skarbiec.qr.title: "Virement depuis votre application bancaire"
+page.skarbiec.qr.note: "Scannez le code avec l'appareil photo de votre application bancaire — tous les champs se remplissent d'eux-mêmes."
+page.skarbiec.qr.hintHtml: "Ouvrez l'application de votre banque, choisissez <strong>« Virement QR »</strong> et scannez. Vous saisissez le montant dans l'application."
+page.skarbiec.qr.recurringLabel: "Un soutien chaque mois · virement permanent"
+page.skarbiec.qr.recurringNoteHtml: "Vous souhaitez soutenir le cycle régulièrement ? Copiez les données ci-dessus et enregistrez-les dans votre application bancaire comme <strong>virement permanent</strong> (rubrique « virements permanents » / « paiements récurrents ») — par exemple 25, 50 ou 100&nbsp;zł par mois. Le code QR ci-dessus crée un virement ponctuel ; un ordre récurrent se saisit à la main. Il reste entièrement sous votre contrôle — vous pouvez le modifier ou l'annuler à tout moment depuis votre banque, sans nous contacter. Sans commission et sans transmettre vos données de carte."
+
+page.skarbiec.mecenat.tag: "soutien régulier · une relation"
+page.skarbiec.mecenat.title: "Devenez mécène du cycle"
+page.skarbiec.mecenat.note: "Le mécénat est plus qu'un don ponctuel — c'est une relation durable avec l'ensemble et sa musique. Votre soutien régulier nous permet de préparer la suite : les répétitions, les enregistrements et les prochains volets du cycle des Concerts Spirituels. En retour, nous vous invitons au plus près de ce que nous faisons."
+page.skarbiec.mecenat.benefitsLabel: "Ce que nous offrons à nos mécènes"
+page.skarbiec.mecenat.benefit1: "Un remerciement personnel et un contact direct avec le fondateur de la Fondation."
+page.skarbiec.mecenat.benefit2: "Votre nom parmi les mécènes du cycle, si vous y consentez."
+page.skarbiec.mecenat.benefit3: "La priorité sur les invitations aux concerts et aux événements à venir."
+page.skarbiec.mecenat.benefit4: "Un récapitulatif annuel de vos dons — utile au moment de votre déclaration d'impôts."
+page.skarbiec.mecenat.howLabel: "Comment cela fonctionne"
+page.skarbiec.mecenat.howHtml: "Le mécénat repose sur un <strong>virement permanent</strong> — un versement mensuel que vous mettez en place et contrôlez entièrement depuis votre banque (par exemple 50, 100 ou 200&nbsp;zł par mois). Vous pouvez le modifier ou l'annuler à tout moment, sans nous contacter. Sans commission et sans transmettre vos données de carte."
+page.skarbiec.mecenat.talkLabel: "Vous préférez en parler d'abord ?"
+page.skarbiec.mecenat.talkNote: "Écrivez-nous — nous répondrons personnellement et vous aiderons à trouver la forme de soutien qui vous convient."
+page.skarbiec.mecenat.joinLabel: "Dites-nous que vous nous rejoignez"
+page.skarbiec.mecenat.consentHtml: "Je consens au traitement de mes données (prénom, nom, adresse e-mail) afin d'être contacté au sujet du mécénat, conformément à la <a href=\"/polityka-prywatnosci\">Politique de confidentialité</a>."
+page.skarbiec.mecenat.confirmGreeting: "Merci"
+page.skarbiec.mecenat.confirmFallbackName: "cher mécène"
+page.skarbiec.mecenat.confirmBody: "Nous avons enregistré votre demande — nous vous écrirons dès que votre premier virement nous parviendra."
+page.skarbiec.mecenat.confirmContact: "Pour toute question, écrivez à"
+
+page.skarbiec.result.kicker: "VoctEnsemble · cycle MMXXVI"
+
+page.skarbiec.gratitude.title1: "Votre voix"
+page.skarbiec.gratitude.title2: "a rejoint le chœur."
+page.skarbiec.gratitude.strap: "Merci. Que cette musique continue de résonner — grâce à vous aussi."
+
+page.skarbiec.failure.title1: "Le paiement"
+page.skarbiec.failure.title2: "n'a pas abouti."
+page.skarbiec.failure.strap: "Nous sommes désolés, le paiement n'a pas pu être traité. Rien n'a été prélevé sur votre compte. Merci de réessayer ou de choisir un autre moyen."

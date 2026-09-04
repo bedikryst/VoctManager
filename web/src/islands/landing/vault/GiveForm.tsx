@@ -4,6 +4,11 @@
  *  20/50/100, or custom amount), email + consent capture, then POSTs to the public Django
  *  endpoint that returns a gateway redirect URL. Exposes a `preselect(amount)` imperative API
  *  via VaultContext so opening links can pre-populate the form. Web/Astro port of the SPA widget.
+ *
+ *  THE LOCALE TRAVELS WITH THE DONATION. The gateway's own page carries its language in the URL
+ *  (`paywall.axepta.pl/<lang>/pay/…`), so the backend rewrites that segment from what is posted
+ *  here — otherwise a reader of any language meets whichever page the gateway defaults to, which
+ *  is not the one they were reading a second earlier.
  * @architecture Astro islands 2026
  * @module islands/landing/vault/GiveForm
  */
@@ -15,13 +20,14 @@ import {
   CURRENCY_SUFFIX,
   GIVE_DEFAULT_TIER,
   GIVE_MAX,
-  GIVE_METHODS_NOTE,
   GIVE_MIN,
   GIVE_TIERS,
   type GiveCurrency,
 } from "../constants/giveTiers";
 import { formatMoney } from "../lib/formatMoney";
+import { VAULT_CONFIG } from "../constants/vaultConfig";
 import { useVault } from "../providers/VaultContext";
+import { useVaultCopy } from "./copyContext";
 import { Typo } from "../lib/Typo";
 
 type TierValue = number | "custom";
@@ -56,6 +62,7 @@ function isValidAmount(amount: number): boolean {
 
 export function GiveForm(): React.JSX.Element {
   const { registerGiveApi, registerConsentAcceptor, openRegulamin } = useVault();
+  const { lang, vault, terms, t } = useVaultCopy();
   const [state, setState] = useState<GiveFormState>(INITIAL_STATE);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,16 +76,14 @@ export function GiveForm(): React.JSX.Element {
   const amountValid = isValidAmount(amount);
 
   const amountLabel = useMemo(
-    () => (amountValid ? formatMoney(amount, state.currency) : "—"),
-    [amount, amountValid, state.currency],
+    () => (amountValid ? formatMoney(amount, state.currency, lang) : "—"),
+    [amount, amountValid, state.currency, lang],
   );
 
   const ctaLabel = useMemo(() => {
-    if (loading) return "Przetwarzanie...";
-    return amountValid
-      ? `Wesprzyj ${formatMoney(amount, state.currency)}`
-      : "Przejdź do płatności";
-  }, [amount, amountValid, loading, state.currency]);
+    if (loading) return t.ctaProcessing;
+    return amountValid ? t.ctaGive(formatMoney(amount, state.currency, lang)) : t.ctaFallback;
+  }, [amount, amountValid, loading, state.currency, lang, t]);
 
   // Expose preselect() to the VaultContext so external openers can pre-populate the amount.
   useEffect(() => {
@@ -135,26 +140,24 @@ export function GiveForm(): React.JSX.Element {
       const email = state.email.trim();
 
       if (!Number.isFinite(resolved) || resolved < GIVE_MIN) {
-        setError("Wpisz kwotę darowizny, którą chcesz przekazać.");
+        setError(t.errorAmount);
         if (state.tier === "custom") customRef.current?.focus();
         return;
       }
       if (resolved > GIVE_MAX) {
-        setError(
-          `Maksymalna kwota wpłaty online to ${formatMoney(GIVE_MAX, state.currency)}. Większą darowiznę prosimy przekazać przelewem.`,
-        );
+        setError(t.errorAmountMax(formatMoney(GIVE_MAX, state.currency, lang)));
         return;
       }
       const emailEl = emailRef.current;
       if (!email || !emailEl?.checkValidity()) {
         setEmailInvalid(true);
-        setError("Podaj poprawny adres e-mail — wyślemy na niego potwierdzenie darowizny.");
+        setError(t.errorEmail);
         emailEl?.focus();
         return;
       }
       if (!state.consent) {
         setConsentInvalid(true);
-        setError("Zaznacz akceptację regulaminu darowizn, aby przejść do płatności.");
+        setError(t.errorConsent);
         consentRef.current?.focus();
         return;
       }
@@ -165,6 +168,7 @@ export function GiveForm(): React.JSX.Element {
           email,
           amount: resolved,
           currency: state.currency,
+          locale: lang,
         });
         window.location.href = redirectUrl;
       } catch (err) {
@@ -174,16 +178,14 @@ export function GiveForm(): React.JSX.Element {
           console.error("[VoctGive] unexpected", err);
         }
         setLoading(false);
-        setError(
-          "Wystąpił problem z połączeniem. Spróbuj ponownie za chwilę lub skorzystaj z przelewu poniżej.",
-        );
+        setError(t.errorNetwork);
       }
     },
-    [loading, state],
+    [loading, state, lang, t],
   );
 
   return (
-    <Typo>
+    <Typo locale={lang}>
       <form
         className="give-form"
         onSubmit={onSubmit}
@@ -192,7 +194,7 @@ export function GiveForm(): React.JSX.Element {
       >
         <div className="give-field">
           <div className="give-label-row">
-            <span className="give-label micro">Kwota darowizny</span>
+            <span className="give-label micro">{t.amountLabel}</span>
             <span className="give-amount-current" aria-live="polite">
               {amountLabel}
             </span>
@@ -201,7 +203,7 @@ export function GiveForm(): React.JSX.Element {
             className="give-currency"
             data-currency={state.currency}
             role="radiogroup"
-            aria-label="Waluta darowizny"
+            aria-label={t.currencyAria}
           >
             <button
               type="button"
@@ -223,11 +225,7 @@ export function GiveForm(): React.JSX.Element {
             </button>
             <div className="give-currency-thumb" aria-hidden="true" />
           </div>
-          <div
-            className="give-tiers"
-            role="radiogroup"
-            aria-label="Sugerowana kwota darowizny"
-          >
+          <div className="give-tiers" role="radiogroup" aria-label={t.tiersAria}>
             {GIVE_TIERS[state.currency].map((value, index) => (
               <button
                 key={index}
@@ -237,7 +235,7 @@ export function GiveForm(): React.JSX.Element {
                 aria-checked={state.tier === index}
                 onClick={() => selectTier(index)}
               >
-                {formatMoney(value, state.currency)}
+                {formatMoney(value, state.currency, lang)}
               </button>
             ))}
             <button
@@ -247,7 +245,7 @@ export function GiveForm(): React.JSX.Element {
               aria-checked={state.tier === "custom"}
               onClick={() => selectTier("custom")}
             >
-              Inna kwota
+              {t.customTier}
             </button>
           </div>
           {state.tier === "custom" ? (
@@ -262,7 +260,7 @@ export function GiveForm(): React.JSX.Element {
                   step="1"
                   placeholder="0"
                   autoComplete="off"
-                  aria-label="Własna kwota darowizny"
+                  aria-label={t.customAria}
                   value={state.customAmount}
                   onChange={(event) => {
                     setState((prev) => ({
@@ -283,7 +281,7 @@ export function GiveForm(): React.JSX.Element {
 
         <div className="give-field">
           <label className="give-label micro" htmlFor="giveEmail">
-            E-mail · na ten adres wyślemy potwierdzenie
+            {t.emailLabel}
           </label>
           <input
             ref={emailRef}
@@ -291,7 +289,7 @@ export function GiveForm(): React.JSX.Element {
             name="email"
             type="email"
             className="give-email"
-            placeholder="twoj@adres.pl"
+            placeholder={t.emailPlaceholder}
             required
             autoComplete="email"
             inputMode="email"
@@ -340,8 +338,12 @@ export function GiveForm(): React.JSX.Element {
               <path d="M3 8.4 L6.4 11.8 L13 4.6" />
             </svg>
           </span>
+          {/* One sentence broken at the link, because the link is a BUTTON that opens the terms
+              overlay — and the desk's inline vocabulary has no `<button>`. The title comes from
+              the terms document itself, so the checkbox and the overlay's own heading can never
+              drift into two names for one thing. */}
           <span className="give-consent-text">
-            Zapoznał(a)m się i akceptuję{" "}
+            {`${vault.online.consentLead} `}
             <button
               type="button"
               className="give-consent-link plausible-event-name=regulamin+darowizn"
@@ -352,7 +354,7 @@ export function GiveForm(): React.JSX.Element {
                 openRegulamin();
               }}
             >
-              Regulamin przekazywania darowizn
+              {terms.head.title}
             </button>
             .
           </span>
@@ -370,10 +372,14 @@ export function GiveForm(): React.JSX.Element {
         </button>
 
         <div className="give-fineprint">
-          <p className="give-methods-note">{GIVE_METHODS_NOTE[state.currency]}</p>
+          <p className="give-methods-note">
+            {state.currency === "PLN" ? vault.online.methodsNotePln : vault.online.methodsNoteEur}
+          </p>
+          {/* The transfer title stays Polish in every locale: it is the string the foundation's
+              bank statement has to carry, not a sentence for the reader. Only its label turns. */}
           <p className="give-descriptor">
-            Tytuł transakcji:{" "}
-            <strong>Darowizna na cele statutowe VoctFoundation</strong>
+            {`${t.transactionTitleLabel}: `}
+            <strong>{VAULT_CONFIG.recipient.title}</strong>
           </p>
         </div>
       </form>

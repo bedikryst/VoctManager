@@ -72,15 +72,29 @@ function setAt(root: unknown, at: readonly (string | number)[], value: string): 
 }
 
 /**
+ * A last pass over an `HTML` field, after its links have been localized. Every page on this site
+ * wants nothing here — the build's typography pass and the page's own markup already cover them.
+ * The donation vault does, because it is a client ISLAND: `lib/typoHtml` copies `<astro-island>`
+ * subtrees through untouched (rewriting them would desynchronise React's two renders), so a
+ * paragraph inside one reaches the reader with no typographic pass at all unless its caller runs
+ * one first. See `lib/vaultCopy`.
+ */
+export type HtmlPass = (html: string, locale: Locale) => string;
+
+/**
  * This page's copy in `locale` — the shape its schema describes, with translated fields in place.
  * The returned object is freshly parsed per call and is the caller's to read; nothing caches it,
  * because a static build renders each page once per locale.
  */
-export function pageCopy<T>(spec: PageCopySpec<T>, locale: Locale): T {
+export function pageCopy<T>(spec: PageCopySpec<T>, locale: Locale, htmlPass?: HtmlPass): T {
   const data = spec.schema.parse(YAML.parse(sourceOf(spec.id)));
   for (const leaf of walkCopy(spec, data)) {
     const source = overlayValue(leaf.key, locale) ?? leaf.value;
-    const next = leaf.kind === "HTML" ? localizeHrefs(source, locale) : source;
+    let next = source;
+    if (leaf.kind === "HTML") {
+      next = localizeHrefs(source, locale);
+      if (htmlPass) next = htmlPass(next, locale);
+    }
     if (next !== leaf.value) setAt(data, leaf.at, next);
   }
   return data;

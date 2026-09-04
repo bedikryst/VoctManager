@@ -27,7 +27,6 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { DEFAULT_LOCALE } from "./src/i18n/config.ts";
 import { detectLocale, typographyHtml } from "./src/lib/typoHtml.ts";
 
 /**
@@ -133,13 +132,15 @@ export function staticTypography() {
             touched += 1;
           }
 
-          // Judged in Polish, not in the page's locale: island copy (the vault, the player) is the
-          // Polish original on every page, which is exactly what `<Typo>`'s default assumes.
-          // Reading them as French would flag Polish sentences for the French colon rule.
+          // Judged in the PAGE's locale, which it did not use to be: island copy was the Polish
+          // original on every page until the donation vault was translated, and reading a French
+          // paragraph under the Polish one-letter-word rule flags every correct sentence in it.
+          // The reverse is now the useful signal — an island still SSR-ing Polish onto a foreign
+          // page shows up here as a run of spots no rule of that language should have found.
           /** @type {string[]} */
           const spots = [];
           for (const fragment of islandFragments(next)) {
-            const fixed = typographyHtml(fragment, DEFAULT_LOCALE);
+            const fixed = typographyHtml(fragment, locale);
             if (fixed !== fragment) spots.push(...differences(fragment, fixed));
           }
           if (spots.length > 0) islandSpots.set(path.relative(outDir, file), [...new Set(spots)]);

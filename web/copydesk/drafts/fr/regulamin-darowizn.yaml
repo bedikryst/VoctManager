@@ -1,0 +1,67 @@
+# page.regulamin-darowizn — brouillon FR (étape I). Traduit du polonais, jamais de l'anglais.
+#
+# TEXTE JURIDIQUE, ET C'EST LA VERSION POLONAISE QUI FAIT FOI. Le § 5, alinéa 3 — nouveau en
+# version 1.2 — le dit à l'intérieur même du document, et c'est ce qui rend cette traduction
+# publiable. Le registre est donc statutaire et non éditorial : aucune phrase n'est resserrée, rien
+# n'est lissé, et là où le polonais est long le français l'est aussi.
+#
+# LA NUMÉROTATION FAIT PARTIE DU TEXTE ET N'EST JAMAIS RENUMÉROTÉE. Le § 3, alinéa 4 renvoie à
+# « l'adresse indiquée à l'alinéa 2 », qui est `s3.p2Html` ; le § 1, alinéa 2 cite « les § 5 et
+# § 6 » des Statuts ; le § 1, alinéa 4 cite « l'art. 890 § 1, 2e phrase » du Code civil polonais.
+# Ce sont des adresses dans d'autres documents : l'instrument est nommé en français, la citation
+# elle-même reste telle quelle.
+#
+# TERMES DÉJÀ PUBLIÉS PAR LE SITE, repris plutôt qu'inventés :
+#   Statut Fundacji      → les Statuts de la Fondation   (`page.kolofon.fundatio.statuteLink`)
+#   cele statutowe       → les buts statutaires          (`page.o-nas.foundation.legalNote`)
+#   RODO                 → RGPD
+#   Polityka prywatności → Politique de confidentialité  (`UI.footer.privacy`)
+#
+# LA FONDATION EST IDENTIFIÉE UNE FOIS, PAR SA RAISON SOCIALE. « Fundacja VoctFoundation » est ce
+# que porte le registre judiciaire polonais, et une partie à un contrat doit être identifiable
+# depuis ce contrat : le § 1, alinéa 1 garde donc la raison sociale non traduite et pose le terme
+# défini dont vit le reste du document. Ensuite, y compris au § 4, alinéa 1, l'entité porte le nom
+# que le site publie déjà en français — un même organisme ne doit pas porter deux noms à trois
+# sections d'intervalle. Le siège est une adresse : la ville prend son exonyme, le code postal
+# garde la forme qu'il doit avoir sur une enveloppe.
+#
+# PAS D'ESPACES INSÉCABLES TAPÉES À LA MAIN : `lib/typo.ts` les insère au build.
+
+page.regulamin-darowizn.head.kicker: "Document · dons"
+page.regulamin-darowizn.head.title: "Règlement des dons"
+page.regulamin-darowizn.head.lede: "Le présent règlement définit les modalités des dons faits à la Fondation VoctFoundation par l'intermédiaire du site voctensemble.com — par paiement en ligne et par virement bancaire."
+
+page.regulamin-darowizn.s1.title: "Dispositions générales"
+page.regulamin-darowizn.s1.p1Html: "Le présent règlement définit les modalités des dons faits à la <strong>Fundacja VoctFoundation</strong>, dont le siège est à Cracovie (ul. Św. Filipa 23/3, 31-150 Kraków), inscrite au Registre national judiciaire sous le numéro KRS : 0001237252, NIP : 6762718992, REGON : 544621525, ci-après « la Fondation »."
+page.regulamin-darowizn.s1.p2Html: "Conformément aux § 5 et § 6 des <a href=\"/docs/Statut-VoctFoundation.pdf\">Statuts de la Fondation</a>, publiés sur le site de la Fondation, tous les dons faits à la Fondation sont affectés exclusivement à la réalisation de ses buts statutaires, en particulier l'activité artistique, notamment musicale, le développement et la diffusion de la création musicale, la documentation, la protection et la diffusion du patrimoine musical, l'action éducative et de sensibilisation dans le domaine de la culture, l'élargissement de l'accès à la culture, le soutien aux jeunes artistes ainsi que la réalisation de projets artistiques, y compris l'activité de l'ensemble en résidence de la Fondation."
+page.regulamin-darowizn.s1.p3: "Peut être donateur toute personne physique majeure, toute personne morale ou toute entité dépourvue de la personnalité juridique."
+page.regulamin-darowizn.s1.p4: "Conformément à l'art. 890 § 1, 2e phrase du Code civil polonais, le contrat de donation d'une somme d'argent devient valable et effectif au moment de l'exécution de la prestation (c'est-à-dire lorsque les fonds parviennent sur le compte de la Fondation), quelle que soit la forme de la déclaration de volonté."
+
+page.regulamin-darowizn.s2.title: "Modalités des dons et moyens de paiement"
+page.regulamin-darowizn.s2.p1: "Les dons en ligne se font au moyen du formulaire de soutien disponible sur le site voctensemble.com."
+page.regulamin-darowizn.s2.p2: "L'opérateur des paiements en ligne est BNP Paribas Bank Polska S.A., dont le siège est à Varsovie (passerelle Axepta BNP Paribas) ; pour les transactions par carte, l'établissement acquéreur est PayU S.A., dont le siège est à Poznań."
+page.regulamin-darowizn.s2.p3: "Le donateur peut faire un don par des moyens de paiement modernes et chiffrés, en particulier : cartes de paiement (Visa, Mastercard), système BLIK, virements bancaires instantanés (Pay-By-Link) et portefeuilles électroniques (Apple Pay, Google Pay)."
+page.regulamin-darowizn.s2.p4: "Indépendamment du paiement en ligne, le donateur peut faire un don par virement bancaire ordinaire directement sur le compte de la Fondation — de manière ponctuelle ou sous forme de virement permanent, que le donateur met en place, modifie et annule lui-même depuis sa banque ; la Fondation ne conserve à cette fin ni données de carte ni autorisation de prélèvement. Un don peut également être fait par l'intermédiaire du service de collecte Zrzutka.pl, dans les conditions prévues par le règlement de ce service."
+page.regulamin-darowizn.s2.p5: "Les dons peuvent être faits en PLN et en EUR. La disponibilité des différents moyens de paiement dépend de la devise choisie."
+page.regulamin-darowizn.s2.p6: "Le fait de cliquer sur le bouton confirmant la volonté de soutenir et d'effectuer le paiement vaut conclusion du contrat de donation et acceptation du présent règlement."
+
+page.regulamin-darowizn.s3.title: "Réclamations et remboursements"
+page.regulamin-darowizn.s3.p1: "Le donateur a le droit de signaler toute irrégularité survenue dans le processus de don (par exemple un dysfonctionnement technique du système de paiement)."
+page.regulamin-darowizn.s3.p2Html: "Merci d'adresser vos signalements par voie électronique à l'adresse e-mail : <a href=\"mailto:kontakt@voctensemble.com\">kontakt@voctensemble.com</a>."
+page.regulamin-darowizn.s3.p3: "La Fondation examine les signalements avec le plus grand soin et sans délai, et en tout état de cause dans les 14 jours suivant leur réception."
+page.regulamin-darowizn.s3.p4: "En cas de paiement effectué par erreur ou de défaillance de la banque du donateur ayant entraîné un double débit, le donateur a le droit de demander le remboursement du don dans les 14 jours suivant sa réalisation. La demande doit être envoyée à l'adresse indiquée à l'alinéa 2, en précisant l'identifiant de la transaction et l'adresse e-mail utilisée lors du paiement."
+page.regulamin-darowizn.s3.p5: "Pour la sécurité financière des donateurs, tout remboursement est effectué exclusivement sur le moyen de paiement d'origine (le même compte bancaire ou la même carte de paiement) que celui utilisé lors du versement initial, conformément à la loi et aux règlements des opérateurs de paiement."
+
+page.regulamin-darowizn.s4.title: "Données personnelles (RGPD)"
+page.regulamin-darowizn.s4.p1: "Le responsable du traitement des données personnelles des donateurs est la Fondation VoctFoundation."
+page.regulamin-darowizn.s4.p2Html: "Les informations détaillées relatives au traitement des données personnelles, aux finalités de ce traitement, au rôle des opérateurs de paiement (Axepta BNP Paribas, PayU) et aux droits dont disposent les donateurs figurent dans la <a href=\"/polityka-prywatnosci\">Politique de confidentialité</a> disponible sur le site voctensemble.com."
+
+page.regulamin-darowizn.s5.title: "Dispositions finales"
+page.regulamin-darowizn.s5.p1: "La Fondation se réserve le droit d'apporter des modifications au présent règlement ; elle en informera par la mise à jour de son texte sur le site internet."
+page.regulamin-darowizn.s5.p2: "Pour tout ce que le présent règlement ne prévoit pas, les dispositions du droit polonais s'appliquent, en particulier celles du Code civil."
+page.regulamin-darowizn.s5.p3: "Le présent règlement est publié en polonais, ainsi qu'en traduction anglaise et française. La version polonaise est celle qui fait foi ; les traductions n'ont qu'une valeur informative et, en cas de divergence entre les versions linguistiques, c'est le texte polonais qui prévaut."
+
+page.regulamin-darowizn.history.label: "Historique des versions"
+page.regulamin-darowizn.history.entries.v1-2.note: "Ajout du § 5, alinéa 3 : le règlement est également publié en traduction anglaise et française, la version polonaise restant celle qui fait foi."
+page.regulamin-darowizn.history.entries.v1-1.note: "Le § 2 a été complété par les moyens de don en dehors de la passerelle de paiement en ligne : le virement bancaire ordinaire (ponctuel ou sous forme de virement permanent) et le service de collecte Zrzutka.pl."
+page.regulamin-darowizn.history.entries.v1-0.note: "Version initiale du règlement, publiée avec la mise en ligne du site voctensemble.com."

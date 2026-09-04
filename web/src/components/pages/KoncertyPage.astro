@@ -45,7 +45,7 @@ import { CONCERT } from "../../i18n/content/koncert";
 import { eraName } from "../../i18n/content/repertuar";
 import { UI } from "../../i18n/ui";
 import { localizePath, pageI18n, SITE, type Locale } from "../../i18n/config";
-import { VaultIsland } from "../../islands/landing/VaultIsland";
+import VaultMount from "../../components/VaultMount.astro";
 import "../../styles/vault.css";
 
 interface Props {
@@ -550,7 +550,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
   <SiteFooter lang={lang} />
 
-  <VaultIsland client:idle />
+  <VaultMount lang={lang} />
   <script>
     import "../../scripts/vault-triggers.ts";
   </script>

@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { BrandGlyph } from "../BrandGlyph";
 import { useLenisLock } from "../hooks/useLenisLock";
 import { useVault } from "../providers/VaultContext";
+import { useVaultCopy } from "./copyContext";
 import { Typo } from "../lib/Typo";
 
 function waitForUI(showNow: () => void): () => void {
@@ -36,6 +37,7 @@ function waitForUI(showNow: () => void): () => void {
 }
 
 export function FailureModal(): React.JSX.Element | null {
+  const { lang, vault, t } = useVaultCopy();
   const [visible, setVisible] = useState(false);
   const { open: openVault } = useVault();
 
@@ -74,7 +76,7 @@ export function FailureModal(): React.JSX.Element | null {
   }, [visible, close]);
 
   return (
-    <Typo>
+    <Typo locale={lang}>
       <div
         className={`failure${visible ? " is-visible" : ""}`}
         id="failure"
@@ -91,21 +93,20 @@ export function FailureModal(): React.JSX.Element | null {
             <span className="failure-mark-halo" />
             <BrandGlyph />
           </div>
-          <div className="failure-kicker micro">VoctEnsemble · cykl MMXXVI</div>
+          <div className="failure-kicker micro">{vault.result.kicker}</div>
           {/* Not an <h1>: the page's h1 is the hero title — overlays must not add more. */}
           <p className="failure-title" id="failure-title">
-            Płatność nie<br />doszła do skutku.
+            {vault.failure.title1}
+            <br />
+            {vault.failure.title2}
           </p>
-          <p className="failure-strap">
-            Przepraszamy, płatność nie mogła zostać przetworzona. Twoje środki nie zostały
-            pobrane. Prosimy spróbować ponownie lub wybrać inną metodę.
-          </p>
+          <p className="failure-strap">{vault.failure.strap}</p>
           <button
             type="button"
             className="failure-retry plausible-event-name=sprobuj+ponownie"
             onClick={retry}
           >
-            Spróbuj ponownie
+            {t.failureRetry}
           </button>
         </div>
       </div>

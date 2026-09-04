@@ -9,10 +9,11 @@
  * @module islands/landing/vault/MecenatPanel
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import { PatronInterestError, submitPatronInterest } from "../api/patronage";
-import { TransferFieldButton, type TransferField } from "./transferFields";
+import { mecenatTransferFields, TransferFieldButton } from "./transferFields";
+import { useVaultCopy } from "./copyContext";
 import { Typo } from "../lib/Typo";
 
 // `voctensemble.com` and not `voctfoundation.com`, which is what these two used to say. The
@@ -25,36 +26,8 @@ import { Typo } from "../lib/Typo";
 const PATRON_EMAIL = "patronat@voctensemble.com";
 const FOUNDER_EMAIL = "florent.de.bazelaire@voctensemble.com";
 
-// Distinct title so the foundation can recognise an incoming standing order as patronage.
-const MECENAT_FIELDS: readonly TransferField[] = [
-  {
-    label: "Numer konta · PLN",
-    value: "26160010131724418410000001",
-    display: "26 1600 1013 1724 4184 1000 0001",
-    eventName: "mecenat+copy+nrkonta",
-  },
-  {
-    label: "Odbiorca",
-    value: "Fundacja VoctFoundation",
-    display: "Fundacja VoctFoundation",
-    eventName: "mecenat+copy+fundacja",
-  },
-  {
-    label: "Tytuł przelewu cyklicznego",
-    value: "Mecenat — darowizna na cele statutowe VoctFoundation",
-    display: "Mecenat — darowizna na cele statutowe VoctFoundation",
-    eventName: "mecenat+copy+tytul",
-  },
-];
-
-const BENEFITS: readonly string[] = [
-  "Osobiste podziękowanie i bezpośredni kontakt z założycielem Fundacji.",
-  "Imienne podziękowanie wśród mecenasów cyklu, jeśli wyrazisz na to zgodę.",
-  "Pierwszeństwo zaproszeń na przyszłe koncerty i wydarzenia.",
-  "Roczne zbiorcze potwierdzenie darowizn — pomocne przy rozliczeniu podatkowym.",
-];
-
 export function MecenatPanel(): React.JSX.Element {
+  const { lang, vault, t } = useVaultCopy();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -68,6 +41,17 @@ export function MecenatPanel(): React.JSX.Element {
   const emailRef = useRef<HTMLInputElement>(null);
   const consentRef = useRef<HTMLInputElement>(null);
 
+  const fields = useMemo(() => mecenatTransferFields(t), [t]);
+  const benefits = useMemo(
+    () => [
+      vault.mecenat.benefit1,
+      vault.mecenat.benefit2,
+      vault.mecenat.benefit3,
+      vault.mecenat.benefit4,
+    ],
+    [vault],
+  );
+
   const onSubmit = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -78,19 +62,19 @@ export function MecenatPanel(): React.JSX.Element {
       const em = email.trim();
 
       if (!fn || !ln) {
-        setError("Podaj imię i nazwisko, abyśmy wiedzieli, komu dziękować.");
+        setError(t.mecenatErrorName);
         firstNameRef.current?.focus();
         return;
       }
       if (!em || !emailRef.current?.checkValidity()) {
         setEmailInvalid(true);
-        setError("Podaj poprawny adres e-mail — na niego się odezwiemy.");
+        setError(t.mecenatErrorEmail);
         emailRef.current?.focus();
         return;
       }
       if (!consent) {
         setConsentInvalid(true);
-        setError("Zaznacz zgodę na kontakt, abyśmy mogli się do Ciebie odezwać.");
+        setError(t.mecenatErrorConsent);
         consentRef.current?.focus();
         return;
       }
@@ -107,64 +91,54 @@ export function MecenatPanel(): React.JSX.Element {
           console.error("[VoctMecenat] unexpected", err);
         }
         setLoading(false);
-        setError(
-          `Nie udało się wysłać zgłoszenia. Spróbuj ponownie za chwilę lub napisz na ${PATRON_EMAIL}.`,
-        );
+        setError(t.mecenatErrorSend(PATRON_EMAIL));
       }
     },
-    [loading, firstName, lastName, email, consent],
+    [loading, firstName, lastName, email, consent, t],
   );
 
   return (
-    <Typo>
-      <section className="mecenat" aria-label="Mecenat — wsparcie regularne">
+    <Typo locale={lang}>
+      <section className="mecenat" aria-label={t.mecenatAria}>
         <article className="method mecenat-card" data-method="mecenat">
           <div className="method-head">
             <div className="method-tag">
               <span className="method-tag-dot" aria-hidden="true" />
-              <span className="micro">wsparcie regularne · relacja</span>
+              <span className="micro">{vault.mecenat.tag}</span>
             </div>
             <span className="method-status" data-status="ready">
-              mecenat
+              {t.statusMecenat}
             </span>
           </div>
 
-          <h3 className="method-title">Zostań mecenasem cyklu</h3>
-          <p className="method-note">
-            Mecenat to więcej niż jednorazowa darowizna — to trwała relacja z zespołem i jego muzyką.
-            Twoje regularne wsparcie pozwala nam planować z wyprzedzeniem: próby, nagrania i kolejne
-            odsłony cyklu Concerts Spirituels. W zamian zapraszamy Cię bliżej tego, co robimy.
-          </p>
+          <h3 className="method-title">{vault.mecenat.title}</h3>
+          <p className="method-note">{vault.mecenat.note}</p>
 
           <div className="mecenat-block">
-            <span className="mecenat-sublabel">Co zapewniamy mecenasom</span>
+            <span className="mecenat-sublabel">{vault.mecenat.benefitsLabel}</span>
             <ul className="mecenat-benefits">
-              {BENEFITS.map((benefit) => (
+              {benefits.map((benefit) => (
                 <li key={benefit}>{benefit}</li>
               ))}
             </ul>
           </div>
 
           <div className="mecenat-block">
-            <span className="mecenat-sublabel">Jak to działa</span>
-            <p className="mecenat-how">
-              Mecenat opiera się na <strong>zleceniu stałym</strong> — comiesięcznym przelewie, który
-              ustawiasz i w pełni kontrolujesz w swojej bankowości (np. 50, 100 lub 200&nbsp;zł
-              miesięcznie). Zmienisz go lub odwołasz w każdej chwili, bez kontaktu z nami. Bez
-              prowizji i bez przekazywania danych karty.
-            </p>
+            <span className="mecenat-sublabel">{vault.mecenat.howLabel}</span>
+            <p
+              className="mecenat-how"
+              dangerouslySetInnerHTML={{ __html: vault.mecenat.howHtml }}
+            />
             <div className="method-transfer-fields">
-              {MECENAT_FIELDS.map((field) => (
+              {fields.map((field) => (
                 <TransferFieldButton key={field.label} field={field} />
               ))}
             </div>
           </div>
 
           <div className="mecenat-block">
-            <span className="mecenat-sublabel">Wolisz najpierw porozmawiać?</span>
-            <p className="mecenat-how">
-              Napisz do nas — odpowiemy osobiście i pomożemy dobrać dogodną formę wsparcia.
-            </p>
+            <span className="mecenat-sublabel">{vault.mecenat.talkLabel}</span>
+            <p className="mecenat-how">{vault.mecenat.talkNote}</p>
             <div className="mecenat-contact">
               <a
                 className="plausible-event-name=mecenat+mail+patronat"
@@ -186,19 +160,20 @@ export function MecenatPanel(): React.JSX.Element {
               <span className="mecenat-confirm-mark" aria-hidden="true">
                 ✦
               </span>
+              {/* The patron's own name sits in a vocative slot, which is why the greeting is its
+                  own field: a name must never be inside a clause a translator might reorder. */}
               <p className="mecenat-confirm-text">
-                Dziękujemy, {firstName.trim() || "drogi Mecenasie"}! Zapisaliśmy Twoje zgłoszenie —
-                odezwiemy się, gdy tylko zaksięgujemy Twój pierwszy przelew. W razie pytań napisz na{" "}
+                {`${vault.mecenat.confirmGreeting}, ${firstName.trim() || vault.mecenat.confirmFallbackName}! ${vault.mecenat.confirmBody} ${vault.mecenat.confirmContact} `}
                 <a href={`mailto:${PATRON_EMAIL}`}>{PATRON_EMAIL}</a>.
               </p>
             </div>
           ) : (
             <form className="mecenat-form" onSubmit={onSubmit} noValidate aria-busy={loading}>
-              <span className="mecenat-sublabel">Daj nam znać, że dołączasz</span>
+              <span className="mecenat-sublabel">{vault.mecenat.joinLabel}</span>
               <div className="mecenat-name-row">
                 <div className="give-field">
                   <label className="give-label micro" htmlFor="mecenatFirstName">
-                    Imię
+                    {t.firstNameLabel}
                   </label>
                   <input
                     ref={firstNameRef}
@@ -215,7 +190,7 @@ export function MecenatPanel(): React.JSX.Element {
                 </div>
                 <div className="give-field">
                   <label className="give-label micro" htmlFor="mecenatLastName">
-                    Nazwisko
+                    {t.lastNameLabel}
                   </label>
                   <input
                     id="mecenatLastName"
@@ -232,7 +207,7 @@ export function MecenatPanel(): React.JSX.Element {
               </div>
               <div className="give-field">
                 <label className="give-label micro" htmlFor="mecenatEmail">
-                  E-mail · na ten adres się odezwiemy
+                  {t.mecenatEmailLabel}
                 </label>
                 <input
                   ref={emailRef}
@@ -241,7 +216,7 @@ export function MecenatPanel(): React.JSX.Element {
                   type="email"
                   inputMode="email"
                   autoComplete="email"
-                  placeholder="twoj@adres.pl"
+                  placeholder={t.emailPlaceholder}
                   aria-invalid={emailInvalid || undefined}
                   value={email}
                   onChange={(event) => {
@@ -280,19 +255,10 @@ export function MecenatPanel(): React.JSX.Element {
                     <path d="M3 8.4 L6.4 11.8 L13 4.6" />
                   </svg>
                 </span>
-                <span className="give-consent-text">
-                  Wyrażam zgodę na przetwarzanie moich danych (imię, nazwisko, e-mail) w celu kontaktu
-                  w sprawie mecenatu, zgodnie z{" "}
-                  <a
-                    className="give-consent-link"
-                    href="/polityka-prywatnosci"
-                    target="_blank"
-                    rel="noopener"
-                  >
-                    Polityką prywatności
-                  </a>
-                  .
-                </span>
+                <span
+                  className="give-consent-text"
+                  dangerouslySetInnerHTML={{ __html: vault.mecenat.consentHtml }}
+                />
               </label>
 
               {error ? (
@@ -307,7 +273,7 @@ export function MecenatPanel(): React.JSX.Element {
                 disabled={loading}
               >
                 <span className="method-cta-text">
-                  {loading ? "Wysyłanie..." : "Dołączam do mecenatu"}
+                  {loading ? t.mecenatSubmitting : t.mecenatSubmit}
                 </span>
                 <span className="method-cta-arrow" aria-hidden="true">
                   →

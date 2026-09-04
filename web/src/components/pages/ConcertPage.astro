@@ -55,7 +55,7 @@ import { formatRef } from "../../lib/scriptureRef";
 import { CONCERT, fill } from "../../i18n/content/koncert";
 import { UI } from "../../i18n/ui";
 import { glossFor, localizePath, pageI18n, type Locale } from "../../i18n/config";
-import { VaultIsland } from "../../islands/landing/VaultIsland";
+import VaultMount from "../../components/VaultMount.astro";
 import { ImageLightbox } from "../../islands/landing/ImageLightbox";
 import { VideoPlayer } from "../../islands/landing/video/VideoPlayer";
 import "../../styles/vault.css";
@@ -1078,7 +1078,7 @@ const jsonLd =
 
   <SiteFooter lang={lang} />
 
-  <VaultIsland client:idle />
+  <VaultMount lang={lang} />
   <ImageLightbox client:idle />
   <script>
     import "../../scripts/vault-triggers.ts";

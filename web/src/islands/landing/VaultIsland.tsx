@@ -7,6 +7,11 @@
  *  Also auto-opens on a `?donate` URL (legacy deep-link parity). Result modals self-trigger from
  *  `?donated=success|failure` on return from the gateway.
  *
+ *  IT IS NEVER MOUNTED DIRECTLY. `components/VaultMount.astro` is the one caller: it resolves the
+ *  prose for the page's locale at build and hands it in, because `lib/vaultCopy` reads YAML through
+ *  Vite and cannot run in a browser. Mounting this component by hand would compile and would then
+ *  need a locale nobody supplied.
+ *
  *  Styles: the landing gets them from landing.css; subpages must import styles/vault.css.
  * @architecture Astro islands 2026
  * @module islands/landing/VaultIsland
@@ -14,7 +19,9 @@
 
 import { useEffect } from "react";
 
+import type { Locale } from "../../i18n/config";
 import { VaultProvider, useVault } from "./providers/VaultContext";
+import { VaultCopyProvider, type VaultCopyBundle } from "./vault/copyContext";
 import { FailureModal } from "./vault/FailureModal";
 import { GratitudeModal } from "./vault/GratitudeModal";
 import { RegulaminModal } from "./vault/RegulaminModal";
@@ -56,14 +63,22 @@ function VaultBridge(): null {
   return null;
 }
 
-export function VaultIsland(): React.JSX.Element {
+export function VaultIsland({
+  lang,
+  copy,
+}: {
+  readonly lang: Locale;
+  readonly copy: VaultCopyBundle;
+}): React.JSX.Element {
   return (
-    <VaultProvider>
-      <VaultBridge />
-      <VaultModal />
-      <RegulaminModal />
-      <GratitudeModal />
-      <FailureModal />
-    </VaultProvider>
+    <VaultCopyProvider lang={lang} copy={copy}>
+      <VaultProvider>
+        <VaultBridge />
+        <VaultModal />
+        <RegulaminModal />
+        <GratitudeModal />
+        <FailureModal />
+      </VaultProvider>
+    </VaultCopyProvider>
   );
 }

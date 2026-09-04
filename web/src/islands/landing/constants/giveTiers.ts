@@ -1,8 +1,10 @@
 /**
  * @file giveTiers.ts
- * @description Donation tier configuration per currency, with translated payment method notes.
- * @architecture Enterprise SaaS 2026
- * @module features/landing/constants/giveTiers
+ * @description Donation tier configuration per currency, and the bounds the form validates
+ *  against. The sentence describing which methods each currency supports is COPY and lives in
+ *  `src/content/pages/skarbiec.yaml` — it is a claim a reader reads, not a constant.
+ * @architecture Astro islands 2026
+ * @module islands/landing/constants/giveTiers
  */
 
 export type GiveCurrency = "PLN" | "EUR";
@@ -12,11 +14,7 @@ export const GIVE_TIERS: Readonly<Record<GiveCurrency, readonly number[]>> = {
   EUR: [20, 50, 100],
 };
 
-export const GIVE_METHODS_NOTE: Readonly<Record<GiveCurrency, string>> = {
-  PLN: "Płatności w PLN obsługują BLIK, karty płatnicze, Apple/Google Pay oraz szybkie przelewy.",
-  EUR: "Płatności w EUR obsługiwane są wyłącznie za pomocą kart płatniczych oraz Apple/Google Pay.",
-};
-
+/** The currency's mark, appended after the amount by `lib/formatMoney`. */
 export const CURRENCY_SUFFIX: Readonly<Record<GiveCurrency, string>> = {
   PLN: "zł",
   EUR: "€",

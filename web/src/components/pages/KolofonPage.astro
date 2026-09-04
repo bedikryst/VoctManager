@@ -52,7 +52,7 @@ import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
-import { VaultIsland } from "../../islands/landing/VaultIsland";
+import VaultMount from "../../components/VaultMount.astro";
 import { ImageLightbox } from "../../islands/landing/ImageLightbox";
 import { bleedPair, photo } from "../../lib/photos";
 import { galleryRuns } from "../../lib/galleryRuns";
@@ -589,7 +589,7 @@ const thanks = [
 
   <SiteFooter lang={lang} />
 
-  <VaultIsland client:idle />
+  <VaultMount lang={lang} />
   <ImageLightbox client:idle />
   <script>
     import "../../scripts/vault-triggers.ts";

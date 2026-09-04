@@ -79,7 +79,7 @@ import { pageCopy } from "../../lib/pageCopy";
 import { counted, OBRAZY_CHROME, OBRAZY_PAGE } from "../../i18n/content/obrazy";
 import { UI } from "../../i18n/ui";
 import { localizePath, pageI18n, SITE, type Locale } from "../../i18n/config";
-import { VaultIsland } from "../../islands/landing/VaultIsland";
+import VaultMount from "../../components/VaultMount.astro";
 import { ImageLightbox } from "../../islands/landing/ImageLightbox";
 import "../../styles/vault.css";
 import "../../styles/image-lightbox.css";
@@ -592,7 +592,7 @@ const jsonLd = {
 
   <SiteFooter lang={lang} />
 
-  <VaultIsland client:idle />
+  <VaultMount lang={lang} />
   <ImageLightbox client:idle />
   <script>
     import "../../scripts/vault-triggers.ts";

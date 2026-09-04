@@ -1,0 +1,174 @@
+# The editorial text of the donation vault — Polish, and Polish only.
+#
+# THE VAULT IS NOT A PAGE, WHICH IS THE ONE THING THAT MAKES IT DIFFERENT. It is a React island
+# (`islands/landing/VaultIsland`) mounted on eight surfaces — the landing, /press and every shared
+# page component — so its words are read on /kontakt, /o-nas, /obrazy, /kolofon, /koncerty and
+# every concert page, in all three locales. That is why it was the largest live gap left after
+# stage G: the nav has said "Support us" and "Nous soutenir" since the chrome was translated, and
+# the sheet behind that button answered in Polish.
+#
+# ITS TERMS ARE A SEPARATE DOCUMENT and live in `regulamin-darowizn.yaml`. Two scopes rather than
+# one, because a legal text is reviewed against a different question than an invitation is — and
+# because the privacy policy joins it as a peer in the next stage.
+#
+# THE ISLAND CANNOT READ THIS FILE. `lib/pageCopy` and `lib/copyOverlay` are build-time only; the
+# resolved copy is handed to the island as a prop by `components/VaultMount.astro`, which is the
+# ONE place that mounts it. See that file for why `lang` is required rather than defaulted.
+#
+# WHAT IS NOT HERE, AND WHERE IT LIVES INSTEAD:
+#
+#   affordances, aria-labels, form labels and the validation messages → `i18n/content/skarbiec.ts`
+#     as a `Record<Locale, …>`. The line is §6r's: a missing locale on a form error is a broken
+#     form at the worst possible moment, so completeness can be DEMANDED and a type should say so.
+#     A paragraph, by contrast, has to be allowed to stand in Polish until somebody translates it.
+#   the donor count ("1 darczyńca" / "2 darczyńcy" / "5 darczyńców") → the same module, as a
+#     function per locale. A counted noun is a closed table walked by an arithmetic result, not
+#     copy awaiting review (§6x). Polish needs three forms and the vault printed two until now.
+#   the foundation's register (KRS, NIP, REGON, the account number, the address, the transfer
+#     title) → `constants/vaultConfig.ts` and `vault/transferFields.tsx`. An account number is not
+#     copy, and the transfer title is what the foundation books the money under: it stays Polish in
+#     every locale because that is the string a bank statement has to carry.
+#   "Darowizna na cele statutowe." under the register → `UI[lang].footer.donationNote`, which
+#     already says it in three languages. A sentence printed twice is READ twice, never written
+#     twice (§6y).
+#   "Polityka prywatności" as a link label → `UI[lang].footer.privacy`, for the same reason.
+#   brand names — Zrzutka.pl, Axepta BNP Paribas, BLIK, Apple/Google Pay, the six banks under the
+#     QR — stay in the markup and the config. They are the same in every language.
+#
+# TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under this page's desk
+# key — `page.skarbiec.` + the dotted path below — and are read through `lib/copyOverlay`.
+#
+# NO TYPOGRAPHY. Write the prose plainly: `lib/typo.ts` pins Polish orphans and French punctuation
+# spacing. The island runs the same pass in-render (`islands/landing/lib/Typo`), so what is written
+# here must be the unpinned string or the two passes disagree and React re-renders the fix away.
+
+head:
+  # The register above the title. "Skarbiec" is the site's own word for this sheet — a treasury,
+  # not a donation form — and MMXXVI is the cycle's year in Roman numerals, the same in every
+  # language.
+  kicker: "Skarbiec muzyki · cykl MMXXVI"
+  # The sheet's h2 and its accessible name. Two words, imperative, addressed to one person.
+  title: "Wesprzyj cykl"
+
+progress:
+  # Left half of the line under the campaign rail. The right half is the goal, formatted from
+  # `VAULT_CONFIG.goalAmount`; the middle is either the donor count or `awaiting` below.
+  open: "Zbiórka otwarta"
+  # Printed instead of the donor count while the count is zero or unknown. An early-stage bar with
+  # "0 darczyńców" beside it reads as emptiness; the cycle's name reads as a beginning.
+  # "Concerts Spirituels" is the cycle's published name and stays itself in all three locales.
+  awaiting: "cykl Concerts Spirituels"
+
+methods:
+  # Above the three cards. It names a choice between roads, not a list of options.
+  label: "Wybierz drogę"
+
+online:
+  # The tag on the card, read as one breath: two promises separated by a middle dot.
+  tag: "natychmiast · bezpiecznie"
+  title: "Wpłać online"
+  note: >-
+    Bezpośrednio na konto Fundacji — przez bramkę Axepta BNP Paribas. Bez pośredników, bez
+    zakładania konta.
+  # The consent line beside the checkbox, split at the link because the link is a BUTTON that
+  # opens the terms overlay — the desk's inline vocabulary is `<em> <strong> <a>` and a `<button>`
+  # would be flattened on the way in. The two halves are one sentence: the second is the document's
+  # own title and must match what the overlay's heading says, which is why it is read from
+  # `regulamin-darowizn.yaml` rather than written here.
+  consentLead: "Zapoznał(a)m się i akceptuję"
+  # What the donor's own bank will offer them once they are on the gateway. Availability differs
+  # by currency, which is why there are two: a Polish account pays by BLIK, a foreign card does not.
+  methodsNotePln: >-
+    Płatności w PLN obsługują BLIK, karty płatnicze, Apple/Google Pay oraz szybkie przelewy.
+  methodsNoteEur: >-
+    Płatności w EUR obsługiwane są wyłącznie za pomocą kart płatniczych oraz Apple/Google Pay.
+
+zrzutka:
+  tag: "społeczność · instant"
+  note: >-
+    BLIK, karta, Apple Pay, Google Pay. Wpłaty regularne dostępne. Dołącz do społeczności
+    słuchaczy.
+
+qr:
+  # The one method that costs the foundation nothing at all.
+  tag: "zero prowizji"
+  title: "Przelew z aplikacji bankowej"
+  note: >-
+    Zeskanuj kod aparatem w aplikacji bankowej — wszystkie pola wypełnią się automatycznie.
+  # The quoted phrase is the label Polish banking apps print on that function; a translation names
+  # whatever the reader's own bank calls it rather than translating the Polish words.
+  hintHtml: >-
+    Otwórz aplikację banku, wybierz <strong>„Przelew QR”</strong> i zeskanuj. Kwotę wpiszesz
+    w aplikacji.
+  recurringLabel: "Wsparcie co miesiąc · zlecenie stałe"
+  # The standing order is the foundation's answer to recurring giving, and the whole point of the
+  # paragraph is that the donor keeps control of it: no card is stored anywhere and cancelling
+  # needs no contact with us. "Zlecenie stałe" is the banking term — use the reader's own.
+  recurringNoteHtml: >-
+    Chcesz wspierać cykl regularnie? Skopiuj powyższe dane i w swojej aplikacji bankowej ustaw je
+    jako <strong>zlecenie stałe</strong> (zakładka „zlecenia stałe” / „płatności cykliczne”) — np.
+    25, 50 lub 100&nbsp;zł miesięcznie. Kod QR powyżej tworzy przelew jednorazowy; zlecenie
+    cykliczne wpisuje się ręcznie. Pozostaje ono w pełni pod Twoją kontrolą — zmienisz je lub
+    odwołasz w każdej chwili w bankowości, bez kontaktu z nami. Bez prowizji i bez przekazywania
+    danych karty.
+
+mecenat:
+  tag: "wsparcie regularne · relacja"
+  title: "Zostań mecenasem cyklu"
+  note: >-
+    Mecenat to więcej niż jednorazowa darowizna — to trwała relacja z zespołem i jego muzyką. Twoje
+    regularne wsparcie pozwala nam planować z wyprzedzeniem: próby, nagrania i kolejne odsłony
+    cyklu Concerts Spirituels. W zamian zapraszamy Cię bliżej tego, co robimy.
+  benefitsLabel: "Co zapewniamy mecenasom"
+  # Four promises, in descending order of intimacy. The last one is the practical one and belongs
+  # last for that reason.
+  benefit1: "Osobiste podziękowanie i bezpośredni kontakt z założycielem Fundacji."
+  benefit2: "Imienne podziękowanie wśród mecenasów cyklu, jeśli wyrazisz na to zgodę."
+  benefit3: "Pierwszeństwo zaproszeń na przyszłe koncerty i wydarzenia."
+  benefit4: "Roczne zbiorcze potwierdzenie darowizn — pomocne przy rozliczeniu podatkowym."
+  howLabel: "Jak to działa"
+  howHtml: >-
+    Mecenat opiera się na <strong>zleceniu stałym</strong> — comiesięcznym przelewie, który
+    ustawiasz i w pełni kontrolujesz w swojej bankowości (np. 50, 100 lub 200&nbsp;zł miesięcznie).
+    Zmienisz go lub odwołasz w każdej chwili, bez kontaktu z nami. Bez prowizji i bez przekazywania
+    danych karty.
+  talkLabel: "Wolisz najpierw porozmawiać?"
+  talkNote: >-
+    Napisz do nas — odpowiemy osobiście i pomożemy dobrać dogodną formę wsparcia.
+  joinLabel: "Daj nam znać, że dołączasz"
+  # The lawful basis for keeping a patron's contact details (art. 6(1)(a) RODO). The three data
+  # points are named on purpose — a consent that does not say what it covers covers nothing.
+  consentHtml: >-
+    Wyrażam zgodę na przetwarzanie moich danych (imię, nazwisko, e-mail) w celu kontaktu w sprawie
+    mecenatu, zgodnie z <a href="/polityka-prywatnosci">Polityką prywatności</a>.
+  # What the panel says after the form is sent. The greeting takes the donor's own first name in a
+  # vocative slot, so it is kept apart from the sentence around it: a name must never sit inside a
+  # clause a translator might reorder.
+  confirmGreeting: "Dziękujemy"
+  # Used in place of the name when somebody sent the form with the field left blank.
+  confirmFallbackName: "drogi Mecenasie"
+  confirmBody: >-
+    Zapisaliśmy Twoje zgłoszenie — odezwiemy się, gdy tylko zaksięgujemy Twój pierwszy przelew.
+  # The address follows this fragment as a link, so the sentence has to end pointing forward.
+  confirmContact: "W razie pytań napisz na"
+
+result:
+  # Above both result overlays — the thank-you and the apology — because it is the same imprint
+  # under both, and one string is one row on the desk rather than two that can drift apart.
+  kicker: "VoctEnsemble · cykl MMXXVI"
+
+gratitude:
+  # Set as two lines, and the break is compositional rather than grammatical: a translation decides
+  # its own split. Not an h1 — the page under this overlay already has one.
+  title1: "Twój głos"
+  title2: "dołączył do chóru."
+  strap: "Dziękujemy. Niech ta muzyka wybrzmiewa dalej — także dzięki Tobie."
+
+failure:
+  # Same two-line composition as the thank-you, and the same rule about the break. The register is
+  # an apology with a fact in it: the money did not move.
+  title1: "Płatność nie"
+  title2: "doszła do skutku."
+  strap: >-
+    Przepraszamy, płatność nie mogła zostać przetworzona. Twoje środki nie zostały pobrane.
+    Prosimy spróbować ponownie lub wybrać inną metodę.

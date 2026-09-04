@@ -1,8 +1,8 @@
 /**
  * @file VaultModal.tsx
  * @description The donation "skarbiec" sliding sheet. A top segmented toggle splits two
- *  intents: "Jednorazowo" (one-off — Axepta form, Zrzutka, bank QR, with the campaign
- *  progress rail) and "Mecenat" (recurring — the standing-order patronage panel, no rail).
+ *  intents: one-off (Axepta form, Zrzutka, bank QR, with the campaign progress rail) and
+ *  patronage (recurring — the standing-order panel, no rail).
  *  Manages browser-history integration (back closes), Lenis stop/start while open, the
  *  progress rail, and the `body.vault-open` flag for chrome theming. Web/Astro port.
  * @architecture Astro islands 2026
@@ -11,6 +11,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { localizePath } from "../../../i18n/config";
+import { UI } from "../../../i18n/ui";
 import { dismissOverlayEntry, isOverlayEntry, pushOverlayEntry } from "../../../lib/overlayHistory";
 import { BrandGlyph } from "../BrandGlyph";
 import { VAULT_CONFIG } from "../constants/vaultConfig";
@@ -20,6 +22,7 @@ import { useFocusTrap } from "../hooks/useFocusTrap";
 import { useLenisLock } from "../hooks/useLenisLock";
 import { formatMoney } from "../lib/formatMoney";
 import { useVault } from "../providers/VaultContext";
+import { useVaultCopy } from "./copyContext";
 import { GiveForm } from "./GiveForm";
 import { MecenatPanel } from "./MecenatPanel";
 import { QRPanel } from "./QRPanel";
@@ -28,6 +31,7 @@ import { Typo } from "../lib/Typo";
 
 export function VaultModal(): React.JSX.Element {
   const { isOpen, close, openRegulamin } = useVault();
+  const { lang, vault, terms, t } = useVaultCopy();
   const sheetRef = useRef<HTMLDivElement>(null);
   const progress = useDonationProgress();
   const [tab, setTab] = useState<"once" | "mecenat">("once");
@@ -61,7 +65,7 @@ export function VaultModal(): React.JSX.Element {
   const fillWidth = progress?.visibleWidth ?? 0;
 
   return (
-    <Typo>
+    <Typo locale={lang}>
       <aside
         className={`vault${isOpen ? " is-open" : ""}`}
         id="vault"
@@ -78,19 +82,19 @@ export function VaultModal(): React.JSX.Element {
               <BrandGlyph />
             </div>
             <div className="vault-head-text">
-              <div className="micro vault-kicker">Skarbiec muzyki · cykl MMXXVI</div>
+              <div className="micro vault-kicker">{vault.head.kicker}</div>
               <h2 className="vault-title" id="vault-title">
-                Wesprzyj cykl
+                {vault.head.title}
               </h2>
             </div>
-            <button type="button" className="vault-close" onClick={dismiss} aria-label="Zamknij">
+            <button type="button" className="vault-close" onClick={dismiss} aria-label={t.close}>
               <span />
               <span />
             </button>
           </header>
 
           <div className="vault-seg-wrap">
-            <div className="vault-seg" role="tablist" aria-label="Forma wsparcia">
+            <div className="vault-seg" role="tablist" aria-label={t.tabsAria}>
               <button
                 type="button"
                 role="tab"
@@ -100,7 +104,7 @@ export function VaultModal(): React.JSX.Element {
                 className="vault-seg-tab plausible-event-name=vault+tab+jednorazowo"
                 onClick={() => setTab("once")}
               >
-                Jednorazowo
+                {t.tabOnce}
               </button>
               <button
                 type="button"
@@ -111,7 +115,7 @@ export function VaultModal(): React.JSX.Element {
                 className="vault-seg-tab plausible-event-name=vault+tab+mecenat"
                 onClick={() => setTab("mecenat")}
               >
-                Mecenat
+                {t.tabMecenat}
               </button>
               <div className="vault-seg-thumb" data-active={tab} aria-hidden="true" />
             </div>
@@ -119,7 +123,7 @@ export function VaultModal(): React.JSX.Element {
 
           {tab === "once" ? (
             <div id="vault-panel-once" role="tabpanel" aria-labelledby="vault-tab-once">
-              <section className="vault-progress" aria-label="Postęp zbiórki">
+              <section className="vault-progress" aria-label={t.progressAria}>
                 <div className="vault-progress-rail">
                   <div
                     className="vault-progress-fill"
@@ -131,34 +135,39 @@ export function VaultModal(): React.JSX.Element {
                   {/* Donors lead when known — the count is the social proof; an early-stage
                       bar percentage alone reads as emptiness, not momentum. */}
                   <span>
-                    {progress && progress.donors > 0
-                      ? `Zbiórka otwarta · ${progress.donors === 1 ? "1 darczyńca" : `${progress.donors} darczyńców`}`
-                      : "Zbiórka otwarta · cykl Concerts Spirituels"}
+                    {`${vault.progress.open} · ${
+                      progress && progress.donors > 0
+                        ? t.donors(progress.donors)
+                        : vault.progress.awaiting
+                    }`}
                   </span>
                   <span>
-                    <strong>cel {formatMoney(progress?.goal ?? VAULT_CONFIG.goalAmount, "PLN")}</strong>
+                    <strong>
+                      {`${t.goalLabel} ${formatMoney(
+                        progress?.goal ?? VAULT_CONFIG.goalAmount,
+                        "PLN",
+                        lang,
+                      )}`}
+                    </strong>
                   </span>
                 </div>
               </section>
 
-              <section className="methods" aria-label="Wybierz drogę wsparcia">
-                <div className="methods-label micro">Wybierz drogę</div>
+              <section className="methods" aria-label={t.methodsAria}>
+                <div className="methods-label micro">{vault.methods.label}</div>
                 <div className="methods-grid">
                   <article className="method" data-method="axepta" data-elevated="true">
                     <div className="method-head">
                       <div className="method-tag">
                         <span className="method-tag-dot" aria-hidden="true" />
-                        <span className="micro">natychmiast · bezpiecznie</span>
+                        <span className="micro">{vault.online.tag}</span>
                       </div>
                       <span className="method-status" data-status="ready">
-                        dostępne
+                        {t.statusReady}
                       </span>
                     </div>
-                    <h3 className="method-title">Wpłać online</h3>
-                    <p className="method-note">
-                      Bezpośrednio na konto Fundacji — przez bramkę Axepta BNP Paribas. Bez
-                      pośredników, bez zakładania konta.
-                    </p>
+                    <h3 className="method-title">{vault.online.title}</h3>
+                    <p className="method-note">{vault.online.note}</p>
                     <GiveForm />
                   </article>
 
@@ -174,12 +183,15 @@ export function VaultModal(): React.JSX.Element {
           )}
 
           <footer className="vault-foot">
+            {/* The foundation's register: numbers and an address, the same in every language. The
+                closing sentence is the chrome's own — /kontakt already owns that fact, and a
+                sentence printed twice is read twice, never written twice. */}
             <p className="vault-trust">
-              <strong>Fundacja VoctFoundation</strong>
+              <strong>{VAULT_CONFIG.recipient.name}</strong>
               <br />
               KRS 0001237252 · NIP 6762718992 · REGON 544621525
               <br />
-              Św. Filipa 23/3, 31-150 Kraków · Darowizna na cele statutowe.
+              {`Św. Filipa 23/3, 31-150 Kraków · ${UI[lang].footer.donationNote}`}
             </p>
             <div className="vault-foot-links">
               <button
@@ -189,15 +201,15 @@ export function VaultModal(): React.JSX.Element {
                 aria-controls="regulamin"
                 onClick={openRegulamin}
               >
-                Regulamin darowizn
+                {terms.head.title}
               </button>
               <a
                 className="vault-foot-link plausible-event-name=polityka+prywatnosci"
-                href="/polityka-prywatnosci"
+                href={localizePath("/polityka-prywatnosci", lang)}
                 target="_blank"
                 rel="noopener"
               >
-                Polityka prywatności ↗
+                {`${UI[lang].footer.privacy} ↗`}
               </a>
             </div>
           </footer>

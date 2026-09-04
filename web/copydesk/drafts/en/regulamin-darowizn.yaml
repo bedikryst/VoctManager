@@ -1,0 +1,66 @@
+# page.regulamin-darowizn — EN draft (stage I). Same flat shape as the overlay it will become.
+#
+# THIS IS A LEGAL TEXT AND THE POLISH VERSION IS THE BINDING ONE. § 5(3) — new in version 1.2 —
+# says so inside the document itself, which is what makes this translation safe to publish at all.
+# The register is therefore statutory rather than editorial: no sentence is tightened, nothing is
+# smoothed away, and where the Polish is long-winded so is the English.
+#
+# NUMBERING IS TEXT AND IS NEVER RENUMBERED. § 3(4) points back at "the address given in paragraph
+# 2" and that paragraph is `s3.p2Html`; § 1(2) cites "§ 5 and § 6" of the Statute; § 1(4) cites
+# "art. 890 § 1 sentence 2" of the Polish Civil Code. Those are addresses inside other documents:
+# the instrument is named in English, the citation itself stays exactly as it is.
+#
+# TERMS THE SITE HAS ALREADY PUBLISHED, followed rather than invented:
+#   Statut Fundacji  → the Foundation's Statute   (`page.kolofon.fundatio.statuteLink`)
+#   cele statutowe   → statutory purposes         (`page.o-nas.foundation.legalNote`)
+#   RODO             → GDPR
+#   Polityka prywatności → Privacy policy         (`UI.footer.privacy`)
+#
+# THE FOUNDATION IS IDENTIFIED ONCE, BY ITS REGISTERED NAME. "Fundacja VoctFoundation" is what the
+# National Court Register holds, and a party to an agreement has to be identifiable from the
+# agreement — so § 1(1) keeps the legal name untranslated and defines the term the rest of the
+# document leans on. Everywhere after that, including § 4(1), the entity wears the name the site
+# already publishes in English: one body should not carry two names three sections apart. The seat
+# is an address and is written the way it must be written on an envelope.
+#
+# Not the overlay: `npm run copy:propose --locale en` carries these in as proposals, which is the
+# only door that stamps the provenance hash the stale state is computed from.
+
+page.regulamin-darowizn.head.kicker: "Document · donations"
+page.regulamin-darowizn.head.title: "Terms of donation"
+page.regulamin-darowizn.head.lede: "These terms set out how donations are made to the VoctFoundation through the voctensemble.com website — by online payment and by bank transfer."
+
+page.regulamin-darowizn.s1.title: "General provisions"
+page.regulamin-darowizn.s1.p1Html: "These terms set out the rules for making donations to <strong>Fundacja VoctFoundation</strong>, with its registered office in Kraków (ul. Św. Filipa 23/3, 31-150 Kraków), entered in the National Court Register under KRS: 0001237252, NIP: 6762718992, REGON: 544621525, hereinafter “the Foundation”."
+page.regulamin-darowizn.s1.p2Html: "Under § 5 and § 6 of the <a href=\"/docs/Statut-VoctFoundation.pdf\">Foundation's Statute</a>, published on the Foundation's website, every donation made to the Foundation is devoted solely to its statutory purposes, in particular artistic activity, including music, the development and dissemination of musical creation, the documentation, protection and dissemination of musical heritage, educational and outreach work in the field of culture, widening access to culture, support for young artists and the realisation of artistic projects, including the work of the Foundation's resident ensemble."
+page.regulamin-darowizn.s1.p3: "A donor may be any adult natural person, any legal person or any organisational unit without legal personality."
+page.regulamin-darowizn.s1.p4: "Under art. 890 § 1 sentence 2 of the Polish Civil Code, a contract for the donation of money becomes valid and effective at the moment the payment is made (that is, when the funds reach the Foundation's account), irrespective of the form of the declaration of intent."
+
+page.regulamin-darowizn.s2.title: "Rules for making donations, and payment methods"
+page.regulamin-darowizn.s2.p1: "Donations are made online through the support form available on the voctensemble.com website."
+page.regulamin-darowizn.s2.p2: "The online payment operator is BNP Paribas Bank Polska S.A., with its registered office in Warsaw (the Axepta BNP Paribas gateway), and the acquirer for card transactions is PayU S.A., with its registered office in Poznań."
+page.regulamin-darowizn.s2.p3: "A donor may give using modern, encrypted payment methods, in particular: payment cards (Visa, Mastercard), the BLIK system, instant bank transfers (Pay-By-Link) and electronic wallets (Apple Pay, Google Pay)."
+page.regulamin-darowizn.s2.p4: "Independently of online payment, a donor may give by ordinary bank transfer straight to the Foundation's account — once, or as a standing order (a recurring transfer), which the donor sets up, changes and cancels themselves in their own banking; the Foundation stores neither card details nor a debit mandate for this purpose. A donation may also be made through the Zrzutka.pl fundraising service, on the terms set out in that service's own regulations."
+page.regulamin-darowizn.s2.p5: "Donations may be made in PLN and in EUR. Which payment methods are available depends on the currency chosen."
+page.regulamin-darowizn.s2.p6: "Clicking the button that confirms the intention to give, and making the payment, constitutes the conclusion of a donation contract and acceptance of these Terms."
+
+page.regulamin-darowizn.s3.title: "Complaints and refunds"
+page.regulamin-darowizn.s3.p1: "A donor has the right to raise a complaint about any irregularity in the donation process (for example, a technical fault in the payment system)."
+page.regulamin-darowizn.s3.p2Html: "Please send complaints by e-mail to: <a href=\"mailto:kontakt@voctensemble.com\">kontakt@voctensemble.com</a>."
+page.regulamin-darowizn.s3.p3: "The Foundation considers complaints with the greatest care and without delay, and in any event within 14 days of receiving them."
+page.regulamin-darowizn.s3.p4: "Where a payment was made in error, or a fault on the side of the donor's bank resulted in a double charge, the donor has the right to request a refund of the donation within 14 days of it being made. The request should be sent to the address given in paragraph 2, quoting the transaction identifier and the e-mail address used for the payment."
+page.regulamin-darowizn.s3.p5: "For the financial safety of donors, all refunds are made solely to the same payment method (the same bank account or payment card) as the one used for the original payment, as required by law and by the payment operators' own regulations."
+
+page.regulamin-darowizn.s4.title: "Personal data (GDPR)"
+page.regulamin-darowizn.s4.p1: "The controller of donors' personal data is the VoctFoundation."
+page.regulamin-darowizn.s4.p2Html: "Detailed information about the processing of personal data, the purposes of that processing, the roles of the payment operators (Axepta BNP Paribas, PayU) and the rights available to donors can be found in the <a href=\"/polityka-prywatnosci\">Privacy policy</a> available on the voctensemble.com website."
+
+page.regulamin-darowizn.s5.title: "Final provisions"
+page.regulamin-darowizn.s5.p1: "The Foundation reserves the right to amend these Terms, and will give notice of any amendment by updating their text on its website."
+page.regulamin-darowizn.s5.p2: "Matters not governed by these Terms are subject to the relevant provisions of Polish law, in particular the Civil Code."
+page.regulamin-darowizn.s5.p3: "These Terms are published in Polish, and also in English and French translation. The Polish version is the binding one; the translations are for information only, and in the event of any discrepancy between the language versions the Polish wording prevails."
+
+page.regulamin-darowizn.history.label: "Version history"
+page.regulamin-darowizn.history.entries.v1-2.note: "Added § 5(3): the Terms are also published in English and French translation, the Polish version remaining the binding one."
+page.regulamin-darowizn.history.entries.v1-1.note: "§ 2 extended with the ways of giving outside the online payment gateway: an ordinary bank transfer (one-off, or as a standing order) and the Zrzutka.pl fundraising service."
+page.regulamin-darowizn.history.entries.v1-0.note: "The first version of the Terms, published when the voctensemble.com website went live."

@@ -33,7 +33,8 @@ import { AudioController } from "../islands/landing/AudioController";
 import { Preloader } from "../islands/landing/Preloader";
 import { StickyHeader } from "../islands/landing/StickyHeader";
 import { SiteFooter } from "../islands/landing/SiteFooter";
-import { VaultIsland } from "../islands/landing/VaultIsland";
+import { DEFAULT_LOCALE } from "../i18n/config";
+import VaultMount from "../components/VaultMount.astro";
 import { VoxMoment } from "../islands/landing/VoxMoment";
 import { VideoLightbox } from "../islands/landing/VideoLightbox";
 import { MovementSpine } from "../islands/landing/MovementSpine";
@@ -156,7 +157,7 @@ const jsonLd = {
 
     <SiteFooter client:visible />
 
-    <VaultIsland client:idle />
+    <VaultMount lang={DEFAULT_LOCALE} />
     <VideoLightbox client:idle poster={voxPoster} />
   </div>
 

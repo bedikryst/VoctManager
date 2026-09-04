@@ -25,7 +25,7 @@ import BleedImage from "../BleedImage.astro";
 import { photo, photoOptional, bleedPair } from "../../lib/photos";
 import { concertKey, overlayValue } from "../../lib/copyOverlay";
 import { viaMoment } from "../../lib/dates";
-import { VaultIsland } from "../../islands/landing/VaultIsland";
+import VaultMount from "../../components/VaultMount.astro";
 import { ABOUT_CHROME, ABOUT_PAGE } from "../../i18n/content/o-nas";
 import { pageCopy } from "../../lib/pageCopy";
 import { UI } from "../../i18n/ui";
@@ -476,7 +476,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
   <SiteFooter lang={lang} />
 
-  <VaultIsland client:idle />
+  <VaultMount lang={lang} />
   <script>
     import "../../scripts/vault-triggers.ts";
   </script>

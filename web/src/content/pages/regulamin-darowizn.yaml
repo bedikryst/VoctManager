@@ -1,0 +1,178 @@
+# The donation terms — Polish, and Polish only.
+#
+# THIS IS A LEGAL TEXT AND IT IS ON THE DESK ANYWAY, deliberately. The desk is the only machinery
+# in this project that stamps a `source_hash`, and silent drift between language versions is worse
+# in a document that governs money than in a paragraph of prose. A version that quietly stopped
+# matching the Polish would be invisible in exactly the place where nobody is reading closely.
+#
+# THE POLISH VERSION GOVERNS (decided 2026-09-04). The English and French are informational, and
+# § 5 ust. 3 below says so inside the document itself rather than in a footnote on the site —
+# which is why translating this document was itself an AMENDMENT to it: the clause is new, the
+# version moved to 1.2, and the history records it. A reader who accepts the terms by ticking the
+# box accepts a document that states which of its versions binds.
+#
+# NUMBERING IS PART OF THE TEXT, NOT PART OF THE LAYOUT. § 3 ust. 4 says "adres wskazany w ust. 2"
+# and § 1 ust. 2 cites "§ 5 oraz § 6 Statutu"; § 1 ust. 4 cites "art. 890 § 1 zd. 2 Kodeksu
+# cywilnego". So the paragraphs are NAMED fields (`s3.p4`), never a list the desk could reorder,
+# and a translation keeps every reference pointing where it points. The `§` numerals themselves are
+# in the markup — locale-neutral, like every other rubric on this site.
+#
+# THE STATUTE AND THE CODE ARE POLISH INSTRUMENTS. `Statut Fundacji` is published in Polish only
+# and `Kodeks cywilny` is the Polish civil code; a translation names them in the reader's language
+# and leaves the citation itself alone (`art. 890 § 1 zd. 2` is an address, not a phrase).
+#
+# THE VERSION AND ITS DATES ARE NOT COPY. `version` and `effectiveFrom` are structural, and every
+# date printed by this document is formatted from an ISO value per locale (`lib/dates`), because a
+# Polish date carried inside a translated sentence drifts from the field it was copied from — the
+# trap this project has now found four times.
+#
+# TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under this page's desk
+# key — `page.regulamin-darowizn.` + the dotted path below — and are read through `lib/copyOverlay`.
+#
+# NO TYPOGRAPHY. Write the prose plainly; `lib/typo.ts` pins orphans and French punctuation
+# spacing. Links inside these fields are given `target="_blank"` at render, because the document is
+# read in an overlay above a half-filled donation form (`lib/vaultCopy.ts`).
+
+# The version this document is at, and the day it started to apply. Both are read by the footer of
+# the overlay and by the newest entry of the history below.
+version: "1.2"
+effectiveFrom: "2026-09-04"
+
+head:
+  kicker: "Dokument · darowizny"
+  # The document's own title, and the ONE name it is called by anywhere on the site: the consent
+  # line beside the give-form's checkbox and the link in the vault's footer both read it from here.
+  # Two wordings for one document on one screen is the defect this replaces.
+  title: "Regulamin przekazywania darowizn"
+  lede: >-
+    Regulamin określa zasady przekazywania darowizn na rzecz Fundacji VoctFoundation za
+    pośrednictwem strony voctensemble.com — w formie płatności online oraz przelewu bankowego.
+
+s1:
+  title: "Postanowienia ogólne"
+  # The foundation's register — KRS, NIP, REGON and the seat — is written out in full here because
+  # a party to an agreement has to be identifiable from the agreement. The numbers stay themselves;
+  # only the words around them are translated.
+  p1Html: >-
+    Niniejszy regulamin określa zasady przekazywania darowizn na rzecz <strong>Fundacji
+    VoctFoundation</strong> z siedzibą w Krakowie (ul. Św. Filipa 23/3, 31-150 Kraków), wpisanej do
+    rejestru Krajowego Rejestru Sądowego pod numerem KRS: 0001237252, NIP: 6762718992, REGON:
+    544621525, zwanej dalej „Fundacją”.
+  # The link points at the foundation's statute, which is a Polish-language PDF in every locale.
+  p2Html: >-
+    Zgodnie z § 5 oraz § 6 <a href="/docs/Statut-VoctFoundation.pdf">Statutu Fundacji</a>,
+    opublikowanego na stronie internetowej Fundacji, wszystkie darowizny przekazywane na rzecz
+    Fundacji są przeznaczane wyłącznie na realizację jej celów statutowych, w szczególności
+    działalności artystycznej, w tym muzycznej, rozwoju i upowszechniania twórczości muzycznej,
+    dokumentowania, ochrony i upowszechniania dziedzictwa muzycznego, działalności edukacyjnej
+    i popularyzatorskiej w obszarze kultury, zwiększania dostępności kultury, wspierania młodych
+    artystów oraz realizacji projektów artystycznych, w tym działalności zespołu-rezydenta Fundacji.
+  p3: >-
+    Darczyńcą może być każda pełnoletnia osoba fizyczna, osoba prawna lub jednostka organizacyjna
+    nieposiadająca osobowości prawnej.
+  p4: >-
+    Zgodnie z art. 890 § 1 zd. 2 Kodeksu cywilnego, umowa darowizny środków pieniężnych staje się
+    ważna i skuteczna w momencie spełnienia świadczenia (czyli w chwili wpłynięcia środków na
+    rachunek Fundacji), niezależnie od formy oświadczenia woli.
+
+s2:
+  title: "Zasady przekazywania darowizn i metody płatności"
+  p1: >-
+    Przekazywanie darowizn online odbywa się za pośrednictwem formularza wsparcia dostępnego na
+    stronie internetowej voctensemble.com.
+  p2: >-
+    Operatorem płatności online jest BNP Paribas Bank Polska S.A. z siedzibą w Warszawie (bramka
+    Axepta BNP Paribas), a dla transakcji kartowych agentem rozliczeniowym jest PayU S.A.
+    z siedzibą w Poznaniu.
+  p3: >-
+    Darczyńca ma możliwość przekazania darowizny z wykorzystaniem nowoczesnych, szyfrowanych metod
+    płatności, w szczególności: kart płatniczych (Visa, Mastercard), systemu BLIK, szybkich
+    przelewów bankowych (Pay-By-Link) oraz portfeli elektronicznych (Apple Pay, Google Pay).
+  p4: >-
+    Niezależnie od płatności online, Darczyńca może przekazać darowiznę zwykłym przelewem bankowym
+    bezpośrednio na rachunek Fundacji — jednorazowo lub w formie zlecenia stałego (przelewu
+    cyklicznego), które Darczyńca ustanawia, zmienia i odwołuje samodzielnie w swojej bankowości;
+    Fundacja nie przechowuje w tym celu danych karty ani zgody na obciążenia. Darowiznę można
+    również przekazać za pośrednictwem serwisu zbiórkowego Zrzutka.pl, na zasadach określonych
+    w regulaminie tego serwisu.
+  p5: >-
+    Darowizny mogą być przekazywane w walutach: PLN oraz EUR. Dostępność poszczególnych metod
+    płatności zależy od wybranej waluty.
+  p6: >-
+    Kliknięcie przycisku potwierdzającego chęć przekazania wsparcia w formularzu oraz dokonanie
+    płatności jest równoznaczne z zawarciem umowy darowizny oraz akceptacją niniejszego Regulaminu.
+
+s3:
+  title: "Reklamacje i zwroty"
+  p1: >-
+    Darczyńca ma prawo zgłosić reklamację dotyczącą ewentualnych nieprawidłowości w procesie
+    przekazywania darowizny (np. w przypadku usterek technicznych systemu płatności).
+  p2Html: >-
+    Zgłoszenia prosimy kierować drogą elektroniczną na adres e-mail:
+    <a href="mailto:kontakt@voctensemble.com">kontakt@voctensemble.com</a>.
+  p3: >-
+    Fundacja rozpatruje zgłoszenia z najwyższą starannością, niezwłocznie, nie później jednak niż
+    w terminie 14 dni od daty ich otrzymania.
+  # "ust. 2" points at `p2Html` above. A translation keeps the reference, and keeps it pointing at
+  # the second paragraph of this section.
+  p4: >-
+    W przypadku omyłkowego wykonania wpłaty lub awarii po stronie banku Darczyńcy skutkującej
+    podwójnym obciążeniem, Darczyńca ma prawo żądać zwrotu przekazanej darowizny w terminie 14 dni
+    od momentu jej zrealizowania. Wniosek o zwrot należy przesłać na adres wskazany w ust. 2,
+    podając identyfikator transakcji oraz adres e-mail użyty podczas płatności.
+  p5: >-
+    Mając na uwadze bezpieczeństwo finansowe Darczyńców, wszelkie zwroty środków są realizowane
+    wyłącznie na tę samą metodę płatności (ten sam rachunek bankowy lub kartę płatniczą), przy
+    użyciu której dokonano pierwotnej wpłaty, co wynika z przepisów prawa oraz regulaminów
+    operatorów płatności.
+
+s4:
+  title: "Dane osobowe (RODO)"
+  p1: "Administratorem danych osobowych Darczyńców jest Fundacja VoctFoundation."
+  p2Html: >-
+    Szczegółowe informacje dotyczące przetwarzania danych osobowych, celów ich przetwarzania, ról
+    operatorów płatności (Axepta BNP Paribas, PayU) oraz praw przysługujących Darczyńcom, znajdują
+    się w <a href="/polityka-prywatnosci">Polityce prywatności</a> dostępnej na stronie
+    voctensemble.com.
+
+s5:
+  title: "Postanowienia końcowe"
+  p1: >-
+    Fundacja zastrzega sobie prawo do wprowadzania zmian w Regulaminie, o czym będzie informować
+    poprzez aktualizację jego treści na stronie internetowej.
+  p2: >-
+    W sprawach nieuregulowanych niniejszym Regulaminem zastosowanie mają odpowiednie przepisy prawa
+    polskiego, w szczególności Kodeksu cywilnego.
+  # Added in version 1.2, together with the English and French versions of this document. It is the
+  # clause that makes those translations safe to publish: the reader is told, inside the document
+  # they are accepting, which version is the one that binds.
+  p3: >-
+    Regulamin jest publikowany w języku polskim, a także w tłumaczeniu na język angielski
+    i francuski. Wersją wiążącą jest wersja polska; tłumaczenia mają charakter wyłącznie
+    informacyjny, a w razie rozbieżności między wersjami językowymi rozstrzygające jest brzmienie
+    wersji polskiej.
+
+history:
+  # Newest first. `version` and `date` are structural — the line above each note is composed at
+  # render from them, so a Polish date can never travel inside a translated sentence. `id` is what
+  # the desk keys an entry by; it is the version with its dot replaced, because a dot is not legal
+  # inside a key part.
+  label: "Historia wersji"
+  entries:
+    - id: "v1-2"
+      version: "1.2"
+      date: "2026-09-04"
+      note: >-
+        Dodano § 5 ust. 3: Regulamin jest publikowany także w tłumaczeniu na język angielski
+        i francuski, przy czym wersją wiążącą pozostaje wersja polska.
+    - id: "v1-1"
+      version: "1.1"
+      date: "2026-06-03"
+      note: >-
+        Uzupełniono § 2 o sposoby przekazania darowizny poza bramką płatności online: zwykły
+        przelew bankowy (jednorazowy oraz w formie zlecenia stałego) i serwis zbiórkowy Zrzutka.pl.
+    - id: "v1-0"
+      version: "1.0"
+      date: "2026-05-13"
+      note: >-
+        Pierwotna wersja Regulaminu, opublikowana wraz z uruchomieniem strony voctensemble.com.

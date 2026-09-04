@@ -7,6 +7,7 @@
  * @module features/landing/api/donations
  */
 
+import type { Locale } from "../../../i18n/config";
 import { VAULT_CONFIG } from "../constants/vaultConfig";
 import type { GiveCurrency } from "../constants/giveTiers";
 
@@ -14,6 +15,13 @@ export interface DonationRequest {
   readonly email: string;
   readonly amount: number;
   readonly currency: GiveCurrency;
+  /**
+   * The language the donor was reading a second ago. The gateway's hosted page carries its own
+   * language in the URL it hands back, so the backend rewrites that segment from this — otherwise
+   * a reader of any locale meets whichever page the gateway happens to default to, which today is
+   * English even for a Polish donor.
+   */
+  readonly locale: Locale;
 }
 
 export interface DonationResponse {

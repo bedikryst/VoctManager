@@ -34,7 +34,8 @@ import { photo, bleedPair } from "../lib/photos";
 import { viaMoment } from "../lib/dates";
 import { PATHS } from "../data/landing/paths";
 import { MODAL_VIDEO } from "../data/landing/video";
-import { VaultIsland } from "../islands/landing/VaultIsland";
+import { DEFAULT_LOCALE } from "../i18n/config";
+import VaultMount from "../components/VaultMount.astro";
 import { VideoPlayer } from "../islands/landing/video/VideoPlayer";
 import "../styles/vault.css";
 import "../styles/vplayer.css";
@@ -658,7 +659,7 @@ const jsonLd = {
 
   <SiteFooter />
 
-  <VaultIsland client:idle />
+  <VaultMount lang={DEFAULT_LOCALE} />
   <script>
     import "../scripts/vault-triggers.ts";
   </script>

@@ -32,7 +32,7 @@ import { pageCopy } from "../../lib/pageCopy";
 import { CONTACT_CHROME, KONTAKT_PAGE } from "../../i18n/content/kontakt";
 import { UI } from "../../i18n/ui";
 import { localizePath, pageI18n, SITE, type Locale } from "../../i18n/config";
-import { VaultIsland } from "../../islands/landing/VaultIsland";
+import VaultMount from "../../components/VaultMount.astro";
 import "../../styles/vault.css";
 
 interface Props {
@@ -244,7 +244,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
   <SiteFooter lang={lang} />
 
-  <VaultIsland client:idle />
+  <VaultMount lang={lang} />
   <script>
     import "../../scripts/vault-triggers.ts";
 

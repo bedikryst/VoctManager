@@ -134,14 +134,25 @@ const PL: readonly Rule[] = [...COMMON, PL_ORPHAN, PL_ABBR, PL_ROMAN];
  * on the French page — 47 broken apostrophes, each rendering as literal text. French copy here is
  * written with the space, so requiring one costs nothing and closes that whole class of damage.
  * The guillemet rules may still insert: `«` and `»` cannot occur inside an entity.
+ *
+ * EVERY RULE MUST RE-EMIT ITS LEFT CONTEXT UNCHANGED, and the closing guillemet is why this is
+ * written down. `lib/typoHtml` and the islands' `<Typo>` both prepend the previous run's last
+ * character so a rule can see across an inline tag, then slice exactly that many characters back
+ * off — so a rule that INSERTS to the left of its match makes the slice cut the wrong end. The
+ * closing rule used to be `${FR_SPACE}?»`, which matched a bare `»` handed to it AS the context
+ * and pushed a no-break space in front of it: `<strong>« Virement QR »</strong> et` came back
+ * with the guillemet doubled, on ten French pages, and nothing failed. It now anchors on a
+ * preceding non-space and re-emits it, which also means a `»` with nothing before it is left
+ * alone — correct, since there is nothing there to pin it to.
  */
 const FR_SPACE = "[ \\u00a0\\u202f]";
 const FR: readonly Rule[] = [
   ...COMMON,
   [new RegExp(`(\\S)${FR_SPACE}([;!?])`, "g"), `$1${NNBSP}$2`],
   [new RegExp(`(\\S)${FR_SPACE}(:)`, "g"), `$1${NBSP}$2`],
+  // The opening guillemet inserts to its RIGHT, so the context ahead of it is untouched.
   [new RegExp(`«${FR_SPACE}?`, "g"), `«${NBSP}`],
-  [new RegExp(`${FR_SPACE}?»`, "g"), `${NBSP}»`],
+  [new RegExp(`(\\S)${FR_SPACE}?»`, "g"), `$1${NBSP}»`],
 ];
 
 const RULES: Record<Locale, readonly Rule[]> = { pl: PL, en: COMMON, fr: FR };
