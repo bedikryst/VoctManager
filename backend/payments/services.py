@@ -166,10 +166,12 @@ class AxeptaPaymentService:
         # about a payment having started; without it the default is Polish for a
         # PLN transaction whoever the donor is. It is documented on the
         # `transaction` schema and NOT on `payment-link`, which is the one this
-        # call uses — so it ships behind a switch, off by default: an unknown
-        # field rejected here would fail every donation on the site, and a
-        # foreign-language notice is not worth that risk untested. Turn it on,
-        # make one real donation, and leave it on if the link still comes back.
+        # call uses — so it ships behind a switch, off by default: a value the
+        # gateway refuses here fails the donation outright, and a foreign-language
+        # notice is not worth that. The switch was tried on production in 2026-09
+        # and the gateway accepted 'pl' while refusing every EN/FR donation, so it
+        # stays off. Any retrial must be made FROM EACH LOCALE — a Polish donation
+        # proves nothing about the only value the field exists to send.
         if settings.AXEPTA_SEND_CUSTOMER_LOCALE:
             customer['locale'] = _GATEWAY_LANGUAGE.get(locale, _DEFAULT_GATEWAY_LANGUAGE)
 
@@ -193,9 +195,20 @@ class AxeptaPaymentService:
             )
             response.raise_for_status()
         except requests.RequestException as exc:
-            error_body = exc.response.text if hasattr(exc, 'response') and exc.response is not None else str(exc)
+            # The gateway's own rejection text is the ONLY place the reason for a
+            # refused payment-link is ever stated — `PaymentGatewayError` reaches
+            # the donor as one generic sentence, so a body lost here is a payment
+            # nobody can explain. A transport failure carries no response; there
+            # `str(exc)` stands in. Truncated because a log line is not a dump,
+            # and the payload is never logged: it carries the donor's e-mail.
+            gateway_response = exc.response
+            detail = (
+                f"HTTP {gateway_response.status_code} {gateway_response.text[:500]}"
+                if gateway_response is not None
+                else str(exc)
+            )
             logger.error(
-                "Axepta payment-link request failed for donation %s: %s", donation.id, exc, error_body
+                "Axepta payment-link request failed for donation %s: %s", donation.id, detail
             )
             raise PaymentGatewayError("Could not reach the payment gateway.") from exc
 
