@@ -115,6 +115,11 @@ export const TRANSLATED_ROUTES: ReadonlySet<string> = new Set<string>([
   "/koncerty",
   "/obrazy",
   "/kolofon",
+  // The privacy policy is `noindex,follow` and is IN this set anyway, unlike /404 — the set lights
+  // LINKS, and this document is linked from the footer of every page on the site, from /kolofon
+  // and from inside the vault's terms. A noindex leaf nothing links to belongs outside; one that
+  // thirty pages point at belongs in, or an English reader's footer sends them to Polish.
+  "/polityka-prywatnosci",
   "/koncerty/wcielenie",
   "/koncerty/wolanie-gor",
   "/koncerty/9-kart",
