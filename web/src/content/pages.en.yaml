@@ -13,6 +13,10 @@
 #
 # Sorted by key and written whole, so a diff of this file is a diff of the translation.
 
+page.404.head.lede: "Nothing stands at this address — the page has been moved, or it was never here. The nave is a few steps away."
+page.404.head.title: "This leaf is blank."
+page.404.meta.description: "There is no page at this address. Return to the nave — concerts, the ensemble, contact."
+page.404.meta.title: "This leaf is blank — VoctEnsemble"
 page.kolofon.auctor.eyebrow: "Author"
 page.kolofon.auctor.role: "design · code"
 page.kolofon.constructio.eyebrow: "Construction"

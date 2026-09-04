@@ -321,7 +321,29 @@ French month/day capitalization does not survive naive formatting (see the proje
 | D3 | reviewer mode: old → new, accept / reject / edit further — **done, §6i** | the patch gets made |
 | E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 — **EN pass 1 done, §6j** | Florent's first sitting |
 | F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang — **done, §6o** | the pages exist |
-| G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing — **`kontakt` (§6r–§6u), `koncerty` (§6v, §6w), `obrazy` (§6x) and `kolofon` (§6y) are through the whole loop and live in three locales; the chrome and the landing are still Polish-only** | the rest of the corpus enters the desk |
+| G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome, `/404`), then landing — **`kontakt` (§6r–§6u), `koncerty` (§6v, §6w), `obrazy` (§6x), `kolofon` (§6y) and the chrome + `/404` (§6z) are through the whole loop and live in three locales** | the rest of the corpus enters the desk |
+| H | `o-nas.ts` → YAML + overlays (§6r's named debt) — **not started** | the desk holds every page |
+| I | the donation vault (~1 870 lines: the invitation, the validation, the regulamin) — **not started** | the "Support us" every foreign page already offers |
+| J | the privacy policy (2 116 words, today a static file in `public/`) — **not started** | the RODO notice the footer already links in three locales |
+| K | the landing (index + eleven partials) + `TRANSLATED_ROUTES` "/" — **not started** | the site is translated |
+
+**H–K in that order, decided 2026-09-04, and the ordering is against intuition on purpose.** The
+landing is the biggest block of prose left and it is LAST, because it is the only one of the four
+that a foreign reader cannot reach at all: `/en` does not exist. The vault and the privacy policy
+are already reachable from every English and French page on the site — the nav's "Support us"
+opens a Polish island, the footer's Index column links a Polish RODO notice — so they are live
+gaps on ten built pages where the landing is a gap on none. Fixing what a reader can already reach
+beats writing what they cannot. `o-nas` goes first inside that because it is the cheapest: its
+English and French are written and reviewed already, so the stage moves prose between files and
+adds none.
+
+Two gates belong to **I** and must be answered before its drafts are written, not after: what
+language the Axepta / PayU checkout actually renders in (a translated form that hands a French
+donor to a Polish gateway is a promise the site cannot keep), and which language of the donation
+regulamin governs. The recommendation on the second is Polish governing with EN/FR informational
+and a sentence in the document saying so — and the regulamin goes on the desk like any page,
+because the desk is the only machinery here that stamps `source_hash`, and silent drift between
+language versions is worse in a legal text than in copy.
 
 ### §6a Stage A — what shipped (2026-09-02)
 
@@ -1972,6 +1994,106 @@ small divergence this page did not create and did not fix: the statute link's sc
 says "otwiera się w nowym oknie" where the footer's `statuteAria` says "nowej karcie" — one fact,
 two wordings, and changing the Polish was not this stage's to do.
 
+### §6z Stage G8 — the chrome, which turned out to be a sweep (2026-09-04)
+
+The fifth stage of G, and the first one that **adds nothing to the desk from the surface it was
+named after**. The question the stage was set was not "how do we translate the chrome" — the
+chrome has been a `Record<Locale, …>` since stage F — but "which of it is prose Florent edits".
+All 38 keys of `ui.ts` were put through §6r's completeness test, and the answer is: **none of
+it**.
+
+- **35 are landmarks, affordances and index labels.** A missing locale there is a broken page, not
+  a paragraph awaiting review. They stay typed.
+- **Three looked like candidates and are not.** `nav.archiveGloss` ("wszystkie fotografie") and
+  `footer.statuteAria` are two-word labels. `footer.donationNote` ("Darowizna na cele statutowe.")
+  is genuinely a claim rather than a label — and it is the **third printing of a fact
+  `kontakt.yaml` already owns**, which §6y settled: a sentence printed twice is READ twice, never
+  written twice. Putting it on the desk would have created the drift the rule exists to stop.
+
+So `PAGE_SPECS` grew by a page and not by the chrome. **563 keys · 1 689 rows** (+4 keys, +12
+rows), all of them `/404`'s.
+
+**The sweep was the stage.** G7 found a hand-written `<a href="/kolofon">Kolofon</a>` in the nave
+card. It was not one literal; it was five, all the same shape — correct when typed, blind once the
+file around them learned `lang` — and two of them were the site's worst-reachable defect since
+stage F:
+
+- **The mobile Via sent every concert row to the Polish page.** `href={r.href}` where the desktop
+  ribbon two hundred lines above already called `localizePath`, on the surface this file's own
+  comment calls "the phone's only road to the pages the desktop hangs under KONCERTY". A comment
+  beside it asserted "concert pages stay Polish-only" — false since §6o.
+- **`registrum-all` and `via-all` carried a hand-written `/obrazy`** from before §6x translated it,
+  while the footer's Index column on the same page offered `/en/obrazy`. One reader, two addresses
+  for one page.
+- **`via-all` printed `Obrazy`** where `t.nav.archive` has said "Images" in both foreign locales
+  since the chrome was translated.
+- **`SiteFooter` printed the Polish season gloss on every page in every locale** — under the Latin
+  incipit and inside the `aria-label`, out of a field literally named `pl`. That is §7's
+  key-named-for-a-locale trap in a third disguise, and the field is `gloss: Record<Locale, …>`
+  now. The canonical hour's poem did the same in the mobile card.
+- **Three islands had never learned a locale at all**, and this is the half the stage was not
+  looking for: `ImageLightbox` (four accessible names, on /obrazy, /kolofon and every concert
+  page), `VideoPlayer` (five, plus a scrubber whose `aria-valuetext` joined the times with the
+  Polish word "z"), and `ScrollTopButton` — which `BaseLayout` mounts on **every page of the
+  site** and which prints a VISIBLE Polish hint, "wróć w ciszę", beside the cursor.
+
+**Four decisions worth carrying.**
+
+- **A locale a client island holds is read from the document, never taken as a prop.**
+  `ScrollTopButton` is `transition:persist`: the ClientRouter keeps the island's INSTANCE across a
+  swap, so a prop freezes at whichever language the tab opened on — a Polish landing, one
+  navigation, and the control is offering Polish to an English reader with nothing reporting an
+  error. `i18n/documentLocale.ts` reads `<html lang>`, which every swap rewrites, and
+  `useDocumentLocale` re-reads it on `astro:page-load`. The chrome's own delegated script takes
+  the same route for a different reason: it binds once per tab (`__voctChrome`) and outlives every
+  document it acts on, so it must ask when it acts rather than remember.
+- **A gloss that must agree with a computed HOUR or SEASON is chrome.** Same test §6x applied to a
+  counted noun and §6y to a computed date, one turn further: five seasons and eight hours are
+  closed tables walked by the calendar and the clock, so a missing locale is a broken line rather
+  than one awaiting review. They are complete triples in `lib/tempusLiturgicus` and
+  `horaeCanonicae`, and they went through §2's two passes like any draft.
+- **A blank leaf speaks the language of the shelf it was found on, and that is an nginx decision.**
+  `/404` is a page of the desk now (`content/pages/404.yaml`, `i18n/content/notFound.ts`,
+  `NotFoundPage.astro`, three routes) — but three documents are useless while one `error_page`
+  serves them all. A `map $uri $marketing_404` in `nginx.conf` picks the leaf from the prefix that
+  was asked for, and the whole existing miss cascade (marketing files → app assets → `@not_found`)
+  stays intact: only the leaf at the end of it turns. A pair of prefix `location` blocks would
+  have duplicated that cascade to change its last line.
+- **`/404` stays OUT of `TRANSLATED_ROUTES`, and this is the first page to earn that.** The set's
+  documented job is to light LINKS, a language switcher and an hreflang graph. Nothing links to a
+  404; it is reached by a mistake, through nginx. An hreflang graph on a `noindex` leaf is noise
+  Google discards, and a switcher on it offers a choice of blank leaves. So: three documents, no
+  ledger entry, and `NotFoundPage` composes its own canonical from `lang` rather than looking one
+  up. The ordering contract is untouched — it forbids entering the set early, not staying out.
+
+**The page is four fields, and the accounting is why.** What a reader meets is five Latin rubrics,
+a number, two sentences and four ways out. The rubrics are locale-neutral, `404` is a number, and
+the four ways' vernacular names are the names the chrome **already prints** for those destinations
+— `ui.footer.home`, `CONCERT[lang].meta.breadcrumb`, `ui.nav.about`, `ui.nav.contact`. Restating
+them here would have put four rows on the desk carrying names that already exist, and the first
+edit to either copy would leave a reader looking at two words for one destination on one screen.
+Both drafts also had their register decided by evidence rather than taste: "karta" is published by
+this site as **Leaf** and **feuillet** (`9 Kart` → "Nine Leaves from the Book of Psalms", "Neuf
+feuillets du Livre des Psaumes"), which is what makes the `Vacat` above it legible in all three.
+
+**The loop:** `copy:sync` (12 created, **0 updated, 0 retired** — nothing else in the corpus
+moved), `copy:propose --write` (4 + 4, with **"559 already in the repository" and nothing
+re-proposing**, which discharges §6x's owed item: the sanitizer fix is deployed and the four
+`lang="fr"` rows have stopped re-proposing), `copy:apply --write` (8 translations, 0 Polish edits,
+0 refused).
+
+**The proof the move changed no Polish: 236 words, in the same order, before and after** — and
+because a word-stream proof is blind to attributes (§6y), all 415 attribute values were compared
+too: two class names differ, `nf-way-pl` → `nf-way-name` and `foot-incipit-pl` →
+`foot-incipit-gloss`, both renamed on purpose because neither holds one language any more.
+
+**What is still owed.** H–K in §6's table. Inside this stage's own reach, two small divergences it
+did not create: the statute link's screen-reader note still says "otwiera się w nowym oknie" where
+`footer.statuteAria` says "nowej karcie" (§6y), and `dates[].venue` on the concert pages is still
+the fuller Polish legal string (§6x). And one this stage inspected and left standing on purpose:
+the footer's postal address prints "ul. Św. Filipa 23/3" in every locale, because an address is
+written the way it must be written on an envelope.
+
 ## §7 Traps
 
 - **`overflow-x: hidden` on the body kills every page-level `position: sticky`.** One axis `hidden`
@@ -1998,6 +2120,18 @@ two wordings, and changing the Polish was not this stage's to do.
   translated and still linked a hand-written `<a href="/kolofon">Kolofon</a>` from its nave card,
   so every English and French page on the site offered the colophon in Polish (§6y). A literal that
   was correct when it was typed does not announce itself when the file around it learns a locale.
+  §6z found four more of them in the same file, one of which — `href={r.href}` on the mobile Via —
+  sent every concert row to the Polish page on a phone, which is the only road a phone has to a
+  concert at all. **When a shared component learns `lang`, grep its own body for `href="` and for
+  bare text nodes in the same pass you grep its callers.**
+- **A `transition:persist` island holds the locale it was BORN with, for the life of the tab.** The
+  ClientRouter keeps the island's instance across a swap, so a `lang` prop is set once and never
+  again: `ScrollTopButton` is mounted by `BaseLayout` on every page of the site, and a reader who
+  arrives on the Polish landing and navigates to `/en/kontakt` keeps a Polish accessible name and a
+  VISIBLE Polish hint under their cursor. Nothing errors, nothing rerenders, and the prop looks
+  correct in the source. Read `<html lang>` instead (`i18n/documentLocale`), which every swap
+  rewrites, and re-read it on `astro:page-load`. The same rule covers a document-delegated script
+  bound once per tab: it must ASK at the moment it acts, never close over a value.
 - **Astro drops the whitespace between an expression and whatever stands beside it**, and a
   word-stream proof cannot see it. `{copy.link} <span>↗</span>` renders with the arrow hard against
   the link, and `{t.impressio} {impressioLabel}` renders "odbito4 września" — silently, in a page
@@ -2054,12 +2188,22 @@ two wordings, and changing the Polish was not this stage's to do.
   `src/pages/{en,fr}/koncerty/[id].astro` filter their own `getStaticPaths` through the set (§6o),
   so page and links appear together; every hand-written page still owes the contract. Flip one
   concert at a time regardless — a concert enters when its translation is reviewed, not when the
-  section is.
+  section is. And the set is not a register of translated documents: it lights LINKS, a language
+  switcher and an hreflang graph, so a page nothing links to belongs OUTSIDE it however many
+  locales it exists in. `/404` is the first (§6z) — three documents, no entry, and its component
+  composes its own canonical from `lang`.
 - **A `LocalizedText` from `concerts.yaml` carries `pl` and nothing else.** Since stage C3 the
   corpus is Polish-only and translations live in the overlay, so `pickLocale` on a concert field
   returns Polish in EVERY locale — silently, on a page that looks translated. This is what stage F
   found across the whole concert page (§6o). Read a concert's copy through `lib/copyOverlay`;
   `pickLocale` is for maps that genuinely hold their own locales.
+- **An error page is served by nginx, not by the router, so translating it is half a code change.**
+  The build emits `/404.html`, `/en/404.html` and `/fr/404.html` and every one of them is dead
+  weight while `error_page 404 /404.html` names a single file — the routes exist, the pages are
+  correct, and a French reader still meets the Polish leaf. It is `$marketing_404` (a `map` in
+  `infra/nginx/nginx.conf`, used by both `prod.conf` and `local.conf`) now. `map` is http-only,
+  which is why a rule about the public site's error page lives in the core config rather than
+  beside the server block that uses it.
 - **A route tree outside `/panel` has to be declared twice, and neither place is the router.** The
   desk lives at `/redakcja/*`, which nginx (`infra/nginx/{prod,local}.conf`) and the service
   worker's navigation allowlist (`frontend/src/sw.ts`) each have to know, mirroring one another. It
@@ -2085,7 +2229,12 @@ two wordings, and changing the Polish was not this stage's to do.
   suffix was the visible half; `movements[].pl` and `interlude.pl` were the same ambiguity written
   as a nested key, and a grep for `Pl:` would not have found either. Both are `gloss` now. When a
   new field appears beside a `lat`/`text`/`inscriptio`, ask which of §5's two meanings its name
-  carries before writing it.
+  carries before writing it. It reappeared OUTSIDE the corpus in §6z: `Tempus.pl` in
+  `lib/tempusLiturgicus` sat under a Latin season name, read perfectly as "the Polish of this
+  Latin", and printed "okres zwykły" into the footer of every English and French page on the site.
+  The name is what hid it — nobody greps a field called `pl` for a missing translation. Anywhere a
+  vernacular tier stands under a Latin one, the field is `gloss` and its type is
+  `Record<Locale, string>`.
 - **A migration of this file may not go through a YAML parser.** `concerts.yaml` is ~2 500 lines of
   which a large share is comments carrying decisions nothing else records (the veil per station,
   the run boundaries, the consent scope on the roster). Any parse-and-dump deletes all of them

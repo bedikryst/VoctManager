@@ -16,6 +16,10 @@
 #
 # Sorted by key and written whole, so a diff of this file is a diff of the translation.
 
+page.404.head.lede: "Rien ne se tient à cette adresse — la page a été déplacée, ou elle n'a jamais été là. La nef est à quelques pas."
+page.404.head.title: "Ce feuillet est vierge."
+page.404.meta.description: "Aucune page à cette adresse. Revenez dans la nef — concerts, ensemble, contact."
+page.404.meta.title: "Ce feuillet est vierge — VoctEnsemble"
 page.kolofon.auctor.eyebrow: "Auteur"
 page.kolofon.auctor.role: "conception · code"
 page.kolofon.constructio.eyebrow: "Construction"
