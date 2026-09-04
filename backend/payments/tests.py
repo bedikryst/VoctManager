@@ -15,6 +15,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from .models import Donation, DonationCurrency, DonationStatus
+from .services import AxeptaPaymentService
 
 
 @override_settings(DONATION_GOAL_PLN=20000, DONATION_EUR_TO_PLN_RATE='4.00')
@@ -315,3 +316,77 @@ class InitiateDonationValidationTests(APITestCase):
         donation = Donation.objects.get()
         # The injected status is ignored — a donation always opens as PENDING.
         self.assertEqual(donation.status, DonationStatus.PENDING)
+
+
+class GatewayLanguageTests(APITestCase):
+    """
+    The hosted payment page carries its language in its own URL and there is no
+    request field that sets it, so the link the gateway hands back is rewritten
+    before the donor follows it. These tests pin the two halves that can fail
+    silently: an unfamiliar URL must survive untouched, and the reader's locale
+    must actually reach the service that does the rewriting.
+    """
+
+    url = reverse('payments:donation-initiate')
+
+    def test_language_segment_follows_the_reader(self):
+        localize = AxeptaPaymentService._localize_payment_link
+        link = 'https://paywall.axepta.pl/en/pay/880544c1-bfb8-4c29-a6b4-f05672886ba5'
+        self.assertEqual(
+            localize(link, 'pl'),
+            'https://paywall.axepta.pl/pl/pay/880544c1-bfb8-4c29-a6b4-f05672886ba5',
+        )
+        # The gateway has no French page, so a French reader gets the English one
+        # rather than whatever the gateway would have defaulted to.
+        self.assertEqual(
+            localize(link, 'fr'),
+            'https://paywall.axepta.pl/en/pay/880544c1-bfb8-4c29-a6b4-f05672886ba5',
+        )
+        self.assertEqual(localize(link, 'en'), link)
+
+    def test_query_and_fragment_survive_the_rewrite(self):
+        localize = AxeptaPaymentService._localize_payment_link
+        self.assertEqual(
+            localize('https://paywall.axepta.pl/en/pay/abc?token=x#top', 'pl'),
+            'https://paywall.axepta.pl/pl/pay/abc?token=x#top',
+        )
+
+    def test_an_unfamiliar_link_is_left_alone(self):
+        """A donor who reaches no payment page at all is worse off than one
+        reading English, so anything but the known shape is passed through."""
+        localize = AxeptaPaymentService._localize_payment_link
+        for link in (
+            'https://paywall.axepta.pl/pay/abc',
+            'https://paywall.axepta.pl/payment/en/abc',
+            'https://pay.example/x',
+        ):
+            self.assertEqual(localize(link, 'pl'), link)
+
+    @patch('payments.views.AxeptaPaymentService.create_payment_link', return_value='https://pay.example/x')
+    def test_locale_reaches_the_gateway_client(self, link_mock):
+        resp = self.client.post(
+            self.url,
+            {'email': 'donor@example.com', 'amount': '50.00', 'currency': 'PLN', 'locale': 'fr'},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(link_mock.call_args.args[1], 'fr')
+
+    @patch('payments.views.AxeptaPaymentService.create_payment_link', return_value='https://pay.example/x')
+    def test_a_request_without_a_locale_stays_polish(self, link_mock):
+        """The vault always sends one; a stale cached bundle might not."""
+        self.client.post(
+            self.url, {'email': 'donor@example.com', 'amount': '50.00', 'currency': 'PLN'},
+            format='json',
+        )
+        self.assertEqual(link_mock.call_args.args[1], 'pl')
+
+    @patch('payments.views.AxeptaPaymentService.create_payment_link')
+    def test_an_unknown_locale_is_rejected_before_the_gateway(self, link_mock):
+        resp = self.client.post(
+            self.url,
+            {'email': 'donor@example.com', 'amount': '50.00', 'currency': 'PLN', 'locale': 'de'},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        link_mock.assert_not_called()

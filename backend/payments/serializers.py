@@ -27,6 +27,11 @@ class InitiateDonationSerializer(serializers.Serializer):
         choices=DonationCurrency.choices,
         default=DonationCurrency.PLN,
     )
+    # The language the donor was reading when they opened the form. It is not
+    # persisted — nothing downstream asks a settled donation what language it
+    # came from — and exists only to point the hosted payment page at the right
+    # one. Constrained rather than free text: the value ends up inside a URL.
+    locale = serializers.ChoiceField(choices=['pl', 'en', 'fr'], default='pl')
 
 
 class DonationStatusSerializer(serializers.ModelSerializer):

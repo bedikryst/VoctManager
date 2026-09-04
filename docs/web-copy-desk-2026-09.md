@@ -14,7 +14,8 @@ for it, and §1 of the board-feedback file points here.
 - **§4 The segment** — the unit everything else is built on.
 - **§5 `concerts.yaml`** — the measured corpus and the `*Pl` trap that blocks three locales.
 - **§6 Order of work** — stages, and what each one delivers. **§6a** and **§6b** record what stages
-  A and B shipped; **§6c** splits stage C and states the four defects that forced the split.
+  A and B shipped; **§6c** splits stage C and states the four defects that forced the split. Each
+  later stage has its own record, **§6d** through **§6bb**; read the one you need, never the run.
 - **§7 Traps** — things that look correct and ship wrong.
 - **§8 Open decisions.**
 
@@ -323,7 +324,7 @@ French month/day capitalization does not survive naive formatting (see the proje
 | F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang — **done, §6o** | the pages exist |
 | G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome, `/404`), then landing — **`kontakt` (§6r–§6u), `koncerty` (§6v, §6w), `obrazy` (§6x), `kolofon` (§6y) and the chrome + `/404` (§6z) are through the whole loop and live in three locales** | the rest of the corpus enters the desk |
 | H | `o-nas.ts` → YAML + overlays (§6r's named debt) — **done, §6aa; the desk now holds every page the site has** | the desk holds every page |
-| I | the donation vault (~1 870 lines: the invitation, the validation, the regulamin) — **not started** | the "Support us" every foreign page already offers |
+| I | the donation vault (~1 870 lines: the invitation, the validation, the regulamin) — **done, §6bb; two desk pages, and the gateway now follows the reader** | the "Support us" every foreign page already offers |
 | J | the privacy policy (2 116 words, today a static file in `public/`) — **not started** | the RODO notice the footer already links in three locales |
 | K | the landing (index + eleven partials) + `TRANSLATED_ROUTES` "/" — **not started** | the site is translated |
 
@@ -337,13 +338,16 @@ beats writing what they cannot. `o-nas` goes first inside that because it is the
 English and French are written and reviewed already, so the stage moves prose between files and
 adds none.
 
-Two gates belong to **I** and must be answered before its drafts are written, not after: what
-language the Axepta / PayU checkout actually renders in (a translated form that hands a French
-donor to a Polish gateway is a promise the site cannot keep), and which language of the donation
-regulamin governs. The recommendation on the second is Polish governing with EN/FR informational
-and a sentence in the document saying so — and the regulamin goes on the desk like any page,
-because the desk is the only machinery here that stamps `source_hash`, and silent drift between
-language versions is worse in a legal text than in copy.
+**Both of I's gates were answered before its drafts were written, and the first one turned out to
+point the other way.** The question was what language the Axepta / PayU checkout renders in — the
+fear being "a translated form that hands a French donor to a Polish gateway is a promise the site
+cannot keep". Measured by the developer against the live gateway: it serves **English by default
+to everybody, Polish donors included**, with a manual switch to Polish and no French at all. So the
+gap was never the foreign reader's; it was the Polish one's, and it predated any translation. What
+made it fixable is that the gateway carries its language in the URL it hands back
+(`paywall.axepta.pl/<lang>/pay/<id>`), which §6bb rewrites. The second gate — which language of the
+regulamin governs — was settled as recommended: Polish binding, EN/FR informational, and the
+sentence saying so goes INSIDE the document, which makes translating it an amendment to it.
 
 ### §6a Stage A — what shipped (2026-09-02)
 
@@ -2172,6 +2176,120 @@ on the concert pages is still the fuller Polish legal string (§6x), and the sta
 screen-reader note still says "otwiera się w nowym oknie" where `footer.statuteAria` says "nowej
 karcie" (§6y).
 
+### §6bb Stage I — the donation vault, and the gateway that spoke the wrong language to everyone (2026-09-04)
+
+The first surface in this plan that is **not a page**. The vault is a React island mounted on eight
+surfaces, so its words are read on /kontakt, /o-nas, /obrazy, /kolofon, /koncerty and every concert
+page, in all three locales — which is why it was the largest LIVE gap left after stage G: the nav
+has said "Support us" and "Nous soutenir" since the chrome was translated, and the sheet behind
+that button answered in Polish. Measured before starting: **~1 370 words of Polish prose**, about
+one concert page.
+
+**What shipped.** Two content files (`content/pages/skarbiec.yaml`, `regulamin-darowizn.yaml`),
+three modules (`i18n/content/skarbiec.ts`, `regulaminDarowizn.ts`, `skarbiecChrome.ts`),
+`lib/vaultCopy.ts`, `components/VaultMount.astro`, and every vault component rewritten to read its
+words rather than hold them. **712 keys · 2 136 rows** (+76 keys, +228 rows). The whole loop:
+`copy:sync` (228 created, **0 updated, 0 retired**), `copy:propose --write` twice (76 + 76, with
+636 already in the repository and nothing re-proposing), `copy:apply --write` (152 translations,
+**0 Polish edits, 0 refused**).
+
+**Two desk pages, not one.** `page.skarbiec` is the invitation; `page.regulamin-darowizn` is the
+terms. A legal text is reviewed against a different question than an invitation is — not "does this
+read well" but "does this still say what the Polish says" — and on the desk that difference is a
+row of its own with its own stale count. The privacy policy joins it as a peer in stage J.
+
+**Six decisions worth carrying.**
+
+- **The prose is a PROP and the chrome is an IMPORT, and the split is forced twice over.** Chrome
+  carries functions — a Polish plural, an interpolated amount — and a function cannot be serialized
+  into an island's props. Prose is resolved by `lib/pageCopy`, which reads YAML through Vite and
+  cannot run in a browser. So the chrome had to leave `skarbiec.ts` for a file of its own:
+  `skarbiec.ts` builds a zod schema at module scope, which is a side effect no bundler may drop,
+  and an island importing one constant from it would have shipped zod to every reader of every page
+  on the site. The payload argument that looked decisive turned out not to be: the vault's markup,
+  regulamin included, has ALWAYS been server-rendered into every page's HTML, so the props replace
+  literals that were already there.
+- **The locale is a prop here, which is the OPPOSITE of §6z's rule, and both are right.** §6z reads
+  `<html lang>` because a `transition:persist` island outlives the swap that rewrites it. This
+  island is server-rendered and remounts per page, and reading the document would break it the
+  other way: `documentLocale()` has no document during SSR and answers Polish, so the server would
+  render Polish under an English page and React would throw its own markup away at hydration. The
+  rule is not "always read the document" — it is **read the document when the instance outlives the
+  page, take a prop when the SERVER has to agree with the client.**
+- **`target="_blank"` is added at render, not written into the content file.** Every link in this
+  copy is read in an overlay standing above a half-filled donation form, so following one in place
+  costs the reader what they had typed. Putting the attribute in the YAML would have needed
+  `target`/`rel` on the desk's whitelist — and §7's sanitizer trap says an editor's first proposal
+  on that field would then have stripped them in silence. It goes in the same seam `pageCopy`
+  already occupies for `localizePath`, which is also the choice G1 made when `/kontakt`'s privacy
+  link lost its `target` on the way into `kontakt.yaml`.
+- **An island's `HTML` field gets no typographic pass unless its caller runs one.** `lib/typoHtml`
+  copies `<astro-island>` subtrees through byte for byte, and `<Typo>` pins string LEAVES — an
+  `HTML` field is injected through `dangerouslySetInnerHTML`, where there is no leaf to pin. So
+  French prose inside the vault would have been the one place on the site that never met
+  `lib/typo`. `vaultCopy` runs `typographyHtml` on those fields at build, before the string is
+  handed over.
+- **A counted noun is chrome, and the Polish one was ungrammatical.** `donors(n)` needs THREE forms
+  in Polish and the vault printed two, so "2 darczyńców" has been wrong on the live site since it
+  shipped. Same test §6x applied to a counted noun; the fix is a side effect of asking the question.
+- **The consent line is two fields because its link is a BUTTON.** The desk's inline vocabulary is
+  `<em> <strong> <a>`, so the sentence breaks at the link and the document's own title fills the
+  gap — read from `regulamin-darowizn.yaml`, which also closed a live defect: the footer said
+  "Regulamin darowizn" and the checkbox two inches away said "Regulamin przekazywania darowizn".
+  One document, two names, on one screen (§6z's rule, in the source language).
+
+**The gateway, which is the half of this stage that is not copy.** Axepta's contract has no field
+that sets the payment page's language — but the page carries it in the URL the API returns, so
+`create_payment_link` rewrites that one segment from a `locale` the form now posts. Guarded to the
+exact `/<lang>/pay/<rest>` shape and returning anything else untouched, because a donor who reaches
+no payment page at all is worse off than one reading English. French maps to English (the gateway
+has no French). `customer.locale`, which sets the language of the mail Axepta sends the donor, is
+documented on the `transaction` schema and NOT on `payment-link` — so it ships behind
+`AXEPTA_SEND_CUSTOMER_LOCALE`, **off by default**: an unknown field rejected on that call would
+fail every donation on the site, and a foreign-language notice is not worth that risk untested.
+Turn it on, make one real donation, leave it on if the link still comes back.
+
+**Translating the regulamin amended it.** § 5 ust. 3 is new — "wersją wiążącą jest wersja polska" —
+the version moved to 1.2, and the history records it. That is the whole Polish diff of this stage
+apart from the link label, and it is a legal text change rather than a copy change.
+
+**A latent bug in `lib/typo.ts`, found because this is the first French copy with `»` before a
+closing inline tag.** `typoHtml` prepends the previous run's last character so a rule can see across
+an inline tag, then slices exactly that many characters back off — a contract its own comment
+states. The closing-guillemet rule was `${FR_SPACE}?»`, which matched a bare `»` handed to it AS
+the context and inserted a no-break space to its LEFT, so the slice cut the wrong end:
+`<strong>« Virement QR »</strong> et` came back with the guillemet doubled, on ten French pages,
+with nothing failing. It anchors on a preceding non-space now and re-emits it.
+
+**And the typography audit was judging every island in Polish.** `typography-static.mjs` hard-coded
+`DEFAULT_LOCALE` on the reasoning that "island copy is the Polish original on every page" — true
+until this stage, false after it, and it was flagging correct French sentences for the Polish
+one-letter-word rule. It reads the page's locale now, which turns the same warning into a useful
+one: **6 spots on three French concert pages, all `VideoPlayer`'s `vplayer-meta`**, whose French
+guillemets are unpinned in the served markup because the island resolves its locale at HYDRATION
+(§6z's `useDocumentLocale`) and the server therefore renders Polish rules over French text.
+`ScrollTopButton` has the same shape and is worse — `BaseLayout` mounts it on every page, and every
+English and French document ships `aria-label="Wróć na początek strony"` and a visible "wróć
+w ciszę" until React re-renders. Both predate this stage and neither is a copy job.
+
+**The proof, against a build of the tree as it stood before the stage.** Every Polish page — all
+six concerts, /press, the privacy policy and all three `/404` leaves — carries a **byte-identical
+attribute set**, and the Polish word stream changed in exactly five places: the link label, § 5
+ust. 3, the new history entry, `1.1 → 1.2` and the effective date. Every English and French page
+changed exactly **nine attribute values**, all of them the vault's Polish aria-labels, alt text and
+placeholder, now in the reader's language. **Nothing else moved on any page.**
+
+**What is still owed.** J and K in §6's table. Inside this stage's reach: the two islands above,
+which the corrected audit now names; `AXEPTA_RETURN_URL` still returns every donor to the POLISH
+landing whatever locale they gave from, so the thank-you and the apology are translated and will
+not be seen in EN/FR until stage K gives `/en` and `/fr` a root (then it is a locale prefix on one
+setting); and `UI.footer.donationNote` renders "cele statutowe" as "charitable purposes" in English
+where the overlay and this stage's terms both say "statutory purposes" — two English readings of
+one Polish sentence, one click apart in the vault. **And one thing to verify rather than assume:**
+the form promises "wyślemy potwierdzenie darowizny" and this backend sends the donor no mail at all
+— the only one documented in the Axepta contract is a "payment started" notice. Confirm what a
+donor actually receives before that promise stands in three languages.
+
 ## §7 Traps
 
 - **`overflow-x: hidden` on the body kills every page-level `position: sticky`.** One axis `hidden`
@@ -2202,6 +2320,30 @@ karcie" (§6y).
   sent every concert row to the Polish page on a phone, which is the only road a phone has to a
   concert at all. **When a shared component learns `lang`, grep its own body for `href="` and for
   bare text nodes in the same pass you grep its callers.**
+- **A TYPOGRAPHY RULE THAT INSERTS TO THE LEFT OF ITS MATCH CORRUPTS THE TEXT NEXT TO IT.**
+  `lib/typoHtml` and the islands' `<Typo>` both prepend the previous run's last character so a rule
+  can see across an inline tag, then slice exactly that many characters back off — so every rule
+  must re-emit its left context unchanged. French's closing-guillemet rule did not: `${FR_SPACE}?»`
+  matched a bare `»` handed to it AS the context, put a no-break space in front of it, and the
+  slice then cut the space instead of the guillemet. `<strong>« Virement QR »</strong> et` shipped
+  with the guillemet doubled on ten French pages and nothing failed — no test, no warning, and the
+  audit could not see it because the audit runs the same rules. Anchor on `(\S)` and re-emit it
+  (§6bb).
+- **An SSR-ed island takes its locale as a PROP; only a persisted one reads the document.** These
+  look like the same rule and are opposites. `documentLocale()` has no document during SSR and
+  answers Polish, so an island that is server-rendered and reads it renders Polish under an English
+  page — and React answers the mismatch by throwing the server's markup away and re-rendering, in
+  front of the reader. The vault takes `lang` from `VaultMount.astro` for exactly this reason. The
+  live consequence of getting it the other way round is standing on the site right now:
+  `ScrollTopButton` and `VideoPlayer` resolve at hydration, so every English and French document
+  SHIPS Polish accessible names and, on the scroll control, a visible Polish hint. Read the
+  document when the instance outlives the page; take a prop when the server has to agree with the
+  client.
+- **An `HTML` copy field inside an island meets no typographic pass at all.** `lib/typoHtml` copies
+  `<astro-island>` subtrees through byte for byte (rewriting them desynchronises hydration), and
+  `<Typo>` pins string LEAVES — an `HTML` field goes through `dangerouslySetInnerHTML`, where there
+  is no leaf. Plain text inside an island is covered by `<Typo>`; markup is not, and the failure is
+  silent French. Run `typographyHtml` on the field before handing it to the island (`lib/vaultCopy`).
 - **A `transition:persist` island holds the locale it was BORN with, for the life of the tab.** The
   ClientRouter keeps the island's instance across a swap, so a `lang` prop is set once and never
   again: `ScrollTopButton` is mounted by `BaseLayout` on every page of the site, and a reader who

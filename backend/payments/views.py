@@ -83,7 +83,9 @@ class InitiateDonationView(APIView):
         )
 
         try:
-            redirect_url = AxeptaPaymentService.create_payment_link(donation)
+            redirect_url = AxeptaPaymentService.create_payment_link(
+                donation, serializer.validated_data['locale']
+            )
         except PaymentGatewayError as exc:
             logger.error("Donation %s could not be initiated: %s", donation.id, exc)
             return Response(

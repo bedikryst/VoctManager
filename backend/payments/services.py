@@ -16,6 +16,7 @@ import hashlib
 import hmac
 import json
 import logging
+import re
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import requests
@@ -36,6 +37,18 @@ _AXEPTA_TIMEOUT = (5, 8)
 # Webhook payment statuses (compared lower-cased) that terminate a donation as
 # FAILED. Confirmed against Axepta API v1.0.2; extend here if new strings appear.
 _FAILURE_STATUSES = frozenset({'rejected', 'cancelled'})
+
+# The hosted payment page speaks two languages and carries the choice in its own
+# URL (`paywall.axepta.pl/<lang>/pay/<id>`). French is not one of them, so a
+# French reader is handed the English page rather than a Polish one — which is
+# also what the gateway does by DEFAULT to everybody, Polish donors included.
+_GATEWAY_LANGUAGE = {'pl': 'pl', 'en': 'en', 'fr': 'en'}
+_DEFAULT_GATEWAY_LANGUAGE = 'pl'
+
+# `/<lang>/pay/<id>` — the shape the rewrite is allowed to touch, and nothing
+# else. A gateway that changes its URL shape must leave the link working, so an
+# unrecognised path is returned untouched rather than rebuilt on a guess.
+_PAYWALL_PATH = re.compile(r'^/(?P<lang>[a-z]{2})/pay/(?P<rest>.+)$')
 
 
 # --- Domain Exceptions -------------------------------------------------------
@@ -87,9 +100,42 @@ class AxeptaPaymentService:
         )
 
     @staticmethod
-    def create_payment_link(donation: Donation) -> str:
+    def _localize_payment_link(url: str, locale: str) -> str:
         """
-        Registers `donation` with Axepta and returns the hosted payment-page URL.
+        Points the hosted payment page at the donor's own language.
+
+        The gateway carries the choice in the URL it hands back
+        (`paywall.axepta.pl/pl/pay/<id>`), and there is no request field that
+        sets it — so the segment is rewritten here, on a link the gateway itself
+        produced. Only the exact `/<lang>/pay/<rest>` shape is touched: a URL
+        that does not match is returned unchanged, because a donor who reaches
+        no payment page at all is a worse outcome than one who reads English.
+        """
+        parts = urlsplit(url)
+        match = _PAYWALL_PATH.match(parts.path)
+        language = _GATEWAY_LANGUAGE.get(locale, _DEFAULT_GATEWAY_LANGUAGE)
+        if match is None:
+            logger.warning(
+                "Axepta payment link has an unfamiliar path (%s); left as it came.", parts.path
+            )
+            return url
+        if match.group('lang') == language:
+            return url
+        return urlunsplit(
+            (
+                parts.scheme,
+                parts.netloc,
+                f"/{language}/pay/{match.group('rest')}",
+                parts.query,
+                parts.fragment,
+            )
+        )
+
+    @staticmethod
+    def create_payment_link(donation: Donation, locale: str = 'pl') -> str:
+        """
+        Registers `donation` with Axepta and returns the hosted payment-page URL,
+        pointed at `locale`'s language where the gateway has one.
 
         Currency and amount are taken straight from the `donation` row — the
         amount is converted to the gateway's integer minor-unit convention via
@@ -110,7 +156,24 @@ class AxeptaPaymentService:
         # `firstName` purely so transactions are distinguishable in Axepta's
         # dashboard. A dedicated name field on the form would supersede this.
         # customer_first_name = donation.email.split('@', 1)[0][:64] or 'Darczyńca'
-        payload = {
+        customer: dict[str, str] = {
+            'firstName': 'Darczynca',
+            'lastName': 'VoctFoundation',
+            'email': donation.email,
+        }
+
+        # `customer.locale` (pl|en) sets the language of the mail Axepta sends
+        # about a payment having started; without it the default is Polish for a
+        # PLN transaction whoever the donor is. It is documented on the
+        # `transaction` schema and NOT on `payment-link`, which is the one this
+        # call uses — so it ships behind a switch, off by default: an unknown
+        # field rejected here would fail every donation on the site, and a
+        # foreign-language notice is not worth that risk untested. Turn it on,
+        # make one real donation, and leave it on if the link still comes back.
+        if settings.AXEPTA_SEND_CUSTOMER_LOCALE:
+            customer['locale'] = _GATEWAY_LANGUAGE.get(locale, _DEFAULT_GATEWAY_LANGUAGE)
+
+        payload: dict[str, object] = {
             'serviceId': settings.AXEPTA_SERVICE_ID,
             'amount': donation.get_amount_in_minor_units(),
             'currency': donation.currency,
@@ -121,11 +184,7 @@ class AxeptaPaymentService:
             # A neutral / abandoned return also lands on the failure surface, so
             # the donor sees the retry path, not a thank-you they didn't earn.
             'returnUrl': failure_url,
-            'customer': {
-                'firstName': 'Darczynca',
-                'lastName': 'VoctFoundation',
-                'email': donation.email,
-            },
+            'customer': customer,
         }
 
         try:
@@ -151,7 +210,7 @@ class AxeptaPaymentService:
             raise PaymentGatewayError("Unexpected response from the payment gateway.") from exc
 
         logger.info("Axepta payment link created for donation %s.", donation.id)
-        return payment_url
+        return AxeptaPaymentService._localize_payment_link(payment_url, locale)
 
     @staticmethod
     def _extract_signature(signature_header: str) -> str:

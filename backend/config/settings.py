@@ -556,6 +556,13 @@ AXEPTA_FAILURE_RETURN_URL = env('AXEPTA_FAILURE_RETURN_URL', default='https://vo
 # any source IP not in this list. Leave empty to rely on signature verification
 # alone (the canonical IP allowlist belongs at the nginx tier).
 AXEPTA_WEBHOOK_ALLOWED_IPS = env.list('AXEPTA_WEBHOOK_ALLOWED_IPS', default=[])
+# Send `customer.locale` (pl|en) with the payment-link request, which sets the
+# language of the mail Axepta sends the donor about a payment having started.
+# OFF by default and deliberately so: the field is documented on the API's
+# `transaction` schema and not on `payment-link`, so a gateway that rejects
+# unknown fields would fail every donation on the site. Turn it on, make one
+# real donation, and leave it on if the payment link still comes back.
+AXEPTA_SEND_CUSTOMER_LOCALE = env.bool('AXEPTA_SEND_CUSTOMER_LOCALE', default=False)
 
 # --- DONATION PROGRESS (public aggregate behind the landing vault) ---
 # Campaign goal (PLN) reported by /api/payments/donations/progress/ so the
