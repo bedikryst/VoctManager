@@ -15,7 +15,7 @@ for it, and §1 of the board-feedback file points here.
 - **§5 `concerts.yaml`** — the measured corpus and the `*Pl` trap that blocks three locales.
 - **§6 Order of work** — stages, and what each one delivers. **§6a** and **§6b** record what stages
   A and B shipped; **§6c** splits stage C and states the four defects that forced the split. Each
-  later stage has its own record, **§6d** through **§6bb**; read the one you need, never the run.
+  later stage has its own record, **§6d** through **§6cc**; read the one you need, never the run.
 - **§7 Traps** — things that look correct and ship wrong.
 - **§8 Open decisions.**
 
@@ -325,8 +325,12 @@ French month/day capitalization does not survive naive formatting (see the proje
 | G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome, `/404`), then landing — **`kontakt` (§6r–§6u), `koncerty` (§6v, §6w), `obrazy` (§6x), `kolofon` (§6y) and the chrome + `/404` (§6z) are through the whole loop and live in three locales** | the rest of the corpus enters the desk |
 | H | `o-nas.ts` → YAML + overlays (§6r's named debt) — **done, §6aa; the desk now holds every page the site has** | the desk holds every page |
 | I | the donation vault (~1 870 lines: the invitation, the validation, the regulamin) — **done, §6bb; two desk pages, and the gateway now follows the reader** | the "Support us" every foreign page already offers |
-| J | the privacy policy (2 116 words, today a static file in `public/`) — **not started** | the RODO notice the footer already links in three locales |
-| K | the landing (index + eleven partials) + `TRANSLATED_ROUTES` "/" — **not started** | the site is translated |
+| J | the privacy policy (2 116 words, a static file in `public/`) — **done, §6cc; it is a route in three locales and the static file is gone** | the RODO notice the footer already links in three locales |
+| K | the landing (index + eleven partials) + `TRANSLATED_ROUTES` "/" — **not started; the only stage left** | the site is translated |
+
+**H, I and J are through; K is the only stage left.** The ordering below is what put them in that
+sequence, and it held: each of the three closed a gap a foreign reader could already reach, and the
+landing is last because it is the one they cannot.
 
 **H–K in that order, decided 2026-09-04, and the ordering is against intuition on purpose.** The
 landing is the biggest block of prose left and it is LAST, because it is the only one of the four
@@ -2290,6 +2294,120 @@ the form promises "wyślemy potwierdzenie darowizny" and this backend sends the 
 — the only one documented in the Axepta contract is a "payment started" notice. Confirm what a
 donor actually receives before that promise stands in three languages.
 
+### §6cc Stage J — the privacy policy, and the whitelist that lives on the server (2026-09-04)
+
+The last document a reader could already reach and not read. `public/polityka-prywatnosci.html`
+was a hand-authored file **outside the build** — so no locale of it could ever be rendered, no word
+of it could reach the desk, and the footer of every English and French page on the site linked to
+it anyway. 2 116 words of Polish behind a link the chrome had been translating since stage G8.
+
+**What shipped.** `src/content/pages/polityka-prywatnosci.yaml` (111 copy fields),
+`src/i18n/content/politykaPrywatnosci.ts` (schema, contract, two chrome strings),
+`components/pages/PrivacyPage.astro` and three one-line routes; the static file is deleted.
+`PAGE_SPECS` gained the page — **823 keys · 2 469 rows** (+111 keys, +333 rows). The whole loop:
+`copy:sync` (333 created, **0 updated, 0 retired**), `copy:propose --write` twice (111 + 111, with
+712 already in the repository and nothing re-proposing), `copy:apply --write` (222 translations,
+**0 Polish edits, 0 refused**), then `TRANSLATED_ROUTES`.
+
+**Seven decisions worth carrying.**
+
+- **The document keeps its OWN shell and does not use `BaseLayout`.** The file it replaces shipped
+  zero JavaScript and no site chrome, and that register is the point: a legal leaf is read, not
+  navigated. `BaseLayout` would have added the ClientRouter, Lenis, the custom cursor, two islands
+  and the document gates to a page that has none of them — a redesign, where this stage is a
+  translation. What the page does borrow is named and small: `UI` for two labels, `localizePath`
+  for the way back, `lib/dates` for the effective date. It composes its own `<head>`, canonical and
+  hreflang graph, which is the price.
+- **Astro's scoping cannot reach a `set:html` field, and `is:global` is not the answer either.**
+  Half this document's prose is injected DOM with no `data-astro-cid-…`, so a scoped `em`/`strong`/
+  `a`/`code` rule would style the markup the component authors and silently miss the identical
+  markup inside every desk field (§7). The first build therefore made the sheet global — and the
+  **register audit failed it**: a bare `a { transition: color, border-color }` at (0,0,1) landed in
+  the emitted cascade and collided with the reveal register on `<a.im-entry.reveal>`, on all three
+  `/obrazy` pages. The answer is a real class on `<body>` — every rule prefixed `.legal-doc`, which
+  reaches injected DOM and confines nothing else. The audit caught this on the first run, which is
+  the whole argument for it.
+- **The document's NAME is chrome; the donation terms' name is not — and one rule decides both.**
+  §6r's test is whether completeness can be demanded. `UI.footer.privacy` is printed by the footer
+  of thirty pages in three locales and a missing one breaks them all, so the name lives there and
+  this page READS it for its `<h1>` and the first half of its `<title>`. The terms' title is read
+  only inside the island that already holds the document, so it is desk copy. Two opposite answers,
+  same predicate — and neither document has its name in two places.
+- **The contents list is DERIVED from the section titles.** Twelve entries, twelve headings, and
+  two of them disagreed in the file this replaces: the list said "Transfery poza Europejski Obszar
+  Gospodarczy" over a heading reading "Transfery poza EOG", and "Cookies i localStorage" over
+  "Cookies, localStorage i skrypty podmiotów trzecich". A name printed twice is read twice (§6y),
+  so the heading is now the section's one name and the list reads it. Same move on the badge row in
+  § 5: the five chips and the five paragraphs are ONE list, each recipient carrying its own short
+  form, because they were the same five entities in the same order printed twice.
+- **`<br>` left the corpus and `code` joined the whitelist, for the same reason.** The register card
+  in § 1 and the contact card in § 2 were `<strong>…</strong><br>address<br>numbers` — and the
+  sanitizer turns `<br>` into a newline, so an editor's first proposal would have flattened both
+  cards. They are structural fields now (`foundation.name/address/registry/email`), rendered with
+  the breaks in the markup, which is also the honest classification: a postal address and three
+  registry numbers are not copy. `<code>` went the other way: three storage keys are genuinely
+  inline in this document's prose, it marks a literal an editor must not translate — meaning, like
+  `lang`, not presentation — so it is on `ALLOWED_TAGS` with its own line in the corpus-shapes test.
+- **Version 1.2: translating the document amended it.** § 12 gained the clause saying the Polish
+  version binds and the translations are informational, the version moved, and the history records
+  it. It is written as the twin of § 5 ust. 3 of the donation terms — same construction, same words
+  for "wiążąca" and "rozstrzygające" in all three languages. Two legal documents on one site may
+  not answer the same question in two voices.
+- **The page is `noindex` and it IS in `TRANSLATED_ROUTES`, unlike `/404`.** The set lights LINKS,
+  and this document is linked from every footer on the site, from `/kolofon` and from inside the
+  vault's terms; a noindex leaf nothing links to belongs outside it, one that thirty pages point at
+  belongs in. The sitemap exclusion moved with it: it used to be an absent `customPages` entry and
+  is now a clause in the integration's `filter`, because the three routes are discovered.
+
+**The one thing that came back damaged, and it is §7's trap firing exactly as written.**
+`s3.audio.p1Html` lost its single `<code>` in BOTH locales. The whitelist lives on the SERVER;
+`code` was added to it in this stage's first commit, which is not deployed; the loop runs against
+production. Everything else survived — **10 `<em>`, 42 `<strong>` and 8 `<a>` per locale,
+unchanged** — so the superset property holds for every construction the deployed sanitizer knows.
+The remedy is mechanical and the signal is self-clearing: the drafts still hold the tag, so
+`copy:propose` reports **1 row per locale** on every run until the backend deploys, and then one
+`make copy-draft` clears both. **The general rule this makes explicit: a tag or attribute new to
+the corpus needs the BACKEND DEPLOY before the loop, not before the commit.** This is the third
+time it has bitten (`lang` in §6w, twice now here).
+
+**Two Polish editorial findings, named rather than harmonised.** § 4 says the foundation
+"pośredniczy w transmisji danych płatniczych do bramki" and § 11 says "Nasz serwer nie pośredniczy
+w transmisji danych płatniczych" — one verb, two opposite claims, seven sections apart, in a
+document whose whole point is that card data never touches these servers. And § 9 addresses the
+reader as "Państwo" while the other eleven sections use "Ty"; English cannot see the difference and
+French absorbs it into `vous`, so it surfaces only in the source language. Both are editorial
+questions for the desk, not translation defects, and both drafts say so in their headers.
+
+**A defect from stage I, found by running the coverage check.** `copy:propose` reported 113 English
+rows to post where the page has 111. The two extras were `page.skarbiec.qr.recurringNoteHtml` and
+`mecenat.howHtml`, whose drafts carry the literal entity `&nbsp;` while the repository holds
+U+00A0: **the desk decodes a character reference on the way in**, so a draft written with one drifts
+from the repository permanently and re-proposes itself on every future run. Fixed in all four
+draft files by writing the character.
+
+**And the panel went down mid-run again**, between the English and French passes — this time
+nothing answered on 443 at all, static site included, while the droplet still answered ICMP. It
+recovered inside two minutes. §6n's resumability is what made it a non-event: the failed French run
+had already posted **105 of 111** before the connection died, and the retry posted the remaining 6
+rather than a second proposal on every row.
+
+**The proof, against the removed static file.** The Polish page's word stream differs in exactly
+five places and its attribute set in two, and every one is intended: the version and its date
+(1.1 → 1.2, the amendment), the two contents entries that now match their headings, three
+storage-note sentences that begin with a capital where the original capitalised one of three, § 12's
+new clause, and the new history entry. The two attributes are the document's own `.legal-doc`
+classes and the contents `aria-label`, which is now the site's own `UI.nav.tabulaAria` rather than a
+second wording. Nothing else moved.
+
+**What is still owed.** K alone: the landing (index plus eleven partials) and `TRANSLATED_ROUTES`
+"/", after which the site is translated and `/en` and `/fr` finally have a root — which is also
+what unblocks `AXEPTA_RETURN_URL`'s locale prefix (§6bb). The standing items from §6bb are
+untouched by this stage: `ScrollTopButton` and `VideoPlayer` still resolve their locale at
+hydration, `UI.footer.donationNote` still says "charitable purposes" where everything else says
+"statutory purposes", `dates[].venue` on the concert pages is still the fuller Polish legal string,
+and the statute link's screen-reader note still disagrees with `footer.statuteAria`. `/press` joins
+the desk after Etap 3 recuts it.
+
 ## §7 Traps
 
 - **`overflow-x: hidden` on the body kills every page-level `position: sticky`.** One axis `hidden`
@@ -2375,6 +2493,29 @@ donor actually receives before that promise stands in three languages.
   reviewer's digest — the two-iteration rule quietly loses its second iteration, and nothing on
   screen says so. Grant `can_edit_site_copy` and leave staff alone; if an editor genuinely needs the
   Django admin, the reviewer test has to move to a narrower predicate before they get it.
+- **THE WHITELIST LIVES ON THE SERVER, so a tag new to the corpus needs the BACKEND DEPLOY before
+  the LOOP — not before the commit.** `sanitize_for_kind` runs in the panel the loop posts to, which
+  is production; adding `code` to `ALLOWED_TAGS` in the same commit as the page that uses it is
+  therefore not enough, and the failure is silent in the only direction that matters. Stage J
+  proposed 222 values against a production still running the old list and got back exactly one row
+  per locale with its `<code>` flattened to prose, while every `<em>`, `<strong>` and `<a>` came
+  through untouched — so the run looks clean and the damage is two sentences deep in a legal text
+  (§6cc). The same shape ate `<em lang="fr">` in §6w. Deploy the backend, THEN run the loop; and
+  when it has already happened, the drafts still hold the tag, so `copy:propose` keeps reporting
+  those rows until a post-deploy `make copy-draft` clears them.
+- **A DRAFT THAT CARRIES AN HTML ENTITY DRIFTS FROM THE REPOSITORY FOR EVER.** The desk decodes
+  character references on the way in, so `&nbsp;` in a draft becomes U+00A0 in the overlay and the
+  two never compare equal again: `copy:propose` re-proposes that row on every future run, and the
+  count is a permanent false positive that hides a real one. Two of stage I's vault drafts did this
+  and it was found by counting a coverage report that should have read 111 and read 113 (§6cc).
+  Write the character, not the entity.
+- **Astro's scoped styles cannot reach a `set:html` field, and `is:global` fixes that by breaking
+  something else.** A scoped `em`/`a`/`code` rule misses injected DOM entirely (the trap below);
+  a global one puts a bare element selector at (0,0,1) into the site's emitted cascade, where it
+  meets the reveal register — `a { transition: color, border-color }` from the privacy page's sheet
+  replaced the register's own transition on three `/obrazy` pages, and the register audit failed
+  the build. The middle is a real class on `<body>` and a prefix on every rule: it reaches injected
+  DOM, because injected DOM sits inside it, and it confines nothing else (§6cc).
 - **A whitelist that is not a superset of the corpus destroys the corpus, one edit at a time.**
   `sanitize_for_kind` rebuilds every submitted value from `<em> <strong> <a href>` on both write
   paths — the editor's autosave and the reviewer's rewrite — which is the right guard and is the
