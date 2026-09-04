@@ -35,7 +35,6 @@ web/
 │   ├── ambient.m4a    #   Sacred ambient track (gated behind the Threshold choice)
 │   ├── docs/          #   Static PDFs (Statut, regulamin)
 │   ├── donation-progress.json  # Tier progress data (read by the Vault island)
-│   ├── polityka-prywatnosci.html  # Self-contained privacy policy (static HTML)
 │   ├── robots.txt / sitemap.xml    # SEO; sitemap is hand-curated (5 URLs)
 │   └── logo_icon.png / logo-mark.png / qr-bank.png  # Brand + payment assets
 │
@@ -205,7 +204,7 @@ Run from the `web/` directory:
 
 ## Privacy & Browser Storage
 
-The site does not set first-party cookies, ship analytics, or embed third-party trackers. Browser storage is limited to a few strictly-necessary functional entries (documented in `public/polityka-prywatnosci.html` §10):
+The site does not set first-party cookies, ship analytics, or embed third-party trackers. Browser storage is limited to a few strictly-necessary functional entries (documented in `/polityka-prywatnosci` §10 — the prose lives in `src/content/pages/polityka-prywatnosci.yaml`, and each key below is a structural field of that file rather than translatable copy):
 
 | Key | Storage | Purpose | Lifetime |
 |:---|:---|:---|:---|

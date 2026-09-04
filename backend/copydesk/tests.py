@@ -259,6 +259,10 @@ class SanitizerTests(TestCase):
             "<em>Duchowe.</em>",
             'To współczesna forma dawnych <em lang="fr">Concerts Spirituels</em> — chodź po nich '
             "po kolei.",
+            # polityka-prywatnosci.yaml — the only `<code>` in the corpus, and the reason the
+            # tag is on the list at all: a storage key is a literal, and an editor's first
+            # proposal on this paragraph would otherwise return it with the key as plain prose.
+            "przeglądarki (<em>localStorage</em>) pod kluczem <code>voct.demo.audio</code>.",
         ):
             with self.subTest(value=value):
                 self.assertEqual(sanitize_html(value), value)

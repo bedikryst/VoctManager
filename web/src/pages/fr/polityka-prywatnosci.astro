@@ -1,0 +1,14 @@
+---
+/**
+ * @file fr/polityka-prywatnosci.astro
+ * @description French privacy policy (/fr/polityka-prywatnosci). Structure lives in the shared
+ *  PrivacyPage component; this route only selects the locale. The path keeps its Polish slug in
+ *  every locale, like every other page on this site. The Polish version is the binding one; § 12
+ *  of the document says so inside the document.
+ * @architecture Astro islands 2026
+ * @module pages/fr/polityka-prywatnosci
+ */
+import PrivacyPage from "../../components/pages/PrivacyPage.astro";
+---
+
+<PrivacyPage lang="fr" />

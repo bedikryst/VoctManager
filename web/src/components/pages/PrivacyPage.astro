@@ -1,0 +1,760 @@
+---
+/**
+ * @file PrivacyPage.astro
+ * @description Locale-agnostic body of the privacy policy. The three route files
+ *  (/polityka-prywatnosci, /en/…, /fr/…) are one-liners that differ only in `lang`.
+ *
+ *  IT CARRIES ITS OWN DOCUMENT SHELL, deliberately, and does NOT use `BaseLayout`. This replaces a
+ *  hand-authored `public/polityka-prywatnosci.html` that shipped zero JavaScript and no site
+ *  chrome, and the register is the point: a legal leaf is read, not navigated. BaseLayout would
+ *  add the ClientRouter, Lenis smooth scroll, the custom cursor, two islands and the document
+ *  gates to a page that today has none of them — a redesign, where this stage is a translation.
+ *  Everything the page does borrow is named: `UI` for the two labels it shares with the site,
+ *  `localizePath` for the way back, and `lib/dates` for the effective date.
+ *
+ *  THE DOCUMENT'S NAME IS READ, NEVER WRITTEN HERE. `UI[lang].footer.privacy` is what the footer
+ *  of all thirty other pages prints for this document, so it is also this page's `<h1>` and the
+ *  first half of its `<title>`. See `i18n/content/politykaPrywatnosci.ts`.
+ *
+ *  THE CONTENTS LIST IS DERIVED FROM THE SECTION TITLES. One section, one name — the twelve
+ *  anchors below pair an id that predates this component (an inbound link to `#cookies` still
+ *  lands) with the section's own heading.
+ *
+ *  THE STYLES ARE GLOBAL, AND EVERY ONE OF THEM IS PREFIXED `.legal-doc`. Half of this document's
+ *  prose arrives through `set:html` from the copy desk, and injected DOM carries no
+ *  `data-astro-cid-…` attribute — so a SCOPED `em`, `strong`, `a` or `code` rule would style the
+ *  markup this file authors and silently miss the identical markup inside every `…Html` field
+ *  (spec §7). Astro's scoping is therefore replaced by a real class on `<body>`, which injected
+ *  DOM sits inside. The prefix is not cosmetic: a bare `a { transition: color, border-color }` in
+ *  an emitted sheet out-specifies nothing and collides with the reveal register on three other
+ *  pages — the register audit failed the build on exactly that.
+ * @architecture Astro islands 2026
+ * @module components/pages/PrivacyPage
+ */
+import { DEFAULT_LOCALE, LOCALE_META, pageI18n, SITE, localizePath, type Locale } from "../../i18n/config";
+import { PRIVACY_CHROME, PRIVACY_PAGE } from "../../i18n/content/politykaPrywatnosci";
+import { UI } from "../../i18n/ui";
+import { longDate } from "../../lib/dates";
+import { pageCopy } from "../../lib/pageCopy";
+
+interface Props {
+  lang?: Locale;
+}
+const { lang = DEFAULT_LOCALE } = Astro.props;
+
+const copy = pageCopy(PRIVACY_PAGE, lang);
+const t = PRIVACY_CHROME[lang];
+const ui = UI[lang];
+
+const { path, alternates } = pageI18n("/polityka-prywatnosci", lang);
+const canonical = new URL(path, SITE).href;
+
+/** The document's one name, shared with every footer on the site. */
+const docTitle = ui.footer.privacy;
+
+/* The twelve sections, in order. The fragment id is FROZEN — it predates this component and an
+   inbound link to `#cookies` has to keep landing — while the name comes from the section itself,
+   so the contents list and the heading it jumps to can never disagree. */
+const sections = [
+  { id: "administrator", title: copy.s1.title },
+  { id: "kontakt", title: copy.s2.title },
+  { id: "dane", title: copy.s3.title },
+  { id: "cele", title: copy.s4.title },
+  { id: "odbiorcy", title: copy.s5.title },
+  { id: "transfery", title: copy.s6.title },
+  { id: "retencja", title: copy.s7.title },
+  { id: "prawa", title: copy.s8.title },
+  { id: "statystyki", title: copy.s9.title },
+  { id: "cookies", title: copy.s10.title },
+  { id: "bezpieczenstwo", title: copy.s11.title },
+  { id: "zmiany", title: copy.s12.title },
+] as const;
+
+/** `01`–`12`, two digits, as the numeral before each heading. Locale-neutral, like every rubric. */
+const num = (index: number): string => String(index + 1).padStart(2, "0");
+---
+
+<!doctype html>
+<html class="legal-doc-root" lang={LOCALE_META[lang].htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{`${docTitle} — VoctEnsemble`}</title>
+    <meta name="description" content={copy.meta.description} />
+    <meta name="theme-color" content="#f4f1e9" />
+    <meta name="color-scheme" content="light" />
+    {/* The document is a public legal text and could be indexed; it is not, and the sitemap's
+        filter in astro.config agrees with this tag in both directions. Dropping the noindex means
+        editing that filter in the same commit. */}
+    <meta name="robots" content="noindex,follow" />
+    <link rel="canonical" href={canonical} />
+    {alternates.map((alt) => <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />)}
+
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 56' fill='none' stroke='%23c6a45b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3V47'/%3E%3Cpath d='M3.2 12.5L12 36.5'/%3E%3Cpath d='M20.8 12.5L12 36.5'/%3E%3Cpath d='M0.5 12.5H5.5'/%3E%3Cpath d='M18.5 12.5H23.5'/%3E%3Ccircle cx='12' cy='52' r='2' fill='%23c6a45b' stroke='none'/%3E%3C/svg%3E"
+    />
+
+    <!-- Self-hosted variable fonts (woff2, OFL) — the same declarations the site's base sheet
+         makes. Repeated here because this document does not load that sheet: it carries no site
+         chrome, and pulling in tokens.css/base.css for three families would bring the whole
+         register language with them. -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/CormorantGaramond-Variable.latin.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/IBMPlexSans-Variable.latin.woff2"
+      crossorigin
+    />
+  </head>
+  <body class="legal-doc">
+    <header class="chrome">
+      <a class="chrome-brand" href={localizePath("/", lang)} aria-label={ui.nav.brandAria}>
+        <svg
+          viewBox="0 0 24 56"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.3"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 3 V47"></path>
+          <path d="M3.2 12.5 L12 36.5"></path>
+          <path d="M20.8 12.5 L12 36.5"></path>
+          <path d="M0.5 12.5 L5.5 12.5"></path>
+          <path d="M18.5 12.5 L23.5 12.5"></path>
+          <circle cx="12" cy="52" r="1.6" fill="currentColor" stroke="none"></circle>
+        </svg>
+        <span>VoctEnsemble</span>
+      </a>
+      <a class="chrome-back" href={localizePath("/", lang)}>{t.back}</a>
+    </header>
+
+    <main>
+      <p class="doc-eyebrow">{copy.head.kicker}</p>
+      <h1 class="doc-title">{docTitle}</h1>
+      <p class="doc-meta">{t.stamp(copy.version, longDate(copy.effectiveFrom, lang))}</p>
+
+      <p class="doc-lede" set:html={copy.head.ledeHtml} />
+
+      <nav class="toc" aria-label={ui.nav.tabulaAria}>
+        <p class="toc-label">{copy.head.tocLabel}</p>
+        <ol class="toc-list">
+          {sections.map((s) => (
+            <li><a href={`#${s.id}`}>{s.title}</a></li>
+          ))}
+        </ol>
+      </nav>
+
+      <section id="administrator">
+        <h2 data-num={num(0)}>{copy.s1.title}</h2>
+        <p set:html={copy.s1.p1Html} />
+        <div class="data-card">
+          <strong>{copy.foundation.name}</strong><br />
+          {copy.foundation.address}<br />
+          {copy.foundation.registry}
+        </div>
+        <p>{copy.s1.p2}</p>
+      </section>
+
+      <section id="kontakt">
+        <h2 data-num={num(1)}>{copy.s2.title}</h2>
+        <p>{copy.s2.p1}</p>
+        <div class="data-card">
+          <strong>{copy.foundation.email}</strong><br />
+          {copy.s2.cardNote}
+        </div>
+        <p>{copy.s2.p2}</p>
+      </section>
+
+      <section id="dane">
+        <h2 data-num={num(2)}>{copy.s3.title}</h2>
+
+        <h3>{copy.s3.visitors.title}</h3>
+        <p>{copy.s3.visitors.p1}</p>
+        <ul>{copy.s3.visitors.items.map((i) => <li>{i.text}</li>)}</ul>
+        <p>{copy.s3.visitors.p2}</p>
+
+        <h3>{copy.s3.donors.title}</h3>
+        <p>{copy.s3.donors.p1}</p>
+
+        <h3>{copy.s3.gateway.title}</h3>
+        <p set:html={copy.s3.gateway.p1Html} />
+        <ul>{copy.s3.gateway.items.map((i) => <li set:html={i.textHtml} />)}</ul>
+        <p set:html={copy.s3.gateway.p2Html} />
+
+        <h3>{copy.s3.zrzutka.title}</h3>
+        <p set:html={copy.s3.zrzutka.p1Html} />
+
+        <h3>{copy.s3.transfer.title}</h3>
+        <p>{copy.s3.transfer.p1}</p>
+
+        <h3>{copy.s3.patronage.title}</h3>
+        <p set:html={copy.s3.patronage.p1Html} />
+
+        <h3>{copy.s3.email.title}</h3>
+        <p>{copy.s3.email.p1}</p>
+
+        <h3>{copy.s3.audio.title}</h3>
+        <p set:html={copy.s3.audio.p1Html} />
+      </section>
+
+      <section id="cele">
+        <h2 data-num={num(3)}>{copy.s4.title}</h2>
+        <p>{copy.s4.p1}</p>
+        <ul>{copy.s4.items.map((i) => <li set:html={i.textHtml} />)}</ul>
+      </section>
+
+      <section id="odbiorcy">
+        <h2 data-num={num(4)}>{copy.s5.title}</h2>
+        <p>{copy.s5.p1}</p>
+        {/* The chips and the paragraphs below are the SAME five recipients, in the same order,
+            read off one list — see the content module. */}
+        <div class="badges">
+          {copy.s5.items.map((r) => <span class="badge">{r.badge}</span>)}
+        </div>
+        <ul>{copy.s5.items.map((r) => <li set:html={r.textHtml} />)}</ul>
+      </section>
+
+      <section id="transfery">
+        <h2 data-num={num(5)}>{copy.s6.title}</h2>
+        <p>{copy.s6.p1}</p>
+        <p>{copy.s6.p2}</p>
+        <p>{copy.s6.p3}</p>
+      </section>
+
+      <section id="retencja">
+        <h2 data-num={num(6)}>{copy.s7.title}</h2>
+        <ul>{copy.s7.items.map((i) => <li set:html={i.textHtml} />)}</ul>
+      </section>
+
+      <section id="prawa">
+        <h2 data-num={num(7)}>{copy.s8.title}</h2>
+        <p>{copy.s8.p1}</p>
+        <ul>{copy.s8.items.map((i) => <li set:html={i.textHtml} />)}</ul>
+        <p set:html={copy.s8.p2Html} />
+      </section>
+
+      <section id="statystyki">
+        <h2 data-num={num(8)}>{copy.s9.title}</h2>
+        <p set:html={copy.s9.p1Html} />
+        <ul>{copy.s9.items.map((i) => <li set:html={i.textHtml} />)}</ul>
+        <p set:html={copy.s9.p2Html} />
+      </section>
+
+      <section id="cookies">
+        <h2 data-num={num(9)}>{copy.s10.title}</h2>
+
+        <h3>{copy.s10.own.title}</h3>
+        <p set:html={copy.s10.own.p1Html} />
+
+        <h3>{copy.s10.storage.title}</h3>
+        <p>{copy.s10.storage.p1}</p>
+        <ul>
+          {copy.s10.storage.items.map((e) => (
+            <li>
+              <code>{e.storageKey}</code>{" ("}<em>{e.store}</em>{") — "}{e.note}
+            </li>
+          ))}
+        </ul>
+
+        <h3>{copy.s10.gateway.title}</h3>
+        <p set:html={copy.s10.gateway.p1Html} />
+        <ul>{copy.s10.gateway.items.map((i) => <li>{i.text}</li>)}</ul>
+        <p set:html={copy.s10.gateway.p2Html} />
+      </section>
+
+      <section id="bezpieczenstwo">
+        <h2 data-num={num(10)}>{copy.s11.title}</h2>
+        <ul>{copy.s11.items.map((i) => <li set:html={i.textHtml} />)}</ul>
+      </section>
+
+      <section id="zmiany">
+        <h2 data-num={num(11)}>{copy.s12.title}</h2>
+        <p>{copy.s12.p1}</p>
+        <p>{copy.s12.p2}</p>
+
+        <details class="changelog">
+          <summary>
+            <span>{copy.history.label}</span>
+            <span class="changelog-icon" aria-hidden="true"></span>
+          </summary>
+          <ul class="changelog-list">
+            {copy.history.entries.map((e) => (
+              <li>
+                <strong>{`${e.version} · ${longDate(e.date, lang)}`}</strong>{" — "}{e.note}
+              </li>
+            ))}
+          </ul>
+        </details>
+
+        <p set:html={copy.s12.p3Html} />
+      </section>
+    </main>
+
+    <footer>
+      <a href={localizePath("/", lang)}>← voctensemble.com</a>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  /* GLOBAL, NOT SCOPED, AND PREFIXED `.legal-doc` — see the header. Copy arrives through `set:html`
+     and injected DOM has no `data-astro-cid-…`, so Astro's scoping would style this file's markup
+     and miss the identical markup inside every desk field. The class on <body> does the confining
+     instead: it reaches injected DOM, and it keeps a bare `a`/`p`/`em` rule out of the cascade of
+     every other page whose CSS lands in the same emitted bundle. */
+
+  @font-face {
+    font-family: "Cormorant Garamond";
+    font-style: normal;
+    font-weight: 300 700;
+    font-display: swap;
+    src: url("/fonts/CormorantGaramond-Variable.latin.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+      U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: "Cormorant Garamond";
+    font-style: normal;
+    font-weight: 300 700;
+    font-display: swap;
+    src: url("/fonts/CormorantGaramond-Variable.latin-ext.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+      U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+      U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face {
+    font-family: "Cormorant Garamond";
+    font-style: italic;
+    font-weight: 300 700;
+    font-display: swap;
+    src: url("/fonts/CormorantGaramond-Italic-Variable.latin.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+      U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: "Cormorant Garamond";
+    font-style: italic;
+    font-weight: 300 700;
+    font-display: swap;
+    src: url("/fonts/CormorantGaramond-Italic-Variable.latin-ext.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+      U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+      U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face {
+    font-family: "IBM Plex Sans";
+    font-style: normal;
+    font-weight: 100 700;
+    font-display: swap;
+    src: url("/fonts/IBMPlexSans-Variable.latin.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+      U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: "IBM Plex Sans";
+    font-style: normal;
+    font-weight: 100 700;
+    font-display: swap;
+    src: url("/fonts/IBMPlexSans-Variable.latin-ext.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+      U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+      U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face {
+    font-family: "IBM Plex Mono";
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url("/fonts/IBMPlexMono-300.latin.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+      U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: "IBM Plex Mono";
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url("/fonts/IBMPlexMono-300.latin-ext.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+      U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+      U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face {
+    font-family: "IBM Plex Mono";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/IBMPlexMono-400.latin.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+      U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: "IBM Plex Mono";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/IBMPlexMono-400.latin-ext.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+      U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+      U+2C60-2C7F, U+A720-A7FF;
+  }
+
+  /* The document's tokens live on its own body, not on `:root` — the sheet is emitted into a
+     bundle other pages can share, and a custom property set at the root is inherited by whatever
+     else that bundle reaches. Only `html`'s ground is written literally, because it is the one
+     surface outside `.legal-doc` (overscroll) and cannot read a property scoped below it. */
+  html.legal-doc-root {
+    background: #f4f1e9;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body.legal-doc {
+    --paper: #f4f1e9;
+    --paper-soft: #ebe6da;
+    --ink: #161514;
+    --ink-soft: #34302b;
+    --ink-muted: #746d62;
+    --line: rgba(22, 21, 20, 0.16);
+    --line-strong: rgba(22, 21, 20, 0.34);
+    --candle: #c6a45b;
+    --candle-blue: #1b2d60;
+    --serif: "Cormorant Garamond", Georgia, serif;
+    --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --ease: cubic-bezier(0.22, 0.61, 0.16, 1);
+
+    margin: 0;
+    min-width: 320px;
+    background: var(--paper);
+    color: var(--ink-soft);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.7;
+    font-weight: 300;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .legal-doc, .legal-doc * { box-sizing: border-box; }
+
+  .legal-doc a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+    transition: color 0.35s var(--ease), border-color 0.35s var(--ease);
+  }
+  .legal-doc a:hover { color: var(--candle-blue); border-bottom-color: var(--candle-blue); }
+
+  .legal-doc .chrome {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 24px max(28px, 5vw);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .legal-doc .chrome-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--serif);
+    font-size: 21px;
+    font-weight: 300;
+    letter-spacing: 0.03em;
+    color: var(--ink);
+    border-bottom: none;
+  }
+  .legal-doc .chrome-brand svg {
+    width: 18px;
+    height: 42px;
+    color: var(--candle);
+  }
+  .legal-doc .chrome-brand:hover { color: var(--candle-blue); border-bottom: none; }
+
+  .legal-doc .chrome-back {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    border-bottom: none;
+  }
+  .legal-doc .chrome-back:hover { color: var(--ink); border-bottom: none; }
+
+  .legal-doc main {
+    max-width: 740px;
+    margin: 0 auto;
+    padding: clamp(48px, 9vw, 120px) max(28px, 5vw) clamp(64px, 12vw, 140px);
+  }
+
+  .legal-doc .doc-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 0 0 18px;
+  }
+
+  .legal-doc .doc-title {
+    font-family: var(--serif);
+    font-size: clamp(46px, 7vw, 84px);
+    font-weight: 300;
+    line-height: 1;
+    color: var(--ink);
+    margin: 0 0 24px;
+    letter-spacing: -0.01em;
+  }
+
+  .legal-doc .doc-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 0 0 56px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .legal-doc .doc-lede {
+    font-family: var(--serif);
+    font-size: clamp(20px, 1.7vw, 24px);
+    font-weight: 300;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    margin: 0 0 56px;
+    font-style: italic;
+  }
+
+  .legal-doc .toc {
+    margin: 0 0 72px;
+    padding: 24px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .legal-doc .toc-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 0 0 12px;
+  }
+  .legal-doc .toc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+    counter-reset: toc;
+  }
+  .legal-doc .toc-list li {
+    counter-increment: toc;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+  .legal-doc .toc-list li::before {
+    content: counter(toc, decimal-leading-zero) " · ";
+    color: var(--candle);
+  }
+  .legal-doc .toc-list a {
+    border-bottom: none;
+    color: var(--ink-soft);
+  }
+  .legal-doc .toc-list a:hover { color: var(--candle-blue); }
+
+  .legal-doc section {
+    margin: 0 0 56px;
+    scroll-margin-top: 24px;
+  }
+
+  .legal-doc h2 {
+    font-family: var(--serif);
+    font-size: clamp(26px, 2.6vw, 34px);
+    font-weight: 300;
+    line-height: 1.15;
+    color: var(--ink);
+    margin: 0 0 20px;
+    letter-spacing: -0.005em;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .legal-doc h2::before {
+    content: attr(data-num);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    color: var(--candle);
+    flex-shrink: 0;
+    transform: translateY(-2px);
+  }
+
+  .legal-doc h3 {
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin: 28px 0 10px;
+  }
+
+  .legal-doc p { margin: 0 0 16px; }
+
+  .legal-doc ul, .legal-doc ol {
+    margin: 0 0 16px;
+    padding-left: 22px;
+  }
+  .legal-doc li { margin-bottom: 8px; }
+
+  .legal-doc .data-card {
+    background: var(--paper-soft);
+    border: 1px solid var(--line);
+    padding: 22px 26px;
+    margin: 24px 0;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--ink-soft);
+  }
+  .legal-doc .data-card strong {
+    font-weight: 400;
+    color: var(--ink);
+  }
+
+  .legal-doc .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0 8px;
+  }
+  .legal-doc .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  /* `em` and `strong` reach INTO the desk's `…Html` fields — that is what the `.legal-doc`
+     prefix buys over Astro's scoping, which would match nothing inside injected DOM. */
+  .legal-doc em {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--ink);
+  }
+
+  .legal-doc strong {
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .legal-doc footer {
+    border-top: 1px solid var(--line);
+    padding: 36px max(28px, 5vw);
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  .legal-doc footer a { border-bottom: none; }
+  .legal-doc footer a:hover { color: var(--ink); border-bottom: none; }
+
+  /* Version history — collapsed by default, so it does not grow into the document over time. */
+  .legal-doc details.changelog {
+    margin: 8px 0 16px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .legal-doc details.changelog > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 0;
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    transition: color 0.35s var(--ease);
+  }
+
+  .legal-doc details.changelog > summary::-webkit-details-marker { display: none; }
+  .legal-doc details.changelog > summary:hover { color: var(--ink); }
+
+  .legal-doc .changelog-icon {
+    position: relative;
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+  }
+
+  .legal-doc .changelog-icon::before,
+  .legal-doc .changelog-icon::after {
+    content: "";
+    position: absolute;
+    background: var(--candle);
+    transition: transform 0.3s var(--ease);
+  }
+
+  .legal-doc .changelog-icon::before {
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    transform: translateY(-50%);
+  }
+  .legal-doc .changelog-icon::after {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+  }
+  .legal-doc details.changelog[open] .changelog-icon::after {
+    transform: translateX(-50%) scaleY(0);
+  }
+
+  .legal-doc .changelog-list {
+    margin: 0;
+    padding: 4px 0 22px 22px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .legal-doc a { transition: none; }
+    .legal-doc details.changelog > summary,
+    .legal-doc .changelog-icon::before,
+    .legal-doc .changelog-icon::after {
+      transition: none;
+    }
+  }
+</style>

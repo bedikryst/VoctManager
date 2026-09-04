@@ -1,0 +1,14 @@
+---
+/**
+ * @file polityka-prywatnosci.astro
+ * @description Polish privacy policy (/polityka-prywatnosci). Structure lives in the shared
+ *  PrivacyPage component; this route only selects the locale. It replaces the hand-authored
+ *  `public/polityka-prywatnosci.html` at the same URL — the file was outside the build, so no
+ *  locale of it could ever be rendered and no word of it could reach the copy desk.
+ * @architecture Astro islands 2026
+ * @module pages/polityka-prywatnosci
+ */
+import PrivacyPage from "../components/pages/PrivacyPage.astro";
+---
+
+<PrivacyPage lang="pl" />

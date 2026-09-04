@@ -19,7 +19,14 @@ from html.parser import HTMLParser
 #: flattened to its text: markup is not what an editor is being asked for, and a
 #: `<span style>` surviving into `concerts.yaml` would put presentation into a
 #: content file the guardrails keep free of it.
-ALLOWED_TAGS: frozenset[str] = frozenset({"em", "strong", "a"})
+#:
+#: `code` joined the list with the privacy policy, which names three browser
+#: storage keys (`voct.demo.audio` and the two preloader flags) inside its own
+#: prose. It marks a literal an editor must not translate — meaning, like `lang`,
+#: not presentation — and the whitelist has to be a SUPERSET of what the corpus
+#: already holds or the first proposal on that paragraph strips the tag in
+#: silence.
+ALLOWED_TAGS: frozenset[str] = frozenset({"em", "strong", "a", "code"})
 
 #: The attributes that survive: `href` on `<a>`, and `lang` wherever the inline
 #: vocabulary goes. Everything else an editor's browser attaches (class, style,

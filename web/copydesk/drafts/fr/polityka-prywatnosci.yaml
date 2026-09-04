@@ -1,0 +1,182 @@
+# page.polityka-prywatnosci — FR draft (stage J). Same flat shape as the overlay it will become.
+#
+# CECI EST UN TEXTE JURIDIQUE ET LA VERSION POLONAISE FAIT FOI. Le § 12 — nouveau en version 1.2 —
+# le dit à l'intérieur du document lui-même, ce qui est précisément ce qui rend cette traduction
+# publiable. Le registre est donc statutaire et non éditorial : aucune phrase n'est resserrée,
+# aucune assurance n'est adoucie, et là où le polonais énumère, le français énumère.
+#
+# LES CITATIONS SONT DES ADRESSES ET NE SONT JAMAIS RENUMÉROTÉES. `art. 6 ust. 1 lit. f RODO` est
+# un lieu à l'intérieur du RGPD : le règlement est nommé en français et la citation garde sa forme
+# — `art. 6, § 1, f) RGPD`, exactement celle que le site publie déjà
+# (`page.kontakt.legal.rodoHtml`). De même pour les art. 15 à 21, l'art. 37, le considérant 30 de
+# la directive 2002/58/CE et l'art. 74 de la loi polonaise sur la comptabilité. Les durées de
+# conservation sont des engagements et sont recopiées, jamais arrondies.
+#
+# LES RENDUS QUE LE SITE A DÉJÀ PUBLIÉS, suivis plutôt qu'inventés :
+#   RODO                  → RGPD                        (`UI.footer.dataProtection`)
+#   Polityka prywatności  → Politique de confidentialité (`UI.footer.privacy`, et le h1 de cette page)
+#   Regulamin darowizn    → Règlement des dons           (`page.regulamin-darowizn.head.title`)
+#   cele statutowe        → buts statutaires             (`page.o-nas.foundation.legalNote`)
+#   Statut Fundacji       → Statuts de la Fondation      (`page.regulamin-darowizn.s1.p2Html`)
+#   administrator danych  → responsable du traitement    (`page.regulamin-darowizn.s4.p1`)
+#   agent rozliczeniowy   → établissement acquéreur      (`page.regulamin-darowizn.s2.p2`)
+#   szybkie przelewy      → virements bancaires instantanés (`page.regulamin-darowizn.s2.p3`)
+#   zlecenie stałe        → virement permanent           (`page.regulamin-darowizn.s2.p4`)
+#   Wesprzyj              → Nous soutenir                (`UI.nav.support`)
+#   Mecenat / mecenas     → Mécénat / mécène             (`page.skarbiec.mecenat.*`)
+#
+# LE LECTEUR EST VOUVOYÉ, comme partout ailleurs sur ce site. Le polonais passe au « Państwo »
+# (vouvoiement) au § 9 seulement et tutoie ailleurs ; le français absorbe cette inconstance, qui
+# reste une question éditoriale pour la version polonaise.
+#
+# LA FONDATION EST IDENTIFIÉE UNE FOIS, PAR SA RAISON SOCIALE, comme dans le Règlement des dons :
+# la carte du § 1 porte `Fundacja VoctFoundation` non traduit, parce qu'un responsable du
+# traitement doit être identifiable depuis la notice ; ensuite, partout, « la Fondation ».
+#
+# LE § 12 EST LE JUMEAU DU § 5, ALINÉA 3 DU RÈGLEMENT et se lit comme tel — même construction,
+# mêmes mots pour « fait foi » et « prévaut ». Deux documents d'un même site ne peuvent pas
+# répondre à la même question sur deux tons.
+#
+# UNE DÉPENDANCE, NOMMÉE : les § 3 et § 10 citent le seuil d'entrée de la page d'accueil —
+# « Entrer avec la voix » / « Entrer en silence ». Ces deux boutons sont encore codés en dur en
+# polonais dans `Preloader.tsx`, la page d'accueil étant l'étape K. Quand l'étape K les traduira,
+# ces deux phrases devront être vérifiées contre ce que le seuil imprime réellement.
+#
+# PAS D'ESPACES FINES À LA MAIN : `lib/typo.ts` insère les espaces insécables devant `? ! : ;` et
+# à l'intérieur des guillemets au moment du build. Une espace tapée ici se doublerait.
+#
+# Ce n'est pas l'overlay : `npm run copy:propose --locale fr` les porte comme propositions, la
+# seule porte qui estampille l'empreinte de provenance dont dépend l'état « périmé ».
+
+page.polityka-prywatnosci.meta.description: "Quelles données nous traitons et pourquoi. Politique de confidentialité de la Fondation VoctFoundation (voctensemble.com)."
+
+page.polityka-prywatnosci.head.kicker: "Document · RGPD"
+page.polityka-prywatnosci.head.ledeHtml: "Le site <em>voctensemble.com</em> est un site d'information et un canal de réception des dons destinés aux buts statutaires de la Fondation. Nous n'utilisons ni cookies publicitaires ni outils d'analyse, nous ne faisons aucun profilage et nous ne prenons aucune décision automatisée à l'égard des utilisateurs. Nous exposons ci-dessous, précisément, quelles données peuvent être traitées lors de votre visite — y compris lors d'un don — et qui en répond."
+page.polityka-prywatnosci.head.tocLabel: "Sommaire"
+
+page.polityka-prywatnosci.s1.title: "Responsable du traitement"
+page.polityka-prywatnosci.s1.p1Html: "Le responsable du traitement des données personnelles traitées dans le cadre de l'utilisation du site <em>voctensemble.com</em> est :"
+page.polityka-prywatnosci.s1.p2: "La Fondation poursuit des buts statutaires dans le domaine de la culture et de l'art sacré. Le site est son site d'information et son canal de réception des dons."
+
+page.polityka-prywatnosci.s2.title: "Contact pour les questions relatives aux données"
+page.polityka-prywatnosci.s2.p1: "Pour toute question relative au traitement des données personnelles, écrivez-nous à :"
+page.polityka-prywatnosci.s2.cardNote: "ou par courrier, au siège de la fondation"
+page.polityka-prywatnosci.s2.p2: "Nous n'avons pas désigné de délégué à la protection des données — l'étendue et la nature de nos traitements ne l'exigent pas (art. 37 RGPD)."
+
+page.polityka-prywatnosci.s3.title: "Quelles données nous traitons"
+
+page.polityka-prywatnosci.s3.visitors.title: "Visiteurs du site"
+page.polityka-prywatnosci.s3.visitors.p1: "La seule ouverture du site entraîne le traitement automatique de données techniques par les serveurs d'hébergement et les réseaux de diffusion de contenu (CDN) :"
+page.polityka-prywatnosci.s3.visitors.items.ip.text: "l'adresse IP de l'appareil,"
+page.polityka-prywatnosci.s3.visitors.items.headers.text: "les en-têtes HTTP (notamment le type de navigateur, la langue et la provenance),"
+page.polityka-prywatnosci.s3.visitors.items.timestamp.text: "la date et l'heure de la requête,"
+page.polityka-prywatnosci.s3.visitors.items.resource.text: "l'adresse de la ressource demandée."
+page.polityka-prywatnosci.s3.visitors.p2: "Ce sont les journaux standard d'un serveur HTTP. Nous ne les croisons avec aucune autre donnée et nous ne les utilisons ni pour du profilage ni pour de la publicité. Ils ne servent qu'au fonctionnement et à la sécurité du site (blocage d'un trafic abusif, par exemple)."
+
+page.polityka-prywatnosci.s3.donors.title: "Donateurs"
+page.polityka-prywatnosci.s3.donors.p1: "Lors d'un don, nous traitons les données nécessaires à la réalisation de la transaction, à l'établissement d'une éventuelle attestation de don et à l'exécution des obligations comptables de la Fondation. L'étendue et les modalités du traitement dépendent du moyen choisi :"
+
+page.polityka-prywatnosci.s3.gateway.title: "Passerelle de paiement Axepta BNP Paribas (BLIK, virements instantanés, Apple Pay, Google Pay, cartes)"
+page.polityka-prywatnosci.s3.gateway.p1Html: "Nous utilisons la passerelle de paiement <strong>Axepta BNP Paribas</strong>, exploitée par <em>BNP Paribas Bank Polska S.A.</em> Pour les transactions par carte, l'établissement acquéreur est <em>PayU S.A.</em> Le paiement suit un modèle de redirection vers la page sécurisée de l'opérateur :"
+page.polityka-prywatnosci.s3.gateway.items.handoff.textHtml: "Après le choix du montant et la saisie de l'adresse e-mail, notre serveur ne transmet à la passerelle que <strong>le montant, la devise, l'adresse e-mail et l'identifiant du don</strong>, et reçoit en retour un lien à usage unique vers une page de paiement."
+page.polityka-prywatnosci.s3.gateway.items.redirect.textHtml: "Vous êtes redirigé vers la <strong>page de paiement hébergée par l'opérateur</strong>, où vous saisissez directement vos données de paiement (code BLIK, données de carte, choix de la banque pour un virement instantané). Une fois l'opération terminée, vous revenez sur notre site avec l'état de la transaction."
+page.polityka-prywatnosci.s3.gateway.p2Html: "Les données de paiement complètes (numéro de carte, code BLIK, identifiants de banque en ligne) ne sont saisies que sur la page de l'opérateur — <strong>elles ne transitent pas par les serveurs de la Fondation et nous ne les conservons pas</strong>. C'est l'opérateur qui les tokenise et qui assume la charge de l'autorisation ainsi que les obligations de sécurité de la norme <strong>PCI DSS</strong>. Du côté de la Fondation, nous ne conservons que l'adresse e-mail du donateur, le montant, la devise, la date, l'identifiant de la transaction et son état — dans la seule mesure nécessaire à la tenue de nos comptes et à l'établissement d'une confirmation de don."
+
+page.polityka-prywatnosci.s3.zrzutka.title: "Zrzutka.pl"
+page.polityka-prywatnosci.s3.zrzutka.p1Html: "L'étendue des données est déterminée par la politique de Zrzutka.pl ; au sein de ce service, le responsable du traitement des données des contributeurs est <em>Zrzutka Sp. z o.o.</em>"
+
+page.polityka-prywatnosci.s3.transfer.title: "Virement bancaire (ponctuel ou permanent)"
+page.polityka-prywatnosci.s3.transfer.p1: "Les données proviennent de l'ordre de virement lui-même (émetteur, libellé, montant) et ne nous parviennent que par l'intermédiaire de la banque qui tient notre compte. Il en va de même des virements récurrents (virements permanents) : leur mise en place, leur modification et leur annulation se font entièrement depuis la banque du donateur — nous ne conservons à cette fin ni les données de votre carte ni d'autorisation de prélèvement, et l'ordre demeure sous votre seul contrôle."
+
+page.polityka-prywatnosci.s3.patronage.title: "Adhésion au mécénat (formulaire de soutien régulier)"
+page.polityka-prywatnosci.s3.patronage.p1Html: "Si vous décidez de rejoindre les mécènes du cycle et remplissez le formulaire de la section « Mécénat », nous traitons les <strong>prénom, nom et adresse e-mail</strong> que vous nous communiquez. Nous ne les enregistrons que pour vous contacter au sujet du soutien régulier. Le formulaire <strong>ne recueille aucune donnée de paiement</strong> — le soutien lui-même se fait par virement (permanent), que vous mettez en place et contrôlez depuis votre banque. Vos données sont conservées sur nos serveurs situés dans l'Union européenne ; la notification interne d'une nouvelle demande, que nous nous envoyons à nous-mêmes, <strong>ne contient aucune de vos données personnelles</strong>."
+
+page.polityka-prywatnosci.s3.email.title: "Correspondance par e-mail"
+page.polityka-prywatnosci.s3.email.p1: "Si vous nous écrivez à l'une de nos adresses, nous traitons les données contenues dans cette correspondance — adresse e-mail de l'expéditeur, signature, contenu du message — dans le seul but de vous répondre."
+
+page.polityka-prywatnosci.s3.audio.title: "Préférence audio (localStorage)"
+page.polityka-prywatnosci.s3.audio.p1Html: "Après le choix « Entrer avec la voix » ou « Entrer en silence », nous enregistrons votre choix dans la mémoire locale du navigateur (<em>localStorage</em>), sous la clé <code>voct.demo.audio</code>. L'entrée expire au bout de 3 heures et ne contient que la valeur de la préférence et un horodatage. Ce ne sont pas des données personnelles et elles ne quittent pas votre navigateur."
+
+page.polityka-prywatnosci.s4.title: "Finalités et bases légales"
+page.polityka-prywatnosci.s4.p1: "Nous traitons vos données aux finalités suivantes et sur les bases légales suivantes du RGPD :"
+page.polityka-prywatnosci.s4.items.hosting.textHtml: "<strong>Fonctionnement et sécurité du site</strong> (journaux du serveur) — art. 6, § 1, f) RGPD, l'intérêt légitime du responsable du traitement à assurer la continuité et la sécurité du site."
+page.polityka-prywatnosci.s4.items.donation.textHtml: "<strong>Réalisation d'un don</strong> — art. 6, § 1, b) RGPD (nécessité à l'exécution du contrat de donation) ainsi que c) (obligations légales en matière de comptabilité et de reporting d'une fondation). À ce titre, nous servons d'intermédiaire dans la transmission des données de paiement vers la passerelle Axepta BNP Paribas / PayU."
+page.polityka-prywatnosci.s4.items.receipt.textHtml: "<strong>Établissement d'une attestation de don</strong> — art. 6, § 1, c) RGPD, exécution d'obligations résultant du droit fiscal."
+page.polityka-prywatnosci.s4.items.patronage.textHtml: "<strong>Contact au sujet du mécénat</strong> — art. 6, § 1, a) RGPD (le consentement que vous donnez dans le formulaire). Vous pouvez le retirer à tout moment en écrivant à <a href=\"mailto:rodo@voctensemble.com\">rodo@voctensemble.com</a> ; le retrait n'affecte pas la licéité du traitement effectué avant celui-ci."
+page.polityka-prywatnosci.s4.items.claims.textHtml: "<strong>Constatation, exercice ou défense de droits</strong> — art. 6, § 1, f) RGPD, l'intérêt légitime de la Fondation (à l'occasion d'un versement erroné ou d'un litige, par exemple)."
+page.polityka-prywatnosci.s4.items.correspondence.textHtml: "<strong>Réponse à la correspondance</strong> — art. 6, § 1, f) RGPD, notre intérêt légitime à communiquer avec les personnes que l'activité de la fondation intéresse."
+
+page.polityka-prywatnosci.s5.title: "Destinataires des données"
+page.polityka-prywatnosci.s5.p1: "Selon l'opération effectuée, vos données peuvent parvenir aux entités suivantes (sous-traitants ou responsables du traitement distincts) :"
+page.polityka-prywatnosci.s5.items.infra.badge: "Fournisseurs d'infrastructure IT"
+page.polityka-prywatnosci.s5.items.infra.textHtml: "<strong>Fournisseurs d'infrastructure technique (hébergement, CDN)</strong> — des prestataires de confiance qui nous fournissent les serveurs et le réseau de diffusion de contenu nécessaires au fonctionnement et à la protection du site. Ils agissent en qualité de sous-traitants, sur nos instructions. Nous servons nos polices de caractères localement et ne transmettons aucune adresse IP à des fournisseurs de polices tiers."
+page.polityka-prywatnosci.s5.items.bnp.badge: "BNP Paribas"
+page.polityka-prywatnosci.s5.items.bnp.textHtml: "<strong>BNP Paribas Bank Polska S.A.</strong> (ul. Kasprzaka 2, 01-211 Warszawa) — exploitant de la passerelle <em>Axepta BNP Paribas</em>. Elle traite les données de transaction (BLIK, virements instantanés, Apple Pay, Google Pay) afin d'autoriser et de régler les paiements. Aux termes du contrat conclu avec elle, elle est un <strong>responsable du traitement distinct (indépendant)</strong> des données personnelles traitées pour l'exécution d'un paiement. Politique de confidentialité : <a href=\"https://www.bnpparibas.pl/repozytorium/rodo\">bnpparibas.pl/repozytorium/rodo</a>."
+page.polityka-prywatnosci.s5.items.payu.badge: "PayU"
+page.polityka-prywatnosci.s5.items.payu.textHtml: "<strong>PayU S.A.</strong> (ul. Grunwaldzka 186, 60-166 Poznań) — établissement acquéreur pour les transactions par carte. Elle assure l'autorisation, la tokenisation et le traitement des données de carte conformément à la norme PCI DSS. Elle est elle aussi un <strong>responsable du traitement distinct (indépendant)</strong> des données personnelles. Politique de confidentialité : <a href=\"https://poland.payu.com/prywatnosc/\">poland.payu.com/prywatnosc</a>."
+page.polityka-prywatnosci.s5.items.zrzutka.badge: "Zrzutka.pl"
+page.polityka-prywatnosci.s5.items.zrzutka.textHtml: "<strong>Zrzutka Sp. z o.o.</strong> — dès l'instant où vous suivez le lien vers notre collecte et versez par Zrzutka. Elle est un responsable du traitement distinct ; sa politique : <a href=\"https://zrzutka.pl/privacy\">https://zrzutka.pl/privacy</a>."
+page.polityka-prywatnosci.s5.items.accountant.badge: "Cabinet comptable"
+page.polityka-prywatnosci.s5.items.accountant.textHtml: "<strong>Le cabinet comptable de la fondation</strong> — dans la mesure nécessaire à la tenue des livres comptables et du registre des dons."
+
+page.polityka-prywatnosci.s6.title: "Transferts hors EEE"
+page.polityka-prywatnosci.s6.p1: "La Fondation limite les transferts de données hors de l'Espace économique européen partout où cela est possible. Notre infrastructure serveur principale se trouve sur le territoire de l'Union européenne."
+page.polityka-prywatnosci.s6.p2: "Si l'exploitation technique du site donne lieu à un transfert hors EEE (par les réseaux de diffusion de contenu, par exemple), celui-ci n'a lieu que sur le fondement des clauses contractuelles types (CCT) ou d'autres garanties prévues par le RGPD."
+page.polityka-prywatnosci.s6.p3: "L'exploitant de la passerelle de paiement (BNP Paribas Bank Polska S.A.) et l'établissement acquéreur pour les cartes (PayU S.A.) sont établis en Pologne. Ils peuvent toutefois — dans le cadre de leurs propres systèmes de lutte contre la fraude — traiter des données également hors EEE, ce dont ils répondent selon les modalités définies dans leurs politiques de confidentialité."
+
+page.polityka-prywatnosci.s7.title: "Durée de conservation"
+page.polityka-prywatnosci.s7.items.logs.textHtml: "<strong>Journaux du serveur HTTP</strong> — en principe jusqu'à 12 mois, sauf si la loi ou une procédure en cours (une analyse d'abus, par exemple) justifie une conservation plus longue."
+page.polityka-prywatnosci.s7.items.donors.textHtml: "<strong>Données des donateurs (documents comptables et justificatifs de versement)</strong> — pendant 5 ans, à compter du début de l'année suivant l'exercice auquel les données se rapportent. Cette obligation découle directement de l'art. 74 de la loi polonaise sur la comptabilité et des dispositions de l'Ordonnance fiscale."
+page.polityka-prywatnosci.s7.items.correspondence.textHtml: "<strong>Correspondance par e-mail</strong> — jusqu'à la clôture de l'affaire, et pas plus de 3 ans après le dernier échange. Ce délai peut être prolongé jusqu'à la prescription d'éventuelles réclamations si la correspondance constitue une preuve dans une affaire."
+page.polityka-prywatnosci.s7.items.patronage.textHtml: "<strong>Demandes de mécénat</strong> — jusqu'à la fin du contact au sujet du mécénat ou jusqu'au retrait du consentement. Si une collaboration durable s'engage, les données passent sous le régime de conservation des donateurs (documents comptables, 5 ans) ; sinon, nous les supprimons sans délai à la fin du contact."
+page.polityka-prywatnosci.s7.items.audio.textHtml: "<strong>Préférence audio</strong> dans le localStorage — 3 heures après son enregistrement, ou jusqu'à l'effacement des données du navigateur par l'utilisateur."
+
+page.polityka-prywatnosci.s8.title: "Vos droits"
+page.polityka-prywatnosci.s8.p1: "Conformément au RGPD, vous disposez des droits suivants :"
+page.polityka-prywatnosci.s8.items.access.textHtml: "<strong>Le droit d'accès</strong> à vos données et à l'obtention d'une copie de celles-ci (art. 15 RGPD)."
+page.polityka-prywatnosci.s8.items.rectification.textHtml: "<strong>Le droit de rectification</strong> des données inexactes ou incomplètes (art. 16)."
+page.polityka-prywatnosci.s8.items.erasure.textHtml: "<strong>Le droit à l'effacement</strong> des données (« droit à l'oubli », art. 17)."
+page.polityka-prywatnosci.s8.items.restriction.textHtml: "<strong>Le droit à la limitation du traitement</strong> (art. 18)."
+page.polityka-prywatnosci.s8.items.portability.textHtml: "<strong>Le droit à la portabilité des données</strong>, lorsque le traitement repose sur le consentement ou sur un contrat et qu'il est effectué de façon automatisée (art. 20)."
+page.polityka-prywatnosci.s8.items.objection.textHtml: "<strong>Le droit d'opposition</strong> au traitement fondé sur l'intérêt légitime du responsable du traitement (art. 21)."
+page.polityka-prywatnosci.s8.items.complaint.textHtml: "<strong>Le droit d'introduire une réclamation</strong> auprès du Président de l'Office de protection des données personnelles (ul. Stawki 2, 00-193 Warszawa, <a href=\"https://uodo.gov.pl/\">uodo.gov.pl</a>)."
+page.polityka-prywatnosci.s8.p2Html: "Pour exercer l'un de ces droits, écrivez à <a href=\"mailto:rodo@voctensemble.com\">rodo@voctensemble.com</a>. Nous répondons sans retard injustifié, et au plus tard dans le mois suivant la réception de la demande."
+
+page.polityka-prywatnosci.s9.title: "Statistiques de visite"
+page.polityka-prywatnosci.s9.p1Html: "Afin d'améliorer le site et de comprendre quels contenus vous intéressent, nous utilisons l'outil <strong>Plausible Analytics</strong>. C'est une solution centrée sur la vie privée :"
+page.polityka-prywatnosci.s9.items.cookieless.textHtml: "<strong>Aucun cookie :</strong> l'outil n'utilise aucun fichier cookie et n'enregistre aucune donnée dans la mémoire de votre navigateur."
+page.polityka-prywatnosci.s9.items.anonymous.textHtml: "<strong>Anonymat complet :</strong> nous ne collectons ni adresses IP, ni données de localisation, ni aucune information permettant d'identifier une personne."
+page.polityka-prywatnosci.s9.items.minimal.textHtml: "<strong>Minimalisme :</strong> nous ne traitons que des données statistiques brutes et agrégées (nombre de visites, pages les plus consultées), qui ne nous servent qu'à améliorer le site."
+page.polityka-prywatnosci.s9.p2Html: "Le détail de la manière dont cet outil protège la vie privée figure dans la <a href=\"https://plausible.io/data-policy\">Politique de données (Data Policy)</a> officielle de Plausible."
+
+page.polityka-prywatnosci.s10.title: "Cookies, localStorage et scripts de tiers"
+page.polityka-prywatnosci.s10.own.title: "Nos propres cookies"
+page.polityka-prywatnosci.s10.own.p1Html: "<strong>Nous n'utilisons aucun cookie qui nous soit propre</strong> — ni de mesure ni de publicité. Le site ne contient ni Google Analytics, ni Meta Pixel, ni aucun outil de profilage comparable."
+page.polityka-prywatnosci.s10.storage.title: "localStorage et sessionStorage du navigateur"
+page.polityka-prywatnosci.s10.storage.p1: "Nous n'utilisons les mécanismes localStorage et sessionStorage du navigateur que pour mémoriser quelques préférences techniques d'interface. Aucune des entrées ci-dessous n'identifie l'utilisateur, ne contient de données personnelles ni ne sert au pistage. Ce sont des mécanismes « strictement nécessaires » à des fonctions du site que vous avez choisies — au sens du considérant 30 de la directive 2002/58/CE et de la jurisprudence, ils ne requièrent donc pas de consentement préalable."
+page.polityka-prywatnosci.s10.storage.items.audio.note: "Votre choix au seuil d'entrée (« avec la voix » / « en silence »). L'entrée expire 3 heures après son enregistrement."
+page.polityka-prywatnosci.s10.storage.items.preloaderSeen.note: "Un indicateur signalant que vous avez déjà vu le rite d'entrée au cours de cette session ; il permet de le passer lorsque vous revenez à la page d'accueil depuis une autre page. Effacé automatiquement à la fermeture de l'onglet et au rechargement de la page."
+page.polityka-prywatnosci.s10.storage.items.preloaderLastLoad.note: "Un horodatage technique du dernier chargement du document, qui ne sert qu'à distinguer un rechargement de page d'une navigation interne."
+page.polityka-prywatnosci.s10.gateway.title: "Scripts techniques et cookies de la passerelle de paiement"
+page.polityka-prywatnosci.s10.gateway.p1Html: "Après un clic sur « Nous soutenir », vous êtes redirigé vers la page de paiement hébergée par l'opérateur. C'est sur cette page — déjà hors du site voctensemble.com — que se chargent les <strong>bibliothèques JavaScript techniques fournies par BNP Paribas / PayU</strong>, qui peuvent déposer des cookies ou recourir à d'autres mécanismes de stockage dans le navigateur afin de :"
+page.polityka-prywatnosci.s10.gateway.items.session.text: "autoriser le paiement et en maintenir la session,"
+page.polityka-prywatnosci.s10.gateway.items.tokenization.text: "tokeniser les données de carte,"
+page.polityka-prywatnosci.s10.gateway.items.fraud.text: "détecter les abus (fraud detection, device fingerprinting),"
+page.polityka-prywatnosci.s10.gateway.items.sca.text: "gérer le 3-D Secure / Strong Customer Authentication (PSD2 SCA)."
+page.polityka-prywatnosci.s10.gateway.p2Html: "Ces mécanismes sont <strong>strictement nécessaires</strong> à l'exécution sécurisée d'un paiement et ne requièrent pas de consentement distinct. Le responsable du traitement des données traitées par ces scripts est <em>BNP Paribas Bank Polska S.A.</em> et — pour un paiement par carte — <em>PayU S.A.</em>, selon les modalités décrites dans leurs politiques de confidentialité (les liens figurent à la section « Destinataires des données »). Ils n'apparaissent pas sur notre site : ils ne fonctionnent que sur la page de l'opérateur, après la redirection, lorsque vous engagez le paiement."
+
+page.polityka-prywatnosci.s11.title: "Sécurité"
+page.polityka-prywatnosci.s11.items.tls.textHtml: "Le site n'est accessible que par une connexion chiffrée <strong>HTTPS (TLS 1.3)</strong>."
+page.polityka-prywatnosci.s11.items.hsts.textHtml: "Nous imposons le <em>HTTP Strict Transport Security</em> (HSTS) avec l'option preload — un navigateur n'autorisera aucune connexion non chiffrée à notre domaine."
+page.polityka-prywatnosci.s11.items.cards.textHtml: "<strong>Nous ne conservons ni données complètes de cartes de paiement ni codes BLIK</strong> sur les serveurs de la Fondation — vous les saisissez directement sur la page hébergée par l'opérateur (Axepta BNP Paribas / PayU), qui les tokenise et répond de leur sécurité conformément à la norme PCI DSS."
+page.polityka-prywatnosci.s11.items.relay.textHtml: "Notre serveur ne sert pas d'intermédiaire dans la transmission des données de paiement — nous ne transmettons à la passerelle que le montant, la devise, l'adresse e-mail et l'identifiant du don, par une connexion TLS chiffrée exclusivement, afin de générer le lien vers la page de paiement."
+page.polityka-prywatnosci.s11.items.mailboxes.textHtml: "Les adresses e-mail sont conservées dans des boîtes protégées par une authentification multifacteur."
+
+page.polityka-prywatnosci.s12.title: "Modifications de la politique"
+page.polityka-prywatnosci.s12.p1: "Nous actualisons la politique lorsque la manière dont nous traitons les données change — par exemple lorsque nous ouvrons de nouveaux moyens de paiement, ajoutons des formulaires ou modifions notre infrastructure technique. Chaque modification porte un nouveau numéro de version et une date d'entrée en vigueur (en tête de ce document)."
+page.polityka-prywatnosci.s12.p2: "La présente politique est publiée en polonais, ainsi qu'en traduction anglaise et française. La version polonaise est celle qui fait foi ; les traductions n'ont qu'une valeur informative et, en cas de divergence entre les versions linguistiques, c'est le texte polonais qui prévaut."
+page.polityka-prywatnosci.history.label: "Historique des versions"
+page.polityka-prywatnosci.history.entries.v1-2.note: "Ajout du § 12 : la politique est également publiée en traduction anglaise et française, la version polonaise restant celle qui fait foi."
+page.polityka-prywatnosci.history.entries.v1-1.note: "Précision du déroulement d'un paiement en ligne : le paiement suit une redirection vers la page hébergée par l'opérateur, et les données de paiement complètes ne transitent pas par les serveurs de la Fondation. Ajout d'une mention des virements récurrents (virements permanents) comme forme de soutien régulier. Ajout de la prise en charge du formulaire de mécénat (enregistrement des demandes : prénom, nom, e-mail — sur la base du consentement ; données conservées sur des serveurs situés dans l'Union européenne)."
+page.polityka-prywatnosci.history.entries.v1-0.note: "Version initiale de la politique, publiée avec le lancement du site voctensemble.com."
+page.polityka-prywatnosci.s12.p3Html: "Vous pouvez à tout moment obtenir l'historique complet des modifications en écrivant à <a href=\"mailto:rodo@voctensemble.com\">rodo@voctensemble.com</a>."

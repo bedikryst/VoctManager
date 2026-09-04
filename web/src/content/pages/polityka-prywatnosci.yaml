@@ -1,0 +1,550 @@
+# The privacy policy — Polish, and Polish only.
+#
+# THE SECOND LEGAL TEXT ON THE DESK, and a peer of `regulamin-darowizn.yaml` rather than a page of
+# prose: it is reviewed against "does this still say what the Polish says", never against "does
+# this read well". Its own scope, its own stale count. The reason it is on the desk at all is the
+# one the terms give — the desk is the only machinery in this project that stamps a `source_hash`,
+# and silent drift between language versions is worst exactly where nobody reads closely.
+#
+# THE POLISH VERSION GOVERNS. § 12 says so inside the document, the way § 5 ust. 3 of the terms
+# does, so that a reader of the English or French text is told by the text itself which version
+# binds. That clause is new in version 1.2 and translating this document is therefore an AMENDMENT
+# to it — the history below records that, and the version number moved with it.
+#
+# THE DOCUMENT'S OWN NAME IS NOT HERE. Every page of the site prints it in its footer, in three
+# complete locales, from `UI.footer.privacy` (`i18n/ui.ts`) — so the `<h1>` and the `<title>` READ
+# that one name rather than restating it. A name printed on thirty screens is a landmark label, and
+# a landmark label must exist in every locale or a page is broken for somebody; that is the test
+# that puts it in the chrome table (spec §6r). The donation terms went the other way for the
+# opposite reason: their title is read only inside the island that already holds the document.
+#
+# THE TABLE OF CONTENTS IS DERIVED, never written. Each entry is its section's own `title`, so a
+# section has ONE name on the page it names. Two of them disagreed before this file existed — the
+# contents said "Transfery poza Europejski Obszar Gospodarczy" over a heading reading "Transfery
+# poza EOG", and "Cookies i localStorage" over "Cookies, localStorage i skrypty podmiotów trzecich"
+# — which is a name printed twice and therefore read twice (spec §6y).
+#
+# THE REGISTER AND THE NUMBERS. The addresses, the registry numbers, the article citations
+# (`art. 6 ust. 1 lit. f RODO`, `art. 74 ustawy o rachunkowości`), the retention periods and the
+# company names are ADDRESSES AND FACTS: a translation names the instrument in the reader's
+# language (RODO is the GDPR; `ustawa o rachunkowości` is the Polish Accounting Act) and never
+# renumbers a citation or rounds a period.
+#
+# STORAGE KEYS ARE IDENTIFIERS, not words. `voct.demo.audio` and the two preloader flags are
+# structural fields rendered inside `<code>`; only the sentence around them is copy.
+#
+# TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under this page's desk
+# key — `page.polityka-prywatnosci.` + the dotted path below — and are read through
+# `lib/copyOverlay`.
+#
+# NO TYPOGRAPHY. Write the prose plainly; `lib/typo.ts` pins orphans and French punctuation
+# spacing over the finished HTML at build.
+
+# The version this document is at, and the day it started to apply. Both are read by the line under
+# the title and by the newest entry of the history at the foot.
+version: "1.2"
+effectiveFrom: "2026-09-04"
+
+meta:
+  # Read in a browser tab and by a crawler, never on the page. The document is `noindex,follow` —
+  # it is not competing for a search result, it says what the page is to somebody who has it open
+  # in one of nine tabs. The `<title>` is this line with the site's name after it.
+  description: >-
+    Jakie dane przetwarzamy i dlaczego. Polityka prywatności Fundacji VoctFoundation
+    (voctensemble.com).
+
+head:
+  kicker: "Dokument · RODO"
+  # The document's way in: what the site is, what it is not, and what the reader is about to be
+  # told. The three negations are deliberate and they are the substance of the page — no marketing
+  # cookies, no analytics profiling, no automated decisions.
+  ledeHtml: >-
+    Strona <em>voctensemble.com</em> jest witryną informacyjną oraz kanałem przyjmowania darowizn
+    na cele statutowe Fundacji. Nie używamy cookies marketingowych, narzędzi analitycznych, nie
+    dokonujemy profilowania ani nie podejmujemy zautomatyzowanych decyzji wobec użytkowników.
+    Poniżej wyjaśniamy precyzyjnie, jakie dane mogą zostać przetworzone w trakcie korzystania ze
+    strony — w tym podczas wykonywania darowizny — i kto za to odpowiada.
+  tocLabel: "Spis treści"
+
+# The foundation's own register and its data address, written out once and rendered into the two
+# cards § 1 and § 2 print. Structural, all of it: a postal address in Kraków, three Polish registry
+# numbers and a mailbox stay themselves in every language, and a card built from named fields needs
+# no `<br>` inside a copy field — which the desk's whitelist would strip on the first edit anyway.
+foundation:
+  name: "Fundacja VoctFoundation"
+  address: "ul. Św. Filipa 23/3, 31-150 Kraków"
+  registry: "KRS 0001237252 · NIP 6762718992 · REGON 544621525"
+  email: "rodo@voctensemble.com"
+
+s1:
+  title: "Administrator danych"
+  p1Html: >-
+    Administratorem danych osobowych przetwarzanych w związku z korzystaniem ze strony
+    <em>voctensemble.com</em> jest:
+  # Printed under the register card. "Cele statutowe" is the term the statute and the donation
+  # terms both use — keep whatever rendering those two already print.
+  p2: >-
+    Fundacja realizuje cele statutowe w zakresie kultury i sztuki sakralnej. Strona stanowi jej
+    witrynę informacyjną oraz kanał przyjmowania darowizn.
+
+s2:
+  title: "Kontakt w sprawach danych"
+  p1: "W sprawach związanych z przetwarzaniem danych osobowych prosimy o kontakt na adres:"
+  # The second line of the contact card, under the mailbox itself.
+  cardNote: "lub korespondencyjnie na adres siedziby fundacji"
+  # `art. 37 RODO` is an address inside the regulation: name the regulation in the reader's own
+  # language and leave the article number alone. The sentence is a statement that the appointment
+  # was CONSIDERED and is not required — not that it was overlooked.
+  p2: >-
+    Nie powołaliśmy Inspektora Ochrony Danych — zakres i charakter przetwarzania nie wymagają jego
+    ustanowienia (art. 37 RODO).
+
+s3:
+  title: "Jakie dane przetwarzamy"
+
+  visitors:
+    title: "Odwiedzający stronę"
+    p1: >-
+      Samo otwarcie strony powoduje automatyczne przetworzenie danych technicznych przez serwery
+      hostingowe oraz sieci dostarczania treści (CDN):
+    items:
+      - id: ip
+        text: "adres IP urządzenia,"
+      - id: headers
+        text: "nagłówki HTTP (m.in. typ przeglądarki, język, źródło),"
+      - id: timestamp
+        text: "data i godzina żądania,"
+      - id: resource
+        text: "adres żądanego zasobu."
+    p2: >-
+      Są to standardowe logi serwera HTTP. Nie łączymy ich z żadnymi innymi danymi, nie używamy ich
+      do profilowania ani marketingu. Służą wyłącznie do utrzymania działania witryny oraz
+      bezpieczeństwa (np. blokady ruchu nadużywanego).
+
+  donors:
+    title: "Darczyńcy"
+    p1: >-
+      W trakcie składania darowizny przetwarzane są dane niezbędne do realizacji transakcji,
+      wystawienia ewentualnego zaświadczenia o darowiźnie oraz wypełnienia obowiązków księgowych
+      Fundacji. Zakres i sposób przetwarzania zależą od wybranej metody:
+
+  gateway:
+    # The payment methods in the parenthesis are brands and Polish payment schemes; they keep their
+    # names. Only "szybkie przelewy" and "karty" are words.
+    title: "Bramka płatnicza Axepta BNP Paribas (BLIK, szybkie przelewy, Apple Pay, Google Pay, karty)"
+    p1Html: >-
+      Korzystamy z bramki płatniczej <strong>Axepta BNP Paribas</strong>, której operatorem jest
+      <em>BNP Paribas Bank Polska S.A.</em> Dla transakcji kartowych agentem rozliczeniowym jest
+      <em>PayU S.A.</em> Płatność przebiega w modelu przekierowania na bezpieczną stronę operatora:
+    items:
+      - id: handoff
+        textHtml: >-
+          Po wybraniu kwoty i podaniu adresu e-mail nasz serwer przekazuje do bramki wyłącznie
+          <strong>kwotę, walutę, adres e-mail oraz identyfikator darowizny</strong> i otrzymuje
+          w zamian jednorazowy link do strony płatności.
+      - id: redirect
+        textHtml: >-
+          Zostajesz przekierowany na <strong>hostowaną stronę płatności operatora</strong>, gdzie
+          bezpośrednio wprowadzasz dane płatnicze (kod BLIK, dane karty, wybór banku przy szybkim
+          przelewie). Po zakończeniu wracasz na naszą stronę z informacją o statusie transakcji.
+    # The load-bearing assurance of the whole document: full payment data never reaches this
+    # foundation's servers. PCI DSS is a standard's name and stays itself.
+    p2Html: >-
+      Pełne dane płatnicze (numer karty, kod BLIK, dane logowania do bankowości) wprowadzasz
+      wyłącznie na stronie operatora — <strong>nie przechodzą one przez serwery Fundacji ani nie są
+      przez nas przechowywane</strong>. To operator tokenizuje je oraz przejmuje ciężar autoryzacji
+      i obowiązki bezpieczeństwa zgodnie z normą <strong>PCI DSS</strong>. Po stronie Fundacji
+      zachowujemy wyłącznie: adres e-mail darczyńcy, kwotę, walutę, datę, identyfikator transakcji
+      oraz jej status — w zakresie niezbędnym do ewidencji księgowej i wystawienia potwierdzenia
+      darowizny.
+
+  zrzutka:
+    title: "Zrzutka.pl"
+    p1Html: >-
+      Zakres danych określa polityka Zrzutka.pl; administratorem danych wpłacających w jej obrębie
+      jest <em>Zrzutka Sp. z o.o.</em>
+
+  transfer:
+    title: "Przelew bankowy (jednorazowy lub zlecenie stałe)"
+    # The clause about storing no card data and no debit mandate is a factual assurance about how
+    # the foundation works, not a flourish — the donation terms make the same one.
+    p1: >-
+      Dane wynikają z polecenia przelewu (nadawca, tytuł, kwota) i trafiają do nas wyłącznie za
+      pośrednictwem banku prowadzącego nasz rachunek. Dotyczy to także przelewów cyklicznych
+      (zleceń stałych): ich ustanowienie, zmiana i odwołanie odbywają się w całości w bankowości
+      Darczyńcy — nie przechowujemy w tym celu danych Twojej karty ani zgody na obciążanie, a samo
+      zlecenie pozostaje pod Twoją wyłączną kontrolą.
+
+  patronage:
+    # „Mecenat” is the name of the vault's own section; whatever the reader's language calls it
+    # there is what this sentence has to call it here.
+    title: "Zgłoszenie mecenatu (formularz wsparcia regularnego)"
+    p1Html: >-
+      Jeśli zdecydujesz się dołączyć do grona mecenasów i wypełnisz formularz w sekcji „Mecenat”,
+      przetwarzamy podane przez Ciebie <strong>imię, nazwisko oraz adres e-mail</strong>.
+      Zapisujemy je wyłącznie po to, aby skontaktować się z Tobą w sprawie regularnego wsparcia.
+      Formularz <strong>nie zbiera żadnych danych płatniczych</strong> — samo wsparcie odbywa się
+      przelewem (zleceniem stałym), który ustanawiasz i kontrolujesz w swojej bankowości. Twoje
+      dane przechowujemy na naszych serwerach w Unii Europejskiej; wewnętrzne powiadomienie o nowym
+      zgłoszeniu, które wysyłamy do siebie, <strong>nie zawiera Twoich danych osobowych</strong>.
+
+  email:
+    title: "Korespondencja e-mail"
+    p1: >-
+      Jeśli napiszesz do nas na jeden z naszych adresów, przetwarzamy dane zawarte w treści
+      korespondencji — adres e-mail nadawcy, podpis, treść wiadomości — wyłącznie w celu
+      odpowiedzi.
+
+  audio:
+    # The entrance gate's two doors are named in the vault's own words; „Wejdź z głosem” / „Wejdź
+    # w ciszę” are what the landing prints, so a translation follows whatever it prints there.
+    title: "Preferencja audio (localStorage)"
+    p1Html: >-
+      Po wybraniu „Wejdź z głosem” / „Wejdź w ciszę” zapisujemy Twój wybór w pamięci lokalnej
+      przeglądarki (<em>localStorage</em>) pod kluczem <code>voct.demo.audio</code>. Wpis wygasa po
+      3 godzinach i zawiera wyłącznie wartość preferencji oraz znacznik czasu. Nie są to dane
+      osobowe, nie opuszczają Twojej przeglądarki.
+
+s4:
+  title: "Cele i podstawy prawne"
+  p1: "Twoje dane przetwarzamy w następujących celach i na następujących podstawach prawnych RODO:"
+  # Six purposes, each opening with the purpose in bold and closing with the article that licenses
+  # it. Every `art. 6 ust. 1 lit. …` is an address inside the GDPR: name the regulation in the
+  # reader's language, never renumber the citation, and never change which letter a purpose rests
+  # on — the letter IS the legal basis.
+  items:
+    - id: hosting
+      textHtml: >-
+        <strong>Utrzymanie i bezpieczeństwo witryny</strong> (logi serwera) — art. 6 ust. 1 lit. f
+        RODO, prawnie uzasadniony interes administratora w postaci zapewnienia ciągłości
+        i bezpieczeństwa działania strony.
+    - id: donation
+      textHtml: >-
+        <strong>Realizacja darowizny</strong> — art. 6 ust. 1 lit. b RODO (niezbędność do wykonania
+        umowy darowizny) oraz lit. c (obowiązki prawne w zakresie księgowości i sprawozdawczości
+        fundacji). W tym zakresie pośredniczymy w transmisji danych płatniczych do bramki Axepta
+        BNP Paribas / PayU.
+    - id: receipt
+      textHtml: >-
+        <strong>Wystawienie zaświadczenia o darowiźnie</strong> — art. 6 ust. 1 lit. c RODO,
+        wykonanie obowiązków wynikających z przepisów podatkowych.
+    - id: patronage
+      textHtml: >-
+        <strong>Kontakt w sprawie mecenatu</strong> — art. 6 ust. 1 lit. a RODO (Twoja zgoda
+        wyrażona w formularzu). Zgodę możesz wycofać w każdej chwili, pisząc na
+        <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>; wycofanie nie wpływa na
+        zgodność z prawem przetwarzania, którego dokonano przed wycofaniem.
+    - id: claims
+      textHtml: >-
+        <strong>Ustalenie, dochodzenie lub obrona roszczeń</strong> — art. 6 ust. 1 lit. f RODO,
+        prawnie uzasadniony interes Fundacji (np. w związku z błędną wpłatą lub sporem).
+    - id: correspondence
+      textHtml: >-
+        <strong>Odpowiedź na korespondencję</strong> — art. 6 ust. 1 lit. f RODO, prawnie
+        uzasadniony interes w postaci komunikacji z osobami zainteresowanymi działalnością
+        fundacji.
+
+s5:
+  title: "Odbiorcy danych"
+  p1: >-
+    W zależności od wykonywanej operacji Twoje dane mogą trafić do następujących podmiotów
+    (procesorów lub odrębnych administratorów):
+  # ONE LIST, PRINTED TWICE — the row of badges above the paragraphs and the paragraphs themselves
+  # name the same five recipients in the same order, so a recipient carries its own short form
+  # instead of the page holding two lists that could fall out of step. Three of the five badges are
+  # company names and stay themselves in every language; the note on the field says so.
+  items:
+    - id: infra
+      badge: "Dostawcy infrastruktury IT"
+      textHtml: >-
+        <strong>Dostawcy infrastruktury technicznej (hosting, CDN)</strong> — zaufane podmioty
+        zapewniające nam serwery oraz sieć dostarczania treści niezbędną do działania
+        i zabezpieczenia strony. Działają oni jako podmioty przetwarzające na nasze polecenie.
+        Fonty serwujemy lokalnie i nie przekazujemy adresów IP zewnętrznym dostawcom typografii.
+    - id: bnp
+      badge: "BNP Paribas"
+      textHtml: >-
+        <strong>BNP Paribas Bank Polska S.A.</strong> (ul. Kasprzaka 2, 01-211 Warszawa) — operator
+        bramki <em>Axepta BNP Paribas</em>. Przetwarza dane transakcyjne (BLIK, szybkie przelewy,
+        Apple Pay, Google Pay) w celu autoryzacji i rozliczenia płatności. Zgodnie z zawartą umową
+        jest <strong>odrębnym (niezależnym) administratorem</strong> danych osobowych
+        przetwarzanych w celu wykonania płatności. Polityka prywatności:
+        <a href="https://www.bnpparibas.pl/repozytorium/rodo">bnpparibas.pl/repozytorium/rodo</a>.
+    - id: payu
+      badge: "PayU"
+      textHtml: >-
+        <strong>PayU S.A.</strong> (ul. Grunwaldzka 186, 60-166 Poznań) — agent rozliczeniowy dla
+        transakcji kartowych. Obsługuje autoryzację, tokenizację oraz przetwarza dane karty zgodnie
+        z normą PCI DSS. Również jest <strong>odrębnym (niezależnym) administratorem</strong>
+        danych osobowych. Polityka prywatności:
+        <a href="https://poland.payu.com/prywatnosc/">poland.payu.com/prywatnosc</a>.
+    - id: zrzutka
+      badge: "Zrzutka.pl"
+      textHtml: >-
+        <strong>Zrzutka Sp. z o.o.</strong> — w momencie kliknięcia w link do naszej zbiórki
+        i wpłaty przez Zrzutkę. Jest odrębnym administratorem; polityka:
+        <a href="https://zrzutka.pl/privacy">https://zrzutka.pl/privacy</a>.
+    - id: accountant
+      badge: "Biuro rachunkowe"
+      textHtml: >-
+        <strong>Biuro rachunkowe fundacji</strong> — w zakresie niezbędnym do prowadzenia ksiąg
+        rachunkowych i ewidencji darowizn.
+
+s6:
+  # The heading abbreviates what the first paragraph writes out in full. The contents list reads
+  # this same line, so the abbreviation is the section's one name.
+  title: "Transfery poza EOG"
+  p1: >-
+    Fundacja ogranicza przekazywanie danych poza Europejski Obszar Gospodarczy tam, gdzie jest to
+    możliwe. Nasza główna infrastruktura serwerowa znajduje się na terenie Unii Europejskiej.
+  # Standardowe Klauzule Umowne are the GDPR's Standard Contractual Clauses — a named instrument
+  # with an official rendering in every EU language. The abbreviation follows the language.
+  p2: >-
+    Jeżeli w związku z obsługą techniczną strony (np. przez sieci CDN) dochodzi do przekazania
+    danych poza EOG, odbywa się to wyłącznie na podstawie Standardowych Klauzul Umownych (SCC) lub
+    innych zabezpieczeń przewidzianych w RODO.
+  p3: >-
+    Operator bramki płatniczej (BNP Paribas Bank Polska S.A.) oraz agent rozliczeniowy kart
+    (PayU S.A.) są podmiotami z siedzibą w Polsce. Mogą oni jednak — w ramach własnych systemów
+    antyfraudowych — przetwarzać dane również poza EOG, za co odpowiadają na zasadach określonych
+    w swoich politykach prywatności.
+
+s7:
+  title: "Czas przechowywania"
+  # Five periods. Every number is a duration somebody may one day be held to — 12 months, 5 years,
+  # 3 years, 3 hours — and `art. 74 ustawy o rachunkowości` is an address inside the Polish
+  # Accounting Act. Name the act in the reader's language; leave the article and the periods alone.
+  items:
+    - id: logs
+      textHtml: >-
+        <strong>Logi serwera HTTP</strong> — standardowo do 12 miesięcy, chyba że przepisy prawa
+        lub trwające postępowanie (np. analizy nadużyć) uzasadniają dłuższy okres przechowywania.
+    - id: donors
+      textHtml: >-
+        <strong>Dane darczyńców (dokumentacja księgowa i dowody wpłat)</strong> — przez 5 lat,
+        licząc od początku roku następującego po roku obrotowym, którego dane dotyczą. Obowiązek
+        ten wynika wprost z art. 74 ustawy o rachunkowości oraz przepisów Ordynacji podatkowej.
+    - id: correspondence
+      textHtml: >-
+        <strong>Korespondencja e-mail</strong> — do czasu zakończenia sprawy, nie dłużej niż 3 lata
+        od ostatniej wymiany wiadomości. Okres ten może ulec wydłużeniu do czasu przedawnienia
+        ewentualnych roszczeń, jeśli korespondencja stanowi dowód w sprawie.
+    - id: patronage
+      textHtml: >-
+        <strong>Zgłoszenia mecenatu</strong> — do czasu zakończenia kontaktu w sprawie mecenatu lub
+        wycofania zgody. Jeśli nawiążemy stałą współpracę, dane przechodzą w reżim przechowywania
+        dla darczyńców (dokumentacja księgowa, 5 lat); w przeciwnym razie usuwamy je niezwłocznie
+        po zakończeniu kontaktu.
+    - id: audio
+      textHtml: >-
+        <strong>Preferencja audio</strong> w localStorage — 3 godziny od zapisu lub do czasu
+        wyczyszczenia danych przeglądarki przez użytkownika.
+
+s8:
+  title: "Twoje prawa"
+  p1: "Zgodnie z RODO przysługują Ci następujące prawa:"
+  # Seven rights, each named by the GDPR itself. Every jurisdiction's own translation of the
+  # regulation has an official rendering for each of these names — use it rather than inventing
+  # one, and keep the article numbers exactly where they are.
+  items:
+    - id: access
+      textHtml: >-
+        <strong>Prawo dostępu</strong> do swoich danych oraz uzyskania ich kopii (art. 15 RODO).
+    - id: rectification
+      textHtml: >-
+        <strong>Prawo do sprostowania</strong> danych nieprawidłowych lub niekompletnych (art. 16).
+    - id: erasure
+      textHtml: >-
+        <strong>Prawo do usunięcia</strong> danych („prawo do bycia zapomnianym”, art. 17).
+    - id: restriction
+      textHtml: "<strong>Prawo do ograniczenia przetwarzania</strong> (art. 18)."
+    - id: portability
+      textHtml: >-
+        <strong>Prawo do przenoszenia danych</strong>, gdy przetwarzanie odbywa się na podstawie
+        zgody lub umowy i w sposób zautomatyzowany (art. 20).
+    - id: objection
+      textHtml: >-
+        <strong>Prawo do sprzeciwu</strong> wobec przetwarzania opartego na uzasadnionym interesie
+        administratora (art. 21).
+    # The supervisory authority is Poland's, because the administrator is established in Poland —
+    # a reader in another member state also has their own, but this is the one this foundation
+    # answers to. Its name and address stay as they are; only the words around them translate.
+    - id: complaint
+      textHtml: >-
+        <strong>Prawo do złożenia skargi</strong> do Prezesa Urzędu Ochrony Danych Osobowych
+        (ul. Stawki 2, 00-193 Warszawa, <a href="https://uodo.gov.pl/">uodo.gov.pl</a>).
+  p2Html: >-
+    Aby skorzystać z któregokolwiek z powyższych praw, napisz na
+    <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>. Odpowiadamy bez zbędnej
+    zwłoki, najpóźniej w terminie miesiąca od otrzymania żądania.
+
+s9:
+  title: "Statystyki odwiedzin"
+  p1Html: >-
+    W celu optymalizacji strony oraz zrozumienia, jakie treści są dla Państwa interesujące,
+    korzystamy z narzędzia <strong>Plausible Analytics</strong>. Jest to rozwiązanie skoncentrowane
+    na prywatności:
+  items:
+    - id: cookieless
+      textHtml: >-
+        <strong>Brak ciasteczek:</strong> Narzędzie nie wykorzystuje plików cookies i nie zapisuje
+        żadnych danych w pamięci Państwa przeglądarki.
+    - id: anonymous
+      textHtml: >-
+        <strong>Pełna anonimowość:</strong> Nie zbieramy adresów IP, danych lokalizacyjnych ani
+        żadnych informacji pozwalających na identyfikację konkretnej osoby.
+    - id: minimal
+      textHtml: >-
+        <strong>Minimalizm:</strong> Przetwarzamy wyłącznie surowe, zagregowane dane statystyczne
+        (np. liczba odwiedzin, najpopularniejsze podstrony), które służą nam wyłącznie do celów
+        ulepszania serwisu.
+  # The link's label is the document's own title at Plausible; it exists in English only, so the
+  # sentence around it translates and the title itself is named as what it is.
+  p2Html: >-
+    Szczegółowe informacje o tym, w jaki sposób narzędzie to dba o prywatność, można znaleźć
+    w oficjalnej <a href="https://plausible.io/data-policy">Polityce Danych Plausible (Data
+    Policy)</a>.
+
+s10:
+  title: "Cookies, localStorage i skrypty podmiotów trzecich"
+
+  own:
+    title: "Własne pliki cookies"
+    p1Html: >-
+      <strong>Nie używamy własnych plików cookies</strong> — ani analitycznych, ani marketingowych.
+      Strona nie zawiera Google Analytics, Meta Pixel ani podobnych narzędzi profilujących.
+
+  storage:
+    title: "localStorage i sessionStorage przeglądarki"
+    # „Ściśle niezbędne” is the ePrivacy directive's own term of art (recital 30) and every
+    # language has its official rendering — it is what licenses these entries without consent.
+    p1: >-
+      Używamy mechanizmów localStorage i sessionStorage przeglądarki wyłącznie do zapamiętania
+      kilku technicznych preferencji UX. Żaden z poniższych wpisów nie identyfikuje użytkownika,
+      nie zawiera danych osobowych ani nie służy do trackowania. Są to mechanizmy „ściśle
+      niezbędne” do realizacji wybranych przez Ciebie funkcji witryny — zgodnie z motywem 30
+      dyrektywy 2002/58/WE oraz orzecznictwem nie wymagają uprzedniej zgody.
+    # `storageKey` and `store` are identifiers, printed in `<code>` and in italics beside it — an
+    # identifier an editor is about to translate is not an identifier. Only the note is copy.
+    items:
+      - id: audio
+        storageKey: "voct.demo.audio"
+        store: "localStorage"
+        note: >-
+          Twój wybór z bramy wejściowej („z głosem” / „w ciszy”). Wpis wygasa po 3 godzinach od
+          zapisu.
+      - id: preloaderSeen
+        storageKey: "voct.preloader.seen"
+        store: "sessionStorage"
+        note: >-
+          Flaga informująca, że widziałeś już rytualny ekran wejściowy w tej sesji; pozwala pominąć
+          go przy powrotach do strony głównej z podstron. Kasowana automatycznie przy zamknięciu
+          karty oraz przy odświeżeniu strony.
+      - id: preloaderLastLoad
+        storageKey: "voct.preloader.last-load"
+        store: "sessionStorage"
+        note: >-
+          Techniczny znacznik czasu ostatniego załadowania dokumentu, służący wyłącznie do
+          odróżnienia odświeżenia strony od nawigacji wewnętrznej.
+
+  gateway:
+    title: "Techniczne skrypty i pliki cookies bramki płatniczej"
+    # „Wesprzyj” is the nav's own support button; whatever the chrome prints in the reader's
+    # language is what this sentence has to name (`UI.nav.support`).
+    p1Html: >-
+      Po kliknięciu „Wesprzyj” zostajesz przekierowany na hostowaną stronę płatności operatora. To
+      na tej stronie — już poza serwisem voctensemble.com — ładują się <strong>techniczne
+      biblioteki JavaScript dostarczane przez BNP Paribas / PayU</strong>, które mogą ustawić pliki
+      cookies lub korzystać z innych mechanizmów przechowywania danych w przeglądarce w celach:
+    items:
+      - id: session
+        text: "autoryzacji i utrzymania sesji płatności,"
+      - id: tokenization
+        text: "tokenizacji danych karty,"
+      - id: fraud
+        text: "wykrywania nadużyć (fraud detection, device fingerprinting),"
+      - id: sca
+        text: "obsługi 3-D Secure / Strong Customer Authentication (PSD2 SCA)."
+    # The closing sentence is the point of the section: none of this runs on voctensemble.com.
+    # „Odbiorcy danych” names § 5 above — a translation names it whatever § 5's own title becomes.
+    p2Html: >-
+      Te mechanizmy są <strong>ściśle niezbędne</strong> do bezpiecznego przeprowadzenia płatności
+      i nie wymagają odrębnej zgody. Administratorem danych przetwarzanych przez te skrypty są
+      <em>BNP Paribas Bank Polska S.A.</em> oraz — w przypadku płatności kartą — <em>PayU S.A.</em>,
+      na zasadach opisanych w ich politykach prywatności (linki w sekcji „Odbiorcy danych”). Nie
+      pojawiają się one na naszej stronie — działają wyłącznie na stronie operatora po
+      przekierowaniu, gdy rozpoczynasz proces płatności.
+
+s11:
+  title: "Bezpieczeństwo"
+  # Five measures. HTTPS, TLS 1.3, HSTS and PCI DSS are standards' names and stay themselves.
+  items:
+    - id: tls
+      textHtml: >-
+        Strona dostępna jest wyłącznie przez połączenie szyfrowane <strong>HTTPS (TLS 1.3)</strong>.
+    - id: hsts
+      textHtml: >-
+        Wymuszamy <em>HTTP Strict Transport Security</em> (HSTS) z opcją preload — przeglądarka nie
+        pozwoli na nieszyfrowane połączenie z naszą domeną.
+    - id: cards
+      textHtml: >-
+        <strong>Nie przechowujemy pełnych danych kart płatniczych ani kodów BLIK</strong> na
+        serwerach Fundacji — wprowadzasz je bezpośrednio na hostowanej stronie operatora (Axepta
+        BNP Paribas / PayU), który tokenizuje je i odpowiada za ich bezpieczeństwo zgodnie z normą
+        PCI DSS.
+    - id: relay
+      textHtml: >-
+        Nasz serwer nie pośredniczy w transmisji danych płatniczych — do bramki przekazujemy
+        jedynie kwotę, walutę, adres e-mail oraz identyfikator darowizny, wyłącznie szyfrowanym
+        połączeniem TLS, w celu wygenerowania linku do strony płatności.
+    - id: mailboxes
+      textHtml: >-
+        Adresy e-mail przechowywane są w skrzynkach pocztowych zabezpieczonych mechanizmami
+        uwierzytelniania wieloskładnikowego.
+
+s12:
+  title: "Zmiany polityki"
+  p1: >-
+    Politykę aktualizujemy, gdy zmienia się sposób przetwarzania danych — na przykład gdy
+    uruchomimy nowe metody płatności, dodamy formularze lub zmienimy infrastrukturę techniczną.
+    Każda zmiana jest oznaczona nowym numerem wersji i datą obowiązywania (u góry tego dokumentu).
+  # Added in version 1.2, together with the English and French versions of this document — the same
+  # clause the donation terms gained as § 5 ust. 3, and for the same reason: the reader is told,
+  # inside the document itself, which of its versions is the one that binds.
+  p2: >-
+    Polityka jest publikowana w języku polskim, a także w tłumaczeniu na język angielski
+    i francuski. Wersją wiążącą jest wersja polska; tłumaczenia mają charakter wyłącznie
+    informacyjny, a w razie rozbieżności między wersjami językowymi rozstrzygające jest brzmienie
+    wersji polskiej.
+  p3Html: >-
+    Pełną historię zmian możesz zawsze otrzymać, pisząc na
+    <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>.
+
+history:
+  # Newest first. `version` and `date` are structural — the line above each note is composed at
+  # render from them, so a Polish date can never travel inside a translated sentence. `id` is what
+  # the desk keys an entry by; it is the version with its dot replaced, because a dot is not legal
+  # inside a key part.
+  label: "Historia zmian"
+  entries:
+    - id: "v1-2"
+      version: "1.2"
+      date: "2026-09-04"
+      note: >-
+        Dodano § 12: Polityka jest publikowana także w tłumaczeniu na język angielski i francuski,
+        przy czym wersją wiążącą pozostaje wersja polska.
+    - id: "v1-1"
+      version: "1.1"
+      date: "2026-06-03"
+      note: >-
+        Doprecyzowano opis przebiegu płatności online: płatność odbywa się w modelu przekierowania
+        na hostowaną stronę operatora, a pełne dane płatnicze nie przechodzą przez serwery
+        Fundacji. Dodano informację o przelewach cyklicznych (zleceniach stałych) jako formie
+        wsparcia regularnego. Dodano obsługę formularza mecenatu (zapisywanie zgłoszeń: imię,
+        nazwisko, e-mail — na podstawie zgody; dane przechowywane na serwerach w Unii
+        Europejskiej).
+    - id: "v1-0"
+      version: "1.0"
+      date: "2026-05-13"
+      note: >-
+        Wersja pierwotna polityki, opublikowana wraz z uruchomieniem witryny voctensemble.com.

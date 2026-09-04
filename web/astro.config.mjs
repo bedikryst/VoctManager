@@ -56,20 +56,24 @@ export default defineConfig({
     //    answers `noindex` is a contradiction Search Console reports as an error, so this list and
     //    the pages' own robots meta have to be kept in agreement in BOTH directions — which is how
     //    the hand-added /polityka-prywatnosci entry below came to be wrong.
+    //    /polityka-prywatnosci is now a real route in three locales and the integration DOES
+    //    discover it, so the exclusion has moved into the filter — one test over the three URLs.
     //  - `i18n`: emit `<xhtml:link rel="alternate" hreflang>` groups. Only pages that actually
     //    exist in a locale are grouped (currently just /o-nas → pl/en/fr); Polish-only pages get a
     //    single self-referential entry. Mirrors the per-page hreflang already set in BaseLayout.
     // Output lives at /sitemap-index.xml (NOT /sitemap.xml) — robots.txt points there.
     sitemap({
       filter: (page) =>
-        page !== "https://voctensemble.com/press" && page !== "https://voctensemble.com/404",
-      // NO customPages. /polityka-prywatnosci was declared here — the privacy policy is a
-      // hand-authored static file (public/polityka-prywatnosci.html) that the integration cannot
-      // discover — but that file serves `<meta name="robots" content="noindex,follow">`, so the
-      // sitemap was submitting a URL the page itself refuses to be indexed at. Honouring the page
-      // is the change that costs nothing: it was never indexable anyway. If the policy SHOULD be
-      // indexed (it is a public legal document, and most sites do index theirs), drop the noindex
-      // from that file first and re-add the customPages entry — in that order.
+        page !== "https://voctensemble.com/press" &&
+        page !== "https://voctensemble.com/404" &&
+        !/\/polityka-prywatnosci$/.test(new URL(page).pathname),
+      // NO customPages. The privacy policy used to be declared here — it was a hand-authored
+      // static file the integration could not discover — but it serves
+      // `<meta name="robots" content="noindex,follow">`, so the sitemap was submitting a URL the
+      // page itself refuses to be indexed at. It is a real route in three locales now and the
+      // integration finds all three, so the exclusion is a filter test instead. If the policy
+      // SHOULD be indexed (it is a public legal document, and most sites do index theirs), drop
+      // the noindex from PrivacyPage.astro first and then this clause — in that order.
       i18n: {
         defaultLocale: "pl",
         locales: { pl: "pl", en: "en", fr: "fr" },
