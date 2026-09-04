@@ -169,7 +169,12 @@ const CONTACT_CONTRACT: readonly CopyEntry[] = [
   { kind: "field", path: "locus.eyebrow", label: "Fundacja · rubryka", note: "The vernacular of `Fundatio`." },
   { kind: "field", path: "locus.h2", label: "Fundacja · nagłówek" },
   { kind: "field", path: "locus.foundationLabel", label: "Fundacja · etykieta kolumny" },
-  { kind: "field", path: "locus.mission", label: "Fundacja · czym jest" },
+  {
+    kind: "field",
+    path: "locus.mission",
+    label: "Fundacja · czym jest",
+    note: "PRINTED ON TWO PAGES. /kolofon's `Fundatio` rubric reads this same field rather than holding a copy of it, so an edit here changes the colophon too — which is the point: two rows carrying one paragraph is drift the desk cannot see.",
+  },
   { kind: "field", path: "locus.foundationLink", label: "Fundacja · odnośnik", note: "Keep the trailing arrow." },
   { kind: "field", path: "locus.addressLabel", label: "Adres · etykieta kolumny" },
   { kind: "field", path: "locus.addressNote", label: "Adres · nota" },

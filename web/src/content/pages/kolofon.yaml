@@ -1,0 +1,202 @@
+# The editorial text of /kolofon — Polish, and Polish only.
+#
+# THE PAGE'S ONE RULE GOVERNS THIS FILE TOO: a colophon SHOWS its craft, it does not explain it.
+# That is why `regula` is four sentences with no gloss after any of them, and why nothing here may
+# grow a paragraph about the site's own metaphors — every block is set in the thing it describes,
+# and prose saying so would be the one thing the page must never carry.
+#
+# WHAT IS NOT HERE, because something else already owns it:
+#
+#   the LATIN rubrics (Colophon, Sigillum, Regula, Constructio, Typi, Imagines, Fundatio, Auctor,
+#     Gratiarum actio) and the closing inscription — locale-neutral, so they stay in the markup
+#     exactly as the nav's Latin does; only the vernacular tier beside them is below;
+#   the FOUNDATION'S REGISTRY DATA — the address, KRS, NIP, REGON and the board's names are data
+#     and proper names, printed identically in every locale, and they sit in the component beside
+#     the footer's copy of the same three numbers;
+#   the FOUNDATION'S MISSION, which stands on /kontakt as well and is read FROM there
+#     (`page.kontakt.locus.mission`): one paragraph, one home, so an edit on one page cannot leave
+#     the other saying something else;
+#   the `Imagines` ROWS — every name, count, evening and place in that rubric is derived from
+#     `concerts.yaml` at build: the evening's title through the desk's overlay, the place through
+#     `i18n/content/miejsca.ts`, the frame count through /obrazy's own declensions, so a credit
+#     added to the gallery reaches this page with no second edit;
+#   the TYPEFACE NAMES and the collaborators' NAMES — proper names, in the component;
+#   the IMPRESSION LINE — a phrase that must agree with a date computed at build, which makes it
+#     chrome (`i18n/content/kolofon.ts`) on the same test /obrazy's counted nouns take.
+#
+# WHY THIS IS YAML AND NOT A TypeScript MODULE, and where the chrome went instead: the line every
+# page on the desk draws — completeness can be demanded of a landmark, never of a paragraph.
+# docs/web-copy-desk-2026-09.md §6r.
+#
+# TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under this page's desk
+# key — `page.kolofon.` + the dotted path below — and are read through `lib/copyOverlay`.
+#
+# NO TYPOGRAPHY. Write the prose plainly: `lib/typo.ts` pins Polish orphans and French punctuation
+# spacing in the rendered HTML at build.
+
+meta:
+  title: "Kolofon — VoctEnsemble · VoctFoundation"
+  description: >-
+    Kolofon strony VoctEnsemble — kroje pisma, konstrukcja, fotografie, fundacja, autorzy.
+
+hero:
+  # Vernacular gloss of the Latin rubric `Colophon`, which stands beside it unchanged in every
+  # locale.
+  eyebrow: "Pieczęć rzemiosła"
+  # The page's own name, with the full stop the design sets it with. What the breadcrumb and the
+  # footer's Index column call this page is the chrome's `colophon` label, not this — the h1 is
+  # allowed its punctuation, a table of contents is not.
+  title: "Kolofon."
+  # The definition, standing alone. The sentence that used to follow it is gone on purpose: the
+  # lede names three things a colophon records — place, time, who published — and the last two
+  # lines of the page ARE those three, in the historical order. Do not answer them here.
+  lede: >-
+    Krótka inskrypcja na końcu książki, w której drukarz zapisywał miejsce i czas oraz to, kto
+    rzecz wydał.
+
+sigillum:
+  # Gloss of `Sigillum`.
+  eyebrow: "Pieczęć wizyty"
+  # Belongs to the GENERATED seal and is shown only once the script has drawn one, so every clause
+  # has to be true of it: the seed lives in sessionStorage, which is what makes the seal the same
+  # for one visit, different on the next and gone with the tab. A visitor without JS sees the
+  # anchor circle and no claim about it.
+  caption: "ta sama, póki tu jesteś · nowa, gdy wrócisz · znika, gdy zamkniesz tę stronę"
+
+regula:
+  # Gloss of `Regula`.
+  eyebrow: "Reguła"
+  lead: "Strona jest składana według czterech zdań."
+  # Four inscriptions, and each one is demonstrated by the page rather than explained by it: two by
+  # the row they sit in (every row here is ruled, then inked), two by the whole site, which lights
+  # its photographs and moves none of its text. Keep them as sentences of one clause — a rule that
+  # needs a subordinate clause is a paragraph, and this block may not hold one.
+  #
+  # `id` is what the desk keys a line by, so reordering them re-keys nothing.
+  items:
+    - id: "blado"
+      text: "Wszystko czeka wpisane blado, zanim zostanie dopisane."
+    - id: "liniowanie"
+      text: "Kartę liniuje się przed pierwszą literą."
+    - id: "swiatlo"
+      text: "Fotografię wydobywa światło."
+    - id: "litera"
+      text: "Litera zostaje tam, gdzie ją położono."
+
+constructio:
+  # Gloss of `Constructio`.
+  eyebrow: "Konstrukcja"
+  lead: >-
+    Strona zbudowana w Astro: statyczny HTML, a wyspy Reacta wchodzą tylko tam, gdzie potrzebny
+    jest stan po stronie klienta. CSS pisany ręcznie, osobno dla każdej strony.
+  # A definition list of materials, and it runs on ONE negation ("bez cookies"). A second denial
+  # would turn a list of what the page is made of into a list of what it refuses — which is why
+  # the video row states "własny odtwarzacz" positively and the privacy row states where the code
+  # comes from rather than where it does not.
+  #
+  # `term` is the label in the margin and `value` the material beside it; both are read as one
+  # line, so they travel together.
+  items:
+    - id: "framework"
+      term: "Framework"
+      value: "Astro · statyczny HTML + hydratowane wyspy Reacta"
+    - id: "scroll"
+      term: "Płynność scrolla"
+      value: "Lenis · hostowany z naszej domeny"
+    - id: "motion"
+      term: "Animacja"
+      value: "CSS, fonty wariacyjne i IntersectionObserver"
+    - id: "data"
+      term: "Dane"
+      value: "Astro Content Collections · YAML z walidacją Zod"
+    - id: "images"
+      term: "Obrazy"
+      value: "AVIF i WebP w wielu rozmiarach, generowane przy budowaniu"
+    - id: "video"
+      term: "Wideo"
+      value: "AV1 i H.264 · własny odtwarzacz, pliki z naszej domeny"
+    - id: "analytics"
+      term: "Pomiar"
+      value: "Plausible · anonimowo, bez cookies, serwery w UE"
+    - id: "privacy"
+      term: "Prywatność"
+      value: "cały kod i wszystkie kroje pochodzą z tej domeny; Plausible jest jedynym wyjątkiem"
+
+typi:
+  # Gloss of `Typi`.
+  eyebrow: "Kroje pisma"
+  # Each row is set in the face it names, so the specimen is the face's own name and stays in the
+  # component: it is a proper name, and it is also the string whose weight axis the row animates.
+  # What is here is the note under it — the designer, the classification, and the job the face does
+  # on this site.
+  items:
+    - id: "cormorant"
+      meta: "Christian Thalmann · garaldowa antykwa na nagłówki i tekst"
+    - id: "cinzel"
+      meta: "Natanael Gama · kapitała inskrypcyjna na rubryki i cyfry rzymskie"
+    - id: "sans"
+      meta: "Mike Abbink i Bold Monday dla IBM · sans-serif do czytania"
+    - id: "plex"
+      meta: "Mike Abbink i Bold Monday dla IBM · monospace na meta i daty"
+  license: >-
+    Wszystkie cztery na licencji SIL Open Font License · hostowane z naszej domeny jako woff2
+
+imagines:
+  # Gloss of `Imagines`. /obrazy's colophon glosses the same Latin as "Fotografie" — one rubric,
+  # one gloss, because a reader meeting the two pages is meeting one archive.
+  eyebrow: "Fotografie"
+  # Stands over the list of hands and qualifies it. Without it the list reads as a claim that those
+  # six names took every photograph on the site, where most of the archive is the ensemble
+  # photographing itself — `lib/photoCredit` says the same thing inside a run's own credit line and
+  # /obrazy's colophon says it once more, so keep all three saying one thing.
+  lead: >-
+    Zdjęcia z Koncertów Duchowych. Fotografie bez podpisu — tu i w całym serwisie — pochodzą
+    z archiwum zespołu i są własnością fundacji.
+
+fundatio:
+  # Gloss of `Fundatio`.
+  eyebrow: "Fundacja"
+  # The four labels in the margin of the registry rows. KRS, NIP and REGON are the Polish
+  # registers' own acronyms and stay in the markup untranslated, exactly as the footer prints them.
+  seatLabel: "Siedziba"
+  boardLabel: "Zarząd"
+  statuteLabel: "Statut"
+  # The founding document, named in full because this row is where a grantor goes looking for it.
+  # The footer names the SAME file more briefly ("Statut fundacji"); the two may read differently,
+  # they may not name two documents.
+  statuteLink: "Statut Fundacji VoctFoundation (PDF)"
+  policyLabel: "Polityka"
+
+auctor:
+  # Gloss of `Auctor`. This rubric signs the CRAFT, where `Fundatio` above it signs the publisher —
+  # which is why the address under it is the author's own domain and not the foundation's.
+  eyebrow: "Autor"
+  # Under a name set at up to 60px, so it is read as a caption to it: two words, no verb.
+  role: "projekt · kod"
+
+gratia:
+  # Gloss of `Gratiarum actio`.
+  eyebrow: "Podziękowania"
+  lead: >-
+    Twórczynie i twórcy, których praca składała się na kolejne Koncerty Duchowe — nazwiska
+    z plakatów i programów.
+  # A factual credit list, not an endorsement: each row states what somebody did and for which
+  # evening. The NAMES are in the component (people, studios and institutions, so never copy);
+  # what is here is the role and the occasion, which is the half a language renders.
+  #
+  # The evenings are named as this site names them everywhere else — the concert titles come from
+  # `concerts.yaml` through the desk's overlay on every other surface, so a translation of these
+  # rows follows those renderings rather than inventing new ones.
+  items:
+    - id: "garbacz"
+      role: "realizacja nagrań · Kontemplacja Wcielenia, 2024"
+    - id: "bystrzycka"
+      role: "reżyseria świateł · wybrane koncerty 2024–2025"
+    - id: "kuzma"
+      role: "animacja wizualna · wybrane koncerty 2024–2025"
+    - id: "ropotan"
+      role: "skrzypce · Wołanie Gór, 2024"
+    - id: "organy"
+      role: "organy · Hymn Poległym, 2025"
+    - id: "carpediem"
+      role: "współorganizacja · wybrane wydarzenia"
