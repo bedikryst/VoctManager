@@ -208,7 +208,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
             ))
           }
 
-          <p class="letter-signature reveal" data-d="4">
+          {/* The one node on this page where the lead register is literally true of the object:
+              a signature is written ON a ruled line. `data-d="2"` rather than the stanzas' next
+              step, because the ink+lead pair pins `transition-delay: 0.18s` and out-specifies
+              `--reveal-delay` — 2 is what this node actually runs at, so it is what it declares. */}
+          <p class="letter-signature reveal reveal-rule" data-d="2">
             <span class="letter-sig-name">Florent de Bazelaire</span>
             <span class="letter-sig-meta">{c.letter.signatureMeta}</span>
           </p>
@@ -248,7 +252,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <p>{c.ensemble.p2}</p>
           <p set:html={c.ensemble.p3Html}></p>
         </div>
-        <div class="voces-collab reveal" data-d="2">
+        {/* Ink + lead: the hairline over the collaborators is a rule the layout already carried,
+            and it opens the block it rules. `data-d="2"` resolves to 0.18s, which is exactly the
+            delay the pair pins on an ink+lead node — the attribute and the register agree, and
+            they have to be changed together or neither (registers.css). */}
+        <div class="voces-collab reveal reveal-rule" data-d="2">
           <span class="collab-label">{c.ensemble.collabLabel}</span>
           <p>{c.ensemble.collabText}</p>
         </div>
@@ -350,6 +358,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                       loading="lazy"
                       decoding="async"
                     />
+                    {/* Photography takes the light register, not the ink — the veil is bounded to
+                        the image while the row's words keep inking. The host is well under a
+                        screen tall, so it arrives with its photograph and needs no --veil-delay.
+                        `--reveal-delay` still reaches it from the row, which is what keeps a run
+                        of milestones crossing the trigger together from lighting in unison. */}
+                    <span class="reveal-light" aria-hidden="true"></span>
                   </figure>
                 )}
                 <div class="milestone-body">
@@ -533,6 +547,10 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .letter-mark { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .26em; line-height: 1.45; text-transform: uppercase; color: var(--candle-ink); margin: 0; }
   .letter-para { margin: 0; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(20px, 2.2vw, 30px); line-height: 1.48; color: var(--ink); letter-spacing: -.005em; }
   .letter-signature { margin-top: clamp(40px, 6vw, 80px); padding-top: 22px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  /* Lead register: the real border stays for no-JS and reduced-motion visitors and is handed to
+     the drawn pseudo-rule only under the motion gate. `--rule-ink` is left at its default, which
+     is already `var(--line)` — the colour these two borders use. */
+  :global(html.voct-motion) .letter-signature.reveal-rule { border-top-color: transparent; }
   .letter-sig-name { font-family: var(--serif); font-style: italic; font-size: clamp(18px, 1.8vw, 24px); color: var(--ink); }
   .letter-sig-meta { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-muted); }
   /* Sticky: the portrait is ~400px tall against a ~2000px letter — static it would leave
@@ -553,6 +571,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
   /* Ensemble — collaborators line */
   .voces-collab { margin-top: clamp(36px, 5vw, 56px); padding-top: clamp(22px, 3vw, 30px); border-top: 1px solid var(--line); max-width: 720px; }
+  :global(html.voct-motion) .voces-collab.reveal-rule { border-top-color: transparent; }
   .collab-label { font-family: var(--capitalis); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle-ink); }
   .voces-collab p { margin: 12px 0 0; font-size: 16px; line-height: 1.75; color: var(--ink-muted); max-width: 62ch; }
 
@@ -582,7 +601,9 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .milestone-link:hover { color: var(--candle-blue); border-bottom-color: var(--candle-blue); }
   /* Frame owns the ratio (3:2) and clips — so any source crop renders identically,
      regardless of the uploaded photo's intrinsic dimensions. */
-  .milestone-media { margin-inline: 40px; aspect-ratio: 3 / 2; overflow: hidden; }
+  /* `position: relative` is what bounds the light register's veil to the photograph instead of
+     letting it hang off whichever ancestor happens to be positioned. */
+  .milestone-media { position: relative; margin-inline: 40px; aspect-ratio: 3 / 2; overflow: hidden; }
   .milestone-media :global(picture) { display: block; width: 100%; height: 100%; }
   .milestone-media :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
   .milestones-more { padding-top: 10px; }

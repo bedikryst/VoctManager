@@ -496,7 +496,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
             const columns = [era.entries.slice(0, half), era.entries.slice(half)];
             return (
               <div class="rep-era">
-                <div class="rep-era-head reveal">
+                {/* Ink + lead — the shape Etap 7 named and left unresolved. It survives that
+                    stage's constraint for the same reason `.station-inscriptio` does: ONE node
+                    per era, never a sibling group, so there is no stagger for the pinned 0.18s
+                    to cost. The era's rows below it stay ink-only — 6–20 hairlines in a column
+                    would draw in unison. */}
+                <div class="rep-era-head reveal reveal-rule">
                   <h3 class="rep-era-title">{era.title}</h3>
                   <span class="rep-era-span">{era.span}</span>
                 </div>
@@ -747,6 +752,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .rep-era { margin: 0 0 clamp(46px, 6vw, 84px); }
   .rep-era:last-of-type { margin-bottom: 0; }
   .rep-era-head { display: flex; align-items: baseline; gap: 16px; margin: 0 0 22px; padding-bottom: 14px; border-bottom: 1px solid var(--line-strong); }
+  /* The one drawn rule on the site anchored to an element's BOTTOM. The register warns against
+     that — the trigger fires on a node's top edge, so a bottom rule draws below the line that
+     fired it — but this head is a single baseline row, ~40px, and the era's rule belongs under
+     its name rather than over it. Any taller host must take the default top inset instead. */
+  :global(html.voct-motion) .rep-era-head.reveal-rule { border-bottom-color: transparent; --rule-ink: var(--line-strong); --rule-inset: auto 0 0 0; }
   .rep-era-title { font-family: var(--serif); font-weight: 300; font-size: clamp(26px, 3.2vw, 40px); line-height: 1; letter-spacing: -.01em; color: var(--ink); margin: 0; }
   .rep-era-span { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-muted); }
   .rep-cols { display: grid; grid-template-columns: 1fr 1fr; column-gap: clamp(40px,5vw,80px); align-items: start; }

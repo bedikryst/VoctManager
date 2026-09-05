@@ -173,7 +173,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <p set:html={copy.after.pressHtml} />
         </div>
 
-        <div class="voices reveal">
+        {/* Ink + lead. Both hairlines this page hands to the register are LONE — one per block,
+            never a set: three `.channel` rules would draw in unison, because under the `authored`
+            cadence the lead register has no stagger of its own (docs/web-reveal-remediation.md,
+            Etap 7). The pair pins `transition-delay: 0.18s`, which is this node's cadence. */}
+        <div class="voices reveal reveal-rule">
           <span class="voices-label">{copy.voices.label}</span>
           <p class="voices-names">
             {copy.voices.names.map((v, i) => (
@@ -217,7 +221,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           </div>
         </div>
 
-        <div class="locus-legal reveal">
+        <div class="locus-legal reveal reveal-rule">
           <p class="rodo-admin">
             <span class="rodo-admin-label">{copy.legal.controllerLabel}</span>
             Fundacja VoctFoundation · KRS 0001237252 · NIP 6762718992 · REGON 544621525
@@ -334,6 +338,9 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
   /* Three voices — honest signature */
   .voices { margin: clamp(40px, 5vw, 60px) 0 0; padding-top: clamp(28px, 3.6vw, 40px); border-top: 1px solid var(--line); }
+  /* The real border stays for no-JS and reduced-motion visitors; only under the motion gate is it
+     handed to the drawn pseudo-rule. `--rule-ink` defaults to `var(--line)`, the colour used here. */
+  :global(html.voct-motion) .voices.reveal-rule { border-top-color: transparent; }
   .voices-label { font-family: var(--capitalis); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-muted); }
   .voices-names { margin: 14px 0 0; font-family: var(--serif); font-weight: 300; font-size: clamp(22px, 2.6vw, 30px); line-height: 1.35; color: var(--ink); }
   /* The separator is aria-hidden, but it is the only thing keeping three names from running
@@ -359,6 +366,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   /* Administrative fine print — lives inside the locus band, hairline-separated, so it
      reads as the practical tail of one section instead of floating small print on paper. */
   .locus-legal { margin-top: clamp(40px, 5vw, 64px); padding-top: clamp(26px, 3.2vw, 36px); border-top: 1px solid var(--line); }
+  :global(html.voct-motion) .locus-legal.reveal-rule { border-top-color: transparent; }
   .rodo-admin { font-family: var(--mono); font-size: 11px; line-height: 1.85; letter-spacing: .03em; color: var(--ink-muted); margin: 0 0 14px; }
   .rodo-admin-label { display: block; font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--candle-ink); margin-bottom: 6px; }
   .rodo-note { margin: 0; font-family: var(--mono); font-size: 10.5px; line-height: 1.85; letter-spacing: .02em; color: var(--ink-muted); max-width: 78ch; }

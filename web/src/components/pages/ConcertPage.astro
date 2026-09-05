@@ -434,8 +434,11 @@ const jsonLd =
         <h1 class="kd-hero-title reveal ink-press" data-d="1">{concertTitle}</h1>
         <p class="kd-hero-meta reveal" data-d="1">{heroMeta}{heroTime ? ` · ${heroTime}` : ""}</p>
 
+        {/* Ink + lead, the same pairing `/koncerty` gives the station incipit this hero is the
+            detail of. `data-d="2"` is 0.18s, which is exactly what the pair pins — the attribute
+            and the register agree by coincidence, so neither moves without the other. */}
         {c.inscriptio && (
-          <p class="kd-inscriptio reveal" data-d="2">
+          <p class="kd-inscriptio reveal reveal-rule-v" data-d="2">
             <em class="kd-inscriptio-lat">{c.inscriptio}</em>
             {/* The vernacular and the citation are one line of their own under the verse — the
                 citation cites the verse, so it travels with the gloss rather than claiming a
@@ -1175,6 +1178,10 @@ const jsonLd =
   .kd-hero-meta { font-family: var(--capitalis); font-size: clamp(11.5px, 1vw, 13px); letter-spacing: .18em; text-transform: uppercase; color: rgba(244, 241, 233, .68); margin: 26px 0 0; }
 
   .kd-inscriptio { margin: clamp(32px, 4.5vw, 52px) 0 0; max-width: 720px; font-family: var(--serif); font-weight: 300; font-size: clamp(16px, 1.5vw, 20px); line-height: 1.55; color: rgba(244, 241, 233, .82); padding-left: 18px; border-left: 1px solid color-mix(in srgb, var(--candle) 46%, transparent); }
+  /* Lead register, top→down. The real border stays for no-JS and reduced-motion visitors; under
+     the motion gate it is handed to the drawn pseudo-rule, which needs `--rule-ink` spelled out
+     because this hairline is gold rather than the register's default `var(--line)`. */
+  :global(html.voct-motion) .kd-inscriptio.reveal-rule-v { border-left-color: transparent; --rule-ink: color-mix(in srgb, var(--candle) 46%, transparent); }
   /* Verse on one line, its gloss on the next, at every width — the pair is one utterance in two
      tongues and the break belongs to that, not to the measure. Run inline behind a separator it
      survived only while the translation fit: the moment it was a word too long it began mid-line
