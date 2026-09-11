@@ -1,9 +1,15 @@
 """
 @file push_service.py
-@description Dual-channel push transport. Composes a localized, role-aware
-             payload via PushPayloadBuilder and delivers it through VAPID
-             (browsers) or FCM (iOS/Android). Stale subscriptions are
+@description Web Push transport. Composes a localized, role-aware payload via
+             PushPayloadBuilder and delivers it through VAPID to the browser
+             push service the subscription names. Stale subscriptions are
              auto-invalidated on permanent failures.
+
+             VAPID IS THE ONLY TRANSPORT, and that is a property of the product:
+             the panel is a PWA, so every device that can hold a subscription is
+             a browser. A native client would arrive with its own vendor SDK and
+             its own subprocessor entry — neither of which should exist here
+             before that client does.
 @architecture Enterprise SaaS 2026
 @module notifications/push_service
 """
@@ -18,13 +24,11 @@ from uuid import UUID
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import translation
-from firebase_admin import messaging
-from firebase_admin.exceptions import FirebaseError
 from pywebpush import WebPushException, webpush
 
 from core.permissions import user_is_manager
 
-from .dtos import PushDeviceRegisterDTO, WebPushSubscribeDTO
+from .dtos import WebPushSubscribeDTO
 from .models import DeviceType, NotificationLevel, PushDevice
 from .push_payloads import PushPayload, PushPayloadBuilder
 
@@ -48,9 +52,6 @@ _VAPID_URGENCY: dict[str, str] = {
 # operational updates.
 _DEFAULT_TTL = 60 * 60 * 24  # 24h
 _URGENT_TTL = 60 * 60 * 72   # 3 days
-
-# FCM permanent-failure codes that mean the token must be retired.
-_FCM_STALE_CODES = frozenset({"UNREGISTERED", "SENDER_ID_MISMATCH", "INVALID_ARGUMENT"})
 
 # HTTP responses from Web Push services that mean the subscription is gone.
 _VAPID_STALE_STATUSES = frozenset({404, 410})
@@ -86,7 +87,7 @@ class PushDispatcherService:
     Public surface:
       • dispatch_to_user — production dispatch from Celery workers.
       • send_test_push   — diagnostic dispatch from Settings UI.
-      • register_web_push / register_device / unregister_device — subscription lifecycle.
+      • register_web_push / unregister_device — subscription lifecycle.
     """
 
     # ------------------------------------------------------------------ #
@@ -104,8 +105,8 @@ class PushDispatcherService:
         """
         Composes a localized payload and fans it out to every active device the
         recipient owns. Failures are logged and re-raised so Celery's retry
-        machinery can apply backoff — transient FCM/VAPID outages should not
-        be silently swallowed.
+        machinery can apply backoff — a transient outage at the browser's push
+        service should not be silently swallowed.
         """
         target = cls._resolve_target(recipient_id)
         if target is None or not target.devices:
@@ -178,20 +179,6 @@ class PushDispatcherService:
         logger.info("[PushService] Web Push subscription registered for UID:%s", dto.user_id)
 
     @classmethod
-    def register_device(cls, dto: PushDeviceRegisterDTO) -> None:
-        """Registers or reactivates an FCM push token (iOS / Android)."""
-        PushDevice.objects.update_or_create(
-            registration_token=dto.registration_token,
-            defaults={
-                "user_id": dto.user_id,
-                "device_type": dto.device_type,
-                "is_active": True,
-                "is_deleted": False,
-            },
-        )
-        logger.info("[PushService] FCM device token registered for UID:%s", dto.user_id)
-
-    @classmethod
     def unregister_device(cls, user_id: str, token: str) -> None:
         """Hard-deletes a push subscription/token (logout or explicit unsubscribe)."""
         deleted_count, _ = PushDevice.objects.filter(
@@ -230,19 +217,11 @@ class PushDispatcherService:
 
     @classmethod
     def _deliver(cls, target: _DispatchTarget, payload: PushPayload) -> int:
-        """Fan the payload out to every transport, and report how many devices it
-        actually reached. Production dispatch ignores the number — a failed push
-        is logged and retried by the task, not surfaced — but `send_test_push`
-        exists to state it, so the transports have to count rather than assume."""
-        web_devices = [d for d in target.devices if d.device_type == DeviceType.WEB]
-        mobile_devices = [d for d in target.devices if d.device_type != DeviceType.WEB]
-
-        delivered = 0
-        if web_devices:
-            delivered += cls._send_vapid_batch(web_devices, payload, target.language)
-        if mobile_devices:
-            delivered += cls._send_fcm_batch(mobile_devices, payload, target.language)
-        return delivered
+        """Send the payload, and report how many devices it actually reached.
+        Production dispatch ignores the number — a failed push is logged and
+        retried by the task, not surfaced — but `send_test_push` exists to state
+        it, so the transport has to count rather than assume."""
+        return cls._send_vapid_batch(list(target.devices), payload, target.language)
 
     # ------------------------------------------------------------------ #
     # VAPID (Web Push)                                                   #
@@ -302,95 +281,3 @@ class PushDispatcherService:
             )
 
         return delivered
-
-    # ------------------------------------------------------------------ #
-    # FCM (mobile)                                                       #
-    # ------------------------------------------------------------------ #
-
-    @classmethod
-    def _send_fcm_batch(
-        cls,
-        devices: list[PushDevice],
-        payload: PushPayload,
-        language: str,
-    ) -> int:
-        tokens = [d.registration_token for d in devices]
-
-        # Mirror the structured payload into FCM's `data` channel so the mobile
-        # client can render the same UX (deep link, level styling, actions).
-        data = {
-            "type": payload.notification_type,
-            "level": payload.level,
-            "url": payload.url,
-            "tag": payload.tag,
-            "lang": language,
-        }
-        if payload.actions:
-            data["actions"] = json.dumps(
-                [
-                    {"action": a.action, "title": a.title, **({"url": a.url} if a.url else {})}
-                    for a in payload.actions
-                ],
-                ensure_ascii=False,
-            )
-
-        priority = "high" if payload.level in (NotificationLevel.URGENT, NotificationLevel.WARNING) else "normal"
-        ttl_seconds = _URGENT_TTL if payload.level == NotificationLevel.URGENT else _DEFAULT_TTL
-
-        message = messaging.MulticastMessage(
-            notification=messaging.Notification(title=payload.title, body=payload.body),
-            data={k: str(v) for k, v in data.items()},
-            tokens=tokens,
-            android=messaging.AndroidConfig(
-                priority=priority,
-                ttl=ttl_seconds,
-                collapse_key=payload.tag[:64] if payload.tag else None,
-            ),
-            apns=messaging.APNSConfig(
-                headers={
-                    "apns-priority": "10" if priority == "high" else "5",
-                    "apns-collapse-id": payload.tag[:64] if payload.tag else "",
-                },
-                payload=messaging.APNSPayload(
-                    aps=messaging.Aps(
-                        alert=messaging.ApsAlert(title=payload.title, body=payload.body),
-                        sound="default",
-                        thread_id=payload.notification_type,
-                    ),
-                ),
-            ),
-        )
-
-        try:
-            # send_each_for_multicast is the modern replacement for the
-            # deprecated send_multicast batch endpoint (firebase-admin >= 6.2).
-            response = messaging.send_each_for_multicast(message)
-        except FirebaseError as exc:
-            logger.error("[PushService] FCM multicast error: %s", exc, exc_info=True)
-            raise
-
-        if response.failure_count == 0:
-            return len(tokens)
-
-        stale_tokens: list[str] = []
-        for idx, resp in enumerate(response.responses):
-            if resp.success:
-                continue
-            code = getattr(getattr(resp, "exception", None), "code", "UNKNOWN")
-            if code in _FCM_STALE_CODES:
-                stale_tokens.append(tokens[idx])
-            else:
-                logger.error(
-                    "[PushService] FCM send failed for token %s… (code=%s)",
-                    tokens[idx][:12], code,
-                )
-
-        if stale_tokens:
-            invalidated = PushDevice.objects.filter(
-                registration_token__in=stale_tokens
-            ).update(is_active=False)
-            logger.warning(
-                "[PushService] Auto-invalidated %d stale FCM tokens.", invalidated,
-            )
-
-        return response.success_count

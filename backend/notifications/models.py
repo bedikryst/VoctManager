@@ -266,11 +266,15 @@ class Notification(EnterpriseBaseModel):
 
 class DeviceType(models.TextChoices):
     """
-    Categorization of push target platforms for payload optimization.
+    Platform of a registered push target.
+
+    One member, and deliberately so: the panel is a PWA, so every subscription
+    this system can hold belongs to a browser and is delivered over VAPID. The
+    enum survives its own singleton because a native client would add a value
+    here and nowhere else — but until such a client exists, listing platforms
+    nothing can register would describe an ambition, not the data.
     """
     WEB = 'WEB', _('Web Browser')
-    IOS = 'IOS', _('Apple iOS')
-    ANDROID = 'ANDROID', _('Google Android')
 
 
 class PushDevice(EnterpriseBaseModel):
@@ -286,7 +290,7 @@ class PushDevice(EnterpriseBaseModel):
     )
     registration_token = models.TextField(
         unique=True,
-        help_text=_("The FCM/APNs device token (mobile) or Web Push endpoint URL (web).")
+        help_text=_("The Web Push endpoint URL the browser's push service assigned to this subscription.")
     )
     p256dh_key = models.TextField(
         null=True,

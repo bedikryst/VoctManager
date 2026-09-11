@@ -1,0 +1,78 @@
+---
+/**
+ * @file NoticeSignup.astro
+ * @description The concert notice list's sign-up, wherever it stands: the rubric, the band's own
+ *  two sentences, the island that takes the address, and the no-JavaScript fallback. Callers
+ *  supply only the section around it — its landmark, its `id`, its ground.
+ *
+ *  ONE COMPONENT IS WHAT MAKES SEVERAL PLACEMENTS SAFE. `surface` on a consent record names the
+ *  screen the clause was read on, so several values are a finer record rather than a weaker one —
+ *  what would make it untrue is one value standing for several wordings. That is impossible while
+ *  every placement mounts THIS file: one clause (`i18n/content/nuntius.ts`), one version, named by
+ *  the server (`outreach/consent.py`), and one preparation of both.
+ *
+ *  THE PREPARATION IS THE POINT, AND IT IS THE STEP EASIEST TO FORGET. The build's typography and
+ *  link passes skip island subtrees, so a clause handed over raw would be the one sentence on the
+ *  site that never met `lib/typo` — and, in English, the one whose "privacy policy" link pointed
+ *  at the Polish page. `chromeHtmlForIsland` is therefore run here rather than by each caller.
+ *
+ *  ITS VOICE IS THE BAND'S ON /koncerty (`content/pages/koncerty.yaml`, `notice.*`), read here
+ *  through the same desk overlay every page uses. Not a copy of those sentences and not a second
+ *  set beside them: the list says one thing, so a placement that spoke for itself would be the
+ *  drift this component exists to prevent. The heading LEVEL is the caller's, because a page whose
+ *  whole subject is the list opens at `h1` where a band inside a longer page opens at `h2`.
+ * @architecture Astro islands 2026
+ * @module components/NoticeSignup
+ */
+import { NoticeForm } from "../islands/landing/NoticeForm";
+import type { NoticeSurface } from "../islands/landing/api/notices";
+import { KONCERTY_PAGE } from "../i18n/content/koncerty";
+import { NUNTIUS } from "../i18n/content/nuntius";
+import type { Locale } from "../i18n/config";
+import { chromeHtmlForIsland } from "../lib/islandCopy";
+import { pageCopy } from "../lib/pageCopy";
+/* Carried by the component rather than by each caller: what this sheet dresses is mostly rendered
+   by React, so a page that mounted the band without it would show an unstyled form. */
+import "../styles/notice.css";
+
+interface Props {
+  lang: Locale;
+  /** Which screen this consent is being given on. Must exist in the backend's allowlist. */
+  surface: NoticeSurface;
+  /** `h1` on a page that is nothing but this band; `h2` inside a page with its own title. */
+  level?: "h1" | "h2";
+}
+const { lang, surface, level = "h2" } = Astro.props;
+
+const copy = pageCopy(KONCERTY_PAGE, lang);
+const nuntius = NUNTIUS[lang];
+const noticeChrome = {
+  ...nuntius.form,
+  consentHtml: chromeHtmlForIsland(nuntius.form.consentHtml, lang),
+};
+
+/* Capitalised so Astro reads it as a tag name rather than as text. */
+const Heading = level;
+---
+
+<div class="notice-inner">
+  <p class="eyebrow reveal">
+    <span class="lat" lang="la">Nuntius</span>&nbsp;&nbsp;·&nbsp;&nbsp;{nuntius.page.eyebrow}
+  </p>
+  <Heading class="notice-h2 reveal ink-press" data-d="1">{copy.notice.h2}</Heading>
+  <p class="notice-lede reveal" data-d="2">{copy.notice.lede}</p>
+  {/* `client:visible` everywhere it stands: on /koncerty the band sits below six full-screen
+      stations and a reader who never reaches it never pays for the bundle, and on the two pages
+      where it is already in view the observer fires at once. The heading above it is server
+      markup either way, so the band is legible before hydration. */}
+  <NoticeForm
+    client:visible
+    lang={lang}
+    chrome={noticeChrome}
+    copy={{ sentTitle: copy.notice.sentTitle, sentBody: copy.notice.sentBody }}
+    surface={surface}
+  />
+  <noscript>
+    <p class="notice-noscript">{nuntius.form.noscript}</p>
+  </noscript>
+</div>

@@ -122,19 +122,17 @@ Gdy w systemie wydarzy się coś (np. nowa próba, zaproszenie do projektu):
 
 3. PushDispatcherService.dispatch_to_user(recipient_id, ...)
    → pobiera wszystkie aktywne PushDevice użytkownika
-   → rozdziela na WEB i mobile:
+   → wszystkie aktywne subskrypcje idą jedną drogą:
 
-   WEB devices → _send_vapid_batch()
+   → _send_vapid_batch()
      → pywebpush.webpush(
          subscription_info = { endpoint, keys: { p256dh, auth } },
          data = JSON payload,
          vapid_private_key = VAPID_PRIVATE_KEY,
          vapid_claims = { sub: "mailto:noreply@voct.pl" }
        )
-     → Wysyłanie HTTP POST do endpoint URL (np. Google FCM)
+     → Wysyłanie HTTP POST do endpoint URL, który wskazała przeglądarka
      → Google/Mozilla/Apple dostarcza do przeglądarki użytkownika
-
-   mobile devices → _send_fcm_batch() (Firebase Admin SDK)
 
 4. Przeglądarka budzi Service Workera (sw.js):
    → zdarzenie "push" odpala się
@@ -247,7 +245,14 @@ frontend/
 
 ---
 
-## 10. Dlaczego NIE używamy Firebase JS SDK na frontendzie?
+## 10. Dlaczego NIE używamy Firebase?
+
+VAPID jest jedynym transportem, jaki system ma — po obu stronach. Panel jest PWA,
+więc każde urządzenie zdolne utrzymać subskrypcję jest przeglądarką, a Google
+występuje tu wyłącznie jako usługa push przeglądarki (odrębny administrator
+widzący endpoint i metadane), nie jako nasz podprocesor. Gdyby kiedyś powstał
+klient natywny, przyszedłby z własnym SDK i własnym wpisem w rejestrze
+podprocesorów — i dopiero wtedy ten wpis miałby prawo istnieć.
 
 Inne podejście (FCM Web SDK) wymaga:
 

@@ -452,11 +452,6 @@ export type NotificationPreferenceUpdateDTO =
     notification_type: NotificationType;
   };
 
-export interface PushDeviceRegisterDTO {
-  registration_token: string;
-  device_type?: "WEB" | "IOS" | "ANDROID";
-}
-
 export interface WebPushSubscribeDTO {
   endpoint: string;
   p256dh_key: string;

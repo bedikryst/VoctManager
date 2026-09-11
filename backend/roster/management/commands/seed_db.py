@@ -164,7 +164,7 @@ SEED_DOMAIN = "voctmanager.test"
 TZ = DEFAULT_EVENT_TIMEZONE
 # Mirrors LEGAL_DOCS_VERSION in the frontend's LegalContent — the version every
 # seeded member is recorded as having accepted at activation.
-TERMS_VERSION = "2026-07-09"
+TERMS_VERSION = "2026-09-05"
 
 
 # --------------------------------------------------------------------------- #

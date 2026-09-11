@@ -6,7 +6,8 @@
  *
  *  THE PAGE TALKS; THE CONCERTS TALK; THE CATALOGUE DOES NOT. Three sources meet on this route and
  *  the distinction is the whole reason it is legible. What the PAGE says — the hero, the four
- *  rules, the two section heads, the unwritten station, the closing invitation — is prose in
+ *  rules, the two section heads, the unwritten station, the notice band, the closing invitation —
+ *  is prose in
  *  `src/content/pages/koncerty.yaml`, on the desk, translated per field. What a CONCERT says is
  *  `concerts.yaml` read through the desk's overlay by concert key, exactly as /koncerty/[id] reads
  *  it. Era names are labels and live in `i18n/content/repertuar.ts`, because the landing prints
@@ -55,6 +56,14 @@ const koncertyCopySchema = z
       .strict(),
     next: z
       .object({ title: z.string(), meta: z.string(), essence: z.string(), cta: z.string() })
+      .strict(),
+    notice: z
+      .object({
+        h2: z.string(),
+        lede: z.string(),
+        sentTitle: z.string(),
+        sentBody: z.string(),
+      })
       .strict(),
     rites: z
       .object({
@@ -141,6 +150,31 @@ const KONCERTY_CONTRACT: readonly CopyEntry[] = [
     path: "next.cta",
     label: "Koncert bez daty · przycisk",
     note: "Keep the trailing arrow — the site draws it no other way.",
+  },
+
+  // ── Zawiadomienie ─────────────────────────────────────────────────────────────────────────
+  {
+    kind: "field",
+    path: "notice.h2",
+    label: "Zawiadomienie · nagłówek",
+    note: "Read directly under `Koncert bez daty`, as the second thing offered to a reader who has just been told there is no next evening yet.",
+  },
+  {
+    kind: "field",
+    path: "notice.lede",
+    label: "Zawiadomienie · zdanie",
+    note: "One negation in the passage, at its end — the site's rule. It states a frequency, not a relationship.",
+  },
+  {
+    kind: "field",
+    path: "notice.sentTitle",
+    label: "Zawiadomienie · po wysłaniu, tytuł",
+  },
+  {
+    kind: "field",
+    path: "notice.sentBody",
+    label: "Zawiadomienie · po wysłaniu, zdanie",
+    note: "Never says the reader is subscribed — nothing is stored as a consent until the link in the mail is clicked.",
   },
 
   // ── Reguły wieczoru ───────────────────────────────────────────────────────────────────────

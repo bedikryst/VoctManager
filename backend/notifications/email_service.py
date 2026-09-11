@@ -64,11 +64,24 @@ class EmailDispatcherService:
         template_name: str,
         context: dict[str, Any],
         fallback_language: str = 'en',
-        email_type: str = EmailType.CRITICAL_SECURITY
+        email_type: str = EmailType.CRITICAL_SECURITY,
+        from_email: str | None = None,
+        reply_to: list[str] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         """
         Synchronous dispatch interface for direct email operations.
         Enforces contextual internationalization.
+
+        `from_email` overrides the panel's own sender for mail addressed to somebody
+        outside the ensemble — see `settings.PUBLIC_FROM_EMAIL`. Everything else keeps
+        `DEFAULT_FROM_EMAIL`, so no existing caller changes.
+
+        `reply_to` and `headers` exist for the same recipient. A member replying to a
+        notification is replying to the panel that produced it; a stranger replying to a
+        public mail is replying to the foundation, and the address they are answering is
+        printed in that mail's own footer. `headers` carries what a bulk-mail recipient's
+        client reads rather than displays — `List-Unsubscribe` above all.
         """
         # Ensure the template's <html lang> matches the render language even for
         # account emails (notification emails already inject `lang`).
@@ -79,7 +92,10 @@ class EmailDispatcherService:
                 subject=subject,
                 template_name=template_name,
                 context=context,
-                email_type=email_type
+                email_type=email_type,
+                from_email=from_email,
+                reply_to=reply_to,
+                headers=headers,
             )
 
     @classmethod
@@ -256,6 +272,9 @@ class EmailDispatcherService:
         context: dict[str, Any],
         email_type: str,
         attachments: list[tuple[str, str, str]] | None = None,
+        from_email: str | None = None,
+        reply_to: list[str] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         """
         Low-level transport orchestrator.
@@ -272,17 +291,22 @@ class EmailDispatcherService:
             msg = EmailMultiAlternatives(
                 subject=subject,
                 body=text_content,
-                from_email=settings.DEFAULT_FROM_EMAIL,
+                from_email=from_email or settings.DEFAULT_FROM_EMAIL,
                 to=[recipient_email],
+                reply_to=reply_to,
+                headers=headers,
             )
             msg.attach_alternative(html_content, "text/html")
 
             for filename, payload, mimetype in (attachments or []):
                 msg.attach(filename, payload, mimetype)
 
-            # Metadata attachments for downstream ESP analytics (e.g., Resend, Postmark)
-            if hasattr(msg, 'tags'):
-                msg.tags = [email_type, template_name]
+            # Metadata attachments for downstream ESP analytics (e.g., Resend, Postmark).
+            # Anymail reads `tags` off any message it is handed; Django's own backends
+            # ignore the attribute. It is therefore set unconditionally — a `hasattr`
+            # guard here can only ever be false, since the attribute is precisely what
+            # this line creates, and the tags would never reach the ESP.
+            msg.tags = [email_type, template_name]  # type: ignore[attr-defined]
 
             msg.send()
             logger.info(f"[EmailService] Successfully dispatched {email_type} [{template_name}] to {recipient_email}")

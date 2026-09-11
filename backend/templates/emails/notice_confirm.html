@@ -1,0 +1,62 @@
+{% extends "emails/base.html" %}
+
+{% comment %}
+The concert notice list's double opt-in request — the only mail this foundation sends to
+somebody who is NOT a member.
+
+IT CARRIES NO TRANSLATION TAGS. Every string arrives resolved in `copy`, from
+`outreach/copy.py`, where the three locales stand side by side with Polish as the source.
+gettext would have made the English the source and the Polish a back-translation of it,
+which inverts the public site's own direction.
+
+The three overridden blocks are the difference between a member's mail and this one: no
+third-party webfont (an IP disclosure a subscriber never consented to), no "VoctManager"
+signature, and a "why you got this" line that is actually true of the reader.
+{% endcomment %}
+
+{% block webfont %}{% endblock %}
+
+{% block preheader %}{{ copy.preheader }}{% endblock %}
+
+{% block content %}
+
+{% include "emails/partials/_eyebrow.html" with text=copy.eyebrow %}
+{% include "emails/partials/_headline.html" with text=copy.headline size=34 mb=12 %}
+{% include "emails/partials/_subtitle.html" with text=copy.promise %}
+
+<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          font-size: 15px; color: #4b5563; margin: 0 0 36px 0; line-height: 1.9; text-align: center;">
+  {{ copy.body }}
+</p>
+
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+  <tr>
+    <td align="center" style="padding: 0 0 36px 0;">
+      {% include "emails/partials/_button.html" with url=confirm_url label=copy.button %}
+    </td>
+  </tr>
+</table>
+
+{% include "emails/partials/_rule.html" with mb=28 %}
+
+<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          font-size: 13px; color: #8b8378; margin: 0; line-height: 1.8; text-align: center;">
+  {{ copy.ignore }}
+</p>
+
+{% endblock %}
+
+{% block footer_brand %}
+<p class="footer-text sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+           font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+           color: #c9bfb4; margin: 0 0 6px 0; line-height: 1.6;">
+  VoctEnsemble &middot; {% now "Y" %}
+</p>
+{% endblock %}
+
+{% block outer_note %}
+<p style="margin: 0 0 8px 0;">{{ copy.footer }}</p>
+<p style="margin: 0;">
+  <a href="{{ policy_url }}" style="color: #b8a99a; text-decoration: underline;">{{ copy.policyLabel }}</a>
+</p>
+{% endblock %}

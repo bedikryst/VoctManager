@@ -93,6 +93,11 @@ const tempusGloss = tempus.gloss[lang];
             /obrazy is a page of this site where a PDF is not. It has no nav slot by decision
             (docs/web-imagines-spec.md §2), so the footer is its standing entrance. */}
         <li><a href={localizePath("/obrazy", lang)}>{t.images}</a></li>
+        {/* The notice list, after the concerts it announces and their photographs. This is the
+            list's standing entrance: it has no nav slot by decision — four destinations in the bar
+            are the site, and an ask set beside them would read as a fifth one — so the footer is
+            where a reader who has decided they want it goes looking, on every page of the site. */}
+        <li><a href={localizePath("/newsletter", lang)}>{t.notices}</a></li>
         <li><a href={localizePath("/kontakt", lang)}>{t.contact}</a></li>
         <li><a href="/?donate" data-vault-open="100">{t.support}</a></li>
         <li><a href={localizePath("/kolofon", lang)}>{t.colophon}</a></li>

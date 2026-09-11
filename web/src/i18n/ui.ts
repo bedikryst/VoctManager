@@ -80,6 +80,9 @@ export interface UIStrings {
     readonly concerts: string;
     /** The photograph archive (/obrazy). */
     readonly images: string;
+    /** The concert notice list (/newsletter). Named for what arrives, never "newsletter": the
+        English word lives in the address bar alone, where it is what a reader would guess. */
+    readonly notices: string;
     readonly contact: string;
     readonly support: string;
     readonly colophon: string;
@@ -163,6 +166,7 @@ export const UI: Record<Locale, UIStrings> = {
       about: "O nas",
       concerts: "Koncerty",
       images: "Obrazy",
+      notices: "Zawiadomienia",
       contact: "Kontakt",
       support: "Wesprzyj",
       colophon: "Kolofon",
@@ -221,6 +225,7 @@ export const UI: Record<Locale, UIStrings> = {
       about: "About",
       concerts: "Concerts",
       images: "Images",
+      notices: "Notices",
       contact: "Contact",
       support: "Support us",
       colophon: "Colophon",
@@ -279,6 +284,7 @@ export const UI: Record<Locale, UIStrings> = {
       about: "À propos",
       concerts: "Concerts",
       images: "Images",
+      notices: "Annonces",
       contact: "Contact",
       support: "Nous soutenir",
       colophon: "Colophon",

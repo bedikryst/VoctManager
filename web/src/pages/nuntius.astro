@@ -1,0 +1,15 @@
+---
+/**
+ * @file nuntius.astro
+ * @description Polish landing for the concert notice list's mail links (/nuntius) — the
+ *  canonical, un-prefixed page. All structure and behaviour live in the shared NuntiusPage
+ *  component; this route only selects the locale. The /en and /fr siblings render the same
+ *  component with a different `lang`, and the backend builds all three URLs
+ *  (`outreach/services.NOTICE_PATH`).
+ * @architecture Astro islands 2026
+ * @module pages/nuntius
+ */
+import NuntiusPage from "../components/pages/NuntiusPage.astro";
+---
+
+<NuntiusPage lang="pl" />

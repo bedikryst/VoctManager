@@ -9,8 +9,13 @@
 >    dane nie pochodzą od osoby, której dotyczą). → klauzula w mailu z zaproszeniem.
 > 2. **Współpracownik bez konta** (`Collaborator`) — nie ma dostępu do apki, więc
 >    modal go nie obejmuje. → klauzula w pierwszym mailu / umowie.
+> 3. **Subskrybent listy zawiadomień o koncertach** (od 2026-09) — osoba spoza
+>    zespołu, która nigdy nie zobaczy panelu. → klauzula **przy samym formularzu**
+>    na stronie publicznej; sekcja C poniżej mówi, gdzie ona żyje i co ją wiąże.
 >
-> Teksty poniżej są po polsku, bo są dostarczane polskim osobom, których dane dotyczą.
+> Teksty poniżej są po polsku (A i B), bo są dostarczane polskim osobom, których dane
+> dotyczą. Wyjątkiem jest C: strona publiczna mówi w trzech językach, a klauzula, którą
+> ktoś akceptuje, musi być w języku, w którym czyta.
 
 ---
 
@@ -59,6 +64,34 @@ informacyjnego — RODO nie zależy od nośnika. Dla małej listy osób, z któr
 bezpośredni kontakt, obowiązek realizuje **jedno powyższe zdanie w pierwszym
 mailu/umowie**. Dodatkowo art. 14 ust. 5 lit. b (niewspółmierny wysiłek) może ten
 obowiązek ograniczać — do oceny przez prawnika.
+
+---
+
+## C. Klauzula przy zapisie na listę zawiadomień o koncertach
+
+**Tekstu nie ma w tym pliku i nie powinno tu trafić.** Klauzula jest czytana na ekranie,
+w trzech językach, więc jej jedynym domem jest kod strony:
+
+- **Treść (PL / EN / FR):** `web/src/i18n/content/nuntius.ts`, pole `form.consentHtml`.
+  Świadomie jest to *chrome*, a nie tekst z copy desku: pole z desku ma fallback per pole,
+  więc angielski czytelnik zobaczyłby polską klauzulę, a baza zapisałaby wersję zgody tak,
+  jakby ją przeczytał. To jedyny fallback na tej stronie, który czyniłby zapis nieprawdziwym.
+- **Numer wersji:** `backend/outreach/consent.py` → `NOTICE_CLAUSE_VERSION`. Jest własnością
+  serwera (formularz go nie przysyła), a przy każdym potwierdzeniu ląduje w wierszu zgody
+  i w logu `NoticeConsentEvent`.
+- **Pełny opis przetwarzania:** § 3, 4, 5, 6 i 7 polityki prywatności
+  (`web/src/content/pages/polityka-prywatnosci.yaml`), do której klauzula linkuje.
+
+**Zmiana tego, co klauzula OBIECUJE** — cel, częstotliwość („jeden list na jeden wieczór"),
+administrator, sposób wycofania zgody — to jedna zmiana w trzech miejscach naraz: tekst,
+`NOTICE_CLAUSE_VERSION` i nowa wersja polityki prywatności z wpisem w jej historii. Poprawka
+literówki albo tłumaczenia, które mówi to samo, wersji NIE podbija: numer, który zmienia się
+bez zmiany znaczenia, czyni historię zgód nieczytelną.
+
+**Obowiązek z art. 13 jest wykonany przy formularzu**, a nie mailem — dane pochodzą od samej
+osoby i w chwili ich podania widzi ona administratora, cel, podstawę, sposób wycofania zgody
+i link do pełnej polityki. Wiadomość potwierdzająca powtarza administratora i ten link
+(`backend/outreach/copy.py`), bo jest to jedyny dokument, który zostaje w skrzynce.
 
 ---
 

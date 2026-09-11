@@ -1,0 +1,410 @@
+/**
+ * @file notice.css
+ * @description The concert notice list's surfaces: the sign-up band at the foot of /koncerty, the
+ *  same band standing alone on /newsletter and under the vacat leaf, and the /nuntius receipt.
+ *  All of them stand on the site's night ground and share one set of rules — the receipt is the
+ *  same rite's other end, and giving any of them a parchment world of its own would have doubled
+ *  every value here to say the same thing.
+ *
+ *  WHY THIS IS A GLOBAL SHEET AND NOT THE PAGE'S OWN `<style>`. Most of what it dresses is
+ *  rendered by React inside an island. Astro scopes a page rule by appending `[data-astro-cid-…]`
+ *  to every compound, and an element React created carries no such attribute — so a page-scoped
+ *  `.notice-form` compiles to a selector that matches nothing, silently. `styles/vault.css` is
+ *  the same arrangement for the same reason.
+ *
+ *  The controls deliberately mirror the vault's (`landing/08-vault.css`): the same hairline
+ *  field, the same 22px consent box, the same restrained error colour. There is one checkbox on
+ *  this site and a reader who has met it in the donation vault should not have to learn a second.
+ *
+ *  Tokens (--paper, --candle, --serif, --capitalis, --mono, --ease) come from the globally
+ *  imported tokens.css.
+ * @architecture Astro islands 2026
+ * @module styles/notice
+ */
+
+/* ── The band on /koncerty ─────────────────────────────────────────────────────
+   Transparent, like `.station-next` above it: the page's night comes from the body's own
+   ground, and a second opaque layer here would only be a chance for the two to disagree.
+   The hairline is the seam between the unwritten station and this. */
+.notice-band {
+  position: relative;
+  padding: clamp(72px, 10vw, 118px) max(28px, 5vw);
+  color: var(--paper);
+  /* Three pages link here by hash, and the chrome bar is fixed. Declared as a property of the
+     TARGET rather than as an offset in a scroll handler, because the arrivals take three
+     different paths — a native jump on a cold load, Astro's own hash scroll after a swap, and
+     Lenis on a fine pointer — and only one of those three can be given an offset by hand. Matches
+     `ANCHOR_OFFSET` in scripts/landing.ts, plus the band's own air. */
+  scroll-margin-top: 96px;
+}
+
+.notice-band::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(244, 241, 233, 0.16), transparent);
+}
+
+.notice-inner {
+  max-width: 620px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.notice-h2 {
+  margin: 18px 0 0;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: clamp(30px, 4.2vw, 52px);
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  line-height: 1.06;
+}
+
+.notice-lede {
+  margin: 18px auto 0;
+  max-width: 42ch;
+  color: rgba(244, 241, 233, 0.72);
+  font-size: clamp(15px, 1.2vw, 17px);
+  line-height: 1.7;
+}
+
+/* ── The form ──────────────────────────────────────────────────────────────── */
+
+.notice-form {
+  display: grid;
+  gap: 22px;
+  margin-top: clamp(34px, 4vw, 48px);
+  text-align: left;
+}
+
+/* One line on a desk, two on a phone. The button keeps its own width rather than stretching:
+   a full-bleed gold bar under a single field reads as the page's primary call, and the page's
+   primary call is the donation above it. */
+.notice-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 18px;
+}
+
+.notice-field {
+  display: grid;
+  flex: 1 1 260px;
+  gap: 8px;
+}
+
+.notice-label {
+  color: rgba(244, 241, 233, 0.5);
+}
+
+.notice-email {
+  width: 100%;
+  padding: 5px;
+  border: 0;
+  border-bottom: 1px solid rgba(244, 241, 233, 0.22);
+  background: transparent;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: clamp(16px, 1.6vw, 20px);
+  font-weight: 300;
+  transition: border-color 0.4s var(--ease);
+}
+
+.notice-email::placeholder {
+  color: rgba(244, 241, 233, 0.3);
+}
+
+.notice-email:focus {
+  outline: none;
+  border-color: var(--candle);
+}
+
+.notice-email[aria-invalid="true"] {
+  border-color: #c98e7e;
+}
+
+/* The page's own `.pill-gold`, restated because a scoped rule cannot reach into an island. */
+.notice-submit {
+  display: inline-flex;
+  align-items: center;
+  padding: 13px 22px;
+  border: 1px solid var(--candle);
+  background: var(--candle);
+  color: var(--ink);
+  cursor: pointer;
+  font-family: var(--capitalis);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition:
+    background-color 0.4s var(--ease),
+    color 0.4s var(--ease),
+    opacity 0.4s var(--ease);
+}
+
+.notice-submit:hover:not(:disabled) {
+  background: transparent;
+  color: var(--candle);
+}
+
+.notice-submit:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* ── Consent ───────────────────────────────────────────────────────────────── */
+
+.notice-consent {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 13px;
+  align-items: start;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Visually hidden, fully present for assistive technology and the keyboard. */
+.notice-consent-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.notice-consent-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border: 1px solid rgba(244, 241, 233, 0.32);
+  background: rgba(244, 241, 233, 0.02);
+  color: var(--ink);
+  transition:
+    border-color 0.4s var(--ease),
+    background 0.4s var(--ease);
+}
+
+.notice-consent-check {
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  transform: scale(0.55);
+  transition:
+    opacity 0.3s var(--ease),
+    transform 0.3s var(--ease);
+}
+
+.notice-consent:hover .notice-consent-box {
+  border-color: rgba(244, 241, 233, 0.6);
+}
+
+.notice-consent-input:checked + .notice-consent-box {
+  border-color: var(--candle);
+  background: var(--candle);
+}
+
+.notice-consent-input:checked + .notice-consent-box .notice-consent-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.notice-consent-input:focus-visible + .notice-consent-box {
+  outline: 1px solid var(--candle);
+  outline-offset: 3px;
+}
+
+.notice-consent-input[aria-invalid="true"] + .notice-consent-box {
+  border-color: #c98e7e;
+}
+
+.notice-consent-text {
+  color: rgba(244, 241, 233, 0.62);
+  font-size: 12.5px;
+  line-height: 1.62;
+}
+
+.notice-consent-text a {
+  color: rgba(244, 241, 233, 0.82);
+  border-bottom: 1px solid rgba(244, 241, 233, 0.3);
+  transition:
+    color 0.35s var(--ease),
+    border-color 0.35s var(--ease);
+}
+
+.notice-consent-text a:hover {
+  color: var(--candle);
+  border-color: var(--candle);
+}
+
+.notice-error {
+  margin: -6px 0 0;
+  color: #d6a08e;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  line-height: 1.65;
+}
+
+/* ── After the address is handed over ──────────────────────────────────────── */
+
+.notice-done {
+  margin-top: clamp(34px, 4vw, 48px);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.notice-done-mark {
+  color: var(--candle);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.notice-done-title {
+  margin: 0;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: clamp(22px, 2.4vw, 30px);
+  font-weight: 300;
+  line-height: 1.15;
+}
+
+.notice-done-body {
+  margin: 0;
+  max-width: 40ch;
+  color: rgba(244, 241, 233, 0.7);
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+
+.notice-noscript {
+  margin: 22px 0 0;
+  color: rgba(244, 241, 233, 0.6);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+}
+
+/* ── The band standing alone: /newsletter and /nuntius ─────────────────────────
+   One band filling the viewport minus the chrome — neither page has a second section, so a short
+   body must not leave the footer floating halfway up the screen (the /404 leaf's arrangement).
+   Stated once for both: they are the same object seen from its two ends, and a second block of
+   identical values would only be a place for them to disagree. `.notice-page` centres a form
+   where `.nuntius-main` centres a sentence, which is the only reason the inner measures differ. */
+.notice-page,
+.nuntius-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  min-height: 78svh;
+  background: var(--dark);
+  padding: clamp(96px, 13vh, 150px) max(28px, 5vw) clamp(64px, 9vh, 110px);
+  color: var(--paper);
+  text-align: center;
+}
+
+.nuntius-panel {
+  max-width: 560px;
+}
+
+.nuntius-eyebrow {
+  display: block;
+  margin: 0 0 20px;
+  color: rgba(244, 241, 233, 0.62);
+}
+
+.nuntius-title {
+  margin: 0;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: clamp(32px, 5vw, 62px);
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  line-height: 1.04;
+}
+
+.nuntius-body {
+  margin: 20px auto 0;
+  max-width: 42ch;
+  color: rgba(244, 241, 233, 0.72);
+  font-size: clamp(15px, 1.2vw, 17px);
+  line-height: 1.7;
+}
+
+/* While the token is in flight there is nothing to read yet — the heading holds the page open
+   at half ink rather than the panel appearing to have failed. */
+.nuntius-panel[data-state="checking"] .nuntius-title,
+.nuntius-panel[data-state="checking"] .nuntius-body {
+  opacity: 0.55;
+}
+
+.nuntius-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  margin-top: clamp(34px, 4vw, 48px);
+}
+
+.nuntius-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 11px 18px;
+  border: 1px solid rgba(244, 241, 233, 0.4);
+  color: var(--paper);
+  font-family: var(--capitalis);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition:
+    background-color 0.4s var(--ease),
+    border-color 0.4s var(--ease),
+    color 0.4s var(--ease);
+}
+
+.nuntius-link:hover {
+  border-color: var(--candle);
+  background: var(--candle);
+  color: var(--ink);
+}
+
+/* The act, where there is one — a spent or absent link leaves the reader with something to DO, and
+   the two ways back beside it are ways back. Filled at rest, so it is told apart from them before
+   it is read; it takes the hover the outlined pair take, in reverse. */
+.nuntius-link-lead {
+  border-color: var(--candle);
+  background: var(--candle);
+  color: var(--ink);
+}
+
+.nuntius-link-lead:hover {
+  background: transparent;
+  color: var(--candle);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notice-consent-check,
+  .notice-email,
+  .notice-submit,
+  .nuntius-link {
+    transition: none;
+  }
+}

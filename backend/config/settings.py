@@ -8,6 +8,7 @@ Strictly typed environment variables via django-environ.
 
 import os
 from datetime import timedelta
+from email.utils import formataddr, parseaddr
 from pathlib import Path
 
 import environ
@@ -105,6 +106,7 @@ INSTALLED_APPS = [
     'documents',
     'payments',
     'copydesk',
+    'outreach',
 ]
 
 # --- AUTHENTICATION BACKENDS ---
@@ -235,6 +237,15 @@ REST_FRAMEWORK = {
         # endpoint. Set generously so onboarding a whole pending cohort in one
         # sitting is never blocked.
         'resend_activation': '60/hour',
+        # Concert notice list. A sign-up writes a row and sends one e-mail to an
+        # address the SUBMITTER chose, which is the one public endpoint here whose
+        # abuse surface is a stranger's inbox — so it is the tightest of the three
+        # public caps. The service adds a per-address cooldown on top, which is what
+        # actually stops one victim being mailed repeatedly from many IPs.
+        'notice_subscribe': '20/hour',
+        # Following a link from one's own mailbox. Loose enough for a reader who
+        # clicks, goes back, and clicks again.
+        'notice_manage': '60/hour',
     }
 }
 
@@ -338,6 +349,13 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'copydesk.dispatch_copy_proposal_digests',
         'schedule': timedelta(hours=1),
     },
+    # Daily, not hourly: both of its sweeps are measured in days and years, and it is
+    # what makes the retention the privacy policy publishes for the notice list true —
+    # an address nobody confirmed is dropped, a withdrawn consent's record expires.
+    'outreach-purge-notice-records': {
+        'task': 'outreach.purge_notice_records',
+        'schedule': timedelta(days=1),
+    },
 }
 
 # --- EMAIL (ANYMAIL) ---
@@ -346,9 +364,60 @@ ANYMAIL = {
     # Svix signing secret (Resend dashboard → Webhooks) used by Anymail to verify
     # inbound tracking events before the bounce/complaint suppression runs.
     "RESEND_SIGNING_SECRET": env("RESEND_SIGNING_SECRET", default=""),
+    # EmailLabs (Vercom S.A.). `SMTP_ACCOUNT` is the sending identity inside the
+    # account (e.g. "1.voctensemble.smtp"), not an address anyone sees — it selects
+    # the IP pool, which is why EmailLabs types an account transactional or marketing.
+    "EMAILLABS_APP_KEY": env("EMAILLABS_APP_KEY", default=""),
+    "EMAILLABS_SECRET_KEY": env("EMAILLABS_SECRET_KEY", default=""),
+    "EMAILLABS_SMTP_ACCOUNT": env("EMAILLABS_SMTP_ACCOUNT", default=""),
 }
-EMAIL_BACKEND = "anymail.backends.resend.EmailBackend" if env("RESEND_API_KEY", default="") else "django.core.mail.backends.console.EmailBackend"
+
+# Which ESP sends. NAMED EXPLICITLY RATHER THAN INFERRED FROM WHICH KEY IS PRESENT:
+# during a provider change both providers' credentials are configured at once, and
+# rolling back has to be one variable and a restart — not a deploy. The default keeps
+# a deployment that only ever set RESEND_API_KEY working exactly as before.
+EMAIL_PROVIDER = env(
+    "EMAIL_PROVIDER",
+    default="resend" if env("RESEND_API_KEY", default="") else "",
+).strip().lower()
+_EMAIL_BACKENDS = {
+    "emaillabs": "notifications.emaillabs_backend.EmailBackend",
+    "resend": "anymail.backends.resend.EmailBackend",
+}
+EMAIL_BACKEND = _EMAIL_BACKENDS.get(
+    EMAIL_PROVIDER, "django.core.mail.backends.console.EmailBackend",
+)
+
+# Basic-auth credential ("user:password") the EmailLabs panel is configured to send
+# with its delivery reports. Deliberately NOT Anymail's global ANYMAIL["WEBHOOK_SECRET"]:
+# that one applies to every Anymail webhook at once and would start rejecting the
+# Resend webhook, which stays live until the new provider is proven.
+EMAILLABS_WEBHOOK_SECRET = env("EMAILLABS_WEBHOOK_SECRET", default="")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="VoctManager <noreply@voctensemble.com>")
+
+# Sender for mail addressed to somebody OUTSIDE the ensemble (the concert notice list).
+# "VoctManager" is the panel, and a person who asked a choir to tell them about its next
+# concert has never heard of it — the display name is the first thing they read.
+#
+# The DEFAULT DEPARTS ONLY IN THE NAME, keeping `DEFAULT_FROM_EMAIL`'s address: that domain is
+# the one with SPF/DKIM set up for it, and inventing a prettier address that nothing
+# authenticates would send public mail to spam, which is a worse failure than a wrong name.
+# Override with a real VoctEnsemble mailbox once its DNS is configured.
+#
+# Falls back on a BLANK value, not just an absent one: the variable ships empty in
+# .env.example, and django-environ hands back that empty string rather than the default —
+# which would put the panel's own name back on public mail with nothing failing anywhere.
+PUBLIC_FROM_EMAIL = (
+    env("PUBLIC_FROM_EMAIL", default="").strip()
+    or formataddr(("VoctEnsemble", parseaddr(DEFAULT_FROM_EMAIL)[1]))
+)
+
+# Where a reply to public mail goes. `DEFAULT_FROM_EMAIL` is a noreply address, and the
+# confirmation mail's own footer tells the reader they may withdraw their consent "by
+# writing to rodo@voctensemble.com" — without this header that sentence sends the answer
+# into a mailbox nobody reads. THE DEFAULT AND THE FOOTER (`outreach/copy.py`, three
+# locales) ARE ONE PROMISE: change one and the other stops being true.
+PUBLIC_REPLY_TO_EMAIL = env("PUBLIC_REPLY_TO_EMAIL", default="").strip() or "rodo@voctensemble.com"
 
 # Public frontend origin (no trailing slash, no /panel) — used to resolve the
 # SPA-relative deep-links produced by the message layer into absolute URLs for
@@ -356,6 +425,13 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="VoctManager <noreply@voc
 # messaging service and the legacy email CTAs.
 FRONTEND_URL = env("FRONTEND_URL", default="https://voctensemble.com").rstrip("/")
 SITE_URL = env("SITE_URL", default=f"{FRONTEND_URL}/panel")
+
+# Origin of the PUBLIC Astro site (web/), which is a different application from the
+# panel SPA even where the two share a host today. Links mailed to a public subscriber
+# — the concert notice list's confirmation and unsubscribe — are built from this, so a
+# future split (panel on its own subdomain) moves one variable instead of silently
+# mailing strangers a link into the panel's origin.
+PUBLIC_SITE_URL = env("PUBLIC_SITE_URL", default=FRONTEND_URL).rstrip("/")
 
 # Inbox pinged when a visitor submits the public Mecenat (patronage) form. The
 # notification is deliberately content-free — no lead PII leaves the EU database —
@@ -573,7 +649,6 @@ DONATION_GOAL_PLN = env.int('DONATION_GOAL_PLN', default=20000)
 # uses the gateway settlement records, never this.
 DONATION_EUR_TO_PLN_RATE = env('DONATION_EUR_TO_PLN_RATE', default='4.00')
 
-FIREBASE_CREDENTIALS_PATH = os.getenv('FIREBASE_CREDENTIALS_PATH')
 VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
 NOTIFICATIONS_PUSH_ENABLED = True
 NOTIFICATIONS_EMAIL_ENABLED = True

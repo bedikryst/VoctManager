@@ -53,6 +53,7 @@ import { videoAsset, videoAssetAv1 } from "../../lib/videos";
 import { longDate } from "../../lib/dates";
 import { formatRef } from "../../lib/scriptureRef";
 import { CONCERT, fill } from "../../i18n/content/koncert";
+import { NUNTIUS } from "../../i18n/content/nuntius";
 import { UI } from "../../i18n/ui";
 import { glossFor, localizePath, pageI18n, type Locale } from "../../i18n/config";
 import VaultMount from "../../components/VaultMount.astro";
@@ -138,6 +139,12 @@ const next = here >= 0 && here < walk.length - 1 ? walk[here + 1] : null;
     through `say` — that helper is bound to the concert this page is about. */
 const neighbourTitle = (e: CollectionEntry<"concerts">): string =>
   withOverlay(concertKey(e.id, "title"), lang, e.data.title);
+
+// The rail's forward slot on the LAST evening of the walk. It stood empty — and what stands after
+// the newest concert is not another page but a letter that has not been written yet, which is the
+// notice list. A door, not a form: the address is taken in one place, the band on /koncerty.
+const nuntius = NUNTIUS[lang];
+const hrefNotice = `${localizePath("/koncerty", lang)}#nuntius`;
 
 // ── Poster + documentary gallery. photoOptional so a slot can be declared in YAML before its
 // image lands on disk — a missing file is silently skipped rather than breaking the build.
@@ -1072,7 +1079,15 @@ const jsonLd =
                 <span class="kd-vianav-name">{neighbourTitle(next)}</span>
               </a>
             ) : (
-              <span class="kd-vianav-side is-empty" aria-hidden="true"></span>
+              /* Nothing is being announced here: the slot names the LIST, not an evening, so the
+                 rail never implies a concert that has no date. It is the one door on this page
+                 that leads forward rather than back through the walk. */
+              <a class="kd-vianav-side kd-vianav-next kd-vianav-nuntius" href={hrefNotice}>
+                <span class="kd-vianav-dir micro">
+                  <span class="lat" lang="la">Nuntius</span> · {nuntius.page.eyebrow} <span aria-hidden="true">→</span>
+                </span>
+                <span class="kd-vianav-name">{nuntius.invitation.cta}</span>
+              </a>
             )}
           </div>
         </nav>
@@ -1617,6 +1632,10 @@ const jsonLd =
   .kd-vianav-name { font-family: var(--serif); font-weight: 300; font-size: clamp(19px, 2vw, 26px); line-height: 1.1; color: rgba(244,241,233,.9); transition: color .35s var(--ease, ease); }
   .kd-vianav-side:hover .kd-vianav-dir,
   .kd-vianav-side:hover .kd-vianav-name { color: var(--candle); }
+  /* The forward slot on the last evening of the walk. Same rail geometry, one step quieter in
+     voice: it names the notice list, and a door set at a neighbour's weight would read as a sixth
+     evening that has already been announced. */
+  .kd-vianav-nuntius .kd-vianav-name { font-size: clamp(16px, 1.5vw, 20px); color: rgba(244,241,233,.74); }
   .kd-vianav-all { justify-self: center; text-align: center; font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244,241,233,.72); border-bottom: 1px solid rgba(244,241,233,.28); padding-bottom: 4px; transition: color .35s var(--ease, ease), border-color .35s var(--ease, ease); }
   .kd-vianav-all:hover { color: var(--candle); border-bottom-color: var(--candle); }
 

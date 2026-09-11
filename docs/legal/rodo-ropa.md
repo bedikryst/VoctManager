@@ -2,7 +2,8 @@
 
 > **Status: PROJEKT ROBOCZY do weryfikacji przez radcę prawnego.** Nie jest to
 > gotowy dokument prawny. Zawartość wyprowadzona z faktycznego kodu aplikacji
-> (stan: 2026-07-10). Kolumny „Podstawa prawna" i „Retencja" wymagają
+> (stan: 2026-07-10; czynność 11 — lista zawiadomień — dopisana 2026-09-05).
+> Kolumny „Podstawa prawna" i „Retencja" wymagają
 > potwierdzenia przez prawnika — w szczególności wybór art. 6 ust. 1 lit. b vs f
 > dla członków (wolontariat vs umowa).
 
@@ -59,13 +60,13 @@ KRS 0001237252 · NIP 6762718992 · REGON 544621525 · kontakt: rodo@voctensembl
 - **Retencja:** przy usunięciu konta treść wiadomości jest trwale zacierana (`[treść usunięta]`), wątki i członkostwa usuwane.
 - **Transfer poza EOG:** nie.
 
-### 6. Powiadomienia (e-mail, push mobilny i web)
-- **Kategorie danych:** e-mail; tokeny urządzeń push (`registration_token`, `p256dh_key`, `auth_key`); preferencje kanałów; treść/metadane powiadomień. (`notifications.Notification`, `PushDevice`, `NotificationPreference`)
+### 6. Powiadomienia (e-mail i web push)
+- **Kategorie danych:** e-mail; dane subskrypcji web push (`registration_token` — adres endpointu, `p256dh_key`, `auth_key`); preferencje kanałów; treść/metadane powiadomień. (`notifications.Notification`, `PushDevice`, `NotificationPreference`)
 - **Cel:** dostarczanie powiadomień o wydarzeniach, wiadomościach, przypomnieniach.
 - **Podstawa prawna:** art. 6 ust. 1 lit. f; dla push — zgoda (subskrypcja urządzenia).
-- **Odbiorcy/podprocesorzy:** **Resend** (e-mail), **Google Firebase Cloud Messaging** (push mobilny). Web push obsługiwany samodzielnie (VAPID), ale doręczenie idzie przez usługę push przeglądarki (Google/Mozilla/Apple), która widzi endpoint i metadane doręczeń.
-- **Retencja:** token do momentu wyrejestrowania urządzenia; powiadomienia zgodnie z polityką aplikacji.
-- **Transfer poza EOG:** TAK — Resend, Google FCM (USA). Mechanizm: DPF / SCC.
+- **Odbiorcy/podprocesorzy:** **Resend** (e-mail). Push obsługiwany samodzielnie (VAPID) — panel jest PWA, więc każda subskrypcja należy do przeglądarki; doręczenie idzie przez usługę push przeglądarki (Google/Mozilla/Apple), która widzi endpoint i metadane doręczeń, ale nie treść.
+- **Retencja:** subskrypcja do momentu wyrejestrowania urządzenia lub unieważnienia jej przez usługę push; powiadomienia zgodnie z polityką aplikacji.
+- **Transfer poza EOG:** TAK — Resend (USA). Mechanizm: DPF / SCC.
 
 ### 7. Kalendarz iCal
 - **Kategorie danych:** sekretny token w URL feedu kalendarza. (`core.UserProfile.calendar_token`)
@@ -98,7 +99,18 @@ KRS 0001237252 · NIP 6762718992 · REGON 544621525 · kontakt: rodo@voctensembl
 - **Retencja:** ustawowe okresy przechowywania dokumentacji rozliczeniowej (rachunkowość, prawo podatkowe).
 - **Transfer poza EOG:** do zweryfikowania (Axepta — UE).
 
-### 11. Osadzony odtwarzacz Spotify (opcjonalny) — **REKOMENDACJA: USUNĄĆ**
+### 11. Lista zawiadomień o koncertach (strona publiczna)
+- **Podmioty danych:** odwiedzający witrynę, którzy sami poprosili o zawiadomienie (NIE członkowie, NIE darczyńcy).
+- **Kategorie danych:** adres e-mail, język strony, znacznik czasu potwierdzenia, wersja klauzuli zgody, powierzchnia zapisu, dwa tokeny (potwierdzający i wypisujący). (`outreach.ConcertNoticeSubscription`, `outreach.NoticeConsentEvent`)
+- **ŚWIADOMIE NIE ZBIERAMY:** imienia (zawiadomienie go nie potrzebuje) ani adresu IP — dowodem panowania nad skrzynką jest samo potwierdzenie double opt-in, a IP byłoby drugim identyfikatorem do obrony.
+- **Cel:** wysłanie jednej wiadomości o każdym kolejnym koncercie.
+- **Podstawa prawna:** art. 6 ust. 1 lit. a RODO (zgoda) + art. 10 ust. 2 UŚUDE. **Dowodem zgody jest `confirmed_at` wraz z wersją klauzuli** — inaczej niż przy `PatronLead`, gdzie wystarcza sam wiersz, bo darowiznę potwierdza transakcja. Lista powiadomień nie zostawia innego śladu, więc dowód jest zapisywany wprost. Rozdzielona odpowiedzialność: wiersz subskrypcji opisuje zgodę BIEŻĄCĄ, a `NoticeConsentEvent` to dopisywalny log każdej udzielonej i wycofanej zgody — ponowny zapis po wypisaniu resetuje wiersz i bez logu nadpisałby dowód zgody, pod którą wysłano już pocztę.
+- **Odbiorcy/podprocesorzy:** **Resend** (wysyłka poczty). Poza tym nikt — adres nie opuszcza bazy w żadnym innym celu.
+- **Retencja:** zapis niepotwierdzony — usuwany (twardo) po wygaśnięciu linku, tj. po 7 dniach; zgoda wycofana — dowód przechowywany 3 lata od ostatniego zdarzenia, potem twarde usunięcie. Egzekwuje to zadanie `outreach.purge_notice_records` (Celery beat, raz na dobę); okresy są tożsame z tym, co publikuje polityka prywatności (§ 7), i muszą się zmieniać razem.
+- **Transfer poza EOG:** TAK — Resend (USA). Mechanizm: SCC. **Do potwierdzenia przez prawnika:** czy powoływać się także na DPF (zależnie od aktualnej certyfikacji dostawcy) — polityka prywatności mówi obecnie wyłącznie o SCC, co jest twierdzeniem bezpieczniejszym.
+- **Realizacja praw:** wycofanie zgody — link w każdej wiadomości (jedno kliknięcie: nagłówek `List-Unsubscribe` zgodny z RFC 8058 oraz odnośnik w treści), odpowiedź na wiadomość (nagłówek `Reply-To`) albo `rodo@voctensemble.com`; usunięcie danych (art. 17) — twarde skasowanie wiersza w panelu administracyjnym, co kasuje kaskadowo także log zgód. **Zgłoszenie wiadomości jako spam u dostawcy poczty jest traktowane jak wycofanie zgody:** webhook dostawcy przestawia wiersz na UNSUBSCRIBED i dopisuje zdarzenie WITHDRAWN, więc adresat nie musi już nic klikać.
+
+### 12. Osadzony odtwarzacz Spotify (opcjonalny) — **REKOMENDACJA: USUNĄĆ**
 - **Kategorie danych:** adres IP i dane techniczne przekazywane do Spotify po aktywnej zgodzie.
 - **Cel:** referencyjny podgląd playlisty.
 - **Podstawa prawna:** zgoda.
@@ -106,6 +118,6 @@ KRS 0001237252 · NIP 6762718992 · REGON 544621525 · kontakt: rodo@voctensembl
 - **Transfer poza EOG:** TAK — Spotify (USA).
 - **Rekomendacja:** zastąpić osadzenie zwykłym linkiem → eliminuje zgodę, ujawnienie odrębnego administratora i transfer USA przy zerowej stracie funkcjonalnej.
 
-### 12. Monitorowanie błędów (Sentry) — **NIEAKTYWNE**
+### 13. Monitorowanie błędów (Sentry) — **NIEAKTYWNE**
 - Kod integracji istnieje (`config/settings.py`), ale uruchamia się dopiero po ustawieniu `SENTRY_DSN`. Obecnie wyłączone → nie ujmowane jako czynność.
 - **Przed włączeniem:** dodać jako podprocesora (USA), zaktualizować politykę prywatności i sekcję transferów. NIE włączać bez uprzedniego ujawnienia.

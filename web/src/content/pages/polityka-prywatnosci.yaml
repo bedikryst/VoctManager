@@ -42,8 +42,8 @@
 
 # The version this document is at, and the day it started to apply. Both are read by the line under
 # the title and by the newest entry of the history at the foot.
-version: "1.2"
-effectiveFrom: "2026-09-04"
+version: "1.3"
+effectiveFrom: "2026-09-05"
 
 meta:
   # Read in a browser tab and by a crawler, never on the page. The document is `noindex,follow` —
@@ -188,6 +188,23 @@ s3:
       dane przechowujemy na naszych serwerach w Unii Europejskiej; wewnętrzne powiadomienie o nowym
       zgłoszeniu, które wysyłamy do siebie, <strong>nie zawiera Twoich danych osobowych</strong>.
 
+  notices:
+    title: "Lista zawiadomień o koncertach"
+    # The clause the form itself shows is `i18n/content/nuntius.ts`; this is the full account
+    # of the same processing. The version stamped into each consent record is
+    # `backend/outreach/consent.py` — if what the clause PROMISES changes, all three move
+    # together and this document takes a new version number.
+    p1Html: >-
+      Jeśli poprosisz nas o zawiadomienie o kolejnym koncercie, przetwarzamy wyłącznie
+      <strong>adres e-mail</strong> oraz język strony, na której nastąpił zapis. Nie pytamy
+      o imię — zawiadomienie go nie potrzebuje. Zapis jest <strong>dwustopniowy</strong>:
+      po wysłaniu formularza wysyłamy jedną wiadomość z prośbą o potwierdzenie i dopiero
+      kliknięcie linku w niej zapisuje adres na listę; do tego czasu nie wysyłamy nic więcej.
+      Wraz z adresem zapisujemy <strong>datę i godzinę potwierdzenia oraz wersję klauzuli
+      zgody</strong> widocznej przy formularzu — to dowód udzielenia zgody i nic ponadto;
+      nie zapisujemy adresu IP. Każda nasza wiadomość zawiera link, który wypisuje z listy
+      jednym kliknięciem.
+
   email:
     title: "Korespondencja e-mail"
     p1: >-
@@ -233,6 +250,14 @@ s4:
         wyrażona w formularzu). Zgodę możesz wycofać w każdej chwili, pisząc na
         <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>; wycofanie nie wpływa na
         zgodność z prawem przetwarzania, którego dokonano przed wycofaniem.
+    - id: notices
+      textHtml: >-
+        <strong>Zawiadamianie o koncertach</strong> — art. 6 ust. 1 lit. a RODO (Twoja zgoda
+        wyrażona przy zapisie) oraz art. 10 ust. 2 ustawy o świadczeniu usług drogą
+        elektroniczną. Zgodę możesz wycofać w każdej chwili — linkiem w każdej naszej
+        wiadomości albo pisząc na <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>;
+        wycofanie nie wpływa na zgodność z prawem przetwarzania, którego dokonano przed
+        wycofaniem.
     - id: claims
       textHtml: >-
         <strong>Ustalenie, dochodzenie lub obrona roszczeń</strong> — art. 6 ust. 1 lit. f RODO,
@@ -260,6 +285,14 @@ s5:
         zapewniające nam serwery oraz sieć dostarczania treści niezbędną do działania
         i zabezpieczenia strony. Działają oni jako podmioty przetwarzające na nasze polecenie.
         Fonty serwujemy lokalnie i nie przekazujemy adresów IP zewnętrznym dostawcom typografii.
+    - id: resend
+      badge: "Resend"
+      textHtml: >-
+        <strong>Resend, Inc.</strong> (USA) — dostawca usługi wysyłki poczty, z której
+        korzystamy przy zawiadomieniach o koncertach. Działa jako <strong>podmiot
+        przetwarzający</strong> na nasze polecenie i otrzymuje wyłącznie adres e-mail odbiorcy
+        oraz treść wysyłanej wiadomości. Zasady przekazania danych do Stanów Zjednoczonych
+        opisujemy w sekcji „Transfery poza EOG”.
     - id: bnp
       badge: "BNP Paribas"
       textHtml: >-
@@ -307,6 +340,13 @@ s6:
     (PayU S.A.) są podmiotami z siedzibą w Polsce. Mogą oni jednak — w ramach własnych systemów
     antyfraudowych — przetwarzać dane również poza EOG, za co odpowiadają na zasadach określonych
     w swoich politykach prywatności.
+  # Added in 1.3 with the concert notice list. It is the one case in this document where OUR
+  # OWN sending puts a reader's address outside the EEA, so it is stated as its own paragraph
+  # rather than folded into the CDN sentence above.
+  p4: >-
+    Wysyłkę zawiadomień o koncertach obsługuje Resend, Inc. z siedzibą w Stanach Zjednoczonych.
+    Przekazanie danych odbywa się na podstawie Standardowych Klauzul Umownych (SCC) zawartych
+    z dostawcą, w zakresie niezbędnym do doręczenia zamówionej wiadomości.
 
 s7:
   title: "Czas przechowywania"
@@ -334,6 +374,13 @@ s7:
         wycofania zgody. Jeśli nawiążemy stałą współpracę, dane przechodzą w reżim przechowywania
         dla darczyńców (dokumentacja księgowa, 5 lat); w przeciwnym razie usuwamy je niezwłocznie
         po zakończeniu kontaktu.
+    - id: notices
+      textHtml: >-
+        <strong>Zapis na listę zawiadomień</strong> — adres przechowujemy do czasu wycofania
+        zgody. Zapis niepotwierdzony (bez kliknięcia w link) usuwamy po wygaśnięciu linku, czyli
+        po 7 dniach. Po wypisaniu się nie wysyłamy już nic, a zachowujemy wyłącznie dowód
+        udzielonej wcześniej zgody — adres, datę potwierdzenia i wersję klauzuli — przez okres
+        przedawnienia ewentualnych roszczeń, nie dłużej niż 3 lata.
     - id: audio
       textHtml: >-
         <strong>Preferencja audio</strong> w localStorage — 3 godziny od zapisu lub do czasu
@@ -526,6 +573,16 @@ history:
   # inside a key part.
   label: "Historia zmian"
   entries:
+    - id: "v1-3"
+      version: "1.3"
+      date: "2026-09-05"
+      note: >-
+        Uruchomiliśmy listę zawiadomień o koncertach: dodano § 3 (zakres danych — adres e-mail
+        i język, zapis dwustopniowy, przechowywanie dowodu zgody bez adresu IP), § 4 (cel i
+        podstawa: zgoda oraz art. 10 ustawy o świadczeniu usług drogą elektroniczną), § 7 (okresy
+        przechowywania: 7 dni dla zapisu niepotwierdzonego, 3 lata dla dowodu wycofanej zgody).
+        W § 5 ujawniono Resend, Inc. jako podmiot przetwarzający obsługujący wysyłkę, a w § 6
+        — przekazanie danych do Stanów Zjednoczonych na podstawie Standardowych Klauzul Umownych.
     - id: "v1-2"
       version: "1.2"
       date: "2026-09-04"

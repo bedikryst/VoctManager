@@ -1,0 +1,18 @@
+{{ copy.eyebrow|upper }}
+
+{{ copy.headline }}
+=========================================
+
+{{ copy.promise }}
+
+{{ copy.body }}
+
+{{ copy.button|upper }}:
+{{ confirm_url }}
+
+-----------------------------------------
+
+{{ copy.ignore }}
+
+{{ copy.footer }}
+{{ copy.policyLabel }}: {{ policy_url }}

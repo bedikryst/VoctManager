@@ -12,7 +12,11 @@
     <meta name="x-apple-disable-message-reformatting" />
     <meta name="color-scheme" content="light" />
     <meta name="supported-color-schemes" content="light" />
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    {# Overridable so a mail sent to somebody OUTSIDE the ensemble can drop it: loading a
+       webfont discloses the reader's IP to a third party the moment the client renders,
+       which is a disclosure a member's transactional mail already carries and a public
+       subscriber never consented to. Every style here names Georgia as the fallback. #}
+    {% block webfont %}<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">{% endblock %}
     <title>VoctEnsemble</title>
     <style>
       /* Reset & Base */
@@ -141,6 +145,10 @@
               <td class="email-footer" style="background-color: #faf9f7; padding: 36px 64px; text-align: center; border-top: 1px solid #ede8df;">
                 {% load i18n %}
 
+                {# Both lines name the PANEL, which is the sender of every mail that reaches a
+                   member. A mail to somebody outside the ensemble is sent by VoctEnsemble and
+                   is answerable, so it overrides these. #}
+                {% block footer_brand %}
                 <p class="footer-text sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
                            font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
                            color: #c9bfb4; margin: 0 0 6px 0; line-height: 1.6;">
@@ -150,6 +158,7 @@
                            font-size: 10px; color: #ddd8d1; margin: 0; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.1em;">
                   {% translate "Automatically generated. Please do not reply." %}
                 </p>
+                {% endblock %}
                 {% if manage_prefs_url %}
                 <p class="footer-text sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
                            font-size: 10px; margin: 14px 0 0 0; line-height: 1.6; letter-spacing: 0.06em;">
@@ -164,7 +173,9 @@
             <tr>
               <td style="padding: 24px 20px; color: #b8a99a; font-family: sans-serif; font-size: 10px; line-height: 1.5; text-align: center;">
                 {% load i18n %}
-                <p style="margin: 0;">{% translate "You are receiving this because you are a member of the VoctEnsemble artist network." %}</p>
+                {# The mail's "why you got this" line. It has to be TRUE of the recipient, so a
+                   mail to somebody outside the ensemble replaces it with its own. #}
+                {% block outer_note %}<p style="margin: 0;">{% translate "You are receiving this because you are a member of the VoctEnsemble artist network." %}</p>{% endblock %}
               </td>
             </tr>
           </table>

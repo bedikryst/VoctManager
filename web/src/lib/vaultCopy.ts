@@ -14,7 +14,9 @@
  *     leaf to pin. So the French narrow no-break spaces are put in HERE, at build, on the string
  *     that will be injected. Without this, French prose inside the vault would be the one place on
  *     the site that never met `lib/typo`.
- *  2. LINK TARGETS. Every link in this copy is read in an overlay standing above a half-filled
+ *  2. LINK TARGETS (`externalizeLinks`, now shared from `lib/islandCopy` — the notice list's
+ *     consent clause needs the same treatment for the same reason). Every link in this copy is
+ *     read in an overlay standing above a half-filled
  *     donation form, so following one in place costs the reader what they had typed. The `target`
  *     is added at render rather than written into the content file — the same seam `pageCopy`
  *     already occupies for `localizePath`, and the reason `kontakt.yaml` carries a bare `<a href>`
@@ -34,6 +36,7 @@
 import type { Locale } from "../i18n/config";
 import { REGULAMIN_PAGE, type TermsCopy } from "../i18n/content/regulaminDarowizn";
 import { SKARBIEC_PAGE, type VaultCopy } from "../i18n/content/skarbiec";
+import { externalizeLinks } from "./islandCopy";
 import { pageCopy } from "./pageCopy";
 import { typographyHtml } from "./typoHtml";
 
@@ -41,24 +44,6 @@ import { typographyHtml } from "./typoHtml";
 export interface VaultCopyBundle {
   readonly vault: VaultCopy;
   readonly terms: TermsCopy;
-}
-
-/** `<a>` with an href, captured so the tag can be reopened with two attributes added. */
-const ANCHOR = /<a\s+([^>]*?)>/g;
-const HREF = /href="([^"]*)"/;
-
-/**
- * Give every link that navigates away a new tab. `mailto:` is left alone — it hands off to a mail
- * client and never replaces the document — and so is a link that already carries a `target`, so
- * this stays idempotent if a future field arrives with one.
- */
-function externalizeLinks(html: string): string {
-  return html.replace(ANCHOR, (match, attrs: string) => {
-    if (/\starget=/.test(` ${attrs}`)) return match;
-    const href = HREF.exec(attrs)?.[1] ?? "";
-    if (href.startsWith("mailto:")) return match;
-    return `<a ${attrs} target="_blank" rel="noopener">`;
-  });
 }
 
 const htmlPass = (html: string, locale: Locale): string =>

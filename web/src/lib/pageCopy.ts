@@ -51,7 +51,15 @@ function sourceOf(id: string): string {
 /** Internal hrefs only: a path starting with `/`, captured apart from any query or fragment. */
 const INTERNAL_HREF = /href="(\/[^"?#]*)([^"]*)"/g;
 
-function localizeHrefs(html: string, locale: Locale): string {
+/**
+ * Point every internal link in a fragment of copy at this locale's URL for it.
+ *
+ * Exported because copy is not the only prose on this site that carries a link: a CHROME string
+ * can too (the notice list's consent clause, whose completeness has to be demandable and which
+ * therefore cannot live in a page file — `i18n/content/nuntius.ts`). Both must reach the reader
+ * through the same rule, or one of them starts sending an English reader to a Polish page.
+ */
+export function localizeCopyHrefs(html: string, locale: Locale): string {
   return html.replace(
     INTERNAL_HREF,
     (_match, path: string, rest: string) => `href="${localizePath(path, locale)}${rest}"`,
@@ -92,7 +100,7 @@ export function pageCopy<T>(spec: PageCopySpec<T>, locale: Locale, htmlPass?: Ht
     const source = overlayValue(leaf.key, locale) ?? leaf.value;
     let next = source;
     if (leaf.kind === "HTML") {
-      next = localizeHrefs(source, locale);
+      next = localizeCopyHrefs(source, locale);
       if (htmlPass) next = htmlPass(next, locale);
     }
     if (next !== leaf.value) setAt(data, leaf.at, next);

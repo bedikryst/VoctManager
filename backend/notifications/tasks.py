@@ -104,7 +104,7 @@ def send_push_notification_task(
     level: str = NotificationLevel.INFO,
 ) -> None:
     """
-    Isolated transport task for VAPID + FCM dispatch. Delegates payload
+    Isolated transport task for Web Push (VAPID) dispatch. Delegates payload
     composition to the dispatcher service; transient transport failures are
     retried with exponential backoff.
     """

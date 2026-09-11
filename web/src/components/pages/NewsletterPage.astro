@@ -1,0 +1,74 @@
+---
+/**
+ * @file NewsletterPage.astro
+ * @description Locale-agnostic body of `/newsletter` — the notice list under an address a person
+ *  can be told out loud. The three route files (/newsletter, /en/newsletter, /fr/newsletter) are
+ *  one-liners that differ only in `lang`.
+ *
+ *  WHY IT EXISTS BESIDE THE BAND ON /koncerty. The band is where the WALK arrives: directly under
+ *  the station that says the next evening has no date, which is the one place a reader has just
+ *  been told something they might want to be told again. This page is where a NAME arrives — "sign
+ *  up for their notices" sends someone to an address bar, and no one has ever guessed `nuntius`.
+ *  Both mount `NoticeSignup`, so they are one wording taken twice, and `surface` on the record
+ *  says which screen the clause was read on. That is the column's job.
+ *
+ *  INDEXED, unlike the two other pages that stand alone on this ground (/nuntius and the vacat
+ *  leaf). Those are noindex because a receipt and a blank leaf are not what anyone searched for;
+ *  this one is exactly what someone searching "VoctEnsemble newsletter" wants, and being found is
+ *  the whole reason it was built.
+ *
+ *  EVERY WORD IT SAYS IS THE BAND'S — `content/pages/koncerty.yaml` under `notice.*`, read through
+ *  `NoticeSignup`. Only the tab title and the search description are owned here, in the chrome
+ *  (`i18n/content/nuntius.ts`), on the rule the receipt page's meta already follows.
+ * @architecture Astro islands 2026
+ * @module components/pages/NewsletterPage
+ */
+import { getImage } from "astro:assets";
+
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SiteChrome from "../SiteChrome.astro";
+import SiteFooter from "../SiteFooter.astro";
+import NoticeSignup from "../NoticeSignup.astro";
+import { DEFAULT_LOCALE, pageI18n, type Locale } from "../../i18n/config";
+import { NUNTIUS } from "../../i18n/content/nuntius";
+import { UI } from "../../i18n/ui";
+import { bleedPair } from "../../lib/photos";
+
+interface Props {
+  lang?: Locale;
+}
+const { lang = DEFAULT_LOCALE } = Astro.props;
+
+const nuntius = NUNTIUS[lang];
+const t = nuntius.signup;
+const ui = UI[lang];
+
+/* Looked up rather than composed, unlike /nuntius and /404: this page is linked from the footer of
+   every page on the site, so it belongs in `TRANSLATED_ROUTES` and gets a real hreflang graph. */
+const { path, alternates, available } = pageI18n("/newsletter", lang);
+
+const ogImage = (
+  await getImage({ src: bleedPair("koncerty-hero").desktop, width: 1200, format: "webp" })
+).src;
+---
+
+<BaseLayout
+  title={t.meta.title}
+  description={t.meta.description}
+  path={path}
+  alternates={alternates}
+  image={ogImage}
+  bodyClass="page-newsletter"
+  lang={lang}
+>
+  <a class="skip-link" href="#tresc">{ui.skipToContent}</a>
+  {/* `current` is the canonical Polish base path, which is what the bar compares against — it
+      marks no nav item here by design: the list is a page of the site, not a fifth destination. */}
+  <SiteChrome current="/newsletter" tone="dark" lang={lang} availableLocales={available} />
+
+  <main id="tresc" class="notice-page" aria-label={nuntius.form.bandAria}>
+    <NoticeSignup lang={lang} surface="web:newsletter" level="h1" />
+  </main>
+
+  <SiteFooter lang={lang} />
+</BaseLayout>

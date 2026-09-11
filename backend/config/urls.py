@@ -51,6 +51,7 @@ from documents.views import (
     MyEnsembleAPIView,
 )
 from messaging.views import ProjectChannelViewSet, ThreadViewSet
+from notifications.emaillabs_webhook import EmailLabsTrackingWebhookView
 from notifications.views import NotificationPreferenceAPIView, NotificationViewSet, PushDeviceViewSet
 from roster.views import (
     ArtistViewSet,
@@ -128,7 +129,7 @@ urlpatterns = [
     path('api/notifications/preferences/', NotificationPreferenceAPIView.as_view(), name='notification-preferences'),
     path('api/notifications/preferences/<str:notification_type>/', NotificationPreferenceAPIView.as_view(), name='notification-preferences-detail'),
 
-    # --- Push Device Endpoints (Web Push / FCM) ---
+    # --- Push Device Endpoints (Web Push / VAPID) ---
     # Order: 'test' before 'devices/' so it isn't swallowed by the catch-all <path:pk>.
     path('api/notifications/devices/test/', PushDeviceViewSet.as_view({'post': 'test_push'}), name='push-device-test'),
     path('api/notifications/devices/', PushDeviceViewSet.as_view({'post': 'create'}), name='push-device-register'),
@@ -196,8 +197,18 @@ urlpatterns = [
     # --- Payments & Donations (Axepta BNP Paribas) ---
     path("api/payments/", include("payments.urls")),
 
-    # --- ESP delivery webhooks (Anymail/Resend tracking → bounce/complaint suppression) ---
+    # --- Outreach: people who are NOT members and asked to hear from us ---
+    # Public, unauthenticated, posted to by the Astro site (concert notice list).
+    path("api/outreach/", include("outreach.urls")),
+
+    # --- ESP delivery webhooks (tracking → bounce/complaint suppression) ---
+    # Both providers stay mounted through the changeover: the old one keeps reporting
+    # on mail already in flight while the new one starts. Suppression does not care
+    # which arrives — `notifications/signals.py` listens to Anymail's signal, not to
+    # an ESP.
+    #
     # Resend posts Svix-signed events to .../resend/tracking/; Anymail verifies them.
+    # EmailLabs is mounted below, and only when it can be secured.
     path("api/webhooks/email/", include("anymail.urls")),
 
     # --- Chorister Hub: Artist Identity Metrics ---
@@ -218,6 +229,26 @@ urlpatterns = [
         name='score-edition-download',
     ),
 ]
+
+# EmailLabs delivery reports. MOUNTED ONLY WHEN A CREDENTIAL EXISTS TO CHECK: their
+# reports carry no signature, so basic auth is the entire security of this endpoint,
+# and an unauthenticated one would let anyone on the web mark any address undeliverable
+# or end a subscriber's consent. Absent the secret the URL simply does not exist —
+# 404 is a better answer than an open door.
+#
+# The credential is passed to the view rather than set as ANYMAIL["WEBHOOK_SECRET"],
+# which Anymail applies to every webhook at once and which would start rejecting the
+# Resend reports that keep arriving throughout the changeover.
+if settings.EMAILLABS_WEBHOOK_SECRET:
+    urlpatterns += [
+        path(
+            "api/webhooks/email/emaillabs/tracking/",
+            EmailLabsTrackingWebhookView.as_view(
+                basic_auth=[settings.EMAILLABS_WEBHOOK_SECRET],
+            ),
+            name="emaillabs-tracking-webhook",
+        ),
+    ]
 
 # Serve user-uploaded media files (PDFs, Audio) via Django ONLY during local development.
 # In production, this should be handled by Nginx or a cloud storage provider (e.g., AWS S3).

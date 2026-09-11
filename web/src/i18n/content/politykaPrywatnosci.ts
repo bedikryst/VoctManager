@@ -92,6 +92,7 @@ const privacyCopySchema = z
         zrzutka: z.object({ title: z.string(), p1Html: z.string() }).strict(),
         transfer: z.object({ title: z.string(), p1: z.string() }).strict(),
         patronage: z.object({ title: z.string(), p1Html: z.string() }).strict(),
+        notices: z.object({ title: z.string(), p1Html: z.string() }).strict(),
         email: z.object({ title: z.string(), p1: z.string() }).strict(),
         audio: z.object({ title: z.string(), p1Html: z.string() }).strict(),
       })
@@ -110,7 +111,13 @@ const privacyCopySchema = z
       })
       .strict(),
     s6: z
-      .object({ title: z.string(), p1: z.string(), p2: z.string(), p3: z.string() })
+      .object({
+        title: z.string(),
+        p1: z.string(),
+        p2: z.string(),
+        p3: z.string(),
+        p4: z.string(),
+      })
       .strict(),
     s7: z.object({ title: z.string(), items: z.array(markedItem) }).strict(),
     s8: z
@@ -296,6 +303,19 @@ const PRIVACY_CONTRACT: readonly CopyEntry[] = [
   },
   { kind: "field", path: "s3.patronage.p1Html", label: "03 · mecenat · akapit" },
 
+  {
+    kind: "field",
+    path: "s3.notices.title",
+    label: "03 · zawiadomienia · tytuł",
+    note: "Names the same object the concerts page calls the notice list — follow whatever the band there is called in this language.",
+  },
+  {
+    kind: "field",
+    path: "s3.notices.p1Html",
+    label: "03 · zawiadomienia · akapit",
+    note: "The full account of what the short clause beside the form promises. `dwustopniowy` is double opt-in; keep the two steps distinguishable, because the paragraph's point is that nothing is stored until the second one.",
+  },
+
   { kind: "field", path: "s3.email.title", label: "03 · korespondencja · tytuł" },
   { kind: "field", path: "s3.email.p1", label: "03 · korespondencja · akapit" },
 
@@ -355,6 +375,12 @@ const PRIVACY_CONTRACT: readonly CopyEntry[] = [
     note: "Standardowe Klauzule Umowne are the GDPR's Standard Contractual Clauses — a named instrument with an official rendering in every EU language, and its abbreviation follows the language.",
   },
   { kind: "field", path: "s6.p3", label: "06 · akapit 3" },
+  {
+    kind: "field",
+    path: "s6.p4",
+    label: "06 · akapit 4",
+    note: "The one transfer this foundation makes itself rather than inherits from a payment operator. `Resend, Inc.` is a company name and stays as it is.",
+  },
 
   { kind: "field", path: "s7.title", label: "07 · tytuł" },
   {

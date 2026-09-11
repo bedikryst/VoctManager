@@ -615,6 +615,41 @@
     color: var(--candle);
   }
 
+  /* ── The notice list's invitation, under the card's gold CTA ────────────────
+     A LINK, never a field: the address is taken on a page built for it, and a consent clause
+     inside this card would be a second ask where the register's payoff belongs. Ranked below the
+     CTA — the card's argument is that a gift brings the evening closer, and this is its quieter
+     alternative, so the pair is the `.final-actions` hierarchy and not the hero's equality.
+
+     NO RULE OF ITS OWN. It had one, and with the CTA's persistent underline above it and the
+     candle border that CLOSES the register below, three gold hairlines fell inside two hundred
+     pixels — enough that the card lost its own closing gesture and the passage read as a strip
+     bolted to the foot of it. Grade and size carry the ranking now; the one border in this
+     neighbourhood belongs to `.path-next`. */
+  .path-next-nuntius {
+    max-width: 42rem;
+    margin: clamp(18px, 2vw, 26px) 0 0;
+    color: var(--ink-muted);
+    font-size: clamp(13.5px, 1vw, 15px);
+    line-height: 1.62;
+  }
+
+  .path-next-nuntius-link {
+    color: var(--candle-ink);
+    padding-bottom: 1px;
+    border-bottom: 1px solid color-mix(in oklab, var(--candle-ink) 40%, transparent);
+    transition:
+      color 0.3s var(--ease),
+      border-color 0.3s var(--ease);
+  }
+
+  /* Deepening to ink, not lifting to candle: at this size full --candle would drop the link to
+     2.10:1 exactly where it becomes the thing being pointed at. */
+  .path-next-nuntius-link:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
   /* Mobile: collapse the two-rail layout to a single column. Roman + year + tag
      ride along the top of each entry as a slimmer header band. */
   @media (max-width: 720px) {

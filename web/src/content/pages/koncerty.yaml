@@ -1,7 +1,8 @@
 # The editorial text of /koncerty — Polish, and Polish only.
 #
 # WHAT IS AND IS NOT HERE. This file holds what the PAGE says: the hero it opens with, the four
-# rules of the evening, the two section heads, the unwritten station and the closing invitation.
+# rules of the evening, the two section heads, the unwritten station, the notice band's own voice
+# and the closing invitation.
 # What a CONCERT says — its title, its essence, its dateline, its incipit, its facts — is
 # `src/content/concerts.yaml` read through the copy desk's overlay by concert key, exactly as
 # /koncerty/[id] reads it. The catalogue of composers under "Repertuar" is `repertoire.yaml`, which
@@ -54,6 +55,25 @@ next:
     Ten koncert istnieje już w partyturach i próbach — brakuje mu tylko przestrzeni,
     w której wybrzmi. Darowizny przybliżają jego datę.
   cta: "Pomóż mu wybrzmieć →"
+
+# The notice list, standing directly under the station that has just said there is no next date.
+# It is the second thing that can be offered to a reader who has been told that, and it is not
+# money — it is being told when there is one. What the band does NOT hold: its labels, its button
+# and the consent clause, which are chrome (`src/i18n/content/nuntius.ts`) because a clause that
+# fell back to Polish on an English page would be a consent recorded against a text the reader
+# could not read.
+notice:
+  h2: "Damy znać o nadchodzących koncertach."
+  # One negation in the passage, and it is the last three words — the site's own rule. The list
+  # promises a frequency, not a relationship; keep whatever renders that plainly.
+  lede: >-
+    Jeden list na jeden wieczór: miejsce, godzina, program. Nic poza tym.
+  # Read after the address is submitted. It says a mail is on its way, never "you are subscribed":
+  # nothing is stored as a consent until the link in it is clicked.
+  sentTitle: "Sprawdź skrzynkę."
+  sentBody: >-
+    Wysłaliśmy prośbę o potwierdzenie. Adres zapisujemy dopiero wtedy, gdy klikniesz
+    link w tej wiadomości.
 
 # The evening's four rules, read AFTER the walk like a programme-book essay. Documented practice
 # from the ensemble's own programme books, not an invented framework: the Jesuit introduction, the

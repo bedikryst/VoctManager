@@ -124,6 +124,11 @@ export const TRANSLATED_ROUTES: ReadonlySet<string> = new Set<string>([
   // and from inside the vault's terms. A noindex leaf nothing links to belongs outside; one that
   // thirty pages point at belongs in, or an English reader's footer sends them to Polish.
   "/polityka-prywatnosci",
+  // The notice list's sign-up. In for the privacy policy's reason and not the /404 leaf's: the
+  // footer of every page on the site points at it, so an English reader's footer would otherwise
+  // hand them the Polish page. Being in this set localizes LINKS — it adds nothing to the nav bar,
+  // whose four destinations are written by hand in SiteChrome.
+  "/newsletter",
   "/koncerty/wcielenie",
   "/koncerty/wolanie-gor",
   "/koncerty/9-kart",

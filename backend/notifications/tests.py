@@ -25,6 +25,12 @@ from rest_framework.test import APITestCase
 
 from core.constants import AppRole
 from core.models import UserProfile
+from outreach.models import (
+    ConcertNoticeSubscription,
+    NoticeConsentEventKind,
+    NoticeStatus,
+)
+from outreach.services import NoticeListService
 
 from .delivery import default_channel_preferences
 from .email_service import EmailDispatcherService, EmailType
@@ -438,6 +444,19 @@ class TransactionalEmailTests(TestCase):
         self.assertIn("https://voctensemble.com/panel/schedule", html)
         # Plain-text alternative carries the same absolute link
         self.assertIn("https://voctensemble.com/panel/schedule", msg.body)
+
+    def test_the_esp_tag_reaches_the_message(self) -> None:
+        """
+        Anymail reads `tags` off the message it is handed, and nothing puts that attribute
+        there but the dispatcher's own assignment — so a `hasattr` check guarding it can
+        only ever be false, and the ESP would have nothing to group deliveries by.
+        """
+        self._dispatch(NotificationType.REHEARSAL_SCHEDULED, metadata={"project_name": "Requiem"})
+
+        self.assertEqual(
+            getattr(mail.outbox[0], "tags", None),
+            [EmailType.OPERATIONAL, "transactional"],
+        )
 
     def test_email_language_follows_profile_and_updates_after_change(self) -> None:
         """Notification emails resolve profile.language JIT at send time — so a
@@ -1127,6 +1146,72 @@ class ESPTrackingTests(TestCase):
         self._fire(event_type="unsubscribed")
         self.assertFalse(self.profile.email_notifications_enabled)
         self.assertFalse(self.profile.email_undeliverable)
+
+
+class ESPTrackingNoticeListTests(TestCase):
+    """
+    The same webhook for an address that has no user row at all: a concert notice
+    subscriber. A member's bounce sets a flag and leaves the account standing, because the
+    relationship survives a dead mailbox. Here the mailbox IS the relationship, so the only
+    honest answer is to end the consent — and to be able to show that we did.
+    """
+
+    ADDRESS = "reader@example.com"
+
+    def setUp(self) -> None:
+        NoticeListService.subscribe(email=self.ADDRESS, locale="pl", surface="web:koncerty")
+        NoticeListService.confirm(self._row().confirm_token or "")
+
+    def _row(self) -> ConcertNoticeSubscription:
+        return ConcertNoticeSubscription.all_objects.get(email=self.ADDRESS)
+
+    def _fire(self, **kw) -> None:
+        from notifications.signals import handle_esp_tracking
+        base = {"recipient": self.ADDRESS, "event_type": "", "reject_reason": None}
+        base.update(kw)
+        handle_esp_tracking(sender=None, event=SimpleNamespace(**base), esp_name="resend")
+
+    def _assert_withdrawn(self) -> None:
+        row = self._row()
+        self.assertEqual(row.status, NoticeStatus.UNSUBSCRIBED)
+        self.assertIsNotNone(row.unsubscribed_at)
+        self.assertEqual(
+            list(row.consent_events.order_by("at").values_list("kind", flat=True)),
+            [NoticeConsentEventKind.GRANTED, NoticeConsentEventKind.WITHDRAWN],
+        )
+
+    def test_spam_complaint_ends_the_public_consent(self) -> None:
+        self._fire(event_type="complained")
+        self._assert_withdrawn()
+
+    def test_hard_bounce_ends_the_public_consent(self) -> None:
+        self._fire(event_type="bounced", reject_reason="invalid")
+        self._assert_withdrawn()
+
+    def test_esp_side_unsubscribe_ends_the_public_consent(self) -> None:
+        self._fire(event_type="unsubscribed")
+        self._assert_withdrawn()
+
+    def test_a_soft_bounce_leaves_the_consent_standing(self) -> None:
+        """A deferral is the mail system being busy, not the reader saying anything."""
+        self._fire(event_type="bounced", reject_reason="timed_out")
+        self.assertEqual(self._row().status, NoticeStatus.CONFIRMED)
+
+    def test_an_event_for_a_stranger_writes_nothing(self) -> None:
+        self._fire(recipient="nobody@example.com", event_type="complained")
+        self.assertEqual(self._row().status, NoticeStatus.CONFIRMED)
+
+    def test_a_second_complaint_does_not_log_a_second_withdrawal(self) -> None:
+        """The webhook may deliver twice; the consent log is evidence, not a counter."""
+        self._fire(event_type="complained")
+        self._fire(event_type="complained")
+
+        self.assertEqual(
+            self._row().consent_events.filter(
+                kind=NoticeConsentEventKind.WITHDRAWN,
+            ).count(),
+            1,
+        )
 
 
 class NotificationBadgeSeenTests(APITestCase):
@@ -1955,3 +2040,193 @@ class PushEmailOfferStampTests(APITestCase):
         )
         self.profile.refresh_from_db()
         self.assertIsNone(self.profile.push_email_offer_seen_at)
+
+
+class EmailLabsPayloadTests(SimpleTestCase):
+    """
+    What actually goes on the wire to EmailLabs.
+
+    A hand-written ESP integration fails in one direction: quietly, by dropping a
+    field the API spells differently. Every assertion here guards a field whose
+    loss would raise nothing — the mail would send, missing its unsubscribe
+    header, its reply address or its attachment.
+    """
+
+    def _serialize(self, message: EmailMultiAlternatives) -> dict[str, list[str]]:
+        from urllib.parse import parse_qs
+
+        from .emaillabs_backend import EmailBackend
+
+        backend = EmailBackend(
+            app_key="app-key", secret_key="secret-key", smtp_account="1.voct.smtp",
+        )
+        payload = backend.build_message_payload(message, backend.send_defaults)
+        return parse_qs(payload.serialize_data(), keep_blank_values=True)
+
+    def _message(self) -> EmailMultiAlternatives:
+        message = EmailMultiAlternatives(
+            subject="Proba generalna",
+            body="Wersja tekstowa",
+            from_email="VoctEnsemble <noreply@voctensemble.com>",
+            to=["Jan Kowalski <jan@example.com>"],
+            reply_to=["rodo@voctensemble.com"],
+            headers={
+                "List-Unsubscribe": "<https://voctensemble.com/u/abc>",
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
+        )
+        message.attach_alternative("<p>Wersja HTML</p>", "text/html")
+        message.tags = ["OPERATIONAL", "notice_confirm"]  # type: ignore[attr-defined]
+        return message
+
+    def test_core_fields(self) -> None:
+        data = self._serialize(self._message())
+        self.assertEqual(data["from"], ["noreply@voctensemble.com"])
+        self.assertEqual(data["from_name"], ["VoctEnsemble"])
+        self.assertEqual(data["subject"], ["Proba generalna"])
+        self.assertEqual(data["text"], ["Wersja tekstowa"])
+        self.assertEqual(data["html"], ["<p>Wersja HTML</p>"])
+        self.assertEqual(data["smtp_account"], ["1.voct.smtp"])
+
+    def test_recipient_uses_the_providers_own_spelling(self) -> None:
+        # `reciver_name` is EmailLabs' spelling. Corrected, the name is dropped.
+        data = self._serialize(self._message())
+        self.assertEqual(data["to[jan@example.com][reciver_name]"], ["Jan Kowalski"])
+
+    def test_unsubscribe_headers_survive(self) -> None:
+        # The notice list's one-click withdrawal (RFC 8058) IS these two headers.
+        data = self._serialize(self._message())
+        self.assertEqual(data["headers[List-Unsubscribe]"], ["<https://voctensemble.com/u/abc>"])
+        self.assertEqual(
+            data["headers[List-Unsubscribe-Post]"], ["List-Unsubscribe=One-Click"],
+        )
+
+    def test_reply_to_and_tags(self) -> None:
+        data = self._serialize(self._message())
+        self.assertEqual(data["reply_to"], ["rodo@voctensemble.com"])
+        self.assertEqual(data["tags[0]"], ["OPERATIONAL"])
+        self.assertEqual(data["tags[1]"], ["notice_confirm"])
+
+    def test_attachment_is_base64_with_its_media_type_intact(self) -> None:
+        import base64
+
+        message = self._message()
+        message.attach("schedule.ics", "BEGIN:VCALENDAR", "text/calendar; method=PUBLISH")
+        data = self._serialize(message)
+        self.assertEqual(data["files[0][name]"], ["schedule.ics"])
+        self.assertEqual(data["files[0][mime]"], ["text/calendar; method=PUBLISH"])
+        self.assertEqual(
+            data["files[0][content]"], [base64.b64encode(b"BEGIN:VCALENDAR").decode()],
+        )
+
+    def test_esp_extra_can_move_the_message_to_another_sending_identity(self) -> None:
+        message = self._message()
+        message.esp_extra = {"smtp_account": "2.voct-bulk.smtp"}  # type: ignore[attr-defined]
+        self.assertEqual(self._serialize(message)["smtp_account"], ["2.voct-bulk.smtp"])
+
+
+class EmailLabsWebhookTests(TestCase):
+    """
+    The half of the vendor contract that keeps the suppression ledger honest.
+
+    Backed by a database rather than SimpleTestCase because the real receiver in
+    `signals.py` is connected here — these events travel the whole path an actual
+    delivery report travels, suppression included.
+
+    The load-bearing case is `test_spambounce_does_not_suppress`: it looks like a
+    permanent failure and is not, and treating it as one would silently unreach a
+    member — the failure the whole notification stack exists to avoid, arriving
+    from the side that looks like diligence.
+    """
+
+    AUTH = "voct:secret"
+
+    def _post(self, body, auth=AUTH):
+        import base64 as _b64
+        import json as _json
+
+        from django.test import RequestFactory
+
+        from .emaillabs_webhook import EmailLabsTrackingWebhookView
+
+        headers = (
+            {"Authorization": "Basic " + _b64.b64encode(auth.encode()).decode()}
+            if auth is not None
+            else None
+        )
+        request = RequestFactory().post(
+            "/api/webhooks/email/emaillabs/tracking/",
+            data=_json.dumps(body),
+            content_type="application/json",
+            headers=headers,
+        )
+        view = EmailLabsTrackingWebhookView.as_view(basic_auth=[self.AUTH])
+        return view(request)
+
+    def _events(self, body) -> list:
+        from anymail.signals import tracking  # type: ignore[import-untyped]
+
+        received: list = []
+
+        def receiver(sender, event, esp_name, **kwargs):
+            received.append(event)
+
+        tracking.connect(receiver, dispatch_uid="test.emaillabs")
+        try:
+            response = self._post(body)
+        finally:
+            tracking.disconnect(dispatch_uid="test.emaillabs")
+        self.assertEqual(response.status_code, 200)
+        return received
+
+    def test_rejects_missing_basic_auth(self) -> None:
+        from django.core.exceptions import SuspiciousOperation
+
+        with self.assertRaises(SuspiciousOperation):
+            self._post([{"email": "a@b.pl", "status": "ok"}], auth=None)
+
+    def test_hard_bounce_is_a_suppressing_event(self) -> None:
+        event = self._events([{"email": "A@B.pl", "status": "hardbounce"}])[0]
+        self.assertEqual(event.event_type, "bounced")
+        self.assertEqual(event.reject_reason, "bounced")
+        # Lower-cased so the suppression lookup does not depend on the ESP's casing.
+        self.assertEqual(event.recipient, "a@b.pl")
+
+    def test_feedback_is_a_complaint(self) -> None:
+        event = self._events([{"email": "a@b.pl", "status": "feedback"}])[0]
+        self.assertEqual(event.event_type, "complained")
+
+    def test_spambounce_does_not_suppress(self) -> None:
+        # A receiving filter's verdict, which false-positives. `_HARD_BOUNCE_REASONS`
+        # in signals.py must not match it, or one spam filter costs us a member.
+        event = self._events([{"email": "a@b.pl", "status": "spambounce"}])[0]
+        self.assertEqual(event.event_type, "bounced")
+        self.assertNotIn(event.reject_reason, {"invalid", "bounced", "blocked", "spam"})
+
+    def test_dropped_does_not_suppress(self) -> None:
+        # "Dropped" also covers our own account limits — our fault, not the reader's.
+        event = self._events([{"email": "a@b.pl", "status": "dropped"}])[0]
+        self.assertNotIn(event.reject_reason, {"invalid", "bounced", "blocked", "spam"})
+
+    def test_soft_bounce_is_transient(self) -> None:
+        event = self._events([{"email": "a@b.pl", "status": "softbounce"}])[0]
+        self.assertEqual(event.event_type, "deferred")
+
+    def test_accepts_a_batch_and_a_bare_object(self) -> None:
+        batch = self._events([
+            {"email": "a@b.pl", "status": "ok"},
+            {"email": "c@d.pl", "status": "hardbounce"},
+        ])
+        self.assertEqual([event.recipient for event in batch], ["a@b.pl", "c@d.pl"])
+        self.assertEqual(len(self._events({"email": "a@b.pl", "status": "ok"})), 1)
+
+    def test_unknown_and_unreadable_events_do_not_break_the_endpoint(self) -> None:
+        # EmailLabs retries anything that is not 200, so an event we cannot read has
+        # to be logged and dropped rather than raised — otherwise one malformed
+        # report re-delivers for 24 hours.
+        events = self._events([
+            {"email": "a@b.pl", "status": "something_new"},
+            {"nothing": "recognizable"},
+        ])
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].event_type, "unknown")

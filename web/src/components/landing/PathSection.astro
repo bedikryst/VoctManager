@@ -23,6 +23,7 @@ import { PATHS, ROMAN } from "../../data/landing/paths";
 import { concertKey, overlayValue } from "../../lib/copyOverlay";
 import { localizePath, type Locale } from "../../i18n/config";
 import type { LandingChrome, LandingCopy } from "../../i18n/content/landing";
+import { NUNTIUS } from "../../i18n/content/nuntius";
 
 interface Props {
   copy: LandingCopy["register"];
@@ -37,6 +38,10 @@ const { copy, chrome, lang } = Astro.props;
 const concerts = await getCollection("concerts");
 const byId = new Map(concerts.map((c) => [c.id, c.data] as const));
 const hrefConcerts = localizePath("/koncerty", lang);
+const nuntius = NUNTIUS[lang];
+// The band that takes the consent, on the page that says why there is one. Nothing is asked for
+// here — see the note on the invitation itself.
+const hrefNotice = `${hrefConcerts}#nuntius`;
 
 // One row per evening, with its three sources joined. A structural entry whose editorial copy has
 // been removed is loud rather than blank: the row would otherwise print a numeral, a year and
@@ -165,6 +170,23 @@ const entries = PATHS.map((path, i) => {
           >
             {copy.next.cta}
           </a>
+
+          {/* The second thing that can be offered to a reader who has just been told the date
+              depends on patrons, and the only one that is not money. A LINK, not a form: this card
+              is the register's payoff and a field with a consent clause in it would be a second
+              ask standing where one belongs — the address is taken on a page built for it.
+
+              ONE SENTENCE, NO RULE, NO RUBRIC. It carried both and they made a footer of it: a
+              full-width hairline under the CTA's own, with a section rubric heading a single line,
+              is the anatomy of a mailing-list strip, and it read as one against a card where
+              everything else is a voice. What ranks it below the gold CTA is its grade and its
+              size, which is the whole hierarchy this pair needs. */}
+          <p class="path-next-nuntius reveal">
+            {nuntius.invitation.line}{" "}
+            <a class="path-next-nuntius-link" href={hrefNotice}>
+              {nuntius.invitation.cta}&nbsp;<span aria-hidden="true">→</span>
+            </a>
+          </p>
         </div>
       </aside>
     </div>

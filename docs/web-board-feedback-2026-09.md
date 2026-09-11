@@ -43,11 +43,23 @@ So Etap 1 treats the atom, and three complaints close without moving a word or a
 | # | Stage | Blocked by | Status |
 |---|---|---|---|
 | 1 | **Legibility + concert front matter** | nothing | *done* |
-| 2a | **Copy desk** — editorial surface + concerts in three locales | nothing | *next* |
-| 2b | **Concert notification list** ("newsletter") | RODO documents | ordered |
-| 3 | **Press pack + `/press` recut** | assets from the ensemble (rider, photo selection) | ordered |
+| 2a | **Copy desk** — editorial surface + concerts in three locales | nothing | *done* |
+| 2b | **Concert notification list** ("newsletter") | RODO documents — **ours to write** | *done* |
+| 3 | **Press pack + `/press` recut** | assets from the ensemble (rider, photo selection) | *next — order the rider* |
 | 4 | **Liturgies & weddings subpage** | board decision on framing + legal form of the activity | ordered |
 | 5 | **Q&A and testimonials** | consent path for publishing third-party statements | later |
+
+**Etap 2b is built and has its own record:**
+[docs/web-notice-list-2026-09.md](web-notice-list-2026-09.md), which overrides the paragraph below
+wherever they disagree. It went before stages 3 and 4 on the strength of one distinction this table
+had blurred: its blocker was **documents nobody else writes**, while theirs are a rider from the
+ensemble and a board decision. A blocker you clear by working is not the same kind of thing as one
+you clear by waiting, and only the second kind is a reason to skip a stage.
+
+**Everything left is now waiting on somebody who is not the developer**, so both clocks should be
+started before either stage is built: order the technical rider and the photo selection from the
+ensemble (Etap 3 — the longest lead time on the list), and put the odpłatna działalność pożytku
+publicznego vs. działalność gospodarcza question to the board (Etap 4).
 
 **Etap 2 was split and changed shape.** Its spec is now
 [docs/web-copy-desk-2026-09.md](web-copy-desk-2026-09.md) and that file overrides the paragraphs
@@ -85,11 +97,13 @@ finished Polish*. It is not — he is the editor of the Polish, and the concert 
 matters most. `/o-nas` is still the reference pattern for content modules, and `/press` is still
 excluded until Etap 3 recuts it.
 
-**Etap 2b — the notification list.** Not a newsletter — a **concert notification list**, one mail per
-evening, which is what the board actually wanted and the only version that survives the site's own
-no-fabrication and *kairos not chronos* rules. Placement: at the register's foot or the Coda, where
-a reader who has just learned there is no sixth date has an unmet need. What it needs is documents,
-not a board vote:
+**Etap 2b — the notification list.** BUILT; see [its own record](web-notice-list-2026-09.md) for
+what shipped, the four traps it hit, and why sending is deliberately absent. The paragraph below is
+the original brief, kept because every requirement in it held. Placement landed on the register:
+its own night band directly under the *Nondum* station, which is where a reader learns there is no
+sixth date. Not a newsletter — a **concert notification list**, one mail per evening, which is what
+the board actually wanted and the only version that survives the site's own no-fabrication and
+*kairos not chronos* rules. What it needs is documents, not a board vote:
 
 - `docs/legal/klauzula-informacyjna.md` — add the purpose (verified absent).
 - `docs/legal/rodo-ropa.md` — add the processing activity (verified absent; the file currently

@@ -800,20 +800,14 @@ msgstr ""
 msgid "Web Browser"
 msgstr ""
 
-#: notifications/models.py:120
-msgid "Apple iOS"
-msgstr ""
-
-#: notifications/models.py:121
-msgid "Google Android"
-msgstr ""
-
 #: notifications/models.py:133
 msgid "The user entity owning this device."
 msgstr ""
 
 #: notifications/models.py:137
-msgid "The FCM/APNs device token (mobile) or Web Push endpoint URL (web)."
+msgid ""
+"The Web Push endpoint URL the browser's push service assigned to this "
+"subscription."
 msgstr ""
 
 #: notifications/models.py:142

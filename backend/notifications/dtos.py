@@ -8,9 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .models import DeviceType, NotificationLevel, NotificationType
+from .models import NotificationLevel, NotificationType
 
-DEVICE_TYPE_VALUES = frozenset(DeviceType.values)
 NOTIFICATION_LEVEL_VALUES = frozenset(NotificationLevel.values)
 NOTIFICATION_TYPE_VALUES = frozenset(NotificationType.values)
 
@@ -445,20 +444,6 @@ class NotificationCreateDTO(EnterpriseBaseDTO):
     @classmethod
     def validate_level(cls, value: str) -> str:
         return _require_choice(value, NOTIFICATION_LEVEL_VALUES, "level")
-
-class PushDeviceRegisterDTO(BaseModel):
-    """DTO for FCM token registration (iOS / Android)."""
-    model_config = ConfigDict(extra="forbid", frozen=True, validate_by_name=True, validate_by_alias=True)
-
-    user_id: int | str
-    registration_token: str = Field(..., min_length=10, description="The client-provided FCM token.")
-    device_type: str = Field(default="WEB", description="Platform identifier.")
-
-    @field_validator("device_type")
-    @classmethod
-    def validate_device_type(cls, value: str) -> str:
-        return _require_choice(value, DEVICE_TYPE_VALUES, "device_type")
-
 
 class WebPushSubscribeDTO(BaseModel):
     """DTO for Web Push (VAPID) subscription registration from browser clients."""

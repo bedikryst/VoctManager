@@ -819,22 +819,17 @@ msgstr "Powiadomienia"
 msgid "Web Browser"
 msgstr "Przeglądarka internetowa"
 
-#: notifications/models.py:120
-msgid "Apple iOS"
-msgstr "Apple iOS"
-
-#: notifications/models.py:121
-msgid "Google Android"
-msgstr "Google Android"
-
 #: notifications/models.py:133
 msgid "The user entity owning this device."
 msgstr "Użytkownik będący właścicielem tego urządzenia."
 
 #: notifications/models.py:137
-msgid "The FCM/APNs device token (mobile) or Web Push endpoint URL (web)."
+msgid ""
+"The Web Push endpoint URL the browser's push service assigned to this "
+"subscription."
 msgstr ""
-"Token urządzenia FCM lub APNs dostarczony przez infrastrukturę klienta."
+"Adres punktu końcowego Web Push przypisany tej subskrypcji przez usługę push "
+"przeglądarki."
 
 #: notifications/models.py:142
 msgid "ECDH public key for Web Push payload encryption. WEB device type only."

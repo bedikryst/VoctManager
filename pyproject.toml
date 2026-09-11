@@ -87,7 +87,6 @@ module = [
     "celery.*",
     "django_filters.*",
     "environ",
-    "firebase_admin.*",
     "magic.*",
     "pypdf.*",
     "pypdfium2.*",

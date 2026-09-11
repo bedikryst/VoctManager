@@ -30,6 +30,7 @@ import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
 import { pageCopy } from "../../lib/pageCopy";
 import { CONTACT_CHROME, KONTAKT_PAGE } from "../../i18n/content/kontakt";
+import { NUNTIUS } from "../../i18n/content/nuntius";
 import { UI } from "../../i18n/ui";
 import { localizePath, pageI18n, SITE, type Locale } from "../../i18n/config";
 import VaultMount from "../../components/VaultMount.astro";
@@ -47,6 +48,8 @@ const t = CONTACT_CHROME[lang];
 const { path, alternates, available } = pageI18n("/kontakt", lang);
 const hrefFoundation = `${localizePath("/o-nas", lang)}#fundacja`;
 const hrefConcerts = localizePath("/koncerty", lang);
+const nuntius = NUNTIUS[lang];
+const hrefNotice = `${hrefConcerts}#nuntius`;
 
 const hero = bleedPair("kontakt-hero");
 
@@ -172,6 +175,21 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <p>{copy.after.languages}</p>
           <p set:html={copy.after.pressHtml} />
         </div>
+
+        {/* The one route on this page that runs the other way: we write, the reader reads. It
+            stands OUTSIDE `dl.channels` deliberately — that list is `Tres ianuae` and its own
+            Latin head counts the doors, so a fourth row would make the rubric above it false.
+            A link, not a form: the address is taken in one place, the band on /koncerty, which
+            is what keeps the `surface` stamped on a consent record true. */}
+        <p class="nuntius-line reveal">
+          <span class="micro nuntius-rubric">
+            <span class="lat" lang="la">Nuntius</span>&nbsp; ·&nbsp; {nuntius.page.eyebrow}
+          </span>
+          <span class="nuntius-say">
+            {nuntius.invitation.line}{" "}
+            <a href={hrefNotice}>{nuntius.invitation.cta}&nbsp;<span aria-hidden="true">→</span></a>
+          </span>
+        </p>
 
         {/* Ink + lead. Both hairlines this page hands to the register are LONE — one per block,
             never a set: three `.channel` rules would draw in unison, because under the `authored`
@@ -335,6 +353,17 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .after-channels p { max-width: 62ch; font-size: clamp(14.5px, 1.15vw, 16px); line-height: 1.72; color: var(--ink-soft); }
   .after-channels :global(a) { border-bottom: 1px solid var(--line-strong); transition: color .3s var(--ease), border-color .3s var(--ease); }
   .after-channels :global(a:hover) { color: var(--candle-blue); border-color: var(--candle-blue); }
+
+  /* The notice list — a route, not a channel, so it keeps its own hairline rather than a row in
+     the three-door list. Set at the weight of `.after-channels` prose, one rubric above it: this
+     is an offer, and it must not out-shout the three addresses that ARE this page. Gold as INK
+     (--candle at 2.10:1 on parchment would make a rubric this small unreadable); the section
+     already declares --lat-ink, so both tiers of the rubric move together. */
+  .nuntius-line { display: grid; gap: 5px; max-width: 62ch; margin: clamp(28px, 4vw, 44px) 0 0; padding-top: clamp(16px, 2vw, 22px); border-top: 1px solid var(--line); }
+  .nuntius-rubric { color: var(--candle-ink); }
+  .nuntius-say { font-size: clamp(14.5px, 1.15vw, 16px); line-height: 1.72; color: var(--ink-soft); }
+  .nuntius-line a { border-bottom: 1px solid var(--line-strong); transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .nuntius-line a:hover { color: var(--candle-blue); border-color: var(--candle-blue); }
 
   /* Three voices — honest signature */
   .voices { margin: clamp(40px, 5vw, 60px) 0 0; padding-top: clamp(28px, 3.6vw, 40px); border-top: 1px solid var(--line); }

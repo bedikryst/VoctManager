@@ -1,0 +1,95 @@
+---
+/**
+ * @file NuntiusPage.astro
+ * @description Locale-agnostic body of `/nuntius` — the page a mail's link lands on. It confirms
+ *  a sign-up for the concert notice list, or ends one, and says which happened. The three route
+ *  files (/nuntius, /en/nuntius, /fr/nuntius) are one-liners that differ only in `lang`.
+ *
+ *  A LATIN ROUTE NAME, so one URL serves three languages: the backend builds these links
+ *  (`outreach/services.NOTICE_PATH`) and a locale-translated slug would have made that table a
+ *  place for the two halves to drift apart.
+ *
+ *  THE WORK IS DONE BY THE ISLAND, NOT BY THIS DOCUMENT, and that is the point rather than an
+ *  implementation detail. A confirmation that fired on the GET would be spent by every link
+ *  scanner between us and the reader — Outlook Safe Links, antivirus proxies, a preview card —
+ *  forging the one fact double opt-in exists to prove. A scanner fetches HTML; it does not
+ *  hydrate an island.
+ *
+ *  IT IS ALSO WHERE PEOPLE GUESS. The URL is printed in every mail we send and it is the one that
+ *  looks like the list's own address, so a reader who was told about the notices arrives here
+ *  holding no token at all. That state used to answer them with a wall; it now leads with the way
+ *  in (`/newsletter`), which is why this page hands the island a sign-up href.
+ *
+ *  `noindex`, and deliberately OUTSIDE `TRANSLATED_ROUTES` for the reason the /404 leaf states:
+ *  that ledger lights up links, a switcher and an hreflang graph, and nothing on this site links
+ *  here — only a mail does. Three documents, no ledger entry, so the canonical below is composed
+ *  from `lang` rather than looked up.
+ *
+ *  EVERY WORD IS CHROME (`i18n/content/nuntius.ts`). This page tells a reader whether they are
+ *  subscribed; a state message that fell back to Polish on the French page would leave them
+ *  unable to answer that question, which is the test the copy desk's §6r sets for chrome.
+ * @architecture Astro islands 2026
+ * @module components/pages/NuntiusPage
+ */
+import { getImage } from "astro:assets";
+
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SiteChrome from "../SiteChrome.astro";
+import SiteFooter from "../SiteFooter.astro";
+import { DEFAULT_LOCALE, localizePath, type Locale } from "../../i18n/config";
+import { NUNTIUS } from "../../i18n/content/nuntius";
+import { UI } from "../../i18n/ui";
+import { bleedPair } from "../../lib/photos";
+import { NuntiusIsland } from "../../islands/landing/NuntiusIsland";
+import "../../styles/notice.css";
+
+interface Props {
+  lang?: Locale;
+}
+const { lang = DEFAULT_LOCALE } = Astro.props;
+
+const t = NUNTIUS[lang].page;
+const ui = UI[lang];
+
+/* This document's own URL — composed, not looked up. See the header. */
+const path = lang === DEFAULT_LOCALE ? "/nuntius" : `/${lang}/nuntius`;
+
+const ogImage = (
+  await getImage({ src: bleedPair("koncerty-hero").desktop, width: 1200, format: "webp" })
+).src;
+---
+
+<BaseLayout
+  title={t.meta.title}
+  description={t.meta.description}
+  path={path}
+  image={ogImage}
+  bodyClass="page-nuntius"
+  lang={lang}
+>
+  <Fragment slot="head">
+    <meta name="robots" content="noindex,follow" />
+  </Fragment>
+
+  <a class="skip-link" href="#tresc">{ui.skipToContent}</a>
+  <SiteChrome current="/nuntius" tone="dark" lang={lang} />
+
+  <main id="tresc" class="nuntius-main">
+    {/* `client:load` and not `client:visible`: the panel IS the page, and a reader who followed a
+        link from their mailbox is owed the answer without a scroll event to earn it. */}
+    <NuntiusIsland
+      client:load
+      lang={lang}
+      chrome={t}
+      concertsHref={localizePath("/koncerty", lang)}
+      homeHref={localizePath("/", lang)}
+      signupHref={localizePath("/newsletter", lang)}
+      signupLabel={NUNTIUS[lang].invitation.cta}
+    />
+    <noscript>
+      <p class="notice-noscript">{t.noscript}</p>
+    </noscript>
+  </main>
+
+  <SiteFooter lang={lang} />
+</BaseLayout>

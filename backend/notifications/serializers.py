@@ -1,7 +1,7 @@
 # notifications/serializers.py
 from rest_framework import serializers
 
-from .models import DeviceType, Notification, NotificationType
+from .models import Notification, NotificationType
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -21,12 +21,6 @@ class NotificationSerializer(serializers.ModelSerializer):
             'level',
         ]
         read_only_fields = fields
-
-class PushDeviceRegisterSerializer(serializers.Serializer):
-    """Validates FCM token registration payload (iOS / Android)."""
-    registration_token = serializers.CharField(min_length=10)
-    device_type = serializers.ChoiceField(choices=DeviceType.choices, default=DeviceType.WEB)
-
 
 class WebPushSubscribeSerializer(serializers.Serializer):
     """Validates Web Push (VAPID) subscription payload from browser clients."""

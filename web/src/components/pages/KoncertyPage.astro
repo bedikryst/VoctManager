@@ -2,8 +2,9 @@
 /**
  * @file KoncertyPage.astro
  * @description Locale-agnostic body of the concerts index (/koncerty). Dark full-bleed stations
- *  rendered from the `concerts` collection, then — stepping out of the night nave into parchment
- *  light — the "Reguły wieczoru" rite section and the seven-century repertoire catalog. Program
+ *  rendered from the `concerts` collection, the unwritten station, and the notice band that
+ *  closes the night stretch — then, stepping out of the night nave into parchment light, the
+ *  "Reguły wieczoru" rite section and the seven-century repertoire catalog. Program
  *  lists use native <details> (zero JS); the Via rail + chrome light/dark tone are driven by
  *  IntersectionObservers (page-scoped). The three route files (/koncerty, /en/koncerty,
  *  /fr/koncerty) are one-liners that differ only in `lang`.
@@ -12,8 +13,11 @@
  *  page legible:
  *
  *  - What the PAGE says (the hero, the four rules, the two section heads, the unwritten station,
- *    the closing invitation) is Polish prose in `src/content/pages/koncerty.yaml`, read through
- *    `lib/pageCopy` with the copy desk's translations substituted per field.
+ *    the notice band's own voice, the closing invitation) is Polish prose in
+ *    `src/content/pages/koncerty.yaml`, read through `lib/pageCopy` with the copy desk's
+ *    translations substituted per field. The notice band's LABELS, its button and its consent
+ *    clause are not there — they are chrome (`i18n/content/nuntius.ts`), because a clause that
+ *    fell back to Polish would be a consent recorded against a text the reader could not read.
  *  - What a CONCERT says (its title, essence, dateline, incipit, facts, poster alt, credits) is
  *    `concerts.yaml` read through the desk's overlay by concert key — `say()` below — and NEVER
  *    through `pickLocale`: the corpus has been Polish-only since stage C3, so a `LocalizedText` in
@@ -42,11 +46,14 @@ import { concertKey, withOverlay } from "../../lib/copyOverlay";
 import { pageCopy } from "../../lib/pageCopy";
 import { KONCERTY_CHROME, KONCERTY_PAGE } from "../../i18n/content/koncerty";
 import { CONCERT } from "../../i18n/content/koncert";
+import { NUNTIUS } from "../../i18n/content/nuntius";
 import { eraName } from "../../i18n/content/repertuar";
 import { UI } from "../../i18n/ui";
 import { localizePath, pageI18n, SITE, type Locale } from "../../i18n/config";
+import NoticeSignup from "../NoticeSignup.astro";
 import VaultMount from "../../components/VaultMount.astro";
 import "../../styles/vault.css";
+import "../../styles/notice.css";
 
 interface Props {
   /** Which language this render is. Drives the copy, the chrome, the URL and the hreflang graph. */
@@ -64,6 +71,10 @@ const hrefAbout = localizePath("/o-nas", lang);
 const hrefDonate = `${localizePath("/", lang)}?donate`;
 
 const hero = bleedPair("koncerty-hero");
+
+// Only the band's landmark name is read here; its rubric, its two sentences and the clause the
+// island prepares are `NoticeSignup`'s, which is what keeps the three placements one wording.
+const nuntius = NUNTIUS[lang];
 
 /** What this render prints for one of a concert's copy fields: the overlay's translation where one
     exists, the corpus's Polish otherwise. Bound per station, since the key carries the concert's
@@ -444,6 +455,21 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <a class="pill pill-gold" href={hrefDonate} data-vault-open="100">{copy.next.cta}</a>
         </div>
       </div>
+    </section>
+
+    {/* ── The notice list — the second thing that can be offered to a reader who has just
+          been told there is no next date, and the only one that is not money. Still night:
+          the page steps into parchment at the rite map, not here. The band is the LAST
+          thing the dark stretch says. ─────────────────────────────────────── */}
+    {/* The `id` is the destination of every invitation elsewhere on the site (the landing's open
+        card, the newest concert's closing rail, /kontakt). Those are links: the band is where the
+        walk itself arrives, directly under the station that says there is no date. `/newsletter`
+        and the vacat leaf mount the same component, so a reader sent here by name and one who
+        walked here read one clause in one wording — `surface` tells the record which screen it
+        was. Its clearance under the fixed bar is `scroll-margin-top` in notice.css, so a reader
+        arriving on the hash lands on the heading rather than under it. */}
+    <section class="notice-band" id="nuntius" aria-label={nuntius.form.bandAria}>
+      <NoticeSignup lang={lang} surface="web:koncerty" />
     </section>
 
     {/* ── The evening's four rules — the method behind the walk, read AFTER it (like a

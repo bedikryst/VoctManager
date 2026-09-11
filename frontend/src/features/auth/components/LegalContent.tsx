@@ -15,19 +15,19 @@ import { Heading, Text } from "@/shared/ui/primitives/typography";
  * it is displayed in the header, sent with the activation request and stored
  * server-side (UserProfile.terms_accepted_at/_version) as acceptance evidence.
  */
-export const LEGAL_DOCS_VERSION = "2026-07-09";
+export const LEGAL_DOCS_VERSION = "2026-09-05";
 
 /** Human display form of {@link LEGAL_DOCS_VERSION} (dd.mm.yyyy). */
-export const LEGAL_DOCS_UPDATED_DISPLAY = "09.07.2026";
+export const LEGAL_DOCS_UPDATED_DISPLAY = "05.09.2026";
 
 /*
  * Privacy policy for the *panel application* (a separate document from the
  * public site's RODO under web/). Disclosures are written to match the actual
  * implementation:
  *  - messaging erasure: backend/messaging/signals.py ("[treść usunięta]"),
- *  - notification processors: config/settings.py (Anymail/Resend e-mail,
- *    Google Firebase/FCM mobile push, self-hosted VAPID web push relayed by
- *    the browser vendor's push service),
+ *  - notification processors: config/settings.py (Anymail/Resend e-mail;
+ *    push is self-hosted VAPID only, relayed by the browser vendor's push
+ *    service, which is a separate controller and not a processor of ours),
  *  - licensed-score watermarking + access log: backend/archive/score_protection.py
  *    and archive.models.ScoreAccessLog,
  *  - AI sheet-music analysis: Anthropic (backend/archive ingestion pipeline).
