@@ -8,9 +8,10 @@
              are deterministic regardless of compiled .mo catalogs.
 @module notifications/tests
 """
+import json
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
-from typing import ClassVar, cast
+from typing import Any, ClassVar, cast
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
@@ -2117,16 +2118,17 @@ class EmailLabsPayloadTests(SimpleTestCase):
     header, its reply address or its attachment.
     """
 
-    def _serialize(self, message: EmailMultiAlternatives) -> dict[str, list[str]]:
-        from urllib.parse import parse_qs
-
+    def _payload(self, message: EmailMultiAlternatives):
         from .emaillabs_backend import EmailBackend
 
         backend = EmailBackend(
             app_key="app-key", secret_key="secret-key", smtp_account="1.voct.smtp",
         )
-        payload = backend.build_message_payload(message, backend.send_defaults)
-        return parse_qs(payload.serialize_data(), keep_blank_values=True)
+        return backend.build_message_payload(message, backend.send_defaults)
+
+    def _serialize(self, message: EmailMultiAlternatives) -> dict[str, Any]:
+        body = self._payload(message).serialize_data()
+        return json.loads(body)
 
     def _message(self) -> EmailMultiAlternatives:
         message = EmailMultiAlternatives(
@@ -2144,50 +2146,75 @@ class EmailLabsPayloadTests(SimpleTestCase):
         message.tags = ["OPERATIONAL", "notice_confirm"]  # type: ignore[attr-defined]
         return message
 
+    def test_authentication_travels_as_two_headers_not_basic_auth(self) -> None:
+        """
+        The distinction that cost two days: the panel's "Application-Key" and
+        "Authorization" are HEADER NAMES. Sent as a username/password pair — which is
+        what the older API wanted — this account's keys come back 401 "App Key is
+        invalid", a message that indicts the key rather than the scheme.
+        """
+        payload = self._payload(self._message())
+        self.assertEqual(payload.headers["Application-Key"], "app-key")
+        self.assertEqual(payload.headers["Authorization"], "secret-key")
+        self.assertIsNone(payload.auth)
+
+    def test_it_posts_to_the_v2_1_endpoint(self) -> None:
+        self.assertEqual(self._payload(self._message()).get_api_endpoint(), "v2.1/email")
+
     def test_core_fields(self) -> None:
         data = self._serialize(self._message())
-        self.assertEqual(data["from"], ["noreply@voctensemble.com"])
-        self.assertEqual(data["from_name"], ["VoctEnsemble"])
-        self.assertEqual(data["subject"], ["Proba generalna"])
-        self.assertEqual(data["text"], ["Wersja tekstowa"])
-        self.assertEqual(data["html"], ["<p>Wersja HTML</p>"])
-        self.assertEqual(data["smtp_account"], ["1.voct.smtp"])
+        self.assertEqual(data["from"], {"email": "noreply@voctensemble.com", "name": "VoctEnsemble"})
+        self.assertEqual(data["subject"], "Proba generalna")
+        self.assertEqual(data["content"]["text"], "Wersja tekstowa")
+        self.assertEqual(data["content"]["html"], "<p>Wersja HTML</p>")
+        self.assertEqual(data["smtpAccount"], "1.voct.smtp")
 
-    def test_recipient_uses_the_providers_own_spelling(self) -> None:
-        # `reciver_name` is EmailLabs' spelling. Corrected, the name is dropped.
+    def test_recipients_are_objects_carrying_their_display_name(self) -> None:
         data = self._serialize(self._message())
-        self.assertEqual(data["to[jan@example.com][reciver_name]"], ["Jan Kowalski"])
+        self.assertEqual(data["to"], [{"email": "jan@example.com", "name": "Jan Kowalski"}])
+
+    def test_a_name_their_schema_would_reject_is_dropped_rather_than_sent(self) -> None:
+        """Their `name` is 2-64 characters, and a one-letter name fails the WHOLE send."""
+        message = self._message()
+        message.to = ["X <jan@example.com>"]
+        self.assertEqual(self._serialize(message)["to"], [{"email": "jan@example.com"}])
 
     def test_unsubscribe_headers_survive(self) -> None:
         # The notice list's one-click withdrawal (RFC 8058) IS these two headers.
         data = self._serialize(self._message())
-        self.assertEqual(data["headers[List-Unsubscribe]"], ["<https://voctensemble.com/u/abc>"])
-        self.assertEqual(
-            data["headers[List-Unsubscribe-Post]"], ["List-Unsubscribe=One-Click"],
-        )
+        self.assertEqual(data["headers"], {
+            "List-Unsubscribe": "<https://voctensemble.com/u/abc>",
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        })
 
     def test_reply_to_and_tags(self) -> None:
         data = self._serialize(self._message())
-        self.assertEqual(data["reply_to"], ["rodo@voctensemble.com"])
-        self.assertEqual(data["tags[0]"], ["OPERATIONAL"])
-        self.assertEqual(data["tags[1]"], ["notice_confirm"])
+        self.assertEqual(data["replyTo"], {"email": "rodo@voctensemble.com"})
+        self.assertEqual(data["tags"], ["OPERATIONAL", "notice_confirm"])
 
     def test_attachment_is_base64_with_its_media_type_intact(self) -> None:
         import base64
 
         message = self._message()
         message.attach("schedule.ics", "BEGIN:VCALENDAR", "text/calendar; method=PUBLISH")
-        data = self._serialize(message)
-        self.assertEqual(data["files[0][name]"], ["schedule.ics"])
-        self.assertEqual(data["files[0][mime]"], ["text/calendar; method=PUBLISH"])
+        attachment = self._serialize(message)["attachments"][0]
+        self.assertEqual(attachment["fileName"], "schedule.ics")
+        self.assertEqual(attachment["fileMime"], "text/calendar; method=PUBLISH")
         self.assertEqual(
-            data["files[0][content]"], [base64.b64encode(b"BEGIN:VCALENDAR").decode()],
+            attachment["fileContent"], base64.b64encode(b"BEGIN:VCALENDAR").decode(),
         )
+        self.assertFalse(attachment["inline"])
+
+    def test_polish_text_is_not_escaped_into_ascii(self) -> None:
+        """A body escaped character by character triples in size for no reader's benefit."""
+        message = self._message()
+        message.subject = "Próba generalna — Zażółć"
+        self.assertIn("Zażółć", self._payload(message).serialize_data())
 
     def test_esp_extra_can_move_the_message_to_another_sending_identity(self) -> None:
         message = self._message()
-        message.esp_extra = {"smtp_account": "2.voct-bulk.smtp"}  # type: ignore[attr-defined]
-        self.assertEqual(self._serialize(message)["smtp_account"], ["2.voct-bulk.smtp"])
+        message.esp_extra = {"smtpAccount": "2.voct-bulk.smtp"}  # type: ignore[attr-defined]
+        self.assertEqual(self._serialize(message)["smtpAccount"], "2.voct-bulk.smtp")
 
 
 class EmailLabsWebhookTests(TestCase):

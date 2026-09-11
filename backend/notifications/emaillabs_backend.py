@@ -1,14 +1,25 @@
 """
 @file emaillabs_backend.py
-@description Anymail e-mail backend for EmailLabs (Vercom S.A.).
+@description Anymail e-mail backend for EmailLabs (Vercom S.A.), speaking their
+             v2.1 JSON API at api.emaillabs.io.
 
              THE ONLY HAND-WRITTEN ESP INTEGRATION IN THE PROJECT. Every other
              provider Anymail supports arrives as upstream code exercised by
              thousands of installs; EmailLabs has no Anymail backend, so this
              module is the price of sending from a Polish provider. It is
              deliberately small and deliberately boring: it maps the message
-             Anymail hands it onto a form-encoded POST and does not attempt any
+             Anymail hands it onto one JSON POST and does not attempt any
              feature the send path does not already use.
+
+             THERE ARE TWO EMAILLABS APIS AND THEY SHARE ALMOST NOTHING. The
+             older one (api.emaillabs.net.pl/api/new_sendmail) takes
+             form-encoded fields and HTTP basic auth; this one takes JSON and
+             two custom headers. An account created in the NEW panel can only
+             use this one — the old host answers its keys with 401 "App Key is
+             invalid", which reads as a bad credential and is not one. That is
+             also why the panel labels the two secrets "Application-Key" and
+             "Authorization": those are header names, not a username and a
+             password.
 
              Its companion is `emaillabs_webhook.py`. The two halves are one
              vendor contract — this one states what we send, that one states
@@ -20,8 +31,8 @@
 from __future__ import annotations
 
 import base64
+import json
 from typing import Any
-from urllib.parse import urlencode
 
 from anymail.backends.base_requests import (  # type: ignore[import-untyped]
     AnymailRequestsBackend,
@@ -31,30 +42,46 @@ from anymail.exceptions import AnymailRequestsAPIError  # type: ignore[import-un
 from anymail.message import AnymailRecipientStatus  # type: ignore[import-untyped]
 from anymail.utils import Attachment, EmailAddress, get_anymail_setting  # type: ignore[import-untyped]
 
-# EmailLabs answers 200 OK and puts the real verdict in the body's `code`, so an
-# HTTP-level check alone would call a rejected send a success.
-_HTTP_SUCCESS = range(200, 300)
+# Their schema constrains every display name to 2-64 characters and rejects the
+# message outright when one falls short — so a name that cannot be sent is dropped
+# rather than allowed to fail an entire send over a salutation.
+_NAME_MIN_LENGTH = 2
+_NAME_MAX_LENGTH = 64
+
+
+def _person(address: EmailAddress) -> dict[str, str]:
+    """One `{email, name}` object, with the name omitted when it cannot be carried."""
+    person = {"email": address.addr_spec}
+    name = (address.display_name or "").strip()
+    if _NAME_MIN_LENGTH <= len(name) <= _NAME_MAX_LENGTH:
+        person["name"] = name
+    return person
 
 
 class EmailBackend(AnymailRequestsBackend):
-    """EmailLabs (emaillabs.io) transactional API backend."""
+    """EmailLabs (emaillabs.io) v2.1 API backend."""
 
     esp_name = "EmailLabs"
 
     def __init__(self, **kwargs: Any) -> None:
         esp_name = self.esp_name
+        # The panel calls these "Application-Key" and "Authorization" because that is
+        # what they are: two headers. Neither is a username.
         self.app_key: str = get_anymail_setting("app_key", esp_name=esp_name, kwargs=kwargs)
         self.secret_key: str = get_anymail_setting("secret_key", esp_name=esp_name, kwargs=kwargs)
         # The sending identity inside the account, e.g. "1.voctensemble.smtp". It never
-        # appears in the delivered message — the reader sees `from`/`from_name` — but it
-        # selects the IP pool, which is why EmailLabs types an account as transactional
-        # or marketing. A message may override it through `esp_extra`.
+        # appears in the delivered message — the reader sees `from` — but it selects the
+        # IP pool, which is why EmailLabs types an account as transactional or marketing.
+        # Required by the API on every message; a message may override it via `esp_extra`.
         self.smtp_account: str = get_anymail_setting(
             "smtp_account", esp_name=esp_name, kwargs=kwargs,
         )
+        # Overridable so an account still living on the OLD panel can be pointed back at
+        # its own host without a code change — the two APIs are not interchangeable, but
+        # which one an account belongs to is a property of the account, not of this code.
         api_url: str = get_anymail_setting(
             "api_url", esp_name=esp_name, kwargs=kwargs,
-            default="https://api.emaillabs.net.pl/api/",
+            default="https://api.emaillabs.io/",
         )
         if not api_url.endswith("/"):
             api_url += "/"
@@ -69,140 +96,118 @@ class EmailBackend(AnymailRequestsBackend):
         """
         Report every recipient as queued, or raise.
 
-        The response body is not documented field-by-field, and this deliberately
-        does not pretend otherwise: it checks the one field whose meaning is
-        stated (`code`) and takes `req_id` as the message id when present. Parsing
-        further would be inventing a contract, and a wrong guess here would report
-        a failed send as delivered — the one error this method exists to prevent.
-        """
-        parsed = self.deserialize_json_response(response, payload, message)
+        ANY `errors` ENTRY IS A FAILED SEND HERE, including the partial success their
+        207 describes. This project sends one recipient per message, so "some of them
+        went" is not a state that can arise — and treating a 207 as success would report
+        an unsent notification as delivered, the one error this method exists to prevent.
 
-        code = parsed.get("code") if isinstance(parsed, dict) else None
-        if code is not None:
-            try:
-                accepted = int(code) in _HTTP_SUCCESS
-            except (TypeError, ValueError):
-                accepted = False
-            if not accepted:
-                raise AnymailRequestsAPIError(
-                    f"EmailLabs rejected the message (code={code!r})",
-                    email_message=message,
-                    payload=payload,
-                    response=response,
-                    backend=self,
+        `meta.uniqId` is carried into the exception because it is what their support
+        looks a request up by; without it a rejected send is unanswerable.
+        """
+        raw = self.deserialize_json_response(response, payload, message)
+        parsed: dict[str, Any] = raw if isinstance(raw, dict) else {}
+        meta_raw = parsed.get("meta")
+        meta: dict[str, Any] = meta_raw if isinstance(meta_raw, dict) else {}
+        errors = parsed.get("errors") or []
+
+        if errors:
+            detail = "; ".join(
+                str(error.get("message") or error) for error in errors if error
+            )
+            raise AnymailRequestsAPIError(
+                f"EmailLabs rejected the message (uniqId={meta.get('uniqId')!r}): {detail}",
+                email_message=message,
+                payload=payload,
+                response=response,
+                backend=self,
+            )
+
+        # `data` is per recipient and carries the id every later delivery report is
+        # keyed by, so it is read from the response rather than echoed from the request.
+        statuses: dict[str, AnymailRecipientStatus] = {}
+        for item in parsed.get("data") or []:
+            recipient = item.get("to") if isinstance(item, dict) else None
+            if not isinstance(recipient, dict):
+                continue
+            email = str(recipient.get("email") or "").strip()
+            if email:
+                statuses[email] = AnymailRecipientStatus(
+                    message_id=recipient.get("messageId"), status="queued",
                 )
 
-        message_id = parsed.get("req_id") if isinstance(parsed, dict) else None
-        return {
-            recipient.addr_spec: AnymailRecipientStatus(
-                message_id=message_id, status="queued",
+        # A response that named nobody still accepted the message; fall back on what we
+        # asked for rather than returning an empty map Anymail would read as "no sends".
+        for address in payload.to_recipients:
+            statuses.setdefault(
+                address.addr_spec, AnymailRecipientStatus(message_id=None, status="queued"),
             )
-            for recipient in payload.to_recipients
-        }
+        return statuses
 
 
 class EmailLabsPayload(RequestsPayload):
-    """Builds the form-encoded body `POST /api/new_sendmail` expects."""
+    """Builds the JSON body `POST /v2.1/email` expects."""
 
     def __init__(self, message: Any, defaults: Any, backend: EmailBackend, **kwargs: Any) -> None:
         self.to_recipients: list[EmailAddress] = []
         http_headers = kwargs.pop("headers", {})
-        http_headers["Content-Type"] = "application/x-www-form-urlencoded"
+        http_headers["Content-Type"] = "application/json"
         http_headers["Accept"] = "application/json"
-        super().__init__(
-            message, defaults, backend,
-            auth=(backend.app_key, backend.secret_key),
-            headers=http_headers,
-            **kwargs,
-        )
+        # The whole of the authentication: two API-key headers, no basic auth. Sending
+        # these as a username/password pair instead is what the old API wanted, and it
+        # fails here the same silent way it fails there.
+        http_headers["Application-Key"] = backend.app_key
+        http_headers["Authorization"] = backend.secret_key
+        super().__init__(message, defaults, backend, headers=http_headers, **kwargs)
 
     def get_api_endpoint(self) -> str:
-        return "new_sendmail"
+        return "v2.1/email"
 
     def init_payload(self) -> None:
         # `self.headers` is the HTTP request's own headers and `self.files` is what
         # requests would send as multipart — both belong to RequestsPayload. The
         # message's headers and attachments therefore need names of their own, or
         # they would overwrite the transport's.
-        self.data: dict[str, str] = {"smtp_account": self.backend.smtp_account}
+        self.data: dict[str, Any] = {"smtpAccount": self.backend.smtp_account}
+        self.content: dict[str, str] = {}
         self.mail_headers: dict[str, str] = {}
-        self.mail_tags: list[str] = []
-        self.mail_files: list[Attachment] = []
 
     def serialize_data(self) -> str:
-        """
-        Flatten to PHP-style bracket keys — the shape their API reads.
-
-        `urlencode` is given a list of pairs rather than a dict because the
-        bracket keys repeat per recipient, per header and per attachment.
-        """
-        pairs: list[tuple[str, str]] = list(self.data.items())
-
-        for recipient in self.to_recipients:
-            # `reciver_name` is EmailLabs' own spelling. It is not a typo to fix:
-            # corrected to `receiver_name` the field is silently ignored and every
-            # recipient loses their display name.
-            pairs.append((
-                f"to[{recipient.addr_spec}][reciver_name]", recipient.display_name or "",
-            ))
-
-        for name, value in self.mail_headers.items():
-            pairs.append((f"headers[{name}]", value))
-
-        for index, tag in enumerate(self.mail_tags):
-            pairs.append((f"tags[{index}]", tag))
-
-        for index, attachment in enumerate(self.mail_files):
-            content = attachment.content
-            if isinstance(content, str):
-                content = content.encode("utf-8")
-            pairs.append((f"files[{index}][name]", attachment.name or f"attachment-{index}"))
-            # The full media type is passed through unchanged, parameters included:
-            # the schedule attachment is sent as `text/calendar; method=PUBLISH`, and
-            # trimming that to the bare type would change how calendar clients treat
-            # it. If their parser objects, it objects loudly on the first send.
-            pairs.append((f"files[{index}][mime]", attachment.mimetype or "application/octet-stream"))
-            pairs.append((f"files[{index}][content]", base64.b64encode(content).decode("ascii")))
-            pairs.append((f"files[{index}][inline]", "1" if attachment.inline else "0"))
-
-        return urlencode(pairs)
+        payload = dict(self.data)
+        payload["to"] = [_person(recipient) for recipient in self.to_recipients]
+        payload["content"] = self.content
+        if self.mail_headers:
+            payload["headers"] = self.mail_headers
+        # `ensure_ascii=False` with an explicit UTF-8 encode: subjects and bodies are
+        # Polish, and escaping every diacritic would triple the size of the body for
+        # nothing. The Content-Type header already declares the charset implicitly.
+        return json.dumps(payload, ensure_ascii=False)
 
     # ------------------------------------------------------------------ #
     # Anymail payload hooks                                              #
     # ------------------------------------------------------------------ #
 
     def set_from_email(self, email: EmailAddress) -> None:
-        self.data["from"] = email.addr_spec
-        if email.display_name:
-            self.data["from_name"] = email.display_name
+        self.data["from"] = _person(email)
 
     def set_to(self, emails: list[EmailAddress]) -> None:
         self.to_recipients = list(emails)
 
     def set_cc(self, emails: list[EmailAddress]) -> None:
         if emails:
-            self.data["cc"] = emails[0].addr_spec
-            if emails[0].display_name:
-                self.data["cc_name"] = emails[0].display_name
-        if len(emails) > 1:
-            # Their API takes one cc address plus one name, not a list.
-            self.unsupported_feature("multiple cc addresses")
+            self.data["cc"] = [_person(address) for address in emails]
 
     def set_bcc(self, emails: list[EmailAddress]) -> None:
         if emails:
-            self.data["bcc"] = emails[0].addr_spec
-            if emails[0].display_name:
-                self.data["bcc_name"] = emails[0].display_name
-        if len(emails) > 1:
-            self.unsupported_feature("multiple bcc addresses")
+            self.data["bcc"] = [_person(address) for address in emails]
 
     def set_subject(self, subject: str) -> None:
         self.data["subject"] = subject
 
     def set_reply_to(self, emails: list[EmailAddress]) -> None:
         if emails:
-            self.data["reply_to"] = emails[0].addr_spec
+            self.data["replyTo"] = _person(emails[0])
         if len(emails) > 1:
+            # Their schema takes a single object, not a list.
             self.unsupported_feature("multiple reply_to addresses")
 
     def set_extra_headers(self, headers: dict[str, str]) -> None:
@@ -211,21 +216,32 @@ class EmailLabsPayload(RequestsPayload):
         self.mail_headers.update({str(name): str(value) for name, value in headers.items()})
 
     def set_text_body(self, body: str) -> None:
-        self.data["text"] = body
+        self.content["text"] = body
 
     def set_html_body(self, body: str) -> None:
-        self.data["html"] = body
+        self.content["html"] = body
 
     def add_attachment(self, attachment: Attachment) -> None:
-        self.mail_files.append(attachment)
+        content = attachment.content
+        if isinstance(content, str):
+            content = content.encode("utf-8")
+        self.data.setdefault("attachments", []).append({
+            "fileName": attachment.name or "attachment",
+            # The full media type is passed through unchanged, parameters included:
+            # the schedule attachment is sent as `text/calendar; method=PUBLISH`, and
+            # trimming that to the bare type would change how calendar clients treat it.
+            "fileMime": attachment.mimetype or "application/octet-stream",
+            "fileContent": base64.b64encode(content).decode("ascii"),
+            "inline": bool(attachment.inline),
+        })
 
     def set_tags(self, tags: list[str]) -> None:
-        self.mail_tags = list(tags)
+        self.data["tags"] = list(tags)
 
     def set_esp_extra(self, extra: dict[str, Any]) -> None:
         """
         Merge raw API parameters, which is how a message picks a different
-        `smtp_account` — the escape hatch for routing bulk mail onto a marketing
+        `smtpAccount` — the escape hatch for routing bulk mail onto a marketing
         sending identity while the panel's own mail stays on a transactional one.
         """
-        self.data.update({str(key): str(value) for key, value in extra.items()})
+        self.data.update(extra)
