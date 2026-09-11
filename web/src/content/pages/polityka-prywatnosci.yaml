@@ -42,8 +42,8 @@
 
 # The version this document is at, and the day it started to apply. Both are read by the line under
 # the title and by the newest entry of the history at the foot.
-version: "1.3"
-effectiveFrom: "2026-09-05"
+version: "1.4"
+effectiveFrom: "2026-09-11"
 
 meta:
   # Read in a browser tab and by a crawler, never on the page. The document is `noindex,follow` —
@@ -274,9 +274,9 @@ s5:
     W zależności od wykonywanej operacji Twoje dane mogą trafić do następujących podmiotów
     (procesorów lub odrębnych administratorów):
   # ONE LIST, PRINTED TWICE — the row of badges above the paragraphs and the paragraphs themselves
-  # name the same five recipients in the same order, so a recipient carries its own short form
-  # instead of the page holding two lists that could fall out of step. Three of the five badges are
-  # company names and stay themselves in every language; the note on the field says so.
+  # name the same six recipients in the same order, so a recipient carries its own short form
+  # instead of the page holding two lists that could fall out of step. Four of the six badges are
+  # company or product names and stay themselves in every language; the note on the field says so.
   items:
     - id: infra
       badge: "Dostawcy infrastruktury IT"
@@ -285,14 +285,14 @@ s5:
         zapewniające nam serwery oraz sieć dostarczania treści niezbędną do działania
         i zabezpieczenia strony. Działają oni jako podmioty przetwarzające na nasze polecenie.
         Fonty serwujemy lokalnie i nie przekazujemy adresów IP zewnętrznym dostawcom typografii.
-    - id: resend
-      badge: "Resend"
+    - id: emaillabs
+      badge: "EmailLabs"
       textHtml: >-
-        <strong>Resend, Inc.</strong> (USA) — dostawca usługi wysyłki poczty, z której
+        <strong>Vercom S.A.</strong> (Poznań) — operator usługi <em>EmailLabs</em>, z której
         korzystamy przy zawiadomieniach o koncertach. Działa jako <strong>podmiot
         przetwarzający</strong> na nasze polecenie i otrzymuje wyłącznie adres e-mail odbiorcy
-        oraz treść wysyłanej wiadomości. Zasady przekazania danych do Stanów Zjednoczonych
-        opisujemy w sekcji „Transfery poza EOG”.
+        oraz treść wysyłanej wiadomości. Jest spółką polską, a serwery obsługujące wysyłkę
+        znajdują się w Poznaniu i w Berlinie — wysyłka nie opuszcza EOG.
     - id: bnp
       badge: "BNP Paribas"
       textHtml: >-
@@ -340,13 +340,14 @@ s6:
     (PayU S.A.) są podmiotami z siedzibą w Polsce. Mogą oni jednak — w ramach własnych systemów
     antyfraudowych — przetwarzać dane również poza EOG, za co odpowiadają na zasadach określonych
     w swoich politykach prywatności.
-  # Added in 1.3 with the concert notice list. It is the one case in this document where OUR
-  # OWN sending puts a reader's address outside the EEA, so it is stated as its own paragraph
-  # rather than folded into the CDN sentence above.
+  # Where the notice list's OWN sending is answered — the question a reader opens this section to
+  # ask. Since 1.4 the answer is negative, and the paragraph stays a paragraph rather than folding
+  # into the CDN sentence above precisely because 1.3 published a US transfer in this place: a
+  # reader who remembers that claim has to find it withdrawn where they last read it.
   p4: >-
-    Wysyłkę zawiadomień o koncertach obsługuje Resend, Inc. z siedzibą w Stanach Zjednoczonych.
-    Przekazanie danych odbywa się na podstawie Standardowych Klauzul Umownych (SCC) zawartych
-    z dostawcą, w zakresie niezbędnym do doręczenia zamówionej wiadomości.
+    Wysyłkę zawiadomień o koncertach obsługuje Vercom S.A. (usługa EmailLabs) z siedzibą
+    w Poznaniu, a serwery obsługujące wysyłkę znajdują się w Poznaniu i w Berlinie. Treść
+    zawiadomień i adresy odbiorców nie są zatem przekazywane poza EOG.
 
 s7:
   title: "Czas przechowywania"
@@ -573,6 +574,16 @@ history:
   # inside a key part.
   label: "Historia zmian"
   entries:
+    - id: "v1-4"
+      version: "1.4"
+      date: "2026-09-11"
+      note: >-
+        Zmieniliśmy dostawcę wysyłki poczty. Zawiadomienia o koncertach obsługuje teraz
+        Vercom S.A. (usługa EmailLabs) z siedzibą w Poznaniu, w miejsce Resend, Inc. ze Stanów
+        Zjednoczonych — w § 5 zmieniono ujawnienie podmiotu przetwarzającego. Tym samym ustało
+        przekazanie danych do Stanów Zjednoczonych na podstawie Standardowych Klauzul Umownych,
+        opisane w § 6 poprzedniej wersji: wysyłka odbywa się w całości na terenie Europejskiego
+        Obszaru Gospodarczego.
     - id: "v1-3"
       version: "1.3"
       date: "2026-09-05"

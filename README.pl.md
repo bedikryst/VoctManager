@@ -115,7 +115,7 @@ Architektura, koszty, priorytety i to, co zostaje na zewnątrz — moje. Z tego 
 
 **Cyfrowy pulpit nutowy.** Czytnik PDF na tablet postawiony na pulpicie: strony wczytywane z wyprzedzeniem, żeby nie było loadera w środku frazy, obsługa bluetoothowego pedału, blokada wygaszania ekranu, zoom szczypnięciem wokół punktu skupienia. Na tym siedzi warstwa adnotacji świadoma ról. Dyrygent pisze po warstwie wspólnej, którą widzi każdy śpiewak z obsady, a każdy śpiewak ma dodatkowo warstwę osobistą, której nikt inny nie odczyta, łącznie z managerami — egzekwowane na serwerze, nie schowane w interfejsie. Nanoszenie oznaczeń jest po muzycznemu: oddechy, dynamika, widełki, fermata, cezura, odręczny atrament z routowaniem stylus-first, żeby rysował rysik, a palec przesuwał stronę.
 
-**Wiadomości i powiadomienia.** Wątki między śpiewakami a zarządem plus kanały ogłoszeniowe per projekt, dostarczane w aplikacji, mailem przez Resend i web pushem po VAPID. Managerowie dostają workflow triage. To nie jest czat w czasie rzeczywistym i nim nie zostanie: bez obecności, bez wskaźników pisania. Magazyn wiadomości jest odseparowany od dostarczania, więc wiadomości korzystają z pipeline'u powiadomień, który i tak już istniał.
+**Wiadomości i powiadomienia.** Wątki między śpiewakami a zarządem plus kanały ogłoszeniowe per projekt, dostarczane w aplikacji, mailem przez EmailLabs i web pushem po VAPID. Managerowie dostają workflow triage. To nie jest czat w czasie rzeczywistym i nim nie zostanie: bez obecności, bez wskaźników pisania. Magazyn wiadomości jest odseparowany od dostarczania, więc wiadomości korzystają z pipeline'u powiadomień, który i tak już istniał.
 
 **Płatności.** Darowizny przez Axepta BNP Paribas, z walidacją podpisu MAC i asynchronicznym uzgadnianiem w Celery.
 
@@ -188,7 +188,7 @@ graph TD
     Redis <--> Celery[Workery Celery]
     Celery <--> DB
     Celery -->|WeasyPrint / pypdf| Files[Dokumenty · śpiewniki]
-    Celery -->|Resend · Firebase| Notify[E-mail · web push]
+    Celery -->|EmailLabs · VAPID| Notify[E-mail · web push]
 
     Celery -->|wzrok po natywnym PDF| Claude[Claude Sonnet 5]
     Claude -->|wywołania narzędzi| Ext[MusicBrainz · Wikidane<br/>Spotify · YouTube]

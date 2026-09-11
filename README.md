@@ -115,7 +115,7 @@ Architecture, cost, priorities, and what stays out are mine. Those are the parts
 
 **Digital music stand.** A PDF reader for a tablet propped on a music stand: page turns prefetched so there's no loader mid-phrase, Bluetooth pedal support, a screen wake lock, pinch zoom around a focal point. On top of it sits a role-aware annotation layer. The conductor writes a shared layer that every cast singer sees, and each singer also gets a personal layer that nobody else can read, managers included, enforced on the server rather than hidden in the UI. Marking up is musician-native: breath marks, dynamics, hairpins, fermata, caesura, freehand ink with stylus-first routing so a pen draws and a finger pans.
 
-**Messaging and notifications.** Threads between singers and management, plus per-project broadcast channels, delivered in-app, by email through Resend and by web push over VAPID. Managers get a triage workflow. It is not a real-time chat and won't become one: no presence, no typing indicators. The message store is decoupled from delivery, so messages reuse the notification pipeline that already existed.
+**Messaging and notifications.** Threads between singers and management, plus per-project broadcast channels, delivered in-app, by email through EmailLabs and by web push over VAPID. Managers get a triage workflow. It is not a real-time chat and won't become one: no presence, no typing indicators. The message store is decoupled from delivery, so messages reuse the notification pipeline that already existed.
 
 **Payments.** Donations through Axepta BNP Paribas, with MAC signature validation and asynchronous reconciliation in Celery.
 
@@ -188,7 +188,7 @@ graph TD
     Redis <--> Celery[Celery workers]
     Celery <--> DB
     Celery -->|WeasyPrint / pypdf| Files[Documents · score books]
-    Celery -->|Resend · Firebase| Notify[Email · web push]
+    Celery -->|EmailLabs · VAPID| Notify[Email · web push]
 
     Celery -->|native-PDF vision| Claude[Claude Sonnet 5]
     Claude -->|tool-orchestrated lookups| Ext[MusicBrainz · Wikidata<br/>Spotify · YouTube]

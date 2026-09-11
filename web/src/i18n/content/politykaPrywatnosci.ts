@@ -354,11 +354,11 @@ const PRIVACY_CONTRACT: readonly CopyEntry[] = [
       {
         path: "badge",
         label: "znacznik",
-        note: "The short form printed in the row of chips above the paragraphs. Three of the five are company names and stay themselves; only the two descriptions are words.",
+        note: "The short form printed in the row of chips above the paragraphs. Four of the six are company or product names and stay themselves; only the two descriptions are words.",
       },
       { path: "textHtml", label: "akapit" },
     ],
-    note: "Five recipients, named twice on one screen — as a chip and as a paragraph — so each carries both its forms and the two can never fall out of step. The company names, their registered addresses and the linked policies stay exactly as they are.",
+    note: "Six recipients, named twice on one screen — as a chip and as a paragraph — so each carries both its forms and the two can never fall out of step. The company names, their registered addresses and the linked policies stay exactly as they are.",
   },
 
   {
@@ -379,7 +379,7 @@ const PRIVACY_CONTRACT: readonly CopyEntry[] = [
     kind: "field",
     path: "s6.p4",
     label: "06 · akapit 4",
-    note: "The one transfer this foundation makes itself rather than inherits from a payment operator. `Resend, Inc.` is a company name and stays as it is.",
+    note: "The sending this foundation does itself, rather than a transfer it inherits from a payment operator — and since 1.4 the answer is that there is none. `Vercom S.A.` is a company name and stays as it is; `EmailLabs` is a product name and stays with it. Poznań and Berlin are place names: render them as the reader's language renders them.",
   },
 
   { kind: "field", path: "s7.title", label: "07 · tytuł" },

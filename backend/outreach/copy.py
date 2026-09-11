@@ -35,12 +35,14 @@ class NoticeMailCopy:
     preheader: str
     eyebrow: str
     headline: str
-    #: Why this mail arrived, and what confirming does.
+    #: Why this mail arrived, and what confirming does. The address IS already stored while it
+    #: waits — the PENDING row — so nothing here may promise that we are holding nothing yet.
     body: str
     button: str
     #: The promise the address is being given, restated where it is acted on.
     promise: str
-    #: What to do if the reader did not ask for this. Doing nothing must be enough.
+    #: What to do if the reader did not ask for this. Doing nothing must be enough, and the seven
+    #: days are `models.CONFIRM_TOKEN_TTL` — the number § 7 of the privacy policy publishes.
     ignore: str
     #: Administrator + where the full information clause lives.
     footer: str
@@ -59,19 +61,20 @@ POLICY_PATH: dict[str, str] = {
 NOTICE_CONFIRM: dict[str, NoticeMailCopy] = {
     "pl": NoticeMailCopy(
         subject="Potwierdź zapis na zawiadomienia o koncertach",
-        preheader="Jedno kliknięcie i zapiszemy ten adres. Bez niego nie zapisujemy nic.",
+        preheader="Jedno kliknięcie i adres trafia na listę. Bez niego znika po siedmiu dniach.",
         eyebrow="VoctEnsemble · Zawiadomienie",
         headline="Potwierdź zapis",
         body=(
             "Ktoś podał ten adres, prosząc, byśmy napisali, gdy następny Koncert Duchowy "
-            "dostanie datę. Jeśli to byłeś Ty — potwierdź jednym kliknięciem. Do tej chwili "
-            "nie zapisujemy niczego i nie wysyłamy nic więcej."
+            "dostanie datę. Jeśli to Ty — potwierdź jednym kliknięciem. Do tego czasu adres "
+            "czeka wyłącznie na to potwierdzenie: nie trafia na żadną listę i nie wysyłamy "
+            "nic więcej."
         ),
         button="Potwierdzam zapis",
         promise="Jeden list na jeden wieczór. Nic poza tym.",
         ignore=(
             "Jeśli to nie Ty — po prostu zignoruj tę wiadomość. Link wygasa po siedmiu dniach, "
-            "a adres nie trafia na żadną listę."
+            "a adres usuwamy."
         ),
         footer=(
             "Administratorem danych jest Fundacja VoctFoundation, ul. Św. Filipa 23/3, "
@@ -82,19 +85,20 @@ NOTICE_CONFIRM: dict[str, NoticeMailCopy] = {
     ),
     "en": NoticeMailCopy(
         subject="Confirm your place on the concert notice list",
-        preheader="One click and the address is on the list. Without it we store nothing.",
+        preheader="One click and the address joins the list. Without it, it is gone in seven days.",
         eyebrow="VoctEnsemble · Notice",
         headline="Confirm your place",
         body=(
             "Someone gave this address, asking us to write when the next Spiritual Concert "
-            "is given a date. If that was you, confirm it with one click. Until then we "
-            "store nothing and send nothing further."
+            "is given a date. If that was you, confirm it with one click. Until then the "
+            "address waits for nothing but that confirmation: it reaches no list, and we "
+            "send nothing further."
         ),
         button="Confirm",
         promise="One letter for one evening. Nothing else.",
         ignore=(
             "If it was not you, simply ignore this message. The link expires after seven "
-            "days and the address reaches no list at all."
+            "days, and we delete the address."
         ),
         footer=(
             "The data controller is Fundacja VoctFoundation, ul. Św. Filipa 23/3, "
@@ -105,19 +109,20 @@ NOTICE_CONFIRM: dict[str, NoticeMailCopy] = {
     ),
     "fr": NoticeMailCopy(
         subject="Confirmez votre inscription aux annonces de concerts",
-        preheader="Un clic et l'adresse est inscrite. Sans lui, nous ne gardons rien.",
+        preheader="Un clic et l'adresse rejoint la liste. Sans lui, elle disparaît au bout de sept jours.",
         eyebrow="VoctEnsemble · Annonce",
         headline="Confirmez votre inscription",
         body=(
             "Quelqu'un a donné cette adresse en nous demandant d'écrire lorsque le prochain "
             "Concert Spirituel recevra une date. Si c'était vous, confirmez-le d'un clic. "
-            "D'ici là, nous ne gardons rien et n'envoyons rien d'autre."
+            "D'ici là, l'adresse n'attend que cette confirmation : elle n'atteint aucune "
+            "liste et nous n'envoyons rien d'autre."
         ),
         button="Je confirme",
         promise="Une lettre pour une soirée. Rien de plus.",
         ignore=(
             "Si ce n'était pas vous, ignorez simplement ce message. Le lien expire au bout de "
-            "sept jours et l'adresse n'atteint aucune liste."
+            "sept jours et nous supprimons l'adresse."
         ),
         footer=(
             "Le responsable du traitement est la Fundacja VoctFoundation, ul. Św. Filipa 23/3, "

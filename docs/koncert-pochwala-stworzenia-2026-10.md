@@ -371,3 +371,62 @@ Florent has explicitly refused to let it become a checklist.
 - **Proportion**: Massenet + Enescu + Lark + Pärt ≈ 36 of ~69 minutes with the violin leading,
   in a vocal ensemble's concert. Florent's note — *"dodałem tylko utwory dla Radu"* — explains
   where they came from but not whether the balance is intended.
+
+---
+
+## §10 FINAL repertoire (11.09.2026) — supersedes §2
+
+Florent's own list, marked final. **§2's running order is dead**; this is the one to build copy,
+the poster and the eventual `concerts.yaml` entry on. Ten numbered works, five Pärt episodes,
+one bis.
+
+| # | Work | Composer |
+|---|---|---|
+| — | *Spiegel im Spiegel* (1978) **[wstęp]** | Arvo Pärt (ur. 1935) |
+| 1 | Gloria II (2012) | Marian Borkowski (ur. 1934) |
+| 2 | Lumen (2016) | Marian Borkowski |
+| — | *Spiegel im Spiegel* | |
+| 3 | Laudes Creaturarum (1954) | Carl Orff (1895–1982) |
+| 4 | Méditation, z opery *Thaïs* (1894) | Jules Massenet (1842–1912) |
+| 5 | Stars (2011) | Ēriks Ešenvalds (ur. 1977) |
+| — | *Spiegel im Spiegel* | |
+| 6 | The Lark Ascending (1914, rew. 1920), arr. Paul Drayton (2019) | Ralph Vaughan Williams (1872–1958) |
+| 7 | Stoi lód na Prośnie (2017) | Jacek Sykulski (ur. 1964) |
+| 8 | Ménétrier, z *Impressions d'enfance* op. 28 (1940) | George Enescu (1881–1955) |
+| — | *Spiegel im Spiegel* | |
+| 9 | Dona eis requiem II (2016) | Marian Borkowski |
+| 10 | Stetit Angelus (2005) | Rihards Dubra (ur. 1964) |
+| — | *Spiegel im Spiegel* **[zakończenie]** | |
+| bis | What a Wonderful World (1967) | George David Weiss (1921–2010) / Bob Thiele (1922–1996) |
+
+**⚠ The final order contradicts §9's concept, and §9 is the text drafted for publication.**
+Florent wrote *"Ostatni epizod Pärta kończy się bezpośrednio przed Stetit Angelus, więc oba
+«lustra» spotykają się"* — i.e. death → Pärt → angel. The final list puts the Pärt **before**
+*Dona eis requiem* and a further episode **after** *Stetit Angelus*, so the evening is bracketed
+wstęp/zakończenie and the mirrors do not meet at the angel. Either the order changed or the list
+slipped; **the announcement prose in §9 describes the other one** and cannot ship as it stands.
+Raised with Florent 11.09, unanswered.
+
+**Resolved by this list:**
+
+- **WAWW is the bis** — so Florent's dramaturgy really does end on *Stetit Angelus*, and the
+  poster (which omits WAWW) is correct to.
+- **Enescu = *Ménétrier***, the fiddler: the only fast, articulated, attacked music in the
+  evening, and it falls at item 8 — the two-thirds point where the programme was sagging. The
+  "no attack anywhere" worry is answered by the programme itself. Note it is **not new to them**:
+  they played *Ménétrier* at Wołanie Gór, so the announcement must not present it as a premiere
+  for this ensemble.
+- **Lumen is Borkowski**, not the unattributed Missa-brevis movement §2 guessed. **Borkowski now
+  has three works** (Gloria II, Lumen, Dona eis requiem II, all 2012–2016) and is the spine of
+  the choral half — a living Polish composer carrying three of ten items is the best line
+  available for the announcement after the All Saints fact.
+- **Lark arranger confirmed: Paul Drayton, 2019.**
+- Borkowski's Roman numerals are part of the titles (*Gloria II*, *Dona eis requiem II*) — the
+  poster currently drops the **II** from the requiem.
+
+**Still open:** *Ménétrier* is written for violin **and piano**, and this concert has no piano.
+Massenet with organ is ordinary practice; Enescu with organ is not. Unanswered, and the
+repertoire is now locked, so it is a decision rather than a question.
+
+**Poster gap against this list:** the ring is missing **Ménétrier / Enescu** and the **II** on
+*Dona eis requiem*.

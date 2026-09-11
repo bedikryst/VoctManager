@@ -257,6 +257,27 @@ version first when an ESP calls a freshly generated key invalid.
 the old panel can be pointed back at its own host — which API an account belongs to is a
 property of the account, not of the code.
 
+### `serialize_data()` must return BYTES, or a Polish body arrives truncated
+
+With the endpoint fixed, the next send answered:
+
+```
+400 {"errors":[{"title":"Empty request","message":"Not found elements to process request"}]}
+```
+
+The body was there. `requests` derives `Content-Length` from `len()` of whatever
+`serialize_data()` returns, and for a `str` that is the number of **characters** — while the
+body goes out as UTF-8, where every Polish diacritic costs two bytes. Measured on one short
+Polish subject: header `28`, actual body `35` bytes. The server reads 28, gets invalid JSON,
+and reports a body it did receive part of as empty.
+
+This is invisible on the old API and on any ASCII-only payload: `urlencode` percent-escapes
+everything, so character count and byte count agree. It appears the moment a JSON body carries
+`ensure_ascii=False` — which is kept, because escaping every diacritic inflates a Polish mail
+for no reader's benefit. `.encode("utf-8")` at the end of `serialize_data()` is the whole fix,
+and `test_the_body_is_bytes_so_content_length_counts_what_is_actually_sent` guards it by
+asserting the byte count EXCEEDS the character count.
+
 **Remaining, in order.**
 
 1. ~~DNS~~ **Done 2026-09-05.** What the zone ended up as, and why, since none of it is guessable:
