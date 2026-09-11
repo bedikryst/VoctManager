@@ -10,11 +10,13 @@
 """
 import json
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, ClassVar, cast
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.exceptions import ImproperlyConfigured
@@ -408,6 +410,36 @@ class LocalizedRenderTests(SimpleTestCase):
             )
             self.assertIn("rezygnuje", c.title)
             self.assertNotIn("declined", c.title.lower())
+
+
+class TemplateCommentSyntaxTests(SimpleTestCase):
+    """
+    `{# … #}` is a SINGLE-LINE comment. Django's lexer compiles its tag pattern without
+    `re.DOTALL`, so a `{#` whose `#}` sits on a later line matches nothing and the whole
+    comment is emitted as body text — visible in the reader's mail, and invisible to anyone
+    reviewing the template, which is why it has now escaped twice (the call-sheet PDF, then
+    every mail built on `emails/base.html`). Multi-line commentary belongs in
+    `{% comment %} … {% endcomment %}`.
+
+    The check reads the template SOURCE rather than a render, because a leak inside an
+    `{% if %}` branch no fixture happens to take would otherwise pass.
+    """
+
+    def test_no_template_carries_a_multiline_short_comment(self) -> None:
+        root = Path(settings.BASE_DIR) / "templates"
+        offenders = [
+            f"{path.relative_to(root).as_posix()}:{number}"
+            for path in sorted(root.rglob("*"))
+            if path.suffix in {".html", ".txt"}
+            for number, line in enumerate(
+                path.read_text(encoding="utf-8").splitlines(), start=1,
+            )
+            if "{#" in line and "#}" not in line.split("{#", 1)[1]
+        ]
+        self.assertEqual(
+            offenders, [],
+            "`{# … #}` must open and close on one line; use {% comment %} otherwise.",
+        )
 
 
 @override_settings(
