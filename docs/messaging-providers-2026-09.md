@@ -215,6 +215,48 @@ gateway — 11 characters, no diacritics, typically approved within a business d
 **Done, 2026-09-05:** the dead FCM branch and Google's subprocessor row (see §4); the branding
 test; the EmailLabs account with webhooks confirmed; the backend, the webhook view and their tests.
 
+### There are TWO EmailLabs APIs, and the wrong one answers 401 (settled 2026-09-11)
+
+The first live send failed, and every send after it, with:
+
+```
+401 {"code":401,"status":"error","message":"Error: App Key is invalid"}
+```
+
+**The keys were correct the whole time.** EmailLabs runs two APIs, and an account created in
+the NEW panel can only use the new one. Their support states the rule plainly: *"jeżeli konto
+zostało utworzone w nowym panelu i klucze API zostały w nim wygenerowane, należy korzystać
+z nowego API z endpointem api.emaillabs.io."*
+
+| | old | new |
+|---|---|---|
+| host | `api.emaillabs.net.pl` | `api.emaillabs.io` |
+| endpoint | `POST /api/new_sendmail` | `POST /v2.1/email` |
+| auth | HTTP basic, `app_key:secret_key` | headers `Application-Key` + `Authorization` |
+| body | form-urlencoded, `to[addr][reciver_name]` | JSON |
+| fields | `from`, `text`, `html`, `smtp_account` | `from{email,name}`, `content{html,text}`, `smtpAccount` |
+
+**The panel's field names are the answer, and they are easy to read as something else.**
+"Application-Key" and "Authorization" are HTTP header names, not a username and a password.
+Sent as a basic-auth pair they produce the 401 above — which indicts the key rather than the
+scheme, and so sends you to re-copy a credential that was never wrong.
+
+**`Application-Key` is account-scoped.** Generating a second API key returns the SAME
+Application-Key and only a new Authorization. Identical values across two keys are therefore
+not evidence of a stale `.env`, which is exactly what they look like.
+
+The OpenAPI spec is at `https://apidocs.emaillabs.io/openapi.json` (the Swagger UI at
+`apidocs.emaillabs.io` renders by script and cannot be read by fetching it). It is the only
+complete statement of the contract; the human docs describe neither API's fields.
+
+**Two hours were spent eliminating things that were never wrong** — whitespace in the key, the
+IP allowlist, the egress address, a stale container, the sender domain. Reach for the API
+version first when an ESP calls a freshly generated key invalid.
+
+`EMAILLABS_API_URL` stays overridable (`ANYMAIL["EMAILLABS_API_URL"]`) so an account still on
+the old panel can be pointed back at its own host — which API an account belongs to is a
+property of the account, not of the code.
+
 **Remaining, in order.**
 
 1. ~~DNS~~ **Done 2026-09-05.** What the zone ended up as, and why, since none of it is guessable:

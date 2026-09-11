@@ -2205,11 +2205,23 @@ class EmailLabsPayloadTests(SimpleTestCase):
         )
         self.assertFalse(attachment["inline"])
 
-    def test_polish_text_is_not_escaped_into_ascii(self) -> None:
-        """A body escaped character by character triples in size for no reader's benefit."""
+    def test_the_body_is_bytes_so_content_length_counts_what_is_actually_sent(self) -> None:
+        """
+        The defect this guards produced a 400 "Empty request" from a request that had a
+        body. `requests` takes Content-Length from `len()` of the serialized payload; on
+        a `str` that counts characters, while the wire carries UTF-8 — so every Polish
+        diacritic made the header under-count and the server read a truncated JSON.
+        """
         message = self._message()
         message.subject = "Próba generalna — Zażółć"
-        self.assertIn("Zażółć", self._payload(message).serialize_data())
+        body = self._payload(message).serialize_data()
+
+        self.assertIsInstance(body, bytes)
+        # The gap IS the bug: more bytes than characters, so a str would have lied.
+        self.assertGreater(len(body), len(body.decode("utf-8")))
+        # Not escaped into \uXXXX: inflating a Polish body benefits no reader.
+        self.assertIn("Zażółć", body.decode("utf-8"))
+        self.assertEqual(json.loads(body)["subject"], "Próba generalna — Zażółć")
 
     def test_esp_extra_can_move_the_message_to_another_sending_identity(self) -> None:
         message = self._message()

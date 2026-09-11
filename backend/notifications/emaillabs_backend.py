@@ -171,16 +171,24 @@ class EmailLabsPayload(RequestsPayload):
         self.content: dict[str, str] = {}
         self.mail_headers: dict[str, str] = {}
 
-    def serialize_data(self) -> str:
+    def serialize_data(self) -> bytes:
         payload = dict(self.data)
         payload["to"] = [_person(recipient) for recipient in self.to_recipients]
         payload["content"] = self.content
         if self.mail_headers:
             payload["headers"] = self.mail_headers
-        # `ensure_ascii=False` with an explicit UTF-8 encode: subjects and bodies are
-        # Polish, and escaping every diacritic would triple the size of the body for
-        # nothing. The Content-Type header already declares the charset implicitly.
-        return json.dumps(payload, ensure_ascii=False)
+
+        # BYTES, NOT STR, AND THE DIFFERENCE IS THE WHOLE MESSAGE. `requests` derives
+        # Content-Length from `len()` of whatever this returns, and for a `str` that is
+        # the number of CHARACTERS — while the body goes out as UTF-8, where every Polish
+        # diacritic costs two bytes. The header then under-counts, the server reads only
+        # that many bytes, and what arrives is truncated JSON: EmailLabs answers 400
+        # "Empty request", naming a body it did in fact receive part of. Encoding here
+        # makes the count the transport uses the count the transport sends.
+        #
+        # `ensure_ascii=False` is what makes that gap possible and is kept deliberately:
+        # escaping every diacritic would inflate a Polish body for no reader's benefit.
+        return json.dumps(payload, ensure_ascii=False).encode("utf-8")
 
     # ------------------------------------------------------------------ #
     # Anymail payload hooks                                              #
