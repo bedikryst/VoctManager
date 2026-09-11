@@ -16,6 +16,7 @@ from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.core.exceptions import ImproperlyConfigured
 from django.core.mail import EmailMultiAlternatives
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone, translation
@@ -2040,6 +2041,70 @@ class PushEmailOfferStampTests(APITestCase):
         )
         self.profile.refresh_from_db()
         self.assertIsNone(self.profile.push_email_offer_seen_at)
+
+
+class ESPConfigurationGuardTests(SimpleTestCase):
+    """
+    The boot-time refusal that turns a missing variable back into its own name.
+
+    An empty credential is not caught anywhere downstream: Anymail sends it, and the
+    provider answers 401 "App Key is invalid" — pointing at the key rather than at the
+    variable that never arrived.
+    """
+
+    EMAILLABS = "notifications.emaillabs_backend.EmailBackend"
+
+    def test_a_selected_provider_missing_its_keys_refuses_to_boot(self) -> None:
+        from .email_service import assert_esp_is_configured
+
+        with (
+            override_settings(EMAIL_BACKEND=self.EMAILLABS, ANYMAIL={}),
+            self.assertRaises(ImproperlyConfigured) as caught,
+        ):
+            assert_esp_is_configured()
+
+        # The message has to name every missing variable, since that name is the answer.
+        for variable in ("EMAILLABS_APP_KEY", "EMAILLABS_SECRET_KEY", "EMAILLABS_SMTP_ACCOUNT"):
+            self.assertIn(variable, str(caught.exception))
+
+    def test_whitespace_is_not_a_credential(self) -> None:
+        """A key pasted out of a web panel with a trailing newline fails the same 401 way."""
+        from .email_service import assert_esp_is_configured
+
+        with override_settings(
+            EMAIL_BACKEND=self.EMAILLABS,
+            ANYMAIL={
+                "EMAILLABS_APP_KEY": "  \n",
+                "EMAILLABS_SECRET_KEY": "secret",
+                "EMAILLABS_SMTP_ACCOUNT": "1.voct.smtp",
+            },
+        ), self.assertRaises(ImproperlyConfigured) as caught:
+            assert_esp_is_configured()
+
+        self.assertIn("EMAILLABS_APP_KEY", str(caught.exception))
+        self.assertNotIn("EMAILLABS_SECRET_KEY", str(caught.exception))
+
+    def test_a_fully_configured_provider_passes(self) -> None:
+        from .email_service import assert_esp_is_configured
+
+        with override_settings(
+            EMAIL_BACKEND=self.EMAILLABS,
+            ANYMAIL={
+                "EMAILLABS_APP_KEY": "app-key",
+                "EMAILLABS_SECRET_KEY": "secret-key",
+                "EMAILLABS_SMTP_ACCOUNT": "1.voct.smtp",
+            },
+        ):
+            assert_esp_is_configured()
+
+    def test_a_backend_that_sends_nothing_is_asked_for_nothing(self) -> None:
+        """Console and locmem need no keys, and the test suite must not be made to invent them."""
+        from .email_service import assert_esp_is_configured
+
+        with override_settings(
+            EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend", ANYMAIL={},
+        ):
+            assert_esp_is_configured()
 
 
 class EmailLabsPayloadTests(SimpleTestCase):

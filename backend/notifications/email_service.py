@@ -22,6 +22,7 @@ from typing import Any
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ImproperlyConfigured
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils import translation
@@ -34,6 +35,47 @@ from .models import NotificationLevel
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+#: What each sending backend cannot work without, keyed by the backend actually selected
+#: rather than by `EMAIL_PROVIDER`: the console and locmem backends need nothing, and
+#: keying on the outcome means a test that swaps the backend is not asked for keys it
+#: will never use.
+_ESP_REQUIRED_CREDENTIALS: dict[str, tuple[str, ...]] = {
+    "notifications.emaillabs_backend.EmailBackend": (
+        "EMAILLABS_APP_KEY", "EMAILLABS_SECRET_KEY", "EMAILLABS_SMTP_ACCOUNT",
+    ),
+    "anymail.backends.resend.EmailBackend": ("RESEND_API_KEY",),
+}
+
+
+def assert_esp_is_configured() -> None:
+    """
+    Refuse to boot with a provider selected but not credentialled.
+
+    THE FAILURE THIS EXISTS TO PREVENT IS A 401, NOT A CRASH. Every ESP setting defaults
+    to an empty string so that a deployment using another provider still boots — and
+    Anymail hands an empty credential to the API exactly as readily as a real one. A
+    variable that never reached the container therefore arrives at EmailLabs as an empty
+    App Key and comes back as "App Key is invalid": a message that sends whoever reads it
+    to inspect the key they pasted, which is the one place the fault is not. The name of
+    the missing variable is the whole answer, and it is knowable at startup.
+
+    Whitespace counts as absent. A credential pasted out of a web panel with a trailing
+    newline is not a credential, and it fails the same 401 way.
+    """
+    required = _ESP_REQUIRED_CREDENTIALS.get(settings.EMAIL_BACKEND)
+    if not required:
+        return
+
+    anymail: dict[str, Any] = getattr(settings, "ANYMAIL", {}) or {}
+    missing = [name for name in required if not str(anymail.get(name) or "").strip()]
+    if missing:
+        raise ImproperlyConfigured(
+            f"EMAIL_BACKEND is {settings.EMAIL_BACKEND}, but these are empty: "
+            f"{', '.join(missing)}. Set them in the environment (and recreate the "
+            f"container — a restart keeps the old one), or clear EMAIL_PROVIDER to "
+            f"fall back to the console backend."
+        )
 
 # Notification types whose email is rendered by a dedicated, hand-tuned template
 # (free-form message body) rather than the structured transactional layout.

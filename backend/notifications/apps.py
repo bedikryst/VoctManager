@@ -14,3 +14,8 @@ class NotificationsConfig(AppConfig):
         # ledger and answers to no control. Fail at boot instead.
         from .delivery import assert_preference_policy_is_coherent
         assert_preference_policy_is_coherent()
+
+        # A selected ESP with an empty credential does not fail here — it fails at the
+        # provider, as a 401 naming the key rather than the variable behind it.
+        from .email_service import assert_esp_is_configured
+        assert_esp_is_configured()
