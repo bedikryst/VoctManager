@@ -367,9 +367,14 @@ ANYMAIL = {
     # EmailLabs (Vercom S.A.). `SMTP_ACCOUNT` is the sending identity inside the
     # account (e.g. "1.voctensemble.smtp"), not an address anyone sees — it selects
     # the IP pool, which is why EmailLabs types an account transactional or marketing.
-    "EMAILLABS_APP_KEY": env("EMAILLABS_APP_KEY", default=""),
-    "EMAILLABS_SECRET_KEY": env("EMAILLABS_SECRET_KEY", default=""),
-    "EMAILLABS_SMTP_ACCOUNT": env("EMAILLABS_SMTP_ACCOUNT", default=""),
+    # STRIPPED, like every other credential-shaped setting here: these three are pasted
+    # from a web panel into a `.env` that Compose reads literally, and a trailing space
+    # or a stray newline survives all the way into the HTTP basic-auth header. The ESP
+    # then answers "App Key is invalid" — a message that sends you looking at the key
+    # itself, which is correct, rather than at the whitespace after it.
+    "EMAILLABS_APP_KEY": env("EMAILLABS_APP_KEY", default="").strip(),
+    "EMAILLABS_SECRET_KEY": env("EMAILLABS_SECRET_KEY", default="").strip(),
+    "EMAILLABS_SMTP_ACCOUNT": env("EMAILLABS_SMTP_ACCOUNT", default="").strip(),
 }
 
 # Which ESP sends. NAMED EXPLICITLY RATHER THAN INFERRED FROM WHICH KEY IS PRESENT:
@@ -392,7 +397,7 @@ EMAIL_BACKEND = _EMAIL_BACKENDS.get(
 # with its delivery reports. Deliberately NOT Anymail's global ANYMAIL["WEBHOOK_SECRET"]:
 # that one applies to every Anymail webhook at once and would start rejecting the
 # Resend webhook, which stays live until the new provider is proven.
-EMAILLABS_WEBHOOK_SECRET = env("EMAILLABS_WEBHOOK_SECRET", default="")
+EMAILLABS_WEBHOOK_SECRET = env("EMAILLABS_WEBHOOK_SECRET", default="").strip()
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="VoctManager <noreply@voctensemble.com>")
 
 # Sender for mail addressed to somebody OUTSIDE the ensemble (the concert notice list).
