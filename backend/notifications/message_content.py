@@ -5,7 +5,7 @@
              one-sentence "what happened", structured detail rows, deep-link and
              call-to-action — and projects it to every surface:
 
-               • .to_push()          → short-form Web Push / FCM payload
+               • .to_push()          → short-form Web Push payload
                • .to_email_context() → long-form transactional email context
                • .subject            → metadata-bearing inbox subject line
 
