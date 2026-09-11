@@ -24,7 +24,7 @@ from .models import (
     NoticeConsentEventKind,
     NoticeStatus,
 )
-from .services import NoticeListService, SubscribeOutcome
+from .services import ConfirmOutcome, NoticeListService, SubscribeOutcome
 from .tasks import purge_notice_records
 
 
@@ -510,6 +510,49 @@ class ConsentEvidenceTests(NoticeListTestCase):
 
         self.assertEqual(result, {'unconfirmed': 0, 'evidence': 0})
         self.assertTrue(ConcertNoticeSubscription.all_objects.exists())
+
+    def test_purge_spares_a_fresh_sign_up_standing_on_expired_evidence(self):
+        """
+        The mirror of the blocker: not a row both sweeps skip, but one they would both
+        reach for. An address whose old consent is past its retention signs up again, and
+        for seven days the row is expired evidence AND an unspent confirmation link. Taking
+        it deletes that link out of the reader's inbox while they are looking at it — and
+        since the sweep runs nightly and the link lives a week, every re-request they make
+        dies the same night. The expired half waits out the token instead.
+        """
+        self._subscribe()
+        NoticeListService.confirm(self._live_confirm_token())
+        NoticeListService.unsubscribe(self._row().unsubscribe_token)
+        NoticeConsentEvent.objects.update(
+            at=timezone.now() - EVIDENCE_RETENTION - timedelta(days=1),
+        )
+        NoticeListService.subscribe(
+            email='reader@example.com', locale='pl', surface='web:koncerty',
+        )
+
+        self.assertEqual(purge_notice_records(), {'unconfirmed': 0, 'evidence': 0})
+        # The link the reader is holding still resolves.
+        self.assertEqual(
+            NoticeListService.confirm(self._live_confirm_token()), ConfirmOutcome.CONFIRMED,
+        )
+
+    def test_purge_takes_that_row_once_its_link_has_expired(self):
+        """The other side of the reprieve: it is the token's seven days, not an amnesty."""
+        self._subscribe()
+        NoticeListService.confirm(self._live_confirm_token())
+        NoticeListService.unsubscribe(self._row().unsubscribe_token)
+        NoticeListService.subscribe(
+            email='reader@example.com', locale='pl', surface='web:koncerty',
+        )
+        NoticeConsentEvent.objects.update(
+            at=timezone.now() - EVIDENCE_RETENTION - timedelta(days=1),
+        )
+        ConcertNoticeSubscription.all_objects.update(
+            confirm_sent_at=timezone.now() - CONFIRM_TOKEN_TTL - timedelta(days=1),
+        )
+
+        self.assertEqual(purge_notice_records()['evidence'], 1)
+        self.assertFalse(ConcertNoticeSubscription.all_objects.exists())
 
     def test_purge_never_touches_a_live_consent_however_old(self):
         """A consent that has not been withdrawn is kept while it lasts; nothing here expires it."""

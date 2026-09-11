@@ -307,3 +307,67 @@ for the festival's Teilhardian title, less good for Francis. Proposed fix that k
 Ania's work: make them **two human hands**. Of the two light treatments, the calmer one is
 better — in the other the fingers nearly touch and burst into a star, losing the gap that is the
 whole point of the original, and the rays cut through the titles.
+
+---
+
+## §9 Florent's concept, in his own words (11.09.2026) — the authoritative reading
+
+This supersedes §3's creature-mapping as the evening's official account. §3 stays because it is a
+useful reading of the running order, but **it is a reading, not the programme's thesis** — and
+Florent has explicitly refused to let it become a checklist.
+
+> „Pochwała Stworzenia" wyrasta z *Laudes creaturarum* św. Franciszka z Asyżu, czyli tekstu
+> znanego w Polsce przede wszystkim jako *Pieśń słoneczna*. Nie chodzi jednak wyłącznie
+> o pochwałę natury. U Franciszka całe stworzenie jest rzeczywistością, poprzez którą człowiek
+> zwraca się ku Stwórcy. Słońce, księżyc, gwiazdy, powietrze, woda i ziemia nie są więc tylko
+> pięknymi obrazami, ale prowadzą do pytania o miejsce człowieka w całym stworzeniu i o jego
+> relację z Bogiem.
+>
+> Dlatego dramaturgia koncertu schodzi od zachwytu nad stworzeniem ku coraz głębszemu
+> doświadczeniu człowieka: jego przemianie, zależności od świata, cierpieniu i wreszcie śmierci.
+> Po „siostrze śmierci" następuje jednak przejście poza to, co widzialne: *Stetit Angelus*
+> pokazuje anioła stojącego przy ołtarzu, z kadzielnicą w ręku, a dym wonności wznosi się przed
+> Bogiem. To obraz liturgii niebiańskiej i właśnie tutaj domyka się cała droga koncertu.
+>
+> Powracający *Spiegel im Spiegel* jest muzycznym lustrem tej relacji: stworzenie odbija Stwórcę,
+> a człowiek został stworzony „na obraz Boży". Ostatni epizod Pärta kończy się bezpośrednio przed
+> *Stetit Angelus*, więc oba „lustra" spotykają się: to, co widzialne, otwiera się na to, co
+> niewidzialne. W tym sensie właśnie finał jest ostateczną Pochwałą Stworzenia.
+
+**Load-bearing consequences:**
+
+- **Pärt is not a work in the programme and not a refrain of "Laudato si'".** It is the *mirror*:
+  Gen 1:27, creation reflecting its Creator. Hence the count of episodes has never mattered to
+  Florent and has already changed once — do not build anything (poster, copy) on how many times
+  it returns. The two mirrors **meet** at the end, which is why the last Pärt episode stops
+  immediately before *Stetit Angelus*. A playlist ending "09 [zakończenie]" at position 18 is
+  therefore correct, not a slip.
+- **The sun focus is deliberate and defended**: the Polish reception title is *Pieśń słoneczna*,
+  so the sun is not one creature among eight here, it is the title. Florent's rule for the whole
+  project: *"Za dużo wątków nie zmieścimy."* Proposals to add creature imagery, a second ring of
+  creature names, or a water register to the poster were **withdrawn on this basis**.
+- **The Sistine hands are justified by the concept**, not in spite of it. The objection that they
+  assert a vertical God→Adam theology against Francis' horizontal kinship is withdrawn: Florent's
+  thesis *is* the vertical relation, with the creatures as the road to it. Better still, the two
+  hands facing each other with a gap **are** the two mirrors — the poster states Gen 1:27 and
+  Pärt's title with one image. Ania arrived at it before the concept was written down.
+- **Three weights, per Florent**: semantically the **Orff** (it is the whole Canticle, the title
+  work); musically the **Lark**; ideologically the **whole**, resolving only at the end.
+- **⚠ The venue is the ending.** *Stetit Angelus* sets Rev 8:3–4, the angel censing with *the
+  prayers of all the saints* — and the concert is in **Kościół Wszystkich Świętych**. The evening
+  closes on its venue's own patronal text. This is the single strongest fact for the announcement
+  copy and the concert page; use it.
+
+**Open against this concept:**
+
+- **What is *What A Wonderful World* doing after *Stetit Angelus*?** Florent's account ends at the
+  angel, and so does the poster (WAWW is not in the ring). Only the playlist puts it last. If it
+  is a **bis** everything is consistent; if it is in the programme proper, it follows the
+  culmination and blunts it. Needs saying out loud.
+- **Enescu, *Impressions d'enfance* op. 28, is for violin and piano — and there is no piano.**
+  Unanswered. Also unresolved: *which movement* (if *Lever de soleil*, it is brother Sun as the
+  suite's own finale; if *Ménétrier*, it is the only rhythmic, articulated music in the evening —
+  and they already played it at Wołanie Gór).
+- **Proportion**: Massenet + Enescu + Lark + Pärt ≈ 36 of ~69 minutes with the violin leading,
+  in a vocal ensemble's concert. Florent's note — *"dodałem tylko utwory dla Radu"* — explains
+  where they came from but not whether the balance is intended.

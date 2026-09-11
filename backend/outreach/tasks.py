@@ -37,11 +37,12 @@ def purge_notice_records() -> dict[str, int]:
        period. The accountability duty outlives the consent; it does not outlive the
        limitation period for a claim about the mail it licensed.
 
-    THE TWO SWEEPS MEET, they do not merely sit side by side, and sweep 2 is written around
-    that: it takes every row that is not CONFIRMED — the withdrawn one AND the abandoned
-    re-subscription sweep 1 hands over. Reading it as "the withdrawn ones" leaves that
+    THE TWO SWEEPS MEET WITHOUT OVERLAPPING, and sweep 2 is written around both halves of
+    that. It takes every row that is not CONFIRMED — the withdrawn one AND the abandoned
+    re-subscription sweep 1 hands over; reading it as "the withdrawn ones" leaves that
     second row deleted by neither sweep, which is an address held forever with no consent
-    behind it.
+    behind it. It stops short of the one row where the two would collide: a PENDING sign-up
+    whose link is still clickable, which sweep 1 is also still waiting out.
 
     Scheduled daily via CELERY_BEAT_SCHEDULE; requires the `celery beat` process.
     Idempotent and safe to re-run.
@@ -80,6 +81,21 @@ def purge_notice_records() -> dict[str, int]:
             # this clock. Everything else — withdrawn, or pending on top of an old consent —
             # is held solely as evidence, and evidence is what expires.
             status=NoticeStatus.CONFIRMED,
+        ).exclude(
+            # A SIGN-UP WHOSE LINK IS STILL CLICKABLE IS NOT MERELY EVIDENCE, and the row
+            # that reaches here carries both: expired proof of an old consent AND a fresh
+            # ask. Taking it would delete a confirmation link out of somebody's inbox
+            # minutes after they requested it, and they would keep re-requesting it — the
+            # sweep runs nightly, the link lives seven days. The two things share a row and
+            # only one of them can win, so the expired half waits out the token; the row is
+            # taken on a later run, or it is confirmed and its newest event is today.
+            #
+            # This is sweep 1's own condition mirrored, which is what keeps the two from
+            # overlapping: there, an expired token is what makes a PENDING row takeable.
+            # A row with no `confirm_sent_at` has no live link and is not excluded — NULL
+            # is never `>=` anything.
+            status=NoticeStatus.PENDING,
+            confirm_sent_at__gte=now - CONFIRM_TOKEN_TTL,
         ).annotate(
             newest_event=Max('consent_events__at'),
         ).filter(
