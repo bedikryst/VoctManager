@@ -20,6 +20,7 @@ from roster.models import (
     Project,
     ProjectPieceCasting,
 )
+from roster.permissions import led_projects_q
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -29,7 +30,11 @@ if TYPE_CHECKING:
 # personally-owned property, which must not stay readable once the concert is over.
 # Score annotations follow the exact same rule: a shared marking evaporates for a
 # singer the moment every project featuring the piece is closed.
-CLOSED_PROJECT_STATUSES = (Project.Status.COMPLETED, Project.Status.CANCELLED)
+#
+# The name most callers import; the values live on the model, beside
+# `HIDDEN_FROM_CAST_STATUSES`, so the delegation predicates can read the same rule
+# without importing this module (which imports them).
+CLOSED_PROJECT_STATUSES = Project.CLOSED_STATUSES
 
 
 def artist_has_live_access_to_piece(user: User, piece_id: uuid.UUID | str | None) -> bool:
@@ -48,6 +53,32 @@ def artist_has_live_access_to_piece(user: User, piece_id: uuid.UUID | str | None
         Participation.live_seats(artist__user=user)
         .filter(project__program_items__piece_id=piece_id)
         .exclude(project__status__in=CLOSED_PROJECT_STATUSES)
+        .exists()
+    )
+
+
+def user_has_live_access_to_piece(user: User, piece_id: uuid.UUID | str | None) -> bool:
+    """True iff `user` may open this music at all, by either of the two doors.
+
+    A seat in the cast is one (`artist_has_live_access_to_piece`); running one of
+    the projects that programme it is the other — a stand-in asked to take an
+    evening cannot rehearse a piece they are not allowed to see, and they are
+    often not singing in the programme they were handed.
+
+    This is the predicate every "may they read this edition" gate asks. The
+    leader MARKING layer is a narrower question with its own scope and is decided
+    separately, in `AnnotationViewSet.get_queryset`.
+    """
+    if piece_id is None:
+        return False
+    if artist_has_live_access_to_piece(user, piece_id):
+        return True
+    return (
+        ProgramItem.objects
+        .filter(
+            led_projects_q(user, scope='materials', prefix='project__'),
+            piece_id=piece_id,
+        )
         .exists()
     )
 
@@ -216,16 +247,21 @@ def get_artist_materials_queryset(
     ).prefetch_related(*prefetches)
 
 
-def get_conductor_materials_projects(user: User) -> QuerySet[Project]:
+def get_led_materials_projects(user: User) -> QuerySet[Project]:
     """
-    CQRS Read Model for the conductor's slice of the materials dashboard.
+    CQRS Read Model for the "I run this one" slice of the materials dashboard.
 
-    Projects this user conducts (Project.conductor → Artist → user) but is NOT
-    cast in — the sung ones already flow through get_artist_materials_queryset()
-    carrying the singer's personalised castings and readiness, so excluding them
-    here keeps every project a single row. The conductor sees the same rich
-    piece tree (scores, tracks, translations, recordings, programme notes) with
-    the full project cast, resolved in a fixed number of queries.
+    Projects this user leads but is NOT cast in — the sung ones already flow
+    through get_artist_materials_queryset() carrying the singer's personalised
+    castings and readiness, so excluding them here keeps every project a single
+    row. Leading means either holding the podium (Project.conductor) or being
+    handed one programme as a stand-in; `led_projects_q` owns that rule,
+    including the two different lifecycle gates the two doors use.
+
+    The reader sees the same rich piece tree (scores, tracks, translations,
+    recordings, programme notes) with the full project cast, resolved in a fixed
+    number of queries. `.distinct()` because the delegation branch traverses a
+    multi-valued relation.
 
     Returned QuerySet attributes set by this function:
       project.ordered_program              → list[ProgramItem]
@@ -238,20 +274,18 @@ def get_conductor_materials_projects(user: User) -> QuerySet[Project]:
         .values_list('project_id', flat=True)
     )
 
-    conducted_qs: QuerySet[Project] = (
+    led_qs: QuerySet[Project] = (
         Project.objects
-        .filter(conductor__user=user, conductor__is_deleted=False)
+        .filter(led_projects_q(user, scope='materials'))
         .exclude(id__in=sung_project_ids)
-        # Drafts stay — this is the desk they are assembled on. A cancellation
-        # does not: it leaves the podium exactly as it leaves the schedule.
-        .exclude(status=Project.Status.CANCELLED)
+        .distinct()
     )
-    project_ids: list[uuid.UUID] = list(conducted_qs.values_list('id', flat=True))
+    project_ids: list[uuid.UUID] = list(led_qs.values_list('id', flat=True))
 
     program_items_qs: QuerySet[ProgramItem] = _materials_program_items_prefetch(project_ids)
 
     return (
-        conducted_qs
+        led_qs
         .select_related('conductor', 'location')
         .prefetch_related(
             Prefetch(

@@ -22,7 +22,7 @@ from celery.result import AsyncResult
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.db.models import Count, Exists, OuterRef, Prefetch, Q
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q, QuerySet
 from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -61,7 +61,7 @@ from notifications.models import PendingAnnouncement
 
 from .cast_order import participation_sort_key
 from .dashboard_serializers import (
-    ConductedProjectMaterialsSerializer,
+    LedProjectMaterialsSerializer,
     ParticipationMaterialsSerializer,
 )
 from .domain.attendance_window import (
@@ -113,20 +113,23 @@ from .models import (
     Project,
     ProjectPieceCasting,
     Rehearsal,
+    RehearsalDelegate,
     ScorePackage,
     VoiceType,
 )
+from .permissions import led_project_ids, led_projects_q, user_leads_project
 from .queries import (
-    artist_has_live_access_to_piece,
     get_artist_dossier,
     get_artist_materials_queryset,
     get_artist_schedule,
-    get_conductor_materials_projects,
+    get_led_materials_projects,
+    user_has_live_access_to_piece,
 )
 from .queries.materials_queries import CLOSED_PROJECT_STATUSES
 from .score_package_config import resolve_item_edition
 from .score_package_markings import (
     READER_MARK_LAYERS,
+    MarkAudience,
     ReaderMarks,
     reader_marks_for_book,
 )
@@ -149,6 +152,7 @@ from .serializers import (
     ProgramItemSerializer,
     ProjectPieceCastingSerializer,
     ProjectSerializer,
+    RehearsalDelegateSerializer,
     RehearsalSerializer,
 )
 from .services import (
@@ -158,6 +162,7 @@ from .services import (
     PieceReadinessService,
     ProjectManagementService,
     ProjectPublicationService,
+    RehearsalDelegationService,
     RehearsalOperationsService,
 )
 from .tasks import generate_project_zip_task
@@ -169,7 +174,7 @@ logger = logging.getLogger(__name__)
 
 # Thin module-local aliases preserve the existing private call sites below.
 _CLOSED_PROJECT_STATUSES = CLOSED_PROJECT_STATUSES
-_artist_has_live_access_to_piece = artist_has_live_access_to_piece
+_user_has_live_access_to_piece = user_has_live_access_to_piece
 
 
 class PdfRenderUnavailable(APIException):
@@ -213,14 +218,21 @@ def _binder_bytes_stamp(generated_at: datetime | None) -> str:
     return f"{generated_at.timestamp()}" if generated_at else ""
 
 
-def _requested_mark_layers(raw: object, *, is_manager: bool) -> list[str]:
+def _requested_mark_layers(
+    raw: object, *, is_manager: bool, leads_project: bool = False,
+) -> list[str]:
     """Which mark layers a download asked for.
 
     ``?marks=1`` is the singer's switch and means their own pencil; a layer may
     also be named outright (``?marks=conductor,personal``), which is how the
-    conductor's copy is fetched. Asking for a manager-only layer without being
-    one is refused rather than quietly downgraded: a copy that silently lacks the
-    cues it was asked for is worse than an error.
+    conductor's copy is fetched. Asking for a layer that is not this reader's is
+    refused rather than quietly downgraded: a copy that silently lacks the cues
+    it was asked for is worse than an error.
+
+    ``leads_project`` is what separates a stand-in from any other singer. They
+    are not a manager and must not reach the conductor's private layer, but the
+    ``leader`` layer was written for them — including on the paper copy, since a
+    rehearsal is run off a printed book as often as off a screen.
     """
     text = str(raw or "").strip().lower()
     if not text:
@@ -231,7 +243,12 @@ def _requested_mark_layers(raw: object, *, is_manager: bool) -> list[str]:
     unknown = [layer for layer in layers if layer not in READER_MARK_LAYERS]
     if unknown:
         raise DRFValidationError({"marks": f"Unknown marking layer: {unknown[0]}."})
-    if not is_manager and any(READER_MARK_LAYERS[layer] for layer in layers):
+    allowed = {MarkAudience.ANY}
+    if leads_project:
+        allowed.add(MarkAudience.LEADER)
+    if is_manager:
+        allowed |= {MarkAudience.LEADER, MarkAudience.MANAGER}
+    if any(READER_MARK_LAYERS[layer] not in allowed for layer in layers):
         raise PermissionDenied("That marking layer is not yours to download.")
     return layers
 
@@ -606,8 +623,22 @@ class ProjectViewSet(viewsets.ModelViewSet):
         # gets. The subquery also keeps the census annotations above honest —
         # they count the whole cast, and a join to one member would have needed
         # `distinct()` to say so.
+        #
+        # A seat is not the only way in, though: whoever runs the project reaches
+        # it too, cast or not. Every project-scoped door a non-manager can open —
+        # the binder, the page map, the day sheet — resolves through this
+        # queryset, so widening it here is what lets a stand-in actually take the
+        # evening instead of meeting a 404 at each of them. Both ids come from
+        # subqueries rather than joins, so the census annotations stay honest and
+        # no `distinct()` is needed.
+        #
+        # `any`, not `materials`: this decides whether the project EXISTS for the
+        # reader, and every capability needs that much. Each door behind it still
+        # asks for its own scope, so a grant of the roll call alone reaches the
+        # attendance sheet and not the music.
         return base_qs.filter(
-            id__in=Participation.live_seats(artist__user=user).values('project_id')
+            Q(id__in=Participation.live_seats(artist__user=user).values('project_id'))
+            | Q(id__in=led_project_ids(user, scope='any'))
         )
 
     def create(self, request, *args, **kwargs) -> Response:
@@ -677,15 +708,23 @@ class ProjectViewSet(viewsets.ModelViewSet):
             # Read what was asked for BEFORE anything is recorded: a request that
             # is going to be refused must not leave a distribution stamp or an
             # access-log row behind it.
+            leads_project = user_leads_project(
+                request.user, project.pk, scope='marks',
+            )
             layers = _requested_mark_layers(
-                request.query_params.get('marks'), is_manager=is_manager,
+                request.query_params.get('marks'),
+                is_manager=is_manager,
+                leads_project=leads_project,
             )
 
             # A singer downloading the book is the moment it "leaves the building";
             # flag it so the conductor's cockpit warns before a rebuild silently
             # replaces what is already in their folders. Managers previewing it do
-            # not count as distribution. (Unchanged by watermarking.)
-            if not is_manager:
+            # not count as distribution — nor does whoever is running the evening
+            # off it, for the same reason: the book has not reached the choir,
+            # and a false flag here is a rebuild warning about nothing. The
+            # access log still records them; that is the ledger, this is a state.
+            if not is_manager and not leads_project:
                 ScorePackageService.mark_distributed(project)
 
             # The binder physically contains the licensed editions' pages, so it is
@@ -851,7 +890,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = self.get_object()
         is_manager = user_is_manager(request.user)
         layers = _requested_mark_layers(
-            request.query_params.get('layers') or '1', is_manager=is_manager,
+            request.query_params.get('layers') or '1',
+            is_manager=is_manager,
+            leads_project=user_leads_project(request.user, project.pk, scope='marks'),
         )
         if not is_manager and project.status in _CLOSED_PROJECT_STATUSES:
             return Response({"available": False, "count": 0})
@@ -945,6 +986,84 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(
             {"available": True, "pages": frames, "items": items, "stamp": stamp},
         )
+
+    @action(detail=True, methods=['get', 'post'], url_path='delegates', permission_classes=[IsManager])
+    def delegates(self, request, pk=None) -> Response:
+        """
+        Who may run this project's rehearsals besides a manager. Manager-only —
+        lending the conductor's markings is his decision, not a stand-in's.
+
+        GET  — the live delegations, newest first.
+        POST — grant one: `{artist, can_see_leader_marks?, can_take_roll_call?,
+               can_open_materials?, expires_at?, note?}`. Re-granting to the same
+               artist revives and overwrites the existing row rather than
+               colliding with the uniqueness constraint — the manager's gesture
+               is "this person leads it", not "insert a row".
+
+        `Project.conductor` is not listed here and does not need to be: the
+        podium carries these rights on its own.
+        """
+        project = self.get_object()
+
+        if request.method == 'POST':
+            serializer = RehearsalDelegateSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            delegate = RehearsalDelegationService.grant(
+                project=project,
+                granted_by=request.user,
+                **serializer.validated_data,
+            )
+            return Response(
+                RehearsalDelegateSerializer(delegate).data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        rows = (
+            RehearsalDelegate.objects
+            .filter(project=project, is_deleted=False)
+            .select_related('artist', 'granted_by')
+            .order_by('-created_at')
+        )
+        return Response(RehearsalDelegateSerializer(rows, many=True).data)
+
+    @action(
+        detail=True, methods=['patch', 'delete'],
+        url_path=r'delegates/(?P<delegate_id>[^/.]+)',
+        permission_classes=[IsManager],
+    )
+    def delegate_detail(self, request, pk=None, delegate_id=None) -> Response:
+        """
+        Narrow a delegation's scope (PATCH) or end it (DELETE).
+
+        Ending it closes the source and nothing more: a score already open on
+        somebody's tablet stays open until that client next asks the server,
+        and what they have already read they have read. Say so on the screen
+        rather than promising a recall the web cannot perform.
+        """
+        project = self.get_object()
+        try:
+            delegate = RehearsalDelegate.objects.get(
+                pk=delegate_id, project=project, is_deleted=False,
+            )
+        except (RehearsalDelegate.DoesNotExist, DjangoValidationError, ValueError):
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == 'DELETE':
+            RehearsalDelegationService.revoke(delegate, revoked_by=request.user)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        serializer = RehearsalDelegateSerializer(
+            delegate, data=request.data, partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        # The artist a delegation is about is its identity, not its content:
+        # re-pointing one would silently move a grant from the person the
+        # manager named to somebody else, leaving the audit line describing the
+        # wrong hand-over. Grant a new one and end this one instead.
+        serializer.validated_data.pop('artist', None)
+        serializer.save()
+        RehearsalDelegationService.log_change(delegate, changed_by=request.user)
+        return Response(serializer.data)
 
     @action(detail=True, methods=['get', 'post'], url_path='score_package', permission_classes=[IsManager])
     def score_package(self, request, pk=None) -> Response:
@@ -1413,7 +1532,20 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         """
         target = resolve_preview_target(request)
         readiness_visible = not target.is_preview
-        ctx = {'request': request, 'readiness_visible': readiness_visible}
+        ctx = {
+            'request': request,
+            'readiness_visible': readiness_visible,
+            # Who the tree is ABOUT, which under ``?artist=`` is not who is
+            # asking. Both lead flags are claims about that person.
+            'viewer_user_id': target.user.id,
+            # `any`, because this flag answers "do they run this programme" and
+            # a delegation that only hands over the roll call still does. Which
+            # projects have MUSIC here is a different question, decided by
+            # `get_led_materials_projects` on the `materials` scope.
+            'led_project_ids': {
+                str(pid) for pid in led_project_ids(target.user, scope='any')
+            },
+        }
         sung = ParticipationMaterialsSerializer(
             get_artist_materials_queryset(
                 target.user, include_readiness=readiness_visible
@@ -1421,12 +1553,12 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             many=True,
             context=ctx,
         ).data
-        conducted = ConductedProjectMaterialsSerializer(
-            get_conductor_materials_projects(target.user),
+        led = LedProjectMaterialsSerializer(
+            get_led_materials_projects(target.user),
             many=True,
             context=ctx,
         ).data
-        return Response([*sung, *conducted])
+        return Response([*sung, *led])
 
     @action(detail=False, methods=['get'], url_path='schedule-dashboard')
     def schedule_dashboard(self, request) -> Response:
@@ -1439,10 +1571,18 @@ class ParticipationViewSet(viewsets.ModelViewSet):
 
         A manager may ask for a member's timeline with ``?artist=<id>``.
         """
+        target_user = resolve_preview_target(request).user
         projects_qs, rehearsals_qs, participation_by_project = get_artist_schedule(
-            resolve_preview_target(request).user
+            target_user
         )
         ctx = {'request': request}
+        # Which of these evenings this person is expected to RUN — the only thing
+        # that puts a roll call in a singer's hands. A separate scope from the
+        # one that put the project on their timeline: a delegation can open the
+        # music without handing over the attendance record.
+        roll_call_project_ids = {
+            str(pid) for pid in led_project_ids(target_user, scope='roll_call')
+        }
 
         items: list[dict] = [
             {
@@ -1462,6 +1602,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
                 'type': 'REHEARSAL',
                 'participation_id': participation_by_project.get(str(reh_obj.project_id)),
                 'project_title': reh_obj.project.title,
+                'i_lead': str(reh_obj.project_id) in roll_call_project_ids,
                 'my_attendance': (
                     {
                         'id': str(mine.id),
@@ -1617,11 +1758,46 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['rehearsal', 'participation', 'rehearsal__project', 'participation__artist']
 
+    def _can_take_roll_call(self, rehearsal_id: uuid.UUID | str | None) -> bool:
+        """Whether the caller may write the CHOIR's record for this evening,
+        rather than only their own report of it.
+
+        Takes the id rather than the row because the two callers hold different
+        things — a payload on the way in, a loaded row on the way to an edit —
+        and one question must not be asked two ways. An unknown id answers False
+        and the service's own lookup produces the 400.
+        """
+        if user_is_manager(self.request.user):
+            return True
+        if rehearsal_id is None:
+            return False
+        try:
+            return Rehearsal.objects.filter(
+                led_projects_q(
+                    request_user(self.request),
+                    scope='roll_call',
+                    prefix='project__',
+                ),
+                pk=rehearsal_id,
+            ).exists()
+        except (DjangoValidationError, ValueError, TypeError):
+            # A malformed id is not an authority question; let the DTO say so.
+            return False
+
     def get_queryset(self):
         qs = Attendance.objects.select_related('rehearsal', 'rehearsal__project', 'participation', 'participation__artist', 'participation__artist__user')
+        user = request_user(self.request)
         if user_is_manager(self.request.user):
             return qs
-        return qs.filter(participation__artist__user=request_user(self.request))
+        # Own rows always; everybody's rows for the rehearsals of a project this
+        # user runs. Somebody has to be able to read the sheet they are about to
+        # fill in, and a stand-in seeing one name on it — theirs — could not take
+        # a roll call at all. `.distinct()` because the lead branch traverses a
+        # multi-valued relation.
+        return qs.filter(
+            Q(participation__artist__user=user)
+            | led_projects_q(user, scope='roll_call', prefix='rehearsal__project__')
+        ).distinct()
 
     def _window_closed_response(self, request) -> Response:
         """One refusal, whichever door the singer came through.
@@ -1642,21 +1818,25 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         """The 403 for a singer reaching for a rehearsal that has already been held.
 
         The queryset above answers *whose* row this is; this answers *when* they
-        may still touch it. A manager is never refused — correcting the record
-        after the evening is exactly their job.
+        may still touch it. Whoever takes the roll call is never refused —
+        correcting the record after the evening is exactly that job, and a
+        stand-in tidying up the morning after is doing it, not rewriting their
+        own history.
         """
-        if user_is_manager(request.user):
+        if self._can_take_roll_call(attendance.rehearsal_id):
             return None
         if is_open_to_self_report(attendance.rehearsal):
             return None
         return self._window_closed_response(request)
 
     def create(self, request, *args, **kwargs) -> Response:
+        payload = client_payload(request.data, only=_ATTENDANCE_RECORD_FIELDS)
         try:
             dto = AttendanceRecordDTO(
                 requesting_user_id=request.user.id,
+                can_take_roll_call=self._can_take_roll_call(payload.get('rehearsal')),
                 is_manager=user_is_manager(request.user),
-                **client_payload(request.data, only=_ATTENDANCE_RECORD_FIELDS),
+                **payload,
             )
         except ValidationError as e:
             return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -1816,6 +1996,99 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         return qs.filter(project_id__in=seats.values('project_id')).filter(
             Q(invited_participations__isnull=True) | Q(invited_participations__in=seats)
         ).distinct()
+
+    @action(
+        detail=True, methods=['get'], url_path='lead-sheet',
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def lead_sheet(self, request, pk=None) -> Response:
+        """
+        One evening, as the person running it needs to see it: when and where,
+        the work plan, and the choir to be called over.
+
+        A read model rather than three widened list endpoints. The roll call is
+        the ONLY thing a delegation of `roll_call` opens, and answering it here
+        means one authority check in one place and a cast projection that says
+        exactly what a register needs — a name, a voice, a face — instead of the
+        contract rows a generic `/participations/` would have had to start
+        returning to somebody who is not a manager.
+
+        The programme is deliberately absent. Knowing who to call over is the
+        roll call's business; what the choir is singing belongs to the materials
+        scope, which a grant can withhold, and which has its own surface.
+
+        Resolved outside `get_queryset` on purpose: that one answers "which
+        rehearsals are MINE as a singer", and a stand-in is usually not cast in
+        the programme they were handed. 404 rather than 403 for a stranger —
+        the evening is not theirs to know about.
+        """
+        try:
+            rehearsal = (
+                Rehearsal.objects
+                .select_related('project', 'location')
+                .prefetch_related('invited_participations')
+                .filter(pk=pk)
+                .first()
+            )
+        except (DjangoValidationError, ValueError):
+            rehearsal = None
+        if rehearsal is None:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        may_take_roll_call = user_is_manager(request.user) or user_leads_project(
+            request.user, rehearsal.project_id, scope='roll_call',
+        )
+        if not may_take_roll_call:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Who was summoned: the sectional list when there is one, the whole
+        # standing cast when there is not — the same rule `resolveInvited` reads
+        # on the client, and the same pruning of anyone who turned the project
+        # down. A declined seat is not an empty row to be chased at the door.
+        standing_cast: QuerySet[Participation] = (
+            Participation.objects
+            .filter(project_id=rehearsal.project_id, is_deleted=False)
+            .exclude(status=Participation.Status.DECLINED)
+            .select_related('artist', 'artist__user', 'artist__user__profile')
+        )
+        invited_ids = {p.id for p in rehearsal.invited_participations.all()}
+        seats: list[Participation] = [
+            seat for seat in standing_cast
+            if not invited_ids or seat.id in invited_ids
+        ]
+        seats.sort(key=participation_sort_key)
+
+        artist_ctx = {'request': request}
+        return Response({
+            'rehearsal': RehearsalSerializer(rehearsal, context=artist_ctx).data,
+            'project': {
+                'id': str(rehearsal.project_id),
+                'title': rehearsal.project.title,
+                'status': rehearsal.project.status,
+            },
+            # Stated rather than implied: a manager reaching this page is not a
+            # delegate, and the client must not infer the authority from the
+            # mere fact that the read succeeded.
+            'is_manager': user_is_manager(request.user),
+            'cast': [
+                {
+                    'id': str(seat.id),
+                    'artist': str(seat.artist_id),
+                    'project': str(seat.project_id),
+                    'status': seat.status,
+                    'default_voice_line': seat.default_voice_line,
+                    'is_section_leader': seat.is_section_leader,
+                    'section_rank': seat.section_rank,
+                    # The register's projection of a colleague: enough to call a
+                    # name and recognise a face, and nothing a roll call has no
+                    # business carrying — no contact details, no settlement.
+                    'artist_detail': ArtistBasicSerializer(
+                        seat.artist, context=artist_ctx,
+                    ).data,
+                }
+                for seat in seats
+            ],
+        })
 
     @staticmethod
     def _build_create_dto_payload(validated_data):
@@ -2171,6 +2444,10 @@ class ScoreEditionDownloadView(views.APIView):
     /media/ link), so access is re-evaluated on every request. The moment a
     chorister's projects featuring the piece are all closed, the PDF stops
     resolving for them — managers retain access unconditionally.
+
+    Running a project opens its music by the same door: a stand-in handed an
+    evening is usually not cast in the programme, and a rehearsal cannot be led
+    off a score the leader is refused.
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -2180,7 +2457,7 @@ class ScoreEditionDownloadView(views.APIView):
         except ScoreEdition.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        if not user_is_manager(request.user) and not _artist_has_live_access_to_piece(
+        if not user_is_manager(request.user) and not _user_has_live_access_to_piece(
             request.user, edition.piece_id
         ):
             # Deliberately 404 (not 403): a chorister who has lost access must not

@@ -36,6 +36,13 @@ export interface TimelineEvent {
   participationId?: string | number;
   /** The artist's existing attendance row id, when they've already marked it. */
   attendanceId?: string;
+  /**
+   * This evening is theirs to RUN — the conductor's own, or one handed to them
+   * as a stand-in. Orthogonal to `participationId`: a stand-in who also sings
+   * the programme has both, and answers for themselves on the same card they
+   * take the roll call from.
+   */
+  iLead?: boolean;
 }
 
 /** The artist's own attendance, pre-joined onto a rehearsal by the server. */
@@ -55,6 +62,13 @@ export interface ScheduleDashboardRehearsalItem {
   type: "REHEARSAL";
   participation_id: string | null;
   project_title: string;
+  /**
+   * Whether this reader is expected to take THIS evening's roll call — the
+   * conductor's own projects, and any programme handed to them as a stand-in
+   * with the attendance scope. The server decides it; the client never derives
+   * it from a role, because a stand-in has none.
+   */
+  i_lead: boolean;
   my_attendance: ScheduleAttendanceSnapshot | null;
   rehearsal: EnrichedRehearsal;
 }

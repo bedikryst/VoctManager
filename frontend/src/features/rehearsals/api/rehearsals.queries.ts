@@ -103,6 +103,23 @@ const settleOptimistic = async (
   }
 };
 
+/**
+ * The flat register on its own, for a surface that needs the ticks without the
+ * other five collections the manager's workspace joins.
+ *
+ * Deliberately the SAME key and fetcher as the workspace's attendance slot, so
+ * both read one cache entry — which is what lets an optimistic tap taken on the
+ * stand-in's page and one taken in the inspector be the same write, reconciled
+ * once. Server-scoped per reader: a singer sees their own rows, whoever takes a
+ * roll call sees that evening's.
+ */
+export const useAttendanceRegister = () =>
+  useQuery({
+    queryKey: rehearsalKeys.attendances.all,
+    queryFn: RehearsalsService.getAttendances,
+    staleTime: 1000 * 60,
+  });
+
 export const useRehearsalsWorkspaceData = () => {
   const results = useQueries({
     queries: [

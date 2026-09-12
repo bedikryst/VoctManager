@@ -37,6 +37,7 @@ from .models import (
     Project,
     ProjectPieceCasting,
     Rehearsal,
+    RehearsalDelegate,
 )
 
 # --- 1. ARTIST SERIALIZERS ---
@@ -604,3 +605,34 @@ class CrewAssignmentSerializer(CrewAssignmentBasicSerializer):
         model = CrewAssignment
         fields = '__all__'
         read_only_fields = ('is_paid', 'paid_at')
+
+
+class RehearsalDelegateSerializer(serializers.ModelSerializer):
+    """One stand-in on one project, as the manager's delegation list reads it.
+
+    `project` and `granted_by` are stamped by the view from the URL and the
+    request — a delegation that could name its own project in the body would let
+    one project's editor hand out access to another's music.
+
+    `expires_at` is the only tense the client may set. Whether the grant is still
+    LIVE is not stored and not serialised: it is recomputed against the clock and
+    the project's status on every read, by `led_projects_q`, so a row that looks
+    active in a list the browser cached an hour ago still opens nothing.
+    """
+
+    artist_name = serializers.CharField(source='artist.__str__', read_only=True)
+    artist_voice_display = serializers.CharField(
+        source='artist.get_voice_type_display', read_only=True,
+    )
+    granted_by_name = serializers.CharField(
+        source='granted_by.get_full_name', read_only=True, default='',
+    )
+
+    class Meta:
+        model = RehearsalDelegate
+        fields = (
+            'id', 'artist', 'artist_name', 'artist_voice_display',
+            'can_see_leader_marks', 'can_take_roll_call', 'can_open_materials',
+            'expires_at', 'note', 'granted_by_name', 'created_at',
+        )
+        read_only_fields = ('id', 'created_at')

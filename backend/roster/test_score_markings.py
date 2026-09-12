@@ -22,6 +22,8 @@ from django.test import SimpleTestCase, TestCase, override_settings
 from pypdf import PdfReader, PdfWriter
 
 from archive.models import (
+    CONDUCTOR_ANNOTATION_LAYER,
+    LEADER_ANNOTATION_LAYER,
     PERSONAL_ANNOTATION_LAYER,
     SHARED_ANNOTATION_LAYER,
     Annotation,
@@ -537,6 +539,17 @@ class MarkingsCensusTests(_Base):
     def test_personal_marks_are_never_counted(self) -> None:
         edition = self._add_edition(pages=2)
         self._mark(edition, page=1, layer=PERSONAL_ANNOTATION_LAYER)
+        census = compute_program_markings([self.item])[self.item.pk]
+        self.assertEqual(census.inside, 0)
+        self.assertEqual(markings_status(census, enabled=True), MARKINGS_NONE)
+
+    def test_leader_marks_are_never_printed_into_the_choirs_book(self) -> None:
+        # The census is what the binder stamps. A cue written for whoever runs
+        # the rehearsal is addressed to one person; printing it into forty
+        # copies would publish it to the choir by accident.
+        edition = self._add_edition(pages=2)
+        self._mark(edition, page=1, layer=LEADER_ANNOTATION_LAYER)
+        self._mark(edition, page=1, layer=CONDUCTOR_ANNOTATION_LAYER)
         census = compute_program_markings([self.item])[self.item.pk]
         self.assertEqual(census.inside, 0)
         self.assertEqual(markings_status(census, enabled=True), MARKINGS_NONE)

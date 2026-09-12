@@ -4,10 +4,11 @@
  * pill: undo/redo, the tool set (pen · highlighter · note · stamp · eraser),
  * contextual stroke weight + ink colour, what draws (stylus or finger), the note
  * display mode, the musical stamp palette (one group at a time — the catalogue
- * outgrew a flat grid), the write layer, and the "how does this work" panel. In conductor mode the layer toggles between shared/private;
- * in personal mode every mark lands on the user's own private layer (a static
- * chip says so). Drawing tools appear once the page is rendered large enough to
- * write on (see useCanDraw); notes, stamps, eraser + browse stay on every screen.
+ * outgrew a flat grid), the write layer, and the "how does this work" panel. In
+ * conductor mode the layer cycles choir → leader → private; in personal mode
+ * every mark lands on the user's own private layer (a static chip says so).
+ * Drawing tools appear once the page is rendered large enough to write on (see
+ * useCanDraw); notes, stamps, eraser + browse stay on every screen.
  *
  * Collapsed, the bar is a trigger that NAMES the tool in hand — a rehearsal is
  * no place to discover that the pencil was armed all along. Whether it opens
@@ -35,6 +36,7 @@ import {
   Type,
   Undo2,
   Users,
+  UserCheck,
   UserCog,
   ZoomIn,
 } from "lucide-react";
@@ -53,11 +55,19 @@ import {
   type AnnotationToolState,
   type StrokeSize,
 } from "../lib/useAnnotationTools";
+import type { AnnotationLayer } from "../types/annotations.dto";
 import { groupOfStamp, STAMP_GROUPS, stampsInGroup, StampGlyph } from "../lib/stamps";
 
 interface AnnotationToolbarProps extends AnnotationToolState {
-  /** conductor → shared/conductor layer toggle; personal → fixed private layer. */
+  /** conductor → choir/leader/private layer cycle; personal → fixed private layer. */
   mode: "conductor" | "personal";
+  /**
+   * The layer of the mark currently selected, when the reader may move it.
+   * Null when nothing is selected or the mark is not theirs — the control it
+   * drives is an edit of an EXISTING mark, not a setting for the next one.
+   */
+  selectedLayer: AnnotationLayer | null;
+  onMoveSelected: (layer: AnnotationLayer) => void;
   canDraw: boolean;
   annotationCount: number;
   /** How many of the visible marks THIS user may wipe (gates the trash). */
@@ -83,6 +93,25 @@ interface ToolDef {
   fallback: string;
   drawOnly: boolean;
 }
+
+/**
+ * The layers a manager may WRITE to, in the order the pill cycles them — widest
+ * audience first, so one tap from the resting state narrows rather than widens.
+ * `personal` is not here: it is nobody's audience and is reached by opening the
+ * score as oneself, not by a toggle over the choir's marks.
+ */
+type WriteLayer = "shared" | "leader" | "conductor";
+
+const WRITE_LAYERS: readonly WriteLayer[] = ["shared", "leader", "conductor"];
+
+const NEXT_WRITE_LAYER: Record<WriteLayer, WriteLayer> = {
+  shared: "leader",
+  leader: "conductor",
+  conductor: "shared",
+};
+
+const isWriteLayer = (layer: string): layer is WriteLayer =>
+  (WRITE_LAYERS as readonly string[]).includes(layer);
 
 const TOOLS: ReadonlyArray<ToolDef> = [
   { id: "pointer", icon: MousePointer2, labelKey: "annotations.tools.pointer", fallback: "Browse", drawOnly: false },
@@ -166,6 +195,8 @@ const panelChrome =
 
 export const AnnotationToolbar = ({
   mode,
+  selectedLayer,
+  onMoveSelected,
   tool,
   setTool,
   fingerDraw,
@@ -208,6 +239,42 @@ export const AnnotationToolbar = ({
   // Whether the active tool has any contextual options to drop below the pill.
   const hasPanel = showSize || showInk || showNoteMode || showStamps;
   const activeStampGroup = groupOfStamp(stamp);
+
+  // A layer set outside this cycle (an ad-hoc name from an older score) reads as
+  // the choir's, because that is the only answer that cannot quietly widen an
+  // audience: the pill then shows where the NEXT mark goes, which is the one
+  // thing it is there to say.
+  const writeLayer: WriteLayer = isWriteLayer(layer) ? layer : "shared";
+  const WRITE_LAYER_COPY: Record<
+    WriteLayer,
+    { Icon: typeof Users; label: string; short: string; hint: string; tone: string }
+  > = {
+    shared: {
+      Icon: Users,
+      label: t("annotations.layer.shared", "Widoczne dla chóru"),
+      short: t("annotations.layer.shared_short", "Chór"),
+      hint: t("annotations.layer.shared_hint", "Widzi cały chór śpiewający ten utwór"),
+      tone: "bg-ethereal-sage/20 text-ethereal-sage",
+    },
+    leader: {
+      Icon: UserCheck,
+      label: t("annotations.layer.leader", "Dla prowadzącego próbę"),
+      short: t("annotations.layer.leader_short", "Prowadzący"),
+      hint: t(
+        "annotations.layer.leader_hint",
+        "Widzi tylko osoba, której powierzysz prowadzenie próby",
+      ),
+      tone: "bg-ethereal-amethyst/20 text-ethereal-amethyst",
+    },
+    conductor: {
+      Icon: UserCog,
+      label: t("annotations.layer.private", "Prywatne"),
+      short: t("annotations.layer.private_short", "Prywatne"),
+      hint: t("annotations.layer.private_hint", "Tylko dla Ciebie i innych menedżerów"),
+      tone: "bg-ink-on-inverse/10 text-ink-on-inverse",
+    },
+  };
+  const writeLayerCopy = WRITE_LAYER_COPY[writeLayer];
 
   const isImmersive = usePdfImmersive();
 
@@ -363,36 +430,41 @@ export const AnnotationToolbar = ({
         {mode === "conductor" ? (
           <button
             type="button"
-            onClick={() => setLayer(layer === "shared" ? "conductor" : "shared")}
-            aria-label={
-              layer === "shared"
-                ? t("annotations.layer.shared", "Visible to choir")
-                : t("annotations.layer.private", "Private")
-            }
-            title={
-              layer === "shared"
-                ? t("annotations.layer.shared", "Visible to choir")
-                : t("annotations.layer.private", "Private")
-            }
+            onClick={() => setLayer(NEXT_WRITE_LAYER[writeLayer])}
+            aria-label={writeLayerCopy.label}
+            title={writeLayerCopy.hint}
             className={cn(
               "flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
-              layer === "shared"
-                ? "bg-ethereal-sage/20 text-ethereal-sage"
-                : "bg-ink-on-inverse/10 text-ink-on-inverse",
+              writeLayerCopy.tone,
             )}
           >
-            {layer === "shared" ? (
-              <Users size={14} aria-hidden="true" />
-            ) : (
-              <UserCog size={14} aria-hidden="true" />
-            )}
+            <writeLayerCopy.Icon size={14} aria-hidden="true" />
+            <span className="hidden sm:inline">{writeLayerCopy.short}</span>
+          </button>
+        ) : null}
+
+        {/* Moving a mark that already exists. Appears only with one selected,
+            because it edits THAT mark rather than arming the next one — and
+            only in conductor mode, where there is another audience to move it
+            to. One mark at a time on purpose: the private layer holds what the
+            conductor thinks about the singers, and a "move all" would be the
+            gesture that hands those remarks to one of them. */}
+        {mode === "conductor" && selectedLayer && selectedLayer !== "leader" && (
+          <button
+            type="button"
+            onClick={() => onMoveSelected("leader")}
+            aria-label={t("annotations.layer.move_to_leader", "Pokaż prowadzącemu")}
+            title={t("annotations.layer.move_to_leader", "Pokaż prowadzącemu")}
+            className="flex h-9 items-center gap-1.5 rounded-full bg-ethereal-amethyst/20 px-3 text-xs font-medium text-ethereal-amethyst transition-colors hover:bg-ethereal-amethyst/30"
+          >
+            <UserCheck size={14} aria-hidden="true" />
             <span className="hidden sm:inline">
-              {layer === "shared"
-                ? t("annotations.layer.shared_short", "Choir")
-                : t("annotations.layer.private_short", "Private")}
+              {t("annotations.layer.move_to_leader_short", "Prowadzącemu")}
             </span>
           </button>
-        ) : (
+        )}
+
+        {mode === "personal" && (
           // Personal mode writes to one fixed layer — say so instead of offering
           // a toggle that could suggest the choir might see these marks.
           <span

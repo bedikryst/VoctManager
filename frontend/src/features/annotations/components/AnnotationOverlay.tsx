@@ -57,6 +57,7 @@ import {
   type LayerVisibility,
   type StrokeSize,
 } from "../lib/useAnnotationTools";
+import { isPrivateLayer, layerOf } from "../lib/layers";
 import { getStampDef, StampGlyph } from "../lib/stamps";
 import { buildSmoothPath } from "../lib/smoothing";
 import { placeNoteCard } from "../lib/noteCardPlacement";
@@ -117,13 +118,6 @@ const MARK_ATTR = "data-annotation-mark";
 
 const inlineFontSize = (pageWidth: number): number =>
   Math.min(22, Math.max(11, pageWidth * 0.026));
-
-const layerOf = (a: ScoreAnnotation): AnnotationLayer =>
-  a.layer_name === "conductor"
-    ? "conductor"
-    : a.layer_name === "personal"
-      ? "personal"
-      : "shared";
 
 export const AnnotationOverlay = ({
   geometry,
@@ -651,7 +645,7 @@ export const AnnotationOverlay = ({
         if (a.id === editingNote?.id) return null;
         const payload = a.payload as CommentPayload;
         const inline = payload.display === "inline";
-        const isPrivate = layerOf(a) !== "shared";
+        const isPrivate = isPrivateLayer(a);
         const modifiable = canModify(a);
         const draggable = arranging && modifiable;
         const offset = dragOffset?.id === a.id ? dragOffset : null;

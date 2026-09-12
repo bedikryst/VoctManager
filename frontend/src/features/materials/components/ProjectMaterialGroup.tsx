@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { Archive, BookOpen, Briefcase, CalendarDays, EyeOff, Wand2 } from "lucide-react";
 
 import { ProjectScoreBook } from "@/features/projects/components/ProjectScoreBook";
+import { useAuth } from "@/app/providers/AuthProvider";
+import { isManager } from "@/shared/auth/rbac";
 import { CompletionRing } from "@/shared/ui/composites/CompletionRing";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -21,6 +23,7 @@ export const ProjectMaterialGroup = ({
   group,
 }: ProjectMaterialGroupProps): React.JSX.Element => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [isBookOpen, setBookOpen] = useState(false);
   const isArchived = group.project.status === "DONE";
 
@@ -35,6 +38,12 @@ export const ProjectMaterialGroup = ({
   // "has not touched a single piece", which is a claim nobody made. The rule
   // itself lives in one place, shared with `useProjectReadiness`.
   const readinessWithheld = isReadinessWithheld(group.program);
+  // No seat, no readiness to report — and no ring, which would read "0 of N
+  // pieces ready" about somebody who was never asked. The absence of a
+  // participation is the honest test: a stand-in who also SINGS the programme
+  // has one and keeps the ring, and only rows that reach here without one (the
+  // podium, a delegation on a programme the reader is not cast in) lose it.
+  const hasNoSeat = group.participationId === null;
 
   return (
     <div className={`space-y-4 ${isArchived ? "opacity-70" : "opacity-100"}`}>
@@ -85,10 +94,11 @@ export const ProjectMaterialGroup = ({
               {t("materials.project.archived_badge", "Archiwum")}
             </Eyebrow>
           </div>
-        ) : group.isConducting ? (
-          // Conductor's own project: no personal readiness to report, so the
-          // completion ring (always 0/N here) would only mislead. Show the
-          // podium badge instead — the full cast lives on each piece.
+        ) : hasNoSeat ? (
+          // A project run rather than sung: no personal readiness to report, so
+          // the completion ring (always 0/N here) would only mislead. Show what
+          // this person is to the project instead — the full cast lives on each
+          // piece.
           <div className="shrink-0 flex items-center gap-2.5">
             {total > 0 && <OfflineDownloadControl group={group} />}
             <div className="flex items-center gap-1.5 rounded-lg border border-ethereal-gold/30 bg-ethereal-gold/10 px-2.5 py-1 shadow-glass-solid">
@@ -98,7 +108,9 @@ export const ProjectMaterialGroup = ({
                 aria-hidden="true"
               />
               <Eyebrow color="gold">
-                {t("materials.project.conducting_badge", "Prowadzisz")}
+                {group.isConducting
+                  ? t("materials.project.conducting_badge", "Prowadzisz")
+                  : t("materials.project.standing_in_badge", "Zastępstwo")}
               </Eyebrow>
             </div>
           </div>
@@ -159,7 +171,12 @@ export const ProjectMaterialGroup = ({
             projectId={group.project.id}
             projectTitle={group.project.title}
             isOpen={isBookOpen}
-            mode={group.isConducting ? "conductor" : "personal"}
+            // The pencil follows the ROLE, not the podium. Standing in front of
+            // the choir — whether as the named conductor or as a stand-in — does
+            // not make someone a manager, and only a manager may write on the
+            // choir's layers. Offering that toolbar to anyone else armed a pen
+            // the server then refused, which reads as the app losing marks.
+            mode={isManager(user) ? "conductor" : "personal"}
             onClose={() => setBookOpen(false)}
           />
         </>
@@ -174,7 +191,7 @@ export const ProjectMaterialGroup = ({
             order={item.order}
             isEncored={item.is_encore}
             isArchived={isArchived}
-            hideReadiness={group.isConducting}
+            hideReadiness={hasNoSeat}
           />
         ))}
       </div>

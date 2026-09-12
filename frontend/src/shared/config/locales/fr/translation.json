@@ -56,12 +56,20 @@
     "redo": "Rétablir",
     "undo": "Annuler",
     "layer": {
+      "for_leader_short": "Pour le remplaçant",
       "from_conductor_short": "Chef",
+      "leader": "Pour qui dirige la répétition",
+      "leader_hint": "Visible uniquement par la personne à qui vous confiez la répétition",
+      "leader_short": "Remplaçant",
+      "move_to_leader": "Montrer au remplaçant",
+      "move_to_leader_short": "Au remplaçant",
       "personal_hint": "Visible uniquement par vous",
       "personal_short": "Perso",
       "private": "Privé (vous seul)",
+      "private_hint": "Vous et les autres responsables uniquement",
       "private_short": "Privé",
       "shared": "Visible par le chœur",
+      "shared_hint": "Tout le chœur qui chante cette pièce",
       "shared_short": "Chœur"
     },
     "note": {
@@ -2697,6 +2705,7 @@
     "project": {
       "archived_badge": "Archives",
       "conducting_badge": "Vous dirigez",
+      "standing_in_badge": "Remplacement",
       "event": "Événement :",
       "readiness_caption": "{{ready}} parties prêtes sur {{total}}",
       "readiness_withheld": "Préparation masquée",
@@ -3234,6 +3243,42 @@
     "sequence": "Séquence"
   },
   "projects": {
+    "delegates": {
+      "title": "Direction des répétitions",
+      "description": "Une personne hors du cercle des responsables qui dirigera les répétitions de ce projet à votre place.",
+      "add": "Confier la direction à quelqu'un",
+      "revoke": "Retirer",
+      "until": "jusqu'au {{date}}",
+      "until_project_ends": "jusqu'à la fin du projet",
+      "empty": {
+        "title": "Personne ne vous remplace",
+        "description": "Vous et les autres responsables dirigez les répétitions."
+      },
+      "scope": {
+        "marks": "Voit vos notes destinées au remplaçant",
+        "marks_hint": "Uniquement le calque « Pour le remplaçant ». Vos notes privées restent privées.",
+        "marks_short": "Notes",
+        "roll_call": "Fait l'appel",
+        "roll_call_hint": "Peut pointer tout le chœur, pas seulement soi-même.",
+        "roll_call_short": "Présences",
+        "materials": "Ouvre le matériel du projet",
+        "materials_hint": "Nécessaire si cette personne ne chante pas dans ce programme.",
+        "materials_short": "Matériel"
+      },
+      "form": {
+        "person": "Qui dirigera",
+        "person_placeholder": "Choisir une personne",
+        "expires": "Jusqu'à quand (facultatif)",
+        "expires_hint": "Vide = jusqu'à la fin du projet.",
+        "note": "Note (facultatif)",
+        "note_placeholder": "ex. remplacement du 10 au 24 décembre",
+        "submit": "Confier la direction"
+      },
+      "confirm": {
+        "title": "Retirer ce remplacement ?",
+        "description": "{{name}} perdra l'accès aux notes et aux présences de ce projet. Une copie déjà téléchargée sur son appareil y restera jusqu'au vidage du stockage de l'application."
+      }
+    },
     "score_marks": {
       "toggle": "Mes annotations",
       "toggle_hint": "Ajoute vos propres notes sur cet exemplaire. Personne d'autre ne les voit."
@@ -4259,6 +4304,17 @@
       "pitch_pipe": "Diapason",
       "recorded": "Marqués"
     },
+    "lead": {
+      "back": "Agenda",
+      "role": "Remplacement",
+      "title": "Vous dirigez",
+      "title_highlight": "cette répétition.",
+      "loading": "Ouverture de la liste...",
+      "gone": {
+        "title": "Cette répétition n'est plus la vôtre",
+        "description": "Le remplacement a été retiré, ou la répétition n'existe plus. Demandez à un responsable en cas d'erreur."
+      }
+    },
     "pulse": {
       "empty_desc": "Aucune répétition n'est planifiée dans les projets actifs.",
       "empty_title": "Aucune répétition à venir",
@@ -4566,6 +4622,8 @@
         "submit": "Envoyer",
         "title": "Formulaire d'absence pour l'inspecteur"
       },
+      "lead_action": "Faire l'appel",
+      "leading_badge": "Vous dirigez",
       "no_location": "Aucun",
       "optional": "Optionnel",
       "range": {

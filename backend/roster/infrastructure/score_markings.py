@@ -58,9 +58,10 @@ _COMMENT = "CM"
 _FREEHAND = "FH"
 _STAMP = "ST"
 
-# Layers whose ink is the conductor speaking to the choir; they print heavier so
-# they remain separable from a reader's own marks on a monochrome printout.
-_HEAVY_LAYERS = frozenset({"shared", "conductor"})
+# Layers whose ink is the conductor speaking — to the choir, to himself, or to
+# whoever takes an evening in his place. They print heavier so they remain
+# separable from a reader's own marks on a monochrome printout.
+_HEAVY_LAYERS = frozenset({"shared", "conductor", "leader"})
 _HEAVY_FACTOR = 1.4
 
 # Ink used when a stored colour cannot be parsed — the palette's near-black.

@@ -30,6 +30,7 @@ import {
   type CommentPayload,
   type ScoreAnnotation,
 } from "../types/annotations.dto";
+import { layerOf } from "../lib/layers";
 import type { LayerVisibility } from "../lib/useAnnotationTools";
 
 interface AnnotationSidebarProps {
@@ -50,12 +51,6 @@ interface AnnotationSidebarProps {
   onSelectNote: (id: string, page: number) => void;
 }
 
-const layerOf = (a: ScoreAnnotation): AnnotationLayer =>
-  a.layer_name === "conductor"
-    ? "conductor"
-    : a.layer_name === "personal"
-      ? "personal"
-      : "shared";
 
 export const AnnotationSidebar = ({
   annotations,
@@ -92,7 +87,7 @@ export const AnnotationSidebar = ({
   }, [annotations, displayPage]);
 
   const layerCounts = useMemo(() => {
-    const counts = { shared: 0, conductor: 0, personal: 0 };
+    const counts = { shared: 0, conductor: 0, leader: 0, personal: 0 };
     for (const a of annotations) counts[layerOf(a)] += 1;
     return counts;
   }, [annotations]);
@@ -139,6 +134,12 @@ export const AnnotationSidebar = ({
                         onToggle={() => toggleLayerVisibility("shared")}
                       />
                       <LayerToggle
+                        label={t("annotations.layer.leader_short", "Prowadzący")}
+                        count={layerCounts.leader}
+                        visible={visibleLayers.leader}
+                        onToggle={() => toggleLayerVisibility("leader")}
+                      />
+                      <LayerToggle
                         label={t("annotations.layer.private_short", "Prywatne")}
                         count={layerCounts.conductor}
                         visible={visibleLayers.conductor}
@@ -154,6 +155,21 @@ export const AnnotationSidebar = ({
                         visible={visibleLayers.shared}
                         onToggle={() => toggleLayerVisibility("shared")}
                       />
+                      {/* Only whoever was handed the evening ever receives these
+                          rows, so their presence IS the permission — offering the
+                          switch to a singer who has none would name a layer that
+                          means nothing to them. */}
+                      {layerCounts.leader > 0 && (
+                        <LayerToggle
+                          label={t(
+                            "annotations.layer.for_leader_short",
+                            "Dla prowadzącego",
+                          )}
+                          count={layerCounts.leader}
+                          visible={visibleLayers.leader}
+                          onToggle={() => toggleLayerVisibility("leader")}
+                        />
+                      )}
                       <LayerToggle
                         label={t("annotations.layer.personal_short", "Moje")}
                         count={layerCounts.personal}

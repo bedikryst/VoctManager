@@ -56,12 +56,20 @@
     "redo": "Redo",
     "undo": "Undo",
     "layer": {
+      "for_leader_short": "For the leader",
       "from_conductor_short": "Conductor",
+      "leader": "For whoever runs the rehearsal",
+      "leader_hint": "Visible only to the person you hand the rehearsal to",
+      "leader_short": "Leader",
+      "move_to_leader": "Show to the rehearsal leader",
+      "move_to_leader_short": "To leader",
       "personal_hint": "Visible only to you",
       "personal_short": "Mine",
       "private": "Private (only you)",
+      "private_hint": "Only you and the other managers",
       "private_short": "Private",
       "shared": "Visible to the choir",
+      "shared_hint": "Everyone in the choir singing this piece",
       "shared_short": "Choir"
     },
     "note": {
@@ -2697,6 +2705,7 @@
     "project": {
       "archived_badge": "Archive",
       "conducting_badge": "You conduct",
+      "standing_in_badge": "Standing in",
       "event": "Event:",
       "readiness_caption": "{{ready}} of {{total}} parts ready",
       "readiness_withheld": "Readiness hidden",
@@ -3233,6 +3242,42 @@
     "sequence": "séquence"
   },
   "projects": {
+    "delegates": {
+      "title": "Running rehearsals",
+      "description": "Someone outside the managers who will run this project's rehearsals in your place.",
+      "add": "Hand the rehearsals to someone",
+      "revoke": "Revoke",
+      "until": "until {{date}}",
+      "until_project_ends": "until the project closes",
+      "empty": {
+        "title": "Nobody is standing in",
+        "description": "You and the other managers run the rehearsals."
+      },
+      "scope": {
+        "marks": "Sees your notes for the rehearsal leader",
+        "marks_hint": "The “For the leader” layer only. Your private notes stay private.",
+        "marks_short": "Notes",
+        "roll_call": "Takes the roll call",
+        "roll_call_hint": "May mark the whole choir, not only themselves.",
+        "roll_call_short": "Attendance",
+        "materials": "Opens the project's materials",
+        "materials_hint": "Needed when this person is not singing in the programme.",
+        "materials_short": "Materials"
+      },
+      "form": {
+        "person": "Who will run them",
+        "person_placeholder": "Choose a person",
+        "expires": "Until when (optional)",
+        "expires_hint": "Empty = until the project closes.",
+        "note": "Note (optional)",
+        "note_placeholder": "e.g. standing in 10–24 December",
+        "submit": "Hand over the rehearsals"
+      },
+      "confirm": {
+        "title": "Revoke this delegation?",
+        "description": "{{name}} will lose access to this project's notes and attendance. A copy already downloaded to their device stays there until the app's storage is cleared."
+      }
+    },
     "score_marks": {
       "toggle": "My markings",
       "toggle_hint": "Draws your own notes onto this copy. Nobody else sees them."
@@ -4258,6 +4303,17 @@
       "pitch_pipe": "Pitch pipe",
       "recorded": "Marked"
     },
+    "lead": {
+      "back": "Schedule",
+      "role": "Standing in",
+      "title": "You are running",
+      "title_highlight": "this rehearsal.",
+      "loading": "Opening the register...",
+      "gone": {
+        "title": "This rehearsal is no longer yours",
+        "description": "The delegation was revoked, or the rehearsal is gone. Ask a manager if this is a mistake."
+      }
+    },
     "pulse": {
       "empty_desc": "No rehearsal is scheduled in the active projects.",
       "empty_title": "No upcoming rehearsals",
@@ -4565,6 +4621,8 @@
         "submit": "Submit",
         "title": "Absence Form for the Inspector"
       },
+      "lead_action": "Take the roll call",
+      "leading_badge": "You run this",
       "no_location": "None",
       "optional": "Optional",
       "range": {

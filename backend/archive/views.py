@@ -31,12 +31,14 @@ from rest_framework.response import Response
 from core.exceptions import make_error_response
 from core.permissions import IsManager, user_is_manager
 from core.request_utils import request_user, truthy_flag
-from roster.queries import artist_live_piece_ids
+from roster.permissions import led_piece_ids
+from roster.queries import artist_live_piece_ids, user_has_live_access_to_piece
 
 from . import services
 from .annotation_palette import is_reserved_ink
 from .models import (
     CONDUCTOR_ANNOTATION_LAYER,
+    LEADER_ANNOTATION_LAYER,
     PERSONAL_ANNOTATION_LAYER,
     SHARED_ANNOTATION_LAYER,
     Annotation,
@@ -801,17 +803,29 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
 #   layer_name = 'shared'    → conductor→choir: pushed to every chorister cast
 #                              in a LIVE project featuring the piece.
 #   layer_name = 'conductor' → the maestro's private cues, never sent to singers.
+#   layer_name = 'leader'    → cues for whoever runs the rehearsal, readable by a
+#                              delegate who is not a manager.
 #   layer_name = 'personal'  → a single user's own pencil marks, scoped by
 #                              created_by — invisible to everyone else,
 #                              managers included.
 #
 # Access deliberately mirrors ScoreEditionDownloadView so a score and its
 # markings appear and expire together:
-#   * managers          → full CRUD on 'shared' + 'conductor' (any edition),
-#                         plus their OWN 'personal' marks. Never other users'.
+#   * managers          → full CRUD on every layer but other people's
+#                         'personal' (any edition), plus their OWN 'personal'.
 #   * choristers/crew   → read 'shared' + full CRUD on their OWN 'personal'
 #                         marks, only on editions whose piece they still have
 #                         live access to.
+#   * rehearsal leaders → the above, plus READ of 'leader' on the music of the
+#                         projects they run. Read and nothing more: a mark on
+#                         that layer is the conductor's, and a stand-in adding
+#                         to it would be writing in his hand. Their own thoughts
+#                         go on 'personal', like everyone else's.
+#
+# Why 'leader' is a layer of its own and not a switch over 'conductor': that
+# layer carries what the conductor thinks about the singers, so opening it to
+# one of them opens the remarks about their own section. A note reaches a
+# stand-in because it was written for one.
 # ===========================================================================
 
 
@@ -844,11 +858,27 @@ class AnnotationViewSet(viewsets.ModelViewSet):
             # Everything except OTHER users' personal pencil marks — those stay
             # private even from the maestro.
             return base.filter(~Q(layer_name=PERSONAL_ANNOTATION_LAYER) | own_personal)
-        # Chorister / crew: the shared layer plus their own personal marks,
-        # only on still-accessible pieces.
+        # Chorister / crew: the shared layer plus their own personal marks, only
+        # on still-accessible pieces — and, for whoever is standing in front of
+        # the choir, the leader layer on the music of the projects they run.
+        #
+        # Two piece scopes, not one, because they answer different questions.
+        # `readable` is "may they open this music at all" and mirrors
+        # `user_has_live_access_to_piece` exactly — a seat in the cast OR running
+        # the programme — so what a reader may DRAW on they may also read back,
+        # and whoever takes an evening they do not sing in still sees the marks
+        # the whole choir is looking at. The leader layer is the narrower
+        # question and keeps its own scope: a delegation can open the music
+        # without opening the conductor's cues for the stand-in.
+        readable = Q(edition__piece_id__in=artist_live_piece_ids(user)) | Q(
+            edition__piece_id__in=led_piece_ids(user, scope='materials')
+        )
         return base.filter(
-            Q(layer_name=SHARED_ANNOTATION_LAYER) | own_personal,
-            edition__piece_id__in=artist_live_piece_ids(user),
+            ((Q(layer_name=SHARED_ANNOTATION_LAYER) | own_personal) & readable)
+            | (
+                Q(layer_name=LEADER_ANNOTATION_LAYER)
+                & Q(edition__piece_id__in=led_piece_ids(user, scope='marks'))
+            )
         )
 
     def _assert_can_write(
@@ -864,6 +894,12 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         only on editions they still have live access to. Managers pass freely —
         other users' personal marks are already unreachable via get_queryset.
 
+        A rehearsal leader is a non-manager here and stays one. The widened read
+        scope lets them FIND a leader-layer mark, so a write aimed at one now
+        reaches this guard and is refused by the first condition below — a 403
+        rather than the 404 it used to be, which is the honest answer: the mark
+        is not hidden from them, it is simply not theirs to move.
+
         The palette's reserved ink is gated here too, for the same reason and by
         the same rule: crimson is how the page says "the conductor wrote this",
         and one book can now carry both hands at once.
@@ -877,7 +913,10 @@ class AnnotationViewSet(viewsets.ModelViewSet):
             raise PermissionDenied('That ink is reserved for the conductor.')
         if instance is not None and instance.created_by_id != user.id:
             raise PermissionDenied('You may only modify your own annotations.')
-        if edition.piece_id not in set(artist_live_piece_ids(user)):
+        # The union predicate: a seat in the cast OR running the project. A
+        # stand-in rehearsing a programme they do not sing in still keeps their
+        # own pencil.
+        if not user_has_live_access_to_piece(user, edition.piece_id):
             raise PermissionDenied('No live access to this edition.')
 
     def perform_create(self, serializer) -> None:

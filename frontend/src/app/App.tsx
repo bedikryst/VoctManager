@@ -83,6 +83,10 @@ const LogisticsLocationsPage = lazyWithPreload(
   () => import("@pages/panel/LogisticsLocationsPage"),
 );
 const Schedule = lazyWithPreload(() => import("@features/schedule/Schedule"));
+// Opened from one rehearsal card by the few people standing in for the
+// conductor, so it is never preloaded — but it lives with the member routes,
+// not the manager tree: a stand-in holds no manager session.
+const LeadSheet = lazyWithPreload(() => import("@features/rehearsals/LeadSheet"));
 const MaterialsLayout = lazyWithPreload(
   () => import("@features/materials/MaterialsLayout"),
 );
@@ -389,6 +393,10 @@ export const router = createBrowserRouter(
             <Route path=":projectId/:pieceId" element={<PiecePage />} />
           </Route>
           <Route path="schedule" element={<Schedule />} />
+          <Route
+            path="schedule/lead/:rehearsalId"
+            element={<LeadSheet />}
+          />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/:section" element={<SettingsPage />} />
           <Route path="messages" element={<MessagesPage />} />

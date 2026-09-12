@@ -29,12 +29,14 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from enum import StrEnum
 from typing import Any
 
 from django.db.models import Q
 
 from archive.models import (
     CONDUCTOR_ANNOTATION_LAYER,
+    LEADER_ANNOTATION_LAYER,
     PERSONAL_ANNOTATION_LAYER,
     SHARED_ANNOTATION_LAYER,
     Annotation,
@@ -150,12 +152,31 @@ class ReaderMarks:
         return bool(self.by_source)
 
 
+class MarkAudience(StrEnum):
+    """Who may ask for a layer to be drawn onto their own download."""
+
+    #: Anyone who may open the book at all.
+    ANY = 'any'
+    #: Managers only.
+    MANAGER = 'manager'
+    #: Managers, and whoever runs the project this book belongs to.
+    LEADER = 'leader'
+
+
 #: What a reader may ask to have drawn onto their download, and who may ask.
 #: ``personal`` is scoped to the asker; ``conductor`` is the maestro's own cue
-#: layer, which the choir never receives — hence manager-only at the view.
-READER_MARK_LAYERS: dict[str, bool] = {
-    PERSONAL_ANNOTATION_LAYER: False,   # value = manager_only
-    CONDUCTOR_ANNOTATION_LAYER: True,
+#: layer, which nobody else ever receives; ``leader`` is the layer written FOR a
+#: stand-in, so it travels to the stand and to the hand that wrote it.
+#:
+#: A three-valued audience rather than a manager_only boolean because a stand-in
+#: is neither a manager nor just any reader, and collapsing that into "not a
+#: manager" is what would hand them a printed copy with the one layer they were
+#: given missing from it. ``shared`` is deliberately absent from this table: it
+#: is already baked into the book at build time.
+READER_MARK_LAYERS: dict[str, MarkAudience] = {
+    PERSONAL_ANNOTATION_LAYER: MarkAudience.ANY,
+    CONDUCTOR_ANNOTATION_LAYER: MarkAudience.MANAGER,
+    LEADER_ANNOTATION_LAYER: MarkAudience.LEADER,
 }
 
 
@@ -168,9 +189,10 @@ def reader_marks_for_book(
 
     ``personal`` is scoped by ``created_by`` as well as by layer — a personal
     layer is nobody else's business, and this path composes a file that leaves
-    the building. ``conductor`` is not per-user: it is the one layer a manager
-    keeps for himself, so every manager's copy carries the same cues. WHO may
-    ask for which layer is the view's decision, not this function's.
+    the building. ``conductor`` and ``leader`` are not per-user: one is the layer
+    a manager keeps for himself, the other the layer he writes for whoever takes
+    the evening, so every copy of either carries the same cues. WHO may ask for
+    which layer is the view's decision, not this function's.
 
     Which pages of those editions are actually bound is not decided here either
     — the page map decides it later, in one place, exactly as the build does.

@@ -185,6 +185,15 @@ class Project(EnterpriseBaseModel):
     # exception and keeps drafts: they are the one assembling them.
     HIDDEN_FROM_CAST_STATUSES = (Status.DRAFT, Status.CANCELLED)
 
+    # After either of these, a score stops being anyone's but the conductor's: the
+    # music is often licensed or personally owned and is not retained on members'
+    # devices once the concert is behind them. Narrower than the pair above and
+    # composed on top of it, never instead of it — `HIDDEN_FROM_CAST_STATUSES`
+    # decides whether a project exists for a singer at all, this decides how long
+    # its music does. Exported as `CLOSED_PROJECT_STATUSES` by
+    # `roster.queries.materials_queries`, which is where most callers read it.
+    CLOSED_STATUSES = (Status.COMPLETED, Status.CANCELLED)
+
     title = models.CharField(max_length=200, verbose_name=_("Project Title"))
     date_time = models.DateTimeField(verbose_name=_("Event Date & Time"), default=timezone.now)
     call_time = models.DateTimeField(blank=True, null=True, help_text=_("Call time for performers"), verbose_name=_("Call Time"))
@@ -819,6 +828,92 @@ class Rehearsal(EnterpriseBaseModel):
 
     def __str__(self):
         return f"Rehearsal: {self.date_time.strftime('%d.%m %H:%M')}"
+
+
+class RehearsalDelegate(EnterpriseBaseModel):
+    """One person standing in front of the choir in the conductor's place.
+
+    A relationship, deliberately not a fourth AppRole. Every gate in this project
+    asks `user_is_manager` and branches in two, so a new role would land in the
+    not-a-manager half of ~180 of them and grant nothing; what a stand-in needs is
+    not a rank but a named, bounded tie to ONE programme.
+
+    Scoped to a project rather than to a single rehearsal because that is the
+    shape of the thing being lent: score markings hang off editions, which hang
+    off pieces, which reach a person through a project's programme — the same
+    path `artist_live_piece_ids` already walks. It is also the shape of the
+    favour, which is usually "I'm away for a fortnight", not one evening.
+
+    The three scopes are separate because they leak differently: marks expose the
+    conductor's thinking, the roll call writes other people's records, and
+    materials open a programme the stand-in may not be singing in. A grant that
+    bundled them would be easy to give and impossible to reason about afterwards.
+    """
+
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='rehearsal_delegates',
+        verbose_name=_("Project"),
+    )
+    artist = models.ForeignKey(
+        Artist, on_delete=models.CASCADE, related_name='rehearsal_delegations',
+        verbose_name=_("Standing In"),
+    )
+    can_see_leader_marks = models.BooleanField(
+        default=True,
+        verbose_name=_("Sees Leader Markings"),
+        help_text=_("Read access to the 'leader' annotation layer on this "
+                    "project's music. Never the conductor's private layer."),
+    )
+    can_take_roll_call = models.BooleanField(
+        default=True,
+        verbose_name=_("Takes Roll Call"),
+        help_text=_("May record attendance for this project's rehearsals, "
+                    "including other singers' rows."),
+    )
+    can_open_materials = models.BooleanField(
+        default=True,
+        verbose_name=_("Opens Materials"),
+        help_text=_("Reaches this project's scores and programme even without a "
+                    "seat in its cast."),
+    )
+    # Null is "until the project closes", not "forever": every branch of the
+    # predicate drops a project that is completed or cancelled, so an open-ended
+    # grant still ends on its own. A date is for ending it sooner than that.
+    expires_at = models.DateTimeField(
+        null=True, blank=True,
+        verbose_name=_("Expires At"),
+        help_text=_("After this moment the delegation opens nothing. "
+                    "Blank = until the project closes."),
+    )
+    granted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='+',
+        verbose_name=_("Granted By"),
+    )
+    note = models.CharField(
+        max_length=200, blank=True,
+        verbose_name=_("Note"),
+        help_text=_("Why this delegation exists, for whoever reads the list later."),
+    )
+
+    class Meta:
+        verbose_name = _("Rehearsal Delegate")
+        verbose_name_plural = _("Rehearsal Delegates")
+        constraints = [
+            models.UniqueConstraint(
+                fields=['project', 'artist'],
+                condition=models.Q(is_deleted=False),
+                name='unique_active_rehearsal_delegate',
+            ),
+        ]
+        indexes = [
+            # The hot direction: "which projects does the person asking lead?",
+            # resolved on every annotation read and every attendance write.
+            models.Index(fields=['artist', 'project']),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.artist.last_name} leads {self.project.title}"
 
 
 class Attendance(models.Model):

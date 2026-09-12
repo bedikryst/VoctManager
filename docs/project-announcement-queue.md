@@ -188,7 +188,7 @@ project stayed fully visible in the artist's app. Two defects fixed:
 in their schedule, its scores in materials, and the rest of the cast in "Moja Karta" — while the
 conductor believed they were planning privately. All three now exclude drafts, filtered at the
 *participation* level so the cast's rehearsals and participation map drop in the same stroke. The
-conductor's own slices (`conducted_project_ids`, `get_conductor_materials_projects`) keep drafts.
+conductor's own slices (`conducted_project_ids`, `get_led_materials_projects`) keep drafts.
 
 **Divisi could not be built on a draft at all.** `assign_piece_casting` required
 `Participation.Status.CONFIRMED`, and on a draft nobody has been asked, let alone confirmed.

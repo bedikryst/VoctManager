@@ -177,22 +177,32 @@ export interface MaterialsProject {
 }
 
 export interface MaterialsDashboardItem {
-  /** Null for a project the user only conducts (they have no participation). */
+  /** Null for a project the user only leads (they have no participation). */
   participation_id: string | null;
-  /** Null for a conductor row — there is no participation to have a status. */
+  /** Null for a led-only row — there is no participation to have a status. */
   participation_status: string | null;
-  /** True when this project is one the user conducts, not one they sing in. */
+  /** True when this user holds the podium here (`Project.conductor`). */
   is_conducting: boolean;
+  /**
+   * True when this user RUNS this project's rehearsals — the conductor, or
+   * somebody handed the programme as a stand-in. Wider than `is_conducting`,
+   * and the two are read for different things: the podium decides how the row
+   * is labelled, leading decides whether the conductor's cues for a stand-in
+   * are on the page. Neither decides the pencil — only being a manager does.
+   */
+  is_leading: boolean;
   project: MaterialsProject;
   program: MaterialsProgramItem[];
 }
 
 export interface MaterialsDashboardGroup {
   project: MaterialsProject;
-  /** Null for a conductor-only group (no self-report / readiness target). */
+  /** Null for a led-only group (no self-report / readiness target). */
   participationId: string | null;
   participationStatus: string | null;
-  /** The user leads this project rather than singing in it. */
+  /** The user holds the podium here rather than singing in it. */
   isConducting: boolean;
+  /** The user runs this project's rehearsals — conductor or stand-in. */
+  isLeading: boolean;
   program: MaterialsProgramItem[];
 }

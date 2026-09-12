@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Check,
   ChevronDown,
+  ClipboardCheck,
   Music,
   AlignLeft,
 } from "lucide-react";
@@ -213,6 +214,16 @@ export const TimelineRehearsalCard = ({
                   {t("schedule.rehearsal.optional", "Opcjonalna")}
                 </Eyebrow>
               )}
+              {event.iLead && (
+                <Eyebrow
+                  as="span"
+                  color="gold"
+                  className="flex items-center gap-1 rounded border border-ethereal-gold/25 bg-ethereal-gold/10 px-2 py-0.5"
+                >
+                  <ClipboardCheck size={11} aria-hidden="true" />
+                  {t("schedule.rehearsal.leading_badge", "Prowadzisz")}
+                </Eyebrow>
+              )}
               {maskedStatus === "PRESENT" && (
                 <Eyebrow as="span" color="sage" className="px-2 py-0.5 rounded border flex items-center gap-1 bg-ethereal-sage/10 border-ethereal-sage/20">
                   <CheckCircle2 size={11} aria-hidden="true" />
@@ -278,6 +289,48 @@ export const TimelineRehearsalCard = ({
             </motion.div>
           </div>
         </div>
+
+        {/* ── the register, for whoever is taking this evening ───────────
+             Outside the collapsible detail and outside the RSVP block on
+             purpose: a stand-in should not have to expand a card to find the
+             one thing they came for, and they may also be singing in the
+             programme — in which case both this and the RSVP pair belong on
+             the same card. Past evenings keep it: correcting the roll call the
+             morning after is part of having taken it. */}
+        {event.iLead && (
+          <div
+            inert={isPreview}
+            className={cn(
+              "border-t border-ethereal-gold/15 bg-ethereal-gold/5 px-4 py-3",
+              isPreview && INERT_SURFACE,
+            )}
+          >
+            {/* A jump out of the preview would open the MANAGER's own register
+                for this evening under the singer's header — the page is scoped
+                to whoever asks for it, never to whoever is being previewed. */}
+            {isPreview ? (
+              <Button
+                variant="secondary"
+                size="touch"
+                inert
+                className={cn("w-full sm:w-auto", INERT_SURFACE)}
+              >
+                <ClipboardCheck size={14} aria-hidden="true" />
+                {t("schedule.rehearsal.lead_action", "Sprawdź obecność")}
+              </Button>
+            ) : (
+              <Button variant="secondary" size="touch" asChild className="w-full sm:w-auto">
+                <Link
+                  to={`/panel/schedule/lead/${String((event.rawObj as { id: string }).id)}`}
+                  className="inline-flex items-center justify-center gap-2"
+                >
+                  <ClipboardCheck size={14} aria-hidden="true" />
+                  {t("schedule.rehearsal.lead_action", "Sprawdź obecność")}
+                </Link>
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* ── action buttons — mobile: stacked full-width (no clipping),
              desktop: sidebar inside the expanded panel ─────────────────── */}

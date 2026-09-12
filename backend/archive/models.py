@@ -565,13 +565,21 @@ class AnnotationType(models.TextChoices):
 
 # Well-known annotation layers. `layer_name` stays a free CharField (ad-hoc
 # layers like 'rehearsal-2026-05-18' remain possible), but access control in
-# AnnotationViewSet keys off these three:
+# AnnotationViewSet keys off these four:
 #   shared    → conductor→choir markings, pushed to every cast chorister
 #   conductor → the maestro's private cues
+#   leader    → cues for whoever is standing in front of the choir this evening,
+#               readable by a delegate who is not a manager. Separate from
+#               'conductor' on purpose: that layer carries judgements about the
+#               singers themselves, so handing one of them the key to it would
+#               hand them the remarks about their own section. A note reaches a
+#               stand-in because it was written for one, never because a switch
+#               was flipped over notes written for nobody.
 #   personal  → a single user's own pencil marks, scoped by created_by and
 #               invisible to everyone else (managers included)
 SHARED_ANNOTATION_LAYER = 'shared'
 CONDUCTOR_ANNOTATION_LAYER = 'conductor'
+LEADER_ANNOTATION_LAYER = 'leader'
 PERSONAL_ANNOTATION_LAYER = 'personal'
 
 
@@ -602,8 +610,9 @@ class Annotation(EnterpriseBaseModel):
     layer_name = models.CharField(
         max_length=80, default='conductor',
         help_text=_(
-            "e.g. 'conductor', 'shared', 'personal' (the writer's private "
-            "pencil marks), 'rehearsal-2026-05-18'"
+            "e.g. 'conductor', 'shared', 'leader' (cues for whoever runs the "
+            "rehearsal), 'personal' (the writer's private pencil marks), "
+            "'rehearsal-2026-05-18'"
         ),
         verbose_name=_("Layer Name"),
     )

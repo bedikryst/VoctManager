@@ -365,7 +365,7 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
 
     Output shape:
       [{
-        participation_id, participation_status, is_conducting,
+        participation_id, participation_status, is_conducting, is_leading,
         project: { id, title, date_time, status, location },
         program: [{ order, is_encore, piece: { ..., tracks, castings, my_casting } }]
       }]
@@ -414,8 +414,12 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
             'participation_id': str(participation.id),
             'participation_status': participation.status,
             # This row belongs to a singer's own casting, not the podium — the
-            # conductor's rows come through ConductedProjectMaterialsSerializer.
+            # podium's rows come through LedProjectMaterialsSerializer.
             'is_conducting': False,
+            # ...but a stand-in is usually singing in the programme they were
+            # asked to take, so this row is where their delegation surfaces. Led
+            # projects they are NOT cast in never reach this serializer at all.
+            'is_leading': str(project.id) in self.context.get('led_project_ids', set()),
             'project': {
                 'id': str(project.id),
                 'title': project.title,
@@ -439,16 +443,22 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
         }
 
 
-class ConductedProjectMaterialsSerializer(serializers.Serializer):
+class LedProjectMaterialsSerializer(serializers.Serializer):
     """
-    Root serializer for the conductor's slice of the materials dashboard: a
-    project they lead but are not cast in.
+    Root serializer for the "I run this one" slice of the materials dashboard: a
+    project the reader leads but is not cast in.
 
     Emits the exact shape of ParticipationMaterialsSerializer (so the frontend
-    renders one uniform tree) with is_conducting=True, no personal
-    participation / casting / readiness, and the full project cast surfaced on
-    every piece. Consumes the pre-fetched QuerySet produced by
-    get_conductor_materials_projects() — zero additional DB queries.
+    renders one uniform tree) with no personal participation / casting /
+    readiness, and the full project cast surfaced on every piece. Consumes the
+    pre-fetched QuerySet produced by get_led_materials_projects() — zero
+    additional DB queries.
+
+    `is_conducting` and `is_leading` are two different claims and the client acts
+    on them differently: the podium is held by one person, a programme may also
+    have been handed to a stand-in for a fortnight. Both read the reader out of
+    the context (`viewer_user_id`) rather than the request, so a manager's
+    ``?artist=`` preview describes the member being previewed and not themselves.
     """
 
     def to_representation(self, project: Project) -> dict[str, Any]:
@@ -482,10 +492,17 @@ class ConductedProjectMaterialsSerializer(serializers.Serializer):
             if location else None
         )
 
+        viewer_user_id = self.context.get('viewer_user_id')
+        conductor = project.conductor
         return {
             'participation_id': None,
             'participation_status': None,
-            'is_conducting': True,
+            'is_conducting': bool(
+                conductor is not None
+                and viewer_user_id is not None
+                and conductor.user_id == viewer_user_id
+            ),
+            'is_leading': True,
             'project': {
                 'id': str(project.id),
                 'title': project.title,

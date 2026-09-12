@@ -91,6 +91,7 @@ export const useScheduleData = (artistId?: string | number) => {
           project_id: reh.project,
           participationId: item.participation_id ?? undefined,
           attendanceId: item.my_attendance?.id,
+          iLead: item.i_lead,
         });
       }
     }

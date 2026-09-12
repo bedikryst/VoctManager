@@ -43,6 +43,7 @@ const dashboard = (
     type: "REHEARSAL",
     participation_id: PARTICIPATION_ID,
     project_title: "Nieszpory Rachmaninowa",
+    i_lead: false,
     my_attendance: myAttendance,
     rehearsal: {
       id: REHEARSAL_ID,
@@ -68,6 +69,7 @@ const rehearsal = (
   type: "REHEARSAL",
   participation_id: participationId,
   project_title: "Nieszpory Rachmaninowa",
+  i_lead: false,
   my_attendance: null,
   rehearsal: {
     id,

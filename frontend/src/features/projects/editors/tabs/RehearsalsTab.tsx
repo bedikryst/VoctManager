@@ -29,6 +29,7 @@ import { useRehearsalsTab } from "../hooks/useRehearsalsTab";
 import { getEventMomentPresentation } from "../../lib/projectPresentation";
 import type { RehearsalTargetType } from "../types";
 import { RehearsalTimelineRow } from "./components/RehearsalTimelineRow";
+import { RehearsalDelegatesCard } from "./components/RehearsalDelegatesCard";
 import { cn } from "@/shared/lib/utils";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
@@ -244,6 +245,29 @@ export const RehearsalsTab = ({
   )?.key;
 
   const concertTitle = project?.title ?? "";
+
+  // Who a rehearsal is realistically handed to: the people already singing it.
+  // A stand-in from outside the cast is possible on the server and rare in life,
+  // so the picker offers the cast rather than the whole roster — a list of every
+  // member would bury the four names this is actually about.
+  const delegateCandidates = useMemo(
+    () =>
+      projectParticipations
+        .map((participation) => {
+          const artist = artistMap.get(String(participation.artist));
+          return artist
+            ? {
+                id: String(artist.id),
+                name: `${artist.first_name} ${artist.last_name}`,
+              }
+            : null;
+        })
+        .filter((candidate): candidate is { id: string; name: string } =>
+          candidate !== null,
+        )
+        .sort((a, b) => a.name.localeCompare(b.name, "pl")),
+    [artistMap, projectParticipations],
+  );
 
   const renderTimeline = (
     entries: typeof upcomingTimeline,
@@ -631,6 +655,14 @@ export const RehearsalsTab = ({
             />
           )}
         </SectionCard>
+
+        {/* ── Who runs them when it is not a manager ───────────────────── */}
+        <div className="lg:col-span-12">
+          <RehearsalDelegatesCard
+            projectId={projectId}
+            candidates={delegateCandidates}
+          />
+        </div>
       </div>
 
       <ConfirmModal

@@ -217,6 +217,7 @@ export const useAnnotationTools = (
   const [visibleLayers, setVisibleLayers] = useState<LayerVisibility>({
     shared: true,
     conductor: true,
+    leader: true,
     personal: true,
   });
 

@@ -1,10 +1,14 @@
 /**
  * @file RehearsalInspector.tsx
- * @description The protagonist surface: everything the conductor needs to take
- * and read attendance for one rehearsal. A composition-aware progress header,
- * a roll-call toolbar (density · only-unmarked filter · fill gaps · pitch pipe)
- * and a voice-grouped roster that swaps between a scanning list and large tap
- * targets.
+ * @description The protagonist surface: everything whoever is in front of the
+ * choir needs to take and read attendance for one rehearsal. A
+ * composition-aware progress header, a roll-call toolbar (density ·
+ * only-unmarked filter · fill gaps · pitch pipe) and a voice-grouped roster
+ * that swaps between a scanning list and large tap targets.
+ *
+ * Two callers: the manager's workspace, and a stand-in's `LeadSheet` route.
+ * They get the SAME roll call — `allowManagerActions` withholds only the two
+ * things a delegation does not carry (see the prop).
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/RehearsalInspector
  */
@@ -63,6 +67,19 @@ interface RehearsalInspectorProps {
   onToggleOnlyUnmarked: () => void;
   isMarkingAll: boolean;
   onMarkAllPresent: () => void;
+  /**
+   * Whether the reader may do the things that are NOT the roll call: excuse
+   * somebody across a fortnight, and walk into the project's cast editor.
+   *
+   * False for a stand-in running one evening. Both are decisions about a
+   * singer's standing in the choir rather than observations of who turned up,
+   * the server refuses them to a delegation, and offering either here would arm
+   * a control that answers with a 400 in front of the choir. The roll call
+   * itself — every tap on every card below — is unchanged: it is the same
+   * control, because a stand-in learning a second one is the one thing this
+   * surface cannot afford.
+   */
+  allowManagerActions?: boolean;
 }
 
 const SEGMENTS = ["PRESENT", "LATE", "EXCUSED", "ABSENT"] as const;
@@ -116,6 +133,7 @@ export const RehearsalInspector = ({
   onToggleOnlyUnmarked,
   isMarkingAll,
   onMarkAllPresent,
+  allowManagerActions = true,
 }: RehearsalInspectorProps): React.JSX.Element => {
   const { t } = useTranslation();
   const [isPitchPipeOpen, setIsPitchPipeOpen] = useState(false);
@@ -126,6 +144,9 @@ export const RehearsalInspector = ({
   const openSpan = useCallback((artistId: string) => setSpanArtistId(artistId), []);
   const closeSpan = useCallback(() => setSpanArtistId(null), []);
   const spanArtist = spanArtistId ? artistMap.get(spanArtistId) : undefined;
+  // Undefined, not a no-op: `ArtistRow` reads the PRESENCE of this callback to
+  // decide whether the "…and for longer" action exists at all.
+  const rowSpanHandler = allowManagerActions ? openSpan : undefined;
 
   const isSectional = (rehearsal.invited_participations?.length ?? 0) > 0;
 
@@ -371,13 +392,18 @@ export const RehearsalInspector = ({
               "rehearsals.inspector.no_invited_desc",
               "Na tej próbie nie ma ani jednego śpiewaka. Sprawdź obsadę projektu.",
             )}
+            // The cast editor is a manager route; offering it to a stand-in
+            // would send them into a redirect. Nothing replaces it: an evening
+            // with nobody called is a thing to report, not to fix from here.
             actions={
-              <Button variant="outline" size="sm" asChild>
-                <Link to={`/panel/projects/${String(rehearsal.project)}/cast`}>
-                  <UserPlus size={14} aria-hidden="true" />
-                  {t("rehearsals.inspector.open_cast", "Otwórz obsadę")}
-                </Link>
-              </Button>
+              allowManagerActions ? (
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/panel/projects/${String(rehearsal.project)}/cast`}>
+                    <UserPlus size={14} aria-hidden="true" />
+                    {t("rehearsals.inspector.open_cast", "Otwórz obsadę")}
+                  </Link>
+                </Button>
+              ) : undefined
             }
           />
         ) : displayGroups.length === 0 ? (
@@ -414,7 +440,7 @@ export const RehearsalInspector = ({
                         existingRecord={attendanceMap.get(String(part.id))}
                         rehearsalId={String(rehearsal.id)}
                         density="rollcall"
-                        onOpenSpan={openSpan}
+                        onOpenSpan={rowSpanHandler}
                       />
                     );
                   })}
@@ -432,7 +458,7 @@ export const RehearsalInspector = ({
                         existingRecord={attendanceMap.get(String(part.id))}
                         rehearsalId={String(rehearsal.id)}
                         density="compact"
-                        onOpenSpan={openSpan}
+                        onOpenSpan={rowSpanHandler}
                       />
                     );
                   })}
@@ -444,17 +470,21 @@ export const RehearsalInspector = ({
       </div>
 
       {/* Mounted, not conditional: the sheet animates out, and unmounting it on
-          close would cut that short. The id going null is what shuts it. */}
-      <AbsenceSpanSheet
-        isOpen={!!spanArtist}
-        onClose={closeSpan}
-        artistId={spanArtist ? String(spanArtist.id) : null}
-        artistName={
-          spanArtist ? `${spanArtist.first_name} ${spanArtist.last_name}` : ""
-        }
-        anchorDate={rehearsal.date_time}
-        anchorTimezone={rehearsal.timezone}
-      />
+          close would cut that short. The id going null is what shuts it. The
+          exception is a reader who may never open it — no row can name one, so
+          the sheet is not on the page either. */}
+      {allowManagerActions && (
+        <AbsenceSpanSheet
+          isOpen={!!spanArtist}
+          onClose={closeSpan}
+          artistId={spanArtist ? String(spanArtist.id) : null}
+          artistName={
+            spanArtist ? `${spanArtist.first_name} ${spanArtist.last_name}` : ""
+          }
+          anchorDate={rehearsal.date_time}
+          anchorTimezone={rehearsal.timezone}
+        />
+      )}
     </GlassCard>
   );
 };

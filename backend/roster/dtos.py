@@ -151,7 +151,25 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
 
 
 class AttendanceRecordDTO(EnterpriseBaseDTO):
-    requesting_user_id: int | str 
+    """One attendance row, written by either of its two authors.
+
+    Two flags, because the roll call and the verdict are two different powers and
+    only one of them is lent out:
+
+    `can_take_roll_call` is the authority to write the CHOIR's record rather than
+    one's own report, and it carries three consequences: rows about other
+    singers, the evening's window no longer applying, and no manager
+    notification — a roll call of forty is not forty absence requests. A manager
+    holds it, and so does whoever was handed the project for a fortnight.
+
+    `is_manager` decides only whether marking somebody EXCUSED or ABSENT is a
+    VERDICT on their request, which notifies them. A stand-in ticking a box in
+    front of the choir is recording who turned up, not ruling on anyone's
+    excuse — so they take the roll call without ever answering a request.
+    """
+
+    requesting_user_id: int | str
+    can_take_roll_call: bool = False
     is_manager: bool = False
     participation_id: UUID = Field(alias="participation")
     rehearsal_id: UUID = Field(alias="rehearsal")

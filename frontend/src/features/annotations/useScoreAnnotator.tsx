@@ -37,7 +37,9 @@ import { useAnnotationTools } from "./lib/useAnnotationTools";
 import { useAnnotationHistory } from "./lib/useAnnotationHistory";
 import { useCanDraw } from "./lib/useCanDraw";
 import { bookPageFor, type ScoreBook } from "./lib/scoreBook";
+import { layerOf } from "./lib/layers";
 import type {
+  AnnotationLayer,
   AnnotationPatch,
   NewAnnotation,
   ScoreAnnotation,
@@ -53,9 +55,13 @@ export interface UseScoreAnnotatorOptions {
    */
   editionId: string | null;
   /**
-   * conductor → managers: draw on the shared/conductor layers, clear wipes both.
-   * personal  → choristers: write only their own private layer (server-scoped);
-   *             the conductor's shared markings are visible but read-only.
+   * conductor → managers: draw on the shared/leader/conductor layers, clear
+   *             wipes all three.
+   * personal  → everyone else: write only their own private layer
+   *             (server-scoped); the conductor's shared markings are visible but
+   *             read-only, and so are his leader cues for whoever was handed the
+   *             evening. Running a rehearsal does NOT make this "conductor":
+   *             a stand-in reads the conductor's hand, they do not write in it.
    */
   mode: ScoreAnnotatorMode;
   /**
@@ -229,6 +235,38 @@ export const useScoreAnnotator = ({
       tools.setTool("pointer");
     },
     [tools],
+  );
+
+  /**
+   * Moving one mark to another audience, after it was written.
+   *
+   * The conductor rarely knows a fortnight ahead who will take an evening, so
+   * the cues a stand-in needs are usually already on his private layer by the
+   * time somebody is asked. Without this the first delegation means redrawing
+   * the page; with it, it means a tap per cue.
+   *
+   * Deliberately per mark and never in bulk: the private layer is where he
+   * writes about the singers, and "move everything" would be the one gesture
+   * that hands those remarks to one of them.
+   */
+  const selectedLayer = useMemo(() => {
+    if (!selectedId) return null;
+    const target = annotations.find((a) => a.id === selectedId);
+    return target && canModify(target) ? layerOf(target) : null;
+  }, [annotations, canModify, selectedId]);
+
+  const handleMoveSelected = useCallback(
+    (next: AnnotationLayer) => {
+      if (!selectedId) return;
+      const target = annotations.find((a) => a.id === selectedId);
+      if (!target || !canModify(target)) return;
+      handleUpdate(
+        selectedId,
+        { layer_name: next },
+        { layer_name: target.layer_name },
+      );
+    },
+    [annotations, canModify, handleUpdate, selectedId],
   );
 
   /**
@@ -430,6 +468,8 @@ export const useScoreAnnotator = ({
       <AnnotationToolbar
         {...tools}
         mode={mode}
+        selectedLayer={selectedLayer}
+        onMoveSelected={handleMoveSelected}
         canDraw={canDraw}
         annotationCount={annotations.length}
         clearableCount={clearableCount}
@@ -476,14 +516,20 @@ const useIncomingMarks = (
 
   useEffect(() => {
     if (!watching || !editionId) return;
-    const shared = annotations.filter((a) => a.layer_name === "shared");
+    // Both layers the conductor writes TO this reader: what he tells the whole
+    // choir, and — for whoever is taking the evening — what he wrote for them.
+    // A cue that arrives an hour before a rehearsal somebody else is running is
+    // exactly the mark that must not land silently.
+    const incoming = annotations.filter(
+      (a) => a.layer_name === "shared" || a.layer_name === "leader",
+    );
     // The first list to arrive is the baseline, not news: everything already on
     // the page when the reader opened it is simply the score they asked for.
     if (seen.current === null) {
-      seen.current = new Set(shared.map((a) => a.id));
+      seen.current = new Set(incoming.map((a) => a.id));
       return;
     }
-    const fresh = shared.filter((a) => !seen.current?.has(a.id));
+    const fresh = incoming.filter((a) => !seen.current?.has(a.id));
     if (fresh.length === 0) return;
     for (const mark of fresh) seen.current.add(mark.id);
     setMarks({

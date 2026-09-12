@@ -14,10 +14,16 @@ export type AnnotationKind = "FH" | "CM" | "HL" | "ST";
 /**
  * `shared` markings are pushed to every chorister cast in a live project that
  * programs the piece; `conductor` markings are the maestro's private cues;
- * `personal` markings are one user's own pencil marks — scoped server-side to
- * their creator and invisible to everyone else (managers included).
+ * `leader` markings are the cues he writes for whoever runs a rehearsal in his
+ * place, readable by that person and nobody else in the choir; `personal`
+ * markings are one user's own pencil marks — scoped server-side to their creator
+ * and invisible to everyone else (managers included).
+ *
+ * `leader` is separate from `conductor` rather than a permission over it because
+ * that layer carries what he thinks about the singers: opening it to one of them
+ * would open the remarks about their own section.
  */
-export type AnnotationLayer = "shared" | "conductor" | "personal";
+export type AnnotationLayer = "shared" | "conductor" | "leader" | "personal";
 
 /** How a text note renders: a clickable `pin`, or the words drawn `inline` on the page. */
 export type NoteDisplay = "pin" | "inline";

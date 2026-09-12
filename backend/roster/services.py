@@ -98,6 +98,7 @@ from .models import (
     Project,
     ProjectPieceCasting,
     Rehearsal,
+    RehearsalDelegate,
 )
 from .queries.schedule_queries import get_artist_rehearsals_in_window
 from .score_package_config import resolve_item_edition
@@ -1296,6 +1297,72 @@ def rehearsal_notification_context(rehearsal: Rehearsal) -> dict[str, str]:
     }
 
 
+class RehearsalDelegationService:
+    """Handing one programme to somebody who is not a manager, and taking it back.
+
+    Every write goes through here for one reason: a delegation lends out the
+    conductor's markings and the choir's attendance record, and who did that for
+    whom has to be answerable afterwards. The audit line is the point of the
+    service, not a side effect of it.
+    """
+
+    @staticmethod
+    def _log(event: str, delegate: RehearsalDelegate, actor: "User | None") -> None:
+        logger.info(
+            "rehearsal_delegation:%s actor=%s artist=%s project=%s "
+            "marks=%s roll_call=%s materials=%s expires=%s",
+            event,
+            getattr(actor, 'pk', None),
+            delegate.artist_id,
+            delegate.project_id,
+            delegate.can_see_leader_marks,
+            delegate.can_take_roll_call,
+            delegate.can_open_materials,
+            delegate.expires_at.isoformat() if delegate.expires_at else '',
+        )
+
+    @staticmethod
+    def grant(
+        *,
+        project: Project,
+        granted_by: "User | None",
+        artist: Artist,
+        **scopes: Any,
+    ) -> RehearsalDelegate:
+        """Give `artist` this project, or rewrite the grant they already have.
+
+        An upsert rather than an insert: the uniqueness constraint is scoped to
+        live rows, so a second grant after a revoke would otherwise depend on
+        whether anyone had ever revoked one. "This person leads it" is the
+        gesture; how many rows it took to say so is not the manager's problem.
+        """
+        with transaction.atomic():
+            delegate, _created = RehearsalDelegate.all_objects.update_or_create(
+                project=project,
+                artist=artist,
+                defaults={
+                    **scopes,
+                    'granted_by': granted_by,
+                    'is_deleted': False,
+                },
+            )
+        RehearsalDelegationService._log('granted', delegate, granted_by)
+        return delegate
+
+    @staticmethod
+    def revoke(delegate: RehearsalDelegate, *, revoked_by: "User | None") -> None:
+        """End a delegation. Soft, like every other deletion here, so the audit
+        trail keeps a row to point at."""
+        RehearsalDelegationService._log('revoked', delegate, revoked_by)
+        delegate.delete()
+
+    @staticmethod
+    def log_change(delegate: RehearsalDelegate, *, changed_by: "User | None") -> None:
+        """Record a narrowed or extended scope. Called after the write so the
+        line describes what the delegation now says, not what it used to."""
+        RehearsalDelegationService._log('changed', delegate, changed_by)
+
+
 class RehearsalOperationsService:
     @staticmethod
     def schedule_rehearsal(dto: RehearsalCreateDTO, invited_participations: list[Participation] | None = None) -> Rehearsal:
@@ -1462,12 +1529,15 @@ class RehearsalOperationsService:
         if participation.project_id != rehearsal.project_id:
             raise AttendanceValidationException("Project mismatch between participation and rehearsal.")
 
-        if not dto.is_manager and participation.artist.user_id != dto.requesting_user_id:
-            raise AttendanceValidationException("Can only record self-attendance unless you are a Manager.")
+        if not dto.can_take_roll_call and participation.artist.user_id != dto.requesting_user_id:
+            raise AttendanceValidationException(
+                "Can only record self-attendance unless you are taking the roll call."
+            )
 
         # A report is about what one is going to do; once the evening is over,
-        # the row is the roll call's record and only a manager may still write it.
-        if not dto.is_manager and not is_open_to_self_report(rehearsal):
+        # the row is the roll call's record and only whoever takes that roll call
+        # may still write it.
+        if not dto.can_take_roll_call and not is_open_to_self_report(rehearsal):
             raise SelfReportWindowClosedException(str(SELF_REPORT_CLOSED_MESSAGE))
 
         with transaction.atomic():
@@ -1477,7 +1547,7 @@ class RehearsalOperationsService:
                 defaults={'status': dto.status, 'minutes_late': dto.minutes_late, 'excuse_note': dto.excuse_note}
             )
 
-            if not dto.is_manager:
+            if not dto.can_take_roll_call:
                 artist_name = f"{attendance.participation.artist.first_name} {attendance.participation.artist.last_name}"
                 event_time_metadata = build_event_time_metadata(
                     attendance.rehearsal.date_time,
@@ -1520,6 +1590,10 @@ class RehearsalOperationsService:
                     metadata=metadata
                 ))
             
+            # Keyed on managership, not on the roll call: this is a VERDICT on a
+            # singer's request and it reaches them as one. A stand-in ticking
+            # boxes in front of the choir is recording who came, and must not
+            # tell somebody their excuse was refused.
             if dto.is_manager and dto.status in ['EXCUSED', 'ABSENT'] and participation.artist.user_id:
                 is_approved = dto.status == 'EXCUSED'
                 notif_type = NotificationType.ABSENCE_APPROVED if is_approved else NotificationType.ABSENCE_REJECTED

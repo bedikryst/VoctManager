@@ -8,6 +8,7 @@ from django.db.models import Count, Prefetch, Q, QuerySet
 
 from roster.domain.day_timeline import localize
 from roster.models import Attendance, Participation, Project, Rehearsal
+from roster.permissions import led_project_ids
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -117,17 +118,20 @@ def get_artist_schedule(
         str(proj_id): str(pid) for pid, proj_id in active_parts
     }
 
-    # Projects this user conducts (Project.conductor → Artist → user). The
-    # conductor is never cast, so they have no Participation — surface their
-    # podium projects, and *every* rehearsal within, alongside the projects they
-    # sing in. These items simply carry no participation id (no self-RSVP).
-    # Drafts stay: the conductor is the one planning them. A cancellation is
-    # dropped on both sides, exactly as `_schedule_seats` drops it for the cast.
-    conducted_project_ids = set(
-        Project.objects.filter(conductor__user=user, conductor__is_deleted=False)
-        .exclude(status=Project.Status.CANCELLED)
-        .values_list("id", flat=True)
-    )
+    # Projects this user RUNS — the podium (Project.conductor → Artist → user)
+    # and any programme handed to them as a stand-in. Neither is cast, so neither
+    # has a Participation: surface those projects, and *every* rehearsal within,
+    # alongside the projects they sing in. These items simply carry no
+    # participation id (no self-RSVP). Drafts stay for the conductor — they are
+    # the one planning them; `led_projects_q` owns that rule and the different
+    # one an explicit grant follows. A cancellation is dropped on both sides,
+    # exactly as `_schedule_seats` drops it for the cast.
+    #
+    # `any`: the timeline is where a stand-in finds the evening they were asked
+    # to take, so it must not be gated on the scope that opens the music. What
+    # each of those evenings actually lets them DO is decided per scope, where
+    # it is done.
+    conducted_project_ids = set(led_project_ids(user, scope='any'))
     all_project_ids = sung_project_ids | conducted_project_ids
 
     # Cancellation was already decided upstream, on both id sets, which is what

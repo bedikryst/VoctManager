@@ -56,12 +56,20 @@
     "redo": "Ponów",
     "undo": "Cofnij",
     "layer": {
+      "for_leader_short": "Dla prowadzącego",
       "from_conductor_short": "Dyrygent",
+      "leader": "Dla prowadzącego próbę",
+      "leader_hint": "Widzi tylko osoba, której powierzysz prowadzenie próby",
+      "leader_short": "Prowadzący",
+      "move_to_leader": "Pokaż prowadzącemu",
+      "move_to_leader_short": "Prowadzącemu",
       "personal_hint": "Widoczne tylko dla Ciebie",
       "personal_short": "Moje",
       "private": "Prywatne (tylko Ty)",
+      "private_hint": "Tylko dla Ciebie i pozostałych menedżerów",
       "private_short": "Prywatne",
       "shared": "Widoczne dla chóru",
+      "shared_hint": "Widzi cały chór śpiewający ten utwór",
       "shared_short": "Chór"
     },
     "note": {
@@ -2707,6 +2715,7 @@
     "project": {
       "archived_badge": "Archiwum",
       "conducting_badge": "Prowadzisz",
+      "standing_in_badge": "Zastępstwo",
       "event": "Wydarzenie:",
       "readiness_caption": "{{ready}} z {{total}} partii gotowych",
       "readiness_withheld": "Gotowość ukryta",
@@ -3253,6 +3262,42 @@
     "sequence": "Sekwencja"
   },
   "projects": {
+    "delegates": {
+      "title": "Prowadzenie prób",
+      "description": "Osoba spoza grona menedżerów, która poprowadzi próby tego projektu w Twoim zastępstwie.",
+      "add": "Powierz komuś prowadzenie",
+      "revoke": "Cofnij",
+      "until": "do {{date}}",
+      "until_project_ends": "do zakończenia projektu",
+      "empty": {
+        "title": "Nikt nie ma zastępstwa",
+        "description": "Próby prowadzisz Ty i pozostali menedżerowie."
+      },
+      "scope": {
+        "marks": "Widzi Twoje notatki dla prowadzącego",
+        "marks_hint": "Tylko warstwa „Dla prowadzącego”. Twoje prywatne notatki zostają prywatne.",
+        "marks_short": "Notatki",
+        "roll_call": "Sprawdza obecność na próbie",
+        "roll_call_hint": "Może odhaczyć cały chór, nie tylko siebie.",
+        "roll_call_short": "Obecność",
+        "materials": "Otwiera materiały projektu",
+        "materials_hint": "Potrzebne, gdy ta osoba nie śpiewa w tym programie.",
+        "materials_short": "Materiały"
+      },
+      "form": {
+        "person": "Kto poprowadzi",
+        "person_placeholder": "Wybierz osobę",
+        "expires": "Do kiedy (opcjonalnie)",
+        "expires_hint": "Puste = do zakończenia projektu.",
+        "note": "Notatka (opcjonalnie)",
+        "note_placeholder": "np. zastępstwo 10–24 grudnia",
+        "submit": "Powierz prowadzenie"
+      },
+      "confirm": {
+        "title": "Cofnąć zastępstwo?",
+        "description": "{{name}} straci dostęp do notatek i obecności tego projektu. Kopia pobrana wcześniej na urządzenie tej osoby zostanie tam do czasu wyczyszczenia pamięci aplikacji."
+      }
+    },
     "score_marks": {
       "toggle": "Moje oznaczenia",
       "toggle_hint": "Dorysowuje Twoje własne notatki do tego egzemplarza. Nikt inny ich nie zobaczy."
@@ -4287,6 +4332,17 @@
       "pitch_pipe": "Kamerton",
       "recorded": "Oznaczono"
     },
+    "lead": {
+      "back": "Harmonogram",
+      "role": "Zastępstwo",
+      "title": "Prowadzisz",
+      "title_highlight": "próbę.",
+      "loading": "Otwieram listę...",
+      "gone": {
+        "title": "Ta próba nie jest już Twoja",
+        "description": "Zastępstwo zostało cofnięte albo próby już nie ma. Zapytaj menedżera, jeśli to pomyłka."
+      }
+    },
     "pulse": {
       "empty_desc": "W aktywnych projektach nie ma zaplanowanej żadnej próby.",
       "empty_title": "Brak nadchodzących prób",
@@ -4598,6 +4654,8 @@
         "submit": "Wyślij",
         "title": "Formularz nieobecności dla Inspektora"
       },
+      "lead_action": "Sprawdź obecność",
+      "leading_badge": "Prowadzisz",
       "no_location": "Brak",
       "optional": "Opcjonalna",
       "range": {
