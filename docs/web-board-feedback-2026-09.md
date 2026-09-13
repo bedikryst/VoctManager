@@ -45,7 +45,7 @@ So Etap 1 treats the atom, and three complaints close without moving a word or a
 | 1 | **Legibility + concert front matter** | nothing | *done* |
 | 2a | **Copy desk** — editorial surface + concerts in three locales | nothing | *done* |
 | 2b | **Concert notification list** ("newsletter") | RODO documents — **ours to write** | *done* |
-| 3 | **Press pack + `/press` recut** | assets from the ensemble (rider, photo selection) | *next — order the rider* |
+| 3 | **Press pack + `/press` recut** | assets from the ensemble (rider, photo selection) | *page and machinery done; waiting on the two orders* |
 | 4 | **Liturgies & weddings subpage** | board decision on framing + legal form of the activity | ordered |
 | 5 | **Q&A and testimonials** | consent path for publishing third-party statements | later |
 
@@ -115,6 +115,15 @@ the board actually wanted and the only version that survives the site's own no-f
   from the existing pattern, not an oversight to copy.
 - **No third-party embed.** `.ai/07` forbids external requests outright: the form posts to our own
   backend. Sending can use anything afterwards.
+
+**Etap 3 is built and has its own record:**
+[docs/web-press-pack-2026-09.md](web-press-pack-2026-09.md), which overrides the paragraphs below
+wherever they disagree. Everything in the brief held, and the page, the desk port and the pack's
+generator shipped 2026-09-13. What did NOT ship is the pack itself, because its two inputs are the
+ones nobody here can write: the rider and the cleared photographs. **§3 of that file carries all
+three orders — the rider, the photographs, and Etap 4's question to the board — written to be
+sent as they stand.** Until they come back, `/press` renders its honest "materials on request"
+state, which is what is true.
 
 **Etap 3 — press.** The reframing that settles the board's disagreement: **`/press` is not a
 persuasion surface, it is an execution surface.** Nobody commits a fee off a press kit; they decide

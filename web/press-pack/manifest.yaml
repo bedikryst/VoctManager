@@ -1,0 +1,58 @@
+# The press pack's manifest — the only hand-kept part of `npm run press:pack`.
+#
+# WHAT THE SCRIPT DOES NOT ASK YOU. Five of the pack's eight items are GENERATED from the site's
+# own data and are not listed here, because a second list is a second thing to keep true: the
+# three biograms come from `src/content/pages/press.yaml` (the same field the page prints), the
+# photo credits from `concerts.yaml`, the invoicing sheet from `src/data/foundation.ts`, the
+# recording links from `concerts.yaml` and the press section of `press.yaml`, and the logotype
+# from `public/voct-mark.svg`.
+#
+# WHAT IT ASKS YOU IS EXACTLY THE PART NOBODY CAN DERIVE: which photographs the ensemble cleared,
+# and which technical rider is current. Both come from outside this repository, and until they do
+# `npm run press:pack` REFUSES to build and names what is missing. /press then renders its honest
+# "write to us" state, which is true wherever the archive is absent.
+#
+# THE ARCHIVE ITSELF IS NOT IN GIT (`web/.gitignore` → `public/press/`), on the same terms as the
+# photographs it carries. Build it where the photographs are and upload it to the build host, the
+# way `src/assets/photos/` is handled.
+
+# Which month the pack is cut for. It becomes the file name —
+# `voctensemble-press-<month>.zip` — and is printed beside the download so an organiser holding
+# an old zip can see that they are.
+month: "2026-09"
+
+# The one-page technical rider, as a file inside `press-pack/assets/`. It is EMPTY on purpose:
+# every number the old /press printed under that heading was invented and was deleted in 2026-07
+# (reverb ≥ 2 s, 6×4 m, 12–14 voices, 60–75 min). Nothing may be guessed back into it — the
+# ensemble writes it, and until then this stays empty and the pack does not build.
+rider: ""
+
+# The cleared photographs, by their id in `src/assets/photos/.original-photos/`. The script reads
+# each one's real dimensions and orientation, so nothing here claims a shape.
+#
+# WHAT THE SELECTION HAS TO SATISFY, and why the script enforces it: 3–5 frames, and at least one
+# PORTRAIT beside the landscapes. A missing portrait is the single most common reason a programmer
+# writes back — a poster is portrait and a landscape frame cannot be cropped into one by somebody
+# who was not there.
+#
+# `credit` is the photographer as they are to be printed. Leave it out and the script takes the
+# credit `concerts.yaml` already records for that frame; give it only where the corpus has none.
+#
+#   photos:
+#     - { id: kd-wcielenie-3 }
+#     - { id: kd-hymn-0, credit: "Andrzej Płachetko" }
+#
+# NOT ELIGIBLE, recorded so nobody re-adds them: `kd-hymn-4` and `kd-hymn-5` were delivered with a
+# matte border and a credit burnt into the frame (see `data/landing/paths.ts`), so they cannot be
+# laid out by a designer; `kd-wolanie-4` is 900 px wide and sourced from PieninyInfo.
+photos: []
+
+# Which evenings ship as sample programmes. Each becomes one text file with composers, works and
+# durations, read from `concerts.yaml`.
+#
+# ONLY `aeternam` HAS DURATIONS TODAY — 10 works out of 10, where the other five programmes have
+# none out of 59. The script warns rather than refuses on a programme without them, because a
+# running order without times is still useful to somebody building an evening; a second entry here
+# is worth adding the moment the ensemble times one.
+programmes:
+  - aeternam

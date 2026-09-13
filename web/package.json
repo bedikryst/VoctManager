@@ -17,6 +17,7 @@
     "copy:apply": "node --env-file-if-exists=.env copydesk/apply.mjs",
     "test:copydesk": "node --test copydesk/copydesk.test.mjs",
     "photos:proxy": "node downscale-photos.mjs",
+    "press:pack": "node scripts/press-pack.mjs",
     "rite:render": "node rite/render.mjs"
   },
   "dependencies": {

@@ -41,6 +41,7 @@ import { NOT_FOUND_PAGE } from "../src/i18n/content/notFound.ts";
 import { ABOUT_PAGE } from "../src/i18n/content/o-nas.ts";
 import { OBRAZY_PAGE } from "../src/i18n/content/obrazy.ts";
 import { PRIVACY_PAGE } from "../src/i18n/content/politykaPrywatnosci.ts";
+import { PRESS_PAGE } from "../src/i18n/content/press.ts";
 import { REGULAMIN_PAGE } from "../src/i18n/content/regulaminDarowizn.ts";
 import { SKARBIEC_PAGE } from "../src/i18n/content/skarbiec.ts";
 import { guardSegments, localeRows } from "./segment.mjs";
@@ -74,6 +75,10 @@ export const PAGE_SPECS = [
   SKARBIEC_PAGE,
   REGULAMIN_PAGE,
   PRIVACY_PAGE,
+  // On the desk, but NOT in TRANSLATED_ROUTES — the two switches are independent, and this page
+  // is on the first only: Florent edits its Polish, and the English and French wait until that
+  // Polish stops moving (docs/web-copy-desk-2026-09.md §2).
+  PRESS_PAGE,
 ];
 
 /**

@@ -1,0 +1,272 @@
+# The editorial text of /press — Polish, and Polish only.
+#
+# WHAT THIS PAGE IS. An EXECUTION surface, not a persuasion one. Nobody commits a fee off a press
+# kit; they decide from a recommendation, a hearing, or the main site. The reader here has already
+# said yes and now has to produce a poster, a programme book and a press note on a deadline —
+# often not the person who did the inviting. If they cannot get a biogram and a photograph in a
+# minute, they write their own text and it is wrong. Everything that persuades lives on the
+# landing, /o-nas and /koncerty; what is left here is what somebody has to COPY.
+# docs/web-board-feedback-2026-09.md §1, Etap 3.
+#
+# THE HONESTY CHARTER STILL RULES IT. Nothing here is a placeholder or a guess. The technical
+# rider is ABSENT because every number the page once printed under that heading was invented and
+# was deleted in 2026-07; it returns when the ensemble writes one. The pack's download is ABSENT
+# until the file exists, and the page decides that by looking, not by being told.
+#
+# WHAT IS NOT HERE. The full repertoire (the `repertoire` collection, printed on /koncerty#repertuar),
+# the evenings themselves (/koncerty), the photographs (/obrazy), the registry numbers and the
+# accounts (`src/data/foundation.ts` — a number is not prose), the labels of the invoicing block and
+# every declined noun (`src/i18n/content/press.ts` — completeness can be demanded of a label).
+#
+# TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under this page's desk
+# key — `page.press.` + the dotted path below — and are read through `lib/copyOverlay`. As of this
+# stage there are none: the page is Polish-only and outside TRANSLATED_ROUTES, because §2 of the
+# copy-desk spec forbids translating Polish that is still being rewritten.
+#
+# NO TYPOGRAPHY. Write the prose plainly: `lib/typo.ts` pins Polish orphans at build.
+
+meta:
+  title: "Press kit — VoctEnsemble"
+  description: >-
+    Materiały dla organizatorów, redakcji i programatorów: biogram w trzech długościach
+    do skopiowania, pakiet prasowy, dane do umowy i faktury, publikacje o zespole.
+
+head:
+  eyebrow: "Press kit"
+  title: "VoctEnsemble"
+  # Set in italic gold beside the name above it — the cycle, not a second title.
+  titleEm: "Koncerty Duchowe."
+  positioningHtml: >-
+    Zespół wokalny z Krakowa — muzyka sakralna od renesansu po współczesność.
+    Autorski cykl <em>Concerts Spirituels</em>, oprawy liturgii i uroczystości kościelnych.
+  # The page answers "do kogo pisać" before it asks for anything. The address itself is data
+  # (`data/foundation.ts`) and is printed after this sentence, never inside it.
+  contactLede: >-
+    Wszystko, czego potrzeba do plakatu, książeczki programowej i noty prasowej, jest na tej
+    stronie. Terminy i pytania:
+
+bio:
+  eyebrow: "Biogram"
+  h2: "Trzy długości, do skopiowania."
+  # The character counts are NOT written here: the page measures each text after stripping its
+  # markup and prints the real number. A hand-typed "ok. 2000 znaków" was true until somebody
+  # edited a sentence.
+  lede: >-
+    Ten sam tekst w trzech miarach — do noty w programie, do zapowiedzi i do pełnego
+    biogramu. Kliknięcie kopiuje czysty tekst, bez formatowania.
+  # ~300 characters: who, what, and the one thing that makes the cycle a cycle.
+  shortHtml: >-
+    <p>VoctEnsemble to zespół wokalny pod kierownictwem Florenta de Bazelaire, poświęcony
+    muzyce sakralnej od renesansu po współczesność. W autorskim cyklu <em>Koncertów
+    Duchowych</em> przywraca tradycję dawnych <em>Concerts Spirituels</em> — wieczorów,
+    w których muzyka, słowo i światło prowadzą jedną narrację.</p>
+  # ~1000 characters: the above, plus the record a programmer checks — who recorded the debut,
+  # which evenings exist, who builds the light.
+  mediumHtml: |-
+    <p><strong>VoctEnsemble</strong> to nowoczesna formacja wokalna, która pod kierownictwem
+    <strong>Florenta de Bazelaire</strong> wnosi na polską scenę muzyczną nową jakość estetyczną
+    i duchową. W autorskim cyklu <em>Koncertów Duchowych</em> zespół przywraca tradycję dawnych
+    <em>Concerts Spirituels</em>, budując pomost między historyczną świadomością a potrzebami
+    współczesnego słuchacza.</p>
+    <p>Repertuar obejmuje siedem wieków muzyki sakralnej: dzieła mistrzów renesansu i baroku
+    spotykają się w nim z kompozycjami Arvo Pärta i Bernata Vivancosa. Debiutancki projekt
+    <em>Kontemplacja Wcielenia</em> (2024) zarejestrował Jakub Garbacz z Ars Sonora Studio;
+    kolejne wieczory — <em>Hymn Poległym</em> w Bazylice Mariackiej i <em>Aeternam — Epitafium
+    dla Gazy</em> — wzięły się z wrażliwości zespołu na los drugiego człowieka. Dzięki współpracy
+    z reżyserką świateł Adą Bystrzycką koncerty nabierają formy nowoczesnych misteriów.
+    Działalność zespołu prowadzi Fundacja VoctFoundation z siedzibą w Krakowie.</p>
+  # The team's own text, verbatim. It is the one legitimately brochure-voiced artifact on this
+  # site and it is not ours to rewrite — the two shorter measures above are condensations OF it,
+  # and they introduce no fact it does not carry.
+  longHtml: |-
+    <p><strong>VoctEnsemble</strong> to nowoczesna formacja wokalna, która pod kierownictwem
+    <strong>Florenta de Bazelaire</strong> wnosi na polską scenę muzyczną nową jakość estetyczną
+    i duchową. Misją zespołu jest zgłębianie człowieczeństwa za pomocą muzyki sakralnej, przy
+    jednoczesnym zachowaniu niezwykłej czujności na współczesne tragizmy i nadzieje świata.
+    W ramach autorskiego cyklu <em>Koncertów Duchowych</em>, grupa przywraca tradycję dawnych
+    <em>Concerts Spirituels</em>, budując pomost między historyczną świadomością a potrzebami
+    współczesnego słuchacza.</p>
+    <p>Twórczość VoctEnsemble to fascynujący kalejdoskop stylów, w którym dzieła mistrzów
+    Renesansu i Baroku spotykają się z kompozycjami Arvo Pärta czy Bernata Vivancosa.
+    Ta artystyczna wymiana pozwala na odkrywanie uniwersalnych prawd ukrytych w dźwiękach,
+    czyniąc każdy koncert podróżą w głąb sacrum.</p>
+    <p>Zespół od początku istnienia stawia na interdyscyplinarną współpracę z wybitnymi twórcami.
+    Debiutancki projekt <em>Kontemplacja Wcielenia</em> (2024) został zarejestrowany przez Jakuba
+    Garbacza (Ars Sonora Studio), co otworzyło grupie drogę na ogólnopolskie festiwale — m.in.
+    do Archikatedry Łódzkiej pod auspicjami Fundacji Carpe Diem. Wrażliwość zespołu na los
+    drugiego człowieka zaowocowała takimi wydarzeniami jak <em>Hymn Poległym</em> w Bazylice
+    Mariackiej — modlitwą o pokój na Ukrainie — oraz <em>Aeternam — Epitafium dla Gazy</em>,
+    prezentowanym m.in. w krakowskich Mistrzejowicach i Niedzicy.</p>
+    <p>VoctEnsemble to także dbałość o wizualny wymiar duchowości. Dzięki współpracy z reżyserką
+    świateł Adą Bystrzycką oraz artystami takimi jak Sebastian Kuźma (ART Agencja Rzemieślników
+    Teatralnych), koncerty zespołu — m.in. <em>Wołanie Gór</em> czy <em>9 Kart z Księgi
+    Psalmów</em> — nabierają formy nowoczesnych misteriów.</p>
+    <p>Zespół konsekwentnie buduje swoją tożsamość, opierając ją na jedności artystycznej
+    i ludzkiej harmonii. VoctEnsemble to nie tylko głosy — to wspólnota artystyczna, która poprzez
+    arcy-elegancką formę i minimalistyczny przekaz dąży do autentycznego spotkania z publicznością,
+    przywracając muzyce jej pierwotną siłę dotykania serc.</p>
+
+pack:
+  eyebrow: "Materiały"
+  h2: "Pakiet prasowy."
+  # Printed when the file is actually there. The page decides by looking at public/press/.
+  ledeReady: >-
+    Jedno pobranie: zdjęcia w rozdzielczości do druku, logotyp, biogramy, rider techniczny
+    i dane do faktury. Zdjęcia wolno publikować w materiałach o koncercie — z podpisem
+    fotografa, który jest w pakiecie.
+  # Printed when it is not. It promises nothing about a date, because we do not control one.
+  ledePending: >-
+    Pakiet jest w składaniu — czekamy na wybór zdjęć i rider techniczny od zespołu.
+    Do tego czasu wysyłamy materiały mailem, zwykle tego samego dnia.
+  contentsIntro: "W pakiecie:"
+  items:
+    - id: zdjecia
+      text: "3–5 zdjęć do druku (300 dpi), w poziomie i w pionie, z podpisami fotografów"
+    - id: biogramy
+      text: "biogram w trzech długościach, ten sam co na tej stronie"
+    - id: logo
+      text: "logotyp: wektor SVG oraz PNG na jasnym i ciemnym tle, z zasadami użycia"
+    - id: rider
+      text: "jednostronicowy rider techniczny"
+    - id: faktura
+      text: "dane do umowy i do faktury"
+    - id: programy
+      text: "przykładowe programy wieczorów z czasami trwania"
+    - id: nagrania
+      text: "spis nagrań i publikacji, z linkami"
+  requestLabel: "Napisz po materiały"
+  downloadLabel: "Pobierz pakiet prasowy"
+  # The next two are printed ONLY inside the archive, never on the page. They are here and not in
+  # the build script because they are sentences somebody reads and may want to reword, and this is
+  # where the site keeps those.
+  photoUsage: >-
+    Zdjęcia wolno publikować w materiałach dotyczących koncertu — w plakacie, programie,
+    zapowiedzi i relacji. Przy każdym zdjęciu prosimy podać fotografa; nazwiska stoją niżej,
+    przy nazwach plików. Kadrowanie i korekta jasności są w porządku; retusz treści kadru nie.
+  logoUsage: >-
+    Logotypu prosimy używać w jednym kolorze, bez cienia, obrysu i przekształceń proporcji.
+    Wersja SVG jest wzorcem; pliki PNG przygotowano na jasne i na ciemne tło. Wokół znaku
+    prosimy zostawić odstęp nie mniejszy niż wysokość jego poprzeczki.
+  # Where the rest of it is. The pack holds a selection; the site holds everything, and an
+  # organiser who needs a fourth photograph or the whole catalogue should not have to write.
+  moreHtml: >-
+    Więcej niż w pakiecie: <a href="/koncerty#repertuar">pełny repertuar</a>,
+    <a href="/obrazy">archiwum fotografii</a> i <a href="/koncerty">programy dotychczasowych
+    wieczorów</a>.
+
+facts:
+  eyebrow: "Dane"
+  h2: "Zespół w liczbach i w rejestrze."
+  items:
+    # `value` is absent where the page counts it — the cycle's stations and the catalogue's works
+    # are read from the corpus at build, so they cannot rot into a lie the day a concert lands.
+    - id: stacje
+      label: "Koncertów Duchowych w cyklu"
+    - id: utwory
+      label: "utworów w repertuarze"
+    - id: wieki
+      # Seven is the count of the catalogue's era spans, XV to XXI inclusive. It is a claim about
+      # the COMPOSERS, not about the oldest thing sung — the anonymous Llibre Vermell piece is
+      # older, and pairing "siedem wieków" with "od XIV w." would make the claim false.
+      value: "7 wieków"
+      label: "muzyki sakralnej · od XV w."
+    - id: debiut
+      value: "2024"
+      label: "debiut · Kontemplacja Wcielenia"
+    - id: siedziba
+      value: "Kraków"
+      label: "siedziba · Fundacja VoctFoundation"
+  # The one thing the deleted liturgy section said that an organiser actually books on. The page
+  # that will say it properly is Etap 4, and it is a question for the board before it is a design
+  # question — so this states what the music IS, never what it costs.
+  officeNoteHtml: >-
+    Poza cyklem zespół śpiewa też oprawy liturgii, msze ślubne i uroczystości kościelne —
+    program układa się wtedy pod obrzęd, nie pod wieczór.
+    <a href="/koncerty">Zobacz, co zabrzmiało →</a>
+  legalLede: >-
+    Dane do umowy i do faktury. Zespół prowadzi Fundacja VoctFoundation — to ona jest stroną
+    umowy i wystawia rachunek.
+
+collab:
+  eyebrow: "Współpraca"
+  h2: "Kogo wymienić w programie."
+  lede: >-
+    Artyści i instytucje obecni przy dotychczasowych Koncertach Duchowych, oraz patroni
+    medialni tych wydarzeń. Podpisy pod zdjęciami są w pakiecie.
+  artistsTitle: "Artystyczni"
+  institutionsTitle: "Instytucjonalni"
+  mediaTitle: "Patroni medialni"
+  artists:
+    - id: swiatlo
+      role: "Reżyseria świateł"
+      name: "Ada Bystrzycka"
+      entity: "Multiscena"
+    - id: dzwiek
+      role: "Realizacja dźwięku"
+      name: "Jakub Garbacz"
+      entity: "Ars Sonora Studio"
+    - id: wizual
+      role: "Animacja wizualna"
+      name: "Sebastian Kuźma"
+      entity: "ART Agencja Rzemieślników Teatralnych"
+    - id: skrzypce
+      role: "Skrzypce (gość)"
+      name: "Radu Ropotan"
+      entity: "Wołanie Gór · Szczawnica"
+  institutions:
+    - { id: carpe-diem, name: "Fundacja Carpe Diem · Łódź" }
+    - { id: norwid, name: "Ośrodek Kultury Norwida · Mistrzejowice" }
+    - { id: lapsze-gmina, name: "Gmina Łapsze Niżne" }
+    - { id: lapsze-gok, name: "GOK Łapsze Niżne" }
+    - { id: zew, name: "ZEW Niedzica" }
+    - { id: dunajec, name: "Zamek Dunajec" }
+    - { id: acn, name: "ACN — Pomoc Kościołowi w Potrzebie" }
+  media:
+    - { id: gosc, name: "Gość Niedzielny" }
+    - { id: alex, name: "Radio Alex" }
+    - { id: podhalanski, name: "Tygodnik Podhalański" }
+
+# Published coverage — REAL links only. Each entry is a verifiable external document; a headline
+# is the publication's own words and is never translated. No pull-quotes until somebody re-reads
+# the pieces and picks them by hand.
+press:
+  eyebrow: "Pisali o nas"
+  h2: "Ślad w mediach, do sprawdzenia u źródła."
+  lede: >-
+    Publikacje, fotorelacje i transmisje z udziałem zespołu. Każdy link prowadzi do
+    oryginalnego materiału.
+  items:
+    - id: gosc-niedzica
+      outlet: "Gość Niedzielny"
+      kind: "Artykuł"
+      title: "Niedzica. Koncert dedykowany Strefie Gazy"
+      context: "Relacja z koncertu Aeternam — Epitafium dla Gazy w Niedzicy."
+      href: "https://krakow.gosc.pl/doc/9466268.Niedzica-Koncert-dedykowany-Strefie-Gazy"
+    - id: onet-kai
+      outlet: "Onet / KAI"
+      kind: "Artykuł"
+      title: "Muzyczna modlitwa w Niedzicy — koncert dla Strefy Gazy"
+      context: "Depesza Katolickiej Agencji Informacyjnej o tym samym wieczorze."
+      href: "https://www.onet.pl/informacje/kai/muzyczna-modlitwa-w-niedzicy-koncert-dla-strefy-gazy/l3pn8kc,30bc1058"
+    - id: episkopat
+      outlet: "Episkopat Polski"
+      kind: "Fotorelacja"
+      title: "Uroczystość św. Andrzeja Boboli w Warszawie"
+      context: "Oficjalna fotorelacja z liturgii ze śpiewem zespołu."
+      href: "https://flic.kr/s/aHBqjCU2Dw"
+    - id: bobola-transmisja
+      outlet: "Sanktuarium św. Andrzeja Boboli"
+      kind: "Transmisja"
+      title: "Msza w 100-lecie polskich prowincji jezuickich"
+      # The choir sang but is never on camera — every shot is on the altar, and the recording
+      # starts at the Alleluia. Framed as a record of the liturgy, never as "watch them perform".
+      context: "Pełny zapis liturgii, którą śpiewem oprawił zespół."
+      href: "https://www.youtube.com/live/Bpxl8ozPa3s"
+
+booking:
+  eyebrow: "Zaproszenie"
+  h2: "Przygotujemy program pod Wasze miejsce i intencję."
+  ledeHtml: >-
+    Festiwal, parafia, fundacja, samorząd — <em>Koncert Duchowy</em> albo oprawa liturgii
+    pod konkretną przestrzeń i wspólnotę.
+  allChannelsNote: "Pozostałe adresy — dyrekcja artystyczna, patronaty — są na stronie kontaktowej."

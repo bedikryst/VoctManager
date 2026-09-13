@@ -1,0 +1,636 @@
+---
+/**
+ * @file PressPage.astro
+ * @description Locale-agnostic body of the press kit (/press) — an EXECUTION surface, not a
+ *  persuasion one.
+ *
+ *  WHO READS IT. Somebody who has already said yes and now has to produce a poster, a programme
+ *  book and a press note on a deadline — often not the person who did the inviting. If they
+ *  cannot get a biogram and a photograph in a minute they write their own text, and it is wrong.
+ *  So the page answers, in order: whom do I write to, what do I paste, what do I download, what
+ *  are the legal details, whom must I credit. Persuasion lives on the landing, the evenings on
+ *  /koncerty, the photographs on /obrazy — and this page links out rather than restating them.
+ *  docs/web-board-feedback-2026-09.md §1 Etap 3, and docs/web-press-pack-2026-09.md.
+ *
+ *  THE HONESTY CHARTER, WHICH IS OLDER THAN THIS RECUT AND SURVIVES IT. Nothing here is a
+ *  placeholder, a guess, or a promise about somebody else's availability. Two absences are
+ *  deliberate and must stay absences until the material exists:
+ *
+ *  - THE TECHNICAL RIDER. Every number the page once printed under that heading (reverb ≥ 2 s,
+ *    6×4 m, 12–14 voices, 60–75 min) was invented and was deleted in 2026-07. It returns when
+ *    the ensemble writes one, and not as an estimate.
+ *  - THE PACK'S DOWNLOAD. The page LOOKS for the archive (`lib/pressPack`) and renders the
+ *    download only if it is there. The same audit found seven dead links here, all of them
+ *    markup asserting a file instead of asking about one.
+ *
+ *  WHAT IS NOT ON THIS PAGE, and where it went in the recut: the hero film (the landing plays
+ *  the same registration), the three vignettes (/o-nas), the concert register with a player per
+ *  row (/koncerty), the A–Z repertoire (it duplicated the live `repertoire` collection, which
+ *  /koncerty#repertuar renders — and the two had already drifted apart on the count), the
+ *  liturgy cards (/koncerty now carries the `Officia` band, and Etap 4 gets the page), and the
+ *  jump nav (five sections do not need an index).
+ *
+ *  FOUR SOURCES, AND THEY MUST NOT BE CONFUSED. The page's PROSE is Polish in
+ *  `src/content/pages/press.yaml` through `lib/pageCopy`; its CHROME (landmarks, the copy
+ *  affordance, the invoicing labels, the mail subjects) is `i18n/content/press.ts`; the REGISTRY
+ *  and the accounts are `data/foundation.ts`, because a number has no per-locale form and a Node
+ *  script prints it too; the COUNTS are read from the corpus at build.
+ *
+ *  POLISH-ONLY FOR NOW. `lang` is a real prop and the copy falls back per field, but there are no
+ *  `/en/press` and `/fr/press` route files and `/press` is NOT in TRANSLATED_ROUTES — the desk's
+ *  §2 forbids translating prose that is still being rewritten. When it is settled: three route
+ *  files, two drafts, then the ledger entry, in that order.
+ * @architecture Astro islands 2026
+ * @module components/pages/PressPage
+ */
+import { getCollection } from "astro:content";
+import { getImage } from "astro:assets";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SiteChrome from "../SiteChrome.astro";
+import SiteFooter from "../SiteFooter.astro";
+import VaultMount from "../VaultMount.astro";
+import { bleedPair } from "../../lib/photos";
+import { cycleStations } from "../../lib/cycle";
+import { pageCopy } from "../../lib/pageCopy";
+import { htmlToPlainText, plainTextLength } from "../../lib/plainText";
+import { findPressPack, formatBytes } from "../../lib/pressPack";
+import { FOUNDATION } from "../../data/foundation";
+import { UI } from "../../i18n/ui";
+import { LOCALE_META, pageI18n, type Locale } from "../../i18n/config";
+import { PRESS_CHROME, PRESS_PAGE } from "../../i18n/content/press";
+// The declension helper lives with the page that first needed it; /kolofon reaches for it the
+// same way. A content module may not re-export it — see the note in `i18n/content/press.ts`.
+import { counted } from "../../i18n/content/obrazy";
+import "../../styles/vault.css";
+
+interface Props {
+  lang: Locale;
+}
+const { lang } = Astro.props;
+
+const copy = pageCopy(PRESS_PAGE, lang);
+const t = PRESS_CHROME[lang];
+const { path, alternates, available } = pageI18n("/press", lang);
+
+const ogImage = (
+  await getImage({ src: bleedPair("hero-landing").desktop, width: 1200, format: "webp" })
+).src;
+
+/* The two counted tiles. Both are read from the corpus rather than typed, so neither can rot into
+   a lie the day a concert or a work lands — the tile rows in press.yaml carry no `value` at all
+   and are matched to these by their id. */
+const stationCount = cycleStations(await getCollection("concerts")).length;
+const workCount = (await getCollection("repertoire")).reduce(
+  (total, era) => total + era.data.entries.reduce((n, entry) => n + entry.works.length, 0),
+  0,
+);
+const COUNTED: Readonly<Record<string, number>> = {
+  stacje: stationCount,
+  utwory: workCount,
+};
+
+/* The three biograms, each with the plain text a reader pastes and the measure they choose by.
+   ONE source per measure: the marked-up field. The plain version is derived and the character
+   count is measured, so neither can disagree with what is printed above it. */
+const BIOS = [
+  { id: "short", measure: t.bioShort, html: copy.bio.shortHtml },
+  { id: "medium", measure: t.bioMedium, html: copy.bio.mediumHtml },
+  { id: "long", measure: t.bioLong, html: copy.bio.longHtml },
+].map((bio) => ({
+  ...bio,
+  text: htmlToPlainText(bio.html),
+  length: plainTextLength(bio.html),
+}));
+
+/* Present only when the archive is actually on this host — see lib/pressPack. */
+const pack = findPressPack();
+const packMonth = pack
+  ? new Intl.DateTimeFormat(LOCALE_META[lang].htmlLang, {
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(pack.cutAt)
+  : "";
+
+const mailto = (address: string, subject: string) =>
+  `mailto:${address}?subject=${encodeURIComponent(subject)}`;
+
+/* The rows of the invoicing block. KRS, NIP and REGON are their own labels in every language —
+   they are the names of Polish registers, not words — so only the other four take chrome. */
+const LEGAL_ROWS = [
+  { id: "name", label: t.legalName, value: FOUNDATION.name, mono: false },
+  { id: "address", label: t.legalAddress, value: FOUNDATION.addressLine, mono: false },
+  { id: "krs", label: "KRS", value: FOUNDATION.registry.krs, mono: true },
+  { id: "nip", label: "NIP", value: FOUNDATION.registry.nip, mono: true },
+  { id: "regon", label: "REGON", value: FOUNDATION.registry.regon, mono: true },
+  {
+    id: "pln",
+    label: t.legalAccountPln,
+    value: FOUNDATION.accounts.pln.display,
+    mono: true,
+  },
+  {
+    id: "eur",
+    label: t.legalAccountEur,
+    value: FOUNDATION.accounts.eur.display,
+    mono: true,
+  },
+] as const;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "MusicGroup",
+  // The SAME entity node the landing declares (/#ensemble) — this page describes that
+  // MusicGroup, not a twin with a divergent URL. The page is noindex; the graph stays coherent
+  // for anything that still reads it.
+  "@id": `${FOUNDATION.site}/#ensemble`,
+  name: FOUNDATION.ensemble,
+  url: FOUNDATION.site,
+  description: copy.meta.description,
+  founder: { "@type": "Person", name: "Florent de Bazelaire" },
+  genre: ["Sacred music", "Choral music", "Polifonia"],
+  sameAs: [
+    "https://www.instagram.com/voctensemble/",
+    "https://www.facebook.com/voctensemble/",
+    "https://www.youtube.com/@VoctEnsemble-nb7gh",
+  ],
+};
+---
+
+<BaseLayout
+  title={copy.meta.title}
+  description={copy.meta.description}
+  path={path}
+  image={ogImage}
+  bodyClass="page-press"
+  lang={lang}
+  alternates={alternates}
+>
+  <Fragment slot="head">
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <meta name="robots" content="noindex,follow" />
+  </Fragment>
+
+  <a class="skip-link" href="#tresc">{UI[lang].skipToContent}</a>
+  <SiteChrome current="/press" tone="dark" lang={lang} availableLocales={available} />
+
+  <main id="tresc">
+    {/* ── HEAD · who we are, and whom to write to. No film, no second CTA. ── */}
+    <section class="press-head" aria-label={t.headAria}>
+      <div class="press-head-inner">
+        <p class="press-eyebrow titulus"><span class="lat" lang="la">Acta</span> · {copy.head.eyebrow}</p>
+        <h1 class="press-head-title">
+          <span>{copy.head.title}</span>
+          <em>{copy.head.titleEm}</em>
+        </h1>
+        <p class="press-head-positioning" set:html={copy.head.positioningHtml} />
+        <p class="press-head-contact">
+          {copy.head.contactLede}{" "}
+          <a href={mailto(FOUNDATION.mail.booking, t.mailSubjectBooking)}>
+            {FOUNDATION.mail.booking}
+          </a>
+        </p>
+      </div>
+    </section>
+
+    {/* ── BIOGRAM · three measures, each one paste-ready ─────────────────── */}
+    <section class="press-bio tone-light" id="biogram" aria-label={t.bioAria}>
+      <div class="press-section-head">
+        <span class="press-eyebrow titulus">
+          <span class="lat" lang="la">Biographia</span> · {copy.bio.eyebrow}
+        </span>
+        <h2>{copy.bio.h2}</h2>
+        <p class="press-section-lede">{copy.bio.lede}</p>
+      </div>
+      <div class="press-bio-list">
+        {
+          BIOS.map((bio) => (
+            <article class="press-bio-card">
+              <header class="press-bio-card-head">
+                <span class="eyebrow titulus press-bio-measure">{bio.measure}</span>
+                <span class="press-bio-count">{counted(bio.length, t.characters, lang)}</span>
+                <button
+                  type="button"
+                  class="press-copy"
+                  data-copy={bio.text}
+                  data-copied={t.copied}
+                  aria-label={t.copyAria.replace("{measure}", bio.measure)}
+                >
+                  <span class="copy-label">{t.copy}</span>
+                </button>
+              </header>
+              <div class="press-bio-text" set:html={bio.html} />
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    {/* ── PACK · a download when it exists, a plain answer when it does not ── */}
+    <section class="press-pack tone-light" id="materialy" aria-label={t.packAria}>
+      <div class="press-section-head">
+        <span class="press-eyebrow titulus">
+          <span class="lat" lang="la">Documenta</span> · {copy.pack.eyebrow}
+        </span>
+        <h2>{copy.pack.h2}</h2>
+        <p class="press-section-lede">{pack ? copy.pack.ledeReady : copy.pack.ledePending}</p>
+      </div>
+
+      {
+        pack ? (
+          <a class="press-pack-action" href={pack.href} download>
+            <span class="press-pack-action-label">{copy.pack.downloadLabel}</span>
+            <span class="press-pack-action-meta">
+              ZIP · {formatBytes(pack.bytes)} · {packMonth}
+            </span>
+            <span class="press-pack-action-arrow" aria-hidden="true">
+              ↓
+            </span>
+          </a>
+        ) : (
+          <a
+            class="press-pack-action press-pack-action--request"
+            href={mailto(FOUNDATION.mail.general, t.mailSubjectPack)}
+          >
+            <span class="press-pack-action-label">{copy.pack.requestLabel}</span>
+            <span class="press-pack-action-meta">{FOUNDATION.mail.general}</span>
+            <span class="press-pack-action-arrow" aria-hidden="true">
+              →
+            </span>
+          </a>
+        )
+      }
+
+      <div class="press-pack-contents">
+        <p class="eyebrow titulus press-pack-contents-intro">{copy.pack.contentsIntro}</p>
+        <ul class="press-pack-list">
+          {copy.pack.items.map((item) => <li>{item.text}</li>)}
+        </ul>
+        <p class="press-pack-more" set:html={copy.pack.moreHtml} />
+      </div>
+    </section>
+
+    {/* ── FACTS · the scale, the rite note, and the details a contract needs ── */}
+    <section class="press-facts tone-light" id="fakty" aria-label={t.factsAria}>
+      <div class="press-section-head">
+        <span class="press-eyebrow titulus">
+          <span class="lat" lang="la">Tabula</span> · {copy.facts.eyebrow}
+        </span>
+        <h2>{copy.facts.h2}</h2>
+      </div>
+
+      <ul class="press-facts-grid">
+        {
+          copy.facts.items.map((fact) => (
+            <li class="press-fact">
+              <span class="press-fact-num">{fact.value ?? String(COUNTED[fact.id] ?? "")}</span>
+              <span class="eyebrow press-fact-label">{fact.label}</span>
+            </li>
+          ))
+        }
+      </ul>
+
+      <p class="press-facts-office" set:html={copy.facts.officeNoteHtml} />
+
+      <div class="press-legal">
+        <p class="press-legal-lede">{copy.facts.legalLede}</p>
+        <dl class="press-legal-grid">
+          {
+            LEGAL_ROWS.map((row) => (
+              <div class="press-legal-row">
+                <dt class="eyebrow">{row.label}</dt>
+                <dd class={row.mono ? "is-ledger" : undefined}>
+                  <span>{row.value}</span>
+                  <button
+                    type="button"
+                    class="press-copy press-copy--field"
+                    data-copy={row.value}
+                    data-copied={t.copied}
+                    aria-label={t.copyFieldAria.replace("{field}", row.label)}
+                  >
+                    <span class="copy-label">{t.copy}</span>
+                  </button>
+                </dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+    </section>
+
+    {/* ── COLLABORATORS · whom a programme book has to credit ────────────── */}
+    <section class="press-collab tone-light" id="wspolpraca" aria-label={t.collabAria}>
+      <div class="press-section-head">
+        <span class="press-eyebrow titulus">
+          <span class="lat" lang="la">Socii</span> · {copy.collab.eyebrow}
+        </span>
+        <h2>{copy.collab.h2}</h2>
+        <p class="press-section-lede">{copy.collab.lede}</p>
+      </div>
+
+      <div class="press-collab-grid">
+        <div class="press-collab-group press-collab-group--wide">
+          <h3 class="eyebrow titulus press-collab-title">{copy.collab.artistsTitle}</h3>
+          <ul class="press-collab-list">
+            {
+              copy.collab.artists.map((artist) => (
+                <li class="press-collab-entry">
+                  <span class="eyebrow press-collab-role">{artist.role}</span>
+                  <span class="press-collab-name">{artist.name}</span>
+                  <span class="press-collab-entity">{artist.entity}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+
+        <div class="press-collab-group">
+          <h3 class="eyebrow titulus press-collab-title">{copy.collab.institutionsTitle}</h3>
+          <ul class="press-collab-list press-collab-list--simple">
+            {copy.collab.institutions.map((partner) => <li>{partner.name}</li>)}
+          </ul>
+        </div>
+
+        <div class="press-collab-group">
+          <h3 class="eyebrow titulus press-collab-title">{copy.collab.mediaTitle}</h3>
+          <ul class="press-collab-list press-collab-list--simple">
+            {copy.collab.media.map((patron) => <li>{patron.name}</li>)}
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    {/* ── PUBLISHED COVERAGE · real links, each to the original ──────────── */}
+    <section class="press-mentions tone-light" id="prasa" aria-label={t.pressAria}>
+      <div class="press-section-head">
+        <span class="press-eyebrow titulus">
+          <span class="lat" lang="la">Testimonia</span> · {copy.press.eyebrow}
+        </span>
+        <h2>{copy.press.h2}</h2>
+        <p class="press-section-lede">{copy.press.lede}</p>
+      </div>
+      <ul class="press-mentions-list">
+        {
+          copy.press.items.map((item) => (
+            <li class="press-mention">
+              <a href={item.href} target="_blank" rel="noopener noreferrer">
+                <p class="press-mention-head">
+                  <span class="eyebrow press-mention-outlet">{item.outlet}</span>
+                  <span class="eyebrow press-mention-kind">{item.kind}</span>
+                </p>
+                <h3 class="press-mention-title">{item.title}</h3>
+                <p class="press-mention-context">{item.context}</p>
+                <span class="press-mention-arrow" aria-hidden="true">
+                  ↗
+                </span>
+                <span class="sr-only">{t.externalAria}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    {/* ── BOOKING · one address, and the way to the rest ─────────────────── */}
+    <section class="press-booking" id="booking" aria-label={t.bookingAria}>
+      <div class="press-booking-inner">
+        <span class="press-eyebrow titulus">
+          <span class="lat" lang="la">Invitatio</span> · {copy.booking.eyebrow}
+        </span>
+        <h2 class="press-booking-title">{copy.booking.h2}</h2>
+        <p class="press-booking-lede" set:html={copy.booking.ledeHtml} />
+        <a
+          class="press-booking-card"
+          href={mailto(FOUNDATION.mail.booking, t.mailSubjectBooking)}
+        >
+          <span class="press-booking-mail">{FOUNDATION.mail.booking}</span>
+          <span class="press-booking-arrow" aria-hidden="true">→</span>
+        </a>
+        <p class="press-booking-more">
+          {copy.booking.allChannelsNote}{" "}
+          <a href="/kontakt">{t.allChannels} →</a>
+        </p>
+        <p class="eyebrow press-booking-legal">
+          {FOUNDATION.name} · {FOUNDATION.addressLine} · KRS {FOUNDATION.registry.krs} · NIP{" "}
+          {FOUNDATION.registry.nip}
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter lang={lang} />
+
+  <VaultMount lang={lang} />
+  <script>
+    import "../../scripts/vault-triggers.ts";
+    // Every `[data-copy]` control on this page: the three biograms and the invoicing rows.
+    import "../../scripts/copy-fields.ts";
+
+    // Chrome tone flips to light over .tone-light sections (the /koncerty pattern).
+    // ClientRouter-safe: drops stale observers and rebinds on each page-load.
+    let toneIO: IntersectionObserver | undefined;
+
+    const setupPress = () => {
+      toneIO?.disconnect();
+
+      const chrome = document.getElementById("chrome");
+      if (!chrome) return;
+      if (!document.body.classList.contains("page-press")) return;
+
+      const lightSections = [...document.querySelectorAll(".tone-light")];
+      const activeLight = new Set<Element>();
+      toneIO = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) activeLight.add(e.target);
+            else activeLight.delete(e.target);
+          }
+          chrome.classList.toggle("is-light", activeLight.size > 0);
+        },
+        { rootMargin: "-64px 0px -90% 0px", threshold: 0 },
+      );
+      lightSections.forEach((el) => toneIO!.observe(el));
+    };
+
+    document.addEventListener("astro:page-load", setupPress);
+  </script>
+</BaseLayout>
+
+<style>
+  /* Surface as an opaque image, colour slot left to the iOS edge band — see `--edge-band`.
+     A plain `background: var(--paper)` here would put page content back into the band. */
+  :global(body.page-press) {
+    background-image: linear-gradient(var(--paper), var(--paper));
+    background-color: var(--edge-band);
+    color: var(--ink);
+  }
+
+  /* ── Shared section primitives ───────────────────────────────────── */
+  /* THE RUBRIC ATOM IS NOT DECLARED HERE, and that is the whole point of this rule being four
+     properties long. `.press-eyebrow` is a member of base.css's rubric roster — it appears in
+     the `.titulus` compound and in both two-tier `:is(…):has(.lat)` rules — so its face, size,
+     weight, tracking and case belong there. The version of this page that shipped until now set
+     all of them locally, which at (0,2,0) plus bundle order silently BEAT the two-tier rule and
+     left the vernacular gloss in Cinzel caps: the same defect `.kd-section-label` is recorded
+     for in docs/web-board-feedback-2026-09.md §2.3, arrived at independently. A page may state
+     the rubric's ground and its layout. It may not restate the atom.
+
+     `.titulus` in the markup is the SIZE lift for the job these rubrics do here — naming a band.
+     Every one of them names a section, so every one carries it. */
+  .press-eyebrow { color: var(--ink-muted); display: inline-flex; align-items: center; gap: 10px; margin: 0; }
+  /* Parchment sections, keyed on the class the chrome-tone observer already tracks. The rubric's
+     Latin tier is a CHILD (base.css) and defaults to the full candle its dark hosts need, which is
+     2.10:1 once it stands on paper. The head and the booking plate are outside `.tone-light` and
+     keep it. */
+  .tone-light { --lat-ink: var(--candle-ink); }
+
+  .press-section-head { max-width: 760px; margin: 0 0 clamp(36px, 5vw, 64px); }
+  .press-section-head h2 { margin: 18px 0 0; font-family: var(--serif); font-weight: 300; font-size: clamp(32px, 4.4vw, 60px); line-height: 1.04; letter-spacing: -.01em; color: var(--ink); }
+  .press-section-head h2 + .press-section-lede { margin-top: 22px; }
+  .press-section-lede { color: var(--ink-soft); font-size: clamp(16px, 1.2vw, 18px); line-height: 1.65; max-width: 56ch; }
+
+  /* The copy affordance, shared by the biograms and the invoicing rows. */
+  .press-copy { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-muted); border: 1px solid var(--line-strong); padding: 7px 14px; background: transparent; cursor: pointer; transition: color .35s var(--ease), border-color .35s var(--ease), background-color .35s var(--ease); }
+  .press-copy:hover { color: var(--ink); border-color: var(--candle); }
+  .press-copy.is-copied { color: var(--ink); border-color: var(--candle); background: rgba(198, 164, 91, .14); }
+  .press-copy--field { padding: 5px 10px; font-size: 9.5px; letter-spacing: .14em; }
+
+  /* ── HEAD ────────────────────────────────────────────────────────── */
+  /* Deliberately NOT 100svh: the old hero held a film and earned the screen. This one holds four
+     lines, and a reader who came here to fetch a biogram should see the first section without a
+     scroll. */
+  .press-head { position: relative; padding: clamp(132px, 18vh, 190px) max(28px, 5vw) clamp(64px, 9vh, 96px); background: var(--night); color: var(--paper); overflow: hidden; }
+  .press-head::before { content: ""; position: absolute; inset: 0; background: radial-gradient(80% 60% at 50% 0%, rgba(232, 207, 144, 0.06), transparent 65%), linear-gradient(180deg, rgba(8,8,7,0) 0%, rgba(8,8,7,0.55) 100%); pointer-events: none; }
+  .press-head-inner { position: relative; max-width: 1180px; width: 100%; margin: 0 auto; display: grid; gap: clamp(22px, 3vw, 40px); }
+  .press-head .press-eyebrow { color: rgba(244, 241, 233, 0.62); }
+  .press-head .press-eyebrow .lat { color: var(--candle); }
+  .press-head-title { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(48px, 8vw, 116px); line-height: 0.96; letter-spacing: -.01em; color: var(--paper); display: grid; gap: clamp(4px, .8vw, 12px); }
+  .press-head-title em { font-style: italic; color: var(--candle); }
+  .press-head-positioning { margin: 0; max-width: 56ch; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 1.8vw, 24px); line-height: 1.5; color: rgba(244, 241, 233, 0.92); }
+  .press-head-positioning em { font-style: italic; color: var(--candle); }
+  .press-head-contact { margin: 0; max-width: 56ch; color: rgba(244, 241, 233, 0.72); font-size: clamp(15px, 1.1vw, 17px); line-height: 1.6; }
+  .press-head-contact a { color: var(--candle); border-bottom: 1px solid rgba(198, 164, 91, .4); padding-bottom: 1px; transition: border-color .35s var(--ease); }
+  .press-head-contact a:hover { border-color: var(--candle); }
+
+  /* ── BIOGRAM ─────────────────────────────────────────────────────── */
+  .press-bio { padding: clamp(88px, 11vw, 150px) max(28px, 5vw); background: var(--paper-soft); }
+  .press-bio .press-section-head { max-width: 760px; margin-left: auto; margin-right: auto; }
+  .press-bio-list { max-width: 760px; margin: 0 auto; display: grid; gap: clamp(36px, 4vw, 56px); }
+  .press-bio-card { display: grid; gap: 18px; padding-top: clamp(20px, 2vw, 28px); border-top: 1px solid var(--line-strong); }
+  .press-bio-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+  .press-bio-measure { color: var(--ink); }
+  /* The measured length. Mono because it is a number a reader checks against a brief. */
+  .press-bio-count { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--ink-muted); font-variant-numeric: lining-nums; }
+  .press-bio-card-head .press-copy { margin-left: auto; }
+  .press-bio-text { display: grid; gap: clamp(14px, 1.3vw, 20px); }
+  .press-bio-text :global(p) { margin: 0; color: var(--ink); font-family: var(--serif); font-size: clamp(16px, 1.25vw, 19px); line-height: 1.65; font-weight: 300; }
+  .press-bio-text :global(strong) { font-weight: 400; color: var(--ink); }
+  .press-bio-text :global(em) { font-style: italic; color: var(--ink); }
+
+  /* ── PACK ────────────────────────────────────────────────────────── */
+  .press-pack { padding: clamp(88px, 11vw, 150px) max(28px, 5vw); }
+  .press-pack .press-section-head { max-width: 1180px; margin-left: auto; margin-right: auto; }
+  .press-pack-action { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px; max-width: 1180px; margin: 0 auto; padding: clamp(22px, 2.6vw, 34px) clamp(24px, 3vw, 40px); background: var(--candle); color: var(--ink); transition: background-color .4s var(--ease); }
+  .press-pack-action:hover { background: #d8b96b; }
+  /* The request state is not a download and must not look like one: hairline, not a gold plate. */
+  .press-pack-action--request { background: transparent; border: 1px solid var(--line-strong); }
+  .press-pack-action--request:hover { background: rgba(198, 164, 91, .08); border-color: var(--candle); }
+  .press-pack-action-label { font-family: var(--serif); font-weight: 300; font-size: clamp(22px, 2.2vw, 32px); line-height: 1; }
+  .press-pack-action-meta { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: rgba(22, 21, 20, .7); }
+  .press-pack-action--request .press-pack-action-meta { color: var(--ink-muted); }
+  .press-pack-action-arrow { margin-left: auto; font-family: var(--serif); font-size: clamp(24px, 2.4vw, 30px); }
+  .press-pack-contents { max-width: 1180px; margin: clamp(36px, 4vw, 56px) auto 0; display: grid; gap: 18px; }
+  .press-pack-contents-intro { margin: 0; }
+  .press-pack-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 36px; }
+  .press-pack-list li { padding-top: 10px; border-top: 1px solid var(--line); font-family: var(--serif); font-size: clamp(15px, 1.1vw, 17px); line-height: 1.5; color: var(--ink-soft); }
+  .press-pack-more { margin: clamp(20px, 2vw, 28px) 0 0; color: var(--ink-soft); font-size: clamp(15px, 1.1vw, 17px); line-height: 1.65; }
+  .press-pack-more :global(a) { color: var(--ink); border-bottom: 1px solid var(--candle); padding-bottom: 1px; transition: color .35s var(--ease); }
+  .press-pack-more :global(a:hover) { color: var(--candle-ink); }
+  @media (max-width: 720px) { .press-pack-list { grid-template-columns: 1fr; } }
+
+  /* ── FACTS + the invoicing block ─────────────────────────────────── */
+  .press-facts { padding: clamp(88px, 11vw, 150px) max(28px, 5vw); background: var(--paper-soft); }
+  .press-facts .press-section-head { max-width: 1180px; margin-left: auto; margin-right: auto; }
+  .press-facts-grid { list-style: none; max-width: 1180px; margin: 0 auto; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .press-fact { display: grid; gap: 8px; padding: clamp(20px, 2.8vw, 36px); background: var(--paper); align-content: start; }
+  .press-fact-num { font-family: var(--serif); font-weight: 300; font-size: clamp(28px, 3vw, 42px); line-height: 1; color: var(--ink); font-variant-numeric: lining-nums; letter-spacing: -.01em; }
+  /* Job 2 of the rubric family — labelling a datum — so it stays at the atom's own 11px and
+     takes no `.titulus`. Only the leading is this tile's business: these labels wrap. */
+  .press-fact-label { line-height: 1.5; }
+  @media (max-width: 1024px) { .press-facts-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 620px) { .press-facts-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .press-facts-office { max-width: 1180px; margin: clamp(32px, 3.6vw, 48px) auto 0; color: var(--ink-soft); font-size: clamp(15px, 1.1vw, 17px); line-height: 1.65; }
+  .press-facts-office :global(a) { color: var(--ink); border-bottom: 1px solid var(--candle); padding-bottom: 1px; white-space: nowrap; }
+  .press-facts-office :global(a:hover) { color: var(--candle-ink); }
+
+  .press-legal { max-width: 1180px; margin: clamp(48px, 5vw, 72px) auto 0; padding-top: clamp(32px, 3.6vw, 48px); border-top: 1px solid var(--line-strong); }
+  .press-legal-lede { margin: 0 0 clamp(22px, 2.4vw, 32px); max-width: 56ch; color: var(--ink-soft); font-size: clamp(15px, 1.1vw, 17px); line-height: 1.65; }
+  .press-legal-grid { margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .press-legal-row { display: grid; gap: 8px; padding: clamp(16px, 1.8vw, 24px); background: var(--paper); }
+  .press-legal-row dt { font-size: 10px; }
+  .press-legal-row dd { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; font-family: var(--serif); font-size: clamp(16px, 1.2vw, 19px); color: var(--ink); }
+  /* A LEDGER, not a terminal: these are strings an organiser copies into a bank or a contract
+     form and verifies character by character. That is the one job mono keeps on this site. */
+  .press-legal-row dd.is-ledger span { font-family: var(--mono); font-size: clamp(14px, 1vw, 16px); letter-spacing: .04em; font-variant-numeric: lining-nums; word-break: break-word; }
+  .press-legal-row dd .press-copy { margin-left: auto; }
+  @media (max-width: 720px) { .press-legal-grid { grid-template-columns: 1fr; } }
+
+  /* ── COLLABORATORS ──────────────────────────────────────────────── */
+  .press-collab { padding: clamp(88px, 11vw, 150px) max(28px, 5vw); }
+  .press-collab .press-section-head { max-width: 1180px; margin-left: auto; margin-right: auto; }
+  .press-collab-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: clamp(28px, 4vw, 56px); }
+  .press-collab-title { margin: 0 0 18px; padding-bottom: 12px; border-bottom: 1px solid var(--candle); color: var(--ink); }
+  .press-collab-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+  .press-collab-entry { display: grid; gap: 4px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .press-collab-entry:first-child { padding-top: 0; border-top: 0; }
+  .press-collab-role { font-size: 10px; }
+  .press-collab-name { font-family: var(--serif); font-size: clamp(19px, 1.6vw, 23px); color: var(--ink); }
+  .press-collab-entity { font-family: var(--serif); font-style: italic; font-size: 16px; color: var(--ink-soft); }
+  .press-collab-list--simple li { padding: 10px 0; border-top: 1px solid var(--line); font-family: var(--serif); font-size: clamp(15px, 1.1vw, 17px); color: var(--ink-soft); }
+  .press-collab-list--simple li:first-child { padding-top: 0; border-top: 0; }
+  @media (max-width: 980px) { .press-collab-grid { grid-template-columns: 1fr 1fr; } .press-collab-group--wide { grid-column: span 2; } }
+  @media (max-width: 620px) { .press-collab-grid { grid-template-columns: 1fr; } .press-collab-group--wide { grid-column: auto; } }
+
+  /* ── PUBLISHED COVERAGE ─────────────────────────────────────────── */
+  .press-mentions { padding: clamp(88px, 11vw, 150px) max(28px, 5vw); background: var(--paper-soft); }
+  .press-mentions .press-section-head { max-width: 1180px; margin-left: auto; margin-right: auto; }
+  .press-mentions-list { list-style: none; max-width: 1180px; margin: 0 auto; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .press-mention { background: var(--paper); }
+  .press-mention a { position: relative; display: grid; gap: 10px; padding: clamp(24px, 3vw, 36px); color: var(--ink); transition: background-color .4s var(--ease); }
+  .press-mention a:hover { background: rgba(198, 164, 91, 0.06); }
+  .press-mention-head { margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .press-mention-outlet { color: var(--candle-ink); }
+  .press-mention-kind { font-size: 10px; }
+  .press-mention-title { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(21px, 1.9vw, 27px); line-height: 1.16; color: var(--ink); padding-right: 24px; }
+  .press-mention-context { margin: 0; color: var(--ink-soft); font-size: 16px; line-height: 1.6; }
+  .press-mention-arrow { position: absolute; right: clamp(20px, 2.4vw, 32px); bottom: clamp(20px, 2.4vw, 32px); font-family: var(--serif); font-size: 20px; color: var(--candle); transition: transform .4s var(--ease); }
+  .press-mention a:hover .press-mention-arrow { transform: translate(3px, -3px); }
+  @media (max-width: 720px) { .press-mentions-list { grid-template-columns: 1fr; } }
+
+  /* ── BOOKING · dark closure, ONE address ────────────────────────── */
+  .press-booking { position: relative; padding: clamp(88px, 11vw, 150px) max(28px, 5vw); background: linear-gradient(180deg, var(--ink) 0%, var(--night) 100%); color: rgba(244, 241, 233, 0.84); overflow: hidden; }
+  .press-booking::before { content: ""; position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: clamp(120px, 20vw, 280px); height: 1px; background: linear-gradient(90deg, transparent, var(--candle) 50%, transparent); opacity: .32; }
+  .press-booking-inner { max-width: 1180px; margin: 0 auto; }
+  .press-booking-inner .press-eyebrow { color: rgba(244, 241, 233, 0.54); }
+  .press-booking-title { margin: 18px 0 0; font-family: var(--serif); font-weight: 300; font-size: clamp(32px, 4.6vw, 60px); line-height: 1.06; letter-spacing: -.01em; color: var(--paper); max-width: 22ch; }
+  .press-booking-lede { margin: 22px 0 0; max-width: 52ch; color: rgba(244, 241, 233, 0.74); font-family: var(--serif); font-weight: 300; font-size: clamp(17px, 1.35vw, 21px); line-height: 1.6; }
+  .press-booking-lede :global(em) { font-style: italic; color: var(--candle); }
+  .press-booking-card { margin: clamp(40px, 5vw, 64px) 0 0; display: flex; align-items: baseline; gap: 18px; padding: clamp(22px, 2.6vw, 32px) clamp(24px, 3vw, 36px); border: 1px solid rgba(244, 241, 233, 0.16); background: rgba(16, 15, 13, 0.92); transition: background-color .4s var(--ease), border-color .4s var(--ease); }
+  .press-booking-card:hover { background: rgba(8, 8, 7, 1); border-color: var(--candle); }
+  .press-booking-mail { font-family: var(--serif); font-size: clamp(19px, 2vw, 28px); color: var(--candle); word-break: break-word; }
+  .press-booking-arrow { margin-left: auto; font-family: var(--serif); font-size: clamp(22px, 2.2vw, 28px); color: var(--candle); }
+  .press-booking-more { margin: clamp(20px, 2vw, 28px) 0 0; max-width: 52ch; color: rgba(244, 241, 233, 0.62); font-size: clamp(15px, 1.1vw, 17px); line-height: 1.6; }
+  .press-booking-more a { color: var(--candle); white-space: nowrap; }
+  /* Foundation identity for the organiser signing a contract — data, not decoration. The full
+     set, with the accounts, is in the invoicing block above; this is the signature line. */
+  .press-booking-legal { margin: clamp(32px, 4vw, 48px) 0 0; color: rgba(244, 241, 233, 0.42); }
+
+  /* No heading press here, deliberately. This page carries no `.reveal` at all, so there is no
+     trigger class for the ink register to hand a press — see styles/registers.css. It ran a
+     scroll-scrubbed weight of its own until 2026-08, and that was a defect rather than a third
+     opinion about the gesture: it ended at 380 while every one of these rules declares
+     font-weight 300, so the page rested on a weight its own stylesheet never named, and only for
+     visitors with JS, motion and scroll-driven animations. Whether /press should join the
+     register system is a question about the page, not about the press. */
+</style>

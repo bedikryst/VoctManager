@@ -1,9 +1,18 @@
 /**
  * @file vaultConfig.ts
- * @description Single source of truth for donation recipient + payment endpoints.
+ * @description The vault's own settings: the goal, the endpoints it posts to, and the transfer
+ *  title a donor's statement has to carry.
+ *
+ *  WHO THE RECIPIENT IS COMES FROM `src/data/foundation.ts`, not from here. This file's header
+ *  used to call itself the single source of truth for the recipient, and so did
+ *  `vault/transferFields.tsx` — two files, each certain it was the only one, each holding its own
+ *  copy of the account number. Neither was lying; both were written before the facts had a home.
+ *  They do now, because the press pack needs them under plain Node as well.
  * @architecture Enterprise SaaS 2026
  * @module features/landing/constants/vaultConfig
  */
+
+import { FOUNDATION } from "../../../data/foundation";
 
 export interface VaultRecipient {
   readonly name: string;
@@ -34,11 +43,13 @@ export const VAULT_CONFIG: VaultConfig = {
   goalAmount: 20000,
   currency: "PLN",
   recipient: {
-    name: "Fundacja VoctFoundation",
-    nameShort: "VoctFoundation",
-    nip: "6762718992",
-    nrb: "26160010131724418410000001",
-    ibanDisplay: "PL26 1600 1013 1724 4184 1000 0001",
+    name: FOUNDATION.name,
+    nameShort: FOUNDATION.nameShort,
+    nip: FOUNDATION.registry.nip,
+    // The donation account is the PLN one. The EUR account exists for foreign organisers paying
+    // a fee and has never been offered as a donation target.
+    nrb: FOUNDATION.accounts.pln.nrb,
+    ibanDisplay: FOUNDATION.accounts.pln.display,
     title: "Darowizna na cele statutowe VoctFoundation",
     titleDisplay: "Darowizna na cele statutowe · VoctFoundation · cykl MMXXVI",
   },

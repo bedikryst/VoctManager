@@ -34,6 +34,14 @@ src/assets/photos/
 # stable public `/video/*.mp4` paths are not generated.
 src/assets/videos/
 
+# The downloadable press pack (`npm run press:pack`). Tens of megabytes of photographs that are
+# already out of git for the reason above — the archive is built where the originals are and
+# uploaded to the build host by hand. Its ABSENCE is a supported state, not a broken one: /press
+# looks for it (lib/pressPack) and renders "materials on request" wherever it is missing, which
+# is exactly what is true there. The manifest that says what goes in IS tracked
+# (press-pack/manifest.yaml), and so is the rider it names.
+public/press/
+
 # Local A/B clips for grading decisions (docs/… none — throwaway). Served by `astro dev` at
 # /probki/ because only public/ is served statically; kept OUT of git and out of the image,
 # since anything under public/ is copied verbatim into dist/ and would ship to nginx.

@@ -269,37 +269,9 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   <VaultMount lang={lang} />
   <script>
     import "../../scripts/vault-triggers.ts";
-
-    // Copy-to-clipboard for contact channels. Document-delegated + guarded so it binds once
-    // and survives ClientRouter DOM swaps (the buttons only exist on this page; the listener
-    // no-ops everywhere else). A bare mailto is a real desktop failure when no mail client is
-    // configured — the copy button is the escape hatch. The confirmation is read off the button
-    // rather than written here, because this script is shared by three locales.
-    if (!(window as unknown as { __voctCopy?: boolean }).__voctCopy) {
-      (window as unknown as { __voctCopy?: boolean }).__voctCopy = true;
-      document.addEventListener("click", (e) => {
-        const target = e.target;
-        if (!(target instanceof Element)) return;
-        const btn = target.closest<HTMLButtonElement>("[data-copy]");
-        if (!btn) return;
-        const value = btn.dataset.copy;
-        const done = btn.dataset.copied;
-        const label = btn.querySelector<HTMLElement>(".copy-label");
-        if (!value || !done || !label || !navigator.clipboard) return;
-        navigator.clipboard
-          .writeText(value)
-          .then(() => {
-            const prev = label.textContent;
-            btn.classList.add("is-copied");
-            label.textContent = done;
-            window.setTimeout(() => {
-              btn.classList.remove("is-copied");
-              label.textContent = prev;
-            }, 1800);
-          })
-          .catch(() => {});
-      });
-    }
+    // Copy-to-clipboard for the contact channels. The listener itself is shared with /press,
+    // which has the same controls over different strings — see scripts/copy-fields.ts.
+    import "../../scripts/copy-fields.ts";
   </script>
 </BaseLayout>
 

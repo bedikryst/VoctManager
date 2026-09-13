@@ -1,8 +1,12 @@
 /**
  * @file transferFields.tsx
- * @description Shared copy-to-clipboard transfer-field button + the foundation's canonical bank
- *  details. Reused by the QR transfer panel (one-off) and the Mecenat panel (standing order), so
- *  the account data and the copy interaction live in exactly one place.
+ * @description Shared copy-to-clipboard transfer-field button, and the two transfer forms built
+ *  from it: the one-off and the standing order. Reused by the QR panel and the Mecenat panel, so
+ *  the copy interaction lives in one place.
+ *
+ *  THE ACCOUNT DATA ITSELF IS `src/data/foundation.ts`. It was declared here too, in local
+ *  constants under a header claiming this was its only home — while `constants/vaultConfig.ts`
+ *  claimed the same thing about its own copy. Two files, one number, two claims of exclusivity.
  *
  *  A FIELD'S LABEL TURNS WITH THE READER; ITS VALUE NEVER DOES. The label is chrome; the value is
  *  what the visitor pastes into their bank, and the transfer title is the string the foundation's
@@ -12,6 +16,7 @@
  * @module islands/landing/vault/transferFields
  */
 
+import { FOUNDATION } from "../../../data/foundation";
 import type { VaultChrome } from "../../../i18n/content/skarbiecChrome";
 import { useCopyToClipboard } from "../hooks/useCopyToClipboard";
 import { useVaultCopy } from "./copyContext";
@@ -24,10 +29,14 @@ export interface TransferField {
   readonly eventName: string;
 }
 
-const ACCOUNT = "26160010131724418410000001";
-const ACCOUNT_DISPLAY = "26 1600 1013 1724 4184 1000 0001";
-const RECIPIENT = "Fundacja VoctFoundation";
-const ADDRESS = "Św. Filipa 23/3, 31-150 Kraków";
+const ACCOUNT = FOUNDATION.accounts.pln.nrb;
+/* The domestic grouping a Polish bank form shows: the NRB in pairs and fours, with no country
+   prefix. `FOUNDATION.accounts.pln.display` is the IBAN form, which is what an international
+   transfer wants and what /press prints — the two are the same number, written for two readers. */
+const ACCOUNT_DISPLAY = FOUNDATION.accounts.pln.display.replace(/^PL/, "").trim();
+const RECIPIENT = FOUNDATION.name;
+/* Without "ul." — the vault's field is narrow and the label beside it already says "Adres". */
+const ADDRESS = FOUNDATION.addressLine.replace(/^ul\.\s*/, "");
 
 /** The one-off transfer: account, recipient, address, title. */
 export function bankTransferFields(t: VaultChrome): readonly TransferField[] {
