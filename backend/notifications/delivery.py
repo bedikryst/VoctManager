@@ -90,6 +90,14 @@ PREFERENCE_GROUPS: tuple[PreferenceGroup, ...] = (
             NotificationType.REHEARSAL_SCHEDULED,
             NotificationType.REHEARSAL_UPDATED,
             NotificationType.REHEARSAL_CANCELLED,
+            # Being handed a programme — and having it handed back — is a
+            # commitment by the group's own definition: something the reader
+            # must not miss even if they never open the app. It is also the one
+            # pair here the reader did not ask for, which is exactly why the
+            # e-mail matters: a stand-in who learns of the change by turning up
+            # is the failure this type exists to prevent.
+            NotificationType.REHEARSAL_DELEGATED,
+            NotificationType.REHEARSAL_DELEGATION_ENDED,
             # Casting belongs here, not with the sheet music. "You now sing S2
             # instead of S1" changes what the reader has to prepare — it is far
             # nearer to a moved rehearsal than to "a new recording was uploaded".

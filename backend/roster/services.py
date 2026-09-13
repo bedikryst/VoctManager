@@ -37,11 +37,14 @@ from notifications.announcements import (
 )
 from notifications.dtos import (
     AbsenceStatusMetadata,
+    DelegatedRehearsalMetadata,
     ManagerActionMetadata,
     PieceCastingMetadata,
     ProjectCancelledMetadata,
     ProjectUpdatedMetadata,
     RehearsalCancelledMetadata,
+    RehearsalDelegationEndedMetadata,
+    RehearsalDelegationMetadata,
     RehearsalScheduledMetadata,
     RehearsalUpdatedMetadata,
 )
@@ -53,7 +56,7 @@ from notifications.models import (
 )
 from notifications.services import NotificationRecipientPolicy
 from notifications.tasks import send_bulk_notifications_task, send_notification_task
-from notifications.time_metadata import build_event_time_metadata
+from notifications.time_metadata import build_event_time_metadata, format_event_time
 
 from .domain.attendance_window import SELF_REPORT_CLOSED_MESSAGE, is_open_to_self_report
 from .domain.day_timeline import format_time_window
@@ -1297,6 +1300,19 @@ def rehearsal_notification_context(rehearsal: Rehearsal) -> dict[str, str]:
     }
 
 
+def _actor_name(user: "User | None") -> str:
+    """Who performed a gesture, for the person it was performed on.
+
+    Blank when there is no usable name — the composers all fall back to neutral
+    copy ("the management team"), which reads better than a bare username or a
+    sentence with a hole in it.
+    """
+    if user is None:
+        return ""
+    full = f"{user.first_name} {user.last_name}".strip()
+    return full or ""
+
+
 class RehearsalDelegationService:
     """Handing one programme to somebody who is not a manager, and taking it back.
 
@@ -1335,8 +1351,16 @@ class RehearsalDelegationService:
         live rows, so a second grant after a revoke would otherwise depend on
         whether anyone had ever revoked one. "This person leads it" is the
         gesture; how many rows it took to say so is not the manager's problem.
+
+        The person is TOLD, but only when the answer to "am I running this?"
+        changes from no to yes. Narrowing a scope on a live delegation is a
+        correction to something they already know about, and announcing it again
+        would teach them to ignore the announcement that matters.
         """
         with transaction.atomic():
+            was_live = RehearsalDelegate.objects.filter(
+                project=project, artist=artist,
+            ).exists()
             delegate, _created = RehearsalDelegate.all_objects.update_or_create(
                 project=project,
                 artist=artist,
@@ -1347,20 +1371,140 @@ class RehearsalDelegationService:
                 },
             )
         RehearsalDelegationService._log('granted', delegate, granted_by)
+        if not was_live:
+            RehearsalDelegationService._announce_granted(delegate, granted_by)
         return delegate
 
     @staticmethod
     def revoke(delegate: RehearsalDelegate, *, revoked_by: "User | None") -> None:
         """End a delegation. Soft, like every other deletion here, so the audit
-        trail keeps a row to point at."""
+        trail keeps a row to point at.
+
+        Announced for the same reason the grant is, and it is the more urgent
+        half: access disappearing in silence is discovered by standing in front
+        of a choir with the conductor's cues closed.
+        """
         RehearsalDelegationService._log('revoked', delegate, revoked_by)
         delegate.delete()
+        RehearsalDelegationService._announce_revoked(delegate, revoked_by)
 
     @staticmethod
     def log_change(delegate: RehearsalDelegate, *, changed_by: "User | None") -> None:
         """Record a narrowed or extended scope. Called after the write so the
-        line describes what the delegation now says, not what it used to."""
+        line describes what the delegation now says, not what it used to.
+
+        Silent by design — see `grant`.
+        """
         RehearsalDelegationService._log('changed', delegate, changed_by)
+
+    @staticmethod
+    def _next_led_rehearsal(delegate: RehearsalDelegate) -> Rehearsal | None:
+        """The soonest rehearsal this delegation actually covers, if one is on
+        the calendar yet. A grant made a fortnight ahead legitimately covers
+        nothing so far, and that is not a failure — the briefing then offers the
+        schedule instead of an evening."""
+        return (
+            Rehearsal.objects
+            .filter(project_id=delegate.project_id, date_time__gte=timezone.now())
+            .select_related('location')
+            .order_by('date_time')
+            .first()
+        )
+
+    @staticmethod
+    def _recipient_id(delegate: RehearsalDelegate) -> str | None:
+        """A delegation can be recorded against a singer who has no account yet
+        — the roster holds people, not logins. There is then nobody to tell, and
+        that is a fact to log rather than an error to raise."""
+        user_id = delegate.artist.user_id
+        if not user_id:
+            logger.info(
+                "rehearsal_delegation:no_account artist=%s project=%s",
+                delegate.artist_id, delegate.project_id,
+            )
+            return None
+        return str(user_id)
+
+    @staticmethod
+    def _announce_granted(
+        delegate: RehearsalDelegate, granted_by: "User | None",
+    ) -> None:
+        """Tell the stand-in what they have been handed, and what it opens.
+
+        Every scope flag travels: a delegation is three permissions that leak
+        differently, so "you are running rehearsals" on its own would leave the
+        reader guessing whether the conductor's cues are among them.
+        """
+        recipient_id = RehearsalDelegationService._recipient_id(delegate)
+        if not recipient_id:
+            return
+
+        next_rehearsal = RehearsalDelegationService._next_led_rehearsal(delegate)
+        upcoming = None
+        if next_rehearsal is not None:
+            upcoming = DelegatedRehearsalMetadata(
+                rehearsal_id=next_rehearsal.id,
+                location=(
+                    next_rehearsal.location.name if next_rehearsal.location else ""
+                ),
+                focus=next_rehearsal.focus or "",
+                **build_event_time_metadata(
+                    next_rehearsal.date_time,
+                    next_rehearsal.timezone,
+                    fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+                    end=next_rehearsal.end_date_time,
+                ),
+            )
+
+        expires = delegate.expires_at
+        metadata = RehearsalDelegationMetadata(
+            project_id=delegate.project_id,
+            project_name=delegate.project.title,
+            granted_by_name=_actor_name(granted_by),
+            can_see_leader_marks=delegate.can_see_leader_marks,
+            can_take_roll_call=delegate.can_take_roll_call,
+            can_open_materials=delegate.can_open_materials,
+            expires_at=expires.isoformat() if expires else None,
+            expires_at_display=(
+                format_event_time(expires, DEFAULT_EVENT_TIMEZONE, DEFAULT_EVENT_TIMEZONE)
+                if expires else ""
+            ),
+            timezone=DEFAULT_EVENT_TIMEZONE,
+            note=delegate.note or "",
+            next_rehearsal=upcoming,
+        ).model_dump(mode="json")
+
+        transaction.on_commit(
+            lambda: send_notification_task.delay(
+                recipient_id=recipient_id,
+                notification_type=NotificationType.REHEARSAL_DELEGATED,
+                level=NotificationLevel.INFO,
+                metadata=metadata,
+            )
+        )
+
+    @staticmethod
+    def _announce_revoked(
+        delegate: RehearsalDelegate, revoked_by: "User | None",
+    ) -> None:
+        """Tell them it has ended. The urgent half of the pair: access that
+        disappears in silence is discovered in front of a choir."""
+        recipient_id = RehearsalDelegationService._recipient_id(delegate)
+        if not recipient_id:
+            return
+        metadata = RehearsalDelegationEndedMetadata(
+            project_id=delegate.project_id,
+            project_name=delegate.project.title,
+            revoked_by_name=_actor_name(revoked_by),
+        ).model_dump(mode="json")
+        transaction.on_commit(
+            lambda: send_notification_task.delay(
+                recipient_id=recipient_id,
+                notification_type=NotificationType.REHEARSAL_DELEGATION_ENDED,
+                level=NotificationLevel.INFO,
+                metadata=metadata,
+            )
+        )
 
 
 class RehearsalOperationsService:

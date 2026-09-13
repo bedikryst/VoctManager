@@ -35,6 +35,14 @@ class NotificationType(models.TextChoices):
     REHEARSAL_UPDATED = 'REHEARSAL_UPDATED', _('Rehearsal Time/Location Changed')
     REHEARSAL_CANCELLED = 'REHEARSAL_CANCELLED', _('Rehearsal Cancelled')
     REHEARSAL_REMINDER = 'REHEARSAL_REMINDER', _('Upcoming Rehearsal Reminder')
+    # Standing in front of the choir in the conductor's place. Two types rather
+    # than one carrying a direction, matching ABSENCE_APPROVED/REJECTED: the
+    # copy has nothing in common, and a reader who wants to be told they were
+    # handed a programme wants to be told when it is taken back.
+    REHEARSAL_DELEGATED = 'REHEARSAL_DELEGATED', _('Asked to Run Rehearsals')
+    REHEARSAL_DELEGATION_ENDED = (
+        'REHEARSAL_DELEGATION_ENDED', _('No Longer Running Rehearsals')
+    )
 
     # --- REPERTOIRE & CASTING ---
     PIECE_CASTING_ASSIGNED = 'PIECE_CASTING_ASSIGNED', _('Assigned to Piece')

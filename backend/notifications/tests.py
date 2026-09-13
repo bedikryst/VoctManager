@@ -115,6 +115,56 @@ class MessageContentCompositionTests(SimpleTestCase):
             self.assertIn("Rehearsal", labels)
             self.assertNotIn("From", labels)
 
+    def test_a_delegation_lists_only_the_scopes_it_granted(self) -> None:
+        """The row IS the permission. A withheld scope contributes nothing —
+        listing the refusals would bury the two or three things the reader can
+        now actually do."""
+        meta = {
+            "project_id": "3f8f6f2a-0000-4000-8000-000000000001",
+            "project_name": "Adwent",
+            "granted_by_name": "Tomasz Kuras",
+            "can_see_leader_marks": True,
+            "can_take_roll_call": False,
+            "can_open_materials": True,
+        }
+        with translation.override("en"):
+            c = MessageContentBuilder.build(
+                NotificationType.REHEARSAL_DELEGATED, NotificationLevel.INFO,
+                meta, is_manager=False,
+            )
+            labels = [row.label for row in c.details]
+            self.assertIn("Score markings", labels)
+            self.assertIn("Materials", labels)
+            self.assertNotIn("Attendance", labels)
+            # An open-ended grant still ends — on the project, not on a date.
+            self.assertIn(
+                "the project closes",
+                next(row.value for row in c.details if row.label == "Until"),
+            )
+            self.assertIn("Tomasz Kuras", c.body)
+            # The boundary, said once: this is not a manager's seat.
+            self.assertIn("not a manager", c.email_lead)
+
+    def test_ending_a_delegation_reassures_about_their_own_marks(self) -> None:
+        """The one thing a stand-in will worry about when access closes is
+        whether their own pencil went with it."""
+        meta = {
+            "project_id": "3f8f6f2a-0000-4000-8000-000000000001",
+            "project_name": "Adwent",
+            "revoked_by_name": "Tomasz Kuras",
+        }
+        with translation.override("en"):
+            c = MessageContentBuilder.build(
+                NotificationType.REHEARSAL_DELEGATION_ENDED, NotificationLevel.INFO,
+                meta, is_manager=False,
+            )
+            self.assertIn("pencil marks stay", c.body)
+            self.assertIn("untouched", c.email_lead)
+            self.assertIn(
+                "Tomasz Kuras",
+                [row.value for row in c.details if row.label == "Changed by"],
+            )
+
     def test_push_projection_is_faithful(self) -> None:
         """to_push() must mirror the canonical content (push UX unchanged)."""
         with translation.override("en"):

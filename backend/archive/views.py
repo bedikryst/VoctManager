@@ -1017,10 +1017,14 @@ class AnnotationViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='clear')
     def clear(self, request):
         """
-        Bulk soft-delete on one edition. Managers wipe 'shared' + 'conductor'
-        (never anyone's personal layer; pass `layer_name` to narrow — 'personal'
-        narrows to their own marks). Non-managers always wipe only their OWN
-        personal marks. Body: {edition, layer_name?}.
+        Bulk soft-delete on one edition. Managers wipe every layer that is not
+        somebody's 'personal' — 'shared', 'conductor' AND 'leader'. The leader
+        layer is never handled in bulk when it is being GIVEN, because that is
+        the gesture that hands remarks about singers to one of them; taking a
+        manager's own markings back carries no such risk, so the trash takes
+        them with the rest. Pass `layer_name` to narrow ('personal' narrows to
+        their own marks). Non-managers always wipe only their OWN personal
+        marks. Body: {edition, layer_name?}.
         """
         edition_id = request.data.get('edition')
         if not edition_id:

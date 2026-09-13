@@ -255,6 +255,48 @@ class RehearsalCancelledMetadata(EventMomentMetadata):
     focus: str = ""
     message: str | None = None
 
+class DelegatedRehearsalMetadata(EventMomentMetadata):
+    """The next evening this stand-in is due to run, if there is one yet.
+
+    Carried so the briefing's one action can land on that evening's card rather
+    than on a schedule the reader then has to search. A delegation is granted per
+    PROJECT and often weeks ahead, so it is legitimately absent.
+    """
+    rehearsal_id: UUID
+    location: str = ""
+    focus: str = ""
+
+
+class RehearsalDelegationMetadata(EnterpriseBaseDTO):
+    """Somebody has been asked to stand in front of the choir.
+
+    The three scope flags travel because they ARE the message: a delegation is
+    not one permission but three that leak differently, and a reader told only
+    "you are running rehearsals" would not know whether the conductor's cues are
+    open to them. `expires_at_display` travels for the same reason the grant
+    announces itself and the expiry does not — the end is stated once, here,
+    rather than swept for later by a clock nobody runs.
+    """
+    project_id: UUID
+    project_name: str
+    granted_by_name: str = ""
+    can_see_leader_marks: bool = False
+    can_take_roll_call: bool = False
+    can_open_materials: bool = False
+    expires_at: str | None = None
+    expires_at_display: str = ""
+    timezone: str = ""
+    note: str = ""
+    next_rehearsal: DelegatedRehearsalMetadata | None = None
+
+
+class RehearsalDelegationEndedMetadata(EnterpriseBaseDTO):
+    """The delegation has been taken back. Nothing to explain, only to withdraw."""
+    project_id: UUID
+    project_name: str
+    revoked_by_name: str = ""
+
+
 # --- Casting & Repertoire ---
 class PieceCastingMetadata(EventMomentMetadata):
     piece_id: UUID | None = None
@@ -408,6 +450,8 @@ NotificationMetadataPayload = (
     | RehearsalUpdatedMetadata
     | RehearsalCancelledMetadata
     | RehearsalReminderMetadata
+    | RehearsalDelegationMetadata
+    | RehearsalDelegationEndedMetadata
     | PieceCastingMetadata
     | CrewAssignedMetadata
     | AbsenceStatusMetadata

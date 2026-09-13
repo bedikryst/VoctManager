@@ -1063,6 +1063,122 @@ def _compose_rehearsal_reminder(ctx: MessageContext) -> MessageContent:
     )
 
 
+def _delegation_scope_rows(m: Mapping[str, Any]) -> list[DetailRow]:
+    """What the delegation actually opens, one row per granted scope.
+
+    A scope that was NOT granted contributes nothing. The row IS the power —
+    there is no greyed-out version of a door that is locked, and listing the
+    refusals would bury the two or three things this person can now do.
+    """
+    rows: list[DetailRow] = []
+    if m.get("can_see_leader_marks"):
+        rows.append(_row(
+            _("Score markings"),
+            _("The cues the conductor wrote for whoever runs the rehearsal"),
+        ))
+    if m.get("can_take_roll_call"):
+        rows.append(_row(
+            _("Attendance"),
+            _("You can take the roll call at this project's rehearsals"),
+        ))
+    if m.get("can_open_materials"):
+        rows.append(_row(
+            _("Materials"),
+            _("The scores and programme, even if you are not singing in it"),
+        ))
+    return rows
+
+
+def _compose_rehearsal_delegated(ctx: MessageContext) -> MessageContent:
+    """Somebody has been asked to stand in front of the choir.
+
+    Composed as an INVITATION to do something rather than a status change,
+    because that is what it is: the reader has to know which of the three doors
+    was opened, until when, and who asked. The in-app briefing modal states the
+    same three facts — this is the copy that has to survive reaching them by
+    e-mail on a train.
+    """
+    m = ctx.metadata
+    project = m.get("project_name") or _("a project")
+    granted_by = m.get("granted_by_name")
+    until = m.get("expires_at_display")
+
+    details: list[DetailRow] = [_row(_("Project"), project)]
+    if granted_by:
+        details.append(_row(_("Asked by"), granted_by))
+    details.extend(_delegation_scope_rows(m))
+    details.append(_row(
+        _("Until"),
+        until if until else _("the project closes"),
+    ))
+    if m.get("note"):
+        details.append(_row(_("Note"), m["note"]))
+
+    body = (
+        _("%(who)s has asked you to run rehearsals for %(project)s.")
+        % {"who": granted_by, "project": project}
+        if granted_by
+        else _("You have been asked to run rehearsals for %(project)s.")
+        % {"project": project}
+    )
+    return MessageContent(
+        notification_type=ctx.notification_type,
+        level=ctx.level,
+        title=_("You are running rehearsals — %(project)s") % {"project": project},
+        body=body,
+        url_path=_rehearsals_url(ctx),
+        tag=f"rehearsal-delegated:{m.get('project_id') or ''}",
+        actions=(_open_action(),),
+        subject=_("You are running rehearsals for %(project)s") % {"project": project},
+        eyebrow=_("Standing in"),
+        email_lead=_(
+            "%(body)s Here is what that opens for you — and what it does not: you"
+            " are not a manager of this project, so the cast and the excusal"
+            " requests stay with them."
+        ) % {"body": body},
+        details=tuple(details),
+        cta_label=_("Open the schedule"),
+    )
+
+
+def _compose_rehearsal_delegation_ended(ctx: MessageContext) -> MessageContent:
+    """The delegation has been taken back.
+
+    Deliberately plain and deliberately not an alarm: somebody's plans changed,
+    which is ordinary. The one thing it must do is arrive, because the failure
+    it prevents is a stand-in turning up to run an evening they no longer can.
+    """
+    m = ctx.metadata
+    project = m.get("project_name") or _("a project")
+    revoked_by = m.get("revoked_by_name")
+
+    details: list[DetailRow] = [_row(_("Project"), project)]
+    if revoked_by:
+        details.append(_row(_("Changed by"), revoked_by))
+
+    return MessageContent(
+        notification_type=ctx.notification_type,
+        level=ctx.level,
+        title=_("No longer running rehearsals — %(project)s") % {"project": project},
+        body=_(
+            "You are no longer running rehearsals for %(project)s. Your own"
+            " pencil marks stay where they are."
+        ) % {"project": project},
+        url_path=_rehearsals_url(ctx),
+        tag=f"rehearsal-delegation-ended:{m.get('project_id') or ''}",
+        actions=(_open_action(),),
+        subject=_("Rehearsals for %(project)s are covered") % {"project": project},
+        eyebrow=_("Standing in"),
+        email_lead=_(
+            "Somebody else is taking the rehearsals for %(project)s. The"
+            " conductor's cues and the attendance sheet have closed again; your"
+            " own markings on the music are untouched."
+        ) % {"project": project},
+        details=tuple(details),
+        cta_label=_("Open the schedule"),
+    )
+
+
 def _compose_piece_casting_assigned(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     piece = m.get("piece_title") or _("a new piece")
@@ -1732,6 +1848,8 @@ _COMPOSERS: dict[str, _Composer] = {
     NotificationType.REHEARSAL_UPDATED: _compose_rehearsal_updated,
     NotificationType.REHEARSAL_CANCELLED: _compose_rehearsal_cancelled,
     NotificationType.REHEARSAL_REMINDER: _compose_rehearsal_reminder,
+    NotificationType.REHEARSAL_DELEGATED: _compose_rehearsal_delegated,
+    NotificationType.REHEARSAL_DELEGATION_ENDED: _compose_rehearsal_delegation_ended,
     NotificationType.PIECE_CASTING_ASSIGNED: _compose_piece_casting_assigned,
     NotificationType.PIECE_CASTING_UPDATED: _compose_piece_casting_updated,
     NotificationType.MATERIAL_UPLOADED: _compose_material_uploaded,
