@@ -35,21 +35,21 @@
         "book_title": "W książce nutowej",
         "book_body": "Pobierając partyturę koncertu możesz włączyć „Moje oznaczenia” — wtedy zostaną dorysowane na Twoim egzemplarzu. Egzemplarz jest składany osobno dla Ciebie; nikt inny ich tam nie zobaczy.",
         "offline_title": "Działa bez internetu",
-        "offline_body": "Możesz pisać bez zasięgu. Zmiany czekają na urządzeniu i wyślą się same, gdy sieć wróci — nawet jeśli w międzyczasie zamkniesz aplikację."
+        "offline_body": "Możesz pisać bez zasięgu. Zmiany czekają na urządzeniu i wyślą się same, gdy sieć wróci — nawet jeśli w międzyczasie zamkniesz aplikację.",
+        "leader_title": "Wskazówki dla prowadzącego",
+        "leader_body": "Prowadzisz tę próbę, więc dyrygent zostawił tu wskazówki napisane dla Ciebie. Reszta chóru ich nie widzi. Tak jak jego oznaczenia dla chóru — możesz je ukryć, ale nie zmienić ani skasować."
       },
       "conductor": {
-        "title": "Dwie warstwy oznaczeń",
-        "lede": "Co dociera do chóru, a co zostaje przy Tobie.",
-        "shared_title": "Warstwa „Chór”",
-        "shared_body": "To, co napiszesz na tej warstwie, trafia do każdego chórzysty obsadzonego w projekcie z tym utworem. U nich jest tylko do odczytu.",
-        "private_title": "Warstwa „Prywatne”",
-        "private_body": "Twoje własne wskazówki. Nie widzi ich nikt poza Tobą. Przełącznik przy narzędziach decyduje, na którą warstwę piszesz.",
+        "title": "Trzy zasięgi oznaczeń",
+        "lede": "Co dociera do chóru, co do prowadzącego próbę, a co zostaje przy Tobie.",
         "theirs_title": "Ich notatki są zamknięte",
         "theirs_body": "Ślady, które chórzyści robią na swoich nutach, są prywatne również przed Tobą — nie zobaczysz ich tutaj ani nigdzie indziej w panelu.",
         "book_title": "Druk książki nutowej",
-        "book_body": "Oznaczenia z warstwy „Chór” drukują się w książce nutowej, gdy w kokpicie jest włączona ich obsługa. Rysunek poza oprawionym zakresem stron nie wejdzie do druku — kokpit to sygnalizuje.",
+        "book_body": "Oznaczenia z zasięgu „Chór” drukują się w książce nutowej, gdy w kokpicie jest włączona ich obsługa. Prowadzący próbę może dociągnąć swój zasięg na własny egzemplarz. Rysunek poza oprawionym zakresem stron nie wejdzie do druku — kokpit to sygnalizuje.",
         "offline_title": "Przygotowanie bez sieci",
-        "offline_body": "Możesz przygotować oznaczenia bez zasięgu. Czekają na urządzeniu i wysyłają się same po powrocie sieci — również po zamknięciu aplikacji."
+        "offline_body": "Możesz przygotować oznaczenia bez zasięgu. Czekają na urządzeniu i wysyłają się same po powrocie sieci — również po zamknięciu aplikacji.",
+        "reach_title": "Kto zobaczy Twoje oznaczenie",
+        "reach_body": "Każde oznaczenie ma jeden zasięg, a zasięgi zawierają się w sobie. Zmienisz go po fakcie: dotknij oznaczenia na nutach i wybierz, kto ma je widzieć. Przełącznik przy narzędziach decyduje tylko o NASTĘPNYM."
       }
     },
     "open_tools": "Narzędzia adnotacji",
@@ -59,13 +59,11 @@
       "for_leader_short": "Dla prowadzącego",
       "from_conductor_short": "Dyrygent",
       "leader": "Dla prowadzącego próbę",
-      "leader_hint": "Widzi tylko osoba, której powierzysz prowadzenie próby",
+      "leader_hint": "Osoba, której powierzysz prowadzenie próby, i menedżerowie. Chór — nie.",
       "leader_short": "Prowadzący",
-      "move_to_leader": "Pokaż prowadzącemu",
-      "move_to_leader_short": "Prowadzącemu",
       "personal_hint": "Widoczne tylko dla Ciebie",
       "personal_short": "Moje",
-      "private": "Prywatne (tylko Ty)",
+      "private": "Prywatne (Ty i menedżerowie)",
       "private_hint": "Tylko dla Ciebie i pozostałych menedżerów",
       "private_short": "Prywatne",
       "shared": "Widoczne dla chóru",
@@ -159,6 +157,15 @@
       "pen": "Pióro",
       "pointer": "Przeglądaj",
       "stamp": "Symbol"
+    },
+    "mark": {
+      "audience": "Kto to widzi",
+      "delete": "Usuń oznaczenie",
+      "kind": {
+        "freehand": "Kreska",
+        "highlight": "Zakreślenie",
+        "stamp": "Symbol"
+      }
     }
   },
   "archive": {
@@ -3033,7 +3040,9 @@
       "NOTIFICATION_READ_RECEIPT": "Potwierdzenie odczytu",
       "fallback": "Powiadomienie",
       "ANNOUNCEMENT_PENDING": "Kolejka ogłoszeń",
-      "SITE_COPY_PROPOSED": "Redakcja treści"
+      "SITE_COPY_PROPOSED": "Redakcja treści",
+      "REHEARSAL_DELEGATED": "Prowadzisz próby",
+      "REHEARSAL_DELEGATION_ENDED": "Koniec zastępstwa"
     },
     "status": {
       "attendance": {
@@ -3158,6 +3167,26 @@
         "test_no_device": "To urządzenie nie jest już zapisane do powiadomień. Wyłącz push i włącz go ponownie.",
         "test_undeliverable": "Usługa powiadomień przeglądarki odrzuciła wysyłkę. Spróbuj ponownie za chwilę."
       }
+    },
+    "delegation": {
+      "eyebrow": "Prowadzisz próby",
+      "asked_by": "Poprosił(a) {{name}}",
+      "asked_by_lede": "{{name}} poprosił(a) Cię o poprowadzenie prób tego projektu.",
+      "asked_lede": "Poproszono Cię o poprowadzenie prób tego projektu.",
+      "opens": "Co to otwiera",
+      "scope_marks": "Oznaczenia dyrygenta",
+      "scope_marks_body": "Na nutach tego projektu zobaczysz wskazówki, które dyrygent zapisał dla prowadzącego próbę. Nikt inny w chórze ich nie widzi.",
+      "scope_roll_call": "Obecność",
+      "scope_roll_call_body": "Odhaczysz obecność na próbach tego projektu — także za innych śpiewaków.",
+      "scope_materials": "Materiały",
+      "scope_materials_body": "Otworzysz nuty i program projektu, nawet jeśli sam w nim nie śpiewasz.",
+      "next": "Najbliższa próba: {{when}}",
+      "until": "Do {{when}}",
+      "until_close": "Do zakończenia projektu",
+      "boundary": "Nie rozpatrujesz usprawiedliwień i nie edytujesz obsady — to zostaje u menedżerów.",
+      "open_lead_sheet": "Otwórz kartę wieczoru",
+      "open_schedule": "Zobacz harmonogram",
+      "acknowledge": "Rozumiem"
     }
   },
   "offline": {
@@ -4919,7 +4948,9 @@
         "REHEARSAL_UPDATED": "Zmiana czasu/miejsca próby",
         "SYSTEM_ALERT": "Komunikat systemowy",
         "ANNOUNCEMENT_PENDING": "Niewysłane ogłoszenia",
-        "SITE_COPY_PROPOSED": "Propozycje zmian w treści strony"
+        "SITE_COPY_PROPOSED": "Propozycje zmian w treści strony",
+        "REHEARSAL_DELEGATED": "Powierzenie prowadzenia prób",
+        "REHEARSAL_DELEGATION_ENDED": "Koniec prowadzenia prób"
       },
       "unsubscribe_modal": {
         "description": "Nie będziesz już otrzymywać powiadomień push na tym urządzeniu. W każdej chwili możesz je włączyć ponownie.",
@@ -4976,7 +5007,9 @@
         "PROJECT_CANCELLED": "Odwołanie wydarzenia",
         "REHEARSAL_SCHEDULED": "Nowa próba w harmonogramie",
         "REHEARSAL_CANCELLED": "Odwołanie próby",
-        "MESSAGE_RECEIVED": "Odpowiedź w Twojej rozmowie"
+        "MESSAGE_RECEIVED": "Odpowiedź w Twojej rozmowie",
+        "REHEARSAL_DELEGATED": "Ktoś powierzył Ci prowadzenie prób projektu",
+        "REHEARSAL_DELEGATION_ENDED": "Prowadzenie prób wróciło do kogoś innego"
       },
       "restore_recommended": "Przywróć zalecane",
       "customized_hint": "Zmienione — różni się od zalecanych ustawień",

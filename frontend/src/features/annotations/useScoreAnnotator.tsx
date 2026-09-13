@@ -3,12 +3,17 @@
  * @description One-call binding that turns an edition id + annotator mode into
  * the slots PdfViewer needs: a `toolbarSlot`, a `renderPageOverlay` (the drawing
  * surface), an `overlaySlot` (the annotation index, the guide, the live notice)
- * and an `onPageApiChange` handler. Two modes: `conductor` (managers — writes to
- * the shared/conductor layers, clear wipes both) and `personal` (choristers —
- * every mark lands on the user's own private layer; the conductor's shared
- * markings stay read-only). Owns tool state, the per-edition cache, optimistic
- * create/update/delete, undo/redo history and keyboard shortcuts — so callers
- * stay a few lines thin.
+ * and an `onPageApiChange` handler. Two modes: `conductor` (managers — write to
+ * the choir, leader and private reaches, and may move a placed mark between
+ * them) and `personal` (everyone else — every mark lands on the user's own
+ * private layer; what the conductor wrote stays read-only). Owns tool state,
+ * the per-edition cache, optimistic create/update/delete, undo/redo history,
+ * keyboard shortcuts and the lifetime of the selection — so callers stay a few
+ * lines thin.
+ *
+ * The selection is bounded here rather than in the overlay, because all three
+ * things that end it are outside the drawing surface: the mark is erased, the
+ * reader turns the page away from it, or they press Escape.
  *
  * While the stand is open it also watches for markings that arrived from
  * elsewhere — the conductor writing mid-rehearsal. They are drawn silently, and
@@ -37,9 +42,8 @@ import { useAnnotationTools } from "./lib/useAnnotationTools";
 import { useAnnotationHistory } from "./lib/useAnnotationHistory";
 import { useCanDraw } from "./lib/useCanDraw";
 import { bookPageFor, type ScoreBook } from "./lib/scoreBook";
-import { layerOf } from "./lib/layers";
+import { layerOf, WRITE_LAYERS, type WriteLayer } from "./lib/layers";
 import type {
-  AnnotationLayer,
   AnnotationPatch,
   NewAnnotation,
   ScoreAnnotation,
@@ -110,8 +114,9 @@ export const useScoreAnnotator = ({
     [isConductor],
   );
 
-  // Clear mirrors the server rule: managers wipe shared+conductor (personal
-  // layers survive), choristers wipe only their own personal marks.
+  // Clear mirrors the server rule: managers wipe every layer that is not
+  // somebody's personal — the leader cues included, since those are their own
+  // markings coming back — while choristers wipe only their own pencil marks.
   const isCleared = useCallback(
     (a: ScoreAnnotation) =>
       isConductor ? a.layer_name !== "personal" : a.layer_name === "personal",
@@ -209,6 +214,9 @@ export const useScoreAnnotator = ({
       const target = annotations.find((a) => a.id === id);
       remove.mutateAsync(id).catch(() => {});
       if (target) recordDelete(target);
+      // Wherever the erase came from — the card, the eraser, an undo — a mark
+      // that is gone cannot stay selected, or its card outlives it.
+      setSelectedId((current) => (current === id ? null : current));
     },
     [annotations, remove, recordDelete],
   );
@@ -228,46 +236,52 @@ export const useScoreAnnotator = ({
     recordClear(snapshot);
   }, [activeEditionId, annotations, clear, isCleared, recordClear]);
 
-  const handleSelectNote = useCallback(
+  /**
+   * Selecting from a REMOTE surface — the index in the drawer — where the
+   * reader has just travelled to a mark and browse is what they meant. A
+   * selection made on the page itself deliberately does NOT drop the tool:
+   * taking the pencil out of a writer's hand mid-run is the stiffness the
+   * `arranging` rule was written to avoid.
+   */
+  const handleSelectMark = useCallback(
     (id: string) => {
       setSelectedId(id);
-      // Drop into browse so the edit composer / read-only preview opens.
       tools.setTool("pointer");
     },
     [tools],
   );
 
   /**
-   * Moving one mark to another audience, after it was written.
+   * The reaches a placed mark may be moved BETWEEN, for this reader.
    *
-   * The conductor rarely knows a fortnight ahead who will take an evening, so
-   * the cues a stand-in needs are usually already on his private layer by the
-   * time somebody is asked. Without this the first delegation means redrawing
-   * the page; with it, it means a tap per cue.
-   *
-   * Deliberately per mark and never in bulk: the private layer is where he
-   * writes about the singers, and "move everything" would be the one gesture
-   * that hands those remarks to one of them.
+   * Empty in personal mode: a chorister's mark has exactly one possible
+   * audience, so offering a ladder there would name layers that mean nothing to
+   * them. The overlay renders the control from this list alone, which is what
+   * keeps it free of any notion of "mode".
    */
-  const selectedLayer = useMemo(() => {
-    if (!selectedId) return null;
-    const target = annotations.find((a) => a.id === selectedId);
-    return target && canModify(target) ? layerOf(target) : null;
-  }, [annotations, canModify, selectedId]);
-
-  const handleMoveSelected = useCallback(
-    (next: AnnotationLayer) => {
-      if (!selectedId) return;
-      const target = annotations.find((a) => a.id === selectedId);
-      if (!target || !canModify(target)) return;
-      handleUpdate(
-        selectedId,
-        { layer_name: next },
-        { layer_name: target.layer_name },
-      );
-    },
-    [annotations, canModify, handleUpdate, selectedId],
+  const audiences = useMemo<readonly WriteLayer[]>(
+    () => (isConductor ? WRITE_LAYERS : []),
+    [isConductor],
   );
+
+  /**
+   * Escape drops the selection before the score does. The viewer is a Radix
+   * dialog listening on the document, so without claiming the key here first a
+   * reader closing a card would slam the whole score shut. Yields while the
+   * guide is open: capture listeners fire in REGISTRATION order, and this one
+   * registers first, so without the guard it would swallow the guide's own key.
+   */
+  useEffect(() => {
+    if (!selectedId || guideOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setSelectedId(null);
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [guideOpen, selectedId]);
 
   /**
    * The page a marking is ON, in the document actually open. A mark records the
@@ -286,6 +300,32 @@ export const useScoreAnnotator = ({
       );
     },
     [activeEditionId, book, pageApi.currentPage],
+  );
+
+  /**
+   * A selection is a selection of something ON SCREEN: the card is anchored to
+   * the page box, so a mark left selected on a page the reader has turned away
+   * from would hold an invisible card and a live delete button. Written as a
+   * predicate rather than a page-change reflex because the index JUMPS to the
+   * mark's page while selecting it — "is it here" is order-safe, "did the page
+   * move" is not.
+   */
+  useEffect(() => {
+    if (!selectedId) return;
+    const target = annotations.find((a) => a.id === selectedId);
+    if (target && displayPage(target.page_number) !== pageApi.currentPage) {
+      setSelectedId(null);
+    }
+  }, [annotations, displayPage, pageApi.currentPage, selectedId]);
+
+  /**
+   * Whether this reader is actually being handed cues for an evening they are
+   * running. Their presence IS the permission — the server sends the layer to
+   * nobody else — so it is also the only honest trigger for explaining it.
+   */
+  const hasLeaderMarks = useMemo(
+    () => annotations.some((a) => layerOf(a) === "leader"),
+    [annotations],
   );
 
   const incoming = useIncomingMarks(annotations, activeEditionId, mode);
@@ -386,6 +426,8 @@ export const useScoreAnnotator = ({
           fingerDraw={fingerDraw}
           canEdit
           canModify={canModify}
+          inks={tools.inks}
+          audiences={audiences}
           selectedId={selectedId}
           onSelect={setSelectedId}
           onCreate={handleCreate}
@@ -411,7 +453,9 @@ export const useScoreAnnotator = ({
     [
       activeEditionId,
       annotations,
+      audiences,
       book,
+      tools.inks,
       visibleLayers,
       effectiveTool,
       color,
@@ -443,7 +487,7 @@ export const useScoreAnnotator = ({
         visibleLayers={visibleLayers}
         toggleLayerVisibility={tools.toggleLayerVisibility}
         mode={mode}
-        onSelectNote={handleSelectNote}
+        onSelectMark={handleSelectMark}
       />
       <IncomingMarksNotice
         count={incoming.marks?.count ?? 0}
@@ -455,6 +499,7 @@ export const useScoreAnnotator = ({
       <AnnotationGuide
         isOpen={guideOpen}
         mode={mode}
+        hasLeaderMarks={hasLeaderMarks}
         onClose={() => setGuideOpen(false)}
       />
     </>
@@ -468,8 +513,6 @@ export const useScoreAnnotator = ({
       <AnnotationToolbar
         {...tools}
         mode={mode}
-        selectedLayer={selectedLayer}
-        onMoveSelected={handleMoveSelected}
         canDraw={canDraw}
         annotationCount={annotations.length}
         clearableCount={clearableCount}

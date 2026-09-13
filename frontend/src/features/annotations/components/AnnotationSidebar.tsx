@@ -3,9 +3,14 @@
  * @description Collapsible right-edge drawer stacked over the whole viewer (via
  * PdfViewer.overlaySlot). A map of the markup you can't see at a glance on a
  * long score: layer visibility toggles, the pages that carry marks, and a
- * jump-to index of every note. In conductor mode the layers are choir/private;
- * in personal mode they are the conductor's shared markings vs the user's own
- * pencil marks.
+ * jump-to index of every note. In conductor mode the layers are choir, leader
+ * and private; in personal mode they are the conductor's shared markings, the
+ * cues he wrote for whoever runs the evening, and the user's own pencil marks.
+ *
+ * Everything below the toggles obeys them. Hiding a layer is how a conductor
+ * previews what the choir actually receives, so an index that went on listing
+ * what he had just hidden would be arguing with the control above it. Only the
+ * per-layer counts stay whole — that figure is the switch's own subject.
  * @module features/annotations/components
  */
 
@@ -48,7 +53,7 @@ interface AnnotationSidebarProps {
   toggleLayerVisibility: (layer: AnnotationLayer) => void;
   /** Decides which layer rows make sense: choir/private vs conductor/mine. */
   mode: "conductor" | "personal";
-  onSelectNote: (id: string, page: number) => void;
+  onSelectMark: (id: string, page: number) => void;
 }
 
 
@@ -60,32 +65,46 @@ export const AnnotationSidebar = ({
   visibleLayers,
   toggleLayerVisibility,
   mode,
-  onSelectNote,
+  onSelectMark,
 }: AnnotationSidebarProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
+  /**
+   * The map describes what is ON THE PAGE, so it obeys the switches directly
+   * above it. The whole point of hiding a layer is to preview what the choir
+   * sees; an index that went on listing the private notes — and offering jumps
+   * to pages where nothing is drawn any more — was contradicting the control
+   * it sits under.
+   */
+  const visible = useMemo(
+    () => annotations.filter((a) => visibleLayers[layerOf(a)]),
+    [annotations, visibleLayers],
+  );
+
   const notes = useMemo(
     () =>
-      annotations
+      visible
         .filter(isComment)
         .sort(
           (a, b) =>
             a.page_number - b.page_number ||
             (a.payload as CommentPayload).y - (b.payload as CommentPayload).y,
         ),
-    [annotations],
+    [visible],
   );
 
   const annotatedPages = useMemo(() => {
     const counts = new Map<number, number>();
-    for (const a of annotations) {
+    for (const a of visible) {
       const page = displayPage(a.page_number);
       counts.set(page, (counts.get(page) ?? 0) + 1);
     }
     return [...counts.entries()].sort((a, b) => a[0] - b[0]);
-  }, [annotations, displayPage]);
+  }, [visible, displayPage]);
 
+  // Counted over EVERYTHING: this figure is the switch's own subject, and a
+  // hidden layer reporting zero would be a control that erases its own label.
   const layerCounts = useMemo(() => {
     const counts = { shared: 0, conductor: 0, leader: 0, personal: 0 };
     for (const a of annotations) counts[layerOf(a)] += 1;
@@ -231,7 +250,7 @@ export const AnnotationSidebar = ({
                               // can land a screen above the thing that was
                               // clicked.
                               goToPage(displayPage(note.page_number), payload.y);
-                              onSelectNote(note.id, note.page_number);
+                              onSelectMark(note.id, note.page_number);
                             }}
                             className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-ink-on-inverse/10"
                           >
@@ -275,9 +294,11 @@ export const AnnotationSidebar = ({
             className="pointer-events-auto flex flex-col items-center gap-1 rounded-l-2xl border border-r-0 border-line-on-inverse bg-surface-inverse/80 px-2 py-3 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl hover:bg-surface-inverse"
           >
             <PanelRightOpen size={16} aria-hidden="true" />
-            {annotations.length > 0 && (
+            {/* Counts what is drawn, like the index inside — a badge over a
+                hidden layer promises rows the panel would then not show. */}
+            {visible.length > 0 && (
               <span className="rounded-full bg-ethereal-gold/90 px-1.5 text-[10px] font-semibold text-surface-inverse">
-                {annotations.length}
+                {visible.length}
               </span>
             )}
           </motion.button>

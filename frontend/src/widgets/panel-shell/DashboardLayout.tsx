@@ -24,6 +24,7 @@ import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { usePushDeviceSync } from "@/features/notifications/hooks/usePushDeviceSync";
 import { usePushLiveRefresh } from "@/features/notifications/hooks/usePushLiveRefresh";
 import { ProjectInvitationToasts } from "@/features/notifications/components/ProjectInvitationToasts";
+import { DelegationBriefingModal } from "@/features/notifications/components/DelegationBriefingModal";
 import { CustomAdminMessageToast } from "@/features/notifications/components/CustomAdminMessageToast";
 import { FeedbackDock } from "@/features/feedback/components/FeedbackDock";
 import { useBottomBarHeight } from "@/shared/lib/dom/useBottomBarSlot";
@@ -231,6 +232,9 @@ export const DashboardLayout = ({
         </div>
       </main>
       <ProjectInvitationToasts />
+      {/* Waits behind the invitation: a question that needs an answer goes
+          before an instruction that needs reading. */}
+      <DelegationBriefingModal />
       <CustomAdminMessageToast />
       {/* The shell's ambient column — offline badge, install prompt, and the
           permanent feedback button — stacked so they can never overlap each other,

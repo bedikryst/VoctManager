@@ -35,21 +35,21 @@
         "book_title": "Dans le recueil de partitions",
         "book_body": "En téléchargeant la partition du concert, vous pouvez activer « Mes annotations » — elles sont alors dessinées sur votre exemplaire. L'exemplaire est composé pour vous seul ; personne d'autre ne les y verra.",
         "offline_title": "Fonctionne sans réseau",
-        "offline_body": "Vous pouvez écrire sans connexion. Les modifications attendent sur votre appareil et s'envoient seules au retour du réseau — même si vous fermez l'application entre-temps."
+        "offline_body": "Vous pouvez écrire sans connexion. Les modifications attendent sur votre appareil et s'envoient seules au retour du réseau — même si vous fermez l'application entre-temps.",
+        "leader_title": "Des indications écrites pour vous",
+        "leader_body": "Vous dirigez cette répétition : le chef de chœur a laissé ici des indications écrites pour vous. Le reste du chœur ne les voit pas. Comme ses annotations pour le chœur, vous pouvez les masquer mais ni les modifier ni les effacer."
       },
       "conductor": {
-        "title": "Deux calques d'annotations",
-        "lede": "Ce qui parvient au chœur, et ce qui reste chez vous.",
-        "shared_title": "Le calque « Chœur »",
-        "shared_body": "Ce que vous écrivez sur ce calque parvient à chaque choriste distribué dans un projet qui programme cette œuvre. Chez eux, c'est en lecture seule.",
-        "private_title": "Le calque « Privé »",
-        "private_body": "Vos propres indications. Personne d'autre ne les voit. Le sélecteur près des outils décide du calque sur lequel vous écrivez.",
+        "title": "Trois niveaux de visibilité",
+        "lede": "Ce qui parvient au chœur, ce qui parvient à qui dirige la répétition, et ce qui reste chez vous.",
         "theirs_title": "Leurs notes sont fermées",
         "theirs_body": "Les traces que les choristes font sur leurs partitions vous sont privées également — vous ne les verrez ni ici ni ailleurs dans le panneau.",
         "book_title": "Impression du recueil",
-        "book_body": "Les annotations du calque « Chœur » s'impriment dans le recueil lorsque la compilation les active. Un tracé hors de la plage de pages reliée ne s'imprimera pas — le cockpit le signale.",
+        "book_body": "Les annotations du niveau « Chœur » s’impriment dans le carnet de partitions lorsque le cockpit les active. Qui dirige une répétition peut ajouter son propre niveau sur son exemplaire. Un tracé hors de la plage de pages reliée ne sera pas imprimé — le cockpit le signale.",
         "offline_title": "Préparer sans réseau",
-        "offline_body": "Vous pouvez préparer vos annotations sans connexion. Elles attendent sur l'appareil et s'envoient seules au retour du réseau — y compris après la fermeture de l'application."
+        "offline_body": "Vous pouvez préparer vos annotations sans connexion. Elles attendent sur l'appareil et s'envoient seules au retour du réseau — y compris après la fermeture de l'application.",
+        "reach_title": "Qui verra cette annotation",
+        "reach_body": "Chaque annotation a un seul niveau de visibilité, et ces niveaux s’emboîtent. Vous pouvez le changer après coup : touchez l’annotation sur la partition et choisissez qui doit la voir. Le sélecteur près des outils ne décide que de la PROCHAINE."
       }
     },
     "open_tools": "Outils d'annotation",
@@ -59,13 +59,11 @@
       "for_leader_short": "Pour le remplaçant",
       "from_conductor_short": "Chef",
       "leader": "Pour qui dirige la répétition",
-      "leader_hint": "Visible uniquement par la personne à qui vous confiez la répétition",
+      "leader_hint": "La personne à qui vous confiez la répétition, et les responsables. Pas le chœur.",
       "leader_short": "Remplaçant",
-      "move_to_leader": "Montrer au remplaçant",
-      "move_to_leader_short": "Au remplaçant",
       "personal_hint": "Visible uniquement par vous",
       "personal_short": "Perso",
-      "private": "Privé (vous seul)",
+      "private": "Privé (vous et les responsables)",
       "private_hint": "Vous et les autres responsables uniquement",
       "private_short": "Privé",
       "shared": "Visible par le chœur",
@@ -159,6 +157,15 @@
       "pen": "Stylo",
       "pointer": "Parcourir",
       "stamp": "Symbole"
+    },
+    "mark": {
+      "audience": "Qui le voit",
+      "delete": "Supprimer l’annotation",
+      "kind": {
+        "freehand": "Trait",
+        "highlight": "Surlignage",
+        "stamp": "Symbole"
+      }
     }
   },
   "archive": {
@@ -3021,7 +3028,9 @@
       "NOTIFICATION_READ_RECEIPT": "Accusé de lecture",
       "fallback": "Notification",
       "ANNOUNCEMENT_PENDING": "File d'annonces",
-      "SITE_COPY_PROPOSED": "Rédaction des textes"
+      "SITE_COPY_PROPOSED": "Rédaction des textes",
+      "REHEARSAL_DELEGATED": "Vous dirigez les répétitions",
+      "REHEARSAL_DELEGATION_ENDED": "Fin du remplacement"
     },
     "status": {
       "attendance": {
@@ -3139,6 +3148,26 @@
         "test_no_device": "Cet appareil n’est plus enregistré pour les notifications push. Désactivez le push puis réactivez-le.",
         "test_undeliverable": "Le service push du navigateur a refusé l’envoi. Réessayez dans un instant."
       }
+    },
+    "delegation": {
+      "eyebrow": "Vous dirigez les répétitions",
+      "asked_by": "Demandé par {{name}}",
+      "asked_by_lede": "{{name}} vous a demandé de diriger les répétitions de ce projet.",
+      "asked_lede": "On vous a demandé de diriger les répétitions de ce projet.",
+      "opens": "Ce que cela ouvre",
+      "scope_marks": "Les annotations du chef",
+      "scope_marks_body": "Sur les partitions de ce projet, vous verrez les indications que le chef de chœur a écrites pour qui dirige la répétition. Personne d’autre dans le chœur ne les voit.",
+      "scope_roll_call": "Présences",
+      "scope_roll_call_body": "Vous pourrez faire l’appel aux répétitions de ce projet — pour les autres chanteurs aussi.",
+      "scope_materials": "Matériel",
+      "scope_materials_body": "Vous pourrez ouvrir les partitions et le programme, même si vous n’y chantez pas.",
+      "next": "Prochaine répétition : {{when}}",
+      "until": "Jusqu’au {{when}}",
+      "until_close": "Jusqu’à la clôture du projet",
+      "boundary": "Vous ne statuez pas sur les demandes d’absence et vous ne modifiez pas la distribution — cela reste aux responsables.",
+      "open_lead_sheet": "Ouvrir la fiche de la soirée",
+      "open_schedule": "Voir le planning",
+      "acknowledge": "Compris"
     }
   },
   "offline": {
@@ -4885,7 +4914,9 @@
         "REHEARSAL_UPDATED": "Heure/Lieu de répétition modifié",
         "SYSTEM_ALERT": "Maintenance ou alerte système",
         "ANNOUNCEMENT_PENDING": "Modifications non annoncées",
-        "SITE_COPY_PROPOSED": "Propositions de modification des textes du site"
+        "SITE_COPY_PROPOSED": "Propositions de modification des textes du site",
+        "REHEARSAL_DELEGATED": "Chargé de diriger les répétitions",
+        "REHEARSAL_DELEGATION_ENDED": "Fin de la charge des répétitions"
       },
       "unsubscribe_modal": {
         "description": "Vous ne recevrez plus de notifications push sur cet appareil. Vous pourrez les réactiver à tout moment.",
@@ -4942,7 +4973,9 @@
         "PROJECT_CANCELLED": "Un événement est annulé",
         "REHEARSAL_SCHEDULED": "Une nouvelle répétition rejoint le calendrier",
         "REHEARSAL_CANCELLED": "Une répétition est annulée",
-        "MESSAGE_RECEIVED": "Une réponse dans votre conversation"
+        "MESSAGE_RECEIVED": "Une réponse dans votre conversation",
+        "REHEARSAL_DELEGATED": "Quelqu’un vous a confié la conduite des répétitions d’un projet",
+        "REHEARSAL_DELEGATION_ENDED": "Les répétitions sont revenues à quelqu’un d’autre"
       },
       "restore_recommended": "Rétablir les valeurs recommandées",
       "customized_hint": "Personnalisé — diffère des réglages recommandés",

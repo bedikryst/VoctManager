@@ -32,6 +32,8 @@ import {
   ShieldCheck,
   Stamp,
   UserCheck,
+  UserMinus,
+  UserPlus,
   XCircle,
   type LucideIcon,
 } from "lucide-react";
@@ -75,6 +77,8 @@ export const NOTIFICATION_TYPE_ICON: Partial<Record<NotificationType, LucideIcon
   REHEARSAL_SCHEDULED: CalendarPlus,
   REHEARSAL_UPDATED: CalendarCog,
   REHEARSAL_CANCELLED: CalendarX,
+  REHEARSAL_DELEGATED: UserPlus,
+  REHEARSAL_DELEGATION_ENDED: UserMinus,
   PIECE_CASTING_ASSIGNED: Music,
   PIECE_CASTING_UPDATED: Repeat,
   // Requests — the verdict on what you filed yourself

@@ -11,6 +11,11 @@
  * @module features/annotations/lib
  */
 
+import type { TFunction } from "i18next";
+import { Users, UserCheck, UserCog } from "lucide-react";
+
+import type { EtherealAccent } from "@/shared/ui/primitives/accents";
+
 import type { AnnotationLayer, ScoreAnnotation } from "../types/annotations.dto";
 
 /**
@@ -39,3 +44,94 @@ export const layerOf = (a: ScoreAnnotation): AnnotationLayer => {
  *  to the whole ensemble. */
 export const isPrivateLayer = (a: ScoreAnnotation): boolean =>
   layerOf(a) !== "shared";
+
+/**
+ * The layers a manager may WRITE to, widest audience first.
+ *
+ * The three are NESTED, not parallel: the choir's marks reach whoever runs the
+ * rehearsal and the managers too, and the leader's reach the managers. That is
+ * why one rung is picked rather than a set ticked — every combination a reader
+ * could want is already a rung, and the two that are not ("the choir but not
+ * the stand-in") describe an audience the access rules cannot produce.
+ *
+ * `personal` is absent on purpose: it is nobody's audience, and it is reached by
+ * opening the score as oneself rather than by a control over the choir's marks.
+ */
+export type WriteLayer = "shared" | "leader" | "conductor";
+
+export const WRITE_LAYERS: readonly WriteLayer[] = ["shared", "leader", "conductor"];
+
+/** One tap from the resting state NARROWS the audience rather than widening it. */
+export const NEXT_WRITE_LAYER: Record<WriteLayer, WriteLayer> = {
+  shared: "leader",
+  leader: "conductor",
+  conductor: "shared",
+};
+
+export const isWriteLayer = (layer: string): layer is WriteLayer =>
+  (WRITE_LAYERS as readonly string[]).includes(layer);
+
+/**
+ * A layer set outside this cycle (an ad-hoc name from an older score) reads as
+ * the choir's — the only answer that cannot quietly widen an audience, and the
+ * same fold `layerOf` performs.
+ */
+export const asWriteLayer = (layer: string): WriteLayer =>
+  isWriteLayer(layer) ? layer : "shared";
+
+export interface WriteLayerCopy {
+  Icon: typeof Users;
+  /** Full sentence — the accessible name. */
+  label: string;
+  /** One or two words, for a pill that has to fit a phone. */
+  short: string;
+  /** Who ends up reading it, stated plainly — the whole answer, because this is
+   *  the only line the audience picker gives a reader to decide on. */
+  hint: string;
+  /**
+   * The taxonomy's accent, read through `ACCENT_TILE_*` / `ACCENT_TEXT` on the
+   * in-flow surfaces (the cards anchored to a mark).
+   */
+  accent: EtherealAccent;
+  /**
+   * The same rung on the viewer's frosted inverse chrome, where the accent
+   * tables — written for a light ground — do not reach.
+   */
+  tone: string;
+}
+
+/**
+ * How each rung names itself, in one place. Three surfaces read this — the
+ * toolbar pill that arms the NEXT mark, and the two cards that move an existing
+ * one — and a rung described differently on two of them is a rung the reader
+ * cannot trust.
+ */
+export const writeLayerCopy = (t: TFunction): Record<WriteLayer, WriteLayerCopy> => ({
+  shared: {
+    Icon: Users,
+    label: t("annotations.layer.shared", "Widoczne dla chóru"),
+    short: t("annotations.layer.shared_short", "Chór"),
+    hint: t("annotations.layer.shared_hint", "Widzi cały chór śpiewający ten utwór"),
+    accent: "sage",
+    tone: "bg-ethereal-sage/20 text-ethereal-sage",
+  },
+  leader: {
+    Icon: UserCheck,
+    label: t("annotations.layer.leader", "Dla prowadzącego próbę"),
+    short: t("annotations.layer.leader_short", "Prowadzący"),
+    hint: t(
+      "annotations.layer.leader_hint",
+      "Osoba, której powierzysz prowadzenie próby, i menedżerowie. Chór — nie.",
+    ),
+    accent: "amethyst",
+    tone: "bg-ethereal-amethyst/20 text-ethereal-amethyst",
+  },
+  conductor: {
+    Icon: UserCog,
+    label: t("annotations.layer.private", "Prywatne (Ty i menedżerowie)"),
+    short: t("annotations.layer.private_short", "Prywatne"),
+    hint: t("annotations.layer.private_hint", "Tylko dla Ciebie i pozostałych menedżerów"),
+    accent: "graphite",
+    tone: "bg-ink-on-inverse/10 text-ink-on-inverse",
+  },
+});

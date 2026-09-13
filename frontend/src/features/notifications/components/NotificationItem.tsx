@@ -24,6 +24,8 @@ import {
   MessageCircle,
   Megaphone,
   PencilLine,
+  UserCheck,
+  UserMinus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -199,6 +201,37 @@ const describe = (
         ),
         detail: notification.metadata.focus || undefined,
       };
+    case "REHEARSAL_DELEGATED": {
+      // The three scopes are the whole point, so the row lists the ones that
+      // were actually granted. A scope withheld contributes nothing: the chip
+      // IS the power, and there is no greyed-out version of a locked door.
+      const scopes = [
+        notification.metadata.can_see_leader_marks
+          ? t("notifications.delegation.scope_marks", "Oznaczenia dyrygenta")
+          : null,
+        notification.metadata.can_take_roll_call
+          ? t("notifications.delegation.scope_roll_call", "Obecność")
+          : null,
+        notification.metadata.can_open_materials
+          ? t("notifications.delegation.scope_materials", "Materiały")
+          : null,
+      ].filter((scope): scope is string => scope !== null);
+      return {
+        title: notification.metadata.project_name,
+        context: notification.metadata.granted_by_name
+          ? t("notifications.delegation.asked_by", {
+              name: notification.metadata.granted_by_name,
+              defaultValue: "Poprosił(a) {{name}}",
+            })
+          : undefined,
+        detail: notification.metadata.note || undefined,
+        changeChips: scopes,
+      };
+    }
+    case "REHEARSAL_DELEGATION_ENDED":
+      // "No longer running rehearsals" is already the eyebrow — the project
+      // name under it says everything that is left to say.
+      return { title: notification.metadata.project_name };
     case "PROJECT_REMINDER":
       return {
         title: notification.metadata.project_name as string | undefined,
@@ -445,6 +478,15 @@ const resolveVisual = (
       return { icon: Calendar, accent: "sage" };
     case "REHEARSAL_CANCELLED":
       return { icon: Calendar, accent: "crimson" };
+    case "REHEARSAL_DELEGATED":
+      // Amethyst, the same hue the leader layer wears on the score — the one
+      // place this person will meet the delegation again.
+      return { icon: UserCheck, accent: "amethyst" };
+    case "REHEARSAL_DELEGATION_ENDED":
+      // Neutral, deliberately not crimson: somebody's plans changed, which is
+      // ordinary organisation. The alarm colour is for what is actually wrong,
+      // and a cover being rearranged is not that.
+      return { icon: UserMinus, accent: "neutral" };
     case "MATERIAL_UPLOADED":
       return { icon: Headphones, accent: "amethyst" };
     case "PIECE_CASTING_ASSIGNED":
@@ -525,6 +567,16 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       // dead-end at /panel. The desk takes over the shell, so this leaves the
       // panel's route tree entirely.
       return navigate("/redakcja/przeglad");
+    }
+    if (notification.notification_type === "REHEARSAL_DELEGATED") {
+      // Needs its own branch ahead of the substring chain: the type contains
+      // "REHEARSAL" and would land on the schedule, which is not wrong but
+      // discards the evening the metadata is already carrying. Straight to the
+      // card for that evening when there is one.
+      const rehearsalId = notification.metadata.next_rehearsal?.rehearsal_id;
+      return navigate(
+        rehearsalId ? `/panel/schedule/lead/${rehearsalId}` : "/panel/schedule",
+      );
     }
     if (type === "MATERIAL_UPLOADED") {
       return navigate(isAdmin ? "/panel/archive-management" : "/panel/materials");

@@ -12,6 +12,8 @@ export type NotificationType =
   | "REHEARSAL_UPDATED"
   | "REHEARSAL_CANCELLED"
   | "REHEARSAL_REMINDER"
+  | "REHEARSAL_DELEGATED"
+  | "REHEARSAL_DELEGATION_ENDED"
   | "PIECE_CASTING_ASSIGNED"
   | "PIECE_CASTING_UPDATED"
   | "MATERIAL_UPLOADED"
@@ -191,6 +193,40 @@ export interface RehearsalScheduledMetadata extends EventMomentMetadata {
   focus?: string;
 }
 
+/** The next evening a stand-in is due to run, when one is on the calendar. */
+export interface DelegatedRehearsalMetadata extends EventMomentMetadata {
+  rehearsal_id: string;
+  location?: string;
+  focus?: string;
+}
+
+/**
+ * Somebody has been asked to run a project's rehearsals in the conductor's
+ * place. The three scope flags travel because they ARE the message: a delegation
+ * is three permissions that leak differently, and "you are running rehearsals"
+ * on its own leaves the reader guessing which doors opened.
+ */
+export interface RehearsalDelegationMetadata {
+  project_id: string;
+  project_name: string;
+  granted_by_name?: string;
+  can_see_leader_marks?: boolean;
+  can_take_roll_call?: boolean;
+  can_open_materials?: boolean;
+  expires_at?: string | null;
+  expires_at_display?: string;
+  timezone?: string;
+  note?: string;
+  next_rehearsal?: DelegatedRehearsalMetadata | null;
+}
+
+/** The delegation has been taken back. Nothing to explain, only to withdraw. */
+export interface RehearsalDelegationEndedMetadata {
+  project_id: string;
+  project_name: string;
+  revoked_by_name?: string;
+}
+
 export interface RehearsalUpdatedMetadata extends EventMomentMetadata {
   rehearsal_id: string;
   project_id?: string;
@@ -327,6 +363,14 @@ export type NotificationDTO = BaseNotification &
     | {
         notification_type: "REHEARSAL_UPDATED";
         metadata: RehearsalUpdatedMetadata;
+      }
+    | {
+        notification_type: "REHEARSAL_DELEGATED";
+        metadata: RehearsalDelegationMetadata;
+      }
+    | {
+        notification_type: "REHEARSAL_DELEGATION_ENDED";
+        metadata: RehearsalDelegationEndedMetadata;
       }
     | {
         notification_type: "REHEARSAL_CANCELLED";

@@ -14,25 +14,27 @@
  * placement is tap-detected so panning stays possible on touch.
  * Which existing marks may be erased/edited is decided by the `canModify`
  * predicate — a chorister touches only their personal layer.
- * A note is TYPED where it will be read — as the mark itself on the stave, or
- * in the bubble a pin opens — so the card beside it carries only controls
- * (phrases, display mode, size, save). That card takes whichever side of the
- * anchor leaves the writing visible: a card sitting on the bar it annotates is
- * a card written blind.
+ *
+ * EVERY kind of marking answers to a tap, not only the notes: a stroke carries
+ * an invisible hit band, a stamp and a note carry their own buttons, and the
+ * tapped one opens the card that says who reads it. That card is anchored to
+ * the marking (`MarkActionCard`, or `NoteCard` for words) — the question "who
+ * sees this?" is asked about one spot of music, so it is answered there.
  * @module features/annotations/components
  */
 
-import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Lock, Pin, Trash2, X } from "lucide-react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { Lock, Pin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
-import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
 import {
   TAP_ZONE_FRACTION as PDF_TAP_ZONE_FRACTION,
   type PdfPageGeometry,
 } from "@/shared/ui/composites/PdfViewer";
 
+import { MarkActionCard } from "./MarkActionCard";
+import { inlineFontSize, NoteCard } from "./NoteCard";
 import {
   isComment,
   isFreehand,
@@ -41,6 +43,7 @@ import {
   type AnnotationLayer,
   type AnnotationPatch,
   type CommentPayload,
+  type FreehandPayload,
   type NewAnnotation,
   type NoteDisplay,
   type NormPoint,
@@ -49,19 +52,16 @@ import {
 } from "../types/annotations.dto";
 import {
   clampMarkScale,
-  MARK_SCALE_MAX,
-  MARK_SCALE_MIN,
-  MARK_SCALE_STEP,
   strokeFraction,
   type AnnotationTool,
   type LayerVisibility,
   type StrokeSize,
 } from "../lib/useAnnotationTools";
-import { isPrivateLayer, layerOf } from "../lib/layers";
+import { isPrivateLayer, layerOf, type WriteLayer } from "../lib/layers";
+import type { AnnotationInk } from "../lib/palette";
 import { getStampDef, StampGlyph } from "../lib/stamps";
 import { buildSmoothPath } from "../lib/smoothing";
-import { placeNoteCard } from "../lib/noteCardPlacement";
-import { appendPhrase, pickRecentPhrases, QUICK_PHRASES } from "../lib/quickPhrases";
+import { pickRecentPhrases, QUICK_PHRASES } from "../lib/quickPhrases";
 
 interface AnnotationOverlayProps {
   geometry: PdfPageGeometry;
@@ -89,6 +89,15 @@ interface AnnotationOverlayProps {
   canEdit: boolean;
   /** May THIS user erase / edit the given mark? (chorister → personal only). */
   canModify: (annotation: ScoreAnnotation) => boolean;
+  /** Swatches this writer may use, for recolouring a mark already placed. */
+  inks: readonly AnnotationInk[];
+  /**
+   * Reaches a placed mark may be moved BETWEEN. Empty for a chorister: their
+   * mark has exactly one possible audience, so a ladder would name layers that
+   * mean nothing to them. The overlay renders the control from this alone and
+   * never learns what a "mode" is.
+   */
+  audiences: readonly WriteLayer[];
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onCreate: (annotation: Omit<NewAnnotation, "edition">) => void;
@@ -99,7 +108,16 @@ interface AnnotationOverlayProps {
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
 const HIGHLIGHT_OPACITY = 0.42;
-const ERASER_HIT_WIDTH = 16;
+/**
+ * The invisible band that makes a stroke touchable. A hairline pen line has to
+ * grow to something a thumb can find; a bold highlighter must NOT grow past its
+ * own paint, because this band is also where text selection stops passing
+ * through to the page under it.
+ */
+const STROKE_HIT_MIN_WIDTH = 16;
+const STROKE_HIT_MAX_WIDTH = 28;
+/** How far the selection wash spreads beyond the ink it traces, each side. */
+const SELECTION_HALO_PX = 5;
 /** Pointer drift beyond this many px stops being a tap and becomes a drag/pan. */
 const MOUSE_SLOP_PX = 6;
 /**
@@ -116,8 +134,11 @@ const slopFor = (pointerType: string): number =>
  *  press on an existing mark as a request to place a new one. */
 const MARK_ATTR = "data-annotation-mark";
 
-const inlineFontSize = (pageWidth: number): number =>
-  Math.min(22, Math.max(11, pageWidth * 0.026));
+/** Ink and highlighter share a payload and every rule below that draws one. */
+const isStrokeMark = (
+  a: ScoreAnnotation,
+): a is ScoreAnnotation & { payload: FreehandPayload } =>
+  isFreehand(a) || isHighlight(a);
 
 export const AnnotationOverlay = ({
   geometry,
@@ -135,6 +156,8 @@ export const AnnotationOverlay = ({
   onTurnPage,
   canEdit,
   canModify,
+  inks,
+  audiences,
   selectedId,
   onSelect,
   onCreate,
@@ -176,8 +199,14 @@ export const AnnotationOverlay = ({
     if (element.hasPointerCapture(pointerId)) element.releasePointerCapture(pointerId);
   }, []);
 
-  const pageAnnotations = annotations.filter(
-    (a) => a.page_number === pageNumber && visibleLayers[layerOf(a)],
+  // Memoised because a stroke in progress re-renders this component on every
+  // sampled point, and the list below is walked five more times per render.
+  const pageAnnotations = useMemo(
+    () =>
+      annotations.filter(
+        (a) => a.page_number === pageNumber && visibleLayers[layerOf(a)],
+      ),
+    [annotations, pageNumber, visibleLayers],
   );
 
   const toNorm = useCallback((clientX: number, clientY: number): NormPoint => {
@@ -203,6 +232,13 @@ export const AnnotationOverlay = ({
    */
   const arranging = browsing || placing || stamping;
   const marksInteractive = arranging || erasing;
+  /**
+   * Modes in which a STROKE answers to a touch. Narrower than `arranging` on
+   * purpose: a stroke has no anchor of its own, so while a placement tool is
+   * armed a tap on one can only mean "put a mark here" — and writing a word over
+   * a highlighted bar is the commonest gesture there is.
+   */
+  const strokesInteractive = browsing || erasing;
 
   // Words this writer would otherwise type again tonight: their own short notes
   // on this edition (newest first), then the standing presets. The history is
@@ -227,6 +263,32 @@ export const AnnotationOverlay = ({
           (a) => a.id === selectedId && isComment(a) && canModify(a),
         )
       : undefined;
+
+  // The mark whose action card is open. Notes are excluded because a selected
+  // note opens the composer above, which carries the same audience row — one
+  // mark never gets two cards.
+  const actionMark =
+    canEdit && arranging && !pendingNote
+      ? pageAnnotations.find(
+          (a) => a.id === selectedId && !isComment(a) && canModify(a),
+        )
+      : undefined;
+
+  /**
+   * Move one mark to another audience, after it was made.
+   *
+   * The conductor rarely knows a fortnight ahead who will take an evening, so
+   * the cues a stand-in needs are usually already on his private layer by the
+   * time somebody is asked. Without this the first delegation means redrawing
+   * the page; with it, it means a tap per cue.
+   *
+   * Per mark and never in bulk: the private layer is where he writes about the
+   * singers, and "move everything" would be the one gesture that hands those
+   * remarks to one of them.
+   */
+  const moveMarkLayer = (a: ScoreAnnotation, next: WriteLayer): void => {
+    onUpdate(a.id, { layer_name: next }, { layer_name: a.layer_name });
+  };
 
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
@@ -488,10 +550,23 @@ export const AnnotationOverlay = ({
     ? strokeFraction(tool === "highlighter" ? "highlighter" : "pen", size) * width
     : 0;
 
+  /** A tap on any existing mark: rub it out, or open the card about it. */
+  const handleMarkActivate = (a: ScoreAnnotation) => {
+    if (erasing) {
+      if (canModify(a)) onDelete(a.id);
+      return;
+    }
+    onSelect(selectedId === a.id ? null : a.id);
+  };
+
   const renderStroke = (a: ScoreAnnotation & { payload: { paths: NormPoint[][]; width: number } }) => {
     const highlight = a.annotation_type === "HL";
     const d = a.payload.paths.map((p) => buildSmoothPath(p, width, height)).join(" ");
     const strokeWidthPx = Math.max(highlight ? 4 : 1.5, a.payload.width * width);
+    // The hit band is offered only on marks this reader may act on, which is
+    // also what bounds its cost: a chorister reading the conductor's highlight
+    // over the lyrics keeps full text selection under it.
+    const touchable = strokesInteractive && canModify(a);
     return (
       <g key={a.id}>
         <path
@@ -507,18 +582,43 @@ export const AnnotationOverlay = ({
             pointerEvents: "none",
           }}
         />
-        {erasing && canModify(a) && (
-          // Fat invisible hit path so a thin line is still easy to erase.
+        {touchable && (
+          // Invisible band, wide enough to find with a thumb. It must stay a
+          // <path> and never become a <button>: the viewer's pinch gate walks
+          // `closest("button, …, [data-pdf-pinch-through]")` and honours the
+          // attribute on whatever it lands on, so a button here would stop two
+          // fingers zooming the score wherever ink had been drawn.
           <path
             d={d}
             fill="none"
             stroke="transparent"
-            strokeWidth={Math.max(strokeWidthPx, ERASER_HIT_WIDTH)}
+            strokeWidth={Math.min(
+              STROKE_HIT_MAX_WIDTH,
+              Math.max(strokeWidthPx, STROKE_HIT_MIN_WIDTH),
+            )}
             strokeLinecap="round"
             strokeLinejoin="round"
             style={{ pointerEvents: "stroke", cursor: "pointer" }}
+            // Selection rides the CLICK: a touch that scrolled the viewport has
+            // its click suppressed by the browser, so panning over ink is still
+            // panning. Erasing stays on the press, where rubbing belongs.
+            onClick={() => handleMarkActivate(a)}
             onPointerDown={(e) => {
+              if (!erasing) return;
               e.stopPropagation();
+              // A touch (and a stylus) is IMPLICITLY captured to the element it
+              // landed on, so every later `pointerenter` would be delivered
+              // here and the rub below would only ever erase this one line.
+              // Letting the capture go is what makes the gesture reach the rest
+              // of the scribble.
+              if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              }
+              onDelete(a.id);
+            }}
+            // Rubbing out a scribble is one gesture, not one tap per line.
+            onPointerEnter={(e) => {
+              if (!erasing || e.buttons === 0) return;
               onDelete(a.id);
             }}
           />
@@ -527,12 +627,28 @@ export const AnnotationOverlay = ({
     );
   };
 
-  const handleNoteClick = (a: ScoreAnnotation) => {
-    if (erasing) {
-      if (canModify(a)) onDelete(a.id);
-      return;
-    }
-    if (arranging) onSelect(selectedId === a.id ? null : a.id);
+  /** The wash that says "this one". Drawn over the finished ink rather than
+   *  under it: a highlighter composites with `multiply`, so a halo beneath one
+   *  would be multiplied INTO the marker and read as a mark of its own. */
+  const renderSelectionHalo = (
+    a: ScoreAnnotation & { payload: { paths: NormPoint[][]; width: number } },
+  ) => {
+    const highlight = a.annotation_type === "HL";
+    const d = a.payload.paths.map((p) => buildSmoothPath(p, width, height)).join(" ");
+    const strokeWidthPx = Math.max(highlight ? 4 : 1.5, a.payload.width * width);
+    return (
+      <path
+        key={`halo-${a.id}`}
+        className="stroke-ethereal-gold"
+        d={d}
+        fill="none"
+        strokeWidth={strokeWidthPx + SELECTION_HALO_PX * 2}
+        strokeOpacity={0.45}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ mixBlendMode: "normal", pointerEvents: "none" }}
+      />
+    );
   };
 
   return (
@@ -565,13 +681,24 @@ export const AnnotationOverlay = ({
         height={height}
         viewBox={`0 0 ${width} ${height}`}
         className="absolute inset-0"
-        // Painted (auto) only while erasing so the fat hit paths below are
-        // clickable; display-only otherwise so page text stays selectable.
-        style={{ pointerEvents: erasing ? "auto" : "none" }}
+        // Never a hit target itself. `pointer-events: none` on an ancestor does
+        // NOT stop a descendant that switches them back on, so the hit bands
+        // below opt in one at a time — the same arrangement the note markers
+        // already use inside this surface. Leaving the root "auto" while an
+        // eraser was armed turned the whole page rectangle into a target and
+        // swallowed text selection across all of it.
+        style={{ pointerEvents: "none" }}
       >
         {/* Highlighter first (under the ink), then opaque pen strokes. */}
         {pageAnnotations.filter(isHighlight).map(renderStroke)}
         {pageAnnotations.filter(isFreehand).map(renderStroke)}
+
+        {/* Selection last of all, so it washes over finished ink. */}
+        {selectedId !== null &&
+          pageAnnotations
+            .filter((a) => a.id === selectedId)
+            .filter(isStrokeMark)
+            .map(renderSelectionHalo)}
 
         {stroke && stroke.length > 1 && (
           <path
@@ -597,8 +724,10 @@ export const AnnotationOverlay = ({
         const def = getStampDef(payload.symbol);
         if (!def) return null;
         const erasable = erasing && canModify(a);
-        const draggable = arranging && canModify(a);
+        const modifiable = canModify(a);
+        const draggable = arranging && modifiable;
         const offset = dragOffset?.id === a.id ? dragOffset : null;
+        const selected = selectedId === a.id;
         return (
           <div
             key={a.id}
@@ -610,22 +739,31 @@ export const AnnotationOverlay = ({
               transform: offset
                 ? `translate(-50%, -50%) translate(${offset.dx}px, ${offset.dy}px)`
                 : "translate(-50%, -50%)",
-              pointerEvents: erasable || draggable ? "auto" : "none",
+              pointerEvents: marksInteractive && modifiable ? "auto" : "none",
             }}
           >
             <button
               type="button"
-              onClick={() => erasable && onDelete(a.id)}
+              // The viewer's pinch gate stops at the nearest button and reads
+              // this attribute there; without it, two fingers landing on a
+              // symbol cannot zoom the score.
+              data-pdf-pinch-through
+              onClick={() => {
+                if (consumeSuppressedClick()) return;
+                handleMarkActivate(a);
+              }}
               onPointerDown={(event) => beginMarkerDrag(event, a, payload)}
               onPointerMove={moveMarkerDrag}
               onPointerUp={endMarkerDrag}
               onPointerCancel={cancelMarkerDrag}
               aria-label={t(def.labelKey, def.fallback)}
-              tabIndex={erasable ? 0 : -1}
+              aria-pressed={selected}
+              tabIndex={marksInteractive && modifiable ? 0 : -1}
               className={cn(
-                "flex items-center justify-center rounded-md",
-                erasable &&
-                  "cursor-pointer ring-1 ring-transparent transition-shadow hover:ring-ethereal-crimson",
+                "flex items-center justify-center rounded-md transition-shadow",
+                selected && "bg-ethereal-gold/15 ring-2 ring-ethereal-gold",
+                erasable && !selected &&
+                  "cursor-pointer ring-1 ring-transparent hover:ring-ethereal-crimson",
                 draggable && "touch-none",
               )}
               style={draggable ? { cursor: offset ? "grabbing" : "grab" } : undefined}
@@ -655,9 +793,12 @@ export const AnnotationOverlay = ({
         // trailing click is swallowed so it doesn't also toggle selection.
         const onMarkerClick = () => {
           if (consumeSuppressedClick()) return;
-          handleNoteClick(a);
+          handleMarkActivate(a);
         };
         const dragHandlers = {
+          // Same pinch gate as the stamps: the attribute has to sit on the
+          // button, because that is where `closest()` stops looking.
+          "data-pdf-pinch-through": true,
           onPointerDown: (event: React.PointerEvent<HTMLButtonElement>) =>
             beginMarkerDrag(event, a, payload),
           onPointerMove: moveMarkerDrag,
@@ -685,9 +826,14 @@ export const AnnotationOverlay = ({
                 onClick={onMarkerClick}
                 {...dragHandlers}
                 aria-label={payload.text}
+                aria-pressed={selectedId === a.id}
                 className={cn(
                   "relative rounded-md px-1.5 py-0.5 text-center font-semibold leading-snug shadow-sm ring-1 transition-shadow",
-                  selectedId === a.id ? "ring-2" : "ring-black/10",
+                  // The ring colour is named, never left to default: this
+                  // button sets `color` to the note's own ink below, and
+                  // Tailwind's default ring is `currentColor` — so an unnamed
+                  // ring would outline the mark in its own colour.
+                  selectedId === a.id ? "ring-2 ring-ethereal-gold" : "ring-black/10",
                   erasing && modifiable && "cursor-pointer hover:ring-ethereal-crimson",
                   draggable && "touch-none",
                 )}
@@ -724,11 +870,16 @@ export const AnnotationOverlay = ({
               <button
                 type="button"
                 aria-label={payload.text}
+                aria-pressed={selectedId === a.id}
                 onClick={onMarkerClick}
                 {...dragHandlers}
                 className={cn(
                   "relative flex h-7 w-7 items-center justify-center rounded-full text-white shadow-md ring-2 transition-transform hover:scale-110",
-                  selectedId === a.id ? "ring-white" : "ring-white/80",
+                  // Gold is the panel's "this is the one", and the pin's
+                  // resting rim is a light hairline against the page — the two
+                  // have to differ in HUE, because a difference in opacity
+                  // alone is a selection state nobody can see.
+                  selectedId === a.id ? "ring-ethereal-gold" : "ring-white/80",
                   draggable && "touch-none",
                 )}
                 style={{
@@ -772,6 +923,9 @@ export const AnnotationOverlay = ({
           initialDisplay={noteDisplay}
           initialScale={textScale}
           showDelete={false}
+          // A note that does not exist yet takes its reach from the toolbar's
+          // write pill; asking again here would be asking twice in one gesture.
+          audience={null}
           onSubmit={(text, display, scale) => {
             onCreate({
               page_number: pageNumber,
@@ -804,6 +958,11 @@ export const AnnotationOverlay = ({
               initialDisplay={payload.display === "inline" ? "inline" : "pin"}
               initialScale={clampMarkScale(payload.scale)}
               showDelete
+              audience={{
+                current: layerOf(editingNote),
+                options: audiences,
+                onChange: (next) => moveMarkLayer(editingNote, next),
+              }}
               onSubmit={(text, display, scale) => {
                 onUpdate(
                   editingNote.id,
@@ -820,401 +979,37 @@ export const AnnotationOverlay = ({
             />
           );
         })()}
+
+      {/* Ink, highlight or symbol: the same conversation, in its own card —
+          a note is already having it inside its composer above. */}
+      {actionMark && (
+        <MarkActionCard
+          key={actionMark.id}
+          annotation={actionMark}
+          width={width}
+          height={height}
+          inks={inks}
+          audiences={audiences}
+          onChangeLayer={(next) => moveMarkLayer(actionMark, next)}
+          onChangeColor={(next) =>
+            onUpdate(actionMark.id, { color: next }, { color: actionMark.color })
+          }
+          onChangeScale={(next) => {
+            if (!isStamp(actionMark)) return;
+            const current = actionMark.payload as StampPayload;
+            onUpdate(
+              actionMark.id,
+              { payload: { ...current, scale: next } },
+              { payload: { ...current } },
+            );
+          }}
+          onDelete={() => {
+            onDelete(actionMark.id);
+            onSelect(null);
+          }}
+          onClose={() => onSelect(null)}
+        />
+      )}
     </div>
-  );
-};
-
-interface NoteCardProps {
-  width: number;
-  height: number;
-  anchor: { x: number; y: number };
-  /** Ink the note will carry — the mark being written is drawn in it. */
-  color: string;
-  /** One-tap words, recent-first; each appends to what is already written. */
-  phrases: readonly string[];
-  initialText: string;
-  initialDisplay: NoteDisplay;
-  /** Starting font-size multiplier (1 = medium). */
-  initialScale: number;
-  showDelete: boolean;
-  onSubmit: (text: string, display: NoteDisplay, scale: number) => void;
-  onCancel: () => void;
-  onDelete?: () => void;
-}
-
-/** Card box, in page-box pixels. Width is fixed so the placement maths and the
- *  rendered element cannot disagree; height is measured, never assumed. */
-const NOTE_CARD_WIDTH = 240;
-/** Only until the first measurement lands — one layout pass, before paint. */
-const NOTE_CARD_ESTIMATED_HEIGHT = 170;
-/** Half the pin marker (h-7), i.e. how far a pin's own ink reaches upward. */
-const PIN_RADIUS = 14;
-/** Air between the mark being written and the controls card. */
-const CARD_CLEARANCE = 10;
-/** Width of a pin's editable bubble, held between these bounds. */
-const PIN_BUBBLE_MIN = 140;
-const PIN_BUBBLE_MAX = 210;
-
-/** Live height of an element, so the placement maths never runs on a guess. */
-const useMeasuredHeight = (
-  ref: React.RefObject<HTMLElement | null>,
-  fallback: number,
-): number => {
-  const [measured, setMeasured] = useState(fallback);
-  useLayoutEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    const measure = (): void =>
-      setMeasured((current) =>
-        Math.abs(current - element.offsetHeight) < 1 ? current : element.offsetHeight,
-      );
-    measure();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [ref]);
-  return measured;
-};
-
-/** Take focus and put the caret after the last character. */
-const focusAtEnd = (element: HTMLElement): void => {
-  element.focus();
-  const selection = window.getSelection();
-  if (!selection) return;
-  const range = document.createRange();
-  range.selectNodeContents(element);
-  range.collapse(false);
-  selection.removeAllRanges();
-  selection.addRange(range);
-};
-
-interface AnchoredEditorProps {
-  elementRef: React.RefObject<HTMLDivElement | null>;
-  /** Read ONCE, when this editor mounts — see the seeding note below. */
-  seedText: string;
-  label: string;
-  onInput: (text: string) => void;
-  onSubmit: () => void;
-  onCancel: () => void;
-  className?: string;
-  style?: React.CSSProperties;
-}
-
-/**
- * The words themselves, edited where they will be read — as the mark on the
- * stave, or in the bubble a pin opens. There is no text field in the card,
- * because a field in a card asks the writer to imagine the result; this shows
- * it, in the ink and at the size it will have on the page.
- *
- * Uncontrolled by design: React must never re-render the node a caret is
- * sitting in. It is seeded once on mount and reports upward on every input;
- * the card writes back into it only when a phrase chip is tapped.
- *
- * The seed is captured at mount and never re-read, which is what makes
- * switching display mode safe: that swaps one editor for another, and re-
- * seeding from the note's ORIGINAL text would silently discard everything
- * written since the composer opened.
- */
-const AnchoredEditor = ({
-  elementRef,
-  seedText,
-  label,
-  onInput,
-  onSubmit,
-  onCancel,
-  className,
-  style,
-}: AnchoredEditorProps): React.JSX.Element => {
-  const seed = useRef(seedText);
-  useLayoutEffect(() => {
-    const element = elementRef.current;
-    if (!element) return;
-    element.innerText = seed.current;
-    focusAtEnd(element);
-  }, [elementRef]);
-
-  return (
-    <div
-      ref={elementRef}
-      contentEditable
-      role="textbox"
-      aria-multiline="true"
-      aria-label={label}
-      spellCheck={false}
-      // A mark is a word, not a sentence: a keyboard capitalising "razem" would
-      // make typed notes disagree with the phrase chips beside them.
-      autoCapitalize="none"
-      className={className}
-      style={style}
-      onInput={(event) => onInput(event.currentTarget.innerText)}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" && !event.shiftKey) {
-          event.preventDefault();
-          onSubmit();
-        }
-        if (event.key === "Escape") {
-          event.preventDefault();
-          onCancel();
-        }
-      }}
-      onPaste={(event) => {
-        // A marking is plain text; pasted markup would drag foreign type onto
-        // the score. `insertText` keeps the browser's own undo stack intact.
-        event.preventDefault();
-        document.execCommand(
-          "insertText",
-          false,
-          event.clipboardData.getData("text/plain"),
-        );
-      }}
-      // The surface below reads a tap as "close the composer" — writing into
-      // the mark is not that.
-      onPointerDown={(event) => event.stopPropagation()}
-    />
-  );
-};
-
-const NoteCard = ({
-  width,
-  height,
-  anchor,
-  color,
-  phrases,
-  initialText,
-  initialDisplay,
-  initialScale,
-  showDelete,
-  onSubmit,
-  onCancel,
-  onDelete,
-}: NoteCardProps): React.JSX.Element => {
-  const { t } = useTranslation();
-  const [text, setText] = useState(initialText);
-  const [display, setDisplay] = useState<NoteDisplay>(initialDisplay);
-  const [scale, setScale] = useState<number>(() => clampMarkScale(initialScale));
-
-  const cardRef = useRef<HTMLDivElement | null>(null);
-  const markRef = useRef<HTMLDivElement | null>(null);
-  const editorRef = useRef<HTMLDivElement | null>(null);
-
-  const inline = display === "inline";
-  const markFontSize = inlineFontSize(width) * scale;
-
-  const cardHeight = useMeasuredHeight(cardRef, NOTE_CARD_ESTIMATED_HEIGHT);
-  const markHeight = useMeasuredHeight(markRef, inline ? markFontSize * 1.7 : 96);
-
-  const submit = () => {
-    const trimmed = text.trim();
-    if (trimmed) onSubmit(trimmed, display, scale);
-  };
-
-  // How far the mark being written reaches from its anchor. An inline note is
-  // centred on it; a pin sits ON it and hangs its bubble underneath, so the
-  // card may come close from above and must stand clear from below.
-  const gapAbove =
-    (inline ? markHeight / 2 : PIN_RADIUS) + CARD_CLEARANCE;
-  const gapBelow =
-    (inline ? markHeight / 2 : markHeight - PIN_RADIUS) + CARD_CLEARANCE;
-  const placement = placeNoteCard({
-    anchor,
-    pageWidth: width,
-    pageHeight: height,
-    cardWidth: NOTE_CARD_WIDTH,
-    cardHeight,
-    gapAbove,
-    gapBelow,
-  });
-
-  const label = t("annotations.note.text_label", "Treść notatki");
-  /** Write a phrase into the mark and hand the caret back after it. */
-  const takePhrase = (phrase: string): void => {
-    const next = appendPhrase(text, phrase);
-    setText(next);
-    const element = editorRef.current;
-    if (!element) return;
-    element.innerText = next;
-    focusAtEnd(element);
-  };
-
-  return (
-    <>
-      {/* The mark itself, live at its anchor. */}
-      <div
-        ref={markRef}
-        className="absolute z-20"
-        style={{
-          left: anchor.x * width,
-          top: inline ? anchor.y * height : anchor.y * height - PIN_RADIUS,
-          transform: inline ? "translate(-50%, -50%)" : "translateX(-50%)",
-          width: inline
-            ? undefined
-            : Math.min(PIN_BUBBLE_MAX, Math.max(PIN_BUBBLE_MIN, width * 0.4)),
-          maxWidth: inline ? width * 0.5 : undefined,
-          pointerEvents: "auto",
-        }}
-      >
-        {inline ? (
-          <AnchoredEditor
-            elementRef={editorRef}
-            seedText={text}
-            label={label}
-            onInput={setText}
-            onSubmit={submit}
-            onCancel={onCancel}
-            className="min-w-14 rounded-md px-1.5 py-0.5 text-center font-semibold leading-snug shadow-sm outline-none ring-1 ring-black/10 focus:ring-2 focus:ring-ethereal-gold"
-            style={{
-              color,
-              backgroundColor: "rgba(255,255,255,0.92)",
-              // The mark's TRUE size — that is the whole point of writing here.
-              // Below ~16px iOS magnifies the page on focus and a standalone
-              // app does not zoom back out; the trade is deliberate.
-              fontSize: markFontSize,
-            }}
-          />
-        ) : (
-          <div className="flex flex-col items-center">
-            <span
-              aria-hidden="true"
-              className="flex h-7 w-7 items-center justify-center rounded-full text-white shadow-md ring-2 ring-white/80"
-              style={{ backgroundColor: color }}
-            >
-              <Pin size={14} aria-hidden="true" />
-            </span>
-            {/* A pin shows nothing on the page, so its words are written where
-                a reader will open them: in the bubble under the pin. */}
-            <AnchoredEditor
-              elementRef={editorRef}
-              seedText={text}
-              label={label}
-              onInput={setText}
-              onSubmit={submit}
-              onCancel={onCancel}
-              className={cn(
-                "mt-1.5 w-full rounded-nested border border-hairline-strong bg-ethereal-marble px-2.5 py-2 leading-relaxed text-ethereal-ink shadow-glass-ethereal outline-none focus:border-ethereal-gold",
-                FIELD_TEXT_SCALE.xs,
-              )}
-            />
-          </div>
-        )}
-      </div>
-
-      <div
-        ref={cardRef}
-        // The card is CONTROLS, not the mark: it rides the ladder like the rest
-        // of the chrome, so on a dark theme it reads as a panel over the page
-        // rather than a second sheet of paper. Only the mark itself — drawn in
-        // the note's own ink, on the white page — stays paper-side.
-        className="absolute z-20 -translate-x-1/2 rounded-nested border border-hairline-strong bg-ethereal-marble p-2.5 shadow-glass-ethereal"
-        style={{
-          width: NOTE_CARD_WIDTH,
-          left: placement.left,
-          top: placement.top,
-          pointerEvents: "auto",
-        }}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        {/* The words this writer repeats all evening. On a tablet the keyboard
-            is the real cost of a note — it covers the music while it is open —
-            so every chip here is a tap instead of a word. Two rows, flowing
-            sideways: the strip is longer than the card, and the fade at its
-            edge is the only sign a reader gets that it goes on. */}
-        {phrases.length > 0 && (
-          <div className="relative">
-            <div
-              className="no-scrollbar grid auto-cols-max grid-flow-col grid-rows-2 gap-1 overflow-x-auto"
-              role="group"
-              aria-label={t("annotations.quick_phrases", "Szybkie frazy")}
-            >
-              {phrases.map((phrase) => (
-                <button
-                  key={phrase}
-                  type="button"
-                  onClick={() => takePhrase(phrase)}
-                  className="rounded-full bg-ethereal-parchment/60 px-2 py-1 text-[11px] font-medium text-ethereal-graphite transition-colors hover:bg-ethereal-parchment"
-                >
-                  {phrase}
-                </button>
-              ))}
-            </div>
-            {/* Over a strip that fits, this paints the card on the card and
-                vanishes — so it has to be the card's own fill, not white. */}
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 right-0 w-7 bg-linear-to-l from-ethereal-marble to-transparent"
-            />
-          </div>
-        )}
-
-        {/* Inline vs pin display picker. */}
-        <div className="mt-2 flex items-center gap-1">
-          {(["inline", "pin"] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setDisplay(mode)}
-              className={cn(
-                "flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
-                display === mode
-                  ? "bg-ethereal-ink text-ethereal-marble"
-                  : "bg-ethereal-parchment/60 text-ethereal-graphite hover:bg-ethereal-parchment",
-              )}
-            >
-              {mode === "inline"
-                ? t("annotations.note.inline", "Na nucie")
-                : t("annotations.note.pin", "Pinezka")}
-            </button>
-          ))}
-        </div>
-
-        {/* Text size — only meaningful for on-score (inline) text; what it
-            drives is the mark itself, up on the page. */}
-        {inline && (
-          <input
-            type="range"
-            min={MARK_SCALE_MIN}
-            max={MARK_SCALE_MAX}
-            step={MARK_SCALE_STEP}
-            value={scale}
-            onChange={(event) => setScale(Number(event.target.value))}
-            aria-label={t("annotations.scale.text", "Rozmiar tekstu")}
-            className="mt-2 w-full accent-ethereal-ink"
-          />
-        )}
-
-        <div className="mt-2 flex items-center justify-between gap-2">
-          {showDelete && onDelete ? (
-            <button
-              type="button"
-              onClick={onDelete}
-              className="rounded-md p-1 text-ethereal-graphite hover:text-ethereal-crimson"
-              aria-label={t("annotations.note.delete", "Usuń notatkę")}
-            >
-              <Trash2 size={15} aria-hidden="true" />
-            </button>
-          ) : (
-            <span />
-          )}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="rounded-md p-1 text-ethereal-ink/50 hover:text-ethereal-ink"
-              aria-label={t("common.actions.cancel", "Anuluj")}
-            >
-              <X size={15} aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={submit}
-              disabled={!text.trim()}
-              className="rounded-md bg-ethereal-ink px-3 py-1 text-xs font-medium text-ethereal-marble disabled:opacity-40"
-            >
-              {t("common.ok", "OK")}
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
   );
 };

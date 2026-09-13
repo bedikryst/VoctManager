@@ -19,24 +19,45 @@
   ],
   "files": {
     "features/annotations/components/AnnotationOverlay.tsx": {
-      "reason": "Paper-side. The mark on the stave, its lock badge and the pin sit on a page that is white in both themes — the same exception as the canvas under them. The file's CONTROLS (note composer, phrase chips, read-only popover) ride the ladder and carry no literal.",
-      "allow": ["bg-white", "text-white", "ring-white", "ring-white/80", "ring-black/10"]
+      "reason": "Paper-side. The mark on the stave, its lock badge and the pin sit on a page that is white in both themes — the same exception as the canvas under them. The file's CONTROLS ride the ladder and carry no literal; a selected mark is gold, which is an accent and holds its hue.",
+      "allow": [
+        "bg-white",
+        "text-white",
+        "ring-white/80",
+        "ring-black/10"
+      ]
+    },
+    "features/annotations/components/NoteCard.tsx": {
+      "reason": "Paper-side, same exception as AnnotationOverlay: the pin drawn live at its anchor and the on-score word being typed sit on the white page, not on a theme surface. The card of controls beside them rides the ladder.",
+      "allow": [
+        "text-white",
+        "ring-white/80",
+        "ring-black/10"
+      ]
     },
     "features/settings/components/AppTab.tsx": {
       "reason": "The install QR needs a light quiet zone or a scanner cannot read it.",
-      "allow": ["bg-white"]
+      "allow": [
+        "bg-white"
+      ]
     },
     "pages/auth/LegalPage.tsx": {
       "reason": "`print:bg-white` — the one printable route in the panel. Paper leaves the ladder at the printer exactly as the score's canvas does.",
-      "allow": ["bg-white"]
+      "allow": [
+        "bg-white"
+      ]
     },
     "shared/ui/composites/PdfViewer/PdfViewer.tsx": {
       "reason": "The page canvas. A score is paper and dark mode does not print on black.",
-      "allow": ["bg-white"]
+      "allow": [
+        "bg-white"
+      ]
     },
     "shared/ui/primitives/Badge.tsx": {
       "reason": "The pulse sweep across an accent fill — a specular highlight on a hue that holds, not a surface.",
-      "allow": ["via-white/30"]
+      "allow": [
+        "via-white/30"
+      ]
     },
     "features/logistics/components/MapPinShell.tsx": {
       "reason": "Painted directly on Google's raster, which stays light in both themes. A ladder token here inverts the pin into a dark disc casting a pale halo over a map that never moved.",
@@ -48,7 +69,9 @@
     },
     "features/logistics/components/VenueMiniMap.tsx": {
       "reason": "The pin's contact shadow on the same light raster.",
-      "allow": ["bg-black/40"]
+      "allow": [
+        "bg-black/40"
+      ]
     },
     "features/logistics/components/MapAtmosphere.tsx": {
       "reason": "The frame drawn ON the map tiles: an ink vignette and a white inner bevel that belong to the raster's own light, not to the panel's ground.",

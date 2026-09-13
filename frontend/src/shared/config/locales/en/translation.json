@@ -35,21 +35,21 @@
         "book_title": "In the score book",
         "book_body": "When you download the concert score you can switch on “My markings” — they are then drawn onto your copy. The copy is composed for you alone; nobody else sees them there.",
         "offline_title": "Works with no signal",
-        "offline_body": "You can write with no connection. Changes wait on your device and send themselves once the network returns — even if you close the app in the meantime."
+        "offline_body": "You can write with no connection. Changes wait on your device and send themselves once the network returns — even if you close the app in the meantime.",
+        "leader_title": "Cues written for you",
+        "leader_body": "You are running this rehearsal, so the conductor has left cues here written for you. The rest of the choir cannot see them. Like his markings for the choir, you can hide them but not change or erase them."
       },
       "conductor": {
-        "title": "Two layers of markings",
-        "lede": "What reaches the choir, and what stays with you.",
-        "shared_title": "The “Choir” layer",
-        "shared_body": "Whatever you write on this layer reaches every chorister cast in a project that programs this piece. On their side it is read-only.",
-        "private_title": "The “Private” layer",
-        "private_body": "Your own cues. Nobody else can see them. The toggle beside the tools decides which layer you are writing on.",
+        "title": "Three reaches",
+        "lede": "What reaches the choir, what reaches whoever runs the rehearsal, and what stays with you.",
         "theirs_title": "Their notes are closed",
         "theirs_body": "The marks choristers make on their own scores are private from you too — you will not see them here or anywhere else in the panel.",
         "book_title": "Printing the score book",
-        "book_body": "Markings from the “Choir” layer print in the score book when the build has them switched on. A mark outside the bound page range will not print — the cockpit flags that.",
+        "book_body": "Markings in the “Choir” reach print into the score book when the cockpit has them switched on. Whoever runs a rehearsal can pull their own reach onto their own copy. A drawing outside the bound page range will not print — the cockpit says so.",
         "offline_title": "Preparing with no signal",
-        "offline_body": "You can prepare markings with no connection. They wait on your device and send themselves once the network returns — including after you close the app."
+        "offline_body": "You can prepare markings with no connection. They wait on your device and send themselves once the network returns — including after you close the app.",
+        "reach_title": "Who will see this marking",
+        "reach_body": "Every marking has one reach, and the reaches nest inside one another. You can change it afterwards: tap the marking on the score and choose who should see it. The toggle beside the tools only decides where the NEXT one goes."
       }
     },
     "open_tools": "Annotation tools",
@@ -59,13 +59,11 @@
       "for_leader_short": "For the leader",
       "from_conductor_short": "Conductor",
       "leader": "For whoever runs the rehearsal",
-      "leader_hint": "Visible only to the person you hand the rehearsal to",
+      "leader_hint": "Whoever you hand the rehearsal to, and the managers. Not the choir.",
       "leader_short": "Leader",
-      "move_to_leader": "Show to the rehearsal leader",
-      "move_to_leader_short": "To leader",
       "personal_hint": "Visible only to you",
       "personal_short": "Mine",
-      "private": "Private (only you)",
+      "private": "Private (you and the managers)",
       "private_hint": "Only you and the other managers",
       "private_short": "Private",
       "shared": "Visible to the choir",
@@ -159,6 +157,15 @@
       "pen": "Pen",
       "pointer": "Browse",
       "stamp": "Symbol"
+    },
+    "mark": {
+      "audience": "Who sees this",
+      "delete": "Delete marking",
+      "kind": {
+        "freehand": "Ink",
+        "highlight": "Highlight",
+        "stamp": "Symbol"
+      }
     }
   },
   "archive": {
@@ -3021,7 +3028,9 @@
       "NOTIFICATION_READ_RECEIPT": "Read receipt",
       "fallback": "Notification",
       "ANNOUNCEMENT_PENDING": "Announcement queue",
-      "SITE_COPY_PROPOSED": "Copy desk"
+      "SITE_COPY_PROPOSED": "Copy desk",
+      "REHEARSAL_DELEGATED": "You are running rehearsals",
+      "REHEARSAL_DELEGATION_ENDED": "Standing in has ended"
     },
     "status": {
       "attendance": {
@@ -3138,6 +3147,26 @@
         "test_no_device": "This device is no longer registered for push. Turn push off and on again.",
         "test_undeliverable": "The browser’s push service rejected the message. Please try again shortly."
       }
+    },
+    "delegation": {
+      "eyebrow": "You are running rehearsals",
+      "asked_by": "Asked by {{name}}",
+      "asked_by_lede": "{{name}} has asked you to run this project's rehearsals.",
+      "asked_lede": "You have been asked to run this project's rehearsals.",
+      "opens": "What this opens",
+      "scope_marks": "The conductor's markings",
+      "scope_marks_body": "On this project's music you will see the cues the conductor wrote for whoever runs the rehearsal. Nobody else in the choir sees them.",
+      "scope_roll_call": "Attendance",
+      "scope_roll_call_body": "You can take the roll call at this project's rehearsals — for other singers too.",
+      "scope_materials": "Materials",
+      "scope_materials_body": "You can open the scores and the programme, even if you are not singing in it.",
+      "next": "Next rehearsal: {{when}}",
+      "until": "Until {{when}}",
+      "until_close": "Until the project closes",
+      "boundary": "You do not rule on excusal requests and you do not edit the cast — those stay with the managers.",
+      "open_lead_sheet": "Open the evening's card",
+      "open_schedule": "View the schedule",
+      "acknowledge": "Understood"
     }
   },
   "offline": {
@@ -4884,7 +4913,9 @@
         "REHEARSAL_UPDATED": "Rehearsal Time/Location Changed",
         "SYSTEM_ALERT": "System Maintenance or Alert",
         "ANNOUNCEMENT_PENDING": "Unannounced changes waiting",
-        "SITE_COPY_PROPOSED": "Proposed changes to the site's text"
+        "SITE_COPY_PROPOSED": "Proposed changes to the site's text",
+        "REHEARSAL_DELEGATED": "Asked to run rehearsals",
+        "REHEARSAL_DELEGATION_ENDED": "No longer running rehearsals"
       },
       "unsubscribe_modal": {
         "description": "You will no longer receive push notifications on this device. You can turn them back on at any time.",
@@ -4941,7 +4972,9 @@
         "PROJECT_CANCELLED": "An event is called off",
         "REHEARSAL_SCHEDULED": "A new rehearsal joins the schedule",
         "REHEARSAL_CANCELLED": "A rehearsal is called off",
-        "MESSAGE_RECEIVED": "A reply in your conversation"
+        "MESSAGE_RECEIVED": "A reply in your conversation",
+        "REHEARSAL_DELEGATED": "Somebody has asked you to run a project's rehearsals",
+        "REHEARSAL_DELEGATION_ENDED": "The rehearsals have gone back to somebody else"
       },
       "restore_recommended": "Restore recommended",
       "customized_hint": "Customized — differs from the recommended default",
