@@ -61,9 +61,37 @@ retypes none of it.
 
 ### The page
 
-Seven sections: the head (who we are, and the one address, before anything is asked of the reader),
-the three biograms, the pack, the facts and the invoicing block, the collaborators a programme book
-must credit, the published coverage, and the closing invitation.
+Six sections: the head (who we are, and the one address, before anything is asked of the reader),
+the three biograms, the pack, the facts and the invoicing block, who the ensemble works with, and
+the closing invitation.
+
+**Three of them changed shape on the developer's review, the same day.** Each correction is
+recorded with its reason, because each one is the kind a later reader undoes:
+
+- **The published-coverage band was withdrawn.** Not for taste: four links, but **two events** —
+  Gość Niedzielny and Onet/KAI are the same Niedzica evening, the Episkopat photo report and the
+  broadcast are the same Bobola Mass. A band headed "our trace in the media" that resolves to two
+  evenings reads thinner than silence, and a reader who clicks twice sees it in ten seconds.
+  Nothing was lost: the links already ship inside the pack (`nagrania.txt`), which is where the one
+  reader who wants them is looking. **What brings it back is a count of distinct EVENINGS, not of
+  links** — six links about two concerts is still two concerts. Three or four separate evenings, or
+  one publication with real weight. Its heading, lede and rubric were deleted rather than left
+  standing unrendered, because dead copy on the desk spends an editor's attention on a band nobody
+  can see.
+- **"Kogo wymienić w programie" was not vague, it was false.** The heading was an INSTRUCTION over
+  a list that is a HISTORY — everyone the ensemble has ever worked with. Radu Ropotan is marked a
+  guest and played one evening; an organiser who credited him in the programme of a concert he is
+  not playing would have been misled by us. The band is now a statement about the ensemble's
+  practice ("Z kim pracujemy"), and its lede says out loud that the credits for a given evening are
+  settled with the programme. Partners and patrons stay, but as two inline rows under a hairline
+  rather than two columns claiming equal weight with the people who build the evening — they are
+  credibility, which is the one thing on this page that argues.
+- **The biograms open in place.** Three full texts stacked is a wall on a page whose thesis is "one
+  minute". Each row now shows its measure, its measured length and its copy button **always**; only
+  the text is behind the disclosure, and the shortest starts open so the other two are not two shut
+  drawers. **The copy button is outside the `<details>`** — an interactive element inside a
+  `<summary>` swallows the toggle — and the toggle uses `scripts/disclosure.ts`, the site's one
+  controller, non-exclusive so comparing two measures does not close the first.
 
 `noindex,follow` stays, and so does the hand-written sitemap exclusion in `astro.config.mjs`. Its
 only traffic is a link we send — and per the roadmap, that link goes in the **second** mail, after
@@ -283,8 +311,13 @@ been. These are written to be sent as they stand.
 4. `npm run copy:sync` from a clean tree, so `page.press.*` reaches the desk and Florent sees the
    new segments (needs the `COPYDESK_*` credentials).
 
-**Verified here.** `npm run test:copydesk` 29 green, and the accounting reports `press: declared
-but unused: none` — every path in the new YAML is classified. `npm run check`: 13 errors, all of
+**Verified here.** `npm run test:copydesk` reports `press: declared but unused: none` — every path
+in the new YAML is classified. The suite itself was 29 green when this stage shipped and is 28/29
+after the review pass, and **the one failure is not this stage's**: a parallel session added
+`posterCredit`, `ritornello.*` and `festival.*` to `concerts.yaml` without the matching entries in
+`copydesk/contract.mjs`, which that test exists to catch. Whether `ritornello.work` is copy or a
+proper name is a decision for whoever is writing those fields, so it was left alone rather than
+guessed at. `npm run check`: 13 errors, all of
 them the pre-existing `rite/render.mjs` ones, none in a file this stage touched. `npm run build`
 clean — 46 pages, typography 47/47, register audit 2774 nodes with its one standing note.
 `npm run test:audit` 24 green. `npm run press:pack` refuses with an empty manifest and names both
