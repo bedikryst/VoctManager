@@ -43,7 +43,7 @@ import BleedImage from "../BleedImage.astro";
 import { bleedPair, photoOptional } from "../../lib/photos";
 import { layoutShots } from "../../lib/galleryLayout";
 import { galleryRuns } from "../../lib/galleryRuns";
-import { creditSentence, frameCredit } from "../../lib/photoCredit";
+import { creditSentence, designCredit, frameCredit } from "../../lib/photoCredit";
 import { framedShot } from "../../lib/galleryFrame";
 import { candleFrom, candleInkFrom } from "../../lib/candle";
 import { concertKey, withOverlay } from "../../lib/copyOverlay";
@@ -152,6 +152,14 @@ const hrefNotice = `${localizePath("/koncerty", lang)}#nuntius`;
 // ── Poster + documentary gallery. photoOptional so a slot can be declared in YAML before its
 // image lands on disk — a missing file is silently skipped rather than breaking the build.
 const posterImg = c.poster ? photoOptional(c.poster) : undefined;
+/** The poster's full-size renditions, for the frame the coda's sheet opens in. The same pair the
+    landing's announcement and /koncerty ask for, so one poster costs ONE extra emitted file across
+    the three surfaces rather than three (lib/galleryFrame). */
+const posterFrame = posterImg ? await framedShot(posterImg) : undefined;
+/** Who drew it, labelled for this locale. Never through the overlay: the label is translated, the
+    hands are names (glossary §1). An evening whose designer is not on record prints no line — a
+    poster is drawn, and there is no equivalent of "archiwum zespołu" for a hand nobody recorded. */
+const posterCredit = c.posterCredit ? designCredit(c.posterCredit, lang) : undefined;
 const gallery: {
   img: ImageMetadata;
   alt: string;
@@ -348,6 +356,12 @@ for (const p of program) {
 }
 
 const concertTitle = say("title", c.title);
+/** The poster's own name. Resolved once, because the sheet is a button now and the string has two
+    jobs: the `<img>`'s alt in the page, and the frame's accessible name when it opens. The chrome's
+    template stands in where the corpus records none — a control whose only content is an
+    `<img alt="">` reaches a screen reader with no accessible name at all. */
+const posterAlt =
+  sayIf("posterAlt", c.posterAlt) ?? fill(ui.poster.altFallback, { title: concertTitle });
 const essence = say("essence", c.essence);
 const title = `${concertTitle} — ${ui.meta.titleSuffix}`;
 const description = essence;
@@ -1038,22 +1052,49 @@ const jsonLd =
       <div class="kd-wrap kd-coda-inner">
         {/* The gold corner is the mount, not the photograph, so it stays outside the media wrapper
             and above the veil: the frame is already standing when the image lights into it. */}
-        {posterImg && (
+        {posterImg && posterFrame && (
           <figure class="kd-poster">
             <span class="kd-poster-frame" aria-hidden="true"></span>
-            <div class="kd-poster-media">
+            {/* The media wrapper IS the trigger, as in the gallery one band up: a button rather
+                than a control laid over the sheet, contributing no box of its own (`.shot-open`,
+                styles/image-lightbox.css) so the figure's width still decides the geometry.
+
+                It opens ALONE, and deliberately not into `kd-gallery`: that set is the evening's
+                photographs, and a poster is drawn rather than shot — the same distinction that
+                gives it `designCredit` where a frame takes `frameCredit`. Slipping a drawing into
+                a run of photographs would also put it under the gallery's colophon, which names
+                the hands that held a camera.
+
+                AND IT CARRIES NO EXIT, where the landing's announcement carries one. That door
+                exists because the announcement is a dead end on a page about something else; here
+                the reader is already standing on the evening the poster announces, and the coda's
+                own rail two elements down offers the only two roads that are left — the
+                neighbouring stations and the list. A door back to this page would be a no-op. */}
+            <button
+              type="button"
+              class="kd-poster-media shot-open"
+              data-image-open
+              data-image-src={posterFrame.src}
+              data-image-srcset={posterFrame.srcset}
+              data-image-sizes={posterFrame.sizes}
+              data-image-alt={posterAlt}
+              data-image-caption={heroMeta}
+              data-image-credit={posterCredit}
+              data-image-w={String(posterFrame.width)}
+              data-image-h={String(posterFrame.height)}
+            >
               {/* `width` caps the fallback rendition — see lib/photos.ts. */}
               <Image
                 src={posterImg}
                 widths={[280, 420, 560]}
                 width={560}
                 sizes="(max-width: 720px) 62vw, 300px"
-                alt={sayIf("posterAlt", c.posterAlt) ?? fill(ui.poster.altFallback, { title: concertTitle })}
+                alt={posterAlt}
                 loading="lazy"
                 decoding="async"
               />
               <span class="reveal-light" aria-hidden="true"></span>
-            </div>
+            </button>
             <figcaption class="micro reveal">{ui.poster.caption}</figcaption>
           </figure>
         )}

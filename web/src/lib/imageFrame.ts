@@ -23,8 +23,12 @@
  *    the DOM walk, i.e. inventing markup so a lookup mechanism would work — which is the tail
  *    wagging the dog, and unreadable six months later.
  *
- *  A surface with ONE frame and no set to belong to names neither — the landing's announced poster
- *  is the case — and publishes itself, which is the same one-item set the island renders.
+ *  A frame with no set to belong to names neither and publishes itself, which is the same one-item
+ *  set the island renders. That is the POSTER's case on all three surfaces that hang one — the
+ *  landing's announcement, the stations on /koncerty, the coda of a concert page — and it is a
+ *  reading rather than an omission: a poster is one evening's announcement, so a run of them is a
+ *  run of subjects and not a set. The sheet beside a gallery on a concert page stays out of that
+ *  gallery's group for the same reason it takes `designCredit` and not `frameCredit`.
  *
  *  A trigger carrying both is answered by `data-image-set`: the authored set is the specific claim.
  *  Neither form reaches the island differently — both arrive as an `ImageFrameSet`, and the room

@@ -9,6 +9,12 @@
  *  IntersectionObservers (page-scoped). The three route files (/koncerty, /en/koncerty,
  *  /fr/koncerty) are one-liners that differ only in `lang`.
  *
+ *  ITS ONE HYDRATED ISLAND IS THE PHOTOGRAPH FRAME. A station's poster hangs at ~280px, which is
+ *  enough to recognise a sheet and not enough to read one, so it opens in the shared ImageLightbox
+ *  — this page therefore mounts that island, `scripts/image-triggers.ts` and
+ *  `styles/image-lightbox.css`, and declares the frame's scroll-lock against its own body class.
+ *  Each poster opens ALONE rather than as a set; the station's markup states why.
+ *
  *  WHERE EVERY WORD COMES FROM — three sources meet here and keeping them apart is what makes the
  *  page legible:
  *
@@ -39,6 +45,8 @@ import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
 import BleedImage from "../BleedImage.astro";
 import { photo, bleedPair } from "../../lib/photos";
+import { framedShot } from "../../lib/galleryFrame";
+import { designCredit } from "../../lib/photoCredit";
 import { absolute, musicEvent } from "../../lib/eventSchema";
 import { longDate, romanNumeral, viaMoment } from "../../lib/dates";
 import { cycleNumerals, cycleStations, upcomingStation } from "../../lib/cycle";
@@ -46,15 +54,17 @@ import { formatRef } from "../../lib/scriptureRef";
 import { concertKey, withOverlay } from "../../lib/copyOverlay";
 import { pageCopy } from "../../lib/pageCopy";
 import { KONCERTY_CHROME, KONCERTY_PAGE } from "../../i18n/content/koncerty";
-import { CONCERT } from "../../i18n/content/koncert";
+import { CONCERT, fill } from "../../i18n/content/koncert";
 import { NUNTIUS } from "../../i18n/content/nuntius";
 import { eraName } from "../../i18n/content/repertuar";
 import { UI } from "../../i18n/ui";
 import { localizePath, pageI18n, SITE, type Locale } from "../../i18n/config";
 import NoticeSignup from "../NoticeSignup.astro";
 import VaultMount from "../../components/VaultMount.astro";
+import { ImageLightbox } from "../../islands/landing/ImageLightbox";
 import "../../styles/vault.css";
 import "../../styles/notice.css";
+import "../../styles/image-lightbox.css";
 
 interface Props {
   /** Which language this render is. Drives the copy, the chrome, the URL and the hreflang graph. */
@@ -95,66 +105,88 @@ const stepOf = new Map(walk.map((c, i) => [c.id, `${Math.round(((i + 1) / statio
 // the landing's announcement points. Resolved at build: the deploy after the concert takes it down.
 const upcoming = upcomingStation(concerts);
 
-const entries = concerts.map((c) => ({
-  ...c.data,
-  id: c.id,
-  title: say(c.id, "title", c.data.title),
-  essence: say(c.id, "essence", c.data.essence),
-  facts: c.data.facts.map((f, fi) => say(c.id, `facts.${fi}`, f)),
-  links: c.data.links.map((l, li) => ({ ...l, label: say(c.id, `links.${li}.label`, l.label) })),
-  posterAlt: c.data.posterAlt ? say(c.id, "posterAlt", c.data.posterAlt) : undefined,
-  realizacja: c.data.realizacja ? say(c.id, "realizacja", c.data.realizacja) : undefined,
-  // The evening's motto: the foreign original stands unchanged, its vernacular and the citation
-  // that cites it come through the desk. The gloss does two jobs in one slot — the Latin's
-  // vernacular where there IS an `inscriptio`, a standalone editorial note where there is not.
-  inscriptioGloss: c.data.inscriptioGloss
-    ? say(c.id, "inscriptioGloss", c.data.inscriptioGloss.pl)
-    : undefined,
-  inscriptioRefText: c.data.inscriptioRef
-    ? formatRef(
-        c.data.inscriptioRef,
-        lang,
-        c.data.inscriptioRef.source
-          ? say(c.id, "inscriptioRef.source", c.data.inscriptioRef.source.pl)
-          : undefined,
-      )
-    : undefined,
-  // The dateline is composed here, not stored: place per locale (copy, so it comes through the
-  // desk), the moment formatted from the ISO `date` or taken from the vague `dateLabel` (a tour
-  // across a year, a season) — which is copy too.
-  metaPlace: say(c.id, "metaPlace", c.data.metaPlace.pl),
-  // The via-rail's own abbreviation of that same moment — derived, never stored (lib/dates).
-  viaDate: viaMoment(c.data, lang),
-  meta: [
-    say(c.id, "metaPlace", c.data.metaPlace.pl),
-    c.data.date
-      ? longDate(c.data.date, lang)
-      : c.data.dateLabel && say(c.id, "dateLabel", c.data.dateLabel.pl),
-    // The hour, and ONLY on the evening still ahead. It is the one dateline a reader acts on —
-    // every other station's hour is a fact about a night that is over, and printing six of them
-    // would turn a register of memories into a listings page.
-    c.id === upcoming?.id ? c.data.time : undefined,
-  ]
-    .filter(Boolean)
-    .join(" · "),
-  /** The numeral, or `undefined` for an evening the cycle does not number (lib/cycle). */
-  roman: numerals.get(c.id),
-  isUpcoming: c.id === upcoming?.id,
-  /** Whether the door is open, stated only where it is still a question a reader can act on and
-      only where the ensemble recorded the answer — chrome, so it cannot be left behind in one
-      locale, and read off `admission` so the fact has one home (content.config). */
-  door: c.id === upcoming?.id && c.data.admission === "free" ? t.freeAdmission : undefined,
-  // Via-rail fill is derived from position among the STATIONS, not stored per-entry: adding a
-  // concert no longer means re-percentaging every other YAML row by hand, and an office that
-  // never enters the rail cannot advance it.
-  viaStep: stepOf.get(c.id) ?? "0%",
-  // Station backdrops are PRE-BLURRED + pre-darkened WebP files in src/assets/photos,
-  // named after the concert's `bg`. Blurring offline means the browser runs ZERO filter
-  // passes on six full-bleed layers (the old runtime blur was the jank). Astro emits them
-  // as content-hashed asset URLs. Recipe to regenerate them: docs/station-backgrounds.md.
-  bgSrc: photo(c.data.bg).src,
-  posterImg: c.data.poster ? photo(c.data.poster) : null,
-}));
+const entries = await Promise.all(
+  concerts.map(async (c) => {
+    const title = say(c.id, "title", c.data.title);
+    const posterImg = c.data.poster ? photo(c.data.poster) : null;
+    return {
+      ...c.data,
+      id: c.id,
+      title,
+      essence: say(c.id, "essence", c.data.essence),
+      facts: c.data.facts.map((f, fi) => say(c.id, `facts.${fi}`, f)),
+      links: c.data.links.map((l, li) => ({ ...l, label: say(c.id, `links.${li}.label`, l.label) })),
+      realizacja: c.data.realizacja ? say(c.id, "realizacja", c.data.realizacja) : undefined,
+      // The evening's motto: the foreign original stands unchanged, its vernacular and the citation
+      // that cites it come through the desk. The gloss does two jobs in one slot — the Latin's
+      // vernacular where there IS an `inscriptio`, a standalone editorial note where there is not.
+      inscriptioGloss: c.data.inscriptioGloss
+        ? say(c.id, "inscriptioGloss", c.data.inscriptioGloss.pl)
+        : undefined,
+      inscriptioRefText: c.data.inscriptioRef
+        ? formatRef(
+            c.data.inscriptioRef,
+            lang,
+            c.data.inscriptioRef.source
+              ? say(c.id, "inscriptioRef.source", c.data.inscriptioRef.source.pl)
+              : undefined,
+          )
+        : undefined,
+      // The dateline is composed here, not stored: place per locale (copy, so it comes through the
+      // desk), the moment formatted from the ISO `date` or taken from the vague `dateLabel` (a tour
+      // across a year, a season) — which is copy too.
+      metaPlace: say(c.id, "metaPlace", c.data.metaPlace.pl),
+      // The via-rail's own abbreviation of that same moment — derived, never stored (lib/dates).
+      viaDate: viaMoment(c.data, lang),
+      meta: [
+        say(c.id, "metaPlace", c.data.metaPlace.pl),
+        c.data.date
+          ? longDate(c.data.date, lang)
+          : c.data.dateLabel && say(c.id, "dateLabel", c.data.dateLabel.pl),
+        // The hour, and ONLY on the evening still ahead. It is the one dateline a reader acts on —
+        // every other station's hour is a fact about a night that is over, and printing six of them
+        // would turn a register of memories into a listings page.
+        c.id === upcoming?.id ? c.data.time : undefined,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      /** The numeral, or `undefined` for an evening the cycle does not number (lib/cycle). */
+      roman: numerals.get(c.id),
+      isUpcoming: c.id === upcoming?.id,
+      /** Whether the door is open, stated only where it is still a question a reader can act on and
+          only where the ensemble recorded the answer — chrome, so it cannot be left behind in one
+          locale, and read off `admission` so the fact has one home (content.config). */
+      door: c.id === upcoming?.id && c.data.admission === "free" ? t.freeAdmission : undefined,
+      // Via-rail fill is derived from position among the STATIONS, not stored per-entry: adding a
+      // concert no longer means re-percentaging every other YAML row by hand, and an office that
+      // never enters the rail cannot advance it.
+      viaStep: stepOf.get(c.id) ?? "0%",
+      // Station backdrops are PRE-BLURRED + pre-darkened WebP files in src/assets/photos,
+      // named after the concert's `bg`. Blurring offline means the browser runs ZERO filter
+      // passes on six full-bleed layers (the old runtime blur was the jank). Astro emits them
+      // as content-hashed asset URLs. Recipe to regenerate them: docs/station-backgrounds.md.
+      bgSrc: photo(c.data.bg).src,
+      posterImg,
+      /** The poster's full-size renditions, for the frame the station's own poster opens in. The
+          same pair the landing's announcement and /koncerty/[id] ask for, so a poster costs ONE
+          extra emitted file across the three surfaces rather than three (lib/galleryFrame).
+          `framedShot` never upscales: five of the six posters in the corpus are 800px wide and
+          open at 800px, which is the delivered artwork's limit and not this page's. */
+      posterFrame: posterImg ? await framedShot(posterImg) : null,
+      /** The poster's own name, and it is now REQUIRED rather than nice to have: the poster is a
+          button, and a control whose only content is an `<img alt="">` reaches a screen reader
+          with no accessible name at all. Falls back to the chrome's template, exactly as the
+          concert's own coda does — one wording for one object on both surfaces. */
+      posterAlt: c.data.posterAlt
+        ? say(c.id, "posterAlt", c.data.posterAlt)
+        : fill(concertUi.poster.altFallback, { title }),
+      /** Never through the overlay: the label is translated, the hands are names (glossary §1).
+          Most evenings leave it unset and the frame then prints no line — a poster is drawn, and
+          there is no equivalent of "archiwum zespołu" for a hand that is not on record. */
+      posterCredit: c.data.posterCredit ? designCredit(c.data.posterCredit, lang) : undefined,
+    };
+  }),
+);
 
 /** The walk itself — the numbered stations, in Via order. */
 const stations = entries.filter((e) => e.cycle);
@@ -343,10 +375,51 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
             </div>
           ) : (
             <div class="station-inner">
-              {s.posterImg && (
+              {s.posterImg && s.posterFrame && (
                 <figure class="station-poster">
+                  {/* The gold corner is the MOUNT, not the sheet, so it stays outside the trigger:
+                      the frame is already standing when the image lights into it, and a press on
+                      the register mark is not a press on the poster. */}
                   <span class="frame" aria-hidden="true" />
-                  <div class="station-poster-media">
+                  {/* The media wrapper IS the trigger, as on /koncerty/[id] and /obrazy — a button
+                      rather than a control laid over the sheet, so the whole poster is the target
+                      and nothing is drawn on top of it. It contributes no box of its own
+                      (`.shot-open`, styles/image-lightbox.css), so the station's grid is untouched.
+
+                      EACH POSTER OPENS ALONE — no `data-image-group`, and that is a decision rather
+                      than an omission. Every set this site publishes is frames of ONE subject: an
+                      evening's photographs on a concert page, the archive on /obrazy. Six posters
+                      are six announcements, drawn by different hands in different years, and an
+                      arrow that walked between them would do two things the page cannot afford.
+                      The stations stand a full viewport apart, so the room the reader came from is
+                      no longer the station they would return to on closing — where a gallery grid's
+                      neighbours are all within a screen of the press. And the walk is what this
+                      page IS: a poster carousel across the cycle is a second, faster route through
+                      the same six evenings, which is the catalogue reading the register guardrail
+                      exists to refuse (docs/web-landing-guardrails §1). The two memoriam evenings
+                      settle it — they are deliberately quieted here, and an arrow-run would hand
+                      them to a reader in the same breath as the rest.
+
+                      The exit is the evening's own page and appears only where there is one: a
+                      station with no page would otherwise carry a door back to the anchor the
+                      reader is already standing on. Its label is the evening's NAME, because the
+                      frame shows a sheet and a dateline and nothing else says which night it is —
+                      the same reading the landing's announcement takes. */}
+                  <button
+                    type="button"
+                    class="station-poster-media shot-open"
+                    data-image-open
+                    data-image-src={s.posterFrame.src}
+                    data-image-srcset={s.posterFrame.srcset}
+                    data-image-sizes={s.posterFrame.sizes}
+                    data-image-alt={s.posterAlt}
+                    data-image-caption={s.meta}
+                    data-image-credit={s.posterCredit}
+                    data-image-w={String(s.posterFrame.width)}
+                    data-image-h={String(s.posterFrame.height)}
+                    data-image-href={s.hasPage ? localizePath(`/koncerty/${s.id}`, lang) : undefined}
+                    data-image-href-label={s.hasPage ? s.title : undefined}
+                  >
                     {/* `width` caps the fallback rendition — see lib/photos.ts. */}
                     <Picture
                       src={s.posterImg}
@@ -354,12 +427,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                       widths={[280, 420, 560]}
                       width={560}
                       sizes="(max-width: 820px) 72vw, 348px"
-                      alt={s.posterAlt ?? ""}
+                      alt={s.posterAlt}
                       loading="lazy"
                       decoding="async"
                     />
                     <span class="reveal-light" aria-hidden="true"></span>
-                  </div>
+                  </button>
                 </figure>
               )}
               <div class="station-text">
@@ -656,8 +729,10 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   <SiteFooter lang={lang} />
 
   <VaultMount lang={lang} />
+  <ImageLightbox client:idle />
   <script>
     import "../../scripts/vault-triggers.ts";
+    import "../../scripts/image-triggers.ts";
   </script>
 </BaseLayout>
 
@@ -665,6 +740,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   /* Surface as an opaque image, colour slot left to the iOS edge band — see `--edge-band`.
      A plain `background: var(--night)` here would put page content back into the band. */
   :global(body.page-koncerty) { background-image: linear-gradient(var(--night), var(--night)); background-color: var(--edge-band); color: var(--ink-soft); }
+
+  /* The photograph frame's scroll-lock, named for THIS body class rather than declared in
+     image-lightbox.css: a blanket `body.image-open` rule would reach every document on the site,
+     including the ones that never mount the island. Same shape /obrazy, /kolofon and
+     /koncerty/[id] use. */
+  :global(body.page-koncerty.image-open) { overflow: hidden; }
 
   /* Intro hero */
   .intro { position: relative; min-height: 100svh; display: flex; align-items: flex-end; padding: 0 max(28px, 5vw) clamp(64px, 9vw, 112px); color: var(--paper); overflow: hidden; isolation: isolate; }

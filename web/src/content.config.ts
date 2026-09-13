@@ -175,14 +175,19 @@ const concerts = defineCollection({
     heroFoot: z.number().min(0).max(1).optional(),
     /** Framed poster — photo() base name. Absent for the liturgy plate. */
     poster: z.string().optional(),
+    /** The poster's own name, and the accessible name of the button it becomes on all three
+        surfaces that hang it. Optional in the schema, never absent in practice: each surface falls
+        back to the chrome's template (i18n/content/koncert `poster.altFallback`) rather than open a
+        nameless control. */
     posterAlt: z.string().optional(),
     /** Who drew the poster, as a FINISHED list of hands separated by " · " — no label, which the
         locale supplies (lib/photoCredit `designCredit`), and no translation, because these are
         names. It is printed only where the poster stands ALONE and large enough to be read, i.e.
-        in the frame the landing's announcement opens; a credit under a 300px thumbnail is a
-        colophon the band does not carry. An evening whose designer is not on record leaves it
-        unset and the frame prints no line — never "archiwum zespołu", which is a claim about a
-        camera and not about a drawing hand. */
+        inside the frame it opens in (the landing's announcement, the station on /koncerty, the
+        coda of /koncerty/[id]); a credit under a 300px thumbnail is a colophon none of those
+        surfaces carries. An evening whose designer is not on record leaves it unset and the frame
+        prints no line — never "archiwum zespołu", which is a claim about a camera and not about a
+        drawing hand. */
     posterCredit: z.string().optional(),
     realizacja: z.string().optional(),
     spotify: z.string().url().optional(),

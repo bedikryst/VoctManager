@@ -4,9 +4,9 @@
  *  dispatches `voct:open-image` with a SET of photographs and the index of the one pressed, which
  *  the page's ImageLightbox island consumes. The set is the trigger's `data-image-group` in DOM
  *  order — the whole document on /obrazy, one evening's gallery on a concert page. A trigger with
- *  no group publishes itself as a one-item set (lib/imageFrame states the contract), which is the
- *  landing's only case: its Imagines panels are doors to their evening and trigger nothing, and
- *  the announcement band's poster is the single frame that page opens.
+ *  no group publishes itself as a one-item set (lib/imageFrame states the contract), which is what
+ *  every POSTER on the site does: one evening's announcement is not a member of a run, so the
+ *  landing's band, each station on /koncerty and a concert page's coda each open alone.
  *
  *  One delegated listener on the document in the CAPTURE phase, as vault-triggers.ts uses:
  *  ClientRouter's own click handler sits on the document too (bubbling, registered earlier in
