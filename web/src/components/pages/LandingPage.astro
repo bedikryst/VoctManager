@@ -197,7 +197,12 @@ const jsonLd = {
             immediately before it, against it. Dormant with no future-dated station in the corpus,
             which is what this page looked like until 2026. */}
         <ProximumSection copy={c.proximum} chrome={t} lang={lang} />
-        <PathSection copy={c.register} chrome={t} lang={lang} />
+        <PathSection
+          copy={c.register}
+          chrome={t}
+          announceLabel={c.hero.announceLabel}
+          lang={lang}
+        />
       </section>
 
       <section class="movement" id="ruch-iii" data-movement="sustinete" aria-label="III · Sustinete nos">

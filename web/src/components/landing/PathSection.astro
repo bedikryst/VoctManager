@@ -21,6 +21,7 @@
 import { getCollection } from "astro:content";
 import { PATHS, ROMAN } from "../../data/landing/paths";
 import { upcomingStation } from "../../lib/cycle";
+import { longMoment } from "../../lib/dates";
 import { concertKey, overlayValue } from "../../lib/copyOverlay";
 import { localizePath, type Locale } from "../../i18n/config";
 import type { LandingChrome, LandingCopy } from "../../i18n/content/landing";
@@ -29,20 +30,25 @@ import { NUNTIUS } from "../../i18n/content/nuntius";
 interface Props {
   copy: LandingCopy["register"];
   chrome: LandingChrome;
+  /** The word the hero's dateline uses for the evening that is ahead, handed down rather than
+      restated: this register closes on the same claim and one claim has one wording. It lives in
+      the hero's copy slot because that is where it is first said, not because it is the hero's. */
+  announceLabel: string;
   lang: Locale;
 }
-const { copy, chrome, lang } = Astro.props;
+const { copy, chrome, announceLabel, lang } = Astro.props;
 
 // SSoT: program lists live in the `concerts` collection (src/content/concerts.yaml) —
 // the same source the /koncerty stations and concert pages read. The register derives
 // each card's repertoire from it by concert id, so there is no second copy to drift.
 const concerts = await getCollection("concerts");
 const byId = new Map(concerts.map((c) => [c.id, c.data] as const));
-/** Whether an evening is announced — which is what decides if the open card below stands at all.
-    Read from the corpus, not from this register's own list: the register holds what has SOUNDED
-    and an announced evening is by definition not in it, so the list can never see the collision
-    on its own. */
-const announced = upcomingStation(concerts) !== undefined;
+/** The evening that is announced, if one is — which decides which of the register's two closings
+    stands. Read from the corpus, not from this register's own list: the register holds what has
+    SOUNDED and an announced evening is by definition not in it, so the list can never see the
+    collision on its own. */
+const upcoming = upcomingStation(concerts);
+const announced = upcoming !== undefined;
 const hrefConcerts = localizePath("/koncerty", lang);
 const nuntius = NUNTIUS[lang];
 // The band that takes the consent, on the page that says why there is one. Nothing is asked for
@@ -66,6 +72,24 @@ const entries = PATHS.map((path, i) => {
     program: byId.get(path.concertId)?.program ?? [],
   };
 });
+
+/** The register's closing when an evening IS announced — the counterpart of the open card below,
+    and the reason this is not simply "the card stands down". The card carried the gold hairline
+    that CLOSES the register, so removing it removed the closing line with it: the section ended
+    on the last memory and then on nothing at all. What belongs in that slot is the one thing the
+    register cannot hold — an evening that has not sounded — said the way the hero says it, and
+    not as a sixth row: no numeral, no programme, no poster (docs/web-landing-guardrails §1). */
+const ahead = upcoming
+  ? {
+      // An evening with no page of its own is still a PLACE on /koncerty: the station carries the
+      // anchor, so the door lands on the announcement rather than at the head of the walk.
+      href: upcoming.data.hasPage
+        ? `${hrefConcerts}/${upcoming.id}`
+        : `${hrefConcerts}#${upcoming.id}`,
+      title: overlayValue(concertKey(upcoming.id, "title"), lang) ?? upcoming.data.title,
+      moment: longMoment(upcoming.data, lang),
+    }
+  : undefined;
 ---
 
 <section class="section path" id="droga" aria-label={copy.title}>
@@ -214,6 +238,18 @@ const entries = PATHS.map((path, i) => {
           </p>
         </div>
       </aside>
+      )}
+
+      {/* And this is what stands in that slot instead. Written unbroken — whitespace between these
+          nodes would print inside the line, and the mark before the moment is drawn by the sheet. */}
+      {ahead && (
+        <aside class="path-entry path-ahead reveal-rule" aria-label={chrome.nextAria}>
+          <span class="path-entry-rail" aria-hidden="true"></span>
+          <a class="path-ahead-link reveal plausible-event-name=rejestr+najblizej" href={ahead.href}>
+            <span class="path-ahead-dot" aria-hidden="true"></span>
+            <span class="path-ahead-text">{`${announceLabel} — `}<strong>{ahead.title}</strong><span class="path-ahead-when">{ahead.moment}</span></span>
+          </a>
+        </aside>
       )}
     </div>
   </div>

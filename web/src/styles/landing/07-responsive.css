@@ -220,6 +220,21 @@
       display: none;
     }
 
+    /* The register's closing announcement is the same line on the same phone, and its body column
+       is NARROWER than the hero's — the entry's 140px rail stands beside it at every width — so it
+       reaches this point first, not last. */
+    .path-ahead-link {
+      --ahead-line: 1.9;
+    }
+
+    .path-ahead-when {
+      display: block;
+    }
+
+    .path-ahead-when::before {
+      display: none;
+    }
+
     /* One controlled type step (not two competing clamps): 360→430px lands a
        comfortable ~60–72px so "głos." never crushes onto the response line. */
     .hero-title {

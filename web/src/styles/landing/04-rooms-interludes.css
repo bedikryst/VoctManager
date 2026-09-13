@@ -643,6 +643,93 @@
       border-color 0.3s var(--ease);
   }
 
+  /* ── The register's OTHER closing: the evening that is announced ────────────
+     It takes the open card's slot and its job — including the candle hairline that closes the
+     register, which is the line the section loses the moment the card stands down. Same row
+     geometry as an entry, so the announcement starts on the measure the titles start on, and the
+     rail stays EMPTY on purpose: an evening that has not sounded carries no numeral in a register
+     of what has. Padding is its own — an entry is 280–420px tall because it holds a programme,
+     and this holds one line. */
+  .path-ahead {
+    padding-top: clamp(22px, 2.4vw, 32px);
+    padding-bottom: clamp(22px, 2.4vw, 32px);
+    align-items: center;
+    border-bottom: 1px solid rgba(198, 164, 91, 0.3);
+  }
+
+  /* The hero's dateline, moved to parchment: the same dot, the same two facts, the same drawn
+     mark between them — one mark for "this evening is ahead", wherever the site claims it. Only
+     the inks change, and they must: `--candle-ink` rather than display gold, because at 11px on
+     paper full candle measures 2.10 : 1 (the same call `.path-next-nuntius-link` makes above). */
+  .path-ahead-link {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 11px;
+    /* One number for the leading and the dot's offset below it — they are the same measurement
+       read from two places, and it is also what clears the rule under the evening's name once
+       the line wraps to two tiers. */
+    --ahead-line: 1.5;
+    font-family: var(--capitalis);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    line-height: var(--ahead-line);
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    transition: color 0.35s var(--ease);
+  }
+
+  .path-ahead-link strong {
+    color: var(--candle-ink);
+    font-weight: 400;
+    padding-bottom: 2px;
+    border-bottom: 1px solid color-mix(in oklab, var(--candle-ink) 38%, transparent);
+    transition: border-color 0.35s var(--ease);
+  }
+
+  .path-ahead-link:hover,
+  .path-ahead-link:focus-visible {
+    color: var(--ink);
+  }
+
+  .path-ahead-link:hover strong,
+  .path-ahead-link:focus-visible strong {
+    border-bottom-color: var(--candle-ink);
+  }
+
+  /* The moment is a peer of the name, not a subtitle. The middot is DRAWN so the phone layer can
+     drop it when the two facts stop sharing a line, and glued on both sides — with no whitespace
+     in the markup the mark can never end a line, nor the date start one alone. */
+  .path-ahead-when {
+    white-space: nowrap;
+  }
+
+  .path-ahead-when::before {
+    content: "·";
+    margin: 0 0.5em 0 0.62em;
+    letter-spacing: 0;
+  }
+
+  /* `flex-start` with an explicit offset, not `align-items: center`: the line wraps to two tiers
+     on a phone, where a centred dot would float against the middle of the block. The dot is a
+     mark rather than type, so it takes full candle. `announcePulse` is the hero's own keyframes
+     (02-hero-sections) — one pulse for one claim. */
+  .path-ahead-dot {
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+    margin-top: calc((var(--ahead-line) * 1em - 7px) / 2);
+    border-radius: 50%;
+    background: var(--candle);
+    animation: announcePulse 2.8s var(--ease-slow) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .path-ahead-dot {
+      animation: none;
+      opacity: 0.9;
+    }
+  }
+
   /* Deepening to ink, not lifting to candle: at this size full --candle would drop the link to
      2.10:1 exactly where it becomes the thing being pointed at. */
   .path-next-nuntius-link:hover {
