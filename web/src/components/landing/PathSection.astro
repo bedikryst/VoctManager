@@ -245,10 +245,16 @@ const ahead = upcoming
       {ahead && (
         <aside class="path-entry path-ahead reveal-rule" aria-label={chrome.nextAria}>
           <span class="path-entry-rail" aria-hidden="true"></span>
-          <a class="path-ahead-link reveal plausible-event-name=rejestr+najblizej" href={ahead.href}>
-            <span class="path-ahead-dot" aria-hidden="true"></span>
-            <span class="path-ahead-text">{`${announceLabel} — `}<strong>{ahead.title}</strong><span class="path-ahead-when">{ahead.moment}</span></span>
-          </a>
+          {/* The ink is on the LINE, never on the anchor — the same split every entry above makes
+              (`.path-entry-title.reveal` holding `.path-entry-link`). The register's reveal writes
+              `transition: opacity` at a specificity the element cannot clear, so a control that
+              wears it loses its own hover transition. */}
+          <div class="path-ahead-line reveal">
+            <a class="path-ahead-link plausible-event-name=rejestr+najblizej" href={ahead.href}>
+              <span class="path-ahead-dot" aria-hidden="true"></span>
+              <span class="path-ahead-text">{`${announceLabel} — `}<strong>{ahead.title}</strong><span class="path-ahead-when">{ahead.moment}</span></span>
+            </a>
+          </div>
         </aside>
       )}
     </div>
