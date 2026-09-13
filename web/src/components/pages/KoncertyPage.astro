@@ -620,14 +620,19 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                         {s.progRows.map((r) => (
                           <li class:list={[{ bis: r.bis, "prog-return": r.times !== undefined }]}>
                             <span class="prog-n" aria-hidden="true">{r.num}</span>
-                            {/* Markup, for the one emphasis a work line carries: a foreign title
-                                inside a vernacular phrase (content.config). */}
-                            <span class="pc">{r.composer}</span> — <span set:html={r.work} />
-                            {r.times !== undefined && (
-                              <span class="prog-times">
-                                {fill(t.ritornelloTimes, { times: String(r.times) })}
-                              </span>
-                            )}
+                            {/* The body is ONE box beside the ordinal's gutter, not a run of
+                                siblings: the row is a grid, and loose children — the dash between
+                                composer and work included — would each become a cell of their own. */}
+                            <span class="prog-body">
+                              {/* Markup, for the one emphasis a work line carries: a foreign title
+                                  inside a vernacular phrase (content.config). */}
+                              <span class="pc">{r.composer}</span> — <span set:html={r.work} />
+                              {r.times !== undefined && (
+                                <span class="prog-times">
+                                  {fill(t.ritornelloTimes, { times: String(r.times) })}
+                                </span>
+                              )}
+                            </span>
                           </li>
                         ))}
                       </ul>
@@ -998,7 +1003,13 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .prog-d .chev { transition: transform .4s var(--ease); }
   .prog-d[open] .chev { transform: rotate(180deg); }
   .prog-list { list-style: none; margin: 0; padding: 22px 0 0; columns: 2; column-gap: 44px; }
-  .prog-list li { break-inside: avoid; padding: 8px 0; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,233,.78); border-top: 1px solid rgba(244,241,233,.16); }
+  /* The ordinal is a GUTTER, not a word the title runs on from: a work whose name takes two lines
+     ("Beati quorum via, / op. 38 nr 3") used to set its second line under the numeral, where it
+     reads as a new entry that lost its number. Baseline alignment, because the ordinal is 10px
+     mono beside a 15.5px serif and centring the two cells would float it off the line it counts.
+     The column is fixed rather than `min-content`: the dash a row outside the numbering carries is
+     narrower than "01", and sizing to content would start every such row's text at its own x. */
+  .prog-list li { break-inside: avoid; display: grid; grid-template-columns: 15px 1fr; column-gap: 10px; align-items: baseline; padding: 8px 0; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,233,.78); border-top: 1px solid rgba(244,241,233,.16); }
   /* 400, not the body's inherited 300 — this is the site's smallest serif and every factor it
      carries pushes the same way: 15.5px, italic, and light-on-dark, where the stroke thins
      further. Cormorant has no `opsz` axis, so weight is the only compensation there is
@@ -1007,7 +1018,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
      against the row and changing it re-flows both columns. */
   .prog-list li .pc { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 1.15em; color: var(--paper); }
   /* Ordinal — the order is part of the work ("kolejność jest bardzo ważna"), so it shows. */
-  .prog-list li .prog-n { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--accent, var(--candle)); margin-right: 10px; }
+  .prog-list li .prog-n { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--accent, var(--candle)); }
   .prog-list li.bis { color: var(--accent, var(--candle)); }
   /* The piece that returns. Its rule is LIT and it carries a second line saying how often it
      sounds — the two together are the whole statement this list makes about a return, since the
@@ -1015,7 +1026,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
      ink: an encore is a different kind of exception (it is the evening's last word) and keeps the
      accent to itself, so the two cannot be read as one mark. */
   .prog-list li.prog-return { border-top-color: color-mix(in srgb, var(--accent, var(--candle)) 45%, transparent); }
-  .prog-times { display: block; margin-top: 4px; font-family: var(--mono); font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent, var(--candle)); }
+  /* Flush RIGHT in the row's own cell, the way a programme sets a duration: at the left margin it
+     began under the ordinal and read as a second entry rather than a note on this one. The
+     negative margin takes back the trailing letter-space the last character carries, so the mark
+     ends on the measure and not 2px inside it. */
+  .prog-times { display: block; margin-top: 4px; text-align: right; margin-right: -.18em; font-family: var(--mono); font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent, var(--candle)); }
   @media (max-width: 620px) { .prog-list { columns: 1; } }
   @media (max-width: 820px) {
     .station-inner, .station.reverse .station-inner { grid-template-columns: 1fr; gap: 30px; }
