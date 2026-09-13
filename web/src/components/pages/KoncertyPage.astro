@@ -851,8 +851,10 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     </section>
   </main>
 
-  {/* The notice band — the form itself — stands under the unwritten station on this page. */}
-  <SiteFooter lang={lang} notice={false} />
+  {/* The form itself stands under the unwritten station, two screens up. The footer still prints
+      its own ask: a reader who has walked past that band to the foot of the page has left it
+      behind, and a footer that silently drops a stanza on one page reads as broken furniture. */}
+  <SiteFooter lang={lang} />
 
   <VaultMount lang={lang} />
   <ImageLightbox client:idle />

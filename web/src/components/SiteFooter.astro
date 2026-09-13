@@ -25,11 +25,17 @@
  *  alone), `/kolofon` and `/polityka-prywatnosci`.
  *
  *  THE NOTICE LIST IS AN ASK, NOT A PAGE, and filed as one it read `Zawiadomienia` — a word that
- *  names the genre and says nothing about concerts or about signing up. It now stands across the
- *  measure in the wording the site already owns (`NUNTIUS[lang].invitation`, the same sentence
- *  `/kontakt` and the landing print): the rubric names it, the line says what arrives, the link
- *  says what to do. Pages that already offer the list in their own body pass `notice={false}` —
- *  see the prop.
+ *  names the genre and says nothing about concerts or about signing up. It is a STANZA OF ITS OWN
+ *  RANK now, beside the registry and the addresses, in the wording the site already owns
+ *  (`NUNTIUS[lang].invitation`, the same sentence `/kontakt` and the landing print): the rubric
+ *  names it, the line says what arrives, the link says what to do. It stands next to `Vox`
+ *  because those two are the two directions of one correspondence — we write to you, you write
+ *  to us — which is the order `/kontakt` puts them in on the page itself.
+ *
+ *  It was briefly a centred band under the grid and that was the wrong shelf: a lone centred
+ *  object under three columns that hang from the left of the measure belongs to nothing, which
+ *  is the same failure the landing's dateline had and the guardrails record. Four stanzas of one
+ *  rank is this house's own form — the landing's register is four.
  *
  *  What this footer shares with the landing's: the two-voice rubric (`· LATIN gloss`), the
  *  statute, the data-protection route, and an entrance in the site's own registers.
@@ -45,12 +51,14 @@ interface Props {
   /** Page locale — selects footer labels and localizes the site-map links. Defaults to Polish,
       so every un-migrated caller renders byte-identical to before. */
   lang?: Locale;
-  /** Whether to print the `Nuntius` invitation band. Pass `false` from any page that already
-      offers the notice list in its own body — `/koncerty` (the band with the form), `/kontakt`
-      (the same invitation mid-page), `/newsletter` and `/nuntius` (the list itself), and a
-      concert page (the `Nuntius` door in its closing rail). A second ask a screen below the
-      first is a restatement, and on a page that deliberately withholds the offer — a concert
-      with an evening already announced — it would contradict the page. */
+  /** Whether to print the `Nuntius` stanza. The footer is furniture and repeats on every page, so
+      the bar for withholding it is narrow: pass `false` ONLY where the ask would point at the
+      page the reader is standing on (`/newsletter`, `/nuntius`), where the identical sentence is
+      already set in the body a screen above (`/kontakt`), or where a page has deliberately chosen
+      silence about the list (a concert page whose evening is already announced — see its rail).
+      Distance is not duplication: `/koncerty` carries the form itself two screens up and still
+      prints this, because a reader who reached the foot of the page has left that band behind.
+      With the stanza off the grid closes to three columns (`data-stanzas`). */
   notice?: boolean;
 }
 const { lang = DEFAULT_LOCALE, notice = true } = Astro.props;
@@ -62,11 +70,13 @@ const tempusGloss = tempus.gloss[lang];
 ---
 
 <footer class="site-foot">
-  {/* Three columns, three bands, written left to right: `data-d` sets the offset for a whole
-      SUBTREE, so the column carries the cadence and its head, mark and list all take it. The
-      ink is on the columns rather than on the grid because one onset cannot cover a 220px
-      block and still be one utterance. */}
-  <div class="foot-grid">
+  {/* Four stanzas of one rank, all hanging from one line across the measure, written left to
+      right: `data-d` sets the offset for a whole SUBTREE, so the stanza carries the cadence and
+      its head, mark and list all take it. The ink is on the stanzas rather than on the grid
+      because one onset cannot cover a 220px block and still be one utterance. The cadence is
+      handed out in reading order and CLOSES UP when Nuntius is absent — a hole in a stagger
+      reads as a stall, not as an omission. */}
+  <div class="foot-grid" data-stanzas={notice ? "4" : "3"}>
     <div class="foot-col reveal" data-d="1">
       {/* The two-voice rubric this site's registers speak: Latin in the inscriptional capital,
           the gloss in mono minuscule. The split is not decorative — Cinzel has no lowercase, so
@@ -126,7 +136,42 @@ const tempusGloss = tempus.gloss[lang];
       </ul>
     </div>
 
-    <div class="foot-col reveal" data-d="3">
+    {/* THE ASK — the one stanza here that leads FORWARD, and the one sentence in this footer
+        written to a person rather than filed. It stands immediately before `Vox` because the two
+        are the two directions of one correspondence, which is the order the contact page itself
+        puts them in: the three doors a reader writes through, then the one route that runs the
+        other way.
+        Every word is read from `NUNTIUS`, never written here — the same invitation stands on
+        /kontakt and on the landing, and one fact may have only one wording. The destination is
+        `/newsletter`, the page built to be TOLD to someone out loud, and not the form's anchor on
+        /koncerty: a reader arriving from the foot of /o-nas has not been walking the cycle and
+        would land two screens below that page's head. */}
+    {
+      notice && (
+        <div class="foot-col foot-col-nuntius reveal" data-d="3">
+          <h3>
+            <span class="dot" aria-hidden="true">·</span>
+            <span class="lat" lang="la">Nuntius</span>
+            <span class="gloss">{nuntius.page.eyebrow}</span>
+          </h3>
+          <p class="foot-say">{nuntius.invitation.line}</p>
+          {/* The act, set as this footer's other act is — the statute's route two stanzas left:
+              mono, a permanent hairline, no `↗`. The arrow that IS here is `→`, and it means
+              direction rather than "opens elsewhere in the browser"; it is the same arrow
+              /kontakt puts on the same words. */}
+          <p class="foot-act">
+            <a
+              class="plausible-event-name=zawiadomienia+stopka"
+              href={localizePath("/newsletter", lang)}
+            >
+              {nuntius.invitation.cta}&nbsp;<span aria-hidden="true">→</span>
+            </a>
+          </p>
+        </div>
+      )
+    }
+
+    <div class="foot-col reveal" data-d={notice ? "4" : "3"}>
       <h3>
         <span class="dot" aria-hidden="true">·</span>
         <span class="lat" lang="la">Vox</span>
@@ -162,37 +207,13 @@ const tempusGloss = tempus.gloss[lang];
     </div>
   </div>
 
-  {/* THE ASK, across the whole measure — the one thing at the foot of this site that leads
-      FORWARD, and the one warm sentence among three columns of registry data. Centred because
-      it is addressed to the reader rather than filed, and it does not float there: the incipit
-      directly beneath it shares the axis, so the two close the page as a pair.
-      Every word is read from `NUNTIUS`, never written here: the same invitation stands on
-      /kontakt and on the landing, and one fact may have only one wording. The destination is
-      `/newsletter` — the page built to be TOLD to someone out loud — and not the band's anchor
-      on /koncerty, because a reader arriving from the foot of /o-nas has not been walking the
-      cycle and would land two screens below its head. */}
-  {
-    notice && (
-      <p class="foot-nuntius reveal" data-d="4">
-        <span class="micro foot-nuntius-rubric">
-          <span class="lat" lang="la">Nuntius</span>&nbsp; ·&nbsp; {nuntius.page.eyebrow}
-        </span>
-        <span class="foot-nuntius-say">
-          {nuntius.invitation.line}{" "}
-          <a class="plausible-event-name=zawiadomienia+stopka" href={localizePath("/newsletter", lang)}>
-            {nuntius.invitation.cta}&nbsp;<span aria-hidden="true">→</span>
-          </a>
-        </span>
-      </p>
-    )
-  }
-
   {/* The season, named in stone and glossed in speech — the same two-voice rubric the columns
       above use, which is why the gloss takes their minuscule: the accessible name below carries
       the authored case, so "Eastertide" is only lowercased where it is SET, never where it is
       read aloud.
-      It shares `data-d="4"` with the ask above rather than taking a fifth step: the cadence
-      stops at four (styles/registers.css) and these two centred lines are one closing gesture. */}
+      It shares the last stanza's `data-d` rather than taking a fifth step: the cadence stops at
+      four (styles/registers.css), and the season arriving with the register's final column is
+      the right reading anyway — it is the register's own dateline, not a fifth entry. */}
   <p class="foot-incipit reveal" data-d="4" aria-label={`${tempus.incipit} — ${tempusGloss}`}>
     <em>{tempus.incipit}</em>
     <span class="foot-incipit-dot" aria-hidden="true">·</span>
@@ -221,7 +242,12 @@ const tempusGloss = tempus.gloss[lang];
      behind the home indicator — its bottom padding absorbs that inset rather than printing the
      colophon under the bar. Sides take the landscape notch the same way. */
   .site-foot { background: var(--night); color: rgba(244, 241, 233, .72); padding: clamp(56px, 7vw, 88px) max(28px, 5vw, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 40px) max(28px, 5vw, env(safe-area-inset-left, 0px)); }
-  .foot-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: clamp(32px, 5vw, 64px); }
+  /* Fundatio carries an address, three registry rows and a document, so it takes the widest
+     measure; the other three are set to hold their longest single string without wrapping —
+     `patronat@voctensemble.com` at 12px mono and, in the index, the French `Politique de
+     confidentialité`. The three-stanza template is the same grid with the ask withheld. */
+  .foot-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: clamp(28px, 3.6vw, 48px); }
+  .foot-grid[data-stanzas="3"] { grid-template-columns: 1.4fr 1fr 1fr; gap: clamp(32px, 5vw, 64px); }
   /* Selector follows the tag: these are `h3` because every page opens its sections at `h2` and
      an `h4` here skipped a level in the outline. Styled by tag, so the two must move together.
      Two voices on one baseline — stone and speech, the same rubric the landing's register
@@ -234,14 +260,25 @@ const tempusGloss = tempus.gloss[lang];
      by three things at once — face, letter case and colour — and if both halves grow together
      the two-voice reading collapses into one tracked label. */
   .foot-col h3 .gloss { text-transform: lowercase; letter-spacing: .1em; }
-  .foot-mark { font-family: var(--serif); font-style: italic; font-size: 26px; color: var(--paper); margin: 0 0 12px; }
-  .foot-seat { font-family: var(--mono); font-size: 11.5px; line-height: 1.9; letter-spacing: .03em; color: rgba(244, 241, 233, .6); margin: 0; }
-  /* Key and value on one baseline, the key hanging off the number at the rubric's grade — the
-     same pair the landing's registry rows set, so the two footers state one fact one way. */
-  .foot-registry { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-  .foot-registry li { display: flex; align-items: baseline; gap: 10px; font-family: var(--mono); font-size: 11.5px; line-height: 1.9; letter-spacing: .03em; color: rgba(244, 241, 233, .6); }
-  .foot-registry .key { min-width: 3.6em; font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, .42); }
-  .foot-note { font-family: var(--mono); font-size: 11.5px; line-height: 1.9; letter-spacing: .03em; color: rgba(244, 241, 233, .6); margin: 6px 0 0; }
+  .foot-mark { font-family: var(--serif); font-style: italic; font-size: 26px; color: var(--paper); margin: 0 0 10px; }
+  .foot-seat { font-family: var(--mono); font-size: 11.5px; line-height: 1.75; letter-spacing: .03em; color: rgba(244, 241, 233, .6); margin: 0; }
+  /* A RULED TABLE, not three lines of running text: the keys share a column and the numbers all
+     start on one axis, which is what makes three identifiers scan as a register instead of as
+     prose that happens to contain digits. Two grid columns rather than a `min-width` on the key,
+     because `REGON` is two glyphs longer than `KRS` and any hand-set width is a guess that the
+     longest acronym eventually outgrows — the column measures itself.
+     Selector note: `.foot-col ul` below sets `display: grid` at two compounds and would beat a
+     bare `.foot-registry` once Astro appends its scope attribute to both, so this states its own
+     display through `.foot-col` as well.
+     `display: contents` on the row is what lets the two spans BE the grid items; the `<li>` is
+     kept in the markup so the three identifiers remain a list to a screen reader.
+     `tabular-nums` is belt-and-braces on a monospaced face, and it is the pair of digits in
+     `0001237252` that it protects: a reader checks these against a register entry. */
+  .foot-col .foot-registry { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: max-content 1fr; column-gap: 14px; row-gap: 3px; align-items: baseline; }
+  .foot-registry li { display: contents; }
+  .foot-registry .key { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, .42); }
+  .foot-registry .val { font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em; font-variant-numeric: tabular-nums lining-nums; color: rgba(244, 241, 233, .6); }
+  .foot-note { font-family: var(--mono); font-size: 11.5px; line-height: 1.75; letter-spacing: .03em; color: rgba(244, 241, 233, .6); margin: 14px 0 0; }
   /* The statute sits under the note that names its purposes, and it is marked as a DOCUMENT
      rather than as a route: PDF tag and a permanent hairline, no arrow. The arrow belongs to
      the links that open another site; a hairline is what this footer's only file gets, the
@@ -267,21 +304,19 @@ const tempusGloss = tempus.gloss[lang];
   .foot-rodo .key { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, .46); }
   .foot-rodo a { font-size: 11px; color: rgba(244, 241, 233, .6); }
 
-  /* THE ASK. Serif at reading size, because it is the one sentence in this footer written to a
-     person — everything around it is a register set in the typewriter voice, and matching them
-     would file the invitation among the numbers. The rubric's typography is base.css's canonical
-     two-tier shape (`.micro:has(.lat)`), so all this states is the gloss's colour for the night
-     ground — `--lat-ink` stays unset, which is what keeps the Latin at full candle. */
-  .foot-nuntius { max-width: 1180px; margin: clamp(40px, 5vw, 60px) auto 0; display: grid; justify-items: center; gap: 8px; text-align: center; }
-  .foot-nuntius-rubric { color: rgba(244, 241, 233, .46); }
-  .foot-nuntius-say { max-width: 46ch; font-family: var(--serif); font-size: clamp(16px, 1.4vw, 19px); line-height: 1.65; color: rgba(244, 241, 233, .82); }
-  .foot-nuntius-say a { color: var(--candle); border-bottom: 1px solid color-mix(in srgb, var(--candle) 34%, transparent); padding-bottom: 2px; white-space: nowrap; transition: border-color .3s var(--ease); }
-  .foot-nuntius-say a:hover { border-color: var(--candle); }
+  /* THE ASK. Serif at reading size — it is the one sentence in this footer written TO a person,
+     and everything around it is a register in the typewriter voice; matched to them it would
+     file the invitation among the numbers. It sits on the stanza's own measure, so it takes the
+     column rather than a `max-width` of its own. */
+  .foot-say { font-family: var(--serif); font-size: 16.5px; line-height: 1.55; color: rgba(244, 241, 233, .8); margin: 0; }
+  /* The act, in the grammar the statute's route already uses two stanzas left: mono, a permanent
+     hairline, candle on arrival rather than on hover — this is the footer's one forward door and
+     a reader must be able to see that it is one without touching it. */
+  .foot-act { margin: 16px 0 0; }
+  .foot-act a { display: inline-flex; align-items: baseline; font-family: var(--mono); font-size: 12px; letter-spacing: .08em; color: var(--candle); border-bottom: 1px solid color-mix(in srgb, var(--candle) 40%, transparent); padding-bottom: 3px; transition: border-color .3s var(--ease); }
+  .foot-act a:hover { border-color: var(--candle); }
 
-  /* The ask and the season are one closing gesture, so the season follows at the step the bands
-     above it use rather than opening a second interval of its own. */
   .foot-incipit { max-width: 1180px; margin: clamp(40px, 5vw, 60px) auto 0; padding: 0; text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: rgba(244, 241, 233, .42); }
-  .foot-nuntius + .foot-incipit { margin-top: clamp(22px, 3vw, 34px); }
   .foot-incipit em { font-family: var(--serif); font-style: italic; font-size: 15px; letter-spacing: .02em; color: rgba(244, 241, 233, .68); margin-right: 10px; }
   .foot-incipit-dot { margin: 0 8px; color: rgba(244, 241, 233, .28); }
   /* Minuscule because it is a GLOSS, exactly as the column heads' `.gloss` is — the house's
@@ -311,7 +346,8 @@ const tempusGloss = tempus.gloss[lang];
      it, one way to write, the duty address, where we can be seen, the leaves the card does not
      name — and the ask. */
   @media (max-width: 760px) {
-    .foot-grid { grid-template-columns: 1fr; gap: 34px; }
+    .foot-grid,
+    .foot-grid[data-stanzas="3"] { grid-template-columns: 1fr; gap: 32px; }
     .foot-registry li + li,
     .foot-note,
     .foot-doc,

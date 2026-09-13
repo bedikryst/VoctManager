@@ -24,6 +24,7 @@ from .models import (
     NoticeConsentEventKind,
     NoticeStatus,
 )
+from .serializers import NOTICE_SURFACES
 from .services import ConfirmOutcome, NoticeListService, SubscribeOutcome
 from .tasks import purge_notice_records
 
@@ -145,7 +146,7 @@ class SubscribeTests(NoticeListTestCase):
         """The column names the SCREEN, so each placement must survive into the row intact —
         a value quietly collapsed to the default would make the record say a reader read the
         clause somewhere they never were."""
-        for surface in ('web:koncerty', 'web:newsletter', 'web:404'):
+        for surface in NOTICE_SURFACES:
             with self.subTest(surface=surface):
                 email = f'{surface.replace(":", "-")}@example.com'
                 response = self._subscribe(email=email, surface=surface)

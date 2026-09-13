@@ -1186,10 +1186,11 @@ const jsonLd =
     </section>
   </main>
 
-  {/* The closing rail above already holds this page's one forward door — the `Nuntius` slot when
-      nothing is announced, and a deliberate silence when something is (see the rail). The
-      footer's own ask would either restate the first or contradict the second. */}
-  <SiteFooter lang={lang} notice={false} />
+  {/* The rail two hundred pixels up holds this page's own `Nuntius` door in exactly one case —
+      no next station and no evening announced — and there the footer must not say it twice. Every
+      other concert page prints the stanza like the rest of the site; the condition is written as
+      the rail's own so the two cannot drift apart. */}
+  <SiteFooter lang={lang} notice={!!next || !!ahead} />
 
   <VaultMount lang={lang} />
   <ImageLightbox client:idle />

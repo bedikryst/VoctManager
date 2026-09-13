@@ -17,7 +17,7 @@ from .models import NoticeLocale
 #: the same island over the same clause (`web/src/components/NoticeSignup.astro`) and the
 #: version stays server-owned here. Adding a value means adding it to `NoticeSurface` in
 #: `web/src/islands/landing/api/notices.ts` too — one list in two places.
-NOTICE_SURFACES: list[str] = ['web:koncerty', 'web:newsletter', 'web:404']
+NOTICE_SURFACES: list[str] = ['web:koncerty', 'web:newsletter', 'web:404', 'web:kontakt']
 
 
 class NoticeSubscribeSerializer(serializers.Serializer):

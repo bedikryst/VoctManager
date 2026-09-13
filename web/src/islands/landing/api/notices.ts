@@ -33,7 +33,7 @@ const NOTICE_API = {
  * the record nothing: every placement is the same island over the same clause, mounted by
  * `components/NoticeSignup.astro`, and the clause's version is the server's to name.
  */
-export type NoticeSurface = "web:koncerty" | "web:newsletter" | "web:404";
+export type NoticeSurface = "web:koncerty" | "web:newsletter" | "web:404" | "web:kontakt";
 
 /** The site's three locales, as the backend spells them. */
 export type NoticeLocale = "pl" | "en" | "fr";

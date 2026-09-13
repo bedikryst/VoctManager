@@ -13,9 +13,17 @@
  *  subject-prefilled mailto and a copy-to-clipboard button (a bare mailto is a real desktop failure
  *  when no mail client is configured). Then an honest "three voices" signature: the foundation
  *  board answers together, so the three people are named instead of faking a per-channel owner.
- *  Then ONE paper-soft band carrying all the administrative weight — foundation, a mail-only
- *  correspondence address (no map, nobody works there), and the data-controller note — so nothing
- *  floats as small print in a void, and a quiet coda closes. No contact form (RODO — channels only).
+ *  Then the one route that runs the OTHER WAY — the concert notice list's own sign-up, on a night
+ *  ground — because a page about correspondence should not send a reader elsewhere to leave an
+ *  address. Then ONE paper-soft band carrying all the administrative weight — foundation, a
+ *  mail-only correspondence address (no map, nobody works there), and the data-controller note —
+ *  so nothing floats as small print in a void, and a quiet coda closes.
+ *
+ *  STILL NO CONTACT FORM, and the notice band is not one. The rule is about where a message to us
+ *  may be composed: a contact form would put a reader's prose, and whatever they chose to disclose
+ *  in it, through this site — so the doors are mailto: and the reader's own client. The notice
+ *  sign-up takes one address under an explicit, versioned consent clause and is what that clause
+ *  exists for. The two are not the same object and the rule does not reach the second.
  *
  *  The registry identifiers and the postal address are NOT copy and stay in this markup: they are
  *  the same legal facts the JSON-LD carries, and they read identically in every language.
@@ -26,6 +34,7 @@ import { getImage } from "astro:assets";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
+import NoticeSignup from "../NoticeSignup.astro";
 import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
 import { pageCopy } from "../../lib/pageCopy";
@@ -49,7 +58,6 @@ const { path, alternates, available } = pageI18n("/kontakt", lang);
 const hrefFoundation = `${localizePath("/o-nas", lang)}#fundacja`;
 const hrefConcerts = localizePath("/koncerty", lang);
 const nuntius = NUNTIUS[lang];
-const hrefNotice = `${hrefConcerts}#nuntius`;
 
 const hero = bleedPair("kontakt-hero");
 
@@ -176,21 +184,6 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <p set:html={copy.after.pressHtml} />
         </div>
 
-        {/* The one route on this page that runs the other way: we write, the reader reads. It
-            stands OUTSIDE `dl.channels` deliberately — that list is `Tres ianuae` and its own
-            Latin head counts the doors, so a fourth row would make the rubric above it false.
-            A link, not a form: the address is taken in one place, the band on /koncerty, which
-            is what keeps the `surface` stamped on a consent record true. */}
-        <p class="nuntius-line reveal">
-          <span class="micro nuntius-rubric">
-            <span class="lat" lang="la">Nuntius</span>&nbsp; ·&nbsp; {nuntius.page.eyebrow}
-          </span>
-          <span class="nuntius-say">
-            {nuntius.invitation.line}{" "}
-            <a href={hrefNotice}>{nuntius.invitation.cta}&nbsp;<span aria-hidden="true">→</span></a>
-          </span>
-        </p>
-
         {/* Ink + lead. Both hairlines this page hands to the register are LONE — one per block,
             never a set: three `.channel` rules would draw in unison, because under the `authored`
             cadence the lead register has no stagger of its own (docs/web-reveal-remediation.md,
@@ -208,6 +201,28 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <p class="voices-note">{copy.voices.note}</p>
         </div>
       </div>
+    </section>
+
+    {/* ── THE ROUTE THAT RUNS THE OTHER WAY ────────────────────────────────
+          Three doors above are ways of writing TO us; this is the one way we write to the
+          reader, and on a page whose whole subject is correspondence it is a movement, not a
+          footnote. It was a single line pointing at the form on /koncerty — which sent someone
+          standing on the contact page to another page to leave an address, and landed them two
+          screens into a walk they had not asked for.
+
+          The form itself is safe to stand here because `NoticeSignup` is what every placement
+          mounts: one clause, one version, one preparation (see its header). `surface` records
+          which screen the clause was read on — a finer record, not a weaker one — and
+          `web:kontakt` is declared in the two places that list them, `NoticeSurface` here and
+          `NOTICE_SURFACES` in `backend/outreach/serializers.py`.
+
+          It takes the NIGHT ground rather than this page's parchment: notice.css dresses the
+          band for night throughout (paper text, hairline fields), and re-stating every one of
+          those values for one parchment instance is the doubling that sheet's header forbids.
+          A dark inset also says what the band is — the page's one turn of direction. Same
+          arrangement as the vacat leaf's `.nf-notice`. ── */}
+    <section class="notice-band kontakt-notice" aria-label={nuntius.form.bandAria}>
+      <NoticeSignup lang={lang} surface="web:kontakt" />
     </section>
 
     {/* ── Foundation, correspondence address & data-controller — all the administrative
@@ -264,8 +279,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     </section>
   </main>
 
-  {/* The same invitation, in the same words, stands mid-page under the three doors. */}
-  <SiteFooter lang={lang} notice={false} />
+  <SiteFooter lang={lang} />
 
   <VaultMount lang={lang} />
   <script>
@@ -332,11 +346,9 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
      is an offer, and it must not out-shout the three addresses that ARE this page. Gold as INK
      (--candle at 2.10:1 on parchment would make a rubric this small unreadable); the section
      already declares --lat-ink, so both tiers of the rubric move together. */
-  .nuntius-line { display: grid; gap: 5px; max-width: 62ch; margin: clamp(28px, 4vw, 44px) 0 0; padding-top: clamp(16px, 2vw, 22px); border-top: 1px solid var(--line); }
-  .nuntius-rubric { color: var(--candle-ink); }
-  .nuntius-say { font-size: clamp(14.5px, 1.15vw, 16px); line-height: 1.72; color: var(--ink-soft); }
-  .nuntius-line a { border-bottom: 1px solid var(--line-strong); transition: color .3s var(--ease), border-color .3s var(--ease); }
-  .nuntius-line a:hover { color: var(--candle-blue); border-color: var(--candle-blue); }
+  /* The band's own ground on this page — everything inside it is dressed for night by
+     styles/notice.css, which is global (it has to be: most of what it dresses is React). */
+  .kontakt-notice { background: var(--night); }
 
   /* Three voices — honest signature */
   .voices { margin: clamp(40px, 5vw, 60px) 0 0; padding-top: clamp(28px, 3.6vw, 40px); border-top: 1px solid var(--line); }
