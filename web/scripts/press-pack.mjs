@@ -336,7 +336,12 @@ const recordingsTxt = [
   `Serwis               ${FOUNDATION.site}`,
   `Archiwum fotografii  ${FOUNDATION.site}/obrazy`,
   "",
-  ...copy.press.items.flatMap((item) => recordingLine(item.href, item.title, item.outlet)),
+  /* `kind` and `context` are the only copy left in this list now that the page's band is gone,
+     and they earn their place here: a journalist scanning it needs to know which link is a piece
+     and which is a photo report before opening any of them. */
+  ...copy.press.items.flatMap((item) =>
+    recordingLine(item.href, item.title, `${item.outlet}  ·  ${item.kind}`, item.context),
+  ),
   ...concerts.flatMap((concert) =>
     (concert.links ?? []).flatMap((link) =>
       // The corpus writes its link labels with a trailing arrow for the page that renders them.
