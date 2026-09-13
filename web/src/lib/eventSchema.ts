@@ -54,6 +54,11 @@ export interface EventSeed {
       line is what the ensemble's own records hold. */
   readonly address?: string;
   readonly admission?: Admission;
+  /** The festival this evening belongs to, where it belongs to one. It becomes `superEvent` —
+      the only statement in this graph that connects the concert to an entity somebody else
+      owns, names and is searched for, which is precisely what a reader looking for the
+      festival's programme is typing. */
+  readonly festival?: { readonly name: string; readonly url: string };
 }
 
 /** The emitted node. Deliberately open-valued: this is JSON-LD on its way to `JSON.stringify`,
@@ -127,6 +132,20 @@ export const musicEvent = (seed: EventSeed, now: Date = new Date()): MusicEventN
     },
     performer: PERFORMER,
     organizer: ORGANIZER,
+    // The festival is identified BY ITS OWN URL rather than by a node this site mints: it is
+    // somebody else's entity, and the address is the one identifier both graphs can agree on.
+    // No `startDate` — the festival's own dates are not ours to state, and schema.org asks for
+    // them on the event being described, which is the concert.
+    ...(seed.festival
+      ? {
+          superEvent: {
+            "@type": "Festival",
+            "@id": seed.festival.url,
+            name: seed.festival.name,
+            url: seed.festival.url,
+          },
+        }
+      : {}),
     ...offersFor(seed.admission, seed.url),
   };
 };

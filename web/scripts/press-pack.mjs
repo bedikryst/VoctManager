@@ -308,7 +308,11 @@ const programmeFiles = programmes.map((concert) => {
   if (concert.programArc) lines.push(htmlToPlainText(concert.programArc), "");
   for (const work of concert.program ?? []) {
     const who = [work.composer, work.years ? `(${work.years})` : ""].filter(Boolean).join(" ");
-    const what = [work.work, work.movement ? `— ${work.movement}` : ""].filter(Boolean).join(" ");
+    // The work line may carry `<em>` around a foreign title (content.config); this file is typed
+    // into a programme book, so it is flattened here exactly as the biogram is.
+    const what = [htmlToPlainText(work.work), work.movement ? `— ${work.movement}` : ""]
+      .filter(Boolean)
+      .join(" ");
     const tail = [work.voicing, work.duration].filter(Boolean).join("  ·  ");
     lines.push(`${who}`, `    ${what}${tail ? `  ·  ${tail}` : ""}`, "");
   }
@@ -320,10 +324,10 @@ const programmeFiles = programmes.map((concert) => {
    mention wins: a reader who opens the same page twice looking for a second source has been
    misled by a list that counted one thing as two. */
 const recordingSeen = new Set();
-const recordingLine = (href, title, where) => {
+const recordingLine = (href, title, where, note = "") => {
   if (recordingSeen.has(href)) return [];
   recordingSeen.add(href);
-  return [title, `    ${where}`, `    ${href}`, ""];
+  return [title, `    ${where}`, ...(note ? [`    ${note}`] : []), `    ${href}`, ""];
 };
 
 const recordingsTxt = [

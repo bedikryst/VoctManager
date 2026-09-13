@@ -284,10 +284,30 @@ export interface KoncertyChrome {
       appended visually hidden — a label would REPLACE the visible text and voice control matches
       on what is on screen. */
   readonly programSummary: string;
-  /** Affordances on a station: its own page, and the recording. The play glyph is drawn by the
-      markup, so it is not part of the label. */
+  /** The mark on a returning piece inside the programme disclosure — `{times}` takes the count
+      the evening declares (`ritornello`, content.config). The clasps that carry the returns are
+      printed by /koncerty/[id] and by nothing here, so this one mark is the whole statement. */
+  readonly ritornelloTimes: string;
+  /** Affordances on a station: its own page, the recording, and the festival it was sung within.
+      The play glyph is drawn by the markup, so it is not part of the label. The festival link
+      does NOT repeat the festival's name — the evening's own chip states it one row above, and
+      two identical lines under one poster read as a mistake. */
   readonly openConcert: string;
   readonly spotify: string;
+  readonly festivalSite: string;
+  /** The page's own title and description WHILE an evening is announced.
+   *
+   *  The standing pair in `koncerty.yaml` describes the cycle, which is what this page is for
+   *  eleven months of the year and what a search result should say then. It is also, for the one
+   *  month that matters most, a page whose title says nothing about the only thing on it a reader
+   *  can still act on — the name, the day and the town they are typing into a search box. Both are
+   *  derived from the announced station, so the page takes this voice when there is an evening
+   *  ahead and returns to its own on the first build after it. `{title}` `{date}` `{place}` come
+   *  from the concert; `{name}` is the festival's. */
+  readonly metaAnnouncedTitle: string;
+  readonly metaAnnouncedLead: string;
+  readonly metaAnnouncedFestival: string;
+  readonly metaAnnouncedFree: string;
 }
 
 /**
@@ -310,8 +330,14 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
     factsAria: "Cechy programu",
     liturgyFactsAria: "Cechy liturgii",
     programSummary: "Program koncertu",
+    ritornelloTimes: "{times}× w ciągu wieczoru",
     openConcert: "Otwórz stronę koncertu →",
     spotify: "Posłuchaj programu",
+    festivalSite: "Strona festiwalu ↗",
+    metaAnnouncedTitle: "{title} · {date} — VoctEnsemble",
+    metaAnnouncedLead: "Najbliższy koncert VoctEnsemble: {title} — {date}, {place}.",
+    metaAnnouncedFestival: "W ramach festiwalu „{name}”.",
+    metaAnnouncedFree: "Wstęp wolny.",
   },
   en: {
     introAria: "The Spiritual Concerts",
@@ -325,8 +351,14 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
     factsAria: "Programme details",
     liturgyFactsAria: "Liturgy details",
     programSummary: "The concert programme",
+    ritornelloTimes: "{times}× through the evening",
     openConcert: "Open the concert page →",
     spotify: "Listen to the programme",
+    festivalSite: "The festival's site ↗",
+    metaAnnouncedTitle: "{title} · {date} — VoctEnsemble",
+    metaAnnouncedLead: "VoctEnsemble's next concert: {title} — {date}, {place}.",
+    metaAnnouncedFestival: "Part of the “{name}” festival.",
+    metaAnnouncedFree: "Free admission.",
   },
   fr: {
     introAria: "Les Concerts Spirituels",
@@ -340,7 +372,13 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
     factsAria: "Détails du programme",
     liturgyFactsAria: "Détails de la liturgie",
     programSummary: "Le programme du concert",
+    ritornelloTimes: "{times}× au long de la soirée",
     openConcert: "Ouvrir la page du concert →",
     spotify: "Écouter le programme",
+    festivalSite: "Le site du festival ↗",
+    metaAnnouncedTitle: "{title} · {date} — VoctEnsemble",
+    metaAnnouncedLead: "Le prochain concert de VoctEnsemble : {title} — {date}, {place}.",
+    metaAnnouncedFestival: "Dans le cadre du festival « {name} ».",
+    metaAnnouncedFree: "Entrée libre.",
   },
 };

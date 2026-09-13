@@ -120,11 +120,11 @@ const pressCopySchema = z
         media: z.array(z.object({ id: z.string(), name: z.string() }).strict()),
       })
       .strict(),
+    /* Archive-only since the band was withdrawn — see the note in `press.yaml`. Its heading,
+       lede and rubric are gone rather than unrendered; these rows feed the pack's
+       `nagrania.txt` and nothing else. */
     press: z
       .object({
-        eyebrow: z.string(),
-        h2: z.string(),
-        lede: z.string(),
         items: z.array(
           z
             .object({
@@ -315,16 +315,13 @@ const PRESS_CONTRACT: readonly CopyEntry[] = [
     fields: [{ path: "role", label: "rola" }],
   },
 
-  // ── Pisali o nas ──────────────────────────────────────────────────────────────────────────
-  { kind: "field", path: "press.eyebrow", label: "Pisali o nas · rubryka" },
-  { kind: "field", path: "press.h2", label: "Pisali o nas · tytuł" },
-  { kind: "field", path: "press.lede", label: "Pisali o nas · lede" },
+  // ── Pisali o nas — W PAKIECIE, NIE NA STRONIE ─────────────────────────────────────────────
   {
     kind: "list",
     path: "press.items",
     keyBy: "id",
-    label: "Pisali o nas · pozycja",
-    note: "The outlet and the headline are somebody else's words and are not here. `kind` and `context` are ours.",
+    label: "Nagrania i publikacje · pozycja",
+    note: "Printed inside the archive (`nagrania.txt`), not on the page: four links resolving to two evenings read thinner than silence, and the reader who wants them is the one who downloaded the pack. The outlet and the headline are somebody else's words and are not here; `kind` and `context` are ours. `press.yaml` carries what brings the band back.",
     fields: [
       { path: "kind", label: "rodzaj" },
       { path: "context", label: "opis" },
@@ -390,7 +387,6 @@ export interface PressChrome {
   readonly packAria: string;
   readonly factsAria: string;
   readonly collabAria: string;
-  readonly pressAria: string;
   readonly bookingAria: string;
   /**
    * What each biogram is FOR, printed as the measure's own name. The character count beside it is
@@ -406,6 +402,14 @@ export interface PressChrome {
   readonly copied: string;
   /** Accessible name of that button. `{measure}` is replaced with the measure's own name above. */
   readonly copyAria: string;
+  /**
+   * The two states of a biogram's disclosure. BOTH are rendered and CSS shows one, because a
+   * label that changes with `[open]` cannot be a `content` string without leaving the locale
+   * behind. Only the TEXT is behind this control: the copy button stays above it, always, so the
+   * fast path (read the measure, take the text) never requires a second click.
+   */
+  readonly expand: string;
+  readonly collapse: string;
   /** Labels of the invoicing block — a definition list, and a missing term is a broken row. */
   readonly legalName: string;
   readonly legalAddress: string;
@@ -422,8 +426,6 @@ export interface PressChrome {
    */
   readonly mailSubjectBooking: string;
   readonly mailSubjectPack: string;
-  /** Appended to a link that opens somebody else's site, for a reader who cannot see the arrow. */
-  readonly externalAria: string;
 }
 
 export const PRESS_CHROME: Record<Locale, PressChrome> = {
@@ -433,7 +435,6 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     packAria: "Pakiet prasowy",
     factsAria: "Dane zespołu i fundacji",
     collabAria: "Współpracownicy i partnerzy",
-    pressAria: "Publikacje o zespole",
     bookingAria: "Zaproszenie i kontakt",
     bioShort: "Krótki",
     bioMedium: "Średni",
@@ -442,6 +443,8 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     copy: "Kopiuj",
     copied: "Skopiowano",
     copyAria: "Skopiuj biogram — {measure}",
+    expand: "Pokaż tekst",
+    collapse: "Zwiń",
     legalName: "Nazwa",
     legalAddress: "Adres",
     legalAccountPln: "Konto PLN",
@@ -450,7 +453,6 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     allChannels: "Wszystkie kanały kontaktu",
     mailSubjectBooking: "Zaproszenie — VoctEnsemble",
     mailSubjectPack: "Materiały prasowe — VoctEnsemble",
-    externalAria: "otwiera się w nowej karcie",
   },
   en: {
     headAria: "VoctEnsemble press kit",
@@ -458,7 +460,6 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     packAria: "Press pack",
     factsAria: "The ensemble and the foundation",
     collabAria: "Collaborators and partners",
-    pressAria: "Published coverage",
     bookingAria: "Invitations and contact",
     bioShort: "Short",
     bioMedium: "Medium",
@@ -467,6 +468,8 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     copy: "Copy",
     copied: "Copied",
     copyAria: "Copy the biography — {measure}",
+    expand: "Show the text",
+    collapse: "Hide",
     legalName: "Name",
     legalAddress: "Address",
     legalAccountPln: "Account, PLN",
@@ -475,7 +478,6 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     allChannels: "All contact channels",
     mailSubjectBooking: "An invitation — VoctEnsemble",
     mailSubjectPack: "Press materials — VoctEnsemble",
-    externalAria: "opens in a new tab",
   },
   fr: {
     headAria: "Dossier de presse VoctEnsemble",
@@ -483,7 +485,6 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     packAria: "Dossier de presse",
     factsAria: "L'ensemble et la fondation",
     collabAria: "Collaborateurs et partenaires",
-    pressAria: "Ils ont parlé de nous",
     bookingAria: "Invitations et contact",
     bioShort: "Courte",
     bioMedium: "Moyenne",
@@ -492,6 +493,8 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     copy: "Copier",
     copied: "Copié",
     copyAria: "Copier la biographie — {measure}",
+    expand: "Afficher le texte",
+    collapse: "Masquer",
     legalName: "Nom",
     legalAddress: "Adresse",
     legalAccountPln: "Compte, PLN",
@@ -500,6 +503,5 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     allChannels: "Tous les canaux de contact",
     mailSubjectBooking: "Une invitation — VoctEnsemble",
     mailSubjectPack: "Dossier de presse — VoctEnsemble",
-    externalAria: "s'ouvre dans un nouvel onglet",
   },
 };

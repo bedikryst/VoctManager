@@ -202,6 +202,9 @@ const jsonLd = {
         <h2>{copy.bio.h2}</h2>
         <p class="press-section-lede">{copy.bio.lede}</p>
       </div>
+      {/* The head row is never behind the disclosure. A reader who knows which measure they
+          need takes it in one click; opening the text is the slower, optional path — which is
+          also why the shortest one starts open, so the other two are not two shut drawers. */}
       <div class="press-bio-list">
         {
           BIOS.map((bio) => (
@@ -219,7 +222,15 @@ const jsonLd = {
                   <span class="copy-label">{t.copy}</span>
                 </button>
               </header>
-              <div class="press-bio-text" set:html={bio.html} />
+              <details class="press-bio-d" open={bio.id === "short"}>
+                <summary class="press-bio-toggle">
+                  {/* Both labels render and CSS shows one — a `content` string could not carry
+                      the locale. */}
+                  <span class="press-bio-toggle-open">{t.expand}</span>
+                  <span class="press-bio-toggle-close">{t.collapse}</span>
+                </summary>
+                <div class="press-bio-body press-bio-text" set:html={bio.html} />
+              </details>
             </article>
           ))
         }
@@ -328,67 +339,36 @@ const jsonLd = {
         <p class="press-section-lede">{copy.collab.lede}</p>
       </div>
 
-      <div class="press-collab-grid">
-        <div class="press-collab-group press-collab-group--wide">
-          <h3 class="eyebrow titulus press-collab-title">{copy.collab.artistsTitle}</h3>
-          <ul class="press-collab-list">
-            {
-              copy.collab.artists.map((artist) => (
-                <li class="press-collab-entry">
-                  <span class="eyebrow press-collab-role">{artist.role}</span>
-                  <span class="press-collab-name">{artist.name}</span>
-                  <span class="press-collab-entity">{artist.entity}</span>
-                </li>
-              ))
-            }
-          </ul>
-        </div>
-
-        <div class="press-collab-group">
-          <h3 class="eyebrow titulus press-collab-title">{copy.collab.institutionsTitle}</h3>
-          <ul class="press-collab-list press-collab-list--simple">
-            {copy.collab.institutions.map((partner) => <li>{partner.name}</li>)}
-          </ul>
-        </div>
-
-        <div class="press-collab-group">
-          <h3 class="eyebrow titulus press-collab-title">{copy.collab.mediaTitle}</h3>
-          <ul class="press-collab-list press-collab-list--simple">
-            {copy.collab.media.map((patron) => <li>{patron.name}</li>)}
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    {/* ── PUBLISHED COVERAGE · real links, each to the original ──────────── */}
-    <section class="press-mentions tone-light" id="prasa" aria-label={t.pressAria}>
-      <div class="press-section-head">
-        <span class="press-eyebrow titulus">
-          <span class="lat" lang="la">Testimonia</span> · {copy.press.eyebrow}
-        </span>
-        <h2>{copy.press.h2}</h2>
-        <p class="press-section-lede">{copy.press.lede}</p>
-      </div>
-      <ul class="press-mentions-list">
+      <ul class="press-collab-list">
         {
-          copy.press.items.map((item) => (
-            <li class="press-mention">
-              <a href={item.href} target="_blank" rel="noopener noreferrer">
-                <p class="press-mention-head">
-                  <span class="eyebrow press-mention-outlet">{item.outlet}</span>
-                  <span class="eyebrow press-mention-kind">{item.kind}</span>
-                </p>
-                <h3 class="press-mention-title">{item.title}</h3>
-                <p class="press-mention-context">{item.context}</p>
-                <span class="press-mention-arrow" aria-hidden="true">
-                  ↗
-                </span>
-                <span class="sr-only">{t.externalAria}</span>
-              </a>
+          copy.collab.artists.map((artist) => (
+            <li class="press-collab-entry">
+              <span class="eyebrow press-collab-role">{artist.role}</span>
+              <span class="press-collab-name">{artist.name}</span>
+              <span class="press-collab-entity">{artist.entity}</span>
             </li>
           ))
         }
       </ul>
+
+      {/* Partners and patrons are credibility, not execution — the one thing on this page that
+          argues. They stay because a programme book does print "performed with the support of",
+          but as two inline rows under a hairline rather than two columns claiming equal weight
+          with the people who build the evening. */}
+      <div class="press-collab-support">
+        <p class="press-collab-row">
+          <span class="eyebrow press-collab-row-label">{copy.collab.institutionsTitle}</span>
+          <span class="press-collab-row-names">
+            {copy.collab.institutions.map((partner) => partner.name).join("  ·  ")}
+          </span>
+        </p>
+        <p class="press-collab-row">
+          <span class="eyebrow press-collab-row-label">{copy.collab.mediaTitle}</span>
+          <span class="press-collab-row-names">
+            {copy.collab.media.map((patron) => patron.name).join("  ·  ")}
+          </span>
+        </p>
+      </div>
     </section>
 
     {/* ── BOOKING · one address, and the way to the rest ─────────────────── */}
@@ -426,12 +406,23 @@ const jsonLd = {
     // Every `[data-copy]` control on this page: the three biograms and the invoicing rows.
     import "../../scripts/copy-fields.ts";
 
+    import { setupDisclosure } from "../../scripts/disclosure";
+
     // Chrome tone flips to light over .tone-light sections (the /koncerty pattern).
     // ClientRouter-safe: drops stale observers and rebinds on each page-load.
     let toneIO: IntersectionObserver | undefined;
+    let dropBios: (() => void) | undefined;
 
     const setupPress = () => {
       toneIO?.disconnect();
+      dropBios?.();
+
+      // The biograms open in place. NOT exclusive: an organiser comparing two measures before
+      // choosing one should not have the first close under them.
+      dropBios = setupDisclosure(document, {
+        selector: ".press-bio-d",
+        bodyClass: "press-bio-body",
+      });
 
       const chrome = document.getElementById("chrome");
       if (!chrome) return;
@@ -522,6 +513,20 @@ const jsonLd = {
   /* The measured length. Mono because it is a number a reader checks against a brief. */
   .press-bio-count { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--ink-muted); font-variant-numeric: lining-nums; }
   .press-bio-card-head .press-copy { margin-left: auto; }
+
+  /* The disclosure. `scripts/disclosure.ts` animates the body's height and writes `open` itself,
+     so the marker is removed and the summary is styled as the quiet control it is — the loud
+     control on this row is the copy button, which is not inside it. */
+  .press-bio-d > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 9px; padding: 4px 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); transition: color .35s var(--ease); }
+  .press-bio-d > summary::-webkit-details-marker { display: none; }
+  .press-bio-d > summary::after { content: "+"; font-family: var(--serif); font-size: 15px; line-height: 1; transition: transform .35s var(--ease); }
+  .press-bio-d[open] > summary::after { transform: rotate(45deg); }
+  .press-bio-d > summary:hover { color: var(--ink); }
+  /* Both labels are in the DOM so each locale carries its own; CSS chooses. */
+  .press-bio-d[open] .press-bio-toggle-open,
+  .press-bio-d:not([open]) .press-bio-toggle-close { display: none; }
+
+  .press-bio-body { margin-top: 16px; }
   .press-bio-text { display: grid; gap: clamp(14px, 1.3vw, 20px); }
   .press-bio-text :global(p) { margin: 0; color: var(--ink); font-family: var(--serif); font-size: clamp(16px, 1.25vw, 19px); line-height: 1.65; font-weight: 300; }
   .press-bio-text :global(strong) { font-weight: 400; color: var(--ink); }
@@ -579,34 +584,21 @@ const jsonLd = {
   /* ── COLLABORATORS ──────────────────────────────────────────────── */
   .press-collab { padding: clamp(88px, 11vw, 150px) max(28px, 5vw); }
   .press-collab .press-section-head { max-width: 1180px; margin-left: auto; margin-right: auto; }
-  .press-collab-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: clamp(28px, 4vw, 56px); }
-  .press-collab-title { margin: 0 0 18px; padding-bottom: 12px; border-bottom: 1px solid var(--candle); color: var(--ink); }
-  .press-collab-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
-  .press-collab-entry { display: grid; gap: 4px; padding-top: 14px; border-top: 1px solid var(--line); }
-  .press-collab-entry:first-child { padding-top: 0; border-top: 0; }
+  /* The people who build an evening: four rows, full measure, no longer one column of three
+     competing for width with two lists of names. */
+  .press-collab-list { list-style: none; max-width: 1180px; margin: 0 auto; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(20px, 2.4vw, 32px) clamp(32px, 4vw, 64px); }
+  .press-collab-entry { display: grid; gap: 4px; padding-top: 16px; border-top: 1px solid var(--candle); }
   .press-collab-role { font-size: 10px; }
   .press-collab-name { font-family: var(--serif); font-size: clamp(19px, 1.6vw, 23px); color: var(--ink); }
   .press-collab-entity { font-family: var(--serif); font-style: italic; font-size: 16px; color: var(--ink-soft); }
-  .press-collab-list--simple li { padding: 10px 0; border-top: 1px solid var(--line); font-family: var(--serif); font-size: clamp(15px, 1.1vw, 17px); color: var(--ink-soft); }
-  .press-collab-list--simple li:first-child { padding-top: 0; border-top: 0; }
-  @media (max-width: 980px) { .press-collab-grid { grid-template-columns: 1fr 1fr; } .press-collab-group--wide { grid-column: span 2; } }
-  @media (max-width: 620px) { .press-collab-grid { grid-template-columns: 1fr; } .press-collab-group--wide { grid-column: auto; } }
+  @media (max-width: 720px) { .press-collab-list { grid-template-columns: 1fr; } }
 
-  /* ── PUBLISHED COVERAGE ─────────────────────────────────────────── */
-  .press-mentions { padding: clamp(88px, 11vw, 150px) max(28px, 5vw); background: var(--paper-soft); }
-  .press-mentions .press-section-head { max-width: 1180px; margin-left: auto; margin-right: auto; }
-  .press-mentions-list { list-style: none; max-width: 1180px; margin: 0 auto; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
-  .press-mention { background: var(--paper); }
-  .press-mention a { position: relative; display: grid; gap: 10px; padding: clamp(24px, 3vw, 36px); color: var(--ink); transition: background-color .4s var(--ease); }
-  .press-mention a:hover { background: rgba(198, 164, 91, 0.06); }
-  .press-mention-head { margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-  .press-mention-outlet { color: var(--candle-ink); }
-  .press-mention-kind { font-size: 10px; }
-  .press-mention-title { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(21px, 1.9vw, 27px); line-height: 1.16; color: var(--ink); padding-right: 24px; }
-  .press-mention-context { margin: 0; color: var(--ink-soft); font-size: 16px; line-height: 1.6; }
-  .press-mention-arrow { position: absolute; right: clamp(20px, 2.4vw, 32px); bottom: clamp(20px, 2.4vw, 32px); font-family: var(--serif); font-size: 20px; color: var(--candle); transition: transform .4s var(--ease); }
-  .press-mention a:hover .press-mention-arrow { transform: translate(3px, -3px); }
-  @media (max-width: 720px) { .press-mentions-list { grid-template-columns: 1fr; } }
+  /* Support and patronage, two inline rows rather than two columns — see the markup's note. */
+  .press-collab-support { max-width: 1180px; margin: clamp(40px, 4.5vw, 64px) auto 0; padding-top: clamp(24px, 2.8vw, 36px); border-top: 1px solid var(--line-strong); display: grid; gap: 14px; }
+  .press-collab-row { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
+  .press-collab-row-label { flex: 0 0 auto; font-size: 10px; }
+  .press-collab-row-names { font-family: var(--serif); font-size: clamp(15px, 1.1vw, 17px); line-height: 1.6; color: var(--ink-soft); }
+
 
   /* ── BOOKING · dark closure, ONE address ────────────────────────── */
   .press-booking { position: relative; padding: clamp(88px, 11vw, 150px) max(28px, 5vw); background: linear-gradient(180deg, var(--ink) 0%, var(--night) 100%); color: rgba(244, 241, 233, 0.84); overflow: hidden; }

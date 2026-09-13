@@ -53,7 +53,7 @@ bio:
   # edited a sentence.
   lede: >-
     Ten sam tekst w trzech miarach — do noty w programie, do zapowiedzi i do pełnego
-    biogramu. Kliknięcie kopiuje czysty tekst, bez formatowania.
+    biogramu. Kopiowanie nie wymaga rozwijania: przycisk bierze czysty tekst, bez formatowania.
   # ~300 characters: who, what, and the one thing that makes the cycle a cycle.
   shortHtml: >-
     <p>VoctEnsemble to zespół wokalny pod kierownictwem Florenta de Bazelaire, poświęcony
@@ -187,14 +187,27 @@ facts:
     Dane do umowy i do faktury. Zespół prowadzi Fundacja VoctFoundation — to ona jest stroną
     umowy i wystawia rachunek.
 
+# A STATEMENT ABOUT THE ENSEMBLE'S PRACTICE, NOT A CREDIT LIST — and the difference is not
+# cosmetic. The heading here read "Kogo wymienić w programie", which is an INSTRUCTION, over a
+# list which is a HISTORY: everyone the ensemble has ever worked with. Those are different sets,
+# and the instruction version was false. Radu Ropotan is marked a guest and played one evening;
+# an organiser who credited him in the programme of a concert he is not playing would have been
+# misled by us, not by himself.
+#
+# What an organiser actually needs to know from this band is what KIND of production this is —
+# that the evenings are built with a light director and a sound engineer, which tells them what
+# their space may have to accommodate. That is a fact about the ensemble. Who is at THEIR evening
+# is settled with the programme, and the lede has to say so out loud.
 collab:
-  eyebrow: "Współpraca"
-  h2: "Kogo wymienić w programie."
+  eyebrow: "Wokół zespołu"
+  h2: "Z kim pracujemy."
   lede: >-
-    Artyści i instytucje obecni przy dotychczasowych Koncertach Duchowych, oraz patroni
-    medialni tych wydarzeń. Podpisy pod zdjęciami są w pakiecie.
-  artistsTitle: "Artystyczni"
-  institutionsTitle: "Instytucjonalni"
+    Koncert Duchowy buduje się nie tylko z głosów: przy dotychczasowych wieczorach pracowaliśmy
+    z reżyserką świateł, realizatorem dźwięku i artystami wizualnymi. Skład współtwórców
+    konkretnego wieczoru ustala się razem z programem i podajemy go przy potwierdzeniu — poniższa
+    lista mówi, co zespół potrafi zbudować, a nie kogo wymienić w Waszej książeczce.
+  artistsTitle: "Artyści"
+  institutionsTitle: "Dotychczas przy wsparciu"
   mediaTitle: "Patroni medialni"
   artists:
     - id: swiatlo
@@ -229,12 +242,24 @@ collab:
 # Published coverage — REAL links only. Each entry is a verifiable external document; a headline
 # is the publication's own words and is never translated. No pull-quotes until somebody re-reads
 # the pieces and picks them by hand.
+#
+# THE PAGE NO LONGER RENDERS THIS, and the reason is arithmetic rather than taste: four links, but
+# TWO events. Gość Niedzielny and Onet/KAI are the same Niedzica evening; the Episkopat photo
+# report and the broadcast are the same Bobola Mass. A band headed "our trace in the media" that
+# resolves to two evenings reads thinner than saying nothing, and a reader who clicks twice sees
+# it in ten seconds.
+#
+# Nothing is lost by hiding it: these links already ship inside the pack (`nagrania.txt`), which
+# is where the one reader who actually wants them — a journalist writing a piece — is looking.
+# The poster-maker this page is written for never needed them. So this list stays here as
+# ARCHIVE-ONLY copy, on the same footing as `pack.photoUsage` and `pack.logoUsage`.
+#
+# WHAT BRINGS THE SECTION BACK is not a number of links but a number of distinct EVENINGS: six
+# links about two concerts is still two concerts. Three or four separate evenings, or one
+# publication with real weight (a review in a national daily, a broadcast feature). Its heading,
+# lede and rubric were deleted rather than left standing unrendered — dead copy on the desk
+# spends an editor's attention on a band nobody can see.
 press:
-  eyebrow: "Pisali o nas"
-  h2: "Ślad w mediach, do sprawdzenia u źródła."
-  lede: >-
-    Publikacje, fotorelacje i transmisje z udziałem zespołu. Każdy link prowadzi do
-    oryginalnego materiału.
   items:
     - id: gosc-niedzica
       outlet: "Gość Niedzielny"

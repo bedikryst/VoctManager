@@ -38,6 +38,7 @@
  * @architecture Astro islands 2026
  * @module components/pages/KoncertyPage
  */
+import type { CollectionEntry } from "astro:content";
 import { getCollection } from "astro:content";
 import { getImage, Picture } from "astro:assets";
 import BaseLayout from "../../layouts/BaseLayout.astro";
@@ -104,6 +105,61 @@ const stepOf = new Map(walk.map((c, i) => [c.id, `${Math.round(((i + 1) / statio
 // The one evening still ahead, if there is one — it wears a marker, states its hour and is where
 // the landing's announcement points. Resolved at build: the deploy after the concert takes it down.
 const upcoming = upcomingStation(concerts);
+
+/** One line of a station's programme disclosure. */
+interface ProgramRow {
+  /** "01", or the em dash a row outside the numbering takes (the encore, the ritornello). */
+  readonly num: string;
+  readonly composer: string;
+  /** As printed, and rendered as MARKUP: a work line may italicise a foreign title standing
+      inside a vernacular phrase (content.config). */
+  readonly work: string;
+  readonly bis: boolean;
+  /** How many times this piece sounds across the evening — set on the one row that returns. */
+  readonly times?: number;
+}
+
+/**
+ * The programme AS THIS PAGE LISTS IT, which is not the programme as the evening played it — the
+ * three differences are the whole reason this is a function:
+ *
+ * 1. THE RETURNS ARE NOT PRINTED. They are `clasp` rows and belong to /koncerty/[id], which is the
+ *    programme book; nine of them inside a station's disclosure would be a drum roll. The evening
+ *    declares the return once (`ritornello`) and it is marked here — on the work's own row where
+ *    it is one of the numbered works, as an unnumbered row at the head where it is not.
+ * 2. THE ENCORE IS SEALED UNTIL THE EVENING HAS HAPPENED. An encore is the one thing in a
+ *    programme a listener is meant not to know, and this page prints programmes of concerts that
+ *    are over. Read off the calendar (`ahead`), so it unseals itself on the first build after the
+ *    concert — the same deploy `lib/cycle` already makes an obligation.
+ * 3. THE NUMBERING COUNTS WORKS, not rows: everything standing outside it (the encore, an
+ *    unnumbered ritornello) takes the dash and consumes no number.
+ */
+const programRows = (
+  concert: CollectionEntry<"concerts">["data"],
+  ahead: boolean,
+): readonly ProgramRow[] => {
+  const rit = concert.ritornello;
+  let n = 0;
+  const rows = concert.program
+    .filter((p) => !(ahead && p.bis))
+    .map((p): ProgramRow => {
+      if (!p.bis) n += 1;
+      return {
+        num: p.bis ? "—" : String(n).padStart(2, "0"),
+        composer: p.composer,
+        work: p.work,
+        bis: p.bis,
+        times:
+          rit?.numbered && rit.composer === p.composer && rit.work === p.work
+            ? rit.times
+            : undefined,
+      };
+    });
+  // Outside the numbering, and first: the piece the evening opens with and keeps returning to.
+  return rit && !rit.numbered
+    ? [{ num: "—", composer: rit.composer, work: rit.work, bis: false, times: rit.times }, ...rows]
+    : rows;
+};
 
 const entries = await Promise.all(
   concerts.map(async (c) => {
@@ -184,6 +240,7 @@ const entries = await Promise.all(
           Most evenings leave it unset and the frame then prints no line — a poster is drawn, and
           there is no equivalent of "archiwum zespołu" for a hand that is not on record. */
       posterCredit: c.data.posterCredit ? designCredit(c.data.posterCredit, lang) : undefined,
+      progRows: programRows(c.data, c.id === upcoming?.id),
     };
   }),
 );
@@ -242,6 +299,9 @@ const listItems = await Promise.all(
         venue: opening?.venue ?? s.venue ?? s.metaPlace,
         address: opening ? opening.address : s.address,
         admission: opening ? opening.admission : s.admission,
+        // The one statement in this graph about an entity somebody else owns — and the one a
+        // reader searching for the festival's programme is actually looking for.
+        festival: s.festival,
       }),
     };
   }),
@@ -255,12 +315,40 @@ const jsonLd = {
   itemListElement: listItems,
 };
 
+// ── What a search result says about this page, and it depends on whether anything is ahead.
+//
+// The standing pair in koncerty.yaml describes the CYCLE, which is what this page is for most of
+// its life. While an evening is announced it is also the only document on this site about that
+// evening — an announced concert has no page of its own unless it earns one (`hasPage`) — and the
+// pair then names it: the title takes the evening and its day, the description adds the place, the
+// festival and whether the door is open. Every part is read off the station's structured fields,
+// so nothing here can drift from the card two screens down, and the page returns to its own voice
+// on the first build after the concert.
+const announced = upcoming ? entries.find((e) => e.id === upcoming.id) : undefined;
+const announcedDate = announced?.date ? longDate(announced.date, lang) : "";
+const metaTitle = announced
+  ? fill(t.metaAnnouncedTitle, { title: announced.title, date: announcedDate })
+  : copy.meta.title;
+const metaDescription = announced
+  ? [
+      fill(t.metaAnnouncedLead, {
+        title: announced.title,
+        date: announcedDate,
+        place: announced.metaPlace,
+      }),
+      announced.festival ? fill(t.metaAnnouncedFestival, { name: announced.festival.name }) : "",
+      announced.admission === "free" ? t.metaAnnouncedFree : "",
+    ]
+      .filter(Boolean)
+      .join(" ")
+  : copy.meta.description;
+
 const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp" })).src;
 ---
 
 <BaseLayout
-  title={copy.meta.title}
-  description={copy.meta.description}
+  title={metaTitle}
+  description={metaDescription}
   path={path}
   image={ogImage}
   bodyClass="page-koncerty"
@@ -489,7 +577,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                 )}
                 {/* Out of the register deliberately: a half-ink control is a control you are not
                     sure you may press. Everything above it inks; these are simply there. */}
-                {(s.hasPage || s.spotify || s.realizacja || s.links.length > 0) && (
+                {(s.hasPage || s.spotify || s.realizacja || s.festival || s.links.length > 0) && (
                   <div class="station-actions">
                     {s.hasPage && (
                       <a class="pill" href={localizePath(`/koncerty/${s.id}`, lang)}>
@@ -502,6 +590,13 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                       </a>
                     )}
                     {s.realizacja && <span class="station-credit">{s.realizacja}</span>}
+                    {/* The festival's own page. The label does not repeat its name — the chip row
+                        directly above states it, and the evening names it once. */}
+                    {s.festival && (
+                      <a class="link-min" href={s.festival.url} target="_blank" rel="noopener noreferrer">
+                        {t.festivalSite}
+                      </a>
+                    )}
                     {s.links.map((l) => (
                       <a class="link-min" href={l.href} target="_blank" rel="noopener noreferrer">
                         {l.label}
@@ -509,7 +604,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                     ))}
                   </div>
                 )}
-                {s.program.length > 0 && (
+                {s.progRows.length > 0 && (
                   <details class="prog-d reveal" data-d="3">
                     {/* Six of these stand on one page, so the visible label alone gives a screen
                         reader six identical controls. The concert's name goes in visually hidden
@@ -519,11 +614,20 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                       {t.programSummary}<span class="sr-only"> — {s.title}</span> <span class="chev" aria-hidden="true">↓</span>
                     </summary>
                     <div class="station-program">
+                      {/* Rows, not works: the numbering, the sealed encore and the returning
+                          piece are all decided in `programRows` above, where the reasons are. */}
                       <ul class="prog-list">
-                        {s.program.map((p, i) => (
-                          <li class:list={[{ bis: p.bis }]}>
-                            <span class="prog-n" aria-hidden="true">{p.bis ? "—" : String(i + 1).padStart(2, "0")}</span>
-                            <span class="pc">{p.composer}</span> — {p.work}
+                        {s.progRows.map((r) => (
+                          <li class:list={[{ bis: r.bis, "prog-return": r.times !== undefined }]}>
+                            <span class="prog-n" aria-hidden="true">{r.num}</span>
+                            {/* Markup, for the one emphasis a work line carries: a foreign title
+                                inside a vernacular phrase (content.config). */}
+                            <span class="pc">{r.composer}</span> — <span set:html={r.work} />
+                            {r.times !== undefined && (
+                              <span class="prog-times">
+                                {fill(t.ritornelloTimes, { times: String(r.times) })}
+                              </span>
+                            )}
                           </li>
                         ))}
                       </ul>
@@ -905,6 +1009,13 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   /* Ordinal — the order is part of the work ("kolejność jest bardzo ważna"), so it shows. */
   .prog-list li .prog-n { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--accent, var(--candle)); margin-right: 10px; }
   .prog-list li.bis { color: var(--accent, var(--candle)); }
+  /* The piece that returns. Its rule is LIT and it carries a second line saying how often it
+     sounds — the two together are the whole statement this list makes about a return, since the
+     clasps that carry them belong to the concert's own page. The row itself stays in the list's
+     ink: an encore is a different kind of exception (it is the evening's last word) and keeps the
+     accent to itself, so the two cannot be read as one mark. */
+  .prog-list li.prog-return { border-top-color: color-mix(in srgb, var(--accent, var(--candle)) 45%, transparent); }
+  .prog-times { display: block; margin-top: 4px; font-family: var(--mono); font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent, var(--candle)); }
   @media (max-width: 620px) { .prog-list { columns: 1; } }
   @media (max-width: 820px) {
     .station-inner, .station.reverse .station-inner { grid-template-columns: 1fr; gap: 30px; }

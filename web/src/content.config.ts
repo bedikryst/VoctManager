@@ -120,6 +120,18 @@ const concerts = defineCollection({
         be restated as a `facts` chip — one fact in two homes, one of them translated by hand. The
         chip's wording is chrome (a complete triple), not copy, for the same reason. */
     admission: z.enum(["free", "paid"]).optional(),
+    /** The festival this evening is sung within — its name, and its own page.
+     *
+     *  STRUCTURED, because three surfaces need different halves of one fact and a hand-written
+     *  `links` row could only ever be the door: the JSON-LD says `superEvent`, which is how a
+     *  search engine learns that this concert belongs to a festival somebody else is searching
+     *  for; the station prints a link to the festival's site; and the announced-evening meta on
+     *  /koncerty names it in the sentence a result page shows. The NAME stays as written in every
+     *  locale — it is a proper name — and the words around it are chrome.
+     *
+     *  It does not replace the evening's own `facts` chip: the chip states that the evening
+     *  belongs to a festival, this states WHICH one and where it lives. */
+    festival: z.object({ name: z.string(), url: z.string().url() }).strict().optional(),
     /** /o-nas milestone editorial — the About page derives its "Via" list from this
         collection (single source of truth with /koncerty). All fields optional:
         place falls back to `venue`, blurb to `essence`; a missing img renders the
@@ -394,12 +406,48 @@ const concerts = defineCollection({
         about: z.string().optional(),
       })
       .optional(),
+    /** The piece that RETURNS through the evening, declared once.
+     *
+     *  WHY IT IS DECLARED AND NOT COUNTED. A return is carried in the programme by `clasp` — one
+     *  row per return — and /koncerty/[id] prints every one of them, because that page IS the
+     *  programme book. The compact list on /koncerty prints none, and must not: nine
+     *  "Miserere — część N" rows inside a station's disclosure are a drum roll, not a contents
+     *  list. So the evening states the return once and that list marks it.
+     *
+     *  `times` is how many times the piece sounds across the evening. It is authored because it
+     *  cannot be derived: 9 Kart's returns are nine differently-labelled clasps, and Pochwała's
+     *  opening episode is not a clasp at all — it precedes work 01 and has nothing to hang on.
+     *
+     *  `numbered` says whether the returning piece is one of the numbered works, and the two
+     *  cases render differently. True ⇒ the row already in the programme takes the mark (9 Kart:
+     *  the Miserere is work 01 and returns in nine parts). False ⇒ the piece stands OUTSIDE the
+     *  numbering and the list grows one unnumbered row at its head (Pochwała: Spiegel im Spiegel
+     *  opens the evening and is the mirror of the programme rather than a work in it). The
+     *  superRefine below holds that claim against the programme, so neither case can be asserted
+     *  by hand and quietly contradicted by the work list. */
+    ritornello: z
+      .object({
+        composer: z.string(),
+        years: z.string().optional(),
+        work: z.string(),
+        year: z.string().optional(),
+        times: z.number().int().min(2),
+        numbered: z.boolean().default(false),
+      })
+      .strict()
+      .optional(),
     program: z
       .array(
         z.object({
           composer: z.string(),
           /** Composer life-dates as a single string, e.g. "1942–2019". */
           years: z.string().optional(),
+          /** The work as it is printed. Plain text with ONE allowance: `<em>` around a foreign
+              title standing inside a vernacular phrase ("Ménétrier z cyklu <em>Impressions
+              d'enfance</em> op. 28"), which is the only emphasis a work line has ever needed.
+              Every surface renders this field as markup and the press pack flattens it
+              (lib/plainText), so nothing else may be written here — this is hand-authored copy,
+              not sanitized input. */
           work: z.string(),
           /** Year of composition. */
           year: z.string().optional(),
@@ -475,6 +523,27 @@ const concerts = defineCollection({
           "A concert needs a `date` to format, or a `dateLabel` where the day is vague (a season," +
           " a bare year) — otherwise its dateline prints a place with no moment.",
       });
+    }
+
+    // A returning piece is marked on the work list in one of two places, and `numbered` is the
+    // only thing that decides which. Asserted wrongly it fails SILENTLY: `numbered: true` with no
+    // matching work marks nothing at all, and `false` on a work that IS in the programme prints
+    // the piece twice — once unnumbered at the head, once in its own place.
+    if (concert.ritornello) {
+      const { composer, work, numbered } = concert.ritornello;
+      const inProgramme = concert.program.some((p) => p.composer === composer && p.work === work);
+      if (numbered !== inProgramme) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["ritornello", "numbered"],
+          message: numbered
+            ? `\`numbered: true\` says "${composer} — ${work}" is one of the numbered works, but` +
+              ` no programme item names it. Correct the spelling, or drop the flag so the piece` +
+              ` stands as its own unnumbered row.`
+            : `"${composer} — ${work}" IS in the programme, so it would be printed twice. Set` +
+              ` \`numbered: true\` to mark the row it already has.`,
+        });
+      }
     }
 
     // A per-date venue is ONE evening in ONE place by definition, so a slash there is a tour

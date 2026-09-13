@@ -138,7 +138,11 @@ const entries = PATHS.map((path, i) => {
                       {entry.program.map((p, i) => (
                         <li class:list={[{ "path-works-bis": p.bis }]} style={`--i:${i}`}>
                           <span class="path-works-n" aria-hidden="true">{p.bis ? "—" : String(i + 1).padStart(2, "0")}</span>
-                          {p.composer} · <em>{p.work}{p.year ? ` · ${p.year}` : ""}</em>
+                          {/* The work is MARKUP — a line may italicise a foreign title inside a
+                              vernacular phrase (content.config) — and the whole line is italic
+                              here, so the emphasis is silent on this surface and shows on the
+                              compact list. */}
+                          {p.composer} · <em><Fragment set:html={p.work} />{p.year ? ` · ${p.year}` : ""}</em>
                         </li>
                       ))}
                     </ol>

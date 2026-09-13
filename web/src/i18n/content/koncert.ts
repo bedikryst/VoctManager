@@ -100,6 +100,13 @@ export interface ConcertChrome {
     /** Gloss of `Via` on the coda's rail. */
     readonly viaLabel: string;
     readonly allConcerts: string;
+    /** The label on the announcement that closes the road — the evening still ahead.
+     *
+     *  It says the same word as the landing's `hero.announceLabel`, and says it from here on
+     *  purpose: that one is PROSE on the desk, arriving a field at a time, and this is chrome,
+     *  where the compiler can demand all three locales. A concert page carrying an announcement
+     *  in Polish on its French render would be a broken page, not a paragraph awaiting review. */
+    readonly aheadLabel: string;
   };
 }
 
@@ -154,6 +161,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       navAria: "Nawigacja po cyklu",
       viaLabel: "Droga trwa",
       allConcerts: "Wszystkie Koncerty Duchowe",
+      aheadLabel: "Najbliżej",
     },
   },
   en: {
@@ -201,6 +209,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       navAria: "Navigation within the cycle",
       viaLabel: "The road goes on",
       allConcerts: "All the Spiritual Concerts",
+      aheadLabel: "Next",
     },
   },
   fr: {
@@ -248,6 +257,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       navAria: "Navigation dans le cycle",
       viaLabel: "Le chemin continue",
       allConcerts: "Tous les Concerts Spirituels",
+      aheadLabel: "Prochainement",
     },
   },
 };

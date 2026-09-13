@@ -51,7 +51,7 @@ import type { TabulaEntry } from "../../lib/tabula";
 import { absolute, musicEvent } from "../../lib/eventSchema";
 import { videoAsset, videoAssetAv1 } from "../../lib/videos";
 import { longDate } from "../../lib/dates";
-import { cycleNumerals } from "../../lib/cycle";
+import { cycleNumerals, upcomingStation } from "../../lib/cycle";
 import { formatRef } from "../../lib/scriptureRef";
 import { CONCERT, fill } from "../../i18n/content/koncert";
 import { NUNTIUS } from "../../i18n/content/nuntius";
@@ -148,6 +148,34 @@ const neighbourTitle = (e: CollectionEntry<"concerts">): string =>
 // notice list. A door, not a form: the address is taken in one place, the band on /koncerty.
 const nuntius = NUNTIUS[lang];
 const hrefNotice = `${localizePath("/koncerty", lang)}#nuntius`;
+
+// ── The evening that has not happened yet, closing the road.
+//
+// WHY THIS PAGE OF ALL PAGES. The rail above walks evenings that have SOUNDED; every one of these
+// pages is written in the past tense, and a reader who lands on one from a search has no way from
+// here to learn that anything is coming. So the Via ends on the one thing ahead of it — the same
+// lit dot and the same dateline the landing's hero carries, because "this evening is ahead" is one
+// claim and the site makes it with one mark.
+//
+// It takes the STATION'S candle, not brand gold: `--candle` inside <main> is this concert's accent,
+// and the announcement is spoken in the voice of the page it stands on.
+//
+// Dormant by construction (no future-dated station ⇒ nothing), and silent on the announced
+// evening's own page, where it would point at itself. Resolved at build, like every other reading
+// of the corpus's calendar: the deploy after a concert is what takes it down.
+const upcoming = upcomingStation(ordered);
+const ahead =
+  upcoming && upcoming.id !== entry.id
+    ? {
+        // An evening with no page of its own is still a PLACE on /koncerty — the station carries
+        // the anchor, so the door lands on the announcement rather than at the head of the walk.
+        href: upcoming.data.hasPage
+          ? localizePath(`/koncerty/${upcoming.id}`, lang)
+          : `${localizePath("/koncerty", lang)}#${upcoming.id}`,
+        title: neighbourTitle(upcoming),
+        moment: upcoming.data.date ? longDate(upcoming.data.date, lang) : "",
+      }
+    : undefined;
 
 // ── Poster + documentary gallery. photoOptional so a slot can be declared in YAML before its
 // image lands on disk — a missing file is silently skipped rather than breaking the build.
@@ -386,6 +414,7 @@ const events = hasTour
         venue: d.venue,
         address: d.address,
         admission: d.admission,
+        festival: c.festival,
       }),
     )
   : [
@@ -399,6 +428,7 @@ const events = hasTour
         venue: c.venue ?? metaPlace,
         address: c.address,
         admission: c.admission,
+        festival: c.festival,
       }),
     ];
 const jsonLd =
@@ -737,7 +767,10 @@ const jsonLd =
                       {p.years && <span class="kd-program-years"> · {p.years}</span>}
                     </p>
                     <p class="kd-program-work">
-                      <em>{p.work}</em>
+                      {/* Markup: a work line may italicise a foreign title standing inside a
+                          vernacular phrase, and the whole line is italic here anyway — the
+                          emphasis shows on the compact list (/koncerty), where it is not. */}
+                      <em><Fragment set:html={p.work} /></em>
                       {/* The three facts travel as ONE rail: loose in the title's flex row they
                           left the line one chip at a time, so a work could set its year beside
                           the title and its scoring a line below. */}
@@ -1122,6 +1155,11 @@ const jsonLd =
                 <span class="kd-vianav-dir micro">{ui.hero.station} {numerals.get(next.id)} <span aria-hidden="true">→</span></span>
                 <span class="kd-vianav-name">{neighbourTitle(next)}</span>
               </a>
+            ) : ahead ? (
+              /* The announcement standing under the rail IS the forward door, and a second one
+                 offering the notice list beside it asks a reader to subscribe to news they are
+                 being handed. The slot steps aside for it. */
+              <span class="kd-vianav-side is-empty" aria-hidden="true" />
             ) : (
               /* Nothing is being announced here: the slot names the LIST, not an evening, so the
                  rail never implies a concert that has no date. It is the one door on this page
@@ -1134,6 +1172,15 @@ const jsonLd =
               </a>
             )}
           </div>
+
+          {/* The road's end. Written unbroken: whitespace between these nodes would print inside
+              the line, and the mark before the moment is drawn by the sheet. */}
+          {ahead && (
+            <a class="kd-ahead" href={ahead.href}>
+              <span class="kd-ahead-dot" aria-hidden="true" />
+              <span class="kd-ahead-text">{`${ui.coda.aheadLabel} — `}<strong>{ahead.title}</strong>{ahead.moment && <span class="kd-ahead-when">{ahead.moment}</span>}</span>
+            </a>
+          )}
         </nav>
       </div>
     </section>
@@ -1731,6 +1778,26 @@ const jsonLd =
   .kd-vianav-all { justify-self: center; text-align: center; font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244,241,233,.72); border-bottom: 1px solid rgba(244,241,233,.28); padding-bottom: 4px; transition: color .35s var(--ease, ease), border-color .35s var(--ease, ease); }
   .kd-vianav-all:hover { color: var(--candle); border-bottom-color: var(--candle); }
 
+  /* The evening still ahead, closing the Via. Ranked BELOW the rail's names — those are stations
+     of the cycle this page belongs to, this is a door out of it — and set in the dateline's own
+     register rather than a neighbour's serif. */
+  .kd-ahead { justify-self: center; max-width: 100%; display: inline-flex; align-items: flex-start; gap: 11px; --ahead-line: 1.5; font-family: var(--capitalis); font-size: 11px; letter-spacing: .14em; line-height: var(--ahead-line); text-transform: uppercase; color: rgba(244,241,233,.58); transition: color .35s var(--ease, ease); }
+  /* The rule sits on the evening's NAME, so the affordance is on the fact the link is about
+     instead of boxing the whole line. */
+  .kd-ahead strong { color: var(--candle); font-weight: 400; padding-bottom: 2px; border-bottom: 1px solid color-mix(in srgb, var(--candle) 34%, transparent); transition: border-color .35s var(--ease, ease); }
+  .kd-ahead:hover { color: rgba(244,241,233,.86); }
+  .kd-ahead:hover strong { border-bottom-color: var(--candle); }
+  /* The moment is a peer of the name, not a subtitle. The middot is DRAWN so the phone layer can
+     drop it when the two facts stop sharing a line, and it is glued on both sides — with no
+     whitespace in the markup the mark can never end a line, nor the date start one alone. */
+  .kd-ahead-when { white-space: nowrap; }
+  .kd-ahead-when::before { content: "·"; margin: 0 .5em 0 .62em; letter-spacing: 0; }
+  /* `flex-start` with an explicit offset, not `align-items: center`: the line wraps to two tiers
+     on a phone, where a centred dot would float against the middle of the block. */
+  .kd-ahead-dot { width: 7px; height: 7px; flex-shrink: 0; margin-top: calc((var(--ahead-line) * 1em - 7px) / 2); border-radius: 50%; background: var(--candle); animation: kdAheadPulse 2.8s var(--ease-slow, ease) infinite; }
+  @keyframes kdAheadPulse { 0%, 100% { opacity: .4; } 50% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .kd-ahead-dot { animation: none; opacity: .9; } }
+
   /* ── LEAD register ─────────────────────────────────────────────────────────
      Every hairline below is a border this layout already carried; not one was added to have
      something to draw. The real border stays for no-JS and reduced-motion visitors, and only
@@ -1821,5 +1888,12 @@ const jsonLd =
     .kd-program-meta { flex-basis: 100%; margin-left: -13px; clip-path: inset(0 0 0 13px); }
     .kd-text-cols, .kd-text-cols.is-single { grid-template-columns: 1fr; gap: 18px; }
     .kd-tour-row { grid-template-columns: 1fr; gap: 4px; padding: 20px 0; }
+    /* The announcement becomes two authored tiers — a phone column never holds the label, the
+       evening's name and its day on one line — so the mark that joined two peers goes with it.
+       The leading opens to clear the gold rule under the name: it hangs below the em box, and
+       Polish capitals carry their marks above the cap height. */
+    .kd-ahead { --ahead-line: 1.9; }
+    .kd-ahead-when { display: block; }
+    .kd-ahead-when::before { display: none; }
   }
 </style>

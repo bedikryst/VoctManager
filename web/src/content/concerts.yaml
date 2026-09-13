@@ -1148,6 +1148,13 @@
     Teksty i przekłady polskie za programem koncertu.
   # No `movements`: this evening has no acts to group. One psalm is cut into nine parts and
   # braided through the other eight, so the braid IS the structure — the clasps carry it.
+  # The braid is also the whole point of the programme, and the compact list on /koncerty prints
+  # no clasps at all: it marks the Miserere's own row instead, which is why the return is declared.
+  ritornello:
+    composer: "Gregorio Allegri"
+    work: "Miserere mei, Deus"
+    times: 9
+    numbered: true
   gallery:
   # THE ONE TOURING PROGRAMME, and the only gallery here with a venue per frame — which city a
   # photograph comes from is a fact about the photograph and cannot be read off `dates`.
@@ -2561,6 +2568,9 @@
   time: "13:30"
   address: "pl. Grzybowski 3/5, Warszawa"
   admission: free
+  festival:
+    name: "Fenomen człowieka"
+    url: "https://fenomen-czlowieka.pl/"
   about:
     place: "Kościół Wszystkich Świętych · Warszawa"
     blurb: "Koncert w ramach warszawskiego festiwalu „Fenomen człowieka”: Pieśń słoneczna św. Franciszka jako droga od zachwytu nad stworzeniem ku nadziei wieczności."
@@ -2588,7 +2598,14 @@
   # The order is Florent's own, marked final on 11.09.2026. Pärt is NOT one of the ten: the
   # returning Spiegel im Spiegel is the evening's mirror rather than a work in the programme
   # (his words), so each return hangs off the item it follows as a clasp, exactly as the
-  # Miserere does in 9 Kart. The opening episode precedes item 01 and has nothing to hang on.
+  # Miserere does in 9 Kart. The opening episode hangs on nothing — it precedes item 01 — which
+  # is why the whole return is declared below instead: five soundings, outside the numbering.
+  ritornello:
+    composer: "Arvo Pärt"
+    years: "ur. 1935"
+    work: "Spiegel im Spiegel"
+    year: "1978"
+    times: 5
   program:
     - composer: "Marian Borkowski"
       years: "ur. 1934"
@@ -2604,7 +2621,7 @@
       year: "1954"
     - composer: "Jules Massenet"
       years: "1842–1912"
-      work: "Méditation z opery Thaïs"
+      work: "Méditation z opery <em>Thaïs</em>"
       year: "1894"
       voicing: "skrzypce i organy"
     - composer: "Ēriks Ešenvalds"
@@ -2622,7 +2639,7 @@
       year: "2017"
     - composer: "George Enescu"
       years: "1881–1955"
-      work: "Ménétrier z cyklu Impressions d'enfance op. 28"
+      work: "Ménétrier z cyklu <em>Impressions d'enfance</em> op. 28"
       year: "1940"
       clasp: "Spiegel im Spiegel · Arvo Pärt"
     - composer: "Marian Borkowski"
