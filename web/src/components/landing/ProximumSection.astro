@@ -27,6 +27,11 @@
  *  the exception and content.config states why: whether a reader can simply walk in is the first
  *  thing they need, and it is structured data rather than a hand-translated chip.
  *
+ *  IT IS THE ONLY REASON THE LANDING CARRIES THE PHOTOGRAPH FRAME. The poster opens in the shared
+ *  ImageLightbox, and LandingPage mounts that island, `scripts/image-triggers.ts` and
+ *  `styles/image-lightbox.css` for this band alone — the Imagines panels above it are doors to
+ *  their evening and trigger nothing. If the band is ever removed, those three go with it.
+ *
  *  IT GOES DOWN BY DEPLOY. `upcomingStation` is resolved at build, so the band outlives its own
  *  concert until the next build — the same trade `lib/eventSchema` documents for `eventStatus`,
  *  and the reason a deploy belongs in the week after a concert.
@@ -36,6 +41,8 @@
 import { getCollection } from "astro:content";
 import { Picture } from "astro:assets";
 import { photoOptional } from "../../lib/photos";
+import { framedShot } from "../../lib/galleryFrame";
+import { designCredit } from "../../lib/photoCredit";
 import { longDate } from "../../lib/dates";
 import { upcomingStation } from "../../lib/cycle";
 import { concertKey, withOverlay } from "../../lib/copyOverlay";
@@ -62,6 +69,17 @@ const invitation = NUNTIUS[lang].invitation;
 const say = (field: string, polish: string): string =>
   upcoming ? withOverlay(concertKey(upcoming.id, field), lang, polish) : polish;
 
+// `photoOptional`, so a poster named in the corpus before the file lands leaves the band standing
+// as type rather than failing the landing's build.
+const posterImg = upcoming?.data.poster ? photoOptional(upcoming.data.poster) : undefined;
+/** The poster's full-size renditions for the frame it opens in. The same pair the two galleries
+    publish (lib/galleryFrame), so the 1200 step is one emitted file across the whole site.
+
+    `framedShot` never upscales, so how legible the opened poster is, is decided by the DELIVERED
+    artwork and by nothing on this page: ask the designer for an export at least 2000px wide, or
+    the frame will open at whatever the print file happened to be flattened to. */
+const posterFrame = posterImg ? await framedShot(posterImg) : undefined;
+
 const announced = upcoming
   ? {
       // An evening with no page of its own is still a PLACE on /koncerty: the station carries the
@@ -83,10 +101,12 @@ const announced = upcoming
         .filter(Boolean)
         .join(" · "),
       free: upcoming.data.admission === "free",
-      // `photoOptional`, so a poster named in the corpus before the file lands leaves the band
-      // standing as type rather than failing the landing's build.
-      poster: upcoming.data.poster ? photoOptional(upcoming.data.poster) : undefined,
+      poster: posterImg,
       posterAlt: upcoming.data.posterAlt ? say("posterAlt", upcoming.data.posterAlt) : "",
+      // Never through the overlay: the label is translated, the hands are names (glossary §1).
+      posterCredit: upcoming.data.posterCredit
+        ? designCredit(upcoming.data.posterCredit, lang)
+        : undefined,
     }
   : undefined;
 ---
@@ -108,10 +128,40 @@ const announced = upcoming
             {copy.label}
           </p>
           {/* The poster is the evening's own object and the only image it has — held at the
-              register's rail width so the band sits in the page's grid rather than beside it. */}
+              register's rail width so the band sits in the page's grid rather than beside it.
+
+              IT OPENS RATHER THAN LEADING AWAY, and that is the correction: at the rail's 300px a
+              poster carrying a festival, ten works and an address is an ILLUSTRATION of an
+              announcement the reader cannot actually read, and a second door to a page the title
+              and the two actions beside it already open three times over. The frame is not a dead
+              end — it carries this evening's own exit (`href` / `hrefLabel`), so the door survives
+              one press deeper — and it is the one surface on which the poster's hands can be named
+              without the band growing a colophon.
+
+              A <button>, and the `aria-hidden` / `tabindex="-1"` it used to carry are gone with the
+              anchor: those said "this is the title's link twice over, skip it", which was true of a
+              duplicate door and is false of a control that opens something nothing else on this
+              page opens. Its accessible name is the poster's own alt, exactly as the gallery
+              triggers on /obrazy are named. */}
           <div class="proximum-card">
-            {announced.poster && (
-              <a class="proximum-poster" href={announced.href} tabindex="-1" aria-hidden="true">
+            {announced.poster && posterFrame && (
+              <button
+                type="button"
+                class="proximum-poster shot-open"
+                data-image-open
+                data-image-src={posterFrame.src}
+                data-image-srcset={posterFrame.srcset}
+                data-image-sizes={posterFrame.sizes}
+                data-image-alt={announced.posterAlt}
+                data-image-caption={[announced.moment, announced.place]
+                  .filter(Boolean)
+                  .join(" · ")}
+                data-image-credit={announced.posterCredit}
+                data-image-w={String(posterFrame.width)}
+                data-image-h={String(posterFrame.height)}
+                data-image-href={announced.href}
+                data-image-href-label={announced.title}
+              >
                 <span class="frame" />
                 <Picture
                   src={announced.poster}
@@ -123,7 +173,7 @@ const announced = upcoming
                   loading="lazy"
                   decoding="async"
                 />
-              </a>
+              </button>
             )}
             <div class="proximum-text">
               <h2 class="proximum-title reveal ink-press">

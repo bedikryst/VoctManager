@@ -99,8 +99,9 @@ export interface UIStrings {
     readonly realizedBy: string;
   };
   /**
-   * The lightbox over a photograph (`islands/ImageLightbox`), open on /obrazy, /kolofon and every
-   * concert page. All four are accessible names — a surface with no visible text of its own.
+   * The lightbox over a photograph (`islands/ImageLightbox`), open on /obrazy, /kolofon, every
+   * concert page, and the landing while an evening is still ahead (its announced poster). All four
+   * are accessible names — a surface with no visible text of its own.
    */
   readonly lightbox: {
     readonly dialogAria: string;

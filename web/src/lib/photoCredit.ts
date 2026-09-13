@@ -37,21 +37,32 @@ interface CreditLabels {
   /** The ensemble's own hand, lower-case because it stands in a list beside names without
       being one — "fot. Wojciech Przybył · archiwum zespołu" is a list of hands, not of people. */
   readonly ownArchive: string;
+  /** Opens a POSTER's line. A poster is drawn, and "fot." over it would hand a designer an
+      authorship nobody claimed — the same error `source` exists to avoid one field up. */
+  readonly design: string;
 }
 
 const CREDIT_LABELS: Record<Locale, CreditLabels> = {
-  pl: { lead: "Fot.", frame: "fot.", source: "źródło:", ownArchive: "archiwum zespołu" },
+  pl: {
+    lead: "Fot.",
+    frame: "fot.",
+    source: "źródło:",
+    ownArchive: "archiwum zespołu",
+    design: "proj.",
+  },
   en: {
     lead: "Photographs:",
     frame: "photograph:",
     source: "source:",
     ownArchive: "the ensemble's own archive",
+    design: "design:",
   },
   fr: {
     lead: "Photographies :",
     frame: "photographie :",
     source: "source :",
     ownArchive: "archives de l'ensemble",
+    design: "graphisme :",
   },
 };
 
@@ -88,6 +99,17 @@ export const frameCredit = (
   frame.source && !frame.credit
     ? sourceCredit(frame.source, locale)
     : `${CREDIT_LABELS[locale].frame} ${frame.credit ?? ownArchiveCredit(locale)}`;
+
+/**
+ * A POSTER's hand, as a finished line — what the announcement band's frame publishes.
+ *
+ * The hands arrive from the corpus already joined (`posterCredit`) and are printed verbatim: who
+ * drew a poster is not derivable the way `frameCredit` derives the ensemble's own camera from an
+ * empty field, and a poster with nobody named simply prints no line. Only the label is per-locale,
+ * because a designer is a name and stays herself everywhere (glossary §1).
+ */
+export const designCredit = (hands: string, locale: Locale): string =>
+  `${CREDIT_LABELS[locale].design} ${hands}`;
 
 /**
  * Everything behind a set of frames, in the one order every surface prints it: named hands first,

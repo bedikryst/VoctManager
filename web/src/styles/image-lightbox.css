@@ -2,8 +2,9 @@
  * @file image-lightbox.css
  * @description The full-screen photograph frame (islands/landing/ImageLightbox) and the
  *  `[data-image-open]` trigger's own affordance. Standalone by design — imported per page
- *  alongside the island, the way vault.css and vplayer.css are, because the frame is opened
- *  from the concert pages and from the archive rather than from the landing's cascade.
+ *  alongside the island, the way vault.css and vplayer.css are, because the pages that open a
+ *  frame (the concert pages, the archive, the colophon, and the landing for its one poster) do
+ *  not share a cascade.
  *
  *  The scroll-lock is deliberately NOT declared here: `overflow: hidden` on `body.image-open`
  *  has to name the page's own body class (each page carries its own), and a blanket `body` rule

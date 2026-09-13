@@ -176,6 +176,14 @@ const concerts = defineCollection({
     /** Framed poster — photo() base name. Absent for the liturgy plate. */
     poster: z.string().optional(),
     posterAlt: z.string().optional(),
+    /** Who drew the poster, as a FINISHED list of hands separated by " · " — no label, which the
+        locale supplies (lib/photoCredit `designCredit`), and no translation, because these are
+        names. It is printed only where the poster stands ALONE and large enough to be read, i.e.
+        in the frame the landing's announcement opens; a credit under a 300px thumbnail is a
+        colophon the band does not carry. An evening whose designer is not on record leaves it
+        unset and the frame prints no line — never "archiwum zespołu", which is a claim about a
+        camera and not about a drawing hand. */
+    posterCredit: z.string().optional(),
     realizacja: z.string().optional(),
     spotify: z.string().url().optional(),
     links: z.array(z.object({ label: z.string(), href: z.string().url() })).default([]),

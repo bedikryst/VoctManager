@@ -70,10 +70,29 @@
     align-items: start;
   }
 
+  /* A <button> that opens the poster in the shared frame, so `.shot-open` (image-lightbox.css,
+     imported by LandingPage AFTER this sheet) has already stripped the control back to a box. What
+     is left here is the object: the shadow that lifts a printed sheet off the parchment. */
   .proximum-poster {
     position: relative;
     display: block;
     box-shadow: 0 30px 70px -34px rgba(24, 20, 14, 0.55);
+  }
+
+  /* The one thing the shared trigger cannot get right from here: its ring is drawn in the display
+     candle, which was measured against the dark rooms it opens in and reads at 2.10 : 1 on this
+     band's parchment (tokens.css). A focus ring is the one mark on the page that has no decorative
+     reading — it either clears its surroundings or it is not there — so on paper it takes the ink
+     gold, like every other gold on this band that is looked at rather than glanced past. */
+  .proximum-poster.shot-open:focus-visible {
+    outline-color: var(--candle-ink);
+  }
+
+  /* The frame's scroll-lock, named for the landing's own body class: image-lightbox.css declares
+     none, because a blanket `body.image-open` rule would reach documents that mount no island.
+     Same shape as the projection room's lock two sheets up (12-vox). */
+  body.theme-marketing.image-open {
+    overflow: hidden;
   }
 
   .proximum-poster img {

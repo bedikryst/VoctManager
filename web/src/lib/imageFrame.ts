@@ -23,6 +23,9 @@
  *    the DOM walk, i.e. inventing markup so a lookup mechanism would work — which is the tail
  *    wagging the dog, and unreadable six months later.
  *
+ *  A surface with ONE frame and no set to belong to names neither — the landing's announced poster
+ *  is the case — and publishes itself, which is the same one-item set the island renders.
+ *
  *  A trigger carrying both is answered by `data-image-set`: the authored set is the specific claim.
  *  Neither form reaches the island differently — both arrive as an `ImageFrameSet`, and the room
  *  cannot tell them apart, which is the property that keeps this an extension and not a mode.

@@ -414,7 +414,7 @@ one bis.
 | 7 | Stoi lód na Prośnie (2017) | Jacek Sykulski (ur. 1964) |
 | 8 | Ménétrier, z *Impressions d'enfance* op. 28 (1940) | George Enescu (1881–1955) |
 | — | *Spiegel im Spiegel* | |
-| 9 | Dona eis requiem II (2016) | Marian Borkowski |
+| 9 | Dona eis requiem I (2016) | Marian Borkowski |
 | 10 | Stetit Angelus (2005) | Rihards Dubra (ur. 1964) |
 | — | *Spiegel im Spiegel* **[zakończenie]** | |
 | bis | What a Wonderful World (1967) | George David Weiss (1921–2010) / Bob Thiele (1922–1996) |
@@ -437,23 +437,25 @@ Raised with Florent 11.09, unanswered.
   they played *Ménétrier* at Wołanie Gór, so the announcement must not present it as a premiere
   for this ensemble.
 - **Lumen is Borkowski**, not the unattributed Missa-brevis movement §2 guessed. **Borkowski now
-  has three works** (Gloria II, Lumen, Dona eis requiem II, all 2012–2016) and is the spine of
+  has three works** (Gloria II, Lumen, Dona eis requiem I, all 2012–2016) and is the spine of
   the choral half — a living Polish composer carrying three of ten items is the best line
   available for the announcement after the All Saints fact.
 - **Lark arranger confirmed: Paul Drayton, 2019.**
-- Borkowski's Roman numerals are part of the titles (*Gloria II*, *Dona eis requiem II*) — the
-  poster currently drops the **II** from the requiem.
+- Borkowski's Roman numerals are part of the titles (*Gloria II*, *Dona eis requiem I*) — the
+  poster currently drops the **I** from the requiem. The evening sings the FIRST setting (corrected
+  13.09.2026, against the II this list first recorded); the year 2016 beside it was sourced for the
+  **II** and has not been re-checked for the **I**.
 
 **Still open:** *Ménétrier* is written for violin **and piano**, and this concert has no piano.
 Massenet with organ is ordinary practice; Enescu with organ is not. Unanswered, and the
 repertoire is now locked, so it is a decision rather than a question.
 
-**Poster gap against this list:** the ring is missing **Ménétrier / Enescu** and the **II** on
+**Poster gap against this list:** the ring is missing **Ménétrier / Enescu** and the numeral on
 *Dona eis requiem*.
 
 **Checked against the delivered poster (13.09.2026, `poster-stworzenie`):** *Ménétrier · G. Enescu*
 is in the ring — that half is closed. Two things are not, and both are print-side only, since the
-site prints the titles itself: the requiem still reads *Dona eis Requiem* (no **II**, and a
+site prints the titles itself: the requiem still reads *Dona eis Requiem* (no **I**, and a
 capital R the title does not have), and *św. Franciszek z Asyżu* still sits between *C. Orff* and
 *Stetit Angelus* in the ring's own rhythm, so reading round it he parses as Dubra's librettist.
 The byline is **VoctEnsemble & Radu Ropotan**, which is why the corpus credits `Skrzypce: Radu

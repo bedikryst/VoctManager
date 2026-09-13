@@ -2578,6 +2578,7 @@
   bg: st-stworzenie-bg
   poster: poster-stworzenie
   posterAlt: Plakat koncertu Pochwała Stworzenia
+  posterCredit: "Anna Marcisz · VoctEnsemble"
   realizacja: "Skrzypce: Radu Ropotan"
   # The order is Florent's own, marked final on 11.09.2026. Pärt is NOT one of the ten: the
   # returning Spiegel im Spiegel is the evening's mirror rather than a work in the programme
@@ -2620,7 +2621,7 @@
       year: "1940"
       clasp: "Spiegel im Spiegel · Arvo Pärt"
     - composer: "Marian Borkowski"
-      work: "Dona eis requiem II"
+      work: "Dona eis requiem I"
       year: "2016"
     - composer: "Rihards Dubra"
       years: "ur. 1964"

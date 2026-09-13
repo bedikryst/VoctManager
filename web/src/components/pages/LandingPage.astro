@@ -34,6 +34,10 @@ import { toRibbons } from "../../lib/registrum";
 import { pageCopy } from "../../lib/pageCopy";
 import { typographyHtml } from "../../lib/typoHtml";
 import "../../styles/landing.css";
+// The photograph frame, for the ONE trigger this page has: the announcement band's poster
+// (components/landing/ProximumSection). Imported after landing.css so the `.shot-open` reset wins
+// the ties it must win against the band's own `.proximum-poster` rules.
+import "../../styles/image-lightbox.css";
 
 import HeroSection from "../landing/HeroSection.astro";
 import ManifestSection from "../landing/ManifestSection.astro";
@@ -59,6 +63,7 @@ import { LANDING_CHROME, LANDING_PAGE } from "../../i18n/content/landing";
 import VaultMount from "../VaultMount.astro";
 import { VoxMoment } from "../../islands/landing/VoxMoment";
 import { VideoLightbox } from "../../islands/landing/VideoLightbox";
+import { ImageLightbox } from "../../islands/landing/ImageLightbox";
 import { MovementSpine } from "../../islands/landing/MovementSpine";
 
 interface Props {
@@ -207,6 +212,10 @@ const jsonLd = {
 
     <VaultMount lang={lang} />
     <VideoLightbox client:idle poster={voxPoster} caption={c.vox.videoCaption} lang={lang} />
+    {/* The poster's room. It and the projection room never open together and share a z-index;
+        both are dormant until pressed, and this one is dormant for whole seasons — the band that
+        triggers it only exists while an evening is still ahead. */}
+    <ImageLightbox client:idle />
   </div>
 
   <style is:global>
@@ -234,5 +243,6 @@ const jsonLd = {
 
   <script>
     import "../../scripts/landing.ts";
+    import "../../scripts/image-triggers.ts";
   </script>
 </BaseLayout>
