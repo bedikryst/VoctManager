@@ -117,18 +117,10 @@ export const FOUNDATION: Foundation = {
   site: "https://voctensemble.com",
 };
 
-/**
- * The registry line as the site prints it — name, seat, then the three numbers. One function so
- * that a surface deciding to print "the legal line" cannot invent its own order or its own
- * separator.
- */
-export function registryLine(separator = " · "): string {
-  const { name, addressLine, registry } = FOUNDATION;
-  return [
-    name,
-    addressLine,
-    `KRS ${registry.krs}`,
-    `NIP ${registry.nip}`,
-    `REGON ${registry.regon}`,
-  ].join(separator);
-}
+/* NO `registryLine()` HELPER, and the absence is deliberate. One shipped here briefly, justified
+   by "so a surface cannot invent its own order" — and had no callers, because the two surfaces
+   that print these numbers want different things: /press renders the full set as a definition
+   list it builds from its own ordered array, and the closing signature line is a shorter object
+   (name, seat, KRS, NIP) rather than the same line abbreviated. A helper written for callers that
+   do not exist reads, a year later, as one whose callers were removed. Add it when a second
+   surface actually wants the identical string. */
