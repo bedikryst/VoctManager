@@ -2,7 +2,7 @@
 /**
  * @file HeroSection.astro
  * @description Opening threshold — full-bleed sacred fresco via <BleedImage> (art-directed
- *  AVIF/WebP, Ken Burns, parallax). hero-grid holds the optional "next concert" pill → kicker
+ *  AVIF/WebP, Ken Burns, parallax). hero-grid holds the optional "next concert" dateline → kicker
  *  → h1 → response → strap braid; hero-rail holds the CTA anchors (the film reel +
  *  koncerty) + downward cue. The
  *  kinetic "breath" on .hero-title is driven
@@ -18,7 +18,8 @@
 import { getCollection } from "astro:content";
 import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
-import { viaMoment } from "../../lib/dates";
+import { longMoment } from "../../lib/dates";
+import { upcomingStation } from "../../lib/cycle";
 import { concertKey, overlayValue } from "../../lib/copyOverlay";
 import { localizePath, type Locale } from "../../i18n/config";
 import type { LandingCopy } from "../../i18n/content/landing";
@@ -36,16 +37,12 @@ const { copy, videoCaption, lang } = Astro.props;
 const hero = bleedPair("hero-landing");
 const hrefConcerts = localizePath("/koncerty", lang);
 
-// Announcement pill — dormant by design. A standing "next concert" line shows ONLY when
-// concerts.yaml carries an entry whose `date` is still in the future; every current entry is
-// past (EventCompleted), so nothing renders today. Append a future-dated concert and the
-// pill lights up at build time — no markup change needed. This is the "pulse" the hero
-// otherwise lacks: the whole site speaks in the eternal past tense until a date lands here.
-const now = Date.now();
-const upcoming = (await getCollection("concerts"))
-  .map((c) => ({ c, t: c.data.date ? new Date(c.data.date).getTime() : Number.NaN }))
-  .filter((x) => !Number.isNaN(x.t) && x.t >= now)
-  .sort((a, b) => a.t - b.t)[0]?.c;
+// Announcement dateline — dormant by design. A standing "next concert" line shows ONLY while
+// concerts.yaml carries a station whose `date` is still ahead (lib/cycle, which is also what the
+// Proximum band and the station's own marker read, so the three cannot name two different
+// evenings). This is the "pulse" the hero otherwise lacks: the whole site speaks in the eternal
+// past tense until a date lands here.
+const upcoming = upcomingStation(await getCollection("concerts"));
 // The evening names itself, in this locale, from its own entry in the corpus — never from a
 // second copy on the landing.
 const upcomingTitle = upcoming
@@ -60,13 +57,25 @@ const upcomingTitle = upcoming
 
   <div class="hero-inner">
     <div class="hero-grid">
+      {/* An evening with no page of its own is still a place on /koncerty rather than the top of
+          it: the station carries the anchor, so the dateline lands the reader on the announcement
+          instead of at the head of six evenings that are already over. */}
       {upcoming && (
         <a
           class="hero-announce intro-stage plausible-event-name=hero+najblizej"
-          href={upcoming.data.hasPage ? `${hrefConcerts}/${upcoming.id}` : hrefConcerts}
+          href={upcoming.data.hasPage ? `${hrefConcerts}/${upcoming.id}` : `${hrefConcerts}#${upcoming.id}`}
         >
           <span class="hero-announce-dot" aria-hidden="true"></span>
-          <span>{`${copy.announceLabel} — `}<strong>{upcomingTitle}</strong>{` · ${viaMoment(upcoming.data, lang)}`}</span>
+          {/* `longMoment`, not `viaMoment`: the Proximum band prints this same date in full four
+              screens down, and the ribbons' abbreviation ("paź 2026") appeared nowhere else on
+              this page. The two marks stay: the em-dash introduces the label, the middot separates
+              two peer facts — the register the whole site dates things in (`.proximum-when`).
+
+              The moment is its own element and the middot is DRAWN by the sheet, not typed: this
+              line cannot fit a phone column, so at that width it becomes two authored tiers and
+              the mark that joined two facts on one line has to go with it. Written unbroken —
+              whitespace between these nodes would print inside the line. */}
+          <span class="hero-announce-text">{`${copy.announceLabel} — `}<strong>{upcomingTitle}</strong><span class="hero-announce-when">{longMoment(upcoming.data, lang)}</span></span>
         </a>
       )}
       <div class="hero-kicker micro intro-stage">Concerts Spirituels</div>
@@ -83,7 +92,7 @@ const upcomingTitle = upcoming
     <div class="hero-rail intro-stage s6">
       {/* The hero's one standing invitation is the experience itself: the concert video
           projected in the lightbox. The donation line moved to movement III (Sustinete nos),
-          where the asks concentrate; the "next concert" pill (top of hero-grid) is what lights
+          where the asks concentrate; the "next concert" dateline (top of hero-grid) is what lights
           up when a real date lands. */}
       <div class="hero-actions">
         <button

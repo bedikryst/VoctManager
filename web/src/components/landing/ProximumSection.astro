@@ -1,0 +1,156 @@
+---
+/**
+ * @file ProximumSection.astro
+ * @description The one evening that has not happened yet, announced between the Imagines band and
+ *  the register — the page's only entry in the future tense, standing directly above "Co już
+ *  zabrzmiało." It is DORMANT by construction: with no future-dated station in the corpus it
+ *  renders nothing at all, which is the state this site was in for its whole life until 2026.
+ *
+ *  WHY IT IS A SEPARATE OBJECT AND NOT A SIXTH ROW OF THE REGISTER. The register's claim is that it
+ *  is typographic — evenings set as type, in order, with nothing sold — and a row carrying a poster
+ *  turns it into a catalogue listing (docs/web-landing-guardrails §1, which allows exactly this:
+ *  a separate object standing BEFORE the register). The announcement is also not of the same kind
+ *  as the rows: they are memories and it is an invitation, and it is the invitation that may carry
+ *  the practical facts a reader acts on — the hour, the door, where.
+ *
+ *  IT NAMES THE EVENING ONCE. The title, the place, the invitation and the poster all come from
+ *  `concerts.yaml` through the copy overlay, exactly as /koncerty and the concert pages read them;
+ *  the moment is formatted from the ISO `date` (lib/dates) and the open door is read off
+ *  `admission`. This band's own words are two lines in `landing.yaml`, and neither may name a
+ *  programme, a venue or a date — the band is dormant most of the year and lights up on whichever
+ *  evening is next.
+ *
+ *  IT CARRIES ONE MARK, NOT A ROW OF THEM. The `facts` chips belong to the station on /koncerty,
+ *  where a reader is already walking the cycle and wants the evening's particulars; repeated here
+ *  they turned an invitation into a catalogue entry (the guardrail cited above) and restated, in
+ *  three tracked capitals, sentences the paragraph beside them had already said. The open door is
+ *  the exception and content.config states why: whether a reader can simply walk in is the first
+ *  thing they need, and it is structured data rather than a hand-translated chip.
+ *
+ *  IT GOES DOWN BY DEPLOY. `upcomingStation` is resolved at build, so the band outlives its own
+ *  concert until the next build — the same trade `lib/eventSchema` documents for `eventStatus`,
+ *  and the reason a deploy belongs in the week after a concert.
+ * @architecture Astro islands 2026
+ * @module components/landing/ProximumSection
+ */
+import { getCollection } from "astro:content";
+import { Picture } from "astro:assets";
+import { photoOptional } from "../../lib/photos";
+import { longDate } from "../../lib/dates";
+import { upcomingStation } from "../../lib/cycle";
+import { concertKey, withOverlay } from "../../lib/copyOverlay";
+import { localizePath, type Locale } from "../../i18n/config";
+import type { LandingChrome, LandingCopy } from "../../i18n/content/landing";
+import { NUNTIUS } from "../../i18n/content/nuntius";
+
+interface Props {
+  copy: LandingCopy["proximum"];
+  chrome: LandingChrome;
+  lang: Locale;
+}
+const { copy, chrome, lang } = Astro.props;
+
+const upcoming = upcomingStation(await getCollection("concerts"));
+const hrefConcerts = localizePath("/koncerty", lang);
+// The band that takes the consent, on the page that says why there is one — the same door the
+// hero's dateline, the open card and /kontakt already point at.
+const hrefNotice = `${hrefConcerts}#nuntius`;
+const invitation = NUNTIUS[lang].invitation;
+
+/** This evening's words, in this locale: the overlay's translation where one exists, the corpus's
+    Polish otherwise. Never `pickLocale` — the corpus is Polish-only (spec §7). */
+const say = (field: string, polish: string): string =>
+  upcoming ? withOverlay(concertKey(upcoming.id, field), lang, polish) : polish;
+
+const announced = upcoming
+  ? {
+      // An evening with no page of its own is still a PLACE on /koncerty: the station carries the
+      // anchor, so this door lands on the announcement rather than at the head of the walk.
+      href: upcoming.data.hasPage
+        ? `${hrefConcerts}/${upcoming.id}`
+        : `${hrefConcerts}#${upcoming.id}`,
+      title: say("title", upcoming.data.title),
+      // The landing's own paragraph where the desk has written one, the station's programme note
+      // otherwise. The branch chooses the overlay KEY as well as the Polish: asking for
+      // `invitation` on an evening that has none would miss, and a French reader would then get
+      // the corpus's Polish essence instead of the French one sitting in the overlay.
+      invitation: upcoming.data.invitation
+        ? say("invitation", upcoming.data.invitation)
+        : say("essence", upcoming.data.essence),
+      place: say("metaPlace", upcoming.data.metaPlace.pl),
+      // The date is data and the hour is data; neither is ever typed into copy (spec §5).
+      moment: [upcoming.data.date && longDate(upcoming.data.date, lang), upcoming.data.time]
+        .filter(Boolean)
+        .join(" · "),
+      free: upcoming.data.admission === "free",
+      // `photoOptional`, so a poster named in the corpus before the file lands leaves the band
+      // standing as type rather than failing the landing's build.
+      poster: upcoming.data.poster ? photoOptional(upcoming.data.poster) : undefined,
+      posterAlt: upcoming.data.posterAlt ? say("posterAlt", upcoming.data.posterAlt) : "",
+    }
+  : undefined;
+---
+
+{
+  announced && (
+    <section class="section proximum" id="najblizej" aria-label={chrome.proximumAria}>
+      <div class="section-grid">
+        <div class="section-label micro titulus">
+          <span>
+            <span class="lat" lang="la">
+              Proximum
+            </span>
+          </span>
+        </div>
+        <div class="proximum-body">
+          <p class="proximum-rubric reveal">
+            <span class="proximum-dot" aria-hidden="true" />
+            {copy.label}
+          </p>
+          {/* The poster is the evening's own object and the only image it has — held at the
+              register's rail width so the band sits in the page's grid rather than beside it. */}
+          <div class="proximum-card">
+            {announced.poster && (
+              <a class="proximum-poster" href={announced.href} tabindex="-1" aria-hidden="true">
+                <span class="frame" />
+                <Picture
+                  src={announced.poster}
+                  formats={["avif", "webp"]}
+                  widths={[280, 420, 560]}
+                  width={560}
+                  sizes="(max-width: 820px) 60vw, 300px"
+                  alt={announced.posterAlt}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </a>
+            )}
+            <div class="proximum-text">
+              <h2 class="proximum-title reveal ink-press">
+                <a class="proximum-link plausible-event-name=proximum+concert" href={announced.href}>
+                  {announced.title}
+                </a>
+              </h2>
+              <p class="proximum-lede reveal">{copy.lede}</p>
+              <p class="proximum-when reveal">
+                {announced.moment}
+                {announced.moment && announced.place ? " · " : ""}
+                {announced.place}
+              </p>
+              <p class="proximum-invitation reveal">{announced.invitation}</p>
+              {announced.free && <p class="proximum-door reveal">{chrome.proximumFree}</p>}
+              <div class="proximum-actions">
+                <a class="proximum-cta plausible-event-name=proximum+program" href={announced.href}>
+                  {chrome.proximumCta}
+                </a>
+                <a class="proximum-notice plausible-event-name=proximum+nuntius" href={hrefNotice}>
+                  {invitation.cta}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}

@@ -91,7 +91,7 @@ import { croppedShot, type CroppedShot } from "../../lib/croppedShot";
 import { photoOptional } from "../../lib/photos";
 import { concertKey, overlayValue } from "../../lib/copyOverlay";
 import { localizePath, type Locale } from "../../i18n/config";
-import { photographMoment, romanYear } from "../../lib/dates";
+import { photographMoment, romanNumeral } from "../../lib/dates";
 import type { LandingCopy } from "../../i18n/content/landing";
 
 interface Props {
@@ -195,7 +195,7 @@ for (const [i, path] of PATHS.entries()) {
 // Read off the ISO month rather than off the formatted readout: the year is the last word of
 // "styczeń MMXXIV" in all three locales today, and a formatter that ever put it anywhere else
 // would break this silently.
-const years = frames.map((f) => romanYear(Number(f.month.slice(0, 4))));
+const years = frames.map((f) => romanNumeral(Number(f.month.slice(0, 4))));
 const plateSpan = [...new Set([years[0], years.at(-1)])].filter(Boolean).join("–");
 ---
 

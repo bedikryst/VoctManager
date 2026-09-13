@@ -46,6 +46,14 @@ export const shortDate = (iso: string, locale: Locale): string =>
     year: "numeric",
   });
 
+/** The two fields an evening states its moment in: the ISO date where the day is known, and the
+    per-locale `dateLabel` where it is genuinely vague. Both formatters below read exactly this,
+    so a caller can hand either one a whole concert entry. */
+type Moment = {
+  readonly date?: string | undefined;
+  readonly dateLabel?: LocalizedText | undefined;
+};
+
 /**
  * An evening's moment as the rails and registers abbreviate it — the derived replacement for the
  * hand-written `viaDate` the corpus used to carry.
@@ -57,15 +65,28 @@ export const shortDate = (iso: string, locale: Locale): string =>
  * `dateLabel` instead — that one IS copy, and a surface holding the concert's id should resolve it
  * through the copy overlay rather than taking the corpus's Polish (lib/registrum does).
  */
-export const viaMoment = (
-  moment: {
-    readonly date?: string | undefined;
-    readonly dateLabel?: LocalizedText | undefined;
-  },
-  locale: Locale,
-): string =>
+export const viaMoment = (moment: Moment, locale: Locale): string =>
   moment.date
     ? shortDate(moment.date, locale)
+    : moment.dateLabel
+      ? pickLocale(moment.dateLabel, locale)
+      : "";
+
+/**
+ * The same moment written out in full — for a surface with room for the day, and for the one that
+ * must not disagree with its neighbour.
+ *
+ * It exists because the landing states this evening TWICE: the hero's announcement above the fold
+ * and the Proximum band far below it. The band formats `longDate`, the announcement used to reach
+ * for `viaMoment`, and the page therefore printed "paź 2026" and "11 października 2026" for one
+ * date — with the abbreviation, which belongs to the register ribbons' narrow column, appearing
+ * nowhere else on the page that borrowed it. Reach for `viaMoment` where the column is narrow and
+ * for this where the line is a sentence; the fallback to `dateLabel` is the same in both, so an
+ * evening whose day is genuinely vague still states its season rather than a fabricated day.
+ */
+export const longMoment = (moment: Moment, locale: Locale): string =>
+  moment.date
+    ? longDate(moment.date, locale)
     : moment.dateLabel
       ? pickLocale(moment.dateLabel, locale)
       : "";
@@ -88,11 +109,12 @@ const ROMAN: readonly (readonly [number, string])[] = [
 ];
 
 /**
- * A year in roman numerals — the register's own way of dating an evening ("MMXXIV"), and
- * locale-neutral by construction, which is half the reason the landing dates in it at all.
+ * A number in roman numerals. Two surfaces read it and both want it locale-neutral: the landing
+ * dates an evening by its year ("MMXXIV"), which is half the reason it dates in roman at all, and
+ * the cycle numbers its stations from their position (`lib/cycle`).
  */
-export function romanYear(year: number): string {
-  let rest = year;
+export function romanNumeral(value: number): string {
+  let rest = value;
   let out = "";
   for (const [value, glyph] of ROMAN) {
     while (rest >= value) {
@@ -116,5 +138,5 @@ export const photographMoment = (isoMonth: string, locale: Locale): string => {
   const month = new Date(`${isoMonth}-01T00:00:00`).toLocaleDateString(INTL_LOCALE[locale], {
     month: "long",
   });
-  return `${month} ${romanYear(Number(isoMonth.slice(0, 4)))}`;
+  return `${month} ${romanNumeral(Number(isoMonth.slice(0, 4)))}`;
 };

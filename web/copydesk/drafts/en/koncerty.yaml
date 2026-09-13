@@ -61,3 +61,17 @@ page.koncerty.coda.lede: "The Sacred Heart and St Mary's basilicas in Kraków, S
 page.koncerty.coda.contactLink: "Write to us"
 page.koncerty.coda.aboutLink: "Meet the ensemble"
 page.koncerty.coda.supportLink: "Support the foundation"
+
+# Outside the cycle — the sung Mass, the wedding. It says what the music IS when it serves a rite,
+# and never what it costs (the liturgies page is a board question first, Etap 4).
+page.koncerty.officia.eyebrow: "Outside the cycle"
+page.koncerty.officia.h2: "We also sing where the music serves a rite."
+page.koncerty.officia.lede: "A Mass, a solemnity, a wedding: the programme is then shaped for the liturgy, not for an evening. These performances stand outside the cycle’s numbering."
+
+# The notice band, as the overlay already holds it — recorded here so this draft mirrors the
+# repository. It never says the reader is subscribed: nothing is stored as consent until the link
+# in the mail is clicked.
+page.koncerty.notice.h2: "We will let you know about upcoming concerts."
+page.koncerty.notice.lede: "One letter for one evening: the place, the hour, the programme. Nothing else."
+page.koncerty.notice.sentTitle: "Check your mailbox."
+page.koncerty.notice.sentBody: "We have sent a request to confirm. The address is kept only once you follow the link in that message."

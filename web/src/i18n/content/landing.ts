@@ -113,6 +113,12 @@ const landingCopySchema = z
         allLink: z.string(),
       })
       .strict(),
+    /** The announcement band, standing between the photographs and the register: the one evening
+        that is still ahead. Its own words are two — a rubric and a line under the title — because
+        everything else it prints belongs to the concert (`concerts.yaml`, through the overlay) or
+        is formatted from its `date`. A band that restated the evening would be a second place to
+        edit it, and the site's rule is that an evening names itself once. */
+    proximum: z.object({ label: z.string(), lede: z.string() }).strict(),
     register: z
       .object({
         label: z.string(),
@@ -402,6 +408,20 @@ const LANDING_CONTRACT: readonly CopyEntry[] = [
     note: "Printed, not called for: an arrow here would make a row of photographs read as a card shelf with a 'see all' under it. The chrome names the same destination more briefly; keep this one's register.",
   },
 
+  // ── Najbliższy wieczór ────────────────────────────────────────────────────────────────────
+  {
+    kind: "field",
+    path: "proximum.label",
+    label: "Najbliższy wieczór · rubryka",
+    note: "The vernacular of `Proximum`, which stands above it unchanged in every locale. It names the band, never the evening — the concert's own title, place and date are printed from its entry.",
+  },
+  {
+    kind: "field",
+    path: "proximum.lede",
+    label: "Najbliższy wieczór · zdanie",
+    note: "One line under the announced evening's title, true of ANY evening this band will ever carry: the band is dormant between concerts and lights up on whichever one is next. Nothing here may name a particular programme, venue or date.",
+  },
+
   // ── Rejestr wieczorów ─────────────────────────────────────────────────────────────────────
   { kind: "field", path: "register.label", label: "Rejestr · rubryka" },
   {
@@ -452,16 +472,21 @@ const LANDING_CONTRACT: readonly CopyEntry[] = [
   {
     kind: "field",
     path: "register.next.tag",
-    label: "Szósty wieczór · etykieta",
+    label: "Karta otwarta · etykieta",
     note: "The register's open card. It states the two real preconditions for the next evening rather than implying a date exists — the ensemble does not book venues on its own, so a date here would be false.",
   },
-  { kind: "field", path: "register.next.title", label: "Szósty wieczór · nagłówek" },
-  { kind: "field", path: "register.next.place", label: "Szósty wieczór · miejsce" },
-  { kind: "field", path: "register.next.summary", label: "Szósty wieczór · treść" },
+  {
+    kind: "field",
+    path: "register.next.title",
+    label: "Karta otwarta · nagłówek",
+    note: "It counts NOTHING. It said `Szósty wieczór` until the sixth was announced, at which point the card claimed the announced evening was still looking for a host — an ordinal written into copy rots the day the thing it counts arrives, and no build can see it. Name the card, never number it.",
+  },
+  { kind: "field", path: "register.next.place", label: "Karta otwarta · miejsce" },
+  { kind: "field", path: "register.next.summary", label: "Karta otwarta · treść" },
   {
     kind: "field",
     path: "register.next.cta",
-    label: "Szósty wieczór · przycisk",
+    label: "Karta otwarta · przycisk",
     note: "The one home left for `wybrzmieć` as a verb on this site — used as a noun it reads as translated Polish, and the noun form was swept out. Keep it a verb.",
   },
 
@@ -549,6 +574,14 @@ export interface LandingChrome {
   readonly registerListAria: string;
   /** The open card at the foot of the register. */
   readonly nextAria: string;
+  /** The announcement band and the door it opens. The band's own name is chrome because the band
+      is dormant most of the year and must be complete in every locale the day it lights up; the
+      poster's alt text is NOT here — it belongs to the evening, in `concerts.yaml`. The second
+      door is the notice list's own invitation (`nuntius.invitation`), which three other surfaces
+      already word for us. */
+  readonly proximumAria: string;
+  readonly proximumCta: string;
+  readonly proximumFree: string;
   /** The transfer block inside the support section. */
   readonly bankAria: string;
   /** The right-edge movement index. */
@@ -606,6 +639,9 @@ export const LANDING_CHROME: Record<Locale, LandingChrome> = {
     supportAria: "Wesprzyj VoctEnsemble",
     registerListAria: "Wcześniejsze koncerty cyklu",
     nextAria: "Następny koncert cyklu",
+    proximumAria: "Najbliższy koncert",
+    proximumCta: "Zobacz program",
+    proximumFree: "Wstęp wolny",
     bankAria: "Dane do przelewu",
     spineAria: "Części",
     audioOn: "Głos",
@@ -639,6 +675,9 @@ export const LANDING_CHROME: Record<Locale, LandingChrome> = {
     supportAria: "Support VoctEnsemble",
     registerListAria: "Earlier concerts of the cycle",
     nextAria: "The next concert of the cycle",
+    proximumAria: "The coming concert",
+    proximumCta: "See the programme",
+    proximumFree: "Free admission",
     bankAria: "Bank transfer details",
     spineAria: "Movements",
     audioOn: "Voice",
@@ -672,6 +711,9 @@ export const LANDING_CHROME: Record<Locale, LandingChrome> = {
     supportAria: "Soutenir VoctEnsemble",
     registerListAria: "Concerts passés du cycle",
     nextAria: "Le prochain concert du cycle",
+    proximumAria: "Le prochain concert",
+    proximumCta: "Voir le programme",
+    proximumFree: "Entrée libre",
     bankAria: "Coordonnées bancaires",
     spineAria: "Mouvements",
     audioOn: "Voix",

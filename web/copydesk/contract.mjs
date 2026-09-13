@@ -114,6 +114,17 @@ export const CONCERT_CONTRACT = [
       "\"Requiem Introit\" in English. Knowing which is which is part of the job.",
   },
   { kind: "field", path: "essence", label: "Esencja (hero i karta na /koncerty)" },
+  {
+    kind: "field",
+    path: "invitation",
+    label: "Zaproszenie (pasmo „Najbliższy wieczór” na landingu)",
+    note:
+      "A SECOND text about the same evening, and the only one addressed to a reader who has not " +
+      "decided to come. `essence` is the programme note the station speaks on /koncerty; this is " +
+      "the invitation the landing speaks under the poster. Translate it as an invitation — the " +
+      "two must not converge into one paraphrase. It never restates the title, place, date, hour " +
+      "or admission, which the band prints beside it from the structured fields.",
+  },
   { kind: "list", path: "facts", keyBy: null, label: "Fakt", fields: [{ path: null, key: "", label: "" }] },
 
   // ── Próg wieczoru ───────────────────────────────────────────────────────────────────────────
@@ -277,7 +288,7 @@ export const CONCERT_CONTRACT = [
 export const NOT_COPY = {
   id: "identity — it is the first half of every key on this page",
   order: "sequence of the cycle",
-  roman: "the station's numeral",
+  cycle: "flag — is this evening one of the numbered stations (lib/cycle)",
   latin: "the station's Latin name — content, printed unchanged in every locale",
   hasPage: "flag",
   variant: "layout enum",
@@ -293,6 +304,10 @@ export const NOT_COPY = {
   time: "clock time",
   address: "street address — JSON-LD only",
   admission: "enum, JSON-LD only",
+  // `roman` stood here and is GONE from the file too: the numeral is derived from an entry's
+  // position among the cycle's own stations (`lib/cycle`), so inserting an evening cannot leave
+  // the ones after it numbered wrongly. Nothing about it was ever copy; it left for the same
+  // reason as the line below — a fact the page can compute has no business being typed twice.
   // `viaDate` stood here and is GONE from the file (stage F, §6o): it was a Polish month written
   // into data, and it would have printed "sty 2024" in the chrome of every English page. It is
   // derived now — `viaMoment` in `src/lib/dates.ts`, from `date` or, where the day is vague, from

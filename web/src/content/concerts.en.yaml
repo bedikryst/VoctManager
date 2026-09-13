@@ -4,6 +4,9 @@
 # (docs/web-copy-desk-2026-09.md §6c). Every key is a copy-desk segment key; the Polish it
 # renders sits at the matching path in concerts.yaml, which holds no translations at all.
 #
+# FALLBACK IS PER FIELD. A key missing here prints its Polish, beside fields that print this
+# locale — which is what lets a page go up while its prose is still being reviewed.
+#
 # Edit here only in an emergency, and run `npm run copy:sync` straight afterwards — otherwise
 # the desk still shows the old value, marks nothing stale, and the next apply run writes over
 # what you typed. The reviewable route is a proposal.
@@ -508,6 +511,21 @@ concert.hymn-poleglym.reflection: "The concert is an expression of remembrance, 
 concert.hymn-poleglym.reflectionAttribution: "VoctEnsemble · February 2025"
 concert.hymn-poleglym.textNote: "The original texts follow the concert programme and the books they come from; the printed programme of the evening carried them abridged. The English of the hymns, antiphons and biblical passages follows the traditional versions — the Book of Common Prayer and the Authorised Version, and Edward Caswall's of 1849 for the hymn of St Thomas Aquinas — and the remaining translations are our own."
 concert.hymn-poleglym.title: "Hymn to the Fallen"
+concert.pochwala-stworzenia.about.blurb: "A concert within the Warsaw festival “Fenomen człowieka”: St Francis’s Canticle of the Sun as a road from wonder at creation towards the hope of eternity."
+concert.pochwala-stworzenia.about.place: "All Saints’ Church · Warsaw"
+concert.pochwala-stworzenia.essence: "The evening grows out of St Francis’s Laudes creaturarum, known in English as the Canticle of the Sun: in it the whole of creation is a road to the Creator. The programme descends from wonder at the world towards what is fragile in us, towards change, suffering and death, and Pärt’s Spiegel im Spiegel, returning from the gallery, is the mirror of that relation. The whole road is closed by Dubra’s Stetit Angelus, the image of an angel censing the altar with the prayers of all the saints, sung in the church of All Saints."
+concert.pochwala-stworzenia.facts.0: "Festival “Fenomen człowieka”"
+concert.pochwala-stworzenia.facts.1: "Voices, violin, organ"
+concert.pochwala-stworzenia.facts.2: "St Francis’s Canticle of the Sun"
+concert.pochwala-stworzenia.invitation: "St Francis’s Canticle of the Sun greets the sun, the wind, the water and the fire as its own kin, and at the end greets death on the same terms. The programme follows that road: from light towards what is fragile in us, and further — to where the praise of creation becomes the prayer of all the saints, in the church that bears their name."
+concert.pochwala-stworzenia.metaPlace: "All Saints’ Church, Warsaw"
+concert.pochwala-stworzenia.posterAlt: "Poster for the concert In Praise of Creation"
+concert.pochwala-stworzenia.program.1.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.4.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.7.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.9.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.realizacja: "Violin: Radu Ropotan"
+concert.pochwala-stworzenia.title: "In Praise of Creation"
 concert.wcielenie.about.blurb: "The debut of the Spiritual Concerts cycle: Renaissance, Baroque and the present day arranged around the mystery of the Nativity and the Incarnation."
 concert.wcielenie.about.place: "Sacred Heart Basilica · Kraków"
 concert.wcielenie.credits.0.role: "Conductor"

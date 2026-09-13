@@ -136,6 +136,17 @@ imagines:
   caption: "Fotografie wieczorów cyklu"
   allLink: "Wszystkie obrazy"
 
+# ── The announced evening, between the photographs and the register ───────────────────────────
+# The band is DORMANT until `concerts.yaml` carries a station whose date is still ahead, and it
+# takes everything else from that station: the title, the place, the essence, the poster. These two
+# lines must therefore be true of ANY evening it will ever carry — no programme, no venue, no date.
+proximum:
+  label: "Najbliższy wieczór"
+  # One negation, and it is the whole point of the band: it stands directly above „Co już
+  # zabrzmiało." and says what makes this one entry different from the five under it.
+  lede: >-
+    Jedyny wieczór na tej stronie, który jeszcze nie zabrzmiał.
+
 register:
   label: "Z drogi"
   title: "Co już zabrzmiało."
@@ -190,7 +201,11 @@ register:
   # preconditions for the next evening. When a date is agreed this card becomes its announcement.
   next:
     tag: "czeka na zaproszenie"
-    title: "Szósty wieczór."
+    # NOT an ordinal. "Szósty wieczór." stood here until the sixth was announced, and the card then
+    # said the announced evening was still waiting for a host. The card is about whichever evening
+    # has no date yet, and there is always one — the same claim `/koncerty` makes under `Nondum`,
+    # in the same words, since the two cards are the one thought on two surfaces.
+    title: "Wieczór bez daty."
     place: "Miejsce i termin wciąż otwarte"
     summary: >-
       Program powstaje na próbach. Data pojawi się tutaj, gdy znajdzie się gospodarz wieczoru

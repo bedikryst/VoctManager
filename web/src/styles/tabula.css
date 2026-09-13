@@ -105,7 +105,11 @@
   color: var(--paper);
 }
 .chrome[data-tone="dark"].is-light .tabula-sheet {
-  background-color: var(--paper);
+  /* The sheet drops onto the band it was opened over, so it takes the same parchment the bar's
+     glass does — the page's `--chrome-paper`, not the site's default paper (SiteChrome). An
+     opaque sheet one notch off its band reads as a card lying on the page rather than as the
+     page opening. */
+  background-color: var(--chrome-paper, var(--paper));
   border-bottom-color: rgba(22, 21, 20, 0.1);
   color: var(--ink);
 }

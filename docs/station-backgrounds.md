@@ -19,6 +19,12 @@ hand-edit those files.
   | Hymn Poległym | `st-hymn-bg` | `st-hymn-bg.webp` | `st-hymn-bg-desktop.webp` | **memoriam (darker)** |
   | Aeternam | `st-aeternam-bg` | `st-aeternam-bg.webp` | `st-aeternam-bg-desktop.webp` | **memoriam (darker)** |
   | Uroczystość św. A. Boboli | `st-liturgia-bg` | `st-liturgia-bg.webp` | `st-liturgia-bg-desktop.webp` | normal |
+  | Pochwała Stworzenia | `st-stworzenie-bg` | `st-stworzenie-bg.webp` | **`poster-stworzenie.webp`** | normal |
+
+**An evening that has not happened yet has no photograph**, so its wash is blurred from its own
+POSTER instead (the row above; same recipe, same numbers, only the source differs). It is the one
+image the evening has, and at sigma 14 it is a field of colour rather than a picture of a poster.
+Re-derive it from the poster if the poster changes.
 
 The code that consumes them: `web/src/pages/koncerty.astro` — `bgSrc: photo(c.data.bg).src`
 (so **the output name must match the `bg` field exactly**; a new concert with a new `bg` needs a new

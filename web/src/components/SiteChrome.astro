@@ -548,10 +548,19 @@ const langOptions = showLang
   .chrome[data-tone="dark"].is-solid .chrome-brand .brand-mark { background: var(--candle); }
 
   /* is-light can be set independently of is-solid (a paper section under a not-yet-scrolled bar),
-     so the paper glass must carry its own opacity rather than borrow it from is-solid::after. */
+     so the paper glass must carry its own opacity rather than borrow it from is-solid::after.
+
+     WHICH parchment is the page's to say. Glass at 82% over the ground it matches disappears into
+     it; over a ground a notch darker it stands as a lighter strip across the top of the band, and
+     under a section the reader sits in for minutes that strip is the thing they see. So the tone
+     is a variable the page sets on <body> (`--chrome-paper`), defaulting to the parchment most
+     light bands are. It is deliberately ONE value per page and not per band: the observer below
+     publishes only that some light section is under the bar, and teaching it to name which one
+     would be machinery bought for the seconds spent crossing a page's odd band out. A page whose
+     light sections differ sets the tone its longest one uses. */
   .chrome[data-tone="dark"].is-light::after {
     opacity: 1;
-    background-color: rgba(244, 241, 233, 0.82);
+    background-color: color-mix(in srgb, var(--chrome-paper, var(--paper)) 82%, transparent);
     backdrop-filter: blur(20px) saturate(1.1);
     -webkit-backdrop-filter: blur(20px) saturate(1.1);
     border-bottom-color: rgba(22, 21, 20, 0.1);

@@ -42,6 +42,7 @@ import LitanySection from "../landing/LitanySection.astro";
 import EnsembleSection from "../landing/EnsembleSection.astro";
 import DirectorSection from "../landing/DirectorSection.astro";
 import ImaginesBand from "../landing/ImaginesBand.astro";
+import ProximumSection from "../landing/ProximumSection.astro";
 import PathSection from "../landing/PathSection.astro";
 import SilenceMoment from "../landing/SilenceMoment.astro";
 import FinalSupportSection from "../landing/FinalSupportSection.astro";
@@ -186,6 +187,11 @@ const jsonLd = {
             directly below. The "no poster images" rule this appears to bend is about REGISTER
             ENTRIES — see docs/web-landing-guardrails.md §1, where the reading is recorded. */}
         <ImaginesBand copy={c.imagines} lang={lang} />
+        {/* The one entry in the future tense, and it stands HERE for the sentence directly under
+            it: the register is headed „Co już zabrzmiało." — so the evening that has not is read
+            immediately before it, against it. Dormant with no future-dated station in the corpus,
+            which is what this page looked like until 2026. */}
+        <ProximumSection copy={c.proximum} chrome={t} lang={lang} />
         <PathSection copy={c.register} chrome={t} lang={lang} />
       </section>
 

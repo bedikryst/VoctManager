@@ -51,6 +51,7 @@ import type { TabulaEntry } from "../../lib/tabula";
 import { absolute, musicEvent } from "../../lib/eventSchema";
 import { videoAsset, videoAssetAv1 } from "../../lib/videos";
 import { longDate } from "../../lib/dates";
+import { cycleNumerals } from "../../lib/cycle";
 import { formatRef } from "../../lib/scriptureRef";
 import { CONCERT, fill } from "../../i18n/content/koncert";
 import { NUNTIUS } from "../../i18n/content/nuntius";
@@ -131,6 +132,8 @@ const candleInk = candleInkFrom(c.accent);
 // runs THROUGH the detail pages — a walk, not a set of dead-ends. Skips a slot when there
 // is no page-bearing neighbour on that side.
 const ordered = (await getCollection("concerts")).sort((a, b) => a.data.order - b.data.order);
+// Numerals are derived from position among the cycle's own stations, never stored (lib/cycle).
+const numerals = cycleNumerals(ordered);
 const walk = ordered.filter((e) => e.data.hasPage);
 const here = walk.findIndex((e) => e.id === entry.id);
 const prev = here > 0 ? walk[here - 1] : null;
@@ -434,7 +437,7 @@ const jsonLd =
 
       <div class="kd-hero-inner">
         <p class="kd-hero-eyebrow reveal">
-          <span>{ui.hero.station} {c.roman}</span>
+          <span>{ui.hero.station} {numerals.get(entry.id)}</span>
           <span class="kd-dot" aria-hidden="true">·</span>
           <span class="lat">{c.latin}</span>
         </p>
@@ -1064,7 +1067,7 @@ const jsonLd =
           <div class="kd-vianav-rail">
             {prev ? (
               <a class="kd-vianav-side kd-vianav-prev" href={localizePath(`/koncerty/${prev.id}`, lang)}>
-                <span class="kd-vianav-dir micro"><span aria-hidden="true">←</span> {ui.hero.station} {prev.data.roman}</span>
+                <span class="kd-vianav-dir micro"><span aria-hidden="true">←</span> {ui.hero.station} {numerals.get(prev.id)}</span>
                 <span class="kd-vianav-name">{neighbourTitle(prev)}</span>
               </a>
             ) : (
@@ -1075,7 +1078,7 @@ const jsonLd =
 
             {next ? (
               <a class="kd-vianav-side kd-vianav-next" href={localizePath(`/koncerty/${next.id}`, lang)}>
-                <span class="kd-vianav-dir micro">{ui.hero.station} {next.data.roman} <span aria-hidden="true">→</span></span>
+                <span class="kd-vianav-dir micro">{ui.hero.station} {numerals.get(next.id)} <span aria-hidden="true">→</span></span>
                 <span class="kd-vianav-name">{neighbourTitle(next)}</span>
               </a>
             ) : (
@@ -1160,7 +1163,10 @@ const jsonLd =
      nothing. It was bare until 2026-08-08 and the defect stayed invisible here only because every
      `.kd-band` paints its own ground — /obrazy was built from this page, had no such bands, and
      spent its whole life on parchment with `--paper` text as a result. */
-  :global(body.page-koncert-detail) { background: var(--night, #100f0d); color: var(--paper, #f4f1e9); }
+  /* `--chrome-paper` is this page's answer to "which parchment is the bar standing on" (SiteChrome):
+     both `.kd-band-soft` sections are `--paper-soft`, and the pullquote — a step deeper and a few
+     seconds long — takes the near miss rather than the page taking per-band machinery for it. */
+  :global(body.page-koncert-detail) { background: var(--night, #100f0d); color: var(--paper, #f4f1e9); --chrome-paper: var(--paper-soft); }
   main { display: block; }
   /* Overlay scroll-locks. Each overlay names its own class: the landing's video rule is scoped
      to body.theme-marketing, which this page's body doesn't carry, and the photograph frame is a
@@ -1232,7 +1238,21 @@ const jsonLd =
      is — arrives below the bar rather than beneath it. Same number as `/obrazy`'s evenings, for
      the same reason; an anchor that hides its own head states nothing. */
   .kd-band[id] { scroll-margin-top: 96px; }
-  .kd-band-soft { background: var(--paper, #f4f1e9); color: var(--ink, #161514); }
+  /* The page's light run sits one notch down the paper scale from the site's default parchment,
+     and the reason is the SEAM rather than the band. These sections open straight out of `--dark`
+     / `--night`: a full-brightness field arriving after a screen of near-black is a step the
+     reader takes with their eyes before they take it with their attention. Nothing is bought at
+     the band's edges by going darker — parchment against night is already the widest contrast the
+     page owns, and this spends a little of it — so the gain has to be inside the band, which is
+     where the second half of this rule is.
+
+     Deepening a ground costs ink. Twelve rules across these two bands take the muted tier (the
+     per-work notes, the sung glosses, the clasp translations, the whole cast list), and muted is
+     4.11 : 1 on this ground — under AA, at every size they are set in. `--ink-muted-deep`
+     (tokens.css) is the same hue calibrated to clear every parchment the site has, so the rules
+     below keep writing `var(--ink-muted)` and none of them has to know which band it is on.
+     A light band added to this page later inherits both halves by taking this class. */
+  .kd-band-soft { background: var(--paper-soft, #ebe6da); color: var(--ink, #161514); --ink-muted: var(--ink-muted-deep, #655f55); }
   .kd-wrap { max-width: 1180px; margin: 0 auto; }
   .kd-narrow { max-width: 760px; }
 
@@ -1257,13 +1277,18 @@ const jsonLd =
      treatment — on a concert page both tiers stay Cinzel caps and separate on tracking and colour
      alone, where the rest of the site separates them on face and case as well.) */
   .kd-section-label { display: inline-flex; align-items: center; gap: 8px; font-family: var(--capitalis); font-weight: 600; font-size: 12.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--candle); margin: 0 0 22px; }
-  /* Gold that has to be READ, on the two parchment bands. Full candle is 2.10 : 1 there — it
-     fails AA outright at every size these labels are set in — and the tint the station carries
-     does not change that: the accent is normalized to the candle's own luminance, so all five
-     stations land within 2.06–2.13. `--candle-ink` is the same hue at a luminance that clears
-     it (4.55–4.80 measured across the five). The split is by ROLE and not by band, so what
-     stays on `--candle` below stays there on purpose: hairlines, the rubric lozenge and its
-     wash, and display gold, none of which the contrast minimum applies to.
+  /* Gold that has to be READ, on the parchment bands. Full candle is 2.10 : 1 there — it fails AA
+     outright at every size these labels are set in — and the tint the station carries does not
+     change that: the accent is normalized to the candle's own luminance, so all six stations land
+     within 2.06–2.13. `--candle-ink` is the same hue at a luminance that clears it (4.84–5.07
+     measured across the six on this page's ground, lib/candle).
+
+     THE SPLIT IS BY ROLE, AND THE ROLE IS "IS IT READ", NOT "IS IT BIG". What stays on `--candle`
+     is what carries no words: hairlines, the rubric lozenge and its wash, the guillemets around a
+     quotation. Size is not an exemption — it only lowers the bar to 3 : 1, which 2.10 also misses —
+     so the act headings and the psalm returns take the ink too, at 42px as at 17px. Gold sized like
+     display and gold that is display are different things; the exemption was written for the dark
+     bands, where the same paint measures 8.08 : 1 and every one of these rules keeps it.
 
      `--lat-ink` is the second half of that same declaration and must not be separated from it.
      The label's Latin tier (`.lat`, "Programma" / "Voces") is painted by base.css's two-tier
@@ -1367,15 +1392,23 @@ const jsonLd =
   .kd-movement:first-child { border-top: 0; margin-top: 0; padding-top: clamp(4px, 1vw, 12px); }
   .kd-movement + .kd-program-item { border-top: 0; padding-top: 0; }
   .kd-movement-head { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
-  .kd-movement-lat { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(27px, 3.1vw, 42px); line-height: 1; letter-spacing: -.01em; color: var(--candle); }
+  /* The act's name, and it takes the ink for the same reason the psalm below it does. Size is not
+     the escape it looks like: at 27–42px this IS large text in WCAG's sense, so the bar drops to
+     3 : 1 — and full candle on parchment is 2.10, which does not clear even that. The exemption
+     display gold enjoys was written about gold on DARK ground, where the same paint measures 8.08
+     (the footer note in landing/06-footer.css reaches the identical conclusion about its clock).
+     Nothing is lost by the swap: the flame still draws every rule, mark and wash on this band, and
+     the act still arrives in the station's own hue. */
+  .kd-movement-lat { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(27px, 3.1vw, 42px); line-height: 1; letter-spacing: -.01em; color: var(--candle-ink); }
   /* Weight stated for the same reason `.kd-section-label` states it: this span lives inside the
      act's <h3>, so with nothing declared it inherits the heading's UA `bold` and renders at
      Cinzel 700 — the only bold micro label on the page, and an accident rather than a decision.
      Its Latin sibling escaped it only by setting a weight of its own. */
-  /* `--ink-soft`, not `--ink-muted`: muted clears AA on parchment by 0.03, and this is the least
-     forgiving setting on the page for it — 10.5px of Cinzel capitals at .24em, where the tracking
-     breaks the word shape and the capitals remove the ascender cues that carry it. The hierarchy
-     against the Latin above is held by size and tracking, so nothing needs lightness to say it. */
+  /* `--ink-soft`, not the muted tier: this is the least forgiving setting on the page — 10.5px of
+     Cinzel capitals at .24em, where the tracking breaks the word shape and the capitals remove the
+     ascender cues that carry it — and a tier that merely clears AA is not enough at it. The
+     hierarchy against the Latin above is held by size and tracking, so nothing needs lightness
+     to say it. */
   .kd-movement-gloss { font-family: var(--capitalis); font-weight: 400; font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-soft, #34302b); }
   .kd-movement-line { margin: 14px 0 0; max-width: 56ch; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(16px, 1.5vw, 20px); line-height: 1.5; color: var(--ink-soft, #34302b); }
 
@@ -1427,8 +1460,10 @@ const jsonLd =
      entry's epigraph — the scripture the work is written on — and the note beneath it is apparatus
      explaining it; set at one size the sans note carries more ink per glyph and simply outweighs
      it, which is the apparatus talking over its text. Size does the separating and not colour:
-     `--ink-muted` stays, because serif at this size is what that token was drawn for and darkening
-     it would close the gap to the work title over it instead. */
+     the muted tier stays, because serif at this size is what that token was drawn for and
+     promoting it would close the gap to the work title over it instead. (The band's tier is the
+     deep one, which is compensation for a darker ground rather than a promotion — it holds the
+     epigraph roughly where it stood against the lighter parchment.) */
   .kd-program-inscriptio { margin: 6px 0 0; font-family: var(--serif); font-size: clamp(15.5px, 1.2vw, 17px); line-height: 1.55; color: var(--ink-muted, #746d62); }
   .kd-program-inscriptio-lat { font-style: italic; color: var(--ink-soft, #34302b); }
   .kd-program-inscriptio-gloss { color: var(--ink-muted, #746d62); }
@@ -1445,10 +1480,10 @@ const jsonLd =
 
   /* Per-work note — the "why this work" gloss, a museum wall-label register.
      THE ONLY SANS COPY ON THIS PAGE THAT IS READ IN QUANTITY, and it is set heavier and larger
-     than the site's resting 300 for that reason alone. `--ink-muted` measures 4.53 : 1 on
-     parchment, which clears AA — but a reader sitting with a whole programme reported eye strain
-     at 14px / 300 / 60ch, and the fatigue lives in the stroke and the size, not in the ratio. AA
-     is a threshold of perceivability, never one of reading comfort. Raise the colour to
+     than the site's resting 300 for that reason alone. The muted tier measures 5.08 : 1 on this
+     band, comfortably clear of AA — but a reader sitting with a whole programme reported eye
+     strain at 14px / 300 / 60ch, and the fatigue lives in the stroke and the size, not in the
+     ratio. AA is a threshold of perceivability, never one of reading comfort. Raise the colour to
      `--ink-soft` only if weight and size prove not to be enough; dimming this note further to
      match the micro notes beside it is what created the defect. */
   .kd-program-note-work { margin: 10px 0 0; max-width: 60ch; font-family: var(--sans); font-weight: 400; font-size: clamp(15.5px, 1.4vw, 16px); line-height: 1.7; color: var(--ink-muted, #746d62); }
@@ -1506,8 +1541,8 @@ const jsonLd =
      "Przerwa"), or a sung return that brings its words with it (9 Kart — Psalm 51 coming back
      nine times between the psalms). The label's own rule IS the seam, so the row carries no
      border-top of its own: two hairlines twenty pixels apart read as a misprint, not a decision.
-     The words hang below it, centered and candle-lit, the same grammar the dark interlude uses
-     — scripture returning, here slim and on parchment. The translation takes the same optical
+     The words hang below it, centered, the same grammar the dark interlude uses — scripture
+     returning, here slim and on parchment. The translation takes the same optical
      compensation as the sung texts above (460, not 300): small Cormorant on parchment, and this
      one is centred on top of that. The measure holds a whole psalm verse — in centred pre-line
      text a wrap is indistinguishable from an authored verse break. */
@@ -1522,7 +1557,13 @@ const jsonLd =
   /* A bare label has nothing under it, so the work that follows would put its own hairline a
      breath below the label's — the sung variant is spared this by the psalm sitting between. */
   .kd-clasp:not(.is-sung) + .kd-program-item { border-top: 0; }
-  .kd-clasp-lat { margin: clamp(22px, 2.8vw, 32px) auto 0; max-width: 56ch; text-align: center; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(17.5px, 1.7vw, 23px); line-height: 1.5; color: var(--candle); white-space: pre-line; }
+  /* THE PSALM IS READ, so it takes the ink and not the flame. On night the same paint carries text
+     with room to spare (8.08 : 1) and the interlude this echoes is welcome to it; on parchment full
+     candle is 2.10 : 1, and the station tints do not change that — they are normalized to the
+     candle's own luminance, so all six land within 2.06–2.13. At 17.5–23px this is not even large
+     text in WCAG's sense: the bar is 4.5, and the verse was at 2.1 while its own Polish translation
+     sat underneath it at 5.08. The lead line was the least legible thing on the band. */
+  .kd-clasp-lat { margin: clamp(22px, 2.8vw, 32px) auto 0; max-width: 56ch; text-align: center; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(17.5px, 1.7vw, 23px); line-height: 1.5; color: var(--candle-ink); white-space: pre-line; }
   .kd-clasp-gloss { margin: clamp(12px, 1.6vw, 18px) auto 0; max-width: 56ch; text-align: center; font-family: var(--serif); font-weight: 460; font-size: clamp(15.5px, 1.35vw, 18px); line-height: 1.62; color: var(--ink-muted, #746d62); white-space: pre-line; }
 
   .kd-program-foot { display: flex; flex-wrap: wrap; gap: 12px 32px; align-items: baseline; margin: clamp(40px, 5vw, 64px) 0 0; }
@@ -1536,18 +1577,28 @@ const jsonLd =
   .kd-spotify-link:hover { border-bottom-color: var(--candle-ink); }
 
   /* ── Pull quote ────────────────────────────────────────────────────────── */
-  .kd-pullquote { background: var(--paper-soft, #ebe6da); color: var(--ink, #161514); }
+  /* The dip in the light run. This band has always stood a step deeper than the two it sits
+     between, and that step is the whole reason one quotation reads as an inset rather than as a
+     third section — so when the run moved down the paper scale, this moved with it and keeps the
+     interval.
+
+     `--paper-deep` is the floor of that scale and it is a real floor: `--candle-ink` measures
+     4.50 : 1 here with no margin at all (the same note stands on /o-nas, the site's other deep
+     band). Nothing gold that has to be READ may be added to this band without revisiting the
+     token. The guillemets keep full candle because they are ornament around the quote, not part
+     of reading it — the one exemption, and it does not extend to a label. */
+  .kd-pullquote { background: var(--paper-deep, #e3dccd); color: var(--ink, #161514); --ink-muted: var(--ink-muted-deep, #655f55); }
   .kd-quote { margin: 0; }
   .kd-quote p { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(22px, 2.6vw, 34px); line-height: 1.45; color: var(--ink); margin: 0; letter-spacing: -.005em; }
   .kd-quote p::before { content: "« "; color: var(--candle); }
   .kd-quote p::after { content: " »"; color: var(--candle); }
   .kd-cite { display: flex; flex-direction: column; gap: 6px; margin-top: clamp(28px, 4vw, 44px); padding-top: 18px; border-top: 1px solid var(--line, rgba(22,21,20,.16)); font-style: normal; }
   .kd-cite-name { font-family: var(--serif); font-style: italic; font-size: clamp(16px, 1.5vw, 20px); color: var(--ink); }
-  /* `--ink-soft`, not the `--ink-muted` every other caption on this page takes: this band is the
-     page's only `--paper-soft` ground, and muted measures 4.53 : 1 on `--paper` but 4.11 on
-     paper-soft — under AA at 10.5px. The step down to the citation's name (`--ink`) survives:
-     10.5 : 1 against 15 : 1. Any other small `--ink-muted` string moved onto this band needs
-     the same treatment. */
+  /* `--ink-soft`, not the muted tier every other caption on this page takes, and AA is not what
+     decides it — the band's muted tier clears the bar at 4.63 : 1. 10.5px of Cinzel capitals at
+     .22em is the least forgiving setting the page has (the tracking breaks the word shape, the
+     capitals remove the ascender cues), and this is the darkest parchment it is ever set on. The
+     step down from the citation's name survives the choice either way: 9.6 : 1 against 13.4. */
   .kd-cite-about { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-soft, #34302b); }
 
   /* ── Voces: the evening's cast, grouped by voice part ──────────────────── */

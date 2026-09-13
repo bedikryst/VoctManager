@@ -23,6 +23,7 @@
  */
 import { concertKey, withOverlay } from "./copyOverlay";
 import { viaMoment } from "./dates";
+import { cycleNumerals } from "./cycle";
 import type { Locale, LocalizedText } from "../i18n/config";
 
 /** The slice of a `concerts` collection entry the ribbons read (structural on purpose). */
@@ -30,7 +31,7 @@ export interface ConcertStation {
   readonly id: string;
   readonly data: {
     readonly order: number;
-    readonly roman: string;
+    readonly cycle: boolean;
     readonly latin: string;
     readonly title: string;
     readonly accent: string;
@@ -79,8 +80,12 @@ export interface RibbonEntry {
 export const toRibbons = (
   concerts: readonly ConcertStation[],
   locale: Locale,
-): RibbonEntry[] =>
-  concerts
+): RibbonEntry[] => {
+  // The numeral is the cycle's own, counted over the stations rather than stored per entry
+  // (lib/cycle) — so it is resolved against the WHOLE corpus before the page-bearing ones are
+  // filtered out, and an evening without a page cannot shift the numbers of the ones that have it.
+  const numerals = cycleNumerals(concerts);
+  return concerts
     .filter((e) => e.data.hasPage)
     .sort((a, b) => a.data.order - b.data.order)
     .map((e) => {
@@ -96,7 +101,7 @@ export const toRibbons = (
       return {
         id: e.id,
         href: `/koncerty/${e.id}`,
-        roman: e.data.roman,
+        roman: numerals.get(e.id) ?? "",
         latin: e.data.latin,
         title: say("title", e.data.title),
         meta: `${place} — ${viaDate}`,
@@ -104,3 +109,4 @@ export const toRibbons = (
         accent: e.data.accent,
       };
     });
+};

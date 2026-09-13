@@ -198,6 +198,28 @@
       margin-bottom: 0;
     }
 
+    /* The dateline is a TWO-TIER BLOCK here, not a wrapped line. Three facts in tracked capitals
+       are ~390px of type and the widest phone column is ~313, so it always breaks — and left to
+       the browser it broke at the space after the middot, hanging a separator off the end of the
+       first line. The break is authored instead: the evening's name closes the first tier, its
+       moment stands on the second, and the mark goes, because the tiers now do its job. The
+       moment's own `nowrap` (02-hero-sections) keeps "11 października 2026" whole on that tier.
+
+       The leading opens because the tiers have to clear the gold rule under the evening's name:
+       it hangs ~3px below the em box and 1.5 leaves 5.5px between em boxes, of which the acute of
+       "PAŹDZIERNIKA" — Polish capitals carry marks ABOVE the cap height — takes the rest. */
+    .hero-announce {
+      --announce-line: 1.9;
+    }
+
+    .hero-announce-when {
+      display: block;
+    }
+
+    .hero-announce-when::before {
+      display: none;
+    }
+
     /* One controlled type step (not two competing clamps): 360→430px lands a
        comfortable ~60–72px so "głos." never crushes onto the response line. */
     .hero-title {
@@ -225,12 +247,34 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 16px;
+      /* The air above the labels is the links' own now (below), not the rail's — stacked, the two
+         paddings would otherwise add up and push the pair off the rule it hangs from. */
+      padding-top: 4px;
       padding-bottom: 0;
     }
 
+    /* THE RULE BELONGS TO THE WORD, NOT TO A BOX AROUND IT. A 46px centred box with the hairline
+       pinned to its bottom edge leaves ~21px between 11px capitals and their own underline: on the
+       desktop rail that is air around a short mark, but stacked here the pair spans the whole
+       column, so the two detached rules land parallel to the rail's own hairline and the foot ends
+       in three full-width strokes — a row of buttons, not two invitations. The height moves into
+       padding ABOVE the label: the ink contracts to an underlined word, the strike zone stays past
+       44px, and the row is no taller than it was. `line-height: 1` so the underline is measured
+       from the capitals rather than from half-leading that changes with the body scale. */
     .hero-actions .primary-link,
     .hero-actions .secondary-link {
       font-size: 11px;
+      min-height: 0;
+      line-height: 1;
+      padding: 24px 0 8px;
+    }
+
+    /* Ink quantity, not colour. At 0.35 these were BRIGHTER than the 0.22 hairline they hang
+       under while spanning the same full column — the affordance out-weighing the structure. On
+       the desktop rail each is a 120px mark inside 1580px, where 0.35 is right. */
+    .hero-actions .primary-link::before,
+    .hero-actions .secondary-link::before {
+      opacity: 0.28;
     }
 
     .threshold-actions {

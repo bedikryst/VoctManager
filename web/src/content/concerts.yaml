@@ -26,7 +26,6 @@
 
 - id: wcielenie
   order: 1
-  roman: "I"
   latin: Incarnatio
   title: Kontemplacja Wcielenia
   metaPlace: { pl: "Bazylika NSPJ, Kraków" }
@@ -478,7 +477,6 @@
 
 - id: wolanie-gor
   order: 2
-  roman: "II"
   latin: Terra
   title: Wołanie Gór
   metaPlace: { pl: "Dworek Gościnny, Szczawnica" }
@@ -1078,7 +1076,6 @@
 
 - id: 9-kart
   order: 3
-  roman: "III"
   latin: Psalmi
   title: 9 Kart z Księgi Psalmów
   metaPlace: { pl: "Rybnik · Łódź · Bazylika NSPJ, Kraków" }
@@ -1598,7 +1595,6 @@
 
 - id: hymn-poleglym
   order: 4
-  roman: "IV"
   latin: Memoria
   title: Hymn Poległym
   metaPlace: { pl: "Bazylika Mariacka, Kraków" }
@@ -2094,7 +2090,6 @@
 
 - id: aeternam
   order: 5
-  roman: "V"
   latin: Lamentum
   title: Aeternam — Epitafium dla Gazy
   metaPlace: { pl: "Mistrzejowice, Kraków · Niedzica" }
@@ -2523,7 +2518,10 @@
 
 - id: bobola
   order: 6
-  roman: "VI"
+  # A sung Mass, not a Koncert Duchowy — so it carries no numeral and stands outside the Via,
+  # under `Officia` at the foot of /koncerty. The landing has always left it out of the register
+  # and out of the evening count for the same reason (docs/web-landing-guardrails §1).
+  cycle: false
   latin: Liturgia
   title: Uroczystość św. Andrzeja Boboli
   metaPlace: { pl: "Sanktuarium Narodowe św. Andrzeja Boboli, Warszawa" }
@@ -2547,3 +2545,89 @@
   links:
     - { label: Transmisja Mszy ↗, href: "https://www.youtube.com/live/Bpxl8ozPa3s" }
     - { label: Fotorelacja (Episkopat) ↗, href: "https://flic.kr/s/aHBqjCU2Dw" }
+
+- id: pochwala-stworzenia
+  order: 7
+  latin: Laudes
+  title: Pochwała Stworzenia
+  metaPlace: { pl: "Kościół Wszystkich Świętych, Warszawa" }
+  venue: "Kościół Wszystkich Świętych, Warszawa"
+  date: "2026-10-11"
+  time: "13:30"
+  address: "pl. Grzybowski 3/5, Warszawa"
+  admission: free
+  about:
+    place: "Kościół Wszystkich Świętych · Warszawa"
+    blurb: "Koncert w ramach warszawskiego festiwalu „Fenomen człowieka”: Pieśń słoneczna św. Franciszka jako droga od zachwytu nad stworzeniem ku nadziei wieczności."
+  # Amber rather than the base gold two evenings already wear: this one is named after the sun,
+  # and candleFrom needs a hue of its own to tint the page with (lib/candle).
+  accent: "#c9873f"
+  essence: "Wieczór wyrasta z Laudes creaturarum św. Franciszka, znanych po polsku jako Pieśń słoneczna: całe stworzenie jest w nich drogą do Stwórcy. Program schodzi od zachwytu nad światem ku temu, co w człowieku kruche, ku przemianie, cierpieniu i śmierci, a powracający z galerii Spiegel im Spiegel Pärta jest lustrem tej relacji. Całą drogę domyka Stetit Angelus Dubry, obraz anioła okadzającego ołtarz modlitwami wszystkich świętych, śpiewany w kościele Wszystkich Świętych."
+  # The landing's own paragraph about this evening. It leads with the one thing the essence never
+  # says — that the Canticle GREETS its subjects, and greets death on the same terms — so the two
+  # texts open on different facts rather than paraphrasing each other. It carries no date, no
+  # hour, no place and no admission: the band prints all five from the fields above.
+  invitation: "Pieśń słoneczna św. Franciszka wita słońce, wiatr, wodę i ogień jak rodzeństwo, a na końcu tak samo wita śmierć. Program idzie tą drogą: od światła ku temu, co w człowieku kruche, i dalej — aż tam, gdzie pochwała stworzenia staje się modlitwą wszystkich świętych, w kościele pod tym samym wezwaniem."
+  facts:
+    - Festiwal „Fenomen człowieka”
+    - Głosy, skrzypce, organy
+    - Pieśń słoneczna św. Franciszka
+  # The poster is the only image this evening has, so the station's wash is made from it
+  # (docs/station-backgrounds.md). Both stems say `stworzenie`, not the concert's id — the
+  # archive's own naming, which photos.ts keys by file rather than by concert.
+  bg: st-stworzenie-bg
+  poster: poster-stworzenie
+  posterAlt: Plakat koncertu Pochwała Stworzenia
+  realizacja: "Skrzypce: Radu Ropotan"
+  # The order is Florent's own, marked final on 11.09.2026. Pärt is NOT one of the ten: the
+  # returning Spiegel im Spiegel is the evening's mirror rather than a work in the programme
+  # (his words), so each return hangs off the item it follows as a clasp, exactly as the
+  # Miserere does in 9 Kart. The opening episode precedes item 01 and has nothing to hang on.
+  program:
+    - composer: "Marian Borkowski"
+      years: "ur. 1934"
+      work: "Gloria II"
+      year: "2012"
+    - composer: "Marian Borkowski"
+      work: "Lumen"
+      year: "2016"
+      clasp: "Spiegel im Spiegel · Arvo Pärt"
+    - composer: "Carl Orff"
+      years: "1895–1982"
+      work: "Laudes creaturarum"
+      year: "1954"
+    - composer: "Jules Massenet"
+      years: "1842–1912"
+      work: "Méditation z opery Thaïs"
+      year: "1894"
+      voicing: "skrzypce i organy"
+    - composer: "Ēriks Ešenvalds"
+      years: "ur. 1977"
+      work: "Stars"
+      year: "2011"
+      clasp: "Spiegel im Spiegel · Arvo Pärt"
+    - composer: "Ralph Vaughan Williams"
+      years: "1872–1958"
+      work: "The Lark Ascending"
+      year: "1914 · rew. 1920 · oprac. Paul Drayton 2019"
+    - composer: "Jacek Sykulski"
+      years: "ur. 1964"
+      work: "Stoi lód na Prośnie"
+      year: "2017"
+    - composer: "George Enescu"
+      years: "1881–1955"
+      work: "Ménétrier z cyklu Impressions d'enfance op. 28"
+      year: "1940"
+      clasp: "Spiegel im Spiegel · Arvo Pärt"
+    - composer: "Marian Borkowski"
+      work: "Dona eis requiem II"
+      year: "2016"
+    - composer: "Rihards Dubra"
+      years: "ur. 1964"
+      work: "Stetit Angelus"
+      year: "2005"
+      clasp: "Spiegel im Spiegel · Arvo Pärt"
+    - composer: "George David Weiss / Bob Thiele"
+      work: "What a Wonderful World"
+      year: "1967"
+      bis: true

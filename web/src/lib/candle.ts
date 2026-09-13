@@ -14,8 +14,17 @@
 const BASE_CANDLE = "#c6a45b";
 
 /** The candle as INK (`--candle-ink`, tokens.css) — the lightest value of this hue that clears
- *  WCAG AA for small text on parchment. Gold that has to be READ rather than seen. */
-const BASE_CANDLE_INK = "#7f693a";
+ *  WCAG AA for small text on EVERY parchment the site has. Gold that has to be READ rather than
+ *  seen.
+ *
+ *  THIS LITERAL MIRRORS A TOKEN AND MUST BE CHANGED WITH IT. It is the one place the ink is
+ *  spelled out in TypeScript instead of taken from CSS, and it has already drifted once: tokens.css
+ *  darkened the ink from 64% to 58% of the candle when 64% was found to fail on the deeper papers,
+ *  and this copy stayed at the old `#7f693a`, so the concert pages went on deriving every station's
+ *  ink from a value the site had retired. Nothing shows when that happens — the colour is still
+ *  gold, still plausible, just under the bar. The footer note in landing/06-footer.css records the
+ *  same trap from the other end. */
+const BASE_CANDLE_INK = "#735f35";
 
 /** Max OKLab chroma for the derived candle — keeps a saturated future accent from
  *  reading neon next to the parchment/night palette. Base gold sits near 0.10. */
@@ -84,9 +93,13 @@ export const candleFrom = (accentHex: string, baseHex: string = BASE_CANDLE): st
  *
  * The gold stations return the hand-tuned `--candle-ink` verbatim (as `candleFrom` returns the
  * base gold verbatim), so a page burning plain gold stays byte-identical with /o-nas and
- * /kolofon. Measured across the five station accents the derived inks land at 4.55–4.80 : 1 on
- * `--paper`, i.e. AA for small text with room to spare; on `--paper-soft` they fall to ~4.2, so
- * do not reach for this on that ground without re-measuring.
+ * /kolofon.
+ *
+ * Measured across the six station accents, the derived inks land at 5.34–5.59 : 1 on `--paper`
+ * and 4.84–5.07 on `--paper-soft`, which is the ground the concert page's reading bands actually
+ * stand on. `--paper-deep` is where it runs out: three of the six fall to 4.41–4.49 there, just
+ * under the bar, so a band on the deepest parchment may carry gold RULES and MARKS but no gold
+ * that has to be read. The concert page's pullquote is that band and holds none.
  */
 export const candleInkFrom = (accentHex: string): string =>
   accentHex.toLowerCase() === BASE_CANDLE.toLowerCase()

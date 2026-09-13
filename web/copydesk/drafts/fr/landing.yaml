@@ -185,7 +185,7 @@ page.landing.register.entries.aeternam.credit: "Partenaires : commune de Łapsze
 page.landing.register.entries.aeternam.videoNote: "C. Shaw — and the swallow (psaume 84) · captation depuis la nef · son direct"
 
 page.landing.register.next.tag: "en attente d'une invitation"
-page.landing.register.next.title: "La sixième soirée."
+page.landing.register.next.title: "Une soirée sans date."
 page.landing.register.next.place: "Lieu et date encore ouverts"
 page.landing.register.next.summary: "Le programme se construit aux répétitions. La date paraîtra ici dès qu'un hôte accueillera la soirée et que les honoraires des chanteurs seront réunis. Chaque don la rapproche."
 page.landing.register.next.cta: "Aidez-la à résonner"
@@ -209,3 +209,8 @@ page.landing.support.supportCta: "Nous soutenir"
 page.landing.support.writeCta: "Écrivez-nous"
 
 page.landing.coda.captionHtml: "Le silence <em>résonne encore.</em>"
+
+# La bande d'annonce, au-dessus du registre. Les deux lignes doivent rester vraies de TOUTE
+# soirée qu'elle portera : elle dort entre les concerts et s'allume sur la suivante.
+page.landing.proximum.label: "La soirée la plus proche"
+page.landing.proximum.lede: "La seule soirée de cette page qui n'a pas encore résonné."

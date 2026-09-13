@@ -177,7 +177,7 @@ page.landing.register.entries.aeternam.credit: "Partners: Łapsze Niżne Commune
 page.landing.register.entries.aeternam.videoNote: "C. Shaw — and the swallow (Psalm 84) · recorded from the nave · live sound"
 
 page.landing.register.next.tag: "awaiting an invitation"
-page.landing.register.next.title: "The sixth evening."
+page.landing.register.next.title: "An evening with no date."
 page.landing.register.next.place: "Place and date still open"
 page.landing.register.next.summary: "The programme takes shape in rehearsal. The date will appear here once there is a host for the evening and the means to pay the singers. Every donation brings it closer."
 page.landing.register.next.cta: "Help it ring out"
@@ -201,3 +201,8 @@ page.landing.support.supportCta: "Support us"
 page.landing.support.writeCta: "Write to us"
 
 page.landing.coda.captionHtml: "The silence <em>sounds on.</em>"
+
+# The announcement band, above the register. Both lines must stay true of ANY evening it will
+# ever carry: it is dormant between concerts and lights up on whichever one is next.
+page.landing.proximum.label: "The coming evening"
+page.landing.proximum.lede: "The only evening on this page that has not yet sounded."

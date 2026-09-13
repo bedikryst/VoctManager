@@ -75,6 +75,19 @@ notice:
     Wysłaliśmy prośbę o potwierdzenie. Adres zapisujemy dopiero wtedy, gdy klikniesz
     link w tej wiadomości.
 
+# What the ensemble sang that the cycle does not number — a sung Mass, a wedding. The band closes
+# the night stretch, after the walk has ended and the notice list has been offered, because these
+# are not stations: they carry no numeral and the Via does not run through them (lib/cycle).
+# It says what the music IS when it serves a rite; it must never become a price list — that
+# question is the board's before it is a designer's (docs/web-board-feedback-2026-09, Etap 4).
+officia:
+  eyebrow: "Poza cyklem"
+  h2: "Śpiewamy też tam, gdzie muzyka służy obrzędowi."
+  # One negation in the passage, and it sits in the middle clause — the site's own rule.
+  lede: >-
+    Msza, uroczystość, ślub: program układa się wtedy pod liturgię, nie pod wieczór.
+    Te wykonania stoją poza numeracją cyklu.
+
 # The evening's four rules, read AFTER the walk like a programme-book essay. Documented practice
 # from the ensemble's own programme books, not an invented framework: the Jesuit introduction, the
 # "kolejność jest bardzo ważna" note, the printed request for silence, Ada Bystrzycka's light

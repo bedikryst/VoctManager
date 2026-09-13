@@ -59,40 +59,81 @@
     color: rgba(244, 241, 233, 0.72);
   }
 
-  /* "Next concert" pill — renders only when a future-dated concert exists (see HeroSection).
-     A single standing invitation that gives the hero a present tense; opacity-only pulse. */
+  /* "Next concert" announcement — renders only when a future-dated concert exists (see
+     HeroSection). A single standing invitation that gives the hero a present tense.
+
+     IT IS TYPE, NOT A PILL. The rounded, blurred, tinted box it used to wear was the only piece of
+     product chrome on a page built from hairlines, corner marks and capitals — the same object
+     base.css turned down for the scroll-to-top mark, where the note reads "a votive mark, not a
+     SaaS chip". Nothing was lost with the scrim: this corner is the hero's lit left zone, where
+     the `::before` gradient has already run to 0.88 black.
+
+     IT RANKS BELOW THE KICKER, at 0.58 against its 0.72. Two tracked-caps lines stacked above an
+     h1 are a masthead only if they rank — this is the dateline, "Concerts Spirituels" is the
+     standing head, and the gold between them is the news. Boxed, and set brighter than the line
+     under it, the announcement took the kicker's job of being the page's quiet first mark. */
   .hero-announce {
     display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 30px;
-    padding: 9px 18px 9px 15px;
-    border: 1px solid rgba(232, 207, 144, 0.4);
-    border-radius: 999px;
-    background: rgba(8, 8, 7, 0.26);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
+    align-items: flex-start;
+    gap: 11px;
+    margin-bottom: 26px;
     font-family: var(--capitalis);
     font-size: 11px;
     letter-spacing: 0.14em;
+    /* ONE number for the leading and the dot's offset below it, because they are the same
+       measurement read from two places. It is also the only lever that clears the gold rule under
+       the evening's name once this block wraps: the rule is drawn BELOW the em box (inline padding
+       + border) and lands in the leading of the tier beneath — see the phone layer, where the
+       block is two tiers by design. */
+    --announce-line: 1.5;
+    line-height: var(--announce-line);
     text-transform: uppercase;
-    color: rgba(244, 241, 233, 0.86);
+    color: rgba(244, 241, 233, 0.58);
     text-decoration: none;
-    transition: border-color 0.35s var(--ease), color 0.35s var(--ease);
+    transition: color 0.35s var(--ease);
   }
+  /* The evening's own name carries the rule, so the affordance sits on the fact the link is about
+     instead of boxing the whole line again. Full `--candle`: this ground is night, where the
+     display gold measures 8.46 : 1 and the paper contract (tokens.css) does not apply. */
   .hero-announce strong {
     color: var(--candle);
     font-weight: 400;
+    padding-bottom: 2px;
+    border-bottom: 1px solid color-mix(in srgb, var(--candle) 34%, transparent);
+    transition: border-color 0.35s var(--ease);
   }
   .hero-announce:hover,
   .hero-announce:focus-visible {
-    border-color: var(--candle);
-    color: var(--paper);
+    color: rgba(244, 241, 233, 0.86);
   }
+  .hero-announce:hover strong,
+  .hero-announce:focus-visible strong {
+    border-bottom-color: var(--candle);
+  }
+
+  /* The evening's moment, and the mark that makes it a peer of the name rather than a subtitle.
+     The middot is generated so the phone layer can drop it when the two facts stop sharing a line
+     (07-responsive), and it is glued to the date on both sides — with no whitespace in the markup
+     there is no break opportunity here, so the mark can never end a line and the date can never
+     start one alone. Optical margins and the tracking reset follow `.litany-name::after`, which is
+     the same mark doing the same job between names. */
+  .hero-announce-when {
+    white-space: nowrap;
+  }
+
+  .hero-announce-when::before {
+    content: "·";
+    margin: 0 0.5em 0 0.62em;
+    letter-spacing: 0;
+  }
+  /* `flex-start` and an explicit offset rather than `align-items: center`: the line wraps at phone
+     width, where a centred dot would float against the middle of a two-line block instead of
+     sitting on the first line's capitals. */
   .hero-announce-dot {
     width: 7px;
     height: 7px;
     flex-shrink: 0;
+    margin-top: calc((var(--announce-line) * 1em - 7px) / 2);
     border-radius: 50%;
     background: var(--candle);
     animation: announcePulse 2.8s var(--ease-slow) infinite;

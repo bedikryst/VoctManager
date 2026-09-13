@@ -65,3 +65,16 @@ page.koncerty.coda.lede: "Les basiliques du Sacré-Cœur et Sainte-Marie à Crac
 page.koncerty.coda.contactLink: "Écrivez-nous"
 page.koncerty.coda.aboutLink: "Découvrez l'ensemble"
 page.koncerty.coda.supportLink: "Soutenir la fondation"
+
+# Hors du cycle — la messe chantée, le mariage. Ce bloc dit ce que la musique EST lorsqu'elle sert
+# un rite, jamais ce qu'elle coûte (la page des liturgies est d'abord une question du conseil, Etap 4).
+page.koncerty.officia.eyebrow: "Hors du cycle"
+page.koncerty.officia.h2: "Nous chantons aussi là où la musique sert le rite."
+page.koncerty.officia.lede: "Une messe, une solennité, un mariage : le programme se construit alors pour la liturgie, non pour une soirée. Ces exécutions se tiennent hors de la numérotation du cycle."
+
+# La bande d'inscription, telle que la superposition la porte déjà — recopiée ici pour que ce
+# brouillon reflète le dépôt. Seul `h2` change : « prévenir » veut un objet.
+page.koncerty.notice.h2: "Nous vous préviendrons des concerts à venir."
+page.koncerty.notice.lede: "Une lettre pour une soirée : le lieu, l'heure, le programme. Rien de plus."
+page.koncerty.notice.sentTitle: "Vérifiez votre boîte."
+page.koncerty.notice.sentBody: "Nous avons envoyé une demande de confirmation. L'adresse n'est conservée qu'une fois le lien de ce message suivi."

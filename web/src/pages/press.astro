@@ -32,6 +32,7 @@ import SiteChrome from "../components/SiteChrome.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { photo, bleedPair } from "../lib/photos";
 import { viaMoment } from "../lib/dates";
+import { cycleNumerals } from "../lib/cycle";
 import { PATHS } from "../data/landing/paths";
 import { pageCopy } from "../lib/pageCopy";
 import { LANDING_PAGE } from "../i18n/content/landing";
@@ -247,7 +248,10 @@ const FACTS = [
 // Polish-only and noindex, so it asks for the Polish and nothing else. `video` passes through
 // untouched — rows without footage render NO player (paths.ts rule: "omit when no footage exists,
 // never fabricate").
-const concertData = new Map((await getCollection("concerts")).map((c) => [c.id, c.data]));
+const allConcerts = await getCollection("concerts");
+const concertData = new Map(allConcerts.map((c) => [c.id, c.data]));
+// The numeral is the cycle's own, derived from position rather than stored (lib/cycle).
+const numerals = cycleNumerals(allConcerts);
 const landing = pageCopy(LANDING_PAGE, DEFAULT_LOCALE);
 const register = await Promise.all(
   PATHS.map(async (p) => {
@@ -258,7 +262,7 @@ const register = await Promise.all(
       ...p,
       ...words,
       title: meta?.title ?? "",
-      roman: meta?.roman ?? "",
+      roman: numerals.get(p.concertId) ?? "",
       yearLabel: meta?.date?.slice(0, 4) ?? (meta ? viaMoment(meta, "pl").match(/\d{4}/)?.[0] : undefined) ?? "",
       posterSrc: p.video
         ? (await getImage({ src: photo(p.poster), width: 900, format: "webp" })).src

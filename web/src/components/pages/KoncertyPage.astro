@@ -40,7 +40,8 @@ import SiteFooter from "../SiteFooter.astro";
 import BleedImage from "../BleedImage.astro";
 import { photo, bleedPair } from "../../lib/photos";
 import { absolute, musicEvent } from "../../lib/eventSchema";
-import { longDate, viaMoment } from "../../lib/dates";
+import { longDate, romanNumeral, viaMoment } from "../../lib/dates";
+import { cycleNumerals, cycleStations, upcomingStation } from "../../lib/cycle";
 import { formatRef } from "../../lib/scriptureRef";
 import { concertKey, withOverlay } from "../../lib/copyOverlay";
 import { pageCopy } from "../../lib/pageCopy";
@@ -83,8 +84,18 @@ const say = (id: string, field: string, polish: string): string =>
   withOverlay(concertKey(id, field), lang, polish);
 
 const concerts = (await getCollection("concerts")).sort((a, b) => a.data.order - b.data.order);
-const stationCount = concerts.length;
-const stations = concerts.map((c, i) => ({
+// The cycle is what the Via walks and what the numerals count; a sung Mass or a wedding is neither
+// (lib/cycle). Both lists are built from one mapper below and then split, so an office and a
+// station cannot drift into two readings of the same corpus.
+const walk = cycleStations(concerts);
+const stationCount = walk.length;
+const numerals = cycleNumerals(concerts);
+const stepOf = new Map(walk.map((c, i) => [c.id, `${Math.round(((i + 1) / stationCount) * 100)}%`]));
+// The one evening still ahead, if there is one — it wears a marker, states its hour and is where
+// the landing's announcement points. Resolved at build: the deploy after the concert takes it down.
+const upcoming = upcomingStation(concerts);
+
+const entries = concerts.map((c) => ({
   ...c.data,
   id: c.id,
   title: say(c.id, "title", c.data.title),
@@ -119,12 +130,24 @@ const stations = concerts.map((c, i) => ({
     c.data.date
       ? longDate(c.data.date, lang)
       : c.data.dateLabel && say(c.id, "dateLabel", c.data.dateLabel.pl),
+    // The hour, and ONLY on the evening still ahead. It is the one dateline a reader acts on —
+    // every other station's hour is a fact about a night that is over, and printing six of them
+    // would turn a register of memories into a listings page.
+    c.id === upcoming?.id ? c.data.time : undefined,
   ]
     .filter(Boolean)
     .join(" · "),
-  // Via-rail fill is derived from position, not stored per-entry: adding a concert
-  // no longer means re-percentaging every other YAML row by hand.
-  viaStep: `${Math.round(((i + 1) / stationCount) * 100)}%`,
+  /** The numeral, or `undefined` for an evening the cycle does not number (lib/cycle). */
+  roman: numerals.get(c.id),
+  isUpcoming: c.id === upcoming?.id,
+  /** Whether the door is open, stated only where it is still a question a reader can act on and
+      only where the ensemble recorded the answer — chrome, so it cannot be left behind in one
+      locale, and read off `admission` so the fact has one home (content.config). */
+  door: c.id === upcoming?.id && c.data.admission === "free" ? t.freeAdmission : undefined,
+  // Via-rail fill is derived from position among the STATIONS, not stored per-entry: adding a
+  // concert no longer means re-percentaging every other YAML row by hand, and an office that
+  // never enters the rail cannot advance it.
+  viaStep: stepOf.get(c.id) ?? "0%",
   // Station backdrops are PRE-BLURRED + pre-darkened WebP files in src/assets/photos,
   // named after the concert's `bg`. Blurring offline means the browser runs ZERO filter
   // passes on six full-bleed layers (the old runtime blur was the jank). Astro emits them
@@ -133,28 +156,16 @@ const stations = concerts.map((c, i) => ({
   posterImg: c.data.poster ? photo(c.data.poster) : null,
 }));
 
+/** The walk itself — the numbered stations, in Via order. */
+const stations = entries.filter((e) => e.cycle);
+/** Everything the cycle does not number, in the same chronology: the `Officia` band at the foot. */
+const officia = entries.filter((e) => !e.cycle);
+
 // Era headings are labels rather than prose, so they are a typed triple keyed by the catalogue's
 // own id — the landing's litany plate reads the same one (i18n/content/repertuar.ts).
 const eras = (await getCollection("repertoire"))
   .sort((a, b) => a.data.order - b.data.order)
   .map((era) => ({ ...era.data, id: era.id, ...eraName(era.id, lang) }));
-
-// Roman numeral for the still-unwritten station (Nondum) — computed, not a fixed lookup
-// table, so the sequence keeps going no matter how many concerts eventually land.
-const toRoman = (n: number): string => {
-  const table: readonly (readonly [number, string])[] = [
-    [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
-  ];
-  let out = "";
-  let rem = n;
-  for (const [value, sym] of table) {
-    while (rem >= value) {
-      out += sym;
-      rem -= value;
-    }
-  }
-  return out;
-};
 
 // The list describes one event per CONCERT, not per tour date — a touring programme's
 // itinerary belongs to its own page, which emits a node per evening. Node shape (calendar-
@@ -163,7 +174,9 @@ const toRoman = (n: number): string => {
 // The same `bleedPair(heroImg ?? bg)` + 1200/webp call the detail page makes, so getImage
 // serves both from one rendition instead of emitting a second copy per station.
 const listItems = await Promise.all(
-  stations.map(async (s, i) => {
+  // In the order the page states them — the walk, then the offices at its foot — so the list
+  // describes the document a reader actually sees rather than the corpus's own chronology.
+  [...stations, ...officia].map(async (s, i) => {
     // A touring programme carries no concert-level day — its `meta` reads "2024" or "jesień
     // 2025" — so the list would describe it with no `startDate` at all, and startDate is one of
     // the three properties schema.org Event actually REQUIRES. The opening evening stands in:
@@ -264,9 +277,10 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     {
       stations.map((s) => (
         <section
+          id={s.id}
           class:list={[
             "station",
-            { reverse: s.reverse, "station--memoriam": s.variant === "memoriam", "station--liturgy": s.variant === "liturgy" },
+            { reverse: s.reverse, "station--memoriam": s.variant === "memoriam", "station--liturgy": s.variant === "liturgy", "station--ahead": s.isUpcoming },
           ]}
           aria-label={s.title}
           data-via-num={s.roman}
@@ -349,6 +363,15 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                 </figure>
               )}
               <div class="station-text">
+                {/* The one station a reader can still act on says so before it says anything else,
+                    and it says it with the same lit dot the landing's pill carries — one mark for
+                    "this evening is ahead", wherever the site makes the claim. */}
+                {s.isUpcoming && (
+                  <p class="station-ahead reveal">
+                    <span class="station-ahead-dot" aria-hidden="true" />
+                    {t.upcomingLabel}
+                  </p>
+                )}
                 <p class="station-num reveal">{concertUi.hero.station} {s.roman} &nbsp;·&nbsp; <span lang="la">{s.latin}</span></p>
                 <h2 class="station-title reveal ink-press" data-d="1">{s.title}</h2>
                 <p class="station-meta reveal" data-d="1">{s.meta}</p>
@@ -383,8 +406,9 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                     the programme disclosure. The essence and the incipit share 0.18s and must:
                     the incipit's ink+lead pair pins that delay regardless of `data-d`, so it is
                     the one node in the stack that cannot be moved. */}
-                {s.facts.length > 0 && (
+                {(s.facts.length > 0 || s.door) && (
                   <div class="station-facts reveal" data-d="3" role="list" aria-label={t.factsAria}>
+                    {s.door && <span class="station-fact-door" role="listitem">{s.door}</span>}
                     {s.facts.map((f) => (
                       <span role="listitem">{f}</span>
                     ))}
@@ -447,7 +471,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     <section class="station-next" aria-label={t.nextAria}>
       <div class="station-next-inner">
         <span class="station-next-glyph reveal" aria-hidden="true"></span>
-        <p class="station-num reveal">{toRoman(stationCount + 1)} &nbsp;·&nbsp; <span class="lat" lang="la">Nondum</span></p>
+        <p class="station-num reveal">{romanNumeral(stationCount + 1)} &nbsp;·&nbsp; <span class="lat" lang="la">Nondum</span></p>
         <h2 class="station-title reveal ink-press" data-d="1">{copy.next.title}</h2>
         <p class="station-meta reveal" data-d="1">{copy.next.meta}</p>
         <p class="station-essence reveal" data-d="2">{copy.next.essence}</p>
@@ -471,6 +495,56 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     <section class="notice-band" id="nuntius" aria-label={nuntius.form.bandAria}>
       <NoticeSignup lang={lang} surface="web:koncerty" />
     </section>
+
+    {/* ── Officia — what the ensemble sang that the cycle does not number: a sung Mass, a
+          wedding. It stands AFTER the walk has ended and the list has been offered, because a
+          station is a station and these are not: no numeral, no via-rail, no full-bleed nave of
+          their own. Their plate is the blurred wash their own evening already carries, held at
+          card size. Still night — the page steps into parchment at the rite map, not here.
+          This band is the seed of the liturgies page (Etap 4) and deliberately not that page:
+          it says what the music is when it serves a rite, and never what it costs. ──────── */}
+    {officia.length > 0 && (
+      <section class="officia" aria-label={t.officiaAria}>
+        <div class="officia-wrap">
+          <div class="officia-head reveal">
+            <span class="eyebrow"><span class="lat" lang="la">Officia</span>  ·  {copy.officia.eyebrow}</span>
+            <h2 class="ink-press">{copy.officia.h2}</h2>
+            <p>{copy.officia.lede}</p>
+          </div>
+          <ul class="officia-list">
+            {officia.map((o) => (
+              <li class="officium reveal-rule">
+                <div class="officium-wash" aria-hidden="true" style={`--bg:url('${o.bgSrc}')`} />
+                <div class="officium-body">
+                  {/* No numeral here, and that absence IS the statement — the Latin names what
+                      kind of evening it was and the cycle's count runs on without it. */}
+                  <p class="officium-lat reveal" lang="la">{o.latin}</p>
+                  <h3 class="officium-title reveal" data-d="1">{o.title}</h3>
+                  <p class="officium-meta reveal" data-d="1">{o.meta}</p>
+                  <p class="officium-essence reveal" data-d="2">{o.essence}</p>
+                  {o.facts.length > 0 && (
+                    <div class="officium-facts reveal" data-d="2" role="list" aria-label={t.liturgyFactsAria}>
+                      {o.facts.map((f) => (
+                        <span role="listitem">{f}</span>
+                      ))}
+                    </div>
+                  )}
+                  {o.links.length > 0 && (
+                    <div class="officium-actions">
+                      {o.links.map((l) => (
+                        <a class="link-min" href={l.href} target="_blank" rel="noopener noreferrer">
+                          {l.label}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    )}
 
     {/* ── The evening's four rules — the method behind the walk, read AFTER it (like a
           programme-book essay). Parchment: the page steps out of the night nave into
@@ -663,6 +737,48 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .station-actions { margin: 30px 0 0; display: flex; flex-wrap: wrap; gap: 14px 26px; align-items: center; }
   .station-facts { margin: 24px 0 0; display: flex; flex-wrap: wrap; gap: 10px; }
   .station-facts span { display: inline-flex; align-items: center; min-height: 32px; padding: 8px 12px; border: 1px solid rgba(244,241,233,.18); color: rgba(244,241,233,.68); font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .14em; line-height: 1.35; text-transform: uppercase; }
+  /* The one chip a reader acts on rather than reads — lit, and only ever on the evening ahead. */
+  .station-facts .station-fact-door { border-color: color-mix(in srgb, var(--accent, var(--candle)) 55%, transparent); color: var(--accent, var(--candle)); }
+
+  /* The evening still ahead. Its whole announcement is a marker and a lit dot: the station form
+     is unchanged, because an announced concert is not a different KIND of thing from a sung one —
+     it is the same evening earlier. The dot is the hero pill's (landing/02-hero-sections), so one
+     mark means "ahead" on both surfaces; the keyframes are re-declared because this page does not
+     load the landing's sheet. */
+  .station { scroll-margin-top: 96px; }
+  .station-ahead { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--accent, var(--candle)); }
+  .station-ahead-dot { width: 7px; height: 7px; flex-shrink: 0; border-radius: 50%; background: var(--accent, var(--candle)); animation: aheadPulse 2.8s var(--ease-slow) infinite; }
+  @keyframes aheadPulse { 0%, 100% { opacity: .35; transform: scale(.86); } 50% { opacity: 1; transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) { .station-ahead-dot { animation: none; opacity: .9; } }
+
+  /* Officia — outside the cycle, and the card says so by being a card: no numeral, no full-bleed
+     nave, no via-rail. The evening's own blurred wash sits inside the frame instead of behind the
+     page, which is the same photograph doing a quieter job. */
+  .officia { position: relative; padding: clamp(72px,9vh,110px) max(28px,5vw) clamp(84px,11vh,130px); background: var(--ink); color: var(--paper); }
+  .officia-wrap { max-width: 1120px; margin: 0 auto; }
+  .officia-head { max-width: 46ch; }
+  .officia-head h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(26px, 3vw, 40px); line-height: 1.12; margin: 14px 0 0; color: var(--paper); }
+  .officia-head p { margin: 16px 0 0; font-family: var(--serif); font-size: clamp(16px, 1.5vw, 19px); line-height: 1.55; color: rgba(244,241,233,.7); }
+  .officia-list { list-style: none; margin: clamp(38px,5vh,56px) 0 0; padding: 0; display: grid; gap: clamp(24px,3vh,36px); }
+  .officium { position: relative; display: grid; overflow: hidden; border-top: 1px solid rgba(244,241,233,.14); }
+  /* LEAD — the card's own top border is handed to the register's pseudo-rule, exactly as the
+     incipit hands over its left one. Two consequences, both of which bite silently if dropped:
+     the real border must go transparent under the motion gate or the rule is drawn over a line
+     that is already there, and the rule has to be lifted above this card's scrim, which is the
+     one pseudo-element sitting between the two (`::after`, z-index 1). Reduced motion and no-JS
+     keep the real border, because `voct-motion` is never set for them. */
+  :global(html.voct-motion) .officium.reveal-rule { border-top-color: transparent; }
+  :global(html.voct-motion) .officium.reveal-rule::before { z-index: 3; }
+  .officium-wash { position: absolute; inset: 0; z-index: 0; background-image: var(--bg); background-size: cover; background-position: center; opacity: .5; }
+  .officium::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(100deg, rgba(16,15,13,.94) 0%, rgba(16,15,13,.82) 58%, rgba(16,15,13,.6) 100%); }
+  .officium-body { position: relative; z-index: 2; padding: clamp(28px,4vh,44px) clamp(24px,3vw,44px); max-width: 62ch; }
+  .officium-lat { margin: 0; font-family: var(--serif); font-style: italic; font-size: clamp(15px, 1.4vw, 18px); letter-spacing: .3em; color: var(--accent, var(--candle)); }
+  .officium-title { font-family: var(--serif); font-weight: 300; font-size: clamp(24px, 3vw, 38px); line-height: 1.08; margin: 10px 0 0; color: var(--paper); }
+  .officium-meta { margin: 14px 0 0; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: rgba(244,241,233,.6); }
+  .officium-essence { margin: 16px 0 0; font-family: var(--serif); font-size: clamp(16px, 1.5vw, 19px); line-height: 1.55; color: rgba(244,241,233,.86); }
+  .officium-facts { margin: 20px 0 0; display: flex; flex-wrap: wrap; gap: 10px; }
+  .officium-facts span { display: inline-flex; align-items: center; min-height: 30px; padding: 7px 11px; border: 1px solid rgba(244,241,233,.16); color: rgba(244,241,233,.62); font-family: var(--capitalis); font-size: 10px; letter-spacing: .14em; line-height: 1.35; text-transform: uppercase; }
+  .officium-actions { margin: 24px 0 0; display: flex; flex-wrap: wrap; gap: 14px 26px; align-items: center; }
   .pill { display: inline-flex; align-items: center; gap: 9px; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--paper); border: 1px solid rgba(244,241,233,.4); padding: 11px 18px; transition: background-color .4s var(--ease), border-color .4s var(--ease), color .4s var(--ease); }
   .pill:hover { background: var(--accent, var(--candle)); border-color: var(--accent, var(--candle)); color: var(--ink); }
   /* Filled by default (the Via's one call to give); hover inverts to hollow. */

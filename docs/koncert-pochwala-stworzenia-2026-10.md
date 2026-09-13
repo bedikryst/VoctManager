@@ -243,13 +243,33 @@ Design the footer band around those slots first.
 - Whether the Spotify playlist can be made public; the `spotify:` field exists in the schema and
   has never rendered because every playlist so far is private.
 
-## §7 Publishing
+## §7 Publishing — DONE 13.09.2026
 
-When the facts firm up, this becomes one entry in `web/src/content/concerts.yaml` (facts,
-`essence`, `programArc`, programme in performed order, `poster` + `posterAlt`), plus photo assets
-named `poster-pochwala` / `kd-pochwala-*` / `st-pochwala-bg`. A detail page (`hasPage: true`) is
-only worth it once there is a booklet to mine — the four existing pages were all built from
-programme booklets, not from the YAML alone.
+The evening is on the site as `concert.pochwala-stworzenia`, station **VI** of the cycle, in all
+three languages. What that pass settled, so nothing here is re-derived:
+
+- **Bobola stopped being a station.** He was numbered VI and is a sung Mass, not a Koncert
+  Duchowy — so the corpus gained `cycle: false`, the numeral is now DERIVED from position among
+  the cycle's own stations (`web/src/lib/cycle.ts`; `roman` is gone from the YAML), and everything
+  the cycle does not number stands under a new `Officia · Poza cyklem` band at the foot of
+  `/koncerty`, after the notice list. Weddings land there too. That band is the seed of Etap 4
+  (`web-board-feedback-2026-09.md`) and deliberately not that page: it says what the music is when
+  it serves a rite, never what it costs — the board question comes first.
+- **The announcement has three surfaces, all reading `upcomingStation`** (one derivation, so they
+  cannot name two different evenings): the hero pill on the landing, which has been dormant since
+  it was built and now lights up; a new `Proximum` band between the Imagines plate and the
+  register, directly above „Co już zabrzmiało."; and the station itself, which wears a marker, its
+  hour and a free-admission chip. **All three go down by DEPLOY** — the date is read at build, so
+  a deploy belongs in the week after the concert.
+- **Assets** are `poster-stworzenie` (as delivered, converted to webp; the PNG is in
+  `.original-photos/`) and `st-stworzenie-bg`, the station's wash, **blurred from the poster** —
+  the only image this evening has. `src/assets/photos/` is gitignored, so both files must be
+  uploaded to the build host by hand or the build fails loudly.
+- **Not published:** a detail page (`hasPage: false`). It is worth building once there is a
+  booklet to mine — the four existing pages were all built from programme booklets, not from the
+  YAML alone — and the §9/§10 contradiction below still blocks the long prose. The short
+  `essence` was written around it: it says the whole road closes on *Stetit Angelus*, which is
+  Florent's own claim about the dramaturgy, and says nothing about where the last Pärt falls.
 
 ---
 
@@ -430,3 +450,11 @@ repertoire is now locked, so it is a decision rather than a question.
 
 **Poster gap against this list:** the ring is missing **Ménétrier / Enescu** and the **II** on
 *Dona eis requiem*.
+
+**Checked against the delivered poster (13.09.2026, `poster-stworzenie`):** *Ménétrier · G. Enescu*
+is in the ring — that half is closed. Two things are not, and both are print-side only, since the
+site prints the titles itself: the requiem still reads *Dona eis Requiem* (no **II**, and a
+capital R the title does not have), and *św. Franciszek z Asyżu* still sits between *C. Orff* and
+*Stetit Angelus* in the ring's own rhythm, so reading round it he parses as Dubra's librettist.
+The byline is **VoctEnsemble & Radu Ropotan**, which is why the corpus credits `Skrzypce: Radu
+Ropotan` rather than filing him under a bare "Realizacja".

@@ -1,0 +1,41 @@
+# concert.pochwala-stworzenia — brouillon FR. Même forme plate que la superposition qu’il deviendra.
+#
+# LES MOTS DE LA SOIRÉE, pas ceux de la page. Ce que /koncerty et la bande Proximum disent autour
+# de ce concert vit sous `page.koncerty.*` et `page.landing.proximum.*`.
+#
+# Rendus suivis plutôt qu’inventés :
+#   Koncert Duchowy        → Concert Spirituel                 (koncert.ts, o-nas.ts)
+#   Warszawa               → Varsovie                          (concert.bobola.metaPlace)
+#   Skrzypce : <nom>       → Violon : <nom>                    (concert.wolanie-gor.realizacja)
+#   Plakat koncertu <X>    → Affiche du concert <X>            (tous les posterAlt du corpus)
+#
+# DEUX CHOSES PORTENT CETTE PAGE, et une traduction qui en perd une perd la soirée :
+#   - *Stetit Angelus* met en musique l’ange encensant avec LES PRIÈRES DE TOUS LES SAINTS, et le
+#     concert a lieu en l’église de Tous-les-Saints. La dernière proposition d’`essence` EST cette
+#     rime : garder les deux formules identiques, sinon la phrase énonce deux faits sans rapport.
+#   - « znanych po polsku jako Pieśń słoneczna » est une note de RÉCEPTION : elle devient l’énoncé
+#     vrai équivalent pour le lecteur français, chez qui le texte est le Cantique des créatures.
+
+concert.pochwala-stworzenia.title: "Louange de la Création"
+concert.pochwala-stworzenia.metaPlace: "Église de Tous-les-Saints, Varsovie"
+concert.pochwala-stworzenia.essence: "La soirée naît des Laudes creaturarum de saint François, connues en français comme le Cantique des créatures : la création tout entière y est un chemin vers le Créateur. Le programme descend de l’émerveillement devant le monde vers ce qui est fragile en l’homme, vers la transformation, la souffrance et la mort, et le Spiegel im Spiegel de Pärt, revenant de la tribune, est le miroir de cette relation. Tout le chemin se referme sur le Stetit Angelus de Dubra, image de l’ange encensant l’autel avec les prières de tous les saints, chanté en l’église de Tous-les-Saints."
+
+# `invitation` est un SECOND texte sur cette soirée, et non un `essence` raccourci : la station de
+# /koncerty dit la note de programme, la bande « Najbliższy wieczór » de l’accueil dit l’invitation.
+# Les deux ouvrent volontairement sur des faits différents — l’essence sur l’origine de la soirée,
+# celui-ci sur ce que FAIT le Cantique, à savoir saluer ses sujets, la mort comprise, comme une
+# fratrie. Garder cet écart en français : une traduction qui les rapproche pose une seule
+# paraphrase sur deux surfaces.
+concert.pochwala-stworzenia.invitation: "Le Cantique des créatures de saint François salue le soleil, le vent, l’eau et le feu comme une fratrie, et salue la mort dans les mêmes termes. Le programme suit ce chemin : de la lumière vers ce qui est fragile en l’homme, et plus loin — jusque là où la louange de la création devient la prière de tous les saints, en l’église qui porte leur nom."
+
+concert.pochwala-stworzenia.facts.0: "Festival « Fenomen człowieka »"
+concert.pochwala-stworzenia.facts.1: "Voix, violon, orgue"
+concert.pochwala-stworzenia.facts.2: "Le Cantique des créatures de saint François"
+concert.pochwala-stworzenia.program.1.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.4.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.7.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.9.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.posterAlt: "Affiche du concert Louange de la Création"
+concert.pochwala-stworzenia.realizacja: "Violon : Radu Ropotan"
+concert.pochwala-stworzenia.about.place: "Église de Tous-les-Saints · Varsovie"
+concert.pochwala-stworzenia.about.blurb: "Un concert dans le cadre du festival varsovien « Fenomen człowieka » : le Cantique des créatures de saint François comme un chemin de l’émerveillement devant la création vers l’espérance de l’éternité."

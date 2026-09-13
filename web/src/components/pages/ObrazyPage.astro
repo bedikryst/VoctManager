@@ -74,6 +74,7 @@ import { creditList, creditSentence, frameCredit } from "../../lib/photoCredit";
 import { framedShot } from "../../lib/galleryFrame";
 import { candleFrom } from "../../lib/candle";
 import { viaMoment } from "../../lib/dates";
+import { cycleNumerals } from "../../lib/cycle";
 import { concertKey, withOverlay } from "../../lib/copyOverlay";
 import { pageCopy } from "../../lib/pageCopy";
 import { counted, OBRAZY_CHROME, OBRAZY_PAGE } from "../../i18n/content/obrazy";
@@ -117,8 +118,11 @@ const SHEET_SCALE = 0.5;
 
 // Via order — the same order the register and /koncerty walk, so an evening sits in the same
 // place on every surface. An entry with no photographs simply has no series here; the roman
-// numerals stay the concert's own, so a gap in the numbering would be honest rather than a slip.
+// numerals stay the concert's own (derived from its position in the cycle, lib/cycle), so a gap in
+// the numbering is honest rather than a slip — and an evening the cycle does not number, a sung
+// Mass or a wedding, carries no numeral here either.
 const concerts = (await getCollection("concerts")).sort((a, b) => a.data.order - b.data.order);
+const numerals = cycleNumerals(concerts);
 
 const withGallery = concerts.filter((entry) => entry.data.gallery.length > 0);
 
@@ -184,7 +188,7 @@ const evenings = await Promise.all(
 
     return {
       id: entry.id,
-      roman: c.roman,
+      roman: numerals.get(entry.id),
       latin: c.latin,
       title: say(entry.id, "title", c.title),
       viaDate: viaMoment(c, lang),
@@ -301,7 +305,9 @@ const jsonLd = {
     availableLocales={available}
     index={evenings.map((e) => ({
       id: e.id,
-      roman: e.roman,
+      // Empty for an evening the cycle does not number — a sung Mass, a wedding. The index keeps
+      // its numeral column and that row simply has none, which is the claim (lib/cycle).
+      roman: e.roman ?? "",
       title: e.title,
       // Abbreviated as the printed index and the evening heads abbreviate — the same fact must
       // not meet the reader under two different labels on one page.

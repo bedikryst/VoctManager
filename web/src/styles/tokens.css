@@ -16,6 +16,21 @@
   --ink: #161514;
   --ink-soft: #34302b;
   --ink-muted: #746d62;
+  /* The muted tier for parchment that is not `--paper`. Muted itself is calibrated to the
+     lightest ground and to nothing else: it measures 4.53 : 1 there — 0.03 over the small-text
+     bar — and 4.11 / 3.75 : 1 on `--paper-soft` / `--paper-deep`. So every caption, gloss and
+     note follows its band down the paper scale straight out of AA, and does it silently, since
+     nothing about the rule that sets the colour changes.
+
+     This is the same hue scaled to 87%, and like `--candle-ink` below it is stated against ALL
+     THREE grounds rather than the one it was needed for: 5.60 / 5.08 / 4.63 : 1. It is
+     calibrated on the DARKEST parchment, so on the lighter two it runs a little richer than
+     plain muted — the safe direction, and the reason one value can serve every band.
+
+     Use it wherever the muted tier lands on a ground darker than `--paper`. The idiom is to
+     redefine `--ink-muted` on the band itself, so the rules underneath go on writing
+     `var(--ink-muted)` and stay out of the question entirely. */
+  --ink-muted-deep: #655f55;
   --line: rgba(22, 21, 20, 0.16);
   --line-strong: rgba(22, 21, 20, 0.34);
   --candle: #c6a45b;

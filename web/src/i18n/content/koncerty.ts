@@ -65,6 +65,7 @@ const koncertyCopySchema = z
         sentBody: z.string(),
       })
       .strict(),
+    officia: z.object({ eyebrow: z.string(), h2: z.string(), lede: z.string() }).strict(),
     rites: z
       .object({
         eyebrow: z.string(),
@@ -177,6 +178,26 @@ const KONCERTY_CONTRACT: readonly CopyEntry[] = [
     note: "Never says the reader is subscribed — nothing is stored as a consent until the link in the mail is clicked.",
   },
 
+  // ── Poza cyklem ───────────────────────────────────────────────────────────────────────────
+  {
+    kind: "field",
+    path: "officia.eyebrow",
+    label: "Poza cyklem · rubryka",
+    note: "The vernacular of `Officia`, which stands above it unchanged in every locale.",
+  },
+  {
+    kind: "field",
+    path: "officia.h2",
+    label: "Poza cyklem · nagłówek",
+    note: "Heads the evenings that are not stations of the cycle — a sung Mass, a wedding. It says what they are, never what they cost: this site does not sell services (docs/web-board-feedback-2026-09, Etap 4).",
+  },
+  {
+    kind: "field",
+    path: "officia.lede",
+    label: "Poza cyklem · zdanie",
+    note: "One sentence on what the music is when it serves a rite rather than a concert.",
+  },
+
   // ── Reguły wieczoru ───────────────────────────────────────────────────────────────────────
   {
     kind: "field",
@@ -246,9 +267,16 @@ export interface KoncertyChrome {
       own concert's title. */
   readonly introAria: string;
   readonly nextAria: string;
+  readonly officiaAria: string;
   readonly ritesAria: string;
   readonly repertoireAria: string;
   readonly codaAria: string;
+  /** The marker on the one station that has not happened yet, and the chip stating that its door
+      is open. Both are read off structured data — `date` and `admission` — rather than written
+      into the evening's words, so neither can be left behind in Polish or go stale by hand. The
+      free-admission chip prints only where the ensemble recorded the answer. */
+  readonly upcomingLabel: string;
+  readonly freeAdmission: string;
   /** Accessible names for the two chip rows — a concert's programme facts, a liturgy's. */
   readonly factsAria: string;
   readonly liturgyFactsAria: string;
@@ -273,6 +301,9 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
   pl: {
     introAria: "Koncerty Duchowe",
     nextAria: "Następny Koncert Duchowy",
+    officiaAria: "Poza cyklem",
+    upcomingLabel: "Najbliższy wieczór",
+    freeAdmission: "Wstęp wolny",
     ritesAria: "Reguły wieczoru",
     repertoireAria: "Repertuar VoctEnsemble",
     codaAria: "Zaproszenie",
@@ -285,6 +316,9 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
   en: {
     introAria: "The Spiritual Concerts",
     nextAria: "The next Spiritual Concert",
+    officiaAria: "Outside the cycle",
+    upcomingLabel: "The coming evening",
+    freeAdmission: "Free admission",
     ritesAria: "The rules of the evening",
     repertoireAria: "VoctEnsemble's repertoire",
     codaAria: "An invitation",
@@ -297,6 +331,9 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
   fr: {
     introAria: "Les Concerts Spirituels",
     nextAria: "Le prochain Concert Spirituel",
+    officiaAria: "Hors du cycle",
+    upcomingLabel: "La prochaine soirée",
+    freeAdmission: "Entrée libre",
     ritesAria: "Les règles de la soirée",
     repertoireAria: "Le répertoire de VoctEnsemble",
     codaAria: "Une invitation",

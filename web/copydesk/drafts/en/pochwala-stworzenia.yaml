@@ -1,0 +1,42 @@
+# concert.pochwala-stworzenia — EN draft. Same flat shape as the overlay it becomes.
+#
+# THE EVENING'S OWN WORDS, not the page's. What /koncerty and the landing's Proximum band say
+# around this concert is `page.koncerty.*` and `page.landing.proximum.*`.
+#
+# Renderings followed rather than invented:
+#   Koncert Duchowy        → Spiritual Concert                 (koncert.ts, o-nas.ts)
+#   Warszawa               → Warsaw                            (concert.bobola.metaPlace)
+#   Skrzypce: <name>       → Violin: <name>                    (concert.wolanie-gor.realizacja)
+#   Plakat koncertu <X>    → Poster for the concert <X>        (every posterAlt in this corpus)
+#
+# TWO THINGS THIS PAGE TURNS ON, and a translation that loses either loses the evening:
+#   - *Stetit Angelus* sets the angel censing with THE PRAYERS OF ALL THE SAINTS, and the concert
+#     is in the church of All Saints. The last clause of `essence` is that rhyme; keep the two
+#     phrases identical in English, or the sentence states two unrelated facts.
+#   - "znanych po polsku jako Pieśń słoneczna" is a note about RECEPTION, so it becomes the
+#     equivalent true statement about English reception — the Canticle of the Sun is exactly what
+#     an English reader knows the text as. Translating it as "known in Polish as…" would hand an
+#     English reader a fact about a language they are not reading.
+
+concert.pochwala-stworzenia.title: "In Praise of Creation"
+concert.pochwala-stworzenia.metaPlace: "All Saints’ Church, Warsaw"
+concert.pochwala-stworzenia.essence: "The evening grows out of St Francis’s Laudes creaturarum, known in English as the Canticle of the Sun: in it the whole of creation is a road to the Creator. The programme descends from wonder at the world towards what is fragile in us, towards change, suffering and death, and Pärt’s Spiegel im Spiegel, returning from the gallery, is the mirror of that relation. The whole road is closed by Dubra’s Stetit Angelus, the image of an angel censing the altar with the prayers of all the saints, sung in the church of All Saints."
+
+# `invitation` is a SECOND text about this evening, not a shorter `essence`: the station on
+# /koncerty speaks the programme note, the landing's Proximum band speaks the invitation. They
+# deliberately open on different facts — the essence on where the evening comes from, this on what
+# the Canticle DOES, which is greet its subjects, death included, as kin. Keep them apart in
+# English too; a translation that converges them puts one paraphrase on two surfaces.
+concert.pochwala-stworzenia.invitation: "St Francis’s Canticle of the Sun greets the sun, the wind, the water and the fire as its own kin, and at the end greets death on the same terms. The programme follows that road: from light towards what is fragile in us, and further — to where the praise of creation becomes the prayer of all the saints, in the church that bears their name."
+
+concert.pochwala-stworzenia.facts.0: "Festival “Fenomen człowieka”"
+concert.pochwala-stworzenia.facts.1: "Voices, violin, organ"
+concert.pochwala-stworzenia.facts.2: "St Francis’s Canticle of the Sun"
+concert.pochwala-stworzenia.program.1.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.4.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.7.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.9.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.posterAlt: "Poster for the concert In Praise of Creation"
+concert.pochwala-stworzenia.realizacja: "Violin: Radu Ropotan"
+concert.pochwala-stworzenia.about.place: "All Saints’ Church · Warsaw"
+concert.pochwala-stworzenia.about.blurb: "A concert within the Warsaw festival “Fenomen człowieka”: St Francis’s Canticle of the Sun as a road from wonder at creation towards the hope of eternity."

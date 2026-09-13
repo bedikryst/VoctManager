@@ -74,7 +74,19 @@ const concerts = defineCollection({
   loader: file("src/content/concerts.yaml"),
   schema: z.object({
     order: z.number(),
-    roman: z.string(),
+    /** Is this evening one of the numbered Koncerty Duchowe?
+     *
+     *  THE CYCLE IS A CLAIM, NOT A LAYOUT. The ensemble also sings liturgies and weddings; they
+     *  belong in this corpus (they happened, they have a programme, /o-nas dates them) and they
+     *  are NOT stations — they carry no numeral, stand outside the Via, and the announcement
+     *  surfaces must never name one as the next concert. `variant` is the plate a station is drawn
+     *  on and is independent: Aeternam is a memoriam plate and a numbered station, and a wedding
+     *  would be a liturgy plate and neither.
+     *
+     *  The numeral itself is DERIVED from position among these (lib/cycle) rather than stored, so
+     *  an evening inserted between two others cannot renumber the rest wrongly — the same reason
+     *  the via-rail's percentages are computed and the landing's evening count is counted. */
+    cycle: z.boolean().default(true),
     latin: z.string(),
     title: z.string(),
     /** The place half of the presentational dateline ("Bazylika NSPJ, Kraków"), per locale. The
@@ -98,11 +110,15 @@ const concerts = defineCollection({
     /** Street address of the venue (e.g. "ul. Kopernika 26, Kraków") — JSON-LD Place.address
         only; the visible page keeps the quieter `meta`/`venue` register. */
     address: z.string().optional(),
-    /** What the door cost — JSON-LD `offers`/`isAccessibleForFree` only, never rendered.
-        Set it ONLY where the ensemble actually recorded the answer: "free" emits a price-0
-        Offer, "paid" emits the honest negative without inventing a ticket price, and leaving
-        it unset emits neither. A touring concert states this per date instead (see `dates`),
-        since one programme can be free in one city and ticketed in the next. */
+    /** What the door costs. Set it ONLY where the ensemble actually recorded the answer: "free"
+        emits a price-0 Offer, "paid" emits the honest negative without inventing a ticket price,
+        and leaving it unset emits neither. A touring concert states this per date instead (see
+        `dates`), since one programme can be free in one city and ticketed in the next.
+
+        JSON-LD everywhere, and VISIBLE on an evening that has not happened yet: whether the door
+        is open is the first thing a reader deciding whether to come needs, and it would otherwise
+        be restated as a `facts` chip — one fact in two homes, one of them translated by hand. The
+        chip's wording is chrome (a complete triple), not copy, for the same reason. */
     admission: z.enum(["free", "paid"]).optional(),
     /** /o-nas milestone editorial — the About page derives its "Via" list from this
         collection (single source of truth with /koncerty). All fields optional:
@@ -121,6 +137,19 @@ const concerts = defineCollection({
       .optional(),
     accent: z.string(),
     essence: z.string(),
+    /** The evening as the LANDING announces it — the Proximum band's paragraph, and the only
+        field written for a reader who has not decided to come yet.
+
+        It exists because `essence` is a programme note and is set as one: /koncerty prints it
+        serif italic at 42ch in a dark nave, where it is the station's own voice. The landing
+        prints the same words in the reading sans on parchment, under a poster, above a door —
+        the register of an invitation, which that paragraph is not. Rather than shorten one text
+        until it serves neither surface, the evening gets a second, forward-facing one.
+
+        Falls back to `essence`, exactly as `about.blurb` does, so an evening announced before the
+        desk has written an invitation still stands. Never restate what the band already prints
+        beside it: the title, the place, the date, the hour and whether the door is free. */
+    invitation: z.string().optional(),
     facts: z.array(z.string()).default([]),
     variant: z.enum(["default", "memoriam", "liturgy"]).default("default"),
     reverse: z.boolean().default(false),
