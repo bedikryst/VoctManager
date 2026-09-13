@@ -48,6 +48,7 @@
   heroImg: o-nas-wcielenie
   poster: poster-wcielenie
   posterAlt: Plakat koncertu Kontemplacja Wcielenia
+  posterCredit: "Anna Marcisz · VoctEnsemble"
   realizacja: "Realizacja: Ars Sonora Studio"
   video:
     asset: landing-modal
@@ -534,6 +535,7 @@
   heroFoot: 0.85
   poster: poster-wolanie
   posterAlt: Plakat koncertu Wołanie Gór
+  posterCredit: "Anna Marcisz · VoctEnsemble"
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/6yCPC7QDiot7MqzgdASkAP
   realizacja: "Skrzypce: Radu Ropotan"
   hasPage: true
@@ -1101,6 +1103,7 @@
   heroImg: o-nas-9-kart
   poster: poster-9-kart
   posterAlt: Plakat koncertu 9 Kart z Księgi Psalmów
+  posterCredit: "Anna Marcisz · VoctEnsemble"
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/6quiVYU28Sl3Fx17VZulSc
   hasPage: true
   # Booklet documents cities + hours for all three evenings and a venue only for Kraków;
@@ -1632,6 +1635,7 @@
   heroImg: kd-hymn-hero
   poster: poster-hymn
   posterAlt: Plakat koncertu Hymn Poległym
+  posterCredit: "Anna Marcisz · VoctEnsemble"
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/2ncz4uimkLsFEvLhc3HqlM
   realizacja: "Organy: Michał Piechnik · Krzysztof Michałek"
   hasPage: true
@@ -2116,6 +2120,7 @@
   heroImg: o-nas-epitafium
   poster: poster-aeternam
   posterAlt: Plakat koncertu Aeternam — Epitafium dla Gazy
+  posterCredit: "Anna Marcisz · VoctEnsemble"
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/2ncz4uimkLsFEvLhc3HqlM?si=417e9288f94a4201&pt=99e96a55d7b2cb60c5ac46b8a007f36e
   links:
     - { label: Relacja prasowa ↗, href: "https://krakow.gosc.pl/doc/9466268.Niedzica-Koncert-dedykowany-Strefie-Gazy" }

@@ -34,8 +34,10 @@ the beam, the nave and the listeners.
 - **Collaborator names** — consent first.
 - **Donation amounts mapped to line items** — the tiers stay qualitative. Publishing anything
   implying musician rates was ruled out and is not a copy problem to "fix".
-- **A future date.** As of 2026-07 nothing is scheduled. The register's open card states the two
-  real preconditions (a host, and fees for the singers) rather than implying a date exists.
+- **A future date** — *while nothing is scheduled*, which was the site's whole life until 2026. The
+  register's open card states the two real preconditions (a host, and fees for the singers) rather
+  than implying a date exists. Since the announcement band exists (2026-08) the site has a second
+  state, and the card is **suppressed** in it — see "The open card is an understudy" below.
 - **The Bobola Mass** — real and already sung, but a liturgy, not a Koncert Duchowy. Putting it in
   the register would falsify the roman numbering. It belongs on `/koncerty`.
 - **A month for 9 Kart.** Its `viaDate: "2024"` sits in a column of "sty 2024" / "jesień 2025" and
@@ -67,6 +69,35 @@ and the evening's name appears in a single readout only while that frame is appr
 set under five cells at once is a table of contents for the list standing 200px below it, which is
 the same defect in a second voice. The readout is the corrected reading, and it is what makes the
 panels legible as doors (spec §14); a caption row per cell is not.
+
+### The open card is an understudy, and it leaves the stage when the principal arrives
+
+Settled 2026-09-13, after the card was found denying the page's own announcement.
+
+The register's open card ("Wieczór bez daty") numbers itself `ROMAN[PATHS.length]` — the next after
+the evenings that have **sounded**. An *announced* evening has not sounded, so it is not in `PATHS`
+either, and the two claim the **same numeral in the same year**: the landing carried
+`VI · MMXXVI · czeka na zaproszenie · Wieczór bez daty · Miejsce i termin wciąż otwarte` two sections
+under a Proximum band announcing evening VI of MMXXVI with a date, a place and a poster. The card
+cannot see this from inside its own list, which is why the check reads the corpus
+(`upcomingStation`) and not `PATHS`.
+
+The card is therefore hidden whenever an evening is announced, and so is `/koncerty`'s `Nondum`
+station. On `/koncerty` the numeral stays honest (the announced evening is counted, `Nondum` is the
+one after) — what fails there is the **claim**: "Data pojawi się tutaj, gdy znajdzie się gospodarz"
+is read as a statement about *the next one*, and the next one is a screen up with a host, an hour
+and an open door. The Via also ends on a lit station in that state, which is a better payoff than a
+shrug. Nothing is lost either way: the gold CTA's vault reopens in `FinalSupportSection`
+(the very next section) and in `/koncerty`'s `.cta-band`; the notice link is carried by the
+announcement itself.
+
+**The standing obligation this exposes, and it is not yet automated.** `PATHS` is hand-kept — it
+carries per-evening curated data (video files, the Imagines frame, its crop and exposure) that
+cannot be derived — so the deploy that takes an announcement down after the concert must **also**
+add that evening to `data/landing/paths.ts` and `landing.yaml` `register.entries`. Until it does,
+the open card comes back claiming a numeral the evening has already spent. This is the same rot as
+"Szósty wieczór" in copy, one structural level up. A build-time assertion (*every cycle station with
+a past date is in `PATHS`*) would close it and has not been written.
 
 ---
 

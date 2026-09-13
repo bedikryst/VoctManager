@@ -537,10 +537,23 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       ))
     }
 
-    {/* ── The unwritten station — the Via's payoff. Not a `.station` (the via-rail
-          observer only tracks walked concerts); a threshold, not a memory. "No fake
-          upcoming concert" holds: we promise nothing but say plainly the next one
-          waits on patrons. Numeral continues the sequence. ──────────────── */}
+    {/* ── The unwritten station — the Via's payoff WHEN THERE IS NOTHING AHEAD. Not a `.station`
+          (the via-rail observer only tracks walked concerts); a threshold, not a memory. "No fake
+          upcoming concert" holds: we promise nothing but say plainly the next one waits on
+          patrons. Numeral continues the sequence.
+
+          It is gone while an evening IS announced, and the reason is the walk rather than the
+          numeral — the numeral stays honest, since the announced evening is counted and this is
+          the one after it. What stops being honest is the claim: "Data pojawi się tutaj, gdy
+          znajdzie się gospodarz wieczoru" is read as a statement about THE NEXT ONE, and the next
+          one is a screen up with a host, an hour and an open door. The Via also ends on a lit
+          station in that state — the marker, the pulse, the door a reader can still walk through —
+          and that IS the payoff; following it with a shrug spends the best moment the page has.
+
+          The money door it carries is not lost: `.cta-band` at the foot opens the same vault at
+          the same tier. The landing's open card stands down on the same signal and for a related
+          reason (components/landing/PathSection). ──────────────── */}
+    {!upcoming && (
     <section class="station-next" aria-label={t.nextAria}>
       <div class="station-next-inner">
         <span class="station-next-glyph reveal" aria-hidden="true"></span>
@@ -553,11 +566,14 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
         </div>
       </div>
     </section>
+    )}
 
-    {/* ── The notice list — the second thing that can be offered to a reader who has just
-          been told there is no next date, and the only one that is not money. Still night:
-          the page steps into parchment at the rite map, not here. The band is the LAST
-          thing the dark stretch says. ─────────────────────────────────────── */}
+    {/* ── The notice list — the only thing this page offers that is not money, and it is offered
+          in both states the walk can end in. Under the unwritten station it answers "there is no
+          date yet"; under an announced evening, with that station gone, it closes the walk on the
+          one promise that outlives the evening above it — a letter before the NEXT Koncert
+          Duchowy, not this one. Still night: the page steps into parchment at the rite map, not
+          here. The band is the LAST thing the dark stretch says. ─────────────── */}
     {/* The `id` is the destination of every invitation elsewhere on the site (the landing's open
         card, the newest concert's closing rail, /kontakt). Those are links: the band is where the
         walk itself arrives, directly under the station that says there is no date. `/newsletter`

@@ -20,6 +20,7 @@
  */
 import { getCollection } from "astro:content";
 import { PATHS, ROMAN } from "../../data/landing/paths";
+import { upcomingStation } from "../../lib/cycle";
 import { concertKey, overlayValue } from "../../lib/copyOverlay";
 import { localizePath, type Locale } from "../../i18n/config";
 import type { LandingChrome, LandingCopy } from "../../i18n/content/landing";
@@ -37,6 +38,11 @@ const { copy, chrome, lang } = Astro.props;
 // each card's repertoire from it by concert id, so there is no second copy to drift.
 const concerts = await getCollection("concerts");
 const byId = new Map(concerts.map((c) => [c.id, c.data] as const));
+/** Whether an evening is announced — which is what decides if the open card below stands at all.
+    Read from the corpus, not from this register's own list: the register holds what has SOUNDED
+    and an announced evening is by definition not in it, so the list can never see the collision
+    on its own. */
+const announced = upcomingStation(concerts) !== undefined;
 const hrefConcerts = localizePath("/koncerty", lang);
 const nuntius = NUNTIUS[lang];
 // The band that takes the consent, on the page that says why there is one. Nothing is asked for
@@ -150,8 +156,23 @@ const entries = PATHS.map((path, i) => {
           continues the sequence, and the card states the two real preconditions for the
           cycle's next evening: a host who invites the ensemble, and the fees for the
           singers. The ensemble does not book venues on its own, so promising a date here
-          would be false. When one is agreed, this card becomes its announcement (title,
-          date, place) and a new open one takes its seat. */}
+          would be false.
+
+          AND IT STANDS DOWN THE MOMENT AN EVENING IS ANNOUNCED, which is not a refinement but the
+          repair of a contradiction the card cannot see from inside its own list. Its numeral is
+          `ROMAN[PATHS.length]` — the next after the ones that have SOUNDED — and an announced
+          evening has not sounded, so the two claim the SAME numeral in the same year: the page
+          carried "VI · MMXXVI · czeka na zaproszenie · Wieczór bez daty" two sections under a
+          Proximum band announcing evening VI of MMXXVI with a date, a place and a poster. The
+          card was the understudy for an announcement this page had no way to make; ProximumSection
+          took that job, and an understudy who stays on stage denies the performance.
+
+          Nothing is lost while it is down. Its gold CTA is the vault at 100, and the offering band
+          (`Sustinete nos` → FinalSupportSection) is the very next section; its notice link is the
+          one the announcement itself already carries. When the evening passes, `upcomingStation`
+          goes quiet on the next deploy and the card takes its seat again — which is also what
+          makes the deploy after a concert an obligation rather than housekeeping (lib/cycle). */}
+      {!announced && (
       <aside class="path-entry path-next reveal-rule" aria-label={chrome.nextAria}>
         <div class="path-entry-rail reveal">
           <span class="path-entry-roman">{ROMAN[PATHS.length]}</span>
@@ -189,6 +210,7 @@ const entries = PATHS.map((path, i) => {
           </p>
         </div>
       </aside>
+      )}
     </div>
   </div>
 </section>
