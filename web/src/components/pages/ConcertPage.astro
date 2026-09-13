@@ -1186,7 +1186,10 @@ const jsonLd =
     </section>
   </main>
 
-  <SiteFooter lang={lang} />
+  {/* The closing rail above already holds this page's one forward door — the `Nuntius` slot when
+      nothing is announced, and a deliberate silence when something is (see the rail). The
+      footer's own ask would either restate the first or contradict the second. */}
+  <SiteFooter lang={lang} notice={false} />
 
   <VaultMount lang={lang} />
   <ImageLightbox client:idle />

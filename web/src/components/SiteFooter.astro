@@ -2,35 +2,60 @@
 /**
  * @file SiteFooter.astro
  * @description Shared marketing footer for every page EXCEPT the landing (Fundatio identity ·
- *  index · contact/socials), on the site-wide night ground.
+ *  the leaves the bar does not name · the notice list · contact/socials), on the site-wide
+ *  night ground.
  *
  *  IT IS NOT THE LANDING'S FOOTER AND MUST NOT BE REPLACED BY IT, which has been asked twice.
- *  Three reasons, each sufficient. The landing's plate numbers itself `IV · INSCRIPTIO FINALIS`
- *  and closes the sequence I · Lumen Christi, II · Vox memoriae, III · Sustinete nos — on
- *  `/kontakt` there is no I, II or III, and a fourth movement without them is a false claim of
- *  the same class the concert register's roman numbering is protected from. This footer carries
- *  the SITE MAP, which is the only wayfinding at the foot of a subpage (the landing needs none:
- *  the page is the navigation). Both are translated now — this one takes `lang` as a prop and the
- *  landing's island has since stage K — so the language is no longer one of the reasons; the
- *  numbering and the site map still are.
+ *  The landing's plate numbers itself `IV · INSCRIPTIO FINALIS` and closes the sequence
+ *  I · Lumen Christi, II · Vox memoriae, III · Sustinete nos — on `/kontakt` there is no I, II
+ *  or III, and a fourth movement without them is a false claim of the same class the concert
+ *  register's roman numbering is protected from. Both are translated now — this one takes `lang`
+ *  as a prop and the landing's island has since stage K — so language is not one of the reasons;
+ *  the numbering is.
  *
- *  What the two DO share is a house: the two-voice rubric (`· LATIN gloss`), the statute, the
- *  data-protection route, and an entrance in the site's own registers. Those were the four real
- *  gaps and they are closed here rather than by making one footer of two.
+ *  WHAT THE INDEX COLUMN IS, AND WHY IT IS THREE LINES. It was the whole site map, nine entries,
+ *  and six of them (Strona główna, O nas, Koncerty, Kontakt, Wesprzyj, and Obrazy through the
+ *  KONCERTY register) are named by `SiteChrome` on every page of this site — a bar that is
+ *  `position: fixed`, i.e. ON SCREEN at the exact moment a reader is reading this footer. A
+ *  footer site map earns its place where the navigation has scrolled away; here it never does,
+ *  and the phone's card carries a FULLER index than this column ever did (it prints the Via, every
+ *  concert by name). So the column answers the only question the bar leaves open — what else is
+ *  under here that you were never offered — and holds exactly the leaves with no slot in it:
+ *  `/obrazy` (a subordinate line inside the KONCERTY register, reachable on desktop by hover
+ *  alone), `/kolofon` and `/polityka-prywatnosci`.
+ *
+ *  THE NOTICE LIST IS AN ASK, NOT A PAGE, and filed as one it read `Zawiadomienia` — a word that
+ *  names the genre and says nothing about concerts or about signing up. It now stands across the
+ *  measure in the wording the site already owns (`NUNTIUS[lang].invitation`, the same sentence
+ *  `/kontakt` and the landing print): the rubric names it, the line says what arrives, the link
+ *  says what to do. Pages that already offer the list in their own body pass `notice={false}` —
+ *  see the prop.
+ *
+ *  What this footer shares with the landing's: the two-voice rubric (`· LATIN gloss`), the
+ *  statute, the data-protection route, and an entrance in the site's own registers.
  * @architecture Astro islands 2026
  * @module components/SiteFooter
  */
 import { tempusForDate } from "../lib/tempusLiturgicus";
 import { UI } from "../i18n/ui";
+import { NUNTIUS } from "../i18n/content/nuntius";
 import { localizePath, DEFAULT_LOCALE, type Locale } from "../i18n/config";
 
 interface Props {
   /** Page locale — selects footer labels and localizes the site-map links. Defaults to Polish,
       so every un-migrated caller renders byte-identical to before. */
   lang?: Locale;
+  /** Whether to print the `Nuntius` invitation band. Pass `false` from any page that already
+      offers the notice list in its own body — `/koncerty` (the band with the form), `/kontakt`
+      (the same invitation mid-page), `/newsletter` and `/nuntius` (the list itself), and a
+      concert page (the `Nuntius` door in its closing rail). A second ask a screen below the
+      first is a restatement, and on a page that deliberately withholds the offer — a concert
+      with an evening already announced — it would contradict the page. */
+  notice?: boolean;
 }
-const { lang = DEFAULT_LOCALE } = Astro.props;
+const { lang = DEFAULT_LOCALE, notice = true } = Astro.props;
 const t = UI[lang].footer;
+const nuntius = NUNTIUS[lang];
 const year = new Date().getFullYear();
 const tempus = tempusForDate(new Date());
 const tempusGloss = tempus.gloss[lang];
@@ -54,17 +79,21 @@ const tempusGloss = tempus.gloss[lang];
         <span class="gloss">{t.foundation}</span>
       </h3>
       <p class="foot-mark">VoctFoundation</p>
-      <p class="foot-legal">
-        ul. Św. Filipa 23/3 · 31-150 Kraków<br />
-        KRS 0001237252 · NIP 6762718992<br />
-        REGON 544621525<br />
-        {t.donationNote}
-      </p>
+      <p class="foot-seat">ul. Św. Filipa 23/3 · 31-150 Kraków</p>
+      {/* The registers, one row each rather than one paragraph of `<br>`s, because the phone
+          prints the KRS and drops the other two (see the subset at the foot of this sheet) and a
+          text node between line breaks cannot be addressed. Same key/val shape the landing's
+          Fundatio stanza uses. The acronyms are the Polish registers' own and are never
+          translated. */}
+      <ul class="foot-registry">
+        <li><span class="key">KRS</span><span class="val">0001237252</span></li>
+        <li><span class="key">NIP</span><span class="val">6762718992</span></li>
+        <li><span class="key">REGON</span><span class="val">544621525</span></li>
+      </ul>
+      <p class="foot-note">{t.donationNote}</p>
       {/* The founding document, beside the numbers that register it and directly under the note
-          that names its purposes ("cele statutowe"). It was reachable from the landing alone,
-          which for a foundation is the one file a grantor goes looking for. It is deliberately
-          NOT in the index column: that column is the site's own contents, and a PDF is not a
-          page of this site. */}
+          that names its purposes ("cele statutowe"). It is deliberately NOT in the index column:
+          that column is the site's own leaves, and a PDF is not a page of this site. */}
       <p class="foot-doc">
         <a
           href="/docs/Statut-VoctFoundation.pdf"
@@ -85,21 +114,13 @@ const tempusGloss = tempus.gloss[lang];
         <span class="gloss">{t.site}</span>
       </h3>
       <ul>
-        <li><a href={localizePath("/", lang)}>{t.home}</a></li>
-        <li><a href={localizePath("/o-nas", lang)}>{t.about}</a></li>
-        <li><a href={localizePath("/koncerty", lang)}>{t.concerts}</a></li>
-        {/* The archive sits under the concerts because it is their photographs, and it sits in
-            THIS column rather than beside the statute: the index is the site's own contents, and
-            /obrazy is a page of this site where a PDF is not. It has no nav slot by decision
-            (docs/web-imagines-spec.md §2), so the footer is its standing entrance. */}
+        {/* The archive has no nav slot by decision (docs/web-imagines-spec.md §7) — what it has
+            is a subordinate line inside the KONCERTY register, which on desktop opens on hover
+            alone. This is its one standing entrance, on every page, for a reader who never
+            brushes the bar. It belongs on THIS shelf and not beside the statute: filed among
+            documents an image archive reads as an administrative record, and that shelf was
+            weighed and rejected when the entrance was placed. */}
         <li><a href={localizePath("/obrazy", lang)}>{t.images}</a></li>
-        {/* The notice list, after the concerts it announces and their photographs. This is the
-            list's standing entrance: it has no nav slot by decision — four destinations in the bar
-            are the site, and an ask set beside them would read as a fifth one — so the footer is
-            where a reader who has decided they want it goes looking, on every page of the site. */}
-        <li><a href={localizePath("/newsletter", lang)}>{t.notices}</a></li>
-        <li><a href={localizePath("/kontakt", lang)}>{t.contact}</a></li>
-        <li><a href="/?donate" data-vault-open="100">{t.support}</a></li>
         <li><a href={localizePath("/kolofon", lang)}>{t.colophon}</a></li>
         <li><a href={localizePath("/polityka-prywatnosci", lang)}>{t.privacy}</a></li>
       </ul>
@@ -113,14 +134,21 @@ const tempusGloss = tempus.gloss[lang];
       </h3>
       <ul>
         <li><a href="mailto:kontakt@voctensemble.com">kontakt@voctensemble.com</a></li>
-        <li><a href="mailto:patronat@voctensemble.com">patronat@voctensemble.com</a></li>
+        <li class="foot-vox-patronage"><a href="mailto:patronat@voctensemble.com">patronat@voctensemble.com</a></li>
         {/* An obligation, not an invitation — hence the key in front of it and the quieter
-            grade. It stays with the other two addresses because it IS a way of writing to us,
-            and it stood on the landing alone while the duty is the whole site's. */}
+            grade. It stays with the other addresses because it IS a way of writing to us, and
+            it is the one route here the phone keeps: a duty a reader may need to exercise from
+            whatever page they are standing on. */}
         <li class="foot-rodo">
           <span class="key">{t.dataProtection}</span>
           <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>
         </li>
+      </ul>
+      {/* A list of its own so the phone can set the three on one wrapped row while the desktop
+          keeps them stacked under the addresses — one DOM, two compositions, nothing duplicated.
+          The `↗` is this site's mark for a link that opens elsewhere IN THE BROWSER; the
+          addresses above carry none because a `mailto:` hands off to a mail client instead. */}
+      <ul class="foot-social">
         <li>
           <a href="https://www.instagram.com/voctensemble/" target="_blank" rel="noopener noreferrer">Instagram ↗</a>
         </li>
@@ -134,10 +162,37 @@ const tempusGloss = tempus.gloss[lang];
     </div>
   </div>
 
+  {/* THE ASK, across the whole measure — the one thing at the foot of this site that leads
+      FORWARD, and the one warm sentence among three columns of registry data. Centred because
+      it is addressed to the reader rather than filed, and it does not float there: the incipit
+      directly beneath it shares the axis, so the two close the page as a pair.
+      Every word is read from `NUNTIUS`, never written here: the same invitation stands on
+      /kontakt and on the landing, and one fact may have only one wording. The destination is
+      `/newsletter` — the page built to be TOLD to someone out loud — and not the band's anchor
+      on /koncerty, because a reader arriving from the foot of /o-nas has not been walking the
+      cycle and would land two screens below its head. */}
+  {
+    notice && (
+      <p class="foot-nuntius reveal" data-d="4">
+        <span class="micro foot-nuntius-rubric">
+          <span class="lat" lang="la">Nuntius</span>&nbsp; ·&nbsp; {nuntius.page.eyebrow}
+        </span>
+        <span class="foot-nuntius-say">
+          {nuntius.invitation.line}{" "}
+          <a class="plausible-event-name=zawiadomienia+stopka" href={localizePath("/newsletter", lang)}>
+            {nuntius.invitation.cta}&nbsp;<span aria-hidden="true">→</span>
+          </a>
+        </span>
+      </p>
+    )
+  }
+
   {/* The season, named in stone and glossed in speech — the same two-voice rubric the columns
       above use, which is why the gloss takes their minuscule: the accessible name below carries
       the authored case, so "Eastertide" is only lowercased where it is SET, never where it is
-      read aloud. */}
+      read aloud.
+      It shares `data-d="4"` with the ask above rather than taking a fifth step: the cadence
+      stops at four (styles/registers.css) and these two centred lines are one closing gesture. */}
   <p class="foot-incipit reveal" data-d="4" aria-label={`${tempus.incipit} — ${tempusGloss}`}>
     <em>{tempus.incipit}</em>
     <span class="foot-incipit-dot" aria-hidden="true">·</span>
@@ -149,15 +204,15 @@ const tempusGloss = tempus.gloss[lang];
       was invented to have something to draw. Rule first, imprint a beat behind. */}
   <div class="foot-base reveal reveal-rule">
     <span>© {year} Fundacja VoctFoundation</span>
-    {/* No `↗`, and it is the same rule the colophon's `Auctor` block states: the arrow is this
-        site's mark for a link that opens elsewhere IN THE BROWSER, and a `mailto:` hands off to a
-        mail client instead — the three social links above are where it belongs. The address is the
-        author's own domain because this line credits the person who built the site, not a role
-        inside the foundation; the foundation's own addresses are in the Vox column. */}
-    <span>
+    {/* No `↗`: a `mailto:` hands off to a mail client rather than opening elsewhere in the
+        browser, which is what the arrow marks. The address is the author's own domain because
+        this line credits the person who built the site, not a role inside the foundation; the
+        foundation's own addresses are in the Vox column. The phone drops this line and the one
+        after it — both are set again, in full, on /kolofon under `Auctor`. */}
+    <span class="foot-base-author">
       {t.realizedBy} · <a href="mailto:krystian@bugalski.dev" rel="author">Krystian Bugalski</a>
     </span>
-    <a href={localizePath("/", lang)}>voctensemble.com</a>
+    <a class="foot-base-home" href={localizePath("/", lang)}>voctensemble.com</a>
   </div>
 </footer>
 
@@ -180,7 +235,13 @@ const tempusGloss = tempus.gloss[lang];
      the two-voice reading collapses into one tracked label. */
   .foot-col h3 .gloss { text-transform: lowercase; letter-spacing: .1em; }
   .foot-mark { font-family: var(--serif); font-style: italic; font-size: 26px; color: var(--paper); margin: 0 0 12px; }
-  .foot-legal { font-family: var(--mono); font-size: 11.5px; line-height: 1.9; letter-spacing: .03em; color: rgba(244, 241, 233, .6); }
+  .foot-seat { font-family: var(--mono); font-size: 11.5px; line-height: 1.9; letter-spacing: .03em; color: rgba(244, 241, 233, .6); margin: 0; }
+  /* Key and value on one baseline, the key hanging off the number at the rubric's grade — the
+     same pair the landing's registry rows set, so the two footers state one fact one way. */
+  .foot-registry { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .foot-registry li { display: flex; align-items: baseline; gap: 10px; font-family: var(--mono); font-size: 11.5px; line-height: 1.9; letter-spacing: .03em; color: rgba(244, 241, 233, .6); }
+  .foot-registry .key { min-width: 3.6em; font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, .42); }
+  .foot-note { font-family: var(--mono); font-size: 11.5px; line-height: 1.9; letter-spacing: .03em; color: rgba(244, 241, 233, .6); margin: 6px 0 0; }
   /* The statute sits under the note that names its purposes, and it is marked as a DOCUMENT
      rather than as a route: PDF tag and a permanent hairline, no arrow. The arrow belongs to
      the links that open another site; a hairline is what this footer's only file gets, the
@@ -193,13 +254,34 @@ const tempusGloss = tempus.gloss[lang];
   .foot-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
   .foot-col ul a { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; color: rgba(244, 241, 233, .78); transition: color .3s var(--ease); }
   .foot-col ul a:hover { color: var(--candle); }
+  /* Reads as a continuation of the addresses above it, so the step matches their own gap.
+     Written as a COMPOUND with `.foot-col`, and the phone's row rule below is too: Astro appends
+     `[data-astro-cid-…]` to every compound in a scoped block, so the two-compound `.foot-col ul`
+     above lands at (0,4,0) and a bare `.foot-social` at (0,2,0) would silently lose its `margin`
+     and its `display` to it. Same trap the register audit exists to catch. */
+  .foot-col .foot-social { margin-top: 10px; }
 
   /* The duty route reads a grade quieter than the two invitations above it, and its key is what
      says which duty. Baseline row so the 9px key hangs off the address rather than above it. */
   .foot-rodo { display: flex; align-items: baseline; gap: 10px; }
   .foot-rodo .key { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, .46); }
   .foot-rodo a { font-size: 11px; color: rgba(244, 241, 233, .6); }
+
+  /* THE ASK. Serif at reading size, because it is the one sentence in this footer written to a
+     person — everything around it is a register set in the typewriter voice, and matching them
+     would file the invitation among the numbers. The rubric's typography is base.css's canonical
+     two-tier shape (`.micro:has(.lat)`), so all this states is the gloss's colour for the night
+     ground — `--lat-ink` stays unset, which is what keeps the Latin at full candle. */
+  .foot-nuntius { max-width: 1180px; margin: clamp(40px, 5vw, 60px) auto 0; display: grid; justify-items: center; gap: 8px; text-align: center; }
+  .foot-nuntius-rubric { color: rgba(244, 241, 233, .46); }
+  .foot-nuntius-say { max-width: 46ch; font-family: var(--serif); font-size: clamp(16px, 1.4vw, 19px); line-height: 1.65; color: rgba(244, 241, 233, .82); }
+  .foot-nuntius-say a { color: var(--candle); border-bottom: 1px solid color-mix(in srgb, var(--candle) 34%, transparent); padding-bottom: 2px; white-space: nowrap; transition: border-color .3s var(--ease); }
+  .foot-nuntius-say a:hover { border-color: var(--candle); }
+
+  /* The ask and the season are one closing gesture, so the season follows at the step the bands
+     above it use rather than opening a second interval of its own. */
   .foot-incipit { max-width: 1180px; margin: clamp(40px, 5vw, 60px) auto 0; padding: 0; text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: rgba(244, 241, 233, .42); }
+  .foot-nuntius + .foot-incipit { margin-top: clamp(22px, 3vw, 34px); }
   .foot-incipit em { font-family: var(--serif); font-style: italic; font-size: 15px; letter-spacing: .02em; color: rgba(244, 241, 233, .68); margin-right: 10px; }
   .foot-incipit-dot { margin: 0 8px; color: rgba(244, 241, 233, .28); }
   /* Minuscule because it is a GLOSS, exactly as the column heads' `.gloss` is — the house's
@@ -216,5 +298,29 @@ const tempusGloss = tempus.gloss[lang];
      matches the document element. */
   html.voct-motion .foot-base.reveal-rule { border-top-color: transparent; --rule-ink: rgba(244, 241, 233, .12); }
 
-  @media (max-width: 760px) { .foot-grid { grid-template-columns: 1fr; gap: 36px; } }
+  /* ── THE PHONE PRINTS A SUBSET ────────────────────────────────────────────────────────────
+     One DOM, two compositions — the rules below are the only thing that decides which, so there
+     is no second tree and no duplicated link to keep in sync. Stacked into one narrow column the
+     three registers ran past twenty lines, which is a footer nobody reaches the end of.
+
+     WHAT THE PHONE DOES NOT PRINT, and why none of it is lost: NIP, REGON, the donation note and
+     the statute are all set — in a fuller form, under their own heads — on /kolofon and /o-nas,
+     and the phone's own menu card links /kolofon in its fine print; `patronat@` is one of the
+     four routes /kontakt sets out in full, and KONTAKT is a voice in that same card. What stays
+     is what a foundation's footer owes on a phone: who we are, where we sit, the KRS that proves
+     it, one way to write, the duty address, where we can be seen, the leaves the card does not
+     name — and the ask. */
+  @media (max-width: 760px) {
+    .foot-grid { grid-template-columns: 1fr; gap: 34px; }
+    .foot-registry li + li,
+    .foot-note,
+    .foot-doc,
+    .foot-vox-patronage,
+    .foot-base-author,
+    .foot-base-home { display: none; }
+    /* Three names on one wrapped row instead of three lines of a list. */
+    .foot-col .foot-social { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+    .foot-mark { font-size: 23px; }
+    .foot-base { justify-content: flex-start; }
+  }
 </style>

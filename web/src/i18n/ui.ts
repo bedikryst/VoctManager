@@ -72,19 +72,18 @@ export interface UIStrings {
    */
   readonly footer: {
     readonly foundation: string;
-    /** Glosses `Index` — the site's own table of contents, not the word "page". */
+    /** Glosses `Index` — a POINTER LIST, which is what the column now is: the leaves of this site
+        that the bar does not name (/obrazy, /kolofon, /polityka-prywatnosci). A page's own table
+        of contents is the `tabula`, a different surface with a different word. */
     readonly site: string;
     readonly contactMedia: string;
+    /** Not a footer entry any more — the breadcrumb root (`lib/breadcrumb`) and /404's first
+        door, both of which need the word "home" in this locale. */
     readonly home: string;
+    /** Not a footer entry any more — /o-nas reads its own breadcrumb label from here. */
     readonly about: string;
-    readonly concerts: string;
     /** The photograph archive (/obrazy). */
     readonly images: string;
-    /** The concert notice list (/newsletter). Named for what arrives, never "newsletter": the
-        English word lives in the address bar alone, where it is what a reader would guess. */
-    readonly notices: string;
-    readonly contact: string;
-    readonly support: string;
     readonly colophon: string;
     readonly privacy: string;
     /** The foundation's founding document, linked as a PDF beside the registry numbers. */
@@ -165,11 +164,7 @@ export const UI: Record<Locale, UIStrings> = {
       contactMedia: "Kontakt i media",
       home: "Strona główna",
       about: "O nas",
-      concerts: "Koncerty",
       images: "Obrazy",
-      notices: "Zawiadomienia",
-      contact: "Kontakt",
-      support: "Wesprzyj",
       colophon: "Kolofon",
       privacy: "Polityka prywatności",
       statute: "Statut fundacji",
@@ -224,11 +219,7 @@ export const UI: Record<Locale, UIStrings> = {
       contactMedia: "Contact & media",
       home: "Home",
       about: "About",
-      concerts: "Concerts",
       images: "Images",
-      notices: "Notices",
-      contact: "Contact",
-      support: "Support us",
       colophon: "Colophon",
       privacy: "Privacy policy",
       statute: "Foundation statute",
@@ -283,11 +274,7 @@ export const UI: Record<Locale, UIStrings> = {
       contactMedia: "Contact & médias",
       home: "Accueil",
       about: "À propos",
-      concerts: "Concerts",
       images: "Images",
-      notices: "Annonces",
-      contact: "Contact",
-      support: "Nous soutenir",
       colophon: "Colophon",
       privacy: "Politique de confidentialité",
       statute: "Statuts de la fondation",

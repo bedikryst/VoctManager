@@ -264,7 +264,8 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     </section>
   </main>
 
-  <SiteFooter lang={lang} />
+  {/* The same invitation, in the same words, stands mid-page under the three doors. */}
+  <SiteFooter lang={lang} notice={false} />
 
   <VaultMount lang={lang} />
   <script>

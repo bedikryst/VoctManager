@@ -70,5 +70,6 @@ const ogImage = (
     <NoticeSignup lang={lang} surface="web:newsletter" level="h1" />
   </main>
 
-  <SiteFooter lang={lang} />
+  {/* This page IS the ask; the footer must not offer it a screen below the form. */}
+  <SiteFooter lang={lang} notice={false} />
 </BaseLayout>

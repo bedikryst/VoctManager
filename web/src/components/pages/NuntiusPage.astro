@@ -91,5 +91,7 @@ const ogImage = (
     </noscript>
   </main>
 
-  <SiteFooter lang={lang} />
+  {/* The receipt already answers for the list — confirming it, or offering the sign-up again in
+      the states where the link failed. A second ask under it would not know which. */}
+  <SiteFooter lang={lang} notice={false} />
 </BaseLayout>
