@@ -18,7 +18,13 @@
 
 concert.pochwala-stworzenia.title: "Louange de la Création"
 concert.pochwala-stworzenia.metaPlace: "Église de Tous-les-Saints, Varsovie"
-concert.pochwala-stworzenia.essence: "La soirée naît des Laudes creaturarum de saint François, connues en français comme le Cantique des créatures : la création tout entière y est un chemin vers le Créateur. Le programme descend de l’émerveillement devant le monde vers ce qui est fragile en l’homme, vers la transformation, la souffrance et la mort, et le Spiegel im Spiegel de Pärt, revenant de la tribune, est le miroir de cette relation. Tout le chemin se referme sur le Stetit Angelus de Dubra, image de l’ange encensant l’autel avec les prières de tous les saints, chanté en l’église de Tous-les-Saints."
+# PERSONNE NE LIT CE CHAMP AVANT LE 12 OCTOBRE : tant que la soirée est à venir il n'est que la
+# description JSON-LD, et au premier build après la date il devient la <meta description> — la phrase
+# qu'un résultat de recherche cite. Il tient seul, et c'est donc le seul endroit qui porte encore la
+# rime de la Toussaint en entier ; les bandes visibles ne la dépensent plus qu'une fois. « Le
+# concert » et non « la soirée » : l'heure imprimée sur cette page est 13:30. « Entre les groupes
+# d'œuvres » est la correction du chef lui-même sur la fréquence du retour de Pärt.
+concert.pochwala-stworzenia.essence: "Le concert naît des Laudes creaturarum de saint François, connues en français comme le Cantique des créatures : la création tout entière y est un chemin vers le Créateur. Le programme conduit de l’émerveillement devant le monde vers la fragilité de l’homme, vers la transformation, la souffrance et la mort, et entre les groupes d’œuvres le Spiegel im Spiegel de Pärt revient de la tribune, miroir de cette relation. Tout le chemin se referme sur le Stetit Angelus de Dubra, image de l’ange encensant l’autel avec les prières de tous les saints, chanté en l’église de Tous-les-Saints."
 
 # `invitation` est un SECOND texte sur cette soirée, et non un `essence` raccourci : la station de
 # /koncerty dit la note de programme, la bande « Najbliższy wieczór » de l’accueil dit l’invitation.
@@ -39,3 +45,214 @@ concert.pochwala-stworzenia.posterAlt: "Affiche du concert Louange de la Créati
 concert.pochwala-stworzenia.realizacja: "Violon : Radu Ropotan"
 concert.pochwala-stworzenia.about.place: "Église de Tous-les-Saints · Varsovie"
 concert.pochwala-stworzenia.about.blurb: "Un concert dans le cadre du festival varsovien « Fenomen człowieka » : le Cantique des créatures de saint François comme un chemin de l’émerveillement devant la création vers l’espérance de l’éternité."
+
+# ── La page du concert (2026-09). Tout ce qui suit existe parce que cette soirée a gagné sa
+#    propre page ; les clés ci-dessus ne servaient que la station et l'accueil.
+#
+#    Quatre œuvres reviennent de `wolanie-gor` — Stars, The Lark Ascending, Stoi lód na Prośnie et
+#    Ménétrier. Leurs traductions ET leurs notes sont celles de ce brouillon : une `note` dit ce
+#    qu'une œuvre EST, ce qui ne change pas d'une soirée à l'autre, donc une traduction déjà acceptée
+#    pour l'autre page est la bonne réponse ici, et non une paraphrase nouvelle. Ce que l'œuvre fait
+#    dans CE programme, c'est `locus`, et cela se réécrit chaque fois.
+#
+#    `locus` EST LE CHAMP LE PLUS COURT DE LA PAGE ET DOIT LE RESTER. Il s'imprime à côté de l'œuvre,
+#    la note repliée dessous : une formule qui double de longueur en français devient l'élément le
+#    plus bruyant du programme. Au présent, et vrai après le concert autant qu'avant — la page passe
+#    d'invitation à document toute seule.
+
+concert.pochwala-stworzenia.inscriptioGloss: "Loué sois-Tu, mon Seigneur, avec toutes Tes créatures"
+concert.pochwala-stworzenia.inscriptioRef.source: "Cantique des créatures de saint François"
+
+# La bande de la porte, que seule une soirée encore à venir dresse. `venueNote` est un écriteau et non
+# de la prose : rendre comme un bâtiment nomme ses propres salles. `festivalNote` décrit l'événement
+# d'autrui dans notre voix : de quoi parle cette édition, qui l'organise, comment elle rime avec ce
+# programme, puis un point. NE PORTER AUCUN APPEL au nom de l'organisateur, et garder le nom du
+# festival tel qu'il est écrit. La phrase sur la fondation est un FAIT et ne doit pas devenir une
+# figure : la page dit ce qu'ils font et laisse le lecteur la joindre à la beauté qui demeure dans la
+# douleur.
+concert.pochwala-stworzenia.venueNote: "Église haute"
+concert.pochwala-stworzenia.festivalNote: "Trois jours d'expositions, d'ateliers et de rencontres ; ce concert les referme. Le festival est porté par la fondation de soins palliatifs Mój Dom, qui accompagne les personnes atteintes de SLA et leurs familles. L'édition de cette année lit l'homme à travers la beauté : celle des valeurs et des relations, celle de la nature et du son, et celle qui demeure jusque dans la douleur. Ce programme descend vers cette dernière."
+
+# Le seuil ne porte ni date, ni heure, ni festival, ni porte ouverte : la bande ci-dessus les imprime
+# tous les quatre depuis les champs structurés, et un paragraphe qui les répéterait serait la page
+# parlant deux fois.
+# LA CHUTE NOMME L'ANGE ET NON LES SAINTS, délibérément : la révélation appartient à
+# `reflectionNote`, deux bandes plus bas. Nommer ici les prières de tous les saints — trois phrases
+# après « l'église de Tous-les-Saints » — énonce la coïncidence avant que la page ne l'ait méritée.
+concert.pochwala-stworzenia.prologue: "Un dimanche après-midi, place Grzybowski. Au-dessus du portail de l'église de Tous-les-Saints, un verset du psaume est gravé dans la pierre : « Louez le Seigneur dans ses saints ». Le concert commence déjà sous cette phrase, et s'achève sur une phrase de la même famille — celle d'un ange encensant l'autel avec la prière."
+
+# LA RÉFLEXION SIGNÉE A DISPARU de cette soirée et ses lignes ne doivent pas être rétablies : le texte
+# était généré et non écrit, il ne pouvait donc pas porter le nom du chef. Ce que la bande imprime est
+# de nous, et sans signature.
+
+# LA NÔTRE, non signée. Les deux moitiés de la rime doivent survivre : les saints de l'antienne et
+# les saints du nom gravé au-dessus de la porte. Rendues par deux formules différentes, la phrase
+# énonce une coïncidence au lieu d'énoncer le point.
+concert.pochwala-stworzenia.reflectionNote: "L'antienne que met en musique Dubra assemble des mots de l'Apocalypse : « la fumée des parfums monta, avec les prières des saints, devant Dieu ». La dernière phrase de ce chemin est donc chantée dans l'église qui porte exactement ce nom — Tous-les-Saints."
+
+concert.pochwala-stworzenia.programLede: "Dix œuvres et un miroir"
+# LA RÉDACTION DU CHEF LUI-MÊME, renvoyée le 14.09.2026 : le polonais est désormais de lui. Deux
+# choses y sont des corrections et non du style, et une version française qui en perdrait une serait
+# fausse : le Pärt revient entre les GROUPES d'œuvres et non entre chaque œuvre (quatre groupes, cinq
+# retours), et le miroir est énoncé positivement — l'ancien « non pas un numéro de plus… mais » a
+# disparu, et le français ne doit pas remettre la négation.
+concert.pochwala-stworzenia.programArc: "L'ordre descend depuis la louange et la lumière : Gloria II et Lumen de Borkowski ouvrent la soirée, et aussitôt après vient Laudes creaturarum de Carl Orff, qui met directement en musique le Cantique des créatures de saint François. De là le programme passe de l'image cosmique de la création vers l'homme : la Méditation de Massenet, liée dans l'opéra à la transformation intérieure de Thaïs ; le ciel nocturne d'Ešenvalds ; l'alouette de Vaughan Williams, montant vers la lumière ; la Prosna gelée de Sykulski et le ménétrier de village d'Enescu. À la fin viennent Dona eis requiem de Borkowski et l'ange de Dubra près de l'autel. Entre les groupes d'œuvres revient le Spiegel im Spiegel de Pärt, joué de la tribune à l'orgue comme le miroir musical de la relation entre la création et son Créateur."
+
+concert.pochwala-stworzenia.program.0.locus: "Borkowski a trois œuvres dans ce programme ; la première l'ouvre sur un seul mot : gloire."
+concert.pochwala-stworzenia.program.0.note: "Sa musique sacrée prend d'ordinaire un seul mot latin et en construit la pièce entière : par plans sonores, par registres extrêmes et par répétition, non par la mélodie."
+# L'œuvre 01 n'a AUCUNE note, dans aucune langue : tout ce que la ligne portait était une lecture et
+# non un fait, et le programme ne dit rien d'autre. N'en écrivez pas une pour combler le vide.
+concert.pochwala-stworzenia.program.1.locus: "Après la louange vient ce par quoi quelque chose devient visible."
+
+# Sans « le centre de la soirée » en tête : la phrase le dit mieux seule, et ce concert est à 13:30
+# — le mot du moment de la journée appartient à la scène du prologue et au paragraphe du chef, pas
+# aux dix lignes du programme.
+concert.pochwala-stworzenia.program.2.locus: "Tout ce que le reste du programme touche l'un après l'autre passe ici d'un seul coup."
+concert.pochwala-stworzenia.program.2.note: "Le Cantique tout entier, dans l'original ombrien de la première moitié du XIIIe siècle, celui dans lequel François l'a composé : le soleil, la lune et les étoiles, le vent, l'eau, le feu, la mère terre, ceux qui pardonnent, et sœur la mort. Orff a mis ce texte en musique en 1954, dans le recueil Concento di voci."
+concert.pochwala-stworzenia.program.2.textGloss: |-
+  Très-Haut, tout-puissant et bon Seigneur,
+  à Toi la louange, la gloire, l'honneur et toute bénédiction.
+  À Toi seul, Très-Haut, ils reviennent,
+  et nul homme n'est digne de Te nommer.
+
+  Loué sois-Tu, mon Seigneur, avec toutes Tes créatures,
+  et d'abord monseigneur frère Soleil,
+  qui est le jour, et par qui Tu nous éclaires ;
+  il est beau et rayonnant d'une grande splendeur —
+  de Toi, Très-Haut, il porte le signe.
+
+  Loué sois-Tu, mon Seigneur, pour sœur Lune et les étoiles :
+  dans le ciel Tu les as formées, claires, précieuses et belles.
+
+  Loué sois-Tu, mon Seigneur, pour frère Vent,
+  pour l'air et les nuages, pour le temps serein et tout autre temps,
+  par lesquels Tu donnes soutien à Tes créatures.
+
+  Loué sois-Tu, mon Seigneur, pour sœur Eau,
+  qui est très utile et humble, et précieuse, et chaste.
+
+  Loué sois-Tu, mon Seigneur, pour frère Feu,
+  par qui Tu éclaires la nuit ;
+  il est beau et joyeux, robuste et fort.
+
+  Loué sois-Tu, mon Seigneur, pour notre sœur mère Terre,
+  qui nous porte et nous gouverne,
+  et produit des fruits divers avec des fleurs colorées et l'herbe.
+
+  Loué sois-Tu, mon Seigneur, pour ceux qui pardonnent par amour de Toi
+  et supportent maladie et tribulation.
+  Heureux ceux qui les supporteront en paix,
+  car par Toi, Très-Haut, ils seront couronnés.
+
+  Loué sois-Tu, mon Seigneur, pour notre sœur la Mort corporelle,
+  à qui nul homme vivant ne peut échapper.
+  Malheur à ceux qui meurent en péché mortel ;
+  heureux ceux qu'elle trouvera dans Tes très saintes volontés,
+  car la seconde mort ne leur fera pas de mal.
+
+  Louez et bénissez mon Seigneur, rendez-Lui grâce
+  et servez-Le en grande humilité.
+
+concert.pochwala-stworzenia.program.3.locus: "Le premier intérieur de cet après-midi : un intérieur en train de se retourner."
+concert.pochwala-stworzenia.program.3.note: "Un intermède entre les tableaux du deuxième acte de l'opéra : dans Thaïs, c'est le moment où l'héroïne, courtisane d'Alexandrie, décide de changer de vie. Toute la transformation se joue sans un mot, à la partie de violon."
+
+concert.pochwala-stworzenia.program.4.inscriptioGloss: "texte : Sara Teasdale"
+concert.pochwala-stworzenia.program.4.locus: "Aussitôt après l'intérieur, le ciel, et un homme dessous : la question de sa place dans la création commence ici."
+concert.pochwala-stworzenia.program.4.note: "Un poème de la poétesse américaine Sara Teasdale sur une nuit solitaire sous les étoiles. Ešenvalds a ajouté au chœur des harmonicas de verre (des verres accordés que l'on frotte d'un doigt mouillé) pour qu'ils sonnent comme un scintillement."
+concert.pochwala-stworzenia.program.4.textGloss: |-
+  Seul dans la nuit
+  sur une colline sombre,
+  parmi les pins
+  odorants et silencieux,
+
+  et au-dessus de ma tête
+  un ciel plein d'étoiles —
+  blanches, couleur de topaze
+  et voilées de rouge ;
+
+  des myriades au cœur
+  battant de feu,
+  que les éons
+  ne sauraient attrister ni lasser ;
+
+  vers le haut de la voûte du ciel,
+  comme sur une grande colline,
+  je regarde leur marche,
+  majestueuse et calme,
+
+  et je sais que j'ai
+  l'honneur d'être
+  le témoin
+  d'une si grande majesté.
+
+concert.pochwala-stworzenia.program.5.inscriptioGloss: "texte : George Meredith · arr. pour violon et chœur : Paul Drayton"
+concert.pochwala-stworzenia.program.5.locus: "Le point le plus haut : l'alouette monte jusqu'à se perdre dans la lumière. À partir d'ici, tout descend."
+concert.pochwala-stworzenia.program.5.note: "Un poème symphonique pastoral pour violon, écrit en 1914 et révisé en 1920 ; il a attendu six ans sa création, car la guerre avait éclaté. Il s'inspire du poème de George Meredith sur l'alouette qui monte vers le ciel ; la ligne mélodique monte et retombe en imitant le vol. Paul Drayton a récrit la pièce pour violon et chœur, si bien que les mots de Meredith, dans l'original seulement inscrits au-dessus des notes, s'entendent ici pour de bon."
+concert.pochwala-stworzenia.program.5.textGloss: |-
+  Il s'élève et se met à tracer des cercles,
+  il laisse tomber une chaîne d'argent sonore
+  aux mille anneaux, sans interruption,
+  en gazouillis, en sifflements, en glissades et en trilles.
+
+  Car il chante jusqu'à ce que son ciel soit comble —
+  c'est l'amour de la terre qu'il greffe en nous ;
+  et montant toujours plus haut,
+  notre vallée est sa coupe d'or,
+  et lui le vin qui déborde,
+  pour nous emporter avec lui quand il s'en va.
+
+  Jusqu'à ce qu'il se perde dans ses cercles d'air,
+  dans la lumière — et c'est alors que chante l'imagination.
+
+concert.pochwala-stworzenia.program.6.inscriptioGloss: "chant d'idiome populaire · paroles ajoutées à une vocalise"
+# Le seul endroit, hormis l'Orff, où le Cantique est cité : ici l'œuvre RETOURNE la strophe au lieu
+# d'en être étiquetée. Les mots cités doivent être le français que la traduction du Cantique emploie
+# quelques lignes plus haut, sinon l'inversion énonce une coïncidence.
+concert.pochwala-stworzenia.program.6.locus: "Sœur Eau, que le Cantique appelle très utile et humble, et précieuse, et chaste. Ici, elle est prise par la glace."
+concert.pochwala-stworzenia.program.6.note: "Sykulski l'a écrit à la demande d'Agnieszka Franków-Żelazny pour le Chœur national polonais des jeunes : comme une vocalise, sans paroles. Il y manquait pourtant quelque chose : « la pièce ne portait aucun message ». Le compositeur a donc envoyé la partition à un ami, qui en une seule nuit y a écrit toute une histoire, si bien ajustée qu'il n'a pas fallu changer une note. Une jeune fille de Podzamcze pleure sur la Prosna gelée, le moulin est arrêté, il n'y aura pas de pain, et Jean Népomucène, patron des ponts et des rivières, se tient auprès d'elle."
+concert.pochwala-stworzenia.program.6.textGloss: |-
+  La glace est prise sur la Prosna,
+  elle est prise près du moulin —
+  voilà cinq ans que vient ici
+  la jeune fille de Podzamcze.
+
+  Elle se tient là et gémit,
+  un fichu caché dans les mains,
+  saint Roch appelle à la grand-messe
+  pour la consoler.
+
+  Oj dana, oj dana…
+
+  Le moulin est là, mais qui donc
+  fera claquer sa roue ?
+  Il n'y a pas de farine, il n'y en a pas,
+  et il n'y aura pas de pain.
+
+  Dana, dana… na na, na na…
+
+  La glace est prise sur la Prosna,
+  le temps coule sous la glace,
+  et Jean Népomucène
+  se tient auprès de la jeune fille.
+
+  Dana, dana… na na…
+
+concert.pochwala-stworzenia.program.7.inscriptioGloss: "du cycle Impressions d'enfance op. 28 · le ménétrier du village"
+concert.pochwala-stworzenia.program.7.locus: "La seule pulsation rapide de tout le programme, et la dernière lumière avant le requiem."
+concert.pochwala-stworzenia.program.7.note: "La première des dix miniatures du cycle Impressions d'enfance op. 28, souvenirs d'enfance rangés selon le cours d'une journée : du violoneux au grillon et au vent dans la cheminée, puis à l'orage nocturne et au lever du soleil. Le ménétrier, c'est le violoneux du village, celui des noces. C'est Radu Ropotan qui joue : comme Enescu, un Roumain."
+
+concert.pochwala-stworzenia.program.8.locus: "Le fond de ce chemin : sœur la mort, la dernière que le Cantique salue par son nom."
+concert.pochwala-stworzenia.program.8.note: "« Donne-leur le repos » : deux mots de la messe des morts."
+
+concert.pochwala-stworzenia.program.9.inscriptioGloss: "Un ange se tint près de l'autel du temple, un encensoir d'or à la main"
+# La rime de Tous-les-Saints n'est PAS ici : elle est dans `reflectionNote`, dans sa propre bande, où
+# elle est le fait le plus fort de la soirée et non la queue d'une note. La dire deux fois la dépense.
+concert.pochwala-stworzenia.program.9.locus: "Ici le chemin se referme, déjà au-delà du visible."
+# La rime de la Toussaint n'est NI dans le locus NI dans la note : elle est dans `reflectionNote`,
+# dans sa propre bande. La note s'arrête à « une antienne assemblée à partir de mots de l'Apocalypse »
+# parce que l'ange et l'encensoir sont imprimés par `inscriptioGloss` une ligne plus haut, et la
+# fumée et les saints par `reflectionNote` une bande plus haut.
+concert.pochwala-stworzenia.program.9.note: "Un compositeur letton dont la musique sacrée procède du chant grégorien et du minimalisme. Le texte est une antienne assemblée à partir de mots de l'Apocalypse."
+
+concert.pochwala-stworzenia.textNote: "Le Cantique est donné dans l'original ombrien dans lequel François l'a composé ; traductions françaises les nôtres."
+concert.pochwala-stworzenia.credits.0.role: "Direction"

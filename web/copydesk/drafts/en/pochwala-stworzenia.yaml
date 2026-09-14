@@ -20,7 +20,13 @@
 
 concert.pochwala-stworzenia.title: "In Praise of Creation"
 concert.pochwala-stworzenia.metaPlace: "All Saints’ Church, Warsaw"
-concert.pochwala-stworzenia.essence: "The evening grows out of St Francis’s Laudes creaturarum, known in English as the Canticle of the Sun: in it the whole of creation is a road to the Creator. The programme descends from wonder at the world towards what is fragile in us, towards change, suffering and death, and Pärt’s Spiegel im Spiegel, returning from the gallery, is the mirror of that relation. The whole road is closed by Dubra’s Stetit Angelus, the image of an angel censing the altar with the prayers of all the saints, sung in the church of All Saints."
+# NO HUMAN READS THIS FIELD UNTIL 12 OCTOBER: while the evening is ahead it is the JSON-LD
+# description alone, and on the first build after the date it becomes the <meta description> — the
+# sentence a search result quotes. It stands alone, so it is the one place that still carries the
+# All Saints rhyme in full; the visible bands now spend it once. „The concert”, not „the evening”:
+# the hour on this page is 13:30. „Between the groups of works” is the conductor's own correction
+# to how often the Pärt returns, and English must not go back to implying a return after each work.
+concert.pochwala-stworzenia.essence: "The concert grows out of St Francis’s Laudes creaturarum, known in English as the Canticle of the Sun: in it the whole of creation is a road to the Creator. The programme leads from wonder at the world towards human frailty, towards change, suffering and death, and between the groups of works Pärt’s Spiegel im Spiegel returns from the gallery, the mirror of that relation. The whole road is closed by Dubra’s Stetit Angelus, the image of an angel censing the altar with the prayers of all the saints, sung in the church of All Saints."
 
 # `invitation` is a SECOND text about this evening, not a shorter `essence`: the station on
 # /koncerty speaks the programme note, the landing's Proximum band speaks the invitation. They
@@ -40,3 +46,172 @@ concert.pochwala-stworzenia.posterAlt: "Poster for the concert In Praise of Crea
 concert.pochwala-stworzenia.realizacja: "Violin: Radu Ropotan"
 concert.pochwala-stworzenia.about.place: "All Saints’ Church · Warsaw"
 concert.pochwala-stworzenia.about.blurb: "A concert within the Warsaw festival “Fenomen człowieka”: St Francis’s Canticle of the Sun as a road from wonder at creation towards the hope of eternity."
+
+# ── The page (the concert page, 2026-09). Everything below exists because this evening earned a
+#    page of its own; the keys above served the station and the landing alone.
+#
+#    Four works return from `wolanie-gor` — Stars, The Lark Ascending, Stoi lód na Prośnie and
+#    Ménétrier. Their glosses AND their notes are that draft's: a `note` says what a work IS, which
+#    does not change between two evenings, so an accepted translation from the other page is the
+#    right answer here rather than a fresh paraphrase of it. What each work does in THIS programme
+#    is `locus`, and that is written from scratch every time.
+#
+#    `locus` IS THE SHORTEST FIELD ON THIS PAGE AND HAS TO STAY SHORT. It prints beside the work
+#    with the note folded underneath it, so a clause that doubles in length in English becomes the
+#    loudest thing in the programme book. Present tense, and true after the concert as well as
+#    before it: the page turns from invitation to record on its own.
+
+concert.pochwala-stworzenia.inscriptioGloss: "Praised be You, my Lord, with all Your creatures"
+concert.pochwala-stworzenia.inscriptioRef.source: "St Francis's Canticle of the Sun"
+
+# The door band, which only an evening still ahead raises. `venueNote` is a sign and not prose —
+# render it the way a building labels its own rooms. `festivalNote` describes somebody else's event
+# in our voice: what the edition is about, who runs it, and how it rhymes with this programme, then a
+# full stop. CARRY NO APPEAL on the organiser's behalf, and keep the festival's own name as written.
+# The sentence about the foundation is a FACT and must not become a figure: the page says what they
+# do and leaves the reader to join it to the beauty that stays in pain.
+concert.pochwala-stworzenia.venueNote: "Upper church"
+concert.pochwala-stworzenia.festivalNote: "Three days of exhibitions, workshops and conversations; this concert closes them. The festival is run by the Mój Dom hospice foundation, which accompanies people with ALS and their families. This year's edition reads the human through beauty: the beauty of values and of relationships, the beauty of nature and of sound, and the beauty that stays even in pain. This programme descends towards that last one."
+
+# The próg carries no date, hour, festival or open door: the band above prints all four from the
+# structured fields, and a paragraph restating them would be the page speaking twice.
+#
+# THE TAIL NAMES THE ANGEL AND NOT THE SAINTS, deliberately: the reveal is `reflectionNote`'s, two
+# bands down. Naming the prayers of all the saints here — three sentences after „the church of All
+# Saints” — states the coincidence before the page has earned it. Do not put them back.
+concert.pochwala-stworzenia.prologue: "A Sunday afternoon on plac Grzybowski. Above the portal of the church of All Saints a verse of the psalm is cut into the stone: “Praise the Lord in His saints”. The concert begins under that sentence already, and ends on a sentence of the same family — about an angel censing the altar with prayer."
+
+# THE SIGNED REFLECTION IS GONE from this evening and its rows are not to be restored: the text was
+# generated rather than written, so it could not carry the conductor's name. What the band prints is
+# ours and unsigned. Both halves of the rhyme have to survive: the saints in the antiphon and the
+# saints in the name over the door. Rendered by two different phrases, the sentence states a
+# coincidence instead of stating the point.
+concert.pochwala-stworzenia.reflectionNote: "The antiphon Dubra sets arranges words from the Book of Revelation: “the smoke of the incense went up with the prayers of the saints before God”. The last sentence of this road is therefore sung in the church that bears exactly that name — All Saints."
+
+concert.pochwala-stworzenia.programLede: "Ten works and one mirror"
+# THE CONDUCTOR'S OWN EDIT of this paragraph, returned 14.09.2026, and the Polish is now his. Two
+# things in it are corrections rather than style, and an English version that loses either is wrong:
+# the Pärt returns between GROUPS of works and not between every work (there are four groups and five
+# soundings), and the mirror is stated positively — the earlier "not another number in the programme
+# but…" is gone, and English must not put the negation back.
+concert.pochwala-stworzenia.programArc: "The order descends from praise and light: Borkowski's Gloria II and Lumen open the evening, and immediately after them comes Carl Orff's Laudes creaturarum, which sets St Francis's Canticle of the Sun directly. From there the programme moves from the cosmic image of creation towards the human: Massenet's Méditation, bound in the opera to the inward change of Thaïs; Ešenvalds's night sky; Vaughan Williams's lark, rising towards the light; Sykulski's frozen Prosna and Enescu's village fiddler. At the end come Borkowski's Dona eis requiem and Dubra's angel at the altar. Between the groups of works Pärt's Spiegel im Spiegel returns, played from the gallery on the organ as the musical mirror of the relation between creation and its Creator."
+
+concert.pochwala-stworzenia.program.0.locus: "Borkowski has three works in this programme; the first opens it on one word: glory."
+concert.pochwala-stworzenia.program.0.note: "His sacred music usually takes a single Latin word and builds the whole piece out of it: in planes of sound, in extreme registers and in repetition, not in melody."
+# Work 01 has NO note in any locale — everything the row used to carry was a reading rather than a
+# fact, and the booklet says nothing else. Do not write one to fill the gap.
+concert.pochwala-stworzenia.program.1.locus: "After praise comes the thing by which anything at all can be seen."
+
+# No „the centre of the evening” in front of it: the sentence says it better on its own, and this
+# concert is at 13:30 — the time-of-day word belongs to the prologue's scene and to the conductor's
+# own paragraph, not to ten programme rows.
+concert.pochwala-stworzenia.program.2.locus: "Everything the rest of the programme touches one at a time passes through here at once."
+concert.pochwala-stworzenia.program.2.note: "The whole Canticle, in the Umbrian original of the first half of the thirteenth century in which Francis composed it: the sun, the moon and the stars, wind, water, fire, mother earth, those who forgive, and sister death. Orff set the text in 1954, in the collection Concento di voci."
+concert.pochwala-stworzenia.program.2.textGloss: |-
+  Most High, all-powerful, good Lord,
+  Yours are the praises, the glory, the honour and every blessing.
+  To You alone, Most High, do they belong,
+  and no man is worthy to speak Your name.
+
+  Praised be You, my Lord, with all Your creatures,
+  and first of all Sir Brother Sun,
+  who is the day, and by whom You give us light;
+  he is beautiful and radiant in great splendour —
+  of You, Most High, he bears the likeness.
+
+  Praised be You, my Lord, for Sister Moon and the stars:
+  in heaven You formed them, bright and precious and fair.
+
+  Praised be You, my Lord, for Brother Wind,
+  for the air and the clouds, for fair weather and all weather,
+  by which You give Your creatures their keeping.
+
+  Praised be You, my Lord, for Sister Water,
+  who is very useful and humble and precious and chaste.
+
+  Praised be You, my Lord, for Brother Fire,
+  by whom You light up the night;
+  and he is beautiful and merry and robust and strong.
+
+  Praised be You, my Lord, for our Sister Mother Earth,
+  who sustains and governs us,
+  and brings forth diverse fruits with coloured flowers and grass.
+
+  Praised be You, my Lord, for those who forgive for love of You
+  and bear infirmity and tribulation.
+  Blessed are those who endure them in peace,
+  for by You, Most High, they will be crowned.
+
+  Praised be You, my Lord, for our Sister Bodily Death,
+  from whom no living man can escape.
+  Woe to those who die in mortal sin;
+  blessed are those she finds doing Your most holy will,
+  for the second death will do them no harm.
+
+  Praise and bless my Lord, and give Him thanks,
+  and serve Him with great humility.
+
+concert.pochwala-stworzenia.program.3.locus: "The first interior of the afternoon: one that is turning as we listen."
+concert.pochwala-stworzenia.program.3.note: "An interlude between the scenes of the opera's second act: in Thaïs it is the moment when the title character, a courtesan of Alexandria, decides to change her life. The whole transformation happens without a single word, in the violin part."
+
+concert.pochwala-stworzenia.program.4.inscriptioGloss: "text: Sara Teasdale"
+concert.pochwala-stworzenia.program.4.locus: "Straight after the interior, the sky, and a human being standing under it: the question of our place in creation begins here."
+concert.pochwala-stworzenia.program.4.note: "A poem by the American poet Sara Teasdale about a solitary night beneath the stars. To the choir Ešenvalds added glass harmonicas — tuned glasses played with a wet finger — so that they would sound like a shimmer."
+concert.pochwala-stworzenia.program.4.textGloss: "= original"
+
+concert.pochwala-stworzenia.program.5.inscriptioGloss: "text: George Meredith · arr. for violin and choir: Paul Drayton"
+concert.pochwala-stworzenia.program.5.locus: "The highest point: the lark rises until it is lost in the light. From here everything descends."
+concert.pochwala-stworzenia.program.5.note: "A pastoral tone poem for violin, written in 1914 and revised in 1920; it waited six years for its first performance because the war had broken out. Its inspiration was George Meredith's poem about a lark rising towards the sky; the melodic line rises and falls in imitation of the flight. Paul Drayton rewrote the piece for violin and choir, so that Meredith's words — in the original only written above the notes — can here actually be heard."
+concert.pochwala-stworzenia.program.5.textGloss: "= original"
+
+concert.pochwala-stworzenia.program.6.inscriptioGloss: "a song in a folk idiom · words written to an existing vocalise"
+# The one place besides the Orff where the Canticle is cited, because here the work TURNS the stanza
+# over rather than being labelled with it. The quoted words must be the same English the Canticle's
+# own gloss uses a few rows up, or the inversion states a coincidence.
+concert.pochwala-stworzenia.program.6.locus: "Sister Water, whom the Canticle calls very useful and humble and precious and chaste. Here she is frozen."
+concert.pochwala-stworzenia.program.6.note: "Sykulski wrote it to a commission from Agnieszka Franków-Żelazny for the Polish National Youth Choir: as a vocalise, without words. Something was missing from it, though — “the piece carried no message”. So the composer sent the score to a friend, who in the course of a single night wrote a whole story into it, fitted so exactly that not one note had to change. A girl from Podzamcze weeps over the frozen Prosna, the mill has stopped, there will be no bread, and John of Nepomuk, patron of bridges and rivers, stands beside her."
+concert.pochwala-stworzenia.program.6.textGloss: |-
+  Ice stands on the Prosna,
+  stands beside the mill —
+  five years the girl from Podzamcze
+  has been coming here.
+
+  The girl stands and whimpers,
+  a kerchief hidden in her hands;
+  St Roch is calling her
+  to high Mass, for comfort.
+
+  Oj dana, oj dana…
+
+  The mill stands — but who is there
+  to set its wheel rattling?
+  There is no flour, none at all,
+  and there will be no bread.
+
+  Dana, dana… na na, na na…
+
+  Ice stands on the Prosna,
+  time flows on beneath the ice,
+  and John of Nepomuk
+  stands beside the girl.
+
+  Dana, dana… na na…
+
+concert.pochwala-stworzenia.program.7.inscriptioGloss: "from the cycle Impressions d'enfance op. 28 · the village fiddler"
+concert.pochwala-stworzenia.program.7.locus: "The only fast pulse in the whole programme, and the last light before the requiem."
+concert.pochwala-stworzenia.program.7.note: "The first of the ten miniatures of Impressions d'enfance op. 28, childhood memories arranged by the course of a day: from the fiddler, through the cricket and the wind in the chimney, to the night storm and the sunrise. The ménétrier is the village fiddler, the one who plays at weddings. The player is Radu Ropotan: like Enescu, a Romanian."
+
+concert.pochwala-stworzenia.program.8.locus: "The floor of this road: sister death, the last thing the Canticle greets by name."
+concert.pochwala-stworzenia.program.8.note: "“Give them rest”: two words from the Mass for the dead."
+
+concert.pochwala-stworzenia.program.9.inscriptioGloss: "An angel stood at the altar of the temple, holding a golden censer in his hand"
+# The All Saints rhyme is NOT here and NOT in the note: it is `reflectionNote`, in its own band,
+# where it is the evening's strongest fact rather than a tail on a work. The note stops at „an
+# antiphon arranged from words of the Book of Revelation” because the angel and the censer are
+# printed by `inscriptioGloss` one row up and the smoke and the saints by `reflectionNote` one band
+# above — a note that retold both would put the same sentence three times on one screen.
+concert.pochwala-stworzenia.program.9.locus: "Here the road closes, already beyond the visible."
+concert.pochwala-stworzenia.program.9.note: "A Latvian composer whose sacred music grows out of chant and out of minimalism. The text is an antiphon arranged from words of the Book of Revelation."
+
+concert.pochwala-stworzenia.textNote: "The Canticle is given in the Umbrian original in which Francis composed it; English translations our own."
+concert.pochwala-stworzenia.credits.0.role: "Conductor"

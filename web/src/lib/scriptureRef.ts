@@ -21,7 +21,7 @@
 import { pickLocale, type Locale, type LocalizedText } from "../i18n/config";
 
 /** The books cited across `concerts.yaml`. Add an entry here before citing a new one. */
-export const SCRIPTURE_BOOKS = ["isa", "jer", "ps", "song", "matt", "luke", "zech"] as const;
+export const SCRIPTURE_BOOKS = ["isa", "jer", "ps", "song", "matt", "luke", "zech", "rev"] as const;
 export type ScriptureBook = (typeof SCRIPTURE_BOOKS)[number];
 
 const ABBR: Record<ScriptureBook, Record<Locale, string>> = {
@@ -32,6 +32,7 @@ const ABBR: Record<ScriptureBook, Record<Locale, string>> = {
   matt: { pl: "Mt", en: "Mt", fr: "Mt" },
   luke: { pl: "Łk", en: "Lk", fr: "Lc" },
   zech: { pl: "Za", en: "Zech", fr: "Za" },
+  rev: { pl: "Ap", en: "Rev", fr: "Ap" },
 };
 
 /** Chapter→verse mark, and the mark between two non-contiguous verse groups. */

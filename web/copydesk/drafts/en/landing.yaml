@@ -202,7 +202,9 @@ page.landing.support.writeCta: "Write to us"
 
 page.landing.coda.captionHtml: "The silence <em>sounds on.</em>"
 
-# The announcement band, above the register. Both lines must stay true of ANY evening it will
-# ever carry: it is dormant between concerts and lights up on whichever one is next.
-page.landing.proximum.label: "The coming evening"
-page.landing.proximum.lede: "The only evening on this page that has not yet sounded."
+# The announcement band, above the register. Its label must stay true of ANY evening it will ever
+# carry: the band is dormant between concerts and lights up on whichever one is next. It had a
+# `lede` too — "The only evening on this page that has not yet sounded" — and the corpus dropped
+# it: a sentence about this page, saying what the entry is NOT, where the guardrails allow one
+# negation and the manifest had already spent it.
+page.landing.proximum.label: "The coming concert"

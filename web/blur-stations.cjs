@@ -27,10 +27,23 @@ const jobs = [
   // The liturgy plate has no /o-nas twin (its milestone is a different photograph), so it keeps
   // its own source — a real 1920x1080 webp, not one of the duplicated camera originals.
   { name: "st-liturgia-bg", src: "st-liturgia-bg-desktop.webp", brightness: 0.46, saturation: 0.95 },
+  // An evening still ahead: its wash came from the POSTER while it had no photograph, and now
+  // reads its own hero like every other station (docs/station-backgrounds.md).
+  { name: "st-stworzenie-bg", src: "kd-stworzenie-hero-desktop.jpg", brightness: 0.46, saturation: 0.95 },
 ];
 
+// Name one station to wash only that one. Without it every wash is rebuilt — which, per the
+// note above, is a visible change to /koncerty for stations whose source has since moved, and
+// not something to trigger while adding an evening.
+const only = process.argv[2];
+const selected = only ? jobs.filter((j) => j.name === only) : jobs;
+if (only && selected.length === 0) {
+  console.error(`no station named "${only}" — one of: ${jobs.map((j) => j.name).join(", ")}`);
+  process.exit(1);
+}
+
 (async () => {
-  for (const { name, src, brightness, saturation } of jobs) {
+  for (const { name, src, brightness, saturation } of selected) {
     await sharp(`${SRC}/${src}`)
       .resize({ width: 900, withoutEnlargement: true }) // blur hides detail → small is fine
       .blur(14) // Gaussian sigma; the heavy wash

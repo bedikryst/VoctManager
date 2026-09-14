@@ -45,7 +45,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
 import BleedImage from "../BleedImage.astro";
-import { photo, bleedPair } from "../../lib/photos";
+import { photo, photoOptional, bleedPair } from "../../lib/photos";
 import { framedShot } from "../../lib/galleryFrame";
 import { designCredit } from "../../lib/photoCredit";
 import { absolute, musicEvent } from "../../lib/eventSchema";
@@ -343,7 +343,13 @@ const metaDescription = announced
       .join(" ")
   : copy.meta.description;
 
-const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp" })).src;
+// The frame a pasted link previews with, and it follows the title. While an evening is announced
+// this page's `<title>` names that evening, so a preview still showing the nave would be a picture
+// of the cycle under a sentence about one night; the announced entry's `share` frame carries the
+// day, the hour and the door (content.config). Falls back to the nave the rest of the year, and
+// for an announced evening that has no share frame of its own.
+const shareImg = announced?.share ? photoOptional(announced.share) : undefined;
+const ogImage = (await getImage({ src: shareImg ?? hero.desktop, width: 1200, format: "webp" })).src;
 ---
 
 <BaseLayout
@@ -392,6 +398,82 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
         <span class="scroll-cue reveal" data-d="4">{copy.intro.scrollCue}</span>
       </div>
     </section>
+
+    {/* ── The announced evening, at the HEAD of the walk ───────────────────────────────────────
+          This page's `<title>` already names it — `metaAnnounced*`, because for one month it is the
+          only thing here a reader can still act on — while the walk itself reaches it as the
+          SEVENTH station, behind six full-viewport evenings that are over. A tab that says
+          "Pochwała Stworzenia · 11 października 2026" over a page that says nothing about it for
+          seven screens is the defect this plate closes: whoever is told "there is a concert" and
+          clicks Koncerty lands here.
+
+          A FRONTISPIECE, NOT A SECOND STATION. It states four facts and a door — which evening,
+          when, where, whether they may simply walk in — and stops. The station keeps everything
+          that makes it a station: the programme and its ritornello, the inscriptio, the poster at
+          a size it can be read and opened at, the festival's own link. So the plate is short by
+          construction, and its door leads DOWN this page rather than away from it.
+
+          IT IS THE INVERSE OF THE `Nondum` CARD at the foot, which stands only while NO evening is
+          announced. The two are one declaration in its two states — there is a next evening, or
+          there is not yet — and they are deliberately at opposite ends: an announcement belongs
+          where a reader arrives, an admission that there is no date belongs where the walk ends.
+
+          Everything it prints is the same `announced` entry the metadata is derived from, so the
+          tab and the plate cannot name two different nights. ─────────────────────────────────── */}
+    {announced && (
+      <section class="announced" aria-label={t.nextAria} style={`--accent:${announced.accent}`}>
+        <div class="announced-inner">
+          {announced.posterImg && (
+            <figure class="announced-poster">
+              {/* The gold corner is the mount, not the sheet — the same register mark the stations
+                  draw. It does NOT open here: the poster's readable size and its frame live on the
+                  station, and a 220px sheet that opens a room is an illustration pretending to be
+                  a document (the reasoning the landing's band records for itself). */}
+              <span class="frame" aria-hidden="true" />
+              <Picture
+                src={announced.posterImg}
+                formats={["avif", "webp"]}
+                widths={[220, 340, 440]}
+                width={440}
+                sizes="(max-width: 820px) 44vw, 220px"
+                alt={announced.posterAlt}
+                loading="lazy"
+                decoding="async"
+              />
+            </figure>
+          )}
+          <div class="announced-text">
+            <p class="announced-rubric reveal">
+              <span class="announced-dot" aria-hidden="true" />
+              {t.upcomingLabel}
+            </p>
+            {/* Not a heading: the station below holds the h2, the programme and the prose, and a
+                heading over four facts is an outline that promises a room and opens onto a line.
+                The same call the landing's hero block makes for the same reason. */}
+            <p class="announced-title reveal ink-press" data-d="1">{announced.title}</p>
+            <p class="announced-meta reveal" data-d="1">{announced.meta}</p>
+            {announced.door && <p class="announced-door reveal" data-d="2">{announced.door}</p>}
+            {/* The door follows the evening, not this page. While the announced concert has no
+                page of its own the only fuller account of it IS the station below, so the plate
+                leads down; the moment it earns one, that page holds the programme, the texts and
+                the prose, and sending a reader to a disclosure instead would be sending them to
+                the lesser of two documents. Every other announcement surface (the landing's hero
+                block, Path, Proximum) already reads `hasPage` for exactly this reason — this was
+                the one that did not, and it is the plate a stranger arrives on.
+
+                The label stands in both states: "Zobacz program" is what the station's disclosure
+                opens and what the page's Programma band is, so it never promises a room that is
+                not there. */}
+            <a
+              class="announced-cta plausible-event-name=koncerty+zapowiedz"
+              href={announced.hasPage ? localizePath(`/koncerty/${announced.id}`, lang) : `#${announced.id}`}
+            >
+              {t.announcedCta}
+            </a>
+          </div>
+        </div>
+      </section>
+    )}
 
     {/* ── Stations (from the `concerts` collection) ────────────────────── */}
     {
@@ -529,7 +611,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                     "this evening is ahead", wherever the site makes the claim. */}
                 {s.isUpcoming && (
                   <p class="station-ahead reveal">
-                    <span class="station-ahead-dot" aria-hidden="true" />
+                    <span class="lit-dot station-ahead-dot" aria-hidden="true" />
                     {t.upcomingLabel}
                   </p>
                 )}
@@ -898,6 +980,64 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .scroll-cue { margin-top: 38px; font-family: var(--capitalis); font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: rgba(244,241,233,.62); display: inline-flex; align-items: center; gap: 10px; }
   .scroll-cue::after { content: ""; width: 38px; height: 1px; background: currentColor; opacity: .6; animation: cuepulse 3.4s var(--ease-slow) infinite; }
 
+  /* ── The announced evening, at the head of the walk ───────────────────────────────────────────
+     A plate crossed on the way in, NOT a screen: no `min-height`, so its height is its content
+     plus the padding a notice needs to stand apart. Every station below it is 100svh, and a
+     seventh full screen at the entrance would make the walk eight evenings long to say that one
+     of them has not happened.
+
+     The ground is the night the whole walk is printed on, opened by a hairline: the intro's own
+     scrim closes at rgba(16,15,13,.84), so without a rule this plate would read as the foot of
+     that photograph rather than as a different kind of object. It takes the announced evening's
+     own `--accent` (its candle, `lib/candle`), so the plate is lit in the colour the station
+     seven screens down is lit in.
+
+     Everything gold here is on night, where full candle clears 8:1 — the ink-gold contract
+     tokens.css states for the parchment rooms does not reach this page. */
+  .announced { position: relative; padding: clamp(56px,8vh,96px) max(28px,5vw); color: var(--paper); background: var(--dark); isolation: isolate; }
+  .announced::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(64% 78% at 22% 42%, color-mix(in srgb, var(--accent, var(--candle)) 14%, transparent) 0%, transparent 66%); }
+  .announced::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(244,241,233,.18), transparent); }
+
+  /* The poster's column is narrow on purpose. It is here for RECOGNITION — someone arriving from
+     a post that carried this artwork has to see the same image and know they are in the right
+     place — and recognition is all a 220px sheet can do. Reading it is the station's job. */
+  .announced-inner { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: clamp(28px, 4vw, 64px); align-items: center; }
+  .announced-poster { position: relative; margin: 0; box-shadow: 0 30px 70px -32px rgba(0,0,0,.85); }
+  .announced-poster :global(picture) { display: block; }
+  .announced-poster :global(img) { display: block; width: 100%; height: auto; }
+  .announced-poster .frame { position: absolute; left: -9px; top: -9px; width: 36px; height: 36px; border-top: 1px solid var(--accent, var(--candle)); border-left: 1px solid var(--accent, var(--candle)); opacity: .8; z-index: 1; }
+
+  .announced-rubric { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--accent, var(--candle)); }
+  /* The same pulse the station's own marker wears (`aheadPulse`) — one mark for one claim, at both
+     ends of the walk. */
+  .announced-dot { width: 7px; height: 7px; flex-shrink: 0; border-radius: 50%; background: var(--accent, var(--candle)); animation: aheadPulse 2.8s var(--ease-slow) infinite; }
+  @media (prefers-reduced-motion: reduce) { .announced-dot { animation: none; opacity: .9; } }
+
+  /* A paragraph set as display type (the markup states why), one step under the station's own
+     title so the plate announces the evening without out-shouting it. */
+  .announced-title { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(30px, 4.4vw, 58px); line-height: 1.02; letter-spacing: -.01em; }
+  /* Place · day · hour, in the capitals this site dates everything in — the hour prints HERE and
+     on no other station, because every other one is a fact about a night that is over. */
+  .announced-meta { margin: 18px 0 0; font-family: var(--capitalis); font-size: 11px; letter-spacing: .17em; line-height: 1.6; text-transform: uppercase; color: rgba(244,241,233,.86); }
+  /* Whether a reader may simply walk in, as a standing notice rather than one more metadata line —
+     the same bordered word the station's chip row and the landing's band both draw. */
+  .announced-door { width: fit-content; margin: 20px 0 0; display: flex; align-items: center; min-height: 30px; padding: 7px 12px; border: 1px solid color-mix(in srgb, var(--accent, var(--candle)) 55%, transparent); font-family: var(--capitalis); font-size: 10px; letter-spacing: .14em; line-height: 1.35; text-transform: uppercase; color: var(--accent, var(--candle)); }
+
+  /* The door leads DOWN this page, so the mark is a descent and not an arrow out. Drawn, not typed
+     (the chrome's note says so), and it does not travel on hover: what it points at is on this
+     page and the gesture that fits is the rule brightening under the words. */
+  .announced-cta { display: inline-flex; align-items: center; gap: 10px; margin-top: 28px; padding-bottom: 5px; border-bottom: 1px solid rgba(244,241,233,.34); font-family: var(--capitalis); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--paper); transition: color .4s var(--ease), border-color .4s var(--ease); }
+  .announced-cta::after { content: "\2193"; font-family: var(--serif); font-size: 1.3em; line-height: 1; letter-spacing: 0; text-transform: none; }
+  .announced-cta:hover, .announced-cta:focus-visible { color: var(--accent, var(--candle)); border-color: var(--accent, var(--candle)); }
+
+  /* One column, poster first: at phone width a 220px rail beside 40 characters of capitals is
+     neither an image nor a dateline. It keeps the desktop's narrow sheet rather than growing to
+     the column — the plate is a notice, and a full-width poster here would be the station. */
+  @media (max-width: 820px) {
+    .announced-inner { grid-template-columns: minmax(0, 1fr); gap: clamp(22px, 6vw, 32px); justify-items: start; }
+    .announced-poster { max-width: 200px; }
+  }
+
   /* Stations */
   .station { position: relative; min-height: 100svh; display: flex; align-items: center; padding: clamp(96px,13vh,150px) max(28px,5vw) clamp(72px,10vh,110px); color: var(--paper); overflow: hidden; isolation: isolate; }
   /* Backdrops are pre-blurred + pre-darkened offline (src/assets/photos), so there is NO
@@ -956,7 +1096,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
      load the landing's sheet. */
   .station { scroll-margin-top: 96px; }
   .station-ahead { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--accent, var(--candle)); }
-  .station-ahead-dot { width: 7px; height: 7px; flex-shrink: 0; border-radius: 50%; background: var(--accent, var(--candle)); animation: aheadPulse 2.8s var(--ease-slow) infinite; }
+  /* Geometry and fill come from `.lit-dot` (base.css), shared with every other surface that names
+     an evening still ahead. THE PULSE IS THIS PAGE'S ALONE and is the whole reason the rule stays:
+     a reader walking the list needs the one row that has not happened yet to catch the eye, where
+     the surfaces that stand beside a poster and an open door do not. */
+  .station-ahead-dot { animation: aheadPulse 2.8s var(--ease-slow) infinite; }
   @keyframes aheadPulse { 0%, 100% { opacity: .35; transform: scale(.86); } 50% { opacity: 1; transform: scale(1); } }
   @media (prefers-reduced-motion: reduce) { .station-ahead-dot { animation: none; opacity: .9; } }
 

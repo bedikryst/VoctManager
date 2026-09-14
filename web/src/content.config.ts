@@ -101,15 +101,32 @@ const concerts = defineCollection({
     dateLabel: localized.optional(),
     /** Venue name alone — feeds schema.org Place.name (`metaPlace` is display-only). */
     venue: z.string().optional(),
+    /** Which room, where the building has more than one, or whatever else a reader standing at the
+        address still has to work out — a staircase, a side door, a courtyard. Visible on the door
+        band of an evening still ahead, and true of the sung evening afterwards, so it survives the
+        page's turn from invitation to record. Keep it to the practical fact; the room's atmosphere
+        belongs to `prologue`. */
+    venueNote: z.string().optional(),
     /** ISO date (YYYY-MM-DD) for schema.org startDate. Omitted when the date is vague
         (a season or bare year); JSON-LD then skips startDate rather than fabricate one. */
     date: z.string().optional(),
     /** Concert hour "HH:MM" for a single-date concert — shown after `meta` in the detail
         hero and folded into the JSON-LD startDate. Tour entries carry time per-date. */
     time: z.string().optional(),
-    /** Street address of the venue (e.g. "ul. Kopernika 26, Kraków") — JSON-LD Place.address
-        only; the visible page keeps the quieter `meta`/`venue` register. */
+    /** When the slot ENDS, "HH:MM", where somebody published it — a festival's schedule, a
+        hall's booking. It is not a duration of ours and must never be presented as one: the
+        running orders are untimed and `lib/eventSchema` keeps no durations, so this prints as a
+        window ("13:30–14:30") and nothing else. Set it only from a source; an hour guessed from
+        the number of works would be the wrong kind of precise. Feeds JSON-LD `endDate`. */
+    endTime: z.string().optional(),
+    /** Street address of the venue (e.g. "ul. Kopernika 26, Kraków") — JSON-LD Place.address,
+        and visible on the door band of an evening still ahead. */
     address: z.string().optional(),
+    /** A map of the address, as a link the reader FOLLOWS — nothing on this site requests a third
+        party (.ai/07), so this is an `href` and never an embed. Stored rather than composed from
+        `address`, because building a maps query in code would pick a provider on the reader's
+        behalf without the corpus ever saying which. */
+    mapUrl: z.string().url().optional(),
     /** What the door costs. Set it ONLY where the ensemble actually recorded the answer: "free"
         emits a price-0 Offer, "paid" emits the honest negative without inventing a ticket price,
         and leaving it unset emits neither. A touring concert states this per date instead (see
@@ -132,6 +149,12 @@ const concerts = defineCollection({
      *  It does not replace the evening's own `facts` chip: the chip states that the evening
      *  belongs to a festival, this states WHICH one and where it lives. */
     festival: z.object({ name: z.string(), url: z.string().url() }).strict().optional(),
+    /** What the festival's own edition is about, in a sentence or two, where the frame is worth
+        more to a reader than the bare name. Copy, so it is translated; and somebody else's event,
+        so it states what the frame is and how it rhymes with this programme, then stops. No appeal
+        on the organiser's behalf (.ai/07 rules out donation-first framing), and nothing about their
+        work that their own site says better — `festival.url` is the door to that. */
+    festivalNote: z.string().optional(),
     /** /o-nas milestone editorial — the About page derives its "Via" list from this
         collection (single source of truth with /koncerty). All fields optional:
         place falls back to `venue`, blurb to `essence`; a missing img renders the
@@ -185,6 +208,17 @@ const concerts = defineCollection({
         a flat scrim would have dulled the raking light that is the reason to use the photograph.
         Per station: the six evenings have no single correct veil. */
     heroFoot: z.number().min(0).max(1).optional(),
+    /** The frame this concert wears OFF the site — the Open Graph image a pasted link previews
+     *  with. photo() base name, 1.91:1, falling back to the hero when unset.
+     *
+     *  IT EXISTS BECAUSE THE HERO IS THE WRONG PICTURE FOR A LINK SOMEBODY FORWARDS. The hero is
+     *  a photograph of the room, which is right above a title the page prints anyway and silent
+     *  about the four facts a reader deciding whether to come actually needs — the day, the hour,
+     *  the place and the door. A poster states all four and is a standing A-sheet, so it cannot
+     *  BE the hero; mounted on its own ground at 1200x630 it is exactly the preview (web/
+     *  poster-art.cjs). Set it on an evening that is still ahead, where a link is an invitation;
+     *  a sung evening is a document and its hero is the honest frame for it. */
+    share: z.string().optional(),
     /** Framed poster — photo() base name. Absent for the liturgy plate. */
     poster: z.string().optional(),
     /** The poster's own name, and the accessible name of the button it becomes on all three
@@ -458,9 +492,29 @@ const concerts = defineCollection({
           voicing: z.string().optional(),
           /** Duration as printed, e.g. "10′". */
           duration: z.string().optional(),
-          /** Source / curatorial note for the work — one or two sentences on where it comes
-              from and why it sits here (drawn from the ensemble's own programme book, factual,
-              never a fabricated quote). Rendered as a quiet programme-book gloss. */
+          /** Where the work stands in THIS programme — one clause, two short sentences at most,
+              and the only field that changes when a work is sung again in another evening.
+           *
+           *  IT EXISTS BECAUSE ONE FIELD WAS DOING TWO JOBS. `note` used to carry both what a work
+           *  is and what it does here, so reusing a work meant copying a paragraph and appending a
+           *  new tail to it — four works on this page came over from `wolanie-gor` that way, one of
+           *  them with no tail at all, and the tails converged on a single move repeated like a
+           *  checklist. Split, the facts are shared honestly (a poem's author does not change
+           *  between concerts) and only this clause is written and translated afresh.
+           *
+           *  Write it in the present and make it true of the sung evening as well: a page turns
+           *  from invitation to record on the first deploy after its date, and nothing that
+           *  survives that turn may be phrased so the turn falsifies it.
+           *
+           *  A reading, not a scheme. Where a programme has an organising text, cite it only where
+           *  the work genuinely turns it over; the same citation hung on work after work stops
+           *  being a reading (docs/koncert-pochwala-stworzenia §3). */
+          locus: z.string().optional(),
+          /** What the work IS, independent of the programme it stands in — where it comes from,
+              how it is scored, whose words it sets (drawn from the ensemble's own programme book,
+              factual, never a fabricated quote). Two evenings singing one work may carry the same
+              `note` word for word, because the fact is the same; what it does differently belongs
+              in `locus`. Rendered as a quiet programme-book gloss. */
           note: z.string().optional(),
           /** A rubric — what HAPPENED in the room while this work sounded, printed the way a
               missal prints its instructions: not what was sung, but what was done. Reserved for

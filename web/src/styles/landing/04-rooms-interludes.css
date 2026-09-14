@@ -379,7 +379,17 @@
     text-transform: uppercase;
   }
 
+  /* The register's display-title hover, as ONE list on the section that owns both titles: the
+     entries' `.path-entry-title` and the closing announcement's `.path-ahead-name`. It was declared
+     on the entry title alone, and the announcement then either restated it — two lists that drift
+     on the first edit — or went without and hovered differently from the six rows above it, which
+     is what happened. There is exactly one `transition-property` slot per element, so a named list
+     is the only way more than one element can share it and stay true. */
   .path {
+    --title-hover-transition:
+      color 0.5s var(--ease),
+      letter-spacing 0.6s var(--ease-slow),
+      font-variation-settings 0.6s var(--ease-slow);
     background: var(--paper-soft);
     border-top: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
@@ -505,13 +515,8 @@
     /* wght driven via the variable axis (not font-weight) so it can transition — Cormorant
        carries a live wght axis (the footer clock breathes on it). */
     font-variation-settings: "wght" 300;
-    /* Named rather than inlined because this element is ALSO an ink node, and there is exactly
-       one `transition-property` slot per element — the rule below has to restate this list, and
-       one list in one place is the only way that stays true. */
-    --title-hover-transition:
-      color 0.5s var(--ease),
-      letter-spacing 0.6s var(--ease-slow),
-      font-variation-settings 0.6s var(--ease-slow);
+    /* The list is declared on `.path` — this element is ALSO an ink node, so the rule below has to
+       restate it, and the announcement's own title needs the same one. */
     transition: var(--title-hover-transition);
   }
 
@@ -650,63 +655,176 @@
      rail stays EMPTY on purpose: an evening that has not sounded carries no numeral in a register
      of what has. Padding is its own — an entry is 280–420px tall because it holds a programme,
      and this holds one line. */
+  /* IT INVERTS THE ENTRY'S GRID RATHER THAN ABANDONING IT. The rail is gone from the markup, so
+     this row starts where the entries' NUMERALS start — roughly 240px to the left of every title
+     above it — and the reader's eye, which has been running down one indent for six evenings, meets
+     the one evening still ahead stepping out of it. Nothing is shouted to achieve that.
+
+     BUT THE MEASURE HAS TO BE SPENT. Taking the full width and then stacking two short tiers at its
+     left end is not a broken axis, it is a title that has lost its alignment: the row became the
+     emptiest thing in the section at the largest scale in it. So the name takes the left edge, the
+     facts take the right, and the two rules this row already owns — the entry hairline above, the
+     candle rule below — hold them. A composition may put two groups on two edges exactly when
+     something is drawn across between them; here something is.
+
+     `align-items: end` so the facts sit on the name's baseline rather than under the rubric: the
+     display line is the row's anchor and three tiers of capitals hanging from the top would align
+     to a label instead of to it. */
   .path-ahead {
-    padding-top: clamp(22px, 2.4vw, 32px);
-    padding-bottom: clamp(22px, 2.4vw, 32px);
-    align-items: center;
-    border-bottom: 1px solid rgba(198, 164, 91, 0.3);
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "line facts"
+      "detail detail";
+    /* Column and row gaps are NOT one measurement here. The column gap is the air between the
+       name and the facts on the measure; the row gap is zero because the disclosure below draws
+       its own rule across the top and carries its own offset — one `gap` shorthand would have put
+       72px of nothing above that rule. */
+    column-gap: clamp(24px, 4vw, 72px);
+    row-gap: 0;
+    align-items: end;
+    padding-top: clamp(30px, 3.6vw, 50px);
+    padding-bottom: clamp(34px, 4.2vw, 60px);
+    /* Mixed from `--candle-ink`, not from the display candle. The literal `rgba(198, 164, 91, …)`
+       this replaces is the gold drawn for the dark rooms, and at 0.3 on `--paper-soft` it is a
+       ghost — the rule that closes the register was not reading as a rule at all. */
+    border-bottom: 1px solid color-mix(in oklab, var(--candle-ink) 45%, transparent);
   }
 
-  /* The hero's dateline, moved to parchment: the same dot, the same two facts, the same drawn
-     mark between them — one mark for "this evening is ahead", wherever the site claims it. Only
-     the inks change, and they must: `--candle-ink` rather than display gold, because at 11px on
-     paper full candle measures 2.10 : 1 (the same call `.path-next-nuntius-link` makes above). */
+  /* The announcement as a DATELINE — the register's closing line, where the same facts the hero's
+     line above the braid states are said again, one screen-full later: the same dot, the same
+     rubric, drawn marks between them. One mark for "this evening is ahead", wherever the site
+     claims it.
+
+     THE INKS ARE NOT THE NIGHT SURFACES', and the gap is bigger than it looks. `--ink-muted`
+     (#746d62) carried this line and measures 3.97 : 1 on `--paper-soft` — under the 4.5 floor for
+     11px text, so the page's ONE future-tense fact was the one row in the register a reader could
+     not comfortably read. `--ink-soft` clears it at ~10 : 1.
+
+     THE EVENING'S NAME IS THE DARKEST THING IN THE LINE, which is the correction the ink above
+     forces: at `--candle-ink` (4.85 : 1) the name would now be LIGHTER than the rubric and the date
+     framing it, and the one word a reader is meant to catch would be the faintest. Gold stays as
+     the two MARKS — the pulse and the rule under the name — where no contrast floor applies. That
+     is also the register's own vocabulary one row up: `.path-entry-title` is `--ink`, its tag is
+     not. */
   .path-ahead-link {
+    display: block;
+    color: inherit;
+  }
+
+  /* The tag tier: what this is, and when. Quiet capitals over a display line, which is the shape
+     the entries above use and the reason this row can outrank them without being louder. */
+  .path-ahead-rubric {
     display: inline-flex;
     align-items: flex-start;
     gap: 11px;
     /* One number for the leading and the dot's offset below it — they are the same measurement
-       read from two places, and it is also what clears the rule under the evening's name once
-       the line wraps to two tiers. */
+       read from two places, and it is what keeps the dot on the first tier's capitals once the
+       phone layer breaks this into two. */
     --ahead-line: 1.5;
     font-family: var(--capitalis);
     font-size: 11px;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.18em;
     line-height: var(--ahead-line);
     text-transform: uppercase;
-    color: var(--ink-muted);
-    transition: color 0.35s var(--ease);
+    color: var(--ink-soft);
   }
 
-  .path-ahead-link strong {
-    color: var(--candle-ink);
-    font-weight: 400;
-    padding-bottom: 2px;
-    border-bottom: 1px solid color-mix(in oklab, var(--candle-ink) 38%, transparent);
-    transition: border-color 0.35s var(--ease);
-  }
+  /* THE EVENING'S NAME, AT THE REGISTER'S OWN TITLE SCALE. Same face, same clamp, same weight and
+     the same near-black as `.path-entry-title`, because it is a peer of the evenings above it and
+     not an annotation on them — what sets it apart is the axis it stands on, not its size.
 
-  .path-ahead-link:hover,
-  .path-ahead-link:focus-visible {
+     IT HOVERS EXACTLY AS THE SIX ROWS ABOVE IT DO, and that is not a preference — one list where
+     one row lights differently from its peers reads as a bug, which is what it was. So the trigger
+     is the ROW (`.path-entry:hover` is what the entries answer, not their link), the warm is the
+     display `--candle` and not the ink gold, and the weight axis and tracking open by the same
+     deltas. The raw candle measures ~2.1 : 1 on this parchment and is accepted here for the same
+     reason the entries accept it: hover is transient, it carries no information the resting state
+     does not, and the resting `--ink` is where this row's legibility actually lives.
+
+     The underline rests transparent and is drawn on approach, exactly as `.path-entry-link` does —
+     a permanent rule under a 64px serif is a box, and every title in this register is bare until it
+     is pointed at. It answers the LINK's hover, not the row's: the row's warm says "this is live",
+     the hairline says "and THIS is the door". */
+  .path-ahead-name {
+    display: block;
+    margin-top: clamp(13px, 1.5vw, 20px);
+    font-family: var(--serif);
+    font-size: clamp(32px, 4.4vw, 64px);
+    font-weight: 300;
+    line-height: 1.04;
+    letter-spacing: -0.01em;
+    text-transform: none;
     color: var(--ink);
+    /* wght via the variable axis, not `font-weight`, so it can transition — the entries' own note
+       on Cormorant's live axis applies here unchanged. */
+    font-variation-settings: "wght" 300;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.14em;
+    /* One slot, so the register's shared list is reused verbatim and the door's own hairline is
+       appended to it rather than replacing it. */
+    transition: var(--title-hover-transition), text-decoration-color 0.5s var(--ease);
   }
 
-  .path-ahead-link:hover strong,
-  .path-ahead-link:focus-visible strong {
-    border-bottom-color: var(--candle-ink);
+  .path-ahead:hover .path-ahead-name,
+  .path-ahead:active .path-ahead-name {
+    color: var(--candle);
+    letter-spacing: 0.012em;
+    font-variation-settings: "wght" 384;
   }
 
-  /* The moment is a peer of the name, not a subtitle. The middot is DRAWN so the phone layer can
-     drop it when the two facts stop sharing a line, and glued on both sides — with no whitespace
-     in the markup the mark can never end a line, nor the date start one alone. */
-  .path-ahead-when {
-    white-space: nowrap;
+  .path-ahead-link:hover .path-ahead-name,
+  .path-ahead-link:focus-visible .path-ahead-name {
+    text-decoration-color: color-mix(in oklab, currentColor 55%, transparent);
   }
 
-  .path-ahead-when::before {
-    content: "·";
-    margin: 0 0.5em 0 0.62em;
-    letter-spacing: 0;
+  /* The measure's other edge: the moment with its hour, the church, and whether the door is simply
+     open. Right-aligned as a block and internally, so the three share one edge with each other and
+     with every hairline in the register — which all end here.
+
+     THEY ARE THE SAME TIER AS AN ENTRY'S PLACE LINE, deliberately. The register states where each
+     evening sounded; this row stated only a name and a month, and that missing line is most of why
+     it read as an orphan among its peers rather than as a peer that stepped out of line. */
+  .path-ahead-facts {
+    grid-area: facts;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 7px;
+    text-align: right;
+  }
+
+  .path-ahead-line {
+    grid-area: line;
+  }
+
+  /* Across BOTH columns, under the name and the facts alike — the disclosure belongs to the whole
+     row, not to one of its edges, and a folded list hanging off either one would tip the row back
+     into a column. `row-gap` is the grid's `gap`, which is measured for the space BETWEEN the two
+     planes; the rule this detail draws across its own top is the separation it needs, so the
+     margin above it stays the entries' own 8px (`.path-card-detail`). */
+  .path-ahead-detail {
+    grid-area: detail;
+    margin-top: clamp(6px, 1vw, 14px);
+  }
+
+  .path-ahead-fact {
+    margin: 0;
+    font-family: var(--capitalis);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    line-height: 1.4;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  /* The one fact here that is an invitation rather than an address, so it takes the gold — the ink
+     gold, because this is read and the ground is paper (tokens.css states the contract). No box:
+     the band already sets these three apart, and a bordered word at the end of a register reads as
+     a button. */
+  .path-ahead-door {
+    color: var(--candle-ink);
   }
 
   /* `flex-start` with an explicit offset, not `align-items: center`: the line wraps to two tiers

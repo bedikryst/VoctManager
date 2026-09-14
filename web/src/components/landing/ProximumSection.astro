@@ -1,36 +1,49 @@
 ---
 /**
  * @file ProximumSection.astro
- * @description The one evening that has not happened yet, announced between the Imagines band and
- *  the register — the page's only entry in the future tense, standing directly above "Co już
- *  zabrzmiało." It is DORMANT by construction: with no future-dated station in the corpus it
- *  renders nothing at all, which is the state this site was in for its whole life until 2026.
+ * @description The one evening that has not happened yet — the page's only entry in the future
+ *  tense, and its SECOND BAND, standing directly under the hero. DORMANT by construction: with no
+ *  future-dated station in the corpus it renders nothing at all, which is the state this site was
+ *  in for its whole life until 2026.
  *
- *  WHY IT IS A SEPARATE OBJECT AND NOT A SIXTH ROW OF THE REGISTER. The register's claim is that it
- *  is typographic — evenings set as type, in order, with nothing sold — and a row carrying a poster
- *  turns it into a catalogue listing (docs/web-landing-guardrails §1, which allows exactly this:
- *  a separate object standing BEFORE the register). The announcement is also not of the same kind
- *  as the rows: they are memories and it is an invitation, and it is the invitation that may carry
- *  the practical facts a reader acts on — the hour, the door, where.
+ *  IT IS THE STATION FORM, BORROWED. The shape is `/koncerty`'s `.station--ahead` — night ground,
+ *  a bounded centred measure, the poster in a fixed rail beside a column of type, rubric → name →
+ *  the line a reader acts on → prose → the open door → the doors. That is not a resemblance, it is
+ *  the point: the reader who follows this band's own link arrives at the same object on the cycle's
+ *  page, and an announcement that changes shape between the two surfaces that make it reads as two
+ *  announcements.
+ *
+ *  THE MEASURE IS BOUNDED AND CENTRED, and that single decision is what makes the band work. Laid
+ *  across the frame at the hero's gutters, a 300px poster and two short marks sit ~1300px apart and
+ *  read as two objects stranded at opposite edges with a hole between them; inside 1120px they are
+ *  one dense group with air around it. Air beside an object is a margin; air between two is a hole.
+ *  The station states the same number for the same reason.
+ *
+ *  THE GROUND IS NIGHT, AND IT IS NOT FLAT. A band of unbroken `--dark` cannot carry 1920px behind
+ *  one portrait object — nothing in it holds the width. `.proximum-light` is what does: a soft gold
+ *  wash spilling from the top edge, screen-blended, so the shaft that falls through the hero's nave
+ *  reads as continuing past the hero's bottom edge and landing on the sheet. That is also why this
+ *  band needs no photograph of its own — the landing rations full-bleed images to two (the hero and
+ *  the litany's nave) and a third here would be the page's largest asset spent on a backdrop.
+ *
+ *  IT DOES NOT REPEAT THE HERO. Up there the evening is ONE LINE above the braid — a pulse, a name,
+ *  a month — and a full viewport separates it from this band, so a reader never holds both at once.
+ *  Everything a reader acts on is here: the hour, the church, whether the door is simply open, the
+ *  programme, the notice list.
+ *
+ *  WHY IT IS A SEPARATE OBJECT AND NOT A SIXTH ROW OF THE REGISTER. The rows are memories and this
+ *  is an invitation, and it is the invitation that may carry the practical facts
+ *  (docs/web-landing-guardrails §1, which allows exactly this: a separate object standing BEFORE
+ *  the register). A register row carrying an hour and an open door would be the thing being sold.
  *
  *  IT NAMES THE EVENING ONCE. The title, the place, the invitation and the poster all come from
  *  `concerts.yaml` through the copy overlay, exactly as /koncerty and the concert pages read them;
  *  the moment is formatted from the ISO `date` (lib/dates) and the open door is read off
- *  `admission`. This band's own words are two lines in `landing.yaml`, and neither may name a
- *  programme, a venue or a date — the band is dormant most of the year and lights up on whichever
- *  evening is next.
- *
- *  IT CARRIES ONE MARK, NOT A ROW OF THEM. The `facts` chips belong to the station on /koncerty,
- *  where a reader is already walking the cycle and wants the evening's particulars; repeated here
- *  they turned an invitation into a catalogue entry (the guardrail cited above) and restated, in
- *  three tracked capitals, sentences the paragraph beside them had already said. The open door is
- *  the exception and content.config states why: whether a reader can simply walk in is the first
- *  thing they need, and it is structured data rather than a hand-translated chip.
+ *  `admission`. This band's own words are ONE rubric in `landing.yaml`.
  *
  *  IT IS THE ONLY REASON THE LANDING CARRIES THE PHOTOGRAPH FRAME. The poster opens in the shared
  *  ImageLightbox, and LandingPage mounts that island, `scripts/image-triggers.ts` and
- *  `styles/image-lightbox.css` for this band alone — the Imagines panels above it are doors to
- *  their evening and trigger nothing. If the band is ever removed, those three go with it.
+ *  `styles/image-lightbox.css` for this band alone. If the band goes, those three go with it.
  *
  *  IT GOES DOWN BY DEPLOY. `upcomingStation` is resolved at build, so the band outlives its own
  *  concert until the next build — the same trade `lib/eventSchema` documents for `eventStatus`,
@@ -72,12 +85,12 @@ const say = (field: string, polish: string): string =>
 // `photoOptional`, so a poster named in the corpus before the file lands leaves the band standing
 // as type rather than failing the landing's build.
 const posterImg = upcoming?.data.poster ? photoOptional(upcoming.data.poster) : undefined;
-/** The poster's full-size renditions for the frame it opens in. The same pair the two galleries
+/** The poster's full-size renditions for the frame it opens in — the pair the two galleries
     publish (lib/galleryFrame), so the 1200 step is one emitted file across the whole site.
 
-    `framedShot` never upscales, so how legible the opened poster is, is decided by the DELIVERED
-    artwork and by nothing on this page: ask the designer for an export at least 2000px wide, or
-    the frame will open at whatever the print file happened to be flattened to. */
+    `framedShot` never upscales, so how legible the OPENED poster is, is decided by the delivered
+    artwork and by nothing here: ask the designer for an export at least 2000px wide, or the frame
+    opens at whatever the print file happened to be flattened to. */
 const posterFrame = posterImg ? await framedShot(posterImg) : undefined;
 
 const announced = upcoming
@@ -113,91 +126,85 @@ const announced = upcoming
 
 {
   announced && (
-    <section class="section proximum" id="najblizej" aria-label={chrome.proximumAria}>
-      <div class="section-grid">
-        <div class="section-label micro titulus">
-          <span>
-            <span class="lat" lang="la">
-              Proximum
-            </span>
-          </span>
-        </div>
-        <div class="proximum-body">
+    <section class="proximum" id="najblizej" aria-label={chrome.proximumAria}>
+      {/* The hero's shaft, continuing. Screen-blended so it lifts the ground rather than painting
+          on it, and anchored to the TOP edge so the light arrives from the nave above rather than
+          from nowhere. It is the band's whole claim to depth — see the header on why there is no
+          photograph here. */}
+      <span class="proximum-light" aria-hidden="true" />
+
+      <div class="proximum-inner">
+        {/* IT OPENS RATHER THAN LEADING AWAY. At the rail's width a poster carrying a festival, ten
+            works and an address is an ILLUSTRATION of an announcement the reader cannot actually
+            read, and a second door to a page the title and the actions beside it already open. The
+            frame is not a dead end — it carries this evening's own exit (`href` / `hrefLabel`), so
+            the door survives one press deeper — and it is the one surface on which the poster's
+            hands can be named without the band growing a colophon.
+
+            NO `width` ON THE TRIGGER. `.shot-open` (image-lightbox.css) declares `width: 100%` and
+            LandingPage imports that sheet AFTER this band's, so at equal specificity the reset wins
+            and a width set here is dropped in silence. The size comes from the grid TRACK, which a
+            width declaration cannot override. Its accessible name is the poster's own alt, exactly
+            as the gallery triggers on /obrazy are named. */}
+        {announced.poster && posterFrame && (
+          <button
+            type="button"
+            class="proximum-poster shot-open"
+            data-image-open
+            data-image-src={posterFrame.src}
+            data-image-srcset={posterFrame.srcset}
+            data-image-sizes={posterFrame.sizes}
+            data-image-alt={announced.posterAlt}
+            data-image-caption={[announced.moment, announced.place].filter(Boolean).join(" · ")}
+            data-image-credit={announced.posterCredit}
+            data-image-w={String(posterFrame.width)}
+            data-image-h={String(posterFrame.height)}
+            data-image-href={announced.href}
+            data-image-href-label={chrome.proximumCta}
+          >
+            <span class="frame" />
+            <Picture
+              src={announced.poster}
+              formats={["avif", "webp"]}
+              widths={[280, 420, 560]}
+              width={560}
+              sizes="(max-width: 820px) 62vw, 320px"
+              alt={announced.posterAlt}
+              loading="lazy"
+              decoding="async"
+            />
+          </button>
+        )}
+
+        <div class="proximum-text">
           <p class="proximum-rubric reveal">
-            <span class="proximum-dot" aria-hidden="true" />
+            <span class="lit-dot" aria-hidden="true" />
             {copy.label}
           </p>
-          {/* The poster is the evening's own object and the only image it has — held at the
-              register's rail width so the band sits in the page's grid rather than beside it.
-
-              IT OPENS RATHER THAN LEADING AWAY, and that is the correction: at the rail's 300px a
-              poster carrying a festival, ten works and an address is an ILLUSTRATION of an
-              announcement the reader cannot actually read, and a second door to a page the title
-              and the two actions beside it already open three times over. The frame is not a dead
-              end — it carries this evening's own exit (`href` / `hrefLabel`), so the door survives
-              one press deeper — and it is the one surface on which the poster's hands can be named
-              without the band growing a colophon.
-
-              A <button>, and the `aria-hidden` / `tabindex="-1"` it used to carry are gone with the
-              anchor: those said "this is the title's link twice over, skip it", which was true of a
-              duplicate door and is false of a control that opens something nothing else on this
-              page opens. Its accessible name is the poster's own alt, exactly as the gallery
-              triggers on /obrazy are named. */}
-          <div class="proximum-card">
-            {announced.poster && posterFrame && (
-              <button
-                type="button"
-                class="proximum-poster shot-open"
-                data-image-open
-                data-image-src={posterFrame.src}
-                data-image-srcset={posterFrame.srcset}
-                data-image-sizes={posterFrame.sizes}
-                data-image-alt={announced.posterAlt}
-                data-image-caption={[announced.moment, announced.place]
-                  .filter(Boolean)
-                  .join(" · ")}
-                data-image-credit={announced.posterCredit}
-                data-image-w={String(posterFrame.width)}
-                data-image-h={String(posterFrame.height)}
-                data-image-href={announced.href}
-                data-image-href-label={announced.title}
-              >
-                <span class="frame" />
-                <Picture
-                  src={announced.poster}
-                  formats={["avif", "webp"]}
-                  widths={[280, 420, 560]}
-                  width={560}
-                  sizes="(max-width: 820px) 60vw, 300px"
-                  alt={announced.posterAlt}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </button>
-            )}
-            <div class="proximum-text">
-              <h2 class="proximum-title reveal ink-press">
-                <a class="proximum-link plausible-event-name=proximum+concert" href={announced.href}>
-                  {announced.title}
-                </a>
-              </h2>
-              <p class="proximum-lede reveal">{copy.lede}</p>
-              <p class="proximum-when reveal">
-                {announced.moment}
-                {announced.moment && announced.place ? " · " : ""}
-                {announced.place}
-              </p>
-              <p class="proximum-invitation reveal">{announced.invitation}</p>
-              {announced.free && <p class="proximum-door reveal">{chrome.proximumFree}</p>}
-              <div class="proximum-actions">
-                <a class="proximum-cta plausible-event-name=proximum+program" href={announced.href}>
-                  {chrome.proximumCta}
-                </a>
-                <a class="proximum-notice plausible-event-name=proximum+nuntius" href={hrefNotice}>
-                  {invitation.cta}
-                </a>
-              </div>
-            </div>
+          <h2 class="proximum-title reveal ink-press">
+            <a class="proximum-link plausible-event-name=proximum+concert" href={announced.href}>
+              {announced.title}
+            </a>
+          </h2>
+          {/* The place leads and the moment follows, which is the station's order on /koncerty: a
+              reader who has just been told an evening is ahead asks WHERE before WHEN, and the
+              church is the fact that decides whether the hour matters to them at all. */}
+          <p class="proximum-when reveal">
+            {announced.place}
+            {announced.place && announced.moment ? " · " : ""}
+            {announced.moment}
+          </p>
+          <p class="proximum-invitation reveal">{announced.invitation}</p>
+          {announced.free && <p class="proximum-door reveal">{chrome.proximumFree}</p>}
+          {/* Out of the register deliberately: a half-ink control is a control you are not sure you
+              may press. Everything above it inks; these are simply there. */}
+          <div class="proximum-actions">
+            <a class="proximum-cta plausible-event-name=proximum+program" href={announced.href}>
+              {chrome.proximumCta}
+            </a>
+            <a class="proximum-notice plausible-event-name=proximum+nuntius" href={hrefNotice}>
+              {invitation.cta}
+            </a>
           </div>
         </div>
       </div>

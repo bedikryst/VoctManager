@@ -1,10 +1,18 @@
   /* ─── Hero "Świetlisty fresk" ───
-     Full-bleed image treated as light, not a photograph: lifted to a luminous warm
-     alabaster near-monochrome, edges dissolving into the paper so image and page are one
-     surface. The liturgy lives in a lit left zone (paper scrim → crisp ink type), the
-     fresco stays clear toward the right/centre. The only motions are a slow push-in and
-     one breathing raking light.
-     z-stack: media(0) → light + veil(1) → content(2) → descend(3). */
+     One shaft of light falling through a dark nave, shown as the photograph it is: the grade holds
+     the interior together and the veil is spent only where the liturgy stands. The liturgy gathers
+     at the foot, the shaft keeps the middle of the frame, and the only motions are a slow push-in
+     and the title's own breath.
+
+     THE OPENING IS DARK BECAUSE THE BAR IS, and because the page opens on a threshold. `.chrome`
+     is fixed, full width and paper-coloured until it engages its glass (01-foundation), so
+     whatever stands under it in the first screen has to be dark enough to read light type on — a
+     parchment opening was built and taken out again for exactly that, since it needs the bar to
+     carry two grounds at once, which is a change to every page's chrome rather than to this one's
+     composition. The darkness is also the page's argument: movement I is "Lumen Christi", the
+     paschal candle carried into an unlit church, and a page that opened in daylight would have
+     nothing left to light.
+     z-stack: media(0) → veil(1) → content(2) → descend(3). */
   .hero {
     position: relative;
     min-height: 100svh;
@@ -20,33 +28,81 @@
     inset: 0;
   }
 
-  /* Geometry, Ken Burns + reduced-motion are owned by <BleedImage>; the landing only keeps
-     the dark sacred dimming on the rendered image. */
+  /* Geometry, Ken Burns + reduced-motion are owned by <BleedImage>; the landing keeps the grade.
+
+     THE NAVE IS SUPPOSED TO BE LIT. This photograph is one shaft of light falling through a dark
+     church, and it was being darkened TWICE — a third of the image taken out here, and then a wash
+     laid over the whole frame below — so that type could sit anywhere on it. Two suppressions of
+     the one thing the page is about, to solve a problem that only exists in the lower third.
+     The grade is now a grade: enough to hold the interior together, not enough to put the light
+     out. */
   .hero-media .bleed img {
-    filter: saturate(0.76) contrast(1.08) brightness(0.64);
+    filter: saturate(0.82) contrast(1.06) brightness(0.82);
   }
 
+  /* THE DARK IS DIRECTIONAL, NOT A WASH — three pools, each spent on words and none of them on the
+     shaft. A ground for the bar across the head; a BAY down the left, where the braid stands; and
+     a close under the foot, which the invitations and the notice share across the full width.
+
+     THE DIRECTION IS THE WHOLE CORRECTION. What was here before was a radial centred at
+     `70% 35%` — that is, centred on the brightest thing in the photograph, which it took to 0.62 by
+     its outer stop. A veil aimed AT the subject cannot be tuned, only traded: every step that made
+     the type legible put the light out, and the answer each time was to dim the image again
+     underneath. Aimed AWAY from it, the same ink buys the same legibility and costs the shaft
+     nothing — the bay runs out by 66%, and the shaft's source sits past that once the crop has
+     pushed it right (`position` on <BleedImage>, HeroSection).
+
+     So the lit centre-right of the frame carries no veil at all below the bar. That is the page's
+     one full-bleed photograph shown as a photograph, which is what the section's own name has
+     claimed all along. Banding in the deep stops is dithered by the body grain (01-foundation). */
   .hero::before {
     content: "";
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(circle at 70% 35%, transparent 0, rgba(8, 8, 7, 0.16) 26rem, rgba(8, 8, 7, 0.62) 58rem),
-      linear-gradient(180deg, rgba(8, 8, 7, 0.34) 0%, rgba(8, 8, 7, 0.08) 38%, rgba(8, 8, 7, 0.88) 100%);
+      linear-gradient(180deg, rgba(8, 8, 7, 0.46) 0%, rgba(8, 8, 7, 0.14) 12%, transparent 26%),
+      linear-gradient(
+        95deg,
+        rgba(8, 8, 7, 0.9) 0%,
+        rgba(8, 8, 7, 0.72) 22%,
+        rgba(8, 8, 7, 0.4) 40%,
+        rgba(8, 8, 7, 0.12) 54%,
+        transparent 66%
+      ),
+      linear-gradient(
+        180deg,
+        transparent 0%,
+        transparent 46%,
+        rgba(8, 8, 7, 0.28) 62%,
+        rgba(8, 8, 7, 0.62) 78%,
+        rgba(8, 8, 7, 0.86) 90%,
+        rgba(8, 8, 7, 0.93) 100%
+      );
     z-index: 1;
   }
 
+  /* THE PAGE HAS ONE LEFT EDGE, and this is the one screen where both edges are visible at once.
+     `.chrome` (01-foundation) is full width with a `max(28px, 5vw)` gutter and no measure of its
+     own, so a centred 1580px column here stood the liturgy 170px inside the brand mark above it on
+     a 1920 screen and ended the foot 170px short of the nav — two left edges and two right edges,
+     reading as a column that missed its frame rather than as a decision.
+
+     The gutter is copied from the bar, safe-area insets included. Nothing is lost with the cap:
+     what it was standing in for is a MEASURE, and the elements that need one carry their own
+     (`.hero-title`, `.hero-response`, `.hero-strap`). The foot is the one thing that wanted the
+     full frame all along — it is the composition's rule, and a rule that stops short of the edge
+     it is drawn against is a line, not an edge. */
   .hero-inner {
     position: relative;
     z-index: 2;
-    width: min(1580px, 100%);
+    width: 100%;
     min-height: 100svh;
-    margin: 0 auto;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     gap: clamp(20px, 6vh, 80px);
-    padding: clamp(96px, 11vh, 132px) max(28px, 5vw) clamp(18px, 3vh, 32px);
+    padding: clamp(96px, 11vh, 132px) max(28px, 5vw, env(safe-area-inset-right, 0px))
+      clamp(18px, 3vh, 32px) max(28px, 5vw, env(safe-area-inset-left, 0px));
   }
 
   .hero-grid {
@@ -59,19 +115,19 @@
     color: rgba(244, 241, 233, 0.72);
   }
 
-  /* "Next concert" announcement — renders only when a future-dated concert exists (see
-     HeroSection). A single standing invitation that gives the hero a present tense.
+  /* ─── The dateline · one line, above the braid ───
+     Renders only while `concerts.yaml` carries a future-dated station (HeroSection).
 
-     IT IS TYPE, NOT A PILL. The rounded, blurred, tinted box it used to wear was the only piece of
+     IT IS TYPE, NOT A PILL. The rounded, blurred, tinted box this once wore was the only piece of
      product chrome on a page built from hairlines, corner marks and capitals — the same object
-     base.css turned down for the scroll-to-top mark, where the note reads "a votive mark, not a
-     SaaS chip". Nothing was lost with the scrim: this corner is the hero's lit left zone, where
-     the `::before` gradient has already run to 0.88 black.
+     base.css turns down for the scroll-to-top mark, where the note reads "a votive mark, not a
+     SaaS chip". Nothing is lost without a scrim: it stands in the bay, where the veil has already
+     run past 0.7 (`.hero::before`).
 
-     IT RANKS BELOW THE KICKER, at 0.58 against its 0.72. Two tracked-caps lines stacked above an
-     h1 are a masthead only if they rank — this is the dateline, "Concerts Spirituels" is the
-     standing head, and the gold between them is the news. Boxed, and set brighter than the line
-     under it, the announcement took the kicker's job of being the page's quiet first mark. */
+     ONE LINE IS THE WHOLE DISCIPLINE. Given tiers it becomes a block, and a block belongs to the
+     band below — which prints the hour, the place, the door and the prose beside the poster they
+     are about. What this line owes a reader is that an evening IS ahead, what it is called, and
+     roughly when; everything past that is one screen down. */
   .hero-announce {
     display: inline-flex;
     align-items: flex-start;
@@ -92,6 +148,7 @@
     text-decoration: none;
     transition: color 0.35s var(--ease);
   }
+
   /* The evening's own name carries the rule, so the affordance sits on the fact the link is about
      instead of boxing the whole line again. Full `--candle`: this ground is night, where the
      display gold measures 8.46 : 1 and the paper contract (tokens.css) does not apply. */
@@ -102,10 +159,12 @@
     border-bottom: 1px solid color-mix(in srgb, var(--candle) 34%, transparent);
     transition: border-color 0.35s var(--ease);
   }
+
   .hero-announce:hover,
   .hero-announce:focus-visible {
     color: rgba(244, 241, 233, 0.86);
   }
+
   .hero-announce:hover strong,
   .hero-announce:focus-visible strong {
     border-bottom-color: var(--candle);
@@ -115,8 +174,7 @@
      The middot is generated so the phone layer can drop it when the two facts stop sharing a line
      (07-responsive), and it is glued to the date on both sides — with no whitespace in the markup
      there is no break opportunity here, so the mark can never end a line and the date can never
-     start one alone. Optical margins and the tracking reset follow `.litany-name::after`, which is
-     the same mark doing the same job between names. */
+     start one alone. */
   .hero-announce-when {
     white-space: nowrap;
   }
@@ -126,18 +184,26 @@
     margin: 0 0.5em 0 0.62em;
     letter-spacing: 0;
   }
+
   /* `flex-start` and an explicit offset rather than `align-items: center`: the line wraps at phone
      width, where a centred dot would float against the middle of a two-line block instead of
-     sitting on the first line's capitals. */
+     sitting on the first line's capitals.
+
+     THE PAGE'S ONLY PULSE. It is the sole sign that anything is ahead on a site that otherwise
+     speaks in the eternal past tense, and the band below wears the same mark AT REST — down there
+     the poster and the door have already made the announcement, and a second blinking dot beside
+     them is an alarm for news the reader is already reading.
+
+     Geometry and fill are `.lit-dot` (base.css), shared with the three other surfaces that name an
+     evening still ahead; what stays here is what is this line's alone — the pulse, and the offset
+     that stands the mark on the first line's capitals. The 7px below must track the class's width:
+     the offset is measured against it, and it is the one value a shared class cannot carry because
+     only this surface knows its own leading. */
   .hero-announce-dot {
-    width: 7px;
-    height: 7px;
-    flex-shrink: 0;
     margin-top: calc((var(--announce-line) * 1em - 7px) / 2);
-    border-radius: 50%;
-    background: var(--candle);
     animation: announcePulse 2.8s var(--ease-slow) infinite;
   }
+
   @keyframes announcePulse {
     0%,
     100% {
@@ -147,6 +213,7 @@
       opacity: 1;
     }
   }
+
   @media (prefers-reduced-motion: reduce) {
     .hero-announce-dot {
       animation: none;
@@ -173,9 +240,13 @@
     color: #e6d8b4;
   }
 
+  /* The air under the h1 is measured against its DESCENDERS, not its baseline. `.hero-title` is set
+     at `line-height: 0.9`, so the "g" of "głos." hangs below its own em box and the gap the number
+     promises is not the gap the eye is given; at the display sizes this clamp reaches, an 18px
+     floor closed to nothing. */
   .hero-response {
     max-width: 30ch;
-    margin: clamp(18px, 2.2vw, 32px) 0 0;
+    margin: clamp(26px, 3vw, 44px) 0 0;
     font-family: var(--serif);
     font-style: italic;
     font-weight: 300;
@@ -187,20 +258,29 @@
   /* Waga 400, nie 460 jak bliźniacze pasmo w stopce: tu jasne leży na ciemnym, a to
      optycznie POGRUBIA kreskę (odwrotnie niż na pergaminie). Ta sama kompensacja
      przeniesiona wprost z gruntu jasnego wyszłaby tu za ciężka. */
+  /* THE MEASURE IS SET BY THE BAY, NOT BY THE COLUMN. At 40rem this sentence ran past the left
+     third and into the lit nave — the weakest ink on the screen laid across its most detailed
+     ground, and the one line here that is unmistakably text ON a picture rather than text with a
+     ground of its own. 34rem is where the bay still holds it: on a 1920 frame it ends near a third
+     across, where the veil is past 0.4, and on the narrowest desktop it reaches 45%, which is the
+     weakest ink meeting the thinnest ink and no worse than either.
+
+     The ink comes up a step for the same reason it was lowered: 0.72 was tuned against an image
+     dimmed to 0.64, and the image is no longer dimmed to 0.64. */
   .hero-strap {
-    max-width: 40rem;
+    max-width: 34rem;
     margin: clamp(16px, 1.8vw, 26px) 0 0;
-    color: rgba(244, 241, 233, 0.72);
+    color: rgba(244, 241, 233, 0.78);
     font-family: var(--serif);
     font-size: clamp(17px, 1.5vw, 22px);
     font-weight: 400;
     line-height: 1.4;
   }
 
-  /* The strap is a copy field now, so its link carries no class of its own: a `class` on an
-     editor's proposal is stripped by the desk's sanitizer, and a rule that depended on one would
-     go dead the first time the sentence was edited. `white-space: nowrap` is also what binds the
-     name — no hard space is ever typed into a field an editor edits. */
+  /* The strap is a copy field, so its link carries no class of its own: a `class` on an editor's
+     proposal is stripped by the desk's sanitizer, and a rule that depended on one would go dead
+     the first time the sentence was edited. `white-space: nowrap` is also what binds the name —
+     no hard space is ever typed into a field an editor edits. */
   .hero-strap a {
     white-space: nowrap;
     color: var(--paper);
@@ -215,16 +295,33 @@
     border-bottom-color: var(--candle);
   }
 
-  .hero-rail {
+  /* ─── The foot · the rail ───
+     One rule across the frame; under it, the two standing invitations at the frame's left edge and
+     the descend cue at its right, on one baseline. Two marks, two edges, nothing in the middle.
+
+     IT CARRIES NO STATE. The announcement is a line above the braid, so nothing here grows or
+     recomposes when an evening lands. The version that put the announcement's four tiers into this
+     row is what this replaces, and it failed on geometry rather than on taste: a three-tier block
+     beside a single mark has no alignment that works — bottoms leave a ~100px hole under the rule
+     on the left, tops leave the block's ragged right edge a hair short of the cue's flush one, and
+     the rail's whole claim is that it has exactly two edges. */
+  .hero-foot {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     width: 100%;
     gap: 18px 32px;
-    margin-top: 0;
-    padding-top: 18px;
+    padding-top: 20px;
     border-top: 1px solid rgba(244, 241, 233, 0.22);
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 0;
   }
 
   .hero-cue {
@@ -254,14 +351,6 @@
 
   @media (prefers-reduced-motion: reduce) {
     .hero-cue::after { animation: none; opacity: 0.6; }
-  }
-
-  .hero-actions {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    flex-wrap: wrap;
-    margin-top: 0;
   }
 
   .text-link,

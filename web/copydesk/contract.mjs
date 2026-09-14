@@ -127,6 +127,28 @@ export const CONCERT_CONTRACT = [
   },
   { kind: "list", path: "facts", keyBy: null, label: "Fakt", fields: [{ path: null, key: "", label: "" }] },
 
+  // ── Wejście ─────────────────────────────────────────────────────────────────────────────────
+  // The door band of an evening still ahead. Everything else it prints — day, hour, place,
+  // address, admission, the festival's name — is a structured field and not on this desk.
+  {
+    kind: "field",
+    path: "venueNote",
+    label: "Wejście · która sala",
+    note:
+      "The practical fact a reader standing at the address still needs (\"Kościół górny\"), so " +
+      "render it as a sign would, not as prose. Names of rooms follow local usage rather than the " +
+      "Polish word order.",
+  },
+  {
+    kind: "field",
+    path: "festivalNote",
+    label: "Wejście · o festiwalu",
+    note:
+      "Somebody else's event, described in our voice: what the edition is about and how it rhymes " +
+      "with this programme, then a full stop. Carry NO appeal on the organiser's behalf in any " +
+      "locale, and keep the festival's own name as written — it is a proper name (see NOT_COPY).",
+  },
+
   // ── Próg wieczoru ───────────────────────────────────────────────────────────────────────────
   { kind: "field", path: "prologue", label: "Próg wieczoru" },
 
@@ -184,7 +206,26 @@ export const CONCERT_CONTRACT = [
     fields: [
       { path: "inscriptioGloss.pl", key: "inscriptioGloss", label: "incipit · przekład", shape: "map" },
       { path: "inscriptioRef.source.pl", key: "inscriptioRef.source", label: "incipit · źródło", shape: "map" },
-      { path: "note", key: "note", label: "nota" },
+      {
+        path: "locus",
+        key: "locus",
+        label: "miejsce w programie",
+        note:
+          "Where the work stands in THIS evening, and the one field that is written afresh when a " +
+          "work returns in another programme — so translate it as a reading, not as a label. It " +
+          "sits beside the work on the page while the `note` under it opens; keep it as short in " +
+          "the target language. Present tense, and true of the sung evening too: the page turns " +
+          "from invitation to record on its own.",
+      },
+      {
+        path: "note",
+        key: "note",
+        label: "nota",
+        note:
+          "What the work IS, not what it does here — so two evenings singing one work may carry " +
+          "this word for word, and a translation already accepted for the other evening is the " +
+          "right answer here rather than a fresh paraphrase of it.",
+      },
       {
         path: "rubric",
         key: "rubric",
@@ -298,12 +339,29 @@ export const NOT_COPY = {
   heroImg: "asset name",
   heroFoot: "veil depth, 0–1",
   poster: "asset name",
+  share: "asset name — the Open Graph frame",
+  posterCredit:
+    "the hands that drew the poster — names, separated by \" · \". The LABEL in front of them is" +
+    " chrome and is supplied per locale (lib/photoCredit `designCredit`), which is why the field" +
+    " itself carries none and is not on the desk.",
+  "festival.name": "a proper name — the festival is somebody else's entity and keeps its own name",
+  "festival.url": "URL",
+  "ritornello.composer": "a person's name",
+  "ritornello.work": "the work's title — content, printed unchanged in every locale",
+  "ritornello.years": "life dates",
+  "ritornello.year": "year of composition",
+  "ritornello.times": "a count — how many times the piece sounds across the evening",
+  "ritornello.numbered": "flag — is the returning piece one of the numbered works",
   spotify: "URL",
   venue: "venue name — schema.org Place.name, and the landing reads its tail as a town",
   date: "ISO date; every visible form of it is FORMATTED per locale (lib/dates)",
   time: "clock time",
-  address: "street address — JSON-LD only",
-  admission: "enum, JSON-LD only",
+  endTime:
+    "clock time — the end of the slot as somebody else published it. The page prints the pair as a" +
+    " window and never as a duration, so there is no wording here to translate.",
+  address: "street address — JSON-LD, and printed on the door band of an evening still ahead",
+  mapUrl: "URL",
+  admission: "enum — JSON-LD, and the door band's open-door line, whose wording is chrome",
   // `roman` stood here and is GONE from the file too: the numeral is derived from an entry's
   // position among the cycle's own stations (`lib/cycle`), so inserting an evening cannot leave
   // the ones after it numbered wrongly. Nothing about it was ever copy; it left for the same

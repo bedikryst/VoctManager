@@ -25,10 +25,13 @@
 
 import type { Locale } from "../config";
 
-/** The eight bands a concert page can raise, each named the same way in its heading and its index
-    row. A concert that lacks the field a band hangs off never renders it — the `when` guards in the
+/** The bands a concert page can raise, each named the same way in its heading and its index row.
+    A concert that lacks the field a band hangs off never renders it — the `when` guards in the
     component are the single source of that decision. */
 export interface ConcertBands {
+  /** The door: when, where, what the entry costs. Only an evening still ahead raises it, so it is
+      the one band that leaves the page rather than filling up — see `unsung` in the component. */
+  readonly ianua: string;
   readonly prologue: string;
   readonly verbum: string;
   readonly tour: string;
@@ -59,6 +62,15 @@ export interface ConcertChrome {
   /** Gloss of `Tabula`: what the front-matter contents list and its aria-label are called. */
   readonly tabula: string;
   readonly bands: ConcertBands;
+  /** The door band's three field names. Everything else it labels — the open door, and the link to
+      the festival's own site — is already the house's wording on /koncerty's announced station and
+      is read from `KONCERTY_CHROME` rather than restated here: one fact in two homes, translated
+      twice, is what the schema's `admission` comment warns against. */
+  readonly ianua: {
+    readonly when: string;
+    readonly where: string;
+    readonly door: string;
+  };
   readonly verbum: {
     /** Summary of the disclosure holding the whole transcript. */
     readonly fullCue: string;
@@ -72,8 +84,18 @@ export interface ConcertChrome {
     readonly realizacjaRole: string;
     /** aria-label on a movement's scriptural interlude. */
     readonly interludeAria: string;
-    /** Summary of the disclosure holding a sung text beside its gloss. */
+    /** Summary of the disclosure holding a sung text beside its gloss. Used whenever there IS a
+        sung text, even though the work's `note` now opens in the same box: the text is the larger
+        promise, and a note standing above it reads as the headnote a programme book puts there. */
     readonly textCue: string;
+    /** Summary of the same disclosure where the work has a note and no sung text. */
+    readonly workCue: string;
+    /** The mark on the returning piece's own row at the head of the programme — `{times}` takes
+        the count the evening declares (`ritornello`, content.config). /koncerty says the same
+        words from its own table: that page prints no clasps and needs the mark to state the
+        return at all, this one prints every clasp and needs it to state the FIRST sounding, which
+        precedes work 01 and hangs on no seam. */
+    readonly ritornelloTimes: string;
     /**
      * Where the printed texts come from, for a concert that states nothing of its own. A concert
      * that does states it in `textNote`, which is a desk field and must describe THIS locale's
@@ -128,6 +150,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
     },
     tabula: "Zawartość wieczoru",
     bands: {
+      ianua: "Wejście",
       prologue: "Próg wieczoru",
       verbum: "Słowo wprowadzające",
       tour: "Wykonania",
@@ -137,6 +160,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       film: "Zapis wieczoru",
       gallery: "Obrazy wieczoru",
     },
+    ianua: { when: "Kiedy", where: "Gdzie", door: "Wstęp" },
     verbum: {
       fullCue: "Całe słowo wprowadzenia",
       note: "Zapis słowa wprowadzającego, nieznacznie zredagowany dla czytelności.",
@@ -146,6 +170,8 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       realizacjaRole: "Realizacja",
       interludeAria: "Przerywnik biblijny",
       textCue: "Tekst i przekład",
+      workCue: "O utworze",
+      ritornelloTimes: "{times}× w ciągu wieczoru",
       textNoteDefault:
         "Teksty łacińskie i oryginalne — z programów zespołu; przekłady polskie własne.",
       spotify: "wybrzmiało m.in. na Spotify",
@@ -161,7 +187,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       navAria: "Nawigacja po cyklu",
       viaLabel: "Droga trwa",
       allConcerts: "Wszystkie Koncerty Duchowe",
-      aheadLabel: "Najbliżej",
+      aheadLabel: "Najbliższy koncert",
     },
   },
   en: {
@@ -176,6 +202,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
     },
     tabula: "What the evening holds",
     bands: {
+      ianua: "Coming in",
       prologue: "The threshold of the evening",
       verbum: "The opening word",
       tour: "Performances",
@@ -185,6 +212,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       film: "The evening on film",
       gallery: "Images of the evening",
     },
+    ianua: { when: "When", where: "Where", door: "Admission" },
     verbum: {
       fullCue: "The whole of the opening word",
       note: "A transcript of the opening word, lightly edited for readability.",
@@ -194,6 +222,8 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       realizacjaRole: "Production",
       interludeAria: "Scriptural interlude",
       textCue: "Text and translation",
+      workCue: "About the work",
+      ritornelloTimes: "{times}× through the evening",
       textNoteDefault:
         "Latin and original texts from the ensemble's own programmes; English translations our own.",
       spotify: "some of it can be heard on Spotify",
@@ -209,7 +239,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       navAria: "Navigation within the cycle",
       viaLabel: "The road goes on",
       allConcerts: "All the Spiritual Concerts",
-      aheadLabel: "Next",
+      aheadLabel: "The coming concert",
     },
   },
   fr: {
@@ -224,6 +254,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
     },
     tabula: "Le contenu de la soirée",
     bands: {
+      ianua: "L'entrée",
       prologue: "Le seuil de la soirée",
       verbum: "La parole d'ouverture",
       tour: "Exécutions",
@@ -233,6 +264,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       film: "L'enregistrement de la soirée",
       gallery: "Images de la soirée",
     },
+    ianua: { when: "Quand", where: "Où", door: "Entrée" },
     verbum: {
       fullCue: "L'intégralité de la parole d'ouverture",
       note: "Transcription de la parole d'ouverture, légèrement éditée pour la lisibilité.",
@@ -242,6 +274,8 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       realizacjaRole: "Réalisation",
       interludeAria: "Interlude biblique",
       textCue: "Texte et traduction",
+      workCue: "À propos de l'œuvre",
+      ritornelloTimes: "{times}× au cours de la soirée",
       textNoteDefault:
         "Textes latins et originaux tirés des programmes de l'ensemble ; traductions françaises les nôtres.",
       spotify: "on peut en écouter une partie sur Spotify",
@@ -257,7 +291,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       navAria: "Navigation dans le cycle",
       viaLabel: "Le chemin continue",
       allConcerts: "Tous les Concerts Spirituels",
-      aheadLabel: "Prochainement",
+      aheadLabel: "Le prochain concert",
     },
   },
 };

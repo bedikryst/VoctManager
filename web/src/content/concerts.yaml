@@ -2564,20 +2564,63 @@
   title: Pochwała Stworzenia
   metaPlace: { pl: "Kościół Wszystkich Świętych, Warszawa" }
   venue: "Kościół Wszystkich Świętych, Warszawa"
+  # Which room, in a building that has two. The festival's schedule puts this hour in the upper
+  # church, and a reader who has found the door still has a staircase to choose.
+  venueNote: "Kościół górny"
   date: "2026-10-11"
   time: "13:30"
+  # The end of the SLOT as the organiser published it, never a duration of ours: the running order
+  # is untimed and the ensemble keeps no durations (lib/eventSchema). It prints as a window, which
+  # is the only honest form of it, and it is what lets the JSON-LD carry `endDate`.
+  endTime: "14:30"
   address: "pl. Grzybowski 3/5, Warszawa"
+  # The organiser's own map link, followed rather than fetched — no page on this site requests a
+  # third party (.ai/07). A field rather than a URL composed from `address`, because building a maps
+  # query in code picks a provider on the reader's behalf without saying so.
+  mapUrl: "https://maps.app.goo.gl/YNrqTTynPnUC4fZc8"
   admission: free
   festival:
     name: "Fenomen człowieka"
     url: "https://fenomen-czlowieka.pl/"
+  # Why the frame earns a sentence and not only a link: this edition reads the human through beauty,
+  # and one of the kinds it names is the beauty that stays in pain, which is the axis this
+  # programme's own descent runs. It states that rhyme and stops. `schodzi` is deliberate — it is the
+  # verb `programArc` opens on, and repeating it IS the rhyme.
+  #
+  # THE FOUNDATION'S WORK IS STATED AS A FACT AND NEVER AS A FIGURE. Naming who runs the festival,
+  # and that they accompany people with ALS, is attribution a reader is owed; drawing a meaning for
+  # our concert out of somebody else's illness is not ours to draw (the braid's third strand, .ai/07:
+  # never aestheticize real tragedy). So the two sentences stand apart and the reader joins them or
+  # does not. For the same reason the note carries no appeal: `festival.url` is the door to their
+  # work, and a collection taken on their behalf would be the donation-first framing .ai/07 rules
+  # out. The foundation's own writing makes the connection explicitly, in its own voice, which is
+  # where that belongs.
+  festivalNote: >-
+    Trzy dni wystaw, warsztatów i rozmów; ten koncert je zamyka. Festiwal prowadzi Fundacja
+    Hospicyjna „Mój Dom”, która towarzyszy chorym na SLA i ich rodzinom. Tegoroczna edycja czyta
+    człowieka przez piękno: piękno wartości i relacji, piękno natury i dźwięku, i to, które
+    zostaje także w bólu. Ten program schodzi ku temu ostatniemu.
   about:
     place: "Kościół Wszystkich Świętych · Warszawa"
     blurb: "Koncert w ramach warszawskiego festiwalu „Fenomen człowieka”: Pieśń słoneczna św. Franciszka jako droga od zachwytu nad stworzeniem ku nadziei wieczności."
+    img: kd-stworzenie-hero-desktop
   # Amber rather than the base gold two evenings already wear: this one is named after the sun,
   # and candleFrom needs a hue of its own to tint the page with (lib/candle).
   accent: "#c9873f"
-  essence: "Wieczór wyrasta z Laudes creaturarum św. Franciszka, znanych po polsku jako Pieśń słoneczna: całe stworzenie jest w nich drogą do Stwórcy. Program schodzi od zachwytu nad światem ku temu, co w człowieku kruche, ku przemianie, cierpieniu i śmierci, a powracający z galerii Spiegel im Spiegel Pärta jest lustrem tej relacji. Całą drogę domyka Stetit Angelus Dubry, obraz anioła okadzającego ołtarz modlitwami wszystkich świętych, śpiewany w kościele Wszystkich Świętych."
+  # The refrain, not a verse: the Canticle names each creature after the same nine words, and the
+  # programme returns to the same piece between its works. The evening's form and its text's form
+  # are one form, and this is where the page says so first.
+  inscriptio: "Laudato si', mi' Signore, cum tucte le Tue creature"
+  inscriptioGloss: { pl: "Pochwalony bądź, Panie mój, ze wszystkimi Twoimi stworzeniami" }
+  inscriptioRef: { source: { pl: "Pieśń słoneczna św. Franciszka z Asyżu" } }
+  # THE ONLY FIELD NO HUMAN READS UNTIL 12 OCTOBER: while the evening is ahead this is the JSON-LD
+  # description and nothing else, and on the first build after the date it becomes the page's
+  # <meta description> — the sentence a search result quotes. So it has to stand alone, and it
+  # carries the All Saints rhyme for that reason, where the visible bands now spend it once.
+  # `Koncert`, not `Wieczór`: the door band prints 13:30 three screens up. „Między grupami utworów”
+  # is the conductor's own correction to how often the Pärt returns (programArc) — this field
+  # predates it and used to imply a continuous return.
+  essence: "Koncert wyrasta z Laudes creaturarum św. Franciszka, znanych po polsku jako Pieśń słoneczna: całe stworzenie jest w nich drogą do Stwórcy. Program prowadzi od zachwytu nad światem ku kruchości człowieka, ku przemianie, cierpieniu i śmierci, a między grupami utworów wraca z galerii Spiegel im Spiegel Pärta, lustro tej relacji. Całą drogę domyka Stetit Angelus Dubry, obraz anioła okadzającego ołtarz modlitwami wszystkich świętych, śpiewany w kościele Wszystkich Świętych."
   # The landing's own paragraph about this evening. It leads with the one thing the essence never
   # says — that the Canticle GREETS its subjects, and greets death on the same terms — so the two
   # texts open on different facts rather than paraphrasing each other. It carries no date, no
@@ -2587,14 +2630,85 @@
     - Festiwal „Fenomen człowieka”
     - Głosy, skrzypce, organy
     - Pieśń słoneczna św. Franciszka
-  # The poster is the only image this evening has, so the station's wash is made from it
-  # (docs/station-backgrounds.md). Both stems say `stworzenie`, not the concert's id — the
-  # archive's own naming, which photos.ts keys by file rather than by concert.
+  # All three stems say `stworzenie`, not the concert's id — the archive's own naming, which
+  # photos.ts keys by file rather than by concert.
+  #
+  # The hero is the CHURCH, photographed before anything happened in it: this evening has no
+  # documentary frame of its own and will not have one until 11 October, and a room nobody is in
+  # yet is the honest picture of a concert that has not been sung — the same call Wołanie's empty
+  # auditorium makes above, for the same reason. Desktop stands in the nave; the phone looks up at
+  # the gallery, which is where the organ is and therefore where the Pärt will come from.
+  # The wash on /koncerty is blurred from the desktop frame like every other station's; while the
+  # evening had only its poster it was washed from that instead (docs/station-backgrounds.md).
   bg: st-stworzenie-bg
+  heroImg: kd-stworzenie-hero
   poster: poster-stworzenie
   posterAlt: Plakat koncertu Pochwała Stworzenia
   posterCredit: "Anna Marcisz · VoctEnsemble"
+  # The frame a pasted link previews with, and the one surface where the poster beats the
+  # photograph: a reader who has not decided to come needs the day, the hour and the door, and
+  # the sheet prints all three. Built by web/poster-art.cjs; drop it once the evening is sung and
+  # the hero becomes the honest preview again.
+  share: share-stworzenie
   realizacja: "Skrzypce: Radu Ropotan"
+  hasPage: true
+  # The scene, and nothing the door band states in fields: the day, the hour, the festival and the
+  # open door are printed from `date`/`time`/`festival`/`admission` a screen higher, and a paragraph
+  # that repeated them would be the page saying one thing twice in two registers. This ends on the
+  # angel, which is where the próg is strongest and which the last work answers.
+  # The tail names the angel but NOT the saints, and that is the whole point of it: the reveal
+  # belongs to `reflectionNote` two bands down, which is where this evening's strongest fact is
+  # spent. Saying „modlitwami wszystkich świętych” here — three sentences after „kościoła
+  # Wszystkich Świętych” — states the coincidence before the page has earned it.
+  prologue: >-
+    Niedzielne popołudnie, plac Grzybowski. Nad portalem kościoła Wszystkich Świętych wykuto
+    wers psalmu: „Chwalcie Pana w świętych Jego”. Koncert zaczyna się już pod tym zdaniem,
+    a kończy zdaniem z tej samej rodziny — o aniele, który okadza ołtarz modlitwą.
+  # THIS EVENING CARRIES NO SIGNED REFLECTION, and the omission is deliberate. The account the
+  # conductor sent for publication was generated rather than written — he said so when he sent it
+  # (docs/koncert-pochwala-stworzenia §9) — so it is not his voice and must not carry his name; and
+  # it said what `essence` and `programArc` already say, which is where the reading of the evening
+  # lives. He is on the page as its conductor, in `credits`. A signed paragraph belongs here only
+  # when he writes one.
+  #
+  # What the band prints instead is ours, and unsigned. It is the single strongest fact this evening
+  # has, and it has to survive translation in BOTH halves at once — the saints in the antiphon and
+  # the saints in the name over the door.
+  reflectionNote: >-
+    Antyfona, którą opracował Dubra, układa słowa Apokalipsy: „dym kadzideł wzniósł się z modlitwami
+    świętych przed Bogiem”. Ostatnie zdanie tej drogi pada więc w kościele, który nosi dokładnie
+    to wezwanie — Wszystkich Świętych.
+  credits:
+    - { role: "Dyrygent", name: "Florent de Bazelaire" }
+  programLede: "Dziesięć utworów i jedno lustro"
+  # The conductor's own edit of this paragraph, returned 14.09.2026 — so the arc is his reading in
+  # his words, which is the one thing the page had been missing since the generated reflection came
+  # out of it. Three departures from what he sent, each with a reason:
+  #
+  #  · „Pieśni słonecznej” stays lower-case, as it is in `inscriptioRef.source` and in `facts`;
+  #  · the requiem keeps its bare title here and its numeral in the programme list, where the work
+  #    is named rather than mentioned (§10: the evening sings the FIRST setting, and „Dona eis
+  #    requiem I Borkowskiego” is not a thing anybody says out loud);
+  #  · his two paragraphs are joined, because the band sets this as one <p>.
+  #
+  # „MIĘDZY GRUPAMI UTWORÓW” IS A CORRECTION AND NOT A PARAPHRASE. This said „między utworami”,
+  # which claimed a return after each of the ten; the clasps below hang off works 02, 05, 08 and 10,
+  # so the Pärt divides the evening into four groups and sounds five times counting the one that
+  # opens it. His wording is what the programme actually does.
+  programArc: >-
+    Kolejność schodzi od pochwały i światła: Gloria II i Lumen Borkowskiego otwierają wieczór,
+    a zaraz po nich wybrzmiewa Laudes creaturarum Carla Orffa, bezpośrednio odwołujące się do
+    Pieśni słonecznej św. Franciszka. Dalej program przechodzi od kosmicznego obrazu stworzenia
+    ku człowiekowi: Méditation Masseneta, związana w operze z wewnętrzną przemianą Thaïs; nocne
+    niebo Ešenvaldsa; skowronek Vaughana Williamsa, wznoszący się ku światłu; zamarznięta Prosna
+    Sykulskiego i wiejski skrzypek Enescu. Na końcu pojawiają się Dona eis requiem Borkowskiego
+    i anioł Dubry przy ołtarzu. Między grupami utworów powraca Spiegel im Spiegel Pärta, grany
+    z galerii na organach jako muzyczne lustro relacji stworzenia i Stwórcy.
+  # The default line would claim the originals come "z programów zespołu"; this evening has no
+  # programme book yet, and its central text is not Latin.
+  textNote: >-
+    Kantyk podajemy w oryginale umbryjskim, w którym Franciszek go ułożył; przekłady polskie
+    własne.
   # The order is Florent's own, marked final on 11.09.2026. Pärt is NOT one of the ten: the
   # returning Spiegel im Spiegel is the evening's mirror rather than a work in the programme
   # (his words), so each return hangs off the item it follows as a clasp, exactly as the
@@ -2611,46 +2725,367 @@
       years: "ur. 1934"
       work: "Gloria II"
       year: "2012"
+      voicing: "a 7"
+      locus: "Borkowski ma w tym programie trzy utwory; pierwszy otwiera go jednym słowem: chwała."
+      note: >-
+        Jego muzyka sakralna bierze zwykle jedno łacińskie słowo i buduje z niego całość:
+        płaszczyznami brzmienia, skrajnymi rejestrami i powtórzeniem, nie melodią.
     - composer: "Marian Borkowski"
       work: "Lumen"
       year: "2016"
+      voicing: "a 5"
+      # No `note`: everything this entry used to say was a reading of the programme rather than a
+      # fact about the piece, and the booklet is silent on the rest. An empty field is the spec's
+      # answer to that, and the Canticle's own line about brother sun is printed under the Orff.
+      locus: "Po chwale przychodzi to, dzięki czemu cokolwiek widać."
       clasp: "Spiegel im Spiegel · Arvo Pärt"
     - composer: "Carl Orff"
       years: "1895–1982"
       work: "Laudes creaturarum"
       year: "1954"
+      voicing: "a 8"
+      # No „Centrum wieczoru” in front: the sentence that follows says it better, and the hour on
+      # this page is 13:30 — the time-of-day word belongs to the prologue's scene and to the
+      # conductor's own paragraph, not to ten programme rows.
+      locus: >-
+        Tu przechodzi naraz wszystko, czego reszta programu dotyka po kolei.
+      note: >-
+        Cały Kantyk, w umbryjskim oryginale z pierwszej połowy XIII wieku, w którym Franciszek
+        go ułożył: słońce, księżyc i gwiazdy, wiatr, woda, ogień, matka ziemia, ci, którzy
+        przebaczają, i siostra śmierć. Orff opracował ten tekst w 1954 roku, w zbiorze
+        Concento di voci.
+      text: |-
+        Altissimu, onnipotente, bon Signore,
+        Tue so le laude, la gloria e l'honore et onne benedictione.
+        Ad Te solo, Altissimo, se konfano
+        et nullu homo ène dignu Te mentovare.
+
+        Laudato si', mi' Signore, cum tucte le Tue creature,
+        spetialmente messor lo frate sole,
+        lo quale è iorno et allumini noi per lui;
+        et ellu è bellu e radiante cum grande splendore:
+        de Te, Altissimo, porta significatione.
+
+        Laudato si', mi' Signore, per sora luna e le stelle:
+        in celu l'ài formate clarite et pretiose et belle.
+
+        Laudato si', mi' Signore, per frate vento
+        et per aere et nubilo et sereno et onne tempo,
+        per lo quale a le Tue creature dài sustentamento.
+
+        Laudato si', mi' Signore, per sor'aqua,
+        la quale è multo utile et humile et pretiosa et casta.
+
+        Laudato si', mi' Signore, per frate focu,
+        per lo quale ennallumini la nocte:
+        ed ello è bello et iocundo et robustoso et forte.
+
+        Laudato si', mi' Signore, per sora nostra matre terra,
+        la quale ne sustenta et governa,
+        et produce diversi fructi con coloriti flori et herba.
+
+        Laudato si', mi' Signore, per quelli ke perdonano per lo Tuo amore
+        et sostengo infirmitate et tribulatione.
+        Beati quelli ke 'l sosterranno in pace,
+        ka da Te, Altissimo, sirano incoronati.
+
+        Laudato si', mi' Signore, per sora nostra morte corporale,
+        da la quale nullu homo vivente po' skappare.
+        Guai a quelli ke morrano ne le peccata mortali;
+        beati quelli ke trovarà ne le Tue sanctissime voluntati,
+        ka la morte secunda no 'l farrà male.
+
+        Laudate et benedicete mi' Signore et rengratiate
+        e serviateli cum grande humilitate.
+      textGloss:
+        pl: |-
+          Najwyższy, wszechmogący, dobry Panie,
+          Twoja jest sława, chwała i cześć, i wszelkie błogosławieństwo.
+          Tobie jednemu, Najwyższy, przystoją
+          i żaden człowiek nie jest godzien wymówić Twego imienia.
+
+          Pochwalony bądź, Panie mój, ze wszystkimi Twoimi stworzeniami,
+          a najpierw z panem bratem słońcem,
+          który jest dniem i przez którego nas oświecasz;
+          piękny jest i promienny, w wielkim blasku —
+          o Tobie, Najwyższy, daje świadectwo.
+
+          Pochwalony bądź, Panie mój, przez siostrę księżyc i gwiazdy:
+          ukształtowałeś je na niebie jasne, drogocenne i piękne.
+
+          Pochwalony bądź, Panie mój, przez brata wiatr,
+          przez powietrze i chmury, przez pogodę i każdy czas,
+          którymi swoim stworzeniom dajesz utrzymanie.
+
+          Pochwalony bądź, Panie mój, przez siostrę wodę,
+          która jest bardzo pożyteczna i pokorna, i drogocenna, i czysta.
+
+          Pochwalony bądź, Panie mój, przez brata ogień,
+          którym rozświetlasz noc;
+          a on jest piękny i radosny, i silny, i mocny.
+
+          Pochwalony bądź, Panie mój, przez siostrę naszą, matkę ziemię,
+          która nas żywi i chowa,
+          i wydaje rozmaite owoce z barwnymi kwiatami i trawą.
+
+          Pochwalony bądź, Panie mój, przez tych, którzy przebaczają dla Twojej miłości
+          i znoszą słabość i utrapienie.
+          Błogosławieni, którzy wytrwają w pokoju,
+          bo przez Ciebie, Najwyższy, będą uwieńczeni.
+
+          Pochwalony bądź, Panie mój, przez siostrę naszą, śmierć cielesną,
+          której żaden żyjący człowiek ujść nie może.
+          Biada tym, którzy umierają w grzechach śmiertelnych;
+          błogosławieni, których zastanie pełniących Twoją najświętszą wolę,
+          bo śmierć druga nie uczyni im zła.
+
+          Chwalcie i błogosławcie Pana mojego, i dziękujcie Mu,
+          i służcie Mu z wielką pokorą.
     - composer: "Jules Massenet"
       years: "1842–1912"
       work: "Méditation z opery <em>Thaïs</em>"
       year: "1894"
       voicing: "skrzypce i organy"
+      locus: >-
+        Pierwsze wnętrze tego popołudnia: takie, które właśnie się odwraca.
+      note: >-
+        Przerywnik między obrazami drugiego aktu opery: w Thaïs to moment, w którym tytułowa
+        bohaterka, kurtyzana z Aleksandrii, postanawia zmienić życie. Cała przemiana dzieje się
+        bez jednego słowa, w partii skrzypiec.
     - composer: "Ēriks Ešenvalds"
       years: "ur. 1977"
       work: "Stars"
       year: "2011"
+      voicing: "a 8"
+      locus: >-
+        Zaraz po wnętrzu niebo, a pod nim człowiek: pytanie o jego miejsce w stworzeniu zaczyna
+        się tutaj.
+      note: >-
+        Wiersz amerykańskiej poetki Sary Teasdale o samotnej nocy pod gwiazdami. Ešenvalds dopisał
+        do chóru szklane harmonijki (strojone kieliszki, po których wodzi się mokrym palcem), żeby
+        brzmiały jak migotanie.
+      inscriptioGloss: { pl: "tekst: Sara Teasdale" }
+      text: |-
+        Alone in the night
+        on a dark hill
+        with pines around me
+        spicy and still,
+
+        and a heaven full of stars
+        over my head,
+        white and topaz
+        and misty red;
+
+        myriads with beating
+        hearts of fire
+        that aeons
+        cannot vex or tire;
+
+        up the dome of heaven
+        like a great hill,
+        I watch them marching
+        stately and still,
+
+        and I know that I
+        am honored to be
+        witness
+        of so much majesty.
+      textGloss:
+        pl: |-
+          Samotny w nocy
+          na ciemnym wzgórzu,
+          wśród sosen
+          pachnących i cichych,
+
+          a nad głową
+          niebo pełne gwiazd —
+          białych, topazowych
+          i zamglonych czerwienią;
+
+          miriady o bijących
+          sercach z ognia,
+          których eony
+          nie zdołają zasmucić ani zmęczyć;
+
+          w górę kopuły nieba,
+          jak na wielkie wzgórze,
+          patrzę, jak maszerują
+          dostojnie i spokojnie,
+
+          i wiem, że mam
+          zaszczyt być
+          świadkiem
+          tak wielkiego majestatu.
       clasp: "Spiegel im Spiegel · Arvo Pärt"
     - composer: "Ralph Vaughan Williams"
       years: "1872–1958"
       work: "The Lark Ascending"
       year: "1914 · rew. 1920 · oprac. Paul Drayton 2019"
+      voicing: "skrzypce i chór a 12"
+      locus: >-
+        Najwyższy punkt: skowronek wznosi się, aż ginie w świetle. Dalej wszystko już schodzi.
+      note: >-
+        Pastoralny poemat na skrzypce, napisany w 1914 roku i zrewidowany w 1920; na prawykonanie
+        czekał sześć lat, bo wybuchła wojna. Inspirował go wiersz George'a Mereditha o skowronku
+        wznoszącym się ku niebu; linia melodyczna wznosi się i opada, naśladując lot. Paul Drayton
+        przepisał utwór na skrzypce i chór, więc słowa Mereditha, w oryginale tylko wypisane nad
+        nutami, tutaj naprawdę słychać.
+      inscriptioGloss: { pl: "tekst: George Meredith · oprac. na skrzypce i chór: Paul Drayton" }
+      text: |-
+        He rises and begins to round,
+        he drops the silver chain of sound,
+        of many links without a break,
+        in chirrup, whistle, slur and shake.
+
+        For singing till his heaven fills,
+        'tis love of earth that he instils,
+        and ever winging up and up,
+        our valley is his golden cup
+        and he the wine which overflows
+        to lift us with him as he goes.
+
+        Till lost on his aerial rings
+        in light, and then the fancy sings.
+      textGloss:
+        pl: |-
+          Wzbija się i zaczyna zataczać kręgi,
+          upuszcza srebrny łańcuch dźwięku
+          o wielu ogniwach, bez przerwy,
+          w ćwierkaniu, gwizdach, ślizgach i drżeniu.
+
+          Bo śpiewa, aż jego niebo się wypełni —
+          to miłość do ziemi w nas zaszczepia;
+          i wciąż wznosząc się wyżej i wyżej,
+          nasza dolina jest jego złotym kielichem,
+          a on winem, które się przelewa,
+          by unieść nas z sobą, gdy odchodzi.
+
+          Aż zginie w swoich powietrznych kręgach
+          w świetle — i wtedy śpiewa wyobraźnia.
     - composer: "Jacek Sykulski"
       years: "ur. 1964"
       work: "Stoi lód na Prośnie"
       year: "2017"
+      voicing: "a 8"
+      # The one place the Canticle earns a citation outside the Orff: the stanza is not a label
+      # hung on the work, it is the thing the work turns over. Read it as an inversion or leave
+      # it out — a mapping repeated work after work is a checklist, and this evening's reading
+      # is not one (docs/koncert-pochwala-stworzenia §3).
+      locus: >-
+        Siostra woda, którą Kantyk nazywa pożyteczną i pokorną, i drogocenną, i czystą. Tutaj
+        jest zamarznięta.
+      note: >-
+        Sykulski napisał go na zamówienie Agnieszki Franków-Żelazny dla Polskiego Narodowego Chóru
+        Młodzieżowego: jako wokalizę, bez słów. Czegoś w nim jednak brakowało: „utwór nie niósł
+        żadnego przesłania”. Kompozytor wysłał więc partyturę koledze, a ten w ciągu jednej nocy
+        dopisał całą historię, tak dopasowaną, że w muzyce nie trzeba było zmienić ani nuty.
+        Dziewczyna z Podzamcza płacze nad zamarzniętą Prosną, młyn stoi, chleba nie będzie, a Jan
+        Nepomucen, patron mostów i rzek, stoi przy niej.
+      inscriptioGloss: { pl: "pieśń w idiomie ludowym · słowa dopisane do wokalizy" }
+      text: |-
+        Stoi lód na Prośnie,
+        stoi koło młyna —
+        pięć lat tu przychodzi
+        z Podzamcza dziewczyna.
+
+        Stoi dziewcze, kwili,
+        w dłoniach fular skrywa,
+        Święty Roch na sumę
+        ku pociesze wzywa.
+
+        Oj dana, oj dana…
+
+        Stoi młyn, lecz któż ma
+        koło rozklekotać?
+        Nie ma mąki, nie ma
+        i nie będzie chleba.
+
+        Dana, dana… na na, na na…
+
+        Stoi lód na Prośnie,
+        czas pod lodem płynie,
+        a Jan Nepomucen
+        stoi przy dziewczynie.
+
+        Dana, dana… na na…
+      # Polish original, so the vernacular gloss repeats it verbatim — the slot is filled for the
+      # foreign reader and the page declines to print it twice in Polish (glossFor, i18n/config).
+      textGloss:
+        pl: |-
+          Stoi lód na Prośnie,
+          stoi koło młyna —
+          pięć lat tu przychodzi
+          z Podzamcza dziewczyna.
+
+          Stoi dziewcze, kwili,
+          w dłoniach fular skrywa,
+          Święty Roch na sumę
+          ku pociesze wzywa.
+
+          Oj dana, oj dana…
+
+          Stoi młyn, lecz któż ma
+          koło rozklekotać?
+          Nie ma mąki, nie ma
+          i nie będzie chleba.
+
+          Dana, dana… na na, na na…
+
+          Stoi lód na Prośnie,
+          czas pod lodem płynie,
+          a Jan Nepomucen
+          stoi przy dziewczynie.
+
+          Dana, dana… na na…
     - composer: "George Enescu"
       years: "1881–1955"
       work: "Ménétrier z cyklu <em>Impressions d'enfance</em> op. 28"
       year: "1940"
+      # No `voicing`: the score folder has no part for this one because it carries no choir, and
+      # whether the violin plays it alone or with the organ is the open question (§10 — it is
+      # written with piano and this concert has none). An empty field until he answers.
+      locus: >-
+        Jedyny szybki rytm w całym programie, i ostatnie światło przed requiem.
+      note: >-
+        Pierwsza z dziesięciu miniatur cyklu Impressions d'enfance op. 28, wspomnień z dzieciństwa
+        ułożonych wedle biegu dnia: od skrzypka, przez świerszcza i wiatr w kominie, po nocną burzę
+        i wschód słońca. Ménétrier to wiejski skrzypek, ten od wesel. Gra Radu Ropotan: jak Enescu,
+        Rumun.
+      inscriptioGloss: { pl: "z cyklu Impressions d'enfance op. 28 · wiejski skrzypek" }
       clasp: "Spiegel im Spiegel · Arvo Pärt"
     - composer: "Marian Borkowski"
       work: "Dona eis requiem I"
-      year: "2016"
+      # 2015 is the FIRST setting's year, off the conductor's own repertoire list. The 2016 that
+      # stood here was sourced for the II and had never been re-checked for the I — Borkowski's
+      # numerals are part of his titles, and the evening sings the first.
+      year: "2015"
+      voicing: "a 8"
+      locus: >-
+        Dno tej drogi: siostra śmierć, ostatnie, co Kantyk wita po imieniu.
+      note: >-
+        „Daj im odpoczynek”: dwa słowa z mszy za zmarłych.
     - composer: "Rihards Dubra"
       years: "ur. 1964"
       work: "Stetit Angelus"
       year: "2005"
+      voicing: "a 9"
+      # The All Saints rhyme is deliberately NOT here: it is `reflectionNote`, in its own band,
+      # where it is the evening's strongest fact rather than a tail on a work. Saying it twice
+      # would spend it.
+      locus: >-
+        Tu droga się domyka, już poza tym, co widzialne.
+      # The image is NOT re-told here: `inscriptioGloss` prints the angel and the censer two rows
+      # below, and `reflectionNote` prints the smoke and the saints one band above. A note that
+      # restated both would be the page saying the same sentence three times in one screen.
+      note: >-
+        Łotewski kompozytor, którego muzyka sakralna wyrasta z chorału i z minimalizmu. Tekst jest
+        antyfoną ułożoną ze słów Apokalipsy.
+      inscriptio: "Stetit Angelus iuxta aram templi, habens thuribulum aureum in manu sua"
+      inscriptioGloss: { pl: "Stanął anioł przy ołtarzu świątyni, mając w ręku złotą kadzielnicę" }
+      inscriptioRef: { scripture: [{ book: rev, chapter: "8", verses: ["3–4"] }] }
       clasp: "Spiegel im Spiegel · Arvo Pärt"
     - composer: "George David Weiss / Bob Thiele"
       work: "What a Wonderful World"
       year: "1967"
+      voicing: "a 4"
       bis: true

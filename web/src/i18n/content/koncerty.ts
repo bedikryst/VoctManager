@@ -274,9 +274,19 @@ export interface KoncertyChrome {
   /** The marker on the one station that has not happened yet, and the chip stating that its door
       is open. Both are read off structured data — `date` and `admission` — rather than written
       into the evening's words, so neither can be left behind in Polish or go stale by hand. The
-      free-admission chip prints only where the ensemble recorded the answer. */
+      free-admission chip prints only where the ensemble recorded the answer.
+
+      `upcomingLabel` is read TWICE while an evening is ahead: by that marker, and by the rubric of
+      the plate this page now opens with — one rubric for one claim, whichever end of the walk it
+      is made from. It says "concert" rather than the site's own "wieczór" because both surfaces
+      are met by strangers, and there the plainest available word is the one that gets read. */
   readonly upcomingLabel: string;
   readonly freeAdmission: string;
+  /** The door on that plate. It leads DOWN this page, to the station that holds the programme, the
+      full poster and the festival — not to a page of its own, which an announced evening may not
+      have. So the label must not promise one: `openConcert` two fields below is the other door and
+      says "page" on purpose. The arrow is drawn by the sheet and is not part of the label. */
+  readonly announcedCta: string;
   /** Accessible names for the two chip rows — a concert's programme facts, a liturgy's. */
   readonly factsAria: string;
   readonly liturgyFactsAria: string;
@@ -322,8 +332,9 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
     introAria: "Koncerty Duchowe",
     nextAria: "Następny Koncert Duchowy",
     officiaAria: "Poza cyklem",
-    upcomingLabel: "Najbliższy wieczór",
+    upcomingLabel: "Najbliższy koncert",
     freeAdmission: "Wstęp wolny",
+    announcedCta: "Zobacz program",
     ritesAria: "Reguły wieczoru",
     repertoireAria: "Repertuar VoctEnsemble",
     codaAria: "Zaproszenie",
@@ -343,8 +354,9 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
     introAria: "The Spiritual Concerts",
     nextAria: "The next Spiritual Concert",
     officiaAria: "Outside the cycle",
-    upcomingLabel: "The coming evening",
+    upcomingLabel: "The coming concert",
     freeAdmission: "Free admission",
+    announcedCta: "See the programme",
     ritesAria: "The rules of the evening",
     repertoireAria: "VoctEnsemble's repertoire",
     codaAria: "An invitation",
@@ -364,8 +376,9 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
     introAria: "Les Concerts Spirituels",
     nextAria: "Le prochain Concert Spirituel",
     officiaAria: "Hors du cycle",
-    upcomingLabel: "La prochaine soirée",
+    upcomingLabel: "Le prochain concert",
     freeAdmission: "Entrée libre",
+    announcedCta: "Voir le programme",
     ritesAria: "Les règles de la soirée",
     repertoireAria: "Le répertoire de VoctEnsemble",
     codaAria: "Une invitation",

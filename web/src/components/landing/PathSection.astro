@@ -78,7 +78,16 @@ const entries = PATHS.map((path, i) => {
     that CLOSES the register, so removing it removed the closing line with it: the section ended
     on the last memory and then on nothing at all. What belongs in that slot is the one thing the
     register cannot hold — an evening that has not sounded — said the way the hero says it, and
-    not as a sixth row: no numeral, no programme, no poster (docs/web-landing-guardrails §1). */
+    not as a sixth row.
+
+    NO NUMERAL AND NO POSTER, and only those two. The numeral because `PATHS` counts what has
+    SOUNDED and this has not, so a number here would collide with the open card's (guardrails,
+    "the open card is an understudy"); the poster because guardrail §1 is precisely the question
+    "does a row of the register now carry a face?" — a thumbnail beside a row turns the register
+    into a catalogue listing. The PROGRAMME is neither of those and it used to be refused here
+    citing the same §1, which that section does not say: a folded list of works carries no face,
+    and it is the disclosure every entry above already offers. Encores are filtered off it
+    (`bis`, below) — the one thing an evening that has not happened cannot print. */
 const ahead = upcoming
   ? {
       // An evening with no page of its own is still a PLACE on /koncerty: the station carries the
@@ -87,7 +96,21 @@ const ahead = upcoming
         ? `${hrefConcerts}/${upcoming.id}`
         : `${hrefConcerts}#${upcoming.id}`,
       title: overlayValue(concertKey(upcoming.id, "title"), lang) ?? upcoming.data.title,
-      moment: longMoment(upcoming.data, lang),
+      // The date is data and the hour is data; neither is ever typed into copy (spec §5).
+      moment: [longMoment(upcoming.data, lang), upcoming.data.time].filter(Boolean).join(" · "),
+      /** THE PLACE IS WHAT MADE THIS ROW AN ORPHAN. Every entry in the register states where it
+          sounded; this one stated only a name and a month, so it sat among peers missing the one
+          line they all carry. It is four screens from the band that announces this evening in
+          full, which is far enough that a reader arriving here has no memory of the address — the
+          same reading `ProximumSection` records for the open door standing twice. */
+      place: overlayValue(concertKey(upcoming.id, "metaPlace"), lang) ?? upcoming.data.metaPlace.pl,
+      free: upcoming.data.admission === "free",
+      /** NO ENCORES ON AN EVENING THAT HAS NOT HAPPENED. `/koncerty` filters `bis` off the
+          upcoming station for the same reason: a bis is what was given beyond the programme, so
+          printing one in advance either spoils it or promises it. The filter also keeps the
+          numbering honest — the entries above mark a bis with an em-dash instead of a number, and
+          with none present every line here simply counts. */
+      program: (upcoming.data.program ?? []).filter((p) => !p.bis),
     }
   : undefined;
 ---
@@ -240,21 +263,72 @@ const ahead = upcoming
       </aside>
       )}
 
-      {/* And this is what stands in that slot instead. Written unbroken — whitespace between these
-          nodes would print inside the line, and the mark before the moment is drawn by the sheet. */}
+      {/* And this is what stands in that slot instead.
+
+          NO RAIL, and its absence is the composition. Every entry above is indented past a rail
+          holding its numeral; this evening has none, because a register of what has sounded cannot
+          number what has not. An empty rail left a hole where a numeral goes and indented the
+          announcement anyway, so the row read as an entry that had lost its number. Taking the full
+          measure instead makes the break in axis say what the copy says: this one is not of the
+          register, and it is the only thing on the page still in the future tense. */}
       {ahead && (
         <aside class="path-entry path-ahead reveal-rule" aria-label={chrome.nextAria}>
-          <span class="path-entry-rail" aria-hidden="true"></span>
           {/* The ink is on the LINE, never on the anchor — the same split every entry above makes
               (`.path-entry-title.reveal` holding `.path-entry-link`). The register's reveal writes
               `transition: opacity` at a specificity the element cannot clear, so a control that
               wears it loses its own hover transition. */}
+          {/* The name takes the left edge, the facts the right, and the two rules this row already
+              has — the entry hairline above, the candle rule below — are what hold them together.
+              That is the same shape the hero's foot uses and it is earned here for the reason it is
+              earned there: a composition may put two groups on two edges when something is drawn
+              across between them. It is also what the full measure is FOR. */}
           <div class="path-ahead-line reveal">
             <a class="path-ahead-link plausible-event-name=rejestr+najblizej" href={ahead.href}>
-              <span class="path-ahead-dot" aria-hidden="true"></span>
-              <span class="path-ahead-text">{`${announceLabel} — `}<strong>{ahead.title}</strong><span class="path-ahead-when">{ahead.moment}</span></span>
+              {/* Tag, then title — the shape every entry above uses, so this row outranks them by
+                  the axis it stands on rather than by shouting. The rubric carries the label alone:
+                  the moment moved to the facts, where it stands beside the hour it belongs to. */}
+              <span class="path-ahead-rubric">
+                <span class="path-ahead-dot" aria-hidden="true"></span>
+                {announceLabel}
+              </span>
+              <span class="path-ahead-name">{ahead.title}</span>
             </a>
           </div>
+
+          {/* The three facts a reader acts on, on the measure's other edge. NOT a second door: the
+              evening's name is already the link to its programme, and two anchors to one
+              destination inside one row is a menu. */}
+          <div class="path-ahead-facts reveal">
+            {ahead.moment && <p class="path-ahead-fact">{ahead.moment}</p>}
+            {ahead.place && <p class="path-ahead-fact">{ahead.place}</p>}
+            {ahead.free && <p class="path-ahead-fact path-ahead-door">{chrome.proximumFree}</p>}
+          </div>
+
+          {/* The same disclosure every entry above carries, and it is what finally makes this row a
+              PEER of them rather than a headline about one. The guardrail this used to cite against
+              itself (§1) is about poster images — "does a row of the register now carry a face?" —
+              and a folded list of works carries none; the poster stays out for that reason and this
+              does not. It is also the one place on the landing where what the evening will actually
+              sound can be read without leaving the page. */}
+          {ahead.program.length > 0 && (
+            <details class="path-card-detail path-entry-detail path-ahead-detail">
+              <summary>
+                <span>{copy.programLabel}</span>
+                <span class="path-detail-icon" aria-hidden="true" />
+              </summary>
+              <ol class="path-works">
+                {ahead.program.map((p, i) => (
+                  <li style={`--i:${i}`}>
+                    <span class="path-works-n" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                    {/* The work is MARKUP — a line may italicise a foreign title inside a
+                        vernacular phrase (content.config) — and the whole line is italic here, so
+                        the emphasis is silent on this surface, exactly as in the entries. */}
+                    {p.composer} · <em><Fragment set:html={p.work} />{p.year ? ` · ${p.year}` : ""}</em>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
         </aside>
       )}
     </div>

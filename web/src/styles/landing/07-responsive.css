@@ -3,9 +3,12 @@
       grid-template-columns: 1fr auto;
       padding: 24px 22px;
     }
-
     .event-pill {
       display: none;
+    }
+
+    .hero-inner {
+      padding-top: 132px;
     }
 
     .chrome-actions {
@@ -39,10 +42,6 @@
 
     .donation-list {
       margin-top: clamp(40px, 7vw, 56px);
-    }
-
-    .hero-inner {
-      padding-top: 132px;
     }
 
     .section {
@@ -160,24 +159,84 @@
       font-size: 18px;
     }
 
+    /* The register's closing announcement keeps its two tiers here and splits the upper one: the
+       rubric and the moment stop sharing a line, so the drawn separator between them goes with the
+       line it joined. A rubric of several words plus a date cannot share a tier at any type size
+       worth reading once the column is a phone's.
+
+       The leading opens so the dot still lands on the first tier's capitals rather than between the
+       two — `--ahead-line` is read by the dot's own offset (04-rooms-interludes). */
+    /* THE AXIS DEVICE DOES NOT EXIST ON A PHONE, so the ground takes over. `.path-entry` collapses
+       to one column here (below), which means every entry already starts at the column's left edge
+       and the announcement's whole distinction — standing where the numerals stand — says nothing.
+       A warmed panel is what is left: the register's evenings are cooled parchment
+       (`--paper-soft`), this one is lit. It is the site's own way of telling bands apart, and it is
+       the only one that survives a single column.
+
+       It bleeds PAST the text on both sides — negative inline margin against equal padding — so the
+       ground runs wider than the hairlines it sits between and reads as a band behind them rather
+       than as a card floating on them. */
+    /* The areas have to be restated, not just the columns: a template whose AREAS still name two
+       tracks implies two columns no matter what `grid-template-columns` says, so the row would keep
+       its desktop split here and silently ignore the single track below. */
+    .path-ahead {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        "line"
+        "facts"
+        "detail";
+      gap: 18px;
+      align-items: stretch;
+      margin-inline: calc(-1 * clamp(14px, 4vw, 24px));
+      padding-inline: clamp(14px, 4vw, 24px);
+      background: color-mix(in oklab, var(--candle-ink) 7%, var(--paper));
+    }
+
+    /* The facts fall under the name and take its edge — on one column there is no right edge left
+       for them to close, and capitals hugging the right of a phone read as a toolbar. */
+    .path-ahead-facts {
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    /* The evening's name steps down with the register's own titles: the clamp's 32px minimum would
+       otherwise hold a display serif at desktop scale in a column a third the width. */
+    .path-ahead-name {
+      font-size: clamp(27px, 8vw, 38px);
+    }
+
     /* ── Hero · sacred poster (mobile recomposition · Faza 2) ─────────────────
        The desktop hero reads as luminous alabaster fresco; the phone is led the
        other way — a lit threshold in the dark. The fresco breathes across the
        upper half of the screen and the liturgy gathers at the foot like an
-       inscription (kicker → title → response → strap → CTA + descend cue), in
-       the thumb zone. The scrim is therefore FOOT-heavy (legibility where the
-       text now lives) with a low warm bloom behind the gold "głos.", rather than
-       the old top-anchored scrim that assumed text sat near the top. */
+       inscription (kicker → title → response → strap → notice → CTA + descend
+       cue), in the thumb zone. The scrim is therefore FOOT-heavy (legibility
+       where the text now lives) with a low warm bloom behind the gold "głos.",
+       rather than the old top-anchored scrim that assumed text sat near the top. */
+    /* A DIFFERENT CROP IS A DIFFERENT PHOTOGRAPH, and it takes its own grade. The phone is served
+       the tall `-mobile` cut (BleedImage), which is framed close on the doorway and the lit
+       congregation — the same exposure that reads as a dark interior across a desktop frame reads
+       as a lit one here, and the liturgy stands directly on it. A step and a half back down. */
+    .hero-media .bleed img {
+      filter: saturate(0.8) contrast(1.06) brightness(0.72);
+    }
+
+    /* The clear window moves UP with the text. On a phone the braid begins around a third of the
+       way down the frame, so the desktop's "nothing until 42%" put the veil's first stop exactly
+       where the eyebrow lands. Here the window is the top quarter — the shaft's source, which is
+       the whole reason for a window — and everything from the rubric down has a ground. */
     .hero::before {
       background:
         radial-gradient(ellipse 92% 40% at 50% 90%, rgba(198, 164, 91, 0.17), transparent 72%),
         linear-gradient(
           180deg,
-          rgba(8, 8, 7, 0.44) 0%,
-          rgba(8, 8, 7, 0.20) 30%,
-          rgba(8, 8, 7, 0.34) 54%,
-          rgba(8, 8, 7, 0.78) 80%,
-          rgba(8, 8, 7, 0.95) 100%
+          rgba(8, 8, 7, 0.42) 0%,
+          rgba(8, 8, 7, 0.14) 10%,
+          transparent 20%,
+          rgba(8, 8, 7, 0.3) 34%,
+          rgba(8, 8, 7, 0.62) 52%,
+          rgba(8, 8, 7, 0.86) 74%,
+          rgba(8, 8, 7, 0.96) 100%
         );
     }
 
@@ -188,51 +247,18 @@
     /* Gather the braid at the foot; the fresco owns the top ~half. flex-end keeps
        it pinned low, the generous top padding guarantees clearance from the fixed
        chrome on shorter devices. */
+    /* The gutter is the bar's, not a tighter one of its own (02-hero-sections states why): the
+       brand mark stands directly above the kicker on this screen, and 6px of disagreement between
+       two left edges that close is read as a slip rather than as a narrower column. */
     .hero-inner {
       justify-content: flex-end;
       gap: clamp(16px, 3.2vh, 28px);
-      padding: clamp(112px, 16vh, 168px) max(22px, 5vw) clamp(22px, 3.4vh, 36px);
+      padding: clamp(112px, 16vh, 168px) max(28px, 5vw, env(safe-area-inset-right, 0px))
+        clamp(22px, 3.4vh, 36px) max(28px, 5vw, env(safe-area-inset-left, 0px));
     }
 
     .hero-kicker {
       margin-bottom: 0;
-    }
-
-    /* The dateline is a TWO-TIER BLOCK here, not a wrapped line. Three facts in tracked capitals
-       are ~390px of type and the widest phone column is ~313, so it always breaks — and left to
-       the browser it broke at the space after the middot, hanging a separator off the end of the
-       first line. The break is authored instead: the evening's name closes the first tier, its
-       moment stands on the second, and the mark goes, because the tiers now do its job. The
-       moment's own `nowrap` (02-hero-sections) keeps "11 października 2026" whole on that tier.
-
-       The leading opens because the tiers have to clear the gold rule under the evening's name:
-       it hangs ~3px below the em box and 1.5 leaves 5.5px between em boxes, of which the acute of
-       "PAŹDZIERNIKA" — Polish capitals carry marks ABOVE the cap height — takes the rest. */
-    .hero-announce {
-      --announce-line: 1.9;
-    }
-
-    .hero-announce-when {
-      display: block;
-    }
-
-    .hero-announce-when::before {
-      display: none;
-    }
-
-    /* The register's closing announcement is the same line on the same phone, and its body column
-       is NARROWER than the hero's — the entry's 140px rail stands beside it at every width — so it
-       reaches this point first, not last. */
-    .path-ahead-link {
-      --ahead-line: 1.9;
-    }
-
-    .path-ahead-when {
-      display: block;
-    }
-
-    .path-ahead-when::before {
-      display: none;
     }
 
     /* One controlled type step (not two competing clamps): 360→430px lands a
@@ -249,23 +275,62 @@
     /* The strap drops to a quiet inscription beneath the response — present for
        message + SEO, but no longer competing with the title for weight. */
     .hero-strap {
+      max-width: none;
       margin-top: 12px;
       font-size: 15.5px;
       line-height: 1.5;
-      color: rgba(244, 241, 233, 0.6);
+      color: rgba(244, 241, 233, 0.66);
     }
 
-    /* CTA rail in the thumb zone: stack the descend cue under the actions so
-       neither is cramped against a screen edge. */
-    .hero-rail {
-      margin-top: 6px;
+    /* THE RAIL HAS NO SECOND EDGE ON A PHONE — there is only one column, so the desktop's two
+       ends become an order: the invitations stack under the rule and the descend cue sits beneath
+       them in the thumb zone. */
+    .hero-foot {
+      display: flex;
       flex-direction: column;
       align-items: flex-start;
+      gap: 0;
+      padding-top: 0;
+      border-top: none;
+    }
+
+    /* The rule travels with the invitations rather than with the foot, so it does here what it
+       does on the desktop: divide the standing invitations from everything that is not one.
+
+       The air above the labels is the links' own (below), not this element's: stacked, the two
+       paddings would add up and push the pair off the rule it hangs from. */
+    .hero-actions {
+      width: 100%;
       gap: 16px;
-      /* The air above the labels is the links' own now (below), not the rail's — stacked, the two
-         paddings would otherwise add up and push the pair off the rule it hangs from. */
       padding-top: 4px;
-      padding-bottom: 0;
+      border-top: 1px solid rgba(244, 241, 233, 0.22);
+    }
+
+    /* Under the invitations, not beside them — and left-aligned with everything else in the
+       column, since there is no right edge left for it to close. */
+    .hero-cue {
+      align-self: flex-start;
+      margin-top: 16px;
+    }
+
+    /* THE DATELINE IS TWO TIERS HERE, BY DESIGN. The line cannot fit a phone column, so the moment
+       takes a tier of its own and the middot that joined two peer facts goes with it — a drawn
+       separator leading the second line would read as a bullet rather than as a join.
+
+       The leading opens because the gold rule under the evening's name is drawn BELOW its em box
+       and lands in the leading of the tier beneath: it hangs ~3px below, and 1.5 leaves 5.5px
+       between em boxes, of which the acute of "PAŹDZIERNIKA" — Polish capitals carry marks ABOVE
+       the cap height — takes the rest. One number, because the dot's own offset reads it too. */
+    .hero-announce {
+      --announce-line: 1.9;
+    }
+
+    .hero-announce-when {
+      display: block;
+    }
+
+    .hero-announce-when::before {
+      display: none;
     }
 
     /* THE RULE BELONGS TO THE WORD, NOT TO A BOX AROUND IT. A 46px centred box with the hairline
@@ -472,6 +537,59 @@
       font-size: 11px;
       letter-spacing: 0.06em;
     }
+  }
+
+  /* ───────────────────────────────────────────────────────────────
+     SHORT VIEWPORTS · the threshold on a laptop
+     ─────────────────────────────────────────────────────────────────
+     A HEIGHT QUERY, WHICH THIS SHEET OTHERWISE NEVER USES, because the defect is height and
+     nothing else: the hero pins its content to the foot of `100svh`, so on a 13-inch screen
+     — ~760px of viewport once the browser has taken its own chrome — the braid plus the foot
+     measure past the frame and "Z ciszy głos." leaves the first screen from the TOP. Width has
+     nothing to do with it; the same laptop is 1440 across, where every width query here is silent.
+
+     Every step down is one step, and the order of sacrifice is the one the phone layer already
+     states: the display tier last, the response never. What gives is the air — the top padding
+     the bar no longer needs at this height, the gap between the braid and the foot, and the
+     leading around the strap.
+     ─────────────────────────────────────────────────────────────── */
+  @media (min-width: 641px) and (max-height: 840px) {
+    .hero-inner {
+      gap: clamp(16px, 3vh, 34px);
+      padding-top: clamp(84px, 9.5vh, 108px);
+    }
+
+    .hero-kicker {
+      margin-bottom: 24px;
+    }
+
+    .hero-title {
+      font-size: clamp(50px, 7.4vw, 96px);
+    }
+
+    /* Still a step down from the full-height air, but not back to the floor that closed onto the
+       h1's descenders: the display tier here is smaller, so the clearance can be too — it cannot
+       be nothing. */
+    .hero-response {
+      margin-top: clamp(18px, 2vw, 30px);
+      font-size: clamp(19px, 2vw, 26px);
+    }
+
+    .hero-strap {
+      margin-top: clamp(12px, 1.4vw, 20px);
+      font-size: clamp(16px, 1.3vw, 19px);
+    }
+
+    .hero-foot {
+      padding-top: 16px;
+    }
+
+    /* The dateline closes toward the kicker. On a short window the hero's content is pinned to the
+       foot, so every pixel this line spends above the braid is one the h1 gives up off the top. */
+    .hero-announce {
+      margin-bottom: 18px;
+    }
+
   }
 
   /* ───────────────────────────────────────────────────────────────

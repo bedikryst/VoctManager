@@ -349,6 +349,25 @@ button { font: inherit; }
   margin-bottom: -0.15em;
 }
 
+/* The mark beside a rubric naming an evening that has not happened yet. Four surfaces announce one
+   evening — the landing's hero line and its Proximum band, /koncerty's station, and the concert
+   page's own hero — and this is the geometry all of them share, in one place, because
+   `landing/16-proximum.css` already carries a note about restating values from `.station--ahead`
+   and a fourth restatement is how four surfaces stop looking like one announcement.
+
+   WHAT IS DELIBERATELY *NOT* HERE IS THE PULSE. /koncerty's station blinks because the reader is
+   walking a list and this row is the one that is still ahead; the Proximum band and this page's
+   hero do not, because the poster, the title and the open door beside them have already made the
+   announcement and a second blinking mark is an alarm for news already being read. The pulse is
+   therefore added by the one surface that wants it, on top of this. */
+.lit-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent, var(--candle));
+}
+
 .skip-link {
   position: fixed;
   top: -120px;

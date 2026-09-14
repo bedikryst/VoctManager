@@ -36,7 +36,8 @@ import { typographyHtml } from "../../lib/typoHtml";
 import "../../styles/landing.css";
 // The photograph frame, for the ONE trigger this page has: the announcement band's poster
 // (components/landing/ProximumSection). Imported after landing.css so the `.shot-open` reset wins
-// the ties it must win against the band's own `.proximum-poster` rules.
+// the ties it must win against the band's own `.proximum-poster` rules — which is also why that
+// band sizes its poster from a grid track and never from a `width`.
 import "../../styles/image-lightbox.css";
 
 import HeroSection from "../landing/HeroSection.astro";
@@ -162,6 +163,35 @@ const jsonLd = {
 
     <main id="main">
       <HeroSection copy={c.hero} videoCaption={c.vox.videoCaption} lang={lang} />
+
+      {/* THE ANNOUNCEMENT STANDS SECOND, and the hero says so in ONE LINE above its braid. That
+          division is what the page failed at twice over. Put the evening only at the foot of
+          movement II, four screens down, and the board could not find the concert on this site at
+          all. Put its four facts into the hero's FOOT instead, and they land ~300px above a band
+          printing the same four — a reader scrolling holds two identical notices in one screen.
+
+          One line up top and the announcement down here has neither failure: the line is above the
+          fold and a full viewport from this band, so the two are never read together, and what a
+          reader acts on — the hour, the church, the open door, the programme — is all in one place,
+          beside the poster it is about.
+
+          IT TAKES /koncerty's STATION FORM. Night ground, bounded measure, poster in a rail beside
+          a column of type. That is deliberate rather than convenient: this band's own link lands
+          the reader on the same object on the cycle's page, and an announcement that changes shape
+          between its two surfaces reads as two announcements.
+
+          THE NIGHT IS ALSO THE JOIN. The hero closes in near-black and this band opens in it, so
+          there is no seam between them and the page's hard tonal edge falls one band lower, between
+          this and the manifest's parchment — which is the page's own argument read literally:
+          movement I is "Lumen Christi", a candle carried into an unlit church, and what comes out
+          of the dark is the light.
+
+          Both surfaces read one derivation (`lib/cycle`), so they cannot name different nights, and
+          both are dormant with no future-dated station in the corpus — which is what this page
+          looked like until 2026. In that state the hero's braid simply opens on its kicker and this
+          renders nothing. */}
+      <ProximumSection copy={c.proximum} chrome={t} lang={lang} />
+
       <ManifestSection copy={c.manifest} aria={t.manifestAria} />
 
       {/* Movement inscriptions are real liturgical Latin, never coined: "Lumen Christi" is the
@@ -192,11 +222,10 @@ const jsonLd = {
             directly below. The "no poster images" rule this appears to bend is about REGISTER
             ENTRIES — see docs/web-landing-guardrails.md §1, where the reading is recorded. */}
         <ImaginesBand copy={c.imagines} lang={lang} />
-        {/* The one entry in the future tense, and it stands HERE for the sentence directly under
-            it: the register is headed „Co już zabrzmiało." — so the evening that has not is read
-            immediately before it, against it. Dormant with no future-dated station in the corpus,
-            which is what this page looked like until 2026. */}
-        <ProximumSection copy={c.proximum} chrome={t} lang={lang} />
+        {/* The register opens the movement's last room on its own: the evening in the future tense
+            is the page's second band (see the hero). It still prints the announcement's rubric in
+            its closing line — one word, from `hero.announceLabel`, so every surface that names the
+            next evening keeps one vocabulary. */}
         <PathSection
           copy={c.register}
           chrome={t}

@@ -113,12 +113,19 @@ const landingCopySchema = z
         allLink: z.string(),
       })
       .strict(),
-    /** The announcement band, standing between the photographs and the register: the one evening
-        that is still ahead. Its own words are two — a rubric and a line under the title — because
+    /** The announcement band, standing directly under the hero as the page's second band: the one evening
+        that is still ahead. Its own word is ONE — the rubric that names the band — because
         everything else it prints belongs to the concert (`concerts.yaml`, through the overlay) or
         is formatted from its `date`. A band that restated the evening would be a second place to
-        edit it, and the site's rule is that an evening names itself once. */
-    proximum: z.object({ label: z.string(), lede: z.string() }).strict(),
+        edit it, and the site's rule is that an evening names itself once.
+
+        It had a line under the title too, and that line was the problem the band was reported for:
+        "the only evening on this page that has not yet sounded" is a sentence ABOUT this page —
+        legible once you hold its conceit, opaque to anyone arriving, and a second apophasis
+        against a budget of one (guardrails §1, spent on the manifest). What a reader wants under
+        the title is the moment, the place and whether the door is open, and the band prints all
+        three from the corpus. */
+    proximum: z.object({ label: z.string() }).strict(),
     register: z
       .object({
         label: z.string(),
@@ -231,8 +238,8 @@ const LANDING_CONTRACT: readonly CopyEntry[] = [
   {
     kind: "field",
     path: "hero.announceLabel",
-    label: "Hero · zapowiedź",
-    note: "Dormant until `concerts.yaml` carries a future date. The evening's own title and moment are appended after it, so this is the opening word alone.",
+    label: "Zapowiedź · rubryka",
+    note: "Dormant until `concerts.yaml` carries a future date, and then read by THREE surfaces: the hero's announcement block, where it is a rubric standing over four facts; the register's closing line; and the coda of every concert page, where the evening's title and moment follow it on one dateline. It must work in both shapes, and it has to be the plainest available word for a concert — a stranger meeting the site reads this before anything else on the page.",
   },
   {
     kind: "field",
@@ -408,18 +415,12 @@ const LANDING_CONTRACT: readonly CopyEntry[] = [
     note: "Printed, not called for: an arrow here would make a row of photographs read as a card shelf with a 'see all' under it. The chrome names the same destination more briefly; keep this one's register.",
   },
 
-  // ── Najbliższy wieczór ────────────────────────────────────────────────────────────────────
+  // ── Najbliższy koncert ────────────────────────────────────────────────────────────────────
   {
     kind: "field",
     path: "proximum.label",
-    label: "Najbliższy wieczór · rubryka",
+    label: "Najbliższy koncert · rubryka",
     note: "The vernacular of `Proximum`, which stands above it unchanged in every locale. It names the band, never the evening — the concert's own title, place and date are printed from its entry.",
-  },
-  {
-    kind: "field",
-    path: "proximum.lede",
-    label: "Najbliższy wieczór · zdanie",
-    note: "One line under the announced evening's title, true of ANY evening this band will ever carry: the band is dormant between concerts and lights up on whichever one is next. Nothing here may name a particular programme, venue or date.",
   },
 
   // ── Rejestr wieczorów ─────────────────────────────────────────────────────────────────────

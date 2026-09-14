@@ -19,12 +19,24 @@ hand-edit those files.
   | Hymn Poległym | `st-hymn-bg` | `st-hymn-bg.webp` | `st-hymn-bg-desktop.webp` | **memoriam (darker)** |
   | Aeternam | `st-aeternam-bg` | `st-aeternam-bg.webp` | `st-aeternam-bg-desktop.webp` | **memoriam (darker)** |
   | Uroczystość św. A. Boboli | `st-liturgia-bg` | `st-liturgia-bg.webp` | `st-liturgia-bg-desktop.webp` | normal |
-  | Pochwała Stworzenia | `st-stworzenie-bg` | `st-stworzenie-bg.webp` | **`poster-stworzenie.webp`** | normal |
+  | Pochwała Stworzenia | `st-stworzenie-bg` | `st-stworzenie-bg.webp` | `kd-stworzenie-hero-desktop.jpg` | normal |
 
-**An evening that has not happened yet has no photograph**, so its wash is blurred from its own
-POSTER instead (the row above; same recipe, same numbers, only the source differs). It is the one
-image the evening has, and at sigma 14 it is a field of colour rather than a picture of a poster.
-Re-derive it from the poster if the poster changes.
+**An evening that has not happened yet has no photograph OF ITSELF**, and for a month this one was
+washed from its own POSTER instead — the only image it had, and at sigma 14 a field of colour
+rather than a picture of a poster. It is now washed from its hero like every other station: the
+hero is the CHURCH, photographed empty before the concert, which is a true picture of the evening's
+room without claiming to be a picture of the evening. Keep the poster recipe in mind for the next
+announced concert that has no venue photograph either.
+
+**Wash one station at a time:** `node blur-stations.cjs st-stworzenie-bg`. Without an argument the
+script rebuilds every wash, which — per the note in its header — is a visible change to `/koncerty`
+for the stations whose source has moved since May, and not something to trigger while adding an
+evening.
+
+**The share card is a different artifact and lives in its own script** (`node poster-art.cjs`): a
+1200×630 Open Graph frame with the poster mounted whole on a ground blurred from itself, named by
+the concert's `share` field. A wash is for a card behind type; a share card is read at thumbnail
+size in a feed and has to stay a picture of something. Only an evening still ahead needs one.
 
 The code that consumes them: `web/src/pages/koncerty.astro` — `bgSrc: photo(c.data.bg).src`
 (so **the output name must match the `bg` field exactly**; a new concert with a new `bg` needs a new

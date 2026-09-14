@@ -54,9 +54,12 @@ rite:
 
 # ── I. The threshold ──────────────────────────────────────────────────────────────────────────
 hero:
-  # The standing "next concert" pill, dormant until `concerts.yaml` carries a future date. The
-  # evening's own title and moment are appended by the component.
-  announceLabel: "Najbliżej"
+  # The rubric of the standing announcement, dormant until `concerts.yaml` carries a future date.
+  # Read by THREE surfaces (the hero's block, the register's closing line, the coda of every
+  # concert page), so it has to work both as a heading over four facts and as the opening word of a
+  # one-line dateline. It says "concert" rather than the site's own "wieczór": on the surfaces a
+  # stranger meets first, the plainest available word is the one that gets read.
+  announceLabel: "Najbliższy koncert"
   title1: "Z ciszy"
   title2: "głos."
   response: "Dwanaście głosów w kamiennej nawie: od Victorii po Pärta."
@@ -136,16 +139,19 @@ imagines:
   caption: "Fotografie wieczorów cyklu"
   allLink: "Wszystkie obrazy"
 
-# ── The announced evening, between the photographs and the register ───────────────────────────
+# ── The announced evening · the page's second band, directly under the hero ───────────────────
 # The band is DORMANT until `concerts.yaml` carries a station whose date is still ahead, and it
-# takes everything else from that station: the title, the place, the essence, the poster. These two
-# lines must therefore be true of ANY evening it will ever carry — no programme, no venue, no date.
+# takes everything else from that station: the title, the place, the essence, the poster. Its one
+# line must therefore be true of ANY evening it will ever carry — no programme, no venue, no date.
 proximum:
-  label: "Najbliższy wieczór"
-  # One negation, and it is the whole point of the band: it stands directly above „Co już
-  # zabrzmiało." and says what makes this one entry different from the five under it.
-  lede: >-
-    Jedyny wieczór na tej stronie, który jeszcze nie zabrzmiał.
+  # The band's only words. Everything else under it — the title, the moment, the place, the open
+  # door, the invitation — is the evening's own, printed from `concerts.yaml`.
+  #
+  # It says the same thing as the hero's `announceLabel` and as the band's own accessible name
+  # (`proximumAria`), and it has to: an aria-label REPLACES the visible text for a screen reader
+  # and voice control matches on what is on screen, so a band whose rubric reads "wieczór" while
+  # its name says "koncert" is one band under two words.
+  label: "Najbliższy koncert"
 
 register:
   label: "Z drogi"

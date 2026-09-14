@@ -2,11 +2,41 @@
 /**
  * @file HeroSection.astro
  * @description Opening threshold — full-bleed sacred fresco via <BleedImage> (art-directed
- *  AVIF/WebP, Ken Burns, parallax). hero-grid holds the optional "next concert" dateline → kicker
- *  → h1 → response → strap braid; hero-rail holds the CTA anchors (the film reel +
- *  koncerty) + downward cue. The
- *  kinetic "breath" on .hero-title is driven
- *  by scripts/landing.ts; the dark dimming filter is applied in landing.css (.hero-media .bleed img).
+ *  AVIF/WebP, Ken Burns, parallax). `hero-grid` holds the kicker → h1 → response → strap braid;
+ *  `hero-foot` is the composition's second plane, carrying the standing invitation on the left and,
+ *  while an evening is still ahead, the announcement on the right. The kinetic "breath" on
+ *  .hero-title is driven by scripts/landing.ts; the grade and the directional veil are in
+ *  02-hero-sections.css, which states why both aim away from the shaft.
+ *
+ *  THE COMPOSITION IS ONE PHOTOGRAPH AND ONE COLUMN, and the two are kept apart by the CROP rather
+ *  than by ink. The frame's own subject is centred; the type is not; so the subject is moved right
+ *  (`position`, below) and the veil is poured down the left, and neither the light nor the words
+ *  is spent to buy the other. A two-bay layout — half the frame flat night, half of it window —
+ *  was built against this and taken out again: it bought the type a ground by taking the
+ *  photograph's other half, and the page's one full-bleed image is the argument for the page.
+ *
+ *  THE ANNOUNCEMENT IS ONE LINE, AND IT STANDS ABOVE THE BRAID. That position is the whole of why
+ *  it works, and the reason is scroll distance rather than rank: at the top of the hero it is a
+ *  full viewport away from the band that carries the same evening below, so a reader never has the
+ *  two on screen together. Moved down into the foot it gains tiers — rubric, name, moment, place —
+ *  and lands ~300px above a band printing all four again; that is the duplication this shape does
+ *  not have. It also costs the h1 nothing: the hero's content is pinned to the foot, so every tier
+ *  down there comes off the top of the display type, and one line up here comes off nothing.
+ *
+ *  IT IS A DATELINE, NOT A PILL. No rounded, blurred, tinted box: that is the only piece of product
+ *  chrome a page built from hairlines and capitals could wear, and base.css turns the same object
+ *  down for the scroll-to-top mark ("a votive mark, not a SaaS chip"). What carries it instead is
+ *  the pulse and the rule under the evening's name.
+ *
+ *  IT IS THE SAME EVENING THE BAND BELOW CARRIES, from one derivation (`lib/cycle`), so the two
+ *  cannot name different nights. The split of labour: this is the line that says something is
+ *  ahead, the band directly under the hero is the announcement itself — poster, name, hour, door,
+ *  prose.
+ *
+ *  BOTH INVITATIONS STAND IN THE FOOT, in every state. The rail is one row, the two standing
+ *  invitations at the frame's left edge and the descend cue at its right — two marks, two edges,
+ *  one baseline, nothing in the middle. It does not recompose around the announcement, because the
+ *  announcement is no longer in it.
  *
  *  Its words come from `landing.yaml` through the copy desk (lib/pageCopy); `Concerts Spirituels`
  *  is the French name of the historical form and stays in the markup with the site's other
@@ -20,7 +50,7 @@ import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
 import { longMoment } from "../../lib/dates";
 import { upcomingStation } from "../../lib/cycle";
-import { concertKey, overlayValue } from "../../lib/copyOverlay";
+import { concertKey, withOverlay } from "../../lib/copyOverlay";
 import { localizePath, type Locale } from "../../i18n/config";
 import type { LandingCopy } from "../../i18n/content/landing";
 import { MODAL_VIDEO } from "../../data/landing/video";
@@ -37,45 +67,79 @@ const { copy, videoCaption, lang } = Astro.props;
 const hero = bleedPair("hero-landing");
 const hrefConcerts = localizePath("/koncerty", lang);
 
-// Announcement dateline — dormant by design. A standing "next concert" line shows ONLY while
-// concerts.yaml carries a station whose `date` is still ahead (lib/cycle, which is also what the
-// Proximum band and the station's own marker read, so the three cannot name two different
-// evenings). This is the "pulse" the hero otherwise lacks: the whole site speaks in the eternal
-// past tense until a date lands here.
+// The announcement — dormant by design. It shows ONLY while concerts.yaml carries a station whose
+// `date` is still ahead (lib/cycle, which is also what the Proximum band and the station's own
+// marker read, so the three cannot name two different evenings). This is the "pulse" the hero
+// otherwise lacks: the whole site speaks in the eternal past tense until a date lands here.
 const upcoming = upcomingStation(await getCollection("concerts"));
-// The evening names itself, in this locale, from its own entry in the corpus — never from a
-// second copy on the landing.
-const upcomingTitle = upcoming
-  ? (overlayValue(concertKey(upcoming.id, "title"), lang) ?? upcoming.data.title)
-  : "";
+
+/** This evening's words, in this locale: the overlay's translation where one exists, the corpus's
+    Polish otherwise — the same helper the band below uses. Never `pickLocale` (spec §7). */
+const say = (field: string, polish: string): string =>
+  upcoming ? withOverlay(concertKey(upcoming.id, field), lang, polish) : polish;
+
+/** NO POSTER HERE. It was tried at ~100px and the size was the argument against it: a print sheet
+    carrying a festival, a programme and an address is a coloured rectangle at that scale. The band
+    that follows this section is where the same artwork is drawn large enough to be looked at. */
+
+/** THREE FACTS, NOT FOUR. The hour and the place are the band's, one screen down, beside the
+    poster they belong to — up here they would make this a four-tier block and take the h1's air.
+    What this line owes a reader is that something IS ahead, what it is called and roughly when. */
+const announced = upcoming
+  ? {
+      // An evening with no page of its own is still a PLACE on /koncerty: the station carries the
+      // anchor, so this door lands on the announcement rather than at the head of a walk through
+      // six evenings that are already over. It follows `hasPage` on its own, so the day this
+      // evening earns a page of its own, the door moves with it and nothing here is revisited.
+      href: upcoming.data.hasPage
+        ? `${hrefConcerts}/${upcoming.id}`
+        : `${hrefConcerts}#${upcoming.id}`,
+      // The evening names itself from its own entry in the corpus — never from a second copy here.
+      title: say("title", upcoming.data.title),
+      // The date is data (spec §5), and `longMoment` rather than `longDate` because it answers for
+      // a vague moment too. No hour: that is the one fact this line may not carry, since a reader
+      // who reads an hour here and nothing else will not scroll to find the church.
+      moment: longMoment(upcoming.data, lang),
+    }
+  : undefined;
 ---
 
 <section class="hero" id="top" aria-label="VoctEnsemble">
+  {/* THE CROP PUTS THE SHAFT OFF-CENTRE, which is the other half of the veil's correction
+      (02-hero-sections). The photograph is a symmetrical nave with its light down the middle, and
+      a left-hand column of type laid over a centred subject is two vertical axes competing for one
+      frame: "Z ciszy" was crossing into the cone. `cover` on a 1.78 source in a 120%-tall box is
+      height-driven on any ordinary desktop window, so there is horizontal slack to spend, and
+      spending it here moves the subject rather than dimming it.
+
+      It is deliberately a MODEST number. The slack shrinks as the window narrows, so an extreme
+      value would be a composition that silently stops existing; 34% is most of the shift on a wide
+      frame and degrades to the centre without a seam, and the bay carries the legibility either
+      way. The phone is served the tall `-mobile` cut, which is already framed on the doorway. */}
   <div class="hero-media" aria-hidden="true">
-    <BleedImage desktop={hero.desktop} mobile={hero.mobile} alt="" eager animate />
+    <BleedImage
+      desktop={hero.desktop}
+      mobile={hero.mobile}
+      alt=""
+      position="34% center"
+      eager
+      animate
+    />
   </div>
 
   <div class="hero-inner">
     <div class="hero-grid">
-      {/* An evening with no page of its own is still a place on /koncerty rather than the top of
-          it: the station carries the anchor, so the dateline lands the reader on the announcement
-          instead of at the head of six evenings that are already over. */}
-      {upcoming && (
+      {/* The moment is its own element and the middot is DRAWN by the sheet, not typed: this line
+          cannot fit a phone column, so at that width it becomes two authored tiers and the mark
+          that joined two facts on one line has to go with it. Written unbroken — whitespace
+          between these nodes would print inside the line. */}
+      {announced && (
         <a
           class="hero-announce intro-stage plausible-event-name=hero+najblizej"
-          href={upcoming.data.hasPage ? `${hrefConcerts}/${upcoming.id}` : `${hrefConcerts}#${upcoming.id}`}
+          href={announced.href}
         >
-          <span class="hero-announce-dot" aria-hidden="true"></span>
-          {/* `longMoment`, not `viaMoment`: the Proximum band prints this same date in full four
-              screens down, and the ribbons' abbreviation ("paź 2026") appeared nowhere else on
-              this page. The two marks stay: the em-dash introduces the label, the middot separates
-              two peer facts — the register the whole site dates things in (`.proximum-when`).
-
-              The moment is its own element and the middot is DRAWN by the sheet, not typed: this
-              line cannot fit a phone column, so at that width it becomes two authored tiers and
-              the mark that joined two facts on one line has to go with it. Written unbroken —
-              whitespace between these nodes would print inside the line. */}
-          <span class="hero-announce-text">{`${copy.announceLabel} — `}<strong>{upcomingTitle}</strong><span class="hero-announce-when">{longMoment(upcoming.data, lang)}</span></span>
+          <span class="lit-dot hero-announce-dot" aria-hidden="true" />
+          <span class="hero-announce-text">{`${copy.announceLabel} — `}<strong>{announced.title}</strong><span class="hero-announce-when">{announced.moment}</span></span>
         </a>
       )}
       <div class="hero-kicker micro intro-stage">Concerts Spirituels</div>
@@ -89,12 +153,23 @@ const upcomingTitle = upcoming
       <p class="hero-strap intro-stage s5" set:html={copy.strapHtml} />
     </div>
 
-    <div class="hero-rail intro-stage s6">
-      {/* The hero's one standing invitation is the experience itself: the concert video
-          projected in the lightbox. The donation line moved to movement III (Sustinete nos),
-          where the asks concentrate; the "next concert" dateline (top of hero-grid) is what lights
-          up when a real date lands. */}
+    {/* The rail: one row, the two standing invitations at the frame's left edge and the descend
+        cue at its right, on one baseline. It carries no state — the announcement is a line above
+        the braid, not a plane down here, so there is nothing for this row to recompose around. */}
+    <div class="hero-foot intro-stage s6">
       <div class="hero-actions">
+        {/* THE FILM IS A LINE, AND THE ONE PLATE ON THIS SCREEN BELONGS TO THE EVENING. A frame of
+            the reel stood here while the photograph was confined to half the frame and the other
+            half was flat night with a bay to fill. Full-bleed takes both premises away: the bay is
+            gone, and a 16:9 still of a lit interior laid over a photographed nave is a photograph
+            on a photograph — the one pairing that reliably reads as neither. The complaint it was
+            answering ("the ensemble is not seen until the reader scrolls") is answered by the
+            photograph itself once it has the whole frame back.
+
+            It is also what gives the foot a PRIMARY. Two plates under one rule is a shelf, and the
+            page's own failure has never been that the film is hard to find — it is that the
+            evening was. The plate goes to the evening; the film keeps the play mark, the runtime
+            and its rule, which is what it has been at every width below 981px all along. */}
         <button
           type="button"
           class="primary-link plausible-event-name=hero+wideo"
@@ -112,10 +187,15 @@ const upcomingTitle = upcoming
             <span class="primary-link-meta">{copy.videoMeta}</span>
           </span>
         </button>
+        {/* Two parallel invitations, not a primary and a secondary: the film opens in place and
+            the cycle is a page. Both stand in every state — the dateline above the braid is a
+            line, not a plane, so it takes nothing from this row and leaves nothing for the second
+            link to fill in. */}
         <a class="secondary-link plausible-event-name=hero+koncerty" href={hrefConcerts}>
           {copy.concertsLink}
         </a>
       </div>
+
       <span class="hero-cue" aria-hidden="true">{copy.cue}</span>
     </div>
   </div>

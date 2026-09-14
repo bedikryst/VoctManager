@@ -40,6 +40,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
 import BleedImage from "../BleedImage.astro";
+import NoticeSignup from "../NoticeSignup.astro";
 import { bleedPair, photoOptional } from "../../lib/photos";
 import { layoutShots } from "../../lib/galleryLayout";
 import { galleryRuns } from "../../lib/galleryRuns";
@@ -54,6 +55,11 @@ import { longDate } from "../../lib/dates";
 import { cycleNumerals, upcomingStation } from "../../lib/cycle";
 import { formatRef } from "../../lib/scriptureRef";
 import { CONCERT, fill } from "../../i18n/content/koncert";
+// ONE WORDING ON TWO PAGES, deliberately across the page boundary. The open door, the link to a
+// festival's own site and the sentence a result page shows for an announced evening are already
+// this house's words on /koncerty's announced station; a second set here would be one fact in two
+// homes, hand-translated twice, drifting on whichever page was edited second.
+import { KONCERTY_CHROME } from "../../i18n/content/koncerty";
 import { NUNTIUS } from "../../i18n/content/nuntius";
 import { UI } from "../../i18n/ui";
 import { glossFor, localizePath, pageI18n, type Locale } from "../../i18n/config";
@@ -73,6 +79,8 @@ interface Props {
 const { lang, entry } = Astro.props;
 const c = entry.data;
 const ui = CONCERT[lang];
+/** /koncerty's chrome, for the handful of strings both pages say — see the import's note. */
+const walkUi = KONCERTY_CHROME[lang];
 
 // This page's own URL, its hreflang graph and the locales it exists in — all from ONE base path,
 // which is also what the chrome compares `current` against and what the language switcher
@@ -103,6 +111,16 @@ const metaDate = c.date
   : c.dateLabel && say("dateLabel", c.dateLabel.pl);
 const heroMeta = [metaPlace, metaDate].filter(Boolean).join(" · ");
 const heroTime = c.time ? [ui.hero.timePrefix, c.time].filter(Boolean).join(" ") : "";
+// The door band's own moment: the day in full, and the hour as a WINDOW wherever somebody published
+// the end of the slot. Never a duration — the running orders are untimed (content.config's
+// `endTime`, lib/eventSchema) — so the two clock times are printed with an en dash between them and
+// nothing is computed from the pair. The en dash is glued on both sides, which is what keeps a
+// phone from ending a line on it.
+const timeSpan = c.time ? (c.endTime ? `${c.time}–${c.endTime}` : c.time) : "";
+const ianuaTime = timeSpan ? [ui.hero.timePrefix, timeSpan].filter(Boolean).join(" ") : "";
+const whenLine = [metaDate, ianuaTime].filter(Boolean).join(" · ");
+const venueNote = sayIf("venueNote", c.venueNote);
+const festivalNote = sayIf("festivalNote", c.festivalNote);
 // The evening's motto: a Latin verse (printed unchanged), its vernacular, and the citation that
 // cites the verse. The gloss does two jobs in one slot — the Latin's vernacular where there IS an
 // `inscriptio`, a standalone editorial note where there is not — and both are copy either way.
@@ -114,7 +132,13 @@ const inscriptioRefText = c.inscriptioRef
 // as the milestone — rather than a second byte-identical copy under the `st-*-bg-desktop`
 // name. `bg` stays what it is: the pre-blurred card wash for /koncerty.
 const bg = bleedPair(c.heroImg ?? c.bg);
-const ogImage = (await getImage({ src: bg.desktop, width: 1200, format: "webp" })).src;
+// What a PASTED LINK previews with, which is not the same picture as the page's own opening.
+// An evening still ahead declares a `share` frame built from its poster — the one image that
+// carries the day, the hour and the door — and every sung evening keeps its hero, the honest
+// frame for a document. `photoOptional`, so a declared-but-missing file falls back rather than
+// failing a build on the host the photographs are uploaded to by hand.
+const shareImg = c.share ? photoOptional(c.share) : undefined;
+const ogImage = (await getImage({ src: shareImg ?? bg.desktop, width: 1200, format: "webp" })).src;
 
 // ── The station's own light: `--candle` inside <main> takes the concert accent's hue at
 // the base gold's OKLCH lightness (build-time hex — no runtime CSS feature risk). Gold
@@ -261,10 +285,25 @@ const credits = c.credits.map((cr, i) => ({
 // role, because the corpus is Polish and the translated list is a projection of it.
 const conductorAt = c.credits.findIndex((cr) => /dyrygent/i.test(cr.role));
 const conductorCredit = conductorAt >= 0 ? credits[conductorAt] : undefined;
-// A page carries the sung word when any work — or any clasp, since in 9 Kart the psalm itself
-// lives in the returns rather than in the work rows — prints its text. The provenance line hangs
-// off this, so a clasp-only page must still own up to where its texts come from.
-const hasText = c.program.some((p) => p.text || p.textGloss || p.claspText || p.claspTextGloss);
+// ── THIS EVENING HAS NOT BEEN SUNG YET, and it is one fact with several consequences, so it is
+// named once here. Read off the calendar (`upcoming`, lib/cycle), which means the first deploy
+// after the concert turns this page from an invitation into a record without anyone editing it:
+//
+//  · the door band is raised, and it is the only band that LEAVES the page rather than filling up;
+//  · the front-matter tabula is held back — a contents list of three rows under the poster and the
+//    hour is noise, and the document earns its front matter when it becomes a document;
+//  · the notice list is offered once, and the coda's rail drops its own door so the page does not
+//    ask twice;
+//  · the poster moves up into the door band, because before the concert it is the notice and only
+//    afterwards a keepsake;
+//  · the encore is sealed, exactly as it is on /koncerty — and it has to be sealed HERE TOO or the
+//    seal means nothing: this page is the fuller document, so the one surface that says more would
+//    be the one that gives the surprise away;
+//  · `ahead` is already suppressed a hundred lines up, so the page never announces itself.
+//
+// Nothing that survives the turn may be phrased in a tense the turn falsifies — that rule belongs
+// to the corpus, and `locus` is the field it bites hardest (content.config).
+const unsung = upcoming?.id === entry.id;
 
 // ── The programme, in this locale. Every work is resolved ONCE here, against its own position in
 // `c.program` — which is the key the copy desk addresses it by — so that the grouping below and
@@ -275,8 +314,13 @@ const hasText = c.program.some((p) => p.text || p.textGloss || p.claspText || p.
 // Polish. Their slots are filled in every locale regardless — an empty one falls back to Polish
 // and would print a Polish stanza under an English original — so it is the page that declines to
 // say the same thing twice.
+//
+// The encore is dropped AFTER the mapping, never before it: `i` is the desk key the copy for this
+// work is addressed by, and filtering first would slide every key up by one on the evenings that
+// have an encore.
 const program = c.program.map((p, i) => ({
   ...p,
+  locus: sayIf(`program.${i}.locus`, p.locus),
   note: sayIf(`program.${i}.note`, p.note),
   rubric: sayIf(`program.${i}.rubric`, p.rubric),
   clasp: sayIf(`program.${i}.clasp`, p.clasp),
@@ -288,7 +332,14 @@ const program = c.program.map((p, i) => ({
     text: glossFor(p.text, sayIf(`program.${i}.textGloss`, p.textGloss?.pl)),
     clasp: glossFor(p.claspText, sayIf(`program.${i}.claspTextGloss`, p.claspTextGloss?.pl)),
   },
-}));
+})).filter((p) => !(unsung && p.bis));
+
+// A page carries the sung word when any work — or any clasp, since in 9 Kart the psalm itself
+// lives in the returns rather than in the work rows — prints its text. The provenance line hangs
+// off this, so a clasp-only page must still own up to where its texts come from. Read off the
+// SEALED list: a page whose only sung text sits in a withheld encore prints no provenance line
+// for a text it is not printing.
+const hasText = program.some((p) => p.text || p.textGloss || p.claspText || p.claspTextGloss);
 
 // ── `realizacja` is a free-text credit line owned by the /koncerty listing, and each evening fills
 // it with whatever extra hand it had: "Realizacja: Ars Sonora Studio", "Skrzypce: Radu Ropotan",
@@ -330,13 +381,18 @@ const filmVideoSrcAv1 = c.video ? videoAssetAv1(c.video.asset) : undefined;
 // Two bands are deliberately absent. The PULL QUOTE is punctuation, not a place — it prints no
 // label of its own, so a row for it would have to invent one. The CODA is the road out (prev /
 // next concert); reaching it by index would be skipping the page rather than steering it.
-const TABULA_ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"] as const;
+//
+// THE ARRAY'S ORDER IS THE DOCUMENT'S ORDER — the numerals are this index's own, so counting the
+// bands in one sequence while the scroll meets them in another is worse than having no index. The
+// door is the only row the calendar adds, and it goes first because that is where the band goes.
+const TABULA_ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"] as const;
 const tabula: TabulaEntry[] = [
+  { when: unsung, id: "wejscie", title: ui.bands.ianua, figure: "Ianua" },
   { when: !!c.prologue, id: "prolog", title: ui.bands.prologue, figure: "Ante concentum" },
   { when: !!c.verbum, id: "slowo", title: ui.bands.verbum, figure: "Verbum" },
   { when: hasTour, id: "wykonania", title: ui.bands.tour, figure: "Itinerarium" },
   { when: !!(c.reflection || c.reflectionNote), id: "refleksja", title: ui.bands.reflection, figure: "Reflectio" },
-  { when: c.program.length > 0, id: "program", title: ui.bands.program, figure: "Programma" },
+  { when: program.length > 0, id: "program", title: ui.bands.program, figure: "Programma" },
   { when: !!(c.roster && c.roster.groups.length > 0), id: "glosy", title: ui.bands.voces, figure: "Voces" },
   { when: !!(c.video && filmVideoSrc), id: "zapis", title: ui.bands.film, figure: "Imago viva" },
   { when: gallery.length > 0, id: "obrazy", title: ui.bands.gallery, figure: "Imagines" },
@@ -391,8 +447,28 @@ const concertTitle = say("title", c.title);
 const posterAlt =
   sayIf("posterAlt", c.posterAlt) ?? fill(ui.poster.altFallback, { title: concertTitle });
 const essence = say("essence", c.essence);
-const title = `${concertTitle} — ${ui.meta.titleSuffix}`;
-const description = essence;
+// ── What a RESULT PAGE shows, which is a different job before the concert and after it. `essence`
+// is the programme note and says nothing about when the evening is or whether the door is open — the
+// two facts a reader searching for something to go to is searching for. So while the evening is
+// ahead the pair becomes the announcement, assembled from the same templates /koncerty swaps its own
+// pair with (KONCERTY_CHROME — see the import's note), and it returns to the programme note on the
+// first build after the date.
+const title = unsung
+  ? fill(walkUi.metaAnnouncedTitle, { title: concertTitle, date: metaDate ?? "" })
+  : `${concertTitle} — ${ui.meta.titleSuffix}`;
+const description = unsung
+  ? [
+      fill(walkUi.metaAnnouncedLead, {
+        title: concertTitle,
+        date: metaDate ?? "",
+        place: metaPlace,
+      }),
+      c.festival ? fill(walkUi.metaAnnouncedFestival, { name: c.festival.name }) : "",
+      c.admission === "free" ? walkUi.metaAnnouncedFree : "",
+    ]
+      .filter(Boolean)
+      .join(" ")
+  : essence;
 
 // ── JSON-LD: a tour emits one MusicEvent per date (each evening carries its own venue,
 // address and admission); a single-date concert keeps one event. The node's shape — status
@@ -480,6 +556,18 @@ const jsonLd =
       </div>
 
       <div class="kd-hero-inner">
+        {/* The lit rubric, in the words every other announcement surface uses (`coda.aheadLabel`),
+            so the hero, the landing's band, the register's closing line and /koncerty's station all
+            name the evening the same way. It stands ABOVE the station line rather than inside it:
+            "Obraz VII · Laudes" says which evening this is in the cycle, and this says that it has
+            not happened — two facts, and the dateline under the title already holds three.
+            Same onset as the station line; the two are one block. */}
+        {unsung && (
+          <p class="kd-hero-ahead reveal">
+            <span class="lit-dot" aria-hidden="true"></span>
+            <span>{ui.coda.aheadLabel}</span>
+          </p>
+        )}
         <p class="kd-hero-eyebrow reveal">
           <span>{ui.hero.station} {numerals.get(entry.id)}</span>
           <span class="kd-dot" aria-hidden="true">·</span>
@@ -514,6 +602,118 @@ const jsonLd =
       </div>
     </section>
 
+    {/* ── Ianua: the door, and the only band that an evening loses by being sung ───────────────
+          Everything here already existed in the corpus and reached nobody: `admission`, `festival`
+          and `address` were JSON-LD only, so a search engine was told this is a free concert inside
+          a named festival at a given address while the reader was told none of it; and `invitation`
+          — the one paragraph written for somebody who has not decided to come — was read only by
+          the landing's announcement band. The band prints them, and writes nothing new.
+
+          THE POSTER STANDS HERE WHILE THE EVENING IS AHEAD, and returns to the coda afterwards.
+          It is one sheet doing two jobs at two times: before the concert it is the notice, and the
+          only image carrying the day, the hour and the door; after it, a keepsake captioned „Plakat
+          wieczoru" at the foot of a document. Same file, same lightbox, one place at a time.
+
+          Facts as a description list, in the order a reader needs them: when, where, what it costs.
+          The festival closes the band because it is the widest frame and the one door that leads
+          away from this page — a link and never an embed (.ai/07: no third-party requests). */}
+    {unsung && (
+      <section class="kd-band kd-ianua" id="wejscie" aria-label={ui.bands.ianua}>
+        <div class="kd-wrap kd-ianua-wrap">
+          {/* The same sheet, the same frame and the same lightbox the coda opens — read that block
+              for why a drawing opens alone and carries no exit. What differs is the size and the
+              caption: here it is the notice and is set large enough to be READ, and the line under
+              it credits the hand that drew it, where the coda's calls it a keepsake. */}
+          {posterImg && posterFrame && (
+            <figure class="kd-poster kd-ianua-poster">
+              <span class="kd-poster-frame" aria-hidden="true"></span>
+              <button
+                type="button"
+                class="kd-poster-media shot-open"
+                data-image-open
+                data-image-src={posterFrame.src}
+                data-image-srcset={posterFrame.srcset}
+                data-image-sizes={posterFrame.sizes}
+                data-image-alt={posterAlt}
+                data-image-caption={heroMeta}
+                data-image-credit={posterCredit}
+                data-image-w={String(posterFrame.width)}
+                data-image-h={String(posterFrame.height)}
+              >
+                <Image
+                  src={posterImg}
+                  widths={[320, 480, 640]}
+                  width={640}
+                  sizes="(max-width: 860px) 70vw, 320px"
+                  alt={posterAlt}
+                  loading="eager"
+                  decoding="async"
+                />
+                <span class="reveal-light" aria-hidden="true"></span>
+              </button>
+              {posterCredit && <figcaption class="micro reveal">{posterCredit}</figcaption>}
+            </figure>
+          )}
+
+          <div class="kd-ianua-body">
+            <h2 class="kd-section-label micro reveal">
+              <span class="lat">Ianua</span>
+              <span class="kd-dot" aria-hidden="true">·</span>
+              <span>{ui.bands.ianua}</span>
+            </h2>
+
+            {c.invitation && (
+              <p class="kd-ianua-invitation reveal" data-d="1">{say("invitation", c.invitation)}</p>
+            )}
+
+            <dl class="kd-ianua-facts reveal" data-d="2">
+              {whenLine && (
+                <div class="kd-ianua-fact">
+                  <dt>{ui.ianua.when}</dt>
+                  <dd>{whenLine}</dd>
+                </div>
+              )}
+              <div class="kd-ianua-fact">
+                <dt>{ui.ianua.where}</dt>
+                <dd>
+                  {c.venue ?? heroMeta}
+                  {venueNote && <span class="kd-ianua-room">{venueNote}</span>}
+                  {c.address && (
+                    <span class="kd-ianua-address">
+                      {c.mapUrl
+                        ? <a href={c.mapUrl} target="_blank" rel="noopener noreferrer">{c.address} <span aria-hidden="true">↗</span></a>
+                        : c.address}
+                    </span>
+                  )}
+                </dd>
+              </div>
+              {c.admission === "free" && (
+                <div class="kd-ianua-fact">
+                  <dt>{ui.ianua.door}</dt>
+                  <dd>{walkUi.freeAdmission}</dd>
+                </div>
+              )}
+            </dl>
+
+            {c.festival && (
+              <div class="kd-ianua-festival reveal" data-d="3">
+                <p class="kd-ianua-festival-name">{c.festival.name}</p>
+                {festivalNote && <p class="kd-ianua-festival-note">{festivalNote}</p>}
+                <a
+                  class="kd-ianua-festival-link micro"
+                  href={c.festival.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {walkUi.festivalSite}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    )}
+
     {/* ── The evening's contents, printed ONCE as front matter ───────────────────────────────
           The page already has an index — the chrome's tabula, built from the same array below.
           What it does not have is one that serves a FIRST reading: tabula.css states the weakness
@@ -536,7 +736,7 @@ const jsonLd =
 
           It stands on `--night` because the prologue below it does: the hero, this leaf and the
           threshold band are one dark opening stretch, and the page's first parchment is `#program`. */}
-    {tabula.length > 1 && (
+    {!unsung && tabula.length > 1 && (
       <nav class="kd-band kd-tabula-front" aria-label={ui.tabula}>
         <div class="kd-wrap">
           <h2 class="kd-section-label micro reveal">
@@ -660,7 +860,18 @@ const jsonLd =
       </section>
     )}
 
-    {/* ── Reflection: Florent's authored paragraph + our unsigned bridge note ─── */}
+    {/* ── Reflection: an authored paragraph where the evening has one, and our unsigned note ─────
+          IT STANDS BEFORE THE PROGRAMME ON EVERY EVENING, ANNOUNCED OR SUNG, and the reason is the
+          seam above it rather than a rule about documents. The próg ends on the angel censing the
+          altar with the prayers of all the saints; this band's unsigned note is what that sentence
+          rhymes with. The two are one thought, and a nine-hundred-line programme book between them
+          would weaken both.
+
+          An earlier pass had the pair swapped by `order` while the evening was ahead — the reading
+          of an evening after the works that make it. Reverted: flex `order` moves what the eye
+          meets and leaves the document where it was, so a screen reader and the tab key would have
+          taken the bands in one sequence while everybody else read them in the other. A page that
+          wants a different order has to be written in that order. */}
     {(c.reflection || c.reflectionNote) && (
       <section class="kd-band kd-reflection" id="refleksja" aria-label={ui.bands.reflection}>
         <div class="kd-wrap kd-narrow">
@@ -684,7 +895,7 @@ const jsonLd =
           then each work with scoring, source verse and — where kept — the sung
           word with its gloss in the reader's language (a <details>, unfolded by the
           disclosure controller — see the script at the foot of this file). ───── */}
-    {c.program.length > 0 && (
+    {program.length > 0 && (
       <section class="kd-band kd-band-soft kd-program-band tone-light" id="program" aria-label={ui.bands.program}>
         <div class="kd-wrap">
           <header class="kd-section-head">
@@ -723,6 +934,25 @@ const jsonLd =
           </header>
 
           <ol class="kd-program">
+            {/* The returning piece, where it stands OUTSIDE the numbering. Its returns are carried
+                by the clasps below, one per work it follows — but the first sounding precedes work
+                01 and so hangs on nothing, and the count belongs to the whole evening rather than
+                to any one seam. Without this row the programme book would print four returns of a
+                piece the station on /koncerty says sounds five times, and the page that is the
+                fuller document would be the one that is wrong.
+
+                A ritornello that IS one of the numbered works needs no row: it already has one,
+                and the corpus refuses the other combination (content.config's superRefine). */}
+            {c.ritornello && !c.ritornello.numbered && (
+              <li class="kd-clasp kd-ritornello">
+                <span class="kd-clasp-rule reveal">
+                  <span>
+                    {c.ritornello.work} · {c.ritornello.composer} ·{" "}
+                    {fill(ui.program.ritornelloTimes, { times: String(c.ritornello.times) })}
+                  </span>
+                </span>
+              </li>
+            )}
             {programGroups.map((grp) => (
               <>
                 {/* The Latin is the verse and the Polish is its translation: read in sequence, so
@@ -815,19 +1045,37 @@ const jsonLd =
                         <span>{p.rubric}</span>
                       </p>
                     )}
-                    {p.note && <p class="kd-program-note-work">{p.note}</p>}
-                    {(p.text || p.gloss.text) && (
+                    {/* Where the work stands in THIS programme, and the only part of a work's
+                        prose that stays open. It is the band's own reading voice one rung down
+                        from `programArc` — which is the point: read straight through, the arc and
+                        these ten clauses are the evening, and the apparatus is a press away. */}
+                    {p.locus && <p class="kd-program-locus">{p.locus}</p>}
+                    {/* THE NOTE OPENS WITH THE TEXT, in one box rather than standing above it.
+                        A page whose ten works each print a paragraph of provenance buries the arc
+                        that just promised the evening, and an evening still ahead is read by
+                        somebody deciding whether to come. Nothing is lost to search: `<details>`
+                        content is in the HTML, and this is one disclosure per work where the page
+                        used to have one for the text alone.
+
+                        The cue names the largest thing inside: a sung text if there is one, with
+                        the note reading as the headnote a programme book puts above it. */}
+                    {(p.note || p.text || p.gloss.text) && (
                       <details class="kd-text">
                         <summary>
-                          <span class="kd-text-cue">{ui.program.textCue}</span>
+                          <span class="kd-text-cue">
+                            {p.text || p.gloss.text ? ui.program.textCue : ui.program.workCue}
+                          </span>
                           <span class="kd-text-icon" aria-hidden="true"></span>
                         </summary>
-                        <div
-                          class:list={["kd-text-cols", { "is-single": !(p.text && p.gloss.text) }]}
-                        >
-                          {p.text && <p class="kd-text-orig">{p.text}</p>}
-                          {p.gloss.text && <p class="kd-text-gloss">{p.gloss.text}</p>}
-                        </div>
+                        {p.note && <p class="kd-program-note-work">{p.note}</p>}
+                        {(p.text || p.gloss.text) && (
+                          <div
+                            class:list={["kd-text-cols", { "is-single": !(p.text && p.gloss.text) }]}
+                          >
+                            {p.text && <p class="kd-text-orig">{p.text}</p>}
+                            {p.gloss.text && <p class="kd-text-gloss">{p.gloss.text}</p>}
+                          </div>
+                        )}
                       </details>
                     )}
                       </div>
@@ -1080,12 +1328,30 @@ const jsonLd =
       </section>
     )}
 
+    {/* ── The list, offered once, at the end of an invitation ───────────────────────────────────
+          Only while the evening is ahead, and only here: a reader who has just read the programme
+          of a concert they may not be able to reach is the one reader on this page for whom the
+          list is an answer. After the concert the rail's own Nuntius door does this job, which is
+          why that door steps aside while this band stands (see the rail's note).
+
+          Its own `<section>` and not a foot of the door band: the component opens at `h2` and
+          brings its own rubric and lede, so inside Ianua it would be a second heading at one level
+          and a second call to action beside "come on 11 October". */}
+    {unsung && (
+      <section class="notice-band" id="nuntius" aria-label={nuntius.form.bandAria}>
+        <NoticeSignup lang={lang} surface="web:koncert" />
+      </section>
+    )}
+
     {/* ── Coda: the poster as keepsake, and the Via that runs on ────────────── */}
     <section class="kd-band kd-coda" aria-label={ui.coda.aria}>
       <div class="kd-wrap kd-coda-inner">
         {/* The gold corner is the mount, not the photograph, so it stays outside the media wrapper
             and above the veil: the frame is already standing when the image lights into it. */}
-        {posterImg && posterFrame && (
+        {/* A keepsake at the foot of a document — which it is not yet while the evening is ahead,
+            and then it stands in the door band instead (`unsung`). One sheet, one place at a time:
+            printing it twice would make the notice a souvenir of itself. */}
+        {!unsung && posterImg && posterFrame && (
           <figure class="kd-poster">
             <span class="kd-poster-frame" aria-hidden="true"></span>
             {/* The media wrapper IS the trigger, as in the gallery one band up: a button rather
@@ -1155,10 +1421,15 @@ const jsonLd =
                 <span class="kd-vianav-dir micro">{ui.hero.station} {numerals.get(next.id)} <span aria-hidden="true">→</span></span>
                 <span class="kd-vianav-name">{neighbourTitle(next)}</span>
               </a>
-            ) : ahead ? (
+            ) : ahead || unsung ? (
               /* The announcement standing under the rail IS the forward door, and a second one
                  offering the notice list beside it asks a reader to subscribe to news they are
-                 being handed. The slot steps aside for it. */
+                 being handed. The slot steps aside for it.
+
+                 `unsung` joins the same condition for the same reason at the other end: this page
+                 IS the announcement, and the band a screen above already asks the one question the
+                 list exists to ask. Two doors to one list on one page is the drift NoticeSignup's
+                 own header exists to prevent, so the condition is written here as the band's. */
               <span class="kd-vianav-side is-empty" aria-hidden="true" />
             ) : (
               /* Nothing is being announced here: the slot names the LIST, not an evening, so the
@@ -1174,11 +1445,13 @@ const jsonLd =
           </div>
 
           {/* The road's end. Written unbroken: whitespace between these nodes would print inside
-              the line, and the mark before the moment is drawn by the sheet. */}
+              the line, and BOTH marks are drawn by the sheet — the rubric can be several words, so
+              on a phone this becomes three authored tiers and each mark goes with the line break
+              that ends its job. */}
           {ahead && (
             <a class="kd-ahead" href={ahead.href}>
               <span class="kd-ahead-dot" aria-hidden="true" />
-              <span class="kd-ahead-text">{`${ui.coda.aheadLabel} — `}<strong>{ahead.title}</strong>{ahead.moment && <span class="kd-ahead-when">{ahead.moment}</span>}</span>
+              <span class="kd-ahead-text"><span class="kd-ahead-label">{ui.coda.aheadLabel}</span><strong>{ahead.title}</strong>{ahead.moment && <span class="kd-ahead-when">{ahead.moment}</span>}</span>
             </a>
           )}
         </nav>
@@ -1286,6 +1559,13 @@ const jsonLd =
       linear-gradient(0deg, rgba(8,8,7,var(--hero-foot, 0)) 0%, transparent 60%); }
 
   .kd-hero-inner { max-width: 1180px; width: 100%; margin: 0 auto; }
+  /* The lit rubric of an evening still ahead. It takes the candle where the station line below it
+     is paper at .72 — the rubric is the one line on this hero that is news, and colour is how it
+     says so without a second size. `.lit-dot` (base.css) draws the mark and does not pulse here;
+     the reasoning is at the class. */
+  /* `flex`, not the `inline-flex` the station line below uses: two inline-level rubrics in a block
+     container would set themselves on ONE line. */
+  .kd-hero-ahead { display: flex; align-items: center; justify-content: flex-start; gap: 10px; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--candle); margin: 0 0 14px; }
   .kd-hero-eyebrow { display: inline-flex; align-items: center; gap: 10px; font-family: var(--capitalis); font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: rgba(244, 241, 233, .72); margin: 0 0 22px; }
   .kd-hero-title { font-family: var(--serif); font-weight: 300; line-height: .98; font-size: clamp(48px, 9vw, 124px); letter-spacing: -.01em; margin: 0; color: var(--paper); }
   .kd-hero-meta { font-family: var(--capitalis); font-size: clamp(11.5px, 1vw, 13px); letter-spacing: .18em; text-transform: uppercase; color: rgba(244, 241, 233, .68); margin: 26px 0 0; }
@@ -1424,6 +1704,42 @@ const jsonLd =
      same eight bands and a second grammar for one page's contents is a second vocabulary. What
      differs is scale and the leader: the bar's is drawn on hover because the bar is a control,
      and this one is standing type, so the hairline is simply there. */
+  /* ── Ianua: the door ─────────────────────────────────────────────────────────────────────────
+     On the same `--night` as the tabula and the próg below it: the hero, this band and the
+     threshold are one dark opening stretch, and the page's first parchment is still `#program`.
+
+     THE POSTER IS A GRID TRACK AND THE TRACK IS WHAT SIZES IT. `.shot-open` contributes no box of
+     its own, so a width set on the figure is a tie the later reset can win — the track cannot be
+     argued with. `.kd-poster` brings the gold corner and the shadow from the coda; all this
+     overrides is the width it declares for a keepsake. */
+  .kd-ianua { background: var(--night, #100f0d); color: var(--paper); padding-top: clamp(52px, 7vw, 88px); padding-bottom: clamp(52px, 7vw, 88px); }
+  .kd-ianua-wrap { display: grid; grid-template-columns: clamp(220px, 26vw, 320px) minmax(0, 1fr); gap: clamp(30px, 5vw, 72px); align-items: start; }
+  .kd-ianua-poster { width: 100%; }
+  .kd-ianua-poster figcaption { color: rgba(244,241,233,.5); }
+  .kd-ianua-body { display: grid; gap: clamp(22px, 2.6vw, 32px); min-width: 0; }
+  /* The one paragraph on this page addressed to somebody who has not decided to come. A step under
+     the programme's arc and in the same voice — serif, 300, the gold hairline that marks the page's
+     own speech — because the two are the evening's two invitations and the reader meets this first. */
+  .kd-ianua-invitation { margin: 0; max-width: 56ch; font-family: var(--serif); font-weight: 300; font-size: clamp(17.5px, 1.6vw, 21px); line-height: 1.62; color: rgba(244,241,233,.9); padding-left: 18px; border-left: 1px solid color-mix(in srgb, var(--candle) 52%, transparent); }
+  /* When, where, what the door costs — a description list, because that is what it is. The term is
+     the mono voice the page reserves for facts; the value is set at reading size, since an address
+     in 10px tracked capitals is a label rather than something a reader can act on. */
+  .kd-ianua-facts { margin: 0; display: grid; gap: 18px; }
+  .kd-ianua-fact { display: grid; grid-template-columns: clamp(78px, 9vw, 104px) minmax(0, 1fr); gap: 8px clamp(14px, 2vw, 24px); align-items: baseline; }
+  .kd-ianua-fact dt { font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: rgba(244,241,233,.5); }
+  .kd-ianua-fact dd { margin: 0; display: grid; gap: 3px; font-family: var(--sans); font-weight: 300; font-size: clamp(15px, 1.3vw, 16.5px); line-height: 1.5; color: rgba(244,241,233,.92); }
+  .kd-ianua-room { color: rgba(244,241,233,.66); }
+  .kd-ianua-address { font-size: clamp(13.5px, 1.15vw, 14.5px); color: rgba(244,241,233,.58); }
+  .kd-ianua-address a { color: inherit; border-bottom: 1px solid rgba(244,241,233,.24); padding-bottom: 1px; transition: color .3s var(--ease, ease), border-color .3s var(--ease, ease); }
+  .kd-ianua-address a:hover { color: var(--candle); border-bottom-color: var(--candle); }
+  /* The widest frame, and the one door that leads off this page — so it closes the band, behind a
+     rule that says "this is somebody else's event" without a sentence having to. */
+  .kd-ianua-festival { padding-top: clamp(20px, 2.4vw, 28px); border-top: 1px solid rgba(244,241,233,.14); }
+  .kd-ianua-festival-name { margin: 0; font-family: var(--capitalis); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); }
+  .kd-ianua-festival-note { margin: 10px 0 0; max-width: 58ch; font-family: var(--sans); font-weight: 300; font-size: clamp(14.5px, 1.2vw, 15.5px); line-height: 1.65; color: rgba(244,241,233,.7); }
+  .kd-ianua-festival-link { display: inline-block; margin: 14px 0 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color .3s var(--ease, ease); }
+  .kd-ianua-festival-link:hover { border-bottom-color: var(--candle); }
+
   .kd-tabula-front { background: var(--night, #100f0d); color: var(--paper); padding-top: clamp(48px, 6vw, 78px); padding-bottom: clamp(48px, 6vw, 78px); }
   .kd-tabula-list { list-style: none; margin: 0; padding: 0; max-width: 720px; border-top: 1px solid rgba(244, 241, 233, .14); }
   .kd-tabula-row { border-bottom: 1px solid rgba(244, 241, 233, .14); }
@@ -1544,18 +1860,19 @@ const jsonLd =
   .kd-program-voicing,
   .kd-program-duration { font-family: var(--capitalis); font-style: normal; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft, #34302b); padding-left: 12px; border-left: 1px solid var(--line, rgba(22,21,20,.16)); }
 
-  /* The floor tracks `.kd-program-note-work`'s and must keep tracking it: this motto stands ABOVE
-     the wall-label note in the entry's order, so a narrow window that left it the smaller of the
-     two inverted the hierarchy at exactly the widths where the column is hardest to read.
+  /* The entry's epigraph — the scripture the work is written on. Its floor sits above the sans
+     note's, and must keep doing so: a narrow window that left the epigraph the smaller of the two
+     inverted the hierarchy at exactly the widths where the column is hardest to read, and set at
+     one size the sans carries more ink per glyph and simply outweighs the serif.
 
-     THE CEILING IS ITS OWN RUNG, above the note's 16px rather than level with it. This line is the
-     entry's epigraph — the scripture the work is written on — and the note beneath it is apparatus
-     explaining it; set at one size the sans note carries more ink per glyph and simply outweighs
-     it, which is the apparatus talking over its text. Size does the separating and not colour:
-     the muted tier stays, because serif at this size is what that token was drawn for and
-     promoting it would close the gap to the work title over it instead. (The band's tier is the
-     deep one, which is compensation for a darker ground rather than a promotion — it holds the
-     epigraph roughly where it stood against the lighter parchment.) */
+     `.kd-program-locus` DELIBERATELY MATCHES THIS RULE'S SIZE and the weight it inherits — the two
+     are the serif pair under a work title and italic is the only thing between them. Move one and
+     move the other; the reasoning is written out over there.
+
+     Size does the separating and not colour: the muted tier stays, because serif at this size is
+     what that token was drawn for and promoting it would close the gap to the work title over it
+     instead. (The band's tier is the deep one, which is compensation for a darker ground rather
+     than a promotion — it holds the epigraph roughly where it stood against lighter parchment.) */
   .kd-program-inscriptio { margin: 6px 0 0; font-family: var(--serif); font-size: clamp(15.5px, 1.2vw, 17px); line-height: 1.55; color: var(--ink-muted, #746d62); }
   .kd-program-inscriptio-lat { font-style: italic; color: var(--ink-soft, #34302b); }
   .kd-program-inscriptio-gloss { color: var(--ink-muted, #746d62); }
@@ -1570,7 +1887,25 @@ const jsonLd =
   .kd-rubric { margin: 14px 0 2px; justify-self: start; display: flex; align-items: center; gap: 12px; padding: 9px 18px 9px 14px; border-left: 2px solid var(--candle); background: color-mix(in srgb, var(--candle) 9%, transparent); font-family: var(--capitalis); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; line-height: 1.5; color: var(--ink-soft, #34302b); }
   .kd-rubric-mark { width: 6px; height: 6px; flex: none; transform: rotate(45deg); background: var(--candle); }
 
-  /* Per-work note — the "why this work" gloss, a museum wall-label register.
+  /* Where the work stands in this programme — the one line of a work's prose that stays open, and
+     the band's reading voice one rung below `.kd-program-arc`: same serif at the same weight, a
+     size down, no gold rule (the arc owns that gesture at band level, and repeating it ten times
+     would turn a reading into a list of pull quotes).
+
+     THE EPIGRAPH ABOVE AND THIS LINE ARE ONE SIZE, and ITALIC is the whole of what separates them:
+     the verse is the work quoting itself, this is the page speaking. Neither may outweigh the
+     other — an epigraph set smaller than the gloss under it is apparatus talking over its text, and
+     a gloss set smaller than an ornament that only half the works carry loses the one voice every
+     work has. Size and weight therefore track `.kd-program-inscriptio` deliberately, weight by
+     inheriting exactly as it does, so the two cannot drift apart in one place. Do not set this in
+     italic to "match" the verse: that is the single change that collapses the pair.
+
+     The note under it is the third tier and the only other one — SANS, muted, and behind a press. */
+  .kd-program-locus { margin: 8px 0 0; max-width: 58ch; font-family: var(--serif); font-size: clamp(15.5px, 1.2vw, 17px); line-height: 1.6; color: var(--ink-soft, #34302b); }
+
+  /* Per-work note — the "why this work" gloss, a museum wall-label register. It opens inside the
+     work's disclosure rather than standing under the title (see the band's markup), so its top
+     margin is the breath under a summary now instead of the gap under an epigraph.
      THE ONLY SANS COPY ON THIS PAGE THAT IS READ IN QUANTITY, and it is set heavier and larger
      than the site's resting 300 for that reason alone. The muted tier measures 5.08 : 1 on this
      band, comfortably clear of AA — but a reader sitting with a whole programme reported eye
@@ -1646,6 +1981,9 @@ const jsonLd =
   .kd-clasp-rule::before,
   .kd-clasp-rule::after { content: ""; height: 1px; background: color-mix(in srgb, var(--candle) 40%, transparent); flex: 1; }
   .kd-clasp.is-sung { padding-bottom: clamp(32px, 4vw, 48px); }
+  /* The returning piece's own row opens the list instead of seaming two works, so it drops the
+     top padding of a seam it is not and opens the space under itself into work 01. */
+  .kd-ritornello { padding-top: 0; padding-bottom: clamp(22px, 3vw, 34px); }
   /* A bare label has nothing under it, so the work that follows would put its own hairline a
      breath below the label's — the sung variant is spared this by the psalm sitting between. */
   .kd-clasp:not(.is-sung) + .kd-program-item { border-top: 0; }
@@ -1791,9 +2129,12 @@ const jsonLd =
   .kd-ahead strong { color: var(--candle); font-weight: 400; padding-bottom: 2px; border-bottom: 1px solid color-mix(in srgb, var(--candle) 34%, transparent); transition: border-color .35s var(--ease, ease); }
   .kd-ahead:hover { color: rgba(244,241,233,.86); }
   .kd-ahead:hover strong { border-bottom-color: var(--candle); }
-  /* The moment is a peer of the name, not a subtitle. The middot is DRAWN so the phone layer can
-     drop it when the two facts stop sharing a line, and it is glued on both sides — with no
-     whitespace in the markup the mark can never end a line, nor the date start one alone. */
+  /* Both marks in this line are DRAWN so the phone layer can drop each one as its two facts stop
+     sharing a line — the em-dash introduces the evening after the rubric, the middot separates the
+     evening from its moment. Each is glued on both sides: with no whitespace in the markup, a mark
+     can never end a line, nor the fact after it start one alone. The moment is a peer of the name,
+     not a subtitle. */
+  .kd-ahead-label::after { content: "—"; margin: 0 .42em 0 .5em; letter-spacing: 0; }
   .kd-ahead-when { white-space: nowrap; }
   .kd-ahead-when::before { content: "·"; margin: 0 .5em 0 .62em; letter-spacing: 0; }
   /* `flex-start` with an explicit offset, not `align-items: center`: the line wraps to two tiers
@@ -1868,8 +2209,16 @@ const jsonLd =
 
   /* ── Responsive ────────────────────────────────────────────────────────── */
   @media (max-width: 820px) {
+    /* The door stacks with the POSTER FIRST: on a phone the sheet is the announcement and the
+       reader has to see what they are being invited to before reading why. */
+    .kd-ianua-wrap { grid-template-columns: 1fr; gap: clamp(28px, 7vw, 44px); }
+    .kd-ianua-poster { width: min(300px, 68vw); }
+    .kd-ianua-fact { grid-template-columns: 1fr; gap: 4px; }
     .kd-coda-inner { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: clamp(32px, 8vw, 52px); }
-    .kd-poster { width: clamp(180px, 52vw, 240px); }
+    /* The coda's keepsake only — the door's sheet is sized a rule up, and the two must not be one
+       selector: a notice a reader is deciding on and a souvenir at the foot of a document do not
+       want the same width on a phone. */
+    .kd-coda-inner .kd-poster { width: clamp(180px, 52vw, 240px); }
     .kd-vianav { width: 100%; justify-items: center; }
     .kd-vianav-rail { grid-template-columns: 1fr; gap: 22px; }
     .kd-vianav-next { text-align: center; justify-items: center; }
@@ -1892,12 +2241,12 @@ const jsonLd =
     .kd-program-meta { flex-basis: 100%; margin-left: -13px; clip-path: inset(0 0 0 13px); }
     .kd-text-cols, .kd-text-cols.is-single { grid-template-columns: 1fr; gap: 18px; }
     .kd-tour-row { grid-template-columns: 1fr; gap: 4px; padding: 20px 0; }
-    /* The announcement becomes two authored tiers — a phone column never holds the label, the
-       evening's name and its day on one line — so the mark that joined two peers goes with it.
-       The leading opens to clear the gold rule under the name: it hangs below the em box, and
-       Polish capitals carry their marks above the cap height. */
+    /* The announcement becomes three authored tiers — a phone column never holds the rubric, the
+       evening's name and its day on one line — so both drawn marks go with the breaks that end
+       their job. The leading opens to clear the gold rule under the name: it hangs below the em
+       box, and Polish capitals carry their marks above the cap height. */
     .kd-ahead { --ahead-line: 1.9; }
-    .kd-ahead-when { display: block; }
-    .kd-ahead-when::before { display: none; }
+    .kd-ahead-label, .kd-ahead-when { display: block; }
+    .kd-ahead-label::after, .kd-ahead-when::before { display: none; }
   }
 </style>
