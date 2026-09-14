@@ -134,6 +134,9 @@ export const TRANSLATED_ROUTES: ReadonlySet<string> = new Set<string>([
   "/koncerty/9-kart",
   "/koncerty/hymn-poleglym",
   "/koncerty/aeternam",
+  // Bobola is absent on purpose and not by oversight: `cycle: false` keeps him off the numbered
+  // walk, and he has no page of his own to translate.
+  "/koncerty/pochwala-stworzenia",
 ]);
 
 /**

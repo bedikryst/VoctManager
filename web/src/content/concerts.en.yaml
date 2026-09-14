@@ -513,19 +513,162 @@ concert.hymn-poleglym.textNote: "The original texts follow the concert programme
 concert.hymn-poleglym.title: "Hymn to the Fallen"
 concert.pochwala-stworzenia.about.blurb: "A concert within the Warsaw festival “Fenomen człowieka”: St Francis’s Canticle of the Sun as a road from wonder at creation towards the hope of eternity."
 concert.pochwala-stworzenia.about.place: "All Saints’ Church · Warsaw"
-concert.pochwala-stworzenia.essence: "The evening grows out of St Francis’s Laudes creaturarum, known in English as the Canticle of the Sun: in it the whole of creation is a road to the Creator. The programme descends from wonder at the world towards what is fragile in us, towards change, suffering and death, and Pärt’s Spiegel im Spiegel, returning from the gallery, is the mirror of that relation. The whole road is closed by Dubra’s Stetit Angelus, the image of an angel censing the altar with the prayers of all the saints, sung in the church of All Saints."
+concert.pochwala-stworzenia.credits.0.role: "Conductor"
+concert.pochwala-stworzenia.essence: "The concert grows out of St Francis’s Laudes creaturarum, known in English as the Canticle of the Sun: in it the whole of creation is a road to the Creator. The programme leads from wonder at the world towards human frailty, towards change, suffering and death, and between the groups of works Pärt’s Spiegel im Spiegel returns from the gallery, the mirror of that relation. The whole road is closed by Dubra’s Stetit Angelus, the image of an angel censing the altar with the prayers of all the saints, sung in the church of All Saints."
 concert.pochwala-stworzenia.facts.0: "Festival “Fenomen człowieka”"
 concert.pochwala-stworzenia.facts.1: "Voices, violin, organ"
 concert.pochwala-stworzenia.facts.2: "St Francis’s Canticle of the Sun"
+concert.pochwala-stworzenia.festivalNote: "Three days of exhibitions, workshops and conversations; this concert closes them. The festival is run by the Mój Dom hospice foundation, which accompanies people with ALS and their families. This year's edition reads the human through beauty: the beauty of values and of relationships, the beauty of nature and of sound, and the beauty that stays even in pain. This programme descends towards that last one."
+concert.pochwala-stworzenia.inscriptioGloss: "Praised be You, my Lord, with all Your creatures"
+concert.pochwala-stworzenia.inscriptioRef.source: "St Francis's Canticle of the Sun"
 concert.pochwala-stworzenia.invitation: "St Francis’s Canticle of the Sun greets the sun, the wind, the water and the fire as its own kin, and at the end greets death on the same terms. The programme follows that road: from light towards what is fragile in us, and further — to where the praise of creation becomes the prayer of all the saints, in the church that bears their name."
 concert.pochwala-stworzenia.metaPlace: "All Saints’ Church, Warsaw"
 concert.pochwala-stworzenia.posterAlt: "Poster for the concert In Praise of Creation"
+concert.pochwala-stworzenia.program.0.locus: "Borkowski has three works in this programme; the first opens it on one word: glory."
+concert.pochwala-stworzenia.program.0.note: "His sacred music usually takes a single Latin word and builds the whole piece out of it: in planes of sound, in extreme registers and in repetition, not in melody."
 concert.pochwala-stworzenia.program.1.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.1.locus: "After praise comes the thing by which anything at all can be seen."
+concert.pochwala-stworzenia.program.2.locus: "Everything the rest of the programme touches one at a time passes through here at once."
+concert.pochwala-stworzenia.program.2.note: "The whole Canticle, in the Umbrian original of the first half of the thirteenth century in which Francis composed it: the sun, the moon and the stars, wind, water, fire, mother earth, those who forgive, and sister death. Orff set the text in 1954, in the collection Concento di voci."
+concert.pochwala-stworzenia.program.2.textGloss: |-
+  Most High, all-powerful, good Lord,
+  Yours are the praises, the glory, the honour and every blessing.
+  To You alone, Most High, do they belong,
+  and no man is worthy to speak Your name.
+
+  Praised be You, my Lord, with all Your creatures,
+  and first of all Sir Brother Sun,
+  who is the day, and by whom You give us light;
+  he is beautiful and radiant in great splendour —
+  of You, Most High, he bears the likeness.
+
+  Praised be You, my Lord, for Sister Moon and the stars:
+  in heaven You formed them, bright and precious and fair.
+
+  Praised be You, my Lord, for Brother Wind,
+  for the air and the clouds, for fair weather and all weather,
+  by which You give Your creatures their keeping.
+
+  Praised be You, my Lord, for Sister Water,
+  who is very useful and humble and precious and chaste.
+
+  Praised be You, my Lord, for Brother Fire,
+  by whom You light up the night;
+  and he is beautiful and merry and robust and strong.
+
+  Praised be You, my Lord, for our Sister Mother Earth,
+  who sustains and governs us,
+  and brings forth diverse fruits with coloured flowers and grass.
+
+  Praised be You, my Lord, for those who forgive for love of You
+  and bear infirmity and tribulation.
+  Blessed are those who endure them in peace,
+  for by You, Most High, they will be crowned.
+
+  Praised be You, my Lord, for our Sister Bodily Death,
+  from whom no living man can escape.
+  Woe to those who die in mortal sin;
+  blessed are those she finds doing Your most holy will,
+  for the second death will do them no harm.
+
+  Praise and bless my Lord, and give Him thanks,
+  and serve Him with great humility.
+concert.pochwala-stworzenia.program.3.locus: "The first interior of the afternoon: one that is turning as we listen."
+concert.pochwala-stworzenia.program.3.note: "An interlude between the scenes of the opera's second act: in Thaïs it is the moment when the title character, a courtesan of Alexandria, decides to change her life. The whole transformation happens without a single word, in the violin part."
 concert.pochwala-stworzenia.program.4.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.4.inscriptioGloss: "text: Sara Teasdale"
+concert.pochwala-stworzenia.program.4.locus: "Straight after the interior, the sky, and a human being standing under it: the question of our place in creation begins here."
+concert.pochwala-stworzenia.program.4.note: "A poem by the American poet Sara Teasdale about a solitary night beneath the stars. To the choir Ešenvalds added glass harmonicas — tuned glasses played with a wet finger — so that they would sound like a shimmer."
+concert.pochwala-stworzenia.program.4.textGloss: |-
+  Alone in the night
+  on a dark hill
+  with pines around me
+  spicy and still,
+
+  and a heaven full of stars
+  over my head,
+  white and topaz
+  and misty red;
+
+  myriads with beating
+  hearts of fire
+  that aeons
+  cannot vex or tire;
+
+  up the dome of heaven
+  like a great hill,
+  I watch them marching
+  stately and still,
+
+  and I know that I
+  am honored to be
+  witness
+  of so much majesty.
+concert.pochwala-stworzenia.program.5.inscriptioGloss: "text: George Meredith · arr. for violin and choir: Paul Drayton"
+concert.pochwala-stworzenia.program.5.locus: "The highest point: the lark rises until it is lost in the light. From here everything descends."
+concert.pochwala-stworzenia.program.5.note: "A pastoral tone poem for violin, written in 1914 and revised in 1920; it waited six years for its first performance because the war had broken out. Its inspiration was George Meredith's poem about a lark rising towards the sky; the melodic line rises and falls in imitation of the flight. Paul Drayton rewrote the piece for violin and choir, so that Meredith's words — in the original only written above the notes — can here actually be heard."
+concert.pochwala-stworzenia.program.5.textGloss: |-
+  He rises and begins to round,
+  he drops the silver chain of sound,
+  of many links without a break,
+  in chirrup, whistle, slur and shake.
+
+  For singing till his heaven fills,
+  'tis love of earth that he instils,
+  and ever winging up and up,
+  our valley is his golden cup
+  and he the wine which overflows
+  to lift us with him as he goes.
+
+  Till lost on his aerial rings
+  in light, and then the fancy sings.
+concert.pochwala-stworzenia.program.6.inscriptioGloss: "a song in a folk idiom · words written to an existing vocalise"
+concert.pochwala-stworzenia.program.6.locus: "Sister Water, whom the Canticle calls very useful and humble and precious and chaste. Here she is frozen."
+concert.pochwala-stworzenia.program.6.note: "Sykulski wrote it to a commission from Agnieszka Franków-Żelazny for the Polish National Youth Choir: as a vocalise, without words. Something was missing from it, though — “the piece carried no message”. So the composer sent the score to a friend, who in the course of a single night wrote a whole story into it, fitted so exactly that not one note had to change. A girl from Podzamcze weeps over the frozen Prosna, the mill has stopped, there will be no bread, and John of Nepomuk, patron of bridges and rivers, stands beside her."
+concert.pochwala-stworzenia.program.6.textGloss: |-
+  Ice stands on the Prosna,
+  stands beside the mill —
+  five years the girl from Podzamcze
+  has been coming here.
+
+  The girl stands and whimpers,
+  a kerchief hidden in her hands;
+  St Roch is calling her
+  to high Mass, for comfort.
+
+  Oj dana, oj dana…
+
+  The mill stands — but who is there
+  to set its wheel rattling?
+  There is no flour, none at all,
+  and there will be no bread.
+
+  Dana, dana… na na, na na…
+
+  Ice stands on the Prosna,
+  time flows on beneath the ice,
+  and John of Nepomuk
+  stands beside the girl.
+
+  Dana, dana… na na…
 concert.pochwala-stworzenia.program.7.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.7.inscriptioGloss: "from the cycle Impressions d'enfance op. 28 · the village fiddler"
+concert.pochwala-stworzenia.program.7.locus: "The only fast pulse in the whole programme, and the last light before the requiem."
+concert.pochwala-stworzenia.program.7.note: "The first of the ten miniatures of Impressions d'enfance op. 28, childhood memories arranged by the course of a day: from the fiddler, through the cricket and the wind in the chimney, to the night storm and the sunrise. The ménétrier is the village fiddler, the one who plays at weddings. The player is Radu Ropotan: like Enescu, a Romanian."
+concert.pochwala-stworzenia.program.8.locus: "The floor of this road: sister death, the last thing the Canticle greets by name."
+concert.pochwala-stworzenia.program.8.note: "“Give them rest”: two words from the Mass for the dead."
 concert.pochwala-stworzenia.program.9.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.9.inscriptioGloss: "An angel stood at the altar of the temple, holding a golden censer in his hand"
+concert.pochwala-stworzenia.program.9.locus: "Here the road closes, already beyond the visible."
+concert.pochwala-stworzenia.program.9.note: "A Latvian composer whose sacred music grows out of chant and out of minimalism. The text is an antiphon arranged from words of the Book of Revelation."
+concert.pochwala-stworzenia.programArc: "The order descends from praise and light: Borkowski's Gloria II and Lumen open the evening, and immediately after them comes Carl Orff's Laudes creaturarum, which sets St Francis's Canticle of the Sun directly. From there the programme moves from the cosmic image of creation towards the human: Massenet's Méditation, bound in the opera to the inward change of Thaïs; Ešenvalds's night sky; Vaughan Williams's lark, rising towards the light; Sykulski's frozen Prosna and Enescu's village fiddler. At the end come Borkowski's Dona eis requiem and Dubra's angel at the altar. Between the groups of works Pärt's Spiegel im Spiegel returns, played from the gallery on the organ as the musical mirror of the relation between creation and its Creator."
+concert.pochwala-stworzenia.programLede: "Ten works and one mirror"
+concert.pochwala-stworzenia.prologue: "A Sunday afternoon on plac Grzybowski. Above the portal of the church of All Saints a verse of the psalm is cut into the stone: “Praise the Lord in His saints”. The concert begins under that sentence already, and ends on a sentence of the same family — about an angel censing the altar with prayer."
 concert.pochwala-stworzenia.realizacja: "Violin: Radu Ropotan"
+concert.pochwala-stworzenia.reflectionNote: "The antiphon Dubra sets arranges words from the Book of Revelation: “the smoke of the incense went up with the prayers of the saints before God”. The last sentence of this road is therefore sung in the church that bears exactly that name — All Saints."
+concert.pochwala-stworzenia.textNote: "The Canticle is given in the Umbrian original in which Francis composed it; English translations our own."
 concert.pochwala-stworzenia.title: "In Praise of Creation"
+concert.pochwala-stworzenia.venueNote: "Upper church"
 concert.wcielenie.about.blurb: "The debut of the Spiritual Concerts cycle: Renaissance, Baroque and the present day arranged around the mystery of the Nativity and the Incarnation."
 concert.wcielenie.about.place: "Sacred Heart Basilica · Kraków"
 concert.wcielenie.credits.0.role: "Conductor"
