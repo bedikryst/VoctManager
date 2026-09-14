@@ -6,8 +6,12 @@ the Spotify running order, and Ania's two poster sketches. The SSoT is
 `docs/concert-detail-pages-spec.md`); this file is where the reasoning behind it lives.
 
 **Read the file backwards.** It was written as the evening firmed up, so the later a section is,
-the more of it is true: **§12 is what is on the site and what is still open** — it supersedes §11's
-page and §11's account of the programme notes — §11 is the first publication of the page, §10 is the
+the more of it is true. **Start at §13: it is what is on the site, and §14 is the whole list of
+questions for Florent** — gathered there so they stop being scattered across §9–§12. §13 also
+corrects one sentence of §12 (the próg no longer spells out the saints) and closes two facts §12
+left open (per-work voicings, and the requiem's year, which is 2015). §12 is still the authority on
+the page's SHAPE — the `unsung` mode, and the `note`/`locus` split — and it supersedes §11's
+page and §11's account of the programme notes. §11 is the first publication of the page, §10 is the
 final repertoire (§2's running order is dead), §9 is Florent's account of the evening (§3's
 creature-map is a reading, never a checklist), §8 is the decisions log. §1 and §4–§7 are the facts,
 the poster brief and the station's first publication.
@@ -760,3 +764,159 @@ Everything §11 left open stands, except §1's festival caveat. Added:
 add that evening to `data/landing/paths.ts` and `landing.yaml` `register.entries`. Add to it: **drop
 `share`** (per its own comment in the corpus — a sung evening's hero is the honest preview). Everything
 else on this page flips itself.
+
+---
+
+## §13 The copy audit, and EN/FR shipped (14.09.2026, third pass)
+
+**§12's page was right about its shape and wrong about how many times it says things.** This pass
+audited every prose field in the entry for quality, for surviving generated phrasing, and for
+consistency, then ran the desk. Nothing about the `unsung` mode changed.
+
+### The audit's findings, in the order they bite
+
+1. **The All Saints rhyme was stated FOUR times on one screen.** §12 guarded `program.9.locus`
+   against restating it — "Saying it twice would spend it" — and in the same pass the page said it
+   in `invitation`, in `prologue`, in `program.9.note` and in `reflectionNote`, with `essence`
+   carrying a fifth in the JSON-LD. The note was the clearest waste: it re-told the angel and the
+   censer that its own `inscriptioGloss` prints one row below it, and the smoke and the saints that
+   `reflectionNote` prints one band above. **Now spent once, in `reflectionNote`**, which is the
+   band that was given the job. The note stops at „antyfoną ułożoną ze słów Apokalipsy".
+   `invitation` keeps its tail because it is the only one of these that also stands alone, on the
+   landing's Proximum band.
+2. **⚠ This overturns one sentence of §12.** That section reasoned that "the próg ends on the angel
+   censing the altar with the prayers of all the saints, and `reflectionNote` is what that sentence
+   rhymes with." The pairing is kept; the spoiler is not. The prologue names „kościoła Wszystkich
+   Świętych" in its second sentence, so spelling out „modlitwami wszystkich świętych" in its third
+   states the coincidence three sentences before the band whose whole job is to reveal it — and
+   `reflectionNote`'s „więc" presupposes a reader who has not been told. **The próg now ends on the
+   angel and NOT on the saints**, and the reveal survives.
+3. **`essence` was the last field still written in the deleted text's voice.** Its three sentences
+   are §9's three paragraphs compressed, and §12 deleted that text partly on prose grounds. It is
+   also the field nobody reads until 12 October: while the evening is ahead it is the JSON-LD
+   description alone, and on the first build after the date it becomes the `<meta description>` —
+   the sentence a search result quotes. Fixed: „Koncert", not „Wieczór" (the door band prints
+   **13:30** three screens up); „między grupami utworów", which is the conductor's own correction
+   and which this field predated, so it had been implying a return after every work; and the
+   left-branching participle „powracający z galerii Spiegel im Spiegel Pärta" unwound.
+4. **`festivalNote`'s third sentence did not parse on one reading.** „przez piękno: wartości i
+   relacji, natury, dźwięku, i to, które zostaje także w bólu" is a garden path — four genitives
+   hanging off „piękno", then a neuter pronoun agreeing with it instead. Repeating the noun fixes
+   it. Its last sentence, „Ten program schodzi tą samą osią", had **no antecedent in the Polish**:
+   „oś" exists only in the English reasoning above it, and the sentence it points back at is a list
+   of kinds, not an axis. Now „schodzi ku temu ostatniemu", which names the one it means. Also
+   „Organizuje je" to „Festiwal prowadzi": two „je" in adjacent clauses.
+5. **`reflectionNote` said the composer sings.** „Antyfona, którą śpiewa Dubra" — Dubra wrote it and
+   the ensemble sings it. **Both translators had silently corrected this** ("the antiphon Dubra
+   sets", "que met en musique Dubra"), which is the tell: the Polish was following the English
+   rather than the other way round. Now „którą opracował Dubra".
+6. **Three of ten `locus` rows opened on „tego popołudnia"**, and a fourth said „Centrum wieczoru"
+   about a concert at 13:30. The rule now: **our voice names the time of day once, in the prologue's
+   scene, and the loci talk about the programme.** „Wieczór" survives only in `programArc`, where it
+   is the conductor's own word for a Koncert Duchowy.
+7. **„schodzi" appeared five times.** The `festivalNote` / `programArc` repetition is the deliberate
+   rhyme and its comment says so; three more made it a tic. `essence` and two loci give it up.
+8. **Smaller:** `program.7.locus` used „atak" as a term of art on a page written for a general
+   reader; `program.0.locus` and `program.2.locus` ran to two sentences where the field is specified
+   as one clause.
+
+### Facts closed against the ensemble's own artefacts
+
+The developer sent the score folder and the conductor's repertoire list. Both are authoritative and
+both agreed with the corpus, with one correction:
+
+- **`Dona eis requiem I` is 2015, not 2016.** §11 flagged exactly this number as "still unverified
+  and now PRINTED" — it had been sourced for the **II**. Closed.
+- **Per-work voicings, off the score folder** (§12's "question for Florent", now answered without
+  him): Gloria II a 7 · Lumen a 5 · Laudes creaturarum a 8 · Stars a 8 · Lark **skrzypce i chór a
+  12** · Stoi lód a 8 · Dona eis requiem I a 8 · Stetit Angelus a 9 · bis a 4. This is exactly Ania's
+  "na 5, 7, 8, 9 i 12 głosów", now assigned. **Ménétrier stays empty** — it has no choral part, so
+  the folder says nothing, and whether the violin plays it alone or with the organ is still open.
+- **The running order is verified, not merely asserted.** Drop the two violin items from §10 (they
+  have no choral part and therefore no PDF) and the folder's 01–08 matches item for item. The
+  repertoire list also confirms the clasps hang off works 2, 5, 8 and 10 — four groups, five
+  soundings, which is `ritornello.times: 5` and the four `clasp` rows in the corpus.
+- **One thing the score folder says and the repertoire list does not:** the bis is **arr. Carter**.
+  The corpus credits only Weiss/Thiele and the field is sealed until after the concert, so nothing is
+  wrong on the page today — but a first name is needed before it unseals.
+
+### EN/FR — DONE
+
+`copy:sync` then `copy:propose --locale {en,fr} --write` then `copy:apply --write`. **82 values
+stamped and verified on disk**, both drafts 53/53. `/koncerty/pochwala-stworzenia` is in
+`TRANSLATED_ROUTES`; the build goes 48 to **50 pages**, register audit clean, copydesk 29/29,
+audit 24/24.
+
+Two things the run surfaced that are NOT this evening's and are now the oldest debt on the desk:
+
+- **`page.press` is 0/64 in both locales.** The page is `noindex` and outside `TRANSLATED_ROUTES`,
+  so nothing is broken — but the press pack's own page has no translation at all.
+- **`page.polityka-prywatnosci` is 111/120**, and the nine missing keys are all the notice-list and
+  EmailLabs rows the outreach work added. The policy **is** in `TRANSLATED_ROUTES`, so an English
+  reader is currently reading nine Polish rows inside an otherwise English document. Fix before the
+  list is advertised anywhere foreign.
+
+### Still open after this pass
+
+§12's list stands minus the voicings and minus the requiem's year. What remains:
+
+- **Radu's biography** — Royal Academy of Music, international prizes. A new claim about a real
+  person; still waiting on him or on Ania. The page keeps `Skrzypce: Radu Ropotan`.
+- **The foundation's exact name** — the page prints „Fundacja Hospicyjna »Mój Dom«" after Ania's
+  spelling; their own materials also use „Fundacja MÓJ DOM". One check.
+- **Three image files by hand to the build host**, unchanged from §11: `kd-stworzenie-hero-desktop.jpg`,
+  `kd-stworzenie-hero-mobile.jpg`, `share-stworzenie.webp`, plus the regenerated `st-stworzenie-bg.webp`,
+  and `poster-stworzenie.webp` must be REPLACED by `poster-stworzenie.png`. `bleedPair` throws on a
+  missing hero, so a forgotten upload fails the build loudly.
+- **The questions for Florent** are gathered in §14 rather than scattered across §9 to §12.
+
+---
+
+## §14 What to ask Florent — the whole list, nothing else
+
+Everything still unanswered that only he can answer, in the order it costs the project. Trivia is
+deliberately absent: the 60-minute slot against ~69 minutes of music is NOT here, because the page
+prints a window and never a duration, and nobody expects a concert to stop on the hour.
+
+**A. Two that change what a reader is told**
+
+1. **Ménétrier — organ or alone?** It is written for violin and piano and this concert has no piano.
+   Massenet with organ is ordinary practice; Enescu with organ is not. `voicing` on that work is the
+   one empty field left in the programme, and it stays empty until he says. (Massenet already reads
+   „skrzypce i organy" — confirm that too if the answer changes it.)
+2. **Is the Orff a speaking chorus?** *Laudes creaturarum* (1954) is written for Sprechchor with
+   percussion, and §8 settled that there is no percussion. If the choir really speaks Francis'
+   Umbrian at the centre of the programme, **that is the strongest dramaturgical fact the evening
+   has and the page says nothing about it** — it would go straight into that work's `locus`. If it
+   is sung, the page stays as it is.
+
+**B. Three small facts that are printed or about to be**
+
+3. **The bis is „arr. Carter" in the score folder — which Carter?** The corpus credits only
+   Weiss/Thiele. The field is sealed until after 11.10, so there is time, but the arranger is an
+   attribution and the page should not unseal without a first name.
+4. **„Dona eis requiem I" or „Dona eis Requiem I"?** The poster, the score folder and his own
+   repertoire list all capitalise the R; the corpus lower-cases it on the editorial convention for
+   Latin incipits. Three of his own artefacts against one of our rules — his call. (The year is
+   settled: 2015.)
+5. **Does Radu play the Pärt from the gallery too?** *Spiegel im Spiegel* is a duo. This decides
+   whether the violin is the evening's one continuous voice or a guest who appears three times. It
+   changes nothing that is printed today, but it is the fact the programme book would open on.
+
+**C. One that is his to rule on, not ours**
+
+6. **Ania's post and the page say two different things about the same concept.** Her Facebook draft
+   has „Człowiek jest tu bratem innych stworzeń" — the horizontal Franciscan kinship. §9 deliberately
+   moved to the **vertical** relation (the human as God's image, the Pärt as its mirror), and
+   creature imagery was struck from the poster on exactly that basis. One of the two should give
+   way, and he is the one who wrote the concept.
+
+**D. Not blocking, ask if there is a moment**
+
+7. **Where does the last Pärt episode fall?** §9's text said it ends immediately before *Stetit
+   Angelus*, so the two mirrors meet; §10's final order brackets the evening wstęp/zakończenie and
+   puts an episode after the angel. **The page deliberately says nothing about episode placement**,
+   so this blocks nothing — but it was raised on 11.09 and never answered, and the programme book
+   will have to take a side.
+8. **The roster.** `Voces` is absent from the page and stays absent until there is a line-up and
+   consent to print names. Who sings, and may we name them?
