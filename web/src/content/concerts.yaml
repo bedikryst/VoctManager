@@ -2692,9 +2692,10 @@
   #  · his two paragraphs are joined, because the band sets this as one <p>.
   #
   # „MIĘDZY GRUPAMI UTWORÓW” IS A CORRECTION AND NOT A PARAPHRASE. This said „między utworami”,
-  # which claimed a return after each of the ten; the clasps below hang off works 02, 05, 09 and 10,
-  # so the Pärt divides the evening into four groups and sounds five times counting the one that
-  # opens it. His wording is what the programme actually does.
+  # which claimed a return after each of the ten; the clasps below hang off works 02, 05, 08 and 09,
+  # so the Pärt sounds five times counting the one that opens the evening. It never closes one: the
+  # conductor's running order numbers the episodes I–V and puts the fifth immediately BEFORE Stetit
+  # Angelus, so the mirror introduces the angel and the angel is the last thing sung before the bis.
   programArc: >-
     Kolejność schodzi od pochwały i światła: Gloria II i Lumen Borkowskiego otwierają wieczór,
     a zaraz po nich wybrzmiewa Laudes creaturarum Carla Orffa, bezpośrednio odwołujące się do
@@ -2709,11 +2710,19 @@
   textNote: >-
     Kantyk podajemy w oryginale umbryjskim, w którym Franciszek go ułożył; przekłady polskie
     własne.
-  # The order is Florent's own, marked final on 11.09.2026. Pärt is NOT one of the ten: the
-  # returning Spiegel im Spiegel is the evening's mirror rather than a work in the programme
-  # (his words), so each return hangs off the item it follows as a clasp, exactly as the
+  # The order is Florent's own, off the running order he numbers I–V (15.09.2026). Pärt is NOT one
+  # of the ten: the returning Spiegel im Spiegel is the evening's mirror rather than a work in the
+  # programme (his words), so each return hangs off the item it follows as a clasp, exactly as the
   # Miserere does in 9 Kart. The opening episode hangs on nothing — it precedes item 01 — which
   # is why the whole return is declared below instead: five soundings, outside the numbering.
+  #
+  # IT IS THE ORGAN ALONE, from the gallery. His running order writes „org. solo” against the Pärt
+  # and „Radu (+org.)” / „Radu solo” against the two violin items, so the violin is a guest that
+  # appears twice rather than the evening's continuous voice, and the organ carries the mirror.
+  #
+  # THE FIVE ARE DELIBERATELY NOT NUMBERED on the page, where 9 Kart's Miserere is. His numerals
+  # have moved twice in four days; `times` states the count in ONE place, where a correction costs
+  # one edit rather than five, and the clasp stays a name. Number them once a booklet prints them.
   ritornello:
     composer: "Arvo Pärt"
     years: "ur. 1935"
@@ -3061,6 +3070,7 @@
         i wschód słońca. Jedyna, w której skrzypce zostają same, bez fortepianu. Ménétrier to
         wiejski skrzypek, ten od wesel. Gra Radu Ropotan: jak Enescu, Rumun.
       inscriptioGloss: { pl: "z cyklu Impressions d'enfance op. 28 · wiejski skrzypek" }
+      clasp: "Spiegel im Spiegel · Arvo Pärt"
     - composer: "Marian Borkowski"
       work: "Dona eis requiem I"
       # 2015 is the FIRST setting's year, off the conductor's own repertoire list. The 2016 that
@@ -3076,10 +3086,10 @@
         eis requiem” jest ledwie słyszalne.
       inscriptio: "Pie Jesu Domine, dona eis requiem"
       inscriptioGloss: { pl: "Litościwy Panie Jezu, daj im odpoczynek" }
-      # The return moved here from the fiddler above, on the conductor's final running order
-      # (15.09.2026): the Pärt now falls between the requiem and the angel. That is the placement
-      # his own account of the evening always described — the visible mirror and the invisible one
-      # meeting immediately before Stetit Angelus — which the previous order contradicted.
+      # The LAST of the five, and the one that settled a fifteen-day argument: the mirror stands
+      # immediately before Stetit Angelus, which is what the conductor's account of the evening
+      # always described (§9) and what two earlier running orders contradicted. Nothing returns
+      # after the angel, so the evening ends where he said it ends.
       clasp: "Spiegel im Spiegel · Arvo Pärt"
     - composer: "Rihards Dubra"
       years: "ur. 1964"
@@ -3100,7 +3110,6 @@
       inscriptio: "Stetit Angelus iuxta aram templi, habens thuribulum aureum in manu sua"
       inscriptioGloss: { pl: "Stanął anioł przy ołtarzu świątyni, mając w ręku złotą kadzielnicę" }
       inscriptioRef: { scripture: [{ book: rev, chapter: "8", verses: ["3–4"] }] }
-      clasp: "Spiegel im Spiegel · Arvo Pärt"
     - composer: "George David Weiss / Bob Thiele"
       work: "What a Wonderful World"
       year: "1967"

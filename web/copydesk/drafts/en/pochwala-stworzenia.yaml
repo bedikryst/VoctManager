@@ -38,14 +38,14 @@ concert.pochwala-stworzenia.invitation: "St Francis’s Canticle of the Sun gree
 concert.pochwala-stworzenia.facts.0: "Festival “Fenomen człowieka”"
 concert.pochwala-stworzenia.facts.1: "Voices, violin, organ"
 concert.pochwala-stworzenia.facts.2: "St Francis’s Canticle of the Sun"
-# The four returns hang off works 02, 05, 09 and 10 — the third of them moved from the fiddler to
-# the requiem on the conductor's final running order (15.09.2026). The INDEX is the row the return
-# follows, so a clasp that moves is a key that moves: leave a stale index here and the desk carries
-# a translation for a row that no longer has one.
+# The four returns hang off works 02, 05, 08 and 09 — the conductor's own running order numbers the
+# episodes I–V and ends the evening on Stetit Angelus, with nothing after it (15.09.2026). The INDEX
+# is the row the return follows, so a clasp that moves is a key that moves: leave a stale index here
+# and the desk carries a translation for a row that no longer has one.
 concert.pochwala-stworzenia.program.1.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.program.4.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.7.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.program.8.clasp: "Spiegel im Spiegel · Arvo Pärt"
-concert.pochwala-stworzenia.program.9.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.posterAlt: "Poster for the concert In Praise of Creation"
 concert.pochwala-stworzenia.realizacja: "Violin: Radu Ropotan"
 concert.pochwala-stworzenia.about.place: "All Saints’ Church · Warsaw"

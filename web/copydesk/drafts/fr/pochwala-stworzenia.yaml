@@ -37,14 +37,14 @@ concert.pochwala-stworzenia.invitation: "Le Cantique des créatures de saint Fra
 concert.pochwala-stworzenia.facts.0: "Festival « Fenomen człowieka »"
 concert.pochwala-stworzenia.facts.1: "Voix, violon, orgue"
 concert.pochwala-stworzenia.facts.2: "Le Cantique des créatures de saint François"
-# Les quatre retours s'accrochent aux œuvres 02, 05, 09 et 10 — le troisième est passé du ménétrier
-# au requiem dans l'ordre définitif du chef (15.09.2026). L'INDICE désigne la ligne que le retour
-# suit : un retour qui se déplace est une clé qui se déplace, et un indice périmé laisse au bureau
-# une traduction pour une ligne qui n'en porte plus.
+# Les quatre retours s'accrochent aux œuvres 02, 05, 08 et 09 — l'ordre du chef numérote les
+# épisodes I–V et termine la soirée sur Stetit Angelus, sans rien après (15.09.2026). L'INDICE
+# désigne la ligne que le retour suit : un retour qui se déplace est une clé qui se déplace, et un
+# indice périmé laisse au bureau une traduction pour une ligne qui n'en porte plus.
 concert.pochwala-stworzenia.program.1.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.program.4.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.7.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.program.8.clasp: "Spiegel im Spiegel · Arvo Pärt"
-concert.pochwala-stworzenia.program.9.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.posterAlt: "Affiche du concert Louange de la Création"
 concert.pochwala-stworzenia.realizacja: "Violon : Radu Ropotan"
 concert.pochwala-stworzenia.about.place: "Église de Tous-les-Saints · Varsovie"
