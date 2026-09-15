@@ -2692,7 +2692,7 @@
   #  · his two paragraphs are joined, because the band sets this as one <p>.
   #
   # „MIĘDZY GRUPAMI UTWORÓW” IS A CORRECTION AND NOT A PARAPHRASE. This said „między utworami”,
-  # which claimed a return after each of the ten; the clasps below hang off works 02, 05, 08 and 10,
+  # which claimed a return after each of the ten; the clasps below hang off works 02, 05, 09 and 10,
   # so the Pärt divides the evening into four groups and sounds five times counting the one that
   # opens it. His wording is what the programme actually does.
   programArc: >-
@@ -2971,9 +2971,16 @@
       # hung on the work, it is the thing the work turns over. Read it as an inversion or leave
       # it out — a mapping repeated work after work is a checklist, and this evening's reading
       # is not one (docs/koncert-pochwala-stworzenia §3).
+      #
+      # THE STANZA IS THE CONDUCTOR'S CHOICE AND NOT OURS. His programme book sets this work
+      # against „sora nostra matre terra”, the earth that sustains us; the page used to cite
+      # sister WATER here, reading the frozen river as an inversion of „pożyteczna i pokorna”.
+      # Both are defensible and only one can be printed, because a reader holding the booklet
+      # would otherwise be told two different things about one work. „Która nas żywi” is this
+      # page's own gloss of that line, word for word, so the citation and the printed text agree.
       locus: >-
-        Siostra woda, którą Kantyk nazywa pożyteczną i pokorną, i drogocenną, i czystą. Tutaj
-        jest zamarznięta.
+        Kantyk nazywa ziemię siostrą, która nas żywi. Tutaj żywi tylko dopóty, dopóki rzeka
+        płynie.
       note: >-
         Sykulski napisał go na zamówienie Agnieszki Franków-Żelazny dla Polskiego Narodowego Chóru
         Młodzieżowego: jako wokalizę, bez słów. Czegoś w nim jednak brakowało: „utwór nie niósł
@@ -3041,18 +3048,19 @@
       years: "1881–1955"
       work: "Ménétrier z cyklu <em>Impressions d'enfance</em> op. 28"
       year: "1940"
-      # No `voicing`: the score folder has no part for this one because it carries no choir, and
-      # whether the violin plays it alone or with the organ is the open question (§10 — it is
-      # written with piano and this concert has none). An empty field until he answers.
+      # Solo by the composer's design, not by this concert's want of a piano: the suite is written
+      # for violin AND piano and this movement alone has no piano part. That is what let the field
+      # be filled at all — the question it stood empty for (organ or alone?) turned out not to be
+      # a question about this concert's forces.
+      voicing: "skrzypce solo"
       locus: >-
         Jedyny szybki rytm w całym programie, i ostatnie światło przed requiem.
       note: >-
         Pierwsza z dziesięciu miniatur cyklu Impressions d'enfance op. 28, wspomnień z dzieciństwa
         ułożonych wedle biegu dnia: od skrzypka, przez świerszcza i wiatr w kominie, po nocną burzę
-        i wschód słońca. Ménétrier to wiejski skrzypek, ten od wesel. Gra Radu Ropotan: jak Enescu,
-        Rumun.
+        i wschód słońca. Jedyna, w której skrzypce zostają same, bez fortepianu. Ménétrier to
+        wiejski skrzypek, ten od wesel. Gra Radu Ropotan: jak Enescu, Rumun.
       inscriptioGloss: { pl: "z cyklu Impressions d'enfance op. 28 · wiejski skrzypek" }
-      clasp: "Spiegel im Spiegel · Arvo Pärt"
     - composer: "Marian Borkowski"
       work: "Dona eis requiem I"
       # 2015 is the FIRST setting's year, off the conductor's own repertoire list. The 2016 that
@@ -3063,7 +3071,16 @@
       locus: >-
         Dno tej drogi: siostra śmierć, ostatnie, co Kantyk wita po imieniu.
       note: >-
-        „Daj im odpoczynek”: dwa słowa z mszy za zmarłych.
+        Ostatnie wersy sekwencji Dies irae, te, które w mszy żałobnej padają już po obrazie sądu.
+        Borkowski powtarza je przez cały utwór: prośba narasta, a potem gaśnie, i ostatnie „dona
+        eis requiem” jest ledwie słyszalne.
+      inscriptio: "Pie Jesu Domine, dona eis requiem"
+      inscriptioGloss: { pl: "Litościwy Panie Jezu, daj im odpoczynek" }
+      # The return moved here from the fiddler above, on the conductor's final running order
+      # (15.09.2026): the Pärt now falls between the requiem and the angel. That is the placement
+      # his own account of the evening always described — the visible mirror and the invisible one
+      # meeting immediately before Stetit Angelus — which the previous order contradicted.
+      clasp: "Spiegel im Spiegel · Arvo Pärt"
     - composer: "Rihards Dubra"
       years: "ur. 1964"
       work: "Stetit Angelus"

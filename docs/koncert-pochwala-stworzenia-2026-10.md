@@ -6,14 +6,16 @@ the Spotify running order, and Ania's two poster sketches. The SSoT is
 `docs/concert-detail-pages-spec.md`); this file is where the reasoning behind it lives.
 
 **Read the file backwards.** It was written as the evening firmed up, so the later a section is,
-the more of it is true. **Start at §13: it is what is on the site, and §14 is the whole list of
-questions for Florent** — gathered there so they stop being scattered across §9–§12. §13 also
-corrects one sentence of §12 (the próg no longer spells out the saints) and closes two facts §12
-left open (per-work voicings, and the requiem's year, which is 2015). §12 is still the authority on
-the page's SHAPE — the `unsung` mode, and the `note`/`locus` split — and it supersedes §11's
-page and §11's account of the programme notes. §11 is the first publication of the page, §10 is the
-final repertoire (§2's running order is dead), §9 is Florent's account of the evening (§3's
-creature-map is a reading, never a checklist), §8 is the decisions log. §1 and §4–§7 are the facts,
+the more of it is true. **Start at §15: it is the conductor's final repertoire description — the
+programme book's own text — and it is the newest authority on the running order, on four works'
+facts, and on which questions are still his to answer.** It supersedes §10's running order (one
+Pärt return moved) and marks up §14's list, so read §14 only through §15's marking. §13 is what
+the site says and how the copy was audited; it corrects one sentence of §12 (the próg no longer
+spells out the saints). §12 is still the authority on the page's SHAPE — the `unsung` mode, and the
+`note`/`locus` split — and it supersedes §11's page and §11's account of the programme notes. §11
+is the first publication of the page, §10 is the previous final repertoire (§2's running order is
+long dead), §9 is Florent's account of the evening (§3's creature-map is a reading, never a
+checklist — but see §15, which now has HIS), §8 is the decisions log. §1 and §4–§7 are the facts,
 the poster brief and the station's first publication.
 
 Two things in §9 are no longer what they look like, and reading it cold will mislead you: **the
@@ -874,6 +876,9 @@ Two things the run surfaced that are NOT this evening's and are now the oldest d
 
 ## §14 What to ask Florent — the whole list, nothing else
 
+**⚠ Read this list through §15's marking: three of its eight are answered.** Kept whole rather than
+edited, because the reasoning under each is still the reason the question mattered.
+
 Everything still unanswered that only he can answer, in the order it costs the project. Trivia is
 deliberately absent: the 60-minute slot against ~69 minutes of music is NOT here, because the page
 prints a window and never a duration, and nobody expects a concert to stop on the hour.
@@ -920,3 +925,134 @@ prints a window and never a duration, and nobody expects a concert to stop on th
    will have to take a side.
 8. **The roster.** `Voces` is absent from the page and stays absent until there is a line-up and
    consent to print names. Who sings, and may we name them?
+
+---
+
+## §15 The conductor's final repertoire description (15.09.2026) — the programme book arrives
+
+What came: the running order marked final **again**, a convention table (PL `ur. / oprac. / rew. /
+wer.` against EN `b. / arr. / rev. / ver.`), four `nb` corrections, the Canticle laid out in four
+columns (Umbrian · modern Italian · Polish · French), **a Canticle stanza assigned to every single
+item** including the Pärt and the encore, and a commentary paragraph per work.
+
+**This is the programme book, not copy for this site.** The page is an invitation and stays one
+(§12): ten five-sentence paragraphs of provenance are exactly what that pass removed, and twelve
+identically-shaped Canticle citations are the checklist §3 and §9 both refuse. What the document
+does is settle facts the page prints, and move one thing on it.
+
+### What changed in the corpus
+
+1. **The third Pärt return moved from the fiddler to the requiem.** The order is now
+   `wstęp · 01 · 02 · ↩ · 03 · 04 · 05 · ↩ · 06 · 07 · 08 · 09 · ↩ · 10 · ↩ · bis` — five soundings
+   still, but the clasps hang off works **02, 05, 09 and 10**, where §10 had 02, 05, 08 and 10. So
+   `clasp` left `program[7]` (Ménétrier) and now sits on `program[8]` (Dona eis requiem I).
+   `ritornello.times: 5` is unchanged and `programArc`'s „między grupami utworów" still holds — the
+   fourth group is simply one work long.
+   **This closes §14 Q7**: the last structural return falls between the requiem and the angel,
+   which is exactly what §9's account always claimed and what §10's order contradicted. His own new
+   note on *Stetit Angelus* says it in words — „Po ostatnim powrocie *Spiegel im Spiegel* otwiera
+   się zupełnie inna przestrzeń".
+   ⚠ **One thing in his document contradicts itself and the booklet will have to settle it:** the
+   episode he labels `[zakończenie]` is the fourth of five, and a further unlabelled *Spiegel*
+   stands after *Stetit Angelus*, before the encore. Either that trailing one is the evening's
+   dissolve into the bis (taken here — five soundings, four clasps), or it is a leftover from the
+   previous list and the evening really ends on the angel (four soundings, `times: 4`). The page
+   prints four clasps either way; only the count in `ritornello` would move.
+2. **`Ménétrier` has a `voicing` at last: „skrzypce solo".** **This closes §14 Q1**, and not the way
+   the question was framed. The movement is not violin-and-piano played without a piano — it is the
+   **only** movement of *Impressions d'enfance* written for violin alone, which is why the fiddler
+   stands unaccompanied by the composer's design. The organ never came into it. The note gained the
+   fact in one clause; the empty-field comment is gone.
+3. **`Stoi lód na Prośnie` changed its stanza, water → earth.** The page cited **sor'aqua** and read
+   the frozen river as an inversion of „pożyteczna i pokorna, i drogocenna, i czysta". His book sets
+   the work against **„sora nostra matre terra"**, the earth that sustains us, and reads the frozen
+   river as what stops the mill: no flour, so no bread. Both readings are good and only one can be
+   printed — a reader holding the booklet must not be told two different things about one work — so
+   the page follows the booklet. New `locus`: „Kantyk nazywa ziemię siostrą, która nas żywi. Tutaj
+   żywi tylko dopóty, dopóki rzeka płynie." „Która nas żywi" is this page's own gloss of that line,
+   word for word, so the citation and the printed Canticle agree; EN and FR follow their own glosses
+   („who sustains us", „qui nous porte").
+   **The page still cites the Canticle exactly three times** (Orff, Stoi lód, Dona eis requiem) — the
+   count §12 settled. What changed is which stanza the middle one names.
+4. **`Dona eis requiem I` stopped being the thinnest row on the page.** It is the floor of the whole
+   descent and carried nine words. His note supplies what it sets — the returning *Dona eis requiem*
+   **and** *Pie Jesu, Domine* — so the row now has the incipit every other substantial row has, plus
+   a note that says where the line stands (the close of the *Dies irae*, after the image of
+   judgement) and what the setting does with it (swells, then fades to near-inaudible). One new desk
+   row per locale: `program.8.inscriptioGloss`.
+
+### What the list confirms without changing anything
+
+- **Every composer date, title and year in the corpus matches**, including the requiem's **2015**
+  (§13 had closed it; this is the second independent artefact saying so) and the Lark's
+  `1914 · rew. 1920 · oprac. Paul Drayton 2019`, which is his own convention table applied.
+- **§14 Q4 is closed in our favour: „Dona eis requiem I", lower-case r.** The poster, the score
+  folder and his older repertoire list all capitalised it; this document lower-cases it twice, in
+  the running order and in the per-work heading. Three of his artefacts against one is now two
+  against two, and the newest is his — the corpus keeps its Latin-incipit convention and the poster
+  is the odd one out. Print-side only.
+- **The Massenet nb** („wersja na skrzypce i organy jest aranżacją, nie pierwotną obsadą") is
+  already true on the page: `voicing` says the arrangement and the note calls the piece an interlude
+  in an opera, so nothing claims 1894 scored it this way.
+- **The Orff nb** confirms *Concento di voci*, which the note already names.
+- Per-work voicings match §13's score-folder reading item for item.
+
+### What was offered and deliberately NOT taken
+
+- **His Polish and French Canticle.** Provenance unstated, and this page's whole reason for having
+  its own translations is the rights question §11 settled by refusing Leopold Staff (d. 1957,
+  protected to 31.12.2027). `textNote` says „przekłady polskie własne" and that has to stay true.
+- **The twelve per-work stanzas as a page feature.** That is the booklet's shape. Four citations in
+  one shape is the defect §12 spent a pass removing; twelve would be the same defect louder.
+- **A `note` for `Lumen`.** The book says it is built around one word, „światło", from a nearly
+  inaudible start to successive luminous climaxes. But `program[0].note` already tells the reader
+  that Borkowski takes a single Latin word and builds a whole piece out of it, so a note one row
+  down saying this piece is built on one word is that sentence again with a different noun. The
+  field stays empty, which is the spec's answer.
+- **Orff's 1957 premiere** (written 1954). True, and it would be the page's second „waited for its
+  first performance" fact — the Lark's, which has a reason attached, is the one worth keeping.
+- **Enescu's completion date, 10 April 1940**, and the doina/dance reading of the fiddler. Booklet
+  material.
+
+### §14, marked up
+
+- **Q1 Ménétrier — organ or alone? CLOSED.** Solo, by the composer's design. Printed.
+- **Q4 requiem capitalisation? CLOSED.** Lower-case, per his own newest artefact. Nothing to change.
+- **Q7 where the last Pärt falls? CLOSED.** Between the requiem and the angel. Printed as a clasp.
+- **Q2 is the Orff a speaking chorus? STILL OPEN, with a hint.** His note says Orff builds the piece
+  „z powtarzalnej recytacji i intensywnego rytmu" and ends it on an „Amen", and his bracket for the
+  work reads `[a8]`. Recitation in eight parts is suggestive and is not an answer; if the choir
+  really speaks Francis' Umbrian it is still the evening's strongest dramaturgical fact and still
+  belongs in that work's `locus`.
+- **Q5 does Radu play the Pärt? STILL OPEN, with a hint that points the other way.** The bracket on
+  *Spiegel im Spiegel* reads `[wer. na organy]` where the Massenet's reads `[vn + org.]`. He
+  distinguishes the two, which suggests the Pärt is organ alone and the violin is a guest appearing
+  three times. Nothing printed depends on it; the programme book would open on it.
+- **Q3 (which Carter arranged the bis), Q6 (Ania's horizontal kinship against the concept's vertical
+  relation) and Q8 (the roster) are untouched.** On Q6 the new document cuts slightly against §9:
+  its commentary is full of „brat słońce", „brat wiatr", „siostra, matka ziemia", and only the
+  opening *Spiegel* entry carries the vertical claim (Gen 1:27). The page says nothing either way —
+  but if creature imagery was struck from the poster on the vertical argument, his own book is now
+  partly an argument for putting it back.
+
+### Still open after this pass
+
+Everything §13 left open stands, minus the three questions above. Added:
+
+- **⚠ EN and FR are stale until the desk runs.** Four rows per locale changed or appeared:
+  `program.6.locus`, `program.7.note`, `program.8.note`, `program.8.inscriptioGloss`, plus
+  `program.7.clasp` → `program.8.clasp`. The drafts are written; the overlays are not, and must not
+  be hand-written (`copydesk/propose.mjs` says why — a hand-written overlay has no provenance and
+  the desk can never mark it stale). Until `copy:sync` → `copy:propose` → `copy:apply` has run,
+  `/en|fr/koncerty/pochwala-stworzenia` prints the OLD water sentence under Stoi lód and the Polish
+  gloss under the requiem's new Latin incipit. **Do not deploy between this commit and that run.**
+  The orphaned `program.7.clasp` was deleted from both overlays by hand, which is cleanup and not a
+  translation.
+- **`voicing`, `years` and `year` are not on the desk and are printed raw in every locale.** So
+  `/en/` and `/fr/` print „ur. 1934" and „skrzypce solo" and „1914 · rew. 1920 · oprac. Paul Drayton
+  2019". This is **corpus-wide and not this evening's** — 24 „ur." rows and several Polish voicings,
+  `wolanie-gor` included, already live — and `copydesk/contract.mjs` classifies all three as
+  untranslatable on the assumption that a voicing is notation („a 8", „SAATBB"). Fixing it means
+  reclassifying two or three paths, one desk run for every concert that has them, and a decision
+  about whether „ur." is chrome the renderer should supply per locale rather than data. Worth doing
+  before the site is advertised anywhere foreign; out of scope for a repertoire update.

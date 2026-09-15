@@ -38,9 +38,13 @@ concert.pochwala-stworzenia.invitation: "St Francis’s Canticle of the Sun gree
 concert.pochwala-stworzenia.facts.0: "Festival “Fenomen człowieka”"
 concert.pochwala-stworzenia.facts.1: "Voices, violin, organ"
 concert.pochwala-stworzenia.facts.2: "St Francis’s Canticle of the Sun"
+# The four returns hang off works 02, 05, 09 and 10 — the third of them moved from the fiddler to
+# the requiem on the conductor's final running order (15.09.2026). The INDEX is the row the return
+# follows, so a clasp that moves is a key that moves: leave a stale index here and the desk carries
+# a translation for a row that no longer has one.
 concert.pochwala-stworzenia.program.1.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.program.4.clasp: "Spiegel im Spiegel · Arvo Pärt"
-concert.pochwala-stworzenia.program.7.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.8.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.program.9.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.posterAlt: "Poster for the concert In Praise of Creation"
 concert.pochwala-stworzenia.realizacja: "Violin: Radu Ropotan"
@@ -168,7 +172,12 @@ concert.pochwala-stworzenia.program.6.inscriptioGloss: "a song in a folk idiom �
 # The one place besides the Orff where the Canticle is cited, because here the work TURNS the stanza
 # over rather than being labelled with it. The quoted words must be the same English the Canticle's
 # own gloss uses a few rows up, or the inversion states a coincidence.
-concert.pochwala-stworzenia.program.6.locus: "Sister Water, whom the Canticle calls very useful and humble and precious and chaste. Here she is frozen."
+#
+# THE STANZA CHANGED on 15.09.2026 and this row changed with it: the conductor's own programme book
+# sets this work against our Sister Mother Earth, not against Sister Water, and the page cannot
+# print one stanza while the booklet in the reader's hand prints another. „Who sustains us” is the
+# first half of the Canticle's own line above — keep the two identical.
+concert.pochwala-stworzenia.program.6.locus: "The Canticle calls the earth our sister, the one who sustains us. Here she sustains us only as long as the river runs."
 concert.pochwala-stworzenia.program.6.note: "Sykulski wrote it to a commission from Agnieszka Franków-Żelazny for the Polish National Youth Choir: as a vocalise, without words. Something was missing from it, though — “the piece carried no message”. So the composer sent the score to a friend, who in the course of a single night wrote a whole story into it, fitted so exactly that not one note had to change. A girl from Podzamcze weeps over the frozen Prosna, the mill has stopped, there will be no bread, and John of Nepomuk, patron of bridges and rivers, stands beside her."
 concert.pochwala-stworzenia.program.6.textGloss: |-
   Ice stands on the Prosna,
@@ -199,10 +208,14 @@ concert.pochwala-stworzenia.program.6.textGloss: |-
 
 concert.pochwala-stworzenia.program.7.inscriptioGloss: "from the cycle Impressions d'enfance op. 28 · the village fiddler"
 concert.pochwala-stworzenia.program.7.locus: "The only fast pulse in the whole programme, and the last light before the requiem."
-concert.pochwala-stworzenia.program.7.note: "The first of the ten miniatures of Impressions d'enfance op. 28, childhood memories arranged by the course of a day: from the fiddler, through the cricket and the wind in the chimney, to the night storm and the sunrise. The ménétrier is the village fiddler, the one who plays at weddings. The player is Radu Ropotan: like Enescu, a Romanian."
+concert.pochwala-stworzenia.program.7.note: "The first of the ten miniatures of Impressions d'enfance op. 28, childhood memories arranged by the course of a day: from the fiddler, through the cricket and the wind in the chimney, to the night storm and the sunrise. The only one in which the violin is left alone, without the piano. The ménétrier is the village fiddler, the one who plays at weddings. The player is Radu Ropotan: like Enescu, a Romanian."
 
+# The incipit is the close of the Dies irae, so the gloss is a liturgical text and not a paraphrase:
+# follow the English a requiem's own wordbook uses. The note must NOT restate it — it says where the
+# line stands in the Mass and what the setting does with it, which the gloss does not.
+concert.pochwala-stworzenia.program.8.inscriptioGloss: "Merciful Lord Jesus, give them rest"
 concert.pochwala-stworzenia.program.8.locus: "The floor of this road: sister death, the last thing the Canticle greets by name."
-concert.pochwala-stworzenia.program.8.note: "“Give them rest”: two words from the Mass for the dead."
+concert.pochwala-stworzenia.program.8.note: "The last lines of the Dies irae sequence, the ones that come in the Mass for the dead once the image of judgement has passed. Borkowski repeats them through the whole piece: the plea swells, then fades, and the final “dona eis requiem” is barely audible."
 
 concert.pochwala-stworzenia.program.9.inscriptioGloss: "An angel stood at the altar of the temple, holding a golden censer in his hand"
 # The All Saints rhyme is NOT here and NOT in the note: it is `reflectionNote`, in its own band,

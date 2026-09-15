@@ -37,9 +37,13 @@ concert.pochwala-stworzenia.invitation: "Le Cantique des créatures de saint Fra
 concert.pochwala-stworzenia.facts.0: "Festival « Fenomen człowieka »"
 concert.pochwala-stworzenia.facts.1: "Voix, violon, orgue"
 concert.pochwala-stworzenia.facts.2: "Le Cantique des créatures de saint François"
+# Les quatre retours s'accrochent aux œuvres 02, 05, 09 et 10 — le troisième est passé du ménétrier
+# au requiem dans l'ordre définitif du chef (15.09.2026). L'INDICE désigne la ligne que le retour
+# suit : un retour qui se déplace est une clé qui se déplace, et un indice périmé laisse au bureau
+# une traduction pour une ligne qui n'en porte plus.
 concert.pochwala-stworzenia.program.1.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.program.4.clasp: "Spiegel im Spiegel · Arvo Pärt"
-concert.pochwala-stworzenia.program.7.clasp: "Spiegel im Spiegel · Arvo Pärt"
+concert.pochwala-stworzenia.program.8.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.program.9.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.posterAlt: "Affiche du concert Louange de la Création"
 concert.pochwala-stworzenia.realizacja: "Violon : Radu Ropotan"
@@ -208,7 +212,12 @@ concert.pochwala-stworzenia.program.6.inscriptioGloss: "chant d'idiome populaire
 # Le seul endroit, hormis l'Orff, où le Cantique est cité : ici l'œuvre RETOURNE la strophe au lieu
 # d'en être étiquetée. Les mots cités doivent être le français que la traduction du Cantique emploie
 # quelques lignes plus haut, sinon l'inversion énonce une coïncidence.
-concert.pochwala-stworzenia.program.6.locus: "Sœur Eau, que le Cantique appelle très utile et humble, et précieuse, et chaste. Ici, elle est prise par la glace."
+#
+# LA STROPHE A CHANGÉ le 15.09.2026 et cette ligne avec elle : le livret du chef place cette œuvre
+# en regard de notre sœur mère la Terre, et non de sœur Eau ; la page ne peut pas citer une strophe
+# pendant que le programme entre les mains du lecteur en cite une autre. « Qui nous porte » est la
+# première moitié du vers du Cantique ci-dessus — garder les deux identiques.
+concert.pochwala-stworzenia.program.6.locus: "Le Cantique appelle la terre notre sœur, celle qui nous porte. Ici, elle ne nous porte qu'aussi longtemps que la rivière coule."
 concert.pochwala-stworzenia.program.6.note: "Sykulski l'a écrit à la demande d'Agnieszka Franków-Żelazny pour le Chœur national polonais des jeunes : comme une vocalise, sans paroles. Il y manquait pourtant quelque chose : « la pièce ne portait aucun message ». Le compositeur a donc envoyé la partition à un ami, qui en une seule nuit y a écrit toute une histoire, si bien ajustée qu'il n'a pas fallu changer une note. Une jeune fille de Podzamcze pleure sur la Prosna gelée, le moulin est arrêté, il n'y aura pas de pain, et Jean Népomucène, patron des ponts et des rivières, se tient auprès d'elle."
 concert.pochwala-stworzenia.program.6.textGloss: |-
   La glace est prise sur la Prosna,
@@ -239,10 +248,14 @@ concert.pochwala-stworzenia.program.6.textGloss: |-
 
 concert.pochwala-stworzenia.program.7.inscriptioGloss: "du cycle Impressions d'enfance op. 28 · le ménétrier du village"
 concert.pochwala-stworzenia.program.7.locus: "La seule pulsation rapide de tout le programme, et la dernière lumière avant le requiem."
-concert.pochwala-stworzenia.program.7.note: "La première des dix miniatures du cycle Impressions d'enfance op. 28, souvenirs d'enfance rangés selon le cours d'une journée : du violoneux au grillon et au vent dans la cheminée, puis à l'orage nocturne et au lever du soleil. Le ménétrier, c'est le violoneux du village, celui des noces. C'est Radu Ropotan qui joue : comme Enescu, un Roumain."
+concert.pochwala-stworzenia.program.7.note: "La première des dix miniatures du cycle Impressions d'enfance op. 28, souvenirs d'enfance rangés selon le cours d'une journée : du violoneux au grillon et au vent dans la cheminée, puis à l'orage nocturne et au lever du soleil. La seule où le violon reste seul, sans le piano. Le ménétrier, c'est le violoneux du village, celui des noces. C'est Radu Ropotan qui joue : comme Enescu, un Roumain."
 
+# L'incipit est la clausule du Dies irae : la glose est donc un texte liturgique et non une
+# paraphrase, et suit le français d'un livret de requiem. La note ne doit PAS la redire — elle dit
+# où le vers se tient dans la messe et ce que la partition en fait, ce que la glose ne dit pas.
+concert.pochwala-stworzenia.program.8.inscriptioGloss: "Doux Jésus, Seigneur, donne-leur le repos"
 concert.pochwala-stworzenia.program.8.locus: "Le fond de ce chemin : sœur la mort, la dernière que le Cantique salue par son nom."
-concert.pochwala-stworzenia.program.8.note: "« Donne-leur le repos » : deux mots de la messe des morts."
+concert.pochwala-stworzenia.program.8.note: "Les derniers vers de la séquence Dies irae, ceux qui, dans la messe des morts, viennent une fois passée l'image du jugement. Borkowski les répète tout au long de l'œuvre : la prière enfle, puis s'éteint, et le dernier « dona eis requiem » est à peine audible."
 
 concert.pochwala-stworzenia.program.9.inscriptioGloss: "Un ange se tint près de l'autel du temple, un encensoir d'or à la main"
 # La rime de Tous-les-Saints n'est PAS ici : elle est dans `reflectionNote`, dans sa propre bande, où
