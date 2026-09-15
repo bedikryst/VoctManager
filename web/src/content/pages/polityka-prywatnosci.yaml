@@ -367,9 +367,12 @@ s6:
 
 s7:
   title: "Czas przechowywania"
-  # Five periods. Every number is a duration somebody may one day be held to — 12 months, 5 years,
-  # 3 years, 3 hours — and `art. 74 ustawy o rachunkowości` is an address inside the Polish
-  # Accounting Act. Name the act in the reader's language; leave the article and the periods alone.
+  # Seven periods. Every number is a duration somebody may one day be held to — 12 months, 5 years,
+  # 3 years, 24 months, 7 days, 3 hours — and `art. 74 ustawy o rachunkowości` is an address inside
+  # the Polish Accounting Act. Name the act in the reader's language; leave the article and the
+  # periods alone. Four of them are enforced by a Celery task rather than by hand, and those four
+  # (`attempts`, `patronage`, and both halves of `notices`) may not be edited here alone: the
+  # figures are duplicated in `payments/tasks.py`, `outreach/models.py` and RoPA § 10/§ 11.
   items:
     - id: logs
       textHtml: >-
@@ -380,6 +383,19 @@ s7:
         <strong>Dane darczyńców (dokumentacja księgowa i dowody wpłat)</strong> — przez 5 lat,
         licząc od początku roku następującego po roku obrotowym, którego dane dotyczą. Obowiązek
         ten wynika wprost z art. 74 ustawy o rachunkowości oraz przepisów Ordynacji podatkowej.
+        Okres ten dotyczy wpłat, które doszły do skutku; o próbie przerwanej mówi punkt następny.
+    # The item the policy lacked until 1.5: the five years above are an ACCOUNTING duty, and an
+    # attempt that never reached the books is not accounting documentation. Read together with
+    # `donors` — that is what the closing clause above is for — the pair says which of the two
+    # periods a reader falls under, which neither says alone.
+    - id: attempts
+      textHtml: >-
+        <strong>Przerwana lub nieudana próba wpłaty</strong> — przez 12 miesięcy od próby, po czym
+        adres e-mail i całą informację o próbie trwale usuwamy. Jeżeli płatność nie doszła do
+        skutku, nie powstaje dokument księgowy ani obowiązek podatkowy, więc pięcioletni okres
+        z punktu wyżej nie ma tu zastosowania. Krótszy okres zachowujemy wyłącznie po to, by
+        rozpoznać wpłatę potwierdzoną przez operatora z opóźnieniem oraz rozpatrzyć reklamację,
+        gdyby Twoja karta została obciążona mimo niepowodzenia odnotowanego po naszej stronie.
     - id: correspondence
       textHtml: >-
         <strong>Korespondencja e-mail</strong> — do czasu zakończenia sprawy, nie dłużej niż 3 lata
@@ -389,8 +405,9 @@ s7:
       textHtml: >-
         <strong>Zgłoszenia mecenatu</strong> — do czasu zakończenia kontaktu w sprawie mecenatu lub
         wycofania zgody. Jeśli nawiążemy stałą współpracę, dane przechodzą w reżim przechowywania
-        dla darczyńców (dokumentacja księgowa, 5 lat); w przeciwnym razie usuwamy je niezwłocznie
-        po zakończeniu kontaktu.
+        dla darczyńców (dokumentacja księgowa, 5 lat). W przeciwnym razie usuwamy je trwale po
+        12 miesiącach od zamknięcia sprawy, a zgłoszenie, którego nikt formalnie nie zamknął —
+        po 24 miesiącach bez kontaktu z którejkolwiek strony.
     - id: notices
       textHtml: >-
         <strong>Zapis na listę zaproszeń</strong> — adres i podane imię przechowujemy do czasu
@@ -604,6 +621,11 @@ history:
         osobie lub podmiotowi prowadzącemu dalej zespół VoctEnsemble — o czym uprzedzimy
         wcześniej, z możliwością wypisania się przed przekazaniem (§ 3). Zgody udzielone
         przed tą zmianą pozostają zgodami udzielonymi pod poprzednim brzmieniem klauzuli.
+        Uzupełniliśmy też § 7 o dwa okresy przechowywania, których wcześniej nie podawaliśmy:
+        przerwaną lub nieudaną próbę wpłaty usuwamy po 12 miesiącach (pięcioletni obowiązek
+        księgowy dotyczy wyłącznie wpłat, które doszły do skutku), a zgłoszenie mecenatu — po
+        12 miesiącach od zamknięcia sprawy albo po 24 miesiącach bez kontaktu. Żaden z tych
+        okresów nie wydłuża przechowywania; oba je skracają.
     - id: "v1-4"
       version: "1.4"
       date: "2026-09-11"

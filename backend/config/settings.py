@@ -326,6 +326,19 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'payments.expire_stale_pending_donations',
         'schedule': timedelta(hours=1),
     },
+    # Daily, not hourly: both retention sweeps below are measured in months and years,
+    # and each is what makes a period the privacy policy publishes (§ 7) true. An
+    # attempt that never became a donation is not accounting documentation and has no
+    # five-year duty behind it; a patronage enquiry whose conversation ended has none
+    # at all.
+    'payments-purge-failed-donations': {
+        'task': 'payments.purge_failed_donations',
+        'schedule': timedelta(days=1),
+    },
+    'payments-purge-expired-patron-leads': {
+        'task': 'payments.purge_expired_patron_leads',
+        'schedule': timedelta(days=1),
+    },
     'roster-dispatch-due-reminders': {
         'task': 'roster.dispatch_due_reminders',
         'schedule': timedelta(hours=1),

@@ -72,6 +72,16 @@ const sections = [
 
 /** `01`–`12`, two digits, as the numeral before each heading. Locale-neutral, like every rubric. */
 const num = (index: number): string => String(index + 1).padStart(2, "0");
+
+/* THE CHANGELOG IS APPEND-ONLY AND THE DOCUMENT IS NOT, so the list is split rather than trimmed:
+   the three most recent versions stand, the rest fold into a nested disclosure. NOTHING IS
+   DROPPED — every entry is in the DOM, one click away and inside the page's own text search. That
+   matters more than the tidiness: § 12 promises the full history on request, and a changelog that
+   silently lost its older entries would make that promise false about its own page. Three is what
+   answers "what changed lately"; the fold appears only once a fourth version exists. */
+const RECENT_VERSIONS = 3;
+const recentEntries = copy.history.entries.slice(0, RECENT_VERSIONS);
+const olderEntries = copy.history.entries.slice(RECENT_VERSIONS);
 ---
 
 <!doctype html>
@@ -294,12 +304,27 @@ const num = (index: number): string => String(index + 1).padStart(2, "0");
             <span class="changelog-icon" aria-hidden="true"></span>
           </summary>
           <ul class="changelog-list">
-            {copy.history.entries.map((e) => (
+            {recentEntries.map((e) => (
               <li>
                 <strong>{`${e.version} · ${longDate(e.date, lang)}`}</strong>{" — "}{e.note}
               </li>
             ))}
           </ul>
+          {olderEntries.length > 0 && (
+            <details class="changelog-older">
+              <summary>
+                <span>{t.olderVersions(olderEntries.length)}</span>
+                <span class="changelog-icon" aria-hidden="true"></span>
+              </summary>
+              <ul class="changelog-list">
+                {olderEntries.map((e) => (
+                  <li>
+                    <strong>{`${e.version} · ${longDate(e.date, lang)}`}</strong>{" — "}{e.note}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
         </details>
 
         <p set:html={copy.s12.p3Html} />
@@ -745,7 +770,11 @@ const num = (index: number): string => String(index + 1).padStart(2, "0");
     width: 1px;
     transform: translateX(-50%);
   }
-  .legal-doc details.changelog[open] .changelog-icon::after {
+  /* `> summary` IS LOAD-BEARING, not tidiness. The older-versions fold nests one `details` inside
+     another and both carry a `.changelog-icon`; as a descendant selector this rule would fire on
+     the inner icon the moment the OUTER list opened, drawing a closed fold as if it were open. */
+  .legal-doc details.changelog[open] > summary .changelog-icon::after,
+  .legal-doc details.changelog-older[open] > summary .changelog-icon::after {
     transform: translateX(-50%) scaleY(0);
   }
 
@@ -754,9 +783,39 @@ const num = (index: number): string => String(index + 1).padStart(2, "0");
     padding: 4px 0 22px 22px;
   }
 
+  /* The older versions sit UNDER the recent ones and read as subordinate to them: aligned to the
+     list's own indent rather than to the section, and parted from it by a single hairline. */
+  .legal-doc details.changelog-older {
+    margin: 0 0 18px 22px;
+    border-top: 1px solid var(--line);
+  }
+
+  .legal-doc details.changelog-older > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 0;
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    transition: color 0.35s var(--ease);
+  }
+
+  .legal-doc details.changelog-older > summary::-webkit-details-marker { display: none; }
+  .legal-doc details.changelog-older > summary:hover { color: var(--ink); }
+
+  /* Already indented by its own parent, so the nested list starts at the summary's edge. */
+  .legal-doc details.changelog-older .changelog-list { padding-left: 0; }
+
   @media (prefers-reduced-motion: reduce) {
     .legal-doc a { transition: none; }
     .legal-doc details.changelog > summary,
+    .legal-doc details.changelog-older > summary,
     .legal-doc .changelog-icon::before,
     .legal-doc .changelog-icon::after {
       transition: none;

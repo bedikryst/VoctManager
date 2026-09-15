@@ -5,17 +5,33 @@
 # ==========================================
 import hashlib
 import json
+from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
 from django.core.cache import cache
-from django.test import override_settings
+from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Donation, DonationCurrency, DonationStatus
+from .models import (
+    Donation,
+    DonationCurrency,
+    DonationStatus,
+    PatronLead,
+    PatronLeadStatus,
+)
 from .services import AxeptaPaymentService
+from .tasks import (
+    ARCHIVED_LEAD_RETENTION,
+    DONATION_FAILURE_RETENTION,
+    DORMANT_LEAD_RETENTION,
+    expire_stale_pending_donations,
+    purge_expired_patron_leads,
+    purge_failed_donations,
+)
 
 
 @override_settings(DONATION_GOAL_PLN=20000, DONATION_EUR_TO_PLN_RATE='4.00')
@@ -390,3 +406,118 @@ class GatewayLanguageTests(APITestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         link_mock.assert_not_called()
+
+
+class RetentionSweepTests(TestCase):
+    """
+    The two purges that make § 7's published periods true. Both delete HARD — a row that
+    survives as `is_deleted=True` still holds the address, which is the outcome neither
+    task may produce — so every assertion counts `all_objects`, never `objects`.
+    """
+
+    @staticmethod
+    def _age(model, pk, *, created=None, updated=None):
+        """
+        `created_at` is auto_now_add and `updated_at` auto_now, so neither can be set
+        through `save()`. A queryset update writes them directly, which is the only way
+        to put a row in the past.
+        """
+        fields = {}
+        if created is not None:
+            fields['created_at'] = created
+        if updated is not None:
+            fields['updated_at'] = updated
+        model.all_objects.filter(pk=pk).update(**fields)
+
+    def _donation(self, status_value, *, age):
+        donation = Donation.objects.create(
+            email='donor@example.com', amount=Decimal('50.00'),
+            currency=DonationCurrency.PLN, status=status_value,
+        )
+        self._age(Donation, donation.pk, created=timezone.now() - age)
+        return donation
+
+    def _lead(self, status_value, *, idle):
+        lead = PatronLead.objects.create(
+            first_name='Anna', last_name='Kowalska',
+            email='anna@example.com', status=status_value,
+        )
+        self._age(PatronLead, lead.pk, updated=timezone.now() - idle)
+        return lead
+
+    # ── Donations ────────────────────────────────────────────────────────────────
+    def test_failed_donation_past_retention_is_hard_deleted(self):
+        donation = self._donation(
+            DonationStatus.FAILED, age=DONATION_FAILURE_RETENTION + timedelta(days=1),
+        )
+        self.assertEqual(purge_failed_donations(), 1)
+        self.assertFalse(Donation.all_objects.filter(pk=donation.pk).exists())
+
+    def test_failed_donation_inside_retention_is_kept(self):
+        """The reconciliation window: a late webhook can still settle a FAILED row."""
+        donation = self._donation(
+            DonationStatus.FAILED, age=DONATION_FAILURE_RETENTION - timedelta(days=1),
+        )
+        self.assertEqual(purge_failed_donations(), 0)
+        self.assertTrue(Donation.all_objects.filter(pk=donation.pk).exists())
+
+    def test_settled_donation_is_never_purged(self):
+        """Accounting documentation, kept for the five years the policy publishes."""
+        donation = self._donation(DonationStatus.SETTLED, age=timedelta(days=5 * 365))
+        self.assertEqual(purge_failed_donations(), 0)
+        self.assertTrue(Donation.all_objects.filter(pk=donation.pk).exists())
+
+    def test_pending_donation_is_never_purged(self):
+        """However old: a payment still in flight is not an expired record."""
+        donation = self._donation(DonationStatus.PENDING, age=timedelta(days=5 * 365))
+        self.assertEqual(purge_failed_donations(), 0)
+        self.assertTrue(Donation.all_objects.filter(pk=donation.pk).exists())
+
+    def test_soft_deleted_pending_donation_still_expires(self):
+        """
+        Otherwise it stays PENDING for ever, and PENDING is the one status the purge
+        will not collect — an address held with no path out of the table.
+        """
+        donation = self._donation(DonationStatus.PENDING, age=timedelta(days=2))
+        donation.delete()
+        self.assertEqual(expire_stale_pending_donations(), 1)
+        donation.refresh_from_db()
+        self.assertEqual(donation.status, DonationStatus.FAILED)
+
+    # ── Patron leads ─────────────────────────────────────────────────────────────
+    def test_archived_lead_past_retention_is_hard_deleted(self):
+        lead = self._lead(
+            PatronLeadStatus.ARCHIVED, idle=ARCHIVED_LEAD_RETENTION + timedelta(days=1),
+        )
+        self.assertEqual(purge_expired_patron_leads()['archived'], 1)
+        self.assertFalse(PatronLead.all_objects.filter(pk=lead.pk).exists())
+
+    def test_dormant_lead_past_the_longer_window_is_hard_deleted(self):
+        lead = self._lead(
+            PatronLeadStatus.CONTACTED, idle=DORMANT_LEAD_RETENTION + timedelta(days=1),
+        )
+        self.assertEqual(purge_expired_patron_leads()['dormant'], 1)
+        self.assertFalse(PatronLead.all_objects.filter(pk=lead.pk).exists())
+
+    def test_a_lead_touched_recently_survives_both_sweeps(self):
+        """`updated_at` carries the sentence: any hand on the lead is contact."""
+        lead = self._lead(PatronLeadStatus.CONTACTED, idle=timedelta(days=30))
+        self.assertEqual(purge_expired_patron_leads(), {'archived': 0, 'dormant': 0})
+        self.assertTrue(PatronLead.all_objects.filter(pk=lead.pk).exists())
+
+    def test_an_unarchived_lead_is_not_taken_on_the_archived_clock(self):
+        """
+        The windows must not cross: a NEW lead idle for thirteen months is inside the
+        dormant period and has to stay until it ends.
+        """
+        lead = self._lead(
+            PatronLeadStatus.NEW, idle=ARCHIVED_LEAD_RETENTION + timedelta(days=1),
+        )
+        self.assertEqual(purge_expired_patron_leads(), {'archived': 0, 'dormant': 0})
+        self.assertTrue(PatronLead.all_objects.filter(pk=lead.pk).exists())
+
+    def test_active_patron_is_never_purged(self):
+        """A live relationship whose records belong to the donors' accounting regime."""
+        lead = self._lead(PatronLeadStatus.ACTIVE, idle=timedelta(days=5 * 365))
+        self.assertEqual(purge_expired_patron_leads(), {'archived': 0, 'dormant': 0})
+        self.assertTrue(PatronLead.all_objects.filter(pk=lead.pk).exists())

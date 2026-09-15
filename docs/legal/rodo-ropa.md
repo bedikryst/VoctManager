@@ -95,9 +95,13 @@ KRS 0001237252 · NIP 6762718992 · REGON 544621525 · kontakt: rodo@voctensembl
 - **Podmioty danych:** darczyńcy (NIE członkowie).
 - **Kategorie danych:** e-mail darczyńcy, kwota, waluta, status, identyfikator płatności bramki. (`payments.Donation`, `payments.PatronLead`)
 - **Cel:** przyjęcie i rozliczenie darowizny.
-- **Podstawa prawna:** art. 6 ust. 1 lit. b/c (wykonanie + obowiązki księgowo-podatkowe).
+- **Podstawa prawna:** art. 6 ust. 1 lit. b/c (wykonanie + obowiązki księgowo-podatkowe) — ale **tylko dla wpłaty, która doszła do skutku**. Przy próbie nieudanej lit. b wygasa z chwilą niedojścia transakcji do skutku, a lit. c nigdy się nie zaczepia: nie ma dowodu księgowego, nie ma zdarzenia podatkowego, a wobec art. 890 § 1 KC nie ma też darowizny. Dalsze trzymanie wiersza opiera się wyłącznie na lit. f i wygasa razem z nim.
 - **Odbiorcy/podprocesorzy:** **Axepta BNP Paribas** (bramka płatnicza).
-- **Retencja:** ustawowe okresy przechowywania dokumentacji rozliczeniowej (rachunkowość, prawo podatkowe).
+- **Retencja — trzy różne okresy, bo to trzy różne podstawy:**
+  - `Donation` SETTLED — ustawowe okresy przechowywania dokumentacji rozliczeniowej: 5 lat od początku roku następującego po roku obrotowym (art. 74 ust. 2–3 ustawy o rachunkowości, art. 86 § 1 w zw. z art. 70 § 1 Ordynacji podatkowej).
+  - `Donation` FAILED — **12 miesięcy od próby, potem twarde usunięcie.** Okres wynika z uzasadnionego interesu (art. 6 ust. 1 lit. f), nie z ustawy: spóźniony webhook wciąż potrafi przestawić FAILED na SETTLED (`AxeptaPaymentService`, stanem terminalnym jest tylko SETTLED), a darczyńca, któremu karta została obciążona, choć webhook do nas nie dotarł, ma w tym wierszu jedyny klucz korelacji, jakim dysponujemy (`axepta_payment_id`). Tyle samo publikujemy dla logów HTTP i z tego samego powodu. Egzekwuje `payments.purge_failed_donations` (Celery beat, raz na dobę). PENDING jest poza zasięgiem tego zadania — płatność w locie nie jest wygasłym rekordem.
+  - `PatronLead` — **ARCHIVED: 12 miesięcy od ostatniego dotknięcia wiersza; NEW/CONTACTED bez ruchu przez 24 miesiące** (rozmowa, której nikt nie zamknął formalnie); potem twarde usunięcie. ACTIVE nie podlega żadnemu z zamiatań — to żywa relacja, której dokumentacja wchodzi w reżim księgowy darczyńców. Oba zegary czytają `updated_at`, więc każda ręka na zgłoszeniu (zmiana statusu, notatka) jest kontaktem i liczy okres od nowa. Egzekwuje `payments.purge_expired_patron_leads` (Celery beat, raz na dobę).
+- Okresy są tożsame z tym, co publikuje polityka prywatności (§ 7), i **muszą się zmieniać razem** — tak jak przy liście zaproszeń w § 11.
 - **Transfer poza EOG:** do zweryfikowania (Axepta — UE).
 
 ### 11. Lista zawiadomień o koncertach (strona publiczna)

@@ -557,19 +557,34 @@ export interface PrivacyChrome {
    * one shape that keeps a Polish date out of a translated sentence.
    */
   readonly stamp: (version: string, date: string) => string;
+  /**
+   * The nested disclosure holding every version before the three most recent. The history is
+   * append-only and the document is not — left flat, the changelog outgrows the policy it
+   * describes. Nothing is hidden by it: § 12 already offers the full history on request, and
+   * one click opens the rest in place.
+   *
+   * A function, because the count is the only honest way to say how much is folded away — a
+   * bare "older versions" reads as a link to somewhere else. The Polish form is deliberately
+   * plural-agnostic ("wersje wcześniejsze: 3"), since the fold appears only from the fourth
+   * version onwards and an inflected numeral here would be one more thing to get wrong.
+   */
+  readonly olderVersions: (count: number) => string;
 }
 
 export const PRIVACY_CHROME: Record<Locale, PrivacyChrome> = {
   pl: {
     back: "← powrót",
     stamp: (version, date) => `Wersja ${version} · obowiązuje od ${date}`,
+    olderVersions: (count) => `Wersje wcześniejsze: ${count}`,
   },
   en: {
     back: "← back",
     stamp: (version, date) => `Version ${version} · in force since ${date}`,
+    olderVersions: (count) => `Earlier versions: ${count}`,
   },
   fr: {
     back: "← retour",
     stamp: (version, date) => `Version ${version} · en vigueur depuis le ${date}`,
+    olderVersions: (count) => `Versions antérieures : ${count}`,
   },
 };
