@@ -12,10 +12,8 @@ COMPOSE_PROD = docker compose -f docker-compose.yml -f docker-compose.prod.yml
 # observed running the backend's `pip install` and the Astro sharp pass at the same
 # time, each slowing the other. Serialising them does not lengthen the build — there
 # is one core either way — it only stops them fighting over it.
-# NOTE: this bounds concurrency BETWEEN services. Independent stages inside a single
-# Dockerfile (frontend's panel-builder and web-builder) still overlap; serialising
-# those needs a dependency edge that would also make a panel change invalidate the
-# Astro image pass, so it is deliberately left alone.
+# NOTE: this bounds concurrency BETWEEN services, never between STAGES — see the
+# `astro-stage` target below for the half of the problem it cannot reach.
 BUILD_ENV = COMPOSE_PARALLEL_LIMIT=1 APP_BUILD_SHA=$(shell git rev-parse --short HEAD 2>/dev/null)
 
 # The commit the panel bundle was built from, stamped into it and carried by every
@@ -25,13 +23,14 @@ BUILD_ENV = COMPOSE_PARALLEL_LIMIT=1 APP_BUILD_SHA=$(shell git rev-parse --short
 # a bare timestamp — leaving "already fixed" and "still broken" indistinguishable
 # in the triage queue, which is the one thing the stamp exists to prevent.
 
-.PHONY: up prod deploy gc down logs shell migrate seed superuser reset-test-data \
-        copy-sync copy-draft copy-check copy-apply
+.PHONY: up prod deploy astro-stage gc down logs shell migrate seed superuser \
+        reset-test-data copy-sync copy-draft copy-check copy-apply
 
 up:
 	$(BUILD_ENV) $(COMPOSE_DEV) up --build -d
 
 prod:
+	$(MAKE) astro-stage
 	$(BUILD_ENV) $(COMPOSE_PROD) up --build -d
 
 # Full production deploy. Nothing here is optional and the order matters:
@@ -58,11 +57,32 @@ prod:
 # Dangling images are what actually free the headroom, in both calls.
 deploy:
 	-@bash infra/docker-gc.sh --keep-build-cache
+	$(MAKE) astro-stage
 	$(BUILD_ENV) $(COMPOSE_PROD) build
 	$(COMPOSE_PROD) up -d
 	$(COMPOSE_PROD) exec -T web python manage.py migrate
 	$(COMPOSE_PROD) exec -T web python manage.py migrate --check
 	-@bash infra/docker-gc.sh
+
+# The Astro stage, built ALONE, so the next build finds it in cache.
+#
+# frontend/Dockerfile holds two node builder stages that depend on nothing but their
+# base image — panel-builder and web-builder — and BuildKit schedules independent
+# stages CONCURRENTLY. COMPOSE_PARALLEL_LIMIT does not reach inside a Dockerfile, so
+# on one vCPU the two peaks land on top of each other: a rollup graph carrying
+# sourcemaps for 3000+ modules beside sharp and the ~700 MB of video Vite emits. The
+# sum does not fit in this droplet's RAM, and the failure mode is not a slow build —
+# it is the whole box paging, load into the 60s, every other container starved for
+# minutes at a time. Sequential, each peak fits; concurrent, neither does.
+#
+# The `--target` build has to come FIRST and it has to be the ASTRO one: web-builder
+# declares no ARG, so its hash cannot differ between this invocation and the compose
+# build that follows, which is what guarantees the second one reuses it instead of
+# repeating it. Going the other way would put the VITE_* build args in the middle of
+# that guarantee. The image left behind is untagged on purpose — the `gc` at the end
+# of `deploy` reclaims it, while the cache records it wrote survive by age.
+astro-stage:
+	$(BUILD_ENV) docker build --target web-builder -f frontend/Dockerfile .
 
 # Manual disk reclaim, same script cron runs. `make gc DEEP=--deep` also drops
 # the BuildKit cache mounts (npm + Astro encode cache) — bigger reclaim, and on

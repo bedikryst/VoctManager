@@ -54,6 +54,12 @@ web/.astro
 web/src/assets/photos/.original-photos
 web/src/assets/photos/.old-bg-desktop
 
+# Grading samples for the church interior — ~98 MB of frames kept beside the proxies so the
+# choice can be re-made against the originals. The photo glob is FLAT (`*`), so no build reads
+# them; without this line they ride into the `COPY web/ ./` layer anyway, for the same reason
+# and at the same cost as the archive above.
+web/src/assets/photos/kosciol-samples
+
 # The camera masters the web renditions are encoded FROM — ~1 GB, and read by nobody at build
 # time: lib/videos.ts imports three named files from `src/assets/videos/` directly, never this
 # folder. The encode is a host-side step, same shape as `npm run photos:proxy` above, and for the
