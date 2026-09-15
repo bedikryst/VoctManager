@@ -1048,11 +1048,27 @@ does is settle facts the page prints, and move one thing on it.
   the mirror alone and the violin is a guest rather than the evening's continuous voice.
   `programArc`'s „grany z galerii na organach" was already right and is now exact, and §9's
   proportion worry collapses: three items, not four, and the longest of them is sung with the choir.
-- **Q2 is the Orff a speaking chorus? STILL OPEN, with a hint.** His note says Orff builds the piece
-  „z powtarzalnej recytacji i intensywnego rytmu" and ends it on an „Amen", and his bracket for the
-  work reads `[a8]`. Recitation in eight parts is suggestive and is not an answer; if the choir
-  really speaks Francis' Umbrian it is still the evening's strongest dramaturgical fact and still
-  belongs in that work's `locus`.
+- **Q2 is the Orff a speaking chorus? CLOSED — no. The choir sings it.** He marked the question `X`
+  and explained: „jest coś takiego jak recytatyw w śpiewie (często na jednym dźwięku). Możesz
+  posłuchać utworu Orffa." So „powtarzalna recytacja" in his programme-book paragraph means SUNG
+  recitation on repeated notes, not Sprechchor. **The reading that has stood since §2 is dead and
+  should not be revived**: *Laudes creaturarum* is catalogued for speaking chorus with percussion,
+  §8 established there is no percussion, and the inference that the centre of the evening is the one
+  moment the choir stops singing was wrong. It went into `program.2.note` as a positive fact instead
+  of a `locus` clause, because how a work sounds is what a work IS — „Chór śpiewa go recytacją,
+  często na jednym dźwięku". „Recytacja" rather than „recytatyw": the second is an opera term and
+  §13 already ruled out terms of art on this page — **overruled by the developer, and he is right:**
+  „recytatyw" sits far shallower in Polish than „recitative" does in English. It stands, glossed in
+  its own clause („blisko mowy i na rytmie sylab"), which is the condition on which one term of art
+  may appear on a page written for strangers.
+
+  **The first draft of that sentence was his correction pasted through, and it would have been an
+  embarrassment.** „Chór śpiewa go recytacją, często na jednym dźwięku" fails three ways: it answers
+  a question the reader never asked (nobody suspected the choir might speak — that doubt lives only
+  in this file), „śpiewa recytacją" reads as an oxymoron, and „na jednym dźwięku" sells the centre of
+  the evening as monotony. It also echoed `program[0].note`'s „powtórzeniem, nie melodią" two rows
+  up, about this composer's neighbour. **A private correction to us is not copy**; what it settles
+  has to be re-written as what a listener hears.
 - **Q8 the roster — ANSWERED, and the answer is „not yet".** His words: „Muzyków jeszcze nie mamy
   zebranych do obsady — w trakcie." So `Voces` stays absent, as designed, and there is now a second
   name missing besides the singers: **nobody is credited for the organ**, which after this list is
@@ -1067,11 +1083,23 @@ does is settle facts the page prints, and move one thing on it.
 
 ### Still open after this pass
 
-Everything §13 left open stands, minus Q1, Q4, Q5 and Q7, with Q8 answered „not yet". Added:
+Everything §13 left open stands, minus Q1, Q2, Q4, Q5 and Q7, with Q8 answered „not yet". **Only
+Q3 (which Carter) and Q6 (Ania's kinship against the concept) are left.** Added:
 
-- **⚠ EN and FR are stale until the desk runs.** Five rows per locale changed or appeared:
-  `program.6.locus`, `program.7.note`, `program.8.note`, `program.8.inscriptioGloss` and the new
-  `program.8.clasp`. The drafts are written; the overlays are not, and must not be hand-written
+- **⚠ A STALE DRAFT RE-PROPOSED A REJECTED SENTENCE, and it nearly shipped.** Not this evening's:
+  `page.koncerty.notice.lede`. The Polish moved off „Jeden list na jeden wieczór" to „Jeden krótki
+  list przed każdym koncertem" in `f3a77ef`, with a comment saying why (the frequency IS the offer,
+  and the short form reads as one letter EVERY evening). The EN and FR overlays were corrected in
+  the same commit — but `copydesk/drafts/{en,fr}/koncerty.yaml` still held the old wording, so the
+  next `copy:propose` posted it again and it stood as an accepted proposal, ready to push both
+  locales back to the rejected sentence while the Polish kept the corrected one. Both drafts are
+  fixed and now carry the reason. **The lesson is general: a draft file is not a scratch pad, it is
+  a mirror of the overlay, and correcting Polish means correcting its drafts in the same pass or the
+  desk will undo the correction for you.** Its own header already says „recorded here so this draft
+  mirrors the repository"; nothing enforced it.
+- **⚠ EN and FR are stale until the desk runs.** Six rows per locale changed or appeared:
+  `program.2.note`, `program.6.locus`, `program.7.note`, `program.8.note`,
+  `program.8.inscriptioGloss` and the new `program.8.clasp`. The drafts are written; the overlays are not, and must not be hand-written
   (`copydesk/propose.mjs` says why — a hand-written overlay has no provenance and the desk can never
   mark it stale). Until `copy:sync` → `copy:propose` → `copy:apply` has run,
   `/en|fr/koncerty/pochwala-stworzenia` prints the OLD water sentence under *Stoi lód* and the Polish

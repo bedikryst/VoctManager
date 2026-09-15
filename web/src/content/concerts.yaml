@@ -2758,18 +2758,23 @@
       # conductor's own paragraph, not to ten programme rows.
       locus: >-
         Tu przechodzi naraz wszystko, czego reszta programu dotyka po kolei.
-      # THE CHOIR SINGS IT. Settled by the conductor on 15.09.2026, against a reading that had stood
-      # since §2: *Laudes creaturarum* is catalogued for Sprechchor with percussion, and this evening
-      # has no percussion, so the centre of the programme looked like the one moment the choir stops
-      # singing and SPEAKS Francis' Umbrian. It does not. What Orff writes is sung recitation, often
-      # on a single pitch — his words: „jest coś takiego jak recytatyw w śpiewie". „Recytacja" rather
-      # than „recytatyw" because that one is an opera term and this page is read by strangers.
+      # THE THIRD SENTENCE IS THE CENTRE OF THE EVENING DESCRIBED AS SOUND, which this note lacked
+      # while carrying the heaviest work in the programme. It is written as what a listener hears
+      # and NOT as the answer to our own question: the conductor settled on 15.09.2026 that the
+      # choir sings this rather than speaking it (§2 had it down as Sprechchor for years), but the
+      # reader never suspected speech, so an answer would arrive with no question in front of it.
+      # „Recytatyw” is named AND glossed in the same clause, which is what lets one term of art
+      # stand on a page written for strangers: „blisko mowy i na rytmie sylab” teaches it to
+      # whoever needs it and costs nothing to whoever does not. The version that failed was „chór
+      # śpiewa go recytacją”, which reads as an oxymoron. Nor may this reach for repetition or for
+      # the absence of melody: `program[0].note` ends on „powtórzeniem, nie melodią” about this
+      # composer's neighbour in the list, and the move cannot be spent twice in three rows.
       note: >-
         Cały Kantyk, w umbryjskim oryginale z pierwszej połowy XIII wieku, w którym Franciszek
         go ułożył: słońce, księżyc i gwiazdy, wiatr, woda, ogień, matka ziemia, ci, którzy
-        przebaczają, i siostra śmierć. Orff opracował ten tekst w 1954 roku, w zbiorze
-        Concento di voci. Chór śpiewa go recytacją, często na jednym dźwięku; tekst płynie
-        jednym nieprzerwanym nurtem.
+        przebaczają, i siostra śmierć. Orff opracował go w 1954 roku, w zbiorze Concento di voci.
+        Prowadzi tekst recytatywem, blisko mowy i na rytmie sylab, więc cały przechodzi jednym
+        nieprzerwanym ciągiem.
       text: |-
         Altissimu, onnipotente, bon Signore,
         Tue so le laude, la gloria e l'honore et onne benedictione.
