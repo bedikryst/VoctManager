@@ -6,10 +6,11 @@ the Spotify running order, and Ania's two poster sketches. The SSoT is
 `docs/concert-detail-pages-spec.md`); this file is where the reasoning behind it lives.
 
 **Read the file backwards.** It was written as the evening firmed up, so the later a section is,
-the more of it is true. **Start at §15: it is the conductor's final repertoire description — the
-programme book's own text — and it is the newest authority on the running order, on four works'
-facts, and on which questions are still his to answer.** It supersedes §10's running order (one
-Pärt return moved) and marks up §14's list, so read §14 only through §15's marking. §13 is what
+the more of it is true. **Start at §15: it carries the programme book's own text and the score
+binder that corrects it, and it is the newest authority on where the five Pärt episodes fall, on
+four works' facts, and on which questions are still his to answer.** It supersedes §10's running
+order (the mirror's five places are fixed; the ten works have never moved) and marks up §14's list,
+so read §14 only through §15's marking. §13 is what
 the site says and how the copy was audited; it corrects one sentence of §12 (the próg no longer
 spells out the saints). §12 is still the authority on the page's SHAPE — the `unsung` mode, and the
 `note`/`locus` split — and it supersedes §11's page and §11's account of the programme notes. §11
