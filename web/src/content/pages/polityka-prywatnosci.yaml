@@ -42,8 +42,8 @@
 
 # The version this document is at, and the day it started to apply. Both are read by the line under
 # the title and by the newest entry of the history at the foot.
-version: "1.4"
-effectiveFrom: "2026-09-11"
+version: "1.5"
+effectiveFrom: "2026-09-15"
 
 meta:
   # Read in a browser tab and by a crawler, never on the page. The document is `noindex,follow` —
@@ -189,21 +189,36 @@ s3:
       zgłoszeniu, które wysyłamy do siebie, <strong>nie zawiera Twoich danych osobowych</strong>.
 
   notices:
-    title: "Lista zawiadomień o koncertach"
+    title: "Lista zaproszeń na koncerty"
     # The clause the form itself shows is `i18n/content/nuntius.ts`; this is the full account
     # of the same processing. The version stamped into each consent record is
     # `backend/outreach/consent.py` — if what the clause PROMISES changes, all three move
     # together and this document takes a new version number.
+    #
+    # THE NAME IS OPTIONAL AND THE PARAGRAPH HAS TO SAY WHAT IT IS FOR. A field described only
+    # as collected is a field with no purpose, which is the state data minimisation forbids;
+    # the greeting of the letter is the whole of its use and is named as such.
     p1Html: >-
-      Jeśli poprosisz nas o zawiadomienie o kolejnym koncercie, przetwarzamy wyłącznie
-      <strong>adres e-mail</strong> oraz język strony, na której nastąpił zapis. Nie pytamy
-      o imię — zawiadomienie go nie potrzebuje. Zapis jest <strong>dwustopniowy</strong>:
-      po wysłaniu formularza wysyłamy jedną wiadomość z prośbą o potwierdzenie i dopiero
-      kliknięcie linku w niej zapisuje adres na listę; do tego czasu nie wysyłamy nic więcej.
-      Wraz z adresem zapisujemy <strong>datę i godzinę potwierdzenia oraz wersję klauzuli
-      zgody</strong> widocznej przy formularzu — to dowód udzielenia zgody i nic ponadto;
-      nie zapisujemy adresu IP. Każda nasza wiadomość zawiera link, który wypisuje z listy
-      jednym kliknięciem.
+      Jeśli poprosisz nas o zaproszenia na koncerty, przetwarzamy <strong>adres
+      e-mail</strong>, język strony, na której nastąpił zapis, oraz — jeśli je podasz —
+      <strong>imię</strong>. Imię jest nieobowiązkowe i służy wyłącznie do tego, żeby zwracać
+      się do Ciebie po imieniu w treści listu; bez niego zaproszenie wygląda tak samo.
+      Zapis jest <strong>dwustopniowy</strong>: po wysłaniu formularza wysyłamy jedną
+      wiadomość z prośbą o potwierdzenie i dopiero kliknięcie linku w niej zapisuje adres na
+      listę; do tego czasu nie wysyłamy nic więcej. Wraz z adresem zapisujemy <strong>datę
+      i godzinę potwierdzenia oraz wersję klauzuli zgody</strong> widocznej przy formularzu —
+      to dowód udzielenia zgody i nic ponadto; nie zapisujemy adresu IP. Każda nasza
+      wiadomość zawiera link, który wypisuje z listy jednym kliknięciem.
+    # The continuity clause the board settled on (wariant B, 2026-09): one controller, with a
+    # named successor, rather than joint controllership under art. 26 RODO. It belongs in the
+    # policy AND in the consent clause, because a consent given to one controller does not
+    # silently cover another — the reader has to have read this before the list may pass.
+    p2Html: >-
+      Lista istnieje po to, żeby zapraszać na koncerty zespołu VoctEnsemble. Gdyby Fundacja
+      zakończyła działalność lub uległa reorganizacji, lista może zostać przekazana osobie
+      lub podmiotowi prowadzącemu dalej ten zespół. <strong>Uprzedzimy o tym wcześniej</strong>
+      — osobną wiadomością, z możliwością wypisania się przed przekazaniem. Bez takiej
+      informacji i bez możliwości sprzeciwu przekazanie nie nastąpi.
 
   email:
     title: "Korespondencja e-mail"
@@ -252,7 +267,7 @@ s4:
         zgodność z prawem przetwarzania, którego dokonano przed wycofaniem.
     - id: notices
       textHtml: >-
-        <strong>Zawiadamianie o koncertach</strong> — art. 6 ust. 1 lit. a RODO (Twoja zgoda
+        <strong>Zapraszanie na koncerty</strong> — art. 6 ust. 1 lit. a RODO (Twoja zgoda
         wyrażona przy zapisie) oraz art. 10 ust. 2 ustawy o świadczeniu usług drogą
         elektroniczną. Zgodę możesz wycofać w każdej chwili — linkiem w każdej naszej
         wiadomości albo pisząc na <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>;
@@ -290,7 +305,7 @@ s5:
       textHtml: >-
         <strong>Vercom S.A.</strong> (ul. Wierzbięcice 1B, 61-569 Poznań) — operator usługi
         <em>EmailLabs</em>, z której
-        korzystamy przy zawiadomieniach o koncertach. Działa jako <strong>podmiot
+        korzystamy przy zaproszeniach na koncerty. Działa jako <strong>podmiot
         przetwarzający</strong> na nasze polecenie i otrzymuje wyłącznie adres e-mail odbiorcy
         oraz treść wysyłanej wiadomości. Jest spółką polską, a serwery obsługujące wysyłkę
         znajdują się w Poznaniu i w Berlinie — wysyłka nie opuszcza EOG.
@@ -346,9 +361,9 @@ s6:
   # into the CDN sentence above precisely because 1.3 published a US transfer in this place: a
   # reader who remembers that claim has to find it withdrawn where they last read it.
   p4: >-
-    Wysyłkę zawiadomień o koncertach obsługuje Vercom S.A. (usługa EmailLabs) z siedzibą
+    Wysyłkę zaproszeń na koncerty obsługuje Vercom S.A. (usługa EmailLabs) z siedzibą
     w Poznaniu, a serwery obsługujące wysyłkę znajdują się w Poznaniu i w Berlinie. Treść
-    zawiadomień i adresy odbiorców nie są zatem przekazywane poza EOG.
+    zaproszeń i adresy odbiorców nie są zatem przekazywane poza EOG.
 
 s7:
   title: "Czas przechowywania"
@@ -378,11 +393,11 @@ s7:
         po zakończeniu kontaktu.
     - id: notices
       textHtml: >-
-        <strong>Zapis na listę zawiadomień</strong> — adres przechowujemy do czasu wycofania
-        zgody. Zapis niepotwierdzony (bez kliknięcia w link) usuwamy po wygaśnięciu linku, czyli
-        po 7 dniach. Po wypisaniu się nie wysyłamy już nic, a zachowujemy wyłącznie dowód
-        udzielonej wcześniej zgody — adres, datę potwierdzenia i wersję klauzuli — przez okres
-        przedawnienia ewentualnych roszczeń, nie dłużej niż 3 lata.
+        <strong>Zapis na listę zaproszeń</strong> — adres i podane imię przechowujemy do czasu
+        wycofania zgody. Zapis niepotwierdzony (bez kliknięcia w link) usuwamy po wygaśnięciu
+        linku, czyli po 7 dniach. Po wypisaniu się nie wysyłamy już nic, a zachowujemy wyłącznie
+        dowód udzielonej wcześniej zgody — adres, datę potwierdzenia i wersję klauzuli — przez
+        okres przedawnienia ewentualnych roszczeń, nie dłużej niż 3 lata.
     - id: audio
       textHtml: >-
         <strong>Preferencja audio</strong> w localStorage — 3 godziny od zapisu lub do czasu
@@ -575,6 +590,20 @@ history:
   # inside a key part.
   label: "Historia zmian"
   entries:
+    - id: "v1-5"
+      version: "1.5"
+      date: "2026-09-15"
+      # PLAIN TEXT, like every other entry: the field is `note`, not `noteHtml`, and the page
+      # prints it as a string (`PrivacyPage.astro`). Markup typed here renders as its own tags.
+      note: >-
+        Zmiany dotyczą listy adresowej. Nazwaliśmy ją listą zaproszeń na koncerty
+        zamiast listy zawiadomień — zmienia się nazwa, nie zakres. Przy zapisie można teraz
+        podać imię; jest nieobowiązkowe i służy wyłącznie zwracaniu się po
+        imieniu w treści listu (§ 3 i § 7). Dodaliśmy też wyraźne zastrzeżenie, że w razie
+        zakończenia działalności lub reorganizacji Fundacji lista może zostać przekazana
+        osobie lub podmiotowi prowadzącemu dalej zespół VoctEnsemble — o czym uprzedzimy
+        wcześniej, z możliwością wypisania się przed przekazaniem (§ 3). Zgody udzielone
+        przed tą zmianą pozostają zgodami udzielonymi pod poprzednim brzmieniem klauzuli.
     - id: "v1-4"
       version: "1.4"
       date: "2026-09-11"

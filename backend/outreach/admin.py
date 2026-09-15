@@ -46,8 +46,11 @@ class ConcertNoticeSubscriptionAdmin(admin.ModelAdmin):
     search_fields = ('email',)
     ordering = ('-created_at',)
     date_hierarchy = 'created_at'
+    # `name` is here and not in `list_display`: an access request is answered from the row,
+    # while the list is scanned over somebody's shoulder — it carries no more of a person
+    # than the address that identifies them.
     readonly_fields = (
-        'id', 'email', 'locale', 'status', 'clause_version', 'surface',
+        'id', 'email', 'name', 'locale', 'status', 'clause_version', 'surface',
         'confirm_sent_at', 'confirmed_at', 'unsubscribed_at', 'created_at', 'updated_at',
     )
     # The two secrets are never shown: an unsubscribe token in a screenshot is a way to

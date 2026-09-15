@@ -92,7 +92,9 @@ const privacyCopySchema = z
         zrzutka: z.object({ title: z.string(), p1Html: z.string() }).strict(),
         transfer: z.object({ title: z.string(), p1: z.string() }).strict(),
         patronage: z.object({ title: z.string(), p1Html: z.string() }).strict(),
-        notices: z.object({ title: z.string(), p1Html: z.string() }).strict(),
+        notices: z
+          .object({ title: z.string(), p1Html: z.string(), p2Html: z.string() })
+          .strict(),
         email: z.object({ title: z.string(), p1: z.string() }).strict(),
         audio: z.object({ title: z.string(), p1Html: z.string() }).strict(),
       })
@@ -306,14 +308,20 @@ const PRIVACY_CONTRACT: readonly CopyEntry[] = [
   {
     kind: "field",
     path: "s3.notices.title",
-    label: "03 · zawiadomienia · tytuł",
-    note: "Names the same object the concerts page calls the notice list — follow whatever the band there is called in this language.",
+    label: "03 · zaproszenia · tytuł",
+    note: "Names the same object the concerts page calls the invitation list — follow whatever the band there is called in this language.",
   },
   {
     kind: "field",
     path: "s3.notices.p1Html",
-    label: "03 · zawiadomienia · akapit",
-    note: "The full account of what the short clause beside the form promises. `dwustopniowy` is double opt-in; keep the two steps distinguishable, because the paragraph's point is that nothing is stored until the second one.",
+    label: "03 · zaproszenia · akapit",
+    note: "The full account of what the short clause beside the form promises. `dwustopniowy` is double opt-in; keep the two steps distinguishable, because the paragraph's point is that nothing is stored until the second one. The first name is optional and the sentence has to keep saying what it is FOR — a field described only as collected is one with no stated purpose.",
+  },
+  {
+    kind: "field",
+    path: "s3.notices.p2Html",
+    label: "03 · zaproszenia · co się stanie z listą",
+    note: "The continuity clause: one controller, with a named successor if the foundation ever winds up. It is a promise to warn the reader BEFORE any transfer and to let them leave first — both halves must survive translation, because the promise is what makes the transfer lawful.",
   },
 
   { kind: "field", path: "s3.email.title", label: "03 · korespondencja · tytuł" },

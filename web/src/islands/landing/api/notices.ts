@@ -39,7 +39,10 @@ export type NoticeSurface =
   | "web:404"
   | "web:kontakt"
   /** One concert's own page, where the band stands only while that evening is still ahead. */
-  | "web:koncert";
+  | "web:koncert"
+  /** The strip that opens the landing page's footer — the only placement a reader meets
+      without having gone looking for the list. */
+  | "web:landing";
 
 /** The site's three locales, as the backend spells them. */
 export type NoticeLocale = "pl" | "en" | "fr";
@@ -91,11 +94,14 @@ async function postJson(url: string, body: unknown): Promise<Response> {
  */
 export async function subscribeToNotices(payload: {
   readonly email: string;
+  /** Optional; `''` is the ordinary case and means an unnamed letter, not a missing value. */
+  readonly name: string;
   readonly locale: NoticeLocale;
   readonly surface: NoticeSurface;
 }): Promise<void> {
   const response = await postJson(NOTICE_API.subscribe, {
     email: payload.email,
+    name: payload.name,
     locale: payload.locale,
     surface: payload.surface,
     consent: true,

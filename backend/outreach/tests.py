@@ -9,6 +9,7 @@ from unittest.mock import patch
 from django.conf import settings
 from django.core import mail
 from django.core.cache import cache
+from django.core.mail import EmailMultiAlternatives
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -215,6 +216,64 @@ class SubscribeTests(NoticeListTestCase):
             side_effect=RuntimeError('database down'),
         ), self.assertRaises(RuntimeError):
             self._subscribe()
+
+
+class NameTests(NoticeListTestCase):
+    """
+    The one optional field on the form. It exists so the notice can open with a greeting,
+    and that single use is what makes asking for it proportionate — so these tests guard
+    both halves: that a name given is kept, and that a reader who gives none is not turned
+    into one by the machinery.
+    """
+
+    def test_a_name_given_is_kept_and_an_absent_one_is_empty_rather_than_null(self):
+        self._subscribe(name='Ania')
+        self.assertEqual(self._row().name, 'Ania')
+
+        self._subscribe(email='second@example.com')
+        self.assertEqual(self._row('second@example.com').name, '')
+
+    def test_whitespace_is_not_a_name(self):
+        """Three ways of saying "I would rather not", answered as one state."""
+        self._subscribe(name='   ')
+        self.assertEqual(self._row().name, '')
+
+    def test_signing_up_again_without_a_name_drops_the_one_given_before(self):
+        """
+        The row records what was on screen NOW — the rule the clause version and the surface
+        already follow. Keeping a name the reader did not re-enter would make the row claim
+        more about them than the form they just filled in.
+        """
+        self._subscribe(name='Ania')
+        ConcertNoticeSubscription.all_objects.update(
+            confirm_sent_at=timezone.now() - timedelta(hours=1),
+        )
+
+        self._subscribe()
+
+        self.assertEqual(self._row().name, '')
+
+    def test_the_confirmation_mail_never_greets_by_name(self):
+        """
+        This is the one mail on the list whose recipient may not be the person who typed the
+        address — its own body says so. A salutation would contradict that sentence and hand
+        whoever owns the mailbox the first name of whoever typed it in.
+        """
+        self._subscribe(name='Ania')
+
+        # Both parts, because a greeting added to only the HTML one would still reach almost
+        # every reader while the plain-text assertion stayed green.
+        message = mail.outbox[0]
+        rendered = str(message.body)
+        if isinstance(message, EmailMultiAlternatives):
+            rendered += ''.join(str(content) for content, _ in message.alternatives)
+        self.assertNotIn('Ania', rendered)
+
+    def test_a_name_longer_than_the_column_is_refused_rather_than_truncated(self):
+        response = self._subscribe(name='A' * 81)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(ConcertNoticeSubscription.all_objects.exists())
 
 
 class ConfirmTests(NoticeListTestCase):

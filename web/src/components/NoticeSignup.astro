@@ -41,8 +41,16 @@ interface Props {
   surface: NoticeSurface;
   /** `h1` on a page that is nothing but this band; `h2` inside a page with its own title. */
   level?: "h1" | "h2";
+  /**
+   * `band` is the full-height ask under a station or on a page of its own. `strip` is the same
+   * ask laid on its side — the landing's footer opens with it — and differs in GRADE, never in
+   * what it says: the heading drops to the lede's size and the voice moves beside the fields
+   * instead of above them. Nothing is removed, because the one thing that decides this shape's
+   * height is the consent clause, and that may not be shortened to fit a design.
+   */
+  variant?: "band" | "strip";
 }
-const { lang, surface, level = "h2" } = Astro.props;
+const { lang, surface, level = "h2", variant = "band" } = Astro.props;
 
 const copy = pageCopy(KONCERTY_PAGE, lang);
 const nuntius = NUNTIUS[lang];
@@ -55,12 +63,16 @@ const noticeChrome = {
 const Heading = level;
 ---
 
-<div class="notice-inner">
-  <p class="eyebrow reveal">
-    <span class="lat" lang="la">Nuntius</span>&nbsp;&nbsp;·&nbsp;&nbsp;{nuntius.page.eyebrow}
-  </p>
-  <Heading class="notice-h2 reveal ink-press" data-d="1">{copy.notice.h2}</Heading>
-  <p class="notice-lede reveal" data-d="2">{copy.notice.lede}</p>
+<div class:list={["notice-inner", variant === "strip" && "notice-inner-strip"]}>
+  {/* The voice, kept in one element so the strip can set it beside the fields rather than above
+      them — and so the receipt, which replaces all three at once, has one thing to hide. */}
+  <div class="notice-say">
+    <p class="eyebrow reveal">
+      <span class="lat" lang="la">Nuntius</span>&nbsp;&nbsp;·&nbsp;&nbsp;{nuntius.page.eyebrow}
+    </p>
+    <Heading class="notice-h2 reveal ink-press" data-d="1">{copy.notice.h2}</Heading>
+    <p class="notice-lede reveal" data-d="2">{copy.notice.lede}</p>
+  </div>
   {/* `client:visible` everywhere it stands: on /koncerty the band sits below six full-screen
       stations and a reader who never reaches it never pays for the bundle, and on the two pages
       where it is already in view the observer fires at once. The heading above it is server
@@ -69,7 +81,11 @@ const Heading = level;
     client:visible
     lang={lang}
     chrome={noticeChrome}
-    copy={{ sentTitle: copy.notice.sentTitle, sentBody: copy.notice.sentBody }}
+    copy={{
+      sentTitle: copy.notice.sentTitle,
+      sentBody: copy.notice.sentBody,
+      sentHint: copy.notice.sentHint,
+    }}
     surface={surface}
   />
   <noscript>

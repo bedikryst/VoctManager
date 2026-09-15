@@ -23,6 +23,13 @@ or a translation that says the same thing is not a bump — a version that chang
 without the meaning changing makes the history unreadable.
 """
 
-# Bump together with the clause text in `koncerty.yaml` (`notice.consentHtml`) and
-# with the privacy policy's own version, which describes this purpose in § 3/4/7.
-NOTICE_CLAUSE_VERSION = "1.0"
+# Bump together with the clause text in `web/src/i18n/content/nuntius.ts` (`form.consentHtml`,
+# three locales) and with the privacy policy's own version, which describes this purpose in
+# § 3/4/7.
+#
+# 2.0 carries three changes that had to be one version, because a consent is evidence of a
+# single text a reader saw: the list is named *Zaproszenia* rather than *Zawiadomienia*, the
+# clause states what happens to the list if the foundation is wound up, and it covers an
+# optional first name. Consents stamped 1.0 stay 1.0 — they were given under a clause that
+# named neither the successor nor the name, and no later wording reaches back to them.
+NOTICE_CLAUSE_VERSION = "2.0"

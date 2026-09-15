@@ -63,6 +63,7 @@ const koncertyCopySchema = z
         lede: z.string(),
         sentTitle: z.string(),
         sentBody: z.string(),
+        sentHint: z.string(),
       })
       .strict(),
     officia: z.object({ eyebrow: z.string(), h2: z.string(), lede: z.string() }).strict(),
@@ -153,29 +154,35 @@ const KONCERTY_CONTRACT: readonly CopyEntry[] = [
     note: "Keep the trailing arrow — the site draws it no other way.",
   },
 
-  // ── Zawiadomienie ─────────────────────────────────────────────────────────────────────────
+  // ── Zaproszenia ─────────────────────────────────────────────────────────────────────────
   {
     kind: "field",
     path: "notice.h2",
-    label: "Zawiadomienie · nagłówek",
+    label: "Zaproszenia · nagłówek",
     note: "Read directly under `Koncert bez daty`, as the second thing offered to a reader who has just been told there is no next evening yet.",
   },
   {
     kind: "field",
     path: "notice.lede",
-    label: "Zawiadomienie · zdanie",
-    note: "One negation in the passage, at its end — the site's rule. It states a frequency, not a relationship.",
+    label: "Zaproszenia · zdanie",
+    note: "One negation in the passage, at its end — the site's rule. It states a frequency, not a relationship. Say `koncert`, never the site's own `wieczór`: a stranger scanning this band reads the plainest available word, and counting letters against evenings reads as one letter every evening.",
   },
   {
     kind: "field",
     path: "notice.sentTitle",
-    label: "Zawiadomienie · po wysłaniu, tytuł",
+    label: "Zaproszenia · po wysłaniu, tytuł",
   },
   {
     kind: "field",
     path: "notice.sentBody",
-    label: "Zawiadomienie · po wysłaniu, zdanie",
+    label: "Zaproszenia · po wysłaniu, zdanie",
     note: "Never says the reader is subscribed — nothing is stored as a consent until the link in the mail is clicked.",
+  },
+  {
+    kind: "field",
+    path: "notice.sentHint",
+    label: "Zaproszenia · po wysłaniu, gdzie szukać listu",
+    note: "Names the sender the mail actually arrives from (VoctEnsemble) and the folders it can be filed under. On a double opt-in list a confirmation nobody finds is an address that expires unused, so keep both facts.",
   },
 
   // ── Poza cyklem ───────────────────────────────────────────────────────────────────────────

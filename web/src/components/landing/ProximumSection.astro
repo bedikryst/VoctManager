@@ -202,6 +202,11 @@ const announced = upcoming
             <a class="proximum-cta plausible-event-name=proximum+program" href={announced.href}>
               {chrome.proximumCta}
             </a>
+            {/* The act alone. This is the ONE surface that prints the invitation without
+                `invitation.line` above it, and deliberately: that sentence promises to write
+                before the next Spiritual Concert, and the next Spiritual Concert is the poster
+                the reader is looking at. The label therefore has to carry its own reason, which
+                is why it names the list rather than the address (`i18n/content/nuntius.ts`). */}
             <a class="proximum-notice plausible-event-name=proximum+nuntius" href={hrefNotice}>
               {invitation.cta}
             </a>

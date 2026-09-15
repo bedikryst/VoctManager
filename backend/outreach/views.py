@@ -50,6 +50,7 @@ class NoticeSubscribeView(_PublicOutreachView):
 
         NoticeListService.subscribe(
             email=serializer.validated_data['email'],
+            name=serializer.validated_data['name'],
             locale=serializer.validated_data['locale'],
             surface=serializer.validated_data['surface'],
         )

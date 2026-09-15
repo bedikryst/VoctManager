@@ -65,9 +65,15 @@ class ConcertNoticeSubscription(EnterpriseBaseModel):
     RODO + art. 10 UŚUDE — the confirmation click is the proof), the clause version
     that was on screen, and the surface it was given on.
 
-    WHAT IT DOES NOT STORE, on purpose: no name (a notice needs no salutation), no IP,
-    no user agent. Double opt-in already proves control of the mailbox, which is the
-    fact in dispute; an IP would only add a second identifier to defend.
+    WHAT IT DOES NOT STORE, on purpose: no IP, no user agent. Double opt-in already
+    proves control of the mailbox, which is the fact in dispute; an IP would only add a
+    second identifier to defend.
+
+    THE NAME IS OPTIONAL AND HAS EXACTLY ONE USE — the greeting of the notice itself.
+    That single use is what makes asking for it lawful: a field collected because a form
+    usually has one is data minimisation's own example of what not to do. If the notice
+    template ever stops greeting by name, this column stops having a purpose and comes
+    out; it is not a general-purpose "who is this".
 
     A ROW IS NEVER DELETED ON UNSUBSCRIBE. Withdrawing consent ends the processing it
     licensed, not the duty to show the consent was lawfully obtained — so the row
@@ -78,6 +84,15 @@ class ConcertNoticeSubscription(EnterpriseBaseModel):
         unique=True,
         verbose_name=_("Email"),
         help_text=_("One row per address; re-subscribing reuses it rather than duplicating."),
+    )
+    # Blank rather than nullable, the convention this codebase keeps for optional text:
+    # "gave no name" is one state, and a column that can be both `''` and `NULL` invites
+    # two spellings of it.
+    name = models.CharField(
+        max_length=80,
+        blank=True,
+        verbose_name=_("First name"),
+        help_text=_("Optional. Used for nothing but the greeting of the notice itself."),
     )
     locale = models.CharField(
         max_length=2,

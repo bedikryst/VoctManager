@@ -24,9 +24,9 @@
  *  `/obrazy` (a subordinate line inside the KONCERTY register, reachable on desktop by hover
  *  alone), `/kolofon` and `/polityka-prywatnosci`.
  *
- *  THE NOTICE LIST IS AN ASK, NOT A PAGE, and filed as one it read `Zawiadomienia` — a word that
- *  names the genre and says nothing about concerts or about signing up. It is a STANZA OF ITS OWN
- *  RANK now, beside the registry and the addresses, in the wording the site already owns
+ *  THE INVITATION LIST IS AN ASK, NOT A PAGE, and filed among the pages it read as a genre label
+ *  saying nothing about concerts or about signing up. It is a STANZA OF ITS OWN
+ *  RANK, beside the registry and the addresses, in the wording the site already owns
  *  (`NUNTIUS[lang].invitation`, the same sentence `/kontakt` and the landing print): the rubric
  *  names it, the line says what arrives, the link says what to do. It stands next to `Vox`
  *  because those two are the two directions of one correspondence — we write to you, you write
@@ -160,6 +160,10 @@ const tempusGloss = tempus.gloss[lang];
               direction rather than "opens elsewhere in the browser"; it is the same arrow
               /kontakt puts on the same words. */}
           <p class="foot-act">
+            {/* The analytics key is FROZEN at the list's old name. It is not a label a reader
+                sees; it is the identifier a goal is configured under in Plausible's own
+                dashboard, which no deploy from here can rename — changing it would silently
+                end the series rather than continue it under a better word. */}
             <a
               class="plausible-event-name=zawiadomienia+stopka"
               href={localizePath("/newsletter", lang)}

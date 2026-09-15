@@ -141,7 +141,7 @@ def unsubscribe_headers(subscription: ConcertNoticeSubscription) -> dict[str, st
 
 class NoticeListService:
     """
-    The concert notice list — double opt-in, one mail per evening, nothing else.
+    The concert invitation list — double opt-in, one mail per concert, nothing else.
 
     THE LIST IS NOT A MAILING TOOL. Everything here is about establishing and ending a
     consent; sending the notice itself is deliberately absent, because the evening it
@@ -160,7 +160,9 @@ class NoticeListService:
         return email.strip().lower()
 
     @classmethod
-    def subscribe(cls, *, email: str, locale: str, surface: str) -> SubscribeOutcome:
+    def subscribe(
+        cls, *, email: str, locale: str, surface: str, name: str = '',
+    ) -> SubscribeOutcome:
         """
         Takes a sign-up and, where it is a new one, sends the confirmation request.
 
@@ -184,6 +186,7 @@ class NoticeListService:
             ).get_or_create(
                 email=address,
                 defaults={
+                    'name': name,
                     'locale': locale,
                     'status': NoticeStatus.PENDING,
                     'clause_version': NOTICE_CLAUSE_VERSION,
@@ -213,6 +216,12 @@ class NoticeListService:
                 # A repeat ask, an expired link, or a return after unsubscribing: the row
                 # is reset to a fresh PENDING with a fresh secret, and the clause version
                 # is re-stamped — what the person agreed to is what was on screen NOW.
+                #
+                # The name follows that rule rather than being merged into it: somebody who
+                # signs up again and leaves the field empty has asked for an unnamed letter,
+                # and keeping a name they did not re-enter would make the row say more about
+                # them than the form they just filled in did.
+                subscription.name = name
                 subscription.locale = locale
                 subscription.status = NoticeStatus.PENDING
                 subscription.clause_version = NOTICE_CLAUSE_VERSION
@@ -223,7 +232,7 @@ class NoticeListService:
                 subscription.unsubscribed_at = None
                 subscription.is_deleted = False
                 subscription.save(update_fields=[
-                    'locale', 'status', 'clause_version', 'surface', 'confirm_token',
+                    'name', 'locale', 'status', 'clause_version', 'surface', 'confirm_token',
                     'confirm_sent_at', 'confirmed_at', 'unsubscribed_at', 'is_deleted',
                     'updated_at',
                 ])
@@ -240,6 +249,12 @@ class NoticeListService:
         The one mail this app sends. Raises on transport failure; `subscribe` is what
         decides that is survivable, and anything else calling this — a resend from the
         admin, say — should be told the mail did not go out.
+
+        IT DOES NOT GREET BY NAME, THOUGH THE ROW MAY HOLD ONE. This mail is the only one
+        on this list whose recipient may not be the person who typed the address — its own
+        body says so ("somebody gave this address") — and a salutation would both contradict
+        that sentence and hand a stranger the first name of whoever typed their address. The
+        name's one use is the notice itself, where the recipient is by then proven.
         """
         copy = NOTICE_CONFIRM.get(subscription.locale, NOTICE_CONFIRM[NoticeLocale.PL])
         base = settings.PUBLIC_SITE_URL.rstrip('/')

@@ -53,6 +53,15 @@ export interface NoticeFormChrome {
   readonly bandAria: string;
   readonly emailLabel: string;
   readonly emailPlaceholder: string;
+  /**
+   * The one optional field. THE LABEL CARRIES THE WORD "OPTIONAL" AND NOTHING ELSE: what the
+   * name is FOR is stated in the clause a few centimetres below, which the reader has to read
+   * anyway, and a hint repeating it would be the same promise made twice on one screen. What
+   * the label may not do is stay silent about the field being optional — a name asked for
+   * without that word is a name most people will believe is required.
+   */
+  readonly nameLabel: string;
+  readonly namePlaceholder: string;
   /** The clause itself — inline markup, rendered through `set:html`. */
   readonly consentHtml: string;
   readonly submit: string;
@@ -90,7 +99,14 @@ export interface NuntiusPageChrome {
 export interface NuntiusInvitation {
   /** What the address is for, in one sentence. The rubric alone would be a riddle. */
   readonly line: string;
-  /** The act. No arrow: each surface prints its own, in its own direction. */
+  /**
+   * The act. No arrow: each surface prints its own, in its own direction.
+   *
+   * IT NAMES THE LIST, NOT THE ADDRESS, because one surface prints it with no `line` above it:
+   * the landing's poster block, where the act stands beside "see the programme" and two lines
+   * under a church's street address. "Leave your address" there named the cost instead of the
+   * offer and could be read as a request for somewhere to send post.
+   */
   readonly cta: string;
 }
 
@@ -101,9 +117,16 @@ export interface NuntiusInvitation {
  * the receipt page's meta is.
  *
  * WHY THE ROUTE IS THE ONE ENGLISH WORD ON THIS SITE. The page is named for the act of finding it:
- * a reader told "sign up for the notices" types the word they already have, and `nuntius` is not
- * that word in any of the three languages. It stays in the address bar and out of the prose — the
- * list is called *Zawiadomienia · Nuntius* everywhere a reader can read it.
+ * a reader told "sign up for the invitations" types the word they already have, and `nuntius` is
+ * not that word in any of the three languages. It stays in the address bar and out of the prose —
+ * the list is called *Zaproszenia · Nuntius* everywhere a reader can read it.
+ *
+ * WHY THE LATIN STAYS WHILE THE VERNACULAR MOVED. `/nuntius` is frozen: it is `NOTICE_PATH` in
+ * the backend and it is printed into every unsubscribe link already sitting in somebody's inbox,
+ * so it has to resolve for as long as those mails exist. The word beside it is free, and had to
+ * move — *zawiadomienie* survives in Polish almost only in official collocations (of a crime, of
+ * proceedings) and read on a concert page as a summons. The rubric is therefore a naming rather
+ * than a gloss, which is the trade this route's permanence forces.
  */
 export interface NuntiusSignupChrome {
   readonly meta: { readonly title: string; readonly description: string };
@@ -123,13 +146,18 @@ const CONTACT_MAILBOX = "kontakt@voctensemble.com";
 export const NUNTIUS: Record<Locale, NuntiusChrome> = {
   pl: {
     form: {
-      bandAria: "Zawiadomienie o następnym koncercie",
+      bandAria: "Zaproszenia na koncerty",
       emailLabel: "Adres e-mail",
       emailPlaceholder: "imie@przyklad.pl",
+      nameLabel: "Imię — nieobowiązkowe",
+      namePlaceholder: "Ania",
       consentHtml:
-        `Zgadzam się na otrzymywanie zawiadomień o koncertach VoctEnsemble na podany adres. ` +
-        `Administratorem danych jest Fundacja VoctFoundation. Zgodę mogę wycofać w każdej chwili ` +
-        `— linkiem w każdej wiadomości albo pisząc na <a href="mailto:${DATA_MAILBOX}">${DATA_MAILBOX}</a>. ` +
+        `Zgadzam się na otrzymywanie zaproszeń na koncerty VoctEnsemble na podany adres e-mail. ` +
+        `Jeśli podam imię, użyjemy go wyłącznie w powitaniu listu. Administratorem danych jest ` +
+        `Fundacja VoctFoundation; gdyby zakończyła działalność, listę może przejąć osoba ` +
+        `prowadząca zespół VoctEnsemble — uprzedzimy o tym wcześniej. Zgodę mogę wycofać ` +
+        `w każdej chwili — linkiem w każdej wiadomości albo pisząc na ` +
+        `<a href="mailto:${DATA_MAILBOX}">${DATA_MAILBOX}</a>. ` +
         `Szczegóły w <a href="/polityka-prywatnosci">polityce prywatności</a>.`,
       submit: "Zapisz mnie",
       submitting: "Wysyłamy…",
@@ -140,10 +168,10 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
     },
     page: {
       meta: {
-        title: "Zawiadomienie — VoctEnsemble",
-        description: "Potwierdzenie zapisu na zawiadomienia o koncertach VoctEnsemble.",
+        title: "Zaproszenia — VoctEnsemble",
+        description: "Potwierdzenie zapisu na zaproszenia na koncerty VoctEnsemble.",
       },
-      eyebrow: "Zawiadomienie",
+      eyebrow: "Zaproszenia",
       states: {
         checking: {
           title: "Sprawdzamy link…",
@@ -152,8 +180,9 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         confirmed: {
           title: "Jesteś na liście.",
           body:
-            "Napiszemy, gdy następny Koncert Duchowy dostanie datę — jeden list na jeden " +
-            "wieczór, z miejscem i programem. W każdej wiadomości będzie link do wypisania się.",
+            "Napiszemy, gdy następny Koncert Duchowy dostanie datę — jeden krótki list przed " +
+            "każdym koncertem, z miejscem i programem. W każdej wiadomości będzie link do " +
+            "wypisania się.",
         },
         already_confirmed: {
           title: "Ten adres już jest na liście.",
@@ -180,8 +209,8 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         missing: {
           title: "Tę stronę otwiera link z wiadomości.",
           body:
-            "Bez niego nie ma tu nic do potwierdzenia. Jeśli chcesz dostawać zawiadomienia " +
-            "o koncertach, zostaw adres — zajmie to chwilę.",
+            "Bez niego nie ma tu nic do potwierdzenia. Jeśli chcesz dostawać zaproszenia " +
+            "na koncerty, zapisz się — zajmie to chwilę.",
         },
         error: {
           title: "Coś poszło nie tak.",
@@ -194,27 +223,31 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
     },
     signup: {
       meta: {
-        title: "Zawiadomienia o koncertach — VoctEnsemble",
+        title: "Zaproszenia na koncerty — VoctEnsemble",
         description:
-          "Jeden list na jeden wieczór: miejsce, godzina, program. Zostaw adres, a napiszemy " +
-          "przed następnym Koncertem Duchowym.",
+          "Jeden krótki list przed każdym koncertem: miejsce, godzina, program. Zapisz się, " +
+          "a napiszemy przed następnym Koncertem Duchowym.",
       },
     },
     invitation: {
       line: "Napiszemy przed następnym Koncertem Duchowym.",
-      cta: "Zostaw adres",
+      cta: "Otrzymuj zaproszenia",
     },
   },
 
   en: {
     form: {
-      bandAria: "Notice of the next concert",
+      bandAria: "Invitations to the concerts",
       emailLabel: "Email address",
       emailPlaceholder: "name@example.com",
+      nameLabel: "First name — optional",
+      namePlaceholder: "Anna",
       consentHtml:
-        `I agree to receive notices of VoctEnsemble's concerts at this address. The data ` +
-        `controller is Fundacja VoctFoundation. I may withdraw my consent at any time — through ` +
-        `the link in every message, or by writing to ` +
+        `I agree to receive invitations to VoctEnsemble's concerts at this email address. ` +
+        `If I give a first name, it will be used only in the letter's greeting. The data ` +
+        `controller is Fundacja VoctFoundation; should it cease to operate, the list may pass ` +
+        `to the person who runs the VoctEnsemble — we will tell you beforehand. I may withdraw ` +
+        `my consent at any time — through the link in every message, or by writing to ` +
         `<a href="mailto:${DATA_MAILBOX}">${DATA_MAILBOX}</a>. ` +
         `The details are in the <a href="/polityka-prywatnosci">privacy policy</a>.`,
       submit: "Put me on the list",
@@ -226,10 +259,10 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
     },
     page: {
       meta: {
-        title: "Notice — VoctEnsemble",
-        description: "Confirmation for VoctEnsemble's concert notice list.",
+        title: "Invitations — VoctEnsemble",
+        description: "Confirmation for VoctEnsemble's concert invitation list.",
       },
-      eyebrow: "Notice",
+      eyebrow: "Invitations",
       states: {
         checking: {
           title: "Checking the link…",
@@ -238,8 +271,9 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         confirmed: {
           title: "You are on the list.",
           body:
-            "We will write when the next Spiritual Concert is given a date — one letter for one " +
-            "evening, with the place and the programme. Every message carries a link to leave.",
+            "We will write when the next Spiritual Concert is given a date — one short letter " +
+            "before each concert, with the place and the programme. Every message carries a " +
+            "link to leave.",
         },
         already_confirmed: {
           title: "This address is already on the list.",
@@ -266,8 +300,8 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         missing: {
           title: "This page is opened by a link from a message.",
           body:
-            "Without one there is nothing here to confirm. If you would like notice of the " +
-            "concerts, leave your address — it takes a moment.",
+            "Without one there is nothing here to confirm. If you would like invitations to " +
+            "the concerts, sign up — it takes a moment.",
         },
         error: {
           title: "Something went wrong.",
@@ -280,26 +314,31 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
     },
     signup: {
       meta: {
-        title: "Concert notices — VoctEnsemble",
+        title: "Concert invitations — VoctEnsemble",
         description:
-          "One letter for one evening: the place, the hour, the programme. Leave your address " +
+          "One short letter before each concert: the place, the hour, the programme. Sign up " +
           "and we will write before the next Spiritual Concert.",
       },
     },
     invitation: {
       line: "We will write before the next Spiritual Concert.",
-      cta: "Leave your address",
+      cta: "Receive the invitations",
     },
   },
 
   fr: {
     form: {
-      bandAria: "Annonce du prochain concert",
+      bandAria: "Invitations aux concerts",
       emailLabel: "Adresse e-mail",
       emailPlaceholder: "nom@exemple.fr",
+      nameLabel: "Prénom — facultatif",
+      namePlaceholder: "Anne",
       consentHtml:
-        `J'accepte de recevoir les annonces des concerts de VoctEnsemble à cette adresse. Le ` +
-        `responsable du traitement est la Fundacja VoctFoundation. Je peux retirer mon ` +
+        `J'accepte de recevoir les invitations aux concerts de VoctEnsemble à cette adresse ` +
+        `e-mail. Si je donne un prénom, il ne servira qu'à la formule d'appel de la lettre. ` +
+        `Le responsable du traitement est la Fundacja VoctFoundation ; si elle venait à cesser ` +
+        `son activité, la liste pourrait être reprise par la personne qui dirige le ` +
+        `VoctEnsemble — nous vous en préviendrons à l'avance. Je peux retirer mon ` +
         `consentement à tout moment — par le lien présent dans chaque message ou en écrivant à ` +
         `<a href="mailto:${DATA_MAILBOX}">${DATA_MAILBOX}</a>. ` +
         `Les détails figurent dans la <a href="/polityka-prywatnosci">politique de confidentialité</a>.`,
@@ -312,10 +351,10 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
     },
     page: {
       meta: {
-        title: "Annonce — VoctEnsemble",
-        description: "Confirmation d'inscription aux annonces de concerts de VoctEnsemble.",
+        title: "Invitations — VoctEnsemble",
+        description: "Confirmation d'inscription aux invitations aux concerts de VoctEnsemble.",
       },
-      eyebrow: "Annonce",
+      eyebrow: "Invitations",
       states: {
         checking: {
           title: "Vérification du lien…",
@@ -324,9 +363,9 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         confirmed: {
           title: "Vous êtes inscrit.",
           body:
-            "Nous écrirons lorsque le prochain Concert Spirituel recevra une date — une lettre " +
-            "pour une soirée, avec le lieu et le programme. Chaque message porte un lien pour se " +
-            "désinscrire.",
+            "Nous écrirons lorsque le prochain Concert Spirituel recevra une date — une courte " +
+            "lettre avant chaque concert, avec le lieu et le programme. Chaque message porte un " +
+            "lien pour se désinscrire.",
         },
         already_confirmed: {
           title: "Cette adresse est déjà inscrite.",
@@ -355,8 +394,8 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         missing: {
           title: "Cette page s'ouvre depuis un lien reçu par courrier.",
           body:
-            "Sans lui, il n'y a rien à confirmer ici. Si vous souhaitez être prévenu des " +
-            "concerts, laissez votre adresse — cela prend un instant.",
+            "Sans lui, il n'y a rien à confirmer ici. Si vous souhaitez recevoir les " +
+            "invitations aux concerts, inscrivez-vous — cela prend un instant.",
         },
         error: {
           title: "Quelque chose s'est mal passé.",
@@ -369,15 +408,15 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
     },
     signup: {
       meta: {
-        title: "Annonces des concerts — VoctEnsemble",
+        title: "Invitations aux concerts — VoctEnsemble",
         description:
-          "Une lettre pour une soirée : le lieu, l'heure, le programme. Laissez votre adresse " +
+          "Une courte lettre avant chaque concert : le lieu, l'heure, le programme. Inscrivez-vous " +
           "et nous écrirons avant le prochain Concert Spirituel.",
       },
     },
     invitation: {
       line: "Nous écrirons avant le prochain Concert Spirituel.",
-      cta: "Laissez votre adresse",
+      cta: "Recevoir les invitations",
     },
   },
 };

@@ -52,6 +52,8 @@ import PathSection from "../landing/PathSection.astro";
 import SilenceMoment from "../landing/SilenceMoment.astro";
 import FinalSupportSection from "../landing/FinalSupportSection.astro";
 import CodaSection from "../landing/CodaSection.astro";
+import NoticeSignup from "../NoticeSignup.astro";
+import { NUNTIUS } from "../../i18n/content/nuntius";
 import VaultBuffer from "../landing/VaultBuffer.astro";
 
 import { AudioController } from "../../islands/landing/AudioController";
@@ -240,6 +242,20 @@ const jsonLd = {
       </section>
 
       <CodaSection copy={c.coda} aria={t.codaAria} />
+
+      {/* The one ask on this page that is a FORM rather than a link, and the last thing in the
+          document before the footer's own chapter. It stands after the coda rather than before
+          it: `FinalSupportSection` has just asked for money, and putting a second ask between
+          that and the coda would have made three closing gestures in a row and taken the coda's
+          last breath away from it. Inside `<main>` because a form is content, styled as the
+          footer's opening row because that is how it should read.
+
+          `web:landing` is its own surface for the reason every placement is: the column records
+          the screen a clause was read on, and this is the only screen a reader reaches without
+          having gone looking for the list. */}
+      <section class="notice-strip" aria-label={NUNTIUS[lang].form.bandAria}>
+        <NoticeSignup lang={lang} surface="web:landing" variant="strip" />
+      </section>
     </main>
 
     <SiteFooter client:visible lang={lang} chrome={t} />

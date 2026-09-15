@@ -59,7 +59,13 @@
     initial-value: 0;
   }
 
-  .site-footer {
+  /* PAS ZAPISU NOSI TĘ SAMĄ PALETĘ, nie własną. Stoi bezpośrednio nad stopką i ma się czytać
+     jako jej pierwszy wiersz, więc godzina musi go zastawać razem z nią — pas z własnym
+     kompletem tokenów byłby drugą paletą do utrzymania, a o 21:00 przełamywałby się osobno.
+     Tokeny idą do obu elementów, grunt i włos zostają przy stopce niżej: tło pasa opisuje
+     `styles/notice.css`, bo tam opisany jest cały ten formularz. */
+  .site-footer,
+  .notice-strip {
     position: relative;
     /* Stan SSR i stan bez JS-u: pergamin. Statyczna strona nie zna godziny czytelnika,
        a domyślnie oddawać trzeba to, co jest prawdą przez trzy czwarte doby. */
@@ -103,11 +109,6 @@
       rgb(198 164 91 / 0.05) calc(var(--nox) * 100%)
     );
 
-    background:
-      radial-gradient(120% 62% at 50% 0%, var(--foot-bloom), transparent 64%),
-      linear-gradient(180deg, var(--paper) 0%, var(--paper) 36%, var(--paper-soft) 100%);
-    border-top: 1px solid var(--line);
-    color: var(--ink-soft);
     /* Jedyny `transition` na tym elemencie i jedyny, jakiego ta zmiana potrzebuje: żaden
        potomek nie dostaje własnej deklaracji, więc nic nie wchodzi w kolizję ze szczeliną
        `transition-property` rejestrów wpisu. Krzywa jest świetlna — trzyma, zalewa,
@@ -116,9 +117,19 @@
     transition: --nox 1.6s var(--ease-light);
   }
 
+  /* Grunt stopki — osobno od tokenów, bo pas nad nią ma własny, płaski. */
+  .site-footer {
+    background:
+      radial-gradient(120% 62% at 50% 0%, var(--foot-bloom), transparent 64%),
+      linear-gradient(180deg, var(--paper) 0%, var(--paper) 36%, var(--paper-soft) 100%);
+    border-top: 1px solid var(--line);
+    color: var(--ink-soft);
+  }
+
   /* Płyta nocna. Specyficzność jest z zapasem (0,3,0) wobec `body.theme-marketing`, bo
-     `--edge-foot` musi wygrać niezależnie od kolejności bundlowania tokens.css i tego pliku. */
-  body.theme-marketing[data-lumen="nox"] .site-footer {
+     `--edge-foot` musi wygrać niezależnie od kolejności bundlowania tokens.css i tego pliku.
+     `:is()` liczy się jak najmocniejszy argument, czyli tyle samo co sam `.site-footer`. */
+  body.theme-marketing[data-lumen="nox"] :is(.site-footer, .notice-strip) {
     --nox: 1;
   }
 

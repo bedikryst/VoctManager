@@ -66,14 +66,28 @@ notice:
   h2: "Damy znać o nadchodzących koncertach."
   # One negation in the passage, and it is the last three words — the site's own rule. The list
   # promises a frequency, not a relationship; keep whatever renders that plainly.
+  #
+  # IT SAYS "KONCERT", NOT THE SITE'S OWN "WIECZÓR", and it names the occasion rather than
+  # counting letters against it. This is the band a stranger meets while scanning, and the same
+  # rule `landing.yaml` states at `announceLabel` applies here: the plainest available word is the
+  # one that gets read. "One letter for one evening" was ambiguous in exactly the place where the
+  # frequency IS the offer — it can be read as one letter every evening.
   lede: >-
-    Jeden list na jeden wieczór: miejsce, godzina, program. Nic poza tym.
+    Jeden krótki list przed każdym koncertem: miejsce, godzina, program. Nic poza tym.
   # Read after the address is submitted. It says a mail is on its way, never "you are subscribed":
   # nothing is stored as a consent until the link in it is clicked.
   sentTitle: "Sprawdź skrzynkę."
   sentBody: >-
     Wysłaliśmy prośbę o potwierdzenie. Adres zapisujemy dopiero wtedy, gdy klikniesz
     link w tej wiadomości.
+  # The third tier of the receipt, and the one that decides whether the consent ever closes: on a
+  # double opt-in list an unread confirmation is an address that expires in seven days. It names
+  # the SENDER (`settings.PUBLIC_FROM_EMAIL` displays "VoctEnsemble") and the two folders a
+  # transactional mail actually lands in, because "check your mailbox" is untrue advice for a
+  # letter filed under Promotions.
+  sentHint: >-
+    List przychodzi od nadawcy VoctEnsemble. Jeśli nie widzisz go w skrzynce, zajrzyj do
+    folderu z ofertami albo do spamu.
 
 # What the ensemble sang that the cycle does not number — a sung Mass, a wedding. The band closes
 # the night stretch, after the walk has ended and the notice list has been offered, because these

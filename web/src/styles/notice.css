@@ -97,8 +97,26 @@
   gap: 8px;
 }
 
+/* The optional field takes less room than the required one, which is the hierarchy said without
+   a word: it may not grow past the address, and on a phone it wraps above it rather than beside.
+   No separate input rule — it wears `.notice-email`, because one field on this list looking
+   unlike the other would suggest one of them behaves differently.
+
+   IT IS MEASURED BY ITS OWN LABEL, NOT BY A NUMBER. The label carries the word "optional" and so
+   is half again the length of the address label beside it — and a different length in each of
+   the three locales. A fixed basis wide enough for one of them broke the label onto two lines in
+   another, which cost a line of height and left the two labels sitting on different baselines.
+   The address field is the one that absorbs whatever this takes. */
+.notice-field-name {
+  flex: 0 0 auto;
+  min-width: 190px;
+}
+
+/* Paired with the rule above: the label is what the field is measured against, so it may not
+   reflow. Every one of them is short enough to stand on a phone. */
 .notice-label {
   color: rgba(244, 241, 233, 0.5);
+  white-space: nowrap;
 }
 
 .notice-email {
@@ -289,6 +307,212 @@
   color: rgba(244, 241, 233, 0.7);
   font-size: 14.5px;
   line-height: 1.7;
+}
+
+/* The third tier, and the one that decides whether the consent ever closes: which sender the
+   letter comes from and which folders it can be filed under. Quieter than the body because it is
+   read second, but not mono — that grade is the site's voice for machinery, and this is advice. */
+.notice-done-hint {
+  margin: 2px 0 0;
+  max-width: 44ch;
+  color: rgba(244, 241, 233, 0.5);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* ── The band once the address has gone ────────────────────────────────────────
+   THE WHOLE BAND CHANGES, not only the island inside it. The heading and the lede are the
+   sign-up's offer; left standing over the receipt they went on promising in the band's largest
+   grade while the one live instruction — open your inbox, follow the link — read as a footnote
+   to them. This list is double opt-in, so a receipt nobody reads is an address that expires in
+   seven days having consented to nothing.
+
+   The height is held by an inline `min-height` the island writes from `offsetHeight` BEFORE the
+   swap, so the page below never moves; the receipt is then centred in the space the form
+   occupied, which is where the reader is already looking. */
+.notice-inner[data-sent] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Wins over the strip's own left alignment: the receipt is one short statement and reads as
+     one wherever it stands. The attribute is what makes this outrank `.notice-inner-strip`. */
+  text-align: center;
+}
+
+.notice-inner[data-sent] .notice-h2,
+.notice-inner[data-sent] .notice-lede {
+  display: none;
+}
+
+/* Its own air is the form's; centred in the frozen band it needs none. */
+.notice-inner[data-sent] .notice-done {
+  margin-top: 0;
+}
+
+/* Focus is moved here by the island so a screen reader and the keyboard follow the eye. It is a
+   region rather than a control, and a ring around a paragraph reads as a mistake. */
+.notice-done:focus {
+  outline: none;
+}
+
+/* ── The strip that opens the landing's footer ─────────────────────────────────
+   NOT A SECTION OF THE PAGE, AND NOT A SECOND BAND. The landing has already ended by the time a
+   reader gets here — the coda is its last breath — and a full band under it would be a third
+   closing gesture in a row. This reads as the FOOTER'S FIRST ROW: the same night ground, a
+   hairline above, none of the band's air. The page still ends where it ended, and the footer
+   opens with the one ask.
+
+   IT CANNOT BE MADE NARROW, only low. The consent clause is the wording each record is kept
+   against and may not be set small enough to skim past, so the height is decided by it rather
+   than chosen. What makes this shape low is dropping the band's display heading — not shrinking
+   anything a reader has to read before agreeing. */
+/* IT WEARS THE FOOTER'S OWN PALETTE, NOT THIS SHEET'S NIGHT ONE. Everything else here stands on
+   the site's night ground, but the landing's footer prints the canonical hour it is read in and
+   takes its plate from it — parchment through the day, the night plate at Completorium and
+   Matutinum. `landing/06-footer.css` therefore hands `.notice-strip` the same `--nox` axis and
+   the same tokens, and the rules below spend those tokens instead of the literals the band uses.
+   A strip written in `rgba(244 241 233 / …)` was very nearly invisible at noon. */
+.notice-strip {
+  /* `position: relative` and the palette come from the footer sheet. Side padding is NOT here —
+     see the measure below. */
+  padding-block: clamp(22px, 2.2vw, 32px);
+  background: var(--paper);
+  color: var(--ink-soft);
+  border-top: 1px solid var(--line);
+}
+
+/* THE FOOTER'S MEASURE, TO THE PIXEL — `.site-footer-inner` in `landing/06-footer.css`, gutters
+   included. The two are read as one register, so the rubric here has to begin on the same
+   vertical as `Fundatio` below it and the button has to end where `Vox` ends. Width alone does
+   not do that: the footer keeps its side padding INSIDE its 1580, and a strip that kept the same
+   padding outside sat 96px wider on each side — near enough to look like a mistake and far
+   enough to be one. Change either of these and change both. */
+.notice-inner-strip {
+  width: min(1580px, 100%);
+  max-width: none;
+  margin: 0 auto;
+  padding-inline: max(28px, 5vw, env(safe-area-inset-right, 0px));
+  text-align: left;
+}
+
+/* No measure cap on either line. In the band they are centred display text and a cap is what
+   keeps them readable; here the column IS the cap, and a `max-width` inside it only opened a
+   void between the voice and the fields. */
+.notice-inner-strip .notice-h2 {
+  margin: 10px 0 0;
+  max-width: none;
+  color: var(--ink);
+  font-size: clamp(20px, 1.9vw, 27px);
+  line-height: 1.16;
+}
+
+.notice-inner-strip .notice-lede {
+  margin: 7px 0 0;
+  max-width: none;
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+.notice-inner-strip .notice-form {
+  margin-top: 22px;
+  gap: 14px;
+}
+
+.notice-inner-strip .notice-label {
+  color: var(--ink-muted);
+}
+
+.notice-inner-strip .notice-email {
+  border-bottom-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.notice-inner-strip .notice-email::placeholder {
+  color: var(--ink-muted);
+}
+
+/* `--candle-text` rather than `--candle`: on the parchment plate the full gold is 2.10:1 and
+   cannot carry a focus ring, and this token is the footer's own answer to that. */
+.notice-inner-strip .notice-email:focus {
+  border-color: var(--candle-text);
+}
+
+.notice-inner-strip .notice-consent-box {
+  border-color: var(--line-strong);
+  background: transparent;
+}
+
+.notice-inner-strip .notice-consent-text {
+  color: var(--ink-muted);
+}
+
+/* The two links inside the clause — the data mailbox and the policy — were set in the band's
+   near-white and vanished on parchment, which is the worst pair of links on the site to lose:
+   they are how a consent is withdrawn and where it is explained. Darker than the prose around
+   them rather than lighter, because on this plate weight reads as emphasis. */
+.notice-inner-strip .notice-consent-text a {
+  color: var(--ink-soft);
+  border-bottom-color: var(--line-strong);
+}
+
+.notice-inner-strip .notice-consent-text a:hover {
+  color: var(--candle-text);
+  border-color: var(--candle-text);
+}
+
+/* The plate under the button is gold in BOTH palettes, so its ink may not follow the hour:
+   `var(--ink)` here would be light at night and put pale letters on gold. */
+.notice-inner-strip .notice-submit {
+  color: #161514;
+}
+
+.notice-inner-strip .notice-done-title {
+  color: var(--ink);
+}
+
+.notice-inner-strip .notice-done-body {
+  color: var(--ink-soft);
+}
+
+.notice-inner-strip .notice-done-hint,
+.notice-inner-strip .notice-noscript {
+  color: var(--ink-muted);
+}
+
+.notice-inner-strip .notice-done-mark {
+  color: var(--candle-text);
+}
+
+/* The refusal colours are the one pair this sheet has no token for, so they are mixed along the
+   footer's own axis: the band's warm rose is legible on the night plate and washes out on
+   parchment, and an error nobody can read is the worst place for that to happen. */
+.notice-inner-strip .notice-error {
+  color: color-mix(in oklab, #9b4f38, #d6a08e calc(var(--nox) * 100%));
+}
+
+.notice-inner-strip .notice-email[aria-invalid="true"] {
+  border-color: color-mix(in oklab, #9b4f38, #c98e7e calc(var(--nox) * 100%));
+}
+
+/* Voice beside fields rather than above them — the whole of what makes the strip a strip. Below
+   this width it stacks, which is the band's own arrangement at a smaller grade. */
+@media (min-width: 900px) {
+  .notice-inner-strip {
+    display: grid;
+    /* The voice takes what one line of it needs; the fields take the rest — and the rest is what
+       decides this shape's height. The clause wraps into whatever width is left, and every line
+       it gains, the strip gains. Widening the HEADING does not lower the strip; widening the
+       FORM does, which is why the larger share is on the right. */
+    grid-template-columns: minmax(280px, 0.62fr) minmax(520px, 1fr);
+    align-items: start;
+    /* The register's own gap (`.site-footer-grid`), so the two rows of one footer breathe alike. */
+    gap: clamp(28px, 3vw, 56px);
+  }
+
+  .notice-inner-strip .notice-form {
+    margin-top: 2px;
+  }
 }
 
 .notice-noscript {

@@ -25,6 +25,9 @@ NOTICE_SURFACES: list[str] = [
     'web:newsletter',
     'web:404',
     'web:kontakt',
+    #: The strip that opens the landing page's footer. Distinct from every other surface in
+    #: one way worth recording: it is the only one a reader meets without having gone looking.
+    'web:landing',
 ]
 
 
@@ -38,6 +41,16 @@ class NoticeSubscribeSerializer(serializers.Serializer):
     could name the wording it agreed to could name any wording.
     """
     email = serializers.EmailField(max_length=254)
+    # Optional in the strong sense: a reader may send nothing, an empty string, or whitespace,
+    # and all three mean the same thing — an unnamed letter. `allow_blank` plus the default is
+    # what keeps those three from becoming three shapes the service has to tell apart.
+    name = serializers.CharField(
+        max_length=80,
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+        default='',
+    )
     locale = serializers.ChoiceField(choices=NoticeLocale.choices, default=NoticeLocale.PL)
     # NOT called `source`: `serializers.Field` already owns that attribute name, so a
     # declared field of that name shadows DRF's own binding machinery.
