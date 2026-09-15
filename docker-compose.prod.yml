@@ -39,6 +39,11 @@ services:
       # /var/www/certbot, nginx (in container) serves it for ACME validation.
       - /var/www/certbot:/var/www/certbot:ro
       - ./infra/maintenance:/usr/share/nginx/html/maintenance:ro
+      # The films, served off the host instead of out of the image. They are excluded from
+      # the build context (root .dockerignore), so this mount is the ONLY thing that puts
+      # them behind `/video/` — without it the pages render and the players 404. Re-cutting
+      # a film is then an upload plus a VIDEO_REVISION bump, with no rebuild at all.
+      - ./web/public/video:/usr/share/nginx/html/marketing/video:ro
       # The Astro public site at /usr/share/nginx/html/marketing is baked INTO
       # the image by frontend/Dockerfile (web-builder stage). No host mount
       # needed — building via `make prod` (both -f files!) produces the panel

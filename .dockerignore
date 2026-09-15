@@ -60,11 +60,20 @@ web/src/assets/photos/.old-bg-desktop
 # and at the same cost as the archive above.
 web/src/assets/photos/kosciol-samples
 
-# The camera masters the web renditions are encoded FROM — ~1 GB, and read by nobody at build
-# time: lib/videos.ts imports three named files from `src/assets/videos/` directly, never this
-# folder. The encode is a host-side step, same shape as `npm run photos:proxy` above, and for the
-# same reason — this weight in the `COPY web/ ./` layer buys nothing and costs the BuildKit cache.
-web/src/assets/videos/oryginaly
+# Video, in both its homes, and for one reason: no build step reads a frame of it.
+#  • `src/assets/videos/` holds the camera masters and the encodes made from them — a host-side
+#    step, the same shape as `npm run photos:proxy` above.
+#  • `public/video/` holds the six files the site actually serves. They reach nginx through the
+#    bind mount in docker-compose.prod.yml, NOT through an image layer, which is the whole point:
+#    everything under public/ is otherwise copied verbatim into dist/ and baked in.
+# Together they are ~1.7 GB that used to ride the `COPY web/ ./` layer, get hashed by rollup,
+# land in dist/, and be copied into the image a second time — 29 minutes of asset pass per
+# deploy, and the BuildKit budget blown by records nothing would reuse.
+#
+# CONSEQUENCE, and it is the failure worth recognising: with the mount missing on a host, the
+# films 404 and everything else on the page is fine. Check the volume before suspecting the code.
+web/src/assets/videos
+web/public/video
 
 # ---- Python / Django (the backend has its OWN Dockerfile + context: ./backend,
 # but anything that would slip into this root context should still be excluded

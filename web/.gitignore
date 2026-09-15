@@ -29,10 +29,12 @@ node_modules/
 # time (see lib/photos.ts), so the directory must exist on the build host.
 src/assets/photos/
 
-# Source videos — large MP4s, uploaded out-of-band to the build host like the photos
-# above. Astro imports them from src/assets/videos/ and emits content-hashed URLs, so
-# stable public `/video/*.mp4` paths are not generated.
+# Video — large MP4s, uploaded out-of-band to the host like the photos above, and kept out
+# of the build entirely (lib/videos.ts explains what that buys). `src/assets/videos/` is the
+# masters-and-encodes archive; `public/video/` is what the site serves, at stable paths, from
+# a bind mount in production and from `astro dev` locally.
 src/assets/videos/
+public/video/
 
 # The downloadable press pack (`npm run press:pack`). Tens of megabytes of photographs that are
 # already out of git for the reason above — the archive is built where the originals are and

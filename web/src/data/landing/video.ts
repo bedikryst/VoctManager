@@ -2,8 +2,8 @@
  * @file video.ts
  * @description Video sources for the landing — single source of truth. Self-hosted MP4
  *  only — GDPR hard rule: no YouTube/Vimeo embeds (an outbound link is fine, an iframe
- *  is not). All files live in `src/assets/videos`, so the build emits content-hashed
- *  asset URLs instead of stable public `/video/*.mp4` paths.
+ *  is not). The files themselves are served off disk at stable `/video/*.mp4` paths and
+ *  never enter the build — see lib/videos for why, and for the revision that busts them.
  * @architecture Astro islands 2026
  * @module data/landing/video
  */

@@ -1,32 +1,41 @@
 /**
  * @file videos.ts
- * @description Self-hosted marketing video asset registry. Videos live under
- *  `src/assets/videos`, so the build emits content-hashed URLs instead of stable public
- *  `/video/*.mp4` paths.
+ * @description Self-hosted marketing video registry. Every film resolves to a stable
+ *  `/video/<file>` URL served straight off disk by nginx — the files are NOT part of the
+ *  build.
  *
- *  Every film ships TWICE: an AV1 rendition and the H.264 original it was cut from. AV1 carries
- *  this footage — a lit nave, fine ornament, sensor grain — at roughly 2.5× fewer bytes for the
- *  same measured quality, which is a saving H.264 cannot reach at any setting (raising its CRF
- *  far enough to matter costs visible quality; denoising first costs it too and saves nothing).
- *  H.264 stays because AV1 is not universal: Safari decodes it only from 17 and only on hardware
- *  that has the decoder, so the older Apple half of the audience needs a file it can actually
- *  play. `videoAssetAv1` is total, not optional — the compiler is what keeps a newly added film
- *  from silently shipping in one codec.
+ *  WHY THEY ARE NOT BUNDLED. Handing them to Vite (`?url`) costs three quarters of a
+ *  gigabyte of work on every deploy for a set that changes twice a year: rollup reads each
+ *  file to emit it under a content hash, writes it into `dist/`, and the runtime stage then
+ *  copies `dist/` into the nginx image, which orphans the previous one. On the one-vCPU
+ *  droplet that single asset pass measured **29 minutes** and took the whole box into swap
+ *  with it — every other container starved while a file nobody edited was hashed again. The
+ *  `<Image>` pipeline earns its keep because it TRANSFORMS; this one only moved bytes.
+ *
+ *  WHERE THE FILES LIVE. `web/public/video/`, gitignored like the photographs and uploaded
+ *  to the host out of band (web/README.md §Conventions). `astro dev` serves `public/` at the
+ *  site root, so development needs nothing else. In production the directory is bind-mounted
+ *  into the nginx container (docker-compose.prod.yml) and the root `.dockerignore` keeps it
+ *  out of the build context, so the same bytes reach the same URL without ever entering an
+ *  image layer. A re-cut film is then an upload, not a deploy.
+ *
+ *  CACHE. A stable path cannot carry a content hash, so nginx serves `/video/` as immutable
+ *  for a year (infra/nginx/prod.conf) and `VIDEO_REVISION` is what makes a re-encode visible
+ *  to browsers holding the old file. Bump it in the same commit that names a new cut, or the
+ *  upload ships to everyone except the people who have already watched.
  * @architecture Astro assets 2026
  * @module lib/videos
  */
 
-import landingAeternamAv1 from "../assets/videos/landing-aeternam.av1.mp4?url";
-import landingAeternam from "../assets/videos/landing-aeternam.mp4?url";
-import landingModalAv1 from "../assets/videos/landing-modal.av1.mp4?url";
-import landingModal from "../assets/videos/landing-modal.mp4?url";
-import landingWolanieAv1 from "../assets/videos/landing-wolanie.av1.mp4?url";
-import landingWolanie from "../assets/videos/landing-wolanie.mp4?url";
+/** Bumped whenever a film is re-encoded under a name that is already public. See @file. */
+const VIDEO_REVISION = "1";
+
+const videoUrl = (file: string): string => `/video/${file}?v=${VIDEO_REVISION}`;
 
 export const VIDEO_ASSETS = {
-  "landing-modal": landingModal,
-  "landing-wolanie": landingWolanie,
-  "landing-aeternam": landingAeternam,
+  "landing-modal": videoUrl("landing-modal.mp4"),
+  "landing-wolanie": videoUrl("landing-wolanie.mp4"),
+  "landing-aeternam": videoUrl("landing-aeternam.mp4"),
 } as const;
 
 export type VideoAssetKey = keyof typeof VIDEO_ASSETS;
@@ -35,11 +44,18 @@ export type VideoAssetKey = keyof typeof VIDEO_ASSETS;
  * AV1 renditions, one per key — the annotation is the point: adding a film to VIDEO_ASSETS
  * without encoding its AV1 twin fails the typecheck rather than quietly serving everyone the
  * heavy file.
+ *
+ * Every film ships TWICE. AV1 carries this footage — a lit nave, fine ornament, sensor grain —
+ * at roughly 2.5× fewer bytes for the same measured quality, which is a saving H.264 cannot
+ * reach at any setting (raising its CRF far enough to matter costs visible quality; denoising
+ * first costs it too and saves nothing). H.264 stays because AV1 is not universal: Safari
+ * decodes it only from 17 and only on hardware that has the decoder, so the older Apple half of
+ * the audience needs a file it can actually play.
  */
 export const VIDEO_ASSETS_AV1: Record<VideoAssetKey, string> = {
-  "landing-modal": landingModalAv1,
-  "landing-wolanie": landingWolanieAv1,
-  "landing-aeternam": landingAeternamAv1,
+  "landing-modal": videoUrl("landing-modal.av1.mp4"),
+  "landing-wolanie": videoUrl("landing-wolanie.av1.mp4"),
+  "landing-aeternam": videoUrl("landing-aeternam.av1.mp4"),
 };
 
 /**
