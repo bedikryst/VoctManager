@@ -19,23 +19,26 @@
  *  out of the build context, so the same bytes reach the same URL without ever entering an
  *  image layer. A re-cut film is then an upload, not a deploy.
  *
- *  CACHE. A stable path cannot carry a content hash, so nginx serves `/video/` as immutable
- *  for a year (infra/nginx/prod.conf) and `VIDEO_REVISION` is what makes a re-encode visible
- *  to browsers holding the old file. Bump it in the same commit that names a new cut, or the
- *  upload ships to everyone except the people who have already watched.
+ *  THE TOKEN IN EACH NAME is the first 8 hex of the file's SHA-256, put there by
+ *  `npm run video:stamp`. Leaving the build cost the content-addressing Astro would have
+ *  given these files, and the token buys both halves of it back: a URL nobody can type from
+ *  memory, and a name unique per encode — which is what lets nginx serve `/video/` immutable
+ *  for a year rather than re-validating a 300 MB file every week.
+ *
+ *  SO THESE LITERALS AND THE HOST MUST AGREE. They are two halves of one fact and nothing
+ *  checks them at build time: a mismatch renders every page correctly and 404s the players.
+ *  Re-encoding a film is therefore: drop it in `public/video/`, `npm run video:stamp`, paste
+ *  what it prints below, upload, and `npm run video:stamp -- --verify` on the host.
  * @architecture Astro assets 2026
  * @module lib/videos
  */
 
-/** Bumped whenever a film is re-encoded under a name that is already public. See @file. */
-const VIDEO_REVISION = "1";
-
-const videoUrl = (file: string): string => `/video/${file}?v=${VIDEO_REVISION}`;
+const videoUrl = (file: string): string => `/video/${file}`;
 
 export const VIDEO_ASSETS = {
-  "landing-modal": videoUrl("landing-modal.mp4"),
-  "landing-wolanie": videoUrl("landing-wolanie.mp4"),
-  "landing-aeternam": videoUrl("landing-aeternam.mp4"),
+  "landing-modal": videoUrl("landing-modal.21190d6c.mp4"),
+  "landing-wolanie": videoUrl("landing-wolanie.be25b0a5.mp4"),
+  "landing-aeternam": videoUrl("landing-aeternam.66c36c7c.mp4"),
 } as const;
 
 export type VideoAssetKey = keyof typeof VIDEO_ASSETS;
@@ -53,9 +56,9 @@ export type VideoAssetKey = keyof typeof VIDEO_ASSETS;
  * the audience needs a file it can actually play.
  */
 export const VIDEO_ASSETS_AV1: Record<VideoAssetKey, string> = {
-  "landing-modal": videoUrl("landing-modal.av1.mp4"),
-  "landing-wolanie": videoUrl("landing-wolanie.av1.mp4"),
-  "landing-aeternam": videoUrl("landing-aeternam.av1.mp4"),
+  "landing-modal": videoUrl("landing-modal.av1.be588b53.mp4"),
+  "landing-wolanie": videoUrl("landing-wolanie.av1.573bcfb9.mp4"),
+  "landing-aeternam": videoUrl("landing-aeternam.av1.256b72ca.mp4"),
 };
 
 /**
