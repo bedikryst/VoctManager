@@ -644,3 +644,129 @@ class ConsentEvidenceTests(NoticeListTestCase):
 
         self.assertEqual(purge_notice_records()['evidence'], 1)
         self.assertFalse(ConcertNoticeSubscription.all_objects.exists())
+
+
+class NoticePreferencesTests(NoticeListTestCase):
+    """
+    Rectification of the greeting (art. 16), reached by the subscriber themselves. The token
+    is the unsubscribe one — the only secret that proves control of the mailbox and already
+    travels in every mail.
+    """
+    preferences_url = reverse('outreach:notice-preferences')
+
+    def _confirmed(self, name: str = '') -> ConcertNoticeSubscription:
+        subscription = ConcertNoticeSubscription.all_objects.create(
+            email='board@example.com', name=name, locale='pl',
+            status=NoticeStatus.CONFIRMED, confirmed_at=timezone.now(),
+            clause_version=NOTICE_CLAUSE_VERSION, surface='web:koncerty',
+        )
+        return subscription
+
+    def test_a_confirmed_subscriber_can_add_a_name(self):
+        """The case the sign-up form silently swallowed: already on the list, no name."""
+        subscription = self._confirmed()
+        resp = self.client.post(
+            self.preferences_url,
+            {'token': subscription.unsubscribe_token, 'name': 'Anna'},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data, {'status': 'ok', 'name': 'Anna'})
+        subscription.refresh_from_db()
+        self.assertEqual(subscription.name, 'Anna')
+
+    def test_an_empty_name_clears_the_greeting(self):
+        """Clearing must be as reachable as setting; `''` is the column's only 'no name'."""
+        subscription = self._confirmed(name='Anna')
+        resp = self.client.post(
+            self.preferences_url,
+            {'token': subscription.unsubscribe_token, 'name': ''},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['name'], '')
+        subscription.refresh_from_db()
+        self.assertEqual(subscription.name, '')
+
+    def test_a_missing_name_field_is_rejected(self):
+        """On a rectification form an absent field means 'said nothing', which cannot be guessed."""
+        subscription = self._confirmed(name='Anna')
+        resp = self.client.post(
+            self.preferences_url, {'token': subscription.unsubscribe_token}, format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        subscription.refresh_from_db()
+        self.assertEqual(subscription.name, 'Anna')
+
+    def test_a_withdrawn_consent_refuses_a_greeting(self):
+        """No letter left to greet — writing here would collect data for an ended purpose."""
+        subscription = self._confirmed()
+        NoticeListService.unsubscribe(subscription.unsubscribe_token)
+        resp = self.client.post(
+            self.preferences_url,
+            {'token': subscription.unsubscribe_token, 'name': 'Anna'},
+            format='json',
+        )
+        self.assertEqual(resp.data['status'], 'withdrawn')
+        subscription.refresh_from_db()
+        self.assertEqual(subscription.name, '')
+
+    def test_an_unknown_token_is_invalid_and_writes_nothing(self):
+        resp = self.client.post(
+            self.preferences_url, {'token': 'nie-ma-takiego', 'name': 'Anna'}, format='json',
+        )
+        self.assertEqual(resp.data, {'status': 'invalid', 'name': ''})
+
+    def test_the_confirm_token_does_not_open_the_preferences(self):
+        """
+        The two secrets have different powers, and this is one of them: a confirmation link
+        printed in an old mail must not become a way to rewrite a live subscription.
+        """
+        subscription = self._confirmed()
+        subscription.confirm_token = 'a-confirmation-secret'
+        subscription.save(update_fields=['confirm_token'])
+        resp = self.client.post(
+            self.preferences_url,
+            {'token': 'a-confirmation-secret', 'name': 'Anna'},
+            format='json',
+        )
+        self.assertEqual(resp.data['status'], 'invalid')
+        subscription.refresh_from_db()
+        self.assertEqual(subscription.name, '')
+
+    def test_the_get_reads_without_acting(self):
+        subscription = self._confirmed(name='Anna')
+        resp = self.client.get(
+            self.preferences_url, {'token': subscription.unsubscribe_token},
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data, {'status': 'ok', 'name': 'Anna'})
+        subscription.refresh_from_db()
+        self.assertEqual(subscription.status, NoticeStatus.CONFIRMED)
+        self.assertEqual(subscription.name, 'Anna')
+
+    def test_a_greeting_change_writes_no_consent_event(self):
+        """The log is for consents granted and withdrawn; a greeting is neither."""
+        subscription = self._confirmed()
+        before = NoticeConsentEvent.objects.filter(subscription=subscription).count()
+        self.client.post(
+            self.preferences_url,
+            {'token': subscription.unsubscribe_token, 'name': 'Anna'},
+            format='json',
+        )
+        after = NoticeConsentEvent.objects.filter(subscription=subscription).count()
+        self.assertEqual(before, after)
+
+    def test_a_pending_subscriber_may_still_fix_a_typo(self):
+        """Not yet on the list, but the name they typed is theirs to correct before confirming."""
+        subscription = ConcertNoticeSubscription.all_objects.create(
+            email='pending@example.com', name='Ana', locale='pl',
+            status=NoticeStatus.PENDING, confirm_sent_at=timezone.now(),
+            clause_version=NOTICE_CLAUSE_VERSION, surface='web:koncerty',
+        )
+        resp = self.client.post(
+            self.preferences_url,
+            {'token': subscription.unsubscribe_token, 'name': 'Anna'},
+            format='json',
+        )
+        self.assertEqual(resp.data['name'], 'Anna')

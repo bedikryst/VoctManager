@@ -8,6 +8,7 @@ from django.urls import path
 from .views import (
     NoticeConfirmView,
     NoticeOneClickUnsubscribeView,
+    NoticePreferencesView,
     NoticeSubscribeView,
     NoticeUnsubscribeView,
 )
@@ -18,6 +19,7 @@ urlpatterns = [
     path('notices/subscribe/', NoticeSubscribeView.as_view(), name='notice-subscribe'),
     path('notices/confirm/', NoticeConfirmView.as_view(), name='notice-confirm'),
     path('notices/unsubscribe/', NoticeUnsubscribeView.as_view(), name='notice-unsubscribe'),
+    path('notices/preferences/', NoticePreferencesView.as_view(), name='notice-preferences'),
     # The token travels in the PATH here, and only here: this is the URI a mail's
     # `List-Unsubscribe` header carries, and RFC 8058 leaves the request body to the
     # standard. The page's own client keeps posting the token to the route above.

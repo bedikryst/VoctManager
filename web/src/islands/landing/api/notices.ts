@@ -22,6 +22,7 @@ const NOTICE_API = {
   subscribe: "/api/outreach/notices/subscribe/",
   confirm: "/api/outreach/notices/confirm/",
   unsubscribe: "/api/outreach/notices/unsubscribe/",
+  preferences: "/api/outreach/notices/preferences/",
 } as const;
 
 /**
@@ -66,6 +67,20 @@ export type UnsubscribeStatus = (typeof UNSUBSCRIBE_STATUSES)[number];
 
 /** Which link the reader followed. The two share a shape and differ only in their outcomes. */
 export type NoticeAction = "confirm" | "unsubscribe";
+
+/**
+ * Answers to the greeting form. `withdrawn` is a real token whose consent has since ended —
+ * distinct from `invalid`, a link that names nobody, because the page says different things
+ * about them and only one of the two is a person.
+ */
+export const PREFERENCE_STATUSES = ["ok", "withdrawn", "invalid"] as const;
+export type PreferenceStatus = (typeof PREFERENCE_STATUSES)[number];
+
+export interface NoticePreferences {
+  readonly status: PreferenceStatus;
+  /** `''` is an answer — a letter with no name — not a missing value. */
+  readonly name: string;
+}
 
 export class NoticeError extends Error {
   constructor(message: string, readonly cause?: unknown) {
@@ -141,4 +156,63 @@ export async function resolveNoticeToken(
     throw new NoticeError(`Notice ${action} returned an unknown status: ${String(status)}`);
   }
   return status as ConfirmStatus | UnsubscribeStatus;
+}
+
+/** Shared shape of both preference calls, refused at the boundary rather than rendered blank. */
+async function parsePreferences(response: Response, what: string): Promise<NoticePreferences> {
+  if (!response.ok) {
+    throw new NoticeError(`Notice ${what} failed: HTTP ${response.status}`);
+  }
+  const payload: unknown = await response.json().catch((cause: unknown) => {
+    throw new NoticeError(`Notice ${what} returned no JSON`, cause);
+  });
+  const body = (typeof payload === "object" && payload !== null ? payload : {}) as {
+    status?: unknown;
+    name?: unknown;
+  };
+  if (typeof body.status !== "string" || !PREFERENCE_STATUSES.includes(body.status as PreferenceStatus)) {
+    throw new NoticeError(`Notice ${what} returned an unknown status: ${String(body.status)}`);
+  }
+  return {
+    status: body.status as PreferenceStatus,
+    // A missing `name` is coerced rather than rejected: the field is legitimately empty far more
+    // often than not, and an absent one means the same thing the empty string does.
+    name: typeof body.name === "string" ? body.name : "",
+  };
+}
+
+/**
+ * Reads the greeting a token's subscription currently carries.
+ *
+ * THE ONE GET IN THIS CLIENT, and it is safe precisely because it reads: RFC 8058's rule that a
+ * GET must not act is what keeps the other three POSTs, since a link scanner would spend them.
+ * A scanner opening this one learns only what is already in the mail it is scanning.
+ */
+export async function readNoticePreferences(token: string): Promise<NoticePreferences> {
+  const url = `${NOTICE_API.preferences}?token=${encodeURIComponent(token)}`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      credentials: "omit",
+    });
+  } catch (cause) {
+    throw new NoticeError(`Network error contacting ${url}`, cause);
+  }
+  return parsePreferences(response, "preferences read");
+}
+
+/**
+ * Rewrites the greeting — rectification under art. 16, which the sign-up form cannot do: it
+ * returns early for an address already on the list and the typed name goes nowhere.
+ *
+ * An empty `name` is a real instruction and clears the field.
+ */
+export async function updateNoticeName(
+  token: string,
+  name: string,
+): Promise<NoticePreferences> {
+  const response = await postJson(NOTICE_API.preferences, { token, name });
+  return parsePreferences(response, "preferences write");
 }

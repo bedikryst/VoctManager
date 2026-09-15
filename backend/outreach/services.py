@@ -67,6 +67,20 @@ class UnsubscribeOutcome(Enum):
     INVALID = 'INVALID'
 
 
+class PreferenceOutcome(Enum):
+    """
+    The answer to a request to read or change how the letter greets someone.
+
+    `WITHDRAWN` is separate from `INVALID` because the two are different facts and the page
+    says different things about them: an unknown token is a dead link, while a withdrawn
+    consent is a live token belonging to somebody we no longer write to — for whom a
+    greeting has nothing left to greet.
+    """
+    OK = 'OK'
+    WITHDRAWN = 'WITHDRAWN'
+    INVALID = 'INVALID'
+
+
 def _public_url(locale: str, param: str, token: str) -> str:
     """
     An absolute link into the public site's notice page. `quote` is belt-and-braces —
@@ -86,6 +100,20 @@ def confirmation_url(subscription: ConcertNoticeSubscription) -> str:
 def unsubscribe_url(subscription: ConcertNoticeSubscription) -> str:
     """The withdrawal link. It goes in every mail this list ever sends."""
     return _public_url(subscription.locale, 'unsubscribe', subscription.unsubscribe_token)
+
+
+def preferences_url(subscription: ConcertNoticeSubscription) -> str:
+    """
+    Where a subscriber changes how the letter greets them. IT CARRIES THE UNSUBSCRIBE TOKEN,
+    not a third secret: that token already proves control of the mailbox, already travels in
+    every mail, and the worst a leaked one can do here — set or clear a greeting in somebody
+    else's letter — is strictly less than the withdrawal it could already perform.
+
+    A SEPARATE PARAMETER FROM `unsubscribe`, though, and that part is not cosmetic. The
+    unsubscribe link acts the moment the page runs; a reader sent to it to fix their name
+    would be removed from the list before the form appeared.
+    """
+    return _public_url(subscription.locale, 'preferences', subscription.unsubscribe_token)
 
 
 def unsubscribe_page_url(token: str) -> str:
@@ -324,10 +352,8 @@ class NoticeListService:
         Ends the processing the consent licensed. The row stays — it is the evidence that
         the consent was lawfully obtained, and that duty outlives the consent itself.
         """
-        subscription = ConcertNoticeSubscription.all_objects.filter(
-            unsubscribe_token=token,
-        ).first()
-        if subscription is None or not token:
+        subscription = cls._by_unsubscribe_token(token)
+        if subscription is None:
             return UnsubscribeOutcome.INVALID
 
         if subscription.status == NoticeStatus.UNSUBSCRIBED:
@@ -359,6 +385,63 @@ class NoticeListService:
 
         cls._withdraw(subscription)
         return True
+
+    @classmethod
+    def read_preferences(cls, token: str) -> tuple[PreferenceOutcome, str]:
+        """
+        What the greeting currently says, for the holder of the unsubscribe token.
+
+        A READ, AND ONLY A READ, so the page may fetch it on arrival with a GET. RFC 8058's
+        rule that a GET must not act is about acting; a link scanner that opens this learns
+        nothing it could not already read in the mail it is scanning, and changes nothing.
+        """
+        subscription = cls._by_unsubscribe_token(token)
+        if subscription is None:
+            return PreferenceOutcome.INVALID, ''
+        if subscription.status == NoticeStatus.UNSUBSCRIBED:
+            return PreferenceOutcome.WITHDRAWN, ''
+        return PreferenceOutcome.OK, subscription.name
+
+    @classmethod
+    def update_name(cls, token: str, name: str) -> tuple[PreferenceOutcome, str]:
+        """
+        Rectification under art. 16, which § 8 of the privacy policy promises for data that is
+        incomplete as well as data that is wrong — an address with no name is the first case,
+        and until now the form had no way to say so: `subscribe()` returns early on a CONFIRMED
+        row and the typed name was dropped on the floor.
+
+        THE EMPTY STRING IS A REAL ANSWER, not a missing one. Clearing the field is how a
+        subscriber asks not to be greeted by name, and it has to be as reachable as setting
+        one; `''` is also the only spelling of "no name" the column allows.
+
+        IT REFUSES A WITHDRAWN CONSENT. There is no letter left to greet, so writing a name
+        onto that row would be collecting personal data for a purpose that has ended — which
+        is the state `purge_notice_records` exists to end, not to enrich.
+
+        NO CONSENT EVENT IS WRITTEN. The log records consents granted and withdrawn; a
+        greeting is neither, and an event that said otherwise would make the evidence harder
+        to read, not easier.
+        """
+        subscription = cls._by_unsubscribe_token(token)
+        if subscription is None:
+            return PreferenceOutcome.INVALID, ''
+        if subscription.status == NoticeStatus.UNSUBSCRIBED:
+            return PreferenceOutcome.WITHDRAWN, ''
+
+        subscription.name = name
+        subscription.save(update_fields=['name', 'updated_at'])
+        logger.info("Concert notice subscription %s updated its greeting.", subscription.id)
+        return PreferenceOutcome.OK, subscription.name
+
+    @staticmethod
+    def _by_unsubscribe_token(token: str) -> ConcertNoticeSubscription | None:
+        """
+        The row a mail's token names. `all_objects`, like every other lookup here: a
+        soft-deleted row is still a row somebody holds a live link into.
+        """
+        if not token:
+            return None
+        return ConcertNoticeSubscription.all_objects.filter(unsubscribe_token=token).first()
 
     @staticmethod
     def _withdraw(subscription: ConcertNoticeSubscription) -> None:

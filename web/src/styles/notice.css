@@ -579,6 +579,35 @@
   opacity: 0.55;
 }
 
+/* The greeting form — the one place /nuntius asks instead of reporting. It wears the band's own
+   `.notice-label`, `.notice-email`, `.notice-error` and `.notice-submit`, so only the arrangement
+   is here: the panel above it is centred prose, and a field inherits that centring unless it is
+   told otherwise. `justify-items: start` inside a box that is itself centred gives a field that
+   reads as a field while the panel stays a panel. */
+.nuntius-form {
+  display: grid;
+  gap: 11px;
+  justify-items: start;
+  margin: clamp(28px, 3.5vw, 40px) auto 0;
+  max-width: 320px;
+  text-align: left;
+}
+
+/* Full width of the form box, not of the panel: an address-length input under a two-word
+   heading would read as the page's main event, which it is not. */
+.nuntius-form .notice-email {
+  font-size: clamp(16px, 1.4vw, 18px);
+}
+
+.nuntius-hint {
+  margin: -3px 0 0;
+  color: rgba(244, 241, 233, 0.45);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  line-height: 1.65;
+}
+
 .nuntius-actions {
   display: flex;
   flex-wrap: wrap;

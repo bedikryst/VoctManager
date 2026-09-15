@@ -41,7 +41,13 @@ export type NoticeState =
   | "unsubscribed"
   | "already_unsubscribed"
   | "missing"
-  | "error";
+  | "error"
+  /** The greeting form, open and waiting. Reached by `?preferences=…`, which — unlike the other
+      two links — asks before it does anything, because there is nothing here to spend. */
+  | "preferences"
+  | "preferences_saved"
+  /** A live token whose consent has since been withdrawn: a real person, no letter to greet. */
+  | "withdrawn";
 
 export interface NoticeStateCopy {
   readonly title: string;
@@ -74,11 +80,27 @@ export interface NoticeFormChrome {
   readonly noscript: string;
 }
 
+/**
+ * The one control on the receipt page — the greeting form. Small enough to be chrome rather than
+ * desk copy, and it has to be: a label printed in Polish under English prose would be a control
+ * the reader cannot read.
+ */
+export interface NoticePreferencesChrome {
+  readonly nameLabel: string;
+  readonly namePlaceholder: string;
+  readonly submit: string;
+  readonly submitting: string;
+  /** What an empty field does. Stated at the control, because "clear it" is not guessable. */
+  readonly clearHint: string;
+  readonly errorSend: string;
+}
+
 export interface NuntiusPageChrome {
   readonly meta: { readonly title: string; readonly description: string };
   /** Latin rubric's vernacular gloss; the Latin `Nuntius` stands unchanged beside it. */
   readonly eyebrow: string;
   readonly states: Readonly<Record<NoticeState, NoticeStateCopy>>;
+  readonly preferences: NoticePreferencesChrome;
   readonly backToConcerts: string;
   readonly backHome: string;
   readonly noscript: string;
@@ -216,6 +238,30 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
           title: "Coś poszło nie tak.",
           body: `Spróbuj otworzyć link jeszcze raz. Jeśli to się powtórzy, napisz na ${CONTACT_MAILBOX}.`,
         },
+        preferences: {
+          title: "Jak mamy się do Ciebie zwracać?",
+          body:
+            "Imię pojawia się wyłącznie w powitaniu listu i nigdzie indziej. Możesz je dodać, " +
+            "zmienić albo usunąć — teraz i kiedykolwiek później.",
+        },
+        preferences_saved: {
+          title: "Zapisane.",
+          body: "Tak zwrócimy się do Ciebie w następnym zaproszeniu.",
+        },
+        withdrawn: {
+          title: "Ten adres jest wypisany.",
+          body:
+            "Nie wysyłamy już na niego nic, więc nie ma listu, w którym moglibyśmy Cię powitać. " +
+            "Jeśli chcesz wrócić na listę, zapisz się jeszcze raz.",
+        },
+      },
+      preferences: {
+        nameLabel: "Imię (nieobowiązkowe)",
+        namePlaceholder: "Anna",
+        submit: "Zapisz",
+        submitting: "Zapisujemy…",
+        clearHint: "Puste pole znaczy list bez imienia.",
+        errorSend: `Nie udało się zapisać. Spróbuj jeszcze raz albo napisz na ${CONTACT_MAILBOX}.`,
       },
       backToConcerts: "Wróć do koncertów",
       backHome: "Strona główna",
@@ -307,6 +353,30 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
           title: "Something went wrong.",
           body: `Try opening the link once more. If it happens again, write to ${CONTACT_MAILBOX}.`,
         },
+        preferences: {
+          title: "How should we address you?",
+          body:
+            "The name appears in the letter's greeting and nowhere else. You may add it, change " +
+            "it or remove it — now and at any time after.",
+        },
+        preferences_saved: {
+          title: "Saved.",
+          body: "That is how we will greet you in the next invitation.",
+        },
+        withdrawn: {
+          title: "This address is unsubscribed.",
+          body:
+            "We send nothing to it any more, so there is no letter in which to greet you. " +
+            "If you would like to come back to the list, sign up again.",
+        },
+      },
+      preferences: {
+        nameLabel: "First name (optional)",
+        namePlaceholder: "Anna",
+        submit: "Save",
+        submitting: "Saving…",
+        clearHint: "An empty field means a letter with no name.",
+        errorSend: `We could not save it. Try again, or write to ${CONTACT_MAILBOX}.`,
       },
       backToConcerts: "Back to the concerts",
       backHome: "Home",
@@ -401,6 +471,30 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
           title: "Quelque chose s'est mal passé.",
           body: `Essayez d'ouvrir le lien une nouvelle fois. Si cela se reproduit, écrivez à ${CONTACT_MAILBOX}.`,
         },
+        preferences: {
+          title: "Comment souhaitez-vous que nous vous appelions ?",
+          body:
+            "Le prénom n'apparaît que dans la salutation de la lettre, nulle part ailleurs. " +
+            "Vous pouvez l'ajouter, le modifier ou le retirer — maintenant et à tout moment.",
+        },
+        preferences_saved: {
+          title: "Enregistré.",
+          body: "C'est ainsi que nous vous saluerons dans la prochaine invitation.",
+        },
+        withdrawn: {
+          title: "Cette adresse est désinscrite.",
+          body:
+            "Nous n'y envoyons plus rien : il n'y a donc pas de lettre dans laquelle vous " +
+            "saluer. Si vous souhaitez revenir sur la liste, inscrivez-vous à nouveau.",
+        },
+      },
+      preferences: {
+        nameLabel: "Prénom (facultatif)",
+        namePlaceholder: "Anne",
+        submit: "Enregistrer",
+        submitting: "Enregistrement…",
+        clearHint: "Un champ vide signifie une lettre sans prénom.",
+        errorSend: `Nous n'avons pas pu l'enregistrer. Réessayez ou écrivez à ${CONTACT_MAILBOX}.`,
       },
       backToConcerts: "Retour aux concerts",
       backHome: "Accueil",

@@ -11,7 +11,11 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from .serializers import NoticeSubscribeSerializer, NoticeTokenSerializer
+from .serializers import (
+    NoticePreferencesSerializer,
+    NoticeSubscribeSerializer,
+    NoticeTokenSerializer,
+)
 from .services import NoticeListService, unsubscribe_page_url
 
 
@@ -88,6 +92,40 @@ class NoticeUnsubscribeView(_PublicOutreachView):
         serializer.is_valid(raise_exception=True)
         outcome = NoticeListService.unsubscribe(serializer.validated_data['token'])
         return Response({'status': outcome.value.lower()})
+
+
+class NoticePreferencesView(_PublicOutreachView):
+    """
+    Reads and rewrites the one field on the row that is a preference rather than evidence:
+    how the letter greets its reader. It is the rectification route art. 16 requires and § 8
+    of the privacy policy promises, reachable by the person themselves instead of by a mail
+    to `rodo@` and somebody's hands in a shell.
+
+    THE GET READS AND THE POST WRITES, which is the ordinary division and here also the safe
+    one: a link scanner opening this learns only what is already in the mail it is scanning.
+    That is why this endpoint, alone among the four, answers a GET at all — the others act,
+    and acting on a GET is what would let a scanner spend a consent (RFC 8058 § 4).
+
+    It shares `notice_manage` with the confirmation and unsubscribe views: like them, this is
+    a link follow-up from a mailbox, and nobody has a reason to rename themselves more than a
+    few times an hour.
+    """
+    throttle_scope = 'notice_manage'
+
+    def get(self, request: Request) -> Response:
+        outcome, name = NoticeListService.read_preferences(
+            request.query_params.get('token', ''),
+        )
+        return Response({'status': outcome.value.lower(), 'name': name})
+
+    def post(self, request: Request) -> Response:
+        serializer = NoticePreferencesSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        outcome, name = NoticeListService.update_name(
+            serializer.validated_data['token'],
+            serializer.validated_data['name'],
+        )
+        return Response({'status': outcome.value.lower(), 'name': name})
 
 
 class NoticeOneClickUnsubscribeView(_PublicOutreachView):

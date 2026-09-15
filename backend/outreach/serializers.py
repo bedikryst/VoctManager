@@ -65,6 +65,20 @@ class NoticeSubscribeSerializer(serializers.Serializer):
         return value
 
 
+class NoticePreferencesSerializer(serializers.Serializer):
+    """
+    A change to how the letter greets somebody, authenticated by the unsubscribe token.
+
+    `name` IS REQUIRED HERE, unlike on the sign-up form, and the difference is the point: at
+    sign-up an absent field means "the reader did not fill this in", while on a rectification
+    form it would mean "the reader did not say what to do" — and the one thing this endpoint
+    may not do is guess. An empty string is still accepted and still means an unnamed letter;
+    it is how the field is cleared, which art. 16 requires to be as reachable as setting it.
+    """
+    token = serializers.CharField(max_length=64, trim_whitespace=True)
+    name = serializers.CharField(max_length=80, allow_blank=True, trim_whitespace=True)
+
+
 class NoticeTokenSerializer(serializers.Serializer):
     """
     The token carried by a confirmation or unsubscribe link.
