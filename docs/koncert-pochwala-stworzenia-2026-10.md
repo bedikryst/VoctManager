@@ -1043,9 +1043,11 @@ does is settle facts the page prints, and move one thing on it.
   the angel. Printed as a clasp on work 09.
 - **Q5 does Radu play the Pärt? CLOSED — he does not.** The binder writes **„org. solo"** against
   *Spiegel im Spiegel*, against „Radu (+org.)" for the Massenet and „Radu solo" for the *Ménétrier*.
-  So the organ carries the mirror alone and the violin is a guest appearing twice, not the evening's
-  continuous voice. `programArc`'s „grany z galerii na organach" was already right and is now exact.
-  It also collapses §9's proportion worry: the violin plays two items, not four.
+  He confirmed it in his own words the same afternoon: „Radu gra Masseneta Meditation z organami /
+  Enescu (Menetrier) solo / Lark'a z VE" — **three items, and not the Pärt.** So the organ carries
+  the mirror alone and the violin is a guest rather than the evening's continuous voice.
+  `programArc`'s „grany z galerii na organach" was already right and is now exact, and §9's
+  proportion worry collapses: three items, not four, and the longest of them is sung with the choir.
 - **Q2 is the Orff a speaking chorus? STILL OPEN, with a hint.** His note says Orff builds the piece
   „z powtarzalnej recytacji i intensywnego rytmu" and ends it on an „Amen", and his bracket for the
   work reads `[a8]`. Recitation in eight parts is suggestive and is not an answer; if the choir

@@ -75,6 +75,12 @@ page.koncerty.officia.lede: "Une messe, une solennité, un mariage : le programm
 # La bande d'inscription, telle que la superposition la porte déjà — recopiée ici pour que ce
 # brouillon reflète le dépôt. Seul `h2` change : « prévenir » veut un objet.
 page.koncerty.notice.h2: "Nous vous préviendrons des concerts à venir."
-page.koncerty.notice.lede: "Une lettre pour une soirée : le lieu, l'heure, le programme. Rien de plus."
+# « UNE LETTRE POUR UNE SOIRÉE » EST LA FORMULE ÉCARTÉE et ne doit pas revenir. Le polonais s'en est
+# détourné délibérément (voir le commentaire de `lede` dans `content/pages/koncerty.yaml`) : ici la
+# fréquence EST l'offre, et « une lettre pour une soirée » peut se lire comme une lettre chaque
+# soir. Elle doit aussi dire « concert » et non « soirée », le mot propre au site : c'est la bande
+# qu'un inconnu croise en parcourant la page. Cette ligne était restée périmée dans le brouillon
+# après la correction du polonais et en a été reproposée une fois ; elle reflète de nouveau le dépôt.
+page.koncerty.notice.lede: "Une courte lettre avant chaque concert : le lieu, l'heure, le programme. Rien de plus."
 page.koncerty.notice.sentTitle: "Vérifiez votre boîte."
 page.koncerty.notice.sentBody: "Nous avons envoyé une demande de confirmation. L'adresse n'est conservée qu'une fois le lien de ce message suivi."

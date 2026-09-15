@@ -72,6 +72,12 @@ page.koncerty.officia.lede: "A Mass, a solemnity, a wedding: the programme is th
 # repository. It never says the reader is subscribed: nothing is stored as consent until the link
 # in the mail is clicked.
 page.koncerty.notice.h2: "We will let you know about upcoming concerts."
-page.koncerty.notice.lede: "One letter for one evening: the place, the hour, the programme. Nothing else."
+# „ONE LETTER FOR ONE EVENING” IS THE REJECTED WORDING AND MUST NOT COME BACK. The Polish moved off
+# it deliberately (see the comment on `lede` in `content/pages/koncerty.yaml`): the frequency IS the
+# offer here, and „one letter for one evening” can be read as one letter EVERY evening. It also has
+# to say „concert” rather than the site's own „evening”, because this is the band a stranger meets
+# while scanning. This row stood stale in the draft after the Polish was corrected and was
+# re-proposed from it once; it now mirrors the repository again.
+page.koncerty.notice.lede: "One short letter before each concert: the place, the hour, the programme. Nothing else."
 page.koncerty.notice.sentTitle: "Check your mailbox."
 page.koncerty.notice.sentBody: "We have sent a request to confirm. The address is kept only once you follow the link in that message."
