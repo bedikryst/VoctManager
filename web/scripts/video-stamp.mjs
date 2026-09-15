@@ -39,12 +39,21 @@ async function stamp(file) {
   return hash.digest("hex").slice(0, 8);
 }
 
-/** `landing-modal.av1.21190d6c.mp4` → `{ base: "landing-modal.av1", token: "21190d6c" }` */
+/**
+ * `landing-modal.av1.21190d6c.mp4` → `{ key: "landing-modal", av1: true, token: "21190d6c" }`
+ *
+ * `.av1` is a segment of the name, not a second extension: both renditions are MP4, so the
+ * container cannot say which codec is inside and the name has to. It is stripped here because
+ * the two encodes of one film share a KEY in videos.ts and differ only by which map they land
+ * in — printing them as separate names is what made this output misleading.
+ */
 function split(name) {
   const parts = name.split(".");
   const ext = parts.pop();
   const token = TOKEN.test(parts.at(-1) ?? "") ? parts.pop() : undefined;
-  return { base: parts.join("."), token, ext };
+  const av1 = parts.at(-1) === "av1";
+  if (av1) parts.pop();
+  return { key: parts.join("."), av1, token, ext };
 }
 
 const verify = process.argv.includes("--verify");
@@ -59,9 +68,9 @@ const named = [];
 let mismatched = 0;
 
 for (const file of files) {
-  const { base, token, ext } = split(file);
+  const { key, av1, token, ext } = split(file);
   const actual = await stamp(path.join(VIDEO_DIR, file));
-  const next = `${base}.${actual}.${ext}`;
+  const next = `${key}${av1 ? ".av1" : ""}.${actual}.${ext}`;
 
   if (verify) {
     const ok = token === actual;
@@ -73,7 +82,7 @@ for (const file of files) {
   } else {
     console.log(`${file} (already stamped)`);
   }
-  named.push({ base, name: next });
+  named.push({ key, av1, name: next });
 }
 
 if (verify) {
@@ -88,5 +97,23 @@ if (verify) {
   process.exit(0);
 }
 
-console.log("\n— literals for src/lib/videos.ts —\n");
-for (const { base, name } of named) console.log(`  "${base}" → videoUrl("${name}")`);
+// Printed as the two maps they belong to, not as six loose filenames: a film is ONE key with an
+// H.264 name in VIDEO_ASSETS and an AV1 name in VIDEO_ASSETS_AV1. A film missing half its pair
+// is called out here, because the type annotation in videos.ts is what would otherwise catch it
+// and only after someone has already pasted a half-finished block.
+const block = (wanted) =>
+  named
+    .filter((n) => n.av1 === wanted)
+    .map(({ key, name }) => `  "${key}": videoUrl("${name}"),`)
+    .join("\n");
+
+console.log("\n— src/lib/videos.ts, VIDEO_ASSETS —\n");
+console.log(block(false));
+console.log("\n— src/lib/videos.ts, VIDEO_ASSETS_AV1 —\n");
+console.log(block(true));
+
+const keys = new Set(named.map((n) => n.key));
+const unpaired = [...keys].filter((k) => named.filter((n) => n.key === k).length !== 2);
+if (unpaired.length > 0) {
+  console.log(`\n[video-stamp] no codec pair for: ${unpaired.join(", ")} — every film ships twice.`);
+}
