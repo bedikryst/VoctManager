@@ -928,12 +928,31 @@ prints a window and never a duration, and nobody expects a concert to stop on th
 
 ---
 
-## §15 The conductor's final repertoire description (15.09.2026) — the programme book arrives
+## §15 The programme book, and the running order finally settled (15.09.2026)
 
-What came: the running order marked final **again**, a convention table (PL `ur. / oprac. / rew. /
-wer.` against EN `b. / arr. / rev. / ver.`), four `nb` corrections, the Canticle laid out in four
-columns (Umbrian · modern Italian · Polish · French), **a Canticle stanza assigned to every single
-item** including the Pärt and the encore, and a commentary paragraph per work.
+**Two documents arrived the same afternoon and only the second is authoritative on the order.**
+
+The first is the **programme book's own text**: the running order marked final again, a convention
+table (PL `ur. / oprac. / rew. / wer.` against EN `b. / arr. / rev. / ver.`), four `nb` corrections,
+the Canticle laid out in four columns (Umbrian · modern Italian · Polish · French), **a Canticle
+stanza assigned to every single item** including the Pärt and the encore, and a commentary paragraph
+per work.
+
+The second is the **score binder**, sent as a correction an hour later: page numbers (p. 03 … p. 66),
+the choral works numbered 01–08 with the bis as 09, the two violin items marked `►` and unnumbered
+because they have no choral part, and — the thing that matters — **the five Pärt episodes numbered
+I–V, each in a named place.** Where the two disagree about the order, the binder wins: it is what
+the singers will be holding.
+
+**Neither is copy for this site.** The page is an invitation and stays one (§12): ten five-sentence
+paragraphs of provenance are exactly what that pass removed, and twelve identically-shaped Canticle
+citations are the checklist §3 and §9 both refuse. What the documents do is settle facts the page
+prints, and move one thing on it.
+
+**The binder's numbering is NOT the page's and must not become it.** It numbers what the choir has
+music for; the page numbers what the audience hears as a work, which is why the violin items are 04
+and 08 there and `►` in the binder, and why `programLede` still says „Dziesięć utworów i jedno
+lustro". Two documents, two jobs.
 
 **This is the programme book, not copy for this site.** The page is an invitation and stays one
 (§12): ten five-sentence paragraphs of provenance are exactly what that pass removed, and twelve
@@ -942,22 +961,20 @@ does is settle facts the page prints, and move one thing on it.
 
 ### What changed in the corpus
 
-1. **The third Pärt return moved from the fiddler to the requiem.** The order is now
-   `wstęp · 01 · 02 · ↩ · 03 · 04 · 05 · ↩ · 06 · 07 · 08 · 09 · ↩ · 10 · ↩ · bis` — five soundings
-   still, but the clasps hang off works **02, 05, 09 and 10**, where §10 had 02, 05, 08 and 10. So
-   `clasp` left `program[7]` (Ménétrier) and now sits on `program[8]` (Dona eis requiem I).
-   `ritornello.times: 5` is unchanged and `programArc`'s „między grupami utworów" still holds — the
-   fourth group is simply one work long.
-   **This closes §14 Q7**: the last structural return falls between the requiem and the angel,
-   which is exactly what §9's account always claimed and what §10's order contradicted. His own new
-   note on *Stetit Angelus* says it in words — „Po ostatnim powrocie *Spiegel im Spiegel* otwiera
-   się zupełnie inna przestrzeń".
-   ⚠ **One thing in his document contradicts itself and the booklet will have to settle it:** the
-   episode he labels `[zakończenie]` is the fourth of five, and a further unlabelled *Spiegel*
-   stands after *Stetit Angelus*, before the encore. Either that trailing one is the evening's
-   dissolve into the bis (taken here — five soundings, four clasps), or it is a leftover from the
-   previous list and the evening really ends on the angel (four soundings, `times: 4`). The page
-   prints four clasps either way; only the count in `ritornello` would move.
+1. **The Pärt's five places are fixed, and §14 Q7 is CLOSED.** In the page's own numbering the
+   evening runs
+   `↩I · 01 · 02 · ↩II · 03 · 04 · 05 · ↩III · 06 · 07 · 08 · ↩IV · 09 · ↩V · 10 · bis`,
+   so the clasps hang off works **02, 05, 08 and 09** — corpus indices 1, 4, 7 and 8 — and
+   `ritornello.times: 5` is unchanged.
+   **Nothing returns after *Stetit Angelus*.** The fifth episode stands immediately before it, which
+   is what §9's account always claimed and what both §10's order and the morning's list contradicted.
+   The evening ends on the angel, then the bis.
+   ⚠ **The morning's list was wrong twice and this cost one wrong edit, recorded so nobody repeats
+   it:** it labelled the fourth episode `[zakończenie]`, omitted the return after *Ménétrier*, and
+   put a spurious one after the angel. Read literally it said the clasp had MOVED from the fiddler
+   to the requiem; the binder says the fiddler keeps its return and the requiem gains one — two
+   clasps, not a move — and the angel loses the one it had. **The order of the ten works has never
+   changed through any of this**; only the mirror has.
 2. **`Ménétrier` has a `voicing` at last: „skrzypce solo".** **This closes §14 Q1**, and not the way
    the question was framed. The movement is not violin-and-piano played without a piano — it is the
    **only** movement of *Impressions d'enfance* written for violin alone, which is why the fiddler
@@ -995,7 +1012,10 @@ does is settle facts the page prints, and move one thing on it.
   already true on the page: `voicing` says the arrangement and the note calls the piece an interlude
   in an opera, so nothing claims 1894 scored it this way.
 - **The Orff nb** confirms *Concento di voci*, which the note already names.
-- Per-work voicings match §13's score-folder reading item for item.
+- Per-work voicings match §13's score-folder reading item for item, the encore's `a 4` included
+  („Voces do What a Wonderful World to [a4]").
+- **The two violin items keep their places**, between the Orff and *Stars* and between *Stoi lód* and
+  the requiem. Through three running orders in five days the order of the works has never moved.
 
 ### What was offered and deliberately NOT taken
 
@@ -1018,18 +1038,25 @@ does is settle facts the page prints, and move one thing on it.
 
 - **Q1 Ménétrier — organ or alone? CLOSED.** Solo, by the composer's design. Printed.
 - **Q4 requiem capitalisation? CLOSED.** Lower-case, per his own newest artefact. Nothing to change.
-- **Q7 where the last Pärt falls? CLOSED.** Between the requiem and the angel. Printed as a clasp.
+- **Q7 where the last Pärt falls? CLOSED.** Immediately before *Stetit Angelus*, and nothing follows
+  the angel. Printed as a clasp on work 09.
+- **Q5 does Radu play the Pärt? CLOSED — he does not.** The binder writes **„org. solo"** against
+  *Spiegel im Spiegel*, against „Radu (+org.)" for the Massenet and „Radu solo" for the *Ménétrier*.
+  So the organ carries the mirror alone and the violin is a guest appearing twice, not the evening's
+  continuous voice. `programArc`'s „grany z galerii na organach" was already right and is now exact.
+  It also collapses §9's proportion worry: the violin plays two items, not four.
 - **Q2 is the Orff a speaking chorus? STILL OPEN, with a hint.** His note says Orff builds the piece
   „z powtarzalnej recytacji i intensywnego rytmu" and ends it on an „Amen", and his bracket for the
   work reads `[a8]`. Recitation in eight parts is suggestive and is not an answer; if the choir
   really speaks Francis' Umbrian it is still the evening's strongest dramaturgical fact and still
   belongs in that work's `locus`.
-- **Q5 does Radu play the Pärt? STILL OPEN, with a hint that points the other way.** The bracket on
-  *Spiegel im Spiegel* reads `[wer. na organy]` where the Massenet's reads `[vn + org.]`. He
-  distinguishes the two, which suggests the Pärt is organ alone and the violin is a guest appearing
-  three times. Nothing printed depends on it; the programme book would open on it.
-- **Q3 (which Carter arranged the bis), Q6 (Ania's horizontal kinship against the concept's vertical
-  relation) and Q8 (the roster) are untouched.** On Q6 the new document cuts slightly against §9:
+- **Q8 the roster — ANSWERED, and the answer is „not yet".** His words: „Muzyków jeszcze nie mamy
+  zebranych do obsady — w trakcie." So `Voces` stays absent, as designed, and there is now a second
+  name missing besides the singers: **nobody is credited for the organ**, which after this list is
+  the evening's most present instrument (five episodes plus the Massenet) while `realizacja` names
+  only the violinist.
+- **Q3 (which Carter arranged the bis) and Q6 (Ania's horizontal kinship against the concept's
+  vertical relation) are untouched.** On Q6 the new document cuts slightly against §9:
   its commentary is full of „brat słońce", „brat wiatr", „siostra, matka ziemia", and only the
   opening *Spiegel* entry carries the vertical claim (Gen 1:27). The page says nothing either way —
   but if creature imagery was struck from the poster on the vertical argument, his own book is now
@@ -1037,17 +1064,21 @@ does is settle facts the page prints, and move one thing on it.
 
 ### Still open after this pass
 
-Everything §13 left open stands, minus the three questions above. Added:
+Everything §13 left open stands, minus Q1, Q4, Q5 and Q7, with Q8 answered „not yet". Added:
 
-- **⚠ EN and FR are stale until the desk runs.** Four rows per locale changed or appeared:
-  `program.6.locus`, `program.7.note`, `program.8.note`, `program.8.inscriptioGloss`, plus
-  `program.7.clasp` → `program.8.clasp`. The drafts are written; the overlays are not, and must not
-  be hand-written (`copydesk/propose.mjs` says why — a hand-written overlay has no provenance and
-  the desk can never mark it stale). Until `copy:sync` → `copy:propose` → `copy:apply` has run,
-  `/en|fr/koncerty/pochwala-stworzenia` prints the OLD water sentence under Stoi lód and the Polish
+- **⚠ EN and FR are stale until the desk runs.** Five rows per locale changed or appeared:
+  `program.6.locus`, `program.7.note`, `program.8.note`, `program.8.inscriptioGloss` and the new
+  `program.8.clasp`. The drafts are written; the overlays are not, and must not be hand-written
+  (`copydesk/propose.mjs` says why — a hand-written overlay has no provenance and the desk can never
+  mark it stale). Until `copy:sync` → `copy:propose` → `copy:apply` has run,
+  `/en|fr/koncerty/pochwala-stworzenia` prints the OLD water sentence under *Stoi lód* and the Polish
   gloss under the requiem's new Latin incipit. **Do not deploy between this commit and that run.**
-  The orphaned `program.7.clasp` was deleted from both overlays by hand, which is cleanup and not a
-  translation.
+  Two overlay edits were made by hand and are NOT translations: `program.9.clasp` deleted (that row
+  has no clasp any more) and `program.7.clasp` restored after the morning's list had it wrongly
+  removed. `copy:sync` had not run in between, so the desk's mirror never saw either.
+- **Nobody is credited for the organ.** `realizacja` reads „Skrzypce: Radu Ropotan" and the organ now
+  plays five of the evening's sixteen items plus the Massenet. When the line-up firms up this wants
+  to become „Skrzypce: … · Organy: …", which is one corpus row and one desk row per locale.
 - **`voicing`, `years` and `year` are not on the desk and are printed raw in every locale.** So
   `/en/` and `/fr/` print „ur. 1934" and „skrzypce solo" and „1914 · rew. 1920 · oprac. Paul Drayton
   2019". This is **corpus-wide and not this evening's** — 24 „ur." rows and several Polish voicings,
