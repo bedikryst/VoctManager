@@ -4,7 +4,7 @@
 # `o-nas.ts` held all three locales in TypeScript literals from before the copy desk existed, which
 # left the site's founding text as the one page no editor could reach and no reviewer could accept
 # a word of: `copy:apply` writes YAML and rewrites overlays, and it has never been able to write a
-# `.ts` file at all. See docs/web-copy-desk-2026-09.md §6r and the stage that closed it.
+# `.ts` file at all. See docs/specs/web-copy-desk-2026-09.md §6r and the stage that closed it.
 #
 # WHAT IS NOT HERE, because something else already owns it:
 #

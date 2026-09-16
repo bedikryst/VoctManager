@@ -13,7 +13,7 @@
  *  lives in `src/content/pages/kontakt.yaml` (Polish, the desk's source) with its translations in
  *  `src/content/pages.{en,fr}.yaml`, falling back per field — and `copy:apply` writes both with
  *  the tools it already has. It is the same line `koncert.ts` draws between the page talking and
- *  the concert talking. Reasoning in docs/web-copy-desk-2026-09.md §6r.
+ *  the concert talking. Reasoning in docs/specs/web-copy-desk-2026-09.md §6r.
  *
  *  THIS FILE IS IMPORTED BY NODE, not only by Vite: the desk's extractor reads the contract below
  *  straight from here (type-stripping, no build step), so that the key a translation is stored

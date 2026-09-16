@@ -143,7 +143,7 @@ reset-test-data:
 #                     Commits nothing — the diff is the review.
 #
 # The full reasoning, and the three failures worth recognising on sight, are in
-# docs/web-copy-desk-2026-09.md §6m.
+# docs/specs/web-copy-desk-2026-09.md §6m.
 copy-sync:
 	cd web && npm run copy:sync
 

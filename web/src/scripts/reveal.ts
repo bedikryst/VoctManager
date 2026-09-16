@@ -32,7 +32,7 @@ const MIN_GAP_MS = 70;
  * The trigger line, as a whole-number percentage of the viewport inset from its bottom edge: a
  * node enters when its top crosses 88% vh. Kept as an integer because the same number is read
  * twice — once as a `rootMargin` string, once as a ratio by `outOfReach` — and `0.12 * 100` is
- * not 12 in binary floating point. The whole timing budget in docs/web-reveal-remediation.md is
+ * not 12 in binary floating point. The whole timing budget in docs/archive/web-reveal-remediation.md is
  * measured against this line; moving it re-times every register on the site.
  */
 const TRIGGER_INSET_PCT = 12;
@@ -219,7 +219,7 @@ export function setupReveal(root: ParentNode, { reduce, cadence }: RevealOptions
     // was quietly setting the tempo — which is the defect that made the subpage observer differ
     // from this one in the first place. A zero threshold against an inset root fires when the top
     // edge crosses 88% of the viewport, identically for every node, which is what the queue needs
-    // as input and what the whole timing budget in docs/web-reveal-remediation.md is measured
+    // as input and what the whole timing budget in docs/archive/web-reveal-remediation.md is measured
     // against. Same shape setupManifestLight uses.
     { threshold: 0, rootMargin: `0px 0px -${TRIGGER_INSET_PCT}% 0px` },
   );

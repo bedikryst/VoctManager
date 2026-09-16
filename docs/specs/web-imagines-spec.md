@@ -312,7 +312,7 @@ the entrances above localize themselves — the footer's Index column and the re
 now point a foreign reader at their own archive. Two things came with it: a venue's name is a label
 this site publishes in three languages (`i18n/content/miejsca.ts`), which also fixed the Polish run
 heads every foreign concert page had carried since its own fork; and the scale line's nouns decline
-per locale. Recorded in docs/web-copy-desk-2026-09.md §6x. **"No nav slot" still holds** — nothing
+per locale. Recorded in docs/specs/web-copy-desk-2026-09.md §6x. **"No nav slot" still holds** — nothing
 about being translated makes the archive a fifth voice in the bar.
 
 ## 8. Stage 4 — the `Imagines` band on the landing — SHIPPED

@@ -174,7 +174,7 @@ class NoticeListService:
     THE LIST IS NOT A MAILING TOOL. Everything here is about establishing and ending a
     consent; sending the notice itself is deliberately absent, because the evening it
     would announce does not exist yet (that is what /koncerty's `Nondum` station says).
-    See docs/web-notice-list-2026-09.md for why that is a decision rather than an omission.
+    See docs/specs/web-notice-list-2026-09.md for why that is a decision rather than an omission.
     """
 
     @staticmethod

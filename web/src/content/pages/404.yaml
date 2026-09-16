@@ -11,7 +11,7 @@
 #     "Strona główna", "O nas" and "Kontakt" are `i18n/ui.ts`; "Koncerty Duchowe" is the cycle's
 #     name, which `i18n/content/koncert.ts` owns for the breadcrumb. A way out of a blank leaf
 #     must be called what the nav calls it — a reader who cannot match the two is being offered a
-#     fifth destination. docs/web-copy-desk-2026-09.md §6y: printed twice, read twice.
+#     fifth destination. docs/specs/web-copy-desk-2026-09.md §6y: printed twice, read twice.
 #
 # THE REGISTER IS `vacat` — the bibliographic term for a leaf a book leaves blank. The page does
 # not apologise and does not explain the error; it names the blank and points back into the

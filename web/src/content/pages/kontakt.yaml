@@ -6,7 +6,7 @@
 # proven, for YAML (`copydesk/yamlEdit.mjs`, four reconstruction proofs). Holding this prose in a
 # `.ts` literal would mean a SECOND implementation of that operation — and a worse one, since every
 # accepted French sentence and every `<a href="…">` would have to survive string escaping that can
-# corrupt the file while leaving it parseable. See docs/web-copy-desk-2026-09.md §6r.
+# corrupt the file while leaving it parseable. See docs/specs/web-copy-desk-2026-09.md §6r.
 #
 # The page's CHROME went the other way, to `src/i18n/content/kontakt.ts`, and the line between them
 # is not "prose vs label" but whether completeness can be demanded: an aria-label must exist in all

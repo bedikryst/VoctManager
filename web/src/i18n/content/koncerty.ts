@@ -17,7 +17,7 @@
  *  DEMANDED. An aria-label must exist in every locale or the page is broken for somebody, and
  *  `Record<Locale, …>` makes the compiler say so. A paragraph arrives one field at a time through
  *  review, and the English page has to stand with English chrome around Polish prose for as long
- *  as that takes. Reasoning in docs/web-copy-desk-2026-09.md §6r.
+ *  as that takes. Reasoning in docs/specs/web-copy-desk-2026-09.md §6r.
  *
  *  THIS FILE IS IMPORTED BY NODE, not only by Vite: the desk's extractor reads the contract below
  *  straight from here (type-stripping, no build step), so that the key a translation is stored

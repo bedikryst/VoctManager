@@ -77,7 +77,7 @@ export const PAGE_SPECS = [
   PRIVACY_PAGE,
   // On the desk, but NOT in TRANSLATED_ROUTES — the two switches are independent, and this page
   // is on the first only: Florent edits its Polish, and the English and French wait until that
-  // Polish stops moving (docs/web-copy-desk-2026-09.md §2).
+  // Polish stops moving (docs/specs/web-copy-desk-2026-09.md §2).
   PRESS_PAGE,
 ];
 

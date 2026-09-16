@@ -9,7 +9,7 @@
  *  frame's `caption`, forty-three captions carried nine distinct facts: `/obrazy` printed
  *  "Koncert 9 Kart w Bazylice NSPJ w Krakowie" six times consecutively under a three-column grid,
  *  and Hymn Poległym printed its own heading back at the reader four times. Repetition at that
- *  density is not redundancy, it is the tell of a template — see docs/web-imagines-spec.md §16.
+ *  density is not redundancy, it is the tell of a template — see docs/specs/web-imagines-spec.md §16.
  *
  *  A run is drawn from ADJACENCY, never by collecting matches from across the gallery. Two visits
  *  to the same church a year apart are two runs and must stay two, and the frames are stored in

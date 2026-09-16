@@ -59,7 +59,7 @@ before** the register, so the register itself is still purely typographic, entry
 What the rule was never about is photography on the landing, which the page is full of — the hero
 bleed, ImageRite, the Director portrait, the Vox poster, the FinalSupport backdrop. A site that
 declines to show its own documentary photographs is not restrained, it is hiding, and the founder's
-complaint that started `docs/web-imagines-spec.md` was exactly that. So the test for anything similar
+complaint that started `docs/specs/web-imagines-spec.md` was exactly that. So the test for anything similar
 is not "is there a photograph here" but **"does a row of the register now carry a face?"**
 
 Two constraints the band carries because of this, both load-bearing: it is a **line, never a grid**
@@ -970,7 +970,7 @@ back onto a bottom border, and do not give the lead register its own trigger lin
 for anything — two trigger lines invert the order of neighbouring nodes (a wrapper's rule would
 draw *after* the rows it opens). One trigger line for every register is a correctness requirement.
 
-Remediation is sequenced in `docs/web-reveal-remediation.md` — read that before retuning any
+Remediation is sequenced in `docs/archive/web-reveal-remediation.md` — read that before retuning any
 timing here, and note its `Rejected` section (left→right on body copy, and line-by-line reveals)
 before proposing either.
 

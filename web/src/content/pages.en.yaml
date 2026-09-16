@@ -1,7 +1,7 @@
 # pages.en.yaml — the EN overlay over the static pages' Polish in src/content/pages/.
 #
 # MACHINE-WRITTEN by `npm run copy:apply`, which is the write direction of the copy desk
-# (docs/web-copy-desk-2026-09.md §6c). Every key is a copy-desk segment key; the Polish it
+# (docs/specs/web-copy-desk-2026-09.md §6c). Every key is a copy-desk segment key; the Polish it
 # renders sits at the matching path in that page's own file, which holds no translations at all.
 #
 # FALLBACK IS PER FIELD. A key missing here prints its Polish, beside fields that print this
@@ -89,10 +89,10 @@ page.koncerty.next.cta: "Help it ring out →"
 page.koncerty.next.essence: "This concert already exists in the scores and the rehearsals — all it lacks is the space in which to ring out. Donations bring its date closer."
 page.koncerty.next.meta: "Its date and space will be set by donors"
 page.koncerty.next.title: "A concert with no date."
-page.koncerty.notice.h2: "We will let you know about upcoming concerts."
-page.koncerty.notice.lede: "One short letter before each concert: the place, the hour, the programme. Nothing else."
-page.koncerty.notice.sentBody: "We have sent a request to confirm. The address is kept only once you follow the link in that message."
-page.koncerty.notice.sentHint: "The letter comes from VoctEnsemble. If it is not in your inbox, look in the promotions folder or in spam."
+page.koncerty.notice.h2: "See you there."
+page.koncerty.notice.lede: "Leave your email. We will let you know about our concerts."
+page.koncerty.notice.sentBody: "Confirm your place through the message from VoctEnsemble."
+page.koncerty.notice.sentHint: "The message may land in promotions or spam. The link is valid for seven days."
 page.koncerty.notice.sentTitle: "Check your mailbox."
 page.koncerty.officia.eyebrow: "Outside the cycle"
 page.koncerty.officia.h2: "We also sing where the music serves a rite."

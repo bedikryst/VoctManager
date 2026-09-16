@@ -121,7 +121,7 @@
      photographs are 3:2 and their horizontality IS their subject — a nave is wide — and a 1:1
      panel keeps two thirds of that width where 4:5 kept barely half. Five across the plate are
      316px at and above the measure and ~230px at the breakpoint below, which stays clear of the
-     240×160 at which docs/web-imagines-spec.md §2 says these frames become black rectangles. */
+     240×160 at which docs/specs/web-imagines-spec.md §2 says these frames become black rectangles. */
   .imagines-media {
     display: block;
     position: relative;

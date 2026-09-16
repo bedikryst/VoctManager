@@ -86,7 +86,7 @@ function header(locale, corpus) {
     `# ${corpus}.${locale}.yaml — the ${locale.toUpperCase()} overlay over ${over.over}.`,
     "#",
     "# MACHINE-WRITTEN by `npm run copy:apply`, which is the write direction of the copy desk",
-    "# (docs/web-copy-desk-2026-09.md §6c). Every key is a copy-desk segment key; the Polish it",
+    "# (docs/specs/web-copy-desk-2026-09.md §6c). Every key is a copy-desk segment key; the Polish it",
     `# renders sits at the matching path in ${over.at}`,
     "#",
     "# FALLBACK IS PER FIELD. A key missing here prints its Polish, beside fields that print this",

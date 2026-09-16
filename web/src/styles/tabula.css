@@ -10,7 +10,7 @@
  *  a full-bleed threshold in each evening's own candle and prints the evening's head under it, a
  *  concert page prints `kd-section-label` at the head of every band — and both say it exactly once,
  *  at a threshold the reader has already crossed. What neither says after the first screen is WHERE
- *  ELSE YOU MAY GO. `/obrazy` authored that answer (docs/web-imagines-spec.md §20) and measured that
+ *  ELSE YOU MAY GO. `/obrazy` authored that answer (docs/specs/web-imagines-spec.md §20) and measured that
  *  its head cannot clear the fold at any desktop size, so the index it built is legible for about
  *  one scroll gesture of a 15 500px document. This is that index, given back on the gesture that
  *  asks for it: turning back in a book is asking where you are, and the breviary's answer to that

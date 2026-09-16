@@ -5,7 +5,7 @@ chorister, and what was deliberately left alone. `Still open` is the only sectio
 follow-up session has to read before deciding what to do next; the rest is reasoning
 you only need when you are about to change one of these surfaces.
 
-Sibling record: `docs/call-sheet-remediation.md` (the printed day card). This one is
+Sibling record: `docs/specs/call-sheet-remediation.md` (the printed day card). This one is
 about everything *outside* the PDF.
 
 ---

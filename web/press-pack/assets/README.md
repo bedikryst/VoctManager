@@ -13,5 +13,5 @@ again.
 every number was invented — reverb ≥ 2 s, a 6 × 4 m platform, 12–14 voices, 60–75 minutes — and all
 of it was deleted rather than corrected. The rider returns when the ensemble writes one.
 
-`docs/web-press-pack-2026-09.md` §3 carries the request to send them, including what the page has
+`docs/specs/web-press-pack-2026-09.md` §3 carries the request to send them, including what the page has
 to be able to say once it arrives.

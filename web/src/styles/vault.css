@@ -27,7 +27,7 @@
    clamp(58px, 19vw, 92px) at ≤640). A dead token that disagrees with the one it claims to mirror
    is worse than no token: it reads as a scale the subpages are already on. THEY ARE NOT. Subpage
    type is authored per page, and the landing's display scale is sized for a one-screen hero, not
-   for an 8000px programme book — see docs/web-concert-detail-remediation.md §1. */
+   for an 8000px programme book — see docs/specs/web-concert-detail-remediation.md §1. */
 :root {
   --candle-rgb: 198 164 91;
   --candle-blue-rgb: 27 45 96;

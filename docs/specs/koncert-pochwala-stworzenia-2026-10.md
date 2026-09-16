@@ -2,8 +2,8 @@
 
 Working record for the next Koncert Duchowy, gathered 2026-09-07 from Florent's programme note,
 the Spotify running order, and Ania's two poster sketches. The SSoT is
-[`web/src/content/concerts.yaml`](../web/src/content/concerts.yaml) (see
-`docs/concert-detail-pages-spec.md`); this file is where the reasoning behind it lives.
+[`web/src/content/concerts.yaml`](../../web/src/content/concerts.yaml) (see
+`docs/specs/concert-detail-pages-spec.md`); this file is where the reasoning behind it lives.
 
 **Read the file backwards.** It was written as the evening firmed up, so the later a section is,
 the more of it is true. **Start at §15: it carries the programme book's own text and the score

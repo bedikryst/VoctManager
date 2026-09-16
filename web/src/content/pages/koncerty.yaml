@@ -14,7 +14,7 @@
 # is the one operation in the whole system that can destroy hand-made text, and it already exists,
 # proven, for YAML (`copydesk/yamlEdit.mjs`, four reconstruction proofs). The page's CHROME went
 # the other way, to `src/i18n/content/koncerty.ts`, and the line between them is not "prose vs
-# label" but whether completeness can be demanded. See docs/web-copy-desk-2026-09.md §6r.
+# label" but whether completeness can be demanded. See docs/specs/web-copy-desk-2026-09.md §6r.
 #
 # TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under this page's desk
 # key — `page.koncerty.` + the dotted path below — and are read through `lib/copyOverlay`.
@@ -63,7 +63,7 @@ next:
 # fell back to Polish on an English page would be a consent recorded against a text the reader
 # could not read.
 notice:
-  h2: "Damy znać o nadchodzących koncertach."
+  h2: "Do zobaczenia."
   # One negation in the passage, and it is the last three words — the site's own rule. The list
   # promises a frequency, not a relationship; keep whatever renders that plainly.
   #
@@ -73,21 +73,19 @@ notice:
   # one that gets read. "One letter for one evening" was ambiguous in exactly the place where the
   # frequency IS the offer — it can be read as one letter every evening.
   lede: >-
-    Jeden krótki list przed każdym koncertem: miejsce, godzina, program. Nic poza tym.
+    Zostaw e-mail. Damy znać o naszych koncertach.
   # Read after the address is submitted. It says a mail is on its way, never "you are subscribed":
   # nothing is stored as a consent until the link in it is clicked.
   sentTitle: "Sprawdź skrzynkę."
   sentBody: >-
-    Wysłaliśmy prośbę o potwierdzenie. Adres zapisujemy dopiero wtedy, gdy klikniesz
-    link w tej wiadomości.
+    Potwierdź zapis w wiadomości od VoctEnsemble.
   # The third tier of the receipt, and the one that decides whether the consent ever closes: on a
   # double opt-in list an unread confirmation is an address that expires in seven days. It names
   # the SENDER (`settings.PUBLIC_FROM_EMAIL` displays "VoctEnsemble") and the two folders a
   # transactional mail actually lands in, because "check your mailbox" is untrue advice for a
   # letter filed under Promotions.
   sentHint: >-
-    List przychodzi od nadawcy VoctEnsemble. Jeśli nie widzisz go w skrzynce, zajrzyj do
-    folderu z ofertami albo do spamu.
+    Wiadomość może trafić do folderu z ofertami albo do spamu. Link jest ważny siedem dni.
 
 # What the ensemble sang that the cycle does not number — a sung Mass, a wedding. The band closes
 # the night stretch, after the walk has ended and the notice list has been offered, because these

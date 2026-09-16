@@ -16,7 +16,7 @@
  *  compiler say so — so the ten landmark names live here and adding a section without naming it
  *  cannot build. A paragraph is the opposite: it arrives one field at a time through review, and
  *  the English page has to stand with English chrome around Polish prose for as long as that
- *  takes. Reasoning in docs/web-copy-desk-2026-09.md §6r.
+ *  takes. Reasoning in docs/specs/web-copy-desk-2026-09.md §6r.
  *
  *  THIS FILE IS IMPORTED BY NODE, not only by Vite: the desk's extractor reads the contract below
  *  straight from here (type-stripping, no build step), so that the key a translation is stored

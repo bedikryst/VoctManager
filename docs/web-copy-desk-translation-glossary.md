@@ -4,7 +4,7 @@ The termbase stage E writes against, and the record of where every sung text's E
 comes from. Written for `concerts.yaml`, but the register rules and the naming decisions outlive it:
 stage G brings the static pages into the same two locales and must not re-decide any of this.
 
-Companion to `docs/web-copy-desk-2026-09.md` (§5 says what is translated and what never is; §2 says
+Companion to `docs/specs/web-copy-desk-2026-09.md` (§5 says what is translated and what never is; §2 says
 a translation is never handed over on the pass that wrote it). Nothing here overrides that file.
 
 ## How to read this

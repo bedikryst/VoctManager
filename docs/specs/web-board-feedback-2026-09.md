@@ -23,7 +23,7 @@ Companion to `.ai/07_marketing_public_site.md` (rules) and `docs/web-landing-gua
 
 Three of Ania's four complaints are **one defect**, and that is the finding that shaped the whole
 plan. She named "Skąd się wzięliśmy?" as a heading she cannot see. It is not a heading — it is a
-`.micro` rubric label ([EnsembleSection.astro:84](../web/src/components/landing/EnsembleSection.astro#L84)),
+`.micro` rubric label ([EnsembleSection.astro:84](../../web/src/components/landing/EnsembleSection.astro#L84)),
 and the `<h2>` beside it is set at `clamp(46px, 6vw, 96px)`. So she is not failing to see headings.
 She is reading the **labels** as the headings, correctly — a label is the thing that says what a
 section is about — and the labels are 10.5–11px Cinzel at weight 400.
@@ -50,7 +50,7 @@ So Etap 1 treats the atom, and three complaints close without moving a word or a
 | 5 | **Q&A and testimonials** | consent path for publishing third-party statements | later |
 
 **Etap 2b is built and has its own record:**
-[docs/web-notice-list-2026-09.md](web-notice-list-2026-09.md), which overrides the paragraph below
+[docs/specs/web-notice-list-2026-09.md](web-notice-list-2026-09.md), which overrides the paragraph below
 wherever they disagree. It went before stages 3 and 4 on the strength of one distinction this table
 had blurred: its blocker was **documents nobody else writes**, while theirs are a rider from the
 ensemble and a board decision. A blocker you clear by working is not the same kind of thing as one
@@ -62,7 +62,7 @@ ensemble (Etap 3 — the longest lead time on the list), and put the odpłatna d
 publicznego vs. działalność gospodarcza question to the board (Etap 4).
 
 **Etap 2 was split and changed shape.** Its spec is now
-[docs/web-copy-desk-2026-09.md](web-copy-desk-2026-09.md) and that file overrides the paragraphs
+[docs/specs/web-copy-desk-2026-09.md](web-copy-desk-2026-09.md) and that file overrides the paragraphs
 below wherever they disagree. Three changes:
 
 - **2a and 2b are separated.** The notification list is blocked by RODO documents; leaving it
@@ -88,7 +88,7 @@ kept here only records what the original reasoning was and where it broke. It re
 ~15.9k words in `concerts.yaml` alone, so concert detail pages are not translated — they are the
 deepest Polish on the site and the least useful to a foreign visitor, who needs
 who/what/how-to-book; translate `/kontakt`, `/koncerty` at index level and `/press`, with `/o-nas`
-as the reference pattern ([i18n/content/o-nas.ts](../web/src/i18n/content/o-nas.ts) +
+as the reference pattern ([i18n/content/o-nas.ts](../../web/src/i18n/content/o-nas.ts) +
 `TRANSLATED_ROUTES` as the lazy switch). And the review surface was to be a **read-only noindex
 route** rendering PL | EN | FR side by side.
 
@@ -117,7 +117,7 @@ the board actually wanted and the only version that survives the site's own no-f
   backend. Sending can use anything afterwards.
 
 **Etap 3 is built and has its own record:**
-[docs/web-press-pack-2026-09.md](web-press-pack-2026-09.md), which overrides the paragraphs below
+[docs/specs/web-press-pack-2026-09.md](web-press-pack-2026-09.md), which overrides the paragraphs below
 wherever they disagree. Everything in the brief held, and the page, the desk port and the pack's
 generator shipped 2026-09-13. What did NOT ship is the pack itself, because its two inputs are the
 ones nobody here can write: the rider and the cleared photographs. **§3 of that file carries all
@@ -177,7 +177,7 @@ build: do not create `/testimony` before five real statements exist.
 - **A sticky in-page index.** The page already has one — see §2.
 - **The looping-phrase video grid.** Deferred until masters exist, and when they do it needs a
   design pass, not just implementation: autoplaying sound is forbidden by the creative direction,
-  and a wall of moving thumbnails is the grid that `docs/web-imagines-spec.md` §2 rejected. Flagged
+  and a wall of moving thumbnails is the grid that `docs/specs/web-imagines-spec.md` §2 rejected. Flagged
   now so it is not promised as a small feature.
 
 ---
@@ -213,7 +213,7 @@ siblings.** That is the defect: not a taste call, an unfinished pass.
 The remedy is the one this site has already field-tested on the same material. Guardrails, on the
 litany plate: *"What actually fails at this size is the letterform… the fix is the axis and the
 size."* The values it landed on are still in
-[15-litany.css:171](../web/src/styles/landing/15-litany.css#L171) — `clamp(13px, 1.15vw, 15px)` at
+[15-litany.css:171](../../web/src/styles/landing/15-litany.css#L171) — `clamp(13px, 1.15vw, 15px)` at
 **weight 600**. Cinzel is a variable face (`font-weight: 400 900`), so the axis is free; base.css's
 own hard constraint caps it at ~16px, which leaves exactly the room needed.
 
@@ -245,8 +245,8 @@ Tracking comes *down* as size and weight go up. base.css already records why —
 words apart into separate letters"* — and that pressure grows with weight.
 
 `--micro` is **not** bumped. It is declared in two files
-([01-foundation.css:39](../web/src/styles/landing/01-foundation.css#L39),
-[vault.css:36](../web/src/styles/vault.css#L36)) and read by jobs 2 and 3, where the labels are not
+([01-foundation.css:39](../../web/src/styles/landing/01-foundation.css#L39),
+[vault.css:36](../../web/src/styles/vault.css#L36)) and read by jobs 2 and 3, where the labels are not
 the complaint and the layouts are tight (vault form rows, `tabula-meta`). Resizing the token would
 be a site-wide layout change to fix a problem that lives in one of its three roles.
 
@@ -278,15 +278,15 @@ reveal register's entrance floor — do not conflate them.
 ### 2.2 The concert page's front matter
 
 **The page already has an index.** It is the *tabula* — rendered by `SiteChrome` from the array the
-page passes ([`[id].astro`:164–197](../web/src/pages/koncerty/[id].astro#L164)), carrying all eight
+page passes ([`[id].astro`:164–197](../../web/src/pages/koncerty/[id].astro#L164)), carrying all eight
 bands including Głosy and Obrazy. So "add an index" is the wrong instruction; the object exists and
 is well made.
 
-What it does not do is serve a **first** reading. [tabula.css](../web/src/styles/tabula.css) states
+What it does not do is serve a **first** reading. [tabula.css](../../web/src/styles/tabula.css) states
 the weakness itself: *"the register is summoned by a POINTER, an act that is unambiguously a
 request, and this by a scroll gesture the reader may not have meant as one."* The threshold is 180px
 of deliberate backward scroll on desktop and **340px on touch**
-([SiteChrome.astro:754](../web/src/components/SiteChrome.astro#L754)). A reader going down the page
+([SiteChrome.astro:754](../../web/src/components/SiteChrome.astro#L754)). A reader going down the page
 for the first time never makes that gesture. The tabula serves *return*; nothing serves *arrival*.
 
 So: **the page prints its own contents once, at the threshold, as front matter** — not as chrome,

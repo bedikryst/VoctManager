@@ -29,28 +29,28 @@ conventions like Ethereal tokens do NOT apply; `web/` owns its CSS, see `.ai/07_
    recording of the actual choir) keeps playing site-wide. When any video plays, the bed
    **ducks** (fades to gain 0.04 over 600 ms) and **restores** (900 ms) when the video
    pauses/ends/closes. The plumbing already exists: `voct:audio-duck` / `voct:audio-restore`
-   are honoured by [AudioController.tsx:80-96](../web/src/islands/landing/AudioController.tsx#L80-L96)
+   are honoured by [AudioController.tsx:80-96](../../web/src/islands/landing/AudioController.tsx#L80-L96)
    and are non-invasive (never flip the saved Cisza/Głos choice; no-op when ambient is off).
    The new player only has to dispatch them.
 6. **ListenMoment is superseded.** The audio-only "Posłuchaj" island (dormant — its
    `/audio/vox-excerpt.*` asset never materialised) is replaced by the video VoxMoment.
    Delete it (Part H).
 7. **SilenceMoment needs NO work** — its scroll-lock was already removed
-   ([landing.ts:518-529](../web/src/scripts/landing.ts#L518-L529), "no scroll-lock, ever").
+   ([landing.ts:518-529](../../web/src/scripts/landing.ts#L518-L529), "no scroll-lock, ever").
 
 ### Confirmed facts (verified against the tree — do not re-derive)
 
-- Duck/restore handler: [AudioController.tsx:80-96](../web/src/islands/landing/AudioController.tsx#L80-L96).
+- Duck/restore handler: [AudioController.tsx:80-96](../../web/src/islands/landing/AudioController.tsx#L80-L96).
   Duck detail shape: `{ gain?: number }`, default 0.05; ListenMoment used `0.04` — keep 0.04.
 - Static-DOM → island event delegation precedent: `setupInteractions` in
-  [landing.ts:534-566](../web/src/scripts/landing.ts#L534-L566) (`[data-vault-open]` →
+  [landing.ts:534-566](../../web/src/scripts/landing.ts#L534-L566) (`[data-vault-open]` →
   `voct:open-vault`). Our `[data-video-open]` block is appended inside the same `onClick`.
 - Modal precedent: `VaultModal` uses `useBodyClass("vault-open")`
-  ([VaultModal.tsx:33](../web/src/islands/landing/vault/VaultModal.tsx#L33)) +
+  ([VaultModal.tsx:33](../../web/src/islands/landing/vault/VaultModal.tsx#L33)) +
   `data-lenis-prevent` on the panel (line 60) + scroll lock via
-  `body.theme-marketing.vault-open` ([08-vault.css:1](../web/src/styles/landing/08-vault.css#L1)).
-- Hooks ready to reuse: [useBodyClass.ts](../web/src/islands/landing/hooks/useBodyClass.ts)
-  (refcounted body class), [useFocusTrap.ts](../web/src/islands/landing/hooks/useFocusTrap.ts)
+  `body.theme-marketing.vault-open` ([08-vault.css:1](../../web/src/styles/landing/08-vault.css#L1)).
+- Hooks ready to reuse: [useBodyClass.ts](../../web/src/islands/landing/hooks/useBodyClass.ts)
+  (refcounted body class), [useFocusTrap.ts](../../web/src/islands/landing/hooks/useFocusTrap.ts)
   (`(ref, active, { onEscape })` — restores focus on deactivate).
 - Pre-hydration guard precedent: `VaultBuffer` + `window.__voctVaultBuffer`. We use a simpler
   flag (`window.__voctVideoReady`) because the video CTA has a meaningful native fallback
@@ -65,7 +65,7 @@ conventions like Ethereal tokens do NOT apply; `web/` owns its CSS, see `.ai/07_
   `web/src/styles/landing/04-rooms-interludes.css`.
 - `PathSection.astro`: `path-entry-summary` paragraph = line 40, `<details>` = lines 41–62.
 - `paths.ts`: `interface Path` = lines 22–35.
-- Styles barrel: [landing.css:22](../web/src/styles/landing.css#L22) imports `12-listen.css`.
+- Styles barrel: [landing.css:22](../../web/src/styles/landing.css#L22) imports `12-listen.css`.
 - `--night` token exists (used by press styles); landing tokens: `--paper`, `--ink`,
   `--ink-muted`, `--candle`, `--line`, `--serif`, `--mono`, `--ease`, `--ease-slow`.
 
@@ -493,7 +493,7 @@ Notes:
 
 ### E1. Delegation in `landing.ts`
 
-In `setupInteractions` ([landing.ts:534-566](../web/src/scripts/landing.ts#L534-L566)),
+In `setupInteractions` ([landing.ts:534-566](../../web/src/scripts/landing.ts#L534-L566)),
 append after the `vaultBtn` block (i.e. after line 562's closing `}`, before line 563's `};`):
 
 ```ts
@@ -614,7 +614,7 @@ const voxPoster = (
 ## Part G — styles: `12-vox.css` replaces `12-listen.css`
 
 Delete `web/src/styles/landing/12-listen.css`. Create `web/src/styles/landing/12-vox.css`.
-Update [landing.css:22](../web/src/styles/landing.css#L22) to:
+Update [landing.css:22](../../web/src/styles/landing.css#L22) to:
 
 ```css
 @import "./landing/12-vox.css"; /* Vox — zobacz i usłysz (movement II) + shared player + video lightbox */

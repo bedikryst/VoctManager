@@ -21,7 +21,7 @@ already-resolved strings. `templates/emails/notice_confirm.*` therefore carries 
 IT IS STILL NOT ON THE COPY DESK. The desk covers `web/`, and reaching into it from
 Django is a larger piece of machinery than one mail earns. If a second public mail
 appears — the concert notice itself — that calculation changes; see
-docs/web-notice-list-2026-09.md.
+docs/specs/web-notice-list-2026-09.md.
 
 THE LIST IS CALLED *ZAPROSZENIA* WHERE A READER CAN READ IT, and `notice` everywhere in
 this codebase. That split is deliberate rather than an unfinished rename: `/nuntius`,

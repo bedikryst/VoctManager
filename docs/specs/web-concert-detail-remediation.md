@@ -1,6 +1,6 @@
 # Concert detail page (`/koncerty/[id]`) — remediation
 
-Written 2026-08-08, after a full audit of [`web/src/pages/koncerty/[id].astro`](../web/src/pages/koncerty/%5Bid%5D.astro).
+Written 2026-08-08, after a full audit of [`web/src/pages/koncerty/[id].astro`](../../web/src/pages/koncerty/%5Bid%5D.astro).
 
 **Etap 1 shipped in that session; Etap 2 on 2026-08-08, after re-auditing Etap 1 against the built
 output.** What is left is in `Still open` below, and it is left there because every item in it needs

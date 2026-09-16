@@ -1,6 +1,6 @@
 # The concert notice list — Etap 2b (2026-09)
 
-What `docs/web-board-feedback-2026-09.md` §1 lists as "2b — concert notification list". Built
+What `docs/specs/web-board-feedback-2026-09.md` §1 lists as "2b — concert notification list". Built
 2026-09-05. This file is the authority for it; the roadmap's paragraph points here.
 
 ## How to read this file

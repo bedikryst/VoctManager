@@ -17,7 +17,7 @@ share a decision (where the confirmed sign-up sends a reader next).
 - **§5 Open** — what nobody can answer yet, and who owns each question.
 - **§6 Order of work.**
 
-Companion to `docs/web-notice-list-2026-09.md` (the list's own spec — the consent model,
+Companion to `docs/specs/web-notice-list-2026-09.md` (the list's own spec — the consent model,
 retention, the six surfaces) and `.ai/04_design_system.md`. Neither is overridden here.
 
 ---
@@ -46,7 +46,7 @@ This review first called `states.confirmed` a lie: it says *"Napiszemy, gdy nast
 Duchowy dostanie datę"* while a date exists (*Pochwała Stworzenia*, Kościół Wszystkich Świętych,
 Warszawa, X.2026). **That reading is wrong.** The sentence is about a future event, and "następny"
 naturally means the evening after the one that already has its date — so it is true as written.
-The prediction in `docs/web-notice-list-2026-09.md` about a sentence rotting on announcement day
+The prediction in `docs/specs/web-notice-list-2026-09.md` about a sentence rotting on announcement day
 concerned `notice.h2`, which used to read "Damy znać, gdy pojawi się data" and has since been
 fixed to "Damy znać o nadchodzących koncertach". The warning was mapped onto the wrong field.
 
@@ -83,11 +83,11 @@ lives in five places:
 
 | Where | Field |
 |---|---|
-| [`koncerty.yaml`](../web/src/content/pages/koncerty.yaml) | `notice.lede` (+ two locale overlays) |
-| [`nuntius.ts`](../web/src/i18n/content/nuntius.ts) | `states.confirmed` (×3 locales) |
-| [`nuntius.ts`](../web/src/i18n/content/nuntius.ts) | `signup.meta.description` (×3 locales) |
-| [`copy.py`](../backend/outreach/copy.py) | `promise` (×3 locales) |
-| [`models.py`](../backend/outreach/models.py) | `ConcertNoticeSubscription` docstring |
+| [`koncerty.yaml`](../../web/src/content/pages/koncerty.yaml) | `notice.lede` (+ two locale overlays) |
+| [`nuntius.ts`](../../web/src/i18n/content/nuntius.ts) | `states.confirmed` (×3 locales) |
+| [`nuntius.ts`](../../web/src/i18n/content/nuntius.ts) | `signup.meta.description` (×3 locales) |
+| [`copy.py`](../../backend/outreach/copy.py) | `promise` (×3 locales) |
+| [`models.py`](../../backend/outreach/models.py) | `ConcertNoticeSubscription` docstring |
 
 `NOTICE_CLAUSE_VERSION` in `outreach/consent.py` does **not** move. Verify that before writing:
 if any wording touching purpose, controller or withdrawal changes, it does.
@@ -129,11 +129,11 @@ room, because it was designed as a transition rather than a station. Ania's *"za
 names this correctly. One `padding-block` value in `.notice-inner-strip`.
 
 **Ribbon, not blur.** Ania sent a soft-gradient reference and said it reminded her of "the blur
-from the concerts" — that is [`.vplayer-glow`](../web/src/styles/vplayer.css#L57), a blurred
+from the concerts" — that is [`.vplayer-glow`](../../web/src/styles/vplayer.css#L57), a blurred
 low-res mirror of the frame, commented *"projection light in the room"*. The developer's read is
 better: what she is pointing at is the **breviary** language of the concert menu, not the blur.
 
-The ribbon in [`nave-menu.css`](../web/src/styles/nave-menu.css) is **meaningful** — on the
+The ribbon in [`nave-menu.css`](../../web/src/styles/nave-menu.css) is **meaningful** — on the
 desktop register each concert's ribbon carries that evening's accent, and on mobile per-concert
 dye was tried and rejected (line 110: *"DYE — crimson, always"*). So it cannot simply be copied
 onto a band that marks no concert.
@@ -167,11 +167,11 @@ The same edit adds the **link to the mecenat** — see §3.4 for why it goes her
 Two claims made here were wrong and are recorded so they are not repeated:
 
 - ~~"The vault only opens on the landing."~~ **False.** `SiteChrome.astro` carries the support
-  button on every page and [`vault-triggers.ts`](../web/src/scripts/vault-triggers.ts) opens the
+  button on every page and [`vault-triggers.ts`](../../web/src/scripts/vault-triggers.ts) opens the
   vault in place via `voct:open-vault`; `href="/?donate"` is only the no-JS fallback.
 - ~~"The mecenat has no address."~~ **False.** `voctensemble.com/?donate` auto-opens the vault
-  ([`VaultIsland.tsx:57`](../web/src/islands/landing/VaultIsland.tsx#L57)) **and skips the audio
-  gate** ([`DocumentGates.astro:82`](../web/src/components/DocumentGates.astro#L82):
+  ([`VaultIsland.tsx:57`](../../web/src/islands/landing/VaultIsland.tsx#L57)) **and skips the audio
+  gate** ([`DocumentGates.astro:82`](../../web/src/components/DocumentGates.astro#L82):
   `params.has("donate") → return true`).
 
 What survives, and it is enough:
@@ -185,7 +185,7 @@ What survives, and it is enough:
 
 Add the measured funnel: landing → section → vault (~5% of visits) → second tab. Each level is a
 filter, and the product is ~0. Goal is 20 000 PLN
-([`vaultConfig.ts:43`](../web/src/islands/landing/constants/vaultConfig.ts#L43)).
+([`vaultConfig.ts:43`](../../web/src/islands/landing/constants/vaultConfig.ts#L43)).
 
 This is the same disease the notice list was already cured of — *"widoczność ≠ głośność:
 niewidzialne przy skanowaniu, nieuchronne przy szukaniu"* — and the cure (`/newsletter`) is in the
@@ -275,7 +275,7 @@ Ania proposed splitting into public / patrons / professional, chosen by checkbox
   interpret how to sign up"; two or three boxes put a *decision* in front of a trivial act. Today's
   form has one field and one checkbox; this makes four choices.
 - **Only one of the three is a mailing list.** Patrons already exist as a set with recorded consent
-  to be contacted (`PatronLead`, [`payments/models.py:111`](../backend/payments/models.py#L111)) —
+  to be contacted (`PatronLead`, [`payments/models.py:111`](../../backend/payments/models.py#L111)) —
   what is missing is a sending channel, not a form, and that relation starts with a donation, not a
   checkbox. Professional (festivals, curators, press) is not a newsletter and Ania says so herself:
   **a curator is found and written to by name, not signed up.** That is an address book, and its

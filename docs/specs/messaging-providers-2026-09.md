@@ -15,7 +15,7 @@ answered together, because answering them apart is what makes the wrong choice l
 - **§6 Runbook** — order of work, and the two tests that must run before any decision.
 
 Companion to `docs/legal/podprocesorzy.md` (the subprocessor register, which this changes) and
-`docs/web-notice-list-2026-09.md` (the list whose consent this must not break).
+`docs/specs/web-notice-list-2026-09.md` (the list whose consent this must not break).
 
 ---
 
@@ -93,7 +93,7 @@ electronic-communications law, and the consent collected in 2026-09 covers e-mai
 require its own consent, a phone field on a public form, and a second retention story.
 
 **Decision: do not put a phone field on the public notice form.** The list stays e-mail-only. The
-consent record built in `docs/web-notice-list-2026-09.md` is evidence for one channel; widening it
+consent record built in `docs/specs/web-notice-list-2026-09.md` is evidence for one channel; widening it
 would mean re-collecting consent from everyone already on the list.
 
 ---

@@ -13,7 +13,7 @@
 # STILL POLISH IN EVERY LOCALE, named rather than buried: twelve `year` values carry a Polish
 # qualifier ("ok. 1727", "pocz. XVI w.", "aranż. współczesna", "trad. Oksytania"). A dating is
 # never copy on this site, so the fix is structural — the treatment `inscriptioRef` got in stage A
-# — and not a translation. See docs/web-copy-desk-2026-09.md.
+# — and not a translation. See docs/specs/web-copy-desk-2026-09.md.
 #
 # SEVEN IS THE COUNT OF THE `span`s in that module, XV to XXI inclusive, and every "siedem wieków"
 # on the site (/koncerty, /press, /o-nas, the landing plate) is that number. It is not the age of the oldest

@@ -48,7 +48,7 @@ const RIDER_DIR = "press-pack/assets";
 const PHOTO_DIR = "src/assets/photos/.original-photos";
 const OUT_DIR = "public/press";
 
-/** 3–5 frames, the pack spec's own range (docs/web-board-feedback-2026-09.md §1). */
+/** 3–5 frames, the pack spec's own range (docs/specs/web-board-feedback-2026-09.md §1). */
 const MIN_PHOTOS = 3;
 const MAX_PHOTOS = 5;
 /** A short edge of 2000 px is ~17 cm at 300 dpi — a half-page in a programme book. */

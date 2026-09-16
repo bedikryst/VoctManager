@@ -19,7 +19,7 @@
              guess one spelling and fail closed, each field is read from a small
              set of candidates and anything unrecognized is logged whole. The
              first production events are expected to narrow this — see the
-             runbook in docs/messaging-providers-2026-09.md.
+             runbook in docs/specs/messaging-providers-2026-09.md.
 @architecture Enterprise SaaS 2026
 @module notifications/emaillabs_webhook
 """

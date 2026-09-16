@@ -43,7 +43,7 @@ Impersonation was rejected on a hard constraint, not on taste:
 visibility, and no superuser override". A manager who *becomes* Kasia reads her
 correspondence with another manager. Impersonation would also stamp watermarked
 scores with the wrong copy-holder name and burn a copy number in `ScoreAccessLog`
-([`archive/score_protection.py`](../backend/archive/score_protection.py)), and
+([`archive/score_protection.py`](../../backend/archive/score_protection.py)), and
 would require a read-only gate, a cache/offline purge on both edges of the
 session, and an audit trail — all to reach a place this design reaches without
 any of them.

@@ -1,6 +1,6 @@
 # Copy desk — the site's editorial surface (2026-09)
 
-Spec for what `docs/web-board-feedback-2026-09.md` called "Etap 2 — translation review surface".
+Spec for what `docs/specs/web-board-feedback-2026-09.md` called "Etap 2 — translation review surface".
 The stage changed shape during design and is now a different object; this file is the authority
 for it, and §1 of the board-feedback file points here.
 

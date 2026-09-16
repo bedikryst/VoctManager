@@ -19,7 +19,7 @@
  *  therefore always in the DOM, empty or not: a region created by the change it is meant to
  *  announce announces nothing, and moving between frames would otherwise be silent. And every
  *  frame carries an EXIT to its own evening — a lightbox that can only be closed is the dead end
- *  docs/web-imagines-spec.md §1 opens with, one layer up. The exit goes through
+ *  docs/specs/web-imagines-spec.md §1 opens with, one layer up. The exit goes through
  *  `navigateFromOverlay`, never a bare `<a>`: pushed on top of the overlay's own entry, the
  *  destination leaves a shadow entry that eats the first back press.
  *

@@ -1,6 +1,6 @@
 # `/press` and the press pack — Etap 3 (2026-09)
 
-What `docs/web-board-feedback-2026-09.md` §1 lists as "Etap 3 — Press pack + `/press` recut".
+What `docs/specs/web-board-feedback-2026-09.md` §1 lists as "Etap 3 — Press pack + `/press` recut".
 Built 2026-09-13. This file is the authority for it; the roadmap's paragraph points here.
 
 ## How to read this file
@@ -111,7 +111,7 @@ markup anyway and extracting the prose cost nothing at that moment:
 | `copydesk/extractPages.mjs` | one entry in `PAGE_SPECS` |
 
 **On the desk, NOT in `TRANSLATED_ROUTES`** — the two switches are independent and this page is on
-the first only. §2 of `docs/web-copy-desk-2026-09.md` forbids translating prose that is still being
+the first only. §2 of `docs/specs/web-copy-desk-2026-09.md` forbids translating prose that is still being
 rewritten; the English and French wait until this Polish stops moving. When it does, the order is
 route files first, ledger entry last.
 
@@ -147,7 +147,7 @@ in their own header that they were the single source of truth for the bank detai
 surfaces still carry their own copies** — the two footers, `FinalSupportSection`, `AboutPage`,
 `ContactPage`, `KolofonPage`, and the policy / terms YAML where the number sits inside a sentence
 and belongs to the desk. That sweep is mechanical and is deliberately a separate pass;
-`docs/web-colophon-remediation.md` has been asking for it since 2026-08.
+`docs/specs/web-colophon-remediation.md` has been asking for it since 2026-08.
 
 ---
 
@@ -256,7 +256,7 @@ been. These are written to be sent as they stand.
   `:is(…):has(.lat)` rules, but the page's own `<style>` restated the atom's face, size, weight,
   tracking and case — at (0,2,0) with the page bundle loading last, which wins. The effect was the
   vernacular gloss staying in Cinzel caps instead of turning to Plex Sans lowercase: the exact
-  defect `docs/web-board-feedback-2026-09.md` §2.3 records for `.kd-section-label`, arrived at
+  defect `docs/specs/web-board-feedback-2026-09.md` §2.3 records for `.kd-section-label`, arrived at
   independently on a second page. The recut removed those declarations; the page now states only
   the rubric's ground and its layout, and carries `.titulus` in the markup. **When a page's style
   block names a class that base.css also names, base.css has already lost.**
@@ -293,7 +293,7 @@ been. These are written to be sent as they stand.
   and names press materials as the case it is NOT cleared for. The pack ships no roster.
 - **Video files and the photograph archive.** The pack is a working set, not a library; `/obrazy`
   is linked instead. The looping-phrase video grid remains rejected pending masters *and* a design
-  pass — `docs/web-imagines-spec.md` §2 already rejected a wall of moving thumbnails.
+  pass — `docs/specs/web-imagines-spec.md` §2 already rejected a wall of moving thumbnails.
 - **EN and FR.** §2 of the copy-desk spec, stated above.
 
 ---

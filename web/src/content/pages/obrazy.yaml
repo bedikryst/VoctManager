@@ -16,7 +16,7 @@
 #
 # WHY THIS IS YAML AND NOT A TypeScript MODULE, and where the chrome went instead: the same line
 # every page on the desk draws — completeness can be demanded of a landmark, not of a paragraph.
-# docs/web-copy-desk-2026-09.md §6r.
+# docs/specs/web-copy-desk-2026-09.md §6r.
 #
 # TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under this page's desk
 # key — `page.obrazy.` + the dotted path below — and are read through `lib/copyOverlay`.

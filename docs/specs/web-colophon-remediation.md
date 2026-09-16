@@ -4,7 +4,7 @@ Working plan for `/kolofon` (`web/src/pages/kolofon.astro`), started 2026-08-01 
 of the page — copy, registers, cascade, accessibility, data.
 
 Companion to `docs/web-landing-guardrails.md` (doctrine, and the negative space) and
-`docs/web-reveal-remediation.md` (the register machinery and its measured budgets). This file is
+`docs/archive/web-reveal-remediation.md` (the register machinery and its measured budgets). This file is
 neither: it is one page's work, in dependency order.
 
 **How to read this file.** Every stage carries the measurement that made it decidable, so a later

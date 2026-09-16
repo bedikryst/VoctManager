@@ -16,7 +16,7 @@
  *  second line-level rewrite of a file whose ~150 comments carry decisions nothing else records,
  *  every time an editor accepted a translation — the one operation in the copy-desk plan that can
  *  destroy the corpus. With the split, `apply-copy` only ever replaces a Polish scalar in place and
- *  the overlays are machine-written whole (docs/web-copy-desk-2026-09.md §8).
+ *  the overlays are machine-written whole (docs/specs/web-copy-desk-2026-09.md §8).
  *
  *  FALLBACK IS PER FIELD, NOT PER PAGE, which is the rule stage A set for the locale maps and the
  *  reason a half-translated evening still builds: a field with no overlay value prints its Polish,

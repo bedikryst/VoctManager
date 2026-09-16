@@ -390,7 +390,7 @@ const concerts = defineCollection({
               only where the default is measurably wrong, and measure before setting it: the one
               case is `kd-hymn-0`, which led its run at mean luma 9 and p90 24 — a black
               rectangle standing 698px tall. Same lever, for the same reason, as `Path.frame` on
-              the landing band (docs/web-imagines-spec.md §8). */
+              the landing band (docs/specs/web-imagines-spec.md §8). */
           plate: z.boolean().default(false),
         }),
       )
