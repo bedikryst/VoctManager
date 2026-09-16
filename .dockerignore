@@ -110,6 +110,21 @@ docs/
 # (the two READMEs above are kept only because some tooling reads metadata
 # from them — strip them if image size matters more than introspection.)
 
+# ---- Agent context — instructions and accumulated project knowledge ----
+# `.agent/memory/` is ~600 KB of notes on how this project is built and decided, `.ai/` the design
+# and domain canon, `.claude/` local tool settings. All are gitignored, none is read by any build
+# step, and none belongs in a published image. The `*.md` rule above does NOT cover them: in a
+# .dockerignore a bare `*.md` matches one path segment, so it catches root-level files only and
+# leaves every nested note in the context.
+.agent/
+.ai/
+.claude/
+.codex/
+AGENTS.md
+AGENTS.override.md
+CLAUDE.md
+gemini.md
+
 # Local A/B video clips (web/.gitignore too). Everything under public/ is copied verbatim into
 # dist/ by the web-builder stage, so without this the grading samples would ship to nginx.
 web/public/probki

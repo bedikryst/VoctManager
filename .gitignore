@@ -87,7 +87,11 @@ gemini.md
 .secrets/
 .ai/
 .claude/
+.codex/
+.agent/
 CLAUDE.md
+AGENTS.md
+AGENTS.override.md
 docs/welcome-invitation-and-email-gating-spec.md
 
 docs/about/
