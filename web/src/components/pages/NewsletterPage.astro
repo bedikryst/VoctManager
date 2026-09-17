@@ -18,21 +18,33 @@
  *  the whole reason it was built.
  *
  *  EVERY WORD IT SAYS IS THE BAND'S — `content/pages/koncerty.yaml` under `notice.*`, read through
- *  `NoticeSignup`. Only the tab title and the search description are owned here, in the chrome
- *  (`i18n/content/nuntius.ts`), on the rule the receipt page's meta already follows.
+ *  `NoticeSignup`. Only the tab title, the search description and the register's two rubrics are
+ *  owned here, in the chrome (`i18n/content/nuntius.ts`), on the rule the receipt page's meta
+ *  already follows.
+ *
+ *  IT CARRIES A REGISTER OF EVENINGS, AND THAT IS WHAT MAKES IT A PAGE. A sign-up standing alone
+ *  is a card: a promise, two fields, and a screen of ground around them. The evenings are the only
+ *  thing here that lets a reader check what the promise costs — the ensemble has sung six since
+ *  January 2024, and a cadence read off a register is worth more than a sentence claiming it. The
+ *  one still ahead stands inside the ask, where it answers "what would you write to me about";
+ *  the rest fall below it as the record. Every fact in both is derived from the corpus
+ *  (`lib/noticeRegister`), so nothing here is a claim this page can be caught making.
  * @architecture Astro islands 2026
  * @module components/pages/NewsletterPage
  */
 import { getImage } from "astro:assets";
+import { getCollection } from "astro:content";
 
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
 import NoticeSignup from "../NoticeSignup.astro";
-import { DEFAULT_LOCALE, pageI18n, type Locale } from "../../i18n/config";
+import NoticeRecord from "../NoticeRecord.astro";
+import { DEFAULT_LOCALE, localizePath, pageI18n, type Locale } from "../../i18n/config";
 import { NUNTIUS } from "../../i18n/content/nuntius";
 import { UI } from "../../i18n/ui";
 import { bleedPair } from "../../lib/photos";
+import { noticeRegister } from "../../lib/noticeRegister";
 
 interface Props {
   lang?: Locale;
@@ -46,6 +58,25 @@ const ui = UI[lang];
 /* Looked up rather than composed, unlike /nuntius and /404: this page is linked from the footer of
    every page on the site, so it belongs in `TRANSLATED_ROUTES` and gets a real hreflang graph. */
 const { path, alternates, available } = pageI18n("/newsletter", lang);
+
+/* THE BUILD'S OWN DAY, IN WARSAW — the same clock `/nuntius` dates its candidates against, and for
+   the same reason: an ISO day compared as a string needs no timezone arithmetic, and a build
+   machine an hour behind must not retire an evening that is still ahead here. Unlike the receipt
+   page this one may settle the question at build time: it is read from a link on the site rather
+   than from a mail weeks old, so a deploy is never far behind the reader. */
+const today = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Warsaw",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+}).format(new Date());
+
+const register = noticeRegister(
+  await getCollection("concerts"),
+  lang,
+  today,
+  localizePath("/koncerty", lang),
+);
 
 const ogImage = (
   await getImage({ src: bleedPair("koncerty-hero").desktop, width: 1200, format: "webp" })
@@ -66,8 +97,28 @@ const ogImage = (
       marks no nav item here by design: the list is a page of the site, not a fifth destination. */}
   <SiteChrome current="/newsletter" tone="dark" lang={lang} availableLocales={available} />
 
+  {/* The leaf composition, and this is the page it was drawn for: the register gets the full
+      measure and the page's whole height. The other placements keep the band and the strip until
+      their own stage.
+
+      THE RECORD STANDS OUTSIDE `NoticeSignup` ON PURPOSE. What that component owns is one wording
+      taken by four placements; the evenings belong to this page alone, and folding them into the
+      shared component would put markup on /koncerty, /kontakt and the landing that only ever
+      renders here. The sign-up's own exchange reaches `.notice-stage` and nothing below it, so the
+      record survives the swap the way the running head does. */}
   <main id="tresc" class="notice-page" aria-label={nuntius.form.bandAria}>
-    <NoticeSignup lang={lang} surface="web:newsletter" level="h1" />
+    <NoticeSignup
+      lang={lang}
+      surface="web:newsletter"
+      level="h1"
+      variant="leaf"
+      ahead={register.ahead}
+    />
+    <NoticeRecord
+      evenings={register.record}
+      label={nuntius.register.record}
+      aria={nuntius.register.recordAria}
+    />
   </main>
 
   {/* This page IS the ask; the footer must not offer it a screen below the form. */}

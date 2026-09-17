@@ -24,6 +24,13 @@
  *  the frequency, the controller, how to withdraw — means bumping `NOTICE_CLAUSE_VERSION` in
  *  `backend/outreach/consent.py` in the same commit, and saying so in the privacy policy's own
  *  history. Fixing a typo is not a bump.
+ *
+ *  `consentHtml` IS A FIRST LAYER, NOT THE ACCOUNT. It carries the three things art. 13 wants in
+ *  front of a reader as they hand the address over — who the controller is, what it is for, how
+ *  to leave — and links the rest, which is the shape the EDPB's transparency guidelines describe
+ *  and the shape `content/pages/polityka-prywatnosci.yaml` was already written for (see the note
+ *  above its *Lista zaproszeń* section). Anything this clause stops saying must be findable
+ *  there BEFORE it leaves here; a detail that exists in neither place is one nobody was told.
  * @architecture Astro islands 2026
  * @module i18n/content/nuntius
  */
@@ -34,6 +41,18 @@ import type { Locale } from "../config";
     page opened with no token at all, which is what a reader sees if they bookmark it. */
 export type NoticeState =
   | "checking"
+  /**
+   * A link has been opened and NOTHING HAS BEEN SPENT YET — the page is holding the token and
+   * waiting for a person to press the button. These two are what keeps automatic execution from
+   * standing in for human action: the mount effect reads the URL, and only a click POSTs.
+   *
+   * The older arrangement, which POSTed from the effect, already kept link scanners from spending
+   * a token on the GET. What it could not do is show that the reader themselves decided — and on
+   * a double opt-in list the deliberate act IS the evidence, so it may not be inferred from a
+   * browser having run some JavaScript.
+   */
+  | "confirm"
+  | "unsubscribe"
   | "confirmed"
   | "already_confirmed"
   | "expired"
@@ -74,8 +93,32 @@ export interface NoticeFormChrome {
   readonly submitting: string;
   /** Errors, in the order the form checks them. `errorSend` names the inbox to write to. */
   readonly errorEmail: string;
-  readonly errorConsent: string;
   readonly errorSend: string;
+  /**
+   * The waiting leaf's own controls. Its two sentences are the BAND'S — `koncerty.yaml`, under
+   * `notice.sentTitle` / `sentBody` / `sentHint`, where the desk can edit them. What is here is
+   * only what a reader operates, which is chrome for the reason the whole file is.
+   *
+   * `pendingAddressLabel` names a value this browser typed and nothing else. It may not be
+   * phrased as a report of where a letter went: the endpoint answers identically for a new
+   * address, one already pending and one long confirmed, and a line reading "we wrote to …"
+   * would turn the receipt into the membership oracle the endpoint refuses to be.
+   */
+  readonly pendingAddressLabel: string;
+  readonly editAddress: string;
+  /** The recovery disclosure, shut by default — a reader whose letter arrived never opens it. */
+  readonly recoverySummary: string;
+  readonly recoveryBody: string;
+  readonly resend: string;
+  readonly resending: string;
+  /**
+   * NEVER "the letter has been sent". `subscribe()` accepts a request; whether a mail followed
+   * depends on the cooldown it may have been swallowed by and on a transport that reports its
+   * failures to us and not to the reader. This says what we actually know we did.
+   */
+  readonly resent: string;
+  /** `{time}` is a mm:ss countdown mirroring the server's own resend floor. */
+  readonly resendWait: string;
   /** The band without JavaScript: the form cannot post, so it says where to write instead. */
   readonly noscript: string;
 }
@@ -101,6 +144,24 @@ export interface NuntiusPageChrome {
   readonly eyebrow: string;
   readonly states: Readonly<Record<NoticeState, NoticeStateCopy>>;
   readonly preferences: NoticePreferencesChrome;
+  /** The two buttons that spend a token. Each names its own act rather than saying "continue":
+      the reader is about to join a list or leave one, and those are not the same press. */
+  readonly actions: {
+    readonly confirm: string;
+    readonly confirming: string;
+    readonly unsubscribe: string;
+    readonly unsubscribing: string;
+  };
+  /**
+   * The programme entry a confirmed leaf carries. It has no "there is no concert" string, and
+   * that absence is the design: `confirmed.body` already states what the list promises without
+   * naming a date, so an evening exists or the leaf simply says nothing about one. A second
+   * sentence for the empty case would print the same promise twice.
+   */
+  readonly programme: {
+    readonly eyebrow: string;
+    readonly action: string;
+  };
   readonly backToConcerts: string;
   readonly backHome: string;
   readonly noscript: string;
@@ -154,15 +215,34 @@ export interface NuntiusSignupChrome {
   readonly meta: { readonly title: string; readonly description: string };
 }
 
+/**
+ * The rubrics over /newsletter's register of evenings — two words naming two blocks, and nothing
+ * else. Every fact in the register itself is DERIVED from the concert corpus (`lib/noticeRegister`):
+ * the numerals, the titles, the places and the moments are data, and a locale file is the one place
+ * they must never be retyped.
+ *
+ * `record` NAMES A RECORD OF EVENINGS, NEVER OF LETTERS. The list is new and has written to
+ * nobody, so a rubric reading "the evenings we wrote about" would be the single sentence on this
+ * page that the database could contradict. What the block honestly shows is what the ensemble has
+ * sung — which is the same cadence, stated as a fact instead of as a claim.
+ */
+export interface NuntiusRegisterChrome {
+  /** Over the evening still ahead — the one the next letter will be about. */
+  readonly ahead: string;
+  /** Over the evenings already sung. */
+  readonly record: string;
+  /** Names the record for a screen reader, which cannot see the rubric standing above it. */
+  readonly recordAria: string;
+}
+
 export interface NuntiusChrome {
   readonly form: NoticeFormChrome;
   readonly page: NuntiusPageChrome;
   readonly signup: NuntiusSignupChrome;
+  readonly register: NuntiusRegisterChrome;
   readonly invitation: NuntiusInvitation;
 }
 
-/** Written to in every locale by the clause and by the receipt page's failure states. */
-const DATA_MAILBOX = "rodo@voctensemble.com";
 const CONTACT_MAILBOX = "kontakt@voctensemble.com";
 
 export const NUNTIUS: Record<Locale, NuntiusChrome> = {
@@ -174,18 +254,25 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       nameLabel: "Imię — nieobowiązkowe",
       namePlaceholder: "Ania",
       consentHtml:
-        `Zgadzam się na otrzymywanie zaproszeń na koncerty VoctEnsemble na podany adres e-mail. ` +
-        `Jeśli podam imię, użyjemy go wyłącznie w powitaniu listu. Administratorem danych jest ` +
-        `Fundacja VoctFoundation; gdyby zakończyła działalność, listę może przejąć osoba ` +
-        `prowadząca zespół VoctEnsemble — uprzedzimy o tym wcześniej. Zgodę mogę wycofać ` +
-        `w każdej chwili — linkiem w każdej wiadomości albo pisząc na ` +
-        `<a href="mailto:${DATA_MAILBOX}">${DATA_MAILBOX}</a>. ` +
-        `Szczegóły w <a href="/polityka-prywatnosci">polityce prywatności</a>.`,
+        `Zapisując się, prosisz Fundację VoctFoundation o zaproszenia na koncerty VoctEnsemble. ` +
+        `Imię trafia wyłącznie do powitania listu, a wypisujesz się jednym kliknięciem ` +
+        `w każdej wiadomości. Gdyby Fundacja zakończyła działalność, lista może przejść do ` +
+        `osoby prowadzącej dalej ten zespół — uprzedzimy o tym osobną wiadomością. Reszta ` +
+        `jest w <a href="/polityka-prywatnosci">polityce prywatności</a>.`,
       submit: "Zapisz mnie",
       submitting: "Wysyłamy…",
       errorEmail: "Podaj adres e-mail, na który mamy napisać.",
-      errorConsent: "Bez zgody nie możemy zapisać adresu.",
       errorSend: `Nie udało się wysłać. Spróbuj ponownie albo napisz na ${CONTACT_MAILBOX}.`,
+      pendingAddressLabel: "Wpisany adres",
+      editAddress: "Popraw adres",
+      recoverySummary: "Wiadomość nie dotarła?",
+      recoveryBody:
+        "Możemy poprosić o potwierdzenie jeszcze raz. Jeśli i to nie pomoże, napisz na " +
+        `${CONTACT_MAILBOX} — dopiszemy Cię ręcznie.`,
+      resend: "Wyślij ponownie",
+      resending: "Wysyłamy…",
+      resent: "Poprosiliśmy o ponowną wysyłkę.",
+      resendWait: "Kolejna prośba za {time}.",
       noscript: `Formularz wymaga JavaScriptu. Napisz na ${CONTACT_MAILBOX}, a dopiszemy Cię ręcznie.`,
     },
     page: {
@@ -199,12 +286,27 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
           title: "Sprawdzamy link…",
           body: "To potrwa chwilę.",
         },
+        confirm: {
+          title: "Potwierdź zapis.",
+          body:
+            "Jeszcze jeden ruch i zaproszenia będą przychodzić na ten adres. Zgodę zapisujemy " +
+            "dopiero wtedy, gdy naciśniesz — nie robi tego za Ciebie program pocztowy.",
+        },
+        unsubscribe: {
+          title: "Wypisać ten adres?",
+          body:
+            "Po naciśnięciu nie wyślemy już na niego nic. Dopóki nie naciśniesz, nic się " +
+            "nie dzieje.",
+        },
+        /* THE BODY NAMES NO DATE, and that is what lets one sentence serve both leaves: below it
+           stands the programme entry when an evening is published, and nothing when none is. The
+           earlier wording promised to write "when the next Spiritual Concert is given a date",
+           which read as a contradiction directly above a dated programme entry. */
         confirmed: {
           title: "Jesteś na liście.",
           body:
-            "Napiszemy, gdy następny Koncert Duchowy dostanie datę — jeden krótki list przed " +
-            "każdym koncertem, z miejscem i programem. W każdej wiadomości będzie link do " +
-            "wypisania się.",
+            "Piszemy tylko o koncertach. Termin, miejsce, program i każda zmiana. " +
+            "W każdej wiadomości będzie link do wypisania się.",
         },
         already_confirmed: {
           title: "Ten adres już jest na liście.",
@@ -263,6 +365,16 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         clearHint: "Puste pole znaczy list bez imienia.",
         errorSend: `Nie udało się zapisać. Spróbuj jeszcze raz albo napisz na ${CONTACT_MAILBOX}.`,
       },
+      actions: {
+        confirm: "Potwierdzam zapis",
+        confirming: "Potwierdzamy…",
+        unsubscribe: "Wypisz mnie",
+        unsubscribing: "Wypisujemy…",
+      },
+      programme: {
+        eyebrow: "Najbliższy koncert",
+        action: "Zobacz program",
+      },
       backToConcerts: "Wróć do koncertów",
       backHome: "Strona główna",
       noscript: "Ta strona potrzebuje JavaScriptu, żeby dokończyć zapis lub wypisanie.",
@@ -271,9 +383,14 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       meta: {
         title: "Zaproszenia na koncerty — VoctEnsemble",
         description:
-          "Jeden krótki list przed każdym koncertem: miejsce, godzina, program. Zapisz się, " +
+          "Piszemy tylko o koncertach. Termin, miejsce, program i każda zmiana. Zapisz się, " +
           "a napiszemy przed następnym Koncertem Duchowym.",
       },
+    },
+    register: {
+      ahead: "Najbliższy wieczór",
+      record: "Dotychczas",
+      recordAria: "Rejestr wieczorów",
     },
     invitation: {
       line: "Napiszemy przed następnym Koncertem Duchowym.",
@@ -289,18 +406,25 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       nameLabel: "First name — optional",
       namePlaceholder: "Anna",
       consentHtml:
-        `I agree to receive invitations to VoctEnsemble's concerts at this email address. ` +
-        `If I give a first name, it will be used only in the letter's greeting. The data ` +
-        `controller is Fundacja VoctFoundation; should it cease to operate, the list may pass ` +
-        `to the person who runs the VoctEnsemble — we will tell you beforehand. I may withdraw ` +
-        `my consent at any time — through the link in every message, or by writing to ` +
-        `<a href="mailto:${DATA_MAILBOX}">${DATA_MAILBOX}</a>. ` +
-        `The details are in the <a href="/polityka-prywatnosci">privacy policy</a>.`,
+        `By signing up you are asking Fundacja VoctFoundation for invitations to VoctEnsemble's ` +
+        `concerts. A first name is used only in the letter's greeting, and one click in any ` +
+        `message takes you off the list. Were the foundation to wind up, the list may pass to ` +
+        `whoever carries this ensemble on — we would tell you separately first. The rest is ` +
+        `in the <a href="/polityka-prywatnosci">privacy policy</a>.`,
       submit: "Put me on the list",
       submitting: "Sending…",
       errorEmail: "Give us an address to write to.",
-      errorConsent: "Without your consent we cannot keep the address.",
       errorSend: `We could not send it. Try again, or write to ${CONTACT_MAILBOX}.`,
+      pendingAddressLabel: "The address you entered",
+      editAddress: "Correct the address",
+      recoverySummary: "Nothing arrived?",
+      recoveryBody:
+        "We can ask for the confirmation once more. If that does not help either, write to " +
+        `${CONTACT_MAILBOX} and we will add you by hand.`,
+      resend: "Send it again",
+      resending: "Sending…",
+      resent: "We have asked for it to be sent again.",
+      resendWait: "You can ask again in {time}.",
       noscript: `The form needs JavaScript. Write to ${CONTACT_MAILBOX} and we will add you by hand.`,
     },
     page: {
@@ -314,12 +438,23 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
           title: "Checking the link…",
           body: "One moment.",
         },
+        confirm: {
+          title: "Confirm your sign-up.",
+          body:
+            "One more move and the invitations will come to this address. The consent is " +
+            "recorded only when you press — a mail program does not do it for you.",
+        },
+        unsubscribe: {
+          title: "Unsubscribe this address?",
+          body:
+            "Once you press, nothing further will be sent to it. Until you press, nothing " +
+            "happens.",
+        },
         confirmed: {
           title: "You are on the list.",
           body:
-            "We will write when the next Spiritual Concert is given a date — one short letter " +
-            "before each concert, with the place and the programme. Every message carries a " +
-            "link to leave.",
+            "We write only about concerts. The date, the place, the programme and every " +
+            "change. Every message carries a link to leave.",
         },
         already_confirmed: {
           title: "This address is already on the list.",
@@ -378,6 +513,16 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         clearHint: "An empty field means a letter with no name.",
         errorSend: `We could not save it. Try again, or write to ${CONTACT_MAILBOX}.`,
       },
+      actions: {
+        confirm: "Confirm my sign-up",
+        confirming: "Confirming…",
+        unsubscribe: "Unsubscribe me",
+        unsubscribing: "Unsubscribing…",
+      },
+      programme: {
+        eyebrow: "The next concert",
+        action: "See the programme",
+      },
       backToConcerts: "Back to the concerts",
       backHome: "Home",
       noscript: "This page needs JavaScript to finish a sign-up or an unsubscribe.",
@@ -386,9 +531,14 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       meta: {
         title: "Concert invitations — VoctEnsemble",
         description:
-          "One short letter before each concert: the place, the hour, the programme. Sign up " +
-          "and we will write before the next Spiritual Concert.",
+          "We write only about concerts. The date, the place, the programme and every change. " +
+          "Sign up and we will write before the next Spiritual Concert.",
       },
+    },
+    register: {
+      ahead: "The next evening",
+      record: "So far",
+      recordAria: "Register of evenings",
     },
     invitation: {
       line: "We will write before the next Spiritual Concert.",
@@ -404,19 +554,26 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       nameLabel: "Prénom — facultatif",
       namePlaceholder: "Anne",
       consentHtml:
-        `J'accepte de recevoir les invitations aux concerts de VoctEnsemble à cette adresse ` +
-        `e-mail. Si je donne un prénom, il ne servira qu'à la formule d'appel de la lettre. ` +
-        `Le responsable du traitement est la Fundacja VoctFoundation ; si elle venait à cesser ` +
-        `son activité, la liste pourrait être reprise par la personne qui dirige le ` +
-        `VoctEnsemble — nous vous en préviendrons à l'avance. Je peux retirer mon ` +
-        `consentement à tout moment — par le lien présent dans chaque message ou en écrivant à ` +
-        `<a href="mailto:${DATA_MAILBOX}">${DATA_MAILBOX}</a>. ` +
-        `Les détails figurent dans la <a href="/polityka-prywatnosci">politique de confidentialité</a>.`,
+        `En vous inscrivant, vous demandez à la Fundacja VoctFoundation les invitations aux ` +
+        `concerts du VoctEnsemble. Le prénom ne sert qu'à la formule d'appel de la lettre, et ` +
+        `un clic dans n'importe quel message vous retire de la liste. Si la Fondation cessait ` +
+        `son activité, la liste pourrait passer à la personne qui poursuit cet ensemble — nous ` +
+        `vous en préviendrions par un message séparé. Le reste figure dans la ` +
+        `<a href="/polityka-prywatnosci">politique de confidentialité</a>.`,
       submit: "Inscrivez-moi",
       submitting: "Envoi…",
       errorEmail: "Indiquez l'adresse à laquelle écrire.",
-      errorConsent: "Sans votre consentement, nous ne pouvons pas conserver l'adresse.",
       errorSend: `L'envoi a échoué. Réessayez ou écrivez à ${CONTACT_MAILBOX}.`,
+      pendingAddressLabel: "L'adresse saisie",
+      editAddress: "Corriger l'adresse",
+      recoverySummary: "Rien n'est arrivé ?",
+      recoveryBody:
+        "Nous pouvons redemander la confirmation. Si cela ne suffit pas non plus, écrivez à " +
+        `${CONTACT_MAILBOX} et nous vous inscrirons à la main.`,
+      resend: "Envoyer à nouveau",
+      resending: "Envoi…",
+      resent: "Nous avons demandé un nouvel envoi.",
+      resendWait: "Nouvelle demande possible dans {time}.",
       noscript: `Le formulaire nécessite JavaScript. Écrivez à ${CONTACT_MAILBOX} et nous vous inscrirons à la main.`,
     },
     page: {
@@ -430,12 +587,24 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
           title: "Vérification du lien…",
           body: "Un instant.",
         },
+        confirm: {
+          title: "Confirmez votre inscription.",
+          body:
+            "Encore un geste et les invitations arriveront à cette adresse. Le consentement " +
+            "n'est enregistré qu'au moment où vous appuyez — un logiciel de messagerie ne le " +
+            "fait pas à votre place.",
+        },
+        unsubscribe: {
+          title: "Désinscrire cette adresse ?",
+          body:
+            "Une fois que vous aurez appuyé, plus rien ne partira vers elle. Tant que vous " +
+            "n'appuyez pas, rien ne se passe.",
+        },
         confirmed: {
           title: "Vous êtes inscrit.",
           body:
-            "Nous écrirons lorsque le prochain Concert Spirituel recevra une date — une courte " +
-            "lettre avant chaque concert, avec le lieu et le programme. Chaque message porte un " +
-            "lien pour se désinscrire.",
+            "Nous n'écrivons que pour les concerts. La date, le lieu, le programme et chaque " +
+            "changement. Chaque message porte un lien pour se désinscrire.",
         },
         already_confirmed: {
           title: "Cette adresse est déjà inscrite.",
@@ -496,17 +665,33 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         clearHint: "Un champ vide signifie une lettre sans prénom.",
         errorSend: `Nous n'avons pas pu l'enregistrer. Réessayez ou écrivez à ${CONTACT_MAILBOX}.`,
       },
+      actions: {
+        confirm: "Je confirme mon inscription",
+        confirming: "Confirmation…",
+        unsubscribe: "Désinscrivez-moi",
+        unsubscribing: "Désinscription…",
+      },
+      programme: {
+        eyebrow: "Le prochain concert",
+        action: "Voir le programme",
+      },
       backToConcerts: "Retour aux concerts",
       backHome: "Accueil",
-      noscript: "Cette page a besoin de JavaScript pour terminer une inscription ou une désinscription.",
+      noscript:
+        "Cette page a besoin de JavaScript pour terminer une inscription ou une désinscription.",
     },
     signup: {
       meta: {
         title: "Invitations aux concerts — VoctEnsemble",
         description:
-          "Une courte lettre avant chaque concert : le lieu, l'heure, le programme. Inscrivez-vous " +
-          "et nous écrirons avant le prochain Concert Spirituel.",
+          "Nous n'écrivons que pour les concerts. La date, le lieu, le programme et chaque " +
+          "changement. Inscrivez-vous : nous écrirons avant le prochain Concert Spirituel.",
       },
+    },
+    register: {
+      ahead: "La prochaine soirée",
+      record: "Jusqu'ici",
+      recordAria: "Registre des soirées",
     },
     invitation: {
       line: "Nous écrirons avant le prochain Concert Spirituel.",

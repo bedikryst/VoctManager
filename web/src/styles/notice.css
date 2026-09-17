@@ -1,10 +1,10 @@
 /**
  * @file notice.css
  * @description The concert notice list's surfaces: the sign-up band at the foot of /koncerty, the
- *  same band standing alone on /newsletter and under the vacat leaf, and the /nuntius receipt.
- *  All of them stand on the site's night ground and share one set of rules — the receipt is the
- *  same rite's other end, and giving any of them a parchment world of its own would have doubled
- *  every value here to say the same thing.
+ *  register that IS the page on /newsletter, the strip in the landing's footer, and the /nuntius
+ *  receipt. All of them stand on the site's night ground and share one set of rules — the receipt
+ *  is the same rite's other end, and giving any of them a parchment world of its own would have
+ *  doubled every value here to say the same thing.
  *
  *  WHY THIS IS A GLOBAL SHEET AND NOT THE PAGE'S OWN `<style>`. Most of what it dresses is
  *  rendered by React inside an island. Astro scopes a page rule by appending `[data-astro-cid-…]`
@@ -12,9 +12,9 @@
  *  `.notice-form` compiles to a selector that matches nothing, silently. `styles/vault.css` is
  *  the same arrangement for the same reason.
  *
- *  The controls deliberately mirror the vault's (`landing/08-vault.css`): the same hairline
- *  field, the same 22px consent box, the same restrained error colour. There is one checkbox on
- *  this site and a reader who has met it in the donation vault should not have to learn a second.
+ *  The controls deliberately mirror the vault's (`landing/08-vault.css`): the same hairline field
+ *  and the same restrained error colour, so a reader who has given an address in the donation
+ *  vault is not asked to learn a second kind of control here.
  *
  *  Tokens (--paper, --candle, --serif, --capitalis, --mono, --ease) come from the globally
  *  imported tokens.css.
@@ -175,84 +175,17 @@
   opacity: 0.55;
 }
 
-/* ── Consent ───────────────────────────────────────────────────────────────── */
-
-.notice-consent {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 13px;
-  align-items: start;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Visually hidden, fully present for assistive technology and the keyboard. */
-.notice-consent-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  border: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.notice-consent-box {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  margin-top: 1px;
-  border: 1px solid rgba(244, 241, 233, 0.32);
-  background: rgba(244, 241, 233, 0.02);
-  color: var(--ink);
-  transition:
-    border-color 0.4s var(--ease),
-    background 0.4s var(--ease);
-}
-
-.notice-consent-check {
-  width: 14px;
-  height: 14px;
-  opacity: 0;
-  transform: scale(0.55);
-  transition:
-    opacity 0.3s var(--ease),
-    transform 0.3s var(--ease);
-}
-
-.notice-consent:hover .notice-consent-box {
-  border-color: rgba(244, 241, 233, 0.6);
-}
-
-.notice-consent-input:checked + .notice-consent-box {
-  border-color: var(--candle);
-  background: var(--candle);
-}
-
-.notice-consent-input:checked + .notice-consent-box .notice-consent-check {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.notice-consent-input:focus-visible + .notice-consent-box {
-  outline: 1px solid var(--candle);
-  outline-offset: 3px;
-}
-
-.notice-consent-input[aria-invalid="true"] + .notice-consent-box {
-  border-color: #c98e7e;
-}
+/* ── The clause ────────────────────────────────────────────────────────────────
+   STATED, NEVER TICKED — see the note on `consentBlock` in `NoticeForm.tsx` for why the box went
+   and why the wording did not. What is left has to be READABLE rather than merely present: a
+   clause nobody can read is not the informed half of informed consent, whatever a checkbox beside
+   it would have claimed. So it is set as fine print at a fine print's measure, not as a wall. */
 
 .notice-consent-text {
-  color: rgba(244, 241, 233, 0.62);
+  margin: 0;
+  color: rgba(244, 241, 233, 0.58);
   font-size: 12.5px;
-  line-height: 1.62;
+  line-height: 1.68;
 }
 
 .notice-consent-text a {
@@ -438,11 +371,6 @@
   border-color: var(--candle-text);
 }
 
-.notice-inner-strip .notice-consent-box {
-  border-color: var(--line-strong);
-  background: transparent;
-}
-
 .notice-inner-strip .notice-consent-text {
   color: var(--ink-muted);
 }
@@ -524,24 +452,67 @@
   line-height: 1.7;
 }
 
-/* ── The band standing alone: /newsletter and /nuntius ─────────────────────────
-   One band filling the viewport minus the chrome — neither page has a second section, so a short
-   body must not leave the footer floating halfway up the screen (the /404 leaf's arrangement).
+/* ── The pages this register fills: /newsletter and /nuntius ───────────────────
+   One ground filling at least the viewport minus the chrome — neither page has a second section,
+   so a short body must not leave the footer floating halfway up the screen (the /404 leaf's
+   arrangement). `min-height` is a FLOOR and not a height: /newsletter now runs well past it, and
+   the centring below simply stops applying once it does.
+
    Stated once for both: they are the same object seen from its two ends, and a second block of
-   identical values would only be a place for them to disagree. `.notice-page` centres a form
-   where `.nuntius-main` centres a sentence, which is the only reason the inner measures differ. */
+   identical values would only be a place for them to disagree. `.notice-page` centres a register
+   where `.nuntius-main` centres a statement, which is the only reason the inner measures differ.
+
+   `align-items: stretch`, because this column holds TWO measured blocks on /newsletter — the
+   sign-up and the record of evenings — and they have to agree on one measure to the pixel or the
+   page's four rules stop lining up. Each sets its own `max-width` and centres itself; centring
+   them here instead would shrink-wrap each to its own content. */
 .notice-page,
 .nuntius-main {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  gap: 22px;
   min-height: 78svh;
-  background: var(--dark);
-  padding: clamp(96px, 13vh, 150px) max(28px, 5vw) clamp(64px, 9vh, 110px);
+  /* A POOL OF LIGHT, BECAUSE A CAST SHADOW ONTO NIGHT IS A SHADOW ONTO NOTHING. Nothing can be
+     painted darker than this ground, so what gives the page a light direction is the ground
+     LIFTED where the display line stands and falling off down the register.
+
+     IT IS ANCHORED TO THE HEAD, NOT TO THE MIDDLE. Centred on a box whose height is now the whole
+     register, the same wash spread over 1400px and read as a lighter black rather than as a room
+     — the fault it was drawn to avoid. Held to the opening, it does what a raking light does:
+     places the one mark the page opens with and leaves the index below it in plain ink. Warm,
+     because every other light on this site is. */
+  position: relative;
+  background:
+    radial-gradient(74% 46% at 26% 4%, rgb(198 164 91 / 0.15), rgb(198 164 91 / 0) 72%),
+    radial-gradient(120% 60% at 50% 0%, rgb(244 241 233 / 0.045), rgb(244 241 233 / 0) 68%),
+    var(--dark);
+  padding: clamp(88px, 11vh, 132px) max(28px, 5vw) clamp(76px, 10vh, 120px);
   color: var(--paper);
   text-align: center;
+}
+
+/* The same grain the sheet wears, over the ground as well — a pool of light on an untextured
+   black bands, and the tile is what dithers it. Behind everything: this is the room, not a film
+   over the page. */
+.notice-page::before,
+.nuntius-main::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.05;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.84' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Over the grain film, which is the ground's own texture rather than a layer on the composition.
+   Stated on the register itself rather than on `.notice-page > *`: on /nuntius the register is
+   rendered inside an `<astro-island>`, and Astro gives that element `display: contents` — it
+   generates no box, so a child selector would land `z-index` on something that cannot paint. */
+.notice-leaf {
+  position: relative;
+  z-index: 1;
 }
 
 .nuntius-panel {
@@ -574,8 +545,8 @@
 
 /* While the token is in flight there is nothing to read yet — the heading holds the page open
    at half ink rather than the panel appearing to have failed. */
-.nuntius-panel[data-state="checking"] .nuntius-title,
-.nuntius-panel[data-state="checking"] .nuntius-body {
+[data-state="checking"] .nuntius-title,
+[data-state="checking"] .nuntius-body {
   opacity: 0.55;
 }
 
@@ -653,11 +624,984 @@
   color: var(--candle);
 }
 
+/* ── The register ──────────────────────────────────────────────────────────────
+   EVERY MARK ON THIS PAGE IS A RULE, A RUBRIC OR A WORD. Nothing is modelled, nothing is lit and
+   nothing imitates a material: the law `nave-menu.css` records under THE RIBBON IS DRAWN, NOT
+   RENDERED was settled by three field passes and it holds here for the same reason it held there.
+   What this composition spends instead is DENSITY — of information, not of gradients. A sheet of
+   parchment drawn in CSS was the first answer and it was the wrong one twice over: it was the one
+   illusionistic object on a flat page, and it was a costume over a page that had almost nothing
+   to say.
+
+   THE MEASURE IS THE RULE, NOT A BOX. Four rules divide the page and each one runs the full width
+   the site's gutter allows — the gold head above the running head, the register rule opening the
+   ask, the record rule, and the colophon that ends it. The reading columns are set inside them, so
+   the space at a rule's ends is a margin the composition declares rather than the emptiness a
+   centred card leaves around itself.
+
+   TWO COLUMNS, AND THEY MUST CARRY COMPARABLE MASS. The apparatus column takes a written address
+   and no more; everything else is the reading column. That arrangement failed for as long as the
+   reading column held one line and a lede — a 4:1 imbalance is a heading with a form parked beside
+   it, not a register — and it is the evenings that make it a register. */
+.notice-leaf,
+.notice-record {
+  /* Shared so the two blocks agree on ONE measure. They carry four rules between them and a
+     disagreement of a single pixel is visible along the whole page. */
+  width: 100%;
+  max-width: 1560px;
+  margin-inline: auto;
+  /* The numeral gutter, shared for the same reason: the evening at the head of the register and
+     the evenings in the record below it are one column of numerals running down the page, and
+     they read as one only while both reserve the same width for it. */
+  --roman-col: clamp(2.4rem, 3.2vw, 3.4rem);
+}
+
+.notice-leaf {
+  --register-gap: clamp(40px, 6vw, 116px);
+  /* The apparatus column: wide enough for a written address and no wider. The reading column
+     takes whatever is left over, which is what makes the display line's size a consequence of the
+     window rather than a number tuned against it.
+
+     IT IS MEASURED BY THE CLAUSE, NOT BY THE FIELDS. At 32vw the consent ran to five lines and
+     was a quarter of the form's whole height, which is height the column beside it then has to
+     answer. Widening the column shortens the clause and lowers the form — the one lever here that
+     improves both columns at once, since the reading column loses width it was not using. */
+  --register-work: clamp(300px, 38vw, 600px);
+  /* How far the written surface travels as it lifts away. See `notice-leaf-lift`. */
+  --lift-x: 8px;
+  --lift-y: -24px;
+
+  position: relative;
+  padding: 0;
+  color: var(--paper);
+  text-align: left;
+}
+
+/* The colophon rule that closes the page, answering the head rule above the running head. Paper
+   rather than gold: the gold one opens and names, this one only ends. */
+.notice-leaf::after,
+.notice-record::after {
+  content: "";
+  display: block;
+  margin-top: clamp(44px, 5vw, 84px);
+  height: 1px;
+  background: linear-gradient(90deg, rgb(244 241 233 / 0.16), rgb(244 241 233 / 0) 72%);
+}
+
+/* On /newsletter the page does not end at the sign-up — the record does, and the colophon belongs
+   at the true foot. Without this the leaf would close itself a screen early and the record would
+   read as an appendix printed after the end of the page. /nuntius has no record and keeps its own
+   closing rule. */
+.notice-leaf:has(+ .notice-record)::after {
+  display: none;
+}
+
+/* ── The written surface ───────────────────────────────────────────────────── */
+
+/* THE RUNNING HEAD CARRIES THE PAGE'S OPENING RULE, as one object rather than as a line plus a
+   label that have to be kept level with each other. Gold, and it is the only gold above the
+   fields: on this ground it is the one mark that names what the page is, and the site's law for
+   the accent is that it stands for one thing at a time (`nave-menu.css`, DYE). */
+.notice-runhead {
+  margin: 0;
+  padding-top: clamp(13px, 1.2vw, 18px);
+  border-top: 1px solid rgb(198 164 91 / 0.36);
+  color: rgb(244 241 233 / 0.6);
+}
+
+/* The stage: the box the exchange happens inside. It holds the opening and the ask, and the island
+   freezes its height before the swap so nothing below moves while the reader is looking straight
+   at it. The running head above it and the record of evenings below it stand OUTSIDE and survive —
+   which is what keeps the page a page while its middle is exchanged. */
+.notice-stage {
+  margin-top: clamp(54px, 7vw, 124px);
+}
+
+/* The sheet letting itself down onto the shorter letter once the exchange is over. Only while the
+   island is walking the floor down — a permanent transition here would animate every reflow the
+   box has, including the recovery disclosure opening inside it. */
+.notice-stage[data-settling] {
+  transition: min-height 0.55s var(--ease);
+}
+
+/* ── The opening ───────────────────────────────────────────────────────────────
+   ONE ROW, TWO COLUMNS, SET ON A BASELINE. The display line takes the reading column and the
+   invitation stands in the apparatus column — on the same vertical the fields take below the rule,
+   so the page declares its two columns in the first thing it says. `align-items: end` is what
+   makes it read as one line rather than as two blocks: a 95px display against a 17px lede aligned
+   at their TOPS leaves the small text floating beside a capital, which is the arrangement a slide
+   makes and a page does not. */
+.notice-opening {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--register-work);
+  column-gap: var(--register-gap);
+  align-items: end;
+}
+
+/* THE ONE DISPLAY LINE ON THE PAGE, and the register is what lets it be one: with everything else
+   set in columns beside and below it, it can take the size a page-scale composition wants instead
+   of the size a card had room for. Sized against its own column, so it stands as one line in all
+   three locales — the Polish breaks after two letters if it is forced to wrap, which is the worst
+   line this page could set. */
+.notice-leaf .notice-h2 {
+  margin: 0;
+  max-width: 14ch;
+  color: var(--paper);
+  font-size: clamp(46px, 6.6vw, 112px);
+  letter-spacing: -0.024em;
+  line-height: 0.96;
+}
+
+/* No measure cap: the apparatus column IS the cap here, exactly as in the strip. A `max-width`
+   inside it only opens a void between the two columns. */
+.notice-leaf .notice-lede {
+  margin: 0;
+  max-width: none;
+  color: rgb(244 241 233 / 0.64);
+  font-size: 17px;
+}
+
+/* ── The ask ───────────────────────────────────────────────────────────────────
+   The register rule opens it, and under that rule the two columns do their real work: the evening
+   the next letter will be about on the reading side, the lines a reader writes on the apparatus
+   side. They begin on ONE vertical, which is the whole reason the rule is there — two columns that
+   started at whatever height their neighbours above happened to end at would be two stacks, not a
+   register.
+
+   The border is real so a reader without JavaScript still gets the rule; under the motion gate it
+   is handed to the drawn pseudo-rule, which needs `--rule-ink` spelled out because registers.css
+   cannot know which side or which ink any given hairline uses. */
+.notice-ask {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--register-work);
+  column-gap: var(--register-gap);
+  align-items: start;
+  margin-top: clamp(38px, 4.6vw, 76px);
+  padding-top: clamp(30px, 3.4vw, 52px);
+  border-top: 1px solid rgb(244 241 233 / 0.14);
+}
+
+html.voct-motion .notice-ask.reveal-rule {
+  border-top-color: transparent;
+  --rule-ink: rgb(244 241 233 / 0.14);
+}
+
+/* DESCENDANT SELECTORS, NOT CHILD ONES, and the distinction is load-bearing rather than a matter
+   of taste. The form and the receipt are rendered by React inside an `<astro-island>` element.
+   Astro gives that element `display: contents`, so it generates no box and its children become
+   grid items of this ask — which is why the LAYOUT works through it. Selectors are not affected by
+   `display`: in the DOM the island is still their parent, so `.notice-ask > .notice-form` matches
+   nothing at all. It fails silently, and what it leaves behind looks almost right — auto-placement
+   still puts the two side by side — so the only symptom is a receipt that sits in one column
+   instead of across both, and an exchange whose animation never runs. */
+.notice-ask .notice-form {
+  grid-area: 1 / 2 / 2 / 3;
+  margin-top: 0;
+  gap: clamp(22px, 2.6vw, 32px);
+}
+
+/* Across both columns and held to a reading measure of its own: the receipt is one short statement
+   and must not be set to the width of a page. */
+.notice-ask .notice-done {
+  grid-area: 1 / 1 / 2 / 3;
+  align-self: start;
+  justify-items: start;
+  margin-top: 0;
+  text-align: left;
+}
+
+.notice-stage[data-sent] .notice-opening,
+.notice-stage[data-sent] .notice-proximum {
+  display: none;
+}
+
+/* The rule belongs to the ASK, and once the ask is a receipt there is no ask to open. Left drawn,
+   it reads as a stray line ruled above a paragraph. */
+.notice-stage[data-sent] .notice-ask {
+  border-top-color: transparent;
+  --rule-ink: transparent;
+}
+
+/* ── The rubric over a block of the register ───────────────────────────────────
+   Two words naming what is under them, in the site's own eyebrow. It is the THIRD of the three
+   jobs that atom does (`.titulus`, base.css): not naming a band and not labelling a datum, but
+   standing as an inscription over a block. Measured at 4.8:1 on this ground. */
+.notice-rubric {
+  margin: 0 0 clamp(16px, 1.8vw, 26px);
+  color: rgb(244 241 233 / 0.5);
+}
+
+/* ── The evening the next letter is about ──────────────────────────────────────
+   THE ARGUMENT FOR THE ADDRESS, WHICH IS WHY IT STANDS INSIDE THE ASK. A sign-up's hardest
+   question is "what would you actually send me", and a page that answers it beside the field
+   answers it where the answer is worth something. Below, among the evenings already sung, the
+   same entry would be a fact; here it is the offer.
+
+   It is the page's SECOND voice, at a clear step under the display line and a clear step over the
+   index — three sizes of the same serif, which is the subordination this site carries instead of
+   colour. */
+.notice-evening {
+  display: grid;
+  grid-template-columns: var(--roman-col) minmax(0, 1fr);
+  /* THE INDEX'S OWN GAP, not the register's. `--register-gap` separates the page's two columns and
+     is an order of magnitude too wide here; what this gutter separates is a numeral from the name
+     it numbers, and it has to match the index below exactly or the two blocks stop reading as one
+     column of figures. */
+  column-gap: clamp(12px, 1.4vw, 26px);
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Every part of the entry but the numeral and the plate sits in the second column; the numeral
+   holds the gutter the record's numerals hold, so the two blocks read as one column of figures
+   down the whole page.
+
+   NO EXPLICIT ROW NUMBERS ANYWHERE HERE, and that is deliberate rather than lazy: the plate and
+   the sentence are both optional, so any row a rule names would be the wrong row for an evening
+   that carries neither. Stating only the COLUMN lets auto-placement lay whatever exists into as
+   many rows as it needs, which is correct for all four combinations without a branch. */
+.notice-evening-latin,
+.notice-evening-title,
+.notice-evening-place,
+.notice-evening-moment,
+.notice-evening-blurb {
+  grid-column: 2;
+}
+
+/* CINZEL AT ITS FLOOR OR ABOVE, NEVER UNDER IT — 12.5px at 600 is where this face stops being
+   legible on a screen and starts being a smudge, and its ceiling is around 16px (base.css). Every
+   capitalis mark in this register is inside that range by construction. */
+.notice-evening-roman {
+  grid-column: 1;
+  align-self: start;
+  padding-top: 0.2em;
+  color: rgb(244 241 233 / 0.42);
+  font-family: var(--capitalis);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  /* Right-aligned for the same reason the index's numerals are, and it has to match them: both
+     blocks begin at the page's left margin and both reserve `--roman-col`, so aligning one edge
+     and not the other would leave VI hanging a few pixels off the column of figures beneath it. */
+  text-align: right;
+}
+
+.notice-evening-latin {
+  color: rgb(244 241 233 / 0.52);
+  font-family: var(--capitalis);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.notice-evening-title {
+  margin-top: 6px;
+  color: var(--paper);
+  font-family: var(--serif);
+  /* The page's SECOND voice, and it has to read as one: a clear step under the display line above
+     and a clear step over the index below, which is the three-size subordination this site carries
+     instead of colour. */
+  font-size: clamp(28px, 3.3vw, 50px);
+  font-weight: 300;
+  letter-spacing: -0.012em;
+  line-height: 1.06;
+  transition: color 0.4s var(--ease);
+}
+
+.notice-evening-place {
+  margin-top: 12px;
+  color: rgb(244 241 233 / 0.6);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+/* MONO FOR THE MOMENT, at one of the two weights this family ships (300 and 400 — an inherited
+   600 would be synthesised and would smear at this size). It is the register a reader checks
+   character by character, which is the one job this face keeps on the site. */
+.notice-evening-moment {
+  margin-top: 4px;
+  color: rgb(244 241 233 / 0.55);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+}
+
+/* THE EVENING'S OWN SENTENCE — the corpus's `about.blurb`, read through the copy overlay. It is
+   the only prose on the page that is not about the list, and it is what turns the block from a
+   label into the argument for handing over an address: it says what the next letter will be about
+   in the evening's own words rather than in the page's. Spent by this entry alone; five of them
+   down the index would be a wall where a reader wants a list. */
+.notice-evening-blurb {
+  margin-top: clamp(14px, 1.5vw, 20px);
+  max-width: 56ch;
+  color: rgb(244 241 233 / 0.62);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+/* Gold arrives on hover and leaves with the pointer — one mark, one row, one meaning at a time,
+   which is how the accent keeps the standing the resting page gives it. */
+.notice-evening:hover .notice-evening-title {
+  color: var(--candle);
+}
+
+/* ── The record of evenings already sung ───────────────────────────────────────
+   THE PAGE'S BODY, AND THE ONLY CONTENT ON IT THAT CANNOT GO STALE. It is set at the full measure
+   because an index is: five columns running the width of the page, numeral at the left margin and
+   moment at the right, one ruled line per evening. That is what a register looks like, and it is
+   the shape this site already uses for its concert navigation — brought here rather than invented,
+   because the page's job was to grow up to the rest of the site.
+
+   IT ALSO SOLVES THE COMPOSITION. Two columns of comparable mass is what the register promised and
+   never delivered while the reading side held a heading and a lede: the imbalance was 4:1 and read
+   as a form parked beside a title. A short apparatus beside a long body is a MARGIN and reads as
+   one; the reverse is a mistake. */
+.notice-record {
+  margin-top: clamp(48px, 6vw, 96px);
+  padding-top: clamp(30px, 3.4vw, 52px);
+  border-top: 1px solid rgb(244 241 233 / 0.14);
+  color: var(--paper);
+  text-align: left;
+}
+
+html.voct-motion .notice-record.reveal-rule {
+  border-top-color: transparent;
+  --rule-ink: rgb(244 241 233 / 0.14);
+}
+
+/* THE TRACKS ARE DECLARED ONCE AND SPENT ON EVERY ROW. Each row is its own grid rather than a
+   subgrid of this list, which means the columns line up only because every row is handed the same
+   track list at the same width — so the definition lives here, on the list, and a row may never
+   state its own.
+
+   FIXED TRACKS, AND `auto` IS THE ONE THING THAT CANNOT BE USED HERE. A content-sized track is
+   resolved per GRID, and every row is its own grid — so `auto` sized the latin column to LAMENTUM
+   on one row and to INCARNATIO on the next, and the columns stopped lining up down the page. It
+   fails quietly: each row looks correct on its own. (Subgrid would resolve them across the list
+   and is the other honest answer; fixed tracks need no support floor and no fallback path, and
+   these four columns hold names, places and abbreviated dates whose lengths are known.)
+
+   The widths are MEASURED rather than guessed — the longest latin is 100px, the longest place
+   176px, the longest moment 80px — and each track carries a little headroom for the two locales
+   whose places are longer. Everything left over goes to the title, where it becomes the leader
+   rather than a hole: proportional tracks left 232px of empty column beside the titles and 230px
+   beside the places, 462px of the index's 1296 standing for nothing. */
+.notice-entries {
+  --entry-cols: var(--roman-col) 7.5rem minmax(0, 1fr) 12rem 5.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The ruled lines of the page. Anchored to the TOP of each row, which is both what registers.css
+   asks of a hairline and what makes the first rule sit under the rubric rather than under the
+   first title. */
+.notice-entry {
+  display: grid;
+  grid-template-columns: var(--entry-cols);
+  align-items: baseline;
+  column-gap: clamp(12px, 1.4vw, 26px);
+  padding: clamp(13px, 1.3vw, 18px) 0;
+  border-top: 1px solid rgb(244 241 233 / 0.1);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.4s var(--ease);
+}
+
+.notice-entry-roman {
+  color: rgb(244 241 233 / 0.38);
+  font-family: var(--capitalis);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  /* Right-aligned, so the numerals abut the names they number however many strokes they take —
+     the arrangement every printed index uses and the reason the gutter is a fixed width. */
+  text-align: right;
+}
+
+.notice-entry-latin {
+  color: rgb(244 241 233 / 0.5);
+  font-family: var(--capitalis);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* THE LEADER IS WHAT MAKES THIS AN INDEX AND NOT A TABLE. A printed index runs a rule from the
+   end of an entry to the number that answers it, and this site already does exactly that in its
+   concert navigation (`lib/registrum` — "an index line runs a hairline leader to each silk's
+   tip"). Here it ties each evening to where and when it was sung, and it is the reason the slack
+   in this column is a mark rather than a gap.
+
+   The cell is the flex row and the name is its first item, so the rule starts where the TITLE
+   ends rather than where the column does — which is the whole difference between a leader and a
+   border. Fainter than the row rules it crosses: it joins two things a reader is already reading
+   and must not become a third. */
+.notice-entry-title {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(14px, 1.6vw, 26px);
+  min-width: 0;
+  color: rgb(244 241 233 / 0.92);
+  font-family: var(--serif);
+  font-size: clamp(17px, 1.5vw, 22px);
+  font-weight: 300;
+  line-height: 1.2;
+  transition: color 0.4s var(--ease);
+}
+
+.notice-entry-name {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.notice-entry-title::after {
+  content: "";
+  flex: 1 1 auto;
+  /* Never absent, however long a title runs: a leader that vanishes on the one entry with the
+     longest name would read as a defect on that row rather than as a column that is full. */
+  min-width: 1.5rem;
+  border-bottom: 1px solid rgb(244 241 233 / 0.12);
+}
+
+.notice-entry-place {
+  color: rgb(244 241 233 / 0.5);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.notice-entry-moment {
+  color: rgb(244 241 233 / 0.5);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  text-align: right;
+}
+
+.notice-entry:hover {
+  border-top-color: rgb(198 164 91 / 0.5);
+}
+
+.notice-entry:hover .notice-entry-title {
+  color: var(--candle);
+}
+
+/* ── The lines a reader writes on ──────────────────────────────────────────────
+   The address leads and takes the sheet's width, which is both the hierarchy and the order the
+   form is actually filled in; the name sits under it at the width a first name needs. */
+
+.notice-lines {
+  display: grid;
+  gap: clamp(22px, 2.6vw, 34px);
+}
+
+.notice-field-given {
+  max-width: 260px;
+}
+
+/* THE FIELDS ARE THE RULED LINES OF THE PAGE, which is why they are hairlines the width of their
+   column and nothing else: no box, no fill, no resting state that looks like a control. Sans for
+   the value — Cormorant is this page's display voice, and a long real address set in a delicate
+   serif is a value nobody can check for a typo. */
+.notice-leaf .notice-email {
+  padding: 6px 2px 13px;
+  border-bottom-color: rgb(244 241 233 / 0.26);
+  font-family: var(--sans);
+  font-weight: 300;
+}
+
+/* A PLACEHOLDER IS TEXT AND THIS PAGE'S FLOOR APPLIES TO IT — 4.5:1, the same one `nave-menu.css`
+   sets for every word on a register. At 0.28 it measured 2.2:1, the only mark on the page under
+   the floor, and it is not decoration: it shows the SHAPE of the value, which is the one thing a
+   reader checks a typed address against. 0.48 puts it at 4.5:1. It still cannot be mistaken for a
+   filled field, because a typed value is full paper at 15.8:1 — four times the step. */
+.notice-leaf .notice-email::placeholder {
+  color: rgb(244 241 233 / 0.48);
+}
+
+/* It leads the register it shares with the name, which is all the hierarchy this order needs —
+   the page's weight is spent on the greeting in the column beside it. */
+.notice-leaf .notice-field-address .notice-email {
+  font-size: clamp(18px, 1.7vw, 25px);
+}
+
+.notice-leaf .notice-field-given .notice-email {
+  font-size: 18px;
+}
+
+/* Full `--candle` here, unlike anything on parchment: gold's 2.1 : 1 problem is a PAPER problem,
+   and on the night ground it is the accent this site reserves for exactly this — the one line
+   being written on. Doubled into a shadow so the active rule is unmistakably thicker without the
+   field changing height. */
+.notice-leaf .notice-email:focus {
+  border-bottom-color: var(--candle);
+  box-shadow: 0 1px 0 var(--candle);
+}
+
+/* MONO, BECAUSE THESE ARE THE SHEET'S ANNOTATIONS RATHER THAN ITS VOICE. The brief gives Cinzel
+   to the running head, Cormorant to the headline and the mono to short metadata, and a field
+   label is exactly that: two words naming the line beneath them. Set in letterspaced sans caps
+   they are the label of any form on any site; set in the mono they belong to a printed edition,
+   and they stop competing with the running head, which wears the same caps in Cinzel a few
+   centimetres above. Weight 400 — this family is carried at 300 and 400 only.
+
+   Wrapping allowed: the band measures its optional field by this label and therefore cannot let
+   it reflow, but the leaf gives each line its own row and has the room. */
+.notice-leaf .notice-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  white-space: normal;
+}
+
+/* FINE PRINT THAT IS ACTUALLY FINE PRINT — and what makes it so is the PAGE, not the paragraph.
+   Standing beside a display line and nothing else, this clause was the second-largest mass of ink
+   on the screen and read as a wall a reader had to clear to reach the button; the answer was never
+   to shorten it, because what it states is what each consent record is evidence of. The answer was
+   to give the page a body. Beside a register of evenings the same five lines are the quietest
+   thing in the column, which is where fine print belongs.
+
+   It takes the apparatus column's own width rather than a measure of its own: the column is
+   already narrow, and a cap inside it only opens a gutter down the clause's right-hand side.
+   Subordination here is carried by REGISTER — a grade smaller, opened up — which is this site's
+   rule (`nave-menu.css`, LEGIBILITY), never by fading it further toward the ground. Measured at
+   6.2:1 against this page's night, over the 4.5:1 floor that rule sets. */
+.notice-leaf .notice-consent-text {
+  font-size: 12.5px;
+  line-height: 1.74;
+  max-width: none;
+}
+
+/* Wider-tracked and a grade smaller than the band's: the block earns its weight from the space
+   inside it rather than from its area, and it is the only filled shape in the whole register. */
+.notice-leaf .notice-submit {
+  padding: 15px 34px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+}
+
+/* THE RULE IS WHAT GIVES THE ACT A PLACE TO STAND — the line a form is signed on. It closes the
+   clause above it, carries the block on its outer end, and is the last mark of the apparatus
+   column. Hairline, because it divides the foot of a column from its body; the page's own two
+   rules (the gold head and the colophon) are the ones that open and close. */
+.notice-act {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+  /* Nearer the clause than the block, because it is the clause it closes: the form's own row gap
+     already carries most of the separation above it. */
+  margin-top: 2px;
+  padding-top: 22px;
+  border-top: 1px solid rgb(244 241 233 / 0.14);
+}
+
+/* Scoped to the form's own refusal: the receipt carries a `.notice-error` too (a resend that
+   failed), and that one belongs beside the button inside the disclosure, on the reading axis.
+   Under the act, on the act's own end of the rule: a refusal printed at the far side of a column
+   from the control that produced it is a refusal a reader has to go looking for. */
+.notice-leaf .notice-form > .notice-error {
+  margin-left: auto;
+  max-width: 52ch;
+  text-align: right;
+}
+
+/* ── The waiting leaf ──────────────────────────────────────────────────────── */
+
+.notice-leaf .notice-done {
+  gap: 12px;
+}
+
+.notice-leaf .notice-done-title {
+  font-size: clamp(30px, 4.4vw, 62px);
+  letter-spacing: -0.02em;
+  line-height: 1.02;
+}
+
+.notice-leaf .notice-done-body {
+  max-width: 44ch;
+  font-size: clamp(15px, 1.25vw, 18px);
+}
+
+.notice-leaf .notice-done-hint {
+  max-width: 52ch;
+}
+
+/* The address, as the page's own record of what was written on it. Mono for the value: this is a
+   string a reader verifies character by character, which is the one job that face keeps. */
+.notice-done-address {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin: 8px 0 2px;
+  padding-top: 12px;
+  border-top: 1px solid rgb(244 241 233 / 0.14);
+}
+
+.notice-done-address-label {
+  color: rgb(244 241 233 / 0.5);
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.notice-done-address-value {
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+/* A text button, because correcting an address is a way BACK and must not look like a second
+   thing to submit. It wears the clause's own link treatment. */
+.notice-textlink {
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid rgb(244 241 233 / 0.3);
+  background: none;
+  color: rgb(244 241 233 / 0.78);
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 13px;
+  transition:
+    color 0.35s var(--ease),
+    border-color 0.35s var(--ease);
+}
+
+.notice-textlink:hover {
+  color: var(--candle);
+  border-color: var(--candle);
+}
+
+/* ── Recovery ──────────────────────────────────────────────────────────────────
+   Shut by default and small: the reader whose letter arrived never opens this, and the only
+   person it is for is the one whose letter did not. */
+
+.notice-recovery {
+  margin-top: 14px;
+  max-width: 52ch;
+}
+
+/* The native disclosure triangle is dropped — it is the one glyph on this page the site did not
+   draw, and beside Cormorant and a ruled register it reads as a browser widget that wandered in.
+   The `::-webkit-details-marker` line is still needed for WebKit, which ignores `list-style`. */
+.notice-recovery-summary {
+  color: rgb(244 241 233 / 0.6);
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 13px;
+  list-style: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgb(244 241 233 / 0.28);
+}
+
+.notice-recovery-summary::-webkit-details-marker {
+  display: none;
+}
+
+.notice-recovery-summary:hover {
+  color: var(--paper);
+}
+
+.notice-recovery-body {
+  margin: 12px 0 14px;
+  color: rgb(244 241 233 / 0.6);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* Outlined rather than filled: the register's one filled block is the act, and this is a repair. */
+.notice-leaf .notice-submit-quiet {
+  padding: 11px 20px;
+  border-color: rgb(244 241 233 / 0.3);
+  background: transparent;
+  color: rgb(244 241 233 / 0.82);
+}
+
+.notice-leaf .notice-submit-quiet:hover:not(:disabled) {
+  border-color: var(--candle);
+  color: var(--candle);
+}
+
+.notice-recovery-state {
+  margin: 10px 0 0;
+  min-height: 1.2em;
+  color: rgb(244 241 233 / 0.6);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+/* ── The exchange ──────────────────────────────────────────────────────────────
+   A short movement between overlapping planes, not a turning page. The written surface lifts and
+   fades; the receipt standing under it settles into the space it vacates. The end state is
+   DECLARED as well as animated, so a browser that never runs the keyframes still shows the
+   finished exchange rather than a form frozen on top of a receipt. */
+
+.notice-stage[data-phase="leaving"] .notice-opening,
+.notice-stage[data-phase="leaving"] .notice-proximum,
+.notice-stage[data-phase="leaving"] .notice-form {
+  opacity: 0;
+  transform: translate3d(var(--lift-x), var(--lift-y), 0);
+  animation: notice-leaf-lift 440ms var(--ease) both;
+}
+
+.notice-stage[data-phase="leaving"] .notice-done {
+  animation: notice-leaf-settle 460ms var(--ease) 130ms both;
+}
+
+/* The travel is a property rather than a literal so the phone can shorten it without a second
+   @keyframes of the same name — two definitions of one animation resolve by bundle order, which
+   is not a thing to leave a layout depending on. */
+@keyframes notice-leaf-lift {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(var(--lift-x), var(--lift-y), 0);
+  }
+}
+
+@keyframes notice-leaf-settle {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* ── The receipt page wearing the same register ────────────────────────────────
+   NO ENTRANCE REGISTER AT ALL HERE, and that absence is the design: /nuntius opens DIRECTLY in
+   its state. /newsletter inks its running head and its display line as any page of this site does;
+   a reader arriving from their mailbox is owed the answer instead, not a re-enactment of signing
+   up while they wait to learn whether they are subscribed.
+
+   ONE COLUMN, because this page carries a statement rather than a form: there is no apparatus to
+   stand beside the voice, so the register closes to the measure a statement is read at. */
+.notice-leaf:has(.nuntius-panel) {
+  max-width: 1080px;
+}
+
+.notice-leaf .nuntius-panel {
+  max-width: 62ch;
+  margin-top: clamp(44px, 6vw, 96px);
+}
+
+.notice-leaf .nuntius-title {
+  margin: 0;
+  max-width: 15ch;
+  font-size: clamp(34px, 5vw, 76px);
+  letter-spacing: -0.02em;
+}
+
+.notice-leaf .nuntius-body {
+  margin: clamp(20px, 2.2vw, 30px) 0 0;
+  max-width: 40ch;
+  font-size: 17px;
+}
+
+.notice-leaf .nuntius-form {
+  margin-inline: 0;
+}
+
+.nuntius-act {
+  margin-top: clamp(26px, 3vw, 38px);
+}
+
+/* The programme entry — typeset as an entry, never boxed as a card. When no evening is published
+   there is simply nothing here: `confirmed.body` has already said what the list promises, and a
+   hollow card would be the second sentence saying it. */
+.nuntius-programme {
+  margin-top: clamp(26px, 3vw, 38px);
+  padding-top: clamp(18px, 2vw, 26px);
+  border-top: 1px solid rgb(244 241 233 / 0.14);
+}
+
+.nuntius-programme-eyebrow {
+  margin: 0 0 10px;
+  color: rgb(244 241 233 / 0.6);
+}
+
+.nuntius-programme-title {
+  margin: 0;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: clamp(22px, 2.6vw, 32px);
+  font-weight: 300;
+  line-height: 1.12;
+}
+
+.nuntius-programme-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin: 10px 0 0;
+  color: rgb(244 241 233 / 0.6);
+  font-size: 14px;
+}
+
+.nuntius-programme-moment {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.03em;
+}
+
+.nuntius-programme .nuntius-link-lead {
+  margin-top: clamp(16px, 1.8vw, 22px);
+}
+
+.notice-leaf .nuntius-actions {
+  justify-content: flex-start;
+  margin-top: clamp(26px, 3vw, 38px);
+}
+
+/* ── The register on a phone ───────────────────────────────────────────────────
+   One column, everything on the main reading axis, the same exchange with less travel. The rules
+   stay — they are the composition, not its decoration — and the consent clause gives up nothing. */
+@media (max-width: 760px) {
+  .notice-leaf {
+    --lift-x: 4px;
+    --lift-y: -14px;
+  }
+
+  .notice-leaf .notice-stage {
+    margin-top: clamp(34px, 9vw, 52px);
+  }
+
+  /* EVERYTHING ON ONE READING AXIS. At this width a column wide enough for a written address
+     leaves the display line nothing at all, so both rows of the register collapse — the ask keeps
+     its rule, because the rule is the composition rather than its decoration. */
+  .notice-opening,
+  .notice-ask {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+    align-items: start;
+  }
+
+  /* The lede returns to being a line under a heading, so it takes a heading's own air; the ask's
+     two halves are separate acts and keep the distance between them. */
+  .notice-opening {
+    row-gap: clamp(16px, 4vw, 24px);
+  }
+
+  .notice-ask {
+    row-gap: clamp(30px, 8vw, 44px);
+  }
+
+  .notice-ask .notice-form {
+    grid-area: auto;
+  }
+
+  /* Back across the one column it now has, rather than across two that no longer exist. */
+  .notice-ask .notice-done {
+    grid-area: auto;
+  }
+
+  .notice-leaf .notice-h2 {
+    max-width: none;
+    font-size: clamp(42px, 11.6vw, 58px);
+  }
+
+  .notice-leaf .notice-field-address .notice-email {
+    font-size: clamp(18px, 5.4vw, 22px);
+  }
+
+  .notice-field-given {
+    max-width: none;
+  }
+
+  /* The act returns to the reading axis: a full-width target is what a thumb needs, and with the
+     button spanning the sheet there is no longer a right-hand side for the refusal to sit on. */
+  .notice-leaf .notice-submit {
+    width: 100%;
+    justify-content: center;
+    padding-block: 17px;
+  }
+
+  .notice-leaf .notice-form > .notice-error {
+    margin-left: 0;
+    text-align: left;
+  }
+
+  /* The repair does NOT take the full width the sign-up takes. Stretched across the sheet and
+     greyed out by its own cooldown, it read as the page's main action having been disabled. */
+  .notice-leaf .notice-submit-quiet {
+    width: auto;
+    padding-block: 12px;
+  }
+
+  .notice-leaf .notice-done-title {
+    font-size: clamp(28px, 8.6vw, 40px);
+  }
+
+  .notice-leaf .nuntius-title {
+    max-width: none;
+    font-size: clamp(30px, 9vw, 44px);
+  }
+
+  /* THE INDEX KEEPS ITS NUMERAL GUTTER AND GIVES UP ITS COLUMNS. Five tracks in 390px is five
+     things too narrow to read; what survives is the shape of an index entry — the numeral at the
+     margin, the latin and the moment on one line as the entry's head, the title and the place
+     under them. The moment stays at the right edge because that is where an index prints it and
+     because it is what a reader scans this list for. */
+  .notice-entry {
+    grid-template-columns: var(--roman-col) minmax(0, 1fr) auto;
+    column-gap: 10px;
+    row-gap: 3px;
+  }
+
+  .notice-entry-roman {
+    grid-row: 1 / span 3;
+    align-self: start;
+  }
+
+  .notice-entry-latin {
+    grid-column: 2;
+  }
+
+  .notice-entry-moment {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  /* NO LEADER AT THIS WIDTH. The place and the moment no longer sit at the end of the title's own
+     line, so a rule running to the edge of the screen would join the title to nothing. The cell
+     goes back to being a cell. */
+  .notice-entry-title {
+    display: block;
+    grid-column: 2 / span 2;
+  }
+
+  .notice-entry-title::after {
+    display: none;
+  }
+
+  .notice-entry-place {
+    grid-column: 2 / span 2;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .notice-consent-check,
   .notice-email,
   .notice-submit,
-  .nuntius-link {
+  .nuntius-link,
+  .notice-leaf,
+  .notice-entry,
+  .notice-evening,
+  .notice-textlink {
     transition: none;
   }
 }

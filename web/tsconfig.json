@@ -1,7 +1,10 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"],
+  // `rite/` is a standalone package with its own package.json and its own playwright
+  // dependency — it ships to video collaborators without the site. Its deps are never
+  // installed here, so checking it from this project only ever reports missing modules.
+  "exclude": ["dist", "rite"],
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react"

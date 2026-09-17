@@ -37,10 +37,15 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
 import { DEFAULT_LOCALE, localizePath, type Locale } from "../../i18n/config";
+import { getCollection } from "astro:content";
+
 import { NUNTIUS } from "../../i18n/content/nuntius";
 import { UI } from "../../i18n/ui";
 import { bleedPair } from "../../lib/photos";
-import { NuntiusIsland } from "../../islands/landing/NuntiusIsland";
+import { cycleStations } from "../../lib/cycle";
+import { longDate } from "../../lib/dates";
+import { concertKey, withOverlay } from "../../lib/copyOverlay";
+import { NuntiusIsland, type NoticeOccurrence } from "../../islands/landing/NuntiusIsland";
 import "../../styles/notice.css";
 
 interface Props {
@@ -53,6 +58,72 @@ const ui = UI[lang];
 
 /* This document's own URL — composed, not looked up. See the header. */
 const path = lang === DEFAULT_LOCALE ? "/nuntius" : `/${lang}/nuntius`;
+
+/**
+ * The evenings the confirmed leaf can offer — every published STATION still ahead, ascending.
+ *
+ * A LIST, NOT `upcomingStation`. Two things that helper cannot do here. It answers with one
+ * evening chosen at BUILD time, and this document is the one page on the site that is opened
+ * from a mailbox rather than from a link — days or weeks after the deploy that made it, which is
+ * exactly long enough for "the next concert" to have already happened. And it reads only `date`,
+ * so a tour's own evenings in `dates` are invisible to it; a confirmation that skipped four of
+ * the five cities would be offering the wrong one. The choice is therefore the island's, made
+ * against the reader's clock; this pass only typesets the candidates and drops what was already
+ * past when the site was built.
+ *
+ * Stations only, for the reason `lib/cycle` states: a wedding is not what "the next concert"
+ * means, and this list promises Spiritual Concerts.
+ */
+const builtOn = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Warsaw",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+}).format(new Date());
+
+const hrefConcerts = localizePath("/koncerty", lang);
+
+const occurrences: NoticeOccurrence[] = cycleStations(await getCollection("concerts"))
+  .flatMap((entry): NoticeOccurrence[] => {
+    /* This evening's words in this locale: the overlay's translation where one exists, the
+       corpus's Polish otherwise. Never `pickLocale` — the corpus is Polish-only (spec §7). */
+    const say = (field: string, polish: string): string =>
+      withOverlay(concertKey(entry.id, field), lang, polish);
+    const title = say("title", entry.data.title);
+    /* An evening with no page of its own is still a PLACE on /koncerty: the station carries the
+       anchor, so this door lands on the announcement rather than at the head of the walk. */
+    const href = entry.data.hasPage
+      ? `${hrefConcerts}/${entry.id}`
+      : `${hrefConcerts}#${entry.id}`;
+    /* The date is data and the hour is data; neither is ever typed into copy (spec §5). */
+    const moment = (date: string, time?: string): string =>
+      [longDate(date, lang), time].filter(Boolean).join(" · ");
+
+    /* A tour states each city in `dates`; a single evening states itself in `date`/`metaPlace`.
+       The venue of a tour date is a proper name and is printed as the corpus wrote it, which is
+       what the itinerary on the concert's own page does with the same field. */
+    if (entry.data.dates?.length) {
+      return entry.data.dates.map((evening) => ({
+        date: evening.date,
+        title,
+        place: evening.venue,
+        moment: moment(evening.date, evening.time),
+        href,
+      }));
+    }
+    if (!entry.data.date) return [];
+    return [
+      {
+        date: entry.data.date,
+        title,
+        place: say("metaPlace", entry.data.metaPlace.pl),
+        moment: moment(entry.data.date, entry.data.time),
+        href,
+      },
+    ];
+  })
+  .filter((evening) => evening.date >= builtOn)
+  .sort((a, b) => a.date.localeCompare(b.date));
 
 const ogImage = (
   await getImage({ src: bleedPair("koncerty-hero").desktop, width: 1200, format: "webp" })
@@ -85,6 +156,7 @@ const ogImage = (
       homeHref={localizePath("/", lang)}
       signupHref={localizePath("/newsletter", lang)}
       signupLabel={NUNTIUS[lang].invitation.cta}
+      occurrences={occurrences}
     />
     <noscript>
       <p class="notice-noscript">{t.noscript}</p>

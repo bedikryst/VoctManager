@@ -64,16 +64,22 @@ next:
 # could not read.
 notice:
   h2: "Do zobaczenia."
-  # One negation in the passage, and it is the last three words — the site's own rule. The list
-  # promises a frequency, not a relationship; keep whatever renders that plainly.
+  # THE PROMISE IS SCOPE, NOT A COUNT. Counting letters ("one short letter before each concert")
+  # states an operational limit no sending policy keeps: one programme sung in three cities is
+  # three dates, and a moved hour is another letter. What can be promised without such a policy is
+  # the purpose the consent record already holds — concerts — so the sentence names the subject
+  # and then lists what a letter carries. "Każda zmiana" is the last ITEM of that list, never a
+  # sentence of its own about changes: it is one more thing the letter brings, and the strongest
+  # reason a stranger has to give an address.
   #
-  # IT SAYS "KONCERT", NOT THE SITE'S OWN "WIECZÓR", and it names the occasion rather than
-  # counting letters against it. This is the band a stranger meets while scanning, and the same
-  # rule `landing.yaml` states at `announceLabel` applies here: the plainest available word is the
-  # one that gets read. "One letter for one evening" was ambiguous in exactly the place where the
-  # frequency IS the offer — it can be read as one letter every evening.
+  # IT SAYS "KONCERT", NOT THE SITE'S OWN "WIECZÓR". This is the band a stranger meets while
+  # scanning, and the same rule `landing.yaml` states at `announceLabel` applies here: the
+  # plainest available word is the one that gets read.
+  #
+  # The two no-break spaces this line wants — "o koncertach" and "i każda" — are `lib/typo`'s
+  # work, not the author's. Write it plainly.
   lede: >-
-    Zostaw e-mail. Damy znać o naszych koncertach.
+    Piszemy tylko o koncertach. Termin, miejsce, program i każda zmiana.
   # Read after the address is submitted. It says a mail is on its way, never "you are subscribed":
   # nothing is stored as a consent until the link in it is clicked.
   sentTitle: "Sprawdź skrzynkę."

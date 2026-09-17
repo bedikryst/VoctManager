@@ -48,6 +48,21 @@ export type NoticeSurface =
 /** The site's three locales, as the backend spells them. */
 export type NoticeLocale = "pl" | "en" | "fr";
 
+/**
+ * How long the waiting leaf keeps its resend button shut, in milliseconds.
+ *
+ * A MIRROR OF `CONFIRM_RESEND_COOLDOWN` (`backend/outreach/models.py`), NOT A SECOND RULE. The
+ * server is the one that decides; it simply cannot say so, because `subscribe()` answers 202
+ * identically whether it sent a letter, swallowed the request inside the cooldown or found the
+ * address confirmed years ago — and it answers that way on purpose, so that a public form cannot
+ * be asked "is this person on the list?".
+ *
+ * So the countdown is the reader's only feedback, and its honesty is entirely this constant's
+ * job: a floor lower than the server's would offer a button that changes nothing. Move the two
+ * together, and keep this one no smaller.
+ */
+export const NOTICE_RESEND_COOLDOWN_MS = 10 * 60 * 1000;
+
 /** Answers to a confirmation link. `invalid` covers an unknown, spent-then-withdrawn or garbled token. */
 export const CONFIRM_STATUSES = [
   "confirmed",

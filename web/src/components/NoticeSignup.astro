@@ -3,7 +3,8 @@
  * @file NoticeSignup.astro
  * @description The concert notice list's sign-up, wherever it stands: the rubric, the band's own
  *  two sentences, the island that takes the address, and the no-JavaScript fallback. Callers
- *  supply only the section around it — its landmark, its `id`, its ground.
+ *  supply the section around it — its landmark, its `id`, its ground — and, on the leaf, the one
+ *  evening still ahead, because only a page that reads the concert corpus can know it.
  *
  *  ONE COMPONENT IS WHAT MAKES SEVERAL PLACEMENTS SAFE. `surface` on a consent record names the
  *  screen the clause was read on, so several values are a finer record rather than a weaker one —
@@ -28,6 +29,7 @@ import { NoticeForm } from "../islands/landing/NoticeForm";
 import type { NoticeSurface } from "../islands/landing/api/notices";
 import { KONCERTY_PAGE } from "../i18n/content/koncerty";
 import { NUNTIUS } from "../i18n/content/nuntius";
+import type { RegisterEvening } from "../lib/noticeRegister";
 import type { Locale } from "../i18n/config";
 import { chromeHtmlForIsland } from "../lib/islandCopy";
 import { pageCopy } from "../lib/pageCopy";
@@ -47,10 +49,45 @@ interface Props {
    * what it says: the heading drops to the lede's size and the voice moves beside the fields
    * instead of above them. Nothing is removed, because the one thing that decides this shape's
    * height is the consent clause, and that may not be shortened to fit a design.
+   *
+   * `leaf` is the REGISTER on /newsletter, and it is a page rather than a placement: four rules
+   * dividing the site's night, two columns under them, and the concert corpus set out beneath as
+   * an index. Nothing on it is drawn or modelled — the law `nave-menu.css` records under THE
+   * RIBBON IS DRAWN, NOT RENDERED applies here, and an earlier answer that drew a sheet of
+   * parchment with a silk marker on this ground failed it exactly as that note predicts.
+   *
+   * It is the only variant that changes the form's READING ORDER — address first, the way a
+   * register is actually filled in — which is why `NoticeForm` is told which composition it is
+   * in rather than left to infer it from a stylesheet.
    */
-  variant?: "band" | "strip";
+  variant?: "band" | "strip" | "leaf";
+  /**
+   * The evening the next letter will be about, set beside the fields on the leaf. `leaf` only,
+   * and optional even there — between seasons the corpus holds no station still ahead, and the
+   * ask then stands on its own rather than on a slot with nothing in it.
+   *
+   * THE ARGUMENT FOR THE ADDRESS, NOT AN ORNAMENT. It is the one thing on the page that answers
+   * "what would you actually write to me about", which is why it stands IN the ask rather than
+   * further down among the evenings already sung.
+   */
+  ahead?: RegisterEvening | undefined;
 }
-const { lang, surface, level = "h2", variant = "band" } = Astro.props;
+const { lang, surface, level = "h2", variant = "band", ahead } = Astro.props;
+const isLeaf = variant === "leaf";
+
+/* NO PHOTOGRAPH ON THIS PAGE, AND IT WAS BUILT ONCE BEFORE BEING REMOVED — which is worth a note,
+   because the idea will come back. A frame of the evening still ahead, set as a band over its
+   entry, is sound in principle: it answers what the letters are about better than a sentence, and
+   it fills the column beside the form. Two things killed it. The corpus's declared frame for an
+   evening (`about.img`) is a promotional composite rather than a photograph of the ensemble, and
+   on a page whose whole argument is ruled type on night it read as the one foreign object — the
+   same failure `nave-menu.css` records for modelled cloth on flat parchment. And a photograph as
+   GROUND is ruled out outright: the register below is 11–12.5px type held to a 4.5:1 floor, which
+   no scrim can guarantee over an image, and a scrim heavy enough to try spends the image's whole
+   range (the fault the register audit reports as R10).
+
+   What would change the answer is an ASSET, not code: a real concert frame, dark, in the site's
+   own palette. Until there is one, the evening carries its own sentence instead. */
 
 const copy = pageCopy(KONCERTY_PAGE, lang);
 const nuntius = NUNTIUS[lang];
@@ -61,34 +98,112 @@ const noticeChrome = {
 
 /* Capitalised so Astro reads it as a tag name rather than as text. */
 const Heading = level;
+
+/* `client:visible` everywhere it stands: on /koncerty the band sits below six full-screen
+   stations and a reader who never reaches it never pays for the bundle, and on the three pages
+   where it is already in view the observer fires at once. The heading above it is server markup
+   either way, so the ask is legible before hydration. */
+const islandProps = {
+  lang,
+  chrome: noticeChrome,
+  copy: {
+    sentTitle: copy.notice.sentTitle,
+    sentBody: copy.notice.sentBody,
+    sentHint: copy.notice.sentHint,
+  },
+  surface,
+} as const;
 ---
 
-<div class:list={["notice-inner", variant === "strip" && "notice-inner-strip"]}>
-  {/* The voice, kept in one element so the strip can set it beside the fields rather than above
-      them — and so the receipt, which replaces all three at once, has one thing to hide. */}
-  <div class="notice-say">
-    <p class="eyebrow reveal">
-      <span class="lat" lang="la">Nuntius</span>&nbsp;&nbsp;·&nbsp;&nbsp;{nuntius.page.eyebrow}
-    </p>
-    <Heading class="notice-h2 reveal ink-press" data-d="1">{copy.notice.h2}</Heading>
-    <p class="notice-lede reveal" data-d="2">{copy.notice.lede}</p>
-  </div>
-  {/* `client:visible` everywhere it stands: on /koncerty the band sits below six full-screen
-      stations and a reader who never reaches it never pays for the bundle, and on the two pages
-      where it is already in view the observer fires at once. The heading above it is server
-      markup either way, so the band is legible before hydration. */}
-  <NoticeForm
-    client:visible
-    lang={lang}
-    chrome={noticeChrome}
-    copy={{
-      sentTitle: copy.notice.sentTitle,
-      sentBody: copy.notice.sentBody,
-      sentHint: copy.notice.sentHint,
-    }}
-    surface={surface}
-  />
-  <noscript>
-    <p class="notice-noscript">{nuntius.form.noscript}</p>
-  </noscript>
-</div>
+{
+  /*
+    TWO TREES, BECAUSE THE EXCHANGE IS STRUCTURAL. On the leaf the written surface and the
+    receipt that replaces it have to occupy ONE box — they are superimposed for the length of the
+    exchange and the box's height is frozen across it, so the receipt does not slide to a new
+    position the moment the form unmounts. `.notice-stage` is that box, and the swap takes
+    everything inside it: the opening and the ask alike. The running head above it and the record
+    of evenings below it stand outside and survive, which is what keeps the page a page while its
+    middle is exchanged. The band and the strip have no such stage and are left exactly as they
+    were.
+  */
+}
+{
+  isLeaf ? (
+    <div class="notice-inner notice-leaf">
+      {/* The running head carries the page's opening rule; the colophon rule that closes it is
+          `.notice-leaf::after`. Nothing else is drawn — this composition is ruled type on the
+          site's night, and every mark on it is a rule, a rubric or a word. */}
+      <p class="notice-runhead eyebrow reveal">
+        <span class="lat" lang="la">
+          Nuntius
+        </span>
+        &nbsp;&nbsp;·&nbsp;&nbsp;{nuntius.page.eyebrow}
+      </p>
+      <div class="notice-stage">
+        {/* THE OPENING IS ONE ROW OF THE REGISTER, not a block with the form beside it: the
+            display line takes the reading column and the invitation sits in the apparatus
+            column, on the same vertical the fields will use below the rule. Bottom-aligned, so
+            the two land on one line rather than on two tops of unequal height. */}
+        <div class="notice-opening">
+          <Heading class="notice-h2 reveal ink-press" data-d="1">
+            {copy.notice.h2}
+          </Heading>
+          <p class="notice-lede reveal" data-d="2">
+            {copy.notice.lede}
+          </p>
+        </div>
+        <div class="notice-ask reveal-rule">
+          {ahead && (
+            <div class="notice-proximum reveal" data-d="1">
+              <p class="notice-rubric eyebrow">{nuntius.register.ahead}</p>
+              <a class="notice-evening" href={ahead.href}>
+                <span class="notice-evening-roman">{ahead.roman}</span>
+                {/* NOT `.lat`: that class is the Latin tier of a two-tier RUBRIC and base.css
+                    styles it only as a descendant of one, so worn here it would silently render
+                    as plain body text. This is a name in an index, and carries only its
+                    language. */}
+                <span class="notice-evening-latin" lang="la">
+                  {ahead.latin}
+                </span>
+                <span class="notice-evening-title">{ahead.title}</span>
+                <span class="notice-evening-place">{ahead.place}</span>
+                <span class="notice-evening-moment">
+                  {ahead.time ? `${ahead.fullMoment} · ${ahead.time}` : ahead.fullMoment}
+                </span>
+                {ahead.blurb && <span class="notice-evening-blurb">{ahead.blurb}</span>}
+              </a>
+            </div>
+          )}
+          <NoticeForm client:visible {...islandProps} variant="leaf" />
+        </div>
+      </div>
+      <noscript>
+        <p class="notice-noscript">{nuntius.form.noscript}</p>
+      </noscript>
+    </div>
+  ) : (
+    <div class:list={["notice-inner", variant === "strip" && "notice-inner-strip"]}>
+      {/* The voice, kept in one element so the strip can set it beside the fields rather than
+          above them — and so the receipt, which replaces all three at once, has one thing to
+          hide. */}
+      <div class="notice-say">
+        <p class="eyebrow reveal">
+          <span class="lat" lang="la">
+            Nuntius
+          </span>
+          &nbsp;&nbsp;·&nbsp;&nbsp;{nuntius.page.eyebrow}
+        </p>
+        <Heading class="notice-h2 reveal ink-press" data-d="1">
+          {copy.notice.h2}
+        </Heading>
+        <p class="notice-lede reveal" data-d="2">
+          {copy.notice.lede}
+        </p>
+      </div>
+      <NoticeForm client:visible {...islandProps} variant="band" />
+      <noscript>
+        <p class="notice-noscript">{nuntius.form.noscript}</p>
+      </noscript>
+    </div>
+  )
+}

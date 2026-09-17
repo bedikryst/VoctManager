@@ -1,0 +1,74 @@
+---
+/**
+ * @file NoticeRecord.astro
+ * @description The record of evenings already sung, set as the foot of /newsletter's register —
+ *  the full measure, one ruled line per evening, numeral first and moment last.
+ *
+ *  IT IS THE PAGE'S ARGUMENT, NOT ITS DECORATION. Everything above it is a promise: leave an
+ *  address and we will write before each evening. This is the only thing on the page that lets a
+ *  reader check what that costs them — six evenings across three years is a cadence they can see,
+ *  and no sentence claiming "a few letters a year" would be as credible or as short. The count is
+ *  never stated in words: the rows ARE the count, which is also why nothing here can go stale.
+ *
+ *  NO CLAIM ABOUT LETTERS ALREADY SENT. The rubric names a record of EVENINGS, because that is
+ *  what the corpus holds and what is true — this list is new and has written to nobody. A rubric
+ *  reading "the evenings we wrote about" would be the one sentence on the page that the database
+ *  could contradict.
+ *
+ *  EVERY ROW IS A LINK AND NONE OF THEM IS GOLD. The accent on this page names the list (the head
+ *  rule and the running head) and the act (the block). Five gold latin words down the register
+ *  would cost it that standing — the law `nave-menu.css` states under DYE — so subordination here
+ *  is carried by register instead: capitalis against serif against mono, and one step of size.
+ *  Gold returns on hover, where it marks one row at a time and then leaves.
+ * @architecture Astro islands 2026
+ * @module components/NoticeRecord
+ */
+import type { RegisterEvening } from "../lib/noticeRegister";
+
+interface Props {
+  /** Most recent first — the ordering is `lib/noticeRegister`'s, not this file's to decide. */
+  evenings: readonly RegisterEvening[];
+  /** The rubric naming the block, from the chrome (`i18n/content/nuntius.ts`). */
+  label: string;
+  /** Names the list for a screen reader, which cannot see the rubric sitting above it. */
+  aria: string;
+}
+const { evenings, label, aria } = Astro.props;
+---
+
+{
+  /* Nothing at all when the corpus holds no sung evening — the sign-up above still stands on its
+     own, and an empty register would be a shelf with a label and no books. It cannot happen while
+     the corpus has a past, but the page must not depend on that. */
+  evenings.length > 0 && (
+    <section class="notice-record reveal reveal-rule" aria-label={aria}>
+      <p class="notice-rubric eyebrow">{label}</p>
+      <ol class="notice-entries">
+        {evenings.map((evening) => (
+          <li>
+            <a class="notice-entry" href={evening.href}>
+              <span class="notice-entry-roman">{evening.roman}</span>
+              {/* NOT `.lat`, and the distinction is real rather than pedantic. That class is the
+                  Latin tier of a two-tier RUBRIC and base.css styles it only as a descendant of
+                  one (`:is(.eyebrow, .micro, …) .lat`) — worn here it would inherit nothing and
+                  render as plain body text, silently. This is a name in an index column, so it
+                  carries the language for a screen reader and takes its face from this sheet. */}
+              <span class="notice-entry-latin" lang="la">
+                {evening.latin}
+              </span>
+              {/* The name is wrapped so the cell can carry the LEADER beside it: the cell is the
+                  flex row, the name is its first item and the hairline is the second, which is
+                  the only arrangement that starts a leader where the title actually ends rather
+                  than where its column does. */}
+              <span class="notice-entry-title">
+                <span class="notice-entry-name">{evening.title}</span>
+              </span>
+              <span class="notice-entry-place">{evening.place}</span>
+              <span class="notice-entry-moment">{evening.moment}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
