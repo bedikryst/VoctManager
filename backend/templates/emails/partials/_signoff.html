@@ -1,16 +1,3 @@
 {% load i18n %}
-{% comment %}Closing salutation + team line. Reads `level` from context: the warm
-"With warmest regards," is suppressed for WARNING/URGENT (a cancelled rehearsal
-should not sign off cheerfully). Templates that carry no level always show it.{% endcomment %}
-{% if level != 'WARNING' and level != 'URGENT' %}
-<p style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-          font-size: 18px; font-style: italic; color: #4b5563;
-          margin: 0 0 12px 0; text-align: center; line-height: 1.5;">
-  {% translate "With warmest regards," %}
-</p>
-{% endif %}
-<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-          font-size: 9px; font-weight: 700; letter-spacing: 0.48em; text-transform: uppercase;
-          color: #111827; margin: 0; text-align: center;">
-  {% translate "The VoctEnsemble Team" %}
-</p>
+{% if level != 'WARNING' and level != 'URGENT' %}<p class="serif" style="font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-style: italic; line-height: 1.5; color: #34302b; margin: 0 0 8px;">{% translate "With warmest regards," %}</p>{% endif %}
+<p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 12px; font-weight: 700; line-height: 1.5; letter-spacing: 0.06em; text-transform: uppercase; color: #34302b; margin: 0;">{% translate "The VoctEnsemble Team" %}</p>

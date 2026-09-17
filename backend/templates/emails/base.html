@@ -1,10 +1,5 @@
 <!doctype html>
-<html
-  lang="{{ lang|default:'en' }}"
-  xmlns="http://www.w3.org/1999/xhtml"
-  xmlns:v="urn:schemas-microsoft-com:vml"
-  xmlns:o="urn:schemas-microsoft-com:office:office"
->
+<html lang="{{ lang|default:'en' }}" xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,182 +7,53 @@
     <meta name="x-apple-disable-message-reformatting" />
     <meta name="color-scheme" content="light" />
     <meta name="supported-color-schemes" content="light" />
-    {% comment %}
-       Overridable so a mail sent to somebody OUTSIDE the ensemble can drop it: loading a
-       webfont discloses the reader's IP to a third party the moment the client renders,
-       which is a disclosure a member's transactional mail already carries and a public
-       subscriber never consented to. Every style here names Georgia as the fallback.
-    {% endcomment %}
-    {% block webfont %}<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">{% endblock %}
     <title>VoctEnsemble</title>
     <style>
-      /* Reset & Base */
-      body, p, h1, h2, h3 { margin: 0; padding: 0; }
-      img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; max-width: 100%; display: block; }
-      body {
-        margin: 0; padding: 0; width: 100% !important;
-        -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;
-        background-color: #f8f6f2;
-        color-scheme: light;
-      }
-
-      /* Container */
-      .email-container { max-width: 600px; margin: 0 auto; }
-
-      /* Typography Fallbacks */
-      .serif { font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important; }
-      .sans { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important; }
-
-      /* Buttons & Interaction */
-      .cta { transition: background-color 0.2s ease, border-color 0.2s ease; }
-      .cta:hover { background-color: #1f2937 !important; border-color: #1f2937 !important; }
-
-      /*
-       * Mobile Adjustments
-       * A phone renders this fixed 600px artifact at its own device width. The
-       * single worst failure mode was a fixed-width CTA (wide padding + wide
-       * letter-spacing) overflowing a ~360px screen: to fit it, mail clients
-       * (iOS Mail especially) scale the WHOLE message down — which is exactly
-       * why headlines and some copy read "too small". We therefore make the CTA
-       * full-bleed and size the headline to the device, so the message renders
-       * at true 1:1 scale instead of being shrunk to fit a runaway button.
-       */
+      body, p, h1 { margin: 0; padding: 0; }
+      table { border-spacing: 0; }
+      .email-container { width: 600px; max-width: 600px; }
+      .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif !important; }
+      .serif { font-family: Georgia, "Times New Roman", serif !important; }
       @media only screen and (max-width: 600px) {
-        .outer-cell   { padding: 24px 12px !important; }
-        .content-cell { padding: 40px 26px !important; }
-        .logo-cell    { padding: 24px 0 !important; }
-        .logo-img     { height: 46px !important; }
-        .email-footer { padding: 30px 26px !important; }
-
-        /* Headline stays editorial, sized to land in one or two lines. */
-        .email-h1 { font-size: 27px !important; line-height: 1.24 !important; }
-
-        /* Full-bleed, finger-friendly primary action — never overflows. */
-        .cta {
-          display: block !important;
-          width: 100% !important;
-          box-sizing: border-box !important;
-          padding: 18px 20px !important;
-          letter-spacing: 0.16em !important;
-        }
+        .outer-cell { padding: 24px 12px !important; }
+        .content-cell { padding: 36px 28px !important; }
+        .email-footer { padding: 24px 28px !important; }
+        .email-h1 { font-size: 28px !important; line-height: 1.2 !important; }
+        .cta-table, .cta-table tbody, .cta-table tr, .cta-table td, .cta-link { display: block !important; width: 100% !important; box-sizing: border-box !important; }
       }
-
-      /*
-       * Color scheme — this email is a deliberately light, parchment-toned
-       * editorial artifact. We opt out of automatic client dark-mode inversion
-       * (see color-scheme / supported-color-schemes meta in <head>) rather than
-       * ship a half-inverted treatment. The previous dark block recoloured
-       * every <p>/<span> to slate, which silently flattened the gold accents
-       * (#c9a764) and brand styling; a controlled light render is the truer,
-       * more consistent result across Apple Mail, Gmail and Outlook.
-       */
-
-      /* Fix dla Gmail Desktop */
-      u + .body .email-outer { background-color: #f8f6f2 !important; }
     </style>
   </head>
-  <body class="body" style="margin: 0; padding: 0 !important; mso-line-height-rule: exactly; background-color: #f8f6f2;">
-
-    <!-- Inbox preview (preheader): hidden in the body, shown as the snippet next to the subject line -->
-    <div style="display: none; max-height: 0; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #f8f6f2; opacity: 0;">
-      {% block preheader %}{% endblock %}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+  <body style="margin: 0; padding: 0; width: 100%; background-color: #f4f1e9; color: #161514;">
+    <div style="display: none; max-height: 0; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #f4f1e9; opacity: 0;">
+      {% block preheader %}{% endblock %}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
     </div>
-
-    <table class="email-outer" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f8f6f2" style="background-color: #f8f6f2;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f4f1e9" style="width: 100%; background-color: #f4f1e9;">
       <tr>
-        <td class="outer-cell" align="center" valign="top" bgcolor="#f8f6f2" style="padding: 40px 16px; background-color: #f8f6f2;">
-          
-          <table
-            role="presentation" border="0" cellpadding="0" cellspacing="0"
-            class="email-container"
-            width="600"
-            style="max-width: 600px; width: 100%; margin: 0 auto; background-color: #ffffff; border: 1px solid #e8e3d8; border-radius: 4px; border-collapse: separate; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.09);"
-          >
-
+        <td class="outer-cell" align="center" style="padding: 40px 16px;">
+          <table role="presentation" class="email-container" border="0" cellpadding="0" cellspacing="0" width="600" bgcolor="#fbfaf6" style="width: 600px; max-width: 600px; background-color: #fbfaf6;">
             <tr>
-              <td style="background-color: #c9a764; height: 3px; font-size: 0; line-height: 0;">&nbsp;</td>
-            </tr>
-
-            <tr>
-              <td
-                class="logo-cell"
-                align="center"
-                style="background-color: #ffffff; padding: 28px 0; border-bottom: 1px solid #f0ede7;"
-              >
-                {% if logo_url %}
-                  <img
-                    src="{{ logo_url }}"
-                    alt="VoctEnsemble"
-                    height="56"
-                    class="logo-img"
-                    style="height: 56px; width: auto; max-width: 100%; display: block; margin: 0 auto;"
-                  />
-                {% else %}
-                  <div style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-                              font-size: 22px; font-weight: 400; letter-spacing: 0.4em;
-                              color: #111827; margin: 0; text-transform: uppercase; text-align: center;">
-                    VOCT<span style="color: #c9a764;">&middot;</span>ENSEMBLE
-                  </div>
-                  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                              font-size: 7px; font-weight: 700; letter-spacing: 0.6em;
-                              color: #c9bfb4; text-transform: uppercase; margin: 10px 0 0 0; text-align: center;">
-                    M A N A G E R
-                  </div>
-                {% endif %}
+              <td style="padding: 28px 48px 20px; border-bottom: 1px solid #c6a45b;">
+                <p class="serif" style="font-family: Georgia, 'Times New Roman', serif; font-size: 22px; line-height: 1.1; letter-spacing: 0.08em; color: #161514; margin: 0;">VOCT<span style="color: #735f35;">&middot;</span>ENSEMBLE</p>
+                <p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 11px; font-weight: 700; line-height: 1.5; letter-spacing: 0.1em; text-transform: uppercase; color: #746d62; margin: 8px 0 0;">{% block masthead_label %}VoctManager{% endblock %}</p>
               </td>
             </tr>
-
             <tr>
-              <td class="content-cell" style="background-color: #ffffff; padding: 48px 64px;">
-                {% block content %}{% endblock %}
-              </td>
+              <td class="content-cell" style="padding: 44px 48px 48px; background-color: #fbfaf6;">{% block content %}{% endblock %}</td>
             </tr>
-
             <tr>
-              <td class="email-footer" style="background-color: #faf9f7; padding: 36px 64px; text-align: center; border-top: 1px solid #ede8df;">
+              <td class="email-footer" style="padding: 24px 48px; background-color: #f4f1e9; border-top: 1px solid #d9d3c7;">
                 {% load i18n %}
-
-                {% comment %}
-                   Both lines name the PANEL, which is the sender of every mail that reaches a
-                   member. A mail to somebody outside the ensemble is sent by VoctEnsemble and
-                   is answerable, so it overrides these.
-                {% endcomment %}
                 {% block footer_brand %}
-                <p class="footer-text sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                           font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
-                           color: #c9bfb4; margin: 0 0 6px 0; line-height: 1.6;">
-                  VoctManager &middot; {% now "Y" %}
-                </p>
-                <p class="footer-text sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                           font-size: 10px; color: #ddd8d1; margin: 0; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.1em;">
-                  {% translate "Automatically generated. Please do not reply." %}
-                </p>
+                <p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 12px; line-height: 1.55; color: #34302b; margin: 0 0 4px;">VoctManager &middot; {% now "Y" %}</p>
+                <p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 12px; line-height: 1.55; color: #746d62; margin: 0;">{% translate "Automatically generated. Please do not reply." %}</p>
                 {% endblock %}
-                {% if manage_prefs_url %}
-                <p class="footer-text sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                           font-size: 10px; margin: 14px 0 0 0; line-height: 1.6; letter-spacing: 0.06em;">
-                  <a href="{{ manage_prefs_url }}" style="color: #c9a764; text-decoration: underline;">{% translate "Manage your notification preferences" %}</a>
-                </p>
-                {% endif %}
-              </td>
-            </tr>
-
-          </table>
-          <table role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
-            <tr>
-              <td style="padding: 24px 20px; color: #b8a99a; font-family: sans-serif; font-size: 10px; line-height: 1.5; text-align: center;">
-                {% load i18n %}
-                {% comment %}
-                   The mail's "why you got this" line. It has to be TRUE of the recipient, so a
-                   mail to somebody outside the ensemble replaces it with its own.
-                {% endcomment %}
-                {% block outer_note %}<p style="margin: 0;">{% translate "You are receiving this because you are a member of the VoctEnsemble artist network." %}</p>{% endblock %}
+                {% if manage_prefs_url %}<p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 12px; line-height: 1.55; margin: 12px 0 0;"><a href="{{ manage_prefs_url }}" style="color: #735f35; text-decoration: underline;">{% translate "Manage your notification preferences" %}</a></p>{% endif %}
               </td>
             </tr>
           </table>
-
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" style="width: 600px; max-width: 600px;"><tr><td class="sans" style="padding: 18px 12px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 12px; line-height: 1.55; color: #746d62; text-align: left;">{% block outer_note %}<p style="margin: 0;">{% translate "You are receiving this because you are a member of the VoctEnsemble artist network." %}</p>{% endblock %}</td></tr></table>
         </td>
       </tr>
     </table>
-    </body>
+  </body>
 </html>

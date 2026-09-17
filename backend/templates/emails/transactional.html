@@ -1,71 +1,13 @@
 {% extends "emails/base.html" %}
 {% load i18n %}
-
-{% comment %}
-  Unified transactional notification email. Every operational notification type
-  (invitations, rehearsal changes, casting, materials, contracts, absences,
-  manager alerts, reminders, system alerts) renders through this single template.
-  All dynamic, type-specific copy — eyebrow, headline, lead, detail rows, the CTA
-  label and its deep-link — is composed and localized upstream in
-  notifications/message_content.py and arrives here pre-translated.
-  Shared chrome (eyebrow/headline/greeting/button/sign-off) lives in partials/.
-{% endcomment %}
-
 {% block preheader %}{{ preheader }}{% endblock %}
-
 {% block content %}
-
-{# I. HEADLINE #}
 {% include "emails/partials/_eyebrow.html" with text=eyebrow|default:"VoctManager" %}
-{% include "emails/partials/_headline.html" with text=headline size=34 mb=44 %}
-{% include "emails/partials/_rule.html" with mb=40 %}
-
-{# II. GREETING + LEAD #}
-{% include "emails/partials/_greeting.html" with style=greeting_style|default:"hello" mb=24 %}
-
-{% if lead %}
-<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-          font-size: 15px; color: #4b5563; margin: 0 0 32px 0; line-height: 1.85; text-align: left;">
-  {{ lead }}
-</p>
-{% endif %}
-
-{# III. DETAIL CARD #}
-{% if details %}
-<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 32px 0;">
-  <tr>
-    <td bgcolor="#faf9f7" style="background-color: #faf9f7; border: 1px solid #e8e3d8;
-                                  border-left: 2px solid #c9a764; padding: 18px 22px;">
-      {% for row in details %}
-      <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                font-size: 13px; color: #4b5563; margin: 0 0 {% if not forloop.last %}10px{% else %}0{% endif %} 0; line-height: 1.5;">
-        <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                     font-size: 9px; font-weight: 700; text-transform: uppercase;
-                     letter-spacing: 0.14em; color: #c9a764;">{{ row.label }}</span>
-        {% comment %}
-           A row value may hold several lines (a rehearsal schedule, a programme).
-           `linebreaksbr` escapes first, so this stays safe for composed copy.
-        {% endcomment %}
-        <br/><span style="display: inline-block; margin-top: 3px; color: #374151;">{{ row.value|linebreaksbr }}</span>
-      </p>
-      {% endfor %}
-    </td>
-  </tr>
-</table>
-{% endif %}
-
-{# IV. CALL TO ACTION — deep-links to the exact destination #}
-<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 44px 0;">
-  <tr>
-    <td bgcolor="#faf8f4" style="background-color: #faf8f4; border: 1px solid #e8e3d8;
-                                 padding: 32px; text-align: center;">
-      {% include "emails/partials/_button.html" with url=cta_url label=cta_label %}
-    </td>
-  </tr>
-</table>
-
-{# V. CLOSING #}
-{% include "emails/partials/_rule.html" with mb=44 %}
+{% include "emails/partials/_headline.html" with text=headline size=34 mb=20 %}
+{% include "emails/partials/_greeting.html" with style=greeting_style|default:"hello" mb=20 %}
+{% if lead %}<p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 16px; line-height: 1.65; color: #34302b; margin: 0 0 28px;">{{ lead }}</p>{% endif %}
+{% if details %}<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="width: 100%; margin: 0 0 32px;">{% for row in details %}<tr><td style="padding: 11px 0; border-top: 1px solid #d9d3c7;"><p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 12px; font-weight: 700; line-height: 1.4; letter-spacing: 0.06em; text-transform: uppercase; color: #735f35; margin: 0 0 4px;">{{ row.label }}</p><p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 15px; line-height: 1.55; color: #34302b; margin: 0;">{{ row.value|linebreaksbr }}</p></td></tr>{% endfor %}</table>{% endif %}
+{% include "emails/partials/_button.html" with url=cta_url label=cta_label %}
+{% include "emails/partials/_rule.html" with mb=24 %}
 {% include "emails/partials/_signoff.html" %}
-
 {% endblock %}

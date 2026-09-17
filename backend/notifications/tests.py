@@ -9,6 +9,7 @@
 @module notifications/tests
 """
 import json
+import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
@@ -21,6 +22,7 @@ from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.exceptions import ImproperlyConfigured
 from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone, translation
 from pydantic import ValidationError
@@ -490,6 +492,72 @@ class TemplateCommentSyntaxTests(SimpleTestCase):
             offenders, [],
             "`{# … #}` must open and close on one line; use {% comment %} otherwise.",
         )
+
+
+class EmailTemplateRedesignTests(SimpleTestCase):
+    """The HTML family keeps privacy, semantic layout and action parity guarantees."""
+
+    HTML_TEMPLATES = (
+        "account_activation", "account_deleted", "briefing", "custom_admin_message",
+        "digest", "feedback_report", "message_received", "notice_confirm",
+        "password_changed", "password_reset", "patron_lead_notification", "transactional",
+        "welcome_email",
+    )
+
+    CONTEXT: ClassVar[dict[str, Any]] = {
+        "activation_link": "https://voctensemble.com/activate/token",
+        "reset_link": "https://voctensemble.com/reset/token",
+        "cta_url": "https://voctensemble.com/panel/schedule",
+        "cta_label": "Open schedule",
+        "site_url": "https://voctensemble.com/panel",
+        "frontend_url": "https://voctensemble.com/panel",
+        "admin_url": "https://voctensemble.com/admin/",
+        "confirm_url": "https://voctensemble.com/confirm/token",
+        "policy_url": "https://voctensemble.com/privacy",
+        "copy": {
+            "preheader": "Confirm your subscription", "eyebrow": "Concert notices",
+            "headline": "One last step", "promise": "Only concert news.",
+            "body": "Confirm your address to receive concert notices.", "button": "Confirm",
+            "ignore": "Ignore this message if this was not you.", "footer": "You asked for this.",
+            "policyLabel": "Privacy policy",
+        },
+    }
+
+    def _html(self, template: str) -> str:
+        return render_to_string(f"emails/{template}.html", self.CONTEXT)
+
+    def test_every_html_template_renders_without_remote_assets(self) -> None:
+        rendered = [self._html(template) for template in self.HTML_TEMPLATES]
+        self.assertEqual(len(rendered), len(self.HTML_TEMPLATES))
+        for html in rendered:
+            self.assertNotIn("fonts.googleapis.com", html)
+            self.assertNotIn("raw.githubusercontent.com", html)
+
+    def test_all_layout_tables_are_presentational(self) -> None:
+        root = Path(settings.BASE_DIR) / "templates" / "emails"
+        offenders = []
+        for path in sorted(root.rglob("*.html")):
+            source = path.read_text(encoding="utf-8")
+            if re.search(r"<table\\b(?![^>]*\\brole=[\"']presentation[\"'])", source):
+                offenders.append(path.relative_to(root).as_posix())
+        self.assertEqual(offenders, [])
+
+    def test_public_mail_keeps_its_own_identity_and_action(self) -> None:
+        html = self._html("notice_confirm")
+        text = render_to_string("emails/notice_confirm.txt", self.CONTEXT)
+        self.assertIn("VoctEnsemble", html)
+        self.assertNotIn("artist network", html)
+        self.assertIn(self.CONTEXT["confirm_url"], html)
+        self.assertIn(self.CONTEXT["confirm_url"], text)
+
+    def test_security_and_transactional_actions_are_in_both_versions(self) -> None:
+        for template, url in (
+            ("account_activation", self.CONTEXT["activation_link"]),
+            ("password_reset", self.CONTEXT["reset_link"]),
+            ("transactional", self.CONTEXT["cta_url"]),
+        ):
+            self.assertIn(url, self._html(template))
+            self.assertIn(url, render_to_string(f"emails/{template}.txt", self.CONTEXT))
 
 
 @override_settings(

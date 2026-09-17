@@ -323,12 +323,8 @@ class EmailDispatcherService:
         Compiles templates and delegates execution to the configured ESP (Anymail).
         """
         try:
-            full_context = {
-                'logo_url': getattr(settings, 'EMAIL_LOGO_URL', ''),
-                **context,
-            }
-            html_content = render_to_string(f"emails/{template_name}.html", full_context)
-            text_content = render_to_string(f"emails/{template_name}.txt", full_context)
+            html_content = render_to_string(f"emails/{template_name}.html", context)
+            text_content = render_to_string(f"emails/{template_name}.txt", context)
 
             msg = EmailMultiAlternatives(
                 subject=subject,

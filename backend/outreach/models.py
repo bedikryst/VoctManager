@@ -55,8 +55,9 @@ class NoticeStatus(models.TextChoices):
 class ConcertNoticeSubscription(EnterpriseBaseModel):
     """
     One address on the concert notice list: a person who asked to be written to when
-    an evening gets a date. One mail per concert, nothing else — the promise made at
-    the form is the boundary of what this row licenses.
+    an evening gets a date. Concerts and nothing else — the promise made at the form
+    is the boundary of what this row licenses, and it names a subject rather than a
+    number of mails.
 
     IT STORES THE EVIDENCE, WHICH `PatronLead` DELIBERATELY DOES NOT. A donation lead
     is corroborated by the transaction that follows it, so its `created_at` can stand

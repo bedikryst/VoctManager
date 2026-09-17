@@ -35,10 +35,14 @@ class NoticeSubscribeSerializer(serializers.Serializer):
     """
     Inbound sign-up for the concert notice list.
 
-    `consent` must be explicitly true and is NOT stored as a column — an unconfirmed row
-    is not a consent at all, and a confirmed one carries `confirmed_at`, which is the
-    evidence. The clause VERSION is server-owned (`outreach/consent.py`); a client that
-    could name the wording it agreed to could name any wording.
+    `consent` is required and must be true, and it is NOT stored as a column. What it is
+    NOT is the evidence: an unconfirmed row is not a consent at all, and a confirmed one
+    carries `confirmed_at` — the click in the mail, a second and independent act. Since the
+    tick box went (clause 3.0) every first-party client sends this flag as a constant, so
+    what the field still buys is one thing only: a caller that has not been written against
+    this contract cannot subscribe an address by accident. The clause VERSION is
+    server-owned (`outreach/consent.py`); a client that could name the wording it agreed to
+    could name any wording.
     """
     email = serializers.EmailField(max_length=254)
     # Optional in the strong sense: a reader may send nothing, an empty string, or whitespace,
@@ -60,7 +64,7 @@ class NoticeSubscribeSerializer(serializers.Serializer):
     def validate_consent(self, value: bool) -> bool:
         if not value:
             raise serializers.ValidationError(
-                "Zgoda jest wymagana, aby zapisać adres na listę zawiadomień."
+                "Zgoda jest wymagana, aby zapisać adres na listę zaproszeń."
             )
         return value
 
