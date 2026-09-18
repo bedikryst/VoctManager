@@ -75,7 +75,7 @@ NOTICE_CONFIRM: dict[str, NoticeMailCopy] = {
     "pl": NoticeMailCopy(
         subject="Potwierdź zapis na zaproszenia",
         preheader="Jedno kliknięcie i adres trafia na listę. Bez niego znika po siedmiu dniach.",
-        eyebrow="VoctEnsemble · Zaproszenia",
+        eyebrow="Nuntius · Zaproszenia",
         headline="Potwierdź zapis",
         body=(
             "Ktoś podał ten adres, prosząc, byśmy napisali, gdy następny Koncert Duchowy "
@@ -101,7 +101,7 @@ NOTICE_CONFIRM: dict[str, NoticeMailCopy] = {
     "en": NoticeMailCopy(
         subject="Confirm your place on the invitation list",
         preheader="One click and the address joins the list. Without it, it is gone in seven days.",
-        eyebrow="VoctEnsemble · Invitations",
+        eyebrow="Nuntius · Invitations",
         headline="Confirm your place",
         body=(
             "Someone gave this address, asking us to write when the next Spiritual Concert "
@@ -127,7 +127,7 @@ NOTICE_CONFIRM: dict[str, NoticeMailCopy] = {
     "fr": NoticeMailCopy(
         subject="Confirmez votre inscription aux invitations",
         preheader="Un clic et l'adresse rejoint la liste. Sans lui, elle disparaît au bout de sept jours.",
-        eyebrow="VoctEnsemble · Invitations",
+        eyebrow="Nuntius · Invitations",
         headline="Confirmez votre inscription",
         body=(
             "Quelqu'un a donné cette adresse en nous demandant d'écrire lorsque le prochain "

@@ -2197,7 +2197,10 @@ const jsonLd =
   .kd-nuntius :global(.notice-blank) { grid-column: 1 / 3; grid-row: 1; display: grid; grid-template-columns: subgrid; align-items: baseline; min-width: 0; }
   /* The term, in the fact's mono voice (`.kd-ianua-fact dt`). */
   .kd-nuntius :global(.notice-blank-label) { grid-column: 1; margin: 0; white-space: nowrap; font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: rgba(244,241,233,.5); }
-  .kd-nuntius :global(.notice-blank-line) { grid-column: 2; position: relative; display: block; min-width: 0; }
+  /* The margin is the room the tails need: the rule is at this box's foot and the address's
+     descenders hang below it (tokens.css, --blank-tail), so without it the clause on the next row
+     is written through them — measured at 4px of clearance before it. */
+  .kd-nuntius :global(.notice-blank-line) { grid-column: 2; position: relative; display: block; min-width: 0; margin-bottom: calc(var(--nuntius-line) * var(--blank-tail)); }
   /* The rule the address is written on, in the ink this page underlines what a reader may act on
      (`.kd-ianua-address a`); candle under the pen, as that link goes candle under the pointer. */
   .kd-nuntius :global(.notice-blank-line::after) { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: rgba(244,241,233,.3); transition: background-color .35s var(--ease); }
@@ -2207,11 +2210,11 @@ const jsonLd =
      with a lower slope (4.8vw against 5.2): the line shares its row with the key and the door, and
      at the lede's slope a written address overran the rule under 1100px. Lining figures: Cormorant's
      default numerals hang below the baseline and an address with digits read as a typo.
-     LEADING 1.3, NOT THE LEDE'S 1.04: an input clips its text to its own content box, and
-     Cormorant's ascent and descent together are 1.21em — at the lede's leading every `y`, `g`
-     and `@` lost its tail at the baseline. The foot is 6px, since the descender's room now comes
-     from the leading itself. */
-  .kd-nuntius :global(.notice-email) { display: block; width: 100%; margin: 0; padding: 0 0 6px; border: 0; background: none; color: var(--paper); caret-color: var(--paper); font-family: var(--serif); font-size: var(--nuntius-line); font-weight: 300; font-variant-numeric: lining-nums; letter-spacing: -.01em; line-height: 1.3; transition: none; }
+     THE LINE IS SET AS A WRITING LINE, not as underlined type — `--blank-lead` clears the face's
+     descenders inside the field's box and `--blank-lift` pulls that box's foot up to just under
+     the baseline, so the rule lands where a pen would and the tails of `y`, `g` and `@` cross it
+     (tokens.css). At the lede's 1.04 leading the field clipped those tails outright. */
+  .kd-nuntius :global(.notice-email) { display: block; width: 100%; margin: 0 0 var(--blank-lift); padding: 0; border: 0; background: none; color: var(--paper); caret-color: var(--paper); font-family: var(--serif); font-size: var(--nuntius-line); font-weight: 300; font-variant-numeric: lining-nums; letter-spacing: -.01em; line-height: var(--blank-lead); transition: none; }
   .kd-nuntius :global(.notice-email:focus) { outline: none; }
   .kd-nuntius :global(.notice-email:-webkit-autofill),
   .kd-nuntius :global(.notice-email:-webkit-autofill:focus) { -webkit-text-fill-color: var(--paper); box-shadow: 0 0 0 1000px var(--night) inset; transition: background-color 9999s ease-out; }
@@ -2225,10 +2228,10 @@ const jsonLd =
      to the list (`.kd-vianav-nuntius`, 16–20px: a step under a neighbour's name, and here three
      steps under the reader's line, which is the block's largest type), upright and at 300 like
      every name on it, the arrow written after it in the same hand as the address link's `↗`. It
-     stands on the LINE'S ROW, at its right end, on its baseline — the term, the value, the door,
-     one row — with the same foot as the input so the two bottoms agree. No box, no rule: a door
-     on this page is a name that takes the candle. */
-  .kd-nuntius :global(.notice-act) { grid-column: 3; grid-row: 1; justify-self: end; display: inline-flex; align-items: baseline; gap: 10px; margin: 0; padding: 0 0 6px; border: 0; border-radius: 0; background: none; color: rgba(244,241,233,.9); cursor: pointer; font-family: var(--serif); font-weight: 300; font-size: clamp(16px, 1.5vw, 20px); letter-spacing: 0; line-height: 1.1; text-align: right; text-transform: none; white-space: nowrap; transition: color .35s var(--ease), opacity .35s var(--ease); }
+     stands on the LINE'S ROW, at its right end, on the same baseline — so the term, the address
+     and the door are three things standing on one writing line. No box, no rule: a door on this
+     page is a name that takes the candle. */
+  .kd-nuntius :global(.notice-act) { grid-column: 3; grid-row: 1; justify-self: end; display: inline-flex; align-items: baseline; gap: 10px; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; color: rgba(244,241,233,.9); cursor: pointer; font-family: var(--serif); font-weight: 300; font-size: clamp(16px, 1.5vw, 20px); letter-spacing: 0; line-height: 1.1; text-align: right; text-transform: none; white-space: nowrap; transition: color .35s var(--ease), opacity .35s var(--ease); }
   .kd-nuntius :global(.notice-act::after) { content: "\2192"; font: inherit; color: rgba(244,241,233,.6); transition: color .35s var(--ease); }
   /* THE LINE HAS BECOME AN ADDRESS, SO THE DOOR TAKES THE CANDLE — the rail's own answer to a
      pointer, given here to the hand. `[data-ready]` rather than `:has(:valid)`: the browser calls

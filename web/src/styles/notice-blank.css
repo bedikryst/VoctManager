@@ -97,12 +97,17 @@
    form; a line above it would have made the h1 the smaller thing. Lining figures because an
    address is read back, not read: the face's old-style figures put a `3` and a `5` below the line.
    One class over the bare `.notice-email`, so this rule stays the letter's should the receipt
-   page's base field rule (`notice.css`) ever be loaded beside it. */
+   page's base field rule (`notice.css`) ever be loaded beside it.
+
+   SET AS A WRITING LINE, which on a letter is the whole point: `--blank-lead` clears the face's
+   descenders inside the field's box (at 1.15 the tails of `y`, `g` and `@` were clipped) and
+   `--blank-lift` pulls that box's foot up to just under the baseline, so the rule runs where a
+   pen would and the tails cross it, as they do on the sheet's own addressee line (tokens.css). */
 .notice-blank .notice-email {
   display: block;
   width: 100%;
-  margin: 0;
-  padding: 2px 0 8px;
+  margin: 0 0 var(--blank-lift);
+  padding: 2px 0 0;
   border: 0;
   background: none;
   color: var(--blank-text);
@@ -112,7 +117,7 @@
   font-weight: 300;
   font-variant-numeric: lining-nums;
   letter-spacing: -0.01em;
-  line-height: 1.15;
+  line-height: var(--blank-lead);
   cursor: text;
   transition: none;
 }

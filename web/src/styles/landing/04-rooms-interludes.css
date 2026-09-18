@@ -1145,8 +1145,18 @@
   .path-liniatura .notice-email {
     display: block;
     width: 100%;
-    margin: 0;
-    padding: 2px 0 12px;
+    /* THE ADDRESS SITS ON THE RULED LINE, and on this sheet that costs two declarations rather
+       than one, because here the rule is not drawn at the foot of this field — it belongs to the
+       PITCH (`.notice-form::before`, one rule per row, the sheet's whole rhythm). `--blank-lift`
+       brings the field's box foot up to just under the baseline so the row's rule lands where a
+       pen would, with the tails of `y`, `g` and `@` crossing it as they do on ruled paper; at
+       1.25 leading with a 12px foot the line floated a third of its own grade above the rule it
+       was meant to be written on, and the key had been pulled down by 0.16em to chase it.
+       The padding pays the lift back ABOVE the text, so the row's content keeps the height
+       `--lin-pitch` was derived from and no rule on the sheet moves: 0.205em + 14px is the old
+       box (1.25em + 2 + 12) minus the new one (--blank-lead + --blank-lift). */
+    margin: 0 0 var(--blank-lift);
+    padding: calc(0.205em + 14px) 0 0;
     border: 0;
     background: none;
     color: var(--ink);
@@ -1154,8 +1164,9 @@
     font-family: var(--serif);
     font-size: var(--lin-address);
     font-weight: 300;
+    font-variant-numeric: lining-nums;
     letter-spacing: -0.01em;
-    line-height: 1.25;
+    line-height: var(--blank-lead);
     transition: none;
   }
 

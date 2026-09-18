@@ -406,8 +406,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .notice-door :global(.notice-blank-line:focus-within::after) { background: var(--candle); }
   .notice-door :global(.notice-blank-line:has(.notice-email[aria-invalid="true"])::after) { background: #9b4f38; }
   /* The reader's address in the doors' serif at the doors' grade — the one line on this page
-     that is theirs — across the whole measure, so it is written out rather than scrolled. */
-  .notice-door :global(.notice-email) { display: block; width: 100%; margin: 0; padding: 2px 0 8px; border: 0; background: none; color: var(--ink); caret-color: var(--ink); font-family: var(--serif); font-size: clamp(22px, 3.2vw, 34px); font-weight: 300; line-height: 1.15; transition: none; }
+     that is theirs — across the whole measure, so it is written out rather than scrolled. Set as
+     a WRITING LINE: `--blank-lead` clears the face's descenders inside the field's box (at 1.15
+     the tails of `y`, `g` and `@` were clipped) and `--blank-lift` pulls that box's foot up to
+     just under the baseline, so the rule lands where a pen would and the tails cross it
+     (tokens.css). */
+  .notice-door :global(.notice-email) { display: block; width: 100%; margin: 0 0 var(--blank-lift); padding: 2px 0 0; border: 0; background: none; color: var(--ink); caret-color: var(--ink); font-family: var(--serif); font-size: clamp(22px, 3.2vw, 34px); font-weight: 300; font-variant-numeric: lining-nums; line-height: var(--blank-lead); transition: none; }
   .notice-door :global(.notice-email:focus) { outline: none; }
   .notice-door :global(.notice-email:-webkit-autofill),
   .notice-door :global(.notice-email:-webkit-autofill:focus) { -webkit-text-fill-color: var(--ink); box-shadow: 0 0 0 1000px var(--paper) inset; transition: background-color 9999s ease-out; }

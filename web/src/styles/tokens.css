@@ -156,6 +156,44 @@
   --wght-press: 580;
   --wght-rest: 300;
 
+  /* ── A WRITING LINE ────────────────────────────────────────────────────────
+     Five surfaces put the reader's address on a ruled line in the display serif, and the two
+     numbers below are what makes that line behave like ruled paper rather than like an
+     underlined control. Both are properties of the TYPEFACE, which is why they live here and
+     not on any one of those sheets. Cormorant Garamond reports ascent 0.92em and descent
+     0.29em — 1.21em from the top of an `f` to the foot of a `g`.
+
+     --blank-lead is the leading that clears the face. An `<input>` clips its text to its
+     CONTENT box, and padding under the text buys nothing, so anything tighter than 1.21 cuts
+     the tails off `y`, `g`, `j` and `@`. 1.3 leaves a hair of half-leading at each end.
+
+     --blank-lift is the one that matters to the eye, and it is a NEGATIVE BOTTOM MARGIN on the
+     field. A rule drawn at the foot of that box stands 0.335em under the baseline — a third of
+     the line's own grade, ~29px at 68px — which is the geometry of a table rule, not of a line
+     someone writes on. On ruled paper the rule IS the baseline: letters sit on it and their
+     descenders cross it. The lift pulls the field's box foot up to 0.08em under the baseline,
+     so the rule lands there and the tails hang across it, while the field keeps its full line
+     box and goes on clipping nothing. 0.08 rather than 0 because the round letters overshoot
+     the baseline, and a rule exactly on it reads as cutting them.
+
+       (--blank-lead - 1.21) / 2 + 0.29 - 0.08 = 0.255em
+
+     Its unit is `em`, and a custom property resolves at the point of USE, so the value scales
+     with whichever grade the surface writes its address at. Anything that consumes the field's
+     BOX HEIGHT (the landing's ruled pitch) must pay the lift back above the text — see
+     `.path-liniatura .notice-email`. */
+  --blank-lead: 1.3;
+  --blank-lift: -0.255em;
+
+  /* And what the lift costs: with the rule 0.08em under the baseline, the face's tails hang
+     0.21em BELOW it (0.29 - 0.08). Whatever a placement sets under its writing line has to clear
+     that, or the clause arrives inside the descenders of the address — which is what the first
+     render of the lift showed on two of the three bands. It is a bare multiplier rather than an
+     `em` because it is spent on a node in a different grade from the address (a clause at 12.5px
+     under a line at 76), so each placement multiplies it by its OWN address variable. A placement
+     whose next row is a full ruled pitch away (the landing) owes nothing. */
+  --blank-tail: 0.21;
+
   /* ── One easing per register ──────────────────────────────────────────────
      The registers differ in HOW their material arrives, not only in what moves, so each
      owns a curve. Read them all by one measure — at what fraction of the clock is 82% of

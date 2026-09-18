@@ -1,15 +1,73 @@
-{% extends "emails/base.html" %}
-{% comment %}Public consent mail deliberately names the ensemble and never inherits member-network claims.{% endcomment %}
-{% block masthead_label %}VoctEnsemble{% endblock %}
-{% block preheader %}{{ copy.preheader }}{% endblock %}
-{% block content %}
-{% include "emails/partials/_eyebrow.html" with text=copy.eyebrow %}
-{% include "emails/partials/_headline.html" with text=copy.headline size=34 mb=8 %}
-{% include "emails/partials/_subtitle.html" with text=copy.promise %}
-<p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 16px; line-height: 1.65; color: #34302b; margin: 0 0 28px;">{{ copy.body }}</p>
-{% include "emails/partials/_button.html" with url=confirm_url label=copy.button %}
-{% include "emails/partials/_rule.html" with mb=20 %}
-<p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 13px; line-height: 1.55; color: #746d62; margin: 0;">{{ copy.ignore }}</p>
-{% endblock %}
-{% block footer_brand %}<p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 12px; line-height: 1.55; color: #34302b; margin: 0;">VoctEnsemble &middot; {% now "Y" %}</p>{% endblock %}
-{% block outer_note %}<p style="margin: 0 0 8px;">{{ copy.footer }}</p><p style="margin: 0;"><a href="{{ policy_url }}" style="color: #735f35; text-decoration: underline;">{{ copy.policyLabel }}</a></p>{% endblock %}
+<!doctype html>
+<html lang="{{ lang|default:'en' }}" xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
+    <title>{{ copy.headline }}</title>
+    <style>
+      body, p, h1 { margin: 0; padding: 0; }
+      table { border-spacing: 0; }
+      .email-shell { width: 560px; max-width: 560px; }
+      .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif !important; }
+      .serif { font-family: Georgia, "Times New Roman", serif !important; }
+      @media only screen and (max-width: 600px) {
+        .outer-cell { padding: 28px 16px !important; }
+        .email-shell { width: 100% !important; }
+        .masthead { padding: 0 8px 24px !important; }
+        .letter-body { padding: 36px 28px !important; }
+        .legal-note { padding: 24px 8px 0 !important; }
+        .email-h1 { font-size: 31px !important; }
+        .cta-table, .cta-table tbody, .cta-table tr, .cta-table td, .cta-link { display: block !important; width: 100% !important; box-sizing: border-box !important; }
+      }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0; width: 100%; background-color: #f4f1e9; color: #161514;">
+    <div style="display: none; max-height: 0; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #f4f1e9; opacity: 0;">
+      {{ copy.preheader }}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+    </div>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f4f1e9" style="width: 100%; background-color: #f4f1e9;">
+      <tr>
+        <td class="outer-cell" align="center" style="padding: 52px 20px 44px;">
+          <table role="presentation" class="email-shell" border="0" cellpadding="0" cellspacing="0" width="560" style="width: 560px; max-width: 560px;">
+            <tr>
+              <td class="masthead" style="padding: 0 8px 28px; border-bottom: 1px solid #c6a45b;">
+                <p class="serif" aria-label="VoctEnsemble" style="font-family: Georgia, 'Times New Roman', serif; font-size: 22px; font-weight: 400; line-height: 1; letter-spacing: 0.09em; color: #161514; margin: 0;">VOCTENSEMBLE</p>
+              </td>
+            </tr>
+            <tr>
+              <td class="letter-body" bgcolor="#fbfaf6" style="padding: 46px 48px 44px; background-color: #fbfaf6;">
+                <p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.13em; line-height: 1.5; text-transform: uppercase; color: #8d733d; margin: 0 0 17px;">{{ copy.eyebrow }}</p>
+                <h1 class="email-h1 serif" style="font-family: Georgia, 'Times New Roman', serif; font-size: 37px; font-weight: 400; line-height: 1.12; color: #161514; margin: 0 0 15px;">{{ copy.headline }}</h1>
+                <p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 15px; line-height: 1.6; color: #746d62; margin: 0 0 30px;">{{ copy.promise }}</p>
+                <p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 16px; line-height: 1.68; color: #34302b; margin: 0 0 30px;">{{ copy.body }}</p>
+                <table role="presentation" class="cta-table" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; margin: 0 0 30px;">
+                  <tr>
+                    <td bgcolor="#161514" style="background-color: #161514;">
+                      <a class="cta-link sans" href="{{ confirm_url }}" style="display: inline-block; padding: 15px 21px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 13px; font-weight: 700; line-height: 1.2; color: #fbfaf6; text-decoration: none; text-align: center;">{{ copy.button }} <span style="color: #d8bd7d;">&rarr;</span></a>
+                    </td>
+                  </tr>
+                </table>
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="width: 100%;">
+                  <tr>
+                    <td style="border-top: 1px solid #d9d3c7; font-size: 0; line-height: 0;">&nbsp;</td>
+                  </tr>
+                </table>
+                <p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 12px; line-height: 1.6; color: #746d62; margin: 18px 0 0;">{{ copy.ignore }}</p>
+              </td>
+            </tr>
+            <tr>
+              <td class="legal-note" style="padding: 26px 8px 0;">
+                <p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 12px; line-height: 1.62; color: #746d62; margin: 0 0 10px;">{{ copy.footer }}</p>
+                <p class="sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 12px; line-height: 1.5; margin: 0;"><a href="{{ policy_url }}" style="color: #735f35; text-decoration: underline;">{{ copy.policyLabel }}</a></p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
