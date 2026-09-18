@@ -361,6 +361,7 @@ export const NOT_COPY = {
     " window and never as a duration, so there is no wording here to translate.",
   address: "street address — JSON-LD, and printed on the door band of an evening still ahead",
   mapUrl: "URL",
+  facebookEvent: "URL — the label in front of it is chrome (KONCERTY_CHROME.facebookEvent)",
   admission: "enum — JSON-LD, and the door band's open-door line, whose wording is chrome",
   // `roman` stood here and is GONE from the file too: the numeral is derived from an entry's
   // position among the cycle's own stations (`lib/cycle`), so inserting an evening cannot leave

@@ -302,6 +302,7 @@ const listItems = await Promise.all(
         // The one statement in this graph about an entity somebody else owns — and the one a
         // reader searching for the festival's programme is actually looking for.
         festival: s.festival,
+        sameAs: s.facebookEvent,
       }),
     };
   }),
@@ -659,7 +660,12 @@ const ogImage = (await getImage({ src: shareImg ?? hero.desktop, width: 1200, fo
                 )}
                 {/* Out of the register deliberately: a half-ink control is a control you are not
                     sure you may press. Everything above it inks; these are simply there. */}
-                {(s.hasPage || s.spotify || s.realizacja || s.festival || s.links.length > 0) && (
+                {(s.hasPage ||
+                  s.spotify ||
+                  s.realizacja ||
+                  s.festival ||
+                  (s.isUpcoming && s.facebookEvent) ||
+                  s.links.length > 0) && (
                   <div class="station-actions">
                     {s.hasPage && (
                       <a class="pill" href={localizePath(`/koncerty/${s.id}`, lang)}>
@@ -677,6 +683,13 @@ const ogImage = (await getImage({ src: shareImg ?? hero.desktop, width: 1200, fo
                     {s.festival && (
                       <a class="link-min" href={s.festival.url} target="_blank" rel="noopener noreferrer">
                         {t.festivalSite}
+                      </a>
+                    )}
+                    {/* The event page, and only while the evening is ahead: afterwards it is a
+                        door to an RSVP nobody can make, on a station that has become a memory. */}
+                    {s.isUpcoming && s.facebookEvent && (
+                      <a class="link-min" href={s.facebookEvent} target="_blank" rel="noopener noreferrer">
+                        {t.facebookEvent}
                       </a>
                     )}
                     {s.links.map((l) => (

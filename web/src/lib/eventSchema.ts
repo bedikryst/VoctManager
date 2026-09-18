@@ -59,6 +59,10 @@ export interface EventSeed {
       owns, names and is searched for, which is precisely what a reader looking for the
       festival's programme is typing. */
   readonly festival?: { readonly name: string; readonly url: string };
+  /** The same evening under somebody else's roof — its Facebook event page. `sameAs` is the
+      schema.org relation for exactly that, and it stays true after the night is over, so it is
+      not date-gated the way the visible link is. */
+  readonly sameAs?: string;
 }
 
 /** The emitted node. Deliberately open-valued: this is JSON-LD on its way to `JSON.stringify`,
@@ -121,6 +125,7 @@ export const musicEvent = (seed: EventSeed, now: Date = new Date()): MusicEventN
     name: seed.name,
     description: seed.description,
     ...(seed.url ? { url: seed.url } : {}),
+    ...(seed.sameAs ? { sameAs: seed.sameAs } : {}),
     ...(seed.image ? { image: seed.image } : {}),
     ...(seed.date ? { startDate: seed.time ? `${seed.date}T${seed.time}:00` : seed.date } : {}),
     ...(status ? { eventStatus: status } : {}),

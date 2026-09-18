@@ -319,6 +319,11 @@ export interface KoncertyChrome {
   readonly openConcert: string;
   readonly spotify: string;
   readonly festivalSite: string;
+  /** The evening's Facebook event (`facebookEvent`, content.config) — printed on the announced
+      station here and on the concert page's door band, both under the date gate. The network is
+      named because the label is the whole promise: a reader who does not use it should know
+      before the door opens what is behind it. */
+  readonly facebookEvent: string;
   /** The page's own title and description WHILE an evening is announced.
    *
    *  The standing pair in `koncerty.yaml` describes the cycle, which is what this page is for
@@ -359,6 +364,7 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
     openConcert: "Otwórz stronę koncertu →",
     spotify: "Posłuchaj programu",
     festivalSite: "Strona festiwalu ↗",
+    facebookEvent: "Wydarzenie na Facebooku ↗",
     metaAnnouncedTitle: "{title} · {date} — VoctEnsemble",
     metaAnnouncedLead: "Najbliższy koncert VoctEnsemble: {title} — {date}, {place}.",
     metaAnnouncedFestival: "W ramach festiwalu „{name}”.",
@@ -381,6 +387,7 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
     openConcert: "Open the concert page →",
     spotify: "Listen to the programme",
     festivalSite: "The festival's site ↗",
+    facebookEvent: "The event on Facebook ↗",
     metaAnnouncedTitle: "{title} · {date} — VoctEnsemble",
     metaAnnouncedLead: "VoctEnsemble's next concert: {title} — {date}, {place}.",
     metaAnnouncedFestival: "Part of the “{name}” festival.",
@@ -403,6 +410,7 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
     openConcert: "Ouvrir la page du concert →",
     spotify: "Écouter le programme",
     festivalSite: "Le site du festival ↗",
+    facebookEvent: "L’événement sur Facebook ↗",
     metaAnnouncedTitle: "{title} · {date} — VoctEnsemble",
     metaAnnouncedLead: "Le prochain concert de VoctEnsemble : {title} — {date}, {place}.",
     metaAnnouncedFestival: "Dans le cadre du festival « {name} ».",

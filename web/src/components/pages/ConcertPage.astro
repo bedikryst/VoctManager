@@ -491,6 +491,7 @@ const events = hasTour
         address: d.address,
         admission: d.admission,
         festival: c.festival,
+        sameAs: c.facebookEvent,
       }),
     )
   : [
@@ -505,6 +506,7 @@ const events = hasTour
         address: c.address,
         admission: c.admission,
         festival: c.festival,
+        sameAs: c.facebookEvent,
       }),
     ];
 const jsonLd =
@@ -615,8 +617,11 @@ const jsonLd =
           wieczoru" at the foot of a document. Same file, same lightbox, one place at a time.
 
           Facts as a description list, in the order a reader needs them: when, where, what it costs.
-          The festival closes the band because it is the widest frame and the one door that leads
-          away from this page — a link and never an embed (.ai/07: no third-party requests). */}
+          Under them the evening's own event page, where a reader who has just decided says so and
+          passes the evening on — it sits with the facts because it is about THIS night, and stands
+          apart from them because it is a door rather than a fact. The festival closes the band
+          because it is the widest frame. Every door here is a link and never an embed (.ai/07: no
+          third-party requests). */}
     {unsung && (
       <section class="kd-band kd-ianua" id="wejscie" aria-label={ui.bands.ianua}>
         <div class="kd-wrap kd-ianua-wrap">
@@ -694,6 +699,21 @@ const jsonLd =
                 </div>
               )}
             </dl>
+
+            {/* The reveal rides the wrapper, as it does on the festival block: the register owns
+                `transition` on whatever it is granted to, and the link needs its own for the rule. */}
+            {c.facebookEvent && (
+              <p class="kd-ianua-event reveal" data-d="3">
+                <a
+                  class="kd-ianua-event-link micro"
+                  href={c.facebookEvent}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {walkUi.facebookEvent}
+                </a>
+              </p>
+            )}
 
             {c.festival && (
               <div class="kd-ianua-festival reveal" data-d="3">
@@ -1746,13 +1766,18 @@ const jsonLd =
   .kd-ianua-address { font-size: clamp(13.5px, 1.15vw, 14.5px); color: rgba(244,241,233,.58); }
   .kd-ianua-address a { color: inherit; border-bottom: 1px solid rgba(244,241,233,.24); padding-bottom: 1px; transition: color .3s var(--ease, ease), border-color .3s var(--ease, ease); }
   .kd-ianua-address a:hover { color: var(--candle); border-bottom-color: var(--candle); }
-  /* The widest frame, and the one door that leads off this page — so it closes the band, behind a
-     rule that says "this is somebody else's event" without a sentence having to. */
+  /* The two doors off this page share one voice — the mono rubric in candle, a hairline that inks
+     on hover — so a reader learns once what an off-site link looks like here. The event line is
+     pulled up towards the facts it belongs to, short of the body's own gap. */
+  .kd-ianua-event { margin: calc(-1 * clamp(6px, .8vw, 10px)) 0 0; }
+  .kd-ianua-event-link, .kd-ianua-festival-link { display: inline-block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color .3s var(--ease, ease); }
+  .kd-ianua-event-link:hover, .kd-ianua-festival-link:hover { border-bottom-color: var(--candle); }
+  /* The widest frame — so it closes the band, behind a rule that says "this is somebody else's
+     event" without a sentence having to. */
   .kd-ianua-festival { padding-top: clamp(20px, 2.4vw, 28px); border-top: 1px solid rgba(244,241,233,.14); }
   .kd-ianua-festival-name { margin: 0; font-family: var(--capitalis); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); }
   .kd-ianua-festival-note { margin: 10px 0 0; max-width: 58ch; font-family: var(--sans); font-weight: 300; font-size: clamp(14.5px, 1.2vw, 15.5px); line-height: 1.65; color: rgba(244,241,233,.7); }
-  .kd-ianua-festival-link { display: inline-block; margin: 14px 0 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color .3s var(--ease, ease); }
-  .kd-ianua-festival-link:hover { border-bottom-color: var(--candle); }
+  .kd-ianua-festival-link { margin: 14px 0 0; }
 
   .kd-tabula-front { background: var(--night, #100f0d); color: var(--paper); padding-top: clamp(48px, 6vw, 78px); padding-bottom: clamp(48px, 6vw, 78px); }
   .kd-tabula-list { list-style: none; margin: 0; padding: 0; max-width: 720px; border-top: 1px solid rgba(244, 241, 233, .14); }

@@ -2578,6 +2578,10 @@
   # third party (.ai/07). A field rather than a URL composed from `address`, because building a maps
   # query in code picks a provider on the reader's behalf without saying so.
   mapUrl: "https://maps.app.goo.gl/YNrqTTynPnUC4fZc8"
+  # The event page, where a reader says "I'm going" and passes the evening on. Printed only while
+  # the evening is ahead (content.config) — after 11.10 the field can stay, since JSON-LD `sameAs`
+  # remains true of a night that happened.
+  facebookEvent: "https://fb.me/e/gwDNFHv8S"
   admission: free
   festival:
     name: "Fenomen człowieka"

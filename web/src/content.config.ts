@@ -127,6 +127,15 @@ const concerts = defineCollection({
         `address`, because building a maps query in code would pick a provider on the reader's
         behalf without the corpus ever saying which. */
     mapUrl: z.string().url().optional(),
+    /** The evening's event page on Facebook — the one place a reader can say "I'm going" and hand
+        the evening to somebody else. A link the reader FOLLOWS, never an embed or a share button
+        (.ai/07: no third-party requests), and a field rather than a `links` row because `links` are
+        the documentary trail of a night that is over (a broadcast, a photo report) and never expire,
+        whereas this door is worth opening only while the evening is ahead: the concert page's door
+        band and the /koncerty station print it under the date gate, and JSON-LD carries it as
+        `sameAs` in both tenses. Deliberately NOT on the landing — its announcement sends a reader
+        to the concert page, and the page sends them on. */
+    facebookEvent: z.string().url().optional(),
     /** What the door costs. Set it ONLY where the ensemble actually recorded the answer: "free"
         emits a price-0 Offer, "paid" emits the honest negative without inventing a ticket price,
         and leaving it unset emits neither. A touring concert states this per date instead (see
