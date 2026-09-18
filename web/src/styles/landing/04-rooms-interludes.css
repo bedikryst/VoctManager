@@ -891,10 +891,15 @@
      unkeyed rules, which wins whatever the bundling order. Its `.notice-band` rules are keyed and
      never reach here. */
   .path-liniatura {
-    /* The pitch of the ruled lines, sized by the blank: a 64px Cormorant line standing on its rule
-       with the descent clear (64 × 1.25 + the input's own 2/12 padding ≈ 94px). The floor is the
-       phone's, where the address is at its 32px minimum. */
-    --lin-pitch: clamp(66px, 6.8vw, 100px);
+    /* The address's grade — the register's own title clamp. Everything on the sheet is measured
+       against it. */
+    --lin-address: clamp(32px, 4.4vw, 64px);
+    /* The pitch of the ruled lines, DERIVED from the line it has to hold rather than chosen: the
+       first row carries the key's line, the key's pull-down into the address's box, and the address
+       at 1.25 leading with its 2/12 padding — 30.5px + 1.09 × the grade — and every other row is
+       the same height so the sheet has one pitch. Written as a function of the grade so it never
+       falls under that content at any width; at 64px it is 104, on a phone 69. */
+    --lin-pitch: calc(var(--lin-address) * 1.1 + 34px);
     /* The seal at rest, beside its verb; and the seal once it has risen to the writing line, where
        it is scaled against that 64px line rather than against the verb it left. The risen one is
        the widest thing at the grid's right edge, which is why the sheet marks `data-spine-clear`. */
@@ -1115,12 +1120,12 @@
     opacity: 1;
   }
 
-  /* The key, over the line. It is pulled down INTO the input's box, because a 64px line at 1.25
-     leading carries ~30px of dead air above its own cap height, and a key standing above that air
-     floated a hundred pixels over the rule. Measured against the written address, its baseline
-     clears the tallest ascender by ~19px. */
+  /* The key, over the line. It is pulled down INTO the input's box, because a line at 1.25 leading
+     carries dead air above its own ascenders — ~30px at 64px — and a key standing above that air
+     floated a hundred pixels over the rule. The pull is a fraction of the address's grade so it
+     scales with the air it takes: at 32px on a phone the same fixed pixels ran into the ascenders. */
   .path-liniatura .notice-blank-label {
-    margin: 0 0 -14px;
+    margin: 0 0 calc(var(--lin-address) * -0.16);
     white-space: nowrap;
     color: var(--ink-soft);
     font-family: var(--capitalis);
@@ -1147,7 +1152,7 @@
     color: var(--ink);
     caret-color: var(--ink);
     font-family: var(--serif);
-    font-size: clamp(32px, 4.4vw, 64px);
+    font-size: var(--lin-address);
     font-weight: 300;
     letter-spacing: -0.01em;
     line-height: 1.25;
@@ -1631,11 +1636,14 @@
 
   /* THE FOLDED SHEET, below the measure the clause and the act need side by side. One column: the
      act takes the second line alone and the clause the third, both left-set, and each row keeps its
-     rule. The act row's foot is a rule of the clause's own, drawn like every other one on the sheet
-     rather than left as a static border among moving ones. The refusal comes into the flow between
-     the address and the act, because the act row has no air left above the seal for it to stand in.
-     The blank's row is unchanged: the key was never on the line, so nothing has to be given up for
-     the address to keep its measure on a phone. */
+     rule. The act row's foot is the ACT's own rule, drawn like every other one on the sheet rather
+     than left as a static border among moving ones; the act is stretched to its row so the rule is
+     the row's foot and not the button's. (Not the clause's top edge: a `<p>` that has to be its
+     whole row can only be one through flex or grid, and either one turns the sentence and its link
+     into two boxes.) The refusal comes into the flow between the address and the act, because the
+     act row has no air left above the seal for it to stand in. The blank's row is unchanged: the
+     key was never on the line, so nothing has to be given up for the address to keep its measure
+     on a phone. */
   @container liniatura (max-width: 799px) {
     .path-liniatura .notice-form {
       grid-template-columns: minmax(0, 1fr);
@@ -1659,37 +1667,33 @@
 
     /* The verb may wrap on a narrow phone; the seal stays whole beside its last line. */
     .path-liniatura .notice-act {
-      justify-self: start;
+      position: relative;
+      align-self: stretch;
+      justify-self: stretch;
+      align-items: flex-end;
+      justify-content: flex-start;
       text-align: left;
       white-space: normal;
     }
 
-    /* Stretched, and its text laid on the row's own foot. The clause carries the act row's rule on
-       its top edge, so the element has to BE the row: bottom-aligned like every other thing on this
-       sheet, its box would start a third of a pitch below the row it opens and the rule would land
-       there with it — which is the receipt's second rule missing its mark by 35px. */
-    .path-liniatura .notice-consent-text {
-      position: relative;
-      align-self: stretch;
-      display: flex;
-      align-items: flex-end;
-      padding-right: 0;
-    }
-
-    .path-liniatura .notice-consent-text::before {
+    .path-liniatura .notice-act::before {
       content: "";
       position: absolute;
-      top: 0;
       right: 0;
+      bottom: 0;
       left: 0;
       height: 1px;
       background: var(--lin-ink);
       transform-origin: left center;
     }
 
+    .path-liniatura .notice-consent-text {
+      padding-right: 0;
+    }
+
     @supports (animation-timeline: view()) {
       @media (prefers-reduced-motion: no-preference) {
-        .path-liniatura .notice-consent-text::before {
+        .path-liniatura .notice-act::before {
           animation: liniatura-rule linear both;
           animation-timeline: --liniatura;
           animation-range: cover 15% cover 27%;
