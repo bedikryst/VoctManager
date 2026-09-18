@@ -948,3 +948,266 @@ to find what the author should have seen in the code. His words: *"you were not 
 with me, you were supposed to judge for yourself… sixteen rounds of corrections are exactly
 because of this behaviour."* The rule this file should have carried from Round 5: a round that
 ends in "which of these do you want" is a round spent.
+
+## Round 18: the register's next page — designed from a thesis — BUILT (2026-09-18)
+
+**Status: in the tree, uncommitted. `astro check` 0 errors, `npm run build` 49 pages with the
+register audit clean, `test:audit` 24/24, measured at 1920/1440/1200/390 by
+`C:\Users\kryst\vm-shot\notice-r18.cjs` (rules identical before and after send at every width, to
+the pixel). Two of the developer's amendments during the build are in the tree; see the end.**
+
+### The thesis
+
+> **This is the register's next page: it rules itself as the reader arrives, and the one line the
+> page inks is blank — because it is the only line on this page the ensemble cannot write itself.**
+
+### What was wrong with Round 17, read off the tree rather than the history
+
+1. **The centre of gravity belonged to the wrong party.** The room's largest object was the
+   ensemble's headline (28–46px); the reader's line — the only thing on the page the reader
+   supplies — was a step under it (21–30px) and shared its row with a 340px act. Round 16 answered
+   "no centre of gravity" with a headline, which is weight, not figure.
+2. **Dimensionally a footnote to the row above.** Same column, edges, hairlines and face, every
+   tier a step quieter than the register's. The eye filed it as a seventh, fainter row.
+3. **The motion had no subject and no destination.** Two 20%-opacity hairlines growing sideways on
+   a page whose whole register already draws its hairlines on scroll.
+
+### What stands
+
+- **The blank at the register's own title clamp** (`--lin-address: clamp(32px, 4.4vw, 64px)`, the
+  same as `.path-entry-title`), full measure. A blank line outranks nothing, so the announced
+  evening keeps the page's one future-tense voice.
+- **The key above the line, not on it** — quiet capitals over a display line, the register's own
+  row shape — pulled into the address's dead air by `−0.16 × grade`.
+- **One pitch, derived, a rule under every line:** `--lin-pitch: calc(grade × 1.1 + 34px)` (104 at
+  1920, 69 on a phone). Derived from the first row's content rather than chosen by `vw`, which is
+  what finally made the receipt land to the pixel at every width. Two empty lines.
+- **The ruling is one gesture with a destination.** Every rule references the sheet's
+  `view()` timeline and draws left→right top to bottom (`cover 12→24`, `18→30`, `24→36`, `29→41`),
+  then the page goes over the writing line again IN INK (`.notice-blank::before`, `33→45`), then
+  lays the dotted leader on it (`40→50`), landing as the block is centred. Rule it, ink it, mark it.
+  **Everything the scroll drives is a `transform`** — a scroll-driven animation with `both` fill
+  pins the property it animates, so colour and opacity stay the hand's (refusal, focus, written).
+- **The act at rest is the verb and the seal on the clause's line, right edge**, the verb in
+  `--ink-soft`. The right column is `clamp(190px, 17vw, 270px)` so the verb wraps to two lines, not
+  three; the blank spans both columns, so the column costs it nothing.
+- **When the line becomes an address the seal rises to it** — his amendment 1, below.
+
+### Not done, and why
+
+- **Not a cut to night.** `FinalSupportSection` is a full-bleed photograph under a black scrim and
+  is the very next room; two dark rooms in sequence read as one slab (`.director-dark::after`
+  exists to prevent exactly this). The material change was made in texture instead.
+- **The place is not moved.** Three moves were refused from render, not from elimination, and each
+  moved the sheet to answer a complaint about the field. The sheet stays the register's body
+  column, whole.
+- **The verb does not change size on ready.** He allowed it ("ewentualnie się zwiększa"); refused
+  by the author: type that changes grade on a state is a jump and the page has no such move.
+
+### Built, and what changed on his word (2026-09-18)
+
+1. **The seal rises.** On seeing the first render he wrote an address, admired the page and forgot
+   to press anything — the act a row below was missed. His own proposal, built: at rest the act is
+   as above; when the line has the shape of an address the seal leaves the verb's line and comes up
+   to the end of the line just written, growing from `--lin-seal` (38–46px) to `--lin-seal-ready`
+   (52–74px, scaled to the 64px line), filling ink, with a little inertia
+   (`cubic-bezier(0.22, 1.18, 0.36, 1)` on `bottom` only — size takes `--ease-slow`, a size that
+   overshoots is a bounce). Out of flow (`position: absolute` inside the act, which is stretched to
+   its row, so `bottom: calc(100% + 6px)` is 6px above the writing line's rule however tall the
+   clause has made the row); the verb keeps the width the seal vacated; the address reserves
+   `--lin-seal-ready + 16–24px` at its end permanently, so nothing reflows. Two-column layout only —
+   folded, the seal fills where it stands.
+2. **The trigger is the line's SHAPE, read by the island, not `:valid`.** `NoticeForm.tsx` prints
+   `data-ready` on the form when the value matches `^[^\s@]+@[^\s@]+\.[^\s@.]` — name, `@`, host, a
+   dot and the FIRST LETTER of the tail (his refinement). Three reasons, all measured: the browser's
+   `:valid` fires at `name@host` with no dot; a debounced version (the author's first cut) dropped
+   and re-rose on every letter of `.com` ("trochę skacze"); a pure function of the value holds
+   through the tail and drops only when that letter is deleted. Harness proves it: at the dot not
+   ready, at the first letter ready, held through the rest.
+
+### The tree
+
+- `landing/04-rooms-interludes.css` — the liniatura block rewritten (tokens, blank, ink pass,
+  leader, act, rise, ruling, fold). The fold's act row rule is the ACT's own `::before` (a clause
+  that has to be its whole row can only be so through flex/grid, and either splits the sentence
+  from its link into two boxes — seen at 390, fixed).
+- `landing/PathSection.astro` — comments only; the void still holds two lines.
+- `islands/landing/NoticeForm.tsx` — `ready` (derived, no state) and `data-ready` on the form.
+- `landing/13-spine.css` — comment only (the risen seal is what meets the spine).
+- Harness: `vm-shot\notice-r18.cjs` — walks the ruling in real pixels, types the address a letter
+  at a time to prove the trigger, reads the risen seal's foot against rule 1, compares every rule
+  before and after send. `out-r18\` holds rest / written / sent at four widths.
+
+### Left open
+
+- The developer's eye on the live page, on the motion in particular: the rise is the one moving
+  object in the block and the first thing to judge. If it reads as a trick on his screen, the
+  measured fallback is the seal standing on the writing line permanently (built and measured
+  earlier this round, then replaced on his word).
+- `/koncerty`, `/koncerty/<slug>` and `/kontakt` — judged and rebuilt in Round 19, below; each
+  now waits for its own session.
+- Stage 2 (`.notice-leaf` prune) and the register's tally remain their own sessions.
+
+## Round 19: the three other placements, judged and built from each host's materials — BUILT, first look given, SPLIT INTO THREE SESSIONS (2026-09-18)
+
+**Status: in the tree, uncommitted, on top of Round 18. `astro check` 0 errors, `npm run build`
+49 pages with the register audit clean, `test:audit` 24/24, `test:copydesk` 29/29. Rendered by
+`C:\Users\kryst\vm-shot\notice-r19.cjs` (rest / written / sent at 1920/1440/390 for all three,
+`out-r19c\`). The developer saw the first render on his screen and gave three findings and one
+decision (below); the findings that were defects are fixed in this tree, the findings that are
+judgments are the briefs of the three sessions that follow.**
+
+### The judgment, per surface (what travels is the grammar, never the object)
+
+- **/koncerty → (c), rebuilt from the station.** Night under the last nave; the station stack
+  (italic numeral, title 36–76, capitals, italic essence); the hollow `.pill`. The band is the
+  station after the last station, without a numeral (`Nondum` counts honestly; `VIII · Nuntius`
+  would count a list among concerts): the reader's line at the station title's clamp on the
+  station's 1120 measure, the key above it as `.station-meta`, the pill at the line's end lighting
+  candle (its own hover) on `data-ready`. Round 12's fault read off the render: a 230px hairline in
+  a 760 column under a 76px title — a footnote to the nave.
+- **/koncerty/<slug> → (c), the strongest case.** The page has no station, no pill, no
+  `.station-meta`; it wore /koncerty's clothes through `notice.css` because both are night. Its
+  own materials: the Ianua `dl` (mono term column, value column, baseline-paired), the invitation's
+  candle left-rule, the section label in Cinzel candle, the coda rail's forward door (serif name +
+  arrow, candle on hover). Thesis: the page's SECOND DOOR — Ianua ran in, this runs out, with the
+  one fact only the reader supplies in the same row. Own class `.kd-nuntius`, dressed in
+  `ConcertPage.astro` through `:global()`; `.notice-band` is /koncerty's alone now.
+- **/kontakt → (b), the landing's blank adapted.** Parchment, the same hairline tokens, Cormorant
+  and Cinzel, gold as ink — the blank transfers as an object (key over an inked display line, the
+  act answering the finished line with the page's own fill); the page supplies the grade
+  (`.channel-mail` 22–34), the row (hairline over, role over address, capsule at the line's end),
+  the act (the `.channel-copy` capsule grown to the line's height, candle-ink, filling on ready).
+  No liniatura, no seal. It now follows `voices` at the voices' cadence (40–60px, a hairline)
+  instead of 270px later, and carries the section's foot to the seat band.
+
+### The developer's first look (2026-09-18, his screen, 1920)
+
+1. **/koncerty: the typed address struck the key.** `lkRyst@…` — Cormorant's ascenders and
+   capitals rise past the cap height; a key pulled into the input's box to sit tight over lowercase
+   left 4px. FIXED: the key stands 8px clear of the box, the line at the title's own 1.04 leading
+   with no top padding; measured with a capitalised address (`out-r19c\koncerty-caps-1920.png`).
+2. **/kontakt: "the title is nearly invisible — probably the whole page needs strengthening."**
+   The rubric tier (`--ink-muted`, ~4 : 1 at 10–11px on this parchment). DONE page-wide on
+   /kontakt: `.col-head .eyebrow`, `.voices-label`, `.aside-block h3` and the door's rubric are
+   `--ink-soft` (the landing's own choice for its register rubric); the key takes the eyebrow's 600.
+3. **"Add a headline like the landing's — sometimes you cannot tell what this is about."** The
+   same finding Round 16 made on the landing: the rubric is a label read at a label's speed, and
+   the promise says what a letter carries, not that this is where one is asked for. DONE as
+   shared copy, not per page: `noticeHeadline` left the landing's copy for `koncerty.yaml`
+   `notice.headline` (schema and desk registry in `i18n/content/koncerty.ts`; `landing.ts` and
+   `landing.yaml` lose theirs; EN/FR moved in `pages.en.yaml`/`pages.fr.yaml` AND in
+   `copydesk/drafts/{en,fr}/{landing,koncerty}.yaml`, same wording). `NoticeSignup` renders it on
+   every surface; the `headline` prop is gone. Each dress carries a DEFAULT rule for `.notice-head`
+   in that page's own display face (one step under the line on /koncerty; `.kd-section-title` on
+   the concert page; `.col-head h2` on /kontakt) — a starting point, not a judgment.
+4. **"On <slug> it all looks poor and cramped. Better to work on each separately, in its own
+   chat."** Agreed and DONE as a split: the shared plumbing above landed here so the three
+   sessions start from one base; the dresses are theirs to re-judge.
+
+### Also changed here
+
+- The receipt (`notice.css`, `.notice-inner[data-sent]`, `.notice-done`) is LEFT-SET at
+  mid-height on every band placement — the stations, the concert page's door and /kontakt's doors
+  all hang off the left rag, and a centred receipt was the one centred thing on three pages. The
+  landing overrides as before.
+- `NoticeForm.tsx`, `NoticeSignup.astro`, `KoncertyPage.astro`: comments only.
+
+### The tree
+
+- `styles/notice.css` — header and the whole band section rewritten for /koncerty (the
+  `--band-address` clamp, the key/line/pill row, the headline, the ready answer), the receipt
+  left-set. The /nuntius controls and the page rules below are untouched.
+- `pages/ConcertPage.astro` — the section is `kd-band kd-nuntius` in a `kd-wrap kd-narrow`; the
+  dress is the `Nuntius: the second door` block after the coda rail's rules, with its fold in the
+  820 query.
+- `pages/ContactPage.astro` — `.channels-section` gives up its bottom padding to the door; the
+  `fourth door` block rewritten; the rubric tier `--ink-soft`.
+- Copy: `content/pages/koncerty.yaml` (+`notice.headline`), `content/pages/landing.yaml`
+  (−`noticeHeadline`), `i18n/content/koncerty.ts`, `i18n/content/landing.ts`, `pages.en.yaml`,
+  `pages.fr.yaml`, `copydesk/drafts/{en,fr}/{landing,koncerty}.yaml`. `copydesk/segments.json`
+  is NOT regenerated — `make copy-sync` re-extracts it; the desk will see one segment leave the
+  landing and one arrive under koncerty.
+- `components/NoticeSignup.astro` — headline from `copy.notice.headline`, no prop;
+  `landing/PathSection.astro` mounts it without one.
+- Harness: `vm-shot\notice-r19.cjs` (three surfaces, three widths, rest/written/sent, measures
+  key-to-rule, line share, the act's fill on ready, the receipt's alignment), `caps-probe.cjs`.
+
+### Left open — one session each, in this order of doubt
+
+- **/koncerty/<slug>** (his verdict: poor, cramped) — DONE in Round 20 below, unseen by him.
+  What stood was the second-door thesis at the quietest reading of it: `.kd-narrow` 760, a 34px
+  line in the value column, a 20px serif door, under a 68px headline that dwarfed the row.
+- **/koncerty**: the rest state's ~97px of night between the key and the rule (the price of a
+  76px line with no leader — the dotted leader is the landing's gesture and was not carried); the
+  headline's grade against the line's; the pill vs. the 1120 measure.
+- **/kontakt**: the capsule at 37px as the act (loud? — it fills candle-ink on ready); the
+  headline at the section head's grade over a 34px line; whether the rubric tier at `--ink-soft`
+  is what he meant by "the whole page".
+- **/newsletter**: NOT touched by Rounds 18–19. The letter has no answer to the finished line —
+  `data-ready` is printed there too, and `notice-blank.css` ignores it. The session judges whether
+  and how the letter's own act (the paper bar with the arrow) answers `@ + . + letter`, in the
+  letter's material, not the landing's.
+- Stage 2 (`.notice-leaf` prune) and the register's tally remain their own sessions.
+
+## Round 20: /koncerty/<slug> — the second door on the full wrap, the line as the figure — BUILT, NOT SEEN (2026-09-18)
+
+**Status: in the tree, uncommitted, on top of Round 19 and the /newsletter ink session. `npm run
+build` 49 pages, register audit clean. Rendered by `vm-shot\notice-r19.cjs` (`out-r20\`,
+`koncert-measurements.txt`) and a written-with-capitals probe at 390/900/1100 (`out-r20\w\`).
+The developer has not looked.**
+
+### What the render said about "poor and cramped"
+
+Three things, none of them the thesis. (1) The block was CENTRED in a 760 column between two
+left-set night compositions on the 1180 wrap (Ianua above, the coda's rail below) — the one thing
+on the page that floated. (2) The hierarchy was upside down: a 68px headline was the figure and
+the row under it (key 10 / line 34 / clause 14 / door 20) a small cluster — display to micro in
+a hundred pixels, i.e. a headline about a form. (3) On the phone the key hung 46px over the rule
+at a form field's height (Round 8's separator, back).
+
+### Built
+
+- **Full wrap, left-set** (`kd-wrap`, no `kd-narrow`): the band is the head of the coda's night
+  and shares its left edge (370 at 1920, 130 at 1440) with the rail and with Ianua.
+- **The grades trade places.** The line is the figure at the programme lede's grade
+  (`--nuntius-line: clamp(30px, 4.8vw, 68px)` — the lede's clamp with a lower slope, because the
+  line shares its row with the key and the door and at 5.2vw a written address overran the rule
+  under 1100); the headline steps down to the work's grade (`.kd-program-work`, 23–34), one line
+  on the wrap. Promise unchanged (invitation's setting).
+- **One row, one baseline**: term column (`--nuntius-term` 96–112, wide enough for the French
+  label), the line, the door — `align-items: baseline` on the form grid, the blank a column
+  subgrid over the first two tracks, the act in the third with the input's own 10px foot. The key
+  stands on the address's baseline as `Kiedy` stands beside its date; the door stands where the
+  coda's rail puts `next`, at the row's right end, candle on `data-ready`. The clause under the
+  line in the value column, one line at 58ch.
+- **`font-variant-numeric: lining-nums` on the address** — Cormorant's default figures hang.
+- **The receipt on the row.** The say stays; `.notice-inner[data-sent]` is `display: block` (the
+  frozen `min-height` stays, its centring is undone) and `.notice-done` takes the form's margin in
+  the row's own columns: the candle mark in the term column on the title's baseline, "Sprawdź
+  skrzynkę." at the line's grade in the value column, the instruction in the invitation's serif,
+  the advice in the clause's sans (one line at 80ch). Measured: inner 359 → 399 at 1920 (the
+  receipt is one tier taller than the form, so the coda drops 40px below the reader's eye); 353 →
+  353 at 390.
+- **Folds.** ≤960: the door leaves the line's row for the clause's, right-set (the line would
+  have no room for a written address); ≤820: one column, the key 8px clear of the line's box (its
+  box is its 1.04 leading alone — key-to-rule 49px at 390, the line's own height), the door
+  left-set on its own row, the receipt's mark over its title.
+
+### Measured (out-r20)
+
+1920/1440: line 68px, key 20px above the rule (its baseline), line share 64% of the row, the act
+on the line's row (t 654 / b 686 against the line's b 695), candle ink on act, arrow and rule at
+`written`; rule back to paper on blur, act stays candle. 390: line 30px, share 100%.
+
+### Left open
+
+- His look. The empty line at rest is 68px of night over a rule between a key and a door — the
+  landing's dotted leader was not carried (not this page's gesture). If the rest state reads as
+  a gap rather than a line, the candidates are a shorter row margin (now `clamp(36px, 4.2vw,
+  60px)`) or a resting caret — never a placeholder (Round 7).
+- The receipt's 40px growth at desktop: accepted here because it happens below the eye; the
+  alternative (receipt bottom-set in the frozen box) put the title 65px above where the address
+  had been, at the eye.
+- `--nuntius-term` is 96–112 against Ianua's 78–104 for the same term column (holds
+  `Adresse e-mail`); the two are never adjacent.

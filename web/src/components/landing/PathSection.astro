@@ -354,8 +354,9 @@ const ahead = upcoming
 
       THE SHEET HAS A HEADLINE, because it stands among headed things: the headline names the
       benefit, the promise under it says what a letter carries, and the blank under them is what
-      the reader came to do. One pitch for every line it rules, written or not
-      (04-rooms-interludes, `--lin-pitch`).
+      the reader came to do. Both sentences are the list's own (`koncerty.yaml`, `notice.*`) and
+      are read by the component, so this register and the three other placements say one thing.
+      One pitch for every line it rules, written or not (04-rooms-interludes, `--lin-pitch`).
 
       `web:landing` is its own consent surface for the reason every placement is: the column
       records the screen a clause was read on, and this is the only screen a reader reaches without
@@ -368,7 +369,7 @@ const ahead = upcoming
       does over the Imagines plate: the spine is orientation, the sheet is the page. Marked on the
       sheet and not on `.path`, so the register's own rows keep their index. */}
   <aside class="path-liniatura" aria-label={nuntius.form.bandAria} data-spine-clear>
-    <NoticeSignup lang={lang} surface="web:landing" level={3} headline={copy.noticeHeadline} />
+    <NoticeSignup lang={lang} surface="web:landing" level={3} />
 
     {/* The unwritten lines. They carry no text and name nothing, so they are out of the
         accessibility tree entirely — a screen reader that announced two blank rules would be

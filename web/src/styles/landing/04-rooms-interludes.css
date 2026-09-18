@@ -1344,7 +1344,7 @@
     .path-liniatura .notice-act::after {
       position: absolute;
       right: 0;
-      bottom: 6px;
+      bottom: 15px;
     }
 
     .path-liniatura .notice-email {
@@ -1361,7 +1361,7 @@
 
   /* Hover answers in either state, and with the same gesture the vault's close makes. */
   .path-liniatura .notice-act:hover:not(:disabled)::after {
-    transform: scale(1.06);
+    transform: scale(1.4);
   }
 
   .path-liniatura .notice-act:focus-visible {

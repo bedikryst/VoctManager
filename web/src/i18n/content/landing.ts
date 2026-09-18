@@ -133,7 +133,6 @@ const landingCopySchema = z
         lede: z.string(),
         videoLabel: z.string(),
         programLabel: z.string(),
-        noticeHeadline: z.string(),
         entries: z
           .array(
             z
@@ -444,12 +443,6 @@ const LANDING_CONTRACT: readonly CopyEntry[] = [
     path: "register.programLabel",
     label: "Rejestr · rozwijany program",
     note: "The summary of a disclosure widget, repeated on every entry. The works under it come from `concerts.yaml` and are not translated here.",
-  },
-  {
-    kind: "field",
-    path: "register.noticeHeadline",
-    label: "Rejestr · nagłówek zapisu",
-    note: "The headline over the notice list's sign-up, under the announced evening. A benefit in the reader's direction, plural and open-ended — it must not point at the evening announced one row above it. One line at desktop width; the promise under it (`koncerty.notice.lede`) says what a letter carries.",
   },
   {
     kind: "list",

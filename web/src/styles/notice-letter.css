@@ -472,8 +472,20 @@ body.page-newsletter {
 /* ── The addressee's line ──────────────────────────────────────────────────────
    Where a letter carries its addressee: at the head, before anything is said. Not a field — the
    letter's own line, in the same shape as the blank under the photograph, filling with what the
-   reader writes there. Empty it is a ruled line after "Do"; written on, its rule darkens; sent, it
-   is inked. */
+   reader writes there. Empty it is a printed rule after "Do"; while the address is being written
+   it stands on that rule IN PENCIL — the resting ink the bar's arrow also wears — and the rule
+   itself does not move, as a printed line under a pencil does not; WHOLE — the island's reading
+   of the line's shape, `[data-ready]` on the form, reached from the stage — the writing and the
+   rule under it take the ink together: the letter is addressed the moment the address is one,
+   which is what the class the commitment adds has always been named for. Sent, the ink holds
+   after the form has left. The pencil is legible at a glance and no more: the reader proofreads
+   in the blank under the photograph, where the line is paper on black; here they see that the
+   letter is being written to them, and that it is not yet.
+
+   In the letter's hand, at the incipit's grade: the two lines on this sheet that are not the
+   band's own words — the line to be sung and the reader's — are set alike, a step under the
+   evening's name. The empty line keeps the written line's height, so the first character moves
+   nothing. */
 .letter-addressee {
   display: flex;
   align-items: baseline;
@@ -493,15 +505,18 @@ body.page-newsletter {
   position: relative;
   flex: 1 1 auto;
   min-width: 0;
-  min-height: 40px;
+  min-height: calc(1.2em + 14px);
   margin: 0;
-  padding: 6px 0 10px;
-  color: var(--ink);
-  font-family: var(--sans);
-  font-size: 18px;
+  padding: 4px 0 10px;
+  color: rgb(20 19 15 / 0.42);
+  font-family: var(--serif);
+  font-size: clamp(21px, 1.9cqw, 25px);
   font-weight: 300;
-  line-height: 1.3;
+  font-variant-numeric: lining-nums;
+  letter-spacing: -0.006em;
+  line-height: 1.2;
   overflow-wrap: anywhere;
+  transition: color 0.4s ease;
 }
 
 .letter-to-line::after {
@@ -516,10 +531,12 @@ body.page-newsletter {
   transition: background-color 0.4s ease;
 }
 
-.letter-to-line.has-text::after {
-  background: rgb(20 19 15 / 0.7);
+.letter-stage:has(.notice-form[data-ready]) .letter-to-line,
+.letter-sheet.is-addressed .letter-to-line {
+  color: var(--ink);
 }
 
+.letter-stage:has(.notice-form[data-ready]) .letter-to-line::after,
 .letter-sheet.is-addressed .letter-to-line::after {
   background: var(--ink);
 }
@@ -938,11 +955,6 @@ body.page-newsletter {
 
   .letter-incipit {
     margin-top: 16px;
-  }
-
-  /* One class over the object's own rule, so this holds whichever sheet the bundle orders first. */
-  .notice-letter-ask .notice-blank .notice-email {
-    font-size: 22px;
   }
 }
 

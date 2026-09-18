@@ -161,13 +161,9 @@ register:
     wykonane.
   videoLabel: "Zobacz fragment"
   programLabel: "Program koncertu"
-  # The headline over the notice list's sign-up under the announced evening (PathSection, the
-  # liniatura). It names the BENEFIT in the reader's direction with the list's own word, plural and
-  # open-ended: "przed następnym koncertem" would point at the evening announced one row above it,
-  # and a reader looking at that evening does not need a letter to learn of it. The promise that
-  # follows it — what a letter carries — is `koncerty.yaml`'s `notice.lede`, one sentence on every
-  # surface, and is not restated here.
-  noticeHeadline: "Zaprosimy Cię na kolejne koncerty."
+  # The notice list's sign-up under the announced evening (PathSection, the liniatura) has no copy
+  # here: its headline and its promise are `koncerty.yaml`'s `notice.headline` / `notice.lede`,
+  # one sentence each on every surface that mounts it.
   # One entry per evening, keyed by the concert's own id in `concerts.yaml`. The TITLE is not here:
   # it belongs to the concert and is read through the overlay, so the register and the concert page
   # can never print two names for one evening.

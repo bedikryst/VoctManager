@@ -60,6 +60,7 @@ const koncertyCopySchema = z
     notice: z
       .object({
         h2: z.string(),
+        headline: z.string(),
         lede: z.string(),
         sentTitle: z.string(),
         sentBody: z.string(),
@@ -160,6 +161,12 @@ const KONCERTY_CONTRACT: readonly CopyEntry[] = [
     path: "notice.h2",
     label: "Zaproszenia · nagłówek",
     note: "Read directly under `Koncert bez daty`, as the second thing offered to a reader who has just been told there is no next evening yet.",
+  },
+  {
+    kind: "field",
+    path: "notice.headline",
+    label: "Zaproszenia · nagłówek nad blankietem",
+    note: "The headline over the notice list's sign-up on every surface that mounts it (the landing's register, this band, a concert page, /kontakt). A benefit in the reader's direction, plural and open-ended — it must not point at whichever evening is announced beside it. One line at desktop width; the promise under it (`notice.lede`) says what a letter carries.",
   },
   {
     kind: "field",

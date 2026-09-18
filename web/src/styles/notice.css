@@ -1,22 +1,25 @@
 /**
  * @file notice.css
- * @description The NIGHT BAND of the concert notice list — the sign-up under the last station of
- *  /koncerty and at the end of a concert page whose evening is still ahead — and the /nuntius
- *  receipt page's own controls. The band is dressed from the stations' materials and nothing
- *  else: the page's two-tier eyebrow for the rubric, the essence's italic serif for the one
- *  sentence, a hairline of the pill's own ink to write the address on, and the hollow `.pill` as
- *  the act (the gold fill is the Via's one call to give and is not borrowed for a list). The
- *  landing's strip and /kontakt's door mount the same island and take NONE of these rules by
- *  choice: each is dressed by its host (`landing/06-footer.css`, `pages/ContactPage.astro`) at one
- *  class of specificity above what is here, so what this sheet says about colour reaches them
- *  only where the host has said nothing. /newsletter, which IS the letter, loads
- *  `notice-blank.css` and `notice-letter.css` instead, never this.
+ * @description The BAND under the last station of /koncerty — the concert notice list's sign-up
+ *  where the walk ends — and the /nuntius receipt page's own controls. The band is dressed from the
+ *  stations' materials and nothing else: the page's two-tier eyebrow for the rubric, the essence's
+ *  italic serif for the one sentence, the station's capitals for the key, a line at the STATION
+ *  TITLE'S OWN GRADE for the address, a hairline of the pill's ink to write it on, and the hollow
+ *  `.pill` as the act (the gold fill is the Via's one call to give and is not borrowed for a list).
+ *  The other placements mount the same island and take NONE of these rules: each is dressed by
+ *  its host — the landing as the register's next page (`landing/04-rooms-interludes.css`), a
+ *  concert page as its second door (`pages/ConcertPage.astro`, `.kd-nuntius`), /kontakt as the
+ *  fourth of its doors (`pages/ContactPage.astro`, `.notice-door`) — so every band rule here is
+ *  keyed on `.notice-band` and reaches nothing else. What is unkeyed (the receipt, the fallback)
+ *  is the night default a host overrides by one class of specificity. /newsletter, which IS the
+ *  letter, loads `notice-blank.css` and `notice-letter.css` instead, never this.
  *
  *  WHY THIS IS A GLOBAL SHEET AND NOT THE PAGE'S OWN `<style>`. Most of what it dresses is
  *  rendered by React inside an island. Astro scopes a page rule by appending `[data-astro-cid-…]`
  *  to every compound, and an element React created carries no such attribute — so a page-scoped
  *  `.notice-form` compiles to a selector that matches nothing, silently. `styles/vault.css` is
- *  the same arrangement for the same reason.
+ *  the same arrangement for the same reason; the concert page and /kontakt reach the island
+ *  through `:global()` instead, which is the other way out of the same trap.
  *
  *  Tokens (--paper, --candle, --ink, --serif, --sans, --capitalis, --mono, --ease) come from the
  *  globally imported tokens.css.
@@ -24,11 +27,24 @@
  * @module styles/notice
  */
 
-/* ── The band ──────────────────────────────────────────────────────────────────
-   Transparent, like `.station-next` above it: the page's night comes from the body's own
-   ground, and a second opaque layer here would only be a chance for the two to disagree.
-   The hairline is the seam between the unwritten station and this. */
+/* ── The band: the walk's last line ───────────────────────────────────────────
+   THE BAND IS THE STATION AFTER THE LAST STATION, WITHOUT A NUMERAL. Seven evenings are named
+   above it at the station title's grade, each a full-screen nave; the walk ends and the page
+   asks for the one line it cannot write itself. It stays on the body's night — `.station-next`
+   above it is transparent for the same reason, and a second opaque layer here would only be a
+   chance for the two to disagree. The hairline is the seam between the last nave and this.
+
+   THE READER'S LINE IS AT THE STATION TITLE'S CLAMP — `clamp(36px, 5.4vw, 76px)`, the same as
+   `.station-title` — and it takes the station's whole measure. That is the composition and not an
+   emphasis: at the essence's grade on a 760 column the band was a footnote to the nave above it,
+   because dimensionally it was one. A blank line outranks nothing; the announced evening a screen
+   up keeps the page's one future-tense voice.
+
+   The numeral cannot be borrowed. `Nondum` counts honestly because it IS the next evening's slot;
+   a `VIII · Nuntius` would count a list among the concerts. */
 .notice-band {
+  /* The address's grade — the station title's own clamp. */
+  --band-address: clamp(36px, 5.4vw, 76px);
   position: relative;
   padding: clamp(72px, 10vw, 118px) max(28px, 5vw);
   color: var(--paper);
@@ -50,14 +66,12 @@
   background: linear-gradient(90deg, transparent, rgba(244, 241, 233, 0.16), transparent);
 }
 
-/* A STATION'S COLUMN, SET FROM THE LEFT. The page's stations hang their text off the left rag;
-   only the two terminal ones (memoriam, the unwritten station) are centred. Left-set, the band
-   is a station's shape, and it is the shape the band has whether the station above it is the
-   centred `Nondum` or an announced evening. 760 rather than the `Nondum` station's 660: the key,
-   the line and the pill share one row, and in 660 the line between them was 219px — sixteen
-   characters of an address. The station above is centred, so no left edge was aligned to 660. */
+/* THE STATION'S OWN MEASURE, set from the left. `.station-inner` is 1120 and every station hangs
+   its text off its left rag; only the two terminal ones (memoriam, the unwritten station) are
+   centred. The line the reader writes runs the whole 1120, which is what lets it stand at the
+   title's grade without scrolling a long address under its own key. */
 .notice-inner {
-  max-width: 760px;
+  max-width: 1120px;
   margin: 0 auto;
   text-align: left;
 }
@@ -73,11 +87,28 @@
   line-height: 1.4;
 }
 
+/* THE HEADLINE, in the station title's face one step under the title's grade — the step the
+   landing's sheet takes for the same reason: the reader's line below it stands at the full grade,
+   and a display title at that grade beside it would be two titles in one block. It is the
+   `ink-press` node of the block, so its weight RESTS at 300 (the register audit fails the build
+   over anything else). `balance` so a wrap on a narrow band is two even lines, not a widow. */
+.notice-band .notice-head {
+  margin: 14px 0 0;
+  max-width: 26ch;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: clamp(28px, 3.4vw, 50px);
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  line-height: 1.08;
+  text-transform: none;
+  text-wrap: balance;
+}
+
 /* The band's one sentence, at the grade the stations give THEIR one sentence (`.station-essence`,
-   KoncertyPage): italic serif, a station's measure. Not the letter's display grade — on this page
-   that grade is a station's title, and the list is not a station. */
+   KoncertyPage): italic serif, a station's measure, under the headline. */
 .notice-promise {
-  margin: 22px 0 0;
+  margin: 18px 0 0;
   max-width: 42ch;
   color: rgb(244 241 233 / 0.92);
   font-family: var(--serif);
@@ -88,49 +119,53 @@
   text-wrap: pretty;
 }
 
-/* ── The blank and the act — the station's own row ─────────────────────────────
-   A key ON the line, and the pill beside it: the key in the tracked capitals `.station-meta`
-   names a datum in, standing on the line's own baseline with the rule running on from it — a
-   key hung an input's height above the rule made the empty line read as a separator, which is
-   the finding the letter's blank was built on (round 8). `.station-actions` is the row a
-   station's controls stand in. The line and the pill share ONE ink — the pill's border,
-   `rgb(244 241 233 / 0.4)` — and one answer to attention: the pill fills with candle on hover,
-   the line turns candle on focus. Grid, not flex-wrap: the line must take the room and the pill
-   must keep its own width, and below the station's phone measure the pill drops under the line
-   on its own row, left-set as the stations set theirs. Selectors carry `.notice-band` so the
-   strip and the door, which mount the same island, inherit none of this by accident. */
+/* ── The line and the pill — the station's row ─────────────────────────────────
+   The blank takes the first row's whole measure, the pill stands at its END on the same rule, and
+   the clause takes the row under. The key is ABOVE the line, in the station's own shape for a row
+   (quiet capitals over a display line: `.station-meta` under `.station-title`, `.station-num`
+   over it) and not on its baseline: at the title's grade a key on the line took a third of what
+   there was to write on, and hung an input's height over the rule it made the empty line read as
+   a separator. The line and the pill share ONE ink — the pill's border, `rgb(244 241 233 / 0.4)`
+   — and one answer to attention: the line turns candle under the pen, the pill fills with candle
+   when the line is written. Explicit rows, not areas: the island prints the refusal between the
+   blank and the act, and an area template would auto-place it under the clause. Selectors carry
+   `.notice-band` so no other host inherits this by accident. */
 .notice-band .notice-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
-  column-gap: 26px;
-  row-gap: 14px;
-  margin-top: clamp(30px, 3.6vw, 44px);
+  column-gap: clamp(26px, 3vw, 44px);
+  row-gap: 18px;
+  margin-top: clamp(34px, 4vw, 56px);
 }
 
 .notice-band .notice-blank {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
+  grid-column: 1;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
 }
 
+/* The key in `.station-meta`'s capitals, standing clear of the line's ASCENDERS, not of its box:
+   Cormorant's `l`, `k` and capitals rise past the cap height, and a key pulled into the box to
+   sit tight over lowercase was struck by the first `R` typed at 76px. The line's box has almost
+   no air above the ascenders (1.04 leading, no top padding), so the clearance is this margin. */
 .notice-band .notice-blank-label {
-  flex: none;
-  margin: 0;
+  margin: 0 0 8px;
   white-space: nowrap;
   color: rgb(244 241 233 / 0.66);
   font-family: var(--capitalis);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.2em;
+  line-height: 1.5;
   text-transform: uppercase;
 }
 
 .notice-band .notice-blank-line {
   position: relative;
   display: block;
-  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -153,21 +188,25 @@
   background: #d6a08e;
 }
 
-/* The address in the page's serif at the grade of a station's inscription — the one thing on the
-   band the reader writes, set as the page sets what it quotes. */
+/* THE ADDRESS AT THE STATION TITLE'S GRADE, in the station title's own setting (300, the title's
+   tracking, the title's leading to the pixel that keeps descenders inside an input's box). The
+   one thing on the band the reader writes, and the largest thing in the room — six evenings are
+   named at this size, and the seventh line is blank. The floor is far above the 16px at which
+   iOS zooms a focused field. */
 .notice-band .notice-email {
   display: block;
   width: 100%;
   margin: 0;
-  padding: 2px 0 8px;
+  padding: 0 0 10px;
   border: 0;
   background: none;
   color: var(--paper);
   caret-color: var(--paper);
   font-family: var(--serif);
-  font-size: clamp(20px, 1.6vw, 24px);
+  font-size: var(--band-address);
   font-weight: 300;
-  line-height: 1.2;
+  letter-spacing: -0.01em;
+  line-height: 1.04;
   transition: none;
 }
 
@@ -185,8 +224,11 @@
 
 /* THE PAGE'S OWN `.pill`, restated because a scoped rule cannot reach into an island — same
    face, tracking, border and hover as KoncertyPage's, so the band's act is a station's control.
-   Hollow, not gold: `.pill-gold` is the Via's one call to give. */
+   Hollow, not gold: `.pill-gold` is the Via's one call to give. It stands on the writing line's
+   own rule, at the line's end, where the eye is when the writing stops. */
 .notice-band .notice-act {
+  grid-column: 2;
+  grid-row: 1;
   display: inline-flex;
   align-items: center;
   gap: 9px;
@@ -210,6 +252,13 @@
     opacity 0.4s var(--ease);
 }
 
+/* THE LINE HAS BECOME AN ADDRESS, SO THE PILL LIGHTS — the answer every hollow pill on this page
+   gives a pointer, given here to the reader's hand before any pointer reaches it. `[data-ready]`
+   is the island's reading of the line's SHAPE (a name, `@`, a host, a dot and the first letter of
+   its tail; NoticeForm.tsx), not the browser's `:valid`, which calls `name@host` an address. Lit
+   in candle rather than resting in it: `.pill-gold` at rest is the money door, and a list signed
+   up for in gold reads as a purchase; a pill that lights when the line is written reads as live. */
+.notice-band .notice-form[data-ready] .notice-act,
 .notice-band .notice-act:hover:not(:disabled),
 .notice-band .notice-act:focus-visible {
   background: var(--candle);
@@ -228,10 +277,10 @@
 }
 
 /* The refusal stays where the DOM has it — straight after the field it refuses, for anyone
-   reading in that order — and takes the whole row on screen. */
+   reading in that order — and takes its own row under the line. */
 .notice-band .notice-form > .notice-error {
   grid-column: 1 / -1;
-  margin: -4px 0 0;
+  margin: -6px 0 0;
   color: #d6a08e;
   font-family: var(--sans);
   font-size: 13.5px;
@@ -246,8 +295,9 @@
 .notice-band .notice-consent-text {
   grid-column: 1 / -1;
   margin: 0;
+  max-width: 64ch;
   color: rgb(244 241 233 / 0.6);
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.55;
   text-wrap: pretty;
 }
@@ -274,6 +324,8 @@
   }
 
   .notice-band .notice-act {
+    grid-column: 1;
+    grid-row: 2;
     justify-self: start;
   }
 }
@@ -356,10 +408,13 @@
 
 /* ── After the address is handed over ──────────────────────────────────────── */
 
+/* Left-set, as every host sets its own text: the stations hang off the left rag, the concert
+   page's door and /kontakt's doors do the same, and a centred receipt in a left-set block was the
+   one centred thing on three pages. The star leads the title on its own line. */
 .notice-done {
   margin-top: clamp(34px, 4vw, 48px);
   display: grid;
-  justify-items: center;
+  justify-items: start;
   gap: 10px;
 }
 
@@ -405,16 +460,15 @@
    seven days having consented to nothing.
 
    The height is held by an inline `min-height` the island writes from `offsetHeight` BEFORE the
-   swap, so the page below never moves; the receipt is then centred in the space the form
-   occupied, which is where the reader is already looking. */
+   swap, so the page below never moves; the receipt is then set at mid-height of the space the
+   form occupied, which is where the reader is already looking, on the host's own left edge. The
+   landing keeps its say and writes the receipt on its ruled lines instead (04-rooms-interludes). */
 .notice-inner[data-sent] {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  /* Wins over every host's left alignment: the receipt is one short statement and reads as one
-     wherever it stands. The attribute is what makes this outrank a host's `.notice-inner` rule. */
-  text-align: center;
+  text-align: left;
 }
 
 .notice-inner[data-sent] .notice-say {

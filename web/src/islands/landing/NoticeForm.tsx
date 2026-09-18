@@ -8,8 +8,9 @@
  *  page IS the letter and `styles/notice-blank.css` dresses the blank as a form letter's
  *  (`Na adres ______`, the paper bar with the arrow). `band` is every other door to the list, and
  *  there the blank wears NOTHING OF ITS OWN: the page it stands on dresses it from its own
- *  materials (the stations' hairline and pill on /koncerty, the register's ruled lines on the
- *  landing, the doors' serif line and capsule on /kontakt), because an object carried from
+ *  materials (the station title's line and the pill on /koncerty, the register's ruled lines on
+ *  the landing, the door's fact row on a concert page, the doors' serif line and capsule on
+ *  /kontakt), because an object carried from
  *  one page onto another is a patch on every page but its own. Hence the neutral class names, and
  *  hence the two things this markup does decide by placement — the letter's arrow and the
  *  letter's `Na adres` label are the letter's gestures, and a band prints the plain field name.
@@ -447,7 +448,7 @@ export function NoticeForm({
   /* Its own classes, not any page's: a page rule is SCOPED by Astro, which appends the scope
      attribute to every compound, and an element React rendered carries none — so a page that
      dresses this form does it through a global sheet or `:global()` rules keyed on the section it
-     mounts the island in (`.notice-band`, `.path-liniatura`, `.notice-door`). */
+     mounts the island in (`.notice-band`, `.path-liniatura`, `.kd-nuntius`, `.notice-door`). */
   const form =
     phase === "sent" ? null : (
       <form

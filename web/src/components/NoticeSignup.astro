@@ -21,22 +21,27 @@
  *  ITS VOICE IS THE BAND'S ON /koncerty (`content/pages/koncerty.yaml`, `notice.*`), read here
  *  through the same desk overlay every page uses. Not a copy of those sentences and not a second
  *  set beside them: the list says one thing, so a placement that spoke for itself would be the
- *  drift this component exists to prevent. The band's one sentence is `notice.lede`; `notice.h2`
- *  is the letter's sign-off and does not stand here — as a band's headline it said goodbye at the
- *  moment of asking.
+ *  drift this component exists to prevent. The headline is `notice.headline` and the one sentence
+ *  under it is `notice.lede`; `notice.h2` is the letter's sign-off and does not stand here — as a
+ *  band's headline it said goodbye at the moment of asking.
  *
  *  ONE SHAPE, THE HOST'S MATERIALS. What every placement shares is the composition — the rubric
  *  naming the list, the one sentence, one line to write an address on, the act, the clause — and
  *  this markup. What no two placements share is a single visual rule: the ask is built from the
  *  type, hairlines and controls of the page it stands on, so that taking it out would leave a hole
- *  in that page and not the mark of a sticker. The night band (`styles/notice.css`, loaded here)
- *  dresses it for /koncerty and a concert page from the stations' hairline and pill; the landing
- *  mounts it as the REGISTER'S FIRST UNWRITTEN LINE (`landing/PathSection.astro`,
- *  `.path-liniatura`), ruled in the register's own hairlines (`landing/04-rooms-interludes.css`,
- *  which also rules the empty lines below it); /kontakt dresses
- *  `.notice-door` as the fourth of its doors (`pages/ContactPage.astro`). The letter's own dress
- *  (`notice-blank.css`) is the letter's and is not loaded here — carried onto the landing it was
- *  refused on sight as a paper bar in a footer of hairlines and italic links.
+ *  in that page and not the mark of a sticker. What travels between them is a GRAMMAR, never an
+ *  object: the ask stands where the page's material runs out; the reader's line is the block's
+ *  figure, at the grade that page names things; the act is a door in that page's scale and it
+ *  answers the finished line (`data-ready`, printed by the island) with that page's own fill. The
+ *  band under /koncerty's last station (`styles/notice.css`, loaded here, `.notice-band`) is the
+ *  station after the last station: the line at the station title's grade, the hollow pill lit;
+ *  the landing mounts it as the REGISTER'S NEXT PAGE (`landing/PathSection.astro`,
+ *  `.path-liniatura`), ruled in the register's own hairlines (`landing/04-rooms-interludes.css`);
+ *  a concert page dresses it as its SECOND DOOR — Ianua's fact row and the coda's forward door
+ *  (`pages/ConcertPage.astro`, `.kd-nuntius`); /kontakt dresses `.notice-door` as the fourth of
+ *  its doors, the channel row with the capsule grown to the act (`pages/ContactPage.astro`). The
+ *  letter's own dress (`notice-blank.css`) is the letter's and is not loaded here — carried onto
+ *  the landing it was refused on sight as a paper bar in a footer of hairlines and italic links.
  *
  *  THE RUBRIC IS THREE SPANS, NOT A STRING, because its hosts set it more than one way: the site's
  *  eyebrow reads `Nuntius · zaproszenia`, a stanza label reads `· Nuntius zaproszenia`. A flex
@@ -44,12 +49,13 @@
  *  host's to say: a band standing among a page's sections is an `h2`, a row standing among a
  *  register's entries is a peer of their `h3`s — the outline follows the composition.
  *
- *  A HOST MAY SET A HEADLINE OVER THE SENTENCE. Where the ask stands among headed things — the
- *  landing's register, whose every row has a title — the rubric alone is a label, and a label is
- *  read at a label's speed. `headline` is the host's own sentence naming the benefit; when it is
- *  given it takes the heading and the rubric becomes the eyebrow over it, so the outline still has
- *  one entry for the ask. The sentence under it stays the list's one promise. The night band and
- *  the door give none and keep the rubric as their heading.
+ *  THE HEADLINE STANDS OVER THE SENTENCE ON EVERY SURFACE. The rubric alone is a label, and a
+ *  label is read at a label's speed: on the landing it was the finding that gave the block its
+ *  headline (Round 16), and on the three other placements the developer's first look said the
+ *  same — "trochę nie wiadomo o co chodzi" — because the promise says what a letter carries, not
+ *  that this is where one is asked for. The headline names the benefit (`notice.headline`, one
+ *  wording like the promise), takes the heading, and the rubric becomes the eyebrow over it, so
+ *  the outline has one entry for the ask.
  * @architecture Astro islands 2026
  * @module components/NoticeSignup
  */
@@ -61,9 +67,10 @@ import type { Locale } from "../i18n/config";
 import { chromeHtmlForIsland } from "../lib/islandCopy";
 import { pageCopy } from "../lib/pageCopy";
 /* Carried by the component rather than by each caller: what this sheet dresses is mostly rendered
-   by React, so a page that mounted the band without it would show an unstyled form. It is the
-   night band's dress and the receipt page's controls; the strip and the door override it from
-   their own sheets by one class of specificity. */
+   by React, so a page that mounted the band without it would show an unstyled form. It is
+   /koncerty's band dress (keyed on `.notice-band`), the night default for the receipt, and the
+   receipt page's controls; every other host dresses the island from its own sheet by one class
+   of specificity. */
 import "../styles/notice.css";
 
 interface Props {
@@ -72,14 +79,9 @@ interface Props {
   surface: NoticeSurface;
   /** Heading level of the ask — see the note on the rubric above. Default `2`. */
   level?: 2 | 3;
-  /** The host's headline over the promise. With it the heading is this sentence and the rubric is
-      its eyebrow; without it the rubric is the heading. */
-  headline?: string;
 }
-const { lang, surface, level = 2, headline } = Astro.props;
+const { lang, surface, level = 2 } = Astro.props;
 const Heading = level === 3 ? "h3" : "h2";
-/* The rubric is the heading only when nothing outranks it. */
-const Rubric = headline ? "p" : Heading;
 
 const copy = pageCopy(KONCERTY_PAGE, lang);
 const nuntius = NUNTIUS[lang];
@@ -108,23 +110,20 @@ const islandProps = {
   {/* The voice, kept in one element so a host can set it beside the blank rather than above
       it — and so the receipt, which replaces everything at once, has one thing to hide.
 
-      WITHOUT A HEADLINE THE HEADING IS THE RUBRIC. The landmark is named after the list, not
-      after what the list promises: a reader arriving on `#nuntius` from another page lands on the
-      name of the thing they were sent to, and the sentence under it is what it does. With one, the
-      headline is the heading and carries the scroll's press (`ink-press`, a display serif resting
-      at 300); the promise is then a sentence of text and is only revealed. */}
+      The headline is the heading and carries the scroll's press (`ink-press`, a display serif
+      resting at 300); the rubric over it names the list — a reader arriving on `#nuntius` from
+      another page still lands on the name of the thing they were sent to — and the promise under
+      it is a sentence of text and is only revealed. */}
   <div class="notice-say">
-    <Rubric class="notice-rubric eyebrow reveal">
+    <p class="notice-rubric eyebrow reveal">
       <span class="lat" lang="la">Nuntius</span>
       <span class="notice-rubric-dot" aria-hidden="true">·</span>
       <span class="notice-rubric-gloss">{nuntius.page.eyebrow}</span>
-    </Rubric>
-    {headline && (
-      <Heading class="notice-head reveal ink-press" data-d="1">
-        {headline}
-      </Heading>
-    )}
-    <p class:list={["notice-promise reveal", { "ink-press": !headline }]} data-d={headline ? "2" : "1"}>
+    </p>
+    <Heading class="notice-head reveal ink-press" data-d="1">
+      {copy.notice.headline}
+    </Heading>
+    <p class="notice-promise reveal" data-d="2">
       {copy.notice.lede}
     </p>
   </div>

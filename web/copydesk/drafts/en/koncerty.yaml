@@ -72,6 +72,7 @@ page.koncerty.officia.lede: "A Mass, a solemnity, a wedding: the programme is th
 # repository. It never says the reader is subscribed: nothing is stored as consent until the link
 # in the mail is clicked.
 page.koncerty.notice.h2: "We will let you know about upcoming concerts."
+page.koncerty.notice.headline: "We will invite you to the concerts ahead."
 # NO WORDING HERE MAY COUNT LETTERS — „one short letter before each concert” is the rejected one,
 # and so is „one letter for one evening”. A count is an operational limit no sending policy keeps
 # (one programme sung in three cities is three dates; a moved hour is another letter), while the

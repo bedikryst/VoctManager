@@ -268,7 +268,9 @@ const moment = ahead
     if (!line || !sheet || !stage) return;
     const { value, state } = (event as CustomEvent<NoticeAddressDetail>).detail;
     line.textContent = value;
-    line.classList.toggle("has-text", value.length > 0);
+    /* The addressee's line is pencilled while it is being written and inked by the sheet itself
+       once the address is whole (the form's `data-ready`, reached with `:has()`); this class
+       carries that ink past the moment the form leaves for the receipt, and lifts the sheet. */
     sheet.classList.toggle("is-addressed", state === "sent");
     /* The lamp answers the commitment, not the typing. */
     stage.classList.toggle("is-committed", state === "sent");

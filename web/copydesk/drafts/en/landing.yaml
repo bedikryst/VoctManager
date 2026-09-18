@@ -151,7 +151,6 @@ page.landing.register.videoLabel: "Watch an excerpt"
 page.landing.register.programLabel: "The concert programme"
 # The headline over the sign-up under the announced evening. Plural and open-ended on purpose —
 # "the next concert" would point at the evening announced one row above it.
-page.landing.register.noticeHeadline: "We will invite you to the concerts ahead."
 
 page.landing.register.entries.wcielenie.tag: "Spiritual Concert · debut"
 page.landing.register.entries.wcielenie.place: "Sacred Heart Basilica in Kraków"

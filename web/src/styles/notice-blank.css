@@ -3,6 +3,8 @@
  * @description THE LETTER'S BLANK — how the sign-up island is dressed on /newsletter, where the
  *  page is the letter: a form letter's line (`Na adres ______`), the act as a bar of the letter's
  *  paper with the arrow that sends it, the refusal under the rule, and the one-line clause.
+ *  The line is written in the letter's own hand — the serif at the sentence's grade — because on
+ *  this page it is one of two lines in that hand under the photograph, the band's and the reader's.
  *  Imported by `NoticeLetter.astro` and by nothing else. The same island stands on /koncerty, in
  *  the landing's footer and on /kontakt, and there it wears none of this: each of those pages
  *  dresses the blank from its own materials (`notice.css` for the night band, the landing's
@@ -33,6 +35,7 @@
   --blank-act-ground-hover: #fbf9f4;
   --blank-act-ground-busy: rgb(244 241 233 / 0.72);
   --blank-act-ink: var(--ink);
+  --blank-act-arrow: rgb(20 19 15 / 0.42);
   --blank-act-ring: var(--candle);
   --blank-fine: rgb(244 241 233 / 0.6);
   --blank-fine-link: rgb(244 241 233 / 0.86);
@@ -87,21 +90,29 @@
   background: var(--blank-refusal);
 }
 
-/* One class over the bare `.notice-email`, so this rule stays the letter's should the receipt
+/* THE READER'S LINE, IN THE LETTER'S HAND AT THE SENTENCE'S GRADE (`.letter-lede`: the serif at
+   300, 24–32px). Under the photograph there are two lines in that hand — what the band says the
+   letter carries, and the address the reader writes — and they are set as two lines of one
+   exchange, neither above the other. A sans line a step under the sentence read as a field on a
+   form; a line above it would have made the h1 the smaller thing. Lining figures because an
+   address is read back, not read: the face's old-style figures put a `3` and a `5` below the line.
+   One class over the bare `.notice-email`, so this rule stays the letter's should the receipt
    page's base field rule (`notice.css`) ever be loaded beside it. */
 .notice-blank .notice-email {
   display: block;
   width: 100%;
   margin: 0;
-  padding: 6px 0 10px;
+  padding: 2px 0 8px;
   border: 0;
   background: none;
   color: var(--blank-text);
   caret-color: var(--blank-text);
-  font-family: var(--sans);
-  font-size: clamp(20px, 1.5cqw, 24px);
+  font-family: var(--serif);
+  font-size: clamp(24px, 2.1cqw, 32px);
   font-weight: 300;
-  line-height: 1.3;
+  font-variant-numeric: lining-nums;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
   cursor: text;
   transition: none;
 }
@@ -129,7 +140,19 @@
 
 /* ── The act ───────────────────────────────────────────────────────────────────
    A BAR OF THE LETTER'S PAPER. On the night side there is one paper object besides the letter, and
-   it is the thing that sends it. */
+   it is the thing that sends it.
+
+   HOW IT ANSWERS THE FINISHED LINE: IN INK, AND ONLY IN INK. The other four placements light,
+   fill or raise their act on `[data-ready]` because each of them is a quiet control at a line's
+   end that has to declare itself the moment the writing stops. This bar is the brightest
+   rectangle on the dark side and needs no declaring; and this page already answers the hand with
+   every keystroke, on the sheet's addressee line. So the answer here is the smallest the letter's
+   material has: the arrow — the bar's one gesture, the thing that sends — rests in the supporting
+   ink and takes the full ink when the line is whole, in the same breath as the addressee's rule
+   on the sheet (`notice-letter.css`). No candle: the letter's one candle is the lamp, and the lamp
+   is spent on the commitment. No motion: the arrow's movement is the hover's, and it keeps it.
+   `[data-ready]` and not `:has(:valid)` — the browser calls `name@host` an address with no dot in
+   it; the island reads the line's SHAPE (NoticeForm.tsx). */
 .notice-act {
   display: flex;
   align-items: center;
@@ -153,11 +176,22 @@
 }
 
 .notice-act-arrow {
+  color: var(--blank-act-arrow);
   font-family: var(--serif);
   font-size: 22px;
   font-weight: 300;
   line-height: 1;
-  transition: transform 0.45s var(--ease);
+  transition:
+    color 0.5s var(--ease),
+    transform 0.45s var(--ease);
+}
+
+/* The ink is the hover's, given to the hand before any pointer reaches the bar; the pointer then
+   adds the only thing it ever added, the arrow's travel. */
+.notice-form[data-ready] .notice-act-arrow,
+.notice-act:hover .notice-act-arrow,
+.notice-act:focus-visible .notice-act-arrow {
+  color: var(--blank-act-ink);
 }
 
 .notice-act:hover,

@@ -64,6 +64,13 @@ next:
 # could not read.
 notice:
   h2: "Do zobaczenia."
+  # THE HEADLINE OVER THE SIGN-UP, ONE SENTENCE ON EVERY SURFACE (`components/NoticeSignup`): the
+  # landing's register, this page's band, a concert page's second door, /kontakt's fourth door.
+  # It names the BENEFIT in the reader's direction with the list's own word, plural and
+  # open-ended: "przed następnym koncertem" would point at whichever evening is announced beside
+  # it, and a reader looking at that evening does not need a letter to learn of it. One line at
+  # desktop width. The promise that follows it — what a letter carries — is `lede` below.
+  headline: "Zaprosimy Cię na kolejne koncerty."
   # THE PROMISE IS SCOPE, NOT A COUNT. Counting letters ("one short letter before each concert")
   # states an operational limit no sending policy keeps: one programme sung in three cities is
   # three dates, and a moved hour is another letter. What can be promised without such a policy is
