@@ -1361,7 +1361,7 @@
 
   /* Hover answers in either state, and with the same gesture the vault's close makes. */
   .path-liniatura .notice-act:hover:not(:disabled)::after {
-    transform: scale(1.4);
+    transform: scale(1.1);
   }
 
   .path-liniatura .notice-act:focus-visible {

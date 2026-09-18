@@ -189,15 +189,20 @@
 }
 
 /* THE ADDRESS AT THE STATION TITLE'S GRADE, in the station title's own setting (300, the title's
-   tracking, the title's leading to the pixel that keeps descenders inside an input's box). The
-   one thing on the band the reader writes, and the largest thing in the room — six evenings are
-   named at this size, and the seventh line is blank. The floor is far above the 16px at which
-   iOS zooms a focused field. */
+   tracking). The one thing on the band the reader writes, and the largest thing in the room —
+   six evenings are named at this size, and the seventh line is blank. The floor is far above the
+   16px at which iOS zooms a focused field.
+
+   LEADING 1.3, NOT THE TITLE'S 1.04: an input clips its text to its own content box, and
+   Cormorant's ascent and descent together are 1.21em, so at the title's leading every `y`, `g`
+   and `@` lost its tail at the baseline. The padding under the text is no help — the clip is the
+   content box, not the padding box. Lining figures: the face's default numerals hang below the
+   baseline, and an address with digits read as a typo. */
 .notice-band .notice-email {
   display: block;
   width: 100%;
   margin: 0;
-  padding: 0 0 10px;
+  padding: 0 0 6px;
   border: 0;
   background: none;
   color: var(--paper);
@@ -205,8 +210,9 @@
   font-family: var(--serif);
   font-size: var(--band-address);
   font-weight: 300;
+  font-variant-numeric: lining-nums;
   letter-spacing: -0.01em;
-  line-height: 1.04;
+  line-height: 1.3;
   transition: none;
 }
 

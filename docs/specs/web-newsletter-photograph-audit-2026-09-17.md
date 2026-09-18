@@ -1190,22 +1190,43 @@ at a form field's height (Round 8's separator, back).
   receipt is one tier taller than the form, so the coda drops 40px below the reader's eye); 353 →
   353 at 390.
 - **Folds.** ≤960: the door leaves the line's row for the clause's, right-set (the line would
-  have no room for a written address); ≤820: one column, the key 8px clear of the line's box (its
-  box is its 1.04 leading alone — key-to-rule 49px at 390, the line's own height), the door
-  left-set on its own row, the receipt's mark over its title.
+  have no room for a written address); ≤820: one column, the key 8px clear of the line's box
+  (key-to-rule 53px at 390, the line's own height), the door left-set on its own row, the
+  receipt's mark over its title.
+- **The row's entrance** (his second finding, "no reveals"). The controller (`scripts/reveal.ts`)
+  enumerates `.reveal` nodes ONCE at setup and never sees an island's markup — a `.reveal` written
+  into the form would stand at half-ink for the session. So the row is keyed on the promise's own
+  entrance: `html.voct-motion .kd-nuntius .notice-inner:has(.notice-promise.is-in)` draws the rule
+  (`scaleX` 0→1, `--rule-in`/`--ease-rule`, delay .27s = the say's next `data-d` slot) and inks
+  the form (`--half-ink`→1, `--ink-in`/`--ease-ink`, delay .45s = rule + the 0.18s pairing).
+  Hidden state under the motion gate only. Probed: before entry opacity 0.44 / rule 0; at +1s
+  0.97 / 0.97; settled 1 / 1.
+- **Descenders** (his first finding, "the bottoms of letters are cut", seen on dev at 1920). An
+  input clips its text to its CONTENT box, and Cormorant's ascent+descent is 1.21em, so at the
+  lede's 1.04 leading every `y`, `g`, `@` lost its tail at the baseline; padding under the text
+  does not help. Leading 1.3 on the input (and on the receipt's title, so it lands where the
+  address was), foot 6px. **The same defect was on /koncerty** (`notice.css`, `.notice-band
+  .notice-email`, the station title's 1.04 — Round 19's own comment claimed the leading "keeps
+  descenders inside an input's box"; it did not): fixed there the same way, with `lining-nums`
+  added in the same rule. Consequence for the /koncerty session: key-to-rule at rest is now 113px
+  (was 97) at 1920, 61 at 390.
 
-### Measured (out-r20)
+### Measured (out-r20, `measurements.txt`)
 
-1920/1440: line 68px, key 20px above the rule (its baseline), line share 64% of the row, the act
-on the line's row (t 654 / b 686 against the line's b 695), candle ink on act, arrow and rule at
-`written`; rule back to paper on blur, act stays candle. 390: line 30px, share 100%.
+1920/1440: line 68px (box 94), key 24px above the rule (its baseline), line share 64% of the row,
+the act on the line's row, candle ink on act, arrow and rule at `written`; rule back to paper on
+blur, act stays candle. 390: line 30px, share 100%. `e\descenders.png`: `jgpqy.krystian@gmail.com`
+whole. /koncerty 1920: `koncerty-written-1920.png`, tails whole.
 
 ### Left open
 
-- His look. The empty line at rest is 68px of night over a rule between a key and a door — the
-  landing's dotted leader was not carried (not this page's gesture). If the rest state reads as
-  a gap rather than a line, the candidates are a shorter row margin (now `clamp(36px, 4.2vw,
-  60px)`) or a resting caret — never a placeholder (Round 7).
+- His look at the composition. The empty line at rest is ~90px of night over a rule between a
+  key and a door — the landing's dotted leader was not carried (not this page's gesture). If the
+  rest state reads as a gap rather than a line, the candidates are a shorter row margin (now
+  `clamp(36px, 4.2vw, 60px)`) or a resting caret — never a placeholder (Round 7).
+- /kontakt's field (`ContactPage.astro`, `.notice-door .notice-email`, leading 1.15) and the
+  letter's (`notice-blank.css`, 1.15) sit under 1.21 too — a lesser clip (~2px of the deepest
+  tails), each its own session's.
 - The receipt's 40px growth at desktop: accepted here because it happens below the eye; the
   alternative (receipt bottom-set in the frozen box) put the title 65px above where the address
   had been, at the eye.
