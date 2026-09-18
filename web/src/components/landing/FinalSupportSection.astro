@@ -15,12 +15,21 @@
 import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
 import type { LandingChrome, LandingCopy } from "../../i18n/content/landing";
+import { localizePath, type Locale } from "../../i18n/config";
+import { FOUNDATION_PAGE_LINKED } from "../../data/foundationSupport";
 
 interface Props {
   copy: LandingCopy["support"];
   chrome: LandingChrome;
+  /** Which language this render is — the foundation link has to be this locale's page. */
+  lang: Locale;
 }
-const { copy, chrome } = Astro.props;
+const { copy, chrome, lang } = Astro.props;
+
+// The third door: regular support and the companies' route live on the foundation's page, not in
+// this section — the tiers above are the vault's, and the vault is for one-off giving. Drawn only
+// once FOUNDATION_PAGE_LINKED (data/foundationSupport).
+const hrefMecenat = `${localizePath("/fundacja", lang)}#mecenat`;
 
 const bg = bleedPair("swiatlo-krzyz");
 
@@ -182,6 +191,11 @@ const tiers = copy.tiers.map((tier) => {
         >
           {copy.writeCta}
         </a>
+        {FOUNDATION_PAGE_LINKED && (
+          <a class="secondary-link plausible-event-name=mecenat+dol" href={hrefMecenat}>
+            {chrome.foundationLink}
+          </a>
+        )}
       </div>
     </div>
   </div>

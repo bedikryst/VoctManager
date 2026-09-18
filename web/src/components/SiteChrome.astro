@@ -13,6 +13,7 @@ import { toRibbons } from "../lib/registrum";
 import type { TabulaEntry } from "../lib/tabula";
 import { UI } from "../i18n/ui";
 import { localizePath, LOCALE_META, DEFAULT_LOCALE, LANG_SWITCHER_ENABLED, type Locale } from "../i18n/config";
+import { FOUNDATION_PAGE_LINKED } from "../data/foundationSupport";
 import "../styles/tabula.css";
 
 interface Props {
@@ -94,6 +95,7 @@ const hrefHome = localizePath("/", lang);
 const hrefAbout = localizePath("/o-nas", lang);
 const hrefConcerts = localizePath("/koncerty", lang);
 const hrefContact = localizePath("/kontakt", lang);
+const hrefFoundation = localizePath("/fundacja", lang);
 const hrefColophon = localizePath("/kolofon", lang);
 const hrefImages = localizePath("/obrazy", lang);
 
@@ -179,6 +181,9 @@ const langOptions = showLang
       </div>
     </div>
     <a href={hrefContact} aria-current={current === "/kontakt" ? "page" : undefined}>{t.nav.contact}</a>
+    {FOUNDATION_PAGE_LINKED && (
+      <a href={hrefFoundation} aria-current={current === "/fundacja" ? "page" : undefined}>{t.nav.foundation}</a>
+    )}
     <a class="nav-support" href="/?donate" data-vault-open="100">{t.nav.support}</a>
     {
       showLang && (
@@ -397,10 +402,20 @@ const langOptions = showLang
           <span class="voice-lead" aria-hidden="true"></span>
           <em class="voice-lat">Sustinete nos</em>
         </a>
-        {/* The page's fine print — Kolofon is a real page with no other road from the phone
-            (nave-menu.css). /press stays out on purpose: a noindex press kit is addressed to
-            journalists, not to a reader opening the menu. */}
+        {/* The page's fine print — the foundation's page and Kolofon, the two real pages that
+            are not voices: the closing line above keeps the vault, and the card's band count
+            (nave-menu.css GEOMETRY) is not paid for a fifth voice. /press stays out on purpose:
+            a noindex press kit is addressed to journalists, not to a reader opening the menu.
+            The foundation's entry waits on FOUNDATION_PAGE_LINKED (data/foundationSupport). */}
         <span class="nave-fine">
+          {FOUNDATION_PAGE_LINKED && (
+            <>
+              <a href={hrefFoundation} aria-current={current === "/fundacja" ? "page" : undefined}>
+                {t.nav.foundation}
+              </a>
+              <span aria-hidden="true">·</span>
+            </>
+          )}
           <a href={hrefColophon} aria-current={current === "/kolofon" ? "page" : undefined}>
             {t.footer.colophon}
           </a>

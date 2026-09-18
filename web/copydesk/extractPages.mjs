@@ -33,6 +33,7 @@ import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 
 import { walkCopy } from "../src/i18n/content/copySpec.ts";
+import { FUNDACJA_PAGE } from "../src/i18n/content/fundacja.ts";
 import { KOLOFON_PAGE } from "../src/i18n/content/kolofon.ts";
 import { LANDING_PAGE } from "../src/i18n/content/landing.ts";
 import { KONCERTY_PAGE } from "../src/i18n/content/koncerty.ts";
@@ -68,6 +69,7 @@ export const PAGE_SPECS = [
   LANDING_PAGE,
   ABOUT_PAGE,
   KONTAKT_PAGE,
+  FUNDACJA_PAGE,
   KONCERTY_PAGE,
   OBRAZY_PAGE,
   KOLOFON_PAGE,

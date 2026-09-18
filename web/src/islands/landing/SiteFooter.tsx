@@ -73,6 +73,7 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
   const hrefContact = localizePath("/kontakt", lang);
   const hrefPrivacy = localizePath("/polityka-prywatnosci", lang);
   const hrefColophon = localizePath("/kolofon", lang);
+  const hrefFoundation = localizePath("/fundacja", lang);
 
   return (
     <Typo locale={lang}>
@@ -248,6 +249,13 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
                 <span className="pl">{chrome.stanzaDocuments}</span>
               </span>
               <ul className="foundation-corpus-list">
+                {/* The foundation's own page leads the corpus: it is where the documents below
+                    are filed with the identity they belong to. */}
+                <li>
+                  <a href={hrefFoundation} className="plausible-event-name=fundacja+stopka">
+                    {t.footer.foundationPage}
+                  </a>
+                </li>
                 <li>
                   <a
                     href="/docs/Statut-VoctFoundation.pdf"

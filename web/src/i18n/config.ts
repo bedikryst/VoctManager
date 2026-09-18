@@ -129,6 +129,11 @@ export const TRANSLATED_ROUTES: ReadonlySet<string> = new Set<string>([
   // hand them the Polish page. Being in this set localizes LINKS — it adds nothing to the nav bar,
   // whose four destinations are written by hand in SiteChrome.
   "/newsletter",
+  // The foundation's page. In for the same reason as /kontakt: it is where the nav's Fundacja
+  // entry, both footers, the vault's recurring-support link and every institutional link on the
+  // site point, so an English reader must land on the English chrome. Its prose falls back per
+  // field until the desk's translations land.
+  "/fundacja",
   "/koncerty/wcielenie",
   "/koncerty/wolanie-gor",
   "/koncerty/9-kart",

@@ -23,7 +23,7 @@
 #   szybkie przelewy      → virements bancaires instantanés (`page.regulamin-darowizn.s2.p3`)
 #   zlecenie stałe        → virement permanent           (`page.regulamin-darowizn.s2.p4`)
 #   Wesprzyj              → Nous soutenir                (`UI.nav.support`)
-#   Mecenat / mecenas     → Mécénat / mécène             (`page.skarbiec.mecenat.*`)
+#   Mecenat / mecenas     → Mécénat / mécène             (`page.fundacja.support.*`)
 #
 # LE LECTEUR EST VOUVOYÉ, comme partout ailleurs sur ce site. Le polonais passe au « Państwo »
 # (vouvoiement) au § 9 seulement et tutoie ailleurs ; le français absorbe cette inconstance, qui

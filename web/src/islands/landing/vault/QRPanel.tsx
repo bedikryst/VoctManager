@@ -2,8 +2,9 @@
  * @file QRPanel.tsx
  * @description Bank-QR panel inside the donation vault. The QR image is a static asset
  *  (/qr-bank.png) generated out-of-band; we also expose the canonical Polish 2D (KIR) payload
- *  for debug/regeneration. Also carries the recurring-support copy: the same account details
- *  set up as a standing order (zlecenie stałe) — donor-controlled, no card stored.
+ *  for debug/regeneration. Also carries the recurring-support note: one sentence saying the same
+ *  account details work as a standing order (zlecenie stałe). The note holds no link — the road
+ *  to /fundacja#mecenat is the sheet's own closing line (VaultModal), right under this card.
  * @architecture Astro islands 2026
  * @module islands/landing/vault/QRPanel
  */

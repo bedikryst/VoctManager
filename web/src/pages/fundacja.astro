@@ -1,0 +1,14 @@
+---
+/**
+ * @file fundacja.astro
+ * @description Polish foundation route (/fundacja) — the canonical, un-prefixed page. Structure,
+ *  styles and JSON-LD live in the shared FoundationPage component; this route only selects the
+ *  locale. See src/content/pages/fundacja.yaml for the prose and i18n/content/fundacja.ts for the
+ *  chrome. `/mecenat` is an nginx alias to `/fundacja#mecenat`, not a page.
+ * @architecture Astro islands 2026
+ * @module pages/fundacja
+ */
+import FoundationPage from "../components/pages/FoundationPage.astro";
+---
+
+<FoundationPage lang="pl" />

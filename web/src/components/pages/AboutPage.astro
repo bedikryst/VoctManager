@@ -30,6 +30,7 @@ import { ABOUT_CHROME, ABOUT_PAGE } from "../../i18n/content/o-nas";
 import { pageCopy } from "../../lib/pageCopy";
 import { UI } from "../../i18n/ui";
 import { localizePath, pageI18n, pickLocale, SITE, type Locale } from "../../i18n/config";
+import { FOUNDATION_PAGE_LINKED } from "../../data/foundationSupport";
 import "../../styles/vault.css";
 
 interface Props {
@@ -44,6 +45,10 @@ const t = ABOUT_CHROME[lang];
 const { path, alternates, available } = pageI18n("/o-nas", lang);
 const hrefConcerts = localizePath("/koncerty", lang);
 const hrefContact = localizePath("/kontakt", lang);
+// The foundation's own page: the band below keeps its summary, the page holds the rest. Until
+// FOUNDATION_PAGE_LINKED, the band is the foundation's public home and its NGO `url` says so.
+const hrefFoundation = localizePath("/fundacja", lang);
+const foundationUrl = FOUNDATION_PAGE_LINKED ? `${SITE}/fundacja` : `${SITE}/o-nas#fundacja`;
 
 const hero = bleedPair("o-nas-hero");
 const plate = bleedPair("swiatlo-krzyz");
@@ -67,9 +72,9 @@ const milestones = concerts.map((entry, i) => {
     d: String((i % 3) + 1),
     body: translated("about.blurb") ?? a?.blurb ?? entry.data.essence,
     // Only concerts that actually own a detail page get a control — `hasPage` is the same flag
-    // /koncerty gates its station link on, so a row here can never point at a 404. The path stays
-    // Polish in every locale on purpose: /koncerty/[id] exists only in Polish, and localizePath
-    // returns the Polish URL for any route outside TRANSLATED_ROUTES (see i18n/config).
+    // /koncerty gates its station link on, so a row here can never point at a 404. Every such
+    // concert is in TRANSLATED_ROUTES (i18n/config), so the localised /koncerty prefix plus the
+    // id is that concert's page in this locale.
     href: entry.data.hasPage ? `${hrefConcerts}/${entry.id}` : undefined,
   };
 });
@@ -128,7 +133,7 @@ const jsonLd = {
       "@type": "NGO",
       "@id": `${SITE}/#foundation`,
       name: "Fundacja VoctFoundation",
-      url: `${SITE}/o-nas#fundacja`,
+      url: foundationUrl,
       identifier: [
         { "@type": "PropertyValue", propertyID: "KRS", value: "0001237252" },
         { "@type": "PropertyValue", propertyID: "NIP", value: "6762718992" },
@@ -423,9 +428,16 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <p class="legal-note">{c.foundation.legalNote}</p>
           <div class="legal-foot">
             <span>Fundacja VoctFoundation · ul. Św. Filipa 23/3, 31-150 Kraków</span>
-            <a class="btn" href="/docs/Statut-VoctFoundation.pdf" target="_blank" rel="noopener">
-              {c.foundation.statuteLabel}
-            </a>
+            {/* Two doors of one rank: the founding document, and the page where the foundation
+                sets out what it does with support. The page's label is chrome, not copy — a
+                nav word, the same one the footer prints. The second door waits on
+                FOUNDATION_PAGE_LINKED (data/foundationSupport). */}
+            <span class="legal-doors">
+              <a class="btn" href="/docs/Statut-VoctFoundation.pdf" target="_blank" rel="noopener">
+                {c.foundation.statuteLabel}
+              </a>
+              {FOUNDATION_PAGE_LINKED && <a class="btn" href={hrefFoundation}>{t.foundationLink}</a>}
+            </span>
           </div>
         </div>
       </div>
@@ -624,6 +636,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .legal-grid .k { font-family: var(--capitalis); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-muted); }
   .legal-grid .v { font-family: var(--mono); font-size: 15px; color: var(--ink); letter-spacing: .02em; }
   .legal-foot { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 22px; font-family: var(--mono); font-size: 12px; color: var(--ink-muted); letter-spacing: .03em; }
+  .legal-doors { display: flex; flex-wrap: wrap; gap: 12px; }
   .legal-note { margin: 0; max-width: 78ch; color: var(--ink-muted); font-size: 16px; line-height: 1.75; }
   @media (max-width: 620px) { .legal-grid { grid-template-columns: 1fr; gap: 14px; } }
 

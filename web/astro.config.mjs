@@ -69,7 +69,10 @@ export default defineConfig({
         !/\/polityka-prywatnosci$/.test(new URL(page).pathname) &&
         // /nuntius is the concert notice list's receipt page, in three locales. It is
         // `noindex,follow` and its only inbound link is one we mail to one reader.
-        !/\/nuntius$/.test(new URL(page).pathname),
+        !/\/nuntius$/.test(new URL(page).pathname) &&
+        // /fundacja is deployed but not announced: `noindex` while FOUNDATION_PAGE_LINKED is
+        // false in src/data/foundationSupport.ts. Drop this clause together with that flag.
+        !/\/fundacja$/.test(new URL(page).pathname),
       // NO customPages. The privacy policy used to be declared here — it was a hand-authored
       // static file the integration could not discover — but it serves
       // `<meta name="robots" content="noindex,follow">`, so the sitemap was submitting a URL the

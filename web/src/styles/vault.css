@@ -2,10 +2,9 @@
  * @file vault.css
  * @description Subpage entry point for the donation vault + regulamin + result-modal styles.
  *  The AUTHORITATIVE rules live in ./landing/08-vault.css — the landing pulls the SAME partial in
- *  through landing.css. This file used to be a hand-copied fork of that partial and silently
- *  drifted out of sync (the Jednorazowo/Mecenat segmented toggle, the whole Mecenat panel, the
- *  standing-order block and the regulamin version history were all missing on the subpages), so it
- *  is now a thin shim: re-export the single source of truth, then add only what the partial assumes
+ *  through landing.css. A hand-copied fork of that partial silently drifts (whole blocks went
+ *  missing on the subpages before this shim existed), so this file only re-exports the single
+ *  source of truth, then adds what the partial assumes
  *  but the subpages don't otherwise get — the landing-only `--dark` token + the `.micro` atom (both
  *  live in landing/01-foundation on the homepage, absent here) and a theme-agnostic scroll lock
  *  (the partial's own lock is scoped to body.theme-marketing, which the subpages don't carry).

@@ -611,6 +611,10 @@ export interface LandingChrome {
   /** The IBAN copy control, before and after the click. */
   readonly copy: string;
   readonly copied: string;
+  /** The closing section’s third, quiet door: /fundacja#mecenat, where recurring support and the
+      companies’ route are set out. A nav word rather than a copy field, like the footer’s; the
+      arrow is the link style’s own (`.secondary-link::after`), so the word carries none. */
+  readonly foundationLink: string;
 
   /** The footer plate. Its four stanza heads are the vernacular half of a two-voice rubric —
       `Fundatio` · `Consilium` · `Corpus` · `Vox` are set beside them and are never translated — so
@@ -666,6 +670,7 @@ export const LANDING_CHROME: Record<Locale, LandingChrome> = {
     voxPatronage: "patronat",
     voxDirection: "dyrekcja artystyczna",
     presenceAria: "Obecność w sieci",
+    foundationLink: "Mecenat i partnerstwa",
     colophonAria: "Kolofon — fonty, prawa, autorzy",
   },
   en: {
@@ -702,6 +707,7 @@ export const LANDING_CHROME: Record<Locale, LandingChrome> = {
     voxPatronage: "patronage",
     voxDirection: "artistic direction",
     presenceAria: "Presence online",
+    foundationLink: "Patronage & partnerships",
     colophonAria: "Colophon — typefaces, rights, credits",
   },
   fr: {
@@ -738,6 +744,7 @@ export const LANDING_CHROME: Record<Locale, LandingChrome> = {
     voxPatronage: "mécénat",
     voxDirection: "direction artistique",
     presenceAria: "Présence en ligne",
+    foundationLink: "Mécénat et partenariats",
     colophonAria: "Colophon — caractères, droits, crédits",
   },
 };

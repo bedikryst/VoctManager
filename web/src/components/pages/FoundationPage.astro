@@ -1,0 +1,684 @@
+---
+/**
+ * @file FoundationPage.astro
+ * @description Locale-agnostic body of /fundacja — the foundation's home on the ensemble's site.
+ *  It explains what allows VoctEnsemble's music to continue and gives a person or an organisation
+ *  a practical way to help. The three route files (/fundacja, /en/fundacja, /fr/fundacja) differ
+ *  only in `lang`. Brief: docs/specs/web-foundation-brief-2026-09.md.
+ *
+ *  THE SAME PAPER, CLOSER TO THE WORK. The composition is the practical pages of a concert
+ *  programme: a compact typographic opening with the routes a reader came for, one documentary
+ *  plate, then a paper-soft band where the current undertaking stands beside its material needs,
+ *  the record, the two plain ways to give with the transfer block both share, the companies'
+ *  route, and a second quiet administrative band that ends on the patronage address. No coda:
+ *  the page closes on who answers, not on a manifesto.
+ *
+ *  WHAT IS A FACT AND WHERE IT COMES FROM. The recipient, accounts and registry numbers are
+ *  `data/foundation.ts`; the transfer title is the vault's; the featured concert and the two
+ *  record programmes are read from the corpus by the ids `data/foundationSupport.ts` chooses;
+ *  the board's role lines are /o-nas's copy and the mission sentence is /kontakt's, so neither
+ *  has a second home here. This page's own words come from `content/pages/fundacja.yaml` through
+ *  `lib/pageCopy`; its chrome from `i18n/content/fundacja.ts`.
+ *
+ *  NO NUMBERS THAT ARE NOT APPROVED. The costs band names what a concert is made of and what each
+ *  line enables — no totals, no goal, no progress. That is the complete launch state the brief
+ *  defines, not a placeholder for one.
+ *
+ *  ONE-OFF GIVING IS THE VAULT'S. "Wpłać online" opens the existing donation vault in place
+ *  (`data-vault-open`, with `/?donate` as the no-JS fallback); this page builds no checkout.
+ * @architecture Astro islands 2026
+ * @module components/pages/FoundationPage
+ */
+import { getCollection } from "astro:content";
+import { getImage, Picture } from "astro:assets";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SiteChrome from "../SiteChrome.astro";
+import SiteFooter from "../SiteFooter.astro";
+import BleedImage from "../BleedImage.astro";
+import VaultMount from "../VaultMount.astro";
+import { PatronInterestForm } from "../../islands/landing/PatronInterestForm";
+import { bleedPair, photoOptional } from "../../lib/photos";
+import { pageCopy } from "../../lib/pageCopy";
+import { concertKey, overlayValue } from "../../lib/copyOverlay";
+import { chromeHtmlForIsland } from "../../lib/islandCopy";
+import { longDate, viaMoment } from "../../lib/dates";
+import { upcomingStation } from "../../lib/cycle";
+import { FOUNDATION } from "../../data/foundation";
+import { FOUNDATION_PAGE_LINKED, FOUNDATION_SUPPORT } from "../../data/foundationSupport";
+import { VAULT_CONFIG } from "../../islands/landing/constants/vaultConfig";
+import { FOUNDATION_CHROME, FUNDACJA_PAGE } from "../../i18n/content/fundacja";
+import { ABOUT_PAGE } from "../../i18n/content/o-nas";
+import { KONTAKT_PAGE } from "../../i18n/content/kontakt";
+import { UI } from "../../i18n/ui";
+import { localizePath, pageI18n, pickLocale, SITE, type Locale } from "../../i18n/config";
+import "../../styles/vault.css";
+
+interface Props {
+  /** Which language this render is. Drives the copy, the chrome, the URL and the hreflang graph. */
+  lang: Locale;
+}
+const { lang } = Astro.props;
+
+const copy = pageCopy(FUNDACJA_PAGE, lang);
+const t = FOUNDATION_CHROME[lang];
+const { path, alternates, available } = pageI18n("/fundacja", lang);
+const hrefConcerts = localizePath("/koncerty", lang);
+// The vault opens in place; the href is the no-JS road to the landing that auto-opens it, and
+// has to be THIS locale’s landing or a reader with scripts off lands in Polish.
+const hrefDonate = `${localizePath("/", lang)}?donate`;
+const hrefPrivacy = localizePath("/polityka-prywatnosci", lang);
+
+// Two sentences this page prints but does not own: the mission as /kontakt states it, and the
+// board's remits as /o-nas states them. Read from their pages rather than copied.
+const mission = pageCopy(KONTAKT_PAGE, lang).locus.mission;
+const aboutRoles = pageCopy(ABOUT_PAGE, lang).governance.roles;
+const boardMembers = [
+  { id: "florent", name: "Florent de Bazelaire" },
+  { id: "ania", name: "Anna Marcisz" },
+  { id: "krystian", name: "Krystian Bugalski" },
+] as const;
+const board = boardMembers.map((member) => {
+  const role = aboutRoles.find((r) => r.id === member.id);
+  if (!role) throw new Error(`[fundacja] no governance role on /o-nas for board member "${member.id}".`);
+  return { ...member, role: role.role };
+});
+
+// ── Concerts, by the ids the support record chooses ──────────────────────────────────────────
+const concerts = await getCollection("concerts");
+const concertById = (id: string) => {
+  const entry = concerts.find((c) => c.id === id);
+  if (!entry) throw new Error(`[fundacja] data/foundationSupport.ts names concert "${id}", which is not in the corpus.`);
+  return entry;
+};
+const concertView = (id: string) => {
+  const entry = concertById(id);
+  const translated = (field: string) => overlayValue(concertKey(entry.id, field), lang);
+  const a = entry.data.about;
+  return {
+    id: entry.id,
+    title: translated("title") ?? entry.data.title,
+    essence: translated("essence") ?? entry.data.essence,
+    place: translated("about.place") ?? a?.place ?? entry.data.venue ?? pickLocale(entry.data.metaPlace, lang),
+    moment: viaMoment(entry.data, lang),
+    date: entry.data.date,
+    time: entry.data.time,
+    admission: entry.data.admission,
+    img: a?.img ? photoOptional(a.img) : undefined,
+    // Every concert with a page is in TRANSLATED_ROUTES (i18n/config), so the localised
+    // /koncerty prefix plus the id is that concert's page in this locale.
+    href: entry.data.hasPage ? `${hrefConcerts}/${entry.id}` : undefined,
+  };
+};
+
+// The current work: a chosen concert, in the present tense only while it is still ahead — read at
+// build, the same standing obligation lib/cycle documents. After the evening the page keeps the
+// same concert in the past tense; it never slides to the next one on its own.
+const featured = concertView(FOUNDATION_SUPPORT.featuredConcertId);
+const featuredAhead = upcomingStation(concerts)?.id === featured.id;
+const featuredDate = featured.date ? longDate(featured.date, lang) : featured.moment;
+const record = FOUNDATION_SUPPORT.recordConcertIds.map(concertView);
+
+// ── Giving ────────────────────────────────────────────────────────────────────────────────────
+const amounts = new Intl.ListFormat(lang, { type: "disjunction" }).format(
+  FOUNDATION_SUPPORT.monthlyExamples.map((n) => String(n)),
+);
+const monthlyAmounts = copy.support.monthly.amounts.replace("{amounts}", amounts);
+const transferTitle = VAULT_CONFIG.recipient.title;
+const patronMail = FOUNDATION.mail.patronage;
+const partnershipHref = `mailto:${patronMail}?subject=${encodeURIComponent(copy.partnership.mailSubject)}`;
+const bookingHref = `mailto:${FOUNDATION.mail.booking}?subject=${encodeURIComponent(copy.partnership.bookingSubject)}`;
+
+const formProps = {
+  chrome: t.form,
+  copy: {
+    consentHtml: chromeHtmlForIsland(copy.join.consentHtml, lang),
+    successTitle: copy.join.successTitle,
+    successBody: copy.join.successBody,
+  },
+  contactEmail: patronMail,
+} as const;
+
+// ── Images ────────────────────────────────────────────────────────────────────────────────────
+// The one documentary plate: the ensemble at work in a nave, the pair the landing's ensemble
+// section already shows. Decorative here — the section head beside it says what it is.
+const plate = bleedPair("chor-nawa");
+const ogImage = (await getImage({ src: plate.desktop, width: 1200, format: "webp" })).src;
+
+// The foundation as the subject, the ensemble as its music group — two objects, never one as the
+// other's alternate name.
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: copy.meta.title,
+  url: `${SITE}${path}`,
+  inLanguage: lang,
+  about: {
+    "@type": "Organization",
+    name: FOUNDATION.name,
+    url: SITE,
+    email: patronMail,
+    identifier: [
+      { "@type": "PropertyValue", propertyID: "KRS", value: FOUNDATION.registry.krs },
+      { "@type": "PropertyValue", propertyID: "NIP", value: FOUNDATION.registry.nip },
+      { "@type": "PropertyValue", propertyID: "REGON", value: FOUNDATION.registry.regon },
+    ],
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: FOUNDATION.seat.street,
+      postalCode: FOUNDATION.seat.postalCode,
+      addressLocality: FOUNDATION.seat.city,
+      addressCountry: FOUNDATION.seat.countryCode,
+    },
+    subOrganization: { "@type": "MusicGroup", name: FOUNDATION.ensemble, url: SITE },
+  },
+};
+---
+
+<BaseLayout
+  title={copy.meta.title}
+  description={copy.meta.description}
+  path={path}
+  image={ogImage}
+  bodyClass="page-fundacja"
+  lang={lang}
+  alternates={alternates}
+  breadcrumb={[{ name: UI[lang].nav.foundation, path }]}
+>
+  <Fragment slot="head">
+    {/* Deployed but not yet announced: until FOUNDATION_PAGE_LINKED the page is reachable through
+        the footers and the vault, and kept out of the index (and, by hand, out of the sitemap —
+        astro.config.mjs) so a search result never becomes its first door. */}
+    {!FOUNDATION_PAGE_LINKED && <meta name="robots" content="noindex,follow" />}
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
+
+  <a class="skip-link" href="#tresc">{UI[lang].skipToContent}</a>
+  <SiteChrome current="/fundacja" lang={lang} availableLocales={available} />
+
+  <main id="tresc">
+    {/* ── Opening — identity and the routes a reader came for ─────────────────────
+          Compact and typographic: the next section begins within reach, and the index
+          puts the transfer details one tap away for a reader who arrived already asked. */}
+    <section class="hero" aria-label={t.heroAria}>
+      <div class="hero-inner">
+        <p class="eyebrow reveal">
+          <span class="lat">Fundatio</span>{"  ·  "}{copy.hero.eyebrow}
+        </p>
+        <h1>
+          <span class="line"><span class="reveal ink-press">{copy.hero.title1}</span></span>
+          <span class="line"><span class="reveal ink-press" data-d="1" set:html={copy.hero.title2Html} /></span>
+        </h1>
+        <p class="hero-lede reveal" data-d="2">{copy.hero.lede}</p>
+        <div class="hero-actions reveal" data-d="3">
+          <a class="hero-primary plausible-event-name=fundacja+wsparcie" href="#wsparcie">{copy.hero.primary}</a>
+          <a class="hero-secondary" href="#partnerstwo">{copy.hero.secondary}</a>
+        </div>
+        <nav class="hero-index reveal reveal-rule" aria-label={t.indexAria}>
+          <span class="hero-index-label">{copy.hero.indexLabel}</span>
+          <ol class="hero-index-list">
+            {copy.hero.index.map((entry) => (
+              <li><a href={`#${entry.anchor}`}>{entry.label}</a></li>
+            ))}
+          </ol>
+        </nav>
+      </div>
+    </section>
+
+    {/* ── The plate — the audible result, before the material conditions ───────── */}
+    <figure class="plate" aria-hidden="true">
+      <BleedImage desktop={plate.desktop} mobile={plate.mobile} alt="" position="center 40%" animate />
+    </figure>
+
+    {/* ── What a concert is made of ─────────────────────────────────────────────────
+          Desktop: the current undertaking on the left, its material needs on the right,
+          parted by the site's rule. Categories and what each enables — no amounts. */}
+    <section class="costs" id="na-co-ida-srodki" aria-label={t.costsAria}>
+      <div class="wrap">
+        <div class="col-head reveal">
+          <span class="eyebrow"><span class="lat">Impensae</span>  ·  {copy.costs.eyebrow}</span>
+          <h2 class="ink-press">{copy.costs.h2}</h2>
+        </div>
+        <p class="intro reveal" data-d="1">{copy.costs.intro}</p>
+        <p class="body reveal" data-d="2">{copy.costs.body}</p>
+
+        <div class="costs-grid">
+          <article class="current reveal" data-d="1">
+            <h3 class="rubric">{featuredAhead ? copy.costs.current.labelAhead : copy.costs.current.labelPast}</h3>
+            <p class="current-title">{featured.title}</p>
+            <p class="current-facts">
+              {featured.date ? <time datetime={featured.date}>{featuredDate}</time> : featuredDate}
+              {featured.time && featuredAhead && <>{" · "}{featured.time}</>}
+              {" · "}{featured.place}
+              {featured.admission && <>{" · "}{featured.admission === "free" ? t.admissionFree : t.admissionPaid}</>}
+            </p>
+            <p class="current-essence">{featured.essence}</p>
+            {featured.href && (
+              <p class="more"><a class="quiet-link" href={featured.href}>{copy.costs.current.programLink}</a></p>
+            )}
+            <p class="current-note">{copy.costs.current.note}</p>
+          </article>
+
+          <div class="cost-lines reveal" data-d="2">
+            <h3 class="rubric">{copy.costs.itemsLabel}</h3>
+            <dl class="rows">
+              {copy.costs.items.map((item) => (
+                <div class="row">
+                  <dt>{item.term}</dt>
+                  <dd>{item.what}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* ── The record — the ensemble's, not the donors' ───────────────────────────── */}
+    <section class="record" id="dorobek" aria-label={t.recordAria}>
+      <div class="wrap">
+        <div class="col-head reveal">
+          <span class="eyebrow"><span class="lat">Opera</span>  ·  {copy.record.eyebrow}</span>
+          <h2 class="ink-press">{copy.record.h2}</h2>
+        </div>
+        <p class="intro reveal" data-d="1">{copy.record.intro}</p>
+        <ol class="record-list">
+          {record.map((c, i) => (
+            <li class="record-item reveal" data-d={String((i % 3) + 1)}>
+              {c.img && (
+                <div class="record-figure">
+                  {/* `width` caps the fallback rendition — see lib/photos.ts. */}
+                  <Picture
+                    src={c.img}
+                    formats={["avif", "webp"]}
+                    widths={[320, 480, 640, 840]}
+                    width={840}
+                    sizes="(max-width: 700px) min(92vw, 420px), clamp(200px, 22vw, 300px)"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+              )}
+              <div class="record-body">
+                <p class="record-meta"><span>{c.moment}</span><span class="dot" aria-hidden="true"> · </span><span>{c.place}</span></p>
+                <h3 class="record-title">{c.href ? <a href={c.href}>{c.title}</a> : c.title}</h3>
+                <p class="record-essence">{c.essence}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p class="more reveal"><a class="quiet-link" href={hrefConcerts}>{copy.record.allLink}</a></p>
+      </div>
+    </section>
+
+    {/* ── Individual support — regular first, because it answers the continuity argument.
+          One transfer block serves both, statically: selectable numbers on the same phone
+          the reader banks on, copy as a convenience. Then the optional "let us know". ── */}
+    <section class="support" id="wsparcie" aria-label={t.supportAria}>
+      <div class="wrap">
+        <div class="col-head reveal">
+          <span class="eyebrow"><span class="lat">Auxilium</span>  ·  {copy.support.eyebrow}</span>
+          <h2 class="ink-press">{copy.support.h2}</h2>
+        </div>
+        <p class="intro reveal" data-d="1">{copy.support.intro}</p>
+
+        <div class="ways">
+          <article class="way reveal" id="mecenat" data-d="1">
+            <h3 class="way-label">{copy.support.monthly.label}</h3>
+            <p class="way-body">{copy.support.monthly.body}</p>
+            <p class="way-amounts">{monthlyAmounts}</p>
+            <p class="way-act"><a class="capsule" href="#przelew">{copy.support.monthly.transferLink}</a></p>
+          </article>
+          <article class="way reveal" data-d="2">
+            <h3 class="way-label">{copy.support.once.label}</h3>
+            <p class="way-body">{copy.support.once.body}</p>
+            <p class="way-act">
+              <a class="capsule plausible-event-name=fundacja+wplata" href={hrefDonate} data-vault-open="100">{copy.support.once.vaultAction}</a>
+              <a class="quiet-link" href="#przelew">{copy.support.once.transferLink}</a>
+            </p>
+          </article>
+        </div>
+
+        <div class="transfer reveal reveal-rule" id="przelew" aria-label={t.transferAria}>
+          <h3 class="rubric">{copy.transfer.h3}</h3>
+          <dl class="transfer-rows">
+            <div class="transfer-row">
+              <dt>{copy.transfer.recipientLabel}</dt>
+              <dd>
+                <span class="transfer-value">{FOUNDATION.name}</span>
+                <button type="button" class="copy-btn plausible-event-name=fundacja+copy+odbiorca" data-copy={FOUNDATION.name} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", copy.transfer.recipientLabel)}>
+                  <span class="copy-label">{t.copy}</span>
+                </button>
+              </dd>
+            </div>
+            <div class="transfer-row">
+              <dt>{copy.transfer.accountLabel} <span class="currency">PLN</span></dt>
+              <dd>
+                <span class="transfer-value transfer-iban">{FOUNDATION.accounts.pln.display}</span>
+                <button type="button" class="copy-btn plausible-event-name=fundacja+copy+PLN" data-copy={FOUNDATION.accounts.pln.iban} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", `${copy.transfer.accountLabel} PLN`)}>
+                  <span class="copy-label">{t.copy}</span>
+                </button>
+              </dd>
+            </div>
+            <div class="transfer-row">
+              <dt>{copy.transfer.eurLabel} <span class="currency">EUR</span></dt>
+              <dd>
+                <span class="transfer-value transfer-iban">{FOUNDATION.accounts.eur.display}</span>
+                <button type="button" class="copy-btn plausible-event-name=fundacja+copy+EUR" data-copy={FOUNDATION.accounts.eur.iban} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", `${copy.transfer.eurLabel} EUR`)}>
+                  <span class="copy-label">{t.copy}</span>
+                </button>
+                <span class="transfer-note">{copy.transfer.eurNote}</span>
+              </dd>
+            </div>
+            <div class="transfer-row">
+              <dt>{copy.transfer.titleLabel}</dt>
+              <dd>
+                <span class="transfer-value" lang="pl">{transferTitle}</span>
+                <button type="button" class="copy-btn plausible-event-name=fundacja+copy+tytul" data-copy={transferTitle} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", copy.transfer.titleLabel)}>
+                  <span class="copy-label">{t.copy}</span>
+                </button>
+              </dd>
+            </div>
+          </dl>
+          <p class="transfer-hint">{copy.transfer.standingOrderHint}</p>
+          <p class="transfer-scope">{copy.transfer.scope}</p>
+        </div>
+
+        <div class="join reveal reveal-rule" id="zglos">
+          <h3 class="rubric">{copy.join.h3}</h3>
+          <p class="join-body">{copy.join.body}</p>
+          <PatronInterestForm client:visible {...formProps} />
+          <noscript>
+            <p class="join-noscript">{t.form.noscript}</p>
+          </noscript>
+          <p class="join-contact">
+            {copy.join.contactLead}{" "}
+            <a href={`mailto:${patronMail}`}>{patronMail}</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    {/* ── Companies and institutions — three things to discuss, one address, no packages ── */}
+    <section class="partnership" id="partnerstwo" aria-label={t.partnershipAria}>
+      <div class="wrap">
+        <div class="col-head reveal">
+          <span class="eyebrow"><span class="lat">Societas</span>  ·  {copy.partnership.eyebrow}</span>
+          <h2 class="ink-press">{copy.partnership.h2}</h2>
+        </div>
+        <p class="intro reveal" data-d="1">{copy.partnership.intro}</p>
+        <dl class="rows partner-rows">
+          {copy.partnership.rows.map((row, i) => (
+            <div class="row reveal" data-d={String((i % 3) + 1)}>
+              <dt>{row.term}</dt>
+              <dd>{row.what}</dd>
+            </div>
+          ))}
+        </dl>
+        <div class="partner-next reveal">
+          <p class="body">{copy.partnership.next}</p>
+          <p class="partner-thanks">{copy.partnership.thanks}</p>
+          <p class="mail-line">
+            <span class="rubric">{copy.partnership.mailLabel}</span>
+            <a class="mail plausible-event-name=fundacja+partnerstwo+mail" href={partnershipHref}>{patronMail}</a>
+            <button type="button" class="copy-btn" data-copy={patronMail} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", patronMail)}>
+              <span class="copy-label">{t.copy}</span>
+            </button>
+          </p>
+          <p class="partner-booking">
+            {copy.partnership.bookingLead}{" "}
+            <a class="quiet-link" href={bookingHref}>{copy.partnership.bookingLink}</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    {/* ── Who answers — the second quiet band. Ends on the patronage address. ─────── */}
+    <section class="who" id="fundacja-i-dokumenty" aria-label={t.whoAria}>
+      <div class="wrap">
+        <div class="col-head reveal">
+          <span class="eyebrow"><span class="lat">Fundatio</span>  ·  {copy.who.eyebrow}</span>
+          <h2 class="ink-press">{copy.who.h2}</h2>
+        </div>
+        <p class="intro reveal" data-d="1">{copy.who.relation}</p>
+        <p class="body reveal" data-d="2">{mission}</p>
+
+        <div class="who-grid">
+          <div class="who-block reveal" data-d="1">
+            <h3 class="rubric">{copy.who.boardLabel}</h3>
+            <ul class="board">
+              {board.map((b) => (
+                <li>
+                  <span class="board-name">{b.name}</span>
+                  <span class="board-role">{b.role}</span>
+                </li>
+              ))}
+            </ul>
+            <p class="who-note">{copy.who.boardNote}</p>
+          </div>
+          <div class="who-block reveal" data-d="2">
+            <h3 class="rubric">{copy.who.identityLabel}</h3>
+            <p class="identity">
+              {FOUNDATION.name}<br />
+              {FOUNDATION.addressLine}<br />
+              KRS {FOUNDATION.registry.krs}<br />
+              NIP {FOUNDATION.registry.nip}<br />
+              REGON {FOUNDATION.registry.regon}
+            </p>
+          </div>
+          <div class="who-block reveal" data-d="3">
+            <h3 class="rubric">{copy.who.documentsLabel}</h3>
+            <ul class="documents">
+              <li><a href={FOUNDATION_SUPPORT.statutePath}>{copy.who.statuteLink}</a></li>
+              <li><a href={hrefPrivacy}>{copy.who.privacyLink}</a></li>
+              <li><a href={hrefDonate} data-vault-open="100">{copy.who.termsLink}</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="help reveal reveal-rule">
+          <h3 class="rubric">{copy.who.help.label}</h3>
+          <dl class="help-list">
+            {copy.who.help.items.map((item) => (
+              <div class="help-item">
+                <dt>{item.q}</dt>
+                <dd>{item.a}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        <p class="who-contact reveal">
+          <span class="rubric">{copy.who.contactLabel}</span>
+          <a class="mail" href={`mailto:${patronMail}`}>{patronMail}</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter lang={lang} />
+
+  <VaultMount lang={lang} />
+  <script>
+    import "../../scripts/vault-triggers.ts";
+    import "../../scripts/copy-fields.ts";
+  </script>
+</BaseLayout>
+
+<style>
+  /* ── Shared measure and heads ─────────────────────────────────────────────────────────────
+     The reading measure of /kontakt (920px), the same section head, and the rubric tier at
+     `--ink-soft` for the reason ContactPage records: muted is nearly invisible at 10px here. */
+  .wrap { max-width: 920px; margin: 0 auto; }
+  .col-head { margin: 0; }
+  .col-head .eyebrow { display: block; margin-bottom: 16px; color: var(--ink-soft); }
+  .col-head h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(30px, 3.6vw, 48px); line-height: 1.05; color: var(--ink); margin: 0; letter-spacing: -.01em; }
+  .intro { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(19px, 2vw, 25px); line-height: 1.5; color: var(--ink-soft); max-width: 40ch; margin: 18px 0 0; }
+  .body { margin: 18px 0 0; max-width: 62ch; font-size: clamp(15px, 1.15vw, 16.5px); line-height: 1.72; color: var(--ink-soft); }
+  .rubric { font-family: var(--capitalis); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 14px; font-weight: 400; }
+  .more { margin: 18px 0 0; }
+  .quiet-link { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); border-bottom: 1px solid var(--line-strong); padding-bottom: 3px; transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .quiet-link:hover { color: var(--candle-blue); border-color: var(--candle-blue); }
+  /* Rows of term + explanation, the ledger's shape: a hairline over each, the term as a rubric. */
+  .rows { margin: 0; }
+  .row { display: grid; gap: 8px; padding: clamp(18px, 2.4vw, 26px) 0; border-top: 1px solid var(--line); }
+  .row:last-of-type { border-bottom: 1px solid var(--line); }
+  .row dt { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--candle-ink); margin: 0; }
+  .row dd { margin: 0; max-width: 56ch; font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.7; color: var(--ink-soft); }
+  /* The real border stays for no-JS and reduced motion; under the motion gate the drawn rule
+     takes over (`--rule-ink` defaults to `var(--line)`). Same call as ContactPage's `.voices`. */
+  :global(html.voct-motion) .reveal-rule { border-top-color: transparent; }
+  /* Copy capsule — ContactPage's `.channel-copy`, the site's one shape for "copy this". */
+  .copy-btn { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; font-family: var(--capitalis); font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-muted); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .copy-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+  .copy-btn.is-copied { color: var(--sage); border-color: var(--sage); }
+  .mail { font-family: var(--serif); font-size: clamp(20px, 2.6vw, 30px); color: var(--ink); border-bottom: 1px solid transparent; transition: border-color .3s var(--ease); overflow-wrap: anywhere; }
+  .mail:hover { border-bottom-color: var(--candle); }
+
+  /* ── Opening — on the paper, compact ────────────────────────────────────────────────────── */
+  .hero { padding: clamp(96px, 14vw, 170px) var(--gutter) clamp(48px, 6vw, 80px); --lat-ink: var(--candle-ink); }
+  .hero-inner { max-width: 920px; margin: 0 auto; }
+  .hero .eyebrow { color: var(--ink-soft); }
+  .hero h1 { font-family: var(--serif); font-weight: 300; line-height: .98; font-size: clamp(44px, 7.4vw, 100px); letter-spacing: -.01em; margin: 16px 0 0; color: var(--ink); }
+  /* `:global(em)`: the second line arrives through `set:html` and carries no scope attribute. */
+  .hero h1 :global(em) { color: var(--candle-ink); font-style: italic; }
+  .hero-lede { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(19px, 2.2vw, 27px); line-height: 1.42; max-width: 38ch; margin: 22px 0 0; color: var(--ink-soft); }
+  .hero-actions { margin: 30px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; }
+  /* The capsule: outlined at rest, filled under the hand — the shape the contact door's act
+     uses. The hero's primary is the one capsule filled at rest, because it is the page's ask. */
+  .capsule, .hero-primary { display: inline-flex; align-items: center; padding: 12px 22px; border: 1px solid color-mix(in srgb, var(--candle-ink) 62%, transparent); border-radius: 999px; color: var(--candle-ink); font-family: var(--capitalis); font-size: 10.5px; font-weight: 600; letter-spacing: .16em; line-height: 1.2; text-transform: uppercase; white-space: nowrap; transition: color .3s var(--ease), border-color .3s var(--ease), background-color .3s var(--ease); }
+  .capsule:hover, .capsule:focus-visible, .hero-primary { background: var(--candle-ink); border-color: var(--candle-ink); color: var(--paper); }
+  .hero-primary:hover, .hero-primary:focus-visible { background: var(--ink); border-color: var(--ink); }
+  .capsule:focus-visible, .hero-primary:focus-visible { outline: 2px solid var(--candle-ink); outline-offset: 4px; }
+  .hero-secondary { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-muted); border-bottom: 1px solid var(--line-strong); padding-bottom: 3px; transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .hero-secondary:hover { color: var(--candle-blue); border-color: var(--candle-blue); }
+  /* The index — the page's own table of contents, in the rows' rubric tier. */
+  .hero-index { margin: clamp(36px, 5vw, 56px) 0 0; padding-top: clamp(20px, 2.6vw, 28px); border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 28px; }
+  .hero-index-label { font-family: var(--capitalis); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-soft); }
+  .hero-index-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; }
+  .hero-index-list a { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-muted); border-bottom: 1px solid var(--line); padding-bottom: 3px; transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .hero-index-list a:hover { color: var(--ink); border-color: var(--line-strong); }
+
+  /* ── The plate ──────────────────────────────────────────────────────────────────────────── */
+  .plate { position: relative; margin: 0; height: clamp(300px, 56svh, 640px); overflow: hidden; isolation: isolate; }
+
+  /* ── Costs — paper-soft; the undertaking beside its needs ───────────────────────────────── */
+  .costs { background: var(--paper-soft); padding: clamp(72px, 11vw, 150px) var(--gutter); --lat-ink: var(--candle-ink); }
+  .costs-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(36px, 6vw, 88px); align-items: start; margin-top: clamp(40px, 5vw, 64px); }
+  @media (max-width: 720px) { .costs-grid { grid-template-columns: 1fr; gap: 44px; } }
+  .current { margin: 0; }
+  .current-title { font-family: var(--serif); font-weight: 300; font-size: clamp(26px, 3vw, 36px); line-height: 1.1; letter-spacing: -.01em; color: var(--ink); margin: 0; }
+  .current-facts { margin: 10px 0 0; font-family: var(--mono); font-size: 11px; letter-spacing: .04em; line-height: 1.8; color: var(--ink-muted); font-variant-numeric: lining-nums; }
+  .current-essence { margin: 16px 0 0; max-width: 46ch; font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.72; color: var(--ink-soft); }
+  .current-note { margin: 18px 0 0; max-width: 42ch; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); }
+  .cost-lines { margin: 0; }
+
+  /* ── Record ─────────────────────────────────────────────────────────────────────────────── */
+  .record { padding: clamp(72px, 11vw, 150px) var(--gutter); --lat-ink: var(--candle-ink); }
+  .record-list { list-style: none; margin: clamp(36px, 5vw, 56px) 0 0; padding: 0; }
+  .record-item { display: grid; grid-template-columns: clamp(200px, 22vw, 300px) minmax(0, 1fr); gap: clamp(22px, 3.4vw, 44px); align-items: start; padding: clamp(26px, 3.6vw, 40px) 0; border-top: 1px solid var(--line); }
+  .record-item:last-of-type { border-bottom: 1px solid var(--line); }
+  @media (max-width: 700px) { .record-item { grid-template-columns: 1fr; gap: 18px; } }
+  .record-figure { margin: 0; aspect-ratio: 4 / 3; overflow: hidden; background: var(--paper-soft); }
+  .record-figure :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .record-meta { margin: 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-muted); font-variant-numeric: lining-nums; }
+  .record-meta .dot { color: var(--candle-ink); }
+  .record-title { font-family: var(--serif); font-weight: 300; font-size: clamp(24px, 2.8vw, 34px); line-height: 1.1; letter-spacing: -.01em; color: var(--ink); margin: 10px 0 0; }
+  .record-title a { border-bottom: 1px solid transparent; transition: border-color .3s var(--ease); }
+  .record-title a:hover { border-bottom-color: var(--candle); }
+  .record-essence { margin: 14px 0 0; max-width: 56ch; font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.72; color: var(--ink-soft); }
+
+  /* ── Support ────────────────────────────────────────────────────────────────────────────── */
+  .support { padding: clamp(72px, 11vw, 150px) var(--gutter); --lat-ink: var(--candle-ink); }
+  .ways { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(30px, 5vw, 64px); margin-top: clamp(40px, 5vw, 64px); }
+  @media (max-width: 680px) { .ways { grid-template-columns: 1fr; gap: 40px; } }
+  .way { margin: 0; padding-top: clamp(20px, 2.6vw, 28px); border-top: 1px solid var(--line); }
+  .way-label { font-family: var(--serif); font-weight: 300; font-size: clamp(24px, 2.8vw, 32px); line-height: 1.1; letter-spacing: -.01em; color: var(--ink); margin: 0; }
+  .way-body { margin: 14px 0 0; max-width: 44ch; font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.72; color: var(--ink-soft); }
+  .way-amounts { margin: 12px 0 0; max-width: 44ch; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); font-variant-numeric: lining-nums; }
+  .way-act { margin: 22px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
+
+  /* The transfer block: one row per field, the value in mono (an IBAN is checked digit by
+     digit), the capsule at the line's end; the values wrap at phone width rather than scroll. */
+  .transfer { margin-top: clamp(48px, 6vw, 80px); padding-top: clamp(28px, 3.6vw, 40px); border-top: 1px solid var(--line); }
+  .transfer-rows { margin: 0; display: grid; gap: 18px; }
+  .transfer-row { display: grid; grid-template-columns: minmax(120px, 160px) minmax(0, 1fr); gap: 6px 24px; align-items: baseline; }
+  @media (max-width: 560px) { .transfer-row { grid-template-columns: 1fr; gap: 4px; } }
+  .transfer-row dt { font-family: var(--capitalis); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-soft); }
+  .transfer-row dt .currency { color: var(--candle-ink); }
+  .transfer-row dd { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  .transfer-value { font-family: var(--mono); font-size: clamp(14px, 1.3vw, 17px); letter-spacing: .04em; color: var(--ink); user-select: all; overflow-wrap: anywhere; font-variant-numeric: lining-nums; }
+  .transfer-iban { letter-spacing: .06em; }
+  .transfer-note { flex-basis: 100%; font-size: 13px; line-height: 1.6; color: var(--ink-muted); }
+  .transfer-hint { margin: 24px 0 0; max-width: 56ch; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); }
+  .transfer-scope { margin: 10px 0 0; max-width: 62ch; font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.7; color: var(--ink-soft); }
+
+  /* The optional "let us know": the island's markup is React's and carries no scope attribute,
+     so every inner selector is `:global()`. Writing lines, not boxes — the doors' grammar. */
+  .join { margin-top: clamp(48px, 6vw, 80px); padding-top: clamp(28px, 3.6vw, 40px); border-top: 1px solid var(--line); }
+  .join-body { margin: 0 0 24px; max-width: 56ch; font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.72; color: var(--ink-soft); }
+  .join :global(.patron-form) { display: grid; gap: 22px; max-width: 640px; }
+  .join :global(.patron-fields) { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; }
+  @media (max-width: 560px) { .join :global(.patron-fields) { grid-template-columns: 1fr; } }
+  .join :global(.patron-field) { display: grid; gap: 6px; min-width: 0; }
+  .join :global(.patron-field-wide) { grid-column: 1 / -1; }
+  .join :global(.patron-label) { font-family: var(--capitalis); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--candle-ink); }
+  .join :global(.patron-input) { display: block; width: 100%; padding: 6px 0; border: 0; border-bottom: 1px solid var(--line-strong); background: none; color: var(--ink); caret-color: var(--ink); font-family: var(--serif); font-size: clamp(19px, 2vw, 24px); font-weight: 300; line-height: 1.3; border-radius: 0; transition: border-color .3s var(--ease); }
+  .join :global(.patron-input:focus) { outline: none; border-bottom-color: var(--candle); }
+  .join :global(.patron-input[aria-invalid="true"]) { border-bottom-color: #9b4f38; }
+  .join :global(.patron-input:disabled) { opacity: .6; }
+  .join :global(.patron-consent) { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 12px; align-items: start; cursor: pointer; }
+  .join :global(.patron-consent-input) { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .join :global(.patron-consent-box) { display: block; width: 18px; height: 18px; margin-top: 2px; border: 1px solid var(--line-strong); background: transparent; transition: background-color .3s var(--ease), border-color .3s var(--ease); }
+  .join :global(.patron-consent-input:checked + .patron-consent-box) { background: var(--candle-ink); border-color: var(--candle-ink); }
+  .join :global(.patron-consent-input:focus-visible + .patron-consent-box) { outline: 2px solid var(--candle-ink); outline-offset: 3px; }
+  .join :global(.patron-consent-input[aria-invalid="true"] + .patron-consent-box) { border-color: #9b4f38; }
+  .join :global(.patron-consent-text) { font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); text-wrap: pretty; }
+  .join :global(.patron-consent-text a) { color: var(--ink-soft); border-bottom: 1px solid var(--line-strong); transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .join :global(.patron-consent-text a:hover) { color: var(--candle-blue); border-color: var(--candle-blue); }
+  .join :global(.patron-error) { margin: -6px 0 0; color: #9b4f38; font-size: 13.5px; line-height: 1.5; }
+  .join :global(.patron-error a) { border-bottom: 1px solid currentColor; }
+  .join :global(.patron-submit) { justify-self: start; display: inline-flex; align-items: center; padding: 12px 22px; border: 1px solid color-mix(in srgb, var(--candle-ink) 62%, transparent); border-radius: 999px; background: transparent; color: var(--candle-ink); cursor: pointer; font-family: var(--capitalis); font-size: 10.5px; font-weight: 600; letter-spacing: .16em; line-height: 1.2; text-transform: uppercase; transition: color .3s var(--ease), border-color .3s var(--ease), background-color .3s var(--ease), opacity .3s var(--ease); }
+  .join :global(.patron-submit:hover:not(:disabled)), .join :global(.patron-submit:focus-visible) { background: var(--candle-ink); border-color: var(--candle-ink); color: var(--paper); }
+  .join :global(.patron-submit:focus-visible) { outline: 2px solid var(--candle-ink); outline-offset: 4px; }
+  .join :global(.patron-submit:disabled) { cursor: progress; opacity: .55; }
+  .join :global(.patron-done) { max-width: 56ch; }
+  .join :global(.patron-done-title) { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(22px, 2.6vw, 30px); line-height: 1.2; color: var(--ink); }
+  .join :global(.patron-done-body) { margin: 10px 0 0; font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.72; color: var(--ink-soft); }
+  .join-noscript { margin: 0; max-width: 56ch; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); }
+  .join-contact { margin: 24px 0 0; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); }
+  .join-contact a { color: var(--ink-soft); border-bottom: 1px solid var(--line-strong); transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .join-contact a:hover { color: var(--candle-blue); border-color: var(--candle-blue); }
+
+  /* ── Partnership ────────────────────────────────────────────────────────────────────────── */
+  .partnership { padding: clamp(72px, 11vw, 150px) var(--gutter); --lat-ink: var(--candle-ink); }
+  .partner-rows { margin-top: clamp(36px, 5vw, 56px); }
+  .partner-next { margin-top: clamp(30px, 4vw, 48px); }
+  .partner-next .body { margin-top: 0; }
+  .partner-thanks { margin: 14px 0 0; max-width: 62ch; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); }
+  .mail-line { margin: 28px 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 18px; }
+  .mail-line .rubric { flex-basis: 100%; margin: 0; }
+  .partner-booking { margin: 24px 0 0; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); }
+
+  /* ── Who — paper-soft again; closes on the address ──────────────────────────────────────── */
+  .who { background: var(--paper-soft); padding: clamp(72px, 11vw, 150px) var(--gutter) clamp(84px, 12vw, 150px); --lat-ink: var(--candle-ink); }
+  .who-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(30px, 5vw, 64px); align-items: start; margin-top: clamp(40px, 5vw, 64px); }
+  @media (max-width: 760px) { .who-grid { grid-template-columns: 1fr; gap: 40px; } }
+  .who-block { margin: 0; }
+  .board { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .board li { display: grid; gap: 2px; }
+  .board-name { font-family: var(--serif); font-weight: 300; font-size: clamp(19px, 2vw, 23px); line-height: 1.3; color: var(--ink); }
+  .board-role { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); }
+  .who-note { margin: 16px 0 0; max-width: 34ch; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); }
+  .identity { margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.9; letter-spacing: .02em; color: var(--ink-soft); user-select: all; font-variant-numeric: lining-nums; }
+  .documents { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .documents a { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); border-bottom: 1px solid var(--line-strong); padding-bottom: 3px; transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .documents a:hover { color: var(--candle-blue); border-color: var(--candle-blue); }
+  .help { margin-top: clamp(40px, 5vw, 64px); padding-top: clamp(26px, 3.2vw, 36px); border-top: 1px solid var(--line); }
+  .help-list { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 22px clamp(30px, 5vw, 64px); }
+  @media (max-width: 680px) { .help-list { grid-template-columns: 1fr; } }
+  .help-item dt { font-family: var(--serif); font-weight: 400; font-size: clamp(17px, 1.6vw, 19px); line-height: 1.35; color: var(--ink); margin: 0; }
+  .help-item dd { margin: 6px 0 0; max-width: 40ch; font-size: 14px; line-height: 1.65; color: var(--ink-soft); }
+  .who-contact { margin: clamp(40px, 5vw, 64px) 0 0; display: grid; gap: 6px; }
+  .who-contact .rubric { margin: 0; }
+</style>

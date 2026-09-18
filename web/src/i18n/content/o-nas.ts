@@ -396,6 +396,9 @@ export interface AboutChrome {
   readonly cantusAria: string;
   readonly milestonesAria: string;
   readonly foundationAria: string;
+  /** The onward door from the foundation band to /fundacja, beside the statute. A nav word (the
+      footer prints the same one), so it is chrome rather than a copy field. */
+  readonly foundationLink: string;
   readonly governanceAria: string;
   readonly ctaAria: string;
   /** The statutory-purposes list, which sits INSIDE the foundation section and needs a name of its
@@ -414,6 +417,7 @@ export const ABOUT_CHROME: Record<Locale, AboutChrome> = {
     cantusAria: "Co śpiewamy",
     milestonesAria: "Droga koncertów",
     foundationAria: "Fundacja VoctFoundation",
+    foundationLink: "Fundacja i wsparcie →",
     governanceAria: "Zarząd fundacji",
     ctaAria: "Zaproszenie do kontaktu",
     goalsAria: "Cele statutowe",
@@ -427,6 +431,7 @@ export const ABOUT_CHROME: Record<Locale, AboutChrome> = {
     cantusAria: "What we sing",
     milestonesAria: "The path of the concerts",
     foundationAria: "The VoctFoundation",
+    foundationLink: "Foundation & support →",
     governanceAria: "The foundation's board",
     ctaAria: "An invitation to get in touch",
     goalsAria: "Statutory purposes",
@@ -440,6 +445,7 @@ export const ABOUT_CHROME: Record<Locale, AboutChrome> = {
     cantusAria: "Ce que nous chantons",
     milestonesAria: "Le chemin des concerts",
     foundationAria: "La Fondation VoctFoundation",
+    foundationLink: "Fondation et soutien →",
     governanceAria: "Le conseil de la fondation",
     ctaAria: "Une invitation à nous contacter",
     goalsAria: "Buts statutaires",

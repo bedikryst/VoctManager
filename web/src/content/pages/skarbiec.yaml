@@ -101,56 +101,14 @@ qr:
     Otwórz aplikację banku, wybierz <strong>„Przelew QR”</strong> i zeskanuj. Kwotę wpiszesz
     w aplikacji.
   recurringLabel: "Wsparcie co miesiąc · zlecenie stałe"
-  # The standing order is the foundation's answer to recurring giving, and the whole point of the
-  # paragraph is that the donor keeps control of it: no card is stored anywhere and cancelling
-  # needs no contact with us. "Zlecenie stałe" is the banking term — use the reader's own.
+  # One practical sentence about THESE details, no link and no question: the sheet's closing line
+  # (skarbiecChrome `recurringLink`) is the one road to /fundacja#mecenat and it asks the question
+  # itself, right under this card. The offer — amounts, what patronage means, how to tell us — has
+  # one home there and this note must not grow back into a second copy of it.
+  # "Zlecenie stałe" is the banking term — use the reader's own.
   recurringNoteHtml: >-
-    Chcesz wspierać cykl regularnie? Skopiuj powyższe dane i w swojej aplikacji bankowej ustaw je
-    jako <strong>zlecenie stałe</strong> (zakładka „zlecenia stałe” / „płatności cykliczne”) — np.
-    25, 50 lub 100&nbsp;zł miesięcznie. Kod QR powyżej tworzy przelew jednorazowy; zlecenie
-    cykliczne wpisuje się ręcznie. Pozostaje ono w pełni pod Twoją kontrolą — zmienisz je lub
-    odwołasz w każdej chwili w bankowości, bez kontaktu z nami. Bez prowizji i bez przekazywania
-    danych karty.
-
-mecenat:
-  tag: "wsparcie regularne · relacja"
-  title: "Zostań mecenasem cyklu"
-  note: >-
-    Mecenat to więcej niż jednorazowa darowizna — to trwała relacja z zespołem i jego muzyką. Twoje
-    regularne wsparcie pozwala nam planować z wyprzedzeniem: próby, nagrania i kolejne odsłony
-    cyklu Concerts Spirituels. W zamian zapraszamy Cię bliżej tego, co robimy.
-  benefitsLabel: "Co zapewniamy mecenasom"
-  # Four promises, in descending order of intimacy. The last one is the practical one and belongs
-  # last for that reason.
-  benefit1: "Osobiste podziękowanie i bezpośredni kontakt z założycielem Fundacji."
-  benefit2: "Imienne podziękowanie wśród mecenasów cyklu, jeśli wyrazisz na to zgodę."
-  benefit3: "Pierwszeństwo zaproszeń na przyszłe koncerty i wydarzenia."
-  benefit4: "Roczne zbiorcze potwierdzenie darowizn — pomocne przy rozliczeniu podatkowym."
-  howLabel: "Jak to działa"
-  howHtml: >-
-    Mecenat opiera się na <strong>zleceniu stałym</strong> — comiesięcznym przelewie, który
-    ustawiasz i w pełni kontrolujesz w swojej bankowości (np. 50, 100 lub 200&nbsp;zł miesięcznie).
-    Zmienisz go lub odwołasz w każdej chwili, bez kontaktu z nami. Bez prowizji i bez przekazywania
-    danych karty.
-  talkLabel: "Wolisz najpierw porozmawiać?"
-  talkNote: >-
-    Napisz do nas — odpowiemy osobiście i pomożemy dobrać dogodną formę wsparcia.
-  joinLabel: "Daj nam znać, że dołączasz"
-  # The lawful basis for keeping a patron's contact details (art. 6(1)(a) RODO). The three data
-  # points are named on purpose — a consent that does not say what it covers covers nothing.
-  consentHtml: >-
-    Wyrażam zgodę na przetwarzanie moich danych (imię, nazwisko, e-mail) w celu kontaktu w sprawie
-    mecenatu, zgodnie z <a href="/polityka-prywatnosci">Polityką prywatności</a>.
-  # What the panel says after the form is sent. The greeting takes the donor's own first name in a
-  # vocative slot, so it is kept apart from the sentence around it: a name must never sit inside a
-  # clause a translator might reorder.
-  confirmGreeting: "Dziękujemy"
-  # Used in place of the name when somebody sent the form with the field left blank.
-  confirmFallbackName: "drogi Mecenasie"
-  confirmBody: >-
-    Zapisaliśmy Twoje zgłoszenie — odezwiemy się, gdy tylko zaksięgujemy Twój pierwszy przelew.
-  # The address follows this fragment as a link, so the sentence has to end pointing forward.
-  confirmContact: "W razie pytań napisz na"
+    Te same dane ustawisz w swojej bankowości jako <strong>zlecenie stałe</strong> — kod QR
+    powyżej tworzy przelew jednorazowy.
 
 result:
   # Above both result overlays — the thank-you and the apology — because it is the same imprint

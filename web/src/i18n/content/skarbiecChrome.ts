@@ -29,10 +29,6 @@ import type { Locale } from "../config";
 export interface VaultChrome {
   /** Accessible name of the sheet's close control. */
   readonly close: string;
-  /** The two forms of support, as a tablist. */
-  readonly tabsAria: string;
-  readonly tabOnce: string;
-  readonly tabMecenat: string;
   /** The campaign rail. `goalLabel` precedes a formatted amount. */
   readonly progressAria: string;
   readonly goalLabel: string;
@@ -44,7 +40,6 @@ export interface VaultChrome {
   /** The three cards and the badge each of them wears. */
   readonly methodsAria: string;
   readonly statusReady: string;
-  readonly statusMecenat: string;
   /** The give form. */
   readonly amountLabel: string;
   readonly currencyAria: string;
@@ -80,18 +75,8 @@ export interface VaultChrome {
   readonly fieldRecipient: string;
   readonly fieldAddress: string;
   readonly fieldTransferTitle: string;
-  readonly fieldRecurringTitle: string;
-  /** The patronage panel and its form. */
-  readonly mecenatAria: string;
-  readonly firstNameLabel: string;
-  readonly lastNameLabel: string;
-  readonly mecenatEmailLabel: string;
-  readonly mecenatSubmitting: string;
-  readonly mecenatSubmit: string;
-  readonly mecenatErrorName: string;
-  readonly mecenatErrorEmail: string;
-  readonly mecenatErrorConsent: string;
-  readonly mecenatErrorSend: (email: string) => string;
+  /** The sheet's one road out: recurring support lives on /fundacja#mecenat, not in a tab here. */
+  readonly recurringLink: string;
   /** The terms overlay. */
   readonly termsClose: string;
   readonly termsAccept: string;
@@ -118,15 +103,11 @@ function plDonors(count: number): string {
 export const VAULT_CHROME: Record<Locale, VaultChrome> = {
   pl: {
     close: "Zamknij",
-    tabsAria: "Forma wsparcia",
-    tabOnce: "Jednorazowo",
-    tabMecenat: "Mecenat",
     progressAria: "Postęp zbiórki",
     goalLabel: "cel",
     donors: plDonors,
     methodsAria: "Wybierz drogę wsparcia",
     statusReady: "dostępne",
-    statusMecenat: "mecenat",
     amountLabel: "Kwota darowizny",
     currencyAria: "Waluta darowizny",
     tiersAria: "Sugerowana kwota darowizny",
@@ -157,18 +138,7 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     fieldRecipient: "Odbiorca",
     fieldAddress: "Adres fundacji",
     fieldTransferTitle: "Tytuł przelewu",
-    fieldRecurringTitle: "Tytuł przelewu cyklicznego",
-    mecenatAria: "Mecenat — wsparcie regularne",
-    firstNameLabel: "Imię",
-    lastNameLabel: "Nazwisko",
-    mecenatEmailLabel: "E-mail · na ten adres się odezwiemy",
-    mecenatSubmitting: "Wysyłanie...",
-    mecenatSubmit: "Dołączam do mecenatu",
-    mecenatErrorName: "Podaj imię i nazwisko, abyśmy wiedzieli, komu dziękować.",
-    mecenatErrorEmail: "Podaj poprawny adres e-mail — na niego się odezwiemy.",
-    mecenatErrorConsent: "Zaznacz zgodę na kontakt, abyśmy mogli się do Ciebie odezwać.",
-    mecenatErrorSend: (email) =>
-      `Nie udało się wysłać zgłoszenia. Spróbuj ponownie za chwilę lub napisz na ${email}.`,
+    recurringLink: "Wolisz wspierać regularnie? Mecenat →",
     termsClose: "Zamknij regulamin",
     termsAccept: "Akceptuję regulamin",
     versionLabel: "Wersja",
@@ -178,15 +148,11 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
   },
   en: {
     close: "Close",
-    tabsAria: "Form of support",
-    tabOnce: "One-off",
-    tabMecenat: "Patronage",
     progressAria: "Campaign progress",
     goalLabel: "goal",
     donors: (count) => `${count} ${count === 1 ? "donor" : "donors"}`,
     methodsAria: "Choose how to give",
     statusReady: "available",
-    statusMecenat: "patronage",
     amountLabel: "Amount",
     currencyAria: "Donation currency",
     tiersAria: "Suggested amount",
@@ -217,18 +183,7 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     fieldRecipient: "Recipient",
     fieldAddress: "Foundation address",
     fieldTransferTitle: "Transfer title",
-    fieldRecurringTitle: "Standing order title",
-    mecenatAria: "Patronage — regular support",
-    firstNameLabel: "First name",
-    lastNameLabel: "Surname",
-    mecenatEmailLabel: "E-mail · we will reply to this address",
-    mecenatSubmitting: "Sending...",
-    mecenatSubmit: "I am joining",
-    mecenatErrorName: "Give us your name, so we know who to thank.",
-    mecenatErrorEmail: "Enter a valid e-mail address — it is where we will write.",
-    mecenatErrorConsent: "Please agree to be contacted, so we can write back to you.",
-    mecenatErrorSend: (email) =>
-      `We could not send your message. Try again in a moment, or write to ${email}.`,
+    recurringLink: "Would you rather support us regularly? Patronage →",
     termsClose: "Close the terms",
     termsAccept: "I accept the terms",
     versionLabel: "Version",
@@ -238,15 +193,11 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
   },
   fr: {
     close: "Fermer",
-    tabsAria: "Forme de soutien",
-    tabOnce: "Ponctuel",
-    tabMecenat: "Mécénat",
     progressAria: "Avancement de la collecte",
     goalLabel: "objectif",
     donors: (count) => `${count} ${count === 1 ? "donateur" : "donateurs"}`,
     methodsAria: "Choisir une forme de soutien",
     statusReady: "disponible",
-    statusMecenat: "mécénat",
     amountLabel: "Montant du don",
     currencyAria: "Devise du don",
     tiersAria: "Montant suggéré",
@@ -277,18 +228,7 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     fieldRecipient: "Bénéficiaire",
     fieldAddress: "Adresse de la fondation",
     fieldTransferTitle: "Intitulé du virement",
-    fieldRecurringTitle: "Intitulé du virement permanent",
-    mecenatAria: "Mécénat — soutien régulier",
-    firstNameLabel: "Prénom",
-    lastNameLabel: "Nom",
-    mecenatEmailLabel: "E-mail · c'est là que nous répondrons",
-    mecenatSubmitting: "Envoi...",
-    mecenatSubmit: "Je rejoins le mécénat",
-    mecenatErrorName: "Donnez-nous votre nom, pour que nous sachions qui remercier.",
-    mecenatErrorEmail: "Indiquez une adresse e-mail valide — c'est là que nous écrirons.",
-    mecenatErrorConsent: "Acceptez d'être contacté, pour que nous puissions vous répondre.",
-    mecenatErrorSend: (email) =>
-      `Nous n'avons pas pu envoyer votre message. Réessayez dans un instant, ou écrivez à ${email}.`,
+    recurringLink: "Vous préférez nous soutenir régulièrement ? Mécénat →",
     termsClose: "Fermer le règlement",
     termsAccept: "J'accepte le règlement",
     versionLabel: "Version",

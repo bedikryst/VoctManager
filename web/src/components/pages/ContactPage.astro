@@ -42,6 +42,7 @@ import { CONTACT_CHROME, KONTAKT_PAGE } from "../../i18n/content/kontakt";
 import { NUNTIUS } from "../../i18n/content/nuntius";
 import { UI } from "../../i18n/ui";
 import { localizePath, pageI18n, SITE, type Locale } from "../../i18n/config";
+import { FOUNDATION_PAGE_LINKED } from "../../data/foundationSupport";
 import VaultMount from "../../components/VaultMount.astro";
 import "../../styles/vault.css";
 
@@ -55,7 +56,12 @@ const copy = pageCopy(KONTAKT_PAGE, lang);
 const t = CONTACT_CHROME[lang];
 // One base path → this render's own URL, its hreflang graph, and the locales the switcher offers.
 const { path, alternates, available } = pageI18n("/kontakt", lang);
-const hrefFoundation = `${localizePath("/o-nas", lang)}#fundacja`;
+// The institutional block leads to the foundation's own page, at the section that holds the
+// board, the registry and the documents — /o-nas#fundacja keeps its summary, and stays the
+// place a reader is sent to verify the recipient until FOUNDATION_PAGE_LINKED.
+const hrefFoundation = FOUNDATION_PAGE_LINKED
+  ? `${localizePath("/fundacja", lang)}#fundacja-i-dokumenty`
+  : `${localizePath("/o-nas", lang)}#fundacja`;
 const hrefConcerts = localizePath("/koncerty", lang);
 const nuntius = NUNTIUS[lang];
 

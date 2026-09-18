@@ -130,6 +130,7 @@ const tempusGloss = tempus.gloss[lang];
             brushes the bar. It belongs on THIS shelf and not beside the statute: filed among
             documents an image archive reads as an administrative record, and that shelf was
             weighed and rejected when the entrance was placed. */}
+        <li><a href={localizePath("/fundacja", lang)}>{t.foundationPage}</a></li>
         <li><a href={localizePath("/obrazy", lang)}>{t.images}</a></li>
         <li><a href={localizePath("/kolofon", lang)}>{t.colophon}</a></li>
         <li><a href={localizePath("/polityka-prywatnosci", lang)}>{t.privacy}</a></li>
@@ -183,7 +184,14 @@ const tempusGloss = tempus.gloss[lang];
       </h3>
       <ul>
         <li><a href="mailto:kontakt@voctensemble.com">kontakt@voctensemble.com</a></li>
-        <li class="foot-vox-patronage"><a href="mailto:patronat@voctensemble.com">patronat@voctensemble.com</a></li>
+        {/* The address is one door to patronage; the page that explains the relationship is the
+            other, keyed beside it in the same grade the duty route's key uses below. */}
+        <li class="foot-vox-patronage">
+          <a href="mailto:patronat@voctensemble.com">patronat@voctensemble.com</a>
+          <a class="foot-vox-mecenat" href={`${localizePath("/fundacja", lang)}#mecenat`}>
+            {t.patronage}&nbsp;<span aria-hidden="true">→</span>
+          </a>
+        </li>
         {/* An obligation, not an invitation — hence the key in front of it and the quieter
             grade. It stays with the other addresses because it IS a way of writing to us, and
             it is the one route here the phone keeps: a duty a reader may need to exercise from
@@ -303,10 +311,17 @@ const tempusGloss = tempus.gloss[lang];
   .foot-col .foot-social { margin-top: 10px; }
 
   /* The duty route reads a grade quieter than the two invitations above it, and its key is what
-     says which duty. Baseline row so the 9px key hangs off the address rather than above it. */
+     says which duty. Baseline row so the 9px key hangs off the address rather than above it.
+     The address rule carries `.foot-col` for the same reason `.foot-social` does: bare
+     `.foot-rodo a` loses its size and colour to `.foot-col ul a` once both are scoped. */
   .foot-rodo { display: flex; align-items: baseline; gap: 10px; }
   .foot-rodo .key { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, .46); }
-  .foot-rodo a { font-size: 11px; color: rgba(244, 241, 233, .6); }
+  .foot-col .foot-rodo a { font-size: 11px; color: rgba(244, 241, 233, .6); }
+  /* The patronage row keys its page beside the address, in the key's own grade. Written as a
+     three-compound selector so it outranks `.foot-col ul a` above (see the compound note there). */
+  .foot-vox-patronage { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; }
+  .foot-col .foot-vox-patronage .foot-vox-mecenat { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, .46); }
+  .foot-col .foot-vox-patronage .foot-vox-mecenat:hover { color: var(--candle); }
 
   /* THE ASK. Serif at reading size — it is the one sentence in this footer written TO a person,
      and everything around it is a register in the typewriter voice; matched to them it would

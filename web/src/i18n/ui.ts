@@ -38,6 +38,10 @@ export interface UIStrings {
     readonly concerts: string;
     readonly contact: string;
     readonly support: string;
+    /** /fundacja — the foundation's page, one word. The bar prints it next to `support` (the
+        vault), so the fuller "foundation and support" would say "support" twice in one line;
+        the footer's `foundationPage` keeps the fuller name where there is room for it. */
+    readonly foundation: string;
     /** aria-label on the hamburger toggle. */
     readonly menu: string;
     /** Visible close affordance in the mobile card. */
@@ -86,6 +90,12 @@ export interface UIStrings {
     readonly images: string;
     readonly colophon: string;
     readonly privacy: string;
+    /** /fundacja as a footer entry — the fuller name than the bar's `nav.foundation`, since here
+        it does not stand next to the vault's "support" word. */
+    readonly foundationPage: string;
+    /** /fundacja#mecenat — the standing-order relationship, printed beside the patronage
+        address so the address is not the only door. */
+    readonly patronage: string;
     /** The foundation's founding document, linked as a PDF beside the registry numbers. */
     readonly statute: string;
     /** Accessible name for the statute link — states the format and the new tab. */
@@ -150,6 +160,7 @@ export const UI: Record<Locale, UIStrings> = {
       concerts: "Koncerty",
       contact: "Kontakt",
       support: "Wesprzyj",
+      foundation: "Fundacja",
       menu: "Menu",
       close: "Zamknij",
       closeAria: "Zamknij menu",
@@ -167,6 +178,8 @@ export const UI: Record<Locale, UIStrings> = {
       images: "Obrazy",
       colophon: "Kolofon",
       privacy: "Polityka prywatności",
+      foundationPage: "Fundacja i wsparcie",
+      patronage: "Mecenat",
       statute: "Statut fundacji",
       statuteAria: "Statut Fundacji VoctFoundation — dokument PDF, otwiera się w nowej karcie",
       dataProtection: "RODO",
@@ -205,6 +218,7 @@ export const UI: Record<Locale, UIStrings> = {
       concerts: "Concerts",
       contact: "Contact",
       support: "Support us",
+      foundation: "Foundation",
       menu: "Menu",
       close: "Close",
       closeAria: "Close menu",
@@ -222,6 +236,8 @@ export const UI: Record<Locale, UIStrings> = {
       images: "Images",
       colophon: "Colophon",
       privacy: "Privacy policy",
+      foundationPage: "Foundation & support",
+      patronage: "Patronage",
       statute: "Foundation statute",
       statuteAria: "Statute of the VoctFoundation — PDF document, opens in a new tab",
       dataProtection: "GDPR",
@@ -260,6 +276,7 @@ export const UI: Record<Locale, UIStrings> = {
       concerts: "Concerts",
       contact: "Contact",
       support: "Nous soutenir",
+      foundation: "Fondation",
       menu: "Menu",
       close: "Fermer",
       closeAria: "Fermer le menu",
@@ -277,6 +294,8 @@ export const UI: Record<Locale, UIStrings> = {
       images: "Images",
       colophon: "Colophon",
       privacy: "Politique de confidentialité",
+      foundationPage: "Fondation et soutien",
+      patronage: "Mécénat",
       statute: "Statuts de la fondation",
       statuteAria: "Statuts de la Fondation VoctFoundation — document PDF, s'ouvre dans un nouvel onglet",
       dataProtection: "RGPD",

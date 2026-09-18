@@ -23,6 +23,7 @@ import {
 import type { RibbonEntry } from "../../lib/registrum";
 import { localizePath, type Locale } from "../../i18n/config";
 import { UI } from "../../i18n/ui";
+import { FOUNDATION_PAGE_LINKED } from "../../data/foundationSupport";
 import type { LandingChrome } from "../../i18n/content/landing";
 import { useAudioChoice } from "./hooks/useAudioChoice";
 import { useFocusTrap } from "./hooks/useFocusTrap";
@@ -289,6 +290,7 @@ export function StickyHeader({
   const hrefAbout = localizePath("/o-nas", lang);
   const hrefConcerts = localizePath("/koncerty", lang);
   const hrefContact = localizePath("/kontakt", lang);
+  const hrefFoundation = localizePath("/fundacja", lang);
   const hrefImages = localizePath("/obrazy", lang);
   const hrefColophon = localizePath("/kolofon", lang);
 
@@ -391,6 +393,11 @@ export function StickyHeader({
           <a className="support-link plausible-event-name=kontakt" href={hrefContact}>
             {t.nav.contact}
           </a>
+          {FOUNDATION_PAGE_LINKED && (
+            <a className="support-link plausible-event-name=fundacja" href={hrefFoundation}>
+              {t.nav.foundation}
+            </a>
+          )}
           <a
             className="support-link plausible-event-name=skarbiec+menu"
             href="#wesprzyj"
@@ -561,10 +568,20 @@ export function StickyHeader({
                 <span className="voice-lead" aria-hidden="true" />
                 <em className="voice-lat">Sustinete nos</em>
               </a>
-              {/* The page's fine print — Kolofon is a real page with no other road from the
-                  phone (nave-menu.css). A cross-page link, but not an index entry: it closes
-                  the card rather than running the ribbon. */}
+              {/* The page's fine print — the foundation's page and Kolofon, the two real pages
+                  that are not voices (the closing line keeps the vault; a fifth voice would cost
+                  the card's band count, nave-menu.css GEOMETRY). Cross-page links, but not index
+                  entries: they close the card rather than running the ribbon. The foundation's
+                  entry waits on FOUNDATION_PAGE_LINKED (data/foundationSupport). */}
               <span className="nave-fine">
+                {FOUNDATION_PAGE_LINKED && (
+                  <>
+                    <a href={hrefFoundation} onClick={() => closeMenu(false)}>
+                      {t.nav.foundation}
+                    </a>
+                    <span aria-hidden="true">·</span>
+                  </>
+                )}
                 <a href={hrefColophon} onClick={() => closeMenu(false)}>
                   {t.footer.colophon}
                 </a>

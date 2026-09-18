@@ -58,7 +58,7 @@
 # an envelope.
 #
 # `zł` STAYS `zł` IN EVERY LOCALE. The site already publishes "50, 100 or 200 zł" in English
-# (page.skarbiec.mecenat.howHtml); what does change is the thousands separator, which English
+# (page.fundacja.support.monthly.amounts); what does change is the thousands separator, which English
 # writes with a comma.
 #
 # TWO EDITORIAL FINDINGS, NAMED RATHER THAN HARMONISED — both are questions for the desk, in the

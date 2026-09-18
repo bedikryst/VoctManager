@@ -1126,11 +1126,13 @@ html.voct-motion .chrome.menu-open .voice-gloss {
   outline-offset: 4px;
 }
 
-/* ── The colophon line: the page's fine print, where a book puts who set it. Kolofon is a real
-   page the card had no road to; it belongs HERE and not in the index, because it is matter
-   about the book rather than a voice of it — the same reason /press stays out entirely (a
-   noindex press kit is addressed to journalists, not to a reader opening the menu). Set at
-   the smallest step on the card and never given a leader: leaders belong to the entries. ── */
+/* ── The fine print: the page's small line, where a book puts who set it. Two real pages the
+   card has no other road to — the foundation's page and Kolofon — separated by a middle dot.
+   They belong HERE and not in the index, because they are matter about the book rather than
+   voices of it, and the GEOMETRY above is solved for four voices, not five — the same reason
+   /press stays out entirely (a noindex press kit is addressed to journalists, not to a reader
+   opening the menu). Set at the smallest step on the card and never given a leader: leaders
+   belong to the entries. ── */
 .nave-fine {
   display: flex;
   align-items: baseline;

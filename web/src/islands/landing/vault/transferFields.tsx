@@ -1,8 +1,8 @@
 /**
  * @file transferFields.tsx
- * @description Shared copy-to-clipboard transfer-field button, and the two transfer forms built
- *  from it: the one-off and the standing order. Reused by the QR panel and the Mecenat panel, so
- *  the copy interaction lives in one place.
+ * @description Shared copy-to-clipboard transfer-field button, and the one-off transfer form
+ *  built from it for the QR panel. The standing order's fields are not here: recurring support
+ *  has one home, /fundacja#mecenat, which prints its own transfer block.
  *
  *  THE ACCOUNT DATA ITSELF IS `src/data/foundation.ts`. It was declared here too, in local
  *  constants under a header claiming this was its only home — while `constants/vaultConfig.ts`
@@ -59,30 +59,6 @@ export function bankTransferFields(t: VaultChrome): readonly TransferField[] {
       value: "Darowizna na cele statutowe VoctFoundation",
       display: "Darowizna na cele statutowe VoctFoundation",
       eventName: "skarbiec+copy+tytul",
-    },
-  ];
-}
-
-/** The standing order. A distinct title so the foundation can recognise incoming patronage. */
-export function mecenatTransferFields(t: VaultChrome): readonly TransferField[] {
-  return [
-    {
-      label: t.fieldAccount,
-      value: ACCOUNT,
-      display: ACCOUNT_DISPLAY,
-      eventName: "mecenat+copy+nrkonta",
-    },
-    {
-      label: t.fieldRecipient,
-      value: RECIPIENT,
-      display: RECIPIENT,
-      eventName: "mecenat+copy+fundacja",
-    },
-    {
-      label: t.fieldRecurringTitle,
-      value: "Mecenat — darowizna na cele statutowe VoctFoundation",
-      display: "Mecenat — darowizna na cele statutowe VoctFoundation",
-      eventName: "mecenat+copy+tytul",
     },
   ];
 }

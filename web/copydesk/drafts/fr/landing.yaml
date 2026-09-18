@@ -64,7 +64,7 @@
 # would hand a reader words to type that the receiving bank does not expect.
 #
 # `zł` STAYS `zł` IN EVERY LOCALE: the site already publishes « 50, 100 ou 200 zł » in French
-# (page.skarbiec.mecenat.howHtml), and French writes the thousands break as a space, like Polish.
+# (page.fundacja.support.monthly.amounts), and French writes the thousands break as a space, like Polish.
 #
 # TWO EDITORIAL FINDINGS, NAMED RATHER THAN HARMONISED — both are questions for the desk, in the
 # SOURCE language, and neither is a translation defect:

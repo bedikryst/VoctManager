@@ -57,28 +57,6 @@ const vaultCopySchema = z
         recurringNoteHtml: z.string(),
       })
       .strict(),
-    mecenat: z
-      .object({
-        tag: z.string(),
-        title: z.string(),
-        note: z.string(),
-        benefitsLabel: z.string(),
-        benefit1: z.string(),
-        benefit2: z.string(),
-        benefit3: z.string(),
-        benefit4: z.string(),
-        howLabel: z.string(),
-        howHtml: z.string(),
-        talkLabel: z.string(),
-        talkNote: z.string(),
-        joinLabel: z.string(),
-        consentHtml: z.string(),
-        confirmGreeting: z.string(),
-        confirmFallbackName: z.string(),
-        confirmBody: z.string(),
-        confirmContact: z.string(),
-      })
-      .strict(),
     result: z.object({ kicker: z.string() }).strict(),
     gratitude: z.object({ title1: z.string(), title2: z.string(), strap: z.string() }).strict(),
     failure: z.object({ title1: z.string(), title2: z.string(), strap: z.string() }).strict(),
@@ -90,8 +68,8 @@ export type VaultCopy = z.infer<typeof vaultCopySchema>;
 // ── The desk contract ─────────────────────────────────────────────────────────────────────────
 
 /** DECLARATION ORDER IS READING ORDER — `order` is a counter over this list, laid out in the
-    sequence the sheet prints: head, rail, the three roads, the patronage panel, the two overlays
-    a donor meets on the way back from the gateway. */
+    sequence the sheet prints: head, rail, the three roads, the two overlays a donor meets on the
+    way back from the gateway. */
 const VAULT_CONTRACT: readonly CopyEntry[] = [
   {
     kind: "field",
@@ -180,65 +158,7 @@ const VAULT_CONTRACT: readonly CopyEntry[] = [
     kind: "field",
     path: "qr.recurringNoteHtml",
     label: "Przelew · wsparcie cykliczne (opis)",
-    note: "\"Zlecenie stałe\" is the banking term for a standing order — use the reader's own term, and the one their bank's menu actually shows. The paragraph's point is that the donor keeps control: no card is stored, and cancelling needs no contact with us.",
-  },
-  { kind: "field", path: "mecenat.tag", label: "Mecenat · znacznik" },
-  { kind: "field", path: "mecenat.title", label: "Mecenat · tytuł" },
-  {
-    kind: "field",
-    path: "mecenat.note",
-    label: "Mecenat · zaproszenie",
-    note: "The pitch. \"Mecenat\" is patronage in the old sense — a relationship, not a subscription tier — and the paragraph turns on that distinction in its first clause.",
-  },
-  { kind: "field", path: "mecenat.benefitsLabel", label: "Mecenat · co zapewniamy (etykieta)" },
-  {
-    kind: "field",
-    path: "mecenat.benefit1",
-    label: "Mecenat · co zapewniamy · 1",
-    note: "Four promises in descending order of intimacy; this one is the most personal and stays first.",
-  },
-  { kind: "field", path: "mecenat.benefit2", label: "Mecenat · co zapewniamy · 2" },
-  { kind: "field", path: "mecenat.benefit3", label: "Mecenat · co zapewniamy · 3" },
-  {
-    kind: "field",
-    path: "mecenat.benefit4",
-    label: "Mecenat · co zapewniamy · 4",
-    note: "The practical one, and last for that reason. It describes a Polish tax deduction; a translation says what the document IS (a yearly statement of donations) rather than naming a foreign tax regime.",
-  },
-  { kind: "field", path: "mecenat.howLabel", label: "Mecenat · jak to działa (etykieta)" },
-  {
-    kind: "field",
-    path: "mecenat.howHtml",
-    label: "Mecenat · jak to działa",
-    note: "Same standing-order vocabulary as the transfer card. The amounts are examples and stay in złoty — the account they would go to is a Polish one.",
-  },
-  { kind: "field", path: "mecenat.talkLabel", label: "Mecenat · rozmowa (etykieta)" },
-  { kind: "field", path: "mecenat.talkNote", label: "Mecenat · rozmowa" },
-  { kind: "field", path: "mecenat.joinLabel", label: "Mecenat · formularz (etykieta)" },
-  {
-    kind: "field",
-    path: "mecenat.consentHtml",
-    label: "Mecenat · zgoda na kontakt",
-    note: "The lawful basis for keeping a patron's details (art. 6(1)(a) GDPR). The three data points are named on purpose — a consent that does not say what it covers covers nothing — so a translation names the same three.",
-  },
-  {
-    kind: "field",
-    path: "mecenat.confirmGreeting",
-    label: "Mecenat · potwierdzenie · powitanie",
-    note: "The patron's own first name follows this word, then an exclamation mark set in the markup. It is kept apart from the sentence for exactly that reason: a name must never sit inside a clause a translator might reorder.",
-  },
-  {
-    kind: "field",
-    path: "mecenat.confirmFallbackName",
-    label: "Mecenat · potwierdzenie · gdy brak imienia",
-    note: "Stands in the name's place when the form was sent with the field empty. It has to work as a vocative address on its own.",
-  },
-  { kind: "field", path: "mecenat.confirmBody", label: "Mecenat · potwierdzenie · treść" },
-  {
-    kind: "field",
-    path: "mecenat.confirmContact",
-    label: "Mecenat · potwierdzenie · kontakt",
-    note: "An e-mail address follows this fragment as a link, and the full stop after it is set in the markup — so the sentence has to end pointing forward at an address.",
+    note: "\"Zlecenie stałe\" is the banking term for a standing order — use the reader's own term, and the one their bank's menu actually shows. One practical sentence about these details, no link and no question: the sheet's closing line (chrome, outside the desk) is the road to /fundacja#mecenat and asks the question itself.",
   },
   {
     kind: "field",

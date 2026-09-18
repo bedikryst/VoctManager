@@ -1,0 +1,14 @@
+---
+/**
+ * @file en/fundacja.astro
+ * @description English foundation route (/en/fundacja). Structure lives in the shared
+ *  FoundationPage component; this route only selects the locale. The chrome is translated in
+ *  i18n/content/fundacja.ts, and the prose falls back per field to the Polish in
+ *  src/content/pages/fundacja.yaml until the copy desk's English lands in content/pages.en.yaml.
+ * @architecture Astro islands 2026
+ * @module pages/en/fundacja
+ */
+import FoundationPage from "../../components/pages/FoundationPage.astro";
+---
+
+<FoundationPage lang="en" />

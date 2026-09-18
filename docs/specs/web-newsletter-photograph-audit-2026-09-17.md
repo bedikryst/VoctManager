@@ -1201,15 +1201,39 @@ at a form field's height (Round 8's separator, back).
   the form (`--half-ink`→1, `--ink-in`/`--ease-ink`, delay .45s = rule + the 0.18s pairing).
   Hidden state under the motion gate only. Probed: before entry opacity 0.44 / rule 0; at +1s
   0.97 / 0.97; settled 1 / 1.
-- **Descenders** (his first finding, "the bottoms of letters are cut", seen on dev at 1920). An
-  input clips its text to its CONTENT box, and Cormorant's ascent+descent is 1.21em, so at the
-  lede's 1.04 leading every `y`, `g`, `@` lost its tail at the baseline; padding under the text
-  does not help. Leading 1.3 on the input (and on the receipt's title, so it lands where the
-  address was), foot 6px. **The same defect was on /koncerty** (`notice.css`, `.notice-band
-  .notice-email`, the station title's 1.04 — Round 19's own comment claimed the leading "keeps
-  descenders inside an input's box"; it did not): fixed there the same way, with `lining-nums`
-  added in the same rule. Consequence for the /koncerty session: key-to-rule at rest is now 113px
-  (was 97) at 1920, 61 at 390.
+- **THE WRITING LINE, and it is now a site-wide mechanism** (`tokens.css`, `--blank-lead` /
+  `--blank-lift` / `--blank-tail`). It started as his "the bottoms of letters are cut" and ended
+  somewhere else, because the first fix was only half a diagnosis.
+  - The clip: an input clips its text to its CONTENT box, and Cormorant reports ascent 0.92em,
+    descent 0.29em — 1.21em. Anything tighter cuts the tails of `y`, `g`, `j`, `@`, and padding
+    under the text buys nothing. Every placement was tighter: 1.04 on the two night bands, 1.15
+    on /kontakt and the letter, 1.25 on the landing.
+  - His second question is the one that mattered: with the clip gone, the rule stood 0.335em
+    under the baseline — a third of the line's own grade, 29px at 68 — because it was anchored to
+    the field's BOX, which is leading and descent, i.e. compositor's air. That is the geometry of
+    a table rule. **A writing line is baseline-anchored: on ruled paper the rule IS the baseline,
+    letters sit on it and their tails cross it.** `--blank-lift` (a negative bottom margin,
+    `(lead - 1.21)/2 + 0.29 - 0.08`) pulls the box's foot to 0.08em under the baseline while the
+    field keeps its full line box, so the tails hang across the rule and nothing clips. 0.08
+    rather than 0 because the round letters overshoot.
+  - Applied to all five: `.kd-nuntius`, `.notice-band` (/koncerty), `.notice-door` (/kontakt),
+    `.notice-blank` (the letter), `.path-liniatura` (the landing). Measured baseline-to-rule 0.08em
+    on every one of them, tails 16px / 14px / 7px below the rule at 76 / 68 / 34px.
+  - **The landing pays it differently, and this is the trap to remember.** There the rule is not
+    at the field's foot: it belongs to `--lin-pitch`, the sheet's one ruled rhythm
+    (`.notice-form::before`). So the lift is paid BACK above the text as `padding-top:
+    calc(0.205em + 14px)` — the old box minus the new — and the row's content keeps the height the
+    pitch was derived from. No rule on the sheet moves; the key stops chasing the line (its
+    `-0.16em` pull-down exists only because the line floated).
+  - `--blank-tail` (0.21, a bare multiplier) is what the lift costs: whatever sits under the line
+    must clear the tails. The two night bands needed it (measured 2px and 4px of clearance before);
+    /kontakt's gap already covered it and the landing's next row is a full pitch away.
+  - Consequence for the /koncerty session: key-to-rule at rest is now 113px at 1920, 61 at 390.
+- **The caret crosses the rule** and he raised it himself, calling it small. Left alone
+  deliberately: the caret's height is the line box's, CSS has no lever on it (`caret-shape` has
+  none and no support), and the only real fix is a drawn caret in the island — mirroring the
+  value, the selection, the arrows and IME to place it. A pen tip crossing a writing line is not
+  a defect; a caret that lies about where the cursor is, is.
 
 ### Measured (out-r20, `measurements.txt`)
 
@@ -1224,9 +1248,8 @@ whole. /koncerty 1920: `koncerty-written-1920.png`, tails whole.
   key and a door — the landing's dotted leader was not carried (not this page's gesture). If the
   rest state reads as a gap rather than a line, the candidates are a shorter row margin (now
   `clamp(36px, 4.2vw, 60px)`) or a resting caret — never a placeholder (Round 7).
-- /kontakt's field (`ContactPage.astro`, `.notice-door .notice-email`, leading 1.15) and the
-  letter's (`notice-blank.css`, 1.15) sit under 1.21 too — a lesser clip (~2px of the deepest
-  tails), each its own session's.
+- /kontakt and the letter took the writing line with the rest, but neither has been LOOKED at
+  since — their own sessions judge the composition, not the mechanism.
 - The receipt's 40px growth at desktop: accepted here because it happens below the eye; the
   alternative (receipt bottom-set in the frozen box) put the title 65px above where the address
   had been, at the eye.
