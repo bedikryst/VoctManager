@@ -54,6 +54,11 @@
       top: auto;
     }
 
+    /* One column: the register's rail is gone, so the sheet no longer pays for it. */
+    .path-liniatura {
+      padding-left: 0;
+    }
+
     .support-ask {
       border-left: 0;
       border-top: 1px solid var(--line-strong);

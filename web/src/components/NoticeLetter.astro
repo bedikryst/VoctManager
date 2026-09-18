@@ -1,0 +1,318 @@
+---
+/**
+ * @file NoticeLetter.astro
+ * @description The letter on `/newsletter`: the room the ensemble sings in as the page's ground,
+ *  one sentence and one blank under it, and the letter itself lying on the corner of the room.
+ *
+ *  THE PAGE IS THE LETTER, AND THE ROOM IS WHAT THE LETTER IS ABOUT. The reader writes their
+ *  address under the photograph, beside the one sentence that says what the letter carries — and as
+ *  they type, the letter on the right is addressed to them: the addressee's line at its head fills
+ *  with what they write. That mirror is the composition's whole argument, and it is why the sheet
+ *  shows a letter rather than describing one.
+ *
+ *  WHAT IT DOES NOT DO, EACH FOR A REASON PAID FOR IN AN EARLIER ROUND:
+ *  · The photograph does not animate on arrival. The page has one arrival gesture and it belongs to
+ *    the sheet, which is laid down — opaque from the first frame, because what is read does not
+ *    fade and paper does not either. A second gesture on the largest object on the page would
+ *    compete with it, and the only ones on offer (a scale settle, a light coming up) are the stock
+ *    hero moves this composition spent five rounds getting away from.
+ *  · The blank carries no example address, and there is no lantern behind the cursor. Both were
+ *    built and both were refused.
+ *  · Nothing is drawn on the photograph: no frame, no scrim, no gradient. The plate bleeds off the
+ *    top and the left, and has a hard edge at the foot and at the right, where the sheet lies over
+ *    it.
+ *
+ *  ONE FRAME, THREE WINDOWS. The plate's box is an accident of the window — 1.10:1 at 901x900,
+ *  2.41:1 at 1920x900 — so the picture is consumed with `object-position: 100% 100%`: its foot and
+ *  its right edge are the composed ones, and a shorter or narrower box gives up ceiling and the far
+ *  end of the row. Each cut already ends on a measured dark line of the frame; see
+ *  `scripts/nuntius-room-crops.mjs`, which owns that geometry and the luminance table behind it.
+ *
+ *  THE VOICE IS STILL THE BAND'S. The sentence, the sign-off and the receipt are
+ *  `content/pages/koncerty.yaml` under `notice.*`, read through the desk overlay like every other
+ *  placement — this page says what the band says, in the shape a letter says it in. Only the
+ *  stationery is chrome (`i18n/content/nuntius.ts`, `letter`).
+ * @architecture Astro islands 2026
+ * @module components/NoticeLetter
+ */
+import { getImage } from "astro:assets";
+import type { ImageMetadata } from "astro";
+
+import { NoticeForm } from "../islands/landing/NoticeForm";
+import type { NoticeSurface } from "../islands/landing/api/notices";
+import { KONCERTY_PAGE } from "../i18n/content/koncerty";
+import { NUNTIUS } from "../i18n/content/nuntius";
+import type { RegisterEvening } from "../lib/noticeRegister";
+import { localizePath, type Locale } from "../i18n/config";
+import { chromeHtmlForIsland } from "../lib/islandCopy";
+import { pageCopy } from "../lib/pageCopy";
+import { photo } from "../lib/photos";
+/* The blank first, the room and the sheet second: the letter's own overrides of the object are
+   written one class stronger, but the order states the intent — the object is the shared thing. */
+import "../styles/notice-blank.css";
+import "../styles/notice-letter.css";
+
+interface Props {
+  lang: Locale;
+  /** Which screen this consent is being given on. Must exist in the backend's allowlist. */
+  surface: NoticeSurface;
+  /**
+   * The evening the next letter will be about. Optional: between seasons the corpus holds no
+   * station still ahead, and the sheet then carries its letterhead, its addressee and its sign-off
+   * — which is still a letter, where a slot with nothing in it would not be.
+   */
+  ahead?: RegisterEvening | undefined;
+}
+const { lang, surface, ahead } = Astro.props;
+
+const copy = pageCopy(KONCERTY_PAGE, lang);
+const nuntius = NUNTIUS[lang];
+const home = localizePath("/", lang);
+
+/* The clause is typeset and localized here, not in the island: the build's typography and link
+   passes skip island subtrees, so a clause handed over raw would be the one sentence on the site
+   that never met `lib/typo`, and in English its "privacy policy" link would point at the Polish
+   page. Same preparation `NoticeSignup` runs, for the same reason. */
+const islandProps = {
+  lang,
+  chrome: { ...nuntius.form, consentHtml: chromeHtmlForIsland(nuntius.form.consentHtml, lang) },
+  copy: {
+    sentTitle: copy.notice.sentTitle,
+    sentBody: copy.notice.sentBody,
+    sentHint: copy.notice.sentHint,
+  },
+  surface,
+} as const;
+
+/** The ladder each cut is offered at. Capped by the crop's own width in `srcset`. */
+const ROOM_WIDTHS = [900, 1300, 1700, 2100, 2560];
+const PHONE_WIDTHS = [500, 760, 1100];
+
+async function srcset(img: ImageMetadata, widths: readonly number[]): Promise<string> {
+  const usable = widths.filter((w) => w <= img.width);
+  if (usable.length === 0) usable.push(img.width);
+  const built = await Promise.all(usable.map((w) => getImage({ src: img, width: w, format: "webp" })));
+  return built.map((b, i) => `${b.src} ${usable[i]}w`).join(", ");
+}
+
+const spreadImg = photo("nuntius-room-spread");
+const wideImg = photo("nuntius-room-wide");
+const phoneImg = photo("nuntius-room-phone");
+
+const [spread, wide, phone, fallback] = await Promise.all([
+  srcset(spreadImg, ROOM_WIDTHS),
+  srcset(wideImg, ROOM_WIDTHS),
+  srcset(phoneImg, PHONE_WIDTHS),
+  getImage({ src: phoneImg, width: Math.min(phoneImg.width, 1100), format: "webp" }),
+]);
+
+/* The boxes that resolve wider than about 1.95:1, where the spread cut would push the singers'
+   heads up under the chrome: a 1920 window under ~1100px tall, a 1440 one under ~820, a phone held
+   sideways, and the stacked layout in a landscape window — a desktop at 200% zoom lands there.
+   Everything else takes the spread cut, and the phone held upright takes its own. */
+const WIDE_WHEN = [
+  "(min-width: 1700px) and (max-height: 1100px)",
+  "(min-width: 1200px) and (max-height: 820px)",
+  "(max-height: 560px) and (pointer: coarse)",
+  "(min-width: 641px) and (max-width: 899px) and (min-aspect-ratio: 121/100)",
+];
+/* The plate takes the whole stage below the spread breakpoint and everything but the sheet's
+   column above it. */
+const ROOM_SIZES = "(min-width: 900px) 78vw, 100vw";
+
+const moment = ahead
+  ? ahead.time && ahead.endTime
+    ? `${ahead.time}–${ahead.endTime}`
+    : (ahead.time ?? "")
+  : "";
+---
+
+<section class="letter-stage">
+  {/* The room bleeds to the top and the left and is hard-edged at the foot and on the right. It
+      enters UNDER the chrome, which is why the stage's head row is the bar's own height: nothing
+      but the photograph is ever laid beneath it. */}
+  <figure class="letter-room">
+    <div class="letter-plate">
+      <picture>
+        {WIDE_WHEN.map((media) => (
+          <source media={media} srcset={wide} sizes={ROOM_SIZES} width={wideImg.width} height={wideImg.height} />
+        ))}
+        <source
+          media="(min-width: 641px)"
+          srcset={spread}
+          sizes={ROOM_SIZES}
+          width={spreadImg.width}
+          height={spreadImg.height}
+        />
+        <img
+          src={fallback.src}
+          srcset={phone}
+          sizes={ROOM_SIZES}
+          width={phoneImg.width}
+          height={phoneImg.height}
+          alt={nuntius.letter.photoAlt}
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </picture>
+      {/* The sanctuary lamp's light, off at rest and lit only once the letter has been addressed:
+          the one thing in the photograph that answers the reader. */}
+      <div class="letter-bloom" aria-hidden="true"></div>
+    </div>
+  </figure>
+
+  <div class="letter-lede-row">
+    <h1 class="letter-lede">{copy.notice.lede}</h1>
+    {/* The box the exchange happens in — `NoticeForm` freezes its height before the receipt takes
+        the blank's place, so nothing above or below it moves while the reader is looking at it. */}
+    <div class="notice-letter-ask">
+      <NoticeForm client:load {...islandProps} placement="letter" />
+      <noscript>
+        <p class="letter-noscript">{nuntius.form.noscript}</p>
+      </noscript>
+    </div>
+    <p class="letter-credit">{nuntius.letter.photoCredit}</p>
+  </div>
+
+  <div class="letter-sheet-slot">
+    {/* NOT `tone-light`. That class is the contract that flips the whole chrome to paper glass, and
+        it is meant for a full-width band under the bar: a 500px sheet lying at the right edge of a
+        photograph would take the bar light across a screen that is night everywhere else. The
+        register below IS such a band, and it carries the class. */}
+    <article class="letter-sheet">
+      {/* The letterhead is the sender's mark, and the sender's mark is the site's: the same glyph
+          and the same serif the chrome wears, in ink because it lies on paper. */}
+      <header class="letter-head">
+        <a class="letter-mark" href={home} aria-label={`VoctEnsemble — ${nuntius.page.backHome}`}>
+          <span class="letter-glyph" aria-hidden="true"></span>VoctEnsemble
+        </a>
+        {ahead && <span class="letter-head-rubric">{nuntius.register.ahead}</span>}
+      </header>
+
+      {/* Not a field — the letter's own line, in the same shape as the blank under the photograph,
+          filled by the page's script as the reader writes. Hidden from assistive technology
+          because it is a MIRROR: announcing it would read the address back a second time. */}
+      <div class="letter-addressee" aria-hidden="true">
+        <span class="letter-to">{nuntius.letter.to}</span>
+        <p class="letter-to-line" data-letter-address></p>
+      </div>
+
+      {ahead && (
+        <div class="letter-evening">
+          <p class="letter-latin" lang="la">{ahead.latin}</p>
+          <h2 class="letter-title">
+            <a href={ahead.href}>{ahead.title}</a>
+          </h2>
+          <p class="letter-moment">
+            {ahead.fullMoment}
+            {moment && (
+              <>
+                {" · "}
+                <span class="letter-nowrap">{moment}</span>
+              </>
+            )}
+          </p>
+          <p class="letter-place">
+            {ahead.place}
+            {ahead.venueNote && <span class="letter-place-detail">{ahead.venueNote}</span>}
+          </p>
+
+          {/* The only music on the page: the line the evening is inscribed with, quoted as a letter
+              quotes it. Where the corpus states none, the letter simply carries no quotation. */}
+          {ahead.inscriptio && (
+            <blockquote class="letter-incipit">
+              <p><em>{ahead.inscriptio}</em></p>
+              <footer>
+                {ahead.inscriptioGloss && <span class="letter-gloss">{ahead.inscriptioGloss}</span>}
+                <a href={ahead.programHref}>{nuntius.letter.programme}</a>
+              </footer>
+            </blockquote>
+          )}
+        </div>
+      )}
+
+      {/* The band's own heading, standing here as what it has always been: the closing of a
+          letter. One wording, in the desk's hands, and the page's promise is signed with it. */}
+      <p class="letter-signoff">{copy.notice.h2}</p>
+      <p class="letter-signature">VoctEnsemble</p>
+    </article>
+  </div>
+</section>
+
+<script>
+  /* Three things the letter needs from the page: the address written onto the sheet as it is
+     typed, the chrome told when a paper surface is under it, and the arrival released. All three
+     are page-local because all three cross a boundary an island may not: the sheet is the server's
+     markup, the bar belongs to the site, and the root is the document's.
+
+     THIS MODULE RUNS ONCE PER SESSION, NOT ONCE PER VISIT. Under ClientRouter a module already
+     evaluated is not evaluated again when its page is reached a second time, while every node it
+     found the first time is gone with the swap. So nothing here holds an element: the mirror looks
+     its targets up at event time, and the per-document work is done by `arm`, at module time for
+     the document this module arrived in and on `astro:after-swap` for every one after it — the
+     one moment with the new DOM in place and the new frame not yet painted. `astro:page-load` is
+     the wrong hook for the arrival: on a cold load it waits for the window's `load`, i.e. for the
+     room's photograph. */
+  interface NoticeAddressDetail {
+    value: string;
+    state: "writing" | "sent";
+  }
+
+  /* The island announces on `window` rather than reaching for the line itself — React must not
+     write into a tree it does not own, and the sheet must not become one. */
+  window.addEventListener("voct:notice-address", (event) => {
+    const line = document.querySelector<HTMLElement>("[data-letter-address]");
+    const sheet = document.querySelector<HTMLElement>(".letter-sheet");
+    const stage = document.querySelector<HTMLElement>(".letter-stage");
+    if (!line || !sheet || !stage) return;
+    const { value, state } = (event as CustomEvent<NoticeAddressDetail>).detail;
+    line.textContent = value;
+    line.classList.toggle("has-text", value.length > 0);
+    sheet.classList.toggle("is-addressed", state === "sent");
+    /* The lamp answers the commitment, not the typing. */
+    stage.classList.toggle("is-committed", state === "sent");
+  });
+
+  let paperWatch: IntersectionObserver | undefined;
+
+  const arm = () => {
+    paperWatch?.disconnect();
+    paperWatch = undefined;
+    /* After a swap this runs on every page of the site; only the letter's own has work. */
+    if (!document.querySelector(".letter-stage")) return;
+
+    /* The bar over a light surface, on the contract /koncerty already keeps: the sheet and the
+       register are paper, and the chrome wears its paper glass while either of them is under it. */
+    const chrome = document.getElementById("chrome");
+    const paper = [...document.querySelectorAll(".tone-light")];
+    if (chrome && paper.length > 0) {
+      const lit = new Set<Element>();
+      const watch = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) lit.add(entry.target);
+            else lit.delete(entry.target);
+          }
+          chrome.classList.toggle("is-light", lit.size > 0);
+        },
+        { rootMargin: "-64px 0px -90% 0px", threshold: 0 },
+      );
+      paper.forEach((el) => watch.observe(el));
+      paperWatch = watch;
+    }
+
+    /* The arrival: the sheet is laid down and the two blanks rule themselves under it. The lifted
+       state is already the page's — `html.voct-motion`, put on the root before this document's
+       first frame by DocumentGates, which also settles reduced motion, so this page never decides
+       either. What it adds is the release, and it must land AFTER a frame has been painted lifted,
+       or the transition has nowhere to start from: the first callback runs before that frame's
+       paint, the second after it. The swap wipes the class off the root on the way out. */
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => document.documentElement.classList.add("letter-in")),
+    );
+  };
+
+  arm();
+  document.addEventListener("astro:after-swap", arm);
+</script>

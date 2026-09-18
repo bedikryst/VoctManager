@@ -72,9 +72,11 @@ const { copy, chrome, lang } = Astro.props;
 
 const upcoming = upcomingStation(await getCollection("concerts"));
 const hrefConcerts = localizePath("/koncerty", lang);
-// The band that takes the consent, on the page that says why there is one — the same door the
-// hero's dateline, the open card and /kontakt already point at.
-const hrefNotice = `${hrefConcerts}#nuntius`;
+// The page that IS the list, on its first screen — the footer's destination, for the footer's
+// reason: a reader leaving the announcement has not walked /koncerty's cycle and would land on
+// that page's band two screens below its head. The landing's own sheet under the register is the
+// door for the reader who reads on; this one is for the reader who wants the list now.
+const hrefNotice = localizePath("/newsletter", lang);
 const invitation = NUNTIUS[lang].invitation;
 
 /** This evening's words, in this locale: the overlay's translation where one exists, the corpus's

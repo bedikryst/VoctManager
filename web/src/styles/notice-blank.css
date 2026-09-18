@@ -1,0 +1,216 @@
+/**
+ * @file notice-blank.css
+ * @description THE LETTER'S BLANK — how the sign-up island is dressed on /newsletter, where the
+ *  page is the letter: a form letter's line (`Na adres ______`), the act as a bar of the letter's
+ *  paper with the arrow that sends it, the refusal under the rule, and the one-line clause.
+ *  Imported by `NoticeLetter.astro` and by nothing else. The same island stands on /koncerty, in
+ *  the landing's footer and on /kontakt, and there it wears none of this: each of those pages
+ *  dresses the blank from its own materials (`notice.css` for the night band, the landing's
+ *  `06-footer.css` for the strip, `ContactPage` for the door). Carrying this sheet onto them was
+ *  tried and refused on sight — a paper bar in a footer of hairlines and italic verbs is a patch.
+ *
+ *  ITS OWN SHEET, NOT A SECTION OF `notice-letter.css`: what it dresses is rendered by React inside
+ *  an island, and the letter's sheet is otherwise the room and the sheet of paper — the two
+ *  concerns read better apart, and this one is the one that answers for the island's classes.
+ *
+ *  COLOUR IS A LEDGER ON `.notice-form`, so the letter's palette is stated once and read by every
+ *  rule below.
+ *
+ *  Tokens (--paper, --ink, --dark, --candle, --serif, --sans, --ease) come from the globally
+ *  imported tokens.css. `cqw` resolves against the letter's stage.
+ * @architecture Astro islands 2026
+ * @module styles/notice-blank
+ */
+
+.notice-form {
+  --blank-label: rgb(244 241 233 / 0.7);
+  --blank-text: var(--paper);
+  --blank-rule: rgb(244 241 233 / 0.42);
+  --blank-rule-focus: var(--paper);
+  --blank-refusal: #e8a08c;
+  --blank-autofill-ground: var(--dark);
+  --blank-act-ground: var(--paper);
+  --blank-act-ground-hover: #fbf9f4;
+  --blank-act-ground-busy: rgb(244 241 233 / 0.72);
+  --blank-act-ink: var(--ink);
+  --blank-act-ring: var(--candle);
+  --blank-fine: rgb(244 241 233 / 0.6);
+  --blank-fine-link: rgb(244 241 233 / 0.86);
+  --blank-fine-rule: rgb(244 241 233 / 0.32);
+}
+
+/* ── The blank ─────────────────────────────────────────────────────────────────
+   A form letter's: the label stands on the line's own baseline and the rule runs on from it, so an
+   empty field reads as something to write on. With the label hung an input's height above the rule
+   the same field read as a separator — which is what an example address had been hiding. */
+.notice-blank {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.notice-blank-label {
+  flex-shrink: 0;
+  margin: 0;
+  color: var(--blank-label);
+  font-family: var(--serif);
+  font-size: clamp(19px, 1.45cqw, 23px);
+  font-style: italic;
+  line-height: 1;
+}
+
+.notice-blank-line {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Drawn, not printed. The letter rules it on arrival in the same gesture as the addressee's line
+   on the sheet (`notice-letter.css`, Motion); everywhere else it is simply there. */
+.notice-blank-line::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: var(--blank-rule);
+  transform-origin: 0 50%;
+  transition: background-color 0.3s ease;
+}
+
+.notice-blank-line:focus-within::after {
+  background: var(--blank-rule-focus);
+}
+
+.notice-blank-line:has(.notice-email[aria-invalid="true"])::after {
+  background: var(--blank-refusal);
+}
+
+/* One class over the bare `.notice-email`, so this rule stays the letter's should the receipt
+   page's base field rule (`notice.css`) ever be loaded beside it. */
+.notice-blank .notice-email {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 6px 0 10px;
+  border: 0;
+  background: none;
+  color: var(--blank-text);
+  caret-color: var(--blank-text);
+  font-family: var(--sans);
+  font-size: clamp(20px, 1.5cqw, 24px);
+  font-weight: 300;
+  line-height: 1.3;
+  cursor: text;
+  transition: none;
+}
+
+.notice-blank .notice-email:focus {
+  outline: none;
+}
+
+/* The browser's autofill would paint a pale box on the ground; keep it the ground's own. */
+.notice-blank .notice-email:-webkit-autofill,
+.notice-blank .notice-email:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--blank-text);
+  box-shadow: 0 0 0 1000px var(--blank-autofill-ground) inset;
+  transition: background-color 9999s ease-out;
+}
+
+.notice-form > .notice-error {
+  margin: 8px 0 0;
+  color: var(--blank-refusal);
+  font-family: var(--sans);
+  font-size: 13.5px;
+  letter-spacing: 0;
+  line-height: 1.45;
+}
+
+/* ── The act ───────────────────────────────────────────────────────────────────
+   A BAR OF THE LETTER'S PAPER. On the night side there is one paper object besides the letter, and
+   it is the thing that sends it. */
+.notice-act {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 52px;
+  margin: 16px 0 0;
+  padding: 0 18px 0 20px;
+  border: 0;
+  background: var(--blank-act-ground);
+  color: var(--blank-act-ink);
+  font-family: var(--sans);
+  font-size: 14.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.notice-act-arrow {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1;
+  transition: transform 0.45s var(--ease);
+}
+
+.notice-act:hover,
+.notice-act:focus-visible {
+  background: var(--blank-act-ground-hover);
+}
+
+.notice-act:hover .notice-act-arrow,
+.notice-act:focus-visible .notice-act-arrow {
+  transform: translateX(8px);
+}
+
+.notice-act:focus-visible {
+  outline: 2px solid var(--blank-act-ring);
+  outline-offset: 4px;
+}
+
+.notice-act:disabled {
+  background: var(--blank-act-ground-busy);
+  cursor: progress;
+}
+
+/* ── The clause ────────────────────────────────────────────────────────────────
+   STATED, NEVER TICKED — see the note on `consentBlock` in `NoticeForm.tsx`. Fine print at a fine
+   print's measure, and readable: a clause nobody can read is not the informed half of informed
+   consent. */
+.notice-form .notice-consent-text {
+  margin: 12px 0 0;
+  color: var(--blank-fine);
+  font-size: 12px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.notice-form .notice-consent-text a {
+  color: var(--blank-fine-link);
+  border-bottom: 1px solid var(--blank-fine-rule);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    color 0.35s var(--ease),
+    border-color 0.35s var(--ease);
+}
+
+.notice-form .notice-consent-text a:hover {
+  color: var(--blank-text);
+  border-color: var(--blank-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notice-act,
+  .notice-act-arrow,
+  .notice-blank-line::after {
+    transition: none;
+  }
+}

@@ -13,9 +13,9 @@
  *  subject-prefilled mailto and a copy-to-clipboard button (a bare mailto is a real desktop failure
  *  when no mail client is configured). Then an honest "three voices" signature: the foundation
  *  board answers together, so the three people are named instead of faking a per-channel owner.
- *  Then the one route that runs the OTHER WAY — the concert notice list's own sign-up, on a night
- *  ground — because a page about correspondence should not send a reader elsewhere to leave an
- *  address. Then ONE paper-soft band carrying all the administrative weight — foundation, a
+ *  Then the one route that runs the OTHER WAY — the concert notice list's own sign-up, set as a
+ *  fourth door in the three doors' own shape — because a page about correspondence should not
+ *  send a reader elsewhere to leave an address. Then ONE paper-soft band carrying all the administrative weight — foundation, a
  *  mail-only correspondence address (no map, nobody works there), and the data-controller note —
  *  so nothing floats as small print in a void, and a quiet coda closes.
  *
@@ -216,12 +216,15 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           `web:kontakt` is declared in the two places that list them, `NoticeSurface` here and
           `NOTICE_SURFACES` in `backend/outreach/serializers.py`.
 
-          It takes the NIGHT ground rather than this page's parchment: notice.css dresses the
-          band for night throughout (paper text, hairline fields), and re-stating every one of
-          those values for one parchment instance is the doubling that sheet's header forbids.
-          A dark inset also says what the band is — the page's one turn of direction. Same
-          arrangement as the vacat leaf's `.nf-notice`. ── */}
-    <section class="notice-band kontakt-notice" aria-label={nuntius.form.bandAria}>
+          IT IS THE FOURTH DOOR, ON THE PAGE'S OWN PARCHMENT. The three doors above show an
+          address the reader writes to; this one is a line the reader writes their own on — the
+          same row (a hairline over and under it), the same serif line, the same capsule at the
+          end of the line that copies an address on the three and sends one here. It stood for a
+          while as a dark inset dressed by the night band's sheet, which was a foreign ground
+          laid on this page; take that out and the page closed without a trace, which is the
+          test a placement has to fail to belong. The dress is this file's (`.notice-door`
+          below), because the materials are this page's. ── */}
+    <section class="notice-door" aria-label={nuntius.form.bandAria}>
       <NoticeSignup lang={lang} surface="web:kontakt" />
     </section>
 
@@ -341,14 +344,69 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .after-channels :global(a) { border-bottom: 1px solid var(--line-strong); transition: color .3s var(--ease), border-color .3s var(--ease); }
   .after-channels :global(a:hover) { color: var(--candle-blue); border-color: var(--candle-blue); }
 
-  /* The notice list — a route, not a channel, so it keeps its own hairline rather than a row in
-     the three-door list. Set at the weight of `.after-channels` prose, one rubric above it: this
-     is an offer, and it must not out-shout the three addresses that ARE this page. Gold as INK
-     (--candle at 2.10:1 on parchment would make a rubric this small unreadable); the section
-     already declares --lat-ink, so both tiers of the rubric move together. */
-  /* The band's own ground on this page — everything inside it is dressed for night by
-     styles/notice.css, which is global (it has to be: most of what it dresses is React). */
-  .kontakt-notice { background: var(--night); }
+  /* ── The fourth door ─────────────────────────────────────────────────────────
+     The notice list's ask, built from this page's doors and nothing else: the section's rubric
+     over it (eyebrow + Latin, gold as INK — `--candle` at 2.10:1 on parchment cannot carry a
+     rubric this small), the promise at the intro's italic grade a step down, then ONE ROW in the
+     doors' own shape — hairline over and under, the line in `.channel-mail`'s serif, the act as
+     the `.channel-copy` capsule at the end of the line — and the clause at the hint's grade. Not
+     inside the `Tres ianuae` list: those are three ways of writing TO us, and a fourth under that
+     count would be a false one; this is the one way we write to the reader, and it stands where
+     the page turns direction.
+
+     `:global()` on every inner selector, because the island's markup is React's and carries no
+     scope attribute (a scoped `.notice-form` would match nothing). The night band's sheet
+     (styles/notice.css) is loaded by the component and says colours for night; every rule here
+     outranks it by the scoped `.notice-door` compound, so on this parchment nothing of the night
+     reaches through. Layout rules carry `:not([data-sent])` because the receipt centres
+     `.notice-inner[data-sent]` from that sheet and must keep doing so here. */
+  .notice-door { padding: clamp(64px, 9vw, 120px) var(--gutter); --lat-ink: var(--candle-ink); }
+  .notice-door :global(.notice-inner) { max-width: 920px; margin: 0 auto; }
+  .notice-door :global(.notice-inner:not([data-sent])) { text-align: left; }
+  .notice-door :global(.notice-say .notice-rubric) { color: var(--ink-muted); }
+  .notice-door :global(.notice-promise) { margin: 18px 0 0; max-width: 40ch; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(18px, 1.7vw, 22px); line-height: 1.5; color: var(--ink-soft); }
+
+  /* The row. Its air matches a `.channel`'s; the capsule sits on the line's baseline. */
+  .notice-door :global(.notice-form) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 18px; row-gap: 12px; margin: clamp(30px, 4vw, 44px) 0 0; padding: clamp(22px, 3vw, 32px) 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  /* The key ON the line's baseline, the rule running on from it — hung above, an empty line read
+     as a separator (the finding the letter's blank was built on). */
+  .notice-door :global(.notice-blank) { display: flex; align-items: baseline; gap: 16px; min-width: 0; }
+  /* The label at the grade this page gives a datum's name (`.aside-block h3` in the seat band). */
+  .notice-door :global(.notice-blank-label) { flex: none; margin: 0; white-space: nowrap; font-family: var(--capitalis); font-size: 10px; font-weight: 400; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-muted); }
+  .notice-door :global(.notice-blank-line) { position: relative; display: block; flex: 1 1 auto; min-width: 0; }
+  .notice-door :global(.notice-blank-line::after) { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line-strong); transition: background-color .3s var(--ease); }
+  .notice-door :global(.notice-blank-line:focus-within::after) { background: var(--candle); }
+  .notice-door :global(.notice-blank-line:has(.notice-email[aria-invalid="true"])::after) { background: #9b4f38; }
+  /* The reader's address in the doors' serif at the doors' grade — the one line on this page
+     that is theirs. */
+  .notice-door :global(.notice-email) { display: block; width: 100%; margin: 0; padding: 0 0 6px; border: 0; background: none; color: var(--ink); caret-color: var(--ink); font-family: var(--serif); font-size: clamp(22px, 3.2vw, 34px); font-weight: 300; line-height: 1.15; transition: none; }
+  .notice-door :global(.notice-email:focus) { outline: none; }
+  .notice-door :global(.notice-email:-webkit-autofill),
+  .notice-door :global(.notice-email:-webkit-autofill:focus) { -webkit-text-fill-color: var(--ink); box-shadow: 0 0 0 1000px var(--paper) inset; transition: background-color 9999s ease-out; }
+  /* `.channel-copy`'s capsule, in the accent because on this door it is the act and not a
+     convenience; hover fills, as the page's accent does on its links' rules. */
+  .notice-door :global(.notice-act) { display: inline-flex; align-items: center; margin: 0 0 6px; padding: 7px 14px; border: 1px solid color-mix(in srgb, var(--candle-ink) 55%, transparent); border-radius: 999px; background: transparent; color: var(--candle-ink); cursor: pointer; font-family: var(--capitalis); font-size: 9.5px; font-weight: 600; letter-spacing: .16em; line-height: 1.3; text-transform: uppercase; white-space: nowrap; transition: color .3s var(--ease), border-color .3s var(--ease), background-color .3s var(--ease), opacity .3s var(--ease); }
+  .notice-door :global(.notice-act:hover:not(:disabled)),
+  .notice-door :global(.notice-act:focus-visible) { background: var(--candle-ink); border-color: var(--candle-ink); color: var(--paper); }
+  .notice-door :global(.notice-act:focus-visible) { outline: 2px solid var(--candle-ink); outline-offset: 4px; }
+  .notice-door :global(.notice-act:disabled) { cursor: progress; opacity: .55; }
+  .notice-door :global(.notice-form > .notice-error) { grid-column: 1 / -1; margin: -2px 0 0; color: #9b4f38; font-family: var(--sans); font-size: 13.5px; letter-spacing: 0; line-height: 1.45; }
+  /* The clause at `.channel-hint`'s grade: the fine print under a door's line. */
+  .notice-door :global(.notice-consent-text) { grid-column: 1 / -1; margin: 2px 0 0; max-width: 56ch; color: var(--ink-muted); font-size: clamp(13.5px, 1.05vw, 14.5px); line-height: 1.65; text-wrap: pretty; }
+  .notice-door :global(.notice-consent-text a) { color: var(--ink-soft); border-bottom: 1px solid var(--line-strong); text-decoration: none; white-space: nowrap; transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .notice-door :global(.notice-consent-text a:hover) { color: var(--candle-blue); border-color: var(--candle-blue); }
+  /* The receipt and the fallback in this page's ink — the night sheet's literals do not read on
+     parchment. */
+  .notice-door :global(.notice-done-title) { color: var(--ink); }
+  .notice-door :global(.notice-done-body) { color: var(--ink-soft); }
+  .notice-door :global(.notice-done-hint),
+  .notice-door :global(.notice-noscript) { color: var(--ink-muted); }
+  .notice-door :global(.notice-done-mark) { color: var(--candle-ink); }
+  .notice-door :global(.notice-done .notice-error) { color: #9b4f38; }
+  @media (max-width: 560px) {
+    .notice-door :global(.notice-form) { grid-template-columns: minmax(0, 1fr); }
+    .notice-door :global(.notice-act) { justify-self: start; margin-bottom: 0; }
+  }
 
   /* Three voices — honest signature */
   .voices { margin: clamp(40px, 5vw, 60px) 0 0; padding-top: clamp(28px, 3.6vw, 40px); border-top: 1px solid var(--line); }

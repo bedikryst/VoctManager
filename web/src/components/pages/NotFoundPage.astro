@@ -31,11 +31,9 @@ import { getImage } from "astro:assets";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
-import NoticeSignup from "../NoticeSignup.astro";
 import { DEFAULT_LOCALE, localizePath, type Locale } from "../../i18n/config";
 import { CONCERT } from "../../i18n/content/koncert";
 import { NOT_FOUND_CHROME, NOT_FOUND_PAGE } from "../../i18n/content/notFound";
-import { NUNTIUS } from "../../i18n/content/nuntius";
 import { UI } from "../../i18n/ui";
 import { pageCopy } from "../../lib/pageCopy";
 import { bleedPair } from "../../lib/photos";
@@ -113,39 +111,29 @@ const ogImage = (
       </div>
     </section>
 
-    {/* The one page on this site where the reader has ALREADY failed to find something, which is
-        what makes an offer here hospitable rather than an interruption: it is the only thing this
-        leaf can hand someone that is not another way back. It is also the net under the sign-up's
-        own address — a mistyped `/newsletter` lands here, on the form it was reaching for.
-        The same component as the band on /koncerty and the page at /newsletter; `surface` is what
-        tells the consent record which of the three screens the clause was read on. */}
-    <section class="notice-band nf-notice" aria-label={NUNTIUS[lang].form.bandAria}>
-      <NoticeSignup lang={lang} surface="web:404" />
-    </section>
+    {/* No sign-up form on this leaf. The list's door here is the footer's own `Nuntius` stanza,
+        one screen down, which links to /newsletter — a mistyped `/newsletter` lands here and is
+        one click from the letter. A form stood here for a while, dressed by the night band's
+        sheet as a dark inset under the hero; two doors to one list on one short page, and the
+        second was an object from another page. */}
   </main>
 
   <SiteFooter lang={lang} />
 </BaseLayout>
 
 <style>
-  /* The leaf's own band. It no longer holds the page open on its own — the notice band below it
-     does that — so the viewport-filling `min-height` it used to carry is gone: kept, it would
-     have pushed the sign-up entirely past the fold on every screen, which is the one thing this
-     page was changed to avoid. The generous padding still keeps the blank leaf from reading as a
-     cramped error box. */
+  /* The leaf's own band holds the page open by itself: the viewport floor keeps a short body from
+     leaving the footer floating halfway up the screen, and the generous padding keeps the blank
+     leaf from reading as a cramped error box. */
   .nf-hero {
     background: var(--dark);
     color: var(--paper);
     display: flex;
     align-items: center;
+    min-height: 100svh;
     padding: clamp(140px, 18vw, 220px) var(--gutter) clamp(80px, 11vw, 140px);
   }
   .nf-inner { max-width: 760px; margin: 0 auto; width: 100%; }
-
-  /* `.notice-band` is transparent by design — on /koncerty the night is the body's own. This page
-     paints its ground per section, so the band is given the same one the hero above it stands on
-     or its paper-coloured type would land on parchment. */
-  .nf-notice { background: var(--dark); }
 
   .nf-dot { opacity: 0.45; margin: 0 0.5em; }
 

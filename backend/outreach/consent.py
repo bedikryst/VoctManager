@@ -30,19 +30,21 @@ without the meaning changing makes the history unreadable.
 # 3.0 is the clause becoming a LAYERED NOTICE, which is a change of what is on screen and
 # therefore a change of what was consented to. Art. 13 requires the information to be PROVIDED
 # when the data is collected, and the EDPB's transparency guidelines (WP260) are explicit that a
-# short first layer carrying the controller, the purpose and the way out — with the full account
-# one link away — is how that is met. So the form states those three, links the policy, and lets
-# the policy carry what left the screen: the data mailbox and the confirmation link's own
-# validity. Nothing about the processing changed; where the reader meets it did.
+# short first layer — with the full account one link away — is how that is met. The first layer
+# is ONE LINE: the controller by name, and the policy linked. The purpose stands directly above it
+# on every placement (the band's own sentence: concerts, and only concerts), so the clause does not
+# restate it; the way out, the data mailbox, the confirmation link's validity and the successor are
+# carried by the policy and by every letter. Nothing about the processing changed; where the
+# reader meets it did.
 #
-# WHAT DID NOT LEAVE THE SCREEN IS THE SUCCESSOR, and the reason is a decision rather than a
-# drafting preference. A consent given to one controller does not silently cover another, so the
-# board settled (wariant B, 2026-09) that the list passing to whoever carries the ensemble on has
-# to be read BEFORE the address is given, not only found in the policy afterwards — the note above
-# § *Lista zaproszeń* in `web/src/content/pages/polityka-prywatnosci.yaml` states that in as many
-# words. A first pass at this version cut the sentence to fit a column; the column was the thing
-# that was wrong, and it was widened instead. If that sentence is ever dropped again it is the
-# board's call to make and this comment is the thing to change with it.
+# THE SUCCESSOR LEFT THE SCREEN, and that is a decision (developer, 2026-09-17), not a drafting
+# preference. A consent given to one controller does not silently cover another, and the board's
+# earlier answer (wariant B, 2026-09) put the succession sentence on the form for that reason. The
+# three-sentence clause it produced was judged over-engineered for a form letter's blank: what
+# has to stand on screen is the administrator by name, and the link and the letter carry the rest.
+# The sentence lives in the note above § *Lista zaproszeń* in
+# `web/src/content/pages/polityka-prywatnosci.yaml`; if it ever returns to the form, this comment
+# is the thing to change with it.
 #
 # 3.0 also drops the tick box that used to carry this clause. THAT ALONE WOULD NOT BE A BUMP:
 # consent is a statement or a clear affirmative action (art. 4(11), recital 32), the box was

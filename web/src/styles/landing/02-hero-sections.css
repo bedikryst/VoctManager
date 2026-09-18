@@ -487,10 +487,17 @@
     padding-bottom: var(--space-xl);
   }
 
+  /* The gap is a property of the SECTION, not of the grid, because a block standing beside the grid
+     may need to measure itself against the grid's columns (the register's liniatura, which takes
+     the body column's measure from the section's left edge). */
+  .section {
+    --section-gap: clamp(42px, 8vw, 150px);
+  }
+
   .section-grid {
     display: grid;
     grid-template-columns: minmax(160px, 0.32fr) minmax(0, 1fr);
-    gap: clamp(42px, 8vw, 150px);
+    gap: var(--section-gap);
   }
 
   .section-label {

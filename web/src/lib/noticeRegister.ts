@@ -43,8 +43,12 @@ export interface RegisterStation {
     readonly title: string;
     readonly hasPage: boolean;
     readonly venue?: string;
+    readonly venueNote?: string;
     readonly date?: string;
     readonly time?: string;
+    readonly endTime?: string;
+    readonly inscriptio?: string;
+    readonly inscriptioGloss?: LocalizedText;
     readonly dateLabel?: LocalizedText;
     readonly about?: { readonly place?: string; readonly blurb?: string };
   };
@@ -69,6 +73,22 @@ export interface RegisterEvening {
    * something a reader acts on, and beside an evening already sung it is a fact about nothing.
    */
   readonly time: string | undefined;
+  /**
+   * The end of the SLOT where the organiser published one — never a duration of ours. Printed as
+   * the far side of a window ("13:30–14:30") beside `time`, and only for the evening ahead.
+   */
+  readonly endTime: string | undefined;
+  /** Which room, in a building that has two. Empty where the corpus names none. */
+  readonly venueNote: string;
+  /**
+   * The evening's inscription, in its own language, and its vernacular rendering. This is the one
+   * line on the letter that no other ensemble could print — what will be sung, quoted as the
+   * letter quotes it — so where the corpus states none the letter simply has no quotation.
+   */
+  readonly inscriptio: string;
+  readonly inscriptioGloss: string;
+  /** The evening's programme, where it has a page: the letter's one link out of itself. */
+  readonly programHref: string;
   /**
    * The evening's own sentence (`about.blurb`), copy and translated through the overlay. Carried
    * for every entry and spent only by the one still ahead: five of them down the index would be a
@@ -116,16 +136,30 @@ export const noticeRegister = (
     const place = entry.data.about?.place
       ? say("about.place", entry.data.about.place)
       : (entry.data.venue ?? "");
+    const href = entry.data.hasPage
+      ? `${concertsHref}/${entry.id}`
+      : `${concertsHref}#${entry.id}`;
     return {
       id: entry.id,
-      href: entry.data.hasPage ? `${concertsHref}/${entry.id}` : `${concertsHref}#${entry.id}`,
+      href,
+      /* The band `#program` is the page's own anchor; an evening with no page of its own has
+         nothing to open, so the link falls back to its place on the walk. */
+      programHref: entry.data.hasPage ? `${href}#program` : href,
       roman: numerals.get(entry.id) ?? "",
       latin: entry.data.latin,
       title: say("title", entry.data.title),
       place,
+      venueNote: entry.data.venueNote ? say("venueNote", entry.data.venueNote) : "",
       moment,
       fullMoment: say("dateLabel", longMoment(entry.data, locale)),
       time: entry.data.time,
+      endTime: entry.data.endTime,
+      /* The original is content, not language: printed unchanged in every locale, with the
+         vernacular beneath it (`content.config.ts`, rule 1). */
+      inscriptio: entry.data.inscriptio ?? "",
+      inscriptioGloss: entry.data.inscriptioGloss?.pl
+        ? say("inscriptioGloss", entry.data.inscriptioGloss.pl)
+        : "",
       blurb: entry.data.about?.blurb ? say("about.blurb", entry.data.about.blurb) : "",
     };
   });

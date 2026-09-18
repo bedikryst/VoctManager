@@ -79,11 +79,12 @@ export interface NoticeFormChrome {
   readonly emailLabel: string;
   readonly emailPlaceholder: string;
   /**
-   * The one optional field. THE LABEL CARRIES THE WORD "OPTIONAL" AND NOTHING ELSE: what the
-   * name is FOR is stated in the clause a few centimetres below, which the reader has to read
-   * anyway, and a hint repeating it would be the same promise made twice on one screen. What
-   * the label may not do is stay silent about the field being optional — a name asked for
-   * without that word is a name most people will believe is required.
+   * The one optional field, on the band and the strip only — the letter asks for no name, and
+   * the receipt page (`preferences`) is where a confirmed reader is asked. THE LABEL CARRIES THE
+   * WORD "OPTIONAL" AND NOTHING ELSE: what the name is for (the greeting of the letter, and
+   * nothing else) is stated in the privacy policy the clause links. What the label may not do is
+   * stay silent about the field being optional — a name asked for without that word is a name
+   * most people will believe is required.
    */
   readonly nameLabel: string;
   readonly namePlaceholder: string;
@@ -91,6 +92,16 @@ export interface NoticeFormChrome {
   readonly consentHtml: string;
   readonly submit: string;
   readonly submitting: string;
+  /**
+   * The letter's own two words, and they are the letter's voice rather than a form's. The blank
+   * under the photograph is a form letter's — "Na adres ______" — so the label stands ON the
+   * line's baseline and the rule runs on from it; that is what lets the field carry no example
+   * address without reading as a stray separator. `addressLine` therefore names the line, not the
+   * data in it, and the word "e-mail" is added for a screen reader alone.
+   */
+  readonly addressLine: string;
+  /** The act on the letter: a bar of the letter's own paper, wide enough to read as a sentence. */
+  readonly commit: string;
   /** Errors, in the order the form checks them. `errorSend` names the inbox to write to. */
   readonly errorEmail: string;
   readonly errorSend: string;
@@ -226,6 +237,31 @@ export interface NuntiusSignupChrome {
  * page that the database could contradict. What the block honestly shows is what the ensemble has
  * sung — which is the same cadence, stated as a fact instead of as a claim.
  */
+/**
+ * The letter on /newsletter — the words the SHEET wears, and only those. The evening it carries is
+ * derived from the corpus like everything in the register; what is here is the stationery: the word
+ * a letter puts before its addressee, the way into the evening's programme, and the two lines the
+ * photograph owes the person who took it.
+ *
+ * THE SIGN-OFF IS NOT HERE. "Do zobaczenia." is the band's own heading (`koncerty.yaml`,
+ * `notice.h2`), and the letter signs itself with it — one wording, in the desk's hands, standing
+ * once as the page's promise and once as the letter's closing.
+ */
+export interface NuntiusLetterChrome {
+  /** Before the addressee's line, as a letter puts it: "Do ______". */
+  readonly to: string;
+  /** The evening's programme — the letter's one link out of itself. */
+  readonly programme: string;
+  /**
+   * What the photograph shows, for a reader who cannot see it. It names the ensemble, the room and
+   * what is happening in it, because the picture is the page's argument and an alt that said
+   * "concert photograph" would withhold exactly that.
+   */
+  readonly photoAlt: string;
+  /** Whose hand the frame is, and from which evening. A name stays itself in every locale. */
+  readonly photoCredit: string;
+}
+
 export interface NuntiusRegisterChrome {
   /** Over the evening still ahead — the one the next letter will be about. */
   readonly ahead: string;
@@ -241,6 +277,7 @@ export interface NuntiusChrome {
   readonly signup: NuntiusSignupChrome;
   readonly register: NuntiusRegisterChrome;
   readonly invitation: NuntiusInvitation;
+  readonly letter: NuntiusLetterChrome;
 }
 
 const CONTACT_MAILBOX = "kontakt@voctensemble.com";
@@ -254,13 +291,12 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       nameLabel: "Imię — nieobowiązkowe",
       namePlaceholder: "Ania",
       consentHtml:
-        `Zapisując się, prosisz Fundację VoctFoundation o zaproszenia na koncerty VoctEnsemble. ` +
-        `Imię trafia wyłącznie do powitania listu, a wypisujesz się jednym kliknięciem ` +
-        `w każdej wiadomości. Gdyby Fundacja zakończyła działalność, lista może przejść do ` +
-        `osoby prowadzącej dalej ten zespół — uprzedzimy o tym osobną wiadomością. Reszta ` +
-        `jest w <a href="/polityka-prywatnosci">polityce prywatności</a>.`,
+        `Adres przetwarza Fundacja VoctFoundation, zgodnie ` +
+        `z <a href="/polityka-prywatnosci">polityką prywatności</a>.`,
       submit: "Zapisz mnie",
       submitting: "Wysyłamy…",
+      addressLine: "Na adres",
+      commit: "Chcę otrzymywać zaproszenia",
       errorEmail: "Podaj adres e-mail, na który mamy napisać.",
       errorSend: `Nie udało się wysłać. Spróbuj ponownie albo napisz na ${CONTACT_MAILBOX}.`,
       pendingAddressLabel: "Wpisany adres",
@@ -396,6 +432,16 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       line: "Napiszemy przed następnym Koncertem Duchowym.",
       cta: "Otrzymuj zaproszenia",
     },
+    letter: {
+      to: "Do",
+      programme: "Program wieczoru",
+      photoAlt:
+        "VoctEnsemble śpiewa w ciemnej nawie bazyliki NSPJ w Krakowie: rozświetlone twarze nad " +
+        "czarnymi nutami, mosiężny pulpit na pierwszym planie, w głębi wieczna lampka",
+      photoCredit:
+        "Na zdjęciu: 9 Kart z Księgi Psalmów, bazylika NSPJ w Krakowie, listopad 2024 · " +
+        "fot. Kamila Grudzińska",
+    },
   },
 
   en: {
@@ -406,13 +452,12 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       nameLabel: "First name — optional",
       namePlaceholder: "Anna",
       consentHtml:
-        `By signing up you are asking Fundacja VoctFoundation for invitations to VoctEnsemble's ` +
-        `concerts. A first name is used only in the letter's greeting, and one click in any ` +
-        `message takes you off the list. Were the foundation to wind up, the list may pass to ` +
-        `whoever carries this ensemble on — we would tell you separately first. The rest is ` +
-        `in the <a href="/polityka-prywatnosci">privacy policy</a>.`,
+        `The address is processed by Fundacja VoctFoundation, in accordance with the ` +
+        `<a href="/polityka-prywatnosci">privacy policy</a>.`,
       submit: "Put me on the list",
       submitting: "Sending…",
+      addressLine: "Write to",
+      commit: "Send me the invitations",
       errorEmail: "Give us an address to write to.",
       errorSend: `We could not send it. Try again, or write to ${CONTACT_MAILBOX}.`,
       pendingAddressLabel: "The address you entered",
@@ -544,6 +589,16 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       line: "We will write before the next Spiritual Concert.",
       cta: "Receive the invitations",
     },
+    letter: {
+      to: "To",
+      programme: "The evening's programme",
+      photoAlt:
+        "VoctEnsemble singing in the dark nave of the Sacred Heart basilica in Kraków: lit faces " +
+        "over black folders, a brass lectern in the foreground, the sanctuary lamp far behind",
+      photoCredit:
+        "Pictured: 9 Kart z Księgi Psalmów, Sacred Heart basilica, Kraków, November 2024 · " +
+        "photo Kamila Grudzińska",
+    },
   },
 
   fr: {
@@ -554,14 +609,12 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       nameLabel: "Prénom — facultatif",
       namePlaceholder: "Anne",
       consentHtml:
-        `En vous inscrivant, vous demandez à la Fundacja VoctFoundation les invitations aux ` +
-        `concerts du VoctEnsemble. Le prénom ne sert qu'à la formule d'appel de la lettre, et ` +
-        `un clic dans n'importe quel message vous retire de la liste. Si la Fondation cessait ` +
-        `son activité, la liste pourrait passer à la personne qui poursuit cet ensemble — nous ` +
-        `vous en préviendrions par un message séparé. Le reste figure dans la ` +
+        `L'adresse est traitée par la Fundacja VoctFoundation, conformément à la ` +
         `<a href="/polityka-prywatnosci">politique de confidentialité</a>.`,
       submit: "Inscrivez-moi",
       submitting: "Envoi…",
+      addressLine: "Écrire à",
+      commit: "Je veux recevoir les invitations",
       errorEmail: "Indiquez l'adresse à laquelle écrire.",
       errorSend: `L'envoi a échoué. Réessayez ou écrivez à ${CONTACT_MAILBOX}.`,
       pendingAddressLabel: "L'adresse saisie",
@@ -696,6 +749,17 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
     invitation: {
       line: "Nous écrirons avant le prochain Concert Spirituel.",
       cta: "Recevoir les invitations",
+    },
+    letter: {
+      to: "À",
+      programme: "Le programme de la soirée",
+      photoAlt:
+        "Le VoctEnsemble chante dans la nef obscure de la basilique du Sacré-Cœur à Cracovie : " +
+        "des visages éclairés au-dessus des partitions noires, un lutrin de laiton au premier " +
+        "plan, la lampe du sanctuaire au fond",
+      photoCredit:
+        "Sur la photo : 9 Kart z Księgi Psalmów, basilique du Sacré-Cœur, Cracovie, " +
+        "novembre 2024 · photo Kamila Grudzińska",
     },
   },
 };

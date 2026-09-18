@@ -152,6 +152,9 @@ page.landing.register.videoLabel: "Voir un extrait"
 # Le chrome de la page de concert pour l'étiquette polonaise identique (`koncert.ts`, `program`) —
 # et ce volet déplie ce même programme.
 page.landing.register.programLabel: "Le programme du concert"
+# The headline over the sign-up under the announced evening. Plural and open-ended on purpose —
+# "le prochain concert" would point at the evening announced one row above it.
+page.landing.register.noticeHeadline: "Nous vous inviterons aux prochains concerts."
 
 # « débuts » au pluriel, comme le corpus l'a publié (`concert.wcielenie.about.blurb` : « Les débuts
 # du cycle des Concerts Spirituels ») et comme `director.p2Html` le dit déjà sur cette page.

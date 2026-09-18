@@ -1,10 +1,16 @@
 /**
  * @file notice.css
- * @description The concert notice list's surfaces: the sign-up band at the foot of /koncerty, the
- *  register that IS the page on /newsletter, the strip in the landing's footer, and the /nuntius
- *  receipt. All of them stand on the site's night ground and share one set of rules — the receipt
- *  is the same rite's other end, and giving any of them a parchment world of its own would have
- *  doubled every value here to say the same thing.
+ * @description The NIGHT BAND of the concert notice list — the sign-up under the last station of
+ *  /koncerty and at the end of a concert page whose evening is still ahead — and the /nuntius
+ *  receipt page's own controls. The band is dressed from the stations' materials and nothing
+ *  else: the page's two-tier eyebrow for the rubric, the essence's italic serif for the one
+ *  sentence, a hairline of the pill's own ink to write the address on, and the hollow `.pill` as
+ *  the act (the gold fill is the Via's one call to give and is not borrowed for a list). The
+ *  landing's strip and /kontakt's door mount the same island and take NONE of these rules by
+ *  choice: each is dressed by its host (`landing/06-footer.css`, `pages/ContactPage.astro`) at one
+ *  class of specificity above what is here, so what this sheet says about colour reaches them
+ *  only where the host has said nothing. /newsletter, which IS the letter, loads
+ *  `notice-blank.css` and `notice-letter.css` instead, never this.
  *
  *  WHY THIS IS A GLOBAL SHEET AND NOT THE PAGE'S OWN `<style>`. Most of what it dresses is
  *  rendered by React inside an island. Astro scopes a page rule by appending `[data-astro-cid-…]`
@@ -12,17 +18,13 @@
  *  `.notice-form` compiles to a selector that matches nothing, silently. `styles/vault.css` is
  *  the same arrangement for the same reason.
  *
- *  The controls deliberately mirror the vault's (`landing/08-vault.css`): the same hairline field
- *  and the same restrained error colour, so a reader who has given an address in the donation
- *  vault is not asked to learn a second kind of control here.
- *
- *  Tokens (--paper, --candle, --serif, --capitalis, --mono, --ease) come from the globally
- *  imported tokens.css.
+ *  Tokens (--paper, --candle, --ink, --serif, --sans, --capitalis, --mono, --ease) come from the
+ *  globally imported tokens.css.
  * @architecture Astro islands 2026
  * @module styles/notice
  */
 
-/* ── The band on /koncerty ─────────────────────────────────────────────────────
+/* ── The band ──────────────────────────────────────────────────────────────────
    Transparent, like `.station-next` above it: the page's night comes from the body's own
    ground, and a second opaque layer here would only be a chance for the two to disagree.
    The hairline is the seam between the unwritten station and this. */
@@ -48,72 +50,238 @@
   background: linear-gradient(90deg, transparent, rgba(244, 241, 233, 0.16), transparent);
 }
 
+/* A STATION'S COLUMN, SET FROM THE LEFT. The page's stations hang their text off the left rag;
+   only the two terminal ones (memoriam, the unwritten station) are centred. Left-set, the band
+   is a station's shape, and it is the shape the band has whether the station above it is the
+   centred `Nondum` or an announced evening. 760 rather than the `Nondum` station's 660: the key,
+   the line and the pill share one row, and in 660 the line between them was 219px — sixteen
+   characters of an address. The station above is centred, so no left edge was aligned to 660. */
 .notice-inner {
-  max-width: 620px;
+  max-width: 760px;
   margin: 0 auto;
-  text-align: center;
-}
-
-.notice-h2 {
-  margin: 18px 0 0;
-  color: var(--paper);
-  font-family: var(--serif);
-  font-size: clamp(30px, 4.2vw, 52px);
-  font-weight: 300;
-  letter-spacing: -0.01em;
-  line-height: 1.06;
-}
-
-.notice-lede {
-  margin: 18px auto 0;
-  max-width: 42ch;
-  color: rgba(244, 241, 233, 0.72);
-  font-size: clamp(15px, 1.2vw, 17px);
-  line-height: 1.7;
-}
-
-/* ── The form ──────────────────────────────────────────────────────────────── */
-
-.notice-form {
-  display: grid;
-  gap: 22px;
-  margin-top: clamp(34px, 4vw, 48px);
   text-align: left;
 }
 
-/* One line on a desk, two on a phone. The button keeps its own width rather than stretching:
-   a full-bleed gold bar under a single field reads as the page's primary call, and the page's
-   primary call is the donation above it. */
-.notice-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 18px;
+/* The rubric is the landmark's heading and wears the page's own two-tier eyebrow (base.css); its
+   three spans are laid as the eyebrow's text would be — `Nuntius · zaproszenia` — with the same
+   air around the dot that two non-breaking spaces gave the string. */
+.notice-say .notice-rubric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+  line-height: 1.4;
 }
 
-.notice-field {
+/* The band's one sentence, at the grade the stations give THEIR one sentence (`.station-essence`,
+   KoncertyPage): italic serif, a station's measure. Not the letter's display grade — on this page
+   that grade is a station's title, and the list is not a station. */
+.notice-promise {
+  margin: 22px 0 0;
+  max-width: 42ch;
+  color: rgb(244 241 233 / 0.92);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(19px, 2vw, 26px);
+  font-weight: 300;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+/* ── The blank and the act — the station's own row ─────────────────────────────
+   A key ON the line, and the pill beside it: the key in the tracked capitals `.station-meta`
+   names a datum in, standing on the line's own baseline with the rule running on from it — a
+   key hung an input's height above the rule made the empty line read as a separator, which is
+   the finding the letter's blank was built on (round 8). `.station-actions` is the row a
+   station's controls stand in. The line and the pill share ONE ink — the pill's border,
+   `rgb(244 241 233 / 0.4)` — and one answer to attention: the pill fills with candle on hover,
+   the line turns candle on focus. Grid, not flex-wrap: the line must take the room and the pill
+   must keep its own width, and below the station's phone measure the pill drops under the line
+   on its own row, left-set as the stations set theirs. Selectors carry `.notice-band` so the
+   strip and the door, which mount the same island, inherit none of this by accident. */
+.notice-band .notice-form {
   display: grid;
-  flex: 1 1 260px;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  column-gap: 26px;
+  row-gap: 14px;
+  margin-top: clamp(30px, 3.6vw, 44px);
 }
 
-/* The optional field takes less room than the required one, which is the hierarchy said without
-   a word: it may not grow past the address, and on a phone it wraps above it rather than beside.
-   No separate input rule — it wears `.notice-email`, because one field on this list looking
-   unlike the other would suggest one of them behaves differently.
-
-   IT IS MEASURED BY ITS OWN LABEL, NOT BY A NUMBER. The label carries the word "optional" and so
-   is half again the length of the address label beside it — and a different length in each of
-   the three locales. A fixed basis wide enough for one of them broke the label onto two lines in
-   another, which cost a line of height and left the two labels sitting on different baselines.
-   The address field is the one that absorbs whatever this takes. */
-.notice-field-name {
-  flex: 0 0 auto;
-  min-width: 190px;
+.notice-band .notice-blank {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  min-width: 0;
 }
 
-/* Paired with the rule above: the label is what the field is measured against, so it may not
-   reflow. Every one of them is short enough to stand on a phone. */
+.notice-band .notice-blank-label {
+  flex: none;
+  margin: 0;
+  white-space: nowrap;
+  color: rgb(244 241 233 / 0.66);
+  font-family: var(--capitalis);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.notice-band .notice-blank-line {
+  position: relative;
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.notice-band .notice-blank-line::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: rgb(244 241 233 / 0.4);
+  transition: background-color 0.4s var(--ease);
+}
+
+.notice-band .notice-blank-line:focus-within::after {
+  background: var(--candle);
+}
+
+.notice-band .notice-blank-line:has(.notice-email[aria-invalid="true"])::after {
+  background: #d6a08e;
+}
+
+/* The address in the page's serif at the grade of a station's inscription — the one thing on the
+   band the reader writes, set as the page sets what it quotes. */
+.notice-band .notice-email {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 2px 0 8px;
+  border: 0;
+  background: none;
+  color: var(--paper);
+  caret-color: var(--paper);
+  font-family: var(--serif);
+  font-size: clamp(20px, 1.6vw, 24px);
+  font-weight: 300;
+  line-height: 1.2;
+  transition: none;
+}
+
+.notice-band .notice-email:focus {
+  outline: none;
+}
+
+/* The browser's autofill would paint a pale box on the night; keep it the ground's own. */
+.notice-band .notice-email:-webkit-autofill,
+.notice-band .notice-email:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--paper);
+  box-shadow: 0 0 0 1000px var(--dark) inset;
+  transition: background-color 9999s ease-out;
+}
+
+/* THE PAGE'S OWN `.pill`, restated because a scoped rule cannot reach into an island — same
+   face, tracking, border and hover as KoncertyPage's, so the band's act is a station's control.
+   Hollow, not gold: `.pill-gold` is the Via's one call to give. */
+.notice-band .notice-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 1px;
+  padding: 11px 18px;
+  border: 1px solid rgb(244 241 233 / 0.4);
+  background: transparent;
+  color: var(--paper);
+  cursor: pointer;
+  font-family: var(--capitalis);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    background-color 0.4s var(--ease),
+    border-color 0.4s var(--ease),
+    color 0.4s var(--ease),
+    opacity 0.4s var(--ease);
+}
+
+.notice-band .notice-act:hover:not(:disabled),
+.notice-band .notice-act:focus-visible {
+  background: var(--candle);
+  border-color: var(--candle);
+  color: var(--ink);
+}
+
+.notice-band .notice-act:focus-visible {
+  outline: 2px solid var(--candle);
+  outline-offset: 4px;
+}
+
+.notice-band .notice-act:disabled {
+  cursor: progress;
+  opacity: 0.55;
+}
+
+/* The refusal stays where the DOM has it — straight after the field it refuses, for anyone
+   reading in that order — and takes the whole row on screen. */
+.notice-band .notice-form > .notice-error {
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+  color: #d6a08e;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  letter-spacing: 0;
+  line-height: 1.45;
+}
+
+/* ── The clause ────────────────────────────────────────────────────────────────
+   STATED, NEVER TICKED — see the note on `consentBlock` in `NoticeForm.tsx`. Fine print at a fine
+   print's measure, and readable: a clause nobody can read is not the informed half of informed
+   consent. */
+.notice-band .notice-consent-text {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: rgb(244 241 233 / 0.6);
+  font-size: 12px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.notice-band .notice-consent-text a {
+  color: rgb(244 241 233 / 0.86);
+  border-bottom: 1px solid rgb(244 241 233 / 0.32);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    color 0.35s var(--ease),
+    border-color 0.35s var(--ease);
+}
+
+.notice-band .notice-consent-text a:hover {
+  color: var(--paper);
+  border-color: var(--paper);
+}
+
+/* The station's phone arrangement: the pill under the line, on its own row, left-set. */
+@media (max-width: 560px) {
+  .notice-band .notice-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .notice-band .notice-act {
+    justify-self: start;
+  }
+}
+
+/* ── The receipt page's own controls (/nuntius) ────────────────────────────────
+   `NuntiusIsland` wears these three; nothing else on the list does any more. */
+
+/* The label is what the field is measured against, so it may not reflow. */
 .notice-label {
   color: rgba(244, 241, 233, 0.5);
   white-space: nowrap;
@@ -175,32 +343,8 @@
   opacity: 0.55;
 }
 
-/* ── The clause ────────────────────────────────────────────────────────────────
-   STATED, NEVER TICKED — see the note on `consentBlock` in `NoticeForm.tsx` for why the box went
-   and why the wording did not. What is left has to be READABLE rather than merely present: a
-   clause nobody can read is not the informed half of informed consent, whatever a checkbox beside
-   it would have claimed. So it is set as fine print at a fine print's measure, not as a wall. */
-
-.notice-consent-text {
-  margin: 0;
-  color: rgba(244, 241, 233, 0.58);
-  font-size: 12.5px;
-  line-height: 1.68;
-}
-
-.notice-consent-text a {
-  color: rgba(244, 241, 233, 0.82);
-  border-bottom: 1px solid rgba(244, 241, 233, 0.3);
-  transition:
-    color 0.35s var(--ease),
-    border-color 0.35s var(--ease);
-}
-
-.notice-consent-text a:hover {
-  color: var(--candle);
-  border-color: var(--candle);
-}
-
+/* The refusal as the receipt shows it — inside `.notice-done`, where the band's own rule (scoped
+   to the form) does not reach. */
 .notice-error {
   margin: -6px 0 0;
   color: #d6a08e;
@@ -254,7 +398,7 @@
 }
 
 /* ── The band once the address has gone ────────────────────────────────────────
-   THE WHOLE BAND CHANGES, not only the island inside it. The heading and the lede are the
+   THE WHOLE BAND CHANGES, not only the island inside it. The rubric and the sentence are the
    sign-up's offer; left standing over the receipt they went on promising in the band's largest
    grade while the one live instruction — open your inbox, follow the link — read as a footnote
    to them. This list is double opt-in, so a receipt nobody reads is an address that expires in
@@ -268,13 +412,12 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  /* Wins over the strip's own left alignment: the receipt is one short statement and reads as
-     one wherever it stands. The attribute is what makes this outrank `.notice-inner-strip`. */
+  /* Wins over every host's left alignment: the receipt is one short statement and reads as one
+     wherever it stands. The attribute is what makes this outrank a host's `.notice-inner` rule. */
   text-align: center;
 }
 
-.notice-inner[data-sent] .notice-h2,
-.notice-inner[data-sent] .notice-lede {
+.notice-inner[data-sent] .notice-say {
   display: none;
 }
 
@@ -287,160 +430,6 @@
    region rather than a control, and a ring around a paragraph reads as a mistake. */
 .notice-done:focus {
   outline: none;
-}
-
-/* ── The strip that opens the landing's footer ─────────────────────────────────
-   NOT A SECTION OF THE PAGE, AND NOT A SECOND BAND. The landing has already ended by the time a
-   reader gets here — the coda is its last breath — and a full band under it would be a third
-   closing gesture in a row. This reads as the FOOTER'S FIRST ROW: the same night ground, a
-   hairline above, none of the band's air. The page still ends where it ended, and the footer
-   opens with the one ask.
-
-   IT CANNOT BE MADE NARROW, only low. The consent clause is the wording each record is kept
-   against and may not be set small enough to skim past, so the height is decided by it rather
-   than chosen. What makes this shape low is dropping the band's display heading — not shrinking
-   anything a reader has to read before agreeing. */
-/* IT WEARS THE FOOTER'S OWN PALETTE, NOT THIS SHEET'S NIGHT ONE. Everything else here stands on
-   the site's night ground, but the landing's footer prints the canonical hour it is read in and
-   takes its plate from it — parchment through the day, the night plate at Completorium and
-   Matutinum. `landing/06-footer.css` therefore hands `.notice-strip` the same `--nox` axis and
-   the same tokens, and the rules below spend those tokens instead of the literals the band uses.
-   A strip written in `rgba(244 241 233 / …)` was very nearly invisible at noon. */
-.notice-strip {
-  /* `position: relative` and the palette come from the footer sheet. Side padding is NOT here —
-     see the measure below. */
-  padding-block: clamp(22px, 2.2vw, 32px);
-  background: var(--paper);
-  color: var(--ink-soft);
-  border-top: 1px solid var(--line);
-}
-
-/* THE FOOTER'S MEASURE, TO THE PIXEL — `.site-footer-inner` in `landing/06-footer.css`, gutters
-   included. The two are read as one register, so the rubric here has to begin on the same
-   vertical as `Fundatio` below it and the button has to end where `Vox` ends. Width alone does
-   not do that: the footer keeps its side padding INSIDE its 1580, and a strip that kept the same
-   padding outside sat 96px wider on each side — near enough to look like a mistake and far
-   enough to be one. Change either of these and change both. */
-.notice-inner-strip {
-  width: min(1580px, 100%);
-  max-width: none;
-  margin: 0 auto;
-  padding-inline: max(28px, 5vw, env(safe-area-inset-right, 0px));
-  text-align: left;
-}
-
-/* No measure cap on either line. In the band they are centred display text and a cap is what
-   keeps them readable; here the column IS the cap, and a `max-width` inside it only opened a
-   void between the voice and the fields. */
-.notice-inner-strip .notice-h2 {
-  margin: 10px 0 0;
-  max-width: none;
-  color: var(--ink);
-  font-size: clamp(20px, 1.9vw, 27px);
-  line-height: 1.16;
-}
-
-.notice-inner-strip .notice-lede {
-  margin: 7px 0 0;
-  max-width: none;
-  color: var(--ink-muted);
-  font-size: 14px;
-}
-
-.notice-inner-strip .notice-form {
-  margin-top: 22px;
-  gap: 14px;
-}
-
-.notice-inner-strip .notice-label {
-  color: var(--ink-muted);
-}
-
-.notice-inner-strip .notice-email {
-  border-bottom-color: var(--line-strong);
-  color: var(--ink);
-}
-
-.notice-inner-strip .notice-email::placeholder {
-  color: var(--ink-muted);
-}
-
-/* `--candle-text` rather than `--candle`: on the parchment plate the full gold is 2.10:1 and
-   cannot carry a focus ring, and this token is the footer's own answer to that. */
-.notice-inner-strip .notice-email:focus {
-  border-color: var(--candle-text);
-}
-
-.notice-inner-strip .notice-consent-text {
-  color: var(--ink-muted);
-}
-
-/* The two links inside the clause — the data mailbox and the policy — were set in the band's
-   near-white and vanished on parchment, which is the worst pair of links on the site to lose:
-   they are how a consent is withdrawn and where it is explained. Darker than the prose around
-   them rather than lighter, because on this plate weight reads as emphasis. */
-.notice-inner-strip .notice-consent-text a {
-  color: var(--ink-soft);
-  border-bottom-color: var(--line-strong);
-}
-
-.notice-inner-strip .notice-consent-text a:hover {
-  color: var(--candle-text);
-  border-color: var(--candle-text);
-}
-
-/* The plate under the button is gold in BOTH palettes, so its ink may not follow the hour:
-   `var(--ink)` here would be light at night and put pale letters on gold. */
-.notice-inner-strip .notice-submit {
-  color: #161514;
-}
-
-.notice-inner-strip .notice-done-title {
-  color: var(--ink);
-}
-
-.notice-inner-strip .notice-done-body {
-  color: var(--ink-soft);
-}
-
-.notice-inner-strip .notice-done-hint,
-.notice-inner-strip .notice-noscript {
-  color: var(--ink-muted);
-}
-
-.notice-inner-strip .notice-done-mark {
-  color: var(--candle-text);
-}
-
-/* The refusal colours are the one pair this sheet has no token for, so they are mixed along the
-   footer's own axis: the band's warm rose is legible on the night plate and washes out on
-   parchment, and an error nobody can read is the worst place for that to happen. */
-.notice-inner-strip .notice-error {
-  color: color-mix(in oklab, #9b4f38, #d6a08e calc(var(--nox) * 100%));
-}
-
-.notice-inner-strip .notice-email[aria-invalid="true"] {
-  border-color: color-mix(in oklab, #9b4f38, #c98e7e calc(var(--nox) * 100%));
-}
-
-/* Voice beside fields rather than above them — the whole of what makes the strip a strip. Below
-   this width it stacks, which is the band's own arrangement at a smaller grade. */
-@media (min-width: 900px) {
-  .notice-inner-strip {
-    display: grid;
-    /* The voice takes what one line of it needs; the fields take the rest — and the rest is what
-       decides this shape's height. The clause wraps into whatever width is left, and every line
-       it gains, the strip gains. Widening the HEADING does not lower the strip; widening the
-       FORM does, which is why the larger share is on the right. */
-    grid-template-columns: minmax(280px, 0.62fr) minmax(520px, 1fr);
-    align-items: start;
-    /* The register's own gap (`.site-footer-grid`), so the two rows of one footer breathe alike. */
-    gap: clamp(28px, 3vw, 56px);
-  }
-
-  .notice-inner-strip .notice-form {
-    margin-top: 2px;
-  }
 }
 
 .notice-noscript {

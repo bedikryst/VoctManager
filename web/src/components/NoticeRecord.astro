@@ -39,9 +39,14 @@ const { evenings, label, aria } = Astro.props;
 {
   /* Nothing at all when the corpus holds no sung evening — the sign-up above still stands on its
      own, and an empty register would be a shelf with a label and no books. It cannot happen while
-     the corpus has a past, but the page must not depend on that. */
+     the corpus has a past, but the page must not depend on that.
+
+     NO `reveal-rule` ON THE SECTION. That register hands an element's OWN border to a pseudo-rule
+     it can draw, and this one has no border to hand over: every hairline here belongs to a row,
+     and the rows draw themselves as they come into view (`notice-letter.css`). Worn with no
+     `--rule-ink` set by the sheet beneath it, it would draw a line nobody asked for. */
   evenings.length > 0 && (
-    <section class="notice-record reveal reveal-rule" aria-label={aria}>
+    <section class="notice-record reveal" aria-label={aria}>
       <p class="notice-rubric eyebrow">{label}</p>
       <ol class="notice-entries">
         {evenings.map((evening) => (

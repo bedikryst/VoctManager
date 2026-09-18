@@ -15,6 +15,12 @@
  *  the programme come from `concerts.yaml` through the concert overlay, because an evening names
  *  itself once and every surface reads that name. The section's accessible name is the heading it
  *  already prints.
+ *
+ *  THE NOTICE LIST IS THE REGISTER'S LINIATURA — the ruled lines under the announced evening, the
+ *  first of them written by the reader (`.path-liniatura`). It is the landing's one FIELD for the
+ *  list (the announcement's quiet link, `ProximumSection`, leads to /newsletter): under the
+ *  evenings rather than among them, on the section's full width rather than in the register's
+ *  column, and not an object laid beside them.
  * @architecture Astro islands 2026
  * @module components/landing/PathSection
  */
@@ -26,6 +32,7 @@ import { concertKey, overlayValue } from "../../lib/copyOverlay";
 import { localizePath, type Locale } from "../../i18n/config";
 import type { LandingChrome, LandingCopy } from "../../i18n/content/landing";
 import { NUNTIUS } from "../../i18n/content/nuntius";
+import NoticeSignup from "../NoticeSignup.astro";
 
 interface Props {
   copy: LandingCopy["register"];
@@ -51,9 +58,6 @@ const upcoming = upcomingStation(concerts);
 const announced = upcoming !== undefined;
 const hrefConcerts = localizePath("/koncerty", lang);
 const nuntius = NUNTIUS[lang];
-// The band that takes the consent, on the page that says why there is one. Nothing is asked for
-// here — see the note on the invitation itself.
-const hrefNotice = `${hrefConcerts}#nuntius`;
 
 // One row per evening, with its three sources joined. A structural entry whose editorial copy has
 // been removed is loud rather than blank: the row would otherwise print a numeral, a year and
@@ -219,8 +223,8 @@ const ahead = upcoming
           took that job, and an understudy who stays on stage denies the performance.
 
           Nothing is lost while it is down. Its gold CTA is the vault at 100, and the offering band
-          (`Sustinete nos` → FinalSupportSection) is the very next section; its notice link is the
-          one the announcement itself already carries. When the evening passes, `upcomingStation`
+          (`Sustinete nos` → FinalSupportSection) is the very next section; the list is asked for
+          in the liniatura that follows either closing. When the evening passes, `upcomingStation`
           goes quiet on the next deploy and the card takes its seat again — which is also what
           makes the deploy after a concert an obligation rather than housekeeping (lib/cycle). */}
       {!announced && (
@@ -242,23 +246,9 @@ const ahead = upcoming
           >
             {copy.next.cta}
           </a>
-
-          {/* The second thing that can be offered to a reader who has just been told the date
-              depends on patrons, and the only one that is not money. A LINK, not a form: this card
-              is the register's payoff and a field with a consent clause in it would be a second
-              ask standing where one belongs — the address is taken on a page built for it.
-
-              ONE SENTENCE, NO RULE, NO RUBRIC. It carried both and they made a footer of it: a
-              full-width hairline under the CTA's own, with a section rubric heading a single line,
-              is the anatomy of a mailing-list strip, and it read as one against a card where
-              everything else is a voice. What ranks it below the gold CTA is its grade and its
-              size, which is the whole hierarchy this pair needs. */}
-          <p class="path-next-nuntius reveal">
-            {nuntius.invitation.line}{" "}
-            <a class="path-next-nuntius-link" href={hrefNotice}>
-              {nuntius.invitation.cta}&nbsp;<span aria-hidden="true">→</span>
-            </a>
-          </p>
+          {/* ONE ASK ON THE CARD. The list is not offered here as a second link under the gold
+              CTA: the liniatura below the card asks for the address in full, and a sentence
+              pointing at it from inside the card would be the same ask twice within one screen. */}
         </div>
       </aside>
       )}
@@ -331,6 +321,56 @@ const ahead = upcoming
           )}
         </aside>
       )}
+
     </div>
   </div>
+
+  {/* LINIATURA — the register's unwritten lines, and the first of them is the reader's.
+
+      The register closes on the evening that is announced. The page does not: under that closing
+      rule it goes on as what it has been all along, a ruled page — only with nothing written on
+      the lines yet. The address is written on the first of them and the act stands at that line's
+      end, where the writing stops; the clause stands on the second; the ones below are the
+      evenings there is not yet anything to say about. Once the address is sent the page writes its
+      receipt back on those same lines.
+
+      IT IS THE REGISTER'S BODY COLUMN, WHOLE: it begins where every row of the register begins
+      and ends where every row ends, and the act stands at that end. Three other placements were
+      built and refused — a ribbon in the left margin, the sheet starting at the section's edge and
+      stopping a rail short of the right one, the say moved into the margin column against the
+      paper — and every one of them moved the sheet to answer a complaint about the FIELD. What
+      answered that was the dotted leader under the unwritten address. The margin column is
+      `Z drogi`'s alone. It is the grid's sibling, not its item (04-rooms-interludes says why),
+      and pays the rail and the gap as padding on its left.
+
+      THE SHEET HAS A HEADLINE, because it stands among headed things. Every row of the register
+      carries a title at a display grade, and a block under them whose largest text was its own
+      sentence was read as a footnote to the announcement — the metaphor cannot be the only thing
+      that says what the sheet is for. The headline names the benefit; the promise under it says
+      what a letter carries; the ruled lines make the argument for the rest.
+
+      IT IS NOT A ROW OF THE REGISTER and it is not an object laid in its margin; both were built
+      and both were refused. One pitch for every line it rules, written or not (04-rooms-interludes,
+      `--lin-pitch`).
+
+      `web:landing` is its own consent surface for the reason every placement is: the column
+      records the screen a clause was read on, and this is the only screen a reader reaches without
+      having gone looking for the list. The headline is an `h3`, a peer of the entries' headings,
+      because the sheet stands among them. */}
+  <aside class="path-liniatura" aria-label={nuntius.form.bandAria}>
+    <NoticeSignup lang={lang} surface="web:landing" level={3} headline={copy.noticeHeadline} />
+
+    {/* The unwritten lines. They carry no text and name nothing, so they are out of the
+        accessibility tree entirely — a screen reader that announced two blank rules would be
+        reading the paper instead of the page. They are real borders, present without JavaScript
+        and under a declined motion preference; the ruling is what the scroll adds
+        (04-rooms-interludes, "the ruling of the liniatura"). TWO: the block is four lines and the
+        form writes two, so when the receipt takes three the sheet puts the first of these out and
+        no rule moves. Two is also the floor — one empty rule under the clause is a separator after
+        nothing, not ruled paper. */}
+    <div class="path-liniatura-void" aria-hidden="true">
+      <span class="path-liniatura-line"></span>
+      <span class="path-liniatura-line"></span>
+    </div>
+  </aside>
 </section>

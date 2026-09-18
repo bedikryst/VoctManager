@@ -9,8 +9,8 @@
  *  the station that says the next evening has no date, which is the one place a reader has just
  *  been told something they might want to be told again. This page is where a NAME arrives — "sign
  *  up for their notices" sends someone to an address bar, and no one has ever guessed `nuntius`.
- *  Both mount `NoticeSignup`, so they are one wording taken twice, and `surface` on the record
- *  says which screen the clause was read on. That is the column's job.
+ *  Both mount `NoticeForm` and speak the band's copy, so they are one wording taken twice, and
+ *  `surface` on the record says which screen the clause was read on. That is the column's job.
  *
  *  INDEXED, unlike the two other pages that stand alone on this ground (/nuntius and the vacat
  *  leaf). Those are noindex because a receipt and a blank leaf are not what anyone searched for;
@@ -18,17 +18,18 @@
  *  the whole reason it was built.
  *
  *  EVERY WORD IT SAYS IS THE BAND'S — `content/pages/koncerty.yaml` under `notice.*`, read through
- *  `NoticeSignup`. Only the tab title, the search description and the register's two rubrics are
- *  owned here, in the chrome (`i18n/content/nuntius.ts`), on the rule the receipt page's meta
- *  already follows.
+ *  `NoticeLetter`. Only the tab title, the search description, the register's two rubrics and the
+ *  letter's stationery are owned here, in the chrome (`i18n/content/nuntius.ts`), on the rule the
+ *  receipt page's meta already follows.
  *
- *  IT CARRIES A REGISTER OF EVENINGS, AND THAT IS WHAT MAKES IT A PAGE. A sign-up standing alone
- *  is a card: a promise, two fields, and a screen of ground around them. The evenings are the only
- *  thing here that lets a reader check what the promise costs — the ensemble has sung six since
- *  January 2024, and a cadence read off a register is worth more than a sentence claiming it. The
- *  one still ahead stands inside the ask, where it answers "what would you write to me about";
- *  the rest fall below it as the record. Every fact in both is derived from the corpus
- *  (`lib/noticeRegister`), so nothing here is a claim this page can be caught making.
+ *  IT IS A LETTER, AND IT CARRIES A REGISTER OF EVENINGS. A sign-up standing alone is a card: a
+ *  promise, a field, and a screen of ground around them. What this page shows instead is the letter
+ *  itself, addressed as the reader writes — and under it the evenings already sung, which are the
+ *  only thing here that lets a reader check what the promise costs. A cadence read off a register
+ *  is worth more than a sentence claiming one. The evening still ahead stands ON the letter, where
+ *  it answers "what would you write to me about"; the rest fall below it as the record. Every fact
+ *  in both is derived from the corpus (`lib/noticeRegister`), so nothing here is a claim this page
+ *  can be caught making.
  * @architecture Astro islands 2026
  * @module components/pages/NewsletterPage
  */
@@ -38,12 +39,12 @@ import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
-import NoticeSignup from "../NoticeSignup.astro";
+import NoticeLetter from "../NoticeLetter.astro";
 import NoticeRecord from "../NoticeRecord.astro";
 import { DEFAULT_LOCALE, localizePath, pageI18n, type Locale } from "../../i18n/config";
 import { NUNTIUS } from "../../i18n/content/nuntius";
 import { UI } from "../../i18n/ui";
-import { bleedPair } from "../../lib/photos";
+import { photo } from "../../lib/photos";
 import { noticeRegister } from "../../lib/noticeRegister";
 
 interface Props {
@@ -78,8 +79,11 @@ const register = noticeRegister(
   localizePath("/koncerty", lang),
 );
 
+/* THE CARD IS THE PAGE'S OWN PICTURE. What a shared link shows is the room the letter is about —
+   the same frame, in the cut that carries the vault — rather than a hero belonging to another
+   page. */
 const ogImage = (
-  await getImage({ src: bleedPair("koncerty-hero").desktop, width: 1200, format: "webp" })
+  await getImage({ src: photo("nuntius-room-spread"), width: 1200, format: "webp" })
 ).src;
 ---
 
@@ -97,28 +101,35 @@ const ogImage = (
       marks no nav item here by design: the list is a page of the site, not a fifth destination. */}
   <SiteChrome current="/newsletter" tone="dark" lang={lang} availableLocales={available} />
 
-  {/* The leaf composition, and this is the page it was drawn for: the register gets the full
-      measure and the page's whole height. The other placements keep the band and the strip until
-      their own stage.
+  {/* THE LETTER, AND THE REGISTER ON THE PAPER IT IS MADE OF. Two grounds with a hard seam: the
+      room the ensemble sings in, with the sheet lying on its corner, and then paper — the evenings
+      already sung, set as an index. `NoticeLetter` owns the first; this page owns the second,
+      because the evenings belong to /newsletter alone and folding them into a shared component
+      would put markup on /koncerty, /kontakt and the landing that only ever renders here.
 
-      THE RECORD STANDS OUTSIDE `NoticeSignup` ON PURPOSE. What that component owns is one wording
-      taken by four placements; the evenings belong to this page alone, and folding them into the
-      shared component would put markup on /koncerty, /kontakt and the landing that only ever
-      renders here. The sign-up's own exchange reaches `.notice-stage` and nothing below it, so the
-      record survives the swap the way the running head does. */}
-  <main id="tresc" class="notice-page" aria-label={nuntius.form.bandAria}>
-    <NoticeSignup
-      lang={lang}
-      surface="web:newsletter"
-      level="h1"
-      variant="leaf"
-      ahead={register.ahead}
-    />
-    <NoticeRecord
-      evenings={register.record}
-      label={nuntius.register.record}
-      aria={nuntius.register.recordAria}
-    />
+      The record also stands OUTSIDE the exchange: the island freezes and swaps the column the
+      blank stands in, and nothing below the photograph moves when the receipt takes its place. */}
+  <main id="tresc" class="letter-page" aria-label={nuntius.form.bandAria}>
+    <NoticeLetter lang={lang} surface="web:newsletter" ahead={register.ahead} />
+
+    <div class="letter-paper tone-light">
+      <div class="letter-measure">
+        <NoticeRecord
+          evenings={register.record}
+          label={nuntius.register.record}
+          aria={nuntius.register.recordAria}
+        />
+        {/* The register's two doors: the rest of the concerts, and the way back to the site. The
+            letterhead links home as well, and that is the point rather than a duplicate — a
+            letter's sender is named at its head, and a register closes with where to go next. */}
+        <p class="letter-doors">
+          <a class="letter-door" href={localizePath("/koncerty", lang)}>
+            {nuntius.page.backToConcerts} →
+          </a>
+          <a class="letter-door" href={localizePath("/", lang)}>{nuntius.page.backHome} →</a>
+        </p>
+      </div>
+    </div>
   </main>
 
   {/* This page IS the ask; the footer must not offer it a screen below the form. */}

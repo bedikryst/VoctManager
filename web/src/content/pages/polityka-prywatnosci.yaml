@@ -210,9 +210,11 @@ s3:
       to dowód udzielenia zgody i nic ponadto; nie zapisujemy adresu IP. Każda nasza
       wiadomość zawiera link, który wypisuje z listy jednym kliknięciem.
     # The continuity clause the board settled on (wariant B, 2026-09): one controller, with a
-    # named successor, rather than joint controllership under art. 26 RODO. It belongs in the
-    # policy AND in the consent clause, because a consent given to one controller does not
-    # silently cover another — the reader has to have read this before the list may pass.
+    # named successor, rather than joint controllership under art. 26 RODO. THIS PARAGRAPH IS ITS
+    # ONLY HOME: the clause at the form is one line — the controller by name and a link here — so
+    # the reader meets the successor through that link, before the address is given, and the
+    # notice promised below is what precedes any transfer. `backend/outreach/consent.py` records
+    # the decision that took the sentence off the form.
     p2Html: >-
       Lista istnieje po to, żeby zapraszać na koncerty zespołu VoctEnsemble. Gdyby Fundacja
       zakończyła działalność lub uległa reorganizacji, lista może zostać przekazana osobie

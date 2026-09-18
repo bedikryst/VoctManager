@@ -3,18 +3,32 @@
  * @description The concert notice list's sign-up — an address, a consent, and nothing else — and
  *  the waiting leaf it is exchanged for once the address is handed over.
  *
- *  TWO COMPOSITIONS, ONE FORM. `band` is the arrangement every placement has always worn: labels
- *  and fields on one line, the button beside them. `leaf` is the correspondence page on
- *  /newsletter, where the address is the largest practical value on the sheet and the reading
- *  order is the one the form is actually filled in — address, name, consent, act. They are
- *  branched rather than restyled because they are genuinely different compositions and the
- *  reading ORDER differs; everything either of them does with what the reader typed is shared.
+ *  ONE COMPOSITION, TWO PLACEMENTS, AND THE HOST DRESSES IT. The form is one blank — a label, a
+ *  line to write on, the act, the clause — wherever it stands. `letter` is /newsletter, where the
+ *  page IS the letter and `styles/notice-blank.css` dresses the blank as a form letter's
+ *  (`Na adres ______`, the paper bar with the arrow). `band` is every other door to the list, and
+ *  there the blank wears NOTHING OF ITS OWN: the page it stands on dresses it from its own
+ *  materials (the stations' hairline and pill on /koncerty, the register's ruled lines on the
+ *  landing, the doors' serif line and capsule on /kontakt), because an object carried from
+ *  one page onto another is a patch on every page but its own. Hence the neutral class names, and
+ *  hence the two things this markup does decide by placement — the letter's arrow and the
+ *  letter's `Na adres` label are the letter's gestures, and a band prints the plain field name.
+ *  Beyond that the placements differ in what surrounds the exchange, not in the exchange: the
+ *  letter mirrors the address onto the sheet beside it and its receipt carries the apparatus of a
+ *  page that stands alone (the address as sent, the way back to it, the resend); a band inside a
+ *  longer page freezes its own block and shows the short receipt.
  *
- *  THE NAME IS OPTIONAL AND HAS ONE USE — the greeting of the invitation itself. That single use
- *  is what makes asking for it proportionate; a field collected because a form usually has one is
- *  what data minimisation names, and it is the reason this form asks for nothing else. Leaving it
- *  empty costs the reader nothing and the form no branch: the backend trims, stores `''`, and the
- *  letter is written for both cases.
+ *  NO NAME FIELD, AND THAT IS A PLACEMENT, NOT A REMOVAL. The greeting still wants a name; the page
+ *  that asks for it is the receipt (/nuntius `preferences`), where the reader has already confirmed
+ *  and the question is the only thing on screen. Beside the one blank a second field would make the
+ *  ask a form, which is the verdict the letter was built to answer — and with the clause down to
+ *  one line, nothing on screen said what the name was for. The API's contract is unchanged:
+ *  `''` is an answer, an unnamed letter, and it is what this form sends.
+ *
+ *  IT WRITES THE ADDRESS ONTO THE SHEET BESIDE IT. On the letter the addressee's line is the
+ *  server's markup, outside this island, so what the reader types is announced on `window`
+ *  (`voct:notice-address`) and the page mirrors it. An island may not reach into a tree React does
+ *  not own, and the sheet must not become one.
  *
  *  THE SUCCESS STATE IS NOT "YOU ARE SUBSCRIBED". Nothing is stored as a consent until the link
  *  in the confirmation mail is clicked, so the form says a mail is on its way and says why. It
@@ -64,12 +78,8 @@ interface LenisLike {
   scrollTo(target: Element, options?: { offset?: number }): void;
 }
 
-/**
- * Where the reader is between the two leaves. `leaving` exists only on the correspondence leaf
- * and only while motion is allowed: it is the one frame in which BOTH are mounted, which is what
- * lets the written surface lift away from a receipt already standing underneath it.
- */
-type Phase = "open" | "leaving" | "sent";
+/** Which of the two surfaces the reader is on: the blank, or the receipt that replaces it. */
+type Phase = "open" | "sent";
 
 interface NoticeFormProps {
   readonly lang: Locale;
@@ -77,8 +87,18 @@ interface NoticeFormProps {
   readonly chrome: NoticeFormChrome;
   readonly copy: NoticeFormCopy;
   readonly surface: NoticeSurface;
-  /** Which composition to render. See the header. */
-  readonly variant?: "band" | "leaf";
+  /** What stands around the exchange. See the header. */
+  readonly placement?: "band" | "letter";
+}
+
+/**
+ * What the reader has written, for the letter beside the field. `state` is what the sheet does
+ * with it: `writing` mirrors it onto the addressee's line, `sent` inks that line and lights the
+ * sanctuary lamp in the photograph, and returning to the field takes both back.
+ */
+export interface NoticeAddressEvent {
+  readonly value: string;
+  readonly state: "writing" | "sent";
 }
 
 const prefersReducedMotion = (): boolean =>
@@ -101,10 +121,9 @@ export function NoticeForm({
   chrome,
   copy,
   surface,
-  variant = "band",
+  placement = "band",
 }: NoticeFormProps): React.JSX.Element {
   const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [emailInvalid, setEmailInvalid] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -121,36 +140,50 @@ export function NoticeForm({
   /** The band this island stands in, held from the moment it is marked so the receipt can be
       found afterwards without reaching through the document a second time. */
   const bandRef = useRef<HTMLElement | null>(null);
-  /** Set while returning from the waiting leaf, so focus lands back on the address being fixed. */
+  /** Set while returning from the receipt, so focus lands back on the address being fixed. */
   const refocusEmail = useRef(false);
   /** Whether focus has already been handed to the receipt for this exchange. */
   const greeted = useRef(false);
 
-  const isLeaf = variant === "leaf";
+  /** The letter stands alone, so its receipt carries the apparatus of a page: the address as it
+      was sent, the way back to it, and the recovery row. A band inside a longer page does not. */
+  const isLetter = placement === "letter";
+
+  /* The letter is addressed as the reader types — character for character, with no easing: it is
+     their writing, not an animation. Announced rather than written, because the sheet is the
+     server's markup and this island does not own it. */
+  const mirror = useCallback(
+    (value: string, state: NoticeAddressEvent["state"]): void => {
+      if (!isLetter) return;
+      window.dispatchEvent(
+        new CustomEvent<NoticeAddressEvent>("voct:notice-address", { detail: { value, state } }),
+      );
+    },
+    [isLetter],
+  );
 
   /**
    * Marks the box this form is exchanged inside and freezes its height BEFORE it loses its
    * heading, so nothing moves while the reader is looking straight at it.
    *
-   * WHICH BOX DIFFERS BY COMPOSITION, and that is the whole reason the leaf has a stage. The band
-   * holds the WHOLE inner block, because there the receipt replaces a heading, a lede and a form
-   * that are siblings with nothing around them. The leaf holds only `.notice-stage`: the running
-   * head above it survives the exchange, and the two written surfaces are superimposed inside the
-   * stage, so freezing the stage is what keeps the receipt from sliding upward the instant the
-   * form unmounts from under it.
+   * WHICH BOX DIFFERS BY PLACEMENT. The band holds the WHOLE inner block, because there the
+   * receipt replaces a rubric, a sentence and a form that are siblings with nothing around them.
+   * The letter's box is the column the blank stands in, and nothing above it: the sentence under
+   * the photograph is the page's h1 and stays — it says what the letter is, which is still true
+   * once the address has gone.
    *
    * `offsetHeight` is a NUMBER read now — a computed style would be a live handle and would
-   * report the collapsed box a tick later. `min-height` rather than `height`, because the waiting
-   * leaf is allowed to be the taller of the two.
+   * report the collapsed box a tick later. `min-height` rather than `height`, because the receipt
+   * is allowed to be the taller of the two.
    */
   const holdBand = useCallback((): HTMLElement | null => {
-    const selector = isLeaf ? ".notice-stage" : ".notice-inner";
+    const selector = isLetter ? ".notice-letter-ask" : ".notice-inner";
     const band = formRef.current?.closest<HTMLElement>(selector) ?? null;
     if (!band) return null;
     band.style.minHeight = `${band.offsetHeight}px`;
     bandRef.current = band;
     return band;
-  }, [isLeaf]);
+  }, [isLetter]);
 
   /**
    * Lets the sheet down onto what it now says.
@@ -215,7 +248,7 @@ export function NoticeForm({
       try {
         await subscribeToNotices({
           email: address,
-          name: name.trim(),
+          name: "",
           locale: lang,
           surface,
         });
@@ -223,18 +256,17 @@ export function NoticeForm({
         // cooldown from here rather than from the first press of the button inside the receipt.
         setResendAt(Date.now() + NOTICE_RESEND_COOLDOWN_MS);
         const band = holdBand();
-        // Reduced motion is shown the target state directly: the exchange is the one gesture on
-        // this sheet that has an intermediate frame, and there is nothing in it to read.
-        const exchanges = isLeaf && !prefersReducedMotion();
         if (band) {
-          if (exchanges) band.dataset.phase = "leaving";
-          else {
-            band.dataset.sent = "true";
-            // No exchange to wait for: the sheet is let down as soon as the receipt is painted.
-            if (isLeaf) settleBand(band);
-          }
+          band.dataset.sent = "true";
+          // The letter's column is let down onto the receipt as soon as it is painted; a band's
+          // receipt is centred in the block the form held, so the floor there simply stays.
+          if (isLetter) settleBand(band);
         }
-        setPhase(exchanges ? "leaving" : "sent");
+        setPhase("sent");
+        // The address that was actually POSTED, not whatever the field holds when the answer
+        // lands: a slow answer beside an edited field must never let the letter name somebody
+        // nobody wrote to.
+        mirror(address, "sent");
       } catch (err) {
         if (!(err instanceof NoticeError)) console.error("[VoctNotice] unexpected", err);
         else console.error("[VoctNotice]", err);
@@ -242,24 +274,7 @@ export function NoticeForm({
         setError(chrome.errorSend);
       }
     },
-    [loading, email, name, chrome, lang, surface, isLeaf, holdBand, settleBand],
-  );
-
-  /** The written surface has finished lifting away; the receipt standing under it is now the leaf.
-      Driven by the animation rather than by a timer, so the duration lives only in the sheet.
-      Animation events bubble, so a child's own motion must not be mistaken for the form's. */
-  const onLeft = useCallback(
-    (event: React.AnimationEvent<HTMLFormElement>) => {
-      if (event.target !== event.currentTarget) return;
-      const band = bandRef.current;
-      if (band) {
-        delete band.dataset.phase;
-        band.dataset.sent = "true";
-        settleBand(band);
-      }
-      setPhase("sent");
-    },
-    [settleBand],
+    [loading, email, chrome, lang, surface, isLetter, holdBand, settleBand, mirror],
   );
 
   /** Back to the fields with everything still in them — a typo in an address is the whole reason
@@ -276,7 +291,8 @@ export function NoticeForm({
     setRecoveryOpen(false);
     refocusEmail.current = true;
     setPhase("open");
-  }, []);
+    mirror(email.trim(), "writing");
+  }, [email, mirror]);
 
   const waiting = Math.max(0, resendAt - now);
 
@@ -288,7 +304,7 @@ export function NoticeForm({
     try {
       await subscribeToNotices({
         email: email.trim(),
-        name: name.trim(),
+        name: "",
         locale: lang,
         surface,
       });
@@ -301,7 +317,7 @@ export function NoticeForm({
     } finally {
       setResending(false);
     }
-  }, [resending, resendAt, email, name, lang, surface, chrome]);
+  }, [resending, resendAt, email, lang, surface, chrome]);
 
   // The countdown runs only while the reader is looking at it. It is read from the clock on every
   // tick rather than counted down, so a tab that slept through the cooldown opens accurate.
@@ -335,8 +351,6 @@ export function NoticeForm({
       greeted.current = false;
       return;
     }
-    // The exchange passes through two phases and the receipt is mounted for both of them; the
-    // move happens on the first, or the reader's caret would be pulled back mid-gesture.
     if (greeted.current) return;
     const done = bandRef.current?.querySelector<HTMLElement>(".notice-done");
     if (!done) return;
@@ -371,11 +385,13 @@ export function NoticeForm({
    * evidence is `confirmed_at`. A box that no column ever recorded was a widget standing between
    * a reader and a list, carrying no legal weight it did not already have.
    *
-   * WHAT THE LAW DOES REQUIRE IS THIS TEXT, ON SCREEN, BEFORE THE ACT — who the controller is,
-   * what the address is for, and how to withdraw. So the clause did not get shorter or quieter
-   * because the box went: it is still the whole wording, still stamped by version
-   * (`outreach/consent.NOTICE_CLAUSE_VERSION`), still rendered by this one component for every
-   * placement. Only the widget is gone.
+   * WHAT THE LAW DOES REQUIRE IS A FIRST LAYER ON SCREEN, BEFORE THE ACT: who the controller is,
+   * with the full account one link away. That is the whole clause — one line naming the
+   * foundation and linking the policy. The purpose stands directly above it in the band's own
+   * sentence, and the way out is in the policy and in every letter (`outreach/consent.py` records
+   * why the successor left the screen). It is still stamped by version
+   * (`outreach/consent.NOTICE_CLAUSE_VERSION`) and still rendered by this one component for every
+   * placement, so no two placements can ever show two wordings.
    *
    * Typeset and localized at build (lib/islandCopy) — the build's own HTML pass skips island
    * subtrees, and `Typo` sees no string leaf inside an injected fragment.
@@ -392,40 +408,26 @@ export function NoticeForm({
       type="email"
       inputMode="email"
       autoComplete="email"
-      placeholder={chrome.emailPlaceholder}
+      /* `required` is what makes `:valid` mean "a well-formed address is written here" rather than
+         "nothing is written yet": a host may let its act answer that state (the landing's seal
+         inks once the line is written). The form is `noValidate`, so the browser never speaks. */
+      required
+      /* No example address: this is a form letter's line, and the label sitting on its baseline is
+         what says what goes on it. A specimen address inside the rule would be the one printed
+         thing on the page that is not the reader's or ours. `data-blank` is the honest form of the
+         `:placeholder-shown` trick for a field that has none: a host may mark the unwritten line
+         (the landing dots it) and the mark goes the moment anything is written, autofill included,
+         because the field is controlled and autofill reaches `onChange`. */
+      data-blank={email === "" ? "" : undefined}
       aria-invalid={emailInvalid || undefined}
       value={email}
       onChange={(event) => {
         setEmail(event.target.value);
         setEmailInvalid(false);
         if (event.target.value.trim()) setError(null);
+        mirror(event.target.value.trim(), "writing");
       }}
     />
-  );
-
-  /* Optional, and nothing here enforces it beyond that: no validation, no trimming the reader can
-     see, no asterisk on the one beside it. The backend trims and the service stores `''` for
-     anything blank, so a reader who would rather stay a stranger costs the form no branch. */
-  const nameInput = (
-    <input
-      id="noticeName"
-      className="notice-email"
-      type="text"
-      autoComplete="given-name"
-      placeholder={chrome.namePlaceholder}
-      value={name}
-      onChange={(event) => setName(event.target.value)}
-    />
-  );
-
-  /* Its own class, not the page's `.pill`: that rule is SCOPED to KoncertyPage, and Astro appends
-     the scope attribute to every compound — an element React rendered carries none, so the page's
-     own affordance styles never reach inside an island. Everything this form and the receipt page
-     wear lives in `styles/notice.css`. */
-  const submitButton = (
-    <button type="submit" className="notice-submit" disabled={loading}>
-      {loading ? chrome.submitting : chrome.submit}
-    </button>
   );
 
   const errorLine = error ? (
@@ -434,65 +436,43 @@ export function NoticeForm({
     </p>
   ) : null;
 
-  /* `inert` rather than `aria-hidden` on the leaving sheet: it takes the sheet out of the reading
-     order AND out of the tab order, and it moves focus off whatever was still holding it — which
-     `aria-hidden` over a focused field would merely have made unannounceable. */
+  /* Its own classes, not any page's: a page rule is SCOPED by Astro, which appends the scope
+     attribute to every compound, and an element React rendered carries none — so a page that
+     dresses this form does it through a global sheet or `:global()` rules keyed on the section it
+     mounts the island in (`.notice-band`, `.path-liniatura`, `.notice-door`). */
   const form =
     phase === "sent" ? null : (
-      <form
-        ref={formRef}
-        className="notice-form"
-        onSubmit={onSubmit}
-        noValidate
-        aria-busy={loading}
-        inert={phase === "leaving"}
-        onAnimationEnd={phase === "leaving" ? onLeft : undefined}
-      >
-        {isLeaf ? (
-          <>
-            {/* The address is the sheet's largest practical value and leads it, which is also the
-                order the form is filled in. The name shares the register below it. */}
-            <div className="notice-lines">
-              <div className="notice-field notice-field-address">
-                <label className="notice-label eyebrow" htmlFor="noticeEmail">
-                  {chrome.emailLabel}
-                </label>
-                {emailInput}
-              </div>
-              <div className="notice-field notice-field-given">
-                <label className="notice-label eyebrow" htmlFor="noticeName">
-                  {chrome.nameLabel}
-                </label>
-                {nameInput}
-              </div>
-            </div>
-            {consentBlock}
-            {/* The rule is what gives the act a place to stand — the line a form is signed on. It
-                closes the clause above it and carries the block on its outer end. */}
-            <div className="notice-act">{submitButton}</div>
-            {errorLine}
-          </>
-        ) : (
-          <>
-            <div className="notice-row">
-              <div className="notice-field notice-field-name">
-                <label className="notice-label eyebrow" htmlFor="noticeName">
-                  {chrome.nameLabel}
-                </label>
-                {nameInput}
-              </div>
-              <div className="notice-field">
-                <label className="notice-label eyebrow" htmlFor="noticeEmail">
-                  {chrome.emailLabel}
-                </label>
-                {emailInput}
-              </div>
-              {submitButton}
-            </div>
-            {consentBlock}
-            {errorLine}
-          </>
-        )}
+      <form ref={formRef} className="notice-form" onSubmit={onSubmit} noValidate aria-busy={loading}>
+        {/* THE BLANK: a label and a line to write on. On the letter the label is the form letter's
+            `Na adres`, standing on the line's own baseline with the rule running on from it (the
+            addressee's line on the sheet is the same shape, and the two rule themselves in one
+            gesture on arrival); the field's plain name rides along for assistive technology. A band
+            prints the plain name and lets its host decide where the label stands. */}
+        <div className="notice-blank">
+          <label className="notice-blank-label" htmlFor="noticeEmail">
+            {isLetter ? (
+              <>
+                {chrome.addressLine}
+                <span className="sr-only"> — {chrome.emailLabel}</span>
+              </>
+            ) : (
+              chrome.emailLabel
+            )}
+          </label>
+          <span className="notice-blank-line">{emailInput}</span>
+        </div>
+        {errorLine}
+        {/* The act. The arrow is the letter's gesture — its paper bar sends the letter — and no
+            host page draws arrows on its controls, so a band's act is the verb alone. */}
+        <button type="submit" className="notice-act" disabled={loading}>
+          <span>{loading ? chrome.submitting : chrome.commit}</span>
+          {isLetter && (
+            <span className="notice-act-arrow" aria-hidden="true">
+              →
+            </span>
+          )}
+        </button>
+        {consentBlock}
       </form>
     );
 
@@ -505,7 +485,7 @@ export function NoticeForm({
         </span>
         <p className="notice-done-title">{copy.sentTitle}</p>
         <p className="notice-done-body">{copy.sentBody}</p>
-        {isLeaf ? (
+        {isLetter ? (
           <p className="notice-done-address">
             <span className="notice-done-address-label eyebrow">{chrome.pendingAddressLabel}</span>
             <span className="notice-done-address-value">{email.trim()}</span>
@@ -515,7 +495,7 @@ export function NoticeForm({
           </p>
         ) : null}
         <p className="notice-done-hint">{copy.sentHint}</p>
-        {isLeaf ? (
+        {isLetter ? (
           /* Shut by default and quiet: a reader whose letter arrived never opens it, and the one
              whose letter did not is the only person this row is for. */
           <details

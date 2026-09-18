@@ -59,13 +59,9 @@
     initial-value: 0;
   }
 
-  /* PAS ZAPISU NOSI TĘ SAMĄ PALETĘ, nie własną. Stoi bezpośrednio nad stopką i ma się czytać
-     jako jej pierwszy wiersz, więc godzina musi go zastawać razem z nią — pas z własnym
-     kompletem tokenów byłby drugą paletą do utrzymania, a o 21:00 przełamywałby się osobno.
-     Tokeny idą do obu elementów, grunt i włos zostają przy stopce niżej: tło pasa opisuje
-     `styles/notice.css`, bo tam opisany jest cały ten formularz. */
-  .site-footer,
-  .notice-strip {
+  /* Paleta stopki jest osią, nie dwoma kompletami: każdy token jest mieszanką pergaminu i nocy
+     w proporcji `--nox`, więc o 21:00 cała płyta przechodzi w noc jedną regułą. */
+  .site-footer {
     position: relative;
     /* Stan SSR i stan bez JS-u: pergamin. Statyczna strona nie zna godziny czytelnika,
        a domyślnie oddawać trzeba to, co jest prawdą przez trzy czwarte doby. */
@@ -117,7 +113,7 @@
     transition: --nox 1.6s var(--ease-light);
   }
 
-  /* Grunt stopki — osobno od tokenów, bo pas nad nią ma własny, płaski. */
+  /* Grunt stopki — osobno od tokenów. */
   .site-footer {
     background:
       radial-gradient(120% 62% at 50% 0%, var(--foot-bloom), transparent 64%),
@@ -127,9 +123,8 @@
   }
 
   /* Płyta nocna. Specyficzność jest z zapasem (0,3,0) wobec `body.theme-marketing`, bo
-     `--edge-foot` musi wygrać niezależnie od kolejności bundlowania tokens.css i tego pliku.
-     `:is()` liczy się jak najmocniejszy argument, czyli tyle samo co sam `.site-footer`. */
-  body.theme-marketing[data-lumen="nox"] :is(.site-footer, .notice-strip) {
+     `--edge-foot` musi wygrać niezależnie od kolejności bundlowania tokens.css i tego pliku. */
+  body.theme-marketing[data-lumen="nox"] .site-footer {
     --nox: 1;
   }
 

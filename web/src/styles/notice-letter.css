@@ -1,0 +1,1074 @@
+/**
+ * @file notice-letter.css
+ * @description The letter on /newsletter: the room, the blank under it, the sheet lying on the
+ *  room's corner, and the register on paper below. Everything this page wears — including what the
+ *  sign-up island renders inside it — is here, so the page loads no other sheet.
+ *
+ *  THE PAGE IS ONE MATERIAL. Two grounds, a hard seam between them: the room, then paper. The dark
+ *  ground carries grain, the sheet carries grain, and so does the photograph — without it the
+ *  picture was the only surface on the page with none, its own black sat a step under the ground's,
+ *  and the foot of the plate read as a band of shadow instead of an edge.
+ *
+ *  NOTHING IS DRAWN ON THE PHOTOGRAPH. No frame, no scrim, no gradient: the plate bleeds off the
+ *  top and the left and is hard-edged at the foot and on the right, where the sheet lies over it.
+ *  The only gradients near it are the room's warm spill onto the ground beneath it and the
+ *  sanctuary bloom inside it, which is spent only on the commitment.
+ *
+ *  THE SCROLL CARRIES THE COMPOSITION AND DOES NOT DECORATE IT. The room stays and darkens; the
+ *  letter travels with the reader one for one, so what leaves the screen is what has been read; the
+ *  register's paper follows it up and never crosses it. All of that is gated on
+ *  `animation-timeline` support AND on motion being wanted — without the timelines a pinned room
+ *  would let the paper come up over the letter and cut it, so the page simply scrolls.
+ * @architecture Astro islands 2026
+ * @module styles/notice-letter
+ */
+
+/* THE GROUND IS THE NIGHT, AND IT IS STATED HERE BECAUSE THIS IS THE ONLY SHEET THE PAGE LOADS.
+   The body carries it too: the stage is sticky at desktop heights, so what lies behind the letter
+   while it travels is the document's own canvas, and the site's default canvas is paper. */
+body.page-newsletter {
+  background: var(--dark);
+}
+
+.letter-page {
+  container: letter / inline-size;
+  position: relative;
+  background: var(--dark);
+  color: var(--paper);
+}
+
+/* ── The stage ─────────────────────────────────────────────────────────────────
+   A grid whose first column and first row are the bleed: the photograph occupies them and the type
+   does not. Below 900cqw the same grid stacks — photograph, then the sentence and the blank, then
+   the letter — so the reader writes first and scrolls down to a letter already carrying their
+   address. */
+.letter-stage {
+  --letter-gutter: max(22px, 3.4vw);
+  /* The chrome's resting height (22 + 40 + 22). The head row of the stage IS the bar's shadow on
+     the grid, so nothing but the photograph is ever laid under it. */
+  --letter-head-h: 84px;
+  /* A letter is narrower than a card and taller than it is wide: the cap is what makes the paper
+     around the text grow rather than the measure. */
+  --letter-sheet-w: clamp(400px, 33cqw, 500px);
+  /* How far the sheet reaches back over the photograph — the composition's only depth. It lands on
+     the listeners' silhouettes, which is what the crop can afford to lose. */
+  --letter-overlap: clamp(56px, 8cqw, 120px);
+  --letter-sheet-drop: clamp(32px, 12vh, 150px);
+  /* The row under the photograph holds the sentence and the blank; it is also what keeps the
+     photograph's foot above the sheet's, so the sheet crosses that edge everywhere. */
+  --letter-lede-min: 32vh;
+  --letter-plate-ratio: 1.18;
+
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: var(--letter-gutter) minmax(0, 1fr) var(--letter-gutter);
+  grid-template-rows: var(--letter-head-h) auto auto auto;
+  min-height: 100svh;
+  isolation: isolate;
+  /* The room's light spill reaches past the right edge. `clip`, never `hidden`: hidden would make
+     the stage a scroll container and break both the sticky room and every timeline on the page. */
+  overflow-x: clip;
+}
+
+/* Art direction switches on the viewport, which is all `<source media>` can do. A tablet gets a
+   plate with height in it rather than a shallow band: at 820px that is 506px of room, and the act
+   still stands above the fold. */
+@media (min-width: 641px) {
+  .letter-stage {
+    --letter-plate-ratio: 1.62;
+  }
+}
+
+/* A phone held sideways. The bar takes 84px of a 390px window, so a shallow band would put the
+   singers' heads under it; the plate keeps enough height to clear the bar and the letter is reached
+   by scrolling, as it is on a phone held upright. */
+@media (max-height: 560px) and (pointer: coarse) {
+  .letter-stage {
+    --letter-plate-ratio: 2.5;
+  }
+}
+
+/* The dark ground is a material, not a colour: film grain over a warm black. */
+.letter-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 240px 240px;
+}
+
+/* ── The room ───────────────────────────────────────────────────────────────── */
+.letter-room {
+  grid-column: 1 / 4;
+  grid-row: 1 / 3;
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  min-width: 0;
+}
+
+/* The room lights the ground: a spill of the photograph's own warm light past its foot and its
+   right edge, under the sentence, the blank and the sheet. It is what keeps the black from being
+   flat, and it sits UNDER the plate, so it never touches the picture. */
+.letter-room::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  right: -34%;
+  bottom: -48%;
+  width: 84%;
+  height: 116%;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side at 50% 50%,
+    rgb(198 164 91 / 0.15),
+    rgb(198 164 91 / 0.055) 46%,
+    rgb(10 9 8 / 0) 100%
+  );
+}
+
+/* The room recedes as the reader leaves it — the only thing the scroll does to the photograph, and
+   it has to be FLAT: the paper eats the picture from the bottom, so everything still on screen is
+   the plate's top band and a directional dim would spend itself on what is already covered. */
+.letter-room::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: var(--dark);
+  opacity: 0;
+}
+
+.letter-plate {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--letter-plate-ratio);
+  max-height: 62svh;
+  overflow: hidden;
+  background: #0d0c0b;
+}
+
+@media (max-height: 560px) and (pointer: coarse) {
+  .letter-plate {
+    max-height: none;
+  }
+}
+
+/* THE FOOT OF THE PLATE IS FIXED; THE CEILING IS WHAT A SHORTER BOX GIVES UP. Both cuts of the
+   frame end on a measured dark line — below the lectern in the spread, above it in the wide one —
+   so the bottom edge never slices a lit body or the brass. Flush right for the same reason: where
+   the box is narrower than the window the far end of the row is what goes, because the near end is
+   the conductor and the altar. */
+.letter-plate :is(picture, img) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 100% 100%;
+}
+
+.letter-plate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 240px 240px;
+}
+
+/* The sanctuary lamp's light. Off at rest — the room is what it is — and lit only once the letter
+   has been addressed. */
+.letter-bloom {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    42% 38% at 82% 12%,
+    rgb(244 232 205 / 0.42),
+    rgb(198 164 91 / 0.14) 40%,
+    rgb(10 9 8 / 0) 72%
+  );
+  transition: opacity 1.8s var(--ease) 0.2s;
+}
+
+.letter-stage.is-committed .letter-bloom {
+  opacity: 1;
+}
+
+/* ── The dark side: one sentence, one blank, one act ──────────────────────────
+   Under the photograph. The sentence is the page's h1 and says what the letter carries; the blank
+   beside it is where the reader writes; the act is a bar of the letter's own paper. Nothing else
+   lives here but the photograph's credit. */
+.letter-lede-row {
+  grid-column: 2 / 3;
+  grid-row: 3;
+  z-index: 2;
+  display: grid;
+  gap: 28px;
+  align-content: start;
+  padding: 28px 0 36px;
+}
+
+.letter-lede {
+  margin: 0;
+  max-width: 26ch;
+  color: rgb(244 241 233 / 0.94);
+  font-family: var(--serif);
+  font-size: clamp(24px, 2.1cqw, 32px);
+  font-weight: 300;
+  letter-spacing: -0.012em;
+  line-height: 1.2;
+  text-wrap: pretty;
+}
+
+.letter-credit {
+  margin: 0;
+  max-width: 54ch;
+  color: rgb(244 241 233 / 0.6);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.notice-letter-ask {
+  min-width: 0;
+}
+
+/* The floor the island freezes while the receipt takes the blank's place, walked back down to the
+   receipt's own height once it is painted. */
+.notice-letter-ask[data-settling] {
+  transition: min-height 420ms var(--ease);
+}
+
+.notice-letter-ask .notice-form {
+  margin: 0;
+}
+
+/* The blank, the act and the clause are `styles/notice-blank.css` — the letter's own dress for
+   the island; this sheet only gives it the column and the arrival gesture (Motion). */
+
+.letter-noscript {
+  margin: 14px 0 0;
+  color: rgb(244 241 233 / 0.7);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ── The receipt, where the blank was ───────────────────────────────────────── */
+.notice-letter-ask .notice-done {
+  margin: 0;
+}
+
+.notice-letter-ask .notice-done:focus {
+  outline: none;
+}
+
+.notice-letter-ask .notice-done-mark {
+  display: none;
+}
+
+.notice-letter-ask .notice-done-title {
+  margin: 0;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: clamp(22px, 1.6cqw, 25px);
+  font-weight: 300;
+  line-height: 1.2;
+}
+
+.notice-letter-ask .notice-done-body {
+  margin: 10px 0 0;
+  color: rgb(244 241 233 / 0.8);
+  font-size: 14px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.notice-letter-ask .notice-done-address {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  margin: 14px 0 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.notice-letter-ask .notice-done-address-label {
+  color: rgb(244 241 233 / 0.55);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.notice-letter-ask .notice-done-address-value {
+  color: var(--paper);
+  overflow-wrap: anywhere;
+}
+
+.notice-letter-ask .notice-done-hint {
+  margin: 8px 0 0;
+  color: rgb(244 241 233 / 0.6);
+  font-size: 12px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.notice-letter-ask :is(.notice-textlink, .notice-recovery-summary) {
+  padding: 0 0 1px;
+  border: 0;
+  border-bottom: 1px solid rgb(244 241 233 / 0.35);
+  background: none;
+  color: var(--paper);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.notice-letter-ask :is(.notice-textlink, .notice-recovery-summary):hover,
+.notice-letter-ask :is(.notice-textlink, .notice-recovery-summary):focus-visible {
+  border-bottom-color: var(--paper);
+  outline: none;
+}
+
+.notice-letter-ask .notice-recovery {
+  margin: 18px 0 0;
+}
+
+.notice-letter-ask .notice-recovery-summary {
+  display: inline-block;
+  list-style: none;
+}
+
+.notice-letter-ask .notice-recovery-summary::-webkit-details-marker {
+  display: none;
+}
+
+.notice-letter-ask :is(.notice-recovery-body, .notice-recovery-state) {
+  margin: 10px 0 0;
+  color: rgb(244 241 233 / 0.6);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.notice-letter-ask .notice-submit-quiet {
+  margin: 12px 0 0;
+  padding: 8px 16px;
+  border: 1px solid rgb(244 241 233 / 0.28);
+  background: none;
+  color: var(--paper);
+  font-family: var(--sans);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.notice-letter-ask .notice-submit-quiet:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ── The sheet ─────────────────────────────────────────────────────────────────
+   One sheet of the page's own paper, lying over the corner of the room. It carries the letter and
+   nothing else: no creases, no border, no gradient — a material is either there or it is not. */
+.letter-sheet-slot {
+  grid-column: 2 / 3;
+  grid-row: 4;
+  position: relative;
+  z-index: 3;
+  min-width: 0;
+  padding-bottom: clamp(40px, 6vh, 64px);
+  perspective: 1400px;
+}
+
+/* The light comes from the room, on the left: the shadow falls right and down, as a sheet's does on
+   a lit desk, and tightens as the sheet lands. */
+.letter-sheet {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  max-width: 500px;
+  padding: clamp(32px, 8cqw, 52px) clamp(24px, 6.5cqw, 44px) clamp(32px, 8cqw, 48px);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  box-shadow:
+    28px 40px 80px -24px rgb(0 0 0 / 0.8),
+    4px 8px 18px rgb(0 0 0 / 0.42);
+  transform-origin: 50% 100%;
+  transition:
+    transform 0.8s var(--ease),
+    box-shadow 0.8s ease;
+}
+
+.letter-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 240px 240px;
+}
+
+/* The letterhead is the sender's mark, and the sender's mark is the site's: the same glyph and the
+   same serif the chrome wears, at the chrome's size, in ink because it lies on paper. */
+.letter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgb(20 19 15 / 0.2);
+}
+
+.letter-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 300;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.letter-mark:focus-visible {
+  outline: 1px solid rgb(115 95 53 / 0.75);
+  outline-offset: 6px;
+}
+
+.letter-glyph {
+  width: 17px;
+  height: 40px;
+  flex-shrink: 0;
+  background: var(--ink);
+  -webkit-mask: url(/logo-mark.png) center / contain no-repeat;
+  mask: url(/logo-mark.png) center / contain no-repeat;
+}
+
+.letter-head-rubric {
+  color: rgb(20 19 15 / 0.6);
+  font-size: 15px;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+/* ── The addressee's line ──────────────────────────────────────────────────────
+   Where a letter carries its addressee: at the head, before anything is said. Not a field — the
+   letter's own line, in the same shape as the blank under the photograph, filling with what the
+   reader writes there. Empty it is a ruled line after "Do"; written on, its rule darkens; sent, it
+   is inked. */
+.letter-addressee {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: clamp(20px, 3vh, 34px) 0 0;
+}
+
+.letter-to {
+  flex-shrink: 0;
+  color: rgb(20 19 15 / 0.62);
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1;
+}
+
+.letter-to-line {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 40px;
+  margin: 0;
+  padding: 6px 0 10px;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.letter-to-line::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: rgb(20 19 15 / 0.34);
+  transform-origin: 0 50%;
+  transition: background-color 0.4s ease;
+}
+
+.letter-to-line.has-text::after {
+  background: rgb(20 19 15 / 0.7);
+}
+
+.letter-sheet.is-addressed .letter-to-line::after {
+  background: var(--ink);
+}
+
+/* ── The evening, and what will be sung ────────────────────────────────────── */
+.letter-evening {
+  margin-top: clamp(22px, 3.2vh, 38px);
+}
+
+.letter-latin {
+  margin: 0 0 4px;
+  color: rgb(20 19 15 / 0.62);
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.2;
+}
+
+.letter-title {
+  margin: 0;
+  font-size: clamp(28px, 2.4cqw, 34px);
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.letter-title a {
+  color: var(--ink);
+  border-bottom: 1px solid transparent;
+  text-decoration: none;
+  transition: border-color 0.3s ease;
+}
+
+.letter-title a:hover,
+.letter-title a:focus-visible {
+  border-bottom-color: rgb(20 19 15 / 0.4);
+  outline: none;
+}
+
+.letter-moment {
+  margin: 12px 0 0;
+  color: rgb(20 19 15 / 0.84);
+  font-family: var(--mono);
+  font-size: 13.5px;
+  font-variant-numeric: lining-nums tabular-nums;
+  line-height: 1.5;
+}
+
+.letter-nowrap {
+  white-space: nowrap;
+}
+
+.letter-place {
+  margin: 2px 0 0;
+  color: rgb(20 19 15 / 0.72);
+  font-family: var(--sans);
+  font-size: 14.5px;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.letter-place-detail {
+  display: block;
+  color: rgb(20 19 15 / 0.58);
+}
+
+/* The only music on the page: the line this evening is inscribed with, set as the letter quotes
+   it. This is the element no other ensemble could print. */
+.letter-incipit {
+  margin: clamp(18px, 2.6vh, 30px) 0 0;
+  padding: 0;
+}
+
+.letter-incipit p {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(21px, 1.9cqw, 25px);
+  font-weight: 400;
+  letter-spacing: -0.006em;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.letter-incipit em {
+  font-style: italic;
+}
+
+.letter-incipit footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 8px 0 0;
+  color: rgb(20 19 15 / 0.7);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* The link takes the rule and no arrow: the arrow is the act's gesture, and two on one sheet would
+   make the act one of two equal doors. */
+.letter-incipit footer a {
+  padding-bottom: 1px;
+  border-bottom: 1px solid rgb(20 19 15 / 0.3);
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.3s ease;
+}
+
+.letter-incipit footer a:hover,
+.letter-incipit footer a:focus-visible {
+  border-bottom-color: var(--ink);
+}
+
+/* The sign-off and the signature. Light at rest; the sign-off firms once the letter is addressed —
+   the one place the variable axis carries meaning rather than decoration. */
+.letter-signoff {
+  margin: clamp(26px, 4vh, 48px) 0 0;
+  color: var(--ink);
+  font-size: clamp(26px, 2.2cqw, 30px);
+  font-weight: 300;
+  letter-spacing: -0.012em;
+  line-height: 1.05;
+  transition: font-weight 1s ease 0.3s;
+}
+
+.letter-sheet.is-addressed .letter-signoff {
+  font-weight: 460;
+}
+
+.letter-signature {
+  margin: 6px 0 0;
+  color: var(--ink);
+  font-size: 18px;
+  font-style: italic;
+  line-height: 1.2;
+}
+
+.letter-sheet.is-addressed {
+  transform: translateY(-8px);
+  box-shadow:
+    36px 52px 100px -28px rgb(0 0 0 / 0.9),
+    6px 10px 26px rgb(0 0 0 / 0.48);
+}
+
+/* ── The paper: the register ───────────────────────────────────────────────────
+   It comes up over the room after the letter has left it. The reader leaves the room by pulling the
+   paper over it; the letter goes ahead of the paper it is made of, and the paper never crosses it. */
+.letter-paper {
+  position: relative;
+  z-index: 2;
+  padding-block: clamp(64px, 9vh, 116px) clamp(48px, 7vh, 84px);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 -30px 70px rgb(0 0 0 / 0.5);
+}
+
+.letter-paper::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: var(--candle);
+}
+
+/* A printed index is not a screen's width: the register keeps a page's measure, centred. */
+.letter-measure {
+  width: min(100% - 2 * max(22px, 3.4vw), 1000px);
+  margin-inline: auto;
+}
+
+.letter-paper .notice-rubric {
+  margin: 0 0 26px;
+  color: rgb(20 19 15 / 0.66);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.letter-paper .notice-entries {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.letter-paper .notice-entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.6em minmax(0, 1fr);
+  gap: 4px 16px;
+  padding: 18px 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.letter-paper .notice-entry::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: rgb(20 19 15 / 0.22);
+  transform-origin: 0 50%;
+}
+
+.letter-paper .notice-entries li:last-child .notice-entry::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: rgb(20 19 15 / 0.22);
+}
+
+.letter-paper .notice-entry-roman {
+  grid-row: 1 / span 4;
+  color: rgb(20 19 15 / 0.64);
+  font-family: var(--capitalis);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  transition: color 0.35s ease;
+}
+
+/* The rubric hangs in the margin at size: it is the ensemble's own naming, not a subtitle. */
+.letter-paper .notice-entry-latin {
+  color: rgb(20 19 15 / 0.66);
+  font-family: var(--serif);
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.2;
+}
+
+.letter-paper .notice-entry-name {
+  font-family: var(--serif);
+  font-size: 24px;
+  line-height: 1.14;
+  transition: transform 0.4s var(--ease);
+}
+
+.letter-paper .notice-entry-place {
+  color: rgb(20 19 15 / 0.68);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.letter-paper .notice-entry-moment {
+  color: rgb(20 19 15 / 0.72);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.letter-paper .notice-entry:hover .notice-entry-roman,
+.letter-paper .notice-entry:focus-visible .notice-entry-roman {
+  color: var(--ink);
+}
+
+.letter-paper .notice-entry:hover .notice-entry-name,
+.letter-paper .notice-entry:focus-visible .notice-entry-name {
+  transform: translateX(8px);
+}
+
+.letter-paper .notice-entry:focus-visible {
+  outline: 1px solid rgb(115 95 53 / 0.75);
+  outline-offset: 6px;
+}
+
+/* The register's two doors: the rest of the concerts, and the way back to the site. */
+.letter-doors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+  margin: clamp(34px, 5vh, 56px) 0 0;
+}
+
+.letter-door {
+  display: inline-block;
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgb(115 95 53 / 0.45);
+  color: var(--candle-ink);
+  font-family: var(--sans);
+  font-size: 13.5px;
+  text-decoration: none;
+}
+
+.letter-door:hover,
+.letter-door:focus-visible {
+  border-bottom-color: var(--candle-ink);
+}
+
+/* ── Layout switches ask the container ─────────────────────────────────────── */
+@container letter (min-width: 780px) {
+  .letter-paper .notice-entry {
+    grid-template-columns: 2.6em 9ch minmax(0, 1fr) auto auto;
+    gap: 0 20px;
+    align-items: baseline;
+    padding: 20px 0;
+  }
+
+  .letter-paper .notice-entry-roman {
+    grid-row: auto;
+  }
+
+  .letter-paper .notice-entry-place {
+    max-width: 22ch;
+    text-align: right;
+  }
+
+  .letter-paper .notice-entry-moment {
+    white-space: nowrap;
+  }
+}
+
+/* THE SPREAD. The room takes the bleed column and the head row; the sheet stands on the right page
+   and reaches back over the room by --letter-overlap; the sentence, the blank and the credit sit
+   under the photograph, on black. */
+@container letter (min-width: 900px) {
+  .letter-stage {
+    grid-template-columns:
+      var(--letter-gutter) minmax(0, 1fr)
+      calc(var(--letter-sheet-w) - var(--letter-overlap)) var(--letter-gutter);
+    grid-template-rows: var(--letter-head-h) minmax(0, 1fr) auto;
+  }
+
+  .letter-room {
+    grid-column: 1 / 3;
+    grid-row: 1 / 3;
+  }
+
+  .letter-plate {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    height: auto;
+    max-height: none;
+    aspect-ratio: auto;
+  }
+
+  .letter-sheet-slot {
+    grid-column: 3 / 4;
+    grid-row: 2 / 4;
+    align-self: start;
+    justify-self: end;
+    width: var(--letter-sheet-w);
+    margin-top: var(--letter-sheet-drop);
+    padding-bottom: 0;
+  }
+
+  /* A letter's margins: wide enough that the paper, not the text, is what the eye meets, and the
+     foot deeper than the head, as a printed letter's is. */
+  .letter-sheet {
+    max-width: none;
+    padding: clamp(48px, 5cqw, 72px) clamp(40px, 4cqw, 60px) clamp(44px, 4.6cqw, 64px);
+  }
+
+  /* Tall enough that the photograph's foot stays above the sheet's: the sheet must cross that edge
+     or it is a card pinned to the picture's side. */
+  .letter-lede-row {
+    grid-column: 2 / 3;
+    grid-row: 3;
+    min-height: var(--letter-lede-min);
+    gap: 24px;
+    padding: 34px calc(var(--letter-overlap) + 36px) 44px 0;
+  }
+
+  .notice-letter-ask {
+    max-width: 440px;
+  }
+}
+
+/* Wide enough for the sentence and the blank to sit side by side under the photograph: the sentence
+   on the left, the blank on the right, nearest the letter it addresses. */
+@container letter (min-width: 1180px) {
+  .letter-lede-row {
+    /* The blank's column is pinned 36px clear of the sheet and the sentence is pinned to the
+       gutter, so the channel between them is whatever the window leaves. The cap is what moves
+       rather than either anchor: it only widens above ~1570px, where the room to spare is, and the
+       line a reader writes on grows with it. */
+    grid-template-columns: minmax(0, 1fr) clamp(320px, 28cqw, 520px);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 18px 48px;
+    align-items: start;
+  }
+
+  .letter-lede {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  /* The credit follows the SENTENCE, never the foot of the row: aligned to the row's end it was
+     placed by the window rather than by anything it belongs to — 28px under the clause at 900,
+     86 at 1080, 188 at 1024. Held to the sentence it lands in the same band as the clause at every
+     height, and the two close the dark side with one line of small print. */
+  .letter-credit {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+    margin-top: 10px;
+  }
+
+  .notice-letter-ask {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    max-width: none;
+  }
+}
+
+@container letter (max-width: 559px) {
+  .letter-title {
+    font-size: clamp(28px, 9cqw, 34px);
+  }
+
+  .letter-signoff {
+    font-size: clamp(26px, 8.4cqw, 31px);
+  }
+
+  .letter-incipit {
+    margin-top: 16px;
+  }
+
+  /* One class over the object's own rule, so this holds whichever sheet the bundle orders first. */
+  .notice-letter-ask .notice-blank .notice-email {
+    font-size: 22px;
+  }
+}
+
+/* ── Motion ────────────────────────────────────────────────────────────────────
+   Two events on arrival. The sheet is there in the first frame — a little lifted at its head and a
+   little askew, opaque, its shadow far and soft — and it is laid down: it settles flat as the
+   shadow tightens under it. Then the two lines, the blank under the photograph and the addressee's
+   line on the sheet, rule themselves from the left in one gesture, so the reader sees they are one.
+   Nothing that is read fades, and paper does not either.
+
+   THE LIFTED STATE IS KEYED ON THE SITE'S PRE-PAINT GATE, `html.voct-motion` (DocumentGates), not
+   on a class of this page's own. It has to be the first computed style the sheet ever has: a page
+   script arming it lands after the sheet already stands flat, which starts a transition INTO the
+   lift — and `letter-in`, two frames later, reverses that transition while it is still in its
+   delay, at a value that never left flat. Nothing moves. The gate is on the root before the first
+   frame on a cold load and, on a ClientRouter navigation, before the swap; the page then only
+   adds `letter-in` (NoticeLetter.astro), one painted frame later. Scoped to the stage so the
+   shared blank is untouched wherever else it stands. */
+html.voct-motion .letter-sheet {
+  transform: translateY(28px) rotateX(-7deg) rotateZ(-0.7deg);
+  box-shadow:
+    48px 72px 110px -20px rgb(0 0 0 / 0.7),
+    8px 16px 30px rgb(0 0 0 / 0.3);
+  transition:
+    transform 0.86s cubic-bezier(0.2, 0.7, 0.2, 1) 0.12s,
+    box-shadow 0.9s ease 0.12s;
+}
+
+html.voct-motion.letter-in .letter-sheet {
+  transform: none;
+  box-shadow:
+    28px 40px 80px -24px rgb(0 0 0 / 0.8),
+    4px 8px 18px rgb(0 0 0 / 0.42);
+}
+
+html.voct-motion.letter-in .letter-sheet.is-addressed {
+  transform: translateY(-8px);
+  box-shadow:
+    36px 52px 100px -28px rgb(0 0 0 / 0.9),
+    6px 10px 26px rgb(0 0 0 / 0.48);
+}
+
+html.voct-motion .letter-stage :is(.letter-to-line, .notice-blank-line)::after {
+  transform: scaleX(0);
+  transition:
+    transform 0.7s var(--ease) 0.6s,
+    background-color 0.3s ease;
+}
+
+html.voct-motion.letter-in .letter-stage :is(.letter-to-line, .notice-blank-line)::after {
+  transform: scaleX(1);
+}
+
+/* The stage holds still only where the scroll can carry the letter away from it. Without the
+   timelines — no support, or motion reduced — a pinned room would let the paper come up over the
+   letter and cut it, so the page simply scrolls. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) and (min-width: 900px) and (min-height: 700px) {
+    .letter-stage {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+    }
+
+    .letter-room::after {
+      animation: letter-recede linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100vh;
+    }
+
+    /* The letter travels with the reader — one for one with the scroll, so it is content leaving
+       the viewport while the room it lay on stays behind and darkens. It goes ahead of the paper by
+       the black it always had under it. */
+    .letter-sheet-slot {
+      animation: letter-leave linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100vh;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* The register writes its own rules as it comes into view. */
+    .letter-paper .notice-entry::before {
+      animation: letter-draw 1s linear both;
+      animation-timeline: view();
+      animation-range: entry 6% cover 24%;
+    }
+  }
+}
+
+@keyframes letter-recede {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.62;
+  }
+}
+
+@keyframes letter-leave {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-100vh);
+  }
+}
+
+@keyframes letter-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .letter-sheet,
+  .letter-signoff,
+  .letter-bloom,
+  .letter-paper .notice-entry-name {
+    transition: none;
+  }
+
+  .letter-paper .notice-entry::before {
+    transform: scaleX(1);
+  }
+}
