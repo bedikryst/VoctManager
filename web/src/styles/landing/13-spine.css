@@ -26,7 +26,7 @@
      until 1756px and only opens past the spine's ~68px inscription at about 1780; below the 1280px
      breakpoint the band's rail runs to the viewport edge outright. Between those two the gold
      prints itself on the fifth photograph. The register's liniatura stands its act at the grid's
-     right edge with a 44px seal, which the inscription crosses at every width under ~1780. Both
+     right edge with a seal that rises to ~74px, which the inscription crosses at every width under ~1780. Both
      mark themselves `data-spine-clear` and the spine withdraws while the marked element holds the
      viewport centre — see MovementSpine.tsx. Withdrawing, not shifting: the spine is orientation,
      the object it would print on is the page. Written to out-specify `.is-visible`, which is the

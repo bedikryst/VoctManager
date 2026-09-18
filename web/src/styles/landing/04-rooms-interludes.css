@@ -844,10 +844,10 @@
      the act, the empty lines, the receipt's three tiers — is `--lin-pitch` tall with its rule at the
      FOOT, and every rule runs the sheet's full measure. This is the only block on the site where a
      rule stands under each written line, and that texture is what tells the block apart from the
-     register above it: there the rules separate rows, here they carry them. The first row adds
-     `--lin-key` for the key's tier, and THE RECEIPT'S FIRST ROW MUST ADD THE SAME — three receipt
-     rows over one empty line then stand exactly where two form rows over two stood, so the sheet
-     swaps the form for the receipt without one rule moving.
+     register above it: there the rules separate rows, here they carry them. It is also what lets
+     three receipt rows over one empty line stand exactly where two form rows over two stood, so
+     the sheet swaps the form for the receipt without one rule moving. The key rides inside the
+     first row's pitch, in the air a 64px line leaves above itself; no row is an exception.
 
      THE ACT IS ON THE CLAUSE'S LINE, at the measure's right edge with the clause on its left: the
      two-edge gesture the announcement makes one row up, where two groups may take two edges because
@@ -895,10 +895,11 @@
        with the descent clear (64 × 1.25 + the input's own 2/12 padding ≈ 94px). The floor is the
        phone's, where the address is at its 32px minimum. */
     --lin-pitch: clamp(66px, 6.8vw, 100px);
-    /* The key's tier — its 11px line plus the air under it — which the FIRST ruled row adds to the
-       pitch and which the receipt's first row must add identically, or the rules move on send. */
-    --lin-key: 30px;
-    --lin-seal: clamp(38px, 2.8vw, 44px);
+    /* The seal at rest, beside its verb; and the seal once it has risen to the writing line, where
+       it is scaled against that 64px line rather than against the verb it left. The risen one is
+       the widest thing at the grid's right edge, which is why the sheet marks `data-spine-clear`. */
+    --lin-seal: clamp(38px, 2.9vw, 46px);
+    --lin-seal-ready: clamp(52px, 4.6vw, 74px);
     --lin-ink: var(--line-strong);
     display: block;
     /* The section grid's own width and centring (`.path .section-grid`), so the sheet's edges are
@@ -986,17 +987,16 @@
   /* ── The two written rows ───────────────────────────────────────────────────
      The blank takes the first row whole — both columns — and the clause and the act share the
      second, on its two edges. Authored areas rather than the DOM's order, because the island prints
-     the act between the blank and the clause. The first row is the pitch plus the key's tier; the
-     second may grow past the pitch for a clause that wraps. Both rules are the FORM's
+     the act between the blank and the clause. The right column is sized for the seal and a verb
+     that wraps, not for a verb set across; everything else belongs to the line the reader writes.
+     The second row may grow past the pitch for a clause that wraps. Both rules are the FORM's
      pseudo-elements: each row has more than one thing standing on it and a border on any of them
      would break at the column gap. */
   .path-liniatura .notice-form {
     position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows:
-      minmax(calc(var(--lin-pitch) + var(--lin-key)), auto)
-      minmax(var(--lin-pitch), auto);
+    grid-template-columns: minmax(0, 1fr) clamp(190px, 17vw, 270px);
+    grid-template-rows: minmax(var(--lin-pitch), auto) minmax(var(--lin-pitch), auto);
     grid-template-areas:
       "blank blank"
       "clause act";
@@ -1014,7 +1014,7 @@
   .path-liniatura .notice-form::before {
     content: "";
     position: absolute;
-    top: calc(var(--lin-pitch) + var(--lin-key) - 1px);
+    top: calc(var(--lin-pitch) - 1px);
     right: 0;
     left: 0;
     height: 1px;
@@ -1036,15 +1036,13 @@
 
   /* THE BLANK: the key above, the line under it, the whole measure. The key is a rubric over a
      display line — the shape every row of the register uses — and not a word on the baseline: at
-     the title grade a key on the line would take a third of what there is to write on. The row is
-     taller than the pitch by exactly the key's tier, and `align-content: end` stands the pair on
-     the row's foot so the line lands on the rule. */
+     the title grade a key on the line would take a third of what there is to write on. The pair
+     stands on the row's foot, so the line lands on the rule. */
   .path-liniatura .notice-blank {
     position: relative;
     grid-area: blank;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    row-gap: 13px;
     min-width: 0;
   }
 
@@ -1117,10 +1115,12 @@
     opacity: 1;
   }
 
-  /* The key, a tier of its own over the line. Its line-height and the row gap above the address are
-     what `--lin-key` is worth; change one and the first row's height stops matching the receipt's. */
+  /* The key, over the line. It is pulled down INTO the input's box, because a 64px line at 1.25
+     leading carries ~30px of dead air above its own cap height, and a key standing above that air
+     floated a hundred pixels over the rule. Measured against the written address, its baseline
+     clears the tallest ascender by ~19px. */
   .path-liniatura .notice-blank-label {
-    margin: 0;
+    margin: 0 0 -14px;
     white-space: nowrap;
     color: var(--ink-soft);
     font-family: var(--capitalis);
@@ -1171,7 +1171,7 @@
      red. */
   .path-liniatura .notice-form > .notice-error {
     position: absolute;
-    top: calc(var(--lin-pitch) + var(--lin-key) + 8px);
+    top: calc(var(--lin-pitch) + 8px);
     left: 0;
     margin: 0;
     color: #9b4f38;
@@ -1216,19 +1216,22 @@
     color: var(--candle-ink);
   }
 
-  /* THE ACT: the verb, and the seal after it, on the clause's line at the measure's right edge —
+  /* THE ACT: the verb, and the seal beside it, on the clause's line at the measure's right edge —
      the two-edge gesture the announcement makes one row up, where two groups may take two edges
-     because a rule is drawn across between them. It is off the writing line on purpose: anything
-     standing on that line competes with the blank and caps what can be written on it. Upright,
-     against the italic the ensemble speaks in — the house's verbs lean, the reader's hand stands up
-     — at 400, and far enough under the address's grade that the line the reader writes stays the
-     largest thing on the sheet. No underline: a rule under a serif verb was read as a second,
-     shorter field, and that is most of why the act "did not look pressable" for three rounds.
-     Centred on the seal, whose foot stands 6px off the row's rule. */
+     because a rule is drawn across between them. It is off the writing line at rest on purpose:
+     anything standing there competes with the blank. What it does when the writing stops is below.
+
+     Upright, against the italic the ensemble speaks in — the house's verbs lean, the reader's hand
+     stands up — at 400, and far enough under the address's grade that the line the reader writes
+     stays the largest thing on the sheet. No underline: a rule under a serif verb was read as a
+     second, shorter field, and that is most of why the act "did not look pressable" for three
+     rounds. The verb rests in the supporting ink and takes the full ink when the address is
+     finished, so the act answers as one thing. */
   .path-liniatura .notice-act {
     grid-area: act;
-    display: inline-flex;
+    display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: clamp(10px, 1vw, 14px);
     margin: 0;
     padding: 0 0 6px;
@@ -1242,9 +1245,13 @@
     font-weight: 400;
     letter-spacing: 0;
     line-height: 1.2;
-    text-align: left;
+    text-align: right;
     text-transform: none;
-    white-space: nowrap;
+  }
+
+  .path-liniatura .notice-act > span {
+    color: var(--ink-soft);
+    transition: color 0.45s var(--ease);
   }
 
   /* The seal. `.vault-close` and the lightbox's close are this same circle on the night ground;
@@ -1268,18 +1275,83 @@
     font-family: var(--serif);
     font-size: clamp(18px, 1.4vw, 22px);
     line-height: 1;
+    /* The rise carries a little inertia — a curve that overshoots its mark by a few pixels and
+       settles back — so the seal arrives at the line the way a thing with weight does rather than
+       stopping dead on a rail. The growth takes the site's own curve: size that overshoots reads as
+       a bounce, and there is no bounce anywhere on this page. */
     transition:
-      background-color 0.45s var(--ease),
-      color 0.45s var(--ease),
+      bottom 0.9s cubic-bezier(0.22, 1.18, 0.36, 1),
+      width 0.8s var(--ease-slow),
+      height 0.8s var(--ease-slow),
+      font-size 0.8s var(--ease-slow),
+      background-color 0.5s var(--ease),
+      color 0.5s var(--ease),
       transform 0.5s var(--ease-slow);
   }
 
-  /* THE LINE IS WRITTEN, SO THE SEAL FILLS. Not on hover — before it: the act answers the address
-     the moment it is well-formed, and the reader sees the page ready to take it before any pointer
-     goes looking for a button. `~` rather than `+` because the refusal may stand between the two. */
-  .path-liniatura .notice-blank:has(.notice-email:valid) ~ .notice-act::after {
+  /* THE LINE HAS BECOME AN ADDRESS, SO THE ACT ANSWERS: the seal fills and the verb takes the full
+     ink, both at once, before any pointer goes looking for a button. `[data-ready]` and not
+     `:has(:valid)` — the browser calls `name@host` valid with no dot in it, so CSS alone would fire
+     this three characters into the host. The island reads the line's SHAPE (a name, `@`, a host, a
+     dot and the first letter of its tail) and nothing else, so the state holds while the rest of
+     the tail is typed and drops only when that letter goes (NoticeForm.tsx). */
+  .path-liniatura .notice-form[data-ready] .notice-act::after {
     background: var(--ink);
     color: var(--paper);
+  }
+
+  .path-liniatura .notice-form[data-ready] .notice-act > span {
+    color: var(--ink);
+  }
+
+  /* ── The seal rises to the line it is about to seal ─────────────────────────
+     At rest the seal stands beside its verb, on the clause's line; when the writing is finished it
+     LEAVES that line and comes up to the end of the one just written, growing to the address's own
+     scale as it goes. That is the whole answer to the reader who wrote his address, looked at the
+     page and forgot there was anything to press: the act arrives where the eye already is, and it
+     arrives as a movement, which no amount of resting weight can do on a page built from hairlines.
+
+     The verb does not follow it. It keeps its place and the width the seal vacated, so the act
+     stays one control with one label and the gesture reads as the seal going to the writing rather
+     than as the block rearranging itself. The verb's answer is ink, not size: type that changes
+     grade on a state is a jump, and this page has no such move anywhere.
+
+     OUT OF FLOW, so nothing reflows under a reader who has just stopped typing; `bottom: calc(100%
+     + 6px)` is measured off the act's own box, which IS the clause's row, so the seal lands 6px
+     above the writing line's rule however tall a wrapped clause has made that row. The address
+     keeps clear of where it will stand — a permanent reserve at the line's end, so the measure is
+     stable and nothing is pushed when the seal arrives.
+
+     Two columns only. Folded there is no second line for the seal to rise to, and the ink answer
+     above carries the moment on its own. */
+  @container liniatura (min-width: 800px) {
+    .path-liniatura .notice-act {
+      position: relative;
+      align-self: stretch;
+      align-items: flex-end;
+      padding-bottom: 13px;
+    }
+
+    .path-liniatura .notice-act > span {
+      padding-right: calc(var(--lin-seal) + clamp(10px, 1vw, 14px));
+    }
+
+    .path-liniatura .notice-act::after {
+      position: absolute;
+      right: 0;
+      bottom: 6px;
+    }
+
+    .path-liniatura .notice-email {
+      padding-right: calc(var(--lin-seal-ready) + clamp(16px, 1.4vw, 24px));
+    }
+
+    .path-liniatura .notice-form[data-ready] .notice-act::after {
+      bottom: calc(100% + 6px);
+      width: var(--lin-seal-ready);
+      height: var(--lin-seal-ready);
+      font-size: clamp(26px, 2.1vw, 34px);
+    }
   }
 
   /* Hover answers in either state, and with the same gesture the vault's close makes. */
@@ -1325,9 +1397,6 @@
   .path-liniatura .notice-inner[data-sent] .notice-done {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    /* The first tier pays the key's tier exactly as the form's first row does — that is what keeps
-       the receipt's opening rule on the writing line's own position. */
-    grid-template-rows: minmax(calc(var(--lin-pitch) + var(--lin-key)), auto);
     grid-auto-rows: minmax(var(--lin-pitch), auto);
     align-items: end;
     justify-items: stretch;
@@ -1571,7 +1640,7 @@
     .path-liniatura .notice-form {
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows:
-        minmax(calc(var(--lin-pitch) + var(--lin-key)), auto)
+        minmax(var(--lin-pitch), auto)
         auto
         minmax(var(--lin-pitch), auto)
         minmax(var(--lin-pitch), auto);
@@ -1591,11 +1660,19 @@
     /* The verb may wrap on a narrow phone; the seal stays whole beside its last line. */
     .path-liniatura .notice-act {
       justify-self: start;
+      text-align: left;
       white-space: normal;
     }
 
+    /* Stretched, and its text laid on the row's own foot. The clause carries the act row's rule on
+       its top edge, so the element has to BE the row: bottom-aligned like every other thing on this
+       sheet, its box would start a third of a pitch below the row it opens and the rule would land
+       there with it — which is the receipt's second rule missing its mark by 35px. */
     .path-liniatura .notice-consent-text {
       position: relative;
+      align-self: stretch;
+      display: flex;
+      align-items: flex-end;
       padding-right: 0;
     }
 

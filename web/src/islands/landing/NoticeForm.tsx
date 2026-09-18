@@ -135,6 +135,14 @@ export function NoticeForm({
   const [resent, setResent] = useState(false);
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  /** The line has the SHAPE of an address — a name, an `@`, a host, a dot and the first letter of
+      its tail. A host may answer that moment (the landing's seal leaves the verb's line and rises
+      to the end of the line just written). It is a pure reading of the value, so it holds while
+      the rest of the tail is typed and drops only when that letter or the dot is deleted: a state
+      that rose and fell on a timer moved the seal on every letter of `.com`. It is not the
+      browser's `:valid` either, which calls `name@host` an address with no dot at all and would
+      fire the answer three characters into the host. Validity proper is `onSubmit`'s. */
+  const ready = /^[^\s@]+@[^\s@]+\.[^\s@.]/.test(email.trim());
   const emailRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   /** The band this island stands in, held from the moment it is marked so the receipt can be
@@ -442,7 +450,16 @@ export function NoticeForm({
      mounts the island in (`.notice-band`, `.path-liniatura`, `.notice-door`). */
   const form =
     phase === "sent" ? null : (
-      <form ref={formRef} className="notice-form" onSubmit={onSubmit} noValidate aria-busy={loading}>
+      <form
+        ref={formRef}
+        className="notice-form"
+        onSubmit={onSubmit}
+        noValidate
+        aria-busy={loading}
+        /* Read by the host's sheet, never by this island: what the moment LOOKS like belongs to the
+           page the ask stands on; the island only says when the line has become an address. */
+        data-ready={ready ? "" : undefined}
+      >
         {/* THE BLANK: a label and a line to write on. On the letter the label is the form letter's
             `Na adres`, standing on the line's own baseline with the rule running on from it (the
             addressee's line on the sheet is the same shape, and the two rule themselves in one
