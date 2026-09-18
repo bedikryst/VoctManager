@@ -439,7 +439,36 @@ did not.
    simply rests drawn; below 981px the margin does not exist and it becomes a panel at the
    register's foot. The act finally wears a real capsule, which a register row could never give it.
 
-### The standing brief for the next session (developer, 2026-09-18)
+### READ THIS BEFORE ANY OTHER SECTION OF THIS FILE (developer, 2026-09-18, after Round 17)
+
+**The refusal lists in this file are spent. You are not bound by them, and you are told not to
+design against them.** Seventeen rounds produced a block the developer calls *nijaki* — flat — and
+his diagnosis is the correct one: it was designed by ELIMINATION. Each round read the accumulated
+"refused, do not propose again" lists and navigated between them, so every version was the largest
+thing that offended none of them. That is how you get a block with no argument. The lists are a
+record of one author's mistakes; they were never a programme, and a session that treats them as one
+repeats Round 5's trap with better manners.
+
+What this means concretely for the session that takes this over:
+
+- **Start from a thesis about what this block IS, stated in one sentence, and derive the geometry
+  from it.** Not from this file. If your thesis contradicts a past refusal, build it anyway and
+  show it — a refusal was a verdict on ONE execution, not on a direction.
+- **The only things in this file that genuinely bind are facts, not tastes**: the consent clause and
+  its version (`3.0`, `outreach/consent.py`, one wording across placements — a legal record, not a
+  design choice); the promise's wording, which is the developer's own and settled; `notice.lede` is
+  shared by four surfaces; `web:landing` is its own consent surface; `ink-press` nodes must rest at
+  weight 300 or the register audit fails the build; the movement spine floats 2vw from the viewport
+  edge, so anything at the grid's right edge needs `data-spine-clear`.
+- **Everything else — placement, width, grade, motion, whether there is a headline at all, whether
+  the metaphor of ruled paper survives — is open.** Including deleting `.path-liniatura` and its
+  CSS outright and starting on a blank section.
+- **Judge, then build, then show.** Do not put a menu of options to the developer. He has said this
+  twice in one morning and it is the single most expensive habit in this file's history.
+
+The tree as it stands is described under "Round 17"; it builds clean and is not committed.
+
+### The earlier standing brief (developer, 2026-09-18) — his words, still useful as direction
 
 - **Much more ambition, in the animation AND in the composition.** This is the whole point. Neither
   take had it.
@@ -450,12 +479,14 @@ did not.
 - Sticky was considered and is NOT what he means: nothing follows the reader. The object stands in
   one place in the document and answers approach.
 
-### What must not be proposed again
+### What was refused before (a record, NOT a prohibition — see the top of this file)
 
-Everything in Rounds 11 and 12's refused lists, plus: the ask standing after the coda; the ask as a
-row inside the register; a bare word under a hairline as the act (*"does not look pressable"*); and
-"the same object on every page", which is Round 11's verdict and still holds — the landing's answer
-does not transfer to /koncerty or /kontakt, which are still on Round 12's dresses and still unjudged.
+Rounds 11 and 12's lists, plus: the ask standing after the coda; the ask as a row inside the
+register; a bare word under a hairline as the act (*"does not look pressable"*). Each was a verdict
+on one execution. Read them to understand what has already been seen, never as the boundary of what
+may be drawn. The one item here that is still a live CONSTRAINT rather than a taste is Round 11's:
+the landing's answer does not transfer to /koncerty or /kontakt as an object — those pages dress
+the ask from their own materials, and they are still on Round 12's dresses and still unjudged.
 
 ### The tree, precisely
 
@@ -865,42 +896,55 @@ above the pitch. Phones only; noted, not fixed. Row 1 at 1200 folds (content 745
 designed; the developer's ~1915 is two-column. Leader opacity 1 at rest, →0 on writing; the seal
 ring reads `--ink` at rest and fills on `:valid`. Section height at 1440: 498px (Round 15: 538).
 
-### The ruling runs to the edge; the writing does not (2026-09-18, his second look) — BUILT
+### Round 17: three placements refused; the sheet is the body column (2026-09-18) — BUILT
 
-On the built sheet he saw what change 1 had left: *"something is missing on the right"* — the
-rules stopping at 1253 under a register whose every row ends on 1750. He reopened full width. The
-refused full-width build had stretched the WRITING with the rules (a 1000px address, the act a
-screen from its key), and that is what "designed for a shorter block" was about; the rules were
-never the problem. So the third shape: **every rule runs from the section's left edge to the
-register's right edge, and the writing keeps the measure it was drawn for.** Ruled paper is ruled
-to its margin whether or not the hand reached it. The act still stands where the pen stops, at
-1253, with paper after it. Nothing of the writing moved: address 613/443, headline one line,
-promise 46ch, fold at the same width, rule positions before/after send identical
-(14100/14178/14256/14334 at 1920).
+Three shapes were built and refused on the rendered page in one morning, and every one of them
+moved the SHEET to answer a complaint about the FIELD:
 
-Mechanics. `.path-liniatura` keeps its `padding-right` (the container's content box is still the
-writing, so the fold is untouched) and each ruled row bleeds into it: `.notice-form` takes
-`margin-right: -tail; padding-right: tail` (rules are the padding box's pseudo-elements, the grid
-lays out in the content box); the receipt's `p` rules moved from `border-bottom` to an `::after`
-drawn `right: -tail`, because a border stops where the tier's measure-as-padding stops;
-`.path-liniatura-void` takes the tail as negative margin whole. Two traps, both paid for in this
-session:
+1. Off the register's axis, at the register's measure (Round 16's change 1) — *"something is
+   missing on the right"*: rules stopping at 1253 under rows that end on 1750.
+2. Rules run to the register's right edge, writing kept at its measure — *"it looks unfinished"*:
+   a third of every row blank, the two empty lines multiplying it. (Mechanics, should they ever be
+   wanted: rows bleed into a right `--lin-tail` and pay it back as padding. It cost one build to
+   learn that **a `%` or `cqi` inside an UNREGISTERED custom property resolves where the property
+   is USED** — on the form `100%` was the writing's width and the rules stopped at 1630;
+   `@property --lin-tail { syntax: "<length>" }` computes it on the sheet and inherits px, with
+   `100cqi` off `.path` as a size container. Registered ONCE or the register audit R2 fails.)
+3. The say moved into the margin column, headline at 58px, which was the author's reading of his
+   *"stronger typography — bigger, thinner, more 2026"*. Refused on three counts, all correct:
+   the weight came apart left and right (a display title against hairlines and an 11px key across
+   a 150px channel), two labels in one rail pretended to be two sections, and the empty rules
+   stood level with the title.
 
-- **A `%` or `cqi` inside an unregistered custom property resolves where the property is USED.**
-  `--lin-tail` held `min(1580px, 100%)`; on the form `100%` was the writing's width and the rules
-  stopped at 1630. Fix: `@property --lin-tail { syntax: "<length>" }` — it computes to px on
-  `.path-liniatura` and inherits as px — with `100cqi` in place of `100%`, which needs `.path` to be
-  a size container (`container-type: inline-size`; its width is explicit, so containment costs it
-  nothing). The `@property` is registered once, in 04-rooms-interludes; the register audit (R2)
-  fails the build on a second registration.
-- `07-responsive` zeroes the tail below one column as `--lin-tail: 0px` (a `<length>`, not a bare
-  `0`), not `padding-right: 0`.
+**What stands: the sheet IS the register's body column, whole.** Rubric, headline, promise and the
+four ruled rows all in it, both edges the register's (667→1750 at 1920, 473→1368 at 1440), the act
+at the line's end. The margin column is `Z drogi`'s alone. The headline is back one step under the
+rows' title grade (28–46px): the announced evening stands 300px above at the full grade, and this
+page is built from hairlines — weight is not what makes a block seen here. **Thinner does not
+exist**: Cormorant's axis floor is 300 and the `ink-press` node must rest there or the audit fails
+the build. What actually answered *"it is hard to see there is a field there"* was the dotted
+leader, built alongside move 1 in Round 16 and carrying it alone. **Do not move this sheet again
+to make the field visible.**
 
-If the act reading mid-line is what he objects to next, the one-change alternative is the act at
-the register's right edge with the leader kept at its length: `margin-right: -tail` on the form
-without the padding, `padding-right: tail` on `.notice-blank` instead. Not built; the leader
-ending where the act begins is the stronger reading of "write here, up to the act".
+**The one thing this round added: `data-spine-clear` on `.path-liniatura`.** With the act at the
+grid's right edge its 44px seal meets the movement spine, which floats 2vw from the VIEWPORT's
+edge and so leaves the grid only past ~1780: measured, the inscription runs 1745–1822 against a
+grid edge of 1750 at 1920, and 1266–1372 against 1368 at 1440, printing "Vox memoriae" straight
+across the verb. The page already owns this collision — the Imagines plate marks itself and the
+spine withdraws while the marked element holds the viewport centre (`MovementSpine.tsx`,
+`13-spine.css`). Marked on the sheet and not on `.path`, so the register's own rows keep their
+index. Verified veiled at 1920 and 1440.
 
-Harness `vm-shot\notice-r16.cjs` now also reports `x`: every rule's left/right against the grid's
-right edge, and the act's right; `form::before` is measured from the form's first grid track (the
-custom property reads back as its `clamp()` tokens, so it was `null` before).
+Measured after: rules before/after send identical at every width (1920: 14100/14178/14256/14334;
+1440: 13340/13415/13490/13565; 1200 folded five rules), address 613/443, act → 1750/1368, section
+518/498px. Harness `vm-shot\notice-r16.cjs` now also reports `x` — every rule's left/right against
+the grid's right edge, the register body's left, the act's right, the say's box against the
+label's — and measures `form::before` from the form's first grid track (the custom property reads
+back as its `clamp()` tokens, so it was `null` before).
+
+**The working failure this round, worth more than the CSS.** Twice the author put a menu of
+options to the developer instead of a judgement, and twice the developer had to render the result
+to find what the author should have seen in the code. His words: *"you were not supposed to agree
+with me, you were supposed to judge for yourself… sixteen rounds of corrections are exactly
+because of this behaviour."* The rule this file should have carried from Round 5: a round that
+ends in "which of these do you want" is a round spent.

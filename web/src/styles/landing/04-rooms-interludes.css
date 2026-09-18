@@ -821,89 +821,83 @@
     }
   }
 
-  /* ── LINIATURA: the register goes on, unwritten ─────────────────────────────
-     THE FIGURE. A page is ruled before it is written — the gesture this site's LEAD register was
-     built on. The register above has six evenings written on it and closes on the one that is
-     announced; under that closing rule the page stays what it has been, ruled paper, and the lines
-     have nothing on them yet. The reader writes the address on the first of them and the act stands
-     at that line's end; the clause stands on the second; the ones below are empty. And once the
-     address is handed over the page writes its receipt back on the same lines.
+  /* ── LINIATURA: the register's next page ────────────────────────────────────
+     THE FIGURE, AND THE WHOLE ARGUMENT OF THE BLOCK. The register above names six evenings at a
+     display grade and closes on the one that is announced. Under that closing rule the page carries
+     on as what it has been — ruled paper — and the one line it inks is BLANK, because it is the only
+     line on this page the ensemble cannot write itself. Six evenings are named; the seventh line
+     belongs to the reader, and the page has already chosen it and put the pen mark on it.
 
-     THE SHEET IS HEADED, because it stands among headed things. Every row of the register carries a
-     title at a display grade; a block under them whose largest text was its own promise was read as
-     a footnote to the announcement, and a reader who does not read the ruled lines as a metaphor
-     was left with a label and a hairline. So the benefit has a headline one step under the
-     register's title grade — under it, because the evening announced 300px above is the page's one
-     future-tense fact and the ask must not outrank it — and the promise under the headline is a
-     sentence of text, set as text.
+     THE BLANK IS THE LARGEST THING IN THE ROOM, at the register's own title clamp — literally the
+     same `clamp(32px, 4.4vw, 64px)` as `.path-entry-title` and `.path-ahead-name`. That is the
+     composition, not an emphasis: a block whose biggest object was its own headline read as a
+     footnote to the announcement, because dimensionally it was one. A blank line outranks nothing —
+     it carries no claim until the reader supplies one, and what they supply is their own address —
+     so the announced evening 300px above keeps the page's one future-tense voice.
 
-     ONE PITCH, ONE MEASURE, A RULE UNDER EVERY ROW. Each row of the block — the written line, the
-     clause's row, the empty lines, the receipt's three lines — is `--lin-pitch` tall with its rule
-     at its FOOT, and every rule runs the sheet's full width from the same left edge, the key
-     included. That is what makes it read as one ruled sheet rather than as a form with separators
-     under it. It is also what lets the receipt replace the form without one rule moving: three
-     receipt rows over one empty line stand exactly where two form rows over two stood, so the first
-     empty line is simply put out.
+     THE KEY STANDS ABOVE THE LINE, NOT ON IT. At the title grade a key on the baseline eats a third
+     of the measure, and the register's own shape for a row is exactly this: quiet capitals over a
+     display line (`.path-ahead-rubric` over `.path-ahead-name`). The blank takes the whole measure,
+     because anything sharing its line competes with the figure and caps what can be written on it.
 
-     THE ACT STANDS WHERE THE WRITING STOPS. Key, address and act share the first line, so the eye
-     that has just written runs into the thing that sends it, rather than crossing the sheet to its
-     far corner. The act is the verb in the register's own upright serif and after it the page's one
-     round control — the hairline circle with a glyph in it that closes the vault and the lightbox —
-     carrying the arrow. At rest the ring is drawn in INK, so it reads as a control before anything
-     is written; it FILLS THE MOMENT THE LINE IS WRITTEN (`:has(.notice-email:valid)`, which
-     `required` on the field makes mean "a well-formed address"), which is the act answering the
-     reader's hand before any pointer reaches it. Ink, never gold: the vault is this page's one call
-     to give.
+     ONE PITCH, A RULE UNDER EVERY LINE. Every row below the say — the blank, the clause's row with
+     the act, the empty lines, the receipt's three tiers — is `--lin-pitch` tall with its rule at the
+     FOOT, and every rule runs the sheet's full measure. This is the only block on the site where a
+     rule stands under each written line, and that texture is what tells the block apart from the
+     register above it: there the rules separate rows, here they carry them. The first row adds
+     `--lin-key` for the key's tier, and THE RECEIPT'S FIRST ROW MUST ADD THE SAME — three receipt
+     rows over one empty line then stand exactly where two form rows over two stood, so the sheet
+     swaps the form for the receipt without one rule moving.
 
-     WHY A SHEET OFF THE REGISTER'S AXIS, AND NOT A ROW, AND NOT A BOOKMARK. Set as a row of the
-     register the ask was read at the rows' speed, went unseen and drove into the announced concert.
-     THE SHEET IS THE BODY COLUMN, WHOLE. Both of its edges are the register's: it begins where
-     every row of the register begins and ends where every row ends, and the act stands at that
-     end. Three other placements were built and refused on sight, and each refusal was a different
-     face of one mistake — moving the sheet to answer a complaint about the FIELD. As a ribbon in
-     the left margin it was an object laid on a page that has no objects on it. Starting at the
-     section's left edge and keeping the register's measure it stopped a rail short of the right
-     edge and read as unfinished. With the say moved into the margin column it put a display title
-     where this page keeps only labels: two weights arguing across the gap, two labels in one rail
-     pretending to be two sections, and blank rules standing level with a title. The say belongs
-     over the paper, in the paper's own column; the margin column is `Z drogi`'s alone.
+     THE ACT IS ON THE CLAUSE'S LINE, at the measure's right edge with the clause on its left: the
+     two-edge gesture the announcement makes one row up, where two groups may take two edges because
+     a rule is drawn across between them. The act is the verb in the register's own upright serif
+     and after it the page's one round control — the hairline circle with a glyph that closes the
+     vault and the lightbox — carrying the arrow. At rest the ring is drawn in INK, so it reads as a
+     control before anything is written; it FILLS THE MOMENT THE LINE IS WRITTEN
+     (`:has(.notice-email:valid)`, which `required` on the field makes mean "a well-formed
+     address"), which is the act answering the reader's hand before any pointer reaches it. Ink,
+     never gold: the vault is this page's one call to give.
 
-     WHAT MADE THE FIELD VISIBLE WAS THE LEADER, NOT THE MOVE. Both were built at once on the same
-     complaint ("it is hard to see there is a field there"), and the dotted line under the unwritten
-     address answers it by itself. Keep the leader, keep the headline; do not move the sheet again.
+     THE SHEET IS THE REGISTER'S BODY COLUMN, WHOLE — it begins where every row of the register
+     begins and ends where every row ends. Three other placements were built and refused on sight,
+     and each was the same mistake: moving the sheet to answer a complaint about the FIELD. As a
+     ribbon in the left margin it was an object laid on a page that has no objects on it. Starting
+     at the section's left edge it stopped a rail short of the right one and read as unfinished.
+     With the say moved into the margin column it put a display title where this page keeps only
+     labels. The say belongs over the paper, in the paper's own column; the margin column is
+     `Z drogi`'s alone.
 
      THE FOLD IS MEASURED ON THE PAPER. The sheet pays the margin column and the gap as padding on
-     its LEFT, so its content box — the query container — is the body column, exactly as the fold
-     was drawn (~780px for key, twenty characters and act on one line).
+     its LEFT, so its content box — the query container — is the body column, and the fold follows
+     the register's column wherever the grid puts it rather than following the viewport.
 
-     THE WRITING LINE IS DOTTED UNTIL THE PEN RUNS IT. Under the key and under the seal the row's
-     rule is the sheet's hairline; under the address, while nothing is written, it is the dotted
-     leader a paper form prints where the hand goes — "Adres e-mail ………………" — so the sheet says
-     where to write without a box, a specimen or a hint. Focus runs the pen over it (the dots close
-     into the solid line, in ink) and a written address keeps it solid. The leader is a 1px ink line
-     masked to dots, so it keeps the rule's weight and differs from it in texture only.
+     THE WRITING LINE IS DOTTED UNTIL THE PEN RUNS IT — the dotted leader a paper form prints where
+     the hand goes, so the sheet says where to write without a box, a specimen or a hint. Focus or
+     any written character takes the dots off and leaves the inked rule. The leader is a 1px ink
+     line masked to dots: it keeps the rule's weight and differs from it in texture only.
 
      THE EMPTY LINES ARE THE ONE PLACE ON THIS SITE WHERE A RULE IS THE SUBJECT. styles/registers.css
      states the opposite for the entrance registers — "no hairline was added to have something to
      animate" — and that policy is about DECORATION. These carry the section's argument, they are
-     real borders present with JavaScript off and motion declined, and they are ruled by the scroll
-     rather than by a trigger. Two is their floor: one empty rule under the clause is a separator
-     after nothing, and none at all means the sheet's foot jumps by a pitch when the receipt lands.
-     If they ever stop being the subject they should go, not be handed to `.reveal-rule`.
-
-     THE SHEET FOLDS ON ITS OWN MEASURE, not on the viewport. The written line needs roughly 780px
-     to hold the key, twenty characters of address and the act side by side; `.path-liniatura` is a
-     size container and the one-column layout is a container rule, so the fold follows the register's
-     column wherever the grid puts it.
+     real borders present with JavaScript off and motion declined, and they are ruled by distance
+     rather than by a trigger. Two is their floor and their ceiling at this pitch: one is a separator
+     after nothing, and a third would put 100px more empty paper under a block that is already the
+     room's figure. If they ever stop being the subject they should go, not be handed to
+     `.reveal-rule`.
 
      THE INKS ARE THE PARCHMENT'S. `notice.css` rides in with the island and dresses it for the
      night pages, so every rule here carries `.path-liniatura` — one class more than that sheet's
      unkeyed rules, which wins whatever the bundling order. Its `.notice-band` rules are keyed and
      never reach here. */
   .path-liniatura {
-    /* The pitch of the ruled lines. The written line sizes it: a 30px Cormorant address standing on
-       the rule with its descent clear, and the seal's circle beside it with its foot just above. */
-    --lin-pitch: clamp(58px, 5.2vw, 78px);
+    /* The pitch of the ruled lines, sized by the blank: a 64px Cormorant line standing on its rule
+       with the descent clear (64 × 1.25 + the input's own 2/12 padding ≈ 94px). The floor is the
+       phone's, where the address is at its 32px minimum. */
+    --lin-pitch: clamp(66px, 6.8vw, 100px);
+    /* The key's tier — its 11px line plus the air under it — which the FIRST ruled row adds to the
+       pitch and which the receipt's first row must add identically, or the rules move on send. */
+    --lin-key: 30px;
     --lin-seal: clamp(38px, 2.8vw, 44px);
     --lin-ink: var(--line-strong);
     display: block;
@@ -990,52 +984,42 @@
   }
 
   /* ── The two written rows ───────────────────────────────────────────────────
-     A grid of two ruled rows: the key, the address and the act on the first, the clause alone on
-     the second. Authored areas rather than the DOM's order, because the island prints the act after
-     the blank and before the clause and the grid is what puts it beside the address. The second
-     row may grow past the pitch for a long clause; the first never needs to. Both rules are the
-     FORM's pseudo-elements, because each row has more than one thing standing on it and a border on
-     any of them would break at the column gap. */
+     The blank takes the first row whole — both columns — and the clause and the act share the
+     second, on its two edges. Authored areas rather than the DOM's order, because the island prints
+     the act between the blank and the clause. The first row is the pitch plus the key's tier; the
+     second may grow past the pitch for a clause that wraps. Both rules are the FORM's
+     pseudo-elements: each row has more than one thing standing on it and a border on any of them
+     would break at the column gap. */
   .path-liniatura .notice-form {
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: var(--lin-pitch) minmax(var(--lin-pitch), auto);
+    grid-template-rows:
+      minmax(calc(var(--lin-pitch) + var(--lin-key)), auto)
+      minmax(var(--lin-pitch), auto);
     grid-template-areas:
-      "blank act"
-      "clause clause";
+      "blank blank"
+      "clause act";
     column-gap: clamp(24px, 2.6vw, 40px);
     align-items: end;
     margin: clamp(24px, 2.6vw, 40px) 0 0;
   }
 
-  /* THE WRITTEN LINE'S RULE, at the foot of the first row, which is exactly one pitch tall. It runs
-     under the key, the address and the seal alike, the full measure, because it is a line of the
-     ruled page and not the underline of a control. Focus inks it and thickens it: a 1px hairline
-     changing colour is too fine to be a focus indicator on parchment, where the resting rule is
-     already dark, and the second pixel is what makes the state visible without a ring around a line
-     that has no box. Ink, not gold — the address is ink and this is the reader's line. The refusal
-     reddens it. */
+  /* THE WRITING LINE'S RULE, at the foot of the first row, under the whole measure — a line of the
+     ruled page, not the underline of a control. It is laid in two passes, and the order is the
+     argument: the sheet rules this line in `--line-strong` with the rest of the leaf, and then the
+     page goes over THIS one again in ink (`.notice-blank::before`). The ink pass is what says the
+     page has chosen a line, and it is the layer the hand answers — focus thickens it, the refusal
+     reddens it. Both are stacked on the same pixel, so at rest the reader sees one inked rule. */
   .path-liniatura .notice-form::before {
     content: "";
     position: absolute;
-    top: calc(var(--lin-pitch) - 1px);
+    top: calc(var(--lin-pitch) + var(--lin-key) - 1px);
     right: 0;
     left: 0;
     height: 1px;
     background: var(--lin-ink);
-    transition:
-      background-color 0.45s var(--ease),
-      height 0.25s var(--ease);
-  }
-
-  .path-liniatura .notice-form:has(.notice-blank:focus-within)::before {
-    height: 2px;
-    background: var(--ink);
-  }
-
-  .path-liniatura .notice-form:has(.notice-email[aria-invalid="true"])::before {
-    background: #9b4f38;
+    transform-origin: left center;
   }
 
   /* The second row's rule, and the form's foot. */
@@ -1047,26 +1031,58 @@
     left: 0;
     height: 1px;
     background: var(--lin-ink);
+    transform-origin: left center;
   }
 
-  /* THE BLANK, and the key stands ON the line. Hung an input's height above the rule, an empty
-     line reads as a separator — the same finding on every surface this blank has stood on. */
+  /* THE BLANK: the key above, the line under it, the whole measure. The key is a rubric over a
+     display line — the shape every row of the register uses — and not a word on the baseline: at
+     the title grade a key on the line would take a third of what there is to write on. The row is
+     taller than the pitch by exactly the key's tier, and `align-content: end` stands the pair on
+     the row's foot so the line lands on the rule. */
   .path-liniatura .notice-blank {
+    position: relative;
     grid-area: blank;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: baseline;
-    column-gap: clamp(16px, 1.6vw, 26px);
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 13px;
     min-width: 0;
   }
 
-  /* THE DOTTED LEADER, over the written line's rule and only under the address. Two pseudo-layers
-     at the row's foot: the parchment first, covering the hairline, and the dots over it in ink —
-     one layer cannot both hide a line and draw one. Both rest visible while the line is unwritten
-     and unfocused, and go the moment the pen is on the line or anything is on it; what is under
-     them is the row's own rule, which focus has already inked. The line's box ends on the row's
-     foot because the blank is end-aligned in a row exactly one pitch tall and the input is its
-     tallest child. */
+  /* THE INK PASS over the writing line's rule. Drawn AFTER the leaf has been ruled (its window sits
+     later on the sheet's timeline), in `--ink` rather than the hairline grey, because one line on
+     this page is the reader's and the page marks it before the reader arrives. `::before` and not
+     `::after` so the dotted leader, which belongs to a descendant, paints over it. */
+  .path-liniatura .notice-blank::before {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 1px;
+    background: var(--ink);
+    transform-origin: left center;
+    transition:
+      background-color 0.45s var(--ease),
+      height 0.25s var(--ease);
+  }
+
+  /* A 1px hairline changing colour is too fine to be a focus indicator on parchment, where the
+     resting rule is already inked; the second pixel is what makes the state visible without a ring
+     around a line that has no box. */
+  .path-liniatura .notice-blank:focus-within::before {
+    height: 2px;
+  }
+
+  .path-liniatura .notice-blank:has(.notice-email[aria-invalid="true"])::before {
+    background: #9b4f38;
+  }
+
+  /* THE DOTTED LEADER, laid on the writing line as the sheet's last gesture. Two pseudo-layers at
+     the line's foot: the parchment first, covering the inked rule, and the dots over it in ink —
+     one layer cannot both hide a line and draw one. They arrive by being DRAWN, like every rule on
+     this sheet, and they leave by going transparent the moment the pen is on the line or anything
+     is written on it. Those are two different properties on purpose: the scroll owns the transform,
+     the reader's hand owns the opacity, and neither can pin the other. */
   .path-liniatura .notice-blank-line {
     position: relative;
     display: block;
@@ -1082,6 +1098,7 @@
     left: 0;
     height: 1px;
     opacity: 0;
+    transform-origin: left center;
     transition: opacity 0.45s var(--ease);
   }
 
@@ -1100,6 +1117,8 @@
     opacity: 1;
   }
 
+  /* The key, a tier of its own over the line. Its line-height and the row gap above the address are
+     what `--lin-key` is worth; change one and the first row's height stops matching the receipt's. */
   .path-liniatura .notice-blank-label {
     margin: 0;
     white-space: nowrap;
@@ -1108,12 +1127,16 @@
     font-size: 11px;
     font-weight: 400;
     letter-spacing: 0.18em;
+    line-height: 1.5;
     text-transform: uppercase;
   }
 
-  /* The address in the register's own title face and near its scale: it is the one thing on this
-     page written by the reader, so it is set the way the page sets what it names. The floor is far
-     above the 16px at which iOS zooms a focused field, so no scale correction is owed here. */
+  /* THE ADDRESS AT THE REGISTER'S OWN TITLE CLAMP — the same `clamp(32px, 4.4vw, 64px)` that names
+     every evening above. It is the one thing on this page written by the reader and the largest
+     thing in this room, which is the block's whole argument: six evenings are named at this grade
+     and the seventh line is blank. It takes the measure whole, so a long address is written out
+     rather than scrolled under its own label. The floor is far above the 16px at which iOS zooms a
+     focused field, so no scale correction is owed here. */
   .path-liniatura .notice-email {
     display: block;
     width: 100%;
@@ -1124,8 +1147,9 @@
     color: var(--ink);
     caret-color: var(--ink);
     font-family: var(--serif);
-    font-size: clamp(21px, 1.9vw, 30px);
+    font-size: clamp(32px, 4.4vw, 64px);
     font-weight: 300;
+    letter-spacing: -0.01em;
     line-height: 1.25;
     transition: none;
   }
@@ -1147,7 +1171,7 @@
      red. */
   .path-liniatura .notice-form > .notice-error {
     position: absolute;
-    top: calc(var(--lin-pitch) + 8px);
+    top: calc(var(--lin-pitch) + var(--lin-key) + 8px);
     left: 0;
     margin: 0;
     color: #9b4f38;
@@ -1192,14 +1216,15 @@
     color: var(--candle-ink);
   }
 
-  /* THE ACT: the verb, and the seal after it, at the written line's end. Upright, against the italic
-     the ensemble speaks in — the house's verbs lean, the reader's hand stands up — at 400 against
-     the address's 300, and a grade under it, so the line the reader writes stays the largest thing
-     on the sheet and the verb still reads as a control's label rather than as more text. No
-     underline: a rule under a serif verb was read as a second, shorter field, and that is most of
-     why the act "did not look pressable" for three rounds. Centred on the seal, which puts the
-     verb's baseline within a pixel or two of the address's own — the address stands 12px off the
-     rule, the seal 6px, and the verb's centre is the seal's. */
+  /* THE ACT: the verb, and the seal after it, on the clause's line at the measure's right edge —
+     the two-edge gesture the announcement makes one row up, where two groups may take two edges
+     because a rule is drawn across between them. It is off the writing line on purpose: anything
+     standing on that line competes with the blank and caps what can be written on it. Upright,
+     against the italic the ensemble speaks in — the house's verbs lean, the reader's hand stands up
+     — at 400, and far enough under the address's grade that the line the reader writes stays the
+     largest thing on the sheet. No underline: a rule under a serif verb was read as a second,
+     shorter field, and that is most of why the act "did not look pressable" for three rounds.
+     Centred on the seal, whose foot stands 6px off the row's rule. */
   .path-liniatura .notice-act {
     grid-area: act;
     display: inline-flex;
@@ -1300,6 +1325,9 @@
   .path-liniatura .notice-inner[data-sent] .notice-done {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    /* The first tier pays the key's tier exactly as the form's first row does — that is what keeps
+       the receipt's opening rule on the writing line's own position. */
+    grid-template-rows: minmax(calc(var(--lin-pitch) + var(--lin-key)), auto);
     grid-auto-rows: minmax(var(--lin-pitch), auto);
     align-items: end;
     justify-items: stretch;
@@ -1386,29 +1414,40 @@
     }
   }
 
-  /* ── The unwritten lines, and their ruling ──────────────────────────────────
+  /* ── The unwritten lines, and the ruling of the leaf ────────────────────────
      THE RULING IS THE ANIMATION, AND THE SCROLL IS ITS CLOCK — nothing here translates, nothing is
      sticky, nothing follows the reader. The block stands in one place in the document and what the
-     scroll changes is how far the page has ruled itself below the written rows. Each rule is drawn
-     from the left across its own window of the block's passage, the windows overlap, and the whole
-     cascade reverses when the reader goes back up: the object answers distance, in both directions,
-     which is what a trigger cannot do.
+     scroll changes is how far the page has ruled the leaf. Every rule on the sheet is drawn from
+     the left across its own window of the block's passage, top to bottom, and the whole cascade
+     reverses when the reader goes back up: the object answers distance, in both directions, which
+     is what a trigger cannot do.
 
-     THE SUBJECT IS THE WHOLE BLOCK, NOT THE LINES. A `view()` timeline bound to the animated
+     AND THE GESTURE HAS A DESTINATION, which is the difference between a ruling and a decoration.
+     The leaf is ruled in the hairline grey; then the page goes over the FIRST line again in ink
+     (`.notice-blank::before`); then it lays the dotted leader on that same line. Rule it, ink it,
+     mark it: by the time the reader stops, the page has chosen one line out of five and put the pen
+     mark on it, and nothing had to be said in words for the block to be an invitation.
+
+     THE SUBJECT IS THE WHOLE BLOCK, NOT ANY ONE RULE. A `view()` timeline bound to the animated
      element's own box makes "answers approach" arithmetically identical to "slides in on entry" —
      fully played exactly when the element is fully visible, the AOS move this page has refused for
-     three rounds. Naming the timeline on `.path-liniatura` and referencing it from the lines inside
-     gives the ruling a subject taller than the lines, so it is still happening while the block is
-     being read.
+     three rounds. The timeline is named on `.path-liniatura` and referenced from everything inside
+     it, so the subject is taller than any rule and the ruling is still happening while the block is
+     read.
 
-     THE LAST RULE LANDS AS THE BLOCK IS CENTRED, not a screen before: a ruling spent before the
-     reader can see it is an animation that does not exist. The windows sit late enough to be seen
-     on the approach and end where a reader stops to write, so nothing is left a quarter drawn under
-     a hand that is typing.
+     ONE PROPERTY PER OWNER. Everything the scroll drives here is a `transform`, and nothing else
+     is: a scroll-driven animation with `both` fill PINS the property it animates for the whole
+     document, so a rule whose colour or opacity were on the timeline could never be reddened by a
+     refusal or put out by a written address. The scroll owns the transform; the reader's hand owns
+     the colour and the opacity.
 
-     UNGATED, THE PAPER IS SIMPLY RULED. Without `view()` support or with motion declined the
-     borders stand as authored: ruled paper is the resting state and the ruling is the enhancement,
-     never the other way round. */
+     THE LAST BEAT LANDS AS THE BLOCK IS CENTRED, not a screen before: a ruling spent before the
+     reader can see it is an animation that does not exist, and one still running under a hand that
+     is typing reads as a rendering fault. The windows are measured, not chosen — see the harness.
+
+     UNGATED, THE PAPER IS SIMPLY RULED. Without `view()` support or with motion declined every rule
+     stands as authored, the writing line inked and the leader on it: ruled paper is the resting
+     state and the ruling is the enhancement, never the other way round. */
   .path-liniatura-void {
     display: block;
   }
@@ -1419,8 +1458,8 @@
      as on every written row, so the first empty line starts on the clause's rule. */
   .path-liniatura-line {
     --liniatura-ink: color-mix(in oklab, var(--line-strong) 20%, transparent);
-    --rule-from: 44%;
-    --rule-to: 56%;
+    --rule-from: 40%;
+    --rule-to: 52%;
     position: relative;
     display: block;
     height: var(--lin-pitch);
@@ -1428,18 +1467,17 @@
   }
 
   /* Each line fainter than the one above it, from a step below the written rows' own ink — the
-     recession is the ink, not the measure. The windows are late enough to be seen on the approach
-     and the second lands as the sheet is centred. */
+     recession is the ink, not the measure. */
   .path-liniatura-line:nth-child(1) {
     --liniatura-ink: color-mix(in oklab, var(--line-strong) 58%, transparent);
     --rule-from: 24%;
-    --rule-to: 38%;
+    --rule-to: 36%;
   }
 
   .path-liniatura-line:nth-child(2) {
     --liniatura-ink: color-mix(in oklab, var(--line-strong) 34%, transparent);
-    --rule-from: 34%;
-    --rule-to: 48%;
+    --rule-from: 29%;
+    --rule-to: 41%;
   }
 
   /* Once the receipt has taken three rows over the two the form wrote on, the first empty line is
@@ -1457,6 +1495,20 @@
       .path-liniatura {
         view-timeline-name: --liniatura;
         view-timeline-axis: block;
+      }
+
+      /* The leaf is ruled top to bottom: the writing line, the clause's line, then the two that
+         have nothing on them. */
+      .path-liniatura .notice-form::before {
+        animation: liniatura-rule linear both;
+        animation-timeline: --liniatura;
+        animation-range: cover 12% cover 24%;
+      }
+
+      .path-liniatura .notice-form::after {
+        animation: liniatura-rule linear both;
+        animation-timeline: --liniatura;
+        animation-range: cover 18% cover 30%;
       }
 
       /* The border is handed to a pseudo-rule that can be drawn — the same exchange the entrance
@@ -1480,6 +1532,22 @@
         animation-timeline: --liniatura;
         animation-range: cover var(--rule-from) cover var(--rule-to);
       }
+
+      /* THE INK PASS, after the leaf is ruled: the page goes over the reader's line a second time. */
+      .path-liniatura .notice-blank::before {
+        animation: liniatura-rule linear both;
+        animation-timeline: --liniatura;
+        animation-range: cover 33% cover 45%;
+      }
+
+      /* And the pen mark, last — the dots are laid on the inked line as the block reaches the
+         middle of the screen. Their `opacity` stays the hand's: written or focused, they go. */
+      .path-liniatura .notice-blank-line::before,
+      .path-liniatura .notice-blank-line::after {
+        animation: liniatura-rule linear both;
+        animation-timeline: --liniatura;
+        animation-range: cover 40% cover 50%;
+      }
     }
   }
 
@@ -1492,15 +1560,18 @@
     }
   }
 
-  /* THE FOLDED SHEET, below the measure the written line needs. One column: the act takes the
-     second line alone and the clause the third, both left-set, and each row keeps its rule — the
-     clause's top border is the act row's foot. The refusal comes into the flow between the address
-     and the act, because the act row has no air left above the seal for it to stand in. */
+  /* THE FOLDED SHEET, below the measure the clause and the act need side by side. One column: the
+     act takes the second line alone and the clause the third, both left-set, and each row keeps its
+     rule. The act row's foot is a rule of the clause's own, drawn like every other one on the sheet
+     rather than left as a static border among moving ones. The refusal comes into the flow between
+     the address and the act, because the act row has no air left above the seal for it to stand in.
+     The blank's row is unchanged: the key was never on the line, so nothing has to be given up for
+     the address to keep its measure on a phone. */
   @container liniatura (max-width: 799px) {
     .path-liniatura .notice-form {
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows:
-        var(--lin-pitch)
+        minmax(calc(var(--lin-pitch) + var(--lin-key)), auto)
         auto
         minmax(var(--lin-pitch), auto)
         minmax(var(--lin-pitch), auto);
@@ -1524,24 +1595,29 @@
     }
 
     .path-liniatura .notice-consent-text {
+      position: relative;
       padding-right: 0;
-      border-top: 1px solid var(--lin-ink);
-    }
-  }
-
-  /* THE KEY IS PAYING FOR THE LINE. On a phone the measure is ~334px and the key takes a third of
-     it at the desktop grade, leaving an address about eighteen characters of rule to be written on
-     before it starts scrolling under its own label. The key comes down a step and the air between
-     them with it; the key stays ON the baseline, which is the one thing about this blank that is
-     not negotiable on any surface. */
-  @media (max-width: 560px) {
-    .path-liniatura .notice-blank {
-      column-gap: 12px;
     }
 
-    .path-liniatura .notice-blank-label {
-      font-size: 10px;
-      letter-spacing: 0.13em;
+    .path-liniatura .notice-consent-text::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      left: 0;
+      height: 1px;
+      background: var(--lin-ink);
+      transform-origin: left center;
+    }
+
+    @supports (animation-timeline: view()) {
+      @media (prefers-reduced-motion: no-preference) {
+        .path-liniatura .notice-consent-text::before {
+          animation: liniatura-rule linear both;
+          animation-timeline: --liniatura;
+          animation-range: cover 15% cover 27%;
+        }
+      }
     }
   }
 
