@@ -43,8 +43,10 @@ from notifications.dtos import (
     ProjectCancelledMetadata,
     ProjectUpdatedMetadata,
     RehearsalCancelledMetadata,
+    RehearsalDebriefPostedMetadata,
     RehearsalDelegationEndedMetadata,
     RehearsalDelegationMetadata,
+    RehearsalLeadAssignedMetadata,
     RehearsalScheduledMetadata,
     RehearsalUpdatedMetadata,
 )
@@ -102,7 +104,9 @@ from .models import (
     ProjectPieceCasting,
     Rehearsal,
     RehearsalDelegate,
+    VoiceType,
 )
+from .permissions import live_delegate_q
 from .queries.schedule_queries import get_artist_rehearsals_in_window
 from .score_package_config import resolve_item_edition
 
@@ -1248,13 +1252,23 @@ class ProjectManagementService:
 
 class ManagerNotificationHelper:
     @staticmethod
-    def notify_managers(notification_type: str, metadata: dict, level: str = NotificationLevel.INFO):
-        """Utility method to send notifications to all Managers and Admins in the system."""
-        manager_ids = User.objects.filter(
+    def notify_managers(
+        notification_type: str,
+        metadata: dict,
+        level: str = NotificationLevel.INFO,
+        exclude_user_id: int | str | None = None,
+    ):
+        """Utility method to send notifications to all Managers and Admins in
+        the system. `exclude_user_id` leaves out the manager who caused the
+        event — a report of one's own action is noise."""
+        managers = User.objects.filter(
             profile__role__in=['MANAGER', 'ADMIN'],
             is_active=True
-        ).values_list('id', flat=True)
-        
+        )
+        if exclude_user_id is not None:
+            managers = managers.exclude(id=exclude_user_id)
+        manager_ids = managers.values_list('id', flat=True)
+
         if manager_ids:
             send_bulk_notifications_task.delay(
                 recipient_ids=[str(uid) for uid in manager_ids],
@@ -1315,7 +1329,8 @@ def _actor_name(user: "User | None") -> str:
 
 
 class RehearsalDelegationService:
-    """Handing one programme to somebody who is not a manager, and taking it back.
+    """Appointing the leader of one project — somebody who is not a manager —
+    and taking the appointment back.
 
     Every write goes through here for one reason: a delegation lends out the
     conductor's markings and the choir's attendance record, and who did that for
@@ -1324,10 +1339,45 @@ class RehearsalDelegationService:
     """
 
     @staticmethod
+    def suggested_leader(project: Project) -> Artist | None:
+        """Who the add form should pre-select for this project: the most recently
+        appointed leader anywhere, if that person is still active and does not
+        already lead this project.
+
+        A suggestion and nothing more. The conductor normally wants one person
+        for every programme but decides it per concert, so the last appointment
+        is the best guess and the click stays his — nobody is handed a project
+        by the form remembering them. Read from `all_objects`: a revoked or
+        expired grant still says who was last trusted with a programme.
+
+        Ordered by `updated_at`, never `created_at`: `grant` is an upsert that
+        revives soft-deleted rows, so the creation stamp is the FIRST time this
+        pair was ever written and says nothing about who was trusted last.
+        Instrumentalists are out for the same reason the picker never offers
+        them — they do not stand in front of the choir — and a suggestion the
+        picker cannot show is a suggestion that silently does nothing.
+        """
+        already_leading = (
+            RehearsalDelegate.objects
+            .filter(live_delegate_q(scope='any'), project=project)
+            .values('artist_id')
+        )
+        recent = (
+            RehearsalDelegate.all_objects
+            .filter(artist__is_deleted=False, artist__is_active=True)
+            .exclude(artist__voice_type=VoiceType.INSTRUMENTALIST)
+            .exclude(artist_id__in=already_leading)
+            .select_related('artist')
+            .order_by('-updated_at')
+            .first()
+        )
+        return recent.artist if recent else None
+
+    @staticmethod
     def _log(event: str, delegate: RehearsalDelegate, actor: "User | None") -> None:
         logger.info(
             "rehearsal_delegation:%s actor=%s artist=%s project=%s "
-            "marks=%s roll_call=%s materials=%s expires=%s",
+            "marks=%s roll_call=%s materials=%s choir_marks=%s expires=%s",
             event,
             getattr(actor, 'pk', None),
             delegate.artist_id,
@@ -1335,6 +1385,7 @@ class RehearsalDelegationService:
             delegate.can_see_leader_marks,
             delegate.can_take_roll_call,
             delegate.can_open_materials,
+            delegate.can_mark_for_choir,
             delegate.expires_at.isoformat() if delegate.expires_at else '',
         )
 
@@ -1387,7 +1438,31 @@ class RehearsalDelegationService:
         """
         RehearsalDelegationService._log('revoked', delegate, revoked_by)
         delegate.delete()
+        RehearsalDelegationService.release_future_rehearsals(
+            project_id=delegate.project_id, artist_id=delegate.artist_id,
+        )
         RehearsalDelegationService._announce_revoked(delegate, revoked_by)
+
+    @staticmethod
+    def release_future_rehearsals(*, project_id, artist_id) -> None:
+        """Hand this artist's evenings still ahead back to the conductor.
+
+        Called wherever the power to run them ends by a manager's gesture — the
+        grant revoked, or its roll call switched off. An announcement naming
+        somebody the register now refuses would be a lie on every singer's
+        timeline, and would make the evening unsavable in the rehearsal form,
+        which re-sends the field on every edit.
+
+        Past evenings keep the name: they are history, and the dossier counts
+        them. Expiry by the clock raises no gesture to hang this on, so a
+        lapsed grant leaves the name standing — `RehearsalSerializer` does not
+        re-judge an unchanged value for exactly that reason.
+        """
+        Rehearsal.objects.filter(
+            project_id=project_id,
+            led_by_id=artist_id,
+            date_time__gte=timezone.now(),
+        ).update(led_by=None)
 
     @staticmethod
     def log_change(delegate: RehearsalDelegate, *, changed_by: "User | None") -> None:
@@ -1465,6 +1540,7 @@ class RehearsalDelegationService:
             can_see_leader_marks=delegate.can_see_leader_marks,
             can_take_roll_call=delegate.can_take_roll_call,
             can_open_materials=delegate.can_open_materials,
+            can_mark_for_choir=delegate.can_mark_for_choir,
             expires_at=expires.isoformat() if expires else None,
             expires_at_display=(
                 format_event_time(expires, DEFAULT_EVENT_TIMEZONE, DEFAULT_EVENT_TIMEZONE)
@@ -1520,9 +1596,12 @@ class RehearsalOperationsService:
             create_data['timezone'] = resolved_timezone
 
             rehearsal = Rehearsal.objects.create(**create_data)
-            
+
             if invited_participations:
                 rehearsal.invited_participations.set(invited_participations)
+
+            if rehearsal.led_by_id:
+                RehearsalOperationsService._announce_lead_assigned(rehearsal)
 
             metadata = RehearsalScheduledMetadata(
                 rehearsal_id=rehearsal.id,
@@ -1576,6 +1655,7 @@ class RehearsalOperationsService:
                     new_loc = location.name if location else None
                     changes.append(_change("location", old_loc, new_loc))
 
+            lead_changed = False
             for attr, value in update_data.items():
                 if attr in ('location', 'timezone'):
                     continue
@@ -1585,7 +1665,11 @@ class RehearsalOperationsService:
                 # instrumentalists' flag is the same kind of fact. The queue
                 # resolves recipients off the rehearsal at publish time, so a
                 # newly called player is reached by whatever is announced next.
-                if old_value != value and attr != "calls_instrumentalists":
+                # Who leads is not a diff for the cast either — the cast reads
+                # it off the schedule, and the person named is told directly.
+                if attr == "led_by_id":
+                    lead_changed = old_value != value
+                elif old_value != value and attr != "calls_instrumentalists":
                     if attr == "is_mandatory":
                         # Self-describing state change — never a raw "True → False".
                         changes.append(_change("now_mandatory" if value else "now_optional", None, None))
@@ -1598,6 +1682,12 @@ class RehearsalOperationsService:
 
             if invited_participations is not None:
                 rehearsal.invited_participations.set(invited_participations)
+
+            # Told on set and on change, never on clear: handing an evening
+            # back to the conductor is the resting case, and a push saying so
+            # would read as a demotion.
+            if lead_changed and rehearsal.led_by_id:
+                RehearsalOperationsService._announce_lead_assigned(rehearsal)
 
             if changes:
                 metadata = RehearsalUpdatedMetadata(
@@ -1621,6 +1711,124 @@ class RehearsalOperationsService:
                     metadata=metadata,
                 )
         return rehearsal
+
+    @staticmethod
+    def _announce_lead_assigned(rehearsal: Rehearsal) -> None:
+        """Tell the person named in `led_by` that this evening is theirs.
+
+        Silent for the conductor: an explicit value equal to the podium says
+        the same thing as null, and the conductor telling himself would be
+        noise. Silent, and logged, for a leader with no account — the roster
+        holds people, not logins. The sections travel as codes so the push
+        can say "(soprany, alty)" in the reader's language.
+        """
+        artist = rehearsal.led_by
+        if artist is None or artist.pk == rehearsal.project.conductor_id:
+            return
+        if not artist.user_id:
+            logger.info(
+                "rehearsal_lead:no_account artist=%s rehearsal=%s",
+                artist.pk, rehearsal.pk,
+            )
+            return
+
+        # The sectional form groups the cast by the leading letter of the
+        # voice type; the same reading here keeps the push and the form
+        # naming the same sections. A tutti names nobody and sends nothing.
+        sections: list[str] = []
+        for participation in (
+            rehearsal.invited_participations
+            .filter(is_deleted=False)
+            .select_related('artist')
+            .order_by('artist__voice_type')
+        ):
+            family = (participation.artist.voice_type or '')[:1]
+            if family in ('S', 'A', 'T', 'B') and family not in sections:
+                sections.append(family)
+        sections.sort(key='SATB'.index)
+
+        metadata = RehearsalLeadAssignedMetadata(
+            rehearsal_id=rehearsal.pk,
+            project_id=rehearsal.project_id,
+            project_name=rehearsal.project.title,
+            sections=tuple(sections),
+            **rehearsal_notification_context(rehearsal),
+        ).model_dump(mode="json")
+        recipient_id = str(artist.user_id)
+
+        transaction.on_commit(
+            lambda: send_notification_task.delay(
+                recipient_id=recipient_id,
+                notification_type=NotificationType.REHEARSAL_LEAD_ASSIGNED,
+                level=NotificationLevel.INFO,
+                metadata=metadata,
+            )
+        )
+
+    # What a push can say of the debrief: enough to know whether to open it.
+    DEBRIEF_EXCERPT_CHARS: ClassVar[int] = 200
+
+    @staticmethod
+    def post_debrief(rehearsal: Rehearsal, text: str, author: "User") -> Rehearsal:
+        """Hand the evening back: store the report, stamp who and when, tell
+        the managers.
+
+        Refused before the rehearsal's start — a report on an evening that has
+        not happened is not one. Stamped for a manager writing it too, so the
+        card can always say whose words these are, and re-stamped on a wipe:
+        "X cleared it at 22:14" is still a fact worth a surface. A save that
+        changes nothing changes nothing — the signature under a paragraph must
+        not slide forward because somebody re-opened the page and pressed save.
+        The managers are told on the first write and on every change; a wipe
+        and an unchanged save are silent.
+        """
+        if timezone.now() < rehearsal.date_time:
+            raise ValueError(_("The debrief can be written once the rehearsal has started."))
+
+        text = text.strip()
+        if text == rehearsal.debrief:
+            return rehearsal
+
+        author_artist = Artist.objects.filter(user=author, is_deleted=False).first()
+
+        with transaction.atomic():
+            rehearsal.debrief = text
+            rehearsal.debrief_by = author_artist
+            rehearsal.debrief_at = timezone.now()
+            rehearsal.save(update_fields=['debrief', 'debrief_by', 'debrief_at', 'updated_at'])
+
+            if text:
+                RehearsalOperationsService._announce_debrief_posted(rehearsal, author)
+        return rehearsal
+
+    @staticmethod
+    def _announce_debrief_posted(rehearsal: Rehearsal, author: "User") -> None:
+        """Tell the managers — every one but the author — that the evening's
+        report is in. The body is an excerpt: the push is a reason to open
+        the card, not the card. Named as the roster names them (the artist
+        row) when there is one; a manager without a row goes by the account."""
+        excerpt = rehearsal.debrief[:RehearsalOperationsService.DEBRIEF_EXCERPT_CHARS]
+        author_artist = rehearsal.debrief_by if rehearsal.debrief_by_id else None
+        author_name = (
+            f"{author_artist.first_name} {author_artist.last_name}".strip()
+            if author_artist is not None
+            else _actor_name(author)
+        )
+        metadata = RehearsalDebriefPostedMetadata(
+            rehearsal_id=rehearsal.pk,
+            project_id=rehearsal.project_id,
+            project_name=rehearsal.project.title,
+            author_name=author_name,
+            excerpt=excerpt,
+            **rehearsal_notification_context(rehearsal),
+        ).model_dump(mode="json")
+        author_id = author.pk
+
+        transaction.on_commit(lambda: ManagerNotificationHelper.notify_managers(
+            notification_type=NotificationType.REHEARSAL_DEBRIEF_POSTED,
+            metadata=metadata,
+            exclude_user_id=author_id,
+        ))
 
     @staticmethod
     def delete_rehearsal(rehearsal: Rehearsal) -> None:

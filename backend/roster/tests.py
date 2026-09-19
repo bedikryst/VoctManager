@@ -476,6 +476,136 @@ class ArtistDossierQueryTests(TestCase):
         self.assertEqual(stats["earnings_outstanding"], 300.0)
         self.assertEqual(stats["projects_paid"], 1)
 
+    def test_dossier_reports_leadership_from_grants_and_led_by(self):
+        """Projects led come from every delegation row (revoked included); the
+        evenings led come from `Rehearsal.led_by`, never from the grant. A led
+        project without a seat lives only in the leadership list."""
+        from .models import Artist, Participation, Project, Rehearsal, RehearsalDelegate
+        from .queries import get_artist_dossier
+
+        leader = Artist.objects.create(
+            first_name="Lea", last_name="Liderka", email="lea@example.com", voice_type="SOP"
+        )
+        sung_and_led = Project.objects.create(
+            title="Sung and led", date_time=timezone.now() + timedelta(days=20),
+            status=Project.Status.ACTIVE,
+        )
+        led_without_seat = Project.objects.create(
+            title="Led only", date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.ACTIVE,
+        )
+        closed = Project.objects.create(
+            title="Closed", date_time=timezone.now() - timedelta(days=40),
+            status=Project.Status.COMPLETED,
+        )
+        sung_only = Project.objects.create(
+            title="Sung only", date_time=timezone.now() + timedelta(days=5),
+            status=Project.Status.ACTIVE,
+        )
+        Participation.objects.create(
+            artist=leader, project=sung_and_led, status=Participation.Status.CONFIRMED
+        )
+        Participation.objects.create(
+            artist=leader, project=sung_only, status=Participation.Status.CONFIRMED
+        )
+        RehearsalDelegate.objects.create(
+            project=sung_and_led, artist=leader, can_open_materials=False
+        )
+        RehearsalDelegate.objects.create(project=led_without_seat, artist=leader)
+        revoked = RehearsalDelegate.objects.create(project=closed, artist=leader)
+        revoked.is_deleted = True
+        revoked.save(update_fields=["is_deleted"])
+
+        # Two evenings behind her, one ahead, one behind on a project she was
+        # merely granted: the count is of past `led_by` rows and nothing else.
+        for days in (-3, -1):
+            Rehearsal.objects.create(
+                project=sung_and_led, led_by=leader,
+                date_time=timezone.now() + timedelta(days=days),
+            )
+        Rehearsal.objects.create(
+            project=sung_and_led, led_by=leader,
+            date_time=timezone.now() + timedelta(days=2),
+        )
+        Rehearsal.objects.create(
+            project=led_without_seat, date_time=timezone.now() - timedelta(days=1)
+        )
+
+        dossier = get_artist_dossier(leader)
+        leadership = dossier["leadership"]
+
+        self.assertEqual(leadership["projects_led"], 3)
+        self.assertEqual(leadership["rehearsals_led"], 2)
+        self.assertEqual(leadership["debriefs_written"], 0)
+
+        by_title = {row["title"]: row for row in leadership["projects"]}
+        self.assertEqual(set(by_title), {"Sung and led", "Led only", "Closed"})
+        self.assertTrue(by_title["Led only"]["is_live"])
+        self.assertFalse(by_title["Closed"]["is_live"])
+        self.assertEqual(
+            by_title["Sung and led"]["scopes"],
+            {"marks": True, "roll_call": True, "materials": False, "choir_marks": False},
+        )
+
+        history = {row["title"]: row for row in dossier["projects"]}
+        self.assertEqual(set(history), {"Sung and led", "Sung only"})
+        self.assertTrue(history["Sung and led"]["led"])
+        self.assertFalse(history["Sung only"]["led"])
+
+
+class ArtistListLeaderFlagTests(APITestCase):
+    """`is_project_leader` on the manager's roster list: a live grant on an open
+    project and nothing else — a closed project or a revoked row leaves the
+    badge off."""
+
+    def setUp(self) -> None:
+        from .models import RehearsalDelegate
+
+        User = get_user_model()
+        self.manager = User.objects.create_user(
+            username="mgr-leader-flag", email="mgr-leader-flag@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+
+        self.leader = Artist.objects.create(
+            first_name="Lea", last_name="Live", email="lea-live@example.com", voice_type="SOP"
+        )
+        self.former = Artist.objects.create(
+            first_name="Fay", last_name="Former", email="fay@example.com", voice_type="ALT"
+        )
+        self.singer = Artist.objects.create(
+            first_name="Sam", last_name="Singer", email="sam@example.com", voice_type="TEN"
+        )
+        open_project = Project.objects.create(
+            title="Open", date_time=timezone.now() + timedelta(days=10),
+            status=Project.Status.ACTIVE,
+        )
+        closed_project = Project.objects.create(
+            title="Closed", date_time=timezone.now() - timedelta(days=10),
+            status=Project.Status.COMPLETED,
+        )
+        RehearsalDelegate.objects.create(project=open_project, artist=self.leader)
+        RehearsalDelegate.objects.create(project=closed_project, artist=self.former)
+
+    def test_list_flags_only_the_live_leader(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.get("/api/artists/")
+        self.assertEqual(response.status_code, 200)
+        rows = response.json()
+        rows = rows["results"] if isinstance(rows, dict) else rows
+        flags = {row["id"]: row["is_project_leader"] for row in rows}
+        self.assertTrue(flags[str(self.leader.id)])
+        self.assertFalse(flags[str(self.former.id)])
+        self.assertFalse(flags[str(self.singer.id)])
+
+    def test_patch_response_keeps_the_flag(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.patch(
+            f"/api/artists/{self.leader.id}/", {"last_name": "Renamed"}, format="json"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["is_project_leader"])
+
 
 class ContractsSettlementTests(APITestCase):
     """

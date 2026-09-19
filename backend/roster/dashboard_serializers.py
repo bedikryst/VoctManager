@@ -222,6 +222,9 @@ class PieceMaterialsSerializer(serializers.Serializer):
                         by ProgramItemMaterialsSerializer; scopes tracks and names
                         the voice lines
       line_labels       dict       — voice code → display name inside that arrangement
+      choir_marks_piece_ids set[uuid.UUID] — pieces on which this reader's leader
+                        grant opens the choir's 'shared' marking layer (absent →
+                        none); emitted as `may_mark_for_choir` per piece
     """
 
     def to_representation(self, piece: Piece) -> dict[str, Any]:
@@ -229,6 +232,7 @@ class PieceMaterialsSerializer(serializers.Serializer):
         my_piece_castings: list[ProjectPieceCasting] = self.context['my_piece_castings']
         my_readiness_map: dict[uuid.UUID, str] | None = self.context.get('my_readiness_map', {})
         bound_edition_id: uuid.UUID | None = self.context.get('bound_edition_id')
+        choir_marks_piece_ids: set[uuid.UUID] = self.context.get('choir_marks_piece_ids', set())
         child_context: dict[str, Any] = {
             'artist_id': self.context.get('artist_id'),
             'request': self.context.get('request'),
@@ -308,6 +312,10 @@ class PieceMaterialsSerializer(serializers.Serializer):
                 if my_readiness_map is None
                 else my_readiness_map.get(piece.pk, PieceReadiness.Status.NOT_STARTED)
             ),
+            # Whether this reader's pencil reaches the choir's layer on this
+            # music — a leader's opt-in scope, never a manager's standing power
+            # (the client already knows a manager writes everywhere).
+            'may_mark_for_choir': piece.pk in choir_marks_piece_ids,
         }
 
 
@@ -393,6 +401,7 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
             'artist_id': participation.artist_id,
             'request': self.context.get('request'),
             'liturgy': _liturgy_map(ordered_program),
+            'choir_marks_piece_ids': self.context.get('choir_marks_piece_ids', set()),
             # Scores + practice tracks are withheld once the concert is over.
             'materials_locked': project.status in (
                 Project.Status.COMPLETED, Project.Status.CANCELLED,
@@ -473,6 +482,7 @@ class LedProjectMaterialsSerializer(serializers.Serializer):
             'artist_id': None,
             'request': self.context.get('request'),
             'liturgy': _liturgy_map(ordered_program),
+            'choir_marks_piece_ids': self.context.get('choir_marks_piece_ids', set()),
             # Same lifecycle gate as singers: scores + tracks are withheld once
             # the concert is over (they remain reachable through the manager
             # surfaces, which re-check access on every request).

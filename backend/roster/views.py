@@ -76,6 +76,7 @@ from .dtos import (
     AttendanceRangeWindowDTO,
     AttendanceRecordDTO,
     CastOrderDTO,
+    LeadSheetUpdateDTO,
     ParticipationStatusUpdateDTO,
     PieceCastingBoardDTO,
     PieceCastingBoardsDTO,
@@ -118,7 +119,13 @@ from .models import (
     VoiceType,
     is_instrumentalist_account,
 )
-from .permissions import led_project_ids, led_projects_q, user_leads_project
+from .permissions import (
+    led_piece_ids,
+    led_project_ids,
+    led_projects_q,
+    live_delegate_q,
+    user_leads_project,
+)
 from .queries import (
     get_artist_dossier,
     get_artist_materials_queryset,
@@ -306,6 +313,22 @@ def _apply_payment(record: Participation | CrewAssignment, is_paid: bool) -> Non
     record.save()
 
 
+def _led_by_payload(rehearsal: Rehearsal) -> dict[str, str] | None:
+    """`Rehearsal.led_by` as the schedule and the lead sheet state it: explicit
+    only, so null still means "the conductor" and no client has to know who
+    that is to render the resting case as silence. Reads the select_related
+    row — callers prefetch `led_by`."""
+    if rehearsal.led_by_id is None or rehearsal.led_by is None:
+        return None
+    # The bare name: this line says who stands in front of the choir, and the
+    # voice they sing when they are not standing there belongs to their seat.
+    artist = rehearsal.led_by
+    return {
+        'artist_id': str(rehearsal.led_by_id),
+        'name': f"{artist.first_name} {artist.last_name}".strip(),
+    }
+
+
 _MAX_FEE = Decimal("999999.99")
 
 
@@ -387,7 +410,19 @@ class ArtistViewSet(viewsets.ModelViewSet):
 
         manager = Artist.all_objects if include_archived else Artist.objects
         qs = manager.select_related('user', 'user__profile').all()
-        return qs if is_manager else qs.filter(user=request_user(self.request))
+        if not is_manager:
+            return qs.filter(user=request_user(self.request))
+        # "Leads an open project today" — the same predicate the permission
+        # gates use, so the badge and the powers agree. Closed projects are
+        # excluded here as they are in `led_projects_q`: a leadership that
+        # ended with the concert is the dossier's story, not a badge.
+        return qs.annotate(
+            is_project_leader=Exists(
+                RehearsalDelegate.objects
+                .filter(live_delegate_q(scope='any'), artist=OuterRef('pk'))
+                .exclude(project__status__in=Project.CLOSED_STATUSES)
+            ),
+        )
     
     def get_serializer_class(self):
         if user_is_manager(self.request.user):
@@ -575,6 +610,21 @@ class ProjectViewSet(viewsets.ModelViewSet):
         base_qs = Project.objects.select_related('conductor', 'location').prefetch_related(
             'participations__artist',
             'program_items__piece',
+            # Who leads the project, as a fact on the card. Live rows only, by
+            # the same predicate the permission uses; the project's own status
+            # is deliberately not part of it (a finished concert was still led
+            # by somebody). Every reader gets it — a chorister may know who
+            # stands in front of the choir.
+            Prefetch(
+                'rehearsal_delegates',
+                queryset=(
+                    RehearsalDelegate.objects
+                    .filter(live_delegate_q(scope='any'))
+                    .select_related('artist')
+                    .order_by('created_at')
+                ),
+                to_attr='live_leaders',
+            ),
         ).annotate(
             rehearsals_total=Count('rehearsals', distinct=True),
             rehearsals_upcoming=Count(
@@ -991,12 +1041,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get', 'post'], url_path='delegates', permission_classes=[IsManager])
     def delegates(self, request, pk=None) -> Response:
         """
-        Who may run this project's rehearsals besides a manager. Manager-only —
-        lending the conductor's markings is his decision, not a stand-in's.
+        The project's leaders — who may run its rehearsals besides a manager.
+        Manager-only: lending the conductor's markings is his decision, not a
+        leader's. The URL keeps the model's name; people read it as "Lider".
 
         GET  — the live delegations, newest first.
         POST — grant one: `{artist, can_see_leader_marks?, can_take_roll_call?,
-               can_open_materials?, expires_at?, note?}`. Re-granting to the same
+               can_open_materials?, can_mark_for_choir?, expires_at?, note?}`.
+               Re-granting to the same
                artist revives and overwrites the existing row rather than
                colliding with the uniqueness constraint — the manager's gesture
                is "this person leads it", not "insert a row".
@@ -1028,8 +1080,26 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(RehearsalDelegateSerializer(rows, many=True).data)
 
     @action(
+        detail=True, methods=['get'], url_path='delegates/suggested',
+        permission_classes=[IsManager],
+    )
+    def delegates_suggested(self, request, pk=None) -> Response:
+        """
+        `{"artist": <id>|null}` — who the add form should pre-select. A
+        suggestion the manager confirms with a click, never a grant; see
+        `RehearsalDelegationService.suggested_leader`.
+        """
+        project = self.get_object()
+        artist = RehearsalDelegationService.suggested_leader(project)
+        return Response({"artist": str(artist.pk) if artist else None})
+
+    # The id segment is spelled as a UUID rather than "anything": DRF registers
+    # extra actions in name order, so `delegate_detail` is matched before
+    # `delegates_suggested`, and a catch-all here would swallow `/suggested/`
+    # with a 405.
+    @action(
         detail=True, methods=['patch', 'delete'],
-        url_path=r'delegates/(?P<delegate_id>[^/.]+)',
+        url_path=r'delegates/(?P<delegate_id>[0-9a-f-]{36})',
         permission_classes=[IsManager],
     )
     def delegate_detail(self, request, pk=None, delegate_id=None) -> Response:
@@ -1062,7 +1132,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
         # manager named to somebody else, leaving the audit line describing the
         # wrong hand-over. Grant a new one and end this one instead.
         serializer.validated_data.pop('artist', None)
+        had_roll_call = delegate.can_take_roll_call
         serializer.save()
+        # Taking the register back takes the evenings with it, exactly as a
+        # revocation does: an evening announced as hers that she can no longer
+        # run is a lie on the timeline, and one the rehearsal form cannot save
+        # past. Widening the scope again does not re-announce them — the
+        # conductor names an evening on purpose.
+        if had_roll_call and not delegate.can_take_roll_call:
+            RehearsalDelegationService.release_future_rehearsals(
+                project_id=delegate.project_id, artist_id=delegate.artist_id,
+            )
         RehearsalDelegationService.log_change(delegate, changed_by=request.user)
         return Response(serializer.data)
 
@@ -1546,6 +1626,14 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             'led_project_ids': {
                 str(pid) for pid in led_project_ids(target.user, scope='any')
             },
+            # Per PIECE, not per project, because that is the shape of the
+            # server rule: `AnnotationViewSet._assert_can_write` opens 'shared'
+            # on an edition by its piece, so a piece programmed in two projects
+            # is writable wherever it is opened once one grant carries the
+            # scope. The stand reads this to arm its choir pill.
+            'choir_marks_piece_ids': set(
+                led_piece_ids(target.user, scope='choir_marks')
+            ),
         }
         sung = ParticipationMaterialsSerializer(
             get_artist_materials_queryset(
@@ -1584,6 +1672,15 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         roll_call_project_ids = {
             str(pid) for pid in led_project_ids(target_user, scope='roll_call')
         }
+        # Who this reader IS on the roster, for "who stands in front" — a
+        # different question from `i_lead` above: a leader of the project may
+        # take the roll of an evening the conductor announced for himself, and
+        # the conductor's own timeline must not badge an evening handed to her.
+        my_artist_id = (
+            Artist.objects.filter(user=target_user, is_deleted=False)
+            .values_list('id', flat=True)
+            .first()
+        )
 
         items: list[dict] = [
             {
@@ -1599,11 +1696,16 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         for reh_obj, rehearsal in zip(rehearsal_objs, rehearsal_data, strict=True):
             my_attendances = getattr(reh_obj, 'my_attendances', None) or []
             mine = my_attendances[0] if my_attendances else None
+            standing_in_front_id = reh_obj.led_by_id or reh_obj.project.conductor_id
             items.append({
                 'type': 'REHEARSAL',
                 'participation_id': participation_by_project.get(str(reh_obj.project_id)),
                 'project_title': reh_obj.project.title,
                 'i_lead': str(reh_obj.project_id) in roll_call_project_ids,
+                'led_by': _led_by_payload(reh_obj),
+                'i_stand_in_front': (
+                    my_artist_id is not None and standing_in_front_id == my_artist_id
+                ),
                 'my_attendance': (
                     {
                         'id': str(mine.id),
@@ -1983,7 +2085,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = request_user(self.request)
         absent_annotation = Count('attendances', filter=Q(attendances__status__in=['ABSENT', 'EXCUSED']))
-        qs = Rehearsal.objects.select_related('project').prefetch_related(
+        qs = Rehearsal.objects.select_related('project', 'led_by', 'debrief_by').prefetch_related(
             'invited_participations', 'invited_participations__artist'
         ).annotate(absent_count=absent_annotation)
 
@@ -1999,7 +2101,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         ).distinct()
 
     @action(
-        detail=True, methods=['get'], url_path='lead-sheet',
+        detail=True, methods=['get', 'patch'], url_path='lead-sheet',
         permission_classes=[permissions.IsAuthenticated],
     )
     def lead_sheet(self, request, pk=None) -> Response:
@@ -2014,6 +2116,15 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         contract rows a generic `/participations/` would have had to start
         returning to somebody who is not a manager.
 
+        PATCH `{focus}` / `{debrief}` are the leader's two writes on the
+        evening — what it is about, and how it went — behind the same authority
+        as the read (project-wide `roll_call`, so a forgotten `led_by` does not
+        block them), answering with the read model so the page has nothing to
+        reconcile. The plan goes through the manager's `update_rehearsal`: the
+        cast is told of a changed plan the same way whoever changed it. The
+        debrief goes through `post_debrief`: it is a report to the managers,
+        never a diff for the cast, and it is refused before the start.
+
         The programme is deliberately absent. Knowing who to call over is the
         roll call's business; what the choir is singing belongs to the materials
         scope, which a grant can withhold, and which has its own surface.
@@ -2026,7 +2137,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         try:
             rehearsal = (
                 Rehearsal.objects
-                .select_related('project', 'location')
+                .select_related('project', 'location', 'led_by', 'debrief_by')
                 .prefetch_related('invited_participations')
                 .filter(pk=pk)
                 .first()
@@ -2042,6 +2153,32 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         if not may_take_roll_call:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        if request.method == 'PATCH':
+            try:
+                dto = LeadSheetUpdateDTO(**request.data)
+            except ValidationError as e:
+                return Response(
+                    {"validation_errors": format_pydantic_validation_errors(e)},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if 'focus' in dto.model_fields_set:
+                rehearsal = RehearsalOperationsService.update_rehearsal(
+                    rehearsal=rehearsal, dto=dto.as_rehearsal_update(),
+                )
+            if 'debrief' in dto.model_fields_set:
+                try:
+                    rehearsal = RehearsalOperationsService.post_debrief(
+                        rehearsal=rehearsal, text=dto.debrief, author=request.user,
+                    )
+                except ValueError as exc:
+                    return make_error_response(
+                        request,
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        error_code="validation_error",
+                        detail=str(exc),
+                        validation_errors={"debrief": [str(exc)]},
+                    )
+
         # Who was summoned — `Rehearsal.called_participations`, the same rule
         # `resolveInvited` reads on the client — minus anyone who turned the
         # project down. A declined seat is not an empty row to be chased at the
@@ -2055,7 +2192,12 @@ class RehearsalViewSet(viewsets.ModelViewSet):
 
         artist_ctx = {'request': request}
         return Response({
-            'rehearsal': RehearsalSerializer(rehearsal, context=artist_ctx).data,
+            # `show_debrief`: this reader passed the `roll_call` gate above, so
+            # the report is theirs to read and to write — the rehearsal LIST
+            # withholds it, because it is served to the whole cast.
+            'rehearsal': RehearsalSerializer(
+                rehearsal, context={**artist_ctx, 'show_debrief': True},
+            ).data,
             'project': {
                 'id': str(rehearsal.project_id),
                 'title': rehearsal.project.title,
@@ -2065,6 +2207,10 @@ class RehearsalViewSet(viewsets.ModelViewSet):
             # delegate, and the client must not infer the authority from the
             # mere fact that the read succeeded.
             'is_manager': user_is_manager(request.user),
+            # Who was announced for this evening, explicit only — null is the
+            # conductor. The page compares it with the reader to say "you run
+            # this one" against "X runs this one, you may still take the roll".
+            'led_by': _led_by_payload(rehearsal),
             'cast': [
                 {
                     'id': str(seat.id),
@@ -2100,6 +2246,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
             "focus": validated_data.get("focus", ""),
             "is_mandatory": validated_data.get("is_mandatory", True),
             "calls_instrumentalists": validated_data.get("calls_instrumentalists", False),
+            "led_by_id": validated_data["led_by"].id if validated_data.get("led_by") else None,
         }
 
     @staticmethod
@@ -2131,6 +2278,13 @@ class RehearsalViewSet(viewsets.ModelViewSet):
 
         if "calls_instrumentalists" in validated_data:
             payload["calls_instrumentalists"] = validated_data["calls_instrumentalists"]
+
+        # Presence-gated like the length: null hands the evening back to the
+        # conductor, silence leaves the leader alone.
+        if "led_by" in validated_data:
+            payload["led_by_id"] = (
+                validated_data["led_by"].id if validated_data["led_by"] else None
+            )
 
         return payload
 

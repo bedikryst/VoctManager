@@ -3,8 +3,9 @@ CQRS read model for the Artist Dossier (manager-only HR analytics).
 
 Aggregates an artist's *project track record* straight from the authoritative
 relational state — Participation (invite/confirm/decline), ProjectPieceCasting
-(which voice line on which piece) and Attendance (reliability) — rather than from
-the notification stream, which is recipient-scoped, opt-in and deletable. A
+(which voice line on which piece), Attendance (reliability) and
+RehearsalDelegate + `Rehearsal.led_by` (leadership) — rather than from the
+notification stream, which is recipient-scoped, opt-in and deletable. A
 bounded number of queries is issued regardless of how many projects the artist
 has appeared in.
 """
@@ -24,8 +25,10 @@ from roster.models import (
     Project,
     ProjectPieceCasting,
     Rehearsal,
+    RehearsalDelegate,
     VoiceType,
 )
+from roster.permissions import live_delegate_q
 from roster.queries.voice_naming import project_voice_labels
 
 if TYPE_CHECKING:
@@ -119,6 +122,65 @@ def get_artist_dossier(artist: Artist) -> dict[str, Any]:
         .count()
     )
 
+    # Leadership is read from every delegation row ever written, revoked ones
+    # included: a grant that ended is still a project this person once led.
+    # Whether a row still opens anything is asked with the permission's own
+    # predicate, not re-derived here, so the dossier and the gates cannot
+    # disagree about who leads what today.
+    delegations = list(
+        RehearsalDelegate.all_objects.filter(artist=artist)
+        .select_related("project")
+        .order_by("-project__date_time", "-created_at")
+    )
+    live_delegation_ids = set(
+        RehearsalDelegate.objects.filter(live_delegate_q(scope="any"), artist=artist)
+        .exclude(project__status__in=Project.CLOSED_STATUSES)
+        .values_list("id", flat=True)
+    )
+    # One entry per project. A revoked row and a later live one on the same
+    # project are one leadership, and the live row is the one worth showing.
+    led_by_project: dict[Any, RehearsalDelegate] = {}
+    for delegation in delegations:
+        current = led_by_project.get(delegation.project_id)
+        if current is None or (
+            delegation.id in live_delegation_ids
+            and current.id not in live_delegation_ids
+        ):
+            led_by_project[delegation.project_id] = delegation
+
+    # A grant says the conductor trusted her; `led_by` says she stood there.
+    # Only the second is a count of evenings — see the RehearsalDelegate
+    # docstring on why the grant's timestamps say nothing about that.
+    rehearsals_led = Rehearsal.objects.filter(
+        led_by=artist, date_time__lt=now, is_deleted=False
+    ).count()
+    # Evenings she handed back in writing. Counted by the author stamp, not by
+    # `led_by`: a leader may write up a rehearsal she covered without being
+    # announced for it, and that report is still hers.
+    debriefs_written = (
+        Rehearsal.objects.filter(debrief_by=artist, is_deleted=False)
+        .exclude(debrief="")
+        .count()
+    )
+
+    led_projects_payload = [
+        {
+            "project_id": str(delegation.project_id),
+            "title": delegation.project.title,
+            "date_time": delegation.project.date_time,
+            "status": delegation.project.status,
+            "is_live": delegation.id in live_delegation_ids,
+            "expires_at": delegation.expires_at,
+            "scopes": {
+                "marks": delegation.can_see_leader_marks,
+                "roll_call": delegation.can_take_roll_call,
+                "materials": delegation.can_open_materials,
+                "choir_marks": delegation.can_mark_for_choir,
+            },
+        }
+        for delegation in led_by_project.values()
+    ]
+
     # A seat is named inside the concert it was taken in, so the record reads
     # the same as the call sheet that singer was handed. Resolved for the whole
     # history at once — see [roster.queries.voice_naming].
@@ -162,6 +224,7 @@ def get_artist_dossier(artist: Artist) -> dict[str, Any]:
                 "status": participation.project.status,
                 "participation_status": participation.status,
                 "castings": casting_payload,
+                "led": participation.project_id in led_by_project,
             }
         )
 
@@ -196,6 +259,12 @@ def get_artist_dossier(artist: Artist) -> dict[str, Any]:
             "earnings_paid": float(earnings_paid),
             "earnings_outstanding": float(earnings_outstanding),
             "projects_paid": projects_paid,
+        },
+        "leadership": {
+            "projects_led": len(led_by_project),
+            "rehearsals_led": rehearsals_led,
+            "debriefs_written": debriefs_written,
+            "projects": led_projects_payload,
         },
         "projects": projects,
     }

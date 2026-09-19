@@ -41,6 +41,7 @@ from .models import (
     RehearsalDelegate,
     VoiceType,
 )
+from .permissions import live_delegate_q
 
 # --- 1. ARTIST SERIALIZERS ---
 
@@ -111,6 +112,7 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
     """
     account_activated = serializers.SerializerMethodField()
     activation_link_expired = serializers.SerializerMethodField()
+    is_project_leader = serializers.SerializerMethodField()
     # Stored on the account's profile, edited from the roster form. Declared
     # rather than inferred, because the model side is a read-through property;
     # `ArtistHRService.update_artist` is what routes a write to its real owner.
@@ -136,7 +138,7 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
             'sight_reading_skill', 'vocal_range_bottom', 'vocal_range_top',
 
             # Roster standing
-            'is_active',
+            'is_active', 'is_project_leader',
 
             # Onboarding state
             'activation_email_sent_at', 'account_activated', 'activation_link_expired',
@@ -200,6 +202,21 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
             return False
         timeout = getattr(settings, 'PASSWORD_RESET_TIMEOUT', 60 * 60 * 24 * 3)
         return timezone.now() > obj.activation_email_sent_at + timedelta(seconds=timeout)
+
+    def get_is_project_leader(self, obj: Artist) -> bool:
+        """Leads at least one open project right now — the roster's "Lider"
+        badge. The list annotates it (`ArtistViewSet.get_queryset`); an instance
+        that arrived another way (the PATCH response) asks the database with
+        the same predicate, so saving a profile cannot switch the badge off."""
+        annotated = getattr(obj, 'is_project_leader', None)
+        if annotated is not None:
+            return bool(annotated)
+        return (
+            RehearsalDelegate.objects
+            .filter(live_delegate_q(scope='any'), artist=obj)
+            .exclude(project__status__in=Project.CLOSED_STATUSES)
+            .exists()
+        )
 
 
 # --- 2. PARTICIPATION SERIALIZERS ---
@@ -266,6 +283,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     """
     cast = serializers.SerializerMethodField()
     program = serializers.SerializerMethodField()
+    leaders = serializers.SerializerMethodField()
     location = LocationSnippetSerializer(read_only=True)
     location_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     conductor_name = serializers.CharField(source='conductor.__str__', read_only=True)
@@ -318,6 +336,33 @@ class ProjectSerializer(serializers.ModelSerializer):
         if not user_is_manager(getattr(self.context.get('request'), 'user', None)):
             return False
         return bool(getattr(obj, 'has_pending_announcements', False))
+
+    def get_leaders(self, obj) -> list[dict]:
+        """Who leads this project — the live `RehearsalDelegate` rows, name and
+        id only. A fact for the card beside "Conductor", not a permission: the
+        scopes stay on the manager's own list.
+
+        `ProjectViewSet.get_queryset` prefetches the rows as `live_leaders`; an
+        instance that arrived another way (the create/update response) asks the
+        database with the same predicate, so both paths name the same people.
+        """
+        rows = getattr(obj, 'live_leaders', None)
+        if rows is None:
+            rows = list(
+                RehearsalDelegate.objects
+                .filter(live_delegate_q(scope='any'), project=obj)
+                .select_related('artist')
+                .order_by('created_at')
+            )
+        # The bare name, as everywhere somebody is named as leading: the voice
+        # they sing is a fact about their seat, not about the appointment.
+        return [
+            {
+                'artist_id': str(row.artist_id),
+                'name': f"{row.artist.first_name} {row.artist.last_name}".strip(),
+            }
+            for row in rows
+        ]
 
     def get_cast(self, obj) -> list[dict]:
         """Returns non-sensitive casting snapshot."""
@@ -400,6 +445,24 @@ class RehearsalSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
+    # Who stands in front of the choir. Written as an id, read back as an id
+    # and a name so a row can say "Prowadzi: X" without an artist lookup; null
+    # on both sides means the project's conductor.
+    led_by_id = serializers.PrimaryKeyRelatedField(
+        source='led_by',
+        queryset=Artist.objects.filter(is_deleted=False),
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+    led_by_artist_id = serializers.UUIDField(
+        source='led_by_id', read_only=True, allow_null=True,
+    )
+    led_by_name = serializers.SerializerMethodField()
+    # The evening handed back. Read-only here: the only write door is the
+    # lead sheet's PATCH, which stamps the author and the time itself. Withheld
+    # from a singer by `to_representation` — see there.
+    debrief_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Rehearsal
@@ -420,6 +483,12 @@ class RehearsalSerializer(serializers.ModelSerializer):
             'is_mandatory',
             'calls_instrumentalists',
             'invited_participations',
+            'led_by_id',
+            'led_by_artist_id',
+            'led_by_name',
+            'debrief',
+            'debrief_by_name',
+            'debrief_at',
             'absent_count',
         )
         read_only_fields = (
@@ -430,7 +499,65 @@ class RehearsalSerializer(serializers.ModelSerializer):
             'project',
             'location',
             'end_date_time',
+            'debrief',
+            'debrief_at',
             'absent_count',
+        )
+
+    #: Fields of the report the leader writes after the evening. Manager-facing:
+    #: the text is candid about how a section sang and who was missing, so it
+    #: travels only to a reader who is entitled to that account.
+    DEBRIEF_FIELDS = ('debrief', 'debrief_by_name', 'debrief_at')
+
+    def to_representation(self, instance: Rehearsal) -> dict[str, Any]:
+        """Drop the debrief for a reader it was not written for.
+
+        The rehearsal list is served to singers as well as managers (see
+        `RehearsalViewSet.get_queryset`), and a report saying the tenors
+        dragged is not a fact about the evening the way its hour is. The lead
+        sheet says `show_debrief` because the reader there has already passed
+        the `roll_call` gate — that is how a leader reads back their own text.
+        """
+        data = super().to_representation(instance)
+        if self.context.get('show_debrief'):
+            return data
+        if user_is_manager(getattr(self.context.get('request'), 'user', None)):
+            return data
+        for field in self.DEBRIEF_FIELDS:
+            data.pop(field, None)
+        return data
+
+    def get_led_by_name(self, obj: Rehearsal) -> str | None:
+        # The bare name, as for `debrief_by_name`: this line names whoever
+        # stands in front of the choir, and the voice they sing when they are
+        # not standing there is noise on every card that renders it.
+        if not (obj.led_by_id and obj.led_by):
+            return None
+        return f"{obj.led_by.first_name} {obj.led_by.last_name}".strip()
+
+    def get_debrief_by_name(self, obj: Rehearsal) -> str | None:
+        # The bare name: a signature under a paragraph, where the voice in
+        # brackets would read as a credit rather than an author.
+        if not (obj.debrief_by_id and obj.debrief_by):
+            return None
+        return f"{obj.debrief_by.first_name} {obj.debrief_by.last_name}".strip()
+
+    @staticmethod
+    def _may_lead(artist: Artist, project: Project) -> bool:
+        """Only somebody who may actually run the evening can be named as
+        running it: the project's conductor, or an artist holding a live
+        leader grant with the roll call on this project. Naming anyone else
+        would announce a leader the register then refuses. A direct row filter
+        rather than `led_projects_q` — the row has the artist, no user hop —
+        with the same closed-project exclusion every other gate applies, so a
+        grant does not outlive the concert here alone."""
+        if project.conductor_id == artist.pk:
+            return True
+        return (
+            RehearsalDelegate.objects
+            .filter(live_delegate_q(scope='roll_call'), project=project, artist=artist)
+            .exclude(project__status__in=Project.CLOSED_STATUSES)
+            .exists()
         )
 
     def validate_timezone(self, value: str) -> str:
@@ -451,6 +578,29 @@ class RehearsalSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'project_id': ['This field is required.']
             })
+
+        led_by = attrs.get('led_by')
+        # An unchanged value announces nothing, so it is not re-judged: the rule
+        # is "you may not NAME somebody who cannot lead", not "an evening whose
+        # leader's grant has since run out can never be edited again". The form
+        # re-sends this field on every save, and judging it there would leave a
+        # rehearsal unmovable with no way out of it on screen.
+        is_unchanged = (
+            self.instance is not None
+            and led_by is not None
+            and self.instance.led_by_id == led_by.pk
+        )
+        if led_by is not None and not is_unchanged:
+            project = attrs.get('project')
+            if project is None and self.instance is not None:
+                project = self.instance.project
+            if project is not None and not self._may_lead(led_by, project):
+                raise serializers.ValidationError({
+                    'led_by_id': [
+                        "This person is neither the conductor nor a leader of "
+                        "the project with the roll call."
+                    ]
+                })
 
         return attrs
 
@@ -645,7 +795,7 @@ class CrewAssignmentSerializer(CrewAssignmentBasicSerializer):
 
 
 class RehearsalDelegateSerializer(serializers.ModelSerializer):
-    """One stand-in on one project, as the manager's delegation list reads it.
+    """One leader of one project, as the manager's leaders list reads it.
 
     `project` and `granted_by` are stamped by the view from the URL and the
     request — a delegation that could name its own project in the body would let
@@ -657,7 +807,11 @@ class RehearsalDelegateSerializer(serializers.ModelSerializer):
     active in a list the browser cached an hour ago still opens nothing.
     """
 
-    artist_name = serializers.CharField(source='artist.__str__', read_only=True)
+    # The bare name, as on every other surface that names somebody as leading.
+    # The voice is beside it in `artist_voice_display` for a reader who wants
+    # it, rather than welded into the name of an appointment it says nothing
+    # about.
+    artist_name = serializers.SerializerMethodField()
     artist_voice_display = serializers.CharField(
         source='artist.get_voice_type_display', read_only=True,
     )
@@ -670,6 +824,10 @@ class RehearsalDelegateSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'artist', 'artist_name', 'artist_voice_display',
             'can_see_leader_marks', 'can_take_roll_call', 'can_open_materials',
+            'can_mark_for_choir',
             'expires_at', 'note', 'granted_by_name', 'created_at',
         )
         read_only_fields = ('id', 'created_at')
+
+    def get_artist_name(self, obj: RehearsalDelegate) -> str:
+        return f"{obj.artist.first_name} {obj.artist.last_name}".strip()

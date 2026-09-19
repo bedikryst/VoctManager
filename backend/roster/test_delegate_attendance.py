@@ -277,6 +277,41 @@ class DelegateRollCallTests(APITestCase):
         rows = projects["results"] if isinstance(projects, dict) else projects
         self.assertIn(str(self.other_project.pk), {row["id"] for row in rows})
 
+    def _timeline_row(self, rehearsal):
+        timeline = self.client.get("/api/participations/schedule-dashboard/").json()
+        return next(
+            row for row in timeline
+            if row["type"] == "REHEARSAL"
+            and row["rehearsal"]["id"] == str(rehearsal.pk)
+        )
+
+    def test_the_schedule_says_who_stands_in_front(self) -> None:
+        # `i_lead` (may take the roll) and `i_stand_in_front` (announced for
+        # this evening) are two questions: a leader may run the register of an
+        # evening the conductor kept, and a singer is told who leads without
+        # being handed anything.
+        self._grant()
+        self.rehearsal.led_by = self.deputy
+        self.rehearsal.save()
+
+        self.client.force_authenticate(self.deputy_user)
+        mine = self._timeline_row(self.rehearsal)
+        self.assertTrue(mine["i_lead"])
+        self.assertTrue(mine["i_stand_in_front"])
+        self.assertEqual(mine["led_by"]["artist_id"], str(self.deputy.pk))
+        kept = self._timeline_row(self.held_rehearsal)
+        self.assertTrue(kept["i_lead"])
+        self.assertFalse(kept["i_stand_in_front"])
+        self.assertIsNone(kept["led_by"])
+
+        self.client.force_authenticate(self.singer_user)
+        theirs = self._timeline_row(self.rehearsal)
+        self.assertFalse(theirs["i_lead"])
+        self.assertFalse(theirs["i_stand_in_front"])
+        # The bare name: a card telling the choir who to expect at the front
+        # has no use for the voice that person sings when they are not there.
+        self.assertEqual(theirs["led_by"]["name"], "Kasia Nowak")
+
     # --- the sheet itself -----------------------------------------------------
 
     def _sheet(self, rehearsal=None):

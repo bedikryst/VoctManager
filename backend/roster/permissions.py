@@ -22,23 +22,61 @@ from roster.models import ProgramItem, Project
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
 
-#: What a delegation opens. Three switches rather than one because they leak
+#: What a delegation opens. Four switches rather than one because they leak
 #: differently: marks expose the conductor's thinking, the roll call writes other
-#: people's records, and materials open a programme the stand-in may not be
-#: singing in.
+#: people's records, materials open a programme the stand-in may not be singing
+#: in, and choir marks put words on every singer's page in the conductor's voice
+#: (the only switch that is off by default).
 #:
-#: ``any`` is the fourth question and not a fourth switch: "does this project
-#: exist for this person at all". Every capability needs a project to hang off —
-#: a timeline entry, a URL that resolves — and asking `materials` for that made
-#: one of the three switches a silent prerequisite for the other two, so a grant
-#: of the roll call alone opened nothing anywhere.
-LeadScope = Literal['marks', 'roll_call', 'materials', 'any']
+#: ``any`` is a question and not a switch: "does this project exist for this
+#: person at all". Every capability needs a project to hang off — a timeline
+#: entry, a URL that resolves — and asking `materials` for that made one of the
+#: switches a silent prerequisite for the others, so a grant of the roll call
+#: alone opened nothing anywhere.
+LeadScope = Literal['marks', 'roll_call', 'materials', 'choir_marks', 'any']
 
 _SCOPE_FIELD: dict[str, str] = {
     'marks': 'can_see_leader_marks',
     'roll_call': 'can_take_roll_call',
     'materials': 'can_open_materials',
+    'choir_marks': 'can_mark_for_choir',
 }
+
+
+def live_delegate_q(*, scope: LeadScope, rel: str = '') -> Q:
+    """A ``RehearsalDelegate`` row that currently opens ``scope``: not revoked,
+    its artist not deleted, its clock not run out, and at least the asked-for
+    switch on.
+
+    ``rel`` is the lookup path from the queryset's model to the delegate row —
+    ``''`` when filtering ``RehearsalDelegate`` itself, ``'rehearsal_delegates__'``
+    from a Project. The row-level half of `led_projects_q`, split out so the
+    project's own "who leads this" fact and the permission predicate cannot
+    disagree about which rows count. Says nothing about the PROJECT's status:
+    that is the caller's question (a closed project ends every grant for the
+    permission, but is still led by whoever led it as a fact).
+    """
+    if scope == 'any':
+        opens_something = Q()
+        for scope_field in _SCOPE_FIELD.values():
+            opens_something |= Q(**{f'{rel}{scope_field}': True})
+    else:
+        opens_something = Q(**{f'{rel}{_SCOPE_FIELD[scope]}': True})
+
+    return (
+        Q(**{
+            f'{rel}artist__is_deleted': False,
+            f'{rel}is_deleted': False,
+        })
+        & opens_something
+        # Read at call time, never at import: a Q built once at module scope
+        # would freeze "now" on the moment the process started, and a grant that
+        # expired days ago would keep opening the score until the next deploy.
+        & (
+            Q(**{f'{rel}expires_at__isnull': True})
+            | Q(**{f'{rel}expires_at__gt': timezone.now()})
+        )
+    )
 
 
 def led_projects_q(user: User | None, *, scope: LeadScope, prefix: str = '') -> Q:
@@ -79,30 +117,12 @@ def led_projects_q(user: User | None, *, scope: LeadScope, prefix: str = '') -> 
     rel = f'{p}rehearsal_delegates__'
 
     # Every condition below is in ONE filter() call, so they all bind to the same
-    # delegation row — including this disjunction, which is why a grant with
-    # every switch off (reachable through the API, not through the form) still
-    # opens nothing.
-    if scope == 'any':
-        opens_something = Q()
-        for scope_field in _SCOPE_FIELD.values():
-            opens_something |= Q(**{f'{rel}{scope_field}': True})
-    else:
-        opens_something = Q(**{f'{rel}{_SCOPE_FIELD[scope]}': True})
-
+    # delegation row — including the scope disjunction inside `live_delegate_q`,
+    # which is why a grant with every switch off (reachable through the API, not
+    # through the form) still opens nothing.
     delegated = (
-        Q(**{
-            f'{rel}artist__user': user,
-            f'{rel}artist__is_deleted': False,
-            f'{rel}is_deleted': False,
-        })
-        & opens_something
-        # Read at call time, never at import: a Q built once at module scope
-        # would freeze "now" on the moment the process started, and a grant that
-        # expired days ago would keep opening the score until the next deploy.
-        & (
-            Q(**{f'{rel}expires_at__isnull': True})
-            | Q(**{f'{rel}expires_at__gt': timezone.now()})
-        )
+        Q(**{f'{rel}artist__user': user})
+        & live_delegate_q(scope=scope, rel=rel)
         & ~Q(**{f'{p}status__in': Project.CLOSED_STATUSES})
     )
     conducted = (

@@ -172,7 +172,7 @@ def get_artist_schedule(
             )
         )
         .distinct()
-        .select_related("project", "location")
+        .select_related("project", "location", "led_by")
         .annotate(absent_count=absent_annotation)
         .prefetch_related(
             Prefetch(

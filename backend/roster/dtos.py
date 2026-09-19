@@ -615,6 +615,9 @@ class RehearsalCreateDTO(EnterpriseBaseDTO):
     focus: str = Field(default='', max_length=255)
     is_mandatory: bool = True
     calls_instrumentalists: bool = False
+    # Who stands in front of the choir; None = the project's conductor. The
+    # serializer has already checked the person may lead — this is a name.
+    led_by_id: UUID | None = None
 
     @field_validator("timezone")
     @classmethod
@@ -638,6 +641,10 @@ class RehearsalUpdateDTO(EnterpriseBaseDTO):
     focus: str | None = Field(None, max_length=255)
     is_mandatory: bool | None = None
     calls_instrumentalists: bool | None = None
+    # Null is a real value, as for `duration_minutes`: sending it hands the
+    # evening back to the conductor; a patch that never mentions it leaves the
+    # leader alone.
+    led_by_id: UUID | None = None
 
     @field_validator("timezone")
     @classmethod
@@ -655,3 +662,37 @@ class RehearsalUpdateDTO(EnterpriseBaseDTO):
             if field_name in self.model_fields_set and getattr(self, field_name) is None:
                 raise ValueError(f"{field_name} cannot be null.")
         return self
+
+
+class LeadSheetUpdateDTO(EnterpriseBaseDTO):
+    """What the person running one evening may change about it: the work plan
+    before, the debrief after.
+
+    A separate contract from `RehearsalUpdateDTO` rather than a subset flag on
+    it, because the lead sheet is the one write surface a non-manager reaches
+    on a rehearsal, and the list of fields it accepts IS the permission. Null
+    is not a value here: either text is cleared by sending "". The two travel
+    to different places — the plan is a change the cast is told about, the
+    debrief is a report to the managers — so the view reads `model_fields_set`
+    and routes each one; a patch naming neither is refused.
+    """
+    focus: str = Field("", max_length=255)
+    debrief: str = Field("", max_length=4000)
+
+    @field_validator("focus", "debrief", mode="before")
+    @classmethod
+    def normalize_text(cls, value: object) -> object:
+        return _blankable_string(value)
+
+    @model_validator(mode="after")
+    def require_one_field(self):
+        if not self.model_fields_set:
+            raise ValueError("Nothing to change: send focus or debrief.")
+        return self
+
+    def as_rehearsal_update(self) -> RehearsalUpdateDTO:
+        """The same write the manager's form makes, so the cast's change diff
+        and the announcement queue see one kind of edit whoever made it. Only
+        the plan travels — the debrief is not a field of the rehearsal's
+        contract and is never a diff for the cast."""
+        return RehearsalUpdateDTO(**self.model_dump(include={"focus"}, exclude_unset=True))

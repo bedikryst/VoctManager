@@ -869,7 +869,41 @@ class Rehearsal(EnterpriseBaseModel):
     invited_participations = models.ManyToManyField(
         Participation, blank=True, related_name='invited_rehearsals', verbose_name=_("Invited Singers")
     )
-    
+    # Who stands in front of the choir this evening. Null = the project's
+    # conductor, which is the resting case and is never written explicitly. A
+    # value is an ANNOUNCEMENT, not a permission: what the person may do (roll
+    # call, markings, materials) stays on the project-wide `RehearsalDelegate`
+    # grant, and the serializer only accepts an artist who holds one. Two
+    # parallel sectionals are two rehearsals with two different values here.
+    # SET_NULL rather than CASCADE: a past evening keeps its record when the
+    # leader's row is soft-deleted, because "who led" feeds the dossier.
+    led_by = models.ForeignKey(
+        Artist,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='led_rehearsals',
+        verbose_name=_("Led By"),
+        help_text=_("Who runs this rehearsal. Blank = the project's conductor. "
+                    "Names a person; the powers come from the project's leader grant."),
+    )
+    # The evening handed back: a few sentences from whoever stood in front of
+    # the choir, written once the rehearsal has started and read by the
+    # managers where the rehearsal lives. One text per rehearsal, last write
+    # wins — a running log would be the project channel's job. `debrief_by`
+    # is SET_NULL for the same reason `led_by` is: the report outlives the
+    # author's row, and it is stamped for a manager writing it too.
+    debrief = models.TextField(blank=True, verbose_name=_("Debrief"))
+    debrief_by = models.ForeignKey(
+        Artist,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name=_("Debrief By"),
+    )
+    debrief_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Debrief At"))
+
     class Meta:
         verbose_name = _("Rehearsal")
         verbose_name_plural = _("Rehearsals")
@@ -944,12 +978,16 @@ class Rehearsal(EnterpriseBaseModel):
 
 
 class RehearsalDelegate(EnterpriseBaseModel):
-    """One person standing in front of the choir in the conductor's place.
+    """The leader of one project: the person who runs its rehearsals in the
+    conductor's place. Read by people as "Lider projektu".
 
     A relationship, deliberately not a fourth AppRole. Every gate in this project
     asks `user_is_manager` and branches in two, so a new role would land in the
-    not-a-manager half of ~180 of them and grant nothing; what a stand-in needs is
-    not a rank but a named, bounded tie to ONE programme.
+    not-a-manager half of ~180 of them and grant nothing; what a leader needs is
+    not a rank but a named, bounded tie to ONE programme. Normally it is the same
+    person for every programme, but the conductor decides it per concert, and
+    nothing here grants it on its own — the form may suggest the last leader,
+    the manager still clicks.
 
     Scoped to a project rather than to a single rehearsal because that is the
     shape of the thing being lent: score markings hang off editions, which hang
@@ -957,10 +995,20 @@ class RehearsalDelegate(EnterpriseBaseModel):
     path `artist_live_piece_ids` already walks. It is also the shape of the
     favour, which is usually "I'm away for a fortnight", not one evening.
 
-    The three scopes are separate because they leak differently: marks expose the
+    The scopes are separate because they leak differently: marks expose the
     conductor's thinking, the roll call writes other people's records, and
-    materials open a programme the stand-in may not be singing in. A grant that
+    materials open a programme the leader may not be singing in. A grant that
     bundled them would be easy to give and impossible to reason about afterwards.
+    The fourth, writing the choir's official markings, is the one power that
+    speaks to the whole choir in the conductor's voice, so it alone is off
+    unless he switches it on.
+
+    A live grant also seats the leader in the project's channel (a LEADER
+    membership, created on grant and dropped on revoke by `messaging.signals`),
+    so they can talk to the cast they run.
+
+    The class and table keep their original name: renaming them would be a table
+    migration plus a data migration of stored notifications for zero behaviour.
     """
 
     project = models.ForeignKey(
@@ -969,7 +1017,7 @@ class RehearsalDelegate(EnterpriseBaseModel):
     )
     artist = models.ForeignKey(
         Artist, on_delete=models.CASCADE, related_name='rehearsal_delegations',
-        verbose_name=_("Standing In"),
+        verbose_name=_("Leader"),
     )
     can_see_leader_marks = models.BooleanField(
         default=True,
@@ -989,29 +1037,36 @@ class RehearsalDelegate(EnterpriseBaseModel):
         help_text=_("Reaches this project's scores and programme even without a "
                     "seat in its cast."),
     )
+    can_mark_for_choir = models.BooleanField(
+        default=False,
+        verbose_name=_("Marks for the Choir"),
+        help_text=_("Writes the 'shared' annotation layer on this project's "
+                    "music — the choir's official markings, which every singer "
+                    "sees. Off unless the conductor lends his voice on purpose."),
+    )
     # Null is "until the project closes", not "forever": every branch of the
     # predicate drops a project that is completed or cancelled, so an open-ended
     # grant still ends on its own. A date is for ending it sooner than that.
     expires_at = models.DateTimeField(
         null=True, blank=True,
         verbose_name=_("Expires At"),
-        help_text=_("After this moment the delegation opens nothing. "
+        help_text=_("After this moment the leadership opens nothing. "
                     "Blank = until the project closes."),
     )
     granted_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='+',
-        verbose_name=_("Granted By"),
+        verbose_name=_("Appointed By"),
     )
     note = models.CharField(
         max_length=200, blank=True,
         verbose_name=_("Note"),
-        help_text=_("Why this delegation exists, for whoever reads the list later."),
+        help_text=_("Why this person leads the project, for whoever reads the list later."),
     )
 
     class Meta:
-        verbose_name = _("Rehearsal Delegate")
-        verbose_name_plural = _("Rehearsal Delegates")
+        verbose_name = _("Project Leader")
+        verbose_name_plural = _("Project Leaders")
         constraints = [
             models.UniqueConstraint(
                 fields=['project', 'artist'],
