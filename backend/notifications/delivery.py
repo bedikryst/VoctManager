@@ -77,6 +77,13 @@ class PreferenceGroup:
 #     it is already a digest — one message per editor per sitting — and batching
 #     a batch would only cost it up to a day for nothing. Staff-only, because
 #     the reader is whoever applies the proposals to the repository.
+#   • debriefs — the leader's written account of an evening they ran. E-mail ON
+#     + push ON, and deliberately NOT in the digest below, which is what put it
+#     in a group of its own rather than in `team`. The digest exists for routine
+#     fan-out — one row per singer per rehearsal — while a debrief is written
+#     once, only for an evening somebody other than the conductor ran, and it is
+#     the one thing the conductor wanted to read that night rather than at
+#     breakfast. Same split, and the same reason, as `safety_net`.
 #   • team — the manager's job console: routine reports of things that already
 #     happened. Push ON, e-mail OFF; at INFO level the daily digest carries them.
 PREFERENCE_GROUPS: tuple[PreferenceGroup, ...] = (
@@ -98,6 +105,9 @@ PREFERENCE_GROUPS: tuple[PreferenceGroup, ...] = (
             # is the failure this type exists to prevent.
             NotificationType.REHEARSAL_DELEGATED,
             NotificationType.REHEARSAL_DELEGATION_ENDED,
+            # One evening handed over is the same commitment at a finer grain —
+            # and the same failure if it does not arrive.
+            NotificationType.REHEARSAL_LEAD_ASSIGNED,
             # Casting belongs here, not with the sheet music. "You now sing S2
             # instead of S1" changes what the reader has to prepare — it is far
             # nearer to a moved rehearsal than to "a new recording was uploaded".
@@ -149,6 +159,12 @@ PREFERENCE_GROUPS: tuple[PreferenceGroup, ...] = (
         manager_only=True,
         staff_only=True,
         types=(NotificationType.SITE_COPY_PROPOSED,),
+    ),
+    PreferenceGroup(
+        id="debriefs",
+        email=True,
+        manager_only=True,
+        types=(NotificationType.REHEARSAL_DEBRIEF_POSTED,),
     ),
     PreferenceGroup(
         id="team",

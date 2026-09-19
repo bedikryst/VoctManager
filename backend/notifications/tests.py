@@ -128,6 +128,7 @@ class MessageContentCompositionTests(SimpleTestCase):
             "can_see_leader_marks": True,
             "can_take_roll_call": False,
             "can_open_materials": True,
+            "can_mark_for_choir": True,
         }
         with translation.override("en"):
             c = MessageContentBuilder.build(
@@ -137,6 +138,7 @@ class MessageContentCompositionTests(SimpleTestCase):
             labels = [row.label for row in c.details]
             self.assertIn("Score markings", labels)
             self.assertIn("Materials", labels)
+            self.assertIn("Markings for the choir", labels)
             self.assertNotIn("Attendance", labels)
             # An open-ended grant still ends — on the project, not on a date.
             self.assertIn(
@@ -165,6 +167,63 @@ class MessageContentCompositionTests(SimpleTestCase):
             self.assertIn(
                 "Tomasz Kuras",
                 [row.value for row in c.details if row.label == "Changed by"],
+            )
+
+    def test_an_evening_handed_over_names_its_sections_and_lands_on_its_card(self) -> None:
+        """The date is the message; a sectional says which sections in the
+        title, and the one action opens THAT evening's register."""
+        meta = {
+            "rehearsal_id": "3f8f6f2a-0000-4000-8000-000000000009",
+            "project_id": "3f8f6f2a-0000-4000-8000-000000000001",
+            "project_name": "Adwent",
+            "starts_at": "2026-10-03T18:00:00+02:00",
+            "timezone": "Europe/Warsaw",
+            "sections": ["S", "A"],
+        }
+        with translation.override("en"):
+            c = MessageContentBuilder.build(
+                NotificationType.REHEARSAL_LEAD_ASSIGNED, NotificationLevel.INFO,
+                meta, is_manager=False,
+            )
+            self.assertIn("sopranos, altos", c.title)
+            self.assertIn("Adwent", c.body)
+            self.assertEqual(
+                c.url_path, "/panel/schedule/lead/3f8f6f2a-0000-4000-8000-000000000009",
+            )
+            self.assertEqual(c.tag, "rehearsal-lead:3f8f6f2a-0000-4000-8000-000000000009")
+            self.assertIn(
+                "sopranos, altos",
+                [row.value for row in c.details if row.label == "Sections"],
+            )
+
+    def test_a_debrief_names_its_author_and_opens_that_evening(self) -> None:
+        """The author is the title, the excerpt is the body, and the link
+        lands the manager on the rehearsal rather than on the list."""
+        meta = {
+            "rehearsal_id": "3f8f6f2a-0000-4000-8000-000000000009",
+            "project_id": "3f8f6f2a-0000-4000-8000-000000000001",
+            "project_name": "Adwent",
+            "author_name": "Kasia Nowak",
+            "excerpt": "Gloria stands. Kyrie needs another pass.",
+            "starts_at": "2026-10-03T18:00:00+02:00",
+            "timezone": "Europe/Warsaw",
+        }
+        with translation.override("en"):
+            c = MessageContentBuilder.build(
+                NotificationType.REHEARSAL_DEBRIEF_POSTED, NotificationLevel.INFO,
+                meta, is_manager=True,
+            )
+            self.assertIn("Kasia Nowak", c.title)
+            self.assertEqual(c.body, "Gloria stands. Kyrie needs another pass.")
+            self.assertEqual(
+                c.url_path,
+                "/panel/rehearsals?rehearsal=3f8f6f2a-0000-4000-8000-000000000009",
+            )
+            self.assertEqual(c.tag, "rehearsal-debrief:3f8f6f2a-0000-4000-8000-000000000009")
+            self.assertIn("Adwent", c.subject)
+            self.assertIn(
+                "Gloria stands. Kyrie needs another pass.",
+                [row.value for row in c.details if row.label == "Debrief"],
             )
 
     def test_push_projection_is_faithful(self) -> None:
@@ -1738,6 +1797,35 @@ class PreferenceGroupPolicyTests(SimpleTestCase):
         self.assertEqual(set(team.types), set(DIGESTIBLE_TYPES))
         self.assertIs(PREFERENCE_GROUPS[-1], team)
 
+    def test_a_debrief_is_not_batched_with_the_routine_reports(self) -> None:
+        """The second split off team ops, for the same reason as the first.
+
+        A debrief is written once, only for an evening somebody other than the
+        conductor ran, and it is the one manager-facing thing worth reaching him
+        the same night. Held in the digest it would arrive at breakfast, folded
+        between attendance rows — so it gets a group that can say `True`.
+        """
+        from .delivery import (
+            DIGESTIBLE_TYPES,
+            GROUP_OF_TYPE,
+            default_channel_preferences,
+            is_digestible,
+        )
+
+        self.assertEqual(
+            GROUP_OF_TYPE[NotificationType.REHEARSAL_DEBRIEF_POSTED], "debriefs",
+        )
+        self.assertNotIn(NotificationType.REHEARSAL_DEBRIEF_POSTED, DIGESTIBLE_TYPES)
+        self.assertFalse(
+            is_digestible(
+                NotificationType.REHEARSAL_DEBRIEF_POSTED, NotificationLevel.INFO,
+            )
+        )
+        self.assertEqual(
+            default_channel_preferences(NotificationType.REHEARSAL_DEBRIEF_POSTED),
+            {"email_enabled": True, "push_enabled": True},
+        )
+
     def test_casting_is_a_commitment(self) -> None:
         # The load-bearing move of the group rewrite. "You now sing S2 instead of
         # S1" changes what the reader has to prepare, so it travels with the moved
@@ -1832,7 +1920,10 @@ class PreferenceLedgerShapeTests(APITestCase):
         matrix = self._matrix(self.manager)
         self.assertEqual(
             [group["id"] for group in matrix["groups"]],
-            ["commitments", "requests", "messages", "materials", "safety_net", "team"],
+            [
+                "commitments", "requests", "messages", "materials",
+                "safety_net", "debriefs", "team",
+            ],
         )
 
     def test_every_row_names_a_group_the_response_declares(self) -> None:
@@ -1856,6 +1947,7 @@ class PreferenceLedgerShapeTests(APITestCase):
                 "messages": True,
                 "materials": False,
                 "safety_net": True,
+                "debriefs": True,
                 "team": False,
             },
         )
@@ -1877,7 +1969,7 @@ class PreferenceLedgerShapeTests(APITestCase):
     def test_the_manager_groups_are_absent_entirely_for_an_artist(self) -> None:
         matrix = self._matrix(self.artist)
         declared = {group["id"] for group in matrix["groups"]}
-        self.assertTrue(declared.isdisjoint({"team", "safety_net"}))
+        self.assertTrue(declared.isdisjoint({"team", "safety_net", "debriefs"}))
         self.assertNotIn(
             NotificationType.ANNOUNCEMENT_PENDING.value,
             {row["notification_type"] for row in matrix["preferences"]},

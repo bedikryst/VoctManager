@@ -35,14 +35,23 @@ class NotificationType(models.TextChoices):
     REHEARSAL_UPDATED = 'REHEARSAL_UPDATED', _('Rehearsal Time/Location Changed')
     REHEARSAL_CANCELLED = 'REHEARSAL_CANCELLED', _('Rehearsal Cancelled')
     REHEARSAL_REMINDER = 'REHEARSAL_REMINDER', _('Upcoming Rehearsal Reminder')
-    # Standing in front of the choir in the conductor's place. Two types rather
-    # than one carrying a direction, matching ABSENCE_APPROVED/REJECTED: the
-    # copy has nothing in common, and a reader who wants to be told they were
-    # handed a programme wants to be told when it is taken back.
-    REHEARSAL_DELEGATED = 'REHEARSAL_DELEGATED', _('Asked to Run Rehearsals')
+    # Made the leader of a project (running its rehearsals in the conductor's
+    # place). Two types rather than one carrying a direction, matching
+    # ABSENCE_APPROVED/REJECTED: the copy has nothing in common, and a reader
+    # who wants to be told they were handed a programme wants to be told when it
+    # is taken back. The values keep the model's name; the labels say "leader".
+    REHEARSAL_DELEGATED = 'REHEARSAL_DELEGATED', _('Made Project Leader')
     REHEARSAL_DELEGATION_ENDED = (
-        'REHEARSAL_DELEGATION_ENDED', _('No Longer Running Rehearsals')
+        'REHEARSAL_DELEGATION_ENDED', _('Project Leadership Ended')
     )
+    # One evening named as yours to run (`Rehearsal.led_by`). Its own type
+    # rather than a second REHEARSAL_DELEGATED: the client's briefing queue keys
+    # on that one and would re-open the onboarding modal for every evening.
+    REHEARSAL_LEAD_ASSIGNED = 'REHEARSAL_LEAD_ASSIGNED', _('Rehearsal Handed to You')
+    # The evening handed back: whoever stood in front of the choir wrote up
+    # how it went (`Rehearsal.debrief`). Manager-facing, like the attendance
+    # reports — a fact about an evening that has already happened.
+    REHEARSAL_DEBRIEF_POSTED = 'REHEARSAL_DEBRIEF_POSTED', _('Rehearsal Debrief Posted')
 
     # --- REPERTOIRE & CASTING ---
     PIECE_CASTING_ASSIGNED = 'PIECE_CASTING_ASSIGNED', _('Assigned to Piece')

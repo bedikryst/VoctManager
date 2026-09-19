@@ -270,10 +270,10 @@ class DelegatedRehearsalMetadata(EventMomentMetadata):
 class RehearsalDelegationMetadata(EnterpriseBaseDTO):
     """Somebody has been asked to stand in front of the choir.
 
-    The three scope flags travel because they ARE the message: a delegation is
-    not one permission but three that leak differently, and a reader told only
-    "you are running rehearsals" would not know whether the conductor's cues are
-    open to them. `expires_at_display` travels for the same reason the grant
+    The scope flags travel because they ARE the message: a delegation is not one
+    permission but four that leak differently, and a reader told only "you are
+    running rehearsals" would not know whether the conductor's cues are open to
+    them. `expires_at_display` travels for the same reason the grant
     announces itself and the expiry does not — the end is stated once, here,
     rather than swept for later by a clock nobody runs.
     """
@@ -283,6 +283,7 @@ class RehearsalDelegationMetadata(EnterpriseBaseDTO):
     can_see_leader_marks: bool = False
     can_take_roll_call: bool = False
     can_open_materials: bool = False
+    can_mark_for_choir: bool = False
     expires_at: str | None = None
     expires_at_display: str = ""
     timezone: str = ""
@@ -295,6 +296,40 @@ class RehearsalDelegationEndedMetadata(EnterpriseBaseDTO):
     project_id: UUID
     project_name: str
     revoked_by_name: str = ""
+
+
+class RehearsalLeadAssignedMetadata(EventMomentMetadata):
+    """One evening announced as the reader's to run (`Rehearsal.led_by`).
+
+    `sections` carries section CODES (S/A/T/B — the leading letter of the
+    `VoiceType`, which is how the sectional form groups the cast) for a
+    sectional call, and nothing for a tutti — the composer spells them out in
+    the reader's language. The reader already holds the
+    project's leader grant, so no scope travels here: this is a date, not a
+    permission.
+    """
+    rehearsal_id: UUID
+    project_id: UUID
+    project_name: str
+    location: str = ""
+    focus: str = ""
+    sections: tuple[str, ...] = ()
+
+
+class RehearsalDebriefPostedMetadata(EventMomentMetadata):
+    """The evening's report is in (`Rehearsal.debrief`), for the managers.
+
+    `excerpt` is the opening of the text, cut by the service, so the push
+    can say enough to decide whether to open the card; the full text is
+    read on the rehearsal itself, never carried here.
+    """
+    rehearsal_id: UUID
+    project_id: UUID
+    project_name: str
+    author_name: str = ""
+    excerpt: str = ""
+    location: str = ""
+    focus: str = ""
 
 
 # --- Casting & Repertoire ---

@@ -1086,17 +1086,22 @@ def _delegation_scope_rows(m: Mapping[str, Any]) -> list[DetailRow]:
             _("Materials"),
             _("The scores and programme, even if you are not singing in it"),
         ))
+    if m.get("can_mark_for_choir"):
+        rows.append(_row(
+            _("Markings for the choir"),
+            _("What you write on the choir's layer, every singer sees"),
+        ))
     return rows
 
 
 def _compose_rehearsal_delegated(ctx: MessageContext) -> MessageContent:
-    """Somebody has been asked to stand in front of the choir.
+    """Somebody has been made the leader of a project.
 
-    Composed as an INVITATION to do something rather than a status change,
-    because that is what it is: the reader has to know which of the three doors
-    was opened, until when, and who asked. The in-app briefing modal states the
-    same three facts — this is the copy that has to survive reaching them by
-    e-mail on a train.
+    Composed as an APPOINTMENT rather than a status change, because that is
+    what it is: the reader has to know which of the three doors was opened,
+    until when, and who decided. The in-app briefing modal states the same
+    three facts — this is the copy that has to survive reaching them by e-mail
+    on a train.
     """
     m = ctx.metadata
     project = m.get("project_name") or _("a project")
@@ -1105,7 +1110,7 @@ def _compose_rehearsal_delegated(ctx: MessageContext) -> MessageContent:
 
     details: list[DetailRow] = [_row(_("Project"), project)]
     if granted_by:
-        details.append(_row(_("Asked by"), granted_by))
+        details.append(_row(_("Appointed by"), granted_by))
     details.extend(_delegation_scope_rows(m))
     details.append(_row(
         _("Until"),
@@ -1115,22 +1120,22 @@ def _compose_rehearsal_delegated(ctx: MessageContext) -> MessageContent:
         details.append(_row(_("Note"), m["note"]))
 
     body = (
-        _("%(who)s has asked you to run rehearsals for %(project)s.")
+        _("%(who)s has made you the leader of %(project)s.")
         % {"who": granted_by, "project": project}
         if granted_by
-        else _("You have been asked to run rehearsals for %(project)s.")
+        else _("You are now the leader of %(project)s.")
         % {"project": project}
     )
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("You are running rehearsals — %(project)s") % {"project": project},
+        title=_("You lead the project — %(project)s") % {"project": project},
         body=body,
         url_path=_rehearsals_url(ctx),
         tag=f"rehearsal-delegated:{m.get('project_id') or ''}",
         actions=(_open_action(),),
-        subject=_("You are running rehearsals for %(project)s") % {"project": project},
-        eyebrow=_("Standing in"),
+        subject=_("You are the leader of %(project)s") % {"project": project},
+        eyebrow=_("Project leader"),
         email_lead=_(
             "%(body)s Here is what that opens for you — and what it does not: you"
             " are not a manager of this project, so the cast and the excusal"
@@ -1142,11 +1147,11 @@ def _compose_rehearsal_delegated(ctx: MessageContext) -> MessageContent:
 
 
 def _compose_rehearsal_delegation_ended(ctx: MessageContext) -> MessageContent:
-    """The delegation has been taken back.
+    """The leadership has been taken back.
 
     Deliberately plain and deliberately not an alarm: somebody's plans changed,
     which is ordinary. The one thing it must do is arrive, because the failure
-    it prevents is a stand-in turning up to run an evening they no longer can.
+    it prevents is a leader turning up to run an evening they no longer can.
     """
     m = ctx.metadata
     project = m.get("project_name") or _("a project")
@@ -1159,23 +1164,154 @@ def _compose_rehearsal_delegation_ended(ctx: MessageContext) -> MessageContent:
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("No longer running rehearsals — %(project)s") % {"project": project},
+        title=_("No longer the leader — %(project)s") % {"project": project},
         body=_(
-            "You are no longer running rehearsals for %(project)s. Your own"
+            "You are no longer the leader of %(project)s. Your own"
             " pencil marks stay where they are."
         ) % {"project": project},
         url_path=_rehearsals_url(ctx),
         tag=f"rehearsal-delegation-ended:{m.get('project_id') or ''}",
         actions=(_open_action(),),
-        subject=_("Rehearsals for %(project)s are covered") % {"project": project},
-        eyebrow=_("Standing in"),
+        subject=_("Your leadership of %(project)s has ended") % {"project": project},
+        eyebrow=_("Project leader"),
         email_lead=_(
-            "Somebody else is taking the rehearsals for %(project)s. The"
-            " conductor's cues and the attendance sheet have closed again; your"
-            " own markings on the music are untouched."
+            "Somebody else leads %(project)s from now on. The conductor's cues"
+            " and the attendance sheet have closed again; your own markings on"
+            " the music are untouched."
         ) % {"project": project},
         details=tuple(details),
         cta_label=_("Open the schedule"),
+    )
+
+
+#: VoiceType family code → the section, plural, as a leader would say it.
+#: Keyed on the code the metadata carries so the row is composed in the
+#: reader's language, never frozen in the writer's.
+_SECTION_NAMES: dict[str, Callable[[], str]] = {
+    "S": lambda: _("sopranos"),
+    "A": lambda: _("altos"),
+    "T": lambda: _("tenors"),
+    "B": lambda: _("basses"),
+}
+
+
+def _section_list(codes: Iterable[Any]) -> str:
+    """'sopranos, altos' from ('S', 'A'); unknown codes pass through unchanged
+    so an old payload never renders a hole."""
+    return ", ".join(
+        _SECTION_NAMES[str(code)]() if str(code) in _SECTION_NAMES else str(code)
+        for code in codes
+    )
+
+
+def _compose_rehearsal_lead_assigned(ctx: MessageContext) -> MessageContent:
+    """One evening has been handed to the reader to run.
+
+    The date is the message: the reader already leads the project and was
+    told what that opens when they were appointed, so nothing about scopes is
+    repeated here. For a sectional the sections are said in the title —
+    "Poprowadzisz próbę 3 października (soprany, alty)" — because that is the
+    one fact that changes what they prepare.
+    """
+    m = ctx.metadata
+    project = m.get("project_name") or _("a project")
+    when = display_event_time(m, "starts_at")
+    venue = m.get("location")
+    focus = m.get("focus")
+    sections = _section_list(m.get("sections") or ())
+
+    if when and sections:
+        title = _("You lead the rehearsal on %(when)s (%(sections)s)") % {
+            "when": when, "sections": sections,
+        }
+    elif when:
+        title = _("You lead the rehearsal on %(when)s") % {"when": when}
+    else:
+        title = _("A rehearsal has been handed to you")
+
+    details = _rehearsal_detail_rows(project, when, venue, focus, display_event_end(m))
+    if sections:
+        details.insert(1, _row(_("Sections"), sections))
+
+    rehearsal_id = m.get("rehearsal_id")
+    return MessageContent(
+        notification_type=ctx.notification_type,
+        level=ctx.level,
+        title=title,
+        body=_facts(project, venue) or project,
+        url_path=(
+            f"/panel/schedule/lead/{rehearsal_id}" if rehearsal_id else "/panel/schedule"
+        ),
+        # Keyed on the evening, not the project: a reassignment of the same
+        # rehearsal replaces the earlier push instead of stacking beside it.
+        tag=f"rehearsal-lead:{rehearsal_id or ''}",
+        actions=(_open_action(),),
+        subject=(
+            _("You lead the rehearsal — %(project)s, %(when)s")
+            % {"project": project, "when": when}
+            if when
+            else _("You lead a rehearsal — %(project)s") % {"project": project}
+        ),
+        eyebrow=_("Project leader"),
+        email_lead=_(
+            "The conductor has put you in front of the choir for this rehearsal of"
+            " %(project)s. The roll call and everything your leadership of the"
+            " project opens are on the evening's card."
+        ) % {"project": project},
+        details=tuple(details),
+        cta_label=_("Open the evening"),
+    )
+
+
+def _compose_rehearsal_debrief_posted(ctx: MessageContext) -> MessageContent:
+    """The evening has been handed back in writing, for the managers.
+
+    The author is the title — a manager triaging the bell decides by whose
+    account this is — and the excerpt is the body: enough of the text to know
+    whether to open the card, which is where the whole of it is read. The
+    deep-link names the rehearsal so the workspace opens on that evening
+    rather than on the list.
+    """
+    m = ctx.metadata
+    author = m.get("author_name") or _("The leader")
+    project = m.get("project_name") or _("a project")
+    when = display_event_time(m, "starts_at")
+    excerpt = str(m.get("excerpt") or "").strip()
+    rehearsal_id = m.get("rehearsal_id")
+
+    title = _("%(author)s wrote up the rehearsal") % {"author": author}
+    details: list[DetailRow] = [_row(_("Project"), project)]
+    if when:
+        details.append(_row(_("Rehearsal"), when))
+    details.append(_row(_("Written by"), author))
+    if excerpt:
+        details.append(_row(_("Debrief"), excerpt))
+
+    url_path = (
+        f"/panel/rehearsals?rehearsal={rehearsal_id}" if rehearsal_id else "/panel/rehearsals"
+    )
+    return MessageContent(
+        notification_type=ctx.notification_type,
+        level=ctx.level,
+        title=title,
+        body=excerpt or _facts(project, when) or project,
+        url_path=url_path,
+        # Keyed on the evening: a rewrite replaces the earlier push rather
+        # than stacking a second report of the same rehearsal.
+        tag=f"rehearsal-debrief:{rehearsal_id or ''}",
+        actions=(_open_action(url_path),),
+        subject=(
+            _("Debrief — %(project)s, %(when)s") % {"project": project, "when": when}
+            if when
+            else _("Debrief — %(project)s") % {"project": project}
+        ),
+        eyebrow=_("After the rehearsal"),
+        email_lead=_(
+            "%(author)s has written up the rehearsal of %(project)s. The whole"
+            " text is on the evening's card."
+        ) % {"author": author, "project": project},
+        details=tuple(details),
+        cta_label=_("Open the evening"),
     )
 
 
@@ -1850,6 +1986,8 @@ _COMPOSERS: dict[str, _Composer] = {
     NotificationType.REHEARSAL_REMINDER: _compose_rehearsal_reminder,
     NotificationType.REHEARSAL_DELEGATED: _compose_rehearsal_delegated,
     NotificationType.REHEARSAL_DELEGATION_ENDED: _compose_rehearsal_delegation_ended,
+    NotificationType.REHEARSAL_LEAD_ASSIGNED: _compose_rehearsal_lead_assigned,
+    NotificationType.REHEARSAL_DEBRIEF_POSTED: _compose_rehearsal_debrief_posted,
     NotificationType.PIECE_CASTING_ASSIGNED: _compose_piece_casting_assigned,
     NotificationType.PIECE_CASTING_UPDATED: _compose_piece_casting_updated,
     NotificationType.MATERIAL_UPLOADED: _compose_material_uploaded,
