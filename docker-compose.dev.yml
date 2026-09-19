@@ -20,7 +20,12 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # CRITICAL: Mount local codebase only in development
+      # CRITICAL: Mount local codebase only in development.
+      # This shadows the whole image /app — entrypoint.sh included — so the
+      # container executes the HOST copy, not the one the Dockerfile chmod'd.
+      # backend/entrypoint.sh must therefore carry mode 100755 in git; a 644
+      # checkout on a Linux host kills boot with "permission denied" on
+      # ENTRYPOINT before a single line of it runs.
       - ./backend:/app
 
   celery:
