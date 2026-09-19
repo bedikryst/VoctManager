@@ -174,9 +174,12 @@ class ThreadReadState(EnterpriseBaseModel):
 
 
 class ChannelRole(models.TextChoices):
-    """Role of a member within a project channel."""
+    """Which source seated a member in a project channel. The role decides
+    nothing about what they may do there; it records who may take the seat
+    away — the participation sync, the leadership sync, or nobody."""
     MEMBER = 'MEMBER', _('Member')
     MANAGER = 'MANAGER', _('Manager')
+    LEADER = 'LEADER', _('Leader')
 
 
 class ProjectChannel(EnterpriseBaseModel):
@@ -213,8 +216,13 @@ class ChannelMembership(EnterpriseBaseModel):
     """
     A user's membership in a project channel. MEMBER rows are synced from
     confirmed Participation; MANAGER rows are created lazily on first access
-    (managers always have access regardless). Carries per-user read pointer and
-    push opt-in.
+    (managers always have access regardless); LEADER rows are created when a
+    `roster.RehearsalDelegate` goes live and dropped when it is revoked — never
+    synced from Participation, so a leader who is not cast keeps their seat and
+    a leader who leaves the cast keeps it too. One row per (channel, user): the
+    role names the source that owns the seat, and a seat with two sources keeps
+    the one that outlives the other (see `messaging.signals`). Carries per-user
+    read pointer and push opt-in.
     """
     channel = models.ForeignKey(
         ProjectChannel,
@@ -232,7 +240,8 @@ class ChannelMembership(EnterpriseBaseModel):
         max_length=20,
         choices=ChannelRole.choices,
         default=ChannelRole.MEMBER,
-        help_text=_("MEMBER (synced from participation) or MANAGER."),
+        help_text=_("MEMBER (synced from participation), LEADER (synced from "
+                    "project leadership) or MANAGER."),
     )
     last_read_at = models.DateTimeField(
         null=True,

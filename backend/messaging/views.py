@@ -31,11 +31,13 @@ from rest_framework.response import Response
 from core.permissions import MANAGER_QUERY_FILTER, user_is_manager
 from core.request_utils import request_user
 from roster.models import Artist, Project
+from roster.permissions import led_projects_q, user_leads_project
 
 from .dtos import ThreadCreateDTO
 from .models import (
     ChannelMembership,
     ChannelMessage,
+    ChannelRole,
     Message,
     ProjectChannel,
     Thread,
@@ -400,7 +402,8 @@ class ThreadViewSet(viewsets.GenericViewSet):
 class ProjectChannelViewSet(viewsets.GenericViewSet):
     """
     Project group channels. Managers see all channels; artists see channels where they
-    hold an active membership (synced from confirmed participation). Delivery is in-app +
+    hold an active membership (synced from confirmed participation, or from a live
+    project leadership — see `messaging.signals`). Delivery is in-app +
     opt-in push only — handled in ChannelService, not the notifications router.
     Router auto-generates: /channels/, /channels/{pk}/, /channels/{pk}/messages/,
     /channels/{pk}/read/, /channels/{pk}/membership/, /channels/{pk}/messages/{mid}/pin/,
@@ -418,7 +421,20 @@ class ProjectChannelViewSet(viewsets.GenericViewSet):
         qs = ProjectChannel.objects.select_related('project')
         if self._is_manager(user):
             return qs
-        return qs.filter(memberships__user=user, memberships__is_deleted=False).distinct()
+        # A LEADER seat is only as good as the grant behind it. The grant sync
+        # takes the seat back on revoke, but a grant that ran out by the clock
+        # or a project that closed raises no signal, so the seat is re-asked
+        # here against the same predicate every other leader surface uses.
+        # Spelled positively (`role__in`) so the role and the user bind to ONE
+        # membership row — a negated lookup on a multi-valued relation would
+        # not.
+        return qs.filter(
+            Q(memberships__user=user, memberships__is_deleted=False)
+            & (
+                Q(memberships__role__in=[ChannelRole.MEMBER, ChannelRole.MANAGER])
+                | led_projects_q(user, scope='any', prefix='project__')
+            )
+        ).distinct()
 
     def _read_map(self, request: Request, channel_ids: list) -> dict:
         states = ChannelMembership.objects.filter(
@@ -433,8 +449,16 @@ class ProjectChannelViewSet(viewsets.GenericViewSet):
         if self._is_manager(user):
             ChannelService.ensure_manager_membership(channel=channel, user=user)
             return channel
-        is_member = ChannelMembership.objects.filter(channel=channel, user_id=user.id).exists()
-        return channel if is_member else None
+        membership = ChannelMembership.objects.filter(channel=channel, user_id=user.id).first()
+        if membership is None:
+            return None
+        # Same guard as `get_queryset`: a leader's seat outliving its grant
+        # (expiry by the clock, a closed project) opens nothing.
+        if membership.role == ChannelRole.LEADER and not user_leads_project(
+            user, channel.project_id, scope='any',
+        ):
+            return None
+        return channel
 
     @staticmethod
     def _messages_of(channel: ProjectChannel) -> QuerySet[ChannelMessage]:
@@ -557,9 +581,11 @@ class ProjectChannelViewSet(viewsets.GenericViewSet):
             ChannelService.ensure_manager_membership(channel=channel, user=user)
         else:
             existing = ProjectChannel.objects.filter(project=project).first()
-            if existing is None or not ChannelMembership.objects.filter(
-                channel=existing, user_id=user.id
-            ).exists():
+            channel_or_none = (
+                self._get_accessible(request, str(existing.pk))
+                if existing is not None else None
+            )
+            if channel_or_none is None:
                 return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-            channel = existing
+            channel = channel_or_none
         return self._detail_response(request, channel)

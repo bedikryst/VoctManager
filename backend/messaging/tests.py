@@ -20,11 +20,12 @@ from core.constants import AppRole
 from core.models import UserProfile
 from core.signals import account_soft_deleted
 from notifications.models import NotificationType
-from roster.models import Artist, Participation, Project, VoiceType
+from roster.models import Artist, Participation, Project, RehearsalDelegate, VoiceType
 
 from .models import (
     ChannelMembership,
     ChannelMessage,
+    ChannelRole,
     Message,
     ProjectChannel,
     Thread,
@@ -464,6 +465,75 @@ class ProjectChannelTests(APITestCase):
         participation.status = Participation.Status.DECLINED
         participation.save()
         self.assertFalse(ChannelMembership.objects.filter(channel=channel, user=self.artist_user).exists())
+
+    # -- leadership seat --------------------------------------------------- #
+
+    def _grant(self, artist=None, **overrides) -> RehearsalDelegate:
+        return RehearsalDelegate.objects.create(
+            project=self.project, artist=artist or self.artist,
+            granted_by=self.manager, **overrides,
+        )
+
+    def _role_of(self, user) -> str | None:
+        channel = ProjectChannel.objects.filter(project=self.project).first()
+        if channel is None:
+            return None
+        row = ChannelMembership.objects.filter(channel=channel, user=user).first()
+        return row.role if row else None
+
+    def test_a_live_grant_seats_the_leader_without_a_place_in_the_cast(self) -> None:
+        self._grant()
+        self.assertEqual(self._role_of(self.artist_user), ChannelRole.LEADER)
+        self.client.force_authenticate(user=self.artist_user)
+        resp = self.client.get(CHANNELS)
+        self.assertEqual({c["project_id"] for c in resp.json()}, {str(self.project.id)})
+
+    def test_a_revoke_takes_the_leader_s_seat_back(self) -> None:
+        grant = self._grant()
+        grant.delete()
+        self.assertIsNone(self._role_of(self.artist_user))
+
+    def test_leaving_the_cast_does_not_take_a_leader_s_seat(self) -> None:
+        participation = self._confirm(self.artist)
+        self._grant()
+        participation.status = Participation.Status.DECLINED
+        participation.save()
+        self.assertEqual(self._role_of(self.artist_user), ChannelRole.LEADER)
+
+    def test_a_revoke_leaves_a_cast_member_in_as_a_member(self) -> None:
+        self._confirm(self.artist)
+        grant = self._grant()
+        grant.delete()
+        self.assertEqual(self._role_of(self.artist_user), ChannelRole.MEMBER)
+
+    def test_a_seat_held_by_both_sources_survives_either_ending_first(self) -> None:
+        grant = self._grant()
+        participation = self._confirm(self.artist)
+        self.assertEqual(self._role_of(self.artist_user), ChannelRole.LEADER)
+        grant.delete()
+        self.assertEqual(self._role_of(self.artist_user), ChannelRole.MEMBER)
+        participation.status = Participation.Status.DECLINED
+        participation.save()
+        self.assertIsNone(self._role_of(self.artist_user))
+
+    def test_a_grant_that_ran_out_opens_nothing(self) -> None:
+        self._grant(expires_at=timezone.now() + timedelta(days=1))
+        channel = ProjectChannel.objects.get(project=self.project)
+        # The clock alone raises no signal, so the row stays — and must not open.
+        RehearsalDelegate.objects.update(expires_at=timezone.now() - timedelta(hours=1))
+        self.assertEqual(self._role_of(self.artist_user), ChannelRole.LEADER)
+        self.client.force_authenticate(user=self.artist_user)
+        self.assertEqual(self.client.get(CHANNELS).json(), [])
+        self.assertEqual(self.client.get(f"{CHANNELS}{channel.id}/").status_code, 404)
+        resp = self.client.post(f"{CHANNELS}{channel.id}/messages/", {"body": "x"}, format="json")
+        self.assertEqual(resp.status_code, 404)
+
+    def test_a_leader_posts_to_the_cast(self) -> None:
+        self._grant()
+        channel = ProjectChannel.objects.get(project=self.project)
+        self.client.force_authenticate(user=self.artist_user)
+        resp = self.client.post(f"{CHANNELS}{channel.id}/messages/", {"body": "Jutro Kyrie"}, format="json")
+        self.assertEqual(resp.status_code, 201, resp.content)
 
     # -- access / listing -------------------------------------------------- #
 
