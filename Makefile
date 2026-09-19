@@ -4,6 +4,14 @@
 # The dev overrides live in docker-compose.dev.yml and are NEVER auto-loaded
 # (see the note in that file) — always go through these targets.
 
+# Every recipe here is POSIX shell (`VAR=x cmd`, `2>/dev/null`, `cd a && b`). On a
+# Windows checkout GNU make finds no `sh` on PATH and falls back to cmd.exe, which
+# understands none of it. `bash` on PATH is no help either — that is WSL's launcher
+# in System32 — so point straight at the Git for Windows shell.
+ifeq ($(OS),Windows_NT)
+SHELL := C:/Program Files/Git/bin/bash.exe
+endif
+
 COMPOSE_DEV  = docker compose -f docker-compose.yml -f docker-compose.dev.yml
 COMPOSE_PROD = docker compose -f docker-compose.yml -f docker-compose.prod.yml
 
