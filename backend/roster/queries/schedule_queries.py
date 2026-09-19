@@ -7,7 +7,15 @@ from uuid import UUID
 from django.db.models import Count, Prefetch, Q, QuerySet
 
 from roster.domain.day_timeline import localize
-from roster.models import Attendance, Participation, Project, Rehearsal
+from roster.models import (
+    Artist,
+    Attendance,
+    Participation,
+    Project,
+    Rehearsal,
+    VoiceType,
+    is_instrumentalist_account,
+)
 from roster.permissions import led_project_ids
 
 if TYPE_CHECKING:
@@ -53,15 +61,15 @@ def get_artist_rehearsals_in_window(
 
     participation_by_project = {project_id: pid for pid, project_id in seats}
     participation_ids = [pid for pid, _project_id in seats]
+    instrumentalist = Artist.objects.filter(
+        id=artist_id, voice_type=VoiceType.INSTRUMENTALIST
+    ).exists()
 
     rehearsals = (
         Rehearsal.objects.filter(
             project_id__in=list(participation_by_project), is_deleted=False
         )
-        .filter(
-            Q(invited_participations__isnull=True)
-            | Q(invited_participations__in=participation_ids)
-        )
+        .filter(Rehearsal.calling_q(participation_ids, instrumentalist=instrumentalist))
         .filter(
             date_time__gte=(window_start - _WINDOW_SLACK).replace(tzinfo=UTC),
             date_time__lte=(window_end + _WINDOW_SLACK).replace(tzinfo=UTC),
@@ -159,8 +167,9 @@ def get_artist_schedule(
         Rehearsal.objects.filter(project_id__in=all_project_ids, is_deleted=False)
         .filter(
             Q(project_id__in=conducted_project_ids)
-            | Q(invited_participations__isnull=True)
-            | Q(invited_participations__in=participation_ids)
+            | Rehearsal.calling_q(
+                participation_ids, instrumentalist=is_instrumentalist_account(user)
+            )
         )
         .distinct()
         .select_related("project", "location")

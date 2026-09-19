@@ -1,7 +1,7 @@
 # VoctFoundation — hero design and implementation plan
 
 Date: 2026-09-18.
-Status: design recommendation ready for implementation in a fresh session; no application code changed and no browser review performed.
+Status: superseded as direction on 2026-09-18 by [web-foundation-hero-v3-2026-09.md](web-foundation-hero-v3-2026-09.md) — the developer reviewed §9 and asked for a produced centrepiece (film + title-sequence typography) rather than another typeset composition. §9 stays implemented in the working tree, uncommitted, as the base the third iteration builds on. §2–§3 describe the first composition; §9 records where the second departs from them and why.
 Parent brief: [foundation and support page](web-foundation-brief-2026-09.md).
 
 ## 1. Decision and scope
@@ -122,3 +122,92 @@ References checked 2026-09-18. These support the direction; they are not templat
 - [Pentagram — Moholy-Nagy Foundation](https://www.pentagram.com/work/moholy-nagy-foundation): contemporary grotesque typography and restrained neutral grounds in a foundation's archival identity. A precedent for the approach, not a new 2026 launch.
 
 The recommendation for the second half of 2026 is the designer's judgment: clearer institutional character, real photography and economical typography suit this foundation better than borrowing a seasonal effects package. The proposed cobalt, proportions and selected photograph are specific decisions for Voct.
+
+## 8. Completion — 2026-09-18
+
+Implemented as §2–§5 describe, in `web/src/components/pages/FoundationPage.astro` only (plus the
+stale `Fundatio` comment in `content/pages/fundacja.yaml`). `astro check` and `astro build` pass.
+Screenshots at 320/390/768/1024/1440 for PL and at 1440 for EN/FR, with computed styles read
+back: the headline renders IBM Plex Sans 600 with `font-variation-settings: normal` (the ink press
+is absent and explicitly cut off), the emphasis is upright cobalt, nothing scrolls horizontally at
+320. The developer's browser review is still to come.
+
+Departures from the starting values, and why:
+
+- The emphasised phrase (`em`) is `white-space: nowrap`. At 320 px the second line fell as
+  "miała ciąg / dalszy."; keeping the phrase whole gives "miała / ciąg dalszy.". The rest of the
+  line still wraps freely, which is what §2 asks for. Every locale's phrase is under ~4.5 em.
+- The decorative arrows on the actions were omitted; nothing in the composition needed them.
+- The social card (`og:image`) keeps the nave plate `chor-nawa`: the card is not part of the
+  opening and the singing ensemble is what a shared link to the foundation should show.
+  `bleedPair` therefore stays imported; only `BleedImage` went.
+
+Seen in the screenshots, for the review rather than fixed here:
+
+- 1024 px sits just under the 1100 px grid threshold: single column, the text alone on the left
+  half, then the photograph at full container width (922×613). The threshold is §2's; lowering it
+  to ~960 would put the photo beside the text at 1024 but at 364 px wide.
+- At 1440 the photograph column is 493 px against a 690 px text column that the type only half
+  fills. If the opening reads inert, the lever is the 7:5 proportion (a 6:6 or 5:7 grid, or a
+  larger cap on the photo), not motion — §3 states the hero needs no animation to be complete.
+- FR wraps the first line: "Pour que / la musique / ait une suite." — three lines, permitted by §2.
+- The rehearsal frame is monochrome in the corpus: `kd-wcielenie-1.jpg` and its archived original
+  both measure equal RGB channel means, so the site's pipeline is not desaturating anything. A
+  colour original would have to be a new archive file; replacing the proxy in place would recolour
+  the `wcielenie` concert gallery as well, which §4 leaves unchanged.
+
+The translation gap §5 recorded is closed: `pages.en.yaml` and `pages.fr.yaml` carry
+`page.fundacja.*` since commit 0b61fca, so `/en/fundacja` and `/fr/fundacja` render translated.
+
+## 9. Second iteration — 2026-09-18
+
+The developer's verdict on §8: acceptable as a first pass, inert, and a question whether a
+design like this needs an entrance to live. The diagnosis is compositional. Text left, image
+right, centred on a 7:5 grid is the landing-page template of the last decade; the headline at
+84px filled half of its 690px column and the photograph at 493px was a thumbnail of the gesture
+it was chosen for. §1 asks for an asymmetric composition and confident typography, and §3 for
+scale and alignment to do the work — 7:5 with vertical centring is neither.
+
+Two decisions, taken with the developer before implementation:
+
+- **Composition: typographic poster.** The headline runs the whole 1240px measure. Under it one
+  row parts 5:7 — the lead and both acts in the narrow column, the rehearsal frame in the wide
+  one, both hanging from the same top edge. The numbered index closes the opening across the
+  measure. The alternative kept — 7:5 with a larger headline and a 6:6 grid — was rejected as
+  the same silhouette at a bigger size.
+- **Motion: none; hover only.** `registers.css` states the site's doctrine on entrances: an
+  offset is slide-deck physics, a blur-up is the signature of a generated page, nothing starts
+  at zero. The ink reveal cannot include the H1 (§5, weight axis) and would leave the acts at
+  half ink until a controller runs. The developer chose the static opening over an ink reveal on
+  the second row and over a CSS opacity/translate entrance. The one moving thing is the arrow on
+  each act: a 3px nudge along the reading direction on hover, transform only.
+
+Values that departed from §2–§3, in `FoundationPage.astro` only:
+
+| Element | Was (§8) | Now |
+| --- | --- | --- |
+| Grid | 7:5 text/photo from 1100px, vertically centred | H1 full measure; row 5:7 lead/photo from **960px**, top-aligned |
+| H1 | `clamp(64px, 5.6vw, 84px)` desktop; `clamp(38px, 6.2vw, 64px)` below | `clamp(80px, 8.6vw, 132px)` from 960 (82 → ~124 at 1440); `clamp(40px, 9vw, 80px)` below; line-height 1; tracking −.045em; `text-wrap: balance` |
+| Lead | 18px / 46ch | `clamp(18px, 1.45vw, 21px)` / 1.5 / 40ch from 960; 17px below |
+| Photograph | ≤500px wide (38vw) | 7/12 of the measure, ≈686×457 at 1440, ≈510×340 at 1024; `sizes` updated |
+| Primary | 48px, radius 4px | 52px, radius 2px, trailing arrow |
+| Secondary | text link | text link, trailing arrow |
+| Index | flex row of underlined links, hairline above | ruled rows, `01`–`04` in Plex Mono (PrivacyPage's `toc-list` counter idiom), the cell is the link, 4 columns from 960, 2 below, 1 at ≤420; numerals muted at rest, cobalt under the hand |
+| Top padding | `clamp(104px, 10vw, 144px)` | `clamp(96px, 9vw, 128px)` — the headline's own size supplies the air |
+
+Measured before implementing, against the self-hosted Plex Sans SemiBold widths: the Polish
+second line is ~7.3em with the tracking, so it holds on one line from 390px up and breaks
+"miała / ciąg dalszy." at 320 (the `em` stays whole); the French first line "Pour que la
+musique" is ~8.5em, inside the measure at every size the clamp reaches. The 960 threshold is
+§8's lever for 1024: the row now forms there with a 364px lead column and a 510px photograph.
+
+Trade-off, stated rather than solved: at 1440×900 the index's rule sits near y≈1000, just below
+the fold. The poster scale is this iteration's point; §2 says "aim", and forbids shrinking
+readable text to meet a fold. If the review finds the opening too tall, the lever is the H1 cap
+(132 → 112) before anything else.
+
+For the browser review: the 1024 row (narrow lead beside the photo — does it read as a row or as
+two orphans); FR at ≤420, where the first line wraps and the H1 runs to three lines; EN's
+"The foundation and its documents" wrapping to two lines in its 286px index cell at 1440; the
+arrows — decoration §2 allowed and §8 omitted, added here because the acts now sit under a
+21px lead and a 124px headline and need a direction of their own.

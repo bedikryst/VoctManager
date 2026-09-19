@@ -467,6 +467,10 @@ class DocumentGenerator:
         context = {
             'artist_name': f"{artist.first_name} {artist.last_name}",
             'voice_type': artist.get_voice_type_display(),
+            # Non-empty only for a player; the template then contracts an
+            # instrumental part instead of a vocal one. Legal wording, so the
+            # branch lives in the template beside the other clauses.
+            'instrument': artist.instrument,
             'project_title': project.title,
             'project_date': project.date_time,
             'project_location': project.location or 'Miejsce do ustalenia',
@@ -533,7 +537,9 @@ class DocumentGenerator:
         concert programme, so they are the programme's language rather than the
         exporting manager's — the same reason the ZAiKS export stays Polish.
         """
-        groups: dict[str, list[Artist]] = {'Soprany': [], 'Alty': [], 'Tenory': [], 'Basy': [], 'Inne': []}
+        groups: dict[str, list[Artist]] = {
+            'Soprany': [], 'Alty': [], 'Tenory': [], 'Basy': [], 'Instrumentaliści': [], 'Inne': [],
+        }
 
         for p in participations:
             vt = p.artist.voice_type or ''
@@ -545,6 +551,8 @@ class DocumentGenerator:
                 groups['Tenory'].append(p.artist)
             elif vt.startswith('B'):
                 groups['Basy'].append(p.artist)
+            elif vt == VoiceType.INSTRUMENTALIST:
+                groups['Instrumentaliści'].append(p.artist)
             else:
                 groups['Inne'].append(p.artist)
 
@@ -1017,6 +1025,9 @@ class DocumentGenerator:
         # In the order the section stands, not in the order the alphabet does:
         # the singer holding this sheet finds their neighbours where they will
         # actually be standing.
+        #
+        # A player has no section to stand in: two organists on one programme
+        # are not each other's neighbours, so the list stays empty for them.
         section_mates = [
             f'{p.artist.first_name} {p.artist.last_name}'
             for p in sorted(
@@ -1028,23 +1039,24 @@ class DocumentGenerator:
                 ),
                 key=participation_sort_key,
             )
-        ]
+        ] if artist.is_singer else []
         section_size = len(section_mates) + 1
 
         return {
             'full_name': f'{artist.first_name} {artist.last_name}',
-            'voice_label': artist.get_voice_type_display(),
+            'voice_label': artist.role_label,
             'status_label': recipient.get_status_display(),
             'is_confirmed': recipient.status == Participation.Status.CONFIRMED,
             'assignments': assignments,
             'gives_pitch_anywhere': any(entry['gives_pitch'] for entry in assignments),
             'section_mates': section_mates,
             'section_size': section_size,
+            # Nobody who does not stand in a section is "a section of 1 singer".
             'section_label': ngettext(
                 'section of %(count)d singer',
                 'section of %(count)d singers',
                 section_size,
-            ) % {'count': section_size},
+            ) % {'count': section_size} if artist.is_singer else '',
         }
 
     @staticmethod
@@ -1553,19 +1565,14 @@ class DocumentGenerator:
         local_end = localize(rehearsal.end_date_time, rehearsal_timezone)
         invited_participations = list(rehearsal.invited_participations.all())
         invited_ids = {participation.id for participation in invited_participations}
-        is_whole_ensemble = not invited_participations
         scope_label = (
             _('Selected artists (%(count)d)') % {'count': len(invited_participations)}
             if invited_participations
             else pgettext('call sheet', 'Whole ensemble')
         )
-        # A whole-ensemble call is for everyone; a targeted one only for those on
-        # the list. Absent a recipient (conductor / production sheets) we don't filter.
-        is_for_me = (
-            True
-            if recipient is None
-            else is_whole_ensemble or recipient.id in invited_ids
-        )
+        # `Rehearsal.calls_seat` decides whether this reader is called. Absent a
+        # recipient (conductor / production sheets) we don't filter.
+        is_for_me = recipient is None or rehearsal.calls_seat(recipient, invited_ids)
         location = rehearsal.location or project.location
 
         return {
@@ -1603,11 +1610,15 @@ class DocumentGenerator:
         # which every surface listing these people sorts by. A section nobody has
         # arranged still prints alphabetically, exactly as it always did.
         for participation in sorted(participations, key=participation_sort_key):
-            voice_type = participation.artist.voice_type
-            labels[voice_type] = participation.artist.get_voice_type_display()
-            grouped[voice_type].append(
-                f'{participation.artist.first_name} {participation.artist.last_name}'
-            )
+            artist = participation.artist
+            voice_type = artist.voice_type
+            labels[voice_type] = artist.get_voice_type_display()
+            name = f'{artist.first_name} {artist.last_name}'
+            # One "Instrumentalists" section; what each of them plays goes on
+            # their own line, since the heading cannot say it for all of them.
+            if artist.instrument:
+                name = f'{name} ({artist.instrument})'
+            grouped[voice_type].append(name)
 
         ordered_sections = []
         for voice_type, members in sorted(

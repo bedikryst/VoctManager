@@ -18,6 +18,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { artistRoleLabel } from "@/shared/lib/voiceTypes";
+import type { VoiceType } from "@/shared/types";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Calendar, Download, MapPin, Settings, Sparkles } from "lucide-react";
@@ -168,7 +170,7 @@ export const WelcomeMoment = ({
   const voiceType = user?.voice_type ?? null;
   const voicePresentation = getSectionPresentation(voiceType);
   const voiceLabel = voiceType
-    ? t(`dashboard.layout.roles.${voiceType}`, user?.voice_type_display || voiceType)
+    ? artistRoleLabel(t, voiceType as VoiceType, user?.instrument)
     : null;
 
   // Offer a one-tap install only where the browser actually hands us a prompt

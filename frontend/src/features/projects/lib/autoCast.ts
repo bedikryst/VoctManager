@@ -10,6 +10,9 @@
  *      index (`collapseVoiceLabels`);
  *   3. otherwise TUTTI, when the piece declares it and nothing of their family:
  *      a unison setting is sung by everybody.
+ * An instrumentalist is outside that ladder: they take ACC when the piece
+ * declares an accompaniment and are skipped otherwise — never TUTTI, which is
+ * a sung part, and never a family line.
  * Anyone else is left unplaced. A singer the rule cannot seat is a hole the
  * conductor has to see, not a part quietly written onto a page they will sing
  * from — and the pieces that stop the rule (a divided family, a voice type that
@@ -21,6 +24,7 @@
  * @module features/projects/lib/autoCast
  */
 
+import { isInstrumentalist } from "@/shared/lib/voiceTypes";
 import type { ParticipationStatus, VoiceLine, VoiceType } from "@/shared/types";
 
 import { voiceFamilyOf, type VoiceFamilyId } from "./voiceFamilies";
@@ -109,6 +113,14 @@ export const resolveAutoSeat = (
 ): VoiceLine | null => {
   // A declined seat is known to be empty, and the server refuses to fill one.
   if (member.status === "DEC") return null;
+
+  // A player is placed by the piece, not by a family: on ACC when the
+  // arrangement declares an accompaniment, nowhere when it does not. Decided
+  // before the ladder below, whose TUTTI fallback would otherwise hand the
+  // organist a sung part on every a cappella motet.
+  if (isInstrumentalist(member.voiceType)) {
+    return declaredLines.includes("ACC") ? "ACC" : null;
+  }
 
   const lines = declaredLines.length > 0 ? declaredLines : IMPLICIT_LINES;
 

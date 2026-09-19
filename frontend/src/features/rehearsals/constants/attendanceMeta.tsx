@@ -135,8 +135,11 @@ export const RATE_TONE_BAR: Record<AttendanceRateTone, string> = {
 
 /* ── Vocal sections ──────────────────────────────────────────────────────
  * Canonical choral ordering (high → low), with mezzo / counter-tenor /
- * baritone slotted into the SATB spine. `OTHER` is the trailing bucket for
- * unknown or unset voice types so nobody silently disappears from a roster.
+ * baritone slotted into the SATB spine, then the players as a section of
+ * their own — an organist called to the dress rehearsal is marked present
+ * like anyone else and has to be findable. `OTHER` is the trailing bucket
+ * for unknown or unset voice types so nobody silently disappears from a
+ * roster.
  */
 
 export const VOICE_SECTION_ORDER: VoiceType[] = [
@@ -147,6 +150,7 @@ export const VOICE_SECTION_ORDER: VoiceType[] = [
   "TEN",
   "BAR",
   "BAS",
+  "INS",
 ];
 
 export const OTHER_SECTION = "OTHER" as const;
@@ -177,6 +181,7 @@ const VOICE_SECTION_LABEL_KEY: Record<VoiceSectionKey, string> = {
   TEN: "rehearsals.voices.tenors",
   BAR: "rehearsals.voices.baritones",
   BAS: "rehearsals.voices.basses",
+  INS: "rehearsals.voices.instrumentalists",
   DIR: "rehearsals.voices.other",
   [OTHER_SECTION]: "rehearsals.voices.other",
 };

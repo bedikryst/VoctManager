@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import { artistRoleLabel } from "@/shared/lib/voiceTypes";
 import type { Artist } from "@/shared/types";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -364,7 +365,7 @@ export const ArtistDossier = ({
 
   const section = artist ? getSectionPresentation(artist.voice_type) : null;
   const voiceLabel = artist?.voice_type
-    ? t(`dashboard.layout.roles.${artist.voice_type}`, artist.voice_type_display || artist.voice_type)
+    ? artistRoleLabel(t, artist.voice_type, artist.instrument)
     : "";
   const accountPending = artist?.account_activated === false;
   const linkExpired = accountPending && artist?.activation_link_expired === true;

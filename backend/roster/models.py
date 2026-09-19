@@ -7,6 +7,7 @@
 Database models for HR and Logistics entities.
 """
 import uuid
+from collections.abc import Collection
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -63,6 +64,36 @@ class VoiceType(models.TextChoices):
     BARITONE = 'BAR', _('Baritone')
     BASS = 'BAS', _('Bass')
     CONDUCTOR = 'DIR', _('Conductor')
+    # One value for every player, not one per instrument: the organist and the
+    # trumpeter differ in `Artist.instrument`, a label, and nothing in the
+    # system sorts, groups or casts by which instrument it is. A value per
+    # instrument would cost three locales, two sort tables and the salutation
+    # map for each new one, and buy nothing.
+    INSTRUMENTALIST = 'INS', _('Instrumentalist')
+
+
+# The voice types that stand in a choir section. Everything that reads the
+# cast as S/A/T/B — divisi families, section balance, vocal range and sight
+# reading, "section mates" on the personal sheet — asks this set rather than
+# spelling the two exceptions out, so a third non-singing kind would need one
+# edit, not a hunt.
+SINGING_VOICE_TYPES: frozenset[str] = frozenset({
+    VoiceType.SOPRANO,
+    VoiceType.MEZZO,
+    VoiceType.ALTO,
+    VoiceType.COUNTERTENOR,
+    VoiceType.TENOR,
+    VoiceType.BARITONE,
+    VoiceType.BASS,
+})
+
+
+def is_instrumentalist_account(user: Any) -> bool:
+    """Whether the asking account's roster row is a player's — the one fact
+    `Rehearsal.calling_q` needs about the member whose schedule it filters.
+    False for managers and crew, who hold no roster row at all."""
+    artist = getattr(user, 'artist_profile', None)
+    return artist is not None and artist.voice_type == VoiceType.INSTRUMENTALIST
 
 
 class Artist(EnterpriseBaseModel):
@@ -94,6 +125,15 @@ class Artist(EnterpriseBaseModel):
     # serializer validation — a narrower column here would fail that write outright.
     phone_number = models.CharField(max_length=32, blank=True, verbose_name=_("Phone"))
     voice_type = models.CharField(max_length=5, choices=VoiceType.choices, verbose_name=_("Voice Type"))
+    # What an instrumentalist plays, as it should print next to their name
+    # ("Organy", "Trąbka"). Meaningful only for `VoiceType.INSTRUMENTALIST`;
+    # the DTO requires it there and blanks it everywhere else, so a singer row
+    # never carries a stale instrument.
+    instrument = models.CharField(
+        max_length=60, blank=True,
+        verbose_name=_("Instrument"),
+        help_text=_("Instrument played. Required for an instrumentalist, empty for everyone else."),
+    )
     is_active = models.BooleanField(
         default=True,
         verbose_name=_("Is Active"),
@@ -131,6 +171,20 @@ class Artist(EnterpriseBaseModel):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.get_voice_type_display()})"
+
+    @property
+    def is_singer(self) -> bool:
+        """Whether this artist stands in a voice section — see `SINGING_VOICE_TYPES`."""
+        return self.voice_type in SINGING_VOICE_TYPES
+
+    @property
+    def role_label(self) -> str:
+        """What to print after the name: the instrument for a player, the voice
+        for everyone else. A player whose instrument was never entered falls back
+        to the generic "Instrumentalist" rather than an empty bracket."""
+        if self.voice_type == VoiceType.INSTRUMENTALIST and self.instrument:
+            return self.instrument
+        return str(self.get_voice_type_display())
 
     @property
     def first_name_vocative(self) -> str:
@@ -796,6 +850,18 @@ class Rehearsal(EnterpriseBaseModel):
     )
     focus = models.CharField(max_length=200, blank=True, verbose_name=_("Rehearsal Focus"))
     is_mandatory = models.BooleanField(default=True, verbose_name=_("Is Mandatory"))
+    # Whether a whole-cast call reaches the instrumentalists. The choir
+    # rehearses alone for weeks and the organist joins for the last evening, so
+    # the default is "not called" and the exception is a property of the
+    # rehearsal, not of the person: the same organist is absent from every
+    # sectional and present at the dress rehearsal. Irrelevant when
+    # `invited_participations` names people — an explicit list is the call.
+    calls_instrumentalists = models.BooleanField(
+        default=False,
+        verbose_name=_("Calls Instrumentalists"),
+        help_text=_("Whether a whole-cast rehearsal also calls the project's instrumentalists. "
+                    "Ignored when specific participants are invited."),
+    )
     reminder_sent_at = models.DateTimeField(
         null=True, blank=True, db_index=True,
         help_text=_("When the automated upcoming-rehearsal reminder was dispatched. Null = not yet sent.")
@@ -811,6 +877,53 @@ class Rehearsal(EnterpriseBaseModel):
         indexes = [
             models.Index(fields=['project', 'date_time']),
         ]
+
+    def called_participations(self) -> models.QuerySet["Participation"]:
+        """Who this rehearsal calls, before any status narrowing.
+
+        The one reading of "invited list, else the whole cast": named
+        participations when the manager picked some, otherwise every live
+        participation of the project — minus the instrumentalists, unless this
+        rehearsal calls them. Recipients of an announcement, the reminder, the
+        roll-call grid and the printed sheet all start from this set and narrow
+        it by status themselves (a roll-call drops the declined, a cancellation
+        notice keeps them), which is why status is not applied here.
+        """
+        invited = self.invited_participations.filter(is_deleted=False)
+        if invited.exists():
+            return invited
+        cast = Participation.objects.filter(project=self.project, is_deleted=False)
+        if not self.calls_instrumentalists:
+            cast = cast.exclude(artist__voice_type=VoiceType.INSTRUMENTALIST)
+        return cast
+
+    @staticmethod
+    def calling_q(seat_ids: Any, *, instrumentalist: bool) -> models.Q:
+        """The `Rehearsal` rows that call a member holding ``seat_ids``.
+
+        Mirror of `called_participations` from the member's side, for the
+        schedule, the absence window, the calendar feed and the invitation
+        e-mail. A named invitation always reaches them; a whole-cast call
+        reaches a player only when the rehearsal says so.
+        """
+        tutti = models.Q(invited_participations__isnull=True)
+        if instrumentalist:
+            tutti &= models.Q(calls_instrumentalists=True)
+        return models.Q(invited_participations__in=seat_ids) | tutti
+
+    def calls_seat(self, seat: "Participation", invited_ids: Collection[uuid.UUID]) -> bool:
+        """`called_participations` asked about one seat, in memory.
+
+        For the printed sheets, which walk a prefetched invited list per
+        rehearsal and must not pay a query per (rehearsal, reader) pair.
+        ``invited_ids`` is that list; empty means a whole-cast call.
+        """
+        if invited_ids:
+            return seat.id in invited_ids
+        return (
+            self.calls_instrumentalists
+            or seat.artist.voice_type != VoiceType.INSTRUMENTALIST
+        )
 
     @property
     def end_date_time(self) -> datetime | None:

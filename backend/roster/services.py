@@ -294,6 +294,7 @@ class ArtistHRService:
                     last_name=dto.last_name,
                     email=dto.email,
                     voice_type=dto.voice_type,
+                    instrument=dto.instrument or "",
                     phone_number=dto.phone_number or "",
                     sight_reading_skill=dto.sight_reading_skill,
                     vocal_range_bottom=dto.vocal_range_bottom or "",
@@ -1579,7 +1580,12 @@ class RehearsalOperationsService:
                 if attr in ('location', 'timezone'):
                     continue
                 old_value = getattr(rehearsal, attr)
-                if old_value != value:
+                # Who is called is not a change to the rehearsal: the invited
+                # list is set below without a diff entry, and the
+                # instrumentalists' flag is the same kind of fact. The queue
+                # resolves recipients off the rehearsal at publish time, so a
+                # newly called player is reached by whatever is announced next.
+                if old_value != value and attr != "calls_instrumentalists":
                     if attr == "is_mandatory":
                         # Self-describing state change — never a raw "True → False".
                         changes.append(_change("now_mandatory" if value else "now_optional", None, None))
@@ -1618,9 +1624,7 @@ class RehearsalOperationsService:
 
     @staticmethod
     def delete_rehearsal(rehearsal: Rehearsal) -> None:
-        qs = rehearsal.invited_participations.filter(is_deleted=False)
-        if not qs.exists():
-            qs = Participation.objects.filter(project=rehearsal.project, is_deleted=False)
+        qs = rehearsal.called_participations()
 
         # Same audience the queue would have reached with this rehearsal's
         # creation or move (AnnouncementQueue.recipients_for): telling only the

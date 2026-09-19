@@ -55,6 +55,12 @@ export interface RehearsalFormData {
   location_id: string;
   focus: string;
   is_mandatory: boolean;
+  /**
+   * Whether a tutti call also reaches the project's instrumentalists. Read
+   * only when the target is TUTTI — a sectional or a hand-picked list names
+   * its people outright.
+   */
+  calls_instrumentalists: boolean;
 }
 
 export type RehearsalTargetType = "TUTTI" | "SECTIONAL" | "CUSTOM";

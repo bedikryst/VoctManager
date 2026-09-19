@@ -70,6 +70,7 @@ export const buildOptimisticRehearsal = (
   location: null,
   focus: data.focus ?? "",
   is_mandatory: data.is_mandatory,
+  calls_instrumentalists: data.calls_instrumentalists ?? false,
   invited_participations: data.invited_participations ?? [],
   absent_count: 0,
 });

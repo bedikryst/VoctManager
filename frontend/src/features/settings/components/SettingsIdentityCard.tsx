@@ -10,6 +10,8 @@
 
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { artistRoleLabel } from "@/shared/lib/voiceTypes";
+import type { VoiceType } from "@/shared/types";
 import { Camera } from "lucide-react";
 
 import { getSectionPresentation } from "@/features/artists/constants/voiceSections";
@@ -45,10 +47,7 @@ export const SettingsIdentityCard = ({
   const fullName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
   const role = user.profile?.role ? ROLE_LABELS[user.profile.role] : undefined;
   const voiceLabel = user.voice_type
-    ? t(
-        `dashboard.layout.roles.${user.voice_type}`,
-        user.voice_type_display ?? user.voice_type,
-      )
+    ? artistRoleLabel(t, user.voice_type as VoiceType, user.instrument)
     : null;
   // The voice reads through the shared category accent, so a soprano wears the
   // same colour here as on the roster, in the welcome and on every other chip

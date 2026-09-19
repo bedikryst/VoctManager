@@ -22,7 +22,7 @@ from celery.result import AsyncResult
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.db.models import Count, Exists, OuterRef, Prefetch, Q, QuerySet
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -116,6 +116,7 @@ from .models import (
     RehearsalDelegate,
     ScorePackage,
     VoiceType,
+    is_instrumentalist_account,
 )
 from .permissions import led_project_ids, led_projects_q, user_leads_project
 from .queries import (
@@ -1994,7 +1995,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         # addressed to a seat since given up does not resurrect the rehearsal.
         seats = Participation.live_seats(artist__user=user)
         return qs.filter(project_id__in=seats.values('project_id')).filter(
-            Q(invited_participations__isnull=True) | Q(invited_participations__in=seats)
+            Rehearsal.calling_q(seats, instrumentalist=is_instrumentalist_account(user))
         ).distinct()
 
     @action(
@@ -2041,21 +2042,15 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         if not may_take_roll_call:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Who was summoned: the sectional list when there is one, the whole
-        # standing cast when there is not — the same rule `resolveInvited` reads
-        # on the client, and the same pruning of anyone who turned the project
-        # down. A declined seat is not an empty row to be chased at the door.
-        standing_cast: QuerySet[Participation] = (
-            Participation.objects
-            .filter(project_id=rehearsal.project_id, is_deleted=False)
+        # Who was summoned — `Rehearsal.called_participations`, the same rule
+        # `resolveInvited` reads on the client — minus anyone who turned the
+        # project down. A declined seat is not an empty row to be chased at the
+        # door.
+        seats: list[Participation] = list(
+            rehearsal.called_participations()
             .exclude(status=Participation.Status.DECLINED)
             .select_related('artist', 'artist__user', 'artist__user__profile')
         )
-        invited_ids = {p.id for p in rehearsal.invited_participations.all()}
-        seats: list[Participation] = [
-            seat for seat in standing_cast
-            if not invited_ids or seat.id in invited_ids
-        ]
         seats.sort(key=participation_sort_key)
 
         artist_ctx = {'request': request}
@@ -2104,6 +2099,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
             "location_id": validated_data.get("location").id if validated_data.get("location") else None,
             "focus": validated_data.get("focus", ""),
             "is_mandatory": validated_data.get("is_mandatory", True),
+            "calls_instrumentalists": validated_data.get("calls_instrumentalists", False),
         }
 
     @staticmethod
@@ -2132,6 +2128,9 @@ class RehearsalViewSet(viewsets.ModelViewSet):
 
         if "is_mandatory" in validated_data:
             payload["is_mandatory"] = validated_data["is_mandatory"]
+
+        if "calls_instrumentalists" in validated_data:
+            payload["calls_instrumentalists"] = validated_data["calls_instrumentalists"]
 
         return payload
 

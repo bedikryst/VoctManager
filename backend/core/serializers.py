@@ -129,14 +129,15 @@ class UserMeSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer()
     voice_type = serializers.SerializerMethodField()
     voice_type_display = serializers.SerializerMethodField()
-    
+    instrument = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
-            'id', 'email', 'first_name', 'last_name', 
-            'profile', 'voice_type', 'voice_type_display'
+            'id', 'email', 'first_name', 'last_name',
+            'profile', 'voice_type', 'voice_type_display', 'instrument',
         )
-        read_only_fields = ('id', 'email', 'voice_type', 'voice_type_display')
+        read_only_fields = ('id', 'email', 'voice_type', 'voice_type_display', 'instrument')
 
     def update(self, instance, validated_data):
         """
@@ -166,6 +167,11 @@ class UserMeSerializer(serializers.ModelSerializer):
         """Resolves the human-readable translation for the voice type."""
         artist_profile = getattr(obj, 'artist_profile', None)
         return artist_profile.get_voice_type_display() if artist_profile else "N/A"
+
+    def get_instrument(self, obj) -> str:
+        """What a player plays; empty for every singer and for accounts without a roster row."""
+        artist_profile = getattr(obj, 'artist_profile', None)
+        return artist_profile.instrument if artist_profile else ""
 
 
 class ChangePasswordSerializer(serializers.Serializer):

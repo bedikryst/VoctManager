@@ -20,7 +20,8 @@ import { Checkbox } from "@ui/primitives/Checkbox";
 import { Input } from "@ui/primitives/Input";
 import { Select } from "@ui/primitives/Select";
 import { Eyebrow, Heading, Text } from "@ui/primitives/typography";
-import type { Artist, VoiceTypeOption } from "@/shared/types";
+import type { Artist, VoiceType, VoiceTypeOption } from "@/shared/types";
+import { isInstrumentalist, isSingingVoiceType } from "@/shared/lib/voiceTypes";
 import { useArtistForm } from "../hooks/useArtistForm";
 import { voiceToSalutation } from "../types/artist.dto";
 import { NewThreadModal } from "@/features/messages/components/NewThreadModal";
@@ -86,6 +87,8 @@ export default function ArtistEditorPanel({
   const firstNameValue = useWatch({ control: form.control, name: "first_name" });
   const languageValue = useWatch({ control: form.control, name: "language" });
   const voiceValue = useWatch({ control: form.control, name: "voice_type" });
+  const isPlayer = isInstrumentalist(voiceValue as VoiceType);
+  const isSinger = isSingingVoiceType(voiceValue as VoiceType);
 
   // Suggest the form of address from the voice part when creating (manager can
   // still override). Never runs on edit — that field is disabled there.
@@ -378,6 +381,25 @@ export default function ArtistEditorPanel({
                       )}
                     />
 
+                    {/* What a player plays, in the words the sheets will print
+                        ("Organy", "Trąbka"). Only a player has one; the range
+                        and sight-reading below are a singer's facts and are
+                        not asked of anyone who does not stand in a section. */}
+                    {isPlayer && (
+                      <Input
+                        type="text"
+                        label={t("artists.editor.instrument", "Instrument *")}
+                        {...form.register("instrument")}
+                        placeholder={t(
+                          "artists.editor.instrument_placeholder",
+                          "np. Organy",
+                        )}
+                        disabled={isSubmitting}
+                        error={errorText(errors.instrument?.message)}
+                      />
+                    )}
+
+                    {isSinger && (
                     <div className="grid grid-cols-2 gap-5">
                       <Input
                         type="text"
@@ -410,7 +432,9 @@ export default function ArtistEditorPanel({
                         className="text-center font-bold text-ethereal-gold"
                       />
                     </div>
+                    )}
 
+                    {isSinger && (
                     <Controller
                       control={form.control}
                       name="sight_reading_skill"
@@ -436,6 +460,7 @@ export default function ArtistEditorPanel({
                         />
                       )}
                     />
+                    )}
                   </div>
 
                   {artist?.id && (

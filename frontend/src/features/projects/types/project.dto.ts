@@ -99,6 +99,7 @@ export interface RehearsalCreateDTO {
   location_id?: string | null;
   focus?: string;
   is_mandatory: boolean;
+  calls_instrumentalists?: boolean;
   invited_participations?: string[];
 }
 
@@ -108,6 +109,7 @@ export interface RehearsalUpdateDTO {
   location_id?: string | null;
   focus?: string;
   is_mandatory?: boolean;
+  calls_instrumentalists?: boolean;
   invited_participations?: string[];
 }
 

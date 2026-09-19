@@ -26,6 +26,7 @@ import {
   type VoiceSectionKey,
 } from "@/features/rehearsals/constants/attendanceMeta";
 import { foldDiacritics } from "@/shared/lib/text";
+import { isInstrumentalist } from "@/shared/lib/voiceTypes";
 import type {
   Artist,
   Attendance,
@@ -79,6 +80,8 @@ export interface MatrixSinger {
   readonly search: string;
   /** No artist record resolved; the row still exists, flagged rather than dropped. */
   readonly isUnresolved: boolean;
+  /** A player: called to a tutti only when the rehearsal says so. */
+  readonly isInstrumentalist: boolean;
 }
 
 export interface MatrixSection {
@@ -130,6 +133,9 @@ export const buildRoster = ({
       section,
       search: foldDiacritics(`${lastName} ${firstName}`),
       isUnresolved: !artist,
+      isInstrumentalist: isInstrumentalist(
+        artist?.voice_type ?? participation.artist_voice_type,
+      ),
     };
 
     const bucket = buckets.get(section);
@@ -183,16 +189,22 @@ export interface MatrixSession {
   readonly isLive: boolean;
   /** `null` = tutti. An explicit set = a sectional call, and the rest of the column is N/A. */
   readonly called: ReadonlySet<string> | null;
+  /** Whether a tutti column also calls the players; meaningless when `called` is a set. */
+  readonly callsInstrumentalists: boolean;
 }
 
 /** A roll call opens before the downbeat and stays open through the session. */
 const LIVE_BEFORE_MS = 2 * 60 * 60 * 1000;
 const LIVE_AFTER_MS = 3 * 60 * 60 * 1000;
 
+/** The same rule as `resolveInvited`, read cell by cell. */
 export const isCalled = (
   session: MatrixSession,
-  participationId: string,
-): boolean => session.called === null || session.called.has(participationId);
+  singer: Pick<MatrixSinger, "participationId" | "isInstrumentalist">,
+): boolean => {
+  if (session.called !== null) return session.called.has(singer.participationId);
+  return session.callsInstrumentalists || !singer.isInstrumentalist;
+};
 
 export const buildSessions = (
   rehearsals: readonly Rehearsal[],
@@ -220,6 +232,7 @@ export const buildSessions = (
           now >= startedAt - LIVE_BEFORE_MS &&
           now <= startedAt + LIVE_AFTER_MS,
         called: invited.length > 0 ? new Set(invited.map(String)) : null,
+        callsInstrumentalists: rehearsal.calls_instrumentalists ?? false,
       };
     });
 

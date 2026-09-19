@@ -27,6 +27,7 @@ from roster.domain.liturgy import (
     build_program_presentation,
 )
 
+from .dtos import validate_instrument
 from .models import (
     Artist,
     Attendance,
@@ -38,6 +39,7 @@ from .models import (
     ProjectPieceCasting,
     Rehearsal,
     RehearsalDelegate,
+    VoiceType,
 )
 
 # --- 1. ARTIST SERIALIZERS ---
@@ -130,7 +132,7 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
             'email', 'phone_number', 'avatar_thumb_url',
 
             # Musical capability
-            'voice_type', 'voice_type_display',
+            'voice_type', 'voice_type_display', 'instrument',
             'sight_reading_skill', 'vocal_range_bottom', 'vocal_range_top',
 
             # Roster standing
@@ -143,6 +145,35 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
             'id', 'created_at', 'updated_at', 'is_deleted',
             'user', 'is_active', 'activation_email_sent_at',
         )
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        """The instrument rule on the PATCH path. A partial update may carry
+        either field alone, so the missing one is read from the row; the create
+        path applies the same rule in `ArtistCreateDTO`."""
+        attrs = super().validate(attrs)
+        instance = self.instance
+        voice_type = attrs.get(
+            'voice_type', instance.voice_type if instance is not None else None
+        )
+        if voice_type is None:
+            return attrs
+        instrument = attrs.get(
+            'instrument', instance.instrument if instance is not None else ''
+        )
+        # A voice-type change away from INS leaves a stale instrument on the
+        # row. That is not the client's mistake, so it is cleared in the same
+        # write; an instrument the client SENT for a singer is, and is refused.
+        if (
+            voice_type != VoiceType.INSTRUMENTALIST
+            and instrument
+            and 'instrument' not in attrs
+        ):
+            attrs['instrument'] = instrument = ''
+        try:
+            validate_instrument(voice_type, instrument)
+        except ValueError as exc:
+            raise serializers.ValidationError({'instrument': str(exc)}) from exc
+        return attrs
 
     def get_account_activated(self, obj: Artist) -> bool:
         """True once the invited member has set their password (finished
@@ -195,6 +226,10 @@ class ParticipationBasicSerializer(serializers.ModelSerializer):
     """
     artist_name = serializers.CharField(source='artist.__str__', read_only=True)
     project_name = serializers.CharField(source='project.title', read_only=True)
+    # The raw code beside the label: the client's "who is called to this
+    # rehearsal" rule (`resolveInvited`) keys on it, and a localized label is
+    # not a key.
+    artist_voice_type = serializers.CharField(source='artist.voice_type', read_only=True)
     artist_voice_type_display = serializers.CharField(source='artist.get_voice_type_display', read_only=True)
 
     class Meta:
@@ -294,7 +329,8 @@ class ProjectSerializer(serializers.ModelSerializer):
                 'first_name': p.artist.first_name,
                 'last_name': p.artist.last_name,
                 'voice_type': p.artist.voice_type,
-                'voice_type_display': p.artist.get_voice_type_display()
+                'voice_type_display': p.artist.get_voice_type_display(),
+                'instrument': p.artist.instrument,
             }
             for p in participations
         ]
@@ -382,6 +418,7 @@ class RehearsalSerializer(serializers.ModelSerializer):
             'location_id',
             'focus',
             'is_mandatory',
+            'calls_instrumentalists',
             'invited_participations',
             'absent_count',
         )

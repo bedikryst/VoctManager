@@ -53,5 +53,7 @@ export interface AuthUser {
   artist_profile_id?: string | number | null;
   voice_type?: string | null;
   voice_type_display?: string | null;
+  /** What a player plays; empty for everyone else. */
+  instrument?: string | null;
   profile?: AuthProfile | null;
 }

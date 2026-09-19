@@ -1001,6 +1001,8 @@
       "first_name_vocative": "Cas vocatif du prénom",
       "first_name_vocative_hint": "Forme utilisée dans les salutations, ex. dans les e-mails.",
       "first_name_vocative_placeholder": "ex. Jean",
+      "instrument": "Instrument *",
+      "instrument_placeholder": "p. ex. Orgue",
       "language": "Langue des messages *",
       "language_edit_disabled": "La langue est gérée individuellement par l'artiste dans les paramètres de son compte.",
       "last_name": "Nom *",
@@ -1065,6 +1067,13 @@
       "sort_section": "Pupitre (SATB)",
       "sort_skill": "Lecture à vue",
       "view_label": "Affichage"
+    },
+    "validation": {
+      "first_name_required": "Indiquez le prénom.",
+      "instrument_required": "Indiquez l'instrument.",
+      "invalid_email": "Indiquez une adresse e-mail valide.",
+      "last_name_required": "Indiquez le nom.",
+      "voice_type_required": "Choisissez un type de voix."
     }
   },
   "auth": {
@@ -2174,6 +2183,7 @@
         "CT": "Countertenor",
         "DIR": "Chef d'orchestre",
         "guest": "Invité",
+        "INS": "Instrumentiste",
         "MEZ": "Mezzo-soprano",
         "SOP": "Soprano",
         "TEN": "Ténor"
@@ -2187,7 +2197,7 @@
         "VISUALS": "Visuels"
       },
       "specialty_descriptions": {
-        "INSTRUMENT": "Instrumentistes externes et soutien instrumental.",
+        "INSTRUMENT": "Accord, transport et manutention des instruments. Un musicien qui joue au concert appartient au roster comme artiste.",
         "LIGHT": "Conception lumière et habillage visuel de la scène.",
         "LOGISTICS": "Transport, scène et sécurisation de la production.",
         "OTHER": "Collaborateurs hors catégories standard.",
@@ -4088,6 +4098,8 @@
         "no_rehearsals_desc": "La première répétition enregistrée apparaîtra dans ce calendrier, avant la date de l’événement."
       },
       "form": {
+        "calls_instrumentalists": "Convoquer aussi les instrumentistes",
+        "calls_instrumentalists_hint": "Par défaut, le chœur répète seul ; cochez pour une répétition avec accompagnement.",
         "date_time": "Date et heure *",
         "end_time": "Fin de la répétition",
         "focus": "Plan de répétition / répertoire",
@@ -4442,6 +4454,7 @@
       "baritones": "Barytons",
       "basses": "Basses",
       "countertenors": "Contreténors",
+      "instrumentalists": "Instrumentistes",
       "mezzos": "Mezzo-sopranos",
       "other": "Autres",
       "sopranos": "Sopranos",

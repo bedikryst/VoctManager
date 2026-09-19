@@ -43,6 +43,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 import type { Project } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
+import { isInstrumentalist } from "@/shared/lib/voiceTypes";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { TabLoadingCard } from "./components/TabLoadingCard";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
@@ -66,15 +67,21 @@ interface CastTabProps {
 }
 
 /**
- * The second line of a roster row: range · sight-reading. It used to be two
- * icon-prefixed pills, which put sixty glyphs on a screen whose content is
- * forty names.
+ * The second line of a roster row: instrument · range · sight-reading. It used
+ * to be two icon-prefixed pills, which put sixty glyphs on a screen whose
+ * content is forty names. A player's line is their instrument alone — range
+ * and sight-reading are a singer's facts and are never recorded for them.
  */
 const buildSingerMeta = (
-  entry: { rangeLabel: string | null; sightReading: number | null },
+  entry: {
+    instrument: string | null;
+    rangeLabel: string | null;
+    sightReading: number | null;
+  },
   t: TFunction,
 ): string | null => {
   const parts = [
+    entry.instrument,
     entry.rangeLabel,
     entry.sightReading !== null
       ? t("projects.cast.card.a_vista", "a vista {{score}}/5", {
@@ -243,22 +250,26 @@ function CastRow({
             to the automatic fill, not a position in the list, which is why it
             says nothing when empty: the fill then reads the line off their voice
             type, and forty rows repeating that would only bury the seats
-            somebody actually chose. */}
+            somebody actually chose. A player has no seat to pick: the fill puts
+            them on the accompaniment line wherever a piece declares one, so the
+            column stays blank on their row rather than offering choral lines. */}
         <div className="w-28 shrink-0 sm:w-36">
-          <Select
-            size="sm"
-            options={seatOptions}
-            value={entry.seat}
-            onValueChange={onSeatChange}
-            disabled={isBusy || isDeclined}
-            placeholder={t("projects.cast.seat.placeholder", "—")}
-            clearLabel={t("projects.cast.seat.clear", "Z typu głosu")}
-            ariaLabel={t(
-              "projects.cast.seat.aria",
-              "Miejsce w składzie: {{name}}",
-              { name: entry.displayName },
-            )}
-          />
+          {!isInstrumentalist(entry.voiceType) && (
+            <Select
+              size="sm"
+              options={seatOptions}
+              value={entry.seat}
+              onValueChange={onSeatChange}
+              disabled={isBusy || isDeclined}
+              placeholder={t("projects.cast.seat.placeholder", "—")}
+              clearLabel={t("projects.cast.seat.clear", "Z typu głosu")}
+              ariaLabel={t(
+                "projects.cast.seat.aria",
+                "Miejsce w składzie: {{name}}",
+                { name: entry.displayName },
+              )}
+            />
+          )}
         </div>
 
         {/* Marker and control in one: the filled star says who leads the section

@@ -42,7 +42,10 @@ VOICE_TYPE_ORDER: dict[str, int] = {
     VoiceType.TENOR: 4,
     VoiceType.BARITONE: 5,
     VoiceType.BASS: 6,
-    VoiceType.CONDUCTOR: 7,
+    # After the choir, before the podium: the instruments sit below the
+    # staves in a score and print below the sections on a sheet.
+    VoiceType.INSTRUMENTALIST: 7,
+    VoiceType.CONDUCTOR: 8,
 }
 
 VOICE_LINE_ORDER: dict[str, int] = {

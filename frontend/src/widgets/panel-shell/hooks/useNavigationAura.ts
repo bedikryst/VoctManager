@@ -16,6 +16,8 @@ import {
 } from "@/shared/config/navigation/dashboard.config";
 import { isCrew, isManager } from "@/shared/auth/rbac";
 import type { AuthUser } from "@/shared/auth/auth.types";
+import { artistRoleLabel } from "@/shared/lib/voiceTypes";
+import type { VoiceType } from "@/shared/types";
 
 export const useNavigationAura = (user: AuthUser | null) => {
   const { t } = useTranslation();
@@ -68,10 +70,11 @@ export const useNavigationAura = (user: AuthUser | null) => {
     if (isManagerUser) return t("dashboard.layout.roles.admin");
     if (isCrew(user)) return t("dashboard.layout.roles.crew");
 
-    // Resolve specific vocal part or role from translations if available
+    // The same word the identity card and the welcome print after the name:
+    // the voice for a singer, the instrument for a player.
     const voiceKey = user?.voice_type;
     const translatedVoice = voiceKey
-      ? t(`dashboard.layout.roles.${voiceKey}`)
+      ? artistRoleLabel(t, voiceKey as VoiceType, user?.instrument)
       : null;
 
     return (

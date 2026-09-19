@@ -24,6 +24,7 @@ import type {
   VoiceLine,
   VoiceType,
 } from "@/shared/types";
+import { isSingingVoiceType } from "@/shared/lib/voiceTypes";
 import type { SelectOption } from "@/shared/ui/primitives/Select";
 import {
   useCreateParticipation,
@@ -45,6 +46,8 @@ interface RosterFacts {
   readonly voiceType: VoiceType | null;
   /** Localised voice type ("Sopran"); empty when the roster record is gone. */
   readonly voiceLabel: string;
+  /** What a player plays ("Organy"); null for everyone who sings. */
+  readonly instrument: string | null;
   /** "A2–G4", or null when no range is recorded. */
   readonly rangeLabel: string | null;
   readonly sightReading: number | null;
@@ -242,6 +245,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
                 artist?.voice_type_display ?? voiceType,
               )
             : (participation.artist_voice_type_display ?? ""),
+          instrument: artist?.instrument || null,
           rangeLabel: rangeOf(artist),
           sightReading: artist?.sight_reading_skill ?? null,
           status: participation.status,
@@ -270,6 +274,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
             `dashboard.layout.roles.${artist.voice_type}`,
             artist.voice_type_display ?? artist.voice_type,
           ),
+          instrument: artist.instrument || null,
           rangeLabel: rangeOf(artist),
           sightReading: artist.sight_reading_skill ?? null,
         }))
@@ -314,9 +319,9 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
 
     return (
       VOICE_TYPE_ORDER
-        // The conductor is not part of the vocal cast on this tab; a "Dyrygent 0"
-        // in the balance rail would be a warning about a role nobody casts here.
-        .filter((voiceType) => voiceType !== "DIR")
+        // The rail weighs the choir: a "Dyrygent 0" or "Instrumentalista 0"
+        // would be a warning about a section nobody balances here.
+        .filter(isSingingVoiceType)
         .map((voiceType) => ({
           voiceType,
           label: t(`dashboard.layout.roles.${voiceType}`, voiceType),

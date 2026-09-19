@@ -1001,6 +1001,8 @@
       "first_name_vocative": "Vocative",
       "first_name_vocative_hint": "Form used in greetings, e.g. in emails.",
       "first_name_vocative_placeholder": "e.g. John",
+      "instrument": "Instrument *",
+      "instrument_placeholder": "e.g. Organ",
       "language": "Message Language *",
       "language_edit_disabled": "Language is managed individually by the artist in their account settings.",
       "last_name": "Last Name *",
@@ -1065,6 +1067,13 @@
       "sort_section": "Section (SATB)",
       "sort_skill": "Sight-reading",
       "view_label": "View"
+    },
+    "validation": {
+      "first_name_required": "Enter a first name.",
+      "instrument_required": "Enter the instrument.",
+      "invalid_email": "Enter a valid e-mail address.",
+      "last_name_required": "Enter a last name.",
+      "voice_type_required": "Choose a voice type."
     }
   },
   "auth": {
@@ -2174,6 +2183,7 @@
         "CT": "Countertenor",
         "DIR": "Conductor",
         "guest": "Guest",
+        "INS": "Instrumentalist",
         "MEZ": "Mezzo-soprano",
         "SOP": "Soprano",
         "TEN": "Tenor"
@@ -2187,7 +2197,7 @@
         "VISUALS": "Visuals"
       },
       "specialty_descriptions": {
-        "INSTRUMENT": "External instrumentalists and instrument handling.",
+        "INSTRUMENT": "Instrument tuning, transport and handling. A musician who plays the concert belongs on the roster as an artist.",
         "LIGHT": "Lighting design, visual stage setting.",
         "LOGISTICS": "Transport, stage, production security.",
         "OTHER": "Collaborators outside standard categories.",
@@ -4087,6 +4097,8 @@
         "no_rehearsals_desc": "The first rehearsal you save will appear on this schedule, ahead of the event date."
       },
       "form": {
+        "calls_instrumentalists": "Also call the instrumentalists",
+        "calls_instrumentalists_hint": "By default the choir rehearses alone; tick this for a rehearsal with accompaniment.",
         "date_time": "Date and time *",
         "end_time": "Rehearsal ends",
         "focus": "Rehearsal plan / repertoire",
@@ -4441,6 +4453,7 @@
       "baritones": "Baritones",
       "basses": "Basses",
       "countertenors": "Countertenors",
+      "instrumentalists": "Instrumentalists",
       "mezzos": "Mezzo-sopranos",
       "other": "Other",
       "sopranos": "Sopranos",

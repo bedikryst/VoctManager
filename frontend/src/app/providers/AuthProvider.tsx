@@ -33,6 +33,7 @@ interface UserIdentityResponse {
   last_name?: string;
   voice_type?: string | null;
   voice_type_display?: string | null;
+  instrument?: string | null;
   profile?: AuthProfile | null;
 }
 
@@ -44,6 +45,7 @@ interface ArtistSelfResponse {
   last_name?: string;
   voice_type?: string | null;
   voice_type_display?: string | null;
+  instrument?: string | null;
   profile?: AuthProfile | null;
 }
 
@@ -138,6 +140,7 @@ const buildAuthUser = async (): Promise<AuthUser> => {
     voice_type_display:
       identityResponse.data.voice_type_display ??
       artistResponse?.voice_type_display,
+    instrument: identityResponse.data.instrument ?? artistResponse?.instrument ?? null,
     profile: identityResponse.data.profile ?? artistResponse?.profile ?? null,
   };
 };
@@ -149,6 +152,7 @@ const toUserMeDTO = (user: AuthUser): UserMeDTO => ({
   last_name: user.last_name ?? "",
   voice_type: user.voice_type ?? null,
   voice_type_display: user.voice_type_display ?? null,
+  instrument: user.instrument ?? null,
   profile: user.profile
     ? {
         role: user.profile.role,

@@ -508,7 +508,7 @@
             <div class="split">
                 <div class="col left">
                     <div class="name">{{ personal.full_name }}</div>
-                    <div class="voice">{{ personal.voice_label }} · {{ personal.section_label }}</div>
+                    <div class="voice">{{ personal.voice_label }}{% if personal.section_label %} · {{ personal.section_label }}{% endif %}</div>
                 </div>
                 {% comment %}
                     A confirmed participation is the expected state and says so

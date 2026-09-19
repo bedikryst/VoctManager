@@ -29,6 +29,7 @@ import type {
 } from "@/shared/types";
 import { toastApiError } from "@/shared/api/errors";
 import { useLocations } from "@/features/logistics/api/logistics.queries";
+import { resolveInvited } from "@/features/rehearsals/lib/attendanceStats";
 import {
   useCreateRehearsal,
   useDeleteRehearsal,
@@ -206,6 +207,7 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
     location_id: "",
     focus: "",
     is_mandatory: true,
+    calls_instrumentalists: false,
   });
 
   const [targetType, setTargetType] = useState<RehearsalTargetType>("TUTTI");
@@ -279,9 +281,13 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
    */
   const resolveCalledParticipations = useCallback((): string[] => {
     if (targetType === "TUTTI") {
-      return projectParticipations.map((participation) =>
-        String(participation.id),
-      );
+      return resolveInvited(
+        {
+          invited_participations: [],
+          calls_instrumentalists: formData.calls_instrumentalists,
+        },
+        projectParticipations,
+      ).map((participation) => String(participation.id));
     }
 
     if (targetType === "SECTIONAL") {
@@ -304,6 +310,7 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
   }, [
     artistMap,
     customParticipants,
+    formData.calls_instrumentalists,
     projectParticipations,
     selectedSections,
     targetType,
@@ -339,6 +346,7 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
       location_id: "",
       focus: "",
       is_mandatory: true,
+      calls_instrumentalists: false,
     });
     setTargetType("TUTTI");
     setSelectedSections([]);
@@ -371,6 +379,7 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
         location_id: locationId,
         focus: rehearsal.focus || "",
         is_mandatory: rehearsal.is_mandatory ?? true,
+        calls_instrumentalists: rehearsal.calls_instrumentalists ?? false,
       });
 
       const invitedIds = rehearsal.invited_participations?.map(String) || [];
@@ -447,6 +456,7 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
         location_id: formData.location_id,
         focus: formData.focus,
         is_mandatory: formData.is_mandatory,
+        calls_instrumentalists: formData.calls_instrumentalists,
         invited_participations: invitedParticipants,
       };
 

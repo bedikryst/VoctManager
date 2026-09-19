@@ -29,8 +29,8 @@ meta:
     regularnie, jednorazowo albo jako firma lub instytucja.
 
 hero:
-  # Gloss of the Latin rubric `Fundatio`, which the site already uses for the foundation on
-  # /kontakt and /kolofon and which stays in the markup unchanged in every locale.
+  # The opening's plain identifier, the whole line: the foundation's hero sets no Latin rubric
+  # (`Fundatio` stays the foundation's rubric on /kontakt and /kolofon, not here).
   eyebrow: "Fundacja VoctFoundation"
   # Two lines; the break is compositional. A translation decides its own split.
   title1: "Żeby muzyka"

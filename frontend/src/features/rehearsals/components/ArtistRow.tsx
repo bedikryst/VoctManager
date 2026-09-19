@@ -15,6 +15,7 @@ import React, { useEffect } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { artistRoleLabel } from "@/shared/lib/voiceTypes";
 import { CalendarRange, Clock, Edit3, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 
@@ -71,7 +72,7 @@ export const ArtistRow = React.memo(
     const { t } = useTranslation();
 
     const voiceLabel = artist.voice_type
-      ? t(`dashboard.layout.roles.${artist.voice_type}`)
+      ? artistRoleLabel(t, artist.voice_type, artist.instrument)
       : (artist.voice_type_display ?? "");
 
     const upsertMutation = useUpsertAttendanceRecord();

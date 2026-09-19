@@ -15,6 +15,7 @@ from roster.models import (
     Participation,
     Project,
     Rehearsal,
+    is_instrumentalist_account,
 )
 
 # The label a member reads in their phone's calendar list, between "Work" and
@@ -132,8 +133,9 @@ class ICalGeneratorService:
                 Rehearsal.objects.filter(project__in=projects, is_deleted=False)
                 .filter(
                     Q(project_id__in=conducted_ids)
-                    | Q(invited_participations__isnull=True)
-                    | Q(invited_participations__in=seats)
+                    | Rehearsal.calling_q(
+                        seats, instrumentalist=is_instrumentalist_account(user)
+                    )
                 )
                 .distinct()
                 .select_related('project', 'location')

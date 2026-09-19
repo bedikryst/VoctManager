@@ -222,7 +222,9 @@
     </div>
 
     <h2>§ 1. Przedmiot umowy</h2>
-    {% if voice_type %}
+    {% if instrument %}
+        <p>1. Zamawiający powierza, a Wykonawca zobowiązuje się do wykonania dzieła polegającego na artystycznym przygotowaniu i wykonaniu partii instrumentalnej (Instrument: <strong>{{ instrument }}</strong>) podczas projektu muzycznego:</p>
+    {% elif voice_type %}
         <p>1. Zamawiający powierza, a Wykonawca zobowiązuje się do wykonania dzieła polegającego na artystycznym przygotowaniu i wykonaniu partii wokalnej (Głos: <strong>{{ voice_type }}</strong>) podczas projektu muzycznego:</p>
     {% else %}
         <p>1. Zamawiający powierza, a Wykonawca zobowiązuje się do wykonania dzieła polegającego na realizacji usług specjalistycznych w roli: <strong>{{ role_description }}</strong> podczas projektu muzycznego:</p>

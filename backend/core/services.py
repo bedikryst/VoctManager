@@ -570,6 +570,7 @@ class UserPreferencesService:
             artist = user.artist_profile
             data["artist_profile"] = {
                 "voice_type": artist.get_voice_type_display(),
+                "instrument": artist.instrument,
                 "phone_number": artist.phone_number,
             }
         return data

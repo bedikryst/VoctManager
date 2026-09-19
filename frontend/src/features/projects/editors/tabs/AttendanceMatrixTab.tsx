@@ -376,7 +376,7 @@ export const AttendanceMatrixTab = ({
                     </th>
 
                     {sessions.map((session) => {
-                      const called = isCalled(session, singer.participationId);
+                      const called = isCalled(session, singer);
                       const mark = called
                         ? markOf(session.rehearsalId, singer.participationId)
                         : null;

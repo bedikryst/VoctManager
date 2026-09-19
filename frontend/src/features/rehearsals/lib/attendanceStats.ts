@@ -7,6 +7,7 @@
  * @module features/rehearsals/lib/attendanceStats
  */
 
+import { isInstrumentalist } from "@/shared/lib/voiceTypes";
 import type {
   Artist,
   Attendance,
@@ -56,17 +57,24 @@ export const EMPTY_TALLY: AttendanceTally = {
 };
 
 /**
- * The participations actually summoned to a rehearsal. A rehearsal with an
+ * The participations actually summoned to a rehearsal — the client's reading
+ * of `Rehearsal.called_participations` on the server. A rehearsal with an
  * explicit `invited_participations` set is sectional/custom; an empty set means
- * tutti (everyone still on the project). Callers pass `projectParticipations`
- * already pruned of declined singers.
+ * tutti: everyone still on the project, minus the instrumentalists unless the
+ * rehearsal calls them. Callers pass `projectParticipations` already pruned of
+ * declined singers.
  */
 export const resolveInvited = (
-  rehearsal: Pick<Rehearsal, "invited_participations">,
+  rehearsal: Pick<Rehearsal, "invited_participations" | "calls_instrumentalists">,
   projectParticipations: Participation[],
 ): Participation[] => {
   const invitedIds = rehearsal.invited_participations ?? [];
-  if (invitedIds.length === 0) return projectParticipations;
+  if (invitedIds.length === 0) {
+    if (rehearsal.calls_instrumentalists) return projectParticipations;
+    return projectParticipations.filter(
+      (p) => !isInstrumentalist(p.artist_voice_type),
+    );
+  }
   const idSet = new Set(invitedIds.map(String));
   return projectParticipations.filter((p) => idSet.has(String(p.id)));
 };

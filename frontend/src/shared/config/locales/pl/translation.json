@@ -1011,6 +1011,8 @@
       "first_name_vocative": "Wołacz",
       "first_name_vocative_hint": "Forma używana w powitaniach, np. w mailach.",
       "first_name_vocative_placeholder": "np. Krystianie",
+      "instrument": "Instrument *",
+      "instrument_placeholder": "np. Organy",
       "language": "Język wiadomości *",
       "language_edit_disabled": "Język jest zarządzany indywidualnie przez artystę w ustawieniach konta.",
       "last_name": "Nazwisko *",
@@ -1075,6 +1077,13 @@
       "sort_section": "Sekcja (SATB)",
       "sort_skill": "Czytanie a vista",
       "view_label": "Widok"
+    },
+    "validation": {
+      "first_name_required": "Podaj imię.",
+      "instrument_required": "Podaj instrument.",
+      "invalid_email": "Podaj poprawny adres e-mail.",
+      "last_name_required": "Podaj nazwisko.",
+      "voice_type_required": "Wybierz rodzaj głosu."
     }
   },
   "auth": {
@@ -2184,6 +2193,7 @@
         "CT": "Kontratenor",
         "DIR": "Dyrygent",
         "guest": "Gość",
+        "INS": "Instrumentalista",
         "MEZ": "Mezzosopran",
         "SOP": "Sopran",
         "TEN": "Tenor"
@@ -2197,7 +2207,7 @@
         "VISUALS": "Wizualizacje"
       },
       "specialty_descriptions": {
-        "INSTRUMENT": "Instrumentaliści zewnętrzni i obsługa instrumentów.",
+        "INSTRUMENT": "Strojenie, transport i obsługa instrumentów. Muzyk, który gra na koncercie, należy do rosteru jako artysta.",
         "LIGHT": "Reżyseria świateł, oprawa wizualna sceny.",
         "LOGISTICS": "Transport, scena, zabezpieczenie produkcji.",
         "OTHER": "Współpracownicy spoza standardowych kategorii.",
@@ -4107,6 +4117,8 @@
         "no_rehearsals_desc": "Pierwsza zapisana próba pojawi się w tym harmonogramie, przed datą wydarzenia."
       },
       "form": {
+        "calls_instrumentalists": "Wezwij także instrumentalistów",
+        "calls_instrumentalists_hint": "Domyślnie próbuje sam chór; zaznacz na próbie z akompaniamentem.",
         "date_time": "Data i godzina *",
         "end_time": "Koniec próby",
         "focus": "Plan próby / repertuar",
@@ -4470,6 +4482,7 @@
       "baritones": "Barytony",
       "basses": "Basy",
       "countertenors": "Kontratenory",
+      "instrumentalists": "Instrumentaliści",
       "mezzos": "Mezzosoprany",
       "other": "Pozostali",
       "sopranos": "Soprany",

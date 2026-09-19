@@ -42,9 +42,10 @@ export const voiceFamilyRank = (voiceLine: string): number =>
   VOICE_FAMILY_ORDER.indexOf(voiceFamilyOf(voiceLine));
 
 /**
- * Roster order for singers. There is no mezzo, countertenor or baritone VOICE
+ * Roster order for the cast. There is no mezzo, countertenor or baritone VOICE
  * LINE — those are voice types, and they get cast on S2/A1/T2/B1 — which is why
- * they belong here and not in the family list above.
+ * they belong here and not in the family list above. The players come after
+ * the choir and before the podium, as they sit below the staves in a score.
  */
 export const VOICE_TYPE_ORDER: readonly VoiceType[] = [
   "SOP",
@@ -54,6 +55,7 @@ export const VOICE_TYPE_ORDER: readonly VoiceType[] = [
   "TEN",
   "BAR",
   "BAS",
+  "INS",
   "DIR",
 ];
 

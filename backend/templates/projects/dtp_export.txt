@@ -3,5 +3,5 @@ Wygenerowano: {{ generation_date|date:'d.m.Y H:i' }}
 ========================================
 {% for group_name, artists in groups.items %}{% if artists %}
 --- {{ group_name|upper }} ---
-{% for artist in artists %}{{ artist.first_name }} {{ artist.last_name }}
+{% for artist in artists %}{{ artist.first_name }} {{ artist.last_name }}{% if artist.instrument %} — {{ artist.instrument|lower }}{% endif %}
 {% endfor %}{% endif %}{% endfor %}

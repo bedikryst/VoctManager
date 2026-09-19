@@ -236,7 +236,7 @@ export const useAttendanceMatrix = (
     const tallies = new Map<string, MarkTally>();
     sessions.forEach((session) => {
       const marks = allSingers
-        .filter((singer) => isCalled(session, singer.participationId))
+        .filter((singer) => isCalled(session, singer))
         .map((singer) => markOf(session.rehearsalId, singer.participationId));
       tallies.set(session.rehearsalId, tallyMarks(marks));
     });
@@ -252,7 +252,7 @@ export const useAttendanceMatrix = (
     const tallies = new Map<string, MarkTally>();
     allSingers.forEach((singer) => {
       const marks = pastSessions
-        .filter((session) => isCalled(session, singer.participationId))
+        .filter((session) => isCalled(session, singer))
         .map((session) => markOf(session.rehearsalId, singer.participationId));
       tallies.set(singer.participationId, tallyMarks(marks));
     });
@@ -263,7 +263,7 @@ export const useAttendanceMatrix = (
     const marks: AttendanceMark[] = [];
     pastSessions.forEach((session) => {
       allSingers.forEach((singer) => {
-        if (!isCalled(session, singer.participationId)) return;
+        if (!isCalled(session, singer)) return;
         marks.push(markOf(session.rehearsalId, singer.participationId));
       });
     });
@@ -298,7 +298,7 @@ export const useAttendanceMatrix = (
       setDraft((previous) => {
         const next = new Map(previous);
         allSingers.forEach((singer) => {
-          if (!isCalled(session, singer.participationId)) return;
+          if (!isCalled(session, singer)) return;
           const key = cellKeyOf(rehearsalId, singer.participationId);
           if (resolveMark(previous, serverMarks, key) !== null) return;
           next.set(key, {

@@ -31,6 +31,7 @@ import type { RehearsalTargetType } from "../types";
 import { RehearsalTimelineRow } from "./components/RehearsalTimelineRow";
 import { RehearsalDelegatesCard } from "./components/RehearsalDelegatesCard";
 import { cn } from "@/shared/lib/utils";
+import { artistRoleLabel, isInstrumentalist } from "@/shared/lib/voiceTypes";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import {
@@ -104,6 +105,13 @@ export const RehearsalsTab = ({
   /* Only a named call can be empty by mistake. Tutti names nobody on purpose —
      flagging it gold would make the ordinary case look like an error. */
   const isCallEmpty = targetType !== "TUTTI" && invitedCount === 0;
+
+  const hasInstrumentalists = projectParticipations.some((participation) =>
+    isInstrumentalist(
+      artistMap.get(String(participation.artist))?.voice_type ??
+        participation.artist_voice_type,
+    ),
+  );
 
   // The day the runway leads to, named for what the ensemble is singing at: it
   // marks the calendar and closes the timeline, and both must say the same word.
@@ -520,6 +528,47 @@ export const RehearsalsTab = ({
               </div>
 
               <AnimatePresence mode="wait">
+                {/* A whole-cast call leaves the players out unless the conductor
+                    says otherwise — this is where they say it, and only on a
+                    project that has any: a switch for nobody is a question the
+                    form has no business asking. A named list needs no switch. */}
+                {targetType === "TUTTI" && hasInstrumentalists && (
+                  <motion.div
+                    key="tutti-players"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    className="border-t border-hairline pt-4"
+                  >
+                    <label className="flex cursor-pointer items-start gap-2.5 rounded-control px-1.5 py-1 transition-colors hover:bg-ethereal-ink/3">
+                      <Checkbox
+                        checked={formData.calls_instrumentalists}
+                        onChange={(event) =>
+                          setFormData({
+                            ...formData,
+                            calls_instrumentalists: event.target.checked,
+                          })
+                        }
+                        disabled={isSubmitting}
+                      />
+                      <span className="flex flex-col">
+                        <Text as="span" size="sm" color="graphite">
+                          {t(
+                            "projects.rehearsals.form.calls_instrumentalists",
+                            "Wezwij także instrumentalistów",
+                          )}
+                        </Text>
+                        <Caption color="muted">
+                          {t(
+                            "projects.rehearsals.form.calls_instrumentalists_hint",
+                            "Domyślnie próbuje sam chór; zaznacz na próbie z akompaniamentem.",
+                          )}
+                        </Caption>
+                      </span>
+                    </label>
+                  </motion.div>
+                )}
+
                 {targetType === "SECTIONAL" && (
                   <motion.div
                     key="sectional"
@@ -587,10 +636,12 @@ export const RehearsalsTab = ({
                             className="shrink-0"
                           >
                             {artist.voice_type
-                              ? t(`dashboard.layout.roles.${artist.voice_type}`)
-                              : artist.voice_type_display ||
-                                artist.voice_type ||
-                                ""}
+                              ? artistRoleLabel(
+                                  t,
+                                  artist.voice_type,
+                                  artist.instrument,
+                                )
+                              : artist.voice_type_display || ""}
                           </Eyebrow>
                         </button>
                       );

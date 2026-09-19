@@ -530,9 +530,7 @@ class AnnouncementQueue:
                     announcement.subject_id,
                 )
                 return []
-            sectional = rehearsal.invited_participations.filter(is_deleted=False)
-            if sectional.exists():
-                cast = sectional
+            cast = rehearsal.called_participations()
 
         return NotificationRecipientPolicy.in_conversation(cast)
 

@@ -116,7 +116,8 @@ class ArtistAdmin(admin.ModelAdmin):
     # screen above, which is also where a manager or crew member gets one.
     fields = (
         'user', 'first_name', 'last_name', 'email', 'phone_number',
-        'voice_type', 'is_active', 'sight_reading_skill', 'vocal_range_bottom', 'vocal_range_top',
+        'voice_type', 'instrument', 'is_active',
+        'sight_reading_skill', 'vocal_range_bottom', 'vocal_range_top',
     )
 
     def get_queryset(self, request):

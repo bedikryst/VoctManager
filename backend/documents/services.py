@@ -362,9 +362,9 @@ class EnsembleDirectoryService:
 
         me_artist = getattr(user, 'artist_profile', None)
         me = EnsembleMeDTO(
-            voice_type_display=(
-                me_artist.get_voice_type_display() if me_artist is not None else None
-            ),
+            # The word after the member's own name — their instrument for a
+            # player — the same one the identity card and the call sheet print.
+            voice_type_display=me_artist.role_label if me_artist is not None else None,
             is_active=bool(me_artist.is_active) if me_artist is not None else False,
             is_linked=me_artist is not None,
         )

@@ -29,6 +29,7 @@ import {
 
 import type { Artist } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
+import { artistRoleLabel } from "@/shared/lib/voiceTypes";
 import { onActivate } from "@/shared/lib/dom/a11y";
 import { formatLocalizedDateTime } from "@/shared/lib/time/intl";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -96,10 +97,7 @@ export const ArtistCard = React.memo(
       : null;
     const fullName = `${artist.first_name} ${artist.last_name}`;
     const voiceLabel = artist.voice_type
-      ? t(
-          `dashboard.layout.roles.${artist.voice_type}`,
-          artist.voice_type_display || artist.voice_type,
-        )
+      ? artistRoleLabel(t, artist.voice_type, artist.instrument)
       : artist.voice_type_display || "";
     const rangeText =
       artist.vocal_range_bottom || artist.vocal_range_top

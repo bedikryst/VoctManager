@@ -14,7 +14,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, Prefetch
 from django.utils import timezone
 
 from core.voice_labels import plain_voice_line_label
@@ -24,6 +24,7 @@ from roster.models import (
     Project,
     ProjectPieceCasting,
     Rehearsal,
+    VoiceType,
 )
 from roster.queries.voice_naming import project_voice_labels
 
@@ -99,17 +100,20 @@ def get_artist_dossier(artist: Artist) -> dict[str, Any]:
     reliability_base = present + late + absent
     attendance_rate = ((present + late) / reliability_base) if reliability_base else None
 
-    # A session that names nobody calls the whole ensemble — the same rule the
-    # schedule, the reminder and the invitation read it by. Counting only the
-    # named ones would report zero rehearsals for a singer whose project runs
-    # entirely on tutti calls, which is the normal shape of a concert.
+    # `Rehearsal.calling_q` — the same rule the schedule, the reminder and the
+    # invitation read by. Counting only the named sessions would report zero
+    # rehearsals for a singer whose project runs entirely on tutti calls, which
+    # is the normal shape of a concert; counting every tutti would credit an
+    # organist with the choir's evenings.
     rehearsals_invited = (
         Rehearsal.objects.filter(
             project_id__in={p.project_id for p in participations}, is_deleted=False
         )
         .filter(
-            Q(invited_participations__isnull=True)
-            | Q(invited_participations__in=participation_ids)
+            Rehearsal.calling_q(
+                participation_ids,
+                instrumentalist=artist.voice_type == VoiceType.INSTRUMENTALIST,
+            )
         )
         .distinct()
         .count()

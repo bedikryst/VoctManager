@@ -16,6 +16,7 @@ export const STATIC_ROLES = [
   t("dashboard.layout.roles.MEZ", "Mezzosopran"),
   t("dashboard.layout.roles.BAR", "Baryton"),
   t("dashboard.layout.roles.DIR", "Dyrygent"),
+  t("dashboard.layout.roles.INS", "Instrumentalista"),
   t("dashboard.layout.roles.guest", "Gość"),
 ];
 
@@ -35,7 +36,7 @@ export const STATIC_SPECIALTIES = [
 ];
 
 export const STATIC_SPECIALTY_DESCRIPTIONS = [
-  t("dashboard.layout.specialty_descriptions.INSTRUMENT", "Instrumentaliści zewnętrzni i obsługa instrumentów."),
+  t("dashboard.layout.specialty_descriptions.INSTRUMENT", "Strojenie, transport i obsługa instrumentów. Muzyk, który gra na koncercie, należy do rosteru jako artysta."),
   t("dashboard.layout.specialty_descriptions.LIGHT", "Reżyseria świateł, oprawa wizualna sceny."),
   t("dashboard.layout.specialty_descriptions.LOGISTICS", "Transport, scena, zabezpieczenie produkcji."),
   t("dashboard.layout.specialty_descriptions.OTHER", "Współpracownicy spoza standardowych kategorii."),

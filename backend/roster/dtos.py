@@ -46,6 +46,21 @@ def _validate_timezone(value: str) -> str:
     return value
 
 
+def validate_instrument(voice_type: str, instrument: str | None) -> None:
+    """An instrument belongs to an instrumentalist and to nobody else.
+
+    Shared by the create DTO and the manager's PATCH serializer so the two
+    write paths cannot drift: a player without an instrument would print as a
+    bare "Instrumentalist" on every sheet, and a singer carrying one would
+    print it as if it were their voice.
+    """
+    if voice_type == VoiceType.INSTRUMENTALIST:
+        if not instrument:
+            raise ValueError("instrument is required for an instrumentalist.")
+    elif instrument:
+        raise ValueError("instrument may only be set for an instrumentalist.")
+
+
 def _strip_required_text(value: object) -> object:
     if not isinstance(value, str):
         return value
@@ -117,6 +132,7 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
     first_name_vocative: str | None = Field(None, max_length=150)
     email: EmailStr
     voice_type: str = Field(..., min_length=2, max_length=5)
+    instrument: str | None = Field(None, max_length=60)
     phone_number: str | None = Field(None, max_length=32)
     sight_reading_skill: int | None = Field(None, ge=1, le=5)
     vocal_range_bottom: str | None = Field(None, max_length=5)
@@ -129,7 +145,10 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
     def normalize_required_text(cls, value: object) -> object:
         return _strip_required_text(value)
 
-    @field_validator("first_name_vocative", "phone_number", "vocal_range_bottom", "vocal_range_top", mode="before")
+    @field_validator(
+        "first_name_vocative", "instrument", "phone_number", "vocal_range_bottom", "vocal_range_top",
+        mode="before",
+    )
     @classmethod
     def normalize_optional_text(cls, value: object) -> object:
         return _blankable_optional_string(value)
@@ -138,6 +157,11 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
     @classmethod
     def validate_voice_type(cls, value: str) -> str:
         return _require_choice(value, VOICE_TYPE_VALUES, "voice_type")
+
+    @model_validator(mode="after")
+    def validate_instrument_for_voice_type(self) -> Self:
+        validate_instrument(self.voice_type, self.instrument)
+        return self
 
     @field_validator("language")
     @classmethod
@@ -590,6 +614,7 @@ class RehearsalCreateDTO(EnterpriseBaseDTO):
     location_id: UUID | None = None
     focus: str = Field(default='', max_length=255)
     is_mandatory: bool = True
+    calls_instrumentalists: bool = False
 
     @field_validator("timezone")
     @classmethod
@@ -612,6 +637,7 @@ class RehearsalUpdateDTO(EnterpriseBaseDTO):
     location_id: UUID | None = None
     focus: str | None = Field(None, max_length=255)
     is_mandatory: bool | None = None
+    calls_instrumentalists: bool | None = None
 
     @field_validator("timezone")
     @classmethod
@@ -625,7 +651,7 @@ class RehearsalUpdateDTO(EnterpriseBaseDTO):
 
     @model_validator(mode="after")
     def reject_null_for_required_fields(self):
-        for field_name in ("date_time", "timezone", "is_mandatory"):
+        for field_name in ("date_time", "timezone", "is_mandatory", "calls_instrumentalists"):
             if field_name in self.model_fields_set and getattr(self, field_name) is None:
                 raise ValueError(f"{field_name} cannot be null.")
         return self

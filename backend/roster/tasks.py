@@ -169,11 +169,9 @@ def _dispatch_rehearsal_reminders(now) -> int:
         .prefetch_related("invited_participations")
     )
     for reh in rehearsals:
-        participations = reh.invited_participations.all()
-        if not participations.exists():
-            participations = Participation.objects.filter(project=reh.project, is_deleted=False)
-
-        recipient_ids = NotificationRecipientPolicy.from_participations(participations)
+        recipient_ids = NotificationRecipientPolicy.from_participations(
+            reh.called_participations()
+        )
         if not recipient_ids:
             continue
 

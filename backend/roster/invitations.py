@@ -38,6 +38,7 @@ from .models import (
     Project,
     ProjectPieceCasting,
     Rehearsal,
+    VoiceType,
 )
 from .score_package_config import resolve_item_edition
 
@@ -54,13 +55,18 @@ _TimedRehearsal = tuple[datetime, InvitationRehearsalMetadata]
 class ProjectInvitationContext:
     """Everything the cast shares, resolved once per publication.
 
-    `rehearsals_for_all` are the rehearsals the whole cast is called to;
-    `rehearsals_by_participation` holds the ones restricted to named singers
+    `rehearsals_for_all` are the rehearsals the whole cast is called to, players
+    included; `rehearsals_for_choir` are whole-cast calls that leave the
+    instrumentalists out (`Rehearsal.calls_instrumentalists` unset);
+    `rehearsals_by_participation` holds the ones restricted to named people
     (`Rehearsal.invited_participations`), so a sectional never appears in the
-    schedule of someone who was not called to it.
+    schedule of someone who was not called to it. The three are the same rule
+    `Rehearsal.called_participations` applies, pre-split so one publication
+    resolves them once rather than per recipient.
     """
     program: tuple[str, ...] = ()
     rehearsals_for_all: tuple[_TimedRehearsal, ...] = ()
+    rehearsals_for_choir: tuple[_TimedRehearsal, ...] = ()
     rehearsals_by_participation: dict[UUID, list[_TimedRehearsal]] = field(
         default_factory=dict
     )
@@ -94,6 +100,7 @@ def build_invitation_context(project: Project) -> ProjectInvitationContext:
     )
 
     shared: list[_TimedRehearsal] = []
+    choir_only: list[_TimedRehearsal] = []
     personal: dict[UUID, list[_TimedRehearsal]] = defaultdict(list)
     for rehearsal in (
         Rehearsal.objects.filter(project=project)
@@ -104,7 +111,7 @@ def build_invitation_context(project: Project) -> ProjectInvitationContext:
         entry: _TimedRehearsal = (rehearsal.date_time, _rehearsal_payload(rehearsal))
         invited = list(rehearsal.invited_participations.all())
         if not invited:
-            shared.append(entry)
+            (shared if rehearsal.calls_instrumentalists else choir_only).append(entry)
             continue
         for participation in invited:
             personal[participation.id].append(entry)
@@ -121,6 +128,7 @@ def build_invitation_context(project: Project) -> ProjectInvitationContext:
     return ProjectInvitationContext(
         program=program,
         rehearsals_for_all=tuple(shared),
+        rehearsals_for_choir=tuple(choir_only),
         rehearsals_by_participation=dict(personal),
         voice_lines_by_participation={
             key: tuple(value) for key, value in voice_lines.items()
@@ -205,11 +213,19 @@ def build_invitation_metadata(
         program = context.program
         voice_lines = context.voice_lines_by_participation.get(participation.id, ())
         scope = context.voice_scope
+        # A player's invitation lists only the evenings that call them: the
+        # choir-only rehearsals would promise dates they are not expected at.
+        choir_only = (
+            ()
+            if participation.artist.voice_type == VoiceType.INSTRUMENTALIST
+            else context.rehearsals_for_choir
+        )
         rehearsals = tuple(
             payload
             for _, payload in sorted(
                 (
                     *context.rehearsals_for_all,
+                    *choir_only,
                     *context.rehearsals_by_participation.get(participation.id, ()),
                 ),
                 key=lambda entry: entry[0],

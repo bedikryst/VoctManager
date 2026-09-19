@@ -57,6 +57,7 @@ import { Materials } from "@/features/materials/Materials";
 import PiecePage from "@/features/materials/PiecePage";
 import ChoristerHubPage from "@/features/chorister-hub/ChoristerHubPage";
 
+import { artistRoleLabel } from "@/shared/lib/voiceTypes";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
@@ -111,9 +112,11 @@ const ArtistPreviewResolver = ({
       lastName: artist.last_name,
       fullName,
       avatarUrl: artist.avatar_thumb_url ?? null,
-      voiceLabel: artist.voice_type_display ?? null,
+      voiceLabel: artist.voice_type
+        ? artistRoleLabel(t, artist.voice_type, artist.instrument)
+        : (artist.voice_type_display ?? null),
     };
-  }, [artist]);
+  }, [artist, t]);
 
   if (isLoading) {
     return (

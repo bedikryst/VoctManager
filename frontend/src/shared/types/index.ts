@@ -30,7 +30,8 @@ export type VoiceType =
   | "TEN"
   | "BAR"
   | "BAS"
-  | "DIR";
+  | "DIR"
+  | "INS";
 
 export type ParticipationStatus = "INV" | "CON" | "DEC";
 export type AttendanceStatus = "PRESENT" | "LATE" | "ABSENT" | "EXCUSED";
@@ -114,6 +115,8 @@ export interface Artist extends BaseModel {
   phone_number?: string;
   voice_type: VoiceType;
   voice_type_display?: string;
+  /** What a player plays ("Organy"); always empty for a singer or conductor. */
+  instrument?: string;
   is_active: boolean;
   username?: string | null;
   is_manager?: boolean;
@@ -268,6 +271,8 @@ export interface Participation extends BaseModel {
   paid_at?: string | null;
   artist_name?: string;
   project_name?: string;
+  /** Raw code, for rules; the display beside it is for reading. */
+  artist_voice_type?: VoiceType;
   artist_voice_type_display?: string;
 }
 
@@ -286,6 +291,12 @@ export interface Rehearsal extends BaseModel {
   location?: LocationSnippet | null;
   focus?: string;
   is_mandatory: boolean;
+  /**
+   * Whether a whole-cast call (empty `invited_participations`) also reaches the
+   * project's instrumentalists. Off by default: the choir rehearses alone and
+   * the players join for the dress rehearsal. Ignored when people are named.
+   */
+  calls_instrumentalists?: boolean;
   invited_participations?: string[];
   absent_count?: number;
 }

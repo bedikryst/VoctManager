@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
 import { toastApiError } from "@/shared/api/errors";
+import { artistRoleLabel } from "@/shared/lib/voiceTypes";
 import { getCrewSpecialtyOption } from "@/features/crew/constants/crewSpecialties";
 import type {
   Artist,
@@ -191,10 +192,7 @@ export const useBudgetTab = (
             ? `${artist.first_name} ${artist.last_name}`.trim()
             : participation.artist_name?.trim() || unknownName,
           meta: artist?.voice_type
-            ? t(
-                `dashboard.layout.roles.${artist.voice_type}`,
-                artist.voice_type_display ?? artist.voice_type,
-              )
+            ? artistRoleLabel(t, artist.voice_type, artist.instrument)
             : (participation.artist_voice_type_display ?? ""),
           fee: parseFee(participation.fee),
           isSettled: Boolean(participation.is_paid),

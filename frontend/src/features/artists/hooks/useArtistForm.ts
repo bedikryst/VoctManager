@@ -9,8 +9,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import type { Artist, VoiceTypeOption } from "@/shared/types";
+import type { Artist, VoiceType, VoiceTypeOption } from "@/shared/types";
 import { applyFieldErrors, toastApiError } from "@/shared/api/errors";
+import { isInstrumentalist } from "@/shared/lib/voiceTypes";
 import {
   useCreateArtist,
   useToggleArtistStatus,
@@ -57,6 +58,7 @@ export const useArtistForm = (
       voice_type:
         artist?.voice_type ||
         (voiceTypes.length > 0 ? voiceTypes[0].value : "SOP"),
+      instrument: artist?.instrument || "",
       is_active: artist?.is_active ?? true,
       sight_reading_skill: artist?.sight_reading_skill
         ? String(artist.sight_reading_skill)
@@ -83,6 +85,7 @@ export const useArtistForm = (
         email: artist.email,
         phone_number: artist.phone_number || "",
         voice_type: artist.voice_type,
+        instrument: artist.instrument || "",
         is_active: artist.is_active,
         sight_reading_skill: artist.sight_reading_skill
           ? String(artist.sight_reading_skill)
@@ -100,6 +103,7 @@ export const useArtistForm = (
         email: "",
         phone_number: "",
         voice_type: voiceTypes.length > 0 ? voiceTypes[0].value : "SOP",
+        instrument: "",
         is_active: true,
         sight_reading_skill: "",
         vocal_range_bottom: "",
@@ -125,6 +129,12 @@ export const useArtistForm = (
       last_name: data.last_name.trim(),
       email: data.email.trim(),
       voice_type: data.voice_type,
+      // Blank for a singer rather than absent: a PATCH that stays silent on
+      // the field would leave a stale instrument on a row whose voice type
+      // just changed away from it.
+      instrument: isInstrumentalist(data.voice_type as VoiceType)
+        ? data.instrument?.trim() || ""
+        : "",
       phone_number: data.phone_number?.trim() || undefined,
       vocal_range_bottom: data.vocal_range_bottom?.trim() || undefined,
       vocal_range_top: data.vocal_range_top?.trim() || undefined,

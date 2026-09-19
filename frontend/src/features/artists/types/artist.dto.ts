@@ -6,23 +6,38 @@
 
 import { z } from "zod";
 
-import type { Artist } from "@/shared/types";
+import { isInstrumentalist } from "@/shared/lib/voiceTypes";
+import type { Artist, VoiceType } from "@/shared/types";
 
 // 1. Zod Schema defining both validation rules and the shape of the form
-export const artistFormSchema = z.object({
-  first_name: z.string().min(1, "artists.validation.first_name_required"),
-  first_name_vocative: z.string().optional(),
-  last_name: z.string().min(1, "artists.validation.last_name_required"),
-  email: z.string().email("artists.validation.invalid_email"),
-  voice_type: z.string().min(1, "artists.validation.voice_type_required"),
-  phone_number: z.string().optional(),
-  sight_reading_skill: z.string().optional(),
-  vocal_range_bottom: z.string().optional(),
-  vocal_range_top: z.string().optional(),
-  language: z.enum(["pl", "en", "fr"]),
-  salutation: z.enum(["F", "M", "N"]),
-  is_active: z.boolean(),
-});
+export const artistFormSchema = z
+  .object({
+    first_name: z.string().min(1, "artists.validation.first_name_required"),
+    first_name_vocative: z.string().optional(),
+    last_name: z.string().min(1, "artists.validation.last_name_required"),
+    email: z.string().email("artists.validation.invalid_email"),
+    voice_type: z.string().min(1, "artists.validation.voice_type_required"),
+    instrument: z.string().optional(),
+    phone_number: z.string().optional(),
+    sight_reading_skill: z.string().optional(),
+    vocal_range_bottom: z.string().optional(),
+    vocal_range_top: z.string().optional(),
+    language: z.enum(["pl", "en", "fr"]),
+    salutation: z.enum(["F", "M", "N"]),
+    is_active: z.boolean(),
+  })
+  // The server's `validate_instrument` rule, so the form says it before a
+  // round trip: a player without an instrument would print as a bare
+  // "Instrumentalist" on every sheet.
+  .refine(
+    (values) =>
+      !isInstrumentalist(values.voice_type as VoiceType) ||
+      Boolean(values.instrument?.trim()),
+    {
+      message: "artists.validation.instrument_required",
+      path: ["instrument"],
+    },
+  );
 
 export type ArtistFormValues = z.infer<typeof artistFormSchema>;
 
@@ -43,6 +58,8 @@ export interface ArtistCreateDTO {
   last_name: string;
   email: string;
   voice_type: string;
+  /** Sent only for an instrumentalist; the server refuses it on anyone else. */
+  instrument?: string;
   phone_number?: string;
   sight_reading_skill?: number | null;
   vocal_range_bottom?: string;

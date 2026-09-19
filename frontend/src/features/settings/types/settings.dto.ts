@@ -48,6 +48,7 @@ export interface UserMeDTO {
   profile: UserProfileDTO | null;
   voice_type?: string | null;
   voice_type_display?: string | null;
+  instrument?: string | null;
 }
 
 export interface UpdatePreferencesPayload {
