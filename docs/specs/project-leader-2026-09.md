@@ -1,11 +1,13 @@
 # Project leader ("Lider projektu") — promotion of the rehearsal delegate
 
-Status: **All stages (0–4, 3b) done and audited** (2026-09-19; none seen in the browser yet;
-`make migrate` pending for `roster/0052`, `roster/0053`, `roster/0054`, `notifications/0020`,
-`notifications/0021`, `messaging/0004`). The audit closed a debrief leak to the cast, a stale
-`led_by` that froze the rehearsal form, and the missing third dossier tile; it moved the debrief
-off the digest shelf and made every "who leads" line a bare name. What is left is the developer's
-look and the commit.
+Status: **All stages (0–4, 3b) done, audited and committed** (2026-09-19; `894b3a1`..`3c294d9`,
+split one commit per layer; none seen in the browser yet; `make migrate` pending on dev AND prod
+for `roster/0051`–`0054`, `notifications/0019`–`0021`, `messaging/0004`). The audit closed a
+debrief leak to the cast, a stale `led_by` that froze the rehearsal form, and the missing third
+dossier tile; it moved the debrief off the digest shelf and made every "who leads" line a bare
+name. Two gaps closed after it: the leader, delegation and debrief copy now exists in the pl/fr
+catalogs — it had been reaching Polish choristers in English — and the leaders card can change a
+live grant's scope instead of only re-granting over it. What is left is the developer's look.
 
 ## Context
 
@@ -66,8 +68,9 @@ Backend (`backend/roster/`):
   (~L42-45): copy says "leader of project X" instead of "asked to run rehearsals". English only
   in this stage. NB the premise "no project `.po` files" was wrong: `backend/locale/{pl,en,fr}`
   exist (~1070 msgids) — the delegation copy was simply never added to them in 2026-09, so a
-  Polish reader gets this e-mail/push in English. Separate task (polib, see memory
-  `reference_locale_files_editing`).
+  Polish reader got this e-mail/push in English. **Closed 2026-09-19** in `679375f`: 68 msgids
+  merged with polib and the tracked `.mo` files rebuilt in the same commit, because nothing in
+  the image runs `compilemessages`.
 
 Frontend:
 - Rename `features/projects/editors/tabs/components/RehearsalDelegatesCard.tsx` →
