@@ -1,8 +1,8 @@
 # Instrumentalists as Artists — implementation plan
 
-Status: IMPLEMENTED 2026-09-19 (stages 1–3), uncommitted, not yet verified in the browser. Decisions
-confirmed with the developer: existing crew instrumentalists are re-added by hand (no data migration);
-rehearsal call is a per-rehearsal flag.
+Status: IMPLEMENTED 2026-09-19 (stages 1–3), reviewed the same day and committed as `0dda81c`; not yet
+verified in the browser. Decisions confirmed with the developer: existing crew instrumentalists are
+re-added by hand (no data migration); rehearsal call is a per-rehearsal flag.
 
 ## What shipped, and where it differs from the plan below
 
@@ -29,6 +29,16 @@ rehearsal call is a per-rehearsal flag.
   `frontend/src/features/rehearsals/lib/attendanceStats.test.ts`.
 - Verified 2026-09-19: ruff + mypy clean on roster/core/notifications; 1000 backend tests OK;
   frontend typecheck, 220 vitest tests and `npm run build` OK.
+- Review pass, same day, found and fixed: an eighth copy of the call rule in
+  `queries/dossier_queries.py` (the HR card credited an organist with every choir sectional) — now
+  `calling_q`; the call sheet's per-reader check is `Rehearsal.calls_seat()` instead of its own copy;
+  `DICTIONARY_VERSION` bumped (the voice-type picker is persisted for a day, so without it the form
+  could not offer "Instrumentalista"); the cast balance rail filtered only `DIR` and listed
+  "Instrumentalista 1"; crew specialty descriptions pointed at a key catalogue that does not exist
+  (`crew.specialty_descriptions.*`) so EN/FR read the Polish fallback; `artistRoleLabel` applied to
+  the nav shell, the budget ledger, the artist preview bar and the Moja Karta membership card; the
+  personal sheet no longer prints "section of 1 singer" under a player; GDPR export carries the
+  instrument. Two more tests in `test_instrumentalist.py` (dossier count, `calls_seat`).
 
 ## Left for the developer
 
