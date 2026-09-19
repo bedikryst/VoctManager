@@ -43,6 +43,25 @@ export interface TimelineEvent {
    * take the roll call from.
    */
   iLead?: boolean;
+  /**
+   * Who was announced for this evening, explicit only — absent means the
+   * conductor, which the card renders as silence. Shown to everyone, so a
+   * singer knows who to expect at the front.
+   */
+  ledBy?: ScheduleLedBy | null;
+  /**
+   * This evening was announced as THIS reader's to run: `ledBy` is them, or
+   * nobody was named and they conduct the project. Different from `iLead`:
+   * a leader may take the roll of an evening the conductor kept, and the
+   * conductor's own timeline must not badge one handed to somebody else.
+   */
+  iStandInFront?: boolean;
+}
+
+/** `Rehearsal.led_by` as the server states it: id and name, nothing else. */
+export interface ScheduleLedBy {
+  artist_id: string;
+  name: string;
 }
 
 /** The artist's own attendance, pre-joined onto a rehearsal by the server. */
@@ -69,6 +88,10 @@ export interface ScheduleDashboardRehearsalItem {
    * it from a role, because a stand-in has none.
    */
   i_lead: boolean;
+  /** Explicit `led_by` only; null is the conductor. */
+  led_by: ScheduleLedBy | null;
+  /** `led_by` is this reader, or nobody is named and they conduct the project. */
+  i_stand_in_front: boolean;
   my_attendance: ScheduleAttendanceSnapshot | null;
   rehearsal: EnrichedRehearsal;
 }

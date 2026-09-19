@@ -72,6 +72,10 @@ export const buildOptimisticRehearsal = (
   is_mandatory: data.is_mandatory,
   calls_instrumentalists: data.calls_instrumentalists ?? false,
   invited_participations: data.invited_participations ?? [],
+  // The id is known; the name arrives with the refetch, and the row says
+  // nothing about the leader until then rather than guessing one.
+  led_by_artist_id: data.led_by_id ?? null,
+  led_by_name: null,
   absent_count: 0,
 });
 

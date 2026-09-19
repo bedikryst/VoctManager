@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
@@ -354,6 +355,34 @@ export const useRehearsalsData = () => {
     },
     [projectMap],
   );
+
+  /* ── Deep link: `?rehearsal=<id>` opens that evening ──────────────────
+     The debrief notification lands here; a nudge that dropped the manager on
+     the list would leave them hunting for the one evening it was about. The
+     param is consumed once the rehearsal is in hand and then removed, so a
+     later click on the rail is not undone by a stale address. It is dropped
+     unconsumed too, once the workspace has loaded without it: an id that names
+     nothing — a deleted evening, a pasted link — would otherwise sit in the
+     address for the rest of the session, re-asked on every render. */
+  const [searchParams, setSearchParams] = useSearchParams();
+  const wantedRehearsalId = searchParams.get("rehearsal");
+  useEffect(() => {
+    if (!wantedRehearsalId || isLoading) return;
+    const wanted = safeRehearsals.find(
+      (rehearsal) => String(rehearsal.id) === wantedRehearsalId,
+    );
+    if (wanted) {
+      goToRehearsal(String(wanted.project), String(wanted.id));
+    }
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        next.delete("rehearsal");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [wantedRehearsalId, isLoading, safeRehearsals, goToRehearsal, setSearchParams]);
 
   const handleMarkAllPresent = async (): Promise<void> => {
     if (!activeRehearsalId || invitedParticipations.length === 0) return;

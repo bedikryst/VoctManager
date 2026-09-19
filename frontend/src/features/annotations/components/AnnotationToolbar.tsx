@@ -5,7 +5,8 @@
  * contextual stroke weight + ink colour, what draws (stylus or finger), the note
  * display mode, the musical stamp palette (one group at a time — the catalogue
  * outgrew a flat grid), the write layer, and the "how does this work" panel. In
- * conductor mode the layer cycles choir → leader → private; in personal mode
+ * conductor mode the layer cycles choir → leader → private; in leader mode it
+ * toggles between the reader's own pencil and the choir; in personal mode
  * every mark lands on the user's own private layer (a static chip says so).
  *
  * The layer pill arms the NEXT mark and nothing else. Moving one that already
@@ -40,6 +41,7 @@ import {
   Trash2,
   Type,
   Undo2,
+  Users,
   ZoomIn,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -59,10 +61,14 @@ import {
 } from "../lib/useAnnotationTools";
 import { asWriteLayer, NEXT_WRITE_LAYER, writeLayerCopy } from "../lib/layers";
 import { groupOfStamp, STAMP_GROUPS, stampsInGroup, StampGlyph } from "../lib/stamps";
+import type { ScoreAnnotatorMode } from "../useScoreAnnotator";
 
 interface AnnotationToolbarProps extends AnnotationToolState {
-  /** conductor → choir/leader/private layer cycle; personal → fixed private layer. */
-  mode: "conductor" | "personal";
+  /**
+   * conductor → choir/leader/private layer cycle; leader → own pencil ⇄ choir
+   * toggle; personal → fixed private layer.
+   */
+  mode: ScoreAnnotatorMode;
   canDraw: boolean;
   annotationCount: number;
   /** How many of the visible marks THIS user may wipe (gates the trash). */
@@ -392,6 +398,40 @@ export const AnnotationToolbar = ({
           </button>
         ) : null}
 
+        {mode === "leader" &&
+          // A leader has two places to write and no ladder between them: their
+          // own pencil, or the choir's page. One tap flips the NEXT mark; the
+          // pill wears the choir's tone only while the choir is the target, so
+          // a glance says whether the whole ensemble is about to see this.
+          (layer === "shared" ? (
+            <button
+              type="button"
+              onClick={() => setLayer("personal")}
+              aria-label={layerCopy.shared.label}
+              title={layerCopy.shared.hint}
+              className={cn(
+                "flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
+                layerCopy.shared.tone,
+              )}
+            >
+              <Users size={14} aria-hidden="true" />
+              <span className="hidden sm:inline">{layerCopy.shared.short}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setLayer("shared")}
+              aria-label={t("annotations.layer.personal_hint", "Widoczne tylko dla Ciebie")}
+              title={t("annotations.layer.personal_hint", "Widoczne tylko dla Ciebie")}
+              className="flex h-9 items-center gap-1.5 rounded-full bg-ink-on-inverse/10 px-3 text-xs font-medium text-ink-on-inverse transition-colors hover:bg-ink-on-inverse/20"
+            >
+              <Lock size={12} aria-hidden="true" />
+              <span className="hidden sm:inline">
+                {t("annotations.layer.personal_short", "Moje")}
+              </span>
+            </button>
+          ))}
+
         {mode === "personal" && (
           // Personal mode writes to one fixed layer — say so instead of offering
           // a toggle that could suggest the choir might see these marks.
@@ -552,7 +592,7 @@ export const AnnotationToolbar = ({
               </div>
               {/* Said once, where the missing swatch is — the palette is short
                   enough that its absence would otherwise read as a bug. */}
-              {mode === "personal" && (
+              {mode !== "conductor" && (
                 <Caption color="ink-on-inverse-muted">
                   {t(
                     "annotations.ink_reserved",

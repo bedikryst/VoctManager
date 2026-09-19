@@ -4,7 +4,7 @@
  * @module features/annotations
  */
 
-export { useScoreAnnotator } from "./useScoreAnnotator";
+export { scoreAnnotatorModeFor, useScoreAnnotator } from "./useScoreAnnotator";
 export type {
   ScoreAnnotatorBindings,
   ScoreAnnotatorMode,

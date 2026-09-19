@@ -154,6 +154,14 @@ export interface MaterialsPiece {
    * turns a refusal to say into a claim about the person.
    */
   my_readiness: MaterialsReadinessStatus | null;
+  /**
+   * This reader's pencil reaches the choir's `shared` marking layer on this
+   * music — a project leader's opt-in scope (`can_mark_for_choir`), resolved
+   * per PIECE because that is the shape of the server's write rule. False for
+   * every singer, and for a manager too: a manager writes everywhere and the
+   * stand already knows that from the role.
+   */
+  may_mark_for_choir: boolean;
 }
 
 export interface MaterialsProgramItem {

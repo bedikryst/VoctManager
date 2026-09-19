@@ -34,5 +34,12 @@ export interface LeadSheet {
    * evening, and the server refuses it to a stand-in.
    */
   is_manager: boolean;
+  /**
+   * Who was announced for this evening (`Rehearsal.led_by`), explicit only —
+   * null is the conductor. The page compares it with the reader: their own
+   * evening reads "Prowadzisz", somebody else's reads as the register they
+   * are covering.
+   */
+  led_by: { artist_id: string; name: string } | null;
   cast: LeadSheetSeat[];
 }

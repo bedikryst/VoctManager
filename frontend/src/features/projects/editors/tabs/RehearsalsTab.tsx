@@ -29,7 +29,10 @@ import { useRehearsalsTab } from "../hooks/useRehearsalsTab";
 import { getEventMomentPresentation } from "../../lib/projectPresentation";
 import type { RehearsalTargetType } from "../types";
 import { RehearsalTimelineRow } from "./components/RehearsalTimelineRow";
-import { RehearsalDelegatesCard } from "./components/RehearsalDelegatesCard";
+import {
+  ProjectLeadersCard,
+  type LeaderCandidate,
+} from "./components/ProjectLeadersCard";
 import { cn } from "@/shared/lib/utils";
 import { artistRoleLabel, isInstrumentalist } from "@/shared/lib/voiceTypes";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
@@ -61,6 +64,8 @@ const REHEARSAL_DEFAULT_TIME = "18:00";
 const REHEARSAL_DEFAULT_LENGTH_MINUTES = 120;
 const DEFAULT_TIMEZONE = "Europe/Warsaw";
 const MINUTES_PER_DAY = 24 * 60;
+/** The "Prowadzi" select's value for the resting case (`led_by` null). */
+const CONDUCTOR_LEADS = "__conductor__";
 
 interface RehearsalsTabProps {
   projectId: string;
@@ -91,6 +96,7 @@ export const RehearsalsTab = ({
     projectParticipations,
     artistMap,
     locations,
+    rollCallLeaders,
     handleSubmit,
     handleEditClick,
     handleCancelEdit,
@@ -254,28 +260,31 @@ export const RehearsalsTab = ({
 
   const concertTitle = project?.title ?? "";
 
-  // Who a rehearsal is realistically handed to: the people already singing it.
-  // A stand-in from outside the cast is possible on the server and rare in life,
-  // so the picker offers the cast rather than the whole roster — a list of every
-  // member would bury the four names this is actually about.
-  const delegateCandidates = useMemo(
-    () =>
-      projectParticipations
-        .map((participation) => {
-          const artist = artistMap.get(String(participation.artist));
-          return artist
-            ? {
-                id: String(artist.id),
-                name: `${artist.first_name} ${artist.last_name}`,
-              }
-            : null;
-        })
-        .filter((candidate): candidate is { id: string; name: string } =>
-          candidate !== null,
-        )
-        .sort((a, b) => a.name.localeCompare(b.name, "pl")),
-    [artistMap, projectParticipations],
-  );
+  // Who can lead this project: the cast first, because that is who it is
+  // usually handed to, then every other active member — the intended leader
+  // may sit a concert out and still run its rehearsals (the server allows a
+  // leader without a seat). Instrumentalists never: they are not in front of
+  // the choir.
+  const leaderCandidates = useMemo<LeaderCandidate[]>(() => {
+    const castIds = new Set(
+      projectParticipations.map((participation) => String(participation.artist)),
+    );
+    const byName = (a: LeaderCandidate, b: LeaderCandidate): number =>
+      a.name.localeCompare(b.name, "pl");
+    const candidates: LeaderCandidate[] = [];
+    for (const artist of artistMap.values()) {
+      if (!artist.is_active || isInstrumentalist(artist.voice_type)) continue;
+      candidates.push({
+        id: String(artist.id),
+        name: `${artist.first_name} ${artist.last_name}`,
+        inCast: castIds.has(String(artist.id)),
+      });
+    }
+    return [
+      ...candidates.filter((candidate) => candidate.inCast).sort(byName),
+      ...candidates.filter((candidate) => !candidate.inCast).sort(byName),
+    ];
+  }, [artistMap, projectParticipations]);
 
   const renderTimeline = (
     entries: typeof upcomingTimeline,
@@ -476,6 +485,39 @@ export const RehearsalsTab = ({
               }
               disabled={isSubmitting}
             />
+
+            {/* Who stands in front. Asked only when the answer can vary — a
+                project with no leader has one possible value, and a field
+                stating it would be a control competing with the save. The
+                conductor is a real option here (Radix refuses an empty item
+                value), mapped to "" in the form state. */}
+            {rollCallLeaders.length > 0 && (
+              <Select
+                label={t("projects.rehearsals.form.led_by", "Prowadzi")}
+                leftIcon={<UserCheck aria-hidden="true" />}
+                value={formData.led_by_id || CONDUCTOR_LEADS}
+                onValueChange={(next) =>
+                  setFormData({
+                    ...formData,
+                    led_by_id: next === CONDUCTOR_LEADS ? "" : next,
+                  })
+                }
+                disabled={isSubmitting}
+                options={[
+                  {
+                    value: CONDUCTOR_LEADS,
+                    label: t(
+                      "projects.rehearsals.form.led_by_conductor",
+                      "Dyrygent",
+                    ),
+                  },
+                  ...rollCallLeaders.map((leader) => ({
+                    value: leader.artist,
+                    label: leader.artist_name,
+                  })),
+                ]}
+              />
+            )}
 
             {/* No second surface for this group: a card inside a card is what
                 made the form read as two stacked panels. A hairline and an
@@ -707,11 +749,11 @@ export const RehearsalsTab = ({
           )}
         </SectionCard>
 
-        {/* ── Who runs them when it is not a manager ───────────────────── */}
+        {/* ── The project's leader, when it is not a manager ───────────── */}
         <div className="lg:col-span-12">
-          <RehearsalDelegatesCard
+          <ProjectLeadersCard
             projectId={projectId}
-            candidates={delegateCandidates}
+            candidates={leaderCandidates}
           />
         </div>
       </div>

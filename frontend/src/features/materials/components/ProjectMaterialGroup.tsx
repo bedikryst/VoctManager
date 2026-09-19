@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Archive, BookOpen, Briefcase, CalendarDays, EyeOff, Wand2 } from "lucide-react";
 
 import { ProjectScoreBook } from "@/features/projects/components/ProjectScoreBook";
+import { scoreAnnotatorModeFor } from "@/features/annotations";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager } from "@/shared/auth/rbac";
 import { CompletionRing } from "@/shared/ui/composites/CompletionRing";
@@ -110,7 +111,7 @@ export const ProjectMaterialGroup = ({
               <Eyebrow color="gold">
                 {group.isConducting
                   ? t("materials.project.conducting_badge", "Prowadzisz")
-                  : t("materials.project.standing_in_badge", "Zastępstwo")}
+                  : t("materials.project.standing_in_badge", "Lider")}
               </Eyebrow>
             </div>
           </div>
@@ -173,10 +174,17 @@ export const ProjectMaterialGroup = ({
             isOpen={isBookOpen}
             // The pencil follows the ROLE, not the podium. Standing in front of
             // the choir — whether as the named conductor or as a stand-in — does
-            // not make someone a manager, and only a manager may write on the
-            // choir's layers. Offering that toolbar to anyone else armed a pen
-            // the server then refused, which reads as the app losing marks.
-            mode={isManager(user) ? "conductor" : "personal"}
+            // not make someone a manager. The one exception is a leader whose
+            // grant opens the choir's layer, and the book is one stand over the
+            // whole programme, so it is armed only when EVERY piece in it is
+            // theirs to mark for the choir — a pill the server would refuse on
+            // half the pages reads as the app losing marks.
+            mode={scoreAnnotatorModeFor({
+              isManager: isManager(user),
+              mayMarkForChoir:
+                group.program.length > 0 &&
+                group.program.every((item) => item.piece.may_mark_for_choir),
+            })}
             onClose={() => setBookOpen(false)}
           />
         </>

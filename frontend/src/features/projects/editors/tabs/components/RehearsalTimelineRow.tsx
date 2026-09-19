@@ -14,7 +14,7 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Edit2, Trash2, Users } from "lucide-react";
+import { Edit2, Trash2, UserCheck, Users } from "lucide-react";
 
 import type { RehearsalTimelineEntry } from "../../hooks/useRehearsalsTab";
 import { cn } from "@/shared/lib/utils";
@@ -177,20 +177,38 @@ export const RehearsalTimelineRow = ({
 
           {/* Who is called is metadata, not status: it sits at the weight of the
               venue it belongs beside. As a green success chip on every row it
-              only competed with the facts. */}
-          <div className="flex items-center gap-1.5">
-            <Users
-              size={12}
-              className="shrink-0 text-ethereal-graphite/40"
-              aria-hidden="true"
-            />
-            <Caption color="muted">
-              {isTutti
-                ? t("projects.rehearsals.status.tutti", "Tutti")
-                : t("projects.rehearsals.status.invited", "Wezwanych: {{count}}", {
-                    count: invitedCount,
+              only competed with the facts. Who leads sits at the same weight,
+              and only when it is not the conductor — the resting case says
+              nothing. */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="flex items-center gap-1.5">
+              <Users
+                size={12}
+                className="shrink-0 text-ethereal-graphite/40"
+                aria-hidden="true"
+              />
+              <Caption color="muted">
+                {isTutti
+                  ? t("projects.rehearsals.status.tutti", "Tutti")
+                  : t("projects.rehearsals.status.invited", "Wezwanych: {{count}}", {
+                      count: invitedCount,
+                    })}
+              </Caption>
+            </span>
+            {rehearsal.led_by_name && (
+              <span className="flex items-center gap-1.5">
+                <UserCheck
+                  size={12}
+                  className="shrink-0 text-ethereal-gold/70"
+                  aria-hidden="true"
+                />
+                <Caption color="muted">
+                  {t("projects.rehearsals.status.led_by", "Prowadzi: {{name}}", {
+                    name: rehearsal.led_by_name,
                   })}
-            </Caption>
+                </Caption>
+              </span>
+            )}
           </div>
         </div>
       )}

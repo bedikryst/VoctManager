@@ -23,6 +23,12 @@
     },
     "guide": {
       "open": "How markings work",
+      "leader": {
+        "title": "Two reaches for your marks",
+        "lede": "What stays with you, and what the whole choir will see.",
+        "choir_title": "Mine, or for the choir",
+        "choir_body": "The switch beside the tools decides where the NEXT mark goes: \"Mine\" is seen by you alone, \"Choir\" by everyone singing this piece. You can change or erase only your own marks — the conductor's stay his."
+      },
       "personal": {
         "title": "Your own marks",
         "lede": "Briefly: what happens to whatever you write here.",
@@ -972,7 +978,15 @@
       "most_sung_lines": "Most-sung voice parts",
       "no_casting": "Not cast in any pieces",
       "pending_activation_desc": "The invitation was sent, but this artist hasn't activated their platform account yet.",
-      "upcoming": "Upcoming"
+      "upcoming": "Upcoming",
+      "leadership": {
+        "title": "Leadership",
+        "projects": "Projects led",
+        "rehearsals": "Rehearsals led",
+        "debriefs": "Debriefs written",
+        "current": "ongoing",
+        "ended": "ended"
+      }
     },
     "duplicates": {
       "title": "Possible duplicates",
@@ -2722,7 +2736,7 @@
     "project": {
       "archived_badge": "Archive",
       "conducting_badge": "You conduct",
-      "standing_in_badge": "Standing in",
+      "standing_in_badge": "Leader",
       "event": "Event:",
       "readiness_caption": "{{ready}} of {{total}} parts ready",
       "readiness_withheld": "Readiness hidden",
@@ -3039,8 +3053,10 @@
       "fallback": "Notification",
       "ANNOUNCEMENT_PENDING": "Announcement queue",
       "SITE_COPY_PROPOSED": "Copy desk",
-      "REHEARSAL_DELEGATED": "You are running rehearsals",
-      "REHEARSAL_DELEGATION_ENDED": "Standing in has ended"
+      "REHEARSAL_DELEGATED": "You lead this project",
+      "REHEARSAL_DELEGATION_ENDED": "Leadership ended",
+      "REHEARSAL_LEAD_ASSIGNED": "You lead a rehearsal",
+      "REHEARSAL_DEBRIEF_POSTED": "Rehearsal debrief"
     },
     "status": {
       "attendance": {
@@ -3159,10 +3175,10 @@
       }
     },
     "delegation": {
-      "eyebrow": "You are running rehearsals",
-      "asked_by": "Asked by {{name}}",
-      "asked_by_lede": "{{name}} has asked you to run this project's rehearsals.",
-      "asked_lede": "You have been asked to run this project's rehearsals.",
+      "eyebrow": "You lead this project",
+      "asked_by": "Appointed by {{name}}",
+      "asked_by_lede": "{{name}} has made you the leader of this project.",
+      "asked_lede": "You are now the leader of this project.",
       "opens": "What this opens",
       "scope_marks": "The conductor's markings",
       "scope_marks_body": "On this project's music you will see the cues the conductor wrote for whoever runs the rehearsal. Nobody else in the choir sees them.",
@@ -3170,6 +3186,8 @@
       "scope_roll_call_body": "You can take the roll call at this project's rehearsals — for other singers too.",
       "scope_materials": "Materials",
       "scope_materials_body": "You can open the scores and the programme, even if you are not singing in it.",
+      "scope_choir_marks": "Markings for the choir",
+      "scope_choir_marks_body": "What you write on the “Visible to the choir” layer, every singer in this project sees — just like the conductor's markings.",
       "next": "Next rehearsal: {{when}}",
       "until": "Until {{when}}",
       "until_close": "Until the project closes",
@@ -3282,38 +3300,47 @@
   },
   "projects": {
     "delegates": {
-      "title": "Running rehearsals",
-      "description": "Someone outside the managers who will run this project's rehearsals in your place.",
-      "add": "Hand the rehearsals to someone",
+      "title": "Project leader",
+      "description": "Someone outside the managers who runs this project's rehearsals on your behalf. Usually one person for the whole programme — but you decide at every concert.",
+      "add": "Appoint a leader",
+      "badge": "Leader",
       "revoke": "Revoke",
       "until": "until {{date}}",
       "until_project_ends": "until the project closes",
       "empty": {
-        "title": "Nobody is standing in",
+        "title": "This project has no leader",
         "description": "You and the other managers run the rehearsals."
       },
       "scope": {
         "marks": "Sees your notes for the rehearsal leader",
         "marks_hint": "The “For the leader” layer only. Your private notes stay private.",
-        "marks_short": "Notes",
         "roll_call": "Takes the roll call",
         "roll_call_hint": "May mark the whole choir, not only themselves.",
-        "roll_call_short": "Attendance",
         "materials": "Opens the project's materials",
         "materials_hint": "Needed when this person is not singing in the programme.",
-        "materials_short": "Materials"
+        "choir_marks": "Writes markings for the choir",
+        "choir_marks_hint": "Writes on the “Visible to the choir” layer — the official markings every singer sees. Off by default.",
+        "choir_marks_granted": "Writes markings for the choir",
+        "without_marks": "no notes",
+        "without_roll_call": "no attendance",
+        "without_materials": "no materials",
+        "limited": "Limited scope: {{missing}}"
       },
       "form": {
-        "person": "Who will run them",
+        "person": "Who will lead",
         "person_placeholder": "Choose a person",
+        "person_locked": "Leader",
+        "person_locked_hint": "To change the person, end this appointment and name somebody else.",
+        "others_divider": "— Other members —",
+        "scopes_toggle": "Scope (advanced)",
         "expires": "Until when (optional)",
         "expires_hint": "Empty = until the project closes.",
         "note": "Note (optional)",
-        "note_placeholder": "e.g. standing in 10–24 December",
-        "submit": "Hand over the rehearsals"
+        "note_placeholder": "e.g. while I am away 10–24 December",
+        "submit": "Appoint the leader"
       },
       "confirm": {
-        "title": "Revoke this delegation?",
+        "title": "Remove this leader?",
         "description": "{{name}} will lose access to this project's notes and attendance. A copy already downloaded to their device stays there until the app's storage is cleared."
       }
     },
@@ -3969,6 +3996,7 @@
       "facts": {
         "aria": "Edit event details",
         "conductor": "Conductor",
+        "leader": "Leader",
         "title": "Details",
         "venue": "Venue",
         "onsite_contact": "On-site contact",
@@ -4099,6 +4127,8 @@
       "form": {
         "calls_instrumentalists": "Also call the instrumentalists",
         "calls_instrumentalists_hint": "By default the choir rehearses alone; tick this for a rehearsal with accompaniment.",
+        "led_by": "Led by",
+        "led_by_conductor": "Conductor",
         "date_time": "Date and time *",
         "end_time": "Rehearsal ends",
         "focus": "Rehearsal plan / repertoire",
@@ -4136,6 +4166,7 @@
         "optional": "Optional",
         "tutti": "Tutti",
         "invited": "Called: {{count}}",
+        "led_by": "Led by {{name}}",
         "tutti_count": "Whole ensemble — {{count}} so far",
         "tutti_empty_cast": "Whole ensemble — the cast joins later"
       },
@@ -4337,6 +4368,7 @@
       "density": "Roster view",
       "density_cards": "Roll-call cards",
       "density_list": "List",
+      "led_by": "Led by {{name}}",
       "no_invited_desc": "Not a single singer is on this rehearsal. Check the project cast.",
       "no_invited_title": "Nobody was summoned",
       "only_unmarked": "Unmarked only",
@@ -4346,13 +4378,25 @@
     },
     "lead": {
       "back": "Schedule",
-      "role": "Standing in",
+      "role": "Project leader",
       "title": "You are running",
       "title_highlight": "this rehearsal.",
+      "covering_title": "Run by",
+      "focus_label": "Rehearsal focus",
+      "focus_placeholder": "What you are working on",
+      "focus_empty": "Add a focus",
+      "debrief": {
+        "title": "After the rehearsal",
+        "placeholder": "A few sentences for the conductor: what stands, what needs another pass, who was missing.",
+        "submit": "Send to the conductor",
+        "update": "Save changes",
+        "saved": "Saved. The conductor has been told.",
+        "save_error": "The debrief could not be saved."
+      },
       "loading": "Opening the register...",
       "gone": {
         "title": "This rehearsal is no longer yours",
-        "description": "The delegation was revoked, or the rehearsal is gone. Ask a manager if this is a mistake."
+        "description": "You no longer lead this project, or the rehearsal is gone. Ask a manager if this is a mistake."
       }
     },
     "pulse": {
@@ -4665,6 +4709,7 @@
       },
       "lead_action": "Take the roll call",
       "leading_badge": "You run this",
+      "led_by": "Led by {{name}}",
       "no_location": "None",
       "optional": "Optional",
       "range": {
@@ -4927,8 +4972,10 @@
         "SYSTEM_ALERT": "System Maintenance or Alert",
         "ANNOUNCEMENT_PENDING": "Unannounced changes waiting",
         "SITE_COPY_PROPOSED": "Proposed changes to the site's text",
-        "REHEARSAL_DELEGATED": "Asked to run rehearsals",
-        "REHEARSAL_DELEGATION_ENDED": "No longer running rehearsals"
+        "REHEARSAL_DELEGATED": "Made project leader",
+        "REHEARSAL_DELEGATION_ENDED": "Project leadership ended",
+        "REHEARSAL_LEAD_ASSIGNED": "Rehearsal handed to you",
+        "REHEARSAL_DEBRIEF_POSTED": "Rehearsal debrief"
       },
       "unsubscribe_modal": {
         "description": "You will no longer receive push notifications on this device. You can turn them back on at any time.",
@@ -4961,6 +5008,7 @@
         "materials": "Materials & reminders",
         "safety_net": "Unsent announcements",
         "site_copy": "Copy desk",
+        "debriefs": "After a rehearsal",
         "team": "Team operations"
       },
       "type_desc": {
@@ -4986,8 +5034,10 @@
         "REHEARSAL_SCHEDULED": "A new rehearsal joins the schedule",
         "REHEARSAL_CANCELLED": "A rehearsal is called off",
         "MESSAGE_RECEIVED": "A reply in your conversation",
-        "REHEARSAL_DELEGATED": "Somebody has asked you to run a project's rehearsals",
-        "REHEARSAL_DELEGATION_ENDED": "The rehearsals have gone back to somebody else"
+        "REHEARSAL_DELEGATED": "Somebody has made you the leader of a project",
+        "REHEARSAL_DELEGATION_ENDED": "You no longer lead a project",
+        "REHEARSAL_LEAD_ASSIGNED": "The conductor has put you in front of the choir for one rehearsal",
+        "REHEARSAL_DEBRIEF_POSTED": "The leader has written up how a rehearsal went"
       },
       "restore_recommended": "Restore recommended",
       "customized_hint": "Customized — differs from the recommended default",
@@ -5007,13 +5057,15 @@
         "materials": "New scores and recordings, plus reminders shortly before a rehearsal or concert.",
         "safety_net": "The one notification about something that has not been done yet: changes are waiting in the queue and the cast still doesn't know. That is why it goes to email too.",
         "site_copy": "Someone has been through the site's copy desk and left proposals to review. One message per sitting, not per change — which is why it also goes to email.",
+        "debriefs": "The leader writes up how a rehearsal went. Written once, and only for an evening somebody else ran — which is why it arrives straight away rather than in the daily digest, and why it also goes to email.",
         "team": "Responses to invitations, attendance updates and absence requests. The same events the daily digest below gathers up."
       },
       "groups_email_off": {
         "commitments": "You will not get an email when a rehearsal or concert time changes. The app still shows everything — but only once you open it.",
         "messages": "You will not get an email when someone writes to you. The message will be waiting in the app.",
         "safety_net": "You will not get an email when an announcement queue is left unsent. The reminder will stay in the app — that is, where it only reaches you if you were opening it anyway.",
-        "site_copy": "You will not get an email when someone leaves proposals at the copy desk. The notification will stay in the app — and the proposals will wait until you look."
+        "site_copy": "You will not get an email when someone leaves proposals at the copy desk. The notification will stay in the app — and the proposals will wait until you look.",
+        "debriefs": "You will not get an email when a leader writes up the rehearsal they ran. The text will wait in the app, on that rehearsal."
       },
       "details_show": "Details ({{n}})",
       "details_hide": "Hide details",

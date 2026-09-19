@@ -49,8 +49,13 @@ const IDB_KEY = "client";
  * client now accumulates itself. A restored pre-window snapshot paints before
  * any fetch can correct it, so the channel banner would read `pinned_messages`
  * off an object that has none.
+ *
+ * 2026-09-project-leaders: `Project` gained `leaders`. Additive, so nothing
+ * crashes without it — but the facts card reads its absence as "no leader",
+ * which is a wrong fact rather than a missing one, and a snapshot restored
+ * offline would keep saying it.
  */
-export const QUERY_CACHE_BUSTER = "2026-08-windowed-conversations";
+export const QUERY_CACHE_BUSTER = "2026-09-rehearsal-led-by";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

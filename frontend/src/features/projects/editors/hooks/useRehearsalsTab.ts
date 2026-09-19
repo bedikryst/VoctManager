@@ -40,6 +40,10 @@ import {
   useUpdateRehearsal,
 } from "../../api/project.queries";
 import {
+  useProjectDelegates,
+  type RehearsalDelegate,
+} from "../../api/project.delegates";
+import {
   compareProjectDateAsc,
   isPastProjectDate,
 } from "../../lib/projectPresentation";
@@ -82,6 +86,12 @@ export interface UseRehearsalsTabResult {
   projectParticipations: Participation[];
   artistMap: Map<string, Artist>;
   locations: Location[];
+  /**
+   * The project's leaders who may take the roll call — the only people a
+   * rehearsal can name as standing in front besides the conductor. Empty on a
+   * project with none, and the form then asks nothing.
+   */
+  rollCallLeaders: RehearsalDelegate[];
   handleSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   handleEditClick: (rehearsal: Rehearsal) => void;
   handleCancelEdit: () => void;
@@ -169,6 +179,7 @@ const EMPTY_LOCATIONS: Location[] = [];
 const EMPTY_PARTICIPATIONS: Participation[] = [];
 const EMPTY_PROJECTS: Project[] = [];
 const EMPTY_REHEARSALS: Rehearsal[] = [];
+const EMPTY_DELEGATES: RehearsalDelegate[] = [];
 
 export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
   const { t } = useTranslation();
@@ -178,11 +189,21 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
   const participationsQuery = useProjectParticipations(projectId);
   const rehearsalsQuery = useProjectRehearsals(projectId);
   const locationsDataQuery = useLocations();
+  const delegatesQuery = useProjectDelegates(projectId);
   const projects = projectsQuery.data ?? EMPTY_PROJECTS;
   const artists = artistsQuery.data ?? EMPTY_ARTISTS;
   const participations = participationsQuery.data ?? EMPTY_PARTICIPATIONS;
   const rehearsals = rehearsalsQuery.data ?? EMPTY_REHEARSALS;
   const locationsData = locationsDataQuery.data ?? EMPTY_LOCATIONS;
+  const delegates = delegatesQuery.data ?? EMPTY_DELEGATES;
+
+  // The list is live rows only (the server recomputes that on every read), so
+  // the scope is the one filter left: the register refuses a leader without it,
+  // and the form must not offer a name the save would then reject.
+  const rollCallLeaders = useMemo(
+    () => delegates.filter((delegate) => delegate.can_take_roll_call),
+    [delegates],
+  );
 
   const project =
     projects.find((candidate) => String(candidate.id) === String(projectId)) ??
@@ -208,6 +229,7 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
     focus: "",
     is_mandatory: true,
     calls_instrumentalists: false,
+    led_by_id: "",
   });
 
   const [targetType, setTargetType] = useState<RehearsalTargetType>("TUTTI");
@@ -347,6 +369,7 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
       focus: "",
       is_mandatory: true,
       calls_instrumentalists: false,
+      led_by_id: "",
     });
     setTargetType("TUTTI");
     setSelectedSections([]);
@@ -380,6 +403,7 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
         focus: rehearsal.focus || "",
         is_mandatory: rehearsal.is_mandatory ?? true,
         calls_instrumentalists: rehearsal.calls_instrumentalists ?? false,
+        led_by_id: rehearsal.led_by_artist_id ?? "",
       });
 
       const invitedIds = rehearsal.invited_participations?.map(String) || [];
@@ -458,6 +482,9 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
         is_mandatory: formData.is_mandatory,
         calls_instrumentalists: formData.calls_instrumentalists,
         invited_participations: invitedParticipants,
+        // Always sent: "" is the conductor, and null is how the API reads a
+        // leader being taken off an evening on edit.
+        led_by_id: formData.led_by_id || null,
       };
 
       if (isEditing && editingRehearsalId) {
@@ -556,6 +583,7 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
     projectParticipations,
     artistMap,
     locations,
+    rollCallLeaders,
     handleSubmit,
     handleEditClick,
     handleCancelEdit,

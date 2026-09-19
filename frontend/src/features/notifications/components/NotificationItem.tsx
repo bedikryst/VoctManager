@@ -23,6 +23,7 @@ import {
   ClipboardCheck,
   MessageCircle,
   Megaphone,
+  NotebookPen,
   PencilLine,
   UserCheck,
   UserMinus,
@@ -62,6 +63,17 @@ const materialKindLabel = (t: TFunc, kind?: string): string =>
   kind === "score" || kind === "recording"
     ? t(`notifications.materialKinds.${kind}`)
     : "";
+
+/** The plural section name for an S/A/T/B code, as the sectional form spells
+ *  it; an unknown code renders as itself rather than as a hole. */
+const SECTION_KEYS: Record<string, string> = {
+  S: "projects.rehearsals.voices.sopranos",
+  A: "projects.rehearsals.voices.altos",
+  T: "projects.rehearsals.voices.tenors",
+  B: "projects.rehearsals.voices.basses",
+};
+const sectionName = (t: TFunc, code: string): string =>
+  SECTION_KEYS[code] ? t(SECTION_KEYS[code], code) : code;
 
 /** Verb phrase for a roster status code (attendance or RSVP). */
 const statusPhrase = (
@@ -202,9 +214,9 @@ const describe = (
         detail: notification.metadata.focus || undefined,
       };
     case "REHEARSAL_DELEGATED": {
-      // The three scopes are the whole point, so the row lists the ones that
-      // were actually granted. A scope withheld contributes nothing: the chip
-      // IS the power, and there is no greyed-out version of a locked door.
+      // The scopes are the whole point, so the row lists the ones that were
+      // actually granted. A scope withheld contributes nothing: the chip IS
+      // the power, and there is no greyed-out version of a locked door.
       const scopes = [
         notification.metadata.can_see_leader_marks
           ? t("notifications.delegation.scope_marks", "Oznaczenia dyrygenta")
@@ -215,13 +227,16 @@ const describe = (
         notification.metadata.can_open_materials
           ? t("notifications.delegation.scope_materials", "Materiały")
           : null,
+        notification.metadata.can_mark_for_choir
+          ? t("notifications.delegation.scope_choir_marks", "Uwagi dla chóru")
+          : null,
       ].filter((scope): scope is string => scope !== null);
       return {
         title: notification.metadata.project_name,
         context: notification.metadata.granted_by_name
           ? t("notifications.delegation.asked_by", {
               name: notification.metadata.granted_by_name,
-              defaultValue: "Poprosił(a) {{name}}",
+              defaultValue: "Mianował(a) {{name}}",
             })
           : undefined,
         detail: notification.metadata.note || undefined,
@@ -229,9 +244,37 @@ const describe = (
       };
     }
     case "REHEARSAL_DELEGATION_ENDED":
-      // "No longer running rehearsals" is already the eyebrow — the project
-      // name under it says everything that is left to say.
+      // "Leadership ended" is already the eyebrow — the project name under it
+      // says everything that is left to say.
       return { title: notification.metadata.project_name };
+    case "REHEARSAL_LEAD_ASSIGNED": {
+      // The date is the message. A sectional names its sections as chips —
+      // the one fact that changes what the reader prepares; a tutti has none.
+      const sections = (notification.metadata.sections ?? []).map((code) =>
+        sectionName(t, code),
+      );
+      return {
+        title: notification.metadata.project_name,
+        context: compactMetaLine(
+          formatEventMoment(notification.metadata, lang, t),
+          notification.metadata.location,
+        ),
+        detail: notification.metadata.focus || undefined,
+        changeChips: sections.length > 0 ? sections : undefined,
+      };
+    }
+    case "REHEARSAL_DEBRIEF_POSTED":
+      // The author is the title — whose account of the evening this is — and
+      // the excerpt is the detail: enough to decide whether to open the card,
+      // where the whole text lives.
+      return {
+        title: notification.metadata.author_name || notification.metadata.project_name,
+        context: compactMetaLine(
+          notification.metadata.project_name,
+          formatEventMoment(notification.metadata, lang, t),
+        ),
+        detail: notification.metadata.excerpt || undefined,
+      };
     case "PROJECT_REMINDER":
       return {
         title: notification.metadata.project_name as string | undefined,
@@ -482,6 +525,14 @@ const resolveVisual = (
       // Amethyst, the same hue the leader layer wears on the score — the one
       // place this person will meet the delegation again.
       return { icon: UserCheck, accent: "amethyst" };
+    case "REHEARSAL_LEAD_ASSIGNED":
+      // Gold, the schedule's own "Prowadzisz" badge: this is a date on the
+      // reader's calendar, not a change to what they may do.
+      return { icon: ClipboardCheck, accent: "gold" };
+    case "REHEARSAL_DEBRIEF_POSTED":
+      // Sage, with the attendance reports: a record of an evening that has
+      // already happened, filed to the manager's console.
+      return { icon: NotebookPen, accent: "sage" };
     case "REHEARSAL_DELEGATION_ENDED":
       // Neutral, deliberately not crimson: somebody's plans changed, which is
       // ordinary organisation. The alarm colour is for what is actually wrong,
@@ -576,6 +627,21 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       const rehearsalId = notification.metadata.next_rehearsal?.rehearsal_id;
       return navigate(
         rehearsalId ? `/panel/schedule/lead/${rehearsalId}` : "/panel/schedule",
+      );
+    }
+    if (notification.notification_type === "REHEARSAL_LEAD_ASSIGNED") {
+      // Same reason as above: the evening is the message, so land on its
+      // register rather than on the schedule the substring chain would pick.
+      return navigate(`/panel/schedule/lead/${notification.metadata.rehearsal_id}`);
+    }
+    if (notification.notification_type === "REHEARSAL_DEBRIEF_POSTED") {
+      // The workspace opens on that evening (`?rehearsal=` is its contract);
+      // a reader without the workspace reads the same card on the lead sheet.
+      const rehearsalId = notification.metadata.rehearsal_id;
+      return navigate(
+        isAdmin
+          ? `/panel/rehearsals?rehearsal=${rehearsalId}`
+          : `/panel/schedule/lead/${rehearsalId}`,
       );
     }
     if (type === "MATERIAL_UPLOADED") {

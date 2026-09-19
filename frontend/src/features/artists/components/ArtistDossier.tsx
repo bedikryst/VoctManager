@@ -1,7 +1,8 @@
 /**
  * @file ArtistDossier.tsx
  * @description Read-first slide-over: an artist's project track record for the
- * conductor. Reliability (acceptance + attendance), engagement counts, the voice
+ * conductor. Reliability (acceptance + attendance), engagement counts, project
+ * leadership (projects led, evenings actually stood in front of), the voice
  * lines they actually sing, and a per-project casting history ("sang T1 in X,
  * B2 in Y"). All derived from relational state via GET /artists/{id}/dossier/.
  * Editing lives one click deeper, behind the "Edit profile" action.
@@ -16,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
   BadgeCheck,
+  CalendarCheck,
   CalendarClock,
   CheckCircle2,
   ChevronRight,
@@ -25,8 +27,10 @@ import {
   MailWarning,
   MessageSquare,
   Music2,
+  NotebookPen,
   Pencil,
   Send,
+  UserRound,
   Users,
   X,
 } from "lucide-react";
@@ -50,7 +54,9 @@ import { formatLocalizedDate, formatLocalizedDateTime } from "@/shared/lib/time/
 import { useArtistDossier } from "../api/artist.queries";
 import { getSectionPresentation } from "../constants/voiceSections";
 import type {
+  ArtistDossierLeadership,
   ArtistDossierStats,
+  DossierLedProject,
   DossierProject,
 } from "../types/artistDossier.dto";
 
@@ -265,6 +271,131 @@ const StatsSection = ({ stats }: { stats: ArtistDossierStats }) => {
   );
 };
 
+const LedProjectItem = ({ project }: { project: DossierLedProject }) => {
+  const { t } = useTranslation();
+  const dateLabel = project.date_time
+    ? formatLocalizedDate(project.date_time, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : null;
+
+  // Same copy as the project's own leaders card: a row says something about
+  // scope only when one was withheld, because the full grant is the ordinary
+  // appointment.
+  const withheld: string[] = [];
+  if (!project.scopes.marks) {
+    withheld.push(t("projects.delegates.scope.without_marks", "bez notatek"));
+  }
+  if (!project.scopes.roll_call) {
+    withheld.push(t("projects.delegates.scope.without_roll_call", "bez obecności"));
+  }
+  if (!project.scopes.materials) {
+    withheld.push(t("projects.delegates.scope.without_materials", "bez materiałów"));
+  }
+
+  // Three tenses of one appointment: still open (with or without a set end),
+  // or over — either because the clock ran out or because the concert did.
+  const tenure = project.is_live
+    ? project.expires_at
+      ? t("projects.delegates.until", "do {{date}}", {
+          date: formatLocalizedDate(project.expires_at, {
+            day: "numeric",
+            month: "short",
+          }),
+        })
+      : t("artists.dossier.leadership.current", "trwa")
+    : t("artists.dossier.leadership.ended", "zakończone");
+
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-control border border-hairline bg-ethereal-alabaster/60 px-3.5 py-3">
+      <div className="min-w-0">
+        <Text weight="semibold" truncate className="text-ethereal-ink">
+          {project.title}
+        </Text>
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+          {dateLabel && (
+            <Caption color="muted" className="inline-flex items-center gap-1">
+              <CalendarClock size={11} aria-hidden="true" />
+              {dateLabel}
+            </Caption>
+          )}
+          <Caption color={project.is_live ? "graphite" : "muted"}>{tenure}</Caption>
+          {withheld.length > 0 && (
+            <Caption color="gold">
+              {t("projects.delegates.scope.limited", {
+                defaultValue: "Zakres ograniczony: {{missing}}",
+                missing: withheld.join(", "),
+              })}
+            </Caption>
+          )}
+          {/* The fourth scope is off by default, so granted is the exception
+              worth a line. */}
+          {project.scopes.choir_marks && (
+            <Caption color="gold">
+              {t("projects.delegates.scope.choir_marks_granted", "Nanosi uwagi dla chóru")}
+            </Caption>
+          )}
+        </div>
+      </div>
+      <Badge
+        variant={project.is_live ? ACCENT_BADGE.gold : "neutral"}
+        className="shrink-0"
+      >
+        {t("projects.delegates.badge", "Lider")}
+      </Badge>
+    </div>
+  );
+};
+
+// Rendered only when there is something to show: a singer who never led is
+// the ordinary case, and a block of zeros would read as a shortfall.
+const LeadershipSection = ({
+  leadership,
+}: {
+  leadership: ArtistDossierLeadership;
+}) => {
+  const { t } = useTranslation();
+  if (leadership.projects_led === 0) return null;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <Eyebrow as="h4" color="graphite">
+          {t("artists.dossier.leadership.title", "Prowadzenie")}
+        </Eyebrow>
+        <Caption color="muted" className="tabular-nums">
+          {leadership.projects_led}
+        </Caption>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <CountTile
+          icon={<UserRound size={15} />}
+          label={t("artists.dossier.leadership.projects", "Projekty prowadzone")}
+          value={leadership.projects_led}
+        />
+        <CountTile
+          icon={<CalendarCheck size={15} />}
+          label={t("artists.dossier.leadership.rehearsals", "Poprowadzone próby")}
+          value={leadership.rehearsals_led}
+        />
+        {/* Counted by the author stamp, not by `led_by`: a leader may write up
+            an evening she covered without having been announced for it. */}
+        <CountTile
+          icon={<NotebookPen size={15} />}
+          label={t("artists.dossier.leadership.debriefs", "Podsumowania prób")}
+          value={leadership.debriefs_written}
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        {leadership.projects.map((project) => (
+          <LedProjectItem key={project.project_id} project={project} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const ProjectHistoryItem = ({ project }: { project: DossierProject }) => {
   const { t } = useTranslation();
   const badge = projectStatusBadge(project.status);
@@ -291,9 +422,14 @@ const ProjectHistoryItem = ({ project }: { project: DossierProject }) => {
             </Caption>
           )}
         </div>
-        <Badge variant={badge.variant} className="shrink-0">
-          {t(badge.key, badge.fallback)}
-        </Badge>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {project.led && (
+            <Badge variant={ACCENT_BADGE.gold}>
+              {t("projects.delegates.badge", "Lider")}
+            </Badge>
+          )}
+          <Badge variant={badge.variant}>{t(badge.key, badge.fallback)}</Badge>
+        </div>
       </div>
 
       {project.castings.length > 0 ? (
@@ -543,6 +679,8 @@ export const ArtistDossier = ({
               ) : data ? (
                 <div className="space-y-7">
                   <StatsSection stats={data.stats} />
+
+                  <LeadershipSection leadership={data.leadership} />
 
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">

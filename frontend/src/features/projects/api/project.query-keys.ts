@@ -87,6 +87,8 @@ export const projectKeys = {
   delegates: {
     byProject: (projectId: string | number) =>
       ["rehearsalDelegates", { project: String(projectId) }] as const,
+    suggested: (projectId: string | number) =>
+      ["rehearsalDelegates", { project: String(projectId) }, "suggested"] as const,
   },
   scorePackage: {
     byProject: (projectId: string | number) =>

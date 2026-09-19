@@ -14,6 +14,7 @@ import {
   ClipboardCheck,
   Music,
   AlignLeft,
+  UserCheck,
 } from "lucide-react";
 import type { AttendanceStatus } from "@/shared/types";
 import type {
@@ -28,7 +29,7 @@ import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { Button } from "@/shared/ui/primitives/Button";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
+import { Caption, Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { cn } from "@/shared/lib/utils";
@@ -214,7 +215,11 @@ export const TimelineRehearsalCard = ({
                   {t("schedule.rehearsal.optional", "Opcjonalna")}
                 </Eyebrow>
               )}
-              {event.iLead && (
+              {/* "Prowadzisz" is the evening announced as THIS reader's, not
+                  the right to take its roll (that is the register below): a
+                  leader with two of the week's four sectionals gets the badge
+                  on two cards and the register on all four. */}
+              {event.iStandInFront && (
                 <Eyebrow
                   as="span"
                   color="gold"
@@ -275,6 +280,19 @@ export const TimelineRehearsalCard = ({
                   variant="minimal"
                 />
               </span>
+              {/* Who leads, only when it is somebody else: the conductor is
+                  the resting case, and the reader's own evening already
+                  carries the badge above. */}
+              {event.ledBy && !event.iStandInFront && (
+                <span className="flex items-center gap-1.5">
+                  <UserCheck size={13} className="text-ethereal-gold" aria-hidden="true" />
+                  <Caption color="muted">
+                    {t("schedule.rehearsal.led_by", "Prowadzi: {{name}}", {
+                      name: event.ledBy.name,
+                    })}
+                  </Caption>
+                </span>
+              )}
             </div>
           </div>
 

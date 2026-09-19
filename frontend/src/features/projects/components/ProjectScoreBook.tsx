@@ -25,6 +25,7 @@ import {
   buildScoreBook,
   EMPTY_SCORE_BOOK,
   ScoreBookModal,
+  type ScoreAnnotatorMode,
   type ScoreBook,
 } from "@/features/annotations";
 import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
@@ -45,10 +46,11 @@ interface ProjectScoreBookProps {
    */
   readonly version?: string;
   /**
-   * conductor → managers draw the shared/conductor layers; personal →
+   * conductor → managers draw the shared/conductor layers; leader → a project
+   * leader whose grant opens the choir's layer on this programme; personal →
    * choristers write their own private pencil over the read-only shared marks.
    */
-  readonly mode?: "conductor" | "personal";
+  readonly mode?: ScoreAnnotatorMode;
   readonly onClose: () => void;
 }
 

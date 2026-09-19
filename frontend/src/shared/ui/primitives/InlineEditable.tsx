@@ -31,7 +31,12 @@ import { Caption, Text } from "@/shared/ui/primitives/typography";
 
 type InlineEditableValue = string | number | null;
 
-export type InlineEditableVariant = "default" | "title" | "subtle" | "display";
+export type InlineEditableVariant =
+  | "default"
+  | "title"
+  | "subtle"
+  | "display"
+  | "subtitle";
 
 /**
  * Typography the inner `Text` has to carry on its own element.
@@ -49,6 +54,8 @@ export const inlineEditableTextProps = (
   switch (variant) {
     case "display":
       return { weight: "semibold", className: "font-serif" };
+    case "subtitle":
+      return { className: "font-serif italic" };
     case "title":
       return { weight: "semibold" };
     default:
@@ -74,6 +81,10 @@ export interface InlineEditableProps {
    * against the sans's 0.546, so `text-2xl` here lands at roughly the optical
    * size of 17px of sans — a step above the `title` variant's 16px, not three.
    * Any smaller and the name reads smaller than the metadata beneath it.
+   *
+   * `subtitle` is the serif italic a rehearsal's work plan is set in under its
+   * date (`RehearsalInspector`): normal weight, the `md` step the static line
+   * uses for the same x-height reason, in the graphite of a subordinate line.
    */
   readonly variant?: InlineEditableVariant;
   readonly disabled?: boolean;
@@ -180,6 +191,7 @@ export const InlineEditable = ({
           variant === "title" && "text-base",
           variant === "display" && "text-2xl tracking-tight",
           variant === "subtle" && "text-xs text-ethereal-graphite",
+          variant === "subtitle" && "text-base text-ethereal-graphite",
           className,
         )}
       >
@@ -236,6 +248,7 @@ export const InlineEditable = ({
           "w-auto rounded-chip px-1.5 py-0.5",
           variant === "title" && "font-semibold text-base",
           variant === "display" && "font-serif font-semibold text-2xl tracking-tight",
+          variant === "subtitle" && "font-serif italic text-base",
           variant === "subtle" && FIELD_TEXT_SCALE.xs,
           className,
         )}

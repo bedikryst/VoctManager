@@ -101,6 +101,8 @@ export interface RehearsalCreateDTO {
   is_mandatory: boolean;
   calls_instrumentalists?: boolean;
   invited_participations?: string[];
+  /** Who stands in front; null = the project's conductor. */
+  led_by_id?: string | null;
 }
 
 export interface RehearsalUpdateDTO {
@@ -111,6 +113,8 @@ export interface RehearsalUpdateDTO {
   is_mandatory?: boolean;
   calls_instrumentalists?: boolean;
   invited_participations?: string[];
+  /** Null hands the evening back to the conductor; absent leaves it alone. */
+  led_by_id?: string | null;
 }
 
 export interface ProgramItemCreateDTO {

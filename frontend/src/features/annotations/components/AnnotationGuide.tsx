@@ -28,6 +28,7 @@ import {
   FolderClosed,
   Lock,
   UserCheck,
+  Users,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -37,10 +38,11 @@ import { cn } from "@/shared/lib/utils";
 import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
 
 import { WRITE_LAYERS, writeLayerCopy } from "../lib/layers";
+import type { ScoreAnnotatorMode } from "../useScoreAnnotator";
 
 interface AnnotationGuideProps {
   isOpen: boolean;
-  mode: "conductor" | "personal";
+  mode: ScoreAnnotatorMode;
   /**
    * Whether this reader actually holds cues written for whoever runs a
    * rehearsal. Their presence IS the permission, so it is also the only honest
@@ -99,19 +101,37 @@ export const AnnotationGuide = ({
     ),
   };
 
+  // The lead fact is the one that differs between a singer and a leader: for
+  // a singer everything they write is theirs alone; for a leader the toolbar
+  // toggle decides whether the next mark is theirs or the whole choir's, and
+  // saying "only yours" there would be the wrong promise.
+  const leadFact: GuideFact =
+    mode === "leader"
+      ? {
+          id: "choir",
+          icon: Users,
+          accent: true,
+          title: t("annotations.guide.leader.choir_title", "Moje albo dla chóru"),
+          body: t(
+            "annotations.guide.leader.choir_body",
+            "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Chór” zobaczy każdy, kto śpiewa ten utwór. Zmienić i skasować możesz tylko własne oznaczenia — te od dyrygenta zostają jego.",
+          ),
+        }
+      : {
+          id: "private",
+          icon: Lock,
+          accent: true,
+          title: t("annotations.guide.personal.private_title", "Tylko Twoje"),
+          body: t(
+            "annotations.guide.personal.private_body",
+            "Wszystko, co tu napiszesz, widzisz wyłącznie Ty. Nie widzi tego dyrygent ani nikt inny w chórze.",
+          ),
+        };
+
   const facts: GuideFact[] =
-    mode === "personal"
+    mode !== "conductor"
       ? [
-          {
-            id: "private",
-            icon: Lock,
-            accent: true,
-            title: t("annotations.guide.personal.private_title", "Tylko Twoje"),
-            body: t(
-              "annotations.guide.personal.private_body",
-              "Wszystko, co tu napiszesz, widzisz wyłącznie Ty. Nie widzi tego dyrygent ani nikt inny w chórze.",
-            ),
-          },
+          leadFact,
           {
             id: "shared",
             icon: Eye,
@@ -221,20 +241,27 @@ export const AnnotationGuide = ({
             <header className="flex items-start justify-between gap-3 border-b border-line-on-inverse px-5 py-4">
               <div className="min-w-0">
                 <Heading as="h2" size="md" color="ink-on-inverse">
-                  {mode === "personal"
-                    ? t("annotations.guide.personal.title", "Twoje ślady na nutach")
-                    : t("annotations.guide.conductor.title", "Trzy zasięgi oznaczeń")}
+                  {mode === "conductor"
+                    ? t("annotations.guide.conductor.title", "Trzy zasięgi oznaczeń")
+                    : mode === "leader"
+                      ? t("annotations.guide.leader.title", "Dwa zasięgi Twoich oznaczeń")
+                      : t("annotations.guide.personal.title", "Twoje ślady na nutach")}
                 </Heading>
                 <Text as="p" size="sm" color="ink-on-inverse-muted" className="mt-1">
-                  {mode === "personal"
+                  {mode === "conductor"
                     ? t(
-                        "annotations.guide.personal.lede",
-                        "Krótko o tym, co się dzieje z tym, co tu zapiszesz.",
-                      )
-                    : t(
                         "annotations.guide.conductor.lede",
                         "Co dociera do chóru, co do prowadzącego próbę, a co zostaje przy Tobie.",
-                      )}
+                      )
+                    : mode === "leader"
+                      ? t(
+                          "annotations.guide.leader.lede",
+                          "Co zostaje przy Tobie, a co zobaczy cały chór.",
+                        )
+                      : t(
+                          "annotations.guide.personal.lede",
+                          "Krótko o tym, co się dzieje z tym, co tu zapiszesz.",
+                        )}
                 </Text>
               </div>
               <button

@@ -14,6 +14,8 @@ export type NotificationType =
   | "REHEARSAL_REMINDER"
   | "REHEARSAL_DELEGATED"
   | "REHEARSAL_DELEGATION_ENDED"
+  | "REHEARSAL_LEAD_ASSIGNED"
+  | "REHEARSAL_DEBRIEF_POSTED"
   | "PIECE_CASTING_ASSIGNED"
   | "PIECE_CASTING_UPDATED"
   | "MATERIAL_UPLOADED"
@@ -202,9 +204,9 @@ export interface DelegatedRehearsalMetadata extends EventMomentMetadata {
 
 /**
  * Somebody has been asked to run a project's rehearsals in the conductor's
- * place. The three scope flags travel because they ARE the message: a delegation
- * is three permissions that leak differently, and "you are running rehearsals"
- * on its own leaves the reader guessing which doors opened.
+ * place. The scope flags travel because they ARE the message: a delegation is
+ * four permissions that leak differently, and "you are running rehearsals" on
+ * its own leaves the reader guessing which doors opened.
  */
 export interface RehearsalDelegationMetadata {
   project_id: string;
@@ -213,6 +215,7 @@ export interface RehearsalDelegationMetadata {
   can_see_leader_marks?: boolean;
   can_take_roll_call?: boolean;
   can_open_materials?: boolean;
+  can_mark_for_choir?: boolean;
   expires_at?: string | null;
   expires_at_display?: string;
   timezone?: string;
@@ -225,6 +228,34 @@ export interface RehearsalDelegationEndedMetadata {
   project_id: string;
   project_name: string;
   revoked_by_name?: string;
+}
+
+/**
+ * One evening announced as the reader's to run (`Rehearsal.led_by`). The
+ * sections are S/A/T/B codes for a sectional and empty for a tutti; the row
+ * names them in the viewer's language.
+ */
+export interface RehearsalLeadAssignedMetadata extends EventMomentMetadata {
+  rehearsal_id: string;
+  project_id: string;
+  project_name: string;
+  location?: string;
+  focus?: string;
+  sections?: string[];
+}
+
+/**
+ * The evening's report is in, for the managers. `excerpt` is the opening of
+ * the text, cut server-side; the whole of it is read on the rehearsal.
+ */
+export interface RehearsalDebriefPostedMetadata extends EventMomentMetadata {
+  rehearsal_id: string;
+  project_id: string;
+  project_name: string;
+  author_name?: string;
+  excerpt?: string;
+  location?: string;
+  focus?: string;
 }
 
 export interface RehearsalUpdatedMetadata extends EventMomentMetadata {
@@ -373,6 +404,14 @@ export type NotificationDTO = BaseNotification &
         metadata: RehearsalDelegationEndedMetadata;
       }
     | {
+        notification_type: "REHEARSAL_LEAD_ASSIGNED";
+        metadata: RehearsalLeadAssignedMetadata;
+      }
+    | {
+        notification_type: "REHEARSAL_DEBRIEF_POSTED";
+        metadata: RehearsalDebriefPostedMetadata;
+      }
+    | {
         notification_type: "REHEARSAL_CANCELLED";
         metadata: RehearsalCancelledMetadata;
       }
@@ -450,6 +489,7 @@ export type NotificationGroupId =
   | "materials"
   | "safety_net"
   | "site_copy"
+  | "debriefs"
   | "team";
 
 export interface NotificationPreferenceGroupDTO {

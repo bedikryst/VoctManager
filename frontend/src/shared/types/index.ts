@@ -118,6 +118,9 @@ export interface Artist extends BaseModel {
   /** What a player plays ("Organy"); always empty for a singer or conductor. */
   instrument?: string;
   is_active: boolean;
+  // Leads at least one open project right now (a live RehearsalDelegate
+  // grant). Manager-only (detailed serializer); undefined = unknown.
+  is_project_leader?: boolean;
   username?: string | null;
   is_manager?: boolean;
   sight_reading_skill?: number | null;
@@ -185,6 +188,12 @@ export interface ProjectProgramItem {
   score_edition?: string | null;
 }
 
+/** One leader of a project, as `Project.leaders` names them. */
+export interface ProjectLeader {
+  artist_id: string;
+  name: string;
+}
+
 export interface Project extends BaseModel {
   title: string;
   date_time: string;
@@ -197,6 +206,10 @@ export interface Project extends BaseModel {
   // this into the full Artist after joining against the artists dictionary.
   conductor?: string | Artist | null;
   conductor_name?: string | null;
+  /** Who leads the project (runs its rehearsals in the conductor's place):
+   *  the live `RehearsalDelegate` rows, as a fact beside the conductor. Empty
+   *  when the conductor and the managers run everything themselves. */
+  leaders?: ProjectLeader[];
   description?: string | null;
   spotify_playlist_url?: string | null;
   score_pdf?: string | null;
@@ -298,6 +311,22 @@ export interface Rehearsal extends BaseModel {
    */
   calls_instrumentalists?: boolean;
   invited_participations?: string[];
+  /**
+   * Who stands in front of the choir this evening — explicit only. Null on
+   * both fields means the project's conductor, the resting case no surface
+   * spells out. A name, not a permission: the powers sit on the project's
+   * leader grant.
+   */
+  led_by_artist_id?: string | null;
+  led_by_name?: string | null;
+  /**
+   * The evening handed back in writing, by whoever stood in front of the
+   * choir. Read-only on this contract — the only write is the lead sheet's
+   * PATCH, which stamps the author and the time itself.
+   */
+  debrief?: string;
+  debrief_by_name?: string | null;
+  debrief_at?: string | null;
   absent_count?: number;
 }
 

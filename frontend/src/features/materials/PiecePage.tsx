@@ -41,7 +41,7 @@ import {
 } from "@/app/providers/ArtistPreviewProvider";
 import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { isManager } from "@/shared/auth/rbac";
-import { ScoreStandModal } from "@/features/annotations";
+import { ScoreStandModal, scoreAnnotatorModeFor } from "@/features/annotations";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
@@ -593,16 +593,21 @@ export default function PiecePage({
         )}
       </div>
 
-      {/* Managers write the shared/conductor layers; choristers get their own
-          private pencil-mark layer on top of the conductor's shared markings.
-          Never mounted in a preview: the openers above are inert, and the stand
-          would be the manager's own — their annotations, their watermark, their
-          copy number logged against the singer's page. */}
+      {/* Managers write the shared/conductor layers; a project leader with the
+          choir-marks scope may aim at the choir's layer too; every other
+          chorister gets their own private pencil-mark layer on top of the
+          conductor's shared markings. Never mounted in a preview: the openers
+          above are inert, and the stand would be the manager's own — their
+          annotations, their watermark, their copy number logged against the
+          singer's page. */}
       {!isPreview && (
         <ScoreStandModal
           isOpen={openEdition !== null}
           editionId={openEdition?.id ?? null}
-          mode={isManager(user) ? "conductor" : "personal"}
+          mode={scoreAnnotatorModeFor({
+            isManager: isManager(user),
+            mayMarkForChoir: piece.may_mark_for_choir,
+          })}
           title={piece.title}
           subtitle={openEdition?.label ?? composerName}
           fileName={openEdition ? pdfFileName(openEdition.label) : undefined}

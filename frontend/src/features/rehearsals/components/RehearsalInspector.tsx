@@ -8,7 +8,11 @@
  *
  * Two callers: the manager's workspace, and a stand-in's `LeadSheet` route.
  * They get the SAME roll call — `allowManagerActions` withholds only the two
- * things a delegation does not carry (see the prop).
+ * things a delegation does not carry (see the prop). `onSaveFocus` and
+ * `onSaveDebrief` are what a leader gets that the manager's copy does not
+ * need here: the plan is edited where it is read, because the leader has no
+ * rehearsal form, and the debrief is written under the register it reports
+ * on. The manager reads the same debrief block at the foot of the card.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/RehearsalInspector
  */
@@ -24,6 +28,7 @@ import {
   LayoutGrid,
   List,
   Radio,
+  UserCheck,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -37,6 +42,7 @@ import {
 } from "@/shared/ui/composites/SegmentedTabs";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
+import { InlineEditable } from "@/shared/ui/primitives/InlineEditable";
 import { Caption, Eyebrow, Metric, Text } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
@@ -53,6 +59,7 @@ import {
 } from "../constants/attendanceMeta";
 import { ArtistRow } from "./ArtistRow";
 import { AbsenceSpanSheet } from "./AbsenceSpanSheet";
+import { RehearsalDebrief } from "./RehearsalDebrief";
 
 interface RehearsalInspectorProps {
   rehearsal: Rehearsal;
@@ -80,6 +87,21 @@ interface RehearsalInspectorProps {
    * surface cannot afford.
    */
   allowManagerActions?: boolean;
+  /**
+   * Saves a new work plan for the evening. Present → the plan under the date
+   * becomes editable in place (empty included, so a plan can be added where
+   * there was none). Absent → the plan is the static line the manager reads;
+   * the manager's own edit lives in the rehearsal form, and a second pencil
+   * here would be a second, disagreeing way to say the same thing.
+   */
+  onSaveFocus?: (focus: string) => Promise<unknown>;
+  /**
+   * Saves the debrief. Present → the "Po próbie" block at the foot is an
+   * editor once the evening has started. Absent → the block shows what was
+   * written, or nothing: the manager's console reads the report, it does not
+   * write it here.
+   */
+  onSaveDebrief?: (debrief: string) => Promise<unknown>;
 }
 
 const SEGMENTS = ["PRESENT", "LATE", "EXCUSED", "ABSENT"] as const;
@@ -134,6 +156,8 @@ export const RehearsalInspector = ({
   isMarkingAll,
   onMarkAllPresent,
   allowManagerActions = true,
+  onSaveFocus,
+  onSaveDebrief,
 }: RehearsalInspectorProps): React.JSX.Element => {
   const { t } = useTranslation();
   const [isPitchPipeOpen, setIsPitchPipeOpen] = useState(false);
@@ -233,10 +257,23 @@ export const RehearsalInspector = ({
             it: Cormorant's x-height is ~0.39em against the sans's ~0.55, so a
             subtitle set at the body step comes out reading smaller than the
             metadata below it. */}
-        {focus && (
-          <Text size="md" color="graphite" className="mt-1 block font-serif italic">
-            {focus}
-          </Text>
+        {onSaveFocus ? (
+          <div className="mt-1">
+            <InlineEditable
+              variant="subtitle"
+              value={focus ?? ""}
+              onSave={onSaveFocus}
+              ariaLabel={t("rehearsals.lead.focus_label", "Temat próby")}
+              placeholder={t("rehearsals.lead.focus_placeholder", "Nad czym pracujecie")}
+              emptyDisplay={t("rehearsals.lead.focus_empty", "Dodaj temat próby")}
+            />
+          </div>
+        ) : (
+          focus && (
+            <Text size="md" color="graphite" className="mt-1 block font-serif italic">
+              {focus}
+            </Text>
+          )
         )}
 
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -255,6 +292,18 @@ export const RehearsalInspector = ({
             fallback={t("rehearsals.dashboard.no_location", "Brak lok.")}
             variant="minimal"
           />
+          {/* Who stands in front, only when it was announced — the conductor
+              is the resting case and is never spelled out. */}
+          {rehearsal.led_by_name && (
+            <span className="flex items-center gap-1.5">
+              <UserCheck size={12} className="text-ethereal-gold/70" aria-hidden="true" />
+              <Caption color="muted">
+                {t("rehearsals.inspector.led_by", "Prowadzi: {{name}}", {
+                  name: rehearsal.led_by_name,
+                })}
+              </Caption>
+            </span>
+          )}
         </div>
 
         {/* Progress + composition */}
@@ -468,6 +517,9 @@ export const RehearsalInspector = ({
           ))
         )}
       </div>
+
+      {/* ── After the rehearsal ───────────────────────────────────────── */}
+      <RehearsalDebrief rehearsal={rehearsal} onSave={onSaveDebrief} />
 
       {/* Mounted, not conditional: the sheet animates out, and unmounting it on
           close would cut that short. The id going null is what shuts it. The

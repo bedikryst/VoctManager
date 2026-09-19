@@ -12,7 +12,11 @@
  * The roster below is `RehearsalInspector`, the conductor's own surface,
  * unchanged. The only thing withheld is what a delegation does not carry: a span
  * excusal and the cast editor, both of which are decisions about a singer's
- * standing in the choir rather than a record of who turned up.
+ * standing in the choir rather than a record of who turned up. Two things are
+ * added: the plan — the leader has no rehearsal form, so what the evening is
+ * about is edited in place, under the date, where the cast will read it — and
+ * the debrief, written once the evening has started, which is how the leader
+ * hands it back to the conductor.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals
  */
@@ -24,6 +28,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, CalendarOff } from "lucide-react";
 
+import { useAuth } from "@/app/providers/AuthProvider";
 import { toastApiError } from "@/shared/api/errors";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
@@ -37,6 +42,7 @@ import {
 } from "@/shared/ui/kinematics/StaggeredBentoGrid";
 
 import { useMarkMissingAttendancesPresent } from "./api/rehearsals.queries";
+import { useUpdateLeadSheet } from "./api/leadSheet.queries";
 import { useLeadSheetData } from "./hooks/useLeadSheetData";
 import { RehearsalInspector } from "./components/RehearsalInspector";
 
@@ -59,6 +65,24 @@ export default function LeadSheet(): React.JSX.Element {
   const [isRollCall, setIsRollCall] = useState(true);
   const [showOnlyUnmarked, setShowOnlyUnmarked] = useState(false);
   const markMissing = useMarkMissingAttendancesPresent();
+  const updateSheet = useUpdateLeadSheet(rehearsalId);
+  const { user } = useAuth();
+
+  // Both editors show the server's refusal in place, so the mutations reject
+  // rather than toast; a stale grant answers with the same 404 the whole page
+  // would, and the next refetch turns the page into the refusal.
+  const saveFocus = (focus: string): Promise<unknown> =>
+    updateSheet.mutateAsync({ focus });
+  const saveDebrief = (debrief: string): Promise<unknown> =>
+    updateSheet.mutateAsync({ debrief });
+
+  // The header says whose evening this is. Nobody announced = the page reads
+  // as it always has ("Prowadzisz"), because the reader was let in to run it.
+  // Somebody ELSE announced = the reader is covering the register of an
+  // evening that is not theirs, and the page must not tell them otherwise.
+  const ledBy = leadSheet?.led_by ?? null;
+  const someoneElseLeads =
+    ledBy !== null && ledBy.artist_id !== String(user?.artist_profile_id ?? "");
 
   const backLink = (
     <Link
@@ -119,10 +143,18 @@ export default function LeadSheet(): React.JSX.Element {
                 className="!mb-0"
                 roleText={
                   leadSheet?.project.title ??
-                  t("rehearsals.lead.role", "Zastępstwo")
+                  t("rehearsals.lead.role", "Lider projektu")
                 }
-                title={t("rehearsals.lead.title", "Prowadzisz")}
-                titleHighlight={t("rehearsals.lead.title_highlight", "próbę.")}
+                title={
+                  someoneElseLeads
+                    ? t("rehearsals.lead.covering_title", "Prowadzi")
+                    : t("rehearsals.lead.title", "Prowadzisz")
+                }
+                titleHighlight={
+                  someoneElseLeads && ledBy
+                    ? `${ledBy.name}.`
+                    : t("rehearsals.lead.title_highlight", "próbę.")
+                }
                 rightContent={backLink}
               />
             </StaggeredBentoItem>
@@ -151,7 +183,7 @@ export default function LeadSheet(): React.JSX.Element {
                   )}
                   description={t(
                     "rehearsals.lead.gone.description",
-                    "Zastępstwo zostało cofnięte albo próby już nie ma. Zapytaj menedżera, jeśli to pomyłka.",
+                    "Nie jesteś już liderem tego projektu albo próby już nie ma. Zapytaj menedżera, jeśli to pomyłka.",
                   )}
                   actions={
                     <Button variant="outline" size="sm" asChild>
@@ -181,6 +213,8 @@ export default function LeadSheet(): React.JSX.Element {
                   isMarkingAll={markMissing.isPending}
                   onMarkAllPresent={handleMarkAllPresent}
                   allowManagerActions={leadSheet.is_manager}
+                  onSaveFocus={saveFocus}
+                  onSaveDebrief={saveDebrief}
                 />
               </StaggeredBentoItem>
             )}

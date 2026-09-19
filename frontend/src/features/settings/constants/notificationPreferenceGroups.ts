@@ -27,6 +27,7 @@ import {
   MessageCircle,
   MessagesSquare,
   Music,
+  NotebookPen,
   PencilLine,
   Repeat,
   ShieldCheck,
@@ -61,6 +62,8 @@ export const NOTIFICATION_GROUP_ICON: Record<NotificationGroupId, LucideIcon> = 
   // A one-member group, sharing its single row's glyph rather than inventing a
   // second symbol for the same event.
   site_copy: PencilLine,
+  // Likewise one member, and the same glyph its row wears.
+  debriefs: NotebookPen,
   team: ShieldCheck,
 };
 
@@ -79,6 +82,7 @@ export const NOTIFICATION_TYPE_ICON: Partial<Record<NotificationType, LucideIcon
   REHEARSAL_CANCELLED: CalendarX,
   REHEARSAL_DELEGATED: UserPlus,
   REHEARSAL_DELEGATION_ENDED: UserMinus,
+  REHEARSAL_LEAD_ASSIGNED: CalendarCheck,
   PIECE_CASTING_ASSIGNED: Music,
   PIECE_CASTING_UPDATED: Repeat,
   // Requests — the verdict on what you filed yourself
@@ -95,6 +99,7 @@ export const NOTIFICATION_TYPE_ICON: Partial<Record<NotificationType, LucideIcon
   PARTICIPATION_RESPONSE: UserCheck,
   ATTENDANCE_SUBMITTED: ClipboardCheck,
   ABSENCE_REQUESTED: CalendarOff,
+  REHEARSAL_DEBRIEF_POSTED: NotebookPen,
   // Safety net — the queue nobody has published yet
   ANNOUNCEMENT_PENDING: Megaphone,
   // Copy desk — an editor has been through the public site's text

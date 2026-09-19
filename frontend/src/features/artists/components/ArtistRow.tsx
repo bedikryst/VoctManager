@@ -161,6 +161,11 @@ export const ArtistRow = React.memo(
             >
               {voiceLabel}
             </Badge>
+            {isActive && artist.is_project_leader && (
+              <Badge variant={ACCENT_BADGE.gold} className="shrink-0">
+                {t("projects.delegates.badge", "Lider")}
+              </Badge>
+            )}
             {!isActive && (
               <Badge variant="neutral" className="shrink-0">
                 {t("artists.card.archive_badge", "Archiwum")}

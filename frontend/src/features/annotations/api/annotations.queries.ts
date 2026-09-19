@@ -75,6 +75,15 @@ interface AnnotationsOptions {
    * everywhere else, so a songbook of forty closed rows costs nothing.
    */
   live?: boolean;
+  /**
+   * Who is holding the pencil, stamped on every draft as `created_by`. The
+   * server stamps the same id from the request, so this is a faithful
+   * prediction, and it matters wherever ownership is decided per row rather
+   * than per layer: a leader's mark on the choir's layer is theirs to move
+   * only because the row says so — and a draft saying "nobody" would be
+   * unmovable from the moment it was drawn until the network answered.
+   */
+  authorId?: string | null;
 }
 
 const ALL_CLEARED = () => true;
@@ -239,6 +248,7 @@ export const useAnnotationMutations = (
   const queryClient = useQueryClient();
   const key = annotationKeys.byEdition(editionId ?? "none");
   const isCleared = options?.isCleared ?? ALL_CLEARED;
+  const authorId = options?.authorId ?? null;
 
   /** Apply a collapsed write to the durable queue. */
   const enqueue = useCallback((collapsed: CollapsedWrite, label: string) => {
@@ -389,12 +399,12 @@ export const useAnnotationMutations = (
         ...partial,
         id: newMarkId(),
         edition: editionId,
-        created_by: null,
+        created_by: authorId,
         created_at: now,
         updated_at: now,
       };
     },
-    [editionId],
+    [authorId, editionId],
   );
 
   return { create, update, remove, clear, draftAnnotation };

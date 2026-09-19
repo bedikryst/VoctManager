@@ -61,6 +61,12 @@ export interface RehearsalFormData {
    * its people outright.
    */
   calls_instrumentalists: boolean;
+  /**
+   * Who stands in front of the choir: a leader's artist id, or "" for the
+   * project's conductor. Offered only when the project has a leader who may
+   * take the roll call — otherwise the answer cannot vary.
+   */
+  led_by_id: string;
 }
 
 export type RehearsalTargetType = "TUTTI" | "SECTIONAL" | "CUSTOM";

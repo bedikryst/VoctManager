@@ -2,7 +2,7 @@
  * @file ProjectFactsCard.tsx
  * @description Context-rail card for the Project Overview. Consolidates the bare facts a
  * conductor scans first — concert date/time, venue, what waits at that venue on the day,
- * conductor, estimated budget — plus an optional event note, into one calm definition
+ * conductor, project leader, estimated budget — plus an optional event note, into one calm definition
  * list. Subsumes the former single-metric BudgetWidget (the cost now lives as one fact
  * among others, not a lone number in a tall card). The whole card deep-links to the
  * Details work area, which is where every one of these is typed.
@@ -77,6 +77,9 @@ export function ProjectFactsCard({
     project.conductor,
     project.conductor_name,
   );
+  const leaderNames = (project.leaders ?? [])
+    .map((leader) => leader.name)
+    .join(", ");
   const dash = "—";
 
   // Where exactly, once somebody has arrived at the address. Named in the words
@@ -212,6 +215,14 @@ export function ProjectFactsCard({
         <FactRow label={t("projects.overview.facts.conductor", "Dyrygent")}>
           <Text size="sm" weight="medium" color={conductorName ? "default" : "muted"}>
             {conductorName || dash}
+          </Text>
+        </FactRow>
+
+        {/* A fact, not a control: who runs the rehearsals in the conductor's
+            place is appointed on the Rehearsals tab. */}
+        <FactRow label={t("projects.overview.facts.leader", "Lider")}>
+          <Text size="sm" weight="medium" color={leaderNames ? "default" : "muted"}>
+            {leaderNames || dash}
           </Text>
         </FactRow>
 

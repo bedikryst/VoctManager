@@ -53,15 +53,24 @@ const resolvedInput = (variant: InlineEditableVariant): ReadonlySet<string> =>
       "w-auto rounded-chip px-1.5 py-0.5",
       variant === "title" && "font-semibold text-base",
       variant === "display" && "font-serif font-semibold text-2xl tracking-tight",
+      variant === "subtitle" && "font-serif italic text-base",
       variant === "subtle" && "text-xs",
     ),
   );
 
 describe("inlineEditableTextProps — what survives onto the label span", () => {
-  it("sets `display` in the serif, with the sans dropped", () => {
-    const label = resolvedLabel("display");
-    expect(label).toContain("font-serif");
-    expect(label).not.toContain("font-sans");
+  it("sets `display` and `subtitle` in the serif, with the sans dropped", () => {
+    for (const variant of ["display", "subtitle"] as const) {
+      const label = resolvedLabel(variant);
+      expect(label).toContain("font-serif");
+      expect(label).not.toContain("font-sans");
+    }
+  });
+
+  it("keeps `subtitle` italic and at Text's own normal weight", () => {
+    const label = resolvedLabel("subtitle");
+    expect(label).toContain("italic");
+    expect(label).toContain("font-normal");
   });
 
   it("keeps `default` and `subtle` in the sans", () => {
@@ -92,9 +101,12 @@ describe("display mode and edit mode agree", () => {
     }
   });
 
-  it("does not change family when a display title is clicked into its input", () => {
-    expect(resolvedLabel("display")).toContain("font-serif");
-    expect(resolvedInput("display")).toContain("font-serif");
+  it("does not change family when a serif variant is clicked into its input", () => {
+    for (const variant of ["display", "subtitle"] as const) {
+      expect(resolvedLabel(variant)).toContain("font-serif");
+      expect(resolvedInput(variant)).toContain("font-serif");
+    }
+    expect(resolvedInput("subtitle")).toContain("italic");
   });
 });
 

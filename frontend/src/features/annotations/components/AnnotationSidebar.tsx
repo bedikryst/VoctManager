@@ -37,6 +37,7 @@ import {
 } from "../types/annotations.dto";
 import { layerOf } from "../lib/layers";
 import type { LayerVisibility } from "../lib/useAnnotationTools";
+import type { ScoreAnnotatorMode } from "../useScoreAnnotator";
 
 interface AnnotationSidebarProps {
   annotations: ScoreAnnotation[];
@@ -52,7 +53,7 @@ interface AnnotationSidebarProps {
   visibleLayers: LayerVisibility;
   toggleLayerVisibility: (layer: AnnotationLayer) => void;
   /** Decides which layer rows make sense: choir/private vs conductor/mine. */
-  mode: "conductor" | "personal";
+  mode: ScoreAnnotatorMode;
   onSelectMark: (id: string, page: number) => void;
 }
 
@@ -168,8 +169,15 @@ export const AnnotationSidebar = ({
                     </>
                   ) : (
                     <>
+                      {/* For a singer this layer IS the conductor's hand. For
+                          a leader it also carries their own choir marks, so it
+                          is named for its audience rather than its author. */}
                       <LayerToggle
-                        label={t("annotations.layer.from_conductor_short", "Dyrygent")}
+                        label={
+                          mode === "leader"
+                            ? t("annotations.layer.shared_short", "Chór")
+                            : t("annotations.layer.from_conductor_short", "Dyrygent")
+                        }
                         count={layerCounts.shared}
                         visible={visibleLayers.shared}
                         onToggle={() => toggleLayerVisibility("shared")}

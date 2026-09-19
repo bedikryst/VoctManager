@@ -23,6 +23,12 @@
     },
     "guide": {
       "open": "Jak działają adnotacje",
+      "leader": {
+        "title": "Dwa zasięgi Twoich oznaczeń",
+        "lede": "Co zostaje przy Tobie, a co zobaczy cały chór.",
+        "choir_title": "Moje albo dla chóru",
+        "choir_body": "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Chór” zobaczy każdy, kto śpiewa ten utwór. Zmienić i skasować możesz tylko własne oznaczenia — te od dyrygenta zostają jego."
+      },
       "personal": {
         "title": "Twoje ślady na nutach",
         "lede": "Krótko o tym, co się dzieje z tym, co tu zapiszesz.",
@@ -982,7 +988,15 @@
       "most_sung_lines": "Najczęściej śpiewane głosy",
       "no_casting": "Brak przypisania do utworów",
       "pending_activation_desc": "Zaproszenie zostało wysłane, ale ten artysta nie aktywował jeszcze konta na platformie.",
-      "upcoming": "Nadchodzące"
+      "upcoming": "Nadchodzące",
+      "leadership": {
+        "title": "Prowadzenie",
+        "projects": "Projekty prowadzone",
+        "rehearsals": "Poprowadzone próby",
+        "debriefs": "Podsumowania prób",
+        "current": "trwa",
+        "ended": "zakończone"
+      }
     },
     "duplicates": {
       "title": "Możliwe duplikaty",
@@ -2732,7 +2746,7 @@
     "project": {
       "archived_badge": "Archiwum",
       "conducting_badge": "Prowadzisz",
-      "standing_in_badge": "Zastępstwo",
+      "standing_in_badge": "Lider",
       "event": "Wydarzenie:",
       "readiness_caption": "{{ready}} z {{total}} partii gotowych",
       "readiness_withheld": "Gotowość ukryta",
@@ -3051,8 +3065,10 @@
       "fallback": "Powiadomienie",
       "ANNOUNCEMENT_PENDING": "Kolejka ogłoszeń",
       "SITE_COPY_PROPOSED": "Redakcja treści",
-      "REHEARSAL_DELEGATED": "Prowadzisz próby",
-      "REHEARSAL_DELEGATION_ENDED": "Koniec zastępstwa"
+      "REHEARSAL_DELEGATED": "Jesteś liderem projektu",
+      "REHEARSAL_DELEGATION_ENDED": "Koniec prowadzenia projektu",
+      "REHEARSAL_LEAD_ASSIGNED": "Poprowadzisz próbę",
+      "REHEARSAL_DEBRIEF_POSTED": "Podsumowanie próby"
     },
     "status": {
       "attendance": {
@@ -3179,10 +3195,10 @@
       }
     },
     "delegation": {
-      "eyebrow": "Prowadzisz próby",
-      "asked_by": "Poprosił(a) {{name}}",
-      "asked_by_lede": "{{name}} poprosił(a) Cię o poprowadzenie prób tego projektu.",
-      "asked_lede": "Poproszono Cię o poprowadzenie prób tego projektu.",
+      "eyebrow": "Jesteś liderem projektu",
+      "asked_by": "Mianował(a) {{name}}",
+      "asked_by_lede": "{{name}} mianował(a) Cię liderem tego projektu.",
+      "asked_lede": "Od teraz jesteś liderem tego projektu.",
       "opens": "Co to otwiera",
       "scope_marks": "Oznaczenia dyrygenta",
       "scope_marks_body": "Na nutach tego projektu zobaczysz wskazówki, które dyrygent zapisał dla prowadzącego próbę. Nikt inny w chórze ich nie widzi.",
@@ -3190,6 +3206,8 @@
       "scope_roll_call_body": "Odhaczysz obecność na próbach tego projektu — także za innych śpiewaków.",
       "scope_materials": "Materiały",
       "scope_materials_body": "Otworzysz nuty i program projektu, nawet jeśli sam w nim nie śpiewasz.",
+      "scope_choir_marks": "Uwagi dla chóru",
+      "scope_choir_marks_body": "To, co napiszesz na warstwie „Widoczne dla chóru”, zobaczy każdy śpiewak tego projektu — tak jak uwagi dyrygenta.",
       "next": "Najbliższa próba: {{when}}",
       "until": "Do {{when}}",
       "until_close": "Do zakończenia projektu",
@@ -3302,38 +3320,47 @@
   },
   "projects": {
     "delegates": {
-      "title": "Prowadzenie prób",
-      "description": "Osoba spoza grona menedżerów, która poprowadzi próby tego projektu w Twoim zastępstwie.",
-      "add": "Powierz komuś prowadzenie",
+      "title": "Lider projektu",
+      "description": "Osoba spoza grona menedżerów, która prowadzi próby tego projektu w Twoim imieniu. Zwykle jedna na cały program — ale decydujesz przy każdym koncercie.",
+      "add": "Mianuj lidera",
+      "badge": "Lider",
       "revoke": "Cofnij",
       "until": "do {{date}}",
       "until_project_ends": "do zakończenia projektu",
       "empty": {
-        "title": "Nikt nie ma zastępstwa",
+        "title": "Projekt nie ma lidera",
         "description": "Próby prowadzisz Ty i pozostali menedżerowie."
       },
       "scope": {
         "marks": "Widzi Twoje notatki dla prowadzącego",
         "marks_hint": "Tylko warstwa „Dla prowadzącego”. Twoje prywatne notatki zostają prywatne.",
-        "marks_short": "Notatki",
         "roll_call": "Sprawdza obecność na próbie",
         "roll_call_hint": "Może odhaczyć cały chór, nie tylko siebie.",
-        "roll_call_short": "Obecność",
         "materials": "Otwiera materiały projektu",
         "materials_hint": "Potrzebne, gdy ta osoba nie śpiewa w tym programie.",
-        "materials_short": "Materiały"
+        "choir_marks": "Nanosi uwagi dla chóru",
+        "choir_marks_hint": "Pisze na warstwie „Widoczne dla chóru” — oficjalnych uwagach, które widzi każdy śpiewak. Domyślnie wyłączone.",
+        "choir_marks_granted": "Nanosi uwagi dla chóru",
+        "without_marks": "bez notatek",
+        "without_roll_call": "bez obecności",
+        "without_materials": "bez materiałów",
+        "limited": "Zakres ograniczony: {{missing}}"
       },
       "form": {
-        "person": "Kto poprowadzi",
+        "person": "Kto będzie liderem",
         "person_placeholder": "Wybierz osobę",
+        "person_locked": "Lider",
+        "person_locked_hint": "Żeby zmienić osobę, cofnij to nadanie i mianuj kogoś innego.",
+        "others_divider": "— Pozostali członkowie —",
+        "scopes_toggle": "Zakres (zaawansowane)",
         "expires": "Do kiedy (opcjonalnie)",
         "expires_hint": "Puste = do zakończenia projektu.",
         "note": "Notatka (opcjonalnie)",
-        "note_placeholder": "np. zastępstwo 10–24 grudnia",
-        "submit": "Powierz prowadzenie"
+        "note_placeholder": "np. na czas mojego wyjazdu 10–24 grudnia",
+        "submit": "Mianuj lidera"
       },
       "confirm": {
-        "title": "Cofnąć zastępstwo?",
+        "title": "Odwołać lidera?",
         "description": "{{name}} straci dostęp do notatek i obecności tego projektu. Kopia pobrana wcześniej na urządzenie tej osoby zostanie tam do czasu wyczyszczenia pamięci aplikacji."
       }
     },
@@ -3989,6 +4016,7 @@
       "facts": {
         "aria": "Edytuj szczegóły wydarzenia",
         "conductor": "Dyrygent",
+        "leader": "Lider",
         "title": "Szczegóły",
         "venue": "Miejsce",
         "onsite_contact": "Kontakt na miejscu",
@@ -4119,6 +4147,8 @@
       "form": {
         "calls_instrumentalists": "Wezwij także instrumentalistów",
         "calls_instrumentalists_hint": "Domyślnie próbuje sam chór; zaznacz na próbie z akompaniamentem.",
+        "led_by": "Prowadzi",
+        "led_by_conductor": "Dyrygent",
         "date_time": "Data i godzina *",
         "end_time": "Koniec próby",
         "focus": "Plan próby / repertuar",
@@ -4156,6 +4186,7 @@
         "optional": "Opcjonalna",
         "tutti": "Tutti",
         "invited": "Wezwanych: {{count}}",
+        "led_by": "Prowadzi: {{name}}",
         "tutti_count": "Cały zespół — obecnie {{count}} os.",
         "tutti_empty_cast": "Cały zespół — obsada dołączy później"
       },
@@ -4366,6 +4397,7 @@
       "density": "Widok listy",
       "density_cards": "Karty odprawy",
       "density_list": "Lista",
+      "led_by": "Prowadzi: {{name}}",
       "no_invited_desc": "Na tej próbie nie ma ani jednego śpiewaka. Sprawdź obsadę projektu.",
       "no_invited_title": "Nikogo nie wezwano",
       "only_unmarked": "Tylko nieoznaczeni",
@@ -4375,13 +4407,25 @@
     },
     "lead": {
       "back": "Harmonogram",
-      "role": "Zastępstwo",
+      "role": "Lider projektu",
       "title": "Prowadzisz",
       "title_highlight": "próbę.",
+      "covering_title": "Prowadzi",
+      "focus_label": "Temat próby",
+      "focus_placeholder": "Nad czym pracujecie",
+      "focus_empty": "Dodaj temat próby",
+      "debrief": {
+        "title": "Po próbie",
+        "placeholder": "Kilka zdań dla dyrygenta: co stoi, co do powtórki, kogo brakowało.",
+        "submit": "Wyślij dyrygentowi",
+        "update": "Zapisz zmiany",
+        "saved": "Zapisano. Dyrygent dostał znać.",
+        "save_error": "Nie udało się zapisać podsumowania."
+      },
       "loading": "Otwieram listę...",
       "gone": {
         "title": "Ta próba nie jest już Twoja",
-        "description": "Zastępstwo zostało cofnięte albo próby już nie ma. Zapytaj menedżera, jeśli to pomyłka."
+        "description": "Nie jesteś już liderem tego projektu albo próby już nie ma. Zapytaj menedżera, jeśli to pomyłka."
       }
     },
     "pulse": {
@@ -4698,6 +4742,7 @@
       },
       "lead_action": "Sprawdź obecność",
       "leading_badge": "Prowadzisz",
+      "led_by": "Prowadzi: {{name}}",
       "no_location": "Brak",
       "optional": "Opcjonalna",
       "range": {
@@ -4962,8 +5007,10 @@
         "SYSTEM_ALERT": "Komunikat systemowy",
         "ANNOUNCEMENT_PENDING": "Niewysłane ogłoszenia",
         "SITE_COPY_PROPOSED": "Propozycje zmian w treści strony",
-        "REHEARSAL_DELEGATED": "Powierzenie prowadzenia prób",
-        "REHEARSAL_DELEGATION_ENDED": "Koniec prowadzenia prób"
+        "REHEARSAL_DELEGATED": "Mianowanie liderem projektu",
+        "REHEARSAL_DELEGATION_ENDED": "Odwołanie lidera projektu",
+        "REHEARSAL_LEAD_ASSIGNED": "Próba do poprowadzenia",
+        "REHEARSAL_DEBRIEF_POSTED": "Podsumowanie po próbie"
       },
       "unsubscribe_modal": {
         "description": "Nie będziesz już otrzymywać powiadomień push na tym urządzeniu. W każdej chwili możesz je włączyć ponownie.",
@@ -4996,6 +5043,7 @@
         "materials": "Materiały i przypomnienia",
         "safety_net": "Niewysłane ogłoszenia",
         "site_copy": "Redakcja treści",
+        "debriefs": "Podsumowania po próbach",
         "team": "Operacje zespołu"
       },
       "type_desc": {
@@ -5021,8 +5069,10 @@
         "REHEARSAL_SCHEDULED": "Nowa próba w harmonogramie",
         "REHEARSAL_CANCELLED": "Odwołanie próby",
         "MESSAGE_RECEIVED": "Odpowiedź w Twojej rozmowie",
-        "REHEARSAL_DELEGATED": "Ktoś powierzył Ci prowadzenie prób projektu",
-        "REHEARSAL_DELEGATION_ENDED": "Prowadzenie prób wróciło do kogoś innego"
+        "REHEARSAL_DELEGATED": "Ktoś mianował Cię liderem projektu",
+        "REHEARSAL_DELEGATION_ENDED": "Nie jesteś już liderem projektu",
+        "REHEARSAL_LEAD_ASSIGNED": "Dyrygent oddał Ci konkretną próbę do poprowadzenia",
+        "REHEARSAL_DEBRIEF_POSTED": "Lider spisał, jak poszła próba"
       },
       "restore_recommended": "Przywróć zalecane",
       "customized_hint": "Zmienione — różni się od zalecanych ustawień",
@@ -5042,13 +5092,15 @@
         "materials": "Nowe nuty i nagrania oraz przypomnienia tuż przed próbą i koncertem.",
         "safety_net": "Jedyne powiadomienie o tym, czego jeszcze nie zrobiono: zmiany czekają w kolejce, a obsada wciąż o nich nie wie. Dlatego trafia też na e-mail.",
         "site_copy": "Ktoś przeszedł przez redakcję treści strony i zostawił propozycje do przejrzenia. Jedna wiadomość na jedno posiedzenie, nie na każdą zmianę — dlatego trafia też na e-mail.",
+        "debriefs": "Lider spisuje po próbie, jak poszła. Powstaje raz, tylko dla wieczoru prowadzonego przez kogoś innego — dlatego przychodzi od razu, a nie w dziennym podsumowaniu, i trafia też na e-mail.",
         "team": "Odpowiedzi na zaproszenia, zgłoszenia obecności i prośby o nieobecność. Te same zdarzenia, które zbiera dzienne podsumowanie poniżej."
       },
       "groups_email_off": {
         "commitments": "Nie dostaniesz e-maila, gdy zmieni się termin próby albo koncertu. W aplikacji nadal zobaczysz wszystko — ale tylko wtedy, gdy do niej zajrzysz.",
         "messages": "Nie dostaniesz e-maila, gdy ktoś do Ciebie napisze. Wiadomość poczeka w aplikacji.",
         "safety_net": "Nie dostaniesz e-maila, gdy kolejka ogłoszeń czeka niewysłana. Przypomnienie zostanie w aplikacji — czyli tam, gdzie dotrze do Ciebie tylko wtedy, gdy i tak do niej zaglądasz.",
-        "site_copy": "Nie dostaniesz e-maila, gdy ktoś zostawi propozycje w redakcji treści. Powiadomienie zostanie w aplikacji — a propozycje poczekają, aż do niej zajrzysz."
+        "site_copy": "Nie dostaniesz e-maila, gdy ktoś zostawi propozycje w redakcji treści. Powiadomienie zostanie w aplikacji — a propozycje poczekają, aż do niej zajrzysz.",
+        "debriefs": "Nie dostaniesz e-maila, gdy lider spisze, jak poszła prowadzona przez niego próba. Tekst poczeka w aplikacji, przy tej próbie."
       },
       "details_show": "Szczegóły ({{n}})",
       "details_hide": "Ukryj szczegóły",

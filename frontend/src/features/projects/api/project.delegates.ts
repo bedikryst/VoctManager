@@ -1,7 +1,9 @@
 /**
  * @file project.delegates.ts
- * @description Who may run this project's rehearsals besides a manager — read,
- * granted, narrowed and ended.
+ * @description The project's leaders — who may run its rehearsals besides a
+ * manager — read, granted, narrowed and ended, plus the one the add form should
+ * suggest. The file and the URL keep the model's name (`RehearsalDelegate`);
+ * people read it as "Lider projektu".
  *
  * Deliberately not optimistic. Every other list in this hub updates under the
  * hand because a wrong guess costs a flicker; here a row that appears before the
@@ -32,6 +34,8 @@ export interface RehearsalDelegate {
   can_see_leader_marks: boolean;
   can_take_roll_call: boolean;
   can_open_materials: boolean;
+  /** Writes the choir's own layer on this project's music. Off by default. */
+  can_mark_for_choir: boolean;
   /** ISO instant, or null for "until the project closes". */
   expires_at: string | null;
   note: string;
@@ -44,6 +48,7 @@ export interface DelegateGrantInput {
   can_see_leader_marks: boolean;
   can_take_roll_call: boolean;
   can_open_materials: boolean;
+  can_mark_for_choir: boolean;
   expires_at: string | null;
   note: string;
 }
@@ -54,6 +59,7 @@ export type DelegateScopePatch = Partial<
     | "can_see_leader_marks"
     | "can_take_roll_call"
     | "can_open_materials"
+    | "can_mark_for_choir"
     | "expires_at"
     | "note"
   >
@@ -68,6 +74,30 @@ export const useProjectDelegates = (projectId: string, enabled = true) =>
     queryFn: async (): Promise<RehearsalDelegate[]> => {
       const response = await api.get<RehearsalDelegate[]>(delegatesUrl(projectId));
       return response.data;
+    },
+    enabled: Boolean(projectId) && enabled,
+    ...RECONCILING_REFETCH,
+  });
+
+/** `{ artist }` from `GET …/delegates/suggested/`: null when nobody fits. */
+interface SuggestedLeaderResponse {
+  artist: string | null;
+}
+
+/**
+ * Who the add form pre-selects: the most recently appointed leader anywhere,
+ * unless they already lead this project. A suggestion the manager confirms with
+ * a click — reading it grants nothing. Keyed under the delegates list so a
+ * grant or a revocation refreshes it with the list.
+ */
+export const useSuggestedLeader = (projectId: string, enabled = true) =>
+  useQuery({
+    queryKey: projectKeys.delegates.suggested(projectId),
+    queryFn: async (): Promise<string | null> => {
+      const response = await api.get<SuggestedLeaderResponse>(
+        `${delegatesUrl(projectId)}suggested/`,
+      );
+      return response.data.artist;
     },
     enabled: Boolean(projectId) && enabled,
     ...RECONCILING_REFETCH,

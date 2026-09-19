@@ -32,6 +32,7 @@ import {
   Info,
   PencilLine,
   UserCheck,
+  Users,
   X,
 } from "lucide-react";
 
@@ -130,6 +131,17 @@ export const DelegationBriefingModal: React.FC = () => {
       ),
     });
   }
+  if (metadata?.can_mark_for_choir) {
+    scopes.push({
+      key: "choir_marks",
+      Icon: Users,
+      title: t("notifications.delegation.scope_choir_marks", "Uwagi dla chóru"),
+      body: t(
+        "notifications.delegation.scope_choir_marks_body",
+        "To, co napiszesz na warstwie „Widoczne dla chóru”, zobaczy każdy śpiewak tego projektu — tak jak uwagi dyrygenta.",
+      ),
+    });
+  }
 
   return createPortal(
     <AnimatePresence>
@@ -176,7 +188,7 @@ export const DelegationBriefingModal: React.FC = () => {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <Eyebrow color="amethyst">
-                      {t("notifications.delegation.eyebrow", "Prowadzisz próby")}
+                      {t("notifications.delegation.eyebrow", "Jesteś liderem projektu")}
                     </Eyebrow>
                     {pendingCount > 1 && (
                       <Caption color="muted" className="tabular-nums">
@@ -198,11 +210,11 @@ export const DelegationBriefingModal: React.FC = () => {
                       ? t("notifications.delegation.asked_by_lede", {
                           name: metadata.granted_by_name,
                           defaultValue:
-                            "{{name}} poprosił(a) Cię o poprowadzenie prób tego projektu.",
+                            "{{name}} mianował(a) Cię liderem tego projektu.",
                         })
                       : t(
                           "notifications.delegation.asked_lede",
-                          "Poproszono Cię o poprowadzenie prób tego projektu.",
+                          "Od teraz jesteś liderem tego projektu.",
                         )}
                   </Text>
                 </div>

@@ -3,13 +3,15 @@
  * @description One-call binding that turns an edition id + annotator mode into
  * the slots PdfViewer needs: a `toolbarSlot`, a `renderPageOverlay` (the drawing
  * surface), an `overlaySlot` (the annotation index, the guide, the live notice)
- * and an `onPageApiChange` handler. Two modes: `conductor` (managers — write to
- * the choir, leader and private reaches, and may move a placed mark between
- * them) and `personal` (everyone else — every mark lands on the user's own
- * private layer; what the conductor wrote stays read-only). Owns tool state,
- * the per-edition cache, optimistic create/update/delete, undo/redo history,
- * keyboard shortcuts and the lifetime of the selection — so callers stay a few
- * lines thin.
+ * and an `onPageApiChange` handler. Three modes: `conductor` (managers — write
+ * to the choir, leader and private reaches, and may move a placed mark between
+ * them), `leader` (a project leader whose grant opens the choir's layer — the
+ * next mark goes to their own pencil or to the choir, and only their own rows
+ * are theirs to touch on either) and `personal` (everyone else — every mark
+ * lands on the user's own private layer; what the conductor wrote stays
+ * read-only). Owns tool state, the per-edition cache, optimistic
+ * create/update/delete, undo/redo history, keyboard shortcuts and the lifetime
+ * of the selection — so callers stay a few lines thin.
  *
  * The selection is bounded here rather than in the overlay, because all three
  * things that end it are outside the drawing surface: the mark is erased, the
@@ -24,6 +26,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useAuth } from "@/app/providers/AuthProvider";
 import type {
   PdfPageApi,
   PdfPageGeometry,
@@ -49,7 +52,25 @@ import type {
   ScoreAnnotation,
 } from "./types/annotations.dto";
 
-export type ScoreAnnotatorMode = "conductor" | "personal";
+export type ScoreAnnotatorMode = "conductor" | "leader" | "personal";
+
+/**
+ * Which stand a reader gets on one piece. The role decides first — a manager
+ * writes everywhere regardless of any grant — and only then the per-piece fact
+ * the songbook carries (`MaterialsPiece.may_mark_for_choir`). Every mount that
+ * opens a score for a non-manager goes through this so the three surfaces
+ * (piece row, piece page, concert book) cannot disagree about one pencil.
+ */
+export const scoreAnnotatorModeFor = ({
+  isManager,
+  mayMarkForChoir,
+}: {
+  isManager: boolean;
+  mayMarkForChoir: boolean;
+}): ScoreAnnotatorMode => {
+  if (isManager) return "conductor";
+  return mayMarkForChoir ? "leader" : "personal";
+};
 
 export interface UseScoreAnnotatorOptions {
   /**
@@ -61,6 +82,11 @@ export interface UseScoreAnnotatorOptions {
   /**
    * conductor → managers: draw on the shared/leader/conductor layers, clear
    *             wipes all three.
+   * leader    → a project leader whose grant carries `choir_marks` on this
+   *             piece: the next mark goes to their own pencil or to the choir
+   *             (a toggle, not a ladder), and on both layers only THEIR rows
+   *             are theirs to move or erase — the conductor's shared marks stay
+   *             his, and his leader cues stay read-only as ever.
    * personal  → everyone else: write only their own private layer
    *             (server-scoped); the conductor's shared markings are visible but
    *             read-only, and so are his leader cues for whoever was handed the
@@ -102,25 +128,37 @@ export const useScoreAnnotator = ({
   book = null,
 }: UseScoreAnnotatorOptions): ScoreAnnotatorBindings => {
   const isConductor = mode === "conductor";
+  const isLeader = mode === "leader";
+  const { user } = useAuth();
+  // Normalised once: the wire's `created_by` is the user's UUID as a string.
+  const userId = user ? String(user.id) : null;
   const tools = useAnnotationTools(
     isConductor ? "shared" : "personal",
     isConductor,
   );
   // Which of the VISIBLE marks this user may erase / edit. The server already
   // scopes reads (a chorister receives shared + own personal; a manager never
-  // receives other users' personal), so layer membership is enough here.
+  // receives other users' personal), so layer membership is enough — except
+  // for a leader, whose shared marks sit on the same layer as the conductor's:
+  // there the row's author is the only thing that tells the two hands apart,
+  // which is exactly the rule the server applies to their writes.
   const canModify = useCallback(
-    (a: ScoreAnnotation) => isConductor || a.layer_name === "personal",
-    [isConductor],
+    (a: ScoreAnnotation) => {
+      if (isConductor) return true;
+      if (a.layer_name === "personal") return true;
+      return isLeader && a.layer_name === "shared" && a.created_by === userId;
+    },
+    [isConductor, isLeader, userId],
   );
 
   // Clear mirrors the server rule: managers wipe every layer that is not
   // somebody's personal — the leader cues included, since those are their own
-  // markings coming back — while choristers wipe only their own pencil marks.
+  // markings coming back — while everyone else wipes only their own marks: the
+  // pencil layer, plus (for a leader) what they themselves put on the choir's.
   const isCleared = useCallback(
     (a: ScoreAnnotation) =>
-      isConductor ? a.layer_name !== "personal" : a.layer_name === "personal",
-    [isConductor],
+      isConductor ? a.layer_name !== "personal" : canModify(a),
+    [canModify, isConductor],
   );
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -152,7 +190,7 @@ export const useScoreAnnotator = ({
   });
 
   const { create, update, remove, clear, draftAnnotation } =
-    useAnnotationMutations(activeEditionId, { isCleared });
+    useAnnotationMutations(activeEditionId, { isCleared, authorId: userId });
 
   // Freehand needs a page large enough for a stroke to mean something — which
   // the reader can reach by zooming or by switching the fit, on any device.
@@ -256,8 +294,11 @@ export const useScoreAnnotator = ({
    *
    * Empty in personal mode: a chorister's mark has exactly one possible
    * audience, so offering a ladder there would name layers that mean nothing to
-   * them. The overlay renders the control from this list alone, which is what
-   * keeps it free of any notion of "mode".
+   * them. Empty for a leader too: the ladder is a ladder of AUDIENCES, and
+   * their own pencil is not one — a mark that landed on the wrong side of the
+   * toolbar's toggle is erased and drawn again, not promoted. The overlay
+   * renders the control from this list alone, which is what keeps it free of
+   * any notion of "mode".
    */
   const audiences = useMemo<readonly WriteLayer[]>(
     () => (isConductor ? WRITE_LAYERS : []),
@@ -328,7 +369,7 @@ export const useScoreAnnotator = ({
     [annotations],
   );
 
-  const incoming = useIncomingMarks(annotations, activeEditionId, mode);
+  const incoming = useIncomingMarks(annotations, activeEditionId, mode, userId);
 
   const handleGoToIncoming = useCallback(() => {
     if (incoming.marks) pageApi.goToPage(displayPage(incoming.marks.page));
@@ -539,14 +580,18 @@ export const useScoreAnnotator = ({
  * Only the reader's side is watched. In conductor mode the shared layer IS the
  * user's own hand, so announcing it back to them would be noise; a chorister,
  * meanwhile, cannot write to `shared` at all, which makes "a shared mark I had
- * not seen" an exact synonym for "the conductor just wrote this".
+ * not seen" an exact synonym for "the conductor just wrote this". A leader
+ * sits between: they do write to `shared`, so their own rows are left out by
+ * author — the draft carries their id from the moment it is drawn, which is
+ * what keeps a mark they just made from being announced back to them as news.
  */
 const useIncomingMarks = (
   annotations: readonly ScoreAnnotation[],
   editionId: string | null,
   mode: ScoreAnnotatorMode,
+  userId: string | null,
 ): { marks: IncomingMarks | null; dismiss: () => void } => {
-  const watching = mode === "personal";
+  const watching = mode !== "conductor";
   const seen = useRef<Set<string> | null>(null);
   const [marks, setMarks] = useState<IncomingMarks | null>(null);
 
@@ -564,7 +609,9 @@ const useIncomingMarks = (
     // A cue that arrives an hour before a rehearsal somebody else is running is
     // exactly the mark that must not land silently.
     const incoming = annotations.filter(
-      (a) => a.layer_name === "shared" || a.layer_name === "leader",
+      (a) =>
+        (a.layer_name === "shared" || a.layer_name === "leader") &&
+        a.created_by !== userId,
     );
     // The first list to arrive is the baseline, not news: everything already on
     // the page when the reader opened it is simply the score they asked for.
@@ -579,7 +626,7 @@ const useIncomingMarks = (
       count: fresh.length,
       page: Math.min(...fresh.map((a) => a.page_number)),
     });
-  }, [annotations, editionId, watching]);
+  }, [annotations, editionId, userId, watching]);
 
   const dismiss = useCallback(() => setMarks(null), []);
 
