@@ -820,7 +820,9 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
 #                         projects they run. Read and nothing more: a mark on
 #                         that layer is the conductor's, and a stand-in adding
 #                         to it would be writing in his hand. Their own thoughts
-#                         go on 'personal', like everyone else's.
+#                         go on 'personal', like everyone else's — unless the
+#                         grant carries `choir_marks`, which opens 'shared' for
+#                         their OWN marks on that project's music.
 #
 # Why 'leader' is a layer of its own and not a switch over 'conductor': that
 # layer carries what the conductor thinks about the singers, so opening it to
@@ -900,6 +902,12 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         rather than the 404 it used to be, which is the honest answer: the mark
         is not hidden from them, it is simply not theirs to move.
 
+        The one door a delegation can open here is the choir's layer: with the
+        `choir_marks` scope on, a leader writes 'shared' on the music of the
+        project they run — in their own hand only, so a mark the conductor put
+        there stays his (the own-row rule below does not care which layer). The
+        leader layer stays closed either way.
+
         The palette's reserved ink is gated here too, for the same reason and by
         the same rule: crimson is how the page says "the conductor wrote this",
         and one book can now carry both hands at once.
@@ -907,7 +915,15 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         if self._is_manager():
             return
         user = request_user(self.request)
-        if layer_name != PERSONAL_ANNOTATION_LAYER:
+        if layer_name == SHARED_ANNOTATION_LAYER:
+            may_mark_for_choir = edition.piece_id is not None and (
+                led_piece_ids(user, scope='choir_marks')
+                .filter(piece_id=edition.piece_id)
+                .exists()
+            )
+            if not may_mark_for_choir:
+                raise PermissionDenied('Only personal-layer annotations may be written.')
+        elif layer_name != PERSONAL_ANNOTATION_LAYER:
             raise PermissionDenied('Only personal-layer annotations may be written.')
         if color is not None and is_reserved_ink(color):
             raise PermissionDenied('That ink is reserved for the conductor.')
@@ -1023,8 +1039,11 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         the gesture that hands remarks about singers to one of them; taking a
         manager's own markings back carries no such risk, so the trash takes
         them with the rest. Pass `layer_name` to narrow ('personal' narrows to
-        their own marks). Non-managers always wipe only their OWN personal
-        marks. Body: {edition, layer_name?}.
+        their own marks). Non-managers wipe only their OWN marks: the personal
+        layer, plus what they themselves put on 'shared' where the `choir_marks`
+        scope let them — the same door `_assert_can_write` opens, so a leader's
+        "clear everything" reaches exactly what their pencil could. The
+        conductor's shared marks are never theirs. Body: {edition, layer_name?}.
         """
         edition_id = request.data.get('edition')
         if not edition_id:
@@ -1041,7 +1060,8 @@ class AnnotationViewSet(viewsets.ModelViewSet):
             )
         # Never blind-delete by raw id: confirm the edition exists so a stray or
         # forged id can't silently no-op (and so the response is an honest 404).
-        if not ScoreEdition.objects.filter(pk=edition_id).exists():
+        edition = ScoreEdition.objects.filter(pk=edition_id).only('id', 'piece_id').first()
+        if edition is None:
             return Response(
                 {'detail': 'edition not found.'},
                 status=status.HTTP_404_NOT_FOUND,
@@ -1057,7 +1077,14 @@ class AnnotationViewSet(viewsets.ModelViewSet):
             else:
                 qs = qs.exclude(layer_name=PERSONAL_ANNOTATION_LAYER)
         else:
-            qs = qs.filter(layer_name=PERSONAL_ANNOTATION_LAYER, created_by=user)
+            own_layers = [PERSONAL_ANNOTATION_LAYER]
+            if edition.piece_id is not None and (
+                led_piece_ids(user, scope='choir_marks')
+                .filter(piece_id=edition.piece_id)
+                .exists()
+            ):
+                own_layers.append(SHARED_ANNOTATION_LAYER)
+            qs = qs.filter(layer_name__in=own_layers, created_by=user)
         deleted = qs.count()
         qs.delete()  # SoftDeleteQuerySet → bulk is_deleted=True
         return Response({'deleted': deleted}, status=status.HTTP_200_OK)

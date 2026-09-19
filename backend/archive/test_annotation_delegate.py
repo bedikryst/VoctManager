@@ -257,6 +257,62 @@ class DelegateMarkVisibilityTests(APITestCase):
         )
         self.assertEqual(response.status_code, 201)
 
+    # --- the choir's layer, on request --------------------------------------
+
+    def _post_shared_mark(self):
+        return self.client.post(
+            _ENDPOINT,
+            {
+                "edition": str(self.edition.pk),
+                "page_number": 1,
+                "annotation_type": AnnotationType.FREEHAND,
+                "payload": {"paths": [[[0.1, 0.1], [0.2, 0.2]]], "width": 0.004},
+                "layer_name": SHARED_ANNOTATION_LAYER,
+                "color": _PENCIL,
+            },
+            format="json",
+        )
+
+    def test_a_grant_without_choir_marks_keeps_the_shared_layer_closed(self) -> None:
+        self._grant()
+        self.client.force_authenticate(self.deputy_user)
+        self.assertEqual(self._post_shared_mark().status_code, 403)
+
+    def test_choir_marks_open_the_shared_layer_for_their_own_hand(self) -> None:
+        self._grant(can_mark_for_choir=True)
+        self.client.force_authenticate(self.deputy_user)
+        response = self._post_shared_mark()
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(response.json()["layer_name"], SHARED_ANNOTATION_LAYER)
+
+    def test_choir_marks_do_not_reach_the_conductor_s_shared_mark(self) -> None:
+        # The layer is open, the row is not theirs: the own-row rule holds on
+        # 'shared' exactly as it does on 'personal'.
+        self._grant(can_mark_for_choir=True)
+        self.client.force_authenticate(self.deputy_user)
+        response = self.client.patch(
+            f"{_ENDPOINT}{self.shared_mark.pk}/",
+            {"color": "#1F2933"}, format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_choir_marks_do_not_open_the_leader_layer(self) -> None:
+        self._grant(can_mark_for_choir=True)
+        self.client.force_authenticate(self.deputy_user)
+        response = self.client.post(
+            _ENDPOINT,
+            {
+                "edition": str(self.edition.pk),
+                "page_number": 1,
+                "annotation_type": AnnotationType.FREEHAND,
+                "payload": {"paths": [[[0.1, 0.1], [0.2, 0.2]]], "width": 0.004},
+                "layer_name": LEADER_ANNOTATION_LAYER,
+                "color": _PENCIL,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+
     def test_clearing_the_page_still_only_reaches_their_own_marks(self) -> None:
         self._grant()
         self.client.force_authenticate(self.deputy_user)
@@ -267,6 +323,53 @@ class DelegateMarkVisibilityTests(APITestCase):
         self.assertEqual(response.json()["deleted"], 0)
         self.assertTrue(Annotation.objects.filter(pk=self.leader_mark.pk).exists())
         self.assertTrue(Annotation.objects.filter(pk=self.conductor_mark.pk).exists())
+
+    def test_clearing_with_choir_marks_takes_their_own_shared_marks_only(self) -> None:
+        # The trash reaches exactly what the pencil could: their shared mark
+        # goes, the conductor's shared mark on the same page stays.
+        self._grant(can_mark_for_choir=True)
+        self.client.force_authenticate(self.deputy_user)
+        own_shared_id = self._post_shared_mark().json()["id"]
+        response = self.client.post(
+            f"{_ENDPOINT}clear/", {"edition": str(self.edition.pk)}, format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["deleted"], 1)
+        self.assertFalse(Annotation.objects.filter(pk=own_shared_id).exists())
+        self.assertTrue(Annotation.objects.filter(pk=self.shared_mark.pk).exists())
+
+    def test_clearing_without_choir_marks_leaves_shared_marks_alone(self) -> None:
+        # A shared mark they wrote while the scope was on is no longer theirs to
+        # bulk-erase once it is withdrawn — the row rules follow the grant.
+        grant = self._grant(can_mark_for_choir=True)
+        self.client.force_authenticate(self.deputy_user)
+        own_shared_id = self._post_shared_mark().json()["id"]
+        grant.can_mark_for_choir = False
+        grant.save(update_fields=["can_mark_for_choir"])
+        response = self.client.post(
+            f"{_ENDPOINT}clear/", {"edition": str(self.edition.pk)}, format="json",
+        )
+        self.assertEqual(response.json()["deleted"], 0)
+        self.assertTrue(Annotation.objects.filter(pk=own_shared_id).exists())
+
+    # --- what the stand is told ---------------------------------------------
+
+    def _songbook_choir_flag(self) -> bool:
+        rows = self.client.get("/api/participations/materials-dashboard/").json()
+        row = next(r for r in rows if r["project"]["id"] == str(self.project.pk))
+        return row["program"][0]["piece"]["may_mark_for_choir"]
+
+    def test_the_songbook_says_where_the_choir_pill_may_aim(self) -> None:
+        # The flag follows the scope, not the grant: the stand arms its choir
+        # pill from this and nothing else, so it must move exactly when the
+        # server's write rule does.
+        self.client.force_authenticate(self.deputy_user)
+        self.assertFalse(self._songbook_choir_flag())
+        grant = self._grant()
+        self.assertFalse(self._songbook_choir_flag())
+        grant.can_mark_for_choir = True
+        grant.save(update_fields=["can_mark_for_choir"])
+        self.assertTrue(self._songbook_choir_flag())
 
 
 @override_settings(MEDIA_ROOT=_MEDIA)
