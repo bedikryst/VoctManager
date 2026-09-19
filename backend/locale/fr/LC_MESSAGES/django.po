@@ -4643,3 +4643,351 @@ msgid "Page"
 msgid_plural "Pages"
 msgstr[0] "Page"
 msgstr[1] "Pages"
+
+#: notifications/message_content.py:1076
+msgid "Score markings"
+msgstr "Les annotations du chef"
+
+#: notifications/message_content.py:1077
+msgid "The cues the conductor wrote for whoever runs the rehearsal"
+msgstr "Les indications que le chef a écrites pour qui dirige la répétition"
+
+#: notifications/message_content.py:1082
+msgid "You can take the roll call at this project's rehearsals"
+msgstr "Vous pouvez faire l’appel aux répétitions de ce projet"
+
+#: notifications/message_content.py:1086
+msgid "Materials"
+msgstr "Matériel"
+
+#: notifications/message_content.py:1091
+msgid "Markings for the choir"
+msgstr "Annotations pour le chœur"
+
+#: notifications/message_content.py:1092
+msgid "What you write on the choir's layer, every singer sees"
+msgstr "Ce que vous écrivez sur le calque du chœur, chaque choriste le voit"
+
+#: notifications/message_content.py:1123
+#, python-format
+msgid "%(who)s has made you the leader of %(project)s."
+msgstr "%(who)s vous a nommé(e) leader du projet %(project)s."
+
+#: notifications/message_content.py:1126
+#, python-format
+msgid "You are now the leader of %(project)s."
+msgstr "Vous êtes désormais leader du projet %(project)s."
+
+#: notifications/message_content.py:1132
+#, python-format
+msgid "You lead the project — %(project)s"
+msgstr "Vous êtes leader du projet — %(project)s"
+
+#: notifications/message_content.py:1137
+#, python-format
+msgid "You are the leader of %(project)s"
+msgstr "Vous êtes leader du projet : %(project)s"
+
+#: notifications/message_content.py:1138 notifications/message_content.py:1176
+#: notifications/message_content.py:1255
+msgid "Project leader"
+msgstr "Leader du projet"
+
+#: notifications/message_content.py:1113
+msgid "Appointed by"
+msgstr "Nommé(e) par"
+
+#: notifications/message_content.py:1117
+msgid "the project closes"
+msgstr "la clôture du projet"
+
+#: notifications/message_content.py:1139
+#, python-format
+msgid ""
+"%(body)s Here is what that opens for you — and what it does not: you are not"
+" a manager of this project, so the cast and the excusal requests stay with "
+"them."
+msgstr ""
+"%(body)s Voici ce que cela vous ouvre — et ce que cela n’ouvre pas : vous "
+"n’êtes pas responsable de ce projet, la distribution et les demandes "
+"d’absence restent donc aux responsables."
+
+#: notifications/message_content.py:1167
+#, python-format
+msgid "No longer the leader — %(project)s"
+msgstr "Fin de la charge de leader — %(project)s"
+
+#: notifications/message_content.py:1168
+#, python-format
+msgid ""
+"You are no longer the leader of %(project)s. Your own pencil marks stay "
+"where they are."
+msgstr ""
+"Vous n’êtes plus leader du projet %(project)s. Vos propres annotations au "
+"crayon restent où elles sont."
+
+#: notifications/message_content.py:1175
+#, python-format
+msgid "Your leadership of %(project)s has ended"
+msgstr "Fin de votre charge de leader : %(project)s"
+
+#: notifications/message_content.py:1177
+#, python-format
+msgid ""
+"Somebody else leads %(project)s from now on. The conductor's cues and the "
+"attendance sheet have closed again; your own markings on the music are "
+"untouched."
+msgstr ""
+"À partir de maintenant, quelqu’un d’autre dirige %(project)s. Les "
+"indications du chef et la feuille de présence se sont refermées ; vos "
+"propres annotations sur les partitions restent intactes."
+
+#: notifications/message_content.py:1191
+msgid "sopranos"
+msgstr "sopranos"
+
+#: notifications/message_content.py:1192
+msgid "altos"
+msgstr "altos"
+
+#: notifications/message_content.py:1193
+msgid "tenors"
+msgstr "ténors"
+
+#: notifications/message_content.py:1194
+msgid "basses"
+msgstr "basses"
+
+#: notifications/message_content.py:1224
+#, python-format
+msgid "You lead the rehearsal on %(when)s (%(sections)s)"
+msgstr "Vous dirigez la répétition — %(when)s (%(sections)s)"
+
+#: notifications/message_content.py:1228
+#, python-format
+msgid "You lead the rehearsal on %(when)s"
+msgstr "Vous dirigez la répétition — %(when)s"
+
+#: notifications/message_content.py:1230
+msgid "A rehearsal has been handed to you"
+msgstr "Une répétition vous est confiée"
+
+#: notifications/message_content.py:1234
+msgid "Sections"
+msgstr "Pupitres"
+
+#: notifications/message_content.py:1250
+#, python-format
+msgid "You lead the rehearsal — %(project)s, %(when)s"
+msgstr "Vous dirigez la répétition : %(project)s, %(when)s"
+
+#: notifications/message_content.py:1253
+#, python-format
+msgid "You lead a rehearsal — %(project)s"
+msgstr "Vous dirigez une répétition : %(project)s"
+
+#: notifications/message_content.py:1256
+#, python-format
+msgid ""
+"The conductor has put you in front of the choir for this rehearsal of "
+"%(project)s. The roll call and everything your leadership of the project "
+"opens are on the evening's card."
+msgstr ""
+"Le chef vous met devant le chœur pour cette répétition de %(project)s. "
+"L’appel et tout ce qu’ouvre votre charge de leader vous attendent sur la "
+"fiche de la soirée."
+
+#: notifications/message_content.py:1262 notifications/message_content.py:1314
+msgid "Open the evening"
+msgstr "Ouvrir la fiche de la soirée"
+
+#: notifications/message_content.py:1276
+msgid "The leader"
+msgstr "Le leader du projet"
+
+#: notifications/message_content.py:1282
+#, python-format
+msgid "%(author)s wrote up the rehearsal"
+msgstr "Compte rendu de répétition — %(author)s"
+
+#: notifications/message_content.py:1286
+msgid "Written by"
+msgstr "Rédigé par"
+
+#: notifications/message_content.py:1288 roster/models.py:896
+msgid "Debrief"
+msgstr "Compte rendu"
+
+#: notifications/message_content.py:1308
+msgid "After the rehearsal"
+msgstr "Après la répétition"
+
+#: notifications/message_content.py:1309
+#, python-format
+msgid ""
+"%(author)s has written up the rehearsal of %(project)s. The whole text is on"
+" the evening's card."
+msgstr ""
+"%(author)s a rédigé le compte rendu de la répétition de %(project)s. Le "
+"texte entier se trouve sur la fiche de la soirée."
+
+#: notifications/message_content.py:1304
+#, python-format
+msgid "Debrief — %(project)s, %(when)s"
+msgstr "Compte rendu : %(project)s, %(when)s"
+
+#: notifications/message_content.py:1306
+#, python-format
+msgid "Debrief — %(project)s"
+msgstr "Compte rendu : %(project)s"
+
+#: notifications/models.py:43
+msgid "Made Project Leader"
+msgstr "Nomination comme leader du projet"
+
+#: notifications/models.py:45
+msgid "Project Leadership Ended"
+msgstr "Fin de la charge de leader"
+
+#: notifications/models.py:50
+msgid "Rehearsal Handed to You"
+msgstr "Répétition confiée"
+
+#: notifications/models.py:54
+msgid "Rehearsal Debrief Posted"
+msgstr "Compte rendu de répétition publié"
+
+#: roster/models.py:887
+msgid ""
+"Who runs this rehearsal. Blank = the project's conductor. Names a person; "
+"the powers come from the project's leader grant."
+msgstr ""
+"Qui dirige cette répétition. Vide = le chef du projet. Le champ nomme une "
+"personne ; les droits viennent de la nomination de leader sur le projet."
+
+#: roster/models.py:903
+msgid "Debrief By"
+msgstr "Compte rendu rédigé par"
+
+#: roster/models.py:905
+msgid "Debrief At"
+msgstr "Compte rendu rédigé le"
+
+#: roster/services.py:1786
+msgid "The debrief can be written once the rehearsal has started."
+msgstr ""
+"Le compte rendu ne peut être écrit qu’une fois la répétition commencée."
+
+#: roster/models.py:1068
+msgid "Project Leader"
+msgstr "Leader du projet"
+
+#: roster/models.py:1069
+msgid "Project Leaders"
+msgstr "Leaders de projet"
+
+#: messaging/models.py:182 roster/models.py:1020
+msgid "Leader"
+msgstr "Leader"
+
+#: roster/models.py:1024
+msgid "Sees Leader Markings"
+msgstr "Voit les annotations pour le leader"
+
+#: roster/models.py:1025
+msgid ""
+"Read access to the 'leader' annotation layer on this project's music. Never "
+"the conductor's private layer."
+msgstr ""
+"Accès en lecture au calque d’annotations « pour le leader » sur les "
+"partitions de ce projet. Jamais au calque privé du chef."
+
+#: roster/models.py:1030
+msgid "Takes Roll Call"
+msgstr "Fait l’appel"
+
+#: roster/models.py:1031
+msgid ""
+"May record attendance for this project's rehearsals, including other "
+"singers' rows."
+msgstr ""
+"Peut enregistrer les présences aux répétitions de ce projet, y compris les "
+"lignes des autres chanteurs."
+
+#: roster/models.py:1036
+msgid "Opens Materials"
+msgstr "Ouvre le matériel"
+
+#: roster/models.py:1037
+msgid ""
+"Reaches this project's scores and programme even without a seat in its cast."
+msgstr ""
+"Atteint les partitions et le programme de ce projet, même sans place dans sa"
+" distribution."
+
+#: roster/models.py:1042
+msgid "Marks for the Choir"
+msgstr "Annotations pour le chœur"
+
+#: roster/models.py:1043
+msgid ""
+"Writes the 'shared' annotation layer on this project's music — the choir's "
+"official markings, which every singer sees. Off unless the conductor lends "
+"his voice on purpose."
+msgstr ""
+"Écrit sur le calque « visible par le chœur » des partitions de ce projet — "
+"les annotations officielles que chaque choriste voit. Désactivé tant que le "
+"chef ne prête pas sa voix délibérément."
+
+#: roster/models.py:1053
+msgid ""
+"After this moment the leadership opens nothing. Blank = until the project "
+"closes."
+msgstr ""
+"Après ce moment, la charge de leader n’ouvre plus rien. Vide = jusqu’à la "
+"clôture du projet."
+
+#: roster/models.py:1059
+msgid "Appointed By"
+msgstr "Nommé(e) par"
+
+#: roster/models.py:1064
+msgid "Why this person leads the project, for whoever reads the list later."
+msgstr ""
+"Pourquoi cette personne dirige le projet, pour qui lira la liste plus tard."
+
+#: messaging/models.py:243
+msgid ""
+"MEMBER (synced from participation), LEADER (synced from project leadership) "
+"or MANAGER."
+msgstr ""
+"MEMBER (synchronisé depuis la participation), LEADER (synchronisé depuis la "
+"charge de leader) ou MANAGER."
+
+#: notifications/message_content.py:1087
+msgid "The scores and programme, even if you are not singing in it"
+msgstr "Les partitions et le programme, même si vous n’y chantez pas"
+
+#: notifications/message_content.py:1145 notifications/message_content.py:1183
+msgid "Open the schedule"
+msgstr "Voir le planning"
+
+#: notifications/message_content.py:1162
+msgid "Changed by"
+msgstr "Modifié par"
+
+#: roster/models.py:886
+msgid "Led By"
+msgstr "Dirigée par"
+
+#: roster/models.py:1052
+msgid "Expires At"
+msgstr "Expire le"
+
+#: messaging/models.py:180
+msgid "Member"
+msgstr "Membre"
+
+#: messaging/models.py:181
+msgid "Manager"
+msgstr "Responsable"

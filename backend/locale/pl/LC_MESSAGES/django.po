@@ -828,8 +828,8 @@ msgid ""
 "The Web Push endpoint URL the browser's push service assigned to this "
 "subscription."
 msgstr ""
-"Adres punktu końcowego Web Push przypisany tej subskrypcji przez usługę push "
-"przeglądarki."
+"Adres punktu końcowego Web Push przypisany tej subskrypcji przez usługę push"
+" przeglądarki."
 
 #: notifications/models.py:142
 msgid "ECDH public key for Web Push payload encryption. WEB device type only."
@@ -4619,3 +4619,349 @@ msgid_plural "Pages"
 msgstr[0] "Strona"
 msgstr[1] "Strony"
 msgstr[2] "Stron"
+
+#: notifications/message_content.py:1076
+msgid "Score markings"
+msgstr "Oznaczenia dyrygenta"
+
+#: notifications/message_content.py:1077
+msgid "The cues the conductor wrote for whoever runs the rehearsal"
+msgstr "Wskazówki, które dyrygent zapisał dla prowadzącego próbę"
+
+#: notifications/message_content.py:1082
+msgid "You can take the roll call at this project's rehearsals"
+msgstr "Możesz odhaczać obecność na próbach tego projektu"
+
+#: notifications/message_content.py:1086
+msgid "Materials"
+msgstr "Materiały"
+
+#: notifications/message_content.py:1091
+msgid "Markings for the choir"
+msgstr "Uwagi dla chóru"
+
+#: notifications/message_content.py:1092
+msgid "What you write on the choir's layer, every singer sees"
+msgstr "To, co napiszesz na warstwie chóru, zobaczy każdy śpiewak"
+
+#: notifications/message_content.py:1123
+#, python-format
+msgid "%(who)s has made you the leader of %(project)s."
+msgstr "%(who)s mianował(a) Cię liderem projektu „%(project)s”."
+
+#: notifications/message_content.py:1126
+#, python-format
+msgid "You are now the leader of %(project)s."
+msgstr "Od teraz jesteś liderem projektu „%(project)s”."
+
+#: notifications/message_content.py:1132
+#, python-format
+msgid "You lead the project — %(project)s"
+msgstr "Jesteś liderem projektu — %(project)s"
+
+#: notifications/message_content.py:1137
+#, python-format
+msgid "You are the leader of %(project)s"
+msgstr "Jesteś liderem projektu: %(project)s"
+
+#: notifications/message_content.py:1138 notifications/message_content.py:1176
+#: notifications/message_content.py:1255
+msgid "Project leader"
+msgstr "Lider projektu"
+
+#: notifications/message_content.py:1113
+msgid "Appointed by"
+msgstr "Mianował(a)"
+
+#: notifications/message_content.py:1117
+msgid "the project closes"
+msgstr "zakończenia projektu"
+
+#: notifications/message_content.py:1139
+#, python-format
+msgid ""
+"%(body)s Here is what that opens for you — and what it does not: you are not"
+" a manager of this project, so the cast and the excusal requests stay with "
+"them."
+msgstr ""
+"%(body)s Oto, co to dla Ciebie otwiera — i czego nie: nie jesteś menedżerem "
+"tego projektu, więc obsada i wnioski o usprawiedliwienie zostają u "
+"menedżerów."
+
+#: notifications/message_content.py:1167
+#, python-format
+msgid "No longer the leader — %(project)s"
+msgstr "Koniec prowadzenia projektu — %(project)s"
+
+#: notifications/message_content.py:1168
+#, python-format
+msgid ""
+"You are no longer the leader of %(project)s. Your own pencil marks stay "
+"where they are."
+msgstr ""
+"Nie jesteś już liderem projektu „%(project)s”. Twoje własne notatki na "
+"nutach zostają tam, gdzie są."
+
+#: notifications/message_content.py:1175
+#, python-format
+msgid "Your leadership of %(project)s has ended"
+msgstr "Koniec prowadzenia projektu: %(project)s"
+
+#: notifications/message_content.py:1177
+#, python-format
+msgid ""
+"Somebody else leads %(project)s from now on. The conductor's cues and the "
+"attendance sheet have closed again; your own markings on the music are "
+"untouched."
+msgstr ""
+"Od teraz projekt „%(project)s” prowadzi ktoś inny. Wskazówki dyrygenta i "
+"lista obecności znów się zamknęły; Twoje własne oznaczenia na nutach zostają"
+" nietknięte."
+
+#: notifications/message_content.py:1191
+msgid "sopranos"
+msgstr "soprany"
+
+#: notifications/message_content.py:1192
+msgid "altos"
+msgstr "alty"
+
+#: notifications/message_content.py:1193
+msgid "tenors"
+msgstr "tenory"
+
+#: notifications/message_content.py:1194
+msgid "basses"
+msgstr "basy"
+
+#: notifications/message_content.py:1224
+#, python-format
+msgid "You lead the rehearsal on %(when)s (%(sections)s)"
+msgstr "Poprowadzisz próbę — %(when)s (%(sections)s)"
+
+#: notifications/message_content.py:1228
+#, python-format
+msgid "You lead the rehearsal on %(when)s"
+msgstr "Poprowadzisz próbę — %(when)s"
+
+#: notifications/message_content.py:1230
+msgid "A rehearsal has been handed to you"
+msgstr "Poprowadzisz próbę"
+
+#: notifications/message_content.py:1234
+msgid "Sections"
+msgstr "Sekcje"
+
+#: notifications/message_content.py:1250
+#, python-format
+msgid "You lead the rehearsal — %(project)s, %(when)s"
+msgstr "Poprowadzisz próbę: %(project)s, %(when)s"
+
+#: notifications/message_content.py:1253
+#, python-format
+msgid "You lead a rehearsal — %(project)s"
+msgstr "Poprowadzisz próbę: %(project)s"
+
+#: notifications/message_content.py:1256
+#, python-format
+msgid ""
+"The conductor has put you in front of the choir for this rehearsal of "
+"%(project)s. The roll call and everything your leadership of the project "
+"opens are on the evening's card."
+msgstr ""
+"Dyrygent postawił Cię przed chórem na tej próbie w projekcie „%(project)s”. "
+"Lista obecności i wszystko, co otwiera Twoje prowadzenie projektu, czeka na "
+"karcie wieczoru."
+
+#: notifications/message_content.py:1262 notifications/message_content.py:1314
+msgid "Open the evening"
+msgstr "Otwórz kartę wieczoru"
+
+#: notifications/message_content.py:1276
+msgid "The leader"
+msgstr "Lider projektu"
+
+#: notifications/message_content.py:1282
+#, python-format
+msgid "%(author)s wrote up the rehearsal"
+msgstr "Podsumowanie próby — %(author)s"
+
+#: notifications/message_content.py:1286
+msgid "Written by"
+msgstr "Napisał(a)"
+
+#: notifications/message_content.py:1288 roster/models.py:896
+msgid "Debrief"
+msgstr "Podsumowanie"
+
+#: notifications/message_content.py:1308
+msgid "After the rehearsal"
+msgstr "Po próbie"
+
+#: notifications/message_content.py:1309
+#, python-format
+msgid ""
+"%(author)s has written up the rehearsal of %(project)s. The whole text is on"
+" the evening's card."
+msgstr ""
+"%(author)s napisał(a) podsumowanie próby w projekcie „%(project)s”. Całość "
+"czeka na karcie wieczoru."
+
+#: notifications/message_content.py:1304
+#, python-format
+msgid "Debrief — %(project)s, %(when)s"
+msgstr "Podsumowanie próby: %(project)s, %(when)s"
+
+#: notifications/message_content.py:1306
+#, python-format
+msgid "Debrief — %(project)s"
+msgstr "Podsumowanie próby: %(project)s"
+
+#: notifications/models.py:43
+msgid "Made Project Leader"
+msgstr "Mianowanie liderem projektu"
+
+#: notifications/models.py:45
+msgid "Project Leadership Ended"
+msgstr "Koniec prowadzenia projektu"
+
+#: notifications/models.py:50
+msgid "Rehearsal Handed to You"
+msgstr "Powierzenie próby"
+
+#: notifications/models.py:54
+msgid "Rehearsal Debrief Posted"
+msgstr "Podsumowanie próby"
+
+#: roster/models.py:887
+msgid ""
+"Who runs this rehearsal. Blank = the project's conductor. Names a person; "
+"the powers come from the project's leader grant."
+msgstr ""
+"Kto prowadzi tę próbę. Puste = dyrygent projektu. Pole tylko nazywa osobę; "
+"uprawnienia płyną z nadania lidera na projekcie."
+
+#: roster/models.py:903
+msgid "Debrief By"
+msgstr "Podsumowanie napisał(a)"
+
+#: roster/models.py:905
+msgid "Debrief At"
+msgstr "Podsumowanie zapisano"
+
+#: roster/services.py:1786
+msgid "The debrief can be written once the rehearsal has started."
+msgstr "Podsumowanie można napisać dopiero po rozpoczęciu próby."
+
+#: roster/models.py:1068
+msgid "Project Leader"
+msgstr "Lider projektu"
+
+#: roster/models.py:1069
+msgid "Project Leaders"
+msgstr "Liderzy projektów"
+
+#: messaging/models.py:182 roster/models.py:1020
+msgid "Leader"
+msgstr "Lider"
+
+#: roster/models.py:1024
+msgid "Sees Leader Markings"
+msgstr "Widzi oznaczenia dla prowadzącego"
+
+#: roster/models.py:1025
+msgid ""
+"Read access to the 'leader' annotation layer on this project's music. Never "
+"the conductor's private layer."
+msgstr ""
+"Dostęp do odczytu warstwy adnotacji „dla prowadzącego” na nutach tego "
+"projektu. Nigdy do prywatnej warstwy dyrygenta."
+
+#: roster/models.py:1030
+msgid "Takes Roll Call"
+msgstr "Sprawdza obecność"
+
+#: roster/models.py:1031
+msgid ""
+"May record attendance for this project's rehearsals, including other "
+"singers' rows."
+msgstr ""
+"Może zapisywać obecność na próbach tego projektu, także w wierszach innych "
+"śpiewaków."
+
+#: roster/models.py:1036
+msgid "Opens Materials"
+msgstr "Otwiera materiały"
+
+#: roster/models.py:1037
+msgid ""
+"Reaches this project's scores and programme even without a seat in its cast."
+msgstr ""
+"Sięga po nuty i program tego projektu, nawet bez miejsca w jego obsadzie."
+
+#: roster/models.py:1042
+msgid "Marks for the Choir"
+msgstr "Uwagi dla chóru"
+
+#: roster/models.py:1043
+msgid ""
+"Writes the 'shared' annotation layer on this project's music — the choir's "
+"official markings, which every singer sees. Off unless the conductor lends "
+"his voice on purpose."
+msgstr ""
+"Pisze na warstwie „widoczne dla chóru” na nutach tego projektu — oficjalnych"
+" uwagach, które widzi każdy śpiewak. Wyłączone, dopóki dyrygent świadomie "
+"nie użyczy swojego głosu."
+
+#: roster/models.py:1053
+msgid ""
+"After this moment the leadership opens nothing. Blank = until the project "
+"closes."
+msgstr ""
+"Po tym momencie prowadzenie nie otwiera już niczego. Puste = do zakończenia "
+"projektu."
+
+#: roster/models.py:1059
+msgid "Appointed By"
+msgstr "Mianował(a)"
+
+#: roster/models.py:1064
+msgid "Why this person leads the project, for whoever reads the list later."
+msgstr ""
+"Dlaczego ta osoba prowadzi projekt — dla kogoś, kto przeczyta listę później."
+
+#: messaging/models.py:243
+msgid ""
+"MEMBER (synced from participation), LEADER (synced from project leadership) "
+"or MANAGER."
+msgstr ""
+"MEMBER (synchronizowane z udziałem), LEADER (synchronizowane z prowadzeniem "
+"projektu) albo MANAGER."
+
+#: notifications/message_content.py:1087
+msgid "The scores and programme, even if you are not singing in it"
+msgstr "Nuty i program projektu, nawet jeśli sam w nim nie śpiewasz"
+
+#: notifications/message_content.py:1145 notifications/message_content.py:1183
+msgid "Open the schedule"
+msgstr "Zobacz harmonogram"
+
+#: notifications/message_content.py:1162
+msgid "Changed by"
+msgstr "Zmienił(a)"
+
+#: roster/models.py:886
+msgid "Led By"
+msgstr "Prowadzi"
+
+#: roster/models.py:1052
+msgid "Expires At"
+msgstr "Wygasa"
+
+#: messaging/models.py:180
+msgid "Member"
+msgstr "Członek"
+
+#: messaging/models.py:181
+msgid "Manager"
+msgstr "Menedżer"
