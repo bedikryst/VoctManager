@@ -1070,7 +1070,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """
         The project's leaders — who may run its rehearsals besides a manager.
         Manager-only: lending the conductor's markings is his decision, not a
-        leader's. The URL keeps the model's name; people read it as "Lider".
+        leader's. The URL keeps the model's name; people read it as
+        "Asystent dyrygenta".
 
         GET  — the live delegations, newest first.
         POST — grant one: `{artist, can_see_leader_marks?, can_take_roll_call?,

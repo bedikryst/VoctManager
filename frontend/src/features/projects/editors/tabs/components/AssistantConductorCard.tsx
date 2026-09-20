@@ -1,15 +1,18 @@
 /**
- * @file ProjectLeadersCard.tsx
- * @description The project's leader: who runs its rehearsals in the conductor's
- * place, what that opens for them, and until when. Normally one person for
- * every programme, but decided per concert — so the add form suggests the last
- * leader and the manager still clicks.
+ * @file AssistantConductorCard.tsx
+ * @description The project's assistant conductor: who may stand in for the
+ * conductor at its rehearsals, what that opens for them, and until when.
+ * Normally one person for every programme, but decided per concert — so the add
+ * form suggests the last assistant and the manager still clicks.
  *
- * It lives beside the schedule rather than on the score, even though the score
- * is where the conductor thinks of it, because leadership is not a property of
- * one piece — it covers a whole programme and the evenings in it. Putting the
- * control where it is granted keeps one list rather than a second, disagreeing
- * one on every score.
+ * Appointing schedules nothing: which evening the assistant actually leads is
+ * `Rehearsal.led_by`, chosen per rehearsal (default: the conductor). That is why
+ * the card sits with the project's facts on the Details tab rather than in the
+ * rehearsal console — the appointment is a property of the programme, the
+ * rehearsal's "Prowadzi" is a property of one evening.
+ *
+ * The card fetches its own candidates (every active non-instrumentalist, the
+ * cast first) so the tab that mounts it owes it nothing but the project id.
  *
  * The scopes are separate switches because they leak differently, and the copy
  * says what each opens instead of naming an internal layer: a conductor
@@ -29,7 +32,7 @@
  * @module features/projects/editors/tabs/components
  */
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ChevronDown,
@@ -52,6 +55,11 @@ import {
   useUpdateDelegate,
   type RehearsalDelegate,
 } from "../../../api/project.delegates";
+import {
+  useProjectArtistsDictionary,
+  useProjectParticipations,
+} from "../../../api/project.queries";
+import { isInstrumentalist } from "@/shared/lib/voiceTypes";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { DateTimeField } from "@/shared/ui/composites/DateTimeField";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
@@ -67,18 +75,55 @@ import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { toZonedWallClock } from "@/shared/lib/time/timezone";
 import { cn } from "@/shared/lib/utils";
 
-export interface LeaderCandidate {
+interface LeaderCandidate {
   id: string;
   name: string;
   /** Sings in this project. The cast is offered first; everyone else after a divider. */
   inCast: boolean;
 }
 
-interface ProjectLeadersCardProps {
+interface AssistantConductorCardProps {
   projectId: string;
-  /** Every active member who could lead: the cast first, then the rest. */
-  candidates: readonly LeaderCandidate[];
 }
+
+const EMPTY_CANDIDATES: readonly LeaderCandidate[] = [];
+
+/**
+ * Who can be appointed: the cast first, because that is who it is usually
+ * handed to, then every other active member — the intended assistant may sit
+ * a concert out and still run its rehearsals (the server allows an assistant
+ * without a seat). Instrumentalists never: they are not in front of the choir.
+ */
+const useAssistantCandidates = (
+  projectId: string,
+): readonly LeaderCandidate[] => {
+  const { data: artists } = useProjectArtistsDictionary();
+  const { data: participations } = useProjectParticipations(projectId);
+
+  return useMemo<readonly LeaderCandidate[]>(() => {
+    if (!artists) return EMPTY_CANDIDATES;
+    const castIds = new Set(
+      (participations ?? [])
+        .filter((participation) => String(participation.project) === projectId)
+        .map((participation) => String(participation.artist)),
+    );
+    const byName = (a: LeaderCandidate, b: LeaderCandidate): number =>
+      a.name.localeCompare(b.name, "pl");
+    const candidates: LeaderCandidate[] = [];
+    for (const artist of artists) {
+      if (!artist.is_active || isInstrumentalist(artist.voice_type)) continue;
+      candidates.push({
+        id: String(artist.id),
+        name: `${artist.first_name} ${artist.last_name}`,
+        inCast: castIds.has(String(artist.id)),
+      });
+    }
+    return [
+      ...candidates.filter((candidate) => candidate.inCast).sort(byName),
+      ...candidates.filter((candidate) => !candidate.inCast).sort(byName),
+    ];
+  }, [artists, participations, projectId]);
+};
 
 interface DraftState {
   /** `null` = nothing chosen by hand yet, so the server's suggestion applies. */
@@ -126,11 +171,11 @@ const draftFromDelegate = (row: RehearsalDelegate): DraftState => ({
   note: row.note,
 });
 
-export const ProjectLeadersCard = ({
+export const AssistantConductorCard = ({
   projectId,
-  candidates,
-}: ProjectLeadersCardProps): React.JSX.Element => {
+}: AssistantConductorCardProps): React.JSX.Element => {
   const { t } = useTranslation();
+  const candidates = useAssistantCandidates(projectId);
   const { data: delegates = [], isLoading } = useProjectDelegates(projectId);
   const { data: suggestedArtist = null } = useSuggestedLeader(projectId);
   const grant = useGrantDelegate(projectId);
@@ -250,7 +295,7 @@ export const ProjectLeadersCard = ({
           ...otherOptions,
         ]
       : castOptions;
-  // A leader who has since left the roster is still the one this grant is
+  // An assistant who has since left the roster is still the one this grant is
   // about, and the locked field has to say their name rather than a placeholder.
   const personOptions: SelectOption[] =
     editing && !offeredOptions.some((option) => option.value === editing.artist)
@@ -262,7 +307,7 @@ export const ProjectLeadersCard = ({
       <SectionCard
         as="h2"
         icon={<UserRound size={15} aria-hidden="true" />}
-        title={t("projects.delegates.title", "Lider projektu")}
+        title={t("projects.delegates.title", "Asystent dyrygenta")}
         action={
           delegates.length > 0 ? (
             <Badge variant="neutral">{delegates.length}</Badge>
@@ -272,7 +317,7 @@ export const ProjectLeadersCard = ({
         <Caption as="p" color="graphite">
           {t(
             "projects.delegates.description",
-            "Osoba spoza grona menedżerów, która prowadzi próby tego projektu w Twoim imieniu. Zwykle jedna na cały program — ale decydujesz przy każdym koncercie.",
+            "Osoba spoza grona menedżerów, która może prowadzić próby tego projektu w Twoim imieniu. Zwykle jedna na cały program, ale decydujesz przy każdym koncercie — a kto stoi przed chórem danego wieczoru, zaznaczasz przy próbie.",
           )}
         </Caption>
 
@@ -300,7 +345,7 @@ export const ProjectLeadersCard = ({
                         {row.artist_name}
                       </Text>
                       <Badge variant={ACCENT_BADGE.gold}>
-                        {t("projects.delegates.badge", "Lider")}
+                        {t("projects.delegates.badge", "Asystent")}
                       </Badge>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -365,7 +410,7 @@ export const ProjectLeadersCard = ({
             variant="inline"
             className="py-8"
             icon={<UserRound size={22} aria-hidden="true" />}
-            title={t("projects.delegates.empty.title", "Projekt nie ma lidera")}
+            title={t("projects.delegates.empty.title", "Projekt nie ma asystenta")}
             description={t(
               "projects.delegates.empty.description",
               "Próby prowadzisz Ty i pozostali menedżerowie.",
@@ -379,8 +424,8 @@ export const ProjectLeadersCard = ({
               <Select
                 label={
                   editing
-                    ? t("projects.delegates.form.person_locked", "Lider")
-                    : t("projects.delegates.form.person", "Kto będzie liderem")
+                    ? t("projects.delegates.form.person_locked", "Asystent")
+                    : t("projects.delegates.form.person", "Kto będzie asystentem")
                 }
                 placeholder={t(
                   "projects.delegates.form.person_placeholder",
@@ -525,7 +570,7 @@ export const ProjectLeadersCard = ({
               <Button type="button" onClick={submit} disabled={!canSubmit}>
                 {editing
                   ? t("common.actions.save", "Zapisz")
-                  : t("projects.delegates.form.submit", "Mianuj lidera")}
+                  : t("projects.delegates.form.submit", "Mianuj asystenta")}
               </Button>
             </div>
           </div>
@@ -538,14 +583,14 @@ export const ProjectLeadersCard = ({
             onClick={openCreate}
             className="mt-4 w-full sm:w-auto"
           >
-            {t("projects.delegates.add", "Mianuj lidera")}
+            {t("projects.delegates.add", "Mianuj asystenta")}
           </Button>
         )}
       </SectionCard>
 
       <ConfirmModal
         isOpen={pendingRevoke !== null}
-        title={t("projects.delegates.confirm.title", "Odwołać lidera?")}
+        title={t("projects.delegates.confirm.title", "Odwołać asystenta?")}
         // Said plainly, because the web cannot do more than this: the source
         // closes, what somebody already read they have read. Worded without a
         // gendered verb: this names whoever the manager picked, and Polish would

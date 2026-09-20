@@ -220,7 +220,7 @@ export function ProjectFactsCard({
 
         {/* A fact, not a control: who runs the rehearsals in the conductor's
             place is appointed on the Rehearsals tab. */}
-        <FactRow label={t("projects.overview.facts.leader", "Lider")}>
+        <FactRow label={t("projects.overview.facts.leader", "Asystent dyrygenta")}>
           <Text size="sm" weight="medium" color={leaderNames ? "default" : "muted"}>
             {leaderNames || dash}
           </Text>

@@ -1,13 +1,10 @@
-# Project leader ("Lider projektu") — promotion of the rehearsal delegate
+# Assistant conductor ("Asystent dyrygenta") — promotion of the rehearsal delegate
 
-Status: **All stages (0–4, 3b) done, audited and committed** (2026-09-19; `894b3a1`..`3c294d9`,
-split one commit per layer; none seen in the browser yet; `make migrate` pending on dev AND prod
-for `roster/0051`–`0054`, `notifications/0019`–`0021`, `messaging/0004`). The audit closed a
-debrief leak to the cast, a stale `led_by` that froze the rehearsal form, and the missing third
-dossier tile; it moved the debrief off the digest shelf and made every "who leads" line a bare
-name. Two gaps closed after it: the leader, delegation and debrief copy now exists in the pl/fr
-catalogs — it had been reaching Polish choristers in English — and the leaders card can change a
-live grant's scope instead of only re-granting over it. What is left is the developer's look.
+Status: **Stages 0–4 and 3b done, seen in the browser, migrated on dev and prod** (2026-09-19,
+`894b3a1`..`3c294d9`). **Stage 5 (rename to "Asystent dyrygenta" + card moved to Details) done
+2026-09-21, uncommitted**, no schema change beyond the `verbose_name` migration it emits; the
+developer has not looked at it yet. Stages 0–4 below still say "leader" — the reasoning holds,
+only the word changed. Read Stage 5 for what the person is called and where the appointment lives.
 
 ## Context
 
@@ -380,6 +377,47 @@ Shapes settled while building (2026-09-19):
 - Cache buster NOT bumped (same reason as Stage 1: nothing is committed yet, nobody holds a
   snapshot). Bump once before the first deploy that carries any of these DTO changes.
 - `.po` copy for the new type is English-only, as for every delegation type (see Traps).
+
+---
+
+## Stage 5 — "Asystent dyrygenta", appointed from Details (2026-09-21)
+
+Goal: the role reads as the term choirs already use, and the appointment sits with the other
+project facts instead of the rehearsal console. Powers, scopes, routes and models unchanged.
+
+Decisions:
+- **Name: "Asystent dyrygenta" / "Assistant conductor" / "Assistant du chef".** "Lider projektu"
+  did not say what the person does; "asystent projektu/koncertu" names the wrong object. The
+  conductor's assistant is what the scopes add up to (stands in front, takes roll call, marks the
+  choir's scores, runs sectionals in parallel).
+- **Masculine generic, like every other role label in the panel.** No feminine form exists
+  anywhere in `pl/translation.json` ("Dyrygent", "Menedżer", "Chórzysta"), and the roster records
+  no gender by design. A free-text label typed by the conductor was rejected: the role appears in
+  ~25 inflected Polish sentences ("mianował Cię asystentem", "Odwołać asystenta?"), so a noun in a
+  slot is not an option. `UserProfile.Salutation` was rejected as a source — it is a greeting
+  preference on the account, not on the artist, and its default would print "asystent" for the
+  very person this is for. Where the copy can, it uses a present-tense verb, which Polish leaves
+  ungendered ("Prowadzi próby").
+- **Appointing does not schedule.** `Rehearsal.led_by` stays per rehearsal, default null = the
+  conductor; the assistant may lead none of them. Nothing in Stage 5 touches that.
+
+Frontend:
+- `ProjectLeadersCard.tsx` → `AssistantConductorCard.tsx` (git mv). The card now computes its own
+  candidates from `useProjectArtistsDictionary` + `useProjectParticipations` (a local
+  `useAssistantCandidates`); `RehearsalsTab` loses the memo and the mount. It sits in
+  `DetailsTab` **below the `<form id="details-form">`**, not inside it: the card mutates on its
+  own, and an `Input` inside the details form would submit that form on Enter.
+- Values only, key prefixes kept: `projects.delegates.*`, `notifications.delegation.*`,
+  `rehearsals.lead.*`, `materials.project.standing_in_badge`, `projects.overview.facts.leader`,
+  `notifications.types.*`, `settings.notifications.groups.debriefs*`. Fallback strings in TSX
+  follow the pl values.
+- Backend: `RehearsalDelegate` verbose_names/help_texts/docstring; `NotificationType` labels;
+  `message_content.py` compose functions; `ChannelRole.LEADER` label. `backend/locale/{pl,en,fr}`
+  msgids re-keyed with polib and `.mo` rebuilt. Migration for the `verbose_name`s (no SQL).
+
+What stays: model, table, URL `/delegates/`, `led_projects_q`, `NotificationType` values,
+`ChannelRole.LEADER` value, `leader` annotation layer name, TS identifiers (`useSuggestedLeader`,
+`LeaderCandidate`, `rollCallLeaders`) — identifiers are not read by people.
 
 ---
 

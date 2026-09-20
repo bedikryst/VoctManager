@@ -29,10 +29,6 @@ import { useRehearsalsTab } from "../hooks/useRehearsalsTab";
 import { getEventMomentPresentation } from "../../lib/projectPresentation";
 import type { RehearsalTargetType } from "../types";
 import { RehearsalTimelineRow } from "./components/RehearsalTimelineRow";
-import {
-  ProjectLeadersCard,
-  type LeaderCandidate,
-} from "./components/ProjectLeadersCard";
 import { cn } from "@/shared/lib/utils";
 import { artistRoleLabel, isInstrumentalist } from "@/shared/lib/voiceTypes";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
@@ -259,32 +255,6 @@ export const RehearsalsTab = ({
   )?.key;
 
   const concertTitle = project?.title ?? "";
-
-  // Who can lead this project: the cast first, because that is who it is
-  // usually handed to, then every other active member — the intended leader
-  // may sit a concert out and still run its rehearsals (the server allows a
-  // leader without a seat). Instrumentalists never: they are not in front of
-  // the choir.
-  const leaderCandidates = useMemo<LeaderCandidate[]>(() => {
-    const castIds = new Set(
-      projectParticipations.map((participation) => String(participation.artist)),
-    );
-    const byName = (a: LeaderCandidate, b: LeaderCandidate): number =>
-      a.name.localeCompare(b.name, "pl");
-    const candidates: LeaderCandidate[] = [];
-    for (const artist of artistMap.values()) {
-      if (!artist.is_active || isInstrumentalist(artist.voice_type)) continue;
-      candidates.push({
-        id: String(artist.id),
-        name: `${artist.first_name} ${artist.last_name}`,
-        inCast: castIds.has(String(artist.id)),
-      });
-    }
-    return [
-      ...candidates.filter((candidate) => candidate.inCast).sort(byName),
-      ...candidates.filter((candidate) => !candidate.inCast).sort(byName),
-    ];
-  }, [artistMap, projectParticipations]);
 
   const renderTimeline = (
     entries: typeof upcomingTimeline,
@@ -748,14 +718,6 @@ export const RehearsalsTab = ({
             />
           )}
         </SectionCard>
-
-        {/* ── The project's leader, when it is not a manager ───────────── */}
-        <div className="lg:col-span-12">
-          <ProjectLeadersCard
-            projectId={projectId}
-            candidates={leaderCandidates}
-          />
-        </div>
       </div>
 
       <ConfirmModal

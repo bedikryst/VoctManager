@@ -204,8 +204,8 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
         return timezone.now() > obj.activation_email_sent_at + timedelta(seconds=timeout)
 
     def get_is_project_leader(self, obj: Artist) -> bool:
-        """Leads at least one open project right now — the roster's "Lider"
-        badge. The list annotates it (`ArtistViewSet.get_queryset`); an instance
+        """Assists on at least one open project right now — the roster's
+        "Asystent" badge. The list annotates it (`ArtistViewSet.get_queryset`); an instance
         that arrived another way (the PATCH response) asks the database with
         the same predicate, so saving a profile cannot switch the badge off."""
         annotated = getattr(obj, 'is_project_leader', None)

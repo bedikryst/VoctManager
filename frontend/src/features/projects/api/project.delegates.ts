@@ -1,9 +1,9 @@
 /**
  * @file project.delegates.ts
- * @description The project's leaders — who may run its rehearsals besides a
- * manager — read, granted, narrowed and ended, plus the one the add form should
- * suggest. The file and the URL keep the model's name (`RehearsalDelegate`);
- * people read it as "Lider projektu".
+ * @description The project's assistant conductors — who may run its rehearsals
+ * besides a manager — read, granted, narrowed and ended, plus the one the add
+ * form should suggest. The file and the URL keep the model's name
+ * (`RehearsalDelegate`); people read it as "Asystent dyrygenta".
  *
  * Deliberately not optimistic. Every other list in this hub updates under the
  * hand because a wrong guess costs a flicker; here a row that appears before the

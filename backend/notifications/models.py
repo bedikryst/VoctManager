@@ -35,14 +35,14 @@ class NotificationType(models.TextChoices):
     REHEARSAL_UPDATED = 'REHEARSAL_UPDATED', _('Rehearsal Time/Location Changed')
     REHEARSAL_CANCELLED = 'REHEARSAL_CANCELLED', _('Rehearsal Cancelled')
     REHEARSAL_REMINDER = 'REHEARSAL_REMINDER', _('Upcoming Rehearsal Reminder')
-    # Made the leader of a project (running its rehearsals in the conductor's
-    # place). Two types rather than one carrying a direction, matching
+    # Made the assistant conductor on a project (may run its rehearsals in the
+    # conductor's place). Two types rather than one carrying a direction, matching
     # ABSENCE_APPROVED/REJECTED: the copy has nothing in common, and a reader
     # who wants to be told they were handed a programme wants to be told when it
-    # is taken back. The values keep the model's name; the labels say "leader".
-    REHEARSAL_DELEGATED = 'REHEARSAL_DELEGATED', _('Made Project Leader')
+    # is taken back. The values keep the model's name; the labels say "assistant".
+    REHEARSAL_DELEGATED = 'REHEARSAL_DELEGATED', _('Made Assistant Conductor')
     REHEARSAL_DELEGATION_ENDED = (
-        'REHEARSAL_DELEGATION_ENDED', _('Project Leadership Ended')
+        'REHEARSAL_DELEGATION_ENDED', _('Assistant Conductor Removed')
     )
     # One evening named as yours to run (`Rehearsal.led_by`). Its own type
     # rather than a second REHEARSAL_DELEGATED: the client's briefing queue keys

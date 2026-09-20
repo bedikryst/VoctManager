@@ -10,6 +10,9 @@
  * windows and the number to call), and what the ENSEMBLE is told (attire,
  * reference playlist, notes) — every field of the last two is published to the
  * singers, which is why the notes no longer sit under a "production" heading.
+ * A fifth block, the assistant conductor, sits BELOW the form rather than in it:
+ * appointing is its own mutation with its own buttons, and a text field inside
+ * `details-form` would submit the concert's metadata on Enter.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/DetailsTab
  */
@@ -47,6 +50,7 @@ import {
 import { getEventMomentPresentation } from "../../lib/projectPresentation";
 import { TimezoneField } from "../../components/TimezoneField";
 import { DayTimeline } from "./components/DayTimeline";
+import { AssistantConductorCard } from "./components/AssistantConductorCard";
 import {
   DateTimeField,
   TimeField,
@@ -748,6 +752,14 @@ export const DetailsTab = ({
           </SectionCard>
         </div>
       </form>
+
+      {/* ── Who may stand in for the conductor — saved on its own, not with the
+          form, and only once the project exists to be appointed to. ── */}
+      {project && (
+        <div className="mt-6">
+          <AssistantConductorCard projectId={String(project.id)} />
+        </div>
+      )}
 
       {/* Portalled, so it lies over this tab instead of navigating away from a
           form that has not been saved. */}

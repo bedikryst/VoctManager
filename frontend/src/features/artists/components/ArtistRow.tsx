@@ -163,7 +163,7 @@ export const ArtistRow = React.memo(
             </Badge>
             {isActive && artist.is_project_leader && (
               <Badge variant={ACCENT_BADGE.gold} className="shrink-0">
-                {t("projects.delegates.badge", "Lider")}
+                {t("projects.delegates.badge", "Asystent")}
               </Badge>
             )}
             {!isActive && (

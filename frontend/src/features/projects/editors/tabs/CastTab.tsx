@@ -142,10 +142,10 @@ function CastRow({
     },
   );
 
-  /* Named for the job, not for the person doing it: Polish inflects "lider" by
-     gender and the roster does not record one, so "liderka" on a man's row (or
-     the reverse) is a mistake the copy would make on its own. The verbal noun
-     sidesteps it, and `aria-pressed` carries the on/off state. */
+  /* Named for the job, not for the person doing it: Polish inflects the noun by
+     gender and the roster does not record one, so a feminine form on a man's row
+     (or the reverse) is a mistake the copy would make on its own. The verbal
+     noun sidesteps it, and `aria-pressed` carries the on/off state. */
   const leaderLabel = t(
     "projects.cast.leader.aria",
     "Prowadzenie sekcji: {{name}}",

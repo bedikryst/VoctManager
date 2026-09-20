@@ -176,10 +176,10 @@ class ThreadReadState(EnterpriseBaseModel):
 class ChannelRole(models.TextChoices):
     """Which source seated a member in a project channel. The role decides
     nothing about what they may do there; it records who may take the seat
-    away — the participation sync, the leadership sync, or nobody."""
+    away — the participation sync, the appointment sync, or nobody."""
     MEMBER = 'MEMBER', _('Member')
     MANAGER = 'MANAGER', _('Manager')
-    LEADER = 'LEADER', _('Leader')
+    LEADER = 'LEADER', _('Assistant Conductor')
 
 
 class ProjectChannel(EnterpriseBaseModel):

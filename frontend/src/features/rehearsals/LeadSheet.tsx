@@ -143,7 +143,7 @@ export default function LeadSheet(): React.JSX.Element {
                 className="!mb-0"
                 roleText={
                   leadSheet?.project.title ??
-                  t("rehearsals.lead.role", "Lider projektu")
+                  t("rehearsals.lead.role", "Asystent dyrygenta")
                 }
                 title={
                   someoneElseLeads
@@ -183,7 +183,7 @@ export default function LeadSheet(): React.JSX.Element {
                   )}
                   description={t(
                     "rehearsals.lead.gone.description",
-                    "Nie jesteś już liderem tego projektu albo próby już nie ma. Zapytaj menedżera, jeśli to pomyłka.",
+                    "Nie jesteś już asystentem w tym projekcie albo próby już nie ma. Zapytaj menedżera, jeśli to pomyłka.",
                   )}
                   actions={
                     <Button variant="outline" size="sm" asChild>

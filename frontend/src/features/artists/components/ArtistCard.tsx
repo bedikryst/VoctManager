@@ -170,7 +170,7 @@ export const ArtistCard = React.memo(
               </Badge>
               {isActive && artist.is_project_leader && (
                 <Badge variant={ACCENT_BADGE.gold}>
-                  {t("projects.delegates.badge", "Lider")}
+                  {t("projects.delegates.badge", "Asystent")}
                 </Badge>
               )}
               {!isActive && (

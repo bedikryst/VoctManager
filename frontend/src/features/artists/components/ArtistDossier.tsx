@@ -343,7 +343,7 @@ const LedProjectItem = ({ project }: { project: DossierLedProject }) => {
         variant={project.is_live ? ACCENT_BADGE.gold : "neutral"}
         className="shrink-0"
       >
-        {t("projects.delegates.badge", "Lider")}
+        {t("projects.delegates.badge", "Asystent")}
       </Badge>
     </div>
   );
@@ -425,7 +425,7 @@ const ProjectHistoryItem = ({ project }: { project: DossierProject }) => {
         <div className="flex shrink-0 items-center gap-1.5">
           {project.led && (
             <Badge variant={ACCENT_BADGE.gold}>
-              {t("projects.delegates.badge", "Lider")}
+              {t("projects.delegates.badge", "Asystent")}
             </Badge>
           )}
           <Badge variant={badge.variant}>{t(badge.key, badge.fallback)}</Badge>

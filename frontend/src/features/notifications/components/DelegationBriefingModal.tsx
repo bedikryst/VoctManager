@@ -188,7 +188,7 @@ export const DelegationBriefingModal: React.FC = () => {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <Eyebrow color="amethyst">
-                      {t("notifications.delegation.eyebrow", "Jesteś liderem projektu")}
+                      {t("notifications.delegation.eyebrow", "Jesteś asystentem dyrygenta")}
                     </Eyebrow>
                     {pendingCount > 1 && (
                       <Caption color="muted" className="tabular-nums">
@@ -210,11 +210,11 @@ export const DelegationBriefingModal: React.FC = () => {
                       ? t("notifications.delegation.asked_by_lede", {
                           name: metadata.granted_by_name,
                           defaultValue:
-                            "{{name}} mianował(a) Cię liderem tego projektu.",
+                            "{{name}} mianował(a) Cię asystentem dyrygenta w tym projekcie.",
                         })
                       : t(
                           "notifications.delegation.asked_lede",
-                          "Od teraz jesteś liderem tego projektu.",
+                          "Od teraz jesteś asystentem dyrygenta w tym projekcie.",
                         )}
                   </Text>
                 </div>
