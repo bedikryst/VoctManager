@@ -20,22 +20,25 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Count, Max, Q
+from django.http import Http404
 from django.utils.translation import gettext as _
 from django_filters.rest_framework import DjangoFilterBackend
+from pydantic import ValidationError as PydanticValidationError
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
-from core.exceptions import make_error_response
+from core.exceptions import format_pydantic_validation_errors, make_error_response
 from core.permissions import IsManager, user_is_manager
-from core.request_utils import request_user, truthy_flag
+from core.request_utils import client_payload, request_user, truthy_flag
 from roster.permissions import led_piece_ids
 from roster.queries import artist_live_piece_ids, user_has_live_access_to_piece
 
 from . import services
 from .annotation_palette import is_reserved_ink
+from .dtos import PieceVoiceLayoutBulkDTO
 from .models import (
     CONDUCTOR_ANNOTATION_LAYER,
     LEADER_ANNOTATION_LAYER,
@@ -279,6 +282,38 @@ class PieceViewSet(viewsets.ModelViewSet):
             piece=instance, dto=dto, actor_email=_actor_email(request),
         )
         return Response(self.get_serializer(piece).data)
+
+    @action(detail=False, methods=['put'], url_path='voice-requirements')
+    def voice_requirements(self, request) -> Response:
+        """One divisi stamped onto many pieces, as one act.
+
+        Most of a choir's repertoire shares a layout, so the archive lets the
+        manager select pieces and write the piece-wide layer to all of them
+        at once. One transaction: a sweep half-written after a dropped
+        connection would leave no trace of which pieces it reached.
+        """
+        try:
+            dto = PieceVoiceLayoutBulkDTO(**client_payload(request.data))
+        except PydanticValidationError as e:
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail="The submitted data is invalid.",
+                validation_errors=format_pydantic_validation_errors(e),
+            )
+
+        pieces = list(Piece.objects.filter(pk__in=dto.piece_ids))
+        if len(pieces) != len(dto.piece_ids):
+            raise Http404("One of the submitted ids names a piece that does not exist.")
+
+        updated = services.ArchiveManagementService.set_piece_wide_voice_requirements(
+            pieces=pieces, requirements=dto.voice_requirements,
+        )
+        return Response(
+            {'updated': updated, 'piece_ids': [str(piece.pk) for piece in pieces]},
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=True, methods=['post'], url_path='generate_program_note')
     def generate_program_note(self, request, pk=None):

@@ -476,6 +476,127 @@ class UpdatePieceProvenanceTests(APITestCase):
         )
 
 
+class BulkVoiceLayoutEndpointTests(APITestCase):
+    """PUT /api/pieces/voice-requirements/ stamps one piece-wide divisi onto
+    many pieces at once. It replaces only the piece-wide layer — an edition's
+    own override is a statement about that arrangement and survives the sweep.
+    """
+
+    URL = "/api/pieces/voice-requirements/"
+
+    @staticmethod
+    def _user(username: str, email: str, role: str):
+        user = User.objects.create_user(username=username, email=email, password="pw123456")
+        UserProfile.objects.create(user=user, role=role)
+        return user
+
+    def setUp(self) -> None:
+        self.manager = self._user("mgr", "mgr@test.pl", AppRole.MANAGER)
+        self.artist = self._user("art", "art@test.pl", AppRole.ARTIST)
+        self.first = Piece.objects.create(title="Ave Verum")
+        self.second = Piece.objects.create(title="Locus iste")
+        self.untouched = Piece.objects.create(title="Os justi")
+        PieceVoiceRequirement.objects.create(
+            piece=self.first, voice_line="V1", quantity=3,
+        )
+        PieceVoiceRequirement.objects.create(
+            piece=self.untouched, voice_line="V1", quantity=3,
+        )
+        self.edition = ScoreEdition.objects.create(
+            piece=self.second, original_filename="unison.pdf", sha256="a" * 64,
+        )
+        PieceVoiceRequirement.objects.create(
+            piece=self.second, edition=self.edition, voice_line="TUTTI", quantity=1,
+        )
+
+    @staticmethod
+    def _layout(*lines: str) -> list[dict[str, object]]:
+        return [{"voice_line": line, "quantity": 2} for line in lines]
+
+    def _piece_wide(self, piece: Piece) -> set[str]:
+        return set(
+            piece.voice_requirements.filter(edition__isnull=True)
+            .values_list("voice_line", flat=True)
+        )
+
+    def test_requires_manager(self) -> None:
+        self.client.force_authenticate(self.artist)
+        resp = self.client.put(
+            self.URL,
+            {"piece_ids": [str(self.first.id)], "voice_requirements": self._layout("S1")},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 403)
+
+    def test_replaces_the_piece_wide_layer_on_every_named_piece(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.put(
+            self.URL,
+            {
+                "piece_ids": [str(self.first.id), str(self.second.id)],
+                "voice_requirements": self._layout("S1", "A1", "T1", "B1"),
+            },
+            format="json",
+        )
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["updated"], 2)
+        self.assertEqual(self._piece_wide(self.first), {"S1", "A1", "T1", "B1"})
+        self.assertEqual(self._piece_wide(self.second), {"S1", "A1", "T1", "B1"})
+        # The piece outside the selection keeps what it had.
+        self.assertEqual(self._piece_wide(self.untouched), {"V1"})
+
+    def test_edition_overrides_survive_the_sweep(self) -> None:
+        self.client.force_authenticate(self.manager)
+        self.client.put(
+            self.URL,
+            {"piece_ids": [str(self.second.id)], "voice_requirements": self._layout("S1", "A1")},
+            format="json",
+        )
+        edition_rows = set(
+            self.second.voice_requirements.filter(edition=self.edition)
+            .values_list("voice_line", flat=True)
+        )
+        self.assertEqual(edition_rows, {"TUTTI"})
+
+    def test_empty_layout_clears_the_piece_wide_layer(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.put(
+            self.URL,
+            {"piece_ids": [str(self.first.id)], "voice_requirements": []},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(self._piece_wide(self.first), set())
+
+    def test_edition_scoped_entries_are_refused(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.put(
+            self.URL,
+            {
+                "piece_ids": [str(self.second.id)],
+                "voice_requirements": [
+                    {"voice_line": "S1", "quantity": 1, "edition": str(self.edition.id)},
+                ],
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_unknown_piece_writes_nothing(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.put(
+            self.URL,
+            {
+                "piece_ids": [str(self.first.id), "00000000-0000-0000-0000-000000000000"],
+                "voice_requirements": self._layout("S1"),
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(self._piece_wide(self.first), {"V1"})
+
+
 class VerifyFieldEndpointTests(APITestCase):
     """POST /api/pieces/{id}/verify_field/ marks an AI field human-verified —
     it stamps MANUAL provenance WITHOUT changing the value, so a conductor can

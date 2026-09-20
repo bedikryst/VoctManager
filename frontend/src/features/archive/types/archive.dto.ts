@@ -26,6 +26,21 @@ export interface VoiceRequirementDTO {
   edition?: string | null;
 }
 
+/**
+ * One piece-wide divisi for many pieces at once — mirrors backend
+ * [archive.dtos.PieceVoiceLayoutBulkDTO]. The server refuses an `edition` on
+ * any entry, so the entries here carry none.
+ */
+export interface VoiceLayoutBulkDTO {
+  piece_ids: string[];
+  voice_requirements: ReadonlyArray<Pick<VoiceRequirementDTO, "voice_line" | "quantity">>;
+}
+
+export interface VoiceLayoutBulkResult {
+  updated: number;
+  piece_ids: string[];
+}
+
 export interface TrackUploadDTO {
   pieceId: string | number;
   voiceLine: string;

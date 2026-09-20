@@ -34,6 +34,7 @@ import type {
   ScoreEditionUploadDTO,
   TrackPatchDTO,
   TrackUploadDTO,
+  VoiceLayoutBulkDTO,
 } from "../types/archive.dto";
 
 export const archiveKeys = {
@@ -247,6 +248,22 @@ export const useUpdatePiece = () => {
       }
     },
     onSettled: () => {
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+    },
+  });
+};
+
+/**
+ * The bulk divisi sweep. No optimistic write: the list's `voice_requirements_read`
+ * is server-shaped (ids, display labels) and inventing rows client-side
+ * would flash a half-true state for a change the user confirmed anyway.
+ */
+export const useBulkSetVoiceLayout = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: VoiceLayoutBulkDTO) =>
+      ArchiveService.bulkSetVoiceLayout(payload),
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
     },
   });

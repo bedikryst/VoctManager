@@ -13,13 +13,14 @@
  * @module features/archive/hooks/usePieceFormState
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import type { VoiceLine } from "@/shared/types";
 import type { VoiceRequirementDTO } from "../types/archive.dto";
+import { useDivisiDraft } from "./useDivisiDraft";
 
 export const pieceFormSchema = z.object({
   title: z.string().min(1, "Tytuł jest wymagany").max(200),
@@ -113,46 +114,13 @@ export const usePieceFormState = (
   const [isAddingComposer, setIsAddingComposer] = useState<boolean>(false);
   const [composerDraft, setComposerDraft] =
     useState<InlineComposerDraft>(EMPTY_COMPOSER_DRAFT);
-  const [requirements, setRequirements] = useState<VoiceRequirementDTO[]>(
-    initial.requirements ?? [],
-  );
-
-  const adjustRequirement = useCallback((index: number, delta: number) => {
-    setRequirements((prev) => {
-      const next = [...prev];
-      if (!next[index]) return prev;
-      next[index] = {
-        ...next[index],
-        quantity: Math.max(1, next[index].quantity + delta),
-      };
-      return next;
-    });
-  }, []);
-
-  const removeRequirement = useCallback((index: number) => {
-    setRequirements((prev) => {
-      const next = [...prev];
-      next.splice(index, 1);
-      return next;
-    });
-  }, []);
-
-  // Uniqueness is per LAYER: the same line may exist once piece-wide and once
-  // inside an arrangement that overrides it. Only a repeat within one layer is
-  // a duplicate.
-  const addRequirement = useCallback(
-    (voiceLine: VoiceLine, editionId: string | null = null) => {
-      setRequirements((prev) =>
-        prev.some(
-          (r) =>
-            r.voice_line === voiceLine && (r.edition ?? null) === editionId,
-        )
-          ? prev
-          : [...prev, { voice_line: voiceLine, quantity: 1, edition: editionId }],
-      );
-    },
-    [],
-  );
+  const {
+    requirements,
+    setRequirements,
+    adjustRequirement,
+    removeRequirement,
+    addRequirement,
+  } = useDivisiDraft(initial.requirements);
 
   return {
     form,

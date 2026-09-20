@@ -29,6 +29,8 @@ import type {
   ScoreEditionUploadDTO,
   TrackPatchDTO,
   TrackUploadDTO,
+  VoiceLayoutBulkDTO,
+  VoiceLayoutBulkResult,
 } from "../types/archive.dto";
 
 const PIECES_URL = "/api/pieces/";
@@ -128,6 +130,21 @@ export const ArchiveService = {
 
   deletePiece: async (id: string): Promise<void> => {
     await api.delete(`${PIECES_URL}${id}/`);
+  },
+
+  /**
+   * One piece-wide divisi written onto many pieces in a single transaction.
+   * Edition-scoped layers are left untouched server-side; the payload may
+   * only name piece-wide lines.
+   */
+  bulkSetVoiceLayout: async (
+    payload: VoiceLayoutBulkDTO,
+  ): Promise<VoiceLayoutBulkResult> => {
+    const response = await api.put<VoiceLayoutBulkResult>(
+      `${PIECES_URL}voice-requirements/`,
+      payload,
+    );
+    return response.data;
   },
 
   /**

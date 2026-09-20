@@ -11,7 +11,13 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
+import {
+  CheckSquare,
+  ChevronDown,
+  RotateCcw,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
 
 import type { Composer } from "@/shared/types";
 import { Badge } from "@/shared/ui/primitives/Badge";
@@ -48,6 +54,9 @@ interface ArchiveSearchBarProps {
   readonly onEpochFilterChange: (value: string) => void;
   readonly onVoicingFilterChange: (value: string) => void;
   readonly onResetFilters: () => void;
+  /** Bulk selection of rows — the archive's one multi-piece act (divisi). */
+  readonly selectionMode: boolean;
+  readonly onToggleSelectionMode: () => void;
 }
 
 export const ArchiveSearchBar = ({
@@ -68,6 +77,8 @@ export const ArchiveSearchBar = ({
   onEpochFilterChange,
   onVoicingFilterChange,
   onResetFilters,
+  selectionMode,
+  onToggleSelectionMode,
 }: ArchiveSearchBarProps): React.JSX.Element => {
   const { t } = useTranslation();
   const [isAdvancedOpen, setIsAdvancedOpen] = useState<boolean>(
@@ -91,6 +102,19 @@ export const ArchiveSearchBar = ({
           />
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <Button
+            variant={selectionMode ? "secondary" : "outline"}
+            aria-pressed={selectionMode}
+            onClick={onToggleSelectionMode}
+            title={t("archive.search.select_mode", "Zaznacz wiele")}
+            leftIcon={<CheckSquare size={13} aria-hidden="true" />}
+            className={cn(
+              "shrink-0",
+              selectionMode && "border-ethereal-gold/40 text-ethereal-ink",
+            )}
+          >
+            {t("archive.search.select_mode", "Zaznacz wiele")}
+          </Button>
           <Button
             variant={activeFilterCount > 0 ? "secondary" : "outline"}
             onClick={() => setIsAdvancedOpen((open) => !open)}

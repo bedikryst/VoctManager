@@ -10,15 +10,20 @@
  * answer the only question a manager has here — whether the take sitting on
  * the alto line is the alto take. The note beside it travels on to the singer;
  * the filename does not.
+ *
+ * The whole section is a drop target. Several files dropped (or picked
+ * through "add many") open [TrackBatchUpload], where each file already sits
+ * on the voice its name declares — see [trackFilenames].
  * @architecture Enterprise SaaS 2026
  * @module features/archive/components/PieceRowTracks
  */
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useDropzone } from "react-dropzone";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { toastApiError } from "@/shared/api/errors";
-import { Loader2, Plus, Trash2, UploadCloud, X } from "lucide-react";
+import { FolderUp, Loader2, Plus, Trash2, UploadCloud, X } from "lucide-react";
 
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -29,6 +34,7 @@ import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { InlineEditable } from "@/shared/ui/primitives/InlineEditable";
 import { useVoiceLines } from "@/shared/api/options.queries";
 import { collapseVoiceLabels } from "@/shared/lib/voiceLabels";
+import { cn } from "@/shared/lib/utils";
 
 import { scopedToEdition } from "../constants/divisiScope";
 import { getPiecePdfLinks } from "../constants/piecePdfs";
@@ -39,6 +45,15 @@ import {
   useUpdateTrack,
   useDeleteTrack,
 } from "../api/archive.queries";
+import { TrackBatchUpload } from "./TrackBatchUpload";
+
+/** What the model's `FileExtensionValidator` lets through, as a dropzone map. */
+const AUDIO_ACCEPT: Record<string, string[]> = {
+  "audio/mpeg": [".mp3"],
+  "audio/wav": [".wav"],
+  "audio/x-wav": [".wav"],
+  "audio/midi": [".midi"],
+};
 
 interface PieceRowTracksProps {
   readonly piece: EnrichedPiece;
@@ -70,11 +85,54 @@ export const PieceRowTracks = ({
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [batchFiles, setBatchFiles] = useState<File[] | null>(null);
 
   // Per-edition tracks only make sense once there is more than one arrangement
   // to tell apart; below that the control would ask a question with one answer.
   const editions = useMemo(() => getPiecePdfLinks(piece), [piece]);
   const showEditionPicker = editions.length > 1;
+
+  // The codes this piece already speaks of, for reading a bare `(B)` in a
+  // dropped filename the way the singer will see the part named.
+  const voiceScope = useMemo(
+    () => [
+      ...(piece.voice_requirements_read ?? [])
+        .filter((r) => (r.edition ?? null) === null)
+        .map((r) => String(r.voice_line)),
+      ...tracks.map((track) => String(track.voice_part)),
+    ],
+    [piece.voice_requirements_read, tracks],
+  );
+
+  const onDrop = useCallback(
+    (accepted: File[], rejected: readonly { file: File }[]) => {
+      if (rejected.length > 0) {
+        toast.error(
+          t("archive.row_tracks.batch.rejected", {
+            defaultValue: "Pominięto {{count}} plików — tylko MP3, WAV lub MIDI.",
+            count: rejected.length,
+          }),
+        );
+      }
+      if (accepted.length === 0) return;
+      setIsAdding(false);
+      setBatchFiles((current) => [...(current ?? []), ...accepted]);
+    },
+    [t],
+  );
+
+  // The section is the drop target but never the click target: a tap on a
+  // player or a note must stay a tap on that, so the file dialog opens only
+  // from the explicit button.
+  const { getRootProps, getInputProps, isDragActive, open: openFilePicker } =
+    useDropzone({
+      onDrop,
+      accept: AUDIO_ACCEPT,
+      multiple: true,
+      noClick: true,
+      noKeyboard: true,
+      useFsAccessApi: false,
+    });
 
   // A track is named inside its own arrangement, so a piece with one tenor
   // line reads "Tenor" here exactly as it will in the singer's materials.
@@ -181,7 +239,34 @@ export const PieceRowTracks = ({
   };
 
   return (
-    <div className="space-y-3" onClick={stopRowToggle}>
+    <div
+      {...getRootProps({
+        onClick: stopRowToggle,
+        className: cn(
+          "relative space-y-3 rounded-nested outline-none transition-colors",
+          isDragActive &&
+            "bg-ethereal-gold/5 ring-2 ring-ethereal-gold/50 ring-offset-2 ring-offset-transparent",
+        ),
+        "aria-label": t(
+          "archive.row_tracks.batch.dropzone_aria",
+          "Strefa upuszczania plików audio",
+        ),
+      })}
+    >
+      <input {...getInputProps()} />
+      {isDragActive && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-nested bg-ethereal-alabaster/80 backdrop-blur-sm"
+        >
+          <Text size="sm" weight="semibold" color="gold" className="text-center">
+            {t(
+              "archive.row_tracks.batch.drop_active",
+              "Upuść — głos odczytam z nazwy, np. (A1), (B), (mp3) = Tutti",
+            )}
+          </Text>
+        </div>
+      )}
       {isLoading ? (
         <Caption color="muted" className="flex items-center gap-2">
           <Loader2 size={11} className="animate-spin" />
@@ -263,7 +348,16 @@ export const PieceRowTracks = ({
         </ul>
       )}
 
-      {isAdding ? (
+      {batchFiles && batchFiles.length > 0 ? (
+        <TrackBatchUpload
+          piece={piece}
+          files={batchFiles}
+          voiceLines={voiceLines}
+          scope={voiceScope}
+          editions={editions}
+          onDone={() => setBatchFiles(null)}
+        />
+      ) : isAdding ? (
         <form
           onSubmit={handleUpload}
           className="flex flex-col gap-2 rounded-nested border border-ethereal-gold/30 bg-ethereal-gold/5 p-3"
@@ -349,20 +443,42 @@ export const PieceRowTracks = ({
           </div>
         </form>
       ) : (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setIsAdding(true)}
-          leftIcon={<Plus size={13} aria-hidden="true" />}
-        >
-          {tracks.length === 0
-            ? t("archive.row_tracks.add_first", "Dodaj pierwszą ścieżkę")
-            : t("archive.row_tracks.add_more", "Dodaj kolejną ścieżkę")}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAdding(true)}
+            leftIcon={<Plus size={13} aria-hidden="true" />}
+          >
+            {tracks.length === 0
+              ? t("archive.row_tracks.add_first", "Dodaj pierwszą ścieżkę")
+              : t("archive.row_tracks.add_more", "Dodaj kolejną ścieżkę")}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={openFilePicker}
+            leftIcon={<FolderUp size={13} aria-hidden="true" />}
+            title={t(
+              "archive.row_tracks.batch.add_many_hint",
+              "Wybierz wiele plików — głos odczytam z nazwy: (A1), (B), (mp3) = Tutti",
+            )}
+          >
+            {t("archive.row_tracks.batch.add_many", "Wgraj wiele")}
+          </Button>
+          {/* Drag-and-drop is a mouse affordance; a finger never sees it. */}
+          <Caption color="muted" className="hidden fine-pointer:block">
+            {t(
+              "archive.row_tracks.batch.drop_hint",
+              "…albo przeciągnij pliki tutaj — (A1), (B), (mp3) = Tutti.",
+            )}
+          </Caption>
+        </div>
       )}
 
-      {tracks.length === 0 && !isAdding && (
+      {tracks.length === 0 && !isAdding && !batchFiles && (
         <Text size="xs" color="graphite" className="italic">
           {t(
             "archive.row_tracks.empty_hint",

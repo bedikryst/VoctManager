@@ -180,6 +180,33 @@
       "pages": "pp.",
       "section": "AI analysis"
     },
+    "bulk": {
+      "bar_aria": "Bulk actions",
+      "clear": "Clear",
+      "done": "Done",
+      "select_all": "Select all",
+      "select_aria": "Select: {{title}}",
+      "select_without_divisi": "Without a layout ({{n}})",
+      "selected_count": "{{n}} selected",
+      "set_divisi": "Voice layout"
+    },
+    "bulk_divisi": {
+      "apply_one": "Save to {{count}} piece",
+      "apply_other": "Save to {{count}} pieces",
+      "editions_untouched_one": "{{count}} of the selected pieces has a layout saved on an edition — that edition stays as it is.",
+      "editions_untouched_other": "{{count}} of the selected pieces have a layout saved on an edition — those editions stay as they are.",
+      "empty": "Add at least one voice to save.",
+      "explainer": "This layout replaces the piece-wide voice layout of every selected piece.",
+      "hint": "Tap a voice to add it. The number says how many singers the part needs.",
+      "prefilled_one": "Pre-filled with the layout {{count}} of the selected pieces already has.",
+      "prefilled_other": "Pre-filled with the layout {{count}} of the selected pieces already have.",
+      "subtitle_one": "For {{count}} selected piece",
+      "subtitle_other": "For {{count}} selected pieces",
+      "title": "Voice layout",
+      "toast_error": "Could not save the layout",
+      "toast_success_one": "Voice layout saved to {{count}} piece",
+      "toast_success_other": "Voice layout saved to {{count}} pieces"
+    },
     "ai_warning": {
       "before_birth": "Composition year ({{year}}) predates the composer's birth ({{birth}}).",
       "long_after_death": "Composition year ({{year}}) is long after the composer's death ({{death}}).",
@@ -734,6 +761,25 @@
     "row_tracks": {
       "add_first": "Add the first track",
       "add_more": "Add another track",
+      "batch": {
+        "add_many": "Upload many",
+        "add_many_hint": "Pick several files — the voice is read from the name: (A1), (B), (mp3) = Tutti",
+        "ambiguous": "This piece has: {{options}} — which one?",
+        "drop_active": "Drop — the voice is read from the name, e.g. (A1), (B), (mp3) = Tutti",
+        "drop_hint": "…or drag files here — (A1), (B), (mp3) = Tutti.",
+        "dropzone_aria": "Audio file drop zone",
+        "rejected_one": "Skipped {{count}} file — MP3, WAV or MIDI only.",
+        "rejected_other": "Skipped {{count}} files — MP3, WAV or MIDI only.",
+        "remove": "Skip {{name}}",
+        "title_one": "{{count}} file to upload",
+        "title_other": "{{count}} files to upload",
+        "toast_success_one": "Added {{count}} track",
+        "toast_success_other": "Added {{count}} tracks",
+        "unresolved_one": "{{count}} file has no unambiguous voice in its name — pick it by hand.",
+        "unresolved_other": "{{count}} files have no unambiguous voice in their names — pick them by hand.",
+        "upload": "Upload ({{count}})",
+        "voice_for": "Voice for {{name}}"
+      },
       "delete_aria": "Delete track {{label}}",
       "delete_confirm": "Delete track",
       "delete_desc": "The audio file will be deleted from the server. This can't be undone.",
@@ -767,6 +813,7 @@
       "filters_btn": "Filters",
       "placeholder": "Search piece or composer…",
       "reset": "Clear",
+      "select_mode": "Select many",
       "summary_filtered": "{{visible}} of {{total}}",
       "voicing": "Voicing"
     },

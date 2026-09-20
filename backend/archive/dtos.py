@@ -46,6 +46,30 @@ class VoiceRequirementDTO(EnterpriseBaseDTO):
     def validate_voice_line(cls, value: str) -> str:
         return _require_choice(value, VOICE_LINE_VALUES, "voice_line")
 
+
+class PieceVoiceLayoutBulkDTO(EnterpriseBaseDTO):
+    """One piece-wide divisi, written onto several pieces as a single act.
+
+    Only the piece-wide layer is addressed: an arrangement's own override is a
+    deliberate statement about that edition ("this one is unison") and a bulk
+    sweep must not erase it. Hence `edition` is refused on every entry.
+    """
+    piece_ids: tuple[UUID, ...] = Field(..., min_length=1, max_length=500)
+    # Empty tuple is legal: it clears the piece-wide layer on every piece.
+    voice_requirements: tuple[VoiceRequirementDTO, ...] = Field(default=())
+
+    @model_validator(mode="after")
+    def _piece_wide_and_unique(self) -> "PieceVoiceLayoutBulkDTO":
+        if len(set(self.piece_ids)) != len(self.piece_ids):
+            raise ValueError("piece_ids contains duplicates.")
+        if any(req.edition_id is not None for req in self.voice_requirements):
+            raise ValueError("A bulk layout is piece-wide; edition-scoped entries are not accepted.")
+        lines = [req.voice_line for req in self.voice_requirements]
+        if len(set(lines)) != len(lines):
+            raise ValueError("voice_requirements contains duplicate voice lines.")
+        return self
+
+
 class PieceWriteDTO(EnterpriseBaseDTO):
     """Immutable data transfer object for creating or updating a musical piece.
 

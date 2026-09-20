@@ -26,6 +26,7 @@ import React, {
   useDeferredValue,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { Plus, Sparkles, UploadCloud } from "lucide-react";
@@ -45,16 +46,25 @@ import {
 } from "./components/ArchiveSearchBar";
 import { StatLine, type StatLineItem } from "@/shared/ui/composites/StatLine";
 import { ArchiveWelcomeState } from "./components/ArchiveWelcomeState";
+import { BulkDivisiSheet } from "./components/BulkDivisiSheet";
 import { EditionUploadDrawer } from "./components/EditionUploadDrawer";
 import { OrphanIngestionsPanel } from "./components/OrphanIngestionsPanel";
+import { PieceBulkBar } from "./components/PieceBulkBar";
 import { PieceRow } from "./components/PieceRow";
 import { useArchiveData } from "./hooks/useArchiveData";
 import { getArchiveEpochOptions } from "./constants/archiveEpochs";
+import type { EnrichedPiece } from "./types/archive.dto";
 
 const formatCoverage = (value: number, total: number): number => {
   if (total === 0) return 0;
   return Math.round((value / total) * 100);
 };
+
+/** No piece-wide divisi at all — the rows a layout sweep usually targets. */
+const lacksPieceWideDivisi = (piece: EnrichedPiece): boolean =>
+  !(piece.voice_requirements_read ?? []).some(
+    (r) => (r.edition ?? null) === null,
+  );
 
 export default function ArchiveManagement(): React.JSX.Element {
   const { t } = useTranslation();
@@ -65,6 +75,7 @@ export default function ArchiveManagement(): React.JSX.Element {
     isLoading,
     isError,
     composers,
+    voiceLines,
     libraryStats,
     availableVoicings,
     displayPieces,
@@ -161,6 +172,55 @@ export default function ArchiveManagement(): React.JSX.Element {
   ]);
 
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
+
+  // Selection mode: ids live in a Set keyed by String(id); the sheet receives
+  // the piece objects so it can read what layouts they already carry.
+  const [selectionMode, setSelectionMode] = useState<boolean>(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [isDivisiSheetOpen, setIsDivisiSheetOpen] = useState<boolean>(false);
+
+  const toggleSelectionMode = useCallback(() => {
+    setSelectionMode((on) => !on);
+    setSelectedIds(new Set());
+  }, []);
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectVisible = useCallback(
+    (predicate: (piece: EnrichedPiece) => boolean) => {
+      setSelectedIds(
+        new Set(
+          displayPieces.filter(predicate).map((piece) => String(piece.id)),
+        ),
+      );
+    },
+    [displayPieces],
+  );
+
+  // The sweep acts on what the list shows: a piece ticked and then hidden by
+  // a filter stays ticked but neither counts nor gets written until it is
+  // visible again, so the number on the bar is always the number on the save.
+  const selectedPieces = useMemo(
+    () => displayPieces.filter((piece) => selectedIds.has(String(piece.id))),
+    [displayPieces, selectedIds],
+  );
+  const withoutDivisiCount = useMemo(
+    () => displayPieces.filter(lacksPieceWideDivisi).length,
+    [displayPieces],
+  );
+
+  const exitSelection = useCallback(() => {
+    setIsDivisiSheetOpen(false);
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }, []);
 
   useEffect(() => {
     if (isError) {
@@ -298,6 +358,8 @@ export default function ArchiveManagement(): React.JSX.Element {
               onEpochFilterChange={setEpochFilter}
               onVoicingFilterChange={setVoicingFilter}
               onResetFilters={resetFilters}
+              selectionMode={selectionMode}
+              onToggleSelectionMode={toggleSelectionMode}
             />
 
             {deferredPieces.length > 0 ? (
@@ -309,6 +371,9 @@ export default function ArchiveManagement(): React.JSX.Element {
                     onDelete={(p) =>
                       handleDeleteRequest(String(p.id), p.title)
                     }
+                    selectionMode={selectionMode}
+                    selected={selectedIds.has(String(piece.id))}
+                    onToggleSelect={toggleSelect}
                   />
                 ))}
               </div>
@@ -326,6 +391,29 @@ export default function ArchiveManagement(): React.JSX.Element {
         <EditionUploadDrawer
           isOpen={isUploadOpen}
           onClose={() => setIsUploadOpen(false)}
+        />
+
+        <AnimatePresence>
+          {selectionMode && !isFreshArchive && (
+            <PieceBulkBar
+              selectedCount={selectedPieces.length}
+              visibleCount={displayPieces.length}
+              withoutDivisiCount={withoutDivisiCount}
+              onSelectAll={() => selectVisible(() => true)}
+              onSelectWithoutDivisi={() => selectVisible(lacksPieceWideDivisi)}
+              onClear={() => setSelectedIds(new Set())}
+              onSetDivisi={() => setIsDivisiSheetOpen(true)}
+              onExit={exitSelection}
+            />
+          )}
+        </AnimatePresence>
+
+        <BulkDivisiSheet
+          isOpen={isDivisiSheetOpen && selectedPieces.length > 0}
+          pieces={selectedPieces}
+          voiceLines={voiceLines}
+          onClose={() => setIsDivisiSheetOpen(false)}
+          onApplied={exitSelection}
         />
 
         <ConfirmModal

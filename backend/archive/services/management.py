@@ -91,6 +91,34 @@ class ArchiveManagementService:
         PieceVoiceRequirement.objects.bulk_create(new_requirements)
 
     @staticmethod
+    def set_piece_wide_voice_requirements(
+        pieces: Sequence[Piece],
+        requirements: Sequence[VoiceRequirementDTO],
+    ) -> int:
+        """Replace the piece-wide divisi layer on every given piece, as one act.
+
+        Edition layers are left exactly as they were: an arrangement that
+        declares its own divisi keeps overriding the shared one, so the bulk
+        sweep changes what a piece sings by default, never what one edition
+        deliberately says. Returns the number of pieces written.
+        """
+        with transaction.atomic():
+            PieceVoiceRequirement.objects.filter(
+                piece__in=pieces, edition__isnull=True,
+            ).delete()
+            PieceVoiceRequirement.objects.bulk_create([
+                PieceVoiceRequirement(
+                    piece=piece,
+                    edition_id=None,
+                    voice_line=req.voice_line,
+                    quantity=req.quantity,
+                )
+                for piece in pieces
+                for req in requirements
+            ])
+        return len(pieces)
+
+    @staticmethod
     def _normalize_blank_text(value: str | None) -> str:
         return value or ""
 

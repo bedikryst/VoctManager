@@ -34,6 +34,7 @@ import type { EnrichedPiece } from "../types/archive.dto";
 import { INGESTION_STATUS, type IngestionStatusCode } from "@/shared/types";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
+import { Checkbox } from "@/shared/ui/primitives/Checkbox";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { EditionStatusBadge } from "@/shared/ui/composites/repertoire";
 import { InlineEditable } from "@/shared/ui/primitives/InlineEditable";
@@ -49,6 +50,14 @@ interface PieceRowProps {
   readonly piece: EnrichedPiece;
   readonly onDelete: (piece: EnrichedPiece) => void;
   readonly defaultExpanded?: boolean;
+  /**
+   * Selection mode turns the whole row into one tap target that toggles the
+   * piece in the bulk selection: inline edits, expand and delete step aside
+   * so a tap anywhere means "this one".
+   */
+  readonly selectionMode?: boolean;
+  readonly selected?: boolean;
+  readonly onToggleSelect?: (id: string) => void;
 }
 
 const composerLabel = (piece: EnrichedPiece, fallback: string): string => {
@@ -144,10 +153,18 @@ export const PieceRow = ({
   piece,
   onDelete,
   defaultExpanded = false,
+  selectionMode = false,
+  selected = false,
+  onToggleSelect,
 }: PieceRowProps): React.JSX.Element => {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded);
   const updatePiece = useUpdatePiece();
+
+  const activate = () =>
+    selectionMode
+      ? onToggleSelect?.(String(piece.id))
+      : setIsExpanded((v) => !v);
 
   const epochOptions = getArchiveEpochOptions(t);
   const epochLabel = piece.epoch
@@ -197,20 +214,43 @@ export const PieceRow = ({
         isExpanded
           ? "border-ethereal-gold/30 shadow-glass-ethereal"
           : "border-hairline hover:border-ethereal-gold/25 hover:bg-ethereal-parchment/30",
+        selected && "border-ethereal-gold/60 bg-ethereal-gold/4 ring-1 ring-ethereal-gold/40",
       )}
     >
       <div
         role="button"
         tabIndex={0}
-        onClick={() => setIsExpanded((v) => !v)}
-        onKeyDown={onActivate(() => setIsExpanded((v) => !v))}
+        onClick={activate}
+        onKeyDown={onActivate(activate)}
         className={cn(
           "group flex w-full cursor-pointer items-start gap-3 px-4 py-3 md:items-center",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset",
         )}
-        aria-expanded={isExpanded}
+        aria-expanded={selectionMode ? undefined : isExpanded}
+        aria-pressed={selectionMode ? selected : undefined}
+        aria-label={
+          selectionMode
+            ? t("archive.bulk.select_aria", {
+                defaultValue: "Zaznacz: {{title}}",
+                title: piece.title,
+              })
+            : undefined
+        }
       >
-        <div className="min-w-0 flex-1">
+        {selectionMode && (
+          <Checkbox
+            size="md"
+            checked={selected}
+            readOnly
+            tabIndex={-1}
+            aria-hidden="true"
+            className="pointer-events-none self-center"
+          />
+        )}
+
+        {/* In selection mode the inline editors and the rails go inert so the
+            tap reaches the row — the row IS the control then. */}
+        <div className={cn("min-w-0 flex-1", selectionMode && "pointer-events-none")}>
           <div className="flex items-baseline gap-2">
             {/* No stopPropagation wrapper anywhere in this row: `InlineEditable`
                 already swallows the click on its own control, and a wrapper
@@ -293,7 +333,12 @@ export const PieceRow = ({
         </div>
 
         {/* Intrinsic facts — voicing, duration, tracks: plain typography, no chip chrome */}
-        <div className="hidden shrink-0 items-baseline gap-3 md:flex">
+        <div
+          className={cn(
+            "hidden shrink-0 items-baseline gap-3 md:flex",
+            selectionMode && "pointer-events-none",
+          )}
+        >
           {piece.voicing && (
             <InlineEditable
               value={piece.voicing}
@@ -318,34 +363,40 @@ export const PieceRow = ({
           <StateBadges hasPdfAttached={hasPdfAttached} aiStatus={aiStatus} />
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
-          <Button
-            variant="icon"
-            size="icon"
-            aria-label={t("archive.row.delete_aria", "Usuń utwór {{title}}", {
-              title: piece.title,
-            })}
-            onClick={(event) => {
-              event.stopPropagation();
-              onDelete(piece);
-            }}
-            className="h-8 w-8 text-ethereal-graphite transition-opacity hover:text-ethereal-crimson focus-visible:opacity-100 fine-pointer:opacity-0 fine-pointer:group-hover:opacity-100"
-          >
-            <Trash2 size={13} aria-hidden="true" />
-          </Button>
-          <ChevronDown
-            size={16}
-            aria-hidden="true"
-            className={cn(
-              "shrink-0 text-ethereal-graphite/70 transition-transform",
-              isExpanded && "rotate-180 text-ethereal-gold",
-            )}
-          />
-        </div>
+        {!selectionMode && (
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              variant="icon"
+              size="icon"
+              aria-label={t("archive.row.delete_aria", "Usuń utwór {{title}}", {
+                title: piece.title,
+              })}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete(piece);
+              }}
+              className="h-8 w-8 text-ethereal-graphite transition-opacity hover:text-ethereal-crimson focus-visible:opacity-100 fine-pointer:opacity-0 fine-pointer:group-hover:opacity-100"
+            >
+              <Trash2 size={13} aria-hidden="true" />
+            </Button>
+            <ChevronDown
+              size={16}
+              aria-hidden="true"
+              className={cn(
+                "shrink-0 text-ethereal-graphite/70 transition-transform",
+                isExpanded && "rotate-180 text-ethereal-gold",
+              )}
+            />
+          </div>
+        )}
       </div>
 
+      {/* Selection mode folds the body away as well: an open tracks section
+          would keep its drop zone and inline editors live under a row that
+          is supposed to be one inert tap target. The expanded state survives
+          and the body returns when selection mode ends. */}
       <AnimatePresence initial={false}>
-        {isExpanded && (
+        {isExpanded && !selectionMode && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
