@@ -4646,28 +4646,28 @@ msgstr "To, co napiszesz na warstwie chóru, zobaczy każdy śpiewak"
 
 #: notifications/message_content.py:1123
 #, python-format
-msgid "%(who)s has made you the leader of %(project)s."
-msgstr "%(who)s mianował(a) Cię liderem projektu „%(project)s”."
+msgid "%(who)s has made you the assistant conductor on %(project)s."
+msgstr "%(who)s mianował(a) Cię asystentem dyrygenta w projekcie %(project)s."
 
 #: notifications/message_content.py:1126
 #, python-format
-msgid "You are now the leader of %(project)s."
-msgstr "Od teraz jesteś liderem projektu „%(project)s”."
+msgid "You are now the assistant conductor on %(project)s."
+msgstr "Od teraz jesteś asystentem dyrygenta w projekcie %(project)s."
 
 #: notifications/message_content.py:1132
 #, python-format
-msgid "You lead the project — %(project)s"
-msgstr "Jesteś liderem projektu — %(project)s"
+msgid "You assist the conductor — %(project)s"
+msgstr "Asystujesz dyrygentowi — %(project)s"
 
 #: notifications/message_content.py:1137
 #, python-format
-msgid "You are the leader of %(project)s"
-msgstr "Jesteś liderem projektu: %(project)s"
+msgid "You are the assistant conductor on %(project)s"
+msgstr "Jesteś asystentem dyrygenta w projekcie %(project)s"
 
 #: notifications/message_content.py:1138 notifications/message_content.py:1176
 #: notifications/message_content.py:1255
-msgid "Project leader"
-msgstr "Lider projektu"
+msgid "Assistant conductor"
+msgstr "Asystent dyrygenta"
 
 #: notifications/message_content.py:1113
 msgid "Appointed by"
@@ -4690,32 +4690,32 @@ msgstr ""
 
 #: notifications/message_content.py:1167
 #, python-format
-msgid "No longer the leader — %(project)s"
-msgstr "Koniec prowadzenia projektu — %(project)s"
+msgid "No longer assisting — %(project)s"
+msgstr "Koniec asystowania — %(project)s"
 
 #: notifications/message_content.py:1168
 #, python-format
 msgid ""
-"You are no longer the leader of %(project)s. Your own pencil marks stay "
-"where they are."
+"You are no longer the assistant conductor on %(project)s. Your own pencil "
+"marks stay where they are."
 msgstr ""
-"Nie jesteś już liderem projektu „%(project)s”. Twoje własne notatki na "
-"nutach zostają tam, gdzie są."
+"Nie jesteś już asystentem dyrygenta w projekcie %(project)s. Twoje własne "
+"notatki zostają na miejscu."
 
 #: notifications/message_content.py:1175
 #, python-format
-msgid "Your leadership of %(project)s has ended"
-msgstr "Koniec prowadzenia projektu: %(project)s"
+msgid "Your appointment on %(project)s has ended"
+msgstr "Twoja nominacja w projekcie %(project)s dobiegła końca"
 
 #: notifications/message_content.py:1177
 #, python-format
 msgid ""
-"Somebody else leads %(project)s from now on. The conductor's cues and the "
-"attendance sheet have closed again; your own markings on the music are "
+"Somebody else assists on %(project)s from now on. The conductor's cues and "
+"the attendance sheet have closed again; your own markings on the music are "
 "untouched."
 msgstr ""
-"Od teraz projekt „%(project)s” prowadzi ktoś inny. Wskazówki dyrygenta i "
-"lista obecności znów się zamknęły; Twoje własne oznaczenia na nutach zostają"
+"Od teraz w projekcie %(project)s asystuje kto inny. Wskazówki dyrygenta i "
+"lista obecności znów są zamknięte; Twoje własne oznaczenia na nutach zostają"
 " nietknięte."
 
 #: notifications/message_content.py:1191
@@ -4766,20 +4766,19 @@ msgstr "Poprowadzisz próbę: %(project)s"
 #, python-format
 msgid ""
 "The conductor has put you in front of the choir for this rehearsal of "
-"%(project)s. The roll call and everything your leadership of the project "
+"%(project)s. The roll call and everything your appointment on the project "
 "opens are on the evening's card."
 msgstr ""
-"Dyrygent postawił Cię przed chórem na tej próbie w projekcie „%(project)s”. "
-"Lista obecności i wszystko, co otwiera Twoje prowadzenie projektu, czeka na "
-"karcie wieczoru."
+"Dyrygent postawił Cię przed chórem na tę próbę projektu %(project)s. Lista "
+"obecności i wszystko, co otwiera Twoja nominacja, są na karcie wieczoru."
 
 #: notifications/message_content.py:1262 notifications/message_content.py:1314
 msgid "Open the evening"
 msgstr "Otwórz kartę wieczoru"
 
 #: notifications/message_content.py:1276
-msgid "The leader"
-msgstr "Lider projektu"
+msgid "The assistant"
+msgstr "Asystent"
 
 #: notifications/message_content.py:1282
 #, python-format
@@ -4818,12 +4817,12 @@ msgid "Debrief — %(project)s"
 msgstr "Podsumowanie próby: %(project)s"
 
 #: notifications/models.py:43
-msgid "Made Project Leader"
-msgstr "Mianowanie liderem projektu"
+msgid "Made Assistant Conductor"
+msgstr "Mianowanie asystentem dyrygenta"
 
 #: notifications/models.py:45
-msgid "Project Leadership Ended"
-msgstr "Koniec prowadzenia projektu"
+msgid "Assistant Conductor Removed"
+msgstr "Odwołanie asystenta dyrygenta"
 
 #: notifications/models.py:50
 msgid "Rehearsal Handed to You"
@@ -4853,20 +4852,16 @@ msgstr "Podsumowanie zapisano"
 msgid "The debrief can be written once the rehearsal has started."
 msgstr "Podsumowanie można napisać dopiero po rozpoczęciu próby."
 
-#: roster/models.py:1068
-msgid "Project Leader"
-msgstr "Lider projektu"
-
 #: roster/models.py:1069
-msgid "Project Leaders"
-msgstr "Liderzy projektów"
+msgid "Assistant Conductors"
+msgstr "Asystenci dyrygenta"
 
-#: messaging/models.py:182 roster/models.py:1020
-msgid "Leader"
-msgstr "Lider"
+#: messaging/models.py:182 roster/models.py:1020 roster/models.py:1068
+msgid "Assistant Conductor"
+msgstr "Asystent dyrygenta"
 
 #: roster/models.py:1024
-msgid "Sees Leader Markings"
+msgid "Sees Markings for the Lead"
 msgstr "Widzi oznaczenia dla prowadzącego"
 
 #: roster/models.py:1025
@@ -4915,10 +4910,10 @@ msgstr ""
 
 #: roster/models.py:1053
 msgid ""
-"After this moment the leadership opens nothing. Blank = until the project "
+"After this moment the appointment opens nothing. Blank = until the project "
 "closes."
 msgstr ""
-"Po tym momencie prowadzenie nie otwiera już niczego. Puste = do zakończenia "
+"Po tym momencie nominacja niczego nie otwiera. Puste = do zamknięcia "
 "projektu."
 
 #: roster/models.py:1059
@@ -4926,9 +4921,11 @@ msgid "Appointed By"
 msgstr "Mianował(a)"
 
 #: roster/models.py:1064
-msgid "Why this person leads the project, for whoever reads the list later."
+msgid ""
+"Why this person assists on the project, for whoever reads the list later."
 msgstr ""
-"Dlaczego ta osoba prowadzi projekt — dla kogoś, kto przeczyta listę później."
+"Dlaczego ta osoba asystuje w projekcie — dla tych, którzy przeczytają listę "
+"później."
 
 #: messaging/models.py:243
 msgid ""
@@ -4965,3 +4962,8 @@ msgstr "Członek"
 #: messaging/models.py:181
 msgid "Manager"
 msgstr "Menedżer"
+
+#: templates/projects/call_sheet_pdf.html
+msgctxt "call sheet"
+msgid "Instrumental"
+msgstr "Instrumentalny"

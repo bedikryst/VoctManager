@@ -162,6 +162,20 @@ export interface MaterialsPiece {
    * stand already knows that from the role.
    */
   may_mark_for_choir: boolean;
+  /**
+   * The item is cast on instrumentalists only in this project — the organ
+   * voluntary, not a choir piece. A fact about the item, shown to every reader
+   * as a badge; derived from the casting board, so it flips live as the
+   * manager casts.
+   */
+  is_instrumental: boolean;
+  /**
+   * The server left `editions` and `tracks` empty because the music is not
+   * this reader's: a singer on an instrumental item. Players and leaders are
+   * never withheld. Distinct from the lifecycle lock (closed project), which
+   * also empties both lists but says nothing here.
+   */
+  materials_withheld: boolean;
 }
 
 export interface MaterialsProgramItem {

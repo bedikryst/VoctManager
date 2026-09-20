@@ -43,6 +43,7 @@ import {
   useSavePieceCastingBoard,
   useSavePieceCastingBoards,
 } from "../../api/project.queries";
+import { isInstrumentalist } from "@/shared/lib/voiceTypes";
 import { scopedRequirements } from "@/features/archive/constants/divisiScope";
 import { byCastOrder } from "../../lib/castOrder";
 import { autoCastPiece, type AutoCastResult } from "../../lib/autoCast";
@@ -98,6 +99,12 @@ export interface PieceProgress {
   readonly filled: number;
   readonly missing: number;
   readonly hasRequirements: boolean;
+  /**
+   * Every seat on the piece is a player's (and there is at least one): the
+   * choir is not given this score. Mirrors the server's derived rule, read
+   * from the draft board so it flips as the manager casts.
+   */
+  readonly isInstrumental: boolean;
 }
 
 export interface PendingCounts {
@@ -350,22 +357,43 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
         item.score_edition,
       );
 
+      // The manager's casting feed is not filtered by the participation's
+      // soft-delete, so a row left behind by a removed member still arrives.
+      // Only seats that resolve to a current member count — the same slice
+      // `serverCastingsForPiece` takes for the selected piece, and the
+      // server's own `participation__is_deleted=False` — or a ghost row would
+      // fill a line here and make an organ-only piece read as choir.
+      const effectiveCastings =
+        pieceId === String(selectedPieceId)
+          ? localCastings
+          : pieceCastings.filter(
+              (casting) =>
+                String(casting.piece) === pieceId &&
+                memberMap.has(String(casting.participation)),
+            );
+
+      // The server's reading of the same board (`castings_are_instrumental`):
+      // at least one seat, and every one a player's. Read from the draft so
+      // the rail shows the piece turning instrumental — and its score
+      // vanishing from the choir — while the manager is still casting it.
+      const isInstrumental =
+        effectiveCastings.length > 0 &&
+        effectiveCastings.every((casting) =>
+          isInstrumentalist(
+            memberMap.get(String(casting.participation))?.voiceType ?? null,
+          ),
+        );
+
       if (requirements.length === 0) {
         progress[pieceId] = {
           required: 0,
           filled: 0,
           missing: 0,
           hasRequirements: false,
+          isInstrumental,
         };
         return;
       }
-
-      const effectiveCastings =
-        pieceId === String(selectedPieceId)
-          ? localCastings
-          : pieceCastings.filter(
-              (casting) => String(casting.piece) === pieceId,
-            );
 
       let required = 0;
       let filled = 0;
@@ -387,7 +415,13 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
         }
       });
 
-      progress[pieceId] = { required, filled, missing, hasRequirements: true };
+      progress[pieceId] = {
+        required,
+        filled,
+        missing,
+        hasRequirements: true,
+        isInstrumental,
+      };
     });
 
     return progress;

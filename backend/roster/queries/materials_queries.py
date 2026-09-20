@@ -13,14 +13,17 @@ from archive.models import (
     Track,
     Translation,
 )
+from core.permissions import user_is_manager
 from roster.models import (
     Participation,
     PieceReadiness,
     ProgramItem,
     Project,
     ProjectPieceCasting,
+    instrumental_item_exists,
+    is_instrumentalist_account,
 )
-from roster.permissions import led_projects_q
+from roster.permissions import led_projects_q, user_leads_project
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -37,24 +40,36 @@ if TYPE_CHECKING:
 CLOSED_PROJECT_STATUSES = Project.CLOSED_STATUSES
 
 
+def _live_program_items(user: User) -> QuerySet[ProgramItem]:
+    """Programme items of every non-closed project the artist holds a live seat
+    in, minus the items withheld from THIS reader: a singer is not given an
+    instrumental item's music, a player is given everything (they follow the
+    whole evening, their own pieces included)."""
+    items = ProgramItem.objects.filter(
+        project_id__in=Participation.live_seats(artist__user=user).values('project_id'),
+    ).exclude(project__status__in=CLOSED_PROJECT_STATUSES)
+    if is_instrumentalist_account(user):
+        return items
+    return items.annotate(instrumental=instrumental_item_exists()).filter(instrumental=False)
+
+
 def artist_has_live_access_to_piece(user: User, piece_id: uuid.UUID | str | None) -> bool:
     """
     True iff `user` is cast (active participation) in at least one project that
-    is still LIVE (not completed/cancelled) and programs `piece_id`.
+    is still LIVE (not completed/cancelled), programs `piece_id`, and does not
+    withhold that item from them.
 
-    This is the single rule behind chorister score AND annotation access: it
-    evaporates the moment every project featuring the piece is closed, so a
-    leaked or bookmarked score URL — or a shared conductor marking — stops
-    resolving once the concert is done.
+    This is the single rule behind chorister score, practice-track AND
+    annotation access: it evaporates the moment every project featuring the
+    piece is closed, so a leaked or bookmarked score URL — or a shared
+    conductor marking — stops resolving once the concert is done. It also
+    knows whether the reader is a player: an item cast on instrumentalists
+    only is the organist's music, not the choir's, and a singer's seat in the
+    project does not open it.
     """
     if piece_id is None:
         return False
-    return (
-        Participation.live_seats(artist__user=user)
-        .filter(project__program_items__piece_id=piece_id)
-        .exclude(project__status__in=CLOSED_PROJECT_STATUSES)
-        .exists()
-    )
+    return _live_program_items(user).filter(piece_id=piece_id).exists()
 
 
 def user_has_live_access_to_piece(user: User, piece_id: uuid.UUID | str | None) -> bool:
@@ -83,23 +98,28 @@ def user_has_live_access_to_piece(user: User, piece_id: uuid.UUID | str | None) 
     )
 
 
+def user_is_refused_instrumental(user: User, project_id: uuid.UUID | str) -> bool:
+    """Whether an instrumental item's music is withheld from this reader in this
+    project. Only a singer's seat is ever refused: a manager, a player and
+    whoever runs the evening through the materials door see everything. The
+    same three exemptions the songbook applies in memory, asked of the
+    database for the two book endpoints."""
+    return not (
+        user_is_manager(user)
+        or is_instrumentalist_account(user)
+        or user_leads_project(user, project_id, scope='materials')
+    )
+
+
 def artist_live_piece_ids(user: User) -> QuerySet[ProgramItem, uuid.UUID]:
     """
     Distinct ids of every Piece the artist still has live access to (cast in at
     least one non-closed project programming it). Set-form companion to
     `artist_has_live_access_to_piece`, for IN-clause filtering of bulk reads
-    (e.g. all shared annotations the singer is allowed to see).
+    (e.g. all shared annotations the singer is allowed to see). Same reader
+    rule: a singer's set omits the instrumental items.
     """
-    return (
-        ProgramItem.objects.filter(
-            project_id__in=Participation.live_seats(artist__user=user).values(
-                'project_id'
-            )
-        )
-        .exclude(project__status__in=CLOSED_PROJECT_STATUSES)
-        .values_list('piece_id', flat=True)
-        .distinct()
-    )
+    return _live_program_items(user).values_list('piece_id', flat=True).distinct()
 
 
 def _materials_program_items_prefetch(

@@ -62,11 +62,11 @@
     "redo": "Rétablir",
     "undo": "Annuler",
     "layer": {
-      "for_leader_short": "Pour le leader",
+      "for_leader_short": "Pour l'assistant",
       "from_conductor_short": "Chef",
       "leader": "Pour qui dirige la répétition",
       "leader_hint": "La personne à qui vous confiez la répétition, et les responsables. Pas le chœur.",
-      "leader_short": "Leader",
+      "leader_short": "Assistant",
       "personal_hint": "Visible uniquement par vous",
       "personal_short": "Perso",
       "private": "Privé (vous et les responsables)",
@@ -2730,6 +2730,7 @@
       "access_locked_title": "Accès verrouillé",
       "cast_divisi": "Distribution (Divisi)",
       "encore_badge": "Bis",
+      "instrumental_badge": "Instrumental",
       "listen_reference_featured": "Meilleure · {{label}}",
       "lyrics_ipa": "Prononciation (API)",
       "lyrics_translation": "Paroles et traduction",
@@ -2792,7 +2793,7 @@
     "project": {
       "archived_badge": "Archives",
       "conducting_badge": "Vous dirigez",
-      "standing_in_badge": "Leader",
+      "standing_in_badge": "Assistant",
       "event": "Événement :",
       "readiness_caption": "{{ready}} parties prêtes sur {{total}}",
       "readiness_withheld": "Préparation masquée",
@@ -3109,8 +3110,8 @@
       "fallback": "Notification",
       "ANNOUNCEMENT_PENDING": "File d'annonces",
       "SITE_COPY_PROPOSED": "Rédaction des textes",
-      "REHEARSAL_DELEGATED": "Vous êtes leader du projet",
-      "REHEARSAL_DELEGATION_ENDED": "Fin de la charge de leader",
+      "REHEARSAL_DELEGATED": "Vous êtes assistant du chef",
+      "REHEARSAL_DELEGATION_ENDED": "Fin de la charge d'assistant",
       "REHEARSAL_LEAD_ASSIGNED": "Vous dirigez une répétition",
       "REHEARSAL_DEBRIEF_POSTED": "Compte rendu de répétition"
     },
@@ -3235,10 +3236,10 @@
       }
     },
     "delegation": {
-      "eyebrow": "Vous êtes leader du projet",
+      "eyebrow": "Vous êtes assistant du chef",
       "asked_by": "Nommé(e) par {{name}}",
-      "asked_by_lede": "{{name}} vous a nommé(e) leader de ce projet.",
-      "asked_lede": "Vous êtes désormais leader de ce projet.",
+      "asked_by_lede": "{{name}} vous a nommé(e) assistant du chef sur ce projet.",
+      "asked_lede": "Vous êtes désormais assistant du chef sur ce projet.",
       "opens": "Ce que cela ouvre",
       "scope_marks": "Les annotations du chef",
       "scope_marks_body": "Sur les partitions de ce projet, vous verrez les indications que le chef de chœur a écrites pour qui dirige la répétition. Personne d’autre dans le chœur ne les voit.",
@@ -3360,20 +3361,20 @@
   },
   "projects": {
     "delegates": {
-      "title": "Leader du projet",
-      "description": "Une personne hors du cercle des responsables qui dirige les répétitions de ce projet en votre nom. En général une seule pour tout le programme — mais vous décidez à chaque concert.",
-      "add": "Nommer un leader",
-      "badge": "Leader",
+      "title": "Assistant du chef",
+      "description": "Une personne hors du cercle des responsables qui peut diriger les répétitions de ce projet en votre nom. En général une seule pour tout le programme, mais vous décidez à chaque concert — et qui se tient devant le chœur un soir donné se choisit sur la répétition elle-même.",
+      "add": "Nommer un assistant",
+      "badge": "Assistant",
       "revoke": "Retirer",
       "until": "jusqu'au {{date}}",
       "until_project_ends": "jusqu'à la fin du projet",
       "empty": {
-        "title": "Ce projet n'a pas de leader",
+        "title": "Ce projet n'a pas d'assistant",
         "description": "Vous et les autres responsables dirigez les répétitions."
       },
       "scope": {
-        "marks": "Voit vos notes destinées au leader",
-        "marks_hint": "Uniquement le calque « Pour le leader ». Vos notes privées restent privées.",
+        "marks": "Voit vos notes destinées à l'assistant",
+        "marks_hint": "Uniquement le calque « Pour l'assistant ». Vos notes privées restent privées.",
         "roll_call": "Fait l'appel",
         "roll_call_hint": "Peut pointer tout le chœur, pas seulement soi-même.",
         "materials": "Ouvre le matériel du projet",
@@ -3387,9 +3388,9 @@
         "limited": "Périmètre limité : {{missing}}"
       },
       "form": {
-        "person": "Qui sera leader",
+        "person": "Qui sera assistant",
         "person_placeholder": "Choisir une personne",
-        "person_locked": "Leader",
+        "person_locked": "Assistant",
         "person_locked_hint": "Pour changer de personne, retirez cette nomination et nommez quelqu'un d'autre.",
         "others_divider": "— Autres membres —",
         "scopes_toggle": "Périmètre (avancé)",
@@ -3397,10 +3398,10 @@
         "expires_hint": "Vide = jusqu'à la fin du projet.",
         "note": "Note (facultatif)",
         "note_placeholder": "ex. pendant mon absence du 10 au 24 décembre",
-        "submit": "Nommer le leader"
+        "submit": "Nommer l'assistant"
       },
       "confirm": {
-        "title": "Retirer ce leader ?",
+        "title": "Retirer cet assistant ?",
         "description": "{{name}} perdra l'accès aux notes et aux présences de ce projet. Une copie déjà téléchargée sur son appareil y restera jusqu'au vidage du stockage de l'application."
       }
     },
@@ -3446,6 +3447,8 @@
       "conductor_copy": "Exemplaire du chef",
       "conductor_copy_suffix": "chef",
       "stale_hint": "Cette partition n'inclut pas vos dernières modifications. Régénérez-la pour les appliquer.",
+      "withheld_hint": "Ce recueil contient encore les pages d'une pièce devenue instrumentale. Les choristes ne pourront pas l'ouvrir tant que vous ne l'aurez pas régénéré.",
+      "instrumental_hint": "Hors du recueil, car seuls des instrumentistes y jouent : {{titles}}",
       "preview_book": "Aperçu",
       "preview_book_full": "Aperçu de la partition",
       "density": {
@@ -4059,7 +4062,7 @@
       "facts": {
         "aria": "Modifier les détails de l'événement",
         "conductor": "Chef de chœur",
-        "leader": "Leader",
+        "leader": "Assistant du chef",
         "title": "Détails",
         "venue": "Lieu",
         "onsite_contact": "Contact sur place",
@@ -4441,7 +4444,7 @@
     },
     "lead": {
       "back": "Agenda",
-      "role": "Leader du projet",
+      "role": "Assistant du chef",
       "title": "Vous dirigez",
       "title_highlight": "cette répétition.",
       "covering_title": "Dirigée par",
@@ -4459,7 +4462,7 @@
       "loading": "Ouverture de la liste...",
       "gone": {
         "title": "Cette répétition n'est plus la vôtre",
-        "description": "Vous n'êtes plus leader de ce projet, ou la répétition n'existe plus. Demandez à un responsable en cas d'erreur."
+        "description": "Vous n'êtes plus assistant sur ce projet, ou la répétition n'existe plus. Demandez à un responsable en cas d'erreur."
       }
     },
     "pulse": {
@@ -5035,8 +5038,8 @@
         "SYSTEM_ALERT": "Maintenance ou alerte système",
         "ANNOUNCEMENT_PENDING": "Modifications non annoncées",
         "SITE_COPY_PROPOSED": "Propositions de modification des textes du site",
-        "REHEARSAL_DELEGATED": "Nomination comme leader du projet",
-        "REHEARSAL_DELEGATION_ENDED": "Fin de la charge de leader",
+        "REHEARSAL_DELEGATED": "Nomination comme assistant du chef",
+        "REHEARSAL_DELEGATION_ENDED": "Retrait de l'assistant du chef",
         "REHEARSAL_LEAD_ASSIGNED": "Répétition confiée",
         "REHEARSAL_DEBRIEF_POSTED": "Compte rendu après la répétition"
       },
@@ -5097,10 +5100,10 @@
         "REHEARSAL_SCHEDULED": "Une nouvelle répétition rejoint le calendrier",
         "REHEARSAL_CANCELLED": "Une répétition est annulée",
         "MESSAGE_RECEIVED": "Une réponse dans votre conversation",
-        "REHEARSAL_DELEGATED": "Quelqu'un vous a nommé(e) leader d'un projet",
-        "REHEARSAL_DELEGATION_ENDED": "Vous n'êtes plus leader d'un projet",
+        "REHEARSAL_DELEGATED": "Quelqu'un vous a nommé(e) assistant du chef sur un projet",
+        "REHEARSAL_DELEGATION_ENDED": "Vous n'êtes plus assistant sur un projet",
         "REHEARSAL_LEAD_ASSIGNED": "Le chef vous confie une répétition précise à diriger",
-        "REHEARSAL_DEBRIEF_POSTED": "Le responsable a rédigé le compte rendu d'une répétition"
+        "REHEARSAL_DEBRIEF_POSTED": "L'assistant a rédigé le compte rendu d'une répétition"
       },
       "restore_recommended": "Rétablir les valeurs recommandées",
       "customized_hint": "Personnalisé — diffère des réglages recommandés",
@@ -5120,7 +5123,7 @@
         "materials": "Nouvelles partitions et nouveaux enregistrements, ainsi que les rappels peu avant une répétition ou un concert.",
         "safety_net": "La seule notification portant sur ce qui n'a pas encore été fait : des modifications attendent dans la file et les choristes l'ignorent toujours. C'est pourquoi elle part aussi par e-mail.",
         "site_copy": "Quelqu'un est passé par la rédaction des textes du site et a laissé des propositions à relire. Un message par séance, et non par modification — c'est pourquoi il part aussi par e-mail.",
-        "debriefs": "Le responsable rédige le compte rendu de la répétition. Il s'écrit une seule fois, et uniquement pour une soirée dirigée par quelqu'un d'autre — d'où son arrivée immédiate plutôt que dans le résumé quotidien, et son envoi par e-mail.",
+        "debriefs": "L'assistant du chef rédige le compte rendu de la répétition. Il s'écrit une seule fois, et uniquement pour une soirée dirigée par quelqu'un d'autre — d'où son arrivée immédiate plutôt que dans le résumé quotidien, et son envoi par e-mail.",
         "team": "Les réponses aux invitations, les mises à jour de présence et les demandes d'absence. Les mêmes événements que rassemble le résumé quotidien ci-dessous."
       },
       "groups_email_off": {
@@ -5128,7 +5131,7 @@
         "messages": "Vous ne recevrez pas d'e-mail lorsque quelqu'un vous écrit. Le message vous attendra dans l'application.",
         "safety_net": "Vous ne recevrez pas d'e-mail lorsqu'une file d'annonces reste non envoyée. Le rappel restera dans l'application — c'est-à-dire là où il ne vous atteindra que si vous l'ouvrez déjà.",
         "site_copy": "Vous ne recevrez pas d'e-mail lorsque quelqu'un laisse des propositions à la rédaction. La notification restera dans l'application — et les propositions attendront que vous y jetiez un œil.",
-        "debriefs": "Vous ne recevrez pas d'e-mail lorsqu'un responsable rédige le compte rendu de la répétition qu'il a dirigée. Le texte attendra dans l'application, sur cette répétition."
+        "debriefs": "Vous ne recevrez pas d'e-mail lorsqu'un assistant rédige le compte rendu de la répétition qu'il a dirigée. Le texte attendra dans l'application, sur cette répétition."
       },
       "details_show": "Détails ({{n}})",
       "details_hide": "Masquer les détails",

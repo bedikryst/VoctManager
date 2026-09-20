@@ -170,8 +170,11 @@ export default function PiecePage({
 
   // A conductor views their own project's materials but has no participation to
   // self-report against — the readiness console is a singer-only affordance, so
-  // the slot itself is absent for them, in a preview too.
-  const hasReadinessSlot = !group.isConducting && Boolean(group.participationId);
+  // the slot itself is absent for them, in a preview too. Absent as well on
+  // music the reader is not given: there is nothing to learn on an
+  // instrumental item withheld from a singer.
+  const hasReadinessSlot =
+    !group.isConducting && Boolean(group.participationId) && !piece.materials_withheld;
   // A withheld readiness (`null`, what a manager's preview is served) empties
   // the control from the other side: there is no current value to put in it,
   // and NOT_STARTED would be an answer nobody gave. The slot still states the
@@ -313,6 +316,15 @@ export default function PiecePage({
                 className="rounded border border-ethereal-incense/25 bg-ethereal-incense/10 px-2 py-0.5"
               >
                 {t("materials.piece.encore_badge", "Bis")}
+              </Eyebrow>
+            )}
+            {piece.is_instrumental && (
+              <Eyebrow
+                as="span"
+                color="incense"
+                className="rounded border border-ethereal-incense/25 bg-ethereal-incense/10 px-2 py-0.5"
+              >
+                {t("materials.piece.instrumental_badge", "Instrumentalny")}
               </Eyebrow>
             )}
           </div>

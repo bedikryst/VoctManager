@@ -1,6 +1,7 @@
 /**
  * @file readiness.ts
- * @description The one place that decides what a missing readiness MEANS.
+ * @description The one place that decides what a missing readiness MEANS, and
+ * which items a readiness is asked about at all.
  *
  * `my_readiness` is `null` only when the server declined to answer — a manager
  * previewing a member's songbook, who was promised nobody else sees that note.
@@ -9,9 +10,14 @@
  * answer. Never `NOT_STARTED`, which is a claim about the singer rather than a
  * refusal to make one.
  *
- * Two surfaces ask this question — the songbook group header and
- * `useProjectReadiness` (which feeds the ring on three more) — and they must not
- * be able to disagree.
+ * An item whose materials are withheld (an instrumental piece on a singer's
+ * list) is not the singer's to learn: it carries no readiness control, so it
+ * must not count in any ratio either — 6/7 with an unreachable seventh would
+ * read as a piece never practised.
+ *
+ * Three surfaces ask these questions — the songbook group header, its
+ * "still to practise" filter and `useProjectReadiness` (which feeds the ring
+ * on three more) — and they must not be able to disagree.
  * @module features/materials/lib/readiness
  */
 
@@ -26,3 +32,9 @@ export const isReadinessWithheld = (
   program: readonly MaterialsProgramItem[],
 ): boolean =>
   program.length > 0 && program.every((item) => item.piece.my_readiness === null);
+
+/** The items a singer is given music for — the only ones readiness is about. */
+export const practisedProgram = (
+  program: readonly MaterialsProgramItem[],
+): MaterialsProgramItem[] =>
+  program.filter((item) => !item.piece.materials_withheld);

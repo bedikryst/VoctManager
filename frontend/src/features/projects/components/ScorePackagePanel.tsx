@@ -22,6 +22,7 @@ import {
   Download,
   FileText,
   ListOrdered,
+  Music,
   PencilLine,
   Users,
 } from "lucide-react";
@@ -493,12 +494,36 @@ export function ScorePackagePanel({
               <Caption color="crimson">{state.error}</Caption>
             )}
 
-            {hasBook && state.is_stale && (
+            {/* The withheld hint is the stale hint with a consequence attached,
+                so the two never stack: a book the choir cannot open is stale
+                by definition. */}
+            {hasBook && state.book_withheld_from_choir && (
+              <Caption color="gold" className="flex items-start gap-1.5">
+                <AlertTriangle size={13} aria-hidden="true" className="mt-0.5 shrink-0" />
+                {t(
+                  "projects.score_package.withheld_hint",
+                  "Ta książka zawiera jeszcze strony utworu, który stał się instrumentalny. Śpiewacy nie otworzą jej, dopóki nie złożysz jej ponownie.",
+                )}
+              </Caption>
+            )}
+
+            {hasBook && state.is_stale && !state.book_withheld_from_choir && (
               <Caption color="gold" className="flex items-start gap-1.5">
                 <AlertTriangle size={13} aria-hidden="true" className="mt-0.5 shrink-0" />
                 {t(
                   "projects.score_package.stale_hint",
                   "Ta partytura nie zawiera ostatnich zmian. Złóż ją ponownie, aby je uwzględnić.",
+                )}
+              </Caption>
+            )}
+
+            {state.instrumental_pieces.length > 0 && (
+              <Caption color="muted" className="flex items-start gap-1.5">
+                <Music size={13} aria-hidden="true" className="mt-0.5 shrink-0" />
+                {t(
+                  "projects.score_package.instrumental_hint",
+                  "Poza książką, bo grają tylko instrumentaliści: {{titles}}",
+                  { titles: state.instrumental_pieces.join(", ") },
                 )}
               </Caption>
             )}

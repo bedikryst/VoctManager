@@ -9,7 +9,10 @@
 import { useMemo } from "react";
 
 import { useArtistMaterialsDashboard } from "@/features/materials/api/materials.queries";
-import { isReadinessWithheld } from "@/features/materials/lib/readiness";
+import {
+  isReadinessWithheld,
+  practisedProgram,
+} from "@/features/materials/lib/readiness";
 
 export interface ProjectReadiness {
   ready: number;
@@ -36,10 +39,13 @@ export const useProjectReadiness = (
     const item = data.find(
       (entry) => String(entry.project.id) === String(projectId),
     );
-    const total = item?.program.length ?? 0;
-    const ready =
-      item?.program.filter((pi) => pi.piece.my_readiness === "READY").length ??
-      0;
+    // The same ratio the songbook header draws: over the music the singer is
+    // given, never over an instrumental item they cannot learn.
+    const practised = practisedProgram(item?.program ?? []);
+    const total = practised.length;
+    const ready = practised.filter(
+      (pi) => pi.piece.my_readiness === "READY",
+    ).length;
     return {
       ready,
       total,

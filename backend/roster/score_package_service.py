@@ -46,8 +46,11 @@ from roster.models import ProgramItem, Project, ScorePackage
 from roster.score_package_config import (
     CARD_ELEMENTS,
     active_editions,
+    book_binds_instrumental_item,
+    book_program_items,
     composer_label,
     edition_label,
+    instrumental_program_items,
     pinnable_translations,
     resolve_card_config,
     resolve_item_edition,
@@ -154,17 +157,7 @@ class ScorePackageService:
 
     @staticmethod
     def _ordered_items(project: Project) -> QuerySet[ProgramItem]:
-        return (
-            ProgramItem.objects.filter(project=project)
-            .select_related("piece", "piece__composer", "score_edition")
-            .prefetch_related(
-                "piece__editions",
-                "piece__translations",
-                "piece__program_notes",
-                "piece__movements",
-            )
-            .order_by("order")
-        )
+        return book_program_items(project)
 
     @staticmethod
     def _item_signature(
@@ -409,6 +402,14 @@ class ScorePackageService:
             and bool(package.source_hash)
             and package.source_hash != live_hash
         )
+        # The items the book leaves out are still the programme's: named here,
+        # or the conductor is left counting pieces that vanished from the rows.
+        instrumental_titles = [
+            item.piece.title for item in instrumental_program_items(project)
+        ]
+        # The strongest reason to rebuild: a bound book that still carries an
+        # item now instrumental is withheld from every singer until it is.
+        book_withheld = bool(project.score_pdf) and book_binds_instrumental_item(project)
         return {
             "status": package.status,
             "status_display": package.get_status_display().strip(),
@@ -432,6 +433,8 @@ class ScorePackageService:
             "total_pieces": len(items),
             "bindable_pieces": len(items) - len(missing),
             "pieces_without_pdf": missing,
+            "instrumental_pieces": instrumental_titles,
+            "book_withheld_from_choir": book_withheld,
             "cast_size": cast_size,
             "pieces_over_copies": copies_warnings,
             "card_elements": list(CARD_ELEMENTS),
@@ -637,7 +640,7 @@ class ScorePackageService:
                 ScorePackageService._ordered_items(project).get(pk=item_id)
             )
         except ProgramItem.DoesNotExist as exc:
-            raise ScorePackageItemError("Pozycja programu nie istnieje.") from exc
+            raise ScorePackageItemError("Ta pozycja nie wchodzi do książki.") from exc
         return render_item_card_preview(project, package, item)
 
     # ------------------------------------------------------------------ #
@@ -672,7 +675,7 @@ class ScorePackageService:
         try:
             item = ScorePackageService._ordered_items(project).get(pk=item_id)
         except ProgramItem.DoesNotExist as exc:
-            raise ScorePackageItemError("Pozycja programu nie istnieje.") from exc
+            raise ScorePackageItemError("Ta pozycja nie wchodzi do książki.") from exc
 
         width = DEFAULT_THUMBNAIL_WIDTH_PX
         edition = resolve_item_edition(item)

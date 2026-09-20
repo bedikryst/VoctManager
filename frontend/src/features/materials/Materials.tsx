@@ -8,6 +8,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { useMaterialsData } from "./hooks/useMaterialsData";
 import { ProjectMaterialGroup } from "./components/ProjectMaterialGroup";
+import { practisedProgram } from "./lib/readiness";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
@@ -48,10 +49,12 @@ export const Materials = (): React.JSX.Element => {
   const displayedGroups = useMemo<MaterialsDashboardGroup[]>(() => {
     const base = view === "upcoming" ? upcoming : archived;
     if (!onlyUnpracticed || view !== "upcoming") return base;
+    // "Still to practise" is asked of the music the singer is given; an
+    // instrumental item withheld from them is never something left to learn.
     return base
       .map((group) => ({
         ...group,
-        program: group.program.filter(
+        program: practisedProgram(group.program).filter(
           (item) => item.piece.my_readiness !== "READY",
         ),
       }))

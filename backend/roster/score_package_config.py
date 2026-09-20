@@ -12,11 +12,16 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
+from uuid import UUID
+
+from django.db.models import QuerySet
 
 from archive.models import Piece, ProgramNote, ScoreEdition, Translation
 from archive.services.language import normalize_language
-from roster.models import ProgramItem, Project, ScorePackage
+from roster.models import ProgramItem, Project, ScorePackage, instrumental_item_exists
+from roster.score_page_map import book_item_spans
 
 # Canonical, ordered set of toggleable card elements. Title + composer + arranger
 # are structural (a frontispiece is the divider — it always carries them) and are
@@ -44,6 +49,82 @@ class ResolvedCardConfig:
 
     def shows(self, element: str) -> bool:
         return self.enabled and element in self.elements
+
+
+def book_program_items(project: Project) -> QuerySet[ProgramItem]:
+    """The programme the book binds, in order, with the per-item tree pre-joined.
+
+    The book is the choir's: an item cast on players only (the organ voluntary,
+    the interlude) is left out, so the organist's pieces sit as separate PDFs
+    on the list and never in the binder. One queryset for the build and for
+    the source hash — an item flipping in or out changes the hash, and the
+    cockpit reports the bound book stale without any hook watching the board.
+    """
+    return (
+        ProgramItem.objects.filter(project=project)
+        .annotate(instrumental=instrumental_item_exists())
+        .filter(instrumental=False)
+        .select_related("piece", "piece__composer", "score_edition")
+        .prefetch_related(
+            "piece__editions",
+            "piece__translations",
+            "piece__program_notes",
+            "piece__movements",
+        )
+        .order_by("order")
+    )
+
+
+def instrumental_program_items(project: Project) -> QuerySet[ProgramItem]:
+    """The items `book_program_items` leaves out, in programme order — what the
+    cockpit names so a conductor is never left counting pieces that vanished."""
+    return (
+        ProgramItem.objects.filter(project=project)
+        .annotate(instrumental=instrumental_item_exists())
+        .filter(instrumental=True)
+        .select_related("piece")
+        .order_by("order")
+    )
+
+
+def books_binding_instrumental_items(project_ids: Iterable[UUID]) -> set[UUID]:
+    """Projects whose BOUND book still carries an item that is instrumental now.
+
+    The book is built once and served until it is rebuilt, and the board can
+    turn an item instrumental after its pages were bound. Until the conductor
+    rebuilds, that file is not the choir's book: the songbook hides it from a
+    singer and the two book endpoints refuse them, while a player, a leader
+    and a manager keep opening it. Read off the page map, so a hand-uploaded
+    book (which has none) stays the conductor's own decision. Two queries for
+    any number of projects — the dashboard read model has a fixed budget.
+    """
+    bound_by_project: dict[UUID, set[str]] = {}
+    rows = (
+        ScorePackage.objects
+        .filter(project_id__in=project_ids)
+        .values_list("project_id", "page_map")
+    )
+    for project_id, page_map in rows:
+        item_ids = {span["item"] for span in book_item_spans(page_map or [])}
+        if item_ids:
+            bound_by_project[project_id] = item_ids
+    if not bound_by_project:
+        return set()
+    bound_item_ids: set[str] = set()
+    for item_ids in bound_by_project.values():
+        bound_item_ids |= item_ids
+    return set(
+        ProgramItem.objects
+        .filter(project_id__in=bound_by_project.keys(), pk__in=bound_item_ids)
+        .annotate(instrumental=instrumental_item_exists())
+        .filter(instrumental=True)
+        .values_list("project_id", flat=True)
+    )
+
+
+def book_binds_instrumental_item(project: Project) -> bool:
+    """`books_binding_instrumental_items` asked about one project."""
+    return project.pk in books_binding_instrumental_items([project.pk])
 
 
 def package_default_elements(package: ScorePackage) -> frozenset[str]:

@@ -152,6 +152,15 @@ export const PieceRow = ({
                 {t("materials.piece.encore_badge", "Bis")}
               </Eyebrow>
             )}
+            {piece.is_instrumental && (
+              <Eyebrow
+                as="span"
+                color="incense"
+                className="shrink-0 rounded border border-ethereal-incense/25 bg-ethereal-incense/10 px-1.5 py-0.5"
+              >
+                {t("materials.piece.instrumental_badge", "Instrumentalny")}
+              </Eyebrow>
+            )}
           </div>
           <div className="mt-0.5 flex min-w-0 items-center gap-2">
             <Eyebrow color="muted" className="block truncate">
@@ -171,10 +180,15 @@ export const PieceRow = ({
 
         {/* readiness + chevron. A withheld readiness (null) says nothing here:
             the group header states it once, and a "hidden" glyph repeated down
-            twelve rows would bury the rows that do carry a mark. */}
-        {!isArchived && !hideReadiness && piece.my_readiness !== null && (
-          <ReadinessDot value={piece.my_readiness} />
-        )}
+            twelve rows would bury the rows that do carry a mark. Nor does music
+            the reader is not given carry a dot — NOT_STARTED on the organ
+            voluntary would be a claim about a singer who was never asked. */}
+        {!isArchived &&
+          !hideReadiness &&
+          !piece.materials_withheld &&
+          piece.my_readiness !== null && (
+            <ReadinessDot value={piece.my_readiness} />
+          )}
         {isArchived ? (
           <Lock
             size={15}

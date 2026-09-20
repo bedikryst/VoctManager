@@ -7,7 +7,7 @@
 Database models for HR and Logistics entities.
 """
 import uuid
-from collections.abc import Collection
+from collections.abc import Collection, Iterable
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -19,6 +19,7 @@ from django.core.validators import (
     MinValueValidator,
 )
 from django.db import models
+from django.db.models import Exists, ExpressionWrapper, OuterRef
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
@@ -782,6 +783,45 @@ class ProjectPieceCasting(models.Model):
         ]
 
 
+# An item is INSTRUMENTAL in a project when the piece has at least one live
+# casting there and every one of them is a player's. Derived from the board,
+# never stored: the board already says "organ plays in the Mass, not in the
+# motet" per piece, and a flag beside it would be a second truth that can
+# contradict it. Zero castings is a choir piece — the four-part reading an
+# uncast programme has always had. The two shapes below are the one rule for
+# the queryset side (score access, the book's programme) and the prefetched
+# side (the songbook serializer), as `Rehearsal.calling_q` / `calls_seat` are
+# for who a rehearsal calls.
+def instrumental_item_exists() -> ExpressionWrapper:
+    """Annotation for a `ProgramItem` queryset: whether the item is instrumental
+    in ITS project. Castings are scoped to the item's own project — a piece's
+    castings span every project it was ever programmed in."""
+    scoped = ProjectPieceCasting.objects.filter(
+        piece_id=OuterRef('piece_id'),
+        participation__project_id=OuterRef('project_id'),
+        participation__is_deleted=False,
+    )
+    non_player = scoped.exclude(
+        participation__artist__voice_type=VoiceType.INSTRUMENTALIST,
+    )
+    return ExpressionWrapper(
+        Exists(scoped) & ~Exists(non_player),
+        output_field=models.BooleanField(),
+    )
+
+
+def castings_are_instrumental(castings: Iterable["ProjectPieceCasting"]) -> bool:
+    """`instrumental_item_exists` asked about one item's prefetched castings, in
+    memory. The rows must already be sliced to ONE project and carry
+    `participation__artist`; a cross-project slice would let an organist cast
+    elsewhere hide a choir piece here."""
+    rows = list(castings)
+    return bool(rows) and all(
+        row.participation.artist.voice_type == VoiceType.INSTRUMENTALIST
+        for row in rows
+    )
+
+
 class PieceReadiness(models.Model):
     """
     Artist self-reported practice readiness for a single piece within a project.
@@ -978,15 +1018,19 @@ class Rehearsal(EnterpriseBaseModel):
 
 
 class RehearsalDelegate(EnterpriseBaseModel):
-    """The leader of one project: the person who runs its rehearsals in the
-    conductor's place. Read by people as "Lider projektu".
+    """The assistant conductor on one project: the person who may run its
+    rehearsals in the conductor's place. Read by people as "Asystent dyrygenta".
+
+    Appointing settles who MAY stand in front, never which evenings they do:
+    that is `Rehearsal.led_by`, chosen per rehearsal, and an assistant can be
+    appointed for a whole programme and lead none of it.
 
     A relationship, deliberately not a fourth AppRole. Every gate in this project
     asks `user_is_manager` and branches in two, so a new role would land in the
-    not-a-manager half of ~180 of them and grant nothing; what a leader needs is
-    not a rank but a named, bounded tie to ONE programme. Normally it is the same
-    person for every programme, but the conductor decides it per concert, and
-    nothing here grants it on its own — the form may suggest the last leader,
+    not-a-manager half of ~180 of them and grant nothing; what an assistant needs
+    is not a rank but a named, bounded tie to ONE programme. Normally it is the
+    same person for every programme, but the conductor decides it per concert, and
+    nothing here grants it on its own — the form may suggest the last assistant,
     the manager still clicks.
 
     Scoped to a project rather than to a single rehearsal because that is the
@@ -997,18 +1041,19 @@ class RehearsalDelegate(EnterpriseBaseModel):
 
     The scopes are separate because they leak differently: marks expose the
     conductor's thinking, the roll call writes other people's records, and
-    materials open a programme the leader may not be singing in. A grant that
+    materials open a programme the assistant may not be singing in. A grant that
     bundled them would be easy to give and impossible to reason about afterwards.
     The fourth, writing the choir's official markings, is the one power that
     speaks to the whole choir in the conductor's voice, so it alone is off
     unless he switches it on.
 
-    A live grant also seats the leader in the project's channel (a LEADER
+    A live grant also seats the assistant in the project's channel (a LEADER
     membership, created on grant and dropped on revoke by `messaging.signals`),
     so they can talk to the cast they run.
 
-    The class and table keep their original name: renaming them would be a table
-    migration plus a data migration of stored notifications for zero behaviour.
+    The class, table and internal vocabulary ("leader") keep their original
+    names: renaming them would be a table migration plus a data migration of
+    stored notifications for zero behaviour.
     """
 
     project = models.ForeignKey(
@@ -1017,11 +1062,11 @@ class RehearsalDelegate(EnterpriseBaseModel):
     )
     artist = models.ForeignKey(
         Artist, on_delete=models.CASCADE, related_name='rehearsal_delegations',
-        verbose_name=_("Leader"),
+        verbose_name=_("Assistant Conductor"),
     )
     can_see_leader_marks = models.BooleanField(
         default=True,
-        verbose_name=_("Sees Leader Markings"),
+        verbose_name=_("Sees Markings for the Lead"),
         help_text=_("Read access to the 'leader' annotation layer on this "
                     "project's music. Never the conductor's private layer."),
     )
@@ -1050,7 +1095,7 @@ class RehearsalDelegate(EnterpriseBaseModel):
     expires_at = models.DateTimeField(
         null=True, blank=True,
         verbose_name=_("Expires At"),
-        help_text=_("After this moment the leadership opens nothing. "
+        help_text=_("After this moment the appointment opens nothing. "
                     "Blank = until the project closes."),
     )
     granted_by = models.ForeignKey(
@@ -1061,12 +1106,13 @@ class RehearsalDelegate(EnterpriseBaseModel):
     note = models.CharField(
         max_length=200, blank=True,
         verbose_name=_("Note"),
-        help_text=_("Why this person leads the project, for whoever reads the list later."),
+        help_text=_("Why this person assists on the project, for whoever reads "
+                    "the list later."),
     )
 
     class Meta:
-        verbose_name = _("Project Leader")
-        verbose_name_plural = _("Project Leaders")
+        verbose_name = _("Assistant Conductor")
+        verbose_name_plural = _("Assistant Conductors")
         constraints = [
             models.UniqueConstraint(
                 fields=['project', 'artist'],

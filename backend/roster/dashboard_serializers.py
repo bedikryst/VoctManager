@@ -21,7 +21,15 @@ from archive.services.voice_scope import requirements_for_edition, tracks_for_ed
 from core.voice_labels import collapse_voice_labels
 from roster.cast_order import casting_sort_key
 from roster.domain.liturgy import ProgramItemPresentation, build_program_presentation
-from roster.models import Participation, PieceReadiness, ProgramItem, Project, ProjectPieceCasting
+from roster.models import (
+    Participation,
+    PieceReadiness,
+    ProgramItem,
+    Project,
+    ProjectPieceCasting,
+    VoiceType,
+    castings_are_instrumental,
+)
 from roster.score_package_config import resolve_item_edition
 
 
@@ -225,6 +233,9 @@ class PieceMaterialsSerializer(serializers.Serializer):
       choir_marks_piece_ids set[uuid.UUID] — pieces on which this reader's leader
                         grant opens the choir's 'shared' marking layer (absent →
                         none); emitted as `may_mark_for_choir` per piece
+      reader_sees_instrumental bool — whether an instrumental item's editions
+                        and tracks reach this reader (absent → False): a player,
+                        or whoever runs the evening through the materials door
     """
 
     def to_representation(self, piece: Piece) -> dict[str, Any]:
@@ -257,14 +268,23 @@ class PieceMaterialsSerializer(serializers.Serializer):
         # passport (lyrics, IPA, recordings) but loses the rehearsal materials —
         # scores and practice tracks — so nothing licensed stays in the app.
         materials_locked: bool = self.context.get('materials_locked', False)
-        editions = [] if materials_locked else EditionSnippetSerializer(
+        # An item cast on players only is the organist's music, not the choir's:
+        # the badge is a fact about the item and reaches every reader, the
+        # withholding is a fact about the reader and only ever refuses a
+        # non-player. One gate for editions and tracks, as `materials_locked`.
+        is_instrumental = castings_are_instrumental(project_castings)
+        materials_withheld = is_instrumental and not self.context.get(
+            'reader_sees_instrumental', False,
+        )
+        withhold = materials_locked or materials_withheld
+        editions = [] if withhold else EditionSnippetSerializer(
             getattr(piece, 'prefetched_editions', []), many=True, context=child_context,
         ).data
         # Another arrangement's guide tracks are kept away — that is how somebody
         # rehearses the wrong line — but the piece-wide ones stay, except on the
         # lines this edition re-recorded. A take made for one edition supplements
         # the common set; it does not retract it.
-        tracks = [] if materials_locked else TrackSnippetSerializer(
+        tracks = [] if withhold else TrackSnippetSerializer(
             tracks_for_edition(getattr(piece, 'prefetched_tracks', []), bound_edition_id),
             many=True, context=child_context,
         ).data
@@ -298,6 +318,8 @@ class PieceMaterialsSerializer(serializers.Serializer):
             ).data,
             'editions': editions,
             'tracks': tracks,
+            'is_instrumental': is_instrumental,
+            'materials_withheld': materials_withheld,
             'castings': CastingSnippetSerializer(
                 project_castings,
                 many=True,
@@ -389,6 +411,26 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
         # otherwise render as "has not started a single piece", which is a claim
         # about the singer rather than a refusal to make one.
         readiness_visible: bool = self.context.get('readiness_visible', True)
+        project_key = str(project.id)
+        # Scores + practice tracks are withheld once the concert is over.
+        materials_locked = project.status in (
+            Project.Status.COMPLETED, Project.Status.CANCELLED,
+        )
+        # A player follows the whole evening, and a singer handed this
+        # programme to run has the materials door open on every piece of it —
+        # the same door `user_has_live_access_to_piece` opens for the download.
+        # Both are refused nothing; `has_score_pdf` stays the choir's book.
+        reader_sees_instrumental = (
+            participation.artist.voice_type == VoiceType.INSTRUMENTALIST
+            or project_key in self.context.get('materials_led_project_ids', set())
+        )
+        # A bound book that still carries an item now instrumental is not the
+        # choir's book until it is rebuilt: the refused reader is not offered
+        # it, exactly as the `score_pdf` endpoint would refuse them.
+        book_withheld = (
+            not reader_sees_instrumental
+            and project_key in self.context.get('withheld_book_project_ids', set())
+        )
 
         piece_context: dict[str, Any] = {
             'project_id': project.pk,
@@ -402,10 +444,8 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
             'request': self.context.get('request'),
             'liturgy': _liturgy_map(ordered_program),
             'choir_marks_piece_ids': self.context.get('choir_marks_piece_ids', set()),
-            # Scores + practice tracks are withheld once the concert is over.
-            'materials_locked': project.status in (
-                Project.Status.COMPLETED, Project.Status.CANCELLED,
-            ),
+            'materials_locked': materials_locked,
+            'reader_sees_instrumental': reader_sees_instrumental,
         }
 
         location = project.location
@@ -428,9 +468,9 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
             # ...but a stand-in is usually singing in the programme they were
             # asked to take, so this row is where their delegation surfaces. Led
             # projects they are NOT cast in never reach this serializer at all.
-            'is_leading': str(project.id) in self.context.get('led_project_ids', set()),
+            'is_leading': project_key in self.context.get('led_project_ids', set()),
             'project': {
-                'id': str(project.id),
+                'id': project_key,
                 'title': project.title,
                 'date_time': project.date_time,
                 'status': project.status,
@@ -439,10 +479,12 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
                 'location': location_data,
                 # The songbook is where a singer goes for music, so it has to
                 # know whether this concert has a bound book at all. Follows the
-                # same lifecycle gate as the pieces below it — a closed concert
-                # offers no book, exactly as its score_pdf endpoint refuses one.
-                'has_score_pdf': bool(project.score_pdf)
-                and not piece_context['materials_locked'],
+                # same gates as the pieces below it — a closed concert offers no
+                # book, exactly as its score_pdf endpoint refuses one, and so
+                # does a book awaiting a rebuild that would drop organ pages.
+                'has_score_pdf': (
+                    bool(project.score_pdf) and not materials_locked and not book_withheld
+                ),
             },
             'program': ProgramItemMaterialsSerializer(
                 ordered_program,
@@ -489,6 +531,9 @@ class LedProjectMaterialsSerializer(serializers.Serializer):
             'materials_locked': project.status in (
                 Project.Status.COMPLETED, Project.Status.CANCELLED,
             ),
+            # Whoever runs the evening is refused nothing; the instrumental
+            # badge still reaches them because it describes the item.
+            'reader_sees_instrumental': True,
         }
 
         location = project.location

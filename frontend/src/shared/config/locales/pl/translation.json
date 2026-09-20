@@ -2749,6 +2749,7 @@
       "access_locked_title": "Dostęp Zablokowany",
       "cast_divisi": "Obsada (Divisi)",
       "encore_badge": "Bis",
+      "instrumental_badge": "Instrumentalny",
       "listen_reference_featured": "Najlepsze · {{label}}",
       "lyrics_ipa": "Wymowa (IPA)",
       "lyrics_translation": "Tekst i tłumaczenie",
@@ -2811,7 +2812,7 @@
     "project": {
       "archived_badge": "Archiwum",
       "conducting_badge": "Prowadzisz",
-      "standing_in_badge": "Lider",
+      "standing_in_badge": "Asystent",
       "event": "Wydarzenie:",
       "readiness_caption": "{{ready}} z {{total}} partii gotowych",
       "readiness_withheld": "Gotowość ukryta",
@@ -3130,8 +3131,8 @@
       "fallback": "Powiadomienie",
       "ANNOUNCEMENT_PENDING": "Kolejka ogłoszeń",
       "SITE_COPY_PROPOSED": "Redakcja treści",
-      "REHEARSAL_DELEGATED": "Jesteś liderem projektu",
-      "REHEARSAL_DELEGATION_ENDED": "Koniec prowadzenia projektu",
+      "REHEARSAL_DELEGATED": "Jesteś asystentem dyrygenta",
+      "REHEARSAL_DELEGATION_ENDED": "Koniec asystowania w projekcie",
       "REHEARSAL_LEAD_ASSIGNED": "Poprowadzisz próbę",
       "REHEARSAL_DEBRIEF_POSTED": "Podsumowanie próby"
     },
@@ -3263,10 +3264,10 @@
       }
     },
     "delegation": {
-      "eyebrow": "Jesteś liderem projektu",
+      "eyebrow": "Jesteś asystentem dyrygenta",
       "asked_by": "Mianował(a) {{name}}",
-      "asked_by_lede": "{{name}} mianował(a) Cię liderem tego projektu.",
-      "asked_lede": "Od teraz jesteś liderem tego projektu.",
+      "asked_by_lede": "{{name}} mianował(a) Cię asystentem dyrygenta w tym projekcie.",
+      "asked_lede": "Od teraz jesteś asystentem dyrygenta w tym projekcie.",
       "opens": "Co to otwiera",
       "scope_marks": "Oznaczenia dyrygenta",
       "scope_marks_body": "Na nutach tego projektu zobaczysz wskazówki, które dyrygent zapisał dla prowadzącego próbę. Nikt inny w chórze ich nie widzi.",
@@ -3388,15 +3389,15 @@
   },
   "projects": {
     "delegates": {
-      "title": "Lider projektu",
-      "description": "Osoba spoza grona menedżerów, która prowadzi próby tego projektu w Twoim imieniu. Zwykle jedna na cały program — ale decydujesz przy każdym koncercie.",
-      "add": "Mianuj lidera",
-      "badge": "Lider",
+      "title": "Asystent dyrygenta",
+      "description": "Osoba spoza grona menedżerów, która może prowadzić próby tego projektu w Twoim imieniu. Zwykle jedna na cały program, ale decydujesz przy każdym koncercie — a kto stoi przed chórem danego wieczoru, zaznaczasz przy próbie.",
+      "add": "Mianuj asystenta",
+      "badge": "Asystent",
       "revoke": "Cofnij",
       "until": "do {{date}}",
       "until_project_ends": "do zakończenia projektu",
       "empty": {
-        "title": "Projekt nie ma lidera",
+        "title": "Projekt nie ma asystenta",
         "description": "Próby prowadzisz Ty i pozostali menedżerowie."
       },
       "scope": {
@@ -3415,9 +3416,9 @@
         "limited": "Zakres ograniczony: {{missing}}"
       },
       "form": {
-        "person": "Kto będzie liderem",
+        "person": "Kto będzie asystentem",
         "person_placeholder": "Wybierz osobę",
-        "person_locked": "Lider",
+        "person_locked": "Asystent",
         "person_locked_hint": "Żeby zmienić osobę, cofnij to nadanie i mianuj kogoś innego.",
         "others_divider": "— Pozostali członkowie —",
         "scopes_toggle": "Zakres (zaawansowane)",
@@ -3425,10 +3426,10 @@
         "expires_hint": "Puste = do zakończenia projektu.",
         "note": "Notatka (opcjonalnie)",
         "note_placeholder": "np. na czas mojego wyjazdu 10–24 grudnia",
-        "submit": "Mianuj lidera"
+        "submit": "Mianuj asystenta"
       },
       "confirm": {
-        "title": "Odwołać lidera?",
+        "title": "Odwołać asystenta?",
         "description": "{{name}} straci dostęp do notatek i obecności tego projektu. Kopia pobrana wcześniej na urządzenie tej osoby zostanie tam do czasu wyczyszczenia pamięci aplikacji."
       }
     },
@@ -3474,6 +3475,8 @@
       "conductor_copy": "Egzemplarz dyrygencki",
       "conductor_copy_suffix": "dyrygencka",
       "stale_hint": "Ta partytura nie zawiera ostatnich zmian. Złóż ją ponownie, aby je uwzględnić.",
+      "withheld_hint": "Ta książka zawiera jeszcze strony utworu, który stał się instrumentalny. Śpiewacy nie otworzą jej, dopóki nie złożysz jej ponownie.",
+      "instrumental_hint": "Poza książką, bo grają tylko instrumentaliści: {{titles}}",
       "preview_book": "Podgląd",
       "preview_book_full": "Podgląd partytury",
       "density": {
@@ -4087,7 +4090,7 @@
       "facts": {
         "aria": "Edytuj szczegóły wydarzenia",
         "conductor": "Dyrygent",
-        "leader": "Lider",
+        "leader": "Asystent dyrygenta",
         "title": "Szczegóły",
         "venue": "Miejsce",
         "onsite_contact": "Kontakt na miejscu",
@@ -4478,7 +4481,7 @@
     },
     "lead": {
       "back": "Harmonogram",
-      "role": "Lider projektu",
+      "role": "Asystent dyrygenta",
       "title": "Prowadzisz",
       "title_highlight": "próbę.",
       "covering_title": "Prowadzi",
@@ -4496,7 +4499,7 @@
       "loading": "Otwieram listę...",
       "gone": {
         "title": "Ta próba nie jest już Twoja",
-        "description": "Nie jesteś już liderem tego projektu albo próby już nie ma. Zapytaj menedżera, jeśli to pomyłka."
+        "description": "Nie jesteś już asystentem w tym projekcie albo próby już nie ma. Zapytaj menedżera, jeśli to pomyłka."
       }
     },
     "pulse": {
@@ -5078,8 +5081,8 @@
         "SYSTEM_ALERT": "Komunikat systemowy",
         "ANNOUNCEMENT_PENDING": "Niewysłane ogłoszenia",
         "SITE_COPY_PROPOSED": "Propozycje zmian w treści strony",
-        "REHEARSAL_DELEGATED": "Mianowanie liderem projektu",
-        "REHEARSAL_DELEGATION_ENDED": "Odwołanie lidera projektu",
+        "REHEARSAL_DELEGATED": "Mianowanie asystentem dyrygenta",
+        "REHEARSAL_DELEGATION_ENDED": "Odwołanie asystenta dyrygenta",
         "REHEARSAL_LEAD_ASSIGNED": "Próba do poprowadzenia",
         "REHEARSAL_DEBRIEF_POSTED": "Podsumowanie po próbie"
       },
@@ -5140,10 +5143,10 @@
         "REHEARSAL_SCHEDULED": "Nowa próba w harmonogramie",
         "REHEARSAL_CANCELLED": "Odwołanie próby",
         "MESSAGE_RECEIVED": "Odpowiedź w Twojej rozmowie",
-        "REHEARSAL_DELEGATED": "Ktoś mianował Cię liderem projektu",
-        "REHEARSAL_DELEGATION_ENDED": "Nie jesteś już liderem projektu",
+        "REHEARSAL_DELEGATED": "Ktoś mianował Cię asystentem dyrygenta w projekcie",
+        "REHEARSAL_DELEGATION_ENDED": "Nie jesteś już asystentem w projekcie",
         "REHEARSAL_LEAD_ASSIGNED": "Dyrygent oddał Ci konkretną próbę do poprowadzenia",
-        "REHEARSAL_DEBRIEF_POSTED": "Lider spisał, jak poszła próba"
+        "REHEARSAL_DEBRIEF_POSTED": "Asystent spisał, jak poszła próba"
       },
       "restore_recommended": "Przywróć zalecane",
       "customized_hint": "Zmienione — różni się od zalecanych ustawień",
@@ -5163,7 +5166,7 @@
         "materials": "Nowe nuty i nagrania oraz przypomnienia tuż przed próbą i koncertem.",
         "safety_net": "Jedyne powiadomienie o tym, czego jeszcze nie zrobiono: zmiany czekają w kolejce, a obsada wciąż o nich nie wie. Dlatego trafia też na e-mail.",
         "site_copy": "Ktoś przeszedł przez redakcję treści strony i zostawił propozycje do przejrzenia. Jedna wiadomość na jedno posiedzenie, nie na każdą zmianę — dlatego trafia też na e-mail.",
-        "debriefs": "Lider spisuje po próbie, jak poszła. Powstaje raz, tylko dla wieczoru prowadzonego przez kogoś innego — dlatego przychodzi od razu, a nie w dziennym podsumowaniu, i trafia też na e-mail.",
+        "debriefs": "Asystent dyrygenta spisuje po próbie, jak poszła. Powstaje raz, tylko dla wieczoru prowadzonego przez kogoś innego — dlatego przychodzi od razu, a nie w dziennym podsumowaniu, i trafia też na e-mail.",
         "team": "Odpowiedzi na zaproszenia, zgłoszenia obecności i prośby o nieobecność. Te same zdarzenia, które zbiera dzienne podsumowanie poniżej."
       },
       "groups_email_off": {
@@ -5171,7 +5174,7 @@
         "messages": "Nie dostaniesz e-maila, gdy ktoś do Ciebie napisze. Wiadomość poczeka w aplikacji.",
         "safety_net": "Nie dostaniesz e-maila, gdy kolejka ogłoszeń czeka niewysłana. Przypomnienie zostanie w aplikacji — czyli tam, gdzie dotrze do Ciebie tylko wtedy, gdy i tak do niej zaglądasz.",
         "site_copy": "Nie dostaniesz e-maila, gdy ktoś zostawi propozycje w redakcji treści. Powiadomienie zostanie w aplikacji — a propozycje poczekają, aż do niej zajrzysz.",
-        "debriefs": "Nie dostaniesz e-maila, gdy lider spisze, jak poszła prowadzona przez niego próba. Tekst poczeka w aplikacji, przy tej próbie."
+        "debriefs": "Nie dostaniesz e-maila, gdy asystent spisze, jak poszła prowadzona przez niego próba. Tekst poczeka w aplikacji, przy tej próbie."
       },
       "details_show": "Szczegóły ({{n}})",
       "details_hide": "Ukryj szczegóły",

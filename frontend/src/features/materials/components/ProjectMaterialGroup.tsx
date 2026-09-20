@@ -13,7 +13,7 @@ import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { PieceRow } from "./PieceRow";
 import { OfflineDownloadControl } from "./OfflineDownloadControl";
-import { isReadinessWithheld } from "../lib/readiness";
+import { isReadinessWithheld, practisedProgram } from "../lib/readiness";
 import type { MaterialsDashboardGroup } from "../types/materials.dto";
 
 interface ProjectMaterialGroupProps {
@@ -27,9 +27,15 @@ export const ProjectMaterialGroup = ({
   const { user } = useAuth();
   const [isBookOpen, setBookOpen] = useState(false);
   const isArchived = group.project.status === "DONE";
+  const hasProgram = group.program.length > 0;
 
-  const total = group.program.length;
-  const ready = group.program.filter(
+  // Only the music this singer is given counts: an instrumental item on the
+  // list has no readiness control, so it cannot be the piece that keeps the
+  // ring short of a hundred. A programme of nothing but such items keeps its
+  // offline control and simply draws no ring.
+  const practised = practisedProgram(group.program);
+  const total = practised.length;
+  const ready = practised.filter(
     (item) => item.piece.my_readiness === "READY",
   ).length;
   const readyPct = total > 0 ? Math.round((ready / total) * 100) : 0;
@@ -101,7 +107,7 @@ export const ProjectMaterialGroup = ({
           // this person is to the project instead — the full cast lives on each
           // piece.
           <div className="shrink-0 flex items-center gap-2.5">
-            {total > 0 && <OfflineDownloadControl group={group} />}
+            {hasProgram && <OfflineDownloadControl group={group} />}
             <div className="flex items-center gap-1.5 rounded-lg border border-ethereal-gold/30 bg-ethereal-gold/10 px-2.5 py-1 shadow-glass-solid">
               <Wand2
                 size={11}
@@ -111,15 +117,15 @@ export const ProjectMaterialGroup = ({
               <Eyebrow color="gold">
                 {group.isConducting
                   ? t("materials.project.conducting_badge", "Prowadzisz")
-                  : t("materials.project.standing_in_badge", "Lider")}
+                  : t("materials.project.standing_in_badge", "Asystent")}
               </Eyebrow>
             </div>
           </div>
         ) : (
-          total > 0 && (
+          hasProgram && (
             <div className="shrink-0 flex items-center gap-2.5">
               <OfflineDownloadControl group={group} />
-              {readinessWithheld ? (
+              {total === 0 ? null : readinessWithheld ? (
                 <Badge
                   variant="neutral"
                   icon={<EyeOff size={11} aria-hidden="true" />}

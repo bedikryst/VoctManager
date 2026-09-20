@@ -133,8 +133,15 @@ from .queries import (
     get_led_materials_projects,
     user_has_live_access_to_piece,
 )
-from .queries.materials_queries import CLOSED_PROJECT_STATUSES
-from .score_package_config import resolve_item_edition
+from .queries.materials_queries import (
+    CLOSED_PROJECT_STATUSES,
+    user_is_refused_instrumental,
+)
+from .score_package_config import (
+    book_binds_instrumental_item,
+    books_binding_instrumental_items,
+    resolve_item_edition,
+)
 from .score_package_markings import (
     READER_MARK_LAYERS,
     MarkAudience,
@@ -756,6 +763,18 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     {"detail": "This project has no score PDF."},
                     status=status.HTTP_404_NOT_FOUND,
                 )
+            # A book bound before an item turned instrumental still carries
+            # that item's pages. Until it is rebuilt it is not the choir's book,
+            # and a singer's seat is refused it as it is refused the edition.
+            if (
+                not is_manager
+                and user_is_refused_instrumental(request.user, project.pk)
+                and book_binds_instrumental_item(project)
+            ):
+                return Response(
+                    {"detail": "The score book is awaiting a rebuild."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
             # Read what was asked for BEFORE anything is recorded: a request that
             # is going to be refused must not leave a distribution stamp or an
             # access-log row behind it.
@@ -998,6 +1017,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if not is_manager and project.status in _CLOSED_PROJECT_STATUSES:
             return Response(empty)
         if not project.score_pdf:
+            return Response(empty)
+        # Same gate as the file: a book still binding an item now instrumental
+        # is withheld from a singer's seat until it is rebuilt.
+        if (
+            not is_manager
+            and user_is_refused_instrumental(request.user, project.pk)
+            and book_binds_instrumental_item(project)
+        ):
             return Response(empty)
 
         page_map, generated_at = (
@@ -1625,6 +1652,21 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             # `get_led_materials_projects` on the `materials` scope.
             'led_project_ids': {
                 str(pid) for pid in led_project_ids(target.user, scope='any')
+            },
+            # The door that opens MUSIC, for the one place the songbook is
+            # stricter than the download gate: an instrumental item is withheld
+            # from a singer's seat, but not from a singer who also runs the
+            # evening — the download view already lets them through.
+            'materials_led_project_ids': {
+                str(pid) for pid in led_project_ids(target.user, scope='materials')
+            },
+            # Bound books that still carry an item now instrumental, which a
+            # refused reader is not offered until the conductor rebuilds.
+            'withheld_book_project_ids': {
+                str(pid) for pid in books_binding_instrumental_items(
+                    Participation.live_seats(artist__user=target.user)
+                    .values_list('project_id', flat=True)
+                )
             },
             # Per PIECE, not per project, because that is the shape of the
             # server rule: `AnnotationViewSet._assert_can_write` opens 'shared'

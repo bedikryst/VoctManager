@@ -82,6 +82,7 @@ from roster.models import (
     ProjectPieceCasting,
     Rehearsal,
     VoiceType,
+    castings_are_instrumental,
 )
 from roster.score_package_config import resolve_item_edition
 
@@ -649,6 +650,14 @@ class DocumentGenerator:
             if recipient is not None
             else {}
         )
+        # The singer's sheet follows the songbook's rule: an item cast on players
+        # only is the organist's music, and a link the app will refuse them is
+        # a dead link on paper. A player's own sheet, and every manager sheet,
+        # keeps it.
+        withhold_instrumental = is_chorister and (
+            recipient is None
+            or recipient.artist.voice_type != VoiceType.INSTRUMENTALIST
+        )
         program_presentations = build_program_presentation(program_items)
         program_cards = [
             DocumentGenerator._build_program_card(
@@ -658,6 +667,7 @@ class DocumentGenerator:
                 base_url,
                 is_report,
                 presentation,
+                withhold_instrumental=withhold_instrumental,
             )
             for item, presentation in zip(program_items, program_presentations, strict=True)
         ]
@@ -1359,8 +1369,13 @@ class DocumentGenerator:
         base_url: str | None,
         is_report: bool = True,
         presentation: ProgramItemPresentation | None = None,
+        *,
+        withhold_instrumental: bool = False,
     ) -> dict[str, Any]:
         piece = item.piece
+        # `piece_castings` is already sliced to this project, which is what the
+        # predicate needs: the badge names the item, the link follows the reader.
+        is_instrumental = castings_are_instrumental(piece_castings)
         # `to_attr` always sets the attribute, so an EMPTY prefetch is a valid
         # answer — testing it for truthiness sends every materialless piece back
         # to the database for a result already known to be nothing.
@@ -1394,10 +1409,12 @@ class DocumentGenerator:
         # The per-piece "Nuty PDF" link points at the access-gated edition download
         # view (watermarked + logged per recipient), never the raw /media file —
         # nginx serves /media/score_editions/ `internal;` only, so a direct file
-        # hyperlink 404s and would bypass score protection.
+        # hyperlink 404s and would bypass score protection. That same gate
+        # refuses a singer the organist's music, so their sheet carries no link.
         sheet_music_url = (
             DocumentGenerator._absolute_url(base_url, f'/api/materials/scores/{primary_edition.pk}/download/')
             if primary_edition and primary_edition.pdf_file
+            and not (is_instrumental and withhold_instrumental)
             else ''
         )
 
@@ -1480,6 +1497,7 @@ class DocumentGenerator:
             'piece_id': item.piece_id,
             'order': item.order,
             'is_encore': item.is_encore,
+            'is_instrumental': is_instrumental,
             # On a Mass the moment is what a singer scans this list for — "which
             # one is the Communion piece" — so it is printed above the title, not
             # buried in the metadata line.

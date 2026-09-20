@@ -476,6 +476,16 @@ export interface ScorePackageState {
   total_pieces: number;
   bindable_pieces: number;
   pieces_without_pdf: string[];
+  /**
+   * Titles the book leaves out because only players are cast on them — still
+   * the programme's, absent from `items` and from `total_pieces`.
+   */
+  instrumental_pieces: string[];
+  /**
+   * The bound book still carries an item that has since turned instrumental:
+   * singers are refused it until the conductor rebuilds.
+   */
+  book_withheld_from_choir: boolean;
   /** Active ensemble size — the number a licensed edition's copies is checked against. */
   cast_size: number;
   /** Titles whose bound licensed edition is short of physical copies for the cast. */

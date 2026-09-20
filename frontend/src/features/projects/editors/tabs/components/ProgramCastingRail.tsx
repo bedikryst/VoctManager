@@ -68,7 +68,7 @@ export const ProgramCastingRail = ({
       <ul className="divide-y divide-hairline">
         {items.map((item) => {
           const isSelected = item.pieceId === selectedPieceId;
-          const { missing, hasRequirements } = item.progress;
+          const { missing, hasRequirements, isInstrumental } = item.progress;
 
           return (
             <li key={item.pieceId}>
@@ -109,6 +109,18 @@ export const ProgramCastingRail = ({
                 >
                   {item.title}
                 </Text>
+
+                {/* Stated the moment the only seats are players': this is
+                    the piece leaving the choir's songbook and book. */}
+                {isInstrumental && (
+                  <Eyebrow
+                    as="span"
+                    color="incense"
+                    className="shrink-0 rounded border border-ethereal-incense/25 bg-ethereal-incense/10 px-1.5 py-0.5"
+                  >
+                    {t("materials.piece.instrumental_badge", "Instrumentalny")}
+                  </Eyebrow>
+                )}
 
                 {hasRequirements && missing > 0 && (
                   <Text

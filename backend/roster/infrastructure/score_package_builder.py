@@ -49,6 +49,7 @@ from roster.infrastructure.score_source_numbering import FolioBox, detect_source
 from roster.models import ProgramItem, Project, ScorePackage
 from roster.score_package_config import (
     ResolvedCardConfig,
+    book_program_items,
     composer_label,
     movement_titles,
     resolve_card_config,
@@ -280,18 +281,10 @@ def _page_window(total: int, start: int | None, end: int | None) -> tuple[int, i
 
 
 def _resolve_program(project: Project) -> list[PlannedItem]:
-    """Resolve the project's ordered programme into planned items. Every program
-    item is represented — bound to a trimmed edition slice, or as a placeholder
-    when no readable edition is attached."""
-    items = (
-        ProgramItem.objects.filter(project=project)
-        .select_related("piece", "piece__composer", "score_edition")
-        .prefetch_related(
-            "piece__editions", "piece__translations", "piece__program_notes",
-            "piece__movements",
-        )
-        .order_by("order")
-    )
+    """Resolve the project's ordered programme into planned items. Every item
+    the book binds (`book_program_items`) is represented — bound to a trimmed
+    edition slice, or as a placeholder when no readable edition is attached."""
+    items = book_program_items(project)
 
     planned: list[PlannedItem] = []
     for item in items:

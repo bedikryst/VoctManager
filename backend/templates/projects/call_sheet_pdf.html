@@ -698,7 +698,7 @@
                         <div class="prog-no"><div class="no">{{ piece.order }}</div></div>
                         <div class="prog-body">
                             {% if piece.slot_label %}<div class="prog-slot">{{ piece.slot_label }}</div>{% endif %}
-                            <h3>{{ piece.title }}{% if piece.is_encore %} <span class="pill">{% translate "Encore" context "call sheet" %}</span>{% endif %}</h3>
+                            <h3>{{ piece.title }}{% if piece.is_encore %} <span class="pill">{% translate "Encore" context "call sheet" %}</span>{% endif %}{% if piece.is_instrumental %} <span class="pill">{% translate "Instrumental" context "call sheet" %}</span>{% endif %}</h3>
                             <div class="by">{% if piece.composer %}{{ piece.composer }}{% else %}{% translate "Composer not filled in" context "call sheet" %}{% endif %}{% if piece.arranger %} · {% blocktranslate with arranger=piece.arranger %}arr. {{ arranger }}{% endblocktranslate %}{% endif %}</div>
                             {% if piece.meta_line %}<div class="metaline">{{ piece.meta_line }}</div>{% endif %}
                         </div>
