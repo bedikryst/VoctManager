@@ -1,10 +1,11 @@
 /**
  * @file trackFilenames.ts
  * @description Reads the voice a rehearsal file is for out of its name.
- * The choir's audio arrives as `(A1) Title.mp3`, `(B) Title.mp3`,
- * `(mp3) Title.mp3` — the bracketed prefix is the part, and `(mp3)` is the
- * mix of every voice, i.e. Tutti. Pure functions; [PieceRowTracks] uses them
- * to pre-fill the voice on every file dropped at once.
+ * The choir's audio arrives as `(A1) Title.mp3`, `(Ms) Title.mp3`,
+ * `(B) Title.mp3`, `(mp3) Title.mp3` — the bracketed prefix is the part, and
+ * `(mp3)` is the mix of every voice, i.e. Tutti. Pure functions;
+ * [PieceRowTracks] uses them to pre-fill the voice on every file dropped at
+ * once.
  *
  * A bare family letter (`(B)`) is only unambiguous when the piece has ONE
  * line of that family. With B1 and B2 declared the file is not guessed at —
@@ -26,6 +27,18 @@ const FAMILY_WORDS: ReadonlyMap<string, string> = new Map([
   ["T", "T"], ["TEN", "T"], ["TENOR", "T"],
   ["B", "B"], ["BAS", "B"], ["BASS", "B"], ["BASSO", "B"],
   ["V", "V"],
+]);
+
+/**
+ * Word forms of the intermediate parts, which are one line each and so need
+ * no family reading: `(Ms)` itself is the code and resolves via the
+ * dictionary. `BAR` is claimed by the code, so `(Bar)` is never a bass.
+ */
+const INTERMEDIATE_WORDS: ReadonlyMap<string, string> = new Map([
+  ["MEZ", "MS"], ["MEZZO", "MS"], ["MEZZOSOPRAN", "MS"], ["MEZZOSOPRANO", "MS"],
+  ["MEZZO-SOPRANO", "MS"],
+  ["BARYTON", "BAR"], ["BARITONE", "BAR"], ["BARI", "BAR"],
+  ["KONTRATENOR", "CT"], ["COUNTERTENOR", "CT"], ["CONTRATENOR", "CT"],
 ]);
 
 export interface ParsedTrackFilename {
@@ -74,9 +87,16 @@ export const resolveVoiceFromPrefix = (
     return { kind: "resolved", code: "TUTTI" };
   }
 
-  // A code the server knows (`A1`, `SOLO`, `ACC`…) needs no reading.
+  // A code the server knows (`A1`, `MS`, `SOLO`, `ACC`…) needs no reading.
   if (dictionary.has(normalized)) {
     return { kind: "resolved", code: normalized };
+  }
+
+  const intermediate = INTERMEDIATE_WORDS.get(normalized);
+  if (intermediate) {
+    return dictionary.has(intermediate)
+      ? { kind: "resolved", code: intermediate }
+      : { kind: "unknown" };
   }
 
   const family = FAMILY_WORDS.get(normalized);

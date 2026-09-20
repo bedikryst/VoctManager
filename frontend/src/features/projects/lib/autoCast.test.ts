@@ -49,6 +49,18 @@ describe("resolveAutoSeat — singers", () => {
   it("falls back to TUTTI when nothing of their family is declared", () => {
     expect(resolveAutoSeat(member(), lines("TUTTI"))).toBe("TUTTI");
   });
+
+  it("seats a mezzo on the mezzo line only where the arrangement writes one", () => {
+    const mezzo = member({ voiceType: "MEZ" as VoiceType });
+    expect(resolveAutoSeat(mezzo, lines("S1", "MS", "A1"))).toBe("MS");
+    // An SATB piece: S2 or A1 is the conductor's call, not the rule's.
+    expect(resolveAutoSeat(mezzo, lines("S1", "S2", "A1", "T1", "B1"))).toBeNull();
+    expect(resolveAutoSeat(mezzo, lines())).toBeNull();
+  });
+
+  it("does not count the mezzo line as a second soprano", () => {
+    expect(resolveAutoSeat(member(), lines("S1", "MS", "A1"))).toBe("S1");
+  });
 });
 
 describe("resolveAutoSeat — instrumentalists", () => {

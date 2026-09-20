@@ -322,8 +322,11 @@ export const MicroCastingTab = ({
 
   const familyLabels: Record<VoiceFamilyId, string> = {
     S: t("projects.micro_cast.voices.sopranos", "Soprany"),
+    MS: t("projects.micro_cast.voices.mezzos", "Mezzosoprany"),
     A: t("projects.micro_cast.voices.altos", "Alty"),
+    CT: t("projects.micro_cast.voices.countertenors", "Kontratenory"),
     T: t("projects.micro_cast.voices.tenors", "Tenory"),
+    BAR: t("projects.micro_cast.voices.baritones", "Barytony"),
     B: t("projects.micro_cast.voices.basses", "Basy"),
     V: t("projects.micro_cast.voices.untyped", "Głosy nieokreślone"),
     ROLE: t("projects.micro_cast.voices.special", "Linie specjalne"),

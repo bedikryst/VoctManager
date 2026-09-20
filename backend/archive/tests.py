@@ -976,6 +976,19 @@ class VoiceLabelRuleTests(SimpleTestCase):
         self.assertEqual(labels["TUTTI"], "Tutti (All)")
         self.assertEqual(labels["SOLO"], "Solo")
 
+    def test_intermediate_parts_neither_collapse_nor_divide_a_family(self) -> None:
+        # An "S/Ms/A" treble score: the mezzo line prints its own name, and it
+        # is not a second soprano — the lone S1 beside it still reads "Soprano".
+        labels = collapse_voice_labels({"S1", "MS", "A1"})
+        self.assertEqual(labels["MS"], "Mezzo-Soprano")
+        self.assertEqual(labels["S1"], "Soprano")
+        self.assertEqual(labels["A1"], "Alto")
+        # Same for the men's "T/Bar/B" reading: BAR is not a bass line.
+        labels = collapse_voice_labels({"T1", "BAR", "B1", "CT"})
+        self.assertEqual(labels["BAR"], "Baritone")
+        self.assertEqual(labels["CT"], "Countertenor")
+        self.assertEqual(labels["B1"], "Bass")
+
     def test_an_unknown_scope_keeps_the_index(self) -> None:
         # No scope is not evidence of no divisi: a legacy payload must not be
         # renamed on a guess.

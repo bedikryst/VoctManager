@@ -9,24 +9,37 @@ from django.utils.translation import gettext_lazy as _
 class VoiceLine(models.TextChoices):
     """Standardized vocal lines and roles used across the entire VoctManager system.
 
-    Three kinds of value live here, and they behave differently downstream:
+    Four kinds of value live here, and they behave differently downstream:
       * the four choral families with a divisi index (S1…B3),
+      * the intermediate parts MS, CT, BAR — a treble-choir "S/Ms/A" or a
+        men's "T/Bar/B" score writes them as one line each, so they carry no
+        index and never divide; a mezzo-soprano or baritone SINGER in an
+        SATB piece still sits on S2/A1 or T2/B1, which is why these lines are
+        declared by the arrangement and never implied by a voice type,
       * the untyped entries V1…V4 — a canon or a round divides singers into
         equal parts with no tessitura attached, and calling those parts
         "Soprano 1" would invent a voicing the score never wrote,
       * standalone roles (SOLO, TUTTI, VP, BACK, ACC, PRON) that carry no index.
-    Only the first two collapse to a plain family name when undivided — see
-    [core.voice_labels].
+    Only the indexed kinds collapse to a plain family name when undivided —
+    see [core.voice_labels]; the rest print their own label everywhere.
+
+    Declaration order is score order, top staff down: `roster.cast_order`
+    sorts by it, so a new line goes where its staff sits, not at the end.
+    The three intermediate labels reuse the msgids `roster.VoiceType` ships,
+    so the catalogues already translate them.
     """
     SOPRANO_1 = 'S1', _('Soprano 1')
     SOPRANO_2 = 'S2', _('Soprano 2')
     SOPRANO_3 = 'S3', _('Soprano 3')
+    MEZZO = 'MS', _('Mezzo-Soprano')
     ALTO_1 = 'A1', _('Alto 1')
     ALTO_2 = 'A2', _('Alto 2')
     ALTO_3 = 'A3', _('Alto 3')
+    COUNTERTENOR = 'CT', _('Countertenor')
     TENOR_1 = 'T1', _('Tenor 1')
     TENOR_2 = 'T2', _('Tenor 2')
     TENOR_3 = 'T3', _('Tenor 3')
+    BARITONE = 'BAR', _('Baritone')
     BASS_1 = 'B1', _('Bass 1')
     BASS_2 = 'B2', _('Bass 2')
     BASS_3 = 'B3', _('Bass 3')

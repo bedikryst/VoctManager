@@ -26,8 +26,10 @@ from django.utils.translation import gettext_lazy as _
 from core.constants import VoiceLine
 
 # Sx / Ax / Tx / Bx — the four choral families — plus Vx, the untyped parts a
-# canon or a round divides into. Everything else (SOLO, TUTTI, VP, BACK, ACC,
-# PRON) is a standalone role and is never collapsed: those names carry no index.
+# canon or a round divides into. Everything else is never collapsed: the
+# standalone roles (SOLO, TUTTI, VP, BACK, ACC, PRON) and the intermediate
+# parts (MS, CT, BAR) carry no index, so their enum label is already the plain
+# name a singer reads.
 _DIVISI_CODE = re.compile(r'^([SATBV])([1-9])$')
 
 # Plain family names, used when a family holds a single line in scope. The four

@@ -59,12 +59,18 @@ export type VoiceLine =
   | "S1"
   | "S2"
   | "S3"
+  // Intermediate parts, one line each and never divided: the "Ms" of a
+  // treble-choir S/Ms/A score, the "Bar" of a men's T/Bar/B one. Declared by
+  // the arrangement — a mezzo SINGER in an SATB piece still sits on S2 or A1.
+  | "MS"
   | "A1"
   | "A2"
   | "A3"
+  | "CT"
   | "T1"
   | "T2"
   | "T3"
+  | "BAR"
   | "B1"
   | "B2"
   | "B3"

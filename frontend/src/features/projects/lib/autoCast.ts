@@ -30,16 +30,21 @@ import type { ParticipationStatus, VoiceLine, VoiceType } from "@/shared/types";
 import { voiceFamilyOf, type VoiceFamilyId } from "./voiceFamilies";
 
 /**
- * The seats a line-up can hand out: the twelve choral lines and nothing else.
- * TUTTI and SOLO are properties of a piece rather than standing places in a
- * concert, and the untyped V1…V4 exist only inside the canon that declares them
- * — none of the three describes where a singer sits all evening. All of them
- * remain reachable by hand, on the piece that needs them.
+ * The seats a line-up can hand out: the twelve choral lines, the three
+ * intermediate parts, and nothing else. TUTTI and SOLO are properties of a
+ * piece rather than standing places in a concert, and the untyped V1…V4 exist
+ * only inside the canon that declares them — none of the three describes where
+ * a singer sits all evening. All of them remain reachable by hand, on the
+ * piece that needs them. Score order, top staff down, as `castOrder` ranks
+ * seats by their index here.
  */
 export const LINE_UP_SEATS: readonly VoiceLine[] = [
   "S1", "S2", "S3",
+  "MS",
   "A1", "A2", "A3",
+  "CT",
   "T1", "T2", "T3",
+  "BAR",
   "B1", "B2", "B3",
 ];
 
@@ -79,15 +84,20 @@ const IMPLICIT_LINES: readonly VoiceLine[] = ["S1", "A1", "T1", "B1"];
 
 /**
  * Voice type → choral family, for the types where that is a fact and not a
- * decision. Mezzo, countertenor and baritone are deliberately absent: they sing
- * S2 *or* A1, A1 *or* T2, T2 *or* B1 depending on the piece, so an automatic
- * choice would print a part nobody agreed to. Those singers are placed by their
- * line-up seat, or by hand.
+ * decision. A mezzo, countertenor or baritone folds into their own one-line
+ * family, so the ladder seats them exactly where an arrangement writes their
+ * part (an S/Ms/A treble score, a T/Bar/B men's one) and nowhere else: on an
+ * SATB piece they sing S2 *or* A1, A1 *or* T2, T2 *or* B1, and an automatic
+ * choice there would print a part nobody agreed to. Those singers are placed
+ * by their line-up seat, or by hand.
  */
 const FAMILY_BY_VOICE_TYPE: Partial<Record<VoiceType, VoiceFamilyId>> = {
   SOP: "S",
+  MEZ: "MS",
   ALT: "A",
+  CT: "CT",
   TEN: "T",
+  BAR: "BAR",
   BAS: "B",
 };
 

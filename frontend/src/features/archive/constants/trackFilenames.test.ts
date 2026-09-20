@@ -14,8 +14,9 @@ import {
 } from "@/features/archive/constants/trackFilenames";
 
 const DICTIONARY: ReadonlySet<string> = new Set([
-  "S1", "S2", "S3", "A1", "A2", "A3", "T1", "T2", "T3", "B1", "B2", "B3",
-  "V1", "V2", "V3", "V4", "SOLO", "TUTTI", "ACC", "BACK", "PRON", "VP",
+  "S1", "S2", "S3", "MS", "A1", "A2", "A3", "CT", "T1", "T2", "T3", "BAR",
+  "B1", "B2", "B3", "V1", "V2", "V3", "V4", "SOLO", "TUTTI", "ACC", "BACK",
+  "PRON", "VP",
 ]);
 
 describe("parseTrackFilename", () => {
@@ -70,6 +71,27 @@ describe("resolveVoiceFromPrefix", () => {
     expect(
       resolveVoiceFromPrefix("S", ["S1", "S2", "A1"], DICTIONARY),
     ).toEqual({ kind: "ambiguous", family: "S", candidates: ["S1", "S2"] });
+  });
+
+  it("reads the choir's (Ms) and the word forms as the intermediate parts", () => {
+    // `(Ms)` is the code itself, whatever the piece declares.
+    expect(resolveVoiceFromPrefix("MS", ["S1", "A1"], DICTIONARY)).toEqual({
+      kind: "resolved",
+      code: "MS",
+    });
+    expect(resolveVoiceFromPrefix("MEZZO", [], DICTIONARY)).toEqual({
+      kind: "resolved",
+      code: "MS",
+    });
+    // `(Bar)` is the baritone line, never a bass family letter.
+    expect(resolveVoiceFromPrefix("BAR", ["B1", "B2"], DICTIONARY)).toEqual({
+      kind: "resolved",
+      code: "BAR",
+    });
+    expect(resolveVoiceFromPrefix("KONTRATENOR", [], DICTIONARY)).toEqual({
+      kind: "resolved",
+      code: "CT",
+    });
   });
 
   it("is unknown for anything else", () => {

@@ -24,15 +24,19 @@ import type { VoiceRequirementDTO } from "../types/archive.dto";
 
 /**
  * Voice lines a divisi can ask for (one slot = "I need N singers on this
- * part"). Beyond the choral families this covers TUTTI — a unison setting is a
- * real requirement, not the absence of one — and V1…V4, the untyped parts a
- * canon divides into. Rehearsal/recording-only entries (BACKGROUND,
- * ACCOMPANIMENT, PRONUNCIATION) stay out: nobody is cast on them.
+ * part"). Beyond the choral families this covers the intermediate parts a
+ * score writes as one line (MS, CT, BAR), TUTTI — a unison setting is a real
+ * requirement, not the absence of one — and V1…V4, the untyped parts a canon
+ * divides into. Rehearsal/recording-only entries (BACKGROUND, ACCOMPANIMENT,
+ * PRONUNCIATION) stay out: nobody is cast on them.
  */
 export const CHORAL_DIVISI_LINES: ReadonlySet<string> = new Set([
   "S1", "S2", "S3",
+  "MS",
   "A1", "A2", "A3",
+  "CT",
   "T1", "T2", "T3",
+  "BAR",
   "B1", "B2", "B3",
   "V1", "V2", "V3", "V4",
   "TUTTI",
