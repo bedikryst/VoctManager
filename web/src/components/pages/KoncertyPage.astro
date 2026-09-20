@@ -293,6 +293,8 @@ const listItems = await Promise.all(
         // no startDate and no status claim rather than fabricate a date.
         date: s.date ?? opening?.date,
         time: s.time ?? opening?.time,
+        // Concert-level only: a tour's stand-in evening has no published end of its own.
+        endTime: opening ? undefined : s.endTime,
         // The venue has to travel WITH the date it belongs to: pairing the opening evening's day
         // with the concert-level venue string (which lists all three cities) would describe an
         // evening that never happened.

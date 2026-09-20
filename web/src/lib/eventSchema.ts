@@ -7,9 +7,14 @@
  *  every concert sung so far, and false of the first one ever announced ahead of time.
  *
  *  Everything here is derived or omitted, never asserted on a hunch: status comes from the
- *  calendar, `offers` appears only where admission is actually recorded, and a field nobody
- *  can source (a concert's `endDate` — the ensemble keeps no durations) simply stays absent.
+ *  calendar, `offers` appears only where admission is actually recorded, and `endDate` only
+ *  where somebody published the slot's end (the ensemble keeps no durations of its own).
  *  A missing recommended field costs a Search Console warning; a wrong one costs the truth.
+ *
+ *  Google validates EVERY Event-typed node it finds, nested ones included, against the same
+ *  required fields as the page's own event. A `superEvent` typed `Festival` with only a name
+ *  and a URL therefore reads as a second, broken event (no location, no startDate) and puts
+ *  a critical error on the page — which is why the festival is referenced without a type.
  * @architecture Astro islands 2026
  * @module lib/eventSchema
  */
@@ -48,6 +53,9 @@ export interface EventSeed {
   readonly date?: string;
   /** "HH:MM" — folded into `startDate`, and only meaningful alongside a date. */
   readonly time?: string;
+  /** "HH:MM" when the slot ends, as the organiser published it — never a duration guessed from
+      the programme. Folded into `endDate`, and only alongside a date and a start time. */
+  readonly endTime?: string;
   /** Venue name alone (Place.name). */
   readonly venue: string;
   /** Street address of the venue as free text — schema.org accepts Text here, and a plain
@@ -128,6 +136,9 @@ export const musicEvent = (seed: EventSeed, now: Date = new Date()): MusicEventN
     ...(seed.sameAs ? { sameAs: seed.sameAs } : {}),
     ...(seed.image ? { image: seed.image } : {}),
     ...(seed.date ? { startDate: seed.time ? `${seed.date}T${seed.time}:00` : seed.date } : {}),
+    ...(seed.date && seed.time && seed.endTime
+      ? { endDate: `${seed.date}T${seed.endTime}:00` }
+      : {}),
     ...(status ? { eventStatus: status } : {}),
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     location: {
@@ -139,12 +150,13 @@ export const musicEvent = (seed: EventSeed, now: Date = new Date()): MusicEventN
     organizer: ORGANIZER,
     // The festival is identified BY ITS OWN URL rather than by a node this site mints: it is
     // somebody else's entity, and the address is the one identifier both graphs can agree on.
-    // No `startDate` — the festival's own dates are not ours to state, and schema.org asks for
-    // them on the event being described, which is the concert.
+    // Deliberately NO `@type`: schema.org already fixes `superEvent`'s range as Event, and a
+    // typed node would be validated as one — location and startDate required — with facts
+    // (the festival's dates, its venues, its organiser) that are not ours to state. A bare
+    // node reference says exactly what is true: this concert belongs to the thing at that IRI.
     ...(seed.festival
       ? {
           superEvent: {
-            "@type": "Festival",
             "@id": seed.festival.url,
             name: seed.festival.name,
             url: seed.festival.url,
