@@ -11,10 +11,14 @@
  *  where somebody published the slot's end (the ensemble keeps no durations of its own).
  *  A missing recommended field costs a Search Console warning; a wrong one costs the truth.
  *
- *  Google validates EVERY Event-typed node it finds, nested ones included, against the same
- *  required fields as the page's own event. A `superEvent` typed `Festival` with only a name
- *  and a URL therefore reads as a second, broken event (no location, no startDate) and puts
- *  a critical error on the page — which is why the festival is referenced without a type.
+ *  NO `superEvent`, and do not put one back. A concert sung inside somebody else's festival is
+ *  true and worth stating, but `superEvent`'s schema.org range IS Event: Google types the node
+ *  from the property, never from its `@type`, and then validates it as a full event — location
+ *  and startDate required. Satisfying that means asserting the festival's own dates, venues and
+ *  organiser, which are not ours to assert and rot the moment their programme moves. Leaving it
+ *  unsatisfied puts a critical error on this page and suppresses the ONE concert whose event
+ *  result is still ahead. The festival reaches search the way it always did: as a visible,
+ *  followed link in the page's own markup, with the festival's name as its context.
  * @architecture Astro islands 2026
  * @module lib/eventSchema
  */
@@ -62,11 +66,6 @@ export interface EventSeed {
       line is what the ensemble's own records hold. */
   readonly address?: string;
   readonly admission?: Admission;
-  /** The festival this evening belongs to, where it belongs to one. It becomes `superEvent` —
-      the only statement in this graph that connects the concert to an entity somebody else
-      owns, names and is searched for, which is precisely what a reader looking for the
-      festival's programme is typing. */
-  readonly festival?: { readonly name: string; readonly url: string };
   /** The same evening under somebody else's roof — its Facebook event page. `sameAs` is the
       schema.org relation for exactly that, and it stays true after the night is over, so it is
       not date-gated the way the visible link is. */
@@ -148,21 +147,6 @@ export const musicEvent = (seed: EventSeed, now: Date = new Date()): MusicEventN
     },
     performer: PERFORMER,
     organizer: ORGANIZER,
-    // The festival is identified BY ITS OWN URL rather than by a node this site mints: it is
-    // somebody else's entity, and the address is the one identifier both graphs can agree on.
-    // Deliberately NO `@type`: schema.org already fixes `superEvent`'s range as Event, and a
-    // typed node would be validated as one — location and startDate required — with facts
-    // (the festival's dates, its venues, its organiser) that are not ours to state. A bare
-    // node reference says exactly what is true: this concert belongs to the thing at that IRI.
-    ...(seed.festival
-      ? {
-          superEvent: {
-            "@id": seed.festival.url,
-            name: seed.festival.name,
-            url: seed.festival.url,
-          },
-        }
-      : {}),
     ...offersFor(seed.admission, seed.url),
   };
 };

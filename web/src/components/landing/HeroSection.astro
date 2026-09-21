@@ -134,10 +134,7 @@ const announced = upcoming
           that joined two facts on one line has to go with it. Written unbroken — whitespace
           between these nodes would print inside the line. */}
       {announced && (
-        <a
-          class="hero-announce intro-stage plausible-event-name=hero+najblizej"
-          href={announced.href}
-        >
+        <a class="hero-announce intro-stage" href={announced.href}>
           <span class="lit-dot hero-announce-dot" aria-hidden="true" />
           <span class="hero-announce-text">{`${copy.announceLabel} — `}<strong>{announced.title}</strong><span class="hero-announce-when">{announced.moment}</span></span>
         </a>
@@ -172,7 +169,7 @@ const announced = upcoming
             and its rule, which is what it has been at every width below 981px all along. */}
         <button
           type="button"
-          class="primary-link plausible-event-name=hero+wideo"
+          class="primary-link"
           data-video-open
           data-video-src={MODAL_VIDEO.src}
           data-video-src-av1={MODAL_VIDEO.srcAv1}
@@ -191,7 +188,7 @@ const announced = upcoming
             the cycle is a page. Both stand in every state — the dateline above the braid is a
             line, not a plane, so it takes nothing from this row and leaves nothing for the second
             link to fill in. */}
-        <a class="secondary-link plausible-event-name=hero+koncerty" href={hrefConcerts}>
+        <a class="secondary-link" href={hrefConcerts}>
           {copy.concertsLink}
         </a>
       </div>

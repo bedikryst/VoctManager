@@ -18,6 +18,7 @@
 
 import { FOUNDATION } from "../../../data/foundation";
 import type { VaultChrome } from "../../../i18n/content/skarbiecChrome";
+import { GOALS, goalClass, type Goal } from "../../../lib/plausible";
 import { useCopyToClipboard } from "../hooks/useCopyToClipboard";
 import { useVaultCopy } from "./copyContext";
 import { Typo } from "../lib/Typo";
@@ -26,7 +27,9 @@ export interface TransferField {
   readonly label: string;
   readonly value: string;
   readonly display: string;
-  readonly eventName: string;
+  /** Only the account number is a goal: copying it is the transfer's decisive act, and the
+   *  recipient, address and title copied beside it would count the same intent three more times. */
+  readonly goal?: Goal;
 }
 
 const ACCOUNT = FOUNDATION.accounts.pln.nrb;
@@ -45,20 +48,14 @@ export function bankTransferFields(t: VaultChrome): readonly TransferField[] {
       label: t.fieldAccount,
       value: ACCOUNT,
       display: ACCOUNT_DISPLAY,
-      eventName: "skarbiec+copy+nrkonta",
+      goal: GOALS.accountCopied,
     },
-    {
-      label: t.fieldRecipient,
-      value: RECIPIENT,
-      display: RECIPIENT,
-      eventName: "skarbiec+copy+fundacja",
-    },
-    { label: t.fieldAddress, value: ADDRESS, display: ADDRESS, eventName: "skarbiec+copy+adres" },
+    { label: t.fieldRecipient, value: RECIPIENT, display: RECIPIENT },
+    { label: t.fieldAddress, value: ADDRESS, display: ADDRESS },
     {
       label: t.fieldTransferTitle,
       value: "Darowizna na cele statutowe VoctFoundation",
       display: "Darowizna na cele statutowe VoctFoundation",
-      eventName: "skarbiec+copy+tytul",
     },
   ];
 }
@@ -75,7 +72,7 @@ export function TransferFieldButton({ field }: { readonly field: TransferField }
         <span className="transfer-field-label">{field.label}</span>
         <button
           type="button"
-          className={`transfer-field-copy plausible-event-name=${field.eventName}`}
+          className={`transfer-field-copy${field.goal ? ` ${goalClass(field.goal)}` : ""}`}
           onClick={() => void copy(field.value)}
         >
           <span className="transfer-field-val">{field.display}</span>

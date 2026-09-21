@@ -107,7 +107,6 @@ const tempusGloss = tempus.gloss[lang];
       <p class="foot-doc">
         <a
           href="/docs/Statut-VoctFoundation.pdf"
-          class="plausible-event-name=statut+fundacji"
           target="_blank"
           rel="noopener"
           aria-label={t.statuteAria}
@@ -161,14 +160,7 @@ const tempusGloss = tempus.gloss[lang];
               direction rather than "opens elsewhere in the browser"; it is the same arrow
               /kontakt puts on the same words. */}
           <p class="foot-act">
-            {/* The analytics key is FROZEN at the list's old name. It is not a label a reader
-                sees; it is the identifier a goal is configured under in Plausible's own
-                dashboard, which no deploy from here can rename — changing it would silently
-                end the series rather than continue it under a better word. */}
-            <a
-              class="plausible-event-name=zawiadomienia+stopka"
-              href={localizePath("/newsletter", lang)}
-            >
+            <a href={localizePath("/newsletter", lang)}>
               {nuntius.invitation.cta}&nbsp;<span aria-hidden="true">→</span>
             </a>
           </p>

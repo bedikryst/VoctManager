@@ -7,6 +7,7 @@
  * @module islands/landing/vault/ZrzutkaPanel
  */
 
+import { GOALS, goalClass } from "../../../lib/plausible";
 import { VAULT_CONFIG } from "../constants/vaultConfig";
 import { useVaultCopy } from "./copyContext";
 import { Typo } from "../lib/Typo";
@@ -29,7 +30,7 @@ export function ZrzutkaPanel(): React.JSX.Element {
         <h3 className="method-title">Zrzutka.pl</h3>
         <p className="method-note">{vault.zrzutka.note}</p>
         <a
-          className="method-cta plausible-event-name=zrzutka+otworz"
+          className={`method-cta ${goalClass(GOALS.zrzutkaOpened)}`}
           href={VAULT_CONFIG.zrzutka.url}
           target="_blank"
           rel="noopener"

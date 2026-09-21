@@ -21,6 +21,7 @@ import { useCallback, useId, useRef, useState } from "react";
 
 import { submitPatronInterest } from "./api/patronage";
 import type { PatronFormChrome } from "../../i18n/content/fundacja";
+import { GOALS, track } from "../../lib/plausible";
 
 export interface PatronInterestFormProps {
   readonly chrome: PatronFormChrome;
@@ -85,6 +86,7 @@ export function PatronInterestForm({ chrome, copy, contactEmail }: PatronInteres
       setPhase("sending");
       try {
         await submitPatronInterest({ firstName: fn, lastName: ln, email: em, consent });
+        track(GOALS.patronInterest);
         setPhase("sent");
       } catch {
         // Network failure and a non-2xx answer read the same to the reader: nothing was recorded,

@@ -51,6 +51,7 @@
 import { localizePath, type Locale } from "../../i18n/config";
 import { UI } from "../../i18n/ui";
 import type { LandingChrome } from "../../i18n/content/landing";
+import { GOALS, goalClass } from "../../lib/plausible";
 import { useLiturgicalClock } from "./hooks/useLiturgicalClock";
 import { Typo } from "./lib/Typo";
 
@@ -252,14 +253,11 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
                 {/* The foundation's own page leads the corpus: it is where the documents below
                     are filed with the identity they belong to. */}
                 <li>
-                  <a href={hrefFoundation} className="plausible-event-name=fundacja+stopka">
-                    {t.footer.foundationPage}
-                  </a>
+                  <a href={hrefFoundation}>{t.footer.foundationPage}</a>
                 </li>
                 <li>
                   <a
                     href="/docs/Statut-VoctFoundation.pdf"
-                    className="plausible-event-name=statut+fundacji"
                     target="_blank"
                     rel="noopener"
                     aria-label={t.footer.statuteAria}
@@ -271,9 +269,7 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
                   </a>
                 </li>
                 <li>
-                  <a href={hrefPrivacy} className="plausible-event-name=polityka+prywatnosci">
-                    {t.footer.privacy}
-                  </a>
+                  <a href={hrefPrivacy}>{t.footer.privacy}</a>
                 </li>
               </ul>
             </div>
@@ -288,24 +284,22 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
               </span>
               <ul className="foundation-vox-list">
                 <li>
-                  <a href={hrefContact} className="plausible-event-name=kontakt">
-                    {chrome.voxWrite}
-                  </a>
+                  <a href={hrefContact}>{chrome.voxWrite}</a>
                 </li>
                 <li>
-                  <a href="mailto:booking@voctensemble.com" className="plausible-event-name=booking">
+                  <a href="mailto:booking@voctensemble.com" className={goalClass(GOALS.mailBooking)}>
                     {chrome.voxBooking}
                   </a>
                 </li>
                 <li>
-                  <a href="mailto:patronat@voctensemble.com" className="plausible-event-name=patronat">
+                  <a href="mailto:patronat@voctensemble.com" className={goalClass(GOALS.mailPatronage)}>
                     {chrome.voxPatronage}
                   </a>
                 </li>
                 <li>
                   <a
                     href="mailto:florent.de.bazelaire@voctensemble.com"
-                    className="plausible-event-name=dyrekcja"
+                    className={goalClass(GOALS.mailFlorent)}
                   >
                     {chrome.voxDirection}
                   </a>
@@ -313,9 +307,7 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
               </ul>
               <p className="foundation-vox-rodo">
                 <span className="key">{t.footer.dataProtection}</span>
-                <a href="mailto:rodo@voctensemble.com" className="plausible-event-name=rodo+mail">
-                  rodo@voctensemble.com
-                </a>
+                <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>
               </p>
             </div>
           </div>
@@ -330,7 +322,6 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
               <li>
                 <a
                   href="https://www.instagram.com/voctensemble/"
-                  className="plausible-event-name=instagram"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -340,7 +331,6 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
               <li>
                 <a
                   href="https://www.facebook.com/voctensemble/"
-                  className="plausible-event-name=facebook"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -350,7 +340,6 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
               <li>
                 <a
                   href="https://www.youtube.com/@VoctEnsemble-nb7gh"
-                  className="plausible-event-name=youtube"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -409,11 +398,7 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
                   credits the person who built the site rather than a role in the foundation. */}
               <span className="footer-colophon-author">
                 <span lang="la">Auctor</span> ·{" "}
-                <a
-                  href="mailto:krystian@bugalski.dev"
-                  className="plausible-event-name=author+mail"
-                  rel="author"
-                >
+                <a href="mailto:krystian@bugalski.dev" rel="author">
                   Krystian Bugalski
                 </a>
               </span>

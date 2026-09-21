@@ -184,7 +184,7 @@ const announced = upcoming
             {copy.label}
           </p>
           <h2 class="proximum-title reveal ink-press">
-            <a class="proximum-link plausible-event-name=proximum+concert" href={announced.href}>
+            <a class="proximum-link" href={announced.href}>
               {announced.title}
             </a>
           </h2>
@@ -201,7 +201,7 @@ const announced = upcoming
           {/* Out of the register deliberately: a half-ink control is a control you are not sure you
               may press. Everything above it inks; these are simply there. */}
           <div class="proximum-actions">
-            <a class="proximum-cta plausible-event-name=proximum+program" href={announced.href}>
+            <a class="proximum-cta" href={announced.href}>
               {chrome.proximumCta}
             </a>
             {/* The act alone. This is the ONE surface that prints the invitation without
@@ -209,7 +209,7 @@ const announced = upcoming
                 before the next Spiritual Concert, and the next Spiritual Concert is the poster
                 the reader is looking at. The label therefore has to carry its own reason, which
                 is why it names the list rather than the address (`i18n/content/nuntius.ts`). */}
-            <a class="proximum-notice plausible-event-name=proximum+nuntius" href={hrefNotice}>
+            <a class="proximum-notice" href={hrefNotice}>
               {invitation.cta}
             </a>
           </div>

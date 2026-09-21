@@ -248,10 +248,7 @@ const plateSpan = [...new Set([years[0], years.at(-1)])].filter(Boolean).join("â
         <div class="imagines-plate" data-cursor="no-snap">
           {frames.map((f) => (
             <figure class="imagines-frame">
-              <a
-                class="imagines-media plausible-event-name=imagines+wieczor"
-                href={`${localizePath("/koncerty", lang)}/${f.concertId}`}
-              >
+              <a class="imagines-media" href={`${localizePath("/koncerty", lang)}/${f.concertId}`}>
                 {/* A plain `<img>`, not `<Image>`: the renditions are cut to the panel's square up
                     in the frontmatter, and the component has no way to ask for a crop and a ladder
                     at once â€” `widths` derives its own aspect from the source and would drop the one
@@ -328,10 +325,7 @@ const plateSpan = [...new Set([years[0], years.at(-1)])].filter(Boolean).join("â
             baseline rather than one box that swaps its text. */}
         <div class="imagines-foot">
           <p class="imagines-caption">{`${copy.caption} Â· ${plateSpan}`}</p>
-          <a
-            class="imagines-all plausible-event-name=imagines+wszystkie"
-            href={localizePath("/obrazy", lang)}
-          >
+          <a class="imagines-all" href={localizePath("/obrazy", lang)}>
             {copy.allLink}
           </a>
         </div>

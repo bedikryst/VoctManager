@@ -157,9 +157,7 @@ const ahead = upcoming
                     existing gold illumination already reads as "this entry is live" — the link
                     only has to name where it goes, which the hairline does on its own hover. */}
                 <h3 class="path-entry-title reveal">
-                  <a
-                    class="path-entry-link plausible-event-name=path+concert"
-                    href={`${hrefConcerts}/${entry.concertId}`}
+                  <a class="path-entry-link" href={`${hrefConcerts}/${entry.concertId}`}
                   >{entry.title}</a>
                 </h3>
                 <p class="path-entry-place reveal">{entry.place}</p>
@@ -167,7 +165,7 @@ const ahead = upcoming
                 {entry.video && (
                   <button
                     type="button"
-                    class="path-entry-video plausible-event-name=path+fragment"
+                    class="path-entry-video"
                     data-video-open
                     data-video-src={entry.video.src}
                     data-video-src-av1={entry.video.srcAv1}
@@ -239,7 +237,7 @@ const ahead = upcoming
           <p class="path-entry-place reveal">{copy.next.place}</p>
           <p class="path-entry-summary reveal">{copy.next.summary}</p>
           <a
-            class="primary-link path-next-cta plausible-event-name=path+next+wesprzyj"
+            class="primary-link path-next-cta"
             href="#wesprzyj"
             data-no-lenis
             data-vault-open="100"
@@ -273,7 +271,7 @@ const ahead = upcoming
               earned there: a composition may put two groups on two edges when something is drawn
               across between them. It is also what the full measure is FOR. */}
           <div class="path-ahead-line reveal">
-            <a class="path-ahead-link plausible-event-name=rejestr+najblizej" href={ahead.href}>
+            <a class="path-ahead-link" href={ahead.href}>
               {/* Tag, then title — the shape every entry above uses, so this row outranks them by
                   the axis it stands on rather than by shouting. The rubric carries the label alone:
                   the moment moved to the facts, where it stands beside the hour it belongs to. */}

@@ -18,6 +18,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { GOALS, track } from "../../../lib/plausible";
+
 export interface VaultPreselectApi {
   readonly preselect: (amount: number) => void;
 }
@@ -41,15 +43,26 @@ export function VaultProvider({ children }: { readonly children: ReactNode }): R
   const [isRegulaminOpen, setIsRegulaminOpen] = useState(false);
   const giveApiRef = useRef<VaultPreselectApi | null>(null);
   const acceptorRef = useRef<(() => void) | null>(null);
+  /** Mirrors `isOpen` for the goal below: every way into the vault (menu, in-page CTA, `?donate`
+   *  deep link, retry after a failed payment) lands in `open()`, so this is the ONE place the
+   *  opening is counted — and only on the closed→open edge, never for a repeat call while open. */
+  const openRef = useRef(false);
 
   const open = useCallback((amount?: number) => {
     if (typeof amount === "number" && Number.isFinite(amount)) {
       giveApiRef.current?.preselect(amount);
     }
+    if (!openRef.current) {
+      openRef.current = true;
+      track(GOALS.vaultOpened);
+    }
     setIsOpen(true);
   }, []);
 
-  const close = useCallback(() => setIsOpen(false), []);
+  const close = useCallback(() => {
+    openRef.current = false;
+    setIsOpen(false);
+  }, []);
 
   const openRegulamin = useCallback(() => setIsRegulaminOpen(true), []);
   const closeRegulamin = useCallback(() => setIsRegulaminOpen(false), []);

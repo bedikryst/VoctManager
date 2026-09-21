@@ -333,7 +333,7 @@ export function ImageLightbox(): React.JSX.Element | null {
           {current.href && (
             <div className="image-lightbox-foot">
               <a
-                className="image-lightbox-exit plausible-event-name=obraz+wyjscie"
+                className="image-lightbox-exit"
                 href={current.href}
                 onClick={leave}
               >

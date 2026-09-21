@@ -219,17 +219,30 @@ const breadcrumbLd = breadcrumb ? breadcrumbList(breadcrumb, lang) : undefined;
     <meta name="twitter:image:alt" content={imageAlt} />
 
     <!-- Plausible Analytics — cookieless, EU-hosted (see /polityka-prywatnosci). The
-         `tagged-events` variant reports the `plausible-event-name=…` classes already wired
-         on CTAs/gate/vault. Auto-tracks pushState, so ClientRouter swaps count as pageviews.
+         `tagged-events` variant reports the `plausible-event-name=…` classes on the anchors
+         that are goals in themselves; `lib/plausible.ts` is the registry of every goal name.
+         Auto-tracks pushState, so ClientRouter swaps count as pageviews. The queue stub in
+         front of the script is Plausible's own: the script is deferred, and a goal fired by an
+         island before it lands (a return from the payment gateway, a `?donate` deep link) would
+         otherwise be lost — the stub buffers the call, the script drains it.
          Production only: in dev the data would be localhost noise. -->
     {
       import.meta.env.PROD && (
-        <script
-          is:inline
-          defer
-          data-domain="voctensemble.com"
-          src="https://plausible.io/js/script.tagged-events.js"
-        />
+        <>
+          <script is:inline>
+            window.plausible =
+              window.plausible ||
+              function () {
+                (window.plausible.q = window.plausible.q || []).push(arguments);
+              };
+          </script>
+          <script
+            is:inline
+            defer
+            data-domain="voctensemble.com"
+            src="https://plausible.io/js/script.tagged-events.js"
+          />
+        </>
       )
     }
 

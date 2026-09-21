@@ -53,6 +53,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Locale } from "../../i18n/config";
 import type { NoticeFormChrome } from "../../i18n/content/nuntius";
+import { GOALS, track } from "../../lib/plausible";
 import {
   NOTICE_RESEND_COOLDOWN_MS,
   NoticeError,
@@ -264,6 +265,10 @@ export function NoticeForm({
         // This submission WAS the request the cooldown counts from, so the resend opens a full
         // cooldown from here rather than from the first press of the button inside the receipt.
         setResendAt(Date.now() + NOTICE_RESEND_COOLDOWN_MS);
+        // Counted on the accepted POST, not on the confirmed consent: the click in the mail
+        // happens off-site and the goal's job is to say which page the address came from — the
+        // page path in the goal's breakdown, so one name serves every placement of the blank.
+        track(GOALS.noticeSignup);
         const band = holdBand();
         if (band) {
           band.dataset.sent = "true";

@@ -465,7 +465,7 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
             <div className="threshold-actions">
               <button
                 type="button"
-                className="threshold-btn plausible-event-name=enterSilence"
+                className="threshold-btn"
                 data-choice="silence"
                 aria-label={chrome.enterSilenceAria}
                 onClick={() => pick("silence")}
@@ -480,7 +480,7 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
               </button>
               <button
                 type="button"
-                className="threshold-btn plausible-event-name=enterVoice"
+                className="threshold-btn"
                 data-choice="voice"
                 aria-label={chrome.enterVoiceAria}
                 onClick={() => pick("voice")}

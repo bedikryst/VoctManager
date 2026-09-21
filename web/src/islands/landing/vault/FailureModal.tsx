@@ -101,11 +101,7 @@ export function FailureModal(): React.JSX.Element | null {
             {vault.failure.title2}
           </p>
           <p className="failure-strap">{vault.failure.strap}</p>
-          <button
-            type="button"
-            className="failure-retry plausible-event-name=sprobuj+ponownie"
-            onClick={retry}
-          >
+          <button type="button" className="failure-retry" onClick={retry}>
             {t.failureRetry}
           </button>
         </div>

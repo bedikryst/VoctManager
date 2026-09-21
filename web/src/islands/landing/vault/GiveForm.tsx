@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { GOALS, goalClass } from "../../../lib/plausible";
 import { initiateDonation, DonationInitiateError } from "../api/donations";
 import {
   CURRENCY_SUFFIX,
@@ -346,7 +347,7 @@ export function GiveForm(): React.JSX.Element {
             {`${vault.online.consentLead} `}
             <button
               type="button"
-              className="give-consent-link plausible-event-name=regulamin+darowizn"
+              className="give-consent-link"
               aria-haspopup="dialog"
               aria-controls="regulamin"
               onClick={(event) => {
@@ -360,9 +361,12 @@ export function GiveForm(): React.JSX.Element {
           </span>
         </label>
 
+        {/* The goal rides the CLICK, not the gateway hand-off: the tagged-events script sends it
+            while the initiate request is still in flight, whereas a call placed just before the
+            redirect below would race the navigation and be dropped by the unload. */}
         <button
           type="submit"
-          className={`method-cta give-submit plausible-event-name=wesprzyj+Axepta${loading ? " is-loading" : ""}`}
+          className={`method-cta give-submit ${goalClass(GOALS.axeptaSubmit)}${loading ? " is-loading" : ""}`}
           disabled={loading}
         >
           <span className="method-cta-text">{ctaLabel}</span>

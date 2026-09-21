@@ -321,13 +321,13 @@ export function StickyHeader({
         <div className="chrome-actions">
           <button
             type="button"
-            className={`audio-toggle plausible-event-name=przycisk+cisza${audioOn ? " is-on" : ""}`}
+            className={`audio-toggle${audioOn ? " is-on" : ""}`}
             aria-pressed={audioOn}
             onClick={toggleAudio}
           >
             {audioOn ? chrome.audioOn : chrome.audioOff}
           </button>
-          <a className="support-link plausible-event-name=o+nas" href={hrefAbout}>
+          <a className="support-link" href={hrefAbout}>
             {t.nav.about}
           </a>
           {/* "Registrum" — mute breviary register silks + ink index under KONCERTY
@@ -342,7 +342,7 @@ export function StickyHeader({
               (document.activeElement as HTMLElement | null)?.blur();
             }}
           >
-            <a className="support-link plausible-event-name=koncerty" href={hrefConcerts}>
+            <a className="support-link" href={hrefConcerts}>
               {t.nav.concerts}
             </a>
             {ribbons.length > 0 && (
@@ -390,16 +390,16 @@ export function StickyHeader({
               </>
             )}
           </div>
-          <a className="support-link plausible-event-name=kontakt" href={hrefContact}>
+          <a className="support-link" href={hrefContact}>
             {t.nav.contact}
           </a>
           {FOUNDATION_PAGE_LINKED && (
-            <a className="support-link plausible-event-name=fundacja" href={hrefFoundation}>
+            <a className="support-link" href={hrefFoundation}>
               {t.nav.foundation}
             </a>
           )}
           <a
-            className="support-link plausible-event-name=skarbiec+menu"
+            className="support-link"
             href="#wesprzyj"
             data-no-lenis
             onClick={(e) => {
@@ -555,7 +555,7 @@ export function StickyHeader({
               {/* The closing line of the page — the same entry grammar as the voices above, one
                   step smaller, under the foot's gold rule. Not a button: see nave-menu.css. */}
               <a
-                className="nave-cta plausible-event-name=skarbiec+menu"
+                className="nave-cta"
                 href="#wesprzyj"
                 data-no-lenis
                 onClick={(e) => {

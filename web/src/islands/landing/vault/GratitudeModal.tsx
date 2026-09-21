@@ -3,12 +3,18 @@
  * @description Full-screen "thank you" reveal after a successful donation. Listens for
  *  `?donated=success` on mount, waits until preloader + threshold are dismissed, then fades in.
  *  Clears the query param via history.replaceState so reloads don't re-trigger. Web/Astro port.
+ *
+ *  This mount is also where the donation is COUNTED for analytics: the gateway returns here and
+ *  nowhere else, the param is consumed on the spot, and the visitor's session survives the trip to
+ *  the gateway — so the goal keeps the source the donor came from, which the backend's own record
+ *  of the payment never has.
  * @architecture Astro islands 2026
  * @module islands/landing/vault/GratitudeModal
  */
 
 import { useCallback, useEffect, useState } from "react";
 
+import { GOALS, track } from "../../../lib/plausible";
 import { BrandGlyph } from "../BrandGlyph";
 import { useLenisLock } from "../hooks/useLenisLock";
 import { useVaultCopy } from "./copyContext";
@@ -46,6 +52,7 @@ export function GratitudeModal(): React.JSX.Element | null {
     const params = new URLSearchParams(window.location.search);
     if (params.get("donated") !== "success") return;
 
+    track(GOALS.donation);
     const url = new URL(window.location.href);
     url.searchParams.delete("donated");
     try {

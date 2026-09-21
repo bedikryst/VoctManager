@@ -155,7 +155,7 @@ export function VaultModal(): React.JSX.Element {
                 still get the URL in a new tab), committed through the vault's own exit
                 (useLeaveVault) so the back button returns to the page the visitor came from. */}
             <a
-              className="vault-recurring plausible-event-name=vault+mecenat"
+              className="vault-recurring"
               href={hrefMecenat}
               onClick={(event) => leaveVaultOnInternalLink(event, leaveVault)}
             >
@@ -177,7 +177,7 @@ export function VaultModal(): React.JSX.Element {
             <div className="vault-foot-links">
               <button
                 type="button"
-                className="vault-foot-link plausible-event-name=regulamin+darowizn"
+                className="vault-foot-link"
                 aria-haspopup="dialog"
                 aria-controls="regulamin"
                 onClick={openRegulamin}
@@ -185,7 +185,7 @@ export function VaultModal(): React.JSX.Element {
                 {terms.head.title}
               </button>
               <a
-                className="vault-foot-link plausible-event-name=polityka+prywatnosci"
+                className="vault-foot-link"
                 href={localizePath("/polityka-prywatnosci", lang)}
                 target="_blank"
                 rel="noopener"

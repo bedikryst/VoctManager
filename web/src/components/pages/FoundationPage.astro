@@ -54,6 +54,7 @@ import { ABOUT_PAGE } from "../../i18n/content/o-nas";
 import { KONTAKT_PAGE } from "../../i18n/content/kontakt";
 import { UI } from "../../i18n/ui";
 import { localizePath, pageI18n, pickLocale, SITE, type Locale } from "../../i18n/config";
+import { GOALS, goalClass } from "../../lib/plausible";
 import "../../styles/vault.css";
 
 interface Props {
@@ -235,7 +236,7 @@ const jsonLd = {
           {/* The arrows are decoration on a link that already reads as one — hidden from
               assistive technology, drawn in the text's own colour. */}
           <div class="foundation-hero-actions">
-            <a class="foundation-hero-primary plausible-event-name=fundacja+wsparcie" href="#wsparcie">
+            <a class="foundation-hero-primary" href="#wsparcie">
               {copy.hero.primary}
               <svg class="foundation-hero-arrow" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2 8h11M9 3.5 13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </a>
@@ -384,7 +385,7 @@ const jsonLd = {
             <h3 class="way-label">{copy.support.once.label}</h3>
             <p class="way-body">{copy.support.once.body}</p>
             <p class="way-act">
-              <a class="capsule plausible-event-name=fundacja+wplata" href={hrefDonate} data-vault-open="100">{copy.support.once.vaultAction}</a>
+              <a class="capsule" href={hrefDonate} data-vault-open="100">{copy.support.once.vaultAction}</a>
               <a class="quiet-link" href="#przelew">{copy.support.once.transferLink}</a>
             </p>
           </article>
@@ -397,7 +398,7 @@ const jsonLd = {
               <dt>{copy.transfer.recipientLabel}</dt>
               <dd>
                 <span class="transfer-value">{FOUNDATION.name}</span>
-                <button type="button" class="copy-btn plausible-event-name=fundacja+copy+odbiorca" data-copy={FOUNDATION.name} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", copy.transfer.recipientLabel)}>
+                <button type="button" class="copy-btn" data-copy={FOUNDATION.name} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", copy.transfer.recipientLabel)}>
                   <span class="copy-label">{t.copy}</span>
                 </button>
               </dd>
@@ -406,7 +407,7 @@ const jsonLd = {
               <dt>{copy.transfer.accountLabel} <span class="currency">PLN</span></dt>
               <dd>
                 <span class="transfer-value transfer-iban">{FOUNDATION.accounts.pln.display}</span>
-                <button type="button" class="copy-btn plausible-event-name=fundacja+copy+PLN" data-copy={FOUNDATION.accounts.pln.iban} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", `${copy.transfer.accountLabel} PLN`)}>
+                <button type="button" class={`copy-btn ${goalClass(GOALS.accountCopied)}`} data-copy={FOUNDATION.accounts.pln.iban} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", `${copy.transfer.accountLabel} PLN`)}>
                   <span class="copy-label">{t.copy}</span>
                 </button>
               </dd>
@@ -415,7 +416,7 @@ const jsonLd = {
               <dt>{copy.transfer.eurLabel} <span class="currency">EUR</span></dt>
               <dd>
                 <span class="transfer-value transfer-iban">{FOUNDATION.accounts.eur.display}</span>
-                <button type="button" class="copy-btn plausible-event-name=fundacja+copy+EUR" data-copy={FOUNDATION.accounts.eur.iban} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", `${copy.transfer.eurLabel} EUR`)}>
+                <button type="button" class={`copy-btn ${goalClass(GOALS.accountCopied)}`} data-copy={FOUNDATION.accounts.eur.iban} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", `${copy.transfer.eurLabel} EUR`)}>
                   <span class="copy-label">{t.copy}</span>
                 </button>
                 <span class="transfer-note">{copy.transfer.eurNote}</span>
@@ -425,7 +426,7 @@ const jsonLd = {
               <dt>{copy.transfer.titleLabel}</dt>
               <dd>
                 <span class="transfer-value" lang="pl">{transferTitle}</span>
-                <button type="button" class="copy-btn plausible-event-name=fundacja+copy+tytul" data-copy={transferTitle} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", copy.transfer.titleLabel)}>
+                <button type="button" class="copy-btn" data-copy={transferTitle} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", copy.transfer.titleLabel)}>
                   <span class="copy-label">{t.copy}</span>
                 </button>
               </dd>
@@ -471,7 +472,7 @@ const jsonLd = {
           <p class="partner-thanks">{copy.partnership.thanks}</p>
           <p class="mail-line">
             <span class="rubric">{copy.partnership.mailLabel}</span>
-            <a class="mail plausible-event-name=fundacja+partnerstwo+mail" href={partnershipHref}>{patronMail}</a>
+            <a class={`mail ${goalClass(GOALS.mailPatronage)}`} href={partnershipHref}>{patronMail}</a>
             <button type="button" class="copy-btn" data-copy={patronMail} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", patronMail)}>
               <span class="copy-label">{t.copy}</span>
             </button>

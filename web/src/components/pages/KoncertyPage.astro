@@ -465,7 +465,7 @@ const ogImage = (await getImage({ src: shareImg ?? hero.desktop, width: 1200, fo
                 opens and what the page's Programma band is, so it never promises a room that is
                 not there. */}
             <a
-              class="announced-cta plausible-event-name=koncerty+zapowiedz"
+              class="announced-cta"
               href={announced.hasPage ? localizePath(`/koncerty/${announced.id}`, lang) : `#${announced.id}`}
             >
               {t.announcedCta}

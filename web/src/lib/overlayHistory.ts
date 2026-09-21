@@ -18,6 +18,8 @@
 
 import { navigate } from "astro:transitions/client";
 
+import { trackPageview } from "./plausible";
+
 /** One flag per overlay, so stacked overlays (vault opened from the nav card) each own an entry.
  *  A CLOSED union: an overlay missing from it cannot push an entry, so the back button leaves the
  *  page instead of closing it. Adding an overlay means adding its flag here first. */
@@ -71,8 +73,8 @@ export function dismissOverlayEntry(flag: OverlayFlag, closeDirectly: () => void
  *    with where the visitor actually landed.
  *  - Plausible hooks `pushState`, never `replaceState` — a replaced navigation is invisible to it.
  *    Without this call every menu-driven navigation would silently stop being counted, which on a
- *    mobile-first site is most of them. `plausible()` is its documented manual-tracking entry
- *    point; the optional call covers dev (no script) and blocked-script visitors.
+ *    mobile-first site is most of them. `trackPageview()` is its documented manual-tracking entry
+ *    point, guarded for dev (no script) and blocked-script visitors.
  */
 export async function navigateFromOverlay(flag: OverlayFlag, href: string): Promise<void> {
   if (!isOverlayEntry(flag)) {
@@ -84,5 +86,5 @@ export async function navigateFromOverlay(flag: OverlayFlag, href: string): Prom
     { ...history.state, scrollX: window.scrollX, scrollY: window.scrollY },
     "",
   );
-  (window as Window & { plausible?: (event: string) => void }).plausible?.("pageview");
+  trackPageview();
 }
