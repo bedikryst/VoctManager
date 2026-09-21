@@ -297,10 +297,7 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
                   </a>
                 </li>
                 <li>
-                  <a
-                    href="mailto:florent.de.bazelaire@voctensemble.com"
-                    className={goalClass(GOALS.mailFlorent)}
-                  >
+                  <a href="mailto:florent.de.bazelaire@voctensemble.com">
                     {chrome.voxDirection}
                   </a>
                 </li>

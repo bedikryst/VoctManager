@@ -7,16 +7,20 @@
  *  step with.
  *
  *  WHAT QUALIFIES AS A GOAL. The site's Plausible plan has no custom properties and no funnels, and
- *  every custom event counts against the same monthly quota as a pageview. So a goal is one of:
+ *  every custom event counts against the same monthly quota as a pageview. A goal is one of:
  *   - a conversion the site exists for (a donation completed, an address on the notice list, a
- *     patron interest sent, a mail the backend can never see);
- *   - one step of the money path, at the coarseness needed to see WHERE it leaks — the vault opened,
- *     a method chosen, the account number copied.
+ *     patron interest sent). The backend records each of these too; what only Plausible holds is
+ *     the source the visitor came from and the visitor count it is a fraction of — so the goal is
+ *     the numerator that makes a UTM on a poster or a bio link answer "did it bring anyone";
+ *   - a moment on the money path the backend never sees — the vault opened, an outbound method
+ *     chosen, the account number copied, a `mailto:` clicked.
+ *  A moment the backend already records at the same instant (the Axepta submit creates the Donation
+ *  row) is not a goal: the ledger is the backend, Plausible adds nothing there.
  *  Where a goal fires on more than one page, the page path in the goal's own breakdown tells them
  *  apart; the name does not. A click that navigates to a page of this site is never a goal — the
  *  pageview already records it. Neither are UI toggles, legal links, social links or a
  *  "which-of-these-buttons" question: at this site's traffic those split into single digits and say
- *  nothing.
+ *  nothing. Scroll depth and time on page come with the script itself and need no event.
  *
  *  Names are Polish with `+` for space (the form the `plausible-event-name=` class needs), and they
  *  are stable identifiers, not copy — renaming one orphans its history in the dashboard.
@@ -30,12 +34,11 @@ export const GOALS = {
   donation: "darowizna",
   noticeSignup: "zawiadomienia+zapis",
   patronInterest: "mecenat+zgloszenie",
+  /* Intents that end off-site: a mail client, an outbound checkout, a bank form. `mailPatronage`
+   *  covers every address a patronage conversation is offered on — the subject, not the mailbox. */
   mailBooking: "mail+booking",
   mailPatronage: "mail+patronat",
-  mailFlorent: "mail+florent",
-  /* The money path, in order. */
   vaultOpened: "skarbiec+otwarty",
-  axeptaSubmit: "wesprzyj+Axepta",
   zrzutkaOpened: "zrzutka+otworz",
   accountCopied: "przelew+copy+konto",
 } as const;
