@@ -301,9 +301,6 @@ const listItems = await Promise.all(
         venue: opening?.venue ?? s.venue ?? s.metaPlace,
         address: opening ? opening.address : s.address,
         admission: opening ? opening.admission : s.admission,
-        // The one statement in this graph about an entity somebody else owns — and the one a
-        // reader searching for the festival's programme is actually looking for.
-        festival: s.festival,
         sameAs: s.facebookEvent,
       }),
     };

@@ -149,11 +149,12 @@ const concerts = defineCollection({
     /** The festival this evening is sung within — its name, and its own page.
      *
      *  STRUCTURED, because three surfaces need different halves of one fact and a hand-written
-     *  `links` row could only ever be the door: the JSON-LD says `superEvent`, which is how a
-     *  search engine learns that this concert belongs to a festival somebody else is searching
-     *  for; the station prints a link to the festival's site; and the announced-evening meta on
-     *  /koncerty names it in the sentence a result page shows. The NAME stays as written in every
-     *  locale — it is a proper name — and the words around it are chrome.
+     *  `links` row could only ever be the door: the concert page prints the name, the note and
+     *  the link; the /koncerty station prints a link to the festival's site; and the
+     *  announced-evening meta on /koncerty names it in the sentence a result page shows. The
+     *  NAME stays as written in every locale — it is a proper name — and the words around it
+     *  are chrome. It reaches the JSON-LD nowhere: `superEvent` would be validated as a second
+     *  event on facts that are not ours (see lib/eventSchema).
      *
      *  It does not replace the evening's own `facts` chip: the chip states that the evening
      *  belongs to a festival, this states WHICH one and where it lives. */
