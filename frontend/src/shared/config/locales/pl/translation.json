@@ -3175,6 +3175,8 @@
       "parking": "Parking",
       "dressing_room": "Garderoba",
       "onsite_contact": "Kontakt na miejscu",
+      "plan": "Plan próby",
+      "plan_revised": "Plan zmieniony",
       "boolean": {
         "true": "Tak",
         "false": "Nie"
@@ -4455,9 +4457,11 @@
   "rehearsals": {
     "plan": {
       "title": "Plan próby",
-      "announce": "Wyślij plan",
-      "announced_at": "Wysłano {{when}}",
-      "announced_changed": "Wysłano {{when}} · zmieniony po wysłaniu",
+      "publish": "Opublikuj plan",
+      "send_changes": "Wyślij zmiany",
+      "draft": "Szkic — chór go nie widzi",
+      "announced_at": "Opublikowany · wysłano {{when}}",
+      "announced_changed": "Opublikowany · wysłano {{when}} · zmieniony po wysłaniu",
       "loading": "Otwieram plan…",
       "empty": {
         "title": "Bez planu",
@@ -4477,15 +4481,22 @@
       "add": {
         "piece": "Dodaj utwór z programu…",
         "piece_all": "Cały program już w planie",
-        "free": "Punkt bez utworu"
+        "free": "Punkt bez utworu",
+        "break": "Dodaj przerwę"
+      },
+      "reserve": {
+        "title": "Jeśli starczy czasu",
+        "drag": "Przesuń granicę: jeśli starczy czasu"
       },
       "save": {
         "description": "Zmieniono plan próby."
       },
       "toast": {
-        "saved": "Plan zapisany. Chór jeszcze o nim nie wie.",
+        "saved_draft": "Szkic zapisany. Chór go nie widzi.",
+        "saved_public": "Zapisano. Chór widzi zmiany, ale nie dostał o nich znać.",
         "save_error": "Nie udało się zapisać planu.",
-        "announced": "Plan wysłany do wezwanych.",
+        "published": "Plan opublikowany i wysłany do wezwanych.",
+        "changes_sent": "Zmiany wysłane do wezwanych.",
         "announce_error": "Nie udało się wysłać planu.",
         "untitled": "Nadaj nazwę każdemu punktowi bez utworu.",
         "done_error": "Nie udało się odhaczyć punktu."
@@ -4496,10 +4507,12 @@
         "time": "Godzina (opcjonalna)",
         "piece": "Utwór z programu",
         "label": "Nazwa punktu",
-        "label_placeholder": "np. Rozśpiewanie, przerwa",
+        "label_placeholder": "np. Rozśpiewanie, ogłoszenia",
         "note": "Notatka",
         "note_placeholder": "Notatka: od t. 40, pierwsze czytanie…",
-        "calls": "woła {{called}} z {{total}}"
+        "calls": "woła {{called}} z {{total}}",
+        "break_label": "Przerwa",
+        "break_hint": "Przerwa — nikogo nie woła"
       },
       "exclude": {
         "instrumentalists": "Instrumentaliści",
@@ -4517,7 +4530,7 @@
         "not_you": "bez Twojego głosu"
       },
       "debrief": {
-        "prompt": "Co zrobiliście?",
+        "prompt": "Odznacz, czego nie zrobiliście",
         "done_label": "Przerobione"
       }
     },

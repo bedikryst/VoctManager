@@ -267,6 +267,8 @@ export interface RehearsalUpdatedMetadata extends EventMomentMetadata {
   location?: string;
   focus?: string;
   changes: FieldChange[];
+  /** A send of a plan the cast already received — the copy says it changed. */
+  plan_revised?: boolean;
 }
 
 export interface RehearsalCancelledMetadata extends EventMomentMetadata {
@@ -302,6 +304,8 @@ export interface RehearsalPlanLine {
   time: string;
   title: string;
   note: string;
+  /** Under "Jeśli starczy czasu". Absent on rows written before the reserve existed. */
+  reserve?: boolean;
 }
 
 export interface PieceCastingMetadata extends EventMomentMetadata {

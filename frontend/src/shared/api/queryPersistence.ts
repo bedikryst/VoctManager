@@ -59,8 +59,13 @@ const IDB_KEY = "client";
  * Additive, but a snapshot without it reads every sectional as a tutti — the
  * roll-call count, the timeline caption and the schedule badge all say the
  * wrong thing until a fetch lands.
+ *
+ * 2026-09-rehearsal-plan-done: plan rows gained `done`, `is_reserve` and
+ * `is_break`. A snapshot without `done` draws a held evening with no ticks —
+ * "nothing was done" again — and without `is_break` a break reads as a row
+ * that calls everyone.
  */
-export const QUERY_CACHE_BUSTER = "2026-09-rehearsal-called-sections";
+export const QUERY_CACHE_BUSTER = "2026-09-rehearsal-plan-done";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

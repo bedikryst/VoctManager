@@ -3154,6 +3154,8 @@
       "parking": "Stationnement",
       "dressing_room": "Loge",
       "onsite_contact": "Contact sur place",
+      "plan": "Plan de répétition",
+      "plan_revised": "Plan modifié",
       "boolean": {
         "true": "Oui",
         "false": "Non"
@@ -4418,9 +4420,11 @@
   "rehearsals": {
     "plan": {
       "title": "Plan de répétition",
-      "announce": "Envoyer le plan",
-      "announced_at": "Envoyé {{when}}",
-      "announced_changed": "Envoyé {{when}} · modifié depuis",
+      "publish": "Publier le plan",
+      "send_changes": "Envoyer les modifications",
+      "draft": "Brouillon — le chœur ne le voit pas",
+      "announced_at": "Publié · envoyé {{when}}",
+      "announced_changed": "Publié · envoyé {{when}} · modifié depuis",
       "loading": "Ouverture du plan…",
       "empty": {
         "title": "Pas encore de plan",
@@ -4439,15 +4443,22 @@
       "add": {
         "piece": "Ajouter une œuvre du programme…",
         "piece_all": "Tout le programme est déjà dans le plan",
-        "free": "Point sans œuvre"
+        "free": "Point sans œuvre",
+        "break": "Ajouter une pause"
+      },
+      "reserve": {
+        "title": "Si le temps le permet",
+        "drag": "Déplacer la limite : si le temps le permet"
       },
       "save": {
         "description": "Le plan de répétition a changé."
       },
       "toast": {
-        "saved": "Plan enregistré. Le chœur n'en sait encore rien.",
+        "saved_draft": "Brouillon enregistré. Le chœur ne le voit pas.",
+        "saved_public": "Enregistré. Le chœur voit les modifications, mais n'a pas été prévenu.",
         "save_error": "Impossible d'enregistrer le plan.",
-        "announced": "Plan envoyé aux personnes convoquées.",
+        "published": "Plan publié et envoyé aux personnes convoquées.",
+        "changes_sent": "Modifications envoyées aux personnes convoquées.",
         "announce_error": "Impossible d'envoyer le plan.",
         "untitled": "Donnez un nom à chaque point sans œuvre.",
         "done_error": "Impossible de cocher ce point."
@@ -4458,10 +4469,12 @@
         "time": "Heure (facultative)",
         "piece": "Œuvre du programme",
         "label": "Nom du point",
-        "label_placeholder": "p. ex. Échauffement, pause",
+        "label_placeholder": "p. ex. Échauffement, annonces",
         "note": "Note",
         "note_placeholder": "Note : à partir de la mesure 40, première lecture…",
-        "calls": "convoque {{called}} sur {{total}}"
+        "calls": "convoque {{called}} sur {{total}}",
+        "break_label": "Pause",
+        "break_hint": "Pause — ne convoque personne"
       },
       "exclude": {
         "instrumentalists": "Instrumentistes",
@@ -4479,7 +4492,7 @@
         "not_you": "sans votre voix"
       },
       "debrief": {
-        "prompt": "Qu'avez-vous travaillé ?",
+        "prompt": "Décochez ce que vous n'avez pas fait",
         "done_label": "Travaillé"
       }
     },

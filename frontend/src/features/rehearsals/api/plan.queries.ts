@@ -57,8 +57,10 @@ export const useSaveRehearsalPlan = (rehearsalId: string) => {
 };
 
 /**
- * Ticks one row after the fact. Optimistic on the plan query, so a checklist
- * on a tablet answers on the tap; the rehearsal lists reconcile on settle.
+ * Writes the debrief's verdict on one row, always explicitly. Optimistic on
+ * the plan query, so a checklist on a tablet answers on the tap: `done` is
+ * what every surface reads, and the stamps mirror the server's rule that a
+ * row holds at most one of them. The rehearsal lists reconcile on settle.
  */
 export const useMarkPlanItem = (rehearsalId: string) => {
   const queryClient = useQueryClient();
@@ -70,11 +72,18 @@ export const useMarkPlanItem = (rehearsalId: string) => {
       await queryClient.cancelQueries({ queryKey: planKey });
       const previous = queryClient.getQueryData<RehearsalPlanRead>(planKey);
       if (previous) {
-        const stamp = done ? new Date().toISOString() : null;
+        const stamp = new Date().toISOString();
         queryClient.setQueryData<RehearsalPlanRead>(planKey, {
           ...previous,
           rows: previous.rows.map((row) =>
-            row.id === itemId ? { ...row, done_at: stamp } : row,
+            row.id === itemId
+              ? {
+                  ...row,
+                  done,
+                  done_at: done ? stamp : null,
+                  skipped_at: done ? null : stamp,
+                }
+              : row,
           ),
         });
       }

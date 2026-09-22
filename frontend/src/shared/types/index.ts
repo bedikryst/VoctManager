@@ -354,8 +354,14 @@ export interface Rehearsal extends BaseModel {
    * schedule dashboard), null elsewhere.
    */
   plan?: RehearsalPlanItem[];
-  /** When "Wyślij plan" last went out; null = never announced. */
+  /**
+   * When the plan was last sent; null = never, and the plan is a draft the
+   * choir does not see until the evening starts. The server gates it: a
+   * member (or a manager in preview) reads `plan: []` while it is a draft.
+   */
   plan_announced_at?: string | null;
+  /** When the rows last changed — any row created, edited, moved or deleted. */
+  plan_changed_at?: string | null;
   my_plan_window?: RehearsalPlanWindow | null;
 }
 
@@ -363,7 +369,8 @@ export interface Rehearsal extends BaseModel {
  * One row of a rehearsal's plan: a piece of the programme or a free label,
  * an optional wall clock, a one-line note, and the voice lines the row does
  * without. `starts_at` is "HH:MM" in the rehearsal's own zone; rows without
- * one flow under the last clocked row.
+ * one flow under the last clocked row. Reserve rows ("Jeśli starczy czasu")
+ * are a suffix of the plan; a break is a labelled row that calls nobody.
  */
 export interface RehearsalPlanItem {
   id: string;
@@ -377,7 +384,17 @@ export interface RehearsalPlanItem {
   starts_at: string | null;
   excluded_voice_lines: VoiceLine[];
   excludes_instrumentalists: boolean;
+  is_reserve: boolean;
+  is_break: boolean;
+  /**
+   * Whether the row was worked on — the one answer every surface reads. An
+   * explicit tick wins; otherwise, once the evening is over, a main row is
+   * done and a reserve row is not; before that, null. Always null on a break.
+   */
+  done: boolean | null;
+  /** The debrief's explicit verdicts, mutually exclusive. Read `done` instead. */
   done_at: string | null;
+  skipped_at: string | null;
   updated_at: string;
   /** Whether this row needs the reader; null when not computed for them. */
   calls_me?: boolean | null;

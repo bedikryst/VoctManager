@@ -463,7 +463,8 @@ const RehearsalHero = ({
   // has to be here, not behind a card that is not drawn.
   const windowLabel = planWindowLabel(event.planWindow, t);
   const skipsReader = event.planWindow?.calls_me === false;
-  const planRows = event.plan ?? [];
+  // The preview stops at the reserve divider; the page has the rest.
+  const planRows = (event.plan ?? []).filter((row) => !row.is_reserve);
   const rehearsalHref = `/panel/schedule/rehearsal/${String(reh.id)}`;
 
   // A conductor sees the rehearsal but isn't cast in it — no participation to

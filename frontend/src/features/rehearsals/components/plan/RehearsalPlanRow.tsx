@@ -2,19 +2,21 @@
  * @file RehearsalPlanRow.tsx
  * @description One point of the evening's plan in the editor: grip, an
  * optional clock, what is rehearsed (a piece of the programme, or a typed
- * label for a warm-up or a break), a one-line note under it, and who the
- * point does without. The clock is optional on purpose — "18:15 Orff / Lumen
- * / Bach" is three rows and one time, and a row without a clock flows under
- * the last clocked one. Nothing is validated against the rehearsal's window:
- * ordering carries the warning. The caption "woła 14 z 22" is the row's
- * effect stated in people, from the same rule the server calls with.
+ * label for a warm-up), a one-line note under it, and who the point does
+ * without. The clock is optional on purpose — "18:15 Orff / Lumen / Bach" is
+ * three rows and one time, and a row without a clock flows under the last
+ * clocked one. Nothing is validated against the rehearsal's window: ordering
+ * carries the warning. The caption "woła 14 z 22" is the row's effect stated
+ * in people, from the same rule the server calls with. A break is the same
+ * row, muted and without exclusions: it calls nobody, so there is nobody to
+ * leave out — its clock is where the people before it are released.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/RehearsalPlanRow
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { GripVertical, Trash2 } from "lucide-react";
+import { Coffee, GripVertical, Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -68,7 +70,9 @@ export const RehearsalPlanRow = ({
           "flex flex-col gap-2 px-4 py-3 transition-colors",
           isDragging
             ? "rounded-control border border-ethereal-gold/45 bg-ethereal-marble shadow-glass-ethereal"
-            : "hover:bg-ethereal-ink/3",
+            : row.is_break
+              ? "bg-ethereal-parchment/25 hover:bg-ethereal-ink/3"
+              : "hover:bg-ethereal-ink/3",
         )}
       >
         <div className="flex items-center gap-2">
@@ -143,27 +147,34 @@ export const RehearsalPlanRow = ({
             placeholder={t("rehearsals.plan.row.note_placeholder", "Notatka: od t. 40, pierwsze czytanie…")}
             aria-label={t("rehearsals.plan.row.note", "Notatka")}
           />
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
-            <VoiceExclusionChips
-              reading={reading}
-              excludesInstrumentalists={row.excludes_instrumentalists}
-              onToggleLine={(line) => onToggleLine(row.key, line)}
-              onToggleFamily={(family) => onToggleFamily(row.key, family)}
-              onToggleInstrumentalists={() =>
-                onUpdate(row.key, { excludes_instrumentalists: !row.excludes_instrumentalists })
-              }
-            />
-            {/* The row's effect in people. Silent while it calls everyone the
-                rehearsal calls — the resting default is not restated. */}
-            {reading.hasExclusions && (
-              <Caption color="muted" className="tabular-nums">
-                {t("rehearsals.plan.row.calls", "woła {{called}} z {{total}}", {
-                  called: reading.called,
-                  total: calledTotal,
-                })}
-              </Caption>
-            )}
-          </div>
+          {row.is_break ? (
+            <Caption color="muted" className="flex items-center gap-1.5">
+              <Coffee size={12} aria-hidden="true" />
+              {t("rehearsals.plan.row.break_hint", "Przerwa — nikogo nie woła")}
+            </Caption>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+              <VoiceExclusionChips
+                reading={reading}
+                excludesInstrumentalists={row.excludes_instrumentalists}
+                onToggleLine={(line) => onToggleLine(row.key, line)}
+                onToggleFamily={(family) => onToggleFamily(row.key, family)}
+                onToggleInstrumentalists={() =>
+                  onUpdate(row.key, { excludes_instrumentalists: !row.excludes_instrumentalists })
+                }
+              />
+              {/* The row's effect in people. Silent while it calls everyone the
+                  rehearsal calls — the resting default is not restated. */}
+              {reading.hasExclusions && (
+                <Caption color="muted" className="tabular-nums">
+                  {t("rehearsals.plan.row.calls", "woła {{called}} z {{total}}", {
+                    called: reading.called,
+                    total: calledTotal,
+                  })}
+                </Caption>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </li>

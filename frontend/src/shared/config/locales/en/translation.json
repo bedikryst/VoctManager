@@ -3145,6 +3145,8 @@
       "parking": "Parking",
       "dressing_room": "Dressing room",
       "onsite_contact": "On-site contact",
+      "plan": "Rehearsal plan",
+      "plan_revised": "Plan changed",
       "boolean": {
         "true": "Yes",
         "false": "No"
@@ -4408,9 +4410,11 @@
   "rehearsals": {
     "plan": {
       "title": "Rehearsal plan",
-      "announce": "Send plan",
-      "announced_at": "Sent {{when}}",
-      "announced_changed": "Sent {{when}} · changed since",
+      "publish": "Publish plan",
+      "send_changes": "Send changes",
+      "draft": "Draft — the choir cannot see it",
+      "announced_at": "Published · sent {{when}}",
+      "announced_changed": "Published · sent {{when}} · changed since",
       "loading": "Opening the plan…",
       "empty": {
         "title": "No plan yet",
@@ -4428,15 +4432,22 @@
       "add": {
         "piece": "Add a piece from the programme…",
         "piece_all": "The whole programme is in the plan",
-        "free": "Point without a piece"
+        "free": "Point without a piece",
+        "break": "Add a break"
+      },
+      "reserve": {
+        "title": "If time allows",
+        "drag": "Move the line: if time allows"
       },
       "save": {
         "description": "The rehearsal plan changed."
       },
       "toast": {
-        "saved": "Plan saved. The choir does not know yet.",
+        "saved_draft": "Draft saved. The choir cannot see it.",
+        "saved_public": "Saved. The choir sees the changes but has not been notified.",
         "save_error": "The plan could not be saved.",
-        "announced": "Plan sent to everyone called.",
+        "published": "Plan published and sent to everyone called.",
+        "changes_sent": "Changes sent to everyone called.",
         "announce_error": "The plan could not be sent.",
         "untitled": "Give every point without a piece a name.",
         "done_error": "The point could not be ticked."
@@ -4447,10 +4458,12 @@
         "time": "Time (optional)",
         "piece": "Piece from the programme",
         "label": "Point name",
-        "label_placeholder": "e.g. Warm-up, break",
+        "label_placeholder": "e.g. Warm-up, announcements",
         "note": "Note",
         "note_placeholder": "Note: from bar 40, first reading…",
-        "calls": "calls {{called}} of {{total}}"
+        "calls": "calls {{called}} of {{total}}",
+        "break_label": "Break",
+        "break_hint": "Break — calls nobody"
       },
       "exclude": {
         "instrumentalists": "Instrumentalists",
@@ -4468,7 +4481,7 @@
         "not_you": "not your voice"
       },
       "debrief": {
-        "prompt": "What did you get through?",
+        "prompt": "Untick what you did not get to",
         "done_label": "Covered"
       }
     },

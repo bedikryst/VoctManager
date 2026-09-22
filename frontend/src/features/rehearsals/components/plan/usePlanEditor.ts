@@ -8,6 +8,11 @@
  * the number of people the exclusion actually removes, computed by the same
  * rule the server calls with (`lib/rehearsalPlan`). Nothing here talks to the
  * network beyond the one whole-list save; the draft is local until then.
+ *
+ * The reserve ("Jeśli starczy czasu") is a divider in the list, not a flag on
+ * a row: the draft holds where the divider stands, and `is_reserve` is derived
+ * from that position only when the list is sent. A per-row flag would let a
+ * drag put a main row under a reserve one, which the server refuses whole.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/usePlanEditor
  */
@@ -34,6 +39,9 @@ import {
 import type { RehearsalPlanRead, RehearsalPlanRowDTO } from "../../types/rehearsalPlan.dto";
 import type { PlanEditorData } from "./usePlanEditorData";
 
+/** The sortable id of the reserve divider — never a row's key (those are UUIDs). */
+export const RESERVE_DIVIDER_KEY = "plan-reserve-divider";
+
 /** One row of the draft. `key` is the client's handle; `id` the server's, when saved. */
 export interface PlanDraftRow {
   readonly key: string;
@@ -44,7 +52,14 @@ export interface PlanDraftRow {
   readonly starts_at: string | null;
   readonly excluded_voice_lines: readonly VoiceLine[];
   readonly excludes_instrumentalists: boolean;
-  readonly done_at: string | null;
+  /** Calls nobody: no piece, no exclusions. Fixed when the row is added. */
+  readonly is_break: boolean;
+}
+
+/** The rows in order, and the index the reserve starts at (`rows.length` = no reserve). */
+interface PlanDraft {
+  readonly rows: readonly PlanDraftRow[];
+  readonly reserveStart: number;
 }
 
 /** One line a row offers for exclusion, with what excluding it costs. */
@@ -91,6 +106,8 @@ export interface PlanSource {
 
 export interface PlanEditor {
   readonly rows: readonly PlanDraftRow[];
+  /** Rows from this index on are reserve; equal to `rows.length` when none are. */
+  readonly reserveStart: number;
   readonly readings: ReadonlyMap<string, PlanRowReading>;
   /** Seats the rehearsal calls — the denominator under every row. */
   readonly calledTotal: number;
@@ -101,10 +118,16 @@ export interface PlanEditor {
   readonly carryOver: { readonly source: PlanSource; readonly undone: number } | null;
   readonly addPieceRow: (pieceId: string) => void;
   readonly addFreeRow: () => void;
-  readonly updateRow: (key: string, patch: Partial<Omit<PlanDraftRow, "key" | "id">>) => void;
+  /** Adds a break above the divider, labelled with the caller's localized word. */
+  readonly addBreakRow: (label: string) => void;
+  readonly updateRow: (
+    key: string,
+    patch: Partial<Omit<PlanDraftRow, "key" | "id" | "is_break">>,
+  ) => void;
   readonly toggleLine: (key: string, line: VoiceLine) => void;
   readonly toggleFamily: (key: string, family: VoiceFamilyId) => void;
   readonly removeRow: (key: string) => void;
+  /** Moves a row or the divider (`RESERVE_DIVIDER_KEY`) onto another's place. */
   readonly moveRow: (fromKey: string, toKey: string) => void;
   readonly fillProgram: () => void;
   readonly fillCarryOver: () => void;
@@ -118,7 +141,20 @@ const makeKey = (): string =>
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-const draftOf = (item: RehearsalPlanItem): PlanDraftRow => ({
+const blankRow = (patch: Partial<Omit<PlanDraftRow, "key" | "id">>): PlanDraftRow => ({
+  key: makeKey(),
+  id: null,
+  piece: null,
+  label: "",
+  note: "",
+  starts_at: null,
+  excluded_voice_lines: [],
+  excludes_instrumentalists: false,
+  is_break: false,
+  ...patch,
+});
+
+const draftRowOf = (item: RehearsalPlanItem): PlanDraftRow => ({
   key: item.id,
   id: item.id,
   piece: item.piece,
@@ -127,23 +163,30 @@ const draftOf = (item: RehearsalPlanItem): PlanDraftRow => ({
   starts_at: item.starts_at,
   excluded_voice_lines: item.excluded_voice_lines,
   excludes_instrumentalists: item.excludes_instrumentalists,
-  done_at: item.done_at,
+  is_break: item.is_break,
 });
 
-/** A copied row: same content, no clock, no done stamp, no server identity. */
-const copyOf = (item: RehearsalPlanItem): PlanDraftRow => ({
-  key: makeKey(),
-  id: null,
-  piece: item.piece,
-  label: item.label,
-  note: item.note,
-  starts_at: null,
-  excluded_voice_lines: item.excluded_voice_lines,
-  excludes_instrumentalists: item.excludes_instrumentalists,
-  done_at: null,
-});
+/** The server's rows as a draft: the divider stands before the first reserve row. */
+const draftOf = (items: readonly RehearsalPlanItem[]): PlanDraft => {
+  const firstReserve = items.findIndex((item) => item.is_reserve);
+  return {
+    rows: items.map(draftRowOf),
+    reserveStart: firstReserve === -1 ? items.length : firstReserve,
+  };
+};
 
-const rowDTO = (row: PlanDraftRow): RehearsalPlanRowDTO => ({
+/** A copied row: same content, no clock, no verdict, no server identity. */
+const copyOf = (item: RehearsalPlanItem): PlanDraftRow =>
+  blankRow({
+    piece: item.piece,
+    label: item.label,
+    note: item.note,
+    excluded_voice_lines: item.excluded_voice_lines,
+    excludes_instrumentalists: item.excludes_instrumentalists,
+    is_break: item.is_break,
+  });
+
+const rowDTO = (row: PlanDraftRow, isReserve: boolean): RehearsalPlanRowDTO => ({
   ...(row.id ? { id: row.id } : {}),
   piece: row.piece,
   label: row.piece ? "" : row.label.trim(),
@@ -151,20 +194,42 @@ const rowDTO = (row: PlanDraftRow): RehearsalPlanRowDTO => ({
   starts_at: row.starts_at || null,
   excluded_voice_lines: [...row.excluded_voice_lines],
   excludes_instrumentalists: row.excludes_instrumentalists,
+  is_reserve: isReserve,
+  is_break: row.is_break,
 });
+
+const draftDTO = (draft: PlanDraft): RehearsalPlanRowDTO[] =>
+  draft.rows.map((row, index) => rowDTO(row, index >= draft.reserveStart));
 
 /**
  * The order and content a save would send, without the server identities —
  * what "dirty" compares. Identity is left out on purpose: a save answers with
- * the same rows now carrying ids, and that answer must read as clean.
+ * the same rows now carrying ids, and that answer must read as clean. The
+ * divider is in it through `is_reserve`; a divider standing under the last
+ * row and no divider at all are the same plan.
  */
-const fingerprint = (rows: readonly PlanDraftRow[]): string =>
+const fingerprint = (draft: PlanDraft): string =>
   JSON.stringify(
-    rows.map((row) => {
-      const { id: _id, ...content } = rowDTO(row);
+    draftDTO(draft).map((row) => {
+      const { id: _id, ...content } = row;
       return content;
     }),
   );
+
+/** New rows go in above the divider: the reserve is something a row is dragged into. */
+const insertMain = (draft: PlanDraft, added: readonly PlanDraftRow[]): PlanDraft => ({
+  rows: [
+    ...draft.rows.slice(0, draft.reserveStart),
+    ...added,
+    ...draft.rows.slice(draft.reserveStart),
+  ],
+  reserveStart: draft.reserveStart + added.length,
+});
+
+const mapRows = (
+  draft: PlanDraft,
+  map: (row: PlanDraftRow) => PlanDraftRow,
+): PlanDraft => ({ ...draft, rows: draft.rows.map(map) });
 
 const FAMILY_ORDER: readonly VoiceFamilyId[] = ["S", "MS", "A", "CT", "T", "BAR", "B", "V", "ROLE"];
 
@@ -174,9 +239,10 @@ export const usePlanEditor = (
   data: PlanEditorData,
 ): PlanEditor => {
   const serverRows = useMemo(() => serverPlan?.rows ?? [], [serverPlan]);
-  const [rows, setRows] = useState<readonly PlanDraftRow[]>(() => serverRows.map(draftOf));
-  const baseline = useRef(fingerprint(serverRows.map(draftOf)));
-  const isDirty = fingerprint(rows) !== baseline.current;
+  const [draft, setDraft] = useState<PlanDraft>(() => draftOf(serverRows));
+  const baseline = useRef(fingerprint(draftOf(serverRows)));
+  const isDirty = fingerprint(draft) !== baseline.current;
+  const { rows, reserveStart } = draft;
 
   // A fresh server answer (a save, a refetch) re-baselines the draft, and
   // replaces it when the draft says the same thing — which is how the rows a
@@ -188,16 +254,16 @@ export const usePlanEditor = (
   // placeholder, not a decision. A row added while `GET plan/` is still in
   // flight would otherwise keep the stored rows out of the draft for good, and
   // the next save — which replaces the whole list — would delete them.
-  const rowsRef = useRef(rows);
-  rowsRef.current = rows;
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
   const baselined = useRef(false);
   useEffect(() => {
-    const next = serverRows.map(draftOf);
+    const next = draftOf(serverRows);
     const nextFingerprint = fingerprint(next);
-    const wasClean = fingerprint(rowsRef.current) === baseline.current;
+    const wasClean = fingerprint(draftRef.current) === baseline.current;
     baseline.current = nextFingerprint;
-    if (!baselined.current || wasClean || fingerprint(rowsRef.current) === nextFingerprint) {
-      setRows(next);
+    if (!baselined.current || wasClean || fingerprint(draftRef.current) === nextFingerprint) {
+      setDraft(next);
     }
     if (serverPlan !== undefined) baselined.current = true;
   }, [serverRows, serverPlan]);
@@ -290,6 +356,19 @@ export const usePlanEditor = (
   const readings = useMemo(() => {
     const map = new Map<string, PlanRowReading>();
     for (const row of rows) {
+      // A break calls nobody and offers nothing to exclude.
+      if (row.is_break) {
+        map.set(row.key, {
+          key: row.key,
+          title: titleOf(row),
+          called: 0,
+          families: [],
+          offersInstrumentalists: false,
+          instrumentalistsRemoved: 0,
+          hasExclusions: false,
+        });
+        continue;
+      }
       const declared = row.piece === null ? [] : declaredLinesOf(row.piece);
       const rule = planRowOf(row, declared);
       const called = countCalled(rule);
@@ -378,6 +457,25 @@ export const usePlanEditor = (
     [data.rehearsals, rehearsal.id],
   );
 
+  /** A plan's rows that can still be planned: a piece since dropped from the
+   *  programme would make the server refuse the whole save for one stale row. */
+  const plannableRowsOf = useCallback(
+    (rehearsalId: string): RehearsalPlanItem[] =>
+      (data.rehearsals.find((other) => String(other.id) === rehearsalId)?.plan ?? []).filter(
+        (item) => item.piece === null || programByPiece.has(item.piece),
+      ),
+    [data.rehearsals, programByPiece],
+  );
+
+  // What the previous evening did not get to: rows the server reads as not
+  // done. `done` stays null until an evening is over, so one not held yet
+  // offers nothing; a break is never "undone".
+  const undoneOf = useCallback(
+    (rehearsalId: string): RehearsalPlanItem[] =>
+      plannableRowsOf(rehearsalId).filter((item) => item.done === false && !item.is_break),
+    [plannableRowsOf],
+  );
+
   const carryOver = useMemo(() => {
     const previous = data.rehearsals
       .filter(
@@ -386,53 +484,29 @@ export const usePlanEditor = (
       )
       .sort((a, b) => b.date_time.localeCompare(a.date_time))[0];
     if (!previous) return null;
-    const undone = (previous.plan ?? []).filter(
-      (item) => item.done_at === null && (item.piece === null || programByPiece.has(item.piece)),
-    );
+    const undone = undoneOf(String(previous.id));
     if (undone.length === 0) return null;
     const source = sources.find((candidate) => candidate.rehearsalId === String(previous.id));
     return source ? { source, undone: undone.length } : null;
-  }, [data.rehearsals, rehearsal.id, rehearsal.date_time, programByPiece, sources]);
+  }, [data.rehearsals, rehearsal.id, rehearsal.date_time, undoneOf, sources]);
 
   /* ── Edits ───────────────────────────────────────────────────────────── */
 
   const addPieceRow = useCallback((pieceId: string) => {
-    setRows((current) => [
-      ...current,
-      {
-        key: makeKey(),
-        id: null,
-        piece: pieceId,
-        label: "",
-        note: "",
-        starts_at: null,
-        excluded_voice_lines: [],
-        excludes_instrumentalists: false,
-        done_at: null,
-      },
-    ]);
+    setDraft((current) => insertMain(current, [blankRow({ piece: pieceId })]));
   }, []);
 
   const addFreeRow = useCallback(() => {
-    setRows((current) => [
-      ...current,
-      {
-        key: makeKey(),
-        id: null,
-        piece: null,
-        label: "",
-        note: "",
-        starts_at: null,
-        excluded_voice_lines: [],
-        excludes_instrumentalists: false,
-        done_at: null,
-      },
-    ]);
+    setDraft((current) => insertMain(current, [blankRow({})]));
+  }, []);
+
+  const addBreakRow = useCallback((label: string) => {
+    setDraft((current) => insertMain(current, [blankRow({ label, is_break: true })]));
   }, []);
 
   const updateRow = useCallback<PlanEditor["updateRow"]>((key, patch) => {
-    setRows((current) =>
-      current.map((row) => {
+    setDraft((current) =>
+      mapRows(current, (row) => {
         if (row.key !== key) return row;
         const next = { ...row, ...patch };
         // Exclusions are chosen from the piece's own lines; a new piece
@@ -446,8 +520,8 @@ export const usePlanEditor = (
   }, []);
 
   const toggleLine = useCallback((key: string, line: VoiceLine) => {
-    setRows((current) =>
-      current.map((row) => {
+    setDraft((current) =>
+      mapRows(current, (row) => {
         if (row.key !== key) return row;
         const excluded = new Set(row.excluded_voice_lines);
         if (excluded.has(line)) excluded.delete(line);
@@ -462,8 +536,8 @@ export const usePlanEditor = (
       const reading = readings.get(key);
       const target = reading?.families.find((entry) => entry.family === family);
       if (!target) return;
-      setRows((current) =>
-        current.map((row) => {
+      setDraft((current) =>
+        mapRows(current, (row) => {
           if (row.key !== key) return row;
           const excluded = new Set(row.excluded_voice_lines);
           for (const line of target.lines) {
@@ -478,75 +552,81 @@ export const usePlanEditor = (
   );
 
   const removeRow = useCallback((key: string) => {
-    setRows((current) => current.filter((row) => row.key !== key));
+    setDraft((current) => {
+      const index = current.rows.findIndex((row) => row.key === key);
+      if (index === -1) return current;
+      return {
+        rows: current.rows.filter((row) => row.key !== key),
+        reserveStart: index < current.reserveStart ? current.reserveStart - 1 : current.reserveStart,
+      };
+    });
   }, []);
 
+  // The divider sorts like a row: the list is laid out with it in place, moved
+  // as one sequence, and the divider's new index is where the reserve starts.
   const moveRow = useCallback((fromKey: string, toKey: string) => {
-    setRows((current) => {
-      const from = current.findIndex((row) => row.key === fromKey);
-      const to = current.findIndex((row) => row.key === toKey);
+    setDraft((current) => {
+      const keys = current.rows.map((row) => row.key);
+      keys.splice(current.reserveStart, 0, RESERVE_DIVIDER_KEY);
+      const from = keys.indexOf(fromKey);
+      const to = keys.indexOf(toKey);
       if (from === -1 || to === -1 || from === to) return current;
-      return arrayMove([...current], from, to);
+      const moved = arrayMove(keys, from, to);
+      const byKey = new Map(current.rows.map((row) => [row.key, row]));
+      return {
+        rows: moved.flatMap((key) => {
+          const row = byKey.get(key);
+          return row ? [row] : [];
+        }),
+        reserveStart: moved.indexOf(RESERVE_DIVIDER_KEY),
+      };
     });
   }, []);
 
   /* ── Fills ───────────────────────────────────────────────────────────── */
 
   const fillProgram = useCallback(() => {
-    setRows((current) => {
-      const present = new Set(current.map((row) => row.piece).filter(Boolean));
+    setDraft((current) => {
+      const present = new Set(current.rows.map((row) => row.piece).filter(Boolean));
       const added = program
         .filter((item) => !present.has(String(item.piece)))
-        .map<PlanDraftRow>((item) => ({
-          key: makeKey(),
-          id: null,
-          piece: String(item.piece),
-          label: "",
-          note: "",
-          starts_at: null,
-          excluded_voice_lines: [],
-          excludes_instrumentalists: false,
-          done_at: null,
-        }));
-      return [...current, ...added];
+        .map((item) => blankRow({ piece: String(item.piece) }));
+      return insertMain(current, added);
     });
   }, [program]);
 
-  const rowsOf = useCallback(
-    (rehearsalId: string, onlyUndone: boolean): PlanDraftRow[] => {
-      const source = data.rehearsals.find((other) => String(other.id) === rehearsalId);
-      return (source?.plan ?? [])
-        .filter((item) => !onlyUndone || item.done_at === null)
-        // A piece since dropped from the programme cannot be planned — the
-        // server would refuse the whole save for one stale row.
-        .filter((item) => item.piece === null || programByPiece.has(item.piece))
-        .map(copyOf);
-    },
-    [data.rehearsals, programByPiece],
-  );
-
+  // Last week's reserve is this week's due: everything carried lands above
+  // the divider, whichever side of it the row stood on.
   const fillCarryOver = useCallback(() => {
     if (!carryOver) return;
-    const copied = rowsOf(carryOver.source.rehearsalId, true);
-    setRows((current) => [...current, ...copied]);
-  }, [carryOver, rowsOf]);
+    const copied = undoneOf(carryOver.source.rehearsalId).map(copyOf);
+    setDraft((current) => insertMain(current, copied));
+  }, [carryOver, undoneOf]);
 
+  // A copy keeps each row's side of the divider: the source's main rows join
+  // the main part, its reserve rows the end of the reserve.
   const copyFrom = useCallback(
     (rehearsalId: string) => {
-      const copied = rowsOf(rehearsalId, false);
-      setRows((current) => [...current, ...copied]);
+      const source = plannableRowsOf(rehearsalId);
+      const main = source.filter((item) => !item.is_reserve).map(copyOf);
+      const reserve = source.filter((item) => item.is_reserve).map(copyOf);
+      setDraft((current) => {
+        const withMain = insertMain(current, main);
+        return { ...withMain, rows: [...withMain.rows, ...reserve] };
+      });
     },
-    [rowsOf],
+    [plannableRowsOf],
   );
 
   const reset = useCallback(() => {
-    setRows(serverRows.map(draftOf));
+    setDraft(draftOf(serverRows));
   }, [serverRows]);
 
-  const toDTO = useCallback(() => rows.map(rowDTO), [rows]);
+  const toDTO = useCallback(() => draftDTO(draft), [draft]);
 
   return {
     rows,
+    reserveStart,
     readings,
     calledTotal: seats.length,
     isDirty,
@@ -555,6 +635,7 @@ export const usePlanEditor = (
     carryOver,
     addPieceRow,
     addFreeRow,
+    addBreakRow,
     updateRow,
     toggleLine,
     toggleFamily,

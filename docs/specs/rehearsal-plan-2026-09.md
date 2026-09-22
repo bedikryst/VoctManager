@@ -9,8 +9,9 @@ Stages 1–3 (fixes F1–F5 and the decision that a sectional CAN call the playe
 is implemented but not yet seen in the browser. Round 2 (decisions 14–23, Stages 6–10) was
 decided on 2026-09-22 after a conductor-side audit — see "Round 2" at the very end. Stage 6
 (backend) implemented 2026-09-22 — NOT committed; its migration is
-`roster/0060` (`0059` was already the voice-line choices), applied nowhere yet; no visible
-surface until Stage 7. Stages 7–10 NOT started.**
+`roster/0060` (`0059` was already the voice-line choices), applied nowhere yet. Stage 7
+(frontend) implemented 2026-09-22 — NOT committed, NOT seen in the browser (needs `0060` on dev
+first); see its "As landed". Stages 8–10 NOT started.**
 One stage per session; move this line when a stage lands and say whether it is committed,
 migrated and seen in the browser.
 
@@ -1019,6 +1020,30 @@ soloist-only rows, a live mode counting down to a section's release, unpublishin
   (`rehearsals.plan.*`, `schedule.rehearsal.plan.*`).
 - After this stage, `done_at` in `frontend/src/features/rehearsals` appears only in types and the
   optimistic write.
+
+**As landed (2026-09-22).** Where the code departs from or adds to the list above:
+- The draft is `{ rows, reserveStart }`; the divider is the sortable id `RESERVE_DIVIDER_KEY`,
+  and `moveRow` sorts the keys with the divider spliced in, so the divider's new index IS the
+  reserve start. `is_reserve` exists only in `toDTO`. Every single add (piece, free row, break)
+  lands above the divider too, not only the fills — the reserve is something a row is dragged
+  into. `planRowOf` now takes `is_break` as required.
+- Carry-over reads `done === false` (breaks excluded) from the previous rehearsal by date; that
+  is also what makes an evening not held yet offer nothing — its unticked rows are `null`.
+- The caption reads "Opublikowany · wysłano {when}" (not "Opublikowano {when}"): the stamp is
+  the LAST send, and after a resend "Opublikowano" would date the publication wrongly. The draft
+  caption is withheld once the evening has started (the plan is public by then); the save toast
+  splits on the same fact (draft vs. "Chór widzi zmiany, ale nie dostał o nich znać").
+- The free-row placeholder no longer suggests "przerwa" ("np. Rozśpiewanie, ogłoszenia"): a
+  break typed into a free row calls everyone, which is the bug decision 16 exists to fix.
+- The debrief's record face (no write callback) shows `done === true` only; the pre-tick
+  (`done ?? !is_reserve`) is an input's proposal, not a verdict.
+- The timeline draws the reserve on a dashed spine under a gold "Jeśli starczy czasu" rule; a
+  break is muted and never "bez Twojego głosu" (the server answers `calls_me: false` for it to
+  everyone).
+- Found along the way: `notifications.changes.plan` did not exist in any locale, so the bell's
+  chip on every plan send read the raw key "plan". Added, with `plan_revised` ("Plan zmieniony"),
+  which `NotificationItem` swaps in when the metadata says `plan_revised`.
+- `QUERY_CACHE_BUSTER` → `2026-09-rehearsal-plan-done` (the previous value was committed).
 
 ### Stage 8 — Minutes and effective clocks (decision 23; backend and frontend, high effort)
 

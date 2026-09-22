@@ -2,10 +2,12 @@
  * @file RehearsalDebrief.tsx
  * @description "Po próbie": the evening handed back by whoever stood in front
  * of the choir, and read by the conductor where the rehearsal lives. It opens
- * with the plan's rows as a checklist — "Co zrobiliście?" — because ticking
- * what was rehearsed is the first step of the debrief, written after the
- * fact and never live (the conductor conducts, the assistant leads; nobody
- * ticks rows mid-rehearsal). The sentences follow. One block, two faces — an
+ * with the plan's rows as a checklist, pre-ticked as the plan was meant —
+ * "Odznacz, czego nie zrobiliście" — because the plan is what usually
+ * happened, and a debrief nobody writes must not read as "nothing was
+ * done". Written after the fact and never live (the conductor conducts, the
+ * assistant leads; nobody ticks rows mid-rehearsal). Breaks are not in it;
+ * the reserve sits under its own rule, unticked. The sentences follow. One block, two faces — an
  * editor when the caller passes the write callbacks and the rehearsal has
  * started, the record otherwise. The author and the time sit under the text
  * on both faces, because "whose words" is the first thing a manager decides
@@ -51,10 +53,17 @@ interface RehearsalDebriefProps {
 const DEBRIEF_MAX = 4000;
 
 /**
+ * What a checkbox proposes before anyone taps: the server's verdict, else
+ * the plan itself — a main row done, a reserve row not. `done` is still null
+ * while the evening runs, and the checklist can be opened then.
+ */
+const proposedDone = (row: RehearsalPlanItem): boolean => row.done ?? !row.is_reserve;
+
+/**
  * The plan's rows as a checklist. A tap answers at once from a local
- * override, which the server's own stamp then replaces when the read model
+ * override, which the server's own verdict then replaces when the read model
  * catches up — a tablet after the rehearsal is not the place to wait on a
- * round-trip per row.
+ * round-trip per row. The record face shows only what the server states.
  */
 const PlanChecklist = ({
   rows,
@@ -73,7 +82,7 @@ const PlanChecklist = ({
       let changed = false;
       for (const row of rows) {
         const wanted = next[row.id];
-        if (wanted !== undefined && wanted === (row.done_at !== null)) {
+        if (wanted !== undefined && wanted === proposedDone(row)) {
           delete next[row.id];
           changed = true;
         }
@@ -99,16 +108,26 @@ const PlanChecklist = ({
     }
   };
 
+  const firstReserve = rows.findIndex((row) => row.is_reserve);
+
   return (
     <div className="flex flex-col gap-1.5">
       <Caption color="muted">
         {onMark
-          ? t("rehearsals.plan.debrief.prompt", "Co zrobiliście?")
+          ? t("rehearsals.plan.debrief.prompt", "Odznacz, czego nie zrobiliście")
           : t("rehearsals.plan.debrief.done_label", "Przerobione")}
       </Caption>
       <ul className="flex flex-col">
-        {rows.map((row) => {
-          const isDone = pending[row.id] ?? row.done_at !== null;
+        {rows.map((row, index) => {
+          const isDone = onMark
+            ? (pending[row.id] ?? proposedDone(row))
+            : row.done === true;
+          const reserveRule =
+            index === firstReserve ? (
+              <Eyebrow color="gold" className="mt-2 block px-1">
+                {t("rehearsals.plan.reserve.title", "Jeśli starczy czasu")}
+              </Eyebrow>
+            ) : null;
           const label = (
             <span className="flex min-w-0 flex-1 items-baseline gap-2">
               {row.starts_at && (
@@ -136,6 +155,7 @@ const PlanChecklist = ({
           );
           return (
             <li key={row.id}>
+              {reserveRule}
               {onMark ? (
                 <label className="flex cursor-pointer items-center gap-3 rounded-control px-1 py-1.5 transition-colors hover:bg-ethereal-ink/3 pointer-coarse:py-2.5">
                   <Checkbox
@@ -254,8 +274,9 @@ export const RehearsalDebrief = ({
   const canEdit = Boolean(onSave) && hasStarted;
   const written = (rehearsal.debrief ?? "").trim();
   // The checklist exists once the evening has started and there is a plan to
-  // tick; before that the plan is read at the head of the card, not here.
-  const planRows = hasStarted ? (rehearsal.plan ?? []) : [];
+  // tick; before that the plan is read at the head of the card, not here. A
+  // break is never done or undone, so it is not on the list.
+  const planRows = hasStarted ? (rehearsal.plan ?? []).filter((row) => !row.is_break) : [];
   const hasChecklist = planRows.length > 0;
 
   if (!canEdit && !written && !hasChecklist) return null;

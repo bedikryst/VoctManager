@@ -187,8 +187,7 @@ export const planSeatOf = (
 /**
  * A rule row from a saved or drafted plan row. `declaredLines` are the piece's
  * divisi as the programme binds them (the explicit edition only — the server
- * consults nothing else); ignored for a free row. A row that does not say
- * `is_break` is not a break.
+ * consults nothing else); ignored for a free row.
  */
 export const planRowOf = (
   item: {
@@ -196,7 +195,7 @@ export const planRowOf = (
     readonly starts_at: string | null;
     readonly excluded_voice_lines: readonly string[];
     readonly excludes_instrumentalists: boolean;
-    readonly is_break?: boolean;
+    readonly is_break: boolean;
   },
   declaredLines: Iterable<string>,
 ): PlanRuleRow => ({
@@ -205,5 +204,5 @@ export const planRowOf = (
   lines: rowLines(item.piece === null ? [] : declaredLines),
   excludedLines: new Set(item.excluded_voice_lines),
   excludesInstrumentalists: item.excludes_instrumentalists,
-  isBreak: item.is_break ?? false,
+  isBreak: item.is_break,
 });

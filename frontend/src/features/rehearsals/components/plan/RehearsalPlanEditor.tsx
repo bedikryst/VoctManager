@@ -1,13 +1,16 @@
 /**
  * @file RehearsalPlanEditor.tsx
  * @description The conductor's plan for one saved rehearsal: sortable rows
- * (piece or free label, optional clock, note, exclusions), three fills so the
+ * (piece, free label or break; optional clock, note, exclusions), a sortable
+ * "Jeśli starczy czasu" divider with the reserve under it, three fills so the
  * evening is never laid out from zero (the whole programme; what the previous
  * rehearsal left undone; a copy of any other plan), an explicit save, and —
- * separately — "Wyślij plan". Saving is silent: the conductor edits a dozen
+ * separately — publishing. A saved plan is a draft the choir does not see
+ * until "Opublikuj plan" (or until the evening starts); after that, saves are
+ * visible but silent, and "Wyślij zmiany" is the conductor's own act, enabled
+ * only when the rows changed since the last send. The conductor edits a dozen
  * times the day before, and each save queuing a notice would teach the choir
- * to ignore them. The send is his own act, stamped, and a caption says when
- * the rows moved after it — a caption, never an automatic send.
+ * to ignore them.
  *
  * Mounted twice: as a band in the manager's `RehearsalInspector`, where the
  * save bar docks over the page, and in a `BottomSheet` from the project's
@@ -34,9 +37,11 @@ import {
 import {
   SortableContext,
   sortableKeyboardCoordinates,
+  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { ListMusic, ListPlus, Plus, Send } from "lucide-react";
+import { CSS } from "@dnd-kit/utilities";
+import { Coffee, GripVertical, Hourglass, ListMusic, ListPlus, Plus, Send } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { toastApiError } from "@/shared/api/errors";
@@ -58,7 +63,7 @@ import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import type { Rehearsal } from "@/shared/types";
 import { useAnnouncePlan, useRehearsalPlan, useSaveRehearsalPlan } from "../../api/plan.queries";
 import { RehearsalPlanRow } from "./RehearsalPlanRow";
-import { usePlanEditor } from "./usePlanEditor";
+import { RESERVE_DIVIDER_KEY, usePlanEditor, type PlanDraftRow } from "./usePlanEditor";
 import { usePlanEditorData } from "./usePlanEditorData";
 
 interface RehearsalPlanEditorProps {
@@ -71,6 +76,61 @@ interface RehearsalPlanEditorProps {
   readonly actions?: "dock" | "inline";
   readonly className?: string;
 }
+
+/**
+ * The reserve's upper edge, dragged like a row. A quiet line while nothing
+ * sits under it — present from the first row, so the conductor finds it
+ * before he needs it.
+ */
+const ReserveDivider = ({ hasReserve }: { hasReserve: boolean }): React.JSX.Element => {
+  const { t } = useTranslation();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: RESERVE_DIVIDER_KEY });
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn("relative", isDragging && "z-10")}
+    >
+      <div
+        className={cn(
+          "flex items-center gap-2 px-4 py-2",
+          isDragging &&
+            "rounded-control border border-ethereal-gold/45 bg-ethereal-marble shadow-glass-ethereal",
+        )}
+      >
+        <span
+          {...attributes}
+          {...listeners}
+          className={cn(
+            "-ml-1.5 flex min-h-8 min-w-6 shrink-0 cursor-grab select-none items-center justify-center rounded-chip text-ethereal-graphite/30 transition-colors",
+            "hover:bg-ethereal-gold/10 hover:text-ethereal-gold active:cursor-grabbing",
+            "pointer-coarse:min-h-11 pointer-coarse:min-w-9",
+          )}
+          aria-label={t("rehearsals.plan.reserve.drag", "Przesuń granicę: jeśli starczy czasu")}
+        >
+          <GripVertical size={14} aria-hidden="true" />
+        </span>
+        <Hourglass
+          size={12}
+          className={hasReserve ? "text-ethereal-gold" : "text-ethereal-graphite/40"}
+          aria-hidden="true"
+        />
+        <Eyebrow color={hasReserve ? "gold" : "muted"}>
+          {t("rehearsals.plan.reserve.title", "Jeśli starczy czasu")}
+        </Eyebrow>
+        <span
+          aria-hidden="true"
+          className={cn(
+            "h-px flex-1",
+            hasReserve ? "bg-ethereal-gold/40" : "bg-ethereal-graphite/15",
+          )}
+        />
+      </div>
+    </li>
+  );
+};
 
 export const RehearsalPlanEditor = ({
   rehearsal,
@@ -95,6 +155,31 @@ export const RehearsalPlanEditor = ({
     if (over && active.id !== over.id) editor.moveRow(String(active.id), String(over.id));
   };
 
+  /* ── The publication's state ─────────────────────────────────────────── */
+  const announcedAt = planQuery.data?.plan_announced_at ?? null;
+  const changedAt = planQuery.data?.plan_changed_at ?? null;
+  const savedRows = planQuery.data?.rows ?? [];
+  const isPublished = announcedAt !== null;
+  // Any row created, edited, moved or deleted after the send — a deletion
+  // leaves no surviving row to carry a newer stamp, so the rehearsal does.
+  const changedSinceSend =
+    isPublished &&
+    changedAt !== null &&
+    new Date(changedAt).getTime() > new Date(announcedAt).getTime();
+  // A plan announced after the downbeat reaches phones already in the room —
+  // the server refuses it, and so does the button. From the downbeat on the
+  // plan is public anyway: it is the evening's record.
+  const hasStarted = new Date(rehearsal.date_time).getTime() <= Date.now();
+  const isPublic = isPublished || hasStarted;
+  const announcedLabel = announcedAt
+    ? formatLocalizedDateTime(
+        announcedAt,
+        { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" },
+        i18n.language,
+        rehearsal.timezone,
+      )
+    : null;
+
   const handleSave = async (): Promise<void> => {
     // The server refuses the whole list for one nameless free row; catching it
     // here keeps the refusal in the conductor's language and next to the row.
@@ -106,7 +191,14 @@ export const RehearsalPlanEditor = ({
     }
     try {
       await save.mutateAsync({ rows: editor.toDTO() });
-      toast.success(t("rehearsals.plan.toast.saved", "Plan zapisany. Chór jeszcze o nim nie wie."));
+      toast.success(
+        isPublic
+          ? t(
+              "rehearsals.plan.toast.saved_public",
+              "Zapisano. Chór widzi zmiany, ale nie dostał o nich znać.",
+            )
+          : t("rehearsals.plan.toast.saved_draft", "Szkic zapisany. Chór go nie widzi."),
+      );
     } catch (error) {
       toastApiError(error, t, {
         fallbackDescription: t("rehearsals.plan.toast.save_error", "Nie udało się zapisać planu."),
@@ -117,7 +209,11 @@ export const RehearsalPlanEditor = ({
   const handleAnnounce = async (): Promise<void> => {
     try {
       await announce.mutateAsync();
-      toast.success(t("rehearsals.plan.toast.announced", "Plan wysłany do wezwanych."));
+      toast.success(
+        isPublished
+          ? t("rehearsals.plan.toast.changes_sent", "Zmiany wysłane do wezwanych.")
+          : t("rehearsals.plan.toast.published", "Plan opublikowany i wysłany do wezwanych."),
+      );
     } catch (error) {
       toastApiError(error, t, {
         fallbackDescription: t("rehearsals.plan.toast.announce_error", "Nie udało się wysłać planu."),
@@ -130,21 +226,6 @@ export const RehearsalPlanEditor = ({
     [rehearsal.date_time, rehearsal.timezone],
   );
 
-  /* ── The announcement's state ────────────────────────────────────────── */
-  const announcedAt = planQuery.data?.plan_announced_at ?? null;
-  const savedRows = planQuery.data?.rows ?? [];
-  const changedSinceSend =
-    announcedAt !== null &&
-    savedRows.some((row) => new Date(row.updated_at).getTime() > new Date(announcedAt).getTime());
-  const announcedLabel = announcedAt
-    ? formatLocalizedDateTime(
-        announcedAt,
-        { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" },
-        i18n.language,
-        rehearsal.timezone,
-      )
-    : null;
-
   /* ── Pieces still to add: the programme minus what the plan already has ── */
   const presentPieces = useMemo(
     () => new Set(editor.rows.map((row) => row.piece).filter((piece) => piece !== null)),
@@ -154,6 +235,19 @@ export const RehearsalPlanEditor = ({
     () => editor.programOptions.filter((option) => !presentPieces.has(option.value)),
     [editor.programOptions, presentPieces],
   );
+
+  /* ── The sortable sequence: the rows with the divider in its place ────── */
+  const sortableKeys = useMemo(() => {
+    const keys = editor.rows.map((row) => row.key);
+    keys.splice(editor.reserveStart, 0, RESERVE_DIVIDER_KEY);
+    return keys;
+  }, [editor.rows, editor.reserveStart]);
+  const rowsByKey = useMemo(() => {
+    const map = new Map<string, PlanDraftRow>();
+    for (const row of editor.rows) map.set(row.key, row);
+    return map;
+  }, [editor.rows]);
+  const hasReserve = editor.reserveStart < editor.rows.length;
 
   const sourceLabel = (dateTime: string, timezone: string, focus: string): string => {
     const day = formatLocalizedDate(dateTime, { day: "numeric", month: "short" }, undefined, timezone);
@@ -165,10 +259,12 @@ export const RehearsalPlanEditor = ({
   // the server's plan is in hand, every way of adding to it is shut, or a row
   // added first would be the only row the draft has.
   const isOpening = planQuery.isLoading || data.isLoading;
-  // A plan announced after the downbeat reaches phones already in the room —
-  // the server refuses it, and so does the button.
-  const hasStarted = new Date(rehearsal.date_time).getTime() <= Date.now();
-  const canAnnounce = savedRows.length > 0 && !editor.isDirty && !isBusy && !hasStarted;
+  const canAnnounce =
+    savedRows.length > 0 &&
+    !editor.isDirty &&
+    !isBusy &&
+    !hasStarted &&
+    (!isPublished || changedSinceSend);
 
   return (
     <section className={cn("flex flex-col", className)}>
@@ -254,23 +350,37 @@ export const RehearsalPlanEditor = ({
             isLoading={announce.isPending}
             leftIcon={!announce.isPending ? <Send size={14} aria-hidden="true" /> : undefined}
           >
-            {t("rehearsals.plan.announce", "Wyślij plan")}
+            {isPublished
+              ? t("rehearsals.plan.send_changes", "Wyślij zmiany")
+              : t("rehearsals.plan.publish", "Opublikuj plan")}
           </Button>
         </div>
       </div>
 
-      {/* Sent when, and whether the rows moved since. A caption, never a
-          prompt: the decision to send again is the conductor's. */}
-      {announcedLabel && (
+      {/* Who can see it, and whether the rows moved since the last send. A
+          caption, never a prompt: the decision to send again is the
+          conductor's. */}
+      {announcedLabel ? (
         <div className="px-5 pb-2">
           <Caption color={changedSinceSend ? "gold" : "muted"}>
             {changedSinceSend
-              ? t("rehearsals.plan.announced_changed", "Wysłano {{when}} · zmieniony po wysłaniu", {
+              ? t("rehearsals.plan.announced_changed", "Opublikowany · wysłano {{when}} · zmieniony po wysłaniu", {
                   when: announcedLabel,
                 })
-              : t("rehearsals.plan.announced_at", "Wysłano {{when}}", { when: announcedLabel })}
+              : t("rehearsals.plan.announced_at", "Opublikowany · wysłano {{when}}", {
+                  when: announcedLabel,
+                })}
           </Caption>
         </div>
+      ) : (
+        savedRows.length > 0 &&
+        !hasStarted && (
+          <div className="px-5 pb-2">
+            <Caption color="muted">
+              {t("rehearsals.plan.draft", "Szkic — chór go nie widzi")}
+            </Caption>
+          </div>
+        )
       )}
 
       {/* ── Rows ────────────────────────────────────────────────────────── */}
@@ -304,17 +414,18 @@ export const RehearsalPlanEditor = ({
         />
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext
-            items={editor.rows.map((row) => row.key)}
-            strategy={verticalListSortingStrategy}
-          >
+          <SortableContext items={sortableKeys} strategy={verticalListSortingStrategy}>
             <ul className="divide-y divide-hairline border-y border-hairline">
-              {editor.rows.map((row) => {
-                const reading = editor.readings.get(row.key);
-                if (!reading) return null;
+              {sortableKeys.map((key) => {
+                if (key === RESERVE_DIVIDER_KEY) {
+                  return <ReserveDivider key={key} hasReserve={hasReserve} />;
+                }
+                const row = rowsByKey.get(key);
+                const reading = editor.readings.get(key);
+                if (!row || !reading) return null;
                 return (
                   <RehearsalPlanRow
-                    key={row.key}
+                    key={key}
                     row={row}
                     reading={reading}
                     calledTotal={editor.calledTotal}
@@ -353,15 +464,26 @@ export const RehearsalPlanEditor = ({
             ariaLabel={t("rehearsals.plan.add.piece", "Dodaj utwór z programu…")}
           />
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={editor.addFreeRow}
-          disabled={isOpening}
-          leftIcon={<Plus size={14} aria-hidden="true" />}
-        >
-          {t("rehearsals.plan.add.free", "Punkt bez utworu")}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={editor.addFreeRow}
+            disabled={isOpening}
+            leftIcon={<Plus size={14} aria-hidden="true" />}
+          >
+            {t("rehearsals.plan.add.free", "Punkt bez utworu")}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.addBreakRow(t("rehearsals.plan.row.break_label", "Przerwa"))}
+            disabled={isOpening}
+            leftIcon={<Coffee size={14} aria-hidden="true" />}
+          >
+            {t("rehearsals.plan.add.break", "Dodaj przerwę")}
+          </Button>
+        </div>
       </div>
 
       {/* ── Save ────────────────────────────────────────────────────────── */}

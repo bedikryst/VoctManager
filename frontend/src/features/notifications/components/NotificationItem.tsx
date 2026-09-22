@@ -195,7 +195,16 @@ const describe = (
           notification.metadata.location,
         ),
         detail: notification.metadata.focus || undefined,
-        changeChips: renderChanges(t, notification.metadata.changes),
+        // A resend of the plan names itself as a change, not as the plan
+        // arriving again.
+        changeChips: renderChanges(
+          t,
+          notification.metadata.plan_revised
+            ? notification.metadata.changes.map((change) =>
+                change.field === "plan" ? { ...change, field: "plan_revised" } : change,
+              )
+            : notification.metadata.changes,
+        ),
       };
     case "REHEARSAL_CANCELLED":
       // "Rehearsal cancelled" is already the eyebrow — show only the project.

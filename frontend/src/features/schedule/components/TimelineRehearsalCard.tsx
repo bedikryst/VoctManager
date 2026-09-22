@@ -166,7 +166,9 @@ export const TimelineRehearsalCard = ({
   // looked for.
   const windowLabel = planWindowLabel(event.planWindow, t);
   const skipsReader = event.planWindow?.calls_me === false;
-  const planRows = event.plan ?? [];
+  // The preview stops at the reserve divider: "if time allows" is the page's
+  // detail, not what a singer prepares the evening from.
+  const planRows = (event.plan ?? []).filter((row) => !row.is_reserve);
   const firstPiece = planRows.find((row) => row.piece !== null);
   // The tile names the first piece whatever it is, but links it only when its
   // music opens for this reader — an instrumental item, through a singer's
