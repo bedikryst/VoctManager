@@ -1641,11 +1641,11 @@ msgstr "Witaj,"
 #: templates/emails/account_activation.html:54
 msgid ""
 "Your place within VoctEnsemble is ready. We have prepared your private "
-"workspace &mdash; where repertoire, rehearsal schedules, and artistic "
+"workspace — where repertoire, rehearsal schedules, and artistic "
 "collaboration come together in one place."
 msgstr ""
 "Twoje miejsce w VoctEnsemble jest gotowe. Przygotowaliśmy Twoją prywatną "
-"przestrzeń roboczą &mdash; gdzie repertuar, harmonogramy prób i współpraca "
+"przestrzeń roboczą — gdzie repertuar, harmonogramy prób i współpraca "
 "artystyczna spotykają się w jednym miejscu."
 
 #: templates/emails/account_activation.html:64
