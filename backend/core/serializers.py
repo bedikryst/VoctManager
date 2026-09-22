@@ -8,11 +8,12 @@ from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import FeedbackReport, UserProfile
+from .models import FeedbackReport, Note, UserProfile
 
 User = get_user_model()
 
@@ -289,6 +290,59 @@ class FeedbackReportSerializer(serializers.ModelSerializer):
             reporter=reporter if reporter is not None and reporter.is_authenticated else None,
             **validated_data,
         )
+
+
+#: Hard cap on a note's body. Generous for a jotted reminder, tight enough
+#: that quick capture cannot become a document.
+MAX_NOTE_BODY_LENGTH = 2000
+
+
+class NoteSerializer(serializers.ModelSerializer):
+    """
+    A user's own scratchpad entries. `owner` is stamped from the request in
+    `NoteViewSet.perform_create` and never trusted from the payload.
+    """
+    #: Writable on create so a note jotted WITHOUT SIGNAL owns its identity
+    #: from the first keystroke — the offline write queue can then edit or
+    #: toggle it while still offline, and the replayed POST is idempotent.
+    #: Declared explicitly — a ModelSerializer-built pk would carry a
+    #: UniqueValidator that turns the replay into a 400; the replay is
+    #: resolved in ``NoteViewSet.perform_create`` instead, which can tell
+    #: "mine again" from "somebody else's id".
+    id = serializers.UUIDField(required=False)
+
+    class Meta:
+        model = Note
+        fields = ['id', 'body', 'is_done', 'done_at', 'created_at', 'updated_at']
+        read_only_fields = ['done_at', 'created_at', 'updated_at']
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        # `id` is an offline-create affordance only. On an edit it is noise at
+        # best and a request to move a row onto another row's key at worst,
+        # so an existing note keeps the key it was born with.
+        if self.instance is not None:
+            attrs.pop('id', None)
+        return attrs
+
+    def validate_body(self, value: str) -> str:
+        text = value.strip()
+        if not text:
+            raise serializers.ValidationError(_("Note cannot be empty."))
+        return text[:MAX_NOTE_BODY_LENGTH]
+
+    def update(self, instance: Note, validated_data: dict[str, Any]) -> Note:
+        # `done_at` is a server fact about the transition, not a field the
+        # client sets — it is set/cleared here, on the edge the `is_done`
+        # value actually crosses, so a PATCH that repeats the current state
+        # (a queue replay) does not reset an already-stamped timestamp.
+        if 'is_done' in validated_data and validated_data['is_done'] != instance.is_done:
+            validated_data['done_at'] = timezone.now() if validated_data['is_done'] else None
+        return super().update(instance, validated_data)
+
+    def create(self, validated_data: dict[str, Any]) -> Note:
+        if validated_data.get('is_done'):
+            validated_data['done_at'] = timezone.now()
+        return super().create(validated_data)
 
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):

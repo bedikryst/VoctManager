@@ -408,3 +408,54 @@ class FeedbackReport(EnterpriseBaseModel):
 
     def __str__(self) -> str:
         return f"FeedbackReport[{self.status}] {self.kind} — {self.body[:48]}"
+
+
+class Note(EnterpriseBaseModel):
+    """
+    A private scratchpad entry — one flat to-do list per user, never shared.
+
+    `on_delete=CASCADE` on `owner` (unlike `FeedbackReport.reporter`, which is
+    SET_NULL so a report survives an account purge): a note has no meaning to
+    anyone but its author, so a GDPR hard-delete of the account must take it
+    with it rather than leave an orphaned personal jotting behind.
+
+    `done_at` is stamped/cleared only from the `is_done` transition in
+    `NoteSerializer` — never accepted from the client — and drives the
+    30-day retention sweep in `core.tasks.purge_completed_notes`.
+    """
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notes',
+        help_text=_("The account this note belongs to. Never read by any other user, "
+                    "manager or superuser included."),
+    )
+    body = models.TextField(
+        help_text=_("Plain text, line breaks preserved. Length is capped at the "
+                    "serializer boundary."),
+    )
+    is_done = models.BooleanField(
+        default=False,
+        help_text=_("Toggled by the owner. Drives ordering (open notes first) and "
+                    "the 30-day retention sweep once set."),
+    )
+    done_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text=_("Stamped when is_done is set, cleared when unset. Server-side "
+                    "only — the retention window is measured from here."),
+    )
+
+    class Meta:
+        db_table = 'core_note'
+        ordering = ['is_done', '-created_at']
+        verbose_name = _('Note')
+        verbose_name_plural = _('Notes')
+        indexes = [
+            # Declared explicitly because this model overrides Meta and so does
+            # not inherit EnterpriseBaseModel.Meta's equivalent composite index.
+            models.Index(fields=['is_deleted', '-created_at'], name='core_note_isdel_idx'),
+            models.Index(fields=['owner', 'is_done', '-created_at'], name='core_note_owner_idx'),
+        ]
+
+    def __str__(self) -> str:
+        return f"Note[{self.owner_id}] {self.body[:48]}"

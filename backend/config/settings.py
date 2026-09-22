@@ -368,6 +368,12 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'outreach.purge_notice_records',
         'schedule': timedelta(days=1),
     },
+    # Daily: the 30-day window is what keeps the scratchpad's done section a
+    # short-term undo rather than an archive that grows without bound.
+    'core-purge-completed-notes': {
+        'task': 'core.purge_completed_notes',
+        'schedule': timedelta(days=1),
+    },
 }
 
 # --- EMAIL (ANYMAIL) ---

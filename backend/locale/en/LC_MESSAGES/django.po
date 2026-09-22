@@ -3731,3 +3731,7 @@ msgstr ""
 #: templates/emails/password_reset.txt:3
 msgid "Security"
 msgstr ""
+
+#: core/serializers.py:330
+msgid "Note cannot be empty."
+msgstr ""

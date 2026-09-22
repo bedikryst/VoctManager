@@ -5109,3 +5109,7 @@ msgstr "Plan"
 #: notifications/message_content.py
 msgid "Open the rehearsal"
 msgstr "Otwórz próbę"
+
+#: core/serializers.py:330
+msgid "Note cannot be empty."
+msgstr "Notatka nie może być pusta."

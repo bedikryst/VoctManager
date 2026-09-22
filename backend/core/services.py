@@ -35,7 +35,7 @@ from .exceptions import (
     InvalidCredentialsException,
 )
 from .greetings import apply_vocative_rule, resolve_vocative
-from .models import FeedbackReport, UserProfile
+from .models import FeedbackReport, Note, UserProfile
 from .signals import account_soft_deleted, user_email_changed, user_pii_updated
 
 logger = logging.getLogger(__name__)
@@ -484,11 +484,21 @@ class UserIdentityService:
             #    account; the dispatch below is the only remaining trace.
             if hasattr(user, 'profile'):
                 user.profile.hard_delete()
-                
-            # 3. Emit Domain Event (Handled by Roster to soft-delete Artist)
+
+            # 3. Erase the personal scratchpad. `Note.owner` is CASCADE, but that
+            #    cascade never fires here: erasure anonymizes the auth row rather
+            #    than deleting it, so the account this note hangs off still exists
+            #    when the request finishes. Notes are free text that routinely names
+            #    third parties ("call Marek about his results"), which makes leaving
+            #    them behind the worst of the remaining PII. `all_objects` because
+            #    soft-deleted notes are still rows, and `hard_delete()` because the
+            #    queryset's own `delete()` would only set a flag.
+            Note.all_objects.filter(owner=user).hard_delete()
+
+            # 4. Emit Domain Event (Handled by Roster to soft-delete Artist)
             account_soft_deleted.send(sender=UserIdentityService, user=user)
             
-            # 4. Dispatch confirmation email (using the original email we stored)
+            # 5. Dispatch confirmation email (using the original email we stored)
             with override(fallback_lang):
                 translated_subject = str(_("Your VoctManager Account has been successfully deleted"))
                 
@@ -562,7 +572,21 @@ class UserPreferencesService:
                 "date_joined": user.date_joined.isoformat(),
             },
             "preferences": profile_data,
-            "artist_profile": None
+            "artist_profile": None,
+            # The scratchpad is text the person typed themselves and nobody else
+            # can read, which makes it the clearest case of "their own data" in
+            # the app — portability has to hand it back. Soft-deleted notes are
+            # left out: to their author those are already gone, and returning
+            # them would read as the app keeping what they discarded.
+            "notes": [
+                {
+                    "body": note.body,
+                    "is_done": note.is_done,
+                    "created_at": note.created_at.isoformat(),
+                    "done_at": note.done_at.isoformat() if note.done_at else None,
+                }
+                for note in Note.objects.filter(owner=user)
+            ],
         }
 
         # Safe Export - explicitly exclude managerial metrics

@@ -39,6 +39,7 @@ from core.views import (
     FeedbackReportView,
     MarkPushEmailOfferSeenView,
     MarkWelcomeSeenView,
+    NoteViewSet,
     PasswordResetConfirmView,
     PasswordResetRequestView,
     RequestAccountDeletionView,
@@ -110,6 +111,9 @@ router.register(r'messaging/channels', ProjectChannelViewSet, basename='messagin
 
 # --- Chorister Hub & Knowledge Base ---
 router.register(r'documents/categories', DocumentCategoryViewSet, basename='document-category')
+
+# --- Personal scratchpad (private to the owner) ---
+router.register(r'notes', NoteViewSet, basename='note')
 
 urlpatterns = [
     # Django Admin Panel

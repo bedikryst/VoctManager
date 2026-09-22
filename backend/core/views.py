@@ -8,13 +8,15 @@ import logging
 from django.contrib.auth import get_user_model, logout, update_session_auth_hash
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.models import QuerySet
 from django.http import HttpResponse, JsonResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from pydantic import ValidationError
-from rest_framework import generics, renderers, status, views
+from rest_framework import generics, permissions, renderers, status, views, viewsets
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -39,9 +41,14 @@ from .exceptions import (
     make_error_response,
 )
 from .ical_service import ICalGeneratorService
-from .models import UserProfile
-from .request_utils import client_payload
-from .serializers import FeedbackReportSerializer, UserMeSerializer, UserProfileSerializer
+from .models import Note, UserProfile
+from .request_utils import client_payload, request_user
+from .serializers import (
+    FeedbackReportSerializer,
+    NoteSerializer,
+    UserMeSerializer,
+    UserProfileSerializer,
+)
 from .services import FeedbackService, UserIdentityService, UserPreferencesService
 
 User = get_user_model()
@@ -621,3 +628,45 @@ class FeedbackReportView(generics.CreateAPIView):
             logger.exception(
                 "Feedback report %s saved but the maintainer notification failed.", report.id
             )
+
+
+class NoteViewSet(viewsets.ModelViewSet):
+    """
+    CRUD for the personal scratchpad. Private by construction: `get_queryset`
+    scopes to the requester's own rows, so a non-owner's id resolves to 404 —
+    the correct answer for a private resource (403 would confirm the note
+    exists). `owner` is stamped from the request and never trusted from the
+    payload.
+    """
+    serializer_class = NoteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    # No PUT. Every writable field carries a default, so a whole-object replace
+    # would silently behave like a partial one — a second spelling of PATCH that
+    # nothing calls and every reader has to reason about.
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+
+    def get_queryset(self) -> QuerySet[Note]:
+        return Note.objects.filter(owner=request_user(self.request))
+
+    def perform_create(self, serializer: BaseSerializer) -> None:
+        user = request_user(self.request)
+        # A client-chosen key means this POST may be a REPLAY: the note was
+        # jotted with no signal, the queued write went out on reconnect, and
+        # this is either its first arrival or its second (the first reply
+        # died in the tunnel). Answer the second with the row that already
+        # exists rather than a duplicate entry. Soft-deleted rows count as
+        # existing — the queue may replay a create-then-delete in order, and
+        # resurrecting the note here would leave the reader's list one step
+        # behind their intent. `all_objects` is what sees them.
+        supplied_id = serializer.validated_data.get('id')
+        if supplied_id is not None:
+            existing = Note.all_objects.filter(pk=supplied_id).first()
+            if existing is not None:
+                if existing.owner_id != user.id:
+                    raise PermissionDenied('That note id is already taken.')
+                serializer.instance = existing
+                return
+        serializer.save(owner=user)
+
+    def perform_destroy(self, instance: Note) -> None:
+        instance.delete()

@@ -6,12 +6,21 @@ pipeline itself is alive.
 """
 
 import logging
+from datetime import timedelta
 
 import requests
 from celery import shared_task
 from django.conf import settings
+from django.utils import timezone
+
+from .models import Note
 
 logger = logging.getLogger(__name__)
+
+# How long a completed note is kept before the row is destroyed, counted from
+# `done_at`. Long enough to be a short-term undo, short enough that the done
+# section stays a recent-history strip rather than an archive nobody scrolls.
+NOTE_RETENTION = timedelta(days=30)
 
 
 @shared_task(name='core.ping_beat_heartbeat')
@@ -44,3 +53,24 @@ def ping_beat_heartbeat() -> bool:
         return False
 
     return True
+
+
+@shared_task(name='core.purge_completed_notes')
+def purge_completed_notes() -> int:
+    """
+    Hard-deletes notes past `NOTE_RETENTION` since `done_at`, so the personal
+    scratchpad's done section stays a short-term undo rather than growing
+    without bound. THE DELETE IS HARD — a private note has no basis to be
+    held once its retention window has run, and `SoftDeleteQuerySet.delete()`
+    would only flag the row, not remove it.
+
+    Scheduled daily via CELERY_BEAT_SCHEDULE; requires the `celery beat`
+    process. Idempotent and safe to re-run.
+    """
+    cutoff = timezone.now() - NOTE_RETENTION
+    ids = list(
+        Note.all_objects.filter(is_done=True, done_at__lte=cutoff).values_list('pk', flat=True)
+    )
+    if ids:
+        Note.all_objects.filter(pk__in=ids).hard_delete()
+    return len(ids)
