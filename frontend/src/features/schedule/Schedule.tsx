@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { MotionConfig } from "framer-motion";
 import {
   CalendarHeart,
@@ -35,6 +35,9 @@ import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { useNow } from "@/shared/lib/dom/useNow";
 
+/** Past by the same four-hour grace the two tabs below divide on. */
+const PAST_GRACE_MS = 4 * 60 * 60 * 1000;
+
 const TABS = [
   { id: "UPCOMING" as const, labelKey: "schedule.tabs.upcoming", fallback: "Nadchodzące", Icon: CalendarClock },
   { id: "PAST" as const,     labelKey: "schedule.tabs.past",     fallback: "Historia",     Icon: History },
@@ -59,9 +62,13 @@ export default function Schedule(): React.JSX.Element {
     handleAbsenceSubmit,
     absenceRange,
     artistId,
+    allEvents,
   } = useScheduleData(subject);
 
   const [activeDayKey, setActiveDayKey] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedRehearsalId = searchParams.get("rehearsal");
+  const pendingScrollId = useRef<string | null>(null);
 
   const handleTabChange = (id: "UPCOMING" | "PAST") => {
     setViewMode(id);
@@ -82,6 +89,62 @@ export default function Schedule(): React.JSX.Element {
     () => (viewMode === "UPCOMING" ? buildSeasonPulse(filteredEvents) : []),
     [filteredEvents, viewMode],
   );
+
+  // A notice about ONE evening lands here as `?rehearsal=<id>`. The season
+  // stays on screen — a new or moved date only means something read against
+  // the other dates — but the reader is not left hunting the card they were
+  // just told about: the right tab opens, the card unfolds, the page scrolls
+  // to it. The parameter is spent on arrival, so a tab change afterwards does
+  // not drag them back, and a reload does not re-open what they closed.
+  useEffect(() => {
+    if (isLoading || !requestedRehearsalId) return;
+
+    const target = allEvents.find(
+      (candidate) =>
+        candidate.type === "REHEARSAL" &&
+        String((candidate.rawObj as { id: string }).id) === requestedRehearsalId,
+    );
+    setSearchParams(
+      (prev) => {
+        prev.delete("rehearsal");
+        return prev;
+      },
+      { replace: true },
+    );
+    // Cancelled, or an evening this reader was dropped from: the schedule they
+    // already have is the answer, and it is the truthful one.
+    if (!target) return;
+
+    setViewMode(
+      target.date_time.getTime() < Date.now() - PAST_GRACE_MS
+        ? "PAST"
+        : "UPCOMING",
+    );
+    setExpandedEventId(target.id);
+    pendingScrollId.current = target.id;
+  }, [
+    isLoading,
+    requestedRehearsalId,
+    allEvents,
+    setSearchParams,
+    setViewMode,
+    setExpandedEventId,
+  ]);
+
+  // Runs after every render because the card only exists once the tab switch
+  // and the expansion have painted; the ref makes every other pass a single
+  // comparison. The spotlit evening has no card of its own — it IS the hero.
+  useEffect(() => {
+    const pending = pendingScrollId.current;
+    if (!pending) return;
+    const element =
+      heroEvent?.id === pending
+        ? document.getElementById("schedule-hero")
+        : document.getElementById(`schedule-event-${pending}`);
+    if (!element) return;
+    pendingScrollId.current = null;
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 
   const scrollToDay = (key: string) => {
     setActiveDayKey(key);
@@ -207,35 +270,42 @@ export default function Schedule(): React.JSX.Element {
                         className="flex scroll-mt-20 flex-col gap-3"
                       >
                         <DayDivider label={relativeDayLabel(group.date, now, t)} />
-                        {group.events.map((ev) =>
-                          ev.type === "PROJECT" ? (
-                            <TimelineProjectCard
-                              key={ev.id}
-                              event={ev}
-                              isExpanded={expandedEventId === ev.id}
-                              onToggle={() =>
-                                setExpandedEventId(
-                                  expandedEventId === ev.id ? null : ev.id,
-                                )
-                              }
-                              artistId={artistId}
-                            />
-                          ) : (
-                            <TimelineRehearsalCard
-                              key={ev.id}
-                              event={ev}
-                              isExpanded={expandedEventId === ev.id}
-                              onToggle={() =>
-                                setExpandedEventId(
-                                  expandedEventId === ev.id ? null : ev.id,
-                                )
-                              }
-                              onSubmitReport={handleAbsenceSubmit}
-                              absenceRange={absenceRange}
-                              viewMode={viewMode}
-                            />
-                          ),
-                        )}
+                        {/* The anchor a notice about one evening scrolls to.
+                            It sits on a wrapper rather than the card so the
+                            card keeps its own motion root. */}
+                        {group.events.map((ev) => (
+                          <div
+                            key={ev.id}
+                            id={`schedule-event-${ev.id}`}
+                            className="scroll-mt-20"
+                          >
+                            {ev.type === "PROJECT" ? (
+                              <TimelineProjectCard
+                                event={ev}
+                                isExpanded={expandedEventId === ev.id}
+                                onToggle={() =>
+                                  setExpandedEventId(
+                                    expandedEventId === ev.id ? null : ev.id,
+                                  )
+                                }
+                                artistId={artistId}
+                              />
+                            ) : (
+                              <TimelineRehearsalCard
+                                event={ev}
+                                isExpanded={expandedEventId === ev.id}
+                                onToggle={() =>
+                                  setExpandedEventId(
+                                    expandedEventId === ev.id ? null : ev.id,
+                                  )
+                                }
+                                onSubmitReport={handleAbsenceSubmit}
+                                absenceRange={absenceRange}
+                                viewMode={viewMode}
+                              />
+                            )}
+                          </div>
+                        ))}
                       </div>
                     ))}
 

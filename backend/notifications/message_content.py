@@ -264,6 +264,22 @@ def _rehearsal_page_url(ctx: MessageContext) -> str:
     return f"/panel/schedule/rehearsal/{rehearsal_id}"
 
 
+def _schedule_card_url(ctx: MessageContext) -> str:
+    """Where a notice about WHEN an evening happens lands for its reader.
+
+    The season, opened on that evening's card. A date — a new one, or a moved
+    one — means something only read against the other dates, so the list is
+    right and the evening's own page is not; but a member told about one
+    evening should not then have to find it among twenty. The schedule spends
+    `?rehearsal=` on arrival and falls back to itself when the id matches
+    nothing, which is what a reader dropped from the cast should see.
+    """
+    rehearsal_id = ctx.metadata.get("rehearsal_id")
+    if ctx.is_manager or not rehearsal_id:
+        return _rehearsals_url(ctx)
+    return f"{_rehearsals_url(ctx)}?rehearsal={rehearsal_id}"
+
+
 def _materials_url(ctx: MessageContext) -> str:
     return "/panel/archive-management" if ctx.is_manager else "/panel/materials"
 
@@ -961,7 +977,7 @@ def _compose_rehearsal_scheduled(ctx: MessageContext) -> MessageContent:
             else _("A new rehearsal has been added")
         ),
         body=body or project,
-        url_path=_rehearsal_page_url(ctx),
+        url_path=_schedule_card_url(ctx),
         tag=f"rehearsal-scheduled:{m.get('rehearsal_id') or ''}",
         actions=(_open_action(),),
         subject=(
@@ -1045,7 +1061,7 @@ def _compose_rehearsal_updated(ctx: MessageContext) -> MessageContent:
             else _("A rehearsal has changed")
         ),
         body=body or project,
-        url_path=_rehearsal_page_url(ctx),
+        url_path=_schedule_card_url(ctx),
         tag=f"rehearsal-updated:{m.get('rehearsal_id') or ''}",
         actions=(_open_action(),),
         subject=_("Rehearsal changed — %(project)s") % {"project": project},

@@ -573,8 +573,11 @@ class RehearsalPlanApiTests(APITestCase):
         self.assertEqual(manager.url_path, "/panel/rehearsals")
 
     def test_a_move_still_lands_on_the_schedule(self) -> None:
-        """Only the plan diff is redirected: an evening that actually moved is
-        about a date, and the date is read against every other one."""
+        """Only the plan diff is redirected to the evening's own page: an
+        evening that actually moved is about a date, and the date is read
+        against every other one. The schedule is handed the evening's id so it
+        can open on that card, which saves the reader the hunt without taking
+        the season off the screen."""
         from notifications.message_content import MessageContentBuilder
         from notifications.models import NotificationLevel, NotificationType
 
@@ -588,7 +591,9 @@ class RehearsalPlanApiTests(APITestCase):
             },
             is_manager=False,
         )
-        self.assertEqual(content.url_path, "/panel/schedule")
+        self.assertEqual(
+            content.url_path, f"/panel/schedule?rehearsal={self.rehearsal.id}",
+        )
 
     # --- reminder, calendar, statistics ------------------------------------
 
