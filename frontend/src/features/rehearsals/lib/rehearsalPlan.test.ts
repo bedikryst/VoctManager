@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
+  effectiveClocks,
   itemCallsSeat,
   planWindowForSeat,
   rowLines,
@@ -32,6 +33,7 @@ interface FixtureRow {
   readonly piece?: string;
   readonly label?: string;
   readonly time?: string;
+  readonly minutes?: number;
   readonly excluded?: readonly string[];
   readonly excludesInstrumentalists?: boolean;
   readonly isBreak?: boolean;
@@ -53,6 +55,8 @@ interface FixtureCase {
     readonly callsInstrumentalists: boolean;
   };
   readonly rows: readonly FixtureRow[];
+  /** Every row's effective clock; a clock on a row without `time` is derived. */
+  readonly clocks?: readonly (string | null)[];
   readonly expected: Readonly<
     Record<string, { readonly calls: readonly boolean[]; readonly window: FixtureWindow | null }>
   >;
@@ -81,6 +85,7 @@ const rowOf = (spec: FixtureRow): PlanRuleRow => {
   return {
     piece,
     startsAt: spec.time ?? null,
+    minutes: spec.minutes ?? null,
     lines: rowLines(piece === null ? [] : (fixture.pieces[piece] ?? [])),
     excludedLines: new Set(spec.excluded ?? []),
     excludesInstrumentalists: spec.excludesInstrumentalists ?? false,
@@ -93,6 +98,18 @@ describe("rehearsal plan rule — golden cases shared with the server", () => {
     "%s",
     (_name, testCase) => {
       const rows = testCase.rows.map(rowOf);
+      if (testCase.clocks) {
+        const clocks = effectiveClocks(rows, testCase.rehearsal.start);
+        expect(clocks.map((entry) => entry.clock), "clocks").toEqual(testCase.clocks);
+        expect(
+          clocks.map((entry) => entry.derived),
+          "derived",
+        ).toEqual(
+          testCase.clocks.map(
+            (clock, index) => clock !== null && testCase.rows[index]?.time === undefined,
+          ),
+        );
+      }
       for (const [seatKey, expected] of Object.entries(testCase.expected)) {
         const seatSpec = fixture.seats[seatKey];
         expect(seatSpec, `seat ${seatKey} is declared`).toBeDefined();

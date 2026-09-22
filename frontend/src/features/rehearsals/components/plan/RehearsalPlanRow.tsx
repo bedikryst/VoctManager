@@ -1,12 +1,15 @@
 /**
  * @file RehearsalPlanRow.tsx
- * @description One point of the evening's plan in the editor: grip, an
- * optional clock, what is rehearsed (a piece of the programme, or a typed
- * label for a warm-up), a one-line note under it, and who the point does
- * without. The clock is optional on purpose — "18:15 Orff / Lumen / Bach" is
- * three rows and one time, and a row without a clock flows under the last
- * clocked one. Nothing is validated against the rehearsal's window: ordering
- * carries the warning. The caption "woła 14 z 22" is the row's effect stated
+ * @description One point of the evening's plan in the editor: grip, a clock
+ * slot, what is rehearsed (a piece of the programme, or a typed label for a
+ * warm-up), its minutes, a one-line note under it, and who the point does
+ * without. The minutes are the conductor's estimate and the clocks follow
+ * from them, so a drag recomputes every time after it. The slot shows the
+ * row's effective clock: in ink when it is an anchor (a promise, typed or
+ * tapped), muted when it follows from the minutes above — a tap on it anchors
+ * it, clearing an anchor hands it back to the minutes — and a ghost
+ * "+ godz." only when nothing is known. Nothing is validated against the
+ * rehearsal's window: ordering carries the warning. The caption "woła 14 z 22" is the row's effect stated
  * in people, from the same rule the server calls with. A break is the same
  * row, muted and without exclusions: it calls nobody, so there is nobody to
  * leave out — its clock is where the people before it are released.
@@ -14,7 +17,7 @@
  * @module features/rehearsals/components/plan/RehearsalPlanRow
  */
 
-import React from "react";
+import React, { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Coffee, GripVertical, Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
@@ -25,11 +28,15 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
 import { TimeField } from "@/shared/ui/composites/DateTimeField";
-import { Caption } from "@/shared/ui/primitives/typography";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
 import type { VoiceLine } from "@/shared/types";
 import type { VoiceFamilyId } from "@/features/projects/lib/voiceFamilies";
+import type { EffectiveClock } from "../../lib/rehearsalPlan";
 import { VoiceExclusionChips } from "./VoiceExclusionChips";
 import type { PlanDraftRow, PlanEditor, PlanRowReading } from "./usePlanEditor";
+
+/** Minutes step by five: a round start then gives round clocks, with no rounding rule. */
+const MINUTES_STEP = 5;
 
 interface RehearsalPlanRowProps {
   readonly row: PlanDraftRow;
@@ -38,6 +45,9 @@ interface RehearsalPlanRowProps {
   readonly programOptions: readonly SelectOption[];
   /** The clock a first keystroke starts from on an empty time — the rehearsal's own. */
   readonly fallbackClock: string;
+  /** The row's effective clock, as the draft stands. */
+  readonly clock: EffectiveClock | undefined;
+  readonly onAnchor: (key: string) => void;
   readonly onUpdate: PlanEditor["updateRow"];
   readonly onToggleLine: (key: string, line: VoiceLine) => void;
   readonly onToggleFamily: (key: string, family: VoiceFamilyId) => void;
@@ -50,6 +60,8 @@ export const RehearsalPlanRow = ({
   calledTotal,
   programOptions,
   fallbackClock,
+  clock,
+  onAnchor,
   onUpdate,
   onToggleLine,
   onToggleFamily,
@@ -58,6 +70,21 @@ export const RehearsalPlanRow = ({
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: row.key });
+
+  // The field stays open while it holds focus, so clearing an anchor does
+  // not pull the field out from under the keyboard; it collapses on blur.
+  const clockId = useId();
+  const [clockOpen, setClockOpen] = useState(false);
+  const anchored = Boolean(row.starts_at);
+  const derivedClock = !anchored && clock?.derived ? clock.clock : null;
+  useEffect(() => {
+    if (clockOpen) document.getElementById(clockId)?.focus();
+  }, [clockOpen, clockId]);
+
+  const setMinutes = (raw: string): void => {
+    const parsed = Number.parseInt(raw, 10);
+    onUpdate(row.key, { minutes: Number.isFinite(parsed) && parsed > 0 ? parsed : null });
+  };
 
   return (
     <li
@@ -92,13 +119,48 @@ export const RehearsalPlanRow = ({
             <GripVertical size={14} aria-hidden="true" />
           </span>
 
-          <div className="w-28 shrink-0">
-            <TimeField
-              value={row.starts_at ?? ""}
-              onChange={(time) => onUpdate(row.key, { starts_at: time || null })}
-              fallback={fallbackClock}
-              ariaLabel={t("rehearsals.plan.row.time", "Godzina (opcjonalna)")}
-            />
+          {/* The slot keeps its width whatever it shows: the note's indent and
+              the column of clocks down the list depend on it. */}
+          <div className="w-28 shrink-0" onFocus={() => setClockOpen(true)}>
+            {anchored || clockOpen ? (
+              <TimeField
+                id={clockId}
+                value={row.starts_at ?? ""}
+                onChange={(time) => onUpdate(row.key, { starts_at: time || null })}
+                onBlur={() => setClockOpen(false)}
+                fallback={derivedClock ?? fallbackClock}
+                ariaLabel={t("rehearsals.plan.row.time", "Godzina (opcjonalna)")}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  if (derivedClock) onAnchor(row.key);
+                  setClockOpen(true);
+                }}
+                aria-label={
+                  derivedClock
+                    ? t("rehearsals.plan.row.anchor", "Ustal godzinę {{clock}}", {
+                        clock: derivedClock,
+                      })
+                    : t("rehearsals.plan.row.time", "Godzina (opcjonalna)")
+                }
+                className={cn(
+                  "flex min-h-11 w-full items-center justify-center rounded-control transition-colors",
+                  "hover:bg-ethereal-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+                )}
+              >
+                {derivedClock ? (
+                  <Text as="span" size="base" color="muted" className="tabular-nums">
+                    {derivedClock}
+                  </Text>
+                ) : (
+                  <Caption color="muted">
+                    {t("rehearsals.plan.row.add_time", "+ godz.")}
+                  </Caption>
+                )}
+              </button>
+            )}
           </div>
 
           <div className="min-w-0 flex-1">
@@ -138,15 +200,38 @@ export const RehearsalPlanRow = ({
             on a phone the width is worth more than the alignment. Ghost: the
             note waits to be asked. */}
         <div className="flex flex-col gap-2 sm:pl-38">
-          <Input
-            variant="ghost"
-            type="text"
-            value={row.note}
-            maxLength={200}
-            onChange={(event) => onUpdate(row.key, { note: event.target.value })}
-            placeholder={t("rehearsals.plan.row.note_placeholder", "Notatka: od t. 40, pierwsze czytanie…")}
-            aria-label={t("rehearsals.plan.row.note", "Notatka")}
-          />
+          {/* The minutes sit beside the note, not on the title line: on a
+              phone the title needs that width more. */}
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <Input
+                variant="ghost"
+                type="text"
+                value={row.note}
+                maxLength={200}
+                onChange={(event) => onUpdate(row.key, { note: event.target.value })}
+                placeholder={t("rehearsals.plan.row.note_placeholder", "Notatka: od t. 40, pierwsze czytanie…")}
+                aria-label={t("rehearsals.plan.row.note", "Notatka")}
+              />
+            </div>
+            <div className="flex w-24 shrink-0 items-center gap-1.5">
+              <Input
+                variant="ghost"
+                type="number"
+                inputMode="numeric"
+                min={MINUTES_STEP}
+                step={MINUTES_STEP}
+                value={row.minutes ?? ""}
+                onChange={(event) => setMinutes(event.target.value)}
+                placeholder="–"
+                aria-label={t("rehearsals.plan.row.minutes", "Minuty")}
+                className="text-center tabular-nums"
+              />
+              <Caption color="muted" aria-hidden="true">
+                {t("rehearsals.plan.row.minutes_unit", "min")}
+              </Caption>
+            </div>
+          </div>
           {row.is_break ? (
             <Caption color="muted" className="flex items-center gap-1.5">
               <Coffee size={12} aria-hidden="true" />

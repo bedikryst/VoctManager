@@ -37,6 +37,7 @@ from roster.domain.rehearsal_plan import (
     CANONICAL_LINES,
     PlanRow,
     PlanSeat,
+    effective_clocks,
     item_calls_seat,
     plan_window_for_seat,
     row_lines,
@@ -90,9 +91,23 @@ class RehearsalPlanContractTests(SimpleTestCase):
                     excluded_lines=frozenset(row.get("excluded", ())),
                     excludes_instrumentalists=bool(row.get("excludesInstrumentalists", False)),
                     is_break=bool(row.get("isBreak", False)),
+                    minutes=row.get("minutes"),
                 )
                 for row in case["rows"]
             ]
+            start = _clock(rehearsal["start"]) or time(0, 0)
+            if "clocks" in case:
+                with self.subTest(case=case["name"], clocks=True):
+                    clocks = effective_clocks(rows, start)
+                    self.assertEqual(
+                        [entry.clock for entry in clocks],
+                        [_clock(value) for value in case["clocks"]],
+                    )
+                    self.assertEqual(
+                        [entry.derived for entry in clocks],
+                        [value is not None and "time" not in row
+                         for value, row in zip(case["clocks"], case["rows"], strict=True)],
+                    )
             for handle, expected in case["expected"].items():
                 with self.subTest(case=case["name"], seat=handle):
                     seat = seats[handle]
@@ -106,7 +121,7 @@ class RehearsalPlanContractTests(SimpleTestCase):
                     self.assertEqual(calls, expected["calls"])
                     window = plan_window_for_seat(
                         rows, seat,
-                        start=_clock(rehearsal["start"]) or time(0, 0),
+                        start=start,
                         end=_clock(rehearsal["end"]),
                         calls_instrumentalists=rehearsal["callsInstrumentalists"],
                     )
@@ -1136,6 +1151,77 @@ class RehearsalPlanApiTests(APITestCase):
         self.client.patch(f"{self.plan_url}{same[0]['id']}/done/", {"done": True}, format="json")
         self.rehearsal.refresh_from_db()
         self.assertEqual(self.rehearsal.plan_changed_at, dropped)
+
+    # --- minutes (decision 23) ---------------------------------------------
+
+    def _florents_evening(self) -> list[dict]:
+        """"Lumen · 20 min · bez T, B", then "Orff · 30 min", no clock typed."""
+        return [
+            {"piece": str(self.pieces["lumen"].id), "minutes": 20,
+             "excluded_voice_lines": ["T1", "B1"]},
+            {"piece": str(self.pieces["orff"].id), "minutes": 30},
+        ]
+
+    def test_minutes_alone_set_the_tenors_arrival(self) -> None:
+        saved = self._put(self._florents_evening())
+        self.assertEqual(saved.status_code, 200, saved.data)
+        rows = saved.data["rows"]
+        self.assertEqual([row["minutes"] for row in rows], [20, 30])
+        self.assertEqual([row["starts_at"] for row in rows], [None, None])
+        self.assertEqual([row["clock"] for row in rows], ["18:00", "18:20"])
+        self.assertEqual([row["clock_derived"] for row in rows], [True, True])
+
+        self._publish()
+        data = self._read("tenor")
+        self.assertEqual([row["clock"] for row in data["plan"]], ["18:00", "18:20"])
+        self.assertEqual(
+            data["my_plan_window"], {"calls_me": True, "start": "18:20", "end": "21:00"},
+        )
+
+        # Orff dragged first: the arrival moves with nothing retyped.
+        self._put(list(reversed([
+            {"id": row["id"], "piece": row["piece"], "minutes": row["minutes"],
+             "excluded_voice_lines": row["excluded_voice_lines"]}
+            for row in rows
+        ])))
+        self.assertEqual(
+            self._read("tenor")["my_plan_window"],
+            {"calls_me": True, "start": "18:00", "end": "18:30"},
+        )
+
+    def test_an_anchor_is_a_clock_the_minutes_do_not_move(self) -> None:
+        rows = self._put([
+            {"piece": str(self.pieces["orff"].id), "minutes": 30},
+            {"piece": str(self.pieces["bach"].id), "starts_at": "19:00", "minutes": 15},
+            {"piece": str(self.pieces["lumen"].id)},
+        ]).data["rows"]
+        self.assertEqual([row["clock"] for row in rows], ["18:00", "19:00", "19:15"])
+        self.assertEqual([row["clock_derived"] for row in rows], [True, False, True])
+
+    def test_minutes_are_positive(self) -> None:
+        self.assertEqual(
+            self._put([{"piece": str(self.pieces["orff"].id), "minutes": 0}]).status_code, 400,
+        )
+
+    def test_a_minutes_edit_is_a_change_of_the_plan(self) -> None:
+        first = self._put(self._florents_evening())
+        stamp = first.data["plan_changed_at"]
+        edited = self._put([
+            {"id": row["id"], "piece": row["piece"],
+             "minutes": 25 if index == 0 else row["minutes"],
+             "excluded_voice_lines": row["excluded_voice_lines"]}
+            for index, row in enumerate(first.data["rows"])
+        ])
+        self.assertGreater(edited.data["plan_changed_at"], stamp)
+
+    def test_the_reminder_prints_anchors_not_the_budget(self) -> None:
+        self._put([
+            *self._florents_evening(),
+            {"piece": str(self.pieces["bach"].id), "starts_at": "19:00"},
+        ])
+        self._publish()
+        metadata = self._remind()[0]["metadata"]
+        self.assertEqual([row["time"] for row in metadata["plan"]], ["", "", "19:00"])
 
     def test_a_second_send_says_the_plan_changed(self) -> None:
         from django.utils import translation

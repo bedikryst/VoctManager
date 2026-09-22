@@ -1,8 +1,9 @@
 """
 @file rehearsal_plan.py
 @description The rehearsal plan as a rule: which rows of an ordered plan call a
-    given seat, how the rows fall into time blocks, the window one reader
-    is actually needed for, and whether a row was worked on. Pure — no ORM,
+    given seat, when each row starts (anchors and minutes), how the rows fall
+    into time blocks, the window one reader is actually needed for, and
+    whether a row was worked on. Pure — no ORM,
     and the clock is always an argument — so the serializer, the reminder and
     (through the shared golden cases) the client's exclusion chips all answer
     from one function and cannot disagree about who "bez B2" removes. A seat
@@ -20,7 +21,8 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
+from typing import Protocol
 
 from core.voice_labels import section_letters_of_voice_line
 
@@ -47,9 +49,11 @@ class PlanRow:
     """One row of the plan as the rule reads it.
 
     ``piece`` is an opaque key (the piece id as text, or ``None`` for a free
-    row) matched against the seat's ``cast_lines``. ``lines`` are the lines the
+    row) matched against the seat's ``cast_lines``. ``starts_at`` is the
+    conductor's anchor and ``minutes`` his estimate — the row's clock is
+    derived from both by :func:`effective_clocks`. ``lines`` are the lines the
     exclusions were chosen from — see :func:`row_lines`. A break still opens
-    a block when it carries a clock; it simply calls nobody. Whether a row is
+    a block when it has a clock; it simply calls nobody. Whether a row is
     reserve is not read here at all: a reserve row counts toward the window,
     which promises the worst case.
     """
@@ -60,6 +64,7 @@ class PlanRow:
     excluded_lines: frozenset[str]
     excludes_instrumentalists: bool
     is_break: bool = False
+    minutes: int | None = None
 
 
 @dataclass(frozen=True)
@@ -74,12 +79,22 @@ class PlanSeat:
 
 
 @dataclass(frozen=True)
-class PlanBlock:
-    """Consecutive rows sharing one effective clock. ``starts_at`` is ``None``
-    only for the rows before the first clocked row, which happen at the
-    rehearsal's own start."""
+class EffectiveClock:
+    """When one row starts, as far as the plan knows. ``clock`` is ``None``
+    when nothing fixes it — the row flows under the last clock above it.
+    ``derived`` is true when the clock follows from minutes (or is the
+    rehearsal's own start) rather than being an anchor the conductor typed."""
 
-    starts_at: time | None
+    clock: time | None
+    derived: bool
+
+
+@dataclass(frozen=True)
+class PlanBlock:
+    """Consecutive rows sharing one effective clock. The first row always has
+    one — its anchor, else the rehearsal's own start — so every block does."""
+
+    starts_at: time
     rows: tuple[int, ...]
 
 
@@ -132,21 +147,64 @@ def item_calls_seat(row: PlanRow, seat: PlanSeat, *, calls_instrumentalists: boo
     )
 
 
-def plan_blocks(rows: Sequence[PlanRow]) -> list[PlanBlock]:
+def _plus_minutes(clock: time, minutes: int) -> time:
+    return (datetime.combine(date(2000, 1, 1), clock) + timedelta(minutes=minutes)).time()
+
+
+class TimedRow(Protocol):
+    """Whatever carries an anchor and minutes — a rule row, or a stored row
+    read without the lines the call rule would need."""
+
+    @property
+    def starts_at(self) -> time | None: ...
+
+    @property
+    def minutes(self) -> int | None: ...
+
+
+def effective_clocks(rows: Sequence[TimedRow], start: time) -> list[EffectiveClock]:
+    """Every row's clock, in plan order.
+
+    An anchor (``starts_at``) wins — it is the promise, even when the minutes
+    above it add up to later. Otherwise a row starts at the previous row's
+    clock plus the previous row's minutes, when both are known; an unanchored
+    FIRST row starts at the rehearsal's start. Anything else flows
+    under the last clock (``clock=None``), and so does every row after it
+    until the next anchor. With no minutes anywhere, the clocks are the
+    anchors — the rule the plan had before minutes existed.
+    """
+    clocks: list[EffectiveClock] = []
+    following: time | None = start
+    for row in rows:
+        if row.starts_at is not None:
+            entry = EffectiveClock(clock=row.starts_at, derived=False)
+        elif following is not None:
+            entry = EffectiveClock(clock=following, derived=True)
+        else:
+            entry = EffectiveClock(clock=None, derived=False)
+        clocks.append(entry)
+        following = (
+            _plus_minutes(entry.clock, row.minutes)
+            if entry.clock is not None and row.minutes
+            else None
+        )
+    return clocks
+
+
+def plan_blocks(rows: Sequence[PlanRow], start: time) -> list[PlanBlock]:
     """Group the rows into blocks by effective clock, in the order they were
-    laid out: a row without a clock takes the clock of the last clocked row
-    before it, and the rows before the first clock form one block at the
-    rehearsal's start. Never sorted — ordering carries the warning, so a
-    clock earlier than its predecessor is still the next block."""
+    laid out: a row that flows under joins the block above it. Never sorted —
+    ordering carries the warning, so a clock earlier than its predecessor is
+    still the next block."""
     blocks: list[PlanBlock] = []
-    carried: time | None = None
+    carried = start
     current: list[int] = []
-    for index, row in enumerate(rows):
-        if row.starts_at is not None and row.starts_at != carried:
+    for index, entry in enumerate(effective_clocks(rows, start)):
+        if entry.clock is not None and entry.clock != carried:
             if current:
                 blocks.append(PlanBlock(starts_at=carried, rows=tuple(current)))
                 current = []
-            carried = row.starts_at
+            carried = entry.clock
         current.append(index)
     if current:
         blocks.append(PlanBlock(starts_at=carried, rows=tuple(current)))
@@ -164,13 +222,15 @@ def plan_window_for_seat(
     """The part of the evening ``seat`` is needed for, in the rehearsal's own
     wall clock.
 
-    Opens with the reader's first block and closes with the first block AFTER
+    Read off EVERY effective clock, derived ones included — never off the
+    subset a chorister is shown. Opens with the reader's first block and
+    closes with the first block AFTER
     their last one — a gap in the middle is not an end, nobody leaves and
     comes back — else with the rehearsal's end (``None`` when it was never
     timed: "od 19:00"). ``None`` when there is nothing to say: an empty plan,
     or a window equal to the whole rehearsal.
     """
-    blocks = plan_blocks(rows)
+    blocks = plan_blocks(rows, start)
     if not blocks:
         return None
     called = [
@@ -184,12 +244,9 @@ def plan_window_for_seat(
     if not mine:
         return PlanWindow(calls_me=False, start=None, end=None)
 
-    def clock(block: PlanBlock) -> time:
-        return block.starts_at if block.starts_at is not None else start
-
-    window_start = clock(blocks[mine[0]])
+    window_start = blocks[mine[0]].starts_at
     following = mine[-1] + 1
-    window_end = clock(blocks[following]) if following < len(blocks) else end
+    window_end = blocks[following].starts_at if following < len(blocks) else end
     if window_start == start and window_end == end:
         return None
     return PlanWindow(calls_me=True, start=window_start, end=window_end)
@@ -241,10 +298,13 @@ def row_done(
 __all__ = [
     "CANONICAL_LINES",
     "UNTIMED_EVENING_LENGTH",
+    "EffectiveClock",
     "PlanBlock",
     "PlanRow",
     "PlanSeat",
     "PlanWindow",
+    "TimedRow",
+    "effective_clocks",
     "evening_is_over",
     "item_calls_seat",
     "plan_blocks",

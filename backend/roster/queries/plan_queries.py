@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import time
+from datetime import datetime, time
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -28,6 +28,7 @@ from roster.domain.rehearsal_plan import (
     PlanRow,
     PlanSeat,
     PlanWindow,
+    effective_clocks,
     item_calls_seat,
     plan_window_for_seat,
     row_lines,
@@ -115,6 +116,7 @@ def plan_rows_of(
             excluded_lines=frozenset(item.excluded_voice_lines or ()),
             excludes_instrumentalists=item.excludes_instrumentalists,
             is_break=item.is_break,
+            minutes=item.minutes,
         )
         for item in items
     ]
@@ -125,6 +127,25 @@ def _wall_clock(rehearsal: Rehearsal) -> tuple[time, time | None]:
     end = localize(rehearsal.end_date_time, rehearsal.timezone)
     assert start is not None
     return start.time(), end.time() if end is not None else None
+
+
+def plan_row_context(
+    rehearsal: Rehearsal,
+    items: Sequence[RehearsalPlanItem],
+    now: datetime | None = None,
+) -> dict[str, object]:
+    """What `RehearsalPlanItemSerializer` needs to know about the plan as a
+    whole, computed once per rehearsal: whether the evening is over (`done`),
+    and every row's effective clock keyed by row id (`clock`). ``items`` is
+    the WHOLE plan in order, even when fewer rows are serialized — a clock
+    depends on every row above it."""
+    start, _end = _wall_clock(rehearsal)
+    return {
+        'plan_over': rehearsal.is_over(now),
+        'plan_clocks': dict(
+            zip((item.id for item in items), effective_clocks(items, start), strict=True)
+        ),
+    }
 
 
 def plan_readings_for_user(
@@ -306,6 +327,7 @@ __all__ = [
     "PlanReading",
     "plan_lines_for",
     "plan_readings_for_user",
+    "plan_row_context",
     "plan_rows_of",
     "plan_windows_for_seats",
 ]

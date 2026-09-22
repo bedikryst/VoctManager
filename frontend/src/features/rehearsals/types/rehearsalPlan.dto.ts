@@ -20,8 +20,10 @@ export interface RehearsalPlanRowDTO {
   piece: string | null;
   label: string;
   note: string;
-  /** "HH:MM" wall clock in the rehearsal's zone, or null for a row that flows. */
+  /** An anchor: "HH:MM" wall clock in the rehearsal's zone, or null (derived or flowing). */
   starts_at: string | null;
+  /** The conductor's estimate, positive; a break may carry it too. */
+  minutes: number | null;
   excluded_voice_lines: VoiceLine[];
   excludes_instrumentalists: boolean;
   is_reserve: boolean;

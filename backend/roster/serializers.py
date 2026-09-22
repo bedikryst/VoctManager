@@ -27,7 +27,7 @@ from roster.domain.liturgy import (
     ProgramItemPresentation,
     build_program_presentation,
 )
-from roster.domain.rehearsal_plan import row_done, window_payload
+from roster.domain.rehearsal_plan import EffectiveClock, row_done, window_payload
 
 from .dtos import validate_instrument
 from .models import (
@@ -45,7 +45,7 @@ from .models import (
     VoiceType,
 )
 from .permissions import live_delegate_q
-from .queries.plan_queries import PlanReading
+from .queries.plan_queries import PlanReading, plan_row_context
 
 # --- 1. ARTIST SERIALIZERS ---
 
@@ -433,12 +433,20 @@ class RehearsalPlanItemSerializer(serializers.ModelSerializer):
     client reads it rather than the stamps. It depends on whether the evening
     is over, which is one fact per rehearsal: the caller computes it once and
     passes `plan_over` in the context, so a list of rows never reaches back
-    to its rehearsal row by row."""
+    to its rehearsal row by row.
+
+    `clock` is the row's effective clock (`effective_clocks`) and
+    `clock_derived` whether it follows from minutes rather than an anchor;
+    `starts_at` stays the raw anchor the editor writes back. A clock depends
+    on every row above it, so the caller passes `plan_clocks` computed over
+    the whole plan (`plan_row_context`)."""
 
     piece_title = serializers.SerializerMethodField()
     title = serializers.CharField(read_only=True)
     # A wall clock, in the rehearsal's zone, in the shape the run sheet uses.
     starts_at = serializers.TimeField(format='%H:%M', read_only=True, allow_null=True)
+    clock = serializers.SerializerMethodField()
+    clock_derived = serializers.SerializerMethodField()
     done = serializers.SerializerMethodField()
 
     class Meta:
@@ -452,6 +460,9 @@ class RehearsalPlanItemSerializer(serializers.ModelSerializer):
             'title',
             'note',
             'starts_at',
+            'minutes',
+            'clock',
+            'clock_derived',
             'excluded_voice_lines',
             'excludes_instrumentalists',
             'is_reserve',
@@ -465,6 +476,19 @@ class RehearsalPlanItemSerializer(serializers.ModelSerializer):
 
     def get_piece_title(self, obj: RehearsalPlanItem) -> str | None:
         return str(obj.piece.title) if obj.piece_id and obj.piece else None
+
+    def _clock(self, obj: RehearsalPlanItem) -> EffectiveClock | None:
+        clocks = self.context.get('plan_clocks') or {}
+        entry = clocks.get(obj.id)
+        return entry if isinstance(entry, EffectiveClock) else None
+
+    def get_clock(self, obj: RehearsalPlanItem) -> str | None:
+        entry = self._clock(obj)
+        return entry.clock.strftime('%H:%M') if entry and entry.clock else None
+
+    def get_clock_derived(self, obj: RehearsalPlanItem) -> bool:
+        entry = self._clock(obj)
+        return bool(entry and entry.derived)
 
     def get_done(self, obj: RehearsalPlanItem) -> bool | None:
         return row_done(
@@ -627,8 +651,9 @@ class RehearsalSerializer(serializers.ModelSerializer):
     def get_plan(self, obj: Rehearsal) -> list[dict[str, Any]]:
         if not self._plan_shown(obj):
             return []
+        items = list(obj.plan_items.all())
         rows = RehearsalPlanItemSerializer(
-            obj.plan_items.all(), many=True, context={'plan_over': obj.is_over()},
+            items, many=True, context=plan_row_context(obj, items),
         ).data
         reading = self._plan_reading(obj)
         for index, row in enumerate(rows):

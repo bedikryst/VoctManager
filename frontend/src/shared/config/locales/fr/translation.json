@@ -4428,7 +4428,7 @@
       "loading": "Ouverture du plan…",
       "empty": {
         "title": "Pas encore de plan",
-        "desc": "Disposez les œuvres dans l'ordre de travail ; l'heure et les exclusions sont facultatives."
+        "desc": "Disposez les œuvres dans l'ordre de travail ; les minutes, les heures et les exclusions sont facultatives."
       },
       "fill": {
         "menu": "Remplir",
@@ -4474,8 +4474,13 @@
         "note_placeholder": "Note : à partir de la mesure 40, première lecture…",
         "calls": "convoque {{called}} sur {{total}}",
         "break_label": "Pause",
-        "break_hint": "Pause — ne convoque personne"
+        "break_hint": "Pause — ne convoque personne",
+        "anchor": "Fixer l'heure à {{clock}}",
+        "add_time": "+ heure",
+        "minutes": "Minutes",
+        "minutes_unit": "min"
       },
+      "end_line": "Fin de la répétition · {{clock}}",
       "exclude": {
         "instrumentalists": "Instrumentistes",
         "clear_one": "Rétablir : {{label}}",

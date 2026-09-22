@@ -1307,7 +1307,10 @@ def rehearsal_plan_lines(
     rehearsal: Rehearsal, now: datetime | None = None,
 ) -> list[dict[str, str | bool]]:
     """The plan as a message carries it: one entry per row, in plan order,
-    with its clock, its title, its note and whether it is reserve. Nothing
+    with its anchor, its title, its note and whether it is reserve. Only the
+    clock the conductor typed is printed, never one derived from minutes:
+    the choir is told promises, not the budget — the reader's own part of
+    the evening travels as the window, which reads every clock. Nothing
     while the plan is a draft (`Rehearsal.plan_is_public`) — the reminder
     must not publish what the conductor has not.
 
@@ -1910,6 +1913,9 @@ class RehearsalOperationsService:
                     'label': row.label,
                     'note': row.note,
                     'starts_at': row.starts_at,
+                    # A change of minutes moves derived clocks the choir
+                    # reads (their window), so it is a change of the plan.
+                    'minutes': row.minutes,
                     'excluded_voice_lines': list(row.excluded_voice_lines),
                     'excludes_instrumentalists': row.excludes_instrumentalists,
                     'is_reserve': row.is_reserve,

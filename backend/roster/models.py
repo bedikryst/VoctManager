@@ -1220,7 +1220,14 @@ class RehearsalPlanItem(models.Model):
     # "od t. 40 do końca, pierwsze czytanie" — what makes a title a plan a
     # chorister can prepare for.
     note = models.CharField(max_length=200, blank=True, verbose_name=_("Note"))
+    # An ANCHOR: a clock the conductor promised. Without one, the row's clock
+    # follows from the minutes above it (`effective_clocks`).
     starts_at = models.TimeField(null=True, blank=True, verbose_name=_("Starts At"))
+    # The conductor's estimate of the row's length. It is an input that
+    # survives reordering — a dragged row with a typed clock puts every time
+    # after it wrong, minutes recompute. The choir never sees the budget, only
+    # the clocks it produces.
+    minutes = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=_("Minutes"))
     # Voice LINES (`VoiceLine` codes), resolved through the piece's casting:
     # Florent's "bez B2" exists only per piece. A seat cast on the row's piece
     # is excluded by its own line; an uncast seat stays called as long as any

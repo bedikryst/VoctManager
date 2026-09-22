@@ -130,9 +130,9 @@ const PlanChecklist = ({
             ) : null;
           const label = (
             <span className="flex min-w-0 flex-1 items-baseline gap-2">
-              {row.starts_at && (
+              {row.clock && (
                 <Text as="span" size="sm" color="muted" className="shrink-0 tabular-nums">
-                  {row.starts_at}
+                  {row.clock}
                 </Text>
               )}
               <Text

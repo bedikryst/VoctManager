@@ -4418,7 +4418,7 @@
       "loading": "Opening the plan…",
       "empty": {
         "title": "No plan yet",
-        "desc": "Lay the pieces out in rehearsal order; a clock and exclusions are optional."
+        "desc": "Lay the pieces out in rehearsal order; minutes, times and exclusions are optional."
       },
       "fill": {
         "menu": "Fill",
@@ -4463,8 +4463,13 @@
         "note_placeholder": "Note: from bar 40, first reading…",
         "calls": "calls {{called}} of {{total}}",
         "break_label": "Break",
-        "break_hint": "Break — calls nobody"
+        "break_hint": "Break — calls nobody",
+        "anchor": "Fix the time at {{clock}}",
+        "add_time": "+ time",
+        "minutes": "Minutes",
+        "minutes_unit": "min"
       },
+      "end_line": "End of rehearsal · {{clock}}",
       "exclude": {
         "instrumentalists": "Instrumentalists",
         "clear_one": "Restore: {{label}}",

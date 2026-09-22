@@ -140,7 +140,7 @@ from .queries.materials_queries import (
     CLOSED_PROJECT_STATUSES,
     user_is_refused_instrumental,
 )
-from .queries.plan_queries import plan_readings_for_user
+from .queries.plan_queries import plan_readings_for_user, plan_row_context
 from .score_package_config import (
     book_binds_instrumental_item,
     books_binding_instrumental_items,
@@ -2272,13 +2272,13 @@ class RehearsalViewSet(viewsets.ModelViewSet):
                 )
 
         now = timezone.now()
-        items = (
+        items = list(
             RehearsalPlanItem.objects.filter(rehearsal=rehearsal).select_related('piece')
             if runs_evening or rehearsal.plan_is_public(now)
             else RehearsalPlanItem.objects.none()
         )
         rows = RehearsalPlanItemSerializer(
-            items, many=True, context={'plan_over': rehearsal.is_over(now)},
+            items, many=True, context=plan_row_context(rehearsal, items, now),
         ).data
         return Response({
             'rehearsal': str(rehearsal.id),
@@ -2322,7 +2322,9 @@ class RehearsalViewSet(viewsets.ModelViewSet):
                 validation_errors={"done": [str(exc)]},
             )
         return Response(
-            RehearsalPlanItemSerializer(item, context={'plan_over': rehearsal.is_over()}).data
+            RehearsalPlanItemSerializer(
+                item, context=plan_row_context(rehearsal, list(rehearsal.plan_items.all())),
+            ).data
         )
 
     @action(

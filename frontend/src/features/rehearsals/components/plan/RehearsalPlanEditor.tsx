@@ -1,8 +1,10 @@
 /**
  * @file RehearsalPlanEditor.tsx
  * @description The conductor's plan for one saved rehearsal: sortable rows
- * (piece, free label or break; optional clock, note, exclusions), a sortable
- * "Jeśli starczy czasu" divider with the reserve under it, three fills so the
+ * (piece, free label or break; minutes, a clock that follows from them or an
+ * anchor, note, exclusions), a sortable "Jeśli starczy czasu" divider with the
+ * reserve under it, an "end of rehearsal" line where the minutes run past a
+ * timed evening's end, three fills so the
  * evening is never laid out from zero (the whole programme; what the previous
  * rehearsal left undone; a copy of any other plan), an explicit save, and —
  * separately — publishing. A saved plan is a draft the choir does not see
@@ -128,6 +130,23 @@ const ReserveDivider = ({ hasReserve }: { hasReserve: boolean }): React.JSX.Elem
           )}
         />
       </div>
+    </li>
+  );
+};
+
+/**
+ * Where the running time passes the rehearsal's end: the rows under it are
+ * what the evening cannot fit. Not sortable and not a warning in words —
+ * the line and the ordering say it, next to the reserve divider.
+ */
+const EndOfRehearsalLine = ({ clock }: { clock: string }): React.JSX.Element => {
+  const { t } = useTranslation();
+  return (
+    <li className="flex items-center gap-2 px-4 py-2">
+      <Eyebrow color="muted" className="tabular-nums">
+        {t("rehearsals.plan.end_line", "Koniec próby · {{clock}}", { clock })}
+      </Eyebrow>
+      <span aria-hidden="true" className="h-px flex-1 border-t border-dashed border-ethereal-graphite/30" />
     </li>
   );
 };
@@ -398,7 +417,7 @@ export const RehearsalPlanEditor = ({
           title={t("rehearsals.plan.empty.title", "Bez planu")}
           description={t(
             "rehearsals.plan.empty.desc",
-            "Ułóż utwory w kolejności ćwiczenia; godzina i wykluczenia są opcjonalne.",
+            "Ułóż utwory w kolejności ćwiczenia; minuty, godziny i wykluczenia są opcjonalne.",
           )}
           actions={
             <Button
@@ -424,18 +443,24 @@ export const RehearsalPlanEditor = ({
                 const reading = editor.readings.get(key);
                 if (!row || !reading) return null;
                 return (
-                  <RehearsalPlanRow
-                    key={key}
-                    row={row}
-                    reading={reading}
-                    calledTotal={editor.calledTotal}
-                    programOptions={editor.programOptions}
-                    fallbackClock={fallbackClock}
-                    onUpdate={editor.updateRow}
-                    onToggleLine={editor.toggleLine}
-                    onToggleFamily={editor.toggleFamily}
-                    onRemove={editor.removeRow}
-                  />
+                  <React.Fragment key={key}>
+                    {key === editor.endLineBefore && editor.endClock && (
+                      <EndOfRehearsalLine clock={editor.endClock} />
+                    )}
+                    <RehearsalPlanRow
+                      row={row}
+                      reading={reading}
+                      calledTotal={editor.calledTotal}
+                      programOptions={editor.programOptions}
+                      fallbackClock={fallbackClock}
+                      clock={editor.clocks.get(key)}
+                      onAnchor={editor.anchorRow}
+                      onUpdate={editor.updateRow}
+                      onToggleLine={editor.toggleLine}
+                      onToggleFamily={editor.toggleFamily}
+                      onRemove={editor.removeRow}
+                    />
+                  </React.Fragment>
                 );
               })}
             </ul>

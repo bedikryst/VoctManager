@@ -1,7 +1,9 @@
 /**
  * @file RehearsalPlanTimeline.tsx
  * @description The plan as it is read, not edited: a gold spine, a clock
- * rubric where a row carries one, the title, the note under it, and a tick
+ * rubric where the reader is shown one (`shownClocks`: every effective clock
+ * for staff; anchors and the reader's own arrival and release for a
+ * chorister — promises, not the budget), the title, the note under it, and a tick
  * where the row was done (`done`, the server's one answer — never the
  * stamps). Rows that do not call the reader are dimmed and say so — the
  * reader's own window is the page's job, this only shows which rows made it.
@@ -17,7 +19,7 @@
  * @module features/rehearsals/components/plan/RehearsalPlanTimeline
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { Check } from "lucide-react";
@@ -25,6 +27,7 @@ import { Check } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import type { RehearsalPlanItem } from "@/shared/types";
+import { shownClocks } from "../../lib/rehearsalPlan";
 
 interface RehearsalPlanTimelineProps {
   readonly rows: readonly RehearsalPlanItem[];
@@ -43,6 +46,7 @@ export const RehearsalPlanTimeline = ({
   const { t } = useTranslation();
   const isStand = size === "stand";
   const firstReserve = rows.findIndex((row) => row.is_reserve);
+  const clocks = useMemo(() => shownClocks(rows), [rows]);
   const clockWidth = isStand ? "w-14" : "w-11";
   const indent = isStand ? "pl-5" : "pl-4";
 
@@ -98,7 +102,7 @@ export const RehearsalPlanTimeline = ({
                 color={isBreak ? "muted" : "default"}
                 className={cn("shrink-0 pt-0.5 text-right tabular-nums", clockWidth)}
               >
-                {row.starts_at ?? ""}
+                {clocks[index] ?? ""}
               </Text>
               {/* The spine is the content column's left rule, so it runs
                   exactly the rows' height; the dot hangs on it from the row it

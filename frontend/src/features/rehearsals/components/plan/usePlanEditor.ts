@@ -6,7 +6,8 @@
  * from zero (the whole programme; what the previous rehearsal left undone; a
  * copy of any other rehearsal's plan), and — for every row and every chip —
  * the number of people the exclusion actually removes, computed by the same
- * rule the server calls with (`lib/rehearsalPlan`). Nothing here talks to the
+ * rule the server calls with (`lib/rehearsalPlan`), and every row's effective
+ * clock from its anchor and the minutes above it. Nothing here talks to the
  * network beyond the one whole-list save; the draft is local until then.
  *
  * The reserve ("Jeśli starczy czasu") is a divider in the list, not a flag on
@@ -19,6 +20,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
+import { formatInTimeZone } from "date-fns-tz";
 
 import type {
   Piece,
@@ -31,9 +33,12 @@ import { scopedToEdition } from "@/features/archive/constants/divisiScope";
 import { voiceFamilyOf, type VoiceFamilyId } from "@/features/projects/lib/voiceFamilies";
 import { resolveInvited } from "../../lib/attendanceStats";
 import {
+  clockMinutes,
+  effectiveClocks,
   itemCallsSeat,
   planRowOf,
   planSeatOf,
+  type EffectiveClock,
   type PlanRuleRow,
 } from "../../lib/rehearsalPlan";
 import type { RehearsalPlanRead, RehearsalPlanRowDTO } from "../../types/rehearsalPlan.dto";
@@ -49,7 +54,10 @@ export interface PlanDraftRow {
   readonly piece: string | null;
   readonly label: string;
   readonly note: string;
+  /** An anchor: a clock the conductor promised. Null = derived from minutes, or flowing. */
   readonly starts_at: string | null;
+  /** The conductor's estimate; it survives a drag where a typed clock would not. */
+  readonly minutes: number | null;
   readonly excluded_voice_lines: readonly VoiceLine[];
   readonly excludes_instrumentalists: boolean;
   /** Calls nobody: no piece, no exclusions. Fixed when the row is added. */
@@ -108,6 +116,15 @@ export interface PlanEditor {
   readonly rows: readonly PlanDraftRow[];
   /** Rows from this index on are reserve; equal to `rows.length` when none are. */
   readonly reserveStart: number;
+  /** Every row's effective clock, by row key — the rule the server derives with. */
+  readonly clocks: ReadonlyMap<string, EffectiveClock>;
+  /**
+   * The row the "end of rehearsal" line stands above: the first row the
+   * evening cannot fit. Null when everything fits, or the evening is untimed.
+   */
+  readonly endLineBefore: string | null;
+  /** The rehearsal's end as a wall clock; null when it was never timed. */
+  readonly endClock: string | null;
   readonly readings: ReadonlyMap<string, PlanRowReading>;
   /** Seats the rehearsal calls — the denominator under every row. */
   readonly calledTotal: number;
@@ -124,6 +141,8 @@ export interface PlanEditor {
     key: string,
     patch: Partial<Omit<PlanDraftRow, "key" | "id" | "is_break">>,
   ) => void;
+  /** Turns a row's derived clock into an anchor at the same time. */
+  readonly anchorRow: (key: string) => void;
   readonly toggleLine: (key: string, line: VoiceLine) => void;
   readonly toggleFamily: (key: string, family: VoiceFamilyId) => void;
   readonly removeRow: (key: string) => void;
@@ -148,6 +167,7 @@ const blankRow = (patch: Partial<Omit<PlanDraftRow, "key" | "id">>): PlanDraftRo
   label: "",
   note: "",
   starts_at: null,
+  minutes: null,
   excluded_voice_lines: [],
   excludes_instrumentalists: false,
   is_break: false,
@@ -161,6 +181,7 @@ const draftRowOf = (item: RehearsalPlanItem): PlanDraftRow => ({
   label: item.label,
   note: item.note,
   starts_at: item.starts_at,
+  minutes: item.minutes,
   excluded_voice_lines: item.excluded_voice_lines,
   excludes_instrumentalists: item.excludes_instrumentalists,
   is_break: item.is_break,
@@ -175,12 +196,17 @@ const draftOf = (items: readonly RehearsalPlanItem[]): PlanDraft => {
   };
 };
 
-/** A copied row: same content, no clock, no verdict, no server identity. */
+/**
+ * A copied row: same content and minutes, no anchor, no verdict, no server
+ * identity. The estimate of a piece's length travels between evenings; a
+ * clock promised for one evening does not.
+ */
 const copyOf = (item: RehearsalPlanItem): PlanDraftRow =>
   blankRow({
     piece: item.piece,
     label: item.label,
     note: item.note,
+    minutes: item.minutes,
     excluded_voice_lines: item.excluded_voice_lines,
     excludes_instrumentalists: item.excludes_instrumentalists,
     is_break: item.is_break,
@@ -192,6 +218,7 @@ const rowDTO = (row: PlanDraftRow, isReserve: boolean): RehearsalPlanRowDTO => (
   label: row.piece ? "" : row.label.trim(),
   note: row.note.trim(),
   starts_at: row.starts_at || null,
+  minutes: row.minutes && row.minutes > 0 ? row.minutes : null,
   excluded_voice_lines: [...row.excluded_voice_lines],
   excludes_instrumentalists: row.excludes_instrumentalists,
   is_reserve: isReserve,
@@ -437,6 +464,58 @@ export const usePlanEditor = (
     return map;
   }, [rows, declaredLinesOf, countCalled, offersInstrumentalists, titleOf]);
 
+  /* ── Clocks ──────────────────────────────────────────────────────────── */
+
+  // The rehearsal's start and end as the wall clock its zone keeps — the
+  // same "HH:MM" the rows' anchors are written in.
+  const startClock = useMemo(
+    () => formatInTimeZone(rehearsal.date_time, rehearsal.timezone, "HH:mm"),
+    [rehearsal.date_time, rehearsal.timezone],
+  );
+  const endClock = useMemo(
+    () =>
+      rehearsal.duration_minutes && rehearsal.end_date_time
+        ? formatInTimeZone(rehearsal.end_date_time, rehearsal.timezone, "HH:mm")
+        : null,
+    [rehearsal.duration_minutes, rehearsal.end_date_time, rehearsal.timezone],
+  );
+
+  const clocks = useMemo(() => {
+    const entries = effectiveClocks(
+      rows.map((row) => ({ startsAt: row.starts_at || null, minutes: row.minutes })),
+      startClock,
+    );
+    const map = new Map<string, EffectiveClock>();
+    rows.forEach((row, index) => {
+      const entry = entries[index];
+      if (entry) map.set(row.key, entry);
+    });
+    return map;
+  }, [rows, startClock]);
+
+  // The first row that does not fit whole: it starts at or after the end, or
+  // its minutes run past it. Ordering carries the warning — no copy, no
+  // validation. An evening that crosses midnight reads its small-hour clocks
+  // as the next day; one that does not reads an anchor before the start as
+  // simply early.
+  const endLineBefore = useMemo(() => {
+    if (endClock === null) return null;
+    const startMinutes = clockMinutes(startClock);
+    const crossesMidnight = clockMinutes(endClock) < startMinutes;
+    const onEvening = (clock: string): number => {
+      const minutes = clockMinutes(clock);
+      return crossesMidnight && minutes < startMinutes ? minutes + 24 * 60 : minutes;
+    };
+    const end = onEvening(endClock);
+    for (const row of rows) {
+      const clock = clocks.get(row.key)?.clock;
+      if (!clock) continue;
+      const at = onEvening(clock);
+      if (at >= end || (row.minutes !== null && at + row.minutes > end)) return row.key;
+    }
+    return null;
+  }, [endClock, startClock, rows, clocks]);
+
   /* ── Sources for the fills ───────────────────────────────────────────── */
 
   const sources = useMemo<PlanSource[]>(
@@ -518,6 +597,17 @@ export const usePlanEditor = (
       }),
     );
   }, []);
+
+  // A tap on a derived clock promises it: the row keeps that time through
+  // every later drag. Clearing the anchor (`starts_at: null`) hands the row
+  // back to its minutes.
+  const anchorRow = useCallback(
+    (key: string) => {
+      const clock = clocks.get(key)?.clock;
+      if (clock) updateRow(key, { starts_at: clock });
+    },
+    [clocks, updateRow],
+  );
 
   const toggleLine = useCallback((key: string, line: VoiceLine) => {
     setDraft((current) =>
@@ -627,6 +717,9 @@ export const usePlanEditor = (
   return {
     rows,
     reserveStart,
+    clocks,
+    endLineBefore,
+    endClock,
     readings,
     calledTotal: seats.length,
     isDirty,
@@ -637,6 +730,7 @@ export const usePlanEditor = (
     addFreeRow,
     addBreakRow,
     updateRow,
+    anchorRow,
     toggleLine,
     toggleFamily,
     removeRow,

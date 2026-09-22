@@ -39,7 +39,10 @@ export const CANONICAL_LINES: readonly string[] = [
 /** One row as the rule reads it. `piece` is null for a free row. */
 export interface PlanRuleRow {
   readonly piece: string | null;
+  /** The conductor's anchor — a clock he promised. */
   readonly startsAt: string | null;
+  /** The conductor's estimate of the row's length; clocks follow from it. */
+  readonly minutes: number | null;
   /** The lines the exclusions were chosen from — see `rowLines`. */
   readonly lines: ReadonlySet<string>;
   readonly excludedLines: ReadonlySet<string>;
@@ -55,9 +58,19 @@ export interface PlanRuleSeat {
   readonly castLines: ReadonlyMap<string, string>;
 }
 
+/**
+ * When one row starts, as far as the plan knows. `clock` is null when nothing
+ * fixes it — the row flows under the last clock above it. `derived` is true
+ * when the clock follows from minutes (or is the rehearsal's own start).
+ */
+export interface EffectiveClock {
+  readonly clock: string | null;
+  readonly derived: boolean;
+}
+
 export interface PlanBlock {
-  /** Null only for the rows before the first clock — the rehearsal's own start. */
-  readonly startsAt: string | null;
+  /** The first row always has a clock (its anchor, else the start), so every block does. */
+  readonly startsAt: string;
   readonly rows: readonly number[];
 }
 
@@ -97,22 +110,63 @@ export const itemCallsSeat = (
   return false;
 };
 
+const MINUTES_PER_DAY = 24 * 60;
+
+/** Minutes past midnight of an "HH:MM" wall clock. */
+export const clockMinutes = (clock: string): number => {
+  const [hours = "0", minutes = "0"] = clock.split(":");
+  return Number(hours) * 60 + Number(minutes);
+};
+
+/** An "HH:MM" wall clock `minutes` later, wrapping at midnight like the server. */
+export const plusMinutes = (clock: string, minutes: number): string => {
+  const total = (((clockMinutes(clock) + minutes) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+};
+
 /**
- * Rows grouped by effective clock, in the order laid out — never sorted, so a
- * clock earlier than its predecessor is still the next block (ordering
- * carries the warning).
+ * Every row's clock, in plan order. An anchor wins — it is the promise, even
+ * when the minutes above it add up to later. Otherwise a row starts at the
+ * previous row's clock plus the previous row's minutes, when both are known;
+ * an unanchored FIRST row starts at the rehearsal's start. Anything else
+ * flows under the last clock (`clock: null`) until the next anchor.
  */
-export const planBlocks = (rows: readonly PlanRuleRow[]): PlanBlock[] => {
+export const effectiveClocks = (
+  rows: readonly { readonly startsAt: string | null; readonly minutes: number | null }[],
+  start: string,
+): EffectiveClock[] => {
+  const clocks: EffectiveClock[] = [];
+  let following: string | null = start;
+  for (const row of rows) {
+    const entry: EffectiveClock =
+      row.startsAt !== null
+        ? { clock: row.startsAt, derived: false }
+        : following !== null
+          ? { clock: following, derived: true }
+          : { clock: null, derived: false };
+    clocks.push(entry);
+    following =
+      entry.clock !== null && row.minutes ? plusMinutes(entry.clock, row.minutes) : null;
+  }
+  return clocks;
+};
+
+/**
+ * Rows grouped by effective clock, in the order laid out — a row that flows
+ * under joins the block above it. Never sorted, so a clock earlier than its
+ * predecessor is still the next block (ordering carries the warning).
+ */
+export const planBlocks = (rows: readonly PlanRuleRow[], start: string): PlanBlock[] => {
   const blocks: PlanBlock[] = [];
-  let carried: string | null = null;
+  let carried = start;
   let current: number[] = [];
-  rows.forEach((row, index) => {
-    if (row.startsAt !== null && row.startsAt !== carried) {
+  effectiveClocks(rows, start).forEach((entry, index) => {
+    if (entry.clock !== null && entry.clock !== carried) {
       if (current.length > 0) {
         blocks.push({ startsAt: carried, rows: current });
         current = [];
       }
-      carried = row.startsAt;
+      carried = entry.clock;
     }
     current.push(index);
   });
@@ -121,7 +175,8 @@ export const planBlocks = (rows: readonly PlanRuleRow[]): PlanBlock[] => {
 };
 
 /**
- * The part of the evening `seat` is needed for. Opens with the seat's first
+ * The part of the evening `seat` is needed for, read off EVERY effective
+ * clock — never off the subset a chorister is shown. Opens with the seat's first
  * block and closes with the first block AFTER its last one, else with the
  * rehearsal's end (`null` = never timed). `null` when there is nothing to say:
  * an empty plan, or the whole rehearsal.
@@ -135,7 +190,7 @@ export const planWindowForSeat = (
     readonly callsInstrumentalists: boolean;
   },
 ): PlanWindow | null => {
-  const blocks = planBlocks(rows);
+  const blocks = planBlocks(rows, rehearsal.start);
   if (blocks.length === 0) return null;
   const called = rows.map((row) => itemCallsSeat(row, seat, rehearsal.callsInstrumentalists));
   const mine: number[] = [];
@@ -144,17 +199,57 @@ export const planWindowForSeat = (
   });
   if (mine.length === 0) return { callsMe: false, start: null, end: null };
 
-  const clock = (block: PlanBlock): string => block.startsAt ?? rehearsal.start;
   const first = mine[0];
   const last = mine[mine.length - 1];
   if (first === undefined || last === undefined) return null;
   const firstBlock = blocks[first];
   if (!firstBlock) return null;
-  const windowStart = clock(firstBlock);
+  const windowStart = firstBlock.startsAt;
   const followingBlock = blocks[last + 1];
-  const windowEnd = followingBlock ? clock(followingBlock) : rehearsal.end;
+  const windowEnd = followingBlock ? followingBlock.startsAt : rehearsal.end;
   if (windowStart === rehearsal.start && windowEnd === rehearsal.end) return null;
   return { callsMe: true, start: windowStart, end: windowEnd };
+};
+
+/**
+ * Which clock each row shows a reader: the choir is told promises, not the
+ * budget. A reader with a seat reading (`calls_me` answered on the rows) sees
+ * the anchors, plus the clock where they arrive (the block their first called
+ * row falls in) and the one where they are released (the next clock after
+ * their last called row) — a gap in the middle is not a release. A reader
+ * with no reading (staff: `calls_me` null everywhere) sees every clock.
+ * Display only: the window is computed server-side from EVERY clock.
+ */
+export const shownClocks = (
+  rows: readonly {
+    readonly clock: string | null;
+    readonly clock_derived: boolean;
+    readonly calls_me?: boolean | null;
+  }[],
+): (string | null)[] => {
+  const personal = rows.some((row) => typeof row.calls_me === "boolean");
+  if (!personal) return rows.map((row) => row.clock);
+  const firstCalled = rows.findIndex((row) => row.calls_me === true);
+  let lastCalled = -1;
+  rows.forEach((row, index) => {
+    if (row.calls_me === true) lastCalled = index;
+  });
+  let arrival = -1;
+  for (let index = firstCalled; index >= 0; index -= 1) {
+    if (rows[index]?.clock) {
+      arrival = index;
+      break;
+    }
+  }
+  const release =
+    lastCalled === -1
+      ? -1
+      : rows.findIndex((row, index) => index > lastCalled && row.clock !== null);
+  return rows.map((row, index) => {
+    if (row.clock === null) return null;
+    if (!row.clock_derived || index === arrival || index === release) return row.clock;
+    return null;
+  });
 };
 
 /* ── From the panel's own payloads to the rule's shapes ──────────────────── */
@@ -193,6 +288,7 @@ export const planRowOf = (
   item: {
     readonly piece: string | null;
     readonly starts_at: string | null;
+    readonly minutes: number | null;
     readonly excluded_voice_lines: readonly string[];
     readonly excludes_instrumentalists: boolean;
     readonly is_break: boolean;
@@ -201,6 +297,7 @@ export const planRowOf = (
 ): PlanRuleRow => ({
   piece: item.piece,
   startsAt: item.starts_at,
+  minutes: item.minutes,
   lines: rowLines(item.piece === null ? [] : declaredLines),
   excludedLines: new Set(item.excluded_voice_lines),
   excludesInstrumentalists: item.excludes_instrumentalists,

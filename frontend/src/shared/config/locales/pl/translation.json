@@ -4465,7 +4465,7 @@
       "loading": "Otwieram plan…",
       "empty": {
         "title": "Bez planu",
-        "desc": "Ułóż utwory w kolejności ćwiczenia; godzina i wykluczenia są opcjonalne."
+        "desc": "Ułóż utwory w kolejności ćwiczenia; minuty, godziny i wykluczenia są opcjonalne."
       },
       "fill": {
         "menu": "Wypełnij",
@@ -4512,8 +4512,13 @@
         "note_placeholder": "Notatka: od t. 40, pierwsze czytanie…",
         "calls": "woła {{called}} z {{total}}",
         "break_label": "Przerwa",
-        "break_hint": "Przerwa — nikogo nie woła"
+        "break_hint": "Przerwa — nikogo nie woła",
+        "anchor": "Ustal godzinę {{clock}}",
+        "add_time": "+ godz.",
+        "minutes": "Minuty",
+        "minutes_unit": "min"
       },
+      "end_line": "Koniec próby · {{clock}}",
       "exclude": {
         "instrumentalists": "Instrumentaliści",
         "clear_one": "Przywróć: {{label}}",

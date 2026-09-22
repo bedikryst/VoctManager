@@ -738,6 +738,8 @@ class RehearsalPlanRowDTO(EnterpriseBaseDTO):
     label: str = Field(default='', max_length=120)
     note: str = Field(default='', max_length=200)
     starts_at: time | None = None
+    # A break may carry minutes: its length moves every clock after it.
+    minutes: int | None = Field(default=None, gt=0, le=600)
     excluded_voice_lines: tuple[str, ...] = Field(default_factory=tuple)
     excludes_instrumentalists: bool = False
     is_reserve: bool = False

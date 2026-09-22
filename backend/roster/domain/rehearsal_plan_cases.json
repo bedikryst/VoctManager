@@ -7,7 +7,9 @@
     "",
     "'pieces' maps a key to the lines the piece declares; an empty list means the",
     "piece declares nothing and reads as the canonical four-part set. A row without",
-    "'piece' is a free row and offers the canonical set too. 'isBreak' marks a",
+    "'piece' is a free row and offers the canonical set too. 'time' is an anchor and",
+    "'minutes' the conductor's estimate; the rule derives every row's clock from both.",
+    "'isBreak' marks a",
     "break, which calls nobody; 'isReserve' is carried for the record only — the",
     "rule ignores it on purpose, because a reserve row counts toward the window.",
     "'seats' carry the SATB letters a sectional calls them by, whether the seat is a",
@@ -18,7 +20,9 @@
     "'expected' per seat: 'calls' is one boolean per row; 'window' is null when the",
     "plan has nothing to say (empty plan, or the whole rehearsal), {callsMe: false}",
     "when no row calls the seat, else {callsMe: true, start, end} with end null for",
-    "an open end."
+    "an open end. 'clocks', when a case carries it, is every row's effective clock",
+    "in plan order (null = the row flows under the last clock); a clock on a row",
+    "without 'time' is derived."
   ],
   "pieces": {
     "orff": ["S1", "A1", "T1", "B1", "B2"],
@@ -224,6 +228,74 @@
       "expected": {
         "tenor": { "calls": [true, true], "window": null },
         "sopran": { "calls": [true, false], "window": { "callsMe": true, "start": "18:00", "end": "20:00" } }
+      }
+    },
+    {
+      "name": "minutes alone set the clocks",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "lumen", "minutes": 20, "excluded": ["T1", "B1"] },
+        { "piece": "orff", "minutes": 30 }
+      ],
+      "clocks": ["18:00", "18:20"],
+      "expected": {
+        "tenor": { "calls": [false, true], "window": { "callsMe": true, "start": "18:20", "end": "21:00" } },
+        "sopran": { "calls": [true, true], "window": null }
+      }
+    },
+    {
+      "name": "the same rows reordered move a section's part of the evening",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "orff", "minutes": 30 },
+        { "piece": "lumen", "minutes": 20, "excluded": ["T1", "B1"] }
+      ],
+      "clocks": ["18:00", "18:30"],
+      "expected": {
+        "tenor": { "calls": [true, false], "window": { "callsMe": true, "start": "18:00", "end": "18:30" } },
+        "sopran": { "calls": [true, true], "window": null }
+      }
+    },
+    {
+      "name": "an anchor mid-plan wins over the minutes above it",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "orff", "minutes": 30, "excluded": ["T1"] },
+        { "piece": "lumen", "minutes": 20 },
+        { "piece": "bach", "time": "19:00", "minutes": 15, "excluded": ["T1"] },
+        { "piece": "canon", "excluded": ["T1", "T2", "T3"] }
+      ],
+      "clocks": ["18:00", "18:30", "19:00", "19:15"],
+      "expected": {
+        "tenor": { "calls": [false, true, false, false], "window": { "callsMe": true, "start": "18:30", "end": "19:00" } }
+      }
+    },
+    {
+      "name": "a row without minutes mid-plan makes the rows after it flow under",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "orff", "minutes": 30, "excluded": ["A1"] },
+        { "piece": "lumen", "excluded": ["A1", "T1", "B1"] },
+        { "piece": "bach", "minutes": 20, "excluded": ["T1"] },
+        { "piece": "canon", "time": "19:30", "excluded": ["A1", "A2", "A3", "T1", "T2", "T3"] }
+      ],
+      "clocks": ["18:00", "18:30", null, "19:30"],
+      "expected": {
+        "tenor": { "calls": [true, false, false, false], "window": { "callsMe": true, "start": "18:00", "end": "18:30" } },
+        "alt": { "calls": [false, false, true, false], "window": { "callsMe": true, "start": "18:30", "end": "19:30" } }
+      }
+    },
+    {
+      "name": "a break's minutes move every clock after it",
+      "rehearsal": { "start": "19:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "orff", "minutes": 60 },
+        { "label": "Przerwa", "minutes": 15, "isBreak": true },
+        { "piece": "lumen", "minutes": 45, "excluded": ["T1", "B1"] }
+      ],
+      "clocks": ["19:00", "20:00", "20:15"],
+      "expected": {
+        "tenor": { "calls": [true, false, false], "window": { "callsMe": true, "start": "19:00", "end": "20:00" } }
       }
     },
     {

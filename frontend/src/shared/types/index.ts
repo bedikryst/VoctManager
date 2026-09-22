@@ -368,9 +368,10 @@ export interface Rehearsal extends BaseModel {
 /**
  * One row of a rehearsal's plan: a piece of the programme or a free label,
  * an optional wall clock, a one-line note, and the voice lines the row does
- * without. `starts_at` is "HH:MM" in the rehearsal's own zone; rows without
- * one flow under the last clocked row. Reserve rows ("Jeśli starczy czasu")
- * are a suffix of the plan; a break is a labelled row that calls nobody.
+ * without. `starts_at` is the conductor's anchor, "HH:MM" in the rehearsal's
+ * own zone; `clock` is the effective clock the server derives from anchors
+ * and minutes. Reserve rows ("Jeśli starczy czasu") are a suffix of the plan;
+ * a break is a labelled row that calls nobody.
  */
 export interface RehearsalPlanItem {
   id: string;
@@ -381,7 +382,19 @@ export interface RehearsalPlanItem {
   /** The piece's title or the label — whichever the row is. */
   title: string;
   note: string;
+  /** The anchor the conductor typed — the editor's raw input. */
   starts_at: string | null;
+  /** The conductor's estimate. Staff-side: the choir is shown clocks, never the budget. */
+  minutes: number | null;
+  /**
+   * When the row starts: the anchor, else derived from the minutes above it;
+   * null when the row flows under the last clock. A chorister surface shows a
+   * subset of these (anchors and the reader's own flips) — the window is
+   * computed server-side from all of them, never from what is shown.
+   */
+  clock: string | null;
+  /** True when `clock` follows from minutes (or is the rehearsal's start), not an anchor. */
+  clock_derived: boolean;
   excluded_voice_lines: VoiceLine[];
   excludes_instrumentalists: boolean;
   is_reserve: boolean;
