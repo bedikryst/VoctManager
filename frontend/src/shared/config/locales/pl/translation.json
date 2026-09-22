@@ -2191,6 +2191,7 @@
         "copy_desk": "Redakcja tekstów serwisu",
         "copy_desk_short": "Redakcja",
         "logout": "Wyloguj",
+        "notes": "Notatki",
         "open_menu": "Menu",
         "pin": "Przypnij panel",
         "settings": "Ustawienia",
@@ -2200,6 +2201,7 @@
         "actions": {
           "mark_attendance": "Oznacz obecność",
           "new_artist": "Nowy artysta",
+          "new_note": "Nowa notatka",
           "new_project": "Nowy projekt",
           "open_copy_desk": "Redakcja tekstów serwisu",
           "report_absence": "Zgłoś nieobecność"
@@ -2256,6 +2258,7 @@
         "materials": "Materiały",
         "messages": "Czat",
         "more": "Więcej",
+        "notes": "Notatki",
         "projects": "Projekty",
         "schedule": "Kalendarz"
       },
@@ -5662,6 +5665,38 @@
       "patch_rows_many": "zmian",
       "patch_note": "Pierwsze polecenie tylko pokazuje, co wpisze; drugie wpisuje. Potem git diff, commit i wdrożenie — dopiero to zmienia serwis.",
       "patch_since": "Najstarsza decyzja czeka od: {{when}}."
+    }
+  },
+  "notes": {
+    "panel": {
+      "title": "Notatki",
+      "pin": "Przypnij",
+      "unpin": "Odepnij"
+    },
+    "composer": {
+      "placeholder": "Nowa notatka…",
+      "aria_label": "Nowa notatka"
+    },
+    "row": {
+      "mark_done": "Odhacz",
+      "mark_open": "Cofnij ukończenie",
+      "edit_body": "Treść notatki"
+    },
+    "completed": {
+      "toggle_one": "Ukończone ({{count}})",
+      "toggle_few": "Ukończone ({{count}})",
+      "toggle_many": "Ukończone ({{count}})"
+    },
+    "errors": {
+      "empty": "Notatka nie może być pusta."
+    },
+    "error": {
+      "title": "Nie udało się wczytać notatek",
+      "description": "Twoje wpisy są bezpieczne. Spróbujemy ponownie, gdy wróci połączenie."
+    },
+    "empty": {
+      "title": "Pusty notatnik",
+      "description": "Zapisz coś, o czym nie chcesz zapomnieć — telefon, wiadomość do napisania."
     }
   }
 }

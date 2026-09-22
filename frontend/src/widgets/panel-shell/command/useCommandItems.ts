@@ -25,6 +25,7 @@ import {
   Monitor,
   Moon,
   Music,
+  NotebookPen,
   Sun,
   User,
   type LucideIcon,
@@ -45,6 +46,7 @@ import type { MaterialsDashboardItem } from "@/features/materials/types/material
 
 import { useTheme } from "@/shared/theme/useTheme";
 import type { ThemePreference } from "@/shared/theme/themeController";
+import { useNotesPanel } from "@/features/notes/hooks/useNotesPanel";
 
 import { useNavigationAura } from "../hooks/useNavigationAura";
 import { foldSearchText } from "../lib/navSearch";
@@ -75,12 +77,19 @@ export interface CommandItem {
    */
   readonly to?: string;
   /**
-   * Performs the row's effect in place rather than navigating, and leaves the
-   * palette OPEN. That is the point for a preference: the palette is the only
-   * surface where a theme can be judged against real content behind it, so
-   * closing on select would hide the thing being chosen.
+   * Performs the row's effect in place rather than navigating, and by default
+   * leaves the palette OPEN. That is the point for a preference: the palette is
+   * the only surface where a theme can be judged against real content behind
+   * it, so closing on select would hide the thing being chosen.
    */
   readonly run?: () => void;
+  /**
+   * Set by a `run` row whose effect is a surface of its own. The palette is a
+   * full-screen `z-focus-trap` overlay: a panel opened underneath it is not
+   * "behind the dialog" the way a repainted page is — it is invisible, and it
+   * loses the keyboard to the palette that is still listening.
+   */
+  readonly closeOnRun?: boolean;
   readonly keywords: string;
   readonly isCurrent?: boolean;
   readonly projectId?: string;
@@ -121,6 +130,7 @@ export const useCommandItems = (
   const location = useLocation();
   const { favorites, recents } = useProjectQuickAccess();
   const { preference, setPreference } = useTheme();
+  const { openToCompose } = useNotesPanel();
 
   // Project + artist search is a manager affordance — a chorister may not read
   // either collection. Fetch only once the palette is opened.
@@ -377,6 +387,27 @@ export const useCommandItems = (
     });
   }, [preference, setPreference, t]);
 
+  // The scratchpad's quick-capture row. Its own memo — `run` rather than
+  // `to` (a dedicated section, not a loosened `to` on `COMMAND_ACTIONS`,
+  // which every other action row still requires) — and unlike `themeItems`
+  // it stays visible in the resting list: jotting something down is exactly
+  // the kind of quick action a command palette exists for, not a preference
+  // set once per device.
+  const noteItems = useMemo<CommandItem[]>(() => {
+    const label = t("dashboard.layout.command.actions.new_note", "Nowa notatka");
+    return [
+      {
+        id: "action:new_note",
+        kind: "action" as const,
+        label,
+        icon: NotebookPen,
+        run: openToCompose,
+        closeOnRun: true,
+        keywords: foldSearchText(label),
+      },
+    ];
+  }, [openToCompose, t]);
+
   // Rows → sections. The only query-dependent work in the hook.
   return useMemo<CommandItemsResult>(() => {
     const {
@@ -392,11 +423,12 @@ export const useCommandItems = (
     const sections: CommandSection[] = [];
 
     if (tokens.length === 0) {
-      if (actionItems.length > 0) {
+      const restingActionItems = [...noteItems, ...actionItems];
+      if (restingActionItems.length > 0) {
         sections.push({
           id: "actions",
           titleKey: "dashboard.layout.command.sections.actions",
-          items: actionItems,
+          items: restingActionItems,
         });
       }
 
@@ -438,7 +470,7 @@ export const useCommandItems = (
       const projectMatches = projectItems.filter(matches).slice(0, SEARCH_RESULT_CAP);
       const pieceMatches = pieceItems.filter(matches).slice(0, SEARCH_RESULT_CAP);
       const artistMatches = artistItems.filter(matches).slice(0, SEARCH_RESULT_CAP);
-      const actionMatches = actionItems.filter(matches);
+      const actionMatches = [...noteItems, ...actionItems].filter(matches);
 
       if (navMatches.length > 0) {
         sections.push({
@@ -487,5 +519,5 @@ export const useCommandItems = (
 
     const flatItems = sections.flatMap((section) => [...section.items]);
     return { sections, flatItems };
-  }, [favorites, query, recents, sources, themeItems]);
+  }, [favorites, noteItems, query, recents, sources, themeItems]);
 };

@@ -2172,6 +2172,7 @@
         "copy_desk": "Rédaction des textes du site",
         "copy_desk_short": "Rédaction",
         "logout": "Déconnexion",
+        "notes": "Notes",
         "open_menu": "Menu",
         "pin": "Épingler le panneau",
         "settings": "Paramètres",
@@ -2181,6 +2182,7 @@
         "actions": {
           "mark_attendance": "Marquer la présence",
           "new_artist": "Nouvel artiste",
+          "new_note": "Nouvelle note",
           "new_project": "Nouveau projet",
           "open_copy_desk": "Rédaction des textes du site",
           "report_absence": "Signaler une absence"
@@ -2237,6 +2239,7 @@
         "materials": "Matériel",
         "messages": "Chat",
         "more": "Plus",
+        "notes": "Notes",
         "projects": "Projets",
         "schedule": "Agenda"
       },
@@ -5604,6 +5607,37 @@
       "patch_rows_other": "modifications",
       "patch_note": "La première commande montre seulement ce qu'elle écrirait ; la seconde l'écrit. Ensuite git diff, commit et déploiement — c'est cela qui change le site.",
       "patch_since": "La plus ancienne décision attend depuis : {{when}}."
+    }
+  },
+  "notes": {
+    "panel": {
+      "title": "Notes",
+      "pin": "Épingler",
+      "unpin": "Détacher"
+    },
+    "composer": {
+      "placeholder": "Nouvelle note…",
+      "aria_label": "Nouvelle note"
+    },
+    "row": {
+      "mark_done": "Cocher",
+      "mark_open": "Annuler la fin",
+      "edit_body": "Contenu de la note"
+    },
+    "completed": {
+      "toggle_one": "Terminées ({{count}})",
+      "toggle_other": "Terminées ({{count}})"
+    },
+    "errors": {
+      "empty": "Une note ne peut pas être vide."
+    },
+    "error": {
+      "title": "Impossible de charger vos notes",
+      "description": "Vos entrées sont en sécurité. Nous réessaierons dès le retour de la connexion."
+    },
+    "empty": {
+      "title": "Bloc-notes vide",
+      "description": "Notez quelque chose que vous ne voulez pas oublier — un appel à passer, un message à écrire."
     }
   }
 }

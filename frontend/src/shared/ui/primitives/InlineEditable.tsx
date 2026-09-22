@@ -91,6 +91,13 @@ export interface InlineEditableProps {
   /** When true, the empty input shows the placeholder dimmed instead of "—". */
   readonly emptyDisplay?: string;
   readonly className?: string;
+  /**
+   * Swaps the `<input>` for a `<textarea>` that keeps line breaks. Enter no
+   * longer commits (it inserts a newline, the control's native behaviour) —
+   * Escape still cancels, blur still commits, and Ctrl/Cmd+Enter commits
+   * explicitly for a keyboard-only save.
+   */
+  readonly multiline?: boolean;
 }
 
 export const InlineEditable = ({
@@ -104,12 +111,13 @@ export const InlineEditable = ({
   disabled = false,
   emptyDisplay,
   className,
+  multiline = false,
 }: InlineEditableProps): React.JSX.Element => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [draft, setDraft] = useState<string>(value == null ? "" : String(value));
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -119,11 +127,21 @@ export const InlineEditable = ({
   }, [value, isEditing]);
 
   useEffect(() => {
-    if (isEditing) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
+    if (!isEditing) return;
+    const field = inputRef.current;
+    if (!field) return;
+    field.focus();
+    // Select-all is right for a short value being replaced — a title, a number.
+    // On a multiline body it means the first keystroke wipes a paragraph the
+    // reader opened in order to add a line to, so there the caret goes to the
+    // end instead.
+    if (multiline) {
+      const end = field.value.length;
+      field.setSelectionRange(end, end);
+      return;
     }
-  }, [isEditing]);
+    field.select();
+  }, [isEditing, multiline]);
 
   const exit = useCallback(() => {
     setIsEditing(false);
@@ -185,7 +203,10 @@ export const InlineEditable = ({
           label: ariaLabel,
         })}
         className={cn(
-          "group/edit inline-flex items-baseline gap-1.5 rounded-chip py-0.5 text-left transition-colors",
+          "group/edit rounded-chip py-0.5 text-left transition-colors",
+          multiline
+            ? "flex w-full items-start gap-1.5"
+            : "inline-flex items-baseline gap-1.5",
           !disabled && "hover:bg-ethereal-gold/10 hover:text-ethereal-ink cursor-text",
           isEmpty && "text-ethereal-graphite/60 italic",
           variant === "title" && "text-base",
@@ -199,61 +220,113 @@ export const InlineEditable = ({
             `variant` axis, so the label reads at whatever scale it sits in.
             Family and weight cannot travel that way — see
             `inlineEditableTextProps`. */}
-        <Text as="span" size={null} color="inherit" {...inlineEditableTextProps(variant)}>
+        <Text
+          as="span"
+          size={null}
+          color="inherit"
+          className={multiline ? "whitespace-pre-wrap" : undefined}
+          {...inlineEditableTextProps(variant)}
+        >
           {displayText}
         </Text>
         <Pencil
           size={11}
           aria-hidden="true"
-          className="shrink-0 opacity-0 transition-opacity group-hover/edit:opacity-60"
+          className={cn(
+            "shrink-0 opacity-0 transition-opacity group-hover/edit:opacity-60",
+            // Single-line sits on the baseline the glyph already shares; a
+            // multiline block is `items-start`, where the icon needs nudging
+            // down to the first line's optical centre.
+            multiline && "mt-1",
+          )}
         />
       </button>
     );
   }
 
+  const handleKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      cancel();
+      return;
+    }
+    if (multiline) {
+      // Enter inserts a newline (the textarea's own behaviour); only an
+      // explicit Ctrl/Cmd+Enter commits, so a note keeps its line breaks.
+      if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        void commit(draft);
+      }
+      return;
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      void commit(draft);
+    }
+  };
+
+  const handleBlur = (
+    event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const next = event.relatedTarget as HTMLElement | null;
+    if (next?.dataset.inlineEditAction) return;
+    void commit(draft);
+  };
+
+  // The surface comes from the shell like every other field in the product (D4)
+  // — this was the last hand-rolled copy of the gold hairline and the focus
+  // ring, and it had drifted to a 1px ring on a chip radius. Only layout and
+  // the local type scale are added here.
+  const fieldClassName = cn(
+    fieldShellVariants({ variant: "glass", hasError: Boolean(error) }),
+    "rounded-chip px-1.5 py-0.5",
+    multiline ? "w-full resize-none" : "w-auto",
+    variant === "title" && "font-semibold text-base",
+    variant === "display" && "font-serif font-semibold text-2xl tracking-tight",
+    variant === "subtitle" && "font-serif italic text-base",
+    variant === "subtle" && FIELD_TEXT_SCALE.xs,
+    className,
+  );
+
   return (
     <span
-      className="inline-flex items-center gap-1.5"
+      className={cn(
+        multiline ? "flex w-full items-start gap-1.5" : "inline-flex items-center gap-1.5",
+      )}
       onClick={(event) => event.stopPropagation()}
     >
-      <input
-        ref={inputRef}
-        type={type}
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            void commit(draft);
-          } else if (event.key === "Escape") {
-            event.preventDefault();
-            cancel();
-          }
-        }}
-        onBlur={(event) => {
-          const next = event.relatedTarget as HTMLElement | null;
-          if (next?.dataset.inlineEditAction) return;
-          void commit(draft);
-        }}
-        disabled={isSaving}
-        placeholder={placeholder}
-        aria-label={ariaLabel}
-        aria-invalid={error !== null}
-        // The surface comes from the shell like every other field in the
-        // product (D4) — this was the last hand-rolled copy of the gold
-        // hairline and the focus ring, and it had drifted to a 1px ring on a
-        // chip radius. Only layout and the local type scale are added here.
-        className={cn(
-          fieldShellVariants({ variant: "glass", hasError: Boolean(error) }),
-          "w-auto rounded-chip px-1.5 py-0.5",
-          variant === "title" && "font-semibold text-base",
-          variant === "display" && "font-serif font-semibold text-2xl tracking-tight",
-          variant === "subtitle" && "font-serif italic text-base",
-          variant === "subtle" && FIELD_TEXT_SCALE.xs,
-          className,
-        )}
-        style={{ width: `${Math.max(draft.length + 2, 8)}ch` }}
-      />
+      {multiline ? (
+        <textarea
+          ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          disabled={isSaving}
+          placeholder={placeholder}
+          aria-label={ariaLabel}
+          aria-invalid={error !== null}
+          rows={3}
+          className={fieldClassName}
+        />
+      ) : (
+        <input
+          ref={inputRef as React.RefObject<HTMLInputElement>}
+          type={type}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          disabled={isSaving}
+          placeholder={placeholder}
+          aria-label={ariaLabel}
+          aria-invalid={error !== null}
+          className={fieldClassName}
+          style={{ width: `${Math.max(draft.length + 2, 8)}ch` }}
+        />
+      )}
       <button
         type="button"
         data-inline-edit-action="save"

@@ -48,7 +48,8 @@ export type OfflineWriteKind =
   | "readiness"
   | "attendance"
   | "feedback"
-  | "annotation";
+  | "annotation"
+  | "note";
 
 /** A deferred mutation captured while offline, replayed verbatim on reconnect. */
 export interface QueuedWrite {

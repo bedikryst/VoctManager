@@ -287,6 +287,7 @@ export const flushOfflineQueue = async (
   let flushed = 0;
   let rejected = 0;
   let letGoOfMarks = false;
+  let letGoOfNotes = false;
 
   for (const write of [...queue]) {
     try {
@@ -299,6 +300,7 @@ export const flushOfflineQueue = async (
       rejected += 1;
     }
     if (write.kind === "annotation") letGoOfMarks = true;
+    if (write.kind === "note") letGoOfNotes = true;
   }
 
   if (flushed > 0 || rejected > 0) {
@@ -321,6 +323,20 @@ export const flushOfflineQueue = async (
   if (letGoOfMarks) {
     await queryClient.invalidateQueries({
       queryKey: ["annotations"],
+      refetchType: "all",
+    });
+  }
+
+  // Notes: a replayed create returns 201 even for a row that was soft-deleted
+  // offline in the meantime, and a replayed edit returns the row's stored
+  // body rather than the queued one — see `notes.queries.ts`. The queue was
+  // the list's source of truth while it held these writes, so the moment it
+  // lets go the server's answer has to be re-read, `refetchType: "all"` for
+  // the same reason as marks: the queue is empty by the time the reader is
+  // back at the panel, and a merely-stale cache would defer past that.
+  if (letGoOfNotes) {
+    await queryClient.invalidateQueries({
+      queryKey: ["notes"],
       refetchType: "all",
     });
   }

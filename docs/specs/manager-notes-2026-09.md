@@ -1,9 +1,12 @@
 # Personal notes — specification
 
-Status: **Stage 1 (backend) built and audited 2026-09-22 — uncommitted, `make migrate` still
-pending in every environment. Stage 2 (frontend) not started.** Written 2026-09-22 from Florent de
-Bazelaire's request ("a mini notepad / to-do list — somewhere to jot: call X, write to X,
-remember Y").
+Status: **Stage 1 (backend) built, audited and committed (`3bcb9ad`). `make migrate`
+(`core/0027_note`) has been run on dev only; staging/prod still pending. Stage 2 (frontend) built
+2026-09-22, audited 2026-09-22 (the audit failed it), remediated the same day — uncommitted, still
+unreviewed by the developer in a browser. Four deviations from the letter of this spec, plus three
+places where the spec's own premise turned out to be wrong — see "Stage 2 — audit and remediation".**
+Written 2026-09-22 from Florent de Bazelaire's request ("a mini notepad / to-do list — somewhere to
+jot: call X, write to X, remember Y").
 
 A private scratchpad living inside the panel shell. One flat list of short entries, each with a
 done state. Reachable from every panel route without navigating away from the current page.
@@ -176,7 +179,21 @@ compose features; the feature never imports the shell.
   therefore not a promise that the note is visible: treat the list response as the truth and let
   the reconcile drop the optimistic row, or it will flash back in and vanish on the next refetch.
 - Add `"note"` to the `OfflineWriteKind` union in `app/store/useOfflineStore.ts`.
+- **An offline write must reach the editor as a success.** `onError` keeps the optimistic patch and
+  queues the write, but the mutation promise still rejects — and `InlineEditable` reports a rejected
+  `onSave` as a failure and stays in edit mode. So a body edit with no signal announced that it had
+  failed, in the one scenario this whole design exists for. `useSaveNoteBody` is the seam: it
+  swallows exactly `isLikelyOfflineError` and rethrows everything else, so a real 400 or 404 still
+  shows its message. The offline semantics stay in the api layer, not in the row.
+- **A failed list read must not render as an empty notepad.** `isError` with nothing cached gets its
+  own `StatePanel` (`tone="danger"`). "Nothing here" is a statement about the reader's own notes, and
+  by this spec's own argument a scratchpad that makes it once stops being consulted. No retry button:
+  `RECONCILING_REFETCH` re-reads on focus, reconnect and next mount.
 - Bump the query cache buster (DTO change).
+  **Deviation, 2026-09-22:** not bumped, deliberately. `["notes"]` is a new key, so no persisted
+  snapshot can hold a stale shape of it — the bump would evict every *other* feature's offline
+  snapshot to fix nothing. This item is the checklist being followed by rote; the rule it comes from
+  (`reference_query_cache_buster`) is about a *changed* DTO.
 
 ### Row
 
@@ -188,11 +205,35 @@ compose features; the feature never imports the shell.
 - Expanded: full body plus an inline editor (`shared/ui/primitives/InlineEditable.tsx`) and the
   delete action. Delete is reachable only from the expanded state — four targets in a 44 px row is
   one too many on a phone.
-- **Hit areas:** the checkbox is its own button with `stopPropagation` on click *and* keydown
-  (space bubbles to the row otherwise); the body is the expand toggle; nothing else in the row is
-  interactive. `aria-expanded` on the row, `aria-pressed` on the checkbox.
-- Expansion animates via `grid-template-rows: 0fr → 1fr` in CSS, one row at a time. Framer-motion
-  is restricted to transform/opacity here and cannot animate height.
+  **Build note:** `InlineEditable` was single-line only (`<input>`, Enter always commits — an HTML
+  input cannot hold a newline at all, including a pasted one). That is incompatible with "line
+  breaks preserved," so it gained a `multiline` prop (`<textarea>`, Enter inserts a newline,
+  Ctrl/Cmd+Enter commits, blur still commits) rather than the note row hand-rolling a second editor.
+  Scoped and additive — `InlineEditableProps` only grew a prop, the existing single-line behaviour
+  and `InlineEditable.test.ts` are untouched — but it is a change to a shared primitive outside
+  `features/notes/`, done without stopping to ask, so it is named here explicitly.
+- **Hit areas:** the row is the expand toggle, so it is a `role="button"` carrying its own controls.
+  Keyboard activation goes through `onActivate` from `shared/lib/dom/a11y.ts` — the SSOT for exactly
+  this shape — which acts only on a keystroke aimed at the row itself. A hand-rolled `onKeyDown`
+  gets this wrong in both directions: it misses Space (a `role="button"` owes both keys) and it
+  fires on Enter bubbling up from the checkbox, so one keypress both ticks the note and folds the
+  row. The checkbox and the delete button stop their own *click*; nothing wraps the body in a
+  `stopPropagation` div — `InlineEditable` already swallows the click on its own control, and such a
+  wrapper eats the whole line, which is the largest target the row offers. `aria-expanded` on the
+  row, `aria-pressed` on the checkbox.
+- Expansion animates **two** `grid-template-rows: 0fr ↔ 1fr` tracks in opposite directions at once —
+  the preview closing as the editor opens — so the row's height moves continuously. One track plus a
+  conditional render (the first build) snaps the preview away before the editor has grown, and shows
+  both at once on the way back.
+  **Correction to this spec:** the reason given here for not using framer-motion ("restricted to
+  transform/opacity, cannot animate height") is false — `features/archive/components/PieceRow.tsx`
+  animates `height: 0 → auto` under `AnimatePresence`. The CSS grid is kept anyway, because it needs
+  no exit animation to keep the outgoing track measurable, but the stated reason was not the reason.
+- The closing track carries `inert`. `overflow-hidden` hides a collapsed editor from the eye only:
+  without `inert` every collapsed row leaves its editor and its delete button in the tab order and
+  in the accessibility tree, so twenty notes are forty invisible tab stops, the delete action this
+  spec puts behind expansion is reachable from the keyboard at all times, and a screen reader reads
+  each body twice (clamped preview, then full text).
 - Done rows: struck through, moved to a collapsed "Completed" disclosure below the open ones.
 
 ### Composer
@@ -203,6 +244,12 @@ compose features; the feature never imports the shell.
   quick capture — that is what enforces the front-loaded first line that makes `line-clamp-2`
   readable. Multi-line detail is added later in the expanded row's editor.
 - Autofocus only when the panel was opened by the explicit "new note" action, never on a plain open.
+  Carried as a **latch** on the panel context (`pendingCompose` + `consumePendingCompose`), not as a
+  counter the composer compares against its own first render. Below `wide-shell` the panel lives in a
+  `BottomSheet`, which unmounts its children when closed, so the composer mounts *fresh* on that
+  open: a counter it has never seen is indistinguishable from one it has already consumed, and the
+  field never takes focus on a phone. The latch is dropped on close as well as on use, so it cannot
+  steal focus on a later plain open.
 
 ### Surfaces
 
@@ -226,10 +273,23 @@ Mirror of `DesktopSidebar.tsx` / `useSidebarPin.ts`:
 
 - `GlassCard as={motion.aside}` at `fixed right-4 top-4 bottom-4 z-60`, hidden below `wide-shell`.
 - Collapse animates **`clipPath` only**, so nothing reflows:
-  `inset(0px 0px 0px calc(100% - 88px) round 2.5rem)` collapsed →
-  `inset(0px 0% 0px 0px round 2.5rem)` open, with the sidebar's spring
-  (`stiffness: 400, damping: 40, mass: 0.8`). Children fade with `initial={false}` on opacity plus
-  `aria-hidden` when closed.
+  `inset(0px 0px 0px 100% round 2.5rem)` collapsed → `inset(0px 0% 0px 0px round 2.5rem)` open, with
+  the sidebar's spring (`stiffness: 400, damping: 40, mass: 0.8`). Children fade with
+  `initial={false}` on opacity, and the card carries `inert` while collapsed.
+  **Correction to this spec:** the collapsed inset was originally specified as
+  `calc(100% - 88px)`, transcribed from `DesktopSidebar`. It does not carry over. The sidebar's 88px
+  sliver holds the logo and the nav icons; this rail has no permanent content, so the same number
+  leaves an empty marble column parked over the right edge of every panel page ≥60rem — and because
+  `clipPath` clips hit-testing along with paint, that column also swallowed every click landing in
+  it, including onto the rail's own invisible close and pin buttons sitting in the top-right corner.
+  Collapsing to zero width is the fix; the developer chose it over giving the sliver content
+  (2026-09-22).
+- `inert` while collapsed, not `aria-hidden`. The panel stays mounted — the composer has to survive a
+  plain open with its draft — and `aria-hidden` on a subtree whose children are still focusable is
+  the wrong half of the job. `inert` takes the subtree out of hit-testing, the tab order and the
+  accessibility tree at once (see `shared/ui/primitives/inertSurface.ts`, which states the rule).
+  The sidebar does not need this because its collapsed content is genuinely reachable; it settles for
+  `pointer-events-none`.
 - `useNotesPin` copies `useSidebarPin` exactly: `localStorage` key `voct.notes.pinned`, and it is
   the **only** writer of a `--rail-pad` custom property on `document.documentElement`.
 - `<main>` in `DashboardLayout.tsx` currently ends its fine-pointer rule with `fine-pointer:pr-6`.
@@ -239,11 +299,22 @@ Mirror of `DesktopSidebar.tsx` / `useSidebarPin.ts`:
 
 ### Entry points
 
-- **Command palette.** `CommandItem` already supports `run?: () => void` as an alternative to `to`,
-  and `run` leaves the palette open — the theme rows are the precedent. Add a dedicated `useMemo`
-  section rather than loosening the required `to` on `COMMAND_ACTIONS`.
+- **Command palette.** `CommandItem` already supports `run?: () => void` as an alternative to `to`.
+  Add a dedicated `useMemo` section rather than loosening the required `to` on `COMMAND_ACTIONS`.
+  **Correction to this spec:** the theme rows are *not* the precedent for leaving the palette open.
+  A theme repaints the page behind the dialog, which is the only place it can be judged; the notes
+  panel is a surface of its own, and the palette is a full-screen `z-focus-trap` overlay — the rail
+  (`z-60`) opens *underneath* it, invisible, while the palette keeps the keyboard and the autofocus
+  lands in a field nobody can see. On mobile both sit at `z-focus-trap` and fight. `CommandItem`
+  therefore gained `closeOnRun?: boolean`; the notes row sets it, the theme rows do not.
 - **Shell icon** in `DesktopSidebar` and the mobile nav trigger, with a quiet dot when open notes
   exist. A dot, not a count — a count turns a scratchpad into a source of pressure.
+  **Build note:** `MobileNavTrigger`'s bar was already four role-scoped tabs + alerts + "More" in a
+  `max-w-md` row; the notes tab makes seven. Nothing in the spec says where in that bar it goes, and
+  the build did not resolve the crowding question — it added a seventh `flex-1` slot the same shape
+  as the others and left the visual call to the developer's own review, per this project's
+  verification policy (UI is judged in the browser, not by the agent). If it reads as cramped, the
+  fix belongs here, not as a silent redesign.
 - **`NotesPanelProvider`** mirrors `CommandPaletteProvider`: context `{ isOpen, open, close, toggle }`,
   a `useNotesPanel()` that throws outside the provider, and a global hotkey guarded by
   `isEditableTarget` so it does not fire while typing.
@@ -253,6 +324,20 @@ Mirror of `DesktopSidebar.tsx` / `useSidebarPin.ts`:
 The score stand and the PDF viewer compute their fit (auto / page / width / half) from the real
 viewport width. A pinned rail there would make that arithmetic wrong, not merely cramped. The
 provider renders no rail on those routes — suppressed, not hidden.
+
+**Build note — this held for one of the two, not both.** The standalone PDF viewer
+(`/documents/:docType/:docId`) is a sibling route of the dashboard shell, never nested under
+`DashboardLayout` — so `NotesPanelProvider`, mounted inside that layout, is structurally absent
+there with no suppression code needed. The score stand is different: `ScoreStandModal` opens as
+local component state on an **unchanged URL** (no route, no search param), so a route check cannot
+see it — and this codebase has no shared "a fullscreen modal is open" signal to check instead
+(confirmed by search before writing this: `useBodyScrollLock` tracks a module-level counter but
+does not expose it reactively; nothing else in `shared/` does either). Building one was judged to be
+outside this stage's scope. What ships instead: the rail's `z-60` sits under the score stand's
+`z-90` (`--z-focus-trap`), so it cannot show through even while mounted underneath. The gap that
+remains is narrow but real — pressing "n" while the score stand is open opens the notes sheet/rail
+on top of it, at the same `z-focus-trap` layer as the score stand's own overlay on mobile. Left for
+a follow-up rather than resolved by inventing new cross-cutting modal-tracking infrastructure here.
 
 ## i18n
 
@@ -277,6 +362,67 @@ costs nothing — `Note` is not registered in the admin, by the same rule as set
 - Frontend: `npm run typecheck`, then `npm run build` before the stage is called done.
 - `make migrate` is a manual step in every environment, including production.
 - UI is reviewed by the developer in their own browser.
+
+## Stage 2 — audit and remediation (2026-09-22)
+
+The frontend was meant to run as three or four stages, the first by Sonnet 5 and the rest by Opus 5.
+It was built as one pass instead, verified green (`typecheck`/`lint`/`build`) and **failed a
+subsequent audit**. What "green" bought and what it did not is the useful part of this record: every
+defect below compiles, lints and type-checks, and three of them are visible within a minute of
+opening the panel in a browser.
+
+**The pattern, stated once, because it is the thing to watch for next time.** The build copied the
+shape of the nearest precedent — `DesktopSidebar` for the rail, the theme rows for the palette,
+`useAnnotationMutations` for the queue — and dropped, in each case, the one line that was the reason
+the precedent works. Four of the nine fixes are literally a line that exists in the file next door:
+`pointer-events`/`inert` on collapsed chrome (`DesktopSidebar.tsx:198`), `onActivate` instead of a
+hand-rolled `onKeyDown` (`shared/lib/dom/a11y.ts`, which exists *because* of this exact bug in
+`PieceRow`), `inert` on a hidden subtree, and no `stopPropagation` wrapper around an `InlineEditable`.
+Two of those traps are already written down in `.agent/memory/`. Copying a shape is not reuse.
+
+Remediated, all in place: collapsed rail ate clicks and showed an empty column; the palette opened
+the panel under itself; mobile autofocus never fired; Enter on the checkbox both ticked and folded the
+row, while Space did nothing; collapsed rows kept their editor and delete button in the tab order;
+the expand/collapse animation snapped; a failed read rendered as an empty notepad; an offline body
+edit reported failure; select-all on a multiline body meant the first keystroke wiped it.
+
+Also fixed, outside `features/notes/`: `InlineEditable`'s new `mt-1` on the pencil icon was
+unconditional, which shifted it in all 17 call sites across the app. Now `multiline`-only. The other
+shared-primitive change (`multiline` itself) stands as built and is deviation 2 below.
+
+**Deviations from the letter of this spec, four:**
+
+1. Route suppression holds for the standalone PDF viewer (structurally absent) but not for
+   `ScoreStandModal`, which opens on an unchanged URL. Unresolved by design — see the build note
+   under "Routes where the panel must not exist". Pressing "n" over the score stand still opens the
+   panel.
+2. `InlineEditable` gained a `multiline` prop. Additive, existing behaviour and its vitest suite
+   untouched, but it is a change to a shared primitive.
+3. Mobile nav is now seven slots. The build added a seventh `flex-1` the same shape as the others and
+   left the crowding to the developer's own review, per the verification policy.
+4. The query cache buster was not bumped — see the reason under "Queries".
+
+**Corrections to this spec itself, three**, each marked inline where the wrong claim was: framer-motion
+*can* animate height in this codebase; the theme rows are *not* a precedent for keeping the palette
+open; the sidebar's 88px collapsed sliver does *not* carry over to a rail with no permanent content.
+
+None of this widens the feature. The model, the permissions and the **Out, deliberately** list are
+exactly as specced.
+
+**Still open after remediation** (none blocking, all the developer's call):
+
+- A pinned rail makes the "n" hotkey look dead: `isExpanded = isOpen || isPinned`, so the keypress
+  toggles state nothing reads. Either the hotkey focuses the composer when pinned, or it does nothing
+  and says so.
+- `useNotes()` is mounted in `DesktopSidebar` and `MobileNavTrigger` for the dot, so `/api/notes/` is
+  read on every panel entry and every window focus, for every user, chorister included.
+- Offline queue labels are hardcoded Polish (`Notatka: …`), matching `annotations.queries.ts`
+  (`"Oznaczenie na nutach"`) and contradicting the "every new string in three locales" rule. The repo
+  does this two ways; worth settling once, not here.
+- Notes have no `meta` echo on their queued writes, unlike annotations' `pendingMarks`. Their only
+  protection against a rejected replay is that the persister keeps `["notes"]`. It does — but that is
+  one layer, and nothing recorded it until now.
+- "Nowa notatka" sits above "Nowy projekt" in the palette's resting list. Visual call.
 
 ## Deviating from this spec
 

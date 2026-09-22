@@ -19,6 +19,7 @@ import { DesktopSidebar } from "./DesktopSidebar";
 import { MobileNavigation } from "./mobile/MobileNavigation";
 import { PanelErrorBoundary } from "@/app/router/PanelErrorBoundary";
 import { CommandPaletteProvider } from "./command/CommandPaletteProvider";
+import { NotesPanelProvider } from "./notes/NotesPanelProvider";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { usePushDeviceSync } from "@/features/notifications/hooks/usePushDeviceSync";
@@ -192,13 +193,14 @@ export const DashboardLayout = ({
   ]);
 
   return (
+    <NotesPanelProvider>
     <CommandPaletteProvider user={user}>
     <div className="relative flex min-h-screen w-full bg-transparent font-sans text-ethereal-ink antialiased">
       <EtherealBackground />
       <DesktopSidebar user={user} logout={logout} />
       <MobileNavigation user={user} logout={logout} />
       <main
-        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-5 pb-nav-dock transition-[padding] duration-300 ease-out sm:px-6 fine-pointer:pl-[calc(var(--sidebar-pad,var(--spacing-sidebar))+1.5rem)] fine-pointer:pr-6 fine-pointer:pt-6"
+        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-5 pb-nav-dock transition-[padding] duration-300 ease-out sm:px-6 fine-pointer:pl-[calc(var(--sidebar-pad,var(--spacing-sidebar))+1.5rem)] fine-pointer:pt-6 wide-shell:pr-[calc(var(--rail-pad,0px)+1.5rem)]"
         id="main-content"
       >
         <div className="relative mx-auto flex h-full w-full max-w-[1500px] flex-col">
@@ -265,6 +267,7 @@ export const DashboardLayout = ({
       </div>
     </div>
     </CommandPaletteProvider>
+    </NotesPanelProvider>
   );
 };
 

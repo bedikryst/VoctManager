@@ -2163,6 +2163,7 @@
         "copy_desk": "Site copy desk",
         "copy_desk_short": "Copy desk",
         "logout": "Log out",
+        "notes": "Notes",
         "open_menu": "Menu",
         "pin": "Pin panel",
         "settings": "Settings",
@@ -2172,6 +2173,7 @@
         "actions": {
           "mark_attendance": "Mark attendance",
           "new_artist": "New artist",
+          "new_note": "New note",
           "new_project": "New project",
           "open_copy_desk": "Site copy desk",
           "report_absence": "Report absence"
@@ -2228,6 +2230,7 @@
         "materials": "Materials",
         "messages": "Chat",
         "more": "More",
+        "notes": "Notes",
         "projects": "Projects",
         "schedule": "Schedule"
       },
@@ -5593,6 +5596,37 @@
       "patch_rows_other": "changes",
       "patch_note": "The first command only shows what it would write; the second writes it. Then git diff, commit and deploy — that is what changes the site.",
       "patch_since": "The oldest decision has been waiting since: {{when}}."
+    }
+  },
+  "notes": {
+    "panel": {
+      "title": "Notes",
+      "pin": "Pin",
+      "unpin": "Unpin"
+    },
+    "composer": {
+      "placeholder": "New note…",
+      "aria_label": "New note"
+    },
+    "row": {
+      "mark_done": "Check off",
+      "mark_open": "Mark as open",
+      "edit_body": "Note body"
+    },
+    "completed": {
+      "toggle_one": "Completed ({{count}})",
+      "toggle_other": "Completed ({{count}})"
+    },
+    "errors": {
+      "empty": "A note cannot be empty."
+    },
+    "error": {
+      "title": "Could not load your notes",
+      "description": "Your entries are safe. We will try again once the connection is back."
+    },
+    "empty": {
+      "title": "Empty notepad",
+      "description": "Jot down something you don't want to forget — a call to make, a message to send."
     }
   }
 }

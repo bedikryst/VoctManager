@@ -18,12 +18,14 @@ import React from "react";
 import { motion } from "framer-motion";
 import type { Transition } from "framer-motion";
 import { NavLink } from "react-router-dom";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, NotebookPen } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { hapticsService } from "@/shared/lib/hardware/hapticsService";
 import { UnreadMessagesBadge } from "@/features/messages/components/UnreadMessagesBadge";
 import { NotificationCenter } from "@/features/notifications/components/NotificationCenter";
+import { useNotes } from "@/features/notes/api/notes.queries";
+import { useNotesPanel } from "@/features/notes/hooks/useNotesPanel";
 import { useNavigationAura } from "../hooks/useNavigationAura";
 
 const BAR_TRANSITION: Transition = {
@@ -57,6 +59,9 @@ export const MobileNavTrigger = ({
   aura,
 }: MobileNavTriggerProps): React.JSX.Element => {
   const { mobileTabs, t } = aura;
+  const { open: openNotes } = useNotesPanel();
+  const { data: notes } = useNotes();
+  const hasOpenNotes = (notes ?? []).some((note) => !note.is_done);
 
   return (
     <motion.nav
@@ -125,6 +130,34 @@ export const MobileNavTrigger = ({
           variant="tab"
           label={t("dashboard.layout.mobile_tabs.alerts", "Alerty")}
         />
+
+        <button
+          type="button"
+          onClick={() => {
+            hapticsService.playEtherealTick();
+            openNotes();
+          }}
+          aria-label={t("dashboard.layout.actions.notes", "Notatki")}
+          className={cn(
+            slotClass,
+            hasOpenNotes
+              ? "text-ethereal-gold"
+              : "text-ethereal-graphite/55 hover:text-ethereal-ink",
+          )}
+        >
+          <span className="relative flex h-8 items-center justify-center">
+            <NotebookPen size={21} strokeWidth={1.75} aria-hidden="true" />
+            {hasOpenNotes && (
+              <span
+                aria-hidden="true"
+                className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-ethereal-gold ring-2 ring-ethereal-alabaster"
+              />
+            )}
+          </span>
+          <span className={cn(labelClass, "font-medium")}>
+            {t("dashboard.layout.mobile_tabs.notes", "Notatki")}
+          </span>
+        </button>
 
         <button
           type="button"

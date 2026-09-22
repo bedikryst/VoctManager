@@ -115,9 +115,12 @@ export const CommandPalette = ({
       hapticsService.playEtherealTick();
       // An acting row leaves the palette open on purpose — see `run` on
       // CommandItem. The appearance rows are the case: the panel behind the
-      // dialog is the only place the choice can actually be judged.
+      // dialog is the only place the choice can actually be judged. A row that
+      // opens a surface of its own says so with `closeOnRun`; both state
+      // updates land in one commit, so the palette goes as the surface arrives.
       if (item.run) {
         item.run();
+        if (item.closeOnRun) onClose();
         return;
       }
       if (!item.to) return;

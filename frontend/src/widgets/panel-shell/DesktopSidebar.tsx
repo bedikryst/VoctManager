@@ -2,7 +2,7 @@ import React, { forwardRef } from "react";
 import { Link, NavLink, NavLinkProps } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Transition } from "framer-motion";
-import { LogOut, PenLine, Pin, Search, Settings } from "lucide-react";
+import { LogOut, NotebookPen, PenLine, Pin, Search, Settings } from "lucide-react";
 import { cva } from "class-variance-authority";
 
 import { useNavigationAura } from "./hooks/useNavigationAura";
@@ -10,6 +10,8 @@ import { useSidebarPin } from "./hooks/useSidebarPin";
 import { useCommandPalette } from "./command/CommandPaletteProvider";
 import { NotificationCenter } from "@/features/notifications/components/NotificationCenter";
 import { UnreadMessagesBadge } from "@/features/messages/components/UnreadMessagesBadge";
+import { useNotes } from "@/features/notes/api/notes.queries";
+import { useNotesPanel } from "@/features/notes/hooks/useNotesPanel";
 import type { AuthUser } from "@/shared/auth/auth.types";
 import { canEditSiteCopy } from "@/shared/auth/rbac";
 import { cn } from "@/shared/lib/utils";
@@ -94,6 +96,9 @@ export const DesktopSidebar = ({
   } = useSidebarKinematics();
   const { isPinned, togglePin } = useSidebarPin();
   const { open: openCommandPalette } = useCommandPalette();
+  const { open: openNotes } = useNotesPanel();
+  const { data: notes } = useNotes();
+  const hasOpenNotes = (notes ?? []).some((note) => !note.is_done);
   const { navGroups, userFullName, roleLabel, initials, avatarUrl, t } =
     useNavigationAura(user);
 
@@ -502,6 +507,29 @@ export const DesktopSidebar = ({
               <div className="flex h-10 w-14 shrink-0 items-center justify-center rounded-lg transition-all duration-200">
                 <NotificationCenter />
               </div>
+
+              <Tooltip
+                content={t("dashboard.layout.actions.notes", "Notatki")}
+                disabled={isExpanded}
+                side="right"
+              >
+                <button
+                  type="button"
+                  onClick={() => openNotes()}
+                  aria-label={t("dashboard.layout.actions.notes", "Notatki")}
+                  className="group/notes relative flex h-10 w-14 shrink-0 items-center justify-center rounded-lg text-ethereal-graphite/50 outline-none transition-colors duration-200 hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
+                >
+                  <span className="relative flex items-center justify-center transition-transform duration-300 ease-out group-active/notes:scale-95">
+                    <NotebookPen size={18} strokeWidth={2} aria-hidden="true" />
+                    {hasOpenNotes && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-ethereal-gold ring-2 ring-ethereal-marble"
+                      />
+                    )}
+                  </span>
+                </button>
+              </Tooltip>
 
               <Tooltip
                 content={t("dashboard.layout.actions.logout")}
