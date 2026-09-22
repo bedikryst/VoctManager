@@ -5622,6 +5622,7 @@
     "row": {
       "mark_done": "Cocher",
       "mark_open": "Annuler la fin",
+      "edit": "Modifier la note",
       "edit_body": "Contenu de la note"
     },
     "completed": {

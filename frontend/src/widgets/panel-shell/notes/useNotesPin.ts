@@ -15,8 +15,8 @@ const STORAGE_KEY = "voct.notes.pinned";
 
 /** Overlay footprint: unpinned, the rail reflows nothing. */
 const COLLAPSED_PAD = "0px";
-/** Pinned rail footprint (16px inset + 280px expanded panel). */
-const PINNED_PAD = "296px";
+/** Pinned rail footprint: 16px inset + the rail's own `w-88` (352px). */
+const PINNED_PAD = "368px";
 
 const readInitialPin = (): boolean => {
   if (typeof window === "undefined") return false;

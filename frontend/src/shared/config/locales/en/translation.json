@@ -5611,6 +5611,7 @@
     "row": {
       "mark_done": "Check off",
       "mark_open": "Mark as open",
+      "edit": "Edit note",
       "edit_body": "Note body"
     },
     "completed": {

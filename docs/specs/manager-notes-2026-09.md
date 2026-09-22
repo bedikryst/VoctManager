@@ -465,17 +465,34 @@ the "n" hotkey turned from a toggle into open-and-focus, the shell icon likewise
 gap closed with `fullscreenSurface.ts` — which was a precondition, not a bonus: advertising a key
 makes its one known misfire common.
 
-**Still open** (none blocking, all the developer's call):
+**Closed by inspection 2026-09-22, two of the four — both were non-problems:**
 
-- `useNotes()` is mounted in `DesktopSidebar` and `MobileNavTrigger` for the dot, so `/api/notes/` is
-  read on every panel entry and every window focus, for every user, chorister included.
-- Offline queue labels are hardcoded Polish (`Notatka: …`), matching `annotations.queries.ts`
-  (`"Oznaczenie na nutach"`) and contradicting the "every new string in three locales" rule. The repo
-  does this two ways; worth settling once, not here.
-- Notes have no `meta` echo on their queued writes, unlike annotations' `pendingMarks`. Their only
-  protection against a rejected replay is that the persister keeps `["notes"]`. It does — but that is
-  one layer, and nothing recorded it until now.
-- "Nowa notatka" sits above "Nowy projekt" in the palette's resting list. Visual call.
+- *Offline queue labels are hardcoded Polish.* They are, and it does not matter: **nothing renders
+  `QueuedWrite.label`.** The shell surfaces `pendingCount` (a number) and `useOfflineSync` toasts two
+  fixed sentences. The field's own docstring claimed a "sync indicator" that does not exist and has
+  been corrected to say so, because the next reader would otherwise have translated four features'
+  worth of dead strings. The real opportunity it names — making the rejection toast say *what* was
+  rejected — is a feature, not this feature's debt.
+- *Notes have no `meta` echo, unlike annotations' `pendingMarks`.* Deliberately not built. The echo
+  exists for annotations because a score page is redrawn from the server's answer, so a pending mark
+  has nowhere else to live. A note's list **is** the query cache, and the cache is persisted, so an
+  offline note survives a reload without one. The gap it would close is narrower than it first looked:
+  a *rejected* replay, which is already a toast (`summary.rejected > 0`), for a write whose only
+  realistic rejection is a 500 — the body is client-validated and the id collision is
+  cryptographically absurd. A mirror of `pendingMarks` to cover that is more machinery than the risk.
+
+**Settled by the developer 2026-09-22, the last two. Nothing is open on this feature.**
+
+- *The cost of `useNotes()`.* **Accepted as is — do not "optimise" this later.** The traffic is one
+  small GET per panel entry plus one per window focus, per user. Note the correction: the shell's dot
+  is not what drives it — on `wide-shell` the rail keeps `NotesPanel` mounted even while collapsed,
+  so the query is live whatever the nav bars do. The two ways to cut it both cost something visible:
+  unmounting the panel on close loses a half-typed draft (and leaves the rail's collapse animation
+  running on empty content), and dropping the dot removes the notepad's only reminder that it exists.
+  The list is a few unpaginated rows for a choir of a few dozen. Trading a visible thing for an
+  invisible saving is the wrong trade here.
+- *Palette ordering.* "Nowa notatka" stays at the top of the resting action list. Quick capture is
+  what a command palette is for.
 
 ## Deviating from this spec
 

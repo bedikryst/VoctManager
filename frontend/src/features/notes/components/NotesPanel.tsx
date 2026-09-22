@@ -5,11 +5,16 @@
  * (open notes first, then newest) is the server's `Meta.ordering` on `Note`;
  * this never re-sorts, only partitions the already-correct order into open
  * vs completed for the disclosure below.
+ *
+ * Which row is open lives here rather than in the rows: one at a time, and any
+ * click that reaches this element — the composer, the background, the gap
+ * between two notes — folds it back to its two-line clamp. A row that has
+ * something to say about a click stops it before it gets here.
  * @module features/notes/components
  * @architecture Enterprise SaaS 2026
  */
 
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, CloudOff, Lock } from "lucide-react";
 
@@ -26,13 +31,21 @@ export const NotesPanel = (): React.JSX.Element => {
   const { t } = useTranslation();
   const { data, isLoading, isError } = useNotes();
   const [showCompleted, setShowCompleted] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const notes = data ?? [];
   const openNotes = notes.filter((note) => !note.is_done);
   const doneNotes = notes.filter((note) => note.is_done);
 
+  const toggleExpanded = useCallback((id: string): void => {
+    setExpandedId((current) => (current === id ? null : id));
+  }, []);
+
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
+    <div
+      className="flex h-full min-h-0 flex-col gap-3"
+      onClick={() => setExpandedId(null)}
+    >
       <NoteComposer />
 
       {/* Stated in the panel body, not in the rail's header, so the phone gets
@@ -75,7 +88,12 @@ export const NotesPanel = (): React.JSX.Element => {
           <>
             <div className="flex flex-col gap-0.5">
               {openNotes.map((note) => (
-                <NoteRow key={note.id} note={note} />
+                <NoteRow
+                  key={note.id}
+                  note={note}
+                  isExpanded={expandedId === note.id}
+                  onToggle={toggleExpanded}
+                />
               ))}
             </div>
 
@@ -119,7 +137,12 @@ export const NotesPanel = (): React.JSX.Element => {
                       )}
                     </Text>
                     {doneNotes.map((note) => (
-                      <NoteRow key={note.id} note={note} />
+                      <NoteRow
+                        key={note.id}
+                        note={note}
+                        isExpanded={expandedId === note.id}
+                        onToggle={toggleExpanded}
+                      />
                     ))}
                   </div>
                 )}

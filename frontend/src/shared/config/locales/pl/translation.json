@@ -5680,6 +5680,7 @@
     "row": {
       "mark_done": "Odhacz",
       "mark_open": "Cofnij ukończenie",
+      "edit": "Edytuj notatkę",
       "edit_body": "Treść notatki"
     },
     "completed": {

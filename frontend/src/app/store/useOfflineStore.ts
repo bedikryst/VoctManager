@@ -60,7 +60,20 @@ export interface QueuedWrite {
   body: unknown;
   /** Repeated writes to the same target collapse to the latest intent. */
   dedupeKey: string;
-  /** Human label for the sync indicator ("Gotowość: Ave Maria"). */
+  /**
+   * Human label for the write ("Gotowość: Ave Maria").
+   *
+   * NOTHING RENDERS THIS TODAY. The shell surfaces `pendingCount` — a number —
+   * and `useOfflineSync` toasts two fixed sentences, one for "synced", one for
+   * "the server rejected some of it". So do not spend effort translating what
+   * you pass here; every feature currently writes a hardcoded Polish string and
+   * no reader has ever seen one.
+   *
+   * It is kept rather than deleted because the rejection toast is the obvious
+   * place for it: "the server rejected some of it" is a sentence that cannot be
+   * acted on, and the labels are exactly what would make it name the losses. If
+   * that is ever built, the labels have to go through i18next first.
+   */
   label: string;
   createdAt: number;
   /**

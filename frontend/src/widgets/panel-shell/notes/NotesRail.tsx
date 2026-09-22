@@ -81,13 +81,13 @@ export const NotesRail = (): React.JSX.Element => {
         aria-expanded={isExpanded}
         inert={!isExpanded}
         isHoverable={false}
-        className="fixed bottom-4 right-4 top-4 z-60 hidden w-70 flex-col border-none bg-ethereal-marble will-change-[clip-path,box-shadow] wide-shell:flex"
+        className="fixed bottom-4 right-4 top-4 z-60 hidden w-88 flex-col border-none bg-ethereal-marble will-change-[clip-path,box-shadow] wide-shell:flex"
       >
         <motion.div
           initial={false}
           animate={{ opacity: isExpanded ? 1 : 0 }}
           transition={{ duration: 0.2 }}
-          className="flex h-full w-70 min-h-0 flex-col p-4"
+          className="flex h-full w-88 min-h-0 flex-col p-4"
         >
           <div className="mb-3 flex shrink-0 items-center justify-between gap-2">
             <Heading as="h2" size="lg" weight="normal">
