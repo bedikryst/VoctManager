@@ -14,7 +14,9 @@ decided on 2026-09-22 after a conductor-side audit — see "Round 2" at the very
 first); see its "As landed". Stage 8 (minutes, backend and frontend) implemented 2026-09-22 —
 NOT committed, NOT seen in the browser; migration `roster/0061`, applied nowhere yet. Stage 9
 (editor ergonomics, frontend only, no migration) implemented 2026-09-22 — NOT committed, NOT
-seen in the browser; see its "As landed". Stage 10 NOT started.**
+seen in the browser; see its "As landed". Stage 10 (project grid, frontend only, no migration)
+implemented 2026-09-22 — NOT committed, NOT seen in the browser; see its "As landed". Round 2
+is complete in code.**
 One stage per session; move this line when a stage lands and say whether it is committed,
 migrated and seen in the browser.
 
@@ -1148,6 +1150,35 @@ soloist-only rows, a live mode counting down to a section's release, unpublishin
   behind `SegmentedTabs`; layout precedent `AttendanceMatrixTab.tsx` (sticky first column,
   horizontal scroll on a phone). Writes through the plan's whole-list PUT per rehearsal,
   invalidating `["rehearsals"]` and that rehearsal's `["rehearsal-plan", id]`. i18n ×3.
+
+**As landed (2026-09-22).** Where the code departs from or adds to the list above:
+- The switch ("Oś" / "Utwory") stands above the whole tab and "Utwory" replaces BOTH columns:
+  the grid is full width, since its columns are the rehearsals and the compose form has
+  nothing to say to it. The grid sits in its own `Suspense` (it reads `useProjectProgram`), so
+  switching never blanks the switch itself.
+- One row per PIECE, not per programme item: a plan row names a piece, so a piece the programme
+  lists twice (liturgical repeats) is one row. Breaks and free rows never reach a cell.
+- Writes: `useSaveAnyRehearsalPlan` (the rehearsal travels with the call; it answers into
+  `["rehearsal-plan", id]` and settles through the same readers as the editor's save). The rows
+  sent are the freshest known for that evening — the list payload, or the plan query when its
+  `plan_changed_at` is later — and taps on one evening run in a queue, each on the rows the
+  previous one left: two quick taps built from one stale list read would drop the first. The
+  cells observe the plan query too (`useQueries`, `enabled: false`), so a tap's pending mark
+  hands over to the saved answer without a flash of the old list.
+- A tap on a filled cell asks first (`ConfirmModal`) when the row carries a note, minutes, an
+  anchor or an exclusion — a mis-tap would otherwise silently call the men back to a piece they
+  were released from. A piece sitting twice on one evening ("×2") opens that evening's editor:
+  only the editor can say which copy goes. The date heading opens the plan in every column.
+- "Past" = the evening has started (the editor's `hasStarted`), not "over": from the downbeat the
+  plan is the record. Locked columns carry the parchment wash of the register's not-called cells.
+- The heading states whether the choir has what the column shows: "Szkic" (never sent, has rows)
+  or "Niewysłane" (changed after the last send, gold) — the grid writes silently, like the editor's
+  save, and a conductor laying out five evenings needs to see which of them now wait for a send.
+- A cell's state over several rows of one piece: done, then not done, then planned over reserve.
+  Glyphs: filled dot = planned, dashed ring = reserve, check (sage) = done, × = not done.
+- The statistics column is hidden while every `rehearsed_count` is null; its tooltip reuses
+  `projects.program.rehearsed.*`. `ProgramItem.rehearsed_count`'s doc comment still described the
+  pre-Stage-6 row count; corrected.
 
 ### Verification
 

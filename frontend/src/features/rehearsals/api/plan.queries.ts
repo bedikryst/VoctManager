@@ -1,7 +1,8 @@
 /**
  * @file plan.queries.ts
  * @description React Query hooks for one rehearsal's plan: the editor's read,
- * the whole-list save, the per-row done tick and the announcement. Saving is
+ * the whole-list save (bound to one rehearsal, or naming it per call for the
+ * project grid), the per-row done tick and the announcement. Saving is
  * silent on the server and stays silent here — no toast says "the cast was
  * told", because it was not; `useAnnouncePlan` is the one act that tells them.
  * Every write settles by invalidating the rehearsal lists, the lead sheet and
