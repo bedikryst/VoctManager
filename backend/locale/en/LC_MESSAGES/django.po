@@ -3735,3 +3735,52 @@ msgstr ""
 #: core/serializers.py:330
 msgid "Note cannot be empty."
 msgstr ""
+
+#: roster/models.py
+msgid "Plan Changed At"
+msgstr ""
+
+#: roster/models.py
+msgid "Reserve"
+msgstr ""
+
+#: roster/models.py
+msgid "Break"
+msgstr ""
+
+#: roster/models.py
+msgid "Skipped At"
+msgstr ""
+
+#: roster/services.py
+msgid "A break is not ticked off."
+msgstr ""
+
+#: roster/services.py
+msgid "The plan has not changed since it was sent."
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal plan changed — %(when)s"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "The rehearsal plan has changed"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal plan changed — %(project)s"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"The conductor has changed the plan for the %(project)s rehearsal. Open it to"
+" see what is rehearsed now and which part of the evening is yours."
+msgstr ""
+
+#: notifications/message_content.py
+msgid "If time allows:"
+msgstr ""

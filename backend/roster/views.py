@@ -1715,7 +1715,8 @@ class ParticipationViewSet(viewsets.ModelViewSet):
 
         A manager may ask for a member's timeline with ``?artist=<id>``.
         """
-        target_user = resolve_preview_target(request).user
+        target = resolve_preview_target(request)
+        target_user = target.user
         projects_qs, rehearsals_qs, participation_by_project = get_artist_schedule(
             target_user
         )
@@ -1748,13 +1749,18 @@ class ParticipationViewSet(viewsets.ModelViewSet):
 
         rehearsal_objs = list(rehearsals_qs)
         # The plan read through this person's seat, for the whole list at
-        # once: "Twoja część 19:00-21:00" sits on the collapsed card.
+        # once: "Twoja część 19:00-21:00" sits on the collapsed card. A
+        # preview reads the member's plans, drafts withheld as they are from
+        # the member.
         rehearsal_data = RehearsalSerializer(
             rehearsal_objs,
             many=True,
             context={
                 **ctx,
                 'plan_readings': plan_readings_for_user(target_user, rehearsal_objs),
+                'plan_drafts_visible': (
+                    not target.is_preview and user_is_manager(request_user(request))
+                ),
             },
         ).data
         for reh_obj, rehearsal in zip(rehearsal_objs, rehearsal_data, strict=True):
@@ -2181,23 +2187,29 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         seat the schedule dashboard answers through, so the window on the
         member's card and the one on their page are one answer. The
         queryset stays the manager's own: the preview changes whose seat the
-        plan is read through, not which evenings exist."""
+        plan is read through, not which evenings exist. It reads the member's
+        plan too: a draft the member cannot see is not on the previewed page."""
         rehearsal = self.get_object()
-        target_user = resolve_preview_target(request).user
+        target = resolve_preview_target(request)
         serializer = self.get_serializer(
             rehearsal,
             context={
                 **self.get_serializer_context(),
-                'plan_readings': plan_readings_for_user(target_user, [rehearsal]),
+                'plan_readings': plan_readings_for_user(target.user, [rehearsal]),
+                'plan_drafts_visible': (
+                    not target.is_preview and user_is_manager(request_user(request))
+                ),
             },
         )
         return Response(serializer.data)
 
-    def _plan_rehearsal_or_404(self, request, pk) -> Rehearsal | None:
+    def _plan_access(self, request, pk) -> tuple[Rehearsal, bool] | None:
         """The rehearsal a plan request is about, for a reader entitled to
-        the plan: a manager, a project leader with the roll call (the lead
-        sheet's own gate), or a member the rehearsal calls. 404 for anyone
-        else — the evening is not theirs to know about."""
+        the plan, and whether that reader is on the conductor's side of it: a
+        manager or a project leader with the roll call (the lead sheet's own
+        gate) is — they read drafts and write the debrief; a member the
+        rehearsal calls is not. ``None`` for anyone else — the evening is
+        not theirs to know about."""
         try:
             rehearsal = Rehearsal.objects.select_related('project').filter(pk=pk).first()
         except (DjangoValidationError, ValueError):
@@ -2208,9 +2220,9 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         if user_is_manager(user) or user_leads_project(
             user, rehearsal.project_id, scope='roll_call',
         ):
-            return rehearsal
+            return rehearsal, True
         if self.get_queryset().filter(pk=rehearsal.pk).exists():
-            return rehearsal
+            return rehearsal, False
         return None
 
     @action(
@@ -2220,14 +2232,17 @@ class RehearsalViewSet(viewsets.ModelViewSet):
     def plan(self, request, pk=None) -> Response:
         """The plan, whole.
 
-        GET for anyone the rehearsal concerns; PUT for a manager only, taking
-        the complete list (pattern: `piece-castings/boards/`) and answering
-        with what was persisted so the editor re-baselines on it. Saving is
+        GET for anyone the rehearsal concerns — a member reads `rows: []`
+        while the plan is a draft (`Rehearsal.plan_is_public`); PUT for a
+        manager only, taking the complete list (pattern:
+        `piece-castings/boards/`) and answering with what was persisted and
+        `plan_changed_at`, so the editor re-baselines on both. Saving is
         silent — see `announce`.
         """
-        rehearsal = self._plan_rehearsal_or_404(request, pk)
-        if rehearsal is None:
+        access = self._plan_access(request, pk)
+        if access is None:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        rehearsal, runs_evening = access
 
         if request.method == 'PUT':
             if not user_is_manager(request.user):
@@ -2256,13 +2271,19 @@ class RehearsalViewSet(viewsets.ModelViewSet):
                     validation_errors={"rows": [str(exc)]},
                 )
 
+        now = timezone.now()
+        items = (
+            RehearsalPlanItem.objects.filter(rehearsal=rehearsal).select_related('piece')
+            if runs_evening or rehearsal.plan_is_public(now)
+            else RehearsalPlanItem.objects.none()
+        )
         rows = RehearsalPlanItemSerializer(
-            RehearsalPlanItem.objects.filter(rehearsal=rehearsal).select_related('piece'),
-            many=True,
+            items, many=True, context={'plan_over': rehearsal.is_over(now)},
         ).data
         return Response({
             'rehearsal': str(rehearsal.id),
             'plan_announced_at': rehearsal.plan_announced_at,
+            'plan_changed_at': rehearsal.plan_changed_at,
             'rows': rows,
         })
 
@@ -2272,18 +2293,13 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
     )
     def plan_item_done(self, request, pk=None, item_id=None) -> Response:
-        """Tick one row off — the first step of the debrief, behind the same
-        gate (a manager, or the project's roll-call holder) and the same
-        clock: refused before the rehearsal has started."""
-        rehearsal = self._plan_rehearsal_or_404(request, pk)
-        if rehearsal is None:
+        """Write the debrief's verdict on one row — the first step of the
+        debrief, behind the same gate (a manager, or the project's roll-call
+        holder) and the same clock: refused before the rehearsal has started."""
+        access = self._plan_access(request, pk)
+        if access is None or not access[1]:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-        user = request_user(request)
-        may_write = user_is_manager(user) or user_leads_project(
-            user, rehearsal.project_id, scope='roll_call',
-        )
-        if not may_write:
-            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        rehearsal = access[0]
         try:
             dto = RehearsalPlanItemDoneDTO(**client_payload(request.data))
         except ValidationError as e:
@@ -2305,7 +2321,9 @@ class RehearsalViewSet(viewsets.ModelViewSet):
                 detail=str(exc),
                 validation_errors={"done": [str(exc)]},
             )
-        return Response(RehearsalPlanItemSerializer(item).data)
+        return Response(
+            RehearsalPlanItemSerializer(item, context={'plan_over': rehearsal.is_over()}).data
+        )
 
     @action(
         detail=True, methods=['post'], url_path='plan/announce',
@@ -2423,9 +2441,11 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         return Response({
             # `show_debrief`: this reader passed the `roll_call` gate above, so
             # the report is theirs to read and to write — the rehearsal LIST
-            # withholds it, because it is served to the whole cast.
+            # withholds it, because it is served to the whole cast. The same
+            # gate puts them on the conductor's side of the plan: drafts show.
             'rehearsal': RehearsalSerializer(
-                rehearsal, context={**artist_ctx, 'show_debrief': True},
+                rehearsal,
+                context={**artist_ctx, 'show_debrief': True, 'plan_drafts_visible': True},
             ).data,
             'project': {
                 'id': str(rehearsal.project_id),

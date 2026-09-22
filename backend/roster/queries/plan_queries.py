@@ -114,6 +114,7 @@ def plan_rows_of(
             ),
             excluded_lines=frozenset(item.excluded_voice_lines or ()),
             excludes_instrumentalists=item.excludes_instrumentalists,
+            is_break=item.is_break,
         )
         for item in items
     ]
@@ -259,7 +260,8 @@ def plan_windows_for_seats(
 
     Keyed by participation id; a value of ``None`` is the plan having nothing
     to say about that seat (no plan, or the whole evening). ``seats`` must
-    carry `artist` — the voice type is what makes a seat a player's.
+    carry `artist` — the voice type is what makes a seat a player's. Blind to
+    the publish gate: the caller decides whether a draft may be told.
     """
     items = list(rehearsal.plan_items.all())
     if not items or not seats:

@@ -948,6 +948,21 @@ class AnnouncementQueue:
             kind=AnnouncementKind.CREATED,
         ).exists()
 
+    @staticmethod
+    def has_pending_change(
+        project: Project, subject_type: str, subject_id: str, field: str,
+    ) -> bool:
+        """Whether a change to ``field`` of this subject is still waiting to
+        be published — the cast has not been told about it yet."""
+        return PendingAnnouncement.objects.filter(
+            project=project,
+            published_at__isnull=True,
+            subject_type=subject_type,
+            subject_id=str(subject_id),
+            kind=AnnouncementKind.CHANGED,
+            change_field=field,
+        ).exists()
+
 
 def _is_divisible(announcement: ResolvedAnnouncement) -> bool:
     """Whether this announcement becomes one review line per field.

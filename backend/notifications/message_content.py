@@ -1007,30 +1007,49 @@ def _is_plan_announcement(changes: Any) -> bool:
 
 
 def _compose_rehearsal_plan_announced(ctx: MessageContext) -> MessageContent:
+    """The plan arriving, or — `plan_revised` — the plan the cast already has
+    changing. Both keep one tag per evening, so on a device the changed plan
+    replaces the notice of the first one instead of stacking under it."""
     m = ctx.metadata
     project = m.get("project_name") or _("your project")
     when = display_event_time(m, "starts_at", "rehearsal_date")
     venue = m.get("location")
     focus = m.get("focus")
-    return MessageContent(
-        notification_type=ctx.notification_type,
-        level=ctx.level or NotificationLevel.WARNING,
-        title=(
+    if m.get("plan_revised"):
+        title = (
+            _("Rehearsal plan changed — %(when)s") % {"when": when}
+            if when
+            else _("The rehearsal plan has changed")
+        )
+        subject = _("Rehearsal plan changed — %(project)s") % {"project": project}
+        email_lead = _(
+            "The conductor has changed the plan for the %(project)s rehearsal."
+            " Open it to see what is rehearsed now and which part of the evening"
+            " is yours."
+        ) % {"project": project}
+    else:
+        title = (
             _("Rehearsal plan — %(when)s") % {"when": when}
             if when
             else _("Rehearsal plan is up")
-        ),
+        )
+        subject = _("Rehearsal plan — %(project)s") % {"project": project}
+        email_lead = _(
+            "The conductor has sent the plan for the %(project)s rehearsal: what"
+            " is rehearsed, in what order, and from when. Open it to see which"
+            " part of the evening is yours."
+        ) % {"project": project}
+    return MessageContent(
+        notification_type=ctx.notification_type,
+        level=ctx.level or NotificationLevel.WARNING,
+        title=title,
         body=_facts(project, focus or venue),
         url_path=_rehearsal_page_url(ctx),
         tag=f"rehearsal-plan:{m.get('rehearsal_id') or ''}",
         actions=(_open_action(),),
-        subject=_("Rehearsal plan — %(project)s") % {"project": project},
+        subject=subject,
         eyebrow=_("Rehearsal plan"),
-        email_lead=_(
-            "The conductor has sent the plan for the %(project)s rehearsal: what"
-            " is rehearsed, in what order, and from when. Open it to see which"
-            " part of the evening is yours."
-        ) % {"project": project},
+        email_lead=email_lead,
         details=tuple(
             _rehearsal_detail_rows(project, when, venue, focus, display_event_end(m))
         ),
@@ -1128,15 +1147,22 @@ def _plan_window_phrase(window: Any) -> str:
 def _plan_lines(entries: Any) -> list[str]:
     """The plan as an email reads it: one line per row, "18:15 · Orff · od t. 40".
     A row without a clock flows under the one above it and simply has no hour —
-    the same reading the plan itself has."""
+    the same reading the plan itself has. The reserve rows, which close the
+    plan, sit under one "If time allows" line, the divider every panel
+    surface draws."""
     lines: list[str] = []
+    in_reserve = False
     for entry in entries or ():
         if not isinstance(entry, dict):
             continue
         parts = (entry.get("time"), entry.get("title"), entry.get("note"))
         line = " · ".join(str(part).strip() for part in parts if part and str(part).strip())
-        if line:
-            lines.append(line)
+        if not line:
+            continue
+        if entry.get("reserve") and not in_reserve:
+            lines.append(_("If time allows:"))
+            in_reserve = True
+        lines.append(line)
     return lines
 
 

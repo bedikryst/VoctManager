@@ -1,16 +1,17 @@
 """
 @file rehearsal_plan.py
 @description The rehearsal plan as a rule: which rows of an ordered plan call a
-    given seat, how the rows fall into time blocks, and the window one reader
-    is actually needed for. Pure — no ORM, no clock — so the serializer, the
-    reminder and (through the shared golden cases) the client's exclusion
-    chips all answer from one function and cannot disagree about who "bez B2"
-    removes. A seat is called by a row through its casting on the row's piece
-    when it has one, otherwise through the section letters it answers a
-    sectional by; a player is called by the rehearsal's flag and the row's.
-    The window is derived per reader and never written back: the rehearsal
-    keeps one start and one end, and a row outside them is the conductor's
-    warning to himself, not an error.
+    given seat, how the rows fall into time blocks, the window one reader
+    is actually needed for, and whether a row was worked on. Pure — no ORM,
+    and the clock is always an argument — so the serializer, the reminder and
+    (through the shared golden cases) the client's exclusion chips all answer
+    from one function and cannot disagree about who "bez B2" removes. A seat
+    is called by a row through its casting on the row's piece when it has
+    one, otherwise through the section letters it answers a sectional by; a
+    player is called by the rehearsal's flag and the row's; a break calls
+    nobody. The window is derived per reader and never written back: the
+    rehearsal keeps one start and one end, and a row outside them is the
+    conductor's warning to himself, not an error.
 @architecture Enterprise SaaS 2026
 @module roster/domain/rehearsal_plan
 """
@@ -19,9 +20,15 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import time
+from datetime import datetime, time, timedelta
 
 from core.voice_labels import section_letters_of_voice_line
+
+# How long after its start an evening nobody timed counts as over. The twin of
+# the panel's `PAST_GRACE_MS`, which moves a card from "upcoming" to "past" on
+# the same four hours — the plan must not read as done on a card still listed
+# as upcoming.
+UNTIMED_EVENING_LENGTH = timedelta(hours=4)
 
 # The lines a row offers for exclusion when its piece declares none — and the
 # lines a row without a piece offers: the four-part reading an uncast programme
@@ -41,7 +48,10 @@ class PlanRow:
 
     ``piece`` is an opaque key (the piece id as text, or ``None`` for a free
     row) matched against the seat's ``cast_lines``. ``lines`` are the lines the
-    exclusions were chosen from — see :func:`row_lines`.
+    exclusions were chosen from — see :func:`row_lines`. A break still opens
+    a block when it carries a clock; it simply calls nobody. Whether a row is
+    reserve is not read here at all: a reserve row counts toward the window,
+    which promises the worst case.
     """
 
     piece: str | None
@@ -49,6 +59,7 @@ class PlanRow:
     lines: frozenset[str]
     excluded_lines: frozenset[str]
     excludes_instrumentalists: bool
+    is_break: bool = False
 
 
 @dataclass(frozen=True)
@@ -96,13 +107,17 @@ def row_lines(declared: Iterable[str]) -> frozenset[str]:
 def item_calls_seat(row: PlanRow, seat: PlanSeat, *, calls_instrumentalists: bool) -> bool:
     """Whether ``row`` needs ``seat`` in the room.
 
-    A player answers to the rehearsal's flag and the row's, never to a line —
-    a player is not a voice line. A singer cast on the row's piece is called
-    unless that very line is excluded. A singer without a casting is called
+    A break needs nobody, players included — a labelled "Przerwa" that called
+    everyone would keep the men until the ladies-only piece after it. A player
+    answers to the rehearsal's flag and the row's, never to a line — a player
+    is not a voice line. A singer cast on the row's piece is called unless
+    that very line is excluded. A singer without a casting is called
     conservatively: as long as any line that answers to one of the seat's
     section letters is still offered by the row. So "bez B2" only bites a bass
     once the basses are cast — the known cost of resolving through casting.
     """
+    if row.is_break:
+        return False
     if seat.is_instrumentalist:
         return calls_instrumentalists and not row.excludes_instrumentalists
     cast_line = seat.cast_lines.get(row.piece) if row.piece is not None else None
@@ -194,15 +209,47 @@ def window_payload(window: PlanWindow | None) -> dict[str, object] | None:
     }
 
 
+def evening_is_over(start: datetime, end: datetime | None, now: datetime) -> bool:
+    """Whether an evening is behind us: past its end, or — when nobody timed
+    it — past :data:`UNTIMED_EVENING_LENGTH` after its start."""
+    return now >= (end if end is not None else start + UNTIMED_EVENING_LENGTH)
+
+
+def row_done(
+    *, ticked: bool, skipped: bool, is_reserve: bool, is_break: bool, over: bool,
+) -> bool | None:
+    """Whether a row was worked on, as every reader is told it.
+
+    The plan is the default. A debrief is the step most often missed, and an
+    evening with no ticks must not read as "nothing happened": once it is
+    over, a main row reads done and a reserve row — "if time allows" — does
+    not. The debrief's explicit verdict (``ticked`` / ``skipped``) wins either
+    way. Before the end with no verdict, nothing is known yet (``None``). A
+    break is never a verdict: it is not a piece of work.
+    """
+    if is_break:
+        return None
+    if ticked:
+        return True
+    if skipped:
+        return False
+    if not over:
+        return None
+    return not is_reserve
+
+
 __all__ = [
     "CANONICAL_LINES",
+    "UNTIMED_EVENING_LENGTH",
     "PlanBlock",
     "PlanRow",
     "PlanSeat",
     "PlanWindow",
+    "evening_is_over",
     "item_calls_seat",
     "plan_blocks",
     "plan_window_for_seat",
+    "row_done",
     "row_lines",
     "window_payload",
 ]

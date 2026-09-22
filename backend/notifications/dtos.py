@@ -249,6 +249,9 @@ class RehearsalUpdatedMetadata(EventMomentMetadata):
     location: str = ""
     focus: str = ""
     changes: tuple[FieldChangeMetadata, ...]
+    # Set on a plan send the cast has had an earlier version of: the copy then
+    # says the plan changed rather than that it is up.
+    plan_revised: bool = False
     message: str | None = None
 
 class RehearsalCancelledMetadata(EventMomentMetadata):

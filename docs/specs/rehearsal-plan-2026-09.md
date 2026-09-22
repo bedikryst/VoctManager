@@ -1,12 +1,16 @@
 # Rehearsal planning — sectional calls, ordered plan, time slots
 
-Status: **All five stages implemented (1–3 on 2026-09-21, Stages 4 and 5 on 2026-09-22) and seen
-in the browser — NOT committed; migrated on the dev stack only (`roster/0057`, `roster/0058` still
+Status: **All five stages implemented (1–3 on 2026-09-21, Stages 4 and 5 on 2026-09-22), seen
+in the browser and committed; migrated on the dev stack only (`roster/0057`, `roster/0058` still
 wait for `make migrate` on prod); Stages 4 and 5 emitted NO migration. Both audits are closed:
 Stages 1–3 (fixes F1–F5 and the decision that a sectional CAN call the players) and Stages 4–5
 (the four "Fix next" items, all applied 2026-09-22) — see "Audit" at the end. A follow-up round on
 2026-09-22 reworked the ways INTO the rehearsal page (see "Entry points" at the end); that round
-is implemented but not yet seen in the browser.**
+is implemented but not yet seen in the browser. Round 2 (decisions 14–23, Stages 6–10) was
+decided on 2026-09-22 after a conductor-side audit — see "Round 2" at the very end. Stage 6
+(backend) implemented 2026-09-22 — NOT committed; its migration is
+`roster/0060` (`0059` was already the voice-line choices), applied nowhere yet; no visible
+surface until Stage 7. Stages 7–10 NOT started.**
 One stage per session; move this line when a stage lands and say whether it is committed,
 migrated and seen in the browser.
 
@@ -811,3 +815,287 @@ who is running late and wants to say so.
 - A rehearsal-moved notice from the bell: the schedule opens scrolled to that card, expanded, and
   the URL no longer carries `?rehearsal=`.
 - Installed PWA: long-press the icon, "Najbliższa próba" lands on the evening.
+
+## Round 2 — the conductor's side (decided 2026-09-22)
+
+A conductor-side audit of Stages 1–5 found the plan strong on "who is needed when" and weak on
+the planning loop itself: the choir reads drafts, a missed debrief turns the statistics into gold
+false alarms, there is no "if time allows", and the editor makes the conductor type what he
+thinks in blocks. The developer took every item; Florent's answer on minutes added decision 23.
+Stages 6–7 are structural and land before Florent plans his first real evenings; Stage 8 gives
+him the minutes he asked for; 9–10 are ergonomics and come last, so what he says after his first
+weeks can still redirect them.
+
+### Decisions (continuing the numbering above)
+
+14. **The plan is public once published, or once the evening has started.** Today `plan` and
+    `my_plan_window` reach a member from the first save — a half-laid plan saved on Sunday puts
+    "Twoja część 18:00–20:30" on a tenor's card. One predicate, `Rehearsal.plan_is_public(now)`
+    = `plan_announced_at is not None or now >= date_time` (after the start the plan is history
+    and the ticks are the truth). Drafts are visible to a manager reading as themselves and on
+    the lead sheet (the `roll_call` gate); every other reader — a member, a manager in preview
+    (`?artist=`) — gets `plan: []` and `my_plan_window: null`, and `GET plan/` answers a member
+    `rows: []`. The reminder carries no plan lines and no window for an unpublished plan (one
+    group). The button reads "Opublikuj plan" until the first announce, then "Wyślij zmiany",
+    enabled only when the plan changed after `plan_announced_at` — today it re-sends an
+    identical plan. A re-send's copy says the plan CHANGED (metadata flag, new msgids). No
+    unpublish. Plans on the dev stack become drafts; nothing is on prod, so no data migration.
+    **`Rehearsal.plan_changed_at`**, stamped by `replace_plan` whenever a row is created, changed,
+    moved or DELETED, replaces the per-row `updated_at` comparison behind "zmieniony po
+    wysłaniu": deleting the last row changes no surviving row, so the caption misses it today.
+15. **Reserve — "Jeśli starczy czasu".** `RehearsalPlanItem.is_reserve`. Reserve rows form a
+    suffix of the plan; the plan DTO refuses a main row after a reserve row. The editor draws a
+    sortable divider; rows under it are reserve, derived from the divider's position at save
+    (never stored per row in the draft). The divider is present once the plan has a row, a quiet
+    line while nothing sits under it. Every read surface (page, lead sheet, print, debrief) shows
+    the same divider; the card and hero previews stop at it. Reminder lines carry `reserve`, and
+    the e-mail prints a "Jeśli starczy czasu" line before them. **The window is unchanged**: a
+    reserve row counts, since the window promises the worst case — pinned by a golden case.
+    Fills: "Dodaj cały program" appends above the divider; "Niezrobione z ostatniej próby" lands
+    everything above it (last week's reserve is this week's due); "Skopiuj plan z…" keeps the
+    flag.
+16. **Break — a row that calls nobody.** `RehearsalPlanItem.is_break`: a free row (no piece; the
+    label stays required, and the editor prefills "Przerwa"), no exclusions (the DTO refuses
+    them), and `item_calls_seat` answers False for every seat, players included. A labelled break
+    today calls everyone, so "20:00 przerwa, 20:15 Lumen same panie" gives the men 19:00–20:15
+    instead of 19:00–20:00. Never in the debrief checklist, the carry-over or the statistics;
+    muted on every timeline. Golden cases: a break before a ladies-only closer ends the men's
+    window at the break; a break mid-evening is a gap, not an end.
+17. **Done defaults to the plan.** Every missed debrief today reads as "nothing happened": once
+    one row is ticked anywhere, every untouched piece turns gold, and the carry-over brings the
+    whole plan back. `RehearsalPlanItem.skipped_at` beside `done_at`, mutually exclusive, written
+    only by the tick endpoint (`done: true` → `done_at`, `false` → `skipped_at`). One pure
+    function in `domain/rehearsal_plan.py`: an explicit stamp wins; otherwise, once the evening
+    is over, a main row is done and a reserve row is not; before that, `null`. A break is always
+    `null`. "Over" = `end_date_time`, else `date_time` + four hours — one named constant, the twin
+    of the frontend's `PAST_GRACE_MS`. The wire gains `plan[].done: bool | null`, and EVERY client
+    reads `done`, never the stamps. The debrief checklist opens pre-ticked (`done ?? !is_reserve`,
+    so it reads right even when opened before the end), headed "Odznacz, czego nie zrobiliście";
+    a tap writes explicitly. Statistics: `_rehearsed` counts DISTINCT rehearsals per piece off
+    `done` (it counts rows today: a piece worked in the sectional and again in the tutti reads
+    "ćwiczone 2×"), and stays `null` until one rehearsal of the project with a plan is over.
+    Carry-over takes the rows with `done === false` from the previous rehearsal that is over; an
+    evening not held yet offers nothing.
+18. **The clock waits to be asked.** `RehearsalPlanRow` keeps the `w-28` slot (the note indent
+    and the column alignment depend on it); an empty clock is a ghost "+ godz." that opens the
+    `TimeField` on tap; a clock cleared on blur collapses back. Rule for Florent: a clock where
+    somebody arrives or leaves. *The "no duration field" clause is superseded by decision 23; the
+    slot's final behaviour is described there.*
+19. **Block header in the editor.** Once the plan has two blocks or more (blocks as
+    `planBlocks` groups them), the first row of each block carries a header: the span and length
+    ("18:00–19:00 · 60 min"; the last block runs to the rehearsal end, or reads "od 20:30" with no
+    duration; a block starting past the end shows no length — ordering carries the warning), and
+    block call chips — the four families plus players — tri-state over the block's non-break rows
+    (all / some / none excluded). A tap SETS the family on every row of the block, each through
+    its own declared lines. No inheritance on drag: a row moved into a block keeps its
+    exclusions, and the header reads "some". Lines ("bez B2") stay per row. Editor only; nothing
+    here reaches the choir.
+20. **Who is actually coming.** A strip over the editor, per section letter "expected / called":
+    the seats the rehearsal calls (`resolveInvited`) minus those holding an `ABSENT` `Attendance`
+    for this rehearsal (`LATE` counts as coming). A seat counts toward each of its letters, as
+    the call does (a mezzo counts in S and in A); players are a fifth figure when called. Read
+    from the flat `["attendances"]` cache, read-only.
+21. **The project grid — pieces × rehearsals.** A second view on the Rehearsals hub tab
+    (`SegmentedTabs`: "Oś" / "Utwory"). Rows = programme in programme order; columns = the
+    project's rehearsals by date. A cell shows planned / reserve / done / not done, "×2" when a
+    piece sits twice on one evening — a glyph per state, never colour alone. A right-hand column
+    repeats the programme statistics (count, gold zero). Past columns are read-only; a tap on a
+    future cell adds the piece to that plan (above the divider, no clock) or removes it, through
+    the existing whole-list `PUT plan/` built from the list payload's rows. Accepted race: an
+    editor draft of the same rehearsal wins on its next save — the editor is a modal sheet, so
+    the two are never open side by side.
+22. **Closing the plan sheet with a dirty draft asks first** (`ConfirmModal`); the editor
+    exposes `onDirtyChange`.
+23. **Minutes per row; the clocks follow from them** (2026-09-22, Florent: "jeżeli ktoś nie
+    śpiewa w danym utworze, będzie mógł przyjść na próbę później"). His motive is decision 8's
+    window, which already exists. What minutes add is an INPUT that survives reordering: a dragged
+    row keeps a typed clock and every time after it goes wrong, while minutes recompute.
+    - `RehearsalPlanItem.minutes` (positive small integer, null) — the conductor's estimate.
+    - Effective clock, one pure function in `domain/rehearsal_plan.py` and its TS mirror,
+      golden-cased: an explicit `starts_at` is an ANCHOR and wins; otherwise the previous row's
+      effective clock plus the previous row's minutes, when both are known; otherwise the row
+      flows under the last clock, as today. The first row without an anchor starts at the
+      rehearsal start. `plan_blocks` and the window read effective clocks — decision 8's rule is
+      unchanged, only its input.
+    - The choir sees promises, not the budget. The chorister's timeline, page and print show a
+      clock on an anchored row and where the reader's own `calls_me` flips (their arrival, their
+      release); the reminder's plan lines show anchors only, beside the "Twoja część" row. The
+      window itself is computed from every effective clock. The editor and the lead sheet (staff)
+      show every effective clock; a reader with `calls_me: null` (staff) sees all of them too.
+    - Wire: `plan[].clock` ("HH:MM" | null, effective) and `plan[].clock_derived`; the raw
+      `starts_at` stays for the editor.
+    - Editor: a minutes field per row, stepping by 5 (a round start then gives round clocks — no
+      rounding rule anywhere). The `w-28` slot shows the effective clock, muted when derived and
+      in ink when anchored; a tap on a derived clock anchors it, and clearing an anchor returns
+      it to derived; "+ godz." only when nothing is known. With a `duration_minutes`, an "end of
+      rehearsal" line is drawn between the rows where the running time passes the end — the rows
+      under it are what the evening cannot fit, next to the reserve divider. Editor only;
+      ordering carries the warning, no validation copy.
+    - An anchor earlier than the minutes before it add up to: the anchor wins (it is the
+      promise); decision 19's block header states planned minutes against the span, as facts.
+    - Minutes supply WHEN, never WHO. Who is released still comes from casting and declared
+      voicing (decision 4): a piece whose edition declares only S/A lines releases the men by
+      itself; a piece with nothing declared calls everyone until the conductor excludes families.
+
+Rejected: a "partly done" state (the note plus the carry-over covers it), a leader per row,
+soloist-only rows, a live mode counting down to a section's release, unpublishing a plan.
+
+### Stage 6 — Backend: publish gate, reserve, break, done, statistics (high effort)
+
+- `roster/models.py`: `RehearsalPlanItem.is_reserve`, `is_break`, `skipped_at`;
+  `Rehearsal.plan_changed_at`; `Rehearsal.plan_is_public()` → `makemigrations` (`roster/0059`,
+  one migration for all four fields).
+- `roster/dtos.py`: `RehearsalPlanRowDTO` gains `is_reserve`, `is_break` (a break: no piece, no
+  exclusions, no players flag); `RehearsalPlanDTO` refuses a main row after a reserve row.
+- `roster/domain/rehearsal_plan.py`: `item_calls_seat` honours `is_break`; the done rule
+  (decision 17) and the "over" constant. Golden cases in `rehearsal_plan_cases.json` (break ×2,
+  reserve counts toward the window) AND the TS mirror `features/rehearsals/lib/rehearsalPlan.ts`
+  (`PlanRuleRow.is_break`, `planRowOf`) in the same stage — both suites read the one fixture.
+- `roster/services.py`: `replace_plan` (new fields in `values`; stamps `plan_changed_at` when
+  anything was created, changed, moved or deleted); `mark_plan_item` (done → `done_at`, not
+  done → `skipped_at`; a break refused); `announce_plan` (revision flag when
+  `plan_announced_at` was already set); `rehearsal_plan_lines` (`reserve`, and nothing when
+  the plan is not public).
+- `roster/serializers.py`: `RehearsalPlanItemSerializer` (`is_reserve`, `is_break`, `skipped_at`,
+  `done` — "over" computed once per rehearsal and passed in context, never `item.rehearsal` per
+  row); `RehearsalSerializer.get_plan` / `get_my_plan_window` apply the gate; `plan_changed_at`
+  exposed; `ProgramItemSerializer._rehearsed` per decision 17.
+- `roster/views.py`: whose view it is decides drafts — the schedule dashboard and `retrieve`
+  pass the preview target, the lead sheet passes "drafts visible", `GET plan/` answers a member
+  `rows: []` while unpublished, and `PUT plan/` answers `plan_changed_at`.
+- `roster/tasks.py`: `_dispatch_rehearsal_reminders` / `_reminder_groups_by_window` — no lines and
+  no window for an unpublished plan.
+- `notifications/message_content.py`: `_plan_lines` prints the reserve line;
+  `_compose_rehearsal_plan_announced` branches on the revision flag. `.po`/`.mo` pl/fr/en via
+  polib.
+- Tests in `roster/test_rehearsal_plan.py`: the gate (member, preview, manager, lead sheet, after
+  the start, `GET plan/`); the reminder without a published plan (one group, no lines); the
+  reserve suffix; break windows; done (before the end `null`, after it main true / reserve
+  false, an explicit stamp wins both ways, break `null`); statistics count distinct rehearsals and
+  stay `null` until an evening is over; `plan_changed_at` on a deletion; the revision copy.
+  Existing retrieve and reminder tests publish first.
+
+**As landed (2026-09-22).** Where the code departs from or adds to the list above:
+- Migration `roster/0060`, with two `CheckConstraint`s: a row holds at most one verdict
+  (`done_at` or `skipped_at`), and a break names no piece.
+- Whose view it is travels as `plan_drafts_visible` in the serializer context: retrieve and the
+  schedule dashboard pass `not is_preview and user_is_manager`, the lead sheet passes `True`.
+  Without the key (the plain rehearsal list) a manager sees drafts and a member does not.
+  `_plan_access` (was `_plan_rehearsal_or_404`) returns the rehearsal AND whether the reader is
+  on the conductor's side; the same flag gates drafts on `GET plan/` and writes on the tick door.
+  `GET plan/` answers `plan_changed_at` too, not only `PUT`.
+- `announce_plan` refuses a resend when `plan_changed_at <= plan_announced_at` (400, "The plan
+  has not changed since it was sent.") — the server twin of the disabled "Wyślij zmiany".
+- `plan_revised` stays false while an earlier plan send still waits in the announcement queue
+  (`AnnouncementQueue.has_pending_change`): the cast has not heard the first one, and the queue
+  collapses to the latest metadata, so a flag set there would announce a "change" to a plan
+  nobody received. `RehearsalUpdatedMetadata.plan_revised` is a typed field.
+- Statistics are `null` until ANY non-break row of the project has a verdict — an evening over,
+  or an explicit tick. A tick during the evening therefore shows the figures before the end; the
+  spec's "until one evening is over" differs only in that window. Two queries (rehearsals, then
+  rows), because `Rehearsal.end_date_time` stays the single reader of `duration_minutes`.
+- A tap on the tick door always writes explicitly; there is no way back to "no verdict" (nobody
+  asked for one).
+- The e-mail's reserve line is the msgid "If time allows:" (with the colon).
+- TS mirror: `PlanRuleRow.isBreak` (camelCase, like its siblings); `planRowOf` takes `is_break`
+  as OPTIONAL, because the editor's draft rows do not carry it yet — Stage 7 makes the draft
+  carry it and should make the field required then.
+
+### Stage 7 — Frontend: the same semantics on every surface
+
+- Types: `shared/types/index.ts` (`RehearsalPlanItem`: `is_reserve`, `is_break`, `skipped_at`,
+  `done`; `Rehearsal.plan_changed_at`), `features/rehearsals/types/rehearsalPlan.dto.ts`.
+- Editor: `plan/usePlanEditor.ts` (the divider as a sortable item, `is_reserve` derived at save;
+  `addBreakRow`; fills per decisions 15 and 17), `RehearsalPlanEditor.tsx` (Opublikuj / Wyślij
+  zmiany / Opublikowano {when}; caption "Szkic — chór go nie widzi"; "Dodaj przerwę"; the
+  changed-after caption from `plan_changed_at`), `RehearsalPlanRow.tsx` (a break row: no chips,
+  muted).
+- Read side: `RehearsalPlanTimeline.tsx` (divider, break, ticks from `done`),
+  `RehearsalDebrief.tsx` (pre-ticked, new heading, no breaks), `api/plan.queries.ts` (the
+  optimistic tick writes `done` and the stamps), `RehearsalPage.tsx`, `TimelineRehearsalCard`,
+  `NextEventHero` (previews stop at the divider). Check `NotificationItem` for the revised-plan
+  copy.
+- `QUERY_CACHE_BUSTER` (the DTO changed; bump only if the current value is committed). i18n ×3
+  (`rehearsals.plan.*`, `schedule.rehearsal.plan.*`).
+- After this stage, `done_at` in `frontend/src/features/rehearsals` appears only in types and the
+  optimistic write.
+
+### Stage 8 — Minutes and effective clocks (decision 23; backend and frontend, high effort)
+
+- `roster/models.py`: `RehearsalPlanItem.minutes` → `makemigrations` (`roster/0061`; Stage 6
+  took `0060`).
+- `roster/dtos.py`: `RehearsalPlanRowDTO.minutes` (positive; a break may carry minutes).
+- `roster/domain/rehearsal_plan.py`: `effective_clocks(rows, start)`; `plan_blocks` and
+  `plan_window_for_seat` read it. Golden cases in `rehearsal_plan_cases.json`: minutes only; minutes
+  with an anchor mid-plan; the same rows reordered move a section's arrival; a row without minutes
+  mid-plan makes the rows after it flow under. The TS mirror (`lib/rehearsalPlan.ts` + its test)
+  in the same stage.
+- `roster/services.py`: `replace_plan` carries `minutes` (a change of minutes is a change of the
+  plan: `plan_changed_at`); `rehearsal_plan_lines` prints anchors only.
+- `roster/serializers.py`: `RehearsalPlanItemSerializer` gains `minutes`, `clock`,
+  `clock_derived` (effective clocks computed once per rehearsal and passed in context).
+- Frontend: types; `plan/RehearsalPlanRow.tsx` (the minutes field, the clock slot per decision 23);
+  `plan/usePlanEditor.ts` (effective clocks for the draft through the mirror, anchoring,
+  un-anchoring); `plan/RehearsalPlanEditor.tsx` (the end-of-rehearsal line);
+  `plan/RehearsalPlanTimeline.tsx` (the display rule: anchors and the reader's own flips; all
+  clocks when `calls_me` is null). i18n ×3.
+- Tests in `roster/test_rehearsal_plan.py`: the golden cases through the API (a tenor's window
+  from minutes alone), `plan_changed_at` on a minutes edit, reminder lines without derived times.
+
+### Stage 9 — Editor ergonomics
+
+- Block header (decision 19): new `plan/PlanBlockHeader.tsx`, rendered inside the block's first
+  row `<li>` so it travels with the row on drag; `usePlanEditor.ts` gains `setFamilyOnRows` /
+  `setPlayersOnRows` (SET, not toggle).
+- Attendance strip (decision 20): new `plan/PlanAttendanceStrip.tsx`; `usePlanEditorData.ts`
+  reads the attendance register under its existing key.
+- Dirty confirm (decision 22): `features/projects/editors/tabs/RehearsalsTab.tsx` +
+  `onDirtyChange` on the editor.
+- i18n ×3.
+
+### Stage 10 — Project grid
+
+- New `plan/ProjectPlanGrid.tsx` + `plan/useProjectPlanGrid.ts`, mounted in `RehearsalsTab.tsx`
+  behind `SegmentedTabs`; layout precedent `AttendanceMatrixTab.tsx` (sticky first column,
+  horizontal scroll on a phone). Writes through the plan's whole-list PUT per rehearsal,
+  invalidating `["rehearsals"]` and that rehearsal's `["rehearsal-plan", id]`. i18n ×3.
+
+### Verification
+
+Per stage, as above: ruff + mypy on `roster`, `core`, `notifications`; `roster` tests on the
+sqlite settings; `makemigrations --check`; `npm run typecheck`, the vitest golden suite, and
+`npm run build` after Stages 7, 8 and 10. `make migrate` on dev after Stages 6 and 8; prod gets
+0059–0060 with the queued 0057–0058.
+
+Browser, developer:
+- After 7: in a chorister preview a saved, unpublished plan is invisible (card, hero, page);
+  "Opublikuj plan" makes it appear; deleting the last row then shows "zmieniony po wysłaniu"
+  and "Wyślij zmiany". A reserve divider on the page and in print. "20:00 przerwa, 20:15 Lumen
+  same panie" → a tenor's window ends at 20:00. An evening that ended with no debrief → the
+  programme tab counts its main pieces, reserve pieces stay gold; the debrief opens pre-ticked.
+- After 8: 18:00 start, "Lumen · 20 min · bez T, B", then "Orff · 30 min" → the editor shows
+  18:20 muted on Orff, a tenor's card says "Twoja część: 18:20–…"; drag Orff first → the tenor's
+  arrival becomes 18:00 with nothing retyped; tap the 18:20 to anchor it, drag again → it stays
+  18:20. The chorister's page shows only his arrival and anchors, the lead sheet every clock. A
+  plan longer than the evening shows the end-of-rehearsal line between rows.
+- After 9: a block header toggles "Tenory" across its rows; the strip drops a section after an
+  absence is reported; closing a dirty sheet asks.
+- After 10: the grid mirrors the plans; a tap on a future cell shows up in that evening's
+  editor.
+
+### Traps
+
+- `done_at` no longer means "done". Any reader that still checks it shows a missed debrief as
+  "nothing happened" again.
+- The gate is one predicate with five readers (two serializer fields, `GET plan/`, the reminder
+  lines, the reminder windows). The reminder is the one most likely to be missed.
+- `is_reserve` is derived from the divider at save. A draft that stores it per row lets a drag
+  put a main row under a reserve one, and the DTO then refuses the whole list.
+- The golden fixture is read by both suites: a row-shape change in Stage 6 without the TS
+  mirror breaks the frontend suite.
+- `done` depends on `now`: a rehearsal's rows flip at its end without a write, and a persisted
+  query may hold the old `null` until it refetches. Acceptable.
+- Two clock sets after Stage 8: the window and the blocks read EVERY effective clock; the
+  chorister's display shows a subset (anchors and their own flips). A reader built on the
+  displayed clocks computes the wrong window. Every existing golden case (anchors only, no
+  minutes) must pass unchanged — with no minutes, effective clock = `starts_at`.

@@ -9,7 +9,9 @@
  * while excluding is the number of people the server then stops calling.
  * A singer cast on the row's piece answers through that casting; one without
  * a casting is called conservatively, through the section letters a sectional
- * calls them by; a player answers to the rehearsal's flag and the row's.
+ * calls them by; a player answers to the rehearsal's flag and the row's; a
+ * break calls nobody. A reserve row is not read here at all — it counts
+ * toward the window, which promises the worst case.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/lib/rehearsalPlan
  */
@@ -42,6 +44,8 @@ export interface PlanRuleRow {
   readonly lines: ReadonlySet<string>;
   readonly excludedLines: ReadonlySet<string>;
   readonly excludesInstrumentalists: boolean;
+  /** Calls nobody, players included; still opens a block when it has a clock. */
+  readonly isBreak: boolean;
 }
 
 /** One seat as the rule reads it: its section letters, and its line per piece. */
@@ -76,6 +80,7 @@ export const itemCallsSeat = (
   seat: PlanRuleSeat,
   callsInstrumentalists: boolean,
 ): boolean => {
+  if (row.isBreak) return false;
   if (seat.isInstrumentalist) {
     return callsInstrumentalists && !row.excludesInstrumentalists;
   }
@@ -182,7 +187,8 @@ export const planSeatOf = (
 /**
  * A rule row from a saved or drafted plan row. `declaredLines` are the piece's
  * divisi as the programme binds them (the explicit edition only — the server
- * consults nothing else); ignored for a free row.
+ * consults nothing else); ignored for a free row. A row that does not say
+ * `is_break` is not a break.
  */
 export const planRowOf = (
   item: {
@@ -190,6 +196,7 @@ export const planRowOf = (
     readonly starts_at: string | null;
     readonly excluded_voice_lines: readonly string[];
     readonly excludes_instrumentalists: boolean;
+    readonly is_break?: boolean;
   },
   declaredLines: Iterable<string>,
 ): PlanRuleRow => ({
@@ -198,4 +205,5 @@ export const planRowOf = (
   lines: rowLines(item.piece === null ? [] : declaredLines),
   excludedLines: new Set(item.excluded_voice_lines),
   excludesInstrumentalists: item.excludes_instrumentalists,
+  isBreak: item.is_break ?? false,
 });

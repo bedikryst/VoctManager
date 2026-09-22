@@ -5140,3 +5140,55 @@ msgstr "Ouvrir la répétition"
 #: core/serializers.py:330
 msgid "Note cannot be empty."
 msgstr "La note ne peut pas être vide."
+
+#: roster/models.py
+msgid "Plan Changed At"
+msgstr "Plan modifié le"
+
+#: roster/models.py
+msgid "Reserve"
+msgstr "Réserve"
+
+#: roster/models.py
+msgid "Break"
+msgstr "Pause"
+
+#: roster/models.py
+msgid "Skipped At"
+msgstr "Non fait le"
+
+#: roster/services.py
+msgid "A break is not ticked off."
+msgstr "Une pause ne se coche pas."
+
+#: roster/services.py
+msgid "The plan has not changed since it was sent."
+msgstr "Le plan n’a pas changé depuis son envoi."
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal plan changed — %(when)s"
+msgstr "Plan de répétition modifié — %(when)s"
+
+#: notifications/message_content.py
+msgid "The rehearsal plan has changed"
+msgstr "Le plan de répétition a changé"
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal plan changed — %(project)s"
+msgstr "Plan de répétition modifié — %(project)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"The conductor has changed the plan for the %(project)s rehearsal. Open it to"
+" see what is rehearsed now and which part of the evening is yours."
+msgstr ""
+"Le chef a modifié le plan de la répétition (%(project)s). Ouvrez-le pour "
+"voir ce qui est travaillé désormais et quelle partie de la soirée vous "
+"concerne."
+
+#: notifications/message_content.py
+msgid "If time allows:"
+msgstr "Si le temps le permet :"

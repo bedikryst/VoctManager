@@ -1,14 +1,16 @@
-"""The rehearsal plan: one ordered table of rows, each a piece or a label,
-an optional clock, voice exclusions and a done stamp (`RehearsalPlanItem`).
+"""The rehearsal plan: one ordered table of rows, each a piece, a label or a
+break, an optional clock, voice exclusions, a reserve flag and the debrief's
+verdict (`RehearsalPlanItem`).
 
 Two suites. The contract suite replays `domain/rehearsal_plan_cases.json`,
 the fixture the client's exclusion chips mirror, so "bez B2 · 3 osoby" on the
 panel and who the server calls are one rule. The API suite drives the plan
-through its doors: the declarative PUT (done stamps survive, positions never
-collide, a piece outside the programme is refused), the per-reader read
-(`calls_me`, `my_plan_window`) on the single rehearsal and on the schedule
-dashboard, the done gate (the debrief's), and "Wyślij plan", which is the one
-moment the cast hears about the plan.
+through its doors: the declarative PUT (verdicts survive, positions never
+collide, a piece outside the programme is refused, the reserve closes the
+plan), the per-reader read (`calls_me`, `my_plan_window`) on the single
+rehearsal and on the schedule dashboard, the publish gate on all five of its
+readers, `done` defaulting to the plan once the evening is over, and "Wyślij
+plan", which is the one moment the cast hears about the plan.
 """
 
 from __future__ import annotations
@@ -87,6 +89,7 @@ class RehearsalPlanContractTests(SimpleTestCase):
                     lines=pieces[row["piece"]] if row.get("piece") else row_lines(()),
                     excluded_lines=frozenset(row.get("excluded", ())),
                     excludes_instrumentalists=bool(row.get("excludesInstrumentalists", False)),
+                    is_break=bool(row.get("isBreak", False)),
                 )
                 for row in case["rows"]
             ]
@@ -236,6 +239,23 @@ class RehearsalPlanApiTests(APITestCase):
         )
         self.rehearsal.refresh_from_db()
 
+    def _end_the_evening(self) -> None:
+        """Three hours long, over two hours ago."""
+        Rehearsal.objects.filter(pk=self.rehearsal.pk).update(
+            date_time=timezone.now() - timedelta(hours=5),
+        )
+        self.rehearsal.refresh_from_db()
+
+    def _publish(self) -> None:
+        """The conductor's send, without the queue: the plan is public from
+        here on (decision 14). Every read through a member's seat below
+        publishes first — a draft is withheld from them."""
+        Rehearsal.objects.filter(pk=self.rehearsal.pk).update(plan_announced_at=timezone.now())
+        self.rehearsal.refresh_from_db()
+
+    def _pieces(self, *keys: str) -> list[str]:
+        return [str(self.pieces[key].id) for key in keys]
+
     # --- writing -----------------------------------------------------------
 
     def test_put_writes_the_plan_in_order_and_silently(self) -> None:
@@ -356,6 +376,7 @@ class RehearsalPlanApiTests(APITestCase):
 
     def test_exclusions_resolve_through_casting_then_the_section(self) -> None:
         self._put(self._evening())
+        self._publish()
         cases = {
             "sopran": ([True, True, True], None),
             "alt": ([False, True, True], {"calls_me": True, "start": "19:00", "end": "21:00"}),
@@ -378,6 +399,7 @@ class RehearsalPlanApiTests(APITestCase):
             {"piece": str(self.pieces["bach"].id), "starts_at": "19:00",
              "excluded_voice_lines": ["T1"]},
         ])
+        self._publish()
         data = self._read("tenor")
         self.assertEqual([row["calls_me"] for row in data["plan"]], [False, False])
         self.assertEqual(
@@ -390,6 +412,7 @@ class RehearsalPlanApiTests(APITestCase):
         self.rehearsal.save()
         self.rehearsal.invited_participations.set([self.seats["organista"], self.seats["alt"]])
         self._put(self._evening())
+        self._publish()
         data = self._read("organista")
         self.assertEqual([row["calls_me"] for row in data["plan"]], [True, True, False])
 
@@ -400,6 +423,7 @@ class RehearsalPlanApiTests(APITestCase):
              "excluded_voice_lines": ["T1"]},
             {"piece": str(self.pieces["bach"].id), "excluded_voice_lines": ["T1"]},
         ])
+        self._publish()
         data = self._read("tenor")
         self.assertEqual([row["calls_me"] for row in data["plan"]], [True, False, False])
         self.assertEqual(
@@ -408,6 +432,7 @@ class RehearsalPlanApiTests(APITestCase):
 
     def test_the_schedule_dashboard_carries_the_window(self) -> None:
         self._put(self._evening())
+        self._publish()
         self.client.force_authenticate(user=self.users["alt"])
         response = self.client.get("/api/participations/schedule-dashboard/")
         self.assertEqual(response.status_code, 200)
@@ -420,6 +445,7 @@ class RehearsalPlanApiTests(APITestCase):
         self.assertEqual([row["calls_me"] for row in rehearsal["plan"]], [False, True, True])
 
     def test_the_lead_sheet_shows_the_plan_without_reader_fields(self) -> None:
+        # Not published: the lead sheet is the conductor's side of the gate.
         self._put(self._evening())
         self.client.force_authenticate(user=self.leader_user)
         response = self.client.get(f"{self.url}lead-sheet/")
@@ -430,13 +456,13 @@ class RehearsalPlanApiTests(APITestCase):
         self.assertIsNone(response.data["rehearsal"]["my_plan_window"])
 
     def test_a_past_rehearsal_is_still_readable_with_its_ticks(self) -> None:
+        # Never sent, yet readable: once the evening starts the plan is its record.
         rows = self._put(self._evening()).data["rows"]
         self._start_the_evening()
         self.client.force_authenticate(user=self.leader_user)
         self.client.patch(f"{self.plan_url}{rows[0]['id']}/done/", {"done": True}, format="json")
         data = self._read("alt")
-        self.assertIsNotNone(data["plan"][0]["done_at"])
-        self.assertIsNone(data["plan"][1]["done_at"])
+        self.assertEqual([row["done"] for row in data["plan"]], [True, None, None])
 
     # --- done --------------------------------------------------------------
 
@@ -463,9 +489,12 @@ class RehearsalPlanApiTests(APITestCase):
         # Ticking is not an edit of the plan the cast was sent.
         self.assertEqual(item.updated_at, before)
 
+        # "Not done" is a verdict of its own, not the absence of one.
         unticked = self.client.patch(done_url, {"done": False}, format="json")
         self.assertEqual(unticked.status_code, 200)
         self.assertIsNone(unticked.data["done_at"])
+        self.assertIsNotNone(unticked.data["skipped_at"])
+        self.assertFalse(unticked.data["done"])
 
         self.client.force_authenticate(user=self.manager)
         self.assertEqual(
@@ -494,6 +523,7 @@ class RehearsalPlanApiTests(APITestCase):
         kwargs = queue.call_args.kwargs
         self.assertEqual(kwargs["subject_id"], str(self.rehearsal.id))
         self.assertEqual(kwargs["metadata"]["changes"], [{"field": "plan", "old": None, "new": None}])
+        self.assertFalse(kwargs["metadata"]["plan_revised"])
 
     def test_announce_refuses_an_empty_plan_and_a_non_manager(self) -> None:
         self.client.force_authenticate(user=self.manager)
@@ -621,6 +651,7 @@ class RehearsalPlanApiTests(APITestCase):
         in the reminder — which means the sweep fans out per distinct window
         rather than once for the whole call."""
         self._put(self._evening())
+        self._publish()
         dispatches = self._remind()
 
         by_recipient = {
@@ -665,6 +696,7 @@ class RehearsalPlanApiTests(APITestCase):
         from roster.tasks import _dispatch_rehearsal_reminders
 
         self._put(self._evening())
+        self._publish()
         tomorrow = (datetime.now(WARSAW) + timedelta(days=1)).replace(
             hour=18, minute=0, second=0, microsecond=0,
         )
@@ -704,6 +736,7 @@ class RehearsalPlanApiTests(APITestCase):
         from notifications.models import NotificationLevel, NotificationType
 
         self._put(self._evening())
+        self._publish()
         metadata = self._remind()[0]["metadata"]
         self.assertEqual(
             [row["title"] for row in metadata["plan"]], ["Orff", "Bach", "Lumen"],
@@ -763,7 +796,9 @@ class RehearsalPlanApiTests(APITestCase):
         for title in ("Orff", "Bach", "Lumen"):
             self.assertNotIn(title, feed)
 
-    def test_the_programme_counts_nothing_until_something_is_ticked(self) -> None:
+    def test_the_programme_counts_nothing_until_a_verdict_exists(self) -> None:
+        """A tick during the evening is a verdict before the end is: the
+        figures appear with it, and the zero is the point from then on."""
         rows = self._put(self._evening()).data["rows"]
         self.client.force_authenticate(user=self.manager)
         programme = f"/api/program-items/?project={self.project.id}"
@@ -780,17 +815,51 @@ class RehearsalPlanApiTests(APITestCase):
         evening = localize(self.rehearsal.date_time, self.rehearsal.timezone)
         assert evening is not None
         self.assertEqual(worked["last_rehearsed_on"], evening.date().isoformat())
-        # The zero is the point of the figure, and it only appears once the
-        # project has ticked something somewhere.
+        # Under way and untouched: not counted until the evening is over.
         untouched = after[str(self.pieces["orff"].id)]
         self.assertEqual(untouched["rehearsed_count"], 0)
         self.assertIsNone(untouched["last_rehearsed_on"])
+
+    def test_the_programme_counts_evenings_as_the_plan_said(self) -> None:
+        """Decision 17. Nobody debriefed this evening, and it still counts:
+        its main rows read done. A piece worked in the sectional slot and
+        again in the tutti is one rehearsal of it, a reserve piece nobody
+        confirmed is not rehearsed, and an evening not held yet adds nothing."""
+        orff, bach, lumen = self._pieces("orff", "bach", "lumen")
+        self._put([
+            {"piece": bach, "starts_at": "18:00"},
+            {"label": "Przerwa", "starts_at": "19:00", "is_break": True},
+            {"piece": bach, "starts_at": "19:15"},
+            {"piece": orff, "is_reserve": True},
+        ])
+        later = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=3),
+            timezone="Europe/Warsaw", duration_minutes=120,
+        )
+        RehearsalPlanItem.objects.create(rehearsal=later, position=1, piece=self.pieces["lumen"])
+
+        self.client.force_authenticate(user=self.manager)
+        programme = f"/api/program-items/?project={self.project.id}"
+        self.assertEqual(
+            {item["rehearsed_count"] for item in self.client.get(programme).data}, {None},
+        )
+
+        self._end_the_evening()
+        after = {str(item["piece"]): item for item in self.client.get(programme).data}
+        self.assertEqual(after[bach]["rehearsed_count"], 1)
+        evening = localize(self.rehearsal.date_time, self.rehearsal.timezone)
+        assert evening is not None
+        self.assertEqual(after[bach]["last_rehearsed_on"], evening.date().isoformat())
+        self.assertEqual(after[orff]["rehearsed_count"], 0)
+        self.assertEqual(after[lumen]["rehearsed_count"], 0)
+        self.assertIsNone(after[lumen]["last_rehearsed_on"])
 
     def test_retrieve_names_the_programme_for_a_page_read_on_its_own(self) -> None:
         """The rehearsal page has no list around it to borrow a title from, so
         the read carries one. Per-reader fields come with it — that is the
         whole reason the page asks for this read rather than the list."""
         self._put(self._evening())
+        self._publish()
         self.client.force_authenticate(user=self.users["tenor"])
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -821,6 +890,7 @@ class RehearsalPlanApiTests(APITestCase):
             *self._evening()[:1],
             {"label": "Przerwa"},
         ])
+        self._publish()
 
         self.client.force_authenticate(user=self.users["tenor"])
         rows = self.client.get(self.url).data["plan"]
@@ -840,6 +910,7 @@ class RehearsalPlanApiTests(APITestCase):
         honours the same ``?artist=`` the dashboard does. Without it the
         manager, seatless, gets no window at all."""
         self._put(self._evening())
+        self._publish()
         self.client.force_authenticate(user=self.manager)
         own = self.client.get(self.url)
         self.assertEqual(own.status_code, 200)
@@ -856,3 +927,259 @@ class RehearsalPlanApiTests(APITestCase):
         self.client.force_authenticate(user=self.users["alt"])
         refused = self.client.get(self.url, {"artist": str(tenor_artist.id)})
         self.assertEqual(refused.status_code, 403)
+
+    # --- the publish gate (decision 14) --------------------------------------
+
+    def test_a_draft_stays_on_the_conductors_side(self) -> None:
+        """A half-laid plan saved on Sunday must not put a window on a
+        tenor's card. Every read a member makes says nothing until the send —
+        so does a manager's preview of that member; the manager's own read and
+        the lead sheet show the draft being worked on."""
+        self._put(self._evening())
+        tenor_artist = str(self.seats["tenor"].artist.id)
+
+        tenor = self._read("tenor")
+        self.assertEqual(tenor["plan"], [])
+        self.assertIsNone(tenor["my_plan_window"])
+        self.client.force_authenticate(user=self.users["tenor"])
+        dashboard = self.client.get("/api/participations/schedule-dashboard/").data
+        card = next(item for item in dashboard if item["type"] == "REHEARSAL")["rehearsal"]
+        self.assertEqual(card["plan"], [])
+        self.assertIsNone(card["my_plan_window"])
+        listed = self.client.get(f"/api/rehearsals/?project={self.project.id}").data
+        self.assertEqual([row["plan"] for row in listed], [[]])
+        self.assertEqual(self.client.get(self.plan_url).data["rows"], [])
+
+        self.client.force_authenticate(user=self.manager)
+        self.assertEqual(len(self.client.get(self.url).data["plan"]), 3)
+        self.assertEqual(len(self.client.get(self.plan_url).data["rows"]), 3)
+        previewed = self.client.get(self.url, {"artist": tenor_artist}).data
+        self.assertEqual(previewed["plan"], [])
+        self.assertIsNone(previewed["my_plan_window"])
+        previewed_card = next(
+            item for item in self.client.get(
+                "/api/participations/schedule-dashboard/", {"artist": tenor_artist},
+            ).data
+            if item["type"] == "REHEARSAL"
+        )["rehearsal"]
+        self.assertEqual(previewed_card["plan"], [])
+
+        self.client.force_authenticate(user=self.leader_user)
+        self.assertEqual(len(self.client.get(self.plan_url).data["rows"]), 3)
+
+        self._publish()
+        tenor = self._read("tenor")
+        self.assertEqual(len(tenor["plan"]), 3)
+        self.assertEqual(
+            tenor["my_plan_window"], {"calls_me": True, "start": "18:00", "end": "20:30"},
+        )
+
+    def test_a_started_evening_shows_its_plan_unsent(self) -> None:
+        """After the start the plan is the evening's record, sent or not."""
+        self._put(self._evening())
+        self._start_the_evening()
+        self.assertEqual(len(self._read("alt")["plan"]), 3)
+        self.client.force_authenticate(user=self.users["alt"])
+        self.assertEqual(len(self.client.get(self.plan_url).data["rows"]), 3)
+
+    def test_the_reminder_keeps_a_draft_to_itself(self) -> None:
+        """The gate's easiest reader to miss: the reminder states a window
+        per reader and prints the plan in the e-mail. A draft travels in
+        neither, and the evening goes out as one group."""
+        self._put(self._evening())
+        dispatches = self._remind()
+        self.assertEqual(len(dispatches), 1)
+        self.assertEqual(dispatches[0]["metadata"]["plan"], [])
+        self.assertIsNone(dispatches[0]["metadata"]["my_window"])
+
+    # --- reserve and break (decisions 15, 16) --------------------------------
+
+    def test_the_reserve_closes_the_plan(self) -> None:
+        from django.utils import translation
+
+        from notifications.message_content import MessageContentBuilder
+        from notifications.models import NotificationLevel, NotificationType
+
+        orff, bach, lumen = self._pieces("orff", "bach", "lumen")
+        refused = self._put([{"piece": orff, "is_reserve": True}, {"piece": bach}])
+        self.assertEqual(refused.status_code, 400)
+        self.assertEqual(RehearsalPlanItem.objects.count(), 0)
+
+        saved = self._put([
+            {"piece": orff, "starts_at": "18:00"},
+            {"piece": bach, "is_reserve": True},
+            {"piece": lumen, "is_reserve": True, "note": "tylko fuga"},
+        ])
+        self.assertEqual(saved.status_code, 200, saved.data)
+        self.assertEqual([row["is_reserve"] for row in saved.data["rows"]], [False, True, True])
+
+        self._publish()
+        lines = self._remind()[0]["metadata"]["plan"]
+        self.assertEqual([line["reserve"] for line in lines], [False, True, True])
+        with translation.override("pl"):
+            content = MessageContentBuilder.build(
+                notification_type=NotificationType.REHEARSAL_REMINDER,
+                level=NotificationLevel.INFO,
+                metadata={
+                    "rehearsal_id": str(self.rehearsal.id),
+                    "project_name": "Laudes",
+                    "plan": lines,
+                },
+                is_manager=False,
+            )
+        plan = {row.label: row.value for row in content.details}["Plan"]
+        self.assertEqual(
+            plan.split("\n"),
+            ["18:00 · Orff", "Jeśli starczy czasu:", "Bach", "Lumen · tylko fuga"],
+        )
+
+    def test_a_break_calls_nobody_and_is_never_ticked(self) -> None:
+        """"20:00 przerwa, 20:15 Lumen same panie": the men go home at the
+        break, not after it."""
+        orff, lumen = self._pieces("orff", "lumen")
+        for row in (
+            {"label": "Przerwa", "is_break": True, "piece": orff},
+            {"label": "Przerwa", "is_break": True, "excluded_voice_lines": ["T1"]},
+            {"label": "Przerwa", "is_break": True, "excludes_instrumentalists": True},
+            {"is_break": True},
+        ):
+            with self.subTest(row=row):
+                self.assertEqual(self._put([row]).status_code, 400)
+
+        rows = self._put([
+            {"piece": orff, "starts_at": "18:00"},
+            {"label": "Przerwa", "starts_at": "20:00", "is_break": True},
+            {"piece": lumen, "starts_at": "20:15", "excluded_voice_lines": ["T1", "B1"]},
+        ]).data["rows"]
+        self.assertTrue(rows[1]["is_break"])
+        self._publish()
+        tenor = self._read("tenor")
+        self.assertEqual([row["calls_me"] for row in tenor["plan"]], [True, False, False])
+        self.assertEqual(
+            tenor["my_plan_window"], {"calls_me": True, "start": "18:00", "end": "20:00"},
+        )
+        organist = self._read("organista")
+        self.assertEqual([row["calls_me"] for row in organist["plan"]], [True, False, True])
+
+        self._start_the_evening()
+        self.client.force_authenticate(user=self.manager)
+        ticked = self.client.patch(
+            f"{self.plan_url}{rows[1]['id']}/done/", {"done": True}, format="json",
+        )
+        self.assertEqual(ticked.status_code, 400)
+
+    # --- done defaults to the plan (decision 17) -----------------------------
+
+    def test_done_follows_the_plan_unless_the_debrief_says_otherwise(self) -> None:
+        orff, bach, lumen = self._pieces("orff", "bach", "lumen")
+        rows = self._put([
+            {"piece": orff, "starts_at": "18:00"},    # ticked done
+            {"piece": bach},                          # ticked not done
+            {"piece": lumen},                         # untouched main
+            {"label": "Przerwa", "is_break": True},   # a break
+            {"piece": bach, "is_reserve": True},      # untouched reserve
+            {"piece": orff, "is_reserve": True},      # reserve, ticked done
+        ]).data["rows"]
+        self.assertEqual([row["done"] for row in rows], [None] * 6)
+
+        self._start_the_evening()
+        self.client.force_authenticate(user=self.manager)
+        for index, done in ((0, True), (1, False), (5, True)):
+            response = self.client.patch(
+                f"{self.plan_url}{rows[index]['id']}/done/", {"done": done}, format="json",
+            )
+            self.assertEqual(response.status_code, 200, response.data)
+
+        # Under way: the verdicts are known, the untouched rows not yet.
+        during = self._read("alt")["plan"]
+        self.assertEqual(
+            [row["done"] for row in during], [True, False, None, None, None, True],
+        )
+
+        # Over with no debrief for the rest: the plan is the default.
+        self._end_the_evening()
+        after = self._read("alt")["plan"]
+        self.assertEqual(
+            [row["done"] for row in after], [True, False, True, None, False, True],
+        )
+        self.assertIsNone(after[2]["done_at"])
+        self.assertIsNone(after[2]["skipped_at"])
+
+        # An explicit "not done" wins over the default on a main row.
+        self.client.force_authenticate(user=self.manager)
+        self.client.patch(f"{self.plan_url}{rows[2]['id']}/done/", {"done": False}, format="json")
+        self.assertFalse(self._read("alt")["plan"][2]["done"])
+
+    # --- "zmieniony po wysłaniu" and the resend (decision 14) ----------------
+
+    def test_every_change_the_cast_could_notice_moves_plan_changed_at(self) -> None:
+        first = self._put(self._evening())
+        stamp = first.data["plan_changed_at"]
+        self.assertIsNotNone(stamp)
+        same = [
+            {
+                "id": row["id"], "piece": row["piece"], "starts_at": row["starts_at"],
+                "note": row["note"], "excluded_voice_lines": row["excluded_voice_lines"],
+                "excludes_instrumentalists": row["excludes_instrumentalists"],
+            }
+            for row in first.data["rows"]
+        ]
+        self.assertEqual(self._put(same).data["plan_changed_at"], stamp)
+
+        # Dropping the last row changes no surviving row, and is a change.
+        dropped = self._put(same[:2]).data["plan_changed_at"]
+        self.assertGreater(dropped, stamp)
+
+        # A tick is the debrief, not an edit of the plan.
+        self._start_the_evening()
+        self.client.force_authenticate(user=self.manager)
+        self.client.patch(f"{self.plan_url}{same[0]['id']}/done/", {"done": True}, format="json")
+        self.rehearsal.refresh_from_db()
+        self.assertEqual(self.rehearsal.plan_changed_at, dropped)
+
+    def test_a_second_send_says_the_plan_changed(self) -> None:
+        from django.utils import translation
+
+        from notifications.message_content import MessageContentBuilder
+        from notifications.models import NotificationLevel, NotificationType
+
+        announce = f"{self.plan_url}announce/"
+        self._put(self._evening())
+        self.client.force_authenticate(user=self.manager)
+        with patch("roster.services.queue_broadcast") as queue:
+            self.assertEqual(self.client.post(announce, format="json").status_code, 200)
+            # Nothing changed since the send: a resend would repeat it.
+            self.assertEqual(self.client.post(announce, format="json").status_code, 400)
+            self._put(self._evening()[:2])
+            self.assertEqual(self.client.post(announce, format="json").status_code, 200)
+        first, second = (call.kwargs["metadata"] for call in queue.call_args_list)
+        self.assertFalse(first["plan_revised"])
+        self.assertTrue(second["plan_revised"])
+
+        with translation.override("pl"):
+            content = MessageContentBuilder.build(
+                notification_type=NotificationType.REHEARSAL_UPDATED,
+                level=NotificationLevel.WARNING,
+                metadata=second,
+                is_manager=False,
+            )
+        self.assertIn("Zmiana planu próby", content.title)
+        self.assertEqual(content.url_path, f"/panel/schedule/rehearsal/{self.rehearsal.id}")
+
+    def test_a_resend_the_cast_has_not_heard_before_is_still_the_plan(self) -> None:
+        """The queue holds a send until the conductor publishes it. While the
+        first one still waits, the cast has heard nothing, so the one message
+        they will get must not say the plan changed."""
+        from notifications.models import PendingAnnouncement
+
+        announce = f"{self.plan_url}announce/"
+        self._put(self._evening())
+        self.client.force_authenticate(user=self.manager)
+        self.assertEqual(self.client.post(announce, format="json").status_code, 200)
+        self._put(self._evening()[:2])
+        self.assertEqual(self.client.post(announce, format="json").status_code, 200)
+        pending = PendingAnnouncement.objects.filter(
+            subject_id=str(self.rehearsal.id), change_field="plan",
+        )
+        self.assertEqual(pending.count(), 2)
+        self.assertFalse(any(row.metadata.get("plan_revised") for row in pending))

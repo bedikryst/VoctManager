@@ -27,7 +27,7 @@ from roster.domain.liturgy import (
     ProgramItemPresentation,
     build_program_presentation,
 )
-from roster.domain.rehearsal_plan import window_payload
+from roster.domain.rehearsal_plan import row_done, window_payload
 
 from .dtos import validate_instrument
 from .models import (
@@ -426,13 +426,20 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 class RehearsalPlanItemSerializer(serializers.ModelSerializer):
     """One row of the plan, read-only: the plan is written whole through
-    `RehearsalPlanDTO`, and the done stamp through its own door. Reads
-    `piece`, so the rows must be prefetched with it."""
+    `RehearsalPlanDTO`, and the debrief verdict through its own door. Reads
+    `piece`, so the rows must be prefetched with it.
+
+    `done` is the one answer to "was it worked on" (`row_done`) and every
+    client reads it rather than the stamps. It depends on whether the evening
+    is over, which is one fact per rehearsal: the caller computes it once and
+    passes `plan_over` in the context, so a list of rows never reaches back
+    to its rehearsal row by row."""
 
     piece_title = serializers.SerializerMethodField()
     title = serializers.CharField(read_only=True)
     # A wall clock, in the rehearsal's zone, in the shape the run sheet uses.
     starts_at = serializers.TimeField(format='%H:%M', read_only=True, allow_null=True)
+    done = serializers.SerializerMethodField()
 
     class Meta:
         model = RehearsalPlanItem
@@ -447,13 +454,26 @@ class RehearsalPlanItemSerializer(serializers.ModelSerializer):
             'starts_at',
             'excluded_voice_lines',
             'excludes_instrumentalists',
+            'is_reserve',
+            'is_break',
+            'done',
             'done_at',
+            'skipped_at',
             'updated_at',
         )
         read_only_fields = fields
 
     def get_piece_title(self, obj: RehearsalPlanItem) -> str | None:
         return str(obj.piece.title) if obj.piece_id and obj.piece else None
+
+    def get_done(self, obj: RehearsalPlanItem) -> bool | None:
+        return row_done(
+            ticked=obj.done_at is not None,
+            skipped=obj.skipped_at is not None,
+            is_reserve=obj.is_reserve,
+            is_break=obj.is_break,
+            over=bool(self.context.get('plan_over')),
+        )
 
 
 class RehearsalSerializer(serializers.ModelSerializer):
@@ -463,7 +483,9 @@ class RehearsalSerializer(serializers.ModelSerializer):
     via the QuerySet to prevent N+1 serialization bottlenecks.
     """
     absent_count = serializers.IntegerField(read_only=True, default=0)
-    # The plan, in order, for every reader — nothing in it is manager-only. The
+    # The plan, in order, for every reader once it is public
+    # (`Rehearsal.plan_is_public`); before that only for the conductor's side,
+    # and everybody else reads `[]` and no window — see `_plan_shown`. The
     # per-reader answers (`plan[].calls_me`, `my_plan_window`) appear only when
     # the view computed them for this reader (`plan_readings` in the context:
     # the schedule dashboard and the single-rehearsal read); elsewhere they
@@ -540,6 +562,7 @@ class RehearsalSerializer(serializers.ModelSerializer):
             'debrief_at',
             'plan',
             'plan_announced_at',
+            'plan_changed_at',
             'my_plan_window',
             'absent_count',
         )
@@ -555,6 +578,7 @@ class RehearsalSerializer(serializers.ModelSerializer):
             'debrief',
             'debrief_at',
             'plan_announced_at',
+            'plan_changed_at',
             'absent_count',
         )
 
@@ -588,8 +612,24 @@ class RehearsalSerializer(serializers.ModelSerializer):
         reading = readings.get(obj.id)
         return reading if isinstance(reading, PlanReading) else None
 
+    def _plan_shown(self, obj: Rehearsal) -> bool:
+        """The publish gate for this read. A draft is shown to the
+        conductor's side only, and whose view it is comes from the view:
+        `plan_drafts_visible` in the context — false for a manager previewing
+        a member, whose read must be the member's; true on the lead sheet.
+        Without it (the plain rehearsal list), a manager sees drafts and a
+        member does not."""
+        drafts_visible = self.context.get('plan_drafts_visible')
+        if drafts_visible is None:
+            drafts_visible = user_is_manager(getattr(self.context.get('request'), 'user', None))
+        return bool(drafts_visible) or obj.plan_is_public()
+
     def get_plan(self, obj: Rehearsal) -> list[dict[str, Any]]:
-        rows = RehearsalPlanItemSerializer(obj.plan_items.all(), many=True).data
+        if not self._plan_shown(obj):
+            return []
+        rows = RehearsalPlanItemSerializer(
+            obj.plan_items.all(), many=True, context={'plan_over': obj.is_over()},
+        ).data
         reading = self._plan_reading(obj)
         for index, row in enumerate(rows):
             row['calls_me'] = (
@@ -611,7 +651,7 @@ class RehearsalSerializer(serializers.ModelSerializer):
 
     def get_my_plan_window(self, obj: Rehearsal) -> dict[str, Any] | None:
         reading = self._plan_reading(obj)
-        if reading is None:
+        if reading is None or not self._plan_shown(obj):
             return None
         return window_payload(reading.window)
 
@@ -782,16 +822,20 @@ class ProgramItemSerializer(serializers.ModelSerializer):
         return self._presentation(obj).role_prefix
 
     def _rehearsed(self, item: ProgramItem) -> dict[Any, tuple[int, date]] | None:
-        """How often each piece of this programme has actually been worked on,
-        counted off the ticked plan rows of the project's rehearsals and
-        memoized per project like the liturgical labels above — one query for
-        a whole setlist.
+        """On how many evenings each piece of this programme was actually
+        worked on, and the last of them — memoized per project like the
+        liturgical labels above, two queries for a whole setlist.
 
-        ``None`` while the project has never ticked a row anywhere: before the
-        first debrief every piece stands at zero, and a setlist of "nie
-        ćwiczone" says nothing about the programme. The figure earns its place
-        the moment one row is ticked, because from then on the zero is the
-        point — it is the piece nobody has touched a week before the concert.
+        Read off `row_done`, never off the stamps: an evening that ended
+        without a debrief counts its main rows as done, as the plan said. A
+        piece counts once per EVENING — worked in the sectional slot and again
+        in the tutti is one rehearsal of it, not two. Breaks never count.
+
+        ``None`` while no row of the project has a verdict yet — no evening
+        with a plan is over and nothing was ticked: until then every piece
+        stands at zero, and a setlist of "nie ćwiczone" says nothing about the
+        programme. From the first verdict on, the zero is the point — it is
+        the piece nobody has touched a week before the concert.
 
         Dated by the REHEARSAL, not by the tick: a conductor who writes the
         debrief on Sunday still rehearsed the piece on Wednesday, and the
@@ -801,24 +845,46 @@ class ProgramItemSerializer(serializers.ModelSerializer):
         cache = getattr(self, '_rehearsed_counts', None) or {}
         self._rehearsed_counts = cache
         if item.project_id not in cache:
-            tallies: dict[Any, tuple[int, date]] = {}
-            ticked = 0
-            rows = RehearsalPlanItem.objects.filter(
-                rehearsal__project_id=item.project_id,
-                rehearsal__is_deleted=False,
-                done_at__isnull=False,
-            ).values_list('piece_id', 'rehearsal__date_time', 'rehearsal__timezone')
-            for piece_id, moment, zone in rows:
-                ticked += 1
-                local = localize(moment, zone)
-                if not piece_id or local is None:
-                    continue
-                on = local.date()
-                previous = tallies.get(piece_id)
-                tallies[piece_id] = (
-                    (previous[0] + 1, max(previous[1], on)) if previous else (1, on)
+            now = timezone.now()
+            # Per evening: is it over, and on which local day did it happen.
+            held: dict[Any, tuple[bool, date | None]] = {}
+            for rehearsal in Rehearsal.objects.filter(
+                project_id=item.project_id, is_deleted=False,
+            ):
+                local = localize(rehearsal.date_time, rehearsal.timezone)
+                held[rehearsal.id] = (
+                    rehearsal.is_over(now), local.date() if local is not None else None,
                 )
-            cache[item.project_id] = tallies if ticked else None
+            evenings: dict[Any, set[Any]] = {}
+            last_on: dict[Any, date] = {}
+            verdicts = False
+            rows = RehearsalPlanItem.objects.filter(
+                rehearsal_id__in=held.keys(), is_break=False,
+            ).values_list('piece_id', 'is_reserve', 'done_at', 'skipped_at', 'rehearsal_id')
+            for piece_id, is_reserve, done_at, skipped_at, rehearsal_id in rows:
+                over, on = held[rehearsal_id]
+                done = row_done(
+                    ticked=done_at is not None,
+                    skipped=skipped_at is not None,
+                    is_reserve=is_reserve,
+                    is_break=False,
+                    over=over,
+                )
+                if done is None:
+                    continue
+                verdicts = True
+                if not done or not piece_id or on is None:
+                    continue
+                evenings.setdefault(piece_id, set()).add(rehearsal_id)
+                last_on[piece_id] = max(last_on.get(piece_id, on), on)
+            cache[item.project_id] = (
+                {
+                    piece_id: (len(ids), last_on[piece_id])
+                    for piece_id, ids in evenings.items()
+                }
+                if verdicts
+                else None
+            )
         return cache[item.project_id]
 
     def get_rehearsed_count(self, obj: ProgramItem) -> int | None:

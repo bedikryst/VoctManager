@@ -728,7 +728,10 @@ class LeadSheetUpdateDTO(EnterpriseBaseDTO):
 class RehearsalPlanRowDTO(EnterpriseBaseDTO):
     """One row of the plan as the editor sends it. Position is the index in
     the list — the client never numbers rows. `id` names an existing row so
-    its done stamp survives a re-save; a row without one is new."""
+    its debrief verdict survives a re-save; a row without one is new.
+
+    A break is a labelled row that calls nobody, so it carries nothing that
+    would name who it calls: no piece, no excluded lines, no players flag."""
 
     id: UUID | None = None
     piece: UUID | None = None
@@ -737,6 +740,8 @@ class RehearsalPlanRowDTO(EnterpriseBaseDTO):
     starts_at: time | None = None
     excluded_voice_lines: tuple[str, ...] = Field(default_factory=tuple)
     excludes_instrumentalists: bool = False
+    is_reserve: bool = False
+    is_break: bool = False
 
     @field_validator("label", "note", mode="before")
     @classmethod
@@ -767,11 +772,25 @@ class RehearsalPlanRowDTO(EnterpriseBaseDTO):
             raise ValueError("A row needs a piece or a label.")
         return self
 
+    @model_validator(mode="after")
+    def keep_a_break_empty(self):
+        if self.is_break and (
+            self.piece is not None
+            or self.excluded_voice_lines
+            or self.excludes_instrumentalists
+        ):
+            raise ValueError("A break names no piece and excludes nobody.")
+        return self
+
 
 class RehearsalPlanDTO(EnterpriseBaseDTO):
     """The whole plan of one rehearsal, saved as one act — declarative like a
     divisi board: what is on screen is what is sent, and the server
-    reconciles. An empty list clears the plan."""
+    reconciles. An empty list clears the plan.
+
+    The reserve closes the plan: every row after the first reserve row is
+    reserve too. The editor derives the flag from its divider at save, so a
+    list that breaks this was not drawn by the editor and is refused whole."""
 
     rows: tuple[RehearsalPlanRowDTO, ...] = Field(default_factory=tuple)
 
@@ -793,6 +812,16 @@ class RehearsalPlanDTO(EnterpriseBaseDTO):
             if row.id in seen:
                 raise ValueError("rows must name each existing row at most once.")
             seen.add(row.id)
+        return self
+
+    @model_validator(mode="after")
+    def keep_the_reserve_last(self):
+        in_reserve = False
+        for row in self.rows:
+            if row.is_reserve:
+                in_reserve = True
+            elif in_reserve:
+                raise ValueError("A main row cannot follow a reserve row: the reserve closes the plan.")
         return self
 
 

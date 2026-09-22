@@ -33,6 +33,7 @@ from core.voice_labels import (
 )
 from roster.domain.day_timeline import MINUTES_PER_DAY
 from roster.domain.liturgy import SLOT_CHOICES
+from roster.domain.rehearsal_plan import evening_is_over
 
 DEFAULT_EVENT_TIMEZONE = 'Europe/Warsaw'
 
@@ -1014,11 +1015,18 @@ class Rehearsal(EnterpriseBaseModel):
     debrief_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Debrief At"))
     # When the conductor last SENT the plan to the cast. Plan edits themselves
     # are silent (the plan is redrawn a dozen times the day before); the send
-    # is an explicit act and this is its receipt, so the editor can say
-    # "wysłano 14:02" and, when a row's `updated_at` is later, "zmieniony po
-    # wysłaniu" — a caption, never an automatic resend.
+    # is an explicit act and this is its receipt. Until the first send the plan
+    # is a draft the choir does not see (`plan_is_public`).
     plan_announced_at = models.DateTimeField(
         null=True, blank=True, verbose_name=_("Plan Announced At"),
+    )
+    # When the plan last changed in any way the cast could notice: a row
+    # added, edited, moved or DELETED. Stamped by `replace_plan`, never by a
+    # tick. Read against `plan_announced_at` for "zmieniony po wysłaniu" — a
+    # per-row stamp cannot answer it, because a deleted row leaves nothing
+    # behind to carry a later time.
+    plan_changed_at = models.DateTimeField(
+        null=True, blank=True, verbose_name=_("Plan Changed At"),
     )
 
     class Meta:
@@ -1140,6 +1148,25 @@ class Rehearsal(EnterpriseBaseModel):
             return None
         return self.date_time + timedelta(minutes=self.duration_minutes)
 
+    def plan_is_public(self, now: datetime | None = None) -> bool:
+        """Whether the cast may read the plan: once the conductor has sent it,
+        or once the evening has started — from then on the plan is a record
+        of the evening and the ticks are the truth.
+
+        The one gate for every reader that is not the conductor's side: the
+        rehearsal read and its window, `GET plan/`, and the reminder's lines
+        and windows. A half-laid plan saved on Sunday must not put "Twoja
+        część" on a tenor's card.
+        """
+        moment = now or timezone.now()
+        return self.plan_announced_at is not None or moment >= self.date_time
+
+    def is_over(self, now: datetime | None = None) -> bool:
+        """Whether the evening is behind us — the moment an untouched plan row
+        stops reading "not known" and starts reading as the plan said
+        (`roster.domain.rehearsal_plan.row_done`)."""
+        return evening_is_over(self.date_time, self.end_date_time, now or timezone.now())
+
     def __str__(self):
         return f"Rehearsal: {self.date_time.strftime('%d.%m %H:%M')}"
 
@@ -1156,11 +1183,18 @@ class RehearsalPlanItem(models.Model):
     wall-clock in the rehearsal's zone and is never validated against the
     rehearsal's window — ordering carries the warning.
 
+    Two kinds of row beside the ordinary one. A reserve row ("Jeśli starczy
+    czasu") is rehearsed only if the evening allows; reserve rows form a
+    suffix of the plan, and they still count toward a reader's window, which
+    promises the worst case. A break calls nobody — no piece, no exclusions —
+    so the men's evening can end at the break before a ladies-only closer.
+
     A plain model, not `EnterpriseBaseModel`: the plan is saved whole and a
     dropped row is gone, while a soft-deleted row would keep its
     `(rehearsal, position)` slot and collide with the next save. Its siblings
     on the roster (`ProgramItem`, `ProjectPieceCasting`) are shaped the same
-    way. `updated_at` stays, because "changed after it was sent" is read off it.
+    way. "Changed after it was sent" is read off `Rehearsal.plan_changed_at`,
+    not off the rows: a deleted row cannot carry a later stamp.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -1202,10 +1236,17 @@ class RehearsalPlanItem(models.Model):
     excludes_instrumentalists = models.BooleanField(
         default=False, verbose_name=_("Excludes Instrumentalists"),
     )
-    # Ticked after the evening, as the first step of the debrief — never live.
-    # No author: `Rehearsal.debrief_by` already stamps whoever handed the
-    # evening back, and nobody audits who ticked a row.
+    is_reserve = models.BooleanField(default=False, verbose_name=_("Reserve"))
+    is_break = models.BooleanField(default=False, verbose_name=_("Break"))
+    # The debrief's explicit verdict, written only by the tick door and never
+    # live: `done_at` for "we did it", `skipped_at` for "we did not" — at most
+    # one of the two. With neither, the plan is the default once the evening
+    # is over, so a missed debrief does not read as "nothing happened". No
+    # reader checks these stamps for "done"; every one reads
+    # `roster.domain.rehearsal_plan.row_done`. No author: `Rehearsal.debrief_by`
+    # already stamps whoever handed the evening back.
     done_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Done At"))
+    skipped_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Skipped At"))
 
     class Meta:
         verbose_name = _("Rehearsal Plan Item")
@@ -1214,6 +1255,14 @@ class RehearsalPlanItem(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['rehearsal', 'position'], name='unique_rehearsal_plan_position',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(done_at__isnull=True) | models.Q(skipped_at__isnull=True),
+                name='rehearsal_plan_one_verdict',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(is_break=False) | models.Q(piece__isnull=True),
+                name='rehearsal_plan_break_names_no_piece',
             ),
         ]
 

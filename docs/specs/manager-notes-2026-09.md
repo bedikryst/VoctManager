@@ -207,6 +207,7 @@ compose features; the feature never imports the shell.
   expand on nearly every row, which defeats the mechanism.
 - Expanded: full body, plain, with the edit and delete actions on a bar beneath it. Delete is
   reachable only from the expanded state — four targets in a 44 px row is one too many on a phone.
+  **Refined 2026-09-22, fourth pass:** the row is ONE surface in three states — see that section.
   **Superseded 2026-09-22, third pass.** This read "full body plus an inline editor
   (`shared/ui/primitives/InlineEditable.tsx`)", and the primitive grew a `multiline` prop to serve
   it. The developer's browser review called the result what it was: three surfaces stacked — a
@@ -335,6 +336,10 @@ Mirror of `DesktopSidebar.tsx` / `useSidebarPin.ts`:
   That is the slot: `wide-shell:pr-[calc(var(--rail-pad,0px)+1.5rem)]`. The two pad variables are
   independent; the left one is untouched.
 - Pin toggle is the same `Tooltip` + `aria-pressed` button with the rotating `Pin` icon.
+- **Header geometry (2026-09-22, fourth pass):** the rail's content inset is `p-5`, the header row
+  is `h-10`, and the pin and close controls are `size-10` circles. With the `2.5rem` corner that
+  puts the corner control's centre on the corner arc's centre, so it keeps one even 20px margin
+  round the curve. The three numbers move together with the `round 2.5rem` in the `clipPath`.
 
 ### Entry points
 
@@ -560,6 +565,51 @@ The recommendation from the previous session stands — do **not** add a size co
 If the need turns out to be general, promote `features/messages/lib/messageTextScale.ts` to
 `shared/` as one reading-size setting for the whole panel, in Settings. That is its own spec and its
 own session; a feature-to-feature import is not an option here.
+
+## Stage 2 — fourth pass, the panel as an object (2026-09-22)
+
+Three observations from the developer's browser, plus what the same look turned up.
+
+1. *"The edit box grows with the text, but it is always a few pixels short."* A measurement bug,
+   not a taste call. The field's height comes from a mirror span in the same grid cell, and the
+   mirror had no border while the shell's 1px hairline counts towards the textarea's `border-box`
+   height. Every value measured 2px short, the textarea scrolled by those 2px, the scrollbar that
+   appeared narrowed the text, and the narrower text wrapped onto one more line than the mirror had
+   counted. The boxed mirror now carries a transparent border of the shell's width
+   (`MIRROR_SHELL_BORDER` — mirror only, since `border-transparent` on the textarea would out-merge
+   the shell's gold). The row editor no longer has a box of its own at all, see 3.
+2. *"The title does not sit well with the rounded corner."* It sat 16px in, beside a square 32px
+   pin that was 16px from the straight edges and about 6px from the 40px curve. See the header
+   geometry bullet under "Rail": concentric circles, one even margin round the corner, title on the
+   controls' centre line at `2xl`.
+3. *"The hover looks like 2023."* It was the generic list-item wash — `bg-ink/[0.03]` under the
+   whole row — and in edit mode it became a grey box holding a boxed textarea: two surfaces for one
+   note. The row is now **one surface in three states** and the text never moves between them:
+   - collapsed: no surface; hover is the house gold hairline, no fill;
+   - expanded: a recessed well one rung down the ladder (`alabaster/60` + `hairline-strong`), the
+     body, and a bar with the note's date on the left and pencil/bin on the right;
+   - editing: the ROW takes the field shell (`fieldShellVariants` + `FIELD_SHELL_FOCUS_WITHIN`, the
+     documented recipe for a container whose focus lives in a child), and the body becomes a
+     `bare` `NoteField` — no border, no padding, no cap — so the text is edited exactly where it was
+     read. The bar keeps its height and swaps its actions for cancel and save (save is now the
+     card's one `primary`).
+   A click on the body places the caret where it landed (`caretPositionFromPoint`; Safari before
+   support falls back to the end). While editing, a press anywhere on the row that is not a real
+   control is held (`mousedown` default prevented) so it cannot blur-save the editor under the
+   cursor; the tick is exempt on purpose — its blur-save is what keeps the draft when ticking moves
+   the note to the other list.
+
+Also from this look: every body is set with `NOTE_WRAP` (`whitespace-pre-wrap wrap-break-word`),
+because a textarea breaks a pasted link at the edge and a paragraph does not, so the editor
+re-flowed any note holding a long URL. The tick previews its check under the cursor. The row's
+horizontal geometry is deliberate — 1px border, 10px inset, 20px tick, 10px gap — so the ticks, the
+composer's pen and the privacy lock share one axis and the note text starts on the composer's text
+line.
+
+**Not done, and why.** The date on the bar is `created_at` with no words, so it needs no i18n key;
+"edited" and "ticked on" would each need one, and neither was asked for. A keyboard hint for
+Ctrl/Cmd+Enter beside the editor's buttons would need `KbdHint` promoted out of `CommandPalette`
+into `shared/` — worth doing only if a second surface wants it.
 
 ## Deviating from this spec
 

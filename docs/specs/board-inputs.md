@@ -24,14 +24,14 @@ Strona jest zbudowana na tym, co już mamy (KRS, konta, koncerty). Do publikacji
 - [ ] **Dane do przelewu** — potwierdzić: odbiorca, konto PLN, konto EUR, tytuł „Darowizna na cele statutowe VoctFoundation". Plus decyzja: czy konto EUR oferujemy publicznie na darowizny (dziś służy tylko organizatorom zagranicznym). *(zarząd)*
 - [ ] **Pozycje kosztów koncertu** (bez kwot) — potwierdzić listę: honoraria śpiewaków, partytury i program, próby, dojazdy, dźwięk i światło. Pytanie: czy płacimy za sale prób? Jeśli nie — „próby" wypadają. *(Florent)*
 - [ ] **Zgoda na pokazanie „Pochwały Stworzenia"** jako przykładu bieżącej pracy — bez osobnej zbiórki, bez kwot. *(zarząd)*
-- [ ] **Partnerstwo** — potwierdzić trzy formy (wsparcie produkcji, wsparcie ciągłości, zasoby rzeczowe) i podziękowania obiecywane „w uzgodnieniu": wzmianka lub logo w programie i na stronie koncertu. *(zarząd)*
+- [ ] **Partnerstwo** — potwierdzić trzy formy (wsparcie produkcji, wsparcie ciągłości, zasoby rzeczowe) i podziękowania obiecywane „w uzgodnieniu": wzmianka lub logo w programie i na stronie koncertu. Uwaga: logo obiecane w zamian za pieniądze to sponsoring (usługa), nie darowizna, a fundacja nie ma działalności gospodarczej (biuro fundacji: `VOCTFOUNDATION/kartoteka/dane-rejestrowe.md`) — forma prawna rozstrzyga, co strona może obiecać. *(zarząd → księgowa)*
 - [ ] **patronat@** — potwierdzić, że czyta cały zarząd i kto odpowiada, w jakim czasie. *(zarząd)*
 
 ### Wzmacnia
 
 - [ ] **Budżet jednego koncertu** (np. Pochwała Stworzenia): pozycje, koszt całkowity, środki zabezpieczone, brakująca kwota, data „stan na", kto pilnuje, kiedy aktualizacja, co z nadwyżką. Jednolicie brutto albo netto. Bez tego strona pokazuje tylko kategorie — to poprawny stan startowy. *(Florent + zarząd)*
 - [ ] **Zdjęcie z próby** na stronę: wybór z istniejących czarno-białych (które?) albo nowe z prób Pochwały Stworzenia; podpis, fotograf, prawa. *(Ania)*
-- [ ] **Świadczenia dla mecenasów** — które z czterech obietnic ze skarbca zostają i kto je realizuje: osobiste podziękowanie · imienne podziękowanie (gdzie publikowane?) · pierwszeństwo zaproszeń · roczne zbiorcze potwierdzenie darowizn. Bez właściciela — obietnica znika ze strony. *(zarząd)*
+- [ ] **Świadczenia dla mecenasów** — które z czterech obietnic ze skarbca zostają i kto je realizuje: osobiste podziękowanie · imienne podziękowanie (gdzie publikowane?) · pierwszeństwo zaproszeń · roczne zbiorcze potwierdzenie darowizn. Bez właściciela — obietnica znika ze strony. Model z 22.09 (biuro fundacji: `VOCTFOUNDATION/zrodla/karty/mecenat-prywatny.md`): te same podziękowania przy każdej kwocie, bez pierwszeństwa miejsc na darmowym koncercie. *(zarząd)*
 - [ ] **Odliczenie podatkowe** — czy potwierdzamy, że darowiznę można odliczyć od dochodu (PIT art. 26, CIT art. 18) i czy chcemy to napisać. Dziś strona milczy. *(zarząd / księgowa)*
 - [ ] **Sprawozdania** — czy istnieje zatwierdzone sprawozdanie merytoryczne lub finansowe (za który rok). Jeśli nie — nie publikujemy pustej półki. *(zarząd)*
 

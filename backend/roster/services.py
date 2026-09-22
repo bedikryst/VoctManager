@@ -1303,9 +1303,13 @@ def rehearsal_ics_payload(rehearsal: Rehearsal) -> dict:
     }
 
 
-def rehearsal_plan_lines(rehearsal: Rehearsal) -> list[dict[str, str]]:
+def rehearsal_plan_lines(
+    rehearsal: Rehearsal, now: datetime | None = None,
+) -> list[dict[str, str | bool]]:
     """The plan as a message carries it: one entry per row, in plan order,
-    with its clock, its title and its note.
+    with its clock, its title, its note and whether it is reserve. Nothing
+    while the plan is a draft (`Rehearsal.plan_is_public`) — the reminder
+    must not publish what the conductor has not.
 
     Kept out of `rehearsal_notification_context` on purpose. That context is
     shared by every rehearsal notice, and a cancellation or a change of date
@@ -1313,11 +1317,14 @@ def rehearsal_plan_lines(rehearsal: Rehearsal) -> list[dict[str, str]]:
     Only the reminder — the message a singer plans the evening from — carries
     the plan.
     """
+    if not rehearsal.plan_is_public(now):
+        return []
     return [
         {
             'time': item.starts_at.strftime('%H:%M') if item.starts_at else '',
             'title': item.title,
             'note': item.note,
+            'reserve': item.is_reserve,
         }
         for item in rehearsal.plan_items.select_related('piece').all()
     ]
@@ -1846,15 +1853,18 @@ class RehearsalOperationsService:
         """Save the plan whole, silently.
 
         Declarative like a divisi board: the rows arrive in their final order,
-        a row naming an existing id keeps that row (and its done stamp), any
-        row not named is gone. Silent by decision — the conductor redraws the
-        plan a dozen times the day before; telling the cast is `announce_plan`.
-        A piece outside the project's programme is refused: one project per
-        rehearsal, and the row's piece is chosen from that programme.
+        a row naming an existing id keeps that row (and its debrief verdict),
+        any row not named is gone. Silent by decision — the conductor redraws
+        the plan a dozen times the day before; telling the cast is
+        `announce_plan`. A piece outside the project's programme is refused:
+        one project per rehearsal, and the row's piece is chosen from that
+        programme.
 
-        A row that comes back unchanged is not re-saved, so its `updated_at`
-        still says when it was last CHANGED — that is what "zmieniony po
-        wysłaniu" compares against `plan_announced_at`.
+        `Rehearsal.plan_changed_at` is stamped when anything the cast could
+        notice happened — a row created, edited, moved or deleted — and only
+        then, so a save of the same list leaves "zmieniony po wysłaniu"
+        where it was. A row that comes back unchanged is not re-saved either,
+        so its own `updated_at` still says when it was last edited.
         """
         programme = set(
             ProgramItem.objects.filter(project_id=rehearsal.project_id)
@@ -1872,7 +1882,12 @@ class RehearsalOperationsService:
             if kept_ids - existing.keys():
                 raise ValueError(_("A row on the plan does not belong to this rehearsal."))
 
-            RehearsalPlanItem.objects.filter(rehearsal=rehearsal).exclude(id__in=kept_ids).delete()
+            deleted, _by_model = (
+                RehearsalPlanItem.objects.filter(rehearsal=rehearsal)
+                .exclude(id__in=kept_ids)
+                .delete()
+            )
+            touched = deleted > 0
 
             # Positions are unique per rehearsal and the constraint is checked
             # row by row, so a reorder written in place trips over itself.
@@ -1897,11 +1912,14 @@ class RehearsalOperationsService:
                     'starts_at': row.starts_at,
                     'excluded_voice_lines': list(row.excluded_voice_lines),
                     'excludes_instrumentalists': row.excludes_instrumentalists,
+                    'is_reserve': row.is_reserve,
+                    'is_break': row.is_break,
                 }
                 if row.id is None:
                     item = RehearsalPlanItem.objects.create(
                         rehearsal=rehearsal, position=position, **values,
                     )
+                    touched = True
                 else:
                     item = existing[row.id]
                     changed = any(
@@ -1913,31 +1931,45 @@ class RehearsalOperationsService:
                     # A pure move counts: the order is part of what was sent.
                     if changed or original_position[item.id] != position:
                         item.save()
+                        touched = True
                     else:
                         # Back from the parking slot without touching
                         # `updated_at` — on the row or on the instance.
                         RehearsalPlanItem.objects.filter(pk=item.pk).update(position=position)
                 saved.append(item)
+
+            if touched:
+                rehearsal.plan_changed_at = timezone.now()
+                rehearsal.save(update_fields=['plan_changed_at'])
         return saved
 
     @staticmethod
     def mark_plan_item(
         rehearsal: Rehearsal, item_id: UUID | str, *, done: bool,
     ) -> RehearsalPlanItem:
-        """Tick or untick one row — the first step of the debrief, so it is
-        refused before the rehearsal has started, exactly as the debrief is.
-        Ticking is not a change to the plan the cast was sent: only `done_at`
-        is written, and the row's `updated_at` stays where the last edit
-        left it."""
+        """Write the debrief's explicit verdict on one row: ``done`` stamps
+        `done_at`, not done stamps `skipped_at`, and each clears the other.
+        The first step of the debrief, so it is refused before the rehearsal
+        has started, exactly as the debrief is. A tap is always explicit —
+        ticking a row the plan already reads as done still records that
+        somebody said so. A break is refused: it is not a piece of work.
+
+        Not a change to the plan the cast was sent: neither `plan_changed_at`
+        nor the row's `updated_at` moves."""
         if timezone.now() < rehearsal.date_time:
             raise ValueError(_("The plan can be ticked off once the rehearsal has started."))
         item = (
             RehearsalPlanItem.objects.select_related('piece')
             .get(rehearsal=rehearsal, pk=item_id)
         )
-        if (item.done_at is not None) != done:
-            item.done_at = timezone.now() if done else None
-            item.save(update_fields=['done_at'])
+        if item.is_break:
+            raise ValueError(_("A break is not ticked off."))
+        already = item.done_at is not None if done else item.skipped_at is not None
+        if not already:
+            now = timezone.now()
+            item.done_at = now if done else None
+            item.skipped_at = None if done else now
+            item.save(update_fields=['done_at', 'skipped_at'])
         return item
 
     @staticmethod
@@ -1949,6 +1981,13 @@ class RehearsalOperationsService:
         push cannot personalise, so the reader's own window is not in it —
         the page it opens is exact, and the reminder carries the window.
 
+        The first send publishes the plan (`Rehearsal.plan_is_public`); every
+        later one is a revision, refused unless the plan changed since the
+        last send — re-sending an identical plan is noise. A revision's copy
+        says the plan CHANGED, except while the previous send is still
+        waiting in the announcement queue: the cast has not heard the first
+        one yet, so the one message they will get is still the plan arriving.
+
         The mirror of `mark_plan_item`'s gate: a plan is something to arrive
         with, so it cannot be sent once the evening is under way — the notice
         would reach phones that are already in the room."""
@@ -1956,6 +1995,14 @@ class RehearsalOperationsService:
             raise ValueError(_("There is no plan to send yet."))
         if timezone.now() >= rehearsal.date_time:
             raise ValueError(_("The plan can no longer be sent once the rehearsal has started."))
+        sent_before = rehearsal.plan_announced_at
+        if sent_before is not None and (
+            rehearsal.plan_changed_at is None or rehearsal.plan_changed_at <= sent_before
+        ):
+            raise ValueError(_("The plan has not changed since it was sent."))
+        revised = sent_before is not None and not AnnouncementQueue.has_pending_change(
+            rehearsal.project, AnnouncementSubject.REHEARSAL, str(rehearsal.id), "plan",
+        )
         with transaction.atomic():
             rehearsal.plan_announced_at = timezone.now()
             rehearsal.save(update_fields=['plan_announced_at', 'updated_at'])
@@ -1966,6 +2013,7 @@ class RehearsalOperationsService:
                 project_name=rehearsal.project.title,
                 **rehearsal_notification_context(rehearsal),
                 changes=[_change("plan", None, None)],
+                plan_revised=revised,
             ).model_dump(mode="json")
             metadata["ics"] = rehearsal_ics_payload(rehearsal)
             queue_broadcast(

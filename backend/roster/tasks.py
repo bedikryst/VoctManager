@@ -178,15 +178,16 @@ def _dispatch_rehearsal_reminders(now) -> int:
         # The same two builders the scheduling and change announcements use, so
         # the reminder — the message most singers actually plan the evening from —
         # states the end the conductor entered instead of a block invented here.
+        # A plan still in draft travels in neither form: no lines, no windows.
         metadata = {
             "project_name": reh.project.title,
             "project_id": str(reh.project_id),
             "rehearsal_id": str(reh.id),
             **rehearsal_notification_context(reh),
-            "plan": rehearsal_plan_lines(reh),
+            "plan": rehearsal_plan_lines(reh, now),
             "ics": rehearsal_ics_payload(reh),
         }
-        groups = _reminder_groups_by_window(reh, called)
+        groups = _reminder_groups_by_window(reh, called, plan_public=reh.plan_is_public(now))
         if not groups:
             continue
         dispatched = 0
@@ -216,7 +217,7 @@ def _dispatch_rehearsal_reminders(now) -> int:
 
 
 def _reminder_groups_by_window(
-    reh: Rehearsal, called: list[Participation],
+    reh: Rehearsal, called: list[Participation], *, plan_public: bool,
 ) -> list[tuple[dict[str, object] | None, list[str]]]:
     """The evening's recipients, split into one group per distinct plan window.
 
@@ -226,6 +227,10 @@ def _reminder_groups_by_window(
     keeps that promise at the cost of a handful of extra sends: an evening
     whose plan calls everybody the whole time stays a single dispatch.
 
+    A plan the conductor has not sent (``plan_public`` false) states no window
+    to anybody, so the evening goes out as one group — a window read off a
+    draft would publish it one reader at a time.
+
     The recipient rule itself is never restated here: every seat goes through
     `NotificationRecipientPolicy`, one at a time, so who hears about an evening
     is decided in exactly one place.
@@ -233,7 +238,7 @@ def _reminder_groups_by_window(
     from roster.domain.rehearsal_plan import window_payload
     from roster.queries.plan_queries import plan_windows_for_seats
 
-    windows = plan_windows_for_seats(reh, called)
+    windows = plan_windows_for_seats(reh, called) if plan_public else {}
     grouped: dict[str, tuple[dict[str, object] | None, list[str]]] = {}
     for seat in called:
         recipients = NotificationRecipientPolicy.from_participations([seat])

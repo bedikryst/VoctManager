@@ -7,7 +7,9 @@
     "",
     "'pieces' maps a key to the lines the piece declares; an empty list means the",
     "piece declares nothing and reads as the canonical four-part set. A row without",
-    "'piece' is a free row and offers the canonical set too.",
+    "'piece' is a free row and offers the canonical set too. 'isBreak' marks a",
+    "break, which calls nobody; 'isReserve' is carried for the record only — the",
+    "rule ignores it on purpose, because a reserve row counts toward the window.",
     "'seats' carry the SATB letters a sectional calls them by, whether the seat is a",
     "player's, and the line held on each piece of the board ('castings').",
     "'rehearsal' gives the wall-clock start, the end (null = never timed) and whether",
@@ -182,6 +184,46 @@
       "expected": {
         "tenor": { "calls": [false, true, false, true], "window": { "callsMe": true, "start": "18:15", "end": "21:00" } },
         "alt": { "calls": [true, true, true, true], "window": { "callsMe": true, "start": "18:15", "end": "21:00" } }
+      }
+    },
+    {
+      "name": "a break before a ladies-only closer ends the men's evening at the break",
+      "rehearsal": { "start": "19:00", "end": "21:00", "callsInstrumentalists": true },
+      "rows": [
+        { "piece": "orff", "time": "19:00" },
+        { "label": "Przerwa", "time": "20:00", "isBreak": true },
+        { "piece": "lumen", "time": "20:15", "excluded": ["T1", "B1"] }
+      ],
+      "expected": {
+        "tenor": { "calls": [true, false, false], "window": { "callsMe": true, "start": "19:00", "end": "20:00" } },
+        "bas-b2": { "calls": [true, false, false], "window": { "callsMe": true, "start": "19:00", "end": "20:00" } },
+        "sopran": { "calls": [true, false, true], "window": null },
+        "organista": { "calls": [true, false, true], "window": null }
+      }
+    },
+    {
+      "name": "a break mid-evening is a gap, not an end",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "orff", "time": "18:00" },
+        { "label": "Przerwa", "time": "19:30", "isBreak": true },
+        { "piece": "bach", "time": "19:45" }
+      ],
+      "expected": {
+        "tenor": { "calls": [true, false, true], "window": null },
+        "bas-uncast": { "calls": [true, false, true], "window": null }
+      }
+    },
+    {
+      "name": "a reserve row counts toward the window: it promises the worst case",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "orff", "time": "18:00" },
+        { "piece": "bach", "time": "20:00", "excluded": ["S1", "A1"], "isReserve": true }
+      ],
+      "expected": {
+        "tenor": { "calls": [true, true], "window": null },
+        "sopran": { "calls": [true, false], "window": { "callsMe": true, "start": "18:00", "end": "20:00" } }
       }
     },
     {

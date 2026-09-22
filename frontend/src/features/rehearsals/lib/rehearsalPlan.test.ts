@@ -34,6 +34,9 @@ interface FixtureRow {
   readonly time?: string;
   readonly excluded?: readonly string[];
   readonly excludesInstrumentalists?: boolean;
+  readonly isBreak?: boolean;
+  /** Carried for the record; the rule ignores it — see the fixture's `_doc`. */
+  readonly isReserve?: boolean;
 }
 
 interface FixtureWindow {
@@ -81,6 +84,7 @@ const rowOf = (spec: FixtureRow): PlanRuleRow => {
     lines: rowLines(piece === null ? [] : (fixture.pieces[piece] ?? [])),
     excludedLines: new Set(spec.excluded ?? []),
     excludesInstrumentalists: spec.excludesInstrumentalists ?? false,
+    isBreak: spec.isBreak ?? false,
   };
 };
 

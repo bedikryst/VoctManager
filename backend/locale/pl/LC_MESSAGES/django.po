@@ -5113,3 +5113,54 @@ msgstr "Otwórz próbę"
 #: core/serializers.py:330
 msgid "Note cannot be empty."
 msgstr "Notatka nie może być pusta."
+
+#: roster/models.py
+msgid "Plan Changed At"
+msgstr "Plan zmieniony"
+
+#: roster/models.py
+msgid "Reserve"
+msgstr "Rezerwa"
+
+#: roster/models.py
+msgid "Break"
+msgstr "Przerwa"
+
+#: roster/models.py
+msgid "Skipped At"
+msgstr "Pominięte"
+
+#: roster/services.py
+msgid "A break is not ticked off."
+msgstr "Przerwy się nie odhacza."
+
+#: roster/services.py
+msgid "The plan has not changed since it was sent."
+msgstr "Plan nie zmienił się od wysłania."
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal plan changed — %(when)s"
+msgstr "Zmiana planu próby — %(when)s"
+
+#: notifications/message_content.py
+msgid "The rehearsal plan has changed"
+msgstr "Plan próby się zmienił"
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal plan changed — %(project)s"
+msgstr "Zmiana planu próby — %(project)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"The conductor has changed the plan for the %(project)s rehearsal. Open it to"
+" see what is rehearsed now and which part of the evening is yours."
+msgstr ""
+"Dyrygent zmienił plan próby (%(project)s). Otwórz go, by zobaczyć, co teraz "
+"ćwiczymy i która część wieczoru jest Twoja."
+
+#: notifications/message_content.py
+msgid "If time allows:"
+msgstr "Jeśli starczy czasu:"
