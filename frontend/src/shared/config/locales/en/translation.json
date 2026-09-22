@@ -4225,6 +4225,11 @@
         "group_upcoming": "Upcoming",
         "group_past": "Past"
       },
+      "view": {
+        "aria": "Rehearsals view",
+        "timeline": "Timeline",
+        "pieces": "Pieces"
+      },
       "modal": {
         "delete_desc": "Attendance lists associated with this rehearsal will be permanently deleted. This operation cannot be undone.",
         "delete_title": "Delete this rehearsal?"
@@ -4508,6 +4513,42 @@
         "desc": "The changes to this rehearsal's plan are not saved and will be lost.",
         "confirm": "Discard changes",
         "keep": "Back to the plan"
+      },
+      "grid": {
+        "title": "Pieces across rehearsals",
+        "caption": "Rehearsal plans: rows are the programme's pieces, columns are the rehearsals.",
+        "piece": "Piece",
+        "rehearsed": "Rehearsed",
+        "open_plan": "Open the rehearsal plan: {{date}}",
+        "draft": "Draft",
+        "unsent": "Unsent",
+        "cell": "{{piece}}, {{date}}: {{state}}",
+        "times": "{{times}} times",
+        "hint": "A future rehearsal's cell adds the piece to its plan or takes it off · the date opens the plan",
+        "state": {
+          "planned": "In the plan",
+          "reserve": "If time allows",
+          "done": "Covered",
+          "not_done": "Not covered",
+          "none": "Not in the plan"
+        },
+        "action": {
+          "add": "Add to the plan",
+          "remove": "Remove from the plan",
+          "open": "Open this rehearsal's plan"
+        },
+        "remove": {
+          "title": "Remove “{{title}}” from the plan?",
+          "desc": "In the plan for {{date}} this item has a note, minutes, a time or exclusions — they will be lost with it.",
+          "confirm": "Remove from the plan"
+        },
+        "empty": {
+          "rehearsals_title": "No rehearsals",
+          "rehearsals_desc": "Every saved rehearsal becomes a column here.",
+          "program_title": "The programme is empty",
+          "program_desc": "Every piece in the programme gets its own row here.",
+          "program_action": "Open the programme"
+        }
       }
     },
     "dashboard": {

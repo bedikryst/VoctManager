@@ -4235,6 +4235,11 @@
         "group_upcoming": "À venir",
         "group_past": "Passées"
       },
+      "view": {
+        "aria": "Vue des répétitions",
+        "timeline": "Chronologie",
+        "pieces": "Œuvres"
+      },
       "modal": {
         "delete_desc": "Les listes de présence liées à cette répétition seront supprimées définitivement. Cette opération est irréversible.",
         "delete_title": "Supprimer cette répétition ?"
@@ -4519,6 +4524,42 @@
         "desc": "Les modifications du plan de cette répétition ne sont pas enregistrées et seront perdues.",
         "confirm": "Abandonner les modifications",
         "keep": "Revenir au plan"
+      },
+      "grid": {
+        "title": "Œuvres par répétition",
+        "caption": "Plans de répétition : les lignes sont les œuvres du programme, les colonnes les répétitions.",
+        "piece": "Œuvre",
+        "rehearsed": "Travaillé",
+        "open_plan": "Ouvrir le plan de la répétition : {{date}}",
+        "draft": "Brouillon",
+        "unsent": "Non envoyé",
+        "cell": "{{piece}}, {{date}} : {{state}}",
+        "times": "{{times}} fois",
+        "hint": "Une case de répétition à venir ajoute l’œuvre au plan ou l’en retire · la date ouvre le plan",
+        "state": {
+          "planned": "Au plan",
+          "reserve": "Si le temps le permet",
+          "done": "Travaillé",
+          "not_done": "Non travaillé",
+          "none": "Hors du plan"
+        },
+        "action": {
+          "add": "Ajouter au plan",
+          "remove": "Retirer du plan",
+          "open": "Ouvrir le plan de cette répétition"
+        },
+        "remove": {
+          "title": "Retirer « {{title}} » du plan ?",
+          "desc": "Dans le plan du {{date}}, ce point a une note, des minutes, une heure ou des exclusions — elles disparaîtront avec lui.",
+          "confirm": "Retirer du plan"
+        },
+        "empty": {
+          "rehearsals_title": "Aucune répétition",
+          "rehearsals_desc": "Chaque répétition enregistrée devient ici une colonne.",
+          "program_title": "Le programme est vide",
+          "program_desc": "Chaque œuvre du programme aura ici sa ligne.",
+          "program_action": "Ouvrir le programme"
+        }
       }
     },
     "dashboard": {

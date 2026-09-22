@@ -831,10 +831,12 @@ export interface ProgramItem {
    */
   score_edition?: string | null;
   /**
-   * How many ticked plan rows this piece has across the project's rehearsals.
-   * `null` while the project has never ticked a row anywhere — before the first
-   * debrief every piece stands at zero and the figure says nothing. From the
-   * first tick on, `0` is the point: the piece nobody has worked on yet.
+   * On how many of the project's rehearsals this piece was done — distinct
+   * evenings, read off each plan row's `done`, so a piece that sits twice on
+   * one evening's plan counts once. `null` while
+   * no row of the project has a verdict yet (no evening over, nothing ticked):
+   * before that every piece stands at zero and the figure says nothing. After
+   * it, `0` is the point — the piece no evening has reached.
    */
   rehearsed_count?: number | null;
   /** The date of the last rehearsal that worked on it (ISO), not of the tick. */

@@ -12,8 +12,9 @@ decided on 2026-09-22 after a conductor-side audit — see "Round 2" at the very
 `roster/0060` (`0059` was already the voice-line choices), applied nowhere yet. Stage 7
 (frontend) implemented 2026-09-22 — NOT committed, NOT seen in the browser (needs `0060` on dev
 first); see its "As landed". Stage 8 (minutes, backend and frontend) implemented 2026-09-22 —
-NOT committed, NOT seen in the browser; migration `roster/0061`, applied nowhere yet. Stages
-9–10 NOT started.**
+NOT committed, NOT seen in the browser; migration `roster/0061`, applied nowhere yet. Stage 9
+(editor ergonomics, frontend only, no migration) implemented 2026-09-22 — NOT committed, NOT
+seen in the browser; see its "As landed". Stage 10 NOT started.**
 One stage per session; move this line when a stage lands and say whether it is committed,
 migrated and seen in the browser.
 
@@ -1109,6 +1110,37 @@ soloist-only rows, a live mode counting down to a section's release, unpublishin
 - Dirty confirm (decision 22): `features/projects/editors/tabs/RehearsalsTab.tsx` +
   `onDirtyChange` on the editor.
 - i18n ×3.
+
+**As landed (2026-09-22).** Where the code departs from or adds to the list above:
+- Blocks are `planBlocks` over effective clocks, so with minutes on every row each row is its
+  own block. Two rules keep that from putting a header on every row: a one-row block whose
+  minutes fill its span exactly carries no header (the row's clock and minutes already say
+  it), and block chips need two calling rows (one calling row's own chips are the block's).
+  A plan timed by minutes throughout therefore shows headers only where an anchor disagrees
+  with the minutes, or where rows without minutes share a span. `usePlanEditor.blockHeaders`
+  is keyed by the block's first row.
+- The family chips are every family the block's calling rows offer, in the row chips' order —
+  not a fixed four. On a canonical programme that is S/A/T/B; a piece declaring MS lines adds
+  "Mezzosoprany", since a block "Soprany" does not reach an MS line and the header would
+  otherwise offer less than its rows.
+- "some" includes a row leaving out one line of the family. A tap on "all" clears the family
+  everywhere; on "some" or "none" it excludes it everywhere. Shape as well as tone: a struck
+  label = all, a dashed edge = some; `aria-pressed="mixed"`. `toggleFamily` (one row) now runs
+  through `setFamilyOnRows`.
+- A block starting at or after the end, or whose next clock runs backwards, is open-ended
+  ("od 21:15", no length). Planned minutes are shown only when they differ from the span (gold
+  when over it) — equal minutes are not restated. `planBlocks` takes `TimedRow` (anchor +
+  minutes) rather than a full rule row.
+- Strip: "not coming" is `ABSENT` or `EXCUSED`. The spec named `ABSENT` only, but the manager's
+  absence-span sheet records `EXCUSED` by default, so a leave entered by a manager would have
+  left the figure full. Letters with no called seat are not shown; a sectional called by rule
+  shows only its own letters (a mezzo called as S would otherwise put an A figure on a soprano
+  sectional). The strip waits for the register and is not part of the editor's loading gate.
+- Dirty confirm: every way out of the sheet (scrim, Escape, drag, ×) goes through one handler;
+  Escape reaching the sheet under the open confirm is dropped. The inspector's docked editor
+  has no close to guard.
+- Found along the way: the free-row placeholder's code fallback still suggested "przerwa" (the
+  locales were already right).
 
 ### Stage 10 — Project grid
 

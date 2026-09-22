@@ -4263,6 +4263,11 @@
         "group_upcoming": "Najbliższe",
         "group_past": "Zakończone"
       },
+      "view": {
+        "aria": "Widok prób",
+        "timeline": "Oś",
+        "pieces": "Utwory"
+      },
       "modal": {
         "delete_desc": "Powiązane z tą próbą listy obecności zostaną bezpowrotnie wykasowane. Tej operacji nie można cofnąć.",
         "delete_title": "Usunąć tę próbę?"
@@ -4557,6 +4562,42 @@
         "desc": "Zmiany w planie tej próby nie zostały zapisane i przepadną.",
         "confirm": "Odrzuć zmiany",
         "keep": "Wróć do planu"
+      },
+      "grid": {
+        "title": "Utwory na próbach",
+        "caption": "Plany prób: wiersze to utwory programu, kolumny to próby.",
+        "piece": "Utwór",
+        "rehearsed": "Ćwiczone",
+        "open_plan": "Otwórz plan próby: {{date}}",
+        "draft": "Szkic",
+        "unsent": "Niewysłane",
+        "cell": "{{piece}}, {{date}}: {{state}}",
+        "times": "{{times}} razy",
+        "hint": "Pole przyszłej próby dodaje utwór do planu albo go usuwa · data otwiera plan",
+        "state": {
+          "planned": "W planie",
+          "reserve": "Jeśli starczy czasu",
+          "done": "Przerobione",
+          "not_done": "Nieprzerobione",
+          "none": "Poza planem"
+        },
+        "action": {
+          "add": "Dodaj do planu",
+          "remove": "Usuń z planu",
+          "open": "Otwórz plan tej próby"
+        },
+        "remove": {
+          "title": "Usunąć „{{title}}” z planu?",
+          "desc": "W planie próby {{date}} ten punkt ma notatkę, minuty, godzinę lub wykluczenia — przepadną razem z nim.",
+          "confirm": "Usuń z planu"
+        },
+        "empty": {
+          "rehearsals_title": "Brak prób",
+          "rehearsals_desc": "Każda zapisana próba stanie się tu kolumną.",
+          "program_title": "Program jest pusty",
+          "program_desc": "Każdy utwór programu dostanie tu swój wiersz.",
+          "program_action": "Otwórz program"
+        }
       }
     },
     "dashboard": {

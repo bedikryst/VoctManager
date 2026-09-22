@@ -57,6 +57,27 @@ export const useSaveRehearsalPlan = (rehearsalId: string) => {
 };
 
 /**
+ * The same whole-list save for a surface that writes to several evenings'
+ * plans from one place (the project grid): the rehearsal travels with the
+ * call. The promise settles only after the readers have re-read, so a caller
+ * awaiting it sees the list as the server now has it.
+ */
+export const useSaveAnyRehearsalPlan = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ rehearsalId, data }: { rehearsalId: string; data: RehearsalPlanDTO }) =>
+      RehearsalsService.savePlan(rehearsalId, data),
+    onSuccess: (saved, { rehearsalId }) => {
+      queryClient.setQueryData<RehearsalPlanRead>(
+        rehearsalKeys.rehearsals.plan(rehearsalId),
+        saved,
+      );
+    },
+    onSettled: (_saved, _error, { rehearsalId }) => settlePlanReaders(queryClient, rehearsalId),
+  });
+};
+
+/**
  * Writes the debrief's verdict on one row, always explicitly. Optimistic on
  * the plan query, so a checklist on a tablet answers on the tap: `done` is
  * what every surface reads, and the stamps mirror the server's rule that a

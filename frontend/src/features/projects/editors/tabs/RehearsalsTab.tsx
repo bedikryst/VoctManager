@@ -8,17 +8,21 @@
  * The form asks four things and states one (the timezone, which follows the room
  * it was booked in); everything else it used to ask was a control competing with
  * the only action on the card.
+ * A second view, "Utwory", reads the same rehearsals across the programme —
+ * pieces × evenings — full width, since its columns are the rehearsals and the
+ * compose form has nothing to say to it. Both views open the one plan sheet.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/RehearsalsTab
  */
 
-import React, { useMemo, useState } from "react";
+import React, { Suspense, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "framer-motion";
 import { formatInTimeZone } from "date-fns-tz";
 import {
   CalendarClock,
   CalendarRange,
+  ListMusic,
   MapPin,
   MicVocal,
   UserCheck,
@@ -29,6 +33,8 @@ import { useRehearsalsTab } from "../hooks/useRehearsalsTab";
 import { getEventMomentPresentation } from "../../lib/projectPresentation";
 import type { RehearsalTargetType } from "../types";
 import { RehearsalTimelineRow } from "./components/RehearsalTimelineRow";
+import { TabLoadingCard } from "./components/TabLoadingCard";
+import { ProjectPlanGrid } from "@/features/rehearsals/components/plan/ProjectPlanGrid";
 import { RehearsalPlanEditor } from "@/features/rehearsals/components/plan/RehearsalPlanEditor";
 import type { Rehearsal } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
@@ -65,6 +71,8 @@ const DEFAULT_TIMEZONE = "Europe/Warsaw";
 const MINUTES_PER_DAY = 24 * 60;
 /** The "Prowadzi" select's value for the resting case (`led_by` null). */
 const CONDUCTOR_LEADS = "__conductor__";
+
+type RehearsalsView = "timeline" | "pieces";
 
 interface RehearsalsTabProps {
   projectId: string;
@@ -106,6 +114,20 @@ export const RehearsalsTab = ({
   } = useRehearsalsTab(projectId);
 
   const isEditing = editingRehearsal !== null;
+
+  const [view, setView] = useState<RehearsalsView>("timeline");
+  const viewOptions: readonly SegmentedTabItem<RehearsalsView>[] = [
+    {
+      id: "timeline",
+      label: t("projects.rehearsals.view.timeline", "Oś"),
+      Icon: CalendarRange,
+    },
+    {
+      id: "pieces",
+      label: t("projects.rehearsals.view.pieces", "Utwory"),
+      Icon: ListMusic,
+    },
+  ];
 
   // The plan is laid out on a SAVED rehearsal, in a sheet over the runway —
   // the phone flow — never inside the compose form, which has no rehearsal
@@ -355,420 +377,448 @@ export const RehearsalsTab = ({
 
   return (
     <>
-      <div className="grid w-full grid-cols-1 gap-6 pb-12 lg:grid-cols-12 lg:items-start">
-        {/* ── Compose form ─────────────────────────────────────────────── */}
-        <form onSubmit={handleSubmit} className="lg:col-span-5">
-          <SectionCard
-            as="h2"
-            bodyClassName="gap-5"
-            icon={
-              <CalendarClock
-                size={15}
-                className={
-                  isEditing ? "text-ethereal-amethyst" : "text-ethereal-gold"
-                }
-                aria-hidden="true"
-              />
-            }
-            title={
-              isEditing
-                ? t("projects.rehearsals.form.title_edit", "Edytuj próbę")
-                : t("projects.rehearsals.form.title", "Zaplanuj nową próbę")
-            }
-            // Which session is on the bench. "Edit mode" alone is not enough
-            // when the row being edited sits in the other column.
-            action={
-              editingRehearsal ? (
-                <Badge variant="amethyst">
-                  {formatLocalizedDate(
-                    editingRehearsal.date_time,
-                    { day: "numeric", month: "short" },
-                    undefined,
-                    editingRehearsal.timezone,
-                  )}
-                </Badge>
-              ) : undefined
-            }
-            footer={
-              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <label className="flex cursor-pointer items-center gap-2.5 self-start rounded-control px-1.5 py-1 transition-colors hover:bg-ethereal-ink/3">
-                  <Checkbox
-                    checked={formData.is_mandatory}
-                    onChange={(event) =>
-                      setFormData({
-                        ...formData,
-                        is_mandatory: event.target.checked,
-                      })
-                    }
-                    disabled={isSubmitting}
-                  />
-                  <Text as="span" size="sm" color="graphite">
-                    {t(
-                      "projects.rehearsals.form.mandatory",
-                      "Obecność obowiązkowa",
-                    )}
-                  </Text>
-                </label>
+      <div className="mb-5">
+        <SegmentedTabs
+          items={viewOptions}
+          value={view}
+          onChange={setView}
+          ariaLabel={t("projects.rehearsals.view.aria", "Widok prób")}
+        />
+      </div>
 
-                <div className="flex gap-2">
-                  {isEditing && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={handleCancelEdit}
-                      disabled={isSubmitting}
-                      className="flex-1 sm:flex-none"
-                    >
-                      {t("common.actions.cancel", "Anuluj")}
-                    </Button>
-                  )}
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={isSubmitting}
-                    isLoading={isSubmitting}
-                    className="flex-1 sm:flex-none"
-                  >
-                    {isEditing
-                      ? t("projects.rehearsals.form.update", "Aktualizuj")
-                      : t(
-                          "projects.rehearsals.form.submit",
-                          "Zapisz w kalendarzu",
-                        )}
-                  </Button>
-                </div>
-              </div>
+      {view === "pieces" ? (
+        <div className="w-full pb-12">
+          <Suspense
+            fallback={
+              <TabLoadingCard
+                title={t("rehearsals.plan.grid.title", "Utwory na próbach")}
+                icon={<ListMusic size={15} aria-hidden="true" />}
+              />
             }
           >
-            <DateTimeField
-              label={t("projects.rehearsals.form.date_time", "Data i godzina *")}
-              required
-              value={formData.date_time}
-              onChange={(date_time) => setFormData({ ...formData, date_time })}
-              disabled={isSubmitting}
-              // The runway in the other column, folded into the month itself:
-              // what the conductor needs while picking a date is which days the
-              // project already occupies.
-              markers={calendarMarkers}
-              defaultTime={REHEARSAL_DEFAULT_TIME}
+            <ProjectPlanGrid
+              projectId={projectId}
+              rehearsals={projectRehearsals}
+              onOpenPlan={setPlanRehearsal}
             />
-
-            {/* The fact a singer plans the rest of their evening around, and the
-                one this form never asked for — which is why no surface, and no
-                calendar export, could state it. Optional: a date can be fixed
-                before the conductor knows how much of the evening they need,
-                and an empty field stays empty rather than assuming two hours. */}
-            <div className="flex flex-col gap-1.5">
-              <TimeField
-                label={t("projects.rehearsals.form.end_time", "Koniec próby")}
-                value={formData.end_time}
-                onChange={(end_time) => setFormData({ ...formData, end_time })}
-                disabled={isSubmitting}
-                fallback={endTimeFallback}
-              />
-              {lengthLabel && (
-                <Caption color="muted" className="ml-1">
-                  {lengthLabel}
-                </Caption>
-              )}
-            </div>
-
-            <Select
-              label={t("projects.rehearsals.form.location", "Sala próby *")}
-              required
-              leftIcon={<MapPin aria-hidden="true" />}
-              value={formData.location_id}
-              onValueChange={(nextLocationId) => {
-                const selectedLocation =
-                  locations.find(
-                    (location) => String(location.id) === nextLocationId,
-                  ) ?? null;
-
-                setFormData({
-                  ...formData,
-                  location_id: nextLocationId,
-                  timezone: selectedLocation?.timezone ?? formData.timezone,
-                });
-              }}
-              disabled={isSubmitting}
-              placeholder={t(
-                "projects.rehearsals.form.location_placeholder",
-                "Wybierz salę",
-              )}
-              options={locations.map((location) => ({
-                value: String(location.id),
-                label: location.name,
-              }))}
-            />
-
-            <TimezoneField
-              timezone={formData.timezone}
-              onChange={(timezone) => setFormData({ ...formData, timezone })}
-              disabled={isSubmitting}
-            />
-
-            <Textarea
-              label={t("projects.rehearsals.form.focus", "Temat próby")}
-              rows={3}
-              value={formData.focus}
-              placeholder={t(
-                "projects.rehearsals.form.focus_placeholder",
-                "np. Requiem cz. 1–3, pierwsze czytanie",
-              )}
-              onChange={(event) =>
-                setFormData({ ...formData, focus: event.target.value })
-              }
-              disabled={isSubmitting}
-            />
-
-            {/* Who stands in front. Asked only when the answer can vary — a
-                project with no leader has one possible value, and a field
-                stating it would be a control competing with the save. The
-                conductor is a real option here (Radix refuses an empty item
-                value), mapped to "" in the form state. */}
-            {rollCallLeaders.length > 0 && (
-              <Select
-                label={t("projects.rehearsals.form.led_by", "Prowadzi")}
-                leftIcon={<UserCheck aria-hidden="true" />}
-                value={formData.led_by_id || CONDUCTOR_LEADS}
-                onValueChange={(next) =>
-                  setFormData({
-                    ...formData,
-                    led_by_id: next === CONDUCTOR_LEADS ? "" : next,
-                  })
-                }
-                disabled={isSubmitting}
-                options={[
-                  {
-                    value: CONDUCTOR_LEADS,
-                    label: t(
-                      "projects.rehearsals.form.led_by_conductor",
-                      "Dyrygent",
-                    ),
-                  },
-                  ...rollCallLeaders.map((leader) => ({
-                    value: leader.artist,
-                    label: leader.artist_name,
-                  })),
-                ]}
-              />
-            )}
-
-            {/* No second surface for this group: a card inside a card is what
-                made the form read as two stacked panels. A hairline and an
-                overline carry the same division for a tenth of the ink. */}
-            <div className="flex flex-col gap-3 border-t border-hairline pt-5">
-              <Eyebrow color="muted">
-                {t("projects.rehearsals.form.who", "Kto jest wezwany?")}
-              </Eyebrow>
-
-              <SegmentedTabs
-                wrap
-                items={targetOptions}
-                value={targetType}
-                onChange={setTargetType}
-                ariaLabel={t(
-                  "projects.rehearsals.form.who",
-                  "Kto jest wezwany?",
-                )}
-              />
-
-              <div className="flex items-center gap-1.5 pl-1">
-                <Users
-                  size={12}
-                  className={cn(
-                    "shrink-0",
-                    isCallEmpty
-                      ? "text-ethereal-gold"
-                      : "text-ethereal-graphite/40",
-                  )}
+          </Suspense>
+        </div>
+      ) : (
+        <div className="grid w-full grid-cols-1 gap-6 pb-12 lg:grid-cols-12 lg:items-start">
+          {/* ── Compose form ─────────────────────────────────────────────── */}
+          <form onSubmit={handleSubmit} className="lg:col-span-5">
+            <SectionCard
+              as="h2"
+              bodyClassName="gap-5"
+              icon={
+                <CalendarClock
+                  size={15}
+                  className={
+                    isEditing ? "text-ethereal-amethyst" : "text-ethereal-gold"
+                  }
                   aria-hidden="true"
                 />
-                <Caption color={isCallEmpty ? "gold" : "muted"}>
-                  {targetType === "TUTTI"
-                    ? invitedCount === 0
-                      ? t(
-                          "projects.rehearsals.status.tutti_empty_cast",
-                          "Cały zespół — obsada dołączy później",
-                        )
-                      : t(
-                          "projects.rehearsals.status.tutti_count",
-                          "Cały zespół — obecnie {{count}} os.",
-                          { count: invitedCount },
-                        )
-                    : targetType === "SECTIONAL"
-                      ? selectedSections.length === 0
-                        ? t(
-                            "projects.rehearsals.status.sectional_empty",
-                            "Wybierz sekcje — kto dołączy do nich później, też zostanie wezwany",
-                          )
+              }
+              title={
+                isEditing
+                  ? t("projects.rehearsals.form.title_edit", "Edytuj próbę")
+                  : t("projects.rehearsals.form.title", "Zaplanuj nową próbę")
+              }
+              // Which session is on the bench. "Edit mode" alone is not enough
+              // when the row being edited sits in the other column.
+              action={
+                editingRehearsal ? (
+                  <Badge variant="amethyst">
+                    {formatLocalizedDate(
+                      editingRehearsal.date_time,
+                      { day: "numeric", month: "short" },
+                      undefined,
+                      editingRehearsal.timezone,
+                    )}
+                  </Badge>
+                ) : undefined
+              }
+              footer={
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <label className="flex cursor-pointer items-center gap-2.5 self-start rounded-control px-1.5 py-1 transition-colors hover:bg-ethereal-ink/3">
+                    <Checkbox
+                      checked={formData.is_mandatory}
+                      onChange={(event) =>
+                        setFormData({
+                          ...formData,
+                          is_mandatory: event.target.checked,
+                        })
+                      }
+                      disabled={isSubmitting}
+                    />
+                    <Text as="span" size="sm" color="graphite">
+                      {t(
+                        "projects.rehearsals.form.mandatory",
+                        "Obecność obowiązkowa",
+                      )}
+                    </Text>
+                  </label>
+
+                  <div className="flex gap-2">
+                    {isEditing && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={handleCancelEdit}
+                        disabled={isSubmitting}
+                        className="flex-1 sm:flex-none"
+                      >
+                        {t("common.actions.cancel", "Anuluj")}
+                      </Button>
+                    )}
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      disabled={isSubmitting}
+                      isLoading={isSubmitting}
+                      className="flex-1 sm:flex-none"
+                    >
+                      {isEditing
+                        ? t("projects.rehearsals.form.update", "Aktualizuj")
                         : t(
-                            "projects.rehearsals.status.sectional_count",
-                            "Wybrane sekcje — obecnie {{count}} os.",
-                            { count: invitedCount },
-                          )
-                      : t(
-                          "projects.rehearsals.status.invited",
-                          "Wezwanych: {{count}}",
-                          { count: invitedCount },
-                        )}
-                </Caption>
+                            "projects.rehearsals.form.submit",
+                            "Zapisz w kalendarzu",
+                          )}
+                    </Button>
+                  </div>
+                </div>
+              }
+            >
+              <DateTimeField
+                label={t("projects.rehearsals.form.date_time", "Data i godzina *")}
+                required
+                value={formData.date_time}
+                onChange={(date_time) => setFormData({ ...formData, date_time })}
+                disabled={isSubmitting}
+                // The runway in the other column, folded into the month itself:
+                // what the conductor needs while picking a date is which days the
+                // project already occupies.
+                markers={calendarMarkers}
+                defaultTime={REHEARSAL_DEFAULT_TIME}
+              />
+
+              {/* The fact a singer plans the rest of their evening around, and the
+                  one this form never asked for — which is why no surface, and no
+                  calendar export, could state it. Optional: a date can be fixed
+                  before the conductor knows how much of the evening they need,
+                  and an empty field stays empty rather than assuming two hours. */}
+              <div className="flex flex-col gap-1.5">
+                <TimeField
+                  label={t("projects.rehearsals.form.end_time", "Koniec próby")}
+                  value={formData.end_time}
+                  onChange={(end_time) => setFormData({ ...formData, end_time })}
+                  disabled={isSubmitting}
+                  fallback={endTimeFallback}
+                />
+                {lengthLabel && (
+                  <Caption color="muted" className="ml-1">
+                    {lengthLabel}
+                  </Caption>
+                )}
               </div>
 
-              <AnimatePresence mode="wait">
-                {targetType === "TUTTI" && playersToggle && (
-                  <motion.div
-                    key="tutti-players"
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    className="border-t border-hairline pt-4"
-                  >
-                    {playersToggle}
-                  </motion.div>
+              <Select
+                label={t("projects.rehearsals.form.location", "Sala próby *")}
+                required
+                leftIcon={<MapPin aria-hidden="true" />}
+                value={formData.location_id}
+                onValueChange={(nextLocationId) => {
+                  const selectedLocation =
+                    locations.find(
+                      (location) => String(location.id) === nextLocationId,
+                    ) ?? null;
+
+                  setFormData({
+                    ...formData,
+                    location_id: nextLocationId,
+                    timezone: selectedLocation?.timezone ?? formData.timezone,
+                  });
+                }}
+                disabled={isSubmitting}
+                placeholder={t(
+                  "projects.rehearsals.form.location_placeholder",
+                  "Wybierz salę",
                 )}
+                options={locations.map((location) => ({
+                  value: String(location.id),
+                  label: location.name,
+                }))}
+              />
 
-                {targetType === "SECTIONAL" && (
-                  <motion.div
-                    key="sectional"
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    className="flex flex-col gap-4 border-t border-hairline pt-4"
-                  >
-                    <div className="flex flex-wrap gap-2">
-                      {voiceSections.map((section) => (
-                        <TogglePill
-                          key={section.id}
-                          label={section.label}
-                          active={selectedSections.includes(section.id)}
-                          onChange={() => toggleSection(section.id)}
-                          disabled={isSubmitting}
-                        />
-                      ))}
-                    </div>
-                    {playersToggle}
-                  </motion.div>
+              <TimezoneField
+                timezone={formData.timezone}
+                onChange={(timezone) => setFormData({ ...formData, timezone })}
+                disabled={isSubmitting}
+              />
+
+              <Textarea
+                label={t("projects.rehearsals.form.focus", "Temat próby")}
+                rows={3}
+                value={formData.focus}
+                placeholder={t(
+                  "projects.rehearsals.form.focus_placeholder",
+                  "np. Requiem cz. 1–3, pierwsze czytanie",
                 )}
+                onChange={(event) =>
+                  setFormData({ ...formData, focus: event.target.value })
+                }
+                disabled={isSubmitting}
+              />
 
-                {targetType === "CUSTOM" && (
-                  <motion.div
-                    key="custom"
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    className="grid max-h-50 grid-cols-1 gap-2 overflow-y-auto border-t border-hairline pr-1 pt-4 sm:grid-cols-2"
-                  >
-                    {projectParticipations.map((participation) => {
-                      const artist = artistMap.get(String(participation.artist));
-                      if (!artist) return null;
+              {/* Who stands in front. Asked only when the answer can vary — a
+                  project with no leader has one possible value, and a field
+                  stating it would be a control competing with the save. The
+                  conductor is a real option here (Radix refuses an empty item
+                  value), mapped to "" in the form state. */}
+              {rollCallLeaders.length > 0 && (
+                <Select
+                  label={t("projects.rehearsals.form.led_by", "Prowadzi")}
+                  leftIcon={<UserCheck aria-hidden="true" />}
+                  value={formData.led_by_id || CONDUCTOR_LEADS}
+                  onValueChange={(next) =>
+                    setFormData({
+                      ...formData,
+                      led_by_id: next === CONDUCTOR_LEADS ? "" : next,
+                    })
+                  }
+                  disabled={isSubmitting}
+                  options={[
+                    {
+                      value: CONDUCTOR_LEADS,
+                      label: t(
+                        "projects.rehearsals.form.led_by_conductor",
+                        "Dyrygent",
+                      ),
+                    },
+                    ...rollCallLeaders.map((leader) => ({
+                      value: leader.artist,
+                      label: leader.artist_name,
+                    })),
+                  ]}
+                />
+              )}
 
-                      const isSelected = customParticipants.includes(
-                        String(participation.id),
-                      );
+              {/* No second surface for this group: a card inside a card is what
+                  made the form read as two stacked panels. A hairline and an
+                  overline carry the same division for a tenth of the ink. */}
+              <div className="flex flex-col gap-3 border-t border-hairline pt-5">
+                <Eyebrow color="muted">
+                  {t("projects.rehearsals.form.who", "Kto jest wezwany?")}
+                </Eyebrow>
 
-                      return (
-                        <button
-                          key={participation.id}
-                          type="button"
-                          onClick={() =>
-                            toggleCustomParticipant(String(participation.id))
-                          }
-                          aria-pressed={isSelected}
-                          className={cn(
-                            "flex items-center justify-between gap-2 rounded-control border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-                            isSelected
-                              ? "border-ethereal-gold/40 bg-ethereal-gold/15"
-                              : "border-hairline-strong bg-ethereal-marble hover:border-ethereal-gold/30",
-                          )}
-                        >
-                          <Text
-                            as="span"
-                            size="xs"
-                            weight="medium"
-                            truncate
-                            color={isSelected ? "default" : "graphite"}
-                          >
-                            {artist.first_name} {artist.last_name}
-                          </Text>
-                          <Eyebrow
-                            as="span"
-                            size="overline-sm"
-                            color={isSelected ? "gold" : "incense-muted"}
-                            className="shrink-0"
-                          >
-                            {artist.voice_type
-                              ? artistRoleLabel(
-                                  t,
-                                  artist.voice_type,
-                                  artist.instrument,
-                                )
-                              : artist.voice_type_display || ""}
-                          </Eyebrow>
-                        </button>
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </SectionCard>
-        </form>
+                <SegmentedTabs
+                  wrap
+                  items={targetOptions}
+                  value={targetType}
+                  onChange={setTargetType}
+                  ariaLabel={t(
+                    "projects.rehearsals.form.who",
+                    "Kto jest wezwany?",
+                  )}
+                />
 
-        {/* ── The runway ───────────────────────────────────────────────── */}
-        <SectionCard
-          as="h2"
-          scroll
-          className="max-h-[78dvh] lg:col-span-7"
-          bodyClassName="p-0"
-          icon={<CalendarRange size={15} aria-hidden="true" />}
-          title={t("projects.rehearsals.list.title", "Harmonogram prób")}
-          action={
-            projectRehearsals.length > 0 ? (
-              <Badge variant="neutral">{projectRehearsals.length}</Badge>
-            ) : undefined
-          }
-        >
-          {projectRehearsals.length > 0 ? (
-            <>
-              {upcomingTimeline.length > 0 && (
-                <section>
-                  <TimelineGroupHeader
-                    label={t(
-                      "projects.rehearsals.list.group_upcoming",
-                      "Najbliższe",
+                <div className="flex items-center gap-1.5 pl-1">
+                  <Users
+                    size={12}
+                    className={cn(
+                      "shrink-0",
+                      isCallEmpty
+                        ? "text-ethereal-gold"
+                        : "text-ethereal-graphite/40",
                     )}
+                    aria-hidden="true"
                   />
-                  {renderTimeline(upcomingTimeline, false)}
-                </section>
-              )}
+                  <Caption color={isCallEmpty ? "gold" : "muted"}>
+                    {targetType === "TUTTI"
+                      ? invitedCount === 0
+                        ? t(
+                            "projects.rehearsals.status.tutti_empty_cast",
+                            "Cały zespół — obsada dołączy później",
+                          )
+                        : t(
+                            "projects.rehearsals.status.tutti_count",
+                            "Cały zespół — obecnie {{count}} os.",
+                            { count: invitedCount },
+                          )
+                      : targetType === "SECTIONAL"
+                        ? selectedSections.length === 0
+                          ? t(
+                              "projects.rehearsals.status.sectional_empty",
+                              "Wybierz sekcje — kto dołączy do nich później, też zostanie wezwany",
+                            )
+                          : t(
+                              "projects.rehearsals.status.sectional_count",
+                              "Wybrane sekcje — obecnie {{count}} os.",
+                              { count: invitedCount },
+                            )
+                        : t(
+                            "projects.rehearsals.status.invited",
+                            "Wezwanych: {{count}}",
+                            { count: invitedCount },
+                          )}
+                  </Caption>
+                </div>
 
-              {pastTimeline.length > 0 && (
-                <section>
-                  <TimelineGroupHeader
-                    label={t("projects.rehearsals.list.group_past", "Zakończone")}
-                  />
-                  {renderTimeline(pastTimeline, true)}
-                </section>
-              )}
-            </>
-          ) : (
-            <StatePanel
-              variant="inline"
-              className="px-6 py-12"
-              icon={<CalendarRange size={24} aria-hidden="true" />}
-              title={t(
-                "projects.rehearsals.empty.no_rehearsals",
-                "Brak zaplanowanych prób",
-              )}
-              description={t(
-                "projects.rehearsals.empty.no_rehearsals_desc",
-                "Pierwsza zapisana próba pojawi się w tym harmonogramie, przed datą wydarzenia.",
-              )}
-            />
-          )}
-        </SectionCard>
-      </div>
+                <AnimatePresence mode="wait">
+                  {targetType === "TUTTI" && playersToggle && (
+                    <motion.div
+                      key="tutti-players"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className="border-t border-hairline pt-4"
+                    >
+                      {playersToggle}
+                    </motion.div>
+                  )}
+
+                  {targetType === "SECTIONAL" && (
+                    <motion.div
+                      key="sectional"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className="flex flex-col gap-4 border-t border-hairline pt-4"
+                    >
+                      <div className="flex flex-wrap gap-2">
+                        {voiceSections.map((section) => (
+                          <TogglePill
+                            key={section.id}
+                            label={section.label}
+                            active={selectedSections.includes(section.id)}
+                            onChange={() => toggleSection(section.id)}
+                            disabled={isSubmitting}
+                          />
+                        ))}
+                      </div>
+                      {playersToggle}
+                    </motion.div>
+                  )}
+
+                  {targetType === "CUSTOM" && (
+                    <motion.div
+                      key="custom"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className="grid max-h-50 grid-cols-1 gap-2 overflow-y-auto border-t border-hairline pr-1 pt-4 sm:grid-cols-2"
+                    >
+                      {projectParticipations.map((participation) => {
+                        const artist = artistMap.get(String(participation.artist));
+                        if (!artist) return null;
+
+                        const isSelected = customParticipants.includes(
+                          String(participation.id),
+                        );
+
+                        return (
+                          <button
+                            key={participation.id}
+                            type="button"
+                            onClick={() =>
+                              toggleCustomParticipant(String(participation.id))
+                            }
+                            aria-pressed={isSelected}
+                            className={cn(
+                              "flex items-center justify-between gap-2 rounded-control border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+                              isSelected
+                                ? "border-ethereal-gold/40 bg-ethereal-gold/15"
+                                : "border-hairline-strong bg-ethereal-marble hover:border-ethereal-gold/30",
+                            )}
+                          >
+                            <Text
+                              as="span"
+                              size="xs"
+                              weight="medium"
+                              truncate
+                              color={isSelected ? "default" : "graphite"}
+                            >
+                              {artist.first_name} {artist.last_name}
+                            </Text>
+                            <Eyebrow
+                              as="span"
+                              size="overline-sm"
+                              color={isSelected ? "gold" : "incense-muted"}
+                              className="shrink-0"
+                            >
+                              {artist.voice_type
+                                ? artistRoleLabel(
+                                    t,
+                                    artist.voice_type,
+                                    artist.instrument,
+                                  )
+                                : artist.voice_type_display || ""}
+                            </Eyebrow>
+                          </button>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </SectionCard>
+          </form>
+
+          {/* ── The runway ───────────────────────────────────────────────── */}
+          <SectionCard
+            as="h2"
+            scroll
+            className="max-h-[78dvh] lg:col-span-7"
+            bodyClassName="p-0"
+            icon={<CalendarRange size={15} aria-hidden="true" />}
+            title={t("projects.rehearsals.list.title", "Harmonogram prób")}
+            action={
+              projectRehearsals.length > 0 ? (
+                <Badge variant="neutral">{projectRehearsals.length}</Badge>
+              ) : undefined
+            }
+          >
+            {projectRehearsals.length > 0 ? (
+              <>
+                {upcomingTimeline.length > 0 && (
+                  <section>
+                    <TimelineGroupHeader
+                      label={t(
+                        "projects.rehearsals.list.group_upcoming",
+                        "Najbliższe",
+                      )}
+                    />
+                    {renderTimeline(upcomingTimeline, false)}
+                  </section>
+                )}
+
+                {pastTimeline.length > 0 && (
+                  <section>
+                    <TimelineGroupHeader
+                      label={t("projects.rehearsals.list.group_past", "Zakończone")}
+                    />
+                    {renderTimeline(pastTimeline, true)}
+                  </section>
+                )}
+              </>
+            ) : (
+              <StatePanel
+                variant="inline"
+                className="px-6 py-12"
+                icon={<CalendarRange size={24} aria-hidden="true" />}
+                title={t(
+                  "projects.rehearsals.empty.no_rehearsals",
+                  "Brak zaplanowanych prób",
+                )}
+                description={t(
+                  "projects.rehearsals.empty.no_rehearsals_desc",
+                  "Pierwsza zapisana próba pojawi się w tym harmonogramie, przed datą wydarzenia.",
+                )}
+              />
+            )}
+          </SectionCard>
+        </div>
+      )}
 
       <ConfirmModal
         isOpen={rehearsalToDelete !== null}
