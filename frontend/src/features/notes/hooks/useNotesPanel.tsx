@@ -30,10 +30,11 @@ interface NotesPanelContextValue {
    */
   readonly pendingCompose: boolean;
   readonly consumePendingCompose: () => void;
+  /** Opens without touching the caret — the mobile dock's tap. */
   readonly open: () => void;
+  /** Opens and raises the latch: the panel arrives ready to be typed into. */
   readonly openToCompose: () => void;
   readonly close: () => void;
-  readonly toggle: () => void;
 }
 
 const NotesPanelContext = createContext<NotesPanelContextValue | null>(null);
@@ -60,13 +61,6 @@ export const NotesPanelStateProvider = ({
     setIsOpen(false);
     setPendingCompose(false);
   }, []);
-  // Unconditional: the hotkey never raises the latch, so dropping it here is
-  // right in both directions (and a setState inside another's updater is not).
-  const toggle = useCallback(() => {
-    setIsOpen((previous) => !previous);
-    setPendingCompose(false);
-  }, []);
-
   const value = useMemo<NotesPanelContextValue>(
     () => ({
       isOpen,
@@ -75,17 +69,8 @@ export const NotesPanelStateProvider = ({
       open,
       openToCompose,
       close,
-      toggle,
     }),
-    [
-      isOpen,
-      pendingCompose,
-      consumePendingCompose,
-      open,
-      openToCompose,
-      close,
-      toggle,
-    ],
+    [isOpen, pendingCompose, consumePendingCompose, open, openToCompose, close],
   );
 
   return (

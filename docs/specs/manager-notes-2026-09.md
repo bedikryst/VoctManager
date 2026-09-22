@@ -243,8 +243,16 @@ compose features; the feature never imports the shell.
 - Single-line input (`shared/ui/primitives/Input.tsx`). **Enter submits.** There is no newline in
   quick capture — that is what enforces the front-loaded first line that makes `line-clamp-2`
   readable. Multi-line detail is added later in the expanded row's editor.
-- Autofocus only when the panel was opened by the explicit "new note" action, never on a plain open.
-  Carried as a **latch** on the panel context (`pendingCompose` + `consumePendingCompose`), not as a
+- Autofocus on every open that proves a physical keyboard is present, and on no other.
+  **Superseded 2026-09-22** (developer's call): this originally read "only when the panel was opened
+  by the explicit 'new note' action". Too narrow — pressing "n" or reaching for the shell icon *is*
+  the intent to write, and landing in a panel that then needs a second click to start typing is a
+  wasted step. What the old rule was really protecting against is the on-screen keyboard eating a
+  third of a phone screen, and that maps to the input device, not to which button was pressed.
+  So: the "n" hotkey and the `DesktopSidebar` icon both open-and-focus; the mobile dock's button
+  opens plain. No media query is needed for this — pressing "n" proves a hardware keyboard, and the
+  sidebar icon only renders under `fine-pointer`. The two surfaces are already the right two.
+- Carried as a **latch** on the panel context (`pendingCompose` + `consumePendingCompose`), not as a
   counter the composer compares against its own first render. Below `wide-shell` the panel lives in a
   `BottomSheet`, which unmounts its children when closed, so the composer mounts *fresh* on that
   open: a counter it has never seen is indistinguishable from one it has already consumed, and the
@@ -315,9 +323,15 @@ Mirror of `DesktopSidebar.tsx` / `useSidebarPin.ts`:
   as the others and left the visual call to the developer's own review, per this project's
   verification policy (UI is judged in the browser, not by the agent). If it reads as cramped, the
   fix belongs here, not as a silent redesign.
-- **`NotesPanelProvider`** mirrors `CommandPaletteProvider`: context `{ isOpen, open, close, toggle }`,
-  a `useNotesPanel()` that throws outside the provider, and a global hotkey guarded by
+- **`NotesPanelProvider`** mirrors `CommandPaletteProvider`: context
+  `{ isOpen, pendingCompose, consumePendingCompose, open, openToCompose, close }`, a
+  `useNotesPanel()` that throws outside the provider, and a global hotkey guarded by
   `isEditableTarget` so it does not fire while typing.
+- **"n" opens; it does not toggle.** Pressing a letter to catch a thought and finding the panel gone
+  instead is the wrong half of a toggle — and with the rail pinned a toggle is invisible anyway,
+  since `isExpanded` is `isOpen || isPinned` and the keypress only flips a flag nothing reads.
+  Escape and the close button are the way out. (This also retires the "pinned rail makes 'n' look
+  dead" item.) There is no `toggle` on the context: nothing called it once the hotkey stopped.
 
 ### Routes where the panel must not exist
 
@@ -325,7 +339,17 @@ The score stand and the PDF viewer compute their fit (auto / page / width / half
 viewport width. A pinned rail there would make that arithmetic wrong, not merely cramped. The
 provider renders no rail on those routes — suppressed, not hidden.
 
-**Build note — this held for one of the two, not both.** The standalone PDF viewer
+**Closed 2026-09-22.** `shared/lib/dom/fullscreenSurface.ts` is the signal the note below said did
+not exist: a module counter, a `useFullscreenSurface(isOpen)` that registers a viewport-owning
+surface, and an `isFullscreenSurfaceOpen()` the hotkey reads at the keystroke. `PdfViewerModal`
+registers, which covers the score stand, the score book and the document preview in one line.
+Deliberately **not** reactive (the only caller is a keydown handler) and deliberately **not**
+`useBodyScrollLock`, which measures a different thing: `PdfViewerModal` is a `fixed inset-0` surface
+that never takes that lock, while half the app's ordinary drawers do. Register a surface here only
+if it fills the viewport *and* computes from its width — that is what makes a panel over it wrong
+rather than merely untidy.
+
+**Build note — the original gap, kept for the reasoning.** The standalone PDF viewer
 (`/documents/:docType/:docId`) is a sibling route of the dashboard shell, never nested under
 `DashboardLayout` — so `NotesPanelProvider`, mounted inside that layout, is structurally absent
 there with no suppression code needed. The score stand is different: `ScoreStandModal` opens as
@@ -338,6 +362,32 @@ outside this stage's scope. What ships instead: the rail's `z-60` sits under the
 remains is narrow but real — pressing "n" while the score stand is open opens the notes sheet/rail
 on top of it, at the same `z-focus-trap` layer as the score stand's own overlay on mobile. Left for
 a follow-up rather than resolved by inventing new cross-cutting modal-tracking infrastructure here.
+
+## What the interface says out loud
+
+Three statements, each in the one place its question arises, and nothing else. No info icon, no
+popover, no onboarding step — `project_onboarding_no_tours_2026-06` settled that. The test applied
+was "what does it cost the reader not to know this", and only three things scored above zero.
+
+- **Retention, under the expanded "Completed" disclosure.** The highest-cost silence in the feature:
+  the purge is a *hard* delete with no bin and no export, and a reader who treats the done section as
+  a record of what they got through this month loses it without ever being told. Only shown with the
+  section open — in the empty state it would be noise.
+- **Privacy, under the composer, in the panel body.** Not in the rail's header, because the phone
+  never sees that header; not in a tooltip, because a touch device has no hover to reveal one. In a
+  shell where every other surface shows the whole choir's data, the default assumption about a new
+  tab is "shared until told otherwise", and the cost of that assumption is invisible — people do not
+  stop using the notepad, they stop writing the things it was built for.
+  **The claim is product-level and must stay that way:** no manager and no superuser reads these
+  through the API, and `Note` is deliberately not registered in the admin. That is what "only you"
+  can honestly mean. Never "nobody has access", never anything implying encryption — the database
+  and the backups exist, and this is the kind of sentence someone will one day ask you to defend.
+- **The "n" key, in the sidebar icon's tooltip**, following `SHORTCUT_LABEL`'s precedent. A bare
+  letter, so no platform split. Desktop only, since the tooltip's host only renders under
+  `fine-pointer` — advertising a key on a surface that has no keyboard is worse than silence.
+
+Everything else a reader works out by using it, and saying it would be condescending: that the
+composer takes Enter, that a row expands, that edits save on blur, that capture works offline.
 
 ## i18n
 
@@ -409,11 +459,14 @@ open; the sidebar's 88px collapsed sliver does *not* carry over to a rail with n
 None of this widens the feature. The model, the permissions and the **Out, deliberately** list are
 exactly as specced.
 
-**Still open after remediation** (none blocking, all the developer's call):
+**Second pass, same day**, after the developer reviewed the remediation in a browser and asked what
+the interface should say for itself: the three statements under "What the interface says out loud",
+the "n" hotkey turned from a toggle into open-and-focus, the shell icon likewise, and the score-stand
+gap closed with `fullscreenSurface.ts` — which was a precondition, not a bonus: advertising a key
+makes its one known misfire common.
 
-- A pinned rail makes the "n" hotkey look dead: `isExpanded = isOpen || isPinned`, so the keypress
-  toggles state nothing reads. Either the hotkey focuses the composer when pinned, or it does nothing
-  and says so.
+**Still open** (none blocking, all the developer's call):
+
 - `useNotes()` is mounted in `DesktopSidebar` and `MobileNavTrigger` for the dot, so `/api/notes/` is
   read on every panel entry and every window focus, for every user, chorister included.
 - Offline queue labels are hardcoded Polish (`Notatka: …`), matching `annotations.queries.ts`

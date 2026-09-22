@@ -40,6 +40,9 @@ const CONTENT_FADE_TRANSITION: Transition = {
   ease: [0.25, 0.1, 0.25, 1],
 };
 
+// A bare letter, so no platform split: the notes hotkey takes no modifier.
+const NOTES_SHORTCUT_LABEL = "N";
+
 // Windows conductors get Ctrl, macOS gets ⌘ — show the key they actually press.
 const SHORTCUT_LABEL =
   typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform)
@@ -96,7 +99,9 @@ export const DesktopSidebar = ({
   } = useSidebarKinematics();
   const { isPinned, togglePin } = useSidebarPin();
   const { open: openCommandPalette } = useCommandPalette();
-  const { open: openNotes } = useNotesPanel();
+  // Opens with the caret already in the composer. This button only exists under
+  // `fine-pointer`, so there is no on-screen keyboard to summon.
+  const { openToCompose: openNotes } = useNotesPanel();
   const { data: notes } = useNotes();
   const hasOpenNotes = (notes ?? []).some((note) => !note.is_done);
   const { navGroups, userFullName, roleLabel, initials, avatarUrl, t } =
@@ -509,7 +514,7 @@ export const DesktopSidebar = ({
               </div>
 
               <Tooltip
-                content={t("dashboard.layout.actions.notes", "Notatki")}
+                content={`${t("dashboard.layout.actions.notes", "Notatki")} · ${NOTES_SHORTCUT_LABEL}`}
                 disabled={isExpanded}
                 side="right"
               >

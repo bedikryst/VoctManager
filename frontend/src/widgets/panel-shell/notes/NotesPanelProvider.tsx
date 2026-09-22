@@ -9,14 +9,10 @@
  *
  * Mounted once, inside `DashboardLayout` — so it is naturally absent from
  * every route outside the panel shell (the standalone document viewer, the
- * copy desk), with no extra suppression logic needed there. It does NOT
- * detect the one in-shell case that still matters: `ScoreStandModal` opens as
- * local component state on an unchanged URL, so a route check cannot see it,
- * and no shared "a fullscreen modal is open" signal exists in this codebase
- * to check instead. The rail's own z-60 already sits well under the modal's
- * z-90, so it cannot show through — the reachable gap is narrow (pressing "n"
- * while the score stand is open) and is left for a follow-up rather than
- * inventing new cross-cutting modal-tracking infrastructure for it here.
+ * copy desk), with no extra suppression logic needed there. The one in-shell
+ * case a route check cannot see is `ScoreStandModal`, which opens as local
+ * component state on an unchanged URL: `isFullscreenSurfaceOpen()` is what
+ * answers for it, since `PdfViewerModal` registers itself there.
  * @module widgets/panel-shell/notes
  * @architecture Enterprise SaaS 2026
  */
@@ -28,6 +24,7 @@ import {
   useNotesPanel,
 } from "@/features/notes/hooks/useNotesPanel";
 import { useMediaQuery } from "@/shared/lib/dom/useMediaQuery";
+import { isFullscreenSurfaceOpen } from "@/shared/lib/dom/fullscreenSurface";
 import { NotesRail } from "./NotesRail";
 import { NotesSheet } from "./NotesSheet";
 
@@ -45,9 +42,19 @@ const isEditableTarget = (target: EventTarget | null): boolean => {
 };
 
 const NotesPanelChrome = (): React.JSX.Element => {
-  const { toggle } = useNotesPanel();
+  const { openToCompose } = useNotesPanel();
   const isWideShell = useMediaQuery("(min-width: 60rem)");
 
+  // "n" opens and puts the caret in the composer; it never closes. Pressing a
+  // letter to capture a thought and finding the panel gone instead is the wrong
+  // half of a toggle, and with the rail pinned a toggle is invisible anyway:
+  // `isExpanded` is `isOpen || isPinned`, so the keypress would flip a flag
+  // nothing reads. Escape and the close button are how it goes away.
+  //
+  // The autofocus needs no viewport gate — pressing "n" proves a physical
+  // keyboard, so the on-screen one that would eat a third of a phone screen is
+  // not in play. The mobile dock's button, which can be tapped without one,
+  // deliberately calls plain `open()` instead.
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (
@@ -55,15 +62,16 @@ const NotesPanelChrome = (): React.JSX.Element => {
         !event.metaKey &&
         !event.ctrlKey &&
         !event.altKey &&
-        !isEditableTarget(event.target)
+        !isEditableTarget(event.target) &&
+        !isFullscreenSurfaceOpen()
       ) {
         event.preventDefault();
-        toggle();
+        openToCompose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggle]);
+  }, [openToCompose]);
 
   return isWideShell ? <NotesRail /> : <NotesSheet />;
 };

@@ -5615,8 +5615,10 @@
     },
     "completed": {
       "toggle_one": "Completed ({{count}})",
-      "toggle_other": "Completed ({{count}})"
+      "toggle_other": "Completed ({{count}})",
+      "retention": "Thirty days after being ticked off, these are gone for good."
     },
+    "privacy": "Only you can see this",
     "errors": {
       "empty": "A note cannot be empty."
     },

@@ -5685,8 +5685,10 @@
     "completed": {
       "toggle_one": "Ukończone ({{count}})",
       "toggle_few": "Ukończone ({{count}})",
-      "toggle_many": "Ukończone ({{count}})"
+      "toggle_many": "Ukończone ({{count}})",
+      "retention": "Po 30 dniach od odhaczenia znikają bezpowrotnie."
     },
+    "privacy": "Widzisz tylko Ty",
     "errors": {
       "empty": "Notatka nie może być pusta."
     },

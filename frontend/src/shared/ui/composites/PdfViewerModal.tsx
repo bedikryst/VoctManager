@@ -18,6 +18,7 @@ import { ExternalLink, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
+import { useFullscreenSurface } from "@/shared/lib/dom/fullscreenSurface";
 import { Button } from "@/shared/ui/primitives/Button";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
@@ -110,6 +111,11 @@ export const PdfViewerModal = ({
   const { t } = useTranslation();
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isTitleShown, setIsTitleShown] = useState(true);
+
+  // This surface fills the viewport and computes its fit from the real viewport
+  // width, so a global hotkey must not open a panel on top of it. Registering
+  // is all it does — no scroll lock, no behaviour change.
+  useFullscreenSurface(isOpen);
 
   const handleFullViewClick = useCallback(() => {
     onClose();

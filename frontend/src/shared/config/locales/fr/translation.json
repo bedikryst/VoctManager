@@ -5626,8 +5626,10 @@
     },
     "completed": {
       "toggle_one": "Terminées ({{count}})",
-      "toggle_other": "Terminées ({{count}})"
+      "toggle_other": "Terminées ({{count}})",
+      "retention": "Trente jours après avoir été cochées, elles disparaissent définitivement."
     },
+    "privacy": "Vous seul les voyez",
     "errors": {
       "empty": "Une note ne peut pas être vide."
     },

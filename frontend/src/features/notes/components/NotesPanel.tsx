@@ -11,12 +11,12 @@
 
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, CloudOff } from "lucide-react";
+import { ChevronDown, CloudOff, Lock } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
-import { Eyebrow } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { useNotes } from "../api/notes.queries";
 import { NoteComposer } from "./NoteComposer";
 import { NoteRow } from "./NoteRow";
@@ -34,6 +34,21 @@ export const NotesPanel = (): React.JSX.Element => {
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
       <NoteComposer />
+
+      {/* Stated in the panel body, not in the rail's header, so the phone gets
+          it too — and visibly, not in a tooltip, since a touch device has no
+          hover to reveal one. In a shell where every other surface shows the
+          whole choir's data, "who else reads this" is the question a private
+          scratchpad has to answer before anyone trusts it with the things it
+          was built for. The claim is deliberately product-level: no manager and
+          no superuser reads these through the API and `Note` is not registered
+          in the admin — which is what "only you" can honestly mean. */}
+      <div className="-mt-1 flex shrink-0 items-center gap-1.5 px-1 text-ethereal-graphite/45">
+        <Lock size={11} strokeWidth={2} aria-hidden="true" />
+        <Eyebrow color="inherit">
+          {t("notes.privacy", "Widzisz tylko Ty")}
+        </Eyebrow>
+      </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {isLoading ? (
@@ -91,6 +106,18 @@ export const NotesPanel = (): React.JSX.Element => {
 
                 {showCompleted && (
                   <div className="mt-1 flex flex-col gap-0.5">
+                    {/* Said here and nowhere else: this is the one spot where
+                        "what happens to these" is a live question, and the
+                        answer — a hard delete by `core.purge_completed_notes`,
+                        no bin, no export — is the only thing about this feature
+                        a reader cannot find out by using it until it has
+                        already cost them. */}
+                    <Text as="p" size="xs" color="muted" className="px-2 pb-1">
+                      {t(
+                        "notes.completed.retention",
+                        "Po 30 dniach od odhaczenia znikają bezpowrotnie.",
+                      )}
+                    </Text>
                     {doneNotes.map((note) => (
                       <NoteRow key={note.id} note={note} />
                     ))}
