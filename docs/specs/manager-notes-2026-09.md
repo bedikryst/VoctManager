@@ -2,9 +2,10 @@
 
 Status: **Stage 1 (backend) built, audited and committed (`3bcb9ad`). `make migrate`
 (`core/0027_note`) has been run on dev only; staging/prod still pending. Stage 2 (frontend) built
-2026-09-22, audited 2026-09-22 (the audit failed it), remediated the same day — uncommitted, still
-unreviewed by the developer in a browser. Four deviations from the letter of this spec, plus three
-places where the spec's own premise turned out to be wrong — see "Stage 2 — audit and remediation".**
+2026-09-22, audited 2026-09-22 (the audit failed it), remediated the same day, then reviewed by the
+developer in a browser and reworked a third time (composition and type scale — see "Stage 2 — third
+pass") — uncommitted, and that third pass is itself unreviewed. Three deviations from the letter of
+this spec, plus three places where the spec's own premise turned out to be wrong.**
 Written 2026-09-22 from Florent de Bazelaire's request ("a mini notepad / to-do list — somewhere to
 jot: call X, write to X, remember Y").
 
@@ -202,10 +203,28 @@ compose features; the feature never imports the shell.
   `whitespace-pre-wrap`. Parent flex child needs `min-w-0`, as every row in this codebase does.
   **Not** the single-line `truncate` prop — one line cuts a typical note mid-phrase and forces a
   expand on nearly every row, which defeats the mechanism.
-- Expanded: full body plus an inline editor (`shared/ui/primitives/InlineEditable.tsx`) and the
-  delete action. Delete is reachable only from the expanded state — four targets in a 44 px row is
-  one too many on a phone.
-  **Build note:** `InlineEditable` was single-line only (`<input>`, Enter always commits — an HTML
+- Expanded: full body, plain, with the edit and delete actions on a bar beneath it. Delete is
+  reachable only from the expanded state — four targets in a 44 px row is one too many on a phone.
+  **Superseded 2026-09-22, third pass.** This read "full body plus an inline editor
+  (`shared/ui/primitives/InlineEditable.tsx`)", and the primitive grew a `multiline` prop to serve
+  it. The developer's browser review called the result what it was: three surfaces stacked — a
+  clamped preview, a hover-lit display button, a narrow textarea with its actions beside it — at
+  three different type scales. `InlineEditable` is a "fix a typo in a title" primitive: inline,
+  baseline-aligned, actions beside the value. A note body is a block. The editor now lives in
+  `features/notes/` (`NoteField`, plus the row's own commit path) and `multiline` is reverted out of
+  the shared primitive, which retires deviation 2 below.
+- **Expanded is a state of the PANEL, one row at a time.** `NotesPanel` owns `expandedId`; any click
+  that reaches the panel — the composer, the background, the gap between two notes — folds the open
+  row back to its clamp. A row that has something to say about a click stops it before it gets
+  there, and that is the whole mechanism.
+- **One type scale for the body, `NOTE_TEXT`, and it is the FIELD's scale** (`FIELD_TEXT_SCALE.sm`
+  — 16px on touch, 14px behind `fine-pointer`), worn by the clamp, by the expanded body, by the
+  editor and by the editor's mirror. Reading size is writing size, or every edit begins with the
+  text resizing under the caret. It cannot go below 16px on a touch device: iOS magnifies the whole
+  app the instant focus lands in a smaller field and a standalone PWA never zooms back out. So
+  "make the editing text a pixel smaller" is not available on a phone; the reading text moved up to
+  meet the field instead, which is also the cheaper half of the open question about letter size.
+  **Build note, retired:** `InlineEditable` was single-line only (`<input>`, Enter always commits — an HTML
   input cannot hold a newline at all, including a pasted one). That is incompatible with "line
   breaks preserved," so it gained a `multiline` prop (`<textarea>`, Enter inserts a newline,
   Ctrl/Cmd+Enter commits, blur still commits) rather than the note row hand-rolling a second editor.
@@ -240,9 +259,15 @@ compose features; the feature never imports the shell.
 
 - Always at the **top** of the panel, never the bottom: a bottom-anchored composer collides with
   the iOS keyboard inset, which is a solved-but-fragile area of this app.
-- Single-line input (`shared/ui/primitives/Input.tsx`). **Enter submits.** There is no newline in
-  quick capture — that is what enforces the front-loaded first line that makes `line-clamp-2`
-  readable. Multi-line detail is added later in the expanded row's editor.
+- **Enter submits, and the field takes no newline at all** — that is what enforces the front-loaded
+  first line that makes `line-clamp-2` readable. Multi-line detail is added later, in the expanded
+  row's editor.
+  **Corrected 2026-09-22, third pass:** this said "single-line input
+  (`shared/ui/primitives/Input.tsx`)", conflating "no newline" with "one visible line". An `<input>`
+  scrolls sideways, so a capture longer than the field could not be read back before it was
+  committed. It is now the same growing `NoteField` the row editor uses: it wraps and grows to about
+  eight lines, and `Enter` is still swallowed unconditionally (Shift+Enter included), so nothing
+  multi-line gets in behind the clamp.
 - Autofocus on every open that proves a physical keyboard is present, and on no other.
   **Superseded 2026-09-22** (developer's call): this originally read "only when the panel was opened
   by the explicit 'new note' action". Too narrow — pressing "n" or reaching for the shell icon *is*
@@ -280,6 +305,10 @@ viewport is a third of the screen.
 Mirror of `DesktopSidebar.tsx` / `useSidebarPin.ts`:
 
 - `GlassCard as={motion.aside}` at `fixed right-4 top-4 bottom-4 z-60`, hidden below `wide-shell`.
+  **352px wide (`w-88`), widened from 280px on 2026-09-22** — the first width was a phone's column
+  parked on a desktop, and a note that wraps four times in the rail wraps once in a browser. The
+  number is stated twice, here and as `PINNED_PAD` (352 + the 16px inset) in `useNotesPin.ts`; they
+  have to move together or the pinned rail overlaps `<main>`.
 - Collapse animates **`clipPath` only**, so nothing reflows:
   `inset(0px 0px 0px 100% round 2.5rem)` collapsed → `inset(0px 0% 0px 0px round 2.5rem)` open, with
   the sidebar's spring (`stiffness: 400, damping: 40, mass: 0.8`). Children fade with
@@ -440,14 +469,15 @@ Also fixed, outside `features/notes/`: `InlineEditable`'s new `mt-1` on the penc
 unconditional, which shifted it in all 17 call sites across the app. Now `multiline`-only. The other
 shared-primitive change (`multiline` itself) stands as built and is deviation 2 below.
 
-**Deviations from the letter of this spec, four:**
+**Deviations from the letter of this spec — four as built, three still standing:**
 
 1. Route suppression holds for the standalone PDF viewer (structurally absent) but not for
    `ScoreStandModal`, which opens on an unchanged URL. Unresolved by design — see the build note
    under "Routes where the panel must not exist". Pressing "n" over the score stand still opens the
    panel.
-2. `InlineEditable` gained a `multiline` prop. Additive, existing behaviour and its vitest suite
-   untouched, but it is a change to a shared primitive.
+2. ~~`InlineEditable` gained a `multiline` prop.~~ **Retired 2026-09-22, third pass** — the prop is
+   reverted and the primitive is back to its pre-notes shape, byte for byte in behaviour. The
+   scratchpad's editor is `features/notes/components/NoteField.tsx`.
 3. Mobile nav is now seven slots. The build added a seventh `flex-1` the same shape as the others and
    left the crowding to the developer's own review, per the verification policy.
 4. The query cache buster was not bumped — see the reason under "Queries".
@@ -481,7 +511,8 @@ makes its one known misfire common.
   realistic rejection is a 500 — the body is client-validated and the id collision is
   cryptographically absurd. A mirror of `pendingMarks` to cover that is more machinery than the risk.
 
-**Settled by the developer 2026-09-22, the last two. Nothing is open on this feature.**
+**Settled by the developer 2026-09-22, the last two of that round** (the third pass below opened one
+more, on resting type size):
 
 - *The cost of `useNotes()`.* **Accepted as is — do not "optimise" this later.** The traffic is one
   small GET per panel entry plus one per window focus, per user. Note the correction: the shell's dot
@@ -493,6 +524,40 @@ makes its one known misfire common.
   invisible saving is the wrong trade here.
 - *Palette ordering.* "Nowa notatka" stays at the top of the resting action list. Quick capture is
   what a command palette is for.
+
+## Stage 2 — third pass, the developer's browser review (2026-09-22)
+
+Six observations, all about the panel as an object rather than about what it does. Five were
+straightforwardly right and are fixed; the sixth could not be granted as asked and was answered
+sideways. What each one turned out to be:
+
+1. *"The editing text is slightly too big — shrink it a pixel."* Not available on a phone: below
+   16px iOS magnifies the app and a standalone PWA does not zoom back out. The real defect was
+   underneath it — the body was set at **three** sizes (clamp 14, expanded body 16, field 16/14),
+   so every step of reading and editing one note resized it. One scale now, `NOTE_TEXT`, and it is
+   the field's. The visible consequence on a phone is that reading gets *bigger*, not the field
+   smaller.
+2. *"Wider on desktop, there is room."* 280 → 352px.
+3. *"The tick and the cross should not be eating the field's width."* They were: `InlineEditable`
+   lays its actions out beside the value, and in a 280px rail that left the textarea about 150px.
+   Save and cancel are now labelled buttons on a bar below a full-width field.
+4. *"Edit mode is shabby."* The diagnosis is under "Row" above — three stacked surfaces at three
+   scales, two of them hover-lit. The row is now the only lit surface, and the expanded body is
+   text rather than a button (a button there takes its accessible name from the note and announces
+   it as "edit note", which is the one reading that loses the note; the pencil on the action bar
+   carries the name and the keyboard path instead).
+5. *"Expanding works, but a click anywhere else should fold it back."* Expansion moved to the panel
+   — one row at a time, any click reaching the panel folds it. The first half of the request
+   already held and still does: a collapsed row expands from a click anywhere on it, and only a
+   body that is already whole opens the editor.
+6. *"The composer should show what is being typed."* It wraps and grows now. See the correction
+   under "Composer".
+
+**Still open after this pass:** whether 14px is the right resting size for the panel on a desktop.
+The recommendation from the previous session stands — do **not** add a size control to the notepad.
+If the need turns out to be general, promote `features/messages/lib/messageTextScale.ts` to
+`shared/` as one reading-size setting for the whole panel, in Settings. That is its own spec and its
+own session; a feature-to-feature import is not an option here.
 
 ## Deviating from this spec
 

@@ -105,6 +105,11 @@ export const NoteRow = ({ note, isExpanded, onToggle }: NoteRowProps): React.JSX
   };
 
   const commit = async (): Promise<void> => {
+    // The save button and the blur it would cause are two routes to the same
+    // write, and a double tap is a third. The field is deliberately NOT
+    // disabled while saving for the same reason: disabling a focused control
+    // blurs it, and that blur would land right back here.
+    if (isSaving) return;
     const next = draft.trim();
     if (next === note.body) {
       setError(null);
@@ -215,7 +220,6 @@ export const NoteRow = ({ note, isExpanded, onToggle }: NoteRowProps): React.JSX
                   }}
                   ariaLabel={t("notes.row.edit_body", "Treść notatki")}
                   hasError={error !== null}
-                  disabled={isSaving}
                 />
 
                 {error && (

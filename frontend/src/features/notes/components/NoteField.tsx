@@ -63,7 +63,6 @@ export interface NoteFieldProps {
   readonly placeholder?: string;
   readonly ariaLabel: string;
   readonly hasError?: boolean;
-  readonly disabled?: boolean;
   /** Composer only — sits in the field's left inset, from `sm:` up. */
   readonly leftIcon?: React.ReactNode;
 }
@@ -78,7 +77,6 @@ export const NoteField = forwardRef<HTMLTextAreaElement, NoteFieldProps>(
       placeholder,
       ariaLabel,
       hasError = false,
-      disabled = false,
       leftIcon,
     },
     ref,
@@ -115,7 +113,6 @@ export const NoteField = forwardRef<HTMLTextAreaElement, NoteFieldProps>(
           ref={ref}
           value={value}
           rows={1}
-          disabled={disabled}
           placeholder={placeholder}
           aria-label={ariaLabel}
           aria-invalid={hasError}
