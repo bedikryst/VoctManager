@@ -326,7 +326,7 @@ msgstr "Aucun"
 
 #: core/ical_service.py:77
 msgid "Focus"
-msgstr "Objectif"
+msgstr "Thème"
 
 #: core/ical_service.py:77 roster/models.py:145 roster/models.py:182
 #: roster/models.py:219 roster/models.py:315
@@ -2973,10 +2973,10 @@ msgstr ""
 "journée — jetez-y un œil avant de partir."
 
 msgid "%(facts)s. Focus: %(focus)s."
-msgstr "%(facts)s. Au programme : %(focus)s."
+msgstr "%(facts)s. Thème : %(focus)s."
 
 msgid "Focus: %(focus)s."
-msgstr "Au programme : %(focus)s."
+msgstr "Thème : %(focus)s."
 
 msgid "New rehearsal — %(when)s"
 msgstr "Nouvelle répétition — %(when)s"
@@ -3153,7 +3153,7 @@ msgstr "Programme"
 
 #: notifications/message_content.py
 msgid "Your part"
-msgstr "Ta partie"
+msgstr "Votre partie"
 
 #: notifications/message_content.py
 msgid "%(rehearsal)s (optional)"
@@ -4993,3 +4993,142 @@ msgstr "Responsable"
 msgctxt "call sheet"
 msgid "Instrumental"
 msgstr "Instrumental"
+
+#: core/voice_labels.py:150
+#, python-format
+msgid "Sectional: %(sections)s"
+msgstr "Partielle : %(sections)s"
+
+#: roster/models.py:65
+#, python-format
+msgid ""
+"Called sections must be letters from \"%(letters)s\" in that order, each at "
+"most once."
+msgstr ""
+"Les sections appelées sont des lettres de « %(letters)s » dans cet ordre, "
+"chacune au plus une fois."
+
+#: roster/models.py
+msgid "Excluded voice lines must be a list of voice line codes."
+msgstr "Les voix exclues doivent être une liste de codes de pupitre."
+
+#: roster/models.py
+msgid "Excluded voice lines must be voice line codes, each at most once."
+msgstr ""
+"Les voix exclues doivent être des codes de pupitre, chacun au plus une fois."
+
+#: roster/models.py
+msgid "Plan Announced At"
+msgstr "Plan envoyé le"
+
+#: roster/models.py
+msgid "Rehearsal Plan Item"
+msgstr "Point du plan de répétition"
+
+#: roster/models.py
+msgid "Rehearsal Plan Items"
+msgstr "Points du plan de répétition"
+
+#: roster/models.py
+msgid "Position"
+msgstr "Position"
+
+#: roster/models.py
+msgid "Label"
+msgstr "Libellé"
+
+#: roster/models.py
+msgid "Starts At"
+msgstr "À partir de"
+
+#: roster/models.py
+msgid "Excluded Voice Lines"
+msgstr "Voix exclues"
+
+#: roster/models.py
+msgid "Excludes Instrumentalists"
+msgstr "Sans les instrumentistes"
+
+#: roster/models.py
+msgid "Done At"
+msgstr "Fait le"
+
+#: roster/services.py
+msgid "Every piece on the plan must be in the project's programme."
+msgstr "Chaque œuvre du plan doit figurer au programme du projet."
+
+#: roster/services.py
+msgid "A row on the plan does not belong to this rehearsal."
+msgstr "Une ligne du plan n'appartient pas à cette répétition."
+
+#: roster/services.py
+msgid "The plan can be ticked off once the rehearsal has started."
+msgstr "Le plan peut être coché une fois la répétition commencée."
+
+#: roster/services.py
+msgid "There is no plan to send yet."
+msgstr "Il n'y a pas encore de plan à envoyer."
+
+#: roster/services.py
+msgid "The plan can no longer be sent once the rehearsal has started."
+msgstr "Le plan ne peut plus être envoyé une fois la répétition commencée."
+
+#: notifications/message_content.py
+msgid "Rehearsal plan"
+msgstr "Plan de répétition"
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal plan — %(when)s"
+msgstr "Plan de répétition — %(when)s"
+
+#: notifications/message_content.py
+msgid "Rehearsal plan is up"
+msgstr "Le plan de répétition est prêt"
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal plan — %(project)s"
+msgstr "Plan de répétition — %(project)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"The conductor has sent the plan for the %(project)s rehearsal: what is "
+"rehearsed, in what order, and from when. Open it to see which part of the "
+"evening is yours."
+msgstr ""
+"Le chef a envoyé le plan de la répétition (%(project)s) : ce que l'on "
+"travaille, dans quel ordre et à partir de quelle heure. Ouvrez-le pour voir "
+"quelle partie de la soirée est la vôtre."
+
+#: notifications/message_content.py:1021
+msgid "Open the plan"
+msgstr "Ouvrir le plan de répétition"
+
+#: notifications/message_content.py
+#, python-format
+msgid "from %(start)s"
+msgstr "à partir de %(start)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid "Your part: %(window)s."
+msgstr "Votre partie : %(window)s."
+
+#: notifications/message_content.py
+msgctxt "rehearsal plan"
+msgid "Your part"
+msgstr "Votre créneau"
+
+#: notifications/message_content.py
+msgid "The plan doesn't call your voice — you're still expected."
+msgstr "Le plan ne prévoit pas votre voix — la convocation reste valable."
+
+#: notifications/message_content.py
+msgid "Plan"
+msgstr "Plan"
+
+#: notifications/message_content.py
+msgid "Open the rehearsal"
+msgstr "Ouvrir la répétition"

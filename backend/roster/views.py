@@ -85,6 +85,8 @@ from .dtos import (
     ProjectCreateDTO,
     ProjectUpdateDTO,
     RehearsalCreateDTO,
+    RehearsalPlanDTO,
+    RehearsalPlanItemDoneDTO,
     RehearsalUpdateDTO,
 )
 from .duplicates import find_duplicate_groups
@@ -115,6 +117,7 @@ from .models import (
     ProjectPieceCasting,
     Rehearsal,
     RehearsalDelegate,
+    RehearsalPlanItem,
     ScorePackage,
     VoiceType,
     is_instrumentalist_account,
@@ -137,6 +140,7 @@ from .queries.materials_queries import (
     CLOSED_PROJECT_STATUSES,
     user_is_refused_instrumental,
 )
+from .queries.plan_queries import plan_readings_for_user
 from .score_package_config import (
     book_binds_instrumental_item,
     books_binding_instrumental_items,
@@ -168,6 +172,7 @@ from .serializers import (
     ProjectPieceCastingSerializer,
     ProjectSerializer,
     RehearsalDelegateSerializer,
+    RehearsalPlanItemSerializer,
     RehearsalSerializer,
 )
 from .services import (
@@ -1735,7 +1740,16 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         ]
 
         rehearsal_objs = list(rehearsals_qs)
-        rehearsal_data = RehearsalSerializer(rehearsal_objs, many=True, context=ctx).data
+        # The plan read through this person's seat, for the whole list at
+        # once: "Twoja część 19:00-21:00" sits on the collapsed card.
+        rehearsal_data = RehearsalSerializer(
+            rehearsal_objs,
+            many=True,
+            context={
+                **ctx,
+                'plan_readings': plan_readings_for_user(target_user, rehearsal_objs),
+            },
+        ).data
         for reh_obj, rehearsal in zip(rehearsal_objs, rehearsal_data, strict=True):
             my_attendances = getattr(reh_obj, 'my_attendances', None) or []
             mine = my_attendances[0] if my_attendances else None
@@ -2129,7 +2143,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         user = request_user(self.request)
         absent_annotation = Count('attendances', filter=Q(attendances__status__in=['ABSENT', 'EXCUSED']))
         qs = Rehearsal.objects.select_related('project', 'led_by', 'debrief_by').prefetch_related(
-            'invited_participations', 'invited_participations__artist'
+            'invited_participations', 'invited_participations__artist', 'plan_items__piece',
         ).annotate(absent_count=absent_annotation)
 
         if user_is_manager(user):
@@ -2140,8 +2154,173 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         # addressed to a seat since given up does not resurrect the rehearsal.
         seats = Participation.live_seats(artist__user=user)
         return qs.filter(project_id__in=seats.values('project_id')).filter(
-            Rehearsal.calling_q(seats, instrumentalist=is_instrumentalist_account(user))
+            Rehearsal.calling_q(
+                seats,
+                instrumentalist=is_instrumentalist_account(user),
+                section_letters=Participation.section_letters_of_seats(
+                    seats.select_related('artist')
+                ),
+            )
         ).distinct()
+
+    def retrieve(self, request, *args, **kwargs) -> Response:
+        """One rehearsal, read through the reader's own seat: the plan rows
+        say whether they call this reader and `my_plan_window` says which
+        part of the evening is theirs. Past rehearsals included — the
+        queryset narrows to evenings that call the reader, not to future
+        ones — because "co przerobiliście w środę?" is read after the fact.
+
+        A manager may read it as a member with ``?artist=<id>`` — the same
+        seat the schedule dashboard answers through, so the window on the
+        member's card and the one on their page are one answer. The
+        queryset stays the manager's own: the preview changes whose seat the
+        plan is read through, not which evenings exist."""
+        rehearsal = self.get_object()
+        target_user = resolve_preview_target(request).user
+        serializer = self.get_serializer(
+            rehearsal,
+            context={
+                **self.get_serializer_context(),
+                'plan_readings': plan_readings_for_user(target_user, [rehearsal]),
+            },
+        )
+        return Response(serializer.data)
+
+    def _plan_rehearsal_or_404(self, request, pk) -> Rehearsal | None:
+        """The rehearsal a plan request is about, for a reader entitled to
+        the plan: a manager, a project leader with the roll call (the lead
+        sheet's own gate), or a member the rehearsal calls. 404 for anyone
+        else — the evening is not theirs to know about."""
+        try:
+            rehearsal = Rehearsal.objects.select_related('project').filter(pk=pk).first()
+        except (DjangoValidationError, ValueError):
+            rehearsal = None
+        if rehearsal is None:
+            return None
+        user = request_user(request)
+        if user_is_manager(user) or user_leads_project(
+            user, rehearsal.project_id, scope='roll_call',
+        ):
+            return rehearsal
+        if self.get_queryset().filter(pk=rehearsal.pk).exists():
+            return rehearsal
+        return None
+
+    @action(
+        detail=True, methods=['get', 'put'], url_path='plan',
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def plan(self, request, pk=None) -> Response:
+        """The plan, whole.
+
+        GET for anyone the rehearsal concerns; PUT for a manager only, taking
+        the complete list (pattern: `piece-castings/boards/`) and answering
+        with what was persisted so the editor re-baselines on it. Saving is
+        silent — see `announce`.
+        """
+        rehearsal = self._plan_rehearsal_or_404(request, pk)
+        if rehearsal is None:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == 'PUT':
+            if not user_is_manager(request.user):
+                return Response(
+                    {"detail": "Only a manager may write the plan."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            try:
+                dto = RehearsalPlanDTO(**client_payload(request.data))
+            except ValidationError as e:
+                return make_error_response(
+                    request,
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error_code="validation_error",
+                    detail="The submitted data is invalid.",
+                    validation_errors=format_pydantic_validation_errors(e),
+                )
+            try:
+                RehearsalOperationsService.replace_plan(rehearsal=rehearsal, rows=dto.rows)
+            except ValueError as exc:
+                return make_error_response(
+                    request,
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error_code="validation_error",
+                    detail=str(exc),
+                    validation_errors={"rows": [str(exc)]},
+                )
+
+        rows = RehearsalPlanItemSerializer(
+            RehearsalPlanItem.objects.filter(rehearsal=rehearsal).select_related('piece'),
+            many=True,
+        ).data
+        return Response({
+            'rehearsal': str(rehearsal.id),
+            'plan_announced_at': rehearsal.plan_announced_at,
+            'rows': rows,
+        })
+
+    @action(
+        detail=True, methods=['patch'],
+        url_path=r'plan/(?P<item_id>[0-9a-f-]{36})/done',
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def plan_item_done(self, request, pk=None, item_id=None) -> Response:
+        """Tick one row off — the first step of the debrief, behind the same
+        gate (a manager, or the project's roll-call holder) and the same
+        clock: refused before the rehearsal has started."""
+        rehearsal = self._plan_rehearsal_or_404(request, pk)
+        if rehearsal is None:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        user = request_user(request)
+        may_write = user_is_manager(user) or user_leads_project(
+            user, rehearsal.project_id, scope='roll_call',
+        )
+        if not may_write:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            dto = RehearsalPlanItemDoneDTO(**client_payload(request.data))
+        except ValidationError as e:
+            return Response(
+                {"validation_errors": format_pydantic_validation_errors(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            item = RehearsalOperationsService.mark_plan_item(
+                rehearsal=rehearsal, item_id=str(item_id), done=dto.done,
+            )
+        except RehearsalPlanItem.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        except ValueError as exc:
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail=str(exc),
+                validation_errors={"done": [str(exc)]},
+            )
+        return Response(RehearsalPlanItemSerializer(item).data)
+
+    @action(
+        detail=True, methods=['post'], url_path='plan/announce',
+        permission_classes=[IsManager],
+    )
+    def plan_announce(self, request, pk=None) -> Response:
+        """"Wyślij plan": the one moment the cast hears about the plan."""
+        rehearsal = self.get_object()
+        try:
+            rehearsal = RehearsalOperationsService.announce_plan(rehearsal=rehearsal)
+        except ValueError as exc:
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail=str(exc),
+                validation_errors={"plan": [str(exc)]},
+            )
+        return Response({
+            'rehearsal': str(rehearsal.id),
+            'plan_announced_at': rehearsal.plan_announced_at,
+        })
 
     @action(
         detail=True, methods=['get', 'patch'], url_path='lead-sheet',
@@ -2181,7 +2360,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
             rehearsal = (
                 Rehearsal.objects
                 .select_related('project', 'location', 'led_by', 'debrief_by')
-                .prefetch_related('invited_participations')
+                .prefetch_related('invited_participations', 'plan_items__piece')
                 .filter(pk=pk)
                 .first()
             )
@@ -2289,6 +2468,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
             "focus": validated_data.get("focus", ""),
             "is_mandatory": validated_data.get("is_mandatory", True),
             "calls_instrumentalists": validated_data.get("calls_instrumentalists", False),
+            "called_sections": validated_data.get("called_sections", ""),
             "led_by_id": validated_data["led_by"].id if validated_data.get("led_by") else None,
         }
 
@@ -2321,6 +2501,9 @@ class RehearsalViewSet(viewsets.ModelViewSet):
 
         if "calls_instrumentalists" in validated_data:
             payload["calls_instrumentalists"] = validated_data["calls_instrumentalists"]
+
+        if "called_sections" in validated_data:
+            payload["called_sections"] = validated_data["called_sections"]
 
         # Presence-gated like the length: null hands the evening back to the
         # conductor, silence leaves the leader alone.

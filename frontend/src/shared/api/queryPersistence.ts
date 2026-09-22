@@ -54,8 +54,13 @@ const IDB_KEY = "client";
  * crashes without it — but the facts card reads its absence as "no leader",
  * which is a wrong fact rather than a missing one, and a snapshot restored
  * offline would keep saying it.
+ *
+ * 2026-09-rehearsal-called-sections: `Rehearsal` gained `called_sections`.
+ * Additive, but a snapshot without it reads every sectional as a tutti — the
+ * roll-call count, the timeline caption and the schedule badge all say the
+ * wrong thing until a fetch lands.
  */
-export const QUERY_CACHE_BUSTER = "2026-09-rehearsal-led-by";
+export const QUERY_CACHE_BUSTER = "2026-09-rehearsal-called-sections";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

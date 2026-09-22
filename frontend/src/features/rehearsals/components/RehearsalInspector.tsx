@@ -8,11 +8,14 @@
  *
  * Two callers: the manager's workspace, and a stand-in's `LeadSheet` route.
  * They get the SAME roll call — `allowManagerActions` withholds only the two
- * things a delegation does not carry (see the prop). `onSaveFocus` and
+ * things a delegation does not carry (see the prop). Between the header and
+ * the roll call sits the evening's plan: the manager's editor (`canEditPlan`)
+ * or, for a stand-in, the plan as read at stand size. `onSaveFocus` and
  * `onSaveDebrief` are what a leader gets that the manager's copy does not
- * need here: the plan is edited where it is read, because the leader has no
- * rehearsal form, and the debrief is written under the register it reports
- * on. The manager reads the same debrief block at the foot of the card.
+ * need here: the topic line is edited where it is read, because the leader
+ * has no rehearsal form, and the debrief is written under the register it
+ * reports on. The manager reads the same debrief block at the foot of the
+ * card; both tick the plan's rows there through `onMarkPlanItem`.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/RehearsalInspector
  */
@@ -27,6 +30,7 @@ import {
   Filter,
   LayoutGrid,
   List,
+  ListMusic,
   Radio,
   UserCheck,
   UserPlus,
@@ -51,6 +55,7 @@ import { formatLocalizedDate } from "@/shared/lib/time/intl";
 
 import type { Artist, Attendance, Participation, Rehearsal } from "@/shared/types";
 import type { AttendanceTally, VoiceGroup } from "../lib/attendanceStats";
+import { sectionNamesLabel } from "../lib/sectionLabels";
 import {
   ATTENDANCE_STATUS_META,
   RATE_TONE_TEXT,
@@ -60,6 +65,8 @@ import {
 import { ArtistRow } from "./ArtistRow";
 import { AbsenceSpanSheet } from "./AbsenceSpanSheet";
 import { RehearsalDebrief } from "./RehearsalDebrief";
+import { RehearsalPlanEditor } from "./plan/RehearsalPlanEditor";
+import { RehearsalPlanTimeline } from "./plan/RehearsalPlanTimeline";
 
 interface RehearsalInspectorProps {
   rehearsal: Rehearsal;
@@ -102,6 +109,18 @@ interface RehearsalInspectorProps {
    * write it here.
    */
   onSaveDebrief?: (debrief: string) => Promise<unknown>;
+  /**
+   * Whether the reader may lay the evening's plan out — a manager. True mounts
+   * the plan editor as a band under the header; false mounts the plan as it
+   * is read, at stand size, which is what a stand-in at the music stand needs
+   * (nobody drags rows there). Nothing when false and the plan is empty.
+   */
+  canEditPlan?: boolean;
+  /**
+   * Ticks one plan row off after the fact — the debrief's first step, same
+   * gate as the debrief itself. Absent → the ticks are read, not written.
+   */
+  onMarkPlanItem?: (itemId: string, done: boolean) => Promise<unknown>;
 }
 
 const SEGMENTS = ["PRESENT", "LATE", "EXCUSED", "ABSENT"] as const;
@@ -158,6 +177,8 @@ export const RehearsalInspector = ({
   allowManagerActions = true,
   onSaveFocus,
   onSaveDebrief,
+  canEditPlan = false,
+  onMarkPlanItem,
 }: RehearsalInspectorProps): React.JSX.Element => {
   const { t } = useTranslation();
   const [isPitchPipeOpen, setIsPitchPipeOpen] = useState(false);
@@ -172,14 +193,20 @@ export const RehearsalInspector = ({
   // decide whether the "…and for longer" action exists at all.
   const rowSpanHandler = allowManagerActions ? openSpan : undefined;
 
-  const isSectional = (rehearsal.invited_participations?.length ?? 0) > 0;
+  const storedSections = rehearsal.called_sections ?? "";
+  const isSectional =
+    storedSections !== "" || (rehearsal.invited_participations?.length ?? 0) > 0;
 
+  // A sectional names its sections from the stored rule; a hand-picked call
+  // stores no rule, so its badge reads the sections of the people it names.
   const calledSections = useMemo(
     () =>
-      voiceGroups
-        .map((group) => t(voiceSectionLabelKey(group.key), group.key))
-        .join(", "),
-    [voiceGroups, t],
+      storedSections !== ""
+        ? sectionNamesLabel(storedSections, t)
+        : voiceGroups
+            .map((group) => t(voiceSectionLabelKey(group.key), group.key))
+            .join(", "),
+    [storedSections, voiceGroups, t],
   );
 
   // Apply the only-unmarked filter without mutating the source groups.
@@ -361,6 +388,26 @@ export const RehearsalInspector = ({
         )}
       </div>
 
+      {/* ── The plan ──────────────────────────────────────────────────── */}
+      {/* Between the header and the roll call: what the evening works on
+          comes before who turned up to it. The manager edits it here; a
+          stand-in reads it at stand size. */}
+      {canEditPlan ? (
+        <RehearsalPlanEditor rehearsal={rehearsal} className="border-b border-hairline" />
+      ) : (
+        (rehearsal.plan?.length ?? 0) > 0 && (
+          <div className="border-b border-hairline p-5 md:p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <ListMusic size={12} className="text-ethereal-gold/70" aria-hidden="true" />
+              <Eyebrow as="h3" color="graphite">
+                {t("rehearsals.plan.title", "Plan próby")}
+              </Eyebrow>
+            </div>
+            <RehearsalPlanTimeline rows={rehearsal.plan ?? []} size="stand" />
+          </div>
+        )
+      )}
+
       {/* ── Toolbar ───────────────────────────────────────────────────── */}
       {invitedCount > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline bg-ethereal-marble/30 px-4 py-3">
@@ -519,7 +566,11 @@ export const RehearsalInspector = ({
       </div>
 
       {/* ── After the rehearsal ───────────────────────────────────────── */}
-      <RehearsalDebrief rehearsal={rehearsal} onSave={onSaveDebrief} />
+      <RehearsalDebrief
+        rehearsal={rehearsal}
+        onSave={onSaveDebrief}
+        onMarkPlanItem={onMarkPlanItem}
+      />
 
       {/* Mounted, not conditional: the sheet animates out, and unmounting it on
           close would cut that short. The id going null is what shuts it. The

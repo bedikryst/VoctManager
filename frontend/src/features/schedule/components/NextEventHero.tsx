@@ -34,6 +34,8 @@ import {
   Shirt,
   Sparkles,
   Radio,
+  ClipboardCheck,
+  UserCheck,
 } from "lucide-react";
 
 import type { AttendanceStatus, ProgramItem, Project, Rehearsal } from "@/shared/types";
@@ -43,10 +45,12 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { ProjectScoreBook } from "@/features/projects/components/ProjectScoreBook";
+import { RehearsalPlanTimeline } from "@/features/rehearsals/components/plan/RehearsalPlanTimeline";
+import { planWindowLabel } from "@/features/rehearsals/lib/planWindow";
 import { PitchPipe } from "@/shared/ui/instruments/PitchPipe";
 import { cn } from "@/shared/lib/utils";
 import { useNow } from "@/shared/lib/dom/useNow";
@@ -67,6 +71,9 @@ import { AddToCalendar } from "./AddToCalendar";
 
 const REHEARSAL_MODE_BEFORE_MS = 2 * 60 * 60 * 1000;
 const REHEARSAL_MODE_AFTER_MS = 3 * 60 * 60 * 1000;
+
+/** How much of the plan the spotlight shows before deferring to the page. */
+const HERO_PLAN_ROWS = 3;
 
 export const isRehearsalLive = (event: TimelineEvent, now: Date): boolean => {
   if (event.type !== "REHEARSAL") return false;
@@ -416,6 +423,15 @@ const RehearsalHero = ({
   const { data: programItems = [], isLoading: isProgramLoading } =
     useScheduleProgramItems(event.project_id, isLive);
 
+  // The plan, the reader's own hours in it, and the address where both are
+  // complete. On the day this card is the whole surface — the feed hands it
+  // the next event and renders everything after it — so what the plan says
+  // has to be here, not behind a card that is not drawn.
+  const windowLabel = planWindowLabel(event.planWindow, t);
+  const skipsReader = event.planWindow?.calls_me === false;
+  const planRows = event.plan ?? [];
+  const rehearsalHref = `/panel/schedule/rehearsal/${String(reh.id)}`;
+
   // A conductor sees the rehearsal but isn't cast in it — no participation to
   // RSVP against, so the self-attendance controls are withheld.
   const canRsvp = !!event.participationId;
@@ -477,17 +493,84 @@ const RehearsalHero = ({
             fallback={t("schedule.rehearsal.no_location", "Brak")}
             variant="minimal"
           />
+          {/* Who to expect at the front. Silence means the conductor, the
+              resting case; an evening handed to somebody else has to say so
+              here, because on the day this card is the only one on screen. */}
+          {event.ledBy && !event.iStandInFront && (
+            <span className="flex items-center gap-1.5">
+              <UserCheck
+                size={11}
+                className="text-ethereal-gold/70"
+                aria-hidden="true"
+              />
+              <Caption color="muted">
+                {t("schedule.rehearsal.led_by", "Prowadzi: {{name}}", {
+                  name: event.ledBy.name,
+                })}
+              </Caption>
+            </span>
+          )}
         </div>
 
-        {event.focus && (
+        {windowLabel && (
+          <div
+            className={cn(
+              "mt-4 flex items-center gap-2.5 rounded-2xl border px-3.5 py-2.5",
+              skipsReader
+                ? "border-ethereal-incense/25 bg-ethereal-incense/8"
+                : "border-ethereal-gold/30 bg-ethereal-gold/8",
+            )}
+          >
+            <ClipboardCheck
+              size={14}
+              className={skipsReader ? "text-ethereal-incense" : "text-ethereal-gold"}
+              aria-hidden="true"
+            />
+            <Text size="md" weight="semibold" className="tabular-nums">
+              {skipsReader
+                ? windowLabel
+                : t(
+                    "schedule.rehearsal.plan.my_part_inline",
+                    "Twoja część {{window}}",
+                    { window: windowLabel },
+                  )}
+            </Text>
+          </div>
+        )}
+
+        {(event.focus || planRows.length > 0) && (
           <div className="mt-4 rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/60 p-3.5">
             <Eyebrow color="muted" className="mb-1.5 flex items-center gap-1.5">
               <AlignLeft size={12} aria-hidden="true" />
               {t("schedule.rehearsal.details.focus_title", "Plan Pracy")}
             </Eyebrow>
-            <Text size="md" className="whitespace-pre-wrap font-serif italic leading-relaxed">
-              {event.focus}
-            </Text>
+            {event.focus && (
+              <Text size="md" className="whitespace-pre-wrap font-serif italic leading-relaxed">
+                {event.focus}
+              </Text>
+            )}
+            {planRows.length > 0 && (
+              <div className={cn(event.focus && "mt-3 border-t border-ethereal-incense/15 pt-3")}>
+                <RehearsalPlanTimeline rows={planRows.slice(0, HERO_PLAN_ROWS)} />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  asChild
+                  className="mt-3 w-max"
+                >
+                  <Link to={rehearsalHref} className="inline-flex items-center gap-2">
+                    <ListMusic size={13} aria-hidden="true" />
+                    {planRows.length > HERO_PLAN_ROWS
+                      ? t(
+                          "schedule.rehearsal.plan.open_rest",
+                          "Cały plan ({{total}} pkt)",
+                          { total: planRows.length },
+                        )
+                      : t("schedule.rehearsal.plan.open", "Otwórz próbę")}
+                  </Link>
+                </Button>
+              </div>
+            )}
           </div>
         )}
 

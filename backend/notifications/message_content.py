@@ -32,7 +32,11 @@ from django.utils.translation import gettext as _
 from django.utils.translation import ngettext, pgettext
 
 from core.constants import VoiceLine
-from core.voice_labels import voice_line_label
+from core.voice_labels import (
+    section_names_label,
+    sectional_call_label,
+    voice_line_label,
+)
 
 from .models import (
     AnnouncementKind,
@@ -246,6 +250,20 @@ def _rehearsals_url(ctx: MessageContext) -> str:
     return "/panel/rehearsals" if ctx.is_manager else "/panel/schedule"
 
 
+def _rehearsal_page_url(ctx: MessageContext) -> str:
+    """Where a notice about ONE evening lands for its reader.
+
+    A member goes to that evening's own page: it is the only surface that
+    states which part of the plan is theirs, and a schedule full of cards
+    makes them look for the evening they were just told about. A manager
+    keeps the workspace, where the plan is laid out rather than read.
+    """
+    rehearsal_id = ctx.metadata.get("rehearsal_id")
+    if ctx.is_manager or not rehearsal_id:
+        return _rehearsals_url(ctx)
+    return f"/panel/schedule/rehearsal/{rehearsal_id}"
+
+
 def _materials_url(ctx: MessageContext) -> str:
     return "/panel/archive-management" if ctx.is_manager else "/panel/materials"
 
@@ -364,6 +382,7 @@ def _change_field_label(field_key: str) -> str:
         "dress_code": _("Dress code"),
         "focus": _("Focus"),
         "duration": _("Duration"),
+        "plan": _("Rehearsal plan"),
         "is_mandatory": _("Attendance"),  # legacy rows; new rows use now_mandatory/now_optional
         "now_mandatory": _("Now mandatory"),
         "now_optional": _("Now optional"),
@@ -547,7 +566,12 @@ def _invitation_rehearsal_lines(entries: Any) -> list[str]:
         closing = display_event_end_clock(entry)
         if when and closing:
             when = f"{when}{_CLOCK_RANGE_DASH}{closing}"
-        parts = (when, entry.get("location"), entry.get("focus"))
+        # A sectional says which sections before what it works on: the reader
+        # was called to it by section, and that is what tells them why this
+        # evening is on their list and not on a colleague's.
+        sections = entry.get("sections") or ()
+        scope = sectional_call_label(str(code) for code in sections) if sections else ""
+        parts = (when, entry.get("location"), scope, entry.get("focus"))
         line = " · ".join(str(part).strip() for part in parts if part and str(part).strip())
         if not line:
             continue
@@ -955,8 +979,53 @@ def _compose_rehearsal_scheduled(ctx: MessageContext) -> MessageContent:
     )
 
 
+def _is_plan_announcement(changes: Any) -> bool:
+    """A diff that says only "plan" is the conductor sending the plan, not
+    the evening moving — the copy must not say it is not where it was."""
+    return (
+        isinstance(changes, (list, tuple))
+        and len(changes) == 1
+        and isinstance(changes[0], dict)
+        and changes[0].get("field") == "plan"
+    )
+
+
+def _compose_rehearsal_plan_announced(ctx: MessageContext) -> MessageContent:
+    m = ctx.metadata
+    project = m.get("project_name") or _("your project")
+    when = display_event_time(m, "starts_at", "rehearsal_date")
+    venue = m.get("location")
+    focus = m.get("focus")
+    return MessageContent(
+        notification_type=ctx.notification_type,
+        level=ctx.level or NotificationLevel.WARNING,
+        title=(
+            _("Rehearsal plan — %(when)s") % {"when": when}
+            if when
+            else _("Rehearsal plan is up")
+        ),
+        body=_facts(project, focus or venue),
+        url_path=_rehearsal_page_url(ctx),
+        tag=f"rehearsal-plan:{m.get('rehearsal_id') or ''}",
+        actions=(_open_action(),),
+        subject=_("Rehearsal plan — %(project)s") % {"project": project},
+        eyebrow=_("Rehearsal plan"),
+        email_lead=_(
+            "The conductor has sent the plan for the %(project)s rehearsal: what"
+            " is rehearsed, in what order, and from when. Open it to see which"
+            " part of the evening is yours."
+        ) % {"project": project},
+        details=tuple(
+            _rehearsal_detail_rows(project, when, venue, focus, display_event_end(m))
+        ),
+        cta_label=_("Open the plan"),
+    )
+
+
 def _compose_rehearsal_updated(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
+    if _is_plan_announcement(m.get("changes")):
+        return _compose_rehearsal_plan_announced(ctx)
     project = m.get("project_name") or _("your project")
     when = display_event_time(m, "starts_at", "rehearsal_date")
     venue = m.get("location")
@@ -1024,17 +1093,71 @@ def _compose_rehearsal_cancelled(ctx: MessageContext) -> MessageContent:
     )
 
 
+def _plan_window_phrase(window: Any) -> str:
+    """One reader's part of the evening as a clock span ("19:00" to "21:00",
+    set with the same dash the panel uses), or "from 19:00" where nobody timed
+    the end. Empty when the plan has nothing to say: an evening that calls this
+    seat throughout says so by saying nothing, and a line repeating the
+    rehearsal's own hours is noise."""
+    if not isinstance(window, dict) or not window.get("calls_me"):
+        return ""
+    start, end = window.get("start"), window.get("end")
+    if not start:
+        return ""
+    if not end:
+        return _("from %(start)s") % {"start": start}
+    return f"{start}{_CLOCK_RANGE_DASH}{end}"
+
+
+def _plan_lines(entries: Any) -> list[str]:
+    """The plan as an email reads it: one line per row, "18:15 · Orff · od t. 40".
+    A row without a clock flows under the one above it and simply has no hour —
+    the same reading the plan itself has."""
+    lines: list[str] = []
+    for entry in entries or ():
+        if not isinstance(entry, dict):
+            continue
+        parts = (entry.get("time"), entry.get("title"), entry.get("note"))
+        line = " · ".join(str(part).strip() for part in parts if part and str(part).strip())
+        if line:
+            lines.append(line)
+    return lines
+
+
 def _compose_rehearsal_reminder(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     project = m.get("project_name") or _("your project")
     when = display_event_time(m, "starts_at", "rehearsal_date")
     venue = m.get("location")
     focus = m.get("focus")
+    window = m.get("my_window")
+    window_phrase = _plan_window_phrase(window)
     body = _facts(project, venue)
     if focus:
         body = _("%(facts)s. Focus: %(focus)s.") % {"facts": body, "focus": focus} if body \
             else _("Focus: %(focus)s.") % {"focus": focus}
+    # The one line that is this reader's alone, and the reason the reminder is
+    # the only rehearsal message carrying a window at all: it is addressed to
+    # one person, where an announcement is addressed to a cast.
+    if window_phrase:
+        own = _("Your part: %(window)s.") % {"window": window_phrase}
+        body = f"{body.rstrip('.')}. {own}" if body else own
     details = _rehearsal_detail_rows(project, when, venue, focus, display_event_end(m))
+    # A row label of its own, never the invitation's "Your part": that one names
+    # the voice somebody sings, and this one names the hours they are needed.
+    if window_phrase:
+        details.append(_row(pgettext("rehearsal plan", "Your part"), window_phrase))
+    elif isinstance(window, dict) and window.get("calls_me") is False:
+        # Decision 8: the plan leaving a voice out does not release it. Silence
+        # here would read as "you are not needed", which is the one thing it
+        # does not mean.
+        details.append(_row(
+            pgettext("rehearsal plan", "Your part"),
+            _("The plan doesn't call your voice — you're still expected."),
+        ))
+    plan_lines = _plan_lines(m.get("plan"))
+    if plan_lines:
+        details.append(_row(_("Plan"), "\n".join(plan_lines)))
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
@@ -1044,7 +1167,10 @@ def _compose_rehearsal_reminder(ctx: MessageContext) -> MessageContent:
             else _("Your rehearsal is coming up")
         ),
         body=body or project,
-        url_path=_rehearsals_url(ctx),
+        # Decision 10: the reminder deep-links to the evening's own page. It is
+        # the only surface that states which part of the plan is this reader's,
+        # and the reminder is the message that made them ask.
+        url_path=_rehearsal_page_url(ctx),
         tag=f"rehearsal-reminder:{m.get('rehearsal_id') or ''}",
         actions=(_open_action(),),
         subject=(
@@ -1059,7 +1185,7 @@ def _compose_rehearsal_reminder(ctx: MessageContext) -> MessageContent:
             " below — see you at the stands."
         ) % {"project": project},
         details=tuple(details),
-        cta_label=_("View schedule"),
+        cta_label=_("View schedule") if ctx.is_manager else _("Open the rehearsal"),
     )
 
 
@@ -1184,24 +1310,10 @@ def _compose_rehearsal_delegation_ended(ctx: MessageContext) -> MessageContent:
     )
 
 
-#: VoiceType family code → the section, plural, as a leader would say it.
-#: Keyed on the code the metadata carries so the row is composed in the
-#: reader's language, never frozen in the writer's.
-_SECTION_NAMES: dict[str, Callable[[], str]] = {
-    "S": lambda: _("sopranos"),
-    "A": lambda: _("altos"),
-    "T": lambda: _("tenors"),
-    "B": lambda: _("basses"),
-}
-
-
 def _section_list(codes: Iterable[Any]) -> str:
-    """'sopranos, altos' from ('S', 'A'); unknown codes pass through unchanged
-    so an old payload never renders a hole."""
-    return ", ".join(
-        _SECTION_NAMES[str(code)]() if str(code) in _SECTION_NAMES else str(code)
-        for code in codes
-    )
+    """'sopranos, altos' from ('S', 'A') — `core.voice_labels.section_names_label`,
+    composed here in the reader's language, never frozen in the writer's."""
+    return section_names_label(str(code) for code in codes)
 
 
 def _compose_rehearsal_lead_assigned(ctx: MessageContext) -> MessageContent:

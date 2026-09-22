@@ -120,6 +120,8 @@ const normalizeProgramItem = (
     liturgical_slot: item.liturgical_slot ?? "",
     slot_label: item.slot_label ?? "",
     score_edition: item.score_edition ?? null,
+    rehearsed_count: item.rehearsed_count ?? null,
+    last_rehearsed_on: item.last_rehearsed_on ?? null,
   };
 };
 

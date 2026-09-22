@@ -3,6 +3,8 @@ import type {
   LocationSnippet,
   Project,
   Rehearsal,
+  RehearsalPlanItem,
+  RehearsalPlanWindow,
 } from "@/shared/types";
 
 export type ScheduleViewMode = "UPCOMING" | "PAST";
@@ -26,6 +28,24 @@ export interface TimelineEvent {
   location: LocationSnippet | null | undefined;
   focus?: string | null;
   is_mandatory?: boolean;
+  /**
+   * A sectional's SATB letters ("SA"); "" or absent for a tutti. The reader
+   * is on this card because their section is among them, and the badge says
+   * which — a mezzo called with the altos should not wonder why.
+   */
+  calledSections?: string;
+  /**
+   * The evening's plan in order, and which of its rows call this reader. The
+   * schedule dashboard computes both per reader, so a card can show the plan
+   * without a second request; a project event carries neither.
+   */
+  plan?: RehearsalPlanItem[];
+  /**
+   * Which part of the evening is this reader's. Null = nothing to say (no
+   * plan, or the plan spans the whole rehearsal); `calls_me: false` = no row
+   * needs their voice, while the CALL itself stands.
+   */
+  planWindow?: RehearsalPlanWindow | null;
   status?: AttendanceStatus | null;
   excuse_note?: string | null;
   absences?: number;

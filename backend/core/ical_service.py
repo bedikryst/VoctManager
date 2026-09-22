@@ -124,17 +124,21 @@ class ICalGeneratorService:
                 Q(id__in=seats.values('project_id')) | Q(id__in=conducted_ids)
             ).select_related('location')
 
-            # The same rule the schedule reads: a sectional IS its list of
-            # names, so a soprano's calendar does not fill with the basses'
-            # rehearsals — and a deleted session leaves the calendar with it.
-            # A conductor runs every rehearsal of their own project, which is
-            # why that project's id short-circuits the invite list.
+            # The same rule the schedule reads: a sectional calls sections (or
+            # a list of names), so a soprano's calendar does not fill with the
+            # basses' rehearsals — and a deleted session leaves the calendar
+            # with it. A conductor runs every rehearsal of their own project,
+            # which is why that project's id short-circuits the call rule.
             rehearsals = (
                 Rehearsal.objects.filter(project__in=projects, is_deleted=False)
                 .filter(
                     Q(project_id__in=conducted_ids)
                     | Rehearsal.calling_q(
-                        seats, instrumentalist=is_instrumentalist_account(user)
+                        seats,
+                        instrumentalist=is_instrumentalist_account(user),
+                        section_letters=Participation.section_letters_of_seats(
+                            seats.select_related('artist')
+                        ),
                     )
                 )
                 .distinct()
@@ -307,6 +311,12 @@ class ICalGeneratorService:
             # whole doubled every backslash the first pass wrote, so a comma in
             # a conductor's focus note reached the calendar as `\,`.
             focus_text = reh.focus or _('None')
+            # The rehearsal's plan is deliberately NOT here. A subscribed
+            # calendar refreshes a feed every few hours and keeps what it last
+            # read, so a plan pasted into the description would be stale
+            # exactly when somebody opens the event to read it. The VEVENT
+            # states the evening's own window; the plan, and the reader's part
+            # of it, live on the rehearsal page the reminder links to.
             description = cls._escape_ics_text(
                 f"{_('Focus')}: {focus_text}\n{_('Project')}: {reh.project.title}"
             )

@@ -685,6 +685,90 @@ html body[data-scroll-locked] {
 }
 
 /* ========================================== */
+/* THE STAND COPY                             */
+/* ========================================== */
+/*
+ * One page in the panel is meant to leave it on paper: the rehearsal's own
+ * page, which a singer prints to put on the music stand. The rule is the
+ * classic visibility pass rather than a display cascade — the sheet sits deep
+ * inside the shell (layout, page transition, bento item), and hiding its
+ * ancestors would hide it with them. `visibility` is inherited, so hiding
+ * everything and re-showing the sheet's subtree leaves the ancestors as
+ * invisible boxes the sheet is pulled out of.
+ *
+ * `.print-hidden` is for what belongs to the screen even inside the sheet: the
+ * page header, the print button itself, the RSVP.
+ *
+ * The blanket `transform: none` and `position: static` on everything outside
+ * the sheet are load-bearing, not tidiness: the page transition and the bento
+ * stagger leave transforms on the sheet's ancestors, and the shell (`main`,
+ * its centring column, the page's own wrapper) is `position: relative` all
+ * the way down. Either one makes an ancestor the containing block an absolute
+ * sheet resolves against — so the stand copy would print inside the shell's
+ * sidebar padding and the centred column, offset by however far the entrance
+ * animation had travelled, instead of at the page's own corner. The sheet's
+ * subtree keeps its positioning: the plan's spine hangs its dots on it.
+ */
+@media print {
+  @page {
+    margin: 14mm;
+    size: A4 portrait;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  body * {
+    visibility: hidden;
+    transform: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    animation: none !important;
+  }
+
+  /* `min-height: 0` with it: the shell is `min-h-screen`, and an invisible box
+     one screen tall still paginates — the stand copy is one sheet. */
+  body :not(.print-sheet):not(.print-sheet *) {
+    position: static !important;
+    min-height: 0 !important;
+  }
+
+  /* Ink on paper, stated literally rather than through the palette: the panel
+     may be in its dark theme when the sheet is sent to the printer, and a
+     token that resolves to parchment-on-ink prints as an empty page. */
+  .print-sheet,
+  .print-sheet * {
+    visibility: visible;
+    color: #1c1917;
+    border-color: #d6d3d1;
+    background: transparent;
+    box-shadow: none !important;
+  }
+
+  .print-sheet {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    border: 0;
+    border-radius: 0;
+    background: #fff;
+  }
+
+  .print-hidden,
+  .print-hidden * {
+    display: none !important;
+  }
+
+  /* A plan is read as one list; a row broken across the fold loses its clock
+     or its note to the other sheet. */
+  .print-sheet li {
+    break-inside: avoid;
+  }
+}
+
+/* ========================================== */
 /* PUBLIC ZONE & ADMIN ZONE CURSORS           */
 /* ========================================== */
 body:not(.admin-mode) * {

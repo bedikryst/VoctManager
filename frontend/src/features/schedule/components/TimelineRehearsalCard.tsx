@@ -12,6 +12,7 @@ import {
   Check,
   ChevronDown,
   ClipboardCheck,
+  ListMusic,
   Music,
   AlignLeft,
   UserCheck,
@@ -32,7 +33,13 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Caption, Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
+import { sectionNamesLabel } from "@/features/rehearsals/lib/sectionLabels";
+import { planWindowLabel } from "@/features/rehearsals/lib/planWindow";
+import { RehearsalPlanTimeline } from "@/features/rehearsals/components/plan/RehearsalPlanTimeline";
 import { cn } from "@/shared/lib/utils";
+
+/** How much of the plan the expanded card shows before it defers to the page. */
+const PLAN_PREVIEW_ROWS = 4;
 
 interface TimelineRehearsalCardProps {
   event: TimelineEvent;
@@ -153,6 +160,19 @@ export const TimelineRehearsalCard = ({
   );
 
   const maskedStatus = currentMaskedStatus;
+  // The reader's own hours, beside the evening's own. This is the number a
+  // person plans the evening around, so it sits on the collapsed face rather
+  // than behind the chevron — the point of deriving it is lost if it has to be
+  // looked for.
+  const windowLabel = planWindowLabel(event.planWindow, t);
+  const skipsReader = event.planWindow?.calls_me === false;
+  const planRows = event.plan ?? [];
+  const firstPiece = planRows.find((row) => row.piece !== null);
+  // The tile names the first piece whatever it is, but links it only when its
+  // music opens for this reader — an instrumental item, through a singer's
+  // seat, would land on "Nie znaleziono utworu". Otherwise the shelf.
+  const firstPieceOpens = firstPiece !== undefined && firstPiece.piece_open !== false;
+  const rehearsalHref = `/panel/schedule/rehearsal/${String((event.rawObj as { id: string }).id)}`;
   // A conductor sees the rehearsal but isn't cast in it — no participation to
   // RSVP against, so the self-attendance controls are withheld.
   const canRsvp = !!event.participationId;
@@ -215,6 +235,20 @@ export const TimelineRehearsalCard = ({
                   {t("schedule.rehearsal.optional", "Opcjonalna")}
                 </Eyebrow>
               )}
+              {/* Tutti is the resting case and says nothing; a sectional names
+                  the sections it called, so the reader knows why this evening
+                  is theirs. */}
+              {event.calledSections && (
+                <Eyebrow
+                  as="span"
+                  color="amethyst"
+                  className="px-2 py-0.5 rounded border border-ethereal-amethyst/20 bg-ethereal-amethyst/10"
+                >
+                  {t("rehearsals.dashboard.sectional_only", "Tylko: {{sections}}", {
+                    sections: sectionNamesLabel(event.calledSections, t),
+                  })}
+                </Eyebrow>
+              )}
               {/* "Prowadzisz" is the evening announced as THIS reader's, not
                   the right to take its roll (that is the register below): a
                   leader with two of the week's four sectionals gets the badge
@@ -273,6 +307,29 @@ export const TimelineRehearsalCard = ({
                 containerClassName="flex items-center gap-1.5"
                 primaryTimeClassName="flex items-center gap-1.5 font-semibold text-ethereal-ink"
               />
+              {windowLabel && (
+                <span className="flex items-center gap-1.5">
+                  <ClipboardCheck
+                    size={13}
+                    className={
+                      skipsReader ? "text-ethereal-incense" : "text-ethereal-gold"
+                    }
+                    aria-hidden="true"
+                  />
+                  <Caption
+                    color={skipsReader ? "muted" : "default"}
+                    className={cn(!skipsReader && "font-semibold tabular-nums")}
+                  >
+                    {skipsReader
+                      ? windowLabel
+                      : t(
+                          "schedule.rehearsal.plan.my_part_inline",
+                          "Twoja część {{window}}",
+                          { window: windowLabel },
+                        )}
+                  </Caption>
+                </span>
+              )}
               <span className="relative z-[2] flex min-w-0 max-w-full">
                 <LocationPreview
                   locationRef={event.location}
@@ -420,7 +477,33 @@ export const TimelineRehearsalCard = ({
                         {t("schedule.rehearsal.details.no_focus", "Brak szczegółowego planu dla tej próby.")}
                       </Text>
                     )}
+                    {/* The order itself, not a count of it: "4 punkty" tells a
+                        singer nothing they can prepare from, and the first
+                        titles tell them whether tonight is theirs. The whole
+                        plan, with the notes and the exclusions, is one tap
+                        further on — this is the trailer, not the reel. */}
+                    {planRows.length > 0 && (
+                      <div className="mt-3 border-t border-ethereal-incense/15 pt-3">
+                        <RehearsalPlanTimeline rows={planRows.slice(0, PLAN_PREVIEW_ROWS)} />
+                        {planRows.length > PLAN_PREVIEW_ROWS && (
+                          <Caption color="muted" className="mt-2 block">
+                            {t(
+                              "schedule.rehearsal.plan.more_rows",
+                              { count: planRows.length - PLAN_PREVIEW_ROWS },
+                            )}
+                          </Caption>
+                        )}
+                      </div>
+                    )}
                   </GlassCard>
+                  {/* Past evenings keep this link — it is where the singer who
+                      missed Wednesday reads what was actually got through. */}
+                  <Button variant="secondary" size="sm" asChild className="w-max">
+                    <Link to={rehearsalHref} className="inline-flex items-center gap-2">
+                      <ListMusic size={13} aria-hidden="true" />
+                      {t("schedule.rehearsal.plan.open", "Otwórz próbę")}
+                    </Link>
+                  </Button>
                   {(event.absences ?? 0) > 0 && (
                     <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-ethereal-crimson/5 border border-ethereal-crimson/20 shadow-glass-ethereal w-max">
                       <UserMinus size={13} className="text-ethereal-crimson" aria-hidden="true" />
@@ -448,8 +531,18 @@ export const TimelineRehearsalCard = ({
                     <Text size="sm" weight="bold" color="default" className="mb-1">
                       {t("schedule.rehearsal.details.materials_subtitle", "Przygotuj się do próby")}
                     </Text>
+                    {/* When the plan names what is played first, the songbook
+                        is not the answer — that piece is. A generic jump to
+                        the shelf makes the reader look up what they were just
+                        told. */}
                     <Text size="sm" color="muted" className="mb-3 px-4">
-                      {t("schedule.rehearsal.details.materials_desc", "Pobierz nuty PDF i przećwicz swoje partie z odtwarzaczem.")}
+                      {firstPiece
+                        ? t(
+                            "schedule.rehearsal.details.materials_first_piece",
+                            "Zaczynacie od: {{title}}",
+                            { title: firstPiece.title },
+                          )
+                        : t("schedule.rehearsal.details.materials_desc", "Pobierz nuty PDF i przećwicz swoje partie z odtwarzaczem.")}
                     </Text>
                     {/* A jump out of the preview would land the manager in
                         their OWN songbook under the singer's header. */}
@@ -460,8 +553,17 @@ export const TimelineRehearsalCard = ({
                       </Button>
                     ) : (
                       <Button variant="secondary" size="sm" asChild>
-                        <Link to="/panel/materials" className="inline-flex items-center gap-2">
-                          {t("schedule.rehearsal.details.materials_button", "Materiały")}
+                        <Link
+                          to={
+                            firstPiece && firstPieceOpens
+                              ? `/panel/materials/${String(event.project_id)}/${String(firstPiece.piece)}`
+                              : "/panel/materials"
+                          }
+                          className="inline-flex items-center gap-2"
+                        >
+                          {firstPiece && firstPieceOpens
+                            ? t("schedule.rehearsal.details.materials_open_piece", "Otwórz nuty")
+                            : t("schedule.rehearsal.details.materials_button", "Materiały")}
                           <ArrowRight size={13} aria-hidden="true" />
                         </Link>
                       </Button>

@@ -32,6 +32,7 @@ import {
   StaggeredBentoItem,
 } from "@/shared/ui/kinematics/StaggeredBentoGrid";
 
+import { useMarkPlanItem } from "./api/plan.queries";
 import { useRehearsalsData, type RehearsalView } from "./hooks/useRehearsalsData";
 import { useRehearsalAnalytics } from "./hooks/useRehearsalAnalytics";
 import { RehearsalPulseBar } from "./components/RehearsalPulseBar";
@@ -76,6 +77,12 @@ export default function Rehearsals(): React.JSX.Element {
   } = useRehearsalsData();
 
   const { getLocationName } = useLocationResolver();
+
+  // Ticking the plan's rows is the debrief's first step, and the manager may
+  // take it here even though the debrief text is the leader's to write.
+  const markPlanItem = useMarkPlanItem(activeRehearsalId ?? "");
+  const markPlan = (itemId: string, done: boolean): Promise<unknown> =>
+    markPlanItem.mutateAsync({ itemId, done });
 
   // Selecting a rehearsal anywhere (rail row, trend bar) lands in roll-call.
   const openRehearsal = (rehearsalId: string): void => {
@@ -213,6 +220,8 @@ export default function Rehearsals(): React.JSX.Element {
                     onToggleOnlyUnmarked={() => setShowOnlyUnmarked(!showOnlyUnmarked)}
                     isMarkingAll={isMarkingAll}
                     onMarkAllPresent={handleMarkAllPresent}
+                    canEditPlan
+                    onMarkPlanItem={markPlan}
                   />
                 ) : (
                   <StatePanel

@@ -43,7 +43,7 @@ from django.utils.translation import ngettext, pgettext
 
 from archive.services.voice_scope import requirements_for_edition, tracks_for_edition
 from core.greetings import apply_vocative_rule
-from core.voice_labels import collapse_voice_labels
+from core.voice_labels import collapse_voice_labels, sectional_call_label
 from logistics.address import address_parts
 from logistics.models import Location
 from roster.cast_order import (
@@ -1583,11 +1583,12 @@ class DocumentGenerator:
         local_end = localize(rehearsal.end_date_time, rehearsal_timezone)
         invited_participations = list(rehearsal.invited_participations.all())
         invited_ids = {participation.id for participation in invited_participations}
-        scope_label = (
-            _('Selected artists (%(count)d)') % {'count': len(invited_participations)}
-            if invited_participations
-            else pgettext('call sheet', 'Whole ensemble')
-        )
+        if invited_participations:
+            scope_label = _('Selected artists (%(count)d)') % {'count': len(invited_participations)}
+        elif rehearsal.called_sections:
+            scope_label = sectional_call_label(rehearsal.called_sections)
+        else:
+            scope_label = pgettext('call sheet', 'Whole ensemble')
         # `Rehearsal.calls_seat` decides whether this reader is called. Absent a
         # recipient (conductor / production sheets) we don't filter.
         is_for_me = recipient is None or rehearsal.calls_seat(recipient, invited_ids)

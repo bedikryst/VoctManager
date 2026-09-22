@@ -27,6 +27,7 @@ import {
 } from "@/features/rehearsals/constants/attendanceMeta";
 import { foldDiacritics } from "@/shared/lib/text";
 import { isInstrumentalist } from "@/shared/lib/voiceTypes";
+import { sectionLettersOfSeat, sectionsCallSeat } from "./voiceFamilies";
 import type {
   Artist,
   Attendance,
@@ -82,6 +83,8 @@ export interface MatrixSinger {
   readonly isUnresolved: boolean;
   /** A player: called to a tutti only when the rehearsal says so. */
   readonly isInstrumentalist: boolean;
+  /** The SATB letters a sectional calls this seat by (`sectionLettersOfSeat`); "" for a player. */
+  readonly sectionLetters: string;
 }
 
 export interface MatrixSection {
@@ -124,6 +127,7 @@ export const buildRoster = ({
     const fallback = participation.artist_name?.trim();
     const lastName = artist?.last_name.trim() || fallback || unknownName;
     const firstName = artist?.first_name.trim() ?? "";
+    const voiceType = artist?.voice_type ?? participation.artist_voice_type ?? null;
     const section = voiceSectionOf(artist?.voice_type);
 
     const singer: MatrixSinger = {
@@ -133,8 +137,10 @@ export const buildRoster = ({
       section,
       search: foldDiacritics(`${lastName} ${firstName}`),
       isUnresolved: !artist,
-      isInstrumentalist: isInstrumentalist(
-        artist?.voice_type ?? participation.artist_voice_type,
+      isInstrumentalist: isInstrumentalist(voiceType ?? undefined),
+      sectionLetters: sectionLettersOfSeat(
+        voiceType,
+        participation.default_voice_line ?? null,
       ),
     };
 
@@ -187,9 +193,11 @@ export interface MatrixSession {
   readonly isPast: boolean;
   /** Being marked right now — the column the conductor most likely came here for. */
   readonly isLive: boolean;
-  /** `null` = tutti. An explicit set = a sectional call, and the rest of the column is N/A. */
+  /** `null` = a cast call (tutti or sectional). An explicit set = a hand-picked call, and the rest of the column is N/A. */
   readonly called: ReadonlySet<string> | null;
-  /** Whether a tutti column also calls the players; meaningless when `called` is a set. */
+  /** The sectional's SATB letters; "" = tutti. Meaningless when `called` is a set. */
+  readonly calledSections: string;
+  /** Whether the column calls the players — the whole statement about them, tutti or sectional; meaningless when `called` is a set. */
   readonly callsInstrumentalists: boolean;
 }
 
@@ -200,10 +208,11 @@ const LIVE_AFTER_MS = 3 * 60 * 60 * 1000;
 /** The same rule as `resolveInvited`, read cell by cell. */
 export const isCalled = (
   session: MatrixSession,
-  singer: Pick<MatrixSinger, "participationId" | "isInstrumentalist">,
+  singer: Pick<MatrixSinger, "participationId" | "isInstrumentalist" | "sectionLetters">,
 ): boolean => {
   if (session.called !== null) return session.called.has(singer.participationId);
-  return session.callsInstrumentalists || !singer.isInstrumentalist;
+  if (singer.isInstrumentalist) return session.callsInstrumentalists;
+  return sectionsCallSeat(session.calledSections, singer.sectionLetters);
 };
 
 export const buildSessions = (
@@ -232,6 +241,7 @@ export const buildSessions = (
           now >= startedAt - LIVE_BEFORE_MS &&
           now <= startedAt + LIVE_AFTER_MS,
         called: invited.length > 0 ? new Set(invited.map(String)) : null,
+        calledSections: rehearsal.called_sections ?? "",
         callsInstrumentalists: rehearsal.calls_instrumentalists ?? false,
       };
     });

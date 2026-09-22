@@ -14,7 +14,7 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Edit2, Trash2, UserCheck, Users } from "lucide-react";
+import { Edit2, ListMusic, Trash2, UserCheck, Users } from "lucide-react";
 
 import type { RehearsalTimelineEntry } from "../../hooks/useRehearsalsTab";
 import { cn } from "@/shared/lib/utils";
@@ -22,6 +22,7 @@ import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Eyebrow, Metric, Text } from "@/shared/ui/primitives/typography";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
+import { sectionNamesLabel } from "@/features/rehearsals/lib/sectionLabels";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 
@@ -39,6 +40,8 @@ interface RehearsalTimelineRowProps {
   readonly eventMoment: string;
   readonly onEdit: () => void;
   readonly onDelete: () => void;
+  /** Opens the evening's plan in a sheet — the phone flow for laying it out. */
+  readonly onOpenPlan: () => void;
 }
 
 export const RehearsalTimelineRow = ({
@@ -51,6 +54,7 @@ export const RehearsalTimelineRow = ({
   eventMoment,
   onEdit,
   onDelete,
+  onOpenPlan,
 }: RehearsalTimelineRowProps): React.JSX.Element => {
   const { t } = useTranslation();
   const { rehearsal } = entry;
@@ -70,7 +74,20 @@ export const RehearsalTimelineRow = ({
   );
 
   const invitedCount = rehearsal?.invited_participations?.length ?? 0;
-  const isTutti = invitedCount === 0 || invitedCount === castSize;
+  const calledSections = invitedCount === 0 ? (rehearsal?.called_sections ?? "") : "";
+  const isTutti =
+    calledSections === "" && (invitedCount === 0 || invitedCount === castSize);
+  // Three shapes of call, one caption: the rule ("Tutti", "Tylko: Soprany,
+  // Alty") or, for a hand-picked list, the count it names.
+  const callLabel = isTutti
+    ? t("projects.rehearsals.status.tutti", "Tutti")
+    : calledSections !== ""
+      ? t("rehearsals.dashboard.sectional_only", "Tylko: {{sections}}", {
+          sections: sectionNamesLabel(calledSections, t),
+        })
+      : t("projects.rehearsals.status.invited", "Wezwanych: {{count}}", {
+          count: invitedCount,
+        });
 
   return (
     <li
@@ -179,21 +196,29 @@ export const RehearsalTimelineRow = ({
               venue it belongs beside. As a green success chip on every row it
               only competed with the facts. Who leads sits at the same weight,
               and only when it is not the conductor — the resting case says
-              nothing. */}
+              nothing. The plan's size sits here too, once there is one. */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {(rehearsal.plan?.length ?? 0) > 0 && (
+              <span className="flex items-center gap-1.5">
+                <ListMusic
+                  size={12}
+                  className="shrink-0 text-ethereal-gold/70"
+                  aria-hidden="true"
+                />
+                <Caption color="muted" className="tabular-nums">
+                  {t("projects.rehearsals.status.plan_rows", "Plan: {{count}} pkt", {
+                    count: rehearsal.plan?.length ?? 0,
+                  })}
+                </Caption>
+              </span>
+            )}
             <span className="flex items-center gap-1.5">
               <Users
                 size={12}
                 className="shrink-0 text-ethereal-graphite/40"
                 aria-hidden="true"
               />
-              <Caption color="muted">
-                {isTutti
-                  ? t("projects.rehearsals.status.tutti", "Tutti")
-                  : t("projects.rehearsals.status.invited", "Wezwanych: {{count}}", {
-                      count: invitedCount,
-                    })}
-              </Caption>
+              <Caption color="muted">{callLabel}</Caption>
             </span>
             {rehearsal.led_by_name && (
               <span className="flex items-center gap-1.5">
@@ -215,6 +240,17 @@ export const RehearsalTimelineRow = ({
 
       {!isConcert && (
         <div className="flex shrink-0 items-start gap-0.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onOpenPlan}
+            title={t("projects.rehearsals.actions.plan", "Plan próby")}
+            aria-label={t("projects.rehearsals.actions.plan", "Plan próby")}
+            className="text-ethereal-graphite/50"
+          >
+            <ListMusic size={15} aria-hidden="true" />
+          </Button>
           <Button
             type="button"
             variant="ghost"

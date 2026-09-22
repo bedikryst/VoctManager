@@ -326,7 +326,7 @@ msgstr "Brak"
 
 #: core/ical_service.py:77
 msgid "Focus"
-msgstr "Plan próby"
+msgstr "Temat próby"
 
 #: core/ical_service.py:77 roster/models.py:145 roster/models.py:182
 #: roster/models.py:219 roster/models.py:315
@@ -2936,10 +2936,10 @@ msgstr ""
 " zajrzyj tu przed wyjściem."
 
 msgid "%(facts)s. Focus: %(focus)s."
-msgstr "%(facts)s. Plan: %(focus)s."
+msgstr "%(facts)s. Temat: %(focus)s."
 
 msgid "Focus: %(focus)s."
-msgstr "Plan: %(focus)s."
+msgstr "Temat: %(focus)s."
 
 msgid "New rehearsal — %(when)s"
 msgstr "Nowa próba — %(when)s"
@@ -4967,3 +4967,141 @@ msgstr "Menedżer"
 msgctxt "call sheet"
 msgid "Instrumental"
 msgstr "Instrumentalny"
+
+#: core/voice_labels.py:150
+#, python-format
+msgid "Sectional: %(sections)s"
+msgstr "Sekcyjna: %(sections)s"
+
+#: roster/models.py:65
+#, python-format
+msgid ""
+"Called sections must be letters from \"%(letters)s\" in that order, each at "
+"most once."
+msgstr ""
+"Wołane sekcje to litery z „%(letters)s” w tej kolejności, każda najwyżej "
+"raz."
+
+#: roster/models.py
+msgid "Excluded voice lines must be a list of voice line codes."
+msgstr "Wykluczone głosy muszą być listą kodów linii głosowych."
+
+#: roster/models.py
+msgid "Excluded voice lines must be voice line codes, each at most once."
+msgstr ""
+"Wykluczone głosy muszą być kodami linii głosowych, każdy co najwyżej raz."
+
+#: roster/models.py
+msgid "Plan Announced At"
+msgstr "Plan wysłany"
+
+#: roster/models.py
+msgid "Rehearsal Plan Item"
+msgstr "Punkt planu próby"
+
+#: roster/models.py
+msgid "Rehearsal Plan Items"
+msgstr "Punkty planu próby"
+
+#: roster/models.py
+msgid "Position"
+msgstr "Pozycja"
+
+#: roster/models.py
+msgid "Label"
+msgstr "Etykieta"
+
+#: roster/models.py
+msgid "Starts At"
+msgstr "Od godziny"
+
+#: roster/models.py
+msgid "Excluded Voice Lines"
+msgstr "Wykluczone głosy"
+
+#: roster/models.py
+msgid "Excludes Instrumentalists"
+msgstr "Bez instrumentalistów"
+
+#: roster/models.py
+msgid "Done At"
+msgstr "Zrobione"
+
+#: roster/services.py
+msgid "Every piece on the plan must be in the project's programme."
+msgstr "Każdy utwór w planie musi należeć do programu projektu."
+
+#: roster/services.py
+msgid "A row on the plan does not belong to this rehearsal."
+msgstr "Wiersz planu nie należy do tej próby."
+
+#: roster/services.py
+msgid "The plan can be ticked off once the rehearsal has started."
+msgstr "Plan można odhaczać, gdy próba już się zaczęła."
+
+#: roster/services.py
+msgid "There is no plan to send yet."
+msgstr "Nie ma jeszcze planu do wysłania."
+
+#: roster/services.py
+msgid "The plan can no longer be sent once the rehearsal has started."
+msgstr "Planu nie można wysłać po rozpoczęciu próby."
+
+#: notifications/message_content.py
+msgid "Rehearsal plan"
+msgstr "Plan próby"
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal plan — %(when)s"
+msgstr "Plan próby — %(when)s"
+
+#: notifications/message_content.py
+msgid "Rehearsal plan is up"
+msgstr "Plan próby jest gotowy"
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal plan — %(project)s"
+msgstr "Plan próby — %(project)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"The conductor has sent the plan for the %(project)s rehearsal: what is "
+"rehearsed, in what order, and from when. Open it to see which part of the "
+"evening is yours."
+msgstr ""
+"Dyrygent wysłał plan próby (%(project)s): co ćwiczymy, w jakiej kolejności i"
+" od której godziny. Otwórz go, by zobaczyć, która część wieczoru jest Twoja."
+
+#: notifications/message_content.py:1021
+msgid "Open the plan"
+msgstr "Otwórz plan próby"
+
+#: notifications/message_content.py
+#, python-format
+msgid "from %(start)s"
+msgstr "od %(start)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid "Your part: %(window)s."
+msgstr "Twoja część: %(window)s."
+
+#: notifications/message_content.py
+msgctxt "rehearsal plan"
+msgid "Your part"
+msgstr "Twoja część"
+
+#: notifications/message_content.py
+msgid "The plan doesn't call your voice — you're still expected."
+msgstr "Plan nie przewiduje Twojego głosu — wezwanie zostaje w mocy."
+
+#: notifications/message_content.py
+msgid "Plan"
+msgstr "Plan"
+
+#: notifications/message_content.py
+msgid "Open the rehearsal"
+msgstr "Otwórz próbę"

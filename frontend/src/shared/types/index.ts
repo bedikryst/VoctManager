@@ -297,6 +297,11 @@ export interface Participation extends BaseModel {
 
 export interface Rehearsal extends BaseModel {
   project: string;
+  /**
+   * The programme's name, so an evening read on its own — the rehearsal page,
+   * opened from a push — can say what it is a rehearsal for.
+   */
+  project_title?: string;
   date_time: string;
   /** How long the session runs. Null = nobody timed it; no surface states an end. */
   duration_minutes?: number | null;
@@ -316,6 +321,13 @@ export interface Rehearsal extends BaseModel {
    * the players join for the dress rehearsal. Ignored when people are named.
    */
   calls_instrumentalists?: boolean;
+  /**
+   * A sectional's rule: the SATB letters of the sections it calls, in that
+   * order ("SA", "TB"). "" = the whole cast. Resolved against the cast on
+   * every read, so a singer who joins later is called without a re-save.
+   * Ignored when people are named in `invited_participations`.
+   */
+  called_sections?: string;
   invited_participations?: string[];
   /**
    * Who stands in front of the choir this evening — explicit only. Null on
@@ -334,6 +346,59 @@ export interface Rehearsal extends BaseModel {
   debrief_by_name?: string | null;
   debrief_at?: string | null;
   absent_count?: number;
+  /**
+   * The evening's plan, in order — read-only here, written whole through
+   * `PUT rehearsals/<id>/plan/`. Present on every read of a rehearsal; the
+   * per-reader answers (`calls_me`, `my_plan_window`) are filled only where
+   * the server computed them for this reader (the rehearsal page and the
+   * schedule dashboard), null elsewhere.
+   */
+  plan?: RehearsalPlanItem[];
+  /** When "Wyślij plan" last went out; null = never announced. */
+  plan_announced_at?: string | null;
+  my_plan_window?: RehearsalPlanWindow | null;
+}
+
+/**
+ * One row of a rehearsal's plan: a piece of the programme or a free label,
+ * an optional wall clock, a one-line note, and the voice lines the row does
+ * without. `starts_at` is "HH:MM" in the rehearsal's own zone; rows without
+ * one flow under the last clocked row.
+ */
+export interface RehearsalPlanItem {
+  id: string;
+  position: number;
+  piece: string | null;
+  piece_title: string | null;
+  label: string;
+  /** The piece's title or the label — whichever the row is. */
+  title: string;
+  note: string;
+  starts_at: string | null;
+  excluded_voice_lines: VoiceLine[];
+  excludes_instrumentalists: boolean;
+  done_at: string | null;
+  updated_at: string;
+  /** Whether this row needs the reader; null when not computed for them. */
+  calls_me?: boolean | null;
+  /**
+   * Whether the row's music opens for the reader at the materials address —
+   * false for an instrumental item read through a singer's seat, which the
+   * songbook withholds. Null when not computed; nothing is withheld from the
+   * readers who get no reading (a manager), so null links as before.
+   */
+  piece_open?: boolean | null;
+}
+
+/**
+ * What the plan says about one reader's evening. `calls_me` false = no row
+ * needs this seat (the CALL stands — attendance and reminder still count it).
+ * `end` null = until the rehearsal ends, whenever that is.
+ */
+export interface RehearsalPlanWindow {
+  calls_me: boolean;
+  start: string | null;
+  end: string | null;
 }
 
 // Backend Attendance is a plain models.Model (no soft-delete / timestamps in
@@ -735,6 +800,15 @@ export interface ProgramItem {
    * divisi and practice tracks this concert works from.
    */
   score_edition?: string | null;
+  /**
+   * How many ticked plan rows this piece has across the project's rehearsals.
+   * `null` while the project has never ticked a row anywhere — before the first
+   * debrief every piece stands at zero and the figure says nothing. From the
+   * first tick on, `0` is the point: the piece nobody has worked on yet.
+   */
+  rehearsed_count?: number | null;
+  /** The date of the last rehearsal that worked on it (ISO), not of the tick. */
+  last_rehearsed_on?: string | null;
 }
 
 // Backend ProjectPieceCasting is a plain models.Model — no soft-delete fields.

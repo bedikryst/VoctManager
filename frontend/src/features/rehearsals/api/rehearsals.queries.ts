@@ -12,9 +12,15 @@ import {
 import { RehearsalsService } from "./rehearsals.service";
 import type { AbsenceSpanDTO, AttendanceUpsertDTO } from "../types/rehearsals.dto";
 import type { Attendance } from "@/shared/types";
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { projectKeys } from "@/features/projects/api/project.queries";
 import { artistKeys } from "@/features/artists/api/artist.queries";
-import { PERSONAL_READMODEL_KEYS } from "@/shared/api/queryPolicy";
+import {
+  PERSONAL_READMODEL_KEYS,
+  PREVIEW_QUERY_OPTIONS,
+  previewQueryKey,
+  RECONCILING_REFETCH,
+} from "@/shared/api/queryPolicy";
 
 export const rehearsalKeys = {
   rehearsals: {
@@ -23,6 +29,25 @@ export const rehearsalKeys = {
       ["rehearsals", { project: String(projectId) }] as const,
     byArtist: (artistId: string | number) =>
       ["rehearsals", { artist: String(artistId) }] as const,
+    /**
+     * One evening read on its own. Under `["rehearsals"]` on purpose, unlike
+     * the plan below: nothing here is a draft, so every write that invalidates
+     * the domain — including a plan save or a done tick — should bring this
+     * page's copy of the evening back with it.
+     */
+    detail: (rehearsalId: string | number) =>
+      ["rehearsals", "detail", String(rehearsalId)] as const,
+    /** A manager reading one evening through a member's seat — never under the prefix above. */
+    detailPreview: (rehearsalId: string | number, artistId: string) =>
+      previewQueryKey("rehearsals", "detail", rehearsalId, artistId),
+    /**
+     * The editor's own copy of one evening's plan (`GET/PUT plan/`). Its own
+     * root, not under `["rehearsals"]`: every roll-call tap invalidates that
+     * prefix, and the plan an editor is baselined on must not refetch under a
+     * half-built draft.
+     */
+    plan: (rehearsalId: string | number) =>
+      ["rehearsal-plan", String(rehearsalId)] as const,
   },
   attendances: {
     all: ["attendances"] as const,
@@ -119,6 +144,37 @@ export const useAttendanceRegister = () =>
     queryFn: RehearsalsService.getAttendances,
     staleTime: 1000 * 60,
   });
+
+/**
+ * One evening as this reader sees it — the rehearsal page's own source. It is
+ * the read that carries the per-reader answers (`plan[].calls_me`,
+ * `my_plan_window`), which no list emits; `RECONCILING_REFETCH` because the
+ * page is opened from a push, often from a persisted snapshot, and the plan it
+ * was sent about must be the plan that paints.
+ *
+ * Inside a preview it reads the evening through the member being looked at,
+ * from a cache root of its own — the switch sits here, as in
+ * `useScheduleDashboard`, so the card and the page cannot answer about two
+ * different seats.
+ */
+export const useRehearsal = (rehearsalId: string | undefined) => {
+  const { isPreview, artist } = useArtistPreview();
+  const previewId = isPreview ? (artist?.id ?? null) : null;
+  const id = rehearsalId ?? "none";
+
+  return useQuery({
+    queryKey: previewId
+      ? rehearsalKeys.rehearsals.detailPreview(id, previewId)
+      : rehearsalKeys.rehearsals.detail(id),
+    queryFn: () =>
+      RehearsalsService.getRehearsal(rehearsalId ?? "", previewId ?? undefined),
+    enabled: Boolean(rehearsalId),
+    staleTime: 1000 * 60,
+    retry: false,
+    ...RECONCILING_REFETCH,
+    ...(previewId ? PREVIEW_QUERY_OPTIONS : {}),
+  });
+};
 
 export const useRehearsalsWorkspaceData = () => {
   const results = useQueries({

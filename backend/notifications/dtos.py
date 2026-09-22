@@ -74,6 +74,10 @@ class InvitationRehearsalMetadata(EnterpriseBaseDTO):
     location: str = ""
     focus: str = ""
     is_mandatory: bool = True
+    # The letters of `Rehearsal.called_sections` for a sectional; empty for a
+    # tutti. Codes, not a rendered label — the composer names the sections in
+    # the reader's language.
+    sections: tuple[str, ...] = ()
 
 
 class ProjectInvitationMetadata(EnterpriseBaseDTO):
@@ -301,10 +305,10 @@ class RehearsalDelegationEndedMetadata(EnterpriseBaseDTO):
 class RehearsalLeadAssignedMetadata(EventMomentMetadata):
     """One evening announced as the reader's to run (`Rehearsal.led_by`).
 
-    `sections` carries section CODES (S/A/T/B — the leading letter of the
-    `VoiceType`, which is how the sectional form groups the cast) for a
-    sectional call, and nothing for a tutti — the composer spells them out in
-    the reader's language. The reader already holds the
+    `sections` carries section CODES (S/A/T/B — the letters of
+    `Rehearsal.called_sections`) for a sectional call, and nothing for a tutti
+    or a hand-picked list — the composer spells them out in the reader's
+    language. The reader already holds the
     project's leader grant, so no scope travels here: this is a date, not a
     permission.
     """

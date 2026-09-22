@@ -26,6 +26,11 @@ from django.utils.translation import pgettext_lazy
 
 from core.constants import VoiceLine
 from core.models import EnterpriseBaseModel
+from core.voice_labels import (
+    SECTION_LETTERS,
+    canonical_section_letters,
+    section_letters_of_seat,
+)
 from roster.domain.day_timeline import MINUTES_PER_DAY
 from roster.domain.liturgy import SLOT_CHOICES
 
@@ -41,6 +46,31 @@ DEFAULT_EVENT_TIMEZONE = 'Europe/Warsaw'
 FALLBACK_REHEARSAL_DURATION_MINUTES = 120
 # The same reservation for a concert, whose end is likewise never stored.
 FALLBACK_EVENT_DURATION_MINUTES = 240
+
+
+def validate_called_sections(value: str) -> None:
+    """`Rehearsal.called_sections` is a subset of SATB written in that order,
+    with no repeats — the one spelling a `__contains` lookup per letter and an
+    equality test on the whole can both rely on."""
+    if value != canonical_section_letters(value):
+        raise ValidationError(
+            _('Called sections must be letters from "%(letters)s" in that order, each at most once.')
+            % {'letters': SECTION_LETTERS},
+            code='invalid',
+        )
+
+
+def validate_excluded_voice_lines(value: object) -> None:
+    """`RehearsalPlanItem.excluded_voice_lines` is a list of `VoiceLine` codes,
+    each at most once — a JSON column has no choices of its own."""
+    if not isinstance(value, list) or any(not isinstance(code, str) for code in value):
+        raise ValidationError(_('Excluded voice lines must be a list of voice line codes.'), code='invalid')
+    unknown = [code for code in value if code not in VoiceLine.values]
+    if unknown or len(set(value)) != len(value):
+        raise ValidationError(
+            _('Excluded voice lines must be voice line codes, each at most once.'),
+            code='invalid',
+        )
 
 
 def validate_pdf_file_size(value) -> None:
@@ -766,6 +796,28 @@ class Participation(EnterpriseBaseModel):
             .exclude(project__status__in=Project.HIDDEN_FROM_CAST_STATUSES)
         )
 
+    @property
+    def section_letters(self) -> str:
+        """The SATB letters a sectional calls this seat by — the declared seat
+        first, the voice type otherwise (`core.voice_labels.section_letters_of_seat`).
+        Reads `artist`, so load it with the seat."""
+        return section_letters_of_seat(self.artist.voice_type, self.default_voice_line)
+
+    @classmethod
+    def section_letters_of_seats(cls, seats: Iterable["Participation"]) -> str:
+        """The union of `section_letters` over a member's seats, canonical.
+
+        What `Rehearsal.calling_q` needs about the reader: a member holds one
+        seat per project and a rehearsal belongs to one project, so the union
+        can only over-call — a mezzo seated as an alto here and a soprano
+        there sees both sectionals of both concerts — which is the failure
+        mode the section rule chose. Evaluates ``seats``; pass a queryset that
+        selects `artist`.
+        """
+        return canonical_section_letters(
+            letter for seat in seats for letter in seat.section_letters
+        )
+
 
 class ProjectPieceCasting(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -909,6 +961,23 @@ class Rehearsal(EnterpriseBaseModel):
     invited_participations = models.ManyToManyField(
         Participation, blank=True, related_name='invited_rehearsals', verbose_name=_("Invited Singers")
     )
+    # A sectional calls a RULE, not a list: the SATB letters of the sections
+    # called, in canonical order ("SA", "TB"), resolved against the cast on
+    # every read — so a singer who joins the project after the sectional was
+    # booked is called without anyone re-saving it. Empty = the whole cast.
+    # Which letters a given singer answers to is `Participation.section_letters`
+    # (a mezzo answers to S and A). Letters in a CharField rather than an
+    # ArrayField because the test suite runs on sqlite, where `__contains`
+    # works and an array does not. Ignored when `invited_participations` names
+    # people — the hand-picked call (a quartet, the soloists) stays a list.
+    called_sections = models.CharField(
+        max_length=len(SECTION_LETTERS),
+        blank=True,
+        validators=[validate_called_sections],
+        verbose_name=_("Called Sections"),
+        help_text=_("Sections this rehearsal calls, as SATB letters. Blank = the whole cast. "
+                    "Ignored when specific participants are invited."),
+    )
     # Who stands in front of the choir this evening. Null = the project's
     # conductor, which is the resting case and is never written explicitly. A
     # value is an ANNOUNCEMENT, not a permission: what the person may do (roll
@@ -943,6 +1012,14 @@ class Rehearsal(EnterpriseBaseModel):
         verbose_name=_("Debrief By"),
     )
     debrief_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Debrief At"))
+    # When the conductor last SENT the plan to the cast. Plan edits themselves
+    # are silent (the plan is redrawn a dozen times the day before); the send
+    # is an explicit act and this is its receipt, so the editor can say
+    # "wysłano 14:02" and, when a row's `updated_at` is later, "zmieniony po
+    # wysłaniu" — a caption, never an automatic resend.
+    plan_announced_at = models.DateTimeField(
+        null=True, blank=True, verbose_name=_("Plan Announced At"),
+    )
 
     class Meta:
         verbose_name = _("Rehearsal")
@@ -952,16 +1029,42 @@ class Rehearsal(EnterpriseBaseModel):
             models.Index(fields=['project', 'date_time']),
         ]
 
+    def calls_sections(self, letters: str) -> bool:
+        """Whether a seat answering to ``letters`` is inside this rehearsal's
+        section rule: every rehearsal without a rule, a sectional when any one
+        of the seat's letters is called. Players have no letters and are never
+        asked this — `calls_voice` speaks for them."""
+        return not self.called_sections or any(
+            letter in self.called_sections for letter in letters
+        )
+
+    def calls_voice(self, letters: str, *, instrumentalist: bool) -> bool:
+        """The whole-cast rule for one voice: a player answers to
+        `calls_instrumentalists`, a singer to the section rule.
+
+        The two axes are independent on purpose. A section names singers and
+        says nothing about the players, so a sectional that calls them reaches
+        its sections and the rehearsal pianist — the commonest accompaniment
+        case, and the only way to keep it without falling back to a hand-picked
+        list, which gives up the rule that a cast change updates the call.
+        """
+        if instrumentalist:
+            return self.calls_instrumentalists
+        return self.calls_sections(letters)
+
     def called_participations(self) -> models.QuerySet["Participation"]:
         """Who this rehearsal calls, before any status narrowing.
 
-        The one reading of "invited list, else the whole cast": named
-        participations when the manager picked some, otherwise every live
-        participation of the project — minus the instrumentalists, unless this
-        rehearsal calls them. Recipients of an announcement, the reminder, the
-        roll-call grid and the printed sheet all start from this set and narrow
-        it by status themselves (a roll-call drops the declined, a cancellation
-        notice keeps them), which is why status is not applied here.
+        The one reading of "invited list, else the called sections, else the
+        whole cast": named participations when the manager picked some,
+        otherwise every live participation of the project whose section is
+        called (`Participation.section_letters`, resolved now — a joiner is on
+        the list the moment they hold a seat) — minus the instrumentalists,
+        unless this rehearsal calls them. Recipients of an announcement, the
+        reminder, the roll-call grid and the printed sheet all start from this
+        set and narrow it by status themselves (a roll-call drops the declined,
+        a cancellation notice keeps them), which is why status is not applied
+        here.
         """
         invited = self.invited_participations.filter(is_deleted=False)
         if invited.exists():
@@ -969,20 +1072,43 @@ class Rehearsal(EnterpriseBaseModel):
         cast = Participation.objects.filter(project=self.project, is_deleted=False)
         if not self.calls_instrumentalists:
             cast = cast.exclude(artist__voice_type=VoiceType.INSTRUMENTALIST)
+        if self.called_sections:
+            # Decided in Python: the letters come from the seat AND the voice
+            # type, and the intermediate voices' mapping is a table, not a
+            # column expression. Narrowed back to a queryset so every reader
+            # can keep chaining its own status filter. A player that survived
+            # the exclusion above is called by the flag, not by a section.
+            called_ids = [
+                seat.id
+                for seat in cast.select_related('artist')
+                if self.calls_voice(
+                    seat.section_letters,
+                    instrumentalist=seat.artist.voice_type == VoiceType.INSTRUMENTALIST,
+                )
+            ]
+            cast = Participation.objects.filter(id__in=called_ids)
         return cast
 
     @staticmethod
-    def calling_q(seat_ids: Any, *, instrumentalist: bool) -> models.Q:
+    def calling_q(seat_ids: Any, *, instrumentalist: bool, section_letters: str) -> models.Q:
         """The `Rehearsal` rows that call a member holding ``seat_ids``.
 
         Mirror of `called_participations` from the member's side, for the
-        schedule, the absence window, the calendar feed and the invitation
-        e-mail. A named invitation always reaches them; a whole-cast call
-        reaches a player only when the rehearsal says so.
+        schedule, the absence window, the calendar feed and the dossier. A
+        named invitation always reaches them; a player is reached by the
+        rehearsal's flag alone, sectional or not, having no section to be
+        called by; a singer is reached by a rehearsal that calls any of
+        ``section_letters`` (`Participation.section_letters_of_seats` over the
+        same seats), or by one that calls no sections at all.
         """
         tutti = models.Q(invited_participations__isnull=True)
         if instrumentalist:
             tutti &= models.Q(calls_instrumentalists=True)
+        else:
+            sections = models.Q(called_sections="")
+            for letter in section_letters:
+                sections |= models.Q(called_sections__contains=letter)
+            tutti &= sections
         return models.Q(invited_participations__in=seat_ids) | tutti
 
     def calls_seat(self, seat: "Participation", invited_ids: Collection[uuid.UUID]) -> bool:
@@ -990,13 +1116,14 @@ class Rehearsal(EnterpriseBaseModel):
 
         For the printed sheets, which walk a prefetched invited list per
         rehearsal and must not pay a query per (rehearsal, reader) pair.
-        ``invited_ids`` is that list; empty means a whole-cast call.
+        ``invited_ids`` is that list; empty means a cast call, narrowed by the
+        section rule. Reads ``seat.artist``.
         """
         if invited_ids:
             return seat.id in invited_ids
-        return (
-            self.calls_instrumentalists
-            or seat.artist.voice_type != VoiceType.INSTRUMENTALIST
+        return self.calls_voice(
+            seat.section_letters,
+            instrumentalist=seat.artist.voice_type == VoiceType.INSTRUMENTALIST,
         )
 
     @property
@@ -1015,6 +1142,91 @@ class Rehearsal(EnterpriseBaseModel):
 
     def __str__(self):
         return f"Rehearsal: {self.date_time.strftime('%d.%m %H:%M')}"
+
+
+class RehearsalPlanItem(models.Model):
+    """One row of a rehearsal's plan: what is rehearsed, in what order, from
+    when, and who is not needed for it.
+
+    One entity carries both the conductor's ordered list and the assistant's
+    timetable: a row is a position, an optional clock, a piece OR a free label,
+    a one-line note, optional voice exclusions and a done stamp. Rows without a
+    clock flow under the last clocked row, so "18:15 Orff / Lumen / Bach" is
+    three rows and one time (`roster.domain.rehearsal_plan`). The clock is a
+    wall-clock in the rehearsal's zone and is never validated against the
+    rehearsal's window — ordering carries the warning.
+
+    A plain model, not `EnterpriseBaseModel`: the plan is saved whole and a
+    dropped row is gone, while a soft-deleted row would keep its
+    `(rehearsal, position)` slot and collide with the next save. Its siblings
+    on the roster (`ProgramItem`, `ProjectPieceCasting`) are shaped the same
+    way. `updated_at` stays, because "changed after it was sent" is read off it.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    rehearsal = models.ForeignKey(
+        Rehearsal, on_delete=models.CASCADE, related_name='plan_items', verbose_name=_("Rehearsal"),
+    )
+    position = models.PositiveIntegerField(verbose_name=_("Position"))
+    # RESTRICT, as `ProgramItem.piece`: a piece somebody planned an evening
+    # around is not deleted out from under that evening. Validated to sit in
+    # the rehearsal's project programme at write — one project per rehearsal.
+    piece = models.ForeignKey(
+        'archive.Piece',
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        related_name='rehearsal_plan_items',
+        verbose_name=_("Piece"),
+    )
+    # The title of a row that is not a piece ("Rozśpiewanie", "Przerwa").
+    label = models.CharField(max_length=120, blank=True, verbose_name=_("Label"))
+    # "od t. 40 do końca, pierwsze czytanie" — what makes a title a plan a
+    # chorister can prepare for.
+    note = models.CharField(max_length=200, blank=True, verbose_name=_("Note"))
+    starts_at = models.TimeField(null=True, blank=True, verbose_name=_("Starts At"))
+    # Voice LINES (`VoiceLine` codes), resolved through the piece's casting:
+    # Florent's "bez B2" exists only per piece. A seat cast on the row's piece
+    # is excluded by its own line; an uncast seat stays called as long as any
+    # line of its section remains.
+    excluded_voice_lines = models.JSONField(
+        default=list,
+        blank=True,
+        validators=[validate_excluded_voice_lines],
+        verbose_name=_("Excluded Voice Lines"),
+    )
+    # A player is not a voice line, so the organist's "not before 19:30" is a
+    # flag per row. Meaningful only on a rehearsal that calls the players.
+    excludes_instrumentalists = models.BooleanField(
+        default=False, verbose_name=_("Excludes Instrumentalists"),
+    )
+    # Ticked after the evening, as the first step of the debrief — never live.
+    # No author: `Rehearsal.debrief_by` already stamps whoever handed the
+    # evening back, and nobody audits who ticked a row.
+    done_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Done At"))
+
+    class Meta:
+        verbose_name = _("Rehearsal Plan Item")
+        verbose_name_plural = _("Rehearsal Plan Items")
+        ordering = ['position']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['rehearsal', 'position'], name='unique_rehearsal_plan_position',
+            ),
+        ]
+
+    @property
+    def title(self) -> str:
+        """What the row is called on every surface: the piece's title, else
+        the label. Reads `piece`; load it with the row."""
+        if self.piece_id and self.piece:
+            return str(self.piece.title)
+        return self.label
+
+    def __str__(self):
+        return f"Plan {self.rehearsal_id} #{self.position}: {self.title}"
 
 
 class RehearsalDelegate(EnterpriseBaseModel):

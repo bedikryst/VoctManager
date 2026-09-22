@@ -58,15 +58,21 @@ class ProjectInvitationContext:
     `rehearsals_for_all` are the rehearsals the whole cast is called to, players
     included; `rehearsals_for_choir` are whole-cast calls that leave the
     instrumentalists out (`Rehearsal.calls_instrumentalists` unset);
+    `rehearsals_by_section` holds the sectionals, keyed by each SATB letter
+    they call (`Rehearsal.called_sections` — a singer answering to any of
+    their letters gets it); `rehearsals_for_players` holds the sectionals that
+    call the players too, who have no letter to be found under;
     `rehearsals_by_participation` holds the ones restricted to named people
     (`Rehearsal.invited_participations`), so a sectional never appears in the
-    schedule of someone who was not called to it. The three are the same rule
+    schedule of someone who was not called to it. The five are the same rule
     `Rehearsal.called_participations` applies, pre-split so one publication
     resolves them once rather than per recipient.
     """
     program: tuple[str, ...] = ()
     rehearsals_for_all: tuple[_TimedRehearsal, ...] = ()
     rehearsals_for_choir: tuple[_TimedRehearsal, ...] = ()
+    rehearsals_by_section: dict[str, list[_TimedRehearsal]] = field(default_factory=dict)
+    rehearsals_for_players: tuple[_TimedRehearsal, ...] = ()
     rehearsals_by_participation: dict[UUID, list[_TimedRehearsal]] = field(
         default_factory=dict
     )
@@ -87,6 +93,7 @@ def _rehearsal_payload(rehearsal: Rehearsal) -> InvitationRehearsalMetadata:
         location=rehearsal.location.name if rehearsal.location else "",
         focus=rehearsal.focus or "",
         is_mandatory=rehearsal.is_mandatory,
+        sections=tuple(rehearsal.called_sections),
     )
 
 
@@ -101,6 +108,8 @@ def build_invitation_context(project: Project) -> ProjectInvitationContext:
 
     shared: list[_TimedRehearsal] = []
     choir_only: list[_TimedRehearsal] = []
+    by_section: dict[str, list[_TimedRehearsal]] = defaultdict(list)
+    sectional_players: list[_TimedRehearsal] = []
     personal: dict[UUID, list[_TimedRehearsal]] = defaultdict(list)
     for rehearsal in (
         Rehearsal.objects.filter(project=project)
@@ -110,11 +119,16 @@ def build_invitation_context(project: Project) -> ProjectInvitationContext:
     ):
         entry: _TimedRehearsal = (rehearsal.date_time, _rehearsal_payload(rehearsal))
         invited = list(rehearsal.invited_participations.all())
-        if not invited:
+        if invited:
+            for participation in invited:
+                personal[participation.id].append(entry)
+        elif rehearsal.called_sections:
+            for letter in rehearsal.called_sections:
+                by_section[letter].append(entry)
+            if rehearsal.calls_instrumentalists:
+                sectional_players.append(entry)
+        else:
             (shared if rehearsal.calls_instrumentalists else choir_only).append(entry)
-            continue
-        for participation in invited:
-            personal[participation.id].append(entry)
 
     voice_lines: dict[UUID, list[str]] = defaultdict(list)
     for participation_id, voice_line in (
@@ -129,6 +143,8 @@ def build_invitation_context(project: Project) -> ProjectInvitationContext:
         program=program,
         rehearsals_for_all=tuple(shared),
         rehearsals_for_choir=tuple(choir_only),
+        rehearsals_by_section=dict(by_section),
+        rehearsals_for_players=tuple(sectional_players),
         rehearsals_by_participation=dict(personal),
         voice_lines_by_participation={
             key: tuple(value) for key, value in voice_lines.items()
@@ -213,19 +229,30 @@ def build_invitation_metadata(
         program = context.program
         voice_lines = context.voice_lines_by_participation.get(participation.id, ())
         scope = context.voice_scope
+        is_player = participation.artist.voice_type == VoiceType.INSTRUMENTALIST
         # A player's invitation lists only the evenings that call them: the
         # choir-only rehearsals would promise dates they are not expected at.
-        choir_only = (
-            ()
-            if participation.artist.voice_type == VoiceType.INSTRUMENTALIST
-            else context.rehearsals_for_choir
-        )
+        # A sectional has no letter they could be found under, so the ones
+        # that call the players are listed for them directly.
+        choir_only = () if is_player else context.rehearsals_for_choir
+        player_sectionals = context.rehearsals_for_players if is_player else ()
+        # A sectional calling two of the reader's sections (a mezzo at "SA")
+        # sits under both letters; the id set keeps it to one line.
+        sectionals: list[_TimedRehearsal] = []
+        listed: set[UUID] = set()
+        for letter in participation.section_letters:
+            for entry in context.rehearsals_by_section.get(letter, ()):
+                if entry[1].rehearsal_id not in listed:
+                    listed.add(entry[1].rehearsal_id)
+                    sectionals.append(entry)
         rehearsals = tuple(
             payload
             for _, payload in sorted(
                 (
                     *context.rehearsals_for_all,
                     *choir_only,
+                    *sectionals,
+                    *player_sectionals,
                     *context.rehearsals_by_participation.get(participation.id, ()),
                 ),
                 key=lambda entry: entry[0],

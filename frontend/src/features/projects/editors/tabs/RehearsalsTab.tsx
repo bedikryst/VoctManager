@@ -12,7 +12,7 @@
  * @module features/projects/editors/tabs/RehearsalsTab
  */
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "framer-motion";
 import { formatInTimeZone } from "date-fns-tz";
@@ -29,8 +29,11 @@ import { useRehearsalsTab } from "../hooks/useRehearsalsTab";
 import { getEventMomentPresentation } from "../../lib/projectPresentation";
 import type { RehearsalTargetType } from "../types";
 import { RehearsalTimelineRow } from "./components/RehearsalTimelineRow";
+import { RehearsalPlanEditor } from "@/features/rehearsals/components/plan/RehearsalPlanEditor";
+import type { Rehearsal } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
 import { artistRoleLabel, isInstrumentalist } from "@/shared/lib/voiceTypes";
+import { BottomSheet } from "@/shared/ui/composites/BottomSheet";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import {
@@ -104,9 +107,18 @@ export const RehearsalsTab = ({
 
   const isEditing = editingRehearsal !== null;
 
-  /* Only a named call can be empty by mistake. Tutti names nobody on purpose —
-     flagging it gold would make the ordinary case look like an error. */
-  const isCallEmpty = targetType !== "TUTTI" && invitedCount === 0;
+  // The plan is laid out on a SAVED rehearsal, in a sheet over the runway —
+  // the phone flow — never inside the compose form, which has no rehearsal
+  // to hang rows on until it is submitted.
+  const [planRehearsal, setPlanRehearsal] = useState<Rehearsal | null>(null);
+
+  /* Only a named call can be empty by mistake, and a sectional only when no
+     section is ticked. Tutti names nobody on purpose, and a sectional whose
+     section has nobody yet is a rule like tutti — flagging either gold would
+     make the ordinary case look like an error. */
+  const isCallEmpty =
+    (targetType === "CUSTOM" && invitedCount === 0) ||
+    (targetType === "SECTIONAL" && selectedSections.length === 0);
 
   const hasInstrumentalists = projectParticipations.some((participation) =>
     isInstrumentalist(
@@ -114,6 +126,40 @@ export const RehearsalsTab = ({
         participation.artist_voice_type,
     ),
   );
+
+  /* The switch is the call's whole statement about the players — a section
+     names singers and says nothing about them — so it stands under a tutti and
+     under a sectional alike (the rehearsal pianist at a sectional). Only on a
+     project that has any player: a switch for nobody is a question the form
+     has no business asking. A named list needs no switch. */
+  const playersToggle = hasInstrumentalists ? (
+    <label className="flex cursor-pointer items-start gap-2.5 rounded-control px-1.5 py-1 transition-colors hover:bg-ethereal-ink/3">
+      <Checkbox
+        checked={formData.calls_instrumentalists}
+        onChange={(event) =>
+          setFormData({
+            ...formData,
+            calls_instrumentalists: event.target.checked,
+          })
+        }
+        disabled={isSubmitting}
+      />
+      <span className="flex flex-col">
+        <Text as="span" size="sm" color="graphite">
+          {t(
+            "projects.rehearsals.form.calls_instrumentalists",
+            "Wezwij także instrumentalistów",
+          )}
+        </Text>
+        <Caption color="muted">
+          {t(
+            "projects.rehearsals.form.calls_instrumentalists_hint",
+            "Domyślnie próbuje sam chór; zaznacz na próbie z akompaniamentem.",
+          )}
+        </Caption>
+      </span>
+    </label>
+  ) : null;
 
   // The day the runway leads to, named for what the ensemble is singing at: it
   // marks the calendar and closes the timeline, and both must say the same word.
@@ -280,6 +326,9 @@ export const RehearsalsTab = ({
           onDelete={() => {
             if (entry.rehearsal) handleDeleteClick(entry.rehearsal.id);
           }}
+          onOpenPlan={() => {
+            if (entry.rehearsal) setPlanRehearsal(entry.rehearsal);
+          }}
         />
       ))}
     </ul>
@@ -440,15 +489,12 @@ export const RehearsalsTab = ({
             />
 
             <Textarea
-              label={t(
-                "projects.rehearsals.form.focus",
-                "Plan próby / repertuar",
-              )}
+              label={t("projects.rehearsals.form.focus", "Temat próby")}
               rows={3}
               value={formData.focus}
               placeholder={t(
                 "projects.rehearsals.form.focus_placeholder",
-                "np. Requiem cz. 1–3",
+                "np. Requiem cz. 1–3, pierwsze czytanie",
               )}
               onChange={(event) =>
                 setFormData({ ...formData, focus: event.target.value })
@@ -531,20 +577,27 @@ export const RehearsalsTab = ({
                           "Cały zespół — obecnie {{count}} os.",
                           { count: invitedCount },
                         )
-                    : t(
-                        "projects.rehearsals.status.invited",
-                        "Wezwanych: {{count}}",
-                        { count: invitedCount },
-                      )}
+                    : targetType === "SECTIONAL"
+                      ? selectedSections.length === 0
+                        ? t(
+                            "projects.rehearsals.status.sectional_empty",
+                            "Wybierz sekcje — kto dołączy do nich później, też zostanie wezwany",
+                          )
+                        : t(
+                            "projects.rehearsals.status.sectional_count",
+                            "Wybrane sekcje — obecnie {{count}} os.",
+                            { count: invitedCount },
+                          )
+                      : t(
+                          "projects.rehearsals.status.invited",
+                          "Wezwanych: {{count}}",
+                          { count: invitedCount },
+                        )}
                 </Caption>
               </div>
 
               <AnimatePresence mode="wait">
-                {/* A whole-cast call leaves the players out unless the conductor
-                    says otherwise — this is where they say it, and only on a
-                    project that has any: a switch for nobody is a question the
-                    form has no business asking. A named list needs no switch. */}
-                {targetType === "TUTTI" && hasInstrumentalists && (
+                {targetType === "TUTTI" && playersToggle && (
                   <motion.div
                     key="tutti-players"
                     initial={{ opacity: 0, y: -4 }}
@@ -552,32 +605,7 @@ export const RehearsalsTab = ({
                     exit={{ opacity: 0, y: -4 }}
                     className="border-t border-hairline pt-4"
                   >
-                    <label className="flex cursor-pointer items-start gap-2.5 rounded-control px-1.5 py-1 transition-colors hover:bg-ethereal-ink/3">
-                      <Checkbox
-                        checked={formData.calls_instrumentalists}
-                        onChange={(event) =>
-                          setFormData({
-                            ...formData,
-                            calls_instrumentalists: event.target.checked,
-                          })
-                        }
-                        disabled={isSubmitting}
-                      />
-                      <span className="flex flex-col">
-                        <Text as="span" size="sm" color="graphite">
-                          {t(
-                            "projects.rehearsals.form.calls_instrumentalists",
-                            "Wezwij także instrumentalistów",
-                          )}
-                        </Text>
-                        <Caption color="muted">
-                          {t(
-                            "projects.rehearsals.form.calls_instrumentalists_hint",
-                            "Domyślnie próbuje sam chór; zaznacz na próbie z akompaniamentem.",
-                          )}
-                        </Caption>
-                      </span>
-                    </label>
+                    {playersToggle}
                   </motion.div>
                 )}
 
@@ -587,17 +615,20 @@ export const RehearsalsTab = ({
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
-                    className="flex flex-wrap gap-2 border-t border-hairline pt-4"
+                    className="flex flex-col gap-4 border-t border-hairline pt-4"
                   >
-                    {voiceSections.map((section) => (
-                      <TogglePill
-                        key={section.id}
-                        label={section.label}
-                        active={selectedSections.includes(section.id)}
-                        onChange={() => toggleSection(section.id)}
-                        disabled={isSubmitting}
-                      />
-                    ))}
+                    <div className="flex flex-wrap gap-2">
+                      {voiceSections.map((section) => (
+                        <TogglePill
+                          key={section.id}
+                          label={section.label}
+                          active={selectedSections.includes(section.id)}
+                          onChange={() => toggleSection(section.id)}
+                          disabled={isSubmitting}
+                        />
+                      ))}
+                    </div>
+                    {playersToggle}
                   </motion.div>
                 )}
 
@@ -733,6 +764,36 @@ export const RehearsalsTab = ({
         onCancel={() => setRehearsalToDelete(null)}
         isLoading={isDeleting}
       />
+
+      {/* Kept mounted with `isOpen` so the sheet animates out; the rehearsal
+          is read from the freshest list row, so a save inside the sheet is
+          reflected the moment the list refetches. */}
+      <BottomSheet
+        isOpen={planRehearsal !== null}
+        onClose={() => setPlanRehearsal(null)}
+        title={t("rehearsals.plan.title", "Plan próby")}
+        subtitle={
+          planRehearsal
+            ? formatLocalizedDate(
+                planRehearsal.date_time,
+                { weekday: "long", day: "numeric", month: "long" },
+                undefined,
+                planRehearsal.timezone,
+              )
+            : undefined
+        }
+      >
+        {planRehearsal && (
+          <RehearsalPlanEditor
+            rehearsal={
+              projectRehearsals.find((row) => String(row.id) === String(planRehearsal.id)) ??
+              planRehearsal
+            }
+            actions="inline"
+            className="-mx-5 sm:-mx-6"
+          />
+        )}
+      </BottomSheet>
 
       <AutosaveStatus isSaving={isSubmitting || isDeleting} />
     </>

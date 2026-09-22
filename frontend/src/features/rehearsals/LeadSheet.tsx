@@ -13,10 +13,12 @@
  * unchanged. The only thing withheld is what a delegation does not carry: a span
  * excusal and the cast editor, both of which are decisions about a singer's
  * standing in the choir rather than a record of who turned up. Two things are
- * added: the plan — the leader has no rehearsal form, so what the evening is
- * about is edited in place, under the date, where the cast will read it — and
- * the debrief, written once the evening has started, which is how the leader
- * hands it back to the conductor.
+ * added: the topic line — the leader has no rehearsal form, so what the
+ * evening is about is edited in place, under the date, where the cast will
+ * read it — and the debrief, written once the evening has started, which is
+ * how the leader hands it back to the conductor: the plan's rows ticked off
+ * first, then the words. The plan itself is read here at stand size, never
+ * edited — laying it out is the conductor's, on the manager's workspace.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals
  */
@@ -43,6 +45,7 @@ import {
 
 import { useMarkMissingAttendancesPresent } from "./api/rehearsals.queries";
 import { useUpdateLeadSheet } from "./api/leadSheet.queries";
+import { useMarkPlanItem } from "./api/plan.queries";
 import { useLeadSheetData } from "./hooks/useLeadSheetData";
 import { RehearsalInspector } from "./components/RehearsalInspector";
 
@@ -66,7 +69,13 @@ export default function LeadSheet(): React.JSX.Element {
   const [showOnlyUnmarked, setShowOnlyUnmarked] = useState(false);
   const markMissing = useMarkMissingAttendancesPresent();
   const updateSheet = useUpdateLeadSheet(rehearsalId);
+  const markPlanItem = useMarkPlanItem(rehearsalId ?? "");
   const { user } = useAuth();
+
+  // The debrief's first step: which rows of the plan were done. Same gate as
+  // the debrief on the server, so a reader let in to run the evening may tick.
+  const markPlan = (itemId: string, done: boolean): Promise<unknown> =>
+    markPlanItem.mutateAsync({ itemId, done });
 
   // Both editors show the server's refusal in place, so the mutations reject
   // rather than toast; a stale grant answers with the same 404 the whole page
@@ -215,6 +224,7 @@ export default function LeadSheet(): React.JSX.Element {
                   allowManagerActions={leadSheet.is_manager}
                   onSaveFocus={saveFocus}
                   onSaveDebrief={saveDebrief}
+                  onMarkPlanItem={markPlan}
                 />
               </StaggeredBentoItem>
             )}

@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 from core.constants import VoiceLine
+from core.voice_labels import SECTION_LETTERS, canonical_section_letters
 
 from .domain.day_timeline import MINUTES_PER_DAY
 from .models import Attendance, Participation, PieceReadiness, Project, VoiceType
@@ -43,6 +44,16 @@ def _validate_timezone(value: str) -> str:
         ZoneInfo(value)
     except ZoneInfoNotFoundError as exc:
         raise ValueError("timezone must be a valid IANA timezone name.") from exc
+    return value
+
+
+def _validate_called_sections(value: str) -> str:
+    """The model's own rule (`validate_called_sections`), surfaced as the DTO's
+    error so a wrong spelling is refused before the service writes."""
+    if value != canonical_section_letters(value):
+        raise ValueError(
+            f"called_sections must be letters from '{SECTION_LETTERS}' in that order, each at most once."
+        )
     return value
 
 
@@ -615,6 +626,9 @@ class RehearsalCreateDTO(EnterpriseBaseDTO):
     focus: str = Field(default='', max_length=255)
     is_mandatory: bool = True
     calls_instrumentalists: bool = False
+    # The sections a sectional calls, as canonical SATB letters ("SA"); '' is
+    # the whole cast. Validated by the model field's validator on the way in.
+    called_sections: str = ''
     # Who stands in front of the choir; None = the project's conductor. The
     # serializer has already checked the person may lead — this is a name.
     led_by_id: UUID | None = None
@@ -629,6 +643,11 @@ class RehearsalCreateDTO(EnterpriseBaseDTO):
     def normalize_focus(cls, value: object) -> object:
         return _blankable_string(value)
 
+    @field_validator("called_sections")
+    @classmethod
+    def validate_called_sections(cls, value: str) -> str:
+        return _validate_called_sections(value)
+
 
 class RehearsalUpdateDTO(EnterpriseBaseDTO):
     """Data contract for updating an existing rehearsal."""
@@ -641,6 +660,7 @@ class RehearsalUpdateDTO(EnterpriseBaseDTO):
     focus: str | None = Field(None, max_length=255)
     is_mandatory: bool | None = None
     calls_instrumentalists: bool | None = None
+    called_sections: str | None = None
     # Null is a real value, as for `duration_minutes`: sending it hands the
     # evening back to the conductor; a patch that never mentions it leaves the
     # leader alone.
@@ -656,9 +676,16 @@ class RehearsalUpdateDTO(EnterpriseBaseDTO):
     def normalize_focus(cls, value: object) -> object:
         return _blankable_string(value)
 
+    @field_validator("called_sections")
+    @classmethod
+    def validate_called_sections(cls, value: str | None) -> str | None:
+        return _validate_called_sections(value) if value is not None else value
+
     @model_validator(mode="after")
     def reject_null_for_required_fields(self):
-        for field_name in ("date_time", "timezone", "is_mandatory", "calls_instrumentalists"):
+        for field_name in (
+            "date_time", "timezone", "is_mandatory", "calls_instrumentalists", "called_sections",
+        ):
             if field_name in self.model_fields_set and getattr(self, field_name) is None:
                 raise ValueError(f"{field_name} cannot be null.")
         return self
@@ -696,3 +723,80 @@ class LeadSheetUpdateDTO(EnterpriseBaseDTO):
         the plan travels — the debrief is not a field of the rehearsal's
         contract and is never a diff for the cast."""
         return RehearsalUpdateDTO(**self.model_dump(include={"focus"}, exclude_unset=True))
+
+
+class RehearsalPlanRowDTO(EnterpriseBaseDTO):
+    """One row of the plan as the editor sends it. Position is the index in
+    the list — the client never numbers rows. `id` names an existing row so
+    its done stamp survives a re-save; a row without one is new."""
+
+    id: UUID | None = None
+    piece: UUID | None = None
+    label: str = Field(default='', max_length=120)
+    note: str = Field(default='', max_length=200)
+    starts_at: time | None = None
+    excluded_voice_lines: tuple[str, ...] = Field(default_factory=tuple)
+    excludes_instrumentalists: bool = False
+
+    @field_validator("label", "note", mode="before")
+    @classmethod
+    def normalize_text(cls, value: object) -> object:
+        return _blankable_string(value)
+
+    @field_validator("excluded_voice_lines", mode="before")
+    @classmethod
+    def normalize_lines(cls, value: object) -> object:
+        if value is None:
+            return ()
+        if isinstance(value, list | tuple):
+            return tuple(value)
+        return value
+
+    @field_validator("excluded_voice_lines")
+    @classmethod
+    def validate_lines(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        for code in value:
+            _require_choice(code, VOICE_LINE_VALUES, "excluded_voice_lines")
+        if len(set(value)) != len(value):
+            raise ValueError("excluded_voice_lines must name each line at most once.")
+        return value
+
+    @model_validator(mode="after")
+    def require_a_title(self):
+        if self.piece is None and not self.label:
+            raise ValueError("A row needs a piece or a label.")
+        return self
+
+
+class RehearsalPlanDTO(EnterpriseBaseDTO):
+    """The whole plan of one rehearsal, saved as one act — declarative like a
+    divisi board: what is on screen is what is sent, and the server
+    reconciles. An empty list clears the plan."""
+
+    rows: tuple[RehearsalPlanRowDTO, ...] = Field(default_factory=tuple)
+
+    @field_validator("rows", mode="before")
+    @classmethod
+    def normalize_rows(cls, value: object) -> object:
+        if value is None:
+            return ()
+        if isinstance(value, list | tuple):
+            return tuple(value)
+        return value
+
+    @model_validator(mode="after")
+    def reject_repeated_ids(self):
+        seen: set[UUID] = set()
+        for row in self.rows:
+            if row.id is None:
+                continue
+            if row.id in seen:
+                raise ValueError("rows must name each existing row at most once.")
+            seen.add(row.id)
+        return self
+
+
+class RehearsalPlanItemDoneDTO(EnterpriseBaseDTO):
+    """The one thing the debrief writes per row."""
+
+    done: bool

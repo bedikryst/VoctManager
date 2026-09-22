@@ -17,6 +17,12 @@ import type {
   AbsenceSpanResult,
   AttendanceUpsertDTO,
 } from "../types/rehearsals.dto";
+import type {
+  RehearsalPlanAnnounced,
+  RehearsalPlanDTO,
+  RehearsalPlanRead,
+} from "../types/rehearsalPlan.dto";
+import type { RehearsalPlanItem } from "@/shared/types";
 import type { LocationDto } from "../../logistics/types/logistics.dto";
 
 export const RehearsalsService = {
@@ -28,6 +34,27 @@ export const RehearsalsService = {
   getRehearsals: async (): Promise<Rehearsal[]> => {
     const response = await api.get("/api/rehearsals/");
     return response.data.results ?? response.data ?? [];
+  },
+
+  /**
+   * One evening, read through the caller's own seat. This is the only read
+   * that carries `plan[].calls_me` and `my_plan_window` for a single
+   * rehearsal — the list emits neither — so the rehearsal page asks for it
+   * rather than picking the evening out of a collection.
+   *
+   * `previewArtistId` reads it through a member's seat instead — the same
+   * `?artist=` the schedule dashboard sends, so a manager previewing a member
+   * sees on the page the window the card just showed them.
+   */
+  getRehearsal: async (
+    rehearsalId: string,
+    previewArtistId?: string,
+  ): Promise<Rehearsal> => {
+    const response = await api.get<Rehearsal>(
+      `/api/rehearsals/${rehearsalId}/`,
+      previewArtistId ? { params: { artist: previewArtistId } } : undefined,
+    );
+    return response.data;
   },
 
   getParticipations: async (): Promise<Participation[]> => {
@@ -95,5 +122,47 @@ export const RehearsalsService = {
   getLocations: async (): Promise<LocationDto[]> => {
     const response = await api.get("/api/logistics/locations/");
     return response.data.results ?? response.data ?? [];
+  },
+
+  /* ── The plan ──────────────────────────────────────────────────────────
+   * Written whole and silently; the cast hears about it only through
+   * `announcePlan`, which is the conductor's own act. */
+
+  getPlan: async (rehearsalId: string): Promise<RehearsalPlanRead> => {
+    const response = await api.get<RehearsalPlanRead>(
+      `/api/rehearsals/${rehearsalId}/plan/`,
+    );
+    return response.data;
+  },
+
+  savePlan: async (
+    rehearsalId: string,
+    data: RehearsalPlanDTO,
+  ): Promise<RehearsalPlanRead> => {
+    const response = await api.put<RehearsalPlanRead>(
+      `/api/rehearsals/${rehearsalId}/plan/`,
+      data,
+    );
+    return response.data;
+  },
+
+  markPlanItem: async (
+    rehearsalId: string,
+    itemId: string,
+    done: boolean,
+  ): Promise<RehearsalPlanItem> => {
+    const response = await api.patch<RehearsalPlanItem>(
+      `/api/rehearsals/${rehearsalId}/plan/${itemId}/done/`,
+      { done },
+    );
+    return response.data;
+  },
+
+  announcePlan: async (rehearsalId: string): Promise<RehearsalPlanAnnounced> => {
+    const response = await api.post<RehearsalPlanAnnounced>(
+      `/api/rehearsals/${rehearsalId}/plan/announce/`,
+      {},
+    );
+    return response.data;
   },
 };

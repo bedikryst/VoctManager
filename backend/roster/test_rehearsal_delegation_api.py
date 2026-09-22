@@ -307,6 +307,19 @@ class RehearsalLedByTests(APITestCase):
         self.assertEqual(kwargs["metadata"]["sections"], [])
 
     def test_a_sectional_names_its_sections_in_the_push(self) -> None:
+        """The push reads `called_sections`, the rule — a hand-picked list is
+        named nobody's section even when everyone on it is a soprano."""
+        self.client.force_authenticate(self.manager)
+        with patch(TASK) as task, self.captureOnCommitCallbacks(execute=True):
+            response = self.client.patch(
+                f"/api/rehearsals/{self.upcoming.pk}/",
+                {"led_by_id": str(self.leader.pk), "called_sections": "SA"},
+                format="json",
+            )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(task.delay.call_args.kwargs["metadata"]["sections"], ["S", "A"])
+
+    def test_a_hand_picked_call_names_no_section_in_the_push(self) -> None:
         self.client.force_authenticate(self.manager)
         soprano_seat = Participation.objects.get(artist=self.singer)
         with patch(TASK) as task, self.captureOnCommitCallbacks(execute=True):
@@ -319,7 +332,7 @@ class RehearsalLedByTests(APITestCase):
                 format="json",
             )
         self.assertEqual(response.status_code, 200, response.content)
-        self.assertEqual(task.delay.call_args.kwargs["metadata"]["sections"], ["S"])
+        self.assertEqual(task.delay.call_args.kwargs["metadata"]["sections"], [])
 
     def test_revoking_clears_future_evenings_and_keeps_held_ones(self) -> None:
         self.upcoming.led_by = self.leader

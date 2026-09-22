@@ -3136,7 +3136,7 @@
       "status": "Statut",
       "conductor": "Chef de chœur",
       "dress_code": "Tenue",
-      "focus": "Objectif",
+      "focus": "Thème",
       "is_mandatory": "Présence",
       "voice_line": "Pupitre",
       "gives_pitch": "Donne le ton",
@@ -4121,6 +4121,10 @@
         "aria": "Édition de la partition : {{title}}",
         "auto": "Automatique : {{label}}"
       },
+      "rehearsed": {
+        "count": "Travaillé {{times}}× · dernière fois {{date}}",
+        "never": "Jamais travaillé"
+      },
       "empty": {
         "no_results": "Aucun résultat",
         "setlist_desc": "Choisissez des compositions dans la base pour construire le programme.",
@@ -4183,7 +4187,8 @@
       "absences_reported": "Absences signalées :",
       "actions": {
         "delete": "Supprimer la répétition",
-        "edit": "Modifier la répétition"
+        "edit": "Modifier la répétition",
+        "plan": "Plan de répétition"
       },
       "aria_label": "Gérer les répétitions du projet",
       "empty": {
@@ -4197,7 +4202,7 @@
         "led_by_conductor": "Le chef",
         "date_time": "Date et heure *",
         "end_time": "Fin de la répétition",
-        "focus": "Plan de répétition / répertoire",
+        "focus": "Thème de la répétition",
         "focus_placeholder": "ex. Requiem, mvts 1–3",
         "length_h": "{{hours}} h",
         "length_hm": "{{hours}} h {{minutes}} min",
@@ -4232,9 +4237,12 @@
         "optional": "Facultative",
         "tutti": "Tutti",
         "invited": "Convoqués : {{count}}",
+        "plan_rows": "Plan : {{count}} pts",
         "led_by": "Dirigée par {{name}}",
         "tutti_count": "Tout l’ensemble — {{count}} pour l’instant",
-        "tutti_empty_cast": "Tout l’ensemble — la distribution suivra"
+        "tutti_empty_cast": "Tout l’ensemble — la distribution suivra",
+        "sectional_count": "Pupitres choisis — {{count}} pour l’instant",
+        "sectional_empty": "Choisissez les pupitres — qui les rejoint plus tard sera convoqué aussi"
       },
       "title_short": "répét.",
       "toast": {
@@ -4403,6 +4411,73 @@
     }
   },
   "rehearsals": {
+    "plan": {
+      "title": "Plan de répétition",
+      "announce": "Envoyer le plan",
+      "announced_at": "Envoyé {{when}}",
+      "announced_changed": "Envoyé {{when}} · modifié depuis",
+      "loading": "Ouverture du plan…",
+      "empty": {
+        "title": "Pas encore de plan",
+        "desc": "Disposez les œuvres dans l'ordre de travail ; l'heure et les exclusions sont facultatives."
+      },
+      "fill": {
+        "menu": "Remplir",
+        "program": "Ajouter tout le programme",
+        "carry_over": "Ajouter ce que la dernière répétition a laissé ({{count}})",
+        "carry_over_none": "La dernière répétition n'a rien laissé en suspens",
+        "copy_from": "Copier le plan de…",
+        "rows_one": "{{count}} point",
+        "rows_many": "{{count}} points",
+        "rows_other": "{{count}} points"
+      },
+      "add": {
+        "piece": "Ajouter une œuvre du programme…",
+        "piece_all": "Tout le programme est déjà dans le plan",
+        "free": "Point sans œuvre"
+      },
+      "save": {
+        "description": "Le plan de répétition a changé."
+      },
+      "toast": {
+        "saved": "Plan enregistré. Le chœur n'en sait encore rien.",
+        "save_error": "Impossible d'enregistrer le plan.",
+        "announced": "Plan envoyé aux personnes convoquées.",
+        "announce_error": "Impossible d'envoyer le plan.",
+        "untitled": "Donnez un nom à chaque point sans œuvre.",
+        "done_error": "Impossible de cocher ce point."
+      },
+      "row": {
+        "drag": "Déplacer : {{title}}",
+        "untitled": "point sans titre",
+        "time": "Heure (facultative)",
+        "piece": "Œuvre du programme",
+        "label": "Nom du point",
+        "label_placeholder": "p. ex. Échauffement, pause",
+        "note": "Note",
+        "note_placeholder": "Note : à partir de la mesure 40, première lecture…",
+        "calls": "convoque {{called}} sur {{total}}"
+      },
+      "exclude": {
+        "instrumentalists": "Instrumentistes",
+        "clear_one": "Rétablir : {{label}}",
+        "without": "sans {{label}}",
+        "people": "{{count}} pers.",
+        "everyone": "Tout le monde",
+        "edit": "Modifier",
+        "prompt": "De qui ce point n'a pas besoin",
+        "toggle_family": "Exclure le pupitre : {{label}}",
+        "toggle_line": "Exclure la ligne : {{label}}",
+        "toggle_instrumentalists": "Sans instrumentistes"
+      },
+      "timeline": {
+        "not_you": "sans votre voix"
+      },
+      "debrief": {
+        "prompt": "Qu'avez-vous travaillé ?",
+        "done_label": "Travaillé"
+      }
+    },
     "dashboard": {
       "bulk_fill_one": "Remplir 1 absent comme 'Présent'",
       "bulk_fill_few": "Remplir {{count}} absents comme 'Présent'",
@@ -4758,10 +4833,39 @@
         "focus_title": "Plan de travail",
         "materials_button": "Supports",
         "materials_desc": "Téléchargez les partitions PDF et travaillez vos parties avec le lecteur.",
+        "materials_first_piece": "Vous commencez par : {{title}}",
+        "materials_open_piece": "Ouvrir la partition",
         "materials_subtitle": "Préparez-vous pour la répétition",
         "materials_title": "Vos partitions",
         "no_focus": "Aucun plan détaillé pour cette répétition.",
         "reported_absences": "Absences signalées :"
+      },
+      "focus_title": "Thème de la répétition",
+      "page": {
+        "back": "Agenda",
+        "gone": {
+          "description": "Cette répétition a été annulée, ou vous n’y êtes pas convoqué. Consultez votre agenda.",
+          "title": "Cette répétition n’existe pas"
+        },
+        "loading": "Ouverture de la répétition…",
+        "title": "Plan de la",
+        "title_highlight": "répétition."
+      },
+      "plan": {
+        "empty": "Le plan de cette répétition n’a pas encore été établi.",
+        "empty_past": "Aucun plan n’a été établi pour cette répétition.",
+        "more_rows_one": "…et {{count}} point de plus",
+        "more_rows_other": "…et {{count}} points de plus",
+        "my_part": "Votre partie",
+        "my_part_inline": "Votre partie {{window}}",
+        "not_called": "Le plan ne prévoit pas votre voix",
+        "not_called_hint": "La convocation reste valable — la présence compte comme d’habitude.",
+        "open": "Ouvrir la répétition",
+        "open_rest": "Plan complet ({{total}} pts)",
+        "print": "Imprimer",
+        "title": "Plan de répétition",
+        "window_open": "à partir de {{start}}",
+        "window_range": "{{start}}–{{end}}"
       },
       "form": {
         "cancel": "Annuler",

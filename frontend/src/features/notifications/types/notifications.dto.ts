@@ -1,5 +1,7 @@
 // frontend/src/features/notifications/types/notifications.dto.ts
 
+import type { RehearsalPlanWindow } from "@/shared/types";
+
 export type NotificationLevel = "INFO" | "WARNING" | "URGENT";
 
 export type NotificationType =
@@ -282,6 +284,24 @@ export interface RehearsalReminderMetadata extends EventMomentMetadata {
   rehearsal_date?: string | null;
   location?: string | null;
   focus?: string | null;
+  /** The plan as it stood when the reminder went out — one entry per row, in
+   *  order. The live plan is on the rehearsal page; this is the glance. */
+  plan?: RehearsalPlanLine[];
+  /**
+   * This reader's own part of the evening, in the rehearsal's wall clock. The
+   * reminder is the only rehearsal message addressed to one person, so it is
+   * the only one that carries it. `null` = the plan has nothing to say (no
+   * plan, or the whole evening); `calls_me: false` = no row calls this voice,
+   * and the call still stands.
+   */
+  my_window?: RehearsalPlanWindow | null;
+}
+
+/** One row of a rehearsal plan as a notification carries it. */
+export interface RehearsalPlanLine {
+  time: string;
+  title: string;
+  note: string;
 }
 
 export interface PieceCastingMetadata extends EventMomentMetadata {

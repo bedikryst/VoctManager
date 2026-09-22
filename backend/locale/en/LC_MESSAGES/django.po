@@ -3585,3 +3585,140 @@ msgstr ""
 msgctxt "call sheet"
 msgid "Instrumental"
 msgstr ""
+
+#: core/voice_labels.py:150
+#, python-format
+msgid "Sectional: %(sections)s"
+msgstr ""
+
+#: roster/models.py:65
+#, python-format
+msgid ""
+"Called sections must be letters from \"%(letters)s\" in that order, each at "
+"most once."
+msgstr ""
+
+#: roster/models.py
+msgid "Excluded voice lines must be a list of voice line codes."
+msgstr ""
+
+#: roster/models.py
+msgid "Excluded voice lines must be voice line codes, each at most once."
+msgstr ""
+
+#: roster/models.py
+msgid "Plan Announced At"
+msgstr ""
+
+#: roster/models.py
+msgid "Rehearsal Plan Item"
+msgstr ""
+
+#: roster/models.py
+msgid "Rehearsal Plan Items"
+msgstr ""
+
+#: roster/models.py
+msgid "Position"
+msgstr ""
+
+#: roster/models.py
+msgid "Label"
+msgstr ""
+
+#: roster/models.py
+msgid "Note"
+msgstr ""
+
+#: roster/models.py
+msgid "Starts At"
+msgstr ""
+
+#: roster/models.py
+msgid "Excluded Voice Lines"
+msgstr ""
+
+#: roster/models.py
+msgid "Excludes Instrumentalists"
+msgstr ""
+
+#: roster/models.py
+msgid "Done At"
+msgstr ""
+
+#: roster/services.py
+msgid "Every piece on the plan must be in the project's programme."
+msgstr ""
+
+#: roster/services.py
+msgid "A row on the plan does not belong to this rehearsal."
+msgstr ""
+
+#: roster/services.py
+msgid "The plan can be ticked off once the rehearsal has started."
+msgstr ""
+
+#: roster/services.py
+msgid "There is no plan to send yet."
+msgstr ""
+
+#: roster/services.py
+msgid "The plan can no longer be sent once the rehearsal has started."
+msgstr ""
+
+#: notifications/message_content.py
+msgid "Rehearsal plan"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal plan — %(when)s"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "Rehearsal plan is up"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal plan — %(project)s"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"The conductor has sent the plan for the %(project)s rehearsal: what is "
+"rehearsed, in what order, and from when. Open it to see which part of the "
+"evening is yours."
+msgstr ""
+
+#: notifications/message_content.py:1021
+msgid "Open the plan"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "from %(start)s"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "Your part: %(window)s."
+msgstr ""
+
+#: notifications/message_content.py
+msgctxt "rehearsal plan"
+msgid "Your part"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "The plan doesn't call your voice — you're still expected."
+msgstr ""
+
+#: notifications/message_content.py
+msgid "Plan"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "Open the rehearsal"
+msgstr ""

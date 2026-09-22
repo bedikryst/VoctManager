@@ -95,11 +95,15 @@ export interface ProjectBulkFeeDTO {
 export interface RehearsalCreateDTO {
   project_id: string;
   date_time: string;
+  /** Length in minutes; null = nobody timed it, and no surface states an end. */
+  duration_minutes?: number | null;
   timezone: string;
   location_id?: string | null;
   focus?: string;
   is_mandatory: boolean;
   calls_instrumentalists?: boolean;
+  /** A sectional's SATB letters in canonical order ("SA"); "" = the whole cast. */
+  called_sections?: string;
   invited_participations?: string[];
   /** Who stands in front; null = the project's conductor. */
   led_by_id?: string | null;
@@ -107,11 +111,14 @@ export interface RehearsalCreateDTO {
 
 export interface RehearsalUpdateDTO {
   date_time?: string;
+  /** Null clears an end the conductor no longer promises; absent leaves it alone. */
+  duration_minutes?: number | null;
   timezone?: string;
   location_id?: string | null;
   focus?: string;
   is_mandatory?: boolean;
   calls_instrumentalists?: boolean;
+  called_sections?: string;
   invited_participations?: string[];
   /** Null hands the evening back to the conductor; absent leaves it alone. */
   led_by_id?: string | null;

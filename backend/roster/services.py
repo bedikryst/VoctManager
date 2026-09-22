@@ -74,6 +74,7 @@ from .dtos import (
     ProjectCreateDTO,
     ProjectUpdateDTO,
     RehearsalCreateDTO,
+    RehearsalPlanRowDTO,
     RehearsalUpdateDTO,
 )
 from .exceptions import (
@@ -104,6 +105,7 @@ from .models import (
     ProjectPieceCasting,
     Rehearsal,
     RehearsalDelegate,
+    RehearsalPlanItem,
     VoiceType,
 )
 from .permissions import live_delegate_q
@@ -1301,6 +1303,26 @@ def rehearsal_ics_payload(rehearsal: Rehearsal) -> dict:
     }
 
 
+def rehearsal_plan_lines(rehearsal: Rehearsal) -> list[dict[str, str]]:
+    """The plan as a message carries it: one entry per row, in plan order,
+    with its clock, its title and its note.
+
+    Kept out of `rehearsal_notification_context` on purpose. That context is
+    shared by every rehearsal notice, and a cancellation or a change of date
+    listing what was going to be rehearsed buries the one fact it is sent for.
+    Only the reminder — the message a singer plans the evening from — carries
+    the plan.
+    """
+    return [
+        {
+            'time': item.starts_at.strftime('%H:%M') if item.starts_at else '',
+            'title': item.title,
+            'note': item.note,
+        }
+        for item in rehearsal.plan_items.select_related('piece').all()
+    ]
+
+
 def rehearsal_notification_context(rehearsal: Rehearsal) -> dict[str, str]:
     """Compact rehearsal facts reused by push, email, and in-app surfaces."""
     return {
@@ -1662,14 +1684,15 @@ class RehearsalOperationsService:
                 old_value = getattr(rehearsal, attr)
                 # Who is called is not a change to the rehearsal: the invited
                 # list is set below without a diff entry, and the
-                # instrumentalists' flag is the same kind of fact. The queue
+                # instrumentalists' flag and the called sections are the same
+                # kind of fact. The queue
                 # resolves recipients off the rehearsal at publish time, so a
                 # newly called player is reached by whatever is announced next.
                 # Who leads is not a diff for the cast either — the cast reads
                 # it off the schedule, and the person named is told directly.
                 if attr == "led_by_id":
                     lead_changed = old_value != value
-                elif old_value != value and attr != "calls_instrumentalists":
+                elif old_value != value and attr not in ("calls_instrumentalists", "called_sections"):
                     if attr == "is_mandatory":
                         # Self-describing state change — never a raw "True → False".
                         changes.append(_change("now_mandatory" if value else "now_optional", None, None))
@@ -1719,8 +1742,9 @@ class RehearsalOperationsService:
         Silent for the conductor: an explicit value equal to the podium says
         the same thing as null, and the conductor telling himself would be
         noise. Silent, and logged, for a leader with no account — the roster
-        holds people, not logins. The sections travel as codes so the push
-        can say "(soprany, alty)" in the reader's language.
+        holds people, not logins. The sections travel as codes — the letters
+        of `called_sections`, nothing for a tutti or a hand-picked list — so
+        the push can say "(soprany, alty)" in the reader's language.
         """
         artist = rehearsal.led_by
         if artist is None or artist.pk == rehearsal.project.conductor_id:
@@ -1732,26 +1756,11 @@ class RehearsalOperationsService:
             )
             return
 
-        # The sectional form groups the cast by the leading letter of the
-        # voice type; the same reading here keeps the push and the form
-        # naming the same sections. A tutti names nobody and sends nothing.
-        sections: list[str] = []
-        for participation in (
-            rehearsal.invited_participations
-            .filter(is_deleted=False)
-            .select_related('artist')
-            .order_by('artist__voice_type')
-        ):
-            family = (participation.artist.voice_type or '')[:1]
-            if family in ('S', 'A', 'T', 'B') and family not in sections:
-                sections.append(family)
-        sections.sort(key='SATB'.index)
-
         metadata = RehearsalLeadAssignedMetadata(
             rehearsal_id=rehearsal.pk,
             project_id=rehearsal.project_id,
             project_name=rehearsal.project.title,
-            sections=tuple(sections),
+            sections=tuple(rehearsal.called_sections),
             **rehearsal_notification_context(rehearsal),
         ).model_dump(mode="json")
         recipient_id = str(artist.user_id)
@@ -1829,6 +1838,146 @@ class RehearsalOperationsService:
             metadata=metadata,
             exclude_user_id=author_id,
         ))
+
+    @staticmethod
+    def replace_plan(
+        rehearsal: Rehearsal, rows: Sequence[RehearsalPlanRowDTO],
+    ) -> list[RehearsalPlanItem]:
+        """Save the plan whole, silently.
+
+        Declarative like a divisi board: the rows arrive in their final order,
+        a row naming an existing id keeps that row (and its done stamp), any
+        row not named is gone. Silent by decision — the conductor redraws the
+        plan a dozen times the day before; telling the cast is `announce_plan`.
+        A piece outside the project's programme is refused: one project per
+        rehearsal, and the row's piece is chosen from that programme.
+
+        A row that comes back unchanged is not re-saved, so its `updated_at`
+        still says when it was last CHANGED — that is what "zmieniony po
+        wysłaniu" compares against `plan_announced_at`.
+        """
+        programme = set(
+            ProgramItem.objects.filter(project_id=rehearsal.project_id)
+            .values_list('piece_id', flat=True)
+        )
+        if any(row.piece is not None and row.piece not in programme for row in rows):
+            raise ValueError(_("Every piece on the plan must be in the project's programme."))
+
+        with transaction.atomic():
+            existing = {
+                item.id: item
+                for item in RehearsalPlanItem.objects.select_for_update().filter(rehearsal=rehearsal)
+            }
+            kept_ids = {row.id for row in rows if row.id is not None}
+            if kept_ids - existing.keys():
+                raise ValueError(_("A row on the plan does not belong to this rehearsal."))
+
+            RehearsalPlanItem.objects.filter(rehearsal=rehearsal).exclude(id__in=kept_ids).delete()
+
+            # Positions are unique per rehearsal and the constraint is checked
+            # row by row, so a reorder written in place trips over itself.
+            # The kept rows are parked beyond every position in play — old or
+            # new — and then walked into their final places.
+            original_position = {item.id: item.position for item in existing.values()}
+            kept = [existing[row.id] for row in rows if row.id is not None]
+            if kept:
+                park_base = max(
+                    len(rows), max(item.position for item in existing.values()),
+                )
+                for offset, item in enumerate(kept, start=1):
+                    item.position = park_base + offset
+                RehearsalPlanItem.objects.bulk_update(kept, ['position'])
+
+            saved: list[RehearsalPlanItem] = []
+            for position, row in enumerate(rows, start=1):
+                values = {
+                    'piece_id': row.piece,
+                    'label': row.label,
+                    'note': row.note,
+                    'starts_at': row.starts_at,
+                    'excluded_voice_lines': list(row.excluded_voice_lines),
+                    'excludes_instrumentalists': row.excludes_instrumentalists,
+                }
+                if row.id is None:
+                    item = RehearsalPlanItem.objects.create(
+                        rehearsal=rehearsal, position=position, **values,
+                    )
+                else:
+                    item = existing[row.id]
+                    changed = any(
+                        getattr(item, field) != value for field, value in values.items()
+                    )
+                    for field, value in values.items():
+                        setattr(item, field, value)
+                    item.position = position
+                    # A pure move counts: the order is part of what was sent.
+                    if changed or original_position[item.id] != position:
+                        item.save()
+                    else:
+                        # Back from the parking slot without touching
+                        # `updated_at` — on the row or on the instance.
+                        RehearsalPlanItem.objects.filter(pk=item.pk).update(position=position)
+                saved.append(item)
+        return saved
+
+    @staticmethod
+    def mark_plan_item(
+        rehearsal: Rehearsal, item_id: UUID | str, *, done: bool,
+    ) -> RehearsalPlanItem:
+        """Tick or untick one row — the first step of the debrief, so it is
+        refused before the rehearsal has started, exactly as the debrief is.
+        Ticking is not a change to the plan the cast was sent: only `done_at`
+        is written, and the row's `updated_at` stays where the last edit
+        left it."""
+        if timezone.now() < rehearsal.date_time:
+            raise ValueError(_("The plan can be ticked off once the rehearsal has started."))
+        item = (
+            RehearsalPlanItem.objects.select_related('piece')
+            .get(rehearsal=rehearsal, pk=item_id)
+        )
+        if (item.done_at is not None) != done:
+            item.done_at = timezone.now() if done else None
+            item.save(update_fields=['done_at'])
+        return item
+
+    @staticmethod
+    def announce_plan(rehearsal: Rehearsal) -> Rehearsal:
+        """The conductor sends the plan: stamp the send, queue one notice for
+        the cast. Through the announcement queue like every other rehearsal
+        change (a DRAFT project stays silent), with the change key `plan` so
+        the copy says the plan is up rather than that the evening moved. The
+        push cannot personalise, so the reader's own window is not in it —
+        the page it opens is exact, and the reminder carries the window.
+
+        The mirror of `mark_plan_item`'s gate: a plan is something to arrive
+        with, so it cannot be sent once the evening is under way — the notice
+        would reach phones that are already in the room."""
+        if not rehearsal.plan_items.exists():
+            raise ValueError(_("There is no plan to send yet."))
+        if timezone.now() >= rehearsal.date_time:
+            raise ValueError(_("The plan can no longer be sent once the rehearsal has started."))
+        with transaction.atomic():
+            rehearsal.plan_announced_at = timezone.now()
+            rehearsal.save(update_fields=['plan_announced_at', 'updated_at'])
+
+            metadata = RehearsalUpdatedMetadata(
+                rehearsal_id=rehearsal.id,
+                project_id=rehearsal.project_id,
+                project_name=rehearsal.project.title,
+                **rehearsal_notification_context(rehearsal),
+                changes=[_change("plan", None, None)],
+            ).model_dump(mode="json")
+            metadata["ics"] = rehearsal_ics_payload(rehearsal)
+            queue_broadcast(
+                project=rehearsal.project,
+                subject_type=AnnouncementSubject.REHEARSAL,
+                subject_id=str(rehearsal.id),
+                kind=AnnouncementKind.CHANGED,
+                notification_type=NotificationType.REHEARSAL_UPDATED,
+                level=NotificationLevel.WARNING,
+                metadata=metadata,
+            )
+        return rehearsal
 
     @staticmethod
     def delete_rehearsal(rehearsal: Rehearsal) -> None:

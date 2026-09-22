@@ -9,6 +9,8 @@
  * and PRON in no group at all, which is how those lines became unreachable on
  * the board. `VoiceType` (the singer's own voice) is a different enum and gets
  * its own order, used to group the unassigned pool the way a roster is read.
+ * Also the seat → SATB section mapping a sectional rehearsal calls by,
+ * mirrored from the server's `core/voice_labels.py`.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/voiceFamilies
  */
@@ -89,3 +91,68 @@ export const voiceTypeRank = (voiceType: VoiceType | null): number => {
   const index = VOICE_TYPE_ORDER.indexOf(voiceType);
   return index === -1 ? VOICE_TYPE_ORDER.length : index;
 };
+
+/**
+ * The four sections a sectional rehearsal calls, in the order they are
+ * written into `Rehearsal.called_sections` ("SA", "TB"). Mirror of
+ * `core/voice_labels.py` on the server — the same table on both sides is what
+ * keeps the count the form previews equal to the roll call the server builds.
+ */
+export type SectionLetter = "S" | "A" | "T" | "B";
+export const SECTION_LETTERS: readonly SectionLetter[] = ["S", "A", "T", "B"];
+
+/**
+ * Which sections a VOICE TYPE belongs to — the declared home of the three
+ * intermediate voices (a mezzo is called with the sopranos AND the altos, a
+ * countertenor with the altos, a baritone with the tenors AND the basses;
+ * over-calling is the chosen failure mode). A conductor or a player belongs
+ * to no section.
+ */
+const SECTIONS_BY_VOICE_TYPE: Readonly<Record<VoiceType, string>> = {
+  SOP: "S",
+  MEZ: "SA",
+  ALT: "A",
+  CT: "A",
+  TEN: "T",
+  BAR: "TB",
+  BAS: "B",
+  DIR: "",
+  INS: "",
+};
+
+/** Which sections a standalone VOICE LINE belongs to; divisi lines answer by family. */
+const SECTIONS_BY_STANDALONE_LINE: Readonly<Record<string, string>> = {
+  MS: "SA",
+  CT: "A",
+  BAR: "TB",
+};
+
+/** "AS" / ["A", "S", "S"] → "SA": deduplicated, in SATB order, unknown letters dropped. */
+export const canonicalSectionLetters = (letters: Iterable<string>): string => {
+  const wanted = new Set(letters);
+  return SECTION_LETTERS.filter((letter) => wanted.has(letter)).join("");
+};
+
+export const sectionLettersOfVoiceType = (voiceType: VoiceType | null): string =>
+  voiceType ? SECTIONS_BY_VOICE_TYPE[voiceType] : "";
+
+export const sectionLettersOfVoiceLine = (voiceLine: string | null): string => {
+  if (!voiceLine) return "";
+  const family = voiceFamilyOf(voiceLine);
+  if (family === "S" || family === "A" || family === "T" || family === "B") return family;
+  return SECTIONS_BY_STANDALONE_LINE[voiceLine.toUpperCase()] ?? "";
+};
+
+/**
+ * The sections that call one seat of a line-up: the declared seat wins over
+ * the voice type (a mezzo seated as A1 is an alto for this concert's
+ * sectionals); a seat on a role line, or no seat, falls back to the voice.
+ */
+export const sectionLettersOfSeat = (
+  voiceType: VoiceType | null,
+  voiceLine: string | null,
+): string => sectionLettersOfVoiceLine(voiceLine) || sectionLettersOfVoiceType(voiceType);
+
+/** Whether a seat answering to `seatLetters` is called by `calledSections` ("" = everyone). */
+export const sectionsCallSeat = (calledSections: string, seatLetters: string): boolean =>
+  calledSections === "" || [...seatLetters].some((letter) => calledSections.includes(letter));

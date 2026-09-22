@@ -6,6 +6,7 @@ from uuid import UUID
 
 from django.db.models import Count, Prefetch, Q, QuerySet
 
+from core.voice_labels import canonical_section_letters, section_letters_of_seat
 from roster.domain.day_timeline import localize
 from roster.models import (
     Artist,
@@ -27,17 +28,28 @@ if TYPE_CHECKING:
 _WINDOW_SLACK = timedelta(days=1)
 
 
-def _schedule_seats(**artist_lookup: Any) -> list[tuple[UUID, UUID]]:
-    """`(participation_id, project_id)` for every seat that belongs in a schedule.
+def _schedule_seats(**artist_lookup: Any) -> tuple[list[tuple[UUID, UUID]], str]:
+    """`(participation_id, project_id)` for every seat that belongs in a
+    schedule, plus the SATB letters those seats answer a sectional by.
 
     `Participation.live_seats` in the shape this module reads it. Materialising
     the pairs here is what lets the dashboard and the absence range share one
     answer: the count a singer is shown before submitting cannot disagree with
-    the rows the submission writes, because neither re-derives the rule.
+    the rows the submission writes, because neither re-derives the rule. The
+    letters ride on the same query — `Rehearsal.calling_q` needs them beside
+    the ids, and a second round trip for them would be paid on every schedule.
     """
-    return list(
-        Participation.live_seats(**artist_lookup).values_list("id", "project_id")
+    rows = list(
+        Participation.live_seats(**artist_lookup).values_list(
+            "id", "project_id", "default_voice_line", "artist__voice_type"
+        )
     )
+    letters = canonical_section_letters(
+        letter
+        for _pid, _project_id, voice_line, voice_type in rows
+        for letter in section_letters_of_seat(voice_type, voice_line)
+    )
+    return [(pid, project_id) for pid, project_id, _line, _type in rows], letters
 
 
 def get_artist_rehearsals_in_window(
@@ -55,7 +67,7 @@ def get_artist_rehearsals_in_window(
     Rehearsals of a project the artist merely conducts are absent by construction
     — there is no participation there, so there is no attendance row to write.
     """
-    seats = _schedule_seats(artist_id=artist_id)
+    seats, section_letters = _schedule_seats(artist_id=artist_id)
     if not seats:
         return []
 
@@ -69,7 +81,13 @@ def get_artist_rehearsals_in_window(
         Rehearsal.objects.filter(
             project_id__in=list(participation_by_project), is_deleted=False
         )
-        .filter(Rehearsal.calling_q(participation_ids, instrumentalist=instrumentalist))
+        .filter(
+            Rehearsal.calling_q(
+                participation_ids,
+                instrumentalist=instrumentalist,
+                section_letters=section_letters,
+            )
+        )
         .filter(
             date_time__gte=(window_start - _WINDOW_SLACK).replace(tzinfo=UTC),
             date_time__lte=(window_end + _WINDOW_SLACK).replace(tzinfo=UTC),
@@ -119,7 +137,7 @@ def get_artist_schedule(
     # cast has not been told about must not appear in their schedule — being cast in
     # an unpublished concert is a plan the conductor is still making. The conductor's
     # own slice (`conducted_project_ids`) is untouched: they are the one planning it.
-    active_parts = _schedule_seats(artist__user=user)
+    active_parts, section_letters = _schedule_seats(artist__user=user)
     participation_ids = [pid for pid, _ in active_parts]
     sung_project_ids = {proj_id for _, proj_id in active_parts}
     participation_by_project = {
@@ -168,7 +186,9 @@ def get_artist_schedule(
         .filter(
             Q(project_id__in=conducted_project_ids)
             | Rehearsal.calling_q(
-                participation_ids, instrumentalist=is_instrumentalist_account(user)
+                participation_ids,
+                instrumentalist=is_instrumentalist_account(user),
+                section_letters=section_letters,
             )
         )
         .distinct()
@@ -182,6 +202,7 @@ def get_artist_schedule(
                 ),
                 to_attr="my_attendances",
             ),
+            "plan_items__piece",
         )
         .order_by("date_time")
     )

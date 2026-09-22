@@ -20,6 +20,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
 import { cn } from "@/shared/lib/utils";
+import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
@@ -95,6 +96,33 @@ export function SetlistRow({
       })
     : undefined;
 
+  // How often the evening actually reached this piece, off the ticked plan
+  // rows. Silent until the project has ticked something somewhere (the server
+  // sends null until then) — before the first debrief the whole setlist stands
+  // at zero and the line would say nothing. After it, the zero is the point.
+  const rehearsedCount = item.rehearsed_count;
+  const neverRehearsed = rehearsedCount === 0;
+  const rehearsedLabel =
+    rehearsedCount === null || rehearsedCount === undefined
+      ? null
+      : neverRehearsed
+        ? t("projects.program.rehearsed.never", "Nie ćwiczone")
+        : t(
+            "projects.program.rehearsed.count",
+            "Ćwiczone {{times}}× · ostatnio {{date}}",
+            {
+              // `times`, not `count`: i18next reads `count` as a plural
+              // selector, and "3×" does not inflect in any of the three.
+              times: rehearsedCount,
+              // Midday, not midnight: a bare ISO date is parsed as UTC and a
+              // browser west of Greenwich would render the day before.
+              date: formatLocalizedDate(
+                `${item.last_rehearsed_on}T12:00:00`,
+                { day: "2-digit", month: "2-digit" },
+              ),
+            },
+          );
+
   return (
     <li
       ref={setNodeRef}
@@ -167,9 +195,19 @@ export function SetlistRow({
               </Badge>
             )}
           </span>
-          {meta && (
+          {(meta || rehearsedLabel) && (
             <Caption as="span" color="muted" className="truncate">
               {meta}
+              {meta && rehearsedLabel && " · "}
+              {rehearsedLabel && (
+                <span
+                  className={
+                    neverRehearsed ? "text-ethereal-gold" : undefined
+                  }
+                >
+                  {rehearsedLabel}
+                </span>
+              )}
             </Caption>
           )}
           {slotOptions && onChangeSlot && (

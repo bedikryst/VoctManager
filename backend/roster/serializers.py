@@ -9,7 +9,7 @@ Handles pure data transformation (Object <-> JSON).
 Delegates role-based data exposure to explicitly defined serializers routed via ViewSets.
 """
 import zoneinfo
-from datetime import timedelta
+from datetime import date, timedelta
 from typing import Any
 
 from django.conf import settings
@@ -22,10 +22,12 @@ from core.permissions import user_is_manager
 from core.serializers import UserProfileSerializer
 from core.voice_labels import voice_line_label
 from logistics.models import Location
+from roster.domain.day_timeline import localize
 from roster.domain.liturgy import (
     ProgramItemPresentation,
     build_program_presentation,
 )
+from roster.domain.rehearsal_plan import window_payload
 
 from .dtos import validate_instrument
 from .models import (
@@ -39,9 +41,11 @@ from .models import (
     ProjectPieceCasting,
     Rehearsal,
     RehearsalDelegate,
+    RehearsalPlanItem,
     VoiceType,
 )
 from .permissions import live_delegate_q
+from .queries.plan_queries import PlanReading
 
 # --- 1. ARTIST SERIALIZERS ---
 
@@ -420,14 +424,57 @@ class ProjectSerializer(serializers.ModelSerializer):
         ]
 
 
+class RehearsalPlanItemSerializer(serializers.ModelSerializer):
+    """One row of the plan, read-only: the plan is written whole through
+    `RehearsalPlanDTO`, and the done stamp through its own door. Reads
+    `piece`, so the rows must be prefetched with it."""
+
+    piece_title = serializers.SerializerMethodField()
+    title = serializers.CharField(read_only=True)
+    # A wall clock, in the rehearsal's zone, in the shape the run sheet uses.
+    starts_at = serializers.TimeField(format='%H:%M', read_only=True, allow_null=True)
+
+    class Meta:
+        model = RehearsalPlanItem
+        fields = (
+            'id',
+            'position',
+            'piece',
+            'piece_title',
+            'label',
+            'title',
+            'note',
+            'starts_at',
+            'excluded_voice_lines',
+            'excludes_instrumentalists',
+            'done_at',
+            'updated_at',
+        )
+        read_only_fields = fields
+
+    def get_piece_title(self, obj: RehearsalPlanItem) -> str | None:
+        return str(obj.piece.title) if obj.piece_id and obj.piece else None
+
+
 class RehearsalSerializer(serializers.ModelSerializer):
     """
     Serializes Rehearsal schedules.
-    ENTERPRISE NOTE: 'absent_count' is now expected to be pre-annotated by the DB 
+    ENTERPRISE NOTE: 'absent_count' is now expected to be pre-annotated by the DB
     via the QuerySet to prevent N+1 serialization bottlenecks.
     """
     absent_count = serializers.IntegerField(read_only=True, default=0)
+    # The plan, in order, for every reader — nothing in it is manager-only. The
+    # per-reader answers (`plan[].calls_me`, `my_plan_window`) appear only when
+    # the view computed them for this reader (`plan_readings` in the context:
+    # the schedule dashboard and the single-rehearsal read); elsewhere they
+    # are null, never guessed.
+    plan = serializers.SerializerMethodField()
+    my_plan_window = serializers.SerializerMethodField()
     location = LocationSnippetSerializer(read_only=True)
+    # The programme this evening belongs to, by name. A rehearsal read on its
+    # own — the chorister's page, opened from a push — has no list around it to
+    # borrow the title from, and "Próba" with no programme names nothing.
+    project_title = serializers.CharField(source='project.title', read_only=True)
     # Derived here rather than in each client: the length is what is stored, and
     # a panel that added minutes to the start on its own would be a second place
     # able to disagree with the calendar export about when the evening ends.
@@ -473,6 +520,7 @@ class RehearsalSerializer(serializers.ModelSerializer):
             'is_deleted',
             'project',
             'project_id',
+            'project_title',
             'date_time',
             'duration_minutes',
             'end_date_time',
@@ -482,6 +530,7 @@ class RehearsalSerializer(serializers.ModelSerializer):
             'focus',
             'is_mandatory',
             'calls_instrumentalists',
+            'called_sections',
             'invited_participations',
             'led_by_id',
             'led_by_artist_id',
@@ -489,6 +538,9 @@ class RehearsalSerializer(serializers.ModelSerializer):
             'debrief',
             'debrief_by_name',
             'debrief_at',
+            'plan',
+            'plan_announced_at',
+            'my_plan_window',
             'absent_count',
         )
         read_only_fields = (
@@ -497,10 +549,12 @@ class RehearsalSerializer(serializers.ModelSerializer):
             'updated_at',
             'is_deleted',
             'project',
+            'project_title',
             'location',
             'end_date_time',
             'debrief',
             'debrief_at',
+            'plan_announced_at',
             'absent_count',
         )
 
@@ -526,6 +580,40 @@ class RehearsalSerializer(serializers.ModelSerializer):
         for field in self.DEBRIEF_FIELDS:
             data.pop(field, None)
         return data
+
+    def _plan_reading(self, obj: Rehearsal) -> PlanReading | None:
+        readings = self.context.get('plan_readings')
+        if not isinstance(readings, dict):
+            return None
+        reading = readings.get(obj.id)
+        return reading if isinstance(reading, PlanReading) else None
+
+    def get_plan(self, obj: Rehearsal) -> list[dict[str, Any]]:
+        rows = RehearsalPlanItemSerializer(obj.plan_items.all(), many=True).data
+        reading = self._plan_reading(obj)
+        for index, row in enumerate(rows):
+            row['calls_me'] = (
+                reading.calls[index]
+                if reading is not None and index < len(reading.calls)
+                else None
+            )
+            # Whether the row's music opens for this reader — false for an
+            # instrumental item read through a singer's seat. Null when not
+            # computed, and a client then links as before: the readers without
+            # a reading (a manager, a stand-in) are the ones nothing is
+            # withheld from.
+            row['piece_open'] = (
+                reading.opens[index]
+                if reading is not None and index < len(reading.opens)
+                else None
+            )
+        return list(rows)
+
+    def get_my_plan_window(self, obj: Rehearsal) -> dict[str, Any] | None:
+        reading = self._plan_reading(obj)
+        if reading is None:
+            return None
+        return window_payload(reading.window)
 
     def get_led_by_name(self, obj: Rehearsal) -> str | None:
         # The bare name, as for `debrief_by_name`: this line names whoever
@@ -651,6 +739,8 @@ class ProgramItemSerializer(serializers.ModelSerializer):
     slot_label = serializers.SerializerMethodField()
     section = serializers.SerializerMethodField()
     role_prefix_effective = serializers.SerializerMethodField()
+    rehearsed_count = serializers.SerializerMethodField()
+    last_rehearsed_on = serializers.SerializerMethodField()
 
     class Meta:
         model = ProgramItem
@@ -690,6 +780,60 @@ class ProgramItemSerializer(serializers.ModelSerializer):
 
     def get_role_prefix_effective(self, obj: ProgramItem) -> str:
         return self._presentation(obj).role_prefix
+
+    def _rehearsed(self, item: ProgramItem) -> dict[Any, tuple[int, date]] | None:
+        """How often each piece of this programme has actually been worked on,
+        counted off the ticked plan rows of the project's rehearsals and
+        memoized per project like the liturgical labels above — one query for
+        a whole setlist.
+
+        ``None`` while the project has never ticked a row anywhere: before the
+        first debrief every piece stands at zero, and a setlist of "nie
+        ćwiczone" says nothing about the programme. The figure earns its place
+        the moment one row is ticked, because from then on the zero is the
+        point — it is the piece nobody has touched a week before the concert.
+
+        Dated by the REHEARSAL, not by the tick: a conductor who writes the
+        debrief on Sunday still rehearsed the piece on Wednesday, and the
+        caption is read as "when we last sang it".
+        """
+        cache: dict[Any, dict[Any, tuple[int, date]] | None]
+        cache = getattr(self, '_rehearsed_counts', None) or {}
+        self._rehearsed_counts = cache
+        if item.project_id not in cache:
+            tallies: dict[Any, tuple[int, date]] = {}
+            ticked = 0
+            rows = RehearsalPlanItem.objects.filter(
+                rehearsal__project_id=item.project_id,
+                rehearsal__is_deleted=False,
+                done_at__isnull=False,
+            ).values_list('piece_id', 'rehearsal__date_time', 'rehearsal__timezone')
+            for piece_id, moment, zone in rows:
+                ticked += 1
+                local = localize(moment, zone)
+                if not piece_id or local is None:
+                    continue
+                on = local.date()
+                previous = tallies.get(piece_id)
+                tallies[piece_id] = (
+                    (previous[0] + 1, max(previous[1], on)) if previous else (1, on)
+                )
+            cache[item.project_id] = tallies if ticked else None
+        return cache[item.project_id]
+
+    def get_rehearsed_count(self, obj: ProgramItem) -> int | None:
+        tallies = self._rehearsed(obj)
+        if tallies is None:
+            return None
+        entry = tallies.get(obj.piece_id)
+        return entry[0] if entry else 0
+
+    def get_last_rehearsed_on(self, obj: ProgramItem) -> str | None:
+        tallies = self._rehearsed(obj)
+        if tallies is None:
+            return None
+        entry = tallies.get(obj.piece_id)
+        return entry[1].isoformat() if entry else None
 
 class ProjectPieceCastingSerializer(serializers.ModelSerializer):
     voice_line_display = serializers.SerializerMethodField()

@@ -1,0 +1,197 @@
+{
+  "_doc": [
+    "Shared fixture for the rehearsal-plan rule: backend/roster/domain/rehearsal_plan.py",
+    "(item_calls_seat, plan_window_for_seat) and the client's mirror that counts the",
+    "seats an exclusion chip removes. Both replay this file in their own test suite,",
+    "so 'bez B2 · 3 osoby' on the panel cannot disagree with who the server calls.",
+    "",
+    "'pieces' maps a key to the lines the piece declares; an empty list means the",
+    "piece declares nothing and reads as the canonical four-part set. A row without",
+    "'piece' is a free row and offers the canonical set too.",
+    "'seats' carry the SATB letters a sectional calls them by, whether the seat is a",
+    "player's, and the line held on each piece of the board ('castings').",
+    "'rehearsal' gives the wall-clock start, the end (null = never timed) and whether",
+    "the evening calls the instrumentalists.",
+    "",
+    "'expected' per seat: 'calls' is one boolean per row; 'window' is null when the",
+    "plan has nothing to say (empty plan, or the whole rehearsal), {callsMe: false}",
+    "when no row calls the seat, else {callsMe: true, start, end} with end null for",
+    "an open end."
+  ],
+  "pieces": {
+    "orff": ["S1", "A1", "T1", "B1", "B2"],
+    "bach": ["S1", "A1", "T1", "B1"],
+    "lumen": ["S1", "S2", "A1", "T1", "B1"],
+    "canon": []
+  },
+  "seats": {
+    "sopran": { "letters": "S", "castings": { "orff": "S1", "bach": "S1", "lumen": "S1" } },
+    "alt": { "letters": "A", "castings": { "orff": "A1", "bach": "A1", "lumen": "A1" } },
+    "tenor": { "letters": "T", "castings": { "orff": "T1", "bach": "T1", "lumen": "T1" } },
+    "bas-b2": { "letters": "B", "castings": { "orff": "B2", "bach": "B1", "lumen": "B1" } },
+    "bas-uncast": { "letters": "B", "castings": {} },
+    "mezzo-uncast": { "letters": "SA", "castings": {} },
+    "mezzo-as-alt": { "letters": "SA", "castings": { "orff": "A1" } },
+    "sopran-solo": { "letters": "S", "castings": { "orff": "SOLO", "bach": "SOLO" } },
+    "baryton-uncast": { "letters": "TB", "castings": {} },
+    "organista": { "instrumentalist": true }
+  },
+  "cases": [
+    {
+      "name": "a ladies-only closer shortens the men's evening",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": true },
+      "rows": [
+        { "piece": "orff", "time": "18:00", "excluded": ["A1", "B2"] },
+        { "piece": "bach", "time": "19:00" },
+        { "piece": "lumen", "time": "20:30", "excluded": ["T1", "B1"], "excludesInstrumentalists": true }
+      ],
+      "expected": {
+        "sopran": { "calls": [true, true, true], "window": null },
+        "alt": { "calls": [false, true, true], "window": { "callsMe": true, "start": "19:00", "end": "21:00" } },
+        "tenor": { "calls": [true, true, false], "window": { "callsMe": true, "start": "18:00", "end": "20:30" } },
+        "bas-b2": { "calls": [false, true, false], "window": { "callsMe": true, "start": "19:00", "end": "20:30" } },
+        "bas-uncast": { "calls": [true, true, false], "window": { "callsMe": true, "start": "18:00", "end": "20:30" } },
+        "mezzo-uncast": { "calls": [true, true, true], "window": null },
+        "organista": { "calls": [true, true, false], "window": { "callsMe": true, "start": "18:00", "end": "20:30" } }
+      }
+    },
+    {
+      "name": "a gap in the middle is not an end",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "orff", "time": "18:00", "excluded": ["T1"] },
+        { "piece": "bach", "time": "19:00" },
+        { "piece": "lumen", "time": "19:30", "excluded": ["T1"] },
+        { "piece": "canon", "time": "20:00" }
+      ],
+      "expected": {
+        "tenor": { "calls": [false, true, false, true], "window": { "callsMe": true, "start": "19:00", "end": "21:00" } },
+        "alt": { "calls": [true, true, true, true], "window": null }
+      }
+    },
+    {
+      "name": "no clocks: the evening is one block",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "orff", "excluded": ["T1"] },
+        { "piece": "bach" }
+      ],
+      "expected": {
+        "tenor": { "calls": [false, true], "window": null },
+        "alt": { "calls": [true, true], "window": null }
+      }
+    },
+    {
+      "name": "no row calls the seat: the call stands, the plan says so",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "orff", "time": "18:00", "excluded": ["T1"] },
+        { "piece": "lumen", "time": "19:00", "excluded": ["T1"] }
+      ],
+      "expected": {
+        "tenor": { "calls": [false, false], "window": { "callsMe": false, "start": null, "end": null } },
+        "baryton-uncast": { "calls": [true, true], "window": null }
+      }
+    },
+    {
+      "name": "no duration: the window stays open",
+      "rehearsal": { "start": "18:00", "end": null, "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "orff", "time": "18:00", "excluded": ["T1"] },
+        { "piece": "bach", "time": "19:00" }
+      ],
+      "expected": {
+        "tenor": { "calls": [false, true], "window": { "callsMe": true, "start": "19:00", "end": null } },
+        "alt": { "calls": [true, true], "window": null }
+      }
+    },
+    {
+      "name": "rows before the first clock happen at the start",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "label": "Rozśpiewanie" },
+        { "piece": "orff", "time": "19:00", "excluded": ["T1"] },
+        { "piece": "bach", "time": "20:00", "excluded": ["T1"] }
+      ],
+      "expected": {
+        "tenor": { "calls": [true, false, false], "window": { "callsMe": true, "start": "18:00", "end": "19:00" } },
+        "sopran": { "calls": [true, true, true], "window": null }
+      }
+    },
+    {
+      "name": "a player answers to the rehearsal's flag before the row's",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "orff", "time": "18:00" },
+        { "piece": "lumen", "time": "19:00", "excludesInstrumentalists": true }
+      ],
+      "expected": {
+        "organista": { "calls": [false, false], "window": { "callsMe": false, "start": null, "end": null } },
+        "sopran": { "calls": [true, true], "window": null }
+      }
+    },
+    {
+      "name": "an undeclared piece reads as four parts",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "canon", "time": "18:00", "excluded": ["B1", "B2", "B3"] },
+        { "piece": "bach", "time": "19:00" }
+      ],
+      "expected": {
+        "bas-uncast": { "calls": [false, true], "window": { "callsMe": true, "start": "19:00", "end": "21:00" } },
+        "bas-b2": { "calls": [false, true], "window": { "callsMe": true, "start": "19:00", "end": "21:00" } },
+        "baryton-uncast": { "calls": [true, true], "window": null },
+        "mezzo-uncast": { "calls": [true, true], "window": null }
+      }
+    },
+    {
+      "name": "a casting wins over the section letters",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "orff", "time": "18:00", "excluded": ["A1"] },
+        { "piece": "bach", "time": "19:00", "excluded": ["S1"] },
+        { "piece": "lumen", "time": "20:00" }
+      ],
+      "expected": {
+        "mezzo-as-alt": { "calls": [false, true, true], "window": { "callsMe": true, "start": "19:00", "end": "21:00" } },
+        "mezzo-uncast": { "calls": [true, true, true], "window": null },
+        "sopran-solo": { "calls": [true, true, true], "window": null },
+        "sopran": { "calls": [true, false, true], "window": null }
+      }
+    },
+    {
+      "name": "ordering carries the warning: clocks are never sorted",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "orff", "time": "19:00" },
+        { "piece": "bach", "time": "18:30", "excluded": ["T1"] }
+      ],
+      "expected": {
+        "tenor": { "calls": [true, false], "window": { "callsMe": true, "start": "19:00", "end": "18:30" } }
+      }
+    },
+    {
+      "name": "consecutive rows on one clock are one block",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": false },
+      "rows": [
+        { "piece": "orff", "time": "18:15", "excluded": ["T1"] },
+        { "piece": "lumen" },
+        { "piece": "bach", "time": "19:00", "excluded": ["T1"] },
+        { "piece": "canon", "time": "19:00" }
+      ],
+      "expected": {
+        "tenor": { "calls": [false, true, false, true], "window": { "callsMe": true, "start": "18:15", "end": "21:00" } },
+        "alt": { "calls": [true, true, true, true], "window": { "callsMe": true, "start": "18:15", "end": "21:00" } }
+      }
+    },
+    {
+      "name": "an empty plan says nothing",
+      "rehearsal": { "start": "18:00", "end": "21:00", "callsInstrumentalists": true },
+      "rows": [],
+      "expected": {
+        "tenor": { "calls": [], "window": null },
+        "organista": { "calls": [], "window": null }
+      }
+    }
+  ]
+}

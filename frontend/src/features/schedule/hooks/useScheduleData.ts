@@ -85,6 +85,9 @@ export const useScheduleData = (artistId?: string | number) => {
           location: reh.location,
           focus: reh.focus,
           is_mandatory: reh.is_mandatory,
+          calledSections: reh.called_sections ?? "",
+          plan: reh.plan ?? [],
+          planWindow: reh.my_plan_window ?? null,
           status: item.my_attendance?.status ?? null,
           excuse_note: item.my_attendance?.excuse_note ?? null,
           absences: reh.absent_count || 0,
@@ -352,6 +355,12 @@ export const useScheduleData = (artistId?: string | number) => {
     setViewMode,
     expandedEventId,
     setExpandedEventId,
+    /**
+     * Every event, past and future, unsorted by view mode — the rehearsal page
+     * looks one evening up by id and has no view mode to filter by. The
+     * schedule itself reads `filteredEvents`.
+     */
+    allEvents: timelineEvents,
     filteredEvents,
     visibleEvents,
     hasMorePast,

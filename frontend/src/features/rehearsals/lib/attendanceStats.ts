@@ -7,6 +7,10 @@
  * @module features/rehearsals/lib/attendanceStats
  */
 
+import {
+  sectionLettersOfSeat,
+  sectionsCallSeat,
+} from "@/features/projects/lib/voiceFamilies";
 import { isInstrumentalist } from "@/shared/lib/voiceTypes";
 import type {
   Artist,
@@ -59,21 +63,33 @@ export const EMPTY_TALLY: AttendanceTally = {
 /**
  * The participations actually summoned to a rehearsal — the client's reading
  * of `Rehearsal.called_participations` on the server. A rehearsal with an
- * explicit `invited_participations` set is sectional/custom; an empty set means
- * tutti: everyone still on the project, minus the instrumentalists unless the
- * rehearsal calls them. Callers pass `projectParticipations` already pruned of
- * declined singers.
+ * explicit `invited_participations` set is a hand-picked call; otherwise
+ * `called_sections` narrows the cast to the sections it names (a seat is
+ * called when any of its letters is called — `sectionLettersOfSeat`), and an
+ * empty rule means tutti: everyone still on the project. A player has no
+ * section for that rule to name, so the flag alone speaks for them, sectional
+ * or not — the rehearsal pianist at a sectional. Callers pass
+ * `projectParticipations` already pruned of declined singers.
  */
 export const resolveInvited = (
-  rehearsal: Pick<Rehearsal, "invited_participations" | "calls_instrumentalists">,
+  rehearsal: Pick<
+    Rehearsal,
+    "invited_participations" | "calls_instrumentalists" | "called_sections"
+  >,
   projectParticipations: Participation[],
 ): Participation[] => {
   const invitedIds = rehearsal.invited_participations ?? [];
   if (invitedIds.length === 0) {
-    if (rehearsal.calls_instrumentalists) return projectParticipations;
-    return projectParticipations.filter(
-      (p) => !isInstrumentalist(p.artist_voice_type),
-    );
+    const calledSections = rehearsal.called_sections ?? "";
+    return projectParticipations.filter((p) => {
+      if (isInstrumentalist(p.artist_voice_type)) {
+        return Boolean(rehearsal.calls_instrumentalists);
+      }
+      return sectionsCallSeat(
+        calledSections,
+        sectionLettersOfSeat(p.artist_voice_type ?? null, p.default_voice_line ?? null),
+      );
+    });
   }
   const idSet = new Set(invitedIds.map(String));
   return projectParticipations.filter((p) => idSet.has(String(p.id)));

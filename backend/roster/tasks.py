@@ -5,6 +5,7 @@ Utilizes Celery and Redis to handle resource-intensive operations.
 """
 
 import io
+import json
 import logging
 import zipfile
 from datetime import timedelta
@@ -140,7 +141,11 @@ def _dispatch_rehearsal_reminders(now) -> int:
     # Imported inside the function for the reason given in
     # `dispatch_announcement_nudges`: services.py pulls in the whole roster
     # service layer, and this module is loaded by every Celery worker at startup.
-    from .services import rehearsal_ics_payload, rehearsal_notification_context
+    from .services import (
+        rehearsal_ics_payload,
+        rehearsal_notification_context,
+        rehearsal_plan_lines,
+    )
 
     lead = timedelta(hours=getattr(settings, "REHEARSAL_REMINDER_LEAD_HOURS", 24))
     # Drafts are filtered here rather than after the claim below, so a rehearsal whose
@@ -166,15 +171,10 @@ def _dispatch_rehearsal_reminders(now) -> int:
     rehearsals = (
         Rehearsal.objects.filter(id__in=ids)
         .select_related("project", "location")
-        .prefetch_related("invited_participations")
+        .prefetch_related("invited_participations", "plan_items")
     )
     for reh in rehearsals:
-        recipient_ids = NotificationRecipientPolicy.from_participations(
-            reh.called_participations()
-        )
-        if not recipient_ids:
-            continue
-
+        called = list(reh.called_participations().select_related("artist"))
         # The same two builders the scheduling and change announcements use, so
         # the reminder — the message most singers actually plan the evening from —
         # states the end the conductor entered instead of a block invented here.
@@ -183,16 +183,66 @@ def _dispatch_rehearsal_reminders(now) -> int:
             "project_id": str(reh.project_id),
             "rehearsal_id": str(reh.id),
             **rehearsal_notification_context(reh),
+            "plan": rehearsal_plan_lines(reh),
             "ics": rehearsal_ics_payload(reh),
         }
-        send_bulk_notifications_task.delay(
-            recipient_ids=recipient_ids,
-            notification_type=NotificationType.REHEARSAL_REMINDER,
-            level=NotificationLevel.INFO,
-            metadata=metadata,
-        )
-        sent += 1
+        groups = _reminder_groups_by_window(reh, called)
+        if not groups:
+            continue
+        dispatched = 0
+        for window, recipient_ids in groups:
+            # Each group is its own hand-off to the broker. `reminder_sent_at`
+            # is already claimed for the whole evening, so a group that fails
+            # here is not retried by a later beat — but the groups after it,
+            # and the remaining rehearsals in this sweep, must still go out.
+            try:
+                send_bulk_notifications_task.delay(
+                    recipient_ids=recipient_ids,
+                    notification_type=NotificationType.REHEARSAL_REMINDER,
+                    level=NotificationLevel.INFO,
+                    metadata={**metadata, "my_window": window},
+                )
+            except Exception:
+                logger.exception(
+                    "rehearsal reminder: dispatch failed for rehearsal=%s window=%s "
+                    "recipients=%d — these recipients get no reminder",
+                    reh.id, window, len(recipient_ids),
+                )
+                continue
+            dispatched += 1
+        if dispatched:
+            sent += 1
     return sent
+
+
+def _reminder_groups_by_window(
+    reh: Rehearsal, called: list[Participation],
+) -> list[tuple[dict[str, object] | None, list[str]]]:
+    """The evening's recipients, split into one group per distinct plan window.
+
+    The reminder is the only rehearsal message addressed to one person at a
+    time, so it is the only one that can name which part of the evening is
+    theirs: a broadcast cannot personalise. Fanning out per window, not per person,
+    keeps that promise at the cost of a handful of extra sends: an evening
+    whose plan calls everybody the whole time stays a single dispatch.
+
+    The recipient rule itself is never restated here: every seat goes through
+    `NotificationRecipientPolicy`, one at a time, so who hears about an evening
+    is decided in exactly one place.
+    """
+    from roster.domain.rehearsal_plan import window_payload
+    from roster.queries.plan_queries import plan_windows_for_seats
+
+    windows = plan_windows_for_seats(reh, called)
+    grouped: dict[str, tuple[dict[str, object] | None, list[str]]] = {}
+    for seat in called:
+        recipients = NotificationRecipientPolicy.from_participations([seat])
+        if not recipients:
+            continue
+        window = window_payload(windows.get(seat.id))
+        key = json.dumps(window, sort_keys=True)
+        grouped.setdefault(key, (window, []))[1].extend(recipients)
+    return list(grouped.values())
 
 
 def _dispatch_project_reminders(now) -> int:

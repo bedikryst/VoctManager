@@ -45,6 +45,9 @@ import {
   type TFunc,
 } from "../lib/notificationFormat";
 import { useAuth } from "@/app/providers/AuthProvider";
+// The one phrasing of "which part of the evening is mine": the bell reads the
+// window the push and the page read, so one evening cannot be worded three ways.
+import { planWindowLabel } from "@/features/rehearsals/lib/planWindow";
 import { isManager } from "@/shared/auth/rbac";
 import { cn } from "@/shared/lib/utils";
 import { onActivate } from "@/shared/lib/dom/a11y";
@@ -204,15 +207,29 @@ const describe = (
         ),
         detail: notification.metadata.focus || undefined,
       };
-    case "REHEARSAL_REMINDER":
+    case "REHEARSAL_REMINDER": {
+      // The reader's own part of the evening, beside the evening's own hours:
+      // the reminder is the one message that knows it, and this row is where
+      // most people read the reminder.
+      const window = notification.metadata.my_window;
+      const windowLabel = planWindowLabel(window, t);
+      const part = !windowLabel
+        ? undefined
+        : window?.calls_me === false
+          ? windowLabel
+          : t("schedule.rehearsal.plan.my_part_inline", "Twoja część {{window}}", {
+              window: windowLabel,
+            });
       return {
         title: notification.metadata.project_name as string | undefined,
         context: compactMetaLine(
           formatEventMoment(notification.metadata, lang, t, notification.metadata.rehearsal_date),
           notification.metadata.location,
+          part,
         ),
         detail: notification.metadata.focus || undefined,
       };
+    }
     case "REHEARSAL_DELEGATED": {
       // The scopes are the whole point, so the row lists the ones that were
       // actually granted. A scope withheld contributes nothing: the chip IS
@@ -628,6 +645,32 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       return navigate(
         rehearsalId ? `/panel/schedule/lead/${rehearsalId}` : "/panel/schedule",
       );
+    }
+    if (notification.notification_type === "REHEARSAL_UPDATED") {
+      // A diff that says only "plan" is the conductor sending the plan, and
+      // the plan is read on the evening's own page — the only surface stating
+      // which part of it is this reader's. Anything else about the rehearsal
+      // is a change to where and when, which the schedule answers. A manager
+      // keeps the workspace, where the plan is laid out rather than read.
+      const isPlanAnnouncement =
+        notification.metadata.changes?.length === 1 &&
+        notification.metadata.changes[0]?.field === "plan";
+      const rehearsalId = notification.metadata.rehearsal_id;
+      if (isPlanAnnouncement && rehearsalId && !isAdmin) {
+        return navigate(`/panel/schedule/rehearsal/${rehearsalId}`);
+      }
+      return navigate(isAdmin ? "/panel/rehearsals" : "/panel/schedule");
+    }
+    if (notification.notification_type === "REHEARSAL_REMINDER") {
+      // The reminder is the one message addressed to a single person, so it is
+      // the one carrying "your part of the evening" — and that sentence is
+      // only stated in full on the evening's own page. Mirrors the push, which
+      // deep-links to the same place.
+      const rehearsalId = notification.metadata.rehearsal_id;
+      if (rehearsalId && !isAdmin) {
+        return navigate(`/panel/schedule/rehearsal/${rehearsalId}`);
+      }
+      return navigate(isAdmin ? "/panel/rehearsals" : "/panel/schedule");
     }
     if (notification.notification_type === "REHEARSAL_LEAD_ASSIGNED") {
       // Same reason as above: the evening is the message, so land on its

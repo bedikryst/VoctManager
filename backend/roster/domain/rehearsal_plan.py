@@ -1,0 +1,208 @@
+"""
+@file rehearsal_plan.py
+@description The rehearsal plan as a rule: which rows of an ordered plan call a
+    given seat, how the rows fall into time blocks, and the window one reader
+    is actually needed for. Pure — no ORM, no clock — so the serializer, the
+    reminder and (through the shared golden cases) the client's exclusion
+    chips all answer from one function and cannot disagree about who "bez B2"
+    removes. A seat is called by a row through its casting on the row's piece
+    when it has one, otherwise through the section letters it answers a
+    sectional by; a player is called by the rehearsal's flag and the row's.
+    The window is derived per reader and never written back: the rehearsal
+    keeps one start and one end, and a row outside them is the conductor's
+    warning to himself, not an error.
+@architecture Enterprise SaaS 2026
+@module roster/domain/rehearsal_plan
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
+from datetime import time
+
+from core.voice_labels import section_letters_of_voice_line
+
+# The lines a row offers for exclusion when its piece declares none — and the
+# lines a row without a piece offers: the four-part reading an uncast programme
+# has always had. The intermediate lines (MS, CT, BAR) are declared by an
+# arrangement, never implied, so they appear only when a piece names them.
+CANONICAL_LINES: tuple[str, ...] = (
+    'S1', 'S2', 'S3',
+    'A1', 'A2', 'A3',
+    'T1', 'T2', 'T3',
+    'B1', 'B2', 'B3',
+)
+
+
+@dataclass(frozen=True)
+class PlanRow:
+    """One row of the plan as the rule reads it.
+
+    ``piece`` is an opaque key (the piece id as text, or ``None`` for a free
+    row) matched against the seat's ``cast_lines``. ``lines`` are the lines the
+    exclusions were chosen from — see :func:`row_lines`.
+    """
+
+    piece: str | None
+    starts_at: time | None
+    lines: frozenset[str]
+    excluded_lines: frozenset[str]
+    excludes_instrumentalists: bool
+
+
+@dataclass(frozen=True)
+class PlanSeat:
+    """One reader's seat as the rule reads it: the SATB letters a sectional
+    calls it by (``Participation.section_letters``), whether it is a player's,
+    and the voice line it holds on each piece of the board it is cast on."""
+
+    section_letters: str
+    is_instrumentalist: bool
+    cast_lines: Mapping[str, str]
+
+
+@dataclass(frozen=True)
+class PlanBlock:
+    """Consecutive rows sharing one effective clock. ``starts_at`` is ``None``
+    only for the rows before the first clocked row, which happen at the
+    rehearsal's own start."""
+
+    starts_at: time | None
+    rows: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class PlanWindow:
+    """What the plan says about one reader's evening. ``calls_me`` false means
+    no row calls the seat — the CALL is unchanged (attendance, reminder and
+    calendar still count it); the page says the plan does not need this voice.
+    ``end`` is ``None`` for an open end: the reader is needed until the
+    rehearsal ends, and nobody has timed it."""
+
+    calls_me: bool
+    start: time | None
+    end: time | None
+
+
+def row_lines(declared: Iterable[str]) -> frozenset[str]:
+    """The lines a row's exclusions are chosen from: the piece's declared
+    divisi, or the canonical four-part set when it declares nothing (and for a
+    row without a piece)."""
+    lines = frozenset(code for code in declared if code)
+    return lines or frozenset(CANONICAL_LINES)
+
+
+def item_calls_seat(row: PlanRow, seat: PlanSeat, *, calls_instrumentalists: bool) -> bool:
+    """Whether ``row`` needs ``seat`` in the room.
+
+    A player answers to the rehearsal's flag and the row's, never to a line —
+    a player is not a voice line. A singer cast on the row's piece is called
+    unless that very line is excluded. A singer without a casting is called
+    conservatively: as long as any line that answers to one of the seat's
+    section letters is still offered by the row. So "bez B2" only bites a bass
+    once the basses are cast — the known cost of resolving through casting.
+    """
+    if seat.is_instrumentalist:
+        return calls_instrumentalists and not row.excludes_instrumentalists
+    cast_line = seat.cast_lines.get(row.piece) if row.piece is not None else None
+    if cast_line:
+        return cast_line not in row.excluded_lines
+    letters = set(seat.section_letters)
+    if not letters:
+        return False
+    return any(
+        letters.intersection(section_letters_of_voice_line(line))
+        for line in row.lines - row.excluded_lines
+    )
+
+
+def plan_blocks(rows: Sequence[PlanRow]) -> list[PlanBlock]:
+    """Group the rows into blocks by effective clock, in the order they were
+    laid out: a row without a clock takes the clock of the last clocked row
+    before it, and the rows before the first clock form one block at the
+    rehearsal's start. Never sorted — ordering carries the warning, so a
+    clock earlier than its predecessor is still the next block."""
+    blocks: list[PlanBlock] = []
+    carried: time | None = None
+    current: list[int] = []
+    for index, row in enumerate(rows):
+        if row.starts_at is not None and row.starts_at != carried:
+            if current:
+                blocks.append(PlanBlock(starts_at=carried, rows=tuple(current)))
+                current = []
+            carried = row.starts_at
+        current.append(index)
+    if current:
+        blocks.append(PlanBlock(starts_at=carried, rows=tuple(current)))
+    return blocks
+
+
+def plan_window_for_seat(
+    rows: Sequence[PlanRow],
+    seat: PlanSeat,
+    *,
+    start: time,
+    end: time | None,
+    calls_instrumentalists: bool,
+) -> PlanWindow | None:
+    """The part of the evening ``seat`` is needed for, in the rehearsal's own
+    wall clock.
+
+    Opens with the reader's first block and closes with the first block AFTER
+    their last one — a gap in the middle is not an end, nobody leaves and
+    comes back — else with the rehearsal's end (``None`` when it was never
+    timed: "od 19:00"). ``None`` when there is nothing to say: an empty plan,
+    or a window equal to the whole rehearsal.
+    """
+    blocks = plan_blocks(rows)
+    if not blocks:
+        return None
+    called = [
+        item_calls_seat(row, seat, calls_instrumentalists=calls_instrumentalists)
+        for row in rows
+    ]
+    mine = [
+        index for index, block in enumerate(blocks)
+        if any(called[row_index] for row_index in block.rows)
+    ]
+    if not mine:
+        return PlanWindow(calls_me=False, start=None, end=None)
+
+    def clock(block: PlanBlock) -> time:
+        return block.starts_at if block.starts_at is not None else start
+
+    window_start = clock(blocks[mine[0]])
+    following = mine[-1] + 1
+    window_end = clock(blocks[following]) if following < len(blocks) else end
+    if window_start == start and window_end == end:
+        return None
+    return PlanWindow(calls_me=True, start=window_start, end=window_end)
+
+
+def window_payload(window: PlanWindow | None) -> dict[str, object] | None:
+    """The window as every wire carries it: wall-clock ``"HH:MM"`` strings, or
+    ``None`` when the plan has nothing to say. The rehearsal read and the
+    reminder's metadata share this shape so a card, a page and a push cannot
+    word one evening three ways."""
+    if window is None:
+        return None
+    return {
+        'calls_me': window.calls_me,
+        'start': window.start.strftime('%H:%M') if window.start else None,
+        'end': window.end.strftime('%H:%M') if window.end else None,
+    }
+
+
+__all__ = [
+    "CANONICAL_LINES",
+    "PlanBlock",
+    "PlanRow",
+    "PlanSeat",
+    "PlanWindow",
+    "item_calls_seat",
+    "plan_blocks",
+    "plan_window_for_seat",
+    "row_lines",
+    "window_payload",
+]

@@ -19,6 +19,7 @@ import {
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
+import { sectionNamesLabel } from "@/features/rehearsals/lib/sectionLabels";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
@@ -75,9 +76,12 @@ export const RehearsalsWidget = ({
         <ul className="divide-y divide-hairline">
             {upcomingRehearsals.map((rehearsal, index) => {
               const invitedCount = rehearsal.invited_participations?.length || 0;
+              const calledSections =
+                invitedCount === 0 ? (rehearsal.called_sections ?? "") : "";
               const isTutti =
-                invitedCount === 0 ||
-                invitedCount === projectParticipations.length;
+                calledSections === "" &&
+                (invitedCount === 0 ||
+                  invitedCount === projectParticipations.length);
               const absences = rehearsal.absent_count || 0;
 
               return (
@@ -152,17 +156,22 @@ export const RehearsalsWidget = ({
                   </div>
 
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
-                    {/* A partial call is not necessarily a sectional one — the
-                        conductor can name individuals — so the chip states the
-                        headcount rather than guessing at a rehearsal type. */}
+                    {/* A sectional names its sections from its stored rule. A
+                        partial call without one is a hand-picked list, so the
+                        chip states the headcount rather than guessing at a
+                        rehearsal type. */}
                     <Badge variant={isTutti ? "success" : "amethyst"}>
                       {isTutti
                         ? t("projects.rehearsals.status.tutti", "Tutti")
-                        : t(
-                            "projects.rehearsals.status.invited",
-                            "Wezwanych: {{count}}",
-                            { count: invitedCount },
-                          )}
+                        : calledSections !== ""
+                          ? t("rehearsals.dashboard.sectional_only", "Tylko: {{sections}}", {
+                              sections: sectionNamesLabel(calledSections, t),
+                            })
+                          : t(
+                              "projects.rehearsals.status.invited",
+                              "Wezwanych: {{count}}",
+                              { count: invitedCount },
+                            )}
                     </Badge>
                     {!rehearsal.is_mandatory && (
                       <Badge variant="neutral">

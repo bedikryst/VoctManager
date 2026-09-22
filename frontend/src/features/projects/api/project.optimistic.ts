@@ -71,6 +71,9 @@ export const buildOptimisticRehearsal = (
   focus: data.focus ?? "",
   is_mandatory: data.is_mandatory,
   calls_instrumentalists: data.calls_instrumentalists ?? false,
+  // The call's own rule, or the row would read a freshly booked sectional as
+  // a tutti until the refetch lands.
+  called_sections: data.called_sections ?? "",
   invited_participations: data.invited_participations ?? [],
   // The id is known; the name arrives with the refetch, and the row says
   // nothing about the leader until then rather than guessing one.

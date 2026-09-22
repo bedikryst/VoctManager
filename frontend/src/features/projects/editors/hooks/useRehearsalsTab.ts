@@ -47,6 +47,7 @@ import {
   compareProjectDateAsc,
   isPastProjectDate,
 } from "../../lib/projectPresentation";
+import { canonicalSectionLetters } from "../../lib/voiceFamilies";
 import type { RehearsalFormData, RehearsalTargetType } from "../types";
 
 /**
@@ -76,8 +77,8 @@ export interface UseRehearsalsTabResult {
   selectedSections: string[];
   customParticipants: string[];
   /** How many people the current target selection calls against today's cast.
-   *  Under `TUTTI` it is a running headcount, not a guest list — the session is
-   *  stored as "everyone" and grows with the project. */
+   *  Under `TUTTI` and `SECTIONAL` it is a running headcount, not a guest list —
+   *  the session is stored as a rule and grows with the project. */
   invitedCount: number;
   project: Project | null;
   projectRehearsals: Rehearsal[];
@@ -297,58 +298,57 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
   );
 
   /**
+   * The rule a SECTIONAL stores: the ticked pills as canonical SATB letters
+   * ("SA"). "" under any other target — tutti calls everyone, and a hand-picked
+   * list names its people outright.
+   */
+  const calledSections = useMemo(
+    () => (targetType === "SECTIONAL" ? canonicalSectionLetters(selectedSections) : ""),
+    [selectedSections, targetType],
+  );
+
+  /**
    * Who the current selection calls, read against the cast as it stands today.
-   * This is the number the form reports — never what gets stored; see
-   * `buildInvitedPayload`.
+   * This is the number the form reports — never what gets stored: a tutti and
+   * a sectional store a RULE (see `buildInvitedPayload`), and this preview is
+   * that rule read by `resolveInvited`, the client's copy of the server's
+   * `called_participations`, so the count promised here is the roll call the
+   * server builds.
    */
   const resolveCalledParticipations = useCallback((): string[] => {
-    if (targetType === "TUTTI") {
-      return resolveInvited(
-        {
-          invited_participations: [],
-          calls_instrumentalists: formData.calls_instrumentalists,
-        },
-        projectParticipations,
-      ).map((participation) => String(participation.id));
+    if (targetType === "CUSTOM") {
+      return customParticipants;
     }
 
-    if (targetType === "SECTIONAL") {
-      return projectParticipations
-        .filter((participation) => {
-          const artist = artistMap.get(String(participation.artist));
-
-          if (!artist?.voice_type) {
-            return false;
-          }
-
-          return selectedSections.some((section) =>
-            artist.voice_type.startsWith(section),
-          );
-        })
-        .map((participation) => String(participation.id));
-    }
-
-    return customParticipants;
+    return resolveInvited(
+      {
+        invited_participations: [],
+        called_sections: calledSections,
+        calls_instrumentalists: formData.calls_instrumentalists,
+      },
+      projectParticipations,
+    ).map((participation) => String(participation.id));
   }, [
-    artistMap,
+    calledSections,
     customParticipants,
     formData.calls_instrumentalists,
     projectParticipations,
-    selectedSections,
     targetType,
   ]);
 
   /**
-   * What lands in `invited_participations`. Tutti stores an EMPTY list rather
-   * than today's roster: the backend reads "no one named" as "the whole
-   * ensemble" and resolves it per request, so whoever accepts their invitation
-   * next week is called to every tutti session already in the calendar.
-   * Enumerating the cast here would freeze the guest list at booking time — and
-   * would make a session unbookable before anyone is on the project at all.
+   * What lands in `invited_participations`. Only a hand-picked call names
+   * people. Tutti stores an EMPTY list and a sectional stores its letters in
+   * `called_sections`, both rules the backend resolves per request — so
+   * whoever accepts their invitation next week is called to every tutti and
+   * every sectional of their section already in the calendar. Enumerating the
+   * cast here would freeze the guest list at booking time, which is exactly
+   * the sectional Florent had to amend by hand for every joiner — and would
+   * make a session unbookable before anyone is on the project at all.
    */
   const buildInvitedPayload = useCallback(
-    (): string[] => (targetType === "TUTTI" ? [] : resolveCalledParticipations()),
-    [resolveCalledParticipations, targetType],
+    (): string[] => (targetType === "CUSTOM" ? customParticipants : []),
+    [customParticipants, targetType],
   );
 
   // Recomputed with the selection so the form can state, before submitting, how
@@ -407,11 +407,24 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
       });
 
       const invitedIds = rehearsal.invited_participations?.map(String) || [];
+      const storedSections = rehearsal.called_sections ?? "";
 
-      // Two ways a session reads as tutti: it names nobody, or it names the
-      // whole cast. The second is how sessions booked before tutti became a
-      // standing rule look — reopening one and saving it converts the frozen
-      // list into that rule, so it starts calling people who join later.
+      // A session that names nobody is a rule: a sectional when it stores
+      // letters, tutti otherwise — and tutti also when it names the whole
+      // cast, which is how sessions booked before tutti became a standing
+      // rule look; reopening one and saving it converts the frozen list into
+      // that rule, so it starts calling people who join later. A sectional
+      // booked before the letters existed is a frozen list too, and reopens
+      // as the hand-picked call it is stored as: re-saving it as "Sekcyjna"
+      // is the one-time conversion.
+      if (invitedIds.length === 0 && storedSections !== "") {
+        setTargetType("SECTIONAL");
+        setSelectedSections([...storedSections]);
+        setCustomParticipants([]);
+        return;
+      }
+
+      setSelectedSections([]);
       if (
         invitedIds.length === 0 ||
         invitedIds.length === projectParticipations.length
@@ -446,10 +459,15 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
       return;
     }
 
-    // A sectional or a hand-picked call IS its list of names, so an empty one is
-    // a slip worth stopping. Tutti names nobody by design — blocking it would
-    // forbid planning the rehearsals of a concert before its cast exists.
-    if (targetType !== "TUTTI" && invitedCount === 0) {
+    // A hand-picked call IS its list of names and a sectional IS its letters,
+    // so an empty one of either is a slip worth stopping. A sectional whose
+    // section has nobody in it YET is not: like tutti, it is a rule, and
+    // blocking it would forbid booking the altos' evening before an alto is
+    // cast.
+    if (
+      (targetType === "CUSTOM" && invitedCount === 0) ||
+      (targetType === "SECTIONAL" && calledSections === "")
+    ) {
       toast.warning(
         t(
           "projects.rehearsals.toast.select_target",
@@ -481,6 +499,9 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
         focus: formData.focus,
         is_mandatory: formData.is_mandatory,
         calls_instrumentalists: formData.calls_instrumentalists,
+        // Always sent: "" is how a sectional reopened as tutti or as a
+        // hand-picked list drops its old letters on edit.
+        called_sections: calledSections,
         invited_participations: invitedParticipants,
         // Always sent: "" is the conductor, and null is how the API reads a
         // leader being taken off an evening on edit.

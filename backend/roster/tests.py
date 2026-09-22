@@ -2138,8 +2138,11 @@ class TuttiRehearsalIsAStandingCallTests(APITestCase):
     their invitation next month walk into a calendar that already expects them,
     with no session to go back and amend.
 
-    A sectional is the opposite by design: it IS its list of names, so it stays
-    exactly as written and a newcomer is not swept into it.
+    A hand-picked call is the opposite by design: it IS its list of names, so
+    it stays exactly as written and a newcomer is not swept into it. A
+    sectional sits between the two — it calls SECTIONS (`called_sections`),
+    a rule like the tutti's, so a newcomer of a called section walks in and
+    one of another does not; `test_sectional_call.py` owns that rule.
     """
 
     def setUp(self) -> None:
@@ -2206,7 +2209,55 @@ class TuttiRehearsalIsAStandingCallTests(APITestCase):
             [row["id"] for row in response.data], [str(rehearsal.id)]
         )
 
-    def test_a_sectional_stays_the_list_it_was_written_as(self) -> None:
+    def test_a_sections_call_is_written_and_read_back_through_the_api(self) -> None:
+        """Both hand-built DTO payloads in the view have to name the column, or
+        the form's sectional silently books a tutti."""
+        response = self.client.post(
+            "/api/rehearsals/",
+            {
+                "project_id": str(self.project.id),
+                "date_time": (timezone.now() + timedelta(days=30)).isoformat(),
+                "timezone": "Europe/Warsaw",
+                "called_sections": "SA",
+                "invited_participations": [],
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["called_sections"], "SA")
+
+        response = self.client.patch(
+            f"/api/rehearsals/{response.data['id']}/",
+            {"called_sections": "TB"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["called_sections"], "TB")
+
+        response = self.client.patch(
+            f"/api/rehearsals/{response.data['id']}/",
+            {"called_sections": "AS"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400, response.data)
+
+    def test_a_latecomer_of_a_called_section_walks_into_the_sectional(self) -> None:
+        sectional = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=31),
+            called_sections="TB",
+        )
+        Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=32),
+            called_sections="SA",
+        )
+        latecomer_user, _ = self._latecomer()
+        self.client.force_authenticate(user=latecomer_user)
+        self.assertEqual(
+            [row["id"] for row in self.client.get("/api/rehearsals/").data],
+            [str(sectional.id)],
+        )
+
+    def test_a_hand_picked_call_stays_the_list_it_was_written_as(self) -> None:
         sectional = Rehearsal.objects.create(
             project=self.project, date_time=timezone.now() + timedelta(days=31)
         )

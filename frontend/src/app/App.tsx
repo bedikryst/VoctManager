@@ -87,6 +87,12 @@ const Schedule = lazyWithPreload(() => import("@features/schedule/Schedule"));
 // conductor, so it is never preloaded — but it lives with the member routes,
 // not the manager tree: a stand-in holds no manager session.
 const LeadSheet = lazyWithPreload(() => import("@features/rehearsals/LeadSheet"));
+// The evening as a singer reads it — the address the plan's push deep-links
+// to. Preloaded with the member routes: it is opened from the schedule, from
+// the spotlight and from a notification, and it is opened on the way out.
+const RehearsalPage = lazyWithPreload(
+  () => import("@features/rehearsals/RehearsalPage"),
+);
 const MaterialsLayout = lazyWithPreload(
   () => import("@features/materials/MaterialsLayout"),
 );
@@ -210,6 +216,7 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { preload: Materials.preload },
   { preload: PiecePage.preload },
   { preload: Schedule.preload },
+  { preload: RehearsalPage.preload },
   { scope: "manager", preload: Contracts.preload },
   { scope: "manager", preload: Rehearsals.preload },
   { scope: "manager", preload: ArtistManagement.preload },
@@ -396,6 +403,10 @@ export const router = createBrowserRouter(
           <Route
             path="schedule/lead/:rehearsalId"
             element={<LeadSheet />}
+          />
+          <Route
+            path="schedule/rehearsal/:rehearsalId"
+            element={<RehearsalPage />}
           />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/:section" element={<SettingsPage />} />

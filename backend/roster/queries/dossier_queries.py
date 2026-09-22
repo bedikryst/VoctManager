@@ -18,7 +18,11 @@ from typing import TYPE_CHECKING, Any
 from django.db.models import Count, Prefetch
 from django.utils import timezone
 
-from core.voice_labels import plain_voice_line_label
+from core.voice_labels import (
+    canonical_section_letters,
+    plain_voice_line_label,
+    section_letters_of_seat,
+)
 from roster.models import (
     Attendance,
     Participation,
@@ -116,6 +120,15 @@ def get_artist_dossier(artist: Artist) -> dict[str, Any]:
             Rehearsal.calling_q(
                 participation_ids,
                 instrumentalist=artist.voice_type == VoiceType.INSTRUMENTALIST,
+                # `Participation.section_letters` without the per-seat `artist`
+                # join: every seat here belongs to the one artist in hand.
+                section_letters=canonical_section_letters(
+                    letter
+                    for p in participations
+                    for letter in section_letters_of_seat(
+                        artist.voice_type, p.default_voice_line
+                    )
+                ),
             )
         )
         .distinct()

@@ -3157,7 +3157,7 @@
       "status": "Status",
       "conductor": "Dyrygent",
       "dress_code": "Strój",
-      "focus": "Plan próby",
+      "focus": "Temat próby",
       "is_mandatory": "Obecność",
       "voice_line": "Partia",
       "gives_pitch": "Podaje ton",
@@ -4149,6 +4149,10 @@
         "aria": "Wydanie nut: {{title}}",
         "auto": "Automatycznie: {{label}}"
       },
+      "rehearsed": {
+        "count": "Ćwiczone {{times}}× · ostatnio {{date}}",
+        "never": "Nie ćwiczone"
+      },
       "empty": {
         "no_results": "Brak wyników",
         "setlist_desc": "Wybierz kompozycje z bazy, aby zbudować program wydarzenia.",
@@ -4211,7 +4215,8 @@
       "absences_reported": "Zgłoszono braki:",
       "actions": {
         "delete": "Usuń próbę",
-        "edit": "Edytuj próbę"
+        "edit": "Edytuj próbę",
+        "plan": "Plan próby"
       },
       "aria_label": "Zarządzaj próbami projektu",
       "empty": {
@@ -4225,8 +4230,8 @@
         "led_by_conductor": "Dyrygent",
         "date_time": "Data i godzina *",
         "end_time": "Koniec próby",
-        "focus": "Plan próby / repertuar",
-        "focus_placeholder": "np. Requiem cz. 1–3",
+        "focus": "Temat próby",
+        "focus_placeholder": "np. Requiem cz. 1–3, pierwsze czytanie",
         "length_h": "{{hours}} godz.",
         "length_hm": "{{hours}} godz. {{minutes}} min",
         "length_m": "{{minutes}} min",
@@ -4260,9 +4265,12 @@
         "optional": "Opcjonalna",
         "tutti": "Tutti",
         "invited": "Wezwanych: {{count}}",
+        "plan_rows": "Plan: {{count}} pkt",
         "led_by": "Prowadzi: {{name}}",
         "tutti_count": "Cały zespół — obecnie {{count}} os.",
-        "tutti_empty_cast": "Cały zespół — obsada dołączy później"
+        "tutti_empty_cast": "Cały zespół — obsada dołączy później",
+        "sectional_count": "Wybrane sekcje — obecnie {{count}} os.",
+        "sectional_empty": "Wybierz sekcje — kto dołączy do nich później, też zostanie wezwany"
       },
       "title_short": "prób",
       "toast": {
@@ -4440,6 +4448,74 @@
     }
   },
   "rehearsals": {
+    "plan": {
+      "title": "Plan próby",
+      "announce": "Wyślij plan",
+      "announced_at": "Wysłano {{when}}",
+      "announced_changed": "Wysłano {{when}} · zmieniony po wysłaniu",
+      "loading": "Otwieram plan…",
+      "empty": {
+        "title": "Bez planu",
+        "desc": "Ułóż utwory w kolejności ćwiczenia; godzina i wykluczenia są opcjonalne."
+      },
+      "fill": {
+        "menu": "Wypełnij",
+        "program": "Dodaj cały program",
+        "carry_over": "Dodaj niezrobione z ostatniej próby ({{count}})",
+        "carry_over_none": "Ostatnia próba nie zostawiła nic niezrobionego",
+        "copy_from": "Skopiuj plan z…",
+        "rows_one": "{{count}} punkt",
+        "rows_few": "{{count}} punkty",
+        "rows_many": "{{count}} punktów",
+        "rows_other": "{{count}} punktów"
+      },
+      "add": {
+        "piece": "Dodaj utwór z programu…",
+        "piece_all": "Cały program już w planie",
+        "free": "Punkt bez utworu"
+      },
+      "save": {
+        "description": "Zmieniono plan próby."
+      },
+      "toast": {
+        "saved": "Plan zapisany. Chór jeszcze o nim nie wie.",
+        "save_error": "Nie udało się zapisać planu.",
+        "announced": "Plan wysłany do wezwanych.",
+        "announce_error": "Nie udało się wysłać planu.",
+        "untitled": "Nadaj nazwę każdemu punktowi bez utworu.",
+        "done_error": "Nie udało się odhaczyć punktu."
+      },
+      "row": {
+        "drag": "Przeciągnij: {{title}}",
+        "untitled": "punkt bez nazwy",
+        "time": "Godzina (opcjonalna)",
+        "piece": "Utwór z programu",
+        "label": "Nazwa punktu",
+        "label_placeholder": "np. Rozśpiewanie, przerwa",
+        "note": "Notatka",
+        "note_placeholder": "Notatka: od t. 40, pierwsze czytanie…",
+        "calls": "woła {{called}} z {{total}}"
+      },
+      "exclude": {
+        "instrumentalists": "Instrumentaliści",
+        "clear_one": "Przywróć: {{label}}",
+        "without": "bez {{label}}",
+        "people": "{{count}} os.",
+        "everyone": "Wszyscy",
+        "edit": "Zmień",
+        "prompt": "Kogo ten punkt nie potrzebuje",
+        "toggle_family": "Wyklucz sekcję: {{label}}",
+        "toggle_line": "Wyklucz linię: {{label}}",
+        "toggle_instrumentalists": "Bez instrumentalistów"
+      },
+      "timeline": {
+        "not_you": "bez Twojego głosu"
+      },
+      "debrief": {
+        "prompt": "Co zrobiliście?",
+        "done_label": "Przerobione"
+      }
+    },
     "dashboard": {
       "bulk_fill_one": "Uzupełnij 1 brak jako 'Obecny'",
       "bulk_fill_few": "Uzupełnij {{count}} braki jako 'Obecni'",
@@ -4799,10 +4875,41 @@
         "focus_title": "Plan Pracy",
         "materials_button": "Materiały",
         "materials_desc": "Pobierz nuty PDF i przećwicz swoje partie z odtwarzaczem.",
+        "materials_first_piece": "Zaczynacie od: {{title}}",
+        "materials_open_piece": "Otwórz nuty",
         "materials_subtitle": "Przygotuj się do próby",
         "materials_title": "Twoje Nuty",
         "no_focus": "Brak szczegółowego planu dla tej próby.",
         "reported_absences": "Zgłoszone nieobecności:"
+      },
+      "focus_title": "Temat próby",
+      "page": {
+        "back": "Harmonogram",
+        "gone": {
+          "description": "Ta próba została odwołana albo nie jesteś na nią wezwany. Zajrzyj do harmonogramu.",
+          "title": "Nie ma takiej próby"
+        },
+        "loading": "Otwieram próbę…",
+        "title": "Plan",
+        "title_highlight": "próby."
+      },
+      "plan": {
+        "empty": "Plan tej próby nie został jeszcze ułożony.",
+        "empty_past": "Dla tej próby nie ułożono planu.",
+        "more_rows_few": "…i jeszcze {{count}} punkty",
+        "more_rows_many": "…i jeszcze {{count}} punktów",
+        "more_rows_one": "…i jeszcze {{count}} punkt",
+        "more_rows_other": "…i jeszcze {{count}} punktów",
+        "my_part": "Twoja część",
+        "my_part_inline": "Twoja część {{window}}",
+        "not_called": "Plan nie przewiduje Twojego głosu",
+        "not_called_hint": "Wezwanie zostaje w mocy — obecność liczy się jak zwykle.",
+        "open": "Otwórz próbę",
+        "open_rest": "Cały plan ({{total}} pkt)",
+        "print": "Drukuj",
+        "title": "Plan próby",
+        "window_open": "od {{start}}",
+        "window_range": "{{start}}–{{end}}"
       },
       "form": {
         "cancel": "Anuluj",

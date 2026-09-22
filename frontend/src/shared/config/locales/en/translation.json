@@ -3127,7 +3127,7 @@
       "status": "Status",
       "conductor": "Conductor",
       "dress_code": "Dress code",
-      "focus": "Focus",
+      "focus": "Topic",
       "is_mandatory": "Attendance",
       "voice_line": "Voice part",
       "gives_pitch": "Starting pitch",
@@ -4111,6 +4111,10 @@
         "aria": "Score edition: {{title}}",
         "auto": "Automatic: {{label}}"
       },
+      "rehearsed": {
+        "count": "Rehearsed {{times}}× · last {{date}}",
+        "never": "Not rehearsed"
+      },
       "empty": {
         "no_results": "No results",
         "setlist_desc": "Pick compositions from the database to build the programme.",
@@ -4173,7 +4177,8 @@
       "absences_reported": "Reported absences:",
       "actions": {
         "delete": "Delete rehearsal",
-        "edit": "Edit rehearsal"
+        "edit": "Edit rehearsal",
+        "plan": "Rehearsal plan"
       },
       "aria_label": "Manage project rehearsals",
       "empty": {
@@ -4187,7 +4192,7 @@
         "led_by_conductor": "Conductor",
         "date_time": "Date and time *",
         "end_time": "Rehearsal ends",
-        "focus": "Rehearsal plan / repertoire",
+        "focus": "Rehearsal topic",
         "focus_placeholder": "e.g. Requiem, mvts 1–3",
         "length_h": "{{hours}} h",
         "length_hm": "{{hours}} h {{minutes}} min",
@@ -4222,9 +4227,12 @@
         "optional": "Optional",
         "tutti": "Tutti",
         "invited": "Called: {{count}}",
+        "plan_rows": "Plan: {{count}} pts",
         "led_by": "Led by {{name}}",
         "tutti_count": "Whole ensemble — {{count}} so far",
-        "tutti_empty_cast": "Whole ensemble — the cast joins later"
+        "tutti_empty_cast": "Whole ensemble — the cast joins later",
+        "sectional_count": "Selected sections — {{count}} so far",
+        "sectional_empty": "Pick sections — whoever joins them later is called too"
       },
       "title_short": "rehearsals",
       "toast": {
@@ -4393,6 +4401,72 @@
     }
   },
   "rehearsals": {
+    "plan": {
+      "title": "Rehearsal plan",
+      "announce": "Send plan",
+      "announced_at": "Sent {{when}}",
+      "announced_changed": "Sent {{when}} · changed since",
+      "loading": "Opening the plan…",
+      "empty": {
+        "title": "No plan yet",
+        "desc": "Lay the pieces out in rehearsal order; a clock and exclusions are optional."
+      },
+      "fill": {
+        "menu": "Fill",
+        "program": "Add the whole programme",
+        "carry_over": "Add what the last rehearsal left undone ({{count}})",
+        "carry_over_none": "The last rehearsal left nothing undone",
+        "copy_from": "Copy the plan from…",
+        "rows_one": "{{count}} point",
+        "rows_other": "{{count}} points"
+      },
+      "add": {
+        "piece": "Add a piece from the programme…",
+        "piece_all": "The whole programme is in the plan",
+        "free": "Point without a piece"
+      },
+      "save": {
+        "description": "The rehearsal plan changed."
+      },
+      "toast": {
+        "saved": "Plan saved. The choir does not know yet.",
+        "save_error": "The plan could not be saved.",
+        "announced": "Plan sent to everyone called.",
+        "announce_error": "The plan could not be sent.",
+        "untitled": "Give every point without a piece a name.",
+        "done_error": "The point could not be ticked."
+      },
+      "row": {
+        "drag": "Drag: {{title}}",
+        "untitled": "untitled point",
+        "time": "Time (optional)",
+        "piece": "Piece from the programme",
+        "label": "Point name",
+        "label_placeholder": "e.g. Warm-up, break",
+        "note": "Note",
+        "note_placeholder": "Note: from bar 40, first reading…",
+        "calls": "calls {{called}} of {{total}}"
+      },
+      "exclude": {
+        "instrumentalists": "Instrumentalists",
+        "clear_one": "Restore: {{label}}",
+        "without": "without {{label}}",
+        "people": "{{count}} ppl",
+        "everyone": "Everyone",
+        "edit": "Change",
+        "prompt": "Who this point does not need",
+        "toggle_family": "Exclude section: {{label}}",
+        "toggle_line": "Exclude line: {{label}}",
+        "toggle_instrumentalists": "Without instrumentalists"
+      },
+      "timeline": {
+        "not_you": "not your voice"
+      },
+      "debrief": {
+        "prompt": "What did you get through?",
+        "done_label": "Covered"
+      }
+    },
     "dashboard": {
       "bulk_fill_one": "Fill 1 missing as 'Present'",
       "bulk_fill_few": "Fill {{count}} gaps as 'Present'",
@@ -4748,10 +4822,39 @@
         "focus_title": "Rehearsal Focus",
         "materials_button": "Materials",
         "materials_desc": "Download PDF scores and practice your parts with the player.",
+        "materials_first_piece": "You start with: {{title}}",
+        "materials_open_piece": "Open the score",
         "materials_subtitle": "Prepare for the rehearsal",
         "materials_title": "Your Sheet Music",
         "no_focus": "No detailed plan for this rehearsal.",
         "reported_absences": "Reported absences:"
+      },
+      "focus_title": "Rehearsal topic",
+      "page": {
+        "back": "Schedule",
+        "gone": {
+          "description": "This rehearsal has been cancelled, or you are not called to it. Have a look at your schedule.",
+          "title": "No such rehearsal"
+        },
+        "loading": "Opening the rehearsal…",
+        "title": "Rehearsal",
+        "title_highlight": "plan."
+      },
+      "plan": {
+        "empty": "The plan for this rehearsal has not been laid out yet.",
+        "empty_past": "No plan was laid out for this rehearsal.",
+        "more_rows_one": "…and {{count}} more item",
+        "more_rows_other": "…and {{count}} more items",
+        "my_part": "Your part",
+        "my_part_inline": "Your part {{window}}",
+        "not_called": "The plan does not call your voice",
+        "not_called_hint": "The call still stands — attendance counts as usual.",
+        "open": "Open the rehearsal",
+        "open_rest": "Whole plan ({{total}} items)",
+        "print": "Print",
+        "title": "Rehearsal plan",
+        "window_open": "from {{start}}",
+        "window_range": "{{start}}–{{end}}"
       },
       "form": {
         "cancel": "Cancel",

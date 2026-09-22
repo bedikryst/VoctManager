@@ -87,6 +87,11 @@ export interface ProgramTabItem {
    *  auto-selection. Only a piece published in more than one edition has
    *  anything to pin. */
   score_edition: string | null;
+  /** Ticked plan rows for this piece across the project's rehearsals; `null`
+   *  while nothing has been ticked anywhere and the figure would be noise. */
+  rehearsed_count: number | null;
+  /** When it was last worked on (ISO date of the rehearsal, not of the tick). */
+  last_rehearsed_on: string | null;
 }
 
 export interface FeeMutation {
