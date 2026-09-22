@@ -1,11 +1,12 @@
 # Rehearsal planning — sectional calls, ordered plan, time slots
 
-Status: **All five stages implemented (1–3 on 2026-09-21, Stages 4 and 5 on 2026-09-22) — NOT
-committed; migrated on the dev stack only (`roster/0057`, `roster/0058` still wait for
-`make migrate` on prod); Stages 4 and 5 emitted NO migration. Stages 1, 3, 4 and 5 NOT seen in the
-browser (Stage 2 has no visible surface). Both audits are closed: Stages 1–3 (fixes F1–F5 and
-the decision that a sectional CAN call the players) and Stages 4–5 (the four "Fix next" items,
-all applied 2026-09-22) — see "Audit" at the end. What remains is browser verification.**
+Status: **All five stages implemented (1–3 on 2026-09-21, Stages 4 and 5 on 2026-09-22) and seen
+in the browser — NOT committed; migrated on the dev stack only (`roster/0057`, `roster/0058` still
+wait for `make migrate` on prod); Stages 4 and 5 emitted NO migration. Both audits are closed:
+Stages 1–3 (fixes F1–F5 and the decision that a sectional CAN call the players) and Stages 4–5
+(the four "Fix next" items, all applied 2026-09-22) — see "Audit" at the end. A follow-up round on
+2026-09-22 reworked the ways INTO the rehearsal page (see "Entry points" at the end); that round
+is implemented but not yet seen in the browser.**
 One stage per session; move this line when a stage lands and say whether it is committed,
 migrated and seen in the browser.
 
@@ -739,3 +740,74 @@ broker (five dispatches attempted, one lost and logged, both rehearsals claimed 
 The four under Verification, plus: print the page from the desktop shell and confirm the sheet
 fills the A4 width with no trailing blank page; print a plan longer than one page (the sheet is
 `overflow-hidden`).
+
+## Entry points (round of 2026-09-22, fifth session)
+
+The plan shipped, and the question that followed was whether choristers need a separate
+**"Rehearsals" tab**. Rejected, and the reasons are the decision:
+
+- The schedule is ONE axis of the day, rehearsals and concerts interleaved. A second list of the
+  same objects means the question a singer actually asks — "is Saturday free?" — has to be asked
+  in two places.
+- "What did we get through on Wednesday" is already the History tab.
+- The mobile dock holds four slots plus "More"; a fifth entry displaces Materials or Messages,
+  both used more often than a list of rehearsals.
+
+What was missing was not a tab but a **way in**. The rehearsal page is the address of ONE evening:
+it is reached from a notice, from a card, from the dashboard — it is not browsed like a list.
+
+### What changed
+
+**A rehearsal with no plan had no way in at all.** In `NextEventHero` the "Otwórz próbę" button
+sat inside `planRows.length > 0`, itself nested in `(event.focus || planRows.length > 0)`, so the
+dashboard offered no entry to exactly the evenings the conductor had not laid out yet — the
+commonest case. The button now lives in the hero's action row, always present, `primary`; while
+the rehearsal runs it takes the full width under its own label (`plan.open_live`).
+
+**On the schedule card the entry led the expansion instead of trailing it.** It had been sitting
+under the plan box, so the first thing to open was the empty-state line "brak szczegółowego
+planu". It is now the first row of the expansion, `primary`, and its label follows `viewMode`
+(`plan.open_past` — "Zobacz przebieg próby" — under History, where "open" promises something still
+to come). The "Twoje Nuty" panel beside it dropped from `variant="solid"` to `"light"`: an opaque
+surface next to a translucent one read as the card's main offer, and the shelf is the weaker
+destination now that the page leads to the same scores in rehearsal order. `plan.open_rest` was
+deleted from all three locales — a count of plan items on the primary CTA reframes the page as
+"the rest of the list".
+
+**The deep-link contract, split by what the notice is about.** A notice about the CONTENT of one
+evening (a `plan`-only diff, the reminder) lands on that evening's page. A notice about WHEN an
+evening happens (`REHEARSAL_SCHEDULED`, a move) stays on the schedule, because a date means
+something only read against the other dates — `test_a_move_still_lands_on_the_schedule` encodes
+that and it is right. The complaint it did not answer was the hunt for the card, so the schedule
+now takes `?rehearsal=<id>`: it opens the correct tab, expands that card, scrolls to it, and
+spends the parameter (`setSearchParams(..., { replace: true })`) so a later tab change does not
+drag the reader back and a reload does not re-open what they closed. An id matching nothing —
+a cancelled evening, a reader dropped from the cast — falls back to the plain schedule, which is
+the truthful answer. Backend: `_schedule_card_url`. Cancellation keeps the bare schedule; its
+card is gone.
+
+The scroll anchor is a wrapper `#schedule-event-<eventId>` rather than the card itself, so the
+card keeps its own motion root. The spotlit evening has no card in the feed — it IS the hero — so
+that one resolves to `#schedule-hero`.
+
+**`/panel/schedule/next`** (`NextRehearsalRoute`) is a stable address for the home-screen
+shortcut, since a rehearsal's own URL carries an id that changes every week. It resolves and steps
+aside (`<Navigate replace>`), falling back to the schedule when nothing is ahead, and it is left
+out of the preload set — readers who never installed the app should not pay for it. The manifest
+is `frontend/public/manifest.webmanifest`, not the plugin config: `vite.config.ts` sets
+`manifest: false`. Three shortcuts: the next rehearsal, the schedule, materials.
+
+### Considered and not done
+
+**"Rehearsal mode" as a real state of the screen.** When a rehearsal is live the hero shows a
+pulsing badge and nothing else changes. The entry button now goes full-width there, but the rest
+of the surface was left alone: hiding the RSVP pair during the live window would strand the singer
+who is running late and wants to say so.
+
+### Browser checks owed for this round
+
+- Dashboard, a rehearsal with NO plan: the gold "Otwórz próbę" is present.
+- Schedule → History: an expanded past rehearsal reads "Zobacz przebieg próby".
+- A rehearsal-moved notice from the bell: the schedule opens scrolled to that card, expanded, and
+  the URL no longer carries `?rehearsal=`.
+- Installed PWA: long-press the icon, "Najbliższa próba" lands on the evening.

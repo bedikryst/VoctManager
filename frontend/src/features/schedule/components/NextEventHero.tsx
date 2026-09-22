@@ -24,6 +24,7 @@ import {
   AlignLeft,
   ArrowRight,
   BookOpen,
+  CalendarDays,
   Check,
   CheckCircle2,
   ChevronRight,
@@ -53,6 +54,7 @@ import { RehearsalPlanTimeline } from "@/features/rehearsals/components/plan/Reh
 import { planWindowLabel } from "@/features/rehearsals/lib/planWindow";
 import { PitchPipe } from "@/shared/ui/instruments/PitchPipe";
 import { cn } from "@/shared/lib/utils";
+import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { useNow } from "@/shared/lib/dom/useNow";
 import { resolveImminence } from "@/features/logistics/constants/eventImminence";
 import { buildProjectDayTimeline } from "@/features/projects/lib/dayTimeline";
@@ -74,6 +76,28 @@ const REHEARSAL_MODE_AFTER_MS = 3 * 60 * 60 * 1000;
 
 /** How much of the plan the spotlight shows before deferring to the page. */
 const HERO_PLAN_ROWS = 3;
+
+/**
+ * The date the countdown is counting to, in the venue's own day.
+ *
+ * "Za 11 dni" is a hook, not something anyone can put in a diary, and the
+ * spotlight sits ABOVE the day dividers that date every other card in the
+ * feed — so it was the one surface naming hours without ever naming the day.
+ * The weekday leads because that is what an evening is planned around; the
+ * year is left off, since a countdown this card is still drawing cannot reach
+ * one.
+ */
+const shortDateLabel = (
+  value: Date,
+  language: string,
+  timeZone?: string,
+): string =>
+  formatLocalizedDate(
+    value,
+    { weekday: "short", day: "numeric", month: "short" },
+    language,
+    timeZone,
+  );
 
 export const isRehearsalLive = (event: TimelineEvent, now: Date): boolean => {
   if (event.type !== "REHEARSAL") return false;
@@ -139,7 +163,7 @@ export const NextEventHero = ({
 /* ── concert spotlight ────────────────────────────────────────────────── */
 
 const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const proj = event.rawObj as Project;
   const now = useNow();
   const countdown = useCountdownLabel(event.date_time, now);
@@ -212,6 +236,16 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
         </Heading>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
+          {/* Same reason as the rehearsal spotlight: this card sits above the
+              feed's day dividers, so without it the concert names an hour and
+              never a day. It wears the row's tile shape rather than a third
+              badge upstairs. */}
+          <span className="flex items-center gap-1.5 rounded-lg border border-ethereal-incense/40 bg-ethereal-incense/20 px-2.5 py-1 text-ink-on-inverse">
+            <CalendarDays size={11} aria-hidden="true" />
+            <Caption color="ink-on-inverse" className="font-medium tabular-nums">
+              {shortDateLabel(event.date_time, i18n.language, proj.timezone)}
+            </Caption>
+          </span>
           <DualTimeDisplay
             value={event.date_time}
             timeZone={proj.timezone}
@@ -391,7 +425,7 @@ const RehearsalHero = ({
   onSubmitReport,
   absenceRange,
 }: NextEventHeroProps): React.JSX.Element => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const reh = event.rawObj as Rehearsal;
   const now = useNow();
   const countdown = useCountdownLabel(event.date_time, now);
@@ -476,6 +510,20 @@ const RehearsalHero = ({
         </Heading>
 
         <div className="mt-3 flex flex-wrap items-center gap-3">
+          {/* Leads the hours rather than joining the badges above: the badge
+              strip says what this is and how far off, while this row is the
+              facts a singer writes down — day, hours, room, who stands in
+              front — and the day belongs with the hours it qualifies. */}
+          <span className="flex items-center gap-1.5">
+            <CalendarDays
+              size={11}
+              className="text-ethereal-gold/70"
+              aria-hidden="true"
+            />
+            <Caption color="muted" className="tabular-nums">
+              {shortDateLabel(event.date_time, i18n.language, reh.timezone)}
+            </Caption>
+          </span>
           {/* The whole span, not just the downbeat: this card is the surface the
               singer plans the evening from, and on the day it is the ONLY one —
               the feed hands its next event here and renders everything after it,
