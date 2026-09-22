@@ -13,6 +13,29 @@
   "dir": "ltr",
   "categories": ["music", "productivity", "education"],
   "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Najbliższa próba",
+      "short_name": "Próba",
+      "description": "Plan wieczoru, godziny i Twoje nuty w kolejności próby.",
+      "url": "/panel/schedule/next",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Harmonogram",
+      "short_name": "Kalendarz",
+      "description": "Próby i koncerty sezonu na jednej osi.",
+      "url": "/panel/schedule",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Materiały",
+      "short_name": "Nuty",
+      "description": "Nuty PDF i nagrania do ćwiczeń, także offline.",
+      "url": "/panel/materials",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",

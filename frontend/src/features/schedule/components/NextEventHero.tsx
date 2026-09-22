@@ -552,23 +552,13 @@ const RehearsalHero = ({
             {planRows.length > 0 && (
               <div className={cn(event.focus && "mt-3 border-t border-ethereal-incense/15 pt-3")}>
                 <RehearsalPlanTimeline rows={planRows.slice(0, HERO_PLAN_ROWS)} />
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  asChild
-                  className="mt-3 w-max"
-                >
-                  <Link to={rehearsalHref} className="inline-flex items-center gap-2">
-                    <ListMusic size={13} aria-hidden="true" />
-                    {planRows.length > HERO_PLAN_ROWS
-                      ? t(
-                          "schedule.rehearsal.plan.open_rest",
-                          "Cały plan ({{total}} pkt)",
-                          { total: planRows.length },
-                        )
-                      : t("schedule.rehearsal.plan.open", "Otwórz próbę")}
-                  </Link>
-                </Button>
+                {planRows.length > HERO_PLAN_ROWS && (
+                  <Caption color="muted" className="mt-2 block">
+                    {t("schedule.rehearsal.plan.more_rows", {
+                      count: planRows.length - HERO_PLAN_ROWS,
+                    })}
+                  </Caption>
+                )}
               </div>
             )}
           </div>
@@ -578,11 +568,31 @@ const RehearsalHero = ({
             a conductor (no participation), who keeps the calendar action. */}
         {!reportingMode && (
           <>
+          {/* The way into the evening itself, on its own row and above the
+              RSVP. It is the hero's one navigational action and it must not
+              depend on the plan: an evening the conductor has not laid out yet
+              is still an evening with a room, a window and a register, and
+              gating this on plan rows left exactly those rehearsals with no
+              way in. While the rehearsal runs it is what the reader came for,
+              so it takes the full width and says so. */}
+          <Button
+            variant="primary"
+            size="touch"
+            asChild
+            className={cn("mt-4 w-full sm:w-auto", isLive && "sm:w-full")}
+          >
+            <Link to={rehearsalHref} className="inline-flex items-center justify-center gap-2">
+              <ListMusic size={15} aria-hidden="true" />
+              {isLive
+                ? t("schedule.rehearsal.plan.open_live", "Wejdź w trwającą próbę")
+                : t("schedule.rehearsal.plan.open", "Otwórz próbę")}
+            </Link>
+          </Button>
           {canRsvp && (
             <div
               inert={isPreview}
               className={cn(
-                "mt-4 flex flex-col gap-2 sm:flex-row",
+                "mt-3 flex flex-col gap-2 sm:flex-row",
                 isPreview && INERT_SURFACE,
               )}
             >

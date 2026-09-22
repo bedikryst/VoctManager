@@ -93,6 +93,12 @@ const LeadSheet = lazyWithPreload(() => import("@features/rehearsals/LeadSheet")
 const RehearsalPage = lazyWithPreload(
   () => import("@features/rehearsals/RehearsalPage"),
 );
+// Reached from the home-screen shortcut, never from inside the app, so it is
+// left out of the preload set: paying for it on every member session would buy
+// nothing for the readers who never installed the app.
+const NextRehearsalRoute = lazyWithPreload(
+  () => import("@features/rehearsals/NextRehearsalRoute"),
+);
 const MaterialsLayout = lazyWithPreload(
   () => import("@features/materials/MaterialsLayout"),
 );
@@ -404,6 +410,7 @@ export const router = createBrowserRouter(
             path="schedule/lead/:rehearsalId"
             element={<LeadSheet />}
           />
+          <Route path="schedule/next" element={<NextRehearsalRoute />} />
           <Route
             path="schedule/rehearsal/:rehearsalId"
             element={<RehearsalPage />}

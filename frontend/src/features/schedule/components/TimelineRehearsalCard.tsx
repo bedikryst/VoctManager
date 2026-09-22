@@ -460,6 +460,24 @@ export const TimelineRehearsalCard = ({
               transition={{ duration: 0.28 }}
               className="overflow-hidden border-t border-ethereal-incense/15 bg-ethereal-alabaster/20"
             >
+              {/* The evening's own page, first and gold. It leads the
+                  expansion rather than trailing the plan box, because what
+                  opens first is an empty-state line ("brak planu") on exactly
+                  the rehearsals where the page has the most left to say. Past
+                  evenings keep it — that is where the singer who missed
+                  Wednesday reads what was actually got through — but not under
+                  a verb that promises something still to come. */}
+              <div className="px-4 pt-4 sm:px-6 sm:pt-6">
+                <Button variant="primary" size="sm" asChild className="w-full sm:w-max">
+                  <Link to={rehearsalHref} className="inline-flex items-center justify-center gap-2">
+                    <ListMusic size={13} aria-hidden="true" />
+                    {viewMode === "PAST"
+                      ? t("schedule.rehearsal.plan.open_past", "Zobacz przebieg próby")
+                      : t("schedule.rehearsal.plan.open", "Otwórz próbę")}
+                  </Link>
+                </Button>
+              </div>
+
               <div className="p-4 sm:p-6 space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6">
                 {/* focus / work plan */}
                 <div className="flex flex-col gap-2">
@@ -496,14 +514,6 @@ export const TimelineRehearsalCard = ({
                       </div>
                     )}
                   </GlassCard>
-                  {/* Past evenings keep this link — it is where the singer who
-                      missed Wednesday reads what was actually got through. */}
-                  <Button variant="secondary" size="sm" asChild className="w-max">
-                    <Link to={rehearsalHref} className="inline-flex items-center gap-2">
-                      <ListMusic size={13} aria-hidden="true" />
-                      {t("schedule.rehearsal.plan.open", "Otwórz próbę")}
-                    </Link>
-                  </Button>
                   {(event.absences ?? 0) > 0 && (
                     <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-ethereal-crimson/5 border border-ethereal-crimson/20 shadow-glass-ethereal w-max">
                       <UserMinus size={13} className="text-ethereal-crimson" aria-hidden="true" />
@@ -521,8 +531,13 @@ export const TimelineRehearsalCard = ({
                     <Music size={13} aria-hidden="true" />
                     {t("schedule.rehearsal.details.materials_title", "Twoje Nuty")}
                   </Eyebrow>
+                  {/* Peer of the plan box beside it, not a louder rival: the
+                      shelf is the secondary destination here, since the page
+                      above leads to the same scores in the order they will be
+                      rehearsed. An opaque surface next to a translucent one
+                      read as the card's main offer. */}
                   <GlassCard
-                    variant="solid"
+                    variant="light"
                     padding="sm"
                     isHoverable={false}
                     className="flex flex-1 flex-col rounded-2xl"

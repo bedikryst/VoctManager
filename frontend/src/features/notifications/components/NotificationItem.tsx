@@ -646,17 +646,18 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         rehearsalId ? `/panel/schedule/lead/${rehearsalId}` : "/panel/schedule",
       );
     }
-    if (notification.notification_type === "REHEARSAL_UPDATED") {
-      // A diff that says only "plan" is the conductor sending the plan, and
-      // the plan is read on the evening's own page — the only surface stating
-      // which part of it is this reader's. Anything else about the rehearsal
-      // is a change to where and when, which the schedule answers. A manager
-      // keeps the workspace, where the plan is laid out rather than read.
-      const isPlanAnnouncement =
-        notification.metadata.changes?.length === 1 &&
-        notification.metadata.changes[0]?.field === "plan";
+    if (
+      notification.notification_type === "REHEARSAL_UPDATED" ||
+      notification.notification_type === "REHEARSAL_SCHEDULED"
+    ) {
+      // Both notices are about ONE evening, so both land on it. A move or a
+      // new date dropped on the schedule left the reader hunting a list for
+      // the card they had just been told about — and the evening's page states
+      // the hour, the room and which part of the plan is theirs, which is the
+      // whole of what the notice was announcing. A manager keeps the
+      // workspace, where the plan is laid out rather than read.
       const rehearsalId = notification.metadata.rehearsal_id;
-      if (isPlanAnnouncement && rehearsalId && !isAdmin) {
+      if (rehearsalId && !isAdmin) {
         return navigate(`/panel/schedule/rehearsal/${rehearsalId}`);
       }
       return navigate(isAdmin ? "/panel/rehearsals" : "/panel/schedule");

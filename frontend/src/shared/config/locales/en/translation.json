@@ -4832,6 +4832,9 @@
         "reported_absences": "Reported absences:"
       },
       "focus_title": "Rehearsal topic",
+      "next": {
+        "resolving": "Finding your next rehearsal..."
+      },
       "page": {
         "back": "Schedule",
         "gone": {
@@ -4852,7 +4855,8 @@
         "not_called": "The plan does not call your voice",
         "not_called_hint": "The call still stands — attendance counts as usual.",
         "open": "Open the rehearsal",
-        "open_rest": "Whole plan ({{total}} items)",
+        "open_live": "Join the rehearsal in progress",
+        "open_past": "See how the rehearsal went",
         "print": "Print",
         "title": "Rehearsal plan",
         "window_open": "from {{start}}",

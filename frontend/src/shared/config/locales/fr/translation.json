@@ -4843,6 +4843,9 @@
         "reported_absences": "Absences signalées :"
       },
       "focus_title": "Thème de la répétition",
+      "next": {
+        "resolving": "Recherche de votre prochaine répétition..."
+      },
       "page": {
         "back": "Agenda",
         "gone": {
@@ -4863,7 +4866,8 @@
         "not_called": "Le plan ne prévoit pas votre voix",
         "not_called_hint": "La convocation reste valable — la présence compte comme d’habitude.",
         "open": "Ouvrir la répétition",
-        "open_rest": "Plan complet ({{total}} pts)",
+        "open_live": "Rejoindre la répétition en cours",
+        "open_past": "Voir le déroulé de la répétition",
         "print": "Imprimer",
         "title": "Plan de répétition",
         "window_open": "à partir de {{start}}",

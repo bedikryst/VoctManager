@@ -961,7 +961,7 @@ def _compose_rehearsal_scheduled(ctx: MessageContext) -> MessageContent:
             else _("A new rehearsal has been added")
         ),
         body=body or project,
-        url_path=_rehearsals_url(ctx),
+        url_path=_rehearsal_page_url(ctx),
         tag=f"rehearsal-scheduled:{m.get('rehearsal_id') or ''}",
         actions=(_open_action(),),
         subject=(
@@ -1045,7 +1045,7 @@ def _compose_rehearsal_updated(ctx: MessageContext) -> MessageContent:
             else _("A rehearsal has changed")
         ),
         body=body or project,
-        url_path=_rehearsals_url(ctx),
+        url_path=_rehearsal_page_url(ctx),
         tag=f"rehearsal-updated:{m.get('rehearsal_id') or ''}",
         actions=(_open_action(),),
         subject=_("Rehearsal changed — %(project)s") % {"project": project},

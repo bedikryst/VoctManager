@@ -4885,6 +4885,9 @@
         "reported_absences": "Zgłoszone nieobecności:"
       },
       "focus_title": "Temat próby",
+      "next": {
+        "resolving": "Szukam najbliższej próby..."
+      },
       "page": {
         "back": "Harmonogram",
         "gone": {
@@ -4907,7 +4910,8 @@
         "not_called": "Plan nie przewiduje Twojego głosu",
         "not_called_hint": "Wezwanie zostaje w mocy — obecność liczy się jak zwykle.",
         "open": "Otwórz próbę",
-        "open_rest": "Cały plan ({{total}} pkt)",
+        "open_live": "Wejdź w trwającą próbę",
+        "open_past": "Zobacz przebieg próby",
         "print": "Drukuj",
         "title": "Plan próby",
         "window_open": "od {{start}}",
