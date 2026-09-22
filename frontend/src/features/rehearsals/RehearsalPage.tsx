@@ -37,7 +37,6 @@ import {
   UserCheck,
 } from "lucide-react";
 
-import { useAuth } from "@/app/providers/AuthProvider";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { Badge } from "@/shared/ui/primitives/Badge";
@@ -57,6 +56,7 @@ import { LocationPreview } from "@/features/logistics/components/LocationPreview
 import { AbsenceReportForm } from "@/features/schedule/components/AbsenceReportForm";
 import { AddToCalendar } from "@/features/schedule/components/AddToCalendar";
 import { useScheduleData } from "@/features/schedule/hooks/useScheduleData";
+import { useScheduleSubject } from "@/features/schedule/hooks/useScheduleSubject";
 import { useTimelineRehearsalCard } from "@/features/schedule/hooks/useTimelineRehearsalCard";
 import type { TimelineEvent } from "@/features/schedule/types/schedule.dto";
 import type { Rehearsal } from "@/shared/types";
@@ -74,17 +74,15 @@ const PAST_GRACE_MS = 4 * 60 * 60 * 1000;
 export default function RehearsalPage(): React.JSX.Element {
   const { t, i18n } = useTranslation();
   const { rehearsalId } = useParams<{ rehearsalId: string }>();
-  const { user } = useAuth();
-  const { isPreview, artist: previewArtist } = useArtistPreview();
-  const artistId =
-    (isPreview ? previewArtist?.id : user?.artist_profile_id) ?? undefined;
+  const { isPreview } = useArtistPreview();
+  const subject = useScheduleSubject();
 
   const { data: rehearsal, isLoading, isError } = useRehearsal(rehearsalId);
   // The seat, the existing answer and the span writer — all of them already
   // resolved for this reader by the schedule. Asking for them again here would
   // be a second read model of the same fact.
   const { allEvents, handleAbsenceSubmit, absenceRange } =
-    useScheduleData(artistId);
+    useScheduleData(subject);
   const event = allEvents.find(
     (candidate) =>
       candidate.type === "REHEARSAL" &&

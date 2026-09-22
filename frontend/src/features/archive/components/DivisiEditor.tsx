@@ -27,8 +27,8 @@ import type { VoiceRequirementDTO } from "../types/archive.dto";
  * part"). Beyond the choral families this covers the intermediate parts a
  * score writes as one line (MS, CT, BAR), TUTTI — a unison setting is a real
  * requirement, not the absence of one — and V1…V4, the untyped parts a canon
- * divides into. Rehearsal/recording-only entries (BACKGROUND, ACCOMPANIMENT,
- * PRONUNCIATION) stay out: nobody is cast on them.
+ * divides into. Rehearsal/recording-only entries (BACKGROUND, INSTRUMENTAL,
+ * ACCOMPANIMENT, PRONUNCIATION) stay out: nobody is cast on them.
  */
 export const CHORAL_DIVISI_LINES: ReadonlySet<string> = new Set([
   "S1", "S2", "S3",

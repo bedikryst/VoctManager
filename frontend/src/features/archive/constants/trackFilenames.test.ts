@@ -15,8 +15,8 @@ import {
 
 const DICTIONARY: ReadonlySet<string> = new Set([
   "S1", "S2", "S3", "MS", "A1", "A2", "A3", "CT", "T1", "T2", "T3", "BAR",
-  "B1", "B2", "B3", "V1", "V2", "V3", "V4", "SOLO", "TUTTI", "ACC", "BACK",
-  "PRON", "VP",
+  "B1", "B2", "B3", "V1", "V2", "V3", "V4", "SOLO", "TUTTI", "INSTR", "ACC",
+  "BACK", "PRON", "VP",
 ]);
 
 describe("parseTrackFilename", () => {
@@ -44,6 +44,22 @@ describe("resolveVoiceFromPrefix", () => {
     expect(resolveVoiceFromPrefix("MP3", [], DICTIONARY)).toEqual({
       kind: "resolved",
       code: "TUTTI",
+    });
+  });
+
+  it("reads the instrumental take under either spelling", () => {
+    for (const prefix of ["INST", "instr.", "Instrumental", "podkład"]) {
+      expect(resolveVoiceFromPrefix(prefix.toUpperCase(), [], DICTIONARY)).toEqual({
+        kind: "resolved",
+        code: "INSTR",
+      });
+    }
+  });
+
+  it("ignores the dot an abbreviated part is written with", () => {
+    expect(resolveVoiceFromPrefix("SOP.", [], DICTIONARY)).toEqual({
+      kind: "resolved",
+      code: "S1",
     });
   });
 

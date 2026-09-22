@@ -5,6 +5,11 @@
  * participation and attendance). The former four-collection client-side join is
  * gone — this is now a thin map into view-ready `TimelineEvent`s plus paging,
  * attendance stats and the RSVP submit.
+ *
+ * Whose timeline it is arrives as a `ScheduleSubject`, which separates the
+ * reader from the seat: a manager has the first and not the second, and gets
+ * the same evenings with every seat-bound affordance — RSVP, absence range,
+ * the "that line is mine" highlight — absent rather than broken.
  * @architecture Enterprise SaaS 2026
  */
 
@@ -15,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import type { AttendanceStatus, Project } from "@/shared/types";
 import { toZonedWallClock } from "@/shared/lib/time/timezone";
 import { isOpenToSelfReport } from "../lib/absenceWindow";
+import type { ScheduleSubject } from "./useScheduleSubject";
 import {
   useReportAbsenceRange,
   useScheduleDashboard,
@@ -33,8 +39,12 @@ import type {
 // pays for hundreds of animated cards on a single scroll.
 const PAST_PAGE_SIZE = 30;
 
-export const useScheduleData = (artistId?: string | number) => {
+export const useScheduleData = (subject?: ScheduleSubject) => {
   const { t } = useTranslation();
+  const artistId = subject?.artistId ?? undefined;
+  // Depended on as a boolean, never as the object: a caller passing a fresh
+  // literal each render would otherwise rebuild the whole timeline every time.
+  const hasSubject = subject !== undefined;
   const [viewMode, setViewMode] = useState<ScheduleViewMode>("UPCOMING");
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
   const [pastLimit, setPastLimit] = useState(PAST_PAGE_SIZE);
@@ -44,12 +54,12 @@ export const useScheduleData = (artistId?: string | number) => {
     if (viewMode === "PAST") setPastLimit(PAST_PAGE_SIZE);
   }, [viewMode]);
 
-  const { data = [], isLoading } = useScheduleDashboard(artistId);
+  const { data = [], isLoading } = useScheduleDashboard(subject?.key);
   const attendanceMutation = useUpsertScheduleAttendance();
   const rangeMutation = useReportAbsenceRange();
 
   const timelineEvents = useMemo<TimelineEvent[]>(() => {
-    if (!artistId || isLoading) return [];
+    if (!hasSubject || isLoading) return [];
 
     const events: TimelineEvent[] = [];
 
@@ -102,7 +112,7 @@ export const useScheduleData = (artistId?: string | number) => {
     }
 
     return events;
-  }, [artistId, isLoading, data, t]);
+  }, [hasSubject, isLoading, data, t]);
 
   const filteredEvents = useMemo(() => {
     const threshold = new Date(Date.now() - 4 * 60 * 60 * 1000);
@@ -240,9 +250,10 @@ export const useScheduleData = (artistId?: string | number) => {
    * write against, so the number stated before submitting is the number written.
    *
    * Two kinds of rehearsal in the window are not part of that number, and they
-   * are counted apart rather than quietly dropped: a conductor's, which carries
-   * no participation and so no seat to be absent from, and one already held,
-   * which belongs to the roll call and which the server will refuse a singer.
+   * are counted apart rather than quietly dropped: one reached without a seat —
+   * a conductor's, a manager's — which carries no participation and so nothing
+   * to be absent from, and one already held, which belongs to the roll call and
+   * which the server will refuse a singer.
    */
   const resolveAbsenceRange = useCallback(
     (from: string, to: string): AbsenceRangePreview => {

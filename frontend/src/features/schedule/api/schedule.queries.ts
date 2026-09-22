@@ -21,6 +21,11 @@ const ANONYMOUS_ARTIST_QUERY_ID = "anonymous";
 
 export const scheduleKeys = {
   dashboard: {
+    /**
+     * Keyed by the READER, which is the artist id wherever there is one and a
+     * per-user key for a manager who holds no seat — the server answers both,
+     * and only the first has a roster row to name the cache after.
+     */
     byArtist: (artistId: string | number) =>
       [...PERSONAL_READMODEL_KEYS.scheduleDashboard, String(artistId)] as const,
     /** A manager reading a member's timeline — never under the prefix above. */
@@ -40,18 +45,21 @@ const SCHEDULE_DASHBOARD_PREFIX = PERSONAL_READMODEL_KEYS.scheduleDashboard;
  * a cache root of its own. The switch lives here rather than at the call sites
  * so the timeline, the home hero and the readiness ring cannot disagree about
  * whose schedule they are drawing.
+ *
+ * `subjectKey` identifies the reader, not necessarily a roster seat — see
+ * `useScheduleSubject`, which is what every call site should resolve it from.
  */
-export const useScheduleDashboard = (artistId?: string | number) => {
+export const useScheduleDashboard = (subjectKey?: string | number) => {
   const { isPreview, artist } = useArtistPreview();
   const previewId = isPreview ? (artist?.id ?? null) : null;
 
   return useQuery({
     queryKey: previewId
       ? scheduleKeys.dashboard.preview(previewId)
-      : scheduleKeys.dashboard.byArtist(artistId ?? ANONYMOUS_ARTIST_QUERY_ID),
+      : scheduleKeys.dashboard.byArtist(subjectKey ?? ANONYMOUS_ARTIST_QUERY_ID),
     queryFn: () =>
       ScheduleService.getScheduleDashboard(previewId ?? undefined),
-    enabled: previewId ? true : !!artistId,
+    enabled: previewId ? true : !!subjectKey,
     // Personal read-model driven by the artist's participations and the
     // project's rehearsals — both changed from the manager's session. Reconcile
     // on the artist's next mount/focus so a new rehearsal or assignment lands.

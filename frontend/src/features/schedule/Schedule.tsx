@@ -9,11 +9,11 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { useAuth } from "../../app/providers/AuthProvider";
 import { useArtistPreview } from "../../app/providers/ArtistPreviewProvider";
 import { cn } from "@/shared/lib/utils";
 import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { useScheduleData } from "./hooks/useScheduleData";
+import { useScheduleSubject } from "./hooks/useScheduleSubject";
 import { NextEventHero } from "./components/NextEventHero";
 import { TimelineProjectCard } from "./components/TimelineProjectCard";
 import { TimelineRehearsalCard } from "./components/TimelineRehearsalCard";
@@ -42,12 +42,9 @@ const TABS = [
 
 export default function Schedule(): React.JSX.Element {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  // Inside a preview the timeline belongs to the member being looked at — the
-  // id only drives the query gate and the absence-range write, both of which
-  // must name them and not the manager reading over their shoulder.
-  const { isPreview, artist: previewArtist } = useArtistPreview();
+  const { isPreview } = useArtistPreview();
   const now = useNow(60_000);
+  const subject = useScheduleSubject();
   const {
     isLoading,
     viewMode,
@@ -62,9 +59,7 @@ export default function Schedule(): React.JSX.Element {
     handleAbsenceSubmit,
     absenceRange,
     artistId,
-  } = useScheduleData(
-    (isPreview ? previewArtist?.id : user?.artist_profile_id) ?? undefined,
-  );
+  } = useScheduleData(subject);
 
   const [activeDayKey, setActiveDayKey] = useState<string | null>(null);
 

@@ -46,6 +46,7 @@ export const useMaterialsData = (searchQuery = "", enabled = true) => {
         participationStatus: item.participation_status,
         isConducting: item.is_conducting,
         isLeading: item.is_leading,
+        isManaging: item.is_managing,
         program: item.program.map(prioritiseMyTrack),
       }))
       .sort((a, b) => {

@@ -19,7 +19,11 @@ class VoiceLine(models.TextChoices):
       * the untyped entries V1…V4 — a canon or a round divides singers into
         equal parts with no tessitura attached, and calling those parts
         "Soprano 1" would invent a voicing the score never wrote,
-      * standalone roles (SOLO, TUTTI, VP, BACK, ACC, PRON) that carry no index.
+      * standalone roles (SOLO, TUTTI, VP, BACK, INSTR, ACC, PRON) that carry
+        no index. ACC is a seat — the organist is cast on it, see
+        `features/projects/lib/autoCast` — while INSTR is only ever a recording:
+        the piece without its voices, for singing along to. Nothing is cast on
+        INSTR, so it stays out of the divisi vocabulary.
     Only the indexed kinds collapse to a plain family name when undivided —
     see [core.voice_labels]; the rest print their own label everywhere.
 
@@ -51,6 +55,7 @@ class VoiceLine(models.TextChoices):
     VOCAL_PERCUSSION = 'VP', _('Vocal Percussion / Beatbox')
     TUTTI = 'TUTTI', _('Tutti (All)')
     BACKGROUND = 'BACK', _('Backing Vocals')
+    INSTRUMENTAL = 'INSTR', _('Instrumental')
     ACCOMPANIMENT = 'ACC', _('Accompaniment')
     PRONUNCIATION = 'PRON', _('Pronunciation / Diction')
 

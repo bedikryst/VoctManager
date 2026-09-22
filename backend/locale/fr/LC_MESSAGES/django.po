@@ -276,6 +276,10 @@ msgstr "Tutti (Tous)"
 msgid "Backing Vocals"
 msgstr "Chœurs d’accompagnement"
 
+#: core/constants.py:54
+msgid "Instrumental"
+msgstr "Instrumental"
+
 #: core/constants.py:26
 msgid "Accompaniment"
 msgstr "Accompagnement"

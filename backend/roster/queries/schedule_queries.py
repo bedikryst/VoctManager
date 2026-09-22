@@ -6,6 +6,7 @@ from uuid import UUID
 
 from django.db.models import Count, Prefetch, Q, QuerySet
 
+from core.permissions import user_is_manager
 from core.voice_labels import canonical_section_letters, section_letters_of_seat
 from roster.domain.day_timeline import localize
 from roster.models import (
@@ -114,9 +115,10 @@ def get_artist_schedule(
     """
     CQRS Read Model for the Artist Schedule.
 
-    Returns the projects the artist is cast in *and* the projects they conduct,
-    plus the rehearsals they are invited to (every rehearsal, for a project they
-    conduct) — each pre-joined with the artist's own attendance — in a fixed
+    Returns the projects the artist is cast in *and* the projects they run
+    without a seat (conducting, standing in, or managing the choir), plus the
+    rehearsals they are invited to — every rehearsal, for a project they run —
+    each pre-joined with the artist's own attendance, in a fixed
     number of SQL queries. This replaces the former client-side join, where the
     frontend pulled four full collections (rehearsals, participations, projects,
     attendances) and re-joined them in O(n*m) `.find()` loops.
@@ -158,7 +160,20 @@ def get_artist_schedule(
     # each of those evenings actually lets them DO is decided per scope, where
     # it is done.
     conducted_project_ids = set(led_project_ids(user, scope='any'))
-    all_project_ids = sung_project_ids | conducted_project_ids
+
+    # A manager runs the season without sitting in it — often with no Artist row
+    # at all — so no seat and no podium ever puts a date on their timeline. They
+    # get the whole calendar on the same terms the podium gets its own projects:
+    # every live one, drafts included, cancellations dropped. No participation
+    # rides along, so nothing here offers them an RSVP or writes them into a cast.
+    seatless_project_ids = conducted_project_ids
+    if user_is_manager(user):
+        seatless_project_ids = seatless_project_ids | set(
+            Project.objects.exclude(status=Project.Status.CANCELLED)
+            .values_list('id', flat=True)
+        )
+
+    all_project_ids = sung_project_ids | seatless_project_ids
 
     # Cancellation was already decided upstream, on both id sets, which is what
     # keeps the concert row and its rehearsals from parting company. The prefetch
@@ -172,10 +187,11 @@ def get_artist_schedule(
         .order_by("date_time")
     )
 
-    # A rehearsal belongs to the schedule when the user conducts its project
-    # (they run every rehearsal), or — in a project they sing in — it has no
-    # explicit invite list (everyone) or it invites the artist's own
-    # participation. distinct=True on the count keeps it immune to the M2M join.
+    # A rehearsal belongs to the schedule when the user runs its project without
+    # a seat in it — conducting or managing, either way they are entitled to
+    # every rehearsal — or, in a project they sing in, when it has no explicit
+    # invite list (everyone) or it invites the artist's own participation.
+    # distinct=True on the count keeps it immune to the M2M join.
     absent_annotation = Count(
         "attendances",
         filter=Q(attendances__status__in=["ABSENT", "EXCUSED"]),
@@ -184,7 +200,7 @@ def get_artist_schedule(
     rehearsals_qs = (
         Rehearsal.objects.filter(project_id__in=all_project_ids, is_deleted=False)
         .filter(
-            Q(project_id__in=conducted_project_ids)
+            Q(project_id__in=seatless_project_ids)
             | Rehearsal.calling_q(
                 participation_ids,
                 instrumentalist=is_instrumentalist_account(user),

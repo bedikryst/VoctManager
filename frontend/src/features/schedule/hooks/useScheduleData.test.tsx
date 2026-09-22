@@ -148,9 +148,12 @@ const arrangeSchedule = (
 };
 
 const mountSchedule = async () => {
-  const harness = renderHookWithPanel(() => useScheduleData(ARTIST_ID), {
-    user: TEST_ARTIST,
-  });
+  const harness = renderHookWithPanel(
+    () => useScheduleData({ key: ARTIST_ID, artistId: ARTIST_ID }),
+    {
+      user: TEST_ARTIST,
+    },
+  );
   await waitFor(() => expect(harness.result.current.isLoading).toBe(false));
   return harness;
 };

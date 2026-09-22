@@ -395,7 +395,7 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
 
     Output shape:
       [{
-        participation_id, participation_status, is_conducting, is_leading,
+        participation_id, participation_status, is_conducting, is_leading, is_managing,
         project: { id, title, date_time, status, location },
         program: [{ order, is_encore, piece: { ..., tracks, castings, my_casting } }]
       }]
@@ -469,6 +469,10 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
             # asked to take, so this row is where their delegation surfaces. Led
             # projects they are NOT cast in never reach this serializer at all.
             'is_leading': project_key in self.context.get('led_project_ids', set()),
+            # A seat is a seat: a manager cast in the programme reads it as a
+            # singer, with their own part and their own readiness. The
+            # administrative claim belongs to the rows they have no seat in.
+            'is_managing': False,
             'project': {
                 'id': project_key,
                 'title': project.title,
@@ -505,11 +509,14 @@ class LedProjectMaterialsSerializer(serializers.Serializer):
     pre-fetched QuerySet produced by get_led_materials_projects() — zero
     additional DB queries.
 
-    `is_conducting` and `is_leading` are two different claims and the client acts
-    on them differently: the podium is held by one person, a programme may also
-    have been handed to a stand-in for a fortnight. Both read the reader out of
-    the context (`viewer_user_id`) rather than the request, so a manager's
-    ``?artist=`` preview describes the member being previewed and not themselves.
+    `is_conducting`, `is_leading` and `is_managing` are three different claims
+    and the client acts on them differently: the podium is held by one person, a
+    programme may also have been handed to a stand-in for a fortnight, and a
+    manager reaches every programme by running the choir rather than any one
+    concert. All three read the reader out of the context (`viewer_user_id`,
+    `led_project_ids`, `viewer_is_manager`) rather than the request, so a
+    manager's ``?artist=`` preview describes the member being previewed and not
+    themselves.
     """
 
     def to_representation(self, project: Project) -> dict[str, Any]:
@@ -549,6 +556,12 @@ class LedProjectMaterialsSerializer(serializers.Serializer):
 
         viewer_user_id = self.context.get('viewer_user_id')
         conductor = project.conductor
+        project_key = str(project.id)
+        # This slice holds two kinds of row and they must not be confused: one
+        # programme handed to this person, and the whole season reaching them
+        # because they run the choir. A manager's row is not a delegation, and
+        # badging it as one would tell them they were asked to take an evening.
+        is_leading = project_key in self.context.get('led_project_ids', set())
         return {
             'participation_id': None,
             'participation_status': None,
@@ -557,9 +570,11 @@ class LedProjectMaterialsSerializer(serializers.Serializer):
                 and viewer_user_id is not None
                 and conductor.user_id == viewer_user_id
             ),
-            'is_leading': True,
+            'is_leading': is_leading,
+            'is_managing': not is_leading
+            and self.context.get('viewer_is_manager', False),
             'project': {
-                'id': str(project.id),
+                'id': project_key,
                 'title': project.title,
                 'date_time': project.date_time,
                 'status': project.status,

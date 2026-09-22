@@ -170,8 +170,12 @@ class ArtistPreviewTests(APITestCase):
     # ── The schedule ─────────────────────────────────────────────────────
 
     def test_the_preview_shows_the_members_timeline_not_the_managers(self) -> None:
+        # The manager's own timeline is the season read from the office: every
+        # evening is there and a seat in none of them, so what separates it from
+        # a member's is the participation, not the dates.
         own = self._get(self.manager_user, SCHEDULE_URL)
-        self.assertEqual(own.data, [])
+        self.assertTrue(own.data)
+        self.assertEqual({item["participation_id"] for item in own.data}, {None})
 
         preview = self._get(self.manager_user, SCHEDULE_URL, artist=self.singer)
 

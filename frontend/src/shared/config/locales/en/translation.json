@@ -2785,6 +2785,7 @@
       "archived_badge": "Archive",
       "conducting_badge": "You conduct",
       "standing_in_badge": "Assistant",
+      "managing_badge": "Managing",
       "event": "Event:",
       "readiness_caption": "{{ready}} of {{total}} parts ready",
       "readiness_withheld": "Readiness hidden",
@@ -3170,6 +3171,7 @@
       "VP": "Vocal Percussion / Beatbox",
       "TUTTI": "Tutti (All)",
       "BACK": "Backing Vocals",
+      "INSTR": "Instrumental",
       "ACC": "Accompaniment",
       "PRON": "Pronunciation / Diction"
     },

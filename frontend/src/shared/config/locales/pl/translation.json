@@ -2813,6 +2813,7 @@
       "archived_badge": "Archiwum",
       "conducting_badge": "Prowadzisz",
       "standing_in_badge": "Asystent",
+      "managing_badge": "Zarządzasz",
       "event": "Wydarzenie:",
       "readiness_caption": "{{ready}} z {{total}} partii gotowych",
       "readiness_withheld": "Gotowość ukryta",
@@ -3199,7 +3200,8 @@
       "SOLO": "Solo",
       "VP": "Perkusja wokalna / Beatbox",
       "TUTTI": "Tutti (wszyscy)",
-      "BACK": "Chórki",
+      "BACK": "Głosy towarzyszące",
+      "INSTR": "Instrumental",
       "ACC": "Akompaniament",
       "PRON": "Wymowa / Dykcja"
     },

@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Archive, BookOpen, Briefcase, CalendarDays, EyeOff, Wand2 } from "lucide-react";
+import {
+  Archive,
+  BookOpen,
+  Briefcase,
+  CalendarDays,
+  EyeOff,
+  ShieldCheck,
+  Wand2,
+} from "lucide-react";
 
 import { ProjectScoreBook } from "@/features/projects/components/ProjectScoreBook";
 import { scoreAnnotatorModeFor } from "@/features/annotations";
@@ -109,15 +117,25 @@ export const ProjectMaterialGroup = ({
           <div className="shrink-0 flex items-center gap-2.5">
             {hasProgram && <OfflineDownloadControl group={group} />}
             <div className="flex items-center gap-1.5 rounded-lg border border-ethereal-gold/30 bg-ethereal-gold/10 px-2.5 py-1 shadow-glass-solid">
-              <Wand2
-                size={11}
-                className="text-ethereal-gold"
-                aria-hidden="true"
-              />
+              {group.isManaging ? (
+                <ShieldCheck
+                  size={11}
+                  className="text-ethereal-gold"
+                  aria-hidden="true"
+                />
+              ) : (
+                <Wand2
+                  size={11}
+                  className="text-ethereal-gold"
+                  aria-hidden="true"
+                />
+              )}
               <Eyebrow color="gold">
                 {group.isConducting
                   ? t("materials.project.conducting_badge", "Prowadzisz")
-                  : t("materials.project.standing_in_badge", "Asystent")}
+                  : group.isManaging
+                    ? t("materials.project.managing_badge", "Zarządzasz")
+                    : t("materials.project.standing_in_badge", "Asystent")}
               </Eyebrow>
             </div>
           </div>

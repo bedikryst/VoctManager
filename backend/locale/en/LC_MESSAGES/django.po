@@ -275,6 +275,10 @@ msgstr ""
 msgid "Backing Vocals"
 msgstr ""
 
+#: core/constants.py:54
+msgid "Instrumental"
+msgstr ""
+
 #: core/constants.py:26
 msgid "Accompaniment"
 msgstr ""

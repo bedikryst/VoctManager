@@ -20,6 +20,16 @@ const FULL_CODE = /^([SATBV])([1-9])$/;
 /** Prefixes that mean "everybody", in the spellings the choir actually uses. */
 const TUTTI_ALIASES: ReadonlySet<string> = new Set(["MP3", "TUTTI", "ALL", "WSZYSCY", "RAZEM"]);
 
+/**
+ * Word forms of the instrumental take, whose code `INSTR` is itself longer
+ * than a prefix anyone types. `PODKŁAD` is spelled twice: the stroked `ł` does
+ * not fold away under case-mapping, so the plain-letter spelling has to be its
+ * own key.
+ */
+const INSTRUMENTAL_ALIASES: ReadonlySet<string> = new Set([
+  "INST", "INSTRUMENTAL", "INSTRUMENTALNY", "PODKLAD", "PODKŁAD",
+]);
+
 /** Word-form family names, so `(Alt)` and `(Bass)` read like `(A)` and `(B)`. */
 const FAMILY_WORDS: ReadonlyMap<string, string> = new Map([
   ["S", "S"], ["SOP", "S"], ["SOPRAN", "S"], ["SOPRANO", "S"],
@@ -81,10 +91,20 @@ export const resolveVoiceFromPrefix = (
   dictionary: ReadonlySet<string>,
 ): VoiceResolution => {
   if (!prefix) return { kind: "unknown" };
-  const normalized = prefix.replace(/\s+/g, "").toUpperCase();
+  // The trailing dot of an abbreviation is dropped: `(instr.)`, `(sop.)` and
+  // `(bar.)` are how the parts get written by hand, and no voice code holds a
+  // dot, so nothing legible is lost by ignoring it.
+  const normalized = prefix
+    .replace(/\s+/g, "")
+    .replace(/\.+$/, "")
+    .toUpperCase();
 
   if (TUTTI_ALIASES.has(normalized) && dictionary.has("TUTTI")) {
     return { kind: "resolved", code: "TUTTI" };
+  }
+
+  if (INSTRUMENTAL_ALIASES.has(normalized) && dictionary.has("INSTR")) {
+    return { kind: "resolved", code: "INSTR" };
   }
 
   // A code the server knows (`A1`, `MS`, `SOLO`, `ACC`…) needs no reading.

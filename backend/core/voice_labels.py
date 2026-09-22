@@ -27,7 +27,7 @@ from core.constants import VoiceLine
 
 # Sx / Ax / Tx / Bx — the four choral families — plus Vx, the untyped parts a
 # canon or a round divides into. Everything else is never collapsed: the
-# standalone roles (SOLO, TUTTI, VP, BACK, ACC, PRON) and the intermediate
+# standalone roles (SOLO, TUTTI, VP, BACK, INSTR, ACC, PRON) and the intermediate
 # parts (MS, CT, BAR) carry no index, so their enum label is already the plain
 # name a singer reads.
 _DIVISI_CODE = re.compile(r'^([SATBV])([1-9])$')

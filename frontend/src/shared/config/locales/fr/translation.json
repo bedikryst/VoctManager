@@ -2794,6 +2794,7 @@
       "archived_badge": "Archives",
       "conducting_badge": "Vous dirigez",
       "standing_in_badge": "Assistant",
+      "managing_badge": "Gestion",
       "event": "Événement :",
       "readiness_caption": "{{ready}} parties prêtes sur {{total}}",
       "readiness_withheld": "Préparation masquée",
@@ -3179,6 +3180,7 @@
       "VP": "Percussion vocale / Beatbox",
       "TUTTI": "Tutti (tous)",
       "BACK": "Chœurs",
+      "INSTR": "Instrumental",
       "ACC": "Accompagnement",
       "PRON": "Prononciation / Diction"
     },

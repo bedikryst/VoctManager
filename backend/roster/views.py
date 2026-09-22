@@ -1654,6 +1654,11 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             # Who the tree is ABOUT, which under ``?artist=`` is not who is
             # asking. Both lead flags are claims about that person.
             'viewer_user_id': target.user.id,
+            # Whether the seatless rows below reached this person by running the
+            # choir rather than by being handed one programme. Asked of the
+            # preview target, like every other claim here: previewing a member
+            # must not stamp the manager's own standing onto their songbook.
+            'viewer_is_manager': user_is_manager(target.user),
             # `any`, because this flag answers "do they run this programme" and
             # a delegation that only hands over the roll call still does. Which
             # projects have MUSIC here is a different question, decided by

@@ -16,22 +16,29 @@ import { artistKeys } from "@/features/artists/api/artist.queries";
 import { ArtistService } from "@/features/artists/api/artist.service";
 import { useScheduleData } from "@/features/schedule/hooks/useScheduleData";
 import { useScheduleDashboard } from "@/features/schedule/api/schedule.queries";
+import { useScheduleSubject } from "@/features/schedule/hooks/useScheduleSubject";
 import type { TimelineEvent } from "@/features/schedule/types/schedule.dto";
 
 const ANONYMOUS_ARTIST_QUERY_ID = "anonymous";
 const WORKSPACE_STALE_TIME = 1000 * 60 * 5;
 
-export const useArtistDashboardData = (artistId?: string | number) => {
+export const useArtistDashboardData = () => {
   const { t } = useTranslation();
+  // Whose home screen this is — the same resolution the calendar and the
+  // rehearsal page make, so the hero and the timeline cannot end up describing
+  // two different people. The roster seat beneath it is what the profile read
+  // below needs, and a reader without one simply has no profile to greet.
+  const subject = useScheduleSubject();
+  const artistId = subject?.artistId ?? undefined;
 
   // One server-joined read model, shared with /panel/schedule: the home hero,
   // RSVP and attendance mirror can never disagree with the calendar.
   const { isLoading, filteredEvents, attendanceStats, handleAbsenceSubmit } =
-    useScheduleData(artistId);
+    useScheduleData(subject);
 
   // Same query key → React Query dedupes this; it only surfaces error/refetch
   // for the page shell (useScheduleData swallows both).
-  const { isError, refetch: refetchSchedule } = useScheduleDashboard(artistId);
+  const { isError, refetch: refetchSchedule } = useScheduleDashboard(subject?.key);
 
   const { data: artistProfile, refetch: refetchProfile } = useQuery({
     queryKey: artistKeys.artists.details(artistId ?? ANONYMOUS_ARTIST_QUERY_ID),

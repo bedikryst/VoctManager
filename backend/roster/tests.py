@@ -4980,7 +4980,11 @@ class ConductorScheduleAndMaterialsTests(APITestCase):
         self.maestro_user = User.objects.create_user(
             username="cond-maestro", email="cond@test.pl", password="pw123456"
         )
-        UserProfile.objects.create(user=self.maestro_user, role=AppRole.MANAGER)
+        # ARTIST, not MANAGER: conducting and administering the choir are two
+        # different standings and they open the season through two different
+        # doors. A maestro who was also a manager would be handed every project
+        # on the roster, and this class would stop testing the podium.
+        UserProfile.objects.create(user=self.maestro_user, role=AppRole.ARTIST)
         self.maestro = Artist.objects.create(
             user=self.maestro_user, first_name="Wanda", last_name="Baton",
             email="cond@test.pl", voice_type=VoiceType.CONDUCTOR,
@@ -5109,6 +5113,146 @@ class ConductorScheduleAndMaterialsTests(APITestCase):
         self.assertEqual(len(rows), 1)
         self.assertFalse(rows[0]["is_conducting"])
         self.assertEqual(rows[0]["participation_id"], str(maestro_part.id))
+
+
+class ManagerSeasonDashboardTests(APITestCase):
+    """
+    A manager with no Artist row at all — the administrator who runs the choir
+    from the office — reads the season through the same two personal dashboards
+    the singers use, and reads it seatless: every live project and rehearsal,
+    no participation anywhere, and nobody's part marked as theirs.
+    """
+
+    SCHEDULE_URL = "/api/participations/schedule-dashboard/"
+    MATERIALS_URL = "/api/participations/materials-dashboard/"
+
+    def setUp(self) -> None:
+        from archive.models import Composer, Piece
+        from core.constants import VoiceLine
+
+        from .models import ProgramItem, ProjectPieceCasting
+
+        User = get_user_model()
+        now = timezone.now()
+
+        # No Artist row: this account cannot be cast in anything, which is the
+        # whole reason the seat-driven read models used to answer it with silence.
+        self.admin_user = User.objects.create_user(
+            username="season-admin", email="admin@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.admin_user, role=AppRole.MANAGER)
+
+        self.singer_user = User.objects.create_user(
+            username="season-singer", email="ss@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.singer_user, role=AppRole.ARTIST)
+        self.singer = Artist.objects.create(
+            user=self.singer_user, first_name="Sam", last_name="Singer",
+            email="ss@test.pl", voice_type=VoiceType.TENOR,
+        )
+
+        composer = Composer.objects.create(first_name="Henryk", last_name="Górecki")
+        self.piece = Piece.objects.create(title="Totus Tuus", composer=composer)
+
+        self.project = Project.objects.create(
+            title="Adwent", date_time=now, status=Project.Status.ACTIVE,
+        )
+        self.singer_part = Participation.objects.create(
+            artist=self.singer, project=self.project,
+            status=Participation.Status.CONFIRMED,
+        )
+        ProgramItem.objects.create(project=self.project, piece=self.piece, order=1)
+        ProjectPieceCasting.objects.create(
+            participation=self.singer_part, piece=self.piece,
+            voice_line=VoiceLine.TENOR_1,
+        )
+
+        # Invites the singer only — an invite list is a fact about the cast and
+        # must not hide the evening from whoever runs the choir.
+        self.reh_singer_only = Rehearsal.objects.create(
+            project=self.project, date_time=now + timedelta(days=1),
+        )
+        self.reh_singer_only.invited_participations.add(self.singer_part)
+
+        self.cancelled = Project.objects.create(
+            title="Odwołany", date_time=now, status=Project.Status.CANCELLED,
+        )
+        self.reh_cancelled = Rehearsal.objects.create(
+            project=self.cancelled, date_time=now + timedelta(days=2),
+        )
+
+    def test_the_whole_live_season_reaches_the_manager_without_a_seat(self) -> None:
+        self.client.force_authenticate(user=self.admin_user)
+        resp = self.client.get(self.SCHEDULE_URL)
+
+        self.assertEqual(resp.status_code, 200)
+        project_ids = {
+            item["project"]["id"] for item in resp.data if item["type"] == "PROJECT"
+        }
+        self.assertIn(str(self.project.id), project_ids)
+        self.assertNotIn(str(self.cancelled.id), project_ids)
+
+        rehearsal_ids = {
+            item["rehearsal"]["id"] for item in resp.data if item["type"] == "REHEARSAL"
+        }
+        self.assertIn(str(self.reh_singer_only.id), rehearsal_ids)
+        self.assertNotIn(str(self.reh_cancelled.id), rehearsal_ids)
+
+        self.assertEqual({item["participation_id"] for item in resp.data}, {None})
+
+    def test_reading_the_season_never_writes_the_manager_into_a_cast(self) -> None:
+        self.client.force_authenticate(user=self.admin_user)
+        self.client.get(self.SCHEDULE_URL)
+        self.client.get(self.MATERIALS_URL)
+
+        self.assertFalse(
+            Participation.objects.filter(artist__user=self.admin_user).exists()
+        )
+        resp = self.client.get(self.MATERIALS_URL)
+        cast_ids = {
+            casting["artist_id"]
+            for entry in resp.data
+            for item in entry["program"]
+            for casting in item["piece"]["castings"]
+        }
+        self.assertEqual(cast_ids, {str(self.singer.id)})
+
+    def test_the_songbook_row_is_administrative_and_marks_nobodys_part_as_mine(self) -> None:
+        self.client.force_authenticate(user=self.admin_user)
+        resp = self.client.get(self.MATERIALS_URL)
+
+        self.assertEqual(resp.status_code, 200)
+        by_project = {entry["project"]["id"]: entry for entry in resp.data}
+        self.assertNotIn(str(self.cancelled.id), by_project)
+        entry = by_project[str(self.project.id)]
+        self.assertTrue(entry["is_managing"])
+        self.assertFalse(entry["is_conducting"])
+        self.assertFalse(entry["is_leading"])
+        self.assertIsNone(entry["participation_id"])
+
+        piece = entry["program"][0]["piece"]
+        self.assertIsNone(piece["my_casting"])
+        self.assertFalse(any(casting["is_me"] for casting in piece["castings"]))
+
+    def test_a_manager_cast_in_the_programme_keeps_their_singer_row(self) -> None:
+        # A seat outranks the office: the row is theirs as a singer, with their
+        # own part, and must not be relabelled as administration.
+        artist = Artist.objects.create(
+            user=self.admin_user, first_name="Ola", last_name="Zarząd",
+            email="admin@test.pl", voice_type=VoiceType.ALTO,
+        )
+        seat = Participation.objects.create(
+            artist=artist, project=self.project,
+            status=Participation.Status.CONFIRMED,
+        )
+
+        self.client.force_authenticate(user=self.admin_user)
+        resp = self.client.get(self.MATERIALS_URL)
+        rows = [e for e in resp.data if e["project"]["id"] == str(self.project.id)]
+
+        self.assertEqual(len(rows), 1)
+        self.assertFalse(rows[0]["is_managing"])
+        self.assertEqual(rows[0]["participation_id"], str(seat.id))
 
 
 class ConcertDaySheetTests(APITestCase):

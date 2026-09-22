@@ -19,7 +19,7 @@ import { OptionsService } from "./options.service";
  * new one they keep the pre-deploy list and the added entries simply never
  * appear in the pickers that are driven by it.
  */
-export const DICTIONARY_VERSION = "2026-09-intermediate-lines";
+export const DICTIONARY_VERSION = "2026-09-instrumental-line";
 
 /**
  * Keyed by language as well as version: the server sends these vocabularies

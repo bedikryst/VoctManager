@@ -213,6 +213,13 @@ export interface MaterialsDashboardItem {
    * are on the page. Neither decides the pencil — only being a manager does.
    */
   is_leading: boolean;
+  /**
+   * True when this row reached the reader because they run the CHOIR, not this
+   * concert: a manager with no seat here and no delegation. Mutually exclusive
+   * with `is_leading` — the server resolves the stronger claim first — and it
+   * changes only what the row is called, never what it opens.
+   */
+  is_managing: boolean;
   project: MaterialsProject;
   program: MaterialsProgramItem[];
 }
@@ -226,5 +233,7 @@ export interface MaterialsDashboardGroup {
   isConducting: boolean;
   /** The user runs this project's rehearsals — conductor or stand-in. */
   isLeading: boolean;
+  /** The user reaches this project by running the choir, not this concert. */
+  isManaging: boolean;
   program: MaterialsProgramItem[];
 }

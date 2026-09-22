@@ -269,14 +269,22 @@ def get_artist_materials_queryset(
 
 def get_led_materials_projects(user: User) -> QuerySet[Project]:
     """
-    CQRS Read Model for the "I run this one" slice of the materials dashboard.
+    CQRS Read Model for the seatless slice of the materials dashboard: every
+    project whose music reaches this reader through something other than a
+    casting.
 
-    Projects this user leads but is NOT cast in — the sung ones already flow
-    through get_artist_materials_queryset() carrying the singer's personalised
-    castings and readiness, so excluding them here keeps every project a single
-    row. Leading means either holding the podium (Project.conductor) or being
-    handed one programme as a stand-in; `led_projects_q` owns that rule,
-    including the two different lifecycle gates the two doors use.
+    Two doors lead here. Leading one programme — holding the podium
+    (Project.conductor) or being handed it as a stand-in, the rule `led_projects_q`
+    owns, including the two different lifecycle gates the doors use. And running
+    the choir: a manager administers the whole season and is often not on the
+    roster at all (no Artist row to be cast through), so without this slice their
+    songbook is empty while they are the one who filled it. The manager branch is
+    a strict superset of the leading one — same lifecycle rule, every live
+    project — so it simply replaces it.
+
+    Projects the user IS cast in are excluded: those flow through
+    get_artist_materials_queryset() carrying the singer's personalised castings
+    and readiness, and excluding them here keeps every project a single row.
 
     The reader sees the same rich piece tree (scores, tracks, translations,
     recordings, programme notes) with the full project cast, resolved in a fixed
@@ -294,11 +302,13 @@ def get_led_materials_projects(user: User) -> QuerySet[Project]:
         .values_list('project_id', flat=True)
     )
 
+    scoped: QuerySet[Project] = (
+        Project.objects.exclude(status=Project.Status.CANCELLED)
+        if user_is_manager(user)
+        else Project.objects.filter(led_projects_q(user, scope='materials'))
+    )
     led_qs: QuerySet[Project] = (
-        Project.objects
-        .filter(led_projects_q(user, scope='materials'))
-        .exclude(id__in=sung_project_ids)
-        .distinct()
+        scoped.exclude(id__in=sung_project_ids).distinct()
     )
     project_ids: list[uuid.UUID] = list(led_qs.values_list('id', flat=True))
 

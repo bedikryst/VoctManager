@@ -46,9 +46,7 @@ export default function ArtistDashboard(): React.JSX.Element {
     handleAbsenceSubmit,
     greeting,
     firstNameVocative,
-  } = useArtistDashboardData(
-    (isPreview ? previewArtist?.id : user?.artist_profile_id) ?? undefined,
-  );
+  } = useArtistDashboardData();
 
   if (isLoading) {
     return (
