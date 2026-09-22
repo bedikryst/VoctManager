@@ -403,10 +403,11 @@ class PatronageService:
     def notify_foundation(lead: PatronLead) -> None:
         """
         Pings the foundation's inbox that a new patronage lead arrived. Deliberately
-        content-free: it carries no name, e-mail or identifier, so the lead's personal
-        data never leaves the EU database and the e-mail provider processes none of it —
-        the foundation reads the details in the Django admin. Raises on transport
-        failure; the caller swallows it (the lead is already persisted).
+        content-free apart from the admin link: it carries no name or e-mail, so the
+        lead's personal data never leaves the EU database and the e-mail provider
+        processes none of it — the foundation reads the details in the Django admin.
+        Raises on transport failure; the caller swallows it (the lead is already
+        persisted).
         """
         # `lead` is taken (not its fields) so the call site reads naturally and a
         # future switch back to a detailed notification is a one-line change.
@@ -415,7 +416,13 @@ class PatronageService:
             recipient_email=settings.PATRON_NOTIFICATION_EMAIL,
             subject="Nowe zgłoszenie mecenasa",
             template_name='patron_lead_notification',
-            context={},
+            # The lead's id is the only field carried: it addresses the admin row
+            # without putting any personal datum in the message body.
+            context={
+                'admin_url': (
+                    f"{settings.FRONTEND_URL}/admin/payments/patronlead/{lead.id}/change/"
+                ),
+            },
             fallback_language='pl',
             email_type=EmailType.OPERATIONAL,
         )

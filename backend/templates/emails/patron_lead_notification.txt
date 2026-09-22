@@ -10,4 +10,6 @@ administracyjnym — celowo nie umieszczamy ich w tej wiadomości,
 aby dane nie opuszczały bazy.
 
 -----------------------------------------
-Panel → Patron Leads
+Otwórz zgłoszenie: {{ admin_url }}
+
+Powiadomienie wewnętrzne VoctManager dla skrzynki fundacji.

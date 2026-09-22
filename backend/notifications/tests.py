@@ -619,6 +619,75 @@ class EmailTemplateRedesignTests(SimpleTestCase):
             self.assertIn(url, render_to_string(f"emails/{template}.txt", self.CONTEXT))
 
 
+class EmailTemplateLocalizationTests(SimpleTestCase):
+    """
+    Every translatable string in the e-mail templates must resolve in the compiled
+    catalogs. A key that does not resolve renders as its English msgid, which is how
+    a whole paragraph of the activation mail reached Polish members: the template's
+    em dash was changed to a literal character while the catalogue kept the `&mdash;`
+    entity, so the msgid silently stopped matching. Grepping the .po still found the
+    translation. Only asking gettext does not lie — and because it reads the .mo, this
+    also fails when a .po was edited without being recompiled.
+    """
+
+    #: Musical and Latin-rooted terms whose translation is legitimately the source
+    #: word. Extend only when a term really is identical in the target language.
+    IDENTITY_TRANSLATIONS: ClassVar[dict[str, set[str]]] = {
+        "pl": {"Aria"},
+        "fr": {"Aria", "Coda", "Confirmation"},
+    }
+
+    TRANSLATE_TAG = re.compile(r'{%\s*(?:translate|trans)\s+"((?:[^"\\]|\\.)*)"')
+    BLOCKTRANSLATE_TAG = re.compile(
+        r'{%\s*blocktranslate(?P<options>[^%]*)%}(?P<body>.*?){%\s*endblocktranslate\s*%}',
+        re.S,
+    )
+    #: `{{ name }}` is what xgettext would emit as `%(name)s` in the extracted msgid.
+    PLACEHOLDER = re.compile(r"{{\s*([\w.]+)\s*}}")
+
+    @staticmethod
+    def _as_gettext_placeholder(match: re.Match[str]) -> str:
+        name = match.group(1).replace(".", "_")
+        return f"%({name})s"
+
+    @classmethod
+    def _msgids(cls) -> dict[str, set[str]]:
+        """Maps every msgid found in the e-mail templates to the files using it."""
+        root = Path(settings.BASE_DIR) / "templates" / "emails"
+        found: dict[str, set[str]] = {}
+        for path in sorted(root.rglob("*.html")) + sorted(root.rglob("*.txt")):
+            source = path.read_text(encoding="utf-8")
+            name = path.relative_to(root).as_posix()
+            for match in cls.TRANSLATE_TAG.finditer(source):
+                found.setdefault(match.group(1), set()).add(name)
+            for match in cls.BLOCKTRANSLATE_TAG.finditer(source):
+                body = match.group("body")
+                if "trimmed" in match.group("options"):
+                    body = " ".join(
+                        line.strip() for line in body.strip().splitlines() if line.strip()
+                    )
+                msgid = cls.PLACEHOLDER.sub(cls._as_gettext_placeholder, body)
+                found.setdefault(msgid, set()).add(name)
+        return found
+
+    def test_every_template_string_resolves_in_every_catalog(self) -> None:
+        found = self._msgids()
+        self.assertGreater(len(found), 50, "msgid extraction stopped finding strings")
+        for language, identities in self.IDENTITY_TRANSLATIONS.items():
+            with translation.override(language):
+                unresolved = sorted(
+                    f"{msgid!r} (used in {', '.join(sorted(files))})"
+                    for msgid, files in found.items()
+                    if msgid not in identities and translation.gettext(msgid) == msgid
+                )
+            self.assertEqual(
+                unresolved, [],
+                f"[{language}] these strings render in English. Either the catalogue "
+                f"lacks the entry, or the template's text drifted from the msgid. "
+                f"After editing the .po, recompile the .mo — nothing does it for you.",
+            )
+
+
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     FRONTEND_URL="https://voctensemble.com",
