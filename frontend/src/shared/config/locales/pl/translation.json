@@ -4537,6 +4537,26 @@
       "debrief": {
         "prompt": "Odznacz, czego nie zrobiliście",
         "done_label": "Przerobione"
+      },
+      "block": {
+        "span": "{{start}}–{{end}}",
+        "from": "od {{start}}",
+        "length": "{{minutes}} min",
+        "planned": "zaplanowano {{minutes}} min",
+        "calls": "Kogo cały blok nie potrzebuje",
+        "toggle_family": "Wyklucz w całym bloku: {{label}}",
+        "toggle_instrumentalists": "Cały blok bez instrumentalistów"
+      },
+      "attendance": {
+        "title": "Przyjdzie",
+        "players_short": "Instr.",
+        "figure": "{{name}}: przyjdzie {{expected}} z {{called}}"
+      },
+      "discard": {
+        "title": "Zamknąć bez zapisywania?",
+        "desc": "Zmiany w planie tej próby nie zostały zapisane i przepadną.",
+        "confirm": "Odrzuć zmiany",
+        "keep": "Wróć do planu"
       }
     },
     "dashboard": {

@@ -111,6 +111,25 @@ export const RehearsalsTab = ({
   // the phone flow — never inside the compose form, which has no rehearsal
   // to hang rows on until it is submitted.
   const [planRehearsal, setPlanRehearsal] = useState<Rehearsal | null>(null);
+  const [isPlanDirty, setIsPlanDirty] = useState(false);
+  const [isDiscardingPlan, setIsDiscardingPlan] = useState(false);
+
+  // Every way out of the sheet (scrim, Escape, drag, the close button) comes
+  // through here, and an unsaved draft waits for the conductor's word. Escape
+  // reaches the sheet under an open confirm too, so a second ask is dropped.
+  const requestClosePlan = (): void => {
+    if (isDiscardingPlan) return;
+    if (isPlanDirty) {
+      setIsDiscardingPlan(true);
+      return;
+    }
+    setPlanRehearsal(null);
+  };
+  const discardPlan = (): void => {
+    setIsDiscardingPlan(false);
+    setIsPlanDirty(false);
+    setPlanRehearsal(null);
+  };
 
   /* Only a named call can be empty by mistake, and a sectional only when no
      section is ticked. Tutti names nobody on purpose, and a sectional whose
@@ -770,7 +789,7 @@ export const RehearsalsTab = ({
           reflected the moment the list refetches. */}
       <BottomSheet
         isOpen={planRehearsal !== null}
-        onClose={() => setPlanRehearsal(null)}
+        onClose={requestClosePlan}
         title={t("rehearsals.plan.title", "Plan próby")}
         subtitle={
           planRehearsal
@@ -790,10 +809,26 @@ export const RehearsalsTab = ({
               planRehearsal
             }
             actions="inline"
+            onDirtyChange={setIsPlanDirty}
             className="-mx-5 sm:-mx-6"
           />
         )}
       </BottomSheet>
+
+      {/* After the sheet, so it opens over it. */}
+      <ConfirmModal
+        isOpen={isDiscardingPlan}
+        title={t("rehearsals.plan.discard.title", "Zamknąć bez zapisywania?")}
+        description={t(
+          "rehearsals.plan.discard.desc",
+          "Zmiany w planie tej próby nie zostały zapisane i przepadną.",
+        )}
+        confirmText={t("rehearsals.plan.discard.confirm", "Odrzuć zmiany")}
+        cancelText={t("rehearsals.plan.discard.keep", "Wróć do planu")}
+        isDestructive={true}
+        onConfirm={discardPlan}
+        onCancel={() => setIsDiscardingPlan(false)}
+      />
 
       <AutosaveStatus isSaving={isSubmitting || isDeleting} />
     </>

@@ -4499,6 +4499,26 @@
       "debrief": {
         "prompt": "Décochez ce que vous n'avez pas fait",
         "done_label": "Travaillé"
+      },
+      "block": {
+        "span": "{{start}}–{{end}}",
+        "from": "dès {{start}}",
+        "length": "{{minutes}} min",
+        "planned": "prévu {{minutes}} min",
+        "calls": "De qui tout le bloc n'a pas besoin",
+        "toggle_family": "Exclure sur tout le bloc : {{label}}",
+        "toggle_instrumentalists": "Tout le bloc sans instrumentistes"
+      },
+      "attendance": {
+        "title": "Viendront",
+        "players_short": "Instr.",
+        "figure": "{{name}} : {{expected}} sur {{called}} viendront"
+      },
+      "discard": {
+        "title": "Fermer sans enregistrer ?",
+        "desc": "Les modifications du plan de cette répétition ne sont pas enregistrées et seront perdues.",
+        "confirm": "Abandonner les modifications",
+        "keep": "Revenir au plan"
       }
     },
     "dashboard": {

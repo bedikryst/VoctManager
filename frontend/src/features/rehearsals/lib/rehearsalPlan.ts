@@ -124,6 +124,9 @@ export const plusMinutes = (clock: string, minutes: number): string => {
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 };
 
+/** What the clocks are computed from: a row's anchor and its minutes, nothing else. */
+export type TimedRow = Pick<PlanRuleRow, "startsAt" | "minutes">;
+
 /**
  * Every row's clock, in plan order. An anchor wins — it is the promise, even
  * when the minutes above it add up to later. Otherwise a row starts at the
@@ -132,7 +135,7 @@ export const plusMinutes = (clock: string, minutes: number): string => {
  * flows under the last clock (`clock: null`) until the next anchor.
  */
 export const effectiveClocks = (
-  rows: readonly { readonly startsAt: string | null; readonly minutes: number | null }[],
+  rows: readonly TimedRow[],
   start: string,
 ): EffectiveClock[] => {
   const clocks: EffectiveClock[] = [];
@@ -156,7 +159,7 @@ export const effectiveClocks = (
  * under joins the block above it. Never sorted, so a clock earlier than its
  * predecessor is still the next block (ordering carries the warning).
  */
-export const planBlocks = (rows: readonly PlanRuleRow[], start: string): PlanBlock[] => {
+export const planBlocks = (rows: readonly TimedRow[], start: string): PlanBlock[] => {
   const blocks: PlanBlock[] = [];
   let carried = start;
   let current: number[] = [];

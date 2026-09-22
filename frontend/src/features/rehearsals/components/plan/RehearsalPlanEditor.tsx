@@ -4,10 +4,11 @@
  * (piece, free label or break; minutes, a clock that follows from them or an
  * anchor, note, exclusions), a sortable "Jeśli starczy czasu" divider with the
  * reserve under it, an "end of rehearsal" line where the minutes run past a
- * timed evening's end, three fills so the
- * evening is never laid out from zero (the whole programme; what the previous
- * rehearsal left undone; a copy of any other plan), an explicit save, and —
- * separately — publishing. A saved plan is a draft the choir does not see
+ * timed evening's end, a header on each time block once there are two (its
+ * span, and calls set across its rows at once), a strip of who is actually
+ * coming, three fills so the evening is never laid out from zero (the whole
+ * programme; what the previous rehearsal left undone; a copy of any other
+ * plan), an explicit save, and — separately — publishing. A saved plan is a draft the choir does not see
  * until "Opublikuj plan" (or until the evening starts); after that, saves are
  * visible but silent, and "Wyślij zmiany" is the conductor's own act, enabled
  * only when the rows changed since the last send. The conductor edits a dozen
@@ -23,7 +24,7 @@
  * @module features/rehearsals/components/plan/RehearsalPlanEditor
  */
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { formatInTimeZone } from "date-fns-tz";
@@ -64,6 +65,8 @@ import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import type { Rehearsal } from "@/shared/types";
 import { useAnnouncePlan, useRehearsalPlan, useSaveRehearsalPlan } from "../../api/plan.queries";
+import { PlanAttendanceStrip } from "./PlanAttendanceStrip";
+import { PlanBlockHeader } from "./PlanBlockHeader";
 import { RehearsalPlanRow } from "./RehearsalPlanRow";
 import { RESERVE_DIVIDER_KEY, usePlanEditor, type PlanDraftRow } from "./usePlanEditor";
 import { usePlanEditorData } from "./usePlanEditorData";
@@ -76,6 +79,11 @@ interface RehearsalPlanEditorProps {
    * for a host that is itself a modal surface.
    */
   readonly actions?: "dock" | "inline";
+  /**
+   * Whether the draft holds unsaved rows, for a host that can close the
+   * editor — a sheet asks before a close would throw the draft away.
+   */
+  readonly onDirtyChange?: (isDirty: boolean) => void;
   readonly className?: string;
 }
 
@@ -154,6 +162,7 @@ const EndOfRehearsalLine = ({ clock }: { clock: string }): React.JSX.Element => 
 export const RehearsalPlanEditor = ({
   rehearsal,
   actions = "dock",
+  onDirtyChange,
   className,
 }: RehearsalPlanEditorProps): React.JSX.Element => {
   const { t, i18n } = useTranslation();
@@ -163,6 +172,10 @@ export const RehearsalPlanEditor = ({
   const editor = usePlanEditor(rehearsal, planQuery.data, data);
   const save = useSaveRehearsalPlan(rehearsalId);
   const announce = useAnnouncePlan(rehearsalId);
+
+  useEffect(() => {
+    onDirtyChange?.(editor.isDirty);
+  }, [editor.isDirty, onDirtyChange]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -402,6 +415,14 @@ export const RehearsalPlanEditor = ({
         )
       )}
 
+      {!isOpening && data.attendances && (
+        <PlanAttendanceStrip
+          rehearsal={rehearsal}
+          participations={data.participations}
+          attendances={data.attendances}
+        />
+      )}
+
       {/* ── Rows ────────────────────────────────────────────────────────── */}
       {isOpening ? (
         <EtherealLoader
@@ -442,6 +463,7 @@ export const RehearsalPlanEditor = ({
                 const row = rowsByKey.get(key);
                 const reading = editor.readings.get(key);
                 if (!row || !reading) return null;
+                const block = editor.blockHeaders.get(key);
                 return (
                   <React.Fragment key={key}>
                     {key === editor.endLineBefore && editor.endClock && (
@@ -459,6 +481,15 @@ export const RehearsalPlanEditor = ({
                       onToggleLine={editor.toggleLine}
                       onToggleFamily={editor.toggleFamily}
                       onRemove={editor.removeRow}
+                      header={
+                        block && (
+                          <PlanBlockHeader
+                            block={block}
+                            onSetFamily={editor.setFamilyOnRows}
+                            onSetPlayers={editor.setPlayersOnRows}
+                          />
+                        )
+                      }
                     />
                   </React.Fragment>
                 );

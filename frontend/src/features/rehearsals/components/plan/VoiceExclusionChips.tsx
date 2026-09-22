@@ -37,7 +37,7 @@ const CHIP_BUTTON =
   "rounded-chip focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40";
 
 /** The family's plural name — the same taxonomy the casting board headers use. */
-const useFamilyLabels = (): Record<VoiceFamilyId, string> => {
+export const useFamilyLabels = (): Record<VoiceFamilyId, string> => {
   const { t } = useTranslation();
   return {
     S: t("projects.micro_cast.voices.sopranos", "Soprany"),

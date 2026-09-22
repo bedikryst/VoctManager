@@ -12,7 +12,8 @@
  * rehearsal's window: ordering carries the warning. The caption "woła 14 z 22" is the row's effect stated
  * in people, from the same rule the server calls with. A break is the same
  * row, muted and without exclusions: it calls nobody, so there is nobody to
- * leave out — its clock is where the people before it are released.
+ * leave out — its clock is where the people before it are released. A row
+ * that opens a time block carries the block's header above its own line.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/RehearsalPlanRow
  */
@@ -52,6 +53,8 @@ interface RehearsalPlanRowProps {
   readonly onToggleLine: (key: string, line: VoiceLine) => void;
   readonly onToggleFamily: (key: string, family: VoiceFamilyId) => void;
   readonly onRemove: (key: string) => void;
+  /** The head of the block this row opens; inside the row so a drag carries it. */
+  readonly header?: React.ReactNode;
 }
 
 export const RehearsalPlanRow = ({
@@ -66,6 +69,7 @@ export const RehearsalPlanRow = ({
   onToggleLine,
   onToggleFamily,
   onRemove,
+  header,
 }: RehearsalPlanRowProps): React.JSX.Element => {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -102,6 +106,7 @@ export const RehearsalPlanRow = ({
               : "hover:bg-ethereal-ink/3",
         )}
       >
+        {header}
         <div className="flex items-center gap-2">
           {/* The grip is the only drag surface, so the fields stay usable. */}
           <span
@@ -177,7 +182,7 @@ export const RehearsalPlanRow = ({
                 value={row.label}
                 maxLength={120}
                 onChange={(event) => onUpdate(row.key, { label: event.target.value })}
-                placeholder={t("rehearsals.plan.row.label_placeholder", "np. Rozśpiewanie, przerwa")}
+                placeholder={t("rehearsals.plan.row.label_placeholder", "np. Rozśpiewanie, ogłoszenia")}
                 aria-label={t("rehearsals.plan.row.label", "Nazwa punktu")}
               />
             )}

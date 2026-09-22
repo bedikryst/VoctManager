@@ -11,7 +11,9 @@ decided on 2026-09-22 after a conductor-side audit — see "Round 2" at the very
 (backend) implemented 2026-09-22 — NOT committed; its migration is
 `roster/0060` (`0059` was already the voice-line choices), applied nowhere yet. Stage 7
 (frontend) implemented 2026-09-22 — NOT committed, NOT seen in the browser (needs `0060` on dev
-first); see its "As landed". Stages 8–10 NOT started.**
+first); see its "As landed". Stage 8 (minutes, backend and frontend) implemented 2026-09-22 —
+NOT committed, NOT seen in the browser; migration `roster/0061`, applied nowhere yet. Stages
+9–10 NOT started.**
 One stage per session; move this line when a stage lands and say whether it is committed,
 migrated and seen in the browser.
 
@@ -1066,6 +1068,36 @@ soloist-only rows, a live mode counting down to a section's release, unpublishin
   clocks when `calls_me` is null). i18n ×3.
 - Tests in `roster/test_rehearsal_plan.py`: the golden cases through the API (a tenor's window
   from minutes alone), `plan_changed_at` on a minutes edit, reminder lines without derived times.
+
+**As landed (2026-09-22).** Where the code departs from or adds to the list above:
+- Migration `roster/0061_rehearsalplanitem_minutes`. The DTO bounds minutes to 1–600.
+- `effective_clocks(rows, start)` returns `EffectiveClock(clock, derived)` per row and reads any
+  `TimedRow` (a protocol: `starts_at` + `minutes`), so the serializer runs it over the stored
+  rows without building rule rows. An unanchored FIRST row gets the rehearsal start as a derived
+  clock; a row after one without minutes gets `clock=None` (flows under). `plan_blocks` now
+  takes `start` and `PlanBlock.starts_at` is never null — the first block always has a clock.
+  Every existing golden case passes unchanged.
+- The serializer's clocks travel as `plan_clocks` in the context, built with `plan_over` by
+  `plan_queries.plan_row_context(rehearsal, items)` over the WHOLE plan — the tick door, which
+  answers one row, reads all of them for it.
+- Golden cases carry an optional `clocks` list (derivedness = a clock on a row without `time`);
+  five new cases, the four named above plus "a break's minutes move every clock after it".
+- `rehearsal_plan_lines` needed no code: it already printed `starts_at`, which is the anchor.
+- Editor: decision 18's ghost slot lands here together with decision 23 — the slot shows the
+  anchor as a `TimeField`, a derived clock as a muted button (tap = anchor it at that time, via
+  `anchorRow`), "+ godz." when nothing is known; the field stays open while focused, so
+  clearing an anchor does not unmount it mid-edit. The minutes field sits beside the NOTE, not
+  on the title line — on a phone the title needed that width. A copied or carried-over row
+  keeps its minutes and drops its anchor.
+- The end line is drawn above the first row that does not fit whole (it starts at or after the
+  end, or its minutes run past it); an evening crossing midnight reads small-hour clocks as the
+  next day. It is a non-sortable `<li>` rendered with the row, not a drag target.
+- Chorister display: `shownClocks` in `lib/rehearsalPlan.ts` — anchors, the clock of the block
+  the reader's first called row falls in (arrival), and the first clock after their last
+  called row (release); a mid-evening gap shows nothing. Staff (`calls_me` null) see every
+  clock. The debrief reads `clock`.
+- `QUERY_CACHE_BUSTER` not bumped: Stage 7's `2026-09-rehearsal-plan-done` is still
+  uncommitted, and it ships together with these fields.
 
 ### Stage 9 — Editor ergonomics
 

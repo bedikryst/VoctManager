@@ -6,9 +6,11 @@
  * from zero (the whole programme; what the previous rehearsal left undone; a
  * copy of any other rehearsal's plan), and — for every row and every chip —
  * the number of people the exclusion actually removes, computed by the same
- * rule the server calls with (`lib/rehearsalPlan`), and every row's effective
- * clock from its anchor and the minutes above it. Nothing here talks to the
- * network beyond the one whole-list save; the draft is local until then.
+ * rule the server calls with (`lib/rehearsalPlan`), every row's effective
+ * clock from its anchor and the minutes above it, and the time blocks those
+ * clocks cut the evening into — each with its span and a call a header can
+ * set across the block's rows at once. Nothing here talks to the network
+ * beyond the one whole-list save; the draft is local until then.
  *
  * The reserve ("Jeśli starczy czasu") is a divider in the list, not a flag on
  * a row: the draft holds where the divider stands, and `is_reserve` is derived
@@ -36,6 +38,7 @@ import {
   clockMinutes,
   effectiveClocks,
   itemCallsSeat,
+  planBlocks,
   planRowOf,
   planSeatOf,
   type EffectiveClock,
@@ -103,6 +106,40 @@ export interface PlanRowReading {
   readonly hasExclusions: boolean;
 }
 
+/** How far one call reaches across a block's rows: every row, some, or none. */
+export type BlockCallState = "all" | "some" | "none";
+
+export interface PlanBlockFamily {
+  readonly family: VoiceFamilyId;
+  /** Over the rows that offer the family; "some" includes a row leaving out one line of it. */
+  readonly excluded: BlockCallState;
+}
+
+/**
+ * One time block as its header states it. A block is what `planBlocks`
+ * groups — rows sharing an effective clock, the same blocks the window is
+ * cut from — so with minutes on every row, every row is its own block.
+ */
+export interface PlanBlockReading {
+  /** The block's rows in order: what a header chip sets. */
+  readonly rowKeys: readonly string[];
+  readonly startsAt: string;
+  /**
+   * The next block's clock, else the rehearsal's end. Null = open-ended
+   * ("od 20:30"): the last block of an untimed evening, a block starting past
+   * the end, or one whose next clock runs backwards.
+   */
+  readonly endsAt: string | null;
+  /** The span in minutes; null when open-ended or starting past the end. */
+  readonly length: number | null;
+  /** The rows' own minutes added up; null when no row of the block has any. */
+  readonly planned: number | null;
+  /** Family chips; empty unless two rows or more of the block call anyone. */
+  readonly families: readonly PlanBlockFamily[];
+  /** The players' chip; null when no player is called, or fewer than two rows call anyone. */
+  readonly players: BlockCallState | null;
+}
+
 /** A rehearsal a fill can copy from, as the picker lists it. */
 export interface PlanSource {
   readonly rehearsalId: string;
@@ -125,6 +162,12 @@ export interface PlanEditor {
   readonly endLineBefore: string | null;
   /** The rehearsal's end as a wall clock; null when it was never timed. */
   readonly endClock: string | null;
+  /**
+   * Block headers, by the key of the row each one stands on. Empty while the
+   * plan is one block; a one-row block whose minutes fill its span exactly
+   * has none — the row's own clock and minutes already say it.
+   */
+  readonly blockHeaders: ReadonlyMap<string, PlanBlockReading>;
   readonly readings: ReadonlyMap<string, PlanRowReading>;
   /** Seats the rehearsal calls — the denominator under every row. */
   readonly calledTotal: number;
@@ -145,6 +188,17 @@ export interface PlanEditor {
   readonly anchorRow: (key: string) => void;
   readonly toggleLine: (key: string, line: VoiceLine) => void;
   readonly toggleFamily: (key: string, family: VoiceFamilyId) => void;
+  /**
+   * SETS one family on every listed row, each through its own lines — a row
+   * whose piece does not offer the family is left as it is, and so is a break.
+   */
+  readonly setFamilyOnRows: (
+    keys: readonly string[],
+    family: VoiceFamilyId,
+    excluded: boolean,
+  ) => void;
+  /** SETS the players' flag on every listed row but a break. */
+  readonly setPlayersOnRows: (keys: readonly string[], excluded: boolean) => void;
   readonly removeRow: (key: string) => void;
   /** Moves a row or the divider (`RESERVE_DIVIDER_KEY`) onto another's place. */
   readonly moveRow: (fromKey: string, toKey: string) => void;
@@ -493,19 +547,23 @@ export const usePlanEditor = (
     return map;
   }, [rows, startClock]);
 
-  // The first row that does not fit whole: it starts at or after the end, or
-  // its minutes run past it. Ordering carries the warning — no copy, no
-  // validation. An evening that crosses midnight reads its small-hour clocks
-  // as the next day; one that does not reads an anchor before the start as
-  // simply early.
-  const endLineBefore = useMemo(() => {
-    if (endClock === null) return null;
+  // A clock as minutes on the evening's own axis. An evening that crosses
+  // midnight reads its small-hour clocks as the next day; one that does not
+  // reads an anchor before the start as simply early.
+  const onEvening = useMemo(() => {
     const startMinutes = clockMinutes(startClock);
-    const crossesMidnight = clockMinutes(endClock) < startMinutes;
-    const onEvening = (clock: string): number => {
+    const crossesMidnight = endClock !== null && clockMinutes(endClock) < startMinutes;
+    return (clock: string): number => {
       const minutes = clockMinutes(clock);
       return crossesMidnight && minutes < startMinutes ? minutes + 24 * 60 : minutes;
     };
+  }, [startClock, endClock]);
+
+  // The first row that does not fit whole: it starts at or after the end, or
+  // its minutes run past it. Ordering carries the warning — no copy, no
+  // validation.
+  const endLineBefore = useMemo(() => {
+    if (endClock === null) return null;
     const end = onEvening(endClock);
     for (const row of rows) {
       const clock = clocks.get(row.key)?.clock;
@@ -514,7 +572,89 @@ export const usePlanEditor = (
       if (at >= end || (row.minutes !== null && at + row.minutes > end)) return row.key;
     }
     return null;
-  }, [endClock, startClock, rows, clocks]);
+  }, [endClock, onEvening, rows, clocks]);
+
+  /* ── Blocks ──────────────────────────────────────────────────────────── */
+
+  // The same blocks the window is cut from, stated as facts: the span, its
+  // length, and the minutes the rows claim inside it — an anchor that comes
+  // before the minutes above it add up to still wins, and the header is where
+  // that shows. The chips read the block's calling rows only; a break is in
+  // the block's time but calls nobody.
+  const blockHeaders = useMemo(() => {
+    const map = new Map<string, PlanBlockReading>();
+    const blocks = planBlocks(
+      rows.map((row) => ({ startsAt: row.starts_at || null, minutes: row.minutes })),
+      startClock,
+    );
+    if (blocks.length < 2) return map;
+    const end = endClock === null ? null : onEvening(endClock);
+
+    blocks.forEach((block, index) => {
+      const blockRows = block.rows.flatMap((rowIndex) => {
+        const row = rows[rowIndex];
+        return row ? [row] : [];
+      });
+      const first = blockRows[0];
+      if (!first) return;
+
+      const start = onEvening(block.startsAt);
+      const next = blocks[index + 1]?.startsAt ?? endClock;
+      const pastEnd = end !== null && start >= end;
+      const endsAt = next !== null && !pastEnd && onEvening(next) > start ? next : null;
+      const length = endsAt === null ? null : onEvening(endsAt) - start;
+      const timed = blockRows.filter((row) => row.minutes !== null && row.minutes > 0);
+      const planned =
+        timed.length > 0 ? timed.reduce((sum, row) => sum + (row.minutes ?? 0), 0) : null;
+      if (blockRows.length === 1 && planned !== null && planned === length) return;
+
+      const calling = blockRows.filter((row) => !row.is_break);
+      const callReadings = calling.flatMap((row) => {
+        const reading = readings.get(row.key);
+        return reading ? [reading] : [];
+      });
+      // One calling row is its own header: its chips already say it.
+      const offersChips = callReadings.length >= 2;
+      const families = offersChips
+        ? FAMILY_ORDER.flatMap((family): PlanBlockFamily[] => {
+            const offered = callReadings.flatMap((reading) =>
+              reading.families.filter((entry) => entry.family === family),
+            );
+            if (offered.length === 0) return [];
+            const whole = offered.filter((entry) => entry.excluded).length;
+            const touched = offered.filter((entry) =>
+              entry.lines.some((line) => line.excluded),
+            ).length;
+            return [
+              {
+                family,
+                excluded: whole === offered.length ? "all" : touched > 0 ? "some" : "none",
+              },
+            ];
+          })
+        : [];
+      const standingDown = calling.filter((row) => row.excludes_instrumentalists).length;
+      const players: BlockCallState | null =
+        offersChips && offersInstrumentalists
+          ? standingDown === 0
+            ? "none"
+            : standingDown === calling.length
+              ? "all"
+              : "some"
+          : null;
+
+      map.set(first.key, {
+        rowKeys: blockRows.map((row) => row.key),
+        startsAt: block.startsAt,
+        endsAt,
+        length,
+        planned,
+        families,
+        players,
+      });
+    });
+    return map;
+  }, [rows, startClock, endClock, onEvening, readings, offersInstrumentalists]);
 
   /* ── Sources for the fills ───────────────────────────────────────────── */
 
@@ -621,25 +761,51 @@ export const usePlanEditor = (
     );
   }, []);
 
-  const toggleFamily = useCallback(
-    (key: string, family: VoiceFamilyId) => {
-      const reading = readings.get(key);
-      const target = reading?.families.find((entry) => entry.family === family);
-      if (!target) return;
+  // Each row answers through its own lines: "Tenory" on a block is T1+T2 on
+  // a piece that splits them and T on one that does not. No inheritance — a
+  // row dragged into a block later keeps what it had.
+  const setFamilyOnRows = useCallback<PlanEditor["setFamilyOnRows"]>(
+    (keys, family, excluded) => {
+      const linesByKey = new Map<string, readonly VoiceLine[]>();
+      for (const key of keys) {
+        const target = readings.get(key)?.families.find((entry) => entry.family === family);
+        if (target) linesByKey.set(key, target.lines.map((line) => line.line));
+      }
+      if (linesByKey.size === 0) return;
       setDraft((current) =>
         mapRows(current, (row) => {
-          if (row.key !== key) return row;
-          const excluded = new Set(row.excluded_voice_lines);
-          for (const line of target.lines) {
-            if (target.excluded) excluded.delete(line.line);
-            else excluded.add(line.line);
+          const lines = linesByKey.get(row.key);
+          if (!lines || row.is_break) return row;
+          const next = new Set(row.excluded_voice_lines);
+          for (const line of lines) {
+            if (excluded) next.add(line);
+            else next.delete(line);
           }
-          return { ...row, excluded_voice_lines: [...excluded] };
+          return { ...row, excluded_voice_lines: [...next] };
         }),
       );
     },
     [readings],
   );
+
+  const toggleFamily = useCallback(
+    (key: string, family: VoiceFamilyId) => {
+      const target = readings.get(key)?.families.find((entry) => entry.family === family);
+      if (target) setFamilyOnRows([key], family, !target.excluded);
+    },
+    [readings, setFamilyOnRows],
+  );
+
+  const setPlayersOnRows = useCallback<PlanEditor["setPlayersOnRows"]>((keys, excluded) => {
+    const listed = new Set(keys);
+    setDraft((current) =>
+      mapRows(current, (row) =>
+        listed.has(row.key) && !row.is_break
+          ? { ...row, excludes_instrumentalists: excluded }
+          : row,
+      ),
+    );
+  }, []);
 
   const removeRow = useCallback((key: string) => {
     setDraft((current) => {
@@ -720,6 +886,7 @@ export const usePlanEditor = (
     clocks,
     endLineBefore,
     endClock,
+    blockHeaders,
     readings,
     calledTotal: seats.length,
     isDirty,
@@ -733,6 +900,8 @@ export const usePlanEditor = (
     anchorRow,
     toggleLine,
     toggleFamily,
+    setFamilyOnRows,
+    setPlayersOnRows,
     removeRow,
     moveRow,
     fillProgram,

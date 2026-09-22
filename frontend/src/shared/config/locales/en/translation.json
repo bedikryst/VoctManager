@@ -4488,6 +4488,26 @@
       "debrief": {
         "prompt": "Untick what you did not get to",
         "done_label": "Covered"
+      },
+      "block": {
+        "span": "{{start}}–{{end}}",
+        "from": "from {{start}}",
+        "length": "{{minutes}} min",
+        "planned": "planned {{minutes}} min",
+        "calls": "Who the whole block does not need",
+        "toggle_family": "Exclude across the block: {{label}}",
+        "toggle_instrumentalists": "Whole block without instrumentalists"
+      },
+      "attendance": {
+        "title": "Coming",
+        "players_short": "Instr.",
+        "figure": "{{name}}: {{expected}} of {{called}} coming"
+      },
+      "discard": {
+        "title": "Close without saving?",
+        "desc": "The changes to this rehearsal's plan are not saved and will be lost.",
+        "confirm": "Discard changes",
+        "keep": "Back to the plan"
       }
     },
     "dashboard": {
