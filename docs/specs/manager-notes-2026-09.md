@@ -4,8 +4,10 @@ Status: **Stage 1 (backend) built, audited and committed (`3bcb9ad`). `make migr
 (`core/0027_note`) has been run on dev only; staging/prod still pending. Stage 2 (frontend) built
 2026-09-22, audited 2026-09-22 (the audit failed it), remediated the same day, then reviewed by the
 developer in a browser and reworked a third time (composition and type scale — see "Stage 2 — third
-pass") — uncommitted, and that third pass is itself unreviewed. Three deviations from the letter of
-this spec, plus three places where the spec's own premise turned out to be wrong.**
+pass"), which is itself not yet reviewed. The whole of stage 2 is on `master` and pushed —
+`b74806b` and earlier for the first two passes, `bb15582`…`7dac334` for the third. Three deviations
+from the letter of this spec, plus three places where the spec's own premise turned out to be
+wrong.**
 Written 2026-09-22 from Florent de Bazelaire's request ("a mini notepad / to-do list — somewhere to
 jot: call X, write to X, remember Y").
 

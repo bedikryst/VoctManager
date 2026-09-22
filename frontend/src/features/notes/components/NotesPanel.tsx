@@ -56,7 +56,9 @@ export const NotesPanel = (): React.JSX.Element => {
           was built for. The claim is deliberately product-level: no manager and
           no superuser reads these through the API and `Note` is not registered
           in the admin — which is what "only you" can honestly mean. */}
-      <div className="-mt-1 flex shrink-0 items-center gap-1.5 px-1 text-ethereal-graphite/45">
+      {/* `px-4` hangs the lock on the axis the composer's pen and every row's
+          tick share (their centres all fall about 21px in). */}
+      <div className="-mt-1 flex shrink-0 items-center gap-1.5 px-4 text-ethereal-graphite/45">
         <Lock size={11} strokeWidth={2} aria-hidden="true" />
         <Eyebrow color="inherit">
           {t("notes.privacy", "Widzisz tylko Ty")}
@@ -86,7 +88,7 @@ export const NotesPanel = (): React.JSX.Element => {
           <NotesEmptyState />
         ) : (
           <>
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               {openNotes.map((note) => (
                 <NoteRow
                   key={note.id}
@@ -123,7 +125,7 @@ export const NotesPanel = (): React.JSX.Element => {
                 </button>
 
                 {showCompleted && (
-                  <div className="mt-1 flex flex-col gap-0.5">
+                  <div className="mt-1 flex flex-col gap-1">
                     {/* Said here and nowhere else: this is the one spot where
                         "what happens to these" is a live question, and the
                         answer — a hard delete by `core.purge_completed_notes`,

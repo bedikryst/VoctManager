@@ -35,6 +35,20 @@ import { NotesPanel } from "@/features/notes/components/NotesPanel";
 import { useNotesPanel } from "@/features/notes/hooks/useNotesPanel";
 import { useNotesPin } from "./useNotesPin";
 
+/**
+ * The header's controls are circles sitting CONCENTRIC with the rail's corner:
+ * a 2.5rem corner radius, a 1.25rem inset and a 2.5rem circle put the circle's
+ * centre on the corner arc's centre, so the corner button keeps one even 20px
+ * ring of margin all the way round the curve. A square control there sits 20px
+ * from the straight edges and a few pixels from the curve, and reads as jammed
+ * into the corner. The inset, the row height and the circle size move together.
+ */
+const HEADER_CONTROL_CLASS =
+  "grid size-10 shrink-0 place-items-center rounded-full border outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ethereal-gold/50";
+
+const HEADER_CONTROL_IDLE =
+  "border-ethereal-incense/20 text-ethereal-graphite/60 hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink";
+
 const KINETIC_TRANSITION: Transition = {
   type: "spring",
   stiffness: 400,
@@ -87,13 +101,15 @@ export const NotesRail = (): React.JSX.Element => {
           initial={false}
           animate={{ opacity: isExpanded ? 1 : 0 }}
           transition={{ duration: 0.2 }}
-          className="flex h-full w-88 min-h-0 flex-col p-4"
+          className="flex h-full w-88 min-h-0 flex-col p-5"
         >
-          <div className="mb-3 flex shrink-0 items-center justify-between gap-2">
-            <Heading as="h2" size="lg" weight="normal">
+          {/* The title shares the controls' centre line, so it hangs off the
+              same point the corner is drawn round. */}
+          <div className="mb-4 flex h-10 shrink-0 items-center justify-between gap-2">
+            <Heading as="h2" size="2xl" weight="normal" className="leading-none">
               {t("notes.panel.title", "Notatki")}
             </Heading>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {isFinePointer && (
                 <Tooltip
                   content={
@@ -113,10 +129,10 @@ export const NotesRail = (): React.JSX.Element => {
                     }
                     aria-pressed={isPinned}
                     className={cn(
-                      "grid h-8 w-8 place-items-center rounded-lg outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ethereal-gold/50",
+                      HEADER_CONTROL_CLASS,
                       isPinned
-                        ? "bg-ethereal-gold/15 text-ethereal-gold"
-                        : "text-ethereal-graphite/45 hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink",
+                        ? "border-ethereal-gold/40 bg-ethereal-gold/15 text-ethereal-gold"
+                        : HEADER_CONTROL_IDLE,
                     )}
                   >
                     <Pin
@@ -136,7 +152,7 @@ export const NotesRail = (): React.JSX.Element => {
                   type="button"
                   onClick={close}
                   aria-label={t("common.actions.close", "Zamknij")}
-                  className="grid h-8 w-8 place-items-center rounded-lg text-ethereal-graphite/45 outline-none transition-colors duration-200 hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
+                  className={cn(HEADER_CONTROL_CLASS, HEADER_CONTROL_IDLE)}
                 >
                   <X size={15} strokeWidth={2} aria-hidden="true" />
                 </button>
