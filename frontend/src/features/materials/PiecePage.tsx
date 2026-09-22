@@ -159,7 +159,6 @@ export default function PiecePage({
     : null;
   const myPart =
     piece.my_casting?.voice_line_display || piece.my_casting?.voice_line || null;
-  const trackNotes = piece.tracks.filter((track) => track.description?.trim());
 
   const composerName = piece.composer
     ? `${piece.composer.first_name || ""} ${piece.composer.last_name}`.trim()
@@ -418,25 +417,6 @@ export default function PiecePage({
                     >
                       <VoiceMixerPanel piece={piece} projectId={group.project.id} />
                     </div>
-                    {/* The conductor's notes on the takes themselves — where a
-                        track starts, what tempo it sits at. Listed under the
-                        mixer rather than crammed into its rows, which are a
-                        control surface and have no room for a sentence. */}
-                    {trackNotes.length > 0 && (
-                      <ul role="list" className="mt-3 space-y-1 px-1">
-                        {trackNotes.map((track) => (
-                          <li key={track.id}>
-                            <Text size="xs" color="graphite">
-                              <Text as="span" size="xs" weight="semibold">
-                                {track.voice_part_display || track.voice_part}
-                              </Text>
-                              {" — "}
-                              {track.description}
-                            </Text>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
                     <Text size="xs" color="muted" className="mt-2 px-1">
                       {t(
                         "materials.piece_page.mixer_hint",

@@ -1367,7 +1367,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             .prefetch_related(
                 Prefetch(
                     'piece__tracks',
-                    queryset=Track.objects.filter(is_deleted=False).order_by('voice_part'),
+                    # No order_by: alphabetical on the code files Alto before
+                    # Soprano. Track's own Meta ordering is score order.
+                    queryset=Track.objects.filter(is_deleted=False),
                     to_attr='prefetched_tracks',
                 ),
                 Prefetch(

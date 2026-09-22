@@ -33,7 +33,12 @@ export interface PracticeTrackSource {
   label: string;
   url: string;
   isMine: boolean;
+  /** Manager's note on this take, e.g. "od taktu 34, tempo 90". May be empty. */
+  description: string;
 }
+
+/** The voice-line code of a take that already holds the whole choir. */
+const TUTTI_VOICE_PART = "TUTTI";
 
 export interface PracticePieceSource {
   pieceId: string;
@@ -113,19 +118,31 @@ interface PersistedPref {
   preset?: PracticePreset | null;
 }
 
-/** Mute map for a preset given the piece's tracks (used on load + on tap). */
+/**
+ * Mute map for a preset given the piece's tracks (used on load + on tap).
+ *
+ * A tutti take is the whole choir already recorded together, so where one
+ * exists it IS the blend — stacking the per-voice takes on top of it would
+ * double every line against a mix that is usually the better-balanced take.
+ * Only the first tutti plays; a second one is an alternative take, not a
+ * second choir. For the same reason a tutti carries the chorister's own line
+ * and has to go silent in minus-mine.
+ */
 const mutedForPreset = (
   tracks: PracticeTrackSource[],
   preset: PracticePreset,
 ): Record<string, boolean> => {
+  const blendTrackId =
+    tracks.find((track) => track.voicePart === TUTTI_VOICE_PART)?.id ?? null;
   const muted: Record<string, boolean> = {};
   tracks.forEach((track) => {
+    const isTutti = track.voicePart === TUTTI_VOICE_PART;
     muted[track.id] =
       preset === "blend"
-        ? false
+        ? blendTrackId !== null && track.id !== blendTrackId
         : preset === "solo-mine"
           ? !track.isMine
-          : track.isMine; // minus-mine
+          : track.isMine || isTutti; // minus-mine
   });
   return muted;
 };

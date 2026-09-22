@@ -306,6 +306,23 @@ class Track(EnterpriseBaseModel):
     class Meta:
         verbose_name = _("Audio Track")
         verbose_name_plural = _("Audio Tracks")
+        # Score order, top staff down, wherever a piece's takes are listed — the
+        # practice mixer, the archive card, the printed sheet. Upload order is
+        # the order a manager happened to drag files in and carries no meaning
+        # for a singer looking for their line. Lines the enum does not know sort
+        # after the ones it does; `created_at` keeps two takes on the same line
+        # in the order they were added.
+        ordering = [
+            models.Case(
+                *(
+                    models.When(voice_part=value, then=models.Value(index))
+                    for index, value in enumerate(VoiceLine.values)
+                ),
+                default=models.Value(len(VoiceLine.values)),
+                output_field=models.IntegerField(),
+            ),
+            'created_at',
+        ]
 
     def __str__(self) -> str:
         return f"{self.piece.title} - {self.get_voice_part_display()}"
