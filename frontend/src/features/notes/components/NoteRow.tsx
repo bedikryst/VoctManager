@@ -97,6 +97,13 @@ export const NoteRow = ({ note, isExpanded, onToggle }: NoteRowProps): React.JSX
     setIsEditing(false);
   };
 
+  // Both ways in — the body itself and the pencil on the action bar — and both
+  // have to stop the click, or opening the editor folds the row it is in.
+  const handleEditIntent = (event: React.MouseEvent): void => {
+    event.stopPropagation();
+    setIsEditing(true);
+  };
+
   const commit = async (): Promise<void> => {
     const next = draft.trim();
     if (next === note.body) {
@@ -151,7 +158,7 @@ export const NoteRow = ({ note, isExpanded, onToggle }: NoteRowProps): React.JSX
             : t("notes.row.mark_done", "Odhacz")
         }
         className={cn(
-          "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
           note.is_done
             ? "border-ethereal-sage bg-ethereal-sage/20 text-ethereal-sage"
             : "border-ethereal-graphite/30 text-transparent hover:border-ethereal-gold",
@@ -178,10 +185,10 @@ export const NoteRow = ({ note, isExpanded, onToggle }: NoteRowProps): React.JSX
         <div className={TRACK_CLASS} style={{ gridTemplateRows: isExpanded ? "1fr" : "0fr" }}>
           <div className="overflow-hidden" inert={!isExpanded}>
             {isEditing ? (
-              /* Scoped to the editing state, where a click inside the field
-                 would otherwise bubble to the row and fold it shut mid-word.
-                 The read state deliberately has no such wrapper: there the body
-                 is the largest target the row offers. */
+              /* A click inside the field would otherwise bubble to the row and
+                 fold it shut mid-word. Only the two expanded states stop it:
+                 the COLLAPSED body carries no handler at all, because there the
+                 click has to reach the row — the row is what opens it. */
               <div onClick={(event) => event.stopPropagation()}>
                 <NoteField
                   ref={editorRef}
@@ -249,35 +256,28 @@ export const NoteRow = ({ note, isExpanded, onToggle }: NoteRowProps): React.JSX
               </div>
             ) : (
               <div>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setIsEditing(true);
-                  }}
-                  aria-label={t("notes.row.edit", "Edytuj notatkę")}
-                  // No hover fill of its own: the row underneath is already
-                  // lit, and a second surface inside it turns one note into a
-                  // stack of fields. The caret is the whole hint a pointer
-                  // needs; a touch device gets the pencil below.
-                  className="block w-full cursor-text rounded-nested text-left outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
-                >
+                {/* Text, not a control. A button here would take its
+                    accessible name from the body and announce the note as
+                    "edit note", which is the one reading that loses the note.
+                    So the pointer gets the whole paragraph as a target and the
+                    keyboard gets the pencil beside it — one action, named once.
+                    No hover fill either: the row underneath is already lit, and
+                    a second surface inside it turns one note into a stack of
+                    fields. */}
+                <div onClick={handleEditIntent} className="cursor-text">
                   <Text
-                    as="span"
+                    as="p"
                     size={null}
-                    className={cn("block whitespace-pre-wrap", NOTE_TEXT, doneTextClass)}
+                    className={cn("whitespace-pre-wrap", NOTE_TEXT, doneTextClass)}
                   >
                     {note.body}
                   </Text>
-                </button>
+                </div>
 
                 <div className="mt-1.5 flex items-center justify-end gap-0.5">
                   <button
                     type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setIsEditing(true);
-                    }}
+                    onClick={handleEditIntent}
                     aria-label={t("notes.row.edit", "Edytuj notatkę")}
                     className={cn(
                       ICON_BUTTON_CLASS,
