@@ -156,13 +156,16 @@ class EditionSnippetSerializer(serializers.ModelSerializer):
 class TrackSnippetSerializer(serializers.ModelSerializer):
     """One practice track. `description` is the manager's note to the singer
     ("od taktu 34, tempo 90"); the uploaded filename stays out of the payload —
-    it is a manager's verification aid, not something a singer can act on."""
+    it is a manager's verification aid, not something a singer can act on.
+
+    `kind` tells the client which surface plays the take: practice takes go
+    into the mixer together, the tempo giusto take is heard on its own."""
 
     voice_part_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Track
-        fields = ('id', 'voice_part', 'voice_part_display', 'audio_file', 'description')
+        fields = ('id', 'voice_part', 'voice_part_display', 'kind', 'audio_file', 'description')
 
     def get_voice_part_display(self, obj: Track) -> str:
         labels: dict[str, str] = self.context.get('line_labels', {})

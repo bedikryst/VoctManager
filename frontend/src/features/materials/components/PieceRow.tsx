@@ -24,8 +24,10 @@ import { getPiecePdfLinks } from "@/features/archive/constants/piecePdfs";
 import { cn } from "@/shared/lib/utils";
 import {
   buildPracticeSources,
+  practiceTracksOf,
   usePracticePlayer,
 } from "../player/PracticePlayerProvider";
+import { holdsTake } from "../player/practicePlayerEngine";
 import { MaterialsService } from "../api/materials.service";
 import { ReadinessDot } from "./ReadinessControl";
 import type { MaterialsPiece } from "../types/materials.dto";
@@ -65,9 +67,10 @@ export const PieceRow = ({
 
   const pdfLinks = getPiecePdfLinks({ editions: piece.editions });
   const primaryPdf = pdfLinks[0] ?? null;
-  const hasTracks = piece.tracks.length > 0;
+  // Quick-play is the practice mix; the tempo giusto take waits on the page.
+  const hasTracks = practiceTracksOf(piece).length > 0;
 
-  const isThisPieceLoaded = snapshot.piece?.pieceId === piece.id;
+  const isThisPieceLoaded = holdsTake(snapshot, piece.id, "practice");
   const isThisPiecePlaying = isThisPieceLoaded && snapshot.isPlaying;
 
   const composerName = piece.composer

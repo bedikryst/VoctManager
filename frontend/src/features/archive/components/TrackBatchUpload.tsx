@@ -2,7 +2,8 @@
  * @file TrackBatchUpload.tsx
  * @description The queue that appears when several audio files land on a
  * piece at once. Every file arrives with the voice its name declares
- * (`(A1) Title.mp3` → Alt 1, `(mp3) Title.mp3` → Tutti) already picked; the
+ * (`(A1) Title.mp3` → Alt 1, `(mp3) Title.mp3` → Tutti, `(TG) Title.mp3` →
+ * Tempo giusto) already picked; the
  * rows the name could not settle — a bare `(S)` on a piece with S1 and S2,
  * or no prefix at all — wait for the user's choice before the batch can go.
  *
@@ -32,6 +33,7 @@ import {
   resolveVoiceFromPrefix,
   type VoiceResolution,
 } from "../constants/trackFilenames";
+import { trackSlotOptions, uploadTargetForSlot } from "../constants/trackSlots";
 import type { EnrichedPiece } from "../types/archive.dto";
 
 type Phase = "queued" | "uploading" | "succeeded" | "failed";
@@ -95,6 +97,7 @@ export const TrackBatchUpload = ({
     () => new Set(voiceLines.map((vl) => String(vl.value))),
     [voiceLines],
   );
+  const slotOptions = useMemo(() => trackSlotOptions(voiceLines, t), [voiceLines, t]);
   const [entries, setEntries] = useState<BatchEntry[]>([]);
   const [editionId, setEditionId] = useState<string>("");
   const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -134,7 +137,7 @@ export const TrackBatchUpload = ({
       try {
         await uploadMutation.mutateAsync({
           pieceId: piece.id,
-          voiceLine: entry.voice,
+          ...uploadTargetForSlot(entry.voice),
           file: entry.file,
           editionId: editionId || null,
         });
@@ -162,7 +165,7 @@ export const TrackBatchUpload = ({
   };
 
   const voiceLabel = (code: string): string =>
-    voiceLines.find((vl) => String(vl.value) === code)?.label ?? code;
+    slotOptions.find((option) => option.value === code)?.label ?? code;
 
   return (
     <div className="flex flex-col gap-2 rounded-nested border border-ethereal-gold/30 bg-ethereal-gold/5 p-3">
@@ -260,7 +263,7 @@ export const TrackBatchUpload = ({
                       defaultValue: "Głos dla {{name}}",
                       name: entry.file.name,
                     })}
-                    options={voiceLines}
+                    options={slotOptions}
                   />
                   <Button
                     type="button"

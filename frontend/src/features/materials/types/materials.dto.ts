@@ -82,6 +82,12 @@ export interface MaterialsLocation {
   timezone: string;
 }
 
+/**
+ * PRACTICE takes share one length and play together in the mixer;
+ * TEMPO_GIUSTO is the conductor's target-tempo recording, heard on its own.
+ */
+export type MaterialsTrackKind = "PRACTICE" | "TEMPO_GIUSTO";
+
 export interface MaterialsTrack {
   id: string;
   voice_part: string;
@@ -90,6 +96,7 @@ export interface MaterialsTrack {
    * family arrives without its index ("Tenor", not "Tenor 1").
    */
   voice_part_display: string;
+  kind: MaterialsTrackKind;
   audio_file: string;
   /** The manager's practice note, e.g. "od taktu 34, tempo 90". May be empty. */
   description: string;

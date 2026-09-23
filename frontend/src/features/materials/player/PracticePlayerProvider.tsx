@@ -18,6 +18,7 @@ import {
   PracticePlayerEngine,
   type PracticePieceSource,
   type PracticePlayerSnapshot,
+  type PracticeTake,
   type PracticeTrackSource,
 } from "./practicePlayerEngine";
 import type { MaterialsPiece, MaterialsTrack } from "../types/materials.dto";
@@ -95,7 +96,10 @@ const MediaSessionBridge = ({
     }
     navigator.mediaSession.metadata = piece
       ? new MediaMetadata({
-          title: piece.title,
+          title:
+            piece.take === "tempo-giusto"
+              ? `${piece.title} · ${t("materials.player.tempo_giusto", "Tempo giusto")}`
+              : piece.title,
           artist: piece.composer || undefined,
           album: t("materials.dashboard.title_highlight", "Śpiewnik"),
         })
@@ -169,6 +173,46 @@ export const usePracticePlayer = (): {
   return { engine: context.engine, snapshot };
 };
 
+/** The takes that play together in the mixer — the tempo giusto take never
+ *  joins them: it runs its own length, and the master clock would tear. */
+export const practiceTracksOf = (piece: MaterialsPiece): MaterialsTrack[] =>
+  piece.tracks.filter((track) => track.kind !== "TEMPO_GIUSTO");
+
+export const tempoGiustoTracksOf = (piece: MaterialsPiece): MaterialsTrack[] =>
+  piece.tracks.filter((track) => track.kind === "TEMPO_GIUSTO");
+
+const pieceSource = (
+  piece: MaterialsPiece,
+  projectId: string,
+  take: PracticeTake,
+): PracticePieceSource => ({
+  pieceId: piece.id,
+  projectId,
+  title: piece.title,
+  composer: piece.composer?.full_name ?? "",
+  take,
+});
+
+/** One tempo giusto take as its own engine load — a single track, no mix. */
+export const buildTempoGiustoSource = (
+  piece: MaterialsPiece,
+  projectId: string,
+  track: MaterialsTrack,
+  label: string,
+): { source: PracticePieceSource; tracks: PracticeTrackSource[] } => ({
+  source: pieceSource(piece, projectId, "tempo-giusto"),
+  tracks: [
+    {
+      id: track.id,
+      voicePart: track.voice_part,
+      label,
+      url: track.audio_file,
+      isMine: false,
+      description: track.description,
+    },
+  ],
+});
+
 /** Maps API piece/tracks into engine sources (shared by list quick-play and mixer). */
 export const buildPracticeSources = (
   piece: MaterialsPiece,
@@ -176,13 +220,8 @@ export const buildPracticeSources = (
 ): { source: PracticePieceSource; tracks: PracticeTrackSource[] } => {
   const myVoicePart = piece.my_casting?.voice_line ?? null;
   return {
-    source: {
-      pieceId: piece.id,
-      projectId,
-      title: piece.title,
-      composer: piece.composer?.full_name ?? "",
-    },
-    tracks: piece.tracks.map((track: MaterialsTrack) => ({
+    source: pieceSource(piece, projectId, "practice"),
+    tracks: practiceTracksOf(piece).map((track: MaterialsTrack) => ({
       id: track.id,
       voicePart: track.voice_part,
       label: track.voice_part_display || track.voice_part,

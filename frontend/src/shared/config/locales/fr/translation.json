@@ -768,10 +768,10 @@
       "add_more": "Ajouter une autre piste",
       "batch": {
         "add_many": "Téléverser plusieurs",
-        "add_many_hint": "Choisissez plusieurs fichiers — la voix est lue dans le nom : (A1), (B), (mp3) = Tutti",
+        "add_many_hint": "Choisissez plusieurs fichiers — la voix est lue dans le nom : (A1), (B), (mp3) = Tutti, (TG) = Tempo giusto",
         "ambiguous": "Dans cette pièce : {{options}} — laquelle ?",
-        "drop_active": "Déposez — la voix est lue dans le nom, p. ex. (A1), (B), (mp3) = Tutti",
-        "drop_hint": "…ou glissez les fichiers ici — (A1), (B), (mp3) = Tutti.",
+        "drop_active": "Déposez — la voix est lue dans le nom, p. ex. (A1), (B), (mp3) = Tutti, (TG) = Tempo giusto",
+        "drop_hint": "…ou glissez les fichiers ici — (A1), (B), (mp3) = Tutti, (TG) = Tempo giusto.",
         "dropzone_aria": "Zone de dépôt des fichiers audio",
         "rejected_one": "{{count}} fichier ignoré — MP3, WAV ou MIDI uniquement.",
         "rejected_many": "{{count}} fichiers ignorés — MP3, WAV ou MIDI uniquement.",
@@ -804,6 +804,11 @@
       "upload_success": "Piste ajoutée.",
       "uploading": "Import de la piste…",
       "voice_part": "Pupitre",
+      "tempo_giusto": "Tempo giusto",
+      "tempo_giusto_hint": "le tempo visé — les choristes l'écoutent à part, hors de la console",
+      "move_to_tempo_giusto": "Déplacer vers Tempo giusto",
+      "move_to_practice": "Remettre parmi les pistes de travail",
+      "kind_error": "Impossible de déplacer l'enregistrement.",
       "edition": "Édition",
       "edition_any": "Commun à toutes les éditions",
       "note": "Commentaire",
@@ -2762,6 +2767,7 @@
       "duration_min_other": "{{count}} min",
       "gives_pitch": "C'est vous qui donnez le ton",
       "mixer_hint": "Choisissez un mode d'un toucher ou réglez chaque voix — travaillez votre partie avec tout le chœur.",
+      "tempo_giusto_hint": "L'enregistrement au tempo visé — tel que l'œuvre doit sonner au concert.",
       "mixer_section": "Console de travail",
       "my_part_chip": "Votre partie : {{part}}",
       "not_found_desc": "Cette pièce n'est plus dans votre carnet, ou le lien n'est plus à jour.",
@@ -2791,7 +2797,8 @@
       "seek": "Avancer",
       "solo_for": "Solo : {{voice}}",
       "volume_for": "Volume : {{voice}}",
-      "your_voice_short": "Votre voix"
+      "your_voice_short": "Votre voix",
+      "tempo_giusto": "Tempo giusto"
     },
     "project": {
       "archived_badge": "Archives",

@@ -66,9 +66,13 @@ def tracks_for_edition(
     edition has not re-recorded. Another edition's takes never leak in. Input
     order is preserved, because the callers' prefetches already sort into the
     order a musician reads.
+
+    A "line" is the take's kind AND its voice: a practice Tutti and a tempo
+    giusto take both sit on Tutti, and an edition re-recording one of them
+    says nothing about the other.
     """
     own_lines = {
-        row.voice_part
+        (row.kind, row.voice_part)
         for row in rows
         if edition_id is not None and row.edition_id == edition_id
     }
@@ -76,7 +80,7 @@ def tracks_for_edition(
         row
         for row in rows
         if (edition_id is not None and row.edition_id == edition_id)
-        or (row.edition_id is None and row.voice_part not in own_lines)
+        or (row.edition_id is None and (row.kind, row.voice_part) not in own_lines)
     ]
 
 

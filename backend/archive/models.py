@@ -260,6 +260,19 @@ class PieceVoiceRequirement(EnterpriseBaseModel):
         return f"{self.piece.title}: {self.quantity}x {self.get_voice_line_display()}"
 
 
+class TrackKind(models.TextChoices):
+    """What a take is FOR, which decides where a singer meets it.
+
+    Practice takes (the voices and their Tutti mix) are recorded to one clock
+    and play together in the practice mixer — every one must run the same
+    length or the mix drifts apart. A tempo giusto take is the conductor's
+    target reading of the whole piece: one recording, no voice split, heard on
+    its own. Its label is the Italian term in every locale, as musicians say it.
+    """
+    PRACTICE = 'PRACTICE', _('Practice')
+    TEMPO_GIUSTO = 'TEMPO_GIUSTO', 'Tempo giusto'
+
+
 class Track(EnterpriseBaseModel):
     """
     Audio rehearsal materials (MIDI/MP3) associated with a piece.
@@ -268,6 +281,10 @@ class Track(EnterpriseBaseModel):
     the unison arrangement's single guide track and the three-part
     arrangement's three belong to their own editions, and a singer is only
     served the ones their concert's bound edition owns. Blank = the whole piece.
+
+    A tempo giusto take always sits on the Tutti line — it has no voices — so
+    `voice_part` stays a plain fact about the recording and never needs a
+    value of its own for it.
     """
     piece = models.ForeignKey(
         Piece,
@@ -284,6 +301,14 @@ class Track(EnterpriseBaseModel):
         verbose_name=_("Score Edition"),
     )
     voice_part = models.CharField(max_length=10, choices=VoiceLine.choices, verbose_name=_("Melody Line"))
+    kind = models.CharField(
+        max_length=16,
+        choices=TrackKind.choices,
+        default=TrackKind.PRACTICE,
+        help_text=_("Practice takes play together in the mixer and must share one length; "
+                    "a tempo giusto take is the target-tempo recording, heard on its own."),
+        verbose_name=_("Take"),
+    )
 
     audio_file = models.FileField(
         upload_to='audio_tracks/',
@@ -311,8 +336,14 @@ class Track(EnterpriseBaseModel):
         # the order a manager happened to drag files in and carries no meaning
         # for a singer looking for their line. Lines the enum does not know sort
         # after the ones it does; `created_at` keeps two takes on the same line
-        # in the order they were added.
+        # in the order they were added. Practice takes come before the tempo
+        # giusto take, which stands apart from the voice set.
         ordering = [
+            models.Case(
+                models.When(kind=TrackKind.TEMPO_GIUSTO, then=models.Value(1)),
+                default=models.Value(0),
+                output_field=models.IntegerField(),
+            ),
             models.Case(
                 *(
                     models.When(voice_part=value, then=models.Value(index))
@@ -325,6 +356,8 @@ class Track(EnterpriseBaseModel):
         ]
 
     def __str__(self) -> str:
+        if self.kind == TrackKind.TEMPO_GIUSTO:
+            return f"{self.piece.title} - {self.get_kind_display()}"
         return f"{self.piece.title} - {self.get_voice_part_display()}"
 
 

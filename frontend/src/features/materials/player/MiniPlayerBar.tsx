@@ -15,7 +15,7 @@ import { cn } from "@/shared/lib/utils";
 import { Portal } from "@/shared/lib/dom/Portal";
 import { useBottomBarSlot } from "@/shared/lib/dom/useBottomBarSlot";
 import { usePracticePlayer } from "./PracticePlayerProvider";
-import { formatPlayerTime } from "./VoiceMixerPanel";
+import { formatPlayerTime } from "./PlayerTransport";
 
 export const MiniPlayerBar = (): React.JSX.Element => {
   const { t } = useTranslation();
@@ -80,6 +80,11 @@ export const MiniPlayerBar = (): React.JSX.Element => {
                 <Text size="sm" weight="semibold" truncate>
                   {piece.title}
                 </Text>
+                {piece.take === "tempo-giusto" && (
+                  <Eyebrow color="muted" className="shrink-0">
+                    {t("materials.player.tempo_giusto", "Tempo giusto")}
+                  </Eyebrow>
+                )}
               </div>
               <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-ethereal-marble/70">
                 <div

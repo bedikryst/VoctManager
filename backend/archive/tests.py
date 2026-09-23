@@ -42,6 +42,7 @@ from archive.models import (
     ProvenanceSource,
     ScoreEdition,
     Track,
+    TrackKind,
 )
 from archive.services import enrichment
 from archive.services.resolvers import resolve_or_create_piece
@@ -1054,10 +1055,30 @@ class EditionScopedDivisiTests(TestCase):
         self._require("T1", self.three_part)
         self.assertEqual(self.piece.voice_requirements.count(), 2)
 
-    def _track(self, line: str, edition: ScoreEdition | None) -> Track:
+    def _track(
+        self,
+        line: str,
+        edition: ScoreEdition | None,
+        kind: str = TrackKind.PRACTICE,
+    ) -> Track:
         return Track.objects.create(
-            piece=self.piece, edition=edition, voice_part=line,
-            audio_file=f"audio_tracks/{line}-{edition.pk if edition else 'all'}.mp3",
+            piece=self.piece, edition=edition, voice_part=line, kind=kind,
+            audio_file=f"audio_tracks/{kind}-{line}-{edition.pk if edition else 'all'}.mp3",
+        )
+
+    def test_an_edition_tutti_leaves_the_common_tempo_giusto_standing(self) -> None:
+        """Both sit on Tutti, but a practice mix re-recorded for one edition
+        says nothing about the target-tempo take of the whole piece."""
+        tempo_giusto = self._track("TUTTI", None, TrackKind.TEMPO_GIUSTO)
+        shared_tutti = self._track("TUTTI", None)
+        own_tutti = self._track("TUTTI", self.three_part)
+
+        rows = list(self.piece.tracks.all())
+        self.assertEqual(
+            tracks_for_edition(rows, self.three_part.pk), [own_tutti, tempo_giusto],
+        )
+        self.assertEqual(
+            tracks_for_edition(rows, self.unison.pk), [shared_tutti, tempo_giusto],
         )
 
     def test_an_edition_never_sees_another_editions_takes(self) -> None:
@@ -1141,6 +1162,25 @@ class TrackUploadEndpointTests(APITestCase):
         response = self._upload(description="od taktu 34, tempo 90")
         self.assertEqual(response.status_code, 201, response.data)
         self.assertEqual(response.data["description"], "od taktu 34, tempo 90")
+
+    def test_a_tempo_giusto_take_lands_on_tutti(self) -> None:
+        """The target-tempo recording has no voices: whatever line arrives with
+        it, it is stored on Tutti, so it never claims a singer's part."""
+        response = self._upload(kind="TEMPO_GIUSTO")
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["kind"], "TEMPO_GIUSTO")
+        self.assertEqual(response.data["voice_part"], "TUTTI")
+
+    def test_flipping_a_take_to_tempo_giusto_moves_it_to_tutti(self) -> None:
+        track = Track.objects.create(
+            piece=self.piece, voice_part="T1", audio_file="audio_tracks/t1.mp3",
+        )
+        response = self.client.patch(
+            f"/api/tracks/{track.id}/", {"kind": "TEMPO_GIUSTO"}, format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        track.refresh_from_db()
+        self.assertEqual((track.kind, track.voice_part), ("TEMPO_GIUSTO", "TUTTI"))
 
     def test_a_take_on_an_undeclared_line_renames_the_whole_card(self) -> None:
         """Requirements and tracks are printed side by side, so they share one

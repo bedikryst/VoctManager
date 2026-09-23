@@ -42,11 +42,12 @@ import { useUpdateStartingPitches } from "../api/materials.queries";
 import type { MaterialsPiece, MaterialsStartingPitch } from "../types/materials.dto";
 import {
   buildPracticeSources,
+  practiceTracksOf,
   usePracticePlayer,
 } from "./PracticePlayerProvider";
-import { formatPlayerTime } from "./VoiceMixerPanel";
+import { formatPlayerTime } from "./PlayerTransport";
 import { playPitchSequence, type PitchSequenceHandle } from "./pitchTones";
-import type { PracticePreset } from "./practicePlayerEngine";
+import { holdsTake, type PracticePreset } from "./practicePlayerEngine";
 
 interface RehearsalDockProps {
   piece: MaterialsPiece;
@@ -115,8 +116,8 @@ export const RehearsalDock = ({
   const toneRef = useRef<PitchSequenceHandle | null>(null);
 
   const pitches = useMemo(() => piece.starting_pitches ?? [], [piece.starting_pitches]);
-  const hasTracks = piece.tracks.length > 0;
-  const isCurrentPiece = snapshot.piece?.pieceId === piece.id;
+  const hasTracks = practiceTracksOf(piece).length > 0;
+  const isCurrentPiece = holdsTake(snapshot, piece.id, "practice");
   const suggestedTonic = piece.musical_key
     ? parseMusicalKeyTonic(piece.musical_key)
     : null;

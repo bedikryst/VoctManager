@@ -14,6 +14,12 @@
  * The whole section is a drop target. Several files dropped (or picked
  * through "add many") open [TrackBatchUpload], where each file already sits
  * on the voice its name declares — see [trackFilenames].
+ *
+ * Practice takes and the tempo giusto take are listed apart, because the
+ * singer meets them apart: the first play together in the mixer and must
+ * share one length, the second is heard on its own (see [trackSlots]). A
+ * Tutti take can be moved across in place — the target-tempo recording often
+ * arrives as the piece's first Tutti, before the practice mix exists.
  * @architecture Enterprise SaaS 2026
  * @module features/archive/components/PieceRowTracks
  */
@@ -23,21 +29,27 @@ import { useDropzone } from "react-dropzone";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { toastApiError } from "@/shared/api/errors";
-import { FolderUp, Loader2, Plus, Trash2, UploadCloud, X } from "lucide-react";
+import { ArrowRightLeft, FolderUp, Loader2, Plus, Trash2, UploadCloud, X } from "lucide-react";
 
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
-import { Caption, Text } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { InlineEditable } from "@/shared/ui/primitives/InlineEditable";
 import { useVoiceLines } from "@/shared/api/options.queries";
 import { collapseVoiceLabels } from "@/shared/lib/voiceLabels";
 import { cn } from "@/shared/lib/utils";
+import type { Track, TrackKind } from "@/shared/types";
 
 import { scopedToEdition } from "../constants/divisiScope";
 import { getPiecePdfLinks } from "../constants/piecePdfs";
+import {
+  isTempoGiusto,
+  trackSlotOptions,
+  uploadTargetForSlot,
+} from "../constants/trackSlots";
 import type { EnrichedPiece } from "../types/archive.dto";
 import {
   useTracks,
@@ -91,6 +103,10 @@ export const PieceRowTracks = ({
   // to tell apart; below that the control would ask a question with one answer.
   const editions = useMemo(() => getPiecePdfLinks(piece), [piece]);
   const showEditionPicker = editions.length > 1;
+
+  const slotOptions = useMemo(() => trackSlotOptions(voiceLines, t), [voiceLines, t]);
+  const practiceTracks = tracks.filter((track) => !isTempoGiusto(track));
+  const tempoGiustoTracks = tracks.filter(isTempoGiusto);
 
   // The codes this piece already speaks of, for reading a bare `(B)` in a
   // dropped filename the way the singer will see the part named.
@@ -180,7 +196,7 @@ export const PieceRowTracks = ({
     try {
       await uploadMutation.mutateAsync({
         pieceId: piece.id,
-        voiceLine: voicePart,
+        ...uploadTargetForSlot(voicePart),
         file,
         description: note.trim(),
         editionId: editionId || null,
@@ -214,6 +230,19 @@ export const PieceRowTracks = ({
     }
   };
 
+  const handleKindChange = async (trackId: string, kind: TrackKind) => {
+    try {
+      await updateMutation.mutateAsync({ trackId, patch: { kind } });
+    } catch (error) {
+      toastApiError(error, t, {
+        fallbackDescription: t(
+          "archive.row_tracks.kind_error",
+          "Nie udało się przenieść nagrania.",
+        ),
+      });
+    }
+  };
+
   const handleDelete = async () => {
     if (!pendingDeleteId) return;
     const toastId = toast.loading(
@@ -236,6 +265,100 @@ export const PieceRowTracks = ({
     document.querySelectorAll("audio").forEach((el) => {
       if (el !== target) el.pause();
     });
+  };
+
+  const tempoGiustoLabel = t("archive.row_tracks.tempo_giusto", "Tempo giusto");
+
+  const renderTrack = (track: Track): React.JSX.Element => {
+    const tempoGiusto = isTempoGiusto(track);
+    const partLabel = tempoGiusto
+      ? tempoGiustoLabel
+      : labelsByEdition.get(track.edition ?? "")?.[String(track.voice_part)] ||
+        track.voice_part_display ||
+        track.voice_part;
+    const editionLabel = editions.find(
+      (edition) => edition.id === track.edition,
+    )?.label;
+    const fileName =
+      track.original_filename?.trim() || storedFileName(track.audio_file);
+    // Only a Tutti take can be the target-tempo recording; a voice take
+    // offering the move would be a control with no sensible use.
+    const moveTo: TrackKind | null = tempoGiusto
+      ? "PRACTICE"
+      : track.voice_part === "TUTTI"
+        ? "TEMPO_GIUSTO"
+        : null;
+    return (
+      <li
+        key={track.id}
+        className="flex flex-col gap-2 rounded-nested border border-hairline bg-ethereal-alabaster/70 px-3 py-2"
+      >
+        <div className="flex items-center gap-3">
+          <Badge
+            variant={tempoGiusto ? "incense" : "warning"}
+            className="min-w-12 shrink-0 justify-center py-0.5"
+            aria-hidden="true"
+          >
+            {partLabel}
+          </Badge>
+          <audio
+            controls
+            controlsList="nodownload"
+            className="h-9 flex-1 outline-none"
+            onPlay={handleAudioPlay}
+            onClick={stopRowToggle}
+          >
+            <source src={track.audio_file} type="audio/mpeg" />
+          </audio>
+          <Button
+            variant="icon"
+            size="icon"
+            onClick={() => setPendingDeleteId(String(track.id))}
+            disabled={deleteMutation.isPending}
+            aria-label={t(
+              "archive.row_tracks.delete_aria",
+              "Usuń ścieżkę {{label}}",
+              { label: partLabel },
+            )}
+            className="h-8 w-8 text-ethereal-graphite hover:text-ethereal-crimson"
+          >
+            <Trash2 size={13} aria-hidden="true" />
+          </Button>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pl-1">
+          <InlineEditable
+            value={track.description ?? ""}
+            onSave={(value) => handleNoteSave(String(track.id), value)}
+            placeholder={t(
+              "archive.row_tracks.note_placeholder",
+              "Dodaj komentarz",
+            )}
+            ariaLabel={t(
+              "archive.row_tracks.note_aria",
+              "Komentarz do ścieżki {{label}}",
+              { label: partLabel },
+            )}
+          />
+          <Caption color="muted" className="min-w-0 flex-1 truncate">
+            {editionLabel ? `${editionLabel} · ${fileName}` : fileName}
+          </Caption>
+          {moveTo && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => void handleKindChange(String(track.id), moveTo)}
+              disabled={updateMutation.isPending}
+              leftIcon={<ArrowRightLeft size={12} aria-hidden="true" />}
+            >
+              {moveTo === "TEMPO_GIUSTO"
+                ? t("archive.row_tracks.move_to_tempo_giusto", "Przenieś do Tempo giusto")
+                : t("archive.row_tracks.move_to_practice", "Przenieś do ćwiczebnych")}
+            </Button>
+          )}
+        </div>
+      </li>
+    );
   };
 
   return (
@@ -262,7 +385,7 @@ export const PieceRowTracks = ({
           <Text size="sm" weight="semibold" color="gold" className="text-center">
             {t(
               "archive.row_tracks.batch.drop_active",
-              "Upuść — głos odczytam z nazwy, np. (A1), (B), (mp3) = Tutti",
+              "Upuść — głos odczytam z nazwy, np. (A1), (B), (mp3) = Tutti, (TG) = Tempo giusto",
             )}
           </Text>
         </div>
@@ -273,79 +396,29 @@ export const PieceRowTracks = ({
           {t("archive.row_tracks.loading", "Ładowanie…")}
         </Caption>
       ) : (
-        <ul role="list" className="flex flex-col gap-2">
-          {tracks.map((track) => {
-            const partLabel =
-              labelsByEdition.get(track.edition ?? "")?.[
-                String(track.voice_part)
-              ] ||
-              track.voice_part_display ||
-              track.voice_part;
-            const editionLabel = editions.find(
-              (edition) => edition.id === track.edition,
-            )?.label;
-            const fileName =
-              track.original_filename?.trim() ||
-              storedFileName(track.audio_file);
-            return (
-              <li
-                key={track.id}
-                className="flex flex-col gap-2 rounded-nested border border-hairline bg-ethereal-alabaster/70 px-3 py-2"
-              >
-                <div className="flex items-center gap-3">
-                  <Badge
-                    variant="warning"
-                    className="min-w-12 shrink-0 justify-center py-0.5"
-                    aria-hidden="true"
-                  >
-                    {partLabel}
-                  </Badge>
-                  <audio
-                    controls
-                    controlsList="nodownload"
-                    className="h-9 flex-1 outline-none"
-                    onPlay={handleAudioPlay}
-                    onClick={stopRowToggle}
-                  >
-                    <source src={track.audio_file} type="audio/mpeg" />
-                  </audio>
-                  <Button
-                    variant="icon"
-                    size="icon"
-                    onClick={() => setPendingDeleteId(String(track.id))}
-                    disabled={deleteMutation.isPending}
-                    aria-label={t(
-                      "archive.row_tracks.delete_aria",
-                      "Usuń ścieżkę {{label}}",
-                      { label: partLabel },
-                    )}
-                    className="h-8 w-8 text-ethereal-graphite hover:text-ethereal-crimson"
-                  >
-                    <Trash2 size={13} aria-hidden="true" />
-                  </Button>
-                </div>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pl-1">
-                  <InlineEditable
-                    value={track.description ?? ""}
-                    onSave={(value) => handleNoteSave(String(track.id), value)}
-                    placeholder={t(
-                      "archive.row_tracks.note_placeholder",
-                      "Dodaj komentarz",
-                    )}
-                    ariaLabel={t(
-                      "archive.row_tracks.note_aria",
-                      "Komentarz do ścieżki {{label}}",
-                      { label: partLabel },
-                    )}
-                  />
-                  <Caption color="muted" className="truncate">
-                    {editionLabel ? `${editionLabel} · ${fileName}` : fileName}
-                  </Caption>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <>
+          {practiceTracks.length > 0 && (
+            <ul role="list" className="flex flex-col gap-2">
+              {practiceTracks.map(renderTrack)}
+            </ul>
+          )}
+          {tempoGiustoTracks.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex flex-wrap items-baseline gap-x-2 px-1">
+                <Eyebrow color="muted">{tempoGiustoLabel}</Eyebrow>
+                <Caption color="muted">
+                  {t(
+                    "archive.row_tracks.tempo_giusto_hint",
+                    "tempo docelowe — śpiewacy słuchają go osobno, poza mikserem",
+                  )}
+                </Caption>
+              </div>
+              <ul role="list" className="flex flex-col gap-2">
+                {tempoGiustoTracks.map(renderTrack)}
+              </ul>
+            </div>
+          )}
+        </>
       )}
 
       {batchFiles && batchFiles.length > 0 ? (
@@ -371,7 +444,7 @@ export const PieceRowTracks = ({
               className="md:w-40"
               placeholder={t("archive.row_tracks.pick", "Wybierz")}
               ariaLabel={t("archive.row_tracks.voice_part", "Partia wokalna")}
-              options={voiceLines}
+              options={slotOptions}
             />
             {showEditionPicker && (
               <Select
@@ -463,7 +536,7 @@ export const PieceRowTracks = ({
             leftIcon={<FolderUp size={13} aria-hidden="true" />}
             title={t(
               "archive.row_tracks.batch.add_many_hint",
-              "Wybierz wiele plików — głos odczytam z nazwy: (A1), (B), (mp3) = Tutti",
+              "Wybierz wiele plików — głos odczytam z nazwy: (A1), (B), (mp3) = Tutti, (TG) = Tempo giusto",
             )}
           >
             {t("archive.row_tracks.batch.add_many", "Wgraj wiele")}
@@ -472,7 +545,7 @@ export const PieceRowTracks = ({
           <Caption color="muted" className="hidden fine-pointer:block">
             {t(
               "archive.row_tracks.batch.drop_hint",
-              "…albo przeciągnij pliki tutaj — (A1), (B), (mp3) = Tutti.",
+              "…albo przeciągnij pliki tutaj — (A1), (B), (mp3) = Tutti, (TG) = Tempo giusto.",
             )}
           </Caption>
         </div>

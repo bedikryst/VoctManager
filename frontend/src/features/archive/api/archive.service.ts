@@ -248,6 +248,7 @@ export const ArchiveService = {
     const formData = new FormData();
     formData.append("piece", String(payload.pieceId));
     formData.append("voice_part", payload.voiceLine);
+    formData.append("kind", payload.kind);
     formData.append("audio_file", payload.file);
     if (payload.description) formData.append("description", payload.description);
     // Omitted rather than sent empty: DRF reads "" as an invalid UUID, while an

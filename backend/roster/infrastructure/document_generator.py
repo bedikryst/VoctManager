@@ -41,6 +41,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext, pgettext
 
+from archive.models import TrackKind
 from archive.services.voice_scope import requirements_for_edition, tracks_for_edition
 from core.greetings import apply_vocative_rule
 from core.voice_labels import collapse_voice_labels, sectional_call_label
@@ -1395,10 +1396,14 @@ class DocumentGenerator:
         #
         # Scoped to the bound edition first: a piece published both in unison
         # and in three parts would otherwise print one sheet listing both
-        # arrangements' lines, which describes no performance.
+        # arrangements' lines, which describes no performance. The tempo giusto
+        # take follows the voice set it does not belong to.
         tracks = sorted(
             tracks_for_edition(getattr(piece, 'prefetched_tracks', []), bound_edition_id),
-            key=lambda track: VOICE_LINE_ORDER.get(track.voice_part, 999),
+            key=lambda track: (
+                track.kind == TrackKind.TEMPO_GIUSTO,
+                VOICE_LINE_ORDER.get(track.voice_part, 999),
+            ),
         )
         voice_requirements = sorted(
             requirements_for_edition(
@@ -1460,8 +1465,12 @@ class DocumentGenerator:
             f'{requirement.quantity}x {line_labels.get(requirement.voice_line, requirement.voice_line)}'
             for requirement in voice_requirements
         )
+        # A tempo giusto take sits on Tutti but is not the Tutti mix; printing
+        # its line would list "Tutti" twice.
         track_labels = [
-            line_labels.get(track.voice_part, track.get_voice_part_display())
+            track.get_kind_display()
+            if track.kind == TrackKind.TEMPO_GIUSTO
+            else line_labels.get(track.voice_part, track.get_voice_part_display())
             for track in tracks
         ]
         # Assembled here, not chained in the template: each `{% if %}` carried

@@ -40,11 +40,20 @@ export interface PracticeTrackSource {
 /** The voice-line code of a take that already holds the whole choir. */
 const TUTTI_VOICE_PART = "TUTTI";
 
+/**
+ * Which recording set of a piece is loaded. `practice` is the synced voice
+ * set (Tutti + voices) the mixer works on; `tempo-giusto` is the conductor's
+ * target-tempo take, played alone. Surfaces claim the engine only for their
+ * own take — see [holdsTake].
+ */
+export type PracticeTake = "practice" | "tempo-giusto";
+
 export interface PracticePieceSource {
   pieceId: string;
   projectId: string;
   title: string;
   composer: string;
+  take: PracticeTake;
 }
 
 export interface PracticeLoopRange {
@@ -147,6 +156,14 @@ const mutedForPreset = (
   return muted;
 };
 
+/** True when the engine holds this piece's `take` — and so its transport is
+ *  the one a surface for that take should show and drive. */
+export const holdsTake = (
+  snapshot: PracticePlayerSnapshot,
+  pieceId: string,
+  take: PracticeTake,
+): boolean => snapshot.piece?.pieceId === pieceId && snapshot.piece.take === take;
+
 type Listener = () => void;
 
 export class PracticePlayerEngine {
@@ -174,6 +191,9 @@ export class PracticePlayerEngine {
    * Replaces the loaded piece. Restores the chorister's remembered tempo and
    * preset for this piece (falling back to the global rate between pieces), so
    * reopening a piece drops them straight back into how they last practised it.
+   *
+   * The tempo giusto take is exempt: it IS the target tempo, so it always
+   * plays at 1x and neither reads nor overwrites the practice prefs.
    */
   load(
     piece: PracticePieceSource,
@@ -184,8 +204,9 @@ export class PracticePlayerEngine {
     // Created inside the tap that triggered load() → allowed to start on iOS.
     this.ensureContext();
 
-    const pref = this.readPref(piece.pieceId);
-    const rate = pref?.rate ?? this.snapshot.rate;
+    const isPractice = piece.take === "practice";
+    const pref = isPractice ? this.readPref(piece.pieceId) : null;
+    const rate = isPractice ? (pref?.rate ?? this.snapshot.rate) : 1;
 
     const hasMine = tracks.some((track) => track.isMine);
     // A solo/minus preset is meaningless without the chorister's own track.
@@ -427,8 +448,11 @@ export class PracticePlayerEngine {
 
   /** Remembers tempo + preset per piece so practice picks up where it left off. */
   private persistPref(): void {
-    const pieceId = this.snapshot.piece?.pieceId;
-    if (!pieceId || typeof localStorage === "undefined") return;
+    const piece = this.snapshot.piece;
+    if (!piece || piece.take !== "practice" || typeof localStorage === "undefined") {
+      return;
+    }
+    const pieceId = piece.pieceId;
     try {
       const pref: PersistedPref = {
         rate: this.snapshot.rate,

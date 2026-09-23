@@ -12,6 +12,7 @@ import {
   parseTrackFilename,
   resolveVoiceFromPrefix,
 } from "@/features/archive/constants/trackFilenames";
+import { TEMPO_GIUSTO_SLOT } from "@/features/archive/constants/trackSlots";
 
 const DICTIONARY: ReadonlySet<string> = new Set([
   "S1", "S2", "S3", "MS", "A1", "A2", "A3", "CT", "T1", "T2", "T3", "BAR",
@@ -44,6 +45,18 @@ describe("resolveVoiceFromPrefix", () => {
     expect(resolveVoiceFromPrefix("MP3", [], DICTIONARY)).toEqual({
       kind: "resolved",
       code: "TUTTI",
+    });
+  });
+
+  it("reads (Tempo giusto) as the target-tempo slot, not a voice", () => {
+    const { prefix } = parseTrackFilename("(Tempo giusto) Lumen.mp3");
+    expect(resolveVoiceFromPrefix(prefix, [], DICTIONARY)).toEqual({
+      kind: "resolved",
+      code: TEMPO_GIUSTO_SLOT,
+    });
+    expect(resolveVoiceFromPrefix("TG", [], DICTIONARY)).toEqual({
+      kind: "resolved",
+      code: TEMPO_GIUSTO_SLOT,
     });
   });
 

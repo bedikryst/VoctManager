@@ -29,6 +29,7 @@ from django.utils.translation import gettext_lazy as _
 from pydantic import ValidationError as PydanticValidationError
 from rest_framework import serializers
 
+from core.constants import VoiceLine
 from core.voice_labels import voice_line_label
 
 from .annotation_palette import normalize_ink
@@ -48,6 +49,7 @@ from .models import (
     Recording,
     ScoreEdition,
     Track,
+    TrackKind,
     Translation,
 )
 from .score_protection import can_export as edition_can_export
@@ -223,6 +225,10 @@ class TrackSerializer(serializers.ModelSerializer):
     `original_filename` is the manager's only way to check that the take that
     landed on a line is the take they picked — the stored path is renamed on
     collision, so it proves nothing.
+
+    A tempo giusto take has no voices, so whatever line arrives with it is
+    stored as Tutti — flipping an existing take to tempo giusto moves it there
+    too, and the practice mixer never sees two claims on one line.
     """
     voice_part_display = serializers.SerializerMethodField()
     audio_file = serializers.FileField(use_url=True)
@@ -230,7 +236,7 @@ class TrackSerializer(serializers.ModelSerializer):
     class Meta:
         model = Track
         fields = [
-            'id', 'piece', 'edition', 'voice_part', 'voice_part_display',
+            'id', 'piece', 'edition', 'voice_part', 'voice_part_display', 'kind',
             'audio_file', 'original_filename', 'description',
         ]
         read_only_fields = ['original_filename']
@@ -253,6 +259,9 @@ class TrackSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'edition': _('That edition belongs to a different piece.'),
             })
+        kind = attrs.get('kind') or getattr(self.instance, 'kind', TrackKind.PRACTICE)
+        if kind == TrackKind.TEMPO_GIUSTO:
+            attrs['voice_part'] = VoiceLine.TUTTI
         return attrs
 
 

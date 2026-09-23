@@ -11,6 +11,7 @@ import type {
   Piece,
   ScoreLicenseType,
   StartingPitch,
+  TrackKind,
   VoiceLine,
 } from "@/shared/types";
 
@@ -44,6 +45,8 @@ export interface VoiceLayoutBulkResult {
 export interface TrackUploadDTO {
   pieceId: string | number;
   voiceLine: string;
+  /** Practice take (mixer) or the tempo giusto take — see [trackSlots]. */
+  kind: TrackKind;
   file: File;
   /** Practice note shown with the track. */
   description?: string;
@@ -54,10 +57,14 @@ export interface TrackUploadDTO {
   editionId?: string | null;
 }
 
-/** The two fields a manager can correct without re-uploading the audio. */
+/**
+ * What a manager can correct without re-uploading the audio. A take moved to
+ * tempo giusto lands on Tutti server-side; one moved back keeps Tutti.
+ */
 export interface TrackPatchDTO {
   description?: string;
   voice_part?: VoiceLine;
+  kind?: TrackKind;
 }
 
 export interface ComposerWriteDTO {

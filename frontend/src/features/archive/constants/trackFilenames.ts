@@ -3,9 +3,10 @@
  * @description Reads the voice a rehearsal file is for out of its name.
  * The choir's audio arrives as `(A1) Title.mp3`, `(Ms) Title.mp3`,
  * `(B) Title.mp3`, `(mp3) Title.mp3` — the bracketed prefix is the part, and
- * `(mp3)` is the mix of every voice, i.e. Tutti. Pure functions;
- * [PieceRowTracks] uses them to pre-fill the voice on every file dropped at
- * once.
+ * `(mp3)` is the mix of every voice, i.e. Tutti. `(Tempo giusto)` / `(TG)` is
+ * not a voice at all but the target-tempo take, and resolves to its picker
+ * slot (see [trackSlots]). Pure functions; [PieceRowTracks] uses them to
+ * pre-fill the voice on every file dropped at once.
  *
  * A bare family letter (`(B)`) is only unambiguous when the piece has ONE
  * line of that family. With B1 and B2 declared the file is not guessed at —
@@ -14,11 +15,22 @@
  * @module features/archive/constants/trackFilenames
  */
 
+import { TEMPO_GIUSTO_SLOT } from "./trackSlots";
+
 const PREFIX = /^\s*[([]\s*([^)\]]{1,12}?)\s*[)\]]\s*(.*?)\s*$/;
 const FULL_CODE = /^([SATBV])([1-9])$/;
 
 /** Prefixes that mean "everybody", in the spellings the choir actually uses. */
 const TUTTI_ALIASES: ReadonlySet<string> = new Set(["MP3", "TUTTI", "ALL", "WSZYSCY", "RAZEM"]);
+
+/**
+ * Prefixes of the conductor's target-tempo take, read after whitespace is
+ * dropped — `(Tempo giusto)` arrives as `TEMPOGIUSTO`. "Tiempo gusto" is a
+ * spelling the conductor has used, so it is kept rather than corrected.
+ */
+const TEMPO_GIUSTO_ALIASES: ReadonlySet<string> = new Set([
+  "TEMPOGIUSTO", "GIUSTO", "TG", "TIEMPOGUSTO",
+]);
 
 /**
  * Word forms of the instrumental take, whose code `INSTR` is itself longer
@@ -101,6 +113,10 @@ export const resolveVoiceFromPrefix = (
 
   if (TUTTI_ALIASES.has(normalized) && dictionary.has("TUTTI")) {
     return { kind: "resolved", code: "TUTTI" };
+  }
+
+  if (TEMPO_GIUSTO_ALIASES.has(normalized)) {
+    return { kind: "resolved", code: TEMPO_GIUSTO_SLOT };
   }
 
   if (INSTRUMENTAL_ALIASES.has(normalized) && dictionary.has("INSTR")) {

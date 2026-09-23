@@ -24,6 +24,7 @@ import {
   ArrowLeft,
   EyeOff,
   FileText,
+  Gauge,
   KeyRound,
   Languages,
   Lock,
@@ -72,6 +73,11 @@ import { SectionLabel } from "./components/SectionLabel";
 import { PieceLyricsViewer } from "./components/PieceLyricsViewer";
 import { PieceDivisiRoster } from "./components/PieceDivisiRoster";
 import { VoiceMixerPanel } from "./player/VoiceMixerPanel";
+import { TempoGiustoPlayer } from "./player/TempoGiustoPlayer";
+import {
+  practiceTracksOf,
+  tempoGiustoTracksOf,
+} from "./player/PracticePlayerProvider";
 import { RehearsalDock } from "./player/RehearsalDock";
 import type { MaterialsReadinessStatus } from "./types/materials.dto";
 
@@ -154,6 +160,7 @@ export default function PiecePage({
   const referenceLinks = getReferenceRecordingLinks({
     recordings: piece.recordings,
   });
+  const tempoGiustoTracks = tempoGiustoTracksOf(piece);
   const suggestedTonic = piece.musical_key
     ? parseMusicalKeyTonic(piece.musical_key)
     : null;
@@ -406,7 +413,7 @@ export default function PiecePage({
               {/* ── main column ────────────────────────────────────────── */}
               <div className="space-y-5 lg:col-span-3">
                 {/* voice mixer — the practice console */}
-                {piece.tracks.length > 0 && (
+                {practiceTracksOf(piece).length > 0 && (
                   <div className={tabVisibility("practice")}>
                     <SectionLabel icon={<Music2 size={13} />}>
                       {t("materials.piece_page.mixer_section", "Konsola ćwiczeń")}
@@ -421,6 +428,34 @@ export default function PiecePage({
                       {t(
                         "materials.piece_page.mixer_hint",
                         "Wybierz tryb jednym tapnięciem albo dostrój każdy głos osobno — ćwicz swoją partię na tle całego chóru.",
+                      )}
+                    </Text>
+                  </div>
+                )}
+
+                {/* tempo giusto — the conductor's target reading, apart from the mix */}
+                {tempoGiustoTracks.length > 0 && (
+                  <div className={tabVisibility("practice")}>
+                    <SectionLabel icon={<Gauge size={13} />}>
+                      {t("materials.player.tempo_giusto", "Tempo giusto")}
+                    </SectionLabel>
+                    <div
+                      inert={isPreview}
+                      className={cn("space-y-2", isPreview && INERT_SURFACE)}
+                    >
+                      {tempoGiustoTracks.map((track) => (
+                        <TempoGiustoPlayer
+                          key={track.id}
+                          piece={piece}
+                          projectId={group.project.id}
+                          track={track}
+                        />
+                      ))}
+                    </div>
+                    <Text size="xs" color="muted" className="mt-2 px-1">
+                      {t(
+                        "materials.piece_page.tempo_giusto_hint",
+                        "Nagranie w tempie docelowym — tak, jak utwór ma zabrzmieć na koncercie.",
                       )}
                     </Text>
                   </div>

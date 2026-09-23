@@ -763,10 +763,10 @@
       "add_more": "Add another track",
       "batch": {
         "add_many": "Upload many",
-        "add_many_hint": "Pick several files — the voice is read from the name: (A1), (B), (mp3) = Tutti",
+        "add_many_hint": "Pick several files — the voice is read from the name: (A1), (B), (mp3) = Tutti, (TG) = Tempo giusto",
         "ambiguous": "This piece has: {{options}} — which one?",
-        "drop_active": "Drop — the voice is read from the name, e.g. (A1), (B), (mp3) = Tutti",
-        "drop_hint": "…or drag files here — (A1), (B), (mp3) = Tutti.",
+        "drop_active": "Drop — the voice is read from the name, e.g. (A1), (B), (mp3) = Tutti, (TG) = Tempo giusto",
+        "drop_hint": "…or drag files here — (A1), (B), (mp3) = Tutti, (TG) = Tempo giusto.",
         "dropzone_aria": "Audio file drop zone",
         "rejected_one": "Skipped {{count}} file — MP3, WAV or MIDI only.",
         "rejected_other": "Skipped {{count}} files — MP3, WAV or MIDI only.",
@@ -795,6 +795,11 @@
       "upload_success": "Track added.",
       "uploading": "Uploading track…",
       "voice_part": "Voice part",
+      "tempo_giusto": "Tempo giusto",
+      "tempo_giusto_hint": "the target tempo — singers hear it on its own, outside the mixer",
+      "move_to_tempo_giusto": "Move to Tempo giusto",
+      "move_to_practice": "Move to practice takes",
+      "kind_error": "Couldn't move the recording.",
       "edition": "Edition",
       "edition_any": "Shared across editions",
       "note": "Note",
@@ -2753,6 +2758,7 @@
       "duration_min_other": "{{count}} min",
       "gives_pitch": "You give the pitch",
       "mixer_hint": "Pick a mode with one tap or fine-tune each voice — practise your part against the whole choir.",
+      "tempo_giusto_hint": "The recording at the target tempo — the way the piece should sound in concert.",
       "mixer_section": "Practice console",
       "my_part_chip": "Your part: {{part}}",
       "not_found_desc": "This piece is no longer in your songbook, or the link is out of date.",
@@ -2782,7 +2788,8 @@
       "seek": "Seek",
       "solo_for": "Solo: {{voice}}",
       "volume_for": "Volume: {{voice}}",
-      "your_voice_short": "Your voice"
+      "your_voice_short": "Your voice",
+      "tempo_giusto": "Tempo giusto"
     },
     "project": {
       "archived_badge": "Archive",

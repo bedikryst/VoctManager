@@ -541,6 +541,14 @@ export interface VoiceRequirement {
   quantity: number;
 }
 
+/**
+ * What a take is for. PRACTICE takes (the voices and their Tutti mix) share
+ * one length and play together in the practice mixer; TEMPO_GIUSTO is the
+ * conductor's target-tempo recording of the whole piece, heard on its own and
+ * always stored on the Tutti line.
+ */
+export type TrackKind = "PRACTICE" | "TEMPO_GIUSTO";
+
 // Backend Track model extends EnterpriseBaseModel but TrackSerializer only
 // exposes the fields below.
 export interface Track {
@@ -550,6 +558,7 @@ export interface Track {
   edition?: string | null;
   voice_part: VoiceLine;
   voice_part_display?: string;
+  kind: TrackKind;
   audio_file: string;
   /**
    * Name of the uploaded file. Manager-only verification aid — storage renames

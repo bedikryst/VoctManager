@@ -783,10 +783,10 @@
       "add_more": "Dodaj kolejną ścieżkę",
       "batch": {
         "add_many": "Wgraj wiele",
-        "add_many_hint": "Wybierz wiele plików — głos odczytam z nazwy: (A1), (B), (mp3) = Tutti",
+        "add_many_hint": "Wybierz wiele plików — głos odczytam z nazwy: (A1), (B), (mp3) = Tutti, (TG) = Tempo giusto",
         "ambiguous": "W tym utworze: {{options}} — który?",
-        "drop_active": "Upuść — głos odczytam z nazwy, np. (A1), (B), (mp3) = Tutti",
-        "drop_hint": "…albo przeciągnij pliki tutaj — (A1), (B), (mp3) = Tutti.",
+        "drop_active": "Upuść — głos odczytam z nazwy, np. (A1), (B), (mp3) = Tutti, (TG) = Tempo giusto",
+        "drop_hint": "…albo przeciągnij pliki tutaj — (A1), (B), (mp3) = Tutti, (TG) = Tempo giusto.",
         "dropzone_aria": "Strefa upuszczania plików audio",
         "rejected_one": "Pominięto {{count}} plik — tylko MP3, WAV lub MIDI.",
         "rejected_few": "Pominięto {{count}} pliki — tylko MP3, WAV lub MIDI.",
@@ -823,6 +823,11 @@
       "upload_success": "Ścieżka dodana.",
       "uploading": "Wgrywanie ścieżki…",
       "voice_part": "Partia wokalna",
+      "tempo_giusto": "Tempo giusto",
+      "tempo_giusto_hint": "tempo docelowe — śpiewacy słuchają go osobno, poza mikserem",
+      "move_to_tempo_giusto": "Przenieś do Tempo giusto",
+      "move_to_practice": "Przenieś do ćwiczebnych",
+      "kind_error": "Nie udało się przenieść nagrania.",
       "edition": "Wydanie",
       "edition_any": "Wspólne dla wydań",
       "note": "Komentarz",
@@ -2781,6 +2786,7 @@
       "duration_min_other": "{{count}} min",
       "gives_pitch": "Ty podajesz ton",
       "mixer_hint": "Wybierz tryb jednym tapnięciem albo dostrój każdy głos osobno — ćwicz swoją partię na tle całego chóru.",
+      "tempo_giusto_hint": "Nagranie w tempie docelowym — tak, jak utwór ma zabrzmieć na koncercie.",
       "mixer_section": "Konsola ćwiczeń",
       "my_part_chip": "Twoja partia: {{part}}",
       "not_found_desc": "Ten utwór nie jest już dostępny w Twoim śpiewniku lub link jest nieaktualny.",
@@ -2810,7 +2816,8 @@
       "seek": "Przewiń",
       "solo_for": "Solo: {{voice}}",
       "volume_for": "Głośność: {{voice}}",
-      "your_voice_short": "Twój głos"
+      "your_voice_short": "Twój głos",
+      "tempo_giusto": "Tempo giusto"
     },
     "project": {
       "archived_badge": "Archiwum",

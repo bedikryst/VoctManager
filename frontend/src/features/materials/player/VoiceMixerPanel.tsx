@@ -10,8 +10,6 @@ import { useTranslation } from "react-i18next";
 import {
   Headphones,
   Mic,
-  Pause,
-  Play,
   Repeat,
   User,
   Users,
@@ -24,8 +22,13 @@ import type { LucideIcon } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
-import { usePracticePlayer, buildPracticeSources } from "./PracticePlayerProvider";
-import type { PracticePreset } from "./practicePlayerEngine";
+import {
+  usePracticePlayer,
+  buildPracticeSources,
+  practiceTracksOf,
+} from "./PracticePlayerProvider";
+import { holdsTake, type PracticePreset } from "./practicePlayerEngine";
+import { PlayerTransport, formatPlayerTime } from "./PlayerTransport";
 import type { MaterialsPiece } from "../types/materials.dto";
 
 const PLAYBACK_RATES = [0.5, 0.75, 1] as const;
@@ -65,13 +68,6 @@ const PRESETS: readonly {
   },
 ];
 
-export const formatPlayerTime = (seconds: number): string => {
-  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
-};
-
 interface VoiceMixerPanelProps {
   piece: MaterialsPiece;
   projectId: string;
@@ -84,9 +80,9 @@ export const VoiceMixerPanel = ({
   const { t } = useTranslation();
   const { engine, snapshot } = usePracticePlayer();
 
-  if (piece.tracks.length === 0) return null;
+  if (practiceTracksOf(piece).length === 0) return null;
 
-  const isLoaded = snapshot.piece?.pieceId === piece.id;
+  const isLoaded = holdsTake(snapshot, piece.id, "practice");
   const tracks = isLoaded
     ? snapshot.tracks
     : buildPracticeSources(piece, projectId).tracks;
@@ -159,52 +155,13 @@ export const VoiceMixerPanel = ({
 
       {/* ── transport ─────────────────────────────────────────────── */}
       <div className="border-b border-ethereal-marble/60 p-4">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => ensureLoadedThen(() => engine.toggle())}
-            aria-label={
-              isLoaded && snapshot.isPlaying
-                ? t("materials.player.pause", "Pauza")
-                : t("materials.player.play", "Odtwarzaj")
-            }
-            className={cn(
-              "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border shadow-glass-solid transition-all active:scale-95",
-              isLoaded && snapshot.isPlaying
-                ? "border-ethereal-sage/80 bg-ethereal-sage text-ink-on-inverse"
-                : "border-ethereal-marble bg-ethereal-alabaster text-ethereal-ink hover:border-ethereal-sage/50",
-            )}
-          >
-            {isLoaded && snapshot.isPlaying ? (
-              <Pause size={18} aria-hidden="true" />
-            ) : (
-              <Play size={18} className="ml-0.5" aria-hidden="true" />
-            )}
-          </button>
-
-          <div className="min-w-0 flex-1">
-            <input
-              type="range"
-              min={0}
-              max={isLoaded ? Math.max(snapshot.duration, 1) : 1}
-              step={0.1}
-              value={isLoaded ? snapshot.position : 0}
-              onChange={(event) =>
-                ensureLoadedThen(() => engine.seek(Number(event.target.value)))
-              }
-              aria-label={t("materials.player.seek", "Przewiń")}
-              className="w-full accent-ethereal-sage"
-            />
-            <div className="mt-0.5 flex items-center justify-between">
-              <Text size="xs" color="muted" className="tabular-nums">
-                {formatPlayerTime(isLoaded ? snapshot.position : 0)}
-              </Text>
-              <Text size="xs" color="muted" className="tabular-nums">
-                {formatPlayerTime(isLoaded ? snapshot.duration : 0)}
-              </Text>
-            </div>
-          </div>
-        </div>
+        <PlayerTransport
+          isPlaying={isLoaded && snapshot.isPlaying}
+          position={isLoaded ? snapshot.position : 0}
+          duration={isLoaded ? snapshot.duration : 0}
+          onToggle={() => ensureLoadedThen(() => engine.toggle())}
+          onSeek={(seconds) => ensureLoadedThen(() => engine.seek(seconds))}
+        />
 
         {/* tempo + loop */}
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">

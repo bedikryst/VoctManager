@@ -45,7 +45,7 @@ class TrackInline(admin.TabularInline):
     """
     model = Track
     extra = 1
-    fields = ('voice_part', 'audio_file')
+    fields = ('kind', 'voice_part', 'audio_file')
 
 
 class PieceVoiceRequirementInline(admin.TabularInline):
