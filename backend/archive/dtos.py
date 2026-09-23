@@ -408,6 +408,14 @@ class ScoreAnalysisResult(BaseModel):
         description="One prose translation per requested target language."
     )
 
+    # --- Layout on the stand (a coarse category, never geometry) ---
+    single_system_pages: bool | None = Field(
+        default=None,
+        description="True if any page of MUSIC carries a single system that fills most "
+                    "of the page height; false if every page of music carries two or more "
+                    "systems; null if you cannot tell."
+    )
+
     @field_validator("composition_year", mode="before")
     @classmethod
     def validate_composition_year(cls, value: Any) -> int | None:

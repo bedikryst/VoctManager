@@ -644,6 +644,7 @@ export default function PiecePage({
               : null
           }
           canExport={openEdition?.canExport ?? true}
+          preferredFit={openEdition?.wholePage ? "page" : undefined}
           extraOverlay={
             /* Rehearsal instrument: starting pitches + practice-player remote,
                available while the score is on the stand. */

@@ -382,6 +382,11 @@
       "reingest_modal_title": "Relancer le pipeline ?",
       "reingest_success": "Pipeline lancé — les coûts ont été remis à zéro.",
       "reingest_title": "Relancer le pipeline (entraîne de nouveaux coûts IA)",
+      "stand": {
+        "suggested": "L'analyse a trouvé une page à système unique",
+        "whole_page": "Page entière en mode concert",
+        "whole_page_hint": "Un système par page — la vue ⅔ de page le couperait"
+      },
       "untitled": "Sans titre"
     },
     "editor": {
@@ -3345,13 +3350,12 @@
     "error_403": "Vous n'avez pas la permission de voir ce document.",
     "error_generic": "Le document n'a pas pu être chargé.",
     "fit_auto": "Auto",
-    "fit_half": "Demi-page",
+    "fit_two_thirds": "⅔ de page",
     "fit_label": "Ajustement de la page",
     "fit_page": "Page entière",
     "fit_screen_width": "Largeur de l'écran",
     "fit_width": "Ajuster",
     "immersive_enter": "Mode concert",
-    "immersive_hint": "Les bords tournent la page · le centre quitte",
     "jump_to_page": "Aller à la page",
     "next_page": "Page suivante",
     "open_browser": "Ouvrir",

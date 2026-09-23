@@ -644,6 +644,50 @@ class EditionMetadataPatchTests(_ServeBase):
 
 
 @override_settings(MEDIA_ROOT=_MEDIA)
+class StandWholePageTests(_ServeBase):
+    """Whole pages on the stand are the librarian's call, set once per edition,
+    and they have to reach the singer's stand through the songbook."""
+
+    def _songbook_edition(self) -> dict[str, object]:
+        self.client.force_authenticate(self.singer_user)
+        response = self.client.get("/api/participations/materials-dashboard/")
+        self.assertEqual(response.status_code, 200)
+        row = next(r for r in response.data if r["project"]["id"] == str(self.project.pk))
+        editions = row["program"][0]["piece"]["editions"]
+        self.assertEqual(len(editions), 1)
+        return dict(editions[0])
+
+    def test_the_songbook_carries_the_flag(self) -> None:
+        self.assertFalse(self._songbook_edition()["stand_whole_page"])
+        self.edition.stand_whole_page = True
+        self.edition.save(update_fields=["stand_whole_page"])
+        self.assertTrue(self._songbook_edition()["stand_whole_page"])
+
+    def test_manager_patches_the_flag(self) -> None:
+        self.client.force_authenticate(self.manager)
+        response = self.client.patch(
+            f"/api/archive/editions/{self.edition.pk}/",
+            {"stand_whole_page": True},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["stand_whole_page"])
+        self.edition.refresh_from_db()
+        self.assertTrue(self.edition.stand_whole_page)
+
+    def test_chorister_cannot_patch_the_flag(self) -> None:
+        self.client.force_authenticate(self.singer_user)
+        response = self.client.patch(
+            f"/api/archive/editions/{self.edition.pk}/",
+            {"stand_whole_page": True},
+            format="json",
+        )
+        self.assertIn(response.status_code, (403, 404))
+        self.edition.refresh_from_db()
+        self.assertFalse(self.edition.stand_whole_page)
+
+
+@override_settings(MEDIA_ROOT=_MEDIA)
 class SeatBoundScoreAccessTests(_ServeBase):
     """A score follows the seat, and the seat has to be a real one.
 

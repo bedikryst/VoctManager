@@ -150,9 +150,9 @@ Façada [services/ingestion.py](../backend/archive/services/ingestion.py) walidu
 | # | Task | Model AI | Po co | Idempotencja |
 |---|---|---|---|---|
 | 1 | `prepare_document` | — | pypdf → sha256 + page count; limit `MAX_PDF_PAGES` = 100. **Bez bramki na warstwę tekstową** — skan jest poprawnym wejściem, bo model czyta wzrokiem | Bezpieczny re-run; dopisuje tylko puste pola |
-| 2 | `analyze_score` | **Sonnet 5** (`effort=medium`) | JEDNO wywołanie wzrokowe na całym PDF: tożsamość + części + tekst śpiewany + IPA + tłumaczenia | Wynik w payload; brak DB writes |
+| 2 | `analyze_score` | **Sonnet 5** (`effort=medium`) | JEDNO wywołanie wzrokowe na całym PDF: tożsamość + części + tekst śpiewany + IPA + tłumaczenia + `single_system_pages` (czy któraś strona nut to jeden system — kategoria, nigdy współrzędne) | Wynik w payload; brak DB writes |
 | 3 | `resolve_composer_and_piece` | — | MusicBrainz + Wikidata → dedup → `Composer` + `Piece` rows | Idempotent przez `_find_existing_*` priority; fast path przy podpiętym `piece_id` |
-| 4 | `persist_analysis` | — | Zapis części, tekstu, IPA i tłumaczeń z kroku 2 | Pomija części gdy `piece.movements.exists()` |
+| 4 | `persist_analysis` | — | Zapis części, tekstu, IPA i tłumaczeń z kroku 2; układ na pulpicie trafia TYLKO do `ScoreEdition.stand_whole_page_suggested` — flagę `stand_whole_page` ustawia bibliotekarz | Pomija części gdy `piece.movements.exists()` |
 | 5 | `lookup_spotify` | — | Top 5 nagrań ze Spotify | `update_or_create` na `(source, external_id)` |
 | 6 | `lookup_youtube` | — | Top 5 wideo z YouTube Data API | jw. |
 | 7 | `finalize_edition` | — | Status → `AWAITING` (gotowe do zatwierdzenia) | Zawsze biegnie; respektuje `FAILED` |

@@ -16,6 +16,7 @@
 
 import React from "react";
 
+import type { FitMode } from "@/shared/ui/composites/PdfViewer";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 
 import { useScoreAnnotator, type ScoreAnnotatorMode } from "../useScoreAnnotator";
@@ -42,6 +43,12 @@ export interface ScoreStandModalProps {
    * so a protected score stays in-app-only for choristers.
    */
   readonly canExport?: boolean;
+  /**
+   * Fit this edition requires in performance mode — `page` for one system per
+   * page, where any partial view cuts the system. Undefined leaves the
+   * reader's habit in charge.
+   */
+  readonly preferredFit?: FitMode;
   readonly onClose: () => void;
 }
 
@@ -55,6 +62,7 @@ export const ScoreStandModal = ({
   mode,
   extraOverlay,
   canExport = true,
+  preferredFit,
   onClose,
 }: ScoreStandModalProps): React.JSX.Element => {
   const annotator = useScoreAnnotator({ editionId, mode });
@@ -84,6 +92,7 @@ export const ScoreStandModal = ({
       // Music is read off a stand at arm's length; a call sheet is read in the
       // hand. The remembered fit belongs to the posture, not to the app.
       fitScope="score"
+      preferredFit={preferredFit}
       onClose={onClose}
     />
   );

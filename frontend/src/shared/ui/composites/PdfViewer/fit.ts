@@ -18,8 +18,8 @@ import {
   FIT_VERTICAL_RESERVE_MOBILE,
   FIT_VERTICAL_RESERVE_DESKTOP,
   FIT_VERTICAL_RESERVE_IMMERSIVE,
-  HALF_PAGE_FRACTION,
-  AUTO_HALF_GAIN_RATIO,
+  PARTIAL_PAGE_FRACTION,
+  AUTO_PARTIAL_GAIN_RATIO,
 } from "./constants";
 import type { FitMode, ResolvedFitMode } from "./types";
 
@@ -75,23 +75,23 @@ export const resolvePageFit = ({
   };
 
   const wholePageWidth = widthFittingHeight(1);
-  const halfPageWidth = widthFittingHeight(HALF_PAGE_FRACTION);
+  const partialPageWidth = widthFittingHeight(PARTIAL_PAGE_FRACTION);
 
-  // Auto is arithmetic on the measured box, never a device guess: half-page
-  // earns its extra turns only where it renders the music meaningfully bigger,
-  // which is precisely the landscape case a whole-page fit starves.
+  // Auto is arithmetic on the measured box, never a device guess: the partial
+  // fit earns its extra turns only where it renders the music meaningfully
+  // bigger, which is precisely the landscape case a whole-page fit starves.
   const resolvedFit: ResolvedFitMode =
     fitMode !== "auto"
       ? fitMode
-      : halfPageWidth >= wholePageWidth * AUTO_HALF_GAIN_RATIO
-        ? "half"
+      : partialPageWidth >= wholePageWidth * AUTO_PARTIAL_GAIN_RATIO
+        ? "two-thirds"
         : "page";
 
   const targetWidth =
     resolvedFit === "width"
       ? fitWidth
-      : resolvedFit === "half"
-        ? halfPageWidth
+      : resolvedFit === "two-thirds"
+        ? partialPageWidth
         : wholePageWidth;
 
   return {

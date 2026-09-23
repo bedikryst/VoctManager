@@ -22,6 +22,11 @@ export interface PiecePdfLink {
    * from licence × role; defaults to true when the source omits it (public domain).
    */
   canExport: boolean;
+  /**
+   * The librarian marked this edition as one system per page, so the stand
+   * opens it whole: any partial view would cut the system.
+   */
+  wholePage: boolean;
 }
 
 type PieceLike = Pick<Piece, "editions">;
@@ -55,6 +60,7 @@ export const getPiecePdfLinks = (piece: PieceLike): PiecePdfLink[] => {
       edition_year: edition.edition_year ?? undefined,
       page_count: edition.page_count ?? undefined,
       canExport: edition.can_export ?? true,
+      wholePage: edition.stand_whole_page ?? false,
     }));
 };
 

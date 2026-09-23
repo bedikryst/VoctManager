@@ -36,13 +36,14 @@ import {
   DEFAULT_ZOOM,
   SWIPE_EDGE_TOLERANCE_PX,
   PREFETCH_MAX_ZOOM,
-  FIT_SCROLL_OVERLAP_PX,
   SCROLL_EDGE_TOLERANCE_PX,
 } from "./constants";
+import { planScrollTurn } from "./scrollTurn";
 import { clampValue, buildPdfFileName, classifyLoadError, createDownloadAnchor } from "./utils";
 import { PdfToolbar } from "./components/PdfToolbar";
 import { PdfBottomNav } from "./components/PdfBottomNav";
 import { PdfOutlineDrawer } from "./components/PdfOutlineDrawer";
+import { TapZoneHints } from "./components/TapZoneHints";
 import { usePdfState } from "./hooks/usePdfState";
 import { usePdfOutline, type OutlineCapableDocument } from "./hooks/usePdfOutline";
 import { usePrefetchedPages } from "./hooks/usePrefetchedPages";
@@ -55,7 +56,6 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).toString();
 
-const CHIP_HINT_DURATION_MS = 3200;
 const CHIP_PAGE_DURATION_MS = 1200;
 
 /**
@@ -81,6 +81,7 @@ export const PdfViewer = ({
   reserveTopRight = false,
   canExport = true,
   fitScope,
+  preferredFit,
   className,
 }: PdfViewerProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -116,7 +117,7 @@ export const PdfViewer = ({
     isCompactViewport,
     devicePixelRatio,
     reportPageAspect,
-  } = usePdfState({ immersive: isImmersive, fitScope });
+  } = usePdfState({ immersive: isImmersive, fitScope, preferredFit });
 
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -130,7 +131,8 @@ export const PdfViewer = ({
   const pageBoxRef = useRef<HTMLDivElement | null>(null);
   const [pageBox, setPageBox] = useState<{ width: number; height: number } | null>(null);
 
-  // Transient feedback chip (immersive hint / page position in immersive).
+  // Transient page-position chip while performance mode hides the page nav.
+  // How to turn is shown by the zones themselves (`TapZoneHints`), never said.
   const [chip, setChip] = useState<{ id: number; text: string } | null>(null);
   const chipTimerRef = useRef<number | null>(null);
 
@@ -225,24 +227,15 @@ export const PdfViewer = ({
    * is the unit is MEASURED, never inferred from the fit: a whole-page fit
    * overflows too, once the reader zooms or where the minimum page width
    * outgrows a short box, and turning past the rest of the page there would
-   * turn past music.
-   *
-   * A rest of the page that fits one screen is shown in one turn, and a longer
-   * rest is split into equal turns. A fixed screen-minus-overlap step would end
-   * on a sliver: the half-page fit makes a page exactly two screens tall, and
-   * each page would take a third tap that moves it by the overlap alone.
+   * turn past music. The step itself is `planScrollTurn`.
    */
   const turnPage = useCallback((delta: 1 | -1) => {
     const viewport = viewportRef.current;
     if (viewport) {
       const maxScroll = viewport.scrollHeight - viewport.clientHeight;
       const remaining = delta === 1 ? maxScroll - viewport.scrollTop : viewport.scrollTop;
-      if (remaining > SCROLL_EDGE_TOLERANCE_PX) {
-        const step = Math.max(viewport.clientHeight - FIT_SCROLL_OVERLAP_PX, 1);
-        const advance =
-          remaining <= viewport.clientHeight
-            ? remaining
-            : remaining / Math.ceil(remaining / step);
+      const advance = planScrollTurn(remaining, viewport.clientHeight);
+      if (advance > 0) {
         viewport.scrollTo({
           top: viewport.scrollTop + delta * advance,
           left: viewport.scrollLeft,
@@ -344,14 +337,6 @@ export const PdfViewer = ({
     if (chipTimerRef.current) window.clearTimeout(chipTimerRef.current);
   }, []);
 
-  const handleEnterImmersive = useCallback(() => {
-    enterImmersive();
-    showChip(
-      t("pdf_viewer.immersive_hint", "Edges turn pages · centre exits"),
-      CHIP_HINT_DURATION_MS,
-    );
-  }, [enterImmersive, showChip, t]);
-
   const isIdle = !fetchBlob;
   const showLoadingState = (isIdle && !blobUrl) || (!isIdle && isFetchingBlob && !blobUrl);
   const showPdfChrome = !!blobUrl && numPages !== null && !isFetchError;
@@ -387,7 +372,7 @@ export const PdfViewer = ({
     previousFitRef.current = resolvedFit;
     previousImmersiveRef.current = isImmersive;
     // Performance mode re-fits by itself — no chrome to clear, no comfort cap —
-    // so an `auto` that tips page↔half on the way in or out is a side effect of
+    // so an `auto` that tips page↔two-thirds on the way in or out is a side effect of
     // pressing a button, not a new statement about size. Wiping a magnification
     // the singer set for this stand, mid-concert, on a stray centre tap, is not
     // something to do to them.
@@ -615,7 +600,7 @@ export const PdfViewer = ({
           onOpenInBrowser={handleOpenInBrowser}
           onShare={handleShare}
           onDownload={handleDownload}
-          onEnterImmersive={handleEnterImmersive}
+          onEnterImmersive={enterImmersive}
         />
       )}
 
@@ -750,6 +735,14 @@ export const PdfViewer = ({
           </div>
         </div>
 
+        {showPdfChrome && isImmersive && (
+          <TapZoneHints
+            viewportRef={viewportRef}
+            pageBoxRef={pageBoxRef}
+            measureKey={`${stablePage}:${renderedPageWidth ?? 0}:${zoom}`}
+          />
+        )}
+
         {/* Whole-viewer overlay (annotation index / page rail). Spans the page
             area only; content opts back into pointer events on its own surface. */}
         {showPdfChrome && overlaySlot && (
@@ -790,7 +783,7 @@ export const PdfViewer = ({
         />
       )}
 
-      {/* Transient feedback chip: immersive hint + page position feedback. */}
+      {/* Transient feedback chip: page position in performance mode. */}
       <AnimatePresence>
         {chip && (
           <motion.div

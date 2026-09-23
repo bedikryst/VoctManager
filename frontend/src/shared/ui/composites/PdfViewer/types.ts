@@ -38,12 +38,13 @@ export interface PdfPageGeometry {
  * How the page is sized against the viewport.
  * - `page` — the whole page on screen at once (a score on a stand).
  * - `width` — fill the width, read down; the page overflows and scrolls.
- * - `half` — half a page fills the screen, so the music renders at nearly
- *   double the size; a turn advances by a half.
- * `auto` resolves between `page` and `half` from the actual geometry, because
- * the same device answers differently upright and on its side.
+ * - `two-thirds` — two thirds of a page fill the screen, so the music renders
+ *   half as large again; a page takes two stops, top and bottom, whose windows
+ *   overlap by the middle third so a system across the middle is whole on one.
+ * `auto` resolves between `page` and `two-thirds` from the actual geometry,
+ * because the same device answers differently upright and on its side.
  */
-export type FitMode = "auto" | "page" | "width" | "half";
+export type FitMode = "auto" | "page" | "width" | "two-thirds";
 export type ResolvedFitMode = Exclude<FitMode, "auto">;
 
 /**
@@ -70,8 +71,8 @@ export interface PdfPageApi {
    * Rendered width of the page in CSS pixels, zoom included — null until the
    * first page box is measured (only measured for callers that draw an
    * overlay). It is the honest answer to "is there room to write here", which
-   * a viewport width cannot give: the same phone renders a 311px page upright
-   * and a 622px one on its side.
+   * a viewport width cannot give: the same tablet on its side renders a 615px
+   * page fitted whole and a 922px one fitted to two thirds.
    */
   pageWidth: number | null;
 }
@@ -135,5 +136,12 @@ export interface PdfViewerProps {
    * with its own reading posture can claim a bucket of its own.
    */
   fitScope?: string;
+  /**
+   * Fit the document requires in performance mode, whatever the reader's habit
+   * — an edition that sets one system per page must be shown whole on the
+   * stand, or every partial view cuts it. Outside performance mode the reader's
+   * own fit holds, and this is never written into the stored habit.
+   */
+  preferredFit?: FitMode;
   className?: string;
 }

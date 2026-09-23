@@ -377,6 +377,11 @@
       "reingest_modal_title": "Re-run the pipeline?",
       "reingest_success": "Pipeline started — costs have been reset.",
       "reingest_title": "Re-run the pipeline (incurs new AI costs)",
+      "stand": {
+        "suggested": "The analysis found a page with a single system",
+        "whole_page": "Whole page in performance mode",
+        "whole_page_hint": "One system per page — the ⅔ page view would cut it"
+      },
       "untitled": "Untitled"
     },
     "editor": {
@@ -3335,13 +3340,12 @@
     "error_403": "You do not have permission to view this document.",
     "error_generic": "The document could not be loaded.",
     "fit_auto": "Auto",
-    "fit_half": "Half page",
+    "fit_two_thirds": "⅔ page",
     "fit_label": "Page fit",
     "fit_page": "Whole page",
     "fit_screen_width": "Screen width",
     "fit_width": "Fit page",
     "immersive_enter": "Performance mode",
-    "immersive_hint": "Edges turn pages · centre exits",
     "jump_to_page": "Jump to page",
     "next_page": "Next page",
     "open_browser": "Open",

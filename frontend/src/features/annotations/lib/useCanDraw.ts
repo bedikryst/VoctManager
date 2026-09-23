@@ -2,8 +2,9 @@
  * @file useCanDraw.ts
  * @description May this reader put freehand ink on the page? Decided from the
  * PAGE, not from the device: what governs whether a stroke lands where it was
- * meant is how large the music is actually rendered, and one phone shows a
- * 311px page upright and a 622px one on its side in half-page fit. A precise
+ * meant is how large the music is actually rendered, and one tablet shows a
+ * 615px page on its side fitted whole and a 922px one in the two-thirds fit. A
+ * phone on its side stays below the line in either fit. A precise
  * pointer — stylus or mouse — settles it outright, because precision is the
  * only thing being measured here. Pinned/inline notes, stamps and the eraser
  * stay available everywhere (see AnnotationToolbar).

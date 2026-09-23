@@ -38,8 +38,8 @@ describe("resolvePageFit — auto", () => {
     expect(renderedPageWidth).toBe(748);
   });
 
-  it("keeps the whole page on a phone held upright — half would buy nothing", () => {
-    // Width-limited already: half a page fits the same 374px, so the reader
+  it("keeps the whole page on a phone held upright — two thirds would buy nothing", () => {
+    // Width-limited already: two thirds of a page fit the same 374px, so the reader
     // would be turning twice as often for an identical stave.
     const { resolvedFit, renderedPageWidth } = fit({
       viewportWidth: 390,
@@ -49,7 +49,7 @@ describe("resolvePageFit — auto", () => {
     expect(renderedPageWidth).toBe(374);
   });
 
-  it("switches to half-page on a phone on its side, where whole-page starves", () => {
+  it("switches to two thirds on a phone on its side, where whole-page starves", () => {
     const landscapePhone = { viewportWidth: 844, viewportHeight: 390 };
     const auto = fit(landscapePhone);
     const whole = fit({ ...landscapePhone, fitMode: "page" });
@@ -57,17 +57,16 @@ describe("resolvePageFit — auto", () => {
     // 320 is the minimum width, not a fit: the arithmetic wants 311, and even
     // that is 37% of an 844px screen. See the floor case below.
     expect(whole.renderedPageWidth).toBe(320);
-    expect(auto.resolvedFit).toBe("half");
-    expect(auto.renderedPageWidth).toBe(622); // twice the music, same glass
+    expect(auto.resolvedFit).toBe("two-thirds");
+    expect(auto.renderedPageWidth).toBe(466); // half as large again, same glass
   });
 
-  it("switches to half-page on a tablet on its side", () => {
-    const { resolvedFit, renderedPageWidth } = fit({
-      viewportWidth: 1180,
-      viewportHeight: 820,
-    });
-    expect(resolvedFit).toBe("half");
-    expect(renderedPageWidth).toBe(1080); // the desktop comfort cap, not the height
+  it("switches to two thirds on a tablet on its side", () => {
+    const landscapeTablet = { viewportWidth: 1180, viewportHeight: 820 };
+    const { resolvedFit, renderedPageWidth } = fit(landscapeTablet);
+    expect(resolvedFit).toBe("two-thirds");
+    expect(renderedPageWidth).toBe(922);
+    expect(fit({ ...landscapeTablet, fitMode: "page" }).renderedPageWidth).toBe(615);
   });
 });
 
@@ -102,7 +101,7 @@ describe("resolvePageFit — explicit modes and edges", () => {
 
   it("honours an explicit choice over what auto would have picked", () => {
     const landscapePhone = { viewportWidth: 844, viewportHeight: 390 };
-    expect(fit(landscapePhone).resolvedFit).toBe("half");
+    expect(fit(landscapePhone).resolvedFit).toBe("two-thirds");
     expect(fit({ ...landscapePhone, fitMode: "page" }).resolvedFit).toBe("page");
   });
 
@@ -124,9 +123,9 @@ describe("resolvePageFit — explicit modes and edges", () => {
     expect(resolvedFit).toBe("page");
   });
 
-  it("follows a landscape page, which fits whole and needs no halving", () => {
+  it("follows a landscape page, which fits whole and needs no partial view", () => {
     // A landscape scan (aspect 0.71) on a landscape screen: the whole page
-    // already fills the height, so auto must not start halving music.
+    // already fills the width, so auto must not start splitting music.
     const { resolvedFit } = fit({
       viewportWidth: 1180,
       viewportHeight: 820,

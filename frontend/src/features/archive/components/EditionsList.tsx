@@ -1,9 +1,9 @@
 /**
  * @file EditionsList.tsx
  * @description Per-edition card list inside the Piece Card. Each card surfaces:
- * open in the score stand, ingestion status, licence, cost-to-date, pipeline
- * error (if any), plus Re-run pipeline (incurs new AI cost) and Delete edition
- * (soft-delete).
+ * open in the score stand, ingestion status, licence, cost-to-date, whole pages
+ * on the stand, pipeline error (if any), plus Re-run pipeline (incurs new AI
+ * cost) and Delete edition (soft-delete).
  *
  * Approve (AWAI → RDY) is deliberately NOT here: it belongs to the Piece Card's
  * action tray, which blocks it while the conductor has unsaved corrections. A
@@ -25,10 +25,13 @@ import {
   Globe,
   Lock,
   RefreshCcw,
+  Scan,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 
 import { Button } from "@/shared/ui/primitives/Button";
+import { Checkbox } from "@/shared/ui/primitives/Checkbox";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
@@ -190,6 +193,59 @@ const EditionLicenseControl = ({
         </Caption>
       )}
     </div>
+  );
+};
+
+/**
+ * Whole pages on the stand. Some scores set one system per page (a full score,
+ * a nine-staff orchestral system); the two-thirds fit would cut it on every
+ * screen, so the librarian marks the edition once and every chorister's
+ * performance mode opens it whole instead of each of them discovering it on
+ * stage. When the ingestion analysis counted a single-system page and the flag
+ * is still off, the row says so; ticking the box is the confirmation.
+ */
+const EditionStandControl = ({
+  edition,
+}: {
+  edition: ScoreEditionSummary;
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  const patch = usePatchEdition();
+  const isWholePage = edition.stand_whole_page ?? false;
+  const isSuggested = !isWholePage && edition.stand_whole_page_suggested === true;
+
+  return (
+    <label className="mt-2 flex cursor-pointer flex-wrap items-center gap-2">
+      <Checkbox
+        checked={isWholePage}
+        disabled={patch.isPending}
+        onChange={(event) =>
+          patch.mutate({
+            id: edition.id,
+            dto: { stand_whole_page: event.target.checked },
+          })
+        }
+      />
+      <Caption className="shrink-0">
+        {t("archive.editions.stand.whole_page", "Cała strona w trybie występu")}
+      </Caption>
+      <Caption color="muted" className="inline-flex items-center gap-1">
+        <Scan size={12} aria-hidden="true" />
+        {t(
+          "archive.editions.stand.whole_page_hint",
+          "Jeden system na stronę — widok ⅔ strony by go przeciął",
+        )}
+      </Caption>
+      {isSuggested && (
+        <Caption color="gold" className="inline-flex items-center gap-1">
+          <Sparkles size={12} aria-hidden="true" />
+          {t(
+            "archive.editions.stand.suggested",
+            "Analiza znalazła stronę z jednym systemem",
+          )}
+        </Caption>
+      )}
+    </label>
   );
 };
 
@@ -364,6 +420,7 @@ export const EditionsList = ({
               </div>
 
               <EditionLicenseControl edition={edition} />
+              <EditionStandControl edition={edition} />
             </li>
           );
         })}
@@ -430,6 +487,7 @@ export const EditionsList = ({
             : null
         }
         canExport={openEdition?.can_export ?? true}
+        preferredFit={openEdition?.stand_whole_page ? "page" : undefined}
         onClose={() => setOpenEditionId(null)}
       />
     </>

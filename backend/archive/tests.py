@@ -51,7 +51,7 @@ from archive.services.voice_scope import (
     tracks_for_edition,
     voice_labels,
 )
-from archive.tasks import _identity_from_analysis
+from archive.tasks import _identity_from_analysis, persist_analysis
 from core.constants import AppRole
 from core.models import UserProfile
 from core.voice_labels import collapse_voice_labels, voice_line_label
@@ -930,6 +930,76 @@ class CompositionYearIngestionTests(TestCase):
         )
         piece.refresh_from_db()
         self.assertEqual(piece.composition_year, 1791)
+
+
+class StandLayoutSuggestionTests(TestCase):
+    """The analysis counts systems per page; the librarian decides the fit.
+
+    What the model answers lands in the suggestion column and nowhere else —
+    the flag that makes every chorister's stand open an edition whole is never
+    written by a run, whatever the model says.
+    """
+
+    def setUp(self) -> None:
+        composer = Composer.objects.create(first_name="Ralph", last_name="Vaughan Williams")
+        self.piece = Piece.objects.create(title="The Lark Ascending", composer=composer)
+        self.edition = ScoreEdition.objects.create(
+            piece=self.piece, original_filename="lark.pdf", sha256="b" * 64,
+        )
+
+    def _persist(self, **analysis: object) -> None:
+        persist_analysis({
+            "edition_id": str(self.edition.id),
+            "piece_id": str(self.piece.id),
+            "analysis": {
+                "title": "The Lark Ascending",
+                "composer_full_name": "Ralph Vaughan Williams",
+                "confidence": 0.9,
+                **analysis,
+            },
+        })
+        self.edition.refresh_from_db()
+
+    def test_a_single_system_page_is_suggested_not_applied(self) -> None:
+        self._persist(single_system_pages=True)
+        self.assertTrue(self.edition.stand_whole_page_suggested)
+        self.assertFalse(self.edition.stand_whole_page)
+        record = ProvenanceRecord.objects.get(
+            object_id=self.edition.pk, field_name="stand_whole_page_suggested",
+        )
+        self.assertEqual(record.source, ProvenanceSource.AI_SONNET)
+
+    def test_no_answer_leaves_the_suggestion_blank(self) -> None:
+        self._persist()
+        self.assertIsNone(self.edition.stand_whole_page_suggested)
+        self.assertFalse(
+            ProvenanceRecord.objects.filter(
+                object_id=self.edition.pk, field_name="stand_whole_page_suggested",
+            ).exists()
+        )
+
+    def test_an_edition_deleted_mid_run_keeps_the_piece_data(self) -> None:
+        self.edition.delete()
+        persist_analysis({
+            "edition_id": str(self.edition.id),
+            "piece_id": str(self.piece.id),
+            "analysis": {
+                "title": "The Lark Ascending",
+                "composer_full_name": "Ralph Vaughan Williams",
+                "confidence": 0.9,
+                "sung_text": "He rises and begins to round",
+                "single_system_pages": True,
+            },
+        })
+        self.piece.refresh_from_db()
+        self.assertEqual(self.piece.lyrics_original, "He rises and begins to round")
+
+    def test_a_run_never_clears_the_librarians_flag(self) -> None:
+        self.edition.stand_whole_page = True
+        self.edition.save(update_fields=["stand_whole_page"])
+        self._persist(single_system_pages=False)
+        self.assertFalse(self.edition.stand_whole_page_suggested)
+        self.assertTrue(self.edition.stand_whole_page)
 
 
 # ===========================================================================

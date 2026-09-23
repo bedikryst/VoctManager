@@ -16,18 +16,23 @@ export const DEFAULT_PAGE_ASPECT = 1.414;
  * music ends up half the size the device could show. These govern the way out.
  */
 /**
- * Fraction of the page height that must be on screen in half-page mode. Half a
- * page fits at nearly double the width, which is the whole point of the mode.
+ * Fraction of the page height that must be on screen in the partial-page fit.
+ * A page is then seen in two windows, `[0, f]` and `[1 − f, 1]`, and a system
+ * survives the turn only if one window holds it whole. At ½ the windows merely
+ * touch, so every system across the middle is cut on both screens; on a page of
+ * three systems the middle one spans roughly 36–64% of the height, which ⅔
+ * clears with a few percent to spare and 60% does not.
  */
-export const HALF_PAGE_FRACTION = 0.5;
+export const PARTIAL_PAGE_FRACTION = 2 / 3;
 /**
- * How much bigger half-page has to render before `auto` picks it over the whole
- * page. Below this the reader would be turning twice as often for nothing.
+ * How much bigger the partial fit has to render before `auto` picks it over the
+ * whole page. Below this the reader would be turning twice as often for nothing.
  */
-export const AUTO_HALF_GAIN_RATIO = 1.15;
+export const AUTO_PARTIAL_GAIN_RATIO = 1.15;
 /**
- * Slice of the previous screen kept when a turn scrolls a page that overflows —
- * a system split across the fold must not vanish between two halves.
+ * Slice of the previous screen kept by each turn when the rest of a page is
+ * longer than one screen (see `planScrollTurn`) — a system split across the
+ * fold must not vanish between two screens.
  */
 export const FIT_SCROLL_OVERLAP_PX = 28;
 /** Scroll distance below which the viewport counts as parked at an edge. */

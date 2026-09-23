@@ -84,6 +84,10 @@ SCORABLE_FIELDS = (
     # printed one (a copyright date, or one recalled from the model's training).
     'composition_year',
     'sung_text_language',
+    # A layout category, not identity: does any page of music carry a single
+    # system? Worth scoring only with a positive case in the set — an all-false
+    # golden set rewards a model that never says yes.
+    'single_system_pages',
 )
 
 # Scored separately from the identity fields: a list of phrases that must appear

@@ -27,6 +27,7 @@ import {
   type PdfViewerEvent,
   type PdfPageGeometry,
   type PdfPageApi,
+  type FitMode,
 } from "@/shared/ui/composites/PdfViewer";
 import {
   buildDocumentViewerPath,
@@ -85,6 +86,8 @@ export interface PdfViewerModalProps {
   canExport?: boolean;
   /** Which reading habit remembers the fit — see `PdfViewerProps.fitScope`. */
   fitScope?: string;
+  /** Fit the document requires — see `PdfViewerProps.preferredFit`. */
+  preferredFit?: FitMode;
   onClose: () => void;
 }
 
@@ -106,6 +109,7 @@ export const PdfViewerModal = ({
   onPageApiChange,
   canExport = true,
   fitScope,
+  preferredFit,
   onClose,
 }: PdfViewerModalProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -222,6 +226,7 @@ export const PdfViewerModal = ({
                   reserveTopRight
                   canExport={canExport}
                   fitScope={fitScope}
+                  preferredFit={preferredFit}
                   className="flex-1"
                 />
 

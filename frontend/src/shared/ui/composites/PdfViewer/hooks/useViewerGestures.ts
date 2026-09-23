@@ -75,7 +75,8 @@ interface WheelSession {
 const EXEMPT_SELECTOR =
   "button, a, input, textarea, select, [contenteditable='true'], [data-pdf-gesture-exempt]";
 
-const isGestureExemptTarget = (target: EventTarget | null): boolean => {
+/** Whether a tap on `target` is left to the element — shared with the zone hints. */
+export const isGestureExemptTarget = (target: EventTarget | null): boolean => {
   const element = target instanceof Element ? target : null;
   if (!element) return true;
   return !!element.closest(EXEMPT_SELECTOR);

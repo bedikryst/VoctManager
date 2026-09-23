@@ -71,6 +71,8 @@ export interface MaterialsEdition {
   editor_name: string;
   page_count: number | null;
   is_default: boolean;
+  /** The score sets one system per page: performance mode opens it whole. */
+  stand_whole_page: boolean;
   ingestion_status: MaterialsIngestionStatus;
   created_at: string;
 }

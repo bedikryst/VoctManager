@@ -299,6 +299,7 @@ export const PieceRowExpanded = ({
             : null
         }
         canExport={openEdition?.canExport ?? true}
+        preferredFit={openEdition?.wholePage ? "page" : undefined}
         onClose={() => setOpenEditionId(null)}
       />
     </div>

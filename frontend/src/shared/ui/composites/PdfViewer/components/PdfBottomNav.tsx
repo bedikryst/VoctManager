@@ -56,7 +56,7 @@ interface PdfBottomNavProps {
 const FIT_ICONS: Record<ResolvedFitMode, typeof Scan> = {
   page: Scan,
   width: StretchHorizontal,
-  half: Rows2,
+  "two-thirds": Rows2,
 };
 
 const FIT_OPTIONS: {
@@ -68,10 +68,10 @@ const FIT_OPTIONS: {
   { mode: "auto", icon: Sparkles, labelKey: "pdf_viewer.fit_auto", fallback: "Auto" },
   { mode: "page", icon: Scan, labelKey: "pdf_viewer.fit_page", fallback: "Cała strona" },
   {
-    mode: "half",
+    mode: "two-thirds",
     icon: Rows2,
-    labelKey: "pdf_viewer.fit_half",
-    fallback: "Pół strony",
+    labelKey: "pdf_viewer.fit_two_thirds",
+    fallback: "⅔ strony",
   },
   {
     mode: "width",

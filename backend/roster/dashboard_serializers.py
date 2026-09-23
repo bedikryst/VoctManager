@@ -136,7 +136,7 @@ class EditionSnippetSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'pdf_file', 'can_export', 'original_filename',
             'publisher', 'edition_year', 'editor_name',
-            'page_count', 'is_default', 'license_type',
+            'page_count', 'is_default', 'license_type', 'stand_whole_page',
             'ingestion_status', 'created_at',
         )
 

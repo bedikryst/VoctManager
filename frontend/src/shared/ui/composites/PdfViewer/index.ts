@@ -11,4 +11,5 @@ export type {
   PdfViewerEvent,
   PdfPageGeometry,
   PdfPageApi,
+  FitMode,
 } from "./types";

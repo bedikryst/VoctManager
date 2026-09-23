@@ -425,23 +425,32 @@ export const usePatchEdition = () => {
       ArchiveService.patchEdition(id, dto),
     onMutate: async ({ id, dto }) => {
       await qc.cancelQueries({ queryKey: archiveKeys.pieces.all });
-      const previous = qc.getQueryData<Piece[]>(archiveKeys.pieces.all);
-      if (previous) {
-        qc.setQueryData<Piece[]>(
-          archiveKeys.pieces.all,
-          previous.map((piece) => ({
-            ...piece,
-            editions: (piece.editions ?? []).map((e) =>
-              String(e.id) === String(id) ? { ...e, ...dto } : e,
-            ),
-          })),
-        );
-      }
+      const patchPiece = (piece: Piece): Piece => ({
+        ...piece,
+        editions: (piece.editions ?? []).map((e) =>
+          String(e.id) === String(id) ? { ...e, ...dto } : e,
+        ),
+      });
+      // The prefix covers the archive list (`Piece[]`) AND every piece card
+      // (`Piece`) — a control on the card reads the detail entry, and patching
+      // the list alone left its checkbox reading the old value until refetch.
+      const previous = qc.getQueriesData<Piece[] | Piece>({
+        queryKey: archiveKeys.pieces.all,
+      });
+      qc.setQueriesData<Piece[] | Piece>(
+        { queryKey: archiveKeys.pieces.all },
+        (data) =>
+          data === undefined
+            ? data
+            : Array.isArray(data)
+              ? data.map(patchPiece)
+              : patchPiece(data),
+      );
       return { previous };
     },
     onError: (_err, _vars, context) => {
-      if (context?.previous) {
-        qc.setQueryData(archiveKeys.pieces.all, context.previous);
+      for (const [queryKey, data] of context?.previous ?? []) {
+        qc.setQueryData(queryKey, data);
       }
     },
     onSettled: () => {

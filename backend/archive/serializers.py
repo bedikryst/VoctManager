@@ -574,6 +574,7 @@ class PieceEditionSummarySerializer(serializers.ModelSerializer):
             'id', 'pdf_file', 'can_export', 'original_filename', 'publisher',
             'edition_year', 'editor_name', 'page_count',
             'is_default', 'license_type', 'copies_owned',
+            'stand_whole_page', 'stand_whole_page_suggested',
             'ingestion_status', 'ingestion_status_display',
             'ingestion_progress', 'ingestion_cost_cents', 'ingestion_error',
             'created_at', 'updated_at',
@@ -601,7 +602,7 @@ class ScoreEditionListSerializer(serializers.ModelSerializer):
         model = ScoreEdition
         fields = [
             'id', 'original_filename', 'publisher', 'edition_year',
-            'page_count', 'is_default',
+            'page_count', 'is_default', 'stand_whole_page',
             'piece', 'piece_title', 'composer_name',
             'ingestion_status', 'ingestion_status_display', 'ingestion_progress',
             'ingestion_run_started_at',
@@ -621,8 +622,9 @@ class ScoreEditionDetailSerializer(serializers.ModelSerializer):
     """Full ScoreEdition payload — includes annotations and SHA-256.
 
     Also the write surface for edition metadata (manager PATCH): publisher,
-    edition_year, editor_name, is_default, and the licence fields
-    (license_type / copies_owned) are all writable here."""
+    edition_year, editor_name, is_default, the licence fields
+    (license_type / copies_owned) and the stand layout (stand_whole_page) are
+    all writable here."""
     pdf_file = serializers.SerializerMethodField()
     can_export = serializers.SerializerMethodField()
     annotations = serializers.SerializerMethodField()
@@ -636,6 +638,7 @@ class ScoreEditionDetailSerializer(serializers.ModelSerializer):
             'id', 'pdf_file', 'can_export', 'original_filename', 'page_count',
             'publisher', 'edition_year', 'editor_name', 'is_default',
             'license_type', 'copies_owned',
+            'stand_whole_page', 'stand_whole_page_suggested',
             'sha256', 'uploaded_by',
             'piece', 'annotations',
             'ingestion_status', 'ingestion_status_display', 'ingestion_progress',
@@ -647,6 +650,8 @@ class ScoreEditionDetailSerializer(serializers.ModelSerializer):
         # nature; never list them in read_only_fields or DRF raises an assertion.
         read_only_fields = [
             'id', 'page_count', 'sha256', 'uploaded_by',
+            # The analysis's answer; only `stand_whole_page` is the librarian's.
+            'stand_whole_page_suggested',
             'piece', 'annotations',
             'ingestion_status', 'ingestion_status_display', 'ingestion_progress',
             'ingestion_run_started_at',

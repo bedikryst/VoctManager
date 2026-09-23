@@ -10,7 +10,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { resolveTapZone } from "./tapZone";
+import { resolveTapZone, tapZoneBands } from "./tapZone";
 
 // A 1536px-wide laptop screen showing a whole A4 page 611px wide, centred.
 const screen = { left: 0, right: 1536 };
@@ -41,5 +41,23 @@ describe("resolveTapZone", () => {
   it("falls back to the screen when the page is not measured", () => {
     expect(resolveTapZone(1500, screen, null)).toBe(1);
     expect(resolveTapZone(768, screen, null)).toBe(0);
+  });
+});
+
+describe("tapZoneBands", () => {
+  it("draws the bands on the outer thirds of the visible paper", () => {
+    const { back, forward } = tapZoneBands(screen, wholePage);
+    expect(back.left).toBe(462);
+    expect(back.right).toBeCloseTo(462 + 611 / 3);
+    expect(forward.left).toBeCloseTo(1073 - 611 / 3);
+    expect(forward.right).toBe(1073);
+  });
+
+  it("agrees with the hit test at every band edge", () => {
+    const { back, forward } = tapZoneBands(screen, wholePage);
+    expect(resolveTapZone(back.right, screen, wholePage)).toBe(-1);
+    expect(resolveTapZone(back.right + 1, screen, wholePage)).toBe(0);
+    expect(resolveTapZone(forward.left - 1, screen, wholePage)).toBe(0);
+    expect(resolveTapZone(forward.left, screen, wholePage)).toBe(1);
   });
 });

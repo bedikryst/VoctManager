@@ -455,6 +455,19 @@ class ScoreEdition(EnterpriseBaseModel):
                     "Powers the 'more singers than copies' warning in the score-book cockpit."),
         verbose_name=_("Copies Owned"),
     )
+    stand_whole_page = models.BooleanField(
+        default=False,
+        help_text=_("The score sets one system per page, so a partial view on the "
+                    "stand would cut it. Opens every page whole in performance mode."),
+        verbose_name=_("Whole pages on the stand"),
+    )
+    stand_whole_page_suggested = models.BooleanField(
+        null=True, blank=True,
+        help_text=_("What the ingestion analysis read off the pages: whether any page "
+                    "of music carries a single system. A suggestion for the librarian, "
+                    "never applied by itself. Blank when the analysis did not answer."),
+        verbose_name=_("Whole pages on the stand — suggested by analysis"),
+    )
     sha256 = models.CharField(
         max_length=64, db_index=True,
         help_text=_("Hex SHA-256 of the uploaded PDF — used for dedup across uploads"),

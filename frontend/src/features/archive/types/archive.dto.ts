@@ -155,4 +155,6 @@ export interface ScoreEditionPatchDTO {
   license_type?: ScoreLicenseType;
   /** Physical copies owned (LICENSED_COPIES only); null clears it. */
   copies_owned?: number | null;
+  /** One system per page — the stand opens this edition's pages whole. */
+  stand_whole_page?: boolean;
 }

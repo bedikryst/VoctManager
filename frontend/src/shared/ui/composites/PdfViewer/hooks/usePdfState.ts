@@ -34,12 +34,25 @@ interface UsePdfStateArgs {
    * between kinds of document (see `PdfViewerProps.fitScope`).
    */
   fitScope?: string;
+  /**
+   * Fit the document itself asks for on the stand (see
+   * `PdfViewerProps.preferredFit`). Applied only while `immersive`, and never
+   * stored: it is the edition's requirement, not the reader's habit.
+   */
+  preferredFit?: FitMode;
 }
 
 const FIT_STORAGE_PREFIX = "voct.pdf.fit_mode";
 
 const isFitMode = (value: string | null): value is FitMode =>
-  value === "auto" || value === "page" || value === "width" || value === "half";
+  value === "auto" || value === "page" || value === "width" || value === "two-thirds";
+
+/**
+ * `half` is a stored choice from before the partial fit became two thirds. A
+ * reader who chose it asked for the larger music, so it maps to its successor
+ * rather than falling back to `auto`.
+ */
+const LEGACY_HALF_FIT = "half";
 
 const fitStorageKey = (scope: string): string => `${FIT_STORAGE_PREFIX}:${scope}`;
 
@@ -48,6 +61,7 @@ const readStoredFit = (scope: string): FitMode => {
   if (typeof window === "undefined") return "auto";
   try {
     const stored = window.localStorage.getItem(fitStorageKey(scope));
+    if (stored === LEGACY_HALF_FIT) return "two-thirds";
     return isFitMode(stored) ? stored : "auto";
   } catch {
     return "auto";
@@ -57,6 +71,7 @@ const readStoredFit = (scope: string): FitMode => {
 export const usePdfState = ({
   immersive = false,
   fitScope = "document",
+  preferredFit,
 }: UsePdfStateArgs = {}) => {
   const viewportRef = useRef<HTMLDivElement | null>(null);
 
@@ -69,6 +84,11 @@ export const usePdfState = ({
   // then corrected from the real page.
   const [pageAspect, setPageAspect] = useState(DEFAULT_PAGE_ASPECT);
   const [fitMode, setFitModeState] = useState<FitMode>(() => readStoredFit(fitScope));
+  // On the stand the edition's requirement outranks the habit; everywhere else
+  // the reader's own choice holds. Derived rather than seeded into state, so a
+  // different edition in the same open viewer takes effect without a remount,
+  // and the habit the bottom nav shows and stores is never overwritten by it.
+  const effectiveFit: FitMode = immersive && preferredFit ? preferredFit : fitMode;
 
   const setFitMode = useCallback((next: FitMode) => {
     setFitModeState(next);
@@ -89,9 +109,9 @@ export const usePdfState = ({
         viewportHeight,
         pageAspect,
         immersive,
-        fitMode,
+        fitMode: effectiveFit,
       }),
-    [fitMode, immersive, viewportWidth, viewportHeight, pageAspect],
+    [effectiveFit, immersive, viewportWidth, viewportHeight, pageAspect],
   );
 
   const devicePixelRatio = useMemo(() => {

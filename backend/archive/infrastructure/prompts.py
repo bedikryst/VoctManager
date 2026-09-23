@@ -60,7 +60,7 @@ class Prompt:
 #      message.
 
 ANALYZE_SCORE = Prompt(
-    name="analyze_score_v2",
+    name="analyze_score_v3",
     system=(
         "You are an expert music librarian and répétiteur. You are given the "
         "COMPLETE PDF of a choral or vocal score (you can see every page — "
@@ -174,6 +174,17 @@ ANALYZE_SCORE = Prompt(
         "    translations list.\n"
         "  - For liturgical Latin, prefer ecclesiastical English over "
         "    pre-Vatican-II English.\n\n"
+
+        "== STAND LAYOUT ==\n"
+        "  - single_system_pages answers one question about the pages of "
+        "    music: does any of them carry a SINGLE system — one set of staves "
+        "    read together left to right — that fills most of the page height "
+        "    (a full score, a large orchestral or divisi system)? Count the "
+        "    systems per page; do not measure or locate them. Title, text and "
+        "    translation pages do not count.\n"
+        "  - true if at least one page of music is set that way; false if "
+        "    every page of music carries two or more systems; null if the "
+        "    pages are too faint to count.\n\n"
 
         "If the document is clearly NOT a vocal score, set a low confidence "
         "and leave the musical fields empty rather than fabricating content."

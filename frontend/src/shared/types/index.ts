@@ -743,6 +743,13 @@ export interface ScoreEditionSummary extends BaseModel {
   license_type?: ScoreLicenseType;
   /** Physical copies owned (LICENSED_COPIES only). */
   copies_owned?: number | null;
+  /** The score sets one system per page: performance mode opens it whole. */
+  stand_whole_page?: boolean;
+  /**
+   * The ingestion analysis's read of the same question — a suggestion the
+   * librarian confirms by setting `stand_whole_page`. Null: no answer.
+   */
+  stand_whole_page_suggested?: boolean | null;
   ingestion_status: IngestionStatusCode;
   ingestion_status_display?: string;
   ingestion_progress?: IngestionProgressCode;

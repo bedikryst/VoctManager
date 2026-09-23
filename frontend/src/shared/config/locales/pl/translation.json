@@ -387,6 +387,11 @@
       "reingest_modal_title": "Uruchomić pipeline ponownie?",
       "reingest_success": "Pipeline uruchomiony — koszty zostały wyzerowane.",
       "reingest_title": "Uruchom pipeline ponownie (naliczy nowe koszty AI)",
+      "stand": {
+        "suggested": "Analiza znalazła stronę z jednym systemem",
+        "whole_page": "Cała strona w trybie występu",
+        "whole_page_hint": "Jeden system na stronę — widok ⅔ strony by go przeciął"
+      },
       "untitled": "Bez nazwy"
     },
     "editor": {
@@ -3373,13 +3378,12 @@
     "error_403": "Nie masz uprawnień do wyświetlenia tego dokumentu.",
     "error_generic": "Nie udało się załadować dokumentu.",
     "fit_auto": "Auto",
-    "fit_half": "Pół strony",
+    "fit_two_thirds": "⅔ strony",
     "fit_label": "Dopasowanie strony",
     "fit_page": "Cała strona",
     "fit_screen_width": "Szerokość ekranu",
     "fit_width": "Dopasuj",
     "immersive_enter": "Tryb występu",
-    "immersive_hint": "Boki ekranu = strona · środek = wyjście",
     "jump_to_page": "Przejdź do strony",
     "next_page": "Następna strona",
     "open_browser": "Otwórz",

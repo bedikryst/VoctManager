@@ -280,6 +280,7 @@ export const PieceRow = ({
           fileName={primaryPdf.label.endsWith(".pdf") ? primaryPdf.label : `${primaryPdf.label}.pdf`}
           fetchBlob={() => MaterialsService.fetchScoreEditionBlob(primaryPdf.id)}
           canExport={primaryPdf.canExport}
+          preferredFit={primaryPdf.wholePage ? "page" : undefined}
           extraOverlay={
             <RehearsalDock
               piece={piece}

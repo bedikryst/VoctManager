@@ -632,8 +632,9 @@ def resolve_composer_and_piece(self, payload: dict) -> dict:
 @shared_task(name='archive.persist_analysis', **_TASK_KW)
 @_guarded
 def persist_analysis(self, payload: dict) -> dict:
-    """Phase 4 — persist the movements, sung text, IPA and translations that the
-    single analysis call produced. No AI here; idempotent."""
+    """Phase 4 — persist the movements, sung text, IPA, translations and the
+    stand-layout suggestion that the single analysis call produced. No AI here;
+    idempotent."""
     _set_progress(payload['edition_id'], IngestionProgress.PERSISTING)
     piece = Piece.objects.get(id=payload['piece_id'])
     analysis = ScoreAnalysisResult.model_validate(payload['analysis'])
@@ -708,6 +709,26 @@ def persist_analysis(self, payload: dict) -> dict:
             )
             provenance.record_ai(
                 target=translation, field_name='text',
+                model_id=AIModel.SONNET, prompt_version=version,
+                confidence=analysis.confidence,
+            )
+
+        # Stand layout goes to the SUGGESTION column only. The flag that decides
+        # how every chorister's stand opens this edition is the librarian's to
+        # set; the model counts systems, it never decides the fit. A run that
+        # did not answer leaves a previous suggestion in place. An edition
+        # deleted mid-run is skipped, never raised on: a raise here would roll
+        # back the piece data above, which the piece's other editions share.
+        edition = (
+            ScoreEdition.objects.filter(id=payload['edition_id']).first()
+            if analysis.single_system_pages is not None
+            else None
+        )
+        if edition is not None and analysis.single_system_pages is not None:
+            edition.stand_whole_page_suggested = analysis.single_system_pages
+            edition.save(update_fields=['stand_whole_page_suggested', 'updated_at'])
+            provenance.record_ai(
+                target=edition, field_name='stand_whole_page_suggested',
                 model_id=AIModel.SONNET, prompt_version=version,
                 confidence=analysis.confidence,
             )

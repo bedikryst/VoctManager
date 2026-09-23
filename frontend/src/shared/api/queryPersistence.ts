@@ -64,8 +64,12 @@ const IDB_KEY = "client";
  * `is_break`. A snapshot without `done` draws a held evening with no ticks —
  * "nothing was done" again — and without `is_break` a break reads as a row
  * that calls everyone.
+ *
+ * 2026-09-stand-whole-page: editions gained `stand_whole_page`. A snapshot
+ * without it opens a one-system-per-page score in the two-thirds fit, which
+ * cuts the system on every screen — offline, on stage, until a fetch lands.
  */
-export const QUERY_CACHE_BUSTER = "2026-09-rehearsal-plan-done";
+export const QUERY_CACHE_BUSTER = "2026-09-stand-whole-page";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
