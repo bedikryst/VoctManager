@@ -121,6 +121,9 @@ const MessagesPage = lazyWithPreload(
 const FinancePage = lazyWithPreload(
   () => import("@features/finance/overview/FinancePage"),
 );
+const FundingSourcePage = lazyWithPreload(
+  () => import("@features/finance/overview/FundingSourcePage"),
+);
 const Rehearsals = lazyWithPreload(
   () => import("@features/rehearsals/Rehearsals"),
 );
@@ -181,6 +184,9 @@ const BudgetPlanPage = lazyWithPreload(
 );
 const BudgetExpensesPage = lazyWithPreload(
   () => import("@features/finance/budget/ExpensesPage"),
+);
+const BudgetFundingPage = lazyWithPreload(
+  () => import("@features/finance/budget/FundingPage"),
 );
 const ProjectDetailsPage = lazyWithPreload(
   () => import("@features/projects/ProjectDetailsPage"),
@@ -362,6 +368,7 @@ export const router = createBrowserRouter(
           <Route index element={<DashboardHome />} />
           <Route element={<ManagerRoute />}>
             <Route path="finance" element={<FinancePage />} />
+            <Route path="finance/sources/:sourceId" element={<FundingSourcePage />} />
             {/* The settlements workspace's old address, still in bookmarks and
                 in the contract notification's link. */}
             <Route
@@ -394,6 +401,7 @@ export const router = createBrowserRouter(
                 <Route path="plan" element={<BudgetPlanPage />} />
                 <Route path="people" element={<BudgetFeesPage />} />
                 <Route path="costs" element={<BudgetExpensesPage />} />
+                <Route path="funding" element={<BudgetFundingPage />} />
               </Route>
               <Route path="details" element={<ProjectDetailsPage />} />
               <Route

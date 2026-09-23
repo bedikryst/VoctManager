@@ -24,6 +24,7 @@ from ..models import CostItem, CostKind, FinanceAction
 from ..rules import local_date, money
 from . import audit
 from .budget import BudgetService, reconcile_line_change
+from .funding import assert_allocations_fit, release_cost_allocations
 
 # What a paid expense keeps: the amount the office paid and whom it paid.
 _FROZEN_WHEN_PAID = frozenset({"cost_amount", "vendor_name"})
@@ -103,6 +104,8 @@ class ExpenseService:
             before = {name: getattr(item, name) for name in changed}
             for name, value in changed.items():
                 setattr(item, name, value)
+            if "cost_amount" in changed:
+                assert_allocations_fit(item)
             item.save()
             audit.record(
                 budget, actor=actor, subject=item,
@@ -113,14 +116,16 @@ class ExpenseService:
 
     @staticmethod
     def delete(item: CostItem, *, actor: User | None) -> None:
-        """A mistaken entry leaves the budget. A paid one is an accounting record
-        and stays until the board reverts the payment. Its files stay with it."""
+        """A mistaken entry leaves the budget, and every source it was charged
+        to. A paid one is an accounting record and stays until the board
+        reverts the payment. Its files stay with it."""
         with transaction.atomic():
             budget = BudgetService.lock(item.budget.project)
             BudgetService.assert_writable(budget)
             item = CostItem.objects.select_for_update().get(pk=item.pk)
             if item.paid_on is not None:
                 raise PaidItemNotRemovable()
+            release_cost_allocations(budget, item, actor=actor)
             before = _snapshot(item)
             item.delete()
             audit.record(budget, actor=actor, subject=item, action=FinanceAction.REMOVED, before=before)

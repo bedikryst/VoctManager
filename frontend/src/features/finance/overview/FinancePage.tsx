@@ -1,9 +1,11 @@
 /**
  * @file FinancePage.tsx
- * @description Finanse — the portfolio: each project's money in one row, and
- * what the foundation still owes across all of them. Every figure is the
- * server's rollup; a project's ledger lives in its own hub, and this page only
- * opens it. Cancelled projects stay listed, because a cancellation has costs.
+ * @description Finanse — the portfolio: each project's money in one row, what
+ * the foundation still owes across all of them, and every funding source with
+ * what it carries across the projects it funds. Every figure is the server's
+ * rollup; a project's ledger lives in its own hub and a source's settlement on
+ * its own page — this page only opens them. Cancelled projects stay listed,
+ * because a cancellation has costs.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/overview/FinancePage
  */
@@ -20,6 +22,7 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { useFinanceOverview } from "../api/finance.queries";
 import { PayablesCard } from "./components/PayablesCard";
 import { ProjectRollups } from "./components/ProjectRollups";
+import { SourcesCard } from "./components/SourcesCard";
 
 export default function FinancePage(): React.JSX.Element {
   const { t } = useTranslation();
@@ -71,6 +74,9 @@ export default function FinancePage(): React.JSX.Element {
               isFetching={overview.isFetching}
               onPageChange={setOffset}
             />
+            <div className="xl:col-span-2">
+              <SourcesCard sources={data.sources} />
+            </div>
           </div>
         )}
       </div>

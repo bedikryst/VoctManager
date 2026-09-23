@@ -32,7 +32,8 @@ What it seeds, across every bounded context that exists today:
                  (annotation layers), provenance records and score access logs
   • finance    — a kosztorys per project, the cast's and the crew's fees
                  priced through the ledger, two expenses, all paid on
-                 completed concerts
+                 completed concerts; a season grant shared by the concerts,
+                 covering part of each plan and charged the venue
   • documents  — Knowledge-Base categories + role-gated documents
   • messaging  — 1:1 artist↔management threads (assigned, unassigned intake,
                  project-anchored, archived) and per-project group channels
@@ -61,7 +62,7 @@ import random
 import struct
 import uuid
 from collections.abc import Callable, Sequence
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, NamedTuple
 from zoneinfo import ZoneInfo
@@ -105,18 +106,35 @@ from documents.models import Document, DocumentCategory, DocumentIconKey
 
 # Finance (cleared first — the ledger PROTECTs the seats and projects below it —
 # then priced through the ledger's own service)
-from finance.dtos import BudgetLineDTO, ExpenseDTO, FeeBatchDTO, FeeItemDTO, FeeRefDTO, PayFeesDTO
+from finance.dtos import (
+    AllocationDTO,
+    AllocationSetDTO,
+    BudgetLineDTO,
+    ExpenseDTO,
+    FeeBatchDTO,
+    FeeItemDTO,
+    FeeRefDTO,
+    FundingSourceDTO,
+    PayFeesDTO,
+    ProjectFundingDTO,
+)
 from finance.models import (
     BudgetLine,
     Contract,
     ContractSequence,
+    CostAllocation,
     CostItem,
     CostKind,
     FinanceAttachment,
     FinanceEvent,
+    FundingSource,
+    LineAllocation,
     ProjectBudget,
+    ProjectFunding,
 )
+from finance.rules import money
 from finance.services.expenses import ExpenseService
+from finance.services.funding import FundingService
 from finance.services.ledger import LedgerService
 from finance.services.plan import PlanService
 
@@ -863,6 +881,7 @@ class Command(BaseCommand):
         self.quiet = opts["quiet"]
         self.with_media = not opts["no_media"]
         self.now = timezone.now()
+        self.season_grant: FundingSource | None = None
 
         media_note = "with placeholder media" if self.with_media else "metadata only (--no-media)"
         self._log(f"Seeding VoctManager ({media_note}). Password hashing may take a moment...",
@@ -908,7 +927,8 @@ class Command(BaseCommand):
             ThreadReadState, Message, Thread,
             Donation, PatronLead,
             Document, DocumentCategory,
-            FinanceEvent, FinanceAttachment, Contract, ContractSequence, CostItem, BudgetLine, ProjectBudget,
+            FinanceEvent, CostAllocation, LineAllocation, ProjectFunding, FundingSource,
+            FinanceAttachment, Contract, ContractSequence, CostItem, BudgetLine, ProjectBudget,
             Attendance, PieceReadiness, ProjectPieceCasting, CrewAssignment,
             ProgramItem, Rehearsal, Participation, ScorePackage, Project,
             Collaborator,
@@ -1643,6 +1663,7 @@ class Command(BaseCommand):
         paid_on = (when + timedelta(days=2)).date()
         if items:
             LedgerService.apply_fee_batch(project, FeeBatchDTO(items=tuple(items)), actor=None)
+        self._seed_funding(project, lines, expenses[0])
         if not is_done:
             return
         ids = tuple(
@@ -1653,6 +1674,52 @@ class Command(BaseCommand):
         LedgerService.pay(
             project, PayFeesDTO(ids=tuple(expense.pk for expense in expenses), paid_on=paid_on),
             actor=None, kind=CostKind.EXPENSE,
+        )
+
+    def _season_grant(self) -> FundingSource:
+        """One grant for the whole season, so a source's page has more than
+        one concert to sum. Its rules are the usual public-benefit ones; it is
+        applied for, not yet awarded, so no award caps what the seed plans."""
+        if self.season_grant is None:
+            year = self.now.year
+            self.season_grant = FundingService.create_source(
+                FundingSourceDTO(
+                    kind="PUBLIC_GRANT", name=f"Mecenat Małopolski {year}", grantor="Województwo Małopolskie",
+                    agreement_number=f"KL-II.{random.randint(100, 999)}.{year}", status="APPLIED",
+                    eligible_from=date(year - 1, 1, 1), eligible_to=date(year + 1, 12, 31),
+                    report_due_on=date(year + 2, 1, 30), required_own_share_pct=Decimal(10),
+                    admin_cost_cap_pct=Decimal(10), line_tolerance_pct=Decimal(10),
+                ),
+                actor=None,
+            )
+        return self.season_grant
+
+    def _seed_funding(self, project: Project, lines: dict[str, BudgetLine], venue: CostItem) -> None:
+        """Puts the season grant on the concert: it is to cover the venue and
+        half the singers' fees, and the venue's invoice is charged to it."""
+        planned = {
+            "VENUE": money(lines["VENUE"].quantity * lines["VENUE"].unit_cost),
+            "PERSONNEL_ARTISTIC": (
+                money(lines["PERSONNEL_ARTISTIC"].quantity * lines["PERSONNEL_ARTISTIC"].unit_cost / 2)
+                if "PERSONNEL_ARTISTIC" in lines else Decimal(0)
+            ),
+        }
+        funding = FundingService.add_funding(
+            project,
+            ProjectFundingDTO(source=self._season_grant().pk, planned_amount=sum(planned.values(), Decimal(0))),
+            actor=None,
+        )
+        for category, amount in planned.items():
+            if amount > 0:
+                FundingService.set_line_allocations(
+                    lines[category],
+                    AllocationSetDTO(allocations=(AllocationDTO(funding=funding.pk, amount=amount),)),
+                    actor=None,
+                )
+        FundingService.set_cost_allocations(
+            venue,
+            AllocationSetDTO(allocations=(AllocationDTO(funding=funding.pk, amount=venue.cost_amount or Decimal(0)),)),
+            actor=None,
         )
 
     # --- C) programme + score-book cockpit overrides -------------------- #

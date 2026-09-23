@@ -54,6 +54,10 @@ const row = (key: string, overrides: Partial<LedgerRowDTO> = {}): LedgerRowDTO =
   vendor_nip: "",
   note: "",
   contract: null,
+  allocations: [],
+  allocated: "0.00",
+  allocatable: "0.00",
+  unallocated: "0.00",
   ...overrides,
 });
 

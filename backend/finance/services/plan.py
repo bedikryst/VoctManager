@@ -25,6 +25,7 @@ from ..models import BudgetLine, BudgetStatus, CostItem, FinanceAction, ProjectB
 from ..rules import MAX_AMOUNT, ZERO, planned_amount
 from . import audit
 from .budget import BudgetService
+from .funding import assert_line_allocations_fit, release_line_allocations
 
 _LINE_FIELDS = ("category", "name", "unit", "quantity", "unit_cost", "note")
 
@@ -92,6 +93,7 @@ class PlanService:
             for name, value in changed.items():
                 setattr(line, name, value)
             _check_amount(line)
+            assert_line_allocations_fit(line)
             line.save()
             if "category" in changed:
                 _detach(budget, list(CostItem.objects.filter(budget_line=line)), actor=actor)
@@ -103,11 +105,13 @@ class PlanService:
 
     @staticmethod
     def delete_line(line: BudgetLine, *, actor: User | None) -> None:
-        """The line leaves the plan; the costs charged to it stay, outside the plan."""
+        """The line leaves the plan with its split between sources; the costs
+        charged to it stay, outside the plan, charged to whatever they were."""
         with transaction.atomic():
             budget = BudgetService.lock(line.budget.project)
             BudgetService.assert_plan_editable(budget)
             line = BudgetLine.objects.select_for_update().get(pk=line.pk)
+            release_line_allocations(budget, line, actor=actor)
             _detach(budget, list(CostItem.all_objects.filter(budget_line=line)), actor=actor)
             before = _line_snapshot(line)
             line.delete()

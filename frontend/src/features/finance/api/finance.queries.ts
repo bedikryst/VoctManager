@@ -7,9 +7,10 @@
  *  - freshness from `queryPolicy` — a budget changes under other hands (a
  *    singer declines, the office pays), so every mount reconciles.
  *  - every write answers with the whole budget, which replaces the cached one
- *    outright, and marks the portfolio and the budget's history stale. A
- *    refused write refetches the budget instead, since a refusal usually means
- *    the copy on screen is old.
+ *    outright, and marks the portfolio, the funding sources (whose figures sum
+ *    every project) and the budget's history stale. A refused write refetches
+ *    the budget instead, since a refusal usually means the copy on screen is
+ *    old. A source's own write marks every budget stale: each one embeds it.
  * Nothing here is queued offline: a finance write either reaches the server
  * or visibly does not happen.
  * @architecture Enterprise SaaS 2026
@@ -27,26 +28,37 @@ import {
 
 import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
 import type {
+  AllocationSetPayload,
   BudgetLinePayload,
   BudgetLineUpdatePayload,
   CostItemDetailsPayload,
   ExpensePayload,
   ExpenseUpdatePayload,
   FeeBatchPayload,
+  FundingSourcePayload,
+  FundingSourceUpdatePayload,
   OneOffFeePayload,
   PayFeesPayload,
   ProjectBudgetDTO,
+  ProjectFundingPayload,
+  ProjectFundingUpdatePayload,
   SignContractPayload,
+  SourceDetailDTO,
 } from "../types/finance.dto";
 import { FinanceService } from "./finance.service";
 
 export const financeKeys = {
   all: ["finance"] as const,
+  budgets: ["finance", "budget"] as const,
   budget: (projectId: string) => ["finance", "budget", projectId] as const,
   overviews: ["finance", "overview"] as const,
   overview: (limit: number, offset: number) =>
     ["finance", "overview", limit, offset] as const,
   history: (projectId: string) => ["finance", "history", projectId] as const,
+  /** The list and every source's page — one prefix, so one invalidation. */
+  sources: ["finance", "sources"] as const,
+  sourceList: ["finance", "sources", "list"] as const,
+  source: (sourceId: string) => ["finance", "sources", "detail", sourceId] as const,
 };
 
 const FINANCE_STALE_TIME = 30_000;
@@ -72,6 +84,21 @@ export const useFinanceOverview = (offset: number) =>
     queryKey: financeKeys.overview(PAYABLES_PAGE_SIZE, offset),
     queryFn: () => FinanceService.getOverview(PAYABLES_PAGE_SIZE, offset),
     placeholderData: keepPreviousData,
+    ...FINANCE_QUERY_OPTIONS,
+  });
+
+export const useFundingSources = () =>
+  useQuery({
+    queryKey: financeKeys.sourceList,
+    queryFn: FinanceService.getSources,
+    ...FINANCE_QUERY_OPTIONS,
+  });
+
+export const useFundingSource = (sourceId: string) =>
+  useQuery({
+    queryKey: financeKeys.source(sourceId),
+    queryFn: () => FinanceService.getSource(sourceId),
+    enabled: Boolean(sourceId),
     ...FINANCE_QUERY_OPTIONS,
   });
 
@@ -105,6 +132,7 @@ const useBudgetWrite = <TVariables>(
     onSuccess: (budget) => {
       queryClient.setQueryData(financeKeys.budget(projectId), budget);
       void queryClient.invalidateQueries({ queryKey: financeKeys.overviews });
+      void queryClient.invalidateQueries({ queryKey: financeKeys.sources });
       void queryClient.invalidateQueries({ queryKey: financeKeys.history(projectId) });
     },
     onError: () => {
@@ -220,6 +248,88 @@ export const useReorderLines = (projectId: string) =>
 
 export const useChargeLine = (projectId: string) =>
   useBudgetWrite(projectId, (lineId: string) => FinanceService.chargeLine(projectId, lineId));
+
+// ── Funding ───────────────────────────────────────────────────────────────
+
+export const useAddFunding = (projectId: string) =>
+  useBudgetWrite(projectId, (payload: ProjectFundingPayload) =>
+    FinanceService.addFunding(projectId, payload),
+  );
+
+export const useUpdateFunding = (projectId: string) =>
+  useBudgetWrite(
+    projectId,
+    ({ fundingId, payload }: { fundingId: string; payload: ProjectFundingUpdatePayload }) =>
+      FinanceService.updateFunding(projectId, fundingId, payload),
+  );
+
+export const useRemoveFunding = (projectId: string) =>
+  useBudgetWrite(projectId, (fundingId: string) =>
+    FinanceService.removeFunding(projectId, fundingId),
+  );
+
+export const useChargeFunding = (projectId: string) =>
+  useBudgetWrite(
+    projectId,
+    ({ fundingId, ids }: { fundingId: string; ids: readonly string[] }) =>
+      FinanceService.chargeFunding(projectId, fundingId, ids),
+  );
+
+export const useSetLineAllocations = (projectId: string) =>
+  useBudgetWrite(
+    projectId,
+    ({ lineId, payload }: { lineId: string; payload: AllocationSetPayload }) =>
+      FinanceService.setLineAllocations(projectId, lineId, payload),
+  );
+
+export const useSetCostAllocations = (projectId: string) =>
+  useBudgetWrite(
+    projectId,
+    ({ costItemId, payload }: { costItemId: string; payload: AllocationSetPayload }) =>
+      FinanceService.setCostAllocations(costItemId, payload),
+  );
+
+/**
+ * A write to a funding source itself. Its answer is the source's page; every
+ * budget embeds the source, so they are all marked stale with the portfolio.
+ */
+const useSourceWrite = <TVariables>(
+  write: (variables: TVariables) => Promise<SourceDetailDTO>,
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: write,
+    onSuccess: (detail) => {
+      queryClient.setQueryData(financeKeys.source(detail.source.id), detail);
+      void queryClient.invalidateQueries({ queryKey: financeKeys.sourceList });
+      void queryClient.invalidateQueries({ queryKey: financeKeys.budgets });
+      void queryClient.invalidateQueries({ queryKey: financeKeys.overviews });
+    },
+  });
+};
+
+export const useCreateSource = () =>
+  useSourceWrite((payload: FundingSourcePayload) => FinanceService.createSource(payload));
+
+export const useUpdateSource = () =>
+  useSourceWrite(
+    ({ sourceId, payload }: { sourceId: string; payload: FundingSourceUpdatePayload }) =>
+      FinanceService.updateSource(sourceId, payload),
+  );
+
+export const useDeleteSource = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (sourceId: string) => FinanceService.deleteSource(sourceId),
+    onSuccess: (_, sourceId) => {
+      queryClient.removeQueries({ queryKey: financeKeys.source(sourceId) });
+      void queryClient.invalidateQueries({ queryKey: financeKeys.sourceList });
+      void queryClient.invalidateQueries({ queryKey: financeKeys.overviews });
+    },
+  });
+};
 
 // ── The budget's standing ─────────────────────────────────────────────────
 

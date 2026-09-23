@@ -2,11 +2,11 @@
  * @file RowActionsMenu.tsx
  * @description Everything one ledger row can do, behind one quiet control.
  * The form of settlement is a draft like the amount — it goes out with the
- * save bar. Everything below it is an act and happens at once: issuing,
- * printing, signing, paying. An act the row cannot take right now stays in the
- * menu, disabled, with the reason under it; a board act is not offered to a
- * manager outside the board, and the menu says so in one line rather than
- * holding a button that would answer 403.
+ * save bar. Everything below it is an act and happens at once: charging it to
+ * funding sources, issuing, printing, signing, paying. An act the row cannot
+ * take right now stays in the menu, disabled, with the reason under it; a
+ * board act is not offered to a manager outside the board, and the menu says
+ * so in one line rather than holding a button that would answer 403.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/RowActionsMenu
  */
@@ -20,6 +20,7 @@ import {
   FileDown,
   FilePen,
   FileSignature,
+  Landmark,
   MoreHorizontal,
   ReceiptText,
   SlidersHorizontal,
@@ -64,6 +65,8 @@ export interface RowActs {
   readonly onPay: () => void;
   readonly onUnpay: () => void;
   readonly onAnnul: () => void;
+  /** Absent while the fee has nothing a source could take. */
+  readonly onFunding?: () => void;
 }
 
 interface RowActionsMenuProps {
@@ -75,6 +78,8 @@ interface RowActionsMenuProps {
   readonly blockedReason: string | null;
   readonly isBoard: boolean;
   readonly acts: RowActs;
+  /** The sources the fee is charged to, as one line; empty when none. */
+  readonly fundingSummary?: string;
 }
 
 export function RowActionsMenu({
@@ -84,6 +89,7 @@ export function RowActionsMenu({
   blockedReason,
   isBoard,
   acts,
+  fundingSummary,
 }: RowActionsMenuProps): React.JSX.Element {
   const { t } = useTranslation();
   const blocked = blockedReason ?? undefined;
@@ -131,6 +137,20 @@ export function RowActionsMenu({
             description={blocked ?? t("finance.acts.details_hint", "Termin, dokument, składki, uwagi")}
           >
             {t("finance.acts.details", "Szczegóły pozycji")}
+          </DropdownMenuItem>
+        )}
+
+        {acts.onFunding && (
+          <DropdownMenuItem
+            icon={<Landmark size={14} />}
+            onSelect={acts.onFunding}
+            disabled={Boolean(blocked)}
+            description={
+              blocked ??
+              (fundingSummary || t("finance.acts.funding_none", "Nie obciąża jeszcze żadnego źródła"))
+            }
+          >
+            {t("finance.acts.funding", "Źródła finansowania")}
           </DropdownMenuItem>
         )}
 

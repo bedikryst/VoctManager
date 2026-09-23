@@ -43,6 +43,17 @@ const FINANCE_ERROR_COPY: Record<string, string> = {
   attachment_too_large: "Plik jest za duży — limit to 20 MB.",
   attachment_type_not_allowed: "Dołączyć można PDF albo zdjęcie dokumentu (JPG, PNG, WEBP, HEIC).",
   file_detection_unavailable: "Serwer nie może teraz sprawdzić pliku. Spróbuj za chwilę.",
+  unknown_funding: "Tego źródła nie ma już w projekcie. Odśwież stronę.",
+  unknown_source: "Tego źródła finansowania już nie ma. Odśwież stronę.",
+  funding_exists: "To źródło jest już w projekcie.",
+  funding_in_use: "To źródło obciążają już koszty. Najpierw zdejmij je ze źródła, potem usuń źródło z projektu.",
+  source_in_use: "Źródło finansuje jakiś projekt. Usuń je najpierw ze wszystkich projektów.",
+  source_settled: "Źródło jest rozliczone — tego, czym je obciążono, już się nie zmienia. Aby coś poprawić, zmień jego status.",
+  eligibility_period_invalid: "Okres kwalifikowalności kończy się przed swoim początkiem.",
+  allocation_exceeds_amount: "Źródła pokryłyby więcej niż cała kwota. Zmniejsz obciążenie źródeł.",
+  allocation_kind_mismatch: "Pieniądze obciąża się na źródło pieniędzy, a pracę wolontariusza — na wkład osobowy.",
+  allocation_not_counted: "Ten koszt się nie liczy (np. osoba odmówiła udziału), więc nie obciąża się nim źródeł. Można go tylko z nich zdjąć.",
+  charge_refused: "Nie każdy z tych kosztów można obciążyć na to źródło. Nic nie zostało zmienione.",
 };
 
 /** The manager's sentence for a finance refusal code, or null if unknown. */

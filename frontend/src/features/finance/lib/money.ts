@@ -105,6 +105,31 @@ export const isPositiveAmount = (value: DecimalString | null): boolean =>
   (toGrosze(value) ?? 0) > 0;
 
 /**
+ * Whether a server amount is below zero (`"-300.00"`). Amounts themselves
+ * never are; only a difference the server computes can be.
+ */
+export const isNegativeAmount = (value: DecimalString | null): boolean =>
+  value !== null && value.startsWith("-") && isPositiveAmount(value.slice(1));
+
+const signed = (
+  value: DecimalString | null,
+  format: (amount: DecimalString | null) => string | null,
+): string | null => {
+  if (value === null) return null;
+  if (!value.startsWith("-")) return format(value);
+  const magnitude = format(value.slice(1));
+  return magnitude === null ? null : `−${magnitude}`;
+};
+
+/** A server difference for a rail, with the typographic minus: "−500". */
+export const formatDifference = (value: DecimalString | null): string | null =>
+  signed(value, formatAmount);
+
+/** A server difference for a ledger column: "−500,00". */
+export const formatLedgerDifference = (value: DecimalString | null): string | null =>
+  signed(value, formatLedgerAmount);
+
+/**
  * Keeps a hand-typed amount to something the API will accept — digits, one
  * separator, two decimals — while the field stays `type="text"`. A native
  * number input rejects `400,50` on a Polish keyboard and silently reports an

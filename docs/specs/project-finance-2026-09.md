@@ -3,9 +3,9 @@
 Status: **Spec written 2026-09-23; the developer answered Q1–Q6 the same day (§2, §4). Stages 1,
 1b, 2 and 3 — release R1 — built 2026-09-23 (see "As built" under each in §11). Stages 1 and 1b are
 committed; Stage 2 was reviewed in the browser; Stages 2 and 3 are uncommitted. R1 is not deployed
-and goes to prod as one release. The printed copies of Stage 1b await the developer's check. Stage 4
-was built the same day on top of the uncommitted R1 tree; it awaits the browser review. Stage 5 is
-next. Contract wording is drafted in
+and goes to prod as one release. The printed copies of Stage 1b await the developer's check. Stages 4
+and 5 were built the same day on top of the uncommitted R1 tree; both await the browser review.
+Stage 6 is next. Contract wording is drafted in
 `project-finance-contract-drafts-2026-09.md` and awaits legal and accounting review. That review
 gates the first real use of the new templates, not their build.**
 Written from the developer's brief of 2026-09-23 ("as ambitious as possible — this concert is the
@@ -774,6 +774,64 @@ their own. Every deploy that touches models needs `make migrate` on prod.
   warnings, overview utilisation.
 - Frontend: Finansowanie sub-tab; allocation editing on lines and items; global Źródła finansowania +
   a source's page.
+
+**As built (2026-09-23)** — where Stage 5 differs from the text above:
+
+- **Schema:** `finance/0004`. The allocations' funding field is `project_funding`, as in §5.2.
+  `FundingSource` gains a free-text `note`. `ProjectFunding` is unique per live budget × source, and
+  its planned and received amounts default to 0. `FinanceEvent.budget` is nullable: an act on a
+  funding source belongs to no budget, and is logged without one.
+- **Money and valuation are charged apart.** A cost goes to a source of money, up to its cost. A
+  volunteer fee goes at its valuation (hours × rate) to a `VOLUNTEER_WORK` source only. `IN_KIND`
+  takes no cost at all, because a gift in kind has no cost row; its `received_amount` is the
+  gift's value. A plan line may be split between sources of any kind, up to its planned amount.
+- **A split never exceeds its amount, and nothing trims it silently.** A write that would leave a
+  split larger than its amount is refused (`allocation_exceeds_amount`, naming the row in a batch):
+  a lower price, a smaller expense, or a line's quantity × unit cost. So is a write that leaves a
+  split on the wrong kind of source (`allocation_kind_mismatch`), such as a fee turned volunteer
+  while charged to a grant. Only a counted cost can be charged; an uncounted one can only be taken
+  off its sources. Removing an expense, releasing a crew member and deleting a line release their
+  splits, logged as `ALLOCATION_CHANGED` with each source by name.
+- **A settled source is frozen:** its share of any split and its projects' amounts. Changing its
+  status back reopens it (`source_settled`).
+- **Budget states:** the planned amount and the line splits are plan (PLANNING only). What was
+  received and the cost splits are actuals (until CLOSED). A source added after approval comes with
+  nothing planned. A funding carrying costs cannot be removed (`funding_in_use`); its line splits go
+  with it.
+- **`SOURCE_OVERALLOCATED`** (subject: the project funding) is raised in three cases. The line splits
+  exceed what the project expects of the source. The charged costs exceed the charge limit, which is
+  the larger of expected and received: a donation larger than hoped for pays for more without a
+  korekta. Or, across all its projects, the source is asked for or charged more than it awarded
+  (a rejection counts as 0). `OWN_FUNDS` has no charge limit.
+- **The agreement-level rules are measured per source, across every project it funds, on the plan
+  and on the actuals, and either one breaking the rule warns.** Own share on the plan is
+  1 − expected ÷ the plans' totals. On the actuals it is 1 − charged ÷ (counted cost + in-kind
+  contributed), where in-kind contributed is volunteer valuation charged plus gifts received.
+  Administration is the `ADMINISTRATION` share of what is charged to the source, and of its line
+  splits. `OUTSIDE_ELIGIBILITY` checks `incurred_on` only: whether a cost must also be paid inside
+  the period differs by grantor. `REPORT_DUE_SOON` runs from 14 days before the deadline until the
+  source is settled or rejected, and a passed deadline is included.
+- **`LINE_OVER_PLAN` tolerance** is the strictest `line_tolerance_pct` among the sources the line's
+  plan split or its costs are charged to, or 0 when none states one. The row says "w tolerancji"
+  for a line over plan but inside it.
+- **Payload:** ledger rows, expenses and lines carry `allocations`, `allocated` and `unallocated`
+  (rows also `allocatable`). The budget gains `fundings` and `funding` (coverage: planned, received,
+  charged, uncovered, in kind, and the plan's part with no source). The overview gains `sources`.
+  Added beyond §6: `POST projects/{id}/fundings/{id}/charge/` charges the uncovered part of the
+  named costs to one funding, all or nothing (`charge_refused` lists every refused cost).
+- **Document note:** the default formula prints the source's name after a colon, so no name sits in
+  an inflected slot. Placeholders are validated on write (`DOCUMENT_NOTE_PLACEHOLDERS`) and rendered
+  in Stage 6.
+- **Frontend:** Budżet gains Finansowanie: the coverage rail, the sources with their warnings,
+  add / change amounts / remove, and "Obciąż kosztami". That act lists the chargeable costs grouped
+  by kosztorys line, and a group ticks as one. Bulk charging lives there, not in Honoraria's selection
+  bar, whose rows are only the payable and issuable ones. One split sheet serves a kosztorys line, a
+  fee and an expense. Finanse gains "Źródła finansowania", and a source's page is at
+  `/panel/finance/sources/:id`.
+- **Seed:** a season grant (applied for, with the usual rules) on every concert: half the cast line
+  and the venue line in its plan, and the venue invoice charged to it.
+- **Not done:** allocation columns in the ledger CSV (Stage 6 finalises it); backend `.po` entries;
+  no enum-dictionary registration.
 
 ### Stage 6 — Reports and exports
 

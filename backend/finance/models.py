@@ -3,9 +3,12 @@
 @description The project money ledger: one budget per project, its plan (the
              kosztorys lines), one row per actual cost — fees and expenses in one
              table — the files kept with an expense, the contracts the foundation
-             issues for fees, their numbering, and an append-only log of every
-             act that changed a settled fact. Amounts are the foundation's cost
-             in PLN; no VAT is modelled because the foundation is not a VAT payer.
+             issues for fees, their numbering, where the money comes from (funding
+             sources, what each project expects of them, and how plan lines and
+             actual costs are split between them), and an append-only log of
+             every act that changed a settled fact. Amounts are the foundation's
+             cost in PLN; no VAT is modelled because the foundation is not a VAT
+             payer.
 @architecture Enterprise SaaS 2026
 @module finance/models
 """
@@ -127,6 +130,54 @@ class FinanceAction(models.TextChoices):
     BUDGET_CLOSED = 'BUDGET_CLOSED', _('Budget closed')
     PLAN_CHANGED = 'PLAN_CHANGED', _('Plan changed')
     ALLOCATION_CHANGED = 'ALLOCATION_CHANGED', _('Allocation changed')
+
+
+class FundingKind(models.TextChoices):
+    """Where money comes from. The last two bring no money at all: a gift in
+    kind ("wkład rzeczowy" — a venue lent free) and volunteer work valued for a
+    grant ("wkład osobowy")."""
+
+    PUBLIC_GRANT = 'PUBLIC_GRANT', _('Public grant')
+    PRIVATE_GRANT = 'PRIVATE_GRANT', _('Private grant')
+    SPONSOR = 'SPONSOR', _('Sponsor')
+    DONATIONS = 'DONATIONS', _('Donations')
+    TICKETS = 'TICKETS', _('Tickets')
+    OWN_FUNDS = 'OWN_FUNDS', _('Own funds')
+    IN_KIND = 'IN_KIND', _('Contribution in kind')
+    VOLUNTEER_WORK = 'VOLUNTEER_WORK', _('Volunteer work')
+
+
+# Sources that bring no money. A cost is never charged to them: volunteer work
+# is charged its valuation instead, and a gift in kind has no cost row at all.
+NON_CASH_FUNDING_KINDS = (FundingKind.IN_KIND, FundingKind.VOLUNTEER_WORK)
+
+
+class FundingStatus(models.TextChoices):
+    PLANNED = 'PLANNED', _('Planned')
+    APPLIED = 'APPLIED', _('Applied for')
+    AWARDED = 'AWARDED', _('Awarded')
+    REJECTED = 'REJECTED', _('Rejected')
+    SETTLED = 'SETTLED', _('Settled')
+
+
+# The words a document note may interpolate (spec §10.4). Values are printed
+# after a colon or as figures, never in a slot Polish grammar would inflect.
+DOCUMENT_NOTE_PLACEHOLDERS = (
+    'document_number',
+    'document_amount',
+    'source_amount',
+    'source_name',
+    'grantor',
+    'agreement_number',
+    'agreement_date',
+    'plan_line',
+)
+
+DEFAULT_DOCUMENT_NOTE_TEMPLATE = (
+    'Wydatek w kwocie {document_amount} zł (dokument nr {document_number}) został sfinansowany '
+    'w kwocie {source_amount} zł ze środków: {source_name}, zgodnie z umową nr {agreement_number} '
+    'z dnia {agreement_date}. Pozycja kosztorysu: {plan_line}.'
+)
 
 
 class ProjectBudget(EnterpriseBaseModel):
@@ -534,17 +585,207 @@ class ContractSequence(models.Model):
         return f"{self.form}/{self.year}: {self.last_number}"
 
 
+# A percentage a grant's rules state: 0 to 100, two decimals ("7.5").
+PCT_DIGITS = 5
+
+
+class FundingSource(EnterpriseBaseModel):
+    """Where money comes from — a grant, a sponsor, the ticket office.
+
+    Organisation-level, not per project: one grant may fund a whole season, and
+    a grant is settled per agreement, not per concert. Its rules are all
+    optional, because a grantor's form is only known once there is a grantor;
+    each rule a source does state becomes a warning on every project it funds.
+    """
+
+    kind = models.CharField(max_length=16, choices=FundingKind.choices, verbose_name=_("Kind"))
+    name = models.CharField(max_length=200, verbose_name=_("Name"))
+    grantor = models.CharField(max_length=200, blank=True, verbose_name=_("Grantor"))
+    agreement_number = models.CharField(max_length=100, blank=True, verbose_name=_("Agreement number"))
+    agreement_date = models.DateField(null=True, blank=True, verbose_name=_("Agreement date"))
+    # Null until the grantor decides. A rejected source counts as awarded nothing.
+    awarded_amount = models.DecimalField(
+        max_digits=MONEY_DIGITS, decimal_places=MONEY_DECIMALS, null=True, blank=True,
+        verbose_name=_("Awarded amount"),
+    )
+    status = models.CharField(
+        max_length=10, choices=FundingStatus.choices, default=FundingStatus.PLANNED, verbose_name=_("Status"),
+    )
+    # A cost charged to the source must arise inside this period (by its
+    # `incurred_on`). Whether it must also be paid inside it differs between
+    # grantors and is not checked.
+    eligible_from = models.DateField(null=True, blank=True, verbose_name=_("Eligible from"))
+    eligible_to = models.DateField(null=True, blank=True, verbose_name=_("Eligible to"))
+    report_due_on = models.DateField(null=True, blank=True, verbose_name=_("Report due on"))
+    # The share of the task's total that must come from anywhere but this source.
+    required_own_share_pct = models.DecimalField(
+        max_digits=PCT_DIGITS, decimal_places=2, null=True, blank=True, verbose_name=_("Required own share (%)"),
+    )
+    # Administration may take at most this share of what is charged to the source.
+    admin_cost_cap_pct = models.DecimalField(
+        max_digits=PCT_DIGITS, decimal_places=2, null=True, blank=True, verbose_name=_("Administration cap (%)"),
+    )
+    # How far a kosztorys line may overrun its plan without an annex.
+    line_tolerance_pct = models.DecimalField(
+        max_digits=PCT_DIGITS, decimal_places=2, null=True, blank=True, verbose_name=_("Line tolerance (%)"),
+    )
+    # The formula the grantor prescribes for the back of an accounting document,
+    # with the placeholders of `DOCUMENT_NOTE_PLACEHOLDERS`.
+    document_note_template = models.TextField(
+        default=DEFAULT_DOCUMENT_NOTE_TEMPLATE, verbose_name=_("Document note template"),
+    )
+    note = models.TextField(blank=True, verbose_name=_("Note"))
+
+    class Meta:
+        verbose_name = _("Funding source")
+        verbose_name_plural = _("Funding sources")
+        ordering = ['name', 'created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(awarded_amount__isnull=True) | models.Q(awarded_amount__gte=0),
+                name='finance_source_awarded_not_negative',
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(eligible_from__isnull=True)
+                    | models.Q(eligible_to__isnull=True)
+                    | models.Q(eligible_from__lte=models.F('eligible_to'))
+                ),
+                name='finance_source_eligibility_ordered',
+                violation_error_message=_("The eligibility period ends before it starts."),
+            ),
+            *(
+                models.CheckConstraint(
+                    condition=models.Q(**{f'{name}__isnull': True}) | models.Q(
+                        **{f'{name}__gte': 0, f'{name}__lte': 100},
+                    ),
+                    name=f'finance_source_{name}_range',
+                )
+                for name in ('required_own_share_pct', 'admin_cost_cap_pct', 'line_tolerance_pct')
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
+    @property
+    def brings_money(self) -> bool:
+        return self.kind not in NON_CASH_FUNDING_KINDS
+
+
+class ProjectFunding(EnterpriseBaseModel):
+    """A source on one project: what the project expects of it and what has
+    actually arrived (a tranche, the ticket takings, donations collected).
+
+    The planned amount is part of the plan, so it changes while the budget is
+    being planned; what arrives is a fact, recorded whenever it arrives.
+    """
+
+    budget = models.ForeignKey(
+        ProjectBudget, on_delete=models.PROTECT, related_name='fundings', verbose_name=_("Budget"),
+    )
+    source = models.ForeignKey(
+        FundingSource, on_delete=models.PROTECT, related_name='fundings', verbose_name=_("Funding source"),
+    )
+    planned_amount = models.DecimalField(
+        max_digits=MONEY_DIGITS, decimal_places=MONEY_DECIMALS, default=0, verbose_name=_("Planned amount"),
+    )
+    received_amount = models.DecimalField(
+        max_digits=MONEY_DIGITS, decimal_places=MONEY_DECIMALS, default=0, verbose_name=_("Received amount"),
+    )
+
+    class Meta:
+        verbose_name = _("Project funding")
+        verbose_name_plural = _("Project fundings")
+        ordering = ['created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['budget', 'source'],
+                condition=models.Q(is_deleted=False),
+                name='finance_funding_unique_source_per_budget',
+                violation_error_message=_("The source is already on this project."),
+            ),
+            models.CheckConstraint(
+                condition=models.Q(planned_amount__gte=0, received_amount__gte=0),
+                name='finance_funding_amounts_not_negative',
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.source} → {self.budget}"
+
+
+class LineAllocation(EnterpriseBaseModel):
+    """The plan's split: how much of a kosztorys line a source is to cover. The
+    part of a line no source covers is the foundation's own — reported, never
+    assigned to anyone silently."""
+
+    budget_line = models.ForeignKey(
+        BudgetLine, on_delete=models.PROTECT, related_name='allocations', verbose_name=_("Plan line"),
+    )
+    project_funding = models.ForeignKey(
+        ProjectFunding, on_delete=models.PROTECT, related_name='line_allocations', verbose_name=_("Funding"),
+    )
+    amount = models.DecimalField(max_digits=MONEY_DIGITS, decimal_places=MONEY_DECIMALS, verbose_name=_("Amount"))
+
+    class Meta:
+        verbose_name = _("Line allocation")
+        verbose_name_plural = _("Line allocations")
+        constraints = [
+            models.UniqueConstraint(
+                fields=['budget_line', 'project_funding'],
+                condition=models.Q(is_deleted=False),
+                name='finance_line_allocation_unique',
+            ),
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name='finance_line_allocation_positive'),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.budget_line} ← {self.amount}"
+
+
+class CostAllocation(EnterpriseBaseModel):
+    """The actual split: how much of a cost is charged to a source — the figure
+    a grant settlement reports and a document note prints. For volunteer work
+    it is the work's valuation, charged to a volunteer-work source."""
+
+    cost_item = models.ForeignKey(
+        CostItem, on_delete=models.PROTECT, related_name='allocations', verbose_name=_("Cost item"),
+    )
+    project_funding = models.ForeignKey(
+        ProjectFunding, on_delete=models.PROTECT, related_name='cost_allocations', verbose_name=_("Funding"),
+    )
+    amount = models.DecimalField(max_digits=MONEY_DIGITS, decimal_places=MONEY_DECIMALS, verbose_name=_("Amount"))
+
+    class Meta:
+        verbose_name = _("Cost allocation")
+        verbose_name_plural = _("Cost allocations")
+        constraints = [
+            models.UniqueConstraint(
+                fields=['cost_item', 'project_funding'],
+                condition=models.Q(is_deleted=False),
+                name='finance_cost_allocation_unique',
+            ),
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name='finance_cost_allocation_positive'),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.cost_item} ← {self.amount}"
+
+
 class FinanceEvent(models.Model):
     """Append-only audit log, written by the services only.
 
     A plain model on purpose: an audit row that can be soft-deleted is an audit
     row that can be hidden. `subject_id` is a bare UUID rather than a foreign key
-    so the log outlives any row it describes.
+    so the log outlives any row it describes. `budget` is null only for an act on
+    something no single budget owns — a funding source.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     budget = models.ForeignKey(
-        ProjectBudget, on_delete=models.PROTECT, related_name='events', verbose_name=_("Budget"),
+        ProjectBudget, on_delete=models.PROTECT, null=True, blank=True,
+        related_name='events', verbose_name=_("Budget"),
     )
     actor = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,

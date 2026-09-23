@@ -7,6 +7,8 @@
 @architecture Enterprise SaaS 2026
 @module finance/serializers
 """
+from typing import Any
+
 from rest_framework import serializers
 
 
@@ -16,6 +18,18 @@ def _amount(*, allow_null: bool = False) -> serializers.DecimalField:
 
 def _hours(*, allow_null: bool = False) -> serializers.DecimalField:
     return serializers.DecimalField(max_digits=6, decimal_places=2, coerce_to_string=True, allow_null=allow_null)
+
+
+def _pct(**kwargs: Any) -> serializers.DecimalField:
+    """A percentage, or null where there is nothing to measure it on. Wider
+    than a rule's 0 to 100: a measured share can fall below zero when the plan
+    expects more of a source than the whole plan costs."""
+    return serializers.DecimalField(max_digits=9, decimal_places=2, coerce_to_string=True, allow_null=True, **kwargs)
+
+
+class AllocationSerializer(serializers.Serializer):
+    funding_id = serializers.UUIDField()
+    amount = _amount()
 
 
 class ContractSerializer(serializers.Serializer):
@@ -63,6 +77,10 @@ class LedgerRowSerializer(serializers.Serializer):
     vendor_nip = serializers.CharField(allow_blank=True)
     note = serializers.CharField(allow_blank=True)
     contract = ContractSerializer(allow_null=True)
+    allocations = AllocationSerializer(many=True)
+    allocated = _amount()
+    allocatable = _amount()
+    unallocated = _amount()
 
 
 class AttachmentSerializer(serializers.Serializer):
@@ -91,6 +109,9 @@ class ExpenseRowSerializer(serializers.Serializer):
     is_paid = serializers.BooleanField()
     note = serializers.CharField(allow_blank=True)
     attachments = AttachmentSerializer(many=True)
+    allocations = AllocationSerializer(many=True)
+    allocated = _amount()
+    unallocated = _amount()
 
 
 class PlanLineSerializer(serializers.Serializer):
@@ -109,6 +130,94 @@ class PlanLineSerializer(serializers.Serializer):
     paid = _amount()
     cost_count = serializers.IntegerField()
     over_plan = serializers.BooleanField()
+    allocations = AllocationSerializer(many=True)
+    allocated = _amount()
+    unallocated = _amount()
+    tolerance_pct = _pct()
+    over_tolerance = serializers.BooleanField()
+
+
+class SourceFiguresSerializer(serializers.Serializer):
+    """A source across every project it funds (`services/sources.py`)."""
+
+    project_count = serializers.IntegerField()
+    planned = _amount()
+    received = _amount()
+    line_allocated = _amount()
+    charged = _amount()
+    ceiling = _amount(allow_null=True)
+    remaining = _amount(allow_null=True)
+    over_awarded = serializers.BooleanField()
+    own_share_plan_pct = _pct()
+    own_share_actual_pct = _pct()
+    own_share_below = serializers.BooleanField()
+    admin_plan_pct = _pct()
+    admin_actual_pct = _pct()
+    admin_cap_exceeded = serializers.BooleanField()
+
+
+class SourceSerializer(serializers.Serializer):
+    """A funding source with its rules and its figures, from a `SourceView`."""
+
+    id = serializers.UUIDField(source="source.pk")
+    kind = serializers.CharField(source="source.kind")
+    name = serializers.CharField(source="source.name")
+    grantor = serializers.CharField(source="source.grantor", allow_blank=True)
+    agreement_number = serializers.CharField(source="source.agreement_number", allow_blank=True)
+    agreement_date = serializers.DateField(source="source.agreement_date", allow_null=True)
+    awarded_amount = serializers.DecimalField(
+        max_digits=12, decimal_places=2, coerce_to_string=True, allow_null=True, source="source.awarded_amount",
+    )
+    status = serializers.CharField(source="source.status")
+    eligible_from = serializers.DateField(source="source.eligible_from", allow_null=True)
+    eligible_to = serializers.DateField(source="source.eligible_to", allow_null=True)
+    report_due_on = serializers.DateField(source="source.report_due_on", allow_null=True)
+    required_own_share_pct = _pct(source="source.required_own_share_pct")
+    admin_cost_cap_pct = _pct(source="source.admin_cost_cap_pct")
+    line_tolerance_pct = _pct(source="source.line_tolerance_pct")
+    document_note_template = serializers.CharField(source="source.document_note_template")
+    note = serializers.CharField(source="source.note", allow_blank=True)
+    brings_money = serializers.BooleanField(source="source.brings_money")
+    figures = SourceFiguresSerializer()
+
+
+def _with_source(data: Any, view: Any) -> dict[str, Any]:
+    """Adds the nested `source`. A declared field cannot carry that name: it
+    would shadow `Field.source`, the attribute every serializer field reads."""
+    payload = dict(data)
+    payload["source"] = SourceSerializer(view).data
+    return payload
+
+
+class FundingSerializer(serializers.Serializer):
+    """A source on this project (with the nested `source`). `charge_limit` is
+    what the source may carry of the project's costs; the three flags say
+    which limit is passed."""
+
+    id = serializers.UUIDField()
+    planned_amount = _amount()
+    received_amount = _amount()
+    line_allocated = _amount()
+    charged = _amount()
+    charged_count = serializers.IntegerField()
+    charge_limit = _amount()
+    brings_money = serializers.BooleanField()
+    over_plan_allocation = serializers.BooleanField()
+    over_charge_limit = serializers.BooleanField()
+    overallocated = serializers.BooleanField()
+
+    def to_representation(self, instance: Any) -> dict[str, Any]:
+        return _with_source(super().to_representation(instance), instance.source)
+
+
+class FundingSummarySerializer(serializers.Serializer):
+    planned = _amount()
+    received = _amount()
+    charged = _amount()
+    uncovered = _amount()
+    in_kind_planned = _amount()
+    in_kind_contributed = _amount()
+    plan_uncovered = _amount(allow_null=True)
 
 
 class CategoryTotalSerializer(serializers.Serializer):
@@ -179,10 +288,12 @@ class ProjectMoneySerializer(serializers.Serializer):
     project = BudgetProjectSerializer()
     budget = BudgetStateSerializer(allow_null=True)
     summary = SummarySerializer()
+    funding = FundingSummarySerializer()
     warnings = WarningSerializer(many=True)
     ledger = LedgerRowSerializer(many=True, source="rows")
     expenses = ExpenseRowSerializer(many=True)
     lines = PlanLineSerializer(many=True)
+    fundings = FundingSerializer(many=True)
 
 
 class WarningCountsSerializer(serializers.Serializer):
@@ -214,6 +325,48 @@ class PayableSerializer(serializers.Serializer):
     cost_amount = _amount(allow_null=True)
     incurred_on = serializers.DateField()
     due_on = serializers.DateField(allow_null=True)
+
+
+class SourceProjectSerializer(serializers.Serializer):
+    funding_id = serializers.UUIDField()
+    project_id = serializers.UUIDField()
+    project_title = serializers.CharField()
+    project_date_time = serializers.DateTimeField()
+    budget_status = serializers.CharField()
+    planned_amount = _amount()
+    received_amount = _amount()
+    line_allocated = _amount()
+    charged = _amount()
+
+
+class SourceChargeSerializer(serializers.Serializer):
+    cost_item_id = serializers.UUIDField()
+    kind = serializers.CharField()
+    project_id = serializers.UUIDField()
+    project_title = serializers.CharField()
+    payee_name = serializers.CharField(allow_blank=True)
+    vendor_name = serializers.CharField(allow_blank=True)
+    description = serializers.CharField(allow_blank=True)
+    category = serializers.CharField()
+    plan_line = serializers.CharField(allow_blank=True)
+    document_number = serializers.CharField(allow_blank=True)
+    incurred_on = serializers.DateField()
+    paid_on = serializers.DateField(allow_null=True)
+    cost_amount = _amount()
+    amount = _amount()
+    eligible = serializers.BooleanField()
+
+
+class SourceDetailSerializer(serializers.Serializer):
+    """`GET funding-sources/{id}/`: the source (the nested `source`), the
+    projects it funds and every cost charged to it — what its settlement
+    reports."""
+
+    projects = SourceProjectSerializer(many=True)
+    charges = SourceChargeSerializer(many=True)
+
+    def to_representation(self, instance: Any) -> dict[str, Any]:
+        return _with_source(super().to_representation(instance), instance.view)
 
 
 class HistoryEventSerializer(serializers.Serializer):

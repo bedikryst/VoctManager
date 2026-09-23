@@ -3,9 +3,11 @@
 @description The read side of a project's money: the fee ledger rows (including
              the unpriced rows computed from the roster at read time), the
              expenses, the plan lines with what has been charged to each, the
-             summary summed in Decimal, and the warnings. The client renders all
-             of it and computes none of it — so the hub tab, the global page and
-             the project card cannot disagree about what a number means.
+             funding sources the project counts on and how each line and cost
+             is split between them, the summary and the coverage summed in
+             Decimal, and the warnings. The client renders all of it and
+             computes none of it — so the hub tab, the global page and the
+             project card cannot disagree about what a number means.
 @architecture Enterprise SaaS 2026
 @module finance/services/budget
 """
@@ -24,15 +26,21 @@ from roster.models import CrewAssignment, Participation, Project, Rehearsal
 
 from ..exceptions import BudgetLocked, PlanLineCategoryMismatch, PlanLocked, UnknownPlanLine
 from ..models import (
+    NON_CASH_FUNDING_KINDS,
     BudgetLine,
     BudgetStatus,
     Contract,
     ContractStatus,
+    CostAllocation,
     CostItem,
     CostKind,
     FeeForm,
     FinanceAttachment,
+    FundingKind,
+    FundingSource,
+    LineAllocation,
     ProjectBudget,
+    ProjectFunding,
 )
 from ..rules import (
     DOCUMENT_DUE_WINDOW_DAYS,
@@ -41,9 +49,14 @@ from ..rules import (
     VOLUNTEER_INSURANCE_MAX_DAYS,
     ZERO,
     PlanEntry,
+    allocatable_amount,
     category_for,
+    charge_limit,
     default_form_for,
+    exceeds_tolerance,
     in_kind_value,
+    is_eligible_on,
+    line_tolerance_pct,
     local_date,
     minimum_hourly_rate,
     money,
@@ -52,7 +65,9 @@ from ..rules import (
     plan_order,
     plan_section,
     planned_amount,
+    report_due_soon,
 )
+from .sources import FundingFigures, Measures, SourceView, measure
 
 ORIGIN_CAST = "cast"
 ORIGIN_CREW = "crew"
@@ -60,6 +75,18 @@ ORIGIN_ONE_OFF = "one_off"
 
 SEVERITY_WORK = "work"
 SEVERITY_PROBLEM = "problem"
+
+
+@dataclass(frozen=True)
+class AllocationView:
+    """One source's share of a plan line or of a cost."""
+
+    funding_id: UUID
+    amount: Decimal
+
+
+def _allocated(allocations: list[AllocationView]) -> Decimal:
+    return money(sum((allocation.amount for allocation in allocations), ZERO))
 
 
 @dataclass(frozen=True)
@@ -115,6 +142,10 @@ class LedgerRow:
     vendor_nip: str
     note: str
     contract: ContractView | None
+    # The sources the fee is charged to, and what can be split between them:
+    # its cost, or a volunteer's valuation.
+    allocations: list[AllocationView] = field(default_factory=list)
+    allocatable: Decimal = ZERO
 
     @property
     def is_priced(self) -> bool:
@@ -123,6 +154,15 @@ class LedgerRow:
     @property
     def is_paid(self) -> bool:
         return self.paid_on is not None
+
+    @property
+    def allocated(self) -> Decimal:
+        return _allocated(self.allocations)
+
+    @property
+    def unallocated(self) -> Decimal:
+        """What no source covers yet — the foundation's own until charged."""
+        return money(self.allocatable - self.allocated)
 
 
 @dataclass(frozen=True)
@@ -155,10 +195,19 @@ class ExpenseRow:
     paid_marked_at: datetime | None
     note: str
     attachments: list[AttachmentView]
+    allocations: list[AllocationView] = field(default_factory=list)
 
     @property
     def is_paid(self) -> bool:
         return self.paid_on is not None
+
+    @property
+    def allocated(self) -> Decimal:
+        return _allocated(self.allocations)
+
+    @property
+    def unallocated(self) -> Decimal:
+        return money(self.cost_amount - self.allocated)
 
 
 @dataclass(frozen=True)
@@ -166,7 +215,9 @@ class PlanLineView:
     """A plan line with what has actually been charged to it.
 
     `actual` sums the counted costs on the line — the same costs the headline
-    counts — so the plan and the ledger read the same money.
+    counts — so the plan and the ledger read the same money. `allocations` is
+    the plan's split between sources; `tolerance_pct` the overrun the line's
+    sources allow without an annex, and `over_tolerance` whether it is past it.
     """
 
     id: UUID
@@ -183,10 +234,81 @@ class PlanLineView:
     actual: Decimal
     paid: Decimal
     cost_count: int
+    allocations: list[AllocationView]
+    tolerance_pct: Decimal
+    over_tolerance: bool
 
     @property
     def over_plan(self) -> bool:
         return self.actual > self.planned_amount
+
+    @property
+    def allocated(self) -> Decimal:
+        return _allocated(self.allocations)
+
+    @property
+    def unallocated(self) -> Decimal:
+        return money(self.planned_amount - self.allocated)
+
+
+@dataclass(frozen=True)
+class FundingView:
+    """A source on this project: what the project expects of it, what arrived,
+    what the plan asks of it and what is charged to it — with the source's own
+    figures across every project it funds.
+
+    A source of money may carry the project's costs up to what the project
+    expects of it or what has arrived, whichever is more. The foundation's own
+    funds have no such limit — nobody awards them, they are whatever the
+    foundation spends — and volunteer work and gifts in kind carry no costs.
+    """
+
+    id: UUID
+    source: SourceView
+    planned_amount: Decimal
+    received_amount: Decimal
+    line_allocated: Decimal
+    charged: Decimal
+    charged_count: int
+
+    @property
+    def brings_money(self) -> bool:
+        return self.source.source.kind not in NON_CASH_FUNDING_KINDS
+
+    @property
+    def charge_limit(self) -> Decimal:
+        return charge_limit(self.planned_amount, self.received_amount)
+
+    @property
+    def over_plan_allocation(self) -> bool:
+        return self.line_allocated > self.planned_amount
+
+    @property
+    def over_charge_limit(self) -> bool:
+        if not self.brings_money or self.source.source.kind == FundingKind.OWN_FUNDS:
+            return False
+        return self.charged > self.charge_limit
+
+    @property
+    def overallocated(self) -> bool:
+        return self.over_plan_allocation or self.over_charge_limit or self.source.figures.over_awarded
+
+
+@dataclass(frozen=True)
+class FundingSummary:
+    """How the project is covered. Money sources and contributions in kind are
+    kept apart: only money pays a cost. `uncovered` is the counted cost no
+    source of money carries — the foundation's own, or not yet funded;
+    `plan_uncovered` the same on the plan (negative when the sources are
+    expected to bring more than the plan costs), None without a plan."""
+
+    planned: Decimal
+    received: Decimal
+    charged: Decimal
+    uncovered: Decimal
+    in_kind_planned: Decimal
+    in_kind_contributed: Decimal
+    plan_uncovered: Decimal | None
 
 
 @dataclass(frozen=True)
@@ -244,7 +366,9 @@ class ProjectMoney:
     rows: list[LedgerRow]
     expenses: list[ExpenseRow]
     lines: list[PlanLineView]
+    fundings: list[FundingView]
     summary: Summary
+    funding: FundingSummary
     warnings: list[BudgetWarning]
 
     @property
@@ -260,6 +384,9 @@ class _ProjectSources:
     expenses: list[CostItem] = field(default_factory=list)
     lines: list[BudgetLine] = field(default_factory=list)
     attachments: dict[UUID, list[FinanceAttachment]] = field(default_factory=dict)
+    fundings: list[ProjectFunding] = field(default_factory=list)
+    cost_allocations: dict[UUID, list[AllocationView]] = field(default_factory=dict)
+    line_allocations: dict[UUID, list[AllocationView]] = field(default_factory=dict)
     seats: list[Participation] = field(default_factory=list)
     crew: list[CrewAssignment] = field(default_factory=list)
     first_rehearsal: datetime | None = None
@@ -336,12 +463,21 @@ class BudgetService:
             for budget in ProjectBudget.all_objects.filter(project__in=[project.pk for project in projects])
         }
         contracts = _live_contracts(item for source in sources.values() for item in source.items)
+        # A source's own figures sum every project it funds, not only these.
+        funding_sources = {
+            funding.source_id: funding.source
+            for project_sources in sources.values()
+            for funding in project_sources.fundings
+        }
+        measures = measure(list(funding_sources.values()))
         results: list[ProjectMoney] = []
         for project in projects:
             project_sources = sources.get(project.pk, _ProjectSources())
             rows = _rows(project, project_sources, contracts)
             expenses = _expense_rows(project_sources)
-            lines = _plan_lines(project_sources.lines, rows, expenses)
+            fundings = _funding_views(project_sources.fundings, measures)
+            lines = _plan_lines(project_sources, rows, expenses)
+            summary = _summary(rows, expenses, lines)
             results.append(
                 ProjectMoney(
                     project=project,
@@ -349,8 +485,12 @@ class BudgetService:
                     rows=rows,
                     expenses=expenses,
                     lines=lines,
-                    summary=_summary(rows, expenses, lines),
-                    warnings=_warnings(project, project_sources, rows, expenses, lines, moment, today),
+                    fundings=fundings,
+                    summary=summary,
+                    funding=_funding_summary(summary, fundings),
+                    warnings=_warnings(
+                        project, project_sources, rows, expenses, lines, fundings, moment, today,
+                    ),
                 )
             )
         return results
@@ -405,15 +545,46 @@ def _load_sources(projects: Sequence[Project]) -> dict[UUID, _ProjectSources]:
         .order_by('created_at')
     )
     expense_ids: list[UUID] = []
+    item_projects: dict[UUID, UUID] = {}
     for item in items:
         project_sources = sources[item.budget.project_id]
+        item_projects[item.pk] = item.budget.project_id
         if item.kind == CostKind.EXPENSE:
             project_sources.expenses.append(item)
             expense_ids.append(item.pk)
         else:
             project_sources.items.append(item)
+    line_projects: dict[UUID, UUID] = {}
     for line in BudgetLine.objects.filter(budget__project__in=ids).select_related('budget'):
         sources[line.budget.project_id].lines.append(line)
+        line_projects[line.pk] = line.budget.project_id
+    fundings = (
+        ProjectFunding.objects.filter(budget__project__in=ids)
+        .select_related('budget', 'source')
+        .order_by('created_at')
+    )
+    for funding in fundings:
+        sources[funding.budget.project_id].fundings.append(funding)
+    if item_projects:
+        cost_allocations = (
+            CostAllocation.objects.filter(cost_item__in=list(item_projects), project_funding__is_deleted=False)
+            .order_by('created_at')
+        )
+        for allocation in cost_allocations:
+            project_sources = sources[item_projects[allocation.cost_item_id]]
+            project_sources.cost_allocations.setdefault(allocation.cost_item_id, []).append(
+                AllocationView(funding_id=allocation.project_funding_id, amount=allocation.amount)
+            )
+    if line_projects:
+        line_allocations = (
+            LineAllocation.objects.filter(budget_line__in=list(line_projects), project_funding__is_deleted=False)
+            .order_by('created_at')
+        )
+        for line_allocation in line_allocations:
+            project_sources = sources[line_projects[line_allocation.budget_line_id]]
+            project_sources.line_allocations.setdefault(line_allocation.budget_line_id, []).append(
+                AllocationView(funding_id=line_allocation.project_funding_id, amount=line_allocation.amount)
+            )
     if expense_ids:
         attachments = FinanceAttachment.objects.filter(cost_item__in=expense_ids).select_related('cost_item__budget')
         for attachment in attachments:
@@ -473,6 +644,7 @@ def _row(
     crew_assignment: CrewAssignment | None,
     billable: bool,
     concert_day: date,
+    allocations: dict[UUID, list[AllocationView]],
 ) -> LedgerRow:
     roster_source = participation or crew_assignment
     default_form = default_form_for(roster_source) if roster_source is not None else None
@@ -516,6 +688,7 @@ def _row(
             contract=None,
         )
 
+    valuation = in_kind_value(item.in_kind_hours, item.in_kind_hourly_rate)
     return LedgerRow(
         key=key, origin=origin,
         participation_id=item.participation_id,
@@ -533,7 +706,7 @@ def _row(
         cost_amount=item.cost_amount,
         in_kind_hours=item.in_kind_hours,
         in_kind_hourly_rate=item.in_kind_hourly_rate,
-        in_kind_value=in_kind_value(item.in_kind_hours, item.in_kind_hourly_rate),
+        in_kind_value=valuation,
         incurred_on=item.incurred_on,
         due_on=item.due_on,
         paid_on=item.paid_on,
@@ -543,6 +716,8 @@ def _row(
         vendor_nip=item.vendor_nip,
         note=item.note,
         contract=_contract_view(contract),
+        allocations=allocations.get(item.pk, []),
+        allocatable=allocatable_amount(item.kind, item.form, item.cost_amount, valuation),
     )
 
 
@@ -563,7 +738,7 @@ def _rows(project: Project, sources: _ProjectSources, contracts: dict[UUID, Cont
             key=seat.pk, origin=ORIGIN_CAST, item=item,
             contract=contracts.get(item.pk) if item else None,
             participation=seat, crew_assignment=None,
-            billable=not declined, concert_day=concert_day,
+            billable=not declined, concert_day=concert_day, allocations=sources.cost_allocations,
         ))
     # Items whose seat was removed from the cast: never billable any more, and
     # still shown — as work if unpaid, as a counted cost if paid.
@@ -573,7 +748,7 @@ def _rows(project: Project, sources: _ProjectSources, contracts: dict[UUID, Cont
         cast_rows.append(_row(
             key=seat_id, origin=ORIGIN_CAST, item=item, contract=contracts.get(item.pk),
             participation=item.participation, crew_assignment=None,
-            billable=False, concert_day=concert_day,
+            billable=False, concert_day=concert_day, allocations=sources.cost_allocations,
         ))
     cast_rows.sort(key=lambda row: _person_sort_key(row.payee_name))
 
@@ -582,7 +757,7 @@ def _rows(project: Project, sources: _ProjectSources, contracts: dict[UUID, Cont
             key=assignment.pk, origin=ORIGIN_CREW, item=by_crew.get(assignment.pk),
             contract=contracts.get(by_crew[assignment.pk].pk) if assignment.pk in by_crew else None,
             participation=None, crew_assignment=assignment,
-            billable=True, concert_day=concert_day,
+            billable=True, concert_day=concert_day, allocations=sources.cost_allocations,
         )
         for assignment in sources.crew
     ]
@@ -592,7 +767,7 @@ def _rows(project: Project, sources: _ProjectSources, contracts: dict[UUID, Cont
         _row(
             key=item.pk, origin=ORIGIN_ONE_OFF, item=item, contract=contracts.get(item.pk),
             participation=None, crew_assignment=None,
-            billable=True, concert_day=concert_day,
+            billable=True, concert_day=concert_day, allocations=sources.cost_allocations,
         )
         for item in sources.items
         if item.participation_id is None and item.crew_assignment_id is None
@@ -628,6 +803,7 @@ def _expense_rows(sources: _ProjectSources) -> list[ExpenseRow]:
                 )
                 for attachment in sources.attachments.get(item.pk, [])
             ],
+            allocations=sources.cost_allocations.get(item.pk, []),
         )
         for item in sources.expenses
     ]
@@ -635,12 +811,16 @@ def _expense_rows(sources: _ProjectSources) -> list[ExpenseRow]:
     return rows
 
 
-def _plan_lines(lines: list[BudgetLine], rows: list[LedgerRow], expenses: list[ExpenseRow]) -> list[PlanLineView]:
-    """The plan in kosztorys order, each line with the counted costs charged to it."""
+def _plan_lines(sources: _ProjectSources, rows: list[LedgerRow], expenses: list[ExpenseRow]) -> list[PlanLineView]:
+    """The plan in kosztorys order, each line with the counted costs charged to
+    it, its split between sources, and the overrun those sources tolerate — the
+    strictest tolerance among the sources the line's plan or its costs are
+    charged to."""
     charged: dict[UUID, list[Decimal]] = {}
     counts: dict[UUID, int] = {}
+    linked: dict[UUID, set[UUID]] = {}
 
-    def charge(line_id: UUID | None, cost: Decimal, paid: bool) -> None:
+    def charge(line_id: UUID | None, cost: Decimal, paid: bool, allocations: list[AllocationView]) -> None:
         if line_id is None:
             return
         totals = charged.setdefault(line_id, [ZERO, ZERO])
@@ -648,21 +828,30 @@ def _plan_lines(lines: list[BudgetLine], rows: list[LedgerRow], expenses: list[E
         if paid:
             totals[1] += cost
         counts[line_id] = counts.get(line_id, 0) + 1
+        linked.setdefault(line_id, set()).update(allocation.funding_id for allocation in allocations)
 
     for row in rows:
         if row.counted:
-            charge(row.budget_line_id, row.cost_amount or ZERO, row.is_paid)
+            charge(row.budget_line_id, row.cost_amount or ZERO, row.is_paid, row.allocations)
     for expense in expenses:
-        charge(expense.budget_line_id, expense.cost_amount, expense.is_paid)
+        charge(expense.budget_line_id, expense.cost_amount, expense.is_paid, expense.allocations)
 
+    tolerances = {funding.pk: funding.source.line_tolerance_pct for funding in sources.fundings}
+    lines = sources.lines
     entries = {
         line.pk: PlanEntry(key=line.pk, category=line.category, position=line.position, created_at=line.created_at)
         for line in lines
     }
     numbers = plan_numbers(entries.values())
     ordered = sorted(lines, key=lambda line: plan_order(entries[line.pk]))
-    return [
-        PlanLineView(
+    views: list[PlanLineView] = []
+    for line in ordered:
+        planned = planned_amount(line.quantity, line.unit_cost)
+        actual = money(charged.get(line.pk, [ZERO, ZERO])[0])
+        allocations = sources.line_allocations.get(line.pk, [])
+        funding_ids = linked.get(line.pk, set()) | {allocation.funding_id for allocation in allocations}
+        tolerance = line_tolerance_pct(tolerances.get(funding_id) for funding_id in funding_ids)
+        views.append(PlanLineView(
             id=line.pk,
             number=numbers[line.pk],
             section=plan_section(line.category),
@@ -672,14 +861,64 @@ def _plan_lines(lines: list[BudgetLine], rows: list[LedgerRow], expenses: list[E
             unit=line.unit,
             quantity=line.quantity,
             unit_cost=line.unit_cost,
-            planned_amount=planned_amount(line.quantity, line.unit_cost),
+            planned_amount=planned,
             note=line.note,
-            actual=money(charged.get(line.pk, [ZERO, ZERO])[0]),
+            actual=actual,
             paid=money(charged.get(line.pk, [ZERO, ZERO])[1]),
             cost_count=counts.get(line.pk, 0),
-        )
-        for line in ordered
-    ]
+            allocations=allocations,
+            tolerance_pct=tolerance,
+            over_tolerance=exceeds_tolerance(actual, planned, tolerance),
+        ))
+    return views
+
+
+def _funding_views(fundings: list[ProjectFunding], measures: Measures) -> list[FundingView]:
+    """The project's sources, the ones bringing money first, each with its
+    figures on this project and the source's own across all of them."""
+    views: list[FundingView] = []
+    for funding in fundings:
+        figures = measures.fundings.get(funding.pk, FundingFigures())
+        views.append(FundingView(
+            id=funding.pk,
+            source=measures.sources[funding.source_id],
+            planned_amount=funding.planned_amount,
+            received_amount=funding.received_amount,
+            line_allocated=figures.line_allocated,
+            charged=figures.charged,
+            charged_count=figures.charged_count,
+        ))
+    views.sort(key=lambda view: (not view.brings_money, view.source.source.name.casefold()))
+    return views
+
+
+def _funding_summary(summary: Summary, fundings: list[FundingView]) -> FundingSummary:
+    planned = received = charged = in_kind_planned = in_kind_contributed = ZERO
+    for funding in fundings:
+        if funding.brings_money:
+            planned += funding.planned_amount
+            received += funding.received_amount
+            charged += funding.charged
+            continue
+        in_kind_planned += funding.planned_amount
+        # Volunteer work is contributed as it is charged at its valuation; a
+        # gift in kind as it is received.
+        if funding.source.source.kind == FundingKind.VOLUNTEER_WORK:
+            in_kind_contributed += funding.charged
+        else:
+            in_kind_contributed += funding.received_amount
+    plan_uncovered = None
+    if summary.planned is not None:
+        plan_uncovered = money(summary.planned - planned - in_kind_planned)
+    return FundingSummary(
+        planned=money(planned),
+        received=money(received),
+        charged=money(charged),
+        uncovered=money(summary.committed - charged),
+        in_kind_planned=money(in_kind_planned),
+        in_kind_contributed=money(in_kind_contributed),
+        plan_uncovered=plan_uncovered,
+    )
 
 
 def _totals(committed: Decimal, paid: Decimal) -> Totals:
@@ -755,13 +994,14 @@ def _warnings(
     rows: list[LedgerRow],
     expenses: list[ExpenseRow],
     lines: list[PlanLineView],
+    fundings: list[FundingView],
     now: datetime,
     today: date,
 ) -> list[BudgetWarning]:
-    """The §5.4 warnings this stage's data can raise, one entry per code naming
-    every subject it concerns — a ledger row by its key, an expense or a plan
-    line by its id. Computed per request, so a time-relative one ("the concert
-    has passed") is never stale on a client that stayed open."""
+    """The §5.4 warnings, one entry per code naming every subject it concerns —
+    a ledger row by its key, an expense, a plan line or a project funding by
+    its id. Computed per request, so a time-relative one ("the concert has
+    passed", "the report is due") is never stale on a client that stayed open."""
     concert_passed = project.date_time < now
     documents_due = project.date_time <= now + timedelta(days=DOCUMENT_DUE_WINDOW_DAYS)
     concert_day = local_date(project.date_time, project.timezone)
@@ -820,17 +1060,45 @@ def _warnings(
         if has_plan and expense.budget_line_id is None:
             flag("COST_OUTSIDE_PLAN", expense.id)
 
-    # Until funding sources exist no overrun tolerance applies: a line is over
-    # its plan as soon as its actual passes the planned amount.
+    # A line with no source stating a tolerance is over as soon as its actual
+    # passes the planned amount.
     for line in lines:
-        if line.over_plan:
+        if line.over_tolerance:
             flag("LINE_OVER_PLAN", line.id)
+
+    by_funding = {funding.id: funding.source.source for funding in fundings}
+    charged_costs = [(row.key, row.incurred_on, row.allocations) for row in rows if row.counted]
+    charged_costs += [(expense.id, expense.incurred_on, expense.allocations) for expense in expenses]
+    for subject, incurred_on, allocations in charged_costs:
+        if any(
+            not is_eligible_on(incurred_on, source.eligible_from, source.eligible_to)
+            for source in _allocated_sources(allocations, by_funding)
+        ):
+            flag("OUTSIDE_ELIGIBILITY", subject)
+
+    for funding in fundings:
+        source = funding.source.source
+        figures = funding.source.figures
+        if funding.overallocated:
+            flag("SOURCE_OVERALLOCATED", funding.id)
+        if figures.own_share_below:
+            flag("OWN_SHARE_BELOW", funding.id)
+        if figures.admin_cap_exceeded:
+            flag("ADMIN_CAP_EXCEEDED", funding.id)
+        if report_due_soon(source.status, source.report_due_on, today):
+            flag("REPORT_DUE_SOON", funding.id)
 
     return [
         BudgetWarning(code=code, severity=severity, subject_ids=found[code], params=params.get(code, {}))
         for code, severity in WARNING_ORDER
         if code in found
     ]
+
+
+def _allocated_sources(
+    allocations: list[AllocationView], by_funding: dict[UUID, FundingSource],
+) -> list[FundingSource]:
+    return [by_funding[allocation.funding_id] for allocation in allocations if allocation.funding_id in by_funding]
 
 
 def volunteer_period_days(first_rehearsal: datetime | None, project: Project, concert_day: date) -> int:
@@ -849,6 +1117,10 @@ def volunteer_period_days(first_rehearsal: datetime | None, project: Project, co
 WARNING_ORDER: tuple[tuple[str, str], ...] = (
     ("PAID_FOR_DECLINED", SEVERITY_PROBLEM),
     ("BELOW_MINIMUM_HOURLY_RATE", SEVERITY_PROBLEM),
+    ("SOURCE_OVERALLOCATED", SEVERITY_PROBLEM),
+    ("OUTSIDE_ELIGIBILITY", SEVERITY_PROBLEM),
+    ("OWN_SHARE_BELOW", SEVERITY_PROBLEM),
+    ("ADMIN_CAP_EXCEEDED", SEVERITY_PROBLEM),
     ("UNPRICED", SEVERITY_WORK),
     ("ORPHANED_FEE", SEVERITY_WORK),
     ("EMPLOYER_COST_MISSING", SEVERITY_WORK),
@@ -860,4 +1132,5 @@ WARNING_ORDER: tuple[tuple[str, str], ...] = (
     ("PAYMENT_OVERDUE", SEVERITY_WORK),
     ("COST_OUTSIDE_PLAN", SEVERITY_WORK),
     ("LINE_OVER_PLAN", SEVERITY_WORK),
+    ("REPORT_DUE_SOON", SEVERITY_WORK),
 )

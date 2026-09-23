@@ -1630,7 +1630,8 @@
       "people": "Honoraria",
       "aria": "Sekcje budżetu",
       "plan": "Kosztorys",
-      "costs": "Wydatki"
+      "costs": "Wydatki",
+      "funding": "Finansowanie"
     },
     "forms": {
       "DZIELO": "Umowa o dzieło",
@@ -1720,7 +1721,27 @@
       },
       "LINE_OVER_PLAN": {
         "title": "Pozycje ponad plan",
-        "hint": "Wydano więcej, niż przewiduje kosztorys. Przy grancie przekroczenie pozycji może wymagać aneksu — sprawdź umowę."
+        "hint": "Wydano więcej, niż przewiduje kosztorys, ponad tolerancję źródeł tej pozycji. Przy grancie takie przekroczenie zwykle wymaga aneksu — sprawdź umowę."
+      },
+      "SOURCE_OVERALLOCATED": {
+        "title": "Źródło obciążone ponad swoją kwotę",
+        "hint": "Kosztorys albo obciążone koszty wymagają od źródła więcej, niż projekt od niego oczekuje, niż wpłynęło albo niż źródło przyznało. Zmniejsz obciążenie albo popraw kwotę w Finansowaniu."
+      },
+      "OUTSIDE_ELIGIBILITY": {
+        "title": "Koszt poza okresem kwalifikowalności",
+        "hint": "Koszt powstał poza okresem, w którym źródło go pokrywa. Takiego wydatku grantodawca nie uzna — przenieś go na inne źródło."
+      },
+      "OWN_SHARE_BELOW": {
+        "title": "Za mały wkład własny",
+        "hint": "Źródło wymaga, by część zadania pokryć z innych pieniędzy albo wkładem niefinansowym. Zmniejsz udział źródła albo dołóż wkład własny."
+      },
+      "ADMIN_CAP_EXCEEDED": {
+        "title": "Za dużo kosztów administracyjnych",
+        "hint": "Administracja zajmuje większą część tego źródła, niż pozwala jego limit. Przenieś część tych kosztów na inne źródło."
+      },
+      "REPORT_DUE_SOON": {
+        "title": "Termin sprawozdania",
+        "hint": "Sprawozdanie ze źródła trzeba złożyć w ciągu dwóch tygodni albo termin już minął. Gdy je rozliczysz, zmień status źródła na „Rozliczone”."
       }
     },
     "errors": {
@@ -1753,7 +1774,18 @@
       "attachment_missing": "Nie wybrano pliku.",
       "attachment_too_large": "Plik jest za duży — limit to 20 MB.",
       "attachment_type_not_allowed": "Dołączyć można PDF albo zdjęcie dokumentu (JPG, PNG, WEBP, HEIC).",
-      "file_detection_unavailable": "Serwer nie może teraz sprawdzić pliku. Spróbuj za chwilę."
+      "file_detection_unavailable": "Serwer nie może teraz sprawdzić pliku. Spróbuj za chwilę.",
+      "unknown_funding": "Tego źródła nie ma już w projekcie. Odśwież stronę.",
+      "unknown_source": "Tego źródła finansowania już nie ma. Odśwież stronę.",
+      "funding_exists": "To źródło jest już w projekcie.",
+      "funding_in_use": "To źródło obciążają już koszty. Najpierw zdejmij je ze źródła, potem usuń źródło z projektu.",
+      "source_in_use": "Źródło finansuje jakiś projekt. Usuń je najpierw ze wszystkich projektów.",
+      "source_settled": "Źródło jest rozliczone — tego, czym je obciążono, już się nie zmienia. Aby coś poprawić, zmień jego status.",
+      "eligibility_period_invalid": "Okres kwalifikowalności kończy się przed swoim początkiem.",
+      "allocation_exceeds_amount": "Źródła pokryłyby więcej niż cała kwota. Zmniejsz obciążenie źródeł.",
+      "allocation_kind_mismatch": "Pieniądze obciąża się na źródło pieniędzy, a pracę wolontariusza — na wkład osobowy.",
+      "allocation_not_counted": "Ten koszt się nie liczy (np. osoba odmówiła udziału), więc nie obciąża się nim źródeł. Można go tylko z nich zdjąć.",
+      "charge_refused": "Nie każdy z tych kosztów można obciążyć na to źródło. Nic nie zostało zmienione."
     },
     "offline": {
       "act": "Brak połączenia. Rozliczeń nie zapisuje się offline — wróć do sieci, aby to zrobić.",
@@ -1792,7 +1824,9 @@
       "unpay": "Cofnij wypłatę",
       "annul": "Unieważnij umowę",
       "board_only": "Cofnięcie wypłaty i unieważnienie umowy należą do zarządu.",
-      "blocked_by_draft": "Najpierw zapisz albo odrzuć zmianę stawki."
+      "blocked_by_draft": "Najpierw zapisz albo odrzuć zmianę stawki.",
+      "funding_none": "Nie obciąża jeszcze żadnego źródła",
+      "funding": "Źródła finansowania"
     },
     "pay": {
       "title": "Oznacz jako wypłacone",
@@ -1937,7 +1971,8 @@
       "fees": "Honoraria",
       "expenses": "Wydatki",
       "paid_all": "Zapłacone",
-      "outstanding_all": "Do zapłaty"
+      "outstanding_all": "Do zapłaty",
+      "funded": "Ze źródeł"
     },
     "overview": {
       "title": "Budżet",
@@ -1975,7 +2010,19 @@
       "previous": "Wcześniejsze",
       "next": "Dalsze",
       "overdue": "po terminie {{date}}",
-      "due": "termin {{date}}"
+      "due": "termin {{date}}",
+      "remaining": "Zostało",
+      "charged": "Obciążono",
+      "sources": "Źródła finansowania",
+      "add_source": "Nowe źródło",
+      "sources_empty": "Fundacja nie ma jeszcze źródeł finansowania.",
+      "sources_empty_desc": "Źródło to dotacja, grant, sponsor, bilety albo środki własne. Jedno źródło może finansować kilka koncertów — tu widać je w całości, a na stronie źródła każdy obciążony koszt.",
+      "ceiling": "Pułap",
+      "over_awarded": "ponad pułap",
+      "own_share_below": "za mały wkład własny",
+      "admin_over": "administracja ponad limit",
+      "source_projects": "projekty: {{count}}",
+      "report_due": "sprawozdanie do {{date}}"
     },
     "export": {
       "from": "Od",
@@ -2033,7 +2080,8 @@
         "document_date": "Data dokumentu",
         "amount": "Kwota brutto (PLN)",
         "paid_lock": "Wydatek jest zapłacony: kwoty i odbiorcy nie zmienisz bez cofnięcia zapłaty przez zarząd."
-      }
+      },
+      "delete_with_sources": "Zniknie też z obciążonych nim źródeł: {{sources}}."
     },
     "plan": {
       "title": "Kosztorys",
@@ -2094,7 +2142,12 @@
       "sections": {
         "I": "Koszty realizacji działań",
         "II": "Koszty administracyjne"
-      }
+      },
+      "sources_hint": "Ile pokryje dotacja, sponsor, środki własne",
+      "split": "Podziel między źródła",
+      "delete_with_sources": "Zniknie też jej podział między źródła; kwoty oczekiwane od źródeł zostają bez zmian.",
+      "sources": "Źródła: {{sources}}",
+      "within_tolerance": "w tolerancji {{pct}}"
     },
     "standing": {
       "planning": "Kosztorys można zmieniać. Zarząd zatwierdza go, gdy plan jest gotowy — koszty zapisuje się w każdym stanie oprócz zamkniętego.",
@@ -2159,7 +2212,8 @@
         "BUDGET_CLOSED": "Zamknięto budżet",
         "PLAN_CHANGED": "Zmieniono kosztorys",
         "ALLOCATION_CHANGED": "Zmieniono przydział"
-      }
+      },
+      "no_sources": "bez źródeł"
     },
     "units": {
       "PERSON": "Osoba",
@@ -2186,6 +2240,180 @@
       "BILL": "Rachunek",
       "RECEIPT": "Paragon",
       "OTHER": "Inny dokument"
+    },
+    "funding": {
+      "cost": "Koszt projektu",
+      "uncovered": "Własne lub niepokryte",
+      "expected": "Oczekiwane ze źródeł",
+      "received": "Wpłynęło",
+      "in_kind": "Wkład niefinansowy",
+      "plan_over": "Źródła ponad kosztorys",
+      "plan_uncovered": "Kosztorys bez źródła",
+      "title": "Finansowanie",
+      "locked_approved": "Kosztorys jest zatwierdzony: oczekiwane kwoty i podział pozycji są zamrożone. Wpływy i obciążenia kosztów zapisujesz dalej.",
+      "remove_blocked_charged": "Najpierw zdejmij z niego koszty ({{count}}).",
+      "remove_blocked_plan": "Źródło jest w zatwierdzonym kosztorysie — usunąć je można po otwarciu kosztorysu do korekty.",
+      "menu_aria": "Działania — {{name}}",
+      "edit_hint": "Ile projekt oczekuje, ile wpłynęło",
+      "edit": "Zmień kwoty",
+      "charge_hint": "Kosztów bez pełnego pokrycia: {{count}}",
+      "charge": "Obciąż kosztami",
+      "settled_hint": "Źródło jest rozliczone — jego kwot już się nie zmienia.",
+      "open_source_hint": "Zasady, terminy i wszystkie obciążone koszty",
+      "open_source": "Strona źródła",
+      "remove": "Usuń z projektu",
+      "headline": "Pokryte ze źródeł",
+      "sources": "Źródła",
+      "add": "Dodaj źródło",
+      "empty": "Projekt nie ma jeszcze źródeł finansowania",
+      "empty_desc": "Dodaj dotację, sponsora, bilety albo środki własne i wpisz, ile projekt z każdego oczekuje. Potem rozpiszesz między nie pozycje kosztorysu i obciążysz je kosztami — z tego powstaje rozliczenie grantu.",
+      "remove_title": "Usuń źródło z projektu",
+      "remove_confirm": "Usuń",
+      "removed": "Usunięto źródło z projektu.",
+      "remove_error": "Nie udało się usunąć źródła.",
+      "remove_plain": "Źródło zniknie z projektu razem ze swoim udziałem w kosztorysie. Samo źródło zostaje w Finansach.",
+      "received_caption": "wpłynęło {{amount}}",
+      "charged_caption": "obciążono {{amount}}",
+      "plan_caption": "w kosztorysie {{amount}}",
+      "sheet": {
+        "error": "Nie udało się zapisać źródła.",
+        "source_required": "Wybierz źródło albo dodaj nowe.",
+        "name_required": "Podaj nazwę — np. nazwę programu dotacyjnego.",
+        "saved": "Zapisano kwoty źródła.",
+        "added": "Dodano źródło do projektu.",
+        "add_title": "Źródło finansowania projektu",
+        "add": "Dodaj",
+        "source": "Źródło",
+        "loading": "Wczytuję źródła…",
+        "pick": "Wybierz źródło",
+        "new": "Nowe źródło…",
+        "new_hint": "Zasady źródła — okres kwalifikowalności, wymagany wkład własny, termin sprawozdania — uzupełnisz na jego stronie w Finansach.",
+        "planned": "Projekt oczekuje (PLN)",
+        "planned_locked": "Oczekiwana kwota należy do zatwierdzonego kosztorysu. Zmienić ją można po otwarciu kosztorysu do korekty.",
+        "received_in_kind": "Wartość otrzymanego wkładu (PLN)",
+        "received": "Wpłynęło (PLN)",
+        "received_in_kind_hint": "Ile wart jest wkład, który fundacja dostała bez zapłaty — np. kościół użyczony na koncert. Liczy się do wkładu własnego.",
+        "received_hint": "Pieniądze, które naprawdę dotarły: transza dotacji, wpływy z biletów, zebrane darowizny. Źródło może pokryć koszty do kwoty oczekiwanej albo tej, która wpłynęła — tej większej.",
+        "volunteer_hint": "Wkład osobowy rośnie, gdy przypiszesz do tego źródła wycenę pracy wolontariuszy w Honorariach."
+      },
+      "kinds": {
+        "PUBLIC_GRANT": "Dotacja publiczna",
+        "PRIVATE_GRANT": "Grant prywatny",
+        "SPONSOR": "Sponsor",
+        "DONATIONS": "Darowizny",
+        "TICKETS": "Bilety",
+        "OWN_FUNDS": "Środki własne",
+        "IN_KIND": "Wkład rzeczowy",
+        "VOLUNTEER_WORK": "Wkład osobowy (wolontariat)"
+      },
+      "statuses": {
+        "PLANNED": "Planowane",
+        "APPLIED": "Wniosek złożony",
+        "AWARDED": "Przyznane",
+        "REJECTED": "Odrzucone",
+        "SETTLED": "Rozliczone"
+      }
+    },
+    "allocation": {
+      "invalid": "To nie jest kwota.",
+      "over": "Źródła pokryłyby więcej niż {{amount}} {{currency}} — o {{over}} {{currency}} za dużo.",
+      "available": "{{label}}: {{amount}} {{currency}}",
+      "rest": "reszta",
+      "settled": "{{kind}} · rozliczone — bez zmian",
+      "covered": "Ze źródeł: {{amount}} {{currency}}",
+      "over_short": "Ponad kwotę: {{amount}} {{currency}}",
+      "own": "Środki własne lub niepokryte: {{amount}} {{currency}}",
+      "cost_title": "Źródła finansowania",
+      "valuation": "Wycena pracy wolontariusza",
+      "cost": "Koszt",
+      "valuation_note": "Wolontariat nie kosztuje fundacji nic. Jego wycenę wlicza się do wkładu osobowego — dlatego tylko to źródło.",
+      "saved": "Zapisano podział między źródła.",
+      "error": "Nie udało się zapisać podziału.",
+      "line_title": "Pozycja {{number}} — źródła",
+      "planned": "Plan pozycji",
+      "line_note": "Ile z tej pozycji ma pokryć każde źródło — tak jak w kolumnach kosztorysu we wniosku."
+    },
+    "source": {
+      "percent_invalid": "Podaj procent od 0 do 100.",
+      "name_required": "Podaj nazwę źródła.",
+      "period_invalid": "Okres kończy się przed swoim początkiem.",
+      "template_required": "Formuła nie może być pusta.",
+      "template_unknown": "Nieznane pola: {{fields}}.",
+      "saved": "Zapisano źródło.",
+      "created": "Dodano źródło finansowania.",
+      "error": "Nie udało się zapisać źródła.",
+      "create_title": "Nowe źródło finansowania",
+      "create": "Dodaj",
+      "kind": "Rodzaj",
+      "status": "Status",
+      "name": "Nazwa",
+      "name_placeholder": "np. Mecenat Małopolski 2026",
+      "grantor": "Grantodawca",
+      "grantor_placeholder": "np. Województwo Małopolskie",
+      "agreement_section": "Umowa",
+      "agreement_number": "Numer umowy",
+      "agreement_date": "Data umowy",
+      "awarded": "Przyznano (PLN)",
+      "rules_section": "Zasady grantodawcy",
+      "rules_hint": "Wszystkie są opcjonalne. Wpisz te, które stawia umowa — każda stanie się ostrzeżeniem w projektach, które to źródło finansuje.",
+      "eligible_from": "Koszty od",
+      "eligible_to": "Koszty do",
+      "report_due_on": "Termin sprawozdania",
+      "own_share": "Wkład własny (%)",
+      "own_share_hint": "Jaka część zadania musi pochodzić spoza tego źródła.",
+      "admin_cap": "Limit administracji (%)",
+      "admin_cap_hint": "Ile z tego, co obciąża źródło, mogą stanowić koszty administracyjne.",
+      "tolerance": "Tolerancja pozycji (%)",
+      "tolerance_hint": "O ile pozycja kosztorysu może przekroczyć plan bez aneksu.",
+      "template_section": "Opis dokumentów księgowych",
+      "template": "Formuła",
+      "template_hint": "To zdanie trafia na odwrocie każdej faktury i rachunku obciążonego tym źródłem. Wklej formułę z umowy; w nawiasach klamrowych panel wstawi: {{fields}}.",
+      "note": "Uwagi"
+    },
+    "source_page": {
+      "measured_plan": "w kosztorysie {{pct}}",
+      "measured_actual": "w kosztach {{pct}}",
+      "agreement": "Umowa",
+      "eligibility": "Koszty kwalifikowalne",
+      "own_share": "Wymagany wkład własny",
+      "admin_cap": "Limit administracji",
+      "awarded": "Przyznano",
+      "planned": "Oczekują projekty",
+      "role": "Źródło finansowania",
+      "back": "Finanse",
+      "edit": "Edytuj",
+      "money": "Pieniądze",
+      "over_awarded": "Projekty oczekują albo obciążyły więcej, niż źródło przyznało. Zmniejsz oczekiwane kwoty w projektach albo zdejmij część kosztów.",
+      "charges": "Obciążone koszty",
+      "charges_empty": "Tego źródła nie obciąża jeszcze żaden koszt.",
+      "charges_empty_desc": "Źródło obciąża się kosztami w projekcie: w zakładce Finansowanie albo w menu honorarium i wydatku.",
+      "ineligible": "poza okresem kwalifikowalności",
+      "of_cost": "z {{amount}}",
+      "rules": "Zasady",
+      "projects": "Projekty",
+      "projects_empty": "Źródło nie finansuje jeszcze żadnego projektu.",
+      "project_figures": "oczekuje {{planned}} · obciążono {{charged}}",
+      "template_hint": "Na tej podstawie panel przygotuje opisy na odwrocie faktur i rachunków obciążonych tym źródłem.",
+      "delete": "Usuń źródło",
+      "delete_title": "Usuń źródło",
+      "delete_confirm": "Usuń",
+      "deleted": "Usunięto źródło.",
+      "delete_body": "Źródło nie finansuje żadnego projektu, więc zniknie z listy. W historii zostaje ślad, że istniało.",
+      "loading": "Wczytuję źródło…",
+      "missing": "Nie ma takiego źródła.",
+      "missing_desc": "Mogło zostać usunięte albo serwer nie odpowiedział."
+    },
+    "charge": {
+      "outside_plan": "Poza kosztorysem",
+      "done": "Obciążono źródło kosztami: {{count}}.",
+      "error": "Nie udało się obciążyć źródła.",
+      "title": "Obciąż kosztami",
+      "confirm": "Obciąż ({{count}})",
+      "explain": "Zaznaczone koszty trafią na to źródło w części, której nic jeszcze nie pokrywa. Podział pojedynczego kosztu zmienisz w jego menu.",
+      "nothing": "Wszystkie koszty, które to źródło może przyjąć, są już pokryte.",
+      "selected": "Do obciążenia: {{amount}} {{currency}}",
+      "passes_limit": "Źródło poniesie wtedy {{after}} {{currency}} — więcej niż {{limit}} {{currency}}, na które liczy projekt. Zwiększ kwotę oczekiwaną albo wpisz, ile wpłynęło.",
+      "limit": "Źródło poniesie wtedy {{after}} z {{limit}} {{currency}}."
     }
   },
   "crew": {

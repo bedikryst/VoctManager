@@ -4,7 +4,9 @@
              under by default, which cost category a fee falls into, what the
              foundation's cost of an item is, how "0 zł" and "volunteer" keep
              meaning the same thing, what a plan line is worth and which
-             kosztorys number it carries, and the constants the warnings read.
+             kosztorys number it carries, what a cost can be charged to a
+             funding source and how a grant's rules are measured, and the
+             constants the warnings read.
              Nothing here touches the database, so the ledger service, the
              warnings and the roster data copy all ask the same questions of
              the same code.
@@ -21,10 +23,11 @@ from django.utils import timezone, translation
 
 from roster.models import DEFAULT_EVENT_TIMEZONE, Collaborator, CrewAssignment, Participation, VoiceType
 
-from .models import CostCategory, FeeForm
+from .models import NON_CASH_FUNDING_KINDS, CostCategory, CostKind, FeeForm, FundingKind, FundingStatus
 
 CENT = Decimal('0.01')
 ZERO = Decimal('0.00')
+HUNDRED = Decimal('100')
 
 # Where "today" is decided: the foundation's office, not the server's UTC clock.
 # A payment made on the evening of the 31st belongs to that month in the books.
@@ -291,6 +294,85 @@ def plan_numbers(entries: Iterable[PlanEntry]) -> dict[object, str]:
         counters[section] = counters.get(section, 0) + 1
         numbers[entry.key] = f"{section}.{counters[section]}"
     return numbers
+
+
+# --------------------------------------------------------------------------- #
+# Funding                                                                      #
+# --------------------------------------------------------------------------- #
+
+# How close a funding source's report deadline starts to be flagged.
+REPORT_DUE_WINDOW_DAYS = 14
+
+# Sources whose report is no longer anybody's work.
+_REPORT_DONE_STATUSES = frozenset({FundingStatus.SETTLED, FundingStatus.REJECTED})
+
+
+def is_valuation(kind: str, form: str) -> bool:
+    """Volunteer work is charged to a source by its valuation, never by its
+    cost, which is 0: the valuation is the grant's "wkład osobowy"."""
+    return kind == CostKind.FEE and form == FeeForm.VOLUNTEER
+
+
+def allocatable_amount(kind: str, form: str, cost_amount: Decimal | None, valuation: Decimal | None) -> Decimal:
+    """What a cost can be split between sources: its cost to the foundation,
+    or the valuation of volunteer work. Unpriced has nothing to split."""
+    value = valuation if is_valuation(kind, form) else cost_amount
+    return value if value is not None else ZERO
+
+
+def source_accepts(source_kind: str, *, valuation: bool) -> bool:
+    """Money goes to a source of money; volunteer work's valuation to a
+    volunteer-work source. A gift in kind has no cost row to charge."""
+    if valuation:
+        return source_kind == FundingKind.VOLUNTEER_WORK
+    return source_kind not in NON_CASH_FUNDING_KINDS
+
+
+def effective_awarded(status: str, awarded_amount: Decimal | None) -> Decimal | None:
+    """The ceiling a source's own decision sets: what it awarded, and nothing
+    at all once it has refused. None while it has not decided."""
+    if status == FundingStatus.REJECTED:
+        return ZERO
+    return awarded_amount
+
+
+def charge_limit(planned_amount: Decimal, received_amount: Decimal) -> Decimal:
+    """How much of a project's costs a source may carry: what the project
+    expects of it, or what has actually arrived when that is more — a donation
+    larger than hoped for pays for more, and needs no correction of the plan."""
+    return max(planned_amount, received_amount)
+
+
+def share_pct(part: Decimal, whole: Decimal) -> Decimal | None:
+    """``part`` as a percentage of ``whole``, to two places; None without a whole."""
+    if whole <= 0:
+        return None
+    return money(part * HUNDRED / whole)
+
+
+def line_tolerance_pct(tolerances: Iterable[Decimal | None]) -> Decimal:
+    """The overrun a plan line may carry: the strictest tolerance among the
+    sources it is charged to that state one, and none when no source does."""
+    stated = [tolerance for tolerance in tolerances if tolerance is not None]
+    return min(stated) if stated else ZERO
+
+
+def exceeds_tolerance(actual: Decimal, planned: Decimal, tolerance_pct: Decimal) -> bool:
+    return actual > planned * (HUNDRED + tolerance_pct) / HUNDRED
+
+
+def is_eligible_on(day: date, eligible_from: date | None, eligible_to: date | None) -> bool:
+    if eligible_from is not None and day < eligible_from:
+        return False
+    return eligible_to is None or day <= eligible_to
+
+
+def report_due_soon(status: str, report_due_on: date | None, today: date) -> bool:
+    """A report is work from two weeks before its deadline until the source is
+    settled — past the deadline included, which is more urgent, not less."""
+    if report_due_on is None or status in _REPORT_DONE_STATUSES:
+        return False
+    return (report_due_on - today).days <= REPORT_DUE_WINDOW_DAYS
 
 
 def minimum_hourly_rate(year: int) -> Decimal | None:
