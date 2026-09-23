@@ -53,7 +53,6 @@ export interface ParticipationCreateDTO {
   artist: string;
   project: string;
   status: ParticipationStatus;
-  fee?: string | number | null;
   /** This singer's seat in the concert's line-up; `""` clears it. */
   default_voice_line?: VoiceLine | "";
   /** Leads their voice section here, which heads them in every cast listing. */
@@ -77,20 +76,9 @@ export interface CrewAssignmentCreateDTO {
   project: string;
   role_description?: string;
   status?: CrewAssignmentStatus;
-  fee?: string | number | null;
 }
 
 export type CrewAssignmentUpdateDTO = Partial<CrewAssignmentCreateDTO>;
-
-/**
- * One rate for a whole project's cast or crew. The server rejects unknown keys
- * (`extra="forbid"`), so this payload is exactly two fields — `fee` is the
- * public name of what the backend DTO calls `new_fee`.
- */
-export interface ProjectBulkFeeDTO {
-  project_id: string;
-  fee: number;
-}
 
 export interface RehearsalCreateDTO {
   project_id: string;

@@ -3,8 +3,9 @@ CQRS read model for the Artist Dossier (manager-only HR analytics).
 
 Aggregates an artist's *project track record* straight from the authoritative
 relational state — Participation (invite/confirm/decline), ProjectPieceCasting
-(which voice line on which piece), Attendance (reliability) and
-RehearsalDelegate + `Rehearsal.led_by` (leadership) — rather than from the
+(which voice line on which piece), Attendance (reliability),
+RehearsalDelegate + `Rehearsal.led_by` (leadership) and the finance ledger's
+cost items (earnings) — rather than from the
 notification stream, which is recipient-scoped, opt-in and deletable. A
 bounded number of queries is issued regardless of how many projects the artist
 has appeared in.
@@ -15,7 +16,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Prefetch, Sum
 from django.utils import timezone
 
 from core.voice_labels import (
@@ -23,6 +24,7 @@ from core.voice_labels import (
     plain_voice_line_label,
     section_letters_of_seat,
 )
+from finance.models import CostItem
 from roster.models import (
     Attendance,
     Participation,
@@ -81,15 +83,21 @@ def get_artist_dossier(artist: Artist) -> dict[str, Any]:
     decided = len(confirmed) + len(declined)
     acceptance_rate = (len(confirmed) / decided) if decided else None
 
-    # Settlement footprint, derived straight from the participation fees. Declined
-    # invitations are excluded — that artist withdrew, so any stray fee on them is
-    # not money owed. A zero/None fee never counts as a real payment.
-    billable = [p for p in participations if p.status != Participation.Status.DECLINED]
-    earnings_paid = sum((p.fee for p in billable if p.is_paid and p.fee), Decimal("0"))
-    earnings_outstanding = sum(
-        (p.fee for p in billable if not p.is_paid and p.fee), Decimal("0")
+    # Settlement footprint, read from the finance ledger, which alone holds the
+    # money. Paid is every payment made against this artist's seats: as in the
+    # ledger, a payment stays a payment after the seat is declined or removed.
+    # Outstanding is what is priced and unpaid on the seats still in the cast.
+    # A volunteer's 0 is never earnings.
+    fee_items = CostItem.objects.filter(participation__artist=artist, contract_amount__gt=0)
+    paid_items = fee_items.filter(paid_on__isnull=False)
+    earnings_paid = paid_items.aggregate(total=Sum("contract_amount"))["total"] or Decimal("0")
+    earnings_outstanding = (
+        fee_items.filter(paid_on__isnull=True, participation__is_deleted=False)
+        .exclude(participation__status=Participation.Status.DECLINED)
+        .aggregate(total=Sum("contract_amount"))["total"]
+        or Decimal("0")
     )
-    projects_paid = sum(1 for p in billable if p.is_paid and p.fee)
+    projects_paid = paid_items.values("budget__project_id").distinct().count()
 
     participation_ids = [p.id for p in participations]
 

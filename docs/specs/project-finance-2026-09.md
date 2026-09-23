@@ -1,8 +1,10 @@
 # Project finance — budget, settlement and reporting
 
-Status: **Spec written 2026-09-23; the developer answered Q1–Q6 the same day (§2, §4). Stages 1
-and 1b built 2026-09-23, uncommitted and not yet reviewed (see "As built" under §11 Stage 1 and
-Stage 1b). The printed copies of Stage 1b await the developer's check; Stages 2–3 are next. Contract wording is drafted in
+Status: **Spec written 2026-09-23; the developer answered Q1–Q6 the same day (§2, §4). Stages 1,
+1b, 2 and 3 — release R1 — built 2026-09-23 (see "As built" under each in §11). Stages 1 and 1b are
+committed; Stage 2 was reviewed in the browser; Stages 2 and 3 are uncommitted. R1 is not deployed
+and goes to prod as one release. The printed copies of Stage 1b await the developer's check; Stage 4
+is next. Contract wording is drafted in
 `project-finance-contract-drafts-2026-09.md` and awaits legal and accounting review. That review
 gates the first real use of the new templates, not their build.**
 Written from the developer's brief of 2026-09-23 ("as ambitious as possible — this concert is the
@@ -631,6 +633,40 @@ their own. Every deploy that touches models needs `make migrate` on prod.
   `finance.*` i18n in pl/en/fr.
 - Vitest: grosze parsing and draft summarisation.
 
+**As built (2026-09-23)** — where Stage 2 differs from the text above:
+
+- **Backend, the one piece this stage owned:** `finance/infrastructure/ledger_csv.py` behind
+  `GET projects/{id}/export/ledger.csv` and `GET export/ledger.csv?from=&to=` (the office's range,
+  across projects, by `incurred_on`, both ends inclusive; `LedgerRangeDTO`). Rows are the ledger's
+  `counted` rows, so the file sums to the stated cost. Headers and vocabulary are Polish, like the
+  documents; a text cell starting with `= + - @` is written as text. Tests in `test_ledger_csv.py`.
+- **Layout:** `features/finance/{api,types,lib,components,budget,overview}`. The hub's
+  `ProjectBudgetPage` is now a layout route (`BudgetTabs` + `<Outlet context>`); `budget` index is
+  `BudgetOverviewPage`, `budget/people` is `FeesPage`. `/panel/finance` is `overview/FinancePage`.
+- **The draft mirrors the server:** `lib/feeDraft.ts` copies `reconcile_pricing` and the
+  standard-rate skip rules line for line, so the rail's preview is the total the save produces.
+  Per-ledger subtotals are gone: they would be the client summing persisted money. The rail shows
+  the server's `by_category` (only as a split of two or more) and the preview only while dirty.
+- **Drafts and acts share the dock band:** the selection bar opens only while no draft is pending;
+  the save bar says acts wait for the save, and a row's menu names why an act is disabled (its own
+  draft, or offline). Mark-paid is not offered for an orphaned fee, although the server would take it.
+- **Rows the plan left open:** a one-off's chip compares against its side's fallback form, like a
+  roster row against `default_form`. Employer contributions and in-kind valuation are edited in the
+  row's details sheet and saved at once (a one-row batch restating the stored amount), not drafted.
+  Przegląd names each warning's people as links to `budget/people?focus=<key>`; the portfolio's
+  payables link by cost-item id, which the same parameter accepts. Payment happens in the hub only.
+- **Shared additions:** `DateTimeField granularity="date"` (a `yyyy-MM-dd` value, no clock),
+  `EditorActionBar isConfirmDisabled`, `shared/lib/dom/useIsOnline`, `canApproveFinance` in `rbac.ts`.
+- **Not done, deliberately:** no enum-dictionary registration and no `DICTIONARY_VERSION` bump —
+  categories and forms are the client's vocabulary (`financePresentation.ts`), never served by
+  `/api/options`. Budget status is shown only when it is not `PLANNING`; history and transitions are
+  Stage 4. Warning codes of Stages 4–5 fall back to a generic label until those stages map them.
+- **Removed:** `features/contracts/`, `widgets/domain/ExportContractButton.tsx`, the old
+  `BudgetTab`/`useBudgetTab`/`FeeRow`/`StandardRateField`, `features/projects/lib/money.ts`, the
+  `contracts`, `export` and `projects.budget` locale blocks, and the `crewAssignments.all` prefetch
+  that only the contracts page read. The `CONTRACT_ISSUED` notification still links to
+  `/panel/contracts` (now a redirect to a manager-only page) — Stage 7's performer view owns it.
+
 ### Stage 3 — Legacy removal
 
 - Backend: drop `fee`, `is_paid`, `paid_at` from `Participation` and `CrewAssignment`
@@ -645,6 +681,32 @@ their own. Every deploy that touches models needs `make migrate` on prod.
   mutations; bump the query cache buster (DTO shape changed — memory `reference_query_cache_buster`).
 - **R1 release**: deploy, `make migrate` (runs `finance/0001`, `0002` and the roster removal in
   order), then check the first concert's ledger against the old figures.
+
+**As built (2026-09-23)** — where Stage 3 differs from the text above:
+
+- **Migration:** `roster/0062_drop_legacy_fees` depends on `finance/0002`, so no database can drop
+  the columns before the copy has run. `finance/data_copy.py` stays, because `0002` imports it; its
+  tests became a migration test (`TransactionTestCase`) that rolls the roster back to `0061`, writes
+  rows through the historical models and hands the copy those same models.
+- **Removed beyond the list:** `live_contract_for` and `ContractNotIssued` (`contract_not_issued`,
+  with its client copy and three locale keys) — only the retired roster door used them; the
+  participation admin's contract button. The basic/detailed serializer pairs for `Participation`
+  and `CrewAssignment` are one serializer each: with no money on the row, nothing was left to hide.
+- **Artist merge:** the roster copied a duplicate's fee onto the survivor's seat; the ledger does it
+  now. `LedgerService.fold_seat` re-points the duplicate's item at the survivor's seat — paid or
+  contracted as it was, logged as `DETAILS_CHANGED` under the merging manager — when that seat has
+  none. When it has its own, or the budget is `CLOSED`, the item stays on the folded seat and the
+  project is listed in `fee_conflicts`. A merge never fails over money.
+- **Dossier earnings** read the ledger: paid is every paid item on the artist's seats, declined or
+  removed ones included (a payment stays a payment, as in the ledger); outstanding is what is priced
+  and unpaid on live, non-declined seats; a volunteer's 0 is never earnings.
+- **Seed:** `seed_db` prices the cast and crew through `LedgerService.apply_fee_batch` and pays
+  completed concerts through `LedgerService.pay`; declined seats stay unpriced. A new project's
+  creator seat is no longer created with a fee of 0.
+- **Client:** `QUERY_CACHE_BUSTER` is `2026-09-ledger-only-fees`; the bulk-fee hooks and service
+  calls went with their DTO.
+- **Not done:** the backend `.po` files still hold the dropped fields' msgids; the next
+  `makemessages` marks them obsolete.
 
 ### Stage 4 — Plan, expenses, budget states
 

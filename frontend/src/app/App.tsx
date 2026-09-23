@@ -118,8 +118,8 @@ const MessagesPage = lazyWithPreload(
 );
 
 // Manager-only feature trees remain lazy, then preload only for manager sessions.
-const Contracts = lazyWithPreload(
-  () => import("@features/contracts/Contracts"),
+const FinancePage = lazyWithPreload(
+  () => import("@features/finance/overview/FinancePage"),
 );
 const Rehearsals = lazyWithPreload(
   () => import("@features/rehearsals/Rehearsals"),
@@ -169,6 +169,12 @@ const ProjectCrewPage = lazyWithPreload(
 );
 const ProjectBudgetPage = lazyWithPreload(
   () => import("@features/projects/ProjectBudgetPage"),
+);
+const BudgetOverviewPage = lazyWithPreload(
+  () => import("@features/finance/budget/BudgetOverviewPage"),
+);
+const BudgetFeesPage = lazyWithPreload(
+  () => import("@features/finance/budget/FeesPage"),
 );
 const ProjectDetailsPage = lazyWithPreload(
   () => import("@features/projects/ProjectDetailsPage"),
@@ -223,7 +229,7 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { preload: PiecePage.preload },
   { preload: Schedule.preload },
   { preload: RehearsalPage.preload },
-  { scope: "manager", preload: Contracts.preload },
+  { scope: "manager", preload: FinancePage.preload },
   { scope: "manager", preload: Rehearsals.preload },
   { scope: "manager", preload: ArtistManagement.preload },
   { scope: "manager", preload: ProjectDashboard.preload },
@@ -238,6 +244,8 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { scope: "manager", preload: ProjectAttendancePage.preload },
   { scope: "manager", preload: ProjectCrewPage.preload },
   { scope: "manager", preload: ProjectBudgetPage.preload },
+  { scope: "manager", preload: BudgetOverviewPage.preload },
+  { scope: "manager", preload: BudgetFeesPage.preload },
   { scope: "manager", preload: ProjectDetailsPage.preload },
   { scope: "manager", preload: ArchiveManagement.preload },
   { scope: "manager", preload: ArchivePieceCardPage.preload },
@@ -345,7 +353,13 @@ export const router = createBrowserRouter(
         >
           <Route index element={<DashboardHome />} />
           <Route element={<ManagerRoute />}>
-            <Route path="contracts" element={<Contracts />} />
+            <Route path="finance" element={<FinancePage />} />
+            {/* The settlements workspace's old address, still in bookmarks and
+                in the contract notification's link. */}
+            <Route
+              path="contracts"
+              element={<Navigate to="/panel/finance" replace />}
+            />
             <Route path="rehearsals" element={<Rehearsals />} />
             <Route path="artists" element={<ArtistManagement />} />
             <Route
@@ -367,7 +381,10 @@ export const router = createBrowserRouter(
               <Route path="rehearsals" element={<ProjectRehearsalsPage />} />
               <Route path="attendance" element={<ProjectAttendancePage />} />
               <Route path="crew" element={<ProjectCrewPage />} />
-              <Route path="budget" element={<ProjectBudgetPage />} />
+              <Route path="budget" element={<ProjectBudgetPage />}>
+                <Route index element={<BudgetOverviewPage />} />
+                <Route path="people" element={<BudgetFeesPage />} />
+              </Route>
               <Route path="details" element={<ProjectDetailsPage />} />
               <Route
                 path="settings"

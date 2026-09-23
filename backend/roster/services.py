@@ -26,6 +26,7 @@ from archive.services.voice_scope import voice_scope
 from core.exceptions import EmailAlreadyInUseException
 from core.models import UserProfile
 from core.services import UserIdentityService
+from finance.services.ledger import LedgerService
 from logistics.models import Location
 from notifications.announcement_queue import AnnouncementQueue
 from notifications.announcements import (
@@ -70,7 +71,6 @@ from .dtos import (
     CastOrderRowDTO,
     PieceCastingRowDTO,
     PieceReadinessUpdateDTO,
-    ProjectBulkFeeDTO,
     ProjectCreateDTO,
     ProjectUpdateDTO,
     RehearsalCreateDTO,
@@ -248,9 +248,9 @@ class ArtistMergeReport:
     threads_moved: int = 0
     projects_conducted: int = 0
     statuses_upgraded: int = 0
-    # Projects where both rows carried a different fee. The surviving row keeps
-    # its own and this says where to go and look: money is not something a
-    # cleanup gets to average.
+    # Projects where the duplicate's fee stayed on its folded seat: the survivor
+    # had a fee of its own, or the budget is closed. This says where to go and
+    # look — money is not something a cleanup gets to choose between.
     fee_conflicts: tuple[str, ...] = ()
 
 
@@ -507,7 +507,7 @@ class ArtistHRService:
             logger.info(f"Artist {artist.email} archived and user access revoked.")
 
     @staticmethod
-    def merge_artists(primary: Artist, duplicate: Artist) -> ArtistMergeReport:
+    def merge_artists(primary: Artist, duplicate: Artist, *, actor: "User | None" = None) -> ArtistMergeReport:
         """Folds one roster row into another and retires the emptied one.
 
         Two `Artist` rows for one human are possible because uniqueness is on
@@ -528,7 +528,8 @@ class ArtistHRService:
           The other one is soft-deleted after its castings, readiness and
           attendance move across — the alternative, repointing it, would break
           `unique_active_project_participation` and put the same singer on the
-          riser twice.
+          riser twice. Its fee moves to the primary's seat through the ledger
+          (`LedgerService.fold_seat`), which logs the move under `actor`.
         """
         from messaging.models import Thread
 
@@ -544,7 +545,7 @@ class ArtistHRService:
             raise ActivatedArtistMergeException()
 
         with transaction.atomic():
-            report = ArtistHRService._merge_participations(primary, duplicate)
+            report = ArtistHRService._merge_participations(primary, duplicate, actor=actor)
 
             # The podium and the conversations follow the person, not the row.
             # `all_objects` on purpose: a soft-deleted project or thread still
@@ -571,7 +572,7 @@ class ArtistHRService:
         )
 
     @staticmethod
-    def _merge_participations(primary: Artist, duplicate: Artist) -> ArtistMergeReport:
+    def _merge_participations(primary: Artist, duplicate: Artist, *, actor: "User | None") -> ArtistMergeReport:
         """Moves the duplicate's participations, folding the ones that collide.
 
         A collision is the normal case for the duplicate that gets noticed —
@@ -640,14 +641,7 @@ class ArtistHRService:
                 fields.append('status')
                 statuses_upgraded += 1
 
-            if target.fee is None and participation.fee is not None:
-                target.fee = participation.fee
-                fields.append('fee')
-            elif (
-                participation.fee is not None
-                and target.fee is not None
-                and participation.fee != target.fee
-            ):
+            if LedgerService.fold_seat(participation, target, actor=actor):
                 fee_conflicts.append(participation.project.title)
 
             if fields:
@@ -860,10 +854,9 @@ class ProjectManagementService:
 
             if hasattr(user, 'artist_profile'):
                 Participation.objects.create(
-                    artist=user.artist_profile, 
+                    artist=user.artist_profile,
                     project=project,
-                    status=Participation.Status.CONFIRMED, 
-                    fee=0
+                    status=Participation.Status.CONFIRMED,
                 )
             logger.info(f"Project '{project.title}' created by {user.email} with timezone {resolved_timezone}")
             return project
@@ -1117,7 +1110,7 @@ class ProjectManagementService:
 
             if archived_participation:
                 # 2A. RESTORE PATH
-                # Update any new values passed in the request (e.g., a new fee or status)
+                # Update any new values passed in the request (e.g., a new status)
                 for attr, value in validated_data.items():
                     setattr(archived_participation, attr, value)
                 
@@ -1219,38 +1212,6 @@ class ProjectManagementService:
 
         return ordered
 
-    @staticmethod
-    def update_project_bulk_fee(dto: ProjectBulkFeeDTO) -> int:
-        if dto.new_fee < 0:
-            raise ParticipationException("Fee cannot be negative.")
-
-        # A standard cast rate must never rewrite money already settled (that would
-        # silently desync the recorded fee from what was actually paid), nor price
-        # artists who declined. Both are excluded; individual fees stay editable.
-        count = (
-            Participation.objects
-            .filter(project_id=dto.project_id, is_deleted=False, is_paid=False)
-            .exclude(status=Participation.Status.DECLINED)
-            .update(fee=dto.new_fee, updated_at=timezone.now())
-        )
-        logger.info(f"Bulk fee updated to {dto.new_fee} for project {dto.project_id} ({count} participants affected).")
-        return count
-
-    @staticmethod
-    def update_project_crew_bulk_fee(dto: ProjectBulkFeeDTO) -> int:
-        """Applies one standard rate across a project's crew, skipping already-settled rows."""
-        if dto.new_fee < 0:
-            raise ParticipationException("Fee cannot be negative.")
-
-        # CrewAssignment is a plain model (no soft-delete / no decline state); only
-        # guard against overwriting a fee already marked paid.
-        count = (
-            CrewAssignment.objects
-            .filter(project_id=dto.project_id, is_paid=False)
-            .update(fee=dto.new_fee)
-        )
-        logger.info(f"Bulk crew fee updated to {dto.new_fee} for project {dto.project_id} ({count} assignments affected).")
-        return count
 
 class ManagerNotificationHelper:
     @staticmethod
@@ -2356,7 +2317,7 @@ class ParticipationService:
     ) -> Participation:
         """Apply a manager's edit to one seat in the cast.
 
-        Mostly contractual (a fee, a note), but one transition is an act rather
+        Mostly administrative (the seat, the section), but one transition is an act rather
         than a field: **moving someone back to INVITED asks them again.** That is
         what the cast tab does when a singer who declined is re-added, and until
         the invitation follows it, the project simply reappears in their schedule

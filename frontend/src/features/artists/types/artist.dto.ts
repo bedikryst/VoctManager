@@ -104,7 +104,10 @@ export interface ArtistMergeResult {
     threads_moved: number;
     projects_conducted: number;
     statuses_upgraded: number;
-    /** Projects where both rows carried a different fee — the survivor kept its own. */
+    /**
+     * Projects where the duplicate's fee stayed on its folded seat: the survivor
+     * had a fee of its own, or the project's budget is closed.
+     */
     fee_conflicts: string[];
   };
 }

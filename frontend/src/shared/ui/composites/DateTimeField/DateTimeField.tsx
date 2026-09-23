@@ -8,6 +8,9 @@
  * concert is a moment and not two unrelated answers. The value never leaves the
  * `yyyy-MM-ddTHH:mm` wall-clock contract the forms already speak, so the venue's
  * timezone keeps owning what the hour means.
+ * A fact that is a day and not a moment — the date a payment left, the date on
+ * a signed paper — takes `granularity="date"`: the same panel without the clock,
+ * and a `yyyy-MM-dd` value, so no invented hour ever travels with it.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/DateTimeField
  */
@@ -35,7 +38,9 @@ import {
   formatTriggerDate,
   formatWallClock,
   parseClock,
+  parseDateKey,
   parseWallClock,
+  toDateKey,
   toFloatingDate,
   todayCalendarDate,
   type CalendarDate,
@@ -44,8 +49,13 @@ import {
 
 export interface DateTimeFieldProps
   extends Omit<FieldShellVariantProps, "hasError"> {
-  /** `yyyy-MM-ddTHH:mm` wall-clock in the event's timezone, or `""`. */
+  /**
+   * `yyyy-MM-ddTHH:mm` wall-clock in the event's timezone, or `""`. With
+   * `granularity="date"`, a `yyyy-MM-dd` calendar date.
+   */
   readonly value: string;
+  /** `date` drops the clock: the value is a day, not a moment. */
+  readonly granularity?: "datetime" | "date";
   readonly onChange: (next: string) => void;
   readonly label?: string;
   readonly ariaLabel?: string;
@@ -74,6 +84,7 @@ const FALLBACK_CLOCK: Clock = { hours: 12, minutes: 0 };
 
 export const DateTimeField = ({
   value,
+  granularity = "datetime",
   onChange,
   label,
   ariaLabel,
@@ -101,10 +112,13 @@ export const DateTimeField = ({
   const hasError = Boolean(error);
 
   const locale = getDateFnsLocale(i18n.language);
-  const parsed = parseWallClock(value);
-  const selectedDate: CalendarDate | null = parsed
-    ? { year: parsed.year, month: parsed.month, day: parsed.day }
-    : null;
+  const isDateOnly = granularity === "date";
+  const parsed = isDateOnly ? null : parseWallClock(value);
+  const selectedDate: CalendarDate | null = isDateOnly
+    ? parseDateKey(value)
+    : parsed
+      ? { year: parsed.year, month: parsed.month, day: parsed.day }
+      : null;
 
   const anchor = parseWallClock(anchorValue);
   const openingDate: CalendarDate =
@@ -126,6 +140,10 @@ export const DateTimeField = ({
   };
 
   const handleSelectDay = (date: CalendarDate): void => {
+    if (isDateOnly) {
+      onChange(toDateKey(date));
+      return;
+    }
     const clock = parsed ?? parseClock(defaultTime) ?? FALLBACK_CLOCK;
     onChange(
       formatWallClock({
@@ -160,24 +178,28 @@ export const DateTimeField = ({
 
   const triggerContent = (
     <>
-      {parsed ? (
+      {selectedDate ? (
         <span className="flex min-w-0 flex-1 items-baseline gap-2">
           <Text as="span" size="base" truncate className="min-w-0">
-            {formatTriggerDate(parsed, locale)}
+            {formatTriggerDate(selectedDate, locale)}
           </Text>
-          <Text
-            as="span"
-            size="base"
-            weight="medium"
-            className="shrink-0 tabular-nums"
-          >
-            {formatClock(parsed)}
-          </Text>
+          {parsed && (
+            <Text
+              as="span"
+              size="base"
+              weight="medium"
+              className="shrink-0 tabular-nums"
+            >
+              {formatClock(parsed)}
+            </Text>
+          )}
         </span>
       ) : (
         <Text as="span" size="base" color="incense" className="min-w-0 flex-1 truncate">
           {placeholder ??
-            t("shared.datetime.placeholder", "Wybierz datę i godzinę")}
+            (isDateOnly
+              ? t("shared.datetime.placeholder_date", "Wybierz datę")
+              : t("shared.datetime.placeholder", "Wybierz datę i godzinę"))}
         </Text>
       )}
 
@@ -220,18 +242,20 @@ export const DateTimeField = ({
         size={isFinePointer ? "md" : "touch"}
       />
 
-      <div className="flex items-center justify-between gap-3 border-t border-hairline pt-3">
-        <Eyebrow as="label" htmlFor={timeId} color="muted">
-          {t("shared.datetime.time", "Godzina")}
-        </Eyebrow>
-        <TimeSegments
-          layout="roller"
-          hoursId={timeId}
-          value={parsed ? formatClock(parsed) : ""}
-          fallback={defaultTime}
-          onChange={handleTimeChange}
-        />
-      </div>
+      {!isDateOnly && (
+        <div className="flex items-center justify-between gap-3 border-t border-hairline pt-3">
+          <Eyebrow as="label" htmlFor={timeId} color="muted">
+            {t("shared.datetime.time", "Godzina")}
+          </Eyebrow>
+          <TimeSegments
+            layout="roller"
+            hoursId={timeId}
+            value={parsed ? formatClock(parsed) : ""}
+            fallback={defaultTime}
+            onChange={handleTimeChange}
+          />
+        </div>
+      )}
     </div>
   );
 
@@ -344,7 +368,12 @@ export const DateTimeField = ({
           isOpen={isOpen}
           onClose={() => handleOpenChange(false)}
           // A required marker belongs on the field, not in a sheet's heading.
-          title={(label ?? t("shared.datetime.time", "Godzina")).replace(
+          title={(
+            label ??
+            (isDateOnly
+              ? t("shared.datetime.date", "Data")
+              : t("shared.datetime.time", "Godzina"))
+          ).replace(
             /\s*\*$/,
             "",
           )}

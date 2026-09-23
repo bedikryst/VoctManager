@@ -210,3 +210,16 @@ class SignContractDTO(EnterpriseBaseDTO):
 
 class ContractHoursDTO(EnterpriseBaseDTO):
     hours_confirmed: Hours
+
+
+class LedgerRangeDTO(EnterpriseBaseDTO):
+    """The office's export window, both ends inclusive (`?from=&to=`)."""
+
+    date_from: date = Field(..., alias="from")
+    date_to: date = Field(..., alias="to")
+
+    @model_validator(mode="after")
+    def ordered(self) -> Self:
+        if self.date_from > self.date_to:
+            raise ValueError("from must not be later than to.")
+        return self

@@ -51,3 +51,10 @@ export const isCrew = (user: AuthUser | null): boolean =>
  */
 export const canEditSiteCopy = (user: AuthUser | null): boolean =>
   user?.profile?.can_edit_site_copy === true;
+
+/**
+ * May this account take the board's finance acts. Decides only what the panel
+ * offers; the server's `IsBoard` is what admits.
+ */
+export const canApproveFinance = (user: AuthUser | null): boolean =>
+  user?.profile?.can_approve_finance === true;

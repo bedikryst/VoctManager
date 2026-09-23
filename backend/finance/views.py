@@ -35,6 +35,7 @@ from .dtos import (
     ContractHoursDTO,
     CostItemDetailsDTO,
     FeeBatchDTO,
+    LedgerRangeDTO,
     OneOffFeeDTO,
     PayFeesDTO,
     ReasonDTO,
@@ -48,6 +49,7 @@ from .infrastructure.documents import (
     render_bill_pdf,
     render_contract_pdf,
 )
+from .infrastructure.ledger_csv import ledger_csv, project_ledger_filename, range_ledger_filename
 from .models import Contract, CostItem, CostKind
 from .serializers import PayableSerializer, ProjectMoneySerializer, ProjectRollupSerializer
 from .services.budget import SEVERITY_PROBLEM, SEVERITY_WORK, BudgetService, ProjectMoney
@@ -61,6 +63,8 @@ ZIP_FAILED = "zip_failed"
 # The portfolio's payables list, one page at a time.
 PAYABLES_DEFAULT_LIMIT = 50
 PAYABLES_MAX_LIMIT = 200
+
+CSV_CONTENT_TYPE = "text/csv; charset=utf-8"
 
 
 def _invalid(request: Request, exc: ValidationError) -> Response:
@@ -293,6 +297,34 @@ class ContractsZipFileView(FinanceAPIView):
         )
         response["Access-Control-Expose-Headers"] = "Content-Disposition"
         return response
+
+
+class ProjectLedgerCsvView(FinanceAPIView):
+    """GET projects/{project_id}/export/ledger.csv — the project's counted fees,
+    in the office's CSV."""
+
+    def get(self, request: Request, project_id: UUID) -> FileResponse:
+        project = get_object_or_404(Project, pk=project_id)
+        data = ledger_csv([BudgetService.build(project)])
+        return _download(data, project_ledger_filename(project), CSV_CONTENT_TYPE)
+
+
+class LedgerCsvView(FinanceAPIView):
+    """GET export/ledger.csv?from=&to= — every counted fee whose cost date falls
+    in the range, across projects: what the office books for a period."""
+
+    def get(self, request: Request) -> FileResponse:
+        dto = LedgerRangeDTO.model_validate(request.query_params.dict())
+        projects = list(
+            Project.objects.filter(
+                budget__cost_items__incurred_on__range=(dto.date_from, dto.date_to),
+                budget__cost_items__is_deleted=False,
+            )
+            .distinct()
+            .order_by("date_time")
+        )
+        data = ledger_csv(BudgetService.build_many(projects), date_from=dto.date_from, date_to=dto.date_to)
+        return _download(data, range_ledger_filename(dto.date_from, dto.date_to), CSV_CONTENT_TYPE)
 
 
 def _bounded_int(raw: object, default: int, maximum: int) -> int:

@@ -743,17 +743,6 @@ class Participation(EnterpriseBaseModel):
         help_text=_("Position within this project's voice section. "
                     "Blank = this section has not been arranged."),
     )
-    fee = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name=_("Fee"))
-    is_paid = models.BooleanField(
-        default=False,
-        verbose_name=_("Is Paid"),
-        help_text=_("Whether the agreed fee for this participation has been settled.")
-    )
-    paid_at = models.DateTimeField(
-        blank=True, null=True,
-        verbose_name=_("Paid At"),
-        help_text=_("Timestamp the fee was marked as settled. Cleared if the payment is reverted.")
-    )
 
     class Meta:
         verbose_name = _("Participation")
@@ -1480,17 +1469,6 @@ class CrewAssignment(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='crew_assignments', verbose_name=_("Project"))
     role_description = models.CharField(max_length=150, blank=True, verbose_name=_("Role Description"))
     status = models.CharField(max_length=3, choices=Status.choices, default=Status.INVITED, verbose_name=_("Status"))
-    fee = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name=_("Fee"))
-    is_paid = models.BooleanField(
-        default=False,
-        verbose_name=_("Is Paid"),
-        help_text=_("Whether the agreed fee for this assignment has been settled.")
-    )
-    paid_at = models.DateTimeField(
-        blank=True, null=True,
-        verbose_name=_("Paid At"),
-        help_text=_("Timestamp the fee was marked as settled. Cleared if the payment is reverted.")
-    )
 
     class Meta:
         verbose_name = _("Crew Assignment")

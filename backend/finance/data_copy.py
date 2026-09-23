@@ -3,10 +3,11 @@
 @description Copies the fees still held on the roster (`Participation` and
              `CrewAssignment`: `fee`, `is_paid`, `paid_at`) into FEE cost items,
              with a budget for every project it touches. Run by migration
-             `finance/0002` against the historical models it is handed, and by
-             the tests against the live ones — so it reads nothing but fields
-             and plain managers, and it is idempotent: a seat that already has
-             an item is skipped.
+             `finance/0002` against the historical models it is handed; those
+             columns are gone from the live models (`roster/0062`), so the tests
+             roll the roster back and hand it the same historical models. It
+             reads nothing but fields and plain managers, and it is idempotent:
+             a seat that already has an item is skipped.
 @architecture Enterprise SaaS 2026
 @module finance/data_copy
 """
@@ -129,8 +130,8 @@ def copy_roster_fees(apps: Any) -> CopyReport:
     every legacy contract was printed as. Soft-deleted seats are copied too: a
     payment made to somebody later removed from the cast is still a payment, and
     the ledger shows it as counted (paid) or as work (unpaid). `_base_manager`
-    everywhere, because it is the unfiltered manager on both the historical
-    models and the live ones.
+    everywhere, because it is the unfiltered manager on every model it is
+    handed, whatever managers that model declares.
     """
     Participation = apps.get_model("roster", "Participation")
     CrewAssignment = apps.get_model("roster", "CrewAssignment")

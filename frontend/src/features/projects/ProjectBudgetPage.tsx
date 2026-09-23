@@ -1,18 +1,25 @@
 /**
  * @file ProjectBudgetPage.tsx
- * @description Route wrapper for the budget / fee work area.
- * Mounts the existing BudgetTab with the project resolved by the hub layout.
+ * @description Route layout for the project's Budżet tab: the finance
+ * sub-navigation above whichever of its sub-routes is open (Przegląd,
+ * Honoraria). The hub's own context — the project and the unsaved-changes
+ * guard — is handed through to them unchanged.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectBudgetPage
  */
 
 import React from "react";
-import { useOutletContext } from "react-router-dom";
+import { Outlet, useOutletContext } from "react-router-dom";
 
+import { BudgetTabs } from "@/features/finance/budget/BudgetTabs";
 import type { ProjectHubContext } from "./ProjectHubLayout";
-import { BudgetTab } from "./editors/tabs/BudgetTab";
 
 export default function ProjectBudgetPage(): React.JSX.Element {
-  const { project, setDirty } = useOutletContext<ProjectHubContext>();
-  return <BudgetTab projectId={project.id} onDirtyStateChange={setDirty} />;
+  const context = useOutletContext<ProjectHubContext>();
+  return (
+    <div className="flex w-full flex-col gap-5">
+      <BudgetTabs projectId={String(context.project.id)} />
+      <Outlet context={context} />
+    </div>
+  );
 }

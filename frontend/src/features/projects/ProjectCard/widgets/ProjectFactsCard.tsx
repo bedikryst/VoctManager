@@ -2,10 +2,11 @@
  * @file ProjectFactsCard.tsx
  * @description Context-rail card for the Project Overview. Consolidates the bare facts a
  * conductor scans first — concert date/time, venue, what waits at that venue on the day,
- * conductor, project leader, estimated budget — plus an optional event note, into one calm definition
- * list. Subsumes the former single-metric BudgetWidget (the cost now lives as one fact
- * among others, not a lone number in a tall card). The whole card deep-links to the
- * Details work area, which is where every one of these is typed.
+ * conductor, project leader, the cost in fees — plus an optional event note, into one calm
+ * definition list. The cost is the finance summary's own figure, summed by the server in
+ * Decimal and printed in Polish format whatever the interface language; the card adds
+ * nothing up. The whole card deep-links to the Details work area, which is where the rest
+ * of these facts are typed.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/ProjectFactsCard
  */
@@ -16,14 +17,12 @@ import { Info } from "lucide-react";
 
 import type { Project } from "@/shared/types";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
-import { Eyebrow, Metric, Text, Unit } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Metric, Text, Unit } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
-import {
-  useProjectCrewAssignments,
-  useProjectParticipations,
-} from "../../api/project.read.queries";
+import { useProjectBudget } from "@/features/finance/api/finance.queries";
+import { formatAmount } from "@/features/finance/lib/money";
 import { getArtistDisplayName } from "../../lib/projectPresentation";
 
 interface ProjectFactsCardProps {
@@ -51,27 +50,9 @@ export function ProjectFactsCard({
 }: ProjectFactsCardProps): React.JSX.Element {
   const { t } = useTranslation();
 
-  const { data: participations } = useProjectParticipations(String(project.id));
-  const { data: crewAssignments } = useProjectCrewAssignments(
-    String(project.id),
-  );
-
-  const totalBudget = useMemo<number>(() => {
-    const artists = participations.reduce(
-      (sum, p) => sum + (Number(p.fee) || 0),
-      0,
-    );
-    const crew = crewAssignments.reduce((sum, c) => sum + (Number(c.fee) || 0), 0);
-    return artists + crew;
-  }, [participations, crewAssignments]);
-
-  const formattedBudget = useMemo(
-    () =>
-      new Intl.NumberFormat(t("common.locale", "pl-PL"), {
-        maximumFractionDigits: 0,
-      }).format(totalBudget),
-    [t, totalBudget],
-  );
+  const { data: budget } = useProjectBudget(String(project.id));
+  const cost = budget ? formatAmount(budget.summary.committed) : null;
+  const unpriced = budget?.summary.unpriced ?? 0;
 
   const conductorName = getArtistDisplayName(
     project.conductor,
@@ -226,13 +207,30 @@ export function ProjectFactsCard({
           </Text>
         </FactRow>
 
-        <FactRow label={t("projects.budget.estimated_cost", "Przewidywany koszt")}>
-          <div className="flex items-baseline gap-1.5">
-            <Metric as="span" className="text-2xl leading-none text-ethereal-gold">
-              {formattedBudget}
-            </Metric>
-            <Unit>{t("common.currency", "PLN")}</Unit>
-          </div>
+        <FactRow label={t("finance.facts.cost", "Koszt honorariów")}>
+          {cost === null ? (
+            <Text size="sm" color="muted">
+              {dash}
+            </Text>
+          ) : (
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-baseline gap-1.5">
+                <Metric as="span" className="text-2xl leading-none text-ethereal-gold">
+                  {cost}
+                </Metric>
+                <Unit>{t("common.currency", "PLN")}</Unit>
+              </div>
+              {/* The figure understates while someone is unpriced; the card
+                  says by how many people, and only when it does. */}
+              {unpriced > 0 && (
+                <Caption color="gold">
+                  {t("finance.facts.unpriced", "bez stawki: {{count}} os.", {
+                    count: unpriced,
+                  })}
+                </Caption>
+              )}
+            </div>
+          )}
         </FactRow>
 
         {project.description?.trim() && (

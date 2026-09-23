@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import tempfile
 from datetime import timedelta
-from decimal import Decimal
 from typing import Any
 from unittest.mock import patch
 
@@ -274,7 +273,7 @@ class InstrumentalistDocumentTests(APITestCase):
             voice_type=VoiceType.INSTRUMENTALIST, instrument="Organy",
         )
         self.participation = Participation.objects.create(
-            artist=self.player, project=self.project, fee=Decimal("900.00"),
+            artist=self.player, project=self.project,
         )
 
     def test_the_cast_list_groups_them_under_their_own_heading(self) -> None:

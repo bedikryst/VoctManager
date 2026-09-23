@@ -42,6 +42,13 @@ export interface AuthProfile {
    * the door from the one account that can also review.
    */
   can_edit_site_copy?: boolean;
+  /**
+   * The board's finance acts: reverting a payment, annulling a contract, and
+   * (later) the budget's approval. Sent as the EFFECTIVE answer (`is_staff`),
+   * so the panel can leave a board-only control out and say why, instead of
+   * offering a button that answers 403.
+   */
+  can_approve_finance?: boolean;
 }
 
 export interface AuthUser {

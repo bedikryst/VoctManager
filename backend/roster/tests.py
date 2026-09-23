@@ -1,8 +1,7 @@
 import tempfile
 import uuid
 from datetime import UTC, datetime, time, timedelta
-from decimal import Decimal
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -15,6 +14,8 @@ from rest_framework.test import APITestCase
 from core.constants import AppRole
 from core.exceptions import AccountAlreadyActiveException
 from core.models import UserProfile
+from finance.models import BudgetStatus, CostItem, FinanceAction, FinanceEvent, ProjectBudget
+from finance.tests.factories import price
 from notifications.models import NotificationLevel, NotificationType
 
 from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectCreateDTO
@@ -441,11 +442,13 @@ class ArtistDossierQueryTests(TestCase):
         )
         self.assertEqual(dossier["stats"]["top_voice_lines"][0]["label"], "Tenor 1")
 
-    def test_dossier_reports_earnings_excluding_declined(self):
+    def test_dossier_reads_earnings_from_the_ledger_excluding_declined(self):
         from datetime import timedelta
-        from decimal import Decimal
 
         from django.utils import timezone
+
+        from finance.dtos import PayFeesDTO
+        from finance.services.ledger import LedgerService
 
         from .models import Artist, Participation, Project
         from .queries import get_artist_dossier
@@ -456,20 +459,18 @@ class ArtistDossierQueryTests(TestCase):
         p1 = Project.objects.create(title="Gala A", date_time=timezone.now() - timedelta(days=5))
         p2 = Project.objects.create(title="Gala B", date_time=timezone.now() - timedelta(days=2))
         p3 = Project.objects.create(title="Gala C", date_time=timezone.now() + timedelta(days=5))
+        seats = [
+            Participation.objects.create(artist=artist, project=project, status=Participation.Status.CONFIRMED)
+            for project in (p1, p2, p3)
+        ]
 
-        # Paid 500, owed 300, and a declined 999 that must be ignored entirely.
-        Participation.objects.create(
-            artist=artist, project=p1, status=Participation.Status.CONFIRMED,
-            fee=Decimal("500.00"), is_paid=True,
-        )
-        Participation.objects.create(
-            artist=artist, project=p2, status=Participation.Status.CONFIRMED,
-            fee=Decimal("300.00"), is_paid=False,
-        )
-        Participation.objects.create(
-            artist=artist, project=p3, status=Participation.Status.DECLINED,
-            fee=Decimal("999.00"), is_paid=False,
-        )
+        # Paid 500, owed 300, and 999 priced before the singer declined, which
+        # is no longer owed and must be ignored entirely.
+        paid = price(p1, participation=seats[0], amount="500")
+        LedgerService.pay(p1, PayFeesDTO(ids=(paid.pk,), paid_on=timezone.localdate()), actor=None)
+        price(p2, participation=seats[1], amount="300")
+        price(p3, participation=seats[2], amount="999")
+        Participation.objects.filter(pk=seats[2].pk).update(status=Participation.Status.DECLINED)
 
         stats = get_artist_dossier(artist)["stats"]
         self.assertEqual(stats["earnings_paid"], 500.0)
@@ -607,16 +608,16 @@ class ArtistListLeaderFlagTests(APITestCase):
         self.assertTrue(response.json()["is_project_leader"])
 
 
-class ContractsSettlementTests(APITestCase):
+class RosterPayloadMoneyTests(APITestCase):
     """
-    API cover for the settlement cockpit: the payment toggle, the crew label
-    payload, and the contract PDF / project ZIP endpoints (the latter were
-    previously called by the frontend but had no backing route).
+    A cast seat and a crew booking read the same for a manager and for a
+    member: who is on the project, never what they are paid. Fees live in the
+    finance ledger alone, and the ledger is never embedded in roster payloads.
     """
+
+    MONEY_KEYS = frozenset({"fee", "is_paid", "paid_at", "contract_amount", "cost_amount", "paid_on"})
 
     def setUp(self) -> None:
-        from decimal import Decimal
-
         from django.utils import timezone
 
         from core.constants import AppRole
@@ -648,7 +649,7 @@ class ContractsSettlementTests(APITestCase):
         )
         self.participation = Participation.objects.create(
             artist=self.artist, project=self.project,
-            status=Participation.Status.CONFIRMED, fee=Decimal("500.00"),
+            status=Participation.Status.CONFIRMED,
         )
         self.collaborator = Collaborator.objects.create(
             first_name="Sound", last_name="Engineer",
@@ -656,167 +657,23 @@ class ContractsSettlementTests(APITestCase):
         )
         self.crew = CrewAssignment.objects.create(
             collaborator=self.collaborator, project=self.project,
-            role_description="FOH mix", fee=Decimal("800.00"),
+            role_description="FOH mix",
         )
 
-    # ------------------------------------------------------------------ #
-    # Payment toggle                                                     #
-    # ------------------------------------------------------------------ #
-
-    def test_payment_toggle_sets_and_clears_paid_at_for_cast(self) -> None:
-        self.client.force_authenticate(user=self.manager)
-        url = f"/api/participations/{self.participation.id}/payment/"
-
-        resp = self.client.patch(url, {"is_paid": True}, format="json")
-        self.assertEqual(resp.status_code, 200)
-        self.participation.refresh_from_db()
-        self.assertTrue(self.participation.is_paid)
-        self.assertIsNotNone(self.participation.paid_at)
-
-        resp = self.client.patch(url, {"is_paid": False}, format="json")
-        self.assertEqual(resp.status_code, 200)
-        self.participation.refresh_from_db()
-        self.assertFalse(self.participation.is_paid)
-        self.assertIsNone(self.participation.paid_at)
-
-    def test_payment_toggle_works_for_crew(self) -> None:
-        self.client.force_authenticate(user=self.manager)
-        url = f"/api/crew-assignments/{self.crew.id}/payment/"
-
-        resp = self.client.patch(url, {"is_paid": True}, format="json")
-        self.assertEqual(resp.status_code, 200)
-        self.crew.refresh_from_db()
-        self.assertTrue(self.crew.is_paid)
-        self.assertIsNotNone(self.crew.paid_at)
-
-    def test_payment_rejects_non_boolean(self) -> None:
-        self.client.force_authenticate(user=self.manager)
-        url = f"/api/participations/{self.participation.id}/payment/"
-        resp = self.client.patch(url, {"is_paid": "yes"}, format="json")
-        self.assertEqual(resp.status_code, 400)
-
-    def test_payment_forbidden_for_non_manager(self) -> None:
-        self.client.force_authenticate(user=self.artist_user)
-        url = f"/api/participations/{self.participation.id}/payment/"
-        resp = self.client.patch(url, {"is_paid": True}, format="json")
-        self.assertEqual(resp.status_code, 403)
-
-    def test_fee_action_updates_fee_and_ignores_payment_fields(self) -> None:
-        from decimal import Decimal
-
-        # The dedicated fee action sidesteps the conditional UniqueConstraint that
-        # makes the generic Participation PATCH 500, and only ever touches `fee`.
-        self.client.force_authenticate(user=self.manager)
-        url = f"/api/participations/{self.participation.id}/fee/"
-        resp = self.client.patch(url, {"fee": "750.50", "is_paid": True}, format="json")
-        self.assertEqual(resp.status_code, 200)
-        self.participation.refresh_from_db()
-        self.assertEqual(self.participation.fee, Decimal("750.50"))
-        self.assertFalse(self.participation.is_paid)
-
-    def test_fee_action_rejects_negative_value(self) -> None:
-        self.client.force_authenticate(user=self.manager)
-        url = f"/api/participations/{self.participation.id}/fee/"
-        resp = self.client.patch(url, {"fee": "-10"}, format="json")
-        self.assertEqual(resp.status_code, 400)
-
-    def test_fee_action_clears_fee_on_null(self) -> None:
-        self.client.force_authenticate(user=self.manager)
-        url = f"/api/crew-assignments/{self.crew.id}/fee/"
-        resp = self.client.patch(url, {"fee": None}, format="json")
-        self.assertEqual(resp.status_code, 200)
-        self.crew.refresh_from_db()
-        self.assertIsNone(self.crew.fee)
-
-    def test_bulk_fee_skips_paid_and_declined(self) -> None:
-        from decimal import Decimal
-
-        from .models import Artist, Participation, VoiceType
-
-        paid_artist = Artist.objects.create(
-            first_name="Paid", last_name="Singer",
-            email="paid@test.pl", voice_type=VoiceType.SOPRANO,
+    def test_roster_payloads_carry_no_money_for_anybody(self) -> None:
+        price(self.project, participation=self.participation, amount="500")
+        price(self.project, crew=self.crew, amount="800")
+        urls = (
+            f"/api/participations/{self.participation.id}/",
+            f"/api/crew-assignments/{self.crew.id}/",
         )
-        paid_part = Participation.objects.create(
-            artist=paid_artist, project=self.project,
-            status=Participation.Status.CONFIRMED, fee=Decimal("800.00"),
-            is_paid=True,
-        )
-        declined_artist = Artist.objects.create(
-            first_name="Out", last_name="Singer",
-            email="out@test.pl", voice_type=VoiceType.BASS,
-        )
-        declined_part = Participation.objects.create(
-            artist=declined_artist, project=self.project,
-            status=Participation.Status.DECLINED,
-        )
-
-        self.client.force_authenticate(user=self.manager)
-        resp = self.client.patch(
-            "/api/participations/bulk-fee/",
-            {"project_id": str(self.project.id), "fee": "500"},
-            format="json",
-        )
-        self.assertEqual(resp.status_code, 200)
-
-        # The unpaid, confirmed singer is re-priced…
-        self.participation.refresh_from_db()
-        self.assertEqual(self.participation.fee, Decimal("500.00"))
-        # …but the already-settled fee and the declined artist are left untouched.
-        paid_part.refresh_from_db()
-        self.assertEqual(paid_part.fee, Decimal("800.00"))
-        declined_part.refresh_from_db()
-        self.assertIsNone(declined_part.fee)
-        self.assertEqual(resp.data["updated_count"], 1)
-
-    def test_crew_bulk_fee_skips_paid(self) -> None:
-        from decimal import Decimal
-
-        from .models import Collaborator, CrewAssignment
-
-        paid_collab = Collaborator.objects.create(
-            first_name="Paid", last_name="Tech", specialty=Collaborator.Specialty.LIGHT,
-        )
-        paid_crew = CrewAssignment.objects.create(
-            collaborator=paid_collab, project=self.project,
-            fee=Decimal("900.00"), is_paid=True,
-        )
-
-        self.client.force_authenticate(user=self.manager)
-        resp = self.client.patch(
-            "/api/crew-assignments/bulk-fee/",
-            {"project_id": str(self.project.id), "fee": "300"},
-            format="json",
-        )
-        self.assertEqual(resp.status_code, 200)
-
-        self.crew.refresh_from_db()
-        self.assertEqual(self.crew.fee, Decimal("300.00"))  # unpaid crew re-priced
-        paid_crew.refresh_from_db()
-        self.assertEqual(paid_crew.fee, Decimal("900.00"))  # settled fee untouched
-        self.assertEqual(resp.data["updated_count"], 1)
-
-    def test_crew_bulk_fee_forbidden_for_non_manager(self) -> None:
-        self.client.force_authenticate(user=self.artist_user)
-        resp = self.client.patch(
-            "/api/crew-assignments/bulk-fee/",
-            {"project_id": str(self.project.id), "fee": "300"},
-            format="json",
-        )
-        self.assertEqual(resp.status_code, 403)
-
-    def test_crew_fee_hidden_from_non_managers(self) -> None:
-        self.client.force_authenticate(user=self.artist_user)
-        resp = self.client.get(f"/api/crew-assignments/{self.crew.id}/")
-        self.assertEqual(resp.status_code, 200)
-        self.assertNotIn("fee", resp.data)
-        self.assertNotIn("is_paid", resp.data)
-        # Non-sensitive labels stay available.
-        self.assertEqual(resp.data["collaborator_name"], "Sound Engineer")
-
-    # ------------------------------------------------------------------ #
-    # Crew label payload                                                 #
-    # ------------------------------------------------------------------ #
+        for user in (self.manager, self.artist_user):
+            for url in urls:
+                with self.subTest(user=user.username, url=url):
+                    self.client.force_authenticate(user=user)
+                    resp = self.client.get(url)
+                    self.assertEqual(resp.status_code, 200)
+                    self.assertFalse(self.MONEY_KEYS & set(resp.data))
 
     def test_crew_serializer_exposes_name_and_specialty(self) -> None:
         self.client.force_authenticate(user=self.manager)
@@ -837,98 +694,6 @@ class ContractsSettlementTests(APITestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data["collaborator_name"], "Sound Engineer")
         self.assertEqual(resp.data["collaborator_specialty_display"], "Sound Engineering")
-
-    # ------------------------------------------------------------------ #
-    # Contract PDF                                                       #
-    # ------------------------------------------------------------------ #
-
-    @patch("roster.views.contract_filename", return_value="Umowa-UoD-1-2026-Ada_Lovelace.pdf")
-    @patch("roster.views.render_contract_pdf", return_value=b"%PDF-1.4 fake")
-    @patch("roster.views.live_contract_for")
-    def test_contract_pdf_streams_the_finance_contract_for_cast(self, lookup_mock, render_mock, _name) -> None:
-        self.client.force_authenticate(user=self.manager)
-        resp = self.client.get(f"/api/participations/{self.participation.id}/contract/")
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp["Content-Type"], "application/pdf")
-        self.assertIn("attachment", resp["Content-Disposition"])
-        self.assertEqual(b"".join(resp.streaming_content), b"%PDF-1.4 fake")  # type: ignore[attr-defined]
-        lookup_mock.assert_called_once_with(self.participation)
-        render_mock.assert_called_once_with(lookup_mock.return_value)
-
-    @patch("roster.views.contract_filename", return_value="Umowa-UZ-1-2026-Sound_Engineer.pdf")
-    @patch("roster.views.render_contract_pdf", return_value=b"%PDF-1.4 crew")
-    @patch("roster.views.live_contract_for")
-    def test_contract_pdf_streams_the_finance_contract_for_crew(self, lookup_mock, _render, _name) -> None:
-        self.client.force_authenticate(user=self.manager)
-        resp = self.client.get(f"/api/crew-assignments/{self.crew.id}/contract/")
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(b"".join(resp.streaming_content), b"%PDF-1.4 crew")  # type: ignore[attr-defined]
-        lookup_mock.assert_called_once_with(self.crew)
-
-    def test_contract_pdf_is_refused_until_the_ledger_issues_one(self) -> None:
-        """No contract row, no paper: the roster fee is never printed as one."""
-        self.client.force_authenticate(user=self.manager)
-        resp = self.client.get(f"/api/participations/{self.participation.id}/contract/")
-        self.assertEqual(resp.status_code, 409)
-        self.assertEqual(resp.data["error_code"], "contract_not_issued")
-
-    @patch("roster.views.render_contract_pdf", side_effect=DocumentRenderDependencyError("no native libs"))
-    @patch("roster.views.live_contract_for")
-    def test_contract_pdf_returns_503_when_renderer_missing(self, _lookup, _render) -> None:
-        self.client.force_authenticate(user=self.manager)
-        resp = self.client.get(f"/api/participations/{self.participation.id}/contract/")
-        self.assertEqual(resp.status_code, 503)
-
-    # ------------------------------------------------------------------ #
-    # Project ZIP (the finance task behind the legacy door)              #
-    # ------------------------------------------------------------------ #
-
-    @patch("roster.views.generate_contracts_zip_task")
-    def test_request_project_zip_enqueues_the_finance_task(self, task_mock) -> None:
-        task_mock.delay.return_value = MagicMock(id="task-123")
-        self.client.force_authenticate(user=self.manager)
-        resp = self.client.post(
-            "/api/participations/request_project_zip/",
-            {"project_id": str(self.project.id)}, format="json",
-        )
-        self.assertEqual(resp.status_code, 202)
-        self.assertEqual(resp.data["task_id"], "task-123")
-        task_mock.delay.assert_called_once_with(str(self.project.id))
-
-    def test_request_project_zip_requires_project_id(self) -> None:
-        self.client.force_authenticate(user=self.manager)
-        resp = self.client.post("/api/participations/request_project_zip/", {}, format="json")
-        self.assertEqual(resp.status_code, 400)
-
-    @patch("roster.views.AsyncResult")
-    def test_check_zip_status_points_at_the_manager_only_file(self, async_mock) -> None:
-        task_id = "5c1f0b7e-8a55-4c55-9a53-2f4f0f7f9d10"
-        async_mock.return_value = MagicMock(
-            state="SUCCESS", result={"project_id": str(self.project.id), "count": 2}
-        )
-        self.client.force_authenticate(user=self.manager)
-        resp = self.client.get(f"/api/participations/check_zip_status/?task_id={task_id}")
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.data["state"], "SUCCESS")
-        self.assertEqual(resp.data["file_url"], f"/api/finance/contracts/zip/{task_id}/file/")
-
-    @patch("roster.views.AsyncResult")
-    def test_check_zip_status_maps_no_contracts_to_failure(self, async_mock) -> None:
-        async_mock.return_value = MagicMock(
-            state="SUCCESS", result={"project_id": str(self.project.id), "error_code": "no_contracts"}
-        )
-        self.client.force_authenticate(user=self.manager)
-        resp = self.client.get(
-            "/api/participations/check_zip_status/?task_id=5c1f0b7e-8a55-4c55-9a53-2f4f0f7f9d10"
-        )
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.data["state"], "FAILURE")
-        self.assertIn("error", resp.data)
-
-    def test_check_zip_status_refuses_what_is_not_a_task_id(self) -> None:
-        self.client.force_authenticate(user=self.manager)
-        resp = self.client.get("/api/participations/check_zip_status/?task_id=abc")
-        self.assertEqual(resp.status_code, 400)
 
 
 class CollaboratorPiiExposureTests(APITestCase):
@@ -2788,13 +2553,13 @@ class ReinvitationTests(TestCase):
 
         with patch(self.SINGLE) as single, self.captureOnCommitCallbacks(execute=True):
             ParticipationService.update_by_manager(
-                participation, {"status": Participation.Status.CONFIRMED, "fee": 100}
+                participation, {"status": Participation.Status.CONFIRMED, "is_section_leader": True}
             )
 
         # Answering CONFIRMED *for* someone is bookkeeping, not a message to them.
         single.assert_not_called()
         participation.refresh_from_db()
-        self.assertEqual(participation.fee, 100)
+        self.assertTrue(participation.is_section_leader)
 
 
 class DraftProjectSilenceTests(TestCase):
@@ -6720,8 +6485,9 @@ class ArtistDuplicateMergeTests(APITestCase):
         )
         self.twin_part = Participation.objects.create(
             artist=self.twin, project=self.project,
-            status=Participation.Status.CONFIRMED, fee=Decimal("300.00"),
+            status=Participation.Status.CONFIRMED,
         )
+        self.twin_fee = price(self.project, participation=self.twin_part, amount="300")
         ProjectPieceCasting.objects.create(
             participation=self.twin_part, piece=self.piece,
             voice_line=self.voice_line, gives_pitch=True,
@@ -6776,21 +6542,38 @@ class ArtistDuplicateMergeTests(APITestCase):
         # The answer given on either row is the person's answer.
         self.assertEqual(surviving.status, Participation.Status.CONFIRMED)
         self.assertEqual(report.statuses_upgraded, 1)
-        # A fee the survivor never had is inherited rather than lost.
-        self.assertEqual(surviving.fee, Decimal("300.00"))
+        # A fee the survivor never had is inherited rather than lost, and the
+        # ledger logs which seat it moved from.
+        self.assertEqual(CostItem.objects.get(participation=surviving).pk, self.twin_fee.pk)
+        self.assertEqual(report.fee_conflicts, ())
+        self.assertTrue(
+            FinanceEvent.objects.filter(
+                subject_id=self.twin_fee.pk, action=FinanceAction.DETAILS_CHANGED,
+                before__participation=str(self.twin_part.pk),
+            ).exists()
+        )
         self.assertEqual(surviving.castings.count(), 1)
 
     def test_merge_reports_a_fee_it_refused_to_choose_between(self) -> None:
         """Money is not something a cleanup averages: the survivor keeps its own
         and the report says where to go and look."""
-        self.primary_part.fee = Decimal("250.00")
-        self.primary_part.save(update_fields=["fee"])
+        own = price(self.project, participation=self.primary_part, amount="250")
 
         report = ArtistHRService.merge_artists(self.primary, self.twin)
 
         self.assertEqual(report.fee_conflicts, ("Requiem",))
-        self.primary_part.refresh_from_db()
-        self.assertEqual(self.primary_part.fee, Decimal("250.00"))
+        self.assertEqual(CostItem.objects.get(participation=self.primary_part).pk, own.pk)
+        self.assertEqual(CostItem.objects.get(pk=self.twin_fee.pk).participation_id, self.twin_part.pk)
+
+    def test_merge_leaves_a_fee_in_a_closed_budget_where_it_is(self) -> None:
+        """A closed budget is settled history; the merge does not refuse, it
+        leaves the fee on the folded seat and says where it is."""
+        ProjectBudget.objects.filter(project=self.project).update(status=BudgetStatus.CLOSED)
+
+        report = ArtistHRService.merge_artists(self.primary, self.twin)
+
+        self.assertEqual(report.fee_conflicts, ("Requiem",))
+        self.assertEqual(CostItem.objects.get(pk=self.twin_fee.pk).participation_id, self.twin_part.pk)
 
     def test_merge_moves_a_project_the_survivor_was_not_in(self) -> None:
         other = Project.objects.create(

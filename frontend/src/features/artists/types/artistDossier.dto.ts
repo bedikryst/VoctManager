@@ -83,7 +83,10 @@ export interface ArtistDossierStats {
   /** (present + late) / (present + late + absent); null when nothing recorded. */
   attendance_rate: number | null;
   top_voice_lines: DossierVoiceLine[];
-  /** Settlement footprint (PLN). Declined invitations are excluded. */
+  /**
+   * Settlement footprint (PLN), read from the finance ledger. Paid counts every
+   * payment made; outstanding leaves out seats that were declined or removed.
+   */
   earnings_paid: number;
   earnings_outstanding: number;
   projects_paid: number;
