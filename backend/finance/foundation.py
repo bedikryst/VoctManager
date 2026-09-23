@@ -74,9 +74,18 @@ FOUNDATION = Foundation(
             name="Florentyn de Bazelaire de Boucheporn",
             function="Prezes Zarządu",
             aliases=("Florent de Bazelaire",),
+            user_email="florentyn.de.bazelaire@gmail.com",
         ),
-        Representative(name="Anna Marcisz", function="Wiceprezes Zarządu"),
-        Representative(name="Krystian Bugalski", function="Wiceprezes Zarządu"),
+        Representative(
+            name="Anna Marcisz",
+            function="Wiceprezes Zarządu",
+            user_email="anna.kaczka92@gmail.com",
+        ),
+        Representative(
+            name="Krystian Bugalski",
+            function="Wiceprezes Zarządu",
+            user_email="krystbugalski@gmail.com",
+        ),
     ),
     privacy_contact="rodo@voctfoundation.com",
 )
