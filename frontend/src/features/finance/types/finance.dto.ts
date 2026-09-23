@@ -455,6 +455,12 @@ export interface ProjectBudgetDTO {
   readonly fundings: readonly ProjectFundingDTO[];
 }
 
+/** Who a project report is for: a patron (no person, no single fee) or the board. */
+export type ReportAudience = "patron" | "board";
+
+/** The kosztorys as planned, or as it actually came out. */
+export type KosztorysVariant = "plan" | "actual";
+
 export type HistorySubjectType =
   | "cost_item"
   | "contract"

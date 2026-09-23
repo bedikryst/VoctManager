@@ -1,0 +1,15 @@
+{% comment %}
+    The foundation, and the day the figures were read. A report is a snapshot
+    of a budget that may still move: `is_draft` says so in the masthead, where
+    it cannot be cropped off a page that is passed on.
+{% endcomment %}
+<div class="masthead">
+    <div>
+        <div class="masthead-name">{{ foundation.legal_name }}</div>
+        <div class="masthead-registry">KRS {{ foundation.krs }} · NIP {{ foundation.nip }} · REGON {{ foundation.regon }}</div>
+    </div>
+    <div class="masthead-meta">
+        {% if is_draft %}<span class="masthead-draft">wersja robocza</span><br>{% endif %}
+        stan na {{ generated_on|date:"d.m.Y" }}
+    </div>
+</div>

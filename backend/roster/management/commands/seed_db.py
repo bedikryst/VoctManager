@@ -33,7 +33,8 @@ What it seeds, across every bounded context that exists today:
   • finance    — a kosztorys per project, the cast's and the crew's fees
                  priced through the ledger, two expenses, all paid on
                  completed concerts; a season grant shared by the concerts,
-                 covering part of each plan and charged the venue
+                 covering part of each plan and charged the venue; the
+                 patron report's opening sentences
   • documents  — Knowledge-Base categories + role-gated documents
   • messaging  — 1:1 artist↔management threads (assigned, unassigned intake,
                  project-anchored, archived) and per-project group channels
@@ -1664,6 +1665,11 @@ class Command(BaseCommand):
         if items:
             LedgerService.apply_fee_batch(project, FeeBatchDTO(items=tuple(items)), actor=None)
         self._seed_funding(project, lines, expenses[0])
+        PlanService.set_patron_summary(
+            project,
+            "Wieczór polifonii sakralnej w wykonaniu chóru fundacji, z programem od renesansu po "
+            "współczesność. Wstęp był wolny.",
+        )
         if not is_done:
             return
         ids = tuple(

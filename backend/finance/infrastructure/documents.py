@@ -123,7 +123,7 @@ def _place(project: Project) -> str:
     return ", ".join(kept)
 
 
-def _concert(project: Project) -> Concert:
+def concert_facts(project: Project) -> Concert:
     return Concert(
         title=project.title,
         day=local_date(project.date_time, project.timezone),
@@ -192,7 +192,7 @@ def _document_context(contract: Contract) -> dict[str, Any]:
         "amount": format_amount_pl(contract.amount),
         "amount_words": amount_to_words_pl(contract.amount),
         "subject": _subject(item),
-        "concert": _concert(item.budget.project),
+        "concert": concert_facts(item.budget.project),
     }
 
 

@@ -4,8 +4,10 @@
              register numbers, who may sign for it and where a person writes
              about their personal data. Code rather than a model: it changes
              when the KRS entry changes, and that change deserves a commit.
-             Every finance PDF reads it through `foundation_context`, the way
-             fonts arrive through `_brand_font_context()`.
+             Every finance PDF reads it through `foundation_context` (a paper
+             nobody signs for the foundation, through
+             `report_foundation_context`), the way fonts arrive through
+             `_brand_font_context()`.
 @architecture Enterprise SaaS 2026
 @module finance/foundation
 """
@@ -128,14 +130,25 @@ def signatory_for(payee_name: str, payee_email: str | None = None) -> Representa
     raise FoundationIdentityError("Every representative of the foundation is this document's payee.")
 
 
+def _checked_foundation() -> Foundation:
+    """Refuses a record without a GDPR contact, because the clause a contract
+    carries would name nobody to write to, and a report naming people is
+    personal data under the same controller."""
+    if not FOUNDATION.privacy_contact.strip():
+        raise FoundationIdentityError("The foundation record has no privacy contact; no document may be rendered.")
+    return FOUNDATION
+
+
 def foundation_context(*, payee_name: str, payee_email: str | None = None) -> dict[str, object]:
     """The parties' side of every finance document: the foundation and who signs
-    for it. Refuses a record without a GDPR contact, because the clause every
-    document carries would name nobody to write to."""
-    foundation = FOUNDATION
-    if not foundation.privacy_contact.strip():
-        raise FoundationIdentityError("The foundation record has no privacy contact; no document may be rendered.")
+    for it."""
     return {
-        "foundation": foundation,
+        "foundation": _checked_foundation(),
         "representative": signatory_for(payee_name, payee_email),
     }
+
+
+def report_foundation_context() -> dict[str, object]:
+    """The foundation on a paper nobody signs for it: a report, a sheet of
+    document notes."""
+    return {"foundation": _checked_foundation()}

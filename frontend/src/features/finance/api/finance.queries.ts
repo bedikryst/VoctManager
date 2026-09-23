@@ -342,6 +342,11 @@ export const useReopenBudget = (projectId: string) =>
 export const useCloseBudget = (projectId: string) =>
   useBudgetWrite<void>(projectId, () => FinanceService.closeBudget(projectId));
 
+export const useSavePatronSummary = (projectId: string) =>
+  useBudgetWrite(projectId, (text: string) =>
+    FinanceService.savePatronSummary(projectId, text),
+  );
+
 // ── The contracts ZIP ─────────────────────────────────────────────────────
 
 export type ZipExportState = "idle" | "working";

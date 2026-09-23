@@ -54,6 +54,7 @@ const FINANCE_ERROR_COPY: Record<string, string> = {
   allocation_kind_mismatch: "Pieniądze obciąża się na źródło pieniędzy, a pracę wolontariusza — na wkład osobowy.",
   allocation_not_counted: "Ten koszt się nie liczy (np. osoba odmówiła udziału), więc nie obciąża się nim źródeł. Można go tylko z nich zdjąć.",
   charge_refused: "Nie każdy z tych kosztów można obciążyć na to źródło. Nic nie zostało zmienione.",
+  report_source_invalid: "Tego źródła nie ma już w projekcie albo nie wnosi pieniędzy. Odśwież stronę i wybierz źródło jeszcze raz.",
 };
 
 /** The manager's sentence for a finance refusal code, or null if unknown. */

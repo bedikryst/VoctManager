@@ -1,7 +1,7 @@
 """
 The office's ledger CSV: the Polish-Excel shape, only the fees the budget
-counts, the date window across projects, and a typed name that cannot run as
-a formula.
+counts, the sources each cost is charged to, the date window across projects,
+and a typed name that cannot run as a formula.
 """
 import csv
 import io
@@ -13,8 +13,10 @@ from rest_framework.test import APITestCase
 from core.constants import AppRole
 from roster.models import Participation
 
+from ..dtos import AllocationSetDTO, FundingSourceDTO, ProjectFundingDTO
 from ..rules import local_date
 from ..services.contracts import ContractService
+from ..services.funding import FundingService
 from .factories import make_crew, make_project, make_seat, make_user, price
 
 
@@ -51,11 +53,11 @@ class LedgerCsvTests(APITestCase):
         anna = by_payee["Anna Nowak"]
         self.assertEqual(anna[5], "Umowa o dzieło")
         self.assertEqual(anna[6], contract.number)
-        self.assertEqual(anna[7], "Wystawiona")
-        self.assertEqual(anna[9], "1250,50")
+        self.assertEqual(anna[8], "Wystawiona")
+        self.assertEqual(anna[10], "1250,50")
         self.assertEqual(anna[1], local_date(project.date_time, project.timezone).strftime("%d.%m.%Y"))
         jan = by_payee["Jan Kowalski"]
-        self.assertEqual((jan[5], jan[10], jan[11]), ("Umowa zlecenia", "80,25", "480,25"))
+        self.assertEqual((jan[5], jan[11], jan[12]), ("Umowa zlecenia", "80,25", "480,25"))
 
     def test_the_range_export_crosses_projects_and_keeps_to_the_window(self) -> None:
         inside = make_project(days=3, title="W środku")
@@ -86,6 +88,29 @@ class LedgerCsvTests(APITestCase):
         _, row = _rows(self.client.get(f"/api/finance/projects/{project.pk}/export/ledger.csv"))
 
         self.assertEqual(row[2], "'=HYPERLINK(1)")
+
+    def test_each_cost_names_the_sources_it_is_charged_to(self) -> None:
+        project = make_project()
+        item = price(project, participation=make_seat(project), amount="1000")
+        grant = FundingService.create_source(
+            FundingSourceDTO.model_validate({"kind": "PUBLIC_GRANT", "name": "Mecenat"}), actor=None,
+        )
+        tickets = FundingService.create_source(
+            FundingSourceDTO.model_validate({"kind": "TICKETS", "name": "Bilety"}), actor=None,
+        )
+        fundings = [
+            FundingService.add_funding(project, ProjectFundingDTO(source=source.pk), actor=None)
+            for source in (grant, tickets)
+        ]
+        FundingService.set_cost_allocations(item, AllocationSetDTO.model_validate({"allocations": [
+            {"funding": str(fundings[0].pk), "amount": "600"},
+            {"funding": str(fundings[1].pk), "amount": "150.5"},
+        ]}), actor=None)
+
+        header, row = _rows(self.client.get(f"/api/finance/projects/{project.pk}/export/ledger.csv"))
+
+        self.assertEqual(header[-2:], ["Źródła finansowania", "Kwota ze źródeł"])
+        self.assertEqual(row[-2:], ["Mecenat: 600,00 / Bilety: 150,50", "750,50"])
 
     def test_a_singer_cannot_export(self) -> None:
         self.client.force_authenticate(make_user(role=AppRole.ARTIST))

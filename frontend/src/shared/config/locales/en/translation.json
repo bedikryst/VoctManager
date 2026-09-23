@@ -1757,7 +1757,8 @@
       "allocation_exceeds_amount": "The sources would cover more than the whole amount. Reduce what they are charged.",
       "allocation_kind_mismatch": "Money is charged to a source of money; a volunteer's work to a volunteer-work source.",
       "allocation_not_counted": "This cost does not count (the person declined, for example), so no source is charged with it. It can only be taken off them.",
-      "charge_refused": "Not every one of these costs can be charged to this source. Nothing was changed."
+      "charge_refused": "Not every one of these costs can be charged to this source. Nothing was changed.",
+      "report_source_invalid": "This source is no longer on the project, or it brings no money. Refresh the page and choose the source again."
     },
     "offline": {
       "act": "You are offline. Settlements are never saved offline — reconnect to do this.",
@@ -1953,11 +1954,43 @@
       "work_empty": "Nothing is waiting to be settled.",
       "more_names": "and {{count}} more",
       "documents": "For the office",
-      "csv_hint": "Every fee counted in the cost: payee, form, contract number, amounts and dates. Opens in Excel.",
+      "csv_hint": "Every cost — fees and expenses: payee, form, contract or document number, amounts, dates and funding sources. Opens in Excel.",
       "csv": "Settlement (CSV)",
       "zip_hint": "Issued contracts with annexes, one PDF per person: {{count}}.",
       "zip": "Contracts (ZIP)",
       "zip_empty": "The contracts package appears once you issue the first contract under Fees."
+    },
+    "reports": {
+      "title": "Reports",
+      "board": "For the board",
+      "board_hint": "The whole budget with names: plan against actual, funding, what is left to do and to pay, every fee and every expense.",
+      "board_action": "Board report (PDF)",
+      "patron": "For a patron",
+      "patron_hint": "What the concert cost, what the money paid for and where it came from — no names and no single fee. A figure made up of fewer than three people's fees is merged with another, so nobody's fee can be read from it.",
+      "summary_label": "A few sentences about the concert",
+      "summary_placeholder": "What was performed, where, for how many listeners — the report opens with these sentences.",
+      "summary_save": "Save the summary",
+      "summary_saved": "Summary for patrons saved.",
+      "summary_error": "The summary could not be saved.",
+      "highlight_label": "Show what a source covered",
+      "highlight_none": "No highlight",
+      "patron_action": "Patron report (PDF)",
+      "unsaved": "The report prints the saved summary — save your changes before downloading it.",
+      "draft": "Until the budget is closed, the report is marked as a draft (“wersja robocza”)."
+    },
+    "grantor": {
+      "title": "For the grantor",
+      "source_label": "Source",
+      "source_all": "All sources",
+      "source_hint_one": "The grant column (“z dotacji”) and the document notes cover this source only.",
+      "source_hint_all": "The grant column (“z dotacji”) gathers public grants, and the notes cover every source except own funds.",
+      "kosztorys_hint": "The cost plan in the grant-application layout: lines, units, value and how it splits — grant, other funds, volunteer work, contributions in kind. It is the sheet you type the application form from.",
+      "kosztorys_plan": "Cost plan — planned (CSV)",
+      "kosztorys_actual": "Cost plan — actual (CSV)",
+      "kosztorys_empty": "The cost plan for the application appears once you add lines on the Cost plan tab.",
+      "notes_hint": "The note for the back of every document charged to a source, in the source's own formula — to copy by hand, or cut out and paste.",
+      "notes_action": "Document notes (PDF)",
+      "notes_empty": "The notes appear once you charge costs to a source on the Funding tab."
     },
     "zip": {
       "working": "Packing contracts…",

@@ -6,7 +6,8 @@
              PLANNING, APPROVED and CLOSED. The plan is editable while it is
              being planned; an approved plan is changed only after the board
              reopens it with a reason ("korekta kosztorysu"), and a closed
-             budget changes not at all.
+             budget changes not at all. Also the patron report's opening
+             sentences, which are words about the concert rather than money.
 @architecture Enterprise SaaS 2026
 @module finance/services/plan
 """
@@ -241,4 +242,15 @@ class PlanService:
                 before={"status": BudgetStatus.APPROVED},
                 after={"status": budget.status, "committed": summary.committed, "paid": summary.paid},
             )
+            return budget
+
+    @staticmethod
+    def set_patron_summary(project: Project, text: str) -> ProjectBudget:
+        """The sentences the patron report opens with. They describe the
+        concert, not its money, so they are written in any state — a closed
+        budget is exactly when the final report goes out — and not logged."""
+        with transaction.atomic():
+            budget = BudgetService.lock(project)
+            budget.patron_summary = text
+            budget.save(update_fields=["patron_summary", "updated_at"])
             return budget

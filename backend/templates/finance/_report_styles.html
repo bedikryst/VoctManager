@@ -1,0 +1,130 @@
+{% comment %}
+    What the reports and the document notes add to the finance documents'
+    shared styles (`_styles.html`, included first). Tables of figures here are
+    read, not filled in: rows are compact, figures sit right in tabular digits
+    because they align down a column, and a total is set off by the one
+    hairline in the label ink. Crimson (`--alarm`) marks a stated problem in
+    the board report and nothing else; the word beside it carries the meaning
+    on a mono laser print.
+{% endcomment %}
+:root { --alarm: #8f3f3a; }
+
+.masthead-draft {
+    font-size: 7.5pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.1pt;
+    color: var(--gold-ink);
+}
+
+.report-eyebrow {
+    font-size: 7.5pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.1pt;
+    color: var(--ink-4);
+    margin: 0 0 4px 0;
+}
+.report-title {
+    font-family: {{ font_serif }};
+    font-weight: 600;
+    font-size: 22pt;
+    line-height: 1.15;
+    color: var(--ink-1);
+    margin: 0 0 4px 0;
+}
+.report-when { color: var(--ink-3); margin-bottom: 18px; }
+
+/* One display figure: the concert's cost. Serif, proportional digits. */
+.headline { margin: 18px 0 20px 0; }
+.headline-value {
+    font-family: {{ font_serif }};
+    font-weight: 600;
+    font-size: 28pt;
+    line-height: 1.05;
+    color: var(--ink-1);
+}
+.headline-unit { font-size: 15pt; color: var(--ink-3); }
+
+.lede { font-size: 10.5pt; line-height: 1.6; color: var(--ink-1); margin-bottom: 14px; }
+.muted { color: var(--ink-3); }
+
+table.figures { width: 100%; border-collapse: collapse; margin: 4px 0 10px 0; }
+table.figures thead { display: table-header-group; }
+table.figures tr { break-inside: avoid; }
+table.figures th {
+    font-size: 7pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8pt;
+    color: var(--ink-4);
+    text-align: left;
+    border-bottom: 0.5pt solid var(--ink-3);
+    padding: 3px 5px;
+    vertical-align: bottom;
+}
+table.figures td {
+    border-bottom: 0.5pt solid var(--rule);
+    padding: 4px 5px;
+    vertical-align: top;
+}
+table.figures .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+table.figures tr.total td {
+    border-top: 0.5pt solid var(--ink-3);
+    border-bottom: none;
+    font-weight: 600;
+    color: var(--ink-1);
+}
+table.figures tr.group td {
+    font-size: 7pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8pt;
+    color: var(--ink-4);
+    padding-top: 10px;
+}
+.sub { display: block; font-size: 8pt; color: var(--ink-3); }
+
+/* A share of a whole: the bar is gold structure, the figure beside it states
+   the same thing in digits, so a grey print loses nothing. The columns right
+   of the label have fixed widths, so every bar on the page starts and ends at
+   the same place whatever the label — the highlight's table is indented and
+   still lines up, because the page's tables share their right edge. */
+table.shares { table-layout: fixed; }
+table.shares td:nth-child(2) { width: 58mm; }
+table.shares td:nth-child(3) { width: 14mm; }
+table.shares td:nth-child(4) { width: 30mm; }
+.bar-track { height: 5px; background: var(--rule); margin-top: 5px; }
+.bar-fill { height: 5px; background: var(--gold); }
+
+/* The board report's wide tables: fixed widths, set on the head row. */
+table.fixed { table-layout: fixed; }
+
+.highlight {
+    border-left: 1.2pt solid var(--gold);
+    padding: 2px 0 2px 12px;
+    margin: 6px 0 18px 0;
+}
+.highlight-lede { color: var(--ink-1); margin-bottom: 6px; }
+
+.alarm { color: var(--alarm); font-weight: 600; }
+.severity {
+    font-size: 7pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8pt;
+    white-space: nowrap;
+}
+
+.figure-grid { width: 100%; border-collapse: collapse; margin: 6px 0 8px 0; }
+.figure-grid td { padding: 0 14px 8px 0; vertical-align: top; }
+.figure-label {
+    font-size: 7pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8pt;
+    color: var(--ink-4);
+}
+.figure-value { font-size: 12pt; font-weight: 600; color: var(--ink-1); white-space: nowrap; }
+
+.closing { margin-top: 22px; padding-top: 8px; border-top: 0.5pt solid var(--rule); }

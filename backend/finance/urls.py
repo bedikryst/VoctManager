@@ -20,6 +20,7 @@ from .views import (
     ContractsZipStatusView,
     CostAllocationsView,
     CostItemDetailView,
+    DocumentNotesPdfView,
     ExpenseCollectionView,
     ExpenseDetailView,
     FinanceOverviewView,
@@ -29,6 +30,8 @@ from .views import (
     FundingSourceCollectionView,
     FundingSourceDetailView,
     IssueContractView,
+    KosztorysActualCsvView,
+    KosztorysCsvView,
     LedgerCsvView,
     LineAllocationsView,
     LineChargeView,
@@ -42,6 +45,7 @@ from .views import (
     ProjectContractsZipView,
     ProjectFeesView,
     ProjectLedgerCsvView,
+    ReportPdfView,
     SignContractView,
     UnpayView,
 )
@@ -53,6 +57,18 @@ urlpatterns = [
     path('export/ledger.csv', LedgerCsvView.as_view(), name='ledger-csv'),
     path(
         'projects/<uuid:project_id>/export/ledger.csv', ProjectLedgerCsvView.as_view(), name='project-ledger-csv',
+    ),
+    path(
+        'projects/<uuid:project_id>/export/kosztorys-plan.csv',
+        KosztorysCsvView.as_view(), name='project-kosztorys-plan-csv',
+    ),
+    path(
+        'projects/<uuid:project_id>/export/kosztorys-actual.csv',
+        KosztorysActualCsvView.as_view(), name='project-kosztorys-actual-csv',
+    ),
+    path('projects/<uuid:project_id>/report.pdf', ReportPdfView.as_view(), name='project-report'),
+    path(
+        'projects/<uuid:project_id>/document-notes.pdf', DocumentNotesPdfView.as_view(), name='project-document-notes',
     ),
     path('projects/<uuid:project_id>/budget/', ProjectBudgetView.as_view(), name='project-budget'),
     path('projects/<uuid:project_id>/budget/approve/', BudgetApproveView.as_view(), name='project-budget-approve'),

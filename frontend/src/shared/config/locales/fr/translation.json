@@ -1766,7 +1766,8 @@
       "allocation_exceeds_amount": "Les sources couvriraient plus que le montant entier. Réduisez leur imputation.",
       "allocation_kind_mismatch": "L'argent s'impute à une source d'argent ; le travail bénévole au bénévolat valorisé.",
       "allocation_not_counted": "Ce coût ne compte pas (la personne s'est désistée, par exemple) : on ne l'impute à aucune source. On peut seulement l'en retirer.",
-      "charge_refused": "Tous ces coûts ne peuvent pas être imputés à cette source. Rien n'a été modifié."
+      "charge_refused": "Tous ces coûts ne peuvent pas être imputés à cette source. Rien n'a été modifié.",
+      "report_source_invalid": "Cette source n'est plus sur le projet, ou elle n'apporte pas d'argent. Actualisez la page et choisissez de nouveau la source."
     },
     "offline": {
       "act": "Vous êtes hors ligne. Les règlements ne s'enregistrent jamais hors ligne — reconnectez-vous pour le faire.",
@@ -1962,11 +1963,43 @@
       "work_empty": "Rien n'attend d'être réglé.",
       "more_names": "et {{count}} de plus",
       "documents": "Pour le bureau",
-      "csv_hint": "Chaque cachet compté dans le coût : bénéficiaire, forme, numéro de contrat, montants et dates. S'ouvre dans Excel.",
+      "csv_hint": "Chaque coût — cachets et dépenses : bénéficiaire, forme, numéro de contrat ou de pièce, montants, dates et sources de financement. S'ouvre dans Excel.",
       "csv": "Règlement (CSV)",
       "zip_hint": "Contrats émis avec leurs annexes, un PDF par personne : {{count}}.",
       "zip": "Contrats (ZIP)",
       "zip_empty": "Le dossier des contrats apparaîtra dès le premier contrat émis dans Cachets."
+    },
+    "reports": {
+      "title": "Rapports",
+      "board": "Pour le conseil",
+      "board_hint": "Tout le budget, avec les noms : prévu et réalisé, financement, ce qui reste à faire et à payer, chaque cachet et chaque dépense.",
+      "board_action": "Rapport pour le conseil (PDF)",
+      "patron": "Pour un mécène",
+      "patron_hint": "Ce qu'a coûté le concert, à quoi l'argent a servi et d'où il venait — sans noms ni cachet individuel. Un montant formé des cachets de moins de trois personnes est regroupé avec un autre, pour qu'on ne puisse y lire le cachet de personne.",
+      "summary_label": "Quelques phrases sur le concert",
+      "summary_placeholder": "Ce qui a été joué, où, devant combien d'auditeurs — le rapport s'ouvre sur ces phrases.",
+      "summary_save": "Enregistrer le texte",
+      "summary_saved": "Texte pour les mécènes enregistré.",
+      "summary_error": "Le texte n'a pas pu être enregistré.",
+      "highlight_label": "Montrer ce qu'une source a couvert",
+      "highlight_none": "Sans mise en avant",
+      "patron_action": "Rapport pour le mécène (PDF)",
+      "unsaved": "Le rapport imprime le texte enregistré — enregistrez vos modifications avant de le télécharger.",
+      "draft": "Tant que le budget n'est pas clôturé, le rapport porte la mention « version provisoire » (« wersja robocza »)."
+    },
+    "grantor": {
+      "title": "Pour le financeur",
+      "source_label": "Source",
+      "source_all": "Toutes les sources",
+      "source_hint_one": "La colonne subvention (« z dotacji ») et les annotations des pièces ne concernent que cette source.",
+      "source_hint_all": "La colonne subvention (« z dotacji ») rassemble les subventions publiques, et les annotations couvrent toutes les sources sauf les fonds propres.",
+      "kosztorys_hint": "Le budget prévisionnel au format de la demande de subvention : postes, unités, valeur et sa répartition — subvention, autres fonds, bénévolat, apports en nature. C'est la feuille d'après laquelle on remplit le formulaire.",
+      "kosztorys_plan": "Budget — prévu (CSV)",
+      "kosztorys_actual": "Budget — réalisé (CSV)",
+      "kosztorys_empty": "Le budget pour la demande apparaîtra dès que vous ajouterez des postes dans l'onglet Budget prévisionnel.",
+      "notes_hint": "L'annotation à porter au dos de chaque pièce comptable imputée à une source, selon la formule de la source — à recopier, ou à découper et coller.",
+      "notes_action": "Annotations des pièces (PDF)",
+      "notes_empty": "Les annotations apparaîtront dès que vous imputerez des coûts à une source dans l'onglet Financement."
     },
     "zip": {
       "working": "Regroupement des contrats…",

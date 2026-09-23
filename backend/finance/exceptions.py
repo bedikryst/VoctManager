@@ -219,3 +219,8 @@ class AllocationKindMismatch(FinanceError):
 class AllocationNotCounted(FinanceError):
     code = "allocation_not_counted"
     default_message = "Only a counted cost can be charged to a source."
+
+
+class ReportSourceInvalid(FinanceError):
+    code = "report_source_invalid"
+    default_message = "A report or export can name only a source of money on this project."
