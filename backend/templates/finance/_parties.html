@@ -1,0 +1,15 @@
+{% comment %}
+    The parties block shared by the contracts. Included with:
+      foundation_role  — how the foundation is called ("Zamawiającym")
+      payee_role       — how the payee is called ("Wykonawcą")
+      with_payment     — PESEL and bank account lines; a volunteer has neither
+    The representative's name stands in the nominative after a colon, and the
+    payee's in bold at the head of a clause: neither sits in a slot Polish
+    grammar would inflect. PESEL, address and account are written by hand —
+    the app never asks for them.
+{% endcomment %}
+<div class="parties">
+    <p><strong>{{ foundation.legal_name }}</strong> z siedzibą w {{ foundation.seat_locative }}, {{ foundation.address }}, wpisana do Krajowego Rejestru Sądowego pod numerem KRS {{ foundation.krs }}, NIP {{ foundation.nip }}, REGON {{ foundation.regon }}, reprezentowana przez: {{ representative.name }} – {{ representative.function }}, zwana dalej „{{ foundation_role }}”,</p>
+    <p class="parties-and">a</p>
+    <p><strong>{{ payee_name }}</strong>,{% if with_payment %} PESEL <span class="blank"></span>,{% endif %} zamieszkały/-a: <span class="blank blank--l"></span>{% if with_payment %}, numer rachunku bankowego: <span class="blank blank--l"></span>{% endif %}, zwany/-a dalej „{{ payee_role }}”.</p>
+</div>

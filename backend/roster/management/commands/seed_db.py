@@ -100,6 +100,9 @@ from core.models import UserProfile
 # Documents (Knowledge Base / Chorister Hub)
 from documents.models import Document, DocumentCategory, DocumentIconKey
 
+# Finance (cleared only: the ledger PROTECTs the seats and projects below it)
+from finance.models import Contract, ContractSequence, CostItem, FinanceEvent, ProjectBudget
+
 # Logistics
 from logistics.models import Location, LocationCategory
 
@@ -888,6 +891,7 @@ class Command(BaseCommand):
             ThreadReadState, Message, Thread,
             Donation, PatronLead,
             Document, DocumentCategory,
+            FinanceEvent, Contract, ContractSequence, CostItem, ProjectBudget,
             Attendance, PieceReadiness, ProjectPieceCasting, CrewAssignment,
             ProgramItem, Rehearsal, Participation, ScorePackage, Project,
             Collaborator,

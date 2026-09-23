@@ -14,6 +14,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import FeedbackReport, Note, UserProfile
+from .permissions import user_is_board
 
 User = get_user_model()
 
@@ -39,6 +40,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
     # behind the URL. One predicate, asked once, answered the same on both
     # sides.
     can_edit_site_copy = serializers.SerializerMethodField()
+
+    # Effective, like the flag above: whether this account may take the board's
+    # finance acts (approve, reopen, close, revert a payment, annul a contract),
+    # so the panel can say why a control is absent instead of failing with 403.
+    can_approve_finance = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
@@ -71,6 +77,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
             # payload (`copydesk.CopyScopeVisit`) — a profile cannot carry them.
             'can_edit_site_copy',
 
+            # Finance: the board's acts (`core.permissions.user_is_board`).
+            'can_approve_finance',
+
             # Integrations
             'calendar_token'
         )
@@ -98,6 +107,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         from copydesk.permissions import user_can_edit_site_copy
 
         return user_can_edit_site_copy(obj.user)
+
+    def get_can_approve_finance(self, obj: UserProfile) -> bool:
+        return user_is_board(obj.user)
 
     def get_avatar_url(self, obj: UserProfile) -> str | None:
         return self._absolute_media_url(obj.avatar)

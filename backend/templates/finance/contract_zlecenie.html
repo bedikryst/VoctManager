@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Umowa zlecenia nr {{ number }} — {{ payee_name }}</title>
+    {% comment %}
+        Umowa zlecenia: a service performed with due care for a concert —
+        sound, light, logistics. Built from document 2 of
+        docs/specs/project-finance-contract-drafts-2026-09.md — a correction
+        lands there first. Annexes: 1 the contractor's declaration for ZUS and
+        PIT, 2 the hours confirmation the minimum hourly rate is checked
+        against, 3 the GDPR clause.
+    {% endcomment %}
+    <style>{% include "finance/_styles.html" with footer_label="Umowa zlecenia" %}</style>
+</head>
+<body>
+    {% include "finance/_masthead.html" %}
+
+    <div class="title">UMOWA ZLECENIA <span class="title-number">nr {{ number }}</span></div>
+    <p class="concluded">zawarta w {{ foundation.seat_locative }} w dniu <span class="blank"></span> r.</p>
+
+    {% include "finance/_parties.html" with foundation_role="Zleceniodawcą" payee_role="Zleceniobiorcą" with_payment=True %}
+
+    <h2>§ 1. Przedmiot umowy</h2>
+    <ol>
+        <li>Zleceniodawca zleca, a Zleceniobiorca przyjmuje do wykonania czynności: <strong>{% if subject.role %}{{ subject.role }}{% else %}<span class="blank"></span>{% endif %}</strong> (dalej: „Zlecenie”), w związku z koncertem „{{ concert.title }}”, który odbędzie się w dniu {{ concert.day|date:"d.m.Y" }} r. w miejscu: {% if concert.place %}{{ concert.place }}{% else %}<span class="blank blank--l"></span>{% endif %} (dalej: „Koncert”).</li>
+        <li>Zlecenie obejmuje czynności przygotowawcze, obsługę prób technicznych i Koncertu oraz czynności po jego zakończeniu, w terminach uzgodnionych przez Strony.</li>
+        <li>Zleceniobiorca wykona Zlecenie z należytą starannością i osobiście. Powierzenie wykonania osobie trzeciej wymaga zgody Zleceniodawcy, wyrażonej co najmniej w formie dokumentowej.</li>
+        <li>Zleceniodawca przekaże Zleceniobiorcy informacje niezbędne do wykonania Zlecenia, w tym harmonogram dnia Koncertu.</li>
+    </ol>
+
+    <h2>§ 2. Wynagrodzenie</h2>
+    <ol>
+        <li>Za wykonanie Zlecenia Zleceniobiorcy przysługuje wynagrodzenie w łącznej kwocie <strong>{{ amount }} zł brutto</strong> (słownie: {{ amount_words }}).</li>
+        <li>Strony oświadczają, że wynagrodzenie, przy przewidywanej liczbie godzin wykonywania Zlecenia, nie jest niższe od minimalnej stawki godzinowej ustalonej na podstawie ustawy z dnia 10 października 2002 r. o minimalnym wynagrodzeniu za pracę.</li>
+        <li>Zleceniobiorca potwierdza liczbę godzin wykonywania Zlecenia w formie pisemnej lub dokumentowej, według wzoru stanowiącego Załącznik nr 2, najpóźniej w dniu przedstawienia rachunku.</li>
+        <li>Wynagrodzenie zostanie wypłacone przelewem na rachunek bankowy Zleceniobiorcy wskazany w umowie, w terminie 14 dni od dnia wykonania Zlecenia, na podstawie rachunku oraz potwierdzenia liczby godzin.</li>
+        <li>Zleceniodawca, jako płatnik, pobierze od wynagrodzenia zaliczkę na podatek dochodowy oraz obliczy i odprowadzi składki, jeżeli obowiązek ich opłacania powstanie. Podstawą jest oświadczenie Zleceniobiorcy stanowiące Załącznik nr 1.</li>
+    </ol>
+
+    <h2>§ 3. Rezultaty i wizerunek</h2>
+    <ol>
+        <li>Materiały i utrwalenia powstałe przy wykonywaniu Zlecenia, w szczególności nagrania i zapisy konfiguracji, przysługują Zleceniodawcy. W zakresie, w jakim powstanie utwór lub przedmiot praw pokrewnych, Zleceniobiorca przenosi na Zleceniodawcę, w ramach wynagrodzenia określonego w § 2, prawa do nich na polach eksploatacji obejmujących utrwalanie, zwielokrotnianie każdą techniką, wprowadzanie do obrotu, nadawanie, publiczne odtwarzanie oraz publiczne udostępnianie w sieci.</li>
+        <li>Zleceniobiorca zezwala Zleceniodawcy na nieodpłatne rozpowszechnianie swojego wizerunku, utrwalonego w związku z Koncertem, w materiałach dokumentujących i promujących działalność statutową Zleceniodawcy.</li>
+    </ol>
+
+    <h2>§ 4. Rozwiązanie umowy</h2>
+    <p>Każda ze Stron może wypowiedzieć umowę na zasadach określonych w art. 746 Kodeksu cywilnego.</p>
+
+    <h2>§ 5. Dane osobowe</h2>
+    <p>Zasady przetwarzania danych osobowych Zleceniobiorcy określa klauzula informacyjna stanowiąca Załącznik nr 3.</p>
+
+    <h2>§ 6. Postanowienia końcowe</h2>
+    <ol>
+        <li>Zmiany umowy wymagają formy pisemnej pod rygorem nieważności.</li>
+        <li>W sprawach nieuregulowanych stosuje się przepisy Kodeksu cywilnego.</li>
+        <li>Spory wynikające z umowy rozstrzyga sąd właściwy dla siedziby Zleceniodawcy.</li>
+        <li>Umowę sporządzono w dwóch jednobrzmiących egzemplarzach, po jednym dla każdej ze Stron.</li>
+    </ol>
+
+    {% include "finance/_signatures.html" with left="Zleceniodawca" right="Zleceniobiorca" %}
+
+    <section class="annex">
+        {% include "finance/_annex_head.html" with n=1 of="do umowy zlecenia" title="Oświadczenie Zleceniobiorcy do celów ubezpieczeń i podatku" %}
+        <p>Zleceniobiorca: <strong>{{ payee_name }}</strong></p>
+        <ol>
+            <li>Oświadczam, że <em>(zaznaczyć właściwe)</em>:
+                <ul class="ticks">
+                    <li><span class="box"></span>jestem uczniem szkoły ponadpodstawowej lub studentem i nie ukończyłem/-am 26 lat (szkoła/uczelnia: <span class="blank"></span>, nr legitymacji: <span class="blank blank--s"></span>);</li>
+                    <li><span class="box"></span>jestem zatrudniony/-a na podstawie umowy o pracę u innego pracodawcy, a moje wynagrodzenie w miesiącu wykonywania Zlecenia wynosi co najmniej minimalne wynagrodzenie za pracę;</li>
+                    <li><span class="box"></span>prowadzę pozarolniczą działalność gospodarczą i opłacam z tego tytułu składki na ubezpieczenia społeczne;</li>
+                    <li><span class="box"></span>wykonuję inną umowę zlecenia, zawartą wcześniej, z której podstawa wymiaru składek wynosi co najmniej minimalne wynagrodzenie za pracę;</li>
+                    <li><span class="box"></span>mam ustalone prawo do emerytury lub renty (nr decyzji: <span class="blank"></span>);</li>
+                    <li><span class="box"></span>żadna z powyższych sytuacji mnie nie dotyczy.</li>
+                </ul>
+            </li>
+            <li><span class="box"></span>Wnoszę o objęcie mnie dobrowolnym ubezpieczeniem chorobowym.</li>
+            <li><span class="box"></span>Nie ukończyłem/-am 26 lat i korzystam ze zwolnienia z podatku dochodowego przewidzianego dla osób do 26. roku życia.</li>
+            <li>Zobowiązuję się niezwłocznie poinformować Zleceniodawcę o każdej zmianie danych zawartych w oświadczeniu.</li>
+        </ol>
+        <p class="signed-line">Data: <span class="blank blank--s"></span> &emsp; Podpis Zleceniobiorcy: <span class="blank"></span></p>
+    </section>
+
+    <section class="annex">
+        {% include "finance/_annex_head.html" with n=2 of="do umowy zlecenia" title="Potwierdzenie liczby godzin wykonywania Zlecenia" %}
+        <p>Zleceniobiorca: <strong>{{ payee_name }}</strong>. Koncert „{{ concert.title }}”, {{ concert.day|date:"d.m.Y" }} r.</p>
+        <table class="grid">
+            <thead>
+                <tr><th style="width: 22%">Data</th><th style="width: 18%">Liczba godzin</th><th>Czynności</th></tr>
+            </thead>
+            <tbody>
+                {% for row in "0123456789" %}<tr><td></td><td></td><td></td></tr>{% endfor %}
+                <tr class="total"><td>Łącznie</td><td></td><td></td></tr>
+            </tbody>
+        </table>
+        <p class="signed-line">Data: <span class="blank blank--s"></span> &emsp; Podpis Zleceniobiorcy: <span class="blank"></span></p>
+    </section>
+
+    {% include "finance/_gdpr_clause.html" with n=3 of="do umowy zlecenia" %}
+</body>
+</html>

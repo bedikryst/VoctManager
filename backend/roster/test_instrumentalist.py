@@ -7,8 +7,9 @@ here because both are silent when wrong:
 * they are **not called to a whole-cast rehearsal** unless that rehearsal says
   so, so the choir's eight sectionals never appear in the organist's schedule
   and never wait for their attendance row; and
-* their **instrument replaces the voice** on anything printed, starting with the
-  contract, which would otherwise commit them to a vocal part under Polish law.
+* their **instrument replaces the voice** on anything printed. The contract,
+  which would otherwise commit them to a vocal part under Polish law, is pinned
+  in `finance/tests/test_documents.py`.
 
 The rehearsal rule lives in one place (`Rehearsal.called_participations` and its
 query-side twin `calling_q`) because it used to live in seven, and the cases
@@ -275,17 +276,6 @@ class InstrumentalistDocumentTests(APITestCase):
         self.participation = Participation.objects.create(
             artist=self.player, project=self.project, fee=Decimal("900.00"),
         )
-
-    def test_the_contract_commits_an_instrumental_part(self) -> None:
-        with patch(
-            "roster.infrastructure.document_generator._render_pdf",
-            return_value=b"%PDF-",
-        ) as render:
-            DocumentGenerator.generate_participation_contract_pdf(self.participation)
-        html = str(render.call_args.args[0])
-        self.assertIn("partii instrumentalnej", html)
-        self.assertIn("Organy", html)
-        self.assertNotIn("partii wokalnej", html)
 
     def test_the_cast_list_groups_them_under_their_own_heading(self) -> None:
         singer = Artist.objects.create(

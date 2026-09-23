@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Umowa o dzieło nr {{ number }} — {{ payee_name }}</title>
+    {% comment %}
+        Umowa o dzieło: the artistic performance of a concert programme, with
+        the related rights transferred. Built from document 1 of
+        docs/specs/project-finance-contract-drafts-2026-09.md — a correction
+        lands there first. Annexes: 1 the programme, 2 the GDPR clause.
+    {% endcomment %}
+    <style>{% include "finance/_styles.html" with footer_label="Umowa o dzieło" %}</style>
+</head>
+<body>
+    {% include "finance/_masthead.html" %}
+
+    <div class="title">UMOWA O DZIEŁO <span class="title-number">nr {{ number }}</span></div>
+    <p class="concluded">zawarta w {{ foundation.seat_locative }} w dniu <span class="blank"></span> r.</p>
+
+    {% include "finance/_parties.html" with foundation_role="Zamawiającym" payee_role="Wykonawcą" with_payment=True %}
+
+    <h2>§ 1. Przedmiot umowy</h2>
+    <ol>
+        <li>Zamawiający zamawia, a Wykonawca zobowiązuje się wykonać dzieło w postaci artystycznego wykonania {% if subject.kind == "vocal" %}partii wokalnej (głos: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}){% elif subject.kind == "instrumental" %}partii instrumentalnej (instrument: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}){% else %}(rola: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}){% endif %} utworów tworzących program koncertu „{{ concert.title }}”, który odbędzie się w dniu {{ concert.day|date:"d.m.Y" }} r. w miejscu: {% if concert.place %}{{ concert.place }}{% else %}<span class="blank blank--l"></span>{% endif %} (dalej: „Koncert”).</li>
+        <li>Utwory objęte artystycznym wykonaniem określa program Koncertu, stanowiący Załącznik nr 1.</li>
+        <li>Wykonanie dzieła obejmuje przygotowanie partii oraz udział w próbach wyznaczonych przez Zamawiającego, w zakresie niezbędnym do artystycznego wykonania utworów podczas Koncertu.</li>
+        <li>Wykonawca wykona dzieło osobiście. Powierzenie wykonania innej osobie wymaga uprzedniej zgody Zamawiającego, wyrażonej co najmniej w formie dokumentowej.</li>
+    </ol>
+
+    <h2>§ 2. Odbiór dzieła</h2>
+    <ol>
+        <li>Dzieło uważa się za wykonane i odebrane z chwilą zakończenia Koncertu, jeżeli w terminie 7 dni od tej chwili Zamawiający nie zgłosi na piśmie zastrzeżeń co do jego wykonania.</li>
+        <li>Jeżeli Koncert nie odbędzie się z przyczyn, za które żadna ze Stron nie ponosi odpowiedzialności, umowa wygasa, a Wykonawcy nie przysługuje wynagrodzenie.</li>
+        <li>Jeżeli Koncert nie odbędzie się z przyczyn dotyczących Zamawiającego, a Wykonawca był gotów wykonać dzieło, zastosowanie ma art. 639 Kodeksu cywilnego.</li>
+    </ol>
+
+    <h2>§ 3. Prawa do artystycznego wykonania i wizerunek</h2>
+    <ol>
+        <li>Z chwilą wykonania dzieła Wykonawca przenosi na Zamawiającego, w ramach wynagrodzenia określonego w § 4, prawa do artystycznego wykonania, o których mowa w art. 85 i 86 ustawy z dnia 4 lutego 1994 r. o prawie autorskim i prawach pokrewnych, a w zakresie, w jakim wykonanie stanowiłoby utwór — autorskie prawa majątkowe, na następujących polach eksploatacji:
+            {% include "finance/_exploitation_fields.html" %}
+        </li>
+        <li>Przeniesienie praw nie jest ograniczone terytorialnie ani czasowo.</li>
+        <li>Wykonawca zezwala Zamawiającemu na nieodpłatne rozpowszechnianie swojego wizerunku, utrwalonego w związku z Koncertem i próbami, wraz z imieniem i nazwiskiem, w materiałach dokumentujących i promujących działalność statutową Zamawiającego.</li>
+    </ol>
+
+    <h2>§ 4. Wynagrodzenie</h2>
+    <ol>
+        <li>Za wykonanie dzieła i przeniesienie praw, o których mowa w § 3, Zamawiający zapłaci Wykonawcy wynagrodzenie w łącznej kwocie <strong>{{ amount }} zł brutto</strong> (słownie: {{ amount_words }}).</li>
+        <li>Strony ustalają, że całość wynagrodzenia stanowi wynagrodzenie z tytułu rozporządzenia przez Wykonawcę prawami do artystycznego wykonania, o którym mowa w § 3 ust. 1.</li>
+        <li>Wynagrodzenie zostanie wypłacone przelewem na rachunek bankowy Wykonawcy wskazany w umowie, w terminie 14 dni od dnia odbioru dzieła, na podstawie rachunku wystawionego przez Wykonawcę.</li>
+        <li>Zamawiający, jako płatnik, pobierze od wynagrodzenia zaliczkę na podatek dochodowy zgodnie z obowiązującymi przepisami.</li>
+    </ol>
+
+    <h2>§ 5. Dane osobowe</h2>
+    <p>Zasady przetwarzania danych osobowych Wykonawcy określa klauzula informacyjna stanowiąca Załącznik nr 2.</p>
+
+    <h2>§ 6. Postanowienia końcowe</h2>
+    <ol>
+        <li>Zmiany umowy wymagają formy pisemnej pod rygorem nieważności.</li>
+        <li>W sprawach nieuregulowanych stosuje się przepisy Kodeksu cywilnego oraz ustawy o prawie autorskim i prawach pokrewnych.</li>
+        <li>Spory wynikające z umowy rozstrzyga sąd właściwy dla siedziby Zamawiającego.</li>
+        <li>Umowę sporządzono w dwóch jednobrzmiących egzemplarzach, po jednym dla każdej ze Stron.</li>
+    </ol>
+
+    {% include "finance/_signatures.html" with left="Zamawiający" right="Wykonawca" %}
+
+    <section class="annex">
+        {% include "finance/_annex_head.html" with n=1 of="do umowy o dzieło" title="Program Koncertu" %}
+        <p>Koncert „{{ concert.title }}”, {{ concert.day|date:"d.m.Y" }} r. Utwory w kolejności wykonania:</p>
+        {% if programme %}
+            <ol class="programme">
+                {% for entry in programme %}
+                    <li>{% if entry.composer %}<span class="programme-composer">{{ entry.composer }}</span> — {% endif %}{{ entry.title }}{% if entry.is_encore %} <span class="programme-note">(bis)</span>{% endif %}</li>
+                {% endfor %}
+            </ol>
+        {% else %}
+            {% comment %}No programme in the app yet: numbered lines to write it in, since the annex is what individualises the work.{% endcomment %}
+            <ol class="programme programme-blank">
+                <li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li>
+            </ol>
+        {% endif %}
+    </section>
+
+    {% include "finance/_gdpr_clause.html" with n=2 of="do umowy o dzieło" %}
+</body>
+</html>
