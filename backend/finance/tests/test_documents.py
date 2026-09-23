@@ -32,7 +32,7 @@ from ..exceptions import BillNotApplicable, ContractAnnulled
 from ..foundation import FOUNDATION, FoundationIdentityError, Representative, foundation_context, signatory_for
 from ..infrastructure.amount_words import amount_to_words_pl, format_amount_pl, number_to_words_pl
 from ..infrastructure.documents import render_bill_html, render_contract_html
-from ..models import Contract, ContractSequence, CostItem
+from ..models import Contract, ContractSequence, CostItem, FundingSource
 from ..services.contracts import ContractService
 from ..tasks import NO_CONTRACTS, export_path, generate_contracts_zip_task
 from .factories import make_crew, make_project, make_seat, make_user, price
@@ -516,20 +516,24 @@ class ContractsZipTests(APITestCase):
 class SampleDocumentsCommandTests(TestCase):
     """The printed-check command writes one of each document and keeps nothing."""
 
-    def test_six_documents_and_not_a_row_or_a_number_left_behind(self) -> None:
+    def test_every_document_and_not_a_row_or_a_number_left_behind(self) -> None:
         media = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, media, ignore_errors=True)
         with (
             override_settings(MEDIA_ROOT=media),
             patch("finance.infrastructure.documents._render_pdf", side_effect=_html_as_pdf),
+            patch("finance.infrastructure.reports._render_pdf", side_effect=_html_as_pdf),
         ):
             call_command("finance_sample_documents", stdout=io.StringIO())
 
         folder = f"{media}/finance/samples"
         names = sorted(os.listdir(folder))
-        self.assertEqual(len(names), 6)
+        self.assertEqual(len(names), 10)
         with open(f"{folder}/2-umowa-o-dzielo-dyrygent.pdf", encoding="utf-8") as handle:
             self.assertIn(f"reprezentowana przez: Anna Marcisz {EN_DASH} Wiceprezes Zarządu", handle.read())
+        with open(f"{folder}/8-sprawozdanie-dla-sponsora.pdf", encoding="utf-8") as handle:
+            self.assertIn("Środki: Kancelaria Przykładowa", handle.read())
         self.assertFalse(Project.objects.exists())
         self.assertFalse(Contract.all_objects.exists())
         self.assertFalse(ContractSequence.objects.exists())
+        self.assertFalse(FundingSource.objects.exists())

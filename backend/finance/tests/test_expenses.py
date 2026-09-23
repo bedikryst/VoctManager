@@ -140,10 +140,10 @@ class ExpenseTests(APITestCase):
 
         body = b"".join(response.streaming_content).decode("utf-8")[1:]
         header, row = list(csv.reader(io.StringIO(body), delimiter=";"))
-        self.assertEqual(header[-1], "Pozycja kosztorysu")
-        self.assertEqual((row[2], row[5], row[6], row[11], row[14]),
+        self.assertEqual(header[17], "Pozycja kosztorysu")
+        self.assertEqual((row[2], row[5], row[6], row[12], row[15]),
                          ("Parafia św. Anny", "Faktura", "FV/12/2026", "1200,50", "6762718992"))
-        self.assertEqual(row[-1], "I.1 Wynajem kościoła")
+        self.assertEqual(row[17], "I.1 Wynajem kościoła")
 
     def test_the_budget_total_the_project_card_reads_includes_expenses(self) -> None:
         self.create(cost_amount="80")

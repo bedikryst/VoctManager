@@ -1,7 +1,8 @@
 /**
  * @file DocumentsCard.tsx
  * @description What leaves the panel for the office: the project's ledger as a
- * CSV, and every issued contract in one ZIP. Both are fetched through the
+ * CSV — every counted cost with its sources — and every issued contract in one
+ * ZIP. Both are fetched through the
  * signed-in session and saved from memory — the ZIP is packed by a background
  * task and streamed by a manager-only view, never left at a public address.
  * The ZIP is offered only once a contract exists; before that there is
@@ -76,7 +77,7 @@ export function DocumentsCard({
         <Text size="sm" color="graphite">
           {t(
             "finance.overview.csv_hint",
-            "Każde honorarium wliczone w koszt: odbiorca, forma, numer umowy, kwoty i daty. Otwiera się w Excelu.",
+            "Każdy koszt — honoraria i wydatki: odbiorca, forma, numer umowy lub dokumentu, kwoty, daty i źródła finansowania. Otwiera się w Excelu.",
           )}
         </Text>
         <Button

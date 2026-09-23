@@ -1785,7 +1785,8 @@
       "allocation_exceeds_amount": "Źródła pokryłyby więcej niż cała kwota. Zmniejsz obciążenie źródeł.",
       "allocation_kind_mismatch": "Pieniądze obciąża się na źródło pieniędzy, a pracę wolontariusza — na wkład osobowy.",
       "allocation_not_counted": "Ten koszt się nie liczy (np. osoba odmówiła udziału), więc nie obciąża się nim źródeł. Można go tylko z nich zdjąć.",
-      "charge_refused": "Nie każdy z tych kosztów można obciążyć na to źródło. Nic nie zostało zmienione."
+      "charge_refused": "Nie każdy z tych kosztów można obciążyć na to źródło. Nic nie zostało zmienione.",
+      "report_source_invalid": "Tego źródła nie ma już w projekcie albo nie wnosi pieniędzy. Odśwież stronę i wybierz źródło jeszcze raz."
     },
     "offline": {
       "act": "Brak połączenia. Rozliczeń nie zapisuje się offline — wróć do sieci, aby to zrobić.",
@@ -1981,11 +1982,43 @@
       "work_empty": "Nic nie czeka na rozliczenie.",
       "more_names": "i jeszcze {{count}}",
       "documents": "Dla biura",
-      "csv_hint": "Każde honorarium wliczone w koszt: odbiorca, forma, numer umowy, kwoty i daty. Otwiera się w Excelu.",
+      "csv_hint": "Każdy koszt — honoraria i wydatki: odbiorca, forma, numer umowy lub dokumentu, kwoty, daty i źródła finansowania. Otwiera się w Excelu.",
       "csv": "Rozliczenie (CSV)",
       "zip_hint": "Wystawione umowy z aneksami, po jednym PDF na osobę: {{count}}.",
       "zip": "Umowy (ZIP)",
       "zip_empty": "Paczka umów pojawi się, gdy wystawisz pierwszą umowę w Honorariach."
+    },
+    "reports": {
+      "title": "Raporty",
+      "board": "Dla zarządu",
+      "board_hint": "Cały budżet z nazwiskami: plan i wykonanie, finansowanie, co zostało do zrobienia i do zapłaty, każde honorarium i wydatek.",
+      "board_action": "Raport dla zarządu (PDF)",
+      "patron": "Dla mecenasa",
+      "patron_hint": "Koszt koncertu, na co poszły pieniądze i skąd pochodziły — bez nazwisk i bez pojedynczych honorariów. Kwotę, na którą składają się honoraria mniej niż trzech osób, raport łączy z inną, żeby nie dało się z niej odczytać niczyjego honorarium.",
+      "summary_label": "Kilka zdań o koncercie",
+      "summary_placeholder": "Co zabrzmiało, gdzie, dla ilu słuchaczy — raport zaczyna się od tych zdań.",
+      "summary_save": "Zapisz opis",
+      "summary_saved": "Zapisano opis dla mecenasa.",
+      "summary_error": "Nie udało się zapisać opisu.",
+      "highlight_label": "Pokaż, co pokryło źródło",
+      "highlight_none": "Bez wyróżnienia",
+      "patron_action": "Sprawozdanie dla mecenasa (PDF)",
+      "unsaved": "Raport drukuje zapisany opis — zapisz zmiany, zanim go pobierzesz.",
+      "draft": "Dopóki budżet nie jest zamknięty, raport nosi znak „wersja robocza”."
+    },
+    "grantor": {
+      "title": "Dla grantodawcy",
+      "source_label": "Źródło",
+      "source_all": "Wszystkie źródła",
+      "source_hint_one": "Kolumna „z dotacji” i opisy dokumentów dotyczą tylko tego źródła.",
+      "source_hint_all": "Kolumna „z dotacji” zbiera dotacje publiczne, a opisy obejmują każde źródło poza środkami własnymi.",
+      "kosztorys_hint": "Kosztorys w układzie wniosku o dotację: pozycje, jednostki, wartość i jej podział — z dotacji, z innych środków, z wkładu osobowego i rzeczowego. Z niego przepiszesz dane do generatora wniosków.",
+      "kosztorys_plan": "Kosztorys — plan (CSV)",
+      "kosztorys_actual": "Kosztorys — wykonanie (CSV)",
+      "kosztorys_empty": "Kosztorys do wniosku pojawi się, gdy dodasz pozycje w zakładce Kosztorys.",
+      "notes_hint": "Opis na odwrocie każdego dokumentu obciążonego źródłem, według formuły z ustawień źródła — do przepisania albo wycięcia i naklejenia.",
+      "notes_action": "Opisy dokumentów (PDF)",
+      "notes_empty": "Opisy pojawią się, gdy obciążysz koszty źródłem w zakładce Finansowanie."
     },
     "zip": {
       "working": "Pakuję umowy…",

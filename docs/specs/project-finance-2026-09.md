@@ -1,11 +1,9 @@
 # Project finance — budget, settlement and reporting
 
-Status: **Spec written 2026-09-23; the developer answered Q1–Q6 the same day (§2, §4). Stages 1,
-1b, 2 and 3 — release R1 — built 2026-09-23 (see "As built" under each in §11). Stages 1 and 1b are
-committed; Stage 2 was reviewed in the browser; Stages 2 and 3 are uncommitted. R1 is not deployed
-and goes to prod as one release. The printed copies of Stage 1b await the developer's check. Stages 4
-and 5 were built the same day on top of the uncommitted R1 tree; both await the browser review.
-Stage 6 is next. Contract wording is drafted in
+Status: **Spec written 2026-09-23; the developer answered Q1–Q6 the same day (§2, §4). Stages 1–5
+are built and committed, and the developer has seen them in the browser; his feedback on the whole
+module is gathered at the end, after Stage 6. Stage 6 (reports and exports) is built, uncommitted,
+and awaits that same review. Stage 7 is later work, not specified. Contract wording is drafted in
 `project-finance-contract-drafts-2026-09.md` and awaits legal and accounting review. That review
 gates the first real use of the new templates, not their build.**
 Written from the developer's brief of 2026-09-23 ("as ambitious as possible — this concert is the
@@ -838,6 +836,45 @@ their own. Every deploy that touches models needs `make migrate` on prod.
 - §10 in full: patron and board PDF (WeasyPrint, `_brand_font_context()`, mono-print check),
   kosztorys CSV (column set per Q1), document notes PDF, ledger CSV finalised. Tests for the patron
   aggregation floor.
+
+**As built (2026-09-23)** — where Stage 6 differs from §10 or says more than it:
+
+- **Code:** what may be said is `services/reports.py` (no Polish in it); the words and the rendering
+  are `infrastructure/reports.py`, `kosztorys_csv.py` and the templates `report_patron.html`,
+  `report_board.html`, `document_notes.html` with `_report_styles.html` and `_report_masthead.html`.
+  The Polish vocabulary of every paper and export moved to `infrastructure/vocabulary.py`; the board
+  report's warning titles there mirror the Polish locale's `finance.warnings.<code>.title` — change
+  both. The CSV cell rules moved to `csv_format.py`.
+- **API:** as §6. `?source=` is a funding source's id and must be a source of money on the project
+  (`report_source_invalid`). Added: `PATCH projects/{id}/budget/ {patron_summary}` — words about the
+  concert, not money, so writable in every state (closed included) and not logged.
+- **The patron floor.** A payee is a counted fee above 0 — a volunteer does not count. Every
+  personnel category with ≥ 3 payees keeps its row; otherwise they merge into "Honoraria i obsługa";
+  below 3 together, personnel joins **the largest other category** in "Pozostałe koszty", because the
+  rows sum to the printed total and a missing row would be read back by subtraction (§10 said "only
+  inside the total", which leaks exactly that way). With no other cost, only the total is printed.
+  The source highlight goes through the same floor. Volunteer work appears in kind only when ≥ 3
+  volunteers make it up. The funding structure is what each kind of source is charged, plus
+  "Środki własne fundacji" (own funds + uncovered), so it sums to the cost.
+- **Kosztorys CSV:** the §10 columns plus an 11th, "nieprzypisane do źródła" — the unsplit part is
+  shown, never folded into a column. "z dotacji" is the named source, or every `PUBLIC_GRANT` (a
+  private grant counts as other money). The plan splits the planned amount by its line splits. The
+  actual has no quantity and no unit cost (the ledger does not record them), a "Koszty poza
+  kosztorysem" row per section, volunteers' valuation on top of the money cost in "z wkładu
+  osobowego", and each gift in kind's received value shared among lines in the proportions of its
+  plan split (unplaced → section I's outside row).
+- **Document notes:** every source of money except `OWN_FUNDS`, or the named source. One block per
+  document, one note per source. A dzieło or zlecenie prints as "Rachunek do umowy nr …" with the
+  contract amount (a mandate's employer contributions are ZUS's, not billed). A placeholder with no
+  value prints as a dotted line.
+- **Ledger CSV:** "Data dokumentu" after the number; "Źródła finansowania" (`name: amount / …`)
+  and "Kwota ze źródeł" at the end.
+- **Frontend:** Przegląd gains "Raporty" (board; patron with the summary editor and an optional
+  source to highlight) and "Dla grantodawcy" (one source choice for the kosztorys and the notes).
+- **Seed and samples:** `seed_db` writes a patron summary; `finance_sample_documents` renders the
+  four report PDFs too. The mono check was done on grayscale rasters of those samples.
+- **Not done:** a report for one source across all its projects (the grant's own settlement);
+  English or French reports; backend `.po` entries.
 
 ### Stage 7 — Later (not specified here)
 

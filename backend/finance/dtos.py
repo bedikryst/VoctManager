@@ -11,7 +11,7 @@
 from datetime import date
 from decimal import Decimal
 from string import Formatter
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 from uuid import UUID
 
 from pydantic import BeforeValidator, Field, field_validator, model_validator
@@ -521,3 +521,23 @@ class LedgerRangeDTO(EnterpriseBaseDTO):
         if self.date_from > self.date_to:
             raise ValueError("from must not be later than to.")
         return self
+
+
+class PatronSummaryDTO(EnterpriseBaseDTO):
+    """`PATCH projects/{id}/budget/` — the patron report's opening sentences."""
+
+    patron_summary: Text = Field(..., max_length=1500)
+
+
+class SourceQueryDTO(EnterpriseBaseDTO):
+    """An export's optional source (`?source=`): the grant a kosztorys's "z
+    dotacji" column reads, or the one source whose document notes are wanted."""
+
+    source: UUID | None = None
+
+
+class ReportQueryDTO(SourceQueryDTO):
+    """`report.pdf?audience=patron|board[&source=]`; the source is the patron
+    whose money the report shows the use of."""
+
+    audience: Literal["patron", "board"]

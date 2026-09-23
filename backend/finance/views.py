@@ -9,8 +9,9 @@
              write answers with the whole budget, freshly computed, so the
              client never reconciles its copy row by row. Finance payloads
              appear nowhere else in the API, and the files — contracts rendered
-             from their row, an expense's attachments — are streamed to a
-             manager, never left at a public media URL.
+             from their row, an expense's attachments, the reports, the
+             kosztorys and the office's exports — are streamed to a manager,
+             never left at a public media URL.
 @architecture Enterprise SaaS 2026
 @module finance/views
 """
@@ -53,11 +54,14 @@ from .dtos import (
     LedgerRangeDTO,
     LineOrderDTO,
     OneOffFeeDTO,
+    PatronSummaryDTO,
     PayFeesDTO,
     ProjectFundingDTO,
     ProjectFundingUpdateDTO,
     ReasonDTO,
+    ReportQueryDTO,
     SignContractDTO,
+    SourceQueryDTO,
 )
 from .exceptions import AttachmentMissing, FinanceError, finance_error_response
 from .infrastructure.documents import (
@@ -67,7 +71,16 @@ from .infrastructure.documents import (
     render_bill_pdf,
     render_contract_pdf,
 )
+from .infrastructure.kosztorys_csv import kosztorys_csv, kosztorys_filename
 from .infrastructure.ledger_csv import ledger_csv, project_ledger_filename, range_ledger_filename
+from .infrastructure.reports import (
+    board_report_filename,
+    document_notes_filename,
+    patron_report_filename,
+    render_board_report_pdf,
+    render_document_notes_pdf,
+    render_patron_report_pdf,
+)
 from .models import BudgetLine, Contract, CostItem, CostKind, FinanceAttachment, FundingSource, ProjectFunding
 from .serializers import (
     HistoryEventSerializer,
@@ -86,6 +99,7 @@ from .services.funding import FundingService
 from .services.history import HistoryService
 from .services.ledger import LedgerService
 from .services.plan import PlanService
+from .services.reports import VARIANT_ACTUAL, VARIANT_PLAN
 from .tasks import export_path, generate_contracts_zip_task
 
 # A ZIP task that raised rather than returned; the client owns the words.
@@ -153,11 +167,18 @@ class BoardAPIView(FinanceAPIView):
 
 class ProjectBudgetView(FinanceAPIView):
     """GET projects/{project_id}/budget/ — status, summary, warnings and the
-    ledger, including the unpriced rows computed from the roster."""
+    ledger, including the unpriced rows computed from the roster. PATCH writes
+    the patron report's opening sentences."""
 
     def get(self, request: Request, project_id: UUID) -> Response:
         project = get_object_or_404(Project, pk=project_id)
         BudgetService.get_or_create(project)
+        return _budget_response(project)
+
+    def patch(self, request: Request, project_id: UUID) -> Response:
+        project = get_object_or_404(Project, pk=project_id)
+        dto = self.parse(request, PatronSummaryDTO)
+        PlanService.set_patron_summary(project, dto.patron_summary)
         return _budget_response(project)
 
 
@@ -630,6 +651,51 @@ class ProjectLedgerCsvView(FinanceAPIView):
         project = get_object_or_404(Project, pk=project_id)
         data = ledger_csv([BudgetService.build(project)])
         return _download(data, project_ledger_filename(project), CSV_CONTENT_TYPE)
+
+
+class KosztorysCsvView(FinanceAPIView):
+    """GET projects/{project_id}/export/kosztorys-{plan,actual}.csv[?source=] —
+    the kosztorys in the public-benefit layout, to type a grant's form from.
+    ``variant`` is fixed per route."""
+
+    variant = VARIANT_PLAN
+
+    def get(self, request: Request, project_id: UUID) -> FileResponse:
+        project = get_object_or_404(Project, pk=project_id)
+        dto = SourceQueryDTO.model_validate(request.query_params.dict())
+        data = kosztorys_csv(BudgetService.build(project), variant=self.variant, source_id=dto.source)
+        return _download(data, kosztorys_filename(project, variant=self.variant), CSV_CONTENT_TYPE)
+
+
+class KosztorysActualCsvView(KosztorysCsvView):
+    variant = VARIANT_ACTUAL
+
+
+class ReportPdfView(FinanceAPIView):
+    """GET projects/{project_id}/report.pdf?audience=patron|board[&source=] —
+    the patron report (no person, no single fee; `source` shows what that
+    source's money covered) or the board's complete one."""
+
+    def get(self, request: Request, project_id: UUID) -> FileResponse:
+        project = get_object_or_404(Project, pk=project_id)
+        dto = ReportQueryDTO.model_validate(request.query_params.dict())
+        money = BudgetService.build(project)
+        if dto.audience == "board":
+            return _download(render_board_report_pdf(money), board_report_filename(project), "application/pdf")
+        return _download(
+            render_patron_report_pdf(money, source_id=dto.source), patron_report_filename(project), "application/pdf",
+        )
+
+
+class DocumentNotesPdfView(FinanceAPIView):
+    """GET projects/{project_id}/document-notes.pdf[?source=] — the note for the
+    back of every document charged to a source."""
+
+    def get(self, request: Request, project_id: UUID) -> FileResponse:
+        project = get_object_or_404(Project, pk=project_id)
+        dto = SourceQueryDTO.model_validate(request.query_params.dict())
+        data = render_document_notes_pdf(BudgetService.build(project), source_id=dto.source)
+        return _download(data, document_notes_filename(project), "application/pdf")
 
 
 class LedgerCsvView(FinanceAPIView):

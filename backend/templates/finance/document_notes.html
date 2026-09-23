@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Opisy dokumentów — {{ project.title }}</title>
+    {% comment %}
+        The text for the back of every accounting document charged to a
+        source, in that source's own formula, one block per document to copy
+        by hand or cut out and paste. A block is an atom — torn across a page
+        it could not be cut out whole — and its dashed top edge is the line to
+        cut along. A value the panel does not know prints as a dotted line.
+    {% endcomment %}
+    <style>
+        {% include "finance/_styles.html" with footer_label="Opisy dokumentów" %}
+        {% include "finance/_report_styles.html" %}
+        .note {
+            break-inside: avoid;
+            border-top: 0.5pt dashed var(--ink-4);
+            padding: 10px 0 12px 0;
+        }
+        .note-head { color: var(--ink-3); font-size: 8pt; margin-bottom: 6px; }
+        .note-head strong { color: var(--ink-1); }
+        .note-text { color: var(--ink-1); font-size: 10pt; line-height: 1.6; margin: 0 0 6px 0; }
+        .note-text .blank { min-width: 30mm; }
+    </style>
+</head>
+<body>
+    {% include "finance/_report_masthead.html" %}
+
+    <div class="report-eyebrow">Opisy dokumentów księgowych{% if source %} · {{ source.name }}{% endif %}</div>
+    <div class="report-title">{{ project.title }}</div>
+    <p class="report-when">{{ concert.day|date:"j E Y" }}{% if concert.place %} · {{ concert.place }}{% endif %}</p>
+
+    <p class="smallprint muted">Tekst do przepisania na odwrocie dokumentu albo do wycięcia wzdłuż przerywanej linii i naklejenia. Formuła pochodzi z ustawień źródła finansowania; kropkowaną linię uzupełnij ręcznie.{% if own_funds_excluded %} Koszty pokryte ze środków własnych fundacji nie mają opisu.{% endif %}</p>
+
+    {% for document in documents %}
+        <div class="note">
+            <div class="note-head"><strong>{{ document.heading }}</strong> · {{ document.party }}{% if document.date %} · z dnia {{ document.date|date:"d.m.Y" }}{% endif %} · {{ document.amount }} zł</div>
+            {% for note in document.notes %}<p class="note-text">{{ note }}</p>{% endfor %}
+        </div>
+    {% empty %}
+        <p class="muted">Żaden koszt tego projektu nie jest jeszcze obciążony {% if source %}tym źródłem{% else %}źródłem finansowania{% endif %}, więc nie ma czego opisywać.</p>
+    {% endfor %}
+</body>
+</html>

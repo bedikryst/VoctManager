@@ -4,9 +4,10 @@
  * expenses, the plan, the funding and its splits, the budget's standing, an
  * expense's files — answers with the whole budget, freshly computed, so the
  * caller replaces its copy instead of reconciling rows; a funding source's
- * writes answer with the source's page. Files (contracts, bills, the CSV, the
- * contracts ZIP, an expense's attachments) are fetched as blobs through the
- * authenticated client and saved from memory: none of them has a public URL.
+ * writes answer with the source's page. Files (contracts, bills, the CSVs, the
+ * contracts ZIP, an expense's attachments, the reports and document notes) are
+ * fetched as blobs through the authenticated client and saved from memory:
+ * none of them has a public URL.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/api/finance.service
  */
@@ -29,11 +30,13 @@ import type {
   FundingSourceUpdatePayload,
   HistoryPageDTO,
   IsoDate,
+  KosztorysVariant,
   OneOffFeePayload,
   PayFeesPayload,
   ProjectBudgetDTO,
   ProjectFundingPayload,
   ProjectFundingUpdatePayload,
+  ReportAudience,
   SignContractPayload,
   SourceDetailDTO,
 } from "../types/finance.dto";
@@ -209,6 +212,48 @@ export const FinanceService = {
       from,
       to,
     }),
+
+  // ── Reports and the grantor's exports ───────────────────────────────────
+  // `sourceId` is a funding source's id (not the project funding's): the
+  // patron whose money a report shows, or the grant a kosztorys's "z dotacji"
+  // column and the document notes read.
+
+  downloadReport: (
+    projectId: string,
+    audience: ReportAudience,
+    sourceId?: string,
+  ): Promise<void> =>
+    download(
+      `${BASE}/projects/${projectId}/report.pdf`,
+      audience === "board" ? "Raport-dla-zarzadu.pdf" : "Sprawozdanie-dla-mecenasa.pdf",
+      sourceId ? { audience, source: sourceId } : { audience },
+    ),
+
+  downloadKosztorys: (
+    projectId: string,
+    variant: KosztorysVariant,
+    sourceId?: string,
+  ): Promise<void> =>
+    download(
+      `${BASE}/projects/${projectId}/export/kosztorys-${variant}.csv`,
+      variant === "plan" ? "Kosztorys-plan.csv" : "Kosztorys-wykonanie.csv",
+      sourceId ? { source: sourceId } : undefined,
+    ),
+
+  downloadDocumentNotes: (projectId: string, sourceId?: string): Promise<void> =>
+    download(
+      `${BASE}/projects/${projectId}/document-notes.pdf`,
+      "Opisy-dokumentow.pdf",
+      sourceId ? { source: sourceId } : undefined,
+    ),
+
+  savePatronSummary: async (projectId: string, text: string): Promise<ProjectBudgetDTO> => {
+    const response = await api.patch<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/budget/`,
+      { patron_summary: text },
+    );
+    return response.data;
+  },
 
   requestContractsZip: async (projectId: string): Promise<string> => {
     const response = await api.post<{ task_id: string }>(

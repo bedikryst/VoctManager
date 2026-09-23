@@ -4,9 +4,10 @@
  * costs, the plan it is measured against, and what qualifies that figure —
  * paid, owed, what funding sources carry; the
  * work the server's warnings list, each linking to its row; where the budget
- * stands and the board's acts that move it; what the office takes away; and
- * the history of every act. Every figure here is the server's; the page sums
- * nothing.
+ * stands and the board's acts that move it; the reports for the board and for
+ * a patron; what a grantor's settlement is typed and written from; what the
+ * office takes away; and the history of every act. Every figure here is the
+ * server's; the page sums nothing.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/BudgetOverviewPage
  */
@@ -29,7 +30,9 @@ import { formatAmount, isPositiveAmount } from "../lib/money";
 import type { ProjectBudgetDTO } from "../types/finance.dto";
 import { BudgetStandingCard } from "./components/BudgetStandingCard";
 import { DocumentsCard } from "./components/DocumentsCard";
+import { GrantorCard } from "./components/GrantorCard";
 import { HistoryCard } from "./components/HistoryCard";
+import { ReportsCard } from "./components/ReportsCard";
 import { WarningsCard } from "./components/WarningsCard";
 
 interface BudgetOverviewProps {
@@ -173,6 +176,8 @@ function BudgetOverview({ projectId }: BudgetOverviewProps): React.JSX.Element {
           budget={budget}
           isBoard={canApproveFinance(user)}
         />
+        <ReportsCard projectId={projectId} budget={budget} />
+        <GrantorCard projectId={projectId} budget={budget} />
         <DocumentsCard projectId={projectId} contractCount={contractCount} />
       </div>
     </div>

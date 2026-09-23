@@ -1,28 +1,26 @@
 """
 @file ledger_csv.py
 @description The office's ledger export: every fee a budget counts and every
-             expense, one row each, in the shape Polish Excel opens without an
-             import dialog — UTF-8 with a BOM, `;` between cells, a decimal
-             comma, dd.mm.yyyy dates. The rows are the budget's own (a fee only
-             when `counted`), so the export sums to the figure the panel states
-             as the cost. The office reads Polish, as the contracts do, so the
-             column heads and the vocabulary are Polish whatever language the
-             manager uses.
+             expense, one row each — the payee or vendor, the form, the
+             contract's or the document's number and dates, the amounts, the
+             payment, the kosztorys line and the sources the cost is charged
+             to. The rows are the budget's own (a fee only when `counted`), so
+             the export sums to the figure the panel states as the cost. The
+             office reads Polish, as the contracts do, so the column heads and
+             the vocabulary are Polish whatever language the manager uses.
 @architecture Enterprise SaaS 2026
 @module finance/infrastructure/ledger_csv
 """
-import csv
-import io
 from collections.abc import Iterable
 from datetime import date
-from decimal import Decimal
 from uuid import UUID
 
 from roster.models import Project
 
-from ..models import ContractStatus, CostCategory, ExpenseDocumentType, FeeForm
-from ..services.budget import ExpenseRow, LedgerRow, ProjectMoney
+from ..services.budget import AllocationView, ExpenseRow, LedgerRow, ProjectMoney
+from .csv_format import amount_cell, date_cell, encode_csv, text_cell
 from .documents import file_segment
+from .vocabulary import CATEGORY_LABELS, CONTRACT_STATUS_LABELS, DOCUMENT_TYPE_LABELS, FORM_LABELS
 
 HEADER: tuple[str, ...] = (
     "Projekt",
@@ -32,6 +30,7 @@ HEADER: tuple[str, ...] = (
     "Rodzaj kosztu",
     "Forma rozliczenia",
     "Nr umowy lub dokumentu",
+    "Data dokumentu",
     "Stan umowy",
     "Data podpisania",
     "Kwota umowy",
@@ -42,106 +41,71 @@ HEADER: tuple[str, ...] = (
     "NIP",
     "Uwagi",
     "Pozycja kosztorysu",
+    "Źródła finansowania",
+    "Kwota ze źródeł",
 )
 
-# An expense's "form" column names the vendor's document.
-DOCUMENT_TYPE_LABELS: dict[str, str] = {
-    ExpenseDocumentType.INVOICE: "Faktura",
-    ExpenseDocumentType.BILL: "Rachunek",
-    ExpenseDocumentType.RECEIPT: "Paragon",
-    ExpenseDocumentType.OTHER: "Inny dokument",
-}
-
-FORM_LABELS: dict[str, str] = {
-    FeeForm.DZIELO: "Umowa o dzieło",
-    FeeForm.ZLECENIE: "Umowa zlecenia",
-    FeeForm.INVOICE: "Faktura",
-    FeeForm.VOLUNTEER: "Wolontariat",
-    FeeForm.OTHER: "Inna",
-}
-
-CATEGORY_LABELS: dict[str, str] = {
-    CostCategory.PERSONNEL_ARTISTIC: "Personel artystyczny",
-    CostCategory.PERSONNEL_TECHNICAL: "Personel techniczny",
-    CostCategory.VENUE: "Miejsce",
-    CostCategory.TRAVEL: "Podróże",
-    CostCategory.ACCOMMODATION: "Noclegi",
-    CostCategory.CATERING: "Wyżywienie",
-    CostCategory.MATERIALS: "Materiały i prawa",
-    CostCategory.EQUIPMENT: "Sprzęt",
-    CostCategory.PROMOTION: "Promocja",
-    CostCategory.RECORDING: "Nagranie",
-    CostCategory.ADMINISTRATION: "Administracja",
-    CostCategory.OTHER: "Inne",
-}
-
-# A live contract is issued or signed; an annulled one is never on a row.
-CONTRACT_STATUS_LABELS: dict[str, str] = {
-    ContractStatus.ISSUED: "Wystawiona",
-    ContractStatus.SIGNED: "Podpisana",
-}
-
-# Excel reads a cell starting with one of these as a formula. A payee name or a
-# note is typed by hand, so text cells that start with one are quoted as text.
-_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+# Between two sources in one cell. Neither `;` (the cell separator) nor `,`
+# (the decimal comma inside each amount).
+_SOURCE_SEPARATOR = " / "
 
 
-def _text(value: str) -> str:
-    return f"'{value}" if value.startswith(_FORMULA_PREFIXES) else value
+def _sources_cells(allocations: list[AllocationView], names: dict[UUID, str], allocated: str) -> list[str]:
+    """Each source the cost is charged to with its share ("Dotacja MKiDN:
+    1250,00 / Bilety: 200,00"), and the sum. A volunteer's valuation is listed
+    too: it is charged to the volunteer-work source, not paid."""
+    listed = _SOURCE_SEPARATOR.join(
+        f"{names.get(allocation.funding_id, '')}: {amount_cell(allocation.amount)}" for allocation in allocations
+    )
+    return [text_cell(listed), allocated if allocations else ""]
 
 
-def _amount(value: Decimal | None) -> str:
-    """Prints 1250.5 as 1250,50: a decimal comma and no digit grouping, which
-    Excel would otherwise have to be told how to read."""
-    return "" if value is None else f"{value:.2f}".replace(".", ",")
-
-
-def _date(value: date | None) -> str:
-    return "" if value is None else value.strftime("%d.%m.%Y")
-
-
-def _fee_cells(project: Project, row: LedgerRow, line: str) -> list[str]:
+def _fee_cells(project: Project, row: LedgerRow, line: str, names: dict[UUID, str]) -> list[str]:
     contract = row.contract
     return [
-        _text(project.title),
-        _date(row.incurred_on),
-        _text(row.payee_name),
-        _text(row.payee_role),
+        text_cell(project.title),
+        date_cell(row.incurred_on),
+        text_cell(row.payee_name),
+        text_cell(row.payee_role),
         CATEGORY_LABELS.get(row.category, row.category),
         FORM_LABELS.get(row.form, row.form),
-        _text(contract.number if contract is not None else row.document_number),
+        text_cell(contract.number if contract is not None else row.document_number),
+        date_cell(row.document_date) if contract is None else "",
         CONTRACT_STATUS_LABELS.get(contract.status, "") if contract is not None else "",
-        _date(contract.signed_on) if contract is not None else "",
-        _amount(row.contract_amount),
-        _amount(row.employer_contributions),
-        _amount(row.cost_amount),
-        _date(row.due_on),
-        _date(row.paid_on),
+        date_cell(contract.signed_on) if contract is not None else "",
+        amount_cell(row.contract_amount),
+        amount_cell(row.employer_contributions),
+        amount_cell(row.cost_amount),
+        date_cell(row.due_on),
+        date_cell(row.paid_on),
         row.vendor_nip,
-        _text(row.note),
-        _text(line),
+        text_cell(row.note),
+        text_cell(line),
+        *_sources_cells(row.allocations, names, amount_cell(row.allocated)),
     ]
 
 
-def _expense_cells(project: Project, expense: ExpenseRow, line: str) -> list[str]:
+def _expense_cells(project: Project, expense: ExpenseRow, line: str, names: dict[UUID, str]) -> list[str]:
     return [
-        _text(project.title),
-        _date(expense.incurred_on),
-        _text(expense.vendor_name),
-        _text(expense.description),
+        text_cell(project.title),
+        date_cell(expense.incurred_on),
+        text_cell(expense.vendor_name),
+        text_cell(expense.description),
         CATEGORY_LABELS.get(expense.category, expense.category),
         DOCUMENT_TYPE_LABELS.get(expense.document_type, expense.document_type),
-        _text(expense.document_number),
+        text_cell(expense.document_number),
+        date_cell(expense.document_date),
         "",
         "",
         "",
         "",
-        _amount(expense.cost_amount),
-        _date(expense.due_on),
-        _date(expense.paid_on),
+        amount_cell(expense.cost_amount),
+        date_cell(expense.due_on),
+        date_cell(expense.paid_on),
         expense.vendor_nip,
-        _text(expense.note),
-        _text(line),
+        text_cell(expense.note),
+        text_cell(line),
+        *_sources_cells(expense.allocations, names, amount_cell(expense.allocated)),
     ]
 
 
@@ -158,20 +122,19 @@ def ledger_csv(
     """Every counted fee and every expense of the given budgets whose cost date
     falls in the range (both ends inclusive; an open end is unbounded). The
     plan line is written as the kosztorys prints it: "I.2 Wynajem kościoła"."""
-    buffer = io.StringIO()
-    writer = csv.writer(buffer, delimiter=";", lineterminator="\r\n")
-    writer.writerow(HEADER)
+    rows: list[list[str]] = [list(HEADER)]
     for money in moneys:
         lines: dict[UUID, str] = {line.id: f"{line.number} {line.name}" for line in money.lines}
+        names = {funding.id: funding.source.source.name for funding in money.fundings}
         for row in money.rows:
             if row.counted and _in_range(row.incurred_on, date_from, date_to):
                 line = lines.get(row.budget_line_id, "") if row.budget_line_id else ""
-                writer.writerow(_fee_cells(money.project, row, line))
+                rows.append(_fee_cells(money.project, row, line, names))
         for expense in money.expenses:
             if _in_range(expense.incurred_on, date_from, date_to):
                 line = lines.get(expense.budget_line_id, "") if expense.budget_line_id else ""
-                writer.writerow(_expense_cells(money.project, expense, line))
-    return ("﻿" + buffer.getvalue()).encode("utf-8")
+                rows.append(_expense_cells(money.project, expense, line, names))
+    return encode_csv(rows)
 
 
 def project_ledger_filename(project: Project) -> str:

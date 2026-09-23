@@ -1,7 +1,8 @@
 {% comment %}
     Shared styles of the finance documents, included inside each template's
-    <style> with `footer_label` (the document's name, printed with its number at
-    the foot of every page, so a loose page still says what it belongs to).
+    <style> with `footer_label` (the document's name, printed with its number —
+    when it has one — at the foot of every page, so a loose page still says
+    what it belongs to).
 
     The print canon (`.ai/04_design_system.md` § Print artifacts): two voices,
     four ink steps, one hairline, gold as structure. These are legal documents,
@@ -25,7 +26,7 @@
     size: A4;
     margin: 2.2cm 2cm 2.6cm 2cm;
     @bottom-left {
-        content: "{{ footer_label }} nr {{ number }}";
+        content: "{{ footer_label }}{% if number %} nr {{ number }}{% endif %}";
         font-family: {{ font_sans }};
         font-size: 7.5pt;
         color: #a2917a;

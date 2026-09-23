@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Raport dla zarządu — {{ project.title }}</title>
+    {% comment %}
+        The whole budget for the board, names included: plan against actual
+        per kosztorys line, the funding, what is still to be done and still
+        owed, every fee and every expense. Internal: it goes to the board and
+        the office, never to a patron (that is `report_patron.html`).
+    {% endcomment %}
+    <style>
+        {% include "finance/_styles.html" with footer_label="Raport dla zarządu" %}
+        {% include "finance/_report_styles.html" %}
+        body { font-size: 8.5pt; }
+    </style>
+</head>
+<body>
+    {% include "finance/_report_masthead.html" %}
+
+    <div class="report-eyebrow">Raport dla zarządu · budżet: {{ status|lower }}</div>
+    <div class="report-title">{{ project.title }}</div>
+    <p class="report-when">{{ concert.day|date:"j E Y" }}{% if concert.place %} · {{ concert.place }}{% endif %}</p>
+
+    <table class="figure-grid">
+        <tr>
+        {% for label, value in figures %}
+            <td>
+                <div class="figure-label">{{ label }}</div>
+                <div class="figure-value">{{ value }} zł</div>
+            </td>
+            {% if forloop.counter|divisibleby:4 and not forloop.last %}</tr><tr>{% endif %}
+        {% endfor %}
+        </tr>
+    </table>
+
+    <h2>Kosztorys: plan i wykonanie</h2>
+    {% if has_plan %}
+        <table class="figures">
+            <thead>
+                <tr>
+                    <th>Lp.</th>
+                    <th>Pozycja</th>
+                    <th class="num">Plan</th>
+                    <th class="num">Wykonanie</th>
+                    <th class="num">Odchylenie</th>
+                    <th class="num">%</th>
+                    <th>Uwagi</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in comparison %}
+                <tr>
+                    <td>{{ row.number }}</td>
+                    <td>{{ row.name }}</td>
+                    <td class="num">{{ row.planned }}</td>
+                    <td class="num">{{ row.actual }}</td>
+                    <td class="num">{{ row.deviation }}</td>
+                    <td class="num">{{ row.pct }}</td>
+                    <td>{{ row.note }}</td>
+                </tr>
+            {% endfor %}
+                <tr class="total">
+                    <td></td>
+                    <td>Razem</td>
+                    <td class="num">{{ plan_total }}</td>
+                    <td class="num">{{ actual_total }}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+    {% else %}
+        <p class="muted">Budżet nie ma kosztorysu: koszty są zapisane bez planu, z którym można je porównać.</p>
+    {% endif %}
+
+    <h2>Finansowanie</h2>
+    {% if fundings %}
+        <table class="figures">
+            <thead>
+                <tr>
+                    <th>Źródło</th>
+                    <th>Stan</th>
+                    <th class="num">Oczekiwane</th>
+                    <th class="num">Wpłynęło</th>
+                    <th class="num">W kosztorysie</th>
+                    <th class="num">Obciążono</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in fundings %}
+                <tr>
+                    <td>{{ row.name }}<span class="sub">{{ row.kind }}</span></td>
+                    <td>{{ row.status }}</td>
+                    <td class="num">{{ row.planned }}</td>
+                    <td class="num">{{ row.received }}</td>
+                    <td class="num">{{ row.line_allocated }}</td>
+                    <td class="num">{{ row.charged }}{% if row.in_kind %}<span class="sub">wycena</span>{% endif %}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="muted">Projekt nie ma źródeł finansowania: cały koszt pokrywa fundacja.</p>
+    {% endif %}
+
+    <h2>Do zrobienia</h2>
+    {% if warnings %}
+        <table class="figures">
+            <tbody>
+            {% for row in warnings %}
+                <tr>
+                    <td>{% if row.problem %}<span class="severity alarm">problem · </span>{% endif %}<strong>{{ row.title }}</strong>{% if row.subjects %}<span class="sub">{{ row.subjects }}</span>{% endif %}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="muted">Nic nie czeka na rozliczenie.</p>
+    {% endif %}
+
+    <h2>Do zapłaty</h2>
+    {% if payables %}
+        <table class="figures">
+            <thead>
+                <tr>
+                    <th>Odbiorca</th>
+                    <th>Rodzaj</th>
+                    <th>Termin</th>
+                    <th class="num">Kwota</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in payables %}
+                <tr>
+                    <td>{{ row.name }}</td>
+                    <td>{{ row.kind }}</td>
+                    <td>{{ row.due }}</td>
+                    <td class="num">{{ row.amount }}</td>
+                </tr>
+            {% endfor %}
+                <tr class="total">
+                    <td>Razem</td>
+                    <td></td>
+                    <td></td>
+                    <td class="num">{{ payables_total }}</td>
+                </tr>
+            </tbody>
+        </table>
+    {% else %}
+        <p class="muted">Wszystko zapłacone.</p>
+    {% endif %}
+
+    <h2>Honoraria</h2>
+    {% if fee_groups %}
+        <table class="figures fixed">
+            <colgroup>
+                <col style="width: 22%"><col style="width: 10%"><col style="width: 11%"><col style="width: 11%">
+                <col style="width: 13%"><col style="width: 11%"><col style="width: 22%">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Osoba</th>
+                    <th>Forma</th>
+                    <th class="num">Kwota</th>
+                    <th class="num">Koszt</th>
+                    <th>Dokument</th>
+                    <th>Zapłacono</th>
+                    <th>Źródła</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for title, rows in fee_groups %}
+                <tr class="group"><td colspan="7">{{ title }}</td></tr>
+                {% for row in rows %}
+                    <tr>
+                        <td>{{ row.name }}<span class="sub">{{ row.role }}{% if row.state %}{% if row.role %} · {% endif %}{{ row.state }}{% endif %}</span></td>
+                        <td>{{ row.form }}</td>
+                        <td class="num">{{ row.amount }}{% if row.amount_note %}<span class="sub">{{ row.amount_note }}</span>{% endif %}</td>
+                        <td class="num">{{ row.cost }}</td>
+                        <td>{{ row.document }}{% if row.document_note %}<span class="sub">{{ row.document_note }}</span>{% endif %}</td>
+                        <td>{{ row.paid }}</td>
+                        <td>{{ row.sources }}</td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="muted">Projekt nie ma obsady ani ekipy do rozliczenia.</p>
+    {% endif %}
+
+    <h2>Wydatki</h2>
+    {% if expenses %}
+        <table class="figures fixed">
+            <colgroup>
+                <col style="width: 12%"><col style="width: 25%"><col style="width: 20%"><col style="width: 12%">
+                <col style="width: 12%"><col style="width: 19%">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Dostawca</th>
+                    <th>Dokument</th>
+                    <th class="num">Kwota</th>
+                    <th>Zapłacono</th>
+                    <th>Źródła</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in expenses %}
+                <tr>
+                    <td>{{ row.date }}</td>
+                    <td>{{ row.vendor }}{% if row.description %}<span class="sub">{{ row.description }}</span>{% endif %}</td>
+                    <td>{{ row.document }}{% if row.line %}<span class="sub">{{ row.line }}</span>{% endif %}</td>
+                    <td class="num">{{ row.amount }}</td>
+                    <td>{{ row.paid }}</td>
+                    <td>{{ row.sources }}</td>
+                </tr>
+            {% endfor %}
+                <tr class="total">
+                    <td></td>
+                    <td>Razem</td>
+                    <td></td>
+                    <td class="num">{{ expenses_total }}</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+    {% else %}
+        <p class="muted">Budżet nie ma wydatków poza honorariami.</p>
+    {% endif %}
+
+    <div class="closing smallprint muted">
+        <p>Kwoty w złotych, brutto. Dokument wewnętrzny: zawiera dane osobowe i wynagrodzenia — nie przekazuj go poza zarząd i biuro.</p>
+    </div>
+</body>
+</html>
