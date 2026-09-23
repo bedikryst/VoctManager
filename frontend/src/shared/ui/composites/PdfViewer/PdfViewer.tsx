@@ -226,19 +226,25 @@ export const PdfViewer = ({
    * overflows too, once the reader zooms or where the minimum page width
    * outgrows a short box, and turning past the rest of the page there would
    * turn past music.
+   *
+   * A rest of the page that fits one screen is shown in one turn, and a longer
+   * rest is split into equal turns. A fixed screen-minus-overlap step would end
+   * on a sliver: the half-page fit makes a page exactly two screens tall, and
+   * each page would take a third tap that moves it by the overlap alone.
    */
   const turnPage = useCallback((delta: 1 | -1) => {
     const viewport = viewportRef.current;
     if (viewport) {
       const maxScroll = viewport.scrollHeight - viewport.clientHeight;
-      const canScroll =
-        delta === 1
-          ? viewport.scrollTop < maxScroll - SCROLL_EDGE_TOLERANCE_PX
-          : viewport.scrollTop > SCROLL_EDGE_TOLERANCE_PX;
-      if (canScroll) {
+      const remaining = delta === 1 ? maxScroll - viewport.scrollTop : viewport.scrollTop;
+      if (remaining > SCROLL_EDGE_TOLERANCE_PX) {
         const step = Math.max(viewport.clientHeight - FIT_SCROLL_OVERLAP_PX, 1);
+        const advance =
+          remaining <= viewport.clientHeight
+            ? remaining
+            : remaining / Math.ceil(remaining / step);
         viewport.scrollTo({
-          top: viewport.scrollTop + delta * step,
+          top: viewport.scrollTop + delta * advance,
           left: viewport.scrollLeft,
         });
         return;

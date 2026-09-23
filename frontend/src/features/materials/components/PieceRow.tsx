@@ -2,8 +2,9 @@
  * @file PieceRow.tsx
  * @description Slim, tap-first list row for one piece in the Songbook.
  * The two most frequent actions (open score, play my voice track) are always
- * visible — never hidden behind an accordion. The whole row navigates to the
- * piece page for everything else.
+ * visible — never hidden behind an accordion. The score opens with the same
+ * rehearsal dock (starting pitches + player remote) as on the piece page. The
+ * whole row navigates to the piece page for everything else.
  */
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +29,7 @@ import {
   usePracticePlayer,
 } from "../player/PracticePlayerProvider";
 import { holdsTake } from "../player/practicePlayerEngine";
+import { RehearsalDock } from "../player/RehearsalDock";
 import { MaterialsService } from "../api/materials.service";
 import { ReadinessDot } from "./ReadinessControl";
 import type { MaterialsPiece } from "../types/materials.dto";
@@ -278,6 +280,13 @@ export const PieceRow = ({
           fileName={primaryPdf.label.endsWith(".pdf") ? primaryPdf.label : `${primaryPdf.label}.pdf`}
           fetchBlob={() => MaterialsService.fetchScoreEditionBlob(primaryPdf.id)}
           canExport={primaryPdf.canExport}
+          extraOverlay={
+            <RehearsalDock
+              piece={piece}
+              projectId={projectId}
+              canEditPitches={isManager(user)}
+            />
+          }
           onClose={() => setIsScoreOpen(false)}
         />
       )}

@@ -210,8 +210,12 @@ export class PracticePlayerEngine {
 
     const hasMine = tracks.some((track) => track.isMine);
     // A solo/minus preset is meaningless without the chorister's own track.
-    const activePreset: PracticePreset | null =
+    // With nothing remembered the practice take opens on the blend, so a piece
+    // with a tutti take plays that take alone instead of every track stacked.
+    const rememberedPreset: PracticePreset | null =
       pref?.preset && (pref.preset === "blend" || hasMine) ? pref.preset : null;
+    const activePreset: PracticePreset | null =
+      rememberedPreset ?? (isPractice ? "blend" : null);
 
     const volumes: Record<string, number> = {};
     const muted: Record<string, boolean> = activePreset
@@ -360,11 +364,18 @@ export class PracticePlayerEngine {
     this.persistPref();
   }
 
-  /** Solo is exclusive; passing the active solo id (or null) clears it. */
+  /**
+   * Solo is exclusive; passing the active solo id (or null) clears it. The
+   * soloed track is unmuted too: the blend mutes every voice under a tutti
+   * take, and a solo on a muted voice would otherwise be silence.
+   */
   setSolo(trackId: string | null): void {
     const soloTrackId =
       trackId && this.snapshot.soloTrackId !== trackId ? trackId : null;
-    this.commit({ ...this.snapshot, soloTrackId, activePreset: null });
+    const muted = soloTrackId
+      ? { ...this.snapshot.muted, [soloTrackId]: false }
+      : this.snapshot.muted;
+    this.commit({ ...this.snapshot, muted, soloTrackId, activePreset: null });
     this.applyMix();
   }
 
