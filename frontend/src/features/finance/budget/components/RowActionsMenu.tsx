@@ -49,7 +49,8 @@ import {
 } from "../../lib/ledgerActs";
 import { FEE_FORMS, type FeeForm, type LedgerRowDTO } from "../../types/finance.dto";
 
-const ROW_CONTROL_CLASS =
+/** The quiet "⋯" control every finance row ends with. */
+export const ROW_CONTROL_CLASS =
   "flex h-7 w-7 shrink-0 items-center justify-center rounded-chip text-ethereal-graphite/60 transition-colors hover:bg-ethereal-ink/5 hover:text-ethereal-ink pointer-coarse:h-9 pointer-coarse:w-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40";
 
 export interface RowActs {

@@ -1,11 +1,13 @@
 """
 @file views.py
-@description The finance API under /api/finance/. Managers run the ledger;
-             the acts that undo a settled fact (reverting a payment, annulling a
-             contract) are the board's. Every write answers with the whole
-             budget, freshly computed, so the client never reconciles its copy
-             row by row. Finance payloads appear nowhere else in the API, and
-             the documents — rendered from the contract row — are streamed to a
+@description The finance API under /api/finance/. Managers run the ledger, the
+             expenses and the plan; the acts that undo a settled fact
+             (reverting a payment, annulling a contract) and those that move the
+             budget's standing (approve, reopen, close) are the board's. Every
+             write answers with the whole budget, freshly computed, so the
+             client never reconciles its copy row by row. Finance payloads
+             appear nowhere else in the API, and the files — contracts rendered
+             from their row, an expense's attachments — are streamed to a
              manager, never left at a public media URL.
 @architecture Enterprise SaaS 2026
 @module finance/views
@@ -21,6 +23,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from pydantic import BaseModel, ValidationError
 from rest_framework import permissions, status
+from rest_framework.parsers import MultiPartParser
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -28,20 +31,27 @@ from rest_framework.views import APIView
 from core.exceptions import format_pydantic_validation_errors, make_error_response
 from core.permissions import IsBoard, IsManager
 from core.request_utils import client_payload, request_user
+from documents.file_detection import FileTypeDetectionUnavailableError
 from roster.infrastructure.document_generator import DocumentRenderDependencyError
 from roster.models import Project
 
 from .dtos import (
+    BudgetLineDTO,
+    BudgetLineUpdateDTO,
     ContractHoursDTO,
     CostItemDetailsDTO,
+    ExpenseDTO,
+    ExpenseUpdateDTO,
     FeeBatchDTO,
+    HistoryPageDTO,
     LedgerRangeDTO,
+    LineOrderDTO,
     OneOffFeeDTO,
     PayFeesDTO,
     ReasonDTO,
     SignContractDTO,
 )
-from .exceptions import FinanceError, finance_error_response
+from .exceptions import AttachmentMissing, FinanceError, finance_error_response
 from .infrastructure.documents import (
     bill_filename,
     contract_filename,
@@ -50,11 +60,20 @@ from .infrastructure.documents import (
     render_contract_pdf,
 )
 from .infrastructure.ledger_csv import ledger_csv, project_ledger_filename, range_ledger_filename
-from .models import Contract, CostItem, CostKind
-from .serializers import PayableSerializer, ProjectMoneySerializer, ProjectRollupSerializer
+from .models import BudgetLine, Contract, CostItem, CostKind, FinanceAttachment
+from .serializers import (
+    HistoryEventSerializer,
+    PayableSerializer,
+    ProjectMoneySerializer,
+    ProjectRollupSerializer,
+)
+from .services.attachments import AttachmentService
 from .services.budget import SEVERITY_PROBLEM, SEVERITY_WORK, BudgetService, ProjectMoney
 from .services.contracts import ContractService
+from .services.expenses import ExpenseService
+from .services.history import HistoryService
 from .services.ledger import LedgerService
+from .services.plan import PlanService
 from .tasks import export_path, generate_contracts_zip_task
 
 # A ZIP task that raised rather than returned; the client owns the words.
@@ -105,6 +124,13 @@ class FinanceAPIView(APIView):
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 error_code="pdf_renderer_unavailable",
                 detail="PDF rendering is temporarily unavailable on the server.",
+            )
+        if isinstance(exc, FileTypeDetectionUnavailableError):
+            return make_error_response(
+                self.request,
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                error_code="file_detection_unavailable",
+                detail="File type detection is unavailable on the server.",
             )
         return super().handle_exception(exc)
 
@@ -165,13 +191,198 @@ class CostItemDetailView(FinanceAPIView):
 
 
 class UnpayView(BoardAPIView):
-    """POST cost-items/{id}/unpay/ — the board reverts a payment, with a reason."""
+    """POST cost-items/{id}/unpay/ — the board reverts a payment of a fee or an
+    expense, with a reason."""
 
     def post(self, request: Request, pk: UUID) -> Response:
-        item = get_object_or_404(CostItem.objects.select_related("budget__project"), pk=pk, kind=CostKind.FEE)
+        item = get_object_or_404(CostItem.objects.select_related("budget__project"), pk=pk)
         dto = self.parse(request, ReasonDTO)
         LedgerService.unpay(item, reason=dto.reason, actor=request_user(request))
         return _budget_response(item.budget.project)
+
+
+def _expense(project_id: UUID, pk: UUID) -> CostItem:
+    return get_object_or_404(
+        CostItem.objects.select_related("budget__project"),
+        pk=pk, kind=CostKind.EXPENSE, budget__project_id=project_id,
+    )
+
+
+class ExpenseCollectionView(FinanceAPIView):
+    """POST projects/{project_id}/expenses/ — a cost that is not a fee."""
+
+    def post(self, request: Request, project_id: UUID) -> Response:
+        project = get_object_or_404(Project, pk=project_id)
+        dto = self.parse(request, ExpenseDTO)
+        ExpenseService.create(project, dto, actor=request_user(request))
+        return _budget_response(project, status.HTTP_201_CREATED)
+
+
+class ExpenseDetailView(FinanceAPIView):
+    """PATCH | DELETE projects/{project_id}/expenses/{id}/."""
+
+    def patch(self, request: Request, project_id: UUID, pk: UUID) -> Response:
+        item = _expense(project_id, pk)
+        dto = self.parse(request, ExpenseUpdateDTO)
+        ExpenseService.update(item, dto, actor=request_user(request))
+        return _budget_response(item.budget.project)
+
+    def delete(self, request: Request, project_id: UUID, pk: UUID) -> Response:
+        item = _expense(project_id, pk)
+        ExpenseService.delete(item, actor=request_user(request))
+        return _budget_response(item.budget.project)
+
+
+class PayExpensesView(FinanceAPIView):
+    """POST projects/{project_id}/expenses/pay/ — all or nothing, like fees."""
+
+    def post(self, request: Request, project_id: UUID) -> Response:
+        project = get_object_or_404(Project, pk=project_id)
+        dto = self.parse(request, PayFeesDTO)
+        LedgerService.pay(project, dto, actor=request_user(request), kind=CostKind.EXPENSE)
+        return _budget_response(project)
+
+
+def _line(project_id: UUID, pk: UUID) -> BudgetLine:
+    return get_object_or_404(
+        BudgetLine.objects.select_related("budget__project"), pk=pk, budget__project_id=project_id,
+    )
+
+
+class LineCollectionView(FinanceAPIView):
+    """POST projects/{project_id}/lines/ — a plan line, while the plan is open."""
+
+    def post(self, request: Request, project_id: UUID) -> Response:
+        project = get_object_or_404(Project, pk=project_id)
+        dto = self.parse(request, BudgetLineDTO)
+        PlanService.create_line(project, dto, actor=request_user(request))
+        return _budget_response(project, status.HTTP_201_CREATED)
+
+
+class LineDetailView(FinanceAPIView):
+    """PATCH | DELETE projects/{project_id}/lines/{id}/."""
+
+    def patch(self, request: Request, project_id: UUID, pk: UUID) -> Response:
+        line = _line(project_id, pk)
+        dto = self.parse(request, BudgetLineUpdateDTO)
+        PlanService.update_line(line, dto, actor=request_user(request))
+        return _budget_response(line.budget.project)
+
+    def delete(self, request: Request, project_id: UUID, pk: UUID) -> Response:
+        line = _line(project_id, pk)
+        PlanService.delete_line(line, actor=request_user(request))
+        return _budget_response(line.budget.project)
+
+
+class LineReorderView(FinanceAPIView):
+    """POST projects/{project_id}/lines/reorder/ — every line, in its new order."""
+
+    def post(self, request: Request, project_id: UUID) -> Response:
+        project = get_object_or_404(Project, pk=project_id)
+        dto = self.parse(request, LineOrderDTO)
+        PlanService.reorder(project, dto, actor=request_user(request))
+        return _budget_response(project)
+
+
+class LineChargeView(FinanceAPIView):
+    """POST projects/{project_id}/lines/{id}/charge/ — charges the costs of the
+    line's category that sit outside the plan to this line."""
+
+    def post(self, request: Request, project_id: UUID, pk: UUID) -> Response:
+        line = _line(project_id, pk)
+        PlanService.charge_unplanned(line, actor=request_user(request))
+        return _budget_response(line.budget.project)
+
+
+class BudgetApproveView(BoardAPIView):
+    """POST projects/{project_id}/budget/approve/ — the board agrees the plan."""
+
+    def post(self, request: Request, project_id: UUID) -> Response:
+        project = get_object_or_404(Project, pk=project_id)
+        PlanService.approve(project, actor=request_user(request))
+        return _budget_response(project)
+
+
+class BudgetReopenView(BoardAPIView):
+    """POST projects/{project_id}/budget/reopen/ — one step back, with a reason."""
+
+    def post(self, request: Request, project_id: UUID) -> Response:
+        project = get_object_or_404(Project, pk=project_id)
+        dto = self.parse(request, ReasonDTO)
+        PlanService.reopen(project, reason=dto.reason, actor=request_user(request))
+        return _budget_response(project)
+
+
+class BudgetCloseView(BoardAPIView):
+    """POST projects/{project_id}/budget/close/ — the books are settled."""
+
+    def post(self, request: Request, project_id: UUID) -> Response:
+        project = get_object_or_404(Project, pk=project_id)
+        PlanService.close(project, actor=request_user(request))
+        return _budget_response(project)
+
+
+class BudgetHistoryView(FinanceAPIView):
+    """GET projects/{project_id}/history/?limit=&offset= — the budget's log,
+    newest first."""
+
+    def get(self, request: Request, project_id: UUID) -> Response:
+        project = get_object_or_404(Project, pk=project_id)
+        dto = HistoryPageDTO.model_validate(request.query_params.dict())
+        budget = BudgetService.get_or_create(project)
+        count, entries = HistoryService.page(budget, limit=dto.limit, offset=dto.offset)
+        return Response({
+            "count": count,
+            "limit": dto.limit,
+            "offset": dto.offset,
+            "results": HistoryEventSerializer(entries, many=True).data,
+        })
+
+
+class AttachmentUploadView(FinanceAPIView):
+    """POST attachments/ — multipart `cost_item` + `file`, for an expense."""
+
+    parser_classes = [MultiPartParser]
+
+    def post(self, request: Request) -> Response:
+        upload = request.FILES.get("file")
+        if upload is None:
+            raise AttachmentMissing()
+        try:
+            item_id = UUID(str(request.data.get("cost_item", "")))
+        except ValueError as exc:
+            raise Http404 from exc
+        item = get_object_or_404(CostItem.objects.select_related("budget__project"), pk=item_id)
+        AttachmentService.add(item, upload, actor=request_user(request))
+        return _budget_response(item.budget.project, status.HTTP_201_CREATED)
+
+
+class AttachmentDetailView(FinanceAPIView):
+    """GET attachments/{id}/ streams the file to a manager; DELETE removes it
+    from its expense."""
+
+    def _attachment(self, pk: UUID) -> FinanceAttachment:
+        return get_object_or_404(
+            FinanceAttachment.objects.select_related("cost_item__budget__project"),
+            pk=pk, cost_item__is_deleted=False,
+        )
+
+    def get(self, request: Request, pk: UUID) -> FileResponse:
+        attachment = self._attachment(pk)
+        try:
+            handle = attachment.file.open("rb")
+        except (FileNotFoundError, OSError) as exc:
+            raise Http404 from exc
+        response = FileResponse(
+            handle, as_attachment=True, filename=attachment.original_name, content_type=attachment.mime_type,
+        )
+        response["Access-Control-Expose-Headers"] = "Content-Disposition"
+        return response
+
+    def delete(self, request: Request, pk: UUID) -> Response:
+        attachment = self._attachment(pk)
+        AttachmentService.remove(attachment, actor=request_user(request))
+        return _budget_response(attachment.cost_item.budget.project)
 
 
 class IssueContractView(FinanceAPIView):

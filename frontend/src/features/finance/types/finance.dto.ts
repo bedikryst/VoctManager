@@ -49,11 +49,73 @@ export type CostCategory =
   | "ADMINISTRATION"
   | "OTHER";
 
+/** The server's order of categories, which is the kosztorys order. */
+export const COST_CATEGORIES: readonly CostCategory[] = [
+  "PERSONNEL_ARTISTIC",
+  "PERSONNEL_TECHNICAL",
+  "VENUE",
+  "TRAVEL",
+  "ACCOMMODATION",
+  "CATERING",
+  "MATERIALS",
+  "EQUIPMENT",
+  "PROMOTION",
+  "RECORDING",
+  "ADMINISTRATION",
+  "OTHER",
+];
+
 /** The two sides a fee sits on; a one-off payee states which. */
 export type FeeCategory = Extract<
   CostCategory,
   "PERSONNEL_ARTISTIC" | "PERSONNEL_TECHNICAL"
 >;
+
+export const FEE_CATEGORIES: readonly FeeCategory[] = [
+  "PERSONNEL_ARTISTIC",
+  "PERSONNEL_TECHNICAL",
+];
+
+/** Every other category is an expense's: a person is always paid as a fee. */
+export const EXPENSE_CATEGORIES: readonly CostCategory[] = COST_CATEGORIES.filter(
+  (category) => !(FEE_CATEGORIES as readonly CostCategory[]).includes(category),
+);
+
+export const isFeeCategory = (category: CostCategory | ""): category is FeeCategory =>
+  (FEE_CATEGORIES as readonly string[]).includes(category);
+
+export type PlanUnit =
+  | "PERSON"
+  | "PIECE"
+  | "SERVICE"
+  | "HOUR"
+  | "DAY"
+  | "NIGHT"
+  | "KM"
+  | "LUMP_SUM";
+
+export const PLAN_UNITS: readonly PlanUnit[] = [
+  "PERSON",
+  "PIECE",
+  "SERVICE",
+  "HOUR",
+  "DAY",
+  "NIGHT",
+  "KM",
+  "LUMP_SUM",
+];
+
+export type ExpenseDocumentType = "INVOICE" | "BILL" | "RECEIPT" | "OTHER";
+
+export const EXPENSE_DOCUMENT_TYPES: readonly ExpenseDocumentType[] = [
+  "INVOICE",
+  "BILL",
+  "RECEIPT",
+  "OTHER",
+];
+
+/** "I" — koszty realizacji działań; "II" — koszty administracyjne. */
+export type PlanSection = "I" | "II";
 
 export type ContractStatus = "ISSUED" | "SIGNED" | "ANNULLED";
 
@@ -97,6 +159,8 @@ export interface LedgerRowDTO {
   readonly is_priced: boolean;
   readonly is_paid: boolean;
   readonly category: CostCategory | "";
+  /** The plan line the fee is charged to; null is outside the plan. */
+  readonly budget_line_id: string | null;
   readonly form: FeeForm | "";
   /** The form `default_form_for` picks; null for a one-off payee. */
   readonly default_form: FeeForm | null;
@@ -118,21 +182,85 @@ export interface LedgerRowDTO {
   readonly contract: ContractDTO | null;
 }
 
+export interface AttachmentDTO {
+  readonly id: string;
+  readonly original_name: string;
+  readonly mime_type: string;
+  readonly size_bytes: number;
+  readonly uploaded_at: string;
+}
+
+/** A cost that is not a person's fee; its cost is its document's gross. */
+export interface ExpenseRowDTO {
+  readonly id: string;
+  readonly category: CostCategory;
+  readonly budget_line_id: string | null;
+  readonly vendor_name: string;
+  readonly vendor_nip: string;
+  readonly document_type: ExpenseDocumentType | "";
+  readonly document_number: string;
+  readonly document_date: IsoDate | null;
+  readonly description: string;
+  readonly cost_amount: DecimalString;
+  readonly incurred_on: IsoDate;
+  readonly due_on: IsoDate | null;
+  readonly paid_on: IsoDate | null;
+  readonly paid_marked_at: string | null;
+  readonly is_paid: boolean;
+  readonly note: string;
+  readonly attachments: readonly AttachmentDTO[];
+}
+
+/**
+ * A kosztorys line in kosztorys order. `number` ("I.3") and `planned_amount`
+ * (quantity × unit cost) are the server's; `actual` sums the counted costs
+ * charged to the line.
+ */
+export interface PlanLineDTO {
+  readonly id: string;
+  readonly number: string;
+  readonly section: PlanSection;
+  readonly category: CostCategory;
+  readonly name: string;
+  readonly position: number;
+  readonly unit: PlanUnit;
+  readonly quantity: DecimalString;
+  readonly unit_cost: DecimalString;
+  readonly planned_amount: DecimalString;
+  readonly note: string;
+  readonly actual: DecimalString;
+  readonly paid: DecimalString;
+  readonly cost_count: number;
+  readonly over_plan: boolean;
+}
+
 export interface CategoryTotalDTO {
   readonly category: CostCategory;
   readonly committed: DecimalString;
   readonly paid: DecimalString;
 }
 
+export interface TotalsDTO {
+  readonly committed: DecimalString;
+  readonly paid: DecimalString;
+  readonly outstanding: DecimalString;
+}
+
 /**
- * Committed is every counted fee's cost, outstanding what of it is unpaid,
- * in-kind the valuation of volunteer work (never a cost).
+ * Committed is every counted cost — fees and expenses — outstanding what of it
+ * is unpaid; `fees` and `expenses` split both. In-kind is the valuation of
+ * volunteer work (never a cost). `planned` is the plan's total, null while the
+ * budget has no plan lines; `unplanned` is the cost charged to no line.
  */
 export interface BudgetSummaryDTO {
   readonly committed: DecimalString;
   readonly paid: DecimalString;
   readonly outstanding: DecimalString;
   readonly in_kind: DecimalString;
+  readonly fees: TotalsDTO;
+  readonly expenses: TotalsDTO;
+  readonly planned: DecimalString | null;
+  readonly unplanned: DecimalString;
   readonly by_category: readonly CategoryTotalDTO[];
   readonly rows: number;
   readonly priced: number;
@@ -140,12 +268,14 @@ export interface BudgetSummaryDTO {
   readonly paid_count: number;
   readonly orphaned: number;
   readonly volunteers: number;
+  readonly expense_count: number;
+  readonly lines: number;
 }
 
 export interface BudgetWarningDTO {
   readonly code: string;
   readonly severity: WarningSeverity;
-  /** Ledger row keys. */
+  /** Ledger row keys, expense ids or plan line ids — the code says which. */
   readonly subject_ids: readonly string[];
   readonly params: Readonly<Record<string, string | number>>;
 }
@@ -174,6 +304,37 @@ export interface ProjectBudgetDTO {
   readonly summary: BudgetSummaryDTO;
   readonly warnings: readonly BudgetWarningDTO[];
   readonly ledger: readonly LedgerRowDTO[];
+  readonly expenses: readonly ExpenseRowDTO[];
+  readonly lines: readonly PlanLineDTO[];
+}
+
+export type HistorySubjectType =
+  | "cost_item"
+  | "contract"
+  | "budget"
+  | "budget_line"
+  | "attachment";
+
+/** One act in the budget's append-only history. */
+export interface HistoryEventDTO {
+  readonly id: string;
+  readonly at: string;
+  readonly action: string;
+  readonly subject_type: HistorySubjectType;
+  readonly subject_id: string;
+  /** What the act was about, as the record reads now; may be empty. */
+  readonly subject_label: string;
+  readonly actor_name: string;
+  readonly before: Readonly<Record<string, unknown>>;
+  readonly after: Readonly<Record<string, unknown>>;
+  readonly reason: string;
+}
+
+export interface HistoryPageDTO {
+  readonly count: number;
+  readonly limit: number;
+  readonly offset: number;
+  readonly results: readonly HistoryEventDTO[];
 }
 
 export interface ProjectRollupDTO {
@@ -183,13 +344,17 @@ export interface ProjectRollupDTO {
   readonly warning_counts: Readonly<Record<WarningSeverity, number>>;
 }
 
+/** A fee names its payee; an expense its vendor and what it paid for. */
 export interface PayableDTO {
   readonly cost_item_id: string;
+  readonly kind: "FEE" | "EXPENSE";
   readonly project_id: string;
   readonly project_title: string;
   readonly project_date_time: string;
   readonly payee_name: string;
   readonly payee_role: string;
+  readonly vendor_name: string;
+  readonly description: string;
   readonly category: CostCategory;
   readonly form: FeeForm | "";
   readonly cost_amount: DecimalString | null;
@@ -243,11 +408,15 @@ export interface OneOffFeePayload {
   readonly contract_amount: DecimalString | null;
 }
 
-/** Bookkeeping details of one item; only the fields sent change. */
+/**
+ * Bookkeeping details of one fee; only the fields sent change. `budget_line`
+ * null takes the fee out of the plan.
+ */
 export interface CostItemDetailsPayload {
   readonly payee_name?: string;
   readonly payee_role?: string;
   readonly category?: FeeCategory;
+  readonly budget_line?: string | null;
   readonly due_on?: IsoDate | null;
   readonly note?: string;
   readonly document_number?: string;
@@ -259,6 +428,34 @@ export interface PayFeesPayload {
   readonly ids: readonly string[];
   readonly paid_on: IsoDate;
 }
+
+export interface BudgetLinePayload {
+  readonly category: CostCategory;
+  readonly name: string;
+  readonly unit: PlanUnit;
+  readonly quantity: DecimalString;
+  readonly unit_cost: DecimalString;
+  readonly note: string;
+}
+
+export type BudgetLineUpdatePayload = Partial<BudgetLinePayload>;
+
+export interface ExpensePayload {
+  readonly category: CostCategory;
+  readonly budget_line: string | null;
+  readonly vendor_name: string;
+  readonly vendor_nip: string;
+  readonly document_type: ExpenseDocumentType;
+  readonly document_number: string;
+  readonly document_date: IsoDate | null;
+  readonly description: string;
+  readonly cost_amount: DecimalString;
+  readonly due_on: IsoDate | null;
+  readonly note: string;
+}
+
+/** Only the fields sent change. */
+export type ExpenseUpdatePayload = Partial<ExpensePayload>;
 
 export interface SignContractPayload {
   readonly signed_on: IsoDate;

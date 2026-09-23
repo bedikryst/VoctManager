@@ -2,8 +2,8 @@
  * @file BudgetTabs.tsx
  * @description The routed sub-navigation of the project's Budżet tab — the
  * `ArchiveTabs` recipe, because it switches between routes, not between local
- * views. A sub-tab appears in the stage that builds it; there are no
- * placeholder tabs for the plan, expenses or funding.
+ * views. A sub-tab appears in the stage that builds it; there is no
+ * placeholder tab for funding.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/BudgetTabs
  */
@@ -11,7 +11,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { LayoutDashboard, Users } from "lucide-react";
+import { ClipboardList, LayoutDashboard, Receipt, Users } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
@@ -39,16 +39,26 @@ export const BudgetTabs = ({ projectId }: BudgetTabsProps): React.JSX.Element =>
       end: true,
     },
     {
+      to: `${base}/plan`,
+      label: t("finance.nav.plan", "Kosztorys"),
+      icon: <ClipboardList size={14} aria-hidden="true" />,
+    },
+    {
       to: `${base}/people`,
       label: t("finance.nav.people", "Honoraria"),
       icon: <Users size={14} aria-hidden="true" />,
+    },
+    {
+      to: `${base}/costs`,
+      label: t("finance.nav.costs", "Wydatki"),
+      icon: <Receipt size={14} aria-hidden="true" />,
     },
   ];
 
   return (
     <nav
       aria-label={t("finance.nav.aria", "Sekcje budżetu")}
-      className="flex w-max gap-1 rounded-nested border border-hairline bg-ethereal-marble/55 p-1.5 shadow-glass-solid backdrop-blur-md"
+      className="no-scrollbar flex max-w-full gap-1 overflow-x-auto rounded-nested border border-hairline bg-ethereal-marble/55 p-1.5 shadow-glass-solid backdrop-blur-md sm:w-max"
     >
       {tabs.map((tab) => (
         <NavLink

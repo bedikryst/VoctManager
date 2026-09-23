@@ -1609,7 +1609,9 @@
     "nav": {
       "overview": "Aperçu",
       "people": "Cachets",
-      "aria": "Sections du budget"
+      "aria": "Sections du budget",
+      "plan": "Budget prévisionnel",
+      "costs": "Dépenses"
     },
     "forms": {
       "DZIELO": "Contrat d'œuvre (umowa o dzieło)",
@@ -1687,11 +1689,19 @@
       },
       "PAYMENT_OVERDUE": {
         "title": "Paiement en retard",
-        "hint": "L'échéance est passée et le cachet n'est pas marqué comme payé."
+        "hint": "L'échéance est passée et la ligne n'est pas marquée comme payée."
       },
       "unknown": {
         "title": "À vérifier",
         "hint": "Vérifiez les lignes indiquées."
+      },
+      "COST_OUTSIDE_PLAN": {
+        "title": "Coûts hors budget",
+        "hint": "Le budget a un budget prévisionnel, et ces coûts ne sont imputés à aucune de ses lignes. Imputez-les dans l'onglet Budget prévisionnel ou dans le détail du coût."
+      },
+      "LINE_OVER_PLAN": {
+        "title": "Lignes au-delà du prévu",
+        "hint": "La dépense dépasse ce que prévoit le budget. Pour une subvention, dépasser une ligne peut exiger un avenant — vérifiez la convention."
       }
     },
     "errors": {
@@ -1711,7 +1721,20 @@
       "pdf_renderer_unavailable": "Le serveur ne peut pas préparer le document pour l'instant. Réessayez dans un moment.",
       "no_contracts": "Le projet n'a encore aucun contrat émis.",
       "zip_failed": "Les contrats n'ont pas pu être regroupés. Réessayez.",
-      "zip_timeout": "Le regroupement des contrats prend trop de temps. Réessayez dans quelques minutes."
+      "zip_timeout": "Le regroupement des contrats prend trop de temps. Réessayez dans quelques minutes.",
+      "item_paid_not_removable": "La ligne est payée. Elle ne peut être supprimée qu'après l'annulation du paiement.",
+      "plan_locked": "Le budget prévisionnel est approuvé. Le conseil l'ouvre pour correction dans l'onglet Aperçu.",
+      "unknown_plan_line": "Cette ligne du budget n'existe plus. Actualisez la page.",
+      "plan_line_category_mismatch": "Un coût s'impute à une ligne du budget du même type.",
+      "line_order_mismatch": "Le budget prévisionnel a changé entre-temps. Actualisez la page et réordonnez les lignes.",
+      "plan_amount_too_large": "La quantité fois le coût unitaire dépasse ce que le budget peut contenir. Vérifiez les chiffres.",
+      "budget_transition_refused": "Le budget est déjà dans un autre état. Actualisez la page.",
+      "budget_has_open_items": "Le budget ne peut pas être clôturé : il reste des coûts impayés, des personnes sans cachet ou des cachets hors distribution.",
+      "attachment_not_allowed": "Les fichiers ne se joignent qu'aux dépenses.",
+      "attachment_missing": "Aucun fichier choisi.",
+      "attachment_too_large": "Le fichier est trop volumineux — la limite est de 20 Mo.",
+      "attachment_type_not_allowed": "Joignez un PDF ou une photo de la pièce (JPG, PNG, WEBP, HEIC).",
+      "file_detection_unavailable": "Le serveur ne peut pas vérifier le fichier pour le moment. Réessayez dans un instant."
     },
     "offline": {
       "act": "Vous êtes hors ligne. Les règlements ne s'enregistrent jamais hors ligne — reconnectez-vous pour le faire.",
@@ -1727,7 +1750,8 @@
       "locked_by_contract": "Montant figé par le contrat {{number}}",
       "select_aria": "Sélectionner — {{name}}",
       "unknown_payee": "Bénéficiaire sans nom",
-      "amount_aria": "Montant — {{name}}"
+      "amount_aria": "Montant — {{name}}",
+      "outside_plan": "hors budget"
     },
     "standard_rate": {
       "label": "Cachet pour tous",
@@ -1760,7 +1784,11 @@
       "note": "Indiquez le jour où le bureau a envoyé le virement. Le montant et la forme d'un cachet payé sont alors figés — seul le conseil peut annuler le paiement.",
       "confirm": "Marquer payé",
       "done": "Marqué comme payé : {{count}} lignes.",
-      "error": "Le paiement n'a pas pu être enregistré."
+      "error": "Le paiement n'a pas pu être enregistré.",
+      "done_expense": "Marqué comme payé : {{count}} lignes.",
+      "title_expense": "Marquer comme payé",
+      "confirm_expense": "Marquer payé",
+      "note_expense": "Indiquez le jour où le bureau a payé. Le montant et le bénéficiaire d'une dépense payée sont alors figés — seul le conseil peut annuler le paiement."
     },
     "reason": {
       "label": "Motif",
@@ -1885,7 +1913,12 @@
       "paid": "Payé",
       "outstanding": "Reste à payer",
       "in_kind": "Apport bénévole",
-      "unpriced": "Sans cachet"
+      "unpriced": "Sans cachet",
+      "planned": "Prévu",
+      "fees": "Cachets",
+      "expenses": "Dépenses",
+      "paid_all": "Payé",
+      "outstanding_all": "Reste à payer"
     },
     "overview": {
       "title": "Budget",
@@ -1918,7 +1951,7 @@
       "problems": "problèmes : {{count}}",
       "work": "à faire : {{count}}",
       "payables": "Reste à payer",
-      "payables_empty": "La fondation ne doit aucun cachet.",
+      "payables_empty": "La fondation ne doit rien.",
       "range": "{{first}}–{{last}} sur {{total}}",
       "previous": "Précédents",
       "next": "Suivants",
@@ -1929,13 +1962,211 @@
       "from": "Du",
       "to": "Au",
       "action": "Export pour le bureau",
-      "hint": "Cachets comptés dans le coût dont la date de coût (le jour du concert) tombe dans cette période — tous projets confondus.",
+      "hint": "Cachets et dépenses comptés dans le coût dont la date de coût (pour un cachet, le jour du concert) tombe dans cette période — tous projets confondus.",
       "range_required": "Indiquez les deux dates.",
       "range_order": "La date de début est postérieure à la date de fin."
     },
     "facts": {
       "cost": "Coût des cachets",
       "unpriced": "sans cachet : {{count}} pers."
+    },
+    "expenses": {
+      "title": "Dépenses",
+      "closed": "Le budget est clôturé.",
+      "edit": "Modifier la dépense",
+      "files_count": "Fichiers : {{count}}",
+      "files": "Fichiers",
+      "pay": "Marquer comme payé",
+      "delete": "Supprimer la dépense",
+      "unpay": "Annuler le paiement",
+      "board_only": "Annuler un paiement relève du conseil. Une dépense payée ne peut pas être supprimée.",
+      "headline": "Coût des dépenses",
+      "list": "Pièces",
+      "add": "Ajouter une dépense",
+      "empty": "Aucune dépense",
+      "empty_desc": "Location de salle, déplacements, impression, droits d'exécution — tout coût qui n'est pas un cachet. Les cachets, même facturés, sont dans l'onglet Cachets.",
+      "people_note": "Les cachets — y compris ceux qu'une société facture — se règlent dans l'onglet Cachets, pas ici.",
+      "delete_title": "Supprimer la dépense",
+      "delete_confirm": "Supprimer",
+      "deleted": "Dépense supprimée.",
+      "delete_error": "La dépense n'a pas pu être supprimée.",
+      "delete_desc": "La dépense quitte le budget avec son montant. La suppression reste dans l'historique du budget.",
+      "paid_on": "payé le {{date}}",
+      "due_on": "échéance {{date}}",
+      "has_files": "Fichiers : {{count}}",
+      "sheet": {
+        "vendor_required": "Indiquez à qui la fondation paie.",
+        "amount_invalid": "Indiquez le montant TTC de la pièce.",
+        "saved": "Dépense enregistrée.",
+        "added": "Dépense ajoutée : {{vendor}}.",
+        "error": "La dépense n'a pas pu être enregistrée.",
+        "edit_title": "Dépense",
+        "add_title": "Nouvelle dépense",
+        "add": "Ajouter",
+        "category": "Type de coût",
+        "no_line": "Le budget prévisionnel n'a pas de ligne de ce type.",
+        "no_plan": "Le budget n'a pas encore de budget prévisionnel.",
+        "vendor": "Bénéficiaire (société ou personne)",
+        "description": "Objet",
+        "description_placeholder": "p. ex. location de l'église pour le concert",
+        "document_type": "Pièce",
+        "document_number": "Numéro de la pièce",
+        "document_date": "Date de la pièce",
+        "amount": "Montant TTC (PLN)",
+        "paid_lock": "La dépense est payée : son montant et son bénéficiaire restent figés tant que le conseil n'annule pas le paiement."
+      }
+    },
+    "plan": {
+      "title": "Budget prévisionnel",
+      "locked_approved": "Budget prévisionnel approuvé le {{date}}. Il ne change qu'une fois ouvert pour correction — c'est le conseil qui le fait dans l'onglet Aperçu.",
+      "locked_closed": "Le budget est clôturé.",
+      "actual_total": "Réalisé",
+      "unplanned": "Hors budget",
+      "reorder_error": "Les lignes n'ont pas pu être réordonnées.",
+      "charged": "Coûts imputés à la ligne {{number}}.",
+      "charge_error": "Les coûts n'ont pas pu être imputés.",
+      "cast_line_name": "Cachets de la distribution",
+      "cast_proposal_unpriced": "Proposition tirée de la distribution : {{count}} pers. Personne n'a encore de cachet — saisissez le coût unitaire.",
+      "cast_proposal": "Proposition tirée de la distribution : {{count}} pers. à {{rate}} {{currency}} — le cachet le plus fréquent. Vérifiez avant d'enregistrer.",
+      "menu_aria": "Actions — {{name}}",
+      "edit": "Modifier la ligne",
+      "move_up": "Monter",
+      "move_down": "Descendre",
+      "charge_hint": "Coûts de ce type sans ligne au budget : {{count}}",
+      "charge": "Imputer les coûts hors budget",
+      "delete": "Supprimer la ligne",
+      "from_cast": "Cachets de la distribution",
+      "add": "Ajouter une ligne",
+      "headline": "Prévu",
+      "lines": "Lignes",
+      "empty": "Le budget prévisionnel est vide",
+      "empty_desc": "Répartissez les coûts du concert en lignes, comme dans une demande de subvention : quantité, unité, prix. Vous verrez ensuite ici ce qui a été dépensé sur chaque ligne.",
+      "delete_title": "Supprimer la ligne {{number}}",
+      "delete_confirm": "Supprimer",
+      "deleted": "Ligne supprimée.",
+      "delete_error": "La ligne n'a pas pu être supprimée.",
+      "delete_with_costs": "Les coûts qui y sont imputés ({{count}}) resteront hors budget. Les coûts eux-mêmes ne disparaissent pas.",
+      "delete_plain": "La ligne quitte le budget prévisionnel ; elle reste dans l'historique du budget.",
+      "sheet": {
+        "name_required": "Donnez à la ligne l'intitulé de la demande.",
+        "quantity_invalid": "Indiquez une quantité supérieure à zéro.",
+        "cost_invalid": "Ce n'est pas un montant.",
+        "too_large": "Le total dépasse ce que le budget peut contenir.",
+        "saved": "Ligne enregistrée.",
+        "added": "Ligne ajoutée.",
+        "error": "La ligne n'a pas pu être enregistrée.",
+        "edit_title": "Ligne {{number}}",
+        "add_title": "Nouvelle ligne du budget",
+        "add": "Ajouter",
+        "category": "Type de coût",
+        "category_detaches": "Les coûts imputés à cette ligne resteront hors budget — un coût s'impute à une ligne de son propre type.",
+        "name": "Intitulé de la ligne",
+        "name_placeholder": "p. ex. Location de l'église",
+        "quantity": "Quantité",
+        "unit": "Unité",
+        "unit_cost": "Coût unitaire (PLN)",
+        "total": "Total : {{amount}} {{currency}}",
+        "note": "Remarques"
+      },
+      "formula": "{{quantity}} {{unit}} × {{cost}} {{currency}}",
+      "actual": "réalisé {{amount}}",
+      "outside": "Hors budget",
+      "line_field": "Ligne du budget",
+      "sections": {
+        "I": "Coûts de réalisation des actions",
+        "II": "Coûts administratifs"
+      }
+    },
+    "standing": {
+      "planning": "Le budget prévisionnel peut être modifié. Le conseil l'approuve quand il est prêt — les coûts s'enregistrent dans tous les états sauf clôturé.",
+      "approved": "Approuvé le {{date}}. Le budget prévisionnel est verrouillé ; coûts et paiements s'enregistrent toujours.",
+      "closed": "Clôturé le {{date}}. Rien ne change dans le budget tant que le conseil ne le rouvre pas.",
+      "error": "L'état du budget n'a pas pu être modifié.",
+      "reopened": "Budget ouvert.",
+      "title": "État du budget",
+      "approve": "Approuver le budget prévisionnel",
+      "close": "Clôturer le budget",
+      "close_blocked": "La clôture est possible quand tout est payé, que chacun a un cachet et qu'aucun cachet ne reste hors distribution.",
+      "reopen_plan": "Ouvrir le budget prévisionnel pour correction",
+      "reopen_books": "Rouvrir le budget",
+      "board_only": "Le conseil approuve, ouvre pour correction et clôture.",
+      "approve_confirm": "Approuver",
+      "approved_done": "Budget prévisionnel approuvé.",
+      "approve_empty": "Le budget prévisionnel est vide — vous approuvez un budget sans prévision. Les coûts s'enregistrent toujours, et une prévision peut être ajoutée après une ouverture pour correction.",
+      "approve_desc": "Le budget prévu de {{amount}} {{currency}} sera verrouillé. Il ne pourra changer qu'après une ouverture pour correction, motif à l'appui.",
+      "close_confirm": "Clôturer",
+      "closed_done": "Budget clôturé.",
+      "close_desc": "Coût du projet : {{amount}} {{currency}}, entièrement payé. Une fois clôturé, rien ne change dans le budget tant que le conseil ne le rouvre pas.",
+      "reopen_confirm": "Ouvrir",
+      "reopen_books_desc": "Le budget revient à l'état approuvé : on peut de nouveau enregistrer coûts et paiements.",
+      "reopen_plan_desc": "Le budget prévisionnel revient en préparation et peut être modifié. Le conseil l'approuve ensuite à nouveau."
+    },
+    "files": {
+      "added": "Fichier {{name}} ajouté.",
+      "add_error": "Le fichier n'a pas pu être ajouté.",
+      "title": "Fichiers de la dépense",
+      "add": "Ajouter un fichier",
+      "empty": "Aucun fichier",
+      "empty_desc": "Joignez la facture ou une photo du ticket — un PDF ou une image, jusqu'à 20 Mo.",
+      "download_aria": "Télécharger {{name}}",
+      "remove_aria": "Supprimer {{name}}",
+      "remove_title": "Supprimer le fichier ?",
+      "remove_desc": "{{name}} sera retiré de la dépense. La suppression reste dans l'historique du budget.",
+      "remove_confirm": "Supprimer le fichier",
+      "removed": "Fichier supprimé.",
+      "remove_error": "Le fichier n'a pas pu être supprimé."
+    },
+    "history": {
+      "title": "Historique",
+      "loading": "Chargement de l'historique…",
+      "empty": "Rien ne s'est encore passé.",
+      "reason": "Motif : {{reason}}",
+      "more": "Afficher les plus anciens ({{count}})",
+      "actions": {
+        "IMPORTED": "Repris de la distribution",
+        "CREATED": "Ajouté",
+        "PRICED": "Montant modifié",
+        "FORM_CHANGED": "Forme modifiée",
+        "DETAILS_CHANGED": "Détails modifiés",
+        "PAID": "Marqué payé",
+        "UNPAID": "Paiement annulé",
+        "REMOVED": "Supprimé",
+        "CONTRACT_ISSUED": "Contrat émis",
+        "CONTRACT_SIGNED": "Contrat signé",
+        "CONTRACT_HOURS": "Heures confirmées",
+        "CONTRACT_ANNULLED": "Contrat annulé",
+        "BUDGET_APPROVED": "Budget prévisionnel approuvé",
+        "BUDGET_REOPENED": "Rouvert",
+        "BUDGET_CLOSED": "Budget clôturé",
+        "PLAN_CHANGED": "Budget prévisionnel modifié",
+        "ALLOCATION_CHANGED": "Répartition modifiée"
+      }
+    },
+    "units": {
+      "PERSON": "Personne",
+      "PIECE": "Pièce",
+      "SERVICE": "Prestation",
+      "HOUR": "Heure",
+      "DAY": "Jour",
+      "NIGHT": "Nuitée",
+      "KM": "Kilomètre",
+      "LUMP_SUM": "Forfait"
+    },
+    "units_short": {
+      "PERSON": "pers.",
+      "PIECE": "pcs",
+      "SERVICE": "prest.",
+      "HOUR": "h",
+      "DAY": "j",
+      "NIGHT": "nuit.",
+      "KM": "km",
+      "LUMP_SUM": "forfait"
+    },
+    "document_types": {
+      "INVOICE": "Facture",
+      "BILL": "Note d'honoraires",
+      "RECEIPT": "Ticket de caisse",
+      "OTHER": "Autre pièce"
     }
   },
   "crew": {

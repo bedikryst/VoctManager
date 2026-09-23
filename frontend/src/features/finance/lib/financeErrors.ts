@@ -30,6 +30,19 @@ const FINANCE_ERROR_COPY: Record<string, string> = {
   no_contracts: "Projekt nie ma jeszcze żadnej wystawionej umowy.",
   zip_failed: "Nie udało się spakować umów. Spróbuj ponownie.",
   zip_timeout: "Pakowanie umów trwa zbyt długo. Spróbuj ponownie za kilka minut.",
+  item_paid_not_removable: "Pozycja jest zapłacona. Usunąć ją można dopiero po cofnięciu zapłaty.",
+  plan_locked: "Kosztorys jest zatwierdzony. Korektę otwiera zarząd na karcie Przegląd.",
+  unknown_plan_line: "Tej pozycji kosztorysu już nie ma. Odśwież stronę.",
+  plan_line_category_mismatch: "Koszt przypisuje się do pozycji kosztorysu tego samego rodzaju.",
+  line_order_mismatch: "Kosztorys zmienił się w międzyczasie. Odśwież stronę i ułóż pozycje jeszcze raz.",
+  plan_amount_too_large: "Ilość razy cena jednostkowa daje kwotę większą, niż mieści budżet. Sprawdź liczby.",
+  budget_transition_refused: "Budżet jest już w innym stanie. Odśwież stronę.",
+  budget_has_open_items: "Budżetu nie można zamknąć: są jeszcze niezapłacone koszty, osoby bez stawki albo honoraria poza obsadą.",
+  attachment_not_allowed: "Pliki dołącza się tylko do wydatków.",
+  attachment_missing: "Nie wybrano pliku.",
+  attachment_too_large: "Plik jest za duży — limit to 20 MB.",
+  attachment_type_not_allowed: "Dołączyć można PDF albo zdjęcie dokumentu (JPG, PNG, WEBP, HEIC).",
+  file_detection_unavailable: "Serwer nie może teraz sprawdzić pliku. Spróbuj za chwilę.",
 };
 
 /** The manager's sentence for a finance refusal code, or null if unknown. */

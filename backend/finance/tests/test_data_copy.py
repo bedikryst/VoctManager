@@ -4,8 +4,10 @@ The roster → ledger copy run by migration `finance/0002`.
 The columns it reads are dropped by `roster/0062`, so the class rolls the roster
 back to the schema the copy runs against, writes its seats and crew bookings
 through the historical models, and hands the copy those same models — exactly
-what the migration does. The roster is migrated forward again when the class
-ends, even if a test or the rollback fails.
+what the migration does. The ledger's side stays at its latest migration, and
+the copy gets the ledger models of that state: a later finance migration adds
+columns the copy never names, and the database holds them. The roster is
+migrated forward again when the class ends, even if a test or the rollback fails.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -24,9 +26,8 @@ from ..models import CostItem, FeeForm, FinanceAction, FinanceEvent, ProjectBudg
 from ..rules import local_date
 from .factories import make_project
 
-# The last roster migration that still holds the fee columns, and the copy.
+# The last roster migration that still holds the fee columns.
 _BEFORE_DROP = ("roster", "0061_rehearsalplanitem_minutes")
-_COPY = ("finance", "0002_copy_roster_fees")
 
 _sequence = count(1)
 
@@ -45,7 +46,8 @@ class RosterCopyTests(TransactionTestCase):
         cls.addClassCleanup(_migrate_to_leaves)
         executor = MigrationExecutor(connection)
         executor.migrate([_BEFORE_DROP])
-        cls.historical = executor.loader.project_state([_BEFORE_DROP, _COPY]).apps
+        finance_leaves = [node for node in executor.loader.graph.leaf_nodes() if node[0] == "finance"]
+        cls.historical = executor.loader.project_state([_BEFORE_DROP, *finance_leaves]).apps
 
     def setUp(self) -> None:
         self.project = make_project(days=-10)

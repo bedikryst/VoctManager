@@ -104,3 +104,63 @@ class CrewHasSettledFee(FinanceError):
     code = "crew_has_settled_fee"
     default_message = "This crew member has a paid or contracted fee; revert the payment or annul the contract first."
     status_code = 409
+
+
+class PaidItemNotRemovable(FinanceError):
+    code = "item_paid_not_removable"
+    default_message = "A paid item cannot be removed; revert the payment first."
+
+
+class PlanLocked(FinanceError):
+    code = "plan_locked"
+    default_message = "The plan is approved; the board reopens it for a correction."
+
+
+class UnknownPlanLine(FinanceError):
+    code = "unknown_plan_line"
+    default_message = "The plan line does not belong to this budget."
+
+
+class PlanLineCategoryMismatch(FinanceError):
+    code = "plan_line_category_mismatch"
+    default_message = "A cost is charged to a plan line of its own category."
+
+
+class LineOrderMismatch(FinanceError):
+    code = "line_order_mismatch"
+    default_message = "The new order must name every line of the plan exactly once."
+
+
+class PlanAmountTooLarge(FinanceError):
+    code = "plan_amount_too_large"
+    default_message = "Quantity times unit cost exceeds the largest amount the ledger holds."
+
+
+class BudgetTransitionRefused(FinanceError):
+    code = "budget_transition_refused"
+    default_message = "The budget cannot move to that state from where it is."
+
+
+class BudgetHasOpenItems(FinanceError):
+    code = "budget_has_open_items"
+    default_message = "The budget still has unpaid, unpriced or orphaned items; settle them before closing."
+
+
+class AttachmentNotAllowed(FinanceError):
+    code = "attachment_not_allowed"
+    default_message = "Files are kept with expenses only."
+
+
+class AttachmentMissing(FinanceError):
+    code = "attachment_missing"
+    default_message = "No file was sent."
+
+
+class AttachmentTooLarge(FinanceError):
+    code = "attachment_too_large"
+    default_message = "The file is larger than the limit."
+
+
+class AttachmentTypeNotAllowed(FinanceError):
+    code = "attachment_type_not_allowed"
+    default_message = "Only PDF files and photographs of a document are kept."

@@ -30,8 +30,9 @@ What it seeds, across every bounded context that exists today:
                  program notes, rehearsal audio, score editions across the whole
                  licence spectrum and every ingestion state, conductor markup
                  (annotation layers), provenance records and score access logs
-  • finance    — the cast's and the crew's fees, priced through the ledger,
-                 paid on completed concerts
+  • finance    — a kosztorys per project, the cast's and the crew's fees
+                 priced through the ledger, two expenses, all paid on
+                 completed concerts
   • documents  — Knowledge-Base categories + role-gated documents
   • messaging  — 1:1 artist↔management threads (assigned, unassigned intake,
                  project-anchored, archived) and per-project group channels
@@ -104,9 +105,20 @@ from documents.models import Document, DocumentCategory, DocumentIconKey
 
 # Finance (cleared first — the ledger PROTECTs the seats and projects below it —
 # then priced through the ledger's own service)
-from finance.dtos import FeeBatchDTO, FeeItemDTO, FeeRefDTO, PayFeesDTO
-from finance.models import Contract, ContractSequence, CostItem, FinanceEvent, ProjectBudget
+from finance.dtos import BudgetLineDTO, ExpenseDTO, FeeBatchDTO, FeeItemDTO, FeeRefDTO, PayFeesDTO
+from finance.models import (
+    BudgetLine,
+    Contract,
+    ContractSequence,
+    CostItem,
+    CostKind,
+    FinanceAttachment,
+    FinanceEvent,
+    ProjectBudget,
+)
+from finance.services.expenses import ExpenseService
 from finance.services.ledger import LedgerService
+from finance.services.plan import PlanService
 
 # Logistics
 from logistics.models import Location, LocationCategory
@@ -896,7 +908,7 @@ class Command(BaseCommand):
             ThreadReadState, Message, Thread,
             Donation, PatronLead,
             Document, DocumentCategory,
-            FinanceEvent, Contract, ContractSequence, CostItem, ProjectBudget,
+            FinanceEvent, FinanceAttachment, Contract, ContractSequence, CostItem, BudgetLine, ProjectBudget,
             Attendance, PieceReadiness, ProjectPieceCasting, CrewAssignment,
             ProgramItem, Rehearsal, Participation, ScorePackage, Project,
             Collaborator,
@@ -1568,7 +1580,7 @@ class Command(BaseCommand):
             for collaborator in random.sample(self.collaborators, k=3)
         ]
 
-    # --- B2) fees ------------------------------------------------------ #
+    # --- B2) plan, fees, expenses -------------------------------------- #
     def _seed_fees(
         self,
         project: Project,
@@ -1578,9 +1590,45 @@ class Command(BaseCommand):
         *,
         is_done: bool,
     ) -> None:
-        """Prices the cast and the crew through the ledger, the one writer of
-        money, and settles a completed concert two days after it. A declined
-        seat stays unpriced: the ledger refuses to price it."""
+        """Plans the concert, prices the cast and the crew through the ledger,
+        the one writer of money, books two expenses, and settles a completed
+        concert two days after it. The plan comes first, so each fee is charged
+        to the only line of its side as it is priced. A declined seat stays
+        unpriced: the ledger refuses to price it. The printing overruns its
+        line by a little, so the plan warning has something to show."""
+        billable = [seat for seat in participations if seat.status != Participation.Status.DECLINED]
+        plan = [
+            ("PERSONNEL_ARTISTIC", "Honoraria obsady", "PERSON", len(billable), 300),
+            ("PERSONNEL_TECHNICAL", "Obsługa techniczna", "PERSON", len(crew), 1000),
+            ("VENUE", "Wynajem kościoła", "SERVICE", 1, 1500),
+            ("PROMOTION", "Druk programów", "PIECE", 200, 3),
+        ]
+        lines = {
+            category: PlanService.create_line(
+                project,
+                BudgetLineDTO(category=category, name=name, unit=unit, quantity=Decimal(quantity),
+                              unit_cost=Decimal(unit_cost)),
+                actor=None,
+            )
+            for category, name, unit, quantity, unit_cost in plan
+            if quantity > 0
+        }
+        expenses = [
+            ExpenseService.create(
+                project,
+                ExpenseDTO(category="VENUE", vendor_name="Parafia pw. św. Anny", document_type="INVOICE",
+                           document_number=f"FV/{when:%m}/{random.randint(10, 99)}", cost_amount=Decimal(1500),
+                           description="Wynajem kościoła na koncert", budget_line=lines["VENUE"].pk),
+                actor=None,
+            ),
+            ExpenseService.create(
+                project,
+                ExpenseDTO(category="PROMOTION", vendor_name="Drukarnia Tercja", document_type="INVOICE",
+                           document_number=f"{random.randint(100, 999)}/{when:%Y}", cost_amount=Decimal(620),
+                           description="Programy koncertu, 200 szt.", budget_line=lines["PROMOTION"].pk),
+                actor=None,
+            ),
+        ]
         items = [
             FeeItemDTO(
                 ref=FeeRefDTO(participation=seat.pk),
@@ -1592,14 +1640,20 @@ class Command(BaseCommand):
             FeeItemDTO(ref=FeeRefDTO(crew_assignment=assignment.pk), contract_amount=Decimal(1000))
             for assignment in crew
         ]
-        if not items:
+        paid_on = (when + timedelta(days=2)).date()
+        if items:
+            LedgerService.apply_fee_batch(project, FeeBatchDTO(items=tuple(items)), actor=None)
+        if not is_done:
             return
-        LedgerService.apply_fee_batch(project, FeeBatchDTO(items=tuple(items)), actor=None)
-        if is_done:
-            ids = tuple(CostItem.objects.filter(budget__project=project).values_list("pk", flat=True))
-            LedgerService.pay(
-                project, PayFeesDTO(ids=ids, paid_on=(when + timedelta(days=2)).date()), actor=None,
-            )
+        ids = tuple(
+            CostItem.objects.filter(budget__project=project, kind=CostKind.FEE).values_list("pk", flat=True)
+        )
+        if ids:
+            LedgerService.pay(project, PayFeesDTO(ids=ids, paid_on=paid_on), actor=None)
+        LedgerService.pay(
+            project, PayFeesDTO(ids=tuple(expense.pk for expense in expenses), paid_on=paid_on),
+            actor=None, kind=CostKind.EXPENSE,
+        )
 
     # --- C) programme + score-book cockpit overrides -------------------- #
     def _seed_programme(self, project: Project, spec: ProjectSpec) -> None:

@@ -1600,7 +1600,9 @@
     "nav": {
       "overview": "Overview",
       "people": "Fees",
-      "aria": "Budget sections"
+      "aria": "Budget sections",
+      "plan": "Cost plan",
+      "costs": "Expenses"
     },
     "forms": {
       "DZIELO": "Contract for a specific work",
@@ -1678,11 +1680,19 @@
       },
       "PAYMENT_OVERDUE": {
         "title": "Payment overdue",
-        "hint": "The due date has passed and the fee is not marked paid."
+        "hint": "The due date has passed and the item is not marked paid."
       },
       "unknown": {
         "title": "Needs attention",
         "hint": "Check the items named."
+      },
+      "COST_OUTSIDE_PLAN": {
+        "title": "Costs outside the plan",
+        "hint": "The budget has a cost plan, and these costs are charged to none of its lines. Charge them on the Cost plan tab or in the cost's details."
+      },
+      "LINE_OVER_PLAN": {
+        "title": "Lines over plan",
+        "hint": "More has been spent than the cost plan allows. Under a grant, overrunning a line may need an annex — check the agreement."
       }
     },
     "errors": {
@@ -1702,7 +1712,20 @@
       "pdf_renderer_unavailable": "The server cannot prepare the document right now. Try again shortly.",
       "no_contracts": "The project has no issued contract yet.",
       "zip_failed": "The contracts could not be packed. Try again.",
-      "zip_timeout": "Packing the contracts is taking too long. Try again in a few minutes."
+      "zip_timeout": "Packing the contracts is taking too long. Try again in a few minutes.",
+      "item_paid_not_removable": "The item is paid. It can be removed only after the payment is reverted.",
+      "plan_locked": "The cost plan is approved. The board opens it for a correction on the Overview tab.",
+      "unknown_plan_line": "This plan line no longer exists. Refresh the page.",
+      "plan_line_category_mismatch": "A cost is charged to a plan line of the same type.",
+      "line_order_mismatch": "The cost plan changed in the meantime. Refresh the page and order the lines again.",
+      "plan_amount_too_large": "Quantity times unit cost exceeds what the budget can hold. Check the figures.",
+      "budget_transition_refused": "The budget is already in another state. Refresh the page.",
+      "budget_has_open_items": "The budget cannot be closed: there are still unpaid costs, people without a fee, or fees outside the cast.",
+      "attachment_not_allowed": "Files are attached to expenses only.",
+      "attachment_missing": "No file was chosen.",
+      "attachment_too_large": "The file is too large — the limit is 20 MB.",
+      "attachment_type_not_allowed": "Attach a PDF or a photo of the document (JPG, PNG, WEBP, HEIC).",
+      "file_detection_unavailable": "The server cannot check the file right now. Try again shortly."
     },
     "offline": {
       "act": "You are offline. Settlements are never saved offline — reconnect to do this.",
@@ -1718,7 +1741,8 @@
       "locked_by_contract": "Amount frozen by contract {{number}}",
       "select_aria": "Select — {{name}}",
       "unknown_payee": "Unnamed payee",
-      "amount_aria": "Amount — {{name}}"
+      "amount_aria": "Amount — {{name}}",
+      "outside_plan": "outside the plan"
     },
     "standard_rate": {
       "label": "Rate for everyone",
@@ -1751,7 +1775,11 @@
       "note": "Enter the day the office sent the transfer. A paid fee's amount and form are then fixed — only the board can revert the payment.",
       "confirm": "Mark paid",
       "done": "Marked as paid: {{count}} items.",
-      "error": "The payment could not be recorded."
+      "error": "The payment could not be recorded.",
+      "done_expense": "Marked as paid: {{count}} items.",
+      "title_expense": "Mark as paid",
+      "confirm_expense": "Mark paid",
+      "note_expense": "Enter the day the office paid. A paid expense's amount and payee are then fixed — only the board can revert the payment."
     },
     "reason": {
       "label": "Reason",
@@ -1876,7 +1904,12 @@
       "paid": "Paid",
       "outstanding": "Still owed",
       "in_kind": "Volunteer contribution",
-      "unpriced": "No fee set"
+      "unpriced": "No fee set",
+      "planned": "Plan",
+      "fees": "Fees",
+      "expenses": "Expenses",
+      "paid_all": "Paid",
+      "outstanding_all": "Still to pay"
     },
     "overview": {
       "title": "Budget",
@@ -1909,7 +1942,7 @@
       "problems": "problems: {{count}}",
       "work": "to do: {{count}}",
       "payables": "Still owed",
-      "payables_empty": "The foundation owes no fees.",
+      "payables_empty": "The foundation owes nothing.",
       "range": "{{first}}–{{last}} of {{total}}",
       "previous": "Earlier",
       "next": "Later",
@@ -1920,13 +1953,211 @@
       "from": "From",
       "to": "To",
       "action": "Export for the office",
-      "hint": "Fees counted in the cost whose cost date (the concert day) falls in this period — across all projects.",
+      "hint": "Fees and expenses counted in the cost whose cost date (for a fee, the concert day) falls in this period — across all projects.",
       "range_required": "Enter both dates.",
       "range_order": "The start date is later than the end date."
     },
     "facts": {
       "cost": "Cost of fees",
       "unpriced": "no fee set: {{count}} people"
+    },
+    "expenses": {
+      "title": "Expenses",
+      "closed": "The budget is closed.",
+      "edit": "Edit expense",
+      "files_count": "Files: {{count}}",
+      "files": "Files",
+      "pay": "Mark as paid",
+      "delete": "Remove expense",
+      "unpay": "Revert payment",
+      "board_only": "Reverting a payment is the board's. A paid expense cannot be removed.",
+      "headline": "Cost of expenses",
+      "list": "Documents",
+      "add": "Add expense",
+      "empty": "No expenses",
+      "empty_desc": "Venue hire, travel, printing, performing rights — every cost that is not a fee. Fees, invoiced ones included, are on the Fees tab.",
+      "people_note": "Fees — including those a company invoices — are settled on the Fees tab, not here.",
+      "delete_title": "Remove expense",
+      "delete_confirm": "Remove",
+      "deleted": "Expense removed.",
+      "delete_error": "The expense could not be removed.",
+      "delete_desc": "The expense leaves the budget with its amount. The removal stays in the budget's history.",
+      "paid_on": "paid {{date}}",
+      "due_on": "due {{date}}",
+      "has_files": "Files: {{count}}",
+      "sheet": {
+        "vendor_required": "Enter whom the foundation pays.",
+        "amount_invalid": "Enter the gross amount from the document.",
+        "saved": "Expense saved.",
+        "added": "Expense added: {{vendor}}.",
+        "error": "The expense could not be saved.",
+        "edit_title": "Expense",
+        "add_title": "New expense",
+        "add": "Add",
+        "category": "Type of cost",
+        "no_line": "The cost plan has no line of this type.",
+        "no_plan": "The budget has no cost plan yet.",
+        "vendor": "Payee (company or person)",
+        "description": "What for",
+        "description_placeholder": "e.g. church hire for the concert",
+        "document_type": "Document",
+        "document_number": "Document number",
+        "document_date": "Document date",
+        "amount": "Gross amount (PLN)",
+        "paid_lock": "The expense is paid: its amount and payee stay as they are until the board reverts the payment."
+      }
+    },
+    "plan": {
+      "title": "Cost plan",
+      "locked_approved": "Cost plan approved {{date}}. It can be changed once opened for a correction — the board does that on the Overview tab.",
+      "locked_closed": "The budget is closed.",
+      "actual_total": "Actual",
+      "unplanned": "Outside the plan",
+      "reorder_error": "The lines could not be reordered.",
+      "charged": "Costs charged to line {{number}}.",
+      "charge_error": "The costs could not be charged.",
+      "cast_line_name": "Cast fees",
+      "cast_proposal_unpriced": "Proposed from the cast: {{count}} people. Nobody has a fee yet — enter the unit cost.",
+      "cast_proposal": "Proposed from the cast: {{count}} people at {{rate}} {{currency}} — the most common fee. Check it before saving.",
+      "menu_aria": "Actions — {{name}}",
+      "edit": "Edit line",
+      "move_up": "Move up",
+      "move_down": "Move down",
+      "charge_hint": "Costs of this type with no plan line: {{count}}",
+      "charge": "Charge costs outside the plan",
+      "delete": "Remove line",
+      "from_cast": "Fees from the cast",
+      "add": "Add line",
+      "headline": "Plan",
+      "lines": "Lines",
+      "empty": "The cost plan is empty",
+      "empty_desc": "Break the concert's costs into lines, as in a grant application: quantity, unit, price. You will then see here how much of each line has been spent.",
+      "delete_title": "Remove line {{number}}",
+      "delete_confirm": "Remove",
+      "deleted": "Plan line removed.",
+      "delete_error": "The line could not be removed.",
+      "delete_with_costs": "The costs charged to it ({{count}}) will sit outside the plan. The costs themselves stay.",
+      "delete_plain": "The line leaves the cost plan; it stays in the budget's history.",
+      "sheet": {
+        "name_required": "Name the line as the application does.",
+        "quantity_invalid": "Enter a quantity above zero.",
+        "cost_invalid": "That is not an amount.",
+        "too_large": "The total exceeds what the budget can hold.",
+        "saved": "Plan line saved.",
+        "added": "Plan line added.",
+        "error": "The line could not be saved.",
+        "edit_title": "Line {{number}}",
+        "add_title": "New plan line",
+        "add": "Add",
+        "category": "Type of cost",
+        "category_detaches": "Costs charged to this line will sit outside the plan — a cost is charged to a line of its own type.",
+        "name": "Line name",
+        "name_placeholder": "e.g. Church hire",
+        "quantity": "Quantity",
+        "unit": "Unit",
+        "unit_cost": "Unit cost (PLN)",
+        "total": "Total: {{amount}} {{currency}}",
+        "note": "Notes"
+      },
+      "formula": "{{quantity}} {{unit}} × {{cost}} {{currency}}",
+      "actual": "actual {{amount}}",
+      "outside": "Outside the plan",
+      "line_field": "Plan line",
+      "sections": {
+        "I": "Costs of the activities",
+        "II": "Administrative costs"
+      }
+    },
+    "standing": {
+      "planning": "The cost plan can be changed. The board approves it once the plan is ready — costs are recorded in every state but closed.",
+      "approved": "Approved {{date}}. The cost plan is locked; costs and payments are still recorded.",
+      "closed": "Closed {{date}}. Nothing changes in the budget until the board reopens it.",
+      "error": "The budget's state could not be changed.",
+      "reopened": "Budget opened.",
+      "title": "Budget state",
+      "approve": "Approve the cost plan",
+      "close": "Close the budget",
+      "close_blocked": "It can be closed once everything is paid, everyone has a fee and no fee is left outside the cast.",
+      "reopen_plan": "Open the cost plan for a correction",
+      "reopen_books": "Reopen the budget",
+      "board_only": "The board approves, opens for correction and closes.",
+      "approve_confirm": "Approve",
+      "approved_done": "Cost plan approved.",
+      "approve_empty": "The cost plan is empty — you are approving a budget without a plan. Costs are still recorded, and a plan can be added after opening it for a correction.",
+      "approve_desc": "The plan of {{amount}} {{currency}} will be locked. It can then be changed only after opening it for a correction, with a reason.",
+      "close_confirm": "Close",
+      "closed_done": "Budget closed.",
+      "close_desc": "Project cost: {{amount}} {{currency}}, paid in full. Once closed, nothing in the budget changes until the board reopens it.",
+      "reopen_confirm": "Open",
+      "reopen_books_desc": "The budget returns to approved: costs and payments can be recorded again.",
+      "reopen_plan_desc": "The cost plan returns to planning and can be changed. The board then approves it again."
+    },
+    "files": {
+      "added": "File {{name}} added.",
+      "add_error": "The file could not be added.",
+      "title": "Expense files",
+      "add": "Add file",
+      "empty": "No files",
+      "empty_desc": "Attach the invoice or a photo of the receipt — a PDF or an image, up to 20 MB.",
+      "download_aria": "Download {{name}}",
+      "remove_aria": "Remove {{name}}",
+      "remove_title": "Remove the file?",
+      "remove_desc": "{{name}} will be removed from the expense. The removal stays in the budget's history.",
+      "remove_confirm": "Remove file",
+      "removed": "File removed.",
+      "remove_error": "The file could not be removed."
+    },
+    "history": {
+      "title": "History",
+      "loading": "Loading the history…",
+      "empty": "Nothing has happened yet.",
+      "reason": "Reason: {{reason}}",
+      "more": "Show older ({{count}})",
+      "actions": {
+        "IMPORTED": "Carried over from the roster",
+        "CREATED": "Added",
+        "PRICED": "Amount changed",
+        "FORM_CHANGED": "Form changed",
+        "DETAILS_CHANGED": "Details changed",
+        "PAID": "Marked paid",
+        "UNPAID": "Payment reverted",
+        "REMOVED": "Removed",
+        "CONTRACT_ISSUED": "Contract issued",
+        "CONTRACT_SIGNED": "Contract signed",
+        "CONTRACT_HOURS": "Hours confirmed",
+        "CONTRACT_ANNULLED": "Contract annulled",
+        "BUDGET_APPROVED": "Cost plan approved",
+        "BUDGET_REOPENED": "Reopened",
+        "BUDGET_CLOSED": "Budget closed",
+        "PLAN_CHANGED": "Cost plan changed",
+        "ALLOCATION_CHANGED": "Allocation changed"
+      }
+    },
+    "units": {
+      "PERSON": "Person",
+      "PIECE": "Piece",
+      "SERVICE": "Service",
+      "HOUR": "Hour",
+      "DAY": "Day",
+      "NIGHT": "Night",
+      "KM": "Kilometre",
+      "LUMP_SUM": "Lump sum"
+    },
+    "units_short": {
+      "PERSON": "ppl",
+      "PIECE": "pcs",
+      "SERVICE": "svc",
+      "HOUR": "h",
+      "DAY": "days",
+      "NIGHT": "nights",
+      "KM": "km",
+      "LUMP_SUM": "lump sum"
+    },
+    "document_types": {
+      "INVOICE": "Invoice",
+      "BILL": "Bill",
+      "RECEIPT": "Receipt",
+      "OTHER": "Other document"
     }
   },
   "crew": {

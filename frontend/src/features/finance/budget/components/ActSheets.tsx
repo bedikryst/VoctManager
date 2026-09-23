@@ -2,8 +2,9 @@
  * @file ActSheets.tsx
  * @description The finance acts that need one answer before they happen: the
  * date a payment left, the reason a settled fact is undone, the date on a
- * signed paper, a mandate's confirmed hours. Each is mounted when it opens, so
- * it always starts from its defaults, and closes itself once the server has
+ * signed paper, a mandate's confirmed hours. Paying and reverting a payment
+ * serve fees and expenses alike. Each sheet is mounted when it opens, so it
+ * always starts from its defaults, and closes itself once the server has
  * answered with the new budget.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/ActSheets
@@ -20,6 +21,7 @@ import { Text } from "@/shared/ui/primitives/typography";
 import {
   useAnnulContract,
   useConfirmHours,
+  usePayExpenses,
   usePayFees,
   useSignContract,
   useUnpay,
@@ -38,18 +40,30 @@ interface SheetBaseProps {
 /** The paid date is a past or present day; the server refuses a future one. */
 const isFutureDate = (value: string): boolean => value > todayIsoDate();
 
-const payeeList = (rows: readonly LedgerRowDTO[]): string =>
-  rows.map((row) => row.payee_name).join(", ");
-
 // ── Pay ───────────────────────────────────────────────────────────────────
 
-interface PaySheetProps extends SheetBaseProps {
-  readonly rows: readonly LedgerRowDTO[];
+/** A cost item to mark paid, and the name it is listed under. */
+export interface PayTarget {
+  readonly id: string;
+  readonly label: string;
 }
 
-export function PaySheet({ projectId, rows, onClose }: PaySheetProps): React.JSX.Element {
+interface PaySheetProps extends SheetBaseProps {
+  readonly targets: readonly PayTarget[];
+  /** Fees and expenses are paid through doors of their own. */
+  readonly kind: "fee" | "expense";
+}
+
+export function PaySheet({
+  projectId,
+  targets,
+  kind,
+  onClose,
+}: PaySheetProps): React.JSX.Element {
   const { t } = useTranslation();
-  const pay = usePayFees(projectId);
+  const payFees = usePayFees(projectId);
+  const payExpenses = usePayExpenses(projectId);
+  const pay = kind === "fee" ? payFees : payExpenses;
   const [paidOn, setPaidOn] = useState<string>(todayIsoDate);
   const [error, setError] = useState<string | undefined>();
 
@@ -62,15 +76,19 @@ export function PaySheet({ projectId, rows, onClose }: PaySheetProps): React.JSX
       setError(t("finance.pay.date_future", "Data zapłaty nie może być w przyszłości."));
       return;
     }
-    const ids = rows.flatMap((row) => (row.cost_item_id ? [row.cost_item_id] : []));
+    const ids = targets.map((target) => target.id);
     pay.mutate(
       { ids, paid_on: paidOn },
       {
         onSuccess: () => {
           toast.success(
-            t("finance.pay.done", "Oznaczono jako wypłacone: {{count}} poz.", {
-              count: ids.length,
-            }),
+            kind === "fee"
+              ? t("finance.pay.done", "Oznaczono jako wypłacone: {{count}} poz.", {
+                  count: ids.length,
+                })
+              : t("finance.pay.done_expense", "Oznaczono jako zapłacone: {{count}} poz.", {
+                  count: ids.length,
+                }),
           );
           onClose();
         },
@@ -88,14 +106,22 @@ export function PaySheet({ projectId, rows, onClose }: PaySheetProps): React.JSX
     <ActSheet
       isOpen
       onClose={onClose}
-      title={t("finance.pay.title", "Oznacz jako wypłacone")}
-      subtitle={t("finance.pay.subtitle", "Pozycje: {{count}}", { count: rows.length })}
-      confirmLabel={t("finance.pay.confirm", "Oznacz wypłatę")}
+      title={
+        kind === "fee"
+          ? t("finance.pay.title", "Oznacz jako wypłacone")
+          : t("finance.pay.title_expense", "Oznacz jako zapłacone")
+      }
+      subtitle={t("finance.pay.subtitle", "Pozycje: {{count}}", { count: targets.length })}
+      confirmLabel={
+        kind === "fee"
+          ? t("finance.pay.confirm", "Oznacz wypłatę")
+          : t("finance.pay.confirm_expense", "Oznacz zapłatę")
+      }
       onConfirm={handleConfirm}
       isPending={pay.isPending}
     >
       <Text size="sm" color="graphite">
-        {payeeList(rows)}
+        {targets.map((target) => target.label).join(", ")}
       </Text>
       <DateTimeField
         granularity="date"
@@ -108,10 +134,15 @@ export function PaySheet({ projectId, rows, onClose }: PaySheetProps): React.JSX
         error={error}
       />
       <Text size="xs" color="muted">
-        {t(
-          "finance.pay.note",
-          "Wpisz dzień, w którym biuro wysłało przelew. Wypłaty nie zmienisz już w kwocie ani formie — cofnąć ją może tylko zarząd.",
-        )}
+        {kind === "fee"
+          ? t(
+              "finance.pay.note",
+              "Wpisz dzień, w którym biuro wysłało przelew. Wypłaty nie zmienisz już w kwocie ani formie — cofnąć ją może tylko zarząd.",
+            )
+          : t(
+              "finance.pay.note_expense",
+              "Wpisz dzień, w którym biuro zapłaciło. Zapłaconego wydatku nie zmienisz już w kwocie ani dostawcy — cofnąć zapłatę może tylko zarząd.",
+            )}
       </Text>
     </ActSheet>
   );
@@ -120,14 +151,17 @@ export function PaySheet({ projectId, rows, onClose }: PaySheetProps): React.JSX
 // ── Unpay / annul ─────────────────────────────────────────────────────────
 
 interface ReasonSheetProps extends SheetBaseProps {
-  readonly row: LedgerRowDTO;
   readonly mode: "unpay" | "annul";
+  /** The cost item whose payment is reverted, or the contract to annul. */
+  readonly targetId: string;
+  readonly subtitle: string;
 }
 
 export function ReasonSheet({
   projectId,
-  row,
   mode,
+  targetId,
+  subtitle,
   onClose,
 }: ReasonSheetProps): React.JSX.Element {
   const { t } = useTranslation();
@@ -161,10 +195,10 @@ export function ReasonSheet({
             : t("finance.annul.error", "Nie udało się unieważnić umowy."),
         ),
     };
-    if (isUnpay && row.cost_item_id) {
-      unpay.mutate({ costItemId: row.cost_item_id, reason: trimmed }, callbacks);
-    } else if (!isUnpay && row.contract) {
-      annul.mutate({ contractId: row.contract.id, reason: trimmed }, callbacks);
+    if (isUnpay) {
+      unpay.mutate({ costItemId: targetId, reason: trimmed }, callbacks);
+    } else {
+      annul.mutate({ contractId: targetId, reason: trimmed }, callbacks);
     }
   };
 
@@ -178,7 +212,7 @@ export function ReasonSheet({
           ? t("finance.unpay.title", "Cofnij wypłatę")
           : t("finance.annul.title", "Unieważnij umowę")
       }
-      subtitle={isUnpay ? row.payee_name : `${row.contract?.number ?? ""} · ${row.payee_name}`}
+      subtitle={subtitle}
       confirmLabel={
         isUnpay
           ? t("finance.unpay.confirm", "Cofnij wypłatę")
@@ -191,7 +225,7 @@ export function ReasonSheet({
         {isUnpay
           ? t(
               "finance.unpay.description",
-              "Pozycja wróci do niewypłaconych i znów będzie można zmienić jej kwotę. Wypłata zostaje w historii razem z powodem.",
+              "Pozycja wróci do niezapłaconych i znów będzie można zmienić jej kwotę. Zapłata zostaje w historii razem z powodem.",
             )
           : t(
               "finance.annul.description",

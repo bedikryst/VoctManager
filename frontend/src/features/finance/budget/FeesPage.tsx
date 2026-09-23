@@ -38,7 +38,7 @@ import { categoryLabel } from "../lib/financePresentation";
 import { canIssue, canPay, isSelectable } from "../lib/ledgerActs";
 import { isPriceEditable } from "../lib/feeDraft";
 import { formatAmount, formatGrosze, isPositiveAmount, toGrosze } from "../lib/money";
-import type { LedgerRowDTO } from "../types/finance.dto";
+import { isFeeCategory, type LedgerRowDTO } from "../types/finance.dto";
 import { FeeDetailsSheet } from "./components/FeeDetailsSheet";
 import { FeeRow } from "./components/FeeRow";
 import { HoursSheet, PaySheet, ReasonSheet, SignSheet } from "./components/ActSheets";
@@ -214,11 +214,13 @@ function FeesWorkspace({
     );
   }
 
+  // Honoraria reads the fees' share of the budget; expenses have a tab of their own.
   const server = ledger.budget.summary;
+  const serverFees = server.fees;
   const currency = t("common.currency", "PLN");
   const committedHeadline = isDirty
     ? formatGrosze(summary.committed)
-    : (formatAmount(server.committed) ?? "0");
+    : (formatAmount(serverFees.committed) ?? "0");
 
   const categoryFigures: CostFigure[] = isDirty
     ? [...summary.byCategory.entries()]
@@ -231,7 +233,7 @@ function FeesWorkspace({
           tone: "default" as const,
         }))
     : server.by_category
-        .filter((total) => isPositiveAmount(total.committed))
+        .filter((total) => isFeeCategory(total.category) && isPositiveAmount(total.committed))
         .map((total) => ({
           key: total.category,
           label: categoryLabel(t, total.category),
@@ -244,12 +246,12 @@ function FeesWorkspace({
   const figures: CostFigure[] = [
     // One category is the headline again; the split earns a slot only as a split.
     ...(categoryFigures.length > 1 ? categoryFigures : []),
-    ...(isPositiveAmount(server.paid)
+    ...(isPositiveAmount(serverFees.paid)
       ? [
           {
             key: "paid",
             label: t("finance.summary.paid", "Wypłacone"),
-            value: formatAmount(server.paid) ?? "0",
+            value: formatAmount(serverFees.paid) ?? "0",
             unit: currency,
             tone: "sage" as const,
           },
@@ -259,8 +261,8 @@ function FeesWorkspace({
             // A draft never touches a paid fee, so what is owed after the save
             // is the previewed cost less what the server says is paid.
             value: isDirty
-              ? formatGrosze(Math.max(summary.committed - (toGrosze(server.paid) ?? 0), 0))
-              : (formatAmount(server.outstanding) ?? "0"),
+              ? formatGrosze(Math.max(summary.committed - (toGrosze(serverFees.paid) ?? 0), 0))
+              : (formatAmount(serverFees.outstanding) ?? "0"),
             unit: currency,
             tone: "default" as const,
           },
@@ -290,6 +292,8 @@ function FeesWorkspace({
       : []),
   ];
 
+  const hasPlan = ledger.budget.lines.length > 0;
+
   const renderRow = (row: LedgerRowDTO): React.JSX.Element => {
     const preview = ledger.previewOf(row);
     const blockedReason =
@@ -303,6 +307,9 @@ function FeesWorkspace({
         row={row}
         preview={preview}
         concertPassed={concertPassed}
+        outsidePlan={
+          hasPlan && row.counted && row.budget_line_id === null && row.form !== "VOLUNTEER"
+        }
         isFocused={row.key === focusedKey}
         selection={
           isSelectable(row)
@@ -467,13 +474,30 @@ function FeesWorkspace({
       />
 
       {openAct?.kind === "pay" && (
-        <PaySheet projectId={projectId} rows={openAct.rows} onClose={closeAct} />
+        <PaySheet
+          projectId={projectId}
+          kind="fee"
+          targets={openAct.rows.flatMap((row) =>
+            row.cost_item_id ? [{ id: row.cost_item_id, label: row.payee_name }] : [],
+          )}
+          onClose={closeAct}
+        />
       )}
-      {(openAct?.kind === "unpay" || openAct?.kind === "annul") && (
+      {openAct?.kind === "unpay" && openAct.row.cost_item_id && (
         <ReasonSheet
           projectId={projectId}
-          row={openAct.row}
-          mode={openAct.kind}
+          mode="unpay"
+          targetId={openAct.row.cost_item_id}
+          subtitle={openAct.row.payee_name}
+          onClose={closeAct}
+        />
+      )}
+      {openAct?.kind === "annul" && openAct.row.contract && (
+        <ReasonSheet
+          projectId={projectId}
+          mode="annul"
+          targetId={openAct.row.contract.id}
+          subtitle={`${openAct.row.contract.number} · ${openAct.row.payee_name}`}
           onClose={closeAct}
         />
       )}
@@ -484,7 +508,12 @@ function FeesWorkspace({
         <HoursSheet projectId={projectId} row={openAct.row} onClose={closeAct} />
       )}
       {openAct?.kind === "details" && (
-        <FeeDetailsSheet projectId={projectId} row={openAct.row} onClose={closeAct} />
+        <FeeDetailsSheet
+          projectId={projectId}
+          row={openAct.row}
+          lines={ledger.budget.lines}
+          onClose={closeAct}
+        />
       )}
       {openAct?.kind === "one_off" && (
         <OneOffPayeeSheet projectId={projectId} onClose={closeAct} />

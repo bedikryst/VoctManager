@@ -36,6 +36,7 @@ const row = (key: string, overrides: Partial<LedgerRowDTO> = {}): LedgerRowDTO =
   is_priced: false,
   is_paid: false,
   category: "PERSONNEL_ARTISTIC",
+  budget_line_id: null,
   form: "DZIELO",
   default_form: "DZIELO",
   contract_amount: null,

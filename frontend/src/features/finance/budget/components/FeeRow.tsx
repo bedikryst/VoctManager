@@ -45,6 +45,8 @@ interface FeeRowProps {
   readonly row: LedgerRowDTO;
   readonly preview: RowPreview;
   readonly concertPassed: boolean;
+  /** The budget has a plan and this counted cost is charged to none of it. */
+  readonly outsidePlan: boolean;
   /** Reached from a warning on Przegląd: the row the reader came to see. */
   readonly isFocused: boolean;
   /** `null` when the row takes no bulk act, so it draws no checkbox at all. */
@@ -60,6 +62,7 @@ export function FeeRow({
   row,
   preview,
   concertPassed,
+  outsidePlan,
   isFocused,
   selection,
   onAmountChange,
@@ -86,6 +89,13 @@ export function FeeRow({
     facts.push({
       key: "orphaned",
       text: t("finance.row.orphaned", "poza obsadą — nie wlicza się do kosztu"),
+      tone: "gold",
+    });
+  }
+  if (outsidePlan) {
+    facts.push({
+      key: "outside_plan",
+      text: t("finance.row.outside_plan", "poza kosztorysem"),
       tone: "gold",
     });
   }

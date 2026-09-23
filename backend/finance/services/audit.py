@@ -14,14 +14,22 @@ from uuid import UUID
 
 from django.contrib.auth.models import User
 
-from ..models import Contract, CostItem, FinanceAction, FinanceEvent, ProjectBudget
+from ..models import BudgetLine, Contract, CostItem, FinanceAction, FinanceAttachment, FinanceEvent, ProjectBudget
 
-Subject = CostItem | Contract | ProjectBudget
+Subject = CostItem | Contract | ProjectBudget | BudgetLine | FinanceAttachment
+
+SUBJECT_COST_ITEM = "cost_item"
+SUBJECT_CONTRACT = "contract"
+SUBJECT_BUDGET = "budget"
+SUBJECT_LINE = "budget_line"
+SUBJECT_ATTACHMENT = "attachment"
 
 _SUBJECT_TYPES: dict[type, str] = {
-    CostItem: "cost_item",
-    Contract: "contract",
-    ProjectBudget: "budget",
+    CostItem: SUBJECT_COST_ITEM,
+    Contract: SUBJECT_CONTRACT,
+    ProjectBudget: SUBJECT_BUDGET,
+    BudgetLine: SUBJECT_LINE,
+    FinanceAttachment: SUBJECT_ATTACHMENT,
 }
 
 

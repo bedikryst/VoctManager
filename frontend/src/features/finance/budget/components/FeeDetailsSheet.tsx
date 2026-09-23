@@ -2,8 +2,8 @@
  * @file FeeDetailsSheet.tsx
  * @description The bookkeeping behind one fee — what the office needs and the
  * amount field cannot hold: a due date, the vendor's invoice, a mandate's
- * employer contributions, the valuation of a volunteer's work, a note, and a
- * one-off payee's name and side.
+ * employer contributions, the valuation of a volunteer's work, a note, the
+ * plan line it is charged to, and a one-off payee's name and side.
  * It saves as one act. The money fields travel in a single-row pricing batch
  * that restates the stored amount, so a paid or contracted fee still takes its
  * contributions (the server allows exactly that); the rest goes to the item's
@@ -34,11 +34,15 @@ import type {
   FeeCategory,
   FeeItemPayload,
   LedgerRowDTO,
+  PlanLineDTO,
 } from "../../types/finance.dto";
+import { PlanLineSelect } from "../../components/PlanLineSelect";
 
 interface FeeDetailsSheetProps {
   readonly projectId: string;
   readonly row: LedgerRowDTO;
+  /** The budget's plan; a fee is charged to a line of its own side. */
+  readonly lines: readonly PlanLineDTO[];
   readonly onClose: () => void;
 }
 
@@ -58,6 +62,7 @@ const parseOptional = (typed: string): DecimalString | null | undefined => {
 export function FeeDetailsSheet({
   projectId,
   row,
+  lines,
   onClose,
 }: FeeDetailsSheetProps): React.JSX.Element {
   const { t } = useTranslation();
@@ -83,7 +88,12 @@ export function FeeDetailsSheet({
   const [documentDate, setDocumentDate] = useState(row.document_date ?? "");
   const [vendorNip, setVendorNip] = useState(row.vendor_nip);
   const [note, setNote] = useState(row.note);
+  const [lineId, setLineId] = useState(row.budget_line_id ?? "");
   const [errors, setErrors] = useState<FieldErrors>({});
+
+  // A line of the side the fee sits on, which a one-off may be changing here.
+  const sideLines = lines.filter((line) => line.category === side);
+  const chosenLine = sideLines.some((line) => line.id === lineId) ? lineId : "";
 
   const isPending = saveFees.isPending || updateDetails.isPending;
 
@@ -129,6 +139,7 @@ export function FeeDetailsSheet({
     }
     if ((dueOn || null) !== row.due_on) details.due_on = dueOn || null;
     if (note.trim() !== row.note) details.note = note.trim();
+    if ((chosenLine || null) !== row.budget_line_id) details.budget_line = chosenLine || null;
     if (isInvoice) {
       if (documentNumber.trim() !== row.document_number) {
         details.document_number = documentNumber.trim();
@@ -288,6 +299,10 @@ export function FeeDetailsSheet({
             maxLength={20}
           />
         </div>
+      )}
+
+      {sideLines.length > 0 && (
+        <PlanLineSelect lines={sideLines} value={chosenLine} onChange={setLineId} />
       )}
 
       <DateTimeField

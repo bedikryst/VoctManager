@@ -12,10 +12,28 @@ import { describe, expect, it } from "vitest";
 import {
   formatLedgerGrosze,
   fromGrosze,
+  lineTotalGrosze,
   sanitizeAmountInput,
   toAmountInput,
   toGrosze,
 } from "./money";
+
+describe("lineTotalGrosze", () => {
+  it("multiplies quantity by unit cost and rounds half up to the grosz", () => {
+    expect(lineTotalGrosze("8", "412.50")).toBe(330000n);
+    expect(lineTotalGrosze("2.5", "0.03")).toBe(8n);
+    expect(lineTotalGrosze("0.5", "0.01")).toBe(1n);
+  });
+
+  it("stays exact where a float would not", () => {
+    expect(lineTotalGrosze("999999.99", "99999999.99")).toBe(9999999899000000n);
+  });
+
+  it("refuses a factor that is not an amount", () => {
+    expect(lineTotalGrosze("", "10")).toBeNull();
+    expect(lineTotalGrosze("2", "abc")).toBeNull();
+  });
+});
 
 describe("toGrosze", () => {
   it("reads the API's decimal strings exactly", () => {

@@ -70,8 +70,8 @@ export function ProjectRollups({ rollups }: ProjectRollupsProps): React.JSX.Elem
             </Eyebrow>
             {[
               t("finance.portfolio.cost", "Koszt"),
-              t("finance.summary.paid", "Wypłacone"),
-              t("finance.summary.outstanding", "Do wypłaty"),
+              t("finance.summary.paid_all", "Zapłacone"),
+              t("finance.summary.outstanding_all", "Do zapłaty"),
             ].map((label) => (
               <Eyebrow key={label} size="overline-sm" color="muted" className="w-24 text-right">
                 {label}

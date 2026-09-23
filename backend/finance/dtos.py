@@ -17,11 +17,15 @@ from pydantic import BeforeValidator, Field, field_validator, model_validator
 
 from roster.dtos import EnterpriseBaseDTO
 
-from .models import FEE_CATEGORIES, FeeForm
+from .models import EXPENSE_CATEGORIES, FEE_CATEGORIES, CostCategory, ExpenseDocumentType, FeeForm, PlanUnit
 from .rules import finance_today, is_valid_nip
 
 FEE_FORM_VALUES = frozenset(FeeForm.values)
 FEE_CATEGORY_VALUES = frozenset(str(category) for category in FEE_CATEGORIES)
+EXPENSE_CATEGORY_VALUES = frozenset(str(category) for category in EXPENSE_CATEGORIES)
+CATEGORY_VALUES = frozenset(CostCategory.values)
+PLAN_UNIT_VALUES = frozenset(PlanUnit.values)
+DOCUMENT_TYPE_VALUES = frozenset(ExpenseDocumentType.values)
 
 
 def _require_choice(value: str, allowed: frozenset[str], field_name: str) -> str:
@@ -48,7 +52,9 @@ def _normalize_nip(value: object) -> object:
 
 
 MoneyAmount = Annotated[Decimal, Field(ge=0, max_digits=10, decimal_places=2)]
+PositiveAmount = Annotated[Decimal, Field(gt=0, max_digits=10, decimal_places=2)]
 Hours = Annotated[Decimal, Field(gt=0, max_digits=6, decimal_places=2)]
+Quantity = Annotated[Decimal, Field(gt=0, max_digits=8, decimal_places=2)]
 Text = Annotated[str, BeforeValidator(_strip)]
 Nip = Annotated[str, BeforeValidator(_normalize_nip)]
 
@@ -152,13 +158,15 @@ class OneOffFeeDTO(EnterpriseBaseDTO):
 
 
 class CostItemDetailsDTO(EnterpriseBaseDTO):
-    """Bookkeeping details of one item. Only the fields sent are changed. The
+    """Bookkeeping details of one fee. Only the fields sent are changed. The
     payee and side of a one-off are here too; the service refuses them on a
-    roster row (the roster is their source) and on a paid or contracted one."""
+    roster row (the roster is their source) and on a paid or contracted one.
+    `budget_line` sent as null takes the fee out of the plan."""
 
     payee_name: Text | None = Field(default=None, min_length=1, max_length=200)
     payee_role: Text | None = Field(default=None, max_length=150)
     category: str | None = None
+    budget_line: UUID | None = None
     due_on: date | None = None
     note: Text | None = Field(default=None, max_length=2000)
     document_number: Text | None = Field(default=None, max_length=100)
@@ -210,6 +218,141 @@ class SignContractDTO(EnterpriseBaseDTO):
 
 class ContractHoursDTO(EnterpriseBaseDTO):
     hours_confirmed: Hours
+
+
+class BudgetLineDTO(EnterpriseBaseDTO):
+    """A new plan line. Its planned amount is quantity times unit cost, computed by
+    the server; its kosztorys number comes from its category and position."""
+
+    category: str
+    name: Text = Field(..., min_length=1, max_length=200)
+    unit: str
+    quantity: Quantity
+    unit_cost: MoneyAmount
+    note: Text = Field(default="", max_length=2000)
+
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, value: str) -> str:
+        return _require_choice(value, CATEGORY_VALUES, "category")
+
+    @field_validator("unit")
+    @classmethod
+    def validate_unit(cls, value: str) -> str:
+        return _require_choice(value, PLAN_UNIT_VALUES, "unit")
+
+
+class BudgetLineUpdateDTO(EnterpriseBaseDTO):
+    """A plan line's edit; only the fields sent change, and none may be null."""
+
+    category: str | None = None
+    name: Text | None = Field(default=None, min_length=1, max_length=200)
+    unit: str | None = None
+    quantity: Quantity | None = None
+    unit_cost: MoneyAmount | None = None
+    note: Text | None = Field(default=None, max_length=2000)
+
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, value: str | None) -> str | None:
+        return None if value is None else _require_choice(value, CATEGORY_VALUES, "category")
+
+    @field_validator("unit")
+    @classmethod
+    def validate_unit(cls, value: str | None) -> str | None:
+        return None if value is None else _require_choice(value, PLAN_UNIT_VALUES, "unit")
+
+    @model_validator(mode="after")
+    def no_nulls(self) -> Self:
+        cleared = [name for name in self.model_fields_set if getattr(self, name) is None]
+        if cleared:
+            raise ValueError(f"{', '.join(sorted(cleared))} cannot be cleared.")
+        return self
+
+
+class LineOrderDTO(EnterpriseBaseDTO):
+    """Every live line of the budget, in its new order."""
+
+    ids: tuple[UUID, ...] = Field(..., min_length=1)
+
+    @field_validator("ids")
+    @classmethod
+    def unique_ids(cls, value: tuple[UUID, ...]) -> tuple[UUID, ...]:
+        if len(set(value)) != len(value):
+            raise ValueError("ids must not repeat.")
+        return value
+
+
+class ExpenseDTO(EnterpriseBaseDTO):
+    """A cost that is not a person's fee: the vendor, their document and its
+    gross, which is the foundation's cost. `incurred_on` defaults to the
+    document's date, then to the concert day."""
+
+    category: str
+    vendor_name: Text = Field(..., min_length=1, max_length=200)
+    vendor_nip: Nip = ""
+    document_type: str
+    document_number: Text = Field(default="", max_length=100)
+    document_date: date | None = None
+    description: Text = Field(default="", max_length=300)
+    cost_amount: PositiveAmount
+    budget_line: UUID | None = None
+    incurred_on: date | None = None
+    due_on: date | None = None
+    note: Text = Field(default="", max_length=2000)
+
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, value: str) -> str:
+        return _require_choice(value, EXPENSE_CATEGORY_VALUES, "category")
+
+    @field_validator("document_type")
+    @classmethod
+    def validate_document_type(cls, value: str) -> str:
+        return _require_choice(value, DOCUMENT_TYPE_VALUES, "document_type")
+
+
+class ExpenseUpdateDTO(EnterpriseBaseDTO):
+    """An expense's edit; only the fields sent change. The dates, the line, the
+    NIP and the text fields may be cleared; the rest may not."""
+
+    category: str | None = None
+    vendor_name: Text | None = Field(default=None, min_length=1, max_length=200)
+    vendor_nip: Nip | None = None
+    document_type: str | None = None
+    document_number: Text | None = Field(default=None, max_length=100)
+    document_date: date | None = None
+    description: Text | None = Field(default=None, max_length=300)
+    cost_amount: PositiveAmount | None = None
+    budget_line: UUID | None = None
+    incurred_on: date | None = None
+    due_on: date | None = None
+    note: Text | None = Field(default=None, max_length=2000)
+
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, value: str | None) -> str | None:
+        return None if value is None else _require_choice(value, EXPENSE_CATEGORY_VALUES, "category")
+
+    @field_validator("document_type")
+    @classmethod
+    def validate_document_type(cls, value: str | None) -> str | None:
+        return None if value is None else _require_choice(value, DOCUMENT_TYPE_VALUES, "document_type")
+
+    @model_validator(mode="after")
+    def required_stay_set(self) -> Self:
+        required = {"category", "vendor_name", "document_type", "cost_amount", "incurred_on"}
+        cleared = [name for name in self.model_fields_set & required if getattr(self, name) is None]
+        if cleared:
+            raise ValueError(f"{', '.join(sorted(cleared))} cannot be cleared.")
+        return self
+
+
+class HistoryPageDTO(EnterpriseBaseDTO):
+    """A page of the budget's history (`?limit=&offset=`)."""
+
+    limit: int = Field(default=30, ge=1, le=100)
+    offset: int = Field(default=0, ge=0)
 
 
 class LedgerRangeDTO(EnterpriseBaseDTO):

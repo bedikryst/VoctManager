@@ -1,11 +1,11 @@
 /**
  * @file BudgetOverviewPage.tsx
  * @description Przegląd — the project's money at a glance: what the concert
- * costs and what qualifies that figure, the work the server's warnings list,
- * each linking to its row, and what the office takes away. Every figure here is
- * the server's; the page sums nothing.
- * The plan, the budget's approval and its history arrive with the stages that
- * build them — this page grows, it never holds a placeholder for them.
+ * costs, the plan it is measured against, and what qualifies that figure; the
+ * work the server's warnings list, each linking to its row; where the budget
+ * stands and the board's acts that move it; what the office takes away; and
+ * the history of every act. Every figure here is the server's; the page sums
+ * nothing.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/BudgetOverviewPage
  */
@@ -13,19 +13,22 @@
 import React from "react";
 import { useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, RefreshCw, Wallet } from "lucide-react";
+import { Wallet } from "lucide-react";
 
+import { useAuth } from "@/app/providers/AuthProvider";
 import type { ProjectHubContext } from "@/features/projects/ProjectHubLayout";
 import { TabLoadingCard } from "@/features/projects/editors/tabs/components/TabLoadingCard";
-import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { canApproveFinance } from "@/shared/auth/rbac";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { Button } from "@/shared/ui/primitives/Button";
 import { useProjectBudget } from "../api/finance.queries";
+import { BudgetLoadError } from "../components/BudgetLoadError";
 import { CostSummaryCard, type CostFigure } from "../components/CostSummaryCard";
-import { budgetStatusLabel, categoryLabel } from "../lib/financePresentation";
+import { budgetStatusLabel } from "../lib/financePresentation";
 import { formatAmount, isPositiveAmount } from "../lib/money";
 import type { ProjectBudgetDTO } from "../types/finance.dto";
+import { BudgetStandingCard } from "./components/BudgetStandingCard";
 import { DocumentsCard } from "./components/DocumentsCard";
+import { HistoryCard } from "./components/HistoryCard";
 import { WarningsCard } from "./components/WarningsCard";
 
 interface BudgetOverviewProps {
@@ -37,35 +40,55 @@ const useSummaryFigures = (budget: ProjectBudgetDTO | undefined): CostFigure[] =
   if (!budget) return [];
   const { summary } = budget;
   const currency = t("common.currency", "PLN");
-
-  const categories = summary.by_category.filter((total) => isPositiveAmount(total.committed));
+  const hasExpenses = isPositiveAmount(summary.expenses.committed);
 
   return [
-    // One category is the headline again; the split earns a slot only as a split.
-    ...(categories.length > 1
-      ? categories.map((total) => ({
-          key: total.category,
-          label: categoryLabel(t, total.category),
-          value: formatAmount(total.committed) ?? "0",
-          unit: currency,
-          tone: "default" as const,
-        }))
+    // The plan earns its slot once there is one.
+    ...(summary.planned !== null
+      ? [
+          {
+            key: "planned",
+            label: t("finance.summary.planned", "Plan"),
+            value: formatAmount(summary.planned) ?? "0",
+            unit: currency,
+            tone: "default" as const,
+          },
+        ]
+      : []),
+    // Fees against expenses — a split, so only once both exist.
+    ...(hasExpenses && isPositiveAmount(summary.fees.committed)
+      ? [
+          {
+            key: "fees",
+            label: t("finance.summary.fees", "Honoraria"),
+            value: formatAmount(summary.fees.committed) ?? "0",
+            unit: currency,
+            tone: "default" as const,
+          },
+          {
+            key: "expenses",
+            label: t("finance.summary.expenses", "Wydatki"),
+            value: formatAmount(summary.expenses.committed) ?? "0",
+            unit: currency,
+            tone: "default" as const,
+          },
+        ]
       : []),
     // Paid and owed stay off the rail until money has moved: before that,
-    // "0 wypłacone" is the resting case and the headline already says what
+    // "0 zapłacone" is the resting case and the headline already says what
     // is owed.
     ...(isPositiveAmount(summary.paid)
       ? [
           {
             key: "paid",
-            label: t("finance.summary.paid", "Wypłacone"),
+            label: t("finance.summary.paid_all", "Zapłacone"),
             value: formatAmount(summary.paid) ?? "0",
             unit: currency,
             tone: "sage" as const,
           },
           {
             key: "outstanding",
-            label: t("finance.summary.outstanding", "Do wypłaty"),
+            label: t("finance.summary.outstanding_all", "Do zapłaty"),
             value: formatAmount(summary.outstanding) ?? "0",
             unit: currency,
             tone: "default" as const,
@@ -99,6 +122,7 @@ const useSummaryFigures = (budget: ProjectBudgetDTO | undefined): CostFigure[] =
 
 function BudgetOverview({ projectId }: BudgetOverviewProps): React.JSX.Element {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const query = useProjectBudget(projectId);
   const budget = query.data;
   const figures = useSummaryFigures(budget);
@@ -112,32 +136,9 @@ function BudgetOverview({ projectId }: BudgetOverviewProps): React.JSX.Element {
     );
   }
 
-  if (!budget) {
-    return (
-      <StatePanel
-        tone="danger"
-        icon={<AlertTriangle size={28} strokeWidth={1.5} />}
-        title={t("finance.load_error.title", "Nie udało się wczytać budżetu.")}
-        description={t(
-          "finance.load_error.description",
-          "Serwer nie odpowiedział. Spróbuj ponownie za chwilę.",
-        )}
-        actions={
-          <Button
-            variant="secondary"
-            onClick={() => void query.refetch()}
-            leftIcon={<RefreshCw size={14} aria-hidden="true" />}
-          >
-            {t("common.actions.retry", "Ponów")}
-          </Button>
-        }
-      />
-    );
-  }
+  if (!budget) return <BudgetLoadError onRetry={() => void query.refetch()} />;
 
-  const status = budget.budget
-    ? budgetStatusLabel(t, budget.budget.status)
-    : null;
+  const status = budget.budget ? budgetStatusLabel(t, budget.budget.status) : null;
   const contractCount = budget.ledger.filter((row) => row.contract !== null).length;
 
   return (
@@ -150,13 +151,17 @@ function BudgetOverview({ projectId }: BudgetOverviewProps): React.JSX.Element {
           figures={figures}
           action={status ? <Badge variant="neutral">{status}</Badge> : undefined}
         />
-        <WarningsCard
-          warnings={budget.warnings}
-          rows={budget.ledger}
-          peopleHref={`/panel/projects/${projectId}/budget/people`}
-        />
+        <WarningsCard budget={budget} budgetHref={`/panel/projects/${projectId}/budget`} />
+        <HistoryCard projectId={projectId} />
       </div>
-      <DocumentsCard projectId={projectId} contractCount={contractCount} />
+      <div className="flex flex-col gap-5">
+        <BudgetStandingCard
+          projectId={projectId}
+          budget={budget}
+          isBoard={canApproveFinance(user)}
+        />
+        <DocumentsCard projectId={projectId} contractCount={contractCount} />
+      </div>
     </div>
   );
 }
