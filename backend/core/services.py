@@ -495,6 +495,15 @@ class UserIdentityService:
             #    queryset's own `delete()` would only set a flag.
             Note.all_objects.filter(owner=user).hard_delete()
 
+            # 3b. Finance records are deliberately NOT erased. A fee, a payment and
+            #     a contract are accounting records: the Accounting Act (art. 74)
+            #     requires them for five years from the end of the financial year,
+            #     and GDPR art. 17(3)(b) exempts processing required by law. They
+            #     carry snapshots of the payee's name, which is exactly what the
+            #     books must keep; the retention purge after that period is the
+            #     finance module's, not this request's. Silence here would read as
+            #     a forgotten cascade — this is a decision.
+
             # 4. Emit Domain Event (Handled by Roster to soft-delete Artist)
             account_soft_deleted.send(sender=UserIdentityService, user=user)
             
@@ -597,6 +606,13 @@ class UserPreferencesService:
                 "instrument": artist.instrument,
                 "phone_number": artist.phone_number,
             }
+
+        # Right of access: the person's own fees and the contracts issued to them.
+        # Imported here rather than at module scope — `finance` reads `roster`,
+        # which reads `core`, so a top-level import would close the circle.
+        from finance.gdpr import personal_finance_records
+
+        data["finance"] = personal_finance_records(user)
         return data
 
 

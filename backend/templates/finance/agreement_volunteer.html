@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Porozumienie wolontariackie nr {{ number }} — {{ payee_name }}</title>
+    {% comment %}
+        Porozumienie o wykonywaniu świadczeń wolontariusza (art. 44 of the
+        Volunteer Act). Built from document 3 of
+        docs/specs/project-finance-contract-drafts-2026-09.md — a correction
+        lands there first. No PESEL and no bank account: nothing is paid.
+        Annexes: 1 the health and safety risk notice, 2 the volunteer's hours
+        card, 3 the GDPR clause. The insurance duty (§ 2) prints only for an
+        engagement of up to 30 days, decided by the same function that raises
+        the ledger's VOLUNTEER_INSURANCE warning.
+    {% endcomment %}
+    <style>{% include "finance/_styles.html" with footer_label="Porozumienie wolontariackie" %}</style>
+</head>
+<body>
+    {% include "finance/_masthead.html" %}
+
+    <div class="title">POROZUMIENIE O WYKONYWANIU ŚWIADCZEŃ WOLONTARIUSZA <span class="title-number">nr {{ number }}</span></div>
+    <p class="concluded">zawarte w {{ foundation.seat_locative }} w dniu <span class="blank"></span> r. na podstawie art. 44 ustawy z dnia 24 kwietnia 2003 r. o działalności pożytku publicznego i o wolontariacie</p>
+
+    {% include "finance/_parties.html" with foundation_role="Korzystającym" payee_role="Wolontariuszem" with_payment=False %}
+
+    <h2>§ 1. Zakres, sposób i czas wykonywania świadczeń</h2>
+    <ol>
+        <li>Wolontariusz dobrowolnie i bez wynagrodzenia wykona na rzecz Korzystającego świadczenia polegające na {% if subject.kind == "vocal" %}artystycznym wykonaniu partii wokalnej (głos: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}){% elif subject.kind == "instrumental" %}artystycznym wykonaniu partii instrumentalnej (instrument: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}){% else %}czynnościach (rola: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}){% endif %} w ramach koncertu „{{ concert.title }}” w dniu {{ concert.day|date:"d.m.Y" }} r. w miejscu: {% if concert.place %}{{ concert.place }}{% else %}<span class="blank blank--l"></span>{% endif %} (dalej: „Koncert”), wraz z udziałem w próbach.</li>
+        <li>Świadczenia będą wykonywane w okresie od {{ volunteer.period_from|date:"d.m.Y" }} r. do {{ volunteer.period_to|date:"d.m.Y" }} r., w terminach określonych w harmonogramie prób i Koncertu.</li>
+    </ol>
+
+    <h2>§ 2. Obowiązki Korzystającego</h2>
+    <p>Korzystający:</p>
+    <ol>
+        <li>poinformował Wolontariusza o ryzyku dla zdrowia i bezpieczeństwa związanym z wykonywanymi świadczeniami oraz o zasadach ochrony przed zagrożeniami (Załącznik nr 1);</li>
+        <li>zapewnia Wolontariuszowi bezpieczne i higieniczne warunki wykonywania świadczeń;</li>
+        <li>pokrywa, na zasadach dotyczących pracowników, koszty podróży służbowych i diet, chyba że Wolontariusz zwolni go z tego obowiązku w § 4;</li>
+        {% if volunteer.insured %}<li>zapewnia Wolontariuszowi ubezpieczenie od następstw nieszczęśliwych wypadków;</li>{% endif %}
+        <li>wyda, na wniosek Wolontariusza, pisemne zaświadczenie o wykonaniu świadczeń, a na jego wniosek także opinię o ich wykonaniu.</li>
+    </ol>
+
+    <h2>§ 3. Obowiązki Wolontariusza</h2>
+    <p>Wolontariusz wykona świadczenia osobiście i z należytą starannością, zgodnie z harmonogramem. Będzie też odnotowywał czas ich wykonywania w karcie świadczeń (Załącznik nr 2).</p>
+
+    <h2>§ 4. Koszty</h2>
+    <ul class="ticks">
+        <li><span class="box"></span>Wolontariusz zwalnia Korzystającego z obowiązku pokrycia kosztów podróży służbowych i diet.</li>
+        <li><span class="box"></span>Wolontariusz nie zwalnia Korzystającego z tego obowiązku.</li>
+    </ul>
+
+    <h2>§ 5. Prawa do wykonania i wizerunek</h2>
+    <ol>
+        <li>W zakresie, w jakim świadczenia obejmują artystyczne wykonanie, Wolontariusz nieodpłatnie przenosi na Korzystającego prawa do artystycznego wykonania, o których mowa w art. 85 i 86 ustawy z dnia 4 lutego 1994 r. o prawie autorskim i prawach pokrewnych, na następujących polach eksploatacji:
+            {% include "finance/_exploitation_fields.html" %}
+        </li>
+        <li>Wolontariusz zezwala Korzystającemu na nieodpłatne rozpowszechnianie swojego wizerunku, utrwalonego w związku z Koncertem i próbami, w materiałach dokumentujących i promujących działalność statutową Korzystającego.</li>
+    </ol>
+
+    <h2>§ 6. Wycena świadczeń</h2>
+    <p>Na potrzeby wykazania wkładu osobowego w rozliczeniach projektu Strony ustalają wartość świadczeń Wolontariusza na {% if volunteer.hourly_rate %}{{ volunteer.hourly_rate }}{% else %}<span class="blank blank--s"></span>{% endif %} zł za godzinę. Ustalenie to nie stanowi wynagrodzenia.</p>
+
+    <h2>§ 7. Rozwiązanie porozumienia</h2>
+    <p>Każda ze Stron może rozwiązać porozumienie za 3-dniowym uprzedzeniem, a z ważnych przyczyn — ze skutkiem natychmiastowym.</p>
+
+    <h2>§ 8. Dane osobowe i postanowienia końcowe</h2>
+    <p>Zasady przetwarzania danych osobowych określa Załącznik nr 3. W sprawach nieuregulowanych stosuje się przepisy ustawy o działalności pożytku publicznego i o wolontariacie oraz Kodeksu cywilnego. Porozumienie sporządzono w dwóch jednobrzmiących egzemplarzach.</p>
+
+    {% include "finance/_signatures.html" with left="Korzystający" right="Wolontariusz" %}
+
+    <section class="annex">
+        {% include "finance/_annex_head.html" with n=1 of="do porozumienia wolontariackiego" title="Informacja o ryzyku dla zdrowia i bezpieczeństwa" %}
+        <p>Świadczenia wykonywane są w salach prób, kościołach i salach koncertowych. Występują następujące ryzyka:</p>
+        <ul>
+            <li>obciążenie aparatu głosowego;</li>
+            <li>długotrwałe stanie;</li>
+            <li>poruszanie się po podestach i schodach scenicznych;</li>
+            <li>przewody i sprzęt nagłośnieniowy na podłodze;</li>
+            <li>intensywne oświetlenie sceniczne;</li>
+            <li>niska temperatura w nieogrzewanych wnętrzach sakralnych.</li>
+        </ul>
+        <p>Zasady ochrony:</p>
+        <ul>
+            <li>stosowanie się do poleceń kierownika produkcji;</li>
+            <li>korzystanie wyłącznie z wyznaczonych dróg przejścia;</li>
+            <li>zgłaszanie złego samopoczucia;</li>
+            <li>odpowiedni ubiór.</li>
+        </ul>
+        <p class="signed-line">Potwierdzam zapoznanie się z informacją: <span class="blank"></span></p>
+    </section>
+
+    <section class="annex">
+        {% include "finance/_annex_head.html" with n=2 of="do porozumienia wolontariackiego" title="Karta świadczeń wolontariusza" %}
+        <p>Wolontariusz: <strong>{{ payee_name }}</strong>. Koncert „{{ concert.title }}”, {{ concert.day|date:"d.m.Y" }} r.</p>
+        <table class="grid">
+            <thead>
+                <tr><th style="width: 18%">Data</th><th style="width: 14%">Godziny</th><th>Czynności</th><th style="width: 24%">Podpis</th></tr>
+            </thead>
+            <tbody>
+                {% for row in "0123456789" %}<tr><td></td><td></td><td></td><td></td></tr>{% endfor %}
+                <tr class="total"><td>Łącznie</td><td></td><td></td><td></td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    {% include "finance/_gdpr_clause.html" with n=3 of="do porozumienia wolontariackiego" %}
+</body>
+</html>

@@ -1,0 +1,32 @@
+{% comment %}
+    The art. 13 GDPR information clause, the last annex of every contract.
+    Included with `n` and `of` for its head. The contact comes from the
+    foundation record, which refuses to render without one.
+{% endcomment %}
+<section class="annex">
+    {% include "finance/_annex_head.html" with n=n of=of title="Klauzula informacyjna (art. 13 RODO)" %}
+    <ol>
+        <li>Administratorem Pani/Pana danych osobowych jest {{ foundation.legal_name }} z siedzibą w {{ foundation.seat_locative }}, {{ foundation.address }}. Kontakt w sprawach danych osobowych: {{ foundation.privacy_contact }}.</li>
+        <li>Dane przetwarzamy w celu:
+            <ol class="letters">
+                <li>zawarcia i wykonania umowy lub porozumienia (art. 6 ust. 1 lit. b RODO);</li>
+                <li>wypełnienia obowiązków prawnych, w szczególności podatkowych, rachunkowych i z zakresu ubezpieczeń społecznych (art. 6 ust. 1 lit. c RODO);</li>
+                <li>rozliczenia dotacji i grantów z podmiotami finansującymi działalność Fundacji (art. 6 ust. 1 lit. c i f RODO);</li>
+                <li>ustalenia, dochodzenia lub obrony roszczeń (art. 6 ust. 1 lit. f RODO).</li>
+            </ol>
+        </li>
+        <li>Odbiorcami danych mogą być:
+            <ul>
+                <li>podmiot prowadzący księgowość Fundacji,</li>
+                <li>bank obsługujący Fundację,</li>
+                <li>organy podatkowe i ZUS,</li>
+                <li>podmioty finansujące działalność Fundacji — w zakresie kontroli rozliczeń,</li>
+                <li>dostawcy usług informatycznych, z których korzysta Fundacja.</li>
+            </ul>
+        </li>
+        <li>Dane przechowujemy przez czas wykonywania umowy, a następnie przez okres wymagany przepisami podatkowymi i rachunkowymi. Co do zasady jest to 5 lat, liczonych od końca roku, w którym upłynął termin płatności podatku lub zatwierdzono sprawozdanie finansowe. Dłużej przechowujemy dane tylko do upływu terminu przedawnienia roszczeń.</li>
+        <li>Przysługuje Pani/Panu prawo dostępu do danych, ich sprostowania, usunięcia lub ograniczenia przetwarzania, prawo do przenoszenia danych, prawo sprzeciwu wobec przetwarzania opartego na art. 6 ust. 1 lit. f RODO oraz prawo wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych.</li>
+        <li>Podanie danych jest warunkiem zawarcia umowy lub porozumienia. Przy umowie o dzieło i umowie zlecenia podanie numeru PESEL i adresu zamieszkania jest wymogiem ustawowym, wynikającym z obowiązków płatnika.</li>
+        <li>Dane nie podlegają zautomatyzowanemu podejmowaniu decyzji, w tym profilowaniu.</li>
+    </ol>
+</section>

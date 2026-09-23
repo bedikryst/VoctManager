@@ -1,0 +1,223 @@
+{% comment %}
+    Shared styles of the finance documents, included inside each template's
+    <style> with `footer_label` (the document's name, printed with its number at
+    the foot of every page, so a loose page still says what it belongs to).
+
+    The print canon (`.ai/04_design_system.md` § Print artifacts): two voices,
+    four ink steps, one hairline, gold as structure. These are legal documents,
+    so the masthead is sober, there is no QR, and crimson appears nowhere — a
+    contract states no problem. Fill-in lines are dotted borders rather than
+    runs of ellipses: they give a pen room and cannot break mid-run.
+{% endcomment %}
+{{ font_css }}
+
+:root {
+    --ink-1: #161412;
+    --ink-2: #45413b;
+    --ink-3: #746d63;
+    --ink-4: #a2917a;
+    --gold: #c2a878;
+    --gold-ink: #8d6f34;
+    --rule: #e6e1d5;
+}
+
+@page {
+    size: A4;
+    margin: 2.2cm 2cm 2.6cm 2cm;
+    @bottom-left {
+        content: "{{ footer_label }} nr {{ number }}";
+        font-family: {{ font_sans }};
+        font-size: 7.5pt;
+        color: #a2917a;
+        font-variant-numeric: lining-nums;
+    }
+    @bottom-right {
+        content: "strona " counter(page) " z " counter(pages);
+        font-family: {{ font_sans }};
+        font-size: 7.5pt;
+        color: #a2917a;
+        font-variant-numeric: lining-nums;
+    }
+}
+
+/* Lining figures throughout: numbers, dates and sums dip below the baseline
+   in oldstyle, and this document is made of them. */
+body {
+    font-family: {{ font_sans }};
+    font-size: 9.5pt;
+    line-height: 1.55;
+    color: var(--ink-2);
+    font-feature-settings: "liga" 1, "kern" 1, "lnum" 1;
+    font-variant-numeric: lining-nums;
+    margin: 0;
+}
+
+p { margin: 0 0 7px 0; }
+strong { color: var(--ink-1); font-weight: 600; }
+
+/* Masthead: the foundation and the document's number. Its gold rule is the
+   one heavy line of the document. */
+.masthead {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 1.2pt solid var(--gold);
+    padding-bottom: 8px;
+    margin-bottom: 22px;
+}
+.masthead-name {
+    font-family: {{ font_serif }};
+    font-weight: 600;
+    font-size: 15pt;
+    line-height: 1;
+    color: var(--ink-1);
+}
+.masthead-registry, .masthead-meta {
+    font-size: 7.5pt;
+    color: var(--ink-3);
+    margin-top: 4px;
+}
+.masthead-meta { text-align: right; }
+
+/* The document's name is the one serif title on its first page. */
+.title {
+    font-family: {{ font_serif }};
+    font-weight: 600;
+    font-size: 17pt;
+    line-height: 1.2;
+    text-align: center;
+    color: var(--ink-1);
+    margin: 0 0 4px 0;
+}
+.title-number { white-space: nowrap; }
+.concluded {
+    text-align: center;
+    color: var(--ink-3);
+    margin-bottom: 20px;
+}
+
+/* The parties are written in by hand: the leading gives a pen a line. */
+.parties p { line-height: 2.1; margin-bottom: 4px; }
+.parties-and { text-align: center; color: var(--ink-3); }
+.parties { margin-bottom: 14px; }
+
+/* A section marker is a label: the sans, the label ink, the eyebrow recipe
+   the whole product shares. */
+h2 {
+    font-family: {{ font_sans }};
+    font-size: 8pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.1pt;
+    color: var(--ink-4);
+    border-bottom: 0.5pt solid var(--rule);
+    padding-bottom: 4px;
+    margin: 16px 0 7px 0;
+}
+
+ol { margin: 0 0 7px 0; padding-left: 1.5em; }
+ol > li { margin-bottom: 4px; padding-left: 0.2em; }
+ul { margin: 3px 0 7px 0; padding-left: 1.4em; }
+ul > li { margin-bottom: 2px; }
+
+/* Polish legal lettering: "a)", not "a.". */
+ol.letters { list-style: none; counter-reset: letter; padding-left: 1.5em; margin-top: 3px; }
+ol.letters > li { counter-increment: letter; position: relative; }
+ol.letters > li::before {
+    content: counter(letter, lower-alpha) ")";
+    position: absolute;
+    left: -1.5em;
+}
+
+.blank {
+    display: inline-block;
+    min-width: 40mm;
+    border-bottom: 0.5pt dotted var(--ink-3);
+}
+.blank--s { min-width: 22mm; }
+.blank--l { min-width: 85mm; }
+
+/* A box to tick, drawn rather than typed: a ballot-box glyph is missing from
+   the bundled faces and would fall back to whatever the host carries. */
+.box {
+    display: inline-block;
+    width: 2.6mm;
+    height: 2.6mm;
+    border: 0.5pt solid var(--ink-1);
+    margin-right: 5px;
+    vertical-align: -0.3mm;
+}
+ul.ticks { list-style: none; padding-left: 0; }
+ul.ticks > li { padding-left: 1.4em; text-indent: -1.4em; margin-bottom: 4px; }
+
+/* A signature block torn across a page is one nobody signs; it is an atom,
+   which is where the canon allows an `avoid`. */
+.signatures {
+    width: 100%;
+    margin-top: 34px;
+    border-collapse: collapse;
+    break-inside: avoid;
+}
+.signatures td { width: 50%; text-align: center; vertical-align: bottom; padding: 0 12px; }
+.sign-line { border-bottom: 0.5pt solid var(--ink-1); height: 38px; margin: 0 8% 5px 8%; }
+.sign-label, .eyebrow {
+    font-size: 7pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.1pt;
+    color: var(--ink-4);
+}
+
+.signed-line { margin-top: 18px; line-height: 2.1; break-inside: avoid; }
+
+/* Each annex starts a page of its own: it is signed, filed and sent to the
+   office separately from the contract. */
+.annex { break-before: page; }
+.annex-title {
+    font-family: {{ font_serif }};
+    font-weight: 600;
+    font-size: 14pt;
+    line-height: 1.2;
+    color: var(--ink-1);
+    margin: 4px 0 14px 0;
+    padding-bottom: 6px;
+    border-bottom: 0.5pt solid var(--rule);
+}
+
+.programme { padding-left: 1.8em; }
+.programme > li { margin-bottom: 6px; padding-left: 0.3em; break-inside: avoid; }
+.programme-composer { color: var(--ink-1); font-weight: 600; }
+.programme-note { color: var(--ink-3); }
+.programme-blank > li { height: 7mm; border-bottom: 0.5pt dotted var(--ink-3); margin-bottom: 2mm; }
+
+/* Tables to fill in by hand: tall rows for a pen, the head repeated on a new
+   page, no row torn across two. */
+table.grid { width: 100%; border-collapse: collapse; margin: 6px 0 12px 0; }
+table.grid thead { display: table-header-group; }
+table.grid tr { break-inside: avoid; }
+table.grid th {
+    font-size: 7pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8pt;
+    color: var(--ink-4);
+    text-align: left;
+    border-bottom: 0.5pt solid var(--ink-3);
+    padding: 4px 6px;
+    vertical-align: bottom;
+}
+table.grid td {
+    border-bottom: 0.5pt solid var(--rule);
+    height: 8.5mm;
+    padding: 2px 6px;
+    vertical-align: bottom;
+}
+table.grid td.figure { font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.grid tr.total td { border-top: 0.5pt solid var(--ink-3); border-bottom: none; font-weight: 600; color: var(--ink-1); }
+
+.smallprint { font-size: 8.5pt; }
+.office {
+    margin-top: 26px;
+    padding-top: 8px;
+    border-top: 0.5pt solid var(--ink-3);
+}

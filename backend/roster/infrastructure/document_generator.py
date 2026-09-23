@@ -16,7 +16,8 @@ management (``Audience.PRODUCTION``). Typography is the bundled brand pair
 identically on the Windows dev host and the Linux runtime image — and so a
 document made of labels, times and tables is set in the face that draws them.
 The rules it follows are the ``Print artifacts`` canon in
-``.ai/04_design_system.md``, shared with the contract template.
+``.ai/04_design_system.md``, shared with the finance documents
+(``finance/infrastructure/documents.py``).
 
 Its wording is gettext'd and resolved from the *reader*, not from the server or
 from the request: see ``resolve_document_language``. Most of it is composed here
@@ -349,9 +350,10 @@ def resolve_document_language(
 
 
 def _brand_font_context() -> dict[str, str]:
-    """Bundled brand typography for outward-facing templates. Every contract
-    template variable that names a face resolves here, so no template can drift
-    back to a CDN import or to a face the host may not have.
+    """Bundled brand typography for outward-facing templates. Every template
+    variable that names a face — the call sheet's and the finance documents' —
+    resolves here, so no template can drift back to a CDN import or to a face
+    the host may not have.
 
     Marked safe at the source, not at each `{{ }}`: a font stack carries the
     quotes around multi-word family names, and autoescaping them to `&quot;`
@@ -451,58 +453,6 @@ class DocumentGenerator:
             )
             html_string = render_to_string('projects/call_sheet_pdf.html', context)
         return _render_pdf(html_string, base_url=base_url)
-
-    @staticmethod
-    def generate_participation_contract_pdf(participation: Participation) -> bytes:
-        """Compiles a dynamic legal PDF artifact for artist participation.
-
-        Deliberately NOT gettext'd, unlike the call sheet. `contract_pdf.html`
-        is Polish legal text under Polish law, and its wording is settled with
-        the foundation, not with a translator; a placeholder resolved through
-        the active language would also follow the request's `Accept-Language`
-        and drop one French word into an otherwise Polish contract. Translating
-        this document is a legal decision, and it starts with the clauses.
-        """
-        artist = participation.artist
-        project = participation.project
-
-        context = {
-            'artist_name': f"{artist.first_name} {artist.last_name}",
-            'voice_type': artist.get_voice_type_display(),
-            # Non-empty only for a player; the template then contracts an
-            # instrumental part instead of a vocal one. Legal wording, so the
-            # branch lives in the template beside the other clauses.
-            'instrument': artist.instrument,
-            'project_title': project.title,
-            'project_date': project.date_time,
-            'project_location': project.location or 'Miejsce do ustalenia',
-            'fee': participation.fee or 0,
-            'generation_date': timezone.now(),
-            **_brand_font_context(),
-        }
-
-        html_string = render_to_string('contracts/contract_pdf.html', context)
-        return _render_pdf(html_string)
-
-    @staticmethod
-    def generate_crew_contract_pdf(assignment: CrewAssignment) -> bytes:
-        """Compiles a dynamic legal PDF artifact for crew members."""
-        collaborator = assignment.collaborator
-        project = assignment.project
-
-        context = {
-            'artist_name': f"{collaborator.first_name} {collaborator.last_name}",
-            'role_description': assignment.role_description or collaborator.get_specialty_display(),
-            'project_title': project.title,
-            'project_date': project.date_time,
-            'project_location': project.location or 'Miejsce do ustalenia',
-            'fee': assignment.fee or 0,
-            'generation_date': timezone.now(),
-            **_brand_font_context(),
-        }
-
-        html_string = render_to_string('contracts/contract_pdf.html', context)
-        return _render_pdf(html_string)
 
     @staticmethod
     def generate_zaiks_csv_iterator(program_items: QuerySet[ProgramItem]) -> Iterator[str]:

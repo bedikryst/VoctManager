@@ -1,0 +1,14 @@
+{% comment %}
+    The foundation and the contract's number. The issue date is printed small:
+    the date that binds is the signing date, written on the paper by hand.
+{% endcomment %}
+<div class="masthead">
+    <div>
+        <div class="masthead-name">{{ foundation.legal_name }}</div>
+        <div class="masthead-registry">KRS {{ foundation.krs }} · NIP {{ foundation.nip }} · REGON {{ foundation.regon }}</div>
+    </div>
+    <div class="masthead-meta">
+        nr {{ number }}<br>
+        wystawiono {{ issued_on|date:"d.m.Y" }}
+    </div>
+</div>

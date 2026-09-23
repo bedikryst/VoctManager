@@ -842,38 +842,49 @@ class ContractsSettlementTests(APITestCase):
     # Contract PDF                                                       #
     # ------------------------------------------------------------------ #
 
-    @patch("roster.views.DocumentGenerator.generate_participation_contract_pdf")
-    def test_contract_pdf_streams_for_cast(self, render_mock) -> None:
-        render_mock.return_value = b"%PDF-1.4 fake"
+    @patch("roster.views.contract_filename", return_value="Umowa-UoD-1-2026-Ada_Lovelace.pdf")
+    @patch("roster.views.render_contract_pdf", return_value=b"%PDF-1.4 fake")
+    @patch("roster.views.live_contract_for")
+    def test_contract_pdf_streams_the_finance_contract_for_cast(self, lookup_mock, render_mock, _name) -> None:
         self.client.force_authenticate(user=self.manager)
         resp = self.client.get(f"/api/participations/{self.participation.id}/contract/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Type"], "application/pdf")
         self.assertIn("attachment", resp["Content-Disposition"])
         self.assertEqual(b"".join(resp.streaming_content), b"%PDF-1.4 fake")  # type: ignore[attr-defined]
-        render_mock.assert_called_once()
+        lookup_mock.assert_called_once_with(self.participation)
+        render_mock.assert_called_once_with(lookup_mock.return_value)
 
-    @patch("roster.views.DocumentGenerator.generate_crew_contract_pdf")
-    def test_contract_pdf_streams_for_crew(self, render_mock) -> None:
-        render_mock.return_value = b"%PDF-1.4 crew"
+    @patch("roster.views.contract_filename", return_value="Umowa-UZ-1-2026-Sound_Engineer.pdf")
+    @patch("roster.views.render_contract_pdf", return_value=b"%PDF-1.4 crew")
+    @patch("roster.views.live_contract_for")
+    def test_contract_pdf_streams_the_finance_contract_for_crew(self, lookup_mock, _render, _name) -> None:
         self.client.force_authenticate(user=self.manager)
         resp = self.client.get(f"/api/crew-assignments/{self.crew.id}/contract/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(b"".join(resp.streaming_content), b"%PDF-1.4 crew")  # type: ignore[attr-defined]
+        lookup_mock.assert_called_once_with(self.crew)
 
-    @patch("roster.views.DocumentGenerator.generate_participation_contract_pdf")
-    def test_contract_pdf_returns_503_when_renderer_missing(self, render_mock) -> None:
-        render_mock.side_effect = DocumentRenderDependencyError("no native libs")
+    def test_contract_pdf_is_refused_until_the_ledger_issues_one(self) -> None:
+        """No contract row, no paper: the roster fee is never printed as one."""
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.get(f"/api/participations/{self.participation.id}/contract/")
+        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(resp.data["error_code"], "contract_not_issued")
+
+    @patch("roster.views.render_contract_pdf", side_effect=DocumentRenderDependencyError("no native libs"))
+    @patch("roster.views.live_contract_for")
+    def test_contract_pdf_returns_503_when_renderer_missing(self, _lookup, _render) -> None:
         self.client.force_authenticate(user=self.manager)
         resp = self.client.get(f"/api/participations/{self.participation.id}/contract/")
         self.assertEqual(resp.status_code, 503)
 
     # ------------------------------------------------------------------ #
-    # Project ZIP                                                        #
+    # Project ZIP (the finance task behind the legacy door)              #
     # ------------------------------------------------------------------ #
 
-    @patch("roster.views.generate_project_zip_task")
-    def test_request_project_zip_enqueues_task(self, task_mock) -> None:
+    @patch("roster.views.generate_contracts_zip_task")
+    def test_request_project_zip_enqueues_the_finance_task(self, task_mock) -> None:
         task_mock.delay.return_value = MagicMock(id="task-123")
         self.client.force_authenticate(user=self.manager)
         resp = self.client.post(
@@ -890,26 +901,34 @@ class ContractsSettlementTests(APITestCase):
         self.assertEqual(resp.status_code, 400)
 
     @patch("roster.views.AsyncResult")
-    def test_check_zip_status_reports_success(self, async_mock) -> None:
+    def test_check_zip_status_points_at_the_manager_only_file(self, async_mock) -> None:
+        task_id = "5c1f0b7e-8a55-4c55-9a53-2f4f0f7f9d10"
         async_mock.return_value = MagicMock(
-            state="SUCCESS", result={"download_url": "/media/exports/x.zip"}
+            state="SUCCESS", result={"project_id": str(self.project.id), "count": 2}
         )
         self.client.force_authenticate(user=self.manager)
-        resp = self.client.get("/api/participations/check_zip_status/?task_id=abc")
+        resp = self.client.get(f"/api/participations/check_zip_status/?task_id={task_id}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data["state"], "SUCCESS")
-        self.assertEqual(resp.data["file_url"], "/media/exports/x.zip")
+        self.assertEqual(resp.data["file_url"], f"/api/finance/contracts/zip/{task_id}/file/")
 
     @patch("roster.views.AsyncResult")
-    def test_check_zip_status_maps_empty_project_to_failure(self, async_mock) -> None:
+    def test_check_zip_status_maps_no_contracts_to_failure(self, async_mock) -> None:
         async_mock.return_value = MagicMock(
-            state="SUCCESS", result={"error": "no_personnel_in_project"}
+            state="SUCCESS", result={"project_id": str(self.project.id), "error_code": "no_contracts"}
         )
         self.client.force_authenticate(user=self.manager)
-        resp = self.client.get("/api/participations/check_zip_status/?task_id=abc")
+        resp = self.client.get(
+            "/api/participations/check_zip_status/?task_id=5c1f0b7e-8a55-4c55-9a53-2f4f0f7f9d10"
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data["state"], "FAILURE")
         self.assertIn("error", resp.data)
+
+    def test_check_zip_status_refuses_what_is_not_a_task_id(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.get("/api/participations/check_zip_status/?task_id=abc")
+        self.assertEqual(resp.status_code, 400)
 
 
 class CollaboratorPiiExposureTests(APITestCase):

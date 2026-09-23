@@ -49,6 +49,7 @@ known-first-party = [
     "copydesk",
     "core",
     "documents",
+    "finance",
     "logistics",
     "notifications",
     "payments",

@@ -37,6 +37,21 @@ def user_is_manager(user: object) -> bool:
     return bool(profile is not None and profile.is_manager)
 
 
+def user_is_board(user: object) -> bool:
+    """
+    True for Django staff, which in this app is the foundation's board.
+
+    Only the board holds admin, and any one board member may approve, reopen or
+    close a budget, revert a payment or annul a contract — the acts that change
+    a settled fact or a budget's standing. Deliberately narrower than
+    `user_is_manager`: a manager runs the ledger day to day, the board answers
+    for what it says. The copy desk's reviewer gate draws the same line.
+    """
+    if user is None or not getattr(user, 'is_authenticated', False):
+        return False
+    return bool(getattr(user, 'is_staff', False))
+
+
 class BaseEnterprisePermission(permissions.BasePermission):
     """
     Abstract base permission class providing resilient user profile resolution.
@@ -61,6 +76,14 @@ class IsManager(BaseEnterprisePermission):
     """
     def has_permission(self, request, view) -> bool:
         return self._is_manager(request)
+
+
+class IsBoard(BaseEnterprisePermission):
+    """
+    Grants access exclusively to board members (Django staff). See `user_is_board`.
+    """
+    def has_permission(self, request, view) -> bool:
+        return user_is_board(getattr(request, 'user', None))
 
 
 class IsArtist(BaseEnterprisePermission):

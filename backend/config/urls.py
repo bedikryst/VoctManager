@@ -201,6 +201,10 @@ urlpatterns = [
     # --- Payments & Donations (Axepta BNP Paribas) ---
     path("api/payments/", include("payments.urls")),
 
+    # --- Finance: each project's money ledger, contracts and settlement ---
+    # Manager-only; the board (staff) takes the acts that undo a settled fact.
+    path("api/finance/", include("finance.urls")),
+
     # --- Outreach: people who are NOT members and asked to hear from us ---
     # Public, unauthenticated, posted to by the Astro site (concert notice list).
     path("api/outreach/", include("outreach.urls")),

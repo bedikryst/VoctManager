@@ -25,6 +25,7 @@ from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django_filters.rest_framework import DjangoFilterBackend
@@ -56,6 +57,11 @@ from core.exceptions import format_pydantic_validation_errors, make_error_respon
 from core.permissions import IsManager, IsManagerOrReadOnly, user_is_manager
 from core.preview import resolve_preview_target
 from core.request_utils import client_payload, request_user, truthy_flag
+from finance.exceptions import ContractNotIssued, FinanceError, finance_error_response
+from finance.infrastructure.documents import contract_filename, render_contract_pdf
+from finance.services.contracts import live_contract_for
+from finance.services.ledger import LedgerService
+from finance.tasks import generate_contracts_zip_task
 from notifications.announcement_queue import AnnouncementQueue
 from notifications.models import PendingAnnouncement
 
@@ -185,7 +191,6 @@ from .services import (
     RehearsalDelegationService,
     RehearsalOperationsService,
 )
-from .tasks import generate_project_zip_task
 
 # Chorister material-access rule now lives in roster.queries.materials_queries so
 # the archive AnnotationViewSet can share the exact same gate (scores + their
@@ -297,23 +302,25 @@ def _pdf_bytes_response(data: bytes, *, filename: str) -> FileResponse:
     return response
 
 
-def _settlement_contract_response(record: Participation | CrewAssignment) -> FileResponse:
-    """Renders the legal contract PDF for one cast/crew record and wraps it for download."""
-    person: Artist | Collaborator
+def _settlement_contract_response(request, record: Participation | CrewAssignment) -> FileResponse | Response:
+    """The legacy per-person contract download, kept until the finance panel
+    replaces it (removed in finance Stage 3). It prints the record's live
+    finance contract — its number, frozen amount and the foundation's identity —
+    and answers 409 `contract_not_issued` where none exists: a contract is issued
+    in the ledger, never improvised from the roster fee."""
+    contract = live_contract_for(record)
     try:
-        if isinstance(record, Participation):
-            pdf_bytes = DocumentGenerator.generate_participation_contract_pdf(record)
-            person = record.artist
-        else:
-            pdf_bytes = DocumentGenerator.generate_crew_contract_pdf(record)
-            person = record.collaborator
+        if contract is None:
+            raise ContractNotIssued()
+        pdf_bytes = render_contract_pdf(contract)
+    except FinanceError as exc:
+        return finance_error_response(request, exc)
     except DocumentRenderDependencyError as exc:
         raise PdfRenderUnavailable(str(exc)) from exc
 
-    filename = f"Umowa_{person.last_name}_{person.first_name}.pdf".replace(' ', '_')
-    buffer = io.BytesIO(pdf_bytes)
-    buffer.seek(0)
-    response = FileResponse(buffer, as_attachment=True, filename=filename, content_type='application/pdf')
+    response = FileResponse(
+        io.BytesIO(pdf_bytes), as_attachment=True, filename=contract_filename(contract), content_type='application/pdf',
+    )
     response['Access-Control-Expose-Headers'] = 'Content-Disposition'
     return response
 
@@ -1853,9 +1860,9 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(updated_participation).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'], permission_classes=[IsManager])
-    def contract(self, request, pk=None) -> FileResponse:
+    def contract(self, request, pk=None) -> FileResponse | Response:
         """Renders and streams the individual legal contract PDF for one cast member."""
-        return _settlement_contract_response(self.get_object())
+        return _settlement_contract_response(request, self.get_object())
 
     @action(detail=True, methods=['patch'], permission_classes=[IsManager])
     def payment(self, request, pk=None) -> Response:
@@ -1874,20 +1881,27 @@ class ParticipationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='request_project_zip', permission_classes=[IsManager])
     def request_project_zip(self, request) -> Response:
-        """Kicks off the background ZIP export of all contract PDFs for a project."""
+        """The legacy door to the finance contracts ZIP, kept until the finance
+        panel replaces it (removed in finance Stage 3). It runs the finance task,
+        which packs issued contracts only, rendered from their rows."""
         project_id = request.data.get('project_id')
         if not project_id:
             return Response({"detail": "Field 'project_id' is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        task = generate_project_zip_task.delay(str(project_id))
+        task = generate_contracts_zip_task.delay(str(project_id))
         return Response({"task_id": task.id}, status=status.HTTP_202_ACCEPTED)
 
     @action(detail=False, methods=['get'], url_path='check_zip_status', permission_classes=[IsManager])
     def check_zip_status(self, request) -> Response:
-        """Polls the Celery task backing a project ZIP export and normalizes its state."""
+        """Polls the finance ZIP task in the legacy shape. The file is served by the
+        manager-only finance view, never from a public media URL."""
         task_id = request.query_params.get('task_id')
         if not task_id:
             return Response({"detail": "Query param 'task_id' is required."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            task_uuid = uuid.UUID(task_id)
+        except ValueError:
+            return Response({"detail": "Query param 'task_id' is not a task id."}, status=status.HTTP_400_BAD_REQUEST)
 
         result = AsyncResult(task_id)
         state = result.state
@@ -1895,13 +1909,13 @@ class ParticipationViewSet(viewsets.ModelViewSet):
 
         if state == 'SUCCESS':
             data = result.result if isinstance(result.result, dict) else {}
-            if data.get('error'):
+            if data.get('error_code'):
                 # The task completed but found nothing to package — surface as a failure
                 # so the frontend shows an actionable message instead of an empty download.
                 payload['state'] = 'FAILURE'
-                payload['error'] = 'Projekt nie ma przypisanej obsady ani ekipy do wygenerowania umów.'
+                payload['error'] = 'Projekt nie ma jeszcze wystawionych umów.'
             else:
-                payload['file_url'] = data.get('download_url')
+                payload['file_url'] = reverse('finance:contracts-zip-file', kwargs={'task_id': task_uuid})
         elif state in ('FAILURE', 'FAILED'):
             payload['error'] = 'Generowanie paczki nie powiodło się. Spróbuj ponownie.'
 
@@ -2810,10 +2824,24 @@ class CrewAssignmentViewSet(viewsets.ModelViewSet):
         assignment = CastingAndCrewService.assign_crew(serializer.validated_data)
         return Response(self.get_serializer(assignment).data, status=status.HTTP_201_CREATED)
 
+    def destroy(self, request, *args, **kwargs) -> Response:
+        """Unassigning goes through the ledger first. An unpaid, uncontracted fee
+        goes with the assignment; a paid or contracted one refuses the removal
+        with 409 `crew_has_settled_fee` — unpay or annul it first. The ledger's
+        foreign key is PROTECT, so a delete that skipped this could not succeed."""
+        assignment = self.get_object()
+        try:
+            with transaction.atomic():
+                LedgerService.release_crew_assignment(assignment, actor=request_user(request))
+                assignment.delete()
+        except FinanceError as exc:
+            return finance_error_response(request, exc)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(detail=True, methods=['get'], permission_classes=[IsManager])
-    def contract(self, request, pk=None) -> FileResponse:
+    def contract(self, request, pk=None) -> FileResponse | Response:
         """Renders and streams the individual legal contract PDF for one crew member."""
-        return _settlement_contract_response(self.get_object())
+        return _settlement_contract_response(request, self.get_object())
 
     @action(detail=True, methods=['patch'], permission_classes=[IsManager])
     def payment(self, request, pk=None) -> Response:

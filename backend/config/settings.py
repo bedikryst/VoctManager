@@ -107,6 +107,7 @@ INSTALLED_APPS = [
     'payments',
     'copydesk',
     'outreach',
+    'finance',
 ]
 
 # --- AUTHENTICATION BACKENDS ---

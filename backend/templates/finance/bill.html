@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Rachunek do umowy nr {{ number }} — {{ payee_name }}</title>
+    {% comment %}
+        The bill a contractor signs to be paid against an umowa o dzieło or an
+        umowa zlecenia. Built from document 4 of
+        docs/specs/project-finance-contract-drafts-2026-09.md — a correction
+        lands there first. It is the payee's document, not the foundation's, so
+        it carries no foundation masthead. It prints the gross and leaves the
+        tax rows to the office: the panel never computes PIT or ZUS.
+    {% endcomment %}
+    <style>{% include "finance/_styles.html" with footer_label="Rachunek do umowy" %}</style>
+</head>
+<body>
+    <div class="title">RACHUNEK nr <span class="blank blank--s"></span></div>
+    <p class="concluded">do umowy nr {{ number }} z dnia {% if signed_on %}{{ signed_on|date:"d.m.Y" }}{% else %}<span class="blank blank--s"></span>{% endif %} r.</p>
+
+    <div class="parties">
+        <p>Wystawca: <strong>{{ payee_name }}</strong>, zamieszkały/-a: <span class="blank blank--l"></span>, PESEL: <span class="blank"></span></p>
+        <p>Odbiorca: <strong>{{ foundation.legal_name }}</strong>, {{ foundation.address }}, NIP {{ foundation.nip }}</p>
+    </div>
+
+    <p>Za {% if form == "ZLECENIE" %}wykonanie zlecenia{% else %}wykonanie dzieła{% endif %} zgodnie z umową nr {{ number }} proszę o wypłatę kwoty <strong>{{ amount }} zł brutto</strong> (słownie: {{ amount_words }}) na rachunek bankowy nr <span class="blank blank--l"></span></p>
+
+    <p class="signed-line">Data: <span class="blank blank--s"></span> &emsp; Podpis wystawcy: <span class="blank"></span></p>
+
+    <div class="office">
+        <div class="eyebrow">Wypełnia {% if form == "ZLECENIE" %}Zleceniodawca{% else %}Zamawiający{% endif %} / biuro rachunkowe</div>
+        <table class="grid">
+            <thead>
+                <tr>
+                    <th>Kwota brutto</th>
+                    <th>Koszty uzyskania przychodu</th>
+                    <th>Podstawa opodatkowania</th>
+                    <th>Zaliczka na PIT</th>
+                    <th>Składki ZUS</th>
+                    <th>Do wypłaty</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td class="figure">{{ amount }}</td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+        </table>
+        <p class="signed-line smallprint">
+            Sprawdzono pod względem merytorycznym: data <span class="blank blank--s"></span> podpis <span class="blank"></span><br>
+            Sprawdzono pod względem formalnym i rachunkowym: data <span class="blank blank--s"></span> podpis <span class="blank"></span><br>
+            Zatwierdzono do wypłaty: data <span class="blank blank--s"></span> podpisy <span class="blank blank--l"></span><br>
+            Źródło finansowania (opis dokumentu): <span class="blank blank--l"></span>
+        </p>
+    </div>
+</body>
+</html>

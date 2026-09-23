@@ -25,9 +25,12 @@ User = get_user_model()
 
 # Apps whose tables are emptied whole. `core` is deliberately absent: it owns
 # UserProfile, which must survive for the superusers that survive, so core's
-# tables are named individually below.
+# tables are named individually below. `finance` goes with `roster`: its ledger
+# holds PROTECT keys into the seats and projects wiped here, so keeping it would
+# fail the closure check below — and a test round's fees are test data.
 WIPE_APP_LABELS = (
     "roster",
+    "finance",
     "archive",
     "notifications",
     "messaging",

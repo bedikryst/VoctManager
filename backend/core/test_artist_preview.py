@@ -14,6 +14,7 @@ rather than once per endpoint.
 """
 
 from datetime import timedelta
+from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.db import connection
@@ -24,6 +25,8 @@ from archive.models import Piece
 from core.constants import AppRole
 from core.models import UserProfile
 from documents.models import DocumentCategory
+from finance.dtos import FeeBatchDTO
+from finance.services.ledger import LedgerService
 from roster.models import (
     Artist,
     Participation,
@@ -39,6 +42,18 @@ MATERIALS_URL = "/api/participations/materials-dashboard/"
 ENSEMBLE_URL = "/api/documents/my-ensemble/"
 METRICS_URL = "/api/documents/artist-metrics/"
 CATEGORIES_URL = "/api/documents/categories/"
+
+# Keys only the finance ledger writes. None may appear in a member-facing payload.
+FINANCE_KEYS = frozenset({"contract_amount", "cost_amount", "cost_item_id", "ledger", "paid_on", "contract"})
+
+
+def _all_keys(payload: Any) -> set[str]:
+    """Every mapping key anywhere in a response body, however deep."""
+    if isinstance(payload, dict):
+        return set(payload) | {key for value in payload.values() for key in _all_keys(value)}
+    if isinstance(payload, list):
+        return {key for value in payload for key in _all_keys(value)}
+    return set()
 
 
 class ArtistPreviewTests(APITestCase):
@@ -232,6 +247,29 @@ class ArtistPreviewTests(APITestCase):
         for response in (own, preview):
             for row in response.data:
                 self.assertNotIn("fee", row)
+
+    def test_the_finance_ledger_is_refused_to_members_and_absent_from_their_views(self) -> None:
+        # The ledger is the managers' alone and is never embedded elsewhere: a
+        # member's own figure reaches them on paper, not through the app. Priced
+        # through the real service, so the keys scanned for are the ledger's own.
+        LedgerService.apply_fee_batch(
+            self.project,
+            FeeBatchDTO.model_validate(
+                {"items": [{"ref": {"participation": str(self.seat.id)}, "contract_amount": "250"}]}
+            ),
+            actor=self.manager_user,
+        )
+        budget_url = f"/api/finance/projects/{self.project.id}/budget/"
+
+        self.assertEqual(self._get(self.singer_user, budget_url).status_code, 403)
+        self.assertEqual(self._get(self.singer_user, budget_url, artist=self.singer).status_code, 403)
+        for url in (SCHEDULE_URL, MATERIALS_URL, ENSEMBLE_URL, METRICS_URL):
+            own = self._get(self.singer_user, url)
+            preview = self._get(self.manager_user, url, artist=self.singer)
+            for label, response in (("own", own), ("preview", preview)):
+                with self.subTest(url=url, view=label):
+                    self.assertEqual(response.status_code, 200)
+                    self.assertFalse(FINANCE_KEYS & _all_keys(response.data))
 
     # ── The card ─────────────────────────────────────────────────────────
 
