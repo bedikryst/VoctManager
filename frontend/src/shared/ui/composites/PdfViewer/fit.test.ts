@@ -114,6 +114,13 @@ describe("resolvePageFit — explicit modes and edges", () => {
     expect(renderedPageWidth).toBe(260); // the fit wants 141
   });
 
+  it("lets the page run under the nav only where a nav floats over it", () => {
+    const landscapeTablet = { viewportWidth: 1180, viewportHeight: 820, fitMode: "page" as const };
+    expect(fit(landscapeTablet).overflowAllowance).toBe(50);
+    expect(fit({ ...landscapeTablet, immersive: true }).overflowAllowance).toBe(0);
+    expect(fit({ viewportWidth: 390, viewportHeight: 844 }).overflowAllowance).toBe(0);
+  });
+
   it("reports no width before the viewport has been measured", () => {
     const { renderedPageWidth, resolvedFit } = fit({
       viewportWidth: 0,

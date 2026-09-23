@@ -1,6 +1,7 @@
 /**
  * @file scrollTurn.ts
- * @description How far one reader's turn scrolls a page taller than the screen.
+ * @description How far one reader's turn scrolls a page taller than the screen,
+ * and which overrun does not count, because the fit put it under the nav.
  *
  * A rest of the page that fits one screen is shown in one turn, and a longer
  * rest is split into equal turns. A fixed screen-minus-overlap step would end
@@ -12,6 +13,15 @@
  */
 
 import { FIT_SCROLL_OVERLAP_PX, SCROLL_EDGE_TOLERANCE_PX } from "./constants";
+
+/**
+ * The part of the scroll range a reader pages through. A page that overruns the
+ * box by no more than the fit's `overflowAllowance` reads as whole — its foot
+ * sits under the floating nav by design — so a turn goes straight to the next
+ * page and a turn back lands on the top edge, not a few pixels down.
+ */
+export const readableScrollRange = (maxScroll: number, overflowAllowance: number): number =>
+  maxScroll > overflowAllowance + SCROLL_EDGE_TOLERANCE_PX ? maxScroll : 0;
 
 /**
  * Scroll distance (CSS px, always positive) of the next turn toward the edge

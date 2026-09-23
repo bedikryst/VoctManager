@@ -102,7 +102,7 @@ export const usePdfState = ({
 
   const isCompactViewport = viewportWidth > 0 && viewportWidth < COMPACT_VIEWPORT_THRESHOLD;
 
-  const { renderedPageWidth, resolvedFit } = useMemo(
+  const { renderedPageWidth, resolvedFit, overflowAllowance } = useMemo(
     () =>
       resolvePageFit({
         viewportWidth,
@@ -164,6 +164,7 @@ export const usePdfState = ({
     setFitMode,
     resolvedFit,
     renderedPageWidth,
+    overflowAllowance,
     isCompactViewport,
     devicePixelRatio,
     reportPageAspect,

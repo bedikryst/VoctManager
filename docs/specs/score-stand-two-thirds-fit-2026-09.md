@@ -4,7 +4,9 @@ Status: **Stages 1, 2, 2b and 3 IMPLEMENTED 2026-09-23, uncommitted and not yet 
 Open: `make migrate` (archive `0033`, after the unapplied `0032`); golden-set labels for
 `single_system_pages` plus a positive case, then a harness run before the suggestion is trusted.**
 Deviations: the stage 2 hint copy says "⅔" instead of "half", the suggestion lives in its own column
-(`stand_whole_page_suggested`), and the old text hint chip on entering performance mode is gone.
+(`stand_whole_page_suggested`), the old text hint chip on entering performance mode is gone, and
+`preferredFit` is derived in performance mode only (never seeded into state, never stored), so the
+viewer is not keyed on the document.
 Decided with the developer
 after Florent's feedback on performance mode. Already done in the same session and uncommitted:
 the rehearsal dock on scores opened from the songbook list (`PieceRow`), the practice player

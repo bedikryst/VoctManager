@@ -38,7 +38,7 @@ import {
   PREFETCH_MAX_ZOOM,
   SCROLL_EDGE_TOLERANCE_PX,
 } from "./constants";
-import { planScrollTurn } from "./scrollTurn";
+import { planScrollTurn, readableScrollRange } from "./scrollTurn";
 import { clampValue, buildPdfFileName, classifyLoadError, createDownloadAnchor } from "./utils";
 import { PdfToolbar } from "./components/PdfToolbar";
 import { PdfBottomNav } from "./components/PdfBottomNav";
@@ -114,6 +114,7 @@ export const PdfViewer = ({
     setFitMode,
     resolvedFit,
     renderedPageWidth,
+    overflowAllowance,
     isCompactViewport,
     devicePixelRatio,
     reportPageAspect,
@@ -125,6 +126,12 @@ export const PdfViewer = ({
 
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
+
+  // Read through a ref by the turn and parking callbacks: entering performance
+  // mode changes it, and a new `parkViewport` identity would re-park the page
+  // the singer is reading.
+  const overflowAllowanceRef = useRef(overflowAllowance);
+  overflowAllowanceRef.current = overflowAllowance;
 
   // Live rendered-page box (CSS px), measured for the overlay seam. Observed via
   // ResizeObserver so it stays correct across zoom, page change and reflow.
@@ -193,7 +200,10 @@ export const PdfViewer = ({
     if (!viewport) return;
     const park = pendingParkRef.current;
     pendingParkRef.current = { mode: "top" };
-    const maxScroll = Math.max(viewport.scrollHeight - viewport.clientHeight, 0);
+    const maxScroll = readableScrollRange(
+      Math.max(viewport.scrollHeight - viewport.clientHeight, 0),
+      overflowAllowanceRef.current,
+    );
     let top = 0;
     if (park.mode === "bottom") {
       top = maxScroll;
@@ -227,20 +237,26 @@ export const PdfViewer = ({
    * is the unit is MEASURED, never inferred from the fit: a whole-page fit
    * overflows too, once the reader zooms or where the minimum page width
    * outgrows a short box, and turning past the rest of the page there would
-   * turn past music. The step itself is `planScrollTurn`.
+   * turn past music. The overrun the fit grants itself under the nav is not
+   * music (`readableScrollRange`); the step itself is `planScrollTurn`.
    */
   const turnPage = useCallback((delta: 1 | -1) => {
     const viewport = viewportRef.current;
     if (viewport) {
-      const maxScroll = viewport.scrollHeight - viewport.clientHeight;
-      const remaining = delta === 1 ? maxScroll - viewport.scrollTop : viewport.scrollTop;
-      const advance = planScrollTurn(remaining, viewport.clientHeight);
-      if (advance > 0) {
-        viewport.scrollTo({
-          top: viewport.scrollTop + delta * advance,
-          left: viewport.scrollLeft,
-        });
-        return;
+      const maxScroll = readableScrollRange(
+        viewport.scrollHeight - viewport.clientHeight,
+        overflowAllowanceRef.current,
+      );
+      if (maxScroll > 0) {
+        const remaining = delta === 1 ? maxScroll - viewport.scrollTop : viewport.scrollTop;
+        const advance = planScrollTurn(remaining, viewport.clientHeight);
+        if (advance > 0) {
+          viewport.scrollTo({
+            top: viewport.scrollTop + delta * advance,
+            left: viewport.scrollLeft,
+          });
+          return;
+        }
       }
     }
     // Only a turn that lands somewhere may leave a parking instruction behind —
@@ -433,11 +449,16 @@ export const PdfViewer = ({
       setIsPannableX(
         viewport.scrollWidth - viewport.clientWidth > SWIPE_EDGE_TOLERANCE_PX,
       );
-      const maxScroll = viewport.scrollHeight - viewport.clientHeight;
-      const next = {
-        atTop: viewport.scrollTop <= SCROLL_EDGE_TOLERANCE_PX,
-        atBottom: viewport.scrollTop >= maxScroll - SCROLL_EDGE_TOLERANCE_PX,
-      };
+      const maxScroll = readableScrollRange(
+        viewport.scrollHeight - viewport.clientHeight,
+        overflowAllowanceRef.current,
+      );
+      const next = maxScroll === 0
+        ? { atTop: true, atBottom: true }
+        : {
+            atTop: viewport.scrollTop <= SCROLL_EDGE_TOLERANCE_PX,
+            atBottom: viewport.scrollTop >= maxScroll - SCROLL_EDGE_TOLERANCE_PX,
+          };
       setScrollEdges((current) =>
         current.atTop === next.atTop && current.atBottom === next.atBottom
           ? current

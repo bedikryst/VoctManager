@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { planScrollTurn } from "./scrollTurn";
+import { planScrollTurn, readableScrollRange } from "./scrollTurn";
 import { FIT_SCROLL_OVERLAP_PX } from "./constants";
 
 const SCREEN = 820;
@@ -50,5 +50,19 @@ describe("planScrollTurn", () => {
   it("hands the turn to the next page once the viewport is parked at the edge", () => {
     expect(planScrollTurn(0, SCREEN)).toBe(0);
     expect(planScrollTurn(3, SCREEN)).toBe(0);
+  });
+});
+
+describe("readableScrollRange", () => {
+  it("reads a whole page whose foot runs on under the nav as one screen", () => {
+    // Outside performance mode the whole-page fit may overrun the box by 50px.
+    // A tap spent scrolling those pixels shows no new music and turns no page.
+    expect(readableScrollRange(50, 50)).toBe(0);
+    expect(readableScrollRange(51, 50)).toBe(0); // a pixel of layout rounding
+  });
+
+  it("keeps every pixel of an overflow that holds music", () => {
+    expect(readableScrollRange(410, 50)).toBe(410); // zoom, width floor, partial fit
+    expect(readableScrollRange(60, 0)).toBe(60); // performance mode grants nothing
   });
 });

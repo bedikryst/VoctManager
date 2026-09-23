@@ -37,6 +37,13 @@ export interface PageFitResult {
   /** Base width in CSS px; undefined until the viewport has been measured. */
   renderedPageWidth: number | undefined;
   resolvedFit: ResolvedFitMode;
+  /**
+   * CSS px the page may run past the box on purpose: outside performance mode
+   * the whole-page fit lets the foot of the page slide under the floating nav
+   * rather than shrink the music for a strip that carries none. That overrun
+   * is chrome, not the rest of the page, so a turn never scrolls through it.
+   */
+  overflowAllowance: number;
 }
 
 export const resolvePageFit = ({
@@ -50,6 +57,7 @@ export const resolvePageFit = ({
     return {
       renderedPageWidth: undefined,
       resolvedFit: fitMode === "auto" ? "page" : fitMode,
+      overflowAllowance: 0,
     };
   }
 
@@ -100,5 +108,6 @@ export const resolvePageFit = ({
       Math.floor(targetWidth),
     ),
     resolvedFit,
+    overflowAllowance: Math.max(0, -verticalReserve),
   };
 };
