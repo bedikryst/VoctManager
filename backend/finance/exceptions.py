@@ -164,3 +164,58 @@ class AttachmentTooLarge(FinanceError):
 class AttachmentTypeNotAllowed(FinanceError):
     code = "attachment_type_not_allowed"
     default_message = "Only PDF files and photographs of a document are kept."
+
+
+class UnknownFunding(FinanceError):
+    code = "unknown_funding"
+    default_message = "The funding does not belong to this project."
+
+
+class UnknownSource(FinanceError):
+    code = "unknown_source"
+    default_message = "There is no such funding source."
+
+
+class ChargeRefused(FinanceError):
+    code = "charge_refused"
+    default_message = "Some of the costs cannot be charged to this source; nothing was changed."
+
+
+class FundingExists(FinanceError):
+    code = "funding_exists"
+    default_message = "The source is already on this project."
+
+
+class FundingInUse(FinanceError):
+    code = "funding_in_use"
+    default_message = "Costs are charged to this funding; take them off it before removing it."
+
+
+class SourceInUse(FinanceError):
+    code = "source_in_use"
+    default_message = "The source funds a project; remove it from every project first."
+
+
+class EligibilityPeriodInvalid(FinanceError):
+    code = "eligibility_period_invalid"
+    default_message = "The eligibility period ends before it starts."
+
+
+class SourceSettled(FinanceError):
+    code = "source_settled"
+    default_message = "The source is settled; what was charged to it no longer changes."
+
+
+class AllocationExceedsAmount(FinanceError):
+    code = "allocation_exceeds_amount"
+    default_message = "The sources would cover more than the amount itself."
+
+
+class AllocationKindMismatch(FinanceError):
+    code = "allocation_kind_mismatch"
+    default_message = "Money is charged to a source of money; volunteer work only to a volunteer-work source."
+
+
+class AllocationNotCounted(FinanceError):
+    code = "allocation_not_counted"
+    default_message = "Only a counted cost can be charged to a source."

@@ -5,8 +5,10 @@
  * "II. Koszty administracyjne") and, inside them, by category, each with what
  * has actually been charged to it. Numbers, planned amounts and totals are the
  * server's; the page previews only the line being typed.
- * The plan is edited while the budget is being planned. Once the board has
- * approved it the page reads, and says who can open it for a correction.
+ * The plan is edited while the budget is being planned — its lines and how each
+ * is split between the project's funding sources, the kosztorys's "z dotacji /
+ * z innych środków" columns. Once the board has approved it the page reads,
+ * and says who can open it for a correction.
  * The "from the cast" helper proposes a line — billable cast × the most common
  * fee — and opens it in the form; it never writes one on its own.
  * @architecture Enterprise SaaS 2026
@@ -21,6 +23,7 @@ import {
   ArrowDown,
   ArrowUp,
   ClipboardList,
+  Landmark,
   Link2,
   MoreHorizontal,
   Pencil,
@@ -51,10 +54,12 @@ import {
   useReorderLines,
 } from "../api/finance.queries";
 import { ActSheet } from "../components/ActSheet";
+import { LineAllocationSheet } from "../components/AllocationSheet";
 import { BudgetLoadError } from "../components/BudgetLoadError";
 import { CostSummaryCard, type CostFigure } from "../components/CostSummaryCard";
 import { toastFinanceError } from "../lib/financeErrors";
 import {
+  allocationSummary,
   budgetStatusLabel,
   categoryLabel,
   formatFinanceDate,
@@ -74,7 +79,7 @@ import { ROW_CONTROL_CLASS } from "./components/RowActionsMenu";
 
 type OpenSheet =
   | { readonly kind: "line"; readonly line?: PlanLineDTO; readonly initial: LineDraft; readonly note?: string }
-  | { readonly kind: "delete"; readonly line: PlanLineDTO };
+  | { readonly kind: "delete" | "sources"; readonly line: PlanLineDTO };
 
 /** Costs of each category that count and sit outside the plan — what the
  * plan warning names, counted per category for the line's shortcut. */
@@ -278,6 +283,18 @@ function PlanWorkspace({ projectId }: PlanWorkspaceProps): React.JSX.Element {
               >
                 {t("finance.plan.edit", "Edytuj pozycję")}
               </DropdownMenuItem>
+              {budget.fundings.length > 0 && (
+                <DropdownMenuItem
+                  icon={<Landmark size={14} />}
+                  onSelect={() => setOpenSheet({ kind: "sources", line })}
+                  description={t(
+                    "finance.plan.sources_hint",
+                    "Ile pokryje dotacja, sponsor, środki własne",
+                  )}
+                >
+                  {t("finance.plan.split", "Podziel między źródła")}
+                </DropdownMenuItem>
+              )}
               {canMoveUp && (
                 <DropdownMenuItem icon={<ArrowUp size={14} />} onSelect={() => move(line, -1)}>
                   {t("finance.plan.move_up", "Przesuń wyżej")}
@@ -411,6 +428,7 @@ function PlanWorkspace({ projectId }: PlanWorkspaceProps): React.JSX.Element {
                           )}
                           <PlanLineRow
                             line={line}
+                            sources={allocationSummary(line.allocations, budget.fundings)}
                             isFocused={line.id === focusId}
                             menu={renderMenu(line, index)}
                           />
@@ -431,6 +449,14 @@ function PlanWorkspace({ projectId }: PlanWorkspaceProps): React.JSX.Element {
           line={openSheet.line}
           initial={openSheet.initial}
           proposalNote={openSheet.note}
+          onClose={() => setOpenSheet(null)}
+        />
+      )}
+      {openSheet?.kind === "sources" && (
+        <LineAllocationSheet
+          projectId={projectId}
+          line={openSheet.line}
+          fundings={budget.fundings}
           onClose={() => setOpenSheet(null)}
         />
       )}
@@ -465,6 +491,14 @@ function PlanWorkspace({ projectId }: PlanWorkspaceProps): React.JSX.Element {
                 )
               : t("finance.plan.delete_plain", "Pozycja zniknie z kosztorysu; zostanie w historii budżetu.")}
           </Text>
+          {openSheet.line.allocations.length > 0 && (
+            <Text size="sm" color="graphite">
+              {t(
+                "finance.plan.delete_with_sources",
+                "Zniknie też jej podział między źródła; kwoty oczekiwane od źródeł zostają bez zmian.",
+              )}
+            </Text>
+          )}
         </ActSheet>
       )}
     </>

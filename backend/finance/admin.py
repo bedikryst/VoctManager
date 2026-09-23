@@ -13,7 +13,19 @@ from typing import Any
 from django.contrib import admin
 from django.http import HttpRequest
 
-from .models import BudgetLine, Contract, ContractSequence, CostItem, FinanceAttachment, FinanceEvent, ProjectBudget
+from .models import (
+    BudgetLine,
+    Contract,
+    ContractSequence,
+    CostAllocation,
+    CostItem,
+    FinanceAttachment,
+    FinanceEvent,
+    FundingSource,
+    LineAllocation,
+    ProjectBudget,
+    ProjectFunding,
+)
 
 
 class ReadOnlyAdmin(admin.ModelAdmin):
@@ -69,6 +81,45 @@ class FinanceAttachmentAdmin(ReadOnlyAdmin):
 
     def get_queryset(self, request: HttpRequest) -> Any:
         return FinanceAttachment.all_objects.select_related('cost_item')
+
+
+@admin.register(FundingSource)
+class FundingSourceAdmin(ReadOnlyAdmin):
+    list_display = ('name', 'kind', 'status', 'awarded_amount', 'eligible_from', 'eligible_to', 'report_due_on',
+                    'is_deleted')
+    list_filter = ('kind', 'status', 'is_deleted')
+    search_fields = ('name', 'grantor', 'agreement_number')
+
+    def get_queryset(self, request: HttpRequest) -> Any:
+        return FundingSource.all_objects.all()
+
+
+@admin.register(ProjectFunding)
+class ProjectFundingAdmin(ReadOnlyAdmin):
+    list_display = ('source', 'budget', 'planned_amount', 'received_amount', 'is_deleted')
+    list_filter = ('is_deleted',)
+    search_fields = ('source__name', 'budget__project__title')
+
+    def get_queryset(self, request: HttpRequest) -> Any:
+        return ProjectFunding.all_objects.select_related('source', 'budget__project')
+
+
+@admin.register(LineAllocation)
+class LineAllocationAdmin(ReadOnlyAdmin):
+    list_display = ('budget_line', 'project_funding', 'amount', 'is_deleted')
+    list_filter = ('is_deleted',)
+
+    def get_queryset(self, request: HttpRequest) -> Any:
+        return LineAllocation.all_objects.select_related('budget_line', 'project_funding__source')
+
+
+@admin.register(CostAllocation)
+class CostAllocationAdmin(ReadOnlyAdmin):
+    list_display = ('cost_item', 'project_funding', 'amount', 'is_deleted')
+    list_filter = ('is_deleted',)
+
+    def get_queryset(self, request: HttpRequest) -> Any:
+        return CostAllocation.all_objects.select_related('cost_item', 'project_funding__source')
 
 
 @admin.register(Contract)

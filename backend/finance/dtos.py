@@ -10,6 +10,7 @@
 """
 from datetime import date
 from decimal import Decimal
+from string import Formatter
 from typing import Annotated, Self
 from uuid import UUID
 
@@ -17,7 +18,17 @@ from pydantic import BeforeValidator, Field, field_validator, model_validator
 
 from roster.dtos import EnterpriseBaseDTO
 
-from .models import EXPENSE_CATEGORIES, FEE_CATEGORIES, CostCategory, ExpenseDocumentType, FeeForm, PlanUnit
+from .models import (
+    DOCUMENT_NOTE_PLACEHOLDERS,
+    EXPENSE_CATEGORIES,
+    FEE_CATEGORIES,
+    CostCategory,
+    ExpenseDocumentType,
+    FeeForm,
+    FundingKind,
+    FundingStatus,
+    PlanUnit,
+)
 from .rules import finance_today, is_valid_nip
 
 FEE_FORM_VALUES = frozenset(FeeForm.values)
@@ -26,6 +37,8 @@ EXPENSE_CATEGORY_VALUES = frozenset(str(category) for category in EXPENSE_CATEGO
 CATEGORY_VALUES = frozenset(CostCategory.values)
 PLAN_UNIT_VALUES = frozenset(PlanUnit.values)
 DOCUMENT_TYPE_VALUES = frozenset(ExpenseDocumentType.values)
+FUNDING_KIND_VALUES = frozenset(FundingKind.values)
+FUNDING_STATUS_VALUES = frozenset(FundingStatus.values)
 
 
 def _require_choice(value: str, allowed: frozenset[str], field_name: str) -> str:
@@ -51,12 +64,31 @@ def _normalize_nip(value: object) -> object:
     return digits
 
 
+def _check_note_template(value: object) -> object:
+    """A document note may name only the placeholders the renderer fills, each
+    bare — "{source_amount}", never "{source_amount:>10}"."""
+    if not isinstance(value, str):
+        return value
+    try:
+        fields = list(Formatter().parse(value))
+    except ValueError as exc:
+        raise ValueError("document_note_template has an unmatched brace.") from exc
+    for _, field_name, format_spec, conversion in fields:
+        if field_name is None:
+            continue
+        if field_name not in DOCUMENT_NOTE_PLACEHOLDERS or format_spec or conversion:
+            raise ValueError(f"document_note_template uses an unknown placeholder: {{{field_name}}}.")
+    return value
+
+
 MoneyAmount = Annotated[Decimal, Field(ge=0, max_digits=10, decimal_places=2)]
 PositiveAmount = Annotated[Decimal, Field(gt=0, max_digits=10, decimal_places=2)]
 Hours = Annotated[Decimal, Field(gt=0, max_digits=6, decimal_places=2)]
 Quantity = Annotated[Decimal, Field(gt=0, max_digits=8, decimal_places=2)]
+Percent = Annotated[Decimal, Field(ge=0, le=100, max_digits=5, decimal_places=2)]
 Text = Annotated[str, BeforeValidator(_strip)]
 Nip = Annotated[str, BeforeValidator(_normalize_nip)]
+NoteTemplate = Annotated[str, BeforeValidator(_strip), BeforeValidator(_check_note_template)]
 
 
 def _not_in_future(value: date | None, field_name: str) -> date | None:
@@ -346,6 +378,129 @@ class ExpenseUpdateDTO(EnterpriseBaseDTO):
         if cleared:
             raise ValueError(f"{', '.join(sorted(cleared))} cannot be cleared.")
         return self
+
+
+class FundingSourceDTO(EnterpriseBaseDTO):
+    """A new funding source. Every grant rule is optional; the document note
+    falls back to the default formula when none is sent."""
+
+    kind: str
+    name: Text = Field(..., min_length=1, max_length=200)
+    grantor: Text = Field(default="", max_length=200)
+    agreement_number: Text = Field(default="", max_length=100)
+    agreement_date: date | None = None
+    awarded_amount: MoneyAmount | None = None
+    status: str = FundingStatus.PLANNED
+    eligible_from: date | None = None
+    eligible_to: date | None = None
+    report_due_on: date | None = None
+    required_own_share_pct: Percent | None = None
+    admin_cost_cap_pct: Percent | None = None
+    line_tolerance_pct: Percent | None = None
+    document_note_template: NoteTemplate | None = Field(default=None, min_length=1, max_length=2000)
+    note: Text = Field(default="", max_length=2000)
+
+    @field_validator("kind")
+    @classmethod
+    def validate_kind(cls, value: str) -> str:
+        return _require_choice(value, FUNDING_KIND_VALUES, "kind")
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value: str) -> str:
+        return _require_choice(value, FUNDING_STATUS_VALUES, "status")
+
+
+class FundingSourceUpdateDTO(EnterpriseBaseDTO):
+    """A source's edit; only the fields sent change. Kind, name, status and the
+    note template stay set; everything else may be cleared."""
+
+    kind: str | None = None
+    name: Text | None = Field(default=None, min_length=1, max_length=200)
+    grantor: Text | None = Field(default=None, max_length=200)
+    agreement_number: Text | None = Field(default=None, max_length=100)
+    agreement_date: date | None = None
+    awarded_amount: MoneyAmount | None = None
+    status: str | None = None
+    eligible_from: date | None = None
+    eligible_to: date | None = None
+    report_due_on: date | None = None
+    required_own_share_pct: Percent | None = None
+    admin_cost_cap_pct: Percent | None = None
+    line_tolerance_pct: Percent | None = None
+    document_note_template: NoteTemplate | None = Field(default=None, min_length=1, max_length=2000)
+    note: Text | None = Field(default=None, max_length=2000)
+
+    @field_validator("kind")
+    @classmethod
+    def validate_kind(cls, value: str | None) -> str | None:
+        return None if value is None else _require_choice(value, FUNDING_KIND_VALUES, "kind")
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value: str | None) -> str | None:
+        return None if value is None else _require_choice(value, FUNDING_STATUS_VALUES, "status")
+
+    @model_validator(mode="after")
+    def required_stay_set(self) -> Self:
+        required = {"kind", "name", "status", "document_note_template"}
+        cleared = [name for name in self.model_fields_set & required if getattr(self, name) is None]
+        if cleared:
+            raise ValueError(f"{', '.join(sorted(cleared))} cannot be cleared.")
+        return self
+
+
+class ProjectFundingDTO(EnterpriseBaseDTO):
+    """A source put on a project: what the project expects of it and what has
+    arrived so far."""
+
+    source: UUID
+    planned_amount: MoneyAmount = Decimal("0")
+    received_amount: MoneyAmount = Decimal("0")
+
+
+class ProjectFundingUpdateDTO(EnterpriseBaseDTO):
+    planned_amount: MoneyAmount | None = None
+    received_amount: MoneyAmount | None = None
+
+    @model_validator(mode="after")
+    def no_nulls(self) -> Self:
+        cleared = [name for name in self.model_fields_set if getattr(self, name) is None]
+        if cleared:
+            raise ValueError(f"{', '.join(sorted(cleared))} cannot be cleared; send 0.")
+        return self
+
+
+class AllocationDTO(EnterpriseBaseDTO):
+    funding: UUID
+    amount: PositiveAmount
+
+
+class AllocationSetDTO(EnterpriseBaseDTO):
+    """Every source a plan line or a cost is split between, replacing the set
+    it had. An empty set leaves the whole amount to the foundation's own funds."""
+
+    allocations: tuple[AllocationDTO, ...] = ()
+
+    @model_validator(mode="after")
+    def one_entry_per_funding(self) -> Self:
+        fundings = [allocation.funding for allocation in self.allocations]
+        if len(set(fundings)) != len(fundings):
+            raise ValueError("allocations must name each funding at most once.")
+        return self
+
+
+class ChargeCostsDTO(EnterpriseBaseDTO):
+    """Costs whose uncovered remainder goes to one funding. All or nothing."""
+
+    ids: tuple[UUID, ...] = Field(..., min_length=1)
+
+    @field_validator("ids")
+    @classmethod
+    def unique_ids(cls, value: tuple[UUID, ...]) -> tuple[UUID, ...]:
+        if len(set(value)) != len(value):
+            raise ValueError("ids must not repeat.")
+        return value
 
 
 class HistoryPageDTO(EnterpriseBaseDTO):

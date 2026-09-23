@@ -15,8 +15,17 @@ from uuid import UUID
 
 from django.contrib.auth.models import User
 
-from ..models import BudgetLine, Contract, CostItem, CostKind, FinanceAttachment, FinanceEvent, ProjectBudget
-from .audit import SUBJECT_ATTACHMENT, SUBJECT_CONTRACT, SUBJECT_COST_ITEM, SUBJECT_LINE
+from ..models import (
+    BudgetLine,
+    Contract,
+    CostItem,
+    CostKind,
+    FinanceAttachment,
+    FinanceEvent,
+    ProjectBudget,
+    ProjectFunding,
+)
+from .audit import SUBJECT_ATTACHMENT, SUBJECT_CONTRACT, SUBJECT_COST_ITEM, SUBJECT_FUNDING, SUBJECT_LINE
 
 
 @dataclass(frozen=True)
@@ -53,6 +62,9 @@ def _labels(events: list[FinanceEvent]) -> dict[tuple[str, UUID], str]:
         labels[(SUBJECT_LINE, line.pk)] = line.name
     for attachment in FinanceAttachment.all_objects.filter(pk__in=ids.get(SUBJECT_ATTACHMENT, set())):
         labels[(SUBJECT_ATTACHMENT, attachment.pk)] = attachment.original_name
+    fundings = ProjectFunding.all_objects.filter(pk__in=ids.get(SUBJECT_FUNDING, set())).select_related("source")
+    for funding in fundings:
+        labels[(SUBJECT_FUNDING, funding.pk)] = funding.source.name
     return labels
 
 

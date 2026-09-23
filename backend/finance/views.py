@@ -1,7 +1,9 @@
 """
 @file views.py
 @description The finance API under /api/finance/. Managers run the ledger, the
-             expenses and the plan; the acts that undo a settled fact
+             expenses, the plan and the funding — the organisation's sources,
+             each project's share of them and how lines and costs are split
+             between them; the acts that undo a settled fact
              (reverting a payment, annulling a contract) and those that move the
              budget's standing (approve, reopen, close) are the board's. Every
              write answers with the whole budget, freshly computed, so the
@@ -36,18 +38,24 @@ from roster.infrastructure.document_generator import DocumentRenderDependencyErr
 from roster.models import Project
 
 from .dtos import (
+    AllocationSetDTO,
     BudgetLineDTO,
     BudgetLineUpdateDTO,
+    ChargeCostsDTO,
     ContractHoursDTO,
     CostItemDetailsDTO,
     ExpenseDTO,
     ExpenseUpdateDTO,
     FeeBatchDTO,
+    FundingSourceDTO,
+    FundingSourceUpdateDTO,
     HistoryPageDTO,
     LedgerRangeDTO,
     LineOrderDTO,
     OneOffFeeDTO,
     PayFeesDTO,
+    ProjectFundingDTO,
+    ProjectFundingUpdateDTO,
     ReasonDTO,
     SignContractDTO,
 )
@@ -60,17 +68,21 @@ from .infrastructure.documents import (
     render_contract_pdf,
 )
 from .infrastructure.ledger_csv import ledger_csv, project_ledger_filename, range_ledger_filename
-from .models import BudgetLine, Contract, CostItem, CostKind, FinanceAttachment
+from .models import BudgetLine, Contract, CostItem, CostKind, FinanceAttachment, FundingSource, ProjectFunding
 from .serializers import (
     HistoryEventSerializer,
     PayableSerializer,
     ProjectMoneySerializer,
     ProjectRollupSerializer,
+    SourceDetailSerializer,
+    SourceSerializer,
 )
+from .services import sources
 from .services.attachments import AttachmentService
 from .services.budget import SEVERITY_PROBLEM, SEVERITY_WORK, BudgetService, ProjectMoney
 from .services.contracts import ContractService
 from .services.expenses import ExpenseService
+from .services.funding import FundingService
 from .services.history import HistoryService
 from .services.ledger import LedgerService
 from .services.plan import PlanService
@@ -292,6 +304,106 @@ class LineChargeView(FinanceAPIView):
         line = _line(project_id, pk)
         PlanService.charge_unplanned(line, actor=request_user(request))
         return _budget_response(line.budget.project)
+
+
+class LineAllocationsView(FinanceAPIView):
+    """PUT projects/{project_id}/lines/{id}/allocations/ — the plan's split of
+    the line between sources, replacing what it had."""
+
+    def put(self, request: Request, project_id: UUID, pk: UUID) -> Response:
+        line = _line(project_id, pk)
+        dto = self.parse(request, AllocationSetDTO)
+        FundingService.set_line_allocations(line, dto, actor=request_user(request))
+        return _budget_response(line.budget.project)
+
+
+class CostAllocationsView(FinanceAPIView):
+    """PUT cost-items/{id}/allocations/ — the sources a fee or an expense is
+    charged to, replacing what it had."""
+
+    def put(self, request: Request, pk: UUID) -> Response:
+        item = get_object_or_404(CostItem.objects.select_related("budget__project"), pk=pk)
+        dto = self.parse(request, AllocationSetDTO)
+        FundingService.set_cost_allocations(item, dto, actor=request_user(request))
+        return _budget_response(item.budget.project)
+
+
+def _funding(project_id: UUID, pk: UUID) -> ProjectFunding:
+    return get_object_or_404(
+        ProjectFunding.objects.select_related("budget__project", "source"), pk=pk, budget__project_id=project_id,
+    )
+
+
+class FundingCollectionView(FinanceAPIView):
+    """POST projects/{project_id}/fundings/ — puts a source on the project."""
+
+    def post(self, request: Request, project_id: UUID) -> Response:
+        project = get_object_or_404(Project, pk=project_id)
+        dto = self.parse(request, ProjectFundingDTO)
+        FundingService.add_funding(project, dto, actor=request_user(request))
+        return _budget_response(project, status.HTTP_201_CREATED)
+
+
+class FundingDetailView(FinanceAPIView):
+    """PATCH | DELETE projects/{project_id}/fundings/{id}/."""
+
+    def patch(self, request: Request, project_id: UUID, pk: UUID) -> Response:
+        funding = _funding(project_id, pk)
+        dto = self.parse(request, ProjectFundingUpdateDTO)
+        FundingService.update_funding(funding, dto, actor=request_user(request))
+        return _budget_response(funding.budget.project)
+
+    def delete(self, request: Request, project_id: UUID, pk: UUID) -> Response:
+        funding = _funding(project_id, pk)
+        FundingService.remove_funding(funding, actor=request_user(request))
+        return _budget_response(funding.budget.project)
+
+
+class FundingChargeView(FinanceAPIView):
+    """POST projects/{project_id}/fundings/{id}/charge/ — what each named cost
+    has left uncovered goes to this funding."""
+
+    def post(self, request: Request, project_id: UUID, pk: UUID) -> Response:
+        funding = _funding(project_id, pk)
+        dto = self.parse(request, ChargeCostsDTO)
+        FundingService.charge_costs(funding, dto, actor=request_user(request))
+        return _budget_response(funding.budget.project)
+
+
+def _source_payload(source: FundingSource) -> dict[str, Any]:
+    return dict(SourceDetailSerializer(sources.detail(source)).data)
+
+
+class FundingSourceCollectionView(FinanceAPIView):
+    """GET funding-sources/ — every source with its figures across projects;
+    POST — a new source, answered with its page."""
+
+    def get(self, request: Request) -> Response:
+        measures = sources.measure(sources.all_sources())
+        return Response(SourceSerializer(list(measures.sources.values()), many=True).data)
+
+    def post(self, request: Request) -> Response:
+        dto = self.parse(request, FundingSourceDTO)
+        source = FundingService.create_source(dto, actor=request_user(request))
+        return Response(_source_payload(source), status=status.HTTP_201_CREATED)
+
+
+class FundingSourceDetailView(FinanceAPIView):
+    """GET | PATCH | DELETE funding-sources/{id}/ — the source's page: its
+    rules, the projects it funds, every cost charged to it."""
+
+    def get(self, request: Request, pk: UUID) -> Response:
+        return Response(_source_payload(get_object_or_404(FundingSource, pk=pk)))
+
+    def patch(self, request: Request, pk: UUID) -> Response:
+        source = get_object_or_404(FundingSource, pk=pk)
+        dto = self.parse(request, FundingSourceUpdateDTO)
+        return Response(_source_payload(FundingService.update_source(source, dto, actor=request_user(request))))
+
+    def delete(self, request: Request, pk: UUID) -> Response:
+        source = get_object_or_404(FundingSource, pk=pk)
+        FundingService.delete_source(source, actor=request_user(request))
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class BudgetApproveView(BoardAPIView):
@@ -548,7 +660,8 @@ def _bounded_int(raw: object, default: int, maximum: int) -> int:
 
 class FinanceOverviewView(FinanceAPIView):
     """GET overview/ — every project's rollup (cancelled ones included: a
-    cancellation has costs) and the fees still owed, a page at a time
+    cancellation has costs), every funding source with what it carries across
+    projects and its deadlines, and the costs still owed, a page at a time
     (``?limit=&offset=``)."""
 
     def get(self, request: Request) -> Response:
@@ -568,8 +681,10 @@ class FinanceOverviewView(FinanceAPIView):
         limit = _bounded_int(request.query_params.get("limit"), PAYABLES_DEFAULT_LIMIT, PAYABLES_MAX_LIMIT) or 1
         offset = _bounded_int(request.query_params.get("offset"), 0, 1_000_000)
         payables = BudgetService.payables()
+        measures = sources.measure(sources.all_sources())
         return Response({
             "projects": ProjectRollupSerializer(rollups, many=True).data,
+            "sources": SourceSerializer(list(measures.sources.values()), many=True).data,
             "payables": {
                 "count": payables.count(),
                 "limit": limit,

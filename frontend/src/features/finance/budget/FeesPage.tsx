@@ -6,9 +6,10 @@
  *  - amounts and forms are DRAFTS. They preview in the rail and the rows, and
  *    the shared save bar commits them as one atomic batch, so a whole repricing
  *    can be looked at before it lands.
- *  - issuing a contract and marking a fee paid are ACTS. They happen at once,
- *    per row or on a selection, and a row whose price is still a draft cannot
- *    take one — it would settle the old price.
+ *  - issuing a contract, marking a fee paid and charging it to funding sources
+ *    are ACTS. They happen at once, per row (the first two on a selection
+ *    too), and a row whose price is still a draft cannot take one — it would
+ *    settle the old price.
  * Nothing is queued offline: while the device has no network the save bar and
  * every act are disabled, and each says why.
  * @architecture Enterprise SaaS 2026
@@ -32,9 +33,11 @@ import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Button } from "@/shared/ui/primitives/Button";
 import { useIssueContract } from "../api/finance.queries";
 import { FinanceService } from "../api/finance.service";
+import { CostAllocationSheet } from "../components/AllocationSheet";
 import { CostSummaryCard, type CostFigure } from "../components/CostSummaryCard";
 import { toastFinanceError } from "../lib/financeErrors";
-import { categoryLabel } from "../lib/financePresentation";
+import { allocationSummary, categoryLabel } from "../lib/financePresentation";
+import { canAllocateRow, isValuationRow } from "../lib/funding";
 import { canIssue, canPay, isSelectable } from "../lib/ledgerActs";
 import { isPriceEditable } from "../lib/feeDraft";
 import { formatAmount, formatGrosze, isPositiveAmount, toGrosze } from "../lib/money";
@@ -51,7 +54,10 @@ import { useFeeLedger } from "./useFeeLedger";
 
 type OpenAct =
   | { readonly kind: "pay"; readonly rows: readonly LedgerRowDTO[] }
-  | { readonly kind: "unpay" | "annul" | "sign" | "hours" | "details"; readonly row: LedgerRowDTO }
+  | {
+      readonly kind: "unpay" | "annul" | "sign" | "hours" | "details" | "funding";
+      readonly row: LedgerRowDTO;
+    }
   | { readonly kind: "one_off" };
 
 const MINUTE_MS = 60_000;
@@ -293,6 +299,8 @@ function FeesWorkspace({
   ];
 
   const hasPlan = ledger.budget.lines.length > 0;
+  const fundings = ledger.budget.fundings;
+  const budgetOpen = ledger.budget.budget?.status !== "CLOSED";
 
   const renderRow = (row: LedgerRowDTO): React.JSX.Element => {
     const preview = ledger.previewOf(row);
@@ -324,7 +332,11 @@ function FeesWorkspace({
             formEditable={isPriceEditable(row)}
             blockedReason={blockedReason}
             isBoard={isBoard}
+            fundingSummary={allocationSummary(row.allocations, fundings)}
             acts={{
+              ...(budgetOpen && canAllocateRow(row, fundings)
+                ? { onFunding: () => setOpenAct({ kind: "funding", row }) }
+                : {}),
               onFormChange: (form) => ledger.setForm(row, form),
               onDetails: () => setOpenAct({ kind: "details", row }),
               onIssue: () => issueOne(row),
@@ -517,6 +529,18 @@ function FeesWorkspace({
       )}
       {openAct?.kind === "one_off" && (
         <OneOffPayeeSheet projectId={projectId} onClose={closeAct} />
+      )}
+      {openAct?.kind === "funding" && openAct.row.cost_item_id && (
+        <CostAllocationSheet
+          projectId={projectId}
+          costItemId={openAct.row.cost_item_id}
+          label={openAct.row.payee_name}
+          available={openAct.row.allocatable}
+          valuation={isValuationRow(openAct.row)}
+          allocations={openAct.row.allocations}
+          fundings={fundings}
+          onClose={closeAct}
+        />
       )}
     </>
   );

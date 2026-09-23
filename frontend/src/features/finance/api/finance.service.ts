@@ -1,11 +1,12 @@
 /**
  * @file finance.service.ts
  * @description Pure HTTP for `/api/finance/`. Every budget write — fees,
- * expenses, the plan, the budget's standing, an expense's files — answers with
- * the whole budget, freshly computed, so the caller replaces its copy instead
- * of reconciling rows. Files (contracts, bills, the CSV, the contracts ZIP, an
- * expense's attachments) are fetched as blobs through the authenticated client
- * and saved from memory: none of them has a public URL.
+ * expenses, the plan, the funding and its splits, the budget's standing, an
+ * expense's files — answers with the whole budget, freshly computed, so the
+ * caller replaces its copy instead of reconciling rows; a funding source's
+ * writes answer with the source's page. Files (contracts, bills, the CSV, the
+ * contracts ZIP, an expense's attachments) are fetched as blobs through the
+ * authenticated client and saved from memory: none of them has a public URL.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/api/finance.service
  */
@@ -14,6 +15,7 @@ import axios, { type AxiosResponse } from "axios";
 
 import api from "@/shared/api/api";
 import type {
+  AllocationSetPayload,
   BudgetLinePayload,
   BudgetLineUpdatePayload,
   ContractsZipStatusDTO,
@@ -22,12 +24,18 @@ import type {
   ExpenseUpdatePayload,
   FeeBatchPayload,
   FinanceOverviewDTO,
+  FundingSourceDTO,
+  FundingSourcePayload,
+  FundingSourceUpdatePayload,
   HistoryPageDTO,
   IsoDate,
   OneOffFeePayload,
   PayFeesPayload,
   ProjectBudgetDTO,
+  ProjectFundingPayload,
+  ProjectFundingUpdatePayload,
   SignContractPayload,
+  SourceDetailDTO,
 } from "../types/finance.dto";
 
 const BASE = "/api/finance";
@@ -329,6 +337,103 @@ export const FinanceService = {
   chargeLine: async (projectId: string, lineId: string): Promise<ProjectBudgetDTO> => {
     const response = await api.post<ProjectBudgetDTO>(
       `${BASE}/projects/${projectId}/lines/${lineId}/charge/`,
+    );
+    return response.data;
+  },
+
+  // ── Funding ─────────────────────────────────────────────────────────────
+
+  getSources: async (): Promise<readonly FundingSourceDTO[]> => {
+    const response = await api.get<FundingSourceDTO[]>(`${BASE}/funding-sources/`);
+    return response.data;
+  },
+
+  getSource: async (sourceId: string): Promise<SourceDetailDTO> => {
+    const response = await api.get<SourceDetailDTO>(`${BASE}/funding-sources/${sourceId}/`);
+    return response.data;
+  },
+
+  createSource: async (payload: FundingSourcePayload): Promise<SourceDetailDTO> => {
+    const response = await api.post<SourceDetailDTO>(`${BASE}/funding-sources/`, payload);
+    return response.data;
+  },
+
+  updateSource: async (
+    sourceId: string,
+    payload: FundingSourceUpdatePayload,
+  ): Promise<SourceDetailDTO> => {
+    const response = await api.patch<SourceDetailDTO>(
+      `${BASE}/funding-sources/${sourceId}/`,
+      payload,
+    );
+    return response.data;
+  },
+
+  deleteSource: async (sourceId: string): Promise<void> => {
+    await api.delete(`${BASE}/funding-sources/${sourceId}/`);
+  },
+
+  addFunding: async (
+    projectId: string,
+    payload: ProjectFundingPayload,
+  ): Promise<ProjectBudgetDTO> => {
+    const response = await api.post<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/fundings/`,
+      payload,
+    );
+    return response.data;
+  },
+
+  updateFunding: async (
+    projectId: string,
+    fundingId: string,
+    payload: ProjectFundingUpdatePayload,
+  ): Promise<ProjectBudgetDTO> => {
+    const response = await api.patch<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/fundings/${fundingId}/`,
+      payload,
+    );
+    return response.data;
+  },
+
+  removeFunding: async (projectId: string, fundingId: string): Promise<ProjectBudgetDTO> => {
+    const response = await api.delete<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/fundings/${fundingId}/`,
+    );
+    return response.data;
+  },
+
+  chargeFunding: async (
+    projectId: string,
+    fundingId: string,
+    ids: readonly string[],
+  ): Promise<ProjectBudgetDTO> => {
+    const response = await api.post<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/fundings/${fundingId}/charge/`,
+      { ids },
+    );
+    return response.data;
+  },
+
+  setLineAllocations: async (
+    projectId: string,
+    lineId: string,
+    payload: AllocationSetPayload,
+  ): Promise<ProjectBudgetDTO> => {
+    const response = await api.put<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/lines/${lineId}/allocations/`,
+      payload,
+    );
+    return response.data;
+  },
+
+  setCostAllocations: async (
+    costItemId: string,
+    payload: AllocationSetPayload,
+  ): Promise<ProjectBudgetDTO> => {
+    const response = await api.put<ProjectBudgetDTO>(
+      `${BASE}/cost-items/${costItemId}/allocations/`,
+      payload,
     );
     return response.data;
   },

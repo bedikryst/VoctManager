@@ -1,7 +1,8 @@
 /**
  * @file BudgetOverviewPage.tsx
  * @description Przegląd — the project's money at a glance: what the concert
- * costs, the plan it is measured against, and what qualifies that figure; the
+ * costs, the plan it is measured against, and what qualifies that figure —
+ * paid, owed, what funding sources carry; the
  * work the server's warnings list, each linking to its row; where the budget
  * stands and the board's acts that move it; what the office takes away; and
  * the history of every act. Every figure here is the server's; the page sums
@@ -90,6 +91,18 @@ const useSummaryFigures = (budget: ProjectBudgetDTO | undefined): CostFigure[] =
             key: "outstanding",
             label: t("finance.summary.outstanding_all", "Do zapłaty"),
             value: formatAmount(summary.outstanding) ?? "0",
+            unit: currency,
+            tone: "default" as const,
+          },
+        ]
+      : []),
+    // What funding sources carry, once any carries anything.
+    ...(isPositiveAmount(budget.funding.charged)
+      ? [
+          {
+            key: "funded",
+            label: t("finance.summary.funded", "Ze źródeł"),
+            value: formatAmount(budget.funding.charged) ?? "0",
             unit: currency,
             tone: "default" as const,
           },

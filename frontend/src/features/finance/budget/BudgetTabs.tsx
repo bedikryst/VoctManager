@@ -2,8 +2,7 @@
  * @file BudgetTabs.tsx
  * @description The routed sub-navigation of the project's Budżet tab — the
  * `ArchiveTabs` recipe, because it switches between routes, not between local
- * views. A sub-tab appears in the stage that builds it; there is no
- * placeholder tab for funding.
+ * views: Przegląd, Kosztorys, Honoraria, Wydatki, Finansowanie.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/BudgetTabs
  */
@@ -11,7 +10,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ClipboardList, LayoutDashboard, Receipt, Users } from "lucide-react";
+import { ClipboardList, Landmark, LayoutDashboard, Receipt, Users } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
@@ -52,6 +51,11 @@ export const BudgetTabs = ({ projectId }: BudgetTabsProps): React.JSX.Element =>
       to: `${base}/costs`,
       label: t("finance.nav.costs", "Wydatki"),
       icon: <Receipt size={14} aria-hidden="true" />,
+    },
+    {
+      to: `${base}/funding`,
+      label: t("finance.nav.funding", "Finansowanie"),
+      icon: <Landmark size={14} aria-hidden="true" />,
     },
   ];
 

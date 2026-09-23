@@ -2,8 +2,8 @@
  * @file WarningsCard.tsx
  * @description The budget's work list: every warning the server raised, in its
  * order (problems first), each with the one thing to do about it and what it
- * names — a person, an expense, a kosztorys line — each a link to that row on
- * its own tab. The server computes the warnings per request, so "the concert
+ * names — a person, an expense, a kosztorys line, a funding source — each a
+ * link to that row on its own tab. The server computes the warnings per request, so "the concert
  * has passed" is never stale here. A long list of names is cut, and the cut
  * says how many it hides.
  * @architecture Enterprise SaaS 2026
@@ -51,6 +51,12 @@ const subjectsOf = (budget: ProjectBudgetDTO, budgetHref: string): Map<string, S
     subjects.set(line.id, {
       name: `${line.number} ${line.name}`,
       href: `${budgetHref}/plan?focus=${line.id}`,
+    });
+  }
+  for (const funding of budget.fundings) {
+    subjects.set(funding.id, {
+      name: funding.source.name,
+      href: `${budgetHref}/funding?focus=${funding.id}`,
     });
   }
   return subjects;

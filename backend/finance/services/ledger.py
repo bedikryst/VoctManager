@@ -54,6 +54,7 @@ from ..rules import (
 )
 from . import audit
 from .budget import BudgetService, reconcile_line_change
+from .funding import assert_allocations_fit, release_cost_allocations
 
 # The fields a paid item or an issued contract freezes. Contributions and the
 # volunteer valuation stay editable: the office reports contributions after the
@@ -222,6 +223,7 @@ def _apply_pricing(
     for name, value in new.items():
         setattr(item, name, value)
     refresh_item(item, project)
+    assert_allocations_fit(item)
     item.save()
 
     if "form" in changed:
@@ -474,8 +476,9 @@ class LedgerService:
     def release_crew_assignment(assignment: CrewAssignment, *, actor: User | None) -> None:
         """Called before a crew assignment is deleted.
 
-        An unpaid, uncontracted fee goes with the assignment: it is detached and
-        soft-deleted, and the event keeps what it was. A paid or contracted one
+        An unpaid, uncontracted fee goes with the assignment: it is taken off its
+        funding sources, detached and soft-deleted, and the events keep what it
+        was. A paid or contracted one
         refuses the removal — that fee is an accounting record, and the person
         has to be unpaid or their contract annulled first. `all_objects`, because
         the foreign key protects soft-deleted rows too.
@@ -500,6 +503,8 @@ class LedgerService:
             BudgetService.assert_writable(budget)
             for item in items:
                 was_active = not item.is_deleted
+                if was_active:
+                    release_cost_allocations(budget, item, actor=actor)
                 item.crew_assignment = None
                 item.is_deleted = True
                 item.save(update_fields=["crew_assignment", "is_deleted", "updated_at"])

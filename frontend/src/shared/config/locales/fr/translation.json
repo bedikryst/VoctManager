@@ -1611,7 +1611,8 @@
       "people": "Cachets",
       "aria": "Sections du budget",
       "plan": "Budget prévisionnel",
-      "costs": "Dépenses"
+      "costs": "Dépenses",
+      "funding": "Financement"
     },
     "forms": {
       "DZIELO": "Contrat d'œuvre (umowa o dzieło)",
@@ -1701,7 +1702,27 @@
       },
       "LINE_OVER_PLAN": {
         "title": "Lignes au-delà du prévu",
-        "hint": "La dépense dépasse ce que prévoit le budget. Pour une subvention, dépasser une ligne peut exiger un avenant — vérifiez la convention."
+        "hint": "La dépense dépasse le budget prévisionnel au-delà de la tolérance des sources de la ligne. Pour une subvention, un tel dépassement exige en général un avenant — vérifiez la convention."
+      },
+      "SOURCE_OVERALLOCATED": {
+        "title": "Source imputée au-delà de son montant",
+        "hint": "Le budget prévisionnel ou les coûts imputés demandent à la source plus que ce que le projet en attend, que ce qui est arrivé ou que ce qu'elle a accordé. Réduisez l'imputation ou corrigez le montant dans Financement."
+      },
+      "OUTSIDE_ELIGIBILITY": {
+        "title": "Coût hors période d'éligibilité",
+        "hint": "Le coût est né en dehors de la période que couvre la source. Le financeur ne le retiendra pas — imputez-le à une autre source."
+      },
+      "OWN_SHARE_BELOW": {
+        "title": "Apport propre insuffisant",
+        "hint": "La source exige qu'une part de l'action soit couverte par d'autres fonds ou par un apport non financier. Réduisez la part de la source ou ajoutez un apport propre."
+      },
+      "ADMIN_CAP_EXCEEDED": {
+        "title": "Trop de frais administratifs",
+        "hint": "Les frais administratifs occupent une part de cette source supérieure à son plafond. Imputez-en une partie à une autre source."
+      },
+      "REPORT_DUE_SOON": {
+        "title": "Échéance du compte rendu",
+        "hint": "Le compte rendu de la source est dû dans les deux semaines, ou l'échéance est passée. Une fois soldée, passez la source au statut « Soldée »."
       }
     },
     "errors": {
@@ -1734,7 +1755,18 @@
       "attachment_missing": "Aucun fichier choisi.",
       "attachment_too_large": "Le fichier est trop volumineux — la limite est de 20 Mo.",
       "attachment_type_not_allowed": "Joignez un PDF ou une photo de la pièce (JPG, PNG, WEBP, HEIC).",
-      "file_detection_unavailable": "Le serveur ne peut pas vérifier le fichier pour le moment. Réessayez dans un instant."
+      "file_detection_unavailable": "Le serveur ne peut pas vérifier le fichier pour le moment. Réessayez dans un instant.",
+      "unknown_funding": "Cette source ne figure plus dans le projet. Actualisez la page.",
+      "unknown_source": "Cette source de financement n'existe plus. Actualisez la page.",
+      "funding_exists": "Cette source figure déjà dans le projet.",
+      "funding_in_use": "Des coûts sont déjà imputés à cette source. Retirez-les d'abord, puis retirez la source du projet.",
+      "source_in_use": "La source finance un projet. Retirez-la d'abord de tous les projets.",
+      "source_settled": "La source est soldée — ce qui lui a été imputé ne change plus. Pour corriger, changez son statut.",
+      "eligibility_period_invalid": "La période d'éligibilité se termine avant de commencer.",
+      "allocation_exceeds_amount": "Les sources couvriraient plus que le montant entier. Réduisez leur imputation.",
+      "allocation_kind_mismatch": "L'argent s'impute à une source d'argent ; le travail bénévole au bénévolat valorisé.",
+      "allocation_not_counted": "Ce coût ne compte pas (la personne s'est désistée, par exemple) : on ne l'impute à aucune source. On peut seulement l'en retirer.",
+      "charge_refused": "Tous ces coûts ne peuvent pas être imputés à cette source. Rien n'a été modifié."
     },
     "offline": {
       "act": "Vous êtes hors ligne. Les règlements ne s'enregistrent jamais hors ligne — reconnectez-vous pour le faire.",
@@ -1773,7 +1805,9 @@
       "unpay": "Annuler le paiement",
       "annul": "Annuler le contrat",
       "board_only": "Annuler un paiement ou un contrat relève du conseil.",
-      "blocked_by_draft": "Enregistrez ou abandonnez d'abord la modification du cachet."
+      "blocked_by_draft": "Enregistrez ou abandonnez d'abord la modification du cachet.",
+      "funding_none": "N'est encore imputé à aucune source",
+      "funding": "Sources de financement"
     },
     "pay": {
       "title": "Marquer comme payé",
@@ -1918,7 +1952,8 @@
       "fees": "Cachets",
       "expenses": "Dépenses",
       "paid_all": "Payé",
-      "outstanding_all": "Reste à payer"
+      "outstanding_all": "Reste à payer",
+      "funded": "Des sources"
     },
     "overview": {
       "title": "Budget",
@@ -1956,7 +1991,19 @@
       "previous": "Précédents",
       "next": "Suivants",
       "overdue": "en retard depuis le {{date}}",
-      "due": "échéance le {{date}}"
+      "due": "échéance le {{date}}",
+      "remaining": "Reste",
+      "charged": "Imputé",
+      "sources": "Sources de financement",
+      "add_source": "Nouvelle source",
+      "sources_empty": "La fondation n'a pas encore de sources de financement.",
+      "sources_empty_desc": "Une source, c'est une subvention, un mécène, la billetterie ou des fonds propres. Une même source peut financer plusieurs concerts — on la voit ici dans son ensemble, et sa page liste chaque coût imputé.",
+      "ceiling": "Plafond",
+      "over_awarded": "au-delà du plafond",
+      "own_share_below": "apport propre insuffisant",
+      "admin_over": "frais administratifs au-delà du plafond",
+      "source_projects": "projets : {{count}}",
+      "report_due": "compte rendu pour le {{date}}"
     },
     "export": {
       "from": "Du",
@@ -2014,7 +2061,8 @@
         "document_date": "Date de la pièce",
         "amount": "Montant TTC (PLN)",
         "paid_lock": "La dépense est payée : son montant et son bénéficiaire restent figés tant que le conseil n'annule pas le paiement."
-      }
+      },
+      "delete_with_sources": "Elle quitte aussi les sources auxquelles elle était imputée : {{sources}}."
     },
     "plan": {
       "title": "Budget prévisionnel",
@@ -2075,7 +2123,12 @@
       "sections": {
         "I": "Coûts de réalisation des actions",
         "II": "Coûts administratifs"
-      }
+      },
+      "sources_hint": "Ce que couvriront la subvention, un mécène, les fonds propres",
+      "split": "Répartir entre les sources",
+      "delete_with_sources": "Sa répartition entre les sources disparaît aussi ; les montants attendus des sources restent inchangés.",
+      "sources": "Sources : {{sources}}",
+      "within_tolerance": "dans la tolérance {{pct}}"
     },
     "standing": {
       "planning": "Le budget prévisionnel peut être modifié. Le conseil l'approuve quand il est prêt — les coûts s'enregistrent dans tous les états sauf clôturé.",
@@ -2140,7 +2193,8 @@
         "BUDGET_CLOSED": "Budget clôturé",
         "PLAN_CHANGED": "Budget prévisionnel modifié",
         "ALLOCATION_CHANGED": "Répartition modifiée"
-      }
+      },
+      "no_sources": "sans source"
     },
     "units": {
       "PERSON": "Personne",
@@ -2167,6 +2221,180 @@
       "BILL": "Note d'honoraires",
       "RECEIPT": "Ticket de caisse",
       "OTHER": "Autre pièce"
+    },
+    "funding": {
+      "cost": "Coût du projet",
+      "uncovered": "Fonds propres ou non couvert",
+      "expected": "Attendu des sources",
+      "received": "Reçu",
+      "in_kind": "Apport non financier",
+      "plan_over": "Sources au-delà du prévisionnel",
+      "plan_uncovered": "Prévisionnel sans source",
+      "title": "Financement",
+      "locked_approved": "Le budget prévisionnel est approuvé : les montants attendus et la répartition des lignes sont figés. Les encaissements et les imputations de coûts s'enregistrent toujours.",
+      "remove_blocked_charged": "Retirez-en d'abord les coûts ({{count}}).",
+      "remove_blocked_plan": "La source figure dans le budget prévisionnel approuvé — on peut la retirer après sa réouverture pour correction.",
+      "menu_aria": "Actions — {{name}}",
+      "edit_hint": "Ce que le projet attend, ce qui est arrivé",
+      "edit": "Modifier les montants",
+      "charge_hint": "Coûts pas entièrement couverts : {{count}}",
+      "charge": "Imputer des coûts",
+      "settled_hint": "La source est soldée — ses montants ne changent plus.",
+      "open_source_hint": "Règles, échéances et tous les coûts imputés",
+      "open_source": "Page de la source",
+      "remove": "Retirer du projet",
+      "headline": "Couvert par les sources",
+      "sources": "Sources",
+      "add": "Ajouter une source",
+      "empty": "Le projet n'a pas encore de sources de financement",
+      "empty_desc": "Ajoutez une subvention, un mécène, la billetterie ou des fonds propres, et indiquez ce que le projet attend de chacun. Répartissez ensuite entre eux les lignes du budget prévisionnel et imputez-leur les coûts — c'est de cela qu'est fait le bilan d'une subvention.",
+      "remove_title": "Retirer la source du projet",
+      "remove_confirm": "Retirer",
+      "removed": "Source retirée du projet.",
+      "remove_error": "Impossible de retirer la source.",
+      "remove_plain": "La source quitte le projet avec sa part du budget prévisionnel. La source elle-même reste dans Finances.",
+      "received_caption": "reçu {{amount}}",
+      "charged_caption": "imputé {{amount}}",
+      "plan_caption": "au prévisionnel {{amount}}",
+      "sheet": {
+        "error": "Impossible d'enregistrer la source.",
+        "source_required": "Choisissez une source ou ajoutez-en une.",
+        "name_required": "Indiquez un nom — p. ex. celui du programme de subvention.",
+        "saved": "Montants de la source enregistrés.",
+        "added": "Source ajoutée au projet.",
+        "add_title": "Source de financement du projet",
+        "add": "Ajouter",
+        "source": "Source",
+        "loading": "Chargement des sources…",
+        "pick": "Choisir une source",
+        "new": "Nouvelle source…",
+        "new_hint": "Les règles de la source — période d'éligibilité, apport propre exigé, échéance du compte rendu — se complètent sur sa page dans Finances.",
+        "planned": "Le projet attend (PLN)",
+        "planned_locked": "Le montant attendu appartient au budget prévisionnel approuvé. Il peut changer après sa réouverture pour correction.",
+        "received_in_kind": "Valeur de l'apport reçu (PLN)",
+        "received": "Reçu (PLN)",
+        "received_in_kind_hint": "Ce que vaut l'apport reçu sans paiement — une église prêtée pour le concert, par exemple. Il compte dans l'apport propre.",
+        "received_hint": "L'argent réellement arrivé : une tranche de subvention, les recettes de billetterie, des dons collectés. Une source peut couvrir des coûts jusqu'au montant attendu ou reçu — le plus élevé des deux.",
+        "volunteer_hint": "L'apport en personnel augmente quand vous imputez à cette source le bénévolat valorisé dans Cachets."
+      },
+      "kinds": {
+        "PUBLIC_GRANT": "Subvention publique",
+        "PRIVATE_GRANT": "Subvention privée",
+        "SPONSOR": "Mécène d'entreprise",
+        "DONATIONS": "Dons",
+        "TICKETS": "Billetterie",
+        "OWN_FUNDS": "Fonds propres",
+        "IN_KIND": "Apport en nature",
+        "VOLUNTEER_WORK": "Bénévolat valorisé"
+      },
+      "statuses": {
+        "PLANNED": "Envisagée",
+        "APPLIED": "Demande déposée",
+        "AWARDED": "Accordée",
+        "REJECTED": "Refusée",
+        "SETTLED": "Soldée"
+      }
+    },
+    "allocation": {
+      "invalid": "Ce n'est pas un montant.",
+      "over": "Les sources couvriraient plus de {{amount}} {{currency}} — {{over}} {{currency}} de trop.",
+      "available": "{{label}} : {{amount}} {{currency}}",
+      "rest": "le reste",
+      "settled": "{{kind}} · soldée — sans changement",
+      "covered": "Des sources : {{amount}} {{currency}}",
+      "over_short": "Au-delà du montant : {{amount}} {{currency}}",
+      "own": "Fonds propres ou non couvert : {{amount}} {{currency}}",
+      "cost_title": "Sources de financement",
+      "valuation": "Valorisation du bénévolat",
+      "cost": "Coût",
+      "valuation_note": "Le bénévolat ne coûte rien à la fondation. Sa valorisation compte dans l'apport en personnel — d'où cette seule source.",
+      "saved": "Répartition entre les sources enregistrée.",
+      "error": "Impossible d'enregistrer la répartition.",
+      "line_title": "Ligne {{number}} — sources",
+      "planned": "Prévu pour la ligne",
+      "line_note": "Quelle part de cette ligne chaque source doit couvrir — comme dans les colonnes du budget prévisionnel de la demande."
+    },
+    "source": {
+      "percent_invalid": "Indiquez un pourcentage de 0 à 100.",
+      "name_required": "Indiquez le nom de la source.",
+      "period_invalid": "La période se termine avant de commencer.",
+      "template_required": "La formule ne peut pas être vide.",
+      "template_unknown": "Champs inconnus : {{fields}}.",
+      "saved": "Source enregistrée.",
+      "created": "Source de financement ajoutée.",
+      "error": "Impossible d'enregistrer la source.",
+      "create_title": "Nouvelle source de financement",
+      "create": "Ajouter",
+      "kind": "Type",
+      "status": "Statut",
+      "name": "Nom",
+      "name_placeholder": "p. ex. Mecenat Małopolski 2026",
+      "grantor": "Financeur",
+      "grantor_placeholder": "p. ex. Województwo Małopolskie",
+      "agreement_section": "Convention",
+      "agreement_number": "Numéro de convention",
+      "agreement_date": "Date de la convention",
+      "awarded": "Accordé (PLN)",
+      "rules_section": "Règles du financeur",
+      "rules_hint": "Toutes facultatives. Indiquez celles que fixe la convention — chacune devient un avertissement dans les projets que finance cette source.",
+      "eligible_from": "Coûts à partir du",
+      "eligible_to": "Coûts jusqu'au",
+      "report_due_on": "Échéance du compte rendu",
+      "own_share": "Apport propre (%)",
+      "own_share_hint": "Quelle part de l'action doit venir d'ailleurs que cette source.",
+      "admin_cap": "Plafond administratif (%)",
+      "admin_cap_hint": "Quelle part de ce que porte la source peuvent représenter les frais administratifs.",
+      "tolerance": "Tolérance par ligne (%)",
+      "tolerance_hint": "De combien une ligne du budget prévisionnel peut dépasser sans avenant.",
+      "template_section": "Mention sur les pièces comptables",
+      "template": "Formule",
+      "template_hint": "Cette phrase figure au dos de chaque facture et note imputée à cette source. Collez la formule de la convention ; entre accolades, le panneau insère : {{fields}}.",
+      "note": "Remarques"
+    },
+    "source_page": {
+      "measured_plan": "au prévisionnel {{pct}}",
+      "measured_actual": "dans les coûts {{pct}}",
+      "agreement": "Convention",
+      "eligibility": "Coûts éligibles",
+      "own_share": "Apport propre exigé",
+      "admin_cap": "Plafond administratif",
+      "awarded": "Accordé",
+      "planned": "Attendu par les projets",
+      "role": "Source de financement",
+      "back": "Finances",
+      "edit": "Modifier",
+      "money": "Argent",
+      "over_awarded": "Les projets attendent ou ont imputé plus que ce que la source a accordé. Réduisez les montants attendus par les projets ou retirez-en une partie des coûts.",
+      "charges": "Coûts imputés",
+      "charges_empty": "Aucun coût n'est encore imputé à cette source.",
+      "charges_empty_desc": "On impute des coûts à une source dans le projet : dans l'onglet Financement ou depuis le menu d'un cachet ou d'une dépense.",
+      "ineligible": "hors période d'éligibilité",
+      "of_cost": "sur {{amount}}",
+      "rules": "Règles",
+      "projects": "Projets",
+      "projects_empty": "La source ne finance encore aucun projet.",
+      "project_figures": "attend {{planned}} · imputé {{charged}}",
+      "template_hint": "À partir de cela, le panneau préparera les mentions au dos des factures et notes imputées à cette source.",
+      "delete": "Supprimer la source",
+      "delete_title": "Supprimer la source",
+      "delete_confirm": "Supprimer",
+      "deleted": "Source supprimée.",
+      "delete_body": "La source ne finance aucun projet, elle quitte donc la liste. L'historique garde la trace de son existence.",
+      "loading": "Chargement de la source…",
+      "missing": "Cette source n'existe pas.",
+      "missing_desc": "Elle a pu être supprimée, ou le serveur n'a pas répondu."
+    },
+    "charge": {
+      "outside_plan": "Hors budget",
+      "done": "Coûts imputés à la source : {{count}}.",
+      "error": "Impossible d'imputer à la source.",
+      "title": "Imputer des coûts",
+      "confirm": "Imputer ({{count}})",
+      "explain": "Les coûts cochés vont à cette source pour la part que rien ne couvre encore. La répartition d'un seul coût se modifie depuis son propre menu.",
+      "nothing": "Tous les coûts que cette source peut prendre sont déjà couverts.",
+      "selected": "À imputer : {{amount}} {{currency}}",
+      "passes_limit": "La source porterait alors {{after}} {{currency}} — plus que les {{limit}} {{currency}} sur lesquels compte le projet. Augmentez le montant attendu ou indiquez ce qui est arrivé.",
+      "limit": "La source porterait alors {{after}} sur {{limit}} {{currency}}."
     }
   },
   "crew": {

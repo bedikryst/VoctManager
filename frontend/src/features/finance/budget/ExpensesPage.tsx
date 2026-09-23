@@ -3,7 +3,8 @@
  * @description Wydatki — every cost of the project that is not a person's fee:
  * the venue, travel, printing, rights. One row per vendor's document, with the
  * plan line it is charged to, its files and whether the office has paid it.
- * Everything here is an act — booking, correcting, paying, attaching — and
+ * Everything here is an act — booking, correcting, paying, attaching, charging
+ * to funding sources — and
  * answers at once; there is no draft to save, so nothing waits in a dock.
  * A person is never an expense: whoever invoices for performing or crewing is
  * paid through Honoraria, and the page says so where the mistake is made.
@@ -17,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
   Banknote,
+  Landmark,
   MoreHorizontal,
   Paperclip,
   Pencil,
@@ -44,10 +46,12 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { useDeleteExpense, useProjectBudget } from "../api/finance.queries";
 import { ActSheet } from "../components/ActSheet";
+import { CostAllocationSheet } from "../components/AllocationSheet";
 import { BudgetLoadError } from "../components/BudgetLoadError";
 import { CostSummaryCard, type CostFigure } from "../components/CostSummaryCard";
 import { toastFinanceError } from "../lib/financeErrors";
-import { isBudgetWritable } from "../lib/financePresentation";
+import { allocationSummary, isBudgetWritable } from "../lib/financePresentation";
+import { canAllocateExpense } from "../lib/funding";
 import { formatAmount, isPositiveAmount } from "../lib/money";
 import type { ExpenseRowDTO } from "../types/finance.dto";
 import { PaySheet, ReasonSheet } from "./components/ActSheets";
@@ -59,7 +63,7 @@ import { ROW_CONTROL_CLASS } from "./components/RowActionsMenu";
 type OpenSheet =
   | { readonly kind: "add" }
   | {
-      readonly kind: "edit" | "files" | "pay" | "unpay" | "delete";
+      readonly kind: "edit" | "files" | "pay" | "unpay" | "delete" | "funding";
       readonly expenseId: string;
     };
 
@@ -135,9 +139,11 @@ function ExpensesWorkspace({ projectId }: ExpensesWorkspaceProps): React.JSX.Ele
   const opened = openSheet && openSheet.kind !== "add" ? find(openSheet.expenseId) : undefined;
   const close = (): void => setOpenSheet(null);
 
+  const canFund = canAllocateExpense(budget.fundings);
+
   const renderMenu = (expense: ExpenseRowDTO): React.JSX.Element => {
     const blocked = blockedReason ?? undefined;
-    const open = (kind: "edit" | "files" | "pay" | "unpay" | "delete"): void =>
+    const open = (kind: "edit" | "files" | "pay" | "unpay" | "delete" | "funding"): void =>
       setOpenSheet({ kind, expenseId: expense.id });
     return (
       <DropdownMenu>
@@ -174,6 +180,20 @@ function ExpensesWorkspace({ projectId }: ExpensesWorkspaceProps): React.JSX.Ele
           >
             {t("finance.expenses.files", "Pliki")}
           </DropdownMenuItem>
+          {canFund && (
+            <DropdownMenuItem
+              icon={<Landmark size={14} />}
+              onSelect={() => open("funding")}
+              disabled={Boolean(blocked)}
+              description={
+                blocked ??
+                (allocationSummary(expense.allocations, budget.fundings) ||
+                  t("finance.acts.funding_none", "Nie obciąża jeszcze żadnego źródła"))
+              }
+            >
+              {t("finance.acts.funding", "Źródła finansowania")}
+            </DropdownMenuItem>
+          )}
           {!expense.is_paid && (
             <DropdownMenuItem
               icon={<Banknote size={14} />}
@@ -310,6 +330,18 @@ function ExpensesWorkspace({ projectId }: ExpensesWorkspaceProps): React.JSX.Ele
           onClose={close}
         />
       )}
+      {openSheet?.kind === "funding" && opened && (
+        <CostAllocationSheet
+          projectId={projectId}
+          costItemId={opened.id}
+          label={opened.vendor_name}
+          available={opened.cost_amount}
+          valuation={false}
+          allocations={opened.allocations}
+          fundings={budget.fundings}
+          onClose={close}
+        />
+      )}
       {openSheet?.kind === "pay" && opened && (
         <PaySheet
           projectId={projectId}
@@ -353,6 +385,15 @@ function ExpensesWorkspace({ projectId }: ExpensesWorkspaceProps): React.JSX.Ele
               "Wydatek zniknie z budżetu razem ze swoją kwotą. Wpis o usunięciu zostaje w historii budżetu.",
             )}
           </Text>
+          {opened.allocations.length > 0 && (
+            <Text size="sm" color="graphite">
+              {t(
+                "finance.expenses.delete_with_sources",
+                "Zniknie też z obciążonych nim źródeł: {{sources}}.",
+                { sources: allocationSummary(opened.allocations, budget.fundings) },
+              )}
+            </Text>
+          )}
         </ActSheet>
       )}
     </>

@@ -1602,7 +1602,8 @@
       "people": "Fees",
       "aria": "Budget sections",
       "plan": "Cost plan",
-      "costs": "Expenses"
+      "costs": "Expenses",
+      "funding": "Funding"
     },
     "forms": {
       "DZIELO": "Contract for a specific work",
@@ -1692,7 +1693,27 @@
       },
       "LINE_OVER_PLAN": {
         "title": "Lines over plan",
-        "hint": "More has been spent than the cost plan allows. Under a grant, overrunning a line may need an annex — check the agreement."
+        "hint": "More has been spent than the cost plan allows, beyond the tolerance of the line's sources. Under a grant such an overrun usually needs an annex — check the agreement."
+      },
+      "SOURCE_OVERALLOCATED": {
+        "title": "Source charged beyond its amount",
+        "hint": "The cost plan or the charged costs ask more of the source than the project expects of it, than has arrived, or than the source awarded. Reduce what is charged or correct the amount under Funding."
+      },
+      "OUTSIDE_ELIGIBILITY": {
+        "title": "Cost outside the eligibility period",
+        "hint": "The cost arose outside the period the source covers. The grantor will not accept it — move it to another source."
+      },
+      "OWN_SHARE_BELOW": {
+        "title": "Own contribution too small",
+        "hint": "The source requires part of the task to be covered by other money or by a non-financial contribution. Reduce the source's share or add an own contribution."
+      },
+      "ADMIN_CAP_EXCEEDED": {
+        "title": "Too much administration",
+        "hint": "Administration takes a larger share of this source than its cap allows. Move part of those costs to another source."
+      },
+      "REPORT_DUE_SOON": {
+        "title": "Report deadline",
+        "hint": "The source's report is due within two weeks, or its deadline has passed. Once it is settled, set the source's status to “Settled”."
       }
     },
     "errors": {
@@ -1725,7 +1746,18 @@
       "attachment_missing": "No file was chosen.",
       "attachment_too_large": "The file is too large — the limit is 20 MB.",
       "attachment_type_not_allowed": "Attach a PDF or a photo of the document (JPG, PNG, WEBP, HEIC).",
-      "file_detection_unavailable": "The server cannot check the file right now. Try again shortly."
+      "file_detection_unavailable": "The server cannot check the file right now. Try again shortly.",
+      "unknown_funding": "This source is no longer on the project. Refresh the page.",
+      "unknown_source": "This funding source no longer exists. Refresh the page.",
+      "funding_exists": "This source is already on the project.",
+      "funding_in_use": "Costs are already charged to this source. Take them off it first, then remove the source from the project.",
+      "source_in_use": "The source funds a project. Remove it from every project first.",
+      "source_settled": "The source is settled — what was charged to it no longer changes. To correct something, change its status.",
+      "eligibility_period_invalid": "The eligibility period ends before it starts.",
+      "allocation_exceeds_amount": "The sources would cover more than the whole amount. Reduce what they are charged.",
+      "allocation_kind_mismatch": "Money is charged to a source of money; a volunteer's work to a volunteer-work source.",
+      "allocation_not_counted": "This cost does not count (the person declined, for example), so no source is charged with it. It can only be taken off them.",
+      "charge_refused": "Not every one of these costs can be charged to this source. Nothing was changed."
     },
     "offline": {
       "act": "You are offline. Settlements are never saved offline — reconnect to do this.",
@@ -1764,7 +1796,9 @@
       "unpay": "Revert payment",
       "annul": "Annul contract",
       "board_only": "Reverting a payment and annulling a contract are for the board.",
-      "blocked_by_draft": "Save or discard the fee change first."
+      "blocked_by_draft": "Save or discard the fee change first.",
+      "funding_none": "Not charged to any source yet",
+      "funding": "Funding sources"
     },
     "pay": {
       "title": "Mark as paid",
@@ -1909,7 +1943,8 @@
       "fees": "Fees",
       "expenses": "Expenses",
       "paid_all": "Paid",
-      "outstanding_all": "Still to pay"
+      "outstanding_all": "Still to pay",
+      "funded": "From sources"
     },
     "overview": {
       "title": "Budget",
@@ -1947,7 +1982,19 @@
       "previous": "Earlier",
       "next": "Later",
       "overdue": "overdue since {{date}}",
-      "due": "due {{date}}"
+      "due": "due {{date}}",
+      "remaining": "Remaining",
+      "charged": "Charged",
+      "sources": "Funding sources",
+      "add_source": "New source",
+      "sources_empty": "The foundation has no funding sources yet.",
+      "sources_empty_desc": "A source is a grant, a sponsor, tickets or own funds. One source may fund several concerts — here it shows whole, and its page lists every charged cost.",
+      "ceiling": "Ceiling",
+      "over_awarded": "beyond the ceiling",
+      "own_share_below": "own contribution too small",
+      "admin_over": "administration over the cap",
+      "source_projects": "projects: {{count}}",
+      "report_due": "report due {{date}}"
     },
     "export": {
       "from": "From",
@@ -2005,7 +2052,8 @@
         "document_date": "Document date",
         "amount": "Gross amount (PLN)",
         "paid_lock": "The expense is paid: its amount and payee stay as they are until the board reverts the payment."
-      }
+      },
+      "delete_with_sources": "It also leaves the sources it was charged to: {{sources}}."
     },
     "plan": {
       "title": "Cost plan",
@@ -2066,7 +2114,12 @@
       "sections": {
         "I": "Costs of the activities",
         "II": "Administrative costs"
-      }
+      },
+      "sources_hint": "How much the grant, a sponsor, own funds will cover",
+      "split": "Split between sources",
+      "delete_with_sources": "Its split between sources goes too; the amounts expected of the sources stay as they are.",
+      "sources": "Sources: {{sources}}",
+      "within_tolerance": "within tolerance {{pct}}"
     },
     "standing": {
       "planning": "The cost plan can be changed. The board approves it once the plan is ready — costs are recorded in every state but closed.",
@@ -2131,7 +2184,8 @@
         "BUDGET_CLOSED": "Budget closed",
         "PLAN_CHANGED": "Cost plan changed",
         "ALLOCATION_CHANGED": "Allocation changed"
-      }
+      },
+      "no_sources": "no sources"
     },
     "units": {
       "PERSON": "Person",
@@ -2158,6 +2212,180 @@
       "BILL": "Bill",
       "RECEIPT": "Receipt",
       "OTHER": "Other document"
+    },
+    "funding": {
+      "cost": "Project cost",
+      "uncovered": "Own or not yet covered",
+      "expected": "Expected from sources",
+      "received": "Received",
+      "in_kind": "Non-financial contribution",
+      "plan_over": "Sources beyond the cost plan",
+      "plan_uncovered": "Cost plan without a source",
+      "title": "Funding",
+      "locked_approved": "The cost plan is approved: expected amounts and the lines' split are frozen. Receipts and charged costs are still recorded.",
+      "remove_blocked_charged": "Take the costs off it first ({{count}}).",
+      "remove_blocked_plan": "The source is in the approved cost plan — it can be removed once the plan is reopened for a correction.",
+      "menu_aria": "Actions — {{name}}",
+      "edit_hint": "What the project expects, what has arrived",
+      "edit": "Change amounts",
+      "charge_hint": "Costs not fully covered: {{count}}",
+      "charge": "Charge costs",
+      "settled_hint": "The source is settled — its amounts no longer change.",
+      "open_source_hint": "Rules, deadlines and every charged cost",
+      "open_source": "Source page",
+      "remove": "Remove from project",
+      "headline": "Covered by sources",
+      "sources": "Sources",
+      "add": "Add source",
+      "empty": "The project has no funding sources yet",
+      "empty_desc": "Add a grant, a sponsor, tickets or own funds and enter what the project expects of each. Then split the cost plan's lines between them and charge them with costs — that is what a grant settlement is made of.",
+      "remove_title": "Remove source from project",
+      "remove_confirm": "Remove",
+      "removed": "Source removed from the project.",
+      "remove_error": "Could not remove the source.",
+      "remove_plain": "The source leaves the project together with its share of the cost plan. The source itself stays in Finance.",
+      "received_caption": "received {{amount}}",
+      "charged_caption": "charged {{amount}}",
+      "plan_caption": "in the cost plan {{amount}}",
+      "sheet": {
+        "error": "Could not save the source.",
+        "source_required": "Choose a source or add a new one.",
+        "name_required": "Enter a name — e.g. the grant programme's.",
+        "saved": "Source amounts saved.",
+        "added": "Source added to the project.",
+        "add_title": "Project funding source",
+        "add": "Add",
+        "source": "Source",
+        "loading": "Loading sources…",
+        "pick": "Choose a source",
+        "new": "New source…",
+        "new_hint": "The source's rules — eligibility period, required own contribution, report deadline — go on its page in Finance.",
+        "planned": "The project expects (PLN)",
+        "planned_locked": "The expected amount belongs to the approved cost plan. It can change once the plan is reopened for a correction.",
+        "received_in_kind": "Value of the contribution received (PLN)",
+        "received": "Received (PLN)",
+        "received_in_kind_hint": "What the contribution the foundation received without paying is worth — a church lent for the concert, say. It counts towards the own contribution.",
+        "received_hint": "Money that actually arrived: a grant tranche, ticket takings, collected donations. A source may cover costs up to the expected amount or the one received — whichever is more.",
+        "volunteer_hint": "The personal contribution grows as you charge volunteers' valued work to this source in Fees."
+      },
+      "kinds": {
+        "PUBLIC_GRANT": "Public grant",
+        "PRIVATE_GRANT": "Private grant",
+        "SPONSOR": "Sponsor",
+        "DONATIONS": "Donations",
+        "TICKETS": "Tickets",
+        "OWN_FUNDS": "Own funds",
+        "IN_KIND": "In-kind contribution",
+        "VOLUNTEER_WORK": "Volunteer work (personal contribution)"
+      },
+      "statuses": {
+        "PLANNED": "Planned",
+        "APPLIED": "Applied for",
+        "AWARDED": "Awarded",
+        "REJECTED": "Rejected",
+        "SETTLED": "Settled"
+      }
+    },
+    "allocation": {
+      "invalid": "That is not an amount.",
+      "over": "The sources would cover more than {{amount}} {{currency}} — {{over}} {{currency}} too much.",
+      "available": "{{label}}: {{amount}} {{currency}}",
+      "rest": "rest",
+      "settled": "{{kind}} · settled — no changes",
+      "covered": "From sources: {{amount}} {{currency}}",
+      "over_short": "Over the amount: {{amount}} {{currency}}",
+      "own": "Own funds or not covered: {{amount}} {{currency}}",
+      "cost_title": "Funding sources",
+      "valuation": "Valuation of volunteer work",
+      "cost": "Cost",
+      "valuation_note": "Volunteer work costs the foundation nothing. Its valuation counts towards the personal contribution — hence only this source.",
+      "saved": "Split between sources saved.",
+      "error": "Could not save the split.",
+      "line_title": "Line {{number}} — sources",
+      "planned": "Line plan",
+      "line_note": "How much of this line each source is to cover — as in the cost plan's columns in the application."
+    },
+    "source": {
+      "percent_invalid": "Enter a percentage from 0 to 100.",
+      "name_required": "Enter the source's name.",
+      "period_invalid": "The period ends before it starts.",
+      "template_required": "The formula cannot be empty.",
+      "template_unknown": "Unknown fields: {{fields}}.",
+      "saved": "Source saved.",
+      "created": "Funding source added.",
+      "error": "Could not save the source.",
+      "create_title": "New funding source",
+      "create": "Add",
+      "kind": "Kind",
+      "status": "Status",
+      "name": "Name",
+      "name_placeholder": "e.g. Mecenat Małopolski 2026",
+      "grantor": "Grantor",
+      "grantor_placeholder": "e.g. Województwo Małopolskie",
+      "agreement_section": "Agreement",
+      "agreement_number": "Agreement number",
+      "agreement_date": "Agreement date",
+      "awarded": "Awarded (PLN)",
+      "rules_section": "Grantor's rules",
+      "rules_hint": "All optional. Enter the ones the agreement sets — each becomes a warning on the projects this source funds.",
+      "eligible_from": "Costs from",
+      "eligible_to": "Costs until",
+      "report_due_on": "Report due",
+      "own_share": "Own contribution (%)",
+      "own_share_hint": "What part of the task must come from outside this source.",
+      "admin_cap": "Administration cap (%)",
+      "admin_cap_hint": "How much of what the source carries may be administration.",
+      "tolerance": "Line tolerance (%)",
+      "tolerance_hint": "How far a cost plan line may overrun without an annex.",
+      "template_section": "Accounting document notes",
+      "template": "Formula",
+      "template_hint": "This sentence goes on the back of every invoice and bill charged to this source. Paste the agreement's formula; in curly braces the panel fills in: {{fields}}.",
+      "note": "Notes"
+    },
+    "source_page": {
+      "measured_plan": "in the cost plan {{pct}}",
+      "measured_actual": "in costs {{pct}}",
+      "agreement": "Agreement",
+      "eligibility": "Eligible costs",
+      "own_share": "Required own contribution",
+      "admin_cap": "Administration cap",
+      "awarded": "Awarded",
+      "planned": "Projects expect",
+      "role": "Funding source",
+      "back": "Finance",
+      "edit": "Edit",
+      "money": "Money",
+      "over_awarded": "The projects expect or have charged more than the source awarded. Lower the amounts the projects expect or take some costs off it.",
+      "charges": "Charged costs",
+      "charges_empty": "No cost is charged to this source yet.",
+      "charges_empty_desc": "A source is charged with costs in the project: on the Funding tab, or from a fee's or an expense's menu.",
+      "ineligible": "outside the eligibility period",
+      "of_cost": "of {{amount}}",
+      "rules": "Rules",
+      "projects": "Projects",
+      "projects_empty": "The source funds no project yet.",
+      "project_figures": "expects {{planned}} · charged {{charged}}",
+      "template_hint": "From this the panel will prepare the notes for the back of the invoices and bills charged to this source.",
+      "delete": "Delete source",
+      "delete_title": "Delete source",
+      "delete_confirm": "Delete",
+      "deleted": "Source deleted.",
+      "delete_body": "The source funds no project, so it leaves the list. The history keeps a trace that it existed.",
+      "loading": "Loading the source…",
+      "missing": "There is no such source.",
+      "missing_desc": "It may have been deleted, or the server did not answer."
+    },
+    "charge": {
+      "outside_plan": "Outside the plan",
+      "done": "Costs charged to the source: {{count}}.",
+      "error": "Could not charge the source.",
+      "title": "Charge costs",
+      "confirm": "Charge ({{count}})",
+      "explain": "The ticked costs go to this source for the part nothing covers yet. A single cost's split is changed from its own menu.",
+      "nothing": "Every cost this source could take is already covered.",
+      "selected": "To charge: {{amount}} {{currency}}",
+      "passes_limit": "The source would then carry {{after}} {{currency}} — more than the {{limit}} {{currency}} the project counts on. Raise the expected amount or enter what has arrived.",
+      "limit": "The source would then carry {{after}} of {{limit}} {{currency}}."
     }
   },
   "crew": {

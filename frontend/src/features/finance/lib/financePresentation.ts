@@ -1,8 +1,9 @@
 /**
  * @file financePresentation.ts
  * @description The finance vocabulary — forms of settlement, cost categories,
- * plan units and sections, expense documents, budget states, the history's
- * acts and the server's warnings — in one table per taxonomy. The server sends
+ * plan units and sections, expense documents, budget states, funding kinds and
+ * statuses, the history's acts and the server's warnings — in one table per
+ * taxonomy. The server sends
  * codes and never words; this file owns the words, the tone and the one
  * question each warning asks of the manager.
  * Severity follows the canon: `work` is gold, ordinary unfinished business;
@@ -15,20 +16,25 @@ import type { TFunction } from "i18next";
 
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import type {
+  AllocationDTO,
   BudgetStatus,
   BudgetWarningDTO,
   CostCategory,
+  DecimalString,
   ExpenseDocumentType,
   FeeForm,
+  FundingKind,
+  FundingStatus,
   HistoryEventDTO,
   IsoDate,
   LedgerRowDTO,
   PlanSection,
   PlanUnit,
+  ProjectFundingDTO,
   WarningSeverity,
 } from "../types/finance.dto";
 import { fallbackFormFor } from "./feeDraft";
-import { formatLedgerAmount } from "./money";
+import { formatAmount, formatLedgerAmount } from "./money";
 
 const FORM_LABELS: Record<FeeForm, string> = {
   DZIELO: "Umowa o dzieło",
@@ -165,6 +171,62 @@ const DOCUMENT_TYPE_LABELS: Record<ExpenseDocumentType, string> = {
 export const documentTypeLabel = (t: TFunction, type: ExpenseDocumentType): string =>
   t(`finance.document_types.${type}`, DOCUMENT_TYPE_LABELS[type]);
 
+// ── Funding ───────────────────────────────────────────────────────────────
+
+const FUNDING_KIND_LABELS: Record<FundingKind, string> = {
+  PUBLIC_GRANT: "Dotacja publiczna",
+  PRIVATE_GRANT: "Grant prywatny",
+  SPONSOR: "Sponsor",
+  DONATIONS: "Darowizny",
+  TICKETS: "Bilety",
+  OWN_FUNDS: "Środki własne",
+  IN_KIND: "Wkład rzeczowy",
+  VOLUNTEER_WORK: "Wkład osobowy (wolontariat)",
+};
+
+const FUNDING_STATUS_LABELS: Record<FundingStatus, string> = {
+  PLANNED: "Planowane",
+  APPLIED: "Wniosek złożony",
+  AWARDED: "Przyznane",
+  REJECTED: "Odrzucone",
+  SETTLED: "Rozliczone",
+};
+
+export const fundingKindLabel = (t: TFunction, kind: FundingKind): string =>
+  t(`finance.funding.kinds.${kind}`, FUNDING_KIND_LABELS[kind]);
+
+export const fundingStatusLabel = (t: TFunction, status: FundingStatus): string =>
+  t(`finance.funding.statuses.${status}`, FUNDING_STATUS_LABELS[status]);
+
+/**
+ * A measured or stated percentage: `"10.00"` → "10 %", `"7.50"` → "7,5 %",
+ * `"-4.00"` → "−4 %". Null for nothing to measure.
+ */
+export const formatPercent = (value: DecimalString | null): string | null => {
+  if (value === null) return null;
+  const negative = value.startsWith("-");
+  const figure = formatQuantity(negative ? value.slice(1) : value);
+  return `${negative ? "−" : ""}${figure} %`;
+};
+
+/**
+ * The sources a line or a cost is split between, as one short line —
+ * "Mecenat 2026 1 500 · Bilety 300" — in the order the server lists them.
+ * Empty when nothing is split: the resting case says nothing.
+ */
+export const allocationSummary = (
+  allocations: readonly AllocationDTO[],
+  fundings: readonly ProjectFundingDTO[],
+): string => {
+  const names = new Map(fundings.map((funding) => [funding.id, funding.source.name]));
+  return allocations
+    .map((allocation) => {
+      const name = names.get(allocation.funding_id) ?? "–";
+      return `${name} ${formatAmount(allocation.amount) ?? allocation.amount}`;
+    })
+    .join(" · ");
+};
+
 // ── History ───────────────────────────────────────────────────────────────
 
 const ACTION_LABELS: Record<string, string> = {
@@ -193,17 +255,41 @@ export const historyActionLabel = (t: TFunction, action: string): string =>
 const asText = (value: unknown): string | null =>
   typeof value === "string" && value !== "" ? value : null;
 
+interface LoggedAllocation {
+  readonly source: string;
+  readonly amount: string;
+}
+
+const isLoggedAllocation = (value: unknown): value is LoggedAllocation =>
+  typeof value === "object" &&
+  value !== null &&
+  typeof (value as Record<string, unknown>).source === "string" &&
+  typeof (value as Record<string, unknown>).amount === "string";
+
+/** A split as the log kept it — each source by the name it had then. */
+const loggedSplit = (t: TFunction, value: unknown): string => {
+  const entries = Array.isArray(value) ? value.filter(isLoggedAllocation) : [];
+  if (entries.length === 0) return t("finance.history.no_sources", "bez źródeł");
+  return entries
+    .map((entry) => `${entry.source} ${formatLedgerAmount(entry.amount) ?? entry.amount}`)
+    .join(", ");
+};
+
 /**
  * The one change an act is remembered by, as a short "before → after": an
- * amount, a paid date, the budget's state. Acts whose change is the act itself
- * (a contract issued, a file added) say nothing more.
+ * amount, a paid date, the budget's state, a split between sources. Acts
+ * whose change is the act itself (a contract issued, a file added) say
+ * nothing more.
  */
 export const historyChange = (
   t: TFunction,
   event: HistoryEventDTO,
   language: string,
 ): string | null => {
-  const amountKey = ["contract_amount", "cost_amount", "planned_amount"].find(
+  if (event.action === "ALLOCATION_CHANGED") {
+    return `${loggedSplit(t, event.before.allocations)} → ${loggedSplit(t, event.after.allocations)}`;
+  }
+  const amountKey = ["contract_amount", "cost_amount", "planned_amount", "received_amount"].find(
     (key) => key in event.after || key in event.before,
   );
   if (amountKey && event.action !== "CREATED" && event.action !== "REMOVED") {
@@ -236,7 +322,7 @@ interface WarningCopy {
   readonly hint: string;
 }
 
-/** The codes the server computes before funding sources exist. */
+/** Every code the server computes (spec §5.4), problems first. */
 const WARNING_COPY: Record<string, WarningCopy> = {
   PAID_FOR_DECLINED: {
     title: "Wypłacone mimo odmowy udziału",
@@ -245,6 +331,22 @@ const WARNING_COPY: Record<string, WarningCopy> = {
   BELOW_MINIMUM_HOURLY_RATE: {
     title: "Poniżej minimalnej stawki godzinowej",
     hint: "Kwota umowy zlecenia podzielona przez potwierdzone godziny jest niższa niż stawka minimalna ({{minimum}} zł za godzinę w {{year}} r.).",
+  },
+  SOURCE_OVERALLOCATED: {
+    title: "Źródło obciążone ponad swoją kwotę",
+    hint: "Kosztorys albo obciążone koszty wymagają od źródła więcej, niż projekt od niego oczekuje, niż wpłynęło albo niż źródło przyznało. Zmniejsz obciążenie albo popraw kwotę w Finansowaniu.",
+  },
+  OUTSIDE_ELIGIBILITY: {
+    title: "Koszt poza okresem kwalifikowalności",
+    hint: "Koszt powstał poza okresem, w którym źródło go pokrywa. Takiego wydatku grantodawca nie uzna — przenieś go na inne źródło.",
+  },
+  OWN_SHARE_BELOW: {
+    title: "Za mały wkład własny",
+    hint: "Źródło wymaga, by część zadania pokryć z innych pieniędzy albo wkładem niefinansowym. Zmniejsz udział źródła albo dołóż wkład własny.",
+  },
+  ADMIN_CAP_EXCEEDED: {
+    title: "Za dużo kosztów administracyjnych",
+    hint: "Administracja zajmuje większą część tego źródła, niż pozwala jego limit. Przenieś część tych kosztów na inne źródło.",
   },
   UNPRICED: {
     title: "Bez stawki",
@@ -288,7 +390,11 @@ const WARNING_COPY: Record<string, WarningCopy> = {
   },
   LINE_OVER_PLAN: {
     title: "Pozycje ponad plan",
-    hint: "Wydano więcej, niż przewiduje kosztorys. Przy grancie przekroczenie pozycji może wymagać aneksu — sprawdź umowę.",
+    hint: "Wydano więcej, niż przewiduje kosztorys, ponad tolerancję źródeł tej pozycji. Przy grancie takie przekroczenie zwykle wymaga aneksu — sprawdź umowę.",
+  },
+  REPORT_DUE_SOON: {
+    title: "Termin sprawozdania",
+    hint: "Sprawozdanie ze źródła trzeba złożyć w ciągu dwóch tygodni albo termin już minął. Gdy je rozliczysz, zmień status źródła na „Rozliczone”.",
   },
 };
 
@@ -324,8 +430,8 @@ export const SEVERITY_TEXT: Record<WarningSeverity, "gold" | "crimson"> = {
 };
 
 /**
- * Every warning that names this subject — a ledger row's key, an expense's or
- * a plan line's id — problems first (the server's order).
+ * Every warning that names this subject — a ledger row's key, an expense's,
+ * a plan line's or a project funding's id — problems first (the server's order).
  */
 export const warningsFor = (
   warnings: readonly BudgetWarningDTO[],
