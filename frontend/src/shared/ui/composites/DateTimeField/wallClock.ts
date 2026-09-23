@@ -87,6 +87,27 @@ export const parseWallClock = (value?: string | null): WallClock | null => {
   return { year, month, day, hours, minutes };
 };
 
+/** A `yyyy-MM-dd` calendar date — the value of a date-only field. */
+export const parseDateKey = (value?: string | null): CalendarDate | null => {
+  if (!value || value.length < 10) {
+    return null;
+  }
+
+  const parts = [
+    Number(value.slice(0, 4)),
+    Number(value.slice(5, 7)),
+    Number(value.slice(8, 10)),
+  ];
+
+  if (parts.some((part) => Number.isNaN(part))) {
+    return null;
+  }
+
+  const [year, month, day] = parts;
+
+  return { year, month, day };
+};
+
 export const formatWallClock = (value: WallClock): string =>
   `${toDateKey(value)}T${pad(value.hours)}:${pad(value.minutes)}`;
 

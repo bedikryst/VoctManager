@@ -1596,172 +1596,337 @@
     "no_phone": "No phone",
     "specialty_other": "Other"
   },
-  "contracts": {
-    "bulk": {
-      "apply": "Apply",
-      "hint": "Sets one rate across the chosen group (skips already paid).",
-      "label": "Rate",
-      "placeholder": "e.g. 500",
-      "target_label": "Bulk rate for"
+  "finance": {
+    "nav": {
+      "overview": "Overview",
+      "people": "Fees",
+      "aria": "Budget sections"
     },
-    "csv": {
-      "amount": "Amount (PLN)",
-      "done": "Settlement list exported.",
-      "event_date": "Event date",
-      "export": "Export CSV",
-      "hint": "Full settlement list for accounting (CSV)",
-      "kind": "Type",
-      "no": "No",
-      "paid": "Paid",
-      "paid_date": "Payment date",
-      "person": "Person",
-      "project": "Project",
-      "role": "Role",
-      "status": "Status",
-      "yes": "Yes"
+    "forms": {
+      "DZIELO": "Contract for a specific work",
+      "ZLECENIE": "Contract of mandate",
+      "INVOICE": "Invoice",
+      "VOLUNTEER": "Volunteer work",
+      "OTHER": "Other form"
     },
-    "empty": {
-      "no_personnel_description": "Assign people in the project workspace first. Once records appear here you can set fees, mark payments and generate contract PDFs.",
-      "no_personnel_eyebrow": "No personnel",
-      "no_personnel_title": "This project has no assigned cast or crew."
+    "forms_short": {
+      "DZIELO": "Work",
+      "ZLECENIE": "Mandate",
+      "INVOICE": "Invoice",
+      "VOLUNTEER": "Volunteer",
+      "OTHER": "Other"
     },
-    "error": {
-      "action": "Retry synchronization",
-      "description": "Project, cast or crew data did not arrive from the server. Try synchronizing again.",
-      "eyebrow": "No data",
-      "title": "The settlements workspace could not be loaded."
+    "categories": {
+      "PERSONNEL_ARTISTIC": "Artistic personnel",
+      "PERSONNEL_TECHNICAL": "Technical personnel",
+      "VENUE": "Venue",
+      "TRAVEL": "Travel",
+      "ACCOMMODATION": "Accommodation",
+      "CATERING": "Catering",
+      "MATERIALS": "Materials and rights",
+      "EQUIPMENT": "Equipment",
+      "PROMOTION": "Promotion",
+      "RECORDING": "Recording",
+      "ADMINISTRATION": "Administration",
+      "OTHER": "Other"
     },
-    "filters": {
-      "all": "Everyone",
-      "all_short": "All",
-      "aria": "Settlement filter",
-      "unpaid": "To pay",
-      "unpriced": "Unpriced"
+    "budget_status": {
+      "PLANNING": "Planning",
+      "APPROVED": "Approved",
+      "CLOSED": "Closed"
     },
-    "header": {
-      "badge": "Finance operations",
-      "mix": "{{cast}} cast · {{crew}} crew",
-      "refresh": "Refresh",
-      "syncing": "Syncing",
-      "title": "Settlements",
-      "title_highlight": "Hub"
+    "warnings": {
+      "PAID_FOR_DECLINED": {
+        "title": "Paid although they declined",
+        "hint": "This person declined to take part, yet their fee is marked paid. Check it with the office."
+      },
+      "BELOW_MINIMUM_HOURLY_RATE": {
+        "title": "Below the minimum hourly rate",
+        "hint": "The mandate's amount divided by the confirmed hours is below the statutory minimum ({{minimum}} PLN per hour in {{year}})."
+      },
+      "UNPRICED": {
+        "title": "No fee set",
+        "hint": "Enter an amount or choose volunteer work — only then is the concert's cost complete."
+      },
+      "ORPHANED_FEE": {
+        "title": "No longer cast, unpaid",
+        "hint": "These people are no longer in the cast. Their fees are not counted in the cost."
+      },
+      "EMPLOYER_COST_MISSING": {
+        "title": "Employer contributions missing",
+        "hint": "A mandate counts without contributions until the office supplies them. Enter them in the item's details."
+      },
+      "HOURS_MISSING": {
+        "title": "Hours not confirmed",
+        "hint": "The concert has taken place. Enter the confirmed hours before the office pays the mandate."
+      },
+      "VOLUNTEER_INSURANCE": {
+        "title": "Volunteer accident insurance",
+        "hint": "The agreement lasts 30 days or less, so the foundation must insure the volunteer against accidents."
+      },
+      "NOT_SIGNED": {
+        "title": "Contracts not signed",
+        "hint": "The concert has taken place. Mark the contracts signed and note where the copy is kept."
+      },
+      "DOCUMENT_MISSING": {
+        "title": "No document before the concert",
+        "hint": "The concert is days away. Issue the contract or enter the invoice number."
+      },
+      "PAID_WITHOUT_DOCUMENT": {
+        "title": "Paid without a contract in the panel",
+        "hint": "If the contract exists on paper, issue it here as well — the records have to match."
+      },
+      "PAYMENT_OVERDUE": {
+        "title": "Payment overdue",
+        "hint": "The due date has passed and the fee is not marked paid."
+      },
+      "unknown": {
+        "title": "Needs attention",
+        "hint": "Check the items named."
+      }
     },
-    "ledger": {
-      "col_actions": "Settlement",
-      "col_fee": "Fee",
-      "col_person": "Person",
-      "col_role": "Role",
-      "empty_filter": "No items for the selected filter.",
-      "missing": "{{n}} unpriced",
-      "owed": "{{n}} to pay"
+    "errors": {
+      "budget_locked": "The budget is closed. The board has to reopen it first.",
+      "unknown_fee_reference": "This item is no longer in the project. Refresh the page.",
+      "seat_not_billable": "This person is not in the cast or has declined, so they cannot be priced.",
+      "item_paid": "The item is paid. Its amount and form cannot change without reverting the payment.",
+      "item_contracted": "A contract has been issued. The amount and form are frozen until it is annulled.",
+      "invalid_item_change": "This field cannot be changed on this item.",
+      "payment_refused": "Not every selected item can be marked paid. Nothing was changed.",
+      "not_paid": "This item is not marked paid.",
+      "contract_refused": "A contract cannot be issued for this item.",
+      "contract_exists": "This item already has an issued contract.",
+      "contract_annulled": "This contract has been annulled.",
+      "hours_not_applicable": "Hours are confirmed on a contract of mandate only.",
+      "bill_not_applicable": "A volunteer agreement has no bill.",
+      "pdf_renderer_unavailable": "The server cannot prepare the document right now. Try again shortly.",
+      "no_contracts": "The project has no issued contract yet.",
+      "zip_failed": "The contracts could not be packed. Try again.",
+      "zip_timeout": "Packing the contracts is taking too long. Try again in a few minutes."
     },
-    "loader": {
-      "message": "Loading settlement ledgers…"
-    },
-    "mark_all": {
-      "applying": "Marking fees as paid…",
-      "button": "Mark paid",
-      "confirm_cta": "Mark paid",
-      "confirm_desc": "{{count}} priced, unpaid fees (cast and crew) will be marked paid. You can revert each individually.",
-      "confirm_desc_one": "{{count}} priced, unpaid fee (cast and crew) will be marked. You can undo it individually.",
-      "confirm_desc_few": "{{count}} priced, unpaid fees (cast and crew) will be marked. You can undo each one individually.",
-      "confirm_desc_many": "{{count}} priced, unpaid fees (cast and crew) will be marked. You can undo each one individually.",
-      "confirm_desc_other": "{{count}} priced, unpaid fees (cast and crew) will be marked. You can undo each one individually.",
-      "confirm_title": "Mark the whole project as paid?",
-      "done": "Marked {{count}} fees as paid.",
-      "done_one": "Marked {{count}} fee as paid.",
-      "done_few": "Marked {{count}} fees as paid.",
-      "done_many": "Marked {{count}} fees as paid.",
-      "done_other": "Marked {{count}} fees as paid.",
-      "hint": "Marks every priced, unpaid fee in the project as paid.",
-      "partial": "Marked {{ok}} of {{total}} — {{failed}} failed."
-    },
-    "payables": {
-      "clear_desc": "No project has open valuations or outstanding payouts. Pick a project on the left to review details or generate contracts.",
-      "clear_eyebrow": "All clear",
-      "clear_title": "Every fee is settled.",
-      "none_in_filter": "No items in this filter.",
-      "open": "Open in project",
-      "open_short": "Price",
-      "paid_toast": "Marked {{name}} as paid.",
-      "pay": "Paid",
-      "title": "To settle",
-      "unpriced": "Unpriced"
-    },
-    "project_status": {
-      "active": "Active",
-      "archived": "Archived",
-      "cancelled": "Cancelled",
-      "draft": "Draft"
-    },
-    "rail": {
-      "all_clear": "All settled",
-      "all_outstanding": "{{n}} with balances",
-      "all_projects": "All projects",
-      "empty": "no personnel",
-      "missing": "{{n}} unpriced",
-      "mix": "{{cast}} cast · {{crew}} crew",
-      "no_match": "No projects match this search.",
-      "search": "Search projects…",
-      "title": "Projects"
+    "offline": {
+      "act": "You are offline. Settlements are never saved offline — reconnect to do this.",
+      "short": "Offline — settlements are never saved offline."
     },
     "row": {
-      "currency": "PLN",
-      "download_pdf": "Download contract PDF",
-      "fee_aria": "Fee for {{name}}",
-      "fee_placeholder": "0.00",
-      "invalid_fee": "Enter a valid amount.",
-      "mark_paid": "Mark as paid",
-      "mark_unpaid": "Revert payment",
-      "paid": "Paid",
-      "paid_on": "Paid {{date}}",
-      "pay_blocked": "Price the fee first",
-      "pdf_blocked": "Pricing unlocks the contract PDF",
-      "save": "Save fee",
-      "to_pay": "To pay"
+      "paid_for_declined": "declined — paid",
+      "orphaned": "no longer cast — not counted in the cost",
+      "signed": "signed",
+      "unsigned": "not signed",
+      "paid_on": "paid {{date}}",
+      "unpaid": "unpaid",
+      "locked_by_contract": "Amount frozen by contract {{number}}",
+      "select_aria": "Select — {{name}}",
+      "unknown_payee": "Unnamed payee",
+      "amount_aria": "Amount — {{name}}"
     },
-    "sections": {
+    "standard_rate": {
+      "label": "Rate for everyone",
+      "pending": "Will cover {{count}} items — save to apply",
+      "hint": "Will overwrite {{count}} items"
+    },
+    "acts": {
+      "menu_aria": "Actions — {{name}}",
+      "form": "Form of settlement",
+      "details": "Item details",
+      "details_hint": "Due date, document, contributions, notes",
+      "issue": "Issue contract",
+      "download_contract": "Download contract",
+      "download_bill": "Download bill",
+      "sign": "Mark as signed",
+      "hours": "Confirm hours",
+      "hours_current": "Confirmed: {{hours}} h",
+      "pay": "Mark as paid",
+      "unpay": "Revert payment",
+      "annul": "Annul contract",
+      "board_only": "Reverting a payment and annulling a contract are for the board.",
+      "blocked_by_draft": "Save or discard the fee change first."
+    },
+    "pay": {
+      "title": "Mark as paid",
+      "subtitle": "Items: {{count}}",
+      "date": "Payment date",
+      "date_required": "Enter the payment date.",
+      "date_future": "The payment date cannot be in the future.",
+      "note": "Enter the day the office sent the transfer. A paid fee's amount and form are then fixed — only the board can revert the payment.",
+      "confirm": "Mark paid",
+      "done": "Marked as paid: {{count}} items.",
+      "error": "The payment could not be recorded."
+    },
+    "reason": {
+      "label": "Reason",
+      "required": "Give a reason — it goes into the budget's history."
+    },
+    "unpay": {
+      "title": "Revert payment",
+      "description": "The item returns to unpaid and its amount can be changed again. The payment stays in the history with the reason.",
+      "confirm": "Revert payment",
+      "done": "Payment reverted.",
+      "error": "The payment could not be reverted."
+    },
+    "annul": {
+      "title": "Annul contract",
+      "description": "The contract number is not reused. Once annulled, the amount can be changed and a new contract issued.",
+      "confirm": "Annul",
+      "done": "Contract annulled.",
+      "error": "The contract could not be annulled."
+    },
+    "sign": {
+      "title": "Contract signed",
+      "date": "Date on the contract",
+      "date_required": "Enter the date on the signed contract.",
+      "date_future": "The signing date cannot be in the future.",
+      "location": "Where the copy is kept",
+      "location_placeholder": "e.g. binder 2026, a Drive link",
+      "confirm": "Save signature",
+      "done": "Contract marked as signed.",
+      "error": "The signature could not be saved."
+    },
+    "hours": {
+      "title": "Confirmed hours",
+      "label": "Number of hours",
+      "invalid": "Enter a number of hours above zero.",
+      "note": "The figure from the hours confirmation the contractor signed. Without it the minimum hourly rate cannot be checked.",
+      "confirm": "Save hours",
+      "done": "Confirmed hours saved.",
+      "error": "The hours could not be saved."
+    },
+    "one_off": {
+      "title": "Payee outside the cast",
+      "description": "Only for someone the foundation pays who neither performs nor works on the concert. Add a musician or a technician in the Cast or Crew tab instead — then they appear on the day sheet too.",
+      "name": "Full name or company",
+      "name_required": "Enter a full name or a company name.",
+      "role": "What for",
+      "role_placeholder": "e.g. translating the programme texts",
+      "side": "Cost category",
+      "form": "Form of settlement",
+      "amount": "Amount (PLN)",
+      "amount_invalid": "This is not an amount.",
+      "confirm": "Add",
+      "done": "{{name}} added.",
+      "error": "The payee could not be added."
+    },
+    "details": {
+      "title": "Item details",
+      "contributions": "Employer contributions (PLN)",
+      "in_kind": "Valuation of volunteer work",
+      "in_kind_hours": "Hours",
+      "in_kind_rate": "Hourly rate (PLN)",
+      "in_kind_note": "Not a cost: the valuation counts as an in-kind contribution in a grant application.",
+      "document_number": "Invoice number",
+      "document_date": "Invoice date",
+      "vendor_nip": "Vendor's NIP",
+      "due_on": "Due date",
+      "note": "Notes",
+      "not_amount": "This is not an amount.",
+      "hours_positive": "The number of hours must be above zero.",
+      "nip_invalid": "This is not a valid NIP.",
+      "done": "Item details saved.",
+      "error": "The details could not be saved."
+    },
+    "selection": {
+      "aria": "Actions on the selection",
+      "count": "Selected: {{count}}",
+      "issue": "Issue contracts ({{count}})",
+      "pay": "Mark paid ({{count}})",
+      "clear": "Deselect"
+    },
+    "ledger": {
+      "people": "{{count}} people",
+      "unpriced": "No fee set: {{count}}"
+    },
+    "draft": {
+      "description": "Fee changes. Issuing contracts and payments wait until you save.",
+      "invalid_title": "Correct the amounts",
+      "invalid_description": "The fields marked in red do not hold an amount. Correct or clear them.",
+      "saving": "Saving fees…",
+      "saved": "Fees saved and the budget recalculated.",
+      "save_error": "The fees could not be saved. Nothing was changed."
+    },
+    "issue": {
+      "working": "Issuing contracts…",
+      "done_one": "Contract issued: {{name}}.",
+      "done_many": "Contracts issued: {{count}}.",
+      "partial": "Contracts issued: {{done}} of {{total}}. The rest are waiting.",
+      "error": "The contract could not be issued."
+    },
+    "download": {
+      "error": "The document could not be downloaded."
+    },
+    "fees": {
+      "title": "Fees",
+      "headline": "Cost of fees",
+      "preview_note": "Preview: this is how it will read once saved.",
       "cast": "Cast",
-      "crew": "Crew"
+      "cast_empty": "No cast",
+      "cast_empty_desc": "Fees appear here once you add musicians in the Cast tab.",
+      "crew": "Crew",
+      "crew_empty": "No crew",
+      "crew_empty_desc": "Collaborators' rates appear here once you book them in the Crew tab.",
+      "one_off": "Outside the cast",
+      "one_off_empty": "No one outside the cast",
+      "one_off_empty_desc": "Someone the foundation pays who neither performs nor works on the concert — e.g. a translator of the programme texts.",
+      "add_one_off": "Add payee"
     },
-    "status": {
-      "confirmed": "Confirmed",
-      "declined": "Declined",
-      "pending": "Pending"
+    "load_error": {
+      "title": "The budget could not be loaded.",
+      "description": "The server did not answer. Try again shortly."
     },
     "summary": {
-      "all_settled": "Settled",
-      "all_settled_note": "Every fee in this scope is settled.",
-      "committed": "Fee budget",
-      "outstanding": "Outstanding",
-      "outstanding_note": "Awaiting payment: {{n}}",
-      "outstanding_note_missing": "{{owed}} awaiting payment · {{missing}} unpriced",
       "paid": "Paid",
-      "priced": "Priced",
-      "scope_portfolio": "Whole portfolio"
+      "outstanding": "Still owed",
+      "in_kind": "Volunteer contribution",
+      "unpriced": "No fee set"
     },
-    "toast": {
-      "bulk_applying": "Applying a shared rate…",
-      "bulk_error": "Could not apply the bulk rate.",
-      "bulk_success": "Updated {{count}} fees.",
-      "bulk_success_one": "Updated {{count}} fee.",
-      "bulk_success_few": "Updated {{count}} fees.",
-      "bulk_success_many": "Updated {{count}} fees.",
-      "bulk_success_other": "Updated {{count}} fees.",
-      "payment_error": "Could not change the payment status.",
-      "pdf_error": "PDF generation failed: {{message}}",
-      "pdf_generating": "Generating contract for {{name}}…",
-      "pdf_success": "Contract PDF ready.",
-      "save_error": "Could not save the fee for {{name}}."
+    "overview": {
+      "title": "Budget",
+      "headline": "Project cost",
+      "work": "To do",
+      "work_empty": "Nothing is waiting to be settled.",
+      "more_names": "and {{count}} more",
+      "documents": "For the office",
+      "csv_hint": "Every fee counted in the cost: payee, form, contract number, amounts and dates. Opens in Excel.",
+      "csv": "Settlement (CSV)",
+      "zip_hint": "Issued contracts with annexes, one PDF per person: {{count}}.",
+      "zip": "Contracts (ZIP)",
+      "zip_empty": "The contracts package appears once you issue the first contract under Fees."
     },
-    "unknown_artist": "Unknown artist",
-    "unknown_collaborator": "Unknown collaborator",
-    "unknown_specialty": "Unknown specialty",
-    "unknown_voice": "Unknown voice",
-    "warning": {
-      "action": "Retry",
-      "description": "The dashboard still works, but one source failed to refresh. Run a manual sync.",
-      "title": "Some data is out of date."
+    "zip": {
+      "working": "Packing contracts…",
+      "done": "Contracts downloaded: {{count}}.",
+      "failed": "The package could not be prepared",
+      "error": "The contracts package could not be downloaded."
+    },
+    "portfolio": {
+      "role": "Foundation",
+      "title": "Finance",
+      "loading": "Loading settlements…",
+      "projects": "Projects",
+      "projects_empty": "No project has any fees yet.",
+      "hidden": "Projects without fees left out: {{count}}.",
+      "cost": "Cost",
+      "cancelled": "cancelled",
+      "problems": "problems: {{count}}",
+      "work": "to do: {{count}}",
+      "payables": "Still owed",
+      "payables_empty": "The foundation owes no fees.",
+      "range": "{{first}}–{{last}} of {{total}}",
+      "previous": "Earlier",
+      "next": "Later",
+      "overdue": "overdue since {{date}}",
+      "due": "due {{date}}"
+    },
+    "export": {
+      "from": "From",
+      "to": "To",
+      "action": "Export for the office",
+      "hint": "Fees counted in the cost whose cost date (the concert day) falls in this period — across all projects.",
+      "range_required": "Enter both dates.",
+      "range_order": "The start date is later than the end date."
+    },
+    "facts": {
+      "cost": "Cost of fees",
+      "unpriced": "no fee set: {{count}} people"
     }
   },
   "crew": {
@@ -2006,8 +2171,8 @@
         "aria": "System modules",
         "artists": "Artists",
         "artists_hint": "Roster & voices",
-        "contracts": "Finance",
-        "contracts_hint": "Contracts & settlements",
+        "finance": "Finance",
+        "finance_hint": "Fees and contracts",
         "locations": "Locations",
         "locations_hint": "Halls & venues",
         "projects": "Projects",
@@ -2224,7 +2389,7 @@
         "artist_dashboard": "Artist Dashboard",
         "artists": "Artists Roster",
         "attendance": "Rehearsals",
-        "contracts": "Contracts & Payroll",
+        "finance": "Finance",
         "crew": "Technical Crew",
         "locations": "Locations",
         "materials": "Practice Materials",
@@ -2303,16 +2468,6 @@
     },
     "invalid_description": "We could not recognize this document link. It may be malformed or out of date.",
     "invalid_title": "Unsupported document"
-  },
-  "export": {
-    "actions": {
-      "downloadZip": "Download ZIP",
-      "generateZip": "Generate ZIP",
-      "generatingZip": "Preparing contract package"
-    },
-    "status": {
-      "ready": "Package ready"
-    }
   },
   "errors": {
     "toast": {
@@ -3579,50 +3734,6 @@
     },
     "badge_active": "In preparation",
     "badge_done": "Completed",
-    "budget": {
-      "estimated_cost": "Estimated cost",
-      "sections": {
-        "summary": "Personnel costs",
-        "cast": "Vocal cast",
-        "crew": "Technical crew"
-      },
-      "kpi": {
-        "total": "Total cost",
-        "outstanding": "Still owed",
-        "cast_fees": "Cast",
-        "crew_fees": "Crew",
-        "settled": "Settled",
-        "missing": "Unpriced"
-      },
-      "empty": {
-        "cast": "No cast",
-        "cast_desc": "Fees will appear here once you add singers on the Cast tab.",
-        "crew": "No crew",
-        "crew_desc": "Collaborator rates will appear here once you hire them on the Crew tab."
-      },
-      "footer": {
-        "subtotal": "Subtotal",
-        "missing": "{{count}} unpriced",
-        "settled": "Settled: {{count}}"
-      },
-      "row": {
-        "fee_aria": "Fee — {{name}}",
-        "settled": "Settled — this fee can no longer be changed"
-      },
-      "standard_rate": {
-        "label": "Rate for everyone",
-        "hint": "Overwrites {{count}} positions.",
-        "pending": "Covers {{count}} positions — save to apply"
-      },
-      "fab": {
-        "description": "Changes to the fee rates."
-      },
-      "toast": {
-        "saving": "Saving budget...",
-        "save_success": "Rates saved and budget recalculated",
-        "save_error_desc": "Failed to save all rates."
-      }
-    },
     "call_time": "Call Time:",
     "card": {
       "artistic_dashboard": "Artistic Dashboard",
@@ -5438,6 +5549,7 @@
     },
     "datetime": {
       "placeholder": "Pick a date and time",
+      "placeholder_date": "Pick a date",
       "time": "Time",
       "hours": "Hours",
       "minutes": "Minutes",
@@ -5448,7 +5560,8 @@
       "previous_year": "Previous year",
       "next_year": "Next year",
       "today": "Today",
-      "done": "Done"
+      "done": "Done",
+      "date": "Date"
     }
   },
   "voice_types": {

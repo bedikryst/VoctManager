@@ -13,7 +13,6 @@ import { archiveKeys } from "@/features/archive/api/archive.queries";
 import { ArchiveService } from "@/features/archive/api/archive.service";
 import { artistKeys } from "@/features/artists/api/artist.queries";
 import { ArtistService } from "@/features/artists/api/artist.service";
-import { ContractsService } from "@/features/contracts/api/contracts.service";
 import { crewKeys } from "@/features/crew/api/crew.queries";
 import { CrewService } from "@/features/crew/api/crew.service";
 import { logisticsQueryKeys } from "@/features/logistics/api/logistics.queries";
@@ -200,12 +199,6 @@ const preloadManagerWorkspace = async ({
       queryClient,
       crewKeys.collaborators.all,
       CrewService.getCrewMembers,
-      WORKSPACE_STALE_TIME,
-    ),
-    prefetchQuery(
-      queryClient,
-      projectKeys.crewAssignments.all,
-      ContractsService.getCrewAssignments,
       WORKSPACE_STALE_TIME,
     ),
     prefetchQuery(

@@ -1605,172 +1605,337 @@
     "no_phone": "Pas de téléphone",
     "specialty_other": "Autre"
   },
-  "contracts": {
-    "bulk": {
-      "apply": "Appliquer",
-      "hint": "Fixe un cachet unique pour le groupe choisi (ignore les déjà payés).",
-      "label": "Cachet",
-      "placeholder": "p. ex. 500",
-      "target_label": "Cachet groupé pour"
+  "finance": {
+    "nav": {
+      "overview": "Aperçu",
+      "people": "Cachets",
+      "aria": "Sections du budget"
     },
-    "csv": {
-      "amount": "Montant (PLN)",
-      "done": "Liste des règlements exportée.",
-      "event_date": "Date de l'événement",
-      "export": "Export CSV",
-      "hint": "Liste complète des règlements pour la comptabilité (CSV)",
-      "kind": "Type",
-      "no": "Non",
-      "paid": "Payé",
-      "paid_date": "Date de paiement",
-      "person": "Personne",
-      "project": "Projet",
-      "role": "Rôle",
-      "status": "Statut",
-      "yes": "Oui"
+    "forms": {
+      "DZIELO": "Contrat d'œuvre (umowa o dzieło)",
+      "ZLECENIE": "Contrat de mandat (umowa zlecenia)",
+      "INVOICE": "Facture",
+      "VOLUNTEER": "Bénévolat",
+      "OTHER": "Autre forme"
     },
-    "empty": {
-      "no_personnel_description": "Assignez d'abord des personnes dans l'espace du projet. Une fois les enregistrements présents ici, vous pourrez fixer les cachets, marquer les paiements et générer les contrats PDF.",
-      "no_personnel_eyebrow": "Aucun personnel",
-      "no_personnel_title": "Ce projet n'a ni distribution ni équipe assignée."
+    "forms_short": {
+      "DZIELO": "Œuvre",
+      "ZLECENIE": "Mandat",
+      "INVOICE": "Facture",
+      "VOLUNTEER": "Bénévolat",
+      "OTHER": "Autre"
     },
-    "error": {
-      "action": "Relancer la synchronisation",
-      "description": "Les données des projets, de la distribution ou de l'équipe ne sont pas arrivées. Réessayez la synchronisation.",
-      "eyebrow": "Aucune donnée",
-      "title": "Impossible de charger les règlements."
+    "categories": {
+      "PERSONNEL_ARTISTIC": "Personnel artistique",
+      "PERSONNEL_TECHNICAL": "Personnel technique",
+      "VENUE": "Lieu",
+      "TRAVEL": "Déplacements",
+      "ACCOMMODATION": "Hébergement",
+      "CATERING": "Restauration",
+      "MATERIALS": "Matériel et droits",
+      "EQUIPMENT": "Équipement",
+      "PROMOTION": "Promotion",
+      "RECORDING": "Enregistrement",
+      "ADMINISTRATION": "Administration",
+      "OTHER": "Autres"
     },
-    "filters": {
-      "all": "Tous",
-      "all_short": "Tout",
-      "aria": "Filtre des règlements",
-      "unpaid": "À payer",
-      "unpriced": "Sans cachet"
+    "budget_status": {
+      "PLANNING": "En préparation",
+      "APPROVED": "Approuvé",
+      "CLOSED": "Clôturé"
     },
-    "header": {
-      "badge": "Opérations financières",
-      "mix": "{{cast}} distribution · {{crew}} équipe",
-      "refresh": "Actualiser",
-      "syncing": "Synchronisation",
-      "title": "Centre des",
-      "title_highlight": "règlements"
+    "warnings": {
+      "PAID_FOR_DECLINED": {
+        "title": "Payé malgré un refus",
+        "hint": "Cette personne a refusé de participer, et pourtant son cachet est marqué comme payé. Vérifiez-le avec le bureau."
+      },
+      "BELOW_MINIMUM_HOURLY_RATE": {
+        "title": "Sous le taux horaire minimum",
+        "hint": "Le montant du contrat de mandat divisé par les heures confirmées est inférieur au minimum légal ({{minimum}} PLN de l'heure en {{year}})."
+      },
+      "UNPRICED": {
+        "title": "Sans cachet",
+        "hint": "Saisissez un montant ou choisissez le bénévolat — le coût du concert n'est complet qu'à ce moment-là."
+      },
+      "ORPHANED_FEE": {
+        "title": "Hors distribution, non payé",
+        "hint": "Ces personnes ne font plus partie de la distribution. Leurs cachets ne comptent pas dans le coût."
+      },
+      "EMPLOYER_COST_MISSING": {
+        "title": "Cotisations patronales manquantes",
+        "hint": "Un contrat de mandat compte sans cotisations tant que le bureau ne les a pas fournies. Saisissez-les dans le détail de la ligne."
+      },
+      "HOURS_MISSING": {
+        "title": "Heures non confirmées",
+        "hint": "Le concert a eu lieu. Saisissez les heures confirmées avant que le bureau ne paie le mandat."
+      },
+      "VOLUNTEER_INSURANCE": {
+        "title": "Assurance accidents des bénévoles",
+        "hint": "La convention dure 30 jours ou moins : la fondation doit assurer le bénévole contre les accidents."
+      },
+      "NOT_SIGNED": {
+        "title": "Contrats non signés",
+        "hint": "Le concert a eu lieu. Marquez les contrats comme signés et notez où l'exemplaire est rangé."
+      },
+      "DOCUMENT_MISSING": {
+        "title": "Document manquant avant le concert",
+        "hint": "Le concert est dans quelques jours. Émettez le contrat ou saisissez le numéro de facture."
+      },
+      "PAID_WITHOUT_DOCUMENT": {
+        "title": "Payé sans contrat dans le panneau",
+        "hint": "Si le contrat existe sur papier, émettez-le aussi ici — les registres doivent concorder."
+      },
+      "PAYMENT_OVERDUE": {
+        "title": "Paiement en retard",
+        "hint": "L'échéance est passée et le cachet n'est pas marqué comme payé."
+      },
+      "unknown": {
+        "title": "À vérifier",
+        "hint": "Vérifiez les lignes indiquées."
+      }
     },
-    "ledger": {
-      "col_actions": "Règlement",
-      "col_fee": "Cachet",
-      "col_person": "Personne",
-      "col_role": "Rôle",
-      "empty_filter": "Aucun élément pour le filtre choisi.",
-      "missing": "{{n}} sans cachet",
-      "owed": "{{n}} à payer"
+    "errors": {
+      "budget_locked": "Le budget est clôturé. Le conseil doit d'abord le rouvrir.",
+      "unknown_fee_reference": "Cette ligne n'appartient plus au projet. Actualisez la page.",
+      "seat_not_billable": "Cette personne n'est pas dans la distribution ou a refusé : impossible de fixer son cachet.",
+      "item_paid": "La ligne est payée. Son montant et sa forme ne peuvent changer sans annuler le paiement.",
+      "item_contracted": "Un contrat a été émis. Le montant et la forme sont figés jusqu'à son annulation.",
+      "invalid_item_change": "Ce champ ne peut pas être modifié sur cette ligne.",
+      "payment_refused": "Toutes les lignes sélectionnées ne peuvent pas être marquées comme payées. Rien n'a été modifié.",
+      "not_paid": "Cette ligne n'est pas marquée comme payée.",
+      "contract_refused": "Impossible d'émettre un contrat pour cette ligne.",
+      "contract_exists": "Cette ligne a déjà un contrat émis.",
+      "contract_annulled": "Ce contrat est annulé.",
+      "hours_not_applicable": "Les heures ne se confirment que sur un contrat de mandat.",
+      "bill_not_applicable": "Une convention de bénévolat n'a pas de note d'honoraires.",
+      "pdf_renderer_unavailable": "Le serveur ne peut pas préparer le document pour l'instant. Réessayez dans un moment.",
+      "no_contracts": "Le projet n'a encore aucun contrat émis.",
+      "zip_failed": "Les contrats n'ont pas pu être regroupés. Réessayez.",
+      "zip_timeout": "Le regroupement des contrats prend trop de temps. Réessayez dans quelques minutes."
     },
-    "loader": {
-      "message": "Chargement des registres de règlement…"
-    },
-    "mark_all": {
-      "applying": "Marquage des cachets comme payés…",
-      "button": "Marquer payé",
-      "confirm_cta": "Marquer payé",
-      "confirm_desc": "{{count}} cachets chiffrés et impayés (distribution et équipe) seront marqués payés. Vous pouvez annuler chacun individuellement.",
-      "confirm_desc_one": "{{count}} honoraire chiffré et impayé (distribution et équipe) sera marqué. Vous pouvez l'annuler individuellement.",
-      "confirm_desc_few": "{{count}} honoraires chiffrés et impayés (distribution et équipe) seront marqués. Vous pouvez annuler chacun individuellement.",
-      "confirm_desc_many": "{{count}} honoraires chiffrés et impayés (distribution et équipe) seront marqués. Vous pouvez annuler chacun individuellement.",
-      "confirm_desc_other": "{{count}} honoraires chiffrés et impayés (distribution et équipe) seront marqués. Vous pouvez annuler chacun individuellement.",
-      "confirm_title": "Marquer tout le projet comme payé ?",
-      "done": "{{count}} cachets marqués comme payés.",
-      "done_one": "{{count}} honoraire marqué comme payé.",
-      "done_few": "{{count}} honoraires marqués comme payés.",
-      "done_many": "{{count}} honoraires marqués comme payés.",
-      "done_other": "{{count}} honoraires marqués comme payés.",
-      "hint": "Marque tous les cachets chiffrés et impayés du projet comme payés.",
-      "partial": "{{ok}} sur {{total}} marqués — {{failed}} échoués."
-    },
-    "payables": {
-      "clear_desc": "Aucun projet n'a de cachet ouvert ni de paiement en attente. Choisissez un projet à gauche pour voir le détail ou générer les contrats.",
-      "clear_eyebrow": "Tout est en ordre",
-      "clear_title": "Tous les cachets sont réglés.",
-      "none_in_filter": "Aucun élément dans ce filtre.",
-      "open": "Ouvrir dans le projet",
-      "open_short": "Chiffrer",
-      "paid_toast": "{{name}} marqué comme payé.",
-      "pay": "Payé",
-      "title": "À régler",
-      "unpriced": "Sans cachet"
-    },
-    "project_status": {
-      "active": "Actif",
-      "archived": "Archivé",
-      "cancelled": "Annulé",
-      "draft": "Brouillon"
-    },
-    "rail": {
-      "all_clear": "Tout est réglé",
-      "all_outstanding": "{{n}} avec soldes",
-      "all_projects": "Tous les projets",
-      "empty": "aucun personnel",
-      "missing": "{{n}} sans cachet",
-      "mix": "{{cast}} distribution · {{crew}} équipe",
-      "no_match": "Aucun projet ne correspond à cette recherche.",
-      "search": "Rechercher un projet…",
-      "title": "Projets"
+    "offline": {
+      "act": "Vous êtes hors ligne. Les règlements ne s'enregistrent jamais hors ligne — reconnectez-vous pour le faire.",
+      "short": "Hors ligne — les règlements ne s'enregistrent jamais hors ligne."
     },
     "row": {
-      "currency": "PLN",
-      "download_pdf": "Télécharger le contrat PDF",
-      "fee_aria": "Cachet pour {{name}}",
-      "fee_placeholder": "0,00",
-      "invalid_fee": "Saisissez un montant valide.",
-      "mark_paid": "Marquer comme payé",
-      "mark_unpaid": "Annuler le paiement",
-      "paid": "Payé",
-      "paid_on": "Payé le {{date}}",
-      "pay_blocked": "Chiffrez d'abord le cachet",
-      "pdf_blocked": "Le chiffrage débloque le contrat PDF",
-      "save": "Enregistrer le cachet",
-      "to_pay": "À payer"
+      "paid_for_declined": "a refusé — payé",
+      "orphaned": "hors distribution — non compté dans le coût",
+      "signed": "signé",
+      "unsigned": "non signé",
+      "paid_on": "payé le {{date}}",
+      "unpaid": "non payé",
+      "locked_by_contract": "Montant figé par le contrat {{number}}",
+      "select_aria": "Sélectionner — {{name}}",
+      "unknown_payee": "Bénéficiaire sans nom",
+      "amount_aria": "Montant — {{name}}"
     },
-    "sections": {
+    "standard_rate": {
+      "label": "Cachet pour tous",
+      "pending": "Concernera {{count}} lignes — enregistrez pour appliquer",
+      "hint": "Remplacera {{count}} lignes"
+    },
+    "acts": {
+      "menu_aria": "Actions — {{name}}",
+      "form": "Forme de règlement",
+      "details": "Détail de la ligne",
+      "details_hint": "Échéance, document, cotisations, remarques",
+      "issue": "Émettre le contrat",
+      "download_contract": "Télécharger le contrat",
+      "download_bill": "Télécharger la note",
+      "sign": "Marquer comme signé",
+      "hours": "Confirmer les heures",
+      "hours_current": "Confirmé : {{hours}} h",
+      "pay": "Marquer comme payé",
+      "unpay": "Annuler le paiement",
+      "annul": "Annuler le contrat",
+      "board_only": "Annuler un paiement ou un contrat relève du conseil.",
+      "blocked_by_draft": "Enregistrez ou abandonnez d'abord la modification du cachet."
+    },
+    "pay": {
+      "title": "Marquer comme payé",
+      "subtitle": "Lignes : {{count}}",
+      "date": "Date de paiement",
+      "date_required": "Indiquez la date de paiement.",
+      "date_future": "La date de paiement ne peut pas être dans le futur.",
+      "note": "Indiquez le jour où le bureau a envoyé le virement. Le montant et la forme d'un cachet payé sont alors figés — seul le conseil peut annuler le paiement.",
+      "confirm": "Marquer payé",
+      "done": "Marqué comme payé : {{count}} lignes.",
+      "error": "Le paiement n'a pas pu être enregistré."
+    },
+    "reason": {
+      "label": "Motif",
+      "required": "Indiquez un motif — il est conservé dans l'historique du budget."
+    },
+    "unpay": {
+      "title": "Annuler le paiement",
+      "description": "La ligne redevient non payée et son montant peut à nouveau changer. Le paiement reste dans l'historique avec son motif.",
+      "confirm": "Annuler le paiement",
+      "done": "Paiement annulé.",
+      "error": "Le paiement n'a pas pu être annulé."
+    },
+    "annul": {
+      "title": "Annuler le contrat",
+      "description": "Le numéro du contrat n'est pas réutilisé. Après l'annulation, le montant peut changer et un nouveau contrat être émis.",
+      "confirm": "Annuler",
+      "done": "Contrat annulé.",
+      "error": "Le contrat n'a pas pu être annulé."
+    },
+    "sign": {
+      "title": "Contrat signé",
+      "date": "Date figurant sur le contrat",
+      "date_required": "Indiquez la date du contrat signé.",
+      "date_future": "La date de signature ne peut pas être dans le futur.",
+      "location": "Où est rangé l'exemplaire",
+      "location_placeholder": "p. ex. classeur 2026, un lien Drive",
+      "confirm": "Enregistrer la signature",
+      "done": "Contrat marqué comme signé.",
+      "error": "La signature n'a pas pu être enregistrée."
+    },
+    "hours": {
+      "title": "Heures confirmées",
+      "label": "Nombre d'heures",
+      "invalid": "Indiquez un nombre d'heures supérieur à zéro.",
+      "note": "Le chiffre de la confirmation d'heures signée par le mandataire. Sans lui, le taux horaire minimum ne peut pas être vérifié.",
+      "confirm": "Enregistrer les heures",
+      "done": "Heures confirmées enregistrées.",
+      "error": "Les heures n'ont pas pu être enregistrées."
+    },
+    "one_off": {
+      "title": "Bénéficiaire hors distribution",
+      "description": "Uniquement pour une personne que la fondation paie sans qu'elle se produise ni travaille sur le concert. Ajoutez un musicien ou un technicien dans l'onglet Distribution ou Équipe — il figurera alors aussi sur la feuille du jour.",
+      "name": "Nom complet ou société",
+      "name_required": "Indiquez un nom complet ou une raison sociale.",
+      "role": "Pour quoi",
+      "role_placeholder": "p. ex. traduction des textes du programme",
+      "side": "Catégorie de coût",
+      "form": "Forme de règlement",
+      "amount": "Montant (PLN)",
+      "amount_invalid": "Ce n'est pas un montant.",
+      "confirm": "Ajouter",
+      "done": "{{name}} ajouté(e).",
+      "error": "Le bénéficiaire n'a pas pu être ajouté."
+    },
+    "details": {
+      "title": "Détail de la ligne",
+      "contributions": "Cotisations patronales (PLN)",
+      "in_kind": "Valorisation du travail bénévole",
+      "in_kind_hours": "Heures",
+      "in_kind_rate": "Taux horaire (PLN)",
+      "in_kind_note": "Ce n'est pas un coût : la valorisation compte comme apport en nature dans une demande de subvention.",
+      "document_number": "Numéro de facture",
+      "document_date": "Date de facture",
+      "vendor_nip": "NIP du fournisseur",
+      "due_on": "Échéance",
+      "note": "Remarques",
+      "not_amount": "Ce n'est pas un montant.",
+      "hours_positive": "Le nombre d'heures doit être supérieur à zéro.",
+      "nip_invalid": "Ce NIP n'est pas valide.",
+      "done": "Détail de la ligne enregistré.",
+      "error": "Le détail n'a pas pu être enregistré."
+    },
+    "selection": {
+      "aria": "Actions sur la sélection",
+      "count": "Sélection : {{count}}",
+      "issue": "Émettre les contrats ({{count}})",
+      "pay": "Marquer payés ({{count}})",
+      "clear": "Désélectionner"
+    },
+    "ledger": {
+      "people": "{{count}} pers.",
+      "unpriced": "Sans cachet : {{count}}"
+    },
+    "draft": {
+      "description": "Modifications des cachets. L'émission des contrats et les paiements attendent l'enregistrement.",
+      "invalid_title": "Corrigez les montants",
+      "invalid_description": "Les champs marqués en rouge ne contiennent pas de montant. Corrigez-les ou videz-les.",
+      "saving": "Enregistrement des cachets…",
+      "saved": "Cachets enregistrés, budget recalculé.",
+      "save_error": "Les cachets n'ont pas pu être enregistrés. Rien n'a été modifié."
+    },
+    "issue": {
+      "working": "Émission des contrats…",
+      "done_one": "Contrat émis : {{name}}.",
+      "done_many": "Contrats émis : {{count}}.",
+      "partial": "Contrats émis : {{done}} sur {{total}}. Les autres attendent.",
+      "error": "Le contrat n'a pas pu être émis."
+    },
+    "download": {
+      "error": "Le document n'a pas pu être téléchargé."
+    },
+    "fees": {
+      "title": "Cachets",
+      "headline": "Coût des cachets",
+      "preview_note": "Aperçu : voici le résultat une fois enregistré.",
       "cast": "Distribution",
-      "crew": "Équipe"
+      "cast_empty": "Aucune distribution",
+      "cast_empty_desc": "Les cachets apparaissent ici dès que vous ajoutez des musiciens dans l'onglet Distribution.",
+      "crew": "Équipe",
+      "crew_empty": "Aucune équipe",
+      "crew_empty_desc": "Les tarifs des collaborateurs apparaissent ici dès que vous les engagez dans l'onglet Équipe.",
+      "one_off": "Hors distribution",
+      "one_off_empty": "Personne hors distribution",
+      "one_off_empty_desc": "Quelqu'un que la fondation paie sans qu'il se produise ni travaille sur le concert — p. ex. le traducteur des textes du programme.",
+      "add_one_off": "Ajouter"
     },
-    "status": {
-      "confirmed": "Confirmé",
-      "declined": "Refusé",
-      "pending": "En attente"
+    "load_error": {
+      "title": "Le budget n'a pas pu être chargé.",
+      "description": "Le serveur n'a pas répondu. Réessayez dans un moment."
     },
     "summary": {
-      "all_settled": "Réglé",
-      "all_settled_note": "Tous les cachets de ce périmètre sont réglés.",
-      "committed": "Budget des cachets",
-      "outstanding": "À payer",
-      "outstanding_note": "En attente de paiement : {{n}}",
-      "outstanding_note_missing": "{{owed}} en attente de paiement · {{missing}} sans cachet",
-      "paid": "Payés",
-      "priced": "Chiffrés",
-      "scope_portfolio": "Tout le portefeuille"
+      "paid": "Payé",
+      "outstanding": "Reste à payer",
+      "in_kind": "Apport bénévole",
+      "unpriced": "Sans cachet"
     },
-    "toast": {
-      "bulk_applying": "Application d'un cachet commun…",
-      "bulk_error": "Impossible d'appliquer le cachet groupé.",
-      "bulk_success": "{{count}} cachets mis à jour.",
-      "bulk_success_one": "{{count}} honoraire mis à jour.",
-      "bulk_success_few": "{{count}} honoraires mis à jour.",
-      "bulk_success_many": "{{count}} honoraires mis à jour.",
-      "bulk_success_other": "{{count}} honoraires mis à jour.",
-      "payment_error": "Impossible de changer le statut de paiement.",
-      "pdf_error": "Échec de la génération du PDF : {{message}}",
-      "pdf_generating": "Génération du contrat pour {{name}}…",
-      "pdf_success": "Contrat PDF prêt.",
-      "save_error": "Impossible d'enregistrer le cachet pour {{name}}."
+    "overview": {
+      "title": "Budget",
+      "headline": "Coût du projet",
+      "work": "À faire",
+      "work_empty": "Rien n'attend d'être réglé.",
+      "more_names": "et {{count}} de plus",
+      "documents": "Pour le bureau",
+      "csv_hint": "Chaque cachet compté dans le coût : bénéficiaire, forme, numéro de contrat, montants et dates. S'ouvre dans Excel.",
+      "csv": "Règlement (CSV)",
+      "zip_hint": "Contrats émis avec leurs annexes, un PDF par personne : {{count}}.",
+      "zip": "Contrats (ZIP)",
+      "zip_empty": "Le dossier des contrats apparaîtra dès le premier contrat émis dans Cachets."
     },
-    "unknown_artist": "Artiste inconnu",
-    "unknown_collaborator": "Collaborateur inconnu",
-    "unknown_specialty": "Spécialité inconnue",
-    "unknown_voice": "Voix inconnue",
-    "warning": {
-      "action": "Réessayer",
-      "description": "Le tableau de bord fonctionne, mais une source ne s'est pas actualisée. Lancez une synchronisation manuelle.",
-      "title": "Certaines données sont obsolètes."
+    "zip": {
+      "working": "Regroupement des contrats…",
+      "done": "Contrats téléchargés : {{count}}.",
+      "failed": "Le dossier n'a pas pu être préparé",
+      "error": "Le dossier des contrats n'a pas pu être téléchargé."
+    },
+    "portfolio": {
+      "role": "Fondation",
+      "title": "Finances",
+      "loading": "Chargement des règlements…",
+      "projects": "Projets",
+      "projects_empty": "Aucun projet n'a encore de cachets.",
+      "hidden": "Projets sans cachets non affichés : {{count}}.",
+      "cost": "Coût",
+      "cancelled": "annulé",
+      "problems": "problèmes : {{count}}",
+      "work": "à faire : {{count}}",
+      "payables": "Reste à payer",
+      "payables_empty": "La fondation ne doit aucun cachet.",
+      "range": "{{first}}–{{last}} sur {{total}}",
+      "previous": "Précédents",
+      "next": "Suivants",
+      "overdue": "en retard depuis le {{date}}",
+      "due": "échéance le {{date}}"
+    },
+    "export": {
+      "from": "Du",
+      "to": "Au",
+      "action": "Export pour le bureau",
+      "hint": "Cachets comptés dans le coût dont la date de coût (le jour du concert) tombe dans cette période — tous projets confondus.",
+      "range_required": "Indiquez les deux dates.",
+      "range_order": "La date de début est postérieure à la date de fin."
+    },
+    "facts": {
+      "cost": "Coût des cachets",
+      "unpriced": "sans cachet : {{count}} pers."
     }
   },
   "crew": {
@@ -2015,8 +2180,8 @@
         "aria": "Modules du système",
         "artists": "Artistes",
         "artists_hint": "Effectif et voix",
-        "contracts": "Finances",
-        "contracts_hint": "Contrats et règlements",
+        "finance": "Finances",
+        "finance_hint": "Cachets et contrats",
         "locations": "Lieux",
         "locations_hint": "Salles et lieux",
         "projects": "Projets",
@@ -2233,7 +2398,7 @@
         "artist_dashboard": "Tableau de bord Artiste",
         "artists": "Base des Artistes",
         "attendance": "Répétitions et Présences",
-        "contracts": "Contrats et Facturation",
+        "finance": "Finances",
         "crew": "Équipe Technique",
         "locations": "Lieux",
         "materials": "Matériel d'étude",
@@ -2312,16 +2477,6 @@
     },
     "invalid_description": "Nous n'avons pas reconnu ce lien de document. Il peut être malformé ou obsolète.",
     "invalid_title": "Document non pris en charge"
-  },
-  "export": {
-    "actions": {
-      "downloadZip": "Télécharger l'archive ZIP",
-      "generateZip": "Générer l'archive ZIP",
-      "generatingZip": "Préparation du package de contrats"
-    },
-    "status": {
-      "ready": "Package prêt"
-    }
   },
   "errors": {
     "toast": {
@@ -3589,50 +3744,6 @@
     },
     "badge_active": "En préparation",
     "badge_done": "Terminé",
-    "budget": {
-      "estimated_cost": "Coût estimé",
-      "sections": {
-        "summary": "Coûts de personnel",
-        "cast": "Distribution vocale",
-        "crew": "Équipe technique"
-      },
-      "kpi": {
-        "total": "Coût total",
-        "outstanding": "Reste à verser",
-        "cast_fees": "Distribution",
-        "crew_fees": "Équipe",
-        "settled": "Réglé",
-        "missing": "Sans tarif"
-      },
-      "empty": {
-        "cast": "Aucune distribution",
-        "cast_desc": "Les cachets apparaîtront ici dès que vous ajouterez des chanteurs dans l'onglet Distribution.",
-        "crew": "Aucune équipe",
-        "crew_desc": "Les tarifs des collaborateurs apparaîtront ici dès que vous les engagerez dans l'onglet Équipe."
-      },
-      "footer": {
-        "subtotal": "Total",
-        "missing": "{{count}} sans tarif",
-        "settled": "Réglés : {{count}}"
-      },
-      "row": {
-        "fee_aria": "Tarif — {{name}}",
-        "settled": "Réglé — ce tarif ne peut plus être modifié"
-      },
-      "standard_rate": {
-        "label": "Tarif pour tous",
-        "hint": "Écrasera {{count}} postes.",
-        "pending": "Concerne {{count}} postes — enregistrez pour appliquer"
-      },
-      "fab": {
-        "description": "Modifications des tarifs."
-      },
-      "toast": {
-        "saving": "Enregistrement du budget...",
-        "save_success": "Tarifs enregistrés et budget recalculé",
-        "save_error_desc": "Impossible d'enregistrer tous les tarifs."
-      }
-    },
     "call_time": "Convocation :",
     "card": {
       "artistic_dashboard": "Tableau de bord artistique",
@@ -5449,6 +5560,7 @@
     },
     "datetime": {
       "placeholder": "Choisissez une date et une heure",
+      "placeholder_date": "Choisissez une date",
       "time": "Heure",
       "hours": "Heures",
       "minutes": "Minutes",
@@ -5459,7 +5571,8 @@
       "previous_year": "Année précédente",
       "next_year": "Année suivante",
       "today": "Aujourd'hui",
-      "done": "Terminé"
+      "done": "Terminé",
+      "date": "Date"
     }
   },
   "voice_types": {

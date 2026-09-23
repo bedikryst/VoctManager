@@ -38,7 +38,6 @@ import type {
   PieceCastingBoardsDTO,
   ProgramItemCreateDTO,
   ProgramItemUpdateDTO,
-  ProjectBulkFeeDTO,
   ProjectCreateDTO,
   ProjectUpdateDTO,
   RehearsalCreateDTO,
@@ -907,28 +906,6 @@ export const ProjectService = {
 
   deleteCrewAssignment: async (id: string | number): Promise<void> => {
     await api.delete(`${CREW_ASSIGNMENTS_BASE_URL}${id}/`);
-  },
-
-  /**
-   * One standard rate across a whole project, in a single statement rather than
-   * one PATCH per person. The server excludes rows it must not rewrite —
-   * settled fees on both sides, and singers who declined — so the count that
-   * comes back is what was actually repriced, not what was asked for.
-   */
-  applyBulkCastFee: async (data: ProjectBulkFeeDTO): Promise<number> => {
-    const response = await api.patch<{ updated_count: number }>(
-      `${PARTICIPATIONS_BASE_URL}bulk-fee/`,
-      data,
-    );
-    return response.data.updated_count;
-  },
-
-  applyBulkCrewFee: async (data: ProjectBulkFeeDTO): Promise<number> => {
-    const response = await api.patch<{ updated_count: number }>(
-      `${CREW_ASSIGNMENTS_BASE_URL}bulk-fee/`,
-      data,
-    );
-    return response.data.updated_count;
   },
 
   getProgramByProject: async (

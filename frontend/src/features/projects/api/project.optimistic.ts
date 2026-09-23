@@ -90,7 +90,6 @@ export const buildOptimisticParticipation = (
   artist: data.artist,
   project: data.project,
   status: data.status,
-  fee: data.fee ?? null,
 });
 
 export const buildOptimisticCrewAssignment = (
@@ -102,7 +101,6 @@ export const buildOptimisticCrewAssignment = (
   project: data.project,
   role_description: data.role_description ?? "",
   status: data.status ?? "INV",
-  fee: data.fee ?? null,
 });
 
 export const buildOptimisticProgramItem = (

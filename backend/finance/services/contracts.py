@@ -14,7 +14,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
 
-from roster.models import CrewAssignment, Participation
+from roster.models import Participation
 
 from ..dtos import SignContractDTO
 from ..exceptions import ContractAnnulled, ContractExists, ContractRefused, HoursNotApplicable, SeatNotBillable
@@ -41,15 +41,6 @@ def _next_number(form: str, year: int) -> str:
     sequence.last_number += 1
     sequence.save(update_fields=["last_number"])
     return contract_number(form, sequence.last_number, year)
-
-
-def live_contract_for(source: Participation | CrewAssignment) -> Contract | None:
-    """The issued or signed contract of a cast seat's or crew assignment's fee,
-    if one exists — at most one can (a partial unique constraint)."""
-    contracts = Contract.objects.filter(cost_item__is_deleted=False).exclude(status=ContractStatus.ANNULLED)
-    if isinstance(source, Participation):
-        return contracts.filter(cost_item__participation=source).first()
-    return contracts.filter(cost_item__crew_assignment=source).first()
 
 
 def _locked_contract(contract: Contract) -> Contract:

@@ -240,10 +240,11 @@ PARTICIPATION_UNIQUENESS = [
 ]
 
 
-class ParticipationBasicSerializer(serializers.ModelSerializer):
+class ParticipationSerializer(serializers.ModelSerializer):
     """
-    Contract configuration safe for general cast consumption.
-    Strictly omits the financial payload ('fee').
+    One seat in a project's cast, the same for a manager and for the singer who
+    holds it. It carries no money: fees, payments and contracts live in the
+    finance ledger, which is manager-only and never embedded in roster payloads.
     """
     artist_name = serializers.CharField(source='artist.__str__', read_only=True)
     project_name = serializers.CharField(source='project.title', read_only=True)
@@ -255,20 +256,7 @@ class ParticipationBasicSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Participation
-        exclude = ('fee',)
-        validators = PARTICIPATION_UNIQUENESS
-
-class ParticipationDetailedSerializer(ParticipationBasicSerializer):
-    """
-    Privileged contract configuration including financial metrics for Management.
-    Settlement fields (`paid_at`, `is_paid`) are read-only here so the only path
-    that mutates them is the dedicated `payment` action, which keeps `paid_at`
-    consistent with `is_paid`.
-    """
-    class Meta:
-        model = Participation
         fields = '__all__'
-        read_only_fields = ('is_paid', 'paid_at')
         validators = PARTICIPATION_UNIQUENESS
 
 # --- 3. PROJECT & REHEARSAL SERIALIZERS ---
@@ -999,11 +987,11 @@ class CollaboratorSerializer(CollaboratorBasicSerializer):
             data['email'] = None
         return super().to_internal_value(data)
 
-class CrewAssignmentBasicSerializer(serializers.ModelSerializer):
+class CrewAssignmentSerializer(serializers.ModelSerializer):
     """
-    Crew booking without the financial payload. Surfaces the collaborator's
-    display name and specialty (non-sensitive) so any authenticated user can see
-    who is on a project's team, while `fee` / `is_paid` / `paid_at` stay hidden.
+    One crew booking. Surfaces the collaborator's display name and specialty
+    (non-sensitive) so any authenticated user can see who is on a project's
+    team. It carries no money — the crew's fees live in the finance ledger.
     """
     collaborator_name = serializers.CharField(source='collaborator.__str__', read_only=True)
     collaborator_specialty_display = serializers.CharField(
@@ -1012,21 +1000,7 @@ class CrewAssignmentBasicSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CrewAssignment
-        exclude = ('fee', 'is_paid', 'paid_at')
-
-
-class CrewAssignmentSerializer(CrewAssignmentBasicSerializer):
-    """
-    Privileged crew booking for the settlement workspace, including financial
-    metrics. Settlement fields (`paid_at`, `is_paid`) are read-only — they are
-    mutated only by the dedicated `payment` action so `paid_at` stays consistent
-    with `is_paid`.
-    """
-
-    class Meta:
-        model = CrewAssignment
         fields = '__all__'
-        read_only_fields = ('is_paid', 'paid_at')
 
 
 class RehearsalDelegateSerializer(serializers.ModelSerializer):

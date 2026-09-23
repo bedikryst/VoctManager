@@ -68,8 +68,13 @@ const IDB_KEY = "client";
  * 2026-09-stand-whole-page: editions gained `stand_whole_page`. A snapshot
  * without it opens a one-system-per-page score in the two-thirds fit, which
  * cuts the system on every screen — offline, on stage, until a fetch lands.
+ *
+ * 2026-09-ledger-only-fees: cast seats and crew bookings no longer carry `fee`,
+ * `is_paid` or `paid_at`; the finance ledger holds every fee. A snapshot from
+ * before would keep money figures on the device that the server stopped
+ * sending and no surface reads.
  */
-export const QUERY_CACHE_BUSTER = "2026-09-stand-whole-page";
+export const QUERY_CACHE_BUSTER = "2026-09-ledger-only-fees";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

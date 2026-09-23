@@ -44,6 +44,12 @@ export interface EditorActionBarProps {
   formId?: string;
   /** Disables both buttons and shows a spinner on confirm. */
   isLoading?: boolean;
+  /**
+   * Disables confirm alone, for a save that cannot happen right now (offline,
+   * where the surface never queues). The `description` must then say why — a
+   * disabled save that does not name its reason is a dead end.
+   */
+  isConfirmDisabled?: boolean;
   /** Optional extra class for the bar wrapper. */
   className?: string;
 }
@@ -62,6 +68,7 @@ export const EditorActionBar = ({
   confirmIcon,
   formId,
   isLoading = false,
+  isConfirmDisabled = false,
   className,
 }: EditorActionBarProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -133,7 +140,7 @@ export const EditorActionBar = ({
                 variant="primary"
                 size="sm"
                 onClick={formId ? undefined : onConfirm}
-                disabled={isLoading}
+                disabled={isLoading || isConfirmDisabled}
                 isLoading={isLoading}
                 leftIcon={
                   isLoading

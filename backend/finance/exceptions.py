@@ -95,12 +95,6 @@ class HoursNotApplicable(FinanceError):
     default_message = "Hours are confirmed for a contract of mandate only."
 
 
-class ContractNotIssued(FinanceError):
-    code = "contract_not_issued"
-    default_message = "No contract has been issued for this fee; issue one before printing it."
-    status_code = 409
-
-
 class BillNotApplicable(FinanceError):
     code = "bill_not_applicable"
     default_message = "A bill belongs to a contract for a specific work or of mandate; volunteer work has none."

@@ -284,10 +284,6 @@ export interface Participation extends BaseModel {
    * endpoint, which sends a whole section at once.
    */
   section_rank?: number | null;
-  fee?: string | number | null;
-  // Settlement state — mutated only through the dedicated `payment` action.
-  is_paid?: boolean;
-  paid_at?: string | null;
   artist_name?: string;
   project_name?: string;
   /** Raw code, for rules; the display beside it is for reading. */
@@ -458,10 +454,6 @@ export interface CrewAssignment {
   project: string;
   role_description?: string;
   status: CrewAssignmentStatus;
-  fee?: string | number | null;
-  // Settlement state — mutated only through the dedicated `payment` action.
-  is_paid?: boolean;
-  paid_at?: string | null;
   collaborator_name?: string;
   collaborator_specialty_display?: string;
 }

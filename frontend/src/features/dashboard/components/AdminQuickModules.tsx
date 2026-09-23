@@ -10,9 +10,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
+  Banknote,
   Briefcase,
   CalendarCheck,
-  FileText,
   MapPin,
   Music,
   Users,
@@ -63,11 +63,11 @@ export const AdminQuickModules = (): React.JSX.Element => {
       hint: t("dashboard.admin.quick.archive_hint", "Nuty i utwory"),
     },
     {
-      to: "/panel/contracts",
-      Icon: FileText,
+      to: "/panel/finance",
+      Icon: Banknote,
       accent: "gold",
-      label: t("dashboard.admin.quick.contracts", "Finanse"),
-      hint: t("dashboard.admin.quick.contracts_hint", "Umowy i rozliczenia"),
+      label: t("dashboard.admin.quick.finance", "Finanse"),
+      hint: t("dashboard.admin.quick.finance_hint", "Honoraria i umowy"),
     },
     {
       to: "/panel/locations",

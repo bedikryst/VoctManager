@@ -1624,172 +1624,337 @@
     "no_phone": "Brak telefonu",
     "specialty_other": "Inne"
   },
-  "contracts": {
-    "bulk": {
-      "apply": "Zastosuj",
-      "hint": "Ustawia jedną stawkę dla wybranej grupy (pomija już zapłacone).",
-      "label": "Stawka",
-      "placeholder": "np. 500",
-      "target_label": "Stawka zbiorcza dla"
+  "finance": {
+    "nav": {
+      "overview": "Przegląd",
+      "people": "Honoraria",
+      "aria": "Sekcje budżetu"
     },
-    "csv": {
-      "amount": "Kwota (PLN)",
-      "done": "Wyeksportowano listę rozliczeń.",
-      "event_date": "Data wydarzenia",
-      "export": "Eksport CSV",
-      "hint": "Pełna lista rozliczeń do księgowości (CSV)",
-      "kind": "Typ",
-      "no": "Nie",
-      "paid": "Zapłacono",
-      "paid_date": "Data płatności",
-      "person": "Osoba",
-      "project": "Projekt",
-      "role": "Rola",
-      "status": "Status",
-      "yes": "Tak"
+    "forms": {
+      "DZIELO": "Umowa o dzieło",
+      "ZLECENIE": "Umowa zlecenia",
+      "INVOICE": "Faktura",
+      "VOLUNTEER": "Wolontariat",
+      "OTHER": "Inna forma"
     },
-    "empty": {
-      "no_personnel_description": "Najpierw przypisz osoby w panelu projektu. Gdy pojawią się tutaj rekordy, ustalisz honoraria, oznaczysz płatności i wygenerujesz umowy PDF.",
-      "no_personnel_eyebrow": "Brak obsady",
-      "no_personnel_title": "Ten projekt nie ma przypisanej obsady ani ekipy."
+    "forms_short": {
+      "DZIELO": "Dzieło",
+      "ZLECENIE": "Zlecenie",
+      "INVOICE": "Faktura",
+      "VOLUNTEER": "Wolontariat",
+      "OTHER": "Inna"
     },
-    "error": {
-      "action": "Ponów synchronizację",
-      "description": "Dane projektów, obsady lub ekipy nie dotarły z serwera. Spróbuj zsynchronizować ponownie.",
-      "eyebrow": "Brak danych",
-      "title": "Nie udało się wczytać rozliczeń."
+    "categories": {
+      "PERSONNEL_ARTISTIC": "Personel artystyczny",
+      "PERSONNEL_TECHNICAL": "Personel techniczny",
+      "VENUE": "Miejsce",
+      "TRAVEL": "Podróże",
+      "ACCOMMODATION": "Noclegi",
+      "CATERING": "Wyżywienie",
+      "MATERIALS": "Materiały i prawa",
+      "EQUIPMENT": "Sprzęt",
+      "PROMOTION": "Promocja",
+      "RECORDING": "Nagranie",
+      "ADMINISTRATION": "Administracja",
+      "OTHER": "Inne"
     },
-    "filters": {
-      "all": "Wszyscy",
-      "all_short": "Wszystko",
-      "aria": "Filtr rozliczeń",
-      "unpaid": "Do zapłaty",
-      "unpriced": "Bez wyceny"
+    "budget_status": {
+      "PLANNING": "Planowanie",
+      "APPROVED": "Zatwierdzony",
+      "CLOSED": "Zamknięty"
     },
-    "header": {
-      "badge": "Operacje finansowe",
-      "mix": "{{cast}} obsada · {{crew}} ekipa",
-      "refresh": "Odśwież",
-      "syncing": "Synchronizacja",
-      "title": "Centrum",
-      "title_highlight": "Rozliczeń"
+    "warnings": {
+      "PAID_FOR_DECLINED": {
+        "title": "Wypłacone mimo odmowy udziału",
+        "hint": "Osoba odmówiła udziału, a jej honorarium jest oznaczone jako wypłacone. Sprawdź to z biurem."
+      },
+      "BELOW_MINIMUM_HOURLY_RATE": {
+        "title": "Poniżej minimalnej stawki godzinowej",
+        "hint": "Kwota umowy zlecenia podzielona przez potwierdzone godziny jest niższa niż stawka minimalna ({{minimum}} zł za godzinę w {{year}} r.)."
+      },
+      "UNPRICED": {
+        "title": "Bez stawki",
+        "hint": "Wpisz kwotę albo wybierz wolontariat — dopiero wtedy koszt koncertu jest pełny."
+      },
+      "ORPHANED_FEE": {
+        "title": "Poza obsadą, niewypłacone",
+        "hint": "Tych osób nie ma już w obsadzie. Ich honoraria nie wliczają się do kosztu."
+      },
+      "EMPLOYER_COST_MISSING": {
+        "title": "Brak składek pracodawcy",
+        "hint": "Umowa zlecenia liczy się bez składek, dopóki biuro ich nie poda. Wpisz je w szczegółach pozycji."
+      },
+      "HOURS_MISSING": {
+        "title": "Brak potwierdzonych godzin",
+        "hint": "Koncert się odbył. Wpisz godziny z potwierdzenia, zanim biuro wypłaci zlecenie."
+      },
+      "VOLUNTEER_INSURANCE": {
+        "title": "Ubezpieczenie NNW wolontariuszy",
+        "hint": "Porozumienie trwa nie dłużej niż 30 dni, więc fundacja musi ubezpieczyć wolontariusza od następstw nieszczęśliwych wypadków."
+      },
+      "NOT_SIGNED": {
+        "title": "Umowy niepodpisane",
+        "hint": "Koncert się odbył. Oznacz umowy jako podpisane i zapisz, gdzie leży egzemplarz."
+      },
+      "DOCUMENT_MISSING": {
+        "title": "Brak dokumentu przed koncertem",
+        "hint": "Do koncertu zostało kilka dni. Wystaw umowę albo wpisz numer faktury."
+      },
+      "PAID_WITHOUT_DOCUMENT": {
+        "title": "Wypłacone bez umowy w panelu",
+        "hint": "Jeśli umowa istnieje na papierze, wystaw ją także tutaj — ewidencja musi się zgadzać."
+      },
+      "PAYMENT_OVERDUE": {
+        "title": "Po terminie płatności",
+        "hint": "Termin minął, a honorarium nie jest oznaczone jako wypłacone."
+      },
+      "unknown": {
+        "title": "Wymaga uwagi",
+        "hint": "Sprawdź wskazane pozycje."
+      }
     },
-    "ledger": {
-      "col_actions": "Rozliczenie",
-      "col_fee": "Honorarium",
-      "col_person": "Osoba",
-      "col_role": "Rola",
-      "empty_filter": "Brak pozycji dla wybranego filtra.",
-      "missing": "{{n}} bez wyceny",
-      "owed": "{{n}} do zapłaty"
+    "errors": {
+      "budget_locked": "Budżet jest zamknięty. Zarząd musi go najpierw otworzyć.",
+      "unknown_fee_reference": "Tej pozycji nie ma już w projekcie. Odśwież stronę.",
+      "seat_not_billable": "Tej osoby nie ma w obsadzie albo odmówiła udziału, więc nie można jej wycenić.",
+      "item_paid": "Pozycja jest wypłacona. Kwoty ani formy nie można zmienić bez cofnięcia płatności.",
+      "item_contracted": "Umowa jest wystawiona. Kwota i forma są zamrożone do jej unieważnienia.",
+      "invalid_item_change": "Tego pola nie można zmienić w tej pozycji.",
+      "payment_refused": "Nie wszystkie zaznaczone pozycje można oznaczyć jako wypłacone. Nic nie zostało zmienione.",
+      "not_paid": "Ta pozycja nie jest oznaczona jako wypłacona.",
+      "contract_refused": "Dla tej pozycji nie można wystawić umowy.",
+      "contract_exists": "Ta pozycja ma już wystawioną umowę.",
+      "contract_annulled": "Ta umowa jest unieważniona.",
+      "hours_not_applicable": "Godziny potwierdza się tylko w umowie zlecenia.",
+      "bill_not_applicable": "Do porozumienia wolontariackiego nie wystawia się rachunku.",
+      "pdf_renderer_unavailable": "Serwer nie może teraz przygotować dokumentu. Spróbuj za chwilę.",
+      "no_contracts": "Projekt nie ma jeszcze żadnej wystawionej umowy.",
+      "zip_failed": "Nie udało się spakować umów. Spróbuj ponownie.",
+      "zip_timeout": "Pakowanie umów trwa zbyt długo. Spróbuj ponownie za kilka minut."
     },
-    "loader": {
-      "message": "Wczytuję rejestry rozliczeń…"
-    },
-    "mark_all": {
-      "applying": "Oznaczam honoraria jako zapłacone…",
-      "button": "Oznacz zapłacone",
-      "confirm_cta": "Oznacz zapłacone",
-      "confirm_desc": "Zostanie oznaczonych {{count}} wycenionych, niezapłaconych honorariów (obsada i ekipa). Możesz cofnąć każde pojedynczo.",
-      "confirm_desc_one": "Zostanie oznaczonych {{count}} wycenionych, niezapłaconych honorariów (obsada i ekipa). Możesz cofnąć każde pojedynczo.",
-      "confirm_desc_few": "Zostanie oznaczonych {{count}} wycenionych, niezapłaconych honorariów (obsada i ekipa). Możesz cofnąć każde pojedynczo.",
-      "confirm_desc_many": "Zostanie oznaczonych {{count}} wycenionych, niezapłaconych honorariów (obsada i ekipa). Możesz cofnąć każde pojedynczo.",
-      "confirm_desc_other": "Zostanie oznaczonych {{count}} wycenionych, niezapłaconych honorariów (obsada i ekipa). Możesz cofnąć każde pojedynczo.",
-      "confirm_title": "Oznaczyć cały projekt jako zapłacony?",
-      "done": "Oznaczono {{count}} honorariów jako zapłacone.",
-      "done_one": "Oznaczono {{count}} honorariów jako zapłacone.",
-      "done_few": "Oznaczono {{count}} honorariów jako zapłacone.",
-      "done_many": "Oznaczono {{count}} honorariów jako zapłacone.",
-      "done_other": "Oznaczono {{count}} honorariów jako zapłacone.",
-      "hint": "Oznacza wszystkie wycenione, niezapłacone honoraria w projekcie jako zapłacone.",
-      "partial": "Oznaczono {{ok}} z {{total}} — {{failed}} nie powiodło się."
-    },
-    "payables": {
-      "clear_desc": "Żaden projekt nie ma otwartych wycen ani zaległych wypłat. Wybierz projekt z lewej, aby przejrzeć szczegóły lub wygenerować umowy.",
-      "clear_eyebrow": "Czysto",
-      "clear_title": "Wszystkie honoraria są rozliczone.",
-      "none_in_filter": "Brak pozycji w tym filtrze.",
-      "open": "Otwórz w projekcie",
-      "open_short": "Wyceń",
-      "paid_toast": "Oznaczono {{name}} jako zapłacone.",
-      "pay": "Zapłacone",
-      "title": "Do rozliczenia",
-      "unpriced": "Brak wyceny"
-    },
-    "project_status": {
-      "active": "Aktywny",
-      "archived": "Zarchiwizowany",
-      "cancelled": "Anulowany",
-      "draft": "Szkic"
-    },
-    "rail": {
-      "all_clear": "Wszystko rozliczone",
-      "all_outstanding": "{{n}} z zaległościami",
-      "all_projects": "Wszystkie projekty",
-      "empty": "brak obsady",
-      "missing": "{{n}} bez wyceny",
-      "mix": "{{cast}} obsada · {{crew}} ekipa",
-      "no_match": "Brak projektów dla tego zapytania.",
-      "search": "Szukaj projektu…",
-      "title": "Projekty"
+    "offline": {
+      "act": "Brak połączenia. Rozliczeń nie zapisuje się offline — wróć do sieci, aby to zrobić.",
+      "short": "Brak połączenia — rozliczeń nie zapisuje się offline."
     },
     "row": {
-      "currency": "PLN",
-      "download_pdf": "Pobierz umowę PDF",
-      "fee_aria": "Honorarium dla {{name}}",
-      "fee_placeholder": "0,00",
-      "invalid_fee": "Podaj poprawną kwotę.",
-      "mark_paid": "Oznacz jako zapłacone",
-      "mark_unpaid": "Cofnij oznaczenie zapłaty",
-      "paid": "Zapłacone",
-      "paid_on": "Zapłacono {{date}}",
-      "pay_blocked": "Najpierw wyceń honorarium",
-      "pdf_blocked": "Wycena odblokuje umowę PDF",
-      "save": "Zapisz honorarium",
-      "to_pay": "Do zapłaty"
+      "paid_for_declined": "odmowa udziału — wypłacone",
+      "orphaned": "poza obsadą — nie wlicza się do kosztu",
+      "signed": "podpisana",
+      "unsigned": "niepodpisana",
+      "paid_on": "wypłacone {{date}}",
+      "unpaid": "niewypłacone",
+      "locked_by_contract": "Kwota zamrożona umową {{number}}",
+      "select_aria": "Zaznacz — {{name}}",
+      "unknown_payee": "Osoba bez nazwiska",
+      "amount_aria": "Kwota — {{name}}"
     },
-    "sections": {
+    "standard_rate": {
+      "label": "Stawka dla wszystkich",
+      "pending": "Obejmie poz.: {{count}} — zapisz, aby zastosować",
+      "hint": "Nadpisze poz.: {{count}}"
+    },
+    "acts": {
+      "menu_aria": "Działania — {{name}}",
+      "form": "Forma rozliczenia",
+      "details": "Szczegóły pozycji",
+      "details_hint": "Termin, dokument, składki, uwagi",
+      "issue": "Wystaw umowę",
+      "download_contract": "Pobierz umowę",
+      "download_bill": "Pobierz rachunek",
+      "sign": "Oznacz jako podpisaną",
+      "hours": "Potwierdź godziny",
+      "hours_current": "Potwierdzono: {{hours}} godz.",
+      "pay": "Oznacz jako wypłacone",
+      "unpay": "Cofnij wypłatę",
+      "annul": "Unieważnij umowę",
+      "board_only": "Cofnięcie wypłaty i unieważnienie umowy należą do zarządu.",
+      "blocked_by_draft": "Najpierw zapisz albo odrzuć zmianę stawki."
+    },
+    "pay": {
+      "title": "Oznacz jako wypłacone",
+      "subtitle": "Pozycje: {{count}}",
+      "date": "Data zapłaty",
+      "date_required": "Podaj datę zapłaty.",
+      "date_future": "Data zapłaty nie może być w przyszłości.",
+      "note": "Wpisz dzień, w którym biuro wysłało przelew. Wypłaty nie zmienisz już w kwocie ani formie — cofnąć ją może tylko zarząd.",
+      "confirm": "Oznacz wypłatę",
+      "done": "Oznaczono jako wypłacone: {{count}} poz.",
+      "error": "Nie udało się oznaczyć wypłaty."
+    },
+    "reason": {
+      "label": "Powód",
+      "required": "Podaj powód — trafi do historii budżetu."
+    },
+    "unpay": {
+      "title": "Cofnij wypłatę",
+      "description": "Pozycja wróci do niewypłaconych i znów będzie można zmienić jej kwotę. Wypłata zostaje w historii razem z powodem.",
+      "confirm": "Cofnij wypłatę",
+      "done": "Cofnięto wypłatę.",
+      "error": "Nie udało się cofnąć wypłaty."
+    },
+    "annul": {
+      "title": "Unieważnij umowę",
+      "description": "Numer umowy nie wróci do puli. Po unieważnieniu można zmienić kwotę i wystawić nową umowę.",
+      "confirm": "Unieważnij",
+      "done": "Umowa unieważniona.",
+      "error": "Nie udało się unieważnić umowy."
+    },
+    "sign": {
+      "title": "Umowa podpisana",
+      "date": "Data na umowie",
+      "date_required": "Podaj datę z podpisanej umowy.",
+      "date_future": "Data podpisania nie może być w przyszłości.",
+      "location": "Gdzie leży egzemplarz",
+      "location_placeholder": "np. segregator 2026, link do Dysku",
+      "confirm": "Zapisz podpis",
+      "done": "Umowa oznaczona jako podpisana.",
+      "error": "Nie udało się zapisać podpisu."
+    },
+    "hours": {
+      "title": "Potwierdzone godziny",
+      "label": "Liczba godzin",
+      "invalid": "Podaj liczbę godzin większą od zera.",
+      "note": "Liczba z potwierdzenia godzin podpisanego przez zleceniobiorcę. Bez niej nie sprawdzisz minimalnej stawki godzinowej.",
+      "confirm": "Zapisz godziny",
+      "done": "Zapisano potwierdzone godziny.",
+      "error": "Nie udało się zapisać godzin."
+    },
+    "one_off": {
+      "title": "Osoba spoza obsady",
+      "description": "Tylko dla kogoś, kogo fundacja opłaca, a kto nie występuje ani nie pracuje przy koncercie. Muzyka lub technika dodaj w zakładce Obsada albo Ekipa — wtedy trafi też na kartę dnia.",
+      "name": "Imię i nazwisko lub nazwa",
+      "name_required": "Podaj imię i nazwisko albo nazwę.",
+      "role": "Za co",
+      "role_placeholder": "np. tłumaczenie tekstów programu",
+      "side": "Rodzaj kosztu",
+      "form": "Forma rozliczenia",
+      "amount": "Kwota (PLN)",
+      "amount_invalid": "To nie jest kwota.",
+      "confirm": "Dodaj",
+      "done": "Dodano {{name}}.",
+      "error": "Nie udało się dodać osoby."
+    },
+    "details": {
+      "title": "Szczegóły pozycji",
+      "contributions": "Składki pracodawcy (PLN)",
+      "in_kind": "Wycena pracy wolontariusza",
+      "in_kind_hours": "Godziny",
+      "in_kind_rate": "Stawka za godzinę (PLN)",
+      "in_kind_note": "To nie koszt: wycena służy jako wkład osobowy we wniosku o grant.",
+      "document_number": "Numer faktury",
+      "document_date": "Data faktury",
+      "vendor_nip": "NIP wystawcy",
+      "due_on": "Termin płatności",
+      "note": "Uwagi",
+      "not_amount": "To nie jest kwota.",
+      "hours_positive": "Liczba godzin musi być większa od zera.",
+      "nip_invalid": "To nie jest poprawny NIP.",
+      "done": "Zapisano szczegóły pozycji.",
+      "error": "Nie udało się zapisać szczegółów."
+    },
+    "selection": {
+      "aria": "Działania na zaznaczonych",
+      "count": "Zaznaczono: {{count}}",
+      "issue": "Wystaw umowy ({{count}})",
+      "pay": "Oznacz wypłacone ({{count}})",
+      "clear": "Odznacz"
+    },
+    "ledger": {
+      "people": "{{count}} os.",
+      "unpriced": "Bez stawki: {{count}}"
+    },
+    "draft": {
+      "description": "Zmiany stawek. Wystawianie umów i wypłaty poczekają na zapis.",
+      "invalid_title": "Popraw kwoty",
+      "invalid_description": "Pola zaznaczone na czerwono nie zawierają kwoty. Popraw je albo wyczyść.",
+      "saving": "Zapisuję stawki…",
+      "saved": "Zapisano stawki i przeliczono budżet.",
+      "save_error": "Nie udało się zapisać stawek. Nic nie zostało zmienione."
+    },
+    "issue": {
+      "working": "Wystawiam umowy…",
+      "done_one": "Wystawiono umowę: {{name}}.",
+      "done_many": "Wystawiono umowy: {{count}}.",
+      "partial": "Wystawione umowy: {{done}} z {{total}}. Pozostałe czekają.",
+      "error": "Nie udało się wystawić umowy."
+    },
+    "download": {
+      "error": "Nie udało się pobrać dokumentu."
+    },
+    "fees": {
+      "title": "Honoraria",
+      "headline": "Koszt honorariów",
+      "preview_note": "Podgląd: tak będzie po zapisaniu zmian.",
       "cast": "Obsada",
-      "crew": "Ekipa"
+      "cast_empty": "Brak obsady",
+      "cast_empty_desc": "Honoraria pojawią się tutaj, gdy dodasz muzyków w zakładce Obsada.",
+      "crew": "Ekipa",
+      "crew_empty": "Brak ekipy",
+      "crew_empty_desc": "Stawki współpracowników pojawią się tutaj, gdy zatrudnisz ich w zakładce Ekipa.",
+      "one_off": "Spoza obsady",
+      "one_off_empty": "Nikt spoza obsady",
+      "one_off_empty_desc": "Ktoś, komu fundacja płaci, choć nie występuje ani nie pracuje przy koncercie — np. tłumacz tekstów programu.",
+      "add_one_off": "Dodaj osobę"
     },
-    "status": {
-      "confirmed": "Potwierdzony",
-      "declined": "Odrzucony",
-      "pending": "Oczekuje"
+    "load_error": {
+      "title": "Nie udało się wczytać budżetu.",
+      "description": "Serwer nie odpowiedział. Spróbuj ponownie za chwilę."
     },
     "summary": {
-      "all_settled": "Rozliczono",
-      "all_settled_note": "Wszystkie honoraria w tym zakresie są rozliczone.",
-      "committed": "Budżet honorariów",
-      "outstanding": "Do zapłaty",
-      "outstanding_note": "Oczekujących wypłat: {{n}}",
-      "outstanding_note_missing": "{{owed}} osób oczekuje na wypłatę · {{missing}} bez wyceny",
-      "paid": "Zapłacone",
-      "priced": "Wycenione",
-      "scope_portfolio": "Całe portfolio"
+      "paid": "Wypłacone",
+      "outstanding": "Do wypłaty",
+      "in_kind": "Wkład wolontariuszy",
+      "unpriced": "Bez stawki"
     },
-    "toast": {
-      "bulk_applying": "Ustawiam wspólną stawkę…",
-      "bulk_error": "Nie udało się ustawić zbiorczej stawki.",
-      "bulk_success": "Zaktualizowano {{count}} honorariów.",
-      "bulk_success_one": "Zaktualizowano {{count}} honorariów.",
-      "bulk_success_few": "Zaktualizowano {{count}} honorariów.",
-      "bulk_success_many": "Zaktualizowano {{count}} honorariów.",
-      "bulk_success_other": "Zaktualizowano {{count}} honorariów.",
-      "payment_error": "Nie udało się zmienić statusu płatności.",
-      "pdf_error": "Nie udało się wygenerować PDF: {{message}}",
-      "pdf_generating": "Generuję umowę dla {{name}}…",
-      "pdf_success": "Umowa PDF gotowa.",
-      "save_error": "Nie udało się zapisać honorarium dla {{name}}."
+    "overview": {
+      "title": "Budżet",
+      "headline": "Koszt projektu",
+      "work": "Do zrobienia",
+      "work_empty": "Nic nie czeka na rozliczenie.",
+      "more_names": "i jeszcze {{count}}",
+      "documents": "Dla biura",
+      "csv_hint": "Każde honorarium wliczone w koszt: odbiorca, forma, numer umowy, kwoty i daty. Otwiera się w Excelu.",
+      "csv": "Rozliczenie (CSV)",
+      "zip_hint": "Wystawione umowy z aneksami, po jednym PDF na osobę: {{count}}.",
+      "zip": "Umowy (ZIP)",
+      "zip_empty": "Paczka umów pojawi się, gdy wystawisz pierwszą umowę w Honorariach."
     },
-    "unknown_artist": "Nieznany artysta",
-    "unknown_collaborator": "Nieznany współpracownik",
-    "unknown_specialty": "Nieznana specjalność",
-    "unknown_voice": "Nieznany głos",
-    "warning": {
-      "action": "Ponów",
-      "description": "Pulpit działa, ale jedno ze źródeł nie odświeżyło się. Uruchom ręczną synchronizację.",
-      "title": "Część danych jest nieaktualna."
+    "zip": {
+      "working": "Pakuję umowy…",
+      "done": "Pobrano umowy: {{count}}.",
+      "failed": "Nie udało się przygotować paczki",
+      "error": "Nie udało się pobrać paczki umów."
+    },
+    "portfolio": {
+      "role": "Fundacja",
+      "title": "Finanse",
+      "loading": "Wczytuję rozliczenia…",
+      "projects": "Projekty",
+      "projects_empty": "Żaden projekt nie ma jeszcze honorariów.",
+      "hidden": "Pominięto projekty bez honorariów: {{count}}.",
+      "cost": "Koszt",
+      "cancelled": "odwołany",
+      "problems": "problemy: {{count}}",
+      "work": "do zrobienia: {{count}}",
+      "payables": "Do zapłaty",
+      "payables_empty": "Fundacja nie zalega z żadnym honorarium.",
+      "range": "{{first}}–{{last}} z {{total}}",
+      "previous": "Wcześniejsze",
+      "next": "Dalsze",
+      "overdue": "po terminie {{date}}",
+      "due": "termin {{date}}"
+    },
+    "export": {
+      "from": "Od",
+      "to": "Do",
+      "action": "Eksport dla biura",
+      "hint": "Honoraria wliczone w koszt, których data kosztu (dzień koncertu) wypada w tym okresie — ze wszystkich projektów.",
+      "range_required": "Podaj obie daty.",
+      "range_order": "Data początkowa jest późniejsza niż końcowa."
+    },
+    "facts": {
+      "cost": "Koszt honorariów",
+      "unpriced": "bez stawki: {{count}} os."
     }
   },
   "crew": {
@@ -2034,8 +2199,8 @@
         "aria": "Moduły systemu",
         "artists": "Artyści",
         "artists_hint": "Skład i głosy",
-        "contracts": "Finanse",
-        "contracts_hint": "Umowy i rozliczenia",
+        "finance": "Finanse",
+        "finance_hint": "Honoraria i umowy",
         "locations": "Lokalizacje",
         "locations_hint": "Sale i miejsca",
         "projects": "Projekty",
@@ -2252,7 +2417,7 @@
         "artist_dashboard": "Pulpit Artysty",
         "artists": "Baza Artystów",
         "attendance": "Próby i Obecności",
-        "contracts": "Umowy i Rozliczenia",
+        "finance": "Finanse",
         "crew": "Ekipa Techniczna",
         "locations": "Lokalizacje",
         "materials": "Materiały Ćwiczeniowe",
@@ -2331,16 +2496,6 @@
     },
     "invalid_description": "Nie rozpoznaliśmy tego linku do dokumentu. Może być uszkodzony lub nieaktualny.",
     "invalid_title": "Nieobsługiwany dokument"
-  },
-  "export": {
-    "actions": {
-      "downloadZip": "Pobierz archiwum ZIP",
-      "generateZip": "Generuj archiwum ZIP",
-      "generatingZip": "Przygotowanie pakietu umów"
-    },
-    "status": {
-      "ready": "Pakiet gotowy"
-    }
   },
   "errors": {
     "toast": {
@@ -3617,50 +3772,6 @@
     },
     "badge_active": "W przygotowaniu",
     "badge_done": "Zrealizowano",
-    "budget": {
-      "estimated_cost": "Przewidywany koszt",
-      "sections": {
-        "summary": "Koszty osobowe",
-        "cast": "Obsada wokalna",
-        "crew": "Ekipa techniczna"
-      },
-      "kpi": {
-        "total": "Suma kosztów",
-        "outstanding": "Do wypłaty",
-        "cast_fees": "Obsada",
-        "crew_fees": "Ekipa",
-        "settled": "Rozliczone",
-        "missing": "Bez stawki"
-      },
-      "empty": {
-        "cast": "Brak obsady",
-        "cast_desc": "Honoraria pojawią się tutaj, gdy dodasz śpiewaków w zakładce Obsada.",
-        "crew": "Brak ekipy",
-        "crew_desc": "Stawki współpracowników pojawią się tutaj, gdy zatrudnisz ich w zakładce Zespół."
-      },
-      "footer": {
-        "subtotal": "Razem",
-        "missing": "{{count}} bez stawki",
-        "settled": "Rozliczonych: {{count}}"
-      },
-      "row": {
-        "fee_aria": "Stawka — {{name}}",
-        "settled": "Rozliczone — stawki nie można już zmienić"
-      },
-      "standard_rate": {
-        "label": "Stawka dla wszystkich",
-        "hint": "Nadpisze {{count}} poz.",
-        "pending": "Obejmie {{count}} poz. — zapisz, aby zastosować"
-      },
-      "fab": {
-        "description": "Zmiany w stawkach honorariów."
-      },
-      "toast": {
-        "saving": "Zapisywanie budżetu...",
-        "save_success": "Zapisano stawki i przeliczono budżet",
-        "save_error_desc": "Nie udało się zapisać wszystkich stawek."
-      }
-    },
     "call_time": "Zbiórka:",
     "card": {
       "artistic_dashboard": "Pulpit Artystyczny",
@@ -5495,6 +5606,7 @@
     },
     "datetime": {
       "placeholder": "Wybierz datę i godzinę",
+      "placeholder_date": "Wybierz datę",
       "time": "Godzina",
       "hours": "Godziny",
       "minutes": "Minuty",
@@ -5505,7 +5617,8 @@
       "previous_year": "Poprzedni rok",
       "next_year": "Następny rok",
       "today": "Dziś",
-      "done": "Gotowe"
+      "done": "Gotowe",
+      "date": "Data"
     }
   },
   "voice_types": {

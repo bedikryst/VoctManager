@@ -227,19 +227,19 @@ def render_bill_pdf(contract: Contract) -> bytes:
     return _render_pdf(render_bill_html(contract))
 
 
-def _file_segment(value: str) -> str:
+def file_segment(value: str) -> str:
     """A filename fragment: no spaces and no path separators. A contract number
     carries slashes ("UoD/3/2026")."""
     return value.strip().replace(" ", "_").replace("/", "-").replace("\\", "-")
 
 
 def contract_filename(contract: Contract) -> str:
-    return f"Umowa-{_file_segment(contract.number)}-{_file_segment(contract.payee_name)}.pdf"
+    return f"Umowa-{file_segment(contract.number)}-{file_segment(contract.payee_name)}.pdf"
 
 
 def bill_filename(contract: Contract) -> str:
-    return f"Rachunek-{_file_segment(contract.number)}-{_file_segment(contract.payee_name)}.pdf"
+    return f"Rachunek-{file_segment(contract.number)}-{file_segment(contract.payee_name)}.pdf"
 
 
 def contracts_zip_filename(project: Project) -> str:
-    return f"Umowy-{_file_segment(project.title)}.zip"
+    return f"Umowy-{file_segment(project.title)}.zip"

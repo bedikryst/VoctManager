@@ -6,15 +6,13 @@
 Django Admin interface configuration for the Roster application.
 @author Krystian Bugalski
 
-Customizes the administrative dashboard for managing artists, projects, 
-rehearsals, and cast assignments. Upgraded to Enterprise standards 
-with comprehensive list displays, dynamic buttons, and relational filtering.
+Customizes the administrative dashboard for managing artists, projects,
+rehearsals, and cast assignments, with list displays and relational filtering.
 """
 
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
-from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from core.models import UserProfile
@@ -145,21 +143,11 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Participation)
 class ParticipationAdmin(admin.ModelAdmin):
-    """Admin view for managing artist contracts and specific project assignments."""
-    list_display = ('artist', 'project', 'status', 'fee', 'download_pdf_button')
+    """Admin view for an artist's seats in projects. Their fees and contracts
+    are the finance ledger's."""
+    list_display = ('artist', 'project', 'status')
     list_filter = ('status', 'project')
     search_fields = ('artist__first_name', 'artist__last_name', 'project__title')
-    
-    @admin.display(description="Dokumenty")
-    def download_pdf_button(self, obj):
-        """Generates a direct download button for the artist's PDF legal contract."""
-        return format_html(
-            '<a href="/api/participations/{}/contract/" target="_blank" '
-            'style="background-color: #417690; color: white; padding: 5px 10px; '
-            'border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 11px;">'
-            '📄 Pobierz Umowę</a>',
-            obj.id
-        )
 
 
 @admin.register(ProjectPieceCasting)
@@ -196,7 +184,7 @@ class CollaboratorAdmin(admin.ModelAdmin):
 
 @admin.register(CrewAssignment)
 class CrewAssignmentAdmin(admin.ModelAdmin):
-    """Admin view for tracking external staff event assignments and fees."""
-    list_display = ('collaborator', 'project', 'role_description', 'status', 'fee')
+    """Admin view for tracking external staff event assignments."""
+    list_display = ('collaborator', 'project', 'role_description', 'status')
     list_filter = ('status', 'project')
     search_fields = ('collaborator__last_name', 'project__title', 'role_description')

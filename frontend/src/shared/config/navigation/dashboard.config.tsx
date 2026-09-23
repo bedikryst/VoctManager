@@ -8,10 +8,10 @@
  */
 
 import {
+  Banknote,
   Briefcase,
   Calendar,
   CalendarCheck,
-  FileText,
   BookMarked,
   Headphones,
   LayoutDashboard,
@@ -110,9 +110,9 @@ export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
         isPinned: false,
       },
       {
-        to: "/panel/contracts",
-        icon: FileText,
-        labelKey: t("dashboard.layout.links.contracts"),
+        to: "/panel/finance",
+        icon: Banknote,
+        labelKey: t("dashboard.layout.links.finance"),
         isPinned: false,
       },
       {

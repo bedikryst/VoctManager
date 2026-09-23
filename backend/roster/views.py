@@ -15,17 +15,14 @@ import uuid
 from collections import defaultdict
 from dataclasses import asdict
 from datetime import datetime
-from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from celery.result import AsyncResult
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django_filters.rest_framework import DjangoFilterBackend
@@ -57,11 +54,8 @@ from core.exceptions import format_pydantic_validation_errors, make_error_respon
 from core.permissions import IsManager, IsManagerOrReadOnly, user_is_manager
 from core.preview import resolve_preview_target
 from core.request_utils import client_payload, request_user, truthy_flag
-from finance.exceptions import ContractNotIssued, FinanceError, finance_error_response
-from finance.infrastructure.documents import contract_filename, render_contract_pdf
-from finance.services.contracts import live_contract_for
+from finance.exceptions import FinanceError, finance_error_response
 from finance.services.ledger import LedgerService
-from finance.tasks import generate_contracts_zip_task
 from notifications.announcement_queue import AnnouncementQueue
 from notifications.models import PendingAnnouncement
 
@@ -87,7 +81,6 @@ from .dtos import (
     PieceCastingBoardDTO,
     PieceCastingBoardsDTO,
     PieceReadinessUpdateDTO,
-    ProjectBulkFeeDTO,
     ProjectCreateDTO,
     ProjectUpdateDTO,
     RehearsalCreateDTO,
@@ -170,10 +163,8 @@ from .serializers import (
     AttendanceSerializer,
     CollaboratorBasicSerializer,
     CollaboratorSerializer,
-    CrewAssignmentBasicSerializer,
     CrewAssignmentSerializer,
-    ParticipationBasicSerializer,
-    ParticipationDetailedSerializer,
+    ParticipationSerializer,
     ProgramItemSerializer,
     ProjectPieceCastingSerializer,
     ProjectSerializer,
@@ -302,36 +293,6 @@ def _pdf_bytes_response(data: bytes, *, filename: str) -> FileResponse:
     return response
 
 
-def _settlement_contract_response(request, record: Participation | CrewAssignment) -> FileResponse | Response:
-    """The legacy per-person contract download, kept until the finance panel
-    replaces it (removed in finance Stage 3). It prints the record's live
-    finance contract — its number, frozen amount and the foundation's identity —
-    and answers 409 `contract_not_issued` where none exists: a contract is issued
-    in the ledger, never improvised from the roster fee."""
-    contract = live_contract_for(record)
-    try:
-        if contract is None:
-            raise ContractNotIssued()
-        pdf_bytes = render_contract_pdf(contract)
-    except FinanceError as exc:
-        return finance_error_response(request, exc)
-    except DocumentRenderDependencyError as exc:
-        raise PdfRenderUnavailable(str(exc)) from exc
-
-    response = FileResponse(
-        io.BytesIO(pdf_bytes), as_attachment=True, filename=contract_filename(contract), content_type='application/pdf',
-    )
-    response['Access-Control-Expose-Headers'] = 'Content-Disposition'
-    return response
-
-
-def _apply_payment(record: Participation | CrewAssignment, is_paid: bool) -> None:
-    """Toggles a record's settlement state, keeping `paid_at` consistent with `is_paid`."""
-    record.is_paid = is_paid
-    record.paid_at = timezone.now() if is_paid else None
-    record.save()
-
-
 def _led_by_payload(rehearsal: Rehearsal) -> dict[str, str] | None:
     """`Rehearsal.led_by` as the schedule and the lead sheet state it: explicit
     only, so null still means "the conductor" and no client has to know who
@@ -346,44 +307,6 @@ def _led_by_payload(rehearsal: Rehearsal) -> dict[str, str] | None:
         'artist_id': str(rehearsal.led_by_id),
         'name': f"{artist.first_name} {artist.last_name}".strip(),
     }
-
-
-_MAX_FEE = Decimal("999999.99")
-
-
-def _parse_fee(raw: object) -> Decimal | None:
-    """Coerces an incoming fee value to a bounded 2-dp Decimal (or None to clear it)."""
-    if raw is None or raw == '':
-        return None
-    try:
-        value = Decimal(str(raw)).quantize(Decimal("0.01"))
-    except (InvalidOperation, ValueError, TypeError) as exc:
-        raise ValueError("invalid_fee") from exc
-    if value < 0 or value > _MAX_FEE:
-        raise ValueError("fee_out_of_range")
-    return value
-
-
-def _fee_action(viewset, request) -> Response:
-    """
-    Shared fee-update handler. Writes the fee directly instead of routing through
-    the ModelSerializer: DRF mis-handles `Participation`'s conditional
-    UniqueConstraint on partial updates (it reads the condition field
-    `is_deleted` straight from the request payload and KeyErrors), which made the
-    generic `PATCH /participations/{id}/` fee edit 500. This bypass keeps fee
-    editing robust and symmetric across cast and crew.
-    """
-    record = viewset.get_object()
-    try:
-        fee_value = _parse_fee(request.data.get('fee'))
-    except ValueError:
-        return Response(
-            {"detail": "Enter a valid, non-negative fee (max 999999.99)."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-    record.fee = fee_value
-    record.save()
-    return Response(viewset.get_serializer(record).data, status=status.HTTP_200_OK)
 
 
 class ResendActivationThrottle(UserRateThrottle):
@@ -593,7 +516,7 @@ class ArtistViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        report = ArtistHRService.merge_artists(primary, duplicate)
+        report = ArtistHRService.merge_artists(primary, duplicate, actor=request_user(request))
         return Response({
             'artist': self.get_serializer(primary).data,
             'merged': asdict(report),
@@ -1583,7 +1506,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 
 class ParticipationViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly] 
+    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
+    serializer_class = ParticipationSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['project', 'artist', 'status']
 
@@ -1592,9 +1516,6 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         qs = Participation.objects.select_related('artist__user', 'artist', 'project').all()
         return qs if user_is_manager(user) else qs.filter(artist__user=user)
 
-    def get_serializer_class(self):
-        return ParticipationDetailedSerializer if user_is_manager(self.request.user) else ParticipationBasicSerializer
-    
     def create(self, request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -1826,16 +1747,6 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @action(detail=False, methods=['patch'], url_path='bulk-fee', permission_classes=[IsManager])
-    def bulk_fee(self, request) -> Response:
-        try:
-            dto = ProjectBulkFeeDTO(**client_payload(request.data))
-        except ValidationError as e:
-            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        updated_count = ProjectManagementService.update_project_bulk_fee(dto)
-        return Response({"detail": f"Successfully updated {updated_count} records.", "updated_count": updated_count}, status=status.HTTP_200_OK)
-
     @action(detail=True, methods=['patch'], url_path='status', permission_classes=[permissions.IsAuthenticated])
     def update_status(self, request, pk=None) -> Response:
         """
@@ -1858,69 +1769,6 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         updated_participation = ParticipationService.update_status_by_artist(participation, dto.status)
 
         return Response(self.get_serializer(updated_participation).data, status=status.HTTP_200_OK)
-
-    @action(detail=True, methods=['get'], permission_classes=[IsManager])
-    def contract(self, request, pk=None) -> FileResponse | Response:
-        """Renders and streams the individual legal contract PDF for one cast member."""
-        return _settlement_contract_response(request, self.get_object())
-
-    @action(detail=True, methods=['patch'], permission_classes=[IsManager])
-    def payment(self, request, pk=None) -> Response:
-        """Marks this participation's fee as settled / unsettled (manager-only)."""
-        record = self.get_object()
-        is_paid = request.data.get('is_paid')
-        if not isinstance(is_paid, bool):
-            return Response({"detail": "Field 'is_paid' must be a boolean."}, status=status.HTTP_400_BAD_REQUEST)
-        _apply_payment(record, is_paid)
-        return Response(self.get_serializer(record).data, status=status.HTTP_200_OK)
-
-    @action(detail=True, methods=['patch'], permission_classes=[IsManager])
-    def fee(self, request, pk=None) -> Response:
-        """Sets (or clears) the remuneration on one participation (manager-only)."""
-        return _fee_action(self, request)
-
-    @action(detail=False, methods=['post'], url_path='request_project_zip', permission_classes=[IsManager])
-    def request_project_zip(self, request) -> Response:
-        """The legacy door to the finance contracts ZIP, kept until the finance
-        panel replaces it (removed in finance Stage 3). It runs the finance task,
-        which packs issued contracts only, rendered from their rows."""
-        project_id = request.data.get('project_id')
-        if not project_id:
-            return Response({"detail": "Field 'project_id' is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        task = generate_contracts_zip_task.delay(str(project_id))
-        return Response({"task_id": task.id}, status=status.HTTP_202_ACCEPTED)
-
-    @action(detail=False, methods=['get'], url_path='check_zip_status', permission_classes=[IsManager])
-    def check_zip_status(self, request) -> Response:
-        """Polls the finance ZIP task in the legacy shape. The file is served by the
-        manager-only finance view, never from a public media URL."""
-        task_id = request.query_params.get('task_id')
-        if not task_id:
-            return Response({"detail": "Query param 'task_id' is required."}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            task_uuid = uuid.UUID(task_id)
-        except ValueError:
-            return Response({"detail": "Query param 'task_id' is not a task id."}, status=status.HTTP_400_BAD_REQUEST)
-
-        result = AsyncResult(task_id)
-        state = result.state
-        payload: dict = {"state": state}
-
-        if state == 'SUCCESS':
-            data = result.result if isinstance(result.result, dict) else {}
-            if data.get('error_code'):
-                # The task completed but found nothing to package — surface as a failure
-                # so the frontend shows an actionable message instead of an empty download.
-                payload['state'] = 'FAILURE'
-                payload['error'] = 'Projekt nie ma jeszcze wystawionych umów.'
-            else:
-                payload['file_url'] = reverse('finance:contracts-zip-file', kwargs={'task_id': task_uuid})
-        elif state in ('FAILURE', 'FAILED'):
-            payload['error'] = 'Generowanie paczki nie powiodło się. Spróbuj ponownie.'
-
-        return Response(payload, status=status.HTTP_200_OK)
-
 
 # Every attendance payload is whitelisted rather than splatted: the caller must
 # not be able to name `requesting_user_id` or `is_manager`, which the view alone
@@ -2813,11 +2661,6 @@ class CrewAssignmentViewSet(viewsets.ModelViewSet):
             ).values('project_id')
         )
 
-    def get_serializer_class(self):
-        # Financial fields (fee / is_paid / paid_at) are manager-only, mirroring
-        # the participation serializers. Non-managers get the basic payload.
-        return CrewAssignmentSerializer if user_is_manager(self.request.user) else CrewAssignmentBasicSerializer
-
     def create(self, request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -2837,37 +2680,6 @@ class CrewAssignmentViewSet(viewsets.ModelViewSet):
         except FinanceError as exc:
             return finance_error_response(request, exc)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-    @action(detail=True, methods=['get'], permission_classes=[IsManager])
-    def contract(self, request, pk=None) -> FileResponse | Response:
-        """Renders and streams the individual legal contract PDF for one crew member."""
-        return _settlement_contract_response(request, self.get_object())
-
-    @action(detail=True, methods=['patch'], permission_classes=[IsManager])
-    def payment(self, request, pk=None) -> Response:
-        """Marks this crew assignment's fee as settled / unsettled (manager-only)."""
-        record = self.get_object()
-        is_paid = request.data.get('is_paid')
-        if not isinstance(is_paid, bool):
-            return Response({"detail": "Field 'is_paid' must be a boolean."}, status=status.HTTP_400_BAD_REQUEST)
-        _apply_payment(record, is_paid)
-        return Response(self.get_serializer(record).data, status=status.HTTP_200_OK)
-
-    @action(detail=True, methods=['patch'], permission_classes=[IsManager])
-    def fee(self, request, pk=None) -> Response:
-        """Sets (or clears) the remuneration on one crew assignment (manager-only)."""
-        return _fee_action(self, request)
-
-    @action(detail=False, methods=['patch'], url_path='bulk-fee', permission_classes=[IsManager])
-    def bulk_fee(self, request) -> Response:
-        """Applies one standard rate across a project's crew (skips settled rows)."""
-        try:
-            dto = ProjectBulkFeeDTO(**client_payload(request.data))
-        except ValidationError as e:
-            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        updated_count = ProjectManagementService.update_project_crew_bulk_fee(dto)
-        return Response({"detail": f"Successfully updated {updated_count} records.", "updated_count": updated_count}, status=status.HTTP_200_OK)
 
 
 class ScoreEditionDownloadView(views.APIView):

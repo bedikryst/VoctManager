@@ -234,13 +234,9 @@ class ArtistPreviewTests(APITestCase):
         self.assertEqual(titles, {"Ave Maria"})
 
     def test_the_songbook_carries_no_money_for_anybody(self) -> None:
-        # Contracts and settlement are a manager-side module still being built,
-        # and the singer's own figure is no exception: it reaches a person
-        # through a contract, never through the app. Asserted on the key rather
-        # than on its value, so re-adding it as `None` still fails.
-        self.seat.fee = 250
-        self.seat.save(update_fields=["fee"])
-
+        # The singer's own figure reaches them through a contract, never through
+        # the songbook. Asserted on the key rather than on its value, so a `fee`
+        # re-added to the seat as `None` still fails.
         own = self._get(self.singer_user, MATERIALS_URL)
         preview = self._get(self.manager_user, MATERIALS_URL, artist=self.singer)
 

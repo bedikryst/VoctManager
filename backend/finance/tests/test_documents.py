@@ -408,17 +408,6 @@ class DocumentEndpointTests(APITestCase):
         self.assertEqual(self.get(f"contracts/{self.contract.pk}/pdf/").status_code, 403)
         self.assertEqual(self.get(f"contracts/{self.contract.pk}/bill.pdf").status_code, 403)
 
-    @patch("finance.infrastructure.documents._render_pdf", side_effect=_html_as_pdf)
-    def test_the_legacy_roster_door_prints_the_finance_contract(self, _render: MagicMock) -> None:
-        seat = self.contract.cost_item.participation
-        assert seat is not None
-        response = self.client.get(f"/api/participations/{seat.pk}/contract/")
-
-        self.assertEqual(response.status_code, 200)
-        body = _streamed(response).decode("utf-8")
-        self.assertIn(self.contract.number, body)
-        self.assertIn(f"1{NBSP}500,00 zł brutto", body)
-
 
 class ContractsZipTests(APITestCase):
     """The ZIP packs the live contracts, each rendered from its row."""
@@ -455,11 +444,6 @@ class ContractsZipTests(APITestCase):
         signed = self.contract("0", "Gamma")
         # Priced but never issued: no paper to pack.
         price(self.project, participation=make_seat(self.project, "Anna", "Delta"), amount="400")
-        # The legacy roster fee is not a figure any document reads.
-        seat = kept.cost_item.participation
-        assert seat is not None
-        seat.fee = Decimal("4321")
-        seat.save()
 
         result = self.run_task()
 
@@ -471,7 +455,6 @@ class ContractsZipTests(APITestCase):
         self.assertIn(signed.number, contents)
         self.assertNotIn(annulled.number, contents)
         self.assertIn(f"1{NBSP}500,00 zł brutto", contents)
-        self.assertNotIn("4321", contents)
         self.assertNotIn(f"4{NBSP}321", contents)
 
     def test_a_project_without_contracts_reports_so(self) -> None:

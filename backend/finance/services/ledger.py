@@ -2,8 +2,9 @@
 @file ledger.py
 @description The write side of the fee ledger: pricing (one atomic batch with an
              optional standard rate), one-off payees, bookkeeping details, paying
-             and reverting a payment, and releasing a crew member's fee when they
-             are unassigned. Every rule of spec §5.1 that the database cannot
+             and reverting a payment, releasing a crew member's fee when they are
+             unassigned, and moving a seat's fee when an artist merge folds it.
+             Every rule of spec §5.1 that the database cannot
              state is enforced here, and every change is logged.
 @architecture Enterprise SaaS 2026
 @module finance/services/ledger
@@ -31,6 +32,7 @@ from ..exceptions import (
     UnknownFeeReference,
 )
 from ..models import (
+    BudgetStatus,
     Contract,
     ContractStatus,
     CostItem,
@@ -498,3 +500,30 @@ class LedgerService:
                             "contract_amount": item.contract_amount,
                         },
                     )
+
+    @staticmethod
+    def fold_seat(source: Participation, target: Participation, *, actor: User | None) -> bool:
+        """Called when an artist merge folds the duplicate's seat into the
+        survivor's seat on the same project, before the folded seat leaves.
+
+        The duplicate's fee moves to the survivor's seat when that seat has none,
+        so the person keeps one priced row, paid or contracted as it was. It stays
+        on the folded seat when the survivor has a fee of its own — money is not
+        something a cleanup chooses between — or when the budget is closed. The
+        answer is True in those two cases, so the merge can say where to look.
+        """
+        with transaction.atomic():
+            if not CostItem.objects.filter(participation=source).exists():
+                return False
+            budget = BudgetService.lock(target.project)
+            item = CostItem.objects.select_for_update().get(participation=source)
+            if budget.status == BudgetStatus.CLOSED or CostItem.objects.filter(participation=target).exists():
+                return True
+            item.participation = target
+            refresh_item(item, target.project)
+            item.save()
+            audit.record(
+                budget, actor=actor, subject=item, action=FinanceAction.DETAILS_CHANGED,
+                before={"participation": source.pk}, after={"participation": target.pk},
+            )
+            return False

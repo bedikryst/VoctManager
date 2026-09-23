@@ -19,8 +19,8 @@ What it seeds, across every bounded context that exists today:
                  windows, consent stamps, generated avatars)
   • roster     — singers across the full voice spectrum in every account state
                  (activated / invited-but-not-activated / archived), conductors,
-                 collaborators, projects in every lifecycle state, participations
-                 (paid/unpaid), crew assignments, concert programmes with the
+                 collaborators, projects in every lifecycle state, participations,
+                 crew assignments, concert programmes with the
                  score-book cockpit overrides, micro-casting (divisi), rehearsals
                  (plenary + sectional) with attendance history, per-piece practice
                  readiness, and a ScorePackage per project in every build state
@@ -30,6 +30,8 @@ What it seeds, across every bounded context that exists today:
                  program notes, rehearsal audio, score editions across the whole
                  licence spectrum and every ingestion state, conductor markup
                  (annotation layers), provenance records and score access logs
+  • finance    — the cast's and the crew's fees, priced through the ledger,
+                 paid on completed concerts
   • documents  — Knowledge-Base categories + role-gated documents
   • messaging  — 1:1 artist↔management threads (assigned, unassigned intake,
                  project-anchored, archived) and per-project group channels
@@ -100,8 +102,11 @@ from core.models import UserProfile
 # Documents (Knowledge Base / Chorister Hub)
 from documents.models import Document, DocumentCategory, DocumentIconKey
 
-# Finance (cleared only: the ledger PROTECTs the seats and projects below it)
+# Finance (cleared first — the ledger PROTECTs the seats and projects below it —
+# then priced through the ledger's own service)
+from finance.dtos import FeeBatchDTO, FeeItemDTO, FeeRefDTO, PayFeesDTO
 from finance.models import Contract, ContractSequence, CostItem, FinanceEvent, ProjectBudget
+from finance.services.ledger import LedgerService
 
 # Logistics
 from logistics.models import Location, LocationCategory
@@ -1513,10 +1518,11 @@ class Command(BaseCommand):
         is_draft = spec.status == Project.Status.DRAFT
         is_cancelled = spec.status == Project.Status.CANCELLED
 
-        participations = self._seed_participations(project, spec, when)
+        participations = self._seed_participations(project, spec)
         confirmed = [p for p in participations if p.status == Participation.Status.CONFIRMED]
 
-        self._seed_crew_assignments(project, when, is_done=is_done, is_draft=is_draft)
+        crew = self._seed_crew_assignments(project, is_draft=is_draft)
+        self._seed_fees(project, participations, crew, when, is_done=is_done)
         self._seed_programme(project, spec)
         self._seed_casting_and_readiness(project, spec, confirmed)
         self._seed_rehearsals(project, spec, participations, confirmed, when)
@@ -1531,43 +1537,68 @@ class Command(BaseCommand):
             self._seed_announcement_queue(project, spec, participations)
 
     # --- A) participations -------------------------------------------- #
-    def _seed_participations(
-        self, project: Project, spec: ProjectSpec, when: datetime
-    ) -> list[Participation]:
+    def _seed_participations(self, project: Project, spec: ProjectSpec) -> list[Participation]:
         cast_size = min(len(self.artists), 12 if spec.status == Project.Status.DRAFT else 18)
         invited = random.sample(self.artists, k=cast_size)
         participations: list[Participation] = []
         for artist in invited:
-            if spec.status == Project.Status.COMPLETED:
-                status, paid = Participation.Status.CONFIRMED, True
-            elif spec.status == Project.Status.DRAFT:
-                status, paid = Participation.Status.INVITED, False
-            elif spec.status == Project.Status.CANCELLED:
-                status, paid = Participation.Status.CONFIRMED, False
+            if spec.status == Project.Status.DRAFT:
+                status = Participation.Status.INVITED
+            elif spec.status in (Project.Status.COMPLETED, Project.Status.CANCELLED):
+                status = Participation.Status.CONFIRMED
             else:  # ACTIVE — mostly confirmed, a few still deciding or out.
                 status = random.choices(
                     [Participation.Status.CONFIRMED, Participation.Status.INVITED,
                      Participation.Status.DECLINED],
                     weights=[78, 15, 7], k=1,
                 )[0]
-                paid = False
             participations.append(Participation.objects.create(
                 artist=artist, project=project, status=status,
-                fee=random.choice([200, 250, 300, 400]),
-                is_paid=paid, paid_at=(when + timedelta(days=2)) if paid else None,
             ))
         return participations
 
     # --- B) crew ------------------------------------------------------- #
-    def _seed_crew_assignments(
-        self, project: Project, when: datetime, *, is_done: bool, is_draft: bool
-    ) -> None:
-        for collaborator in random.sample(self.collaborators, k=3):
+    def _seed_crew_assignments(self, project: Project, *, is_draft: bool) -> list[CrewAssignment]:
+        return [
             CrewAssignment.objects.create(
                 collaborator=collaborator, project=project,
                 status=CrewAssignment.Status.INVITED if is_draft else CrewAssignment.Status.CONFIRMED,
-                fee=1000, is_paid=is_done, paid_at=(when + timedelta(days=2)) if is_done else None,
                 role_description=f"Obsługa: {collaborator.get_specialty_display()}",
+            )
+            for collaborator in random.sample(self.collaborators, k=3)
+        ]
+
+    # --- B2) fees ------------------------------------------------------ #
+    def _seed_fees(
+        self,
+        project: Project,
+        participations: list[Participation],
+        crew: list[CrewAssignment],
+        when: datetime,
+        *,
+        is_done: bool,
+    ) -> None:
+        """Prices the cast and the crew through the ledger, the one writer of
+        money, and settles a completed concert two days after it. A declined
+        seat stays unpriced: the ledger refuses to price it."""
+        items = [
+            FeeItemDTO(
+                ref=FeeRefDTO(participation=seat.pk),
+                contract_amount=Decimal(random.choice([200, 250, 300, 400])),
+            )
+            for seat in participations
+            if seat.status != Participation.Status.DECLINED
+        ] + [
+            FeeItemDTO(ref=FeeRefDTO(crew_assignment=assignment.pk), contract_amount=Decimal(1000))
+            for assignment in crew
+        ]
+        if not items:
+            return
+        LedgerService.apply_fee_batch(project, FeeBatchDTO(items=tuple(items)), actor=None)
+        if is_done:
+            ids = tuple(CostItem.objects.filter(budget__project=project).values_list("pk", flat=True))
+            LedgerService.pay(
+                project, PayFeesDTO(ids=ids, paid_on=(when + timedelta(days=2)).date()), actor=None,
             )
 
     # --- C) programme + score-book cockpit overrides -------------------- #

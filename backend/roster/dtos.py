@@ -4,7 +4,6 @@
 # Standard: Enterprise SaaS 2026 (Pydantic V2)
 # ==========================================
 from datetime import datetime, time, timedelta
-from decimal import Decimal
 from typing import Any, Self
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -433,13 +432,6 @@ class PieceCastingBoardsDTO(EnterpriseBaseDTO):
                 raise ValueError("boards must hold at most one board per piece.")
             seen.add(board.piece)
         return self
-
-
-class ProjectBulkFeeDTO(EnterpriseBaseDTO):
-    project_id: UUID
-    # The API/frontend speaks `fee`; `new_fee` stays the internal name. Without the
-    # alias the bulk endpoint 400'd on every call (extra="forbid" rejected `fee`).
-    new_fee: Decimal = Field(..., ge=0, max_digits=8, decimal_places=2, alias="fee")
 
 
 class ProjectCreateDTO(EnterpriseBaseDTO):

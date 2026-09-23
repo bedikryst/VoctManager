@@ -391,10 +391,9 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
 
     Carries no money. Contracts and settlement are a manager-side module, and a
     singer is told what they owe the music, never what the choir owes them — the
-    figure reaches a person through a contract, not through the songbook. The
-    same rule already governs `ParticipationBasicSerializer`, which excludes
-    `fee` for every non-manager caller; this tree simply had to stop being the
-    exception.
+    figure reaches a person through a contract, not through the songbook. Every
+    roster payload follows the same rule: money lives in the finance ledger
+    alone.
 
     Output shape:
       [{
