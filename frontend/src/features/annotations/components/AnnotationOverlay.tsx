@@ -29,7 +29,7 @@ import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
 import {
-  TAP_ZONE_FRACTION as PDF_TAP_ZONE_FRACTION,
+  resolveTapZone,
   type PdfPageGeometry,
 } from "@/shared/ui/composites/PdfViewer";
 
@@ -379,10 +379,13 @@ export const AnnotationOverlay = ({
           event.clientY - pan.startY,
         );
         if (travelled <= TOUCH_SLOP_PX) {
-          const rect = pan.viewport.getBoundingClientRect();
-          const relX = (event.clientX - rect.left) / Math.max(rect.width, 1);
-          if (relX <= PDF_TAP_ZONE_FRACTION) onTurnPage(-1);
-          else if (relX >= 1 - PDF_TAP_ZONE_FRACTION) onTurnPage(1);
+          // The surface covers the page, so its box is the paper.
+          const zone = resolveTapZone(
+            event.clientX,
+            pan.viewport.getBoundingClientRect(),
+            event.currentTarget.getBoundingClientRect(),
+          );
+          if (zone !== 0) onTurnPage(zone);
         }
         return;
       }

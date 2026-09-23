@@ -15,8 +15,8 @@
 
 import { useEffect, useRef, type RefObject } from "react";
 
+import { resolveTapZone } from "../tapZone";
 import {
-  TAP_ZONE_FRACTION,
   TAP_MAX_MOVEMENT_PX,
   TAP_MAX_DURATION_MS,
   SWIPE_MIN_DISTANCE_PX,
@@ -193,11 +193,13 @@ export const useViewerGestures = (args: UseViewerGesturesArgs): void => {
         // Double-click is text-selection intent, not navigation.
         if (event.detail > 1) return;
         if (hasActiveTextSelection()) return;
-        const rect = viewport.getBoundingClientRect();
-        const relX = (event.clientX - rect.left) / Math.max(rect.width, 1);
-        if (relX <= TAP_ZONE_FRACTION) onPageDelta(-1, "tap");
-        else if (relX >= 1 - TAP_ZONE_FRACTION) onPageDelta(1, "tap");
-        else onCenterTap();
+        const zone = resolveTapZone(
+          event.clientX,
+          viewport.getBoundingClientRect(),
+          previewTarget()?.getBoundingClientRect() ?? null,
+        );
+        if (zone === 0) onCenterTap();
+        else onPageDelta(zone, "tap");
         return;
       }
 

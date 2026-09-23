@@ -43,8 +43,12 @@ export const FIT_VERTICAL_RESERVE_DESKTOP = -50;
 export const FIT_VERTICAL_RESERVE_IMMERSIVE = 0;
 
 // Gesture tuning — instrument-grade ergonomics for a score on a music stand.
-/** Width of the edge tap-to-turn zones, as a fraction of the viewport. */
-export const TAP_ZONE_FRACTION = 0.22;
+/**
+ * Width of each edge tap-to-turn band, as a fraction of the visible page.
+ * Turning is the frequent act and leaving performance mode the rare one, so
+ * the exit keeps only the middle third of the paper.
+ */
+export const TAP_ZONE_FRACTION = 1 / 3;
 export const TAP_MAX_MOVEMENT_PX = 8;
 export const TAP_MAX_DURATION_MS = 500;
 export const SWIPE_MIN_DISTANCE_PX = 64;

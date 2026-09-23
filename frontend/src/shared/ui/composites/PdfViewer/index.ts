@@ -5,7 +5,7 @@ export { usePdfImmersive } from "./context";
  * touches of its own (an armed pen) can offer the same gesture in the same
  * places instead of inventing a second geography.
  */
-export { TAP_ZONE_FRACTION } from "./constants";
+export { resolveTapZone, type TapZone } from "./tapZone";
 export type {
   PdfViewerProps,
   PdfViewerEvent,
