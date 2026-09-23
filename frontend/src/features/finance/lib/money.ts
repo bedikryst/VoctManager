@@ -51,6 +51,26 @@ export const toGrosze = (
   return Number.isSafeInteger(grosze) ? grosze : null;
 };
 
+/**
+ * A plan line's preview: quantity × unit cost in grosze, rounded half up as the
+ * server rounds it. Both factors come as typed or stored decimals with at most
+ * two places; the product runs in BigInt, because two ten-digit factors
+ * overflow a float's exact range long before they overflow a budget.
+ * `null` when either factor is not an amount.
+ */
+export const lineTotalGrosze = (
+  quantity: DecimalString,
+  unitCost: DecimalString,
+): bigint | null => {
+  const hundredths = toGrosze(quantity);
+  const grosze = toGrosze(unitCost);
+  if (hundredths === null || grosze === null) return null;
+  return (BigInt(hundredths) * BigInt(grosze) + 50n) / 100n;
+};
+
+/** The largest amount the server stores: 99 999 999,99 zł. */
+export const MAX_AMOUNT_GROSZE = 9_999_999_999n;
+
 /** Integer grosze back to the API's decimal string: 40050 → `"400.50"`. */
 export const fromGrosze = (grosze: number): DecimalString => {
   const whole = Math.trunc(grosze / GROSZE_PER_ZLOTY);

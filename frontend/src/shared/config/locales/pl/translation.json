@@ -1628,7 +1628,9 @@
     "nav": {
       "overview": "Przegląd",
       "people": "Honoraria",
-      "aria": "Sekcje budżetu"
+      "aria": "Sekcje budżetu",
+      "plan": "Kosztorys",
+      "costs": "Wydatki"
     },
     "forms": {
       "DZIELO": "Umowa o dzieło",
@@ -1706,11 +1708,19 @@
       },
       "PAYMENT_OVERDUE": {
         "title": "Po terminie płatności",
-        "hint": "Termin minął, a honorarium nie jest oznaczone jako wypłacone."
+        "hint": "Termin minął, a pozycja nie jest oznaczona jako zapłacona."
       },
       "unknown": {
         "title": "Wymaga uwagi",
         "hint": "Sprawdź wskazane pozycje."
+      },
+      "COST_OUTSIDE_PLAN": {
+        "title": "Koszty poza kosztorysem",
+        "hint": "Budżet ma kosztorys, a te koszty nie są przypisane do żadnej jego pozycji. Przypisz je w Kosztorysie albo w szczegółach kosztu."
+      },
+      "LINE_OVER_PLAN": {
+        "title": "Pozycje ponad plan",
+        "hint": "Wydano więcej, niż przewiduje kosztorys. Przy grancie przekroczenie pozycji może wymagać aneksu — sprawdź umowę."
       }
     },
     "errors": {
@@ -1730,7 +1740,20 @@
       "pdf_renderer_unavailable": "Serwer nie może teraz przygotować dokumentu. Spróbuj za chwilę.",
       "no_contracts": "Projekt nie ma jeszcze żadnej wystawionej umowy.",
       "zip_failed": "Nie udało się spakować umów. Spróbuj ponownie.",
-      "zip_timeout": "Pakowanie umów trwa zbyt długo. Spróbuj ponownie za kilka minut."
+      "zip_timeout": "Pakowanie umów trwa zbyt długo. Spróbuj ponownie za kilka minut.",
+      "item_paid_not_removable": "Pozycja jest zapłacona. Usunąć ją można dopiero po cofnięciu zapłaty.",
+      "plan_locked": "Kosztorys jest zatwierdzony. Korektę otwiera zarząd na karcie Przegląd.",
+      "unknown_plan_line": "Tej pozycji kosztorysu już nie ma. Odśwież stronę.",
+      "plan_line_category_mismatch": "Koszt przypisuje się do pozycji kosztorysu tego samego rodzaju.",
+      "line_order_mismatch": "Kosztorys zmienił się w międzyczasie. Odśwież stronę i ułóż pozycje jeszcze raz.",
+      "plan_amount_too_large": "Ilość razy cena jednostkowa daje kwotę większą, niż mieści budżet. Sprawdź liczby.",
+      "budget_transition_refused": "Budżet jest już w innym stanie. Odśwież stronę.",
+      "budget_has_open_items": "Budżetu nie można zamknąć: są jeszcze niezapłacone koszty, osoby bez stawki albo honoraria poza obsadą.",
+      "attachment_not_allowed": "Pliki dołącza się tylko do wydatków.",
+      "attachment_missing": "Nie wybrano pliku.",
+      "attachment_too_large": "Plik jest za duży — limit to 20 MB.",
+      "attachment_type_not_allowed": "Dołączyć można PDF albo zdjęcie dokumentu (JPG, PNG, WEBP, HEIC).",
+      "file_detection_unavailable": "Serwer nie może teraz sprawdzić pliku. Spróbuj za chwilę."
     },
     "offline": {
       "act": "Brak połączenia. Rozliczeń nie zapisuje się offline — wróć do sieci, aby to zrobić.",
@@ -1746,7 +1769,8 @@
       "locked_by_contract": "Kwota zamrożona umową {{number}}",
       "select_aria": "Zaznacz — {{name}}",
       "unknown_payee": "Osoba bez nazwiska",
-      "amount_aria": "Kwota — {{name}}"
+      "amount_aria": "Kwota — {{name}}",
+      "outside_plan": "poza kosztorysem"
     },
     "standard_rate": {
       "label": "Stawka dla wszystkich",
@@ -1779,7 +1803,11 @@
       "note": "Wpisz dzień, w którym biuro wysłało przelew. Wypłaty nie zmienisz już w kwocie ani formie — cofnąć ją może tylko zarząd.",
       "confirm": "Oznacz wypłatę",
       "done": "Oznaczono jako wypłacone: {{count}} poz.",
-      "error": "Nie udało się oznaczyć wypłaty."
+      "error": "Nie udało się oznaczyć wypłaty.",
+      "done_expense": "Oznaczono jako zapłacone: {{count}} poz.",
+      "title_expense": "Oznacz jako zapłacone",
+      "confirm_expense": "Oznacz zapłatę",
+      "note_expense": "Wpisz dzień, w którym biuro zapłaciło. Zapłaconego wydatku nie zmienisz już w kwocie ani dostawcy — cofnąć zapłatę może tylko zarząd."
     },
     "reason": {
       "label": "Powód",
@@ -1787,7 +1815,7 @@
     },
     "unpay": {
       "title": "Cofnij wypłatę",
-      "description": "Pozycja wróci do niewypłaconych i znów będzie można zmienić jej kwotę. Wypłata zostaje w historii razem z powodem.",
+      "description": "Pozycja wróci do niezapłaconych i znów będzie można zmienić jej kwotę. Zapłata zostaje w historii razem z powodem.",
       "confirm": "Cofnij wypłatę",
       "done": "Cofnięto wypłatę.",
       "error": "Nie udało się cofnąć wypłaty."
@@ -1904,7 +1932,12 @@
       "paid": "Wypłacone",
       "outstanding": "Do wypłaty",
       "in_kind": "Wkład wolontariuszy",
-      "unpriced": "Bez stawki"
+      "unpriced": "Bez stawki",
+      "planned": "Plan",
+      "fees": "Honoraria",
+      "expenses": "Wydatki",
+      "paid_all": "Zapłacone",
+      "outstanding_all": "Do zapłaty"
     },
     "overview": {
       "title": "Budżet",
@@ -1937,7 +1970,7 @@
       "problems": "problemy: {{count}}",
       "work": "do zrobienia: {{count}}",
       "payables": "Do zapłaty",
-      "payables_empty": "Fundacja nie zalega z żadnym honorarium.",
+      "payables_empty": "Fundacja nie zalega z żadną płatnością.",
       "range": "{{first}}–{{last}} z {{total}}",
       "previous": "Wcześniejsze",
       "next": "Dalsze",
@@ -1948,13 +1981,211 @@
       "from": "Od",
       "to": "Do",
       "action": "Eksport dla biura",
-      "hint": "Honoraria wliczone w koszt, których data kosztu (dzień koncertu) wypada w tym okresie — ze wszystkich projektów.",
+      "hint": "Honoraria i wydatki wliczone w koszt, których data kosztu (dla honorarium dzień koncertu) wypada w tym okresie — ze wszystkich projektów.",
       "range_required": "Podaj obie daty.",
       "range_order": "Data początkowa jest późniejsza niż końcowa."
     },
     "facts": {
       "cost": "Koszt honorariów",
       "unpriced": "bez stawki: {{count}} os."
+    },
+    "expenses": {
+      "title": "Wydatki",
+      "closed": "Budżet jest zamknięty.",
+      "edit": "Edytuj wydatek",
+      "files_count": "Plików: {{count}}",
+      "files": "Pliki",
+      "pay": "Oznacz jako zapłacone",
+      "delete": "Usuń wydatek",
+      "unpay": "Cofnij zapłatę",
+      "board_only": "Cofnięcie zapłaty należy do zarządu. Zapłaconego wydatku nie można usunąć.",
+      "headline": "Koszt wydatków",
+      "list": "Dokumenty",
+      "add": "Dodaj wydatek",
+      "empty": "Brak wydatków",
+      "empty_desc": "Wynajem sali, podróże, druk, prawa do wykonania — każdy koszt, który nie jest honorarium. Honoraria, także fakturowane, są w zakładce Honoraria.",
+      "people_note": "Honoraria — także fakturowane przez firmę — rozlicza się w zakładce Honoraria, nie tutaj.",
+      "delete_title": "Usuń wydatek",
+      "delete_confirm": "Usuń",
+      "deleted": "Usunięto wydatek.",
+      "delete_error": "Nie udało się usunąć wydatku.",
+      "delete_desc": "Wydatek zniknie z budżetu razem ze swoją kwotą. Wpis o usunięciu zostaje w historii budżetu.",
+      "paid_on": "zapłacone {{date}}",
+      "due_on": "termin {{date}}",
+      "has_files": "Pliki: {{count}}",
+      "sheet": {
+        "vendor_required": "Podaj, komu fundacja płaci.",
+        "amount_invalid": "Podaj kwotę brutto z dokumentu.",
+        "saved": "Zapisano wydatek.",
+        "added": "Dodano wydatek: {{vendor}}.",
+        "error": "Nie udało się zapisać wydatku.",
+        "edit_title": "Wydatek",
+        "add_title": "Nowy wydatek",
+        "add": "Dodaj",
+        "category": "Rodzaj kosztu",
+        "no_line": "Kosztorys nie ma pozycji tego rodzaju.",
+        "no_plan": "Budżet nie ma jeszcze kosztorysu.",
+        "vendor": "Odbiorca (firma lub osoba)",
+        "description": "Za co",
+        "description_placeholder": "np. wynajem kościoła na koncert",
+        "document_type": "Dokument",
+        "document_number": "Numer dokumentu",
+        "document_date": "Data dokumentu",
+        "amount": "Kwota brutto (PLN)",
+        "paid_lock": "Wydatek jest zapłacony: kwoty i odbiorcy nie zmienisz bez cofnięcia zapłaty przez zarząd."
+      }
+    },
+    "plan": {
+      "title": "Kosztorys",
+      "locked_approved": "Kosztorys zatwierdzony {{date}}. Zmienić go można po otwarciu do korekty — robi to zarząd na karcie Przegląd.",
+      "locked_closed": "Budżet jest zamknięty.",
+      "actual_total": "Wykonanie",
+      "unplanned": "Poza kosztorysem",
+      "reorder_error": "Nie udało się przestawić pozycji.",
+      "charged": "Przypisano koszty do pozycji {{number}}.",
+      "charge_error": "Nie udało się przypisać kosztów.",
+      "cast_line_name": "Honoraria obsady",
+      "cast_proposal_unpriced": "Propozycja z obsady: {{count}} os. Nikt nie ma jeszcze stawki — wpisz cenę jednostkową.",
+      "cast_proposal": "Propozycja z obsady: {{count}} os. po {{rate}} {{currency}} — tyle wynosi najczęstsza stawka. Sprawdź przed zapisaniem.",
+      "menu_aria": "Działania — {{name}}",
+      "edit": "Edytuj pozycję",
+      "move_up": "Przesuń wyżej",
+      "move_down": "Przesuń niżej",
+      "charge_hint": "Koszty tego rodzaju bez pozycji w kosztorysie: {{count}}",
+      "charge": "Przypisz koszty spoza kosztorysu",
+      "delete": "Usuń pozycję",
+      "from_cast": "Honoraria z obsady",
+      "add": "Dodaj pozycję",
+      "headline": "Plan",
+      "lines": "Pozycje",
+      "empty": "Kosztorys jest pusty",
+      "empty_desc": "Rozpisz koszty koncertu na pozycje — tak jak we wniosku o grant: ilość, jednostka, cena. Potem zobaczysz tu, ile z każdej pozycji już wydano.",
+      "delete_title": "Usuń pozycję {{number}}",
+      "delete_confirm": "Usuń",
+      "deleted": "Usunięto pozycję kosztorysu.",
+      "delete_error": "Nie udało się usunąć pozycji.",
+      "delete_with_costs": "Przypisane do niej koszty ({{count}}) zostaną poza kosztorysem. Same koszty nie znikają.",
+      "delete_plain": "Pozycja zniknie z kosztorysu; zostanie w historii budżetu.",
+      "sheet": {
+        "name_required": "Podaj nazwę pozycji — taką jak we wniosku.",
+        "quantity_invalid": "Podaj ilość większą od zera.",
+        "cost_invalid": "To nie jest kwota.",
+        "too_large": "Razem wychodzi więcej, niż mieści budżet.",
+        "saved": "Zapisano pozycję kosztorysu.",
+        "added": "Dodano pozycję kosztorysu.",
+        "error": "Nie udało się zapisać pozycji.",
+        "edit_title": "Pozycja {{number}}",
+        "add_title": "Nowa pozycja kosztorysu",
+        "add": "Dodaj",
+        "category": "Rodzaj kosztu",
+        "category_detaches": "Koszty przypisane do tej pozycji zostaną poza kosztorysem — koszt przypisuje się do pozycji swojego rodzaju.",
+        "name": "Nazwa pozycji",
+        "name_placeholder": "np. Wynajem kościoła",
+        "quantity": "Ilość",
+        "unit": "Jednostka",
+        "unit_cost": "Cena jednostkowa (PLN)",
+        "total": "Razem: {{amount}} {{currency}}",
+        "note": "Uwagi"
+      },
+      "formula": "{{quantity}} {{unit}} × {{cost}} {{currency}}",
+      "actual": "wykonanie {{amount}}",
+      "outside": "Poza kosztorysem",
+      "line_field": "Pozycja kosztorysu",
+      "sections": {
+        "I": "Koszty realizacji działań",
+        "II": "Koszty administracyjne"
+      }
+    },
+    "standing": {
+      "planning": "Kosztorys można zmieniać. Zarząd zatwierdza go, gdy plan jest gotowy — koszty zapisuje się w każdym stanie oprócz zamkniętego.",
+      "approved": "Zatwierdzony {{date}}. Kosztorys jest zablokowany; koszty i zapłaty zapisuje się dalej.",
+      "closed": "Zamknięty {{date}}. Budżetu nie zmienia już nic, dopóki zarząd go nie otworzy.",
+      "error": "Nie udało się zmienić stanu budżetu.",
+      "reopened": "Budżet otwarty.",
+      "title": "Stan budżetu",
+      "approve": "Zatwierdź kosztorys",
+      "close": "Zamknij budżet",
+      "close_blocked": "Zamknąć można, gdy wszystko jest zapłacone, każdy ma stawkę i nie zostało honorarium poza obsadą.",
+      "reopen_plan": "Otwórz kosztorys do korekty",
+      "reopen_books": "Otwórz budżet ponownie",
+      "board_only": "Zatwierdza, otwiera do korekty i zamyka zarząd.",
+      "approve_confirm": "Zatwierdź",
+      "approved_done": "Kosztorys zatwierdzony.",
+      "approve_empty": "Kosztorys jest pusty — zatwierdzasz budżet bez planu. Koszty zapisuje się dalej, a plan można dodać po otwarciu do korekty.",
+      "approve_desc": "Plan na {{amount}} {{currency}} zostanie zablokowany. Zmienić go będzie można tylko po otwarciu do korekty, z podaniem powodu.",
+      "close_confirm": "Zamknij",
+      "closed_done": "Budżet zamknięty.",
+      "close_desc": "Koszt projektu: {{amount}} {{currency}}, w całości zapłacony. Po zamknięciu nic w budżecie się nie zmieni, dopóki zarząd go nie otworzy.",
+      "reopen_confirm": "Otwórz",
+      "reopen_books_desc": "Budżet wróci do stanu zatwierdzonego: znów będzie można zapisywać koszty i zapłaty.",
+      "reopen_plan_desc": "Kosztorys wróci do planowania i będzie go można zmienić. Potem zarząd zatwierdza go ponownie."
+    },
+    "files": {
+      "added": "Dodano plik {{name}}.",
+      "add_error": "Nie udało się dodać pliku.",
+      "title": "Pliki wydatku",
+      "add": "Dodaj plik",
+      "empty": "Brak plików",
+      "empty_desc": "Dołącz fakturę albo zdjęcie paragonu — PDF lub zdjęcie, do 20 MB.",
+      "download_aria": "Pobierz {{name}}",
+      "remove_aria": "Usuń {{name}}",
+      "remove_title": "Usunąć plik?",
+      "remove_desc": "{{name}} zniknie z wydatku. Usunięcie zostaje w historii budżetu.",
+      "remove_confirm": "Usuń plik",
+      "removed": "Usunięto plik.",
+      "remove_error": "Nie udało się usunąć pliku."
+    },
+    "history": {
+      "title": "Historia",
+      "loading": "Wczytuję historię…",
+      "empty": "Nic się jeszcze nie wydarzyło.",
+      "reason": "Powód: {{reason}}",
+      "more": "Pokaż starsze ({{count}})",
+      "actions": {
+        "IMPORTED": "Przeniesiono z obsady",
+        "CREATED": "Dodano",
+        "PRICED": "Zmieniono kwotę",
+        "FORM_CHANGED": "Zmieniono formę rozliczenia",
+        "DETAILS_CHANGED": "Zmieniono szczegóły",
+        "PAID": "Oznaczono zapłatę",
+        "UNPAID": "Cofnięto zapłatę",
+        "REMOVED": "Usunięto",
+        "CONTRACT_ISSUED": "Wystawiono umowę",
+        "CONTRACT_SIGNED": "Umowa podpisana",
+        "CONTRACT_HOURS": "Potwierdzono godziny",
+        "CONTRACT_ANNULLED": "Unieważniono umowę",
+        "BUDGET_APPROVED": "Zatwierdzono kosztorys",
+        "BUDGET_REOPENED": "Otwarto ponownie",
+        "BUDGET_CLOSED": "Zamknięto budżet",
+        "PLAN_CHANGED": "Zmieniono kosztorys",
+        "ALLOCATION_CHANGED": "Zmieniono przydział"
+      }
+    },
+    "units": {
+      "PERSON": "Osoba",
+      "PIECE": "Sztuka",
+      "SERVICE": "Usługa",
+      "HOUR": "Godzina",
+      "DAY": "Dzień",
+      "NIGHT": "Nocleg",
+      "KM": "Kilometr",
+      "LUMP_SUM": "Ryczałt"
+    },
+    "units_short": {
+      "PERSON": "os.",
+      "PIECE": "szt.",
+      "SERVICE": "usł.",
+      "HOUR": "godz.",
+      "DAY": "dn.",
+      "NIGHT": "nocl.",
+      "KM": "km",
+      "LUMP_SUM": "ryczałt"
+    },
+    "document_types": {
+      "INVOICE": "Faktura",
+      "BILL": "Rachunek",
+      "RECEIPT": "Paragon",
+      "OTHER": "Inny dokument"
     }
   },
   "crew": {

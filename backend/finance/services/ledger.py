@@ -2,10 +2,10 @@
 @file ledger.py
 @description The write side of the fee ledger: pricing (one atomic batch with an
              optional standard rate), one-off payees, bookkeeping details, paying
-             and reverting a payment, releasing a crew member's fee when they are
-             unassigned, and moving a seat's fee when an artist merge folds it.
-             Every rule of spec §5.1 that the database cannot
-             state is enforced here, and every change is logged.
+             and reverting a payment (of a fee or an expense), releasing a crew
+             member's fee when they are unassigned, and moving a seat's fee when
+             an artist merge folds it. Every rule of spec §5.1 that the database
+             cannot state is enforced here, and every change is logged.
 @architecture Enterprise SaaS 2026
 @module finance/services/ledger
 """
@@ -53,7 +53,7 @@ from ..rules import (
     reconcile_pricing,
 )
 from . import audit
-from .budget import BudgetService
+from .budget import BudgetService, reconcile_line_change
 
 # The fields a paid item or an issued contract freezes. Contributions and the
 # volunteer valuation stay editable: the office reports contributions after the
@@ -89,9 +89,12 @@ def has_live_contract(item: CostItem) -> bool:
 
 
 def refresh_item(item: CostItem, project: Project) -> None:
-    """Re-derive what the ledger owns: the payee snapshot from the roster while
-    no contract freezes it, the concert date while the fee is unpaid, and the
-    foundation's cost from the amount and the form."""
+    """Re-derive what the ledger owns of a fee: the payee snapshot from the
+    roster while no contract freezes it, the concert date while the fee is
+    unpaid, and the foundation's cost from the amount and the form. An expense
+    owns nothing derived — its cost and date are the document's."""
+    if item.kind != CostKind.FEE:
+        return
     source: Participation | CrewAssignment | None = item.participation or item.crew_assignment
     if source is not None and not has_live_contract(item):
         item.payee_name, item.payee_role = payee_snapshot(source)
@@ -199,12 +202,14 @@ def _apply_pricing(
     if item is None:
         source = row.source
         assert source is not None  # a new row is always a roster row; one-offs are created elsewhere
+        category = category_for(source)
         item = CostItem(
             budget=budget,
             kind=CostKind.FEE,
             participation=row.participation,
             crew_assignment=row.crew_assignment,
-            category=category_for(source),
+            category=category,
+            budget_line=BudgetService.default_line(budget, category),
             incurred_on=local_date(project.date_time, project.timezone),
         )
     else:
@@ -323,6 +328,7 @@ class LedgerService:
                 budget=budget,
                 kind=CostKind.FEE,
                 category=dto.category,
+                budget_line=BudgetService.default_line(budget, dto.category),
                 payee_name=dto.payee_name,
                 payee_role=dto.payee_role,
                 form=pricing.form,
@@ -366,10 +372,13 @@ class LedgerService:
                 raise InvalidItemChange(params={"fields": ["payee_name"]})
             if "category" in requested and requested["category"] is None:
                 raise InvalidItemChange(params={"fields": ["category"]})
+            if "budget_line" in requested:
+                requested["budget_line_id"] = requested.pop("budget_line")
 
             changed = {name: value for name, value in requested.items() if getattr(item, name) != value}
             if not changed:
                 return item
+            reconcile_line_change(budget, item, changed)
             identity = sorted(changed.keys() & _ONE_OFF_ONLY_FIELDS)
             if identity:
                 if not item.is_one_off:
@@ -391,15 +400,18 @@ class LedgerService:
             return item
 
     @staticmethod
-    def pay(project: Project, dto: PayFeesDTO, *, actor: User | None) -> list[CostItem]:
-        """All or nothing: an unpriced, volunteer, already-paid or foreign id
-        refuses the whole call and names every one of them."""
+    def pay(
+        project: Project, dto: PayFeesDTO, *, actor: User | None, kind: str = CostKind.FEE,
+    ) -> list[CostItem]:
+        """All or nothing, for items of one kind: an unpriced, volunteer,
+        already-paid or foreign id refuses the whole call and names every one
+        of them. An expense is always priced — its cost is its document's."""
         with transaction.atomic():
             budget = BudgetService.lock(project)
             BudgetService.assert_writable(budget)
             items = {
                 item.pk: item
-                for item in CostItem.objects.filter(budget=budget, kind=CostKind.FEE, pk__in=dto.ids)
+                for item in CostItem.objects.filter(budget=budget, kind=kind, pk__in=dto.ids)
             }
             refused: list[dict[str, str]] = []
             for item_id in dto.ids:
@@ -407,7 +419,7 @@ class LedgerService:
                 reason = ""
                 if item is None:
                     reason = "unknown"
-                elif item.contract_amount is None:
+                elif item.kind == CostKind.FEE and item.contract_amount is None:
                     reason = "unpriced"
                 elif item.form == FeeForm.VOLUNTEER:
                     reason = "volunteer"

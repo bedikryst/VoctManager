@@ -176,6 +176,12 @@ const BudgetOverviewPage = lazyWithPreload(
 const BudgetFeesPage = lazyWithPreload(
   () => import("@features/finance/budget/FeesPage"),
 );
+const BudgetPlanPage = lazyWithPreload(
+  () => import("@features/finance/budget/PlanPage"),
+);
+const BudgetExpensesPage = lazyWithPreload(
+  () => import("@features/finance/budget/ExpensesPage"),
+);
 const ProjectDetailsPage = lazyWithPreload(
   () => import("@features/projects/ProjectDetailsPage"),
 );
@@ -246,6 +252,8 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { scope: "manager", preload: ProjectBudgetPage.preload },
   { scope: "manager", preload: BudgetOverviewPage.preload },
   { scope: "manager", preload: BudgetFeesPage.preload },
+  { scope: "manager", preload: BudgetPlanPage.preload },
+  { scope: "manager", preload: BudgetExpensesPage.preload },
   { scope: "manager", preload: ProjectDetailsPage.preload },
   { scope: "manager", preload: ArchiveManagement.preload },
   { scope: "manager", preload: ArchivePieceCardPage.preload },
@@ -383,7 +391,9 @@ export const router = createBrowserRouter(
               <Route path="crew" element={<ProjectCrewPage />} />
               <Route path="budget" element={<ProjectBudgetPage />}>
                 <Route index element={<BudgetOverviewPage />} />
+                <Route path="plan" element={<BudgetPlanPage />} />
                 <Route path="people" element={<BudgetFeesPage />} />
+                <Route path="costs" element={<BudgetExpensesPage />} />
               </Route>
               <Route path="details" element={<ProjectDetailsPage />} />
               <Route

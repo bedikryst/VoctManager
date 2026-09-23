@@ -3,8 +3,9 @@
 Status: **Spec written 2026-09-23; the developer answered Q1–Q6 the same day (§2, §4). Stages 1,
 1b, 2 and 3 — release R1 — built 2026-09-23 (see "As built" under each in §11). Stages 1 and 1b are
 committed; Stage 2 was reviewed in the browser; Stages 2 and 3 are uncommitted. R1 is not deployed
-and goes to prod as one release. The printed copies of Stage 1b await the developer's check; Stage 4
-is next. Contract wording is drafted in
+and goes to prod as one release. The printed copies of Stage 1b await the developer's check. Stage 4
+was built the same day on top of the uncommitted R1 tree; it awaits the browser review. Stage 5 is
+next. Contract wording is drafted in
 `project-finance-contract-drafts-2026-09.md` and awaits legal and accounting review. That review
 gates the first real use of the new templates, not their build.**
 Written from the developer's brief of 2026-09-23 ("as ambitious as possible — this concert is the
@@ -713,6 +714,59 @@ their own. Every deploy that touches models needs `make migrate` on prod.
 - Backend: `BudgetLine`, EXPENSE items, `FinanceAttachment` + nginx `internal` entries (both confs),
   transitions approve/reopen/close with locks, line reorder, `LINE_OVER_PLAN` / `COST_OUTSIDE_PLAN`.
 - Frontend: Kosztorys and Wydatki sub-tabs; Przegląd gains Plan and the history view.
+
+**As built (2026-09-23)** — where Stage 4 differs from the text above:
+
+- **Schema:** `finance/0003`. `CostItem` gains `budget_line` (SET_NULL — the service detaches, logged,
+  before it removes a line), `vendor_name`, `document_type`, `description`. Two new check constraints:
+  the personnel categories are fees and every other category is an expense (a company invoicing for a
+  performer is a fee with form `INVOICE`, never an expense), and an expense has no seat, form or
+  contract amount and a cost above 0. The migration deliberately has no dependency on `roster/0062`:
+  it touches no roster table, and `test_data_copy` rolls the roster back past 0062 while it stays
+  applied; that test now hands the copy the ledger models of the latest finance state.
+- **A cost is charged only to a line of its own category** (`plan_line_category_mismatch`). A newly
+  priced fee takes the only line of its category when there is exactly one; with two
+  ("chór", "dyrygent") it waits outside the plan. A cost that changes category leaves a line of the old
+  one unless the edit names a new line. Fees set their line through `PATCH cost-items/{id}/`
+  (`budget_line`). Added beyond §6: `POST lines/{id}/charge/` charges every priced cost of the line's
+  category that sits outside the plan — the one-click fix for fees priced before the plan existed, the
+  first concert's included. It is an act on actuals, so it runs in an approved budget.
+- **The korekta path is the board's reopen**, not a board edit inside an approved plan: plan writes are
+  refused in `APPROVED` and `CLOSED` (`plan_locked`) for everyone; `reopen` steps back one state
+  (`CLOSED → APPROVED`, `APPROVED → PLANNING`) with a reason. Approving an empty plan is allowed, so a
+  project without a kosztorys can still be closed. Closing is refused while anything is outstanding,
+  unpriced or orphaned (`budget_has_open_items`, with the three figures in `params`).
+- **Summary:** `committed`, `paid` and `outstanding` are the whole budget; `fees` and `expenses` split
+  them; `planned` is null without lines; `unplanned` is the counted cost charged to no line. Honoraria
+  reads `fees`. Przegląd's rail is now Plan · Honoraria/Wydatki (as a split of two) · Zapłacone · Do
+  zapłaty; the Stage 2 per-category split left the rail, because with expenses it runs to a dozen
+  figures. Plan-line subtotals per section are not shown — the client would be summing persisted money.
+- **Warnings:** `COST_OUTSIDE_PLAN` ignores volunteers (0 zł is no cost to place); `LINE_OVER_PLAN` uses
+  no tolerance until Stage 5 gives sources one; `PAYMENT_OVERDUE` covers expenses. `subject_ids` are
+  ledger row keys, expense ids or line ids, and Przegląd links each to its own sub-tab.
+- **Added beyond §6:** `POST projects/{id}/expenses/pay/` (fees and expenses keep separate pay doors;
+  `unpay` takes either); `GET projects/{id}/history/?limit=&offset=` with a server-resolved
+  `subject_label` and `actor_name`. Payables on the portfolio include unpaid expenses (`kind`,
+  `vendor_name`, `description`). The ledger CSV lists expenses too and gains a trailing "Pozycja
+  kosztorysu" column ("I.2 Wynajem kościoła"); Stage 6 still finalises it.
+- **Attachments:** `POST attachments/` (multipart `cost_item` + `file`), `GET|DELETE attachments/{id}/`.
+  Expenses only (`attachment_not_allowed` for a fee, per Q6b); no contract FK until Q6b is decided.
+  Stored as `finance/<yyyy>/<uuid><ext>` with the original name on the row; the type is read from the
+  bytes (libmagic — PDF, JPEG, PNG, WEBP, HEIC/HEIF), 20 MB; a server without libmagic answers 503
+  `file_detection_unavailable`. Removal is a soft delete and the file stays on disk. The nginx
+  `internal` entry for `/media/finance/` already existed from Stage 1b.
+- **Frontend:** sub-tabs Przegląd · Kosztorys · Honoraria · Wydatki. Kosztorys groups lines by section
+  and category, moves a line within its category, deletes with a statement of what happens to its
+  costs, and proposes the cast line (billable cast × the most frequent priced fee) into the form. The
+  line total previews in BigInt grosze (`lineTotalGrosze`, in `money.test.ts`). Wydatki books from the
+  vendor's document, preselects the only line of the category, keeps amount and payee read-only once
+  paid, and holds files in a sheet whose removal asks first. Przegląd gains "Stan budżetu" (board acts;
+  close disabled with the reason while unsettled) and "Historia" (infinite, 20 per page). A fee row
+  says "poza kosztorysem" in gold when the budget has a plan and the fee has no line.
+- **Seed:** each project gets a four-line kosztorys and two expenses; printing overruns its line by
+  20 zł so `LINE_OVER_PLAN` has something to show.
+- **Not done:** no backend `.po` entries for the new msgids (as in Stage 1); no enum-dictionary
+  registration (the client owns the vocabulary, as decided in Stage 2).
 
 ### Stage 5 — Funding
 

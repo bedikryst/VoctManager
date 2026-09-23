@@ -7,8 +7,9 @@
  *  - freshness from `queryPolicy` — a budget changes under other hands (a
  *    singer declines, the office pays), so every mount reconciles.
  *  - every write answers with the whole budget, which replaces the cached one
- *    outright, and marks the portfolio stale. A refused write refetches the
- *    budget instead, since a refusal usually means the copy on screen is old.
+ *    outright, and marks the portfolio and the budget's history stale. A
+ *    refused write refetches the budget instead, since a refusal usually means
+ *    the copy on screen is old.
  * Nothing here is queued offline: a finance write either reaches the server
  * or visibly does not happen.
  * @architecture Enterprise SaaS 2026
@@ -18,6 +19,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   keepPreviousData,
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -25,7 +27,11 @@ import {
 
 import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
 import type {
+  BudgetLinePayload,
+  BudgetLineUpdatePayload,
   CostItemDetailsPayload,
+  ExpensePayload,
+  ExpenseUpdatePayload,
   FeeBatchPayload,
   OneOffFeePayload,
   PayFeesPayload,
@@ -40,6 +46,7 @@ export const financeKeys = {
   overviews: ["finance", "overview"] as const,
   overview: (limit: number, offset: number) =>
     ["finance", "overview", limit, offset] as const,
+  history: (projectId: string) => ["finance", "history", projectId] as const,
 };
 
 const FINANCE_STALE_TIME = 30_000;
@@ -68,6 +75,24 @@ export const useFinanceOverview = (offset: number) =>
     ...FINANCE_QUERY_OPTIONS,
   });
 
+const HISTORY_PAGE_SIZE = 20;
+
+/**
+ * The budget's history, newest first, a page at a time. A write invalidates it
+ * whole, so every loaded page is refetched from the top and none drifts by the
+ * acts that landed above it.
+ */
+export const useBudgetHistory = (projectId: string) =>
+  useInfiniteQuery({
+    queryKey: financeKeys.history(projectId),
+    queryFn: ({ pageParam }) => FinanceService.getHistory(projectId, HISTORY_PAGE_SIZE, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (last) =>
+      last.offset + last.limit < last.count ? last.offset + last.limit : undefined,
+    enabled: Boolean(projectId),
+    ...FINANCE_QUERY_OPTIONS,
+  });
+
 /** A write whose answer is the project's whole budget. */
 const useBudgetWrite = <TVariables>(
   projectId: string,
@@ -80,6 +105,7 @@ const useBudgetWrite = <TVariables>(
     onSuccess: (budget) => {
       queryClient.setQueryData(financeKeys.budget(projectId), budget);
       void queryClient.invalidateQueries({ queryKey: financeKeys.overviews });
+      void queryClient.invalidateQueries({ queryKey: financeKeys.history(projectId) });
     },
     onError: () => {
       void queryClient.invalidateQueries({ queryKey: financeKeys.budget(projectId) });
@@ -135,6 +161,76 @@ export const useAnnulContract = (projectId: string) =>
   useBudgetWrite(projectId, ({ contractId, reason }: { contractId: string; reason: string }) =>
     FinanceService.annulContract(contractId, reason),
   );
+
+// ── Expenses ──────────────────────────────────────────────────────────────
+
+export const useCreateExpense = (projectId: string) =>
+  useBudgetWrite(projectId, (payload: ExpensePayload) =>
+    FinanceService.createExpense(projectId, payload),
+  );
+
+export const useUpdateExpense = (projectId: string) =>
+  useBudgetWrite(
+    projectId,
+    ({ expenseId, payload }: { expenseId: string; payload: ExpenseUpdatePayload }) =>
+      FinanceService.updateExpense(projectId, expenseId, payload),
+  );
+
+export const useDeleteExpense = (projectId: string) =>
+  useBudgetWrite(projectId, (expenseId: string) =>
+    FinanceService.deleteExpense(projectId, expenseId),
+  );
+
+export const usePayExpenses = (projectId: string) =>
+  useBudgetWrite(projectId, (payload: PayFeesPayload) =>
+    FinanceService.payExpenses(projectId, payload),
+  );
+
+export const useUploadAttachment = (projectId: string) =>
+  useBudgetWrite(projectId, ({ costItemId, file }: { costItemId: string; file: File }) =>
+    FinanceService.uploadAttachment(costItemId, file),
+  );
+
+export const useDeleteAttachment = (projectId: string) =>
+  useBudgetWrite(projectId, (attachmentId: string) =>
+    FinanceService.deleteAttachment(attachmentId),
+  );
+
+// ── The plan ──────────────────────────────────────────────────────────────
+
+export const useCreateLine = (projectId: string) =>
+  useBudgetWrite(projectId, (payload: BudgetLinePayload) =>
+    FinanceService.createLine(projectId, payload),
+  );
+
+export const useUpdateLine = (projectId: string) =>
+  useBudgetWrite(
+    projectId,
+    ({ lineId, payload }: { lineId: string; payload: BudgetLineUpdatePayload }) =>
+      FinanceService.updateLine(projectId, lineId, payload),
+  );
+
+export const useDeleteLine = (projectId: string) =>
+  useBudgetWrite(projectId, (lineId: string) => FinanceService.deleteLine(projectId, lineId));
+
+export const useReorderLines = (projectId: string) =>
+  useBudgetWrite(projectId, (ids: readonly string[]) =>
+    FinanceService.reorderLines(projectId, ids),
+  );
+
+export const useChargeLine = (projectId: string) =>
+  useBudgetWrite(projectId, (lineId: string) => FinanceService.chargeLine(projectId, lineId));
+
+// ── The budget's standing ─────────────────────────────────────────────────
+
+export const useApproveBudget = (projectId: string) =>
+  useBudgetWrite<void>(projectId, () => FinanceService.approveBudget(projectId));
+
+export const useReopenBudget = (projectId: string) =>
+  useBudgetWrite(projectId, (reason: string) => FinanceService.reopenBudget(projectId, reason));
+
+export const useCloseBudget = (projectId: string) =>
+  useBudgetWrite<void>(projectId, () => FinanceService.closeBudget(projectId));
 
 // ── The contracts ZIP ─────────────────────────────────────────────────────
 

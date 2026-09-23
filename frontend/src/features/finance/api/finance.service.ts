@@ -1,11 +1,11 @@
 /**
  * @file finance.service.ts
- * @description Pure HTTP for `/api/finance/`. Every ledger write answers with
+ * @description Pure HTTP for `/api/finance/`. Every budget write — fees,
+ * expenses, the plan, the budget's standing, an expense's files — answers with
  * the whole budget, freshly computed, so the caller replaces its copy instead
- * of reconciling rows. Documents (contracts, bills, the CSV, the contracts
- * ZIP) are fetched as blobs through the authenticated client and saved from
- * memory: none of them has a public URL, and the ZIP in particular is streamed
- * by a manager-only view.
+ * of reconciling rows. Files (contracts, bills, the CSV, the contracts ZIP, an
+ * expense's attachments) are fetched as blobs through the authenticated client
+ * and saved from memory: none of them has a public URL.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/api/finance.service
  */
@@ -14,10 +14,15 @@ import axios, { type AxiosResponse } from "axios";
 
 import api from "@/shared/api/api";
 import type {
+  BudgetLinePayload,
+  BudgetLineUpdatePayload,
   ContractsZipStatusDTO,
   CostItemDetailsPayload,
+  ExpensePayload,
+  ExpenseUpdatePayload,
   FeeBatchPayload,
   FinanceOverviewDTO,
+  HistoryPageDTO,
   IsoDate,
   OneOffFeePayload,
   PayFeesPayload,
@@ -214,4 +219,153 @@ export const FinanceService = {
   /** `fileUrl` is the manager-only view the status names, not a media path. */
   downloadContractsZip: (fileUrl: string): Promise<void> =>
     download(fileUrl, "Umowy.zip"),
+
+  // ── Expenses ────────────────────────────────────────────────────────────
+
+  createExpense: async (
+    projectId: string,
+    payload: ExpensePayload,
+  ): Promise<ProjectBudgetDTO> => {
+    const response = await api.post<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/expenses/`,
+      payload,
+    );
+    return response.data;
+  },
+
+  updateExpense: async (
+    projectId: string,
+    expenseId: string,
+    payload: ExpenseUpdatePayload,
+  ): Promise<ProjectBudgetDTO> => {
+    const response = await api.patch<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/expenses/${expenseId}/`,
+      payload,
+    );
+    return response.data;
+  },
+
+  deleteExpense: async (projectId: string, expenseId: string): Promise<ProjectBudgetDTO> => {
+    const response = await api.delete<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/expenses/${expenseId}/`,
+    );
+    return response.data;
+  },
+
+  payExpenses: async (
+    projectId: string,
+    payload: PayFeesPayload,
+  ): Promise<ProjectBudgetDTO> => {
+    const response = await api.post<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/expenses/pay/`,
+      payload,
+    );
+    return response.data;
+  },
+
+  uploadAttachment: async (costItemId: string, file: File): Promise<ProjectBudgetDTO> => {
+    const body = new FormData();
+    body.append("cost_item", costItemId);
+    body.append("file", file);
+    const response = await api.post<ProjectBudgetDTO>(`${BASE}/attachments/`, body, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
+
+  deleteAttachment: async (attachmentId: string): Promise<ProjectBudgetDTO> => {
+    const response = await api.delete<ProjectBudgetDTO>(
+      `${BASE}/attachments/${attachmentId}/`,
+    );
+    return response.data;
+  },
+
+  downloadAttachment: (attachmentId: string, fallbackName: string): Promise<void> =>
+    download(`${BASE}/attachments/${attachmentId}/`, fallbackName),
+
+  // ── The plan ────────────────────────────────────────────────────────────
+
+  createLine: async (
+    projectId: string,
+    payload: BudgetLinePayload,
+  ): Promise<ProjectBudgetDTO> => {
+    const response = await api.post<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/lines/`,
+      payload,
+    );
+    return response.data;
+  },
+
+  updateLine: async (
+    projectId: string,
+    lineId: string,
+    payload: BudgetLineUpdatePayload,
+  ): Promise<ProjectBudgetDTO> => {
+    const response = await api.patch<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/lines/${lineId}/`,
+      payload,
+    );
+    return response.data;
+  },
+
+  deleteLine: async (projectId: string, lineId: string): Promise<ProjectBudgetDTO> => {
+    const response = await api.delete<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/lines/${lineId}/`,
+    );
+    return response.data;
+  },
+
+  reorderLines: async (
+    projectId: string,
+    ids: readonly string[],
+  ): Promise<ProjectBudgetDTO> => {
+    const response = await api.post<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/lines/reorder/`,
+      { ids },
+    );
+    return response.data;
+  },
+
+  chargeLine: async (projectId: string, lineId: string): Promise<ProjectBudgetDTO> => {
+    const response = await api.post<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/lines/${lineId}/charge/`,
+    );
+    return response.data;
+  },
+
+  // ── The budget's standing and history ───────────────────────────────────
+
+  approveBudget: async (projectId: string): Promise<ProjectBudgetDTO> => {
+    const response = await api.post<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/budget/approve/`,
+    );
+    return response.data;
+  },
+
+  reopenBudget: async (projectId: string, reason: string): Promise<ProjectBudgetDTO> => {
+    const response = await api.post<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/budget/reopen/`,
+      { reason },
+    );
+    return response.data;
+  },
+
+  closeBudget: async (projectId: string): Promise<ProjectBudgetDTO> => {
+    const response = await api.post<ProjectBudgetDTO>(
+      `${BASE}/projects/${projectId}/budget/close/`,
+    );
+    return response.data;
+  },
+
+  getHistory: async (
+    projectId: string,
+    limit: number,
+    offset: number,
+  ): Promise<HistoryPageDTO> => {
+    const response = await api.get<HistoryPageDTO>(
+      `${BASE}/projects/${projectId}/history/`,
+      { params: { limit, offset } },
+    );
+    return response.data;
+  },
 };

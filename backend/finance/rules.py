@@ -3,12 +3,15 @@
 @description The money rules as pure functions: which form a person is settled
              under by default, which cost category a fee falls into, what the
              foundation's cost of an item is, how "0 zł" and "volunteer" keep
-             meaning the same thing, and the constants the warnings read. Nothing
-             here touches the database, so the ledger service, the warnings and
-             the roster data copy all ask the same questions of the same code.
+             meaning the same thing, what a plan line is worth and which
+             kosztorys number it carries, and the constants the warnings read.
+             Nothing here touches the database, so the ledger service, the
+             warnings and the roster data copy all ask the same questions of
+             the same code.
 @architecture Enterprise SaaS 2026
 @module finance/rules
 """
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal
@@ -233,6 +236,61 @@ def reconcile_pricing(
     if form == FeeForm.VOLUNTEER and (amount is None or amount != 0):
         return Pricing(fallback_form, amount)
     return Pricing(form, amount)
+
+
+# --------------------------------------------------------------------------- #
+# The plan                                                                     #
+# --------------------------------------------------------------------------- #
+
+# The largest amount a stored total can hold (ten digits, two decimals). A plan
+# line's product of two factors is checked against it before it is saved.
+MAX_AMOUNT = Decimal('99999999.99')
+
+# The public-benefit kosztorys splits costs into two sections: "I. Koszty
+# realizacji działań" and "II. Koszty administracyjne". Administration is the
+# second; everything else the first.
+PLAN_SECTION_ACTIVITIES = "I"
+PLAN_SECTION_ADMINISTRATION = "II"
+
+# The order categories are listed in, within a section: the enum's own order.
+_CATEGORY_ORDER: dict[str, int] = {category: index for index, category in enumerate(CostCategory)}
+
+
+def plan_section(category: str) -> str:
+    if category == CostCategory.ADMINISTRATION:
+        return PLAN_SECTION_ADMINISTRATION
+    return PLAN_SECTION_ACTIVITIES
+
+
+def planned_amount(quantity: Decimal, unit_cost: Decimal) -> Decimal:
+    return money(quantity * unit_cost)
+
+
+@dataclass(frozen=True)
+class PlanEntry:
+    """What numbering a line needs to know about it."""
+
+    key: object
+    category: str
+    position: int
+    created_at: datetime
+
+
+def plan_order(entry: PlanEntry) -> tuple[str, int, int, datetime]:
+    return (plan_section(entry.category), _CATEGORY_ORDER.get(entry.category, 0), entry.position, entry.created_at)
+
+
+def plan_numbers(entries: Iterable[PlanEntry]) -> dict[object, str]:
+    """The kosztorys number of every line: its section and its place in it —
+    "I.1", "I.2", …, "II.1". Lines run by category, then by position, so moving
+    a line or adding one earlier renumbers what follows, as on paper."""
+    numbers: dict[object, str] = {}
+    counters: dict[str, int] = {}
+    for entry in sorted(entries, key=plan_order):
+        section = plan_section(entry.category)
+        counters[section] = counters.get(section, 0) + 1
+        numbers[entry.key] = f"{section}.{counters[section]}"
+    return numbers
 
 
 def minimum_hourly_rate(year: int) -> Decimal | None:

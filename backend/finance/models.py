@@ -1,14 +1,16 @@
 """
 @file models.py
-@description The project money ledger: one budget per project, one row per
-             actual cost, the contracts the foundation issues for fees, their
-             numbering, and an append-only log of every act that changed a
-             settled fact. Amounts are the foundation's cost in PLN; no VAT is
-             modelled because the foundation is not a VAT payer.
+@description The project money ledger: one budget per project, its plan (the
+             kosztorys lines), one row per actual cost — fees and expenses in one
+             table — the files kept with an expense, the contracts the foundation
+             issues for fees, their numbering, and an append-only log of every
+             act that changed a settled fact. Amounts are the foundation's cost
+             in PLN; no VAT is modelled because the foundation is not a VAT payer.
 @architecture Enterprise SaaS 2026
 @module finance/models
 """
 import uuid
+from pathlib import PurePosixPath
 
 from django.conf import settings
 from django.db import models
@@ -56,6 +58,33 @@ class CostCategory(models.TextChoices):
 
 # The two sides a fee can sit on. A one-off payee states which one it is.
 FEE_CATEGORIES = (CostCategory.PERSONNEL_ARTISTIC, CostCategory.PERSONNEL_TECHNICAL)
+
+# Everything else is an expense. Paying a person is a fee, whoever invoices it,
+# so the personnel categories never hold an expense and Honoraria stays the one
+# place a person's money is read.
+EXPENSE_CATEGORIES = tuple(category for category in CostCategory if category not in FEE_CATEGORIES)
+
+
+class PlanUnit(models.TextChoices):
+    """The unit a kosztorys line is counted in ("Rodzaj miary")."""
+
+    PERSON = 'PERSON', _('Person')
+    PIECE = 'PIECE', _('Piece')
+    SERVICE = 'SERVICE', _('Service')
+    HOUR = 'HOUR', _('Hour')
+    DAY = 'DAY', _('Day')
+    NIGHT = 'NIGHT', _('Night')
+    KM = 'KM', _('Kilometre')
+    LUMP_SUM = 'LUMP_SUM', _('Lump sum')
+
+
+class ExpenseDocumentType(models.TextChoices):
+    """The vendor's document an expense is booked from."""
+
+    INVOICE = 'INVOICE', _('Invoice')
+    BILL = 'BILL', _('Bill')
+    RECEIPT = 'RECEIPT', _('Receipt')
+    OTHER = 'OTHER', _('Other document')
 
 
 class FeeForm(models.TextChoices):
@@ -135,6 +164,44 @@ class ProjectBudget(EnterpriseBaseModel):
         return f"{self.project} ({self.status})"
 
 
+class BudgetLine(EnterpriseBaseModel):
+    """One line of the plan — the kosztorys: "Honoraria chórzystów", 8 persons
+    at 400 zł.
+
+    The planned amount is quantity times unit cost, computed and never stored, so it
+    cannot drift from its factors. The kosztorys number ("I.3") is derived from
+    the category order and `position` when the plan is read, never stored either:
+    moving a line renumbers every line after it, and a stored number would lie.
+    """
+
+    budget = models.ForeignKey(
+        ProjectBudget, on_delete=models.PROTECT, related_name='lines', verbose_name=_("Budget"),
+    )
+    category = models.CharField(max_length=24, choices=CostCategory.choices, verbose_name=_("Category"))
+    name = models.CharField(max_length=200, verbose_name=_("Name"))
+    # Order within the budget; lines are shown grouped by category, so this is
+    # effectively the order within a category.
+    position = models.PositiveIntegerField(default=0, verbose_name=_("Position"))
+    unit = models.CharField(max_length=10, choices=PlanUnit.choices, verbose_name=_("Unit"))
+    quantity = models.DecimalField(max_digits=8, decimal_places=2, verbose_name=_("Quantity"))
+    unit_cost = models.DecimalField(
+        max_digits=MONEY_DIGITS, decimal_places=MONEY_DECIMALS, verbose_name=_("Unit cost"),
+    )
+    note = models.TextField(blank=True, verbose_name=_("Note"))
+
+    class Meta:
+        verbose_name = _("Budget line")
+        verbose_name_plural = _("Budget lines")
+        ordering = ['position', 'created_at']
+        constraints = [
+            models.CheckConstraint(condition=models.Q(quantity__gt=0), name='finance_line_quantity_positive'),
+            models.CheckConstraint(condition=models.Q(unit_cost__gte=0), name='finance_line_unit_cost_not_negative'),
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class CostItem(EnterpriseBaseModel):
     """One actual cost. Fees and expenses share the table so every total is one
     aggregate.
@@ -152,6 +219,13 @@ class CostItem(EnterpriseBaseModel):
     )
     kind = models.CharField(max_length=8, choices=CostKind.choices, default=CostKind.FEE, verbose_name=_("Kind"))
     category = models.CharField(max_length=24, choices=CostCategory.choices, verbose_name=_("Category"))
+    # The plan line the cost is charged to; null is "outside the plan". SET_NULL
+    # for a raw delete only — the plan service detaches a line's costs, logged,
+    # before it removes the line.
+    budget_line = models.ForeignKey(
+        BudgetLine, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='cost_items', verbose_name=_("Plan line"),
+    )
     cost_amount = models.DecimalField(
         max_digits=MONEY_DIGITS, decimal_places=MONEY_DECIMALS, null=True, blank=True,
         verbose_name=_("Cost to the foundation"),
@@ -204,10 +278,18 @@ class CostItem(EnterpriseBaseModel):
         max_digits=MONEY_DIGITS, decimal_places=MONEY_DECIMALS, null=True, blank=True,
         verbose_name=_("Volunteer hourly valuation"),
     )
-    # The vendor's own document, for an INVOICE fee.
+    # The vendor's own document: an INVOICE fee's, and every expense's.
     document_number = models.CharField(max_length=100, blank=True, verbose_name=_("Document number"))
     document_date = models.DateField(null=True, blank=True, verbose_name=_("Document date"))
     vendor_nip = models.CharField(max_length=13, blank=True, verbose_name=_("Vendor NIP"))
+
+    # --- EXPENSE: who is paid, against what, for what. The cost is the
+    # document's gross, entered directly: no VAT is recoverable. ---
+    vendor_name = models.CharField(max_length=200, blank=True, verbose_name=_("Vendor"))
+    document_type = models.CharField(
+        max_length=8, choices=ExpenseDocumentType.choices, blank=True, verbose_name=_("Document type"),
+    )
+    description = models.CharField(max_length=300, blank=True, verbose_name=_("Description"))
 
     class Meta:
         verbose_name = _("Cost item")
@@ -271,6 +353,31 @@ class CostItem(EnterpriseBaseModel):
                 name='finance_item_paid_is_priced',
                 violation_error_message=_("Only a priced, non-volunteer fee can be paid."),
             ),
+            # A person is paid through a fee, anything else is an expense.
+            models.CheckConstraint(
+                condition=(
+                    models.Q(kind=CostKind.FEE, category__in=FEE_CATEGORIES)
+                    | (models.Q(kind=CostKind.EXPENSE) & ~models.Q(category__in=FEE_CATEGORIES))
+                ),
+                name='finance_item_category_matches_kind',
+                violation_error_message=_("Personnel costs are fees; every other category is an expense."),
+            ),
+            # An expense has no person, no form and no contract amount: its cost
+            # is the document's gross, and it is never zero.
+            models.CheckConstraint(
+                condition=(
+                    models.Q(kind=CostKind.FEE)
+                    | models.Q(
+                        participation__isnull=True,
+                        crew_assignment__isnull=True,
+                        form='',
+                        contract_amount__isnull=True,
+                        cost_amount__gt=0,
+                    )
+                ),
+                name='finance_item_expense_shape',
+                violation_error_message=_("An expense carries its cost directly and belongs to no person."),
+            ),
         ]
 
     def __str__(self) -> str:
@@ -287,6 +394,57 @@ class CostItem(EnterpriseBaseModel):
     @property
     def is_one_off(self) -> bool:
         return self.kind == CostKind.FEE and self.participation_id is None and self.crew_assignment_id is None
+
+
+# What an expense's attachment may be: a scanned or photographed document, or
+# the PDF a vendor sent. Detected from the file's bytes, never from its name.
+ATTACHMENT_MIME_TYPES: frozenset[str] = frozenset({
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/heic',
+    'image/heif',
+})
+ATTACHMENT_MAX_BYTES = 20 * 1024 * 1024
+
+
+def attachment_upload_to(instance: 'FinanceAttachment', filename: str) -> str:
+    """`finance/<year>/<uuid><ext>`. The stored name is random: an uploaded name
+    carries a vendor's or a person's name into a path, and a guessable path is
+    one step from a public one. The original name is kept on the row."""
+    suffix = PurePosixPath(filename).suffix.lower()[:10]
+    return f"finance/{timezone.now():%Y}/{uuid.uuid4().hex}{suffix}"
+
+
+class FinanceAttachment(EnterpriseBaseModel):
+    """A file kept with an expense — the vendor's invoice, a receipt.
+
+    Expenses only: a signed contract or a bill carries a handwritten PESEL, and
+    whether the app holds those is undecided (spec §4 Q6b), so the service
+    refuses a fee. The file sits under `MEDIA_ROOT/finance/`, which nginx serves
+    to nobody; the manager-only download view streams it.
+    """
+
+    cost_item = models.ForeignKey(
+        CostItem, on_delete=models.PROTECT, related_name='attachments', verbose_name=_("Cost item"),
+    )
+    file = models.FileField(upload_to=attachment_upload_to, max_length=200, verbose_name=_("File"))
+    original_name = models.CharField(max_length=255, verbose_name=_("Original name"))
+    mime_type = models.CharField(max_length=100, verbose_name=_("MIME type"))
+    size_bytes = models.PositiveIntegerField(verbose_name=_("Size in bytes"))
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='+', verbose_name=_("Uploaded by"),
+    )
+
+    class Meta:
+        verbose_name = _("Finance attachment")
+        verbose_name_plural = _("Finance attachments")
+        ordering = ['created_at']
+
+    def __str__(self) -> str:
+        return self.original_name
 
 
 class Contract(EnterpriseBaseModel):

@@ -1,12 +1,13 @@
 """
 @file ledger_csv.py
-@description The office's ledger export: every fee a budget counts, one row
-             each, in the shape Polish Excel opens without an import dialog —
-             UTF-8 with a BOM, `;` between cells, a decimal comma, dd.mm.yyyy
-             dates. The rows are the ledger's own (`counted`), so the export
-             sums to the figure the panel states as the cost. The office reads
-             Polish, as the contracts do, so the column heads and the
-             vocabulary are Polish whatever language the manager uses.
+@description The office's ledger export: every fee a budget counts and every
+             expense, one row each, in the shape Polish Excel opens without an
+             import dialog — UTF-8 with a BOM, `;` between cells, a decimal
+             comma, dd.mm.yyyy dates. The rows are the budget's own (a fee only
+             when `counted`), so the export sums to the figure the panel states
+             as the cost. The office reads Polish, as the contracts do, so the
+             column heads and the vocabulary are Polish whatever language the
+             manager uses.
 @architecture Enterprise SaaS 2026
 @module finance/infrastructure/ledger_csv
 """
@@ -15,11 +16,12 @@ import io
 from collections.abc import Iterable
 from datetime import date
 from decimal import Decimal
+from uuid import UUID
 
 from roster.models import Project
 
-from ..models import ContractStatus, CostCategory, FeeForm
-from ..services.budget import LedgerRow, ProjectMoney
+from ..models import ContractStatus, CostCategory, ExpenseDocumentType, FeeForm
+from ..services.budget import ExpenseRow, LedgerRow, ProjectMoney
 from .documents import file_segment
 
 HEADER: tuple[str, ...] = (
@@ -39,7 +41,16 @@ HEADER: tuple[str, ...] = (
     "Data zapłaty",
     "NIP",
     "Uwagi",
+    "Pozycja kosztorysu",
 )
+
+# An expense's "form" column names the vendor's document.
+DOCUMENT_TYPE_LABELS: dict[str, str] = {
+    ExpenseDocumentType.INVOICE: "Faktura",
+    ExpenseDocumentType.BILL: "Rachunek",
+    ExpenseDocumentType.RECEIPT: "Paragon",
+    ExpenseDocumentType.OTHER: "Inny dokument",
+}
 
 FORM_LABELS: dict[str, str] = {
     FeeForm.DZIELO: "Umowa o dzieło",
@@ -89,7 +100,7 @@ def _date(value: date | None) -> str:
     return "" if value is None else value.strftime("%d.%m.%Y")
 
 
-def _cells(project: Project, row: LedgerRow) -> list[str]:
+def _fee_cells(project: Project, row: LedgerRow, line: str) -> list[str]:
     contract = row.contract
     return [
         _text(project.title),
@@ -108,7 +119,34 @@ def _cells(project: Project, row: LedgerRow) -> list[str]:
         _date(row.paid_on),
         row.vendor_nip,
         _text(row.note),
+        _text(line),
     ]
+
+
+def _expense_cells(project: Project, expense: ExpenseRow, line: str) -> list[str]:
+    return [
+        _text(project.title),
+        _date(expense.incurred_on),
+        _text(expense.vendor_name),
+        _text(expense.description),
+        CATEGORY_LABELS.get(expense.category, expense.category),
+        DOCUMENT_TYPE_LABELS.get(expense.document_type, expense.document_type),
+        _text(expense.document_number),
+        "",
+        "",
+        "",
+        "",
+        _amount(expense.cost_amount),
+        _date(expense.due_on),
+        _date(expense.paid_on),
+        expense.vendor_nip,
+        _text(expense.note),
+        _text(line),
+    ]
+
+
+def _in_range(day: date, date_from: date | None, date_to: date | None) -> bool:
+    return (date_from is None or day >= date_from) and (date_to is None or day <= date_to)
 
 
 def ledger_csv(
@@ -117,20 +155,22 @@ def ledger_csv(
     date_from: date | None = None,
     date_to: date | None = None,
 ) -> bytes:
-    """Every counted fee of the given budgets whose cost date falls in the
-    range (both ends inclusive; an open end is unbounded)."""
+    """Every counted fee and every expense of the given budgets whose cost date
+    falls in the range (both ends inclusive; an open end is unbounded). The
+    plan line is written as the kosztorys prints it: "I.2 Wynajem kościoła"."""
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";", lineterminator="\r\n")
     writer.writerow(HEADER)
     for money in moneys:
+        lines: dict[UUID, str] = {line.id: f"{line.number} {line.name}" for line in money.lines}
         for row in money.rows:
-            if not row.counted:
-                continue
-            if date_from is not None and row.incurred_on < date_from:
-                continue
-            if date_to is not None and row.incurred_on > date_to:
-                continue
-            writer.writerow(_cells(money.project, row))
+            if row.counted and _in_range(row.incurred_on, date_from, date_to):
+                line = lines.get(row.budget_line_id, "") if row.budget_line_id else ""
+                writer.writerow(_fee_cells(money.project, row, line))
+        for expense in money.expenses:
+            if _in_range(expense.incurred_on, date_from, date_to):
+                line = lines.get(expense.budget_line_id, "") if expense.budget_line_id else ""
+                writer.writerow(_expense_cells(money.project, expense, line))
     return ("﻿" + buffer.getvalue()).encode("utf-8")
 
 

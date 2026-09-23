@@ -13,7 +13,7 @@ from typing import Any
 from django.contrib import admin
 from django.http import HttpRequest
 
-from .models import Contract, ContractSequence, CostItem, FinanceEvent, ProjectBudget
+from .models import BudgetLine, Contract, ContractSequence, CostItem, FinanceAttachment, FinanceEvent, ProjectBudget
 
 
 class ReadOnlyAdmin(admin.ModelAdmin):
@@ -34,15 +34,41 @@ class ProjectBudgetAdmin(ReadOnlyAdmin):
     search_fields = ('project__title',)
 
 
-@admin.register(CostItem)
-class CostItemAdmin(ReadOnlyAdmin):
-    list_display = ('payee_name', 'budget', 'form', 'contract_amount', 'cost_amount', 'paid_on', 'is_deleted')
-    list_filter = ('kind', 'form', 'category', 'is_deleted')
-    search_fields = ('payee_name', 'budget__project__title', 'document_number')
+@admin.register(BudgetLine)
+class BudgetLineAdmin(ReadOnlyAdmin):
+    list_display = ('name', 'budget', 'category', 'quantity', 'unit', 'unit_cost', 'position', 'is_deleted')
+    list_filter = ('category', 'is_deleted')
+    search_fields = ('name', 'budget__project__title')
 
     def get_queryset(self, request: HttpRequest) -> Any:
-        # Soft-deleted items (a released crew fee) are part of the record.
+        return BudgetLine.all_objects.select_related('budget__project')
+
+
+@admin.register(CostItem)
+class CostItemAdmin(ReadOnlyAdmin):
+    list_display = (
+        'payee_name', 'vendor_name', 'budget', 'kind', 'form', 'contract_amount', 'cost_amount', 'paid_on',
+        'is_deleted',
+    )
+    list_filter = ('kind', 'form', 'category', 'is_deleted')
+    search_fields = ('payee_name', 'vendor_name', 'budget__project__title', 'document_number')
+
+    def get_queryset(self, request: HttpRequest) -> Any:
+        # Soft-deleted items (a released crew fee, a removed expense) are part
+        # of the record.
         return CostItem.all_objects.select_related('budget__project')
+
+
+@admin.register(FinanceAttachment)
+class FinanceAttachmentAdmin(ReadOnlyAdmin):
+    # No link to the file: the admin would hand out its media URL, which nginx
+    # refuses; the finance download view is the way to the file.
+    list_display = ('original_name', 'cost_item', 'mime_type', 'size_bytes', 'created_at', 'is_deleted')
+    list_filter = ('mime_type', 'is_deleted')
+    exclude = ('file',)
+
+    def get_queryset(self, request: HttpRequest) -> Any:
+        return FinanceAttachment.all_objects.select_related('cost_item')
 
 
 @admin.register(Contract)

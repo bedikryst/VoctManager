@@ -1,9 +1,9 @@
 /**
  * @file PayablesCard.tsx
- * @description Do zapłaty — every fee the foundation still owes, across
- * projects, the soonest due first, a server page at a time. A row opens its
- * project's Honoraria on that very row, where it is paid; this list states the
- * debt and does not settle it.
+ * @description Do zapłaty — every fee and expense the foundation still owes,
+ * across projects, the soonest due first, a server page at a time. A row opens
+ * its project's Honoraria or Wydatki on that very row, where it is paid; this
+ * list states the debt and does not settle it.
  * The office's export sits here too, because this is where the question "what
  * do we book for the month" is asked: the ledger CSV for a date range, every
  * project at once.
@@ -101,7 +101,7 @@ function OfficeExport(): React.JSX.Element {
       <Caption color="muted">
         {t(
           "finance.export.hint",
-          "Honoraria wliczone w koszt, których data kosztu (dzień koncertu) wypada w tym okresie — ze wszystkich projektów.",
+          "Honoraria i wydatki wliczone w koszt, których data kosztu (dla honorarium dzień koncertu) wypada w tym okresie — ze wszystkich projektów.",
         )}
       </Caption>
     </div>
@@ -166,24 +166,28 @@ export function PayablesCard({
           variant="inline"
           className="px-5 py-10"
           icon={<HandCoins size={22} strokeWidth={1.5} />}
-          title={t("finance.portfolio.payables_empty", "Fundacja nie zalega z żadnym honorarium.")}
+          title={t("finance.portfolio.payables_empty", "Fundacja nie zalega z żadną płatnością.")}
         />
       ) : (
         <ul className="mt-4 divide-y divide-hairline border-t border-hairline">
           {page.results.map((payable) => {
             const overdue = payable.due_on !== null && payable.due_on < today;
+            const isExpense = payable.kind === "EXPENSE";
+            const tab = isExpense ? "costs" : "people";
             return (
               <li key={payable.cost_item_id}>
                 <Link
-                  to={`/panel/projects/${payable.project_id}/budget/people?focus=${payable.cost_item_id}`}
+                  to={`/panel/projects/${payable.project_id}/budget/${tab}?focus=${payable.cost_item_id}`}
                   className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-ethereal-ink/3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold/40"
                 >
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <Text as="span" size="sm" weight="medium" truncate>
-                      {payable.payee_name}
+                      {isExpense ? payable.vendor_name : payable.payee_name}
                     </Text>
                     <Caption color="muted" className="truncate">
-                      {[payable.payee_role, payable.project_title].filter(Boolean).join(" · ")}
+                      {[isExpense ? payable.description : payable.payee_role, payable.project_title]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </Caption>
                   </span>
                   {payable.due_on && (
