@@ -1,8 +1,8 @@
 # Project finance — audit of Stages 1–6
 
-Status: **P0 and P1 fixed 2026-09-24 (uncommitted, see each finding). Q1–Q7 answered (§4). P2 and
-P3 are next, in a fresh session. The prod deploy of `finance` is no longer blocked by this audit;
-its runbook is §6.**
+Status: **P0 and P1 fixed 2026-09-24. Q1–Q7 answered (§4). P2 and P3 fixed 2026-09-24 (§7 names
+the decisions they needed; L4 needs no code). What is left is the prod deploy of `finance`, whose
+runbook is §6.**
 
 Scope: `f20507d4..9fa587c6`, the implementation of `project-finance-2026-09.md` (the "spec" below).
 The commit messages in that range do not describe their content:
@@ -307,3 +307,36 @@ already uses (`docker compose exec web …`).
 - **Documents:** the amount in words is correct for every tested agreement case. The CSV guards
   formula prefixes, with BOM, `;` and decimal comma. The foundation's identity has a single source.
   No `|safe` on user data. The templates match the drafts. The kosztorys totals are consistent.
+
+## 7. P2 and P3: the decisions the fixes took (2026-09-24)
+
+Every finding in §2 P2/P3 is fixed as the finding proposes, with a regression test where the
+behaviour is testable on SQLite (M3 and M8 are lock order, not testable there). These took a
+decision beyond the finding; each is the developer's to overturn:
+
+- **E1 / Q7.** An expense's `incurred_on` is no longer accepted from any client: it is always the
+  document's date, else the concert day. The sheet states which, read-only.
+- **M5.** When a concert moves, unpaid fees and undocumented expenses move with it; a closed budget
+  and anything charged to a settled source do not. The move is not logged.
+- **M6.** A settled source refuses changes to its figures unless the same save reopens it. A cost
+  charged to a settled source keeps `cost_amount`, `category`, `budget_line` and `incurred_on`.
+- **R4.** A mandate's employer contributions are a document of their own in the notes ("Składki ZUS
+  płatnika do umowy nr …", number left to the office). Charges fill the bill first, then the
+  contributions, source by source.
+- **R6.** The floor counts people by normalised name, across rows and across categories. Two people
+  sharing a name count as one, which only makes the floor stricter.
+- **R11.** A patron report whose whole cost fails the floor is refused (409
+  `patron_report_below_floor`). The board report is unaffected.
+- **R5 / Q6.** The board report prints "Pokryte ze źródeł zewnętrznych" and "Środki własne fundacji"
+  (own funds charged plus uncovered), the patron report's definition.
+- **R7.** The bill's "Źródło finansowania" prints the notes of the sources charged when it is
+  printed; without one it stays a line to fill by hand.
+- **R8.** An issued volunteer agreement freezes `in_kind_hourly_rate`; the hours stay editable.
+- **R9.** A number-like document or contract number is written as `="…"`. The NIP stays raw.
+- **R10.** A new ZIP clears only the project's archives older than one hour.
+- **F6.** `PATCH cost-items/{id}/` takes the contributions and the valuation too, priced against
+  the stored amount in the same transaction; the sheet sends one request.
+- **A2.** A seat keeps its artist and project, a crew booking its collaborator and project (400).
+- **L1.** `reset_test_data` keeps `finance_contractsequence` and wipes `media/finance/`.
+- **L2.** Only the link changed. The `CONTRACT_ISSUED` copy still says "sign it in the panel",
+  which is false; nothing emits it, and it must be rewritten before anything does.
