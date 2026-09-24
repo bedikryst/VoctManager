@@ -57,7 +57,7 @@ export const FinanceShell = (): React.JSX.Element => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const { user, logout } = useAuth();
-  const overview = useFinanceOverview(0);
+  const overview = useFinanceOverview();
   const dockBarHeight = useBottomBarHeight();
 
   // `body:not(.admin-mode) *` hides the cursor outright; every full-screen

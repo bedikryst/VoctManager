@@ -1,7 +1,8 @@
 # Finance workspace — `/panel/finance/*`
 
-Status: **Stages 1 (skeleton), 2 (backend) and 3 (tables) done 2026-09-24; stages 1 and 3 not yet
-checked in the browser. Next: stage 4 (Do zapłaty).** Update this line at the end of every stage.
+Status: **Stages 1 (skeleton), 2 (backend), 3 (tables) and 4 (Do zapłaty) done 2026-09-24; stages 1,
+3 and 4 not yet checked in the browser. Next: stage 5 (overview and links).** Update this line at the
+end of every stage.
 
 Builds on `project-finance-2026-09.md` (the finance module) and its audit
 `project-finance-audit-2026-09.md`. Frontend paths below are relative to `frontend/src/` unless they
@@ -359,3 +360,49 @@ from B1–B3 above, or was left open there:
 - Orphaned `finance.portfolio.*` keys were removed from all three locales (`projects`,
   `projects_empty`, `hidden`, `ceiling`, `source_projects`). New keys live under
   `finance.workspace.{projects,sources,charges}`.
+
+### Stage 4
+
+- **URL state** is read and written by `features/finance/lib/payablesQuery.ts` (tests beside it).
+  Params: `status` (absent = unpaid), `project`, `kind`, `paid_from`, `paid_to`, `ordering`, `page`
+  (1-based, absent = 1). Whatever the server would refuse is treated as absent and never sent: a
+  project the overview does not know, a kind other than `FEE`/`EXPENSE`, a malformed date, the
+  paid-only keys on the unpaid list. Crossed paid-date bounds stay in the fields with an error, and
+  neither is sent. Every change except paging returns to page 1. Leaving Zapłacone drops the
+  paid-only keys from the URL. All writes use `replace: true`. When a payment empties the last page,
+  the list moves back to the new last page.
+- **Sort** goes to the server. Columns use the new `sortable` flag instead of `sortValue`. Without
+  `?ordering=`, the header shows the server's default (`due_on`, or `-paid_on` on Zapłacone).
+  Sortable: Termin, Odbiorca, Projekt, Kwota, and Zapłacono. Tytuł and Forma are not, because B1
+  has no key for them.
+- **The overview now asks for `limit=8`** (`useFinanceOverview()` takes no offset). Only the shell
+  reads it, and the nav count is `payables.count`, which does not depend on the limit.
+- **`DataTable` selection** is optional and controlled (`selection` prop). It adds a checkbox
+  column, a header checkbox for the rows on screen (indeterminate when only some are selected), and
+  a checkbox before the link on mobile. Each checkbox sits in a `<label>` to enlarge its target, and
+  the toggle listens only to the input's `change`, so it never fires twice. The whole selection
+  cell is marked `data-row-select` and counts as a control of its own, so a click that misses the
+  checkbox does nothing instead of navigating. Selected rows are tinted gold.
+- **Selection scope:** rows stay selected across pages and sort changes. Changing the list, the
+  project or the kind starts an empty selection. The Zapłacone list has no selection.
+- **Bulk pay reuses the hub's parts.** `PayDateSheet` (the date and validation, extracted from
+  `PaySheet`, which now wraps it) takes a third wording, `mixed`, for fees and expenses together
+  (`finance.pay.note_mixed`). `SelectionBar` gained optional `summary` (the selection's sum),
+  `payLabel` and an optional issue act. The bar hides while the sheet is open.
+- **Refusals:** `paymentRefusals()` in `financeErrors.ts` reads `params.refused` (per-id reasons)
+  and `params.project_ids` (closed budgets). The rows it names get a crimson reason under the payee
+  and leave the selection, so paying again pays the rest. The toast comes from `toastFinanceError`.
+  A refusal with params closes the sheet; a network failure keeps it open for a retry.
+- **Invalidation:** `usePayPayables` marks each budget and history in `project_ids` stale, along
+  with the overview, the sources and the dossiers. It awaits the payables refetch before settling,
+  so the paid rows disappear as the sheet closes. `useBudgetWrite` now also marks the payables list
+  stale, because a hub payment or price change moves rows in and out of it.
+- **Refusal check in the browser:** B1 lists only fees priced above zero, so an unpriced row never
+  appears in the list. To see a refusal: select a row, clear its price or pay it in the hub in a
+  second tab, then pay from the workspace. The result is `unpriced` or `already_paid`.
+- `costItemHref` (`features/finance/lib/links.ts`) is the single row URL builder, used by Do
+  zapłaty and the source page's charges. `PayablesCard` is deleted, along with its orphaned
+  `finance.portfolio.*` keys (`payables`, `payables_empty`, `range`, `previous`, `next`, `overdue`,
+  `due`). New keys are under `finance.workspace.payables`.
+- The mobile row shows the amount, then the due date (or the paid date on Zapłacone) on the right.
+  The form, title and project go in the line of facts.

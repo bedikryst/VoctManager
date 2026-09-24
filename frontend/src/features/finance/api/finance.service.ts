@@ -32,7 +32,10 @@ import type {
   IsoDate,
   KosztorysVariant,
   OneOffFeePayload,
+  PayablesPageDTO,
+  PayablesQuery,
   PayFeesPayload,
+  PayPayablesResultDTO,
   ProjectBudgetDTO,
   ProjectFundingPayload,
   ProjectFundingUpdatePayload,
@@ -103,6 +106,17 @@ export const FinanceService = {
     const response = await api.get<FinanceOverviewDTO>(`${BASE}/overview/`, {
       params: { limit, offset },
     });
+    return response.data;
+  },
+
+  getPayables: async (query: PayablesQuery): Promise<PayablesPageDTO> => {
+    const response = await api.get<PayablesPageDTO>(`${BASE}/payables/`, { params: query });
+    return response.data;
+  },
+
+  /** All or nothing, across projects and kinds. */
+  payPayables: async (payload: PayFeesPayload): Promise<PayPayablesResultDTO> => {
+    const response = await api.post<PayPayablesResultDTO>(`${BASE}/payables/pay/`, payload);
     return response.data;
   },
 

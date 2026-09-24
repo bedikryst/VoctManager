@@ -3,9 +3,10 @@
  * @description The finance acts that need one answer before they happen: the
  * date a payment left, the reason a settled fact is undone, the date on a
  * signed paper, a mandate's confirmed hours. Paying and reverting a payment
- * serve fees and expenses alike. Each sheet is mounted when it opens, so it
- * always starts from its defaults, and closes itself once the server has
- * answered with the new budget.
+ * serve fees and expenses alike, and the pay act's date sheet also serves the
+ * finance workspace's payment across projects. Each sheet is mounted when it
+ * opens, so it always starts from its defaults, and closes itself once the
+ * server has answered with the new budget.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/ActSheets
  */
@@ -30,7 +31,7 @@ import { ActSheet } from "../../components/ActSheet";
 import { toastFinanceError } from "../../lib/financeErrors";
 import { todayIsoDate } from "../../lib/financePresentation";
 import { fromGrosze, sanitizeAmountInput, toGrosze } from "../../lib/money";
-import type { LedgerRowDTO } from "../../types/finance.dto";
+import type { IsoDate, LedgerRowDTO } from "../../types/finance.dto";
 
 interface SheetBaseProps {
   readonly projectId: string;
@@ -46,6 +47,100 @@ const isFutureDate = (value: string): boolean => value > todayIsoDate();
 export interface PayTarget {
   readonly id: string;
   readonly label: string;
+}
+
+/** Fees are paid out, expenses paid; a selection across both reads as paid. */
+export type PayWording = "fee" | "expense" | "mixed";
+
+interface PayDateSheetProps {
+  readonly targets: readonly PayTarget[];
+  readonly wording: PayWording;
+  readonly isPending: boolean;
+  /** Called with a valid paid date; the caller runs the payment and closes the sheet. */
+  readonly onConfirm: (paidOn: IsoDate) => void;
+  readonly onClose: () => void;
+}
+
+/**
+ * The pay act itself — what is being paid and on which day — for any door
+ * that pays: one project's Honoraria or Wydatki, or the workspace's payables
+ * across projects.
+ */
+export function PayDateSheet({
+  targets,
+  wording,
+  isPending,
+  onConfirm,
+  onClose,
+}: PayDateSheetProps): React.JSX.Element {
+  const { t } = useTranslation();
+  const [paidOn, setPaidOn] = useState<string>(todayIsoDate);
+  const [error, setError] = useState<string | undefined>();
+  const isFee = wording === "fee";
+
+  const handleConfirm = (): void => {
+    if (!paidOn) {
+      setError(t("finance.pay.date_required", "Podaj datę zapłaty."));
+      return;
+    }
+    if (isFutureDate(paidOn)) {
+      setError(t("finance.pay.date_future", "Data zapłaty nie może być w przyszłości."));
+      return;
+    }
+    onConfirm(paidOn);
+  };
+
+  const note: Record<PayWording, string> = {
+    fee: t(
+      "finance.pay.note",
+      "Wpisz dzień, w którym biuro wysłało przelew. Wypłaty nie zmienisz już w kwocie ani formie — cofnąć ją może tylko zarząd.",
+    ),
+    expense: t(
+      "finance.pay.note_expense",
+      "Wpisz dzień, w którym biuro zapłaciło. Zapłaconego wydatku nie zmienisz już w kwocie ani dostawcy — cofnąć zapłatę może tylko zarząd.",
+    ),
+    mixed: t(
+      "finance.pay.note_mixed",
+      "Wpisz dzień, w którym biuro zapłaciło. Zapłaconej pozycji nie zmienisz już w kwocie — cofnąć zapłatę może tylko zarząd, w projekcie tej pozycji.",
+    ),
+  };
+
+  return (
+    <ActSheet
+      isOpen
+      onClose={onClose}
+      title={
+        isFee
+          ? t("finance.pay.title", "Oznacz jako wypłacone")
+          : t("finance.pay.title_expense", "Oznacz jako zapłacone")
+      }
+      subtitle={t("finance.pay.subtitle", "Pozycje: {{count}}", { count: targets.length })}
+      confirmLabel={
+        isFee
+          ? t("finance.pay.confirm", "Oznacz wypłatę")
+          : t("finance.pay.confirm_expense", "Oznacz zapłatę")
+      }
+      onConfirm={handleConfirm}
+      isPending={isPending}
+    >
+      <Text size="sm" color="graphite">
+        {targets.map((target) => target.label).join(", ")}
+      </Text>
+      <DateTimeField
+        granularity="date"
+        label={t("finance.pay.date", "Data zapłaty")}
+        value={paidOn}
+        onChange={(next) => {
+          setPaidOn(next);
+          setError(undefined);
+        }}
+        error={error}
+      />
+      <Text size="xs" color="muted">
+        {note[wording]}
+      </Text>
+    </ActSheet>
+  );
 }
 
 interface PaySheetProps extends SheetBaseProps {
@@ -64,18 +159,8 @@ export function PaySheet({
   const payFees = usePayFees(projectId);
   const payExpenses = usePayExpenses(projectId);
   const pay = kind === "fee" ? payFees : payExpenses;
-  const [paidOn, setPaidOn] = useState<string>(todayIsoDate);
-  const [error, setError] = useState<string | undefined>();
 
-  const handleConfirm = (): void => {
-    if (!paidOn) {
-      setError(t("finance.pay.date_required", "Podaj datę zapłaty."));
-      return;
-    }
-    if (isFutureDate(paidOn)) {
-      setError(t("finance.pay.date_future", "Data zapłaty nie może być w przyszłości."));
-      return;
-    }
+  const handleConfirm = (paidOn: IsoDate): void => {
     const ids = targets.map((target) => target.id);
     pay.mutate(
       { ids, paid_on: paidOn },
@@ -103,48 +188,13 @@ export function PaySheet({
   };
 
   return (
-    <ActSheet
-      isOpen
-      onClose={onClose}
-      title={
-        kind === "fee"
-          ? t("finance.pay.title", "Oznacz jako wypłacone")
-          : t("finance.pay.title_expense", "Oznacz jako zapłacone")
-      }
-      subtitle={t("finance.pay.subtitle", "Pozycje: {{count}}", { count: targets.length })}
-      confirmLabel={
-        kind === "fee"
-          ? t("finance.pay.confirm", "Oznacz wypłatę")
-          : t("finance.pay.confirm_expense", "Oznacz zapłatę")
-      }
-      onConfirm={handleConfirm}
+    <PayDateSheet
+      targets={targets}
+      wording={kind}
       isPending={pay.isPending}
-    >
-      <Text size="sm" color="graphite">
-        {targets.map((target) => target.label).join(", ")}
-      </Text>
-      <DateTimeField
-        granularity="date"
-        label={t("finance.pay.date", "Data zapłaty")}
-        value={paidOn}
-        onChange={(next) => {
-          setPaidOn(next);
-          setError(undefined);
-        }}
-        error={error}
-      />
-      <Text size="xs" color="muted">
-        {kind === "fee"
-          ? t(
-              "finance.pay.note",
-              "Wpisz dzień, w którym biuro wysłało przelew. Wypłaty nie zmienisz już w kwocie ani formie — cofnąć ją może tylko zarząd.",
-            )
-          : t(
-              "finance.pay.note_expense",
-              "Wpisz dzień, w którym biuro zapłaciło. Zapłaconego wydatku nie zmienisz już w kwocie ani dostawcy — cofnąć zapłatę może tylko zarząd.",
-            )}
-      </Text>
-    </ActSheet>
+      onConfirm={handleConfirm}
+      onClose={onClose}
+    />
   );
 }
 

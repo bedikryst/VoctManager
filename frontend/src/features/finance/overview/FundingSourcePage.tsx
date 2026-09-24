@@ -40,6 +40,7 @@ import { ActSheet } from "../components/ActSheet";
 import { CostSummaryCard, type CostFigure } from "../components/CostSummaryCard";
 import { SourceSheet } from "../components/SourceSheet";
 import { toastFinanceError } from "../lib/financeErrors";
+import { costItemHref } from "../lib/links";
 import {
   budgetStatusLabel,
   categoryLabel,
@@ -241,7 +242,7 @@ function ChargesTable({ charges }: { readonly charges: readonly SourceChargeDTO[
       columns={columns}
       rowKey={(charge) => charge.cost_item_id}
       rowLink={(charge) => ({
-        to: `/panel/projects/${charge.project_id}/budget/${charge.kind === "EXPENSE" ? "costs" : "people"}?focus=${charge.cost_item_id}`,
+        to: costItemHref(charge),
         state: { financeReturn: pathname + search },
       })}
       sort={sort}

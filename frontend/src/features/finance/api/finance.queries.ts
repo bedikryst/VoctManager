@@ -6,11 +6,13 @@
  *    singer declines, the office pays).
  *  - every write answers with the whole budget, which replaces the cached one
  *    outright (cancelling a read still in flight), and marks the portfolio,
- *    the funding sources (whose figures sum every project), the budget's
- *    history and the artists' dossiers (whose totals sum the ledger) stale. A
- *    refused write refetches the budget instead, since a refusal usually
- *    means the copy on screen is old. A source's own write marks every budget
- *    stale: each one embeds it.
+ *    the payables list, the funding sources (whose figures sum every
+ *    project), the budget's history and the artists' dossiers (whose totals
+ *    sum the ledger) stale. A refused write refetches the budget instead,
+ *    since a refusal usually means the copy on screen is old. A source's own
+ *    write marks every budget stale: each one embeds it. The bulk payment
+ *    across projects has no single budget to answer with; it names the
+ *    projects it paid on instead.
  * Nothing here is queued offline: a finance write either reaches the server
  * or visibly does not happen.
  * @architecture Enterprise SaaS 2026
@@ -44,6 +46,7 @@ import type {
   FundingSourcePayload,
   FundingSourceUpdatePayload,
   OneOffFeePayload,
+  PayablesQuery,
   PayFeesPayload,
   ProjectBudgetDTO,
   ProjectFundingPayload,
@@ -60,6 +63,9 @@ export const financeKeys = {
   overviews: ["finance", "overview"] as const,
   overview: (limit: number, offset: number) =>
     ["finance", "overview", limit, offset] as const,
+  /** Every page of every filter of the payables list — one prefix, so one invalidation. */
+  payables: ["finance", "payables"] as const,
+  payableList: (query: PayablesQuery) => ["finance", "payables", query] as const,
   history: (projectId: string) => ["finance", "history", projectId] as const,
   /** The list and every source's page — one prefix, so one invalidation. */
   sources: ["finance", "sources"] as const,
@@ -94,15 +100,54 @@ export const useProjectBudget = (projectId: string) =>
     ...FINANCE_QUERY_OPTIONS,
   });
 
+/** The overview's own payables are the next few only; the list is `usePayables`. */
+const OVERVIEW_PAYABLES_LIMIT = 8;
+
+export const useFinanceOverview = () =>
+  useQuery({
+    queryKey: financeKeys.overview(OVERVIEW_PAYABLES_LIMIT, 0),
+    queryFn: () => FinanceService.getOverview(OVERVIEW_PAYABLES_LIMIT, 0),
+    ...FINANCE_QUERY_OPTIONS,
+  });
+
 export const PAYABLES_PAGE_SIZE = 50;
 
-export const useFinanceOverview = (offset: number) =>
+/** A page of the payables list; the previous page stays on screen while the next loads. */
+export const usePayables = (query: PayablesQuery) =>
   useQuery({
-    queryKey: financeKeys.overview(PAYABLES_PAGE_SIZE, offset),
-    queryFn: () => FinanceService.getOverview(PAYABLES_PAGE_SIZE, offset),
+    queryKey: financeKeys.payableList(query),
+    queryFn: () => FinanceService.getPayables(query),
     placeholderData: keepPreviousData,
     ...FINANCE_QUERY_OPTIONS,
   });
+
+/**
+ * Marks costs paid across projects, all or nothing. The answer names the
+ * projects paid on, and each of their budgets and histories is marked stale
+ * along with everything a hub payment marks. The list itself is refetched
+ * before the call settles, so the paid rows leave as the sheet closes; a
+ * refusal refetches it too, since a refusal usually means the list is old.
+ */
+export const usePayPayables = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: PayFeesPayload) => FinanceService.payPayables(payload),
+    onSuccess: async ({ project_ids }) => {
+      for (const projectId of project_ids) {
+        void queryClient.invalidateQueries({ queryKey: financeKeys.budget(projectId) });
+        void queryClient.invalidateQueries({ queryKey: financeKeys.history(projectId) });
+      }
+      void queryClient.invalidateQueries({ queryKey: financeKeys.overviews });
+      void queryClient.invalidateQueries({ queryKey: financeKeys.sources });
+      invalidateArtistDossiers(queryClient);
+      await queryClient.invalidateQueries({ queryKey: financeKeys.payables });
+    },
+    onError: () => {
+      void queryClient.invalidateQueries({ queryKey: financeKeys.payables });
+    },
+  });
+};
 
 export const useFundingSources = () =>
   useQuery({
@@ -149,6 +194,7 @@ const useBudgetWrite = <TVariables>(
     onSuccess: async (budget) => {
       await replaceCached(queryClient, financeKeys.budget(projectId), budget);
       void queryClient.invalidateQueries({ queryKey: financeKeys.overviews });
+      void queryClient.invalidateQueries({ queryKey: financeKeys.payables });
       void queryClient.invalidateQueries({ queryKey: financeKeys.sources });
       void queryClient.invalidateQueries({ queryKey: financeKeys.history(projectId) });
       invalidateArtistDossiers(queryClient);

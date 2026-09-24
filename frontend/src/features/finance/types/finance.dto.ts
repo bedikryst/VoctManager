@@ -498,10 +498,15 @@ export interface ProjectRollupDTO {
   readonly warning_counts: Readonly<Record<WarningSeverity, number>>;
 }
 
-/** A fee names its payee; an expense its vendor and what it paid for. */
+export type PayableKind = "FEE" | "EXPENSE";
+
+/**
+ * A fee names its payee; an expense its vendor and what it paid for.
+ * `paid_on` is set only on the paid list.
+ */
 export interface PayableDTO {
   readonly cost_item_id: string;
-  readonly kind: "FEE" | "EXPENSE";
+  readonly kind: PayableKind;
   readonly project_id: string;
   readonly project_title: string;
   readonly project_date_time: string;
@@ -514,6 +519,41 @@ export interface PayableDTO {
   readonly cost_amount: DecimalString | null;
   readonly incurred_on: IsoDate;
   readonly due_on: IsoDate | null;
+  readonly paid_on: IsoDate | null;
+}
+
+export type PayableStatus = "unpaid" | "paid";
+
+/**
+ * `GET payables/` parameters. The server refuses a key it does not expect
+ * (a paid-date bound on `unpaid`, an empty value), so an absent filter is
+ * left out, never sent blank.
+ */
+export interface PayablesQuery {
+  readonly status: PayableStatus;
+  readonly project?: string;
+  readonly kind?: PayableKind;
+  readonly paid_from?: IsoDate;
+  readonly paid_to?: IsoDate;
+  /** A whitelisted key, `-` for descending: `due_on`, `amount`, `payee`, `project`, `paid_on`. */
+  readonly ordering?: string;
+  readonly limit: number;
+  readonly offset: number;
+}
+
+/** One page of the payables list; `count` and `total_amount` cover the whole filtered set. */
+export interface PayablesPageDTO {
+  readonly count: number;
+  readonly limit: number;
+  readonly offset: number;
+  readonly total_amount: DecimalString;
+  readonly results: readonly PayableDTO[];
+}
+
+/** `POST payables/pay/` — the projects paid on, so each one's budget is refreshed. */
+export interface PayPayablesResultDTO {
+  readonly count: number;
+  readonly project_ids: readonly string[];
 }
 
 /** A project a source funds, with that project's figures from it. */

@@ -1830,7 +1830,8 @@
       "done_expense": "Marqué comme payé : {{count}} lignes.",
       "title_expense": "Marquer comme payé",
       "confirm_expense": "Marquer payé",
-      "note_expense": "Indiquez le jour où le bureau a payé. Le montant et le bénéficiaire d'une dépense payée sont alors figés — seul le conseil peut annuler le paiement."
+      "note_expense": "Indiquez le jour où le bureau a payé. Le montant et le bénéficiaire d'une dépense payée sont alors figés — seul le conseil peut annuler le paiement.",
+      "note_mixed": "Indiquez le jour où le bureau a payé. Le montant d'une ligne payée est alors figé — seul le conseil peut annuler le paiement, dans le projet de cette ligne."
     },
     "reason": {
       "label": "Motif",
@@ -2028,13 +2029,6 @@
       "cancelled": "annulé",
       "problems": "problèmes : {{count}}",
       "work": "à faire : {{count}}",
-      "payables": "Reste à payer",
-      "payables_empty": "La fondation ne doit rien.",
-      "range": "{{first}}–{{last}} sur {{total}}",
-      "previous": "Précédents",
-      "next": "Suivants",
-      "overdue": "en retard depuis le {{date}}",
-      "due": "échéance le {{date}}",
       "remaining": "Reste",
       "charged": "Imputé",
       "sources": "Sources de financement",
@@ -2092,6 +2086,43 @@
         "incurred_on": "Date du coût",
         "paid_on": "Payé le",
         "amount": "Montant"
+      },
+      "payables": {
+        "paid": "Payés",
+        "status_aria": "Quels paiements",
+        "due_on": "Échéance",
+        "payee": "Bénéficiaire",
+        "title_column": "Objet",
+        "form": "Forme",
+        "expense": "dépense",
+        "overdue": "en retard",
+        "overdue_on": "en retard depuis le {{date}}",
+        "due_on_short": "échéance le {{date}}",
+        "kind": "Type",
+        "kind_fee": "Cachets",
+        "kind_expense": "Dépenses",
+        "kind_all": "Cachets et dépenses",
+        "all_projects": "Tous les projets",
+        "paid_from": "Payé à partir du",
+        "paid_to": "Payé jusqu'au",
+        "clear_filters": "Effacer les filtres",
+        "select_page": "Sélectionner toutes les lignes de cette page",
+        "pay": "Marquer payé ({{count}})",
+        "visible": "{{visible}} sur {{total}}",
+        "total": "{{amount}} PLN au total",
+        "previous": "Précédents",
+        "next": "Suivants",
+        "empty": "La fondation ne doit rien.",
+        "empty_paid": "Rien n'a encore été marqué comme payé.",
+        "empty_filtered": "Aucune ligne ne correspond aux filtres.",
+        "load_error": "Impossible de charger les paiements.",
+        "refused": {
+          "unknown": "Refusé — cette ligne n'est plus dans le projet",
+          "unpriced": "Refusé — la ligne n'a pas de tarif",
+          "volunteer": "Refusé — le bénévolat ne se paie pas",
+          "already_paid": "Refusé — la ligne est déjà payée",
+          "budget_locked": "Refusé — le budget du projet est clôturé"
+        }
       }
     },
     "facts": {
