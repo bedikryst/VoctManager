@@ -2024,9 +2024,6 @@
       "role": "Fondation",
       "title": "Finances",
       "loading": "Chargement des règlements…",
-      "projects": "Projets",
-      "projects_empty": "Aucun projet n'a encore de cachets.",
-      "hidden": "Projets sans cachets non affichés : {{count}}.",
       "cost": "Coût",
       "cancelled": "annulé",
       "problems": "problèmes : {{count}}",
@@ -2044,11 +2041,9 @@
       "add_source": "Nouvelle source",
       "sources_empty": "La fondation n'a pas encore de sources de financement.",
       "sources_empty_desc": "Une source, c'est une subvention, un mécène, la billetterie ou des fonds propres. Une même source peut financer plusieurs concerts — on la voit ici dans son ensemble, et sa page liste chaque coût imputé.",
-      "ceiling": "Plafond",
       "over_awarded": "au-delà du plafond",
       "own_share_below": "apport propre insuffisant",
       "admin_over": "frais administratifs au-delà du plafond",
-      "source_projects": "projets : {{count}}",
       "report_due": "compte rendu pour le {{date}}"
     },
     "export": {
@@ -2074,6 +2069,29 @@
         "project_label": "Projet",
         "project_placeholder": "Choisir un projet",
         "project_empty": "Choisissez un projet pour télécharger ses rapports, les fichiers de décompte pour le financeur et ses contrats."
+      },
+      "projects": {
+        "project": "Projet",
+        "budget_status": "Statut du budget",
+        "work": "À faire",
+        "open_payables": "Paiements du projet : {{title}}",
+        "open_payables_short": "Paiements du projet",
+        "hide_empty": "Masquer les projets sans coûts",
+        "show_empty": "Afficher les projets sans coûts ({{count}})",
+        "empty": "Aucun projet n'a encore de coûts.",
+        "outstanding_short": "{{amount}} à payer"
+      },
+      "sources": {
+        "source": "Source",
+        "remaining": "Reste",
+        "report_due": "Rapport avant le",
+        "remaining_short": "reste {{amount}}"
+      },
+      "charges": {
+        "cost": "Coût",
+        "incurred_on": "Date du coût",
+        "paid_on": "Payé le",
+        "amount": "Montant"
       }
     },
     "facts": {

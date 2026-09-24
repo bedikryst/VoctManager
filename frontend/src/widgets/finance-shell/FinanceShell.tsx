@@ -34,6 +34,7 @@ import { PanelErrorBoundary } from "@/app/router/PanelErrorBoundary";
 import { FeedbackDock } from "@/features/feedback/components/FeedbackDock";
 import { useFinanceOverview } from "@/features/finance/api/finance.queries";
 import { BudgetLoadError } from "@/features/finance/components/BudgetLoadError";
+import { hasCosts } from "@/features/finance/lib/portfolio";
 import type { FinanceOutletContext } from "@/features/finance/workspace/financeOutlet";
 import { useBottomBarHeight } from "@/shared/lib/dom/useBottomBarSlot";
 import { Avatar } from "@/shared/ui/composites/Avatar";
@@ -94,6 +95,7 @@ export const FinanceShell = (): React.JSX.Element => {
       to: `${FINANCE_BASE}/projects`,
       label: t("finance.workspace.nav.projects", "Projekty"),
       icon: <FolderKanban size={14} aria-hidden="true" />,
+      count: data?.projects.filter(hasCosts).length,
     },
     {
       to: `${FINANCE_BASE}/exports`,

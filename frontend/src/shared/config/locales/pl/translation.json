@@ -2043,9 +2043,6 @@
       "role": "Fundacja",
       "title": "Finanse",
       "loading": "Wczytuję rozliczenia…",
-      "projects": "Projekty",
-      "projects_empty": "Żaden projekt nie ma jeszcze honorariów.",
-      "hidden": "Pominięto projekty bez honorariów: {{count}}.",
       "cost": "Koszt",
       "cancelled": "odwołany",
       "problems": "problemy: {{count}}",
@@ -2063,11 +2060,9 @@
       "add_source": "Nowe źródło",
       "sources_empty": "Fundacja nie ma jeszcze źródeł finansowania.",
       "sources_empty_desc": "Źródło to dotacja, grant, sponsor, bilety albo środki własne. Jedno źródło może finansować kilka koncertów — tu widać je w całości, a na stronie źródła każdy obciążony koszt.",
-      "ceiling": "Pułap",
       "over_awarded": "ponad pułap",
       "own_share_below": "za mały wkład własny",
       "admin_over": "administracja ponad limit",
-      "source_projects": "projekty: {{count}}",
       "report_due": "sprawozdanie do {{date}}"
     },
     "export": {
@@ -2093,6 +2088,29 @@
         "project_label": "Projekt",
         "project_placeholder": "Wybierz projekt",
         "project_empty": "Wybierz projekt, żeby pobrać jego raporty, pliki do rozliczenia z grantodawcą i umowy."
+      },
+      "projects": {
+        "project": "Projekt",
+        "budget_status": "Status budżetu",
+        "work": "Do zrobienia",
+        "open_payables": "Płatności projektu: {{title}}",
+        "open_payables_short": "Płatności projektu",
+        "hide_empty": "Ukryj projekty bez kosztów",
+        "show_empty": "Pokaż projekty bez kosztów ({{count}})",
+        "empty": "Żaden projekt nie ma jeszcze kosztów.",
+        "outstanding_short": "do zapłaty {{amount}}"
+      },
+      "sources": {
+        "source": "Źródło",
+        "remaining": "Pozostało",
+        "report_due": "Raport do",
+        "remaining_short": "zostało {{amount}}"
+      },
+      "charges": {
+        "cost": "Koszt",
+        "incurred_on": "Data kosztu",
+        "paid_on": "Zapłacono",
+        "amount": "Kwota"
       }
     },
     "facts": {

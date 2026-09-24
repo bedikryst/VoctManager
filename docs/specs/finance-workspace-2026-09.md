@@ -1,7 +1,7 @@
 # Finance workspace — `/panel/finance/*`
 
-Status: **Stages 1 (skeleton) and 2 (backend) done 2026-09-24; stage 1 not yet checked in the
-browser. Next: stage 3 (tables).** Update this line at the end of every stage.
+Status: **Stages 1 (skeleton), 2 (backend) and 3 (tables) done 2026-09-24; stages 1 and 3 not yet
+checked in the browser. Next: stage 4 (Do zapłaty).** Update this line at the end of every stage.
 
 Builds on `project-finance-2026-09.md` (the finance module) and its audit
 `project-finance-audit-2026-09.md`. Frontend paths below are relative to `frontend/src/` unless they
@@ -319,3 +319,43 @@ from B1–B3 above, or was left open there:
 - **`paid_on` was added to `PayableSerializer` itself**, so the overview's payable rows carry it too
   (always `null` there). The frontend DTO does not declare it yet; stage 4 adds it.
 - Tests: `backend/finance/tests/test_payables.py`.
+
+### Stage 3
+
+- **The sticky header pins inside the table's own scroll region**, capped at the viewport height
+  from `md` up. `GlassCard` clips overflow (`overflow-hidden`, `contain-paint`), so a header can
+  never stick to the page from inside a `SectionCard`. Below `md` there is no header to pin.
+- **Whole-row link:** the first column holds the real `<Link data-row-link>` (focus, screen reader,
+  middle click). A click elsewhere on the `<tr>` is replayed onto it as a `MouseEvent` with the same
+  modifiers, so Ctrl+click opens a tab from any cell. Clicks on a control inside the row
+  (`a, button, input, select, textarea, label, [role=button]`) and drags that selected text are left
+  alone. The row has no `onKeyDown`, so no keystroke can bubble into navigation.
+- **Sort:** `useSearchParamSort()` keeps `?ordering=` in the DRF spelling (`-amount`) with
+  `replace: true`. `sortRows` sorts in memory, stable, with nulls last in both directions and a
+  Polish collator. Stage 4 sends the same param to B1 instead of calling `sortRows`. Each column's
+  `firstDirection` sets the first click; amounts start high. There is no "unsorted" third state;
+  dropping the param restores server order. Tests: `shared/ui/composites/DataTable.test.ts`.
+- **`useGrouping: true`, not `"always"`.** The ES2022 lib types only accept a boolean, and ECMA-402
+  maps `true` to `"always"`. The test in `money.test.ts` pins `6 750,00`. Table cells use
+  `formatTableAmount` / `formatTableDifference`; other surfaces are unchanged.
+- **Projekty nav count** is the number of projects with costs (`hasCosts` in
+  `features/finance/lib/portfolio.ts`: a fee row, priced or not, or a counted cost). That is the
+  default list, so the count does not change when `?all=1` shows the rest. The toggle is a button in
+  the card header that reads "Pokaż projekty bez kosztów (N)", and it only appears when N > 0.
+  Stage 5 adds its own derivations to the same `portfolio.ts`.
+- **Projekty's secondary action** is an icon link to `payables?project=:id`, shown only when the
+  project still owes money. The table has a visually hidden header for it. **Until stage 4, Do
+  zapłaty ignores `?project=`**, so the link lands on the unfiltered list.
+- **Rows already pass `state={{ financeReturn: pathname + search }}`**: Projekty to the hub budget,
+  and the source page's charges to `budget/{people|costs}?focus=`. Stage 5 only has to read it in
+  `BudgetTabs`. Rows from Źródła go to the source page, inside the workspace, and carry no state.
+- **Źródła:** the Przyznano column is `awarded_amount` (a dash when none). The old card showed the
+  ceiling instead. Pozostało turns gold when the source is over its award, and the broken rule itself
+  is written in crimson under the name. Raport do is blank for settled or rejected sources and turns
+  gold within 14 days.
+- **Charged costs on the source page** are sortable by cost, project, cost date, paid date and
+  amount. Without `?ordering=` they keep the server's report order. The paid date is a new column
+  (`paid_on` was already in the DTO).
+- Orphaned `finance.portfolio.*` keys were removed from all three locales (`projects`,
+  `projects_empty`, `hidden`, `ceiling`, `source_projects`). New keys live under
+  `finance.workspace.{projects,sources,charges}`.

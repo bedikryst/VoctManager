@@ -2015,9 +2015,6 @@
       "role": "Foundation",
       "title": "Finance",
       "loading": "Loading settlements…",
-      "projects": "Projects",
-      "projects_empty": "No project has any fees yet.",
-      "hidden": "Projects without fees left out: {{count}}.",
       "cost": "Cost",
       "cancelled": "cancelled",
       "problems": "problems: {{count}}",
@@ -2035,11 +2032,9 @@
       "add_source": "New source",
       "sources_empty": "The foundation has no funding sources yet.",
       "sources_empty_desc": "A source is a grant, a sponsor, tickets or own funds. One source may fund several concerts — here it shows whole, and its page lists every charged cost.",
-      "ceiling": "Ceiling",
       "over_awarded": "beyond the ceiling",
       "own_share_below": "own contribution too small",
       "admin_over": "administration over the cap",
-      "source_projects": "projects: {{count}}",
       "report_due": "report due {{date}}"
     },
     "export": {
@@ -2065,6 +2060,29 @@
         "project_label": "Project",
         "project_placeholder": "Choose a project",
         "project_empty": "Choose a project to download its reports, the grantor's settlement files and its contracts."
+      },
+      "projects": {
+        "project": "Project",
+        "budget_status": "Budget status",
+        "work": "To do",
+        "open_payables": "Project payables: {{title}}",
+        "open_payables_short": "Project payables",
+        "hide_empty": "Hide projects without costs",
+        "show_empty": "Show projects without costs ({{count}})",
+        "empty": "No project has any costs yet.",
+        "outstanding_short": "{{amount}} to pay"
+      },
+      "sources": {
+        "source": "Source",
+        "remaining": "Remaining",
+        "report_due": "Report due",
+        "remaining_short": "{{amount}} left"
+      },
+      "charges": {
+        "cost": "Cost",
+        "incurred_on": "Incurred",
+        "paid_on": "Paid",
+        "amount": "Amount"
       }
     },
     "facts": {
