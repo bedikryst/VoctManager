@@ -585,8 +585,12 @@ class AnnulContractView(BoardAPIView):
 
 
 def _download(data: bytes, filename: str, content_type: str) -> FileResponse:
+    """A generated document: fees, names and payees, rendered from the live
+    ledger — never kept in a browser's cache, where it would outlive a
+    correction and sit on a shared computer's disk."""
     response = FileResponse(io.BytesIO(data), as_attachment=True, filename=filename, content_type=content_type)
     response["Access-Control-Expose-Headers"] = "Content-Disposition"
+    response["Cache-Control"] = "no-store"
     return response
 
 
@@ -663,6 +667,7 @@ class ContractsZipFileView(FinanceAPIView):
             content_type="application/zip",
         )
         response["Access-Control-Expose-Headers"] = "Content-Disposition"
+        response["Cache-Control"] = "no-store"
         return response
 
 

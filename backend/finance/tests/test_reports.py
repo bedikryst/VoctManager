@@ -494,6 +494,7 @@ class ReportApiTests(APITestCase):
             response = self._get(path)
             self.assertEqual(response.status_code, 200, path)
             self.assertIn(filename, response["Content-Disposition"])
+            self.assertEqual(response["Cache-Control"], "no-store", path)
 
     def test_a_patron_report_that_would_print_one_persons_fee_is_refused(self, _render: Any) -> None:
         response = self._get("report.pdf?audience=patron")
