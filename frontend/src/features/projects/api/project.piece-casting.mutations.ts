@@ -22,6 +22,7 @@ import type { PieceCasting, ProjectSolos } from "@/shared/types";
 
 import { ProjectService } from "./project.service";
 import { projectKeys } from "./project.query-keys";
+import { LEGACY_SOLO_LINE } from "../lib/soloAssignments";
 import type {
   ConvertLegacySoloDTO,
   PieceCastingBoardDTO,
@@ -64,7 +65,8 @@ const replaceBoards = (
     (currentPieceCastings = []) => [
       ...currentPieceCastings.filter(
         (casting) =>
-          !pieceIds.has(String(casting.piece)) || casting.voice_line === "SOLO",
+          !pieceIds.has(String(casting.piece)) ||
+          casting.voice_line === LEGACY_SOLO_LINE,
       ),
       ...saved,
     ],

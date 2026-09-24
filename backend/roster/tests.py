@@ -3436,15 +3436,10 @@ class NamedSoloAssignmentTests(APITestCase):
         }, format='json')
         self.assertEqual(invalid.status_code, 400)
         self.assertTrue(ProjectPieceCasting.objects.filter(pk=legacy.pk).exists())
-        self.participation.status = Participation.Status.DECLINED
-        self.participation.save(update_fields=['status'])
-        declined = self.client.post('/api/piece-castings/convert-solo/', {
-            'casting': str(legacy.id), 'label': 'Soprano at mark 7', 'position': 0,
+        unknown = self.client.post('/api/piece-castings/convert-solo/', {
+            'casting': str(uuid.uuid4()), 'label': 'Soprano at mark 7', 'position': 0,
         }, format='json')
-        self.assertEqual(declined.status_code, 400)
-        self.assertTrue(ProjectPieceCasting.objects.filter(pk=legacy.pk).exists())
-        self.participation.status = Participation.Status.CONFIRMED
-        self.participation.save(update_fields=['status'])
+        self.assertEqual(unknown.status_code, 404)
         response = self.client.post('/api/piece-castings/convert-solo/', {
             'casting': str(legacy.id), 'label': 'Soprano at mark 7', 'position': 0,
         }, format='json')
@@ -3749,6 +3744,97 @@ class SoloDutyConsumerTests(APITestCase):
         notices = [n for n in self._notices() if n.recipient_id == str(self.soloist_user.id)]
         self.assertEqual(len(notices), 1)
         self.assertIn('Solo → Soprano at 7', self._render(notices[0]).body)
+
+    def _resend(self, saved: list[dict]) -> list[dict]:
+        """The editor's payload for the positions as saved: every row, its
+        performer included, in the order shown."""
+        return [
+            {'id': str(row['id']), 'position': index, 'label': row['label'],
+             'score_reference': row['score_reference'],
+             'participation': str(row['participation']) if row['participation'] else None}
+            for index, row in enumerate(saved)
+        ]
+
+    def test_a_performer_who_declined_or_left_never_blocks_the_rest_of_the_piece(self) -> None:
+        saved = self._lark()
+        Participation.objects.filter(pk=self.soloist.pk).update(
+            status=Participation.Status.DECLINED
+        )
+        Participation.objects.filter(pk=self.tenor.pk).update(is_deleted=True)
+
+        rows = self._resend(saved)
+        rows[4]['label'] = 'Alto at 21, bars 3-8'
+        renamed = self._save(rows)
+        self.assertEqual(
+            [row['participation'] for row in renamed], [row['participation'] for row in saved]
+        )
+        self.assertEqual(renamed[4]['label'], 'Alto at 21, bars 3-8')
+
+        # Handing either of them a passage they do not already hold is refused.
+        for gone in (self.soloist, self.tenor):
+            rows = self._resend(saved)
+            rows[4]['participation'] = str(gone.id)
+            response = self.client.put(self.SOLOS_URL, {
+                'project': str(self.project.id), 'piece': str(self.piece.id),
+                'solo_assignments': rows,
+            }, format='json')
+            self.assertEqual(response.status_code, 400)
+        self.assertIsNone(ProjectSoloAssignment.objects.get(pk=saved[4]['id']).participation_id)
+
+    def test_naming_a_declined_singers_legacy_solo_opens_the_position_quietly(self) -> None:
+        legacy = ProjectPieceCasting.objects.create(
+            participation=self.soloist, piece=self.piece, voice_line='SOLO',
+            notes='From bar 12', gives_pitch=True,
+        )
+        Participation.objects.filter(pk=self.soloist.pk).update(
+            status=Participation.Status.DECLINED
+        )
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.post('/api/piece-castings/convert-solo/', {
+            'casting': str(legacy.id), 'label': 'Soprano at 7', 'position': 0,
+        }, format='json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(ProjectPieceCasting.objects.filter(pk=legacy.pk).exists())
+        solo = ProjectSoloAssignment.objects.get(pk=legacy.pk)
+        self.assertEqual(
+            (solo.participation_id, solo.label, solo.notes, solo.gives_pitch),
+            (None, 'Soprano at 7', 'From bar 12', True),
+        )
+        self.assertEqual(
+            [n for n in self._notices() if n.recipient_id == str(self.soloist_user.id)], []
+        )
+
+    def test_the_book_credits_in_one_read_and_ages_only_where_it_prints_the_line(self) -> None:
+        from .score_package_config import book_program_items, resolve_item_performers
+        from .score_package_service import ScorePackageService
+
+        saved = self._lark()
+        items = list(book_program_items(self.project))
+        with self.assertNumQueries(0):
+            self.assertIn('Soprano at 21: S. Singer', resolve_item_performers(items[0]))
+
+        package = ScorePackageService.get_or_create(self.project)
+
+        def book_hash() -> str:
+            return ScorePackageService.compute_source_hash(self.project, package)
+
+        def recast_the_soprano_passage(performer: Participation) -> None:
+            rows = self._resend(saved)
+            rows[3]['participation'] = str(performer.id)
+            self._save(rows)
+
+        ProgramItem.objects.filter(pk=self.item.pk).update(card_enabled=False)
+        hidden = book_hash()
+        recast_the_soprano_passage(self.tenor)
+        self.assertEqual(book_hash(), hidden)
+
+        ProgramItem.objects.filter(pk=self.item.pk).update(
+            card_enabled=True, card_elements=['cast'],
+        )
+        printed = book_hash()
+        recast_the_soprano_passage(self.soloist)
+        self.assertNotEqual(book_hash(), printed)
 
     def test_the_day_sheet_prints_every_duty_including_a_solo_only_singer(self) -> None:
         from .views import ProjectViewSet

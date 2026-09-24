@@ -23,6 +23,7 @@ import {
   declaredSoloCount,
   soloCoverage,
   soloDraftsDiffer,
+  soloPerformerState,
   soloPerformersByPiece,
   soloRowsFromServer,
   toSoloPayload,
@@ -62,6 +63,7 @@ const row = (overrides: Partial<SoloDraftRow> = {}): SoloDraftRow => ({
   label: "Solo",
   scoreReference: "",
   participation: "p1",
+  performerName: null,
   notes: "",
   givesPitch: false,
   referenceNeedsReview: false,
@@ -134,6 +136,19 @@ describe("coverage per position", () => {
       total: 1,
       legacy: 1,
     });
+  });
+
+  it("keeps a performer who left the project on the row, the position open", () => {
+    const departed = row({ participation: "gone", performerName: "Ola Gone" });
+
+    expect(soloPerformerState("gone", statusOf)).toBe("departed");
+    expect(soloPerformerState("p2", statusOf)).toBe("declined");
+    expect(soloPerformerState("p1", statusOf)).toBe("cast");
+    expect(soloPerformerState(null, statusOf)).toBe("open");
+    expect(soloCoverage([departed], 0, statusOf).filled).toBe(0);
+    // The server accepts a performer it already holds; dropping them from the
+    // payload would unassign them behind the conductor's back.
+    expect(toSoloPayload([departed])[0]).toMatchObject({ participation: "gone" });
   });
 
   it("names each performer once per piece across named and legacy solos", () => {

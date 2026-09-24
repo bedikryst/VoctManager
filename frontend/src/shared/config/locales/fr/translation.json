@@ -4612,6 +4612,8 @@
         "remove": "Supprimer le solo",
         "reference_review": "Le programme utilise désormais une autre édition que celle pour laquelle cet endroit a été noté : vérifiez-le.",
         "declined": "L'interprète s'est désisté : ce solo attend une distribution.",
+        "departed": "L'interprète ne fait plus partie du projet : ce solo attend une distribution.",
+        "legacy_declined": "L'interprète s'est désisté : une fois nommé, ce solo attendra une distribution.",
         "legacy_hint": "Solos enregistrés avant que les positions aient un nom. On ignore quel passage ils couvrent : nommez-les, l'interprète, la note et le don du ton sont conservés.",
         "legacy_badge": "Solo sans nom",
         "convert": "Nommer",

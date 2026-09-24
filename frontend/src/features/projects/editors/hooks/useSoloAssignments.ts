@@ -171,6 +171,7 @@ export const useSoloAssignments = (
           label: "",
           scoreReference: "",
           participation: null,
+          performerName: null,
           notes: "",
           givesPitch: false,
           referenceNeedsReview: false,
@@ -187,6 +188,12 @@ export const useSoloAssignments = (
             ? {
                 ...row,
                 ...patch,
+                // The saved name belongs to the saved performer only.
+                performerName:
+                  patch.participation !== undefined &&
+                  patch.participation !== row.participation
+                    ? null
+                    : row.performerName,
                 referenceNeedsReview:
                   patch.scoreReference !== undefined
                     ? false

@@ -4602,6 +4602,8 @@
         "remove": "Remove solo",
         "reference_review": "The programme now uses a different edition from the one this place in the score was written for — check it.",
         "declined": "The performer declined — this solo needs casting.",
+        "departed": "The performer is no longer in the project — this solo needs casting.",
+        "legacy_declined": "The performer declined — once named, this solo will wait for casting.",
         "legacy_hint": "Solos saved before positions had names. Which passage they cover is unknown — name them, and the performer, note and pitch giving carry over unchanged.",
         "legacy_badge": "Unnamed solo",
         "convert": "Name it",

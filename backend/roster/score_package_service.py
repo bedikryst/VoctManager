@@ -191,8 +191,14 @@ class ScorePackageService:
             "text_override": item.text_override,
             "note_override": item.note_override,
             "translation_pin": str(item.translation_id) if item.translation_id else None,
-            # The line as printed: recasting a solo ages a book that credits it.
-            "performers": resolve_item_performers(item),
+            # The line as printed. While the card hides it only the typed field
+            # counts — an edit to the item, like the overrides above — so
+            # recasting a solo never ages a book that credits nobody.
+            "performers": (
+                resolve_item_performers(item)
+                if resolve_card_config(item, package).shows("cast")
+                else item.performers
+            ),
             "hide_source_numbers": item.hide_source_page_numbers,
             "content_ts": max(timestamps).isoformat(),
             # Empty while the book does not print markings — drawing on a score
