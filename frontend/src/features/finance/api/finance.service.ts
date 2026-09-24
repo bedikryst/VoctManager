@@ -81,13 +81,25 @@ const saveResponse = (response: AxiosResponse<Blob>, fallbackName: string): void
   window.URL.revokeObjectURL(url);
 };
 
+/**
+ * Every document is generated from the live ledger, so it never comes from the
+ * browser's HTTP cache. `cache: "no-store"` (fetch adapter) bypasses any entry
+ * the browser may hold — including an error an earlier server answered with a
+ * long max-age — without adding a request header, which a cross-origin API
+ * (Vite on :5173 → Django on :8000) would have to allow in a CORS preflight.
+ */
 const download = async (
   url: string,
   fallbackName: string,
   params?: Record<string, string>,
 ): Promise<void> => {
   try {
-    const response = await api.get<Blob>(url, { responseType: "blob", params });
+    const response = await api.get<Blob>(url, {
+      responseType: "blob",
+      params,
+      adapter: "fetch",
+      fetchOptions: { cache: "no-store" },
+    });
     saveResponse(response, fallbackName);
   } catch (error) {
     await rethrowWithJsonBody(error);
