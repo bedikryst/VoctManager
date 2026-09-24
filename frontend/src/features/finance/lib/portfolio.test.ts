@@ -21,6 +21,10 @@ const project = (overrides: Partial<ProjectRollupDTO> = {}): ProjectRollupDTO =>
     ...overrides,
   }) as ProjectRollupDTO;
 
+/** The portfolio predicate reads only these two summary fields. */
+const summary = (rows: number, committed: string): ProjectRollupDTO["summary"] =>
+  ({ rows, committed }) as ProjectRollupDTO["summary"];
+
 const source = (overrides: Partial<FundingSourceDTO> = {}): FundingSourceDTO =>
   ({
     id: "source-1",
@@ -33,11 +37,11 @@ const source = (overrides: Partial<FundingSourceDTO> = {}): FundingSourceDTO =>
 
 describe("hasCosts", () => {
   it("counts an unpriced fee row as financial work", () => {
-    expect(hasCosts(project({ summary: { rows: 1, committed: "0.00" } }))).toBe(true);
+    expect(hasCosts(project({ summary: summary(1, "0.00") }))).toBe(true);
   });
 
   it("counts a persisted expense even when it has no fee row", () => {
-    expect(hasCosts(project({ summary: { rows: 0, committed: "125.00" } }))).toBe(true);
+    expect(hasCosts(project({ summary: summary(0, "125.00") }))).toBe(true);
   });
 });
 
