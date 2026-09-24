@@ -25,6 +25,7 @@ from core.voice_labels import (
     section_letters_of_seat,
 )
 from finance.models import CostItem
+from finance.rules import money
 from roster.models import (
     Attendance,
     Participation,
@@ -277,8 +278,10 @@ def get_artist_dossier(artist: Artist) -> dict[str, Any]:
             "attendance_excused": excused,
             "attendance_rate": attendance_rate,
             "top_voice_lines": top_voice_lines,
-            "earnings_paid": float(earnings_paid),
-            "earnings_outstanding": float(earnings_outstanding),
+            # Decimal strings ("1250.00"), as every amount the finance API
+            # sends: a float would lose the grosz before the client sees it.
+            "earnings_paid": f"{money(earnings_paid)}",
+            "earnings_outstanding": f"{money(earnings_outstanding)}",
             "projects_paid": projects_paid,
         },
         "leadership": {

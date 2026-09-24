@@ -25,7 +25,7 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
-from ..exceptions import ReportSourceInvalid
+from ..exceptions import PatronReportBelowFloor, ReportSourceInvalid
 from ..models import FEE_CATEGORIES, BudgetStatus, CostCategory, FeeForm, FundingKind
 from ..rules import (
     HUNDRED,
@@ -36,7 +36,7 @@ from ..rules import (
     money,
     plan_section,
 )
-from .budget import AllocationView, BudgetWarning, FundingView, PlanLineView, ProjectMoney
+from .budget import AllocationView, BudgetWarning, FundingView, LedgerRow, PlanLineView, ProjectMoney
 
 # A figure derived from fees must sum at least this many people's fees before a
 # patron sees it: with fewer, one person's fee can be read off it.
@@ -59,12 +59,17 @@ _KIND_ORDER: dict[str, int] = {kind: index for index, kind in enumerate(FundingK
 
 @dataclass(frozen=True)
 class CategoryCost:
-    """What one category costs, and how many people's fees make up the figure
-    (0 for an expense category: nobody's pay can be read off a venue)."""
+    """What one category costs, and the people whose fees make up the figure
+    (`_person`; none for an expense category: nobody's pay can be read off a
+    venue)."""
 
     category: str
     amount: Decimal
-    payees: int
+    people: frozenset[str] = frozenset()
+
+    @property
+    def payees(self) -> int:
+        return len(self.people)
 
 
 @dataclass(frozen=True)
@@ -101,15 +106,16 @@ def _cost_groups(costs: Sequence[CategoryCost]) -> dict[str, str]:
     to as a whole. When even together they sum fewer people's fees, personnel
     has no row of its own — and since the rows sum to the total, which is
     printed, a missing row would be read back by subtraction. So the personnel
-    cost joins the largest other category in a `REMAINDER` row, and when there
-    is no other category, the structure is empty and the total stands alone.
+    cost joins the largest other category in a `REMAINDER` row. When there is
+    no other category, the structure is empty — and the total is that
+    personnel cost, which is why `patron_report` refuses such a report.
     """
     personnel = [cost for cost in costs if cost.category in FEE_CATEGORIES and cost.amount > ZERO]
     others = [cost for cost in costs if cost.category not in FEE_CATEGORIES and cost.amount > ZERO]
     groups = {cost.category: cost.category for cost in others}
     if all(cost.payees >= PATRON_PAYEE_FLOOR for cost in personnel):
         return groups | {cost.category: cost.category for cost in personnel}
-    if sum(cost.payees for cost in personnel) >= PATRON_PAYEE_FLOOR:
+    if len(frozenset[str]().union(*(cost.people for cost in personnel))) >= PATRON_PAYEE_FLOOR:
         return groups | {cost.category: PERSONNEL_MERGED for cost in personnel}
     if not others:
         return {}
@@ -131,13 +137,21 @@ def floored_cost_structure(costs: Sequence[CategoryCost]) -> list[tuple[str, Dec
     return rows if remainder is None else [*rows, (REMAINDER, money(remainder))]
 
 
+def _person(row: LedgerRow) -> str:
+    """Who a fee pays, as the floor counts people. One person can hold two rows
+    (a seat and a crew role, or a one-off payment beside either), and only the
+    name is common to all three, so people are told apart by name. Two people
+    sharing a name count as one, which only makes the floor stricter."""
+    return " ".join(row.payee_name.split()).casefold()
+
+
 @dataclass(frozen=True)
 class _Part:
-    """What a printed figure is made of, as far as the floor cares: the fee
-    rows with a positive part in it — one per person paid — and how much of it
-    is nobody's pay (an expense)."""
+    """What a printed figure is made of, as far as the floor cares: the people
+    whose fee has a positive part in it (`_person`), and how much of it is
+    nobody's pay (an expense)."""
 
-    payees: frozenset[UUID] = frozenset()
+    payees: frozenset[str] = frozenset()
     other: Decimal = ZERO
 
     def __or__(self, part: "_Part") -> "_Part":
@@ -153,12 +167,12 @@ class _Part:
 
 @dataclass(frozen=True)
 class _Cost:
-    """One counted cost with a positive amount: a fee (its row's key is the
-    payee) or an expense (no payee)."""
+    """One counted cost with a positive amount: a fee (`payee` is its person)
+    or an expense (no payee)."""
 
     category: str
     amount: Decimal
-    payee: UUID | None
+    payee: str | None
     allocations: list[AllocationView]
 
     def part(self, amount: Decimal) -> _Part:
@@ -171,7 +185,7 @@ class _Cost:
 
 def _counted_costs(money_: ProjectMoney) -> list[_Cost]:
     fees = [
-        _Cost(category=row.category, amount=row.cost_amount or ZERO, payee=row.key, allocations=row.allocations)
+        _Cost(category=row.category, amount=row.cost_amount or ZERO, payee=_person(row), allocations=row.allocations)
         for row in money_.rows
         if row.counted and (row.cost_amount or ZERO) > ZERO
     ]
@@ -232,13 +246,13 @@ def _floor_figures(figures: list[_Figure], merged_key: str) -> list[_Figure]:
 def _category_costs(money_: ProjectMoney) -> list[CategoryCost]:
     """The counted cost per category, and the people whose fee is in it."""
     amounts: dict[str, Decimal] = {}
-    payees: dict[str, int] = {}
+    payees: dict[str, set[str]] = {}
     for cost in _counted_costs(money_):
         amounts[cost.category] = amounts.get(cost.category, ZERO) + cost.amount
         if cost.payee is not None:
-            payees[cost.category] = payees.get(cost.category, 0) + 1
+            payees.setdefault(cost.category, set()).add(cost.payee)
     return [
-        CategoryCost(category=category, amount=money(amount), payees=payees.get(category, 0))
+        CategoryCost(category=category, amount=money(amount), people=frozenset(payees.get(category, ())))
         for category, amount in amounts.items()
     ]
 
@@ -382,10 +396,10 @@ def _in_kind(money_: ProjectMoney) -> list[tuple[str, Decimal]]:
         elif kind == FundingKind.VOLUNTEER_WORK:
             work += funding.charged
             volunteer_fundings.add(funding.id)
-    volunteers = sum(
-        1 for row in money_.rows
+    volunteers = len({
+        _person(row) for row in money_.rows
         if row.counted and any(a.funding_id in volunteer_fundings and a.amount > ZERO for a in row.allocations)
-    )
+    })
     entries: list[tuple[str, Decimal]] = []
     if gifts > ZERO:
         entries.append((FundingKind.IN_KIND, money(gifts)))
@@ -395,9 +409,17 @@ def _in_kind(money_: ProjectMoney) -> list[tuple[str, Decimal]]:
 
 
 def patron_report(money_: ProjectMoney, *, source_id: UUID | None = None) -> PatronReport:
+    """Refused when the total itself fails the floor: a concert whose whole
+    cost is one or two people's fees has no report a patron may read — the
+    total is those fees."""
     total = money_.summary.committed
-    costs = _category_costs(money_)
     funding = report_funding(money_, source_id)
+    whole = _Part()
+    for cost in _counted_costs(money_):
+        whole |= cost.part(cost.amount)
+    if not whole.floored:
+        raise PatronReportBelowFloor()
+    costs = _category_costs(money_)
     in_kind = _in_kind(money_)
     return PatronReport(
         money=money_,
@@ -671,14 +693,23 @@ def kosztorys(money_: ProjectMoney, *, variant: str, source_id: UUID | None = No
 # --------------------------------------------------------------------------- #
 
 
+# The `kind` of the document behind a mandate's employer contributions: the
+# foundation's ZUS declaration, apart from the bill.
+CONTRIBUTIONS_DOCUMENT = "EMPLOYER_CONTRIBUTIONS"
+
+
 @dataclass(frozen=True)
 class ChargedDocument:
     """An accounting document behind a cost charged to at least one source.
 
     For a dzieło or a zlecenie the document is the bill, which carries the
     contract's number; for an invoiced fee and an expense, the vendor's own.
-    `amount` is the document's: a fee's contract amount (a mandate's employer
-    contributions are declared to ZUS, not billed), an expense's gross.
+    `amount` is the document's: a fee's contract amount, an expense's gross.
+    A mandate's employer contributions are declared to ZUS, not billed, so
+    what a source covers of them is a document of its own
+    (`CONTRIBUTIONS_DOCUMENT`, its number left for the office to write in,
+    `refers_to` naming the contract). No note says a source financed more
+    than the document it is written on.
     """
 
     cost_id: UUID
@@ -691,6 +722,25 @@ class ChargedDocument:
     amount: Decimal
     plan_line: str
     charges: list[tuple[FundingView, Decimal]]
+    refers_to: str = ""
+
+
+def _split_charges(
+    charges: list[tuple[FundingView, Decimal]], first: Decimal,
+) -> tuple[list[tuple[FundingView, Decimal]], list[tuple[FundingView, Decimal]]]:
+    """Fills the first document up to its amount, source by source in the order
+    of the charges; what is left goes to the second."""
+    on_first: list[tuple[FundingView, Decimal]] = []
+    on_second: list[tuple[FundingView, Decimal]] = []
+    room = first
+    for funding, amount in charges:
+        taken = min(amount, max(room, ZERO))
+        room -= taken
+        if taken > ZERO:
+            on_first.append((funding, taken))
+        if amount - taken > ZERO:
+            on_second.append((funding, amount - taken))
+    return on_first, on_second
 
 
 def charged_documents(money_: ProjectMoney, *, source_id: UUID | None = None) -> list[ChargedDocument]:
@@ -717,18 +767,36 @@ def charged_documents(money_: ProjectMoney, *, source_id: UUID | None = None) ->
             continue
         contract = row.contract
         billed = contract is not None and contract.form in PAYABLE_CONTRACT_FORMS
-        documents.append(ChargedDocument(
-            cost_id=row.cost_item_id,
-            is_fee=True,
-            kind=row.form,
-            party=row.payee_name,
-            number=contract.number if billed and contract is not None else row.document_number,
-            document_date=None if billed else row.document_date,
-            incurred_on=row.incurred_on,
-            amount=row.contract_amount or ZERO,
-            plan_line=lines.get(row.budget_line_id, "") if row.budget_line_id else "",
-            charges=found,
-        ))
+        plan_line = lines.get(row.budget_line_id, "") if row.budget_line_id else ""
+        amount = row.contract_amount or ZERO
+        on_document, on_contributions = _split_charges(found, amount)
+        if on_document:
+            documents.append(ChargedDocument(
+                cost_id=row.cost_item_id,
+                is_fee=True,
+                kind=row.form,
+                party=row.payee_name,
+                number=contract.number if billed and contract is not None else row.document_number,
+                document_date=None if billed else row.document_date,
+                incurred_on=row.incurred_on,
+                amount=amount,
+                plan_line=plan_line,
+                charges=on_document,
+            ))
+        if on_contributions:
+            documents.append(ChargedDocument(
+                cost_id=row.cost_item_id,
+                is_fee=True,
+                kind=CONTRIBUTIONS_DOCUMENT,
+                party=row.payee_name,
+                number="",
+                document_date=None,
+                incurred_on=row.incurred_on,
+                amount=row.employer_contributions or ZERO,
+                plan_line=plan_line,
+                charges=on_contributions,
+                refers_to=contract.number if contract is not None else "",
+            ))
     for expense in money_.expenses:
         found = charges(expense.allocations)
         if not found:

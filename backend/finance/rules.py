@@ -249,6 +249,12 @@ def reconcile_pricing(
 # line's product of two factors is checked against it before it is saved.
 MAX_AMOUNT = Decimal('99999999.99')
 
+
+def within_storage(amount: Decimal | None) -> bool:
+    """Whether a derived amount fits the width a stored total holds. Each input
+    is bounded by its own field; their sum or product is not."""
+    return amount is None or amount <= MAX_AMOUNT
+
 # The public-benefit kosztorys splits costs into two sections: "I. Koszty
 # realizacji działań" and "II. Koszty administracyjne". Administration is the
 # second; everything else the first.
@@ -343,11 +349,18 @@ def charge_limit(planned_amount: Decimal, received_amount: Decimal) -> Decimal:
     return max(planned_amount, received_amount)
 
 
+# The widest percentage a payload carries. A placeholder plan of 1 zł against a
+# real grant measures an own share of minus millions of per cent; past this
+# bound the figure says nothing more, and a wider one would fail the response.
+PCT_LIMIT = Decimal('9999999.99')
+
+
 def share_pct(part: Decimal, whole: Decimal) -> Decimal | None:
-    """``part`` as a percentage of ``whole``, to two places; None without a whole."""
+    """``part`` as a percentage of ``whole``, to two places, within
+    ±`PCT_LIMIT`; None without a whole."""
     if whole <= 0:
         return None
-    return money(part * HUNDRED / whole)
+    return max(-PCT_LIMIT, min(PCT_LIMIT, money(part * HUNDRED / whole)))
 
 
 def line_tolerance_pct(tolerances: Iterable[Decimal | None]) -> Decimal:

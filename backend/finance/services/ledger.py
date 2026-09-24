@@ -4,24 +4,28 @@
              optional standard rate), one-off payees, bookkeeping details, paying
              and reverting a payment (of a fee or an expense), releasing a crew
              member's fee when they are unassigned and a fee whose seat no
-             longer counts, and moving a seat's fee when an artist merge folds
-             it. Every rule of spec §5.1 that the database
-             cannot state is enforced here, and every change is logged.
+             longer counts, moving a seat's fee when an artist merge folds it,
+             and moving the costs' date when the concert moves. Every rule of
+             spec §5.1 that the database cannot state is enforced here, and
+             every change except the concert's date is logged.
 @architecture Enterprise SaaS 2026
 @module finance/services/ledger
 """
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 from typing import Any
 
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from roster.models import CrewAssignment, Participation, Project
 
 from ..dtos import CostItemDetailsDTO, FeeBatchDTO, FeeItemDTO, FeeRefDTO, OneOffFeeDTO, PayFeesDTO
 from ..exceptions import (
+    AmountTooLarge,
     CrewHasSettledFee,
     FeeNotOrphaned,
     FinanceError,
@@ -49,20 +53,30 @@ from ..rules import (
     category_for,
     cost_for,
     default_form_for,
+    in_kind_value,
     local_date,
     money,
     one_off_fallback_form,
     payee_snapshot,
     reconcile_pricing,
+    within_storage,
 )
 from . import audit
 from .budget import BudgetService, reconcile_line_change
-from .funding import assert_allocations_fit, release_cost_allocations
+from .funding import (
+    SETTLED_COST_FIELDS,
+    assert_allocations_fit,
+    assert_settled_charges_unchanged,
+    release_cost_allocations,
+    settled_charged_items,
+)
 
 # The fields a paid item or an issued contract freezes. Contributions and the
-# volunteer valuation stay editable: the office reports contributions after the
-# payment, and neither changes what the paper says.
+# volunteer's hours stay editable: the office reports contributions after the
+# payment, and neither is on the paper.
 _FROZEN_PRICING_FIELDS = frozenset({"form", "contract_amount"})
+# The volunteer agreement prints the hourly rate the work is valued at (§6).
+_FROZEN_BY_CONTRACT = _FROZEN_PRICING_FIELDS | {"in_kind_hourly_rate"}
 _OPTIONAL_PRICING_FIELDS = ("employer_contributions", "in_kind_hours", "in_kind_hourly_rate")
 _ONE_OFF_ONLY_FIELDS = frozenset({"payee_name", "payee_role", "category"})
 _TEXT_DETAIL_FIELDS = frozenset({"payee_role", "note", "document_number", "vendor_nip"})
@@ -95,16 +109,28 @@ def has_live_contract(item: CostItem) -> bool:
 def refresh_item(item: CostItem, project: Project) -> None:
     """Re-derive what the ledger owns of a fee: the payee snapshot from the
     roster while no contract freezes it, the concert date while the fee is
-    unpaid, and the foundation's cost from the amount and the form. An expense
-    owns nothing derived — its cost and date are the document's."""
+    unpaid, and the foundation's cost from the amount and the form. A cost or
+    a valuation wider than the database holds is refused here, before the save
+    fails on it. An expense's cost is its document's (`expense_incurred_on`
+    derives its date)."""
     if item.kind != CostKind.FEE:
         return
     source: Participation | CrewAssignment | None = item.participation or item.crew_assignment
     if source is not None and not has_live_contract(item):
         item.payee_name, item.payee_role = payee_snapshot(source)
-    if item.kind == CostKind.FEE and item.paid_on is None:
+    if item.paid_on is None:
         item.incurred_on = local_date(project.date_time, project.timezone)
     item.cost_amount = cost_for(item.form, item.contract_amount, item.employer_contributions)
+    valuation = in_kind_value(item.in_kind_hours, item.in_kind_hourly_rate)
+    if not (within_storage(item.cost_amount) and within_storage(valuation)):
+        raise AmountTooLarge()
+
+
+def expense_incurred_on(document_date: date | None, project: Project) -> date:
+    """An expense is incurred on its document's date, or on the concert day
+    while it has no document. Always derived, never typed: a date the manager
+    could set apart from the document would decide grant eligibility alone."""
+    return document_date or local_date(project.date_time, project.timezone)
 
 
 def _to_grosz(value: Decimal | None) -> Decimal | None:
@@ -190,6 +216,14 @@ def _apply_pricing(
             new[name] = getattr(item, name) if item is not None else None
     if pricing.form != FeeForm.ZLECENIE:
         new["employer_contributions"] = None
+    elif (
+        item is not None
+        and "employer_contributions" not in optional
+        and pricing.contract_amount != item.contract_amount
+    ):
+        # The office's contributions were computed on the old amount. Kept, they
+        # would add to the new one and silence EMPLOYER_COST_MISSING.
+        new["employer_contributions"] = None
     if pricing.form != FeeForm.VOLUNTEER:
         new["in_kind_hours"] = None
         new["in_kind_hourly_rate"] = None
@@ -220,12 +254,17 @@ def _apply_pricing(
         frozen = changed & _FROZEN_PRICING_FIELDS
         if frozen and item.paid_on is not None:
             raise ItemPaid(params={"fields": sorted(frozen)})
-        if frozen and has_live_contract(item):
-            raise ItemContracted(params={"fields": sorted(frozen)})
+        contracted = changed & _FROZEN_BY_CONTRACT
+        if contracted and has_live_contract(item):
+            raise ItemContracted(params={"fields": sorted(contracted)})
 
+    settled_before = {name: getattr(item, name) for name in SETTLED_COST_FIELDS}
     for name, value in new.items():
         setattr(item, name, value)
     refresh_item(item, project)
+    assert_settled_charges_unchanged(
+        item, [name for name, value in settled_before.items() if getattr(item, name) != value],
+    )
     assert_allocations_fit(item)
     item.save()
 
@@ -363,6 +402,9 @@ class LedgerService:
 
     @staticmethod
     def update_details(item: CostItem, dto: CostItemDetailsDTO, *, actor: User | None) -> CostItem:
+        """One atomic edit of a fee's bookkeeping. The optional money fields
+        go through the pricing rules against the amount stored now, never one
+        the client remembers; the rest are details."""
         with transaction.atomic():
             project = item.budget.project
             budget = BudgetService.lock(project)
@@ -370,6 +412,18 @@ class LedgerService:
             item = CostItem.objects.select_for_update().get(pk=item.pk)
 
             requested = {name: getattr(dto, name) for name in dto.model_fields_set}
+            pricing = {name: requested.pop(name) for name in _OPTIONAL_PRICING_FIELDS if name in requested}
+            if pricing:
+                seat = item.participation
+                _apply_pricing(
+                    budget, project,
+                    _Row(
+                        item=item, participation=seat, crew_assignment=item.crew_assignment,
+                        billable=seat is None or _is_billable_seat(seat),
+                    ),
+                    requested_form=None, requested_amount=item.contract_amount, optional=pricing, actor=actor,
+                )
+
             for name in _TEXT_DETAIL_FIELDS & requested.keys():
                 if requested[name] is None:
                     requested[name] = ""
@@ -394,9 +448,13 @@ class LedgerService:
                     raise ItemContracted(params={"fields": identity})
 
             before = {name: getattr(item, name) for name in changed}
+            settled_before = {name: getattr(item, name) for name in SETTLED_COST_FIELDS}
             for name, value in changed.items():
                 setattr(item, name, value)
             refresh_item(item, project)
+            assert_settled_charges_unchanged(
+                item, [name for name, value in settled_before.items() if getattr(item, name) != value],
+            )
             item.save()
             audit.record(
                 budget, actor=actor, subject=item, action=FinanceAction.DETAILS_CHANGED,
@@ -487,11 +545,15 @@ class LedgerService:
         refuses the removal — that fee is an accounting record, and the person
         has to be unpaid or their contract annulled first. `all_objects`, because
         the foreign key protects soft-deleted rows too.
+
+        The budget is locked before the fees are read: a payment landing between
+        the check and the release would otherwise be soft-deleted with them.
         """
         with transaction.atomic():
-            items = list(CostItem.all_objects.filter(crew_assignment=assignment))
-            if not items:
+            if not CostItem.all_objects.filter(crew_assignment=assignment).exists():
                 return
+            budget = BudgetService.lock(assignment.project)
+            items = list(CostItem.all_objects.select_for_update().filter(crew_assignment=assignment))
             live = set(
                 Contract.objects.filter(cost_item__in=items)
                 .exclude(status=ContractStatus.ANNULLED)
@@ -504,7 +566,6 @@ class LedgerService:
             if settled:
                 raise CrewHasSettledFee(params={"cost_item_ids": [str(item.pk) for item in settled]})
 
-            budget = BudgetService.lock(assignment.project)
             BudgetService.assert_writable(budget)
             for item in items:
                 was_active = not item.is_deleted
@@ -582,3 +643,33 @@ class LedgerService:
                 before={"participation": source.pk}, after={"participation": target.pk},
             )
             return False
+
+    @staticmethod
+    def follow_concert_date(project: Project) -> None:
+        """Called after a project's concert moves (its date or its timezone).
+
+        What is incurred on the concert day moves with it: every unpaid fee,
+        and every expense still waiting for its document. Grant eligibility is
+        judged on that date, so a stale one would pass a concert moved past a
+        grant's end. A paid fee keeps its date, and so does anything charged
+        to a settled source — its report has printed it. A closed budget is a
+        record and does not move.
+        """
+        with transaction.atomic():
+            budget = ProjectBudget.all_objects.filter(project=project).first()
+            if budget is None:
+                return
+            budget = BudgetService.lock(project)
+            if budget.status == BudgetStatus.CLOSED:
+                return
+            concert_day = local_date(project.date_time, project.timezone)
+            (
+                CostItem.objects.filter(budget=budget)
+                .filter(
+                    Q(kind=CostKind.FEE, paid_on__isnull=True)
+                    | Q(kind=CostKind.EXPENSE, document_date__isnull=True)
+                )
+                .exclude(incurred_on=concert_day)
+                .exclude(pk__in=settled_charged_items())
+                .update(incurred_on=concert_day, updated_at=timezone.now())
+            )

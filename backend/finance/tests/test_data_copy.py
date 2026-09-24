@@ -88,7 +88,8 @@ class RosterCopyTests(TransactionTestCase):
         item = CostItem.objects.get(participation_id=seat.pk)
         self.assertEqual((item.form, item.contract_amount, item.cost_amount), (FeeForm.DZIELO, Decimal("250.00"),
                                                                              Decimal("250.00")))
-        self.assertEqual(item.paid_on, local_date(paid_at, self.project.timezone))
+        self.assertEqual(item.paid_on, local_date(paid_at, "Europe/Warsaw"))
+        self.assertEqual(item.paid_marked_at, paid_at)
         self.assertEqual(item.incurred_on, self.concert_day)
         self.assertEqual(item.payee_name, "Anna Nowak")
         self.assertEqual(item.payee_role, "Sopran")

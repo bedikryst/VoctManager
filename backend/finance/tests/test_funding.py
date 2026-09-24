@@ -34,6 +34,7 @@ from ..exceptions import (
     FundingInUse,
     PlanLocked,
     SourceInUse,
+    SourceKindInUse,
     SourceSettled,
 )
 from ..models import (
@@ -331,6 +332,48 @@ class SettledSourceTests(TestCase):
         with self.assertRaises(SourceSettled):
             FundingService.update_funding(funding, ProjectFundingUpdateDTO(received_amount=Decimal("1")), actor=None)
 
+    def test_a_settled_source_keeps_its_figures_and_its_costs_their_date_and_category(self) -> None:
+        project = make_project()
+        source = _source(awarded_amount="5000")
+        funding = _fund(project, source, planned="1000")
+        expense = _expense(project)
+        _charge(expense, (funding, "400"))
+        FundingService.update_source(source, _source_update(status=FundingStatus.SETTLED), actor=None)
+
+        with self.assertRaises(SourceSettled):
+            FundingService.update_source(source, _source_update(awarded_amount="6000"), actor=None)
+        with self.assertRaises(SourceSettled):
+            ExpenseService.update(expense, _expense_update(category="TRAVEL"), actor=None)
+        with self.assertRaises(SourceSettled):
+            ExpenseService.update(expense, _expense_update(document_date=str(finance_today())), actor=None)
+        FundingService.update_source(source, _source_update(note="Rozliczone w terminie"), actor=None)
+        ExpenseService.update(expense, _expense_update(document_number="FV/1/2026"), actor=None)
+
+        # Reopening and correcting in one save is allowed.
+        FundingService.update_source(
+            source, _source_update(status=FundingStatus.AWARDED, awarded_amount="6000"), actor=None,
+        )
+        source.refresh_from_db()
+        self.assertEqual(source.awarded_amount, Decimal("6000.00"))
+
+
+class SourceKindTests(TestCase):
+    def test_a_source_carrying_charges_keeps_a_kind_that_accepts_them(self) -> None:
+        project = make_project()
+        source = _source()
+        funding = _fund(project, source)
+        fee = price(project, participation=make_seat(project), amount="5000")
+        _charge(fee, (funding, "5000"))
+
+        with self.assertRaises(SourceKindInUse):
+            FundingService.update_source(source, _source_update(kind="VOLUNTEER_WORK"), actor=None)
+        FundingService.update_source(source, _source_update(kind="SPONSOR"), actor=None)
+
+        CostAllocation.objects.filter(cost_item=fee).delete()
+        FundingService.update_source(source, _source_update(kind="VOLUNTEER_WORK"), actor=None)
+        source.refresh_from_db()
+        self.assertEqual(source.kind, "VOLUNTEER_WORK")
+
 
 class FundingWarningTests(TestCase):
     def setUp(self) -> None:
@@ -377,14 +420,50 @@ class FundingWarningTests(TestCase):
         today = finance_today()
         funding = _fund(self.project, _source(eligible_from=str(today), eligible_to=str(today + timedelta(days=10))),
                         planned="1000")
-        expense = _expense(self.project, incurred_on=str(today + timedelta(days=15)))
+        expense = _expense(self.project, document_date=str(today + timedelta(days=15)))
         _charge(expense, (funding, "500"))
 
         warning = _warnings(self.project)["OUTSIDE_ELIGIBILITY"]
         self.assertEqual(warning.subject_ids, [expense.pk])
 
-        ExpenseService.update(expense, _expense_update(incurred_on=str(today + timedelta(days=5))), actor=None)
+        ExpenseService.update(expense, _expense_update(document_date=str(today + timedelta(days=5))), actor=None)
         self.assertNotIn("OUTSIDE_ELIGIBILITY", _warnings(self.project))
+
+    def test_an_expense_booked_before_its_invoice_is_judged_on_the_invoice(self) -> None:
+        today = finance_today()
+        funding = _fund(self.project, _source(eligible_from=str(today), eligible_to=str(today + timedelta(days=25))),
+                        planned="1000")
+        expense = _expense(self.project)
+        _charge(expense, (funding, "500"))
+        self.assertNotIn("OUTSIDE_ELIGIBILITY", _warnings(self.project))
+
+        ExpenseService.update(expense, _expense_update(document_date=str(today + timedelta(days=30))), actor=None)
+
+        expense.refresh_from_db()
+        self.assertEqual(expense.incurred_on, today + timedelta(days=30))
+        self.assertEqual(_warnings(self.project)["OUTSIDE_ELIGIBILITY"].subject_ids, [expense.pk])
+
+    def test_the_costs_follow_a_concert_moved_past_the_grant(self) -> None:
+        today = finance_today()
+        funding = _fund(self.project, _source(eligible_from=str(today), eligible_to=str(today + timedelta(days=25))),
+                        planned="1000")
+        seat = make_seat(self.project)
+        fee = price(self.project, participation=seat, amount="800")
+        undocumented = _expense(self.project, amount="300")
+        documented = _expense(self.project, amount="200", document_date=str(today))
+        for item in (fee, undocumented, documented):
+            _charge(item, (funding, "100"))
+        self.assertNotIn("OUTSIDE_ELIGIBILITY", _warnings(self.project))
+
+        self.project.date_time += timedelta(days=10)
+        self.project.save()
+        LedgerService.follow_concert_date(self.project)
+
+        self.assertEqual(
+            set(_warnings(self.project)["OUTSIDE_ELIGIBILITY"].subject_ids), {seat.pk, undocumented.pk},
+        )
+        documented.refresh_from_db()
+        self.assertEqual(documented.incurred_on, today)
 
     def test_own_share_on_the_plan_and_on_the_actuals(self) -> None:
         source = _source(required_own_share_pct="10")

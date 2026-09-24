@@ -15,6 +15,7 @@ from roster.models import Collaborator, Participation
 from ..dtos import PayFeesDTO
 from ..models import BudgetStatus, CostItem, FeeForm, FinanceAction, FinanceEvent, ProjectBudget
 from ..rules import finance_today
+from ..services.budget import BudgetService
 from ..services.contracts import ContractService
 from ..services.ledger import LedgerService
 from .factories import make_crew, make_project, make_seat, make_user, price
@@ -107,6 +108,28 @@ class PricingTests(LedgerTestCase):
         self.assertIsNone(item.employer_contributions)
         self.assertEqual(item.cost_amount, Decimal("600.00"))
 
+    def test_a_repriced_mandate_waits_for_its_contributions_again(self) -> None:
+        price(self.project, crew=self.sound, amount="1000", employer_contributions="200")
+
+        item = price(self.project, crew=self.sound, amount="2000")
+
+        self.assertIsNone(item.employer_contributions)
+        self.assertEqual(item.cost_amount, Decimal("2000.00"))
+        self.assertIn("EMPLOYER_COST_MISSING", {w.code for w in BudgetService.build(self.project).warnings})
+
+        item = price(self.project, crew=self.sound, amount="3000", employer_contributions="600")
+        self.assertEqual(item.cost_amount, Decimal("3600.00"))
+
+    def test_a_cost_wider_than_the_ledger_holds_is_refused(self) -> None:
+        response = self.patch_fees({"items": [{
+            "ref": {"crew_assignment": str(self.sound.pk)},
+            "contract_amount": "99999999.99", "employer_contributions": "1",
+        }]})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_code"], "amount_too_large")
+        self.assertFalse(CostItem.objects.exists())
+
     def test_changes_are_logged_with_before_and_after(self) -> None:
         price(self.project, participation=self.anna, amount="300", actor=self.manager)
         price(self.project, participation=self.anna, amount="350", form="ZLECENIE", actor=self.manager)
@@ -182,6 +205,39 @@ class LockTests(LedgerTestCase):
         response = self.patch_fees({"items": [{"ref": {"participation": str(self.anna.pk)}, "contract_amount": "320"}]})
 
         self.assertEqual(response.data["error_code"], "item_contracted")
+
+    def test_a_volunteer_agreement_freezes_the_rate_it_prints_but_not_the_hours(self) -> None:
+        item = price(self.project, participation=self.anna, amount="0", in_kind_hourly_rate="40", in_kind_hours="10")
+        ContractService.issue(item, actor=self.manager)
+        detail = f"/api/finance/cost-items/{item.pk}/"
+
+        refused = self.client.patch(detail, {"in_kind_hourly_rate": "55"}, format="json")
+        self.assertEqual(refused.data["error_code"], "item_contracted")
+
+        allowed = self.client.patch(detail, {"in_kind_hours": "12", "note": "Próby i koncert"}, format="json")
+        self.assertEqual(allowed.status_code, 200)
+        item.refresh_from_db()
+        self.assertEqual((item.in_kind_hours, item.in_kind_hourly_rate, item.note),
+                         (Decimal("12.00"), Decimal("40.00"), "Próby i koncert"))
+
+    def test_details_and_contributions_are_one_edit(self) -> None:
+        item = price(self.project, crew=self.sound, amount="600")
+        detail = f"/api/finance/cost-items/{item.pk}/"
+
+        refused = self.client.patch(
+            detail, {"employer_contributions": "117.18", "budget_line": str(item.pk)}, format="json",
+        )
+        self.assertEqual(refused.status_code, 400)
+        item.refresh_from_db()
+        self.assertIsNone(item.employer_contributions)
+
+        # Priced against the stored amount, whatever the client last saw.
+        price(self.project, crew=self.sound, amount="700")
+        response = self.client.patch(detail, {"employer_contributions": "117.18", "note": "DRA 10/2026"}, format="json")
+        self.assertEqual(response.status_code, 200)
+        item.refresh_from_db()
+        self.assertEqual((item.contract_amount, item.cost_amount, item.note),
+                         (Decimal("700.00"), Decimal("817.18"), "DRA 10/2026"))
 
     def test_a_closed_budget_refuses_every_write(self) -> None:
         budget = ProjectBudget.objects.create(project=self.project, status=BudgetStatus.CLOSED)

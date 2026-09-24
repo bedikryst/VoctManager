@@ -193,7 +193,10 @@ class CostItemDetailsDTO(EnterpriseBaseDTO):
     """Bookkeeping details of one fee. Only the fields sent are changed. The
     payee and side of a one-off are here too; the service refuses them on a
     roster row (the roster is their source) and on a paid or contracted one.
-    `budget_line` sent as null takes the fee out of the plan."""
+    `budget_line` sent as null takes the fee out of the plan. The optional
+    money fields — a mandate's contributions, a volunteer's valuation — are
+    priced against the amount stored when the edit lands, in the same
+    transaction as the rest."""
 
     payee_name: Text | None = Field(default=None, min_length=1, max_length=200)
     payee_role: Text | None = Field(default=None, max_length=150)
@@ -204,6 +207,9 @@ class CostItemDetailsDTO(EnterpriseBaseDTO):
     document_number: Text | None = Field(default=None, max_length=100)
     document_date: date | None = None
     vendor_nip: Nip | None = None
+    employer_contributions: MoneyAmount | None = None
+    in_kind_hours: Hours | None = None
+    in_kind_hourly_rate: MoneyAmount | None = None
 
     @field_validator("category")
     @classmethod
@@ -317,8 +323,8 @@ class LineOrderDTO(EnterpriseBaseDTO):
 
 class ExpenseDTO(EnterpriseBaseDTO):
     """A cost that is not a person's fee: the vendor, their document and its
-    gross, which is the foundation's cost. `incurred_on` defaults to the
-    document's date, then to the concert day."""
+    gross, which is the foundation's cost. The date it is incurred on is not
+    sent: it is the document's date, or the concert day until there is one."""
 
     category: str
     vendor_name: Text = Field(..., min_length=1, max_length=200)
@@ -329,7 +335,6 @@ class ExpenseDTO(EnterpriseBaseDTO):
     description: Text = Field(default="", max_length=300)
     cost_amount: PositiveAmount
     budget_line: UUID | None = None
-    incurred_on: date | None = None
     due_on: date | None = None
     note: Text = Field(default="", max_length=2000)
 
@@ -357,7 +362,6 @@ class ExpenseUpdateDTO(EnterpriseBaseDTO):
     description: Text | None = Field(default=None, max_length=300)
     cost_amount: PositiveAmount | None = None
     budget_line: UUID | None = None
-    incurred_on: date | None = None
     due_on: date | None = None
     note: Text | None = Field(default=None, max_length=2000)
 
@@ -373,7 +377,7 @@ class ExpenseUpdateDTO(EnterpriseBaseDTO):
 
     @model_validator(mode="after")
     def required_stay_set(self) -> Self:
-        required = {"category", "vendor_name", "document_type", "cost_amount", "incurred_on"}
+        required = {"category", "vendor_name", "document_type", "cost_amount"}
         cleared = [name for name in self.model_fields_set & required if getattr(self, name) is None]
         if cleared:
             raise ValueError(f"{', '.join(sorted(cleared))} cannot be cleared.")

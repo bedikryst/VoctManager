@@ -30,8 +30,9 @@ from ..exceptions import BillNotApplicable, ContractAnnulled
 from ..foundation import foundation_context
 from ..models import Contract, ContractStatus, CostItem, FeeForm
 from ..rules import FINANCE_TIMEZONE, PAYABLE_CONTRACT_FORMS, VOLUNTEER_INSURANCE_MAX_DAYS, local_date
-from ..services.budget import volunteer_period_days
+from ..services.budget import BudgetService, volunteer_period_days
 from .amount_words import amount_to_words_pl, format_amount_pl
+from .document_notes import bill_notes
 
 _CONTRACT_TEMPLATES: dict[str, str] = {
     FeeForm.DZIELO: "finance/contract_dzielo.html",
@@ -211,12 +212,16 @@ def render_contract_html(contract: Contract) -> str:
 
 def render_bill_html(contract: Contract) -> str:
     """The bill the payee signs to be paid against the contract. The tax rows
-    are the office's to fill: the panel never computes PIT or ZUS."""
+    are the office's to fill: the panel never computes PIT or ZUS. The source
+    line carries the note of every source the fee is charged to when the bill
+    is printed; without one it stays a line to fill by hand."""
     contract = _load(contract)
     _assert_printable(contract)
     if contract.form not in PAYABLE_CONTRACT_FORMS:
         raise BillNotApplicable()
-    return render_to_string(_BILL_TEMPLATE, _document_context(contract))
+    context = _document_context(contract)
+    context["source_notes"] = bill_notes(BudgetService.build(contract.cost_item.budget.project), contract.cost_item_id)
+    return render_to_string(_BILL_TEMPLATE, context)
 
 
 def render_contract_pdf(contract: Contract) -> bytes:

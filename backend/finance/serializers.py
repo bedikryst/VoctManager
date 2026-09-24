@@ -23,7 +23,8 @@ def _hours(*, allow_null: bool = False) -> serializers.DecimalField:
 def _pct(**kwargs: Any) -> serializers.DecimalField:
     """A percentage, or null where there is nothing to measure it on. Wider
     than a rule's 0 to 100: a measured share can fall below zero when the plan
-    expects more of a source than the whole plan costs."""
+    expects more of a source than the whole plan costs (`rules.share_pct`
+    bounds it to this width)."""
     return serializers.DecimalField(max_digits=9, decimal_places=2, coerce_to_string=True, allow_null=True, **kwargs)
 
 

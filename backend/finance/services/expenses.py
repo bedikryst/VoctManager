@@ -21,10 +21,11 @@ from roster.models import Project
 from ..dtos import ExpenseDTO, ExpenseUpdateDTO
 from ..exceptions import ItemPaid, PaidItemNotRemovable
 from ..models import CostItem, CostKind, FinanceAction
-from ..rules import local_date, money
+from ..rules import money
 from . import audit
 from .budget import BudgetService, reconcile_line_change
-from .funding import assert_allocations_fit, release_cost_allocations
+from .funding import assert_allocations_fit, assert_settled_charges_unchanged, release_cost_allocations
+from .ledger import expense_incurred_on
 
 # What a paid expense keeps: the amount the office paid and whom it paid.
 _FROZEN_WHEN_PAID = frozenset({"cost_amount", "vendor_name"})
@@ -56,9 +57,7 @@ class ExpenseService:
                 category=dto.category,
                 budget_line=line,
                 cost_amount=money(dto.cost_amount),
-                incurred_on=(
-                    dto.incurred_on or dto.document_date or local_date(project.date_time, project.timezone)
-                ),
+                incurred_on=expense_incurred_on(dto.document_date, project),
                 due_on=dto.due_on,
                 note=dto.note,
                 vendor_name=dto.vendor_name,
@@ -75,9 +74,12 @@ class ExpenseService:
     @staticmethod
     def update(item: CostItem, dto: ExpenseUpdateDTO, *, actor: User | None) -> CostItem:
         """Only the fields sent change. A new category takes the expense off a
-        line of its old category, unless a line of the new one is sent with it."""
+        line of its old category, unless a line of the new one is sent with it.
+        The date the expense is incurred on follows its document's date. What a
+        settled source's report printed of it stays as it was."""
         with transaction.atomic():
-            budget = BudgetService.lock(item.budget.project)
+            project = item.budget.project
+            budget = BudgetService.lock(project)
             BudgetService.assert_writable(budget)
             item = CostItem.objects.select_for_update().get(pk=item.pk)
 
@@ -91,6 +93,8 @@ class ExpenseService:
                 elif name == "cost_amount" and value is not None:
                     value = money(value)
                 requested[name] = value
+            document_date = requested.get("document_date", item.document_date)
+            requested["incurred_on"] = expense_incurred_on(document_date, project)
             changed = {name: value for name, value in requested.items() if getattr(item, name) != value}
             if not changed:
                 return item
@@ -100,6 +104,7 @@ class ExpenseService:
                 raise ItemPaid(params={"fields": frozen})
 
             reconcile_line_change(budget, item, changed)
+            assert_settled_charges_unchanged(item, changed)
 
             before = {name: getattr(item, name) for name in changed}
             for name, value in changed.items():

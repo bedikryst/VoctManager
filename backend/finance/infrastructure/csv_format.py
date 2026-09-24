@@ -3,12 +3,14 @@
 @description The shape Polish Excel opens without an import dialog, shared by
              every CSV the finance module hands out: UTF-8 with a BOM, `;`
              between cells, a decimal comma without digit grouping, dd.mm.yyyy
-             dates, and a hand-typed cell that cannot run as a formula.
+             dates, a hand-typed cell that cannot run as a formula, and an
+             identifier Excel does not turn into a number or a date.
 @architecture Enterprise SaaS 2026
 @module finance/infrastructure/csv_format
 """
 import csv
 import io
+import re
 from collections.abc import Iterable, Sequence
 from datetime import date
 from decimal import Decimal
@@ -21,8 +23,22 @@ _FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
 _BOM = chr(0xFEFF)
 
 
+# What Excel would read as a number or a date: "0012" loses its zeros and
+# "12/2026" becomes December. The pattern admits no quote, so such a value can
+# sit inside a text formula's literal without escaping it.
+_NUMBER_LIKE = re.compile(r"[\d\s.,/:\-]+|\d+[eE][+-]?\d+")
+
+
 def text_cell(value: str) -> str:
     return f"'{value}" if value.startswith(_FORMULA_PREFIXES) else value
+
+
+def code_cell(value: str) -> str:
+    """A document or contract number exactly as typed. One that Excel would
+    convert is written as the text formula `="0012"`."""
+    if value and _NUMBER_LIKE.fullmatch(value):
+        return f'="{value}"'
+    return text_cell(value)
 
 
 def amount_cell(value: Decimal | None) -> str:

@@ -18,6 +18,7 @@ from typing import Any
 
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.db.models import QuerySet
 
 from roster.models import Participation, Project
 
@@ -38,6 +39,7 @@ from ..exceptions import (
     FundingExists,
     FundingInUse,
     SourceInUse,
+    SourceKindInUse,
     SourceSettled,
     UnknownFunding,
     UnknownSource,
@@ -73,6 +75,10 @@ _SOURCE_FIELDS = (
 )
 # Text fields a client clears by sending null.
 _SOURCE_TEXT_FIELDS = frozenset({"grantor", "agreement_number", "note"})
+# What a settled source still lets change: reopening it, and its note.
+_SETTLED_SOURCE_EDITABLE = frozenset({"status", "note"})
+# What a settled source's report printed of each cost charged to it.
+SETTLED_COST_FIELDS = frozenset({"cost_amount", "category", "budget_line_id", "incurred_on"})
 
 Allocation = LineAllocation | CostAllocation
 
@@ -99,9 +105,57 @@ def _funding_snapshot(funding: ProjectFunding) -> dict[str, Any]:
 
 
 def _assert_not_settled(sources: Iterable[FundingSource]) -> None:
-    settled = sorted({source.name for source in sources if source.status == FundingStatus.SETTLED})
+    """Refused when one of the sources is settled. The status is read again
+    under a row lock: `update_source` settles a source under the same lock, so
+    a write cannot slip in between this check and the settlement."""
+    ids = {source.pk for source in sources}
+    if not ids:
+        return
+    settled = sorted(
+        FundingSource.objects.select_for_update()
+        .filter(pk__in=ids, status=FundingStatus.SETTLED)
+        .values_list("name", flat=True)
+    )
     if settled:
         raise SourceSettled(params={"sources": settled})
+
+
+def assert_settled_charges_unchanged(item: CostItem, fields: Iterable[str]) -> None:
+    """A cost charged to a settled source keeps what that source's report
+    printed of it: the amount, the category and plan line it was reported
+    under, and the date that made it eligible. Correcting one of them means
+    reopening the source first."""
+    touched = sorted(set(fields) & SETTLED_COST_FIELDS)
+    if not touched or item._state.adding:
+        return
+    charged = CostAllocation.objects.filter(cost_item=item).values("project_funding__source")
+    settled = sorted(
+        FundingSource.objects.select_for_update()
+        .filter(pk__in=charged, status=FundingStatus.SETTLED)
+        .values_list("name", flat=True)
+    )
+    if settled:
+        raise SourceSettled(params={"sources": settled, "fields": touched})
+
+
+def settled_charged_items() -> QuerySet[CostAllocation, Any]:
+    """The ids of the costs charged to a settled source, as a subquery."""
+    return CostAllocation.objects.filter(
+        project_funding__source__status=FundingStatus.SETTLED,
+    ).values("cost_item")
+
+
+def _assert_charges_fit_kind(source: FundingSource, kind: str) -> None:
+    """A source's kind decides what can be charged to it, so a new kind has
+    to accept every cost already charged there: a grant carrying fees does
+    not become volunteer work, where those fees would count a second time."""
+    mismatched = sorted({
+        str(allocation.cost_item_id)
+        for allocation in CostAllocation.objects.filter(project_funding__source=source).select_related("cost_item")
+        if not source_accepts(kind, valuation=is_valuation(allocation.cost_item.kind, allocation.cost_item.form))
+    })
+    if mismatched:
+        raise SourceKindInUse(params={"sources": [source.name], "cost_items": mismatched})
 
 
 def is_counted(item: CostItem) -> bool:
@@ -130,7 +184,10 @@ def assert_allocations_fit(item: CostItem) -> None:
     """
     if item._state.adding:
         return
-    allocations = list(CostAllocation.objects.filter(cost_item=item).select_related("project_funding__source"))
+    # Locked with their sources, so a source's kind cannot change under the check.
+    allocations = list(
+        CostAllocation.objects.filter(cost_item=item).select_related("project_funding__source").select_for_update()
+    )
     if not allocations:
         return
     valuation = is_valuation(item.kind, item.form)
@@ -189,10 +246,13 @@ def release_line_allocations(budget: ProjectBudget, line: BudgetLine, *, actor: 
 
 
 def _fundings_of(budget: ProjectBudget, ids: Iterable[Any]) -> dict[Any, ProjectFunding]:
+    """The fundings a split names, locked with their sources: the kind and the
+    status the checks read cannot change before the split is written."""
     wanted = set(ids)
     fundings = {
         funding.pk: funding
-        for funding in ProjectFunding.objects.filter(budget=budget, pk__in=wanted).select_related("source")
+        for funding in ProjectFunding.objects.filter(budget=budget, pk__in=wanted)
+        .select_related("source").select_for_update()
     }
     if set(fundings) != wanted:
         raise UnknownFunding()
@@ -261,7 +321,9 @@ class FundingService:
     @staticmethod
     def update_source(source: FundingSource, dto: FundingSourceUpdateDTO, *, actor: User | None) -> FundingSource:
         """Only the fields sent change. A settled source may change its status
-        (reopening it) and its note; its figures stay as they were reported."""
+        (reopening it) and its note; its figures stay as they were reported.
+        Settling and correcting in one save is allowed, and so is reopening
+        and correcting. A new kind must accept every cost already charged."""
         with transaction.atomic():
             source = FundingSource.objects.select_for_update().get(pk=source.pk)
             requested: dict[str, Any] = {}
@@ -275,6 +337,15 @@ class FundingService:
             changed = {name: value for name, value in requested.items() if getattr(source, name) != value}
             if not changed:
                 return source
+            stays_settled = (
+                source.status == FundingStatus.SETTLED
+                and changed.get("status", source.status) == FundingStatus.SETTLED
+            )
+            figures = sorted(changed.keys() - _SETTLED_SOURCE_EDITABLE)
+            if stays_settled and figures:
+                raise SourceSettled(params={"sources": [source.name], "fields": figures})
+            if "kind" in changed:
+                _assert_charges_fit_kind(source, changed["kind"])
             eligible_from = changed.get("eligible_from", source.eligible_from)
             eligible_to = changed.get("eligible_to", source.eligible_to)
             if eligible_from and eligible_to and eligible_from > eligible_to:
@@ -315,7 +386,7 @@ class FundingService:
             planned = money(dto.planned_amount)
             if planned > 0:
                 BudgetService.assert_plan_editable(budget)
-            source = FundingSource.objects.filter(pk=dto.source).first()
+            source = FundingSource.objects.select_for_update().filter(pk=dto.source).first()
             if source is None:
                 raise UnknownSource()
             _assert_not_settled([source])
@@ -469,7 +540,9 @@ class FundingService:
         with transaction.atomic():
             budget = BudgetService.lock(funding.budget.project)
             BudgetService.assert_writable(budget)
-            funding = ProjectFunding.objects.select_related("source").get(pk=funding.pk)
+            # Locked with its source: the kind every cost is checked against
+            # cannot change before the charges are written.
+            funding = ProjectFunding.objects.select_related("source").select_for_update().get(pk=funding.pk)
             _assert_not_settled([funding.source])
             items = {
                 item.pk: item

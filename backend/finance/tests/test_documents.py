@@ -20,6 +20,7 @@ from unittest.mock import MagicMock, patch
 from django.core.files.storage import default_storage
 from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from archive.models import Composer, Piece
@@ -28,13 +29,15 @@ from logistics.models import Location, LocationCategory
 from roster.infrastructure.document_generator import DocumentRenderDependencyError
 from roster.models import Collaborator, ProgramItem, Project, Rehearsal, VoiceType
 
+from ..dtos import AllocationSetDTO, FundingSourceDTO, ProjectFundingDTO
 from ..exceptions import BillNotApplicable, ContractAnnulled
 from ..foundation import FOUNDATION, FoundationIdentityError, Representative, foundation_context, signatory_for
 from ..infrastructure.amount_words import amount_to_words_pl, format_amount_pl, number_to_words_pl
 from ..infrastructure.documents import render_bill_html, render_contract_html
 from ..models import Contract, ContractSequence, CostItem, FundingSource
 from ..services.contracts import ContractService
-from ..tasks import NO_CONTRACTS, export_path, generate_contracts_zip_task
+from ..services.funding import FundingService
+from ..tasks import EXPORT_TTL, NO_CONTRACTS, export_path, generate_contracts_zip_task
 from .factories import make_crew, make_project, make_seat, make_user, price
 
 NBSP = chr(0x00A0)
@@ -253,6 +256,29 @@ class DocumentRenderTests(TestCase):
         self.assertIn("Za wykonanie zlecenia", html)
         self.assertIn("Wypełnia Zleceniodawca / biuro rachunkowe", html)
 
+    def test_the_bill_names_the_source_paying_it(self) -> None:
+        contract = self.dzielo("300")
+        self.assertIn('Źródło finansowania (opis dokumentu): <span class="blank', render_bill_html(contract))
+
+        source = FundingService.create_source(
+            FundingSourceDTO.model_validate({"kind": "PUBLIC_GRANT", "name": "Mecenat Małopolski",
+                                             "agreement_number": "KL/5/2026"}),
+            actor=None,
+        )
+        funding = FundingService.add_funding(
+            self.project, ProjectFundingDTO.model_validate({"source": str(source.pk), "planned_amount": "300"}),
+            actor=None,
+        )
+        FundingService.set_cost_allocations(
+            contract.cost_item,
+            AllocationSetDTO.model_validate({"allocations": [{"funding": str(funding.pk), "amount": "300"}]}),
+            actor=None,
+        )
+
+        html = render_bill_html(contract)
+        self.assertIn("Mecenat Małopolski", html)
+        self.assertIn("KL/5/2026", html)
+
     def test_volunteer_work_has_no_bill(self) -> None:
         contract = self.issue(price(self.project, participation=make_seat(self.project), amount="0"))
         with self.assertRaises(BillNotApplicable):
@@ -461,13 +487,20 @@ class ContractsZipTests(APITestCase):
         result = self.run_task()
         self.assertEqual(result.result, {"project_id": str(self.project.pk), "error_code": NO_CONTRACTS})
 
-    def test_a_new_archive_replaces_the_last(self) -> None:
+    def test_a_new_archive_clears_stale_ones_and_leaves_one_being_downloaded(self) -> None:
         self.contract("1500", "Alfa")
-        first = self.run_task()
-        second = self.run_task()
+        stale = self.run_task()
+        stale_path = default_storage.path(export_path(str(self.project.pk), stale.id))
+        an_hour_ago = (timezone.now() - EXPORT_TTL - timedelta(minutes=1)).timestamp()
+        os.utime(stale_path, (an_hour_ago, an_hour_ago))
+        fresh = self.run_task()
 
-        self.assertFalse(default_storage.exists(export_path(str(self.project.pk), first.id)))
-        self.assertTrue(default_storage.exists(export_path(str(self.project.pk), second.id)))
+        latest = self.run_task()
+
+        self.assertFalse(default_storage.exists(export_path(str(self.project.pk), stale.id)))
+        # Another manager's archive, packed a moment ago, is still theirs to download.
+        self.assertTrue(default_storage.exists(export_path(str(self.project.pk), fresh.id)))
+        self.assertTrue(default_storage.exists(export_path(str(self.project.pk), latest.id)))
 
     @patch("finance.views.generate_contracts_zip_task")
     def test_the_request_enqueues_the_task(self, task: MagicMock) -> None:

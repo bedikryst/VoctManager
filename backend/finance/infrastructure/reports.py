@@ -17,14 +17,11 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
-from string import Formatter
 from typing import Any
 from uuid import UUID
 
 from django.template.loader import render_to_string
 from django.utils import timezone, translation
-from django.utils.html import escape
-from django.utils.safestring import SafeString, mark_safe
 
 from roster.infrastructure.document_generator import _brand_font_context, _render_pdf
 from roster.models import Project
@@ -38,11 +35,11 @@ from ..services.budget import (
     SEVERITY_PROBLEM,
     AllocationView,
     ExpenseRow,
-    FundingView,
     LedgerRow,
     ProjectMoney,
 )
 from ..services.reports import (
+    CONTRIBUTIONS_DOCUMENT,
     FOUNDATION_OWN,
     FUNDING_MERGED,
     PERSONNEL_MERGED,
@@ -58,6 +55,7 @@ from ..services.reports import (
     report_funding,
 )
 from .amount_words import format_amount_pl
+from .document_notes import document_notes
 from .documents import concert_facts, file_segment
 from .vocabulary import (
     BUDGET_STATUS_LABELS,
@@ -262,9 +260,14 @@ def _board_context(money: ProjectMoney) -> dict[str, Any]:
         ("Do zapłaty", _amount(summary.outstanding)),
     ]
     if money.fundings:
+        # The foundation's own is what the patron report calls it: its own
+        # funds charged, plus whatever no source carries.
+        own_funds = sum(
+            (f.charged for f in money.fundings if f.source.source.kind == FundingKind.OWN_FUNDS), ZERO,
+        )
         figures += [
-            ("Pokryte ze źródeł", _amount(funding.charged)),
-            ("Własne lub niepokryte", _amount(funding.uncovered)),
+            ("Pokryte ze źródeł zewnętrznych", _amount(funding.charged - own_funds)),
+            (PATRON_FOUNDATION_OWN_LABEL, _amount(funding.uncovered + own_funds)),
         ]
     if funding.in_kind_contributed > ZERO:
         figures.append(("Wkład niefinansowy", _amount(funding.in_kind_contributed)))
@@ -372,25 +375,11 @@ def render_board_report_html(money: ProjectMoney) -> str:
 # Document notes                                                               #
 # --------------------------------------------------------------------------- #
 
-_BLANK = '<span class="blank"></span>'
-
-
-def render_note(template: str, values: dict[str, str]) -> SafeString:
-    """The source's formula with its placeholders filled. A value the panel
-    does not know (an agreement not yet signed, a cost on no kosztorys line)
-    prints as a dotted line to fill in by hand, never as an empty gap the
-    reader would not notice. Everything typed is escaped; the placeholders
-    were checked when the formula was saved."""
-    parts: list[str] = []
-    for literal, name, _spec, _conversion in Formatter().parse(template):
-        parts.append(escape(literal))
-        if name is not None:
-            value = values.get(name, "").strip()
-            parts.append(escape(value) if value else _BLANK)
-    return mark_safe("".join(parts))
-
 
 def _document_heading(document: ChargedDocument) -> str:
+    if document.kind == CONTRIBUTIONS_DOCUMENT:
+        heading = "Składki ZUS płatnika"
+        return f"{heading} do umowy nr {document.refers_to}" if document.refers_to else heading
     if document.is_fee:
         if document.kind in PAYABLE_CONTRACT_FORMS:
             kind = "Rachunek do umowy"
@@ -399,20 +388,6 @@ def _document_heading(document: ChargedDocument) -> str:
     else:
         kind = DOCUMENT_TYPE_LABELS.get(document.kind, document.kind)
     return f"{kind} nr {document.number}" if document.number else kind
-
-
-def _note_values(document: ChargedDocument, amount: Decimal, funding: FundingView) -> dict[str, str]:
-    source = funding.source.source
-    return {
-        "document_number": document.number,
-        "document_amount": _amount(document.amount),
-        "source_amount": _amount(amount),
-        "source_name": source.name,
-        "grantor": source.grantor,
-        "agreement_number": source.agreement_number,
-        "agreement_date": source.agreement_date.strftime("%d.%m.%Y") if source.agreement_date else "",
-        "plan_line": document.plan_line,
-    }
 
 
 def _notes_context(money: ProjectMoney, source_id: UUID | None) -> dict[str, Any]:
@@ -427,10 +402,7 @@ def _notes_context(money: ProjectMoney, source_id: UUID | None) -> dict[str, Any
                 "party": document.party,
                 "date": document.document_date,
                 "amount": _amount(document.amount),
-                "notes": [
-                    render_note(funding.source.source.document_note_template, _note_values(document, amount, funding))
-                    for funding, amount in document.charges
-                ],
+                "notes": document_notes(document),
             }
             for document in documents
         ],

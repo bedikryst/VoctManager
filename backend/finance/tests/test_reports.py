@@ -24,19 +24,21 @@ from ..dtos import (
     FundingSourceDTO,
     ProjectFundingDTO,
 )
-from ..exceptions import ReportSourceInvalid
+from ..exceptions import PatronReportBelowFloor, ReportSourceInvalid
+from ..infrastructure.document_notes import render_note
 from ..infrastructure.reports import (
     render_board_report_html,
     render_document_notes_html,
-    render_note,
     render_patron_report_html,
 )
 from ..models import BudgetLine, BudgetStatus, CostItem, FundingSource, ProjectBudget, ProjectFunding
 from ..services.budget import BudgetService
+from ..services.contracts import ContractService
 from ..services.expenses import ExpenseService
 from ..services.funding import FundingService
 from ..services.plan import PlanService
 from ..services.reports import (
+    CONTRIBUTIONS_DOCUMENT,
     FUNDING_MERGED,
     PATRON_PAYEE_FLOOR,
     PERSONNEL_MERGED,
@@ -44,6 +46,7 @@ from ..services.reports import (
     VARIANT_ACTUAL,
     VARIANT_PLAN,
     CategoryCost,
+    charged_documents,
     floored_cost_structure,
     kosztorys,
     patron_report,
@@ -90,14 +93,28 @@ def _singers(project: Project, *amounts: str) -> list[CostItem]:
     ]
 
 
+def _people(count: int, prefix: str) -> frozenset[str]:
+    return frozenset(f"{prefix}{index}" for index in range(count))
+
+
 class FloorRuleTests(TestCase):
     """`floored_cost_structure` on its own: which personnel rows may exist."""
 
+    def test_one_person_in_both_personnel_categories_counts_once(self) -> None:
+        rows = dict(floored_cost_structure([
+            CategoryCost("PERSONNEL_ARTISTIC", Decimal("3000"), frozenset({"anna", "jan"})),
+            CategoryCost("PERSONNEL_TECHNICAL", Decimal("800"), frozenset({"jan"})),
+            CategoryCost("VENUE", Decimal("1500")),
+        ]))
+
+        # Two people, not three: personnel hides inside the venue.
+        self.assertEqual(rows, {REMAINDER: Decimal("5300")})
+
     def test_each_personnel_category_above_the_floor_keeps_its_row(self) -> None:
         rows = dict(floored_cost_structure([
-            CategoryCost("PERSONNEL_ARTISTIC", Decimal("3000"), PATRON_PAYEE_FLOOR),
-            CategoryCost("PERSONNEL_TECHNICAL", Decimal("2400"), PATRON_PAYEE_FLOOR),
-            CategoryCost("VENUE", Decimal("1500"), 0),
+            CategoryCost("PERSONNEL_ARTISTIC", Decimal("3000"), _people(PATRON_PAYEE_FLOOR, "a")),
+            CategoryCost("PERSONNEL_TECHNICAL", Decimal("2400"), _people(PATRON_PAYEE_FLOOR, "t")),
+            CategoryCost("VENUE", Decimal("1500")),
         ]))
 
         self.assertEqual(rows, {
@@ -108,19 +125,19 @@ class FloorRuleTests(TestCase):
 
     def test_a_small_personnel_category_merges_with_the_other(self) -> None:
         rows = dict(floored_cost_structure([
-            CategoryCost("PERSONNEL_ARTISTIC", Decimal("3000"), 5),
-            CategoryCost("PERSONNEL_TECHNICAL", Decimal("800"), 1),
-            CategoryCost("VENUE", Decimal("1500"), 0),
+            CategoryCost("PERSONNEL_ARTISTIC", Decimal("3000"), _people(5, "a")),
+            CategoryCost("PERSONNEL_TECHNICAL", Decimal("800"), _people(1, "t")),
+            CategoryCost("VENUE", Decimal("1500")),
         ]))
 
         self.assertEqual(rows, {PERSONNEL_MERGED: Decimal("3800"), "VENUE": Decimal("1500")})
 
     def test_personnel_below_the_floor_hides_inside_the_largest_other_cost(self) -> None:
         structure = floored_cost_structure([
-            CategoryCost("PERSONNEL_ARTISTIC", Decimal("3000"), 1),
-            CategoryCost("PERSONNEL_TECHNICAL", Decimal("800"), 1),
-            CategoryCost("VENUE", Decimal("1500"), 0),
-            CategoryCost("PROMOTION", Decimal("620"), 0),
+            CategoryCost("PERSONNEL_ARTISTIC", Decimal("3000"), _people(1, "a")),
+            CategoryCost("PERSONNEL_TECHNICAL", Decimal("800"), _people(1, "t")),
+            CategoryCost("VENUE", Decimal("1500")),
+            CategoryCost("PROMOTION", Decimal("620")),
         ])
 
         self.assertEqual(structure, [("PROMOTION", Decimal("620")), (REMAINDER, Decimal("5300"))])
@@ -129,12 +146,12 @@ class FloorRuleTests(TestCase):
         self.assertNotIn(Decimal("3800"), [amount for _, amount in structure])
 
     def test_personnel_below_the_floor_with_nothing_else_leaves_only_the_total(self) -> None:
-        self.assertEqual(floored_cost_structure([CategoryCost("PERSONNEL_ARTISTIC", Decimal("3000"), 2)]), [])
+        self.assertEqual(floored_cost_structure([CategoryCost("PERSONNEL_ARTISTIC", Decimal("3000"), _people(2, "a"))]), [])
 
     def test_without_personnel_the_rows_run_largest_first(self) -> None:
         structure = floored_cost_structure([
-            CategoryCost("PROMOTION", Decimal("620"), 0),
-            CategoryCost("VENUE", Decimal("1500"), 0),
+            CategoryCost("PROMOTION", Decimal("620")),
+            CategoryCost("VENUE", Decimal("1500")),
         ])
 
         self.assertEqual([key for key, _ in structure], ["VENUE", "PROMOTION"])
@@ -284,6 +301,29 @@ class PatronReportTests(TestCase):
         with self.assertRaises(ReportSourceInvalid):
             patron_report(BudgetService.build(project), source_id=gift.pk)
 
+    def test_a_concert_costing_only_two_peoples_fees_has_no_patron_report(self) -> None:
+        project = make_project()
+        _singers(project, "700", "500")
+
+        with self.assertRaises(PatronReportBelowFloor):
+            patron_report(BudgetService.build(project))
+
+        _expense(project, "100")
+        self.assertEqual(patron_report(BudgetService.build(project)).total, Decimal("1300.00"))
+
+    def test_a_person_paid_on_two_rows_is_one_person_to_the_floor(self) -> None:
+        project = make_project()
+        _singers(project, "400")
+        price(project, participation=make_seat(project, "Jan", "Kowalski"), amount="250")
+        price(project, crew=make_crew(project, "Jan", "Kowalski"), amount="600")
+        _expense(project, "1500")
+
+        report = patron_report(BudgetService.build(project))
+
+        # Three rows but two people: the personnel has no row of its own.
+        self.assertEqual([(share.key, share.amount) for share in report.structure],
+                         [(REMAINDER, Decimal("2750.00"))])
+
     def test_the_report_is_a_draft_until_the_budget_is_closed(self) -> None:
         project = make_project()
         _expense(project, "100")
@@ -310,6 +350,26 @@ class BoardReportTests(TestCase):
         self.assertIn("Piotr Bez-Stawki", html)
         self.assertIn("+200,00", html)
         self.assertIn("ponad tolerancję", html)
+
+    def test_the_foundations_own_reads_as_in_the_patron_report(self) -> None:
+        project = make_project()
+        venue = _expense(project, "1500")
+        printing = _expense(project, "500", category="PROMOTION")
+        grant = _fund(project, _source(), planned="1000")
+        own = _fund(project, _source("Środki własne", kind="OWN_FUNDS"))
+        FundingService.set_cost_allocations(venue, _split((grant, "1000")), actor=None)
+        FundingService.set_cost_allocations(printing, _split((own, "300")), actor=None)
+
+        html = render_board_report_html(BudgetService.build(project))
+        own_share = next(
+            share for share in patron_report(BudgetService.build(project)).funding if share.key == "OWN"
+        )
+
+        # Own funds charged (300) plus what no source carries (700).
+        self.assertEqual(own_share.amount, Decimal("1000.00"))
+        self.assertIn("Pokryte ze źródeł zewnętrznych", html)
+        self.assertIn("Środki własne fundacji", html)
+        self.assertIn(f"1{chr(0x00A0)}000,00", html)
 
 
 class KosztorysTests(TestCase):
@@ -391,6 +451,24 @@ class NoteTests(TestCase):
         self.assertIn("I.1 Pozycja VENUE", html)
         self.assertNotIn("Drukarnia Tercja", html)
 
+    def test_a_mandates_bill_is_financed_up_to_its_amount_and_its_contributions_apart(self) -> None:
+        project = make_project()
+        item = price(project, crew=make_crew(project, "Jan", "Dźwięk"), amount="1000", employer_contributions="200")
+        ContractService.issue(item, actor=None)
+        grant = _fund(project, _source(), planned="1200")
+        FundingService.set_cost_allocations(item, _split((grant, "1200")), actor=None)
+
+        documents = charged_documents(BudgetService.build(project))
+
+        self.assertEqual(
+            [(document.kind, document.amount, [amount for _, amount in document.charges]) for document in documents],
+            [("ZLECENIE", Decimal("1000.00"), [Decimal("1000.00")]),
+             (CONTRIBUTIONS_DOCUMENT, Decimal("200.00"), [Decimal("200.00")])],
+        )
+        html = render_document_notes_html(BudgetService.build(project))
+        self.assertNotIn("1 200,00", html)
+        self.assertIn("Składki ZUS płatnika do umowy nr UZ/", html)
+
 
 def _pdf(html: str) -> bytes:
     return f"%PDF{html}".encode()
@@ -407,6 +485,7 @@ class ReportApiTests(APITestCase):
         return self.client.get(f"/api/finance/projects/{self.project.pk}/{path}")
 
     def test_the_reports_and_notes_download_as_pdfs(self, _render: Any) -> None:
+        _expense(self.project, "1500")
         for path, filename in (
             ("report.pdf?audience=patron", "Sprawozdanie-dla-mecenasa-Lux_Aeterna.pdf"),
             ("report.pdf?audience=board", "Raport-dla-zarzadu-Lux_Aeterna.pdf"),
@@ -415,6 +494,13 @@ class ReportApiTests(APITestCase):
             response = self._get(path)
             self.assertEqual(response.status_code, 200, path)
             self.assertIn(filename, response["Content-Disposition"])
+
+    def test_a_patron_report_that_would_print_one_persons_fee_is_refused(self, _render: Any) -> None:
+        response = self._get("report.pdf?audience=patron")
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()["error_code"], "patron_report_below_floor")
+        self.assertEqual(self._get("report.pdf?audience=board").status_code, 200)
 
     def test_an_unknown_audience_or_a_foreign_source_is_refused(self, _render: Any) -> None:
         self.assertEqual(self._get("report.pdf?audience=press").status_code, 400)
