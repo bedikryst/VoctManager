@@ -1,18 +1,20 @@
 """
 The plan (kosztorys) and the budget's standing: lines and their numbers, what a
 fee is charged to, the two plan warnings, and the board's approve → reopen →
-close path with the locks each state holds.
+close path with the locks each state holds — including the short path of a
+budget with no plan, and the awarded grant that forbids it.
 """
 from decimal import Decimal
 from typing import Any
 
 from rest_framework.test import APITestCase
 
-from ..dtos import BudgetLineDTO, ExpenseDTO, PayFeesDTO
+from ..dtos import BudgetLineDTO, ExpenseDTO, FundingSourceDTO, PayFeesDTO, ProjectFundingDTO
 from ..models import BudgetLine, BudgetStatus, CostItem, FinanceAction, FinanceEvent
 from ..rules import finance_today
 from ..services.budget import BudgetService
 from ..services.expenses import ExpenseService
+from ..services.funding import FundingService
 from ..services.ledger import LedgerService
 from ..services.plan import PlanService
 from .factories import make_crew, make_project, make_seat, make_user, price
@@ -22,6 +24,13 @@ def _line(project: Any, name: str, category: str = "VENUE", quantity: str = "1",
     dto = BudgetLineDTO(category=category, name=name, unit="SERVICE", quantity=Decimal(quantity),
                         unit_cost=Decimal(unit_cost))
     return PlanService.create_line(project, dto, actor=None)
+
+
+def _grant(project: Any, *, status: str, name: str = "Dotacja MKiDN") -> None:
+    source = FundingService.create_source(FundingSourceDTO.model_validate({
+        "kind": "PUBLIC_GRANT", "name": name, "status": status,
+    }), actor=None)
+    FundingService.add_funding(project, ProjectFundingDTO.model_validate({"source": str(source.pk)}), actor=None)
 
 
 def _expense(project: Any, amount: str = "500", category: str = "VENUE", **extra: Any) -> CostItem:
@@ -225,10 +234,10 @@ class BudgetStandingTests(APITestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_closing_waits_for_every_cost_to_be_settled_and_then_locks_everything(self) -> None:
+        _line(self.project, "Honoraria", category="PERSONNEL_ARTISTIC", unit_cost="300")
         item = price(self.project, participation=make_seat(self.project), amount="300")
         self.as_board()
-        self.assertEqual(self.client.post(f"{self.base}/budget/close/").json()["error_code"],
-                         "budget_transition_refused")
+        self.assertEqual(self.client.post(f"{self.base}/budget/close/").json()["error_code"], "plan_not_approved")
         self.client.post(f"{self.base}/budget/approve/")
 
         response = self.client.post(f"{self.base}/budget/close/")
@@ -238,6 +247,8 @@ class BudgetStandingTests(APITestCase):
         LedgerService.pay(self.project, PayFeesDTO(ids=(item.pk,), paid_on=finance_today()), actor=self.manager)
         self.assertEqual(self.client.post(f"{self.base}/budget/close/").status_code, 200)
         self.assertEqual(self.status(), BudgetStatus.CLOSED)
+        self.assertEqual(self.client.post(f"{self.base}/budget/close/").json()["error_code"],
+                         "budget_transition_refused")
 
         self.as_manager()
         response = self.client.post(f"{self.base}/expenses/", {
@@ -249,11 +260,48 @@ class BudgetStandingTests(APITestCase):
         self.client.post(f"{self.base}/budget/reopen/", {"reason": "Zaległa faktura"}, format="json")
         self.assertEqual(self.status(), BudgetStatus.APPROVED)
 
+    def test_an_empty_plan_is_not_approved(self) -> None:
+        self.as_board()
+
+        response = self.client.post(f"{self.base}/budget/approve/")
+
+        self.assertEqual(response.json()["error_code"], "plan_empty")
+        self.assertEqual(self.status(), BudgetStatus.PLANNING)
+
+    def test_a_budget_without_a_plan_closes_without_approval_and_reopens_to_planning(self) -> None:
+        item = price(self.project, participation=make_seat(self.project), amount="300")
+        self.as_board()
+        self.assertEqual(self.client.post(f"{self.base}/budget/close/").json()["error_code"],
+                         "budget_has_open_items")
+
+        LedgerService.pay(self.project, PayFeesDTO(ids=(item.pk,), paid_on=finance_today()), actor=self.manager)
+        response = self.client.post(f"{self.base}/budget/close/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.status(), BudgetStatus.CLOSED)
+        closed = FinanceEvent.objects.get(action=FinanceAction.BUDGET_CLOSED)
+        self.assertEqual(closed.before["status"], "PLANNING")
+
+        self.client.post(f"{self.base}/budget/reopen/", {"reason": "Zaległa faktura"}, format="json")
+        self.assertEqual(self.status(), BudgetStatus.PLANNING)
+
+    def test_an_awarded_grant_closes_only_through_an_approved_plan(self) -> None:
+        _grant(self.project, status="APPLIED")
+        self.as_board()
+        self.assertFalse(self.client.get(f"{self.base}/budget/").json()["plan_required"])
+
+        _grant(self.project, status="AWARDED", name="Dotacja miasta")
+        self.assertTrue(self.client.get(f"{self.base}/budget/").json()["plan_required"])
+        self.assertEqual(self.client.post(f"{self.base}/budget/close/").json()["error_code"], "grant_needs_plan")
+
+        _line(self.project, "Kościół")
+        self.client.post(f"{self.base}/budget/approve/")
+        self.assertEqual(self.client.post(f"{self.base}/budget/close/").status_code, 200)
+
     def test_closing_waits_for_a_mandates_employer_contributions(self) -> None:
         item = price(self.project, crew=make_crew(self.project), amount="600")
         LedgerService.pay(self.project, PayFeesDTO(ids=(item.pk,), paid_on=finance_today()), actor=self.manager)
         self.as_board()
-        self.client.post(f"{self.base}/budget/approve/")
 
         response = self.client.post(f"{self.base}/budget/close/")
         self.assertEqual(response.json()["error_code"], "budget_has_open_items")

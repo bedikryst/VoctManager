@@ -6,7 +6,8 @@
              PLANNING, APPROVED and CLOSED. The plan is editable while it is
              being planned; an approved plan is changed only after the board
              reopens it with a reason ("korekta kosztorysu"), and a closed
-             budget changes not at all. Also the patron report's opening
+             budget changes not at all. A budget with no plan and no awarded
+             grant closes straight from PLANNING. Also the patron report's opening
              sentences, which are words about the concert rather than money.
 @architecture Enterprise SaaS 2026
 @module finance/services/plan
@@ -21,7 +22,15 @@ from django.utils import timezone
 from roster.models import Project
 
 from ..dtos import BudgetLineDTO, BudgetLineUpdateDTO, LineOrderDTO
-from ..exceptions import BudgetHasOpenItems, BudgetTransitionRefused, LineOrderMismatch, PlanAmountTooLarge
+from ..exceptions import (
+    BudgetHasOpenItems,
+    BudgetTransitionRefused,
+    GrantNeedsPlan,
+    LineOrderMismatch,
+    PlanAmountTooLarge,
+    PlanEmpty,
+    PlanNotApproved,
+)
 from ..models import BudgetLine, BudgetStatus, CostItem, FinanceAction, ProjectBudget
 from ..rules import MAX_AMOUNT, ZERO, planned_amount
 from . import audit
@@ -172,12 +181,16 @@ class PlanService:
     @staticmethod
     def approve(project: Project, *, actor: User | None) -> ProjectBudget:
         """PLANNING → APPROVED: the plan is agreed and locked. The event keeps
-        the plan's total as it was approved."""
+        the plan's total as it was approved. An empty plan is refused, so an
+        approved budget always has a plan somebody agreed to; a budget with no
+        plan closes without approval."""
         with transaction.atomic():
             budget = BudgetService.lock(project)
             if budget.status != BudgetStatus.PLANNING:
                 raise BudgetTransitionRefused(params={"status": budget.status, "action": "approve"})
             lines = list(BudgetLine.objects.filter(budget=budget))
+            if not lines:
+                raise PlanEmpty()
             planned = sum((planned_amount(line.quantity, line.unit_cost) for line in lines), ZERO)
             budget.status = BudgetStatus.APPROVED
             budget.approved_at = timezone.now()
@@ -192,13 +205,15 @@ class PlanService:
 
     @staticmethod
     def reopen(project: Project, *, reason: str, actor: User | None) -> ProjectBudget:
-        """One step back, with a reason: CLOSED → APPROVED reopens the books;
-        APPROVED → PLANNING opens the plan for a correction."""
+        """One step back, with a reason: CLOSED reopens the books into the
+        state they were closed from — APPROVED when a plan was approved,
+        PLANNING when the budget closed without one; APPROVED → PLANNING opens
+        the plan for a correction."""
         with transaction.atomic():
             budget = BudgetService.lock(project)
             previous = budget.status
             if previous == BudgetStatus.CLOSED:
-                budget.status = BudgetStatus.APPROVED
+                budget.status = BudgetStatus.APPROVED if budget.approved_at else BudgetStatus.PLANNING
                 budget.closed_at = None
                 budget.closed_by = None
             elif previous == BudgetStatus.APPROVED:
@@ -218,7 +233,13 @@ class PlanService:
 
     @staticmethod
     def close(project: Project, *, actor: User | None) -> ProjectBudget:
-        """APPROVED → CLOSED: the books are settled and nothing changes any more.
+        """→ CLOSED: the books are settled and nothing changes any more.
+
+        From APPROVED always; from PLANNING only when there is no plan to
+        approve — no kosztorys lines, and no awarded grant, which is settled
+        against an approved kosztorys. A plan drafted but not approved is
+        approved first.
+
         Refused while anything is left to settle — an unpaid cost, a person with
         no price, a fee that lost its seat, a mandate whose employer
         contributions the office has not reported (its cost would stay short of
@@ -226,9 +247,15 @@ class PlanService:
         unsettled for good. The refusal says how much of each is left."""
         with transaction.atomic():
             budget = BudgetService.lock(project)
-            if budget.status != BudgetStatus.APPROVED:
-                raise BudgetTransitionRefused(params={"status": budget.status, "action": "close"})
+            previous = budget.status
+            if previous == BudgetStatus.CLOSED:
+                raise BudgetTransitionRefused(params={"status": previous, "action": "close"})
             money = BudgetService.build(project)
+            if previous == BudgetStatus.PLANNING:
+                if money.has_plan:
+                    raise PlanNotApproved()
+                if money.plan_required:
+                    raise GrantNeedsPlan()
             summary = money.summary
             contributions_missing = sum(
                 len(warning.subject_ids) for warning in money.warnings if warning.code == "EMPLOYER_COST_MISSING"
@@ -246,7 +273,7 @@ class PlanService:
             budget.save(update_fields=["status", "closed_at", "closed_by", "updated_at"])
             audit.record(
                 budget, actor=actor, subject=budget, action=FinanceAction.BUDGET_CLOSED,
-                before={"status": BudgetStatus.APPROVED},
+                before={"status": previous},
                 after={"status": budget.status, "committed": summary.committed, "paid": summary.paid},
             )
             return budget

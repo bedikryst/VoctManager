@@ -167,8 +167,10 @@ Amounts are `DecimalField(max_digits=10, decimal_places=2)`, PLN only.
 
 **`ProjectBudget`** — one per project, created lazily by `BudgetService.get_or_create(project)`.
 - `project` (OneToOne, `PROTECT`)
-- `status`: `PLANNING → APPROVED → CLOSED`. `APPROVED → PLANNING` ("korekta kosztorysu") and
-  `CLOSED → APPROVED` (reopen) are allowed, each with a mandatory reason, each logged.
+- `status`: `PLANNING → APPROVED → CLOSED`, or `PLANNING → CLOSED` for a budget with no kosztorys
+  lines and no awarded grant (Stage 4 as built). `APPROVED → PLANNING` ("korekta kosztorysu") and
+  reopening a closed budget into the state it was closed from are allowed, each with a mandatory
+  reason, each logged.
   PLANNING: plan editable. APPROVED: plan locked, actuals recorded. CLOSED: everything locked.
 - `approved_at/by`, `closed_at/by`, `internal_note`, `patron_summary` (2–3 sentences the manager writes
   for the patron report).
@@ -741,9 +743,15 @@ their own. Every deploy that touches models needs `make migrate` on prod.
   first concert's included. It is an act on actuals, so it runs in an approved budget.
 - **The korekta path is the board's reopen**, not a board edit inside an approved plan: plan writes are
   refused in `APPROVED` and `CLOSED` (`plan_locked`) for everyone; `reopen` steps back one state
-  (`CLOSED → APPROVED`, `APPROVED → PLANNING`) with a reason. Approving an empty plan is allowed, so a
-  project without a kosztorys can still be closed. Closing is refused while anything is outstanding,
-  unpriced or orphaned (`budget_has_open_items`, with the three figures in `params`).
+  with a reason (`APPROVED → PLANNING`; `CLOSED` back to the state it was closed from). **A budget
+  with no kosztorys closes straight from `PLANNING`** (decided 2026-09-24): there is nothing to
+  approve, and a board that settles no grant should not click "Zatwierdź kosztorys" over an empty
+  plan. Approving an empty plan is therefore refused (`plan_empty`), so `APPROVED` always means a
+  plan the board agreed to; closing a drafted, unapproved plan is refused (`plan_not_approved`).
+  **An awarded grant forbids the short path** (`grant_needs_plan`; `plan_required` on the budget
+  payload): a public or private grant in `AWARDED` or `SETTLED` is settled against an approved
+  kosztorys. A card with no plan names its state "Otwarty". Closing is refused while anything is
+  outstanding, unpriced or orphaned (`budget_has_open_items`, with the three figures in `params`).
 - **Summary:** `committed`, `paid` and `outstanding` are the whole budget; `fees` and `expenses` split
   them; `planned` is null without lines; `unplanned` is the counted cost charged to no line. Honoraria
   reads `fees`. Przegląd's rail is now Plan · Honoraria/Wydatki (as a split of two) · Zapłacone · Do

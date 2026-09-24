@@ -295,6 +295,7 @@ class ProjectMoneySerializer(serializers.Serializer):
     expenses = ExpenseRowSerializer(many=True)
     lines = PlanLineSerializer(many=True)
     fundings = FundingSerializer(many=True)
+    plan_required = serializers.BooleanField()
 
 
 class WarningCountsSerializer(serializers.Serializer):

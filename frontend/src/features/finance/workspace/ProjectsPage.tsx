@@ -150,7 +150,7 @@ export default function ProjectsPage(): React.JSX.Element {
       className: "w-36",
       cell: (rollup) => (
         <Text as="span" size="sm" color={rollup.budget_status === "PLANNING" ? "muted" : "default"}>
-          {budgetStatusName(t, rollup.budget_status)}
+          {budgetStatusName(t, rollup.budget_status, rollup.summary.lines > 0)}
         </Text>
       ),
     },
@@ -249,7 +249,9 @@ export default function ProjectsPage(): React.JSX.Element {
                   {[
                     projectDate(rollup),
                     cancelled(rollup) ? t("finance.portfolio.cancelled", "odwołany") : null,
-                    rollup.budget_status === "PLANNING" ? null : budgetStatusName(t, rollup.budget_status),
+                    rollup.budget_status === "PLANNING"
+                      ? null
+                      : budgetStatusName(t, rollup.budget_status, rollup.summary.lines > 0),
                   ]
                     .filter(Boolean)
                     .join(" · ")}

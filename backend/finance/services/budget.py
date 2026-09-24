@@ -26,6 +26,8 @@ from roster.models import CrewAssignment, Participation, Project, Rehearsal
 
 from ..exceptions import BudgetLocked, PlanLineCategoryMismatch, PlanLocked, UnknownPlanLine
 from ..models import (
+    BINDING_GRANT_STATUSES,
+    GRANT_FUNDING_KINDS,
     NON_CASH_FUNDING_KINDS,
     BudgetLine,
     BudgetStatus,
@@ -377,6 +379,21 @@ class ProjectMoney:
     @property
     def budget_status(self) -> str:
         return self.budget.status if self.budget is not None else BudgetStatus.PLANNING
+
+    @property
+    def has_plan(self) -> bool:
+        return bool(self.lines)
+
+    @property
+    def plan_required(self) -> bool:
+        """An awarded grant funds the project, so its budget closes only
+        through an approved kosztorys. Without one, a project with no plan
+        closes straight from PLANNING: there is nothing to approve."""
+        return any(
+            funding.source.source.kind in GRANT_FUNDING_KINDS
+            and funding.source.source.status in BINDING_GRANT_STATUSES
+            for funding in self.fundings
+        )
 
 
 @dataclass

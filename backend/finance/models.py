@@ -160,6 +160,13 @@ class FundingStatus(models.TextChoices):
     SETTLED = 'SETTLED', _('Settled')
 
 
+# A grant, once awarded, is settled against the kosztorys its agreement names:
+# a project it funds cannot close its budget without an approved plan. A grant
+# still applied for, or rejected, binds nothing.
+GRANT_FUNDING_KINDS = (FundingKind.PUBLIC_GRANT, FundingKind.PRIVATE_GRANT)
+BINDING_GRANT_STATUSES = (FundingStatus.AWARDED, FundingStatus.SETTLED)
+
+
 # The words a document note may interpolate (spec §10.4). Values are printed
 # after a colon or as figures, never in a slot Polish grammar would inflect.
 DOCUMENT_NOTE_PLACEHOLDERS = (

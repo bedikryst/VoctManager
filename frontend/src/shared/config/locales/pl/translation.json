@@ -1664,7 +1664,8 @@
     "budget_status": {
       "PLANNING": "Planowanie",
       "APPROVED": "Zatwierdzony",
-      "CLOSED": "Zamknięty"
+      "CLOSED": "Zamknięty",
+      "OPEN": "Otwarty"
     },
     "warnings": {
       "PAID_FOR_DECLINED": {
@@ -1772,6 +1773,9 @@
       "amount_too_large": "Koszt albo wycena pracy wychodzi większa, niż mieści budżet. Sprawdź kwotę, składki i godziny.",
       "budget_transition_refused": "Budżet jest już w innym stanie. Odśwież stronę.",
       "budget_has_open_items": "Budżetu nie można zamknąć: są jeszcze niezapłacone koszty, osoby bez stawki, honoraria poza obsadą albo umowy zlecenia bez składek pracodawcy.",
+      "plan_empty": "Kosztorys jest pusty, więc nie ma czego zatwierdzać. Budżet bez kosztorysu zarząd po prostu zamyka.",
+      "plan_not_approved": "Budżet ma kosztorys, którego zarząd jeszcze nie zatwierdził. Zatwierdź go przed zamknięciem budżetu.",
+      "grant_needs_plan": "Projekt ma przyznany grant, a grant rozlicza się według zatwierdzonego kosztorysu. Dodaj kosztorys i zatwierdź go przed zamknięciem budżetu.",
       "crew_has_settled_fee": "Ta osoba ma wypłacone honorarium albo wystawioną umowę. Najpierw cofnij płatność albo unieważnij umowę w Finansach.",
       "attachment_not_allowed": "Pliki dołącza się tylko do wydatków.",
       "attachment_missing": "Nie wybrano pliku.",
@@ -2287,6 +2291,8 @@
     },
     "standing": {
       "planning": "Kosztorys można zmieniać. Zarząd zatwierdza go, gdy plan jest gotowy — koszty zapisuje się w każdym stanie oprócz zamkniętego.",
+      "open": "Bez kosztorysu. Koszty i zapłaty zapisuje się normalnie; kosztorys jest potrzebny, gdy wymaga go grant. Gdy wszystko jest rozliczone, zarząd zamyka budżet.",
+      "grant_needs_plan": "Projekt ma przyznany grant, a grant rozlicza się według kosztorysu. Dodaj pozycje na karcie Kosztorys — zarząd zatwierdzi go przed zamknięciem budżetu.",
       "approved": "Zatwierdzony {{date}}. Kosztorys jest zablokowany; koszty i zapłaty zapisuje się dalej.",
       "closed": "Zamknięty {{date}}. Budżetu nie zmienia już nic, dopóki zarząd go nie otworzy.",
       "error": "Nie udało się zmienić stanu budżetu.",
@@ -2300,13 +2306,13 @@
       "board_only": "Zatwierdza, otwiera do korekty i zamyka zarząd.",
       "approve_confirm": "Zatwierdź",
       "approved_done": "Kosztorys zatwierdzony.",
-      "approve_empty": "Kosztorys jest pusty — zatwierdzasz budżet bez planu. Koszty zapisuje się dalej, a plan można dodać po otwarciu do korekty.",
       "approve_desc": "Plan na {{amount}} {{currency}} zostanie zablokowany. Zmienić go będzie można tylko po otwarciu do korekty, z podaniem powodu.",
       "close_confirm": "Zamknij",
       "closed_done": "Budżet zamknięty.",
       "close_desc": "Koszt projektu: {{amount}} {{currency}}, w całości zapłacony. Po zamknięciu nic w budżecie się nie zmieni, dopóki zarząd go nie otworzy.",
       "reopen_confirm": "Otwórz",
       "reopen_books_desc": "Budżet wróci do stanu zatwierdzonego: znów będzie można zapisywać koszty i zapłaty.",
+      "reopen_books_open_desc": "Budżet znów będzie otwarty: będzie można zapisywać koszty i zapłaty.",
       "reopen_plan_desc": "Kosztorys wróci do planowania i będzie go można zmienić. Potem zarząd zatwierdza go ponownie."
     },
     "files": {

@@ -156,6 +156,7 @@ class ProjectFundingTests(TestCase):
 
     def test_the_planned_amount_is_the_plan_and_the_received_one_a_fact(self) -> None:
         funding = _fund(self.project, self.source, planned="5000")
+        _line(self.project)
         PlanService.approve(self.project, actor=None)
 
         with self.assertRaises(PlanLocked):
@@ -168,6 +169,7 @@ class ProjectFundingTests(TestCase):
         self.assertEqual(funding.received_amount, Decimal("2500.00"))
 
     def test_a_source_arriving_after_approval_comes_with_nothing_planned(self) -> None:
+        _line(self.project)
         PlanService.approve(self.project, actor=None)
 
         with self.assertRaises(PlanLocked):

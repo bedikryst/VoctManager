@@ -27,7 +27,7 @@ from roster.infrastructure.document_generator import _brand_font_context, _rende
 from roster.models import Project
 
 from ..foundation import report_foundation_context
-from ..models import FeeForm, FundingKind
+from ..models import BudgetStatus, FeeForm, FundingKind
 from ..rules import FINANCE_TIMEZONE, PAYABLE_CONTRACT_FORMS, ZERO
 from ..services.budget import (
     ORIGIN_CAST,
@@ -58,6 +58,7 @@ from .amount_words import format_amount_pl
 from .document_notes import document_notes
 from .documents import concert_facts, file_segment
 from .vocabulary import (
+    BUDGET_OPEN_LABEL,
     BUDGET_STATUS_LABELS,
     CONTRACT_STATUS_LABELS,
     DOCUMENT_TYPE_LABELS,
@@ -310,10 +311,14 @@ def _board_context(money: ProjectMoney) -> dict[str, Any]:
     owed = payables(money)
     return {
         **_base_context(money, "Raport dla zarządu"),
-        "status": BUDGET_STATUS_LABELS.get(money.budget_status, money.budget_status),
+        "status": (
+            BUDGET_OPEN_LABEL
+            if money.budget_status == BudgetStatus.PLANNING and not money.has_plan
+            else BUDGET_STATUS_LABELS.get(money.budget_status, money.budget_status)
+        ),
         "figures": figures,
         "comparison": comparison,
-        "has_plan": bool(money.lines),
+        "has_plan": money.has_plan,
         "plan_total": _amount(summary.planned) if summary.planned is not None else "",
         "actual_total": _amount(summary.committed),
         "fundings": [
