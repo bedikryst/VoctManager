@@ -132,6 +132,8 @@ PATRON_FUNDING_LABELS: dict[str, str] = {
     FundingKind.VOLUNTEER_WORK: "Praca wolontariuszy",
 }
 PATRON_FOUNDATION_OWN_LABEL = "Środki własne fundacji"
+# Sources merged so that none shows one or two people's pay on its own.
+PATRON_FUNDING_MERGED_LABEL = "Pozostałe źródła"
 
 # The panel's warning titles (`finance.warnings.<code>.title` in the Polish
 # locale), for the board report.

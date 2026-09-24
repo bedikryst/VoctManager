@@ -146,6 +146,8 @@ class LedgerRow:
     # its cost, or a volunteer's valuation.
     allocations: list[AllocationView] = field(default_factory=list)
     allocatable: Decimal = ZERO
+    # Paid on paper before the ledger existed: no contract of the ledger's is due.
+    paid_before_ledger: bool = False
 
     @property
     def is_priced(self) -> bool:
@@ -718,6 +720,7 @@ def _row(
         contract=_contract_view(contract),
         allocations=allocations.get(item.pk, []),
         allocatable=allocatable_amount(item.kind, item.form, item.cost_amount, valuation),
+        paid_before_ledger=item.paid_before_ledger,
     )
 
 
@@ -1027,7 +1030,7 @@ def _warnings(
             flag("EMPLOYER_COST_MISSING", row.key)
         if row.counted and not row.is_paid and row.due_on is not None and row.due_on < today:
             flag("PAYMENT_OVERDUE", row.key)
-        if row.is_paid and row.form in PAYABLE_CONTRACT_FORMS and contract is None:
+        if row.is_paid and row.form in PAYABLE_CONTRACT_FORMS and contract is None and not row.paid_before_ledger:
             flag("PAID_WITHOUT_DOCUMENT", row.key)
         # A volunteer's 0 is no cost to place in a plan.
         if has_plan and row.counted and row.budget_line_id is None and row.form != FeeForm.VOLUNTEER:

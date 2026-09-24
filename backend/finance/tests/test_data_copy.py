@@ -1,5 +1,6 @@
 """
-The roster → ledger copy run by migration `finance/0002`.
+The roster → ledger copy run by migration `finance/0002`, and the mark on the
+payments it carried over run by `finance/0005`.
 
 The columns it reads are dropped by `roster/0062`, so the class rolls the roster
 back to the schema the copy runs against, writes its seats and crew bookings
@@ -21,9 +22,10 @@ from django.utils import timezone
 
 from roster.models import Artist, Collaborator, Participation, Project, VoiceType
 
-from ..data_copy import copy_roster_fees
+from ..data_copy import copy_roster_fees, mark_payments_before_ledger
 from ..models import CostItem, FeeForm, FinanceAction, FinanceEvent, ProjectBudget
 from ..rules import local_date
+from ..services.budget import BudgetService
 from .factories import make_project
 
 # The last roster migration that still holds the fee columns.
@@ -96,13 +98,83 @@ class RosterCopyTests(TransactionTestCase):
         self.assertEqual(event.after["paid_on_source"], "paid_at")
         self.assertEqual((report.items, report.paid, report.budgets), (1, 1, 1))
 
+    def _cast_later(self, seat: Any) -> None:
+        """Dates the seat a day after its project: cast by hand, not by the
+        project's creation."""
+        type(seat).objects.filter(pk=seat.pk).update(created_at=self.project.created_at + timedelta(days=1))
+
     def test_a_fee_of_zero_is_volunteer_work(self) -> None:
         seat = self._seat(fee=Decimal("0"))
+        self._cast_later(seat)
 
         copy_roster_fees(self.historical)
 
         item = CostItem.objects.get(participation_id=seat.pk)
         self.assertEqual((item.form, item.contract_amount, item.paid_on), (FeeForm.VOLUNTEER, Decimal("0.00"), None))
+
+    def test_the_zero_the_project_creation_gave_its_creator_is_not_copied(self) -> None:
+        creator = self._seat("Krystian", "Twórca", fee=Decimal("0"))
+
+        report = copy_roster_fees(self.historical)
+
+        self.assertFalse(CostItem.objects.filter(participation_id=creator.pk).exists())
+        self.assertEqual(report.skipped_creator_seats, 1)
+
+    def test_on_a_cancelled_project_only_payments_are_copied(self) -> None:
+        cancelled = make_project(title="Odwołany", status=Project.Status.CANCELLED, days=-5)
+        owed = self._seat("Nieopłacona", "Osoba", project=cancelled, fee=Decimal("300"))
+        paid = self._seat("Opłacona", "Osoba", project=cancelled, fee=Decimal("300"), is_paid=True,
+                          paid_at=timezone.now())
+
+        report = copy_roster_fees(self.historical)
+
+        self.assertFalse(CostItem.objects.filter(participation_id=owed.pk).exists())
+        self.assertIsNotNone(CostItem.objects.get(participation_id=paid.pk).paid_on)
+        self.assertEqual(report.skipped_cancelled, 1)
+
+    def test_a_merged_artists_payment_lands_once_on_the_survivors_seat(self) -> None:
+        paid_at = timezone.now() - timedelta(days=3)
+        survivor = self._seat("Anna", "Nowak", fee=Decimal("300"))
+        folded = self._seat("anna", "Nowak ", fee=Decimal("300"), is_paid=True, paid_at=paid_at, is_deleted=True)
+        Artist.objects.filter(pk=folded.artist_id).update(is_deleted=True)
+        # Same fee, same project, but another person: never taken for the survivor.
+        self._seat("Ewa", "Kowalska", fee=Decimal("300"))
+
+        report = copy_roster_fees(self.historical)
+        again = copy_roster_fees(self.historical)
+
+        item = CostItem.objects.get(participation_id=survivor.pk)
+        self.assertEqual(item.paid_on, local_date(paid_at, self.project.timezone))
+        self.assertFalse(CostItem.all_objects.filter(participation_id=folded.pk).exists())
+        self.assertEqual(FinanceEvent.objects.get(subject_id=item.pk).before["merged_from"], str(folded.pk))
+        self.assertEqual((report.merged_payments, report.paid), (1, 1))
+        self.assertEqual(again.items, 0)
+
+    def test_a_removed_duplicate_without_a_single_namesake_is_copied_as_it_stands(self) -> None:
+        self._seat("Anna", "Nowak", fee=Decimal("300"))
+        self._seat("Anna", "Nowak", fee=Decimal("300"))
+        folded = self._seat("Anna", "Nowak", fee=Decimal("300"), is_paid=True, paid_at=timezone.now(),
+                            is_deleted=True)
+        Artist.objects.filter(pk=folded.artist_id).update(is_deleted=True)
+
+        report = copy_roster_fees(self.historical)
+
+        self.assertIsNotNone(CostItem.all_objects.get(participation_id=folded.pk).paid_on)
+        self.assertEqual(report.merged_payments, 0)
+
+    def test_payments_carried_over_need_no_contract_of_the_ledgers(self) -> None:
+        paid = self._seat(fee=Decimal("250"), is_paid=True, paid_at=timezone.now() - timedelta(days=4))
+        owed = self._seat("Ewa", "Kowalska", fee=Decimal("250"))
+
+        copy_roster_fees(self.historical)
+        marked = mark_payments_before_ledger(self.historical)
+
+        self.assertEqual(marked, 1)
+        self.assertTrue(CostItem.objects.get(participation_id=paid.pk).paid_before_ledger)
+        self.assertFalse(CostItem.objects.get(participation_id=owed.pk).paid_before_ledger)
+        codes = {warning.code for warning in BudgetService.build(self.project).warnings}
+        self.assertNotIn("PAID_WITHOUT_DOCUMENT", codes)
+        self.assertEqual(mark_payments_before_ledger(self.historical), 0)
 
     def test_a_paid_seat_without_a_timestamp_falls_back_to_its_last_change(self) -> None:
         seat = self._seat(fee=Decimal("100"), is_paid=True)
@@ -126,6 +198,7 @@ class RosterCopyTests(TransactionTestCase):
     def test_a_paid_flag_the_ledger_cannot_hold_is_kept_in_the_event(self) -> None:
         unpriced = self._seat("Ula", "Bezkwoty", fee=None, is_paid=True)
         volunteer = self._seat("Wanda", "Zero", fee=Decimal("0"), is_paid=True)
+        self._cast_later(volunteer)
 
         report = copy_roster_fees(self.historical)
 
@@ -145,6 +218,19 @@ class RosterCopyTests(TransactionTestCase):
         self.assertEqual(list(ProjectBudget.objects.values_list("project_id", flat=True)), [self.project.pk])
         self.assertEqual((again.items, again.skipped_existing), (0, 1))
         self.assertEqual(list(CostItem.objects.values_list("participation_id", flat=True)), [seat.pk])
+
+    def test_the_drop_refuses_to_be_reversed_while_the_ledger_holds_fees(self) -> None:
+        self._seat(fee=Decimal("300"))
+        copy_roster_fees(self.historical)
+        _migrate_to_leaves()
+        try:
+            with self.assertRaisesMessage(RuntimeError, "roster/0062 cannot be reversed"):
+                MigrationExecutor(connection).migrate([_BEFORE_DROP])
+        finally:
+            # A hard delete — a soft one still leaves fees behind — so the
+            # rollback the rest of the class runs on is allowed again.
+            CostItem.all_objects.all().hard_delete()
+            MigrationExecutor(connection).migrate([_BEFORE_DROP])
 
     def test_a_removed_seat_with_a_payment_is_still_copied(self) -> None:
         seat = self._seat(fee=Decimal("300"), is_paid=True, paid_at=timezone.now(), is_deleted=True)

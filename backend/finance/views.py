@@ -234,6 +234,16 @@ class UnpayView(BoardAPIView):
         return _budget_response(item.budget.project)
 
 
+class ReleaseFeeView(FinanceAPIView):
+    """POST cost-items/{id}/release/ — takes an unpaid, uncontracted fee of a
+    seat that no longer counts off the ledger."""
+
+    def post(self, request: Request, pk: UUID) -> Response:
+        item = get_object_or_404(CostItem.objects.select_related("budget__project"), pk=pk, kind=CostKind.FEE)
+        LedgerService.release_orphan(item, actor=request_user(request))
+        return _budget_response(item.budget.project)
+
+
 def _expense(project_id: UUID, pk: UUID) -> CostItem:
     return get_object_or_404(
         CostItem.objects.select_related("budget__project"),

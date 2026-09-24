@@ -1763,6 +1763,7 @@
       "zip_failed": "Nie udało się spakować umów. Spróbuj ponownie.",
       "zip_timeout": "Pakowanie umów trwa zbyt długo. Spróbuj ponownie za kilka minut.",
       "item_paid_not_removable": "Pozycja jest zapłacona. Usunąć ją można dopiero po cofnięciu zapłaty.",
+      "fee_not_orphaned": "Ta osoba wciąż jest w obsadzie, więc jej honorarium zostaje. Odśwież stronę.",
       "plan_locked": "Kosztorys jest zatwierdzony. Korektę otwiera zarząd na karcie Przegląd.",
       "unknown_plan_line": "Tej pozycji kosztorysu już nie ma. Odśwież stronę.",
       "plan_line_category_mismatch": "Koszt przypisuje się do pozycji kosztorysu tego samego rodzaju.",
@@ -1822,6 +1823,8 @@
       "hours": "Potwierdź godziny",
       "hours_current": "Potwierdzono: {{hours}} godz.",
       "pay": "Oznacz jako wypłacone",
+      "release": "Usuń honorarium z rozliczenia",
+      "release_hint": "Osoby nie ma w obsadzie, a honorarium nie zostało wypłacone. Bez tego budżetu nie da się zamknąć.",
       "unpay": "Cofnij wypłatę",
       "annul": "Unieważnij umowę",
       "board_only": "Cofnięcie wypłaty i unieważnienie umowy należą do zarządu.",
@@ -1854,6 +1857,10 @@
       "confirm": "Cofnij wypłatę",
       "done": "Cofnięto wypłatę.",
       "error": "Nie udało się cofnąć wypłaty."
+    },
+    "release": {
+      "done": "Usunięto honorarium z rozliczenia: {{name}}.",
+      "error": "Nie udało się usunąć honorarium."
     },
     "annul": {
       "title": "Unieważnij umowę",
@@ -5999,7 +6006,7 @@
       "confirmPasswordLabel": "Potwierdź hasłem, aby usunąć konto",
       "deleteDesc": "Trwale zablokuj dostęp do aplikacji. Historyczne dane z prób i koncertów zostaną zanonimizowane na potrzeby statystyki chóru.",
       "deleteTitle": "Usuń konto",
-      "exportDesc": "Pobierz kopię wszystkich danych przypisanych do Twojego konta w maszynowo czytelnym formacie JSON.",
+      "exportDesc": "Pobierz kopię danych przypisanych do Twojego konta w maszynowo czytelnym formacie JSON. Eksport nie obejmuje rozliczeń (honorariów, umów i wypłat) — na Twoją prośbę przekaże je zarząd fundacji.",
       "exportTitle": "Eksport danych",
       "modalDescLine1Highlight": "nieodwracalna",
       "modalDescLine1Prefix": "Ta akcja jest",

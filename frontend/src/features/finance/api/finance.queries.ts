@@ -168,6 +168,9 @@ export const useUnpay = (projectId: string) =>
     FinanceService.unpay(costItemId, reason),
   );
 
+export const useReleaseFee = (projectId: string) =>
+  useBudgetWrite(projectId, (costItemId: string) => FinanceService.releaseFee(costItemId));
+
 export const useIssueContract = (projectId: string) =>
   useBudgetWrite(projectId, (costItemId: string) =>
     FinanceService.issueContract(costItemId),

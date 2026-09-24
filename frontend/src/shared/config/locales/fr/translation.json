@@ -1744,6 +1744,7 @@
       "zip_failed": "Les contrats n'ont pas pu être regroupés. Réessayez.",
       "zip_timeout": "Le regroupement des contrats prend trop de temps. Réessayez dans quelques minutes.",
       "item_paid_not_removable": "La ligne est payée. Elle ne peut être supprimée qu'après l'annulation du paiement.",
+      "fee_not_orphaned": "Cette personne est toujours dans la distribution, son cachet reste donc. Actualisez la page.",
       "plan_locked": "Le budget prévisionnel est approuvé. Le conseil l'ouvre pour correction dans l'onglet Aperçu.",
       "unknown_plan_line": "Cette ligne du budget n'existe plus. Actualisez la page.",
       "plan_line_category_mismatch": "Un coût s'impute à une ligne du budget du même type.",
@@ -1803,6 +1804,8 @@
       "hours": "Confirmer les heures",
       "hours_current": "Confirmé : {{hours}} h",
       "pay": "Marquer comme payé",
+      "release": "Retirer le cachet du règlement",
+      "release_hint": "Cette personne n'est plus dans la distribution et le cachet n'a pas été payé. Le budget ne peut pas être clôturé tant qu'il reste.",
       "unpay": "Annuler le paiement",
       "annul": "Annuler le contrat",
       "board_only": "Annuler un paiement ou un contrat relève du conseil.",
@@ -1835,6 +1838,10 @@
       "confirm": "Annuler le paiement",
       "done": "Paiement annulé.",
       "error": "Le paiement n'a pas pu être annulé."
+    },
+    "release": {
+      "done": "Cachet retiré du règlement : {{name}}.",
+      "error": "Le cachet n'a pas pu être retiré."
     },
     "annul": {
       "title": "Annuler le contrat",
@@ -5953,7 +5960,7 @@
       "confirmPasswordLabel": "Confirmez avec votre mot de passe pour supprimer le compte",
       "deleteDesc": "Bloquez définitivement l'accès à l'application. Les données historiques des répétitions et concerts seront anonymisées pour les statistiques du chœur.",
       "deleteTitle": "Supprimer le compte",
-      "exportDesc": "Téléchargez une copie de toutes les données assignées à votre compte au format JSON lisible par machine.",
+      "exportDesc": "Téléchargez une copie des données assignées à votre compte au format JSON lisible par machine. Les règlements (cachets, contrats et paiements) n'y figurent pas — le conseil de la fondation vous les transmet sur demande.",
       "exportTitle": "Export de données",
       "modalDescLine1Highlight": "irréversible",
       "modalDescLine1Prefix": "Cette action est",

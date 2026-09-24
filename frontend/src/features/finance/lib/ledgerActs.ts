@@ -31,6 +31,14 @@ export const canPay = (row: LedgerRowDTO): boolean =>
   !row.is_paid &&
   !row.orphaned;
 
+/**
+ * Release: the fee of someone no longer in the cast, before anything settled
+ * it. An orphan is unpaid by definition; a live contract is annulled first.
+ * Until it is released the budget cannot close.
+ */
+export const canRelease = (row: LedgerRowDTO): boolean =>
+  row.cost_item_id !== null && row.orphaned && row.contract === null;
+
 /** Issue: a priced, billable fee under a form we write a document for. */
 export const canIssue = (row: LedgerRowDTO): boolean =>
   row.cost_item_id !== null &&

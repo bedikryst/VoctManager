@@ -4,8 +4,22 @@ Drops the fee, the paid flag and the payment timestamp from `Participation` and
 `CrewAssignment`: the finance ledger holds every fee now. It depends on
 `finance/0002`, which copies those columns into the ledger, so no database can
 lose them before the copy has run.
+
+It refuses to be reversed while the ledger holds a fee. Reversing would re-add
+the columns empty — every seat unpriced and unpaid — and nothing copies the
+ledger back, so applying it again would drop whatever was entered in between.
+A database without fees (a fresh one, a test) reverses freely.
 """
 from django.db import migrations
+
+
+def refuse_reverse_with_fees(apps, schema_editor):
+    CostItem = apps.get_model('finance', 'CostItem')
+    if CostItem._base_manager.filter(kind='FEE').exists():
+        raise RuntimeError(
+            "roster/0062 cannot be reversed: the finance ledger holds fees, and the re-added "
+            "roster columns would come back empty. Restore a backup taken before the migration instead."
+        )
 
 
 class Migration(migrations.Migration):
@@ -40,4 +54,6 @@ class Migration(migrations.Migration):
             model_name='participation',
             name='paid_at',
         ),
+        # Last, so that its reverse runs first and refuses before any column is re-added.
+        migrations.RunPython(migrations.RunPython.noop, refuse_reverse_with_fees),
     ]

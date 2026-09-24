@@ -158,6 +158,13 @@ export const FinanceService = {
     return response.data;
   },
 
+  releaseFee: async (costItemId: string): Promise<ProjectBudgetDTO> => {
+    const response = await api.post<ProjectBudgetDTO>(
+      `${BASE}/cost-items/${costItemId}/release/`,
+    );
+    return response.data;
+  },
+
   issueContract: async (costItemId: string): Promise<ProjectBudgetDTO> => {
     const response = await api.post<ProjectBudgetDTO>(
       `${BASE}/cost-items/${costItemId}/contract/`,
