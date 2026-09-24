@@ -9,6 +9,8 @@
  * can be scrolled while the people to place remain a short drag away.
  * Both the pool and every voice line read in the order the Cast tab arranged
  * each section — the board shows the choir as it stands, not as it was dragged.
+ * Named solos sit under the board as a second layer with its own draft; one
+ * action bar saves whichever of the two changed, each through its own write.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/MicroCastingTab
  */
@@ -43,8 +45,10 @@ import { toast } from "sonner";
 import type { PieceCasting, Project } from "@/shared/types";
 
 import { useMicroCasting, type CastMember } from "../hooks/useMicroCasting";
+import { useSoloAssignments } from "../hooks/useSoloAssignments";
 import { PROJECT_STATUS } from "../../constants/projectDomain";
 import { byCastOrder } from "../../lib/castOrder";
+import { soloCoverage } from "../../lib/soloAssignments";
 import {
   VOICE_FAMILY_ORDER,
   voiceFamilyOf,
@@ -60,6 +64,7 @@ import {
   ProgramCastingRail,
   type ProgramCastingRailItem,
 } from "./components/ProgramCastingRail";
+import { SoloAssignmentsEditor } from "./components/SoloAssignmentsEditor";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
@@ -105,12 +110,15 @@ export const MicroCastingTab = ({
   const isDraft = project.status === PROJECT_STATUS.DRAFT;
   const showAnswerState = !isDraft;
 
+  const solos = useSoloAssignments(projectId);
+
   const {
     program,
     voiceLines,
     pieces,
     selectedPieceId,
     selectedRequirements: requirements,
+    selectedSoloCount,
     localCastings,
     activeDragId,
     members,
@@ -134,14 +142,58 @@ export const MicroCastingTab = ({
     handleDragEnd,
     saveChanges,
     discardChanges,
-  } = useMicroCasting(projectId);
+  } = useMicroCasting(projectId, solos);
 
   const [poolQuery, setPoolQuery] = useState<string>("");
   const [isProgramFillOpen, setIsProgramFillOpen] = useState(false);
 
+  const hasChanges = isDirty || solos.isDirty;
+  const isBusy = isSaving || solos.isSaving;
+
   useEffect(() => {
-    onDirtyStateChange?.(isDirty);
-  }, [isDirty, onDirtyStateChange]);
+    onDirtyStateChange?.(hasChanges);
+  }, [hasChanges, onDirtyStateChange]);
+
+  const soloRows = selectedPieceId ? solos.rowsFor(selectedPieceId) : [];
+  const legacySolos = selectedPieceId ? solos.legacyFor(selectedPieceId) : [];
+  const statusOf = (participationId: string) =>
+    memberMap.get(participationId)?.status;
+  const selectedSoloCoverage = soloCoverage(
+    soloRows,
+    legacySolos.length,
+    statusOf,
+  );
+
+  const voiceLineLabels = useMemo(
+    () =>
+      new Map(
+        voiceLines.map((line) => [String(line.value), line.label || String(line.value)]),
+      ),
+    [voiceLines],
+  );
+  const choralLineOf = (participationId: string): string | null => {
+    const seat = localCastings.find(
+      (casting) => String(casting.participation) === participationId,
+    );
+    if (!seat) return null;
+    return voiceLineLabels.get(seat.voice_line) ?? seat.voice_line;
+  };
+
+  // The two layers save independently: a failed solo write leaves the board's
+  // save standing, and each keeps its own draft for a retry.
+  const handleSave = async (): Promise<void> => {
+    if (solos.isDirty && solos.hasBlankLabel) {
+      await solos.save();
+      return;
+    }
+    if (isDirty) await saveChanges();
+    if (solos.isDirty) await solos.save();
+  };
+
+  const handleDiscard = (): void => {
+    discardChanges();
+    solos.discard();
+  };
 
   // Split mouse and touch into separate sensors so each gets the activation
   // constraint its input model needs. A single PointerSensor cannot both let a
@@ -230,6 +282,9 @@ export const MicroCastingTab = ({
     .filter(Boolean)
     .join(" ");
 
+  // A piece's gaps on the rail are its empty choral seats plus its open solo
+  // positions: a filled solo never covers a missing seat, nor the reverse.
+  const { rowsFor: soloRowsFor, legacyFor: legacySolosFor } = solos;
   const railItems = useMemo<ProgramCastingRailItem[]>(
     () =>
       [...program]
@@ -237,19 +292,32 @@ export const MicroCastingTab = ({
         .map((item, index) => {
           const pieceId = String(item.piece);
           const piece = pieces.find((p) => String(p.id) === pieceId);
+          const choral = pieceProgress[pieceId] ?? {
+            required: 0,
+            filled: 0,
+            missing: 0,
+            hasRequirements: false,
+            isInstrumental: false,
+          };
+          const solo = soloCoverage(
+            soloRowsFor(pieceId),
+            legacySolosFor(pieceId).length,
+            (participationId) => memberMap.get(participationId)?.status,
+          );
           return {
             pieceId,
             position: index + 1,
             title: item.piece_title || piece?.title || "",
-            progress: pieceProgress[pieceId] ?? {
-              required: 0,
-              filled: 0,
-              missing: 0,
-              hasRequirements: false,
+            progress: {
+              ...choral,
+              required: choral.required + solo.total,
+              filled: choral.filled + solo.filled,
+              missing: choral.missing + (solo.total - solo.filled),
+              hasRequirements: choral.hasRequirements || solo.total > 0,
             },
           };
         }),
-    [program, pieces, pieceProgress],
+    [program, pieces, pieceProgress, soloRowsFor, legacySolosFor, memberMap],
   );
 
   // Keep divisi lines of the same family adjacent (S1, S2, A1, A2, …) instead of
@@ -273,18 +341,44 @@ export const MicroCastingTab = ({
     [localCastings],
   );
 
+  // A dedicated soloist needs no choral seat, so they are not "still to place":
+  // they wait at the foot of the pool, still draggable onto a line if the
+  // conductor wants them in the choir as well.
+  const soloistIds = useMemo(
+    () =>
+      new Set(
+        selectedPieceId
+          ? (solos.performersByPiece.get(selectedPieceId) ?? [])
+          : [],
+      ),
+    [selectedPieceId, solos.performersByPiece],
+  );
+
   const unassignedMembers = useMemo(
-    () => members.filter((member) => !assignedIds.has(member.participationId)),
-    [members, assignedIds],
+    () =>
+      members.filter(
+        (member) =>
+          !assignedIds.has(member.participationId) &&
+          !soloistIds.has(member.participationId),
+      ),
+    [members, assignedIds, soloistIds],
+  );
+
+  const soloOnlyMembers = useMemo(
+    () =>
+      members.filter(
+        (member) =>
+          !assignedIds.has(member.participationId) &&
+          soloistIds.has(member.participationId),
+      ),
+    [members, assignedIds, soloistIds],
   );
 
   const poolGroups = useMemo<PoolGroup[]>(() => {
     const needle = foldDiacritics(poolQuery.trim());
-    const visible = needle
-      ? unassignedMembers.filter((member) =>
-          foldDiacritics(member.displayName).includes(needle),
-        )
-      : unassignedMembers;
+    const matches = (member: CastMember): boolean =>
+      !needle || foldDiacritics(member.displayName).includes(needle);
+    const visible = unassignedMembers.filter(matches);
 
     const unknownVoice = t(
       "projects.micro_cast.voices.unknown",
@@ -293,21 +387,31 @@ export const MicroCastingTab = ({
 
     // `members` already arrives in the order the Cast tab arranged it, so a
     // sequential walk is the whole grouping.
-    return visible.reduce<PoolGroup[]>((groups, member) => {
+    const groups = visible.reduce<PoolGroup[]>((grouped, member) => {
       const key = member.voiceType ?? "UNKNOWN";
-      const last = groups[groups.length - 1];
+      const last = grouped[grouped.length - 1];
       if (last && last.key === key) {
         last.members.push(member);
-        return groups;
+        return grouped;
       }
-      groups.push({
+      grouped.push({
         key,
         label: member.voiceLabel || unknownVoice,
         members: [member],
       });
-      return groups;
+      return grouped;
     }, []);
-  }, [unassignedMembers, poolQuery, t]);
+
+    const soloOnly = soloOnlyMembers.filter(matches);
+    if (soloOnly.length > 0) {
+      groups.push({
+        key: "SOLO_ONLY",
+        label: t("projects.micro_cast.solos.pool_group", "Tylko solówka"),
+        members: soloOnly,
+      });
+    }
+    return groups;
+  }, [unassignedMembers, soloOnlyMembers, poolQuery, t]);
 
   const freeModeGroups = useMemo(
     () =>
@@ -371,6 +475,13 @@ export const MicroCastingTab = ({
     pendingMetrics.push(
       <Badge key="deletes" variant="danger">
         −{pendingCounts.deletes}
+      </Badge>,
+    );
+  }
+  if (solos.isDirty) {
+    pendingMetrics.push(
+      <Badge key="solos" variant="warning">
+        {t("projects.micro_cast.solos.title", "Solówki")}
       </Badge>,
     );
   }
@@ -701,6 +812,34 @@ export const MicroCastingTab = ({
                   ))}
                 </div>
               )}
+
+              {selectedPieceId && (
+                <div className="mt-8">
+                  <SoloAssignmentsEditor
+                    rows={soloRows}
+                    legacy={legacySolos}
+                    members={members}
+                    memberMap={memberMap}
+                    coverage={selectedSoloCoverage}
+                    declaredCount={selectedSoloCount}
+                    choralLineOf={choralLineOf}
+                    disabled={isBusy}
+                    canConvert={!solos.isDirty}
+                    showLabelErrors={solos.showLabelErrors}
+                    onAdd={() => solos.addRow(selectedPieceId)}
+                    onUpdate={(key, patch) =>
+                      solos.updateRow(selectedPieceId, key, patch)
+                    }
+                    onMove={(key, delta) =>
+                      solos.moveRow(selectedPieceId, key, delta)
+                    }
+                    onRemove={(key) => solos.removeRow(selectedPieceId, key)}
+                    onConvert={(castingId, label) =>
+                      solos.convertLegacy(selectedPieceId, castingId, label)
+                    }
+                  />
+                </div>
+              )}
             </SectionCard>
           </StaggeredBentoItem>
         </StaggeredBentoContainer>
@@ -733,18 +872,18 @@ export const MicroCastingTab = ({
       </DndContext>
 
       <EditorActionBar
-        isOpen={isDirty}
+        isOpen={hasChanges}
         description={t(
           "projects.micro_cast.action_bar.description",
           "Casting utworu: {{piece}}",
           { piece: selectedPiece?.title ?? "" },
         )}
         metrics={pendingMetrics.length > 0 ? <>{pendingMetrics}</> : undefined}
-        onCancel={discardChanges}
-        onConfirm={saveChanges}
+        onCancel={handleDiscard}
+        onConfirm={() => void handleSave()}
         cancelText={t("common.actions.discard", "Odrzuć")}
         confirmText={t("projects.micro_cast.action_bar.save", "Zapisz casting")}
-        isLoading={isSaving}
+        isLoading={isBusy}
       />
 
       <ConfirmModal

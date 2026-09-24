@@ -259,7 +259,9 @@ export const shownClocks = (
 
 /**
  * A seat from a participation and the project's casting board. `castings`
- * carries every seat's rows; only this seat's are read.
+ * carries every seat's rows; only this seat's are read. A legacy SOLO row next
+ * to a choir line is an extra duty and never replaces the line — the server's
+ * `_record_cast_line` reads the pair the same way.
  */
 export const planSeatOf = (
   participation: Pick<Participation, "id" | "artist_voice_type" | "default_voice_line">,
@@ -268,8 +270,10 @@ export const planSeatOf = (
   const castLines = new Map<string, string>();
   const seatId = String(participation.id);
   for (const casting of castings) {
-    if (String(casting.participation) === seatId) {
-      castLines.set(String(casting.piece), casting.voice_line);
+    if (String(casting.participation) !== seatId) continue;
+    const pieceId = String(casting.piece);
+    if (casting.voice_line !== "SOLO" || !castLines.has(pieceId)) {
+      castLines.set(pieceId, casting.voice_line);
     }
   }
   return {

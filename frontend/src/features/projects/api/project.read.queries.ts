@@ -18,6 +18,7 @@ import type {
   PieceCasting,
   ProgramItem,
   Project,
+  ProjectSolos,
   Rehearsal,
   VoiceLineOption,
 } from "@/shared/types";
@@ -324,6 +325,31 @@ export const useProjectPieceCastings = (projectId: string | undefined) =>
         }
       : getDisabledListQueryConfig<PieceCasting>()),
     select: selectPieceCastings,
+  });
+
+const EMPTY_PROJECT_SOLOS: ProjectSolos = {
+  solo_assignments: [],
+  legacy_solos: [],
+};
+
+/** Named and legacy solos across the programme; the manager's read only. */
+export const useProjectSolos = (projectId: string | undefined) =>
+  useSuspenseQuery({
+    queryKey: projectKeys.pieceCastings.solosByProject(
+      projectId ?? PENDING_PROJECT_QUERY_ID,
+    ),
+    ...(projectId
+      ? {
+          queryFn: () => ProjectService.getSolosByProject(projectId),
+          ...RECONCILING_REFETCH,
+          staleTime: FAST_CHANGING_STALE_TIME,
+        }
+      : {
+          queryFn: async (): Promise<ProjectSolos> => EMPTY_PROJECT_SOLOS,
+          staleTime: DISABLED_QUERY_STALE_TIME,
+          initialData: EMPTY_PROJECT_SOLOS,
+          initialDataUpdatedAt: 0,
+        }),
   });
 
 export const useProjectAttendances = (projectId: string | undefined) =>

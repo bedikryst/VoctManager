@@ -78,6 +78,7 @@ export const PieceRow = ({
   const composerName = piece.composer
     ? `${piece.composer.first_name || ""} ${piece.composer.last_name}`.trim()
     : t("materials.piece.traditional", "Tradycyjny / Nieznany");
+  const mySoloCount = piece.my_solos?.length ?? 0;
 
   const piecePath =
     isPreview && previewArtist
@@ -178,6 +179,21 @@ export const PieceRow = ({
                 className="shrink-0 rounded border border-ethereal-sage/20 bg-ethereal-sage/10 px-1.5 py-0.5"
               >
                 {piece.my_casting.voice_line_display || piece.my_casting.voice_line}
+              </Eyebrow>
+            )}
+            {/* Beside the choir part, never instead of it: a singer on T1 with
+                three solos reads "Tenor 1" and "Solo ×3". */}
+            {mySoloCount > 0 && (
+              <Eyebrow
+                as="span"
+                color="amethyst"
+                className="shrink-0 rounded border border-ethereal-amethyst/20 bg-ethereal-amethyst/10 px-1.5 py-0.5"
+              >
+                {mySoloCount > 1
+                  ? t("materials.piece.solo_badge_count", "Solo ×{{count}}", {
+                      count: mySoloCount,
+                    })
+                  : t("materials.piece.solo_badge", "Solo")}
               </Eyebrow>
             )}
           </div>

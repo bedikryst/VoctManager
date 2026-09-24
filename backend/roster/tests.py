@@ -1,3 +1,4 @@
+import json
 import tempfile
 import uuid
 from datetime import UTC, datetime, time, timedelta
@@ -3570,9 +3571,281 @@ class NamedSoloAssignmentTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         announcements = list(PendingAnnouncement.objects.filter(project=self.project))
         self.assertEqual(len(announcements), 1)
-        self.assertEqual(len(announcements[0].metadata['solo_changes']), 2)
+        self.assertEqual(announcements[0].subject_id, f'{self.piece.id}:solos')
+        self.assertEqual(announcements[0].change_field, 'solo_assignments')
+        self.assertEqual(len(json.loads(announcements[0].change_new or '[]')), 2)
         self.assertEqual(len(announcements[0].metadata['solo_assignments']), 2)
 
+
+class SoloDutyConsumerTests(APITestCase):
+    """Named solos as every reader meets them: the songbook, the day sheet, the
+    book's credit line, the dossier, the invitation and the notice a save
+    queues. One singer on T1 with three passages and a soprano who sings only a
+    solo are the two shapes every surface has to get right."""
+
+    SOLOS_URL = '/api/piece-castings/solos/'
+
+    def setUp(self) -> None:
+        from archive.models import Composer, Piece
+
+        self.manager = get_user_model().objects.create_user(
+            username='sd-manager', email='sd-manager@test.pl', password='pw123456'
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+        self.project = Project.objects.create(
+            title='Lark evening', date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.ACTIVE,
+        )
+        composer = Composer.objects.create(first_name='Ralph', last_name='Vaughan Williams')
+        self.piece = Piece.objects.create(title='The Lark Ascending', composer=composer)
+        self.item = ProgramItem.objects.create(project=self.project, piece=self.piece, order=1)
+        self.tenor_user, self.tenor = self._seat('tenor', VoiceType.TENOR)
+        self.soloist_user, self.soloist = self._seat('soloist', VoiceType.SOPRANO)
+        self.choir_seat = ProjectPieceCasting.objects.create(
+            participation=self.tenor, piece=self.piece, voice_line='T1', notes='Breathe at 12',
+        )
+
+    def _seat(self, name: str, voice_type: str):
+        user = get_user_model().objects.create_user(
+            username=f'sd-{name}', email=f'sd-{name}@test.pl', password='pw123456'
+        )
+        UserProfile.objects.create(user=user, role=AppRole.ARTIST)
+        artist = Artist.objects.create(
+            user=user, first_name=name.title(), last_name='Singer',
+            email=f'sd-{name}@test.pl', voice_type=voice_type,
+        )
+        seat = Participation.objects.create(
+            artist=artist, project=self.project, status=Participation.Status.CONFIRMED,
+        )
+        return user, seat
+
+    def _save(self, rows: list[dict]) -> list[dict]:
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.put(self.SOLOS_URL, {
+            'project': str(self.project.id), 'piece': str(self.piece.id),
+            'solo_assignments': rows,
+        }, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        return response.data['solo_assignments']
+
+    def _lark(self) -> list[dict]:
+        """Three passages for the tenor, one for the soprano, one still open."""
+        return self._save([
+            {'position': 0, 'label': 'Tenor at 7', 'score_reference': 'fig. 7',
+             'participation': str(self.tenor.id)},
+            {'position': 1, 'label': 'Tenor at 20', 'participation': str(self.tenor.id)},
+            {'position': 2, 'label': 'Tenor at 22', 'participation': str(self.tenor.id)},
+            {'position': 3, 'label': 'Soprano at 21', 'participation': str(self.soloist.id)},
+            {'position': 4, 'label': 'Alto at 21', 'participation': None},
+        ])
+
+    def _songbook_piece(self, user) -> dict:
+        self.client.force_authenticate(user=user)
+        response = self.client.get('/api/participations/materials-dashboard/')
+        entry = next(e for e in response.data if e['project']['id'] == str(self.project.id))
+        return entry['program'][0]['piece']
+
+    def _notices(self):
+        from notifications.announcement_queue import AnnouncementQueue
+
+        return AnnouncementQueue.collapse(AnnouncementQueue.pending_for(self.project))
+
+    def _render(self, announcement):
+        from notifications.message_content import MessageContentBuilder
+
+        with translation.override('en'):
+            return MessageContentBuilder.build(
+                announcement.notification_type, announcement.level,
+                announcement.metadata, is_manager=False,
+            )
+
+    def test_the_songbook_keeps_the_choir_part_and_lists_every_solo(self) -> None:
+        self._lark()
+
+        tenor_piece = self._songbook_piece(self.tenor_user)
+        self.assertEqual(
+            (tenor_piece['my_casting']['voice_line'], tenor_piece['my_casting']['notes']),
+            ('T1', 'Breathe at 12'),
+        )
+        self.assertEqual(
+            [solo['label'] for solo in tenor_piece['my_solos']],
+            ['Tenor at 7', 'Tenor at 20', 'Tenor at 22'],
+        )
+        self.assertEqual(len(tenor_piece['solos']), 5)
+        self.assertIsNone(tenor_piece['solos'][4]['artist_id'])
+
+        soloist_piece = self._songbook_piece(self.soloist_user)
+        self.assertIsNone(soloist_piece['my_casting'])
+        self.assertEqual([s['label'] for s in soloist_piece['my_solos']], ['Soprano at 21'])
+        self.assertEqual(Participation.objects.filter(project=self.project).count(), 2)
+
+    def test_a_legacy_solo_beside_a_choir_part_never_becomes_the_part(self) -> None:
+        ProjectPieceCasting.objects.create(
+            participation=self.tenor, piece=self.piece, voice_line='SOLO',
+            notes='Pitch A', gives_pitch=True,
+        )
+
+        piece = self._songbook_piece(self.tenor_user)
+
+        self.assertEqual(piece['my_casting']['voice_line'], 'T1')
+        self.assertEqual(
+            [(s['is_legacy'], s['label'], s['notes']) for s in piece['my_solos']],
+            [(True, '', 'Pitch A')],
+        )
+        self.assertNotIn('SOLO', {casting['voice_line'] for casting in piece['castings']})
+
+    def test_one_notice_per_save_names_the_passages_and_reordering_is_silent(self) -> None:
+        saved = self._lark()
+        tenor_notices = [n for n in self._notices() if n.recipient_id == str(self.tenor_user.id)]
+        self.assertEqual(len(tenor_notices), 1)
+        self.assertEqual(tenor_notices[0].subject_id, f'{self.piece.id}:solos')
+
+        content = self._render(tenor_notices[0])
+        self.assertEqual(content.title, 'Solo update — The Lark Ascending')
+        self.assertIn('new: Tenor at 7 (fig. 7)', content.body)
+        self.assertNotIn('[', content.body)
+        self.assertIn(
+            ('Your solos', 'Tenor at 7 (fig. 7), Tenor at 20, Tenor at 22'),
+            {(row.label, row.value) for row in content.details},
+        )
+
+        from notifications.models import PendingAnnouncement
+
+        rows_before = PendingAnnouncement.objects.count()
+        self._save([
+            {**{k: row[k] for k in ('id', 'label', 'score_reference', 'notes', 'gives_pitch')},
+             'participation': row['participation'], 'position': 4 - index}
+            for index, row in enumerate(saved)
+        ])
+        self.assertEqual(PendingAnnouncement.objects.count(), rows_before)
+
+    def test_a_board_save_and_a_solo_save_stay_two_notices(self) -> None:
+        self._lark()
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.put('/api/piece-castings/board/', {
+            'project': str(self.project.id), 'piece': str(self.piece.id),
+            'castings': [{'participation': str(self.tenor.id), 'voice_line': 'T2'}],
+        }, format='json')
+        self.assertEqual(response.status_code, 200)
+
+        subjects = {
+            n.subject_id for n in self._notices() if n.recipient_id == str(self.tenor_user.id)
+        }
+        self.assertEqual(subjects, {str(self.piece.id), f'{self.piece.id}:solos'})
+        self.assertEqual(ProjectSoloAssignment.objects.filter(participation=self.tenor).count(), 3)
+
+    def test_conversion_keeps_the_id_and_reads_as_naming_the_solo(self) -> None:
+        legacy = ProjectPieceCasting.objects.create(
+            participation=self.soloist, piece=self.piece, voice_line='SOLO', gives_pitch=True,
+        )
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.post('/api/piece-castings/convert-solo/', {
+            'casting': str(legacy.id), 'label': 'Soprano at 7', 'position': 0,
+        }, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['solo_assignments'][0]['id'], str(legacy.id))
+        self.assertEqual(response.data['legacy_solos'], [])
+
+        notices = [n for n in self._notices() if n.recipient_id == str(self.soloist_user.id)]
+        self.assertEqual(len(notices), 1)
+        self.assertIn('Solo → Soprano at 7', self._render(notices[0]).body)
+
+    def test_the_day_sheet_prints_every_duty_including_a_solo_only_singer(self) -> None:
+        from .views import ProjectViewSet
+
+        self._lark()
+        parts, crew, program, reh, cast = ProjectViewSet._call_sheet_querysets(self.project)
+        context = DocumentGenerator._build_call_sheet_context(
+            project=self.project, participations=parts, crew=crew, program=program,
+            rehearsals=reh, castings=cast, audience=Audience.CHORISTER,
+            recipient=self.soloist, base_url='http://testserver/', kind=DocumentKind.DAY_CARD,
+        )
+
+        self.assertEqual(
+            [entry['voice_line'] for entry in context['personal']['assignments']],
+            ['Soprano at 21'],
+        )
+        card = context['program_cards'][0]
+        self.assertIsNone(card['you'])
+        self.assertEqual([solo['label'] for solo in card['you_solos']], ['Soprano at 21'])
+        singers = [row['singers'] for row in context['casting_sections'][0]['rows']]
+        self.assertIn('Soprano at 21 — Soloist Singer', singers)
+        # The open passage is printed too, with no performer (in the reader's
+        # language, so only its shape is asserted here).
+        open_rows = [row for row in singers if row.startswith('Alto at 21 — ')]
+        self.assertEqual(len(open_rows), 1)
+        self.assertNotIn('Singer', open_rows[0])
+
+    def test_the_book_credit_falls_back_to_filled_solos_and_yields_to_a_typed_line(self) -> None:
+        from .score_package_config import resolve_item_performers
+
+        self._lark()
+        self.assertEqual(
+            resolve_item_performers(self.item),
+            'Tenor at 7: T. Singer · Tenor at 20: T. Singer · Tenor at 22: T. Singer'
+            ' · Soprano at 21: S. Singer',
+        )
+        self.item.performers = 'Sopran solo: J. Kowalska'
+        self.assertEqual(resolve_item_performers(self.item), 'Sopran solo: J. Kowalska')
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.performers, '')
+
+    def test_the_dossier_and_the_invitation_count_a_soloist_once_per_piece(self) -> None:
+        from .invitations import build_invitation_context
+        from .queries import get_artist_dossier
+
+        self._lark()
+        stats = get_artist_dossier(self.tenor.artist)['stats']
+        solo_lines = [line for line in stats['top_voice_lines'] if line['voice_line'] == 'SOLO']
+        self.assertEqual([line['count'] for line in solo_lines], [1])
+
+        voice_lines = build_invitation_context(self.project).voice_lines_by_participation
+        self.assertEqual(voice_lines[self.tenor.id], ('T1', 'SOLO'))
+        self.assertEqual(voice_lines[self.soloist.id], ('SOLO',))
+
+    def test_a_sung_solo_keeps_an_organ_piece_with_the_choir(self) -> None:
+        from archive.models import Piece
+
+        from .models import instrumental_item_exists
+
+        _, organist = self._seat('organist', VoiceType.INSTRUMENTALIST)
+        voluntary = Piece.objects.create(title='Voluntary', composer=self.piece.composer)
+        ProgramItem.objects.create(project=self.project, piece=voluntary, order=2)
+        ProjectPieceCasting.objects.create(participation=organist, piece=voluntary, voice_line='ACC')
+
+        def instrumental() -> bool:
+            return ProgramItem.objects.annotate(
+                instrumental=instrumental_item_exists()
+            ).get(project=self.project, piece=voluntary).instrumental
+
+        self.assertTrue(instrumental())
+        ProjectSoloAssignment.objects.create(
+            project=self.project, piece=voluntary, position=0,
+            label='Soprano over the organ', participation=self.soloist,
+        )
+        self.assertFalse(instrumental())
+
+    def test_the_whole_programme_reads_for_the_manager_and_one_piece_for_the_cast(self) -> None:
+        self._lark()
+        self.client.force_authenticate(user=self.manager)
+        whole = self.client.get(self.SOLOS_URL, {'project': str(self.project.id)})
+        self.assertEqual(whole.status_code, 200)
+        self.assertEqual(len(whole.data['solo_assignments']), 5)
+
+        cast_url = '/api/piece-castings/cast-solos/'
+        query = {'project': str(self.project.id), 'piece': str(self.piece.id)}
+        self.client.force_authenticate(user=self.soloist_user)
+        self.assertEqual(self.client.get(self.SOLOS_URL, {'project': str(self.project.id)}).status_code, 403)
+        cast = self.client.get(cast_url, query)
+        self.assertEqual(cast.status_code, 200)
+        self.assertEqual([solo['label'] for solo in cast.data][3], 'Soprano at 21')
+
+        outsider = get_user_model().objects.create_user(
+            username='sd-outsider', email='sd-outsider@test.pl', password='pw123456'
+        )
+        UserProfile.objects.create(user=outsider, role=AppRole.ARTIST)
+        self.client.force_authenticate(user=outsider)
+        self.assertEqual(self.client.get(cast_url, query).status_code, 403)
 
 class ProgrammeCastingBoardsTests(APITestCase):
     """Casting the whole programme from the line-up is one decision, so it is one

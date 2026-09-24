@@ -31,6 +31,7 @@ from roster.score_package_config import (
     movement_titles,
     resolve_card_config,
     resolve_item_edition,
+    resolve_item_performers,
     resolve_item_translation,
     select_program_note,
     translation_applicable,
@@ -134,8 +135,9 @@ def _element_statuses(
     else:
         translation = MISSING
 
-    # cast — the concert-specific performers line; manual entry = trusted.
-    cast = READY if (item.performers or "").strip() else MISSING
+    # cast — the concert-specific performers line; manual entry = trusted, and
+    # so is a line read off the filled solos (the board is the conductor's own).
+    cast = READY if resolve_item_performers(item) else MISSING
 
     # movements — the movement list of a cyclic work (<2 movements = nothing to list).
     movements = READY if movement_titles(piece) else MISSING

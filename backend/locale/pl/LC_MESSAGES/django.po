@@ -5170,3 +5170,95 @@ msgid ""
 "An existing booking keeps its person and project; remove it and add a new "
 "one."
 msgstr "Istniejący wpis zachowuje osobę i projekt. Usuń go i dodaj nowy."
+
+#: notifications/message_content.py
+msgid "Solos"
+msgstr "Solówki"
+
+#: notifications/message_content.py
+#, python-format
+msgid "new: %(solo)s"
+msgstr "nowa: %(solo)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid "updated: %(solo)s"
+msgstr "zmieniona: %(solo)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid "removed: %(solo)s"
+msgstr "odwołana: %(solo)s"
+
+#: notifications/message_content.py
+msgid "Your solos"
+msgstr "Twoje solówki"
+
+#: notifications/message_content.py
+msgid "none"
+msgstr "brak"
+
+#: notifications/message_content.py
+#, python-format
+msgid "Solo update — %(piece)s"
+msgstr "Zmiana solówek — %(piece)s"
+
+#: notifications/message_content.py
+msgid "Open the score to see your solos."
+msgstr "Otwórz nuty, żeby zobaczyć swoje solówki."
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"The solos you sing in %(piece)s have changed. Open the score and find the "
+"passages before the next rehearsal."
+msgstr ""
+"Zmieniły się solówki, które śpiewasz w utworze %(piece)s. Otwórz nuty i "
+"odszukaj te fragmenty przed najbliższą próbą."
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"You no longer have a solo in %(piece)s. Anything else you sing in it stays "
+"as it was."
+msgstr ""
+"Nie masz już solówki w utworze %(piece)s. Wszystko inne, co w nim śpiewasz, "
+"zostaje bez zmian."
+
+#: templates/projects/call_sheet_pdf.html
+msgctxt "call sheet"
+msgid "Your solo"
+msgstr "Twoja solówka"
+
+#: roster/services.py
+msgid "Create named solo positions through the solos editor."
+msgstr "Nazwane solówki dodaje się w edytorze solówek."
+
+#: roster/services.py
+msgid "A legacy solo can only change notes and pitch giving."
+msgstr "W dawnej solówce można zmienić tylko notatkę i podawanie tonu."
+
+#: roster/services.py
+msgid "Convert a legacy solo before removing it."
+msgstr "Najpierw nadaj dawnej solówce nazwę, potem ją usuń."
+
+#: roster/services.py
+msgid "Cannot assign a declined or foreign participant to a solo."
+msgstr ""
+"Solówki nie można dać osobie, która odmówiła, ani komuś spoza tego projektu."
+
+#: roster/services.py
+msgid "A solo assignment belongs to another piece or project."
+msgstr "Ta solówka należy do innego utworu albo projektu."
+
+#: roster/services.py
+msgid "Only a legacy solo can be converted."
+msgstr "Nazwę można nadać tylko dawnej solówce."
+
+#: roster/services.py
+msgid "This solo position is already occupied."
+msgstr "Ta pozycja solówki jest już zajęta."
+
+#: roster/views.py
+msgid "This piece is not in the project programme."
+msgstr "Tego utworu nie ma w programie projektu."

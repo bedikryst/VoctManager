@@ -3,7 +3,8 @@ CQRS read model for the Artist Dossier (manager-only HR analytics).
 
 Aggregates an artist's *project track record* straight from the authoritative
 relational state — Participation (invite/confirm/decline), ProjectPieceCasting
-(which voice line on which piece), Attendance (reliability),
+(which voice line on which piece), ProjectSoloAssignment (which named solos),
+Attendance (reliability),
 RehearsalDelegate + `Rehearsal.led_by` (leadership) and the finance ledger's
 cost items (earnings) — rather than from the
 notification stream, which is recipient-scoped, opt-in and deletable. A
@@ -19,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 from django.db.models import Count, Prefetch, Sum
 from django.utils import timezone
 
+from core.constants import VoiceLine
 from core.voice_labels import (
     canonical_section_letters,
     plain_voice_line_label,
@@ -26,11 +28,13 @@ from core.voice_labels import (
 )
 from finance.models import CostItem
 from finance.rules import money
+from roster.domain.solo_duties import is_legacy_solo
 from roster.models import (
     Attendance,
     Participation,
     Project,
     ProjectPieceCasting,
+    ProjectSoloAssignment,
     Rehearsal,
     RehearsalDelegate,
     VoiceType,
@@ -56,7 +60,14 @@ def get_artist_dossier(artist: Artist) -> dict[str, Any]:
                     "piece__title"
                 ),
                 to_attr="pf_castings",
-            )
+            ),
+            Prefetch(
+                "solo_assignments",
+                queryset=ProjectSoloAssignment.objects.select_related("piece").order_by(
+                    "piece__title", "position"
+                ),
+                to_attr="pf_solos",
+            ),
         )
         .order_by("-project__date_time")
     )
@@ -218,18 +229,28 @@ def get_artist_dossier(artist: Artist) -> dict[str, Any]:
     line_counter: dict[str, int] = {}
     line_codes: dict[str, str] = {}
     projects: list[dict[str, Any]] = []
+    solo_label = plain_voice_line_label(VoiceLine.SOLO)
     for participation in participations:
         castings = getattr(participation, "pf_castings", [])
+        named_solos = getattr(participation, "pf_solos", [])
         casting_payload = []
+        # A solo is tallied once per piece however many passages it spans:
+        # three named positions in one motet are one solo performance of it,
+        # and a legacy row beside them is the same performance again.
+        solo_pieces: set[Any] = set()
         for casting in castings:
-            piece_labels = labels_by_pair.get(
-                (participation.project_id, casting.piece_id), {}
-            )
-            label = piece_labels.get(casting.voice_line) or plain_voice_line_label(
-                casting.voice_line
-            )
-            line_counter[label] = line_counter.get(label, 0) + 1
-            line_codes.setdefault(label, casting.voice_line)
+            if is_legacy_solo(casting):
+                solo_pieces.add(casting.piece_id)
+                label = solo_label
+            else:
+                piece_labels = labels_by_pair.get(
+                    (participation.project_id, casting.piece_id), {}
+                )
+                label = piece_labels.get(casting.voice_line) or plain_voice_line_label(
+                    casting.voice_line
+                )
+                line_counter[label] = line_counter.get(label, 0) + 1
+                line_codes.setdefault(label, casting.voice_line)
             casting_payload.append(
                 {
                     "piece_title": casting.piece.title,
@@ -238,6 +259,19 @@ def get_artist_dossier(artist: Artist) -> dict[str, Any]:
                     "gives_pitch": casting.gives_pitch,
                 }
             )
+        for solo in named_solos:
+            solo_pieces.add(solo.piece_id)
+            casting_payload.append(
+                {
+                    "piece_title": solo.piece.title,
+                    "voice_line": VoiceLine.SOLO.value,
+                    "voice_line_label": f"{solo_label} · {solo.label}",
+                    "gives_pitch": solo.gives_pitch,
+                }
+            )
+        if solo_pieces:
+            line_counter[solo_label] = line_counter.get(solo_label, 0) + len(solo_pieces)
+            line_codes.setdefault(solo_label, VoiceLine.SOLO.value)
         projects.append(
             {
                 "project_id": str(participation.project_id),

@@ -39,6 +39,7 @@ import {
   briefingItemSummary,
   compactMetaLine,
   formatEventMoment,
+  isSoloChange,
   renderChanges,
   voiceLineLabel,
   voiceScopeOf,
@@ -331,6 +332,17 @@ const describe = (
           title: notification.metadata.piece_title,
           context: notification.metadata.project_name,
           detail: t("notifications.inapp.casting_removed"),
+        };
+      }
+      // A solo notice carries no voice line: the pill says "Solos" so the news
+      // cannot read as a move of the reader's choir part, and the chips name
+      // each passage that was given, renamed or taken away.
+      if (isSoloChange(notification.metadata.changes)) {
+        return {
+          title: notification.metadata.piece_title,
+          pill: t("notifications.changes.solo_assignments", "Solówki"),
+          context: notification.metadata.project_name,
+          changeChips: renderChanges(t, notification.metadata.changes),
         };
       }
       return {

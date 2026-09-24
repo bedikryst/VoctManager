@@ -73,6 +73,9 @@ export const projectKeys = {
         "pieceCastings",
         { project: String(projectId), piece: String(pieceId) },
       ] as const,
+    /** Named and legacy solos of the whole programme — one read per project. */
+    solosByProject: (projectId: string | number) =>
+      ["pieceCastings", "solos", { project: String(projectId) }] as const,
   },
   rehearsals: {
     all: ["rehearsals"] as const,

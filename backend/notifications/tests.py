@@ -2645,3 +2645,68 @@ class EmailLabsWebhookTests(TestCase):
         ])
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0].event_type, "unknown")
+
+
+class SoloChangeRenderingTests(SimpleTestCase):
+    """A solo save records the reader's solo list before and after as JSON. Every
+    surface must read those lists as passages — never print them, and never
+    name a solo as if it were a voice-line code."""
+
+    @staticmethod
+    def _duties(*rows: tuple[str, str, str]) -> str:
+        return json.dumps([
+            {"id": key, "label": label, "score_reference": reference,
+             "notes": "", "gives_pitch": False}
+            for key, label, reference in rows
+        ])
+
+    def _build(self, old: str, new: str, solos: list[dict[str, str]], language: str):
+        metadata = {
+            "piece_title": "The Lark Ascending",
+            "project_name": "Lark evening",
+            "changes": [{"field": "solo_assignments", "old": old, "new": new}],
+            "solo_assignments": solos,
+            "choir_voice_line": "T1",
+        }
+        with translation.override(language):
+            return MessageContentBuilder.build(
+                NotificationType.PIECE_CASTING_UPDATED, NotificationLevel.INFO,
+                metadata, is_manager=False,
+            )
+
+    def test_each_passage_that_moved_is_named_and_no_json_leaks(self) -> None:
+        content = self._build(
+            self._duties(("a", "", ""), ("b", "Tenor at 20", "")),
+            self._duties(("a", "Soprano at 7", "fig. 7"), ("c", "Tenor at 22", "")),
+            [{"id": "a", "label": "Soprano at 7", "score_reference": "fig. 7"},
+             {"id": "c", "label": "Tenor at 22", "score_reference": ""}],
+            "en",
+        )
+
+        self.assertEqual(content.title, "Solo update — The Lark Ascending")
+        self.assertIn("Solo → Soprano at 7 (fig. 7)", content.body)
+        self.assertIn("new: Tenor at 22", content.body)
+        self.assertIn("removed: Tenor at 20", content.body)
+        rendered = " ".join([content.body, *(row.value for row in content.details)])
+        self.assertNotIn("{", rendered)
+        self.assertNotIn('"id"', rendered)
+        details = {row.label: row.value for row in content.details}
+        self.assertEqual(details["Your solos"], "Soprano at 7 (fig. 7), Tenor at 22")
+        self.assertEqual(details["Your part"], "Tenor 1")
+
+    def test_losing_the_last_solo_reads_as_such_in_polish(self) -> None:
+        content = self._build(
+            self._duties(("a", "Sopran solo", "lit. 7")), "[]", [], "pl",
+        )
+
+        self.assertEqual(content.title, "Zmiana solówek — The Lark Ascending")
+        self.assertIn("odwołana: Sopran solo (lit. 7)", content.body)
+        self.assertIn("Nie masz już solówki w utworze The Lark Ascending.", content.email_lead)
+        self.assertIn(("Twoje solówki", "brak"), {(r.label, r.value) for r in content.details})
+
+    def test_a_malformed_side_renders_a_label_rather_than_raw_text(self) -> None:
+        content = self._build("not json", "[{", [], "en")
+
+        self.assertEqual(content.title, "Solo update — The Lark Ascending")
+        self.assertNotIn("not json", content.body)
+        self.assertNotIn("[{", content.body)

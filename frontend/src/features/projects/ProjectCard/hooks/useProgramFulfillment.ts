@@ -13,7 +13,13 @@ import {
   useProjectPiecesDictionary,
   useProjectPieceCastings,
   useProjectParticipations,
+  useProjectSolos,
 } from "../../api/project.read.queries";
+import {
+  choralRequirements,
+  soloCoverage,
+  soloRowsFromServer,
+} from "../../lib/soloAssignments";
 
 export interface EnrichedProgramItem {
   id: string | number;
@@ -29,9 +35,9 @@ export interface EnrichedProgramItem {
   statusVariant: "success" | "warning" | "neutral";
   statusText: string;
   /**
-   * Singers still missing across all voice lines of the piece. Zero unless the
-   * status is `warning`. A gap count says what "Nieobsadzony" cannot: how far
-   * the piece is from ready.
+   * Singers still missing across all voice lines of the piece, plus its named
+   * solo positions nobody fills. Zero unless the status is `warning`. A gap
+   * count says what "Nieobsadzony" cannot: how far the piece is from ready.
    */
   missingCount: number;
 }
@@ -45,6 +51,7 @@ export const useProgramFulfillment = (project: Project) => {
   const { data: projectParticipations = [] } = useProjectParticipations(
     String(project.id),
   );
+  const { data: solos } = useProjectSolos(String(project.id));
 
   const piecesMap = useMemo(
     () => new Map(piecesList.map((piece) => [String(piece.id), piece])),
@@ -53,6 +60,12 @@ export const useProgramFulfillment = (project: Project) => {
 
   const participationIds = useMemo(
     () => new Set(projectParticipations.map((p) => String(p.id))),
+    [projectParticipations],
+  );
+
+  const participationStatus = useMemo(
+    () =>
+      new Map(projectParticipations.map((p) => [String(p.id), p.status])),
     [projectParticipations],
   );
 
@@ -86,17 +99,26 @@ export const useProgramFulfillment = (project: Project) => {
         const pieceObj = piecesMap.get(pieceId);
         // Scored against the arrangement this concert binds — see
         // [divisiScope]. Summing every layer would report a unison programme
-        // short of the three-part edition's seats.
-        const requirements: VoiceRequirement[] = scopedRequirements(
-          pieceObj,
-          item.score_edition,
+        // short of the three-part edition's seats. A declared SOLO count is
+        // answered by named positions, which are scored per position below.
+        const requirements: VoiceRequirement[] = choralRequirements(
+          scopedRequirements(pieceObj, item.score_edition),
+        );
+        const solo = soloCoverage(
+          soloRowsFromServer(
+            solos.solo_assignments.filter(
+              (assignment) => String(assignment.piece) === pieceId,
+            ),
+          ),
+          0,
+          (participationId) => participationStatus.get(participationId),
         );
 
         let statusVariant: "success" | "warning" | "neutral" = "neutral";
         let statusText = t("projects.program.no_reqs", "Brak wymagań");
-        let missingTotal = 0;
+        let missingTotal = solo.total - solo.filled;
 
-        if (requirements.length > 0) {
+        if (requirements.length > 0 || solo.total > 0) {
           requirements.forEach((req) => {
             const assignedCount = pieceCastings.filter(
               (c) =>
@@ -130,7 +152,15 @@ export const useProgramFulfillment = (project: Project) => {
           missingCount: missingTotal,
         };
       });
-  }, [project.program, piecesMap, pieceCastings, participationIds, t]);
+  }, [
+    project.program,
+    piecesMap,
+    pieceCastings,
+    participationIds,
+    participationStatus,
+    solos.solo_assignments,
+    t,
+  ]);
 
   return {
     enrichedProgram,

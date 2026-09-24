@@ -707,6 +707,9 @@
                         {% if piece.you %}
                         <div class="you">{% translate "You sing" context "call sheet" %}: <strong>{{ piece.you.voice_line }}</strong>{% if piece.you.gives_pitch %} · <span class="pitch-flag">♪ {% translate "you give the pitch" context "call sheet" %}</span>{% endif %}{% if piece.you.notes %} · {{ piece.you.notes }}{% endif %}</div>
                         {% endif %}
+                        {% for solo in piece.you_solos %}
+                        <div class="you">{% translate "Your solo" context "call sheet" %}: <strong>{{ solo.label }}</strong>{% if solo.gives_pitch %} · <span class="pitch-flag">♪ {% translate "you give the pitch" context "call sheet" %}</span>{% endif %}{% if solo.notes %} · {{ solo.notes }}{% endif %}</div>
+                        {% endfor %}
                         {% if piece.material_badges %}<div class="badge-row" style="margin-top:4pt;">{% for badge in piece.material_badges %}<span class="pill">{{ badge }}</span>{% endfor %}</div>{% endif %}
                         {% comment %}
                             Named, not drawn as buttons, and with no code of its

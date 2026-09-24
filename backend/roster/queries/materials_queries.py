@@ -20,6 +20,7 @@ from roster.models import (
     ProgramItem,
     Project,
     ProjectPieceCasting,
+    ProjectSoloAssignment,
     instrumental_item_exists,
     is_instrumentalist_account,
 )
@@ -127,11 +128,11 @@ def _materials_program_items_prefetch(
 ) -> QuerySet[ProgramItem]:
     """
     Program-items queryset with the full piece materials tree pre-joined —
-    tracks, castings (scoped to ``project_ids`` to prevent cross-tenant leakage),
-    translations, recordings, programme notes and ScoreEdition PDFs. Shared by
-    the singer and conductor materials read models so both resolve in a fixed
-    number of queries. Sets on each program_item.piece:
-      prefetched_tracks / scope_castings / prefetched_translations /
+    tracks, castings and named solos (scoped to ``project_ids`` to prevent
+    cross-tenant leakage), translations, recordings, programme notes and
+    ScoreEdition PDFs. Shared by the singer and conductor materials read models
+    so both resolve in a fixed number of queries. Sets on each program_item.piece:
+      prefetched_tracks / scope_castings / scope_solos / prefetched_translations /
       prefetched_recordings / prefetched_program_notes / prefetched_editions.
     """
     castings_in_scope_qs: QuerySet[ProjectPieceCasting] = (
@@ -141,6 +142,14 @@ def _materials_program_items_prefetch(
             participation__is_deleted=False,
         )
         .select_related('participation__artist')
+    )
+    # Named solos ride beside the castings, open positions included: the whole
+    # cast reads who takes which passage, and which ones are still unassigned.
+    solos_in_scope_qs: QuerySet[ProjectSoloAssignment] = (
+        ProjectSoloAssignment.objects
+        .filter(project_id__in=project_ids)
+        .select_related('participation__artist')
+        .order_by('position', 'id')
     )
 
     return (
@@ -156,6 +165,11 @@ def _materials_program_items_prefetch(
                 'piece__castings',
                 queryset=castings_in_scope_qs,
                 to_attr='scope_castings',
+            ),
+            Prefetch(
+                'piece__project_solo_assignments',
+                queryset=solos_in_scope_qs,
+                to_attr='scope_solos',
             ),
             # The divisi is not shown to the singer as a list, but it is what
             # NAMES their part: a piece with one tenor line says "Tenor", not

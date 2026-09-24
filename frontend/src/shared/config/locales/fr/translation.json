@@ -3422,9 +3422,15 @@
       "translation_singable": "chantable",
       "translations_section": "Traductions",
       "unknown_artist": "Artiste",
-      "your_guidelines": "Vos consignes"
+      "your_guidelines": "Vos consignes",
+      "your_solos": "Vos solos",
+      "solos": "Solos",
+      "solo_badge": "Solo",
+      "solo_badge_count": "Solo ×{{count}}",
+      "solo_open": "pas encore distribué"
     },
     "piece_page": {
+      "my_solo_chip": "Solo : {{label}}",
       "back_short": "Carnet",
       "back_to_songbook": "Retour au carnet",
       "duration_min": "{{count}} min",
@@ -3807,6 +3813,13 @@
       }
     },
     "changes": {
+      "solo_assignments": "Solos",
+      "solo": {
+        "unnamed": "Solo",
+        "added": "nouveau : {{solo}}",
+        "removed": "retiré : {{solo}}",
+        "updated": "modifié : {{solo}}"
+      },
       "title": "Titre",
       "date_time": "Date et heure",
       "location": "Lieu",
@@ -4579,6 +4592,35 @@
       "unknown_member": "Membre inconnu"
     },
     "micro_cast": {
+      "solos": {
+        "title": "Solos",
+        "coverage_hint": "Solos distribués sur l'ensemble des solos nommés",
+        "add": "Ajouter un solo",
+        "declared": "Les exigences de l'œuvre prévoient des solistes : {{count}}.",
+        "empty": "Un solo s'ajoute à la partie de chœur : la même personne peut chanter sur sa ligne et tenir plusieurs solos.",
+        "label": "Nom du solo",
+        "label_placeholder": "Nom, p. ex. Soprano solo",
+        "reference": "Endroit dans la partition",
+        "reference_placeholder": "Endroit dans la partition, p. ex. chiffre 7, mes. 12–20",
+        "performer": "Interprète",
+        "open": "À pourvoir",
+        "unassign": "Sans interprète",
+        "notes": "Note du solo",
+        "notes_placeholder": "Note (facultatif)",
+        "move_up": "Monter",
+        "move_down": "Descendre",
+        "remove": "Supprimer le solo",
+        "reference_review": "Le programme utilise désormais une autre édition que celle pour laquelle cet endroit a été noté : vérifiez-le.",
+        "declined": "L'interprète s'est désisté : ce solo attend une distribution.",
+        "legacy_hint": "Solos enregistrés avant que les positions aient un nom. On ignore quel passage ils couvrent : nommez-les, l'interprète, la note et le don du ton sont conservés.",
+        "legacy_badge": "Solo sans nom",
+        "convert": "Nommer",
+        "convert_confirm": "Enregistrer comme solo",
+        "convert_dirty": "Enregistrez ou annulez d'abord les modifications des solos.",
+        "pool_group": "Solo uniquement",
+        "blank_label": "Chaque solo doit avoir un nom.",
+        "saved": "Solos enregistrés"
+      },
       "action_bar": {
         "description": "Distribution de : {{piece}}",
         "save": "Enregistrer casting"

@@ -21,6 +21,7 @@ from uuid import UUID
 
 from archive.models import PieceVoiceRequirement
 from archive.services.voice_scope import requirements_for_edition
+from core.constants import VoiceLine
 from core.permissions import user_is_manager
 from core.voice_labels import section_letters_of_seat
 from roster.domain.day_timeline import localize
@@ -63,6 +64,13 @@ class PlanReading:
     calls: tuple[bool, ...]
     opens: tuple[bool, ...]
     window: PlanWindow | None
+
+
+def _record_cast_line(lines: dict[str, str], piece_id: str, voice_line: str) -> None:
+    """A seat's line on a piece is their choir line. A legacy SOLO row beside it
+    is an extra duty and must not replace it; alone, it is all there is."""
+    if voice_line != VoiceLine.SOLO or piece_id not in lines:
+        lines[piece_id] = voice_line
 
 
 def plan_lines_for(
@@ -186,7 +194,7 @@ def plan_readings_for_user(
         for project_id, piece_id, voice_line in ProjectPieceCasting.objects.filter(
             participation_id__in=seat_ids, piece_id__in=piece_ids,
         ).values_list('participation__project_id', 'piece_id', 'voice_line'):
-            cast_lines[project_id][str(piece_id)] = voice_line
+            _record_cast_line(cast_lines[project_id], str(piece_id), voice_line)
 
     # A player named on the invited list is called whatever the rehearsal's
     # flag says — the list IS the call — so the rows read as if the flag were
@@ -298,7 +306,7 @@ def plan_windows_for_seats(
         for participation_id, piece_id, voice_line in ProjectPieceCasting.objects.filter(
             participation_id__in=seat_ids, piece_id__in=piece_ids,
         ).values_list('participation_id', 'piece_id', 'voice_line'):
-            cast_lines.setdefault(participation_id, {})[str(piece_id)] = voice_line
+            _record_cast_line(cast_lines.setdefault(participation_id, {}), str(piece_id), voice_line)
 
     # A player named on the invited list is called whatever the flag says —
     # the same rule the page reads by, resolved here for the whole call.

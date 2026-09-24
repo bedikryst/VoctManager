@@ -21,6 +21,7 @@ from archive.services.voice_scope import requirements_for_edition, tracks_for_ed
 from core.voice_labels import collapse_voice_labels
 from roster.cast_order import casting_sort_key
 from roster.domain.liturgy import ProgramItemPresentation, build_program_presentation
+from roster.domain.solo_duties import SoloDuty, choral_castings, solo_duties
 from roster.models import (
     Participation,
     PieceReadiness,
@@ -206,6 +207,27 @@ class CastingSnippetSerializer(serializers.ModelSerializer):
         return my_artist_id is not None and obj.participation.artist_id == my_artist_id
 
 
+def _solo_duty_snapshot(duty: SoloDuty, my_artist_id: uuid.UUID | None) -> dict[str, Any]:
+    """One solo duty as the songbook reads it. A legacy row carries no label —
+    the client names it "Solo" rather than inventing a passage."""
+    participation = duty.participation
+    return {
+        'id': str(duty.id),
+        'is_legacy': duty.is_legacy,
+        'label': duty.label,
+        'score_reference': duty.score_reference,
+        'artist_id': str(participation.artist_id) if participation else None,
+        'artist_name': duty.artist_name,
+        'notes': duty.notes,
+        'gives_pitch': duty.gives_pitch,
+        'is_me': (
+            participation is not None
+            and my_artist_id is not None
+            and participation.artist_id == my_artist_id
+        ),
+    }
+
+
 class PieceMaterialsSerializer(serializers.Serializer):
     """
     Context-aware read-only serializer for a Piece in the materials tree.
@@ -213,6 +235,7 @@ class PieceMaterialsSerializer(serializers.Serializer):
     Avoids N+1 by reading exclusively from pre-fetched to_attr lists:
       piece.prefetched_tracks       — set by get_artist_materials_queryset()
       piece.scope_castings          — set by get_artist_materials_queryset()
+      piece.scope_solos             — set by get_artist_materials_queryset()
       piece.prefetched_translations — set by get_artist_materials_queryset()
       piece.prefetched_recordings   — set by get_artist_materials_queryset()
       piece.prefetched_program_notes — set by get_artist_materials_queryset()
@@ -259,13 +282,30 @@ class PieceMaterialsSerializer(serializers.Serializer):
         # conductor's, which no SQL clause expresses. Unsorted, the singer's
         # divisi tab listed the lines themselves in whatever order the rows came
         # back in.
-        project_castings = sorted(
+        all_castings = sorted(
             (c for c in scope_castings if c.participation.project_id == project_id),
             key=casting_sort_key,
         )
+        # The divisi lists choir seats; solos — named positions and the legacy
+        # SOLO rows alike — travel as their own list beside it.
+        project_castings = choral_castings(all_castings)
+        project_solos = [
+            solo for solo in getattr(piece, 'scope_solos', [])
+            if solo.project_id == project_id
+        ]
+        duties = solo_duties(project_solos, all_castings)
+        # `my_casting` is the singer's CHOIR part, the one their practice track
+        # follows. A soloist with no choir part has none — never a synthetic
+        # SOLO line that would pick a solo track as their own.
         my_casting: ProjectPieceCasting | None = next(
-            (c for c in my_piece_castings if c.piece_id == piece.pk), None
+            (
+                c for c in choral_castings(my_piece_castings)
+                if c.piece_id == piece.pk
+            ),
+            None,
         )
+        my_artist_id: uuid.UUID | None = self.context.get('artist_id')
+        solo_snapshots = [_solo_duty_snapshot(duty, my_artist_id) for duty in duties]
 
         # Once a project is completed/cancelled the chorister keeps the reference
         # passport (lyrics, IPA, recordings) but loses the rehearsal materials —
@@ -275,7 +315,7 @@ class PieceMaterialsSerializer(serializers.Serializer):
         # the badge is a fact about the item and reaches every reader, the
         # withholding is a fact about the reader and only ever refuses a
         # non-player. One gate for editions and tracks, as `materials_locked`.
-        is_instrumental = castings_are_instrumental(project_castings)
+        is_instrumental = castings_are_instrumental(all_castings, project_solos)
         materials_withheld = is_instrumental and not self.context.get(
             'reader_sees_instrumental', False,
         )
@@ -332,6 +372,8 @@ class PieceMaterialsSerializer(serializers.Serializer):
                 my_casting,
                 context=child_context,
             ).data if my_casting else None,
+            'solos': solo_snapshots,
+            'my_solos': [snapshot for snapshot in solo_snapshots if snapshot['is_me']],
             'my_readiness': (
                 None
                 if my_readiness_map is None

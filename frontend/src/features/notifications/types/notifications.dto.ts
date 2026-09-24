@@ -321,7 +321,23 @@ export interface PieceCastingMetadata extends EventMomentMetadata {
   project_id?: string;
   project_name?: string;
   event?: CastingChangeEvent;
+  /**
+   * A solo save records one change under the field `solo_assignments`, whose
+   * `old`/`new` are JSON lists of the reader's solo duties — read through
+   * `soloChangePhrases`, never shown as they are.
+   */
   changes?: FieldChange[];
+  /** After a solo save: every solo the reader holds on the piece, in order. */
+  solo_assignments?: SoloDutyMetadata[];
+  /** After a solo save: the reader's choir line (a CODE), absent for a soloist. */
+  choir_voice_line?: string | null;
+}
+
+/** One named solo as a notification names it — a label, never a code. */
+export interface SoloDutyMetadata {
+  id: string;
+  label: string;
+  score_reference?: string;
 }
 
 export interface MaterialUploadedMetadata {

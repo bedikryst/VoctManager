@@ -168,6 +168,39 @@ export interface PieceCastingBoardsDTO {
   boards: PieceBoardDTO[];
 }
 
+/**
+ * One named solo position as the editor sends it. `id` is present once the
+ * position is saved and survives renames and reordering; `participation` null
+ * leaves the position open.
+ */
+export interface SoloAssignmentRowDTO {
+  id?: string;
+  label: string;
+  score_reference: string;
+  participation: string | null;
+  notes: string;
+  gives_pitch: boolean;
+  position: number;
+}
+
+/**
+ * Every named solo of one piece, sent as one declarative write: positions the
+ * payload omits are removed. It never touches the piece's choral seats.
+ */
+export interface PieceSoloAssignmentsDTO {
+  project: string;
+  piece: string;
+  solo_assignments: SoloAssignmentRowDTO[];
+}
+
+/** Gives one legacy `SOLO` row a name, carrying its performer, notes and pitch. */
+export interface ConvertLegacySoloDTO {
+  casting: string;
+  label: string;
+  score_reference: string;
+  position: number;
+}
+
 export interface AttendanceCreateDTO {
   rehearsal: string;
   participation: string;

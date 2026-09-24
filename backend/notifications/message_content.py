@@ -23,6 +23,7 @@
 """
 from __future__ import annotations
 
+import json
 import logging
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
@@ -38,6 +39,7 @@ from core.voice_labels import (
     voice_line_label,
 )
 
+from .dtos import SOLO_CHANGE_FIELD
 from .models import (
     AnnouncementKind,
     AnnouncementSubject,
@@ -405,6 +407,7 @@ def _change_field_label(field_key: str) -> str:
         "now_mandatory": _("Now mandatory"),
         "now_optional": _("Now optional"),
         "voice_line": _("Voice part"),
+        SOLO_CHANGE_FIELD: _("Solos"),
         "gives_pitch": _("Starting pitch"),
         "notes": _("Part note"),
         "run_sheet": _("Day schedule"),
@@ -466,10 +469,68 @@ def _change_value(field_key: str, value: Any, scope: Iterable[str] = ()) -> Any:
     return value
 
 
+def _solo_duties(raw: Any) -> list[dict[str, Any]]:
+    """One side of a solo change, parsed. Unreadable input is an empty list, so
+    a malformed row renders as a bare label and never as raw JSON."""
+    if not raw:
+        return []
+    try:
+        parsed = json.loads(str(raw))
+    except (TypeError, ValueError):
+        return []
+    if not isinstance(parsed, list):
+        return []
+    return [duty for duty in parsed if isinstance(duty, dict)]
+
+
+def _solo_display(duty: Mapping[str, Any]) -> str:
+    """A solo as the reader knows it: the conductor's name for the passage and,
+    when given, its place in the score. A legacy solo has no name and reads
+    as "Solo" — its passage was never recorded."""
+    label = str(duty.get("label") or "").strip() or str(VoiceLine.SOLO.label)
+    reference = str(duty.get("score_reference") or "").strip()
+    return f"{label} ({reference})" if reference else label
+
+
+def _solo_change_phrases(old: Any, new: Any) -> list[str]:
+    """What moved in the reader's solos, one phrase per passage: given, taken
+    away, renamed or re-placed in the score, or with a changed note or pitch
+    duty. Identity is the position's id, so a renamed passage is one change."""
+    before = {str(duty.get("id")): duty for duty in _solo_duties(old)}
+    after = {str(duty.get("id")): duty for duty in _solo_duties(new)}
+    phrases: list[str] = []
+    for key, duty in after.items():
+        previous = before.get(key)
+        if previous is None:
+            phrases.append(_("new: %(solo)s") % {"solo": _solo_display(duty)})
+        elif _solo_display(previous) != _solo_display(duty):
+            phrases.append(f"{_solo_display(previous)} → {_solo_display(duty)}")
+        elif previous != duty:
+            phrases.append(_("updated: %(solo)s") % {"solo": _solo_display(duty)})
+    phrases += [
+        _("removed: %(solo)s") % {"solo": _solo_display(duty)}
+        for key, duty in before.items()
+        if key not in after
+    ]
+    return phrases
+
+
+def _is_solo_change(changes: Any) -> bool:
+    return isinstance(changes, (list, tuple)) and any(
+        isinstance(change, dict) and change.get("field") == SOLO_CHANGE_FIELD
+        for change in changes
+    )
+
+
 def _render_change(change: dict[str, Any], scope: Iterable[str] = ()) -> str:
     """One change as a compact localized phrase: 'Venue: A → B' / 'Conductor'."""
     field_key = str(change.get("field", ""))
     label = _change_field_label(field_key)
+    if field_key == SOLO_CHANGE_FIELD:
+        phrases = _solo_change_phrases(change.get("old"), change.get("new"))
+        if not phrases:
+            return label
+        return _("%(label)s: %(new)s") % {"label": label, "new": "; ".join(phrases)}
     old = _change_value(field_key, change.get("old"), scope)
     new = _change_value(field_key, change.get("new"), scope)
     if old and new:
@@ -504,6 +565,10 @@ def _change_rows(changes: Any, scope: Iterable[str] = ()) -> tuple[DetailRow, ..
             continue
         field_key = str(c.get("field", ""))
         label = _change_field_label(field_key)
+        if field_key == SOLO_CHANGE_FIELD:
+            phrases = _solo_change_phrases(c.get("old"), c.get("new"))
+            rows.append(DetailRow(label=label, value="; ".join(phrases) or "—"))
+            continue
         old = _change_value(field_key, c.get("old"), scope)
         new = _change_value(field_key, c.get("new"), scope)
         value = f"{old} → {new}" if old and new else (new or old or "—")
@@ -760,6 +825,10 @@ def _briefing_casting_items(kind: str, m: dict[str, Any]) -> list[BriefingItem]:
     voice = _voice_line_label(m.get("voice_line"), scope)
     if kind == AnnouncementKind.CREATED:
         return [BriefingItem(primary=piece, secondary=voice, detail=_("A new part for you."))]
+    # A solo change carries no voice line of its own: it sits beside the part,
+    # so the item is headed "Solos" rather than borrowing the part's name.
+    if not voice and _is_solo_change(m.get("changes")):
+        voice = _("Solos")
     return [
         BriefingItem(
             primary=piece,
@@ -1549,6 +1618,9 @@ def _compose_piece_casting_updated(ctx: MessageContext) -> MessageContent:
             cta_label=_("Open dashboard"),
         )
 
+    if _is_solo_change(m.get("changes")):
+        return _compose_solo_update(ctx, piece, score_url)
+
     project = m.get("project_name")
     scope = _voice_scope(m)
     summary = _summarize_changes(m.get("changes"), scope=scope)
@@ -1570,6 +1642,51 @@ def _compose_piece_casting_updated(ctx: MessageContext) -> MessageContent:
             "Your part in %(piece)s is not what it was. Open the score and check the"
             " new line before the next rehearsal."
         ) % {"piece": piece},
+        details=tuple(details),
+        cta_label=_("Open the score"),
+    )
+
+
+def _compose_solo_update(ctx: MessageContext, piece: str, score_url: str) -> MessageContent:
+    """The reader's solos on one piece changed. What moved leads; the solos they
+    hold now follow, beside their choir part — a solo is added to that part and
+    the message must not read as if the part itself had moved."""
+    m = ctx.metadata
+    project = m.get("project_name")
+    summary = _summarize_changes(m.get("changes"))
+    solos = [
+        _solo_display(duty)
+        for duty in (m.get("solo_assignments") or ())
+        if isinstance(duty, Mapping)
+    ]
+    details = list(_change_rows(m.get("changes")))
+    details.append(_row(_("Your solos"), ", ".join(solos) if solos else _("none")))
+    choir_line = _voice_line_label(m.get("choir_voice_line"), _voice_scope(m))
+    if choir_line:
+        details.append(_row(_("Your part"), choir_line))
+    if project:
+        details.append(_row(_("Project"), project))
+    return MessageContent(
+        notification_type=ctx.notification_type,
+        level=ctx.level,
+        title=_("Solo update — %(piece)s") % {"piece": piece},
+        body=summary or _("Open the score to see your solos."),
+        url_path=score_url,
+        tag=f"casting-solos:{m.get('piece_id') or piece}",
+        actions=(_open_action(score_url),),
+        subject=_("Solo update — %(piece)s") % {"piece": piece},
+        eyebrow=_("Casting"),
+        email_lead=(
+            _(
+                "The solos you sing in %(piece)s have changed. Open the score and find"
+                " the passages before the next rehearsal."
+            ) % {"piece": piece}
+            if solos
+            else _(
+                "You no longer have a solo in %(piece)s. Anything else you sing in it"
+                " stays as it was."
+            ) % {"piece": piece}
+        ),
         details=tuple(details),
         cta_label=_("Open the score"),
     )

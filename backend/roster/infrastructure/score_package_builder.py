@@ -54,6 +54,7 @@ from roster.score_package_config import (
     movement_titles,
     resolve_card_config,
     resolve_item_edition,
+    resolve_item_performers,
     resolve_item_translation,
     resolve_page_window,
     resolve_source_numbering,
@@ -415,7 +416,7 @@ def _card_context(
         if duration:
             meta.append(duration)
 
-    cast = (item.performers or "").strip() if config.shows("cast") else ""
+    cast = resolve_item_performers(item) if config.shows("cast") else ""
     movements = movement_titles(piece) if config.shows("movements") else []
 
     rows = _stanza_rows(text, translation)

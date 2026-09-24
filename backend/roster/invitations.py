@@ -28,6 +28,7 @@ from typing import Any
 from uuid import UUID
 
 from archive.services.voice_scope import voice_scope
+from core.constants import VoiceLine
 from notifications.dtos import InvitationRehearsalMetadata, ProjectInvitationMetadata
 from notifications.time_metadata import build_event_time_metadata
 
@@ -37,6 +38,7 @@ from .models import (
     ProgramItem,
     Project,
     ProjectPieceCasting,
+    ProjectSoloAssignment,
     Rehearsal,
     VoiceType,
 )
@@ -138,6 +140,16 @@ def build_invitation_context(project: Project) -> ProjectInvitationContext:
     ):
         if voice_line and voice_line not in voice_lines[participation_id]:
             voice_lines[participation_id].append(voice_line)
+    # A named solo reads as one "Solo" beside the singer's choir parts, however
+    # many passages they hold — the invitation names parts, not passages, and
+    # the passages reach them in the songbook.
+    for participation_id in (
+        ProjectSoloAssignment.objects.filter(project=project, participation__isnull=False)
+        .values_list("participation_id", flat=True)
+        .distinct()
+    ):
+        if VoiceLine.SOLO not in voice_lines[participation_id]:
+            voice_lines[participation_id].append(VoiceLine.SOLO.value)
 
     return ProjectInvitationContext(
         program=program,

@@ -13,6 +13,7 @@ import { useState, useCallback } from "react";
 
 import { ScheduleService } from "../api/schedule.service";
 import {
+  useScheduleCastSolos,
   useSchedulePieceCastings,
   useScheduleProgramItems,
 } from "../api/schedule.queries";
@@ -35,6 +36,11 @@ export const useTimelineProjectCard = (
     );
   const { data: castings = [], isLoading: isCastingsLoading } =
     useSchedulePieceCastings(projectId, expandedPieceId, !!expandedPieceId);
+  const { data: solos = [] } = useScheduleCastSolos(
+    projectId,
+    expandedPieceId,
+    !!expandedPieceId,
+  );
 
   const fetchDaySheetBlob = useCallback(
     () => ScheduleService.exportDaySheet(projectId),
@@ -73,6 +79,7 @@ export const useTimelineProjectCard = (
     programItems,
     isProgramLoading,
     castings,
+    solos,
     isCastingsLoading,
     isDaySheetPreviewOpen,
     fetchDaySheetBlob,

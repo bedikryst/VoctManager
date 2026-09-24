@@ -126,6 +126,94 @@ export const formatEventMoment = (
 export const changeLabel = (t: TFunc, fieldKey: string): string =>
   t(`notifications.changes.${fieldKey}`, fieldKey.replace(/_/g, " "));
 
+/** The change field a solo save records; its values are JSON duty lists. */
+export const SOLO_CHANGE_FIELD = "solo_assignments";
+
+interface SoloDuty {
+  id: string;
+  label: string;
+  score_reference: string;
+  notes: string;
+  gives_pitch: boolean;
+}
+
+/** One side of a solo change. Unreadable input is no duties, never raw JSON. */
+const parseSoloDuties = (raw: unknown): SoloDuty[] => {
+  if (typeof raw !== "string" || !raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (duty): duty is Record<string, unknown> =>
+          Boolean(duty) && typeof duty === "object",
+      )
+      .map((duty) => ({
+        id: String(duty.id ?? ""),
+        label: typeof duty.label === "string" ? duty.label : "",
+        score_reference:
+          typeof duty.score_reference === "string" ? duty.score_reference : "",
+        notes: typeof duty.notes === "string" ? duty.notes : "",
+        gives_pitch: Boolean(duty.gives_pitch),
+      }));
+  } catch {
+    return [];
+  }
+};
+
+/** A solo as the reader knows it; a legacy one has no name and reads "Solo". */
+export const soloDisplay = (
+  t: TFunc,
+  duty: { label?: string; score_reference?: string },
+): string => {
+  const label = duty.label?.trim() || t("notifications.changes.solo.unnamed", "Solo");
+  const reference = duty.score_reference?.trim();
+  return reference ? `${label} (${reference})` : label;
+};
+
+/**
+ * What moved in the reader's solos, one phrase per passage — the same reading
+ * the server's `_solo_change_phrases` gives the email and the push.
+ */
+export const soloChangePhrases = (
+  t: TFunc,
+  old: unknown,
+  next: unknown,
+): string[] => {
+  const before = new Map(parseSoloDuties(old).map((duty) => [duty.id, duty]));
+  const after = new Map(parseSoloDuties(next).map((duty) => [duty.id, duty]));
+  const phrases: string[] = [];
+  after.forEach((duty, id) => {
+    const previous = before.get(id);
+    if (!previous) {
+      phrases.push(t("notifications.changes.solo.added", { solo: soloDisplay(t, duty) }));
+    } else if (soloDisplay(t, previous) !== soloDisplay(t, duty)) {
+      phrases.push(`${soloDisplay(t, previous)} → ${soloDisplay(t, duty)}`);
+    } else if (
+      previous.notes !== duty.notes ||
+      previous.gives_pitch !== duty.gives_pitch
+    ) {
+      phrases.push(t("notifications.changes.solo.updated", { solo: soloDisplay(t, duty) }));
+    }
+  });
+  before.forEach((duty, id) => {
+    if (!after.has(id)) {
+      phrases.push(t("notifications.changes.solo.removed", { solo: soloDisplay(t, duty) }));
+    }
+  });
+  return phrases;
+};
+
+/** Whether a casting notice is about the reader's solos rather than their part. */
+export const isSoloChange = (changes: unknown): boolean =>
+  Array.isArray(changes) &&
+  changes.some(
+    (change) =>
+      Boolean(change) &&
+      typeof change === "object" &&
+      (change as { field?: unknown }).field === SOLO_CHANGE_FIELD,
+  );
+
 /**
  * Renders one change entry as a compact localized chip label. Tolerant of loose
  * or legacy metadata shapes — a change persisted before the structured-codes
@@ -168,14 +256,26 @@ export const renderChange = (
 };
 
 /** Maps a (possibly legacy/loose) `changes` payload to chip labels, dropping any
- *  entry that can't be rendered. Never assumes an array of structured objects. */
+ *  entry that can't be rendered. Never assumes an array of structured objects.
+ *  A solo change becomes one chip per passage that moved. */
 export const renderChanges = (
   t: TFunc,
   changes: unknown,
   scope: readonly string[] = [],
 ): string[] =>
   Array.isArray(changes)
-    ? changes.map((change) => renderChange(t, change, scope)).filter(Boolean)
+    ? changes
+        .flatMap((change) => {
+          const field =
+            change && typeof change === "object"
+              ? (change as { field?: unknown }).field
+              : undefined;
+          if (field !== SOLO_CHANGE_FIELD) return [renderChange(t, change, scope)];
+          const { old, new: next } = change as { old?: unknown; new?: unknown };
+          const phrases = soloChangePhrases(t, old, next);
+          return phrases.length > 0 ? phrases : [changeLabel(t, SOLO_CHANGE_FIELD)];
+        })
+        .filter(Boolean)
     : [];
 
 /** The naming scope a metadata payload carries. Empty on rows written before
@@ -232,7 +332,10 @@ export const briefingItemSummary = (
       typeof m.voice_line === "string" ? m.voice_line : undefined,
       scope,
     );
-    return compactMetaLine(piece, voice, changes) ?? "";
+    // A solo notice has no line of its own; it is headed "Solos" instead.
+    const heading =
+      voice || (isSoloChange(m.changes) ? changeLabel(t, SOLO_CHANGE_FIELD) : "");
+    return compactMetaLine(piece, heading, changes) ?? "";
   }
 
   if (item.subject_type === "REHEARSAL") {

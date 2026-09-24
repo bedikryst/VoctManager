@@ -96,6 +96,22 @@ export const useSchedulePieceCastings = (
   });
 };
 
+/** Keyed under the piece's castings, so every casting write refreshes it too. */
+export const useScheduleCastSolos = (
+  projectId: string | number,
+  pieceId: string | null,
+  enabled: boolean,
+) => {
+  return useQuery({
+    queryKey: [
+      ...projectKeys.pieceCastings.byProjectPiece(projectId, pieceId ?? "pending"),
+      "solos",
+    ],
+    queryFn: () => ScheduleService.getCastSolos(projectId, pieceId),
+    enabled: enabled && !!pieceId,
+  });
+};
+
 /**
  * Optimistic RSVP: patches the artist's attendance straight onto the matching
  * rehearsal in every schedule-dashboard cache, so the card answers the tap with

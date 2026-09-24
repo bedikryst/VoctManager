@@ -340,6 +340,21 @@ class RehearsalDebriefPostedMetadata(EventMomentMetadata):
 
 
 # --- Casting & Repertoire ---
+# The change field a solo save records. Its `old`/`new` are JSON lists of the
+# reader's solo duties on the piece (id, label, score_reference, notes,
+# gives_pitch), sorted by id so the queue's earliest-old/latest-new fold compares
+# like with like; renderers read them as duties, never as voice-line codes.
+SOLO_CHANGE_FIELD = "solo_assignments"
+
+
+class SoloDutyMetadata(EnterpriseBaseDTO):
+    """One named solo as a message names it: the conductor's label for the
+    passage and its place in the score. A name, never a code to localize."""
+    id: UUID
+    label: str
+    score_reference: str = ""
+
+
 class PieceCastingMetadata(EventMomentMetadata):
     piece_id: UUID | None = None
     piece_title: str
@@ -362,6 +377,13 @@ class PieceCastingMetadata(EventMomentMetadata):
     event: str = "updated"  # "updated" | "removed"
     message: str | None = None
     changes: tuple[FieldChangeMetadata, ...] | None = None
+    # Set on a solo save only: every solo the reader holds on the piece after
+    # it, in the conductor's order — empty when the last one was taken away —
+    # and their choir line beside it (a CODE, or None for a soloist with no
+    # choir part). `voice_line` stays empty there, so no surface mistakes the
+    # solo news for a change of the reader's choir part.
+    solo_assignments: tuple[SoloDutyMetadata, ...] | None = None
+    choir_voice_line: str | None = None
 
 # --- HR & Logistics ---
 class CrewAssignedMetadata(EnterpriseBaseDTO):
