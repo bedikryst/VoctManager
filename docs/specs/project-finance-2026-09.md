@@ -364,7 +364,9 @@ absent rather than letting it fail with a 403.
 | `POST projects/{project_id}/budget/{approve,reopen,close}/` | Stage 4; reopen needs a reason. |
 | `attachments/` upload · `attachments/{id}/` download | Stage 4. |
 | `funding-sources/` CRUD · `projects/{project_id}/fundings/` CRUD | Stage 5; allocations are written with their line or item. |
-| `GET overview/` | Portfolio: per-project rollups (server-aggregated), payables (paginated), sources with utilisation, upcoming deadlines. |
+| `GET overview/` | Portfolio: per-project rollups (server-aggregated), sources with utilisation and deadlines, `payables_summary` (`count`, `total`, `overdue_count`, `overdue_total`, `due_soon_count`, `due_soon_total`; "due soon" = due within 14 days, today included; DB aggregates) and the first page of payables (`?limit=&offset=`). |
+| `GET payables/` | The workspace's payables list: `?status=unpaid\|paid` (default `unpaid`), `project`, `kind` (`FEE`\|`EXPENSE`), `paid_from`/`paid_to` (paid only), `ordering` (`due_on`, `amount`, `payee`, `project`, and `paid_on` for paid; `-` reverses), `limit` (default 50, max 200) and `offset`. Answers `{count, limit, offset, total_amount, results}`; `total_amount` sums the whole filtered set. Rows are the overview's payable rows plus `paid_on`. An unknown or meaningless parameter is a 400. No project rollups. |
+| `POST payables/pay/` | `{ids, paid_on}` across projects and kinds, all or nothing: one transaction, budgets locked in project-id order, `fees/pay` run per (project, kind). A closed budget answers `budget_locked` with `params.project_ids`; otherwise every refused id across every project comes back in one `payment_refused` (reasons as `fees/pay`, plus `unknown`). Answers `{count, project_ids}`. |
 | `GET projects/{project_id}/export/{kosztorys-plan,kosztorys-actual,ledger}.csv` | Stage 6 (ledger CSV ships in Stage 2 as the accountant export). |
 | `GET projects/{project_id}/report.pdf?audience=patron\|board[&source=]` | Stage 6. |
 | `GET projects/{project_id}/document-notes.pdf[?source=]` | Stage 6. |
@@ -437,13 +439,20 @@ The tab keeps its name, **Budżet** — now it is one. Its body gets a routed su
 
 ### 8.3 Global — `/panel/finance` (replaces `/panel/contracts`; the old path redirects)
 
+The global page is now a workspace of its own, taking over the screen; its layout, sections and
+stages are specified in `finance-workspace-2026-09.md`. The money it shows:
+
+- **Przegląd** — `payables_summary` from `GET overview/` (owed, overdue, due within 14 days) and the
+  next payables, beside source deadlines and projects with work to do.
+- **Do zapłaty** — `GET payables/`: what is owed or what was paid, filtered by project, kind and paid
+  date, sorted and paged by the server, with the sum of the whole filtered set. Selected rows are
+  paid in one act across projects (`POST payables/pay/`); reverting a payment stays in the hub.
+- **Źródła** — sources with awarded / allocated / charged / remaining and report deadlines; a
+  source's page lists every cost charged to it across projects, because a grant is settled per
+  agreement, not per concert.
 - **Projekty** — one row per project: cost, paid, outstanding, warning count, budget status; opens
-  the project's budget. No per-project ledger here any more: that lives only in the hub.
-- **Do zapłaty** — payables across projects (server-paginated), with due dates; "Eksport dla biura"
-  (ledger CSV for a date range).
-- **Źródła finansowania** (Stage 5) — sources with awarded / allocated / charged / remaining and
-  report deadlines; a source's page lists every cost charged to it across projects, because a grant
-  is settled per agreement, not per concert.
+  the project's budget. No per-project ledger here: that lives only in the hub.
+- **Eksporty** — "Księga dla biura" (ledger CSV for a date range) and a project's documents.
 
 ### 8.4 Client rules
 

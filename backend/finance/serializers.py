@@ -310,7 +310,8 @@ class ProjectRollupSerializer(serializers.Serializer):
 
 
 class PayableSerializer(serializers.Serializer):
-    """A fee names its payee; an expense its vendor and what it paid for."""
+    """A fee names its payee; an expense its vendor and what it paid for.
+    `paid_on` is set on the paid list only."""
 
     cost_item_id = serializers.UUIDField(source="pk")
     kind = serializers.CharField()
@@ -326,6 +327,27 @@ class PayableSerializer(serializers.Serializer):
     cost_amount = _amount(allow_null=True)
     incurred_on = serializers.DateField()
     due_on = serializers.DateField(allow_null=True)
+    paid_on = serializers.DateField(allow_null=True)
+
+
+class PayablesPageSerializer(serializers.Serializer):
+    """`GET payables/`: one page, and the count and sum of the whole filtered
+    set, so a footer never sums only what is on screen."""
+
+    count = serializers.IntegerField()
+    limit = serializers.IntegerField()
+    offset = serializers.IntegerField()
+    total_amount = _amount()
+    results = PayableSerializer(many=True)
+
+
+class PayablesSummarySerializer(serializers.Serializer):
+    count = serializers.IntegerField()
+    total = _amount()
+    overdue_count = serializers.IntegerField()
+    overdue_total = _amount()
+    due_soon_count = serializers.IntegerField()
+    due_soon_total = _amount()
 
 
 class SourceProjectSerializer(serializers.Serializer):

@@ -46,6 +46,7 @@ from ..rules import (
     DOCUMENT_DUE_WINDOW_DAYS,
     FINANCE_TIMEZONE,
     PAYABLE_CONTRACT_FORMS,
+    PAYABLE_DUE_SOON_DAYS,
     VOLUNTEER_INSURANCE_MAX_DAYS,
     ZERO,
     PlanEntry,
@@ -504,11 +505,8 @@ class BudgetService:
         orphan is not a payable, and an unpaid one is work on its project, not
         a debt)."""
         return (
-            CostItem.objects.filter(
-                models.Q(kind=CostKind.FEE, contract_amount__gt=0) | models.Q(kind=CostKind.EXPENSE),
-                paid_on__isnull=True,
-                budget__project__is_deleted=False,
-            )
+            _money_costs()
+            .filter(paid_on__isnull=True)
             .filter(
                 models.Q(participation__isnull=True)
                 | (
@@ -516,9 +514,49 @@ class BudgetService:
                     & ~models.Q(participation__status=Participation.Status.DECLINED)
                 )
             )
-            .select_related('budget__project')
             .order_by(models.F('due_on').asc(nulls_last=True), 'incurred_on', 'payee_name', 'vendor_name')
         )
+
+    @staticmethod
+    def paid_costs() -> models.QuerySet[CostItem]:
+        """What the foundation has paid, across every project, newest payment
+        first. A paid cost stays counted whatever became of its seat, so no
+        seat filter applies here."""
+        return _money_costs().filter(paid_on__isnull=False).order_by('-paid_on', 'payee_name', 'vendor_name')
+
+    @staticmethod
+    def payables_summary(today: date) -> dict[str, Any]:
+        """The payables' headline figures, summed by the database: everything
+        owed, what is past its due date, and what falls due within
+        ``PAYABLE_DUE_SOON_DAYS`` from ``today`` (today included, as it is not
+        yet overdue). A payable with no due date is in the total only."""
+        overdue = models.Q(due_on__lt=today)
+        due_soon = models.Q(due_on__gte=today, due_on__lte=today + timedelta(days=PAYABLE_DUE_SOON_DAYS))
+        figures = BudgetService.payables().order_by().aggregate(
+            count=models.Count('pk'),
+            total=models.Sum('cost_amount'),
+            overdue_count=models.Count('pk', filter=overdue),
+            overdue_total=models.Sum('cost_amount', filter=overdue),
+            due_soon_count=models.Count('pk', filter=due_soon),
+            due_soon_total=models.Sum('cost_amount', filter=due_soon),
+        )
+        return {
+            'count': figures['count'],
+            'total': money(figures['total'] or ZERO),
+            'overdue_count': figures['overdue_count'],
+            'overdue_total': money(figures['overdue_total'] or ZERO),
+            'due_soon_count': figures['due_soon_count'],
+            'due_soon_total': money(figures['due_soon_total'] or ZERO),
+        }
+
+
+def _money_costs() -> models.QuerySet[CostItem]:
+    """The costs that are money, on a live project: fees priced above zero and
+    every expense. A volunteer's fee is valued, never paid."""
+    return CostItem.objects.filter(
+        models.Q(kind=CostKind.FEE, contract_amount__gt=0) | models.Q(kind=CostKind.EXPENSE),
+        budget__project__is_deleted=False,
+    ).select_related('budget__project')
 
 
 def reconcile_line_change(budget: ProjectBudget, item: CostItem, changed: dict[str, Any]) -> None:
