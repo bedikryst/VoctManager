@@ -17,11 +17,20 @@
  * of facts under it, the figure that matters on the right, and an optional
  * action beside the link.
  *
+ * Selection is optional and controlled: the caller owns which rows are
+ * selected (they may be rows of other pages) and the table draws a checkbox
+ * before each row and one in the header for the rows on screen. The checkbox
+ * sits in a `<label>` that widens its target; both are controls of their own,
+ * so a click on them never reaches the row's link, and the toggle listens to
+ * the input's `change` alone — the click the label forwards to the input
+ * changes it once.
+ *
  * The table never sorts or filters by itself. Sort state is controlled — the
  * caller owns it, usually in the URL through `useSearchParamSort` — and
  * `sortRows` orders rows in memory for the lists that arrive whole; a paged
- * list sends the same key to its server instead. Deliberately absent: row
- * virtualisation, column resizing, a column picker.
+ * list marks its columns `sortable` and sends the same key to its server
+ * instead. Deliberately absent: row virtualisation, column resizing, a column
+ * picker.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/DataTable
  */
@@ -32,6 +41,7 @@ import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { Checkbox } from "@/shared/ui/primitives/Checkbox";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 
 export type SortDirection = "asc" | "desc";
@@ -52,6 +62,8 @@ export interface DataTableColumn<T> {
   readonly numeric?: boolean;
   /** Makes the header a sort control. `null` sorts last in either direction. */
   readonly sortValue?: (row: T) => string | number | null;
+  /** Makes the header a sort control for a list its server sorts, with no `sortValue`. */
+  readonly sortable?: boolean;
   /** What the first click on the header sorts by; figures usually start high. */
   readonly firstDirection?: SortDirection;
   /** Width and other layout for the column's cells, header included. */
@@ -77,6 +89,17 @@ export interface DataTableEmpty {
   readonly description?: string;
 }
 
+export interface DataTableSelection<T> {
+  readonly isSelected: (row: T) => boolean;
+  readonly onToggle: (row: T) => void;
+  /** The header's checkbox: select every row on screen, or clear them all. */
+  readonly onToggleRows: (rows: readonly T[], select: boolean) => void;
+  /** Each row checkbox's accessible name. */
+  readonly rowLabel: (row: T) => string;
+  /** The header checkbox's accessible name. */
+  readonly allLabel: string;
+}
+
 export interface DataTableProps<T> {
   /** The table's accessible name. */
   readonly label: string;
@@ -88,13 +111,18 @@ export interface DataTableProps<T> {
   readonly empty: DataTableEmpty;
   readonly sort?: DataTableSort | null;
   readonly onSortChange?: (sort: DataTableSort) => void;
+  readonly selection?: DataTableSelection<T>;
   /** Below the rows: a count, a total, a pager. */
   readonly footer?: React.ReactNode;
   readonly className?: string;
 }
 
-/** What inside a row answers a click for itself. */
-const OWN_CONTROL = "a, button, input, select, textarea, label, [role='button']";
+/**
+ * What inside a row answers a click for itself. The selection cell is in the
+ * list whole: a click that misses its checkbox is a near miss, not a request
+ * to leave the page.
+ */
+const OWN_CONTROL = "a, button, input, select, textarea, label, [role='button'], [data-row-select]";
 
 const LINK_FOCUS =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold/40";
@@ -182,7 +210,7 @@ function HeaderCell<T>({
   readonly onSortChange?: (sort: DataTableSort) => void;
 }): React.JSX.Element {
   const active = sort?.key === column.id ? sort.direction : null;
-  const sortable = Boolean(column.sortValue && onSortChange);
+  const sortable = Boolean((column.sortValue || column.sortable) && onSortChange);
   const label = (
     <Eyebrow
       as="span"
@@ -228,15 +256,66 @@ function HeaderCell<T>({
   );
 }
 
+/** A checkbox inside a label that widens its target past the 16px box. */
+function SelectBox({
+  checked,
+  indeterminate = false,
+  label,
+  onChange,
+}: {
+  readonly checked: boolean;
+  readonly indeterminate?: boolean;
+  readonly label: string;
+  readonly onChange: () => void;
+}): React.JSX.Element {
+  return (
+    <label className="-m-2 inline-flex cursor-pointer p-2">
+      <Checkbox
+        checked={checked}
+        indeterminate={indeterminate}
+        onChange={onChange}
+        aria-label={label}
+      />
+    </label>
+  );
+}
+
+function SelectAllCell<T>({
+  rows,
+  selection,
+}: {
+  readonly rows: readonly T[];
+  readonly selection: DataTableSelection<T>;
+}): React.JSX.Element {
+  const count = rows.filter(selection.isSelected).length;
+  const all = count > 0 && count === rows.length;
+  return (
+    <th
+      scope="col"
+      className="sticky top-0 z-10 w-10 border-b border-hairline bg-ethereal-alabaster py-2 pl-5 pr-1 text-left font-normal"
+    >
+      <SelectBox
+        checked={all}
+        indeterminate={count > 0 && !all}
+        label={selection.allLabel}
+        onChange={() => selection.onToggleRows(rows, !all)}
+      />
+    </th>
+  );
+}
+
 function TableRow<T>({
   row,
   columns,
   link,
+  selection,
 }: {
   readonly row: T;
   readonly columns: readonly DataTableColumn<T>[];
   readonly link: DataTableRowLink;
+  readonly selection?: DataTableSelection<T>;
 }): React.JSX.Element {
+  const selected = selection?.isSelected(row) ?? false;
   const replayOnLink = (event: React.MouseEvent<HTMLTableRowElement>): void => {
     const target = event.target as HTMLElement;
     if (target.closest(OWN_CONTROL)) return;
@@ -258,8 +337,20 @@ function TableRow<T>({
   return (
     <tr
       onClick={replayOnLink}
-      className="cursor-pointer transition-colors hover:bg-ethereal-ink/3"
+      className={cn(
+        "cursor-pointer transition-colors",
+        selected ? "bg-ethereal-gold/5" : "hover:bg-ethereal-ink/3",
+      )}
     >
+      {selection && (
+        <td data-row-select="" className="w-10 cursor-default border-b border-hairline py-3 pl-5 pr-1 align-top">
+          <SelectBox
+            checked={selected}
+            label={selection.rowLabel(row)}
+            onChange={() => selection.onToggle(row)}
+          />
+        </td>
+      )}
       {columns.map((column, index) => (
         <td
           key={column.id}
@@ -297,6 +388,7 @@ export function DataTable<T>({
   empty,
   sort,
   onSortChange,
+  selection,
   footer,
   className,
 }: DataTableProps<T>): React.JSX.Element {
@@ -318,6 +410,7 @@ export function DataTable<T>({
             <table aria-label={label} className="w-full border-separate border-spacing-0 tabular-nums">
               <thead>
                 <tr>
+                  {selection && <SelectAllCell rows={rows} selection={selection} />}
                   {columns.map((column) => (
                     <HeaderCell
                       key={column.id}
@@ -330,7 +423,13 @@ export function DataTable<T>({
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <TableRow key={rowKey(row)} row={row} columns={columns} link={rowLink(row)} />
+                  <TableRow
+                    key={rowKey(row)}
+                    row={row}
+                    columns={columns}
+                    link={rowLink(row)}
+                    selection={selection}
+                  />
                 ))}
               </tbody>
             </table>
@@ -339,13 +438,27 @@ export function DataTable<T>({
           <ul aria-label={label} className="divide-y divide-hairline tabular-nums md:hidden">
             {rows.map((row) => {
               const link = rowLink(row);
+              const selected = selection?.isSelected(row) ?? false;
               return (
-                <li key={rowKey(row)} className="flex items-center gap-2 pr-3">
+                <li
+                  key={rowKey(row)}
+                  className={cn("flex items-center gap-2 pr-3", selected && "bg-ethereal-gold/5")}
+                >
+                  {selection && (
+                    <span className="shrink-0 pl-5">
+                      <SelectBox
+                        checked={selected}
+                        label={selection.rowLabel(row)}
+                        onChange={() => selection.onToggle(row)}
+                      />
+                    </span>
+                  )}
                   <Link
                     to={link.to}
                     state={link.state}
                     className={cn(
-                      "flex min-w-0 flex-1 items-start gap-4 py-3 pl-5 transition-colors hover:bg-ethereal-ink/3",
+                      "flex min-w-0 flex-1 items-start gap-4 py-3 transition-colors hover:bg-ethereal-ink/3",
+                      selection ? "pl-1" : "pl-5",
                       !mobile.action && "pr-2",
                       LINK_FOCUS,
                     )}

@@ -1849,7 +1849,8 @@
       "done_expense": "Oznaczono jako zapłacone: {{count}} poz.",
       "title_expense": "Oznacz jako zapłacone",
       "confirm_expense": "Oznacz zapłatę",
-      "note_expense": "Wpisz dzień, w którym biuro zapłaciło. Zapłaconego wydatku nie zmienisz już w kwocie ani dostawcy — cofnąć zapłatę może tylko zarząd."
+      "note_expense": "Wpisz dzień, w którym biuro zapłaciło. Zapłaconego wydatku nie zmienisz już w kwocie ani dostawcy — cofnąć zapłatę może tylko zarząd.",
+      "note_mixed": "Wpisz dzień, w którym biuro zapłaciło. Zapłaconej pozycji nie zmienisz już w kwocie — cofnąć zapłatę może tylko zarząd, w projekcie tej pozycji."
     },
     "reason": {
       "label": "Powód",
@@ -2047,13 +2048,6 @@
       "cancelled": "odwołany",
       "problems": "problemy: {{count}}",
       "work": "do zrobienia: {{count}}",
-      "payables": "Do zapłaty",
-      "payables_empty": "Fundacja nie zalega z żadną płatnością.",
-      "range": "{{first}}–{{last}} z {{total}}",
-      "previous": "Wcześniejsze",
-      "next": "Dalsze",
-      "overdue": "po terminie {{date}}",
-      "due": "termin {{date}}",
       "remaining": "Zostało",
       "charged": "Obciążono",
       "sources": "Źródła finansowania",
@@ -2111,6 +2105,43 @@
         "incurred_on": "Data kosztu",
         "paid_on": "Zapłacono",
         "amount": "Kwota"
+      },
+      "payables": {
+        "paid": "Zapłacone",
+        "status_aria": "Które płatności",
+        "due_on": "Termin",
+        "payee": "Odbiorca",
+        "title_column": "Tytuł",
+        "form": "Forma",
+        "expense": "wydatek",
+        "overdue": "po terminie",
+        "overdue_on": "po terminie {{date}}",
+        "due_on_short": "termin {{date}}",
+        "kind": "Rodzaj",
+        "kind_fee": "Honoraria",
+        "kind_expense": "Wydatki",
+        "kind_all": "Honoraria i wydatki",
+        "all_projects": "Wszystkie projekty",
+        "paid_from": "Zapłacono od",
+        "paid_to": "Zapłacono do",
+        "clear_filters": "Wyczyść filtry",
+        "select_page": "Zaznacz wszystkie na tej stronie",
+        "pay": "Oznacz zapłacone ({{count}})",
+        "visible": "{{visible}} z {{total}}",
+        "total": "razem {{amount}} PLN",
+        "previous": "Wcześniejsze",
+        "next": "Dalsze",
+        "empty": "Fundacja nie zalega z żadną płatnością.",
+        "empty_paid": "Nic jeszcze nie oznaczono jako zapłacone.",
+        "empty_filtered": "Żadna pozycja nie pasuje do filtrów.",
+        "load_error": "Nie udało się wczytać płatności.",
+        "refused": {
+          "unknown": "Odrzucone — tej pozycji już nie ma w projekcie",
+          "unpriced": "Odrzucone — pozycja nie ma stawki",
+          "volunteer": "Odrzucone — wolontariatu się nie wypłaca",
+          "already_paid": "Odrzucone — pozycja jest już zapłacona",
+          "budget_locked": "Odrzucone — budżet projektu jest zamknięty"
+        }
       }
     },
     "facts": {

@@ -1821,7 +1821,8 @@
       "done_expense": "Marked as paid: {{count}} items.",
       "title_expense": "Mark as paid",
       "confirm_expense": "Mark paid",
-      "note_expense": "Enter the day the office paid. A paid expense's amount and payee are then fixed — only the board can revert the payment."
+      "note_expense": "Enter the day the office paid. A paid expense's amount and payee are then fixed — only the board can revert the payment.",
+      "note_mixed": "Enter the day the office paid. A paid item's amount is then fixed — only the board can revert the payment, in the item's own project."
     },
     "reason": {
       "label": "Reason",
@@ -2019,13 +2020,6 @@
       "cancelled": "cancelled",
       "problems": "problems: {{count}}",
       "work": "to do: {{count}}",
-      "payables": "Still owed",
-      "payables_empty": "The foundation owes nothing.",
-      "range": "{{first}}–{{last}} of {{total}}",
-      "previous": "Earlier",
-      "next": "Later",
-      "overdue": "overdue since {{date}}",
-      "due": "due {{date}}",
       "remaining": "Remaining",
       "charged": "Charged",
       "sources": "Funding sources",
@@ -2083,6 +2077,43 @@
         "incurred_on": "Incurred",
         "paid_on": "Paid",
         "amount": "Amount"
+      },
+      "payables": {
+        "paid": "Paid",
+        "status_aria": "Which payments",
+        "due_on": "Due",
+        "payee": "Payee",
+        "title_column": "For",
+        "form": "Form",
+        "expense": "expense",
+        "overdue": "overdue",
+        "overdue_on": "overdue since {{date}}",
+        "due_on_short": "due {{date}}",
+        "kind": "Kind",
+        "kind_fee": "Fees",
+        "kind_expense": "Expenses",
+        "kind_all": "Fees and expenses",
+        "all_projects": "All projects",
+        "paid_from": "Paid from",
+        "paid_to": "Paid until",
+        "clear_filters": "Clear filters",
+        "select_page": "Select every row on this page",
+        "pay": "Mark paid ({{count}})",
+        "visible": "{{visible}} of {{total}}",
+        "total": "{{amount}} PLN in total",
+        "previous": "Earlier",
+        "next": "Later",
+        "empty": "The foundation owes nothing.",
+        "empty_paid": "Nothing has been marked paid yet.",
+        "empty_filtered": "No item matches the filters.",
+        "load_error": "The payments could not be loaded.",
+        "refused": {
+          "unknown": "Refused — this item is no longer in the project",
+          "unpriced": "Refused — the item has no rate",
+          "volunteer": "Refused — volunteer work is not paid out",
+          "already_paid": "Refused — the item is already paid",
+          "budget_locked": "Refused — the project's budget is closed"
+        }
       }
     },
     "facts": {

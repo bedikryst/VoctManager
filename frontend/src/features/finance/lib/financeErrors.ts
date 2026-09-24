@@ -3,7 +3,8 @@
  * @description The finance API's refusals in the manager's language. Every
  * refusal carries a stable `error_code`; the sentence the server attaches is
  * English and never reaches the screen. A code this table does not know falls
- * through to the shared toast, which picks words by the kind of failure.
+ * through to the shared toast, which picks words by the kind of failure. A
+ * refused payment also names what it refused, so a list can mark those rows.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/financeErrors
  */
@@ -66,6 +67,62 @@ const FINANCE_ERROR_COPY: Record<string, string> = {
 export const financeErrorCopy = (t: TFunction, code: string | null): string | null => {
   if (!code || !(code in FINANCE_ERROR_COPY)) return null;
   return t(`finance.errors.${code}`, FINANCE_ERROR_COPY[code]);
+};
+
+/** Why the server refused one cost of a payment (`params.refused[].reason`). */
+export type PaymentRefusalReason = "unknown" | "unpriced" | "volunteer" | "already_paid" | "budget_locked";
+
+const ITEM_REFUSAL_REASONS: ReadonlySet<string> = new Set([
+  "unknown",
+  "unpriced",
+  "volunteer",
+  "already_paid",
+]);
+
+const isItemReason = (value: unknown): value is PaymentRefusalReason =>
+  typeof value === "string" && ITEM_REFUSAL_REASONS.has(value);
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const refusalParams = (error: unknown): Record<string, unknown> | null => {
+  if (!isRecord(error) || !isRecord(error.response)) return null;
+  const data = error.response.data;
+  return isRecord(data) && isRecord(data.params) ? data.params : null;
+};
+
+/**
+ * A refused payment's own account of what it refused, when it gave one: the
+ * cost ids it named (`payment_refused`), or the projects whose closed budget
+ * refused the whole call (`budget_locked`). Nothing was paid either way.
+ */
+export interface PaymentRefusals {
+  readonly items: ReadonlyMap<string, PaymentRefusalReason>;
+  readonly closedProjects: ReadonlySet<string>;
+}
+
+export const paymentRefusals = (error: unknown): PaymentRefusals | null => {
+  const { code } = parseApiError(error);
+  const params = refusalParams(error);
+  if (!params) return null;
+
+  if (code === "payment_refused" && Array.isArray(params.refused)) {
+    const items = new Map<string, PaymentRefusalReason>();
+    for (const entry of params.refused) {
+      if (!isRecord(entry) || typeof entry.id !== "string") continue;
+      items.set(entry.id, isItemReason(entry.reason) ? entry.reason : "unknown");
+    }
+    return { items, closedProjects: new Set() };
+  }
+
+  if (code === "budget_locked" && Array.isArray(params.project_ids)) {
+    const closedProjects = new Set(
+      params.project_ids.filter((id): id is string => typeof id === "string"),
+    );
+    return { items: new Map(), closedProjects };
+  }
+
+  return null;
 };
 
 export const toastFinanceError = (

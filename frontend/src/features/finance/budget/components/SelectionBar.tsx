@@ -6,6 +6,8 @@
  * It shares the band above the nav dock with the save bar and yields it: the
  * Honoraria page opens this bar only while no pricing draft is pending, because
  * an act on a row whose price is still a draft would settle the old price.
+ * The finance workspace's Do zapłaty opens the same bar with the payment alone,
+ * worded for fees and expenses together and with the selection's sum.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/SelectionBar
  */
@@ -23,12 +25,17 @@ import { Caption, Text } from "@/shared/ui/primitives/typography";
 interface SelectionBarProps {
   readonly isOpen: boolean;
   readonly selectedCount: number;
-  readonly issuableCount: number;
+  /** Beside the count: what the selection adds up to. */
+  readonly summary?: string;
+  /** Without `onIssue` the bar offers no contracts. */
+  readonly issuableCount?: number;
   readonly payableCount: number;
+  /** Replaces the fee wording of the pay button; takes `{{count}}` already filled. */
+  readonly payLabel?: string;
   /** Why the acts are unavailable (offline), or null. */
   readonly blockedReason: string | null;
   readonly isWorking: boolean;
-  readonly onIssue: () => void;
+  readonly onIssue?: () => void;
   readonly onPay: () => void;
   readonly onClear: () => void;
 }
@@ -36,8 +43,10 @@ interface SelectionBarProps {
 export function SelectionBar({
   isOpen,
   selectedCount,
-  issuableCount,
+  summary,
+  issuableCount = 0,
   payableCount,
+  payLabel,
   blockedReason,
   isWorking,
   onIssue,
@@ -64,14 +73,21 @@ export function SelectionBar({
             aria-label={t("finance.selection.aria", "Działania na zaznaczonych")}
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <Text size="sm" weight="bold" className="tabular-nums">
-                {t("finance.selection.count", "Zaznaczono: {{count}}", {
-                  count: selectedCount,
-                })}
-              </Text>
+              <div className="flex flex-col">
+                <Text size="sm" weight="bold" className="tabular-nums">
+                  {t("finance.selection.count", "Zaznaczono: {{count}}", {
+                    count: selectedCount,
+                  })}
+                </Text>
+                {summary && (
+                  <Caption color="muted" className="tabular-nums">
+                    {summary}
+                  </Caption>
+                )}
+              </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {issuableCount > 0 && (
+                {onIssue && issuableCount > 0 && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -92,9 +108,10 @@ export function SelectionBar({
                     disabled={blocked || isWorking}
                     leftIcon={<Banknote size={14} aria-hidden="true" />}
                   >
-                    {t("finance.selection.pay", "Oznacz wypłacone ({{count}})", {
-                      count: payableCount,
-                    })}
+                    {payLabel ??
+                      t("finance.selection.pay", "Oznacz wypłacone ({{count}})", {
+                        count: payableCount,
+                      })}
                   </Button>
                 )}
                 <Button
