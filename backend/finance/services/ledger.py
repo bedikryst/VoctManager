@@ -2,7 +2,8 @@
 @file ledger.py
 @description The write side of the fee ledger: pricing (one atomic batch with an
              optional standard rate), one-off payees, bookkeeping details, paying
-             and reverting a payment (of a fee or an expense), releasing a crew
+             (on one project, or across projects at once) and reverting a
+             payment (of a fee or an expense), releasing a crew
              member's fee when they are unassigned and a fee whose seat no
              longer counts, moving a seat's fee when an artist merge folds it,
              and moving the costs' date when the concert moves. Every rule of
@@ -15,6 +16,7 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from typing import Any
+from uuid import UUID
 
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -26,6 +28,7 @@ from roster.models import CrewAssignment, Participation, Project
 from ..dtos import CostItemDetailsDTO, FeeBatchDTO, FeeItemDTO, FeeRefDTO, OneOffFeeDTO, PayFeesDTO
 from ..exceptions import (
     AmountTooLarge,
+    BudgetLocked,
     CrewHasSettledFee,
     FeeNotOrphaned,
     FinanceError,
@@ -507,6 +510,54 @@ class LedgerService:
                 )
                 paid.append(item)
             return paid
+
+    @staticmethod
+    def pay_across(dto: PayFeesDTO, *, actor: User | None) -> list[Project]:
+        """``pay`` for costs of any project and kind, all or nothing across all
+        of them: every (project, kind) group runs ``pay`` inside one outer
+        transaction, so a refusal anywhere undoes the groups already paid.
+        Every group is tried before refusing, so the refusal names each refused
+        id, in the order given. The budgets are locked in project id order, the
+        same for every caller, so two bulk payments cannot deadlock. Returns
+        the projects paid on, in that order."""
+        with transaction.atomic():
+            owners = {
+                pk: (project_id, kind)
+                for pk, project_id, kind in CostItem.objects.filter(
+                    pk__in=dto.ids, budget__project__is_deleted=False,
+                ).values_list("pk", "budget__project_id", "kind")
+            }
+            refused: list[dict[str, str]] = []
+            groups: dict[tuple[UUID, str], list[UUID]] = {}
+            for item_id in dto.ids:
+                owner = owners.get(item_id)
+                if owner is None:
+                    refused.append({"id": str(item_id), "reason": "unknown"})
+                else:
+                    groups.setdefault(owner, []).append(item_id)
+
+            projects = Project.objects.in_bulk({project_id for project_id, _ in groups})
+            ordered = sorted(projects.values(), key=lambda project: project.pk)
+            closed: list[Project] = []
+            for project in ordered:
+                try:
+                    BudgetService.assert_writable(BudgetService.lock(project))
+                except BudgetLocked:
+                    closed.append(project)
+            if closed:
+                raise BudgetLocked(params={"project_ids": [str(project.pk) for project in closed]})
+
+            for project_id, kind in sorted(groups):
+                group = PayFeesDTO(ids=tuple(groups[(project_id, kind)]), paid_on=dto.paid_on)
+                try:
+                    LedgerService.pay(projects[project_id], group, actor=actor, kind=kind)
+                except PaymentRefused as exc:
+                    refused.extend(exc.params["refused"])
+            if refused:
+                position = {str(item_id): index for index, item_id in enumerate(dto.ids)}
+                refused.sort(key=lambda entry: position[entry["id"]])
+                raise PaymentRefused(params={"refused": refused})
+            return ordered
 
     @staticmethod
     def unpay(item: CostItem, *, reason: str, actor: User | None) -> CostItem:

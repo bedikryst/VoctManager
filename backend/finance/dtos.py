@@ -514,6 +514,42 @@ class HistoryPageDTO(EnterpriseBaseDTO):
     offset: int = Field(default=0, ge=0)
 
 
+PAYABLES_DEFAULT_LIMIT = 50
+PAYABLES_MAX_LIMIT = 200
+# `?ordering=` keys of the payables list; a leading "-" reverses one.
+PAYABLE_ORDERINGS = frozenset({"due_on", "amount", "payee", "project", "paid_on"})
+
+
+class PayablesQueryDTO(EnterpriseBaseDTO):
+    """`GET payables/` — what is owed (`status=unpaid`) or what was paid
+    (`status=paid`), filtered, ordered and a page at a time. The paid-date
+    range and the paid-date ordering only mean something for paid costs.
+    `ordering` left out reads as due date for what is owed and newest payment
+    first for what was paid."""
+
+    status: Literal["unpaid", "paid"] = "unpaid"
+    project: UUID | None = None
+    kind: Literal["FEE", "EXPENSE"] | None = None
+    paid_from: date | None = None
+    paid_to: date | None = None
+    ordering: str | None = None
+    limit: int = Field(default=PAYABLES_DEFAULT_LIMIT, ge=1, le=PAYABLES_MAX_LIMIT)
+    offset: int = Field(default=0, ge=0)
+
+    @model_validator(mode="after")
+    def consistent(self) -> Self:
+        paid = self.status == "paid"
+        if not paid and (self.paid_from is not None or self.paid_to is not None):
+            raise ValueError("paid_from and paid_to apply to status=paid only.")
+        if self.paid_from is not None and self.paid_to is not None and self.paid_from > self.paid_to:
+            raise ValueError("paid_from must not be later than paid_to.")
+        if self.ordering is not None:
+            key = self.ordering.removeprefix("-")
+            if key not in PAYABLE_ORDERINGS or (key == "paid_on" and not paid):
+                raise ValueError("ordering is not one of the allowed keys.")
+        return self
+
+
 class LedgerRangeDTO(EnterpriseBaseDTO):
     """The office's export window, both ends inclusive (`?from=&to=`)."""
 

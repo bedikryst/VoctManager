@@ -58,6 +58,9 @@ VOLUNTEER_INSURANCE_MAX_DAYS = 30
 # How close to the concert a priced fee without its document starts to be flagged.
 DOCUMENT_DUE_WINDOW_DAYS = 7
 
+# The portfolio's "due soon": a payable due within this many days from today.
+PAYABLE_DUE_SOON_DAYS = 14
+
 # Forms settled with a contract the foundation issues and pays out against.
 PAYABLE_CONTRACT_FORMS = (FeeForm.DZIELO, FeeForm.ZLECENIE)
 

@@ -21,6 +21,8 @@ from uuid import UUID
 
 from celery.result import AsyncResult
 from django.core.files.storage import default_storage
+from django.db.models import Count, F, OrderBy, Sum, Value
+from django.db.models.functions import Coalesce, Lower, NullIf
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -39,6 +41,8 @@ from roster.infrastructure.document_generator import DocumentRenderDependencyErr
 from roster.models import Project
 
 from .dtos import (
+    PAYABLES_DEFAULT_LIMIT,
+    PAYABLES_MAX_LIMIT,
     AllocationSetDTO,
     BudgetLineDTO,
     BudgetLineUpdateDTO,
@@ -55,6 +59,7 @@ from .dtos import (
     LineOrderDTO,
     OneOffFeeDTO,
     PatronSummaryDTO,
+    PayablesQueryDTO,
     PayFeesDTO,
     ProjectFundingDTO,
     ProjectFundingUpdateDTO,
@@ -82,9 +87,12 @@ from .infrastructure.reports import (
     render_patron_report_pdf,
 )
 from .models import BudgetLine, Contract, CostItem, CostKind, FinanceAttachment, FundingSource, ProjectFunding
+from .rules import ZERO, finance_today, money
 from .serializers import (
     HistoryEventSerializer,
     PayableSerializer,
+    PayablesPageSerializer,
+    PayablesSummarySerializer,
     ProjectMoneySerializer,
     ProjectRollupSerializer,
     SourceDetailSerializer,
@@ -105,9 +113,14 @@ from .tasks import export_path, generate_contracts_zip_task
 # A ZIP task that raised rather than returned; the client owns the words.
 ZIP_FAILED = "zip_failed"
 
-# The portfolio's payables list, one page at a time.
-PAYABLES_DEFAULT_LIMIT = 50
-PAYABLES_MAX_LIMIT = 200
+# What each `?ordering=` key of the payables list sorts by.
+_PAYABLE_SORT_FIELDS: dict[str, tuple[str, ...]] = {
+    "due_on": ("due_on",),
+    "amount": ("cost_amount",),
+    "payee": ("payee_sort",),
+    "project": ("budget__project__date_time", "budget__project__title"),
+    "paid_on": ("paid_on",),
+}
 
 CSV_CONTENT_TYPE = "text/csv; charset=utf-8"
 
@@ -726,6 +739,58 @@ class LedgerCsvView(FinanceAPIView):
         return _download(data, range_ledger_filename(dto.date_from, dto.date_to), CSV_CONTENT_TYPE)
 
 
+def _payable_ordering(ordering: str) -> list[OrderBy]:
+    """The whitelisted key, then due date, payee and id, so equal keys page in
+    a stable order. Undated and unpriced rows sort last either way."""
+    descending = ordering.startswith("-")
+    fields = _PAYABLE_SORT_FIELDS[ordering.removeprefix("-")]
+    primary = [F(name).desc(nulls_last=True) if descending else F(name).asc(nulls_last=True) for name in fields]
+    return [*primary, F("due_on").asc(nulls_last=True), F("payee_sort").asc(), F("pk").asc()]
+
+
+class PayablesView(FinanceAPIView):
+    """GET payables/?status=unpaid|paid&project=&kind=&paid_from=&paid_to=&ordering=&limit=&offset=
+    — the costs owed (or paid) across projects, with the count and sum of the
+    whole filtered set. Project rollups are the overview's; this is only the
+    list."""
+
+    def get(self, request: Request) -> Response:
+        dto = PayablesQueryDTO.model_validate(request.query_params.dict())
+        paid = dto.status == "paid"
+        costs = BudgetService.paid_costs() if paid else BudgetService.payables()
+        if dto.project is not None:
+            costs = costs.filter(budget__project_id=dto.project)
+        if dto.kind is not None:
+            costs = costs.filter(kind=dto.kind)
+        if dto.paid_from is not None:
+            costs = costs.filter(paid_on__gte=dto.paid_from)
+        if dto.paid_to is not None:
+            costs = costs.filter(paid_on__lte=dto.paid_to)
+        figures = costs.order_by().aggregate(count=Count("pk"), total=Sum("cost_amount"))
+        ordering = dto.ordering or ("-paid_on" if paid else "due_on")
+        page = costs.annotate(
+            payee_sort=Lower(Coalesce(NullIf("payee_name", Value("")), "vendor_name")),
+        ).order_by(*_payable_ordering(ordering))[dto.offset:dto.offset + dto.limit]
+        return Response(PayablesPageSerializer({
+            "count": figures["count"],
+            "limit": dto.limit,
+            "offset": dto.offset,
+            "total_amount": money(figures["total"] or ZERO),
+            "results": list(page),
+        }).data)
+
+
+class PayPayablesView(FinanceAPIView):
+    """POST payables/pay/ — `{ids, paid_on}` across projects and kinds, all or
+    nothing. Answers with the projects paid on, so the client refreshes each
+    one's budget."""
+
+    def post(self, request: Request) -> Response:
+        dto = self.parse(request, PayFeesDTO)
+        projects = LedgerService.pay_across(dto, actor=request_user(request))
+        return Response({"count": len(dto.ids), "project_ids": [str(project.pk) for project in projects]})
+
+
 def _bounded_int(raw: object, default: int, maximum: int) -> int:
     try:
         value = int(str(raw))
@@ -737,8 +802,8 @@ def _bounded_int(raw: object, default: int, maximum: int) -> int:
 class FinanceOverviewView(FinanceAPIView):
     """GET overview/ — every project's rollup (cancelled ones included: a
     cancellation has costs), every funding source with what it carries across
-    projects and its deadlines, and the costs still owed, a page at a time
-    (``?limit=&offset=``)."""
+    projects and its deadlines, the payables' headline figures, and the costs
+    still owed, a page at a time (``?limit=&offset=``)."""
 
     def get(self, request: Request) -> Response:
         projects = list(Project.objects.order_by("-date_time"))
@@ -763,6 +828,7 @@ class FinanceOverviewView(FinanceAPIView):
         return Response({
             "projects": ProjectRollupSerializer(rollups, many=True).data,
             "sources": SourceSerializer(list(measures.sources.values()), many=True).data,
+            "payables_summary": PayablesSummarySerializer(BudgetService.payables_summary(finance_today())).data,
             "payables": {
                 "count": payables.count(),
                 "limit": limit,

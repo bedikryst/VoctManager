@@ -39,8 +39,10 @@ from .views import (
     LineDetailView,
     LineReorderView,
     OneOffFeeView,
+    PayablesView,
     PayExpensesView,
     PayFeesView,
+    PayPayablesView,
     ProjectBudgetView,
     ProjectContractsZipView,
     ProjectFeesView,
@@ -55,6 +57,8 @@ app_name = 'finance'
 
 urlpatterns = [
     path('overview/', FinanceOverviewView.as_view(), name='overview'),
+    path('payables/', PayablesView.as_view(), name='payables'),
+    path('payables/pay/', PayPayablesView.as_view(), name='payables-pay'),
     path('export/ledger.csv', LedgerCsvView.as_view(), name='ledger-csv'),
     path(
         'projects/<uuid:project_id>/export/ledger.csv', ProjectLedgerCsvView.as_view(), name='project-ledger-csv',

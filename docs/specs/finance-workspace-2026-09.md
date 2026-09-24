@@ -1,7 +1,7 @@
 # Finance workspace — `/panel/finance/*`
 
-Status: **Stage 1 (skeleton) done 2026-09-24, not yet checked in the browser. Next: stage 2
-(backend), then stage 3 (tables).** Update this line at the end of every stage.
+Status: **Stages 1 (skeleton) and 2 (backend) done 2026-09-24; stage 1 not yet checked in the
+browser. Next: stage 3 (tables).** Update this line at the end of every stage.
 
 Builds on `project-finance-2026-09.md` (the finance module) and its audit
 `project-finance-audit-2026-09.md`. Frontend paths below are relative to `frontend/src/` unless they
@@ -289,3 +289,33 @@ audit).
   into finance.
 - `RouteTabs` takes `orientation`, `count` and `end`. `ProjectTabs` and `ArchiveTabs` still carry
   private copies of the track (planned).
+
+### Stage 2
+
+The contracts as shipped are in `project-finance-2026-09.md` §6 (the endpoint table). What differs
+from B1–B3 above, or was left open there:
+
+- **`kind` takes the model values `FEE` / `EXPENSE`**, the same strings the rows carry, not
+  lowercase. Unknown or meaningless parameters (`paid_from` on `unpaid`, `ordering=paid_on` on
+  `unpaid`, an extra key) are a 400 `validation_error` (`PayablesQueryDTO`).
+- **The paid list does not apply the seat filter.** A paid cost stays counted whatever became of its
+  seat (`counted = priced and (billable or paid)`), so a paid fee of a singer who later declined is
+  in Zapłacone and in the project's `paid`. Both lists share `_money_costs()` in
+  `services/budget.py`; `payables()` adds the seat filter, `paid_costs()` does not.
+- **Ordering** without `?ordering=` is due date for `unpaid` (as before) and `-paid_on` for `paid`.
+  Every ordering ends with due date, payee and id, so pages are stable. `payee` sorts the payee's
+  name, or the vendor's for an expense, case-insensitively.
+- **"Today"** is `finance_today()` (the finance timezone), the same clock the overdue warning uses.
+  The 14 days are `PAYABLE_DUE_SOON_DAYS` in `rules.py`. Due soon includes today; overdue is before
+  today.
+- **B2 lives in the service**: `LedgerService.pay_across`, called by `PayPayablesView`. It locks
+  every budget first, in project-id order, and collects closed budgets through `assert_writable`
+  into a single `budget_locked` with `params.project_ids`. Only then does it run `pay` per group.
+  A closed budget is refused before any item reasons, because nothing on it can be paid. Ids that do
+  not exist, or belong to a deleted project, are refused as `unknown`. Refusals come back in the
+  order the ids were sent.
+- **The B2 response** is `{count, project_ids}`, so stage 4 can invalidate each affected budget
+  without deriving the projects from its selection.
+- **`paid_on` was added to `PayableSerializer` itself**, so the overview's payable rows carry it too
+  (always `null` there). The frontend DTO does not declare it yet; stage 4 adds it.
+- Tests: `backend/finance/tests/test_payables.py`.
