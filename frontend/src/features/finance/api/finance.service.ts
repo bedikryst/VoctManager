@@ -14,7 +14,7 @@
 
 import axios, { type AxiosResponse } from "axios";
 
-import api from "@/shared/api/api";
+import api, { type AuthRequestConfig } from "@/shared/api/api";
 import type {
   AllocationSetPayload,
   BudgetLinePayload,
@@ -535,7 +535,11 @@ export const FinanceService = {
   ): Promise<HistoryPageDTO> => {
     const response = await api.get<HistoryPageDTO>(
       `${BASE}/projects/${projectId}/history/`,
-      { params: { limit, offset } },
+      {
+        params: { limit, offset },
+        // History uses `results` as its own page payload, alongside offset metadata.
+        skipUnwrap: true,
+      } as AuthRequestConfig,
     );
     return response.data;
   },
