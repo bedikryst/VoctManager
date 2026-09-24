@@ -38,6 +38,7 @@ from .models import (
     ProgramItem,
     Project,
     ProjectPieceCasting,
+    ProjectSoloAssignment,
     Rehearsal,
     VoiceType,
 )
@@ -3344,6 +3345,235 @@ class PieceCastingBoardTests(APITestCase):
         self.assertEqual(ProjectPieceCasting.objects.count(), 0)
 
 
+class NamedSoloAssignmentTests(APITestCase):
+    URL = '/api/piece-castings/solos/'
+
+    def setUp(self) -> None:
+        from archive.models import Composer, Piece
+
+        manager = get_user_model().objects.create_user(
+            username='solo-manager', email='solo-manager@test.pl', password='pw123456'
+        )
+        UserProfile.objects.create(user=manager, role=AppRole.MANAGER)
+        self.client.force_authenticate(user=manager)
+        self.project = Project.objects.create(
+            title='Solo project', date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.DRAFT,
+        )
+        composer = Composer.objects.create(first_name='Solo', last_name='Composer')
+        self.piece = Piece.objects.create(title='Solo piece', composer=composer)
+        ProgramItem.objects.create(project=self.project, piece=self.piece, order=1)
+        self.artist = Artist.objects.create(
+            first_name='Ada', last_name='Singer', email='solo-ada@test.pl',
+            voice_type=VoiceType.TENOR,
+        )
+        self.participation = Participation.objects.create(
+            artist=self.artist, project=self.project,
+            status=Participation.Status.CONFIRMED,
+        )
+
+    def _put(self, rows: list[dict]):
+        return self.client.put(self.URL, {
+            'project': str(self.project.id), 'piece': str(self.piece.id),
+            'solo_assignments': rows,
+        }, format='json')
+
+    def _row(self, position: int, **extra) -> dict:
+        return {
+            'position': position, 'label': f'Solo {position}',
+            'participation': str(self.participation.id), **extra,
+        }
+
+    def test_multiple_solos_do_not_change_choir_casting_or_identity(self) -> None:
+        choir = ProjectPieceCasting.objects.create(
+            participation=self.participation, piece=self.piece,
+            voice_line='T1', notes='Choir note',
+        )
+        response = self._put([self._row(0), self._row(1), self._row(2)])
+        self.assertEqual(response.status_code, 200)
+        ids = [row['id'] for row in response.data['solo_assignments']]
+        self.assertEqual(len(set(ids)), 3)
+        reordered = [
+            {**self._row(index), 'id': assignment_id}
+            for index, assignment_id in enumerate(reversed(ids))
+        ]
+        response = self._put(reordered)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [row['id'] for row in response.data['solo_assignments']], list(reversed(ids))
+        )
+        choir.refresh_from_db()
+        self.assertEqual((choir.voice_line, choir.notes), ('T1', 'Choir note'))
+        self.assertEqual(Participation.objects.filter(project=self.project).count(), 1)
+
+    def test_board_save_preserves_legacy_solo_and_named_positions(self) -> None:
+        legacy = ProjectPieceCasting.objects.create(
+            participation=self.participation, piece=self.piece,
+            voice_line='SOLO', notes='Legacy note', gives_pitch=True,
+        )
+        self._put([self._row(0)])
+        response = self.client.put('/api/piece-castings/board/', {
+            'project': str(self.project.id), 'piece': str(self.piece.id),
+            'castings': [{'participation': str(self.participation.id), 'voice_line': 'T1'}],
+        }, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        legacy.refresh_from_db()
+        self.assertEqual((legacy.notes, legacy.gives_pitch), ('Legacy note', True))
+        self.assertEqual(ProjectSoloAssignment.objects.count(), 1)
+        self.assertEqual(len(self.client.get(self.URL, {
+            'project': str(self.project.id), 'piece': str(self.piece.id),
+        }).data['legacy_solos']), 1)
+
+    def test_conversion_preserves_metadata_and_rejects_non_solo(self) -> None:
+        legacy = ProjectPieceCasting.objects.create(
+            participation=self.participation, piece=self.piece,
+            voice_line='SOLO', notes='Pitch A', gives_pitch=True,
+        )
+        invalid = self.client.post('/api/piece-castings/convert-solo/', {
+            'casting': str(legacy.id), 'label': '   ', 'position': 0,
+        }, format='json')
+        self.assertEqual(invalid.status_code, 400)
+        self.assertTrue(ProjectPieceCasting.objects.filter(pk=legacy.pk).exists())
+        self.participation.status = Participation.Status.DECLINED
+        self.participation.save(update_fields=['status'])
+        declined = self.client.post('/api/piece-castings/convert-solo/', {
+            'casting': str(legacy.id), 'label': 'Soprano at mark 7', 'position': 0,
+        }, format='json')
+        self.assertEqual(declined.status_code, 400)
+        self.assertTrue(ProjectPieceCasting.objects.filter(pk=legacy.pk).exists())
+        self.participation.status = Participation.Status.CONFIRMED
+        self.participation.save(update_fields=['status'])
+        response = self.client.post('/api/piece-castings/convert-solo/', {
+            'casting': str(legacy.id), 'label': 'Soprano at mark 7', 'position': 0,
+        }, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(ProjectPieceCasting.objects.filter(pk=legacy.pk).exists())
+        solo = ProjectSoloAssignment.objects.get()
+        self.assertEqual((solo.notes, solo.gives_pitch, solo.participation_id),
+                         ('Pitch A', True, self.participation.id))
+
+    def test_rejects_foreign_declined_and_duplicate_ids(self) -> None:
+        other_project = Project.objects.create(
+            title='Other', date_time=timezone.now() + timedelta(days=31)
+        )
+        foreign = Participation.objects.create(
+            artist=self.artist, project=other_project, status=Participation.Status.CONFIRMED
+        )
+        response = self._put([self._row(0, participation=str(foreign.id))])
+        self.assertEqual(response.status_code, 400)
+        self.participation.status = Participation.Status.DECLINED
+        self.participation.save(update_fields=['status'])
+        self.assertEqual(self._put([self._row(0)]).status_code, 400)
+        self.participation.status = Participation.Status.CONFIRMED
+        self.participation.save(update_fields=['status'])
+        saved = self._put([self._row(0)]).data['solo_assignments'][0]
+        self.assertEqual(self._put([
+            {**self._row(0), 'id': saved['id']},
+            {**self._row(1), 'id': saved['id']},
+        ]).status_code, 400)
+        self.assertEqual(ProjectSoloAssignment.objects.count(), 1)
+
+    def test_chorister_cannot_write_or_read_manager_solos(self) -> None:
+        singer = get_user_model().objects.create_user(
+            username='solo-singer', email='solo-singer@test.pl', password='pw123456'
+        )
+        UserProfile.objects.create(user=singer, role=AppRole.ARTIST)
+        self.client.force_authenticate(user=singer)
+        self.assertEqual(self._put([self._row(0)]).status_code, 403)
+        self.assertEqual(self.client.get(self.URL, {
+            'project': str(self.project.id), 'piece': str(self.piece.id),
+        }).status_code, 403)
+
+    def test_direct_casting_endpoints_protect_legacy_solo(self) -> None:
+        legacy = ProjectPieceCasting.objects.create(
+            participation=self.participation, piece=self.piece,
+            voice_line='SOLO', notes='Original', gives_pitch=True,
+        )
+        self.assertEqual(self.client.post('/api/piece-castings/', {
+            'participation': str(self.participation.id),
+            'piece': str(self.piece.id), 'voice_line': 'SOLO',
+        }, format='json').status_code, 422)
+        detail = f'/api/piece-castings/{legacy.id}/'
+        self.assertEqual(self.client.patch(detail, {
+            'voice_line': 'T1',
+        }, format='json').status_code, 400)
+        self.assertEqual(self.client.delete(detail).status_code, 400)
+        self.assertEqual(self.client.patch(detail, {
+            'notes': 'Revised', 'gives_pitch': False,
+        }, format='json').status_code, 200)
+        legacy.refresh_from_db()
+        self.assertEqual((legacy.voice_line, legacy.notes, legacy.gives_pitch),
+                         ('SOLO', 'Revised', False))
+
+    def test_piece_scope_and_edition_review(self) -> None:
+        from archive.models import ScoreEdition
+
+        first = ScoreEdition.objects.create(
+            piece=self.piece, pdf_file='scores/first.pdf',
+            original_filename='first.pdf', sha256='a' * 64, is_default=True,
+        )
+        second = ScoreEdition.objects.create(
+            piece=self.piece, pdf_file='scores/second.pdf',
+            original_filename='second.pdf', sha256='b' * 64,
+        )
+        saved = self._put([self._row(0, score_reference='mark 7')])
+        self.assertEqual(saved.status_code, 200)
+        solo = ProjectSoloAssignment.objects.get()
+        self.assertEqual(solo.reference_edition_id, first.id)
+        item = ProgramItem.objects.get(project=self.project, piece=self.piece)
+        item.score_edition = second
+        item.save(update_fields=['score_edition'])
+        response = self.client.get(self.URL, {
+            'project': str(self.project.id), 'piece': str(self.piece.id),
+        })
+        self.assertTrue(response.data['solo_assignments'][0]['reference_needs_review'])
+        solo.refresh_from_db()
+        self.assertEqual((solo.score_reference, solo.reference_edition_id), ('mark 7', first.id))
+        other_project = Project.objects.create(
+            title='Other concert', date_time=timezone.now() + timedelta(days=31)
+        )
+        ProgramItem.objects.create(project=other_project, piece=self.piece, order=1)
+        self.assertEqual(self.client.get(self.URL, {
+            'project': str(other_project.id), 'piece': str(self.piece.id),
+        }).data['solo_assignments'], [])
+
+    def test_non_programme_piece_and_missing_array_are_refused(self) -> None:
+        from archive.models import Piece
+
+        other_piece = Piece.objects.create(title='Another piece', composer=self.piece.composer)
+        response = self.client.put(self.URL, {
+            'project': str(self.project.id), 'piece': str(other_piece.id),
+            'solo_assignments': [self._row(0)],
+        }, format='json')
+        self.assertEqual(response.status_code, 400)
+        response = self.client.put(self.URL, {
+            'project': str(self.project.id), 'piece': str(self.piece.id),
+        }, format='json')
+        self.assertEqual(response.status_code, 400)
+
+    def test_one_announcement_carries_all_changed_solos(self) -> None:
+        from notifications.models import PendingAnnouncement
+
+        singer = get_user_model().objects.create_user(
+            username='solo-recipient', email='solo-recipient@test.pl', password='pw123456'
+        )
+        self.artist.user = singer
+        self.artist.save(update_fields=['user'])
+        self.project.status = Project.Status.ACTIVE
+        self.project.save(update_fields=['status'])
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self._put([
+                self._row(0, score_reference='mark 7'),
+                self._row(1, score_reference='mark 20'),
+            ])
+        self.assertEqual(response.status_code, 200)
+        announcements = list(PendingAnnouncement.objects.filter(project=self.project))
+        self.assertEqual(len(announcements), 1)
+        self.assertEqual(len(announcements[0].metadata['solo_changes']), 2)
+        self.assertEqual(len(announcements[0].metadata['solo_assignments']), 2)
+
+
 class ProgrammeCastingBoardsTests(APITestCase):
     """Casting the whole programme from the line-up is one decision, so it is one
     write. The multi-board endpoint reconciles each piece exactly as the
@@ -6553,6 +6783,25 @@ class ArtistDuplicateMergeTests(APITestCase):
             ).exists()
         )
         self.assertEqual(surviving.castings.count(), 1)
+
+    def test_merge_moves_every_named_and_legacy_solo(self) -> None:
+        ProjectPieceCasting.objects.create(
+            participation=self.twin_part, piece=self.piece,
+            voice_line='SOLO', notes='Legacy solo',
+        )
+        for position in range(2):
+            ProjectSoloAssignment.objects.create(
+                project=self.project, piece=self.piece,
+                participation=self.twin_part, position=position,
+                label=f'Passage {position}',
+            )
+        ArtistHRService.merge_artists(self.primary, self.twin)
+        self.assertEqual(ProjectSoloAssignment.objects.filter(
+            participation=self.primary_part
+        ).count(), 2)
+        self.assertTrue(ProjectPieceCasting.objects.filter(
+            participation=self.primary_part, voice_line='SOLO', notes='Legacy solo'
+        ).exists())
 
     def test_merge_reports_a_fee_it_refused_to_choose_between(self) -> None:
         """Money is not something a cleanup averages: the survivor keeps its own

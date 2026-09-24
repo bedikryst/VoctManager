@@ -353,7 +353,7 @@ class PieceCastingRowDTO(EnterpriseBaseDTO):
     @field_validator("voice_line")
     @classmethod
     def validate_voice_line(cls, value: str) -> str:
-        return _require_choice(value, VOICE_LINE_VALUES, "voice_line")
+        return _require_choice(value, VOICE_LINE_VALUES - {VoiceLine.SOLO}, "voice_line")
 
     @field_validator("notes", mode="before")
     @classmethod
@@ -432,6 +432,65 @@ class PieceCastingBoardsDTO(EnterpriseBaseDTO):
                 raise ValueError("boards must hold at most one board per piece.")
             seen.add(board.piece)
         return self
+
+
+class SoloAssignmentRowDTO(EnterpriseBaseDTO):
+    """One ordered named solo position; an empty performer leaves it open."""
+
+    id: UUID | None = None
+    label: str = Field(..., min_length=1, max_length=200)
+    score_reference: str = ''
+    participation: UUID | None = None
+    notes: str = Field(default='', max_length=200)
+    gives_pitch: bool = False
+    position: int = Field(..., ge=0)
+
+    @field_validator('label')
+    @classmethod
+    def validate_label(cls, value: str) -> str:
+        label = value.strip()
+        if not label:
+            raise ValueError('label must not be blank.')
+        return label
+
+    @field_validator('notes', 'score_reference', mode='before')
+    @classmethod
+    def normalize_text(cls, value: object) -> object:
+        return _blankable_string(value)
+
+
+class PieceSoloAssignmentsDTO(EnterpriseBaseDTO):
+    project: UUID
+    piece: UUID
+    solo_assignments: tuple[SoloAssignmentRowDTO, ...]
+
+    @model_validator(mode='after')
+    def reject_duplicate_ids_and_positions(self):
+        ids = [row.id for row in self.solo_assignments if row.id is not None]
+        positions = [row.position for row in self.solo_assignments]
+        if len(ids) != len(set(ids)) or len(positions) != len(set(positions)):
+            raise ValueError('Solo assignment IDs and positions must be unique.')
+        return self
+
+
+class ConvertLegacySoloDTO(EnterpriseBaseDTO):
+    casting: UUID
+    label: str = Field(..., min_length=1, max_length=200)
+    score_reference: str = ''
+    position: int = Field(..., ge=0)
+
+    @field_validator('label')
+    @classmethod
+    def validate_label(cls, value: str) -> str:
+        label = value.strip()
+        if not label:
+            raise ValueError('label must not be blank.')
+        return label
+
+    @field_validator('score_reference', mode='before')
+    @classmethod
+    def normalize_reference(cls, value: object) -> object:
+        return _blankable_string(value)
 
 
 class ProjectCreateDTO(EnterpriseBaseDTO):

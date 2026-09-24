@@ -76,11 +76,13 @@ from .dtos import (
     AttendanceRangeWindowDTO,
     AttendanceRecordDTO,
     CastOrderDTO,
+    ConvertLegacySoloDTO,
     LeadSheetUpdateDTO,
     ParticipationStatusUpdateDTO,
     PieceCastingBoardDTO,
     PieceCastingBoardsDTO,
     PieceReadinessUpdateDTO,
+    PieceSoloAssignmentsDTO,
     ProjectCreateDTO,
     ProjectUpdateDTO,
     RehearsalCreateDTO,
@@ -114,6 +116,7 @@ from .models import (
     ProgramItem,
     Project,
     ProjectPieceCasting,
+    ProjectSoloAssignment,
     Rehearsal,
     RehearsalDelegate,
     RehearsalPlanItem,
@@ -168,6 +171,7 @@ from .serializers import (
     ProgramItemSerializer,
     ProjectPieceCastingSerializer,
     ProjectSerializer,
+    ProjectSoloAssignmentSerializer,
     RehearsalDelegateSerializer,
     RehearsalPlanItemSerializer,
     RehearsalSerializer,
@@ -2557,6 +2561,69 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance) -> None:
         CastingAndCrewService.delete_piece_casting(instance)
+
+    def _solo_response(self, project: Project, piece: Piece) -> Response:
+        items = list(
+            ProgramItem.objects.filter(project=project, piece=piece)
+            .select_related('piece').prefetch_related('piece__editions').order_by('order')
+        )
+        edition_ids = [
+            edition.pk if (edition := resolve_item_edition(item)) else None
+            for item in items
+        ]
+        solos = list(
+            ProjectSoloAssignment.objects.filter(project=project, piece=piece)
+            .select_related('participation__artist')
+        )
+        legacy = list(
+            ProjectPieceCasting.objects.filter(
+                participation__project=project, piece=piece, voice_line='SOLO',
+                participation__is_deleted=False,
+            ).select_related('participation__artist', 'piece')
+            .prefetch_related('piece__voice_requirements')
+        )
+        return Response({
+            'solo_assignments': ProjectSoloAssignmentSerializer(
+                solos, many=True, context={'edition_ids': edition_ids}
+            ).data,
+            'legacy_solos': self.get_serializer(legacy, many=True).data,
+        })
+
+    @action(detail=False, methods=['get', 'put'], url_path='solos', permission_classes=[IsManager])
+    def solos(self, request) -> Response:
+        try:
+            payload = (
+                {'project': request.query_params.get('project'),
+                 'piece': request.query_params.get('piece'), 'solo_assignments': []}
+                if request.method == 'GET' else client_payload(request.data)
+            )
+            dto = PieceSoloAssignmentsDTO(**payload)
+        except ValidationError as exc:
+            return make_error_response(
+                request, status_code=status.HTTP_400_BAD_REQUEST,
+                error_code='validation_error', detail='The submitted data is invalid.',
+                validation_errors=format_pydantic_validation_errors(exc),
+            )
+        project = get_object_or_404(Project, pk=dto.project)
+        piece = get_object_or_404(Piece, pk=dto.piece)
+        if not ProgramItem.objects.filter(project=project, piece=piece).exists():
+            raise CastingValidationException(_('This piece is not in the project programme.'))
+        if request.method == 'PUT':
+            CastingAndCrewService.save_solo_assignments(dto)
+        return self._solo_response(project, piece)
+
+    @action(detail=False, methods=['post'], url_path='convert-solo', permission_classes=[IsManager])
+    def convert_solo(self, request) -> Response:
+        try:
+            dto = ConvertLegacySoloDTO(**client_payload(request.data))
+        except ValidationError as exc:
+            return make_error_response(
+                request, status_code=status.HTTP_400_BAD_REQUEST,
+                error_code='validation_error', detail='The submitted data is invalid.',
+                validation_errors=format_pydantic_validation_errors(exc),
+            )
+        assignment = CastingAndCrewService.convert_legacy_solo(dto)
+        return Response(ProjectSoloAssignmentSerializer(assignment).data)
 
     @action(detail=False, methods=['put'], url_path='board', permission_classes=[IsManager])
     def board(self, request) -> Response:

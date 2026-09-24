@@ -8,6 +8,7 @@ Domain-driven service layer for the Roster application.
 Encapsulates all database transactions, state mutations, and side-effects.
 Views MUST delegate all business logic to these stateless classes.
 """
+import json
 import logging
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
@@ -69,8 +70,10 @@ from .dtos import (
     AttendanceRangeWindowDTO,
     AttendanceRecordDTO,
     CastOrderRowDTO,
+    ConvertLegacySoloDTO,
     PieceCastingRowDTO,
     PieceReadinessUpdateDTO,
+    PieceSoloAssignmentsDTO,
     ProjectCreateDTO,
     ProjectUpdateDTO,
     RehearsalCreateDTO,
@@ -103,6 +106,7 @@ from .models import (
     ProgramItem,
     Project,
     ProjectPieceCasting,
+    ProjectSoloAssignment,
     Rehearsal,
     RehearsalDelegate,
     RehearsalPlanItem,
@@ -602,7 +606,15 @@ class ArtistHRService:
             # One seat per piece and one attendance per rehearsal are already
             # taken where the two rows overlap; those rows are the duplicate's
             # copy of a fact the survivor already records.
-            taken_pieces = set(target.castings.values_list('piece_id', flat=True))
+            ProjectSoloAssignment.objects.filter(participation=participation).update(
+                participation=target
+            )
+            taken_pieces = set(
+                target.castings.exclude(voice_line='SOLO').values_list('piece_id', flat=True)
+            )
+            castings_moved += ProjectPieceCasting.objects.filter(
+                participation=participation, voice_line='SOLO'
+            ).update(participation=target)
             castings_moved += ProjectPieceCasting.objects.filter(
                 participation=participation
             ).exclude(piece_id__in=taken_pieces).update(participation=target)
@@ -2401,6 +2413,8 @@ class CastingAndCrewService:
 
     @staticmethod
     def assign_piece_casting(validated_data: dict[str, Any]) -> ProjectPieceCasting:
+        if validated_data.get('voice_line') == 'SOLO':
+            raise CastingValidationException(_('Create named solo positions through the solos editor.'))
         participation = validated_data.get('participation')
         # Casting is a plan, not a record of consent: the conductor decides who sings
         # which line before the singers answer — and on a draft nobody has even been
@@ -2429,6 +2443,12 @@ class CastingAndCrewService:
 
     @staticmethod
     def update_piece_casting(casting: ProjectPieceCasting, validated_data: dict[str, Any]) -> ProjectPieceCasting:
+        if casting.voice_line == 'SOLO' and any(
+            field not in {'notes', 'gives_pitch'} for field in validated_data
+        ):
+            raise CastingValidationException(_('A legacy solo can only change notes and pitch giving.'))
+        if validated_data.get('voice_line') == 'SOLO':
+            raise CastingValidationException(_('Create named solo positions through the solos editor.'))
         changes: list[dict[str, str | None]] = []
         with transaction.atomic():
             for attr, value in validated_data.items():
@@ -2457,6 +2477,8 @@ class CastingAndCrewService:
 
     @staticmethod
     def delete_piece_casting(casting: ProjectPieceCasting) -> None:
+        if casting.voice_line == 'SOLO':
+            raise CastingValidationException(_('Convert a legacy solo before removing it.'))
         user_id = casting.participation.artist.user_id
         piece_id = casting.piece_id
         piece_title = casting.piece.title
@@ -2516,7 +2538,7 @@ class CastingAndCrewService:
             piece=piece,
             participation__project=project,
             participation__is_deleted=False,
-        ).select_related("piece"):
+        ).exclude(voice_line='SOLO').select_related("piece"):
             existing.setdefault(casting.participation_id, []).append(casting)
 
         to_create: list[PieceCastingRowDTO] = []
@@ -2606,9 +2628,222 @@ class CastingAndCrewService:
         return list(
             ProjectPieceCasting.objects
             .filter(piece=piece, participation__project=project, participation__is_deleted=False)
+            .exclude(voice_line='SOLO')
             .select_related("piece", "participation__artist")
             .order_by("voice_line", "participation__artist__last_name")
         )
+
+    @staticmethod
+    def save_solo_assignments(dto: PieceSoloAssignmentsDTO) -> list[ProjectSoloAssignment]:
+        """Replace only named positions for one project and programmed piece."""
+        if not ProgramItem.objects.filter(project_id=dto.project, piece_id=dto.piece).exists():
+            raise CastingValidationException(_('This piece is not in the project programme.'))
+        project = Project.objects.get(pk=dto.project)
+        participants = {
+            person.id: person
+            for person in Participation.objects.filter(
+                project=project, is_deleted=False
+            ).select_related('artist')
+        }
+        for row in dto.solo_assignments:
+            if row.participation is not None and (
+                row.participation not in participants
+                or participants[row.participation].status == Participation.Status.DECLINED
+            ):
+                raise CastingValidationException(
+                    _('Cannot assign a declined or foreign participant to a solo.')
+                )
+
+        with transaction.atomic():
+            Project.objects.select_for_update().get(pk=project.pk)
+            existing = {
+                assignment.id: assignment
+                for assignment in ProjectSoloAssignment.objects.select_for_update().filter(
+                    project=project, piece_id=dto.piece
+                )
+            }
+            before = {
+                assignment.id: (
+                    assignment.participation_id, assignment.label,
+                    assignment.score_reference, assignment.notes,
+                    assignment.gives_pitch, assignment.position,
+                )
+                for assignment in existing.values()
+            }
+            submitted_ids = {row.id for row in dto.solo_assignments if row.id is not None}
+            if not submitted_ids.issubset(existing):
+                raise CastingValidationException(_('A solo assignment belongs to another piece or project.'))
+
+            item = ProgramItem.objects.filter(
+                project=project, piece_id=dto.piece
+            ).select_related('piece').prefetch_related('piece__editions').order_by('order').first()
+            edition = resolve_item_edition(item) if item is not None else None
+            saved_ids: set[UUID] = set()
+            for row in dto.solo_assignments:
+                assignment = existing.get(row.id) if row.id else None
+                if assignment is None:
+                    assignment = ProjectSoloAssignment(project=project, piece_id=dto.piece)
+                reference_changed = assignment._state.adding or assignment.score_reference != row.score_reference
+                assignment.position = row.position
+                assignment.label = row.label
+                assignment.score_reference = row.score_reference
+                assignment.participation = (
+                    participants[row.participation] if row.participation is not None else None
+                )
+                assignment.notes = row.notes
+                assignment.gives_pitch = row.gives_pitch
+                if reference_changed:
+                    assignment.reference_edition = edition if row.score_reference else None
+                assignment.save()
+                saved_ids.add(assignment.id)
+            ProjectSoloAssignment.objects.filter(project=project, piece_id=dto.piece).exclude(
+                pk__in=saved_ids
+            ).delete()
+            CastingAndCrewService._queue_solo_changes(project, dto.piece, before)
+        return list(ProjectSoloAssignment.objects.filter(project=project, piece_id=dto.piece))
+
+    @staticmethod
+    def convert_legacy_solo(dto: ConvertLegacySoloDTO) -> ProjectSoloAssignment:
+        """Carry one legacy row into a named position without an intermediate vacancy."""
+        with transaction.atomic():
+            legacy = ProjectPieceCasting.objects.select_for_update().select_related(
+                'participation__project', 'piece'
+            ).get(pk=dto.casting)
+            if legacy.voice_line != 'SOLO':
+                raise CastingValidationException(_('Only a legacy solo can be converted.'))
+            if (
+                legacy.participation.is_deleted
+                or legacy.participation.status == Participation.Status.DECLINED
+            ):
+                raise CastingValidationException(
+                    _('Cannot assign a declined or foreign participant to a solo.')
+                )
+            if not ProgramItem.objects.filter(
+                project=legacy.participation.project, piece=legacy.piece
+            ).exists():
+                raise CastingValidationException(_('This piece is not in the project programme.'))
+            if ProjectSoloAssignment.objects.filter(
+                project=legacy.participation.project, piece=legacy.piece, position=dto.position
+            ).exists():
+                raise CastingValidationException(_('This solo position is already occupied.'))
+            before = {
+                row.id: (
+                    row.participation_id, row.label, row.score_reference,
+                    row.notes, row.gives_pitch, row.position,
+                )
+                for row in ProjectSoloAssignment.objects.filter(
+                    project=legacy.participation.project, piece=legacy.piece
+                )
+            }
+            item = ProgramItem.objects.filter(
+                project=legacy.participation.project, piece=legacy.piece
+            ).select_related('piece').prefetch_related('piece__editions').order_by('order').first()
+            edition = resolve_item_edition(item) if item is not None else None
+            assignment = ProjectSoloAssignment.objects.create(
+                project=legacy.participation.project, piece=legacy.piece,
+                position=dto.position, label=dto.label,
+                score_reference=dto.score_reference,
+                reference_edition=edition if dto.score_reference else None,
+                participation=legacy.participation,
+                notes=legacy.notes, gives_pitch=legacy.gives_pitch,
+            )
+            legacy.delete()
+            CastingAndCrewService._queue_solo_changes(
+                legacy.participation.project, legacy.piece_id, before
+            )
+            return assignment
+
+    @staticmethod
+    def _queue_solo_changes(
+        project: Project,
+        piece_id: UUID,
+        before: dict[UUID, tuple[UUID | None, str, str, str, bool, int]],
+    ) -> None:
+        """Queue one change per affected singer and piece after solo reconciliation."""
+        after_rows = list(ProjectSoloAssignment.objects.filter(project=project, piece_id=piece_id))
+        after = {
+            row.id: (
+                row.participation_id, row.label, row.score_reference,
+                row.notes, row.gives_pitch, row.position,
+            )
+            for row in after_rows
+        }
+        changed = {key for key in before.keys() | after.keys() if before.get(key) != after.get(key)}
+        affected = {
+            participation_id
+            for key in changed
+            for participation_id in (
+                before.get(key, (None, '', '', '', False, 0))[0],
+                after.get(key, (None, '', '', '', False, 0))[0],
+            )
+            if participation_id is not None
+        }
+        if not affected:
+            return
+        people = Participation.objects.filter(pk__in=affected).select_related('artist')
+        piece = Piece.objects.get(pk=piece_id)
+
+        def snapshot(value: tuple[UUID | None, str, str, str, bool, int] | None) -> dict[str, Any] | None:
+            if value is None:
+                return None
+            return {
+                'participation': str(value[0]) if value[0] else None,
+                'label': value[1], 'score_reference': value[2],
+                'notes': value[3], 'gives_pitch': value[4], 'position': value[5],
+            }
+
+        for person in people:
+            changes = [
+                {
+                    'id': str(key),
+                    'before': snapshot(before.get(key)),
+                    'after': snapshot(after.get(key)),
+                }
+                for key in sorted(changed, key=str)
+                if (before.get(key) or (None,))[0] == person.id
+                or (after.get(key) or (None,))[0] == person.id
+            ]
+            duties = [
+                {'id': str(row.id), 'label': row.label,
+                 'score_reference': row.score_reference}
+                for row in after_rows if row.participation_id == person.id
+            ]
+            metadata = PieceCastingMetadata(
+                piece_id=piece_id, piece_title=piece.title,
+                project_id=project.id, project_name=project.title,
+            ).model_dump(mode='json')
+            metadata['solo_changes'] = changes
+            metadata['solo_assignments'] = duties
+            castings = list(ProjectPieceCasting.objects.filter(
+                participation=person, piece_id=piece_id
+            ).values('voice_line', 'notes', 'gives_pitch'))
+            metadata['resulting_duties'] = {
+                'choral_castings': [
+                    row for row in castings if row['voice_line'] != 'SOLO'
+                ],
+                'solo_assignments': duties,
+                'legacy_solos': [
+                    row for row in castings if row['voice_line'] == 'SOLO'
+                ],
+            }
+            old_duties = [
+                {'id': str(key), **(snapshot(value) or {})}
+                for key, value in before.items() if value[0] == person.id
+            ]
+            new_duties = [
+                {'id': str(key), **(snapshot(value) or {})}
+                for key, value in after.items() if value[0] == person.id
+            ]
+            metadata['changes'] = [{
+                'field': 'solo_assignments',
+                'old': json.dumps(old_duties, sort_keys=True, ensure_ascii=False),
+                'new': json.dumps(new_duties, sort_keys=True, ensure_ascii=False),
+            }]
+            CastingAndCrewService._queue_casting(
+                project, person, piece_id, AnnouncementKind.CHANGED,
+                NotificationType.PIECE_CASTING_UPDATED, NotificationLevel.INFO,
+                metadata,
+            )
 
     @staticmethod
     def _queue_casting(
