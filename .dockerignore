@@ -60,6 +60,11 @@ web/src/assets/photos/.old-bg-desktop
 # and at the same cost as the archive above.
 web/src/assets/photos/kosciol-samples
 
+# Frames withheld from the site until their photographer's consent is on record (concerts.yaml,
+# Hymn Poległym). Kept beside the archive so they can be restored without re-sourcing them, and
+# kept out of the context so they reach no image layer while they may not be published.
+web/src/assets/photos/.held-no-consent
+
 # Video, in both its homes, and for one reason: no build step reads a frame of it.
 #  • `src/assets/videos/` holds the camera masters and the encodes made from them — a host-side
 #    step, the same shape as `npm run photos:proxy` above.

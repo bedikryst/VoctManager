@@ -188,8 +188,8 @@
     - { img: kd-wcielenie-3, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ" }
     - { img: kd-wcielenie-4, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ" }
     - { img: kd-wcielenie-5, alt: "Nawa główna podczas koncertu Voctensemble Kontemplacja Wcielenia w Bazylice NSPJ" }
-    - { img: kd-wcielenie-6, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ", credit: "Tomasz Czajkowski" }
-    - { img: kd-wcielenie-7, alt: "VoctEnsemble po Kontemplacji Wcielenia w Bazylice NSPJ", credit: "Tomasz Czajkowski" }
+    - { img: kd-wcielenie-6, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ" }
+    - { img: kd-wcielenie-7, alt: "VoctEnsemble po Kontemplacji Wcielenia w Bazylice NSPJ" }
     - { img: kd-wcielenie-8, alt: "VoctEnsemble po Kontemplacji Wcielenia w Bazylice NSPJ" }
   inscriptio: "Et egredietur virga de radice Iesse"
   inscriptioGloss: { pl: "I wyrośnie różdżka z pnia Jessego" }
@@ -1631,14 +1631,20 @@
   # The one station whose hero cannot be its /o-nas milestone: `o-nas-ukraina` is the curtain-call
   # keepsake — fifteen people in a line, facing the lens, holding roses — and a requiem's title set
   # across smiling faces is the wrong register for this evening (it also stood as the OG image).
-  # The pair is cut from the two frames that hold the evening's culminating fact, the Mariacki
-  # altarpiece opened under the anthem, which `programArc` below names as the point of the night:
-  #   -desktop = kd-hymn-4 de-matted and white-balanced (the `kd-hymn-4-imagines` variant, whose
-  #     burnt-in cyan credit sat exactly where the hero title lands; Płachetko is still credited
-  #     in the gallery below, where that frame also appears intact).
+  # The pair is cut from the two frames that hold the Mariacki altarpiece and the ensemble together
+  # — the altar opened under the anthem is what `programArc` below names as the point of the night:
+  #   -desktop = kd-hymn-2, the nave from the gallery, full width × 2109 from y=1477, resized to
+  #     2560 (sharp.extract 0,1477,3375×2109). The only landscape cut in this set that holds the
+  #     retable and the singers at once: the altar sits in the upper half, the ensemble under the
+  #     title's right end, the same arrangement the station's hero has always had. The blue is
+  #     the light the room was lit with and stays as delivered.
   #   -mobile  = kd-hymn-1, the nave from the organ loft, cut to 0.46 — the phone's own aspect.
   # A single frame cannot serve both: kd-hymn-1 is 9:16, and altar and singers sit 57% of its
   # height apart while a desktop window can hold 26–31% of it. One or the other, never both.
+  #
+  # NO FRAME BY ANDRZEJ PŁACHETKO MAY APPEAR ANYWHERE until his consent is on record. -4 and -5 are
+  # his, and the desktop hero used to be cut from -4; the gallery below holds both commented out,
+  # and their files wait outside the build in `src/assets/photos/.held-no-consent/`.
   heroImg: kd-hymn-hero
   poster: poster-hymn
   posterAlt: Plakat koncertu Hymn Poległym
@@ -1701,19 +1707,22 @@
   # and -2 at 20 / 48), and a gallery must not open on the one photograph that has nothing to open
   # with. The archive still SHOWS every frame; `plate` only chooses which one stands for the set.
   #
-  # It sits on -4 because that frame is the evening's culmination — the Mariacki altarpiece open
-  # under the anthem — and because it is the only one here with both the room and the ensemble
-  # readable at thumbnail size. It carries a photographer's mat and burnt-in mark, which is how it
-  # was delivered and how the archive keeps it; the landing's plate crops those off in a variant of
-  # its own (frameAsset, data/landing/paths). Before -4 and -5 arrived this fell to -3, on tonal
-  # range alone out of four candidates — that frame reads the AUDIENCE from behind, which is a poor
-  # thing for a concert gallery to open on and was only ever the least bad of what there was.
+  # It sits on -2 because that frame is the only one here with both the room and the ensemble
+  # readable at thumbnail size: the altarpiece lit at the head of the nave, the singers on the
+  # steps below it. -1 holds the altar with the ensemble a speck, -3 reads the AUDIENCE from
+  # behind, and -0 is the black rectangle above.
+  #
+  # -4 and -5 are Andrzej Płachetko's and are WITHHELD until his consent is on record — see the
+  # note above `heroImg`. Restoring them is uncommenting these two lines and moving their files
+  # back from `.held-no-consent/` into `.original-photos/`; the EN/FR alts are still in the
+  # overlays, keyed by image, so nothing else has to be re-translated. -4 was this gallery's plate
+  # and the landing's Imagines frame before, and would be the stronger choice for both again.
   - { img: kd-hymn-0, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie" }
   - { img: kd-hymn-1, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie" }
-  - { img: kd-hymn-2, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie" }
+  - { img: kd-hymn-2, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", plate: true }
   - { img: kd-hymn-3, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie" }
-  - { img: kd-hymn-4, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", credit: "Andrzej Płachetko", plate: true }
-  - { img: kd-hymn-5, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", credit: "Andrzej Płachetko" }
+  # - { img: kd-hymn-4, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", credit: "Andrzej Płachetko" }
+  # - { img: kd-hymn-5, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", credit: "Andrzej Płachetko" }
   movements:
     - id: introitus
       lat: Introitus
