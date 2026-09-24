@@ -2050,6 +2050,23 @@
       "range_required": "Enter both dates.",
       "range_order": "The start date is later than the end date."
     },
+    "workspace": {
+      "back_to_panel": "Voct",
+      "nav": {
+        "aria": "Finance sections",
+        "payables": "To pay",
+        "sources": "Sources",
+        "projects": "Projects",
+        "exports": "Exports"
+      },
+      "exports": {
+        "office_title": "Ledger for the office",
+        "project_title": "Project documents",
+        "project_label": "Project",
+        "project_placeholder": "Choose a project",
+        "project_empty": "Choose a project to download its reports, the grantor's settlement files and its contracts."
+      }
+    },
     "facts": {
       "cost": "Cost of fees",
       "unpriced": "no fee set: {{count}} people"
@@ -2400,7 +2417,6 @@
       "awarded": "Awarded",
       "planned": "Projects expect",
       "role": "Funding source",
-      "back": "Finance",
       "edit": "Edit",
       "money": "Money",
       "over_awarded": "The projects expect or have charged more than the source awarded. Lower the amounts the projects expect or take some costs off it.",

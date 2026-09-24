@@ -8,7 +8,8 @@
  * projects it funds, and every cost charged to it in the order the report
  * lists them — with the costs that arose outside its eligibility period
  * marked. The formula for describing documents is kept here; the notes are
- * printed from it in Stage 6.
+ * printed from it in Stage 6. It sits under the finance workspace's Źródła
+ * section, and both ways out of it lead back there.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/overview/FundingSourcePage
  */
@@ -43,6 +44,8 @@ import {
 } from "../lib/financePresentation";
 import { formatAmount, formatDifference, formatLedgerAmount, isPositiveAmount } from "../lib/money";
 import type { FundingSourceDTO, SourceDetailDTO } from "../types/finance.dto";
+
+const FINANCE_SOURCES_PATH = "/panel/finance/sources";
 
 interface Fact {
   readonly label: string;
@@ -182,10 +185,10 @@ function SourceBody({ detail }: { readonly detail: SourceDetailDTO }): React.JSX
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/panel/finance")}
+              onClick={() => navigate(FINANCE_SOURCES_PATH)}
               leftIcon={<ArrowLeft size={14} aria-hidden="true" />}
             >
-              {t("finance.source_page.back", "Finanse")}
+              {t("finance.workspace.nav.sources", "Źródła")}
             </Button>
             <Button
               variant="outline"
@@ -397,7 +400,7 @@ function SourceBody({ detail }: { readonly detail: SourceDetailDTO }): React.JSX
             remove.mutate(source.id, {
               onSuccess: () => {
                 toast.success(t("finance.source_page.deleted", "Usunięto źródło."));
-                navigate("/panel/finance");
+                navigate(FINANCE_SOURCES_PATH);
               },
               onError: (error) =>
                 toastFinanceError(error, t, t("finance.source.error", "Nie udało się zapisać źródła.")),
@@ -423,7 +426,7 @@ export default function FundingSourcePage(): React.JSX.Element {
 
   return (
     <PageTransition>
-      <div className="relative mx-auto flex max-w-6xl flex-col gap-5 pb-24 pt-6">
+      <div className="relative flex flex-col gap-5 pb-24">
         {query.isLoading ? (
           <EtherealLoader message={t("finance.source_page.loading", "Wczytuję źródło…")} />
         ) : !query.data ? (

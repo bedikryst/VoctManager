@@ -4,25 +4,19 @@
  * across projects, the soonest due first, a server page at a time. A row opens
  * its project's Honoraria or Wydatki on that very row, where it is paid; this
  * list states the debt and does not settle it.
- * The office's export sits here too, because this is where the question "what
- * do we book for the month" is asked: the ledger CSV for a date range, every
- * project at once.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/overview/components/PayablesCard
  */
 
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ChevronLeft, ChevronRight, FileSpreadsheet, HandCoins } from "lucide-react";
+import { ChevronLeft, ChevronRight, HandCoins } from "lucide-react";
 
-import { DateTimeField } from "@/shared/ui/composites/DateTimeField";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
-import { FinanceService } from "../../api/finance.service";
-import { toastFinanceError } from "../../lib/financeErrors";
 import { formatFinanceDate, todayIsoDate } from "../../lib/financePresentation";
 import { formatLedgerAmount } from "../../lib/money";
 import type { FinanceOverviewDTO } from "../../types/finance.dto";
@@ -31,81 +25,6 @@ interface PayablesCardProps {
   readonly page: FinanceOverviewDTO["payables"];
   readonly isFetching: boolean;
   readonly onPageChange: (offset: number) => void;
-}
-
-/** The current calendar month, the period the office books by default. */
-const currentMonth = (): { from: string; to: string } => {
-  const today = todayIsoDate();
-  const [year, month] = today.split("-").map(Number);
-  const lastDay = new Date(year, month, 0).getDate();
-  const prefix = today.slice(0, 8);
-  return { from: `${prefix}01`, to: `${prefix}${String(lastDay).padStart(2, "0")}` };
-};
-
-function OfficeExport(): React.JSX.Element {
-  const { t } = useTranslation();
-  const [range, setRange] = useState(currentMonth);
-  const [error, setError] = useState<string | undefined>();
-  const [isExporting, setIsExporting] = useState(false);
-
-  const handleExport = async (): Promise<void> => {
-    if (!range.from || !range.to) {
-      setError(t("finance.export.range_required", "Podaj obie daty."));
-      return;
-    }
-    if (range.from > range.to) {
-      setError(t("finance.export.range_order", "Data początkowa jest późniejsza niż końcowa."));
-      return;
-    }
-    setIsExporting(true);
-    try {
-      await FinanceService.downloadLedgerRange(range.from, range.to);
-    } catch (failure) {
-      toastFinanceError(failure, t, t("finance.download.error", "Nie udało się pobrać dokumentu."));
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[1fr_1fr_auto]">
-        <DateTimeField
-          granularity="date"
-          label={t("finance.export.from", "Od")}
-          value={range.from}
-          onChange={(from) => {
-            setRange((previous) => ({ ...previous, from }));
-            setError(undefined);
-          }}
-        />
-        <DateTimeField
-          granularity="date"
-          label={t("finance.export.to", "Do")}
-          value={range.to}
-          onChange={(to) => {
-            setRange((previous) => ({ ...previous, to }));
-            setError(undefined);
-          }}
-          error={error}
-        />
-        <Button
-          variant="secondary"
-          onClick={() => void handleExport()}
-          isLoading={isExporting}
-          leftIcon={<FileSpreadsheet size={14} aria-hidden="true" />}
-        >
-          {t("finance.export.action", "Eksport dla biura")}
-        </Button>
-      </div>
-      <Caption color="muted">
-        {t(
-          "finance.export.hint",
-          "Honoraria i wydatki wliczone w koszt, których data kosztu (dla honorarium dzień koncertu) wypada w tym okresie — ze wszystkich projektów.",
-        )}
-      </Caption>
-    </div>
-  );
 }
 
 export function PayablesCard({
@@ -126,7 +45,6 @@ export function PayablesCard({
       icon={<HandCoins size={15} aria-hidden="true" />}
       title={t("finance.portfolio.payables", "Do zapłaty")}
       bodyClassName="p-0"
-      toolbar={<OfficeExport />}
       footer={
         page.count > page.limit ? (
           <div className="flex items-center justify-between gap-3">
@@ -169,7 +87,7 @@ export function PayablesCard({
           title={t("finance.portfolio.payables_empty", "Fundacja nie zalega z żadną płatnością.")}
         />
       ) : (
-        <ul className="mt-4 divide-y divide-hairline border-t border-hairline">
+        <ul className="divide-y divide-hairline">
           {page.results.map((payable) => {
             const overdue = payable.due_on !== null && payable.due_on < today;
             const isExpense = payable.kind === "EXPENSE";

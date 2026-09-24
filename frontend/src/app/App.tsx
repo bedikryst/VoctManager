@@ -118,12 +118,6 @@ const MessagesPage = lazyWithPreload(
 );
 
 // Manager-only feature trees remain lazy, then preload only for manager sessions.
-const FinancePage = lazyWithPreload(
-  () => import("@features/finance/overview/FinancePage"),
-);
-const FundingSourcePage = lazyWithPreload(
-  () => import("@features/finance/overview/FundingSourcePage"),
-);
 const Rehearsals = lazyWithPreload(
   () => import("@features/rehearsals/Rehearsals"),
 );
@@ -231,6 +225,30 @@ const CopyDeskReviewPage = lazyWithPreload(
   () => import("@pages/copydesk/CopyDeskReviewPage"),
 );
 
+// The finance workspace — the second layout takeover, built for a board member
+// who opens Voct only to do finance. Unlike the copy desk it IS preloaded for
+// manager sessions: every manager's rail and dashboard lead into it.
+const FinanceShell = lazyWithPreload(() =>
+  import("@/widgets/finance-shell/FinanceShell").then((m) => ({
+    default: m.FinanceShell,
+  })),
+);
+const FinancePayablesPage = lazyWithPreload(
+  () => import("@features/finance/workspace/PayablesPage"),
+);
+const FinanceSourcesPage = lazyWithPreload(
+  () => import("@features/finance/workspace/SourcesPage"),
+);
+const FundingSourcePage = lazyWithPreload(
+  () => import("@features/finance/overview/FundingSourcePage"),
+);
+const FinanceProjectsPage = lazyWithPreload(
+  () => import("@features/finance/workspace/ProjectsPage"),
+);
+const FinanceExportsPage = lazyWithPreload(
+  () => import("@features/finance/workspace/ExportsPage"),
+);
+
 const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { preload: DashboardHome.preload },
   { preload: SettingsPage.preload },
@@ -241,7 +259,12 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { preload: PiecePage.preload },
   { preload: Schedule.preload },
   { preload: RehearsalPage.preload },
-  { scope: "manager", preload: FinancePage.preload },
+  { scope: "manager", preload: FinanceShell.preload },
+  { scope: "manager", preload: FinancePayablesPage.preload },
+  { scope: "manager", preload: FinanceSourcesPage.preload },
+  { scope: "manager", preload: FundingSourcePage.preload },
+  { scope: "manager", preload: FinanceProjectsPage.preload },
+  { scope: "manager", preload: FinanceExportsPage.preload },
   { scope: "manager", preload: Rehearsals.preload },
   { scope: "manager", preload: ArtistManagement.preload },
   { scope: "manager", preload: ProjectDashboard.preload },
@@ -367,8 +390,6 @@ export const router = createBrowserRouter(
         >
           <Route index element={<DashboardHome />} />
           <Route element={<ManagerRoute />}>
-            <Route path="finance" element={<FinancePage />} />
-            <Route path="finance/sources/:sourceId" element={<FundingSourcePage />} />
             {/* The settlements workspace's old address, still in bookmarks and
                 in the contract notification's link. */}
             <Route
@@ -481,6 +502,30 @@ export const router = createBrowserRouter(
               segment; the static routes above outrank it either way. */}
           <Route path=":scope" element={<CopyDeskScopePage />} />
           <Route path="*" element={<Navigate to="/redakcja" replace />} />
+        </Route>
+
+        {/* The finance workspace takes the screen over, so it is a sibling of
+            the panel tree rather than a child of <DashboardLayout>; the path
+            stays under `/panel`, where nginx and the service worker already
+            serve the app. Its shell gates the tree on the overview request and
+            suspends each section inside its own frame. */}
+        <Route element={<ManagerRoute />}>
+          <Route
+            path="/panel/finance"
+            element={
+              <Suspense fallback={<EtherealLoader />}>
+                <FinanceShell />
+              </Suspense>
+            }
+          >
+            <Route index element={<Navigate to="payables" replace />} />
+            <Route path="payables" element={<FinancePayablesPage />} />
+            <Route path="sources" element={<FinanceSourcesPage />} />
+            <Route path="sources/:sourceId" element={<FundingSourcePage />} />
+            <Route path="projects" element={<FinanceProjectsPage />} />
+            <Route path="exports" element={<FinanceExportsPage />} />
+            <Route path="*" element={<Navigate to="/panel/finance" replace />} />
+          </Route>
         </Route>
       </Route>
 
