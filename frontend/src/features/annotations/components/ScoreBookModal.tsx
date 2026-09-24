@@ -98,6 +98,7 @@ export const ScoreBookModal = ({
         ) : undefined
       }
       onPageApiChange={hasMap ? annotator.onPageApiChange : undefined}
+      onEscapeKeyDown={hasMap ? annotator.onEscapeKeyDown : undefined}
       fullView={fullView}
       canExport={canExport}
       fitScope="score"

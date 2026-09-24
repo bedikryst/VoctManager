@@ -79,6 +79,8 @@ export interface PdfViewerModalProps {
   overlaySlot?: React.ReactNode;
   /** Receives the live page handle (current/total + goToPage) on every change. */
   onPageApiChange?: (api: PdfPageApi) => void;
+  /** Optional Escape handling supplied by an interactive viewer overlay. */
+  onEscapeKeyDown?: (event: KeyboardEvent) => boolean;
   /**
    * Whether the document may be exported (open/share/download). Forwarded to the
    * viewer; defaults to `true`. Set `false` for a protected, in-app-only score.
@@ -107,6 +109,7 @@ export const PdfViewerModal = ({
   renderPageOverlay,
   overlaySlot,
   onPageApiChange,
+  onEscapeKeyDown,
   canExport = true,
   fitScope,
   preferredFit,
@@ -223,6 +226,7 @@ export const PdfViewerModal = ({
                   renderPageOverlay={renderPageOverlay}
                   overlaySlot={overlaySlot}
                   onPageApiChange={onPageApiChange}
+                  onEscapeKeyDown={onEscapeKeyDown}
                   reserveTopRight
                   canExport={canExport}
                   fitScope={fitScope}

@@ -13,9 +13,9 @@
  * create/update/delete, undo/redo history, keyboard shortcuts and the lifetime
  * of the selection — so callers stay a few lines thin.
  *
- * The selection is bounded here rather than in the overlay, because all three
- * things that end it are outside the drawing surface: the mark is erased, the
- * reader turns the page away from it, or they press Escape.
+ * Selection and the active tool are bounded here rather than in the overlay,
+ * because the reader can leave either one from outside the drawing surface:
+ * they erase a mark, turn the page, or press Escape.
  *
  * While the stand is open it also watches for markings that arrived from
  * elsewhere — the conductor writing mid-rehearsal. They are drawn silently, and
@@ -108,6 +108,7 @@ export interface ScoreAnnotatorBindings {
   renderPageOverlay: (geometry: PdfPageGeometry) => React.ReactNode;
   overlaySlot: React.ReactNode;
   onPageApiChange: (api: PdfPageApi) => void;
+  onEscapeKeyDown: (event: KeyboardEvent) => boolean;
   annotationCount: number;
   /** The live page handle, for chrome outside the annotator (a programme bar). */
   pageApi: PdfPageApi;
@@ -136,6 +137,8 @@ export const useScoreAnnotator = ({
     isConductor ? "shared" : "personal",
     isConductor,
   );
+  const activeTool = tools.tool;
+  const setActiveTool = tools.setTool;
   // Which of the VISIBLE marks this user may erase / edit. The server already
   // scopes reads (a chorister receives shared + own personal; a manager never
   // receives other users' personal), so layer membership is enough — except
@@ -306,23 +309,34 @@ export const useScoreAnnotator = ({
   );
 
   /**
-   * Escape drops the selection before the score does. The viewer is a Radix
-   * dialog listening on the document, so without claiming the key here first a
-   * reader closing a card would slam the whole score shut. Yields while the
-   * guide is open: capture listeners fire in REGISTRATION order, and this one
-   * registers first, so without the guard it would swallow the guide's own key.
+   * Escape leaves annotation mode before performance mode or a wrapping dialog
+   * see it. Text composers still receive the key so they can discard their
+   * local draft; every other active tool is claimed here, keeping the viewer
+   * open. The guide is the topmost layer and closes before either one.
    */
-  useEffect(() => {
-    if (!selectedId || guideOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      event.stopPropagation();
-      setSelectedId(null);
-    };
-    window.addEventListener("keydown", onKeyDown, true);
-    return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [guideOpen, selectedId]);
+  const onEscapeKeyDown = useCallback(
+    (event: KeyboardEvent): boolean => {
+      if (guideOpen) {
+        event.preventDefault();
+        event.stopPropagation();
+        setGuideOpen(false);
+        return true;
+      }
+      if (selectedId === null && activeTool === "pointer") return false;
+      const target = event.target as HTMLElement | null;
+      const editingText = target?.isContentEditable ?? false;
+      if (selectedId !== null) setSelectedId(null);
+      if (activeTool !== "pointer") setActiveTool("pointer");
+      // NoteCard owns its draft. Let its key handler run so Escape both enters
+      // browse and removes a newly placed, unsaved text anchor.
+      if (!editingText) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      return true;
+    },
+    [activeTool, guideOpen, selectedId, setActiveTool],
+  );
 
   /**
    * The page a marking is ON, in the document actually open. A mark records the
@@ -569,6 +583,7 @@ export const useScoreAnnotator = ({
     renderPageOverlay,
     overlaySlot,
     onPageApiChange,
+    onEscapeKeyDown,
     annotationCount: annotations.length,
     pageApi,
   };
