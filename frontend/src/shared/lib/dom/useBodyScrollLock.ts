@@ -36,18 +36,21 @@ const acquireBodyScrollLock = (): void => {
     // Lock both <html> and <body>. The shell root is `min-h-screen`, so the
     // document scroller is <html>; locking <body> alone leaves the page
     // scrollable behind overlays on tall pages.
-    const widthBeforeLock = html.clientWidth;
+    const bodyWidthBeforeLock = body.getBoundingClientRect().width;
 
     html.style.overflow = "hidden";
     body.style.overflow = "hidden";
 
     // Pay back only the width the lock actually took. `html` declares
     // `scrollbar-gutter: stable` (panel.css), so wherever that is honoured the
-    // gutter survives `overflow: hidden` and this is 0. Padding the body anyway
-    // narrows the page under the overlay, and it springs back the moment a Radix
-    // Select or DropdownMenu opens, because panel.css zeroes body padding under
-    // `data-scroll-locked`.
-    const lostScrollbarWidth = html.clientWidth - widthBeforeLock;
+    // gutter survives `overflow: hidden` and the body keeps its width. Measure
+    // the body, not `html.clientWidth`: Chromium reports the root's clientWidth
+    // as the full viewport once overflow is hidden, while the gutter is still
+    // reserved in layout. Padding the body anyway narrows the page under the
+    // overlay, and it springs back the moment a Radix Select or DropdownMenu
+    // opens, because panel.css zeroes body padding under `data-scroll-locked`.
+    const lostScrollbarWidth =
+      body.getBoundingClientRect().width - bodyWidthBeforeLock;
 
     if (lostScrollbarWidth > 0) {
       body.style.paddingRight = `${computedPaddingRight + lostScrollbarWidth}px`;
