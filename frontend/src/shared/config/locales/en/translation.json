@@ -1636,7 +1636,8 @@
     "budget_status": {
       "PLANNING": "Planning",
       "APPROVED": "Approved",
-      "CLOSED": "Closed"
+      "CLOSED": "Closed",
+      "OPEN": "Open"
     },
     "warnings": {
       "PAID_FOR_DECLINED": {
@@ -1744,6 +1745,9 @@
       "amount_too_large": "The cost or the valuation of the work exceeds what the budget can hold. Check the amount, the contributions and the hours.",
       "budget_transition_refused": "The budget is already in another state. Refresh the page.",
       "budget_has_open_items": "The budget cannot be closed: there are still unpaid costs, people without a fee, fees outside the cast, or mandate contracts without the employer's contributions.",
+      "plan_empty": "The cost plan is empty, so there is nothing to approve. The board simply closes a budget without a cost plan.",
+      "plan_not_approved": "The budget has a cost plan the board has not approved yet. Approve it before closing the budget.",
+      "grant_needs_plan": "An awarded grant funds this project, and a grant is settled against an approved cost plan. Add a cost plan and approve it before closing the budget.",
       "crew_has_settled_fee": "This person has a paid fee or an issued contract. Revert the payment or annul the contract in Finance first.",
       "attachment_not_allowed": "Files are attached to expenses only.",
       "attachment_missing": "No file was chosen.",
@@ -2259,6 +2263,8 @@
     },
     "standing": {
       "planning": "The cost plan can be changed. The board approves it once the plan is ready — costs are recorded in every state but closed.",
+      "open": "No cost plan. Costs and payments are recorded as usual; a cost plan is needed when a grant requires one. Once everything is settled, the board closes the budget.",
+      "grant_needs_plan": "An awarded grant funds this project, and a grant is settled against its cost plan. Add lines on the Cost plan tab — the board approves it before closing the budget.",
       "approved": "Approved {{date}}. The cost plan is locked; costs and payments are still recorded.",
       "closed": "Closed {{date}}. Nothing changes in the budget until the board reopens it.",
       "error": "The budget's state could not be changed.",
@@ -2272,13 +2278,13 @@
       "board_only": "The board approves, opens for correction and closes.",
       "approve_confirm": "Approve",
       "approved_done": "Cost plan approved.",
-      "approve_empty": "The cost plan is empty — you are approving a budget without a plan. Costs are still recorded, and a plan can be added after opening it for a correction.",
       "approve_desc": "The plan of {{amount}} {{currency}} will be locked. It can then be changed only after opening it for a correction, with a reason.",
       "close_confirm": "Close",
       "closed_done": "Budget closed.",
       "close_desc": "Project cost: {{amount}} {{currency}}, paid in full. Once closed, nothing in the budget changes until the board reopens it.",
       "reopen_confirm": "Open",
       "reopen_books_desc": "The budget returns to approved: costs and payments can be recorded again.",
+      "reopen_books_open_desc": "The budget will be open again: costs and payments can be recorded.",
       "reopen_plan_desc": "The cost plan returns to planning and can be changed. The board then approves it again."
     },
     "files": {

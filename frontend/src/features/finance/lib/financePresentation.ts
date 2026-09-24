@@ -96,9 +96,15 @@ export const budgetStatusLabel = (
     ? null
     : t(`finance.budget_status.${status}`, BUDGET_STATUS_LABELS[status]);
 
-/** The state's name where the state itself is the subject — the standing card. */
-export const budgetStatusName = (t: TFunction, status: BudgetStatus): string =>
-  t(`finance.budget_status.${status}`, BUDGET_STATUS_LABELS[status]);
+/**
+ * The state's name where the state itself is the subject — the standing card,
+ * the projects table. PLANNING with no kosztorys lines is named "open": nothing
+ * is being planned there, the books are simply open.
+ */
+export const budgetStatusName = (t: TFunction, status: BudgetStatus, hasPlan: boolean): string =>
+  status === "PLANNING" && !hasPlan
+    ? t("finance.budget_status.OPEN", "Otwarty")
+    : t(`finance.budget_status.${status}`, BUDGET_STATUS_LABELS[status]);
 
 /** A budget that is not closed, whatever the plan says. */
 export const isBudgetWritable = (status: BudgetStatus): boolean => status !== "CLOSED";

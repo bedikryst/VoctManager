@@ -1,9 +1,12 @@
 /**
  * @file BudgetStandingCard.tsx
- * @description Where the budget stands — being planned, approved, or closed —
- * what that state allows, and the board's acts that move it: approve the plan,
- * open it for a correction, close the books, reopen them. Each is one step, and
- * a step back always states its reason, which the history keeps.
+ * @description Where the budget stands — open without a plan, being planned,
+ * approved, or closed — what that state allows, and the board's acts that move
+ * it: approve the plan, open it for a correction, close the books, reopen them.
+ * Each is one step, and a step back always states its reason, which the
+ * history keeps. A budget with no kosztorys has nothing to approve and closes
+ * straight away, unless an awarded grant funds the project: a grant is settled
+ * against an approved kosztorys, so the card asks for one instead.
  * A manager outside the board sees the state and one sentence saying who acts
  * on it, never a button that would answer 403. Closing is refused by the
  * server while anything is unsettled; the card says so before the click.
@@ -56,13 +59,27 @@ export function BudgetStandingCard({
 
   const unsettled =
     isPositiveAmount(summary.outstanding) || summary.unpriced > 0 || summary.orphaned > 0;
+  const hasPlan = budget.lines.length > 0;
+  const closesWithoutPlan = status === "PLANNING" && !hasPlan && !budget.plan_required;
+
+  const planningDescription = hasPlan
+    ? t(
+        "finance.standing.planning",
+        "Kosztorys można zmieniać. Zarząd zatwierdza go, gdy plan jest gotowy — koszty zapisuje się w każdym stanie oprócz zamkniętego.",
+      )
+    : budget.plan_required
+      ? t(
+          "finance.standing.grant_needs_plan",
+          "Projekt ma przyznany grant, a grant rozlicza się według kosztorysu. Dodaj pozycje na karcie Kosztorys — zarząd zatwierdzi go przed zamknięciem budżetu.",
+        )
+      : t(
+          "finance.standing.open",
+          "Bez kosztorysu. Koszty i zapłaty zapisuje się normalnie; kosztorys jest potrzebny, gdy wymaga go grant. Gdy wszystko jest rozliczone, zarząd zamyka budżet.",
+        );
 
   const description =
     status === "PLANNING"
-      ? t(
-          "finance.standing.planning",
-          "Kosztorys można zmieniać. Zarząd zatwierdza go, gdy plan jest gotowy — koszty zapisuje się w każdym stanie oprócz zamkniętego.",
-        )
+      ? planningDescription
       : status === "APPROVED"
         ? t(
             "finance.standing.approved",
@@ -96,6 +113,27 @@ export function BudgetStandingCard({
     });
   };
 
+  const closeAct = (
+    <>
+      <Button
+        variant="secondary"
+        onClick={() => setOpenAct("close")}
+        disabled={unsettled}
+        leftIcon={<Lock size={14} aria-hidden="true" />}
+      >
+        {t("finance.standing.close", "Zamknij budżet")}
+      </Button>
+      {unsettled && (
+        <Caption color="muted">
+          {t(
+            "finance.standing.close_blocked",
+            "Zamknąć można, gdy wszystko jest zapłacone, każdy ma stawkę i nie zostało honorarium poza obsadą.",
+          )}
+        </Caption>
+      )}
+    </>
+  );
+
   return (
     <SectionCard
       as="h2"
@@ -105,7 +143,7 @@ export function BudgetStandingCard({
     >
       <div className="flex flex-col gap-1">
         <Text as="span" size="base" weight="semibold">
-          {budgetStatusName(t, status)}
+          {budgetStatusName(t, status, hasPlan)}
         </Text>
         <Text as="span" size="sm" color="graphite">
           {description}
@@ -114,7 +152,7 @@ export function BudgetStandingCard({
 
       {isBoard ? (
         <div className="flex flex-col gap-2">
-          {status === "PLANNING" && (
+          {status === "PLANNING" && hasPlan && (
             <Button
               variant="secondary"
               onClick={() => setOpenAct("approve")}
@@ -123,24 +161,10 @@ export function BudgetStandingCard({
               {t("finance.standing.approve", "Zatwierdź kosztorys")}
             </Button>
           )}
+          {closesWithoutPlan && closeAct}
           {status === "APPROVED" && (
             <>
-              <Button
-                variant="secondary"
-                onClick={() => setOpenAct("close")}
-                disabled={unsettled}
-                leftIcon={<Lock size={14} aria-hidden="true" />}
-              >
-                {t("finance.standing.close", "Zamknij budżet")}
-              </Button>
-              {unsettled && (
-                <Caption color="muted">
-                  {t(
-                    "finance.standing.close_blocked",
-                    "Zamknąć można, gdy wszystko jest zapłacone, każdy ma stawkę i nie zostało honorarium poza obsadą.",
-                  )}
-                </Caption>
-              )}
+              {closeAct}
               <Button
                 variant="ghost"
                 onClick={() => setOpenAct("reopen")}
@@ -184,16 +208,11 @@ export function BudgetStandingCard({
           }
         >
           <Text size="sm" color="graphite">
-            {summary.planned === null
-              ? t(
-                  "finance.standing.approve_empty",
-                  "Kosztorys jest pusty — zatwierdzasz budżet bez planu. Koszty zapisuje się dalej, a plan można dodać po otwarciu do korekty.",
-                )
-              : t(
-                  "finance.standing.approve_desc",
-                  "Plan na {{amount}} {{currency}} zostanie zablokowany. Zmienić go będzie można tylko po otwarciu do korekty, z podaniem powodu.",
-                  { amount: formatAmount(summary.planned) ?? "0", currency },
-                )}
+            {t(
+              "finance.standing.approve_desc",
+              "Plan na {{amount}} {{currency}} zostanie zablokowany. Zmienić go będzie można tylko po otwarciu do korekty, z podaniem powodu.",
+              { amount: formatAmount(summary.planned) ?? "0", currency },
+            )}
           </Text>
         </ActSheet>
       )}
@@ -238,10 +257,15 @@ export function BudgetStandingCard({
         >
           <Text size="sm" color="graphite">
             {status === "CLOSED"
-              ? t(
-                  "finance.standing.reopen_books_desc",
-                  "Budżet wróci do stanu zatwierdzonego: znów będzie można zapisywać koszty i zapłaty.",
-                )
+              ? budget.budget?.approved_at
+                ? t(
+                    "finance.standing.reopen_books_desc",
+                    "Budżet wróci do stanu zatwierdzonego: znów będzie można zapisywać koszty i zapłaty.",
+                  )
+                : t(
+                    "finance.standing.reopen_books_open_desc",
+                    "Budżet znów będzie otwarty: będzie można zapisywać koszty i zapłaty.",
+                  )
               : t(
                   "finance.standing.reopen_plan_desc",
                   "Kosztorys wróci do planowania i będzie go można zmienić. Potem zarząd zatwierdza go ponownie.",

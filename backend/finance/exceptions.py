@@ -159,6 +159,21 @@ class BudgetHasOpenItems(FinanceError):
     )
 
 
+class PlanEmpty(FinanceError):
+    code = "plan_empty"
+    default_message = "The plan has no lines; there is nothing to approve."
+
+
+class PlanNotApproved(FinanceError):
+    code = "plan_not_approved"
+    default_message = "The budget has a plan the board has not approved; approve it before closing."
+
+
+class GrantNeedsPlan(FinanceError):
+    code = "grant_needs_plan"
+    default_message = "An awarded grant funds this project; it closes only through an approved plan."
+
+
 class AttachmentNotAllowed(FinanceError):
     code = "attachment_not_allowed"
     default_message = "Files are kept with expenses only."

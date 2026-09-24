@@ -1645,7 +1645,8 @@
     "budget_status": {
       "PLANNING": "En préparation",
       "APPROVED": "Approuvé",
-      "CLOSED": "Clôturé"
+      "CLOSED": "Clôturé",
+      "OPEN": "Ouvert"
     },
     "warnings": {
       "PAID_FOR_DECLINED": {
@@ -1753,6 +1754,9 @@
       "amount_too_large": "Le coût ou la valorisation du travail dépasse ce que le budget peut contenir. Vérifiez le montant, les cotisations et les heures.",
       "budget_transition_refused": "Le budget est déjà dans un autre état. Actualisez la page.",
       "budget_has_open_items": "Le budget ne peut pas être clôturé : il reste des coûts impayés, des personnes sans cachet, des cachets hors distribution ou des contrats de mandat sans les cotisations de l'employeur.",
+      "plan_empty": "Le budget prévisionnel est vide, il n'y a donc rien à approuver. Le conseil clôture directement un budget sans prévision.",
+      "plan_not_approved": "Le budget prévisionnel n'est pas encore approuvé par le conseil. Approuvez-le avant de clôturer le budget.",
+      "grant_needs_plan": "Une subvention accordée finance ce projet, et une subvention se justifie selon un budget prévisionnel approuvé. Ajoutez-en un et approuvez-le avant de clôturer le budget.",
       "crew_has_settled_fee": "Cette personne a un cachet payé ou un contrat émis. Annulez d'abord le paiement ou le contrat dans Finances.",
       "attachment_not_allowed": "Les fichiers ne se joignent qu'aux dépenses.",
       "attachment_missing": "Aucun fichier choisi.",
@@ -2268,6 +2272,8 @@
     },
     "standing": {
       "planning": "Le budget prévisionnel peut être modifié. Le conseil l'approuve quand il est prêt — les coûts s'enregistrent dans tous les états sauf clôturé.",
+      "open": "Sans budget prévisionnel. Coûts et paiements s'enregistrent normalement ; une prévision n'est nécessaire que si une subvention l'exige. Une fois tout réglé, le conseil clôture le budget.",
+      "grant_needs_plan": "Une subvention accordée finance ce projet, et une subvention se justifie selon le budget prévisionnel. Ajoutez des lignes dans l'onglet Budget prévisionnel — le conseil l'approuve avant de clôturer le budget.",
       "approved": "Approuvé le {{date}}. Le budget prévisionnel est verrouillé ; coûts et paiements s'enregistrent toujours.",
       "closed": "Clôturé le {{date}}. Rien ne change dans le budget tant que le conseil ne le rouvre pas.",
       "error": "L'état du budget n'a pas pu être modifié.",
@@ -2281,13 +2287,13 @@
       "board_only": "Le conseil approuve, ouvre pour correction et clôture.",
       "approve_confirm": "Approuver",
       "approved_done": "Budget prévisionnel approuvé.",
-      "approve_empty": "Le budget prévisionnel est vide — vous approuvez un budget sans prévision. Les coûts s'enregistrent toujours, et une prévision peut être ajoutée après une ouverture pour correction.",
       "approve_desc": "Le budget prévu de {{amount}} {{currency}} sera verrouillé. Il ne pourra changer qu'après une ouverture pour correction, motif à l'appui.",
       "close_confirm": "Clôturer",
       "closed_done": "Budget clôturé.",
       "close_desc": "Coût du projet : {{amount}} {{currency}}, entièrement payé. Une fois clôturé, rien ne change dans le budget tant que le conseil ne le rouvre pas.",
       "reopen_confirm": "Ouvrir",
       "reopen_books_desc": "Le budget revient à l'état approuvé : on peut de nouveau enregistrer coûts et paiements.",
+      "reopen_books_open_desc": "Le budget sera de nouveau ouvert : on pourra enregistrer coûts et paiements.",
       "reopen_plan_desc": "Le budget prévisionnel revient en préparation et peut être modifié. Le conseil l'approuve ensuite à nouveau."
     },
     "files": {

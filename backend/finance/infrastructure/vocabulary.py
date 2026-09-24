@@ -103,6 +103,10 @@ BUDGET_STATUS_LABELS: dict[str, str] = {
     BudgetStatus.CLOSED: "Zamknięty",
 }
 
+# PLANNING with no kosztorys lines: nothing is being planned, the books are
+# simply open.
+BUDGET_OPEN_LABEL = "Otwarty"
+
 # The patron report speaks to someone outside the office: a cost is named by
 # what it paid for, and a funding kind in the plural, as a sum of sources.
 PATRON_CATEGORY_LABELS: dict[str, str] = {

@@ -453,6 +453,9 @@ export interface ProjectBudgetDTO {
   readonly expenses: readonly ExpenseRowDTO[];
   readonly lines: readonly PlanLineDTO[];
   readonly fundings: readonly ProjectFundingDTO[];
+  /** An awarded grant funds the project: its budget closes only through an
+   * approved kosztorys. Without one, a budget with no plan closes unapproved. */
+  readonly plan_required: boolean;
 }
 
 /** Who a project report is for: a patron (no person, no single fee) or the board. */
