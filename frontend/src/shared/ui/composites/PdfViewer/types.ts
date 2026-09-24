@@ -115,6 +115,11 @@ export interface PdfViewerProps {
   /** Receives the live page handle (current/total + goToPage) on every change. */
   onPageApiChange?: (api: PdfPageApi) => void;
   /**
+   * Gives an overlay the first claim on Escape. Return true when it consumed
+   * the key, so performance mode and a wrapping dialog stay open.
+   */
+  onEscapeKeyDown?: (event: KeyboardEvent) => boolean;
+  /**
    * When the wrapping shell floats its own control in the top-right corner
    * (e.g. a modal's close button), the utility pill drops one row so the two
    * never overlap. Only the non-immersive chrome is affected.

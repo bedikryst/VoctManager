@@ -78,6 +78,7 @@ export const PdfViewer = ({
   renderPageOverlay,
   overlaySlot,
   onPageApiChange,
+  onEscapeKeyDown,
   reserveTopRight = false,
   canExport = true,
   fitScope,
@@ -500,6 +501,7 @@ export const PdfViewer = ({
     if (!blobUrl || isFetchError) return;
 
     if (event.key === "Escape") {
+      if (onEscapeKeyDown?.(event)) return;
       if (isImmersive) {
         // Capture phase + stopPropagation so Esc leaves immersive without also
         // closing a wrapping Radix dialog.
@@ -543,7 +545,7 @@ export const PdfViewer = ({
     if (event.key === "-" || event.key === "_") { event.preventDefault(); changeZoom(-ZOOM_STEP); return; }
     if (event.key === "+" || event.key === "=") { event.preventDefault(); changeZoom(ZOOM_STEP); return; }
     if (event.key === "0") { event.preventDefault(); resetZoom(); }
-  }, [blobUrl, isFetchError, isImmersive, exitImmersive, changePage, turnPage, numPages, changeZoom, resetZoom]);
+  }, [blobUrl, isFetchError, isImmersive, onEscapeKeyDown, exitImmersive, changePage, turnPage, numPages, changeZoom, resetZoom]);
 
   useEffect(() => {
     if (docKey) emitEvent({ type: "open", docKey });

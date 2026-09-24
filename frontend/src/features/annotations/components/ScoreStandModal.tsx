@@ -88,6 +88,7 @@ export const ScoreStandModal = ({
         )
       }
       onPageApiChange={annotator.onPageApiChange}
+      onEscapeKeyDown={annotator.onEscapeKeyDown}
       canExport={canExport}
       // Music is read off a stand at arm's length; a call sheet is read in the
       // hand. The remembered fit belongs to the posture, not to the app.
