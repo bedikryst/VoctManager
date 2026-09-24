@@ -238,6 +238,8 @@ class MaterialsDashboardBookFlagTests(TestCase):
     whether this concert has a bound book at all."""
 
     def setUp(self) -> None:
+        # The per-user throttle counts in the process cache (see ScoreMapEndpointTests).
+        cache.clear()
         User = get_user_model()
         self.user = User.objects.create_user("singer", "singer@test.pl", "pw123456")
         UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)

@@ -47,8 +47,9 @@
             Sprawdzono pod względem merytorycznym: data <span class="blank blank--s"></span> podpis <span class="blank"></span><br>
             Sprawdzono pod względem formalnym i rachunkowym: data <span class="blank blank--s"></span> podpis <span class="blank"></span><br>
             Zatwierdzono do wypłaty: data <span class="blank blank--s"></span> podpisy <span class="blank blank--l"></span><br>
-            Źródło finansowania (opis dokumentu): <span class="blank blank--l"></span>
+            Źródło finansowania (opis dokumentu):{% if not source_notes %} <span class="blank blank--l"></span>{% endif %}
         </p>
+        {% for note in source_notes %}<p class="smallprint">{{ note }}</p>{% endfor %}
     </div>
 </body>
 </html>

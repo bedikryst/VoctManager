@@ -220,18 +220,25 @@ class PlanService:
     def close(project: Project, *, actor: User | None) -> ProjectBudget:
         """APPROVED → CLOSED: the books are settled and nothing changes any more.
         Refused while anything is left to settle — an unpaid cost, a person with
-        no price, a fee that lost its seat — because a closed budget would keep
-        it unsettled for good. The refusal says how much of each is left."""
+        no price, a fee that lost its seat, a mandate whose employer
+        contributions the office has not reported (its cost would stay short of
+        what left the foundation) — because a closed budget would keep it
+        unsettled for good. The refusal says how much of each is left."""
         with transaction.atomic():
             budget = BudgetService.lock(project)
             if budget.status != BudgetStatus.APPROVED:
                 raise BudgetTransitionRefused(params={"status": budget.status, "action": "close"})
-            summary = BudgetService.build(project).summary
-            if summary.outstanding > 0 or summary.unpriced or summary.orphaned:
+            money = BudgetService.build(project)
+            summary = money.summary
+            contributions_missing = sum(
+                len(warning.subject_ids) for warning in money.warnings if warning.code == "EMPLOYER_COST_MISSING"
+            )
+            if summary.outstanding > 0 or summary.unpriced or summary.orphaned or contributions_missing:
                 raise BudgetHasOpenItems(params={
                     "outstanding": str(summary.outstanding),
                     "unpriced": summary.unpriced,
                     "orphaned": summary.orphaned,
+                    "contributions_missing": contributions_missing,
                 })
             budget.status = BudgetStatus.CLOSED
             budget.closed_at = timezone.now()

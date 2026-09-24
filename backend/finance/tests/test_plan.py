@@ -15,7 +15,7 @@ from ..services.budget import BudgetService
 from ..services.expenses import ExpenseService
 from ..services.ledger import LedgerService
 from ..services.plan import PlanService
-from .factories import make_project, make_seat, make_user, price
+from .factories import make_crew, make_project, make_seat, make_user, price
 
 
 def _line(project: Any, name: str, category: str = "VENUE", quantity: str = "1", unit_cost: str = "1000") -> BudgetLine:
@@ -248,6 +248,19 @@ class BudgetStandingTests(APITestCase):
         self.as_board()
         self.client.post(f"{self.base}/budget/reopen/", {"reason": "Zaległa faktura"}, format="json")
         self.assertEqual(self.status(), BudgetStatus.APPROVED)
+
+    def test_closing_waits_for_a_mandates_employer_contributions(self) -> None:
+        item = price(self.project, crew=make_crew(self.project), amount="600")
+        LedgerService.pay(self.project, PayFeesDTO(ids=(item.pk,), paid_on=finance_today()), actor=self.manager)
+        self.as_board()
+        self.client.post(f"{self.base}/budget/approve/")
+
+        response = self.client.post(f"{self.base}/budget/close/")
+        self.assertEqual(response.json()["error_code"], "budget_has_open_items")
+        self.assertEqual(response.json()["params"]["contributions_missing"], 1)
+
+        price(self.project, crew=item.crew_assignment, amount="600", employer_contributions="117.18")
+        self.assertEqual(self.client.post(f"{self.base}/budget/close/").status_code, 200)
 
     def test_the_history_names_each_act_and_its_subject(self) -> None:
         _line(self.project, "Kościół")

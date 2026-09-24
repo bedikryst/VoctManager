@@ -10,6 +10,7 @@ from roster.models import Collaborator, CrewAssignment, Participation
 
 from ..models import CostCategory, FeeForm
 from ..rules import (
+    PCT_LIMIT,
     Pricing,
     category_for,
     contract_number,
@@ -19,6 +20,8 @@ from ..rules import (
     is_valid_nip,
     minimum_hourly_rate,
     reconcile_pricing,
+    share_pct,
+    within_storage,
 )
 
 
@@ -123,3 +126,13 @@ class ConstantsTests(SimpleTestCase):
         self.assertTrue(is_valid_nip("6762718992"))
         self.assertFalse(is_valid_nip("6762718993"))
         self.assertFalse(is_valid_nip("123"))
+
+    def test_a_measured_share_is_bounded_to_what_a_payload_carries(self) -> None:
+        self.assertEqual(share_pct(Decimal("50"), Decimal("200")), Decimal("25.00"))
+        self.assertEqual(share_pct(Decimal("1") - Decimal("1000000"), Decimal("1")), -PCT_LIMIT)
+        self.assertIsNone(share_pct(Decimal("1"), Decimal("0")))
+
+    def test_a_derived_amount_fits_the_stored_width_or_says_so(self) -> None:
+        self.assertTrue(within_storage(None))
+        self.assertTrue(within_storage(Decimal("99999999.99")))
+        self.assertFalse(within_storage(Decimal("100000000.00")))

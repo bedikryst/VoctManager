@@ -253,7 +253,7 @@ class MessageContentCompositionTests(SimpleTestCase):
         with translation.override("en"):
             c = MessageContentBuilder.build(NotificationType.CONTRACT_ISSUED, "INFO", _RICH_META, is_manager=False)
             ctx = c.to_email_context(base_url="https://example.test")
-            self.assertEqual(ctx["cta_url"], "https://example.test/panel/contracts")
+            self.assertEqual(ctx["cta_url"], "https://example.test/panel/schedule")
             self.assertTrue(ctx["lead"].strip())
             self.assertTrue(ctx["cta_label"].strip())
 

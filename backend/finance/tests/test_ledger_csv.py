@@ -8,12 +8,14 @@ import io
 from datetime import timedelta
 from typing import Any
 
+from django.test import SimpleTestCase
 from rest_framework.test import APITestCase
 
 from core.constants import AppRole
 from roster.models import Participation
 
 from ..dtos import AllocationSetDTO, FundingSourceDTO, ProjectFundingDTO
+from ..infrastructure.csv_format import code_cell
 from ..rules import local_date
 from ..services.contracts import ContractService
 from ..services.funding import FundingService
@@ -117,3 +119,16 @@ class LedgerCsvTests(APITestCase):
         project = make_project()
 
         self.assertEqual(self.client.get(f"/api/finance/projects/{project.pk}/export/ledger.csv").status_code, 403)
+
+
+class CodeCellTests(SimpleTestCase):
+    def test_an_identifier_excel_would_convert_stays_text(self) -> None:
+        self.assertEqual(code_cell("12/2026"), '="12/2026"')
+        self.assertEqual(code_cell("0012"), '="0012"')
+        self.assertEqual(code_cell("1234563218"), '="1234563218"')
+        self.assertEqual(code_cell("1E5"), '="1E5"')
+
+    def test_an_ordinary_number_stays_as_typed_and_a_formula_stays_inert(self) -> None:
+        self.assertEqual(code_cell("FV/12/2026"), "FV/12/2026")
+        self.assertEqual(code_cell(""), "")
+        self.assertEqual(code_cell("=HYPERLINK(1)"), "'=HYPERLINK(1)")

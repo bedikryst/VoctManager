@@ -24,6 +24,7 @@ from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser
+from django.core.cache import cache
 from django.db import IntegrityError, transaction
 from django.test import SimpleTestCase, override_settings
 from django.utils import timezone
@@ -158,6 +159,9 @@ _PIECES: dict[str, tuple[str, ...]] = {
 
 class RehearsalPlanApiTests(APITestCase):
     def setUp(self) -> None:
+        # The per-user throttle counts in the process cache, and SQLite hands the
+        # same user ids to every test: earlier requests would count against these.
+        cache.clear()
         User = get_user_model()
         self.manager = User.objects.create_user("mgr-plan", "mgr-plan@test.pl", "pw123456")
         UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)

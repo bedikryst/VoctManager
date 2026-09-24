@@ -916,6 +916,7 @@ class ProjectManagementService:
             key: format_time_window(getattr(project, start), getattr(project, end))
             for key, start, end in ProjectManagementService._DAY_WINDOWS
         }
+        old_concert = (project.date_time, project.timezone)
 
         # Publication is one-way. Sending a live project back to DRAFT would
         # silence a concert the cast is already preparing for and would leave its
@@ -981,6 +982,10 @@ class ProjectManagementService:
                     changes.append(_change(key, old_windows[key], new_window))
 
             project.save()
+
+            # The ledger's costs are incurred on the concert day; they move with it.
+            if (project.date_time, project.timezone) != old_concert:
+                LedgerService.follow_concert_date(project)
 
             # A project leaving DRAFT is being published, and publication supersedes
             # the field diff of the same save: the invitation already carries every

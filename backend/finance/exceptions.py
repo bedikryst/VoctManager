@@ -141,6 +141,11 @@ class PlanAmountTooLarge(FinanceError):
     default_message = "Quantity times unit cost exceeds the largest amount the ledger holds."
 
 
+class AmountTooLarge(FinanceError):
+    code = "amount_too_large"
+    default_message = "The cost or the valuation exceeds the largest amount the ledger holds."
+
+
 class BudgetTransitionRefused(FinanceError):
     code = "budget_transition_refused"
     default_message = "The budget cannot move to that state from where it is."
@@ -148,7 +153,10 @@ class BudgetTransitionRefused(FinanceError):
 
 class BudgetHasOpenItems(FinanceError):
     code = "budget_has_open_items"
-    default_message = "The budget still has unpaid, unpriced or orphaned items; settle them before closing."
+    default_message = (
+        "The budget still has unpaid, unpriced or orphaned items, or mandates without employer contributions; "
+        "settle them before closing."
+    )
 
 
 class AttachmentNotAllowed(FinanceError):
@@ -211,6 +219,11 @@ class SourceSettled(FinanceError):
     default_message = "The source is settled; what was charged to it no longer changes."
 
 
+class SourceKindInUse(FinanceError):
+    code = "source_kind_in_use"
+    default_message = "Costs charged to this source do not fit the new kind; take them off it first."
+
+
 class AllocationExceedsAmount(FinanceError):
     code = "allocation_exceeds_amount"
     default_message = "The sources would cover more than the amount itself."
@@ -229,3 +242,9 @@ class AllocationNotCounted(FinanceError):
 class ReportSourceInvalid(FinanceError):
     code = "report_source_invalid"
     default_message = "A report or export can name only a source of money on this project."
+
+
+class PatronReportBelowFloor(FinanceError):
+    code = "patron_report_below_floor"
+    default_message = "The project's whole cost is the pay of fewer than three people; a patron report would print it."
+    status_code = 409

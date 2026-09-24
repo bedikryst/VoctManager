@@ -473,8 +473,8 @@ class ArtistDossierQueryTests(TestCase):
         Participation.objects.filter(pk=seats[2].pk).update(status=Participation.Status.DECLINED)
 
         stats = get_artist_dossier(artist)["stats"]
-        self.assertEqual(stats["earnings_paid"], 500.0)
-        self.assertEqual(stats["earnings_outstanding"], 300.0)
+        self.assertEqual(stats["earnings_paid"], "500.00")
+        self.assertEqual(stats["earnings_outstanding"], "300.00")
         self.assertEqual(stats["projects_paid"], 1)
 
     def test_dossier_reports_leadership_from_grants_and_led_by(self):
@@ -7503,3 +7503,37 @@ class AnnouncementNudgeTests(TestCase):
 
         result, _ = self._sweep()
         self.assertEqual(result["nudged"], 0)
+
+
+class BookingKeepsItsPersonTests(APITestCase):
+    """A seat or a crew booking carries the fee ledger's row: it never moves to
+    another person or project, which would carry a paid fee along with it."""
+
+    def setUp(self):
+        from finance.tests.factories import make_crew, make_project, make_seat, make_user
+
+        self.client.force_authenticate(make_user())
+        self.project = make_project()
+        self.seat = make_seat(self.project, "Anna", "Nowak")
+        self.crew = make_crew(self.project, "Jan", "Kowalski")
+        self.other_seat = make_seat(make_project(), "Ewa", "Inna")
+        self.other_crew = make_crew(make_project(), "Piotr", "Inny")
+
+    def test_a_seat_keeps_its_artist_and_project(self):
+        for change in ({"artist": str(self.other_seat.artist_id)}, {"project": str(self.other_seat.project_id)}):
+            with self.subTest(change=change):
+                response = self.client.patch(f"/api/participations/{self.seat.pk}/", change, format="json")
+                self.assertEqual(response.status_code, 400)
+        response = self.client.patch(f"/api/participations/{self.seat.pk}/", {"is_section_leader": True}, format="json")
+        self.assertEqual(response.status_code, 200)
+
+    def test_a_crew_booking_keeps_its_person_and_project(self):
+        response = self.client.patch(
+            f"/api/crew-assignments/{self.crew.pk}/", {"collaborator": str(self.other_crew.collaborator_id)},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.patch(
+            f"/api/crew-assignments/{self.crew.pk}/", {"role_description": "Realizator"}, format="json",
+        )
+        self.assertEqual(response.status_code, 200)

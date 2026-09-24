@@ -14,6 +14,7 @@ from typing import Any
 
 from django.conf import settings
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
@@ -46,6 +47,21 @@ from .models import (
 )
 from .permissions import live_delegate_q
 from .queries.plan_queries import PlanReading, plan_row_context
+
+
+def refuse_moving(instance: Any, attrs: dict[str, Any], fields: tuple[str, ...]) -> None:
+    """A seat or a crew booking is one person's place on one project, and the
+    fee ledger keys that person's pay on it. Moved to another person or
+    project, it would carry a paid or contracted fee along, and the next edit
+    would rename the payee. An existing one keeps both; a change of person is
+    a removal and a new booking."""
+    if instance is None:
+        return
+    moved = sorted(name for name in fields if name in attrs and getattr(instance, name) != attrs[name])
+    if moved:
+        message = _("An existing booking keeps its person and project; remove it and add a new one.")
+        raise serializers.ValidationError({name: message for name in moved})
+
 
 # --- 1. ARTIST SERIALIZERS ---
 
@@ -258,6 +274,11 @@ class ParticipationSerializer(serializers.ModelSerializer):
         model = Participation
         fields = '__all__'
         validators = PARTICIPATION_UNIQUENESS
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        attrs = super().validate(attrs)
+        refuse_moving(self.instance, attrs, ('artist', 'project'))
+        return attrs
 
 # --- 3. PROJECT & REHEARSAL SERIALIZERS ---
 
@@ -1001,6 +1022,11 @@ class CrewAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = CrewAssignment
         fields = '__all__'
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        attrs = super().validate(attrs)
+        refuse_moving(self.instance, attrs, ('collaborator', 'project'))
+        return attrs
 
 
 class RehearsalDelegateSerializer(serializers.ModelSerializer):

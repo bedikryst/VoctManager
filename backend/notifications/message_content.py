@@ -284,8 +284,10 @@ def _materials_url(ctx: MessageContext) -> str:
     return "/panel/archive-management" if ctx.is_manager else "/panel/materials"
 
 
-def _contracts_url(_ctx: MessageContext) -> str:
-    return "/panel/contracts"
+def _contracts_url(ctx: MessageContext) -> str:
+    """Contracts live in the managers' finance workspace. A performer sees no
+    money in the panel at all, so they land on their season instead."""
+    return "/panel/finance" if ctx.is_manager else "/panel/schedule"
 
 
 # -- structured-code → localized label maps --------------------------------- #

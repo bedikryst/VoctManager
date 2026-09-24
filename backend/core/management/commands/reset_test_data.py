@@ -43,6 +43,11 @@ WIPE_APP_LABELS = (
 # Individually named because their app also owns tables that must survive.
 WIPE_EXTRA_TABLES = ("core_feedback_report",)
 
+# Tables of a wiped app that survive the wipe. The contract counter: a number
+# it spent may already be printed on a contract signed on paper, and a counter
+# back at 1 would issue that number again.
+KEEP_TABLES = frozenset({"finance_contractsequence"})
+
 # Never truncatable, whatever the app lists above evaluate to. Donations and
 # patron leads are financial and consent records with no second copy; the
 # knowledge base is hand-curated. A guard rather than a comment because the app
@@ -52,7 +57,8 @@ PROTECTED_APP_LABELS = frozenset({"payments", "documents", "auth", "contenttypes
 # Media subtrees owned by the truncated tables. `documents/` is absent — it
 # belongs to the knowledge base, which survives. `avatars/` is handled apart:
 # it is keyed by UserProfile id, and the surviving superusers keep theirs.
-WIPE_MEDIA_DIRS = ("audio_tracks", "score_editions", "project_scores")
+# `finance/` holds the ledger's attachments, contract archives and samples.
+WIPE_MEDIA_DIRS = ("audio_tracks", "score_editions", "project_scores", "finance")
 
 
 class Command(BaseCommand):
@@ -137,7 +143,7 @@ class Command(BaseCommand):
                 tables.add(model._meta.db_table)
 
         existing = set(connection.introspection.table_names())
-        return sorted(tables & existing)
+        return sorted((tables & existing) - KEEP_TABLES)
 
     @staticmethod
     def _assert_no_protected_table(tables: list[str]) -> None:

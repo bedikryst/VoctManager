@@ -5192,3 +5192,11 @@ msgstr ""
 #: notifications/message_content.py
 msgid "If time allows:"
 msgstr "Si le temps le permet :"
+
+#: roster/serializers.py
+msgid ""
+"An existing booking keeps its person and project; remove it and add a new "
+"one."
+msgstr ""
+"Une inscription existante garde sa personne et son projet ; supprimez-la et "
+"ajoutez-en une nouvelle."

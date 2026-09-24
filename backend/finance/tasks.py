@@ -12,17 +12,22 @@
 """
 import io
 import zipfile
+from datetime import timedelta
 from typing import Any
 
 from celery import shared_task
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db.models import QuerySet
+from django.utils import timezone
 
 from .infrastructure.documents import contract_filename, render_contract_pdf
 from .models import Contract, ContractStatus
 
 EXPORT_ROOT = "finance/exports"
+
+# How long a packed archive waits for its download before a newer one clears it.
+EXPORT_TTL = timedelta(hours=1)
 
 # The task's result when the project has nothing to pack; the client owns the words.
 NO_CONTRACTS = "no_contracts"
@@ -47,16 +52,23 @@ def live_contracts(project_id: str) -> QuerySet[Contract]:
     )
 
 
-def _clear_previous_exports(project_id: str) -> None:
-    """One archive per project at a time: a new request replaces the last, so the
-    folder never grows with every click."""
+def _clear_stale_exports(project_id: str) -> None:
+    """A new archive clears the project's archives older than `EXPORT_TTL`, so
+    the folder does not grow with every click. A younger one may be another
+    manager's, packed a moment ago and about to be downloaded, so it stays."""
     folder = export_folder(project_id)
     try:
         _, files = default_storage.listdir(folder)
     except FileNotFoundError:
         return
+    cutoff = timezone.now() - EXPORT_TTL
     for name in files:
-        default_storage.delete(f"{folder}/{name}")
+        path = f"{folder}/{name}"
+        try:
+            if default_storage.get_modified_time(path) < cutoff:
+                default_storage.delete(path)
+        except FileNotFoundError:
+            continue
 
 
 @shared_task(bind=True)
@@ -70,6 +82,6 @@ def generate_contracts_zip_task(self, project_id: str) -> dict[str, Any]:
         for contract in contracts:
             archive.writestr(contract_filename(contract), render_contract_pdf(contract))
 
-    _clear_previous_exports(project_id)
+    _clear_stale_exports(project_id)
     default_storage.save(export_path(project_id, self.request.id), ContentFile(buffer.getvalue()))
     return {"project_id": project_id, "count": len(contracts)}

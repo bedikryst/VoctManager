@@ -18,7 +18,7 @@ from uuid import UUID
 from roster.models import Project
 
 from ..services.budget import AllocationView, ExpenseRow, LedgerRow, ProjectMoney
-from .csv_format import amount_cell, date_cell, encode_csv, text_cell
+from .csv_format import amount_cell, code_cell, date_cell, encode_csv, text_cell
 from .documents import file_segment
 from .vocabulary import CATEGORY_LABELS, CONTRACT_STATUS_LABELS, DOCUMENT_TYPE_LABELS, FORM_LABELS
 
@@ -69,7 +69,7 @@ def _fee_cells(project: Project, row: LedgerRow, line: str, names: dict[UUID, st
         text_cell(row.payee_role),
         CATEGORY_LABELS.get(row.category, row.category),
         FORM_LABELS.get(row.form, row.form),
-        text_cell(contract.number if contract is not None else row.document_number),
+        code_cell(contract.number if contract is not None else row.document_number),
         date_cell(row.document_date) if contract is None else "",
         CONTRACT_STATUS_LABELS.get(contract.status, "") if contract is not None else "",
         date_cell(contract.signed_on) if contract is not None else "",
@@ -93,7 +93,7 @@ def _expense_cells(project: Project, expense: ExpenseRow, line: str, names: dict
         text_cell(expense.description),
         CATEGORY_LABELS.get(expense.category, expense.category),
         DOCUMENT_TYPE_LABELS.get(expense.document_type, expense.document_type),
-        text_cell(expense.document_number),
+        code_cell(expense.document_number),
         date_cell(expense.document_date),
         "",
         "",

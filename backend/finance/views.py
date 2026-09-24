@@ -747,9 +747,11 @@ class FinanceOverviewView(FinanceAPIView):
                 "project": money.project,
                 "budget_status": money.budget_status,
                 "summary": money.summary,
+                # What needs doing, counted by what it concerns: twelve people
+                # without a price are twelve things, not one.
                 "warning_counts": {
-                    SEVERITY_WORK: sum(1 for w in money.warnings if w.severity == SEVERITY_WORK),
-                    SEVERITY_PROBLEM: sum(1 for w in money.warnings if w.severity == SEVERITY_PROBLEM),
+                    severity: sum(len(w.subject_ids) or 1 for w in money.warnings if w.severity == severity)
+                    for severity in (SEVERITY_WORK, SEVERITY_PROBLEM)
                 },
             }
             for money in BudgetService.build_many(projects)

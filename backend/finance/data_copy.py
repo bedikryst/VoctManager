@@ -30,11 +30,13 @@ from decimal import Decimal
 from typing import Any
 
 from django.db.models import Q
+from django.utils import timezone
 
 from roster.models import Project
 
 from .models import CostKind, FeeForm, FinanceAction
 from .rules import (
+    FINANCE_TIMEZONE,
     cast_payee_role,
     category_for_specialty,
     cost_for,
@@ -78,15 +80,17 @@ class _RosterFee:
     paid_fallback: datetime | None
 
 
-def _paid_on(roster: _RosterFee, concert_day: date, tz_name: str) -> tuple[date, str]:
-    """The payment date and where it came from. The roster's `paid_at` first; a
-    seat marked paid without one falls back to when its row last changed; a crew
-    assignment has no such timestamp, so it falls back to the concert date."""
-    if roster.paid_at is not None:
-        return local_date(roster.paid_at, tz_name), "paid_at"
-    if roster.paid_fallback is not None:
-        return local_date(roster.paid_fallback, tz_name), "updated_at"
-    return concert_day, "concert_date"
+def _paid_on(roster: _RosterFee, concert_day: date) -> tuple[date, datetime | None, str]:
+    """The payment date, the moment it was marked, and where they came from.
+    The roster's `paid_at` first; a seat marked paid without one falls back to
+    when its row last changed; a crew assignment has no such timestamp, so it
+    falls back to the concert date and no moment. The date is the office's
+    calendar day, as every payment the ledger records is, wherever the concert
+    was."""
+    for moment, origin in ((roster.paid_at, "paid_at"), (roster.paid_fallback, "updated_at")):
+        if moment is not None:
+            return timezone.localtime(moment, FINANCE_TIMEZONE).date(), moment, origin
+    return concert_day, None, "concert_date"
 
 
 def _copy_one(
@@ -126,9 +130,10 @@ def _copy_one(
 
     concert_day = local_date(project.date_time, project.timezone)
     paid_on: date | None = None
+    paid_marked_at: datetime | None = None
     paid_on_source = ""
     if payable:
-        paid_on, paid_on_source = _paid_on(roster, concert_day, project.timezone)
+        paid_on, paid_marked_at, paid_on_source = _paid_on(roster, concert_day)
     elif roster.is_paid:
         report.paid_flag_dropped += 1
 
@@ -141,6 +146,7 @@ def _copy_one(
         cost_amount=cost_for(form, contract_amount, None),
         incurred_on=concert_day,
         paid_on=paid_on,
+        paid_marked_at=paid_marked_at,
         payee_name=payee_name,
         payee_role=payee_role,
         **{source_field: source},
