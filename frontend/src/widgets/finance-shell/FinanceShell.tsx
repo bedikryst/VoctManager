@@ -27,7 +27,7 @@
 import React, { Suspense, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, FileDown, FolderKanban, HandCoins, Landmark, LogOut } from "lucide-react";
+import { ArrowLeft, FileDown, FolderKanban, HandCoins, Landmark, LayoutDashboard, LogOut } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { PanelErrorBoundary } from "@/app/router/PanelErrorBoundary";
@@ -37,6 +37,7 @@ import { BudgetLoadError } from "@/features/finance/components/BudgetLoadError";
 import { hasCosts } from "@/features/finance/lib/portfolio";
 import type { FinanceOutletContext } from "@/features/finance/workspace/financeOutlet";
 import { useBottomBarHeight } from "@/shared/lib/dom/useBottomBarSlot";
+import { rememberWorkspace } from "@/shared/lib/navigation/lastWorkspace";
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import { RouteTabs, type RouteTabItem } from "@/shared/ui/composites/RouteTabs";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
@@ -68,6 +69,10 @@ export const FinanceShell = (): React.JSX.Element => {
   }, []);
 
   useEffect(() => {
+    rememberWorkspace("finance");
+  }, []);
+
+  useEffect(() => {
     const root = document.documentElement.style;
     for (const [name, value] of Object.entries(NO_DOCK_PROPERTIES)) {
       root.setProperty(name, value);
@@ -79,6 +84,12 @@ export const FinanceShell = (): React.JSX.Element => {
 
   const data = overview.data;
   const sections: RouteTabItem[] = [
+    {
+      to: FINANCE_BASE,
+      label: t("finance.workspace.nav.overview", "Przegląd"),
+      icon: <LayoutDashboard size={14} aria-hidden="true" />,
+      end: true,
+    },
     {
       to: `${FINANCE_BASE}/payables`,
       label: t("finance.workspace.nav.payables", "Do zapłaty"),

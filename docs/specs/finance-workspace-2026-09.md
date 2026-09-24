@@ -1,8 +1,7 @@
 # Finance workspace — `/panel/finance/*`
 
-Status: **Stages 1 (skeleton), 2 (backend), 3 (tables) and 4 (Do zapłaty) done 2026-09-24; stages 1,
-3 and 4 not yet checked in the browser. Next: stage 5 (overview and links).** Update this line at the
-end of every stage.
+Status: **Stages 1–5 done 2026-09-24; stages 1 and 3–5 not yet checked in the browser. Next: browser
+review of the finance workspace.** Update this line at the end of every stage.
 
 Builds on `project-finance-2026-09.md` (the finance module) and its audit
 `project-finance-audit-2026-09.md`. Frontend paths below are relative to `frontend/src/` unless they
@@ -406,3 +405,19 @@ from B1–B3 above, or was left open there:
   `due`). New keys are under `finance.workspace.payables`.
 - The mobile row shows the amount, then the due date (or the paid date on Zapłacone) on the right.
   The form, title and project go in the line of facts.
+
+### Stage 5
+
+- **Przegląd** reads B3's `payables_summary` and its eight payable rows. The client DTO now names the
+  summary explicitly. The three figures are unpaid total, overdue total with its count, and the next
+  14 days with its count; no source balances are combined.
+- **Terminy** lists every live source date in the next 60 days, in date order. A source with both a
+  report and eligibility date appears twice because each is a separate action. Settled and rejected
+  agreements are excluded.
+- **Wymaga pracy** is `projectsRequiringWork()` over the same warning projection the projects table
+  reads. Its hub links, like the existing finance rows, carry `financeReturn`.
+- **Last workspace** is the guarded, device-local `voct:last-workspace`: the finance shell records
+  `finance`, the ordinary panel records `panel`, and Login falls back to finance only for the former.
+  `BudgetTabs` accepts only an internal `/panel/finance` return path; otherwise it points to the
+  foundation projects list.
+- Tests: `features/finance/lib/portfolio.test.ts`.

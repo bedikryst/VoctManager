@@ -2052,10 +2052,32 @@
       "back_to_panel": "Voct",
       "nav": {
         "aria": "Sections des finances",
+        "overview": "Vue d’ensemble",
         "payables": "À payer",
         "sources": "Sources",
         "projects": "Projets",
         "exports": "Exports"
+      },
+      "return_to_finance": "Finances",
+      "finance_foundation": "Finances de la fondation",
+      "overview": {
+        "title": "Les finances aujourd’hui",
+        "outstanding": "À payer",
+        "overdue": "En retard",
+        "due_soon": "Dans les 14 jours",
+        "payments_count": "paiements : {{count}}",
+        "next_payments": "Prochains paiements",
+        "all_payments": "Tous",
+        "payments_empty": "La fondation n’a aucun paiement à effectuer.",
+        "no_due_date": "Sans échéance",
+        "deadlines": "Échéances",
+        "report_due": "Rapport",
+        "eligibility_ends": "Éligibilité",
+        "deadlines_empty": "Aucune échéance de source dans les 60 jours.",
+        "work": "Demande du travail",
+        "problems": "problèmes : {{count}}",
+        "work_count": "à faire : {{count}}",
+        "work_empty": "Aucun budget ne demande de travail actuellement."
       },
       "exports": {
         "office_title": "Registre pour le bureau",

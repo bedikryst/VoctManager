@@ -8,8 +8,9 @@
  */
 
 import React from "react";
+import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ClipboardList, Landmark, LayoutDashboard, Receipt, Users } from "lucide-react";
+import { ArrowLeft, ClipboardList, Landmark, LayoutDashboard, Receipt, Users } from "lucide-react";
 
 import { RouteTabs, type RouteTabItem } from "@/shared/ui/composites/RouteTabs";
 
@@ -19,7 +20,13 @@ interface BudgetTabsProps {
 
 export const BudgetTabs = ({ projectId }: BudgetTabsProps): React.JSX.Element => {
   const { t } = useTranslation();
+  const location = useLocation();
   const base = `/panel/projects/${projectId}/budget`;
+  const financeReturn = (location.state as { financeReturn?: unknown } | null)?.financeReturn;
+  const returnTo =
+    typeof financeReturn === "string" && financeReturn.startsWith("/panel/finance")
+      ? financeReturn
+      : "/panel/finance/projects";
 
   const tabs: RouteTabItem[] = [
     {
@@ -47,6 +54,14 @@ export const BudgetTabs = ({ projectId }: BudgetTabsProps): React.JSX.Element =>
       to: `${base}/funding`,
       label: t("finance.nav.funding", "Finansowanie"),
       icon: <Landmark size={14} aria-hidden="true" />,
+    },
+    {
+      to: returnTo,
+      label:
+        typeof financeReturn === "string" && financeReturn.startsWith("/panel/finance")
+          ? t("finance.workspace.return_to_finance", "Finanse")
+          : t("finance.workspace.finance_foundation", "Finanse fundacji"),
+      icon: <ArrowLeft size={14} aria-hidden="true" />,
     },
   ];
 

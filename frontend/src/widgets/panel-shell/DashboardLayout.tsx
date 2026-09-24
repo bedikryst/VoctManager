@@ -29,6 +29,7 @@ import { DelegationBriefingModal } from "@/features/notifications/components/Del
 import { CustomAdminMessageToast } from "@/features/notifications/components/CustomAdminMessageToast";
 import { FeedbackDock } from "@/features/feedback/components/FeedbackDock";
 import { useBottomBarHeight } from "@/shared/lib/dom/useBottomBarSlot";
+import { rememberWorkspace } from "@/shared/lib/navigation/lastWorkspace";
 import { useOfflineSync } from "@/shared/offline/useOfflineSync";
 import { OfflineStatusBadge } from "@/shared/offline/OfflineStatusBadge";
 import { AppUpdatePrompt } from "@/shared/pwa/AppUpdatePrompt";
@@ -106,6 +107,10 @@ export const DashboardLayout = ({
   useEffect(() => {
     document.body.classList.add("admin-mode");
     return () => document.body.classList.remove("admin-mode");
+  }, []);
+
+  useEffect(() => {
+    rememberWorkspace("panel");
   }, []);
 
   useEffect(() => {
