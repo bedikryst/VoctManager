@@ -101,15 +101,16 @@ export interface Path {
    * IT IS FOR WHAT THE PANEL'S TWO LEVERS CANNOT REACH, which in practice means anything that is
    * not a global brightness or saturation of the pixels as shot. `frameLift` and `frameSaturation`
    * are CSS filter functions over the whole frame; anything living in one channel, or in one
-   * region, or printed on top of the photograph, is outside them by construction. Hymn Poległym is
-   * the standing case: its frame arrives matted, with a light border on all four sides and a
-   * burnt-in credit, and cropping does not remove either — the panel's square is cut from a 3:2
-   * landscape, so it keeps the full height and the border survives top and bottom.
+   * region, or printed on top of the photograph, is outside them by construction. So is SCALE:
+   * the panel's square always takes the source's full short edge, and `framePosition` only slides
+   * it. Hymn Poległym is the standing case — its frame is a portrait shot from the organ loft, and
+   * a square of its full width leaves the singers a speck, so the variant is a tighter square of
+   * the same file around the altar and the ensemble.
    *
-   * WHAT IT MAY NOT DO is change what the photograph says about the evening. Removing a mat the
-   * photographer wrapped around the image is fair; recolouring the light that was in the room is
-   * not, which is why Wołanie Gór's cool panel is damped with `frameSaturation` and never
-   * white-balanced here. A correction that cannot be stated as one sentence about the FILE rather
+   * WHAT IT MAY NOT DO is change what the photograph says about the evening. Cropping closer, or
+   * removing a mat the photographer wrapped around the image, is fair; recolouring the light that
+   * was in the room is not, which is why Wołanie Gór's cool panel is damped with `frameSaturation`
+   * and never white-balanced here. A correction that cannot be stated as one sentence about the FILE rather
    * than about the SUBJECT belongs in a different frame, not in a variant.
    *
    * `frame` still names the GALLERY entry, so alt, credit and run all come from the photograph
@@ -265,35 +266,30 @@ export const PATHS: readonly Path[] = [
     concertId: "hymn-poleglym",
     year: "MMXXV",
     poster: "poster-hymn",
-    // THE DARKEST EVENING IN THE ARCHIVE, and for four frames that was a wall rather than a mood:
-    // `kd-hymn-0` stood here at the grade's ceiling and still measured a MEDIAN of 0.004 with 81.8%
-    // of the panel under 6% luma — a black rectangle with a band of faces, where the rest of the
-    // line runs a median of 0.115–0.132. Lift could not reach it (see `frameLift`), and the other
-    // three offered nothing: `-1` is the altar with the ensemble invisible, `-2` washes the nave
-    // blue and puts the singers a speck at the far end, `-3` is the audience with a face in the
-    // foreground — outside the consent scope, which covers singers.
+    // THE DARKEST EVENING IN THE ARCHIVE, and the one with the least to choose from. `kd-hymn-4`,
+    // the altarpiece open and lit red over the ensemble, is the frame this panel was built for
+    // and is WITHHELD: it is Andrzej Płachetko's, and nothing of his may appear until his consent
+    // is on record (concerts.yaml, above the evening's `heroImg`). Of what remains, `kd-hymn-0` is
+    // a black rectangle with a band of faces (median 0.004, 81.8% under 6% luma, out of reach of
+    // any lift), `-1` is the altar with the ensemble invisible, and `-3` is the audience with a
+    // face in the foreground — outside the consent scope, which covers singers.
     //
-    // This frame is the evening's culmination, which is also what this entry's `note` in
-    // `landing.yaml` describes: the
-    // Mariacki altarpiece open and lit while the anthem sounds. Graded it measures a median of
-    // 0.115 and 0.8% under 6% luma, with the widest hue range in the line at 38.0°. It stays the
-    // darkest panel of the five and that is honest; it is no longer an empty one.
-    frame: "kd-hymn-4",
-    // The photographer delivered this frame matted — a 10px light border on all four sides and a
-    // burnt-in credit in the bottom-left — and NEITHER survives the panel by being cropped away.
-    // The square is cut from a 3:2 landscape, so it takes the full HEIGHT and trims the width: the
-    // border stays top and bottom, and the credit's tail sits inside the left edge of the crop.
-    // The variant is the same photograph with the mat removed (`sharp.extract` 10,10,2000×1213,
-    // which clears the credit by 30px) and nothing else touched. The gallery still shows the file
-    // as delivered, mat and mark intact; the text credit beside it in concerts.yaml is the
-    // attribution that travels with the photograph everywhere else on the site.
-    frameAsset: "kd-hymn-4-imagines",
+    // So `-2`: the nave from the gallery, the retable lit blue at its head and the ensemble on the
+    // steps below. It is the one WIDE shot in a line of mid shots — the camera stood in the organ
+    // loft and no crop brings the singers closer than this without losing the altar. That is the
+    // honest cost of the withheld frame, and the panel to revisit the day `-4` comes back.
+    frame: "kd-hymn-2",
+    // Delivered full-width, a square of it keeps 80% of the nave's height and shrinks the singers
+    // to a speck under the rood beam. The variant is a 1600px square of the same file around the
+    // retable and the ensemble (`sharp.extract` 955,1750,1600×1600 from the 3375×4219 PNG), and
+    // nothing else touched: the blue is the light the room was lit with.
+    frameAsset: "kd-hymn-2-imagines",
     frameMonth: "2025-02",
-    // 1.25, and the limit is the CHROMA rather than the luminance this time: the altarpiece is lit
-    // red, so the red channel is the first thing to clip. At 1.25 it clips over 1.1% of the panel
-    // and the retable keeps its drawing; at 1.35 that is 2.38% and the pentaptych flattens into one
-    // red field, which is the same trade refused for the blue wash in `-2`.
-    frameLift: 1.25,
+    // Graded against the other four at 316px: lift 1.2 puts the median at 0.121, inside the line's
+    // 0.115–0.132; saturation 0.75 takes mean chroma from 0.122 — the highest in the line, all of
+    // it the blue retable — to 0.108, level with Wcielenie's damped panel rather than leading it.
+    frameLift: 1.2,
+    frameSaturation: 0.75,
   },
   {
     slug: "aeternam-epitafium-dla-gazy",

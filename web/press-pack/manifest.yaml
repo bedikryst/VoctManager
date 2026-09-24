@@ -40,11 +40,14 @@ rider: ""
 #
 #   photos:
 #     - { id: kd-wcielenie-3 }
-#     - { id: kd-hymn-0, credit: "Andrzej Płachetko" }
+#     - { id: kd-9-kart-15 }                       # credit read from concerts.yaml
+#     - { id: <frame>, credit: "<Name Surname>" }   # only where concerts.yaml names nobody
 #
-# NOT ELIGIBLE, recorded so nobody re-adds them: `kd-hymn-4` and `kd-hymn-5` were delivered with a
-# matte border and a credit burnt into the frame (see `data/landing/paths.ts`), so they cannot be
-# laid out by a designer; `kd-wolanie-4` is 900 px wide and sourced from PieninyInfo.
+# NOT ELIGIBLE, recorded so nobody re-adds them: `kd-hymn-4` and `kd-hymn-5` are Andrzej
+# Płachetko's and are withheld from every surface until his consent is on record (concerts.yaml,
+# Hymn Poległym) — and even then they were delivered with a matte border and a credit burnt into
+# the frame, so they cannot be laid out by a designer; `kd-wolanie-4` is 900 px wide and sourced
+# from PieninyInfo.
 photos: []
 
 # Which evenings ship as sample programmes. Each becomes one text file with composers, works and
