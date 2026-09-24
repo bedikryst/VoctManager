@@ -1741,8 +1741,10 @@
       "plan_line_category_mismatch": "A cost is charged to a plan line of the same type.",
       "line_order_mismatch": "The cost plan changed in the meantime. Refresh the page and order the lines again.",
       "plan_amount_too_large": "Quantity times unit cost exceeds what the budget can hold. Check the figures.",
+      "amount_too_large": "The cost or the valuation of the work exceeds what the budget can hold. Check the amount, the contributions and the hours.",
       "budget_transition_refused": "The budget is already in another state. Refresh the page.",
-      "budget_has_open_items": "The budget cannot be closed: there are still unpaid costs, people without a fee, or fees outside the cast.",
+      "budget_has_open_items": "The budget cannot be closed: there are still unpaid costs, people without a fee, fees outside the cast, or mandate contracts without the employer's contributions.",
+      "crew_has_settled_fee": "This person has a paid fee or an issued contract. Revert the payment or annul the contract in Finance first.",
       "attachment_not_allowed": "Files are attached to expenses only.",
       "attachment_missing": "No file was chosen.",
       "attachment_too_large": "The file is too large — the limit is 20 MB.",
@@ -1754,12 +1756,14 @@
       "funding_in_use": "Costs are already charged to this source. Take them off it first, then remove the source from the project.",
       "source_in_use": "The source funds a project. Remove it from every project first.",
       "source_settled": "The source is settled — what was charged to it no longer changes. To correct something, change its status.",
+      "source_kind_in_use": "Costs already charged to this source do not fit the new kind. Take them off the source first.",
       "eligibility_period_invalid": "The eligibility period ends before it starts.",
       "allocation_exceeds_amount": "The sources would cover more than the whole amount. Reduce what they are charged.",
       "allocation_kind_mismatch": "Money is charged to a source of money; a volunteer's work to a volunteer-work source.",
       "allocation_not_counted": "This cost does not count (the person declined, for example), so no source is charged with it. It can only be taken off them.",
       "charge_refused": "Not every one of these costs can be charged to this source. Nothing was changed.",
-      "report_source_invalid": "This source is no longer on the project, or it brings no money. Refresh the page and choose the source again."
+      "report_source_invalid": "This source is no longer on the project, or it brings no money. Refresh the page and choose the source again.",
+      "patron_report_below_floor": "The concert's whole cost is the fees of one or two people, so a patron report would reveal them. No such report is prepared."
     },
     "offline": {
       "act": "You are offline. Settlements are never saved offline — reconnect to do this.",
@@ -1883,6 +1887,7 @@
       "in_kind_hours": "Hours",
       "in_kind_rate": "Hourly rate (PLN)",
       "in_kind_note": "Not a cost: the valuation counts as an in-kind contribution in a grant application.",
+      "in_kind_rate_frozen": "The rate is written into agreement {{number}}. Only annulling the agreement changes it.",
       "document_number": "Invoice number",
       "document_date": "Invoice date",
       "vendor_nip": "Vendor's NIP",
@@ -1936,7 +1941,8 @@
       "one_off": "Outside the cast",
       "one_off_empty": "No one outside the cast",
       "one_off_empty_desc": "Someone the foundation pays who neither performs nor works on the concert — e.g. a translator of the programme texts.",
-      "add_one_off": "Add payee"
+      "add_one_off": "Add payee",
+      "closed": "The budget is closed. Changes need it reopened."
     },
     "load_error": {
       "title": "The budget could not be loaded.",
@@ -2091,7 +2097,9 @@
         "document_number": "Document number",
         "document_date": "Document date",
         "amount": "Gross amount (PLN)",
-        "paid_lock": "The expense is paid: its amount and payee stay as they are until the board reverts the payment."
+        "paid_lock": "The expense is paid: its amount and payee stay as they are until the board reverts the payment.",
+        "incurred_document": "Cost date: {{date}}, the document's date. Grant eligibility is judged by it.",
+        "incurred_concert": "Cost date: the concert day, until you enter the document's date. Grant eligibility is judged by it."
       },
       "delete_with_sources": "It also leaves the sources it was charged to: {{sources}}."
     },

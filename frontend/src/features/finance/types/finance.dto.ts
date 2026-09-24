@@ -604,8 +604,9 @@ export interface OneOffFeePayload {
 }
 
 /**
- * Bookkeeping details of one fee; only the fields sent change. `budget_line`
- * null takes the fee out of the plan.
+ * Bookkeeping details of one fee; only the fields sent change, in one
+ * transaction. `budget_line` null takes the fee out of the plan. The money
+ * fields are priced against the amount stored when the edit lands.
  */
 export interface CostItemDetailsPayload {
   readonly payee_name?: string;
@@ -617,6 +618,9 @@ export interface CostItemDetailsPayload {
   readonly document_number?: string;
   readonly document_date?: IsoDate | null;
   readonly vendor_nip?: string;
+  readonly employer_contributions?: DecimalString | null;
+  readonly in_kind_hours?: DecimalString | null;
+  readonly in_kind_hourly_rate?: DecimalString | null;
 }
 
 export interface PayFeesPayload {

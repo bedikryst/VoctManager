@@ -73,8 +73,13 @@ const IDB_KEY = "client";
  * `is_paid` or `paid_at`; the finance ledger holds every fee. A snapshot from
  * before would keep money figures on the device that the server stopped
  * sending and no surface reads.
+ *
+ * 2026-09-dossier-money: an artist's dossier sends its fee totals as decimal
+ * strings and is no longer persisted at all. A snapshot from before holds the
+ * totals as numbers, which the dossier now reads as strings, and keeps a
+ * person's earnings on the device.
  */
-export const QUERY_CACHE_BUSTER = "2026-09-ledger-only-fees";
+export const QUERY_CACHE_BUSTER = "2026-09-dossier-money";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

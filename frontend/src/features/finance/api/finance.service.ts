@@ -40,10 +40,10 @@ import type {
   SignContractPayload,
   SourceDetailDTO,
 } from "../types/finance.dto";
+import { filenameFromDisposition } from "../lib/contentDisposition";
 
 const BASE = "/api/finance";
 
-const FILENAME_PATTERN = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
 
 /**
  * A refused download answers JSON inside a blob, where the error parser cannot
@@ -62,10 +62,10 @@ const rethrowWithJsonBody = async (error: unknown): Promise<never> => {
 };
 
 const saveResponse = (response: AxiosResponse<Blob>, fallbackName: string): void => {
-  const disposition: unknown = response.headers["content-disposition"];
-  const match =
-    typeof disposition === "string" ? FILENAME_PATTERN.exec(disposition) : null;
-  const filename = match?.[1] ? match[1].replace(/['"]/g, "") : fallbackName;
+  const filename = filenameFromDisposition(
+    response.headers["content-disposition"],
+    fallbackName,
+  );
 
   const url = window.URL.createObjectURL(response.data);
   const anchor = document.createElement("a");

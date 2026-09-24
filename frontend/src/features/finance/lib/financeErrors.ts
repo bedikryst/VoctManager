@@ -37,8 +37,10 @@ const FINANCE_ERROR_COPY: Record<string, string> = {
   plan_line_category_mismatch: "Koszt przypisuje się do pozycji kosztorysu tego samego rodzaju.",
   line_order_mismatch: "Kosztorys zmienił się w międzyczasie. Odśwież stronę i ułóż pozycje jeszcze raz.",
   plan_amount_too_large: "Ilość razy cena jednostkowa daje kwotę większą, niż mieści budżet. Sprawdź liczby.",
+  amount_too_large: "Koszt albo wycena pracy wychodzi większa, niż mieści budżet. Sprawdź kwotę, składki i godziny.",
   budget_transition_refused: "Budżet jest już w innym stanie. Odśwież stronę.",
-  budget_has_open_items: "Budżetu nie można zamknąć: są jeszcze niezapłacone koszty, osoby bez stawki albo honoraria poza obsadą.",
+  budget_has_open_items: "Budżetu nie można zamknąć: są jeszcze niezapłacone koszty, osoby bez stawki, honoraria poza obsadą albo umowy zlecenia bez składek pracodawcy.",
+  crew_has_settled_fee: "Ta osoba ma wypłacone honorarium albo wystawioną umowę. Najpierw cofnij płatność albo unieważnij umowę w Finansach.",
   attachment_not_allowed: "Pliki dołącza się tylko do wydatków.",
   attachment_missing: "Nie wybrano pliku.",
   attachment_too_large: "Plik jest za duży — limit to 20 MB.",
@@ -50,12 +52,14 @@ const FINANCE_ERROR_COPY: Record<string, string> = {
   funding_in_use: "To źródło obciążają już koszty. Najpierw zdejmij je ze źródła, potem usuń źródło z projektu.",
   source_in_use: "Źródło finansuje jakiś projekt. Usuń je najpierw ze wszystkich projektów.",
   source_settled: "Źródło jest rozliczone — tego, czym je obciążono, już się nie zmienia. Aby coś poprawić, zmień jego status.",
+  source_kind_in_use: "Tym źródłem obciążono już koszty, których nowy rodzaj nie przyjmie. Najpierw zdejmij je ze źródła.",
   eligibility_period_invalid: "Okres kwalifikowalności kończy się przed swoim początkiem.",
   allocation_exceeds_amount: "Źródła pokryłyby więcej niż cała kwota. Zmniejsz obciążenie źródeł.",
   allocation_kind_mismatch: "Pieniądze obciąża się na źródło pieniędzy, a pracę wolontariusza — na wkład osobowy.",
   allocation_not_counted: "Ten koszt się nie liczy (np. osoba odmówiła udziału), więc nie obciąża się nim źródeł. Można go tylko z nich zdjąć.",
   charge_refused: "Nie każdy z tych kosztów można obciążyć na to źródło. Nic nie zostało zmienione.",
   report_source_invalid: "Tego źródła nie ma już w projekcie albo nie wnosi pieniędzy. Odśwież stronę i wybierz źródło jeszcze raz.",
+  patron_report_below_floor: "Cały koszt koncertu to honoraria jednej lub dwóch osób, więc sprawozdanie dla mecenasa ujawniłoby ich kwoty. Takiego sprawozdania się nie przygotowuje.",
 };
 
 /** The manager's sentence for a finance refusal code, or null if unknown. */

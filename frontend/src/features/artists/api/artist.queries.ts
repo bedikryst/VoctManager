@@ -9,6 +9,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArtistService } from "./artist.service";
 import { parseApiError } from "@/shared/api/errors";
+import { MONEY_QUERY_OPTIONS } from "@/shared/api/queryPolicy";
 import type { ArtistCreateDTO, ArtistUpdateDTO } from "../types/artist.dto";
 
 export const artistKeys = {
@@ -37,12 +38,18 @@ export const useArtists = (includeArchived = false) => {
   });
 };
 
+/**
+ * Manager-only. The dossier carries the artist's fee totals, so it follows the
+ * money policy: never persisted to the device, reconciled on every mount, and
+ * marked stale by every ledger write (`invalidateArtistDossiers`, which matches
+ * this key's shape).
+ */
 export const useArtistDossier = (id: string | null) => {
   return useQuery({
     queryKey: artistKeys.artists.dossier(id ?? "none"),
     queryFn: () => ArtistService.getDossier(id as string),
     enabled: Boolean(id),
-    staleTime: 1000 * 60,
+    ...MONEY_QUERY_OPTIONS,
   });
 };
 

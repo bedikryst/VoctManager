@@ -164,7 +164,7 @@ describe("row edits", () => {
     expect(withAmount(chosen, "250")).toEqual({ amount: "250" });
   });
 
-  it("a mandate costs its contributions on top, once they are known", () => {
+  describe("a mandate with the office's contributions", () => {
     const crew = priced("c", "400.00", {
       origin: "crew",
       participation_id: null,
@@ -176,8 +176,18 @@ describe("row edits", () => {
       cost_amount: "480.25",
     });
 
-    expect(summarizeDraft([crew], { c: withAmount(undefined, "500") }, {}).committed).toBe(58025);
-    expect(summarizeDraft([crew], { c: withForm(undefined, "DZIELO") }, {}).committed).toBe(40000);
+    it("costs them on top while nothing changes it", () => {
+      expect(summarizeDraft([crew], {}, {}).committed).toBe(48025);
+    });
+
+    it("drops them when repriced, as the server does, until they are reported again", () => {
+      expect(summarizeDraft([crew], { c: withAmount(undefined, "500") }, {}).committed).toBe(50000);
+      expect(summarizeDraft([crew], {}, { crew: "600" }).committed).toBe(60000);
+    });
+
+    it("drops them when it stops being a mandate", () => {
+      expect(summarizeDraft([crew], { c: withForm(undefined, "DZIELO") }, {}).committed).toBe(40000);
+    });
   });
 
   it("sums in exact grosze", () => {

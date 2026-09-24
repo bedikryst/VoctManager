@@ -7,7 +7,10 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toastApiError } from "@/shared/api/errors";
-import { invalidatePersonalReadModels } from "@/shared/api/queryPolicy";
+import {
+  invalidatePersonalReadModels,
+  invalidateProjectBudget,
+} from "@/shared/api/queryPolicy";
 
 import type { Participation } from "@/shared/types";
 
@@ -80,6 +83,8 @@ export const useCreateParticipation = (projectId: string) => {
       // Materials program and their personal Schedule. Reconcile those personal
       // read-models (cross-session propagation rides their focus-refetch).
       invalidatePersonalReadModels(queryClient);
+      // A seat is a row of the project's ledger: who is owed changes with it.
+      invalidateProjectBudget(queryClient, projectId);
     },
   });
 };
@@ -136,6 +141,8 @@ export const useUpdateParticipation = (projectId: string) => {
       // Materials program and their personal Schedule. Reconcile those personal
       // read-models (cross-session propagation rides their focus-refetch).
       invalidatePersonalReadModels(queryClient);
+      // A seat is a row of the project's ledger: who is owed changes with it.
+      invalidateProjectBudget(queryClient, projectId);
     },
   });
 };
@@ -239,6 +246,8 @@ export const useDeleteParticipation = (projectId: string) => {
       // Materials program and their personal Schedule. Reconcile those personal
       // read-models (cross-session propagation rides their focus-refetch).
       invalidatePersonalReadModels(queryClient);
+      // A seat is a row of the project's ledger: who is owed changes with it.
+      invalidateProjectBudget(queryClient, projectId);
     },
   });
 };

@@ -55,6 +55,8 @@ interface FeeRowProps {
     readonly onToggle: () => void;
   } | null;
   readonly onAmountChange: (value: string) => void;
+  /** The budget is closed: every amount reads, none edits. */
+  readonly budgetClosed: boolean;
   readonly menu: React.ReactNode;
 }
 
@@ -66,11 +68,12 @@ export function FeeRow({
   isFocused,
   selection,
   onAmountChange,
+  budgetClosed,
   menu,
 }: FeeRowProps): React.JSX.Element {
   const { t, i18n } = useTranslation();
   const currency = t("common.currency", "PLN");
-  const editable = isPriceEditable(row);
+  const editable = !budgetClosed && isPriceEditable(row);
   const chipForm = exceptionalForm(row, preview.next.form);
   const contract = row.contract;
 
