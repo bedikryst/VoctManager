@@ -51,6 +51,8 @@ import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
 import { formatLocalizedDate, formatLocalizedDateTime } from "@/shared/lib/time/intl";
+import { isPositiveAmount, toGrosze } from "@/features/finance/lib/money";
+import type { DecimalString } from "@/features/finance/types/finance.dto";
 import { useArtistDossier } from "../api/artist.queries";
 import { getSectionPresentation } from "../constants/voiceSections";
 import type {
@@ -95,7 +97,9 @@ const plnFormatter = new Intl.NumberFormat("pl-PL", {
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,
 });
-const formatPln = (value: number): string => plnFormatter.format(value);
+/** The server's decimal string, read in integer grosze like every amount. */
+const formatPln = (value: DecimalString): string =>
+  plnFormatter.format((toGrosze(value) ?? 0) / 100);
 
 const projectStatusBadge = (
   status: string,
@@ -198,7 +202,8 @@ const StatsSection = ({ stats }: { stats: ArtistDossierStats }) => {
         />
       </div>
 
-      {(stats.earnings_paid > 0 || stats.earnings_outstanding > 0) && (
+      {(isPositiveAmount(stats.earnings_paid) ||
+        isPositiveAmount(stats.earnings_outstanding)) && (
         <div className="space-y-2">
           <Eyebrow color="muted">
             {t("artists.dossier.earnings", "Rozliczenia")}
@@ -222,7 +227,7 @@ const StatsSection = ({ stats }: { stats: ArtistDossierStats }) => {
             <div className="flex flex-col gap-1.5 rounded-nested border border-hairline bg-ethereal-alabaster/70 p-4">
               <span
                 className={cn(
-                  stats.earnings_outstanding > 0
+                  isPositiveAmount(stats.earnings_outstanding)
                     ? "text-ethereal-crimson"
                     : "text-ethereal-incense/70",
                 )}
@@ -234,7 +239,7 @@ const StatsSection = ({ stats }: { stats: ArtistDossierStats }) => {
                 size="xl"
                 className={cn(
                   "leading-none",
-                  stats.earnings_outstanding > 0
+                  isPositiveAmount(stats.earnings_outstanding)
                     ? "text-ethereal-crimson"
                     : "text-ethereal-ink",
                 )}

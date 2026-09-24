@@ -51,7 +51,8 @@ export function ProjectFactsCard({
   const { t } = useTranslation();
 
   const { data: budget } = useProjectBudget(String(project.id));
-  const cost = budget ? formatAmount(budget.summary.committed) : null;
+  // The fees alone, as the row is labelled: the expenses have a total of their own.
+  const cost = budget ? formatAmount(budget.summary.fees.committed) : null;
   const unpriced = budget?.summary.unpriced ?? 0;
 
   const conductorName = getArtistDisplayName(

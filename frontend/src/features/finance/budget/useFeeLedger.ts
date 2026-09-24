@@ -4,9 +4,11 @@
  * standard rate per roster, the preview they make, and the one atomic save.
  * A settled fee — paid, contracted, or a seat no longer in the cast — takes no
  * draft at all; the server would refuse it, and the row states it instead.
- * The standard rate is a decision about the whole roster, so typing it drops
- * the per-person edits typed before it on that side; one typed afterwards
- * still wins, because the server applies the rate first and the rows after.
+ * The standard rate is a decision about the whole roster, so starting to type
+ * it drops the per-person edits typed before it on the rows it reprices (an
+ * invoice or a volunteer keeps its own); one typed afterwards still wins,
+ * because the server applies the rate first and the rows after, and further
+ * keystrokes in the rate leave it standing.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/useFeeLedger
  */
@@ -23,6 +25,7 @@ import {
   repriceableCount,
   sideOf,
   summarizeDraft,
+  takesStandardRate,
   withAmount,
   withForm,
   type DraftSummary,
@@ -132,6 +135,9 @@ export const useFeeLedger = (
   const setStandardRate = (side: LedgerSide, raw: string): void => {
     const value = sanitizeAmountInput(raw);
     const isCleared = value.trim() === "";
+    // Only the first keystroke of a rate replaces what was typed before it;
+    // the ones after it are the same decision being written out.
+    const startsRate = !isCleared && rates[side] === undefined;
 
     setRates((previous) => {
       const next = { ...previous };
@@ -143,12 +149,12 @@ export const useFeeLedger = (
       return next;
     });
 
-    if (!isCleared) {
+    if (startsRate) {
       setDrafts((previous) =>
         Object.fromEntries(
           Object.entries(previous).filter(([key]) => {
             const row = rows.find((candidate) => candidate.key === key);
-            return !row || sideOf(row) !== side;
+            return !row || sideOf(row) !== side || !takesStandardRate(row);
           }),
         ),
       );

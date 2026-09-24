@@ -7,6 +7,9 @@
  * view and can be changed before saving.
  * On a paid expense the amount and the vendor are what the office paid, so
  * they are read-only here; the board reverts the payment to change them.
+ * The date the cost is incurred on — which grant eligibility is judged by — is
+ * never typed: the server takes the document's date, or the concert day until
+ * there is one, and the sheet says which.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/ExpenseSheet
  */
@@ -24,7 +27,7 @@ import { useCreateExpense, useUpdateExpense } from "../../api/finance.queries";
 import { ActSheet } from "../../components/ActSheet";
 import { PlanLineSelect } from "../../components/PlanLineSelect";
 import { toastFinanceError } from "../../lib/financeErrors";
-import { categoryLabel, documentTypeLabel } from "../../lib/financePresentation";
+import { categoryLabel, documentTypeLabel, formatFinanceDate } from "../../lib/financePresentation";
 import { fromGrosze, sanitizeAmountInput, toAmountInput, toGrosze } from "../../lib/money";
 import { isValidNip, normalizeNip } from "../../lib/nip";
 import {
@@ -60,7 +63,7 @@ export function ExpenseSheet({
   lines,
   onClose,
 }: ExpenseSheetProps): React.JSX.Element {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const create = useCreateExpense(projectId);
   const update = useUpdateExpense(projectId);
   const isPaid = expense?.is_paid ?? false;
@@ -252,6 +255,18 @@ export function ExpenseSheet({
           maxLength={20}
         />
       </div>
+      <Caption color="muted">
+        {documentDate
+          ? t(
+              "finance.expenses.sheet.incurred_document",
+              "Data kosztu: {{date}}, data dokumentu. Według niej ocenia się kwalifikowalność w dotacji.",
+              { date: formatFinanceDate(documentDate, i18n.language) },
+            )
+          : t(
+              "finance.expenses.sheet.incurred_concert",
+              "Data kosztu: dzień koncertu, dopóki nie wpiszesz daty dokumentu. Według niej ocenia się kwalifikowalność w dotacji.",
+            )}
+      </Caption>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
           label={t("finance.expenses.sheet.amount", "Kwota brutto (PLN)")}

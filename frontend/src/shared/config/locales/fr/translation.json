@@ -1750,8 +1750,10 @@
       "plan_line_category_mismatch": "Un coût s'impute à une ligne du budget du même type.",
       "line_order_mismatch": "Le budget prévisionnel a changé entre-temps. Actualisez la page et réordonnez les lignes.",
       "plan_amount_too_large": "La quantité fois le coût unitaire dépasse ce que le budget peut contenir. Vérifiez les chiffres.",
+      "amount_too_large": "Le coût ou la valorisation du travail dépasse ce que le budget peut contenir. Vérifiez le montant, les cotisations et les heures.",
       "budget_transition_refused": "Le budget est déjà dans un autre état. Actualisez la page.",
-      "budget_has_open_items": "Le budget ne peut pas être clôturé : il reste des coûts impayés, des personnes sans cachet ou des cachets hors distribution.",
+      "budget_has_open_items": "Le budget ne peut pas être clôturé : il reste des coûts impayés, des personnes sans cachet, des cachets hors distribution ou des contrats de mandat sans les cotisations de l'employeur.",
+      "crew_has_settled_fee": "Cette personne a un cachet payé ou un contrat émis. Annulez d'abord le paiement ou le contrat dans Finances.",
       "attachment_not_allowed": "Les fichiers ne se joignent qu'aux dépenses.",
       "attachment_missing": "Aucun fichier choisi.",
       "attachment_too_large": "Le fichier est trop volumineux — la limite est de 20 Mo.",
@@ -1763,12 +1765,14 @@
       "funding_in_use": "Des coûts sont déjà imputés à cette source. Retirez-les d'abord, puis retirez la source du projet.",
       "source_in_use": "La source finance un projet. Retirez-la d'abord de tous les projets.",
       "source_settled": "La source est soldée — ce qui lui a été imputé ne change plus. Pour corriger, changez son statut.",
+      "source_kind_in_use": "Des coûts déjà imputés à cette source ne conviennent pas au nouveau type. Retirez-les d'abord de la source.",
       "eligibility_period_invalid": "La période d'éligibilité se termine avant de commencer.",
       "allocation_exceeds_amount": "Les sources couvriraient plus que le montant entier. Réduisez leur imputation.",
       "allocation_kind_mismatch": "L'argent s'impute à une source d'argent ; le travail bénévole au bénévolat valorisé.",
       "allocation_not_counted": "Ce coût ne compte pas (la personne s'est désistée, par exemple) : on ne l'impute à aucune source. On peut seulement l'en retirer.",
       "charge_refused": "Tous ces coûts ne peuvent pas être imputés à cette source. Rien n'a été modifié.",
-      "report_source_invalid": "Cette source n'est plus sur le projet, ou elle n'apporte pas d'argent. Actualisez la page et choisissez de nouveau la source."
+      "report_source_invalid": "Cette source n'est plus sur le projet, ou elle n'apporte pas d'argent. Actualisez la page et choisissez de nouveau la source.",
+      "patron_report_below_floor": "Le coût total du concert correspond aux cachets d'une ou deux personnes : un rapport pour le mécène les révélerait. Un tel rapport n'est pas établi."
     },
     "offline": {
       "act": "Vous êtes hors ligne. Les règlements ne s'enregistrent jamais hors ligne — reconnectez-vous pour le faire.",
@@ -1892,6 +1896,7 @@
       "in_kind_hours": "Heures",
       "in_kind_rate": "Taux horaire (PLN)",
       "in_kind_note": "Ce n'est pas un coût : la valorisation compte comme apport en nature dans une demande de subvention.",
+      "in_kind_rate_frozen": "Le taux figure dans la convention {{number}}. Seule l'annulation de la convention permet de le modifier.",
       "document_number": "Numéro de facture",
       "document_date": "Date de facture",
       "vendor_nip": "NIP du fournisseur",
@@ -1945,7 +1950,8 @@
       "one_off": "Hors distribution",
       "one_off_empty": "Personne hors distribution",
       "one_off_empty_desc": "Quelqu'un que la fondation paie sans qu'il se produise ni travaille sur le concert — p. ex. le traducteur des textes du programme.",
-      "add_one_off": "Ajouter"
+      "add_one_off": "Ajouter",
+      "closed": "Le budget est clôturé. Toute modification exige sa réouverture."
     },
     "load_error": {
       "title": "Le budget n'a pas pu être chargé.",
@@ -2100,7 +2106,9 @@
         "document_number": "Numéro de la pièce",
         "document_date": "Date de la pièce",
         "amount": "Montant TTC (PLN)",
-        "paid_lock": "La dépense est payée : son montant et son bénéficiaire restent figés tant que le conseil n'annule pas le paiement."
+        "paid_lock": "La dépense est payée : son montant et son bénéficiaire restent figés tant que le conseil n'annule pas le paiement.",
+        "incurred_document": "Date du coût : {{date}}, la date du document. L'éligibilité à la subvention se juge sur elle.",
+        "incurred_concert": "Date du coût : le jour du concert, tant que la date du document n'est pas saisie. L'éligibilité à la subvention se juge sur elle."
       },
       "delete_with_sources": "Elle quitte aussi les sources auxquelles elle était imputée : {{sources}}."
     },

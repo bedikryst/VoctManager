@@ -36,7 +36,7 @@ import { FinanceService } from "../api/finance.service";
 import { CostAllocationSheet } from "../components/AllocationSheet";
 import { CostSummaryCard, type CostFigure } from "../components/CostSummaryCard";
 import { toastFinanceError } from "../lib/financeErrors";
-import { allocationSummary, categoryLabel } from "../lib/financePresentation";
+import { allocationSummary, categoryLabel, isBudgetWritable } from "../lib/financePresentation";
 import { canAllocateRow, isValuationRow } from "../lib/funding";
 import { canIssue, canPay, isSelectable } from "../lib/ledgerActs";
 import { isPriceEditable } from "../lib/feeDraft";
@@ -315,12 +315,18 @@ function FeesWorkspace({
 
   const hasPlan = ledger.budget.lines.length > 0;
   const fundings = ledger.budget.fundings;
-  const budgetOpen = ledger.budget.budget?.status !== "CLOSED";
+  // A closed budget is the record the board closed: its rows read, and every
+  // write — a price, an act, a detail, a new payee — waits for it to reopen.
+  const budgetOpen = isBudgetWritable(ledger.budget.budget?.status ?? "PLANNING");
+  const closedReason = budgetOpen
+    ? null
+    : t("finance.fees.closed", "Budżet jest zamknięty. Zmiany wymagają jego ponownego otwarcia.");
 
   const renderRow = (row: LedgerRowDTO): React.JSX.Element => {
     const preview = ledger.previewOf(row);
     const blockedReason =
       offlineReason ??
+      closedReason ??
       (preview.isPending || preview.isInvalid
         ? t("finance.acts.blocked_by_draft", "Najpierw zapisz albo odrzuć zmianę stawki.")
         : null);
@@ -335,16 +341,17 @@ function FeesWorkspace({
         }
         isFocused={row.key === focusedKey}
         selection={
-          isSelectable(row)
+          budgetOpen && isSelectable(row)
             ? { selected: selected.has(row.key), onToggle: () => toggle(row.key) }
             : null
         }
         onAmountChange={(value) => ledger.setAmount(row, value)}
+        budgetClosed={!budgetOpen}
         menu={
           <RowActionsMenu
             row={row}
             currentForm={preview.next.form}
-            formEditable={isPriceEditable(row)}
+            formEditable={budgetOpen && isPriceEditable(row)}
             blockedReason={blockedReason}
             isBoard={isBoard}
             fundingSummary={allocationSummary(row.allocations, fundings)}
@@ -411,7 +418,7 @@ function FeesWorkspace({
             "Honoraria pojawią się tutaj, gdy dodasz muzyków w zakładce Obsada.",
           )}
           toolbar={
-            ledger.repriceable("cast") > 0 ? (
+            budgetOpen && ledger.repriceable("cast") > 0 ? (
               <StandardRateField
                 value={ledger.standardRateOf("cast")}
                 affectedCount={ledger.repriceable("cast")}
@@ -435,7 +442,7 @@ function FeesWorkspace({
             "Stawki współpracowników pojawią się tutaj, gdy zatrudnisz ich w zakładce Ekipa.",
           )}
           toolbar={
-            ledger.repriceable("crew") > 0 ? (
+            budgetOpen && ledger.repriceable("crew") > 0 ? (
               <StandardRateField
                 value={ledger.standardRateOf("crew")}
                 affectedCount={ledger.repriceable("crew")}
@@ -459,15 +466,17 @@ function FeesWorkspace({
             "Ktoś, komu fundacja płaci, choć nie występuje ani nie pracuje przy koncercie — np. tłumacz tekstów programu.",
           )}
           action={
-            <Button
-              variant="outline"
-              size="sm"
-              // Live even offline: the sheet it opens says why it cannot save.
-              onClick={() => setOpenAct({ kind: "one_off" })}
-              leftIcon={<UserPlus size={14} aria-hidden="true" />}
-            >
-              {t("finance.fees.add_one_off", "Dodaj osobę")}
-            </Button>
+            budgetOpen ? (
+              <Button
+                variant="outline"
+                size="sm"
+                // Live even offline: the sheet it opens says why it cannot save.
+                onClick={() => setOpenAct({ kind: "one_off" })}
+                leftIcon={<UserPlus size={14} aria-hidden="true" />}
+              >
+                {t("finance.fees.add_one_off", "Dodaj osobę")}
+              </Button>
+            ) : undefined
           }
         >
           {ledger.sections.oneOff.map(renderRow)}
@@ -475,7 +484,7 @@ function FeesWorkspace({
       </div>
 
       <EditorActionBar
-        isOpen={isDirty}
+        isOpen={budgetOpen && isDirty}
         description={
           offlineReason ??
           t(
@@ -490,7 +499,7 @@ function FeesWorkspace({
       />
 
       <SelectionBar
-        isOpen={!isDirty && selected.size > 0}
+        isOpen={budgetOpen && !isDirty && selected.size > 0}
         selectedCount={selected.size}
         issuableCount={issuable.length}
         payableCount={payable.length}

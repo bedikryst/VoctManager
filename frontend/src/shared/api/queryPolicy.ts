@@ -43,6 +43,21 @@ export const RECONCILING_REFETCH = {
 } as const;
 
 /**
+ * Freshness and retention for every read that carries money: the finance
+ * ledger, its sources and portfolio, and an artist's dossier with its fee
+ * totals. `persist: false` — names and fees never rest in the device's
+ * persisted snapshot; the 24-hour offline paint is for rehearsal material, not
+ * for what the foundation pays whom. A budget changes under other hands (a
+ * singer declines, the office pays), so every mount and focus reconciles; the
+ * `staleTime` only spaces out focus refetches.
+ */
+export const MONEY_QUERY_OPTIONS = {
+  meta: { persist: false },
+  staleTime: 30_000,
+  ...RECONCILING_REFETCH,
+} as const;
+
+/**
  * Freshness tier for a closed vocabulary the server renders in the reader's
  * language — the liturgical slots, and anything else whose only variable is the
  * language it is asked in. It cannot change under a running session, so it is
@@ -117,6 +132,36 @@ export const PREVIEW_QUERY_OPTIONS = {
 export const PERSONAL_READMODEL_KEYS = {
   materialsDashboard: ["materials", "dashboard"] as const,
   scheduleDashboard: ["schedule", "dashboard"] as const,
+};
+
+/**
+ * The money read-models other features change or depend on. A project's
+ * budget changes with its roster (a seat added or declined, a crew member
+ * booked or removed); an artist's dossier sums the ledger, and a ledger write
+ * does not know which artists it touched, so it marks every dossier stale.
+ * The dossier key is `["artists", id, "dossier"]` (`artistKeys` owns it).
+ */
+export const MONEY_READMODEL_KEYS = {
+  budget: (projectId: string) => ["finance", "budget", projectId] as const,
+  isArtistDossier: (queryKey: readonly unknown[]): boolean =>
+    queryKey[0] === "artists" && queryKey[2] === "dossier",
+};
+
+/** Mark a project's budget stale after a roster write that changes who is owed. */
+export const invalidateProjectBudget = (
+  queryClient: QueryClient,
+  projectId: string,
+): void => {
+  void queryClient.invalidateQueries({
+    queryKey: MONEY_READMODEL_KEYS.budget(projectId),
+  });
+};
+
+/** Mark every artist's dossier stale after a ledger write. */
+export const invalidateArtistDossiers = (queryClient: QueryClient): void => {
+  void queryClient.invalidateQueries({
+    predicate: (query) => MONEY_READMODEL_KEYS.isArtistDossier(query.queryKey),
+  });
 };
 
 /**

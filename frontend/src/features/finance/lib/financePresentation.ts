@@ -454,10 +454,20 @@ export const formatFinanceDate = (value: IsoDate, language?: string): string =>
     "UTC",
   );
 
-/** Today as the API's calendar date, in the manager's own day. */
-export const todayIsoDate = (): IsoDate => {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${now.getFullYear()}-${month}-${day}`;
-};
+/**
+ * The books keep the foundation office's calendar (`finance.rules.FINANCE_TIMEZONE`
+ * on the server): a payment on the evening of the 31st belongs to that month,
+ * wherever the manager's device is.
+ */
+const FINANCE_TIMEZONE = "Europe/Warsaw";
+
+// `en-CA` writes a date as `yyyy-MM-dd`, the API's own shape.
+const officeDay = new Intl.DateTimeFormat("en-CA", {
+  timeZone: FINANCE_TIMEZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/** Today as the API's calendar date, in the office's day — the day the server checks against. */
+export const todayIsoDate = (): IsoDate => officeDay.format(new Date());

@@ -1,16 +1,16 @@
 /**
  * @file finance.queries.ts
  * @description Server state for finance. Three rules shape every hook here:
- *  - `persist: false`. Names and fees never rest in the device's persisted
- *    query snapshot; the panel's 24-hour offline paint is for rehearsal
- *    material, not for what the foundation pays whom.
- *  - freshness from `queryPolicy` — a budget changes under other hands (a
- *    singer declines, the office pays), so every mount reconciles.
+ *  - `MONEY_QUERY_OPTIONS` from `queryPolicy`: never persisted to the device,
+ *    and reconciled on every mount — a budget changes under other hands (a
+ *    singer declines, the office pays).
  *  - every write answers with the whole budget, which replaces the cached one
- *    outright, and marks the portfolio, the funding sources (whose figures sum
- *    every project) and the budget's history stale. A refused write refetches
- *    the budget instead, since a refusal usually means the copy on screen is
- *    old. A source's own write marks every budget stale: each one embeds it.
+ *    outright (cancelling a read still in flight), and marks the portfolio,
+ *    the funding sources (whose figures sum every project), the budget's
+ *    history and the artists' dossiers (whose totals sum the ledger) stale. A
+ *    refused write refetches the budget instead, since a refusal usually
+ *    means the copy on screen is old. A source's own write marks every budget
+ *    stale: each one embeds it.
  * Nothing here is queued offline: a finance write either reaches the server
  * or visibly does not happen.
  * @architecture Enterprise SaaS 2026
@@ -20,13 +20,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   keepPreviousData,
+  type QueryClient,
+  type QueryKey,
   useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 
-import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
+import {
+  MONEY_QUERY_OPTIONS,
+  MONEY_READMODEL_KEYS,
+  invalidateArtistDossiers,
+} from "@/shared/api/queryPolicy";
 import type {
   AllocationSetPayload,
   BudgetLinePayload,
@@ -50,7 +56,7 @@ import { FinanceService } from "./finance.service";
 export const financeKeys = {
   all: ["finance"] as const,
   budgets: ["finance", "budget"] as const,
-  budget: (projectId: string) => ["finance", "budget", projectId] as const,
+  budget: MONEY_READMODEL_KEYS.budget,
   overviews: ["finance", "overview"] as const,
   overview: (limit: number, offset: number) =>
     ["finance", "overview", limit, offset] as const,
@@ -61,13 +67,24 @@ export const financeKeys = {
   source: (sourceId: string) => ["finance", "sources", "detail", sourceId] as const,
 };
 
-const FINANCE_STALE_TIME = 30_000;
+const FINANCE_QUERY_OPTIONS = MONEY_QUERY_OPTIONS;
 
-const FINANCE_QUERY_OPTIONS = {
-  meta: { persist: false },
-  staleTime: FINANCE_STALE_TIME,
-  ...RECONCILING_REFETCH,
-} as const;
+/**
+ * Puts a write's answer in the cache, over whatever read is still in flight: a
+ * focus refetch that left before the write would otherwise land after it and
+ * paint the old figures. Only where a query already holds the key — one made
+ * by `setQueryData` alone carries no `persist: false`, and the persister would
+ * keep it; an absent query fetches on its own when it mounts.
+ */
+const replaceCached = async <TData>(
+  queryClient: QueryClient,
+  queryKey: QueryKey,
+  data: TData,
+): Promise<void> => {
+  if (!queryClient.getQueryCache().find({ queryKey, exact: true })) return;
+  await queryClient.cancelQueries({ queryKey, exact: true });
+  queryClient.setQueryData(queryKey, data);
+};
 
 export const useProjectBudget = (projectId: string) =>
   useQuery({
@@ -129,11 +146,12 @@ const useBudgetWrite = <TVariables>(
 
   return useMutation({
     mutationFn: write,
-    onSuccess: (budget) => {
-      queryClient.setQueryData(financeKeys.budget(projectId), budget);
+    onSuccess: async (budget) => {
+      await replaceCached(queryClient, financeKeys.budget(projectId), budget);
       void queryClient.invalidateQueries({ queryKey: financeKeys.overviews });
       void queryClient.invalidateQueries({ queryKey: financeKeys.sources });
       void queryClient.invalidateQueries({ queryKey: financeKeys.history(projectId) });
+      invalidateArtistDossiers(queryClient);
     },
     onError: () => {
       void queryClient.invalidateQueries({ queryKey: financeKeys.budget(projectId) });
@@ -303,8 +321,8 @@ const useSourceWrite = <TVariables>(
 
   return useMutation({
     mutationFn: write,
-    onSuccess: (detail) => {
-      queryClient.setQueryData(financeKeys.source(detail.source.id), detail);
+    onSuccess: async (detail) => {
+      await replaceCached(queryClient, financeKeys.source(detail.source.id), detail);
       void queryClient.invalidateQueries({ queryKey: financeKeys.sourceList });
       void queryClient.invalidateQueries({ queryKey: financeKeys.budgets });
       void queryClient.invalidateQueries({ queryKey: financeKeys.overviews });

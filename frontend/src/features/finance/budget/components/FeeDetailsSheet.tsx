@@ -4,10 +4,12 @@
  * amount field cannot hold: a due date, the vendor's invoice, a mandate's
  * employer contributions, the valuation of a volunteer's work, a note, the
  * plan line it is charged to, and a one-off payee's name and side.
- * It saves as one act. The money fields travel in a single-row pricing batch
- * that restates the stored amount, so a paid or contracted fee still takes its
- * contributions (the server allows exactly that); the rest goes to the item's
- * details. Only what changed is sent.
+ * It saves as one act, in one request: the server prices the money fields
+ * against the amount it holds at that moment — so a paid or contracted fee
+ * still takes its contributions, and an amount changed elsewhere since the
+ * sheet opened is not written back — and applies the rest in the same
+ * transaction. Only what changed is sent. The hourly rate a volunteer
+ * agreement prints is frozen once the agreement is issued.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/FeeDetailsSheet
  */
@@ -21,9 +23,8 @@ import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
-import { useSaveFees, useUpdateCostItemDetails } from "../../api/finance.queries";
+import { useUpdateCostItemDetails } from "../../api/finance.queries";
 import { ActSheet } from "../../components/ActSheet";
-import { feeRefOf } from "../../lib/feeDraft";
 import { toastFinanceError } from "../../lib/financeErrors";
 import { categoryLabel, formLabel } from "../../lib/financePresentation";
 import { fromGrosze, sanitizeAmountInput, toAmountInput, toGrosze } from "../../lib/money";
@@ -32,7 +33,6 @@ import type {
   CostItemDetailsPayload,
   DecimalString,
   FeeCategory,
-  FeeItemPayload,
   LedgerRowDTO,
   PlanLineDTO,
 } from "../../types/finance.dto";
@@ -66,11 +66,11 @@ export function FeeDetailsSheet({
   onClose,
 }: FeeDetailsSheetProps): React.JSX.Element {
   const { t } = useTranslation();
-  const saveFees = useSaveFees(projectId);
   const updateDetails = useUpdateCostItemDetails(projectId);
 
   const identityEditable =
     row.origin === "one_off" && !row.is_paid && row.contract === null;
+  const rateFrozen = row.contract !== null;
   const isMandate = row.form === "ZLECENIE";
   const isVolunteer = row.form === "VOLUNTEER";
   const isInvoice = row.form === "INVOICE";
@@ -95,7 +95,7 @@ export function FeeDetailsSheet({
   const sideLines = lines.filter((line) => line.category === side);
   const chosenLine = sideLines.some((line) => line.id === lineId) ? lineId : "";
 
-  const isPending = saveFees.isPending || updateDetails.isPending;
+  const isPending = updateDetails.isPending;
 
   const handleConfirm = async (): Promise<void> => {
     if (!row.cost_item_id) return;
@@ -124,7 +124,7 @@ export function FeeDetailsSheet({
     if (isMandate) collect("employer_contributions", contributions, row.employer_contributions);
     if (isVolunteer) {
       collect("in_kind_hours", inKindHours, row.in_kind_hours);
-      collect("in_kind_hourly_rate", inKindRate, row.in_kind_hourly_rate);
+      if (!rateFrozen) collect("in_kind_hourly_rate", inKindRate, row.in_kind_hourly_rate);
     }
 
     const details: { -readonly [K in keyof CostItemDetailsPayload]: CostItemDetailsPayload[K] } = {};
@@ -158,25 +158,14 @@ export function FeeDetailsSheet({
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    const hasPricing = Object.keys(pricing).length > 0;
-    const hasDetails = Object.keys(details).length > 0;
-    if (!hasPricing && !hasDetails) {
+    const payload: CostItemDetailsPayload = { ...details, ...pricing };
+    if (Object.keys(payload).length === 0) {
       onClose();
       return;
     }
 
     try {
-      if (hasPricing) {
-        const item: FeeItemPayload = {
-          ref: feeRefOf(row),
-          contract_amount: row.contract_amount,
-          ...pricing,
-        };
-        await saveFees.mutateAsync({ items: [item] });
-      }
-      if (hasDetails) {
-        await updateDetails.mutateAsync({ costItemId: row.cost_item_id, payload: details });
-      }
+      await updateDetails.mutateAsync({ costItemId: row.cost_item_id, payload });
       toast.success(t("finance.details.done", "Zapisano szczegóły pozycji."));
       onClose();
     } catch (failure) {
@@ -264,14 +253,21 @@ export function FeeDetailsSheet({
               value={inKindRate}
               onChange={(event) => setInKindRate(sanitizeAmountInput(event.target.value))}
               error={errors.in_kind_hourly_rate}
+              disabled={rateFrozen}
               className="tabular-nums"
             />
           </div>
           <Text size="xs" color="muted">
-            {t(
-              "finance.details.in_kind_note",
-              "To nie koszt: wycena służy jako wkład osobowy we wniosku o grant.",
-            )}
+            {rateFrozen && row.contract
+              ? t(
+                  "finance.details.in_kind_rate_frozen",
+                  "Stawkę zapisano w porozumieniu {{number}}. Zmienia ją dopiero unieważnienie porozumienia.",
+                  { number: row.contract.number },
+                )
+              : t(
+                  "finance.details.in_kind_note",
+                  "To nie koszt: wycena służy jako wkład osobowy we wniosku o grant.",
+                )}
           </Text>
         </div>
       )}

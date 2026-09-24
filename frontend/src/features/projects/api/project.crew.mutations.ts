@@ -1,12 +1,19 @@
 /**
  * @file project.crew.mutations.ts
- * @description React Query mutations for project crew assignments.
+ * @description React Query mutations for project crew assignments. A crew
+ * booking is a row of the project's fee ledger, so every write marks the
+ * project's budget stale, and a removal the ledger refuses (a paid or
+ * contracted fee) says so in the finance module's words.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toastApiError } from "@/shared/api/errors";
+import { useTranslation } from "react-i18next";
+
+import { financeErrorCopy } from "@/features/finance/lib/financeErrors";
+import { parseApiError, toastApiError } from "@/shared/api/errors";
+import { invalidateProjectBudget } from "@/shared/api/queryPolicy";
 
 import type { CrewAssignment } from "@/shared/types";
 
@@ -74,6 +81,7 @@ export const useCreateCrewAssignment = (projectId: string) => {
         queryKey: projectKeys.crewAssignments.byProject(projectId),
       });
       queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
+      invalidateProjectBudget(queryClient, projectId);
     },
   });
 };
@@ -126,12 +134,14 @@ export const useUpdateCrewAssignment = (projectId: string) => {
         queryKey: projectKeys.crewAssignments.byProject(projectId),
       });
       queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
+      invalidateProjectBudget(queryClient, projectId);
     },
   });
 };
 
 export const useDeleteCrewAssignment = (projectId: string) => {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: (id: string) => ProjectService.deleteCrewAssignment(id),
@@ -152,7 +162,8 @@ export const useDeleteCrewAssignment = (projectId: string) => {
       return { previousCrewAssignments };
     },
     onError: (error, _variables, context) => {
-      toastApiError(error);
+      const copy = financeErrorCopy(t, parseApiError(error).code);
+      toastApiError(error, t, copy ? { description: copy } : {});
       if (context?.previousCrewAssignments) {
         queryClient.setQueryData(
           projectKeys.crewAssignments.byProject(projectId),
@@ -165,6 +176,7 @@ export const useDeleteCrewAssignment = (projectId: string) => {
         queryKey: projectKeys.crewAssignments.byProject(projectId),
       });
       queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
+      invalidateProjectBudget(queryClient, projectId);
     },
   });
 };

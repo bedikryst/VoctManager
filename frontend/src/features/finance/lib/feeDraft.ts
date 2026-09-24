@@ -6,8 +6,9 @@
  * the standard rate first and the rows after it, and reconciles every row so
  * that 0 and VOLUNTEER stay one fact. The preview has to predict exactly that,
  * or the rail promises a total the save does not produce — so
- * `reconcilePricing` mirrors `finance/rules.py::reconcile_pricing` and
- * `takesStandardRate` mirrors the service's skip rules, line for line.
+ * `reconcilePricing` mirrors `finance/rules.py::reconcile_pricing`,
+ * `takesStandardRate` the service's skip rules and `summarizeDraft` its rule
+ * for a repriced mandate's contributions, line for line.
  * Every sum here is integer grosze.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/feeDraft
@@ -256,9 +257,12 @@ export const summarizeDraft = (
     let cost: number | null;
     if (preview.isPending) {
       const counted = preview.next.grosze !== null && (row.billable || row.is_paid);
-      const contributions =
-        preview.next.form === "ZLECENIE" ? toGrosze(row.employer_contributions) : null;
-      cost = counted ? costGrosze(preview.next, contributions) : null;
+      // A row the save changes carries no employer contributions after it
+      // (`finance/services/ledger.py::_apply_pricing`): a mandate whose amount
+      // moves drops the office's figure, which was computed on the old amount,
+      // and a row that only becomes a mandate had none. It counts at its
+      // amount until the office reports them again.
+      cost = counted ? costGrosze(preview.next, null) : null;
     } else {
       cost = row.counted ? toGrosze(row.cost_amount) : null;
     }

@@ -7,6 +7,7 @@
  * @architecture Enterprise SaaS 2026
  */
 
+import type { DecimalString } from "@/features/finance/types/finance.dto";
 import type { ParticipationStatus } from "@/shared/types";
 
 export interface DossierCasting {
@@ -84,11 +85,12 @@ export interface ArtistDossierStats {
   attendance_rate: number | null;
   top_voice_lines: DossierVoiceLine[];
   /**
-   * Settlement footprint (PLN), read from the finance ledger. Paid counts every
-   * payment made; outstanding leaves out seats that were declined or removed.
+   * Settlement footprint (PLN, decimal strings), summed from the finance ledger
+   * by artist. Paid counts every payment made; outstanding leaves out seats
+   * that were declined or removed.
    */
-  earnings_paid: number;
-  earnings_outstanding: number;
+  earnings_paid: DecimalString;
+  earnings_outstanding: DecimalString;
   projects_paid: number;
 }
 

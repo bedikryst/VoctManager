@@ -1769,8 +1769,10 @@
       "plan_line_category_mismatch": "Koszt przypisuje się do pozycji kosztorysu tego samego rodzaju.",
       "line_order_mismatch": "Kosztorys zmienił się w międzyczasie. Odśwież stronę i ułóż pozycje jeszcze raz.",
       "plan_amount_too_large": "Ilość razy cena jednostkowa daje kwotę większą, niż mieści budżet. Sprawdź liczby.",
+      "amount_too_large": "Koszt albo wycena pracy wychodzi większa, niż mieści budżet. Sprawdź kwotę, składki i godziny.",
       "budget_transition_refused": "Budżet jest już w innym stanie. Odśwież stronę.",
-      "budget_has_open_items": "Budżetu nie można zamknąć: są jeszcze niezapłacone koszty, osoby bez stawki albo honoraria poza obsadą.",
+      "budget_has_open_items": "Budżetu nie można zamknąć: są jeszcze niezapłacone koszty, osoby bez stawki, honoraria poza obsadą albo umowy zlecenia bez składek pracodawcy.",
+      "crew_has_settled_fee": "Ta osoba ma wypłacone honorarium albo wystawioną umowę. Najpierw cofnij płatność albo unieważnij umowę w Finansach.",
       "attachment_not_allowed": "Pliki dołącza się tylko do wydatków.",
       "attachment_missing": "Nie wybrano pliku.",
       "attachment_too_large": "Plik jest za duży — limit to 20 MB.",
@@ -1782,12 +1784,14 @@
       "funding_in_use": "To źródło obciążają już koszty. Najpierw zdejmij je ze źródła, potem usuń źródło z projektu.",
       "source_in_use": "Źródło finansuje jakiś projekt. Usuń je najpierw ze wszystkich projektów.",
       "source_settled": "Źródło jest rozliczone — tego, czym je obciążono, już się nie zmienia. Aby coś poprawić, zmień jego status.",
+      "source_kind_in_use": "Tym źródłem obciążono już koszty, których nowy rodzaj nie przyjmie. Najpierw zdejmij je ze źródła.",
       "eligibility_period_invalid": "Okres kwalifikowalności kończy się przed swoim początkiem.",
       "allocation_exceeds_amount": "Źródła pokryłyby więcej niż cała kwota. Zmniejsz obciążenie źródeł.",
       "allocation_kind_mismatch": "Pieniądze obciąża się na źródło pieniędzy, a pracę wolontariusza — na wkład osobowy.",
       "allocation_not_counted": "Ten koszt się nie liczy (np. osoba odmówiła udziału), więc nie obciąża się nim źródeł. Można go tylko z nich zdjąć.",
       "charge_refused": "Nie każdy z tych kosztów można obciążyć na to źródło. Nic nie zostało zmienione.",
-      "report_source_invalid": "Tego źródła nie ma już w projekcie albo nie wnosi pieniędzy. Odśwież stronę i wybierz źródło jeszcze raz."
+      "report_source_invalid": "Tego źródła nie ma już w projekcie albo nie wnosi pieniędzy. Odśwież stronę i wybierz źródło jeszcze raz.",
+      "patron_report_below_floor": "Cały koszt koncertu to honoraria jednej lub dwóch osób, więc sprawozdanie dla mecenasa ujawniłoby ich kwoty. Takiego sprawozdania się nie przygotowuje."
     },
     "offline": {
       "act": "Brak połączenia. Rozliczeń nie zapisuje się offline — wróć do sieci, aby to zrobić.",
@@ -1911,6 +1915,7 @@
       "in_kind_hours": "Godziny",
       "in_kind_rate": "Stawka za godzinę (PLN)",
       "in_kind_note": "To nie koszt: wycena służy jako wkład osobowy we wniosku o grant.",
+      "in_kind_rate_frozen": "Stawkę zapisano w porozumieniu {{number}}. Zmienia ją dopiero unieważnienie porozumienia.",
       "document_number": "Numer faktury",
       "document_date": "Data faktury",
       "vendor_nip": "NIP wystawcy",
@@ -1964,7 +1969,8 @@
       "one_off": "Spoza obsady",
       "one_off_empty": "Nikt spoza obsady",
       "one_off_empty_desc": "Ktoś, komu fundacja płaci, choć nie występuje ani nie pracuje przy koncercie — np. tłumacz tekstów programu.",
-      "add_one_off": "Dodaj osobę"
+      "add_one_off": "Dodaj osobę",
+      "closed": "Budżet jest zamknięty. Zmiany wymagają jego ponownego otwarcia."
     },
     "load_error": {
       "title": "Nie udało się wczytać budżetu.",
@@ -2119,7 +2125,9 @@
         "document_number": "Numer dokumentu",
         "document_date": "Data dokumentu",
         "amount": "Kwota brutto (PLN)",
-        "paid_lock": "Wydatek jest zapłacony: kwoty i odbiorcy nie zmienisz bez cofnięcia zapłaty przez zarząd."
+        "paid_lock": "Wydatek jest zapłacony: kwoty i odbiorcy nie zmienisz bez cofnięcia zapłaty przez zarząd.",
+        "incurred_document": "Data kosztu: {{date}}, data dokumentu. Według niej ocenia się kwalifikowalność w dotacji.",
+        "incurred_concert": "Data kosztu: dzień koncertu, dopóki nie wpiszesz daty dokumentu. Według niej ocenia się kwalifikowalność w dotacji."
       },
       "delete_with_sources": "Zniknie też z obciążonych nim źródeł: {{sources}}."
     },
