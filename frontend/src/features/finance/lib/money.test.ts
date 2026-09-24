@@ -11,6 +11,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatLedgerGrosze,
+  formatTableAmount,
+  formatTableDifference,
   fromGrosze,
   lineTotalGrosze,
   sanitizeAmountInput,
@@ -83,6 +85,16 @@ describe("fromGrosze", () => {
 describe("presentation", () => {
   it("prints Polish figures whatever the interface language", () => {
     expect(formatLedgerGrosze(40050)).toBe("400,50");
+  });
+
+  it("groups every thousand in a table column, where pl-PL alone would not", () => {
+    // Intl separates groups with a no-break space; compare on the digits' layout.
+    const plain = (value: string | null): string | null => value?.replace(/\s/g, " ") ?? null;
+    expect(plain(formatTableAmount("6750.00"))).toBe("6 750,00");
+    expect(plain(formatTableAmount("12500"))).toBe("12 500,00");
+    expect(plain(formatTableAmount("400.5"))).toBe("400,50");
+    expect(plain(formatTableDifference("-1500.00"))).toBe("−1 500,00");
+    expect(formatTableAmount(null)).toBeNull();
   });
 
   it("shows a stored amount in a field without trailing zeros", () => {

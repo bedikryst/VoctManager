@@ -15,7 +15,7 @@
  */
 
 import React, { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { AlertTriangle, ArrowLeft, FolderKanban, Pencil, ReceiptText, ScrollText, Trash2 } from "lucide-react";
@@ -24,6 +24,12 @@ import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { useIsOnline } from "@/shared/lib/dom/useIsOnline";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
+import {
+  DataTable,
+  sortRows,
+  useSearchParamSort,
+  type DataTableColumn,
+} from "@/shared/ui/composites/DataTable";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
@@ -42,8 +48,15 @@ import {
   fundingKindLabel,
   fundingStatusLabel,
 } from "../lib/financePresentation";
-import { formatAmount, formatDifference, formatLedgerAmount, isPositiveAmount } from "../lib/money";
-import type { FundingSourceDTO, SourceDetailDTO } from "../types/finance.dto";
+import {
+  formatAmount,
+  formatDifference,
+  formatLedgerAmount,
+  formatTableAmount,
+  isPositiveAmount,
+  toGrosze,
+} from "../lib/money";
+import type { FundingSourceDTO, SourceChargeDTO, SourceDetailDTO } from "../types/finance.dto";
 
 const FINANCE_SOURCES_PATH = "/panel/finance/sources";
 
@@ -119,6 +132,147 @@ const useFacts = (source: FundingSourceDTO): Fact[] => {
   ];
   return facts.filter((fact): fact is Fact => fact !== null);
 };
+
+/**
+ * Every cost charged to the source, in the order the report lists them until a
+ * header says otherwise (`?ordering=`). A row opens the cost in its project's
+ * ledger.
+ */
+function ChargesTable({ charges }: { readonly charges: readonly SourceChargeDTO[] }): React.JSX.Element {
+  const { t, i18n } = useTranslation();
+  const { pathname, search } = useLocation();
+  const [sort, setSort] = useSearchParamSort();
+  const date = (value: string): string => formatFinanceDate(value, i18n.language);
+  const payee = (charge: SourceChargeDTO): string =>
+    charge.kind === "FEE" ? charge.payee_name : charge.vendor_name;
+  const facts = (charge: SourceChargeDTO): string =>
+    [charge.plan_line || categoryLabel(t, charge.category), charge.document_number || null]
+      .filter(Boolean)
+      .join(" · ");
+  const ineligible = (charge: SourceChargeDTO): React.ReactNode =>
+    charge.eligible ? null : (
+      <Caption as="span" color="crimson">
+        {t("finance.source_page.ineligible", "poza okresem kwalifikowalności")}
+      </Caption>
+    );
+  const amount = (charge: SourceChargeDTO): React.ReactNode => (
+    <>
+      <Text as="span" size="sm">
+        {formatTableAmount(charge.amount) ?? "0"}
+      </Text>
+      {charge.amount !== charge.cost_amount && (
+        <Caption as="span" color="muted" className="block">
+          {t("finance.source_page.of_cost", "z {{amount}}", {
+            amount: formatTableAmount(charge.cost_amount) ?? "0",
+          })}
+        </Caption>
+      )}
+    </>
+  );
+
+  const columns: DataTableColumn<SourceChargeDTO>[] = [
+    {
+      id: "payee",
+      header: t("finance.workspace.charges.cost", "Koszt"),
+      sortValue: payee,
+      cell: (charge) => (
+        <span className="flex flex-col gap-0.5">
+          <Text as="span" size="base" weight="medium">
+            {payee(charge)}
+          </Text>
+          <Caption as="span" color="muted">
+            {facts(charge)}
+          </Caption>
+          {ineligible(charge)}
+        </span>
+      ),
+    },
+    {
+      id: "project",
+      header: t("finance.workspace.projects.project", "Projekt"),
+      sortValue: (charge) => charge.project_title,
+      className: "w-48",
+      cell: (charge) => (
+        <Text as="span" size="sm">
+          {charge.project_title}
+        </Text>
+      ),
+    },
+    {
+      id: "incurred",
+      header: t("finance.workspace.charges.incurred_on", "Data kosztu"),
+      numeric: true,
+      sortValue: (charge) => charge.incurred_on,
+      className: "w-32",
+      cell: (charge) => (
+        <Text as="span" size="sm">
+          {date(charge.incurred_on)}
+        </Text>
+      ),
+    },
+    {
+      id: "paid",
+      header: t("finance.workspace.charges.paid_on", "Zapłacono"),
+      numeric: true,
+      sortValue: (charge) => charge.paid_on,
+      firstDirection: "desc",
+      className: "w-32",
+      cell: (charge) => (
+        <Text as="span" size="sm" color={charge.paid_on ? "sage" : "muted"}>
+          {charge.paid_on ? date(charge.paid_on) : "–"}
+        </Text>
+      ),
+    },
+    {
+      id: "amount",
+      header: t("finance.workspace.charges.amount", "Kwota"),
+      numeric: true,
+      sortValue: (charge) => toGrosze(charge.amount),
+      firstDirection: "desc",
+      className: "w-36",
+      cell: amount,
+    },
+  ];
+
+  return (
+    <DataTable
+      label={t("finance.source_page.charges", "Obciążone koszty")}
+      rows={sortRows(charges, columns, sort)}
+      columns={columns}
+      rowKey={(charge) => charge.cost_item_id}
+      rowLink={(charge) => ({
+        to: `/panel/projects/${charge.project_id}/budget/${charge.kind === "EXPENSE" ? "costs" : "people"}?focus=${charge.cost_item_id}`,
+        state: { financeReturn: pathname + search },
+      })}
+      sort={sort}
+      onSortChange={setSort}
+      empty={{
+        icon: <ReceiptText size={22} strokeWidth={1.5} />,
+        title: t("finance.source_page.charges_empty", "Tego źródła nie obciąża jeszcze żaden koszt."),
+        description: t(
+          "finance.source_page.charges_empty_desc",
+          "Źródło obciąża się kosztami w projekcie: w zakładce Finansowanie albo w menu honorarium i wydatku.",
+        ),
+      }}
+      mobile={{
+        primary: (charge) => (
+          <Text as="span" size="sm" weight="medium">
+            {payee(charge)}
+          </Text>
+        ),
+        secondary: (charge) => (
+          <>
+            <Caption as="span" color="muted">
+              {[charge.project_title, facts(charge), date(charge.incurred_on)].filter(Boolean).join(" · ")}
+            </Caption>
+            {ineligible(charge)}
+          </>
+        ),
+        trailing: amount,
+      }}
+    />
+  );
+}
 
 function SourceBody({ detail }: { readonly detail: SourceDetailDTO }): React.JSX.Element {
   const { t, i18n } = useTranslation();
@@ -226,57 +380,7 @@ function SourceBody({ detail }: { readonly detail: SourceDetailDTO }): React.JSX
             title={t("finance.source_page.charges", "Obciążone koszty")}
             bodyClassName="p-0"
           >
-            {charges.length === 0 ? (
-              <StatePanel
-                variant="inline"
-                className="px-5 py-8"
-                icon={<ReceiptText size={22} strokeWidth={1.5} />}
-                title={t("finance.source_page.charges_empty", "Tego źródła nie obciąża jeszcze żaden koszt.")}
-                description={t(
-                  "finance.source_page.charges_empty_desc",
-                  "Źródło obciąża się kosztami w projekcie: w zakładce Finansowanie albo w menu honorarium i wydatku.",
-                )}
-              />
-            ) : (
-              <ul className="divide-y divide-hairline">
-                {charges.map((charge) => (
-                  <li key={charge.cost_item_id} className="flex items-start gap-4 px-5 py-3">
-                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <Text as="span" size="sm" weight="medium" truncate>
-                        {charge.kind === "FEE" ? charge.payee_name : charge.vendor_name}
-                      </Text>
-                      <Caption as="span" color="muted" className="truncate">
-                        {[
-                          charge.project_title,
-                          charge.plan_line || categoryLabel(t, charge.category),
-                          charge.document_number || null,
-                          formatFinanceDate(charge.incurred_on, i18n.language),
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </Caption>
-                      {!charge.eligible && (
-                        <Caption as="span" color="crimson">
-                          {t("finance.source_page.ineligible", "poza okresem kwalifikowalności")}
-                        </Caption>
-                      )}
-                    </span>
-                    <span className="flex w-32 shrink-0 flex-col items-end">
-                      <Text as="span" size="sm" className="tabular-nums">
-                        {formatLedgerAmount(charge.amount) ?? "0"}
-                      </Text>
-                      {charge.amount !== charge.cost_amount && (
-                        <Caption as="span" color="muted" className="tabular-nums">
-                          {t("finance.source_page.of_cost", "z {{amount}}", {
-                            amount: formatLedgerAmount(charge.cost_amount) ?? "0",
-                          })}
-                        </Caption>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <ChargesTable charges={charges} />
           </SectionCard>
         </div>
 

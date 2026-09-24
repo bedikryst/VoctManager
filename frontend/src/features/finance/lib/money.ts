@@ -30,6 +30,16 @@ const preciseAmountFormatter = new Intl.NumberFormat("pl-PL", {
   maximumFractionDigits: 2,
 });
 
+// `pl-PL` groups only from five digits ("min2"), so `6750,00` would sit a
+// group short of `12 500,00` in the same column. A table groups every figure:
+// `true` is ECMA-402's spelling of `"always"`, the one the ES2022 lib types
+// accept (the default is `"auto"`, which honours the locale's minimum).
+const tableAmountFormatter = new Intl.NumberFormat("pl-PL", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+  useGrouping: true,
+});
+
 /**
  * An amount as integer grosze: `"1250.00"` → 125000, `"400,5"` → 40050.
  * Accepts what the API writes and what a hand in a Polish keyboard types
@@ -100,6 +110,15 @@ export const formatLedgerAmount = (
   return grosze === null ? null : formatLedgerGrosze(grosze);
 };
 
+/**
+ * A server amount for a table column: `6 750,00` beside `12 500,00`, every
+ * thousand grouped so the digits line up down the column.
+ */
+export const formatTableAmount = (value: DecimalString | null): string | null => {
+  const grosze = toGrosze(value);
+  return grosze === null ? null : tableAmountFormatter.format(grosze / GROSZE_PER_ZLOTY);
+};
+
 /** Whether a server amount is above zero — a figure worth a slot at all. */
 export const isPositiveAmount = (value: DecimalString | null): boolean =>
   (toGrosze(value) ?? 0) > 0;
@@ -128,6 +147,10 @@ export const formatDifference = (value: DecimalString | null): string | null =>
 /** A server difference for a ledger column: "−500,00". */
 export const formatLedgerDifference = (value: DecimalString | null): string | null =>
   signed(value, formatLedgerAmount);
+
+/** A server difference for a table column: "−1 500,00". */
+export const formatTableDifference = (value: DecimalString | null): string | null =>
+  signed(value, formatTableAmount);
 
 /**
  * Keeps a hand-typed amount to something the API will accept — digits, one
