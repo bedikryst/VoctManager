@@ -40,6 +40,7 @@ from .models import (
     ProgramItem,
     Project,
     ProjectPieceCasting,
+    ProjectSoloAssignment,
     Rehearsal,
     RehearsalDelegate,
     RehearsalPlanItem,
@@ -940,6 +941,7 @@ class ProjectPieceCastingSerializer(serializers.ModelSerializer):
     artist_name = serializers.SerializerMethodField()
     project_id = serializers.SerializerMethodField()
     artist_id = serializers.SerializerMethodField()
+    is_legacy_solo = serializers.SerializerMethodField()
 
     class Meta:
         model = ProjectPieceCasting
@@ -972,6 +974,32 @@ class ProjectPieceCastingSerializer(serializers.ModelSerializer):
     
     def get_artist_id(self, obj) -> str:
         return str(obj.participation.artist_id)
+
+    def get_is_legacy_solo(self, obj) -> bool:
+        return obj.voice_line == 'SOLO'
+
+
+class ProjectSoloAssignmentSerializer(serializers.ModelSerializer):
+    artist_name = serializers.SerializerMethodField()
+    reference_needs_review = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProjectSoloAssignment
+        fields = '__all__'
+
+    def get_artist_name(self, obj: ProjectSoloAssignment) -> str | None:
+        participation = obj.participation
+        if participation is None:
+            return None
+        return f'{participation.artist.first_name} {participation.artist.last_name}'
+
+    def get_reference_needs_review(self, obj: ProjectSoloAssignment) -> bool:
+        if not obj.score_reference:
+            return False
+        return any(
+            edition_id != obj.reference_edition_id
+            for edition_id in self.context.get('edition_ids', ())
+        )
 
 class CollaboratorBasicSerializer(serializers.ModelSerializer):
     """

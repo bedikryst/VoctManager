@@ -825,6 +825,31 @@ class ProjectPieceCasting(models.Model):
         ]
 
 
+class ProjectSoloAssignment(models.Model):
+    """One named solo duty in a project's casting of a programmed piece."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='solo_assignments')
+    piece = models.ForeignKey('archive.Piece', on_delete=models.RESTRICT, related_name='project_solo_assignments')
+    position = models.PositiveIntegerField()
+    label = models.CharField(max_length=200)
+    score_reference = models.TextField(blank=True)
+    participation = models.ForeignKey(
+        Participation, on_delete=models.RESTRICT, null=True, blank=True,
+        related_name='solo_assignments',
+    )
+    notes = models.CharField(max_length=200, blank=True)
+    gives_pitch = models.BooleanField(default=False)
+    reference_edition = models.ForeignKey(
+        'archive.ScoreEdition', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='+',
+    )
+
+    class Meta:
+        ordering = ['position', 'id']
+        indexes = [models.Index(fields=['project', 'piece', 'position'])]
+
+
 # An item is INSTRUMENTAL in a project when the piece has at least one live
 # casting there and every one of them is a player's. Derived from the board,
 # never stored: the board already says "organ plays in the Mass, not in the
