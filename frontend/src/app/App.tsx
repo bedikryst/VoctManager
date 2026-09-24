@@ -233,6 +233,9 @@ const FinanceShell = lazyWithPreload(() =>
     default: m.FinanceShell,
   })),
 );
+const FinanceOverviewPage = lazyWithPreload(
+  () => import("@features/finance/workspace/OverviewPage"),
+);
 const FinancePayablesPage = lazyWithPreload(
   () => import("@features/finance/workspace/PayablesPage"),
 );
@@ -260,6 +263,7 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { preload: Schedule.preload },
   { preload: RehearsalPage.preload },
   { scope: "manager", preload: FinanceShell.preload },
+  { scope: "manager", preload: FinanceOverviewPage.preload },
   { scope: "manager", preload: FinancePayablesPage.preload },
   { scope: "manager", preload: FinanceSourcesPage.preload },
   { scope: "manager", preload: FundingSourcePage.preload },
@@ -518,7 +522,7 @@ export const router = createBrowserRouter(
               </Suspense>
             }
           >
-            <Route index element={<Navigate to="payables" replace />} />
+            <Route index element={<FinanceOverviewPage />} />
             <Route path="payables" element={<FinancePayablesPage />} />
             <Route path="sources" element={<FinanceSourcesPage />} />
             <Route path="sources/:sourceId" element={<FundingSourcePage />} />

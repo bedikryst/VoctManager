@@ -22,6 +22,7 @@ import { Input } from "@/shared/ui/primitives/Input";
 import { PasswordInput } from "@/shared/ui/primitives/PasswordInput";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
 import { EASE } from "@/shared/ui/kinematics/motion-presets";
+import { readLastWorkspace } from "@/shared/lib/navigation/lastWorkspace";
 import { AuthShell } from "@features/auth/components/AuthShell";
 import { AuthBrand } from "@features/auth/components/AuthBrand";
 import { AuthAlert } from "@features/auth/components/AuthAlert";
@@ -45,9 +46,8 @@ export default function LoginPage(): React.JSX.Element {
   const location = useLocation();
   const { t } = useTranslation();
 
-  const from =
-    (location.state as { from?: { pathname: string } })?.from?.pathname ||
-    "/panel";
+  const requestedPath = (location.state as { from?: { pathname: string } } | null)?.from?.pathname;
+  const from = requestedPath ?? (readLastWorkspace() === "finance" ? "/panel/finance" : "/panel");
 
   const supportEmail = t("auth.login.support_email");
 

@@ -2071,10 +2071,32 @@
       "back_to_panel": "Voct",
       "nav": {
         "aria": "Sekcje finansów",
+        "overview": "Przegląd",
         "payables": "Do zapłaty",
         "sources": "Źródła",
         "projects": "Projekty",
         "exports": "Eksporty"
+      },
+      "return_to_finance": "Finanse",
+      "finance_foundation": "Finanse fundacji",
+      "overview": {
+        "title": "Dzisiaj w finansach",
+        "outstanding": "Do zapłaty",
+        "overdue": "Po terminie",
+        "due_soon": "W 14 dni",
+        "payments_count": "płatności: {{count}}",
+        "next_payments": "Najbliższe płatności",
+        "all_payments": "Wszystkie",
+        "payments_empty": "Fundacja nie ma płatności do wykonania.",
+        "no_due_date": "Bez terminu",
+        "deadlines": "Terminy",
+        "report_due": "Sprawozdanie",
+        "eligibility_ends": "Kwalifikowalność",
+        "deadlines_empty": "W ciągu 60 dni nie ma terminu źródła.",
+        "work": "Wymaga pracy",
+        "problems": "problemy: {{count}}",
+        "work_count": "do zrobienia: {{count}}",
+        "work_empty": "Żaden budżet nie wymaga teraz pracy."
       },
       "exports": {
         "office_title": "Księga dla biura",

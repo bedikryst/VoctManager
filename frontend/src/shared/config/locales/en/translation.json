@@ -2043,10 +2043,32 @@
       "back_to_panel": "Voct",
       "nav": {
         "aria": "Finance sections",
+        "overview": "Overview",
         "payables": "To pay",
         "sources": "Sources",
         "projects": "Projects",
         "exports": "Exports"
+      },
+      "return_to_finance": "Finance",
+      "finance_foundation": "Foundation finance",
+      "overview": {
+        "title": "Finance today",
+        "outstanding": "To pay",
+        "overdue": "Overdue",
+        "due_soon": "Within 14 days",
+        "payments_count": "payments: {{count}}",
+        "next_payments": "Next payments",
+        "all_payments": "All",
+        "payments_empty": "The foundation has no payments to make.",
+        "no_due_date": "No due date",
+        "deadlines": "Deadlines",
+        "report_due": "Report",
+        "eligibility_ends": "Eligibility",
+        "deadlines_empty": "No source deadline falls within 60 days.",
+        "work": "Needs attention",
+        "problems": "problems: {{count}}",
+        "work_count": "to do: {{count}}",
+        "work_empty": "No budget requires attention now."
       },
       "exports": {
         "office_title": "Ledger for the office",

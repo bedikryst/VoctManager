@@ -599,12 +599,23 @@ export interface SourceDetailDTO {
 export interface FinanceOverviewDTO {
   readonly projects: readonly ProjectRollupDTO[];
   readonly sources: readonly FundingSourceDTO[];
+  readonly payables_summary: PayablesSummaryDTO;
   readonly payables: {
     readonly count: number;
     readonly limit: number;
     readonly offset: number;
     readonly results: readonly PayableDTO[];
   };
+}
+
+/** The foundation-wide headline figures for unpaid costs. */
+export interface PayablesSummaryDTO {
+  readonly count: number;
+  readonly total: DecimalString;
+  readonly overdue_count: number;
+  readonly overdue_total: DecimalString;
+  readonly due_soon_count: number;
+  readonly due_soon_total: DecimalString;
 }
 
 // ── Writes ────────────────────────────────────────────────────────────────
