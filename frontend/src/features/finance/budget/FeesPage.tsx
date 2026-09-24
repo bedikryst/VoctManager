@@ -31,7 +31,7 @@ import { useNow } from "@/shared/lib/dom/useNow";
 import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Button } from "@/shared/ui/primitives/Button";
-import { useIssueContract } from "../api/finance.queries";
+import { useIssueContract, useReleaseFee } from "../api/finance.queries";
 import { FinanceService } from "../api/finance.service";
 import { CostAllocationSheet } from "../components/AllocationSheet";
 import { CostSummaryCard, type CostFigure } from "../components/CostSummaryCard";
@@ -77,6 +77,7 @@ function FeesWorkspace({
   const isOnline = useIsOnline();
   const ledger = useFeeLedger(projectId, onDirtyStateChange);
   const issueContract = useIssueContract(projectId);
+  const releaseFee = useReleaseFee(projectId);
   const [searchParams] = useSearchParams();
   const focusKey = searchParams.get("focus");
 
@@ -144,6 +145,20 @@ function FeesWorkspace({
         })),
       onError: (error) =>
         toastFinanceError(error, t, t("finance.issue.error", "Nie udało się wystawić umowy.")),
+    });
+  };
+
+  // No confirmation: only an unpaid fee without a contract can be released,
+  // and the history keeps what it was.
+  const releaseOne = (row: LedgerRowDTO): void => {
+    if (!row.cost_item_id) return;
+    releaseFee.mutate(row.cost_item_id, {
+      onSuccess: () =>
+        toast.success(t("finance.release.done", "Usunięto honorarium z rozliczenia: {{name}}.", {
+          name: row.payee_name,
+        })),
+      onError: (error) =>
+        toastFinanceError(error, t, t("finance.release.error", "Nie udało się usunąć honorarium.")),
     });
   };
 
@@ -355,6 +370,7 @@ function FeesWorkspace({
               onSign: () => setOpenAct({ kind: "sign", row }),
               onHours: () => setOpenAct({ kind: "hours", row }),
               onPay: () => setOpenAct({ kind: "pay", rows: [row] }),
+              onRelease: () => releaseOne(row),
               onUnpay: () => setOpenAct({ kind: "unpay", row }),
               onAnnul: () => setOpenAct({ kind: "annul", row }),
             }}

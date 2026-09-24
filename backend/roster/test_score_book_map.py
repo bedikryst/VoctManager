@@ -22,6 +22,7 @@ import tempfile
 from io import BytesIO
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone
@@ -128,6 +129,10 @@ class BookFrameTests(SimpleTestCase):
 @override_settings(MEDIA_ROOT=_MEDIA)
 class ScoreMapEndpointTests(APITestCase):
     def setUp(self) -> None:
+        # The per-user throttle counts in the process cache, and SQLite hands the
+        # same user ids to every test: requests from earlier tests would count
+        # against this one's singer.
+        cache.clear()
         User = get_user_model()
         self.singer_user = User.objects.create_user("singer", "singer@test.pl", "pw123456")
         UserProfile.objects.create(user=self.singer_user, role=AppRole.ARTIST)

@@ -3,7 +3,8 @@
  * @description Everything one ledger row can do, behind one quiet control.
  * The form of settlement is a draft like the amount — it goes out with the
  * save bar. Everything below it is an act and happens at once: charging it to
- * funding sources, issuing, printing, signing, paying. An act the row cannot
+ * funding sources, issuing, printing, signing, paying, releasing the fee of
+ * someone no longer in the cast. An act the row cannot
  * take right now stays in the menu, disabled, with the reason under it; a
  * board act is not offered to a manager outside the board, and the menu says
  * so in one line rather than holding a button that would answer 403.
@@ -25,6 +26,7 @@ import {
   ReceiptText,
   SlidersHorizontal,
   Undo2,
+  UserMinus,
 } from "lucide-react";
 
 import {
@@ -44,6 +46,7 @@ import {
   canConfirmHours,
   canIssue,
   canPay,
+  canRelease,
   canSign,
   canUnpay,
   hasBill,
@@ -63,6 +66,7 @@ export interface RowActs {
   readonly onSign: () => void;
   readonly onHours: () => void;
   readonly onPay: () => void;
+  readonly onRelease: () => void;
   readonly onUnpay: () => void;
   readonly onAnnul: () => void;
   /** Absent while the fee has nothing a source could take. */
@@ -218,6 +222,24 @@ export function RowActionsMenu({
             description={blocked}
           >
             {t("finance.acts.pay", "Oznacz jako wypłacone")}
+          </DropdownMenuItem>
+        )}
+
+        {canRelease(row) && (
+          <DropdownMenuItem
+            icon={<UserMinus size={14} />}
+            onSelect={acts.onRelease}
+            disabled={Boolean(blocked)}
+            description={
+              blocked ??
+              t(
+                "finance.acts.release_hint",
+                "Osoby nie ma w obsadzie, a honorarium nie zostało wypłacone. Bez tego budżetu nie da się zamknąć.",
+              )
+            }
+            destructive
+          >
+            {t("finance.acts.release", "Usuń honorarium z rozliczenia")}
           </DropdownMenuItem>
         )}
 

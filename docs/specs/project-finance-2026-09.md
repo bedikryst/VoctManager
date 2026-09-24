@@ -2,8 +2,9 @@
 
 Status: **Spec written 2026-09-23; the developer answered Q1–Q6 the same day (§2, §4). Stages 1–5
 are built and committed, and the developer has seen them in the browser; his feedback on the whole
-module is gathered at the end, after Stage 6. Stage 6 (reports and exports) is built, uncommitted,
-and awaits that same review. Stage 7 is later work, not specified. Contract wording is drafted in
+module is gathered at the end, after Stage 6. Stage 6 (reports and exports) is built and committed,
+and awaits that same review. The code audit of Stages 1–6 is in `project-finance-audit-2026-09.md`;
+its P0–P1 findings gate the first production deploy. Stage 7 is later work, not specified. Contract wording is drafted in
 `project-finance-contract-drafts-2026-09.md` and awaits legal and accounting review. That review
 gates the first real use of the new templates, not their build.**
 Written from the developer's brief of 2026-09-23 ("as ambitious as possible — this concert is the

@@ -106,6 +106,11 @@ class CrewHasSettledFee(FinanceError):
     status_code = 409
 
 
+class FeeNotOrphaned(FinanceError):
+    code = "fee_not_orphaned"
+    default_message = "Only the fee of a declined or removed cast member can be released; this one still counts."
+
+
 class PaidItemNotRemovable(FinanceError):
     code = "item_paid_not_removable"
     default_message = "A paid item cannot be removed; revert the payment first."

@@ -3,8 +3,9 @@
 @description The write side of the fee ledger: pricing (one atomic batch with an
              optional standard rate), one-off payees, bookkeeping details, paying
              and reverting a payment (of a fee or an expense), releasing a crew
-             member's fee when they are unassigned, and moving a seat's fee when
-             an artist merge folds it. Every rule of spec §5.1 that the database
+             member's fee when they are unassigned and a fee whose seat no
+             longer counts, and moving a seat's fee when an artist merge folds
+             it. Every rule of spec §5.1 that the database
              cannot state is enforced here, and every change is logged.
 @architecture Enterprise SaaS 2026
 @module finance/services/ledger
@@ -22,11 +23,13 @@ from roster.models import CrewAssignment, Participation, Project
 from ..dtos import CostItemDetailsDTO, FeeBatchDTO, FeeItemDTO, FeeRefDTO, OneOffFeeDTO, PayFeesDTO
 from ..exceptions import (
     CrewHasSettledFee,
+    FeeNotOrphaned,
     FinanceError,
     InvalidItemChange,
     ItemContracted,
     ItemPaid,
     NotPaid,
+    PaidItemNotRemovable,
     PaymentRefused,
     SeatNotBillable,
     UnknownFeeReference,
@@ -461,11 +464,13 @@ class LedgerService:
                 "paid_on": item.paid_on,
                 "paid_marked_by": item.paid_marked_by_id,
                 "paid_marked_at": item.paid_marked_at,
+                "paid_before_ledger": item.paid_before_ledger,
             }
             item.paid_on = None
             item.paid_marked_by = None
             item.paid_marked_at = None
-            item.save(update_fields=["paid_on", "paid_marked_by", "paid_marked_at", "updated_at"])
+            item.paid_before_ledger = False
+            item.save(update_fields=["paid_on", "paid_marked_by", "paid_marked_at", "paid_before_ledger", "updated_at"])
             audit.record(
                 budget, actor=actor, subject=item, action=FinanceAction.UNPAID,
                 before=before, after={"paid_on": None}, reason=reason,
@@ -517,6 +522,39 @@ class LedgerService:
                             "contract_amount": item.contract_amount,
                         },
                     )
+
+    @staticmethod
+    def release_orphan(item: CostItem, *, actor: User | None) -> None:
+        """Takes the fee of a seat that no longer counts — the singer declined,
+        was removed from the cast, or was folded away by an artist merge — off
+        the ledger. Until then the fee is an orphan, and a budget with an orphan
+        cannot close.
+
+        Only an unpaid fee without a live contract goes: a payment stays on the
+        books (a paid fee on a declined seat is `PAID_FOR_DECLINED`, for the
+        board to look into), and a contract is annulled first. Like the crew
+        release, it is taken off its funding sources and soft-deleted, and the
+        event keeps what it was. The seat link stays, so the history still says
+        whose fee it was; a seat that comes back is priced afresh.
+        """
+        with transaction.atomic():
+            budget = BudgetService.lock(item.budget.project)
+            BudgetService.assert_writable(budget)
+            item = CostItem.objects.select_for_update().get(pk=item.pk)
+            seat = item.participation
+            if item.kind != CostKind.FEE or seat is None or _is_billable_seat(seat):
+                raise FeeNotOrphaned()
+            if item.paid_on is not None:
+                raise PaidItemNotRemovable()
+            if has_live_contract(item):
+                raise ItemContracted()
+            release_cost_allocations(budget, item, actor=actor)
+            item.is_deleted = True
+            item.save(update_fields=["is_deleted", "updated_at"])
+            audit.record(
+                budget, actor=actor, subject=item, action=FinanceAction.REMOVED,
+                before={"participation": seat.pk, "form": item.form, "contract_amount": item.contract_amount},
+            )
 
     @staticmethod
     def fold_seat(source: Participation, target: Participation, *, actor: User | None) -> bool:

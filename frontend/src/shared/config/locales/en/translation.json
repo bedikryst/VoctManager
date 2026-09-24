@@ -1735,6 +1735,7 @@
       "zip_failed": "The contracts could not be packed. Try again.",
       "zip_timeout": "Packing the contracts is taking too long. Try again in a few minutes.",
       "item_paid_not_removable": "The item is paid. It can be removed only after the payment is reverted.",
+      "fee_not_orphaned": "This person is still in the cast, so the fee stays. Refresh the page.",
       "plan_locked": "The cost plan is approved. The board opens it for a correction on the Overview tab.",
       "unknown_plan_line": "This plan line no longer exists. Refresh the page.",
       "plan_line_category_mismatch": "A cost is charged to a plan line of the same type.",
@@ -1794,6 +1795,8 @@
       "hours": "Confirm hours",
       "hours_current": "Confirmed: {{hours}} h",
       "pay": "Mark as paid",
+      "release": "Remove the fee from the settlement",
+      "release_hint": "This person is no longer in the cast and the fee was not paid. The budget cannot close until it goes.",
       "unpay": "Revert payment",
       "annul": "Annul contract",
       "board_only": "Reverting a payment and annulling a contract are for the board.",
@@ -1826,6 +1829,10 @@
       "confirm": "Revert payment",
       "done": "Payment reverted.",
       "error": "The payment could not be reverted."
+    },
+    "release": {
+      "done": "Fee removed from the settlement: {{name}}.",
+      "error": "The fee could not be removed."
     },
     "annul": {
       "title": "Annul contract",
@@ -5942,7 +5949,7 @@
       "confirmPasswordLabel": "Confirm with your password to delete the account",
       "deleteDesc": "Permanently block access to the application. Historical rehearsal and concert data will be anonymized for choir statistics.",
       "deleteTitle": "Delete Account",
-      "exportDesc": "Download a copy of all data assigned to your account in machine-readable JSON format.",
+      "exportDesc": "Download a copy of the data assigned to your account in machine-readable JSON format. Settlements (fees, contracts and payments) are not included — the foundation's board provides them on request.",
       "exportTitle": "Data Export",
       "modalDescLine1Highlight": "irreversible",
       "modalDescLine1Prefix": "This action is",

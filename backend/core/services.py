@@ -607,12 +607,10 @@ class UserPreferencesService:
                 "phone_number": artist.phone_number,
             }
 
-        # Right of access: the person's own fees and the contracts issued to them.
-        # Imported here rather than at module scope — `finance` reads `roster`,
-        # which reads `core`, so a top-level import would close the circle.
-        from finance.gdpr import personal_finance_records
-
-        data["finance"] = personal_finance_records(user)
+        # No money reaches anyone outside the finance managers through the app —
+        # not even a person's own fees. The ledger still holds personal data of
+        # everybody it pays, so a request under the right of access is answered
+        # by the board, by hand, from the ledger export; the privacy pane says so.
         return data
 
 

@@ -293,6 +293,10 @@ class CostItem(EnterpriseBaseModel):
         related_name='+', verbose_name=_("Marked paid by"),
     )
     paid_marked_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Marked paid at"))
+    # The roster marked this fee paid before the ledger existed (`finance.data_copy`). Its contract was printed by the old roster, on paper
+    # only, so the ledger expects no contract of its own for this payment.
+    # Reverting the payment clears it: a payment made again is the ledger's.
+    paid_before_ledger = models.BooleanField(default=False, verbose_name=_("Paid before the ledger"))
     note = models.TextField(blank=True, verbose_name=_("Note"))
 
     # --- FEE: where the person comes from. Neither = a one-off payee. ---

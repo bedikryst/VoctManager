@@ -5,9 +5,12 @@
              number the panel does not. The words are the renderer's; this
              module decides which figures exist:
 
-             - the patron report's cost and funding structure, under the privacy
-               floor: a figure derived from fees aggregates at least
-               `PATRON_PAYEE_FLOOR` payees, or it is not printed on its own;
+             - the patron report's cost and funding structure, and one source's
+               share of the cost, under the privacy floor: a printed figure
+               derived from fees aggregates at least `PATRON_PAYEE_FLOOR`
+               payees or blends them with a cost that is not pay, and so does
+               anything a reader gets by subtracting one printed figure from
+               another — or it is merged into another row, never dropped;
              - the board report's plan against actual, its warnings with the
                names of what they concern, and what is still owed;
              - the kosztorys, planned or actual, per line and split between the
@@ -16,8 +19,8 @@
 @architecture Enterprise SaaS 2026
 @module finance/services/reports
 """
-from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from collections.abc import Sequence
+from dataclasses import dataclass, field, replace
 from datetime import date
 from decimal import Decimal
 from uuid import UUID
@@ -33,7 +36,7 @@ from ..rules import (
     money,
     plan_section,
 )
-from .budget import AllocationView, BudgetWarning, ExpenseRow, FundingView, LedgerRow, PlanLineView, ProjectMoney
+from .budget import AllocationView, BudgetWarning, FundingView, PlanLineView, ProjectMoney
 
 # A figure derived from fees must sum at least this many people's fees before a
 # patron sees it: with fewer, one person's fee can be read off it.
@@ -43,6 +46,7 @@ PATRON_PAYEE_FLOOR = 3
 PERSONNEL_MERGED = "PERSONNEL"
 REMAINDER = "REMAINDER"
 FOUNDATION_OWN = "OWN"
+FUNDING_MERGED = "OTHER_SOURCES"
 
 _CATEGORY_ORDER: dict[str, int] = {category: index for index, category in enumerate(CostCategory)}
 _KIND_ORDER: dict[str, int] = {kind: index for index, kind in enumerate(FundingKind)}
@@ -83,8 +87,13 @@ def _shares(entries: Sequence[tuple[str, Decimal]], whole: Decimal) -> list[Shar
     ]
 
 
-def floored_cost_structure(costs: Sequence[CategoryCost]) -> list[tuple[str, Decimal]]:
-    """The cost structure a patron may see, largest first.
+def _largest_first(rows: list[tuple[str, Decimal]]) -> list[tuple[str, Decimal]]:
+    return sorted(rows, key=lambda row: (-row[1], _CATEGORY_ORDER.get(row[0], len(_CATEGORY_ORDER))))
+
+
+def _cost_groups(costs: Sequence[CategoryCost]) -> dict[str, str]:
+    """The printed row each category's cost lands in, under the floor; empty
+    when the structure prints no row at all.
 
     A personnel category is printed on its own only when every personnel
     category holds the fees of at least `PATRON_PAYEE_FLOOR` people. Otherwise
@@ -97,72 +106,193 @@ def floored_cost_structure(costs: Sequence[CategoryCost]) -> list[tuple[str, Dec
     """
     personnel = [cost for cost in costs if cost.category in FEE_CATEGORIES and cost.amount > ZERO]
     others = [cost for cost in costs if cost.category not in FEE_CATEGORIES and cost.amount > ZERO]
-    entries = [(cost.category, cost.amount) for cost in others]
-
-    def largest_first(rows: list[tuple[str, Decimal]]) -> list[tuple[str, Decimal]]:
-        return sorted(rows, key=lambda row: (-row[1], _CATEGORY_ORDER.get(row[0], len(_CATEGORY_ORDER))))
-
-    if not personnel:
-        return largest_first(entries)
+    groups = {cost.category: cost.category for cost in others}
     if all(cost.payees >= PATRON_PAYEE_FLOOR for cost in personnel):
-        return largest_first(entries + [(cost.category, cost.amount) for cost in personnel])
-    personnel_total = money(sum((cost.amount for cost in personnel), ZERO))
+        return groups | {cost.category: cost.category for cost in personnel}
     if sum(cost.payees for cost in personnel) >= PATRON_PAYEE_FLOOR:
-        return largest_first([*entries, (PERSONNEL_MERGED, personnel_total)])
+        return groups | {cost.category: PERSONNEL_MERGED for cost in personnel}
     if not others:
-        return []
+        return {}
     absorbing = max(others, key=lambda cost: (cost.amount, -_CATEGORY_ORDER.get(cost.category, 0)))
-    rest = [(key, amount) for key, amount in entries if key != absorbing.category]
-    return [*largest_first(rest), (REMAINDER, money(absorbing.amount + personnel_total))]
+    return groups | {cost.category: REMAINDER for cost in [absorbing, *personnel]}
 
 
-def _category_costs(
-    rows: Sequence[LedgerRow],
-    expenses: Sequence[ExpenseRow],
-    amount_of: Callable[[Decimal, list[AllocationView]], Decimal],
-) -> list[CategoryCost]:
-    """Sums per category of what ``amount_of`` takes from each counted cost —
-    the whole cost, or one source's share of it — counting the people whose
-    fee contributes more than nothing."""
+def floored_cost_structure(costs: Sequence[CategoryCost]) -> list[tuple[str, Decimal]]:
+    """The cost structure a patron may see, largest first, with a `REMAINDER`
+    row last. `_cost_groups` says which rows exist."""
+    groups = _cost_groups(costs)
+    amounts: dict[str, Decimal] = {}
+    for cost in costs:
+        key = groups.get(cost.category)
+        if key is not None:
+            amounts[key] = amounts.get(key, ZERO) + cost.amount
+    remainder = amounts.pop(REMAINDER, None)
+    rows = _largest_first([(key, money(amount)) for key, amount in amounts.items()])
+    return rows if remainder is None else [*rows, (REMAINDER, money(remainder))]
+
+
+@dataclass(frozen=True)
+class _Part:
+    """What a printed figure is made of, as far as the floor cares: the fee
+    rows with a positive part in it — one per person paid — and how much of it
+    is nobody's pay (an expense)."""
+
+    payees: frozenset[UUID] = frozenset()
+    other: Decimal = ZERO
+
+    def __or__(self, part: "_Part") -> "_Part":
+        return _Part(payees=self.payees | part.payees, other=self.other + part.other)
+
+    @property
+    def floored(self) -> bool:
+        """Nobody's pay can be read off it: it holds no fee, the fees of at
+        least the floor's number of people, or a cost that is not pay, which
+        the fees in it cannot be told apart from."""
+        return not self.payees or len(self.payees) >= PATRON_PAYEE_FLOOR or self.other > ZERO
+
+
+@dataclass(frozen=True)
+class _Cost:
+    """One counted cost with a positive amount: a fee (its row's key is the
+    payee) or an expense (no payee)."""
+
+    category: str
+    amount: Decimal
+    payee: UUID | None
+    allocations: list[AllocationView]
+
+    def part(self, amount: Decimal) -> _Part:
+        if amount <= ZERO:
+            return _Part()
+        if self.payee is None:
+            return _Part(other=amount)
+        return _Part(payees=frozenset({self.payee}))
+
+
+def _counted_costs(money_: ProjectMoney) -> list[_Cost]:
+    fees = [
+        _Cost(category=row.category, amount=row.cost_amount or ZERO, payee=row.key, allocations=row.allocations)
+        for row in money_.rows
+        if row.counted and (row.cost_amount or ZERO) > ZERO
+    ]
+    expenses = [
+        _Cost(category=expense.category, amount=expense.cost_amount, payee=None, allocations=expense.allocations)
+        for expense in money_.expenses
+        if expense.cost_amount > ZERO
+    ]
+    return fees + expenses
+
+
+@dataclass(frozen=True)
+class _Figure:
+    """A row about to be printed. Every part must pass the floor: the row's own,
+    and — where the reader can subtract the row from a printed figure — what
+    that subtraction leaves."""
+
+    key: str
+    amount: Decimal
+    parts: tuple[_Part, ...]
+
+    @property
+    def floored(self) -> bool:
+        return all(part.floored for part in self.parts)
+
+    def merged(self, figure: "_Figure", key: str) -> "_Figure":
+        return _Figure(
+            key=key,
+            amount=self.amount + figure.amount,
+            parts=tuple(mine | theirs for mine, theirs in zip(self.parts, figure.parts, strict=True)),
+        )
+
+
+def _floor_figures(figures: list[_Figure], merged_key: str) -> list[_Figure]:
+    """The rows as printed: the ones that pass the floor, and the rest merged
+    into one `merged_key` row — never dropped, since the rows sum to a printed
+    whole and a missing one is read back by subtraction. When even merged they
+    fail, they join the `merged_key` row if there is one, else the largest row
+    that passes. With no such row, nothing is printed."""
+    passing = [figure for figure in figures if figure.floored]
+    failing = [figure for figure in figures if not figure.floored]
+    if not failing:
+        return passing
+    merged = failing[0]
+    for figure in failing[1:]:
+        merged = merged.merged(figure, merged_key)
+    merged = replace(merged, key=merged_key)
+    host = next((figure for figure in passing if figure.key == merged_key), None)
+    if host is None and not merged.floored:
+        host = max(passing, key=lambda figure: figure.amount, default=None)
+        if host is None:
+            return []
+    if host is None:
+        return [*passing, merged]
+    return [figure for figure in passing if figure is not host] + [host.merged(merged, merged_key)]
+
+
+def _category_costs(money_: ProjectMoney) -> list[CategoryCost]:
+    """The counted cost per category, and the people whose fee is in it."""
     amounts: dict[str, Decimal] = {}
     payees: dict[str, int] = {}
-    for row in rows:
-        if not row.counted:
-            continue
-        amount = amount_of(row.cost_amount or ZERO, row.allocations)
-        if amount <= ZERO:
-            continue
-        amounts[row.category] = amounts.get(row.category, ZERO) + amount
-        payees[row.category] = payees.get(row.category, 0) + 1
-    for expense in expenses:
-        amount = amount_of(expense.cost_amount, expense.allocations)
-        if amount > ZERO:
-            amounts[expense.category] = amounts.get(expense.category, ZERO) + amount
+    for cost in _counted_costs(money_):
+        amounts[cost.category] = amounts.get(cost.category, ZERO) + cost.amount
+        if cost.payee is not None:
+            payees[cost.category] = payees.get(cost.category, 0) + 1
     return [
         CategoryCost(category=category, amount=money(amount), payees=payees.get(category, 0))
         for category, amount in amounts.items()
     ]
 
 
-def _whole_cost(cost: Decimal, allocations: list[AllocationView]) -> Decimal:
-    return cost
-
-
-def _share_of(funding_id: UUID) -> Callable[[Decimal, list[AllocationView]], Decimal]:
-    def share(cost: Decimal, allocations: list[AllocationView]) -> Decimal:
-        return money(sum((a.amount for a in allocations if a.funding_id == funding_id), ZERO))
-
-    return share
-
-
 @dataclass(frozen=True)
 class PatronHighlight:
-    """What one source's money covered on the project, by category, under the
-    same floor as the whole."""
+    """What one source's money covered on the project, in the whole report's
+    rows or coarser, under the same floor. `covered` is None, and the structure
+    empty, when what the source paid for, or what it left to others, would be
+    one or two people's pay: the report then names the source and says it
+    covered part of the costs."""
 
     funding: FundingView
-    covered: Decimal
+    covered: Decimal | None
     structure: list[Share]
+
+
+def _highlight(money_: ProjectMoney, funding: FundingView, groups: dict[str, str]) -> PatronHighlight:
+    """The source's share, grouped by the whole report's rows (`groups`), never
+    finer: a highlight row inside a whole row would be subtracted from it.
+    Each highlight row is floored twice — the share itself, and what the whole
+    row holds beyond it, which the reader gets by that subtraction — and so is
+    `covered`, against the total."""
+    covered = ZERO
+    shares: dict[str, Decimal] = {}
+    share_parts: dict[str, _Part] = {}
+    rest_parts: dict[str, _Part] = {}
+    covered_part = uncovered_part = _Part()
+    for cost in _counted_costs(money_):
+        share = money(sum((a.amount for a in cost.allocations if a.funding_id == funding.id), ZERO))
+        rest = cost.amount - share
+        covered += share
+        covered_part |= cost.part(share)
+        uncovered_part |= cost.part(rest)
+        key = groups.get(cost.category)
+        if key is None:
+            continue
+        shares[key] = shares.get(key, ZERO) + share
+        share_parts[key] = share_parts.get(key, _Part()) | cost.part(share)
+        rest_parts[key] = rest_parts.get(key, _Part()) | cost.part(rest)
+
+    if not (covered_part.floored and uncovered_part.floored):
+        return PatronHighlight(funding=funding, covered=None, structure=[])
+    covered = money(covered)
+
+    figures = [
+        _Figure(key=key, amount=money(amount), parts=(share_parts[key], rest_parts[key]))
+        for key, amount in shares.items()
+        if amount > ZERO
+    ]
+    printed = _floor_figures(figures, REMAINDER)
+    remainder = [(figure.key, figure.amount) for figure in printed if figure.key == REMAINDER]
+    rows = _largest_first([(figure.key, figure.amount) for figure in printed if figure.key != REMAINDER])
+    return PatronHighlight(funding=funding, covered=covered, structure=_shares([*rows, *remainder], covered))
 
 
 @dataclass(frozen=True)
@@ -197,23 +327,45 @@ def report_funding(money_: ProjectMoney, source_id: UUID | None) -> FundingView 
 
 
 def _funding_structure(money_: ProjectMoney) -> list[tuple[str, Decimal]]:
-    by_kind: dict[str, Decimal] = {}
-    own = money_.funding.uncovered
+    """What each kind of source carries, largest first, then the foundation's
+    own (its own funds and whatever no source carries), then the merged row.
+    A kind that carries nothing but one or two people's pay merges: a sponsor
+    who paid only the soloist would otherwise find the soloist's fee here."""
+    kind_of: dict[UUID, str] = {}
+    amounts: dict[str, Decimal] = {FOUNDATION_OWN: money_.funding.uncovered}
     for funding in money_.fundings:
         if not funding.brings_money:
             continue
         kind = funding.source.source.kind
-        if kind == FundingKind.OWN_FUNDS:
-            own += funding.charged
-        else:
-            by_kind[kind] = by_kind.get(kind, ZERO) + funding.charged
-    entries = sorted(
-        ((kind, money(amount)) for kind, amount in by_kind.items() if amount > ZERO),
-        key=lambda row: (-row[1], _KIND_ORDER.get(row[0], 0)),
+        key = FOUNDATION_OWN if kind == FundingKind.OWN_FUNDS else kind
+        kind_of[funding.id] = key
+        amounts[key] = amounts.get(key, ZERO) + funding.charged
+
+    parts: dict[str, _Part] = {}
+    for cost in _counted_costs(money_):
+        carried = ZERO
+        for allocation in cost.allocations:
+            carrier = kind_of.get(allocation.funding_id)
+            if carrier is None:
+                continue
+            parts[carrier] = parts.get(carrier, _Part()) | cost.part(allocation.amount)
+            carried += allocation.amount
+        parts[FOUNDATION_OWN] = parts.get(FOUNDATION_OWN, _Part()) | cost.part(cost.amount - carried)
+
+    printed = _floor_figures(
+        [
+            _Figure(key=key, amount=money(amount), parts=(parts.get(key, _Part()),))
+            for key, amount in amounts.items()
+            if amount > ZERO
+        ],
+        FUNDING_MERGED,
     )
-    if own > ZERO:
-        entries.append((FOUNDATION_OWN, money(own)))
-    return entries
+
+    def order(figure: _Figure) -> tuple[int, Decimal, int]:
+        rank = {FOUNDATION_OWN: 1, FUNDING_MERGED: 2}.get(figure.key, 0)
+        return (rank, -figure.amount, _KIND_ORDER.get(figure.key, 0))
+
+    return [(figure.key, figure.amount) for figure in sorted(printed, key=order)]
 
 
 def _in_kind(money_: ProjectMoney) -> list[tuple[str, Decimal]]:
@@ -244,25 +396,17 @@ def _in_kind(money_: ProjectMoney) -> list[tuple[str, Decimal]]:
 
 def patron_report(money_: ProjectMoney, *, source_id: UUID | None = None) -> PatronReport:
     total = money_.summary.committed
-    highlight = None
+    costs = _category_costs(money_)
     funding = report_funding(money_, source_id)
-    if funding is not None:
-        costs = _category_costs(money_.rows, money_.expenses, _share_of(funding.id))
-        covered = money(sum((cost.amount for cost in costs), ZERO))
-        highlight = PatronHighlight(
-            funding=funding, covered=covered, structure=_shares(floored_cost_structure(costs), covered),
-        )
     in_kind = _in_kind(money_)
     return PatronReport(
         money=money_,
         is_draft=money_.budget_status != BudgetStatus.CLOSED,
         total=total,
-        structure=_shares(
-            floored_cost_structure(_category_costs(money_.rows, money_.expenses, _whole_cost)), total,
-        ),
+        structure=_shares(floored_cost_structure(costs), total),
         funding=_shares(_funding_structure(money_), total),
         in_kind=[Share(key=key, amount=amount, pct=ZERO) for key, amount in in_kind],
-        highlight=highlight,
+        highlight=None if funding is None else _highlight(money_, funding, _cost_groups(costs)),
     )
 
 

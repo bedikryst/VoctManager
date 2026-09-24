@@ -5,10 +5,11 @@
     <title>Sprawozdanie dla mecenasa — {{ project.title }}</title>
     {% comment %}
         What a concert cost and where its money came from, for someone who
-        helped pay for it. No person and no single fee appears: the cost
-        structure arrives already floored by `services/reports.py`, so every
-        row derived from fees sums at least three people's. A draft until the
-        budget is closed, and the masthead says so.
+        helped pay for it. No person and no single fee appears: every figure
+        arrives already floored by `services/reports.py`, so none derived from
+        fees — nor the difference of two of them — is fewer than three people's
+        pay. A source's share that cannot be printed that way arrives without
+        its amount. A draft until the budget is closed, and the masthead says so.
     {% endcomment %}
     <style>
         {% include "finance/_styles.html" with footer_label="Sprawozdanie dla mecenasa" %}
@@ -32,7 +33,11 @@
     {% if highlight %}
         <div class="highlight">
             <div class="report-eyebrow">Środki: {{ highlight.name }}{% if highlight.grantor %} · {{ highlight.grantor }}{% endif %}</div>
-            <p class="highlight-lede">Pokryły koszty koncertu w kwocie <strong>{{ highlight.covered }} zł</strong>{% if highlight.structure %}, w tym:{% else %}.{% endif %}</p>
+            {% if highlight.covered %}
+                <p class="highlight-lede">Pokryły koszty koncertu w kwocie <strong>{{ highlight.covered }} zł</strong>{% if highlight.structure %}, w tym:{% else %}.{% endif %}</p>
+            {% else %}
+                <p class="highlight-lede">Pokryły część kosztów koncertu.</p>
+            {% endif %}
             {% if highlight.structure %}
                 <table class="figures shares">
                     <tbody>

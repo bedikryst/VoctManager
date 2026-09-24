@@ -44,6 +44,7 @@ from ..services.budget import (
 )
 from ..services.reports import (
     FOUNDATION_OWN,
+    FUNDING_MERGED,
     PERSONNEL_MERGED,
     REMAINDER,
     ChargedDocument,
@@ -69,6 +70,7 @@ from .vocabulary import (
     PATRON_CATEGORY_LABELS,
     PATRON_FOUNDATION_OWN_LABEL,
     PATRON_FUNDING_LABELS,
+    PATRON_FUNDING_MERGED_LABEL,
     PATRON_PERSONNEL_MERGED_LABEL,
     PATRON_REMAINDER_LABEL,
     WARNING_TITLES,
@@ -154,6 +156,8 @@ def _cost_label(key: str) -> str:
 def _funding_label(key: str) -> str:
     if key == FOUNDATION_OWN:
         return PATRON_FOUNDATION_OWN_LABEL
+    if key == FUNDING_MERGED:
+        return PATRON_FUNDING_MERGED_LABEL
     return PATRON_FUNDING_LABELS.get(key, key)
 
 
@@ -178,7 +182,7 @@ def _patron_context(report: PatronReport) -> dict[str, Any]:
         "highlight": None if highlight is None else {
             "name": highlight.funding.source.source.name,
             "grantor": highlight.funding.source.source.grantor,
-            "covered": _amount(highlight.covered),
+            "covered": None if highlight.covered is None else _amount(highlight.covered),
             "structure": _share_lines(highlight.structure, _cost_label),
         },
     }

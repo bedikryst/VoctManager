@@ -31,6 +31,7 @@ const FINANCE_ERROR_COPY: Record<string, string> = {
   zip_failed: "Nie udało się spakować umów. Spróbuj ponownie.",
   zip_timeout: "Pakowanie umów trwa zbyt długo. Spróbuj ponownie za kilka minut.",
   item_paid_not_removable: "Pozycja jest zapłacona. Usunąć ją można dopiero po cofnięciu zapłaty.",
+  fee_not_orphaned: "Ta osoba wciąż jest w obsadzie, więc jej honorarium zostaje. Odśwież stronę.",
   plan_locked: "Kosztorys jest zatwierdzony. Korektę otwiera zarząd na karcie Przegląd.",
   unknown_plan_line: "Tej pozycji kosztorysu już nie ma. Odśwież stronę.",
   plan_line_category_mismatch: "Koszt przypisuje się do pozycji kosztorysu tego samego rodzaju.",

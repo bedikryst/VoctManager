@@ -477,3 +477,53 @@ class CategoryOfCrewTests(LedgerTestCase):
         item = price(self.project, crew=organist, amount="800")
 
         self.assertEqual((item.category, item.form), ("PERSONNEL_ARTISTIC", FeeForm.DZIELO))
+
+
+class ReleaseOrphanTests(LedgerTestCase):
+    def release(self, item: CostItem) -> Any:
+        return self.client.post(f"/api/finance/cost-items/{item.pk}/release/")
+
+    def test_a_declined_singers_unpaid_fee_is_released_and_the_budget_can_close(self) -> None:
+        item = price(self.project, participation=self.anna, amount="300")
+        Participation.objects.filter(pk=self.anna.pk).update(status=Participation.Status.DECLINED)
+
+        response = self.release(item)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["summary"]["orphaned"], 0)
+        # A declined seat without a fee is not a ledger row at all.
+        self.assertNotIn(str(self.anna.pk), [row["key"] for row in response.data["ledger"]])
+        self.assertTrue(CostItem.all_objects.get(pk=item.pk).is_deleted)
+        event = FinanceEvent.objects.get(subject_id=item.pk, action=FinanceAction.REMOVED)
+        self.assertEqual(event.before["contract_amount"], "300.00")
+
+    def test_a_removed_seats_fee_is_released_too(self) -> None:
+        item = price(self.project, participation=self.anna, amount="300")
+        self.anna.delete()
+
+        self.assertEqual(self.release(item).status_code, 200)
+        self.assertTrue(CostItem.all_objects.get(pk=item.pk).is_deleted)
+
+    def test_a_fee_that_still_counts_a_paid_one_and_a_contracted_one_stay(self) -> None:
+        counting = price(self.project, participation=self.anna, amount="300")
+        paid = price(self.project, participation=self.basia, amount="200")
+        LedgerService.pay(self.project, _pay([paid]), actor=self.manager)
+        contracted_seat = make_seat(self.project, "Celina", "Umowa")
+        contracted = price(self.project, participation=contracted_seat, amount="250")
+        ContractService.issue(contracted, actor=self.manager)
+        Participation.objects.filter(pk__in=[self.basia.pk, contracted_seat.pk]).update(
+            status=Participation.Status.DECLINED,
+        )
+
+        codes = [self.release(item).data["error_code"] for item in (counting, paid, contracted)]
+
+        self.assertEqual(codes, ["fee_not_orphaned", "item_paid_not_removable", "item_contracted"])
+        self.assertEqual(CostItem.objects.filter(pk__in=[counting.pk, paid.pk, contracted.pk]).count(), 3)
+
+    def test_a_singer_cannot_release_a_fee(self) -> None:
+        item = price(self.project, participation=self.anna, amount="300")
+        Participation.objects.filter(pk=self.anna.pk).update(status=Participation.Status.DECLINED)
+        self.client.force_authenticate(make_user(role=AppRole.ARTIST))
+
+        self.assertEqual(self.release(item).status_code, 403)
+        self.assertFalse(CostItem.all_objects.get(pk=item.pk).is_deleted)

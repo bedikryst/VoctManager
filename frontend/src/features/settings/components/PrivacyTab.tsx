@@ -118,7 +118,7 @@ export const PrivacyTab = () => {
                 >
                   {t(
                     "settings.privacy.exportDesc",
-                    "Pobierz kopię wszystkich danych przypisanych do Twojego konta w maszynowo czytelnym formacie JSON.",
+                    "Pobierz kopię danych przypisanych do Twojego konta w maszynowo czytelnym formacie JSON. Eksport nie obejmuje rozliczeń (honorariów, umów i wypłat) — na Twoją prośbę przekaże je zarząd fundacji.",
                   )}
                 </Text>
               </div>

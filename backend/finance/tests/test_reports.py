@@ -37,6 +37,7 @@ from ..services.expenses import ExpenseService
 from ..services.funding import FundingService
 from ..services.plan import PlanService
 from ..services.reports import (
+    FUNDING_MERGED,
     PATRON_PAYEE_FLOOR,
     PERSONNEL_MERGED,
     REMAINDER,
@@ -196,6 +197,67 @@ class PatronReportTests(TestCase):
         assert report.highlight is not None
         self.assertEqual(report.highlight.covered, Decimal("1000.00"))
         self.assertEqual({share.key for share in report.highlight.structure}, {REMAINDER})
+
+    def test_a_sponsor_of_one_soloist_finds_no_amount_of_theirs(self) -> None:
+        project = make_project()
+        _singers(project, "300", "300", "300")
+        soloist = price(project, participation=make_seat(project, "Solista", "Jedyny"), amount="400")
+        venue = _expense(project, "1500")
+        grant = _fund(project, _source(), planned="1500")
+        sponsor = _source("Kancelaria", kind="SPONSOR")
+        FundingService.set_cost_allocations(venue, _split((grant, "1500")), actor=None)
+        FundingService.set_cost_allocations(soloist, _split((_fund(project, sponsor, planned="400"), "400")),
+                                            actor=None)
+
+        report = patron_report(BudgetService.build(project), source_id=sponsor.pk)
+        html = render_patron_report_html(BudgetService.build(project), source_id=sponsor.pk)
+
+        assert report.highlight is not None
+        self.assertIsNone(report.highlight.covered)
+        self.assertEqual(report.highlight.structure, [])
+        # The sponsors' row would be the soloist's fee: it merges into another source.
+        self.assertEqual(
+            {share.key: share.amount for share in report.funding},
+            {"OWN": Decimal("900.00"), FUNDING_MERGED: Decimal("1900.00")},
+        )
+        self.assertIn("Pokryły część kosztów koncertu.", html)
+        self.assertNotIn("400,00", html)
+
+    def test_a_highlight_cannot_be_subtracted_from_the_merged_personnel(self) -> None:
+        project = make_project()
+        singers = _singers(project, "400", "300", "250")
+        price(project, crew=make_crew(project, "Jan", "Dźwięk"), amount="800")
+        sponsor = _source("Kancelaria", kind="SPONSOR")
+        funding = _fund(project, sponsor, planned="950")
+        for singer in singers:
+            FundingService.set_cost_allocations(singer, _split((funding, str(singer.contract_amount))), actor=None)
+
+        report = patron_report(BudgetService.build(project), source_id=sponsor.pk)
+
+        self.assertEqual([(share.key, share.amount) for share in report.structure],
+                         [(PERSONNEL_MERGED, Decimal("1750.00"))])
+        assert report.highlight is not None
+        # 1750 minus 950 would be the sound engineer's fee.
+        self.assertIsNone(report.highlight.covered)
+        self.assertEqual(report.highlight.structure, [])
+
+    def test_a_highlight_cannot_be_subtracted_from_the_remainder(self) -> None:
+        project = make_project()
+        price(project, participation=make_seat(project, "Solista", "Jedyny"), amount="400")
+        venue = _expense(project, "2000")
+        _expense(project, "300", category="PROMOTION")
+        grant = _source()
+        FundingService.set_cost_allocations(venue, _split((_fund(project, grant, planned="2000"), "2000")),
+                                            actor=None)
+
+        report = patron_report(BudgetService.build(project), source_id=grant.pk)
+
+        self.assertEqual([(share.key, share.amount) for share in report.structure],
+                         [("PROMOTION", Decimal("300.00")), (REMAINDER, Decimal("2400.00"))])
+        assert report.highlight is not None
+        # A venue row of 2000 beside the whole's remainder of 2400 is the soloist's 400.
+        self.assertEqual(report.highlight.structure, [])
+        self.assertEqual(report.highlight.covered, Decimal("2000.00"))
 
     def test_volunteer_work_is_shown_only_when_enough_volunteers_make_it_up(self) -> None:
         project = make_project()
