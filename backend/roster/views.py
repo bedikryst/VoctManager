@@ -2582,7 +2582,7 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
         )
         legacy = list(
             ProjectPieceCasting.objects.filter(
-                participation__project=project, voice_line='SOLO',
+                participation__project=project, voice_line=VoiceLine.SOLO,
                 participation__is_deleted=False, **piece_filter,
             ).select_related('participation__artist', 'piece')
             .prefetch_related('piece__voice_requirements')
@@ -2620,10 +2620,11 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
             )
         project = get_object_or_404(Project, pk=dto.project)
         piece = get_object_or_404(Piece, pk=dto.piece)
-        if not ProgramItem.objects.filter(project=project, piece=piece).exists():
-            raise CastingValidationException(_('This piece is not in the project programme.'))
+        # A write is refused by the service's own programme check.
         if request.method == 'PUT':
             CastingAndCrewService.save_solo_assignments(dto)
+        elif not ProgramItem.objects.filter(project=project, piece=piece).exists():
+            raise CastingValidationException(_('This piece is not in the project programme.'))
         return self._solo_response(project, piece)
 
     @action(detail=False, methods=['get'], url_path='cast-solos')
@@ -2686,6 +2687,7 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
                 error_code='validation_error', detail='The submitted data is invalid.',
                 validation_errors=format_pydantic_validation_errors(exc),
             )
+        get_object_or_404(ProjectPieceCasting, pk=dto.casting)
         assignment = CastingAndCrewService.convert_legacy_solo(dto)
         return self._solo_response(assignment.project, assignment.piece)
 

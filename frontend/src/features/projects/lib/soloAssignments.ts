@@ -25,6 +25,9 @@ import type { SoloAssignmentRowDTO } from "../types/project.dto";
  */
 export const LEGACY_SOLO_LINE = "SOLO";
 
+/** The server's cap on a position's place in the score (`SoloAssignmentRowDTO`). */
+export const SCORE_REFERENCE_MAX_LENGTH = 500;
+
 /** One named position as the editor holds it between saves. */
 export interface SoloDraftRow {
   /** Stable React key: the server id once saved, a local one before. */
@@ -33,6 +36,11 @@ export interface SoloDraftRow {
   readonly label: string;
   readonly scoreReference: string;
   readonly participation: string | null;
+  /**
+   * The saved performer's name, for a row whose performer has left the project
+   * and so is missing from the cast the picker offers.
+   */
+  readonly performerName: string | null;
   readonly notes: string;
   readonly givesPitch: boolean;
   /**
@@ -92,26 +100,42 @@ export const soloRowsFromServer = (
       label: solo.label,
       scoreReference: solo.score_reference ?? "",
       participation: solo.participation ? String(solo.participation) : null,
+      performerName: solo.artist_name ?? null,
       notes: solo.notes ?? "",
       givesPitch: Boolean(solo.gives_pitch),
       referenceNeedsReview: Boolean(solo.reference_needs_review),
     }));
 
 /**
- * A position counts as filled only while its performer can sing it: a singer
- * who declined after being given the passage leaves it open, exactly as a
- * declined singer leaves a choral seat open.
+ * Where a position's performer stands. `declined` and `departed` (no longer on
+ * the project) both leave the passage waiting for someone, but the row keeps
+ * the performer until the conductor picks another — the server accepts a
+ * performer it already holds, and checks only one the save hands a position to.
+ */
+export type SoloPerformerState = "open" | "cast" | "declined" | "departed";
+
+export const soloPerformerState = (
+  participation: string | null,
+  statusOf: (participationId: string) => ParticipationStatus | undefined,
+): SoloPerformerState => {
+  if (!participation) return "open";
+  const status = statusOf(participation);
+  if (status === undefined) return "departed";
+  return status === "DEC" ? "declined" : "cast";
+};
+
+/**
+ * A position counts as filled only while its performer can sing it, exactly
+ * as a declined singer leaves a choral seat open.
  */
 export const soloCoverage = (
   rows: readonly SoloDraftRow[],
   legacyCount: number,
   statusOf: (participationId: string) => ParticipationStatus | undefined,
 ): SoloCoverage => ({
-  filled: rows.filter((row) => {
-    if (!row.participation) return false;
-    const status = statusOf(row.participation);
-    return status !== undefined && status !== "DEC";
-  }).length,
+  filled: rows.filter(
+    (row) => soloPerformerState(row.participation, statusOf) === "cast",
+  ).length,
   total: rows.length,
   legacy: legacyCount,
 });

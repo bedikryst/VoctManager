@@ -22,6 +22,7 @@ import {
   sectionLettersOfSeat,
   sectionLettersOfVoiceLine,
 } from "@/features/projects/lib/voiceFamilies";
+import { LEGACY_SOLO_LINE } from "@/features/projects/lib/soloAssignments";
 
 /**
  * The lines a row offers for exclusion when its piece declares none, and the
@@ -272,7 +273,7 @@ export const planSeatOf = (
   for (const casting of castings) {
     if (String(casting.participation) !== seatId) continue;
     const pieceId = String(casting.piece);
-    if (casting.voice_line !== "SOLO" || !castLines.has(pieceId)) {
+    if (casting.voice_line !== LEGACY_SOLO_LINE || !castLines.has(pieceId)) {
       castLines.set(pieceId, casting.voice_line);
     }
   }

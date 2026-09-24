@@ -434,12 +434,17 @@ class PieceCastingBoardsDTO(EnterpriseBaseDTO):
         return self
 
 
+# A place in the score ("lit. 7, bars 12-20"), not a passage's text. The column
+# is unbounded; the cap belongs to the write contract.
+SCORE_REFERENCE_MAX_LENGTH = 500
+
+
 class SoloAssignmentRowDTO(EnterpriseBaseDTO):
     """One ordered named solo position; an empty performer leaves it open."""
 
     id: UUID | None = None
     label: str = Field(..., min_length=1, max_length=200)
-    score_reference: str = ''
+    score_reference: str = Field(default='', max_length=SCORE_REFERENCE_MAX_LENGTH)
     participation: UUID | None = None
     notes: str = Field(default='', max_length=200)
     gives_pitch: bool = False
@@ -476,7 +481,7 @@ class PieceSoloAssignmentsDTO(EnterpriseBaseDTO):
 class ConvertLegacySoloDTO(EnterpriseBaseDTO):
     casting: UUID
     label: str = Field(..., min_length=1, max_length=200)
-    score_reference: str = ''
+    score_reference: str = Field(default='', max_length=SCORE_REFERENCE_MAX_LENGTH)
     position: int = Field(..., ge=0)
 
     @field_validator('label')

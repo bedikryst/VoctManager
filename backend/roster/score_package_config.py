@@ -16,7 +16,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from uuid import UUID
 
-from django.db.models import QuerySet
+from django.db.models import Prefetch, QuerySet
 
 from archive.models import Piece, ProgramNote, ScoreEdition, Translation
 from archive.services.language import normalize_language
@@ -60,6 +60,33 @@ class ResolvedCardConfig:
         return self.enabled and element in self.elements
 
 
+# Where `book_program_items` leaves each piece's solos in the book's project,
+# so the performers line of a whole book costs two queries, not two per card.
+_BOOK_SOLOS = "book_solos"
+_BOOK_LEGACY_SOLOS = "book_legacy_solos"
+
+
+def _project_named_solos(project_id: UUID) -> QuerySet[ProjectSoloAssignment]:
+    return (
+        ProjectSoloAssignment.objects
+        .filter(project_id=project_id)
+        .select_related("participation__artist")
+        .order_by("position", "id")
+    )
+
+
+def _project_legacy_solos(project_id: UUID) -> QuerySet[ProjectPieceCasting]:
+    return (
+        ProjectPieceCasting.objects
+        .filter(
+            participation__project_id=project_id,
+            participation__is_deleted=False,
+            voice_line=VoiceLine.SOLO,
+        )
+        .select_related("participation__artist")
+    )
+
+
 def book_program_items(project: Project) -> QuerySet[ProgramItem]:
     """The programme the book binds, in order, with the per-item tree pre-joined.
 
@@ -79,6 +106,16 @@ def book_program_items(project: Project) -> QuerySet[ProgramItem]:
             "piece__translations",
             "piece__program_notes",
             "piece__movements",
+            Prefetch(
+                "piece__project_solo_assignments",
+                queryset=_project_named_solos(project.pk),
+                to_attr=_BOOK_SOLOS,
+            ),
+            Prefetch(
+                "piece__castings",
+                queryset=_project_legacy_solos(project.pk),
+                to_attr=_BOOK_LEGACY_SOLOS,
+            ),
         )
         .order_by("order")
     )
@@ -323,26 +360,18 @@ def resolve_item_performers(item: ProgramItem) -> str:
     """The performers line an item's card prints. What the conductor typed wins
     and is never rewritten; without it the line is read off the piece's filled
     solos in this project, so a book stays current while nobody has typed one.
-    The stored field is left empty — the derivation is a fallback, not a value."""
+    The stored field is left empty — the derivation is a fallback, not a value.
+
+    Reads the solos `book_program_items` prefetched; an item loaded any other
+    way costs two queries."""
     manual = (item.performers or "").strip()
     if manual:
         return manual
-    solos = (
-        ProjectSoloAssignment.objects
-        .filter(project_id=item.project_id, piece_id=item.piece_id)
-        .select_related("participation__artist")
-        .order_by("position", "id")
-    )
-    legacy = (
-        ProjectPieceCasting.objects
-        .filter(
-            participation__project_id=item.project_id,
-            participation__is_deleted=False,
-            piece_id=item.piece_id,
-            voice_line=VoiceLine.SOLO,
-        )
-        .select_related("participation__artist")
-    )
+    solos = getattr(item.piece, _BOOK_SOLOS, None)
+    legacy = getattr(item.piece, _BOOK_LEGACY_SOLOS, None)
+    if solos is None or legacy is None:
+        solos = _project_named_solos(item.project_id).filter(piece_id=item.piece_id)
+        legacy = _project_legacy_solos(item.project_id).filter(piece_id=item.piece_id)
     return solo_credit_line(solo_duties(solos, legacy))
 
 

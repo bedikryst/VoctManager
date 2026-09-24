@@ -25,7 +25,12 @@ import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import type { CastMember } from "../../hooks/useMicroCasting";
-import type { SoloCoverage, SoloDraftRow } from "../../../lib/soloAssignments";
+import {
+  SCORE_REFERENCE_MAX_LENGTH,
+  soloPerformerState,
+  type SoloCoverage,
+  type SoloDraftRow,
+} from "../../../lib/soloAssignments";
 
 type SoloRowPatch = Partial<
   Pick<
@@ -83,19 +88,32 @@ export const SoloAssignmentsEditor = ({
     return line ? `${member.displayName} · ${line}` : member.displayName;
   };
 
+  const statusOf = (participationId: string) =>
+    memberMap.get(participationId)?.status;
+
   // A declined singer cannot be given a passage; one who declined after being
-  // given it stays visible on their row so the conductor sees the hole.
-  const optionsFor = (current: string | null): SelectOption[] =>
-    members
+  // given it, or left the project, stays visible on their row so the
+  // conductor sees the hole.
+  const optionsFor = (row: SoloDraftRow): SelectOption[] => {
+    const options: SelectOption[] = members
       .filter(
         (member) =>
-          member.status !== "DEC" || member.participationId === current,
+          member.status !== "DEC" || member.participationId === row.participation,
       )
       .map((member) => ({
         value: member.participationId,
         label: performerLabel(member),
         disabled: member.status === "DEC",
       }));
+    if (row.participation && !memberMap.has(row.participation)) {
+      options.unshift({
+        value: row.participation,
+        label: row.performerName ?? "—",
+        disabled: true,
+      });
+    }
+    return options;
+  };
 
   return (
     <section className="flex flex-col gap-3">
@@ -153,10 +171,9 @@ export const SoloAssignmentsEditor = ({
       {rows.length > 0 && (
         <ol className="flex flex-col gap-2">
           {rows.map((row, index) => {
-            const member = row.participation
-              ? memberMap.get(row.participation)
-              : undefined;
-            const hasDeclined = member?.status === "DEC";
+            const performerState = soloPerformerState(row.participation, statusOf);
+            const hasDeclined = performerState === "declined";
+            const hasDeparted = performerState === "departed";
             const isBlank = row.label.trim() === "";
 
             return (
@@ -198,6 +215,7 @@ export const SoloAssignmentsEditor = ({
                           scoreReference: event.target.value,
                         })
                       }
+                      maxLength={SCORE_REFERENCE_MAX_LENGTH}
                       disabled={disabled}
                       placeholder={t(
                         "projects.micro_cast.solos.reference_placeholder",
@@ -213,7 +231,7 @@ export const SoloAssignmentsEditor = ({
                       onValueChange={(value) =>
                         onUpdate(row.key, { participation: value || null })
                       }
-                      options={optionsFor(row.participation)}
+                      options={optionsFor(row)}
                       disabled={disabled}
                       placeholder={t(
                         "projects.micro_cast.solos.open",
@@ -298,7 +316,7 @@ export const SoloAssignmentsEditor = ({
                   </div>
                 </div>
 
-                {(row.referenceNeedsReview || hasDeclined) && (
+                {(row.referenceNeedsReview || hasDeclined || hasDeparted) && (
                   <div className="flex flex-col gap-1 pl-7">
                     {row.referenceNeedsReview && (
                       <Caption color="gold">
@@ -313,6 +331,14 @@ export const SoloAssignmentsEditor = ({
                         {t(
                           "projects.micro_cast.solos.declined",
                           "Wykonawca odmówił udziału — solówka czeka na obsadę.",
+                        )}
+                      </Caption>
+                    )}
+                    {hasDeparted && (
+                      <Caption color="gold">
+                        {t(
+                          "projects.micro_cast.solos.departed",
+                          "Wykonawca nie należy już do projektu — solówka czeka na obsadę.",
                         )}
                       </Caption>
                     )}
@@ -423,6 +449,14 @@ const LegacySoloList = ({
               </div>
               {casting.notes && (
                 <Caption color="muted">{casting.notes}</Caption>
+              )}
+              {member?.status === "DEC" && (
+                <Caption color="gold">
+                  {t(
+                    "projects.micro_cast.solos.legacy_declined",
+                    "Wykonawca odmówił udziału — po nadaniu nazwy solówka będzie czekać na obsadę.",
+                  )}
+                </Caption>
               )}
               {isNaming && (
                 <form

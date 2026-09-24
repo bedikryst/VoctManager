@@ -252,6 +252,11 @@ Where the implementation differs from the plan above, and why.
 - **One domain fold.** `roster/domain/solo_duties.py` merges named and legacy solos
   for every printed and read surface; `choral_castings` is the one "not a legacy solo"
   filter. The frontend twin is `features/projects/lib/soloAssignments.ts`.
+- **Performers who leave.** A save checks only a performer it hands a position to. One
+  already on a row keeps it after declining or leaving the project, so the rest of the
+  piece's solos can still be saved; the editor marks the row and coverage counts it open.
+  Converting a legacy row whose singer declined or left creates an open named position
+  and tells that singer nothing.
 - **Editor.** Legacy rows are read-only in the UI; the only action is conversion.
   Their notes and pitch flag remain editable through the old PATCH endpoint only.
   A declared `SOLO` requirement is not a board bucket: it is excluded from choral
@@ -264,7 +269,9 @@ Where the implementation differs from the plan above, and why.
 - **Book credit.** `score_package_config.resolve_item_performers` is the one rule:
   the typed line wins, else filled named and legacy solos. The source hash and the
   cockpit readiness follow the resolved line; the cockpit field still shows only
-  what was typed.
+  what was typed. The hash carries the resolved line only where the card prints the
+  cast, so recasting a solo never ages a book that credits nobody. `book_program_items`
+  prefetches the project's solos, so a whole book's credits cost two queries.
 - **Notices.** A solo save queues on its own subject, `CASTING` / `<piece>:solos`, so
   a choir seat created or removed in the same window cannot swallow it. Position is
   not news: a reorder queues nothing. The change field `solo_assignments` carries the

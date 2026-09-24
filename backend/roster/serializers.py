@@ -29,6 +29,7 @@ from roster.domain.liturgy import (
     build_program_presentation,
 )
 from roster.domain.rehearsal_plan import EffectiveClock, row_done, window_payload
+from roster.domain.solo_duties import is_legacy_solo
 
 from .dtos import validate_instrument
 from .models import (
@@ -976,7 +977,7 @@ class ProjectPieceCastingSerializer(serializers.ModelSerializer):
         return str(obj.participation.artist_id)
 
     def get_is_legacy_solo(self, obj) -> bool:
-        return obj.voice_line == 'SOLO'
+        return is_legacy_solo(obj)
 
 
 class ProjectSoloAssignmentSerializer(serializers.ModelSerializer):
