@@ -2078,6 +2078,23 @@
       "range_required": "Podaj obie daty.",
       "range_order": "Data początkowa jest późniejsza niż końcowa."
     },
+    "workspace": {
+      "back_to_panel": "Voct",
+      "nav": {
+        "aria": "Sekcje finansów",
+        "payables": "Do zapłaty",
+        "sources": "Źródła",
+        "projects": "Projekty",
+        "exports": "Eksporty"
+      },
+      "exports": {
+        "office_title": "Księga dla biura",
+        "project_title": "Dokumenty projektu",
+        "project_label": "Projekt",
+        "project_placeholder": "Wybierz projekt",
+        "project_empty": "Wybierz projekt, żeby pobrać jego raporty, pliki do rozliczenia z grantodawcą i umowy."
+      }
+    },
     "facts": {
       "cost": "Koszt honorariów",
       "unpriced": "bez stawki: {{count}} os."
@@ -2428,7 +2445,6 @@
       "awarded": "Przyznano",
       "planned": "Oczekują projekty",
       "role": "Źródło finansowania",
-      "back": "Finanse",
       "edit": "Edytuj",
       "money": "Pieniądze",
       "over_awarded": "Projekty oczekują albo obciążyły więcej, niż źródło przyznało. Zmniejsz oczekiwane kwoty w projektach albo zdejmij część kosztów.",

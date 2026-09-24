@@ -2059,6 +2059,23 @@
       "range_required": "Indiquez les deux dates.",
       "range_order": "La date de début est postérieure à la date de fin."
     },
+    "workspace": {
+      "back_to_panel": "Voct",
+      "nav": {
+        "aria": "Sections des finances",
+        "payables": "À payer",
+        "sources": "Sources",
+        "projects": "Projets",
+        "exports": "Exports"
+      },
+      "exports": {
+        "office_title": "Registre pour le bureau",
+        "project_title": "Documents du projet",
+        "project_label": "Projet",
+        "project_placeholder": "Choisir un projet",
+        "project_empty": "Choisissez un projet pour télécharger ses rapports, les fichiers de décompte pour le financeur et ses contrats."
+      }
+    },
     "facts": {
       "cost": "Coût des cachets",
       "unpriced": "sans cachet : {{count}} pers."
@@ -2409,7 +2426,6 @@
       "awarded": "Accordé",
       "planned": "Attendu par les projets",
       "role": "Source de financement",
-      "back": "Finances",
       "edit": "Modifier",
       "money": "Argent",
       "over_awarded": "Les projets attendent ou ont imputé plus que ce que la source a accordé. Réduisez les montants attendus par les projets ou retirez-en une partie des coûts.",

@@ -1,7 +1,7 @@
 # Finance workspace — `/panel/finance/*`
 
-Status: **Stage 0 (this spec) written 2026-09-24. Nothing built yet. Next: stage 1 (skeleton);
-stage 2 (backend) may run in parallel.** Update this line at the end of every stage.
+Status: **Stage 1 (skeleton) done 2026-09-24, not yet checked in the browser. Next: stage 2
+(backend), then stage 3 (tables).** Update this line at the end of every stage.
 
 Builds on `project-finance-2026-09.md` (the finance module) and its audit
 `project-finance-audit-2026-09.md`. Frontend paths below are relative to `frontend/src/` unless they
@@ -257,3 +257,35 @@ The developer checks the UI in his own browser:
 
 **Prod:** nothing new to migrate. It deploys together with the first `finance` deploy (§6 of the
 audit).
+
+## As built
+
+### Stage 1
+
+- **The nav has no Przegląd entry yet.** The index only redirects to `payables`, so the entry would
+  never be active. Stage 5 adds it along with the page.
+- **Only Do zapłaty and Źródła show counts.** Projekty hides the projects that have no money on
+  them, so a count of the rollups would not match the rows on screen. Stage 3's toggle settles what
+  that count should mean.
+- **Dock clearance** is set on `document.documentElement` while the shell is mounted. That covers
+  `--nav-dock-h` and also `--bottom-dock-gap` and `--floating-dock-gap`, because those two are
+  computed on `:root` and would otherwise keep the dock height. Portalled bars inherit from
+  `<html>`, not from the shell.
+- **The FeedbackDock has no route whitelist.** The whitelist kept in two places covers the client
+  context fields (`collectClientContext.ts` and `_CONTEXT_SPEC`); the route is sent as a free
+  `pathname`. The nginx and service-worker allowlists already cover `/panel/*`. Nothing changed
+  there.
+- **Where things live:**
+  - `FinanceOutletContext` and `useFinanceOutlet` are in `features/finance/workspace/financeOutlet.ts`,
+    not in the widget, because features may not import widgets.
+  - `OfficeExport` is in `features/finance/workspace/components/`.
+- **Do zapłaty paging** runs `useFinanceOverview(offset)` inside the section. At offset 0 it shares
+  the shell's cache entry, and a later page that fails falls back to the shell's first page. Stage 4
+  replaces all of this with B1.
+- **The source page's back button** reads "Źródła" (`finance.workspace.nav.sources`) and leads to
+  `/panel/finance/sources`, as does deleting a source. `finance.source_page.back` is gone.
+- **Preloaders:** the shell and every section chunk are preloaded for manager sessions from the
+  panel shell. The copy desk's chunks are not preloaded, but every manager's rail and dashboard lead
+  into finance.
+- `RouteTabs` takes `orientation`, `count` and `end`. `ProjectTabs` and `ArchiveTabs` still carry
+  private copies of the track (planned).
