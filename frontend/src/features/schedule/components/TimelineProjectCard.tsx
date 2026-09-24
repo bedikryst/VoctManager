@@ -78,6 +78,7 @@ export const TimelineProjectCard = ({
     programItems,
     isProgramLoading,
     castings,
+    solos,
     isCastingsLoading,
     isDaySheetPreviewOpen,
     fetchDaySheetBlob,
@@ -741,6 +742,54 @@ export const TimelineProjectCard = ({
                                               "Brak szczegółowego podziału (divisi) dla tego utworu.",
                                             )}
                                           </Text>
+                                        )}
+                                        {/* Named solos under the lines: a duty
+                                            beside a singer's part, open
+                                            positions included. */}
+                                        {!isCastingsLoading && solos.length > 0 && (
+                                          <div className="mt-5 space-y-2 border-t border-ethereal-incense/20 pt-4">
+                                            <Eyebrow
+                                              as="h5"
+                                              color="amethyst"
+                                              className="pb-1"
+                                            >
+                                              {t("materials.piece.solos", "Solówki")}
+                                            </Eyebrow>
+                                            <ul className="space-y-1.5">
+                                              {solos.map((solo) => {
+                                                const isMe =
+                                                  solo.artist_id !== null &&
+                                                  String(solo.artist_id) === String(artistId);
+                                                return (
+                                                  <li key={solo.id} className="flex flex-col gap-0.5">
+                                                    <Text
+                                                      as="span"
+                                                      size="sm"
+                                                      color="ink-on-inverse"
+                                                      weight={isMe ? "bold" : "normal"}
+                                                    >
+                                                      {solo.label}
+                                                      {" — "}
+                                                      {solo.artist_name ??
+                                                        t(
+                                                          "materials.piece.solo_open",
+                                                          "jeszcze nieobsadzona",
+                                                        )}
+                                                    </Text>
+                                                    {solo.score_reference && (
+                                                      <Text
+                                                        as="span"
+                                                        size="xs"
+                                                        color="ink-on-inverse-muted"
+                                                      >
+                                                        {solo.score_reference}
+                                                      </Text>
+                                                    )}
+                                                  </li>
+                                                );
+                                              })}
+                                            </ul>
+                                          </div>
                                         )}
                                       </div>
                                     </motion.div>

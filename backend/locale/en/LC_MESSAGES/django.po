@@ -3790,3 +3790,90 @@ msgid ""
 "An existing booking keeps its person and project; remove it and add a new "
 "one."
 msgstr ""
+
+#: notifications/message_content.py
+msgid "Solos"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "new: %(solo)s"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "updated: %(solo)s"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "removed: %(solo)s"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "Your solos"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "none"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "Solo update — %(piece)s"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "Open the score to see your solos."
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"The solos you sing in %(piece)s have changed. Open the score and find the "
+"passages before the next rehearsal."
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"You no longer have a solo in %(piece)s. Anything else you sing in it stays "
+"as it was."
+msgstr ""
+
+#: templates/projects/call_sheet_pdf.html
+msgctxt "call sheet"
+msgid "Your solo"
+msgstr ""
+
+#: roster/services.py
+msgid "Create named solo positions through the solos editor."
+msgstr ""
+
+#: roster/services.py
+msgid "A legacy solo can only change notes and pitch giving."
+msgstr ""
+
+#: roster/services.py
+msgid "Convert a legacy solo before removing it."
+msgstr ""
+
+#: roster/services.py
+msgid "Cannot assign a declined or foreign participant to a solo."
+msgstr ""
+
+#: roster/services.py
+msgid "A solo assignment belongs to another piece or project."
+msgstr ""
+
+#: roster/services.py
+msgid "Only a legacy solo can be converted."
+msgstr ""
+
+#: roster/services.py
+msgid "This solo position is already occupied."
+msgstr ""
+
+#: roster/views.py
+msgid "This piece is not in the project programme."
+msgstr ""

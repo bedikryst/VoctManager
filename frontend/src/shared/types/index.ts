@@ -864,4 +864,40 @@ export interface PieceCasting {
   artist_name?: string;
   project_id?: string;
   artist_id?: string;
+  /**
+   * A `SOLO` row from before named solo positions existed. It carries no
+   * passage, so it is shown as a solo of unknown extent until the conductor
+   * converts it into a named position; the divisi board never saves it.
+   */
+  is_legacy_solo?: boolean;
+}
+
+/**
+ * One named solo duty in a project's casting of a programmed piece. Additive to
+ * the performer's choral seat: the same person can hold a voice line and any
+ * number of these, and positions may overlap musically. `participation` null
+ * is an open position still to be filled.
+ */
+export interface ProjectSoloAssignment {
+  id: string;
+  project: string;
+  piece: string;
+  position: number;
+  label: string;
+  /** Free text for the score used in this project ("rehearsal mark 7"). */
+  score_reference: string;
+  participation: string | null;
+  notes: string;
+  gives_pitch: boolean;
+  /** Edition bound when `score_reference` was last written; provenance only. */
+  reference_edition: string | null;
+  artist_name: string | null;
+  /** The programme now binds a different edition than the reference was written for. */
+  reference_needs_review: boolean;
+}
+
+/** Every solo duty of a project's programme, named and legacy. */
+export interface ProjectSolos {
+  solo_assignments: ProjectSoloAssignment[];
+  legacy_solos: PieceCasting[];
 }

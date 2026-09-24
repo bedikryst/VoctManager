@@ -4,7 +4,7 @@
 # Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID
 
 from django.core.files.uploadedfile import UploadedFile
@@ -174,7 +174,7 @@ class ArtistMetricsService:
 
     @classmethod
     def get_metrics_for_artist(cls, artist_id: UUID) -> ArtistIdentityMetricsDTO:
-        from roster.models import Participation, ProjectPieceCasting
+        from roster.models import Participation, ProjectPieceCasting, ProjectSoloAssignment
 
         completed_participations = list(
             Participation.objects.filter(
@@ -199,10 +199,29 @@ class ArtistMetricsService:
         # pieces is ten evenings of "Tenor", not of "Tenor 1".
         casting_counts = (
             ProjectPieceCasting.objects.filter(participation_id__in=participation_ids)
+            .exclude(voice_line=VoiceLine.SOLO)
             .values('piece_id', 'voice_line')
             .annotate(count=Count('id'))
         )
-        counted = list(casting_counts)
+        counted: list[dict[str, Any]] = list(casting_counts)
+        # A solo is one performance of the piece in that concert, however many
+        # passages it spans and whether it was written as a named position or
+        # a legacy SOLO row.
+        solo_pairs = set(
+            ProjectPieceCasting.objects.filter(
+                participation_id__in=participation_ids, voice_line=VoiceLine.SOLO,
+            ).values_list('participation_id', 'piece_id')
+        ) | set(
+            ProjectSoloAssignment.objects.filter(participation_id__in=participation_ids)
+            .values_list('participation_id', 'piece_id')
+        )
+        solos_by_piece: dict[UUID, int] = {}
+        for _, piece_id in solo_pairs:
+            solos_by_piece[piece_id] = solos_by_piece.get(piece_id, 0) + 1
+        counted += [
+            {'piece_id': piece_id, 'voice_line': VoiceLine.SOLO.value, 'count': count}
+            for piece_id, count in solos_by_piece.items()
+        ]
         sung_codes: dict[UUID, set[str]] = {}
         for entry in counted:
             sung_codes.setdefault(entry['piece_id'], set()).add(entry['voice_line'])
@@ -244,26 +263,35 @@ class ArtistMetricsService:
         """
         Repertoire passport: every distinct piece the artist was cast on across
         completed projects, with performance counts, voice lines sung and years.
+        A named solo puts its piece in the passport as "Solo" even without a
+        choir part; performances still count concerts, not passages.
         """
-        from roster.models import ProjectPieceCasting
+        from roster.models import ProjectPieceCasting, ProjectSoloAssignment
 
-        castings = (
-            ProjectPieceCasting.objects.filter(participation_id__in=participation_ids)
-            .select_related('piece__composer', 'participation__project')
-        )
+        castings = [
+            (casting.piece, casting.voice_line, casting.participation.project)
+            for casting in ProjectPieceCasting.objects.filter(
+                participation_id__in=participation_ids
+            ).select_related('piece__composer', 'participation__project')
+        ] + [
+            (solo.piece, VoiceLine.SOLO.value, solo.participation.project)
+            for solo in ProjectSoloAssignment.objects.filter(
+                participation_id__in=participation_ids
+            ).select_related('piece__composer', 'participation__project')
+            if solo.participation is not None
+        ]
 
         # A career passport has no concert in hand, so lines are named against
         # the piece-wide divisi widened by what this singer actually sang.
         sung_codes: dict[UUID, set[str]] = {}
-        for casting in castings:
-            sung_codes.setdefault(casting.piece_id, set()).add(casting.voice_line)
+        for piece, voice_line, _ in castings:
+            sung_codes.setdefault(piece.pk, set()).add(voice_line)
         labels_by_piece = voice_labels_for_pieces(
             sung_codes.keys(), extra_codes_by_piece=sung_codes,
         )
 
         grouped: dict[UUID, dict] = {}
-        for casting in castings:
-            piece = casting.piece
+        for piece, voice_line, project in castings:
             bucket = grouped.setdefault(piece.pk, {
                 'title': piece.title,
                 'composer_name': (
@@ -276,10 +304,9 @@ class ArtistMetricsService:
                 'years': set(),
             })
             bucket['voice_lines'].add(
-                labels_by_piece.get(casting.piece_id, {}).get(casting.voice_line)
-                or str(cls._VOICE_LINE_LABELS.get(casting.voice_line, casting.voice_line))
+                labels_by_piece.get(piece.pk, {}).get(voice_line)
+                or str(cls._VOICE_LINE_LABELS.get(voice_line, voice_line))
             )
-            project = casting.participation.project
             bucket['projects'].add(project.pk)
             bucket['years'].add(project.date_time.year)
 
@@ -357,8 +384,7 @@ class EnsembleDirectoryService:
 
     @classmethod
     def get_ensemble(cls, user: object, request: "Request | None" = None) -> MyEnsembleDTO:
-        from core.constants import VoiceLine
-        from roster.models import ProjectPieceCasting
+        from roster.models import ProjectPieceCasting, ProjectSoloAssignment
 
         me_artist = getattr(user, 'artist_profile', None)
         me = EnsembleMeDTO(
@@ -382,13 +408,29 @@ class EnsembleDirectoryService:
                 participation__project__is_deleted=False,
             ).select_related('participation__project')
         )
-        if not my_castings:
+        # A named solo is a part in the piece too: a soloist with no choir seat
+        # still sings with the people around them, and reads as "Solo" there.
+        my_solos = list(
+            ProjectSoloAssignment.objects.filter(
+                participation__artist_id=me_artist.id,
+                participation__status='CON',
+                participation__is_deleted=False,
+                project__status__in=cls._OPEN_PROJECT_STATUSES,
+                project__is_deleted=False,
+            )
+        )
+        if not my_castings and not my_solos:
             return MyEnsembleDTO(me=me, concerts=())
 
         my_pairs = {(c.participation.project_id, c.piece_id) for c in my_castings}
+        my_pairs |= {(solo.project_id, solo.piece_id) for solo in my_solos}
         my_voice_lines: dict[tuple, set[str]] = {}
         for c in my_castings:
             my_voice_lines.setdefault((c.participation.project_id, c.piece_id), set()).add(c.voice_line)
+        for solo in my_solos:
+            my_voice_lines.setdefault((solo.project_id, solo.piece_id), set()).add(
+                VoiceLine.SOLO.value
+            )
 
         project_ids = {pid for pid, _ in my_pairs}
         piece_ids = {pid for _, pid in my_pairs}
@@ -428,6 +470,28 @@ class EnsembleDirectoryService:
             bucket = pieces.setdefault(key, {'title': casting.piece.title, 'voices': {}})
             members = bucket['voices'].setdefault(casting.voice_line, {})
             members.setdefault(casting.participation.artist_id, casting.participation)
+
+        # Named soloists join the piece's "Solo" section once each, however many
+        # passages they hold, beside anyone still on a legacy SOLO row.
+        for solo in (
+            ProjectSoloAssignment.objects.filter(
+                project_id__in=project_ids,
+                piece_id__in=piece_ids,
+                participation__status='CON',
+                participation__is_deleted=False,
+            )
+            .select_related('participation__artist__user__profile', 'project', 'piece')
+        ):
+            key = (solo.project_id, solo.piece_id)
+            if key not in my_pairs or solo.participation is None:
+                continue
+            projects.setdefault(
+                solo.project_id,
+                {'title': solo.project.title, 'date': solo.project.date_time},
+            )
+            bucket = pieces.setdefault(key, {'title': solo.piece.title, 'voices': {}})
+            members = bucket['voices'].setdefault(VoiceLine.SOLO.value, {})
+            members.setdefault(solo.participation.artist_id, solo.participation)
 
         concerts = cls._build_concerts(
             user_artist_id=me_artist.id,

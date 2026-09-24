@@ -1,8 +1,9 @@
 # Divisi and additional solo assignments
 
-Status: Variant 2 selected; stage 1 implemented on 2026-09-24.
-Stages 2-4 remain pending. The source changes are uncommitted.
-Migration `roster.0063_project_solo_assignment` was applied to the Windows dev database.
+Status: Variant 2 implemented, stages 1-4, on 2026-09-24 and committed. Open: the
+developer's visual review of the editor, songbook, schedule card and bell; `make migrate`
+on prod for `roster.0063_project_solo_assignment` (applied on the Windows dev database).
+See "As built" at the end for where the build departs from the plan.
 
 ## Need
 
@@ -239,7 +240,38 @@ personal view, materials, exports and relevant notifications together.
   roster/documents/notifications tests plus ruff and mypy on touched apps; run
   frontend `npm run typecheck` and `npm run build` once after the full stage.
 
-Implementation handoff: continue with stage 2 in a fresh session. Do not repeat
-the variant decision or broaden ordinary divisi. Preserve all uncommitted changes,
-especially in `backend/roster/services.py`. Stage 4 still needs to render the
-solo change metadata queued by stage 1 in the in-app, email and push messages.
+## As built
+
+Where the implementation differs from the plan above, and why.
+
+- **Reads.** `GET solos/?project=<id>` without `piece` returns the whole programme's
+  named and legacy solos, so the programme rail and the project card can score solo
+  coverage without one request per piece. `GET cast-solos/?project=&piece=` is a
+  cast-readable list (live seat, leader or manager) for the schedule card; it carries no
+  edition provenance. `POST convert-solo/` answers with the piece's solos, not one row.
+- **One domain fold.** `roster/domain/solo_duties.py` merges named and legacy solos
+  for every printed and read surface; `choral_castings` is the one "not a legacy solo"
+  filter. The frontend twin is `features/projects/lib/soloAssignments.ts`.
+- **Editor.** Legacy rows are read-only in the UI; the only action is conversion.
+  Their notes and pitch flag remain editable through the old PATCH endpoint only.
+  A declared `SOLO` requirement is not a board bucket: it is excluded from choral
+  coverage and shown as a hint beside the named positions. Rail and project-card
+  gaps are choral gaps plus open positions. Singers with only solos on the open piece
+  sit in a trailing "Solo only" pool group, still draggable onto a line.
+- **Instrumental rule.** A filled named solo counts as a performer in
+  `instrumental_item_exists` / `castings_are_instrumental`: a soprano over the organ
+  keeps the piece in the choir's songbook and book.
+- **Book credit.** `score_package_config.resolve_item_performers` is the one rule:
+  the typed line wins, else filled named and legacy solos. The source hash and the
+  cockpit readiness follow the resolved line; the cockpit field still shows only
+  what was typed.
+- **Notices.** A solo save queues on its own subject, `CASTING` / `<piece>:solos`, so
+  a choir seat created or removed in the same window cannot swallow it. Position is
+  not news: a reorder queues nothing. The change field `solo_assignments` carries the
+  reader's duties before/after as JSON sorted by id; `solo_assignments` and
+  `choir_voice_line` on the metadata carry the resulting duties. Conversion reuses the
+  legacy row's id, so its one notice reads "Solo → <name>".
+- **Counts.** Dossier and artist metrics tally a solo once per piece per concert
+  however many passages it spans; the invitation adds one `SOLO` to the singer's parts.
+- **Rehearsal plan.** A legacy `SOLO` row never replaces a choir line in the
+  `piece → voice_line` map (server `_record_cast_line`, client `planSeatOf`).

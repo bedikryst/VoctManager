@@ -994,12 +994,14 @@ class ProjectSoloAssignmentSerializer(serializers.ModelSerializer):
         return f'{participation.artist.first_name} {participation.artist.last_name}'
 
     def get_reference_needs_review(self, obj: ProjectSoloAssignment) -> bool:
+        """A reference written against an edition other than the one now bound."""
         if not obj.score_reference:
             return False
         return any(
             edition_id != obj.reference_edition_id
-            for edition_id in self.context.get('edition_ids', ())
+            for edition_id in self.context.get('edition_ids_by_piece', {}).get(obj.piece_id, ())
         )
+
 
 class CollaboratorBasicSerializer(serializers.ModelSerializer):
     """

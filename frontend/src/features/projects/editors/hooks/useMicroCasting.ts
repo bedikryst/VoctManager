@@ -6,7 +6,9 @@
  * which sends the board for the selected piece as one declarative write.
  * The committed snapshot (`originalCastings`) is the diff baseline behind the pending
  * counts; switching pieces while dirty is gated through `requestSelectPiece` so the UI
- * can render a guard.
+ * can render a guard — including when only the piece's solo draft is dirty.
+ * The board is choral only: legacy SOLO rows and declared SOLO counts stay off it,
+ * and named solos live in `useSoloAssignments`, a separate draft and write.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useMicroCasting
  */
@@ -47,6 +49,12 @@ import { isInstrumentalist } from "@/shared/lib/voiceTypes";
 import { scopedRequirements } from "@/features/archive/constants/divisiScope";
 import { byCastOrder } from "../../lib/castOrder";
 import { autoCastPiece, type AutoCastResult } from "../../lib/autoCast";
+import {
+  boardCastings,
+  choralRequirements,
+  declaredSoloCount,
+  LEGACY_SOLO_LINE,
+} from "../../lib/soloAssignments";
 import type { PieceBoardDTO } from "../../types/project.dto";
 
 /**
@@ -121,6 +129,8 @@ export interface UseMicroCastingResult {
   selectedPieceId: string | null;
   /** The divisi the open piece is cast against, read through its bound edition. */
   selectedRequirements: VoiceRequirement[];
+  /** Soloists the open piece's divisi declares; named positions answer it. */
+  selectedSoloCount: number;
   localCastings: PieceCasting[];
   activeDragId: string | null;
   /** Everyone on the project, in the order the Cast tab arranged them. */
@@ -175,7 +185,21 @@ const isCastingDifferent = (a: PieceCasting, b: PieceCasting): boolean =>
   (a.notes ?? "") !== (b.notes ?? "") ||
   Boolean(a.gives_pitch) !== Boolean(b.gives_pitch);
 
-export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
+/** What the solo layer tells the board without the board owning it. */
+export interface MicroCastingSoloLayer {
+  /** The open piece's solo draft has unsaved changes. */
+  readonly isDirty: boolean;
+  readonly discard: () => void;
+  /** Participations performing a named or legacy solo, per piece. */
+  readonly performersByPiece: ReadonlyMap<string, ReadonlySet<string>>;
+}
+
+const NO_SOLO_PERFORMERS: ReadonlySet<string> = new Set();
+
+export const useMicroCasting = (
+  projectId: string,
+  soloLayer: MicroCastingSoloLayer,
+): UseMicroCastingResult => {
   const { t } = useTranslation();
 
   const artistsQuery = useProjectArtistsDictionary();
@@ -187,9 +211,31 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
   const artists = artistsQuery.data ?? EMPTY_ARTISTS;
   const pieces = piecesQuery.data ?? EMPTY_PIECES;
   const participations = participationsQuery.data ?? EMPTY_PARTICIPATIONS;
-  const voiceLines = voiceLinesQuery.data ?? EMPTY_VOICE_LINES;
+  const allVoiceLines = voiceLinesQuery.data ?? EMPTY_VOICE_LINES;
   const program = programQuery.data ?? EMPTY_PROGRAM;
-  const pieceCastings = pieceCastingsQuery.data ?? EMPTY_PIECE_CASTINGS;
+  const allPieceCastings = pieceCastingsQuery.data ?? EMPTY_PIECE_CASTINGS;
+  // SOLO is a duty, not a line to drag anyone onto: the server refuses it as a
+  // seat, so the free-mode board must not offer it either.
+  const voiceLines = useMemo(
+    () => allVoiceLines.filter((line) => line.value !== LEGACY_SOLO_LINE),
+    [allVoiceLines],
+  );
+  const pieceCastings = useMemo(
+    () => boardCastings(allPieceCastings),
+    [allPieceCastings],
+  );
+  const legacySoloists = useMemo(() => {
+    const byPiece = new Map<string, Set<string>>();
+    allPieceCastings.forEach((casting) => {
+      if (casting.voice_line !== LEGACY_SOLO_LINE) return;
+      const pieceId = String(casting.piece);
+      const set = byPiece.get(pieceId) ?? new Set<string>();
+      set.add(String(casting.participation));
+      byPiece.set(pieceId, set);
+    });
+    return byPiece;
+  }, [allPieceCastings]);
+  const { performersByPiece: soloPerformersByPiece } = soloLayer;
 
   const saveMutation = useSavePieceCastingBoard(projectId);
   const saveBoardsMutation = useSavePieceCastingBoards(projectId);
@@ -352,9 +398,9 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
       );
       // Scored against the arrangement this concert binds, so a piece with a
       // unison edition is not reported short by the three-part edition's lines.
-      const requirements: VoiceRequirement[] = scopedRequirements(
-        piece,
-        item.score_edition,
+      // A declared SOLO count is answered by named positions, not by seats.
+      const requirements: VoiceRequirement[] = choralRequirements(
+        scopedRequirements(piece, item.score_edition),
       );
 
       // The manager's casting feed is not filtered by the participation's
@@ -373,15 +419,19 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
             );
 
       // The server's reading of the same board (`castings_are_instrumental`):
-      // at least one seat, and every one a player's. Read from the draft so
-      // the rail shows the piece turning instrumental — and its score
-      // vanishing from the choir — while the manager is still casting it.
+      // at least one seat, and every one a player's. A solo is a seat for
+      // this purpose — a soprano singing over the organ keeps the score in
+      // the choir's hands. Read from the drafts so the rail shows the piece
+      // turning instrumental while the manager is still casting it.
+      const performers = [
+        ...effectiveCastings.map((casting) => String(casting.participation)),
+        ...(legacySoloists.get(pieceId) ?? NO_SOLO_PERFORMERS),
+        ...(soloPerformersByPiece.get(pieceId) ?? NO_SOLO_PERFORMERS),
+      ].filter((participationId) => memberMap.has(participationId));
       const isInstrumental =
-        effectiveCastings.length > 0 &&
-        effectiveCastings.every((casting) =>
-          isInstrumentalist(
-            memberMap.get(String(casting.participation))?.voiceType ?? null,
-          ),
+        performers.length > 0 &&
+        performers.every((participationId) =>
+          isInstrumentalist(memberMap.get(participationId)?.voiceType ?? null),
         );
 
       if (requirements.length === 0) {
@@ -425,7 +475,16 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     });
 
     return progress;
-  }, [pieceCastings, pieces, program, selectedPieceId, localCastings, memberMap]);
+  }, [
+    pieceCastings,
+    pieces,
+    program,
+    selectedPieceId,
+    localCastings,
+    memberMap,
+    legacySoloists,
+    soloPerformersByPiece,
+  ]);
 
   // The arrangement THIS concert binds — a piece published in unison and in
   // three parts would otherwise offer both sets of seats at once.
@@ -434,7 +493,7 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     [program, selectedPieceId],
   );
 
-  const selectedRequirements = useMemo<VoiceRequirement[]>(
+  const selectedScopedRequirements = useMemo<VoiceRequirement[]>(
     () =>
       scopedRequirements(
         pieces.find((piece) => String(piece.id) === selectedPieceId),
@@ -442,6 +501,11 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
       ),
     [pieces, selectedPieceId, selectedItem?.score_edition],
   );
+  const selectedRequirements = useMemo(
+    () => choralRequirements(selectedScopedRequirements),
+    [selectedScopedRequirements],
+  );
+  const selectedSoloCount = declaredSoloCount(selectedScopedRequirements);
 
   const pieceFill = useMemo<AutoCastResult>(
     () =>
@@ -465,9 +529,11 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
 
     for (const item of program) {
       const pieceId = String(item.piece);
-      const lines = scopedRequirements(
-        pieces.find((piece) => String(piece.id) === pieceId),
-        item.score_edition,
+      const lines = choralRequirements(
+        scopedRequirements(
+          pieces.find((piece) => String(piece.id) === pieceId),
+          item.score_edition,
+        ),
       ).map((requirement) => requirement.voice_line);
 
       // One seat per singer per piece: a legacy duplicate would otherwise ride
@@ -701,24 +767,27 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     t,
   ]);
 
+  const { isDirty: isSoloDirty, discard: discardSolos } = soloLayer;
+
   const requestSelectPiece = useCallback(
     (pieceId: string): void => {
       if (pieceId === selectedPieceId) return;
-      if (isDirty) {
+      if (isDirty || isSoloDirty) {
         setPendingPieceSwitch(pieceId);
         return;
       }
       setSelectedPieceId(pieceId);
     },
-    [isDirty, selectedPieceId],
+    [isDirty, isSoloDirty, selectedPieceId],
   );
 
   const confirmPieceSwitch = useCallback((): void => {
     if (!pendingPieceSwitch) return;
     setLocalCastings(originalCastings);
+    discardSolos();
     setSelectedPieceId(pendingPieceSwitch);
     setPendingPieceSwitch(null);
-  }, [originalCastings, pendingPieceSwitch]);
+  }, [discardSolos, originalCastings, pendingPieceSwitch]);
 
   const cancelPieceSwitch = useCallback((): void => {
     setPendingPieceSwitch(null);
@@ -730,6 +799,7 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     pieces,
     selectedPieceId,
     selectedRequirements,
+    selectedSoloCount,
     localCastings,
     activeDragId,
     members,

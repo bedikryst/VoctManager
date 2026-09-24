@@ -22,6 +22,7 @@ import type {
   PieceCasting,
   ProgramItem,
   Project,
+  ProjectSolos,
   Rehearsal,
   ScoreLicenseType,
   VoiceLineOption,
@@ -30,12 +31,14 @@ import type {
   AttendanceCreateDTO,
   AttendanceUpdateDTO,
   CastOrderDTO,
+  ConvertLegacySoloDTO,
   CrewAssignmentCreateDTO,
   CrewAssignmentUpdateDTO,
   ParticipationCreateDTO,
   ParticipationUpdateDTO,
   PieceCastingBoardDTO,
   PieceCastingBoardsDTO,
+  PieceSoloAssignmentsDTO,
   ProgramItemCreateDTO,
   ProgramItemUpdateDTO,
   ProjectCreateDTO,
@@ -982,6 +985,32 @@ export const ProjectService = {
   ): Promise<PieceCasting[]> => {
     const response = await api.put<PieceCasting[]>(
       `${PIECE_CASTINGS_BASE_URL}boards/`,
+      data,
+    );
+    return response.data;
+  },
+
+  /** Every named and legacy solo across the project's programme. */
+  getSolosByProject: async (projectId: string | number): Promise<ProjectSolos> => {
+    const response = await api.get<ProjectSolos>(
+      buildListUrl(`${PIECE_CASTINGS_BASE_URL}solos/`, { project: projectId }),
+    );
+    return response.data;
+  },
+
+  /** Saves one piece's named solos whole; resolves with that piece's solos. */
+  savePieceSolos: async (data: PieceSoloAssignmentsDTO): Promise<ProjectSolos> => {
+    const response = await api.put<ProjectSolos>(
+      `${PIECE_CASTINGS_BASE_URL}solos/`,
+      data,
+    );
+    return response.data;
+  },
+
+  /** Names one legacy solo; resolves with the converted piece's solos. */
+  convertLegacySolo: async (data: ConvertLegacySoloDTO): Promise<ProjectSolos> => {
+    const response = await api.post<ProjectSolos>(
+      `${PIECE_CASTINGS_BASE_URL}convert-solo/`,
       data,
     );
     return response.data;

@@ -2,8 +2,8 @@
 @file score_package_config.py
 @description Single source of truth for the score-book's per-item content
     resolution: which card elements exist, how a program item's overrides fold
-    onto the package defaults, which edition binds, and which translation /
-    programme note is chosen. Pure domain logic — no PDF/AI deps — so it can be
+    onto the package defaults, which edition binds, which translation /
+    programme note is chosen, and what the performers line says. Pure domain logic — no PDF/AI deps — so it can be
     imported by the builder, the readiness engine, the service and the views
     without dragging in WeasyPrint/pypdf.
 @architecture Enterprise SaaS 2026
@@ -20,7 +20,16 @@ from django.db.models import QuerySet
 
 from archive.models import Piece, ProgramNote, ScoreEdition, Translation
 from archive.services.language import normalize_language
-from roster.models import ProgramItem, Project, ScorePackage, instrumental_item_exists
+from core.constants import VoiceLine
+from roster.domain.solo_duties import solo_credit_line, solo_duties
+from roster.models import (
+    ProgramItem,
+    Project,
+    ProjectPieceCasting,
+    ProjectSoloAssignment,
+    ScorePackage,
+    instrumental_item_exists,
+)
 from roster.score_page_map import book_item_spans
 
 # Canonical, ordered set of toggleable card elements. Title + composer + arranger
@@ -308,6 +317,33 @@ def resolve_item_translation(item: ProgramItem, language: str) -> Translation | 
     if not translation_applicable(item.piece, language):
         return None
     return select_translation(item.piece, language)
+
+
+def resolve_item_performers(item: ProgramItem) -> str:
+    """The performers line an item's card prints. What the conductor typed wins
+    and is never rewritten; without it the line is read off the piece's filled
+    solos in this project, so a book stays current while nobody has typed one.
+    The stored field is left empty — the derivation is a fallback, not a value."""
+    manual = (item.performers or "").strip()
+    if manual:
+        return manual
+    solos = (
+        ProjectSoloAssignment.objects
+        .filter(project_id=item.project_id, piece_id=item.piece_id)
+        .select_related("participation__artist")
+        .order_by("position", "id")
+    )
+    legacy = (
+        ProjectPieceCasting.objects
+        .filter(
+            participation__project_id=item.project_id,
+            participation__is_deleted=False,
+            piece_id=item.piece_id,
+            voice_line=VoiceLine.SOLO,
+        )
+        .select_related("participation__artist")
+    )
+    return solo_credit_line(solo_duties(solos, legacy))
 
 
 def pinnable_translations(piece: Piece) -> list[Translation]:

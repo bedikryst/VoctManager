@@ -3413,9 +3413,15 @@
       "translation_singable": "singable",
       "translations_section": "Translations",
       "unknown_artist": "Artist",
-      "your_guidelines": "Your guidelines"
+      "your_guidelines": "Your guidelines",
+      "your_solos": "Your solos",
+      "solos": "Solos",
+      "solo_badge": "Solo",
+      "solo_badge_count": "Solo ×{{count}}",
+      "solo_open": "not cast yet"
     },
     "piece_page": {
+      "my_solo_chip": "Solo: {{label}}",
       "back_short": "Songbook",
       "back_to_songbook": "Back to songbook",
       "duration_min": "{{count}} min",
@@ -3798,6 +3804,13 @@
       }
     },
     "changes": {
+      "solo_assignments": "Solos",
+      "solo": {
+        "unnamed": "Solo",
+        "added": "new: {{solo}}",
+        "removed": "removed: {{solo}}",
+        "updated": "updated: {{solo}}"
+      },
       "title": "Title",
       "date_time": "Date & time",
       "location": "Venue",
@@ -4569,6 +4582,35 @@
       "unknown_member": "Unknown member"
     },
     "micro_cast": {
+      "solos": {
+        "title": "Solos",
+        "coverage_hint": "Filled solos out of all named ones",
+        "add": "Add solo",
+        "declared": "The piece's requirements call for soloists: {{count}}.",
+        "empty": "A solo is added to a choir part — the same person can sing on their line and hold several solos.",
+        "label": "Solo name",
+        "label_placeholder": "Name, e.g. Soprano solo",
+        "reference": "Place in the score",
+        "reference_placeholder": "Place in the score, e.g. fig. 7, bars 12–20",
+        "performer": "Performer",
+        "open": "Open",
+        "unassign": "No performer",
+        "notes": "Solo note",
+        "notes_placeholder": "Note (optional)",
+        "move_up": "Move up",
+        "move_down": "Move down",
+        "remove": "Remove solo",
+        "reference_review": "The programme now uses a different edition from the one this place in the score was written for — check it.",
+        "declined": "The performer declined — this solo needs casting.",
+        "legacy_hint": "Solos saved before positions had names. Which passage they cover is unknown — name them, and the performer, note and pitch giving carry over unchanged.",
+        "legacy_badge": "Unnamed solo",
+        "convert": "Name it",
+        "convert_confirm": "Save as solo",
+        "convert_dirty": "Save or discard the solo changes first.",
+        "pool_group": "Solo only",
+        "blank_label": "Every solo needs a name.",
+        "saved": "Solos saved"
+      },
       "action_bar": {
         "description": "Casting for: {{piece}}",
         "save": "Save casting"

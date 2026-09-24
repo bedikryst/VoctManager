@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import uuid
 from collections import defaultdict
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from enum import StrEnum
 from typing import Any
 from urllib.parse import quote_plus, urljoin
@@ -44,6 +44,7 @@ from django.utils.translation import ngettext, pgettext
 
 from archive.models import TrackKind
 from archive.services.voice_scope import requirements_for_edition, tracks_for_edition
+from core.constants import VoiceLine
 from core.greetings import apply_vocative_rule
 from core.voice_labels import collapse_voice_labels, sectional_call_label
 from logistics.address import address_parts
@@ -69,6 +70,7 @@ from roster.domain.day_timeline import (
 )
 from roster.domain.event_kind import CONCERT, MASS, OTHER, WEDDING
 from roster.domain.liturgy import ProgramItemPresentation, build_program_presentation
+from roster.domain.solo_duties import SoloDuty, choral_castings, solo_duties
 from roster.infrastructure.print_fonts import (
     BRAND_SANS_STACK,
     BRAND_SERIF_STACK,
@@ -82,6 +84,7 @@ from roster.models import (
     ProgramItem,
     Project,
     ProjectPieceCasting,
+    ProjectSoloAssignment,
     Rehearsal,
     VoiceType,
     castings_are_instrumental,
@@ -538,6 +541,15 @@ class DocumentGenerator:
         program_items = list(program)
         rehearsal_list = list(rehearsals)
         casting_list = list(castings)
+        # Named solos are read here rather than passed in: every caller of the
+        # sheet prints them, and the project alone scopes them.
+        solos_by_piece: dict[Any, list[ProjectSoloAssignment]] = defaultdict(list)
+        for solo in (
+            ProjectSoloAssignment.objects.filter(project=project)
+            .select_related('participation__artist')
+            .order_by('position', 'id')
+        ):
+            solos_by_piece[solo.piece_id].append(solo)
 
         kind = resolve_document_kind(kind, audience)
         # Everything a day card must never carry — coverage counters, the
@@ -550,7 +562,7 @@ class DocumentGenerator:
         # recipient is; without it we degrade gracefully to a non-personal sheet.
         personal = (
             DocumentGenerator._build_personal_block(
-                recipient, program_items, casting_list, participation_list
+                recipient, program_items, casting_list, participation_list, solos_by_piece
             )
             if is_chorister and recipient is not None
             else None
@@ -595,9 +607,13 @@ class DocumentGenerator:
         )
         tentative_crew_count = max(len(crew_list) - confirmed_crew_count, 0)
 
-        # Program cards, optionally annotated with the recipient's own line.
+        # Program cards, optionally annotated with the recipient's own choir line
+        # and, beside it, every solo they hold in the piece.
         recipient_line_by_piece = (
-            {c.piece_id: c for c in casting_list if c.participation_id == recipient.id}
+            {
+                c.piece_id: c for c in choral_castings(casting_list)
+                if c.participation_id == recipient.id
+            }
             if recipient is not None
             else {}
         )
@@ -619,6 +635,8 @@ class DocumentGenerator:
                 is_report,
                 presentation,
                 withhold_instrumental=withhold_instrumental,
+                piece_solos=solos_by_piece.get(item.piece_id, []),
+                recipient=recipient,
             )
             for item, presentation in zip(program_items, program_presentations, strict=True)
         ]
@@ -863,7 +881,11 @@ class DocumentGenerator:
             'any_rehearsal_end': any_rehearsal_end,
             'program_cards': program_cards,
             'casting_sections': [
-                DocumentGenerator._build_casting_section(item, piece_castings_map.get(item.piece_id, []))
+                DocumentGenerator._build_casting_section(
+                    item,
+                    piece_castings_map.get(item.piece_id, []),
+                    solos_by_piece.get(item.piece_id, []),
+                )
                 for item in program_items
             ],
             'contact_directory': contact_directory,
@@ -952,9 +974,12 @@ class DocumentGenerator:
         program_items: list[ProgramItem],
         casting_list: list[ProjectPieceCasting],
         participation_list: list[Participation],
+        solos_by_piece: Mapping[Any, list[ProjectSoloAssignment]],
     ) -> dict[str, Any]:
         """The heart of the singer sheet: their voice, their pieces, their pitch
-        duties, and their section-mates for the day."""
+        duties, and their section-mates for the day. Every duty is listed — the
+        choir line and each solo side by side, so a soloist with no choir part
+        still finds their pieces here."""
         artist = recipient.artist
         order_by_piece = {item.piece_id: item.order for item in program_items}
         title_by_piece = {item.piece_id: item.piece.title for item in program_items}
@@ -978,9 +1003,25 @@ class DocumentGenerator:
                 'gives_pitch': casting.gives_pitch,
                 'notes': casting.notes.strip() if casting.notes else '',
             }
-            for casting in casting_list
+            for casting in choral_castings(casting_list)
             if casting.participation_id == recipient.id
         ]
+        for item in program_items:
+            duties = solo_duties(
+                solos_by_piece.get(item.piece_id, []),
+                castings_by_piece.get(item.piece_id, []),
+            )
+            assignments += [
+                {
+                    'order': item.order,
+                    'title': item.piece.title,
+                    'voice_line': duty.display_label,
+                    'gives_pitch': duty.gives_pitch,
+                    'notes': DocumentGenerator._solo_detail(duty),
+                }
+                for duty in duties
+                if duty.participation is not None and duty.participation.pk == recipient.pk
+            ]
         assignments.sort(key=lambda entry: (entry['order'] is None, entry['order'] or 0))
 
         # In the order the section stands, not in the order the alphabet does:
@@ -1322,11 +1363,14 @@ class DocumentGenerator:
         presentation: ProgramItemPresentation | None = None,
         *,
         withhold_instrumental: bool = False,
+        piece_solos: Sequence[ProjectSoloAssignment] = (),
+        recipient: Participation | None = None,
     ) -> dict[str, Any]:
         piece = item.piece
         # `piece_castings` is already sliced to this project, which is what the
         # predicate needs: the badge names the item, the link follows the reader.
-        is_instrumental = castings_are_instrumental(piece_castings)
+        is_instrumental = castings_are_instrumental(piece_castings, piece_solos)
+        duties = solo_duties(piece_solos, piece_castings)
         # `to_attr` always sets the attribute, so an EMPTY prefetch is a valid
         # answer — testing it for truthiness sends every materialless piece back
         # to the database for a result already known to be nothing.
@@ -1405,10 +1449,13 @@ class DocumentGenerator:
         # a flag saying tracks exist is a coverage counter, and nothing on paper
         # can be done with it.
         material_badges = []
+        cast_count = len(piece_castings) + sum(
+            1 for duty in duties if not duty.is_legacy and duty.participation is not None
+        )
         if is_report:
             if tracks:
                 material_badges.append(pgettext('call sheet', 'Tracks'))
-            if piece_castings:
+            if cast_count:
                 material_badges.append(pgettext('call sheet', 'Casting'))
 
         voice_requirements_summary = ', '.join(
@@ -1441,7 +1488,8 @@ class DocumentGenerator:
             if part
         )
 
-        # "You sing this" annotation for the personalized singer sheet.
+        # "You sing this" annotation for the personalized singer sheet: the
+        # choir line, then every solo the reader holds in the piece.
         you = None
         if recipient_casting is not None:
             you = {
@@ -1451,6 +1499,17 @@ class DocumentGenerator:
                 'gives_pitch': recipient_casting.gives_pitch,
                 'notes': recipient_casting.notes.strip() if recipient_casting.notes else '',
             }
+        you_solos = [
+            {
+                'label': duty.display_label,
+                'gives_pitch': duty.gives_pitch,
+                'notes': DocumentGenerator._solo_detail(duty),
+            }
+            for duty in duties
+            if recipient is not None
+            and duty.participation is not None
+            and duty.participation.pk == recipient.pk
+        ]
 
         return {
             'piece_id': item.piece_id,
@@ -1474,22 +1533,34 @@ class DocumentGenerator:
             'reference_links': reference_links,
             'track_count': len(track_labels),
             'track_summary': ', '.join(track_labels),
-            'casting_count': len(piece_castings),
+            'casting_count': cast_count,
             'material_badges': material_badges,
             'you': you,
+            'you_solos': you_solos,
         }
+
+    @staticmethod
+    def _solo_detail(duty: SoloDuty) -> str:
+        """The passage's place in the score and the conductor's note, as one
+        printed line. A legacy row has no place to print."""
+        return ' · '.join(
+            part for part in (duty.score_reference.strip(), duty.notes.strip()) if part
+        )
 
     @staticmethod
     def _build_casting_section(
         item: ProgramItem,
         piece_castings: list[ProjectPieceCasting],
+        piece_solos: Sequence[ProjectSoloAssignment] = (),
     ) -> dict[str, Any]:
         line_labels = _item_line_labels(item, piece_castings)
         grouped_castings: dict[str, list[ProjectPieceCasting]] = defaultdict(list)
         # Musical order for the lines, and inside each of them the order the
         # conductor arranged the section in — the same one the divisi board
         # shows him, so the printed page and the screen cannot disagree.
-        for casting in sorted(piece_castings, key=casting_sort_key):
+        # Solos follow the choir, one row per duty: a legacy SOLO row is a duty
+        # of unknown extent, not a line of the choir.
+        for casting in sorted(choral_castings(piece_castings), key=casting_sort_key):
             label = line_labels.get(casting.voice_line, casting.get_voice_line_display())
             grouped_castings[label].append(casting)
 
@@ -1515,6 +1586,20 @@ class DocumentGenerator:
                     'singers': ', '.join(singers) if singers else _('No cast assigned'),
                     'pitch_team': ', '.join(pitch_team),
                     'notes': '; '.join(dict.fromkeys(notes)),
+                }
+            )
+
+        # The passage's name leads the row: the "Line" column says Solo, and
+        # which solo is what the reader is scanning for. An open position is
+        # printed too — the gap is part of the casting.
+        for duty in solo_duties(piece_solos, piece_castings):
+            performer = duty.artist_name or str(_('No cast assigned'))
+            rows.append(
+                {
+                    'voice_line': str(VoiceLine.SOLO.label),
+                    'singers': f'{duty.label} — {performer}' if duty.label else performer,
+                    'pitch_team': duty.artist_name if duty.gives_pitch and duty.artist_name else '',
+                    'notes': DocumentGenerator._solo_detail(duty),
                 }
             )
 

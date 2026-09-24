@@ -124,6 +124,19 @@ export type ScheduleDashboardItem =
   | ScheduleDashboardProjectItem
   | ScheduleDashboardRehearsalItem;
 
+/**
+ * One named solo of a piece, as GET /api/piece-castings/cast-solos/ returns it
+ * to the cast. `artist_id` null is a position nobody holds yet.
+ */
+export interface ScheduleCastSolo {
+  id: string;
+  label: string;
+  score_reference: string;
+  artist_id: string | null;
+  artist_name: string | null;
+  gives_pitch: boolean;
+}
+
 export interface ScheduleAttendanceReportDTO {
   rehearsal: string | number;
   participation: string | number;

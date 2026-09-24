@@ -3441,9 +3441,15 @@
       "translation_singable": "śpiewalne",
       "translations_section": "Tłumaczenia",
       "unknown_artist": "Artysta",
-      "your_guidelines": "Twoje wytyczne"
+      "your_guidelines": "Twoje wytyczne",
+      "your_solos": "Twoje solówki",
+      "solos": "Solówki",
+      "solo_badge": "Solo",
+      "solo_badge_count": "Solo ×{{count}}",
+      "solo_open": "jeszcze nieobsadzona"
     },
     "piece_page": {
+      "my_solo_chip": "Solo: {{label}}",
       "back_short": "Śpiewnik",
       "back_to_songbook": "Wróć do śpiewnika",
       "duration_min": "{{count}} min",
@@ -3828,6 +3834,13 @@
       }
     },
     "changes": {
+      "solo_assignments": "Solówki",
+      "solo": {
+        "unnamed": "Solo",
+        "added": "nowa: {{solo}}",
+        "removed": "odwołana: {{solo}}",
+        "updated": "zmieniona: {{solo}}"
+      },
       "title": "Tytuł",
       "date_time": "Data i godzina",
       "location": "Miejsce",
@@ -4607,6 +4620,35 @@
       "unknown_member": "Nieznany członek"
     },
     "micro_cast": {
+      "solos": {
+        "title": "Solówki",
+        "coverage_hint": "Obsadzone solówki spośród wszystkich nazwanych",
+        "add": "Dodaj solówkę",
+        "declared": "Wymagania utworu przewidują solistów: {{count}}.",
+        "empty": "Solówka dochodzi do partii w chórze — ta sama osoba może śpiewać w swojej linii i mieć kilka solówek.",
+        "label": "Nazwa solówki",
+        "label_placeholder": "Nazwa, np. Sopran solo",
+        "reference": "Miejsce w nutach",
+        "reference_placeholder": "Miejsce w nutach, np. lit. 7, t. 12–20",
+        "performer": "Wykonawca",
+        "open": "Nieobsadzona",
+        "unassign": "Bez wykonawcy",
+        "notes": "Notatka do solówki",
+        "notes_placeholder": "Notatka (opcjonalnie)",
+        "move_up": "Wyżej",
+        "move_down": "Niżej",
+        "remove": "Usuń solówkę",
+        "reference_review": "Program korzysta teraz z innego wydania niż to, do którego wpisano miejsce w nutach — sprawdź je.",
+        "declined": "Wykonawca odmówił udziału — solówka czeka na obsadę.",
+        "legacy_hint": "Solówki zapisane, zanim pozycje miały nazwy. Nie wiadomo, którego fragmentu dotyczą — nadaj im nazwę, a wykonawca, notatka i podawanie tonu przejdą bez zmian.",
+        "legacy_badge": "Solo bez nazwy",
+        "convert": "Nadaj nazwę",
+        "convert_confirm": "Zapisz jako solówkę",
+        "convert_dirty": "Najpierw zapisz albo odrzuć zmiany solówek.",
+        "pool_group": "Tylko solówka",
+        "blank_label": "Każda solówka potrzebuje nazwy.",
+        "saved": "Solówki zapisane"
+      },
       "action_bar": {
         "description": "Casting utworu: {{piece}}",
         "save": "Zapisz casting"

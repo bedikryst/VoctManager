@@ -24,6 +24,7 @@ from django.utils.translation import gettext_lazy as _
 
 from archive.models import Piece, PieceVoiceRequirement
 from archive.services.voice_scope import voice_scope
+from core.constants import VoiceLine
 from core.exceptions import EmailAlreadyInUseException
 from core.models import UserProfile
 from core.services import UserIdentityService
@@ -38,8 +39,10 @@ from notifications.announcements import (
     queue_broadcast,
 )
 from notifications.dtos import (
+    SOLO_CHANGE_FIELD,
     AbsenceStatusMetadata,
     DelegatedRehearsalMetadata,
+    FieldChangeMetadata,
     ManagerActionMetadata,
     PieceCastingMetadata,
     ProjectCancelledMetadata,
@@ -51,6 +54,7 @@ from notifications.dtos import (
     RehearsalLeadAssignedMetadata,
     RehearsalScheduledMetadata,
     RehearsalUpdatedMetadata,
+    SoloDutyMetadata,
 )
 from notifications.models import (
     AnnouncementKind,
@@ -117,6 +121,10 @@ from .queries.schedule_queries import get_artist_rehearsals_in_window
 from .score_package_config import resolve_item_edition
 
 logger = logging.getLogger(__name__)
+
+# What a performer is told about one solo duty:
+# (participation, label, score reference, notes, gives pitch).
+SoloNoticeFacts = tuple[UUID | None, str, str, str, bool]
 
 # Bind the concrete user model under TYPE_CHECKING so annotations resolve, while
 # keeping the dynamic swappable-model lookup at runtime.
@@ -2663,11 +2671,7 @@ class CastingAndCrewService:
                 )
             }
             before = {
-                assignment.id: (
-                    assignment.participation_id, assignment.label,
-                    assignment.score_reference, assignment.notes,
-                    assignment.gives_pitch, assignment.position,
-                )
+                assignment.id: CastingAndCrewService._solo_notice_facts(assignment)
                 for assignment in existing.values()
             }
             submitted_ids = {row.id for row in dto.solo_assignments if row.id is not None}
@@ -2726,20 +2730,25 @@ class CastingAndCrewService:
                 project=legacy.participation.project, piece=legacy.piece, position=dto.position
             ).exists():
                 raise CastingValidationException(_('This solo position is already occupied.'))
+            # The legacy row counts as the performer's solo before the save, and
+            # the named position takes over its id: the one notice then reads
+            # "Solo → <name>", a duty given its name, not one taken and another
+            # given.
             before = {
-                row.id: (
-                    row.participation_id, row.label, row.score_reference,
-                    row.notes, row.gives_pitch, row.position,
-                )
+                row.id: CastingAndCrewService._solo_notice_facts(row)
                 for row in ProjectSoloAssignment.objects.filter(
                     project=legacy.participation.project, piece=legacy.piece
                 )
             }
+            before[legacy.id] = CastingAndCrewService._solo_notice_facts(legacy)
             item = ProgramItem.objects.filter(
                 project=legacy.participation.project, piece=legacy.piece
             ).select_related('piece').prefetch_related('piece__editions').order_by('order').first()
             edition = resolve_item_edition(item) if item is not None else None
+            legacy_id = legacy.id
+            legacy.delete()
             assignment = ProjectSoloAssignment.objects.create(
+                id=legacy_id,
                 project=legacy.participation.project, piece=legacy.piece,
                 position=dto.position, label=dto.label,
                 score_reference=dto.score_reference,
@@ -2747,102 +2756,96 @@ class CastingAndCrewService:
                 participation=legacy.participation,
                 notes=legacy.notes, gives_pitch=legacy.gives_pitch,
             )
-            legacy.delete()
             CastingAndCrewService._queue_solo_changes(
                 legacy.participation.project, legacy.piece_id, before
             )
             return assignment
 
     @staticmethod
+    def _solo_notice_facts(row: ProjectSoloAssignment | ProjectPieceCasting) -> SoloNoticeFacts:
+        """What a performer is told about one solo. Position is left out: moving
+        a passage up the list changes nothing the singer has to prepare."""
+        if isinstance(row, ProjectPieceCasting):
+            return (row.participation_id, '', '', row.notes, row.gives_pitch)
+        return (row.participation_id, row.label, row.score_reference, row.notes, row.gives_pitch)
+
+    @staticmethod
     def _queue_solo_changes(
         project: Project,
         piece_id: UUID,
-        before: dict[UUID, tuple[UUID | None, str, str, str, bool, int]],
+        before: dict[UUID, SoloNoticeFacts],
     ) -> None:
-        """Queue one change per affected singer and piece after solo reconciliation."""
-        after_rows = list(ProjectSoloAssignment.objects.filter(project=project, piece_id=piece_id))
-        after = {
-            row.id: (
-                row.participation_id, row.label, row.score_reference,
-                row.notes, row.gives_pitch, row.position,
-            )
-            for row in after_rows
-        }
+        """Queue one announcement per performer whose solos on this piece changed.
+
+        Solos are their own subject (`<piece>:solos`), apart from the piece's
+        choir seat: a seat assigned or removed inside the same window restates
+        the whole subject, and on a shared one it would swallow the solo news.
+        The diff is the performer's whole list before and after, sorted by id,
+        so the queue's earliest-old/latest-new fold compares like with like and
+        a passage given and taken back before publishing tells nobody anything.
+        """
+        after_rows = list(
+            ProjectSoloAssignment.objects.filter(project=project, piece_id=piece_id)
+            .order_by('position', 'id')
+        )
+        after = {row.id: CastingAndCrewService._solo_notice_facts(row) for row in after_rows}
         changed = {key for key in before.keys() | after.keys() if before.get(key) != after.get(key)}
         affected = {
-            participation_id
+            facts[0]
             for key in changed
-            for participation_id in (
-                before.get(key, (None, '', '', '', False, 0))[0],
-                after.get(key, (None, '', '', '', False, 0))[0],
-            )
-            if participation_id is not None
+            for facts in (before.get(key), after.get(key))
+            if facts is not None and facts[0] is not None
         }
         if not affected:
             return
-        people = Participation.objects.filter(pk__in=affected).select_related('artist')
         piece = Piece.objects.get(pk=piece_id)
+        choir_lines = dict(
+            ProjectPieceCasting.objects.filter(participation_id__in=affected, piece_id=piece_id)
+            .exclude(voice_line=VoiceLine.SOLO)
+            .values_list('participation_id', 'voice_line')
+        )
+        scope = _piece_voice_scope(piece_id, project)
 
-        def snapshot(value: tuple[UUID | None, str, str, str, bool, int] | None) -> dict[str, Any] | None:
-            if value is None:
-                return None
-            return {
-                'participation': str(value[0]) if value[0] else None,
-                'label': value[1], 'score_reference': value[2],
-                'notes': value[3], 'gives_pitch': value[4], 'position': value[5],
-            }
+        for person in Participation.objects.filter(pk__in=affected).select_related('artist'):
+            user_id = person.artist.user_id
+            if not user_id:
+                continue
 
-        for person in people:
-            changes = [
-                {
-                    'id': str(key),
-                    'before': snapshot(before.get(key)),
-                    'after': snapshot(after.get(key)),
-                }
-                for key in sorted(changed, key=str)
-                if (before.get(key) or (None,))[0] == person.id
-                or (after.get(key) or (None,))[0] == person.id
-            ]
-            duties = [
-                {'id': str(row.id), 'label': row.label,
-                 'score_reference': row.score_reference}
-                for row in after_rows if row.participation_id == person.id
-            ]
+            def duties(state: dict[UUID, SoloNoticeFacts], person_id: UUID = person.id) -> str:
+                return json.dumps(
+                    [
+                        {
+                            'id': str(key), 'label': facts[1], 'score_reference': facts[2],
+                            'notes': facts[3], 'gives_pitch': facts[4],
+                        }
+                        for key, facts in sorted(state.items(), key=lambda entry: str(entry[0]))
+                        if facts[0] == person_id
+                    ],
+                    sort_keys=True, ensure_ascii=False,
+                )
+
             metadata = PieceCastingMetadata(
                 piece_id=piece_id, piece_title=piece.title,
                 project_id=project.id, project_name=project.title,
+                changes=(FieldChangeMetadata(
+                    field=SOLO_CHANGE_FIELD, old=duties(before), new=duties(after),
+                ),),
+                solo_assignments=tuple(
+                    SoloDutyMetadata(id=row.id, label=row.label, score_reference=row.score_reference)
+                    for row in after_rows if row.participation_id == person.id
+                ),
+                choir_voice_line=choir_lines.get(person.id),
+                voice_scope=scope,
             ).model_dump(mode='json')
-            metadata['solo_changes'] = changes
-            metadata['solo_assignments'] = duties
-            castings = list(ProjectPieceCasting.objects.filter(
-                participation=person, piece_id=piece_id
-            ).values('voice_line', 'notes', 'gives_pitch'))
-            metadata['resulting_duties'] = {
-                'choral_castings': [
-                    row for row in castings if row['voice_line'] != 'SOLO'
-                ],
-                'solo_assignments': duties,
-                'legacy_solos': [
-                    row for row in castings if row['voice_line'] == 'SOLO'
-                ],
-            }
-            old_duties = [
-                {'id': str(key), **(snapshot(value) or {})}
-                for key, value in before.items() if value[0] == person.id
-            ]
-            new_duties = [
-                {'id': str(key), **(snapshot(value) or {})}
-                for key, value in after.items() if value[0] == person.id
-            ]
-            metadata['changes'] = [{
-                'field': 'solo_assignments',
-                'old': json.dumps(old_duties, sort_keys=True, ensure_ascii=False),
-                'new': json.dumps(new_duties, sort_keys=True, ensure_ascii=False),
-            }]
-            CastingAndCrewService._queue_casting(
-                project, person, piece_id, AnnouncementKind.CHANGED,
-                NotificationType.PIECE_CASTING_UPDATED, NotificationLevel.INFO,
-                metadata,
+            queue_announcement(
+                project=project,
+                recipient_id=str(user_id),
+                subject_type=AnnouncementSubject.CASTING,
+                subject_id=f'{piece_id}:solos',
+                kind=AnnouncementKind.CHANGED,
+                notification_type=NotificationType.PIECE_CASTING_UPDATED,
+                level=NotificationLevel.INFO,
+                metadata=metadata,
             )
 
     @staticmethod

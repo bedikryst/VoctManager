@@ -851,11 +851,13 @@ class ProjectSoloAssignment(models.Model):
 
 
 # An item is INSTRUMENTAL in a project when the piece has at least one live
-# casting there and every one of them is a player's. Derived from the board,
+# performer there and every one of them is a player's. Derived from the board,
 # never stored: the board already says "organ plays in the Mass, not in the
 # motet" per piece, and a flag beside it would be a second truth that can
-# contradict it. Zero castings is a choir piece — the four-part reading an
-# uncast programme has always had. The two shapes below are the one rule for
+# contradict it. Zero performers is a choir piece — the four-part reading an
+# uncast programme has always had. A filled named solo is a performer too: a
+# soprano singing over the organ keeps the score in the choir's hands, and an
+# open position has nobody to count. The two shapes below are the one rule for
 # the queryset side (score access, the book's programme) and the prefetched
 # side (the songbook serializer), as `Rehearsal.calling_q` / `calls_seat` are
 # for who a rehearsal calls.
@@ -871,21 +873,37 @@ def instrumental_item_exists() -> ExpressionWrapper:
     non_player = scoped.exclude(
         participation__artist__voice_type=VoiceType.INSTRUMENTALIST,
     )
+    solos = ProjectSoloAssignment.objects.filter(
+        piece_id=OuterRef('piece_id'),
+        project_id=OuterRef('project_id'),
+        participation__isnull=False,
+        participation__is_deleted=False,
+    )
+    non_player_solo = solos.exclude(
+        participation__artist__voice_type=VoiceType.INSTRUMENTALIST,
+    )
     return ExpressionWrapper(
-        Exists(scoped) & ~Exists(non_player),
+        (Exists(scoped) | Exists(solos)) & ~Exists(non_player) & ~Exists(non_player_solo),
         output_field=models.BooleanField(),
     )
 
 
-def castings_are_instrumental(castings: Iterable["ProjectPieceCasting"]) -> bool:
-    """`instrumental_item_exists` asked about one item's prefetched castings, in
-    memory. The rows must already be sliced to ONE project and carry
-    `participation__artist`; a cross-project slice would let an organist cast
-    elsewhere hide a choir piece here."""
-    rows = list(castings)
-    return bool(rows) and all(
-        row.participation.artist.voice_type == VoiceType.INSTRUMENTALIST
-        for row in rows
+def castings_are_instrumental(
+    castings: Iterable["ProjectPieceCasting"],
+    solos: Iterable["ProjectSoloAssignment"] = (),
+) -> bool:
+    """`instrumental_item_exists` asked about one item's prefetched castings and
+    named solos, in memory. The rows must already be sliced to ONE project and
+    carry `participation__artist`; a cross-project slice would let an organist
+    cast elsewhere hide a choir piece here."""
+    performers = [row.participation for row in castings]
+    performers += [
+        solo.participation for solo in solos
+        if solo.participation is not None and not solo.participation.is_deleted
+    ]
+    return bool(performers) and all(
+        participation.artist.voice_type == VoiceType.INSTRUMENTALIST
+        for participation in performers
     )
 
 

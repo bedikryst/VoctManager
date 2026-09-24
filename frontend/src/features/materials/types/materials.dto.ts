@@ -115,6 +115,24 @@ export interface MaterialsCasting {
   is_me: boolean;
 }
 
+/**
+ * One solo duty in the piece, beside the choir. A named position carries the
+ * conductor's label and may still be open (`artist_id` null); a legacy row
+ * (`is_legacy`) has no label — it reads as a plain "Solo", because which passage
+ * it covers was never recorded.
+ */
+export interface MaterialsSolo {
+  id: string;
+  is_legacy: boolean;
+  label: string;
+  score_reference: string;
+  artist_id: string | null;
+  artist_name: string | null;
+  gives_pitch: boolean;
+  notes: string;
+  is_me: boolean;
+}
+
 export type MaterialsReadinessStatus =
   | "NOT_STARTED"
   | "IN_PROGRESS"
@@ -153,8 +171,21 @@ export interface MaterialsPiece {
   program_notes: MaterialsProgramNote[];
   editions: MaterialsEdition[];
   tracks: MaterialsTrack[];
+  /** Choir seats only; solos travel in `solos`. */
   castings: MaterialsCasting[];
+  /**
+   * The reader's CHOIR part — what their practice track follows. A soloist
+   * with no choir part has none here; their duties are in `my_solos`.
+   */
   my_casting: MaterialsCasting | null;
+  /**
+   * Every solo of the piece in this concert, open positions included.
+   * Optional because the songbook's first paint reads the persisted snapshot,
+   * which an older build wrote without it — read it through `?? []`.
+   */
+  solos?: MaterialsSolo[];
+  /** The reader's own solos, in the conductor's order; optional as `solos`. */
+  my_solos?: MaterialsSolo[];
   /**
    * The singer's own practice self-report — and `null` when it is WITHHELD,
    * which is a different answer from `NOT_STARTED`. The songbook promises the

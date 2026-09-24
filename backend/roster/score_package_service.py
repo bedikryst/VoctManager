@@ -54,6 +54,7 @@ from roster.score_package_config import (
     pinnable_translations,
     resolve_card_config,
     resolve_item_edition,
+    resolve_item_performers,
     resolve_item_translation,
     resolve_source_numbering,
     sanitize_card_elements,
@@ -190,7 +191,8 @@ class ScorePackageService:
             "text_override": item.text_override,
             "note_override": item.note_override,
             "translation_pin": str(item.translation_id) if item.translation_id else None,
-            "performers": item.performers,
+            # The line as printed: recasting a solo ages a book that credits it.
+            "performers": resolve_item_performers(item),
             "hide_source_numbers": item.hide_source_page_numbers,
             "content_ts": max(timestamps).isoformat(),
             # Empty while the book does not print markings — drawing on a score

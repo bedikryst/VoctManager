@@ -2562,35 +2562,49 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance) -> None:
         CastingAndCrewService.delete_piece_casting(instance)
 
-    def _solo_response(self, project: Project, piece: Piece) -> Response:
-        items = list(
-            ProgramItem.objects.filter(project=project, piece=piece)
+    def _solo_response(self, project: Project, piece: Piece | None = None) -> Response:
+        """Named and legacy solos of one programmed piece, or of the whole programme."""
+        piece_filter = {} if piece is None else {'piece': piece}
+        items = (
+            ProgramItem.objects.filter(project=project, **piece_filter)
             .select_related('piece').prefetch_related('piece__editions').order_by('order')
         )
-        edition_ids = [
-            edition.pk if (edition := resolve_item_edition(item)) else None
-            for item in items
-        ]
+        # A piece repeated in the programme may bind a different edition per
+        # appearance; a reference written against any other one needs review.
+        edition_ids: dict[uuid.UUID, list[uuid.UUID | None]] = {}
+        for item in items:
+            edition = resolve_item_edition(item)
+            edition_ids.setdefault(item.piece_id, []).append(edition.pk if edition else None)
         solos = list(
-            ProjectSoloAssignment.objects.filter(project=project, piece=piece)
+            ProjectSoloAssignment.objects.filter(project=project, **piece_filter)
             .select_related('participation__artist')
+            .order_by('piece_id', 'position', 'id')
         )
         legacy = list(
             ProjectPieceCasting.objects.filter(
-                participation__project=project, piece=piece, voice_line='SOLO',
-                participation__is_deleted=False,
+                participation__project=project, voice_line='SOLO',
+                participation__is_deleted=False, **piece_filter,
             ).select_related('participation__artist', 'piece')
             .prefetch_related('piece__voice_requirements')
         )
         return Response({
             'solo_assignments': ProjectSoloAssignmentSerializer(
-                solos, many=True, context={'edition_ids': edition_ids}
+                solos, many=True, context={'edition_ids_by_piece': edition_ids}
             ).data,
             'legacy_solos': self.get_serializer(legacy, many=True).data,
         })
 
     @action(detail=False, methods=['get', 'put'], url_path='solos', permission_classes=[IsManager])
     def solos(self, request) -> Response:
+        if request.method == 'GET' and not request.query_params.get('piece'):
+            try:
+                project_id = uuid.UUID(str(request.query_params.get('project')))
+            except ValueError:
+                return make_error_response(
+                    request, status_code=status.HTTP_400_BAD_REQUEST,
+                    error_code='validation_error', detail='A project id is required.',
+                )
+            return self._solo_response(get_object_or_404(Project, pk=project_id))
         try:
             payload = (
                 {'project': request.query_params.get('project'),
@@ -2612,6 +2626,56 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
             CastingAndCrewService.save_solo_assignments(dto)
         return self._solo_response(project, piece)
 
+    @action(detail=False, methods=['get'], url_path='cast-solos')
+    def cast_solos(self, request) -> Response:
+        """The named solos of one programmed piece as the cast reads them.
+
+        The same reach as this viewset's list: whoever holds a live seat in the
+        project, or runs it, reads who takes which passage — the songbook and the
+        day sheet already print it. No edition provenance or review cue: those
+        are the editor's, behind the manager-only `solos` action.
+        """
+        try:
+            project_id = uuid.UUID(str(request.query_params.get('project')))
+            piece_id = uuid.UUID(str(request.query_params.get('piece')))
+        except ValueError:
+            return make_error_response(
+                request, status_code=status.HTTP_400_BAD_REQUEST,
+                error_code='validation_error', detail='A project and a piece id are required.',
+            )
+        user = request.user
+        may_read = (
+            user_is_manager(user)
+            or Participation.live_seats(artist__user=request_user(request))
+            .filter(project_id=project_id).exists()
+            or user_leads_project(user, project_id, scope='materials')
+        )
+        if not may_read:
+            raise PermissionDenied()
+        solos = (
+            ProjectSoloAssignment.objects
+            .filter(project_id=project_id, piece_id=piece_id)
+            .select_related('participation__artist')
+            .order_by('position', 'id')
+        )
+        return Response([
+            {
+                'id': str(solo.id),
+                'label': solo.label,
+                'score_reference': solo.score_reference,
+                'artist_id': (
+                    str(solo.participation.artist_id)
+                    if solo.participation and not solo.participation.is_deleted else None
+                ),
+                'artist_name': (
+                    f'{solo.participation.artist.first_name} {solo.participation.artist.last_name}'
+                    if solo.participation and not solo.participation.is_deleted else None
+                ),
+                'gives_pitch': solo.gives_pitch,
+            }
+            for solo in solos
+        ])
+
     @action(detail=False, methods=['post'], url_path='convert-solo', permission_classes=[IsManager])
     def convert_solo(self, request) -> Response:
         try:
@@ -2623,7 +2687,7 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
                 validation_errors=format_pydantic_validation_errors(exc),
             )
         assignment = CastingAndCrewService.convert_legacy_solo(dto)
-        return Response(ProjectSoloAssignmentSerializer(assignment).data)
+        return self._solo_response(assignment.project, assignment.piece)
 
     @action(detail=False, methods=['put'], url_path='board', permission_classes=[IsManager])
     def board(self, request) -> Response:

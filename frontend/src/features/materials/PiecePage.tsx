@@ -28,6 +28,7 @@ import {
   KeyRound,
   Languages,
   Lock,
+  Mic2,
   Music2,
   Timer,
   User,
@@ -166,6 +167,9 @@ export default function PiecePage({
     : null;
   const myPart =
     piece.my_casting?.voice_line_display || piece.my_casting?.voice_line || null;
+  const mySolos = piece.my_solos ?? [];
+  const givesPitch =
+    Boolean(piece.my_casting?.gives_pitch) || mySolos.some((solo) => solo.gives_pitch);
 
   const composerName = piece.composer
     ? `${piece.composer.first_name || ""} ${piece.composer.last_name}`.trim()
@@ -274,7 +278,22 @@ export default function PiecePage({
                 })}
               </Eyebrow>
             )}
-            {piece.my_casting?.gives_pitch && (
+            {mySolos.map((solo) => (
+              <Eyebrow
+                key={solo.id}
+                as="span"
+                color="amethyst"
+                className="flex items-center gap-1 rounded border border-ethereal-amethyst/30 bg-ethereal-amethyst/10 px-2 py-0.5"
+              >
+                <Mic2 size={10} aria-hidden="true" />
+                {solo.label
+                  ? t("materials.piece_page.my_solo_chip", "Solo: {{label}}", {
+                      label: solo.label,
+                    })
+                  : t("materials.piece.solo_badge", "Solo")}
+              </Eyebrow>
+            ))}
+            {givesPitch && (
               <Eyebrow
                 as="span"
                 color="gold"
@@ -610,9 +629,58 @@ export default function PiecePage({
                   </GlassCard>
                 )}
 
+                {/* my solos — beside the choir part, each passage on its own */}
+                {mySolos.length > 0 && (
+                  <GlassCard
+                    variant="ethereal"
+                    className={cn("bg-ethereal-amethyst/5", tabVisibility("practice"))}
+                    isHoverable={false}
+                  >
+                    <div className="mb-3 flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ethereal-marble bg-ethereal-alabaster text-ethereal-amethyst shadow-glass-solid">
+                        <Mic2 size={14} aria-hidden="true" />
+                      </div>
+                      <Eyebrow color="amethyst">
+                        {t("materials.piece.your_solos", "Twoje solówki")}
+                      </Eyebrow>
+                    </div>
+                    <ul className="flex flex-col gap-2">
+                      {mySolos.map((solo) => (
+                        <li
+                          key={solo.id}
+                          className="rounded-lg border border-ethereal-marble/60 bg-ethereal-marble/40 p-3"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <Text size="sm" weight="medium">
+                              {solo.label || t("materials.piece.solo_badge", "Solo")}
+                            </Text>
+                            {solo.gives_pitch && (
+                              <KeyRound
+                                size={13}
+                                className="mt-0.5 shrink-0 text-ethereal-gold"
+                                aria-label={t("materials.piece_page.gives_pitch", "Ty podajesz ton")}
+                              />
+                            )}
+                          </div>
+                          {solo.score_reference && (
+                            <Text size="xs" color="muted" className="mt-0.5">
+                              {solo.score_reference}
+                            </Text>
+                          )}
+                          {solo.notes && (
+                            <Text size="sm" color="graphite" className="mt-1.5 italic">
+                              &quot;{solo.notes}&quot;
+                            </Text>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </GlassCard>
+                )}
+
                 {/* divisi */}
                 <div className={tabVisibility("cast")}>
-                  <PieceDivisiRoster castings={piece.castings} />
+                  <PieceDivisiRoster castings={piece.castings} solos={piece.solos ?? []} />
                 </div>
               </div>
             </div>

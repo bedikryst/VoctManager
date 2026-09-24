@@ -16,6 +16,7 @@ import type {
   AbsenceRangeReportDTO,
   AbsenceRangeResult,
   ScheduleAttendanceReportDTO,
+  ScheduleCastSolo,
   ScheduleDashboardItem,
   EnrichedRehearsal,
 } from "../types/schedule.dto";
@@ -98,6 +99,20 @@ export const ScheduleService = {
     }
     const response = await api.get<PieceCasting[]>(
       `/api/piece-castings/?piece=${pieceId}&participation__project=${projectId}`,
+    );
+    return response.data;
+  },
+
+  /** The piece's named solos as the cast reads them, open positions included. */
+  getCastSolos: async (
+    projectId: string | number,
+    pieceId: string | null,
+  ): Promise<ScheduleCastSolo[]> => {
+    if (!pieceId) {
+      return [];
+    }
+    const response = await api.get<ScheduleCastSolo[]>(
+      `/api/piece-castings/cast-solos/?project=${projectId}&piece=${pieceId}`,
     );
     return response.data;
   },
