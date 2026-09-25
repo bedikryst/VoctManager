@@ -18,7 +18,9 @@
  * @architecture Astro islands 2026
  * @module lib/dates
  */
-import { pickLocale, type Locale, type LocalizedText } from "../i18n/config";
+// Explicit extension: the press-pack generator reaches this module under bare Node (via
+// lib/pressKit → lib/cycle), which resolves no extensionless specifier.
+import { pickLocale, type Locale, type LocalizedText } from "../i18n/config.ts";
 
 const INTL_LOCALE: Record<Locale, string> = { pl: "pl-PL", en: "en-GB", fr: "fr-FR" };
 
@@ -29,6 +31,17 @@ export const longDate = (iso: string, locale: Locale): string =>
     month: "long",
     year: "numeric",
   });
+
+/** The day and month alone — "11 października" — the form a sentence names a date in. */
+export const dayMonth = (iso: string, locale: Locale): string =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString(INTL_LOCALE[locale], {
+    day: "numeric",
+    month: "long",
+  });
+
+/** The weekday's name — "niedziela" / "Sunday" / "dimanche" — for a dateline that states it. */
+export const weekdayName = (iso: string, locale: Locale): string =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString(INTL_LOCALE[locale], { weekday: "long" });
 
 /**
  * Month and year only — the register ribbons' column ("sty 2024" / "Jan 2024" / "janv. 2024"),

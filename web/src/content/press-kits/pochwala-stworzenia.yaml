@@ -1,0 +1,146 @@
+# The press kit for Pochwała Stworzenia (11.10.2026) — the texts /press offers to copy and the pack
+# ships as files. Polish only. Schema and every string built from it: `src/lib/pressKit.ts`.
+#
+# ONLY COPY LIVES HERE. Title, day, hour, venue, address, festival, door and composers are printed
+# from `concerts.yaml`. The prose below has to name the day and the hour anyway — an announcement
+# is pasted whole into somebody's listing — so the loader checks that every dated text still names
+# the corpus's; move the concert and the build fails until this file follows.
+#
+# WHAT THESE TEXTS MUST NEVER SAY, from docs/specs/koncert-pochwala-stworzenia-2026-10.md:
+#   · the relation is VERTICAL — creation as the road to the Creator, the human as God's image
+#     (§9); never the human as a brother of the creatures, which Ania's first draft said (§12);
+#   · the encore is never named: it is the ensemble's to give, and a press text that lists it has
+#     promised it;
+#   · nothing about how often the Pärt returns or where: the conductor's numbering has moved twice,
+#     and a printed listing cannot follow a third move;
+#   · the Stetit Angelus / All Saints rhyme is spent ONCE per text — it is the evening's strongest
+#     fact and a text that says it twice has spent it (.agent memory: strongest fact spent once);
+#   · no Polish Canticle but our own glosses: Leopold Staff's translation is protected to the end of
+#     2027 (§11);
+#   · nothing about Radu Ropotan beyond what is on record — his biography waits for his own word.
+#
+# THE QUOTE IS FLORENT'S PROGRAMME NOTE (§1), NOT §9. §9's account was generated rather than
+# written, he said so when he sent it, and the corpus rules that it may not carry his name
+# (concerts.yaml, `reflectionNote`). He sees the quote before it ships.
+#
+# Every text here is a draft until Ania approves it; nothing ships before that (spec stage 4).
+
+concert: pochwala-stworzenia
+forces: "12 głosów · skrzypce · organy"
+
+release:
+  title: "„Pochwała Stworzenia”. VoctEnsemble zamyka festiwal „Fenomen człowieka”"
+  lead: >-
+    W niedzielę 11 października o 13:30 VoctEnsemble pod dyrekcją Florenta de Bazelaire wystąpi
+    w warszawskim kościele Wszystkich Świętych z koncertem „Pochwała Stworzenia”. Program wyrasta
+    z Pieśni słonecznej św. Franciszka z Asyżu i zamyka trzecią edycję festiwalu „Fenomen
+    człowieka”. Wstęp wolny.
+  body:
+    - >-
+      Laudes creaturarum, znane po polsku jako Pieśń słoneczna, Franciszek ułożył w pierwszej
+      połowie XIII wieku, w dialekcie umbryjskim. Chwali w nich Boga przez słońce, księżyc
+      i gwiazdy, wiatr, wodę, ogień i ziemię: całe stworzenie jest drogą, którą człowiek zwraca się
+      ku Stwórcy. Koncert idzie tą drogą. Zaczyna od zachwytu nad światem, schodzi ku temu, co
+      w człowieku kruche — ku przemianie, cierpieniu i śmierci — i kończy się poza tym, co
+      widzialne.
+    - >-
+      Wieczór otwierają Gloria II i Lumen Mariana Borkowskiego, a zaraz po nich brzmi Laudes
+      creaturarum Carla Orffa z 1954 roku: cały Kantyk, w umbryjskim oryginale. Dalej program
+      przechodzi od kosmicznego obrazu stworzenia ku człowiekowi — przez Méditation z opery Thaïs
+      Julesa Masseneta, nocne niebo w Stars Ēriksa Ešenvaldsa, The Lark Ascending Ralpha Vaughana
+      Williamsa w opracowaniu Paula Draytona na skrzypce i chór, Stoi lód na Prośnie Jacka
+      Sykulskiego i Ménétrier George’a Enescu — aż do Dona eis requiem I Borkowskiego.
+    - >-
+      Marian Borkowski (ur. 1934) ma w tym programie trzy utwory. Jego muzyka sakralna bierze
+      zwykle jedno łacińskie słowo — chwała, światło, odpoczynek — i buduje z niego całość
+      płaszczyznami brzmienia i skrajnymi rejestrami.
+    - >-
+      Między grupami utworów powraca Spiegel im Spiegel Arvo Pärta, grany z galerii na organach.
+      „Lustro w lustrze” jest tu obrazem relacji, na której stoi cały program: stworzenie odbija
+      Stwórcę, a człowiek został stworzony na Jego obraz.
+    - >-
+      Drogę domyka Stetit Angelus łotewskiego kompozytora Rihardsa Dubry. Antyfona układa słowa
+      Apokalipsy o aniele, który staje przy ołtarzu ze złotą kadzielnicą, a dym kadzideł wznosi się
+      z modlitwami świętych przed Bogiem. Ostatnie zdanie tej drogi pada więc w kościele, który
+      nosi dokładnie to wezwanie — Wszystkich Świętych.
+    - >-
+      Gościem zespołu jest rumuński skrzypek Radu Ropotan. Zagra Méditation Masseneta z organami,
+      Ménétrier Enescu — jedyną miniaturę z cyklu Impressions d’enfance napisaną na same skrzypce —
+      oraz The Lark Ascending, w opracowaniu, w którym słowa wiersza George’a Mereditha,
+      w oryginale tylko wypisane nad nutami, naprawdę słychać.
+    - >-
+      „Fenomen człowieka” to trzy dni wystaw, warsztatów i rozmów. Festiwal prowadzi Fundacja
+      Hospicyjna „Mój Dom”, która towarzyszy chorym na SLA i ich rodzinom. Tegoroczna edycja czyta
+      człowieka przez piękno: wartości i relacji, natury i dźwięku, i to, które zostaje także
+      w bólu.
+  quote:
+    text: >-
+      To koncert o zachwycie nad światem stworzonym i o odkrywaniu w nim obecności Boga. Prowadzi
+      słuchaczy przez piękno stworzenia, jego kruchość, ludzkie cierpienie i nadzieję wieczności.
+    author: "Florent de Bazelaire"
+    role: "dyrygent i kierownik artystyczny VoctEnsemble"
+
+announce:
+  # ≤ 500 characters as copied: for listings and calendars. The facts line closes it because a
+  # listing is read for them.
+  short: >-
+    „Pochwała Stworzenia” — VoctEnsemble pod dyrekcją Florenta de Bazelaire zamyka festiwal
+    „Fenomen człowieka”. Program wyrasta z Pieśni słonecznej św. Franciszka i prowadzi od zachwytu
+    nad stworzeniem ku kruchości człowieka i nadziei wieczności. Zabrzmią m.in. Laudes creaturarum
+    Orffa, trzy utwory Mariana Borkowskiego i The Lark Ascending Vaughana Williamsa ze skrzypkiem
+    Radu Ropotanem. Niedziela, 11 października, 13:30, kościół Wszystkich Świętych,
+    pl. Grzybowski 3/5, Warszawa. Wstęp wolny.
+  # ≤ 1500 characters as copied: for a column's announcement. The last block is lines, not prose.
+  long:
+    - >-
+      „Pochwała Stworzenia” — koncert VoctEnsemble pod dyrekcją Florenta de Bazelaire — zamyka
+      trzecią edycję festiwalu „Fenomen człowieka”. Program wyrasta z Pieśni słonecznej
+      św. Franciszka z Asyżu, w której całe stworzenie jest drogą do Stwórcy, i prowadzi od
+      zachwytu nad światem ku kruchości człowieka, cierpieniu i śmierci, a dalej — poza to, co
+      widzialne.
+    - >-
+      W centrum stoi Laudes creaturarum Carla Orffa: cały Kantyk, w umbryjskim oryginale. Obok
+      niego trzy utwory Mariana Borkowskiego, Méditation z opery Thaïs Masseneta, Stars Ešenvaldsa,
+      The Lark Ascending Vaughana Williamsa na skrzypce i chór, Stoi lód na Prośnie Sykulskiego
+      i Ménétrier Enescu. Między grupami utworów powraca z galerii Spiegel im Spiegel Arvo Pärta,
+      muzyczne lustro relacji stworzenia i Stwórcy. Drogę domyka Stetit Angelus Rihardsa Dubry:
+      anioł okadza ołtarz, a dym wznosi się z modlitwami świętych — w kościele, który nosi
+      wezwanie Wszystkich Świętych.
+    - "Na skrzypcach gra Radu Ropotan."
+    - |-
+      Niedziela, 11 października 2026, 13:30
+      Kościół Wszystkich Świętych (kościół górny), pl. Grzybowski 3/5, Warszawa
+      Wstęp wolny
+
+social:
+  # Written in the third person: it is pasted by other people's accounts (the festival, partners,
+  # media), who tag @VoctEnsemble themselves. `postText` appends the concert's address.
+  post:
+    - "„Pochwała Stworzenia” — VoctEnsemble zamyka festiwal „Fenomen człowieka”."
+    - >-
+      Pieśń słoneczna św. Franciszka chwali Boga przez słońce, wiatr, wodę i ogień: całe
+      stworzenie jest w niej drogą do Stwórcy. Program idzie tą drogą, od zachwytu nad światem
+      przez to, co w człowieku kruche, aż poza to, co widzialne. Między grupami utworów wraca
+      z galerii Spiegel im Spiegel Arvo Pärta — lustro, w którym stworzenie odbija Stwórcę,
+      a człowiek jest Jego obrazem.
+    - >-
+      Drogę domyka Stetit Angelus Rihardsa Dubry: anioł z Apokalipsy okadza ołtarz, a dym wznosi
+      się z modlitwami wszystkich świętych — w kościele, który nosi ich wezwanie.
+    - "Dyryguje Florent de Bazelaire, na skrzypcach gra Radu Ropotan."
+    - |-
+      Niedziela, 11 października, 13:30
+      Kościół Wszystkich Świętych (kościół górny), pl. Grzybowski 3/5, Warszawa
+      Wstęp wolny
+  # #FenomenCzłowieka is the festival's name, not a tag it is known to use: its site states none.
+  hashtags:
+    - "#VoctEnsemble"
+    - "#PochwałaStworzenia"
+    - "#FenomenCzłowieka"
+    - "#KoncertDuchowy"
+    - "#MuzykaChóralna"
+    - "#ArvoPärt"
+    - "#Warszawa"
+
+guests:
+  # No biogram on record: the Royal Academy and the prizes in Ania's draft wait for his own word.
+  - { name: "Radu Ropotan", role: "skrzypce" }

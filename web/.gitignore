@@ -42,9 +42,12 @@ public/video/
 # supported state, not a broken one: /press looks for it (lib/pressPack) and renders "materials on
 # request" wherever it is missing, which is exactly what is true there. The manifest that says
 # what goes in IS tracked (press-pack/manifest.yaml); the press photo originals it names are not,
-# on the same terms as src/assets/photos/.
+# on the same terms as src/assets/photos/. The designer's print-ready posters
+# (press-pack/posters/<concert-id>.pdf) stay out for the same reason: a Canva export runs to
+# megabytes and the pack is the only thing that ships it.
 public/press/
 press-pack/photos/
+press-pack/posters/
 
 # Local A/B clips for grading decisions (docs/… none — throwaway). Served by `astro dev` at
 # /probki/ because only public/ is served statically; kept OUT of git and out of the image,

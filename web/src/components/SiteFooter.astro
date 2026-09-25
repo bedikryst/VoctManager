@@ -43,6 +43,7 @@
  * @module components/SiteFooter
  */
 import { tempusForDate } from "../lib/tempusLiturgicus";
+import { SOCIAL } from "../data/social";
 import { UI } from "../i18n/ui";
 import { NUNTIUS } from "../i18n/content/nuntius";
 import { localizePath, DEFAULT_LOCALE, type Locale } from "../i18n/config";
@@ -198,15 +199,13 @@ const tempusGloss = tempus.gloss[lang];
           The `↗` is this site's mark for a link that opens elsewhere IN THE BROWSER; the
           addresses above carry none because a `mailto:` hands off to a mail client instead. */}
       <ul class="foot-social">
-        <li>
-          <a href="https://www.instagram.com/voctensemble/" target="_blank" rel="noopener noreferrer">Instagram ↗</a>
-        </li>
-        <li>
-          <a href="https://www.facebook.com/voctensemble/" target="_blank" rel="noopener noreferrer">Facebook ↗</a>
-        </li>
-        <li>
-          <a href="https://www.youtube.com/@VoctEnsemble-nb7gh" target="_blank" rel="noopener noreferrer">YouTube ↗</a>
-        </li>
+        {
+          Object.values(SOCIAL).map((account) => (
+            <li>
+              <a href={account.url} target="_blank" rel="noopener noreferrer">{account.platform} ↗</a>
+            </li>
+          ))
+        }
       </ul>
     </div>
   </div>

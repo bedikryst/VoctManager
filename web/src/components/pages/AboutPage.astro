@@ -31,6 +31,7 @@ import { pageCopy } from "../../lib/pageCopy";
 import { UI } from "../../i18n/ui";
 import { localizePath, pageI18n, pickLocale, SITE, type Locale } from "../../i18n/config";
 import { FOUNDATION_PAGE_LINKED } from "../../data/foundationSupport";
+import { SOCIAL_SAME_AS } from "../../data/social";
 import "../../styles/vault.css";
 
 interface Props {
@@ -123,11 +124,7 @@ const jsonLd = {
       foundingLocation: { "@type": "Place", name: "Kraków, Polska" },
       founder: { "@type": "Person", name: "Florent de Bazelaire" },
       parentOrganization: { "@id": `${SITE}/#foundation` },
-      sameAs: [
-        "https://www.instagram.com/voctensemble/",
-        "https://www.facebook.com/voctensemble/",
-        "https://www.youtube.com/@VoctEnsemble-nb7gh",
-      ],
+      sameAs: SOCIAL_SAME_AS,
     },
     {
       "@type": "NGO",

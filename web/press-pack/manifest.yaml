@@ -1,61 +1,111 @@
-# The press pack's manifest — the only hand-kept part of `npm run press:pack`.
+# The press photographs — the one hand-kept list `npm run press:pack` reads.
 #
-# WHAT THE SCRIPT DOES NOT ASK YOU. Five of the pack's eight items are GENERATED from the site's
-# own data and are not listed here, because a second list is a second thing to keep true: the
-# three biograms come from `src/content/pages/press.yaml` (the same field the page prints), the
-# photo credits from `concerts.yaml`, the invoicing sheet from `src/data/foundation.ts`, the
-# recording links from `concerts.yaml` and the press section of `press.yaml`, and the logotype
-# from `public/voct-mark.svg`.
+# WHAT THE SCRIPT DOES NOT ASK YOU. Everything else in the pack is GENERATED from the site's own
+# data and is not listed here, because a second list is a second thing to keep true: the concert kit
+# (texts, poster graphics, PDFs) from `src/content/press-kits/<concert>.yaml` and `concerts.yaml`,
+# the biograms and usage terms from `src/content/pages/press.yaml`, the invoicing sheet from
+# `src/data/foundation.ts`, and the logotype from `public/voct-mark.svg`.
 #
-# WHAT IT ASKS YOU IS EXACTLY THE PART NOBODY CAN DERIVE: which photographs the ensemble cleared,
-# and which technical rider is current. Both come from outside this repository, and until they do
-# `npm run press:pack` REFUSES to build and names what is missing. /press then renders its honest
-# "write to us" state, which is true wherever the archive is absent.
+# WHAT IT ASKS YOU IS THE PART NOBODY CAN DERIVE: which frames the ensemble released to the press,
+# how each is cut, what it shows and whom to credit.
 #
-# THE ARCHIVE ITSELF IS NOT IN GIT (`web/.gitignore` → `public/press/`), on the same terms as the
-# photographs it carries. Build it where the photographs are and upload it to the build host, the
-# way `src/assets/photos/` is handled.
-
-# Which month the pack is cut for. It becomes the file name —
-# `voctensemble-press-<month>.zip` — and is printed beside the download so an organiser holding
-# an old zip can see that they are.
-month: "2026-09"
-
-# The one-page technical rider, as a file inside `press-pack/assets/`. It is EMPTY on purpose:
-# every number the old /press printed under that heading was invented and was deleted in 2026-07
-# (reverb ≥ 2 s, 6×4 m, 12–14 voices, 60–75 min). Nothing may be guessed back into it — the
-# ensemble writes it, and until then this stays empty and the pack does not build.
-rider: ""
-
-# The cleared photographs, by their id in `src/assets/photos/.original-photos/`. The script reads
-# each one's real dimensions and orientation, so nothing here claims a shape.
+# THE ORIGINALS ARE NOT IN GIT. They sit in `press-pack/photos/` (gitignored, ~90 MB) on the machine
+# that builds the pack, and the output (`public/press/`) is uploaded to the build host by hand.
 #
-# WHAT THE SELECTION HAS TO SATISFY, and why the script enforces it: 3–5 frames, and at least one
-# PORTRAIT beside the landscapes. A missing portrait is the single most common reason a programmer
-# writes back — a poster is portrait and a landscape frame cannot be cropped into one by somebody
-# who was not there.
+# ONE FILE PER PHOTO, CUT TO EXACTLY ITS RATIO. `ratio` is "16:9" (sites, Facebook, YouTube) or "4:5"
+# (Instagram, print). The crop is the largest box of that ratio inside the frame, centred as close to
+# `focus` as the edges allow; `focus` is [x, y] as fractions of the upright frame, 0 = left/top, and
+# it is set by looking at the crop, not by guessing. What the page shows is what a reader downloads.
 #
-# `credit` is the photographer as they are to be printed. Leave it out and the script takes the
-# credit `concerts.yaml` already records for that frame; give it only where the corpus has none.
+# `credit` is required and is the name an editor prints under the photo. A frame from the ensemble's
+# own archive is credited "VoctEnsemble" — who to credit, not where the frame came from — which
+# deliberately differs from the site's own "archiwum zespołu" (lib/photoCredit).
 #
-#   photos:
-#     - { id: kd-wcielenie-3 }
-#     - { id: kd-9-kart-15 }                       # credit read from concerts.yaml
-#     - { id: <frame>, credit: "<Name Surname>" }   # only where concerts.yaml names nobody
+# The script REFUSES on a row with no credit, a missing source file, or a source that is held in
+# `src/assets/photos/.held-no-consent/`; it WARNS AND SKIPS a crop whose short edge is under 1080 px,
+# so a thumbnail sent by mistake never ships as a press photo and the rest of the pack still builds.
+#
+# Captions are dated from each file's own EXIF and matched against `concerts.yaml`; a frame whose
+# evening cannot be established says only what it shows.
 #
 # NOT ELIGIBLE, recorded so nobody re-adds them: `kd-hymn-4` and `kd-hymn-5` are Andrzej
 # Płachetko's and are withheld from every surface until his consent is on record (concerts.yaml,
 # Hymn Poległym) — and even then they were delivered with a matte border and a credit burnt into
 # the frame, so they cannot be laid out by a designer; `kd-wolanie-4` is 900 px wide and sourced
 # from PieninyInfo.
-photos: []
 
-# Which evenings ship as sample programmes. Each becomes one text file with composers, works and
-# durations, read from `concerts.yaml`.
-#
-# ONLY `aeternam` HAS DURATIONS TODAY — 10 works out of 10, where the other five programmes have
-# none out of 59. The script warns rather than refuses on a programme without them, because a
-# running order without times is still useful to somebody building an evening; a second entry here
-# is worth adding the moment the ensemble times one.
-programmes:
-  - aeternam
+photos:
+  # ── 16:9 ────────────────────────────────────────────────────────────────────────────────────
+  - id: voctensemble-01-fot-voctensemble
+    source: VoctEnsemble_Radu-Ropotan_fot-VE_01.jpg
+    ratio: "16:9"
+    focus: [0.5, 0.52]
+    caption: "VoctEnsemble i Radu Ropotan · Wołanie Gór, Szczawnica, 2024"
+    credit: VoctEnsemble
+  - id: voctensemble-02-fot-kamila-grudzinska
+    source: VoctEnsemble_koncert_fot-Kamila-Grudzinska_02.jpg
+    ratio: "16:9"
+    focus: [0.5, 0.55]
+    caption: "VoctEnsemble · 9 Kart z Księgi Psalmów, Bazylika NSPJ w Krakowie, 2024"
+    credit: Kamila Grudzińska
+  - id: voctensemble-03-fot-voctensemble
+    source: VoctEnsemble_koncert_fot-VE_03.jpg
+    ratio: "16:9"
+    focus: [0.5, 0.5]
+    caption: "VoctEnsemble podczas koncertu"
+    credit: VoctEnsemble
+  - id: voctensemble-04-fot-kamila-grudzinska
+    source: VoctEnsemble_koncert_fot-Kamila-Grudzinska_04.jpg
+    ratio: "16:9"
+    focus: [0.5, 0.42]
+    caption: "Florent de Bazelaire i VoctEnsemble · 9 Kart z Księgi Psalmów, Kraków, 2024"
+    credit: Kamila Grudzińska
+  - id: voctensemble-05-fot-voctensemble
+    source: VoctEnsemble_Radu-Ropotan_proba_fot-VoctEnsemble_05.jpg
+    ratio: "16:9"
+    focus: [0.5, 0.4]
+    caption: "Radu Ropotan na próbie z VoctEnsemble, 2024"
+    credit: VoctEnsemble
+  - id: voctensemble-06-fot-voctensemble
+    source: VoctEnsemble_proba_partytury_fot-VoctEnsemble_06.jpg
+    ratio: "16:9"
+    focus: [0.5, 0.5]
+    caption: "Partytury na próbie VoctEnsemble, 2024"
+    credit: VoctEnsemble
+
+  # ── 4:5 ─────────────────────────────────────────────────────────────────────────────────────
+  - id: voctensemble-07-fot-kamila-grudzinska
+    source: VoctEnsemble_koncert_fot-Kamila-Grudzinska_07.jpg
+    ratio: "4:5"
+    focus: [0.5, 0.6]
+    caption: "VoctEnsemble · 9 Kart z Księgi Psalmów, Bazylika NSPJ w Krakowie, 2024"
+    credit: Kamila Grudzińska
+  - id: voctensemble-08-fot-voctensemble
+    source: VoctEnsemble_proba_fot-VoctEnsemble_08.jpg
+    ratio: "4:5"
+    focus: [0.5, 0.53]
+    caption: "Próba VoctEnsemble, 2024"
+    credit: VoctEnsemble
+  - id: voctensemble-09-fot-voctensemble
+    source: VoctEnsemble_proba_fot-VoctEnsemble_09.jpg
+    ratio: "4:5"
+    focus: [0.5, 0.5]
+    caption: "Próba VoctEnsemble, 2024"
+    credit: VoctEnsemble
+  # 244 × 366: a thumbnail, not the original. The script skips it by the 1080 px rule and names it;
+  # the tile appears once the original replaces this file under the same name.
+  - id: voctensemble-10-fot-voctensemble
+    source: Florent-de-Bazelaire_dyrygent_fot-VoctEnsemble_10.jpg.jpg
+    ratio: "4:5"
+    focus: [0.5, 0.4]
+    caption: "Florent de Bazelaire, dyrygent"
+    credit: VoctEnsemble
+  # The colour square from the same rehearsal as 05. 1860 px square gives a 1488 × 1860 crop: right
+  # for social and the web, short for print. Its black-and-white twin (IMG_0177-5) is the same
+  # frame and is deliberately not used.
+  - id: voctensemble-11-fot-voctensemble
+    source: 2024_05_29_21_12_IMG_01772-5.jpg
+    ratio: "4:5"
+    focus: [0.4, 0.5]
+    caption: "Skrzypce na próbie VoctEnsemble, 2024"
+    credit: VoctEnsemble

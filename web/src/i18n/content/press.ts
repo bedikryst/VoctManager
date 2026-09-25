@@ -1,36 +1,31 @@
 /**
  * @file press.ts
- * @description Everything about the press kit (/press) except its words: the shape its Polish
- *  prose must have (zod, `.strict()`), the copy desk's key contract over that prose, and the
- *  page's chrome in all three locales.
+ * @description Everything about /press except its words: the shape its Polish prose must have
+ *  (zod, `.strict()`), the copy desk's key contract over that prose, and the page's chrome in all
+ *  three locales.
  *
- *  THE PAGE IS A TOOL, NOT AN ARGUMENT. Its reader has already been convinced and now has to
- *  produce a poster, a programme book and a press note before a deadline. So the contract below
- *  is short on purpose: what an organiser COPIES (three biograms), what they DOWNLOAD (the pack),
- *  what they must GET RIGHT (whom to credit, which legal entity signs), and where to look for
- *  everything the site already holds better elsewhere.
+ *  THE PAGE IS A COUNTER, NOT AN ARGUMENT. Its reader has already decided to write about the
+ *  ensemble and now needs a text, a photograph and a poster before a deadline. So the prose below
+ *  is short on purpose: a head, a rubric and a lede per section, the usage terms, the biograms.
  *
- *  THREE THINGS ON THIS PAGE ARE NOT COPY AND MUST NOT DRIFT INTO IT:
+ *  FOUR THINGS ON THIS PAGE ARE NOT COPY HERE AND MUST NOT DRIFT INTO IT:
  *
- *  - the registry numbers and the two accounts → `src/data/foundation.ts`. A number has no
- *    per-locale form at all, and it is printed by a Node script as well as by this page;
- *  - the counts in the fact tiles → read from the corpus at build (`cycleStations`, the
- *    `repertoire` collection), because a typed count rots the day a concert or a work lands;
- *  - the character measures beside each biogram → measured from the text itself
- *    (`lib/plainText`), for the same reason: "ok. 2000 znaków" was typed once and then the
- *    sentence under it changed.
- *
- *  A PUBLICATION'S OWN HEADLINE IS NEVER TRANSLATED. `press.items[].title` is what somebody else
- *  printed; our sentence about it (`context`) is ours and is on the desk. Same line the site
- *  draws around a quoted text everywhere else.
+ *  - the concert kit's texts (release, announcements, post, hashtags) → `src/content/press-kits/`,
+ *    read through `lib/pressKit`, because the page's Kopiuj and the pack's files must write the
+ *    same characters and the limits are measured on them;
+ *  - the concert's facts → `concerts.yaml`, through `concertFacts`;
+ *  - the registry numbers, the accounts and the addresses → `src/data/foundation.ts`, and the
+ *    social handles → `src/data/social.ts`: a number or a handle has no per-locale form;
+ *  - every size, count and dimension → measured at build, from the texts or from the pack's
+ *    `index.json`.
  *
  *  NOT YET IN `TRANSLATED_ROUTES`, deliberately. The page is on the desk so its Polish can be
- *  edited, but there are no `/en/press` and `/fr/press` routes and §2's two-iteration rule says
- *  why: translating prose that is being rewritten this week buys a translation of a draft.
+ *  edited, but there are no `/en/press` and `/fr/press` routes: translating prose that is being
+ *  rewritten this week buys a translation of a draft.
  *
- *  THIS FILE IS IMPORTED BY NODE, not only by Vite: the desk's extractor reads the contract below
- *  straight from here, so the key a translation is stored under and the key the page looks up are
- *  the same expression. Keep it free of `?raw`, `astro:assets` and anything a bundler must resolve.
+ *  THIS FILE IS IMPORTED BY NODE, not only by Vite: the desk's extractor and the press-pack
+ *  generator read it straight from here. Keep it free of `?raw`, `astro:assets` and anything a
+ *  bundler must resolve, and keep every cross-module import `import type`.
  * @architecture Astro islands 2026
  * @module i18n/content/press
  */
@@ -53,98 +48,86 @@ const pressCopySchema = z
     meta: z.object({ title: z.string(), description: z.string() }).strict(),
     head: z
       .object({
-        eyebrow: z.string(),
         title: z.string(),
         titleEm: z.string(),
-        positioningHtml: z.string(),
-        contactLede: z.string(),
+        lede: z.string(),
+        downloadLabel: z.string(),
+        requestLede: z.string(),
+        requestLabel: z.string(),
+        nav: z
+          .object({
+            latest: z.string(),
+            photos: z.string(),
+            social: z.string(),
+            about: z.string(),
+            contact: z.string(),
+          })
+          .strict(),
       })
       .strict(),
-    bio: z
+    latest: z
       .object({
         eyebrow: z.string(),
-        h2: z.string(),
+        photosLink: z.string(),
+        filesEyebrow: z.string(),
+        release: z.string(),
+        announce: z.string(),
+        announceShortSub: z.string(),
+        announceLongSub: z.string(),
+        programme: z.string(),
+        programmeSub: z.string(),
+        biograms: z.string(),
+        poster: z.string(),
+        posterPrint: z.string(),
+        posterPrintSub: z.string(),
+      })
+      .strict(),
+    photos: z
+      .object({
+        eyebrow: z.string(),
+        lede: z.string(),
+        landscape: z.string(),
+        landscapeUse: z.string(),
+        portrait: z.string(),
+        portraitUse: z.string(),
+        downloadAll: z.string(),
+        usage: z.string(),
+      })
+      .strict(),
+    social: z
+      .object({
+        eyebrow: z.string(),
+        lede: z.string(),
+        post: z.string(),
+        postSub: z.string(),
+        hashtags: z.string(),
+        graphics: z.string(),
+        graphic4x5: z.string(),
+        graphic9x16: z.string(),
+        graphic16x9: z.string(),
+        tag: z.string(),
+        tagLede: z.string(),
+      })
+      .strict(),
+    about: z
+      .object({
+        eyebrow: z.string(),
         lede: z.string(),
         shortHtml: z.string(),
         mediumHtml: z.string(),
         longHtml: z.string(),
-      })
-      .strict(),
-    pack: z
-      .object({
-        eyebrow: z.string(),
-        h2: z.string(),
-        ledeReady: z.string(),
-        ledePending: z.string(),
-        contentsIntro: z.string(),
-        items: z.array(z.object({ id: z.string(), text: z.string() }).strict()),
-        requestLabel: z.string(),
-        downloadLabel: z.string(),
-        photoUsage: z.string(),
+        logo: z.string(),
         logoUsage: z.string(),
-        moreHtml: z.string(),
       })
       .strict(),
-    facts: z
+    foundation: z.object({ eyebrow: z.string(), lede: z.string() }).strict(),
+    contact: z
       .object({
         eyebrow: z.string(),
-        h2: z.string(),
-        items: z.array(
-          z
-            .object({ id: z.string(), value: z.string().optional(), label: z.string() })
-            .strict(),
-        ),
-        officeNoteHtml: z.string(),
-        legalLede: z.string(),
-      })
-      .strict(),
-    collab: z
-      .object({
-        eyebrow: z.string(),
-        h2: z.string(),
         lede: z.string(),
-        artistsTitle: z.string(),
-        institutionsTitle: z.string(),
-        mediaTitle: z.string(),
-        artists: z.array(
-          z
-            .object({
-              id: z.string(),
-              role: z.string(),
-              name: z.string(),
-              entity: z.string(),
-            })
-            .strict(),
-        ),
-        institutions: z.array(z.object({ id: z.string(), name: z.string() }).strict()),
-        media: z.array(z.object({ id: z.string(), name: z.string() }).strict()),
-      })
-      .strict(),
-    /* Archive-only since the band was withdrawn — see the note in `press.yaml`. Its heading,
-       lede and rubric are gone rather than unrendered; these rows feed the pack's
-       `nagrania.txt` and nothing else. */
-    press: z
-      .object({
-        items: z.array(
-          z
-            .object({
-              id: z.string(),
-              outlet: z.string(),
-              kind: z.string(),
-              title: z.string(),
-              context: z.string(),
-              href: z.string(),
-            })
-            .strict(),
-        ),
-      })
-      .strict(),
-    booking: z
-      .object({
-        eyebrow: z.string(),
-        h2: z.string(),
-        ledeHtml: z.string(),
-        allChannelsNote: z.string(),
+        broadcastTitle: z.string(),
+        broadcastBody: z.string(),
+        broadcastCta: z.string(),
       })
       .strict(),
   })
@@ -155,7 +138,7 @@ export type PressCopy = z.infer<typeof pressCopySchema>;
 // ── The desk contract ─────────────────────────────────────────────────────────────────────────
 
 /**
- * DECLARATION ORDER IS READING ORDER — head to booking, because `order` is a counter over this
+ * DECLARATION ORDER IS READING ORDER — head to contact, because `order` is a counter over this
  * list.
  */
 const PRESS_CONTRACT: readonly CopyEntry[] = [
@@ -166,197 +149,172 @@ const PRESS_CONTRACT: readonly CopyEntry[] = [
     label: "Metadane · tytuł strony",
     note: "Read in a browser tab and in a mail preview. The page is noindex, so it never appears in a search result — its only traffic is a link we send.",
   },
-  {
-    kind: "field",
-    path: "meta.description",
-    label: "Metadane · opis strony",
-  },
+  { kind: "field", path: "meta.description", label: "Metadane · opis strony" },
 
   // ── Głowica ───────────────────────────────────────────────────────────────────────────────
   {
     kind: "field",
-    path: "head.eyebrow",
-    label: "Głowica · rubryka",
-    note: "The vernacular of `Acta`, which stands above it unchanged in every locale.",
-  },
-  {
-    kind: "field",
     path: "head.title",
-    label: "Głowica · nazwa",
-    note: "The ensemble's name. It is here rather than in the markup only because the line beside it is, and it is the same string in every locale.",
+    label: "Głowica · tytuł",
+    note: "\"Press\" is the page's name in every locale, as it is on the sketch the board sent.",
   },
   {
     kind: "field",
     path: "head.titleEm",
-    label: "Głowica · cykl",
-    note: "Set in italic gold under the name: the cycle, not a subtitle. `Koncerty Duchowe` is the site's own name for it and has a settled rendering in each locale — see the translation glossary.",
+    label: "Głowica · podtytuł",
+    note: "Set in italic gold under the title: what the page holds, in the reader's own words.",
+  },
+  { kind: "field", path: "head.lede", label: "Głowica · lede" },
+  {
+    kind: "field",
+    path: "head.downloadLabel",
+    label: "Głowica · przycisk (pobierz komplet)",
+    note: "The format and the size are printed after it from the pack's own index — never write them here.",
   },
   {
     kind: "field",
-    path: "head.positioningHtml",
-    label: "Głowica · pozycjonowanie",
-    note: "One sentence, and the only one on the page whose job is to say what the ensemble IS. Everything persuasive lives on the landing.",
+    path: "head.requestLede",
+    label: "Głowica · lede (pliki niedostępne)",
+    note: "Printed only on a host without the built pack. It must promise no date.",
+  },
+  { kind: "field", path: "head.requestLabel", label: "Głowica · przycisk (napisz)" },
+  { kind: "field", path: "head.nav.latest", label: "Głowica · spis · najnowsze" },
+  { kind: "field", path: "head.nav.photos", label: "Głowica · spis · zdjęcia" },
+  { kind: "field", path: "head.nav.social", label: "Głowica · spis · social media" },
+  { kind: "field", path: "head.nav.about", label: "Głowica · spis · o zespole" },
+  { kind: "field", path: "head.nav.contact", label: "Głowica · spis · kontakt" },
+
+  // ── Najnowsze ─────────────────────────────────────────────────────────────────────────────
+  {
+    kind: "field",
+    path: "latest.eyebrow",
+    label: "Najnowsze · rubryka",
+    note: "Stands over the card of the soonest concert that has a press kit. The concert's facts under it come from the corpus.",
+  },
+  { kind: "field", path: "latest.photosLink", label: "Najnowsze · link do zdjęć" },
+  { kind: "field", path: "latest.filesEyebrow", label: "Najnowsze · rubryka materiałów" },
+  {
+    kind: "field",
+    path: "latest.release",
+    label: "Najnowsze · plik · informacja prasowa",
+    note: "The release's own headline is printed under it, from the kit.",
   },
   {
     kind: "field",
-    path: "head.contactLede",
-    label: "Głowica · linia kontaktu",
-    note: "The address itself is printed after this sentence from `data/foundation.ts` — never write it into the copy.",
+    path: "latest.announce",
+    label: "Najnowsze · plik · zapowiedź",
+    note: "Named twice, once per measure; the measure (\"do 500 znaków\") and the measured length are printed beside it.",
+  },
+  { kind: "field", path: "latest.announceShortSub", label: "Najnowsze · zapowiedź krótka · opis" },
+  { kind: "field", path: "latest.announceLongSub", label: "Najnowsze · zapowiedź długa · opis" },
+  { kind: "field", path: "latest.programme", label: "Najnowsze · plik · program" },
+  { kind: "field", path: "latest.programmeSub", label: "Najnowsze · program · opis" },
+  {
+    kind: "field",
+    path: "latest.biograms",
+    label: "Najnowsze · plik · biogramy",
+    note: "The names under it are the biograms the PDF holds, read at build.",
+  },
+  { kind: "field", path: "latest.poster", label: "Najnowsze · plik · plakat" },
+  { kind: "field", path: "latest.posterPrint", label: "Najnowsze · plik · plakat do druku" },
+  { kind: "field", path: "latest.posterPrintSub", label: "Najnowsze · plakat do druku · opis" },
+
+  // ── Zdjęcia ───────────────────────────────────────────────────────────────────────────────
+  { kind: "field", path: "photos.eyebrow", label: "Zdjęcia · rubryka" },
+  {
+    kind: "field",
+    path: "photos.lede",
+    label: "Zdjęcia · lede (zasady w skrócie)",
+    note: "The usage terms where the choice is made. It must agree with `photos.usage`, which is the full text in the pack; both are a legal statement the board approves.",
+  },
+  { kind: "field", path: "photos.landscape", label: "Zdjęcia · grupa pozioma" },
+  { kind: "field", path: "photos.landscapeUse", label: "Zdjęcia · grupa pozioma · do czego" },
+  { kind: "field", path: "photos.portrait", label: "Zdjęcia · grupa pionowa" },
+  { kind: "field", path: "photos.portraitUse", label: "Zdjęcia · grupa pionowa · do czego" },
+  { kind: "field", path: "photos.downloadAll", label: "Zdjęcia · przycisk (wszystkie)" },
+  {
+    kind: "field",
+    path: "photos.usage",
+    label: "Zdjęcia · zasady użycia (w paczce)",
+    note: "Printed INSIDE the pack, in PRZECZYTAJ.txt above every photo's credit, never on the page. It is the permission an organiser acts on: it must allow cropping and scaling and stay specific about what is not allowed.",
   },
 
-  // ── Biogram ───────────────────────────────────────────────────────────────────────────────
-  { kind: "field", path: "bio.eyebrow", label: "Biogram · rubryka" },
-  { kind: "field", path: "bio.h2", label: "Biogram · tytuł" },
+  // ── Social media ──────────────────────────────────────────────────────────────────────────
+  { kind: "field", path: "social.eyebrow", label: "Social media · rubryka" },
+  { kind: "field", path: "social.lede", label: "Social media · lede" },
+  { kind: "field", path: "social.post", label: "Social media · post · tytuł" },
   {
     kind: "field",
-    path: "bio.lede",
-    label: "Biogram · lede",
+    path: "social.postSub",
+    label: "Social media · post · opis",
+    note: "The post itself is the kit's; `postText` appends the concert page's address, which is what this line promises.",
+  },
+  { kind: "field", path: "social.hashtags", label: "Social media · hashtagi · tytuł" },
+  { kind: "field", path: "social.graphics", label: "Social media · grafiki · tytuł" },
+  { kind: "field", path: "social.graphic4x5", label: "Social media · grafika 4:5 · do czego" },
+  { kind: "field", path: "social.graphic9x16", label: "Social media · grafika 9:16 · do czego" },
+  { kind: "field", path: "social.graphic16x9", label: "Social media · grafika 16:9 · do czego" },
+  { kind: "field", path: "social.tag", label: "Social media · oznacz nas · tytuł" },
+  { kind: "field", path: "social.tagLede", label: "Social media · oznacz nas · lede" },
+
+  // ── O zespole ─────────────────────────────────────────────────────────────────────────────
+  { kind: "field", path: "about.eyebrow", label: "O zespole · rubryka" },
+  {
+    kind: "field",
+    path: "about.lede",
+    label: "O zespole · lede",
     note: "Do not name a character count here: the page measures each text and prints the real number beside it.",
   },
   {
     kind: "field",
-    path: "bio.shortHtml",
-    label: "Biogram · krótki",
-    note: "Around 300 characters — a note in a programme, or a line under a poster. A condensation of the full biogram below and never a source of new facts. Keep it near that measure in every locale: the page prints the real count.",
+    path: "about.shortHtml",
+    label: "O zespole · biogram krótki",
+    note: "Around 300 characters — a note in a programme, or a line under a poster. A condensation of the full biogram below and never a source of new facts. The press release also closes on it.",
   },
   {
     kind: "field",
-    path: "bio.mediumHtml",
-    label: "Biogram · średni",
+    path: "about.mediumHtml",
+    label: "O zespole · biogram średni",
     note: "Around 1000 characters — an announcement or a press note. Same rule as the short one.",
   },
   {
     kind: "field",
-    path: "bio.longHtml",
-    label: "Biogram · pełny",
-    note: "The ensemble's own text, verbatim, and the one legitimately brochure-voiced artifact on this site. It is ONE field rather than five paragraphs on purpose: a reviewer translating paragraph three and leaving two in Polish would produce a mixed-language biogram that somebody then pastes into a programme book.",
+    path: "about.longHtml",
+    label: "O zespole · biogram pełny",
+    note: "The ensemble's own text, verbatim. It is ONE field rather than five paragraphs on purpose: a reviewer translating paragraph three and leaving two in Polish would produce a mixed-language biogram that somebody then pastes into a programme book.",
+  },
+  { kind: "field", path: "about.logo", label: "O zespole · logotyp · tytuł" },
+  {
+    kind: "field",
+    path: "about.logoUsage",
+    label: "O zespole · zasady użycia logotypu",
+    note: "On the page under the logo files, and in the pack beside them (logo/UZYCIE.txt).",
   },
 
-  // ── Pakiet ────────────────────────────────────────────────────────────────────────────────
-  { kind: "field", path: "pack.eyebrow", label: "Pakiet · rubryka" },
-  { kind: "field", path: "pack.h2", label: "Pakiet · tytuł" },
+  // ── Fundacja ──────────────────────────────────────────────────────────────────────────────
+  { kind: "field", path: "foundation.eyebrow", label: "Fundacja · rubryka" },
   {
     kind: "field",
-    path: "pack.ledeReady",
-    label: "Pakiet · lede (pakiet jest)",
-    note: "Printed only when the archive actually exists in public/press/. The page decides by looking at the directory, so this text can never stand over a dead link.",
-  },
-  {
-    kind: "field",
-    path: "pack.ledePending",
-    label: "Pakiet · lede (pakiet w składaniu)",
-    note: "The other half of the same switch. It must promise no date — what it waits for comes from the ensemble.",
-  },
-  { kind: "field", path: "pack.contentsIntro", label: "Pakiet · wstęp do spisu" },
-  {
-    kind: "list",
-    path: "pack.items",
-    keyBy: "id",
-    label: "Pakiet · pozycja",
-    note: "What is in the archive, listed in both states — when it does not exist yet, this is what an organiser knows to ask for by mail.",
-    fields: [{ path: "text", label: "opis" }],
-  },
-  { kind: "field", path: "pack.requestLabel", label: "Pakiet · przycisk (napisz)" },
-  { kind: "field", path: "pack.downloadLabel", label: "Pakiet · przycisk (pobierz)" },
-  {
-    kind: "field",
-    path: "pack.photoUsage",
-    label: "Pakiet · zasady użycia zdjęć",
-    note: "Printed INSIDE the archive, never on the page — `scripts/press-pack.mjs` writes it into the pack's own readme beside credits.txt. It is the permission an organiser acts on, so it must stay specific about what is allowed and what is not.",
-  },
-  {
-    kind: "field",
-    path: "pack.logoUsage",
-    label: "Pakiet · zasady użycia logotypu",
-    note: "Also inside the archive only, beside the logo files.",
-  },
-  {
-    kind: "field",
-    path: "pack.moreHtml",
-    label: "Pakiet · gdzie jest reszta",
-    note: "Three links out to what the site already holds in full. Write the hrefs as bare Polish paths — `lib/pageCopy` points them at this locale's URL for each page.",
+    path: "foundation.lede",
+    label: "Fundacja · lede",
+    note: "Stands over the registry and account rows, which come from `data/foundation.ts`.",
   },
 
-  // ── Dane ──────────────────────────────────────────────────────────────────────────────────
-  { kind: "field", path: "facts.eyebrow", label: "Dane · rubryka" },
-  { kind: "field", path: "facts.h2", label: "Dane · tytuł" },
-  {
-    kind: "list",
-    path: "facts.items",
-    keyBy: "id",
-    label: "Dane · kafel",
-    note: "Two of these tiles have no `value`: their number is counted from the corpus at build. Their label therefore stands beside a NUMBER, and in Polish it must read correctly beside five or more — the cycle has six stations and only grows.",
-    fields: [
-      { path: "value", label: "liczba" },
-      { path: "label", label: "podpis" },
-    ],
-  },
+  // ── Kontakt ───────────────────────────────────────────────────────────────────────────────
+  { kind: "field", path: "contact.eyebrow", label: "Kontakt · rubryka" },
   {
     kind: "field",
-    path: "facts.officeNoteHtml",
-    label: "Dane · nota o oprawach",
-    note: "The one thing the deleted liturgy section said that somebody books on. It says what the music IS when it serves a rite, and never what it costs — that is a question for the board before it is a page (Etap 4).",
+    path: "contact.lede",
+    label: "Kontakt · linia przed adresem",
+    note: "The address itself is printed after this line from `data/foundation.ts` — never write it into the copy.",
   },
-  { kind: "field", path: "facts.legalLede", label: "Dane · wstęp do danych do faktury" },
-
-  // ── Współpraca ────────────────────────────────────────────────────────────────────────────
-  { kind: "field", path: "collab.eyebrow", label: "Współpraca · rubryka" },
-  { kind: "field", path: "collab.h2", label: "Współpraca · tytuł" },
-  { kind: "field", path: "collab.lede", label: "Współpraca · lede" },
-  { kind: "field", path: "collab.artistsTitle", label: "Współpraca · nagłówek artystów" },
-  { kind: "field", path: "collab.institutionsTitle", label: "Współpraca · nagłówek instytucji" },
-  { kind: "field", path: "collab.mediaTitle", label: "Współpraca · nagłówek patronów" },
-  {
-    kind: "list",
-    path: "collab.artists",
-    keyBy: "id",
-    label: "Współpraca · artysta",
-    note: "Only the ROLE is copy. The person and the studio beside it are proper names.",
-    fields: [{ path: "role", label: "rola" }],
-  },
-
-  // ── Pisali o nas — W PAKIECIE, NIE NA STRONIE ─────────────────────────────────────────────
-  {
-    kind: "list",
-    path: "press.items",
-    keyBy: "id",
-    label: "Nagrania i publikacje · pozycja",
-    note: "Printed inside the archive (`nagrania.txt`), not on the page: four links resolving to two evenings read thinner than silence, and the reader who wants them is the one who downloaded the pack. The outlet and the headline are somebody else's words and are not here; `kind` and `context` are ours. `press.yaml` carries what brings the band back.",
-    fields: [
-      { path: "kind", label: "rodzaj" },
-      { path: "context", label: "opis" },
-    ],
-  },
-
-  // ── Zaproszenie ───────────────────────────────────────────────────────────────────────────
-  { kind: "field", path: "booking.eyebrow", label: "Zaproszenie · rubryka" },
-  { kind: "field", path: "booking.h2", label: "Zaproszenie · tytuł" },
-  { kind: "field", path: "booking.ledeHtml", label: "Zaproszenie · lede" },
-  {
-    kind: "field",
-    path: "booking.allChannelsNote",
-    label: "Zaproszenie · nota o pozostałych adresach",
-    note: "This page prints ONE address. The rest are on /kontakt, and this is the sentence that sends the reader there.",
-  },
+  { kind: "field", path: "contact.broadcastTitle", label: "Kontakt · radio i TV · tytuł" },
+  { kind: "field", path: "contact.broadcastBody", label: "Kontakt · radio i TV · tekst" },
+  { kind: "field", path: "contact.broadcastCta", label: "Kontakt · radio i TV · przycisk" },
 ];
 
 /** Everything else in `press.yaml`, with the reason it is not text a reader is meant to read. */
-const PRESS_NOT_COPY: Readonly<Record<string, string>> = {
-  "pack.items[].id": "identity — it is this item's key part",
-  "facts.items[].id": "identity — it is this tile's key part, and what the build matches a counted number to",
-  "collab.artists[].id": "identity — it is this collaborator's key part",
-  "collab.artists[].name": "a person's name — never translated",
-  "collab.artists[].entity": "a studio's or a company's registered name",
-  "collab.institutions[].id": "identity — it is this partner's key part",
-  "collab.institutions[].name": "an institution's own name, printed unchanged in every locale",
-  "collab.media[].id": "identity — it is this patron's key part",
-  "collab.media[].name": "a title's own name, printed unchanged in every locale",
-  "press.items[].id": "identity — it is this publication's key part",
-  "press.items[].outlet": "the publisher's own name",
-  "press.items[].title":
-    "somebody else's headline, quoted. Translating it would put words in a publication's mouth and break the link between the card and the page it opens",
-  "press.items[].href": "a URL",
-};
+const PRESS_NOT_COPY: Readonly<Record<string, string>> = {};
 
 /** What `lib/pageCopy` needs to read this page, and the extractor to key it. */
 export const PRESS_PAGE: PageCopySpec<PressCopy> = {
@@ -383,11 +341,13 @@ export const PRESS_PAGE: PageCopySpec<PressCopy> = {
 export interface PressChrome {
   /** Landmark names. They are read instead of the heading, so they name the section. */
   readonly headAria: string;
-  readonly bioAria: string;
-  readonly packAria: string;
-  readonly factsAria: string;
-  readonly collabAria: string;
-  readonly bookingAria: string;
+  readonly jumpAria: string;
+  readonly latestAria: string;
+  readonly photosAria: string;
+  readonly socialAria: string;
+  readonly aboutAria: string;
+  readonly foundationAria: string;
+  readonly contactAria: string;
   /**
    * What each biogram is FOR, printed as the measure's own name. The character count beside it is
    * measured, never written.
@@ -395,122 +355,162 @@ export interface PressChrome {
   readonly bioShort: string;
   readonly bioMedium: string;
   readonly bioLong: string;
-  /** "znak / znaki / znaków", so the measured count can be printed as a sentence. */
+  /** "znak / znaki / znaków", so a measured count can be printed as a phrase. */
   readonly characters: CountForms;
+  /** An announcement's measure: `{count}` is the counted limit, "do 500 znaków". */
+  readonly upTo: string;
   /** The copy-to-clipboard affordance: resting label, and the one it flashes after a copy. */
   readonly copy: string;
+  readonly copyText: string;
   readonly copied: string;
-  /** Accessible name of that button. `{measure}` is replaced with the measure's own name above. */
+  /** Accessible name of a biogram's copy button. `{measure}` is the measure's own name above. */
   readonly copyAria: string;
+  /** Accessible name of any other copy button. `{field}` is what it copies. */
+  readonly copyFieldAria: string;
+  /** A file's two ways out: in the browser, and to disk. `{file}` is the file's title. */
+  readonly open: string;
+  readonly openAria: string;
+  readonly downloadAria: string;
   /**
-   * The two states of a biogram's disclosure. BOTH are rendered and CSS shows one, because a
-   * label that changes with `[open]` cannot be a `content` string without leaving the locale
-   * behind. Only the TEXT is behind this control: the copy button stays above it, always, so the
-   * fast path (read the measure, take the text) never requires a second click.
+   * The two states of a text's disclosure. BOTH are rendered and CSS shows one, because a label
+   * that changes with `[open]` cannot be a `content` string without leaving the locale behind.
+   * Only the TEXT is behind this control: the copy button stays beside it, always.
    */
   readonly expand: string;
   readonly collapse: string;
+  /** Size units. French writes "Mo", and the decimal separator follows the locale. */
+  readonly units: { readonly kB: string; readonly MB: string };
+  /** The logotype's three files. */
+  readonly logoSvg: string;
+  readonly logoOnLight: string;
+  readonly logoOnDark: string;
+  /** The invoicing sheet's download, under the rows it repeats. */
+  readonly invoiceFile: string;
   /** Labels of the invoicing block — a definition list, and a missing term is a broken row. */
   readonly legalName: string;
   readonly legalAddress: string;
   readonly legalAccountPln: string;
   readonly legalAccountEur: string;
-  /** Accessible name of the copy button beside one of those values. `{field}` is its label. */
-  readonly copyFieldAria: string;
-  /** Where the one printed address sends a reader for the others. */
-  readonly allChannels: string;
-  /** The label before the journalists' address in the head, under the organisers' line. */
-  readonly mediaContact: string;
   /**
    * Subject lines of the mails this page opens. They are chrome rather than copy because a
    * reader never sees them before sending: nobody reviews a `mailto:`, and one missing in French
    * would send an untitled mail rather than a French one.
    */
-  readonly mailSubjectBooking: string;
   readonly mailSubjectPack: string;
   readonly mailSubjectMedia: string;
+  readonly mailSubjectBroadcast: string;
 }
 
 export const PRESS_CHROME: Record<Locale, PressChrome> = {
   pl: {
-    headAria: "Press kit VoctEnsemble",
-    bioAria: "Biogram do skopiowania",
-    packAria: "Pakiet prasowy",
-    factsAria: "Dane zespołu i fundacji",
-    collabAria: "Współpracownicy i partnerzy",
-    bookingAria: "Zaproszenie i kontakt",
+    headAria: "Materiały dla mediów VoctEnsemble",
+    jumpAria: "Spis sekcji",
+    latestAria: "Najbliższy koncert",
+    photosAria: "Zdjęcia prasowe",
+    socialAria: "Materiały do mediów społecznościowych",
+    aboutAria: "Biogramy i logotyp",
+    foundationAria: "Dane fundacji",
+    contactAria: "Kontakt dla mediów",
     bioShort: "Krótki",
     bioMedium: "Średni",
     bioLong: "Pełny",
     characters: { one: "znak", few: "znaki", many: "znaków" },
+    upTo: "do {count}",
     copy: "Kopiuj",
+    copyText: "Kopiuj tekst",
     copied: "Skopiowano",
     copyAria: "Skopiuj biogram — {measure}",
+    copyFieldAria: "Skopiuj: {field}",
+    open: "Otwórz",
+    openAria: "Otwórz: {file}",
+    downloadAria: "Pobierz: {file}",
     expand: "Pokaż tekst",
     collapse: "Zwiń",
+    units: { kB: "kB", MB: "MB" },
+    logoSvg: "Wzorzec wektorowy",
+    logoOnLight: "Na jasne tło",
+    logoOnDark: "Na ciemne tło",
+    invoiceFile: "Dane do umowy i faktury jako plik",
     legalName: "Nazwa",
     legalAddress: "Adres",
     legalAccountPln: "Konto PLN",
     legalAccountEur: "Konto EUR",
-    copyFieldAria: "Skopiuj: {field}",
-    allChannels: "Wszystkie kanały kontaktu",
-    mediaContact: "Dziennikarze:",
-    mailSubjectBooking: "Zaproszenie — VoctEnsemble",
     mailSubjectPack: "Materiały prasowe — VoctEnsemble",
     mailSubjectMedia: "Pytanie od mediów — VoctEnsemble",
+    mailSubjectBroadcast: "Materiały dla radia i telewizji — VoctEnsemble",
   },
   en: {
-    headAria: "VoctEnsemble press kit",
-    bioAria: "Biography, ready to copy",
-    packAria: "Press pack",
-    factsAria: "The ensemble and the foundation",
-    collabAria: "Collaborators and partners",
-    bookingAria: "Invitations and contact",
+    headAria: "VoctEnsemble press materials",
+    jumpAria: "Sections",
+    latestAria: "The next concert",
+    photosAria: "Press photographs",
+    socialAria: "Social media materials",
+    aboutAria: "Biographies and logo",
+    foundationAria: "The foundation's details",
+    contactAria: "Media contact",
     bioShort: "Short",
     bioMedium: "Medium",
     bioLong: "Full",
     characters: { one: "character", many: "characters" },
+    upTo: "up to {count}",
     copy: "Copy",
+    copyText: "Copy text",
     copied: "Copied",
     copyAria: "Copy the biography — {measure}",
+    copyFieldAria: "Copy: {field}",
+    open: "Open",
+    openAria: "Open: {file}",
+    downloadAria: "Download: {file}",
     expand: "Show the text",
     collapse: "Hide",
+    units: { kB: "kB", MB: "MB" },
+    logoSvg: "Vector master",
+    logoOnLight: "For light backgrounds",
+    logoOnDark: "For dark backgrounds",
+    invoiceFile: "Contract and invoicing details as a file",
     legalName: "Name",
     legalAddress: "Address",
     legalAccountPln: "Account, PLN",
     legalAccountEur: "Account, EUR",
-    copyFieldAria: "Copy: {field}",
-    allChannels: "All contact channels",
-    mediaContact: "Journalists:",
-    mailSubjectBooking: "An invitation — VoctEnsemble",
     mailSubjectPack: "Press materials — VoctEnsemble",
     mailSubjectMedia: "Media enquiry — VoctEnsemble",
+    mailSubjectBroadcast: "Radio and television materials — VoctEnsemble",
   },
   fr: {
-    headAria: "Dossier de presse VoctEnsemble",
-    bioAria: "Biographie, prête à copier",
-    packAria: "Dossier de presse",
-    factsAria: "L'ensemble et la fondation",
-    collabAria: "Collaborateurs et partenaires",
-    bookingAria: "Invitations et contact",
+    headAria: "Espace presse VoctEnsemble",
+    jumpAria: "Sections",
+    latestAria: "Le prochain concert",
+    photosAria: "Photographies de presse",
+    socialAria: "Matériel pour les réseaux sociaux",
+    aboutAria: "Biographies et logo",
+    foundationAria: "Coordonnées de la fondation",
+    contactAria: "Contact presse",
     bioShort: "Courte",
     bioMedium: "Moyenne",
     bioLong: "Complète",
     characters: { one: "caractère", many: "caractères" },
+    upTo: "jusqu'à {count}",
     copy: "Copier",
+    copyText: "Copier le texte",
     copied: "Copié",
     copyAria: "Copier la biographie — {measure}",
+    copyFieldAria: "Copier : {field}",
+    open: "Ouvrir",
+    openAria: "Ouvrir : {file}",
+    downloadAria: "Télécharger : {file}",
     expand: "Afficher le texte",
     collapse: "Masquer",
+    units: { kB: "ko", MB: "Mo" },
+    logoSvg: "Original vectoriel",
+    logoOnLight: "Sur fond clair",
+    logoOnDark: "Sur fond sombre",
+    invoiceFile: "Coordonnées de facturation en fichier",
     legalName: "Nom",
     legalAddress: "Adresse",
     legalAccountPln: "Compte, PLN",
     legalAccountEur: "Compte, EUR",
-    copyFieldAria: "Copier : {field}",
-    allChannels: "Tous les canaux de contact",
-    mediaContact: "Journalistes :",
-    mailSubjectBooking: "Une invitation — VoctEnsemble",
     mailSubjectPack: "Dossier de presse — VoctEnsemble",
     mailSubjectMedia: "Demande presse — VoctEnsemble",
+    mailSubjectBroadcast: "Matériel radio et télévision — VoctEnsemble",
   },
 };
