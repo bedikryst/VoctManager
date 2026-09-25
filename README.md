@@ -16,7 +16,7 @@ I co-founded the foundation behind the ensemble and I'm the only developer on th
 
 | Conductor dashboard | AI score review |
 |:---:|:---:|
-| <img src="docs/assets/admin-dashboard.png" width="420" alt="Admin dashboard showing projects, rehearsals and pending actions"/> | <img src="docs/assets/score-compiler-review.png" width="420" alt="Review screen with per-field provenance chips and confidence scores next to the source PDF"/> |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/admin-dashboard-dark.png"><img src="docs/assets/admin-dashboard-light.png" width="420" alt="Conductor dashboard with the next rehearsal, the upcoming concert and the voice balance of the cast"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/score-compiler-review-dark.png"><img src="docs/assets/score-compiler-review-light.png" width="420" alt="Review screen with the source PDF next to the extracted fields, each marked with its provenance"></picture> |
 
 ---
 
@@ -38,6 +38,8 @@ He ran the end-of-August concert through the app himself, and the singers used i
 - **Donations** through Axepta BNP Paribas, with MAC signature checks and reconciliation in Celery.
 - iCal feeds, light and dark themes, four roles (admin, manager, artist, crew) enforced by the API.
 
+<p align="center"><img src="docs/assets/annotations.gif" width="380" alt="On the music stand the conductor stamps a crescendo, opens the mark and moves it from the choir's layer to the rehearsal leader's"></p>
+
 ## Score pipeline
 
 Upload a PDF score and a few minutes later the archive has a catalogued work: the composer matched to MusicBrainz and Wikidata, movements, the sung text, IPA line by line and singing translations. The conductor reviews and corrects it. The programme note is generated only after that, from the corrected record.
@@ -55,7 +57,7 @@ upload PDF
   → programme note written by Opus 5, on request, from the reviewed record
 ```
 
-Every field that came from a model or an external API stores where it came from (model, prompt version, source, confidence, timestamp). The review screen shows a chip on each field: `AI · 95%`, `MusicBrainz`, or `Verified` once someone has edited it. Canonical IDs come only from MusicBrainz or Wikidata.
+Every field that came from a model or an external API stores where it came from (model, prompt version, source, confidence, timestamp). The review screen marks each field with a coloured dot for how far it can be trusted: checked by hand, matched in MusicBrainz or Wikidata, or read by the model and not checked yet. Clicking the dot on a field that is already right confirms it without retyping. The model's own confidence isn't shown, because it came back at about 95% whether the field was right or wrong. Canonical IDs come only from MusicBrainz or Wikidata.
 
 Retries depend on whether the failed call was billed ([`ai_client.py`](backend/archive/infrastructure/ai_client.py)):
 
@@ -67,7 +69,9 @@ Retries depend on whether the failed call was billed ([`ai_client.py`](backend/a
 
 An ingest costs $0.04–0.20. A score sung entirely in Polish is at the low end, since it needs no IPA or translation. There are three spend caps: per run, per edition over its lifetime, and a daily budget for the whole organisation that trips a circuit breaker. A PDF that has already been processed is recognised by its SHA-256 and never reaches the model. The PDF is sent with prompt caching, so a retry after a truncation reads it at the cache rate.
 
-<img src="docs/assets/score-compiler-upload.png" width="620" alt="Upload screen streaming pipeline progress over Server-Sent Events"/>
+<img src="docs/assets/score-ingestion.gif" width="720" alt="A PDF is uploaded, the pipeline reports its progress live, and the review screen opens on the catalogued piece">
+
+<sub>Recorded from a real run; the pipeline's 51 seconds are shown in three. Score: Giovanni Priuli, <i>Ave dulcissima Maria</i>, engraved by the <a href="https://www.mutopiaproject.org/">Mutopia Project</a> (CC BY-SA 3.0). The music stand above shows Mozart's <i>Ave verum corpus</i> in Carl Reinecke's arrangement, also from Mutopia (CC BY 4.0).</sub>
 
 Details: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion-pipeline.md).
 
@@ -76,6 +80,10 @@ Details: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion-pip
 The conductor lists the pieces for a rehearsal in order. Each row can have a length in minutes, a note ("from bar 40, first read") and the voice lines it doesn't need. A sectional is defined by voice letters (S, A, T, B), so a singer added to the cast later is called automatically. From the plan, every singer gets their own window, for example "your part 19:00–20:15", so nobody sits through pieces they don't sing. That was the conductor's request. He called it respect for people's time.
 
 The plan reaches the choir only when he sends it, not on every edit. After the rehearsal he ticks off what was covered, and a grid of pieces by rehearsals shows how often each piece has been worked on. He can hand a rehearsal to an assistant with specific permissions: taking attendance, marking the choir's scores, opening materials.
+
+| Editing the plan | What a tenor sees |
+|:---:|:---:|
+| <img src="docs/assets/rehearsal-plan.gif" width="560" alt="The conductor drags a piece up the rehearsal plan and lengthens another, then opens a tenor's view of the week"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/rehearsal-singer-dark.png"><img src="docs/assets/rehearsal-singer-light.png" width="240" alt="A tenor's rehearsal page on a phone: his part runs 19:00–21:00, the first piece is marked as not needing his voice"></picture> |
 
 ## Finance
 
@@ -86,6 +94,8 @@ Budgets, fees, expenses and grants for each project, in one ledger approved by t
 - Contract numbers come from a counter per year and contract type, locked with `select_for_update()` inside the issuing transaction.
 - Grant money is allocated to budget lines and individual costs. Own-contribution and administration limits are checked per grant agreement, and the plan exports as a cost sheet for grant applications.
 - Singers see no amounts in the app, including their own.
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/funding-grant-dark.png"><img src="docs/assets/funding-grant-light.png" width="720" alt="A grant's page: the amount awarded, charged, received and left, the costs charged to it across projects, and the terms of the agreement"></picture>
 
 ## Some decisions
 
