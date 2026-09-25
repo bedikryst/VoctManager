@@ -31,6 +31,7 @@ Koncert z końca sierpnia poprowadził przez aplikację już sam, a chórzyści 
 - **Obsada.** Przeciąganiem, z podziałem na sekcje, prowadzącymi sekcji i kolejnością miejsc. Instrumentaliści mają konta i partie tak samo jak śpiewacy.
 - **Plany prób.** Kolejność utworów na każdą próbę i osobne okno czasowe dla każdego śpiewaka. [Więcej niżej](#plan-próby).
 - **Cyfrowy pulpit.** Czytnik PDF na tablet: kolejne strony wczytane z wyprzedzeniem, pedał Bluetooth, blokada wygaszania ekranu, zoom szczypnięciem. Śpiewacy i dyrygent mogą nanosić na nuty oddechy, dynamikę, widełki, fermaty i odręczne notatki (rysik rysuje, palec przewija). Znaki leżą na czterech warstwach: cały chór, prowadzący próbę, zarząd i prywatna warstwa każdego śpiewaka, której nie widzą nawet managerowie. Pilnuje tego serwer.
+- **Ścieżki do ćwiczenia.** Każda linia głosu ma osobne nagranie, a dyrygent może dodać nagranie tempo giusto, czyli swoje wykonanie całego utworu. Śpiewak słucha całego chóru, samego swojego głosu albo wszystkich poza sobą, w tempie 50, 75 albo 100%, z pętlą A/B i kamertonem do dźwięku początkowego.
 - **Śpiewniki.** Gotowy do druku skoroszyt z repertuaru projektu: strona tytułowa, spis treści, karta tytułowa przed każdym utworem, ciągła numeracja stron, zakładki PDF, opcjonalnie układ do druku dwustronnego.
 - **Nuty licencjonowane.** Każde wydanie ma status prawnoautorski, a niesklasyfikowane traktujemy jak chronione. Chronione nuty zostają w aplikacji i dostają znak wodny generowany na serwerze dla każdego odbiorcy: numer egzemplarza, imię i nazwisko, koncert, data. Znak nie zawiera adresu e-mail, bo te kartki się drukuje i zostawia na pulpitach. Każde pobranie trafia do logu, a przy składaniu śpiewnika system ostrzega, gdy egzemplarzy ma być więcej, niż zespół kupił.
 - **Finanse.** Budżety, honoraria, wydatki i granty projektów. [Więcej niżej](#finanse).
@@ -38,7 +39,9 @@ Koncert z końca sierpnia poprowadził przez aplikację już sam, a chórzyści 
 - **Darowizny** przez Axepta BNP Paribas, z weryfikacją podpisu MAC i uzgadnianiem płatności w Celery.
 - Kalendarze iCal, jasny i ciemny motyw, cztery role (admin, manager, artysta, ekipa) sprawdzane po stronie API.
 
-<p align="center"><img src="docs/assets/annotations.gif" width="380" alt="Na pulpicie dyrygent stawia crescendo, otwiera znak i przenosi go z warstwy chóru na warstwę prowadzącego próbę"></p>
+| Na pulpicie | Ćwiczenie w domu |
+|:---:|:---:|
+| <img src="docs/assets/annotations.gif" width="340" alt="Na pulpicie dyrygent stawia crescendo, otwiera znak i przenosi go z warstwy chóru na warstwę prowadzącego próbę"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/materials-singer-dark.png"><img src="docs/assets/materials-singer-light.png" width="240" alt="Konsola ćwiczeń tenora na telefonie: gra sam jego głos, pozostałe są wyciszone, niżej tempo i pętla"></picture> |
 
 ## Pipeline nut
 
