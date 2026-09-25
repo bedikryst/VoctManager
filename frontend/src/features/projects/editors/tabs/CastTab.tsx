@@ -41,7 +41,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-import type { Project } from "@/shared/types";
+import type { Project, VoiceType } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
 import { isInstrumentalist } from "@/shared/lib/voiceTypes";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
@@ -67,13 +67,19 @@ interface CastTabProps {
 }
 
 /**
- * The second line of a roster row: instrument · range · sight-reading. It used
- * to be two icon-prefixed pills, which put sixty glyphs on a screen whose
+ * The second line of a roster row: profile voice · instrument · range ·
+ * sight-reading. The profile voice is printed only where it differs from the
+ * section heading the row — "Baryton" under a name among the basses — since
+ * repeating "Sopran" under every soprano would say nothing forty times. It
+ * used to be two icon-prefixed pills, which put sixty glyphs on a screen whose
  * content is forty names. A player's line is their instrument alone — range
  * and sight-reading are a singer's facts and are never recorded for them.
  */
 const buildSingerMeta = (
   entry: {
+    voiceType: VoiceType | null;
+    voiceLabel: string;
+    section: VoiceType | null;
     instrument: string | null;
     rangeLabel: string | null;
     sightReading: number | null;
@@ -81,6 +87,9 @@ const buildSingerMeta = (
   t: TFunction,
 ): string | null => {
   const parts = [
+    entry.voiceType && entry.voiceType !== entry.section
+      ? entry.voiceLabel
+      : null,
     entry.instrument,
     entry.rangeLabel,
     entry.sightReading !== null
@@ -455,7 +464,7 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
                 <Caption color="muted">
                   {t(
                     "projects.cast.seat.hint",
-                    "Kolejność w sekcji ustawiasz przeciąganiem — tak samo czytają ją divisi, śpiewnik i wydruki. Miejsce w składzie mówi tylko, na którą linię trafi śpiewak przy automatycznym uzupełnianiu divisi. Gwiazdką oznacz osobę prowadzącą sekcję.",
+                    "Kolejność w sekcji ustawiasz przeciąganiem — tak samo czytają ją divisi, śpiewnik i wydruki. Miejsce w składzie to sekcja śpiewaka w tym koncercie i linia, na którą trafi przy automatycznym uzupełnianiu divisi. Gwiazdką oznacz osobę prowadzącą sekcję.",
                   )}
                 </Caption>
               </div>

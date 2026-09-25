@@ -46,7 +46,7 @@ from archive.models import TrackKind
 from archive.services.voice_scope import requirements_for_edition, tracks_for_edition
 from core.constants import VoiceLine
 from core.greetings import apply_vocative_rule
-from core.voice_labels import collapse_voice_labels, sectional_call_label, voice_type_of_seat
+from core.voice_labels import collapse_voice_labels, section_of_seat, sectional_call_label
 from logistics.address import address_parts
 from logistics.models import Location
 from roster.cast_order import (
@@ -499,7 +499,7 @@ class DocumentGenerator:
         for p in participations:
             # Listed where they stand in this concert, which the line-up seat
             # says before the profile does.
-            vt = voice_type_of_seat(p.artist.voice_type or '', p.default_voice_line)
+            vt = section_of_seat(p.artist.voice_type or '', p.default_voice_line)
             if vt.startswith('S'):
                 groups['Soprany'].append(p.artist)
             elif vt.startswith('A') or vt == 'MEZ':
@@ -1035,7 +1035,7 @@ class DocumentGenerator:
         # The section is the one this concert's line-up seats them in, which
         # is why a baritone seated as `B1` reads "Bass" here and stands with
         # the basses.
-        own_voice = voice_type_of_seat(artist.voice_type, recipient.default_voice_line)
+        own_voice = section_of_seat(artist.voice_type, recipient.default_voice_line)
         section_mates = [
             f'{p.artist.first_name} {p.artist.last_name}'
             for p in sorted(
@@ -1043,7 +1043,7 @@ class DocumentGenerator:
                     p for p in participation_list
                     if p.id != recipient.id
                     and p.status == Participation.Status.CONFIRMED
-                    and voice_type_of_seat(p.artist.voice_type, p.default_voice_line) == own_voice
+                    and section_of_seat(p.artist.voice_type, p.default_voice_line) == own_voice
                 ),
                 key=participation_sort_key,
             )
@@ -1685,8 +1685,9 @@ class DocumentGenerator:
         for participation in sorted(participations, key=participation_sort_key):
             artist = participation.artist
             # The section they stand in for this concert: a baritone seated as
-            # `B1` is listed with the basses (`voice_type_of_seat`).
-            voice_type = voice_type_of_seat(artist.voice_type, participation.default_voice_line)
+            # `B1` — or with no seat at all — is listed with the basses
+            # (`section_of_seat`).
+            voice_type = section_of_seat(artist.voice_type, participation.default_voice_line)
             labels[voice_type] = (
                 artist.get_voice_type_display()
                 if voice_type == artist.voice_type

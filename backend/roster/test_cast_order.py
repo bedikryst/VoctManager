@@ -146,6 +146,36 @@ class CastOrderTests(APITestCase):
             self._sorted_names(), ["Cecylia", "Antos", "Borys", "Zeman"]
         )
 
+    def test_a_baritone_is_arranged_among_the_basses(self) -> None:
+        """One section, one arrangement: a bass dragged above a baritone stays there.
+
+        Sorting by voice type first would file every baritone above every bass
+        whatever the ranks said, and the drag would visibly do nothing. A seat
+        moves the section too — a baritone seated `T2` stands with the tenors.
+        """
+        baritone = Participation.objects.create(
+            artist=self._artist("Szymon", "Baryton", VoiceType.BARITONE),
+            project=self.project, status=Participation.Status.CONFIRMED,
+            default_voice_line=VoiceLine.BASS_1, section_rank=1,
+        )
+        bass = Participation.objects.create(
+            artist=self._artist("Franek", "Zbas", VoiceType.BASS),
+            project=self.project, status=Participation.Status.CONFIRMED,
+            default_voice_line=VoiceLine.BASS_2, section_rank=0,
+        )
+        tenor = Participation.objects.create(
+            artist=self._artist("Tomasz", "Tenor", VoiceType.TENOR),
+            project=self.project, status=Participation.Status.CONFIRMED,
+        )
+        self.assertIsNotNone(baritone.pk and bass.pk and tenor.pk)
+
+        self.assertEqual(self._sorted_names()[-3:], ["Tenor", "Zbas", "Baryton"])
+
+        baritone.default_voice_line = VoiceLine.TENOR_2
+        baritone.section_rank = None
+        baritone.save(update_fields=["default_voice_line", "section_rank"])
+        self.assertEqual(self._sorted_names()[-3:], ["Baryton", "Tenor", "Zbas"])
+
     # ── Writing it ───────────────────────────────────────────────────────
 
     def test_the_endpoint_refuses_someone_from_another_project(self) -> None:

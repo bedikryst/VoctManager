@@ -12,7 +12,7 @@
 import type { VoiceLine, VoiceType } from "@/shared/types";
 
 import { LINE_UP_SEATS } from "./autoCast";
-import { voiceTypeRank } from "./voiceFamilies";
+import { sectionOf, voiceTypeRank } from "./voiceFamilies";
 
 /**
  * Everything the order depends on, and nothing else — so a list of chips and a
@@ -44,9 +44,10 @@ export const seatRank = (seat: VoiceLine | "" | null): number => {
 };
 
 /**
- * The cast in the order a conductor reads it: voice family, then the
- * arrangement they gave that family, then — only where they gave none — the
- * leader, the line-up from the top down, and the surname.
+ * The cast in the order a conductor reads it: section (`sectionOf` — a
+ * baritone stands among the basses, so that is where his rank is compared),
+ * then the arrangement they gave that section, then — only where they gave
+ * none — the leader, the line-up from the top down, and the surname.
  *
  * The arrangement outranks both the star and the seat deliberately: a singer
  * dragged above the marked leader has to stay there, or the gesture would
@@ -57,8 +58,10 @@ export const byCastOrder = (
   left: CastOrderFacts,
   right: CastOrderFacts,
 ): number => {
-  const voiceDelta = voiceTypeRank(left.voiceType) - voiceTypeRank(right.voiceType);
-  if (voiceDelta !== 0) return voiceDelta;
+  const sectionDelta =
+    voiceTypeRank(sectionOf(left.voiceType, left.seat || null)) -
+    voiceTypeRank(sectionOf(right.voiceType, right.seat || null));
+  if (sectionDelta !== 0) return sectionDelta;
 
   // Two comparisons rather than a sentinel: an unarranged singer goes after
   // every arranged one, whatever numbers the arrangement happens to use.

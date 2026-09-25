@@ -153,6 +153,53 @@ export const sectionLettersOfSeat = (
   voiceLine: string | null,
 ): string => sectionLettersOfVoiceLine(voiceLine) || sectionLettersOfVoiceType(voiceType);
 
+/**
+ * The section a singer stands in, named by the voice type that heads it — a
+ * mirror of `section_of_seat` in `core/voice_labels.py`, which the cast order
+ * and every printed list read. A baritone stands with the basses and a
+ * countertenor with the altos; a mezzo has no single home, so an unseated one
+ * keeps a section of her own. A declared seat answers first, so a baritone
+ * seated T2 stands with the tenors. Conductor and players keep their own type.
+ */
+const SECTION_BY_VOICE_TYPE: Partial<Record<VoiceType, VoiceType>> = {
+  SOP: "SOP",
+  MEZ: "MEZ",
+  ALT: "ALT",
+  CT: "ALT",
+  TEN: "TEN",
+  BAR: "BAS",
+  BAS: "BAS",
+};
+const SECTION_BY_FAMILY: Readonly<Record<SectionLetter, VoiceType>> = {
+  S: "SOP",
+  A: "ALT",
+  T: "TEN",
+  B: "BAS",
+};
+const SECTION_BY_STANDALONE_LINE: Readonly<Record<string, VoiceType>> = {
+  MS: "MEZ",
+  CT: "ALT",
+  BAR: "BAS",
+};
+
+export const sectionOf = (
+  voiceType: VoiceType | null,
+  voiceLine: string | null,
+): VoiceType | null => {
+  if (!voiceType) return null;
+  const ownSection = SECTION_BY_VOICE_TYPE[voiceType];
+  if (!ownSection) return voiceType;
+  if (voiceLine) {
+    const family = voiceFamilyOf(voiceLine);
+    if (family === "S" || family === "A" || family === "T" || family === "B") {
+      return SECTION_BY_FAMILY[family];
+    }
+    const standalone = SECTION_BY_STANDALONE_LINE[voiceLine.toUpperCase()];
+    if (standalone) return standalone;
+  }
+  return ownSection;
+};
+
 /** Whether a seat answering to `seatLetters` is called by `calledSections` ("" = everyone). */
 export const sectionsCallSeat = (calledSections: string, seatLetters: string): boolean =>
   calledSections === "" || [...seatLetters].some((letter) => calledSections.includes(letter));

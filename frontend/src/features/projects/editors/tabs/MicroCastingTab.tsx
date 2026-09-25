@@ -49,6 +49,7 @@ import { useSoloAssignments } from "../hooks/useSoloAssignments";
 import { PROJECT_STATUS } from "../../constants/projectDomain";
 import { byCastOrder } from "../../lib/castOrder";
 import { soloCoverage } from "../../lib/soloAssignments";
+import { sectionOf } from "../../lib/voiceFamilies";
 import {
   VOICE_FAMILY_ORDER,
   voiceFamilyOf,
@@ -385,10 +386,14 @@ export const MicroCastingTab = ({
       "Głos nieokreślony",
     );
 
-    // `members` already arrives in the order the Cast tab arranged it, so a
-    // sequential walk is the whole grouping.
+    // `members` already arrives in the order the Cast tab arranged it — section
+    // first — so a sequential walk over the SAME key is the whole grouping. The
+    // key has to be the section that order sorts by: a baritone arranged among
+    // the basses would split a voice-type walk into Bas / Baryton / Bas. The
+    // chip still names each singer's own voice.
     const groups = visible.reduce<PoolGroup[]>((grouped, member) => {
-      const key = member.voiceType ?? "UNKNOWN";
+      const section = sectionOf(member.voiceType, member.seat);
+      const key = section ?? "UNKNOWN";
       const last = grouped[grouped.length - 1];
       if (last && last.key === key) {
         last.members.push(member);
@@ -396,7 +401,9 @@ export const MicroCastingTab = ({
       }
       grouped.push({
         key,
-        label: member.voiceLabel || unknownVoice,
+        label: section
+          ? t(`dashboard.layout.roles.${section}`, section)
+          : unknownVoice,
         members: [member],
       });
       return grouped;

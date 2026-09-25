@@ -4376,7 +4376,7 @@
       "seat": {
         "aria": "Place dans l'effectif : {{name}}",
         "clear": "D'après le type de voix",
-        "hint": "L'ordre du pupitre se règle en faisant glisser — le divisi, le recueil et les impressions le lisent de la même façon. La place dans l'effectif indique seulement la ligne qu'un chanteur prend lorsque le divisi d'une pièce est rempli automatiquement. L'étoile désigne qui dirige le pupitre.",
+        "hint": "L'ordre du pupitre se règle en faisant glisser — le divisi, le recueil et les impressions le lisent de la même façon. La place dans l'effectif est le pupitre du chanteur pour ce concert et la ligne qu'il prend lorsque le divisi d'une pièce est rempli automatiquement. L'étoile désigne qui dirige le pupitre.",
         "placeholder": "—"
       },
       "sections": {
