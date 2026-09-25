@@ -419,13 +419,16 @@ export interface PressChrome {
   readonly copyFieldAria: string;
   /** Where the one printed address sends a reader for the others. */
   readonly allChannels: string;
+  /** The label before the journalists' address in the head, under the organisers' line. */
+  readonly mediaContact: string;
   /**
-   * Subject lines of the two mails this page opens. They are chrome rather than copy because a
+   * Subject lines of the mails this page opens. They are chrome rather than copy because a
    * reader never sees them before sending: nobody reviews a `mailto:`, and one missing in French
    * would send an untitled mail rather than a French one.
    */
   readonly mailSubjectBooking: string;
   readonly mailSubjectPack: string;
+  readonly mailSubjectMedia: string;
 }
 
 export const PRESS_CHROME: Record<Locale, PressChrome> = {
@@ -451,8 +454,10 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     legalAccountEur: "Konto EUR",
     copyFieldAria: "Skopiuj: {field}",
     allChannels: "Wszystkie kanały kontaktu",
+    mediaContact: "Dziennikarze:",
     mailSubjectBooking: "Zaproszenie — VoctEnsemble",
     mailSubjectPack: "Materiały prasowe — VoctEnsemble",
+    mailSubjectMedia: "Pytanie od mediów — VoctEnsemble",
   },
   en: {
     headAria: "VoctEnsemble press kit",
@@ -476,8 +481,10 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     legalAccountEur: "Account, EUR",
     copyFieldAria: "Copy: {field}",
     allChannels: "All contact channels",
+    mediaContact: "Journalists:",
     mailSubjectBooking: "An invitation — VoctEnsemble",
     mailSubjectPack: "Press materials — VoctEnsemble",
+    mailSubjectMedia: "Media enquiry — VoctEnsemble",
   },
   fr: {
     headAria: "Dossier de presse VoctEnsemble",
@@ -501,7 +508,9 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     legalAccountEur: "Compte, EUR",
     copyFieldAria: "Copier : {field}",
     allChannels: "Tous les canaux de contact",
+    mediaContact: "Journalistes :",
     mailSubjectBooking: "Une invitation — VoctEnsemble",
     mailSubjectPack: "Dossier de presse — VoctEnsemble",
+    mailSubjectMedia: "Demande presse — VoctEnsemble",
   },
 };

@@ -3772,37 +3772,6 @@
     "title": "Wiadomości"
   },
   "nav": {
-    "actions": {
-      "donate": "Wesprzyj Nas"
-    },
-    "aria": {
-      "accessPanel": "Dostęp do Panelu Klienta",
-      "openMenu": "Otwórz Menu Nawigacji"
-    },
-    "overlay": {
-      "actions": {
-        "close": "Zamknij menu"
-      },
-      "aria": {
-        "mainMenu": "Główne Menu Nawigacji",
-        "primaryLinks": "Główna Nawigacja"
-      },
-      "links": {
-        "about": "O nas",
-        "foundation": "Fundacja",
-        "home": "Strona główna",
-        "repertoire": "Repertuar",
-        "support": "Wsparcie"
-      },
-      "sections": {
-        "community": "Społeczność",
-        "contact": "Biurom / Kontakt"
-      },
-      "status": {
-        "active": "Status: Aktywna",
-        "location": "Kraków, PL — Fundacja VoctEnsemble"
-      }
-    },
     "settings": "Ustawienia",
     "sheet": {
       "accessibility_label": "Rozwinięta nawigacja mobilna"
@@ -5848,6 +5817,11 @@
         "step_2": "Wybierz „Do ekranu początkowego” — bywa niżej na liście, przewiń arkusz",
         "step_3": "Potwierdź — ikona pojawi się na ekranie początkowym",
         "title": "Dodaj do ekranu początkowego"
+      },
+      "colophon": {
+        "copyright": "© {{year}} Fundacja „VoctFoundation”",
+        "credit": "Projekt i wykonanie: Krystian Bugalski",
+        "version": "VoctManager · wersja {{build}}"
       },
       "in_app": {
         "desc": "Ta strona działa w okienku wbudowanym w inną aplikację (np. Messenger, Gmail). Taka przeglądarka nie potrafi dodać aplikacji do ekranu początkowego.",

@@ -67,6 +67,8 @@ export interface Foundation {
     readonly booking: string;
     readonly general: string;
     readonly patronage: string;
+    /** Journalists. The foundation's own domain, as printed on its press releases. */
+    readonly press: string;
     readonly director: string;
   };
   readonly site: string;
@@ -112,6 +114,7 @@ export const FOUNDATION: Foundation = {
     booking: "booking@voctensemble.com",
     general: "kontakt@voctensemble.com",
     patronage: "patronat@voctensemble.com",
+    press: "press@voctfoundation.com",
     director: "florent.de.bazelaire@voctensemble.com",
   },
   site: "https://voctensemble.com",
