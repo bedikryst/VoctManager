@@ -1,0 +1,13 @@
+{
+  "name": "voctmanager-readme-media",
+  "private": true,
+  "description": "Scripted screenshots and GIF takes of the dev panel for the README and portfolio",
+  "type": "module",
+  "scripts": {
+    "shots": "node shots.mjs",
+    "gifs": "node gifs.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "^1.60.0"
+  }
+}

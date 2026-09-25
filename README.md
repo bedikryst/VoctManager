@@ -16,7 +16,7 @@ I co-founded the foundation behind the ensemble and I'm the only developer on th
 
 | Conductor dashboard | AI score review |
 |:---:|:---:|
-| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/admin-dashboard-dark.png"><img src="docs/assets/admin-dashboard-light.png" width="420" alt="Conductor dashboard with the next rehearsal, the upcoming concert and the voice balance of the cast"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/score-compiler-review-dark.png"><img src="docs/assets/score-compiler-review-light.png" width="420" alt="Review screen with the source PDF next to the extracted fields, each marked with its provenance"></picture> |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/admin-dashboard-en-dark.png"><img src="docs/assets/admin-dashboard-en-light.png" width="420" alt="Conductor dashboard with the next rehearsal, the upcoming concert and the voice balance of the cast"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/score-compiler-review-en-dark.png"><img src="docs/assets/score-compiler-review-en-light.png" width="420" alt="Review screen with the source PDF next to the extracted fields, each marked with its provenance"></picture> |
 
 ---
 
@@ -31,6 +31,7 @@ He ran the end-of-August concert through the app himself, and the singers used i
 - **Casting.** Drag and drop, grouped by section, with section leaders and seat order. Instrumentalists get accounts and parts the same way singers do.
 - **Rehearsal plans.** The running order for each rehearsal, with a personal time window for every singer. [More below](#rehearsal-plans).
 - **Digital music stand.** A PDF reader for tablets: prefetched page turns, Bluetooth pedal support, screen wake lock, pinch zoom. Singers and the conductor can mark up the score with breath marks, dynamics, hairpins, fermatas and freehand ink (a stylus draws, a finger scrolls). Marks live on four layers: the whole choir, the rehearsal leader, the management, and a private layer for each singer that managers can't read either. This is enforced on the server.
+- **Practice tracks.** Every voice line has its own recording, and the conductor can add a tempo giusto take, his own reading of the whole piece. A singer plays the full choir, their line alone, or everyone except themselves, at half, three-quarter or full speed, with an A/B loop and a pitch pipe for the starting note.
 - **Score books.** A print-ready binder built from a project's repertoire: title page, table of contents, a title card for each piece, continuous page numbers, PDF bookmarks, optional duplex layout.
 - **Licensed scores.** Every edition has a copyright status, and unclassified ones count as protected. Protected scores stay inside the app and get a per-recipient watermark rendered on the server: copy number, name, concert, date. It leaves out the email address, because these pages get printed and left on music stands. Every download is logged, and the score-book builder warns when a licensed edition would be printed for more singers than the ensemble has copies.
 - **Finance.** Budgets, fees, expenses and grants per project. [More below](#finance).
@@ -38,7 +39,11 @@ He ran the end-of-August concert through the app himself, and the singers used i
 - **Donations** through Axepta BNP Paribas, with MAC signature checks and reconciliation in Celery.
 - iCal feeds, light and dark themes, four roles (admin, manager, artist, crew) enforced by the API.
 
-<p align="center"><img src="docs/assets/annotations.gif" width="380" alt="On the music stand the conductor stamps a crescendo, opens the mark and moves it from the choir's layer to the rehearsal leader's"></p>
+| On the music stand | Practising at home |
+|:---:|:---:|
+| <img src="docs/assets/annotations.gif" width="340" alt="On the music stand the conductor stamps a crescendo, opens the mark and moves it from the choir's layer to the rehearsal leader's"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/materials-singer-en-dark.png"><img src="docs/assets/materials-singer-en-light.png" width="240" alt="A tenor's practice console on a phone: his own line playing alone, the other voices muted, speed and loop controls below"></picture> |
+
+<sub>The stills show the English interface over the ensemble's own data, which is in Polish. The animations were recorded in the Polish interface.</sub>
 
 ## Score pipeline
 
@@ -83,7 +88,7 @@ The plan reaches the choir only when he sends it, not on every edit. After the r
 
 | Editing the plan | What a tenor sees |
 |:---:|:---:|
-| <img src="docs/assets/rehearsal-plan.gif" width="560" alt="The conductor drags a piece up the rehearsal plan and lengthens another, then opens a tenor's view of the week"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/rehearsal-singer-dark.png"><img src="docs/assets/rehearsal-singer-light.png" width="240" alt="A tenor's rehearsal page on a phone: his part runs 19:00–21:00, the first piece is marked as not needing his voice"></picture> |
+| <img src="docs/assets/rehearsal-plan.gif" width="560" alt="The conductor drags a piece up the rehearsal plan and lengthens another, then opens a tenor's view of the week"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/rehearsal-singer-en-dark.png"><img src="docs/assets/rehearsal-singer-en-light.png" width="240" alt="A tenor's rehearsal page on a phone: his part runs 19:00–21:00, the first piece is marked as not needing his voice"></picture> |
 
 ## Finance
 
@@ -95,7 +100,7 @@ Budgets, fees, expenses and grants for each project, in one ledger approved by t
 - Grant money is allocated to budget lines and individual costs. Own-contribution and administration limits are checked per grant agreement, and the plan exports as a cost sheet for grant applications.
 - Singers see no amounts in the app, including their own.
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/funding-grant-dark.png"><img src="docs/assets/funding-grant-light.png" width="720" alt="A grant's page: the amount awarded, charged, received and left, the costs charged to it across projects, and the terms of the agreement"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/funding-grant-en-dark.png"><img src="docs/assets/funding-grant-en-light.png" width="720" alt="A grant's page: the amount awarded, charged, received and left, the costs charged to it across projects, and the terms of the agreement"></picture>
 
 ## Some decisions
 
