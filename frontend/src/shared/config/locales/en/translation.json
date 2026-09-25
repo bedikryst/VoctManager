@@ -5762,8 +5762,8 @@
         "title": "Add to Home Screen"
       },
       "colophon": {
-        "copyright": "© {{year}} Fundacja VoctFoundation",
         "credit": "Designed and built by Krystian Bugalski",
+        "dedication": "Made for VoctEnsemble",
         "version": "VoctManager · version {{build}}"
       },
       "in_app": {

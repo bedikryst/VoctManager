@@ -7,7 +7,7 @@
  * Chromium / the four Apple routes to the home screen / other browsers). It
  * also carries the appearance (light/dark) switch and lets users hand the app
  * to the ensemble via link, native share sheet, or a scannable QR. Closes with
- * the colophon: the build this device is running, the rights holder, the credit.
+ * the colophon: the build this device is running, the dedication, the credit.
  * @architecture Enterprise SaaS 2026
  * @module features/settings/components/AppTab
  */
@@ -45,10 +45,6 @@ const InstallQrCode = lazy(() =>
 );
 
 const COPIED_RESET_MS = 2000;
-
-// The copyright year is the year this build was published, read off the stamp,
-// so it moves with every deploy instead of rotting as a hardcoded literal.
-const BUILD_YEAR = __APP_BUILD__.slice(0, 4);
 
 const Benefit = ({
   icon: Icon,
@@ -470,13 +466,11 @@ export const AppTab = (): React.JSX.Element => {
             build: __APP_BUILD__,
           })}
         </Caption>
-        {/* The rights holder stays the registered name in every locale: statute
-            §4.1 admits only board-adopted translations of it, and requires the
-            full registered name wherever the foundation acts as a legal party. */}
+        {/* A dedication to the ensemble that uses the app, never an ownership
+            line: who holds the code's rights is settled by agreement with its
+            author, and the legal parties are named in the terms. */}
         <Caption as="p">
-          {t("settings.app.colophon.copyright", "© {{year}} Fundacja VoctFoundation", {
-            year: BUILD_YEAR,
-          })}
+          {t("settings.app.colophon.dedication", "Stworzone dla VoctEnsemble")}
         </Caption>
         <Caption as="p">
           {t(
