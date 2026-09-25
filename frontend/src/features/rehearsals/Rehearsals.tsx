@@ -2,7 +2,7 @@
  * @file Rehearsals.tsx
  * @description Centrum Obecności — the conductor's rehearsal command centre.
  * Composes the cross-project pulse, a context navigator (project + rehearsals),
- * and a switchable workspace: "Odprawa" for taking/reading attendance and
+ * and a switchable workspace: "Lista obecności" for taking/reading attendance and
  * "Frekwencja" for reliability analytics. Scheduling/CRUD lives in the project
  * hub; this surface is purely operational + analytical.
  * @architecture Enterprise SaaS 2026
@@ -71,7 +71,6 @@ export default function Rehearsals(): React.JSX.Element {
     attendanceIndex,
     stats,
     pulse,
-    goToRehearsal,
     isMarkingAll,
     handleMarkAllPresent,
   } = useRehearsalsData();
@@ -134,7 +133,7 @@ export default function Rehearsals(): React.JSX.Element {
   const VIEWS: SegmentedTabItem<RehearsalView>[] = [
     {
       id: "ROLL_CALL",
-      label: t("rehearsals.views.roll_call", "Odprawa"),
+      label: t("rehearsals.views.roll_call", "Lista obecności"),
       Icon: ListChecks,
     },
     {
@@ -168,14 +167,7 @@ export default function Rehearsals(): React.JSX.Element {
           </StaggeredBentoItem>
 
           <StaggeredBentoItem>
-            <RehearsalPulseBar
-              pulse={pulse}
-              nowMs={nowMs}
-              onOpenNext={() =>
-                pulse.next &&
-                goToRehearsal(pulse.next.project.id, pulse.next.rehearsal.id)
-              }
-            />
+            <RehearsalPulseBar pulse={pulse} nowMs={nowMs} />
           </StaggeredBentoItem>
 
           <StaggeredBentoItem className="min-w-0">
@@ -235,7 +227,7 @@ export default function Rehearsals(): React.JSX.Element {
                       selectedProjectId
                         ? t(
                             "rehearsals.empty.pick_rehearsal_desc",
-                            "Wskaż próbę z listy po lewej, aby rozpocząć odprawę i odnotować obecność.",
+                            "Wskaż próbę z listy po lewej, aby odnotować obecność.",
                           )
                         : t(
                             "rehearsals.empty.pick_project_desc",

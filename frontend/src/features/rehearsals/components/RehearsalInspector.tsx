@@ -54,7 +54,12 @@ import { PitchPipe } from "@/shared/ui/instruments/PitchPipe";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 
 import type { Artist, Attendance, Participation, Rehearsal } from "@/shared/types";
-import type { AttendanceTally, VoiceGroup } from "../lib/attendanceStats";
+import {
+  LIVE_BEFORE_HOURS,
+  isRegisterOpen,
+  type AttendanceTally,
+  type VoiceGroup,
+} from "../lib/attendanceStats";
 import { sectionNamesLabel } from "../lib/sectionLabels";
 import {
   ATTENDANCE_STATUS_META,
@@ -231,6 +236,7 @@ export const RehearsalInspector = ({
   );
 
   const rateTone = attendanceRateTone(stats.rate);
+  const registerOpen = isRegisterOpen(rehearsal.date_time);
 
   /** One reading of the tally, shared by the composition bar and its legend. */
   const countOf: Record<(typeof SEGMENTS)[number], number> = {
@@ -247,7 +253,7 @@ export const RehearsalInspector = ({
     { id: "LIST", label: t("rehearsals.inspector.density_list", "Lista"), Icon: List },
     {
       id: "ROLL_CALL",
-      label: t("rehearsals.inspector.density_cards", "Karty odprawy"),
+      label: t("rehearsals.inspector.density_cards", "Karty"),
       Icon: LayoutGrid,
     },
   ];
@@ -447,7 +453,16 @@ export const RehearsalInspector = ({
             variant="primary"
             size="sm"
             onClick={onMarkAllPresent}
-            disabled={isMarkingAll || stats.none === 0}
+            disabled={isMarkingAll || stats.none === 0 || !registerOpen}
+            title={
+              registerOpen
+                ? undefined
+                : t(
+                    "rehearsals.dashboard.bulk_fill_not_yet",
+                    "Dostępne od {{hours}} godz. przed próbą",
+                    { hours: LIVE_BEFORE_HOURS },
+                  )
+            }
             isLoading={isMarkingAll}
             leftIcon={!isMarkingAll ? <CheckCircle2 size={14} /> : undefined}
           >

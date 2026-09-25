@@ -1,7 +1,9 @@
 /**
  * @file ProgramWidget.tsx
  * @description Overview summary of the concert programme — a compact, read-only line
- * list of pieces with their casting status, total runtime in the footer.
+ * list of every piece with its casting status, total runtime in the footer. The whole
+ * programme is listed: a concert is a dozen or two rows, and a click on the card leads
+ * away to the Program tab, so a truncated tail would promise an expansion it cannot give.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/ProgramWidget
  */
@@ -23,8 +25,6 @@ interface ProgramWidgetProps {
   project: Project;
   onEdit?: () => void;
 }
-
-const DISPLAY_LIMIT = 7;
 
 /**
  * The setlist is a worklist, so only an unfinished piece earns colour: a chip
@@ -76,8 +76,6 @@ export function ProgramWidget({
   const { enrichedProgram, formattedDuration, hasDuration } =
     useProgramFulfillment(project);
 
-  const overflow = enrichedProgram.length - DISPLAY_LIMIT;
-
   return (
     <SectionCard
       title={t("projects.program.title", "Program wydarzenia")}
@@ -101,7 +99,7 @@ export function ProgramWidget({
     >
       {enrichedProgram.length > 0 ? (
         <ul className="-my-1 divide-y divide-hairline">
-          {enrichedProgram.slice(0, DISPLAY_LIMIT).map((item, index) => (
+          {enrichedProgram.map((item, index) => (
             <li
               key={item.id}
               className="flex items-center justify-between gap-3 py-1.5"
@@ -132,15 +130,6 @@ export function ProgramWidget({
               <ProgramStatus item={item} />
             </li>
           ))}
-          {overflow > 0 && (
-            <li className="py-1.5 pl-7">
-              <Eyebrow color="muted">
-                {t("projects.program.and_more", "...i {{count}} więcej", {
-                  count: overflow,
-                })}
-              </Eyebrow>
-            </li>
-          )}
         </ul>
       ) : (
         <StatePanel

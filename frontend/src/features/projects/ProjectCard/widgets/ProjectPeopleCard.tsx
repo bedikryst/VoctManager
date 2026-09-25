@@ -141,6 +141,9 @@ export function ProjectPeopleCard({
       participations.flatMap((part, index) => {
         const artist = artistMap.get(String(part.artist));
         if (!artist) return [];
+        // The conductor's seat in the cast carries their fee, and a declined
+        // seat is known to be empty: neither of them sings this concert.
+        if (artist.voice_type === "DIR" || part.status === "DEC") return [];
         return [
           {
             key: String(part.id || `cast-${index}`),

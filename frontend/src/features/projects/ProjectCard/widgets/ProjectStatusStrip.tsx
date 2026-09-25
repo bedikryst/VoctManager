@@ -136,6 +136,16 @@ export const ProjectStatusStrip = ({
     return Math.round((target.getTime() - startOfToday.getTime()) / 86_400_000);
   }, [project.date_time]);
 
+  // The conductor's seat in the cast carries their fee, and a declined seat is
+  // known to be empty: neither is part of the ensemble on stage.
+  const ensembleSize = useMemo(
+    () =>
+      participations.filter(
+        (part) => part.artist_voice_type !== "DIR" && part.status !== "DEC",
+      ).length,
+    [participations],
+  );
+
   const rehearsalsDone = useMemo(
     () => rehearsals.filter((r) => isPastProjectDate(r.date_time)).length,
     [rehearsals],
@@ -227,7 +237,7 @@ export const ProjectStatusStrip = ({
       />
       <StatusTile
         label={t("projects.overview.kpi.ensemble", "Zespół")}
-        value={String(participations.length)}
+        value={String(ensembleSize)}
         unit={t("projects.overview.kpi.artists", "artystów")}
         icon={Users}
         onClick={() => navigate(`${base}/cast`)}

@@ -167,20 +167,6 @@ export const useRehearsalsData = () => {
     return map;
   }, [safeParticipations]);
 
-  /* ── Auto-select a project when the tab content changes ──────────────── */
-  useEffect(() => {
-    if (!selectedProjectId && displayProjects.length > 0) {
-      setSelectedProjectId(String(displayProjects[0].id));
-      return;
-    }
-    if (
-      displayProjects.length > 0 &&
-      !displayProjects.find((p) => String(p.id) === selectedProjectId)
-    ) {
-      setSelectedProjectId(String(displayProjects[0].id));
-    }
-  }, [displayProjects, selectedProjectId]);
-
   const selectedProject = selectedProjectId
     ? (projectMap.get(selectedProjectId) ?? null)
     : null;
@@ -338,6 +324,21 @@ export const useRehearsalsData = () => {
     participationsByProject,
     attendanceIndex,
   ]);
+
+  /* ── Auto-select a project when the tab content changes ──────────────── */
+  // The project of the evening the pulse spotlights, when it is on this tab,
+  // so the headline and the register under it open on the same rehearsal;
+  // otherwise the tab's first project. Waits for the data: picking before the
+  // rehearsals arrive would settle on the first project for good.
+  const spotlightProjectId = pulse.next ? String(pulse.next.project.id) : null;
+  useEffect(() => {
+    if (isLoading || displayProjects.length === 0) return;
+    if (displayProjects.some((p) => String(p.id) === selectedProjectId)) return;
+    const spotlight = displayProjects.find(
+      (p) => String(p.id) === spotlightProjectId,
+    );
+    setSelectedProjectId(String((spotlight ?? displayProjects[0]).id));
+  }, [isLoading, displayProjects, selectedProjectId, spotlightProjectId]);
 
   /* ── Navigation: jump straight to a rehearsal from the pulse ─────────── */
   const goToRehearsal = useCallback(

@@ -4,19 +4,27 @@
  * line each singer takes on a piece nobody has cast by hand.
  *
  * One rule, applied in order, and it never guesses:
- *   1. the seat the line-up gives them, when this piece declares that line;
- *   2. otherwise their family's line here — but only when the family has exactly
- *      ONE, the same reading that lets an undivided family print without its
- *      index (`collapseVoiceLabels`);
- *   3. otherwise TUTTI, when the piece declares it and nothing of their family:
+ *   1. the part the piece writes for their own voice type (Ms, Ct, Bar), when
+ *      it writes one — a baritone seated `B1` for the concert still sings the
+ *      baritone part of the one piece that has it;
+ *   2. the seat the line-up gives them, when this piece declares that line —
+ *      the conductor's decision for this concert;
+ *   3. otherwise their family's line here — but only when the family has
+ *      exactly ONE, the same reading that lets an undivided family print
+ *      without its index (`collapseVoiceLabels`). A baritone is a bass wherever
+ *      no baritone part is written, and on a B1/B2 split takes the upper line;
+ *   4. otherwise TUTTI, when the piece declares it and nothing of their family:
  *      a unison setting is sung by everybody.
  * An instrumentalist is outside that ladder: they take ACC when the piece
  * declares an accompaniment and are skipped otherwise — never TUTTI, which is
- * a sung part, and never a family line.
+ * a sung part, and never a family line. A conductor in the cast (the seat that
+ * carries their fee) sings nothing and is never placed.
  * Anyone else is left unplaced. A singer the rule cannot seat is a hole the
  * conductor has to see, not a part quietly written onto a page they will sing
  * from — and the pieces that stop the rule (a divided family, a voice type that
- * sits in two of them) are exactly the ones a musician has to decide.
+ * sits in two of them) are exactly the ones a musician has to decide. Which
+ * basses sing B1 and which B2 is one of them: that depends on who else is in
+ * the section, so it takes a seat.
  *
  * The fill only ever adds: a seat already on the board is never moved, so an
  * automatic pass can extend the conductor's work but never overwrite it.
@@ -83,13 +91,24 @@ export interface AutoCastResult {
 const IMPLICIT_LINES: readonly VoiceLine[] = ["S1", "A1", "T1", "B1"];
 
 /**
+ * The part an arrangement writes for a voice type itself — an S/Ms/A treble
+ * score, a T/Bar/B men's one. It outranks the line-up seat: the seat says where
+ * a singer stands across the concert, and a piece that writes their own voice
+ * a part has said where they stand in it.
+ */
+const OWN_LINE_BY_VOICE_TYPE: Partial<Record<VoiceType, VoiceLine>> = {
+  MEZ: "MS",
+  CT: "CT",
+  BAR: "BAR",
+};
+
+/**
  * Voice type → choral family, for the types where that is a fact and not a
- * decision. A mezzo, countertenor or baritone folds into their own one-line
- * family, so the ladder seats them exactly where an arrangement writes their
- * part (an S/Ms/A treble score, a T/Bar/B men's one) and nowhere else: on an
- * SATB piece they sing S2 *or* A1, A1 *or* T2, T2 *or* B1, and an automatic
- * choice there would print a part nobody agreed to. Those singers are placed
- * by their line-up seat, or by hand.
+ * decision. A baritone is a bass wherever no baritone part is written. A mezzo
+ * or countertenor folds into their own one-line family, so outside a part of
+ * their own they are left unplaced: on an SATB piece they sing S2 *or* A1,
+ * A1 *or* T2, and an automatic choice there would print a part nobody agreed
+ * to. Those singers are placed by their line-up seat, or by hand.
  */
 const FAMILY_BY_VOICE_TYPE: Partial<Record<VoiceType, VoiceFamilyId>> = {
   SOP: "S",
@@ -97,7 +116,7 @@ const FAMILY_BY_VOICE_TYPE: Partial<Record<VoiceType, VoiceFamilyId>> = {
   ALT: "A",
   CT: "CT",
   TEN: "T",
-  BAR: "BAR",
+  BAR: "B",
   BAS: "B",
 };
 
@@ -105,16 +124,32 @@ const FAMILY_BY_VOICE_TYPE: Partial<Record<VoiceType, VoiceFamilyId>> = {
  * The family this singer folds into. A line-up seat answers it outright — except
  * for the standalone roles (SOLO, TUTTI), which belong to no family and must not
  * drag their holder onto another role that happens to be the only one declared.
+ * A baritone seat folds into the basses like the baritone voice type does.
  */
 const familyOf = (member: LineUpMember): VoiceFamilyId | null => {
   if (member.seat) {
     const family = voiceFamilyOf(member.seat);
-    return family === "ROLE" ? null : family;
+    if (family === "ROLE") return null;
+    return family === "BAR" ? "B" : family;
   }
   return member.voiceType
     ? (FAMILY_BY_VOICE_TYPE[member.voiceType] ?? null)
     : null;
 };
+
+/**
+ * Whether this singer is the concert's baritone: seated on the baritone line,
+ * or, with no seat, a baritone by voice type. On a piece that divides its
+ * basses into exactly B1 and B2 and writes no baritone part, that singer takes
+ * B1 — the reading a choral bass split is written for. Only the baritone is
+ * placed this way: a bass may sing either half, depending on who else stands
+ * in the section, so the basses' split stays with their seats.
+ */
+const isBaritone = (member: LineUpMember): boolean =>
+  member.seat ? member.seat === "BAR" : member.voiceType === "BAR";
+
+const isExactBassSplit = (ofFamily: readonly VoiceLine[]): boolean =>
+  ofFamily.length === 2 && ofFamily.includes("B1") && ofFamily.includes("B2");
 
 /** The line one singer takes on a piece declaring `declaredLines`, or null. */
 export const resolveAutoSeat = (
@@ -131,8 +166,14 @@ export const resolveAutoSeat = (
   if (isInstrumentalist(member.voiceType)) {
     return declaredLines.includes("ACC") ? "ACC" : null;
   }
+  if (member.voiceType === "DIR") return null;
 
   const lines = declaredLines.length > 0 ? declaredLines : IMPLICIT_LINES;
+
+  const ownLine = member.voiceType
+    ? OWN_LINE_BY_VOICE_TYPE[member.voiceType]
+    : undefined;
+  if (ownLine && lines.includes(ownLine)) return ownLine;
 
   if (member.seat && lines.includes(member.seat)) return member.seat;
 
@@ -140,6 +181,9 @@ export const resolveAutoSeat = (
   if (family) {
     const ofFamily = lines.filter((line) => voiceFamilyOf(line) === family);
     if (ofFamily.length === 1) return ofFamily[0];
+    if (family === "B" && isBaritone(member) && isExactBassSplit(ofFamily)) {
+      return "B1";
+    }
     // Divided here, and the line-up did not say which half: the conductor's call.
     if (ofFamily.length > 1) return null;
   }

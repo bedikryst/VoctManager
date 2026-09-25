@@ -252,9 +252,10 @@ function CastRow({
             type, and forty rows repeating that would only bury the seats
             somebody actually chose. A player has no seat to pick: the fill puts
             them on the accompaniment line wherever a piece declares one, so the
-            column stays blank on their row rather than offering choral lines. */}
+            column stays blank on their row rather than offering choral lines.
+            Nor does the conductor, whose seat in the cast only carries a fee. */}
         <div className="w-28 shrink-0 sm:w-36">
-          {!isInstrumentalist(entry.voiceType) && (
+          {!isInstrumentalist(entry.voiceType) && entry.voiceType !== "DIR" && (
             <Select
               size="sm"
               options={seatOptions}
