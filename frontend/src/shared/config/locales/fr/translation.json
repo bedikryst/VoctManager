@@ -3753,37 +3753,6 @@
     "title": "Messages"
   },
   "nav": {
-    "actions": {
-      "donate": "Soutenez-nous"
-    },
-    "aria": {
-      "accessPanel": "Accès au panneau client",
-      "openMenu": "Ouvrir le menu de navigation"
-    },
-    "overlay": {
-      "actions": {
-        "close": "Fermer le menu"
-      },
-      "aria": {
-        "mainMenu": "Menu de navigation principal",
-        "primaryLinks": "Navigation principale"
-      },
-      "links": {
-        "about": "À propos",
-        "foundation": "Fondation",
-        "home": "Accueil",
-        "repertoire": "Répertoire",
-        "support": "Soutien"
-      },
-      "sections": {
-        "community": "Communauté",
-        "contact": "Bureaux / Contact"
-      },
-      "status": {
-        "active": "Statut : Actif",
-        "location": "Cracovie, PL — Fondation VoctEnsemble"
-      }
-    },
     "settings": "Paramètres",
     "sheet": {
       "accessibility_label": "Navigation mobile étendue"
@@ -5802,6 +5771,11 @@
         "step_2": "Choisissez « Sur l'écran d'accueil » — l'entrée peut se trouver plus bas, faites défiler",
         "step_3": "Confirmez — l'icône apparaît sur votre écran d'accueil",
         "title": "Ajouter à l'écran d'accueil"
+      },
+      "colophon": {
+        "copyright": "© {{year}} Fondation « VoctFoundation »",
+        "credit": "Conception et réalisation : Krystian Bugalski",
+        "version": "VoctManager · version {{build}}"
       },
       "in_app": {
         "desc": "Cette page s'affiche dans la fenêtre intégrée d'une autre application (Messenger, Gmail…). Ce navigateur ne peut pas ajouter d'application à l'écran d'accueil.",

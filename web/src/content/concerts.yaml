@@ -1109,10 +1109,10 @@
   # Booklet documents cities + hours for all three evenings and a venue only for Kraków;
   # Rybnik + Łódź confirmed by the owner (2026-07-17).
   dates:
-    # `admission` is per evening and set only where the answer is on record — Kraków was free
-    # entry; nobody kept the Rybnik/Łódź door, so those two stay unset rather than guess.
-    - { date: "2024-09-08", venue: "Bazylika św. Antoniego, Rybnik", time: "16:30" }
-    - { date: "2024-09-17", venue: "Archikatedra, Łódź", time: "19:00" }
+    # `admission` is per evening. All three were free entry — Kraków from the booklet, Rybnik
+    # and Łódź confirmed by the owner (2026-09-24).
+    - { date: "2024-09-08", venue: "Bazylika św. Antoniego, Rybnik", time: "16:30", admission: free }
+    - { date: "2024-09-17", venue: "Archikatedra, Łódź", time: "19:00", admission: free }
     - {
         date: "2024-11-16",
         venue: "Bazylika NSPJ, ul. Kopernika 26, Kraków",
@@ -2147,13 +2147,16 @@
     caption: 'Fragment koncertu „Aeternam — Epitafium dla Gazy” · VoctEnsemble 2025'
     note: "C. Shaw — and the swallow (Psalm 84) · zapis z nawy · dźwięk na żywo"
     portrait: true
+  # Both evenings free entry, confirmed by the owner (2026-09-24).
   dates:
     - date: "2025-09-14"
       venue: "Kościół św. Maksymiliana Marii Kolbego (dolny kościół), Mistrzejowice, Kraków"
       time: "18:00"
+      admission: free
     - date: "2025-10-18"
       venue: "Kościół św. Bartłomieja Apostoła, Niedzica"
       time: "18:00"
+      admission: free
   prologue: >-
     Czternasty września 2025, dolny kościół w Mistrzejowicach. Święto Podwyższenia Krzyża
     Świętego, w przeddzień wspomnienia Matki Bożej Bolesnej. Zespół prosi o jedno: żeby wieczór

@@ -3744,37 +3744,6 @@
     "title": "Messages"
   },
   "nav": {
-    "actions": {
-      "donate": "Support Us"
-    },
-    "aria": {
-      "accessPanel": "Access Client Panel",
-      "openMenu": "Open Navigation Menu"
-    },
-    "overlay": {
-      "actions": {
-        "close": "Close menu"
-      },
-      "aria": {
-        "mainMenu": "Main Navigation Menu",
-        "primaryLinks": "Primary Navigation"
-      },
-      "links": {
-        "about": "About Us",
-        "foundation": "Foundation",
-        "home": "Home",
-        "repertoire": "Repertoire",
-        "support": "Support"
-      },
-      "sections": {
-        "community": "Community",
-        "contact": "Offices / Contact"
-      },
-      "status": {
-        "active": "Status: Active",
-        "location": "Krakow, PL — VoctEnsemble Foundation"
-      }
-    },
     "settings": "Settings",
     "sheet": {
       "accessibility_label": "Expanded mobile navigation"
@@ -5791,6 +5760,11 @@
         "step_2": "Choose “Add to Home Screen” — it can sit further down, so scroll the sheet",
         "step_3": "Confirm — the icon appears on your home screen",
         "title": "Add to Home Screen"
+      },
+      "colophon": {
+        "copyright": "© {{year}} “VoctFoundation” Foundation",
+        "credit": "Designed and built by Krystian Bugalski",
+        "version": "VoctManager · version {{build}}"
       },
       "in_app": {
         "desc": "This page is running inside another app's built-in browser window (Messenger, Gmail…). That browser cannot add apps to the home screen.",

@@ -190,6 +190,10 @@ const jsonLd = {
             {FOUNDATION.mail.booking}
           </a>
         </p>
+        <p class="press-head-contact">
+          {t.mediaContact}{" "}
+          <a href={mailto(FOUNDATION.mail.press, t.mailSubjectMedia)}>{FOUNDATION.mail.press}</a>
+        </p>
       </div>
     </section>
 
@@ -502,6 +506,7 @@ const jsonLd = {
   .press-head-contact { margin: 0; max-width: 56ch; color: rgba(244, 241, 233, 0.72); font-size: clamp(15px, 1.1vw, 17px); line-height: 1.6; }
   .press-head-contact a { color: var(--candle); border-bottom: 1px solid rgba(198, 164, 91, .4); padding-bottom: 1px; transition: border-color .35s var(--ease); }
   .press-head-contact a:hover { border-color: var(--candle); }
+  .press-head-contact + .press-head-contact { margin-top: .4em; }
 
   /* ── BIOGRAM ─────────────────────────────────────────────────────── */
   .press-bio { padding: clamp(88px, 11vw, 150px) max(28px, 5vw); background: var(--paper-soft); }

@@ -6,7 +6,8 @@
  * best-effort by nature: it resolves every platform case (installed / one-tap
  * Chromium / the four Apple routes to the home screen / other browsers). It
  * also carries the appearance (light/dark) switch and lets users hand the app
- * to the ensemble via link, native share sheet, or a scannable QR.
+ * to the ensemble via link, native share sheet, or a scannable QR. Closes with
+ * the colophon: the build this device is running, the rights holder, the credit.
  * @architecture Enterprise SaaS 2026
  * @module features/settings/components/AppTab
  */
@@ -44,6 +45,10 @@ const InstallQrCode = lazy(() =>
 );
 
 const COPIED_RESET_MS = 2000;
+
+// The copyright year is the year this build was published, read off the stamp,
+// so it moves with every deploy instead of rotting as a hardcoded literal.
+const BUILD_YEAR = __APP_BUILD__.slice(0, 4);
 
 const Benefit = ({
   icon: Icon,
@@ -454,6 +459,29 @@ export const AppTab = (): React.JSX.Element => {
           </div>
         </div>
       </GlassCard>
+
+      {/* ── COLOPHON ────────────────────────────────── */}
+      {/* The version is the same stamp every feedback report carries, so a
+          member reading it out names exactly the build the triage queue sees —
+          and a service worker still serving an old shell shows as an old stamp. */}
+      <footer className="space-y-1 pt-2 text-center">
+        <Caption as="p">
+          {t("settings.app.colophon.version", "VoctManager · wersja {{build}}", {
+            build: __APP_BUILD__,
+          })}
+        </Caption>
+        <Caption as="p">
+          {t("settings.app.colophon.copyright", "© {{year}} Fundacja „VoctFoundation”", {
+            year: BUILD_YEAR,
+          })}
+        </Caption>
+        <Caption as="p">
+          {t(
+            "settings.app.colophon.credit",
+            "Projekt i wykonanie: Krystian Bugalski",
+          )}
+        </Caption>
+      </footer>
     </div>
   );
 };
