@@ -274,6 +274,13 @@ export const useMicroCasting = (
     );
 
     return projectParticipations
+      // A conductor's seat in the cast carries their fee, not a part: there is
+      // nothing to place them on.
+      .filter(
+        (participation) =>
+          artistDictionary.get(String(participation.artist))?.voice_type !==
+          "DIR",
+      )
       .map((participation) => {
         const artist = artistDictionary.get(String(participation.artist));
         const voiceType = artist?.voice_type ?? null;

@@ -191,13 +191,26 @@ export const groupByVoice = (
 };
 
 /** A rehearsal is "live" within a window around its start (−2h … +3h). */
-const LIVE_BEFORE_MS = 2 * 60 * 60 * 1000;
+export const LIVE_BEFORE_HOURS = 2;
+const LIVE_BEFORE_MS = LIVE_BEFORE_HOURS * 60 * 60 * 1000;
 const LIVE_AFTER_MS = 3 * 60 * 60 * 1000;
 
 export const isRehearsalLive = (dateTimeIso: string, now = Date.now()): boolean => {
   const start = new Date(dateTimeIso).getTime();
   if (Number.isNaN(start)) return false;
   return now >= start - LIVE_BEFORE_MS && now <= start + LIVE_AFTER_MS;
+};
+
+/**
+ * Whether the register may be filled in bulk: from the opening of the live
+ * window on, and for ever after. Ticking a whole choir present is a record of
+ * who came, so it has no meaning for an evening still ahead — while a single
+ * excuse entered days in advance does, which is why only the bulk action waits.
+ */
+export const isRegisterOpen = (dateTimeIso: string, now = Date.now()): boolean => {
+  const start = new Date(dateTimeIso).getTime();
+  if (Number.isNaN(start)) return false;
+  return now >= start - LIVE_BEFORE_MS;
 };
 
 export const isPast = (dateTimeIso: string, now = Date.now()): boolean =>

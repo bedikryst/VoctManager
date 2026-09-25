@@ -46,7 +46,7 @@ from archive.models import TrackKind
 from archive.services.voice_scope import requirements_for_edition, tracks_for_edition
 from core.constants import VoiceLine
 from core.greetings import apply_vocative_rule
-from core.voice_labels import collapse_voice_labels, sectional_call_label
+from core.voice_labels import collapse_voice_labels, sectional_call_label, voice_type_of_seat
 from logistics.address import address_parts
 from logistics.models import Location
 from roster.cast_order import (
@@ -497,7 +497,9 @@ class DocumentGenerator:
         }
 
         for p in participations:
-            vt = p.artist.voice_type or ''
+            # Listed where they stand in this concert, which the line-up seat
+            # says before the profile does.
+            vt = voice_type_of_seat(p.artist.voice_type or '', p.default_voice_line)
             if vt.startswith('S'):
                 groups['Soprany'].append(p.artist)
             elif vt.startswith('A') or vt == 'MEZ':
@@ -1030,6 +1032,10 @@ class DocumentGenerator:
         #
         # A player has no section to stand in: two organists on one programme
         # are not each other's neighbours, so the list stays empty for them.
+        # The section is the one this concert's line-up seats them in, which
+        # is why a baritone seated as `B1` reads "Bass" here and stands with
+        # the basses.
+        own_voice = voice_type_of_seat(artist.voice_type, recipient.default_voice_line)
         section_mates = [
             f'{p.artist.first_name} {p.artist.last_name}'
             for p in sorted(
@@ -1037,7 +1043,7 @@ class DocumentGenerator:
                     p for p in participation_list
                     if p.id != recipient.id
                     and p.status == Participation.Status.CONFIRMED
-                    and p.artist.voice_type == artist.voice_type
+                    and voice_type_of_seat(p.artist.voice_type, p.default_voice_line) == own_voice
                 ),
                 key=participation_sort_key,
             )
@@ -1046,7 +1052,11 @@ class DocumentGenerator:
 
         return {
             'full_name': f'{artist.first_name} {artist.last_name}',
-            'voice_label': artist.role_label,
+            'voice_label': (
+                artist.role_label
+                if own_voice == artist.voice_type
+                else str(VoiceType(own_voice).label)
+            ),
             'status_label': recipient.get_status_display(),
             'is_confirmed': recipient.status == Participation.Status.CONFIRMED,
             'assignments': assignments,
@@ -1674,8 +1684,14 @@ class DocumentGenerator:
         # arranged still prints alphabetically, exactly as it always did.
         for participation in sorted(participations, key=participation_sort_key):
             artist = participation.artist
-            voice_type = artist.voice_type
-            labels[voice_type] = artist.get_voice_type_display()
+            # The section they stand in for this concert: a baritone seated as
+            # `B1` is listed with the basses (`voice_type_of_seat`).
+            voice_type = voice_type_of_seat(artist.voice_type, participation.default_voice_line)
+            labels[voice_type] = (
+                artist.get_voice_type_display()
+                if voice_type == artist.voice_type
+                else str(VoiceType(voice_type).label)
+            )
             name = f'{artist.first_name} {artist.last_name}'
             # One "Instrumentalists" section; what each of them plays goes on
             # their own line, since the heading cannot say it for all of them.

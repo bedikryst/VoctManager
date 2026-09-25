@@ -68,7 +68,7 @@ export const PieceDivisiRoster = ({
       </div>
 
       {castings.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 max-h-48 overflow-y-auto no-scrollbar">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
           {Object.entries(divisiGroups).map(([label, groupCastings]) => (
             <div key={label} className="space-y-1.5">
               <Eyebrow color="muted">{label}</Eyebrow>

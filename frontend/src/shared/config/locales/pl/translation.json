@@ -3189,7 +3189,7 @@
       },
       "attendance_window_closed": {
         "title": "Ta próba już się odbyła",
-        "detail": "Obecność na minionej próbie jest zapisem odprawy. Poproś menedżera, jeśli trzeba ją poprawić."
+        "detail": "Obecność na minionej próbie jest już na liście obecności. Poproś menedżera, jeśli trzeba ją poprawić."
       }
     },
     "form": {
@@ -5340,6 +5340,7 @@
       "bulk_fill_few": "Uzupełnij {{count}} braki jako 'Obecni'",
       "bulk_fill_many": "Uzupełnij {{count}} braków jako 'Obecni'",
       "bulk_fill_other": "Uzupełnij {{count}} braków jako 'Obecni'",
+      "bulk_fill_not_yet": "Dostępne od {{hours}} godz. przed próbą",
       "no_location": "Brak lok.",
       "no_projects": "Brak projektów w tej zakładce.",
       "optional": "Opcjonalna",
@@ -5352,7 +5353,7 @@
     "empty": {
       "pick_project_desc": "Wybierz projekt z listy po lewej, aby zobaczyć jego próby.",
       "pick_project_title": "Wybierz projekt",
-      "pick_rehearsal_desc": "Wskaż próbę z listy po lewej, aby rozpocząć odprawę i odnotować obecność.",
+      "pick_rehearsal_desc": "Wskaż próbę z listy po lewej, aby odnotować obecność.",
       "pick_rehearsal_title": "Wybierz próbę"
     },
     "error": {
@@ -5364,7 +5365,7 @@
       "all_marked_title": "Wszyscy oznaczeni",
       "composition": "Skład obecności",
       "density": "Widok listy",
-      "density_cards": "Karty odprawy",
+      "density_cards": "Karty",
       "density_list": "Lista",
       "led_by": "Prowadzi: {{name}}",
       "no_invited_desc": "Na tej próbie nie ma ani jednego śpiewaka. Sprawdź obsadę projektu.",
@@ -5413,8 +5414,6 @@
       "in_minutes_many": "Za {{count}} min",
       "in_minutes_other": "Za {{count}} min",
       "now": "Trwa teraz",
-      "open_live": "Prowadź odprawę",
-      "open_next": "Otwórz odprawę",
       "title": "Puls prób",
       "to_complete": "do uzupełnienia",
       "today": "dziś",
@@ -5488,7 +5487,7 @@
     "views": {
       "label": "Widok",
       "reliability": "Frekwencja",
-      "roll_call": "Odprawa"
+      "roll_call": "Lista obecności"
     },
     "voices": {
       "altos": "Alty",

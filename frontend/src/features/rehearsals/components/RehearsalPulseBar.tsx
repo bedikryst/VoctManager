@@ -3,8 +3,9 @@
  * @description The conductor's "what needs me right now" strip. Spotlights the
  * next (or running) rehearsal across every active project and, beside the
  * title, the two figures that ask for a decision today: sessions starting
- * today and past sessions whose roll call is still open. One tap on the
- * spotlight jumps the whole workspace to that rehearsal.
+ * today and past sessions whose roll call is still open. It carries no action:
+ * the workspace opens on the spotlit rehearsal, so its register is already the
+ * card below.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/RehearsalPulseBar
  */
@@ -17,7 +18,6 @@ import { Activity, CalendarClock, ClipboardList, Clock, Radio, Sun } from "lucid
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
@@ -29,7 +29,6 @@ interface RehearsalPulseBarProps {
   pulse: RehearsalPulse;
   /** Ticking clock from the workspace, so the countdown ages on screen. */
   nowMs: number;
-  onOpenNext: () => void;
 }
 
 /**
@@ -72,7 +71,7 @@ const StatChip = ({
 );
 
 export const RehearsalPulseBar = React.memo(
-  ({ pulse, nowMs, onOpenNext }: RehearsalPulseBarProps): React.JSX.Element => {
+  ({ pulse, nowMs }: RehearsalPulseBarProps): React.JSX.Element => {
     const { t } = useTranslation();
     const { next } = pulse;
 
@@ -129,7 +128,6 @@ export const RehearsalPulseBar = React.memo(
         title={t("rehearsals.pulse.title", "Puls prób")}
         icon={<Activity size={14} />}
         action={counters}
-        bodyClassName="gap-4 lg:flex-row lg:items-center lg:justify-between"
       >
         <div className="min-w-0 flex-1">
           <Badge
@@ -179,17 +177,6 @@ export const RehearsalPulseBar = React.memo(
             </Text>
           )}
         </div>
-
-        <Button
-          variant="primary"
-          onClick={onOpenNext}
-          leftIcon={<Radio size={15} aria-hidden="true" />}
-          className="shrink-0"
-        >
-          {isRunning
-            ? t("rehearsals.pulse.open_live", "Prowadź odprawę")
-            : t("rehearsals.pulse.open_next", "Otwórz odprawę")}
-        </Button>
       </SectionCard>
     );
   },
