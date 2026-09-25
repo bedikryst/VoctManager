@@ -5225,6 +5225,18 @@
         "instrumentalists": "Instrumentistes",
         "clear_one": "Rétablir : {{label}}",
         "without": "sans {{label}}",
+        "without_family": {
+          "sopranos": "sans sopranos",
+          "mezzos": "sans mezzo-sopranos",
+          "altos": "sans altos",
+          "countertenors": "sans contre-ténors",
+          "tenors": "sans ténors",
+          "baritones": "sans barytons",
+          "basses": "sans basses",
+          "untyped": "sans voix non typées",
+          "special": "sans lignes spéciales"
+        },
+        "without_instrumentalists": "sans instrumentistes",
         "people": "{{count}} pers.",
         "everyone": "Tout le monde",
         "edit": "Modifier",

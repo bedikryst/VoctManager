@@ -36,13 +36,15 @@ src/assets/photos/
 src/assets/videos/
 public/video/
 
-# The downloadable press pack (`npm run press:pack`). Tens of megabytes of photographs that are
-# already out of git for the reason above — the archive is built where the originals are and
-# uploaded to the build host by hand. Its ABSENCE is a supported state, not a broken one: /press
-# looks for it (lib/pressPack) and renders "materials on request" wherever it is missing, which
-# is exactly what is true there. The manifest that says what goes in IS tracked
-# (press-pack/manifest.yaml), and so is the rider it names.
+# The downloadable press material (`npm run press:pack`): crops, previews, PDFs, ZIPs and the
+# index /press reads. Tens of megabytes of photographs that are out of git for the reason above —
+# it is built where the originals are and uploaded to the build host by hand. Its ABSENCE is a
+# supported state, not a broken one: /press looks for it (lib/pressPack) and renders "materials on
+# request" wherever it is missing, which is exactly what is true there. The manifest that says
+# what goes in IS tracked (press-pack/manifest.yaml); the press photo originals it names are not,
+# on the same terms as src/assets/photos/.
 public/press/
+press-pack/photos/
 
 # Local A/B clips for grading decisions (docs/… none — throwaway). Served by `astro dev` at
 # /probki/ because only public/ is served statically; kept OUT of git and out of the image,

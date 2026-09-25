@@ -52,6 +52,26 @@ export const useFamilyLabels = (): Record<VoiceFamilyId, string> => {
   };
 };
 
+/**
+ * "bez tenorów" — a whole family left out, as a closed chip reads it. Its own
+ * phrase per family: Polish puts the name after "bez" in the genitive, which
+ * the plural header labels above cannot supply.
+ */
+const useWithoutFamilyLabels = (): Record<VoiceFamilyId, string> => {
+  const { t } = useTranslation();
+  return {
+    S: t("rehearsals.plan.exclude.without_family.sopranos", "bez sopranów"),
+    MS: t("rehearsals.plan.exclude.without_family.mezzos", "bez mezzosopranów"),
+    A: t("rehearsals.plan.exclude.without_family.altos", "bez altów"),
+    CT: t("rehearsals.plan.exclude.without_family.countertenors", "bez kontratenorów"),
+    T: t("rehearsals.plan.exclude.without_family.tenors", "bez tenorów"),
+    BAR: t("rehearsals.plan.exclude.without_family.baritones", "bez barytonów"),
+    B: t("rehearsals.plan.exclude.without_family.basses", "bez basów"),
+    V: t("rehearsals.plan.exclude.without_family.untyped", "bez głosów nieokreślonych"),
+    ROLE: t("rehearsals.plan.exclude.without_family.special", "bez linii specjalnych"),
+  };
+};
+
 /** "B2 · 3" — the chip and the seats it removes; a zero removes nobody and says so. */
 const ChipLabel = ({ label, removes }: { label: string; removes: number }): React.JSX.Element => (
   <>
@@ -101,6 +121,7 @@ export const VoiceExclusionChips = ({
 }: VoiceExclusionChipsProps): React.JSX.Element => {
   const { t } = useTranslation();
   const familyLabels = useFamilyLabels();
+  const withoutFamilyLabels = useWithoutFamilyLabels();
   const [isOpen, setIsOpen] = useState(false);
 
   // Closed and clean: the one ghost affordance. Closed with exclusions: the
@@ -112,6 +133,7 @@ export const VoiceExclusionChips = ({
             {
               key: `family:${family.family}`,
               label: familyLabels[family.family],
+              chip: withoutFamilyLabels[family.family],
               removes: family.removes,
               clear: () => onToggleFamily(family.family),
             },
@@ -121,6 +143,7 @@ export const VoiceExclusionChips = ({
             .map((line) => ({
               key: line.line,
               label: line.line,
+              chip: t("rehearsals.plan.exclude.without", "bez {{label}}", { label: line.line }),
               removes: line.removes,
               clear: () => onToggleLine(line.line),
             })),
@@ -129,6 +152,7 @@ export const VoiceExclusionChips = ({
       excludedLines.push({
         key: "instrumentalists",
         label: t("rehearsals.plan.exclude.instrumentalists", "Instrumentaliści"),
+        chip: t("rehearsals.plan.exclude.without_instrumentalists", "bez instrumentalistów"),
         removes: reading.instrumentalistsRemoved,
         clear: onToggleInstrumentalists,
       });
@@ -146,7 +170,7 @@ export const VoiceExclusionChips = ({
             className={CHIP_BUTTON}
           >
             <Badge variant="amethyst" className="cursor-pointer">
-              {t("rehearsals.plan.exclude.without", "bez {{label}}", { label: entry.label })}
+              {entry.chip}
               <span className="tabular-nums opacity-70">
                 {t("rehearsals.plan.exclude.people", "{{count}} os.", { count: entry.removes })}
               </span>

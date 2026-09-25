@@ -5214,6 +5214,18 @@
         "instrumentalists": "Instrumentalists",
         "clear_one": "Restore: {{label}}",
         "without": "without {{label}}",
+        "without_family": {
+          "sopranos": "without sopranos",
+          "mezzos": "without mezzo-sopranos",
+          "altos": "without altos",
+          "countertenors": "without countertenors",
+          "tenors": "without tenors",
+          "baritones": "without baritones",
+          "basses": "without basses",
+          "untyped": "without untyped voices",
+          "special": "without special lines"
+        },
+        "without_instrumentalists": "without instrumentalists",
         "people": "{{count}} ppl",
         "everyone": "Everyone",
         "edit": "Change",
