@@ -23,14 +23,16 @@ import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import type { VoiceRequirementDTO } from "../types/archive.dto";
 
 /**
- * Voice lines a divisi can ask for (one slot = "I need N singers on this
+ * Voice lines a divisi can ask for (one slot = "I need N performers on this
  * part"). Beyond the choral families this covers the intermediate parts a
  * score writes as one line (MS, CT, BAR), TUTTI — a unison setting is a real
- * requirement, not the absence of one — and V1…V4, the untyped parts a canon
- * divides into. Rehearsal/recording-only entries (BACKGROUND, INSTRUMENTAL,
- * ACCOMPANIMENT, PRONUNCIATION) stay out: nobody is cast on them.
+ * requirement, not the absence of one — V1…V4, the untyped parts a canon
+ * divides into, and ACC, the seat an instrumentalist is cast on: the cast
+ * board and its auto-fill seat a player only where the piece declares it.
+ * Recording/rehearsal-only entries (BACKGROUND, INSTRUMENTAL, PRONUNCIATION)
+ * stay out: nobody is cast on them.
  */
-export const CHORAL_DIVISI_LINES: ReadonlySet<string> = new Set([
+export const DIVISI_LINES: ReadonlySet<string> = new Set([
   "S1", "S2", "S3",
   "MS",
   "A1", "A2", "A3",
@@ -41,6 +43,7 @@ export const CHORAL_DIVISI_LINES: ReadonlySet<string> = new Set([
   "V1", "V2", "V3", "V4",
   "TUTTI",
   "SOLO",
+  "ACC",
 ]);
 
 interface DivisiEditorProps {
@@ -80,7 +83,7 @@ export const DivisiEditor = ({
 
   const availableLines = voiceLines.filter(
     (vl) =>
-      CHORAL_DIVISI_LINES.has(String(vl.value)) &&
+      DIVISI_LINES.has(String(vl.value)) &&
       !layer.some(({ requirement }) => requirement.voice_line === String(vl.value)),
   );
 
