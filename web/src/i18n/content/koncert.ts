@@ -62,14 +62,20 @@ export interface ConcertChrome {
   /** Gloss of `Tabula`: what the front-matter contents list and its aria-label are called. */
   readonly tabula: string;
   readonly bands: ConcertBands;
-  /** The door band's three field names. Everything else it labels — the open door, and the link to
-      the festival's own site — is already the house's wording on /koncerty's announced station and
-      is read from `KONCERTY_CHROME` rather than restated here: one fact in two homes, translated
-      twice, is what the schema's `admission` comment warns against. */
+  /** The door band's three field names, and the gift line under a free door. Everything else it
+      labels — the open door, and the link to the festival's own site — is already the house's
+      wording on /koncerty's announced station and is read from `KONCERTY_CHROME` rather than
+      restated here: one fact in two homes, translated twice, is what the schema's `admission`
+      comment warns against. */
   readonly ianua: {
     readonly when: string;
     readonly where: string;
     readonly door: string;
+    /** Printed under "free admission" only: the open door is somebody's gift. The sentence is the
+        board's own (the foundation's patronage text), so its thought is not rewritten here. */
+    readonly gift: string;
+    /** The door under the gift line — opens the donation vault in place. */
+    readonly give: string;
   };
   readonly verbum: {
     /** Summary of the disclosure holding the whole transcript. */
@@ -160,7 +166,13 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       film: "Zapis wieczoru",
       gallery: "Obrazy wieczoru",
     },
-    ianua: { when: "Kiedy", where: "Gdzie", door: "Wstęp" },
+    ianua: {
+      when: "Kiedy",
+      where: "Gdzie",
+      door: "Wstęp",
+      gift: "To, że drzwi są otwarte, jest czyimś darem.",
+      give: "Wesprzyj koncert",
+    },
     verbum: {
       fullCue: "Całe słowo wprowadzenia",
       note: "Zapis słowa wprowadzającego, nieznacznie zredagowany dla czytelności.",
@@ -212,7 +224,13 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       film: "The evening on film",
       gallery: "Images of the evening",
     },
-    ianua: { when: "When", where: "Where", door: "Admission" },
+    ianua: {
+      when: "When",
+      where: "Where",
+      door: "Admission",
+      gift: "An open door is someone's gift.",
+      give: "Support the concert",
+    },
     verbum: {
       fullCue: "The whole of the opening word",
       note: "A transcript of the opening word, lightly edited for readability.",
@@ -264,7 +282,13 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       film: "L'enregistrement de la soirée",
       gallery: "Images de la soirée",
     },
-    ianua: { when: "Quand", where: "Où", door: "Entrée" },
+    ianua: {
+      when: "Quand",
+      where: "Où",
+      door: "Entrée",
+      gift: "Si la porte est ouverte, c'est grâce au don de quelqu'un.",
+      give: "Soutenir le concert",
+    },
     verbum: {
       fullCue: "L'intégralité de la parole d'ouverture",
       note: "Transcription de la parole d'ouverture, légèrement éditée pour la lisibilité.",

@@ -203,6 +203,11 @@
     text-transform: uppercase;
   }
 
+  /* Without the rail (`VAULT_CONFIG.progress.showRail`) the line stands alone in the band. */
+  .vault-progress-meta:first-child {
+    margin-top: 0;
+  }
+
   .vault-progress-meta strong {
     color: var(--paper);
     font-weight: 400;

@@ -35,12 +35,21 @@ export interface VaultConfig {
     /** Live aggregate of SETTLED gateway donations (sum + distinct donors). */
     readonly progress: string;
   };
-  /** Static offline baseline (zrzutka + manual bank transfers), merged with the API. */
-  readonly progress: { readonly source: string };
+  readonly progress: {
+    /** Static offline baseline (zrzutka + manual bank transfers), merged with the API. */
+    readonly source: string;
+    /**
+     * Whether the sheet draws the fill rail. Off while the collection is early and a concert is
+     * close: a short fill beside an announced evening reads as doubt that the evening will happen,
+     * which the budget (secured) does not warrant. The donor count and the goal still print — the
+     * count is the social proof, and neither says how far along the collection is.
+     */
+    readonly showRail: boolean;
+  };
 }
 
 export const VAULT_CONFIG: VaultConfig = {
-  goalAmount: 20000,
+  goalAmount: 28000,
   currency: "PLN",
   recipient: {
     name: FOUNDATION.name,
@@ -63,5 +72,6 @@ export const VAULT_CONFIG: VaultConfig = {
   },
   progress: {
     source: "/donation-progress.json",
+    showRail: false,
   },
 };
