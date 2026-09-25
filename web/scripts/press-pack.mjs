@@ -1,34 +1,42 @@
 #!/usr/bin/env node
 /**
  * @file press-pack.mjs
- * @description Assembles `public/press/voctensemble-press-YYYY-MM.zip` — the one file an
- *  organiser downloads from /press.
+ * @description Builds `public/press/` — every file /press offers, the two ZIPs, and the
+ *  `index.json` the page reads to know what exists.
  *
- *  FIVE OF THE EIGHT ITEMS ARE GENERATED, and that is the point of the script rather than a
- *  folder somebody zips by hand. The biograms come from the same YAML field the page prints, the
- *  credits from `concerts.yaml`, the invoicing sheet from `src/data/foundation.ts`, the
- *  programmes from the corpus, the recording links from the corpus and the page. None of them can
- *  drift from the site, because none of them is typed twice.
+ *  WHAT IT MAKES:
+ *   · press photographs, each cut to its ratio (16:9 or 4:5) with a 2400 px preview and two
+ *     thumbnails (`press-pack/photos.mjs`, rows in `press-pack/manifest.yaml`);
+ *   · the kit of the soonest upcoming concert that has one: the release, programme and biogram
+ *     PDFs, the two announcements, the post and the hashtags as text files, the poster, the
+ *     designer's print PDF where one is on this machine, and the poster mounted as 4:5, 9:16 and
+ *     16:9 graphics;
+ *   · the logotype, `PRZECZYTAJ.txt` (usage terms, every credit, the contact) and the invoicing
+ *     sheet;
+ *   · `voctensemble-press-komplet.zip` (all of it) and `voctensemble-press-zdjecia.zip` (the
+ *     photographs and the readme).
  *
- *  THE OTHER THREE COME FROM OUTSIDE AND ARE NAMED IN `press-pack/manifest.yaml`: which
- *  photographs the ensemble cleared, which technical rider is current, which evenings ship as
- *  sample programmes.
+ *  ALMOST NOTHING HERE IS TYPED TWICE. The kit's texts come from `src/content/press-kits/`, the
+ *  concert's facts and programme from `concerts.yaml`, the biograms and usage terms from
+ *  `press.yaml`, the invoicing sheet from `src/data/foundation.ts`. The one hand-kept list is the
+ *  photo manifest, because which frames the ensemble released cannot be derived.
  *
- *  IT REFUSES RATHER THAN SHIPS A GAP. No rider, too few photographs, no portrait among them, a
- *  file that is not there — it prints what is missing and exits non-zero. That is the contract
- *  /press is written against: the page LOOKS for the archive and renders its honest "write to us"
- *  state when there is none, so a refusal here is a correct page there rather than a broken one.
+ *  IT REFUSES, NAMING WHAT IS MISSING, rather than ship a gap: no kit, a kit whose concert is not
+ *  in the corpus or whose texts name another day, a concert without its poster, a photo row
+ *  without a credit or a source, a source held for want of its photographer's consent. It only
+ *  WARNS AND SKIPS a photo whose crop is under 1080 px on its short edge — a thumbnail sent by
+ *  mistake — and an archive over 50 MB.
  *
- *  THE PORTRAIT RULE IS NOT PEDANTRY. A poster is portrait. A programmer holding five landscape
- *  frames writes back and asks for one, which is the single most common reason they write back at
- *  all — and by then they have usually already set the poster with their own photograph.
+ *  THE OUTPUT IS NOT IN GIT. `public/press/` is gitignored and uploaded to the build host by hand,
+ *  as the photographs are. `index.json` carries `kitHash` (lib/pressKit), and the site refuses to
+ *  build against a pack cut from sources other than the ones it holds.
  *
- *  Run from `web/`: `npm run press:pack`. The archive is gitignored and is uploaded to the build
- *  host by hand, the way `src/assets/photos/` is.
+ *  Run from `web/`: `npm run press:pack`. The PDFs need Microsoft Edge (see press-pack/pdf.mjs).
  * @architecture Astro islands 2026
  * @module scripts/press-pack
  */
-import { readdirSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -36,394 +44,498 @@ import sharp from "sharp";
 import YAML from "yaml";
 
 import { FOUNDATION } from "../src/data/foundation.ts";
-import { htmlToPlainText } from "../src/lib/plainText.ts";
 import { PRESS_PAGE } from "../src/i18n/content/press.ts";
+import { htmlToPlainText } from "../src/lib/plainText.ts";
+import {
+  PRESS_MANIFEST,
+  announceText,
+  computeKitHash,
+  concertFacts,
+  concertUrl,
+  hashtagsText,
+  kitProblems,
+  latestKit,
+  loadPressKits,
+  postText,
+} from "../src/lib/pressKit.ts";
+import { posterOnGround } from "./press-pack/graphics.mjs";
+import { renderPdfs } from "./press-pack/pdf.mjs";
+import {
+  biogramsBody,
+  esc,
+  pdfDocument,
+  programmeBody,
+  releaseBody,
+} from "./press-pack/pdf/templates.mjs";
+import { RATIOS, SHORT_EDGE_FLOOR, pressPhoto } from "./press-pack/photos.mjs";
 import { makeZip } from "./zip.mjs";
 
 const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const at = (...parts) => path.join(WEB_ROOT, ...parts);
 
-const MANIFEST = "press-pack/manifest.yaml";
-const RIDER_DIR = "press-pack/assets";
-const PHOTO_DIR = "src/assets/photos/.original-photos";
+const PHOTO_DIR = "press-pack/photos";
+const HELD_DIR = "src/assets/photos/.held-no-consent";
+const POSTER_DIR = "src/assets/photos";
+/** `<concert-id>.pdf`, the designer's print-ready poster. Gitignored like the photographs. */
+const POSTER_PRINT_DIR = "press-pack/posters";
 const OUT_DIR = "public/press";
-
-/** 3–5 frames, the pack spec's own range (docs/specs/web-board-feedback-2026-09.md §1). */
-const MIN_PHOTOS = 3;
-const MAX_PHOTOS = 5;
-/** A short edge of 2000 px is ~17 cm at 300 dpi — a half-page in a programme book. */
-const SHORT_EDGE_FLOOR = 2000;
-/**
- * The long edge a frame is delivered at: 5000 px is 42 cm at 300 dpi, the long side of A3, which
- * is past anything a programme book or a poster proof needs.
- *
- * A CAMERA ORIGINAL IS NOT A PRESS PHOTOGRAPH. The two frames from *Wcielenie* are 8256 × 5504 and
- * 44 MB each; three of those put the archive at 71 MB, and the reader who has to download it is on
- * a deadline, sometimes on a phone. Delivering the raw file is not generosity, it is a 50 MB
- * archive nobody opens — so anything above this line is resampled once, here, by us, rather than
- * badly by whoever receives it.
- */
-const PRINT_LONG_EDGE = 5000;
-/** JPEG quality for that resample. High enough that a print house has nothing to say about it. */
-const PRINT_QUALITY = 92;
-/** The spec's ceiling. Past it, mail servers start refusing the link's own reply. */
+const ARCHIVES = {
+  komplet: "voctensemble-press-komplet.zip",
+  zdjecia: "voctensemble-press-zdjecia.zip",
+};
+/** Past this, mail servers start refusing the link's own reply. */
 const SIZE_CEILING = 50 * 1_000_000;
 
-/* Files in the archive are read by strangers on unknown machines: CRLF so Windows tools that
-   still care are happy, and a BOM so a Polish diacritic cannot be mis-decoded by whatever opens
-   a .txt by double-click. Neither choice would be right for a file in this repository; both are
-   right for a file we hand out. */
+/**
+ * The poster graphics. 9:16 is the story; the sheet is inset so Instagram's own bars never cover
+ * the title or the dateline, and the same inset keeps the other two from touching their edges.
+ */
+const GRAPHICS = [
+  { format: "4x5", width: 1080, height: 1350 },
+  { format: "9x16", width: 1080, height: 1920 },
+  { format: "16x9", width: 1920, height: 1080 },
+];
+const GRAPHIC_INSET = 0.88;
+
+/* Files in the pack are read by strangers on unknown machines: CRLF so Windows tools that still
+   care are happy, and a BOM so a Polish diacritic cannot be mis-decoded by whatever opens a .txt
+   by double-click. Neither would be right for a file in this repository; both are right here. */
 const BOM = "﻿";
-const textFile = (body) => Buffer.from(BOM + body.replace(/\n/g, "\r\n"), "utf8");
+const textFile = (body) => Buffer.from(BOM + body.replace(/\r?\n/g, "\r\n"), "utf8");
 
 const problems = [];
 const warnings = [];
+const notes = [];
 const fail = (message) => problems.push(message);
-const warn = (message) => warnings.push(message);
 
 // ── Sources ───────────────────────────────────────────────────────────────────────────────────
 
-function readYaml(relative) {
-  return YAML.parse(readFileSync(at(relative), "utf8"));
-}
+const readYaml = (relative) => YAML.parse(readFileSync(at(relative), "utf8"));
 
-const manifest = readYaml(MANIFEST);
+const manifest = readYaml(PRESS_MANIFEST) ?? {};
 const copy = PRESS_PAGE.schema.parse(readYaml("src/content/pages/press.yaml"));
 const concerts = readYaml("src/content/concerts.yaml");
 
-/** Every photographer `concerts.yaml` records, by frame id. Frames with no name are the
-    ensemble's own archive and say so rather than being left blank. */
-const creditByFrame = new Map();
-for (const concert of concerts) {
-  for (const frame of concert.gallery ?? []) {
-    if (frame.credit) creditByFrame.set(frame.img, frame.credit);
+let kits = [];
+try {
+  kits = loadPressKits(WEB_ROOT);
+} catch (error) {
+  fail(error.message);
+}
+if (kits.length === 0 && problems.length === 0) {
+  fail("there is no press kit in src/content/press-kits/ — the page has nothing to lead with.");
+}
+for (const kit of kits) {
+  for (const problem of kitProblems(kit, concerts.find((entry) => entry.id === kit.concert))) {
+    fail(problem);
   }
 }
 
-// ── Validation ────────────────────────────────────────────────────────────────────────────────
-
-const month = String(manifest.month ?? "");
-if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
-  fail(`manifest.month must be "YYYY-MM"; it is ${JSON.stringify(manifest.month)}.`);
+/* The same rule the whole site uses for "the next concert" (lib/cycle), fed from raw YAML: a
+   station is any evening not marked `cycle: false`. */
+const stations = concerts.map((entry) => ({
+  id: entry.id,
+  data: { order: entry.order, cycle: entry.cycle ?? true, date: entry.date },
+}));
+const latest = latestKit(kits, stations);
+const kit = latest?.kit;
+const concert = kit && concerts.find((entry) => entry.id === kit.concert);
+if (kits.length > 0 && !kit) {
+  warnings.push("no kit's concert is still ahead, so the pack ships without a concert kit.");
 }
 
-/** `<id>.<anything>` inside the originals directory — the extension varies by frame. */
-function findPhotoFile(id) {
-  let names;
+/** `<stem>.<anything>` in a directory, or undefined. */
+function findByStem(dir, stem) {
   try {
-    names = readdirSync(at(PHOTO_DIR));
+    return readdirSync(at(dir)).find((name) => name.slice(0, name.lastIndexOf(".")) === stem);
   } catch {
     return undefined;
   }
-  return names.find((name) => name.slice(0, name.lastIndexOf(".")) === id);
 }
 
-const photoEntries = Array.isArray(manifest.photos) ? manifest.photos : [];
-if (photoEntries.length < MIN_PHOTOS || photoEntries.length > MAX_PHOTOS) {
-  fail(
-    `manifest.photos holds ${photoEntries.length} frames; the pack takes ${MIN_PHOTOS}–${MAX_PHOTOS}.` +
-      (photoEntries.length === 0 ? " Nothing has been cleared by the ensemble yet." : ""),
-  );
-}
-
-const photos = [];
-for (const entry of photoEntries) {
-  const id = entry?.id;
-  if (!id) {
-    fail("a row of manifest.photos has no `id`.");
-    continue;
-  }
-  const fileName = findPhotoFile(id);
-  if (!fileName) {
-    fail(`photo "${id}" is not in ${PHOTO_DIR} on this machine.`);
-    continue;
-  }
-  const file = at(PHOTO_DIR, fileName);
-  const meta = await sharp(file).metadata();
-  /* EXIF orientation 5–8 means the stored pixels are rotated relative to what a viewer shows.
-     Report — and decide portrait-versus-landscape on — what a designer will actually see. */
-  const turned = (meta.orientation ?? 1) >= 5;
-  const storedWidth = meta.width ?? 0;
-  const storedHeight = meta.height ?? 0;
-  let width = turned ? storedHeight : storedWidth;
-  let height = turned ? storedWidth : storedHeight;
-
-  let deliveredName = fileName;
-  let data;
-  if (Math.max(width, height) > PRINT_LONG_EDGE) {
-    const out = await sharp(file)
-      // Applies the EXIF orientation, so the delivered file needs no flag to be read right.
-      .rotate()
-      .resize({
-        width: PRINT_LONG_EDGE,
-        height: PRINT_LONG_EDGE,
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .jpeg({ quality: PRINT_QUALITY, mozjpeg: true })
-      // Keeps the colour profile; without it a wide-gamut frame prints flat.
-      .withMetadata()
-      .toBuffer({ resolveWithObject: true });
-    data = out.data;
-    width = out.info.width;
-    height = out.info.height;
-    deliveredName = `${id}.jpg`;
-  } else {
-    // Already within the delivery size: hand over the original bytes rather than re-encoding a
-    // JPEG into a JPEG for nothing.
-    data = readFileSync(file);
-  }
-
-  const shortEdge = Math.min(width, height);
-  if (shortEdge < SHORT_EDGE_FLOOR) {
-    warn(
-      `photo "${id}" is ${width}×${height}; its short edge is under ${SHORT_EDGE_FLOOR} px, ` +
-        "so it cannot be printed much larger than a postcard at 300 dpi.",
+let posterFile;
+if (concert) {
+  const name = concert.poster && findByStem(POSTER_DIR, concert.poster);
+  if (!name) {
+    fail(
+      `concert "${concert.id}" names poster "${concert.poster ?? "(none)"}", which is not in ` +
+        `${POSTER_DIR} on this machine.`,
     );
-  }
-
-  photos.push({
-    id,
-    fileName: deliveredName,
-    data,
-    width,
-    height,
-    portrait: height > width,
-    credit: entry.credit ?? creditByFrame.get(id) ?? null,
-  });
-}
-
-if (photos.length > 0 && !photos.some((photo) => photo.portrait)) {
-  fail(
-    "every cleared photograph is landscape. A poster is portrait, and a designer who has none " +
-      "will crop one badly or use their own — ask the ensemble for a portrait frame.",
-  );
-}
-
-const riderName = String(manifest.rider ?? "");
-let riderFile;
-if (!riderName) {
-  fail(
-    `manifest.rider is empty — the one-page technical rider has not arrived. Nothing may be ` +
-      "estimated into it: every number the old /press printed was invented and was deleted.",
-  );
-} else {
-  riderFile = at(RIDER_DIR, riderName);
-  try {
-    readFileSync(riderFile);
-  } catch {
-    fail(`manifest.rider names "${riderName}", which is not in ${RIDER_DIR}.`);
+  } else {
+    posterFile = at(POSTER_DIR, name);
   }
 }
 
-const programmeIds = Array.isArray(manifest.programmes) ? manifest.programmes : [];
-const programmes = [];
-for (const id of programmeIds) {
-  const concert = concerts.find((entry) => entry.id === id);
-  if (!concert) {
-    fail(`manifest.programmes names "${id}", which is not a concert in the corpus.`);
+// ── Photo rows ────────────────────────────────────────────────────────────────────────────────
+
+const sha256 = (data) => createHash("sha256").update(data).digest("hex");
+
+/* A frame withheld for want of its photographer's consent must not leave this machine under any
+   name — so it is matched by content as well as by file name. */
+const held = new Map();
+try {
+  for (const name of readdirSync(at(HELD_DIR))) {
+    held.set(sha256(readFileSync(at(HELD_DIR, name))), name);
+  }
+} catch {
+  // No held directory: nothing is withheld.
+}
+
+const rows = Array.isArray(manifest.photos) ? manifest.photos : [];
+if (rows.length === 0) fail(`${PRESS_MANIFEST} lists no photos.`);
+const seenIds = new Set();
+for (const [index, row] of rows.entries()) {
+  const label = row?.id ? `photo "${row.id}"` : `photo row ${index + 1}`;
+  if (!row?.id) fail(`${label} has no id.`);
+  else if (seenIds.has(row.id)) fail(`${label} is listed twice.`);
+  else seenIds.add(row.id);
+  if (!row?.credit) fail(`${label} has no credit — an editor cannot print a photo without one.`);
+  if (!row?.caption) fail(`${label} has no caption.`);
+  if (!(row?.ratio in RATIOS)) fail(`${label} has ratio ${JSON.stringify(row?.ratio)}; use "16:9" or "4:5".`);
+  const focus = row?.focus;
+  if (!Array.isArray(focus) || focus.length !== 2 || !focus.every((n) => n >= 0 && n <= 1)) {
+    fail(`${label} needs focus: [x, y], each between 0 and 1.`);
+  }
+  if (!row?.source) {
+    fail(`${label} has no source file.`);
     continue;
   }
-  const works = concert.program ?? [];
-  if (!works.some((work) => work.duration)) {
-    warn(`programme "${id}" carries no durations — it ships as a running order without times.`);
+  let bytes;
+  try {
+    bytes = readFileSync(at(PHOTO_DIR, row.source));
+  } catch {
+    fail(`${label}: "${row.source}" is not in ${PHOTO_DIR} on this machine.`);
+    continue;
   }
-  programmes.push(concert);
+  const heldAs = held.get(sha256(bytes));
+  if (heldAs || [...held.values()].includes(row.source)) {
+    fail(`${label}: "${row.source}" is held in ${HELD_DIR} (${heldAs ?? row.source}) until its photographer consents.`);
+  }
 }
 
 if (problems.length > 0) {
-  console.error("\nThe press pack cannot be built yet:\n");
+  console.error("\nThe press pack cannot be built:\n");
   for (const problem of problems) console.error(`  ·  ${problem}`);
-  if (warnings.length > 0) {
-    console.error("\nAlso worth knowing:\n");
-    for (const note of warnings) console.error(`  ·  ${note}`);
-  }
   console.error(
-    `\n/press renders its "write to us" state while ${OUT_DIR} is empty, which is true. ` +
-      "Fill in press-pack/manifest.yaml and run this again.\n",
+    `\nNothing in ${OUT_DIR} was touched. /press renders its "write to us" state where the pack ` +
+      "is absent, which stays true until this builds.\n",
   );
   process.exit(1);
 }
 
-// ── The generated documents ───────────────────────────────────────────────────────────────────
+// ── Output ────────────────────────────────────────────────────────────────────────────────────
 
-const rule = "—".repeat(64);
-/* Ends with ONE blank line, so a caller follows it straight with its first paragraph rather than
-   remembering to separate them. */
-const heading = (title) => `${title}\n${rule}\n`;
-/** A concert's `dateLabel` is a LocalizedText map, not a string — the pack is Polish. */
-const pl = (value) => (typeof value === "string" ? value : (value?.pl ?? ""));
+rmSync(at(OUT_DIR), { recursive: true, force: true });
 
-/** cm at 300 dpi, which is the unit a designer lays a page out in. */
-const printSize = (px) => (px / 300) * 2.54;
+/** Write one file under `public/press/` and describe it as `index.json` lists it. */
+function emit(relative, data, dims) {
+  const file = at(OUT_DIR, relative);
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(file, data);
+  return { path: relative, bytes: data.length, ...(dims ?? {}) };
+}
 
-const BIOS = [
-  { file: "biogram-krotki.txt", label: "Biogram krótki", html: copy.bio.shortHtml },
-  { file: "biogram-sredni.txt", label: "Biogram średni", html: copy.bio.mediumHtml },
-  { file: "biogram-pelny.txt", label: "Biogram pełny", html: copy.bio.longHtml },
-].map((bio) => {
-  const text = htmlToPlainText(bio.html);
-  return { ...bio, text, body: `${heading(`${bio.label} · ${text.length} znaków`)}\n${text}\n` };
-});
+const dimsOf = (info) => ({ width: info.width, height: info.height });
 
-const creditsTxt = [
-  heading("Zdjęcia — podpisy i rozmiary"),
-  copy.pack.photoUsage,
-  "",
-  ...photos.map((photo) => {
-    const who = photo.credit ? `fot. ${photo.credit}` : "fot. archiwum VoctEnsemble";
-    const cm = `${printSize(photo.width).toFixed(1)} × ${printSize(photo.height).toFixed(1)} cm przy 300 dpi`;
-    return [
-      `${photo.fileName}`,
-      `    ${who}`,
-      `    ${photo.width} × ${photo.height} px  ·  ${cm}`,
-      `    ${photo.portrait ? "pion" : "poziom"}`,
-      "",
-    ].join("\n");
-  }),
-].join("\n");
+/** Everything komplet carries, in the order it is listed; `store` for already-compressed media. */
+const kompletEntries = [];
+const photoEntries = [];
+const pack = (relative, data, store) => kompletEntries.push({ name: relative, data, store });
 
-const invoiceTxt = [
-  // No lede: the heading already says what `facts.legalLede` says, and the readme carries the
-  // sentence about who signs.
-  heading("Dane do umowy i do faktury"),
-  `Nazwa       ${FOUNDATION.name}`,
-  `Adres       ${FOUNDATION.addressLine}`,
-  `KRS         ${FOUNDATION.registry.krs}`,
-  `NIP         ${FOUNDATION.registry.nip}`,
-  `REGON       ${FOUNDATION.registry.regon}`,
-  "",
-  `Konto PLN   ${FOUNDATION.accounts.pln.display}`,
-  `Konto EUR   ${FOUNDATION.accounts.eur.display}`,
-  "",
-  `Kontakt     ${FOUNDATION.mail.booking}`,
-  `Serwis      ${FOUNDATION.site}`,
-  "",
-].join("\n");
+// ── Photographs ───────────────────────────────────────────────────────────────────────────────
 
-const programmeFiles = programmes.map((concert) => {
-  const lines = [heading(`${concert.title} — program`)];
-  const when = pl(concert.dateLabel) || concert.date || "";
-  if (when || concert.venue) lines.push([when, concert.venue].filter(Boolean).join("  ·  "), "");
-  if (concert.programArc) lines.push(htmlToPlainText(concert.programArc), "");
-  for (const work of concert.program ?? []) {
-    const who = [work.composer, work.years ? `(${work.years})` : ""].filter(Boolean).join(" ");
-    // The work line may carry `<em>` around a foreign title (content.config); this file is typed
-    // into a programme book, so it is flattened here exactly as the biogram is.
-    const what = [htmlToPlainText(work.work), work.movement ? `— ${work.movement}` : ""]
-      .filter(Boolean)
-      .join(" ");
-    const tail = [work.voicing, work.duration].filter(Boolean).join("  ·  ");
-    lines.push(`${who}`, `    ${what}${tail ? `  ·  ${tail}` : ""}`, "");
+const photos = [];
+for (const row of rows) {
+  const result = await pressPhoto(at(PHOTO_DIR, row.source), row);
+  if (result.skipped) {
+    warnings.push(
+      `photo "${row.id}" skipped: its ${row.ratio} crop is ${result.skipped.width}×` +
+        `${result.skipped.height}, under ${SHORT_EDGE_FLOOR} px on the short edge. ` +
+        `Replace ${PHOTO_DIR}/${row.source} with the original and run this again.`,
+    );
+    continue;
   }
-  return { file: `program-${concert.id}.txt`, body: lines.join("\n") };
-});
-
-/* The corpus's per-concert `links[]` and the page's "Pisali o nas" cards overlap almost entirely —
-   the Bobola broadcast and the Gość / KAI pieces are in both. One list, keyed by URL, first
-   mention wins: a reader who opens the same page twice looking for a second source has been
-   misled by a list that counted one thing as two. */
-const recordingSeen = new Set();
-const recordingLine = (href, title, where, note = "") => {
-  if (recordingSeen.has(href)) return [];
-  recordingSeen.add(href);
-  return [title, `    ${where}`, ...(note ? [`    ${note}`] : []), `    ${href}`, ""];
-};
-
-const recordingsTxt = [
-  heading("Nagrania i publikacje"),
-  `Kanał YouTube        https://www.youtube.com/@VoctEnsemble-nb7gh`,
-  `Serwis               ${FOUNDATION.site}`,
-  `Archiwum fotografii  ${FOUNDATION.site}/obrazy`,
-  "",
-  /* `kind` and `context` are the only copy left in this list now that the page's band is gone,
-     and they earn their place here: a journalist scanning it needs to know which link is a piece
-     and which is a photo report before opening any of them. */
-  ...copy.press.items.flatMap((item) =>
-    recordingLine(item.href, item.title, `${item.outlet}  ·  ${item.kind}`, item.context),
-  ),
-  ...concerts.flatMap((concert) =>
-    (concert.links ?? []).flatMap((link) =>
-      // The corpus writes its link labels with a trailing arrow for the page that renders them.
-      recordingLine(link.href, link.label.replace(/\s*↗$/u, ""), concert.title),
+  const printPath = `zdjecia/${row.id}.jpg`;
+  const print = emit(printPath, result.print.data, dimsOf(result.print.info));
+  const preview = emit(`zdjecia/podglad/${row.id}.jpg`, result.preview.data, dimsOf(result.preview.info));
+  const [w640, w1280] = result.thumbs.map((thumb, i) =>
+    emit(
+      `zdjecia/miniatury/${row.id}-${[640, 1280][i]}.webp`,
+      thumb.data,
+      dimsOf(thumb.info),
     ),
-  ),
-].join("\n");
+  );
+  pack(printPath, result.print.data, true);
+  photoEntries.push({ name: printPath, data: result.print.data, store: true });
+  photos.push({
+    ...print,
+    id: row.id,
+    ratio: row.ratio,
+    caption: row.caption,
+    credit: row.credit,
+    preview,
+    thumbs: { w640, w1280 },
+  });
+}
 
-const logoUsageTxt = [heading("Logotyp — zasady użycia"), copy.pack.logoUsage, ""].join("\n");
+// ── The concert kit ───────────────────────────────────────────────────────────────────────────
 
-const readmeTxt = [
-  heading(`${FOUNDATION.ensemble} — pakiet prasowy ${month}`),
-  copy.pack.ledeReady,
-  "",
-  copy.pack.contentsIntro,
-  ...copy.pack.items.map((item) => `  ·  ${item.text}`),
-  "",
-  copy.facts.legalLede,
-  "",
-  `Kontakt   ${FOUNDATION.mail.booking}`,
-  `Serwis    ${FOUNDATION.site}/press`,
-  "",
-].join("\n");
+const shortBio = htmlToPlainText(copy.about.shortHtml);
+let concertIndex;
+let facts;
+if (kit && concert) {
+  const dir = kit.concert;
+  const url = concertUrl(FOUNDATION.site, concert.id);
+  facts = concertFacts(concert);
+  const performers = [
+    FOUNDATION.ensemble,
+    ...(concert.credits ?? []).map((credit) => `${credit.name} — ${credit.role.toLowerCase()}`),
+    ...kit.guests.map((guest) => `${guest.name} — ${guest.role}`),
+  ];
+
+  const texts = {
+    announceShort: ["zapowiedz-500.txt", announceText(kit, "short")],
+    announceLong: ["zapowiedz-1500.txt", announceText(kit, "long")],
+    post: ["post.txt", postText(kit, url)],
+    hashtags: ["hashtagi.txt", hashtagsText(kit)],
+  };
+  const textIndex = {};
+  for (const [key, [name, body]] of Object.entries(texts)) {
+    const data = textFile(`${body}\n`);
+    textIndex[key] = emit(`${dir}/${name}`, data);
+    pack(`${dir}/${name}`, data, false);
+  }
+
+  const posterJpg = await sharp(posterFile)
+    .flatten({ background: "#ffffff" })
+    .jpeg({ quality: 92, mozjpeg: true })
+    .toBuffer({ resolveWithObject: true });
+  const poster = emit(`${dir}/plakat.jpg`, posterJpg.data, dimsOf(posterJpg.info));
+  pack(`${dir}/plakat.jpg`, posterJpg.data, true);
+
+  /* The designer's print file travels byte for byte: re-rendering it would be this script
+     deciding a printer's colour and resolution. Optional, because only the designer can supply
+     it — its absence is a note, not a refusal. */
+  let posterPrint;
+  try {
+    const data = readFileSync(at(POSTER_PRINT_DIR, `${kit.concert}.pdf`));
+    posterPrint = emit(`${dir}/plakat-do-druku.pdf`, data);
+    pack(`${dir}/plakat-do-druku.pdf`, data, true);
+  } catch {
+    notes.push(`no print poster: drop the designer's PDF at ${POSTER_PRINT_DIR}/${kit.concert}.pdf.`);
+  }
+
+  const graphics = [];
+  for (const graphic of GRAPHICS) {
+    const name = `grafika-${graphic.format}.jpg`;
+    const composed = await posterOnGround(posterFile, graphic, { inset: GRAPHIC_INSET });
+    const jpg = await composed.jpeg({ quality: 90, mozjpeg: true }).toBuffer({ resolveWithObject: true });
+    const thumb = await sharp(jpg.data)
+      .resize({ width: 640 })
+      .webp({ quality: 80 })
+      .toBuffer({ resolveWithObject: true });
+    graphics.push({
+      ...emit(`${dir}/${name}`, jpg.data, dimsOf(jpg.info)),
+      format: graphic.format,
+      thumb: emit(`${dir}/miniatury/grafika-${graphic.format}-640.webp`, thumb.data, dimsOf(thumb.info)),
+    });
+    pack(`${dir}/${name}`, jpg.data, true);
+  }
+
+  /* Biograms: only the texts on record. The conductor and a guest without a `bio` are named in
+     the run's notes, so the gap is visible and nothing is written to fill it. */
+  const bios = [
+    { name: FOUNDATION.ensemble, role: "zespół wokalny", html: copy.about.longHtml },
+    ...kit.guests
+      .filter((guest) => guest.bio)
+      .map((guest) => ({ name: guest.name, role: guest.role, html: `<p>${esc(guest.bio)}</p>` })),
+  ];
+  for (const credit of concert.credits ?? []) {
+    notes.push(`biogramy.pdf: no biogram on record for ${credit.name} (${credit.role.toLowerCase()}).`);
+  }
+  for (const guest of kit.guests.filter((entry) => !entry.bio)) {
+    notes.push(`biogramy.pdf: no biogram on record for ${guest.name} (${guest.role}).`);
+  }
+
+  const footer = `Kontakt dla mediów: ${FOUNDATION.mail.press} · ${FOUNDATION.site.replace(/^https?:\/\//, "")}/press`;
+  const pdfDoc = (title, body) =>
+    pdfDocument({
+      title,
+      body,
+      accent: concert.accent,
+      footer,
+      markSvg: readFileSync(at("public/voct-mark.svg"), "utf8"),
+    });
+  const pdfs = await renderPdfs([
+    {
+      name: "informacja-prasowa",
+      html: pdfDoc(
+        `${concert.title} — informacja prasowa`,
+        releaseBody({ kit, facts, performers, about: shortBio, contact: FOUNDATION.mail.press, concertUrl: url }),
+      ),
+    },
+    {
+      name: "program",
+      html: pdfDoc(`${concert.title} — program`, programmeBody({ concert, facts, performers })),
+    },
+    {
+      name: "biogramy",
+      html: pdfDoc(`${concert.title} — biogramy`, biogramsBody({ facts, entries: bios })),
+    },
+  ]);
+  const pdfIndex = {};
+  for (const [name, data] of pdfs) {
+    pdfIndex[name] = emit(`${dir}/${name}.pdf`, data);
+    pack(`${dir}/${name}.pdf`, data, true);
+  }
+
+  concertIndex = {
+    id: kit.concert,
+    release: pdfIndex["informacja-prasowa"],
+    programme: pdfIndex.program,
+    biograms: pdfIndex.biogramy,
+    ...textIndex,
+    poster,
+    ...(posterPrint ? { posterPrint } : {}),
+    graphics,
+  };
+}
 
 // ── The logotype ──────────────────────────────────────────────────────────────────────────────
 
 const markSvg = readFileSync(at("public/voct-mark.svg"), "utf8");
 /* The vector master paints with `currentColor`, which the site fills from CSS. A raster has no
-   cascade to inherit from, so each export states its own ink: the dark mark is for a light
-   ground and the paper mark for a dark one. Both stay transparent — a designer places them. */
+   cascade to inherit from, so each export states its own ink: the dark mark for a light ground,
+   the paper mark for a dark one. Both stay transparent — a designer places them. */
 const rasterise = async (hex) =>
   sharp(Buffer.from(markSvg.replace(/currentColor/g, hex)), { density: 600 })
     .resize({ height: 2000 })
     .png()
-    .toBuffer();
-const markOnLight = await rasterise("#161514");
-const markOnDark = await rasterise("#F4F1E9");
-
-// ── The archive ───────────────────────────────────────────────────────────────────────────────
-
-const entries = [
-  { name: "PRZECZYTAJ.txt", data: textFile(readmeTxt) },
-  ...BIOS.map((bio) => ({ name: bio.file, data: textFile(bio.body) })),
-  { name: "dane-do-faktury.txt", data: textFile(invoiceTxt) },
-  { name: "credits.txt", data: textFile(creditsTxt) },
-  { name: "nagrania.txt", data: textFile(recordingsTxt) },
-  ...programmeFiles.map((programme) => ({
-    name: programme.file,
-    data: textFile(programme.body),
-  })),
-  { name: "logo/voct-mark.svg", data: Buffer.from(markSvg, "utf8") },
-  { name: "logo/voct-mark-na-jasnym.png", data: markOnLight, store: true },
-  { name: "logo/voct-mark-na-ciemnym.png", data: markOnDark, store: true },
-  { name: "logo/UZYCIE.txt", data: textFile(logoUsageTxt) },
-  { name: `rider/${riderName}`, data: readFileSync(riderFile), store: true },
-  // Already-compressed pixels: deflating them spends time to save nothing.
-  ...photos.map((photo) => ({
-    name: `zdjecia/${photo.fileName}`,
-    data: photo.data,
-    store: true,
-  })),
-];
-
-const archive = makeZip(entries, new Date());
-if (archive.length > SIZE_CEILING) {
-  warn(
-    `the archive is ${(archive.length / 1_000_000).toFixed(1)} MB, over the 50 MB the spec sets. ` +
-      "Drop a frame or ask for smaller originals.",
-  );
+    .toBuffer({ resolveWithObject: true });
+const logo = [];
+for (const [name, data, store, dims] of [
+  ["logo/voct-mark.svg", Buffer.from(markSvg, "utf8"), false],
+  ...(await Promise.all(
+    [
+      ["logo/voct-mark-na-jasnym.png", "#161514"],
+      ["logo/voct-mark-na-ciemnym.png", "#F4F1E9"],
+    ].map(async ([name, hex]) => {
+      const png = await rasterise(hex);
+      return [name, png.data, true, dimsOf(png.info)];
+    }),
+  )),
+  ["logo/UZYCIE.txt", textFile(`Logotyp — zasady użycia\n\n${copy.about.logoUsage}\n`), false],
+]) {
+  logo.push(emit(name, data, dims));
+  pack(name, data, store);
 }
 
-mkdirSync(at(OUT_DIR), { recursive: true });
-const outName = `voctensemble-press-${month}.zip`;
-writeFileSync(at(OUT_DIR, outName), archive);
+// ── Readme and invoicing ──────────────────────────────────────────────────────────────────────
 
-console.log(`\n${OUT_DIR}/${outName}`);
-console.log(`  ${entries.length} plików  ·  ${(archive.length / 1_000_000).toFixed(1)} MB`);
-console.log(
-  `  ${photos.length} zdjęć (${photos.filter((p) => p.portrait).length} w pionie)  ·  ` +
-    `${programmes.length} program(y)  ·  rider: ${riderName}`,
+const rule = "—".repeat(64);
+const heading = (title) => `${title}\n${rule}\n`;
+const site = FOUNDATION.site;
+
+const readmeTxt = [
+  `${FOUNDATION.ensemble} — materiały dla mediów`,
+  "",
+  "",
+  heading("Zdjęcia — zasady użycia"),
+  copy.photos.usage,
+  "",
+  heading("Zdjęcia — podpisy"),
+  ...photos.flatMap((photo) => [
+    photo.path,
+    `    ${photo.caption}`,
+    `    fot. ${photo.credit}`,
+    `    ${photo.width} × ${photo.height} px · ${photo.ratio}`,
+    "",
+  ]),
+  ...(concert
+    ? [
+        heading(`Plakat i grafiki — ${concert.title}`),
+        `${kit.concert}/plakat.jpg, ${kit.concert}/grafika-*.jpg` +
+          (concertIndex?.posterPrint ? `, ${concertIndex.posterPrint.path}` : ""),
+        ...(concert.posterCredit ? [`    projekt plakatu: ${concert.posterCredit}`] : []),
+        "",
+      ]
+    : []),
+  heading("Kontakt"),
+  `Media     ${FOUNDATION.mail.press}`,
+  `Serwis    ${site}/press`,
+  "",
+].join("\n");
+const readmeData = textFile(readmeTxt);
+const readme = emit("PRZECZYTAJ.txt", readmeData);
+
+const invoiceData = textFile(
+  [
+    heading("Dane do umowy i do faktury"),
+    `Nazwa       ${FOUNDATION.name}`,
+    `Adres       ${FOUNDATION.addressLine}`,
+    `KRS         ${FOUNDATION.registry.krs}`,
+    `NIP         ${FOUNDATION.registry.nip}`,
+    `REGON       ${FOUNDATION.registry.regon}`,
+    "",
+    `Konto PLN   ${FOUNDATION.accounts.pln.display}`,
+    `Konto EUR   ${FOUNDATION.accounts.eur.display}`,
+    "",
+    `Kontakt     ${FOUNDATION.mail.booking}`,
+    `Serwis      ${site}`,
+    "",
+  ].join("\n"),
 );
-for (const note of warnings) console.log(`  !  ${note}`);
-console.log(
-  "\nArchiwum nie wchodzi do gita — wgraj je na hosta builda do public/press/ i przebuduj.\n",
+const invoice = emit("dane-do-faktury.txt", invoiceData);
+
+// ── Archives ──────────────────────────────────────────────────────────────────────────────────
+
+const cutAt = new Date();
+const komplet = makeZip(
+  [
+    { name: "PRZECZYTAJ.txt", data: readmeData },
+    { name: "dane-do-faktury.txt", data: invoiceData },
+    ...kompletEntries,
+  ],
+  cutAt,
 );
+const zdjecia = makeZip([{ name: "PRZECZYTAJ.txt", data: readmeData }, ...photoEntries], cutAt);
+const archives = {
+  komplet: emit(ARCHIVES.komplet, komplet),
+  zdjecia: emit(ARCHIVES.zdjecia, zdjecia),
+};
+for (const archive of Object.values(archives)) {
+  if (archive.bytes > SIZE_CEILING) {
+    warnings.push(
+      `${archive.path} is ${(archive.bytes / 1_000_000).toFixed(1)} MB, over the 50 MB ceiling.`,
+    );
+  }
+}
+
+// ── Index ─────────────────────────────────────────────────────────────────────────────────────
+
+const index = {
+  kitHash: computeKitHash(WEB_ROOT),
+  generatedAt: cutAt.toISOString(),
+  readme,
+  invoice,
+  archives,
+  photos,
+  logo,
+  ...(concertIndex ? { concert: concertIndex } : {}),
+};
+emit("index.json", Buffer.from(`${JSON.stringify(index, null, 2)}\n`, "utf8"));
+
+// ── Report ────────────────────────────────────────────────────────────────────────────────────
+
+const mb = (bytes) => `${(bytes / 1_000_000).toFixed(1)} MB`;
+console.log(`\n${OUT_DIR}/  ·  kitHash ${index.kitHash}`);
+console.log(
+  `  ${photos.length} zdjęć (${photos.filter((p) => p.ratio === "16:9").length} × 16:9, ` +
+    `${photos.filter((p) => p.ratio === "4:5").length} × 4:5)` +
+    (concertIndex ? `  ·  zestaw: ${concertIndex.id}` : "  ·  bez zestawu koncertu"),
+);
+console.log(`  ${ARCHIVES.komplet}  ${mb(archives.komplet.bytes)}  (${kompletEntries.length + 2} plików)`);
+console.log(`  ${ARCHIVES.zdjecia}  ${mb(archives.zdjecia.bytes)}  (${photoEntries.length + 1} plików)`);
+for (const warning of warnings) console.log(`  !  ${warning}`);
+for (const note of notes) console.log(`  ·  ${note}`);
+console.log(`\n${OUT_DIR}/ nie wchodzi do gita — wgraj go na hosta builda i przebuduj serwis.\n`);

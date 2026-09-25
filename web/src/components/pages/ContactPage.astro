@@ -43,6 +43,7 @@ import { NUNTIUS } from "../../i18n/content/nuntius";
 import { UI } from "../../i18n/ui";
 import { localizePath, pageI18n, SITE, type Locale } from "../../i18n/config";
 import { FOUNDATION_PAGE_LINKED } from "../../data/foundationSupport";
+import { SOCIAL_SAME_AS } from "../../data/social";
 import VaultMount from "../../components/VaultMount.astro";
 import "../../styles/vault.css";
 
@@ -101,11 +102,7 @@ const jsonLd = {
       contactType: CONTACT_TYPE[channel.id] ?? "general inquiries",
       availableLanguage: ["Polish", "English", "French"],
     })),
-    sameAs: [
-      "https://www.instagram.com/voctensemble/",
-      "https://www.facebook.com/voctensemble/",
-      "https://www.youtube.com/@VoctEnsemble-nb7gh",
-    ],
+    sameAs: SOCIAL_SAME_AS,
   },
 };
 

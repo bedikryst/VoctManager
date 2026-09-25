@@ -1,0 +1,226 @@
+/*
+ * The press PDFs — informacja prasowa, program, biogramy. A4, printed on white by whoever receives
+ * them, so ink on paper and nothing the site's dark ground would need.
+ *
+ * Two voices, as on the site: Cormorant Garamond for the display lines and the quote, IBM Plex
+ * Sans for everything read, Plex Mono for the small rubrics. The @font-face rules are written by
+ * templates.mjs, which knows where `web/public/fonts` is on this machine.
+ *
+ * `--accent` is the concert's own hue (concerts.yaml `accent`) and draws rules only: at 8 pt on
+ * white it would fail as text.
+ */
+:root {
+  --ink: #1d1b19;
+  --muted: #6b645c;
+  --rule: #d9d2c7;
+  --accent: #c9873f;
+}
+
+@page {
+  size: A4;
+  margin: 26mm 20mm 22mm;
+
+  @top-right {
+    content: "VoctEnsemble · materiały dla mediów";
+    font: 400 7pt "IBM Plex Mono", monospace;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    vertical-align: bottom;
+    padding-bottom: 5mm;
+  }
+
+  /* Its `content` — the press contact — and the mark in `@top-left` are written by templates.mjs,
+     which holds the address and the SVG. */
+  @bottom-left {
+    font: 400 7pt "IBM Plex Mono", monospace;
+    color: var(--muted);
+    vertical-align: top;
+    padding-top: 5mm;
+  }
+
+  @bottom-right {
+    content: counter(page) " / " counter(pages);
+    font: 400 7pt "IBM Plex Mono", monospace;
+    color: var(--muted);
+    vertical-align: top;
+    padding-top: 5mm;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color: var(--ink);
+  font: 400 10pt/1.55 "IBM Plex Sans", sans-serif;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body {
+  margin: 0;
+}
+
+.kicker {
+  margin: 0 0 3mm;
+  font: 400 7.5pt "IBM Plex Mono", monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+h1 {
+  margin: 0 0 4mm;
+  font: 500 26pt/1.08 "Cormorant Garamond", serif;
+  letter-spacing: -0.005em;
+}
+
+h2 {
+  margin: 8mm 0 2.5mm;
+  font: 400 7.5pt "IBM Plex Mono", monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  break-after: avoid;
+}
+
+h3 {
+  margin: 0 0 1.5mm;
+  font: 500 15pt/1.2 "Cormorant Garamond", serif;
+  break-after: avoid;
+}
+
+p {
+  margin: 0 0 2.6mm;
+  orphans: 3;
+  widows: 3;
+}
+
+.lead {
+  margin-bottom: 5mm;
+  font-size: 11pt;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.dateline {
+  margin: 0 0 6mm;
+  font-size: 10.5pt;
+  color: var(--muted);
+}
+
+/* The fact block: label / value rows under a hairline, the shape a desk editor scans. */
+.facts {
+  display: grid;
+  grid-template-columns: 30mm 1fr;
+  gap: 1.4mm 5mm;
+  margin: 0 0 7mm;
+  padding: 4mm 0;
+  border-top: 0.6pt solid var(--accent);
+  border-bottom: 0.4pt solid var(--rule);
+  font-size: 9.5pt;
+  break-inside: avoid;
+}
+
+.facts dt {
+  font: 400 7pt/1.9 "IBM Plex Mono", monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+blockquote {
+  margin: 6mm 0;
+  padding: 0 0 0 6mm;
+  border-left: 1.2pt solid var(--accent);
+  break-inside: avoid;
+}
+
+blockquote p {
+  margin: 0 0 2mm;
+  font: italic 400 14pt/1.35 "Cormorant Garamond", serif;
+}
+
+blockquote footer {
+  font-size: 8.5pt;
+  color: var(--muted);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* ── Programme ─────────────────────────────────────────────────────────────────────────────── */
+
+.works {
+  margin: 0 0 6mm;
+  padding: 0;
+  list-style: none;
+  counter-reset: work;
+}
+
+.works li {
+  display: grid;
+  grid-template-columns: 9mm 1fr;
+  padding: 2mm 0;
+  border-bottom: 0.4pt solid var(--rule);
+  counter-increment: work;
+  break-inside: avoid;
+}
+
+.works li::before {
+  content: counter(work, decimal-leading-zero);
+  font: 400 8pt/1.9 "IBM Plex Mono", monospace;
+  color: var(--muted);
+}
+
+/* A work title is italic, and the `<em>` a title may carry (an opera's name inside it) turns
+   upright — the convention for a title within a title. */
+.works .work,
+.mirror .work {
+  font: italic 500 13pt/1.25 "Cormorant Garamond", serif;
+}
+
+.works .work em {
+  font-style: normal;
+}
+
+.works .who {
+  font-size: 9.5pt;
+}
+
+.mirror {
+  margin: 0 0 6mm;
+  padding: 3mm 0 3mm 6mm;
+  border-left: 1.2pt solid var(--accent);
+  font-size: 9.5pt;
+  break-inside: avoid;
+}
+
+.performers {
+  margin: 0 0 2mm;
+  padding: 0;
+  list-style: none;
+}
+
+/* ── Biograms ──────────────────────────────────────────────────────────────────────────────── */
+
+.bio {
+  margin: 0 0 8mm;
+}
+
+.bio + .bio {
+  padding-top: 6mm;
+  border-top: 0.4pt solid var(--rule);
+}
+
+.bio .role {
+  margin: 0 0 3mm;
+  font-size: 9pt;
+  color: var(--muted);
+}

@@ -5,7 +5,7 @@ board, so the body is Polish on purpose — the one file under `docs/` where the
 yields to the reader. Agents: add a row when a stage discovers a fact only a person can supply;
 tick or delete a row when it lands; never restate a spec here — link it.
 
-Sources: `web-foundation-brief-2026-09.md` §7, `web-press-pack-2026-09.md` §3, `web/press-pack/manifest.yaml`.
+Sources: `web-foundation-brief-2026-09.md` §7, `web-press-v2-2026-09.md`, `web/press-pack/manifest.yaml`.
 
 ---
 
@@ -45,26 +45,21 @@ Strona jest zbudowana na tym, co już mamy (KRS, konta, koncerty). Do publikacji
 
 ## 2. Pakiet prasowy (`/press`)
 
-Strona i generator są gotowe. Pakiet **nie buduje się**, dopóki nie ma dwóch rzeczy poniżej — do tego
-czasu strona pisze organizatorom, żeby poprosili o materiały mailem.
+Strona jest przebudowywana według szkicu Ani z 25.09 (spec: `web-press-v2-2026-09.md`). Zdjęcia
+przyszły (10 kadrów + skrzypce), rider nie jest potrzebny.
 
 ### Blokuje
 
-- [ ] **Rider techniczny — jedna strona.** *(Florent; światło — Ada)* Wystarczą odpowiedzi w punktach, ja złożę:
-  - ile głosów zwykle na scenie i minimum, poniżej którego nie gramy programu,
-  - ustawienie i ile miejsca wymaga — szerokość, głębokość, czy podest,
-  - jaka akustyka jest dobra, a jaka wyklucza koncert,
-  - nagłośnienie i monitoring — czy potrzebne, czy wyłącznie akustycznie,
-  - światło: co niezbędne, co opcja,
-  - garderoba i zaplecze — ile osób, czy osobne pomieszczenie,
-  - czas na próbę akustyczną w dniu koncertu,
-  - instrument (organy, fortepian) — czy i jaki,
-  - zasilanie — ile gniazd, gdzie.
-  Stare liczby ze strony (pogłos „≥ 2 s", podest 6 × 4 m, „12–14 głosów", „60–75 min") nikt nie potwierdził — zostały usunięte i nie wracają jako domysł.
-- [ ] **Zdjęcia — 3 do 5 kadrów, w tym co najmniej jeden pionowy** (plakat jest pionowy). *(Ania)* Przy każdym: nazwisko fotografa i **zgoda fotografa na redystrybucję prasową** (organizator publikuje w plakacie, programie, zapowiedzi, z nazwiskiem). Pionowych mamy mało: `kd-hymn-0…3` i portret Florenta; `kd-hymn-4/5` mają wpaloną ramkę i podpis — nieużywalne, chyba że są oryginały. Pytanie do fotografa *Wcielenia*: zgoda na pionowe kadrowanie jednego z jego kadrów (8256 × 5504 — pion trzyma 300 dpi powyżej A4).
+- [ ] **Akceptacja tekstów** zestawu prasowego *Pochwały Stworzenia*: informacja prasowa, zapowiedź do 500 i do 1500 znaków, post, hashtagi. Piszemy je my, Ania sprawdza. Koncert 11.10, więc informacja prasowa powinna wyjść najpóźniej ok. 1.10. *(Ania)*
+- [ ] **Akceptacja zasad użycia materiałów.** Tekst ze szkicu jest przepisany, a kadrowanie i skalowanie zdjęć są wprost dozwolone, bo inaczej żaden social media manager nie może z nich skorzystać. To zdanie prawne. *(Ania)*
+- [ ] **„12 głosów"** w obsadzie *Pochwały Stworzenia*: potwierdzić liczbę (w danych koncertu nie ma liczby głosów). *(Ania / Florent)*
 
 ### Wzmacnia
 
+- [ ] **Podpisy do zdjęć 01–09**: gdzie i kiedy zrobione (np. „Koncert VoctEnsemble, kościół …, 2025"). Bez tego podpis mówi tylko „Koncert" / „Próba". *(Ania)*
+- [ ] **Biogram Radu Ropotana** (skrzypce) do biogramów koncertu. *(Ania)*
+- [ ] **Osoba do kontaktu dla mediów**: imię i telefon, jeśli ktoś ma odbierać. Na razie jest tylko press@. *(zarząd)*
+- [ ] **Pisemne zgody fotografów** na zdjęcia prasowe. Ania: fotografowie byli opłaceni, korzystać możemy. *(Ania)*
 - [ ] Potwierdzenie nazwisk fotografów przy kadrach już w serwisie: Tomasz Czajkowski, Kamila Grudzińska, Wojciech Przybył, Edyta Gonet, Jakub Garbacz, Andrzej Płachetko. *(Ania)*
 
 ## 3. Decyzje zarządu przed kolejnymi etapami
@@ -76,3 +71,8 @@ czasu strona pisze organizatorom, żeby poprosili o materiały mailem.
 ## Dostarczone
 
 *(przenoś tu odhaczone punkty z datą i kto dostarczył)*
+
+- [x] 25.09 · Ania · **Zdjęcia prasowe**: Ania przysłała 10 kadrów (6 poziomych, 4 pionowe) + skrzypce z archiwum; oryginały w `web/press-pack/photos/` (poza gitem).
+- [x] 25.09 · Ania · **Rider techniczny** — zdjęty z listy: na /press niepotrzebny (Ania: to informacja dla organizatora przed nawiązaniem współpracy, robiona przy *Wołaniu gór*). Gdy wróci, pytania do Florenta są w historii tego pliku; stare liczby (pogłos „≥ 2 s", podest 6 × 4 m, „12–14 głosów", „60–75 min") nie wracają jako domysł.
+- [x] 26.09 · Krystian · **Oryginał zdjęcia nr 10 (Florent, próba)**: 1200 × 1600 px, kafel 4:5 jest już w pakiecie.
+- [x] 26.09 · Krystian · **Plakat w jakości do druku**: PDF A3 z Canvy (12,5 MB), w pakiecie jako `plakat-do-druku.pdf`; oryginał w `web/press-pack/posters/` (poza gitem).

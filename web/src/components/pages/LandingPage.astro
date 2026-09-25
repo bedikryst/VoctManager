@@ -58,6 +58,7 @@ import { AudioController } from "../../islands/landing/AudioController";
 import { Preloader } from "../../islands/landing/Preloader";
 import { StickyHeader } from "../../islands/landing/StickyHeader";
 import { SiteFooter } from "../../islands/landing/SiteFooter";
+import { SOCIAL_SAME_AS } from "../../data/social";
 import { pageI18n, SITE, type Locale } from "../../i18n/config";
 import { UI } from "../../i18n/ui";
 import { LANDING_CHROME, LANDING_PAGE } from "../../i18n/content/landing";
@@ -128,11 +129,7 @@ const jsonLd = {
       addressCountry: "PL",
     },
   },
-  sameAs: [
-    "https://www.instagram.com/voctensemble/",
-    "https://www.facebook.com/voctensemble/",
-    "https://www.youtube.com/@VoctEnsemble-nb7gh",
-  ],
+  sameAs: SOCIAL_SAME_AS,
 };
 ---
 

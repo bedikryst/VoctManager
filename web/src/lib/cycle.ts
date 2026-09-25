@@ -19,7 +19,9 @@
  * @architecture Astro islands 2026
  * @module lib/cycle
  */
-import { romanNumeral } from "./dates";
+// Explicit extension: `lib/pressKit` imports this module, and the press-pack generator loads that
+// under bare Node, which resolves no extensionless specifier.
+import { romanNumeral } from "./dates.ts";
 
 /** The slice of a `concerts` entry this module reads — structural, like lib/registrum's. */
 export interface CycleStation {

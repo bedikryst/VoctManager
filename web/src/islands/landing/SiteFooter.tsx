@@ -48,6 +48,7 @@
  * @module widgets/landing/SiteFooter
  */
 
+import { SOCIAL } from "../../data/social";
 import { localizePath, type Locale } from "../../i18n/config";
 import { UI } from "../../i18n/ui";
 import type { LandingChrome } from "../../i18n/content/landing";
@@ -316,33 +317,13 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
               Rule AFTER the list in the source, not just in the grid: it is the band's tail. */}
           <div className="footer-ribbon reveal" aria-label={chrome.presenceAria}>
             <ul className="footer-ribbon-list">
-              <li>
-                <a
-                  href="https://www.instagram.com/voctensemble/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  instagram
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.facebook.com/voctensemble/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  facebook
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.youtube.com/@VoctEnsemble-nb7gh"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  youtube
-                </a>
-              </li>
+              {Object.values(SOCIAL).map((account) => (
+                <li key={account.url}>
+                  <a href={account.url} target="_blank" rel="noopener noreferrer">
+                    {account.platform.toLowerCase()}
+                  </a>
+                </li>
+              ))}
             </ul>
             <span className="footer-ribbon-rule" aria-hidden="true" />
           </div>

@@ -14,6 +14,9 @@
  * the church, prepared by `npm run photos:proxy` like every other station's (docs/
  * station-backgrounds.md). This file exists for the one surface a photograph cannot serve.
  *
+ * The recipe — the sheet at full card height on a ground blurred out of itself — is shared with the
+ * press kit's social graphics (scripts/press-pack/graphics.mjs), so the two cannot drift apart.
+ *
  * Run: `node poster-art.cjs` from `web/`. Output lands in src/assets/photos/, which is gitignored
  * — upload it to the build host with the rest.
  */
@@ -24,20 +27,9 @@ const POSTER = `${DIR}/poster-stworzenie.png`;
 const CARD = { width: 1200, height: 630 };
 
 (async () => {
-  // The sheet at full card height, and a ground cover-cropped from the same file so the colour
-  // beside the sheet is the sheet's own. Blur 28 is well past the point where the ring of work
-  // titles is language; brightness 0.86 seats the sheet without darkening the card into a mood.
-  const sheet = await sharp(POSTER).resize({ height: CARD.height }).toBuffer({ resolveWithObject: true });
-  const ground = await sharp(POSTER)
-    .resize({ ...CARD, fit: "cover", position: "top" })
-    .blur(28)
-    .modulate({ brightness: 0.86, saturation: 0.9 })
-    .toBuffer();
-
-  await sharp(ground)
-    .composite([{ input: sheet.data, left: Math.round((CARD.width - sheet.info.width) / 2), top: 0 }])
-    .webp({ quality: 86 })
-    .toFile(`${DIR}/share-stworzenie.webp`);
+  const { posterOnGround } = await import("./scripts/press-pack/graphics.mjs");
+  const card = await posterOnGround(POSTER, CARD);
+  await card.webp({ quality: 86 }).toFile(`${DIR}/share-stworzenie.webp`);
 
   const m = await sharp(`${DIR}/share-stworzenie.webp`).metadata();
   console.log(`wrote ${DIR}/share-stworzenie.webp — ${m.width}x${m.height}`);

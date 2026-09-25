@@ -1,94 +1,131 @@
 /**
  * @file pressPack.ts
- * @description Where the downloadable press pack lives, what it is called, and whether it is
- *  there. One module, because three things have to agree about it: the page that offers it, the
- *  script that builds it (`scripts/press-pack.mjs`) and the developer who uploads it.
+ * @description What the built press pack holds, read from its own index at build: the one place
+ *  /press learns which files exist, how large they are, and what URL serves each.
  *
- *  THE PAGE LOOKS; IT IS NEVER TOLD. /press renders a download tile or an honest "write to us"
- *  band depending on what this function finds on disk at build. The 2026-07 audit of that page
- *  found SEVEN dead download links, including a gold "Pobierz cały pakiet" pointing at a
- *  directory that did not exist — because the markup asserted a file instead of asking about one.
- *  A hard-coded href cannot be kept true; a lookup cannot be wrong.
+ *  THE PAGE LOOKS; IT IS NEVER TOLD. `scripts/press-pack.mjs` writes `public/press/index.json`
+ *  beside the files it lists, and the page renders a file's controls only because this module
+ *  found it there. The 2026-07 audit of /press found seven dead download links, all of them markup
+ *  asserting a file instead of asking about one.
  *
- *  THE ARCHIVE IS NOT IN GIT, on the same terms as the photographs it contains
- *  (`web/.gitignore`): tens of megabytes of other people's files, uploaded to the build host
- *  out-of-band. The consequence is the good one — a host without the file builds a page that
- *  simply says the pack is still being assembled, which is true there.
+ *  THREE STATES, AND ONLY ONE OF THEM IS AN ERROR:
+ *  - no index — a fresh checkout, or a host the pack was never uploaded to. The page renders its
+ *    texts and a "write to us" mailto in place of every download. Supported, not broken.
+ *  - an index cut from other sources — its `kitHash` differs from the one this checkout computes
+ *    (`computeKitHash` in lib/pressKit). The page's Kopiuj texts would then disagree with the
+ *    files beside them, so THE BUILD FAILS and says what to do.
+ *  - an index naming a file that is not there — a partial upload. The build fails as well.
  *
- *  DATED, AND THE NEWEST ONE WINS. A pack carries the month it was cut, because a photograph
- *  selection and a rider go stale and an organiser holding last year's zip should be able to see
- *  that they are. Several may sit in the directory during a changeover; the page offers the
- *  latest and nothing enumerates the rest.
+ *  EVERY URL CARRIES `?v=`, derived from the moment the pack was cut, so a regenerated ZIP or a
+ *  re-cropped photo is never served from a cache that still holds the last one.
+ *
+ *  THE PACK IS NOT IN GIT (`web/.gitignore`): tens of megabytes of photographs, built where the
+ *  originals are and uploaded to the build host by hand.
  * @architecture Astro islands 2026
  * @module lib/pressPack
  */
-import { readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+
+import { computeKitHash, type PressFile, type PressIndex } from "./pressKit";
 
 /** Inside `web/`, and inside `public/` so the build copies it verbatim to the served root. */
 export const PACK_DIR = "public/press";
 
-/** The URL path a reader downloads from — `public/` is the served root. */
-export const PACK_URL_BASE = "/press";
-
-/** `voctensemble-press-2026-09.zip`. The month is the pack's own, not today's. */
-export const PACK_NAME = /^voctensemble-press-(\d{4})-(\d{2})\.zip$/;
-
-/** The archive's name for a given month. The one place that spells it. */
-export function packFileName(year: number, month: number): string {
-  return `voctensemble-press-${year}-${String(month).padStart(2, "0")}.zip`;
-}
+/** The URL path the pack is served under — `public/` is the served root. */
+const PACK_URL_BASE = "/press";
 
 export interface PressPack {
-  /** Absolute URL path, ready for an `href`. */
-  readonly href: string;
-  readonly fileName: string;
-  readonly bytes: number;
-  /** First day of the month the pack was cut for — what the page prints beside the size. */
-  readonly cutAt: Date;
+  readonly index: PressIndex;
+  /** The URL a reader opens or downloads `file` from, cache-busted. */
+  readonly href: (file: PressFile) => string;
 }
 
 /**
- * The newest pack in `public/press/`, or `undefined` when there is none.
+ * The pack on this host, or `undefined` when there is none. Throws when there is one and it is
+ * stale or incomplete — see the header.
  *
- * `root` defaults to the process's working directory, which is `web/` for both callers: `astro
- * build` runs from the directory holding `astro.config.mjs`, and npm runs a script from its
- * package's directory. Passing it explicitly is for tests.
+ * `root` defaults to the process's working directory, which is `web/` for `astro build` and for
+ * `astro dev` alike.
  */
-export function findPressPack(root: string = process.cwd()): PressPack | undefined {
+export function readPressPack(root: string = process.cwd()): PressPack | undefined {
   const dir = join(root, PACK_DIR);
-  let names: string[];
+  let index: PressIndex;
   try {
-    names = readdirSync(dir);
+    index = JSON.parse(readFileSync(join(dir, "index.json"), "utf8")) as PressIndex;
   } catch {
-    // No directory at all is the normal state of a fresh checkout, not an error.
     return undefined;
   }
 
-  const candidates = names
-    .map((name) => ({ name, match: PACK_NAME.exec(name) }))
-    .filter((entry): entry is { name: string; match: RegExpExecArray } => entry.match !== null)
-    // Lexical order is chronological order for `YYYY-MM`, which is the whole reason for the shape.
-    .sort((a, b) => b.name.localeCompare(a.name));
+  const fix = "Run `npm run press:pack` in web/ and upload web/public/press/ to this host.";
+  const expected = computeKitHash(root);
+  if (index.kitHash !== expected) {
+    throw new Error(
+      `${PACK_DIR}/index.json was cut from other sources (kitHash ${index.kitHash}, this ` +
+        `checkout computes ${expected}). ${fix}`,
+    );
+  }
 
-  const newest = candidates[0];
-  if (!newest) return undefined;
+  const missing = listedFiles(index).filter((file) => !existsSync(join(dir, file.path)));
+  if (missing.length > 0) {
+    throw new Error(
+      `${PACK_DIR}/index.json lists files that are not on this host: ` +
+        `${missing.map((file) => file.path).join(", ")}. ${fix}`,
+    );
+  }
 
-  const year = Number(newest.match[1]);
-  const month = Number(newest.match[2]);
+  const version = Date.parse(index.generatedAt).toString(36);
   return {
-    href: `${PACK_URL_BASE}/${newest.name}`,
-    fileName: newest.name,
-    bytes: statSync(join(dir, newest.name)).size,
-    cutAt: new Date(Date.UTC(year, month - 1, 1)),
+    index,
+    href: (file) => `${PACK_URL_BASE}/${encodeURI(file.path)}?v=${version}`,
   };
 }
 
+/** Every file the index names, in no particular order. */
+function listedFiles(index: PressIndex): PressFile[] {
+  const concert = index.concert;
+  return [
+    index.readme,
+    index.invoice,
+    index.archives.komplet,
+    index.archives.zdjecia,
+    ...index.photos.flatMap((photo) => [photo, photo.preview, photo.thumbs.w640, photo.thumbs.w1280]),
+    ...index.logo,
+    ...(concert
+      ? [
+          concert.release,
+          concert.programme,
+          concert.biograms,
+          concert.announceShort,
+          concert.announceLong,
+          concert.post,
+          concert.hashtags,
+          concert.poster,
+          ...(concert.posterPrint ? [concert.posterPrint] : []),
+          ...concert.graphics.flatMap((graphic) => [graphic, graphic.thumb]),
+        ]
+      : []),
+  ];
+}
+
 /**
- * A file size as a reader decides whether to download it on a train. Megabytes, one decimal below
- * ten, none above — the precision nobody is served by.
+ * A file size as a reader decides whether to download it on a train: kilobytes under one
+ * megabyte, megabytes with one decimal below ten and none above. The number follows the locale's
+ * decimal mark and the unit is the locale's own ("Mo" in French).
  */
-export function formatBytes(bytes: number): string {
+export function formatBytes(
+  bytes: number,
+  htmlLang: string,
+  units: { readonly kB: string; readonly MB: string },
+): string {
+  if (bytes < 1_000_000) {
+    return `${Math.max(1, Math.round(bytes / 1000))} ${units.kB}`;
+  }
   const mb = bytes / 1_000_000;
-  return `${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB`;
+  const digits = mb < 10 ? 1 : 0;
+  const value = new Intl.NumberFormat(htmlLang, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(mb);
+  return `${value} ${units.MB}`;
 }
