@@ -1220,7 +1220,7 @@
       },
       "privacy": {
         "administrator": "Responsable du traitement",
-        "administrator_desc": "Le responsable du traitement de vos données est la Fondation « VoctFoundation », dont le siège est à Cracovie (31-150), ul. Św. Filipa 23/3, inscrite au Registre judiciaire national sous le numéro KRS 0001237252, NIP 6762718992, REGON 544621525. Contact général : kontakt@voctensemble.com ; questions de protection des données : rodo@voctensemble.com. La Fondation n'a pas désigné de délégué à la protection des données — pour toute question concernant vos données, écrivez directement aux adresses ci-dessus.",
+        "administrator_desc": "Le responsable du traitement de vos données est Fundacja VoctFoundation, fondation de droit polonais dont le siège est à Cracovie (31-150), ul. Św. Filipa 23/3, inscrite au Registre judiciaire national sous le numéro KRS 0001237252, NIP 6762718992, REGON 544621525. Contact général : kontakt@voctensemble.com ; questions de protection des données : rodo@voctensemble.com. La Fondation n'a pas désigné de délégué à la protection des données — pour toute question concernant vos données, écrivez directement aux adresses ci-dessus.",
         "analytics_desc": "Pour faciliter l'organisation de l'ensemble, nous présentons au bureau des indicateurs agrégés issus de votre activité (par ex. statistiques de présence ou historique des distributions). Ils servent uniquement à des fins organisationnelles et artistiques. Nous ne prenons à votre égard aucune décision automatisée produisant des effets juridiques ou vous affectant de manière significative (art. 22 RGPD) — les décisions de distribution et de participation sont prises par des personnes.",
         "analytics_title": "Analyses internes et décisions automatisées",
         "contact_email": "rodo@voctensemble.com",
@@ -1288,7 +1288,7 @@
         "confidentiality_desc": "Les informations sur les tarifs, les plans de production, les lieux de répétition et les distributions sont soumises au secret professionnel. Il est interdit de publier des captures d'écran de l'intérieur de l'application sur les réseaux sociaux sans l'approbation du Conseil.",
         "data_desc": "Le traitement de vos données personnelles dans le panneau est décrit dans la Politique de confidentialité. En utilisant VoctManager, vous confirmez en avoir pris connaissance. Pour les questions de protection des données, écrivez à rodo@voctensemble.com.",
         "data_title": "Données personnelles",
-        "definitions_desc": "Fondation — la Fondation « VoctFoundation » dont le siège est à Cracovie, prestataire du Panneau. Panneau — l'application web VoctManager, outil opérationnel interne de la Fondation. Utilisateur — la personne physique à laquelle la Fondation a accordé un compte individuel dans le Panneau. Matériels — partitions, enregistrements, documents et autres contenus mis à disposition dans le Panneau. Règlement — le présent document.",
+        "definitions_desc": "Fondation — Fundacja VoctFoundation, dont le siège est à Cracovie, prestataire du Panneau. Panneau — l'application web VoctManager, outil opérationnel interne de la Fondation. Utilisateur — la personne physique à laquelle la Fondation a accordé un compte individuel dans le Panneau. Matériels — partitions, enregistrements, documents et autres contenus mis à disposition dans le Panneau. Règlement — le présent document.",
         "definitions_title": "Définitions",
         "embeds_desc": "Le panneau peut renvoyer vers ou intégrer en option des contenus de référence de tiers (par ex. playlists Spotify). Ces contenus sont optionnels, désactivés par défaut et régis par les conditions et politiques du fournisseur concerné ; la Fondation n'est pas responsable des services tiers.",
         "embeds_title": "Contenus externes",
@@ -1298,7 +1298,7 @@
         "intellectual_property_desc": "Toutes les partitions (PDF), les enregistrements de répétition (MP3) et les matériels pédagogiques fournis dans le système sont la propriété de la Fondation ou de ses partenaires. Le téléchargement de matériels est autorisé uniquement pour la préparation des concerts VoctEnsemble. La copie et la distribution sans permission sont interdites.",
         "language_desc": "Le Règlement et la Politique de confidentialité sont rédigés en langue polonaise. Les versions anglaise et française sont fournies à titre purement informatif — en cas de divergence, la version polonaise prévaut.",
         "language_title": "Langue des documents",
-        "provider_desc": "Le prestataire du panneau VoctManager est la Fondation « VoctFoundation » dont le siège est à Cracovie (31-150), ul. Św. Filipa 23/3, inscrite au Registre judiciaire national sous le numéro KRS 0001237252, NIP 6762718992, REGON 544621525, e-mail : kontakt@voctensemble.com.",
+        "provider_desc": "Le prestataire du panneau VoctManager est Fundacja VoctFoundation, fondation de droit polonais dont le siège est à Cracovie (31-150), ul. Św. Filipa 23/3, inscrite au Registre judiciaire national sous le numéro KRS 0001237252, NIP 6762718992, REGON 544621525, e-mail : kontakt@voctensemble.com.",
         "provider_title": "Prestataire de services",
         "subtitle": "Conditions d'utilisation",
         "support_desc_prefix": "Toute erreur de fonctionnement du système, incohérence dans les horaires ou problème d'accès doit être signalé à",
@@ -5773,7 +5773,7 @@
         "title": "Ajouter à l'écran d'accueil"
       },
       "colophon": {
-        "copyright": "© {{year}} Fondation « VoctFoundation »",
+        "copyright": "© {{year}} Fundacja VoctFoundation",
         "credit": "Conception et réalisation : Krystian Bugalski",
         "version": "VoctManager · version {{build}}"
       },

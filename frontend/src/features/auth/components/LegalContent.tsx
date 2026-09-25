@@ -15,10 +15,10 @@ import { Heading, Text } from "@/shared/ui/primitives/typography";
  * it is displayed in the header, sent with the activation request and stored
  * server-side (UserProfile.terms_accepted_at/_version) as acceptance evidence.
  */
-export const LEGAL_DOCS_VERSION = "2026-09-11";
+export const LEGAL_DOCS_VERSION = "2026-09-25";
 
 /** Human display form of {@link LEGAL_DOCS_VERSION} (dd.mm.yyyy). */
-export const LEGAL_DOCS_UPDATED_DISPLAY = "11.09.2026";
+export const LEGAL_DOCS_UPDATED_DISPLAY = "25.09.2026";
 
 /*
  * Privacy policy for the *panel application* (a separate document from the

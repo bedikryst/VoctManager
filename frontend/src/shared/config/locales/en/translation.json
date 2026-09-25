@@ -1211,7 +1211,7 @@
       },
       "privacy": {
         "administrator": "Data Controller",
-        "administrator_desc": "The controller of your data is the \"VoctFoundation\" Foundation with its registered office in Krakow (31-150), ul. Św. Filipa 23/3, entered in the National Court Register under KRS number 0001237252, NIP 6762718992, REGON 544621525. General contact: kontakt@voctensemble.com; data protection matters: rodo@voctensemble.com. The Foundation has not appointed a data protection officer — for any matter concerning your data, write directly to the addresses above.",
+        "administrator_desc": "The controller of your data is Fundacja VoctFoundation, a foundation under Polish law with its registered office in Krakow (31-150), ul. Św. Filipa 23/3, entered in the National Court Register under KRS number 0001237252, NIP 6762718992, REGON 544621525. General contact: kontakt@voctensemble.com; data protection matters: rodo@voctensemble.com. The Foundation has not appointed a data protection officer — for any matter concerning your data, write directly to the addresses above.",
         "analytics_desc": "To support the ensemble's organisation, we present aggregated indicators derived from your activity to the board (e.g. attendance statistics or casting history). These serve organisational and artistic purposes only. We do not make automated decisions about you that produce legal effects or similarly significantly affect you (Art. 22 GDPR) — casting and participation decisions are made by people.",
         "analytics_title": "Internal Analytics and Automated Decisions",
         "contact_email": "rodo@voctensemble.com",
@@ -1279,7 +1279,7 @@
         "confidentiality_desc": "Information about rates, production plans, rehearsal locations, and cast assignments is subject to professional secrecy. Taking screenshots of the application's interior and sharing them on social media without Board approval is prohibited.",
         "data_desc": "How your personal data is processed in the panel is described in the Privacy Policy. By using VoctManager you confirm that you have read it. For data-protection matters, write to rodo@voctensemble.com.",
         "data_title": "Personal Data",
-        "definitions_desc": "Foundation — the \"VoctFoundation\" Foundation with its registered office in Krakow, the provider of the Panel. Panel — the VoctManager web application, the Foundation's internal operational tool. User — a natural person to whom the Foundation has granted an individual account in the Panel. Materials — sheet music, recordings, documents and other content made available in the Panel. Terms — this document.",
+        "definitions_desc": "Foundation — Fundacja VoctFoundation, with its registered office in Krakow, the provider of the Panel. Panel — the VoctManager web application, the Foundation's internal operational tool. User — a natural person to whom the Foundation has granted an individual account in the Panel. Materials — sheet music, recordings, documents and other content made available in the Panel. Terms — this document.",
         "definitions_title": "Definitions",
         "embeds_desc": "The panel may link to or optionally embed third-party reference content (e.g. Spotify playlists). Such content is optional, off by default, and governed by the terms and policies of the respective provider; the Foundation is not responsible for third-party services.",
         "embeds_title": "External Content",
@@ -1289,7 +1289,7 @@
         "intellectual_property_desc": "All sheet music (PDF), demo recordings (MP3), and educational materials provided in the system are the property of the Foundation or cooperating entities. Downloading materials is allowed only for preparation for VoctEnsemble concerts. Copying and distributing them without permission is prohibited.",
         "language_desc": "The Terms and the Privacy Policy are drawn up in Polish. The English and French versions are provided for information only — in case of discrepancies, the Polish version prevails.",
         "language_title": "Language of the Documents",
-        "provider_desc": "The provider of the VoctManager panel is the \"VoctFoundation\" Foundation with its registered office in Krakow (31-150), ul. Św. Filipa 23/3, entered in the National Court Register under KRS number 0001237252, NIP 6762718992, REGON 544621525, email: kontakt@voctensemble.com.",
+        "provider_desc": "The provider of the VoctManager panel is Fundacja VoctFoundation, a foundation under Polish law with its registered office in Krakow (31-150), ul. Św. Filipa 23/3, entered in the National Court Register under KRS number 0001237252, NIP 6762718992, REGON 544621525, email: kontakt@voctensemble.com.",
         "provider_title": "Service Provider",
         "subtitle": "Terms of Service",
         "support_desc_prefix": "Report any system errors, inconsistencies in schedules, or access issues to",
@@ -5762,7 +5762,7 @@
         "title": "Add to Home Screen"
       },
       "colophon": {
-        "copyright": "© {{year}} “VoctFoundation” Foundation",
+        "copyright": "© {{year}} Fundacja VoctFoundation",
         "credit": "Designed and built by Krystian Bugalski",
         "version": "VoctManager · version {{build}}"
       },
