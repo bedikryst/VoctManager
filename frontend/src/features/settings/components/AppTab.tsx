@@ -470,8 +470,11 @@ export const AppTab = (): React.JSX.Element => {
             build: __APP_BUILD__,
           })}
         </Caption>
+        {/* The rights holder stays the registered name in every locale: statute
+            §4.1 admits only board-adopted translations of it, and requires the
+            full registered name wherever the foundation acts as a legal party. */}
         <Caption as="p">
-          {t("settings.app.colophon.copyright", "© {{year}} Fundacja „VoctFoundation”", {
+          {t("settings.app.colophon.copyright", "© {{year}} Fundacja VoctFoundation", {
             year: BUILD_YEAR,
           })}
         </Caption>
