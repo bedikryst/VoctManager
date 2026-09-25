@@ -1,0 +1,4 @@
+node_modules/
+# Raw captures: full-size PNGs, recorded .webm takes and ffmpeg intermediates.
+# Only the curated results are copied into docs/assets/.
+out/

@@ -8,166 +8,142 @@
 ![Celery](https://img.shields.io/badge/Celery-37814A?logo=celery&logoColor=white)
 ![Anthropic](https://img.shields.io/badge/Claude_Sonnet_5_+_Opus_5-D97757?logo=anthropic&logoColor=white)
 
-System do zarządzania profesjonalnym zespołem wokalnym i pipeline AI, który kataloguje jego nuty.
+VoctManager obsługuje codzienną pracę VoctEnsemble, zawodowego zespołu wokalnego: obsadę, plany prób, nuty z adnotacjami, umowy i finanse projektów. Ma też pipeline AI, który z PDF-a z nutami robi skatalogowany wpis w archiwum.
 
-Współzałożyłem fundację przy **VoctEnsemble**. Jej dyrektor artystyczny robił ręcznie mnóstwo rzeczy, które powinien robić za niego program: kto śpiewa którą partię, umowy, składanie śpiewnika przed każdym koncertem, przepisywanie metadanych z PDF-ów pole po polu. Więc to zbudowałem.
+Współzałożyłem fundację, która prowadzi zespół, i jestem jedynym programistą tego projektu. Zacząłem w lutym 2026. Wcześniej dyrektor artystyczny, który jest też dyrygentem, robił to wszystko ręcznie: rozpisywał, kto śpiewa którą partię, przygotowywał umowy, składał śpiewnik przed każdym koncertem i przepisywał metadane z PDF-ów.
 
-Jedna osoba, 832 commity, pierwszy 26 lutego 2026.
-
-**Strona publiczna:** [voctensemble.com](https://voctensemble.com) · **Status:** wdrożone i działa, adopcja w toku ([szczegóły](#jak-to-naprawdę-wygląda))
+**Strona publiczna:** [voctensemble.com](https://voctensemble.com) · **Status:** działa na produkcji, zespół korzysta z niego od sierpnia ([szczegóły](#status))
 
 | Pulpit dyrygenta | Weryfikacja wyników AI |
 |:---:|:---:|
-| <img src="docs/assets/admin-dashboard.png" width="420" alt="Pulpit administratora z projektami, próbami i zadaniami do wykonania"/> | <img src="docs/assets/score-compiler-review.png" width="420" alt="Panel weryfikacji z chipami pochodzenia i pewności przy każdym polu, obok źródłowego PDF-a"/> |
+| <img src="docs/assets/admin-dashboard.png" width="420" alt="Pulpit administratora z projektami, próbami i zadaniami do wykonania"/> | <img src="docs/assets/score-compiler-review.png" width="420" alt="Ekran weryfikacji z chipami pochodzenia i pewności przy każdym polu, obok źródłowego PDF-a"/> |
 
 ---
 
-## Pipeline partytur
+## Status
 
-Wrzucasz PDF z nutami. Kilka minut później w archiwum jest skatalogowany utwór: kompozytor rozwiązany do kanonicznego identyfikatora, rozdzielone części, przepisany tekst śpiewany, IPA dopasowana wers po wersie, tłumaczenia śpiewne. Dyrygent to przegląda, poprawia co trzeba, zatwierdza — i dopiero wtedy powstaje nota programowa, z poprawionego rekordu, a nie z pierwszego strzału modelu. Popołudnie przepisywania zmienia się w kilka minut sprawdzania.
+Pierwszy koncert w systemie (u św. Andrzeja Boboli, maj 2026) to były głównie dane, które wpisałem sam, żeby sprawdzić cały proces. Proces zadziałał, ale dyrygent z niego nie korzystał. Swoją pracę robi świetnie i między próbami nie ma czasu na naukę nowych narzędzi, czego nie przewidziałem. Namówienie go, żeby otworzył aplikację w zwykły wtorek, okazało się trudniejsze niż cała strona techniczna.
+
+Koncert z końca sierpnia poprowadził przez aplikację już sam, a chórzyści korzystali z niej w trakcie koncertu. Teraz trwają próby do kolejnego programu i pracują w niej i dyrygent, i chór. Na bieżąco przysyła mi uwagi, a opisany niżej plan próby powstał z dwóch jego zgłoszeń.
+
+## Co w nim jest
+
+- **Obsada.** Przeciąganiem, z podziałem na sekcje, prowadzącymi sekcji i kolejnością miejsc. Instrumentaliści mają konta i partie tak samo jak śpiewacy.
+- **Plany prób.** Kolejność utworów na każdą próbę i osobne okno czasowe dla każdego śpiewaka. [Więcej niżej](#plan-próby).
+- **Cyfrowy pulpit.** Czytnik PDF na tablet: kolejne strony wczytane z wyprzedzeniem, pedał Bluetooth, blokada wygaszania ekranu, zoom szczypnięciem. Śpiewacy i dyrygent mogą nanosić na nuty oddechy, dynamikę, widełki, fermaty i odręczne notatki (rysik rysuje, palec przewija). Znaki leżą na czterech warstwach: cały chór, prowadzący próbę, zarząd i prywatna warstwa każdego śpiewaka, której nie widzą nawet managerowie. Pilnuje tego serwer.
+- **Śpiewniki.** Gotowy do druku skoroszyt z repertuaru projektu: strona tytułowa, spis treści, karta tytułowa przed każdym utworem, ciągła numeracja stron, zakładki PDF, opcjonalnie układ do druku dwustronnego.
+- **Nuty licencjonowane.** Każde wydanie ma status prawnoautorski, a niesklasyfikowane traktujemy jak chronione. Chronione nuty zostają w aplikacji i dostają znak wodny generowany na serwerze dla każdego odbiorcy: numer egzemplarza, imię i nazwisko, koncert, data. Znak nie zawiera adresu e-mail, bo te kartki się drukuje i zostawia na pulpitach. Każde pobranie trafia do logu, a przy składaniu śpiewnika system ostrzega, gdy egzemplarzy ma być więcej, niż zespół kupił.
+- **Finanse.** Budżety, honoraria, wydatki i granty projektów. [Więcej niżej](#finanse).
+- **Wiadomości.** Wątki między śpiewakami a zarządem i kanał ogłoszeń w każdym projekcie, dostarczane w aplikacji, mailem (EmailLabs) i przez web push. Celowo bez statusu obecności i wskaźnika pisania.
+- **Darowizny** przez Axepta BNP Paribas, z weryfikacją podpisu MAC i uzgadnianiem płatności w Celery.
+- Kalendarze iCal, jasny i ciemny motyw, cztery role (admin, manager, artysta, ekipa) sprawdzane po stronie API.
+
+## Pipeline nut
+
+Po wrzuceniu PDF-a z nutami w ciągu kilku minut w archiwum pojawia się skatalogowany utwór: kompozytor dopasowany do MusicBrainz i Wikidanych, części, tekst śpiewany, IPA wers po wersie i tłumaczenia śpiewne. Dyrygent to przegląda i poprawia. Nota programowa powstaje dopiero potem, z poprawionych danych.
 
 ```
 upload PDF
-  → rusza łańcuch Celery, przeglądarka podpina się pod Server-Sent Events
-  → jedno skonsolidowane wywołanie Sonneta 5 czyta cały dokument wzrokowo
-    (warstwa tekstowa i skany; tonacja wyczytana z kluczy przykluczowych,
-     kompozytor oddzielony od aranżera, części, tekst, IPA, tłumaczenia)
-  → kompozytor i utwór rozwiązane wobec MusicBrainz (MBID) i Wikidanych (QID)
-  → Spotify i YouTube przeszukane pod kątem nagrań referencyjnych
-  → każde pole ostemplowane pochodzeniem, zapis do bazy
-  → dyrygent weryfikuje, poprawia, zatwierdza → publikacja
-  → notę programową pisze Opus 5, na żądanie, ze zweryfikowanego rekordu
+  → rusza łańcuch Celery, przeglądarka subskrybuje Server-Sent Events
+  → jedno wywołanie Sonneta 5 czyta cały dokument
+    (warstwa tekstowa albo skan; tonacja, kompozytor i aranżer,
+     części, tekst śpiewany, IPA, tłumaczenia)
+  → kompozytor i utwór dopasowane do MusicBrainz (MBID) i Wikidanych (QID)
+  → nagrania referencyjne wyszukane w Spotify i YouTube
+  → każde pole zapisane razem z pochodzeniem
+  → dyrygent sprawdza, poprawia, zatwierdza → publikacja
+  → notę programową pisze Opus 5, na żądanie, ze sprawdzonych danych
 ```
 
-### Trzy rzeczy, na które bym wskazał
+Każde pole, które przyszło z modelu albo z zewnętrznego API, ma zapisane pochodzenie (model, wersja promptu, źródło, pewność, data). Ekran weryfikacji pokazuje przy każdym polu chip: `AI · 95%`, `MusicBrainz` albo `Zweryfikowane`, gdy ktoś je poprawił. Kanoniczne identyfikatory pochodzą wyłącznie z MusicBrainz i Wikidanych.
 
-**Pochodzenie przy każdym polu.** Wszystko, co wyprodukował model albo zewnętrzne API, niesie ze sobą `(model, prompt_version, source_reference, confidence, retrieved_at)` w `ProvenanceRecord`, a ekran weryfikacji pokazuje to osobno dla każdego pola: chip `AI · 95%`, chip `MusicBrainz` albo chip `Zweryfikowane`, gdy człowiek już poprawił wartość. Kanoniczne identyfikatory zawsze pochodzą z MusicBrainz albo Wikidanych, nigdy z modelu. Chodzi o to, żeby dyrygent nie musiał zgadywać, które pola zasługują na drugie spojrzenie. Czy te chipy są na tyle czytelne, żeby to faktycznie umożliwić — jeszcze nie wiem. Nikt ich nie używał pod presją czasu.
+Ponawianie zależy od tego, czy nieudane wywołanie zostało policzone do rachunku ([`ai_client.py`](backend/archive/infrastructure/ai_client.py)):
 
-**Polityka ponawiania idzie za rachunkiem, nie za kodem HTTP.** Taksonomia wyjątków w [`archive/infrastructure/ai_client.py`](backend/archive/infrastructure/ai_client.py) dzieli błędy jednocześnie na dwa sposoby: czy ponowienie może w ogóle pomóc i czy nieudana próba została zafakturowana?
-
-| Błąd | Zafakturowany? | Polityka |
+| Błąd | Płatny? | Co się dzieje |
 |---|---|---|
-| 529 overloaded / 5xx / 429 / timeout połączenia | nie | Do ponowienia. Czeka dziesiątki sekund do minut i pokazuje stan „usługa zajęta, ponawiam". |
-| ucięcie na `stop_reason='max_tokens'` | tak | Podwaja budżet, ponawia do 2 eskalacji, potem odpuszcza. Stały budżet ucina deterministycznie, więc powtórzenie identycznego wywołania kupuje tę samą porażkę drugi raz. |
-| 400 / autoryzacja / uprawnienia | nie | Terminalny. Przerywa łańcuch, zamiast palić cykle autoretry na żądaniu, które Anthropic już odrzucił. |
+| 529 overloaded, 5xx, 429, timeout połączenia | nie | Ponowienie po kilkudziesięciu sekundach do kilku minut. Interfejs pokazuje „usługa zajęta, ponawiam". |
+| Ucięcie na `max_tokens` | tak | Podwojenie budżetu wyjścia i ponowienie, najwyżej dwa razy. Przy tym samym budżecie odpowiedź urwałaby się w tym samym miejscu. |
+| 400, autoryzacja, uprawnienia | nie | Łańcuch się zatrzymuje. Ponowienie nic nie da. |
 
-`retry(3)` na wszystkim byłoby o pół dnia mniej pracy. Zamienia też chwilowy brak mocy w burzę ponowień, a jedno ucięcie w trzy identyczne rachunki.
+Jeden ingest kosztuje $0.04–0.20. Partytura w całości po polsku jest na dole widełek, bo nie potrzebuje IPA ani tłumaczenia. Są trzy limity wydatków: na jeden przebieg, na wydanie przez cały jego czas życia i dzienny dla całej organizacji, który działa jak bezpiecznik. PDF, który już raz przeszedł przez pipeline, jest rozpoznawany po sumie SHA-256 i model w ogóle nie jest wywoływany. PDF idzie z prompt cachingiem, więc ponowienie po ucięciu czyta go po stawce cache.
 
-**Trzy sufity kosztowe, egzekwowane na granicy zadania.** Na pojedynczy przebieg, dożywotni na wydanie (nigdy się nie resetuje) i dzienny na całą organizację, który zbija bezpiecznik. Domyślnie $1.50, $7.50 i $20.00. Ponowne wrzucenie PDF-a, który już przeszedł przez pipeline, trafia na kontrolę SHA-256 i całkowicie omija model. Jeden ingest kosztuje **$0.04–0.20**, a rozrzut w tym przedziale bierze się z języka śpiewanego, nie z modelu: partytura w całości polska nie zwraca ani IPA, ani tłumaczenia, więc wychodzi za piątą część tego, co dwujęzyczna. PDF idzie jako natywny blok `document` z `cache_control: ephemeral`, więc jeśli ucięcie wymusi eskalację, druga próba odczytuje go po stawkach cache zamiast płacić za pełne wejście jeszcze raz.
+<img src="docs/assets/score-compiler-upload.png" width="620" alt="Ekran wysyłki z postępem pipeline'u przesyłanym przez Server-Sent Events"/>
 
-<img src="docs/assets/score-compiler-upload.png" width="620" alt="Ekran wysyłki z postępem pipeline'u strumieniowanym przez Server-Sent Events"/>
+Szczegóły: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion-pipeline.md).
 
----
+## Plan próby
 
-## Decyzje
+Dyrygent układa utwory na próbę w kolejności. Każdy wiersz może mieć czas w minutach, notatkę („od t. 40, pierwsze czytanie") i linie głosów, które nie są potrzebne. Sekcyjną definiują litery głosów (S, A, T, B), więc śpiewak dopisany później do obsady jest na nią wołany automatycznie. Z planu każdy śpiewak dostaje własne okno, np. „Twoja część 19:00–20:15", żeby nikt nie czekał na utwory, których nie śpiewa. O to prosił dyrygent. Nazwał to szacunkiem dla czasu ludzi.
 
-Łącznie z tymi, w których decyzją było czegoś nie budować. Reszta jest w sekcji [Poza zakresem](#poza-zakresem).
+Plan trafia do chóru dopiero wtedy, gdy dyrygent go wyśle, a nie przy każdej zmianie. Po próbie odhacza, co zostało zrobione, a siatka utworów i prób pokazuje, ile razy każdy utwór był ćwiczony. Próbę może przekazać asystentowi z konkretnymi uprawnieniami: sprawdzanie obecności, oznaczenia w nutach chóru, otwieranie materiałów.
 
-**Dwa frontendy.** Panel to SPA w Reakcie. Strona publiczna to osobna aplikacja w Astro. Ten podział wziął się z wniosku o Google Ad Grants: audyt wymagał treści indeksowalnej, a powłoka SPA podawała crawlerom pusty div. Astro emituje statyczny HTML i hydratuje Reacta tylko tam, gdzie jest prawdziwy stan: ścieżka darowizny, bramka audio, przyklejony nagłówek. Dwa buildy, jeden backend, jeden deploy. To więcej ruchomych części, niż chciałem, i podjąłbym tę decyzję ponownie.
+## Finanse
 
-**Dwa poziomy modelu i podmiana wersji, która podmianą nie była.** Dokument czyta Sonnet 5. Notę programową — jedyny tekst, który publiczność czyta tu dosłownie, wydrukowany w programie koncertu — pisze Opus 5, za jakiegoś centa więcej na notę. Przejście między generacjami okazało się czymś więcej niż wymianą stałej. Na poprzednim Sonnecie brak klucza `thinking` znaczył, że myślenie jest wyłączone; na Sonnecie 5 znaczy, że adaptacyjne myślenie jest włączone — czyli goła podmiana po cichu włączyłaby je z powrotem w jedynym wywołaniu, które wyłącza je celowo, i kazała mu dzielić budżet wyjścia tego wywołania. A mapa pochodzenia przy nierozpoznanym identyfikatorze modelu spadała do poziomu Opusa, więc każde pole wyprodukowane przez Sonneta dostałoby w kokpicie weryfikacji etykietę „Opus", podczas gdy zapisany `model_version` mówiłby co innego — cicha nieprawda dokładnie na tym ekranie, który powstał po to, żeby dyrygent nie musiał zgadywać.
+Budżety, honoraria, wydatki i granty projektów w jednej księdze, którą zatwierdza zarząd. Zastąpiła trzy ekrany, z których każdy liczył honoraria po swojemu.
 
-**Nota programowa wyszła z łańcucha ingestu.** Wcześniej leciała od razu, na końcu pipeline'u, co znaczyło, że tekst dla publiczności powstawał z *niezweryfikowanej* tożsamości od modelu — zły kompozytor albo zła epoka wpisane wprost w zdanie, które czyta słuchacz. Teraz jest osobnym zadaniem na żądanie, odpalanym z kokpitu weryfikacji albo przy zatwierdzeniu, z poprawionymi metadanymi i tekstem śpiewanym jako kontekstem.
+- Każdy zapis idzie przez serwis i trafia do tabeli `FinanceEvent`, do której można tylko dopisywać. Tabela nie ma miękkiego usuwania, więc wpisów nie da się ukryć.
+- Umowa zapamiętuje kwotę i wykonawcę z dnia wystawienia. Zmiana któregokolwiek oznacza unieważnienie umowy i wystawienie nowej, a numer unieważnionej przepada.
+- Numery umów idą z licznika prowadzonego osobno dla każdego roku i rodzaju umowy, blokowanego przez `select_for_update()` w transakcji wystawienia.
+- Pieniądze z grantu przypisuje się do pozycji budżetu i do pojedynczych kosztów. Limity wkładu własnego i kosztów administracyjnych są sprawdzane w ramach każdej umowy dotacyjnej, a plan eksportuje się jako kosztorys do wniosku grantowego.
+- Śpiewacy nie widzą w aplikacji żadnych kwot, także swoich.
 
-**Liveness i readiness odpowiadają na różne pytania.** `/api/health/` nie dotyka niczego i obsługuje healthcheck Dockera. `/api/health/ready/` uderza w Postgresa i Redisa, i zwraca 503, jeśli nie jest w stanie obsłużyć żądania. Trzymanie ich osobno ma większe znaczenie, niż wygląda: zrestartuj kontener dlatego, że Postgres muli, a dostaniesz kontener, który wraca dokładnie tak samo zamulony, po czym `depends_on` przenosi restart na Celery. Sprawdzenie Redisa to zapis i odczyt, a nie `PING`. Redis siedzący na `maxmemory` przy `noeviction` odpowie na `PING` bez zarzutu, jednocześnie odrzucając każdy zapis — i wolę się o tym dowiedzieć z probe'a niż ze zgubionego zadania.
+## Kilka decyzji
 
-**Alert na ciszę.** Martwy scheduler Celery beat nie rzuca wyjątku. Po prostu przestaje, po cichu, i wszystko poniżej wygląda dobrze, dopóki ktoś nie zauważy, że przestały przychodzić podsumowania. Więc zadanie okresowe pinguje zewnętrzny monitor heartbeat, a alert odpala się wtedy, gdy ping *nie* przyjdzie. To dowód end-to-end: beat musiał je zaplanować, broker dostarczyć, a worker wykonać. Samo zadanie pingujące celowo połyka własne błędy. Rozchwiany monitor nie powinien móc dzwonić do mnie o sobie samym.
+**Dwa frontendy.** Panel to SPA w Reakcie, a strona publiczna to osobna aplikacja w Astro. Google Ad Grants wymagał stron, które da się zaindeksować, a SPA pokazywało crawlerom pusty div. Astro generuje statyczny HTML i ładuje Reacta tylko tam, gdzie jest stan: przy darowiźnie, bramce audio i przyklejonym nagłówku.
 
----
+**Nota programowa powstaje po weryfikacji.** Wcześniej generowała się na końcu pipeline'u z niesprawdzonych danych, więc zły kompozytor albo epoka mogły trafić do drukowanego programu koncertu. Teraz to osobne zadanie, uruchamiane z ekranu weryfikacji albo przy zatwierdzeniu.
 
-## Jak to naprawdę wygląda
+**Sonnet 5 czyta, Opus 5 pisze noty.** Nota programowa to jedyny tekst, który publiczność czyta słowo w słowo, więc dostaje mocniejszy model, za około centa więcej na notę. Przejście na nową generację nie sprowadziło się do zmiany stałej: na Sonnecie 5 brak klucza `thinking` oznacza włączone myślenie adaptacyjne, więc zwykła podmiana włączyłaby je z powrotem w jedynym wywołaniu, które je wyłącza.
 
-System jest wdrożony i działa. Czy jest *używany*, to osobne pytanie i szczera odpowiedź brzmi: na razie ledwie.
-
-Przez system przeszedł jeden koncert — u św. Andrzeja Boboli, maj 2026 — i większość tych danych wprowadziłem sam, żeby sprawdzić, czy cały przepływ się trzyma od początku do końca. Trzymał się. Ale dyrektor artystyczny jeszcze go nie przyswoił. Swoją robotę robi bardzo dobrze i ma zerową cierpliwość do uczenia się nowego narzędzia między próbami, co jest całkowicie zrozumiałe i czego w ogóle nie przewidziałem. Przeprowadzenie go od „robi wrażenie" do „otworzyłem to we wtorek" okazało się trudniejsze niż jakakolwiek część inżynierii.
-
-Zadeklarował, że koncert z końca sierpnia poprowadzi już przez system sam. To będzie pierwszy uczciwy test.
-
-Zostawiam tę sekcję, bo to najbardziej użyteczna rzecz, jakiej ten projekt mnie nauczył. Zbudować potrafię. Wprowadzenie tego w czyjeś nawyki pracy to zupełnie inna dyscyplina i mocno ją zlekceważyłem. Funkcje, z których jestem tu najbardziej dumny — chipy pochodzenia, generator śpiewnika, warstwy adnotacji — są warte zero, dopóki ktoś nie otworzy aplikacji we wtorek dlatego, że to łatwiejsze niż jej nieotwieranie. Nie sądzę, żebym to już zbudował.
+**Adnotacje odświeżają się przez odpytywanie.** Otwarty pulpit co 20 sekund pyta mały endpoint o odcisk stanu i pobiera znaki tylko wtedy, gdy się zmienił. Przy Server-Sent Events przez całą próbę byłoby otwartych około trzydziestu połączeń, żeby zyskać sekundę czy dwie.
 
 ## Co zrobiłem źle
 
-**Pierwszy pipeline ingestu był łańcuchem małych wywołań modelu.** Tożsamość w jednym, części w drugim, potem tekst, potem tłumaczenia. Każde wywołanie widziało tylko swój wycinek, więc model raz po raz sięgał po to, co wiedział, zamiast po to, co było wydrukowane — przy znanym hymnie produkował tekst kanoniczny zamiast słów faktycznie na stronie, co dla archiwum jest dokładnie odwrotnością tego, o co chodzi. Skonsolidowanie do jednego wywołania czytającego cały dokument naprawiło dokładność i przy okazji ścięło rachunek. Powinienem był to przewidzieć z pierwszych zasad. Nie przewidziałem.
+**Pierwszy pipeline był łańcuchem małych wywołań modelu** (tożsamość, części, tekst, tłumaczenia). Każde widziało tylko swój fragment, więc przy znanych hymnach model zwracał tekst kanoniczny zamiast tego, co było wydrukowane. Jedno wywołanie na cały dokument to naprawiło i przy okazji wyszło taniej.
 
-**Zbudowałem harness do pomiarów i przez dwa miesiące go nie nakarmiłem.** Ewaluator na złotym zestawie powstał razem z pipeline'em v2 w czerwcu i do sierpnia nie miał żadnego złotego zestawu — czyli każda deklaracja o jakości tego pipeline'u do tamtej pory, łącznie z tymi, którymi uzasadniałem przepisanie go, opierała się na wyrywkowym sprawdzaniu. Kiedy podmiana modelu w końcu wymusiła pomiar, pomiar zaprzeczył rozumowaniu, na którym tę podmianę oparłem: argumentowałem za Sonnetem 5 jego wyższą rozdzielczością wzroku przy skanach, a archiwum okazało się niemal w całości cyfrowe od urodzenia, gdzie ta dźwignia nie robi nic. Został i tak, z powodu, którego nie podałem: 31% taniej i 2,6× szybciej przy identycznej dokładności, bo dochodzi do tej samej odpowiedzi na 39% mniejszym wyjściu, a rachunek mieszka po stronie wyjścia. Zestaw wyszedł też na 100% w każdej konfiguracji, łącznie ze starym modelem, więc niczego jeszcze nie różnicuje — i dlatego tańsze ustawienie `effort`, które dorównało wszędzie, mimo to nie zostało promowane. Test, który wszystko przechodzi, nie jest dowodem.
+**Przez dwa miesiące mój ewaluator nie miał danych.** Ewaluator na złotym zestawie powstał w czerwcu, a sam zestaw dopiero w sierpniu. Kiedy w końcu zmierzyłem przejście na Sonneta 5, okazało się, że mój powód (lepsze czytanie skanów) nie ma znaczenia, bo archiwum to prawie wyłącznie PDF-y cyfrowe od początku. Sonnet 5 został, bo przy tej samej dokładności był tańszy i szybszy. Zestaw nadal daje 100% w każdej konfiguracji, więc jeszcze ich nie rozróżnia.
 
-**Za długo nie testowałem nudnych ścieżek.** Pokrycie testami rosło najpierw wokół pipeline'u AI, bo tam mieszkały ciekawe awarie. Umowy, obecności, rozliczenia dostały je późno. I to właśnie stamtąd wychodziły prawdziwe błędy.
+**Adnotacje offline nie działały, a byłem pewien, że działają.** Zapisy szły prosto do API. Gdy zapis się nie udał, aktualizacja optymistyczna była cofana, a błąd połykany, więc znak postawiony bez zasięgu po prostu znikał. Pobieranie koncertu na offline pomijało też adnotacje. Teraz identyfikator znaku nadaje klient, więc znak można edytować i zmazać, zanim zobaczy go serwer. Zapisy do tego samego znaku są w kolejce scalane (utworzenie, a po nim zmazanie, nie wysyła nic), a ponowione utworzenie nie przywraca zmazanego znaku. Pełnego cyklu offline i powrotu do sieci na prawdziwym tablecie jeszcze nie sprawdziłem.
 
----
+**Testy pisałem najpierw do pipeline'u AI**, bo tam były ciekawe błędy. Umowy, obecności i honoraria dostały testy późno, a prawdziwe błędy wychodziły właśnie tam.
 
-## Jak to powstało i gdzie kończy się AI
+## Utrzymanie
 
-Używam Claude Code codziennie. Projekt tej wielkości nie powstaje w pół roku w pojedynkę bez tego, a historia gita mówi to wprost: część commitów ma współautora.
+- Dwa endpointy zdrowia: `/api/health/` do liveness (niczego nie dotyka) i `/api/health/ready/` do readiness (Postgres i Redis). Redis jest sprawdzany zapisem i odczytem klucza, bo Redis na `maxmemory` z `noeviction` dalej odpowiada na `PING`.
+- Zadanie Celery beat pinguje zewnętrzny monitor heartbeat, a alert przychodzi, gdy pingi ustają.
+- Sentry, monitoring dostępności i ważności certyfikatu TLS.
+- Codzienne kopie zapasowe poza serwerem i próba odtworzenia ([`infra/restore-drill.sh`](infra/restore-drill.sh)), która wgrywa je do tymczasowej bazy i sprawdza liczby wierszy, pliki mediów i stan migracji. Instrukcje: [`docs/backups.md`](docs/backups.md), [`docs/monitoring.md`](docs/monitoring.md).
+- CI puszcza ruff, mypy (strict) i testy backendu na PostgreSQL 16 przy każdym pushu.
+- Testy frontendu obejmują zapisy, których nie da się cofnąć (publikacja projektu wysyła mail do całego chóru; RSVP, obecności i aktywacja konta działają w czyimś imieniu), oraz logikę, która musi się zgadzać z serwerem, np. liczenie honorariów. Resztę panelu sprawdzam ręcznie.
+- Ewaluator na złotym zestawie przepuszcza prawdziwe partytury przez działający pipeline i mierzy dokładność pól, koszt i czas.
 
-Czego AI nie zrobiło: nie rozdzieliło frontendu po tym, jak wrócił audyt Ad Grants. Nie zdecydowało, że polityka ponawiania ma iść za rozliczeniem, a nie za kodem statusu. Nie zdecydowało, że Prometheus, replika Postgresa i klaster Redisa zostają poza zakresem na wdrożeniu z jednym dropletem i jednym utrzymującym. Nie zdecydowało, że znak wodny na nutach niesie imię i nazwisko śpiewaka, a nigdy jego adres e-mail, bo te kartki się drukuje i zostawia na pulpicie, gdzie każdy może je przeczytać.
+## Czego nie robię
 
-Architektura, koszty, priorytety i to, co zostaje na zewnątrz — moje. Z tego warto mnie rozliczać.
+- **Prometheus, Grafana, OpenTelemetry.** Jeden droplet, jedna osoba do utrzymania, brak SLO. To, co muszę wiedzieć, mówią mi Sentry i health checki.
+- **Replikacja Postgresa.** Replika na tym samym droplecie dzieli z bazą dysk i zasilanie. Utratę instancji pokrywają kopie zapasowe, których odtwarzanie jest przetestowane.
+- **Klaster Redisa.** Jedna instancja wystarcza na cache i brokera Celery.
 
----
+## Otwarte
 
-## Reszta platformy
-
-**Zespół i produkcja.** Cztery role (admin, manager, artysta, ekipa) z dostępem egzekwowanym na endpoincie, w payloadzie i w interfejsie. Obsada przeciąganiem, próby, obecności, budżety i rozliczenia per projekt. Kanały iCal, żeby śpiewacy dostawali terminy do kalendarza, którego i tak używają.
-
-**Dokumenty.** Umowy i run sheety generowane w tle przez Celery i WeasyPrint. Większą robotą jest śpiewnik koncertowy: gotowy do druku skoroszyt złożony z repertuaru projektu, ze stroną tytułową, spisem treści z wiodącymi kropkami, kartą tytułową przed każdym utworem zaciągniętą z archiwum, ciągłą numeracją stron, zakładkami PDF i opcjonalnym trybem dwustronnym, który zaczyna każde rozwarcie od strony nieparzystej. Składanie jest deterministyczne. Na tym etapie nie działa żaden model.
-
-**Ochrona nut licencjonowanych.** To wyszło z prawdziwego ograniczenia, nie z pomysłu projektowego. Chóry kupują określoną liczbę fizycznych egzemplarzy utworów objętych prawem autorskim, a rozdanie śpiewakom PDF-a po cichu to łamie. Więc każde wydanie ma status prawnoautorski, przy czym *niesklasyfikowane* jest domyślnie traktowane jako chronione. Nuty z domeny publicznej eksportują się swobodnie. Chronione zostają dla śpiewaków wyłącznie w aplikacji i dostają znak wodny renderowany po stronie serwera osobno dla każdego odbiorcy — numer egzemplarza, nazwisko, koncert, data — nakładany bez zmiany liczby stron i bez rozbijania kotwic w spisie treści PDF-a, w obu miejscach, którymi plik może opuścić system. Każde wydanie pliku ląduje w logu tylko-do-dopisywania, czyli w tym, o co poprosiłby wydawca. Kokpit budowania ostrzega, gdy licencjonowane wydanie ma zostać oprawione dla większej liczby śpiewaków, niż zespół ma egzemplarzy.
-
-**Cyfrowy pulpit nutowy.** Czytnik PDF na tablet postawiony na pulpicie: strony wczytywane z wyprzedzeniem, żeby nie było loadera w środku frazy, obsługa bluetoothowego pedału, blokada wygaszania ekranu, zoom szczypnięciem wokół punktu skupienia. Na tym siedzi warstwa adnotacji świadoma ról. Dyrygent pisze po warstwie wspólnej, którą widzi każdy śpiewak z obsady, a każdy śpiewak ma dodatkowo warstwę osobistą, której nikt inny nie odczyta, łącznie z managerami — egzekwowane na serwerze, nie schowane w interfejsie. Nanoszenie oznaczeń jest po muzycznemu: oddechy, dynamika, widełki, fermata, cezura, odręczny atrament z routowaniem stylus-first, żeby rysował rysik, a palec przesuwał stronę.
-
-**Wiadomości i powiadomienia.** Wątki między śpiewakami a zarządem plus kanały ogłoszeniowe per projekt, dostarczane w aplikacji, mailem przez EmailLabs i web pushem po VAPID. Managerowie dostają workflow triage. To nie jest czat w czasie rzeczywistym i nim nie zostanie: bez obecności, bez wskaźników pisania. Magazyn wiadomości jest odseparowany od dostarczania, więc wiadomości korzystają z pipeline'u powiadomień, który i tak już istniał.
-
-**Płatności.** Darowizny przez Axepta BNP Paribas, z walidacją podpisu MAC i asynchronicznym uzgadnianiem w Celery.
-
----
+- [ ] Przypadki w złotym zestawie, które faktycznie różnicują konfiguracje modelu
+- [ ] Drukowanie wspólnej warstwy adnotacji w śpiewniku
+- [ ] Szyfrowanie Fernet w spoczynku dla pól umów i finansów; niezmienność logu finansów wymuszona na poziomie bazy
+- [ ] CI frontendu i testy end-to-end w Playwright
+- [ ] Rate limiting na brzegu (Cloudflare + WAF) obok throttlingu DRF
+- [ ] Automatyczne testy dostępności wobec wymagań EAA
+- [ ] Deploy bez przestoju
 
 ## Stack
 
-**Backend** — Python 3.13, Django 6, DRF, PostgreSQL (psycopg 3), Redis, Celery 5.3, DTO Pydantic na granicy serwisów, JWT w ciasteczkach (`httpOnly` + `Secure` + `SameSite=Lax`, więc SPA nigdy nie dotyka tokenu) z CSRF double-submit. Warstwy: serwisy i selektory.
+**Backend:** Python 3.13, Django 6, DRF, PostgreSQL (psycopg 3), Redis, Celery, DTO w Pydanticu na granicy serwisów. Logowanie przez JWT w ciasteczku `httpOnly`, `Secure`, `SameSite=Lax` z CSRF double-submit, więc SPA nie ma dostępu do tokenu.
 
-**Panel** — React 19, Vite 7, TypeScript 5.9, Feature-Sliced Design, TanStack Query v5, Zustand, Tailwind v4, Framer Motion, React Hook Form + Zod, prymitywy Radix.
+**Panel:** React 19, Vite 7, TypeScript 5.9, Feature-Sliced Design, TanStack Query v5, Zustand, Tailwind v4, Framer Motion, React Hook Form + Zod, Radix.
 
-**Strona publiczna** — Astro 6 z wyspami Reacta, ręcznie pisany CSS, self-hostowane fonty zmienne (żadnego zewnętrznego CDN, więc żadnego wycieku IP użytkownika), natywne View Transitions.
+**Strona publiczna:** Astro 6 z wyspami Reacta, ręcznie pisany CSS, fonty hostowane u siebie (bez zewnętrznego CDN, więc adresy IP odwiedzających nie trafiają do nikogo trzeciego), View Transitions.
 
-**Dokumenty i AI** — WeasyPrint, pypdf, pypdfium2, SDK Anthropic przypięte do dokładnej wersji, bo pipeline opiera się na domyślnych ustawieniach wrażliwych na wersję: wzrok po natywnym PDF, structured outputs, prompt caching, adaptive thinking.
+**Dokumenty i AI:** WeasyPrint, pypdf, pypdfium2. SDK Anthropic jest przypięte do konkretnej wersji, bo pipeline zależy od zachowań, które zmieniają się między wersjami: natywnego wejścia PDF, structured outputs, prompt cachingu, myślenia adaptacyjnego.
 
-**Infrastruktura** — Docker Compose z parzystością dev/prod, Nginx, Gunicorn/Uvicorn, GitHub Actions, Sentry.
-
----
-
-## Jakość i utrzymanie
-
-**Testy.** 939 w backendzie, w roster, archive, payments, messaging, notifications, documents i core. Generowanie umów, kokpit śpiewnika, ochrona nut licencjonowanych i pipeline pochodzenia są pokryte. Obok nich stoi ewaluator na złotym zestawie — komenda, która przepuszcza prawdziwe partytury przez żywy pipeline i punktuje dokładność pole po polu, koszt i czas wobec ręcznie spisanych oczekiwań; to na tej podstawie zapada tu decyzja o zmianie modelu, zamiast na argumentach. Frontend ma 111, i mała liczba jest tu decyzją, a nie stanem rzeczy: harness komponentowy plus dwanaście testów skierowanych wyłącznie na zapisy, których nie da się cofnąć — publikacja projektu wysyła mail do całego chóru, a RSVP, oznaczanie obecności i aktywacja konta zmieniają stan w czyimś imieniu. Resztę panelu nadal sprawdza `tsc`, build i spojrzenie na ekran. Procent pokrycia liczony po 604 plikach źródłowych mierzyłby co innego.
-
-**CI.** Ruff, mypy w trybie strict i pełny zestaw testów na PostgreSQL 16 przy każdym pushu i pull requeście.
-
-**Kopie zapasowe.** Sprawdzone odtworzeniem, a nie założone. [`infra/restore-drill.sh`](infra/restore-drill.sh) odtwarza archiwum z zewnętrznej lokalizacji do jednorazowej bazy i katalogu tymczasowego, po czym sprawdza integralność archiwum, liczby wierszy względem produkcji, kompletność mediów, stan migracji i to, ile całość zajęła. Produkcja nie jest ruszana. Instrukcja w [`docs/backups.md`](docs/backups.md).
-
-**Monitoring.** Sentry, dwa opisane wyżej probe'y, zewnętrzne odpytywanie o dostępność i wygaśnięcie certyfikatu TLS oraz heartbeat beata. Instrukcja w [`docs/monitoring.md`](docs/monitoring.md).
-
-**Spójność danych.** Miękkie usuwanie zachowuje historię produkcyjną, nie wpuszczając usuniętych wierszy do aktywnych zapytań. Klucze obce i ograniczenia `CheckConstraint` pilnują tego na poziomie bazy, a nie w kodzie aplikacji, który da się obejść.
-
-### Poza zakresem
-
-Spisane, żeby nie wracały jako zgłoszenia błędów.
-
-**Prometheus / Grafana / OpenTelemetry.** Metryki odpowiadają na pytanie *ile*. Instalacja single-tenant na jednym dropletcie z jednym utrzymującym nie ma SLO, nie ma dyżurów i nie ma ruchu, żeby to pytanie zadawać. Pytania, które tu faktycznie padają, brzmią „czy leży" i „co rzuciło", a odpowiadają na oba health probe'y i Sentry — ułamkiem kosztu operacyjnego, na hoście, na którym RAM i tak jest wąskim gardłem podczas builda. Warto wrócić, jeśli kiedyś drugi zespół będzie dzielił to wdrożenie.
-
-**Replikacja strumieniowa PostgreSQL.** Hot standby chroni przed utratą instancji. Codzienne kopie poza serwerem już to pokrywają, a w przeciwieństwie do standby'a ich odtworzenie zostało zmierzone. Na jednym dropletcie replika to druga usługa stanowa na tym samym dysku i tym samym zasilaniu, czyli skorelowana awaria przebrana za redundancję.
-
-**Klaster Redisa.** Jedna instancja obsługuje cache i brokera Celery. Klastrowanie rozwiązuje problem koordynacji, którego to wdrożenie nie ma.
-
-### Otwarte
-
-- [ ] Rozbudowa złotego zestawu o przypadki, które faktycznie różnicują konfiguracje modelu
-- [ ] Wtopienie wspólnej warstwy adnotacji w śpiewnik na etapie składania
-- [ ] Szyfrowanie Fernet w spoczynku dla pól umów i finansowych plus niezmienny log zmian
-- [ ] CI frontendu i pokrycie end-to-end w Playwright
-- [ ] Rate limiting na brzegu (CloudFlare + WAF) na wierzchu istniejącego throttlingu DRF
-- [ ] Automatyczne testy dostępności wobec bazowego poziomu EAA, pod który interfejs jest pisany
-- [ ] Deploy bez przestoju
-
----
+**Infrastruktura:** Docker Compose (ta sama konfiguracja na dev i prod), Nginx, Gunicorn z workerami Uvicorn, GitHub Actions, Sentry.
 
 ## Architektura
 
@@ -190,13 +166,13 @@ graph TD
     Celery -->|WeasyPrint / pypdf| Files[Dokumenty · śpiewniki]
     Celery -->|EmailLabs · VAPID| Notify[E-mail · web push]
 
-    Celery -->|wzrok po natywnym PDF| Claude[Claude Sonnet 5]
+    Celery -->|natywne wejście PDF| Claude[Claude Sonnet 5]
     Claude -->|wywołania narzędzi| Ext[MusicBrainz · Wikidane<br/>Spotify · YouTube]
     Ext -.->|cache| Redis
-    Claude -->|ostemplowane pochodzeniem| DB
+    Claude -->|pola z pochodzeniem| DB
 
     Celery -->|nota programowa, po weryfikacji| Opus[Claude Opus 5]
-    Opus -->|ostemplowane pochodzeniem| DB
+    Opus -->|pola z pochodzeniem| DB
 
     classDef default fill:#1f2937,stroke:#4b5563,color:#f3f4f6;
     classDef db fill:#059669,stroke:#047857,color:#ffffff;
@@ -205,11 +181,7 @@ graph TD
     class Claude,Ext,Opus ai;
 ```
 
-Łańcuch ingestu w Celery: `prepare_document → analyze_score → resolve_composer_and_piece → persist_analysis → lookup_spotify → lookup_youtube → finalize_edition`. `generate_program_note` celowo jest poza nim i chodzi jako osobne zadanie po weryfikacji. Postęp leci z asynchronicznego endpointu ASGI pod `GET /api/archive/editions/<id>/events/`, więc produkcja chodzi pod `gunicorn config.asgi -k uvicorn.workers.UvicornWorker`.
-
-Szczegółowy opis pipeline'u: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion-pipeline.md).
-
----
+Łańcuch ingestu to `prepare_document → analyze_score → resolve_composer_and_piece → persist_analysis → lookup_spotify → lookup_youtube → finalize_edition`. `generate_program_note` działa osobno, po weryfikacji. Postęp płynie z asynchronicznego endpointu ASGI (`GET /api/archive/editions/<id>/events/`), więc produkcja chodzi na `gunicorn config.asgi -k uvicorn.workers.UvicornWorker`.
 
 ## Uruchomienie lokalne
 
@@ -224,7 +196,7 @@ make up
 make migrate && make seed && make superuser
 ```
 
-`make seed` buduje pełny, realistyczny zestaw danych: 28 śpiewaków przez całe spektrum głosów w każdym stanie konta (aktywne, zaproszone bez aktywacji, zarchiwizowane), 2 dyrygentów, 6 osób ekipy, 8 projektów w każdym stanie cyklu życia wraz z ich książkami nutowymi, 14 kompozytorów z częściami, tłumaczeniami i wydaniami przez całe spektrum licencji, warstwy adnotacji dyrygenta, plus bazę wiedzy, wiadomości, płatności, kolejkę ogłoszeń i skrzynkę powiadomień obejmującą każdy typ komunikatu. Jest idempotentny. Loginy: `admin / admin123`, `manager / manager123`, `crew / crew123`.
+`make seed` tworzy realistyczny zestaw danych: 28 śpiewaków w każdym stanie konta (aktywne, zaproszone, zarchiwizowane), organistę i pianistkę, 2 dyrygentów, 5 osób ekipy i 8 projektów na każdym etapie wraz ze śpiewnikami. Jeden z nich, msza za kilka dni, pokazuje nowsze funkcje: skład czytany sekcjami, z liderami sekcji, asystenta dyrygenta, plany prób (dwie odbyte próby odhaczone i opisane, najbliższa wysłana chórowi, próba sekcyjna i generalna z instrumentalistami) oraz nuty z oznaczeniami na wszystkich czterech warstwach. Finanse pokrywają każdy stan budżetu: zakończony koncert z zamkniętym budżetem, podpisanymi umowami o kolejnych numerach i rozliczonym grantem, mszę z zatwierdzonym planem i częścią kosztów zapłaconą oraz projekty robocze na etapie planowania. Do tego wiadomości, darowizny, oczekujące ogłoszenia, powiadomienia i notatnik. Można go uruchamiać wielokrotnie. Loguje się adresem e-mail: `admin@voctmanager.test / admin123`, `manager@voctmanager.test / manager123`, `crew@voctmanager.test / crew123`, a śpiewacy jako `singer00@voctmanager.test / password123` i kolejne. Istniejący już użytkownik `admin` zachowuje swój adres.
 
 ```bash
 python manage.py seed_db --artists 12 --no-media   # mniej danych, szybciej
@@ -237,9 +209,7 @@ python manage.py seed_db --seed 2026               # powtarzalnie
 - Panel: `http://localhost:5173/panel` (`cd frontend && npm install && npm run dev`)
 - Strona publiczna: `http://localhost:4321` (`cd web && npm install && npm run dev`)
 
-Build Astro potrzebuje zdjęć źródłowych w `web/src/assets/photos/` i wideo w `web/src/assets/videos/`. Jedno i drugie jest w `.gitignore` — to oryginały należące do współpracowników, które żyją wyłącznie na hoście budującym. Build wywala się z czytelnym błędem, jeśli czegoś brakuje.
-
----
+Build Astro potrzebuje zdjęć w `web/src/assets/photos/` i filmów w `web/src/assets/videos/`. Oba katalogi są w `.gitignore` (oryginały należą do współpracowników), a bez nich build zatrzymuje się z błędem.
 
 ## Deploy
 
@@ -247,16 +217,12 @@ Build Astro potrzebuje zdjęć źródłowych w `web/src/assets/photos/` i wideo 
 cd ~/VoctManager && git pull && make deploy
 ```
 
-`make deploy` to `gc → build → up -d → migrate → migrate --check → gc`, i każdy krok jest tam z powodu:
+`make deploy` wykonuje `gc → build → up -d → migrate → migrate --check → gc` i zatrzymuje się na pierwszym błędzie. Migracje nie uruchamiają się same, a `migrate --check` wywala deploy, jeśli jakaś została. `frontend/Dockerfile` buduje panel (Vite) i stronę publiczną (Astro + Sharp) i serwuje oba z jednego obrazu `nginx:1.27`, więc na serwerze nie ma Node'a. Build potrzebuje około 3 GB wolnego RAM-u, a [`infra/docker-gc.sh`](infra/docker-gc.sh) sprząta stare warstwy przed buildem i po nim.
 
-- **`build` bez nazwy usługi przebudowuje też backend.** Samo `build frontend` zostawia `web` i `celery` na poprzednim obrazie, więc zmiana w backendzie po cichu nie trafia na produkcję.
-- **Nic nie stosuje migracji za ciebie.** Ani `entrypoint.sh` (robi tylko `collectstatic`), ani `up`. Deploy, który kończy się na `up`, zostawia nowy kod na starym schemacie.
-- **`migrate --check` to potwierdzenie.** Kod niezerowy, jeśli cokolwiek zostało do zrobienia, więc deploy wywala się głośno, zamiast wyglądać na udany.
+## Zbudowane z Claude Code
 
-Make przerywa na pierwszym błędzie, więc zepsuty build nigdy nie dociera do bazy.
-
-`frontend/Dockerfile` to build trzyetapowy zakotwiczony w korzeniu repo: `panel-builder` (Vite) i `web-builder` (Astro + Sharp) karmią wspólny runtime na `nginx:1.27`, więc jeden obraz wiezie oba frontendy. Na hoście nie ma Node'a. Podczas builda potrzeba ~3 GB wolnego RAM-u — graf rollupa szczytuje w okolicach 2 GB, a Sharp dokłada ~500 MB. [`infra/docker-gc.sh`](infra/docker-gc.sh) chodzi przed buildem i po nim, bo nic samo nie usuwa warstw z poprzedniego.
+Codziennie pracuję z Claude Code i wiele commitów ma go jako współautora. Decyzje produktowe, architektura, limity kosztów i to, czego nie budujemy, są moje.
 
 ---
 
-**Krystian Bugalski** — [GitHub](https://github.com/bedikryst) · [LinkedIn](https://www.linkedin.com/in/krystian-bugalski) · krystian@bugalski.dev
+**Krystian Bugalski** · [GitHub](https://github.com/bedikryst) · [LinkedIn](https://www.linkedin.com/in/krystian-bugalski) · krystian@bugalski.dev

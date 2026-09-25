@@ -5263,6 +5263,18 @@
         "instrumentalists": "Instrumentaliści",
         "clear_one": "Przywróć: {{label}}",
         "without": "bez {{label}}",
+        "without_family": {
+          "sopranos": "bez sopranów",
+          "mezzos": "bez mezzosopranów",
+          "altos": "bez altów",
+          "countertenors": "bez kontratenorów",
+          "tenors": "bez tenorów",
+          "baritones": "bez barytonów",
+          "basses": "bez basów",
+          "untyped": "bez głosów nieokreślonych",
+          "special": "bez linii specjalnych"
+        },
+        "without_instrumentalists": "bez instrumentalistów",
         "people": "{{count}} os.",
         "everyone": "Wszyscy",
         "edit": "Zmień",

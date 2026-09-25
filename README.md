@@ -8,166 +8,142 @@
 ![Celery](https://img.shields.io/badge/Celery-37814A?logo=celery&logoColor=white)
 ![Anthropic](https://img.shields.io/badge/Claude_Sonnet_5_+_Opus_5-D97757?logo=anthropic&logoColor=white)
 
-An ERP for a professional vocal ensemble, and the AI pipeline that catalogues its sheet music.
+VoctManager runs the day-to-day work of VoctEnsemble, a professional vocal ensemble: casting, rehearsal plans, scores and annotations, contracts and project finance. It also includes an AI pipeline that turns a PDF score into a catalogued archive entry.
 
-I co-founded a foundation around **VoctEnsemble**. Its artistic director was doing a lot of work by hand that software should have been doing for him: who sings which part, contracts, assembling a singers' score book before every concert, and typing metadata off PDF scores one field at a time. So I built this.
+I co-founded the foundation behind the ensemble and I'm the only developer on this project, which I started in February 2026. Before it, the artistic director (who also conducts) did all of this by hand: deciding who sings which part, preparing contracts, putting together a score book for every concert and copying metadata out of PDF scores.
 
-One person, 832 commits, first one 26 February 2026.
+**Public site:** [voctensemble.com](https://voctensemble.com) · **Status:** in production, used by the ensemble since August ([details](#status))
 
-**Public site:** [voctensemble.com](https://voctensemble.com) · **Status:** deployed and running, adoption still in progress ([details](#where-this-actually-stands))
-
-| Conductor dashboard | AI score review cockpit |
+| Conductor dashboard | AI score review |
 |:---:|:---:|
-| <img src="docs/assets/admin-dashboard.png" width="420" alt="Admin dashboard showing projects, rehearsals and pending actions"/> | <img src="docs/assets/score-compiler-review.png" width="420" alt="Review cockpit with per-field provenance chips and confidence scores next to the source PDF"/> |
+| <img src="docs/assets/admin-dashboard.png" width="420" alt="Admin dashboard showing projects, rehearsals and pending actions"/> | <img src="docs/assets/score-compiler-review.png" width="420" alt="Review screen with per-field provenance chips and confidence scores next to the source PDF"/> |
 
 ---
 
-## The score pipeline
+## Status
 
-Upload a PDF score. A few minutes later the archive holds a catalogued work: composer resolved to a canonical ID, movements split out, the sung text transcribed, IPA aligned line by line, singing translations. The conductor reads it over, fixes what's wrong, approves — and only then is the programme note written, from the corrected record rather than the model's first guess. An afternoon of typing becomes a few minutes of checking.
+The first concert in the system (St. Andrew Bobola, May 2026) was mostly data I entered myself to test the workflow. The workflow held up, but the conductor didn't use it. He's very good at his job and has no time to learn new tools between rehearsals, which I hadn't planned for. Getting him to open the app on an ordinary weekday turned out to be harder than anything on the engineering side.
+
+He ran the end-of-August concert through the app himself, and the singers used it during the concert. The next programme is in rehearsal now, and both he and the choir are working in it. He sends me feedback as he goes; the rehearsal planner described below came from two of his reports.
+
+## What's in it
+
+- **Casting.** Drag and drop, grouped by section, with section leaders and seat order. Instrumentalists get accounts and parts the same way singers do.
+- **Rehearsal plans.** The running order for each rehearsal, with a personal time window for every singer. [More below](#rehearsal-plans).
+- **Digital music stand.** A PDF reader for tablets: prefetched page turns, Bluetooth pedal support, screen wake lock, pinch zoom. Singers and the conductor can mark up the score with breath marks, dynamics, hairpins, fermatas and freehand ink (a stylus draws, a finger scrolls). Marks live on four layers: the whole choir, the rehearsal leader, the management, and a private layer for each singer that managers can't read either. This is enforced on the server.
+- **Score books.** A print-ready binder built from a project's repertoire: title page, table of contents, a title card for each piece, continuous page numbers, PDF bookmarks, optional duplex layout.
+- **Licensed scores.** Every edition has a copyright status, and unclassified ones count as protected. Protected scores stay inside the app and get a per-recipient watermark rendered on the server: copy number, name, concert, date. It leaves out the email address, because these pages get printed and left on music stands. Every download is logged, and the score-book builder warns when a licensed edition would be printed for more singers than the ensemble has copies.
+- **Finance.** Budgets, fees, expenses and grants per project. [More below](#finance).
+- **Messaging.** Threads between singers and management and a broadcast channel per project, delivered in the app, by email (EmailLabs) and by web push. There are no presence or typing indicators, on purpose.
+- **Donations** through Axepta BNP Paribas, with MAC signature checks and reconciliation in Celery.
+- iCal feeds, light and dark themes, four roles (admin, manager, artist, crew) enforced by the API.
+
+## Score pipeline
+
+Upload a PDF score and a few minutes later the archive has a catalogued work: the composer matched to MusicBrainz and Wikidata, movements, the sung text, IPA line by line and singing translations. The conductor reviews and corrects it. The programme note is generated only after that, from the corrected record.
 
 ```
 upload PDF
   → Celery chain starts, browser subscribes to Server-Sent Events
-  → one consolidated Sonnet 5 call reads the whole document by vision
-    (text layer and scans both; the key inferred from the key signature,
-     composer split from arranger, movements, sung text, IPA, translations)
-  → composer + work resolved against MusicBrainz (MBID) and Wikidata (QID)
-  → Spotify / YouTube looked up for reference recordings
-  → every field stamped with provenance, persisted
+  → one Sonnet 5 call reads the whole document
+    (text layer or scan; key, composer vs arranger, movements,
+     sung text, IPA, translations)
+  → composer and work resolved against MusicBrainz (MBID) and Wikidata (QID)
+  → reference recordings looked up on Spotify and YouTube
+  → every field stored with its provenance
   → conductor reviews, corrects, approves → published
-  → programme note written by Opus 5, on demand, from the reviewed record
+  → programme note written by Opus 5, on request, from the reviewed record
 ```
 
-### Three things I'd point at
+Every field that came from a model or an external API stores where it came from (model, prompt version, source, confidence, timestamp). The review screen shows a chip on each field: `AI · 95%`, `MusicBrainz`, or `Verified` once someone has edited it. Canonical IDs come only from MusicBrainz or Wikidata.
 
-**Provenance on every field.** Anything the model or an external API produced carries `(model, prompt_version, source_reference, confidence, retrieved_at)` in a `ProvenanceRecord`, and the review screen shows it per field: an `AI · 95%` chip, a `MusicBrainz` chip, or a `Verified` chip once a human has edited the value. Canonical identifiers always come from MusicBrainz or Wikidata, never from the model. The point is that a conductor shouldn't have to guess which fields deserve a second look. Whether the chips are legible enough to actually do that, I don't know yet. Nobody has used them under time pressure.
+Retries depend on whether the failed call was billed ([`ai_client.py`](backend/archive/infrastructure/ai_client.py)):
 
-**Retry policy follows the billing, not the status code.** The exception taxonomy in [`archive/infrastructure/ai_client.py`](backend/archive/infrastructure/ai_client.py) splits failures two ways at once: can retrying possibly help, and was the failed attempt billed?
-
-| Failure | Billed? | Policy |
+| Failure | Billed? | What happens |
 |---|---|---|
-| 529 overloaded / 5xx / 429 / connection timeout | no | Retryable. Wait tens of seconds to minutes and show a "service busy, retrying" state while waiting. |
-| `stop_reason='max_tokens'` truncation | yes | Double the budget, retry up to 2 escalations, then give up. A fixed budget truncates deterministically, so re-issuing the identical call buys the same failure twice. |
-| 400 / auth / permission | no | Terminal. Abort the chain instead of burning autoretry cycles on a request Anthropic already rejected. |
+| 529 overloaded, 5xx, 429, connection timeout | no | Retry after tens of seconds to minutes. The UI shows "service busy, retrying". |
+| Truncated at `max_tokens` | yes | Double the output budget and retry, at most twice. The same budget would truncate in the same place. |
+| 400, auth, permission | no | Stop the chain. Retrying can't help. |
 
-`retry(3)` on everything would have been half a day's less work. It also turns a capacity blip into a retry storm and a truncation into three identical bills.
+An ingest costs $0.04–0.20. A score sung entirely in Polish is at the low end, since it needs no IPA or translation. There are three spend caps: per run, per edition over its lifetime, and a daily budget for the whole organisation that trips a circuit breaker. A PDF that has already been processed is recognised by its SHA-256 and never reaches the model. The PDF is sent with prompt caching, so a retry after a truncation reads it at the cache rate.
 
-**Three spend ceilings, enforced at the task boundary.** Per-run, a lifetime cap per edition that never resets, and an org-wide daily budget that trips a circuit breaker. Defaults are $1.50, $7.50 and $20.00. Re-uploading a PDF that's already been processed hits a SHA-256 check and skips the model entirely. An ingest costs **$0.04–0.20**, and the spread inside that range is the sung language rather than the model: a wholly-Polish score returns no IPA and no translation, so it comes in at a fifth of a bilingual one. The PDF goes up as a native `document` block with `cache_control: ephemeral`, so if a truncation forces an escalation, the second attempt reads it back at cache rates instead of paying full input again.
+<img src="docs/assets/score-compiler-upload.png" width="620" alt="Upload screen streaming pipeline progress over Server-Sent Events"/>
 
-<img src="docs/assets/score-compiler-upload.png" width="620" alt="Upload screen streaming live pipeline progress over Server-Sent Events"/>
+Details: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion-pipeline.md).
 
----
+## Rehearsal plans
 
-## Decisions
+The conductor lists the pieces for a rehearsal in order. Each row can have a length in minutes, a note ("from bar 40, first read") and the voice lines it doesn't need. A sectional is defined by voice letters (S, A, T, B), so a singer added to the cast later is called automatically. From the plan, every singer gets their own window, for example "your part 19:00–20:15", so nobody sits through pieces they don't sing. That was the conductor's request. He called it respect for people's time.
 
-Including the ones where the decision was not to build something. The rest are listed under [Out of scope](#out-of-scope).
+The plan reaches the choir only when he sends it, not on every edit. After the rehearsal he ticks off what was covered, and a grid of pieces by rehearsals shows how often each piece has been worked on. He can hand a rehearsal to an assistant with specific permissions: taking attendance, marking the choir's scores, opening materials.
 
-**Two frontends.** The panel is a React SPA. The public site is a separate Astro app. That split came out of applying for Google Ad Grants: the audit wanted crawlable content and the SPA shell served crawlers an empty div. Astro emits static HTML and hydrates React only where there's real state: the donation flow, the audio gate, the sticky header. Two builds, one backend, one deploy. It's more moving parts than I wanted, and I'd make the same call again.
+## Finance
 
-**Two model tiers, and a version bump that wasn't one.** The document read is Sonnet 5. The programme note — the only text here an audience reads verbatim, printed in a concert programme — is Opus 5, for about a cent more per note. Crossing a model generation turned out to be more than swapping a constant. On the previous Sonnet an absent `thinking` key meant thinking was off; on Sonnet 5 it means adaptive thinking is on, so a bare swap would have silently re-enabled it on the one call that disables it deliberately and made it share that call's output budget. And the provenance map fell back to the Opus tier on an unrecognised model id, which would have labelled every Sonnet-produced field "Opus" in the review cockpit while the stored `model_version` said otherwise — a quiet lie in exactly the screen built to stop the conductor guessing.
+Budgets, fees, expenses and grants for each project, in one ledger approved by the board. It replaced three screens that each calculated fees their own way.
 
-**The programme note left the ingestion chain.** It used to run eagerly at the end of the pipeline, which meant audience-facing prose was written from the model's *un-reviewed* identity — a wrong composer or epoch baked straight into the text a listener reads. It is now a separate on-demand task, dispatched from the review cockpit or on approval, with the corrected metadata and the sung text as its context.
+- Every write goes through a service and is recorded in an append-only `FinanceEvent` table. The table has no soft delete, so entries can't be hidden.
+- A contract stores the amount and payee as of the day it was issued. Changing either means annulling it and issuing a new one, and the annulled number stays used.
+- Contract numbers come from a counter per year and contract type, locked with `select_for_update()` inside the issuing transaction.
+- Grant money is allocated to budget lines and individual costs. Own-contribution and administration limits are checked per grant agreement, and the plan exports as a cost sheet for grant applications.
+- Singers see no amounts in the app, including their own.
 
-**Liveness and readiness are different questions.** `/api/health/` touches nothing and backs the Docker healthcheck. `/api/health/ready/` hits Postgres and Redis and returns 503 if it can't serve. Keeping them separate matters more than it looks: restart a container because Postgres is slow and you get a container that comes back equally degraded, then `depends_on` cascades the restart into Celery. The Redis half is a write-then-read rather than a `PING`. A Redis sitting at `maxmemory` under `noeviction` will answer `PING` perfectly while refusing every write, and I'd rather find that out from a probe than from a lost task.
+## Some decisions
 
-**Alert on silence.** A dead Celery beat scheduler doesn't throw an exception. It just stops, quietly, and everything downstream looks fine until someone notices the digests stopped arriving. So a periodic task pings an external heartbeat monitor and the alert fires when the ping *doesn't* arrive. It's an end-to-end proof: beat has to have scheduled it, the broker has to have delivered it, a worker has to have run it. The ping task swallows its own errors on purpose. A flaky monitor shouldn't be able to page me about itself.
+**Two frontends.** The panel is a React SPA and the public site is a separate Astro app. Google Ad Grants required crawlable pages, and the SPA served crawlers an empty div. Astro renders static HTML and loads React only where there's state: the donation flow, the audio gate and the sticky header.
 
----
+**Programme notes come after review.** They used to be generated at the end of the pipeline from unreviewed metadata, so a wrong composer or period could end up in a printed concert programme. Now the note is a separate task, started from the review screen or on approval.
 
-## Where this actually stands
+**Sonnet 5 reads, Opus 5 writes the notes.** The programme note is the only text the audience reads word for word, so it gets the stronger model, for about a cent more per note. Moving to the new generation took more than changing a constant: on Sonnet 5 a missing `thinking` key means adaptive thinking is on, so a plain swap would have turned it back on in the one call that disables it.
 
-The system is deployed and running. Whether it's *used* is a separate question and the honest answer is: barely, so far.
-
-One concert has gone through it — St. Andrew Bobola, May 2026 — and I entered most of that data myself to see whether the workflow held up end to end. It did. But the artistic director hasn't adopted it yet. He does his own job extremely well and has close to zero patience for learning a new tool between rehearsals, which is completely reasonable and which I did not plan for at all. Getting him from "this is impressive" to "I opened it on Tuesday" has been harder than any part of the engineering.
-
-He's committed to running the end-of-August date through it himself. That'll be the first honest test.
-
-I'm leaving this section in because it's the most useful thing the project has taught me. I can build the thing. Getting it into somebody else's working habits is a different discipline, and I badly underestimated it. The features I'm proudest of here, the provenance chips and the score-book builder and the annotation layers, are all worth nothing until someone opens the app on a Tuesday because it's easier than not opening it. I don't think I've built that yet.
+**Annotations refresh by polling.** An open music stand checks a small fingerprint endpoint every 20 seconds and refetches the marks only when it changes. Server-Sent Events would have kept around thirty connections open for a whole rehearsal to save a second or two.
 
 ## What I got wrong
 
-**The first ingestion pipeline was a chain of small model calls.** Identity in one call, movements in another, then lyrics, then translations. Each call only saw its own slice, so the model kept falling back on what it knew instead of what was printed — for a well-known hymn it would produce the canonical text rather than the words actually on the page, which is exactly wrong for an archive. Consolidating into one call that reads the whole document fixed the accuracy problem and cut the bill at the same time. I should have seen it coming from first principles. I didn't.
+**The first ingestion pipeline was a chain of small model calls** (identity, movements, lyrics, translations). Each call saw only its own part, so for well-known hymns the model returned the standard text instead of what was printed. One call over the whole document fixed that and was cheaper too.
 
-**I built the measurement harness and then didn't feed it for two months.** The golden-set evaluator shipped with the v2 pipeline in June and had no golden set until August, which means every quality claim I'd made about this pipeline until then — including the ones that justified the rewrite — rested on spot-checking. When the model upgrade finally forced the issue, the measurement contradicted the reasoning I'd upgraded on: I'd argued for Sonnet 5 on its higher-resolution vision for scanned scores, and the archive turned out to be almost entirely born-digital, where that lever does nothing. It stayed anyway, on a reason I hadn't given: 31% cheaper and 2.6× faster at identical accuracy, because it reached the same answer in 39% fewer output tokens and output is where the bill lives. The set also scored 100% on every configuration including the old model, so it can't rank anything yet — which is why the cheaper effort setting that matched it everywhere still didn't get promoted. A test everything passes isn't evidence.
+**My evaluator had no data for two months.** The golden-set evaluator shipped in June and the golden set arrived in August. When I finally measured the move to Sonnet 5, my reason for it (better reading of scanned scores) turned out not to matter, because almost the whole archive is born-digital PDFs. Sonnet 5 stayed because it was cheaper and faster at the same accuracy. The set still scores 100% on every configuration, so it can't tell them apart yet.
 
-**I under-tested the dull paths.** Test coverage grew around the AI pipeline first, because that's where the interesting failures lived. Contracts, attendance, settlements got covered late. Those are where the actual bugs came from.
+**Offline annotations didn't work, and I thought they did.** Annotation writes went straight to the API. When a write failed, the optimistic update was rolled back and the error swallowed, so a mark made without signal simply disappeared. Downloading a concert for offline use skipped the annotations as well. Now the client generates each mark's ID, so a mark can be edited or erased before the server has seen it. Queued writes to the same mark are merged (create followed by erase sends nothing), and replaying a create never brings back an erased mark. I still haven't tested the whole offline-to-online cycle on a real tablet.
 
----
+**I wrote tests for the AI pipeline first**, because that's where the interesting failures were. Contracts, attendance and fees got tests late, and that's where the real bugs turned up.
 
-## How this was built, and where the AI stops
+## Operations
 
-I use Claude Code every day. A project this size doesn't get built by one person in six months without it, and the git history says so plainly: some commits are co-authored.
+- Two health endpoints: `/api/health/` for liveness (touches nothing) and `/api/health/ready/` for readiness (Postgres and Redis). The Redis check writes and reads a key, because a Redis at `maxmemory` with `noeviction` still answers `PING`.
+- A Celery beat task pings an external heartbeat monitor, and the alert fires when the pings stop.
+- Sentry, uptime checks and TLS expiry checks.
+- Daily off-site backups and a restore drill ([`infra/restore-drill.sh`](infra/restore-drill.sh)) that restores them into a scratch database and checks row counts, media files and migration state. Runbooks: [`docs/backups.md`](docs/backups.md), [`docs/monitoring.md`](docs/monitoring.md).
+- CI runs ruff, mypy (strict) and the backend tests against PostgreSQL 16 on every push.
+- Frontend tests cover the writes that can't be undone (publishing a project emails the whole choir; RSVP, attendance and account activation act on someone else's behalf) and logic that has to match the server, such as fee calculation. The rest of the panel I check by hand.
+- A golden-set evaluator runs real scores through the live pipeline and reports accuracy per field, cost and time.
 
-What it didn't do: split the frontend after the Ad Grants audit came back. Decide that retry policy should key off billing rather than status codes. Decide that Prometheus, a Postgres replica and a Redis cluster all stay out on a single-droplet, single-maintainer deployment. Decide that the watermark carries a singer's name and never their email, because these pages get printed and left on a music stand where anyone can read them.
+## Not doing
 
-Architecture, cost, priorities, and what stays out are mine. Those are the parts worth holding me to.
+- **Prometheus, Grafana, OpenTelemetry.** One droplet, one maintainer, no SLO. Sentry and the health checks tell me what I need to know.
+- **Postgres replication.** A replica on the same droplet shares its disk and power supply. Losing the instance is covered by backups, and the restore has been tested.
+- **A Redis cluster.** One instance is enough for the cache and the Celery broker.
 
----
+## Open
 
-## The rest of the platform
-
-**Roster and production.** Four roles (admin, manager, artist, crew) with access enforced at the endpoint, in the payload and in the UI. Drag-and-drop casting, rehearsals, attendance, per-project budgets and settlements. iCal feeds so singers get their dates in whatever calendar they already use.
-
-**Documents.** Contracts and run sheets generated in the background through Celery and WeasyPrint. The bigger job is the concert score book: a print-ready binder assembled from a project's repertoire with a title page, dotted-leader contents, a frontispiece card per piece pulled from the archive, continuous folios, PDF bookmarks and an optional double-sided mode that starts every opening on a recto. Assembly is deterministic. No model runs at build time.
-
-**Licensed-score protection.** This one came from a real constraint rather than a design idea. Choirs buy a fixed number of physical copies of copyrighted music, and handing singers a PDF quietly breaks that. So every edition carries a copyright status, with *unclassified* treated as protected by default. Public-domain scores export freely. Protected ones stay in-app for singers and get a watermark rendered server-side per recipient — copy number, name, concert, date — applied without shifting the page count or breaking the PDF outline anchors, at both places a file can leave the system. Every serve lands in an append-only log, which is what a publisher would ask to see. The build cockpit warns when a licensed edition is about to be bound for more singers than the ensemble owns copies of.
-
-**Digital music stand.** A PDF reader for a tablet propped on a music stand: page turns prefetched so there's no loader mid-phrase, Bluetooth pedal support, a screen wake lock, pinch zoom around a focal point. On top of it sits a role-aware annotation layer. The conductor writes a shared layer that every cast singer sees, and each singer also gets a personal layer that nobody else can read, managers included, enforced on the server rather than hidden in the UI. Marking up is musician-native: breath marks, dynamics, hairpins, fermata, caesura, freehand ink with stylus-first routing so a pen draws and a finger pans.
-
-**Messaging and notifications.** Threads between singers and management, plus per-project broadcast channels, delivered in-app, by email through EmailLabs and by web push over VAPID. Managers get a triage workflow. It is not a real-time chat and won't become one: no presence, no typing indicators. The message store is decoupled from delivery, so messages reuse the notification pipeline that already existed.
-
-**Payments.** Donations through Axepta BNP Paribas, with MAC signature validation and asynchronous reconciliation in Celery.
-
----
+- [ ] Golden-set cases that actually separate one model configuration from another
+- [ ] Print the shared annotation layer into the score book
+- [ ] Fernet encryption at rest for contract and finance fields; make the finance log immutable at the database level
+- [ ] Frontend CI and Playwright end-to-end tests
+- [ ] Rate limiting at the edge (Cloudflare + WAF) on top of DRF throttling
+- [ ] Automated accessibility tests against the EAA baseline
+- [ ] Zero-downtime deploys
 
 ## Stack
 
-**Backend** — Python 3.13, Django 6, DRF, PostgreSQL (psycopg 3), Redis, Celery 5.3, Pydantic DTOs at the service boundary, cookie-based JWT (`httpOnly` + `Secure` + `SameSite=Lax`, so the SPA never touches the token) with CSRF double-submit. Layered into services and selectors.
+**Backend:** Python 3.13, Django 6, DRF, PostgreSQL (psycopg 3), Redis, Celery, Pydantic DTOs at the service boundary. Auth is a JWT in an `httpOnly`, `Secure`, `SameSite=Lax` cookie with CSRF double-submit, so the SPA never handles the token.
 
-**Panel** — React 19, Vite 7, TypeScript 5.9, Feature-Sliced Design, TanStack Query v5, Zustand, Tailwind v4, Framer Motion, React Hook Form + Zod, Radix primitives.
+**Panel:** React 19, Vite 7, TypeScript 5.9, Feature-Sliced Design, TanStack Query v5, Zustand, Tailwind v4, Framer Motion, React Hook Form + Zod, Radix.
 
-**Public site** — Astro 6 with React islands, hand-authored CSS, self-hosted variable fonts (no third-party font CDN, so no user-IP leakage), native View Transitions.
+**Public site:** Astro 6 with React islands, hand-written CSS, self-hosted fonts (no font CDN, so visitors' IP addresses don't go to a third party), View Transitions.
 
-**Documents & AI** — WeasyPrint, pypdf, pypdfium2, Anthropic SDK pinned to an exact version, because the pipeline leans on version-sensitive defaults: vision over native PDF, structured outputs, prompt caching, adaptive thinking.
+**Documents and AI:** WeasyPrint, pypdf, pypdfium2. The Anthropic SDK is pinned to an exact version, because the pipeline depends on version-specific behaviour: native PDF input, structured outputs, prompt caching, adaptive thinking.
 
-**Infrastructure** — Docker Compose with dev/prod parity, Nginx, Gunicorn/Uvicorn, GitHub Actions, Sentry.
-
----
-
-## Quality and operations
-
-**Tests.** 939 on the backend, across roster, archive, payments, messaging, notifications, documents and core. Contract generation, the score-package cockpit, licensed-score protection and the provenance pipeline are covered. Alongside them sits a golden-set evaluator — a management command that runs real scores through the live pipeline and scores per-field accuracy, cost and wall time against hand-written expectations, which is how a model upgrade gets decided here rather than argued. The frontend has 111, and the small number is the decision rather than the state of it: a component harness plus twelve tests pointed only at the writes that can't be taken back — publishing a project mails the whole choir, and RSVP, attendance marking and account activation each change state on someone else's behalf. The rest of the panel is still verified by `tsc`, a build and a look at the screen. A coverage percentage over 604 source files would have measured something else.
-
-**CI.** Ruff, mypy in strict mode, and the full suite against PostgreSQL 16 on every push and pull request.
-
-**Backups.** Restore-tested rather than assumed. [`infra/restore-drill.sh`](infra/restore-drill.sh) replays the off-site archive into a throwaway database and a scratch directory, then checks archive integrity, row counts against live, media completeness, migration state, and how long the whole thing took. Production is never touched. Runbook in [`docs/backups.md`](docs/backups.md).
-
-**Monitoring.** Sentry, the two health probes above, external uptime and TLS-expiry polling, and the beat heartbeat. Runbook in [`docs/monitoring.md`](docs/monitoring.md).
-
-**Data integrity.** Soft deletes keep production history without letting removed rows leak into active queries. Foreign keys and check constraints do the guarding at the database layer rather than in application code that can be bypassed.
-
-### Out of scope
-
-Written down so they don't come back as bug reports.
-
-**Prometheus / Grafana / OpenTelemetry.** Metrics answer *how much*. A single-tenant install on one droplet with one maintainer has no SLO, no on-call rotation and no traffic to ask that of. The questions that actually get asked here are "is it down" and "what threw", and the health probes and Sentry answer both for a fraction of the operating cost, on a host where RAM is already the binding constraint during a build. Worth revisiting if a second ensemble ever shares the deployment.
-
-**PostgreSQL streaming replication.** A hot standby protects against losing the instance. Daily off-site backups already cover that, and unlike the standby, the restore has been measured. On one droplet a replica is a second stateful service sharing the same disk and the same power supply, which is correlated failure dressed up as redundancy.
-
-**Redis cluster.** One instance backs the cache and the Celery broker. Clustering solves a coordination problem this deployment doesn't have.
-
-### Open
-
-- [ ] Grow the golden set to cases that actually separate one model configuration from another
-- [ ] Burn the shared annotation layer into the score book at assembly time
-- [ ] Fernet at-rest encryption for contract and financial fields, plus an immutable mutation log
-- [ ] Frontend CI and Playwright end-to-end coverage
-- [ ] Rate limiting at the edge (CloudFlare + WAF) on top of the DRF throttling in place
-- [ ] Automated accessibility testing against the EAA baseline the UI is built to
-- [ ] Zero-downtime deploys
-
----
+**Infrastructure:** Docker Compose (the same setup in dev and prod), Nginx, Gunicorn with Uvicorn workers, GitHub Actions, Sentry.
 
 ## Architecture
 
@@ -205,13 +181,9 @@ graph TD
     class Claude,Ext,Opus ai;
 ```
 
-The Celery ingestion chain: `prepare_document → analyze_score → resolve_composer_and_piece → persist_analysis → lookup_spotify → lookup_youtube → finalize_edition`. `generate_program_note` is deliberately outside it and runs as its own task after review. Progress streams from an async ASGI endpoint at `GET /api/archive/editions/<id>/events/`, so production runs under `gunicorn config.asgi -k uvicorn.workers.UvicornWorker`.
+The ingestion chain is `prepare_document → analyze_score → resolve_composer_and_piece → persist_analysis → lookup_spotify → lookup_youtube → finalize_edition`. `generate_program_note` runs on its own after review. Progress streams from an async ASGI endpoint (`GET /api/archive/editions/<id>/events/`), so production runs `gunicorn config.asgi -k uvicorn.workers.UvicornWorker`.
 
-Deep dive on the pipeline: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion-pipeline.md).
-
----
-
-## Running it locally
+## Running locally
 
 Requires Docker, Compose v2 and GNU Make.
 
@@ -224,7 +196,7 @@ make up
 make migrate && make seed && make superuser
 ```
 
-`make seed` builds a full realistic dataset — 28 singers across the vocal spectrum in every account state (active, invited-but-not-activated, archived), 2 conductors, 6 crew, 8 projects covering every lifecycle state with their score books, 14 composers with movements, translations and editions across the whole licence spectrum, conductor markup layers, plus the knowledge base, messaging, payments, the pending announcement queue and a notification inbox spanning every message type. It's idempotent. Logins: `admin / admin123`, `manager / manager123`, `crew / crew123`.
+`make seed` creates a realistic dataset: 28 singers in every account state (active, invited, archived), an organist and a pianist, 2 conductors, 5 crew members, and 8 projects across the whole lifecycle with their score books. One of them, a Mass a few days out, carries the newer features: a line-up read by section with section leaders, an assistant conductor, rehearsal plans (two past evenings ticked off with a debrief, the next one sent to the choir, a sectional, a dress rehearsal that calls the players) and a score marked on all four annotation layers. Finance covers every budget state: a finished concert with its books closed, signed contracts numbered in sequence and a settled grant, the Mass with an approved plan and part of its costs paid, and drafts still in planning. There are also messages, donations, pending announcements, notifications and a notebook. It's safe to run again. You sign in with an email: `admin@voctmanager.test / admin123`, `manager@voctmanager.test / manager123`, `crew@voctmanager.test / crew123`, and singers as `singer00@voctmanager.test / password123` and up. An `admin` user that already exists keeps its own email.
 
 ```bash
 python manage.py seed_db --artists 12 --no-media   # smaller and faster
@@ -237,9 +209,7 @@ python manage.py seed_db --seed 2026               # reproducible
 - Panel: `http://localhost:5173/panel` (`cd frontend && npm install && npm run dev`)
 - Public site: `http://localhost:4321` (`cd web && npm install && npm run dev`)
 
-The Astro build needs source photos in `web/src/assets/photos/` and videos in `web/src/assets/videos/`. Both are gitignored — they're collaborator-owned originals that live on the build host. The build fails with a clear error if one is missing.
-
----
+The Astro build needs source photos in `web/src/assets/photos/` and videos in `web/src/assets/videos/`. Both are gitignored (the originals belong to collaborators), and the build stops with an error if they're missing.
 
 ## Deploying
 
@@ -247,16 +217,12 @@ The Astro build needs source photos in `web/src/assets/photos/` and videos in `w
 cd ~/VoctManager && git pull && make deploy
 ```
 
-`make deploy` is `gc → build → up -d → migrate → migrate --check → gc`, and each step earns its place:
+`make deploy` runs `gc → build → up -d → migrate → migrate --check → gc` and stops at the first failure. Nothing applies migrations automatically, and `migrate --check` fails the deploy if any are left. `frontend/Dockerfile` builds the panel (Vite) and the public site (Astro + Sharp) and serves both from one `nginx:1.27` image, so the host needs no Node. The build needs about 3 GB of free RAM, and [`infra/docker-gc.sh`](infra/docker-gc.sh) clears old build layers before and after.
 
-- **`build` with no service name rebuilds the backend too.** `build frontend` alone leaves `web` and `celery` on the previous image, so a backend change silently doesn't ship.
-- **Nothing applies migrations for you.** Not `entrypoint.sh` (it only runs `collectstatic`), not `up`. A deploy that stops after `up` leaves new code against the old schema.
-- **`migrate --check` is the receipt.** Non-zero if anything is outstanding, so the deploy fails loudly instead of looking successful.
+## Built with Claude Code
 
-Make aborts on the first failure, so a broken build never reaches the database.
-
-`frontend/Dockerfile` is a three-stage build rooted at the repo root: `panel-builder` (Vite) and `web-builder` (Astro + Sharp) both feed an `nginx:1.27` runtime, so one image ships both frontends. No Node on the host. Needs ~3 GB free RAM during the build — the rollup graph peaks around 2 GB and Sharp adds ~500 MB. [`infra/docker-gc.sh`](infra/docker-gc.sh) runs before and after the build, because nothing evicts the previous build's layers on its own.
+I use Claude Code every day, and many commits are co-authored with it. The product decisions, the architecture, the cost limits and what stays out are mine.
 
 ---
 
-**Krystian Bugalski** — [GitHub](https://github.com/bedikryst) · [LinkedIn](https://www.linkedin.com/in/krystian-bugalski) · krystian@bugalski.dev
+**Krystian Bugalski** · [GitHub](https://github.com/bedikryst) · [LinkedIn](https://www.linkedin.com/in/krystian-bugalski) · krystian@bugalski.dev
