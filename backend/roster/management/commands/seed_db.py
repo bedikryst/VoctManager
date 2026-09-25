@@ -4,9 +4,13 @@
 # ==========================================
 """
 Generates a rich, realistic, Polish-flavoured dataset for local development,
-demos, staging and manual QA. It works the ORM directly (bypassing the service
-layer) so it stays resilient against service refactors, and is *idempotent*:
-re-running it tops up missing rows instead of duplicating.
+demos, staging and manual QA. Wherever a service owns a rule the screens rely
+on — the ledger and the rest of finance, the rehearsal plan, the cast order,
+named solos, annotations, notes — the seed writes through it; everything else
+goes straight to the ORM. Nothing it does sends a notification: where a service
+would announce a change (the plan's send, a debrief, a lead named for an
+evening), the seed writes the stamp itself. It is *idempotent*: re-running it
+tops up missing rows instead of duplicating.
 
 What it seeds, across every bounded context that exists today:
 
@@ -16,25 +20,35 @@ What it seeds, across every bounded context that exists today:
                  retired venue
   • core/IAM   — superuser, production manager and a crew account; per-user
                  UserProfiles (RBAC, salutation + vocative, sizes, digest
-                 windows, consent stamps, generated avatars)
+                 windows, consent stamps, generated avatars); the admin's
+                 notebook
   • roster     — singers across the full voice spectrum in every account state
-                 (activated / invited-but-not-activated / archived), conductors,
-                 collaborators, projects in every lifecycle state, participations,
-                 crew assignments, concert programmes with the
-                 score-book cockpit overrides, micro-casting (divisi), rehearsals
-                 (plenary + sectional) with attendance history, per-piece practice
-                 readiness, and a ScorePackage per project in every build state
+                 (activated / invited-but-not-activated / archived), two
+                 instrumentalists, conductors, collaborators, projects in every
+                 lifecycle state, participations, crew assignments, concert
+                 programmes with the score-book cockpit overrides, micro-casting
+                 (divisi) and one piece's named solos, rehearsals (plenary,
+                 hand-picked, sectional) with attendance history, per-piece
+                 practice readiness, and a ScorePackage per project in every
+                 build state. One showcase project carries the newer surfaces: a
+                 line-up read by section (seats, leaders, arranged sections), an
+                 assistant conductor, and rehearsal plans — two held evenings
+                 ticked off with a debrief, one sent to the cast
   • archive    — composers (some enriched with external identifiers) + repertoire
                  with opus/key/text-source/IPA/starting pitches, multi-movement
-                 works, voice requirements, translations, reference recordings,
-                 program notes, rehearsal audio, score editions across the whole
-                 licence spectrum and every ingestion state, conductor markup
-                 (annotation layers), provenance records and score access logs
+                 works, an organ piece, voice requirements, translations,
+                 reference recordings, program notes, rehearsal audio (practice
+                 takes and one tempo giusto take), score editions across the
+                 whole licence spectrum and every ingestion state, markings on
+                 all four annotation layers, provenance records and score access
+                 logs
   • finance    — a kosztorys per project, the cast's and the crew's fees
-                 priced through the ledger, two expenses, all paid on
-                 completed concerts; a season grant shared by the concerts,
-                 covering part of each plan and charged the venue; the
-                 patron report's opening sentences
+                 priced through the ledger, two expenses; the concerts already
+                 played approved, contracted, paid and (the older one) closed,
+                 against a spring grant that is settled; the showcase approved
+                 with its expenses paid; everything else still in planning,
+                 against an awarded autumn grant; the patron report's opening
+                 sentences
   • documents  — Knowledge-Base categories + role-gated documents
   • messaging  — 1:1 artist↔management threads (assigned, unassigned intake,
                  project-anchored, archived) and per-project group channels
@@ -51,7 +65,9 @@ Flags:
                  editions, knowledge-base documents, avatars, score books)
   --quiet        only print the final summary
 
-Login after seeding:  admin / admin123   (also  manager / manager123, crew / crew123)
+Login after seeding, by e-mail:  admin@voctmanager.test / admin123
+(also manager@… / manager123, crew@… / crew123, singerNN@… / password123).
+A superuser named `admin` that already exists keeps its own e-mail and password.
 """
 
 from __future__ import annotations
@@ -63,7 +79,7 @@ import random
 import struct
 import uuid
 from collections.abc import Callable, Sequence
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, NamedTuple
 from zoneinfo import ZoneInfo
@@ -76,6 +92,7 @@ from django.utils import timezone
 from PIL import Image, ImageDraw, ImageFont
 
 # Archive
+from archive.annotation_palette import PALETTE
 from archive.models import (
     Annotation,
     AnnotationType,
@@ -95,12 +112,16 @@ from archive.models import (
     ScoreEdition,
     ScoreLicenseType,
     Track,
+    TrackKind,
     Translation,
 )
+from archive.serializers import AnnotationSerializer
 
 # Core
 from core.constants import AppRole, ClothingSizeChoices, VoiceLine
-from core.models import UserProfile
+from core.models import Note, UserProfile
+from core.serializers import NoteSerializer
+from core.voice_labels import section_of_seat, voice_family_of
 
 # Documents (Knowledge Base / Chorister Hub)
 from documents.models import Document, DocumentCategory, DocumentIconKey
@@ -116,11 +137,16 @@ from finance.dtos import (
     FeeItemDTO,
     FeeRefDTO,
     FundingSourceDTO,
+    FundingSourceUpdateDTO,
     PayFeesDTO,
     ProjectFundingDTO,
+    ProjectFundingUpdateDTO,
+    SignContractDTO,
 )
 from finance.models import (
+    CONTRACT_FORMS,
     BudgetLine,
+    BudgetStatus,
     Contract,
     ContractSequence,
     CostAllocation,
@@ -129,11 +155,13 @@ from finance.models import (
     FinanceAttachment,
     FinanceEvent,
     FundingSource,
+    FundingStatus,
     LineAllocation,
     ProjectBudget,
     ProjectFunding,
 )
-from finance.rules import money
+from finance.rules import finance_today, money
+from finance.services.contracts import ContractService
 from finance.services.expenses import ExpenseService
 from finance.services.funding import FundingService
 from finance.services.ledger import LedgerService
@@ -173,6 +201,13 @@ from notifications.time_metadata import build_event_time_metadata
 from payments.models import Donation, DonationCurrency, DonationStatus, PatronLead, PatronLeadStatus
 
 # Roster
+from roster.dtos import (
+    CastOrderRowDTO,
+    PieceSoloAssignmentsDTO,
+    RehearsalPlanDTO,
+    RehearsalPlanRowDTO,
+    SoloAssignmentRowDTO,
+)
 from roster.invitations import build_invitation_context, build_invitation_metadata
 from roster.models import (
     DEFAULT_EVENT_TIMEZONE,
@@ -185,11 +220,21 @@ from roster.models import (
     ProgramItem,
     Project,
     ProjectPieceCasting,
+    ProjectSoloAssignment,
     Rehearsal,
+    RehearsalDelegate,
+    RehearsalPlanItem,
     ScorePackage,
     VoiceType,
 )
 from roster.score_package_service import ScorePackageService
+from roster.services import (
+    CastingAndCrewService,
+    ParticipationService,
+    ProjectManagementService,
+    RehearsalDelegationService,
+    RehearsalOperationsService,
+)
 
 # `get_user_model()` returns a runtime value mypy cannot use as a type. Bind the
 # concrete model under TYPE_CHECKING so annotations resolve, while keeping the
@@ -204,6 +249,8 @@ TZ = DEFAULT_EVENT_TIMEZONE
 # Mirrors LEGAL_DOCS_VERSION in the frontend's LegalContent — the version every
 # seeded member is recorded as having accepted at activation.
 TERMS_VERSION = "2026-09-25"
+# The annotation palette by name. Crimson is the conductor's reserved ink.
+INK: dict[str, str] = {ink.name: ink.value for ink in PALETTE}
 
 
 # --------------------------------------------------------------------------- #
@@ -348,6 +395,30 @@ MALE_VOICES = [
     VoiceType.BASS, VoiceType.BASS, VoiceType.COUNTERTENOR,
 ]
 
+# The seats of the showcase's line-up, handed out in turn within each fach.
+# Baritones sit on B1 and basses on B2, which stands both in the bass section
+# (`section_of_seat`) — the case the cast read by section exists for. A mezzo
+# and a countertenor get no seat, so their voice type places them: the mezzo
+# keeps a section of her own, the countertenor stands with the altos.
+LINEUP_SEATS: dict[str, tuple[str, ...]] = {
+    VoiceType.SOPRANO: (VoiceLine.SOPRANO_1, VoiceLine.SOPRANO_2),
+    VoiceType.ALTO: (VoiceLine.ALTO_1, VoiceLine.ALTO_2),
+    VoiceType.TENOR: (VoiceLine.TENOR_1, VoiceLine.TENOR_2),
+    VoiceType.BARITONE: (VoiceLine.BASS_1,),
+    VoiceType.BASS: (VoiceLine.BASS_2,),
+}
+# The sections the conductor has arranged, about half the cast. The rest keep
+# no rank, so the cast tab shows both an arranged section and one nobody has
+# touched.
+RANKED_SECTIONS = frozenset({VoiceType.SOPRANO, VoiceType.TENOR, VoiceType.BASS})
+
+# (first name, vocative, surname, instrument, e-mail local part). Players are
+# artists with accounts like the singers, cast on the board's ACC line.
+PLAYERS: tuple[tuple[str, str, str, str, str], ...] = (
+    ("Paweł", "Pawle", "Zawadzki", "Organy", "organist"),
+    ("Zuzanna", "Zuzanno", "Ostrowska", "Fortepian", "pianist"),
+)
+
 
 class ComposerSpec(NamedTuple):
     first_name: str
@@ -395,6 +466,8 @@ class PieceSpec(NamedTuple):
     # ISO 639-1 (or a '+'-joined bilingual set) — the canonical form every
     # writer of `Piece.language` funnels through, and what the UI localizes.
     language: str
+    # Empty for a piece nobody sings (the organ prelude): no voice
+    # requirements, no practice takes, and no singer is cast on it.
     voicing: str
     opus: str
     key: str
@@ -497,6 +570,10 @@ PIECES: tuple[PieceSpec, ...] = (
         arranger="M. Brzózka",
         pitches=(("S", 9, 4), ("A", 4, 4), ("T", 0, 4), ("B", 9, 2)),
     ),
+    PieceSpec(
+        "Wachet auf, ruft uns die Stimme", "Bach", EpochChoices.BAROQUE, "", "", "BWV 645",
+        "Es-dur", 1748, 270, "Preludium chorałowe na organy", "", "",
+    ),
 )
 
 # pl/en singable-vs-literal translations, plus a credited translator where one
@@ -588,7 +665,22 @@ EDITIONS: dict[str, EditionSpec] = {
     "Oj, chmielu, chmielu": EditionSpec(
         "Skan archiwalny", "", 1975, ScoreLicenseType.PUBLIC_DOMAIN, ingestion=IngestionStatus.FAILED,
     ),
+    "Wachet auf, ruft uns die Stimme": EditionSpec("Bärenreiter", "", 1984, ScoreLicenseType.PUBLIC_DOMAIN),
 }
+
+# The showcase's centre piece: its score carries marks on every annotation
+# layer, and its practice takes stand beside a tempo giusto take.
+SHOWCASE_PIECE = "Ave verum corpus"
+
+# The divisi piece whose board also names its solos, each with the section it
+# is sung from. By section rather than by voice type, so a mezzo can take the
+# soprano solo of a cast that drew no soprano. A position without a section
+# stays open — the vacancy the solo editor shows the conductor.
+SOLO_PIECE = "Sleep"
+SOLO_POSITIONS: tuple[tuple[str, str, str], ...] = (
+    ("Sopran solo", "t. 46–52, nad chórem", "S"),
+    ("Tenor solo", "t. 61–64", ""),
+)
 
 
 class ProjectSpec(NamedTuple):
@@ -608,30 +700,43 @@ class ProjectSpec(NamedTuple):
     minute: int = 0
     # Carries the unpublished announcement queue. Exactly one project should, so
     # the review sheet has something waiting without every live project nagging.
+    # The named solos sit here too: saving them queues the soloist's notice.
     holds_announcements: bool = False
+    # Carries every surface the older projects never had: the line-up read by
+    # section, the players, the assistant conductor and the rehearsal plans.
+    # Exactly one, and it must be ACTIVE and a few days out.
+    showcase: bool = False
+    # The state the seed leaves the kosztorys in. A COMPLETED project that is
+    # APPROVED is paid in full and only waiting to be closed; an ACTIVE one is
+    # partway through its payments.
+    budget: str = BudgetStatus.PLANNING
 
 
-# When rehearsals start, in the venue's own local time.
+# When rehearsals start, in the venue's own local time, and how long they run.
 REHEARSAL_HOUR = 18
 REHEARSAL_MINUTE = 30
+REHEARSAL_MINUTES = 150
 
 
 PROJECTS: tuple[ProjectSpec, ...] = (
     ProjectSpec(
         "Festiwal Muzyki Dawnej — Wratislavia", Project.Status.COMPLETED, -45, "church", 1,
         ("Już się zmierzcha", "In dulci jubilo", "Miserere mei, Deus", "Magnificat"),
-        package_status=ScorePackage.Status.READY,
+        package_status=ScorePackage.Status.READY, budget=BudgetStatus.CLOSED,
     ),
     ProjectSpec(
         "Koncert Pasyjny „Miserere”", Project.Status.COMPLETED, -12, "philharmonic", 0,
         ("Miserere mei, Deus", "Ubi caritas", "Verleih uns Frieden", "Totus Tuus"),
-        package_status=ScorePackage.Status.READY,
+        package_status=ScorePackage.Status.READY, budget=BudgetStatus.APPROVED,
     ),
     ProjectSpec(
         "Msza św. w intencji Fundacji", Project.Status.ACTIVE, 6, "church", 0,
-        ("Locus iste", "Ave verum corpus", "Ubi caritas", "Totus Tuus", "Modlitwa"),
+        (
+            "Wachet auf, ruft uns die Stimme", "Locus iste", "Ave verum corpus", "Ubi caritas",
+            "Totus Tuus", "Modlitwa",
+        ),
         density=ScorePackage.Density.MASS, package_status=ScorePackage.Status.READY,
-        hour=12,
+        hour=12, showcase=True, budget=BudgetStatus.APPROVED,
     ),
     ProjectSpec(
         "Koncert Wiosenny „Lux Aeterna”", Project.Status.ACTIVE, 18, "philharmonic", 0,
@@ -664,9 +769,10 @@ PROJECTS: tuple[ProjectSpec, ...] = (
 # section heading and the printed role line derive from it — so the only thing
 # left to seed beside it is the performers line, which is genuinely per concert.
 MASS_ITEM_SLOTS: tuple[tuple[str, str], ...] = (
+    ("prelude", ""),
     ("entrance", ""),
     ("offertory", "Sopran solo: A. Kowalska"),
-    ("communion", "Organy: P. Organista"),
+    ("communion", "Organy: P. Zawadzki"),
     ("thanksgiving", ""),
     ("recessional", ""),
 )
@@ -864,8 +970,11 @@ class Command(BaseCommand):
     pieces: dict[str, Piece]
     conductors: list[Artist]
     artists: list[Artist]
+    players: list[Artist]
     collaborators: list[Collaborator]
     projects: list[Project]
+    # Keyed by whether the grant funds the concerts already played.
+    grants: dict[bool, FundingSource]
 
     def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument("--artists", type=int, default=28, help="Number of active singers to generate.")
@@ -882,7 +991,7 @@ class Command(BaseCommand):
         self.quiet = opts["quiet"]
         self.with_media = not opts["no_media"]
         self.now = timezone.now()
-        self.season_grant: FundingSource | None = None
+        self.grants = {}
 
         media_note = "with placeholder media" if self.with_media else "metadata only (--no-media)"
         self._log(f"Seeding VoctManager ({media_note}). Password hashing may take a moment...",
@@ -899,13 +1008,16 @@ class Command(BaseCommand):
             self.conductors = self._seed_conductors()
             self.artists = self._seed_singers(opts["artists"])
             self._seed_archived_singers()
+            self.players = self._seed_players()
             self.collaborators = self._seed_collaborators()
             self._seed_knowledge_base()
             self.projects = self._seed_projects()
+            self._settle_spring_grant()
             self._seed_score_markup()
             self._seed_messaging()
             self._seed_payments()
             self._seed_notifications()
+            self._seed_notebook()
 
         self._print_summary()
 
@@ -926,10 +1038,11 @@ class Command(BaseCommand):
             Notification, NotificationPreference, PushDevice, PendingAnnouncement,
             ChannelMessage, ChannelMembership, ProjectChannel,
             ThreadReadState, Message, Thread,
-            Donation, PatronLead,
+            Donation, PatronLead, Note,
             Document, DocumentCategory,
             FinanceEvent, CostAllocation, LineAllocation, ProjectFunding, FundingSource,
             FinanceAttachment, Contract, ContractSequence, CostItem, BudgetLine, ProjectBudget,
+            ProjectSoloAssignment, RehearsalPlanItem, RehearsalDelegate,
             Attendance, PieceReadiness, ProjectPieceCasting, CrewAssignment,
             ProgramItem, Rehearsal, Participation, ScorePackage, Project,
             Collaborator,
@@ -1130,7 +1243,9 @@ class Command(BaseCommand):
                         for voice, note, octave in spec.pitches
                     ],
                     "mbid_work": _synthetic_uuid("work", spec.title),
-                    "description": f"{spec.voicing} · {spec.language} · {spec.text_source}",
+                    "description": " · ".join(
+                        part for part in (spec.voicing, spec.language, spec.text_source) if part
+                    ),
                 },
             )
             pieces[spec.title] = piece
@@ -1144,7 +1259,7 @@ class Command(BaseCommand):
 
     def _seed_piece_relations(self, piece: Piece, spec: PieceSpec) -> None:
         """Voice requirements, movements, translations, recordings and notes."""
-        for line in _lines_from_voicing(spec.voicing):
+        for line in _lines_from_voicing(spec.voicing) if spec.voicing else ():
             PieceVoiceRequirement.objects.get_or_create(
                 piece=piece, voice_line=line, defaults={"quantity": random.randint(2, 6)},
             )
@@ -1230,12 +1345,18 @@ class Command(BaseCommand):
             if not failed:
                 self._seed_provenance(piece, edition)
 
-        if not piece.tracks.exists():
+        if spec.voicing and not piece.tracks.exists():
             wav = _placeholder_wav()
             for line in _lines_from_voicing(spec.voicing)[:4]:
                 track = Track(piece=piece, voice_part=line)
                 track.audio_file.save(f"{_slug(piece.title)}_{line}.wav", ContentFile(wav), save=False)
                 track.save()
+            if spec.title == SHOWCASE_PIECE:
+                # The conductor's target reading: one take, no voices, always on
+                # the Tutti line, heard apart from the practice mixer.
+                take = Track(piece=piece, voice_part=VoiceLine.TUTTI, kind=TrackKind.TEMPO_GIUSTO)
+                take.audio_file.save(f"{_slug(piece.title)}_tempo_giusto.wav", ContentFile(wav), save=False)
+                take.save()
 
     def _seed_provenance(self, piece: Piece, edition: ScoreEdition) -> None:
         """Attribution rows behind the "AI-suggested vs. verified" badges. Written
@@ -1396,16 +1517,45 @@ class Command(BaseCommand):
             activation_email_sent_at=(self.now - timedelta(days=random.randint(1, 9))) if pending else None,
         )
 
+    def _seed_players(self) -> list[Artist]:
+        """The organist and the rehearsal pianist: artists like the singers, with
+        an instrument where a singer has a range, and no sight-reading score —
+        both belong to the S/A/T/B families a player stands outside."""
+        self._log("6b. Instrumentalists (organ, piano)...")
+        players: list[Artist] = []
+        for first, vocative, last, instrument, handle in PLAYERS:
+            email = f"{handle}@{SEED_DOMAIN}"
+            player = Artist.all_objects.filter(email=email).first()
+            if player is None:
+                is_female = last.endswith("a")
+                phone = f"+48 {random.randint(500, 799)} {random.randint(100, 999)} {random.randint(100, 999)}"
+                user = User.objects.create_user(
+                    username=email, email=email, password="password123", first_name=first, last_name=last,
+                )
+                self._ensure_profile(
+                    user, AppRole.ARTIST, phone=phone, vocative=vocative,
+                    salutation=UserProfile.Salutation.FEMININE if is_female else UserProfile.Salutation.MASCULINE,
+                    digest_enabled=False,
+                )
+                self._attach_avatar(user, f"{first[0]}{last[0]}")
+                player = Artist.objects.create(
+                    user=user, first_name=first, last_name=last, email=email,
+                    voice_type=VoiceType.INSTRUMENTALIST, instrument=instrument, phone_number=phone,
+                )
+            players.append(player)
+        return players
+
     # ----------------------------------------------------------------- #
     # 7. Collaborators (crew)                                           #
     # ----------------------------------------------------------------- #
     def _seed_collaborators(self) -> list[Collaborator]:
         self._log("7. Collaborators (technical crew)...")
+        # The organist is an artist (`_seed_players`) with a seat in the cast,
+        # so the crew holds nobody who plays in the concert.
         data: tuple[tuple[str, str, str, str], ...] = (
             ("Tomasz", "Dźwięk", Collaborator.Specialty.SOUND, "SoundCraft Studio"),
             ("Marek", "Światło", Collaborator.Specialty.LIGHT, "LumenFX"),
             ("Katarzyna", "Logistyk", Collaborator.Specialty.LOGISTICS, "EventMasters"),
-            ("Paweł", "Organista", Collaborator.Specialty.INSTRUMENT, ""),
             ("Anna", "Wizual", Collaborator.Specialty.VISUALS, "Projekcje AV"),
             ("Robert", "Stroiciel", Collaborator.Specialty.OTHER, "Fortepiany Serwis"),
         )
@@ -1547,18 +1697,30 @@ class Command(BaseCommand):
         ]
 
     def _populate_project(self, project: Project, spec: ProjectSpec, when: datetime) -> None:
-        is_done = spec.status == Project.Status.COMPLETED
         is_draft = spec.status == Project.Status.DRAFT
         is_cancelled = spec.status == Project.Status.CANCELLED
 
         participations = self._seed_participations(project, spec)
         confirmed = [p for p in participations if p.status == Participation.Status.CONFIRMED]
+        # The players stay out of every singer-shaped step below — casting by
+        # fach, readiness, the roll call of evenings that never called them —
+        # and join only where a seat is a seat: the fees and their own casting.
+        players: list[Participation] = []
+        if spec.showcase:
+            self._seed_lineup(participations)
+            players = self._seed_player_seats(project)
 
         crew = self._seed_crew_assignments(project, is_draft=is_draft)
-        self._seed_fees(project, participations, crew, when, is_done=is_done)
+        self._seed_fees(project, spec, [*participations, *players], crew, when)
         self._seed_programme(project, spec)
         self._seed_casting_and_readiness(project, spec, confirmed)
-        self._seed_rehearsals(project, spec, participations, confirmed, when)
+        rehearsals = self._seed_rehearsals(project, spec, confirmed, when)
+        if spec.showcase:
+            self._seed_player_casting(project, players)
+            self._arrange_sections(project, participations)
+            self._seed_showcase_rehearsals(project, rehearsals)
+        if spec.holds_announcements:
+            self._seed_named_solos(project, participations)
         self._seed_score_package(project, spec)
 
         if not is_cancelled:
@@ -1590,6 +1752,67 @@ class Command(BaseCommand):
             ))
         return participations
 
+    def _seed_lineup(self, participations: Sequence[Participation]) -> None:
+        """Seats and section leaders, through the manager's own edit. Seats go
+        round each fach's lines in turn; the first confirmed singer of each
+        section — the section the seat puts them in — leads it."""
+        turn: dict[str, int] = {}
+        led: set[str] = set()
+        for seat in participations:
+            if seat.status == Participation.Status.DECLINED:
+                continue
+            voice = seat.artist.voice_type
+            lines = LINEUP_SEATS.get(voice, ())
+            changes: dict[str, Any] = {}
+            if lines:
+                changes["default_voice_line"] = lines[turn.get(voice, 0) % len(lines)]
+                turn[voice] = turn.get(voice, 0) + 1
+            section = section_of_seat(voice, changes.get("default_voice_line"))
+            if seat.status == Participation.Status.CONFIRMED and section not in led:
+                changes["is_section_leader"] = True
+                led.add(section)
+            if changes:
+                ParticipationService.update_by_manager(seat, changes)
+
+    def _seed_player_seats(self, project: Project) -> list[Participation]:
+        return [
+            Participation.objects.create(artist=player, project=project, status=Participation.Status.CONFIRMED)
+            for player in self.players
+        ]
+
+    def _seed_player_casting(self, project: Project, players: Sequence[Participation]) -> None:
+        """The organist on the prelude and nobody else on it: a piece whose only
+        performers are players is instrumental in this project. The pianist
+        accompanies rehearsals and plays in no piece."""
+        organ = next((seat for seat in players if seat.artist.instrument == "Organy"), None)
+        prelude = next(
+            (item.piece for item in ProgramItem.objects.filter(project=project).select_related("piece")
+             if not item.piece.voicing),
+            None,
+        )
+        if organ is not None and prelude is not None:
+            ProjectPieceCasting.objects.get_or_create(
+                participation=organ, piece=prelude, defaults={"voice_line": VoiceLine.ACCOMPANIMENT},
+            )
+
+    def _arrange_sections(self, project: Project, participations: Sequence[Participation]) -> None:
+        """The conductor's order inside the arranged sections, written the way
+        the cast tab writes it: one section whole, its leader on top. The bass
+        section holds the baritones seated on B1 as well."""
+        sections: dict[str, list[Participation]] = {}
+        for seat in participations:
+            if seat.status == Participation.Status.DECLINED:
+                continue
+            section = section_of_seat(seat.artist.voice_type, seat.default_voice_line)
+            if section in RANKED_SECTIONS:
+                sections.setdefault(section, []).append(seat)
+        for seats in sections.values():
+            ordered = sorted(seats, key=lambda seat: not seat.is_section_leader)
+            ProjectManagementService.reorder_cast(
+                project,
+                [CastOrderRowDTO(participation=seat.pk, section_rank=rank) for rank, seat in enumerate(ordered)],
+            )
+
     # --- B) crew ------------------------------------------------------- #
     def _seed_crew_assignments(self, project: Project, *, is_draft: bool) -> list[CrewAssignment]:
         return [
@@ -1605,18 +1828,18 @@ class Command(BaseCommand):
     def _seed_fees(
         self,
         project: Project,
+        spec: ProjectSpec,
         participations: list[Participation],
         crew: list[CrewAssignment],
         when: datetime,
-        *,
-        is_done: bool,
     ) -> None:
         """Plans the concert, prices the cast and the crew through the ledger,
-        the one writer of money, books two expenses, and settles a completed
-        concert two days after it. The plan comes first, so each fee is charged
-        to the only line of its side as it is priced. A declined seat stays
-        unpriced: the ledger refuses to price it. The printing overruns its
-        line by a little, so the plan warning has something to show."""
+        the one writer of money, books two expenses, and takes the budget to
+        the state its spec names (`_advance_budget`). The plan comes first, so
+        each fee is charged to the only line of its side as it is priced. A
+        declined seat stays unpriced: the ledger refuses to price it. The
+        printing overruns its line by a little, so the plan warning has
+        something to show."""
         billable = [seat for seat in participations if seat.status != Participation.Status.DECLINED]
         plan = [
             ("PERSONNEL_ARTISTIC", "Honoraria obsady", "PERSON", len(billable), 300),
@@ -1634,26 +1857,35 @@ class Command(BaseCommand):
             for category, name, unit, quantity, unit_cost in plan
             if quantity > 0
         }
+        # The parish is paid before the concert, the printer ten days before it
+        # (the programmes are invoiced on delivery). Dated against the concert,
+        # the next draft's printer invoice lands just past due and the one after
+        # it inside the fortnight, so the finance overview has both to show.
         expenses = [
             ExpenseService.create(
                 project,
                 ExpenseDTO(category="VENUE", vendor_name="Parafia pw. św. Anny", document_type="INVOICE",
                            document_number=f"FV/{when:%m}/{random.randint(10, 99)}", cost_amount=Decimal(1500),
-                           description="Wynajem kościoła na koncert", budget_line=lines["VENUE"].pk),
+                           description="Wynajem kościoła na koncert", budget_line=lines["VENUE"].pk,
+                           due_on=(when - timedelta(days=3)).date()),
                 actor=None,
             ),
             ExpenseService.create(
                 project,
                 ExpenseDTO(category="PROMOTION", vendor_name="Drukarnia Tercja", document_type="INVOICE",
                            document_number=f"{random.randint(100, 999)}/{when:%Y}", cost_amount=Decimal(620),
-                           description="Programy koncertu, 200 szt.", budget_line=lines["PROMOTION"].pk),
+                           description="Programy koncertu, 200 szt.", budget_line=lines["PROMOTION"].pk,
+                           due_on=(when - timedelta(days=10)).date()),
                 actor=None,
             ),
         ]
         items = [
             FeeItemDTO(
                 ref=FeeRefDTO(participation=seat.pk),
-                contract_amount=Decimal(random.choice([200, 250, 300, 400])),
+                contract_amount=Decimal(
+                    600 if seat.artist.voice_type == VoiceType.INSTRUMENTALIST
+                    else random.choice([200, 250, 300, 400])
+                ),
             )
             for seat in participations
             if seat.status != Participation.Status.DECLINED
@@ -1661,47 +1893,119 @@ class Command(BaseCommand):
             FeeItemDTO(ref=FeeRefDTO(crew_assignment=assignment.pk), contract_amount=Decimal(1000))
             for assignment in crew
         ]
-        paid_on = (when + timedelta(days=2)).date()
         if items:
             LedgerService.apply_fee_batch(project, FeeBatchDTO(items=tuple(items)), actor=None)
-        self._seed_funding(project, lines, expenses[0])
+        played = spec.status == Project.Status.COMPLETED
+        funding = self._seed_funding(project, lines, expenses[0], played=played)
         PlanService.set_patron_summary(
             project,
             "Wieczór polifonii sakralnej w wykonaniu chóru fundacji, z programem od renesansu po "
             "współczesność. Wstęp był wolny.",
         )
-        if not is_done:
+        self._advance_budget(project, spec, expenses, funding, when)
+
+    def _advance_budget(
+        self,
+        project: Project,
+        spec: ProjectSpec,
+        expenses: Sequence[CostItem],
+        funding: ProjectFunding,
+        when: datetime,
+    ) -> None:
+        """From PLANNING to the state the spec names, the way the office gets
+        there. A concert already played: the plan approved, a contract issued
+        and signed for every cast seat (numbered in sequence across projects),
+        everything paid two days after the concert, the grant's money in —
+        and, for a CLOSED budget, the books closed. The showcase, days out: the
+        plan approved, the players' contracts issued, the expenses paid and
+        half the grant received. The closing rules (nothing unpaid, unpriced
+        or missing its employer contributions) hold because the cast signs a
+        dzieło and the crew invoice — no fee is a mandate."""
+        if spec.budget == BudgetStatus.PLANNING:
             return
-        ids = tuple(
-            CostItem.objects.filter(budget__project=project, kind=CostKind.FEE).values_list("pk", flat=True)
+        PlanService.approve(project, actor=None)
+        fees = CostItem.objects.filter(
+            budget__project=project, kind=CostKind.FEE,
+        ).select_related("participation__artist").order_by("payee_name", "pk")
+
+        if spec.status != Project.Status.COMPLETED:
+            for item in fees:
+                if item.participation is not None and item.participation.artist.voice_type == VoiceType.INSTRUMENTALIST:
+                    ContractService.issue(item, actor=None)
+            LedgerService.pay(
+                project, PayFeesDTO(ids=tuple(expense.pk for expense in expenses), paid_on=finance_today()),
+                actor=None, kind=CostKind.EXPENSE,
+            )
+            FundingService.update_funding(
+                funding, ProjectFundingUpdateDTO(received_amount=money(funding.planned_amount / 2)), actor=None,
+            )
+            return
+
+        issued_at = _at_local_time(when - timedelta(days=10), 10)
+        signed = SignContractDTO(
+            signed_on=(when - timedelta(days=7)).date(),
+            signed_copy_location=f"Biuro fundacji, segregator „Umowy {issued_at.year}”",
         )
-        if ids:
-            LedgerService.pay(project, PayFeesDTO(ids=ids, paid_on=paid_on), actor=None)
+        contracts = [ContractService.issue(item, actor=None) for item in fees if item.form in CONTRACT_FORMS]
+        # The service stamps the moment of issue; the paper went out before the
+        # concert, and a contract dated after its own signature reads as an error.
+        Contract.objects.filter(pk__in=[contract.pk for contract in contracts]).update(issued_at=issued_at)
+        for contract in contracts:
+            ContractService.sign(contract, signed, actor=None)
+
+        paid_on = (when + timedelta(days=2)).date()
+        LedgerService.pay(project, PayFeesDTO(ids=tuple(item.pk for item in fees), paid_on=paid_on), actor=None)
         LedgerService.pay(
             project, PayFeesDTO(ids=tuple(expense.pk for expense in expenses), paid_on=paid_on),
             actor=None, kind=CostKind.EXPENSE,
         )
+        FundingService.update_funding(
+            funding, ProjectFundingUpdateDTO(received_amount=funding.planned_amount), actor=None,
+        )
+        if spec.budget == BudgetStatus.CLOSED:
+            PlanService.close(project, actor=None)
 
-    def _season_grant(self) -> FundingSource:
-        """One grant for the whole season, so a source's page has more than
-        one concert to sum. Its rules are the usual public-benefit ones; it is
-        applied for, not yet awarded, so no award caps what the seed plans."""
-        if self.season_grant is None:
+    def _grant(self, *, played: bool) -> FundingSource:
+        """Two grants split the season, so a source's page has more than one
+        concert to sum and both ends of a grant's life show. The spring grant
+        funded the concerts already played and is settled once they are paid
+        (`_settle_spring_grant`); the autumn grant is awarded and funds
+        everything still ahead. One grant for both would not do: a settled
+        source freezes every allocation made to it, and a draft's plan must
+        stay editable. Their rules are the usual public-benefit ones."""
+        if played not in self.grants:
             year = self.now.year
-            self.season_grant = FundingService.create_source(
+            name, grantor, awarded = (
+                (f"Mecenat Małopolski {year}", "Województwo Małopolskie", 9000) if played
+                else (f"Kultura Mazowsza {year}", "Samorząd Województwa Mazowieckiego", 30000)
+            )
+            self.grants[played] = FundingService.create_source(
                 FundingSourceDTO(
-                    kind="PUBLIC_GRANT", name=f"Mecenat Małopolski {year}", grantor="Województwo Małopolskie",
-                    agreement_number=f"KL-II.{random.randint(100, 999)}.{year}", status="APPLIED",
+                    kind="PUBLIC_GRANT", name=name, grantor=grantor,
+                    agreement_number=f"KL-II.{random.randint(100, 999)}.{year}", status="AWARDED",
+                    agreement_date=(self.now - timedelta(days=150 if played else 40)).date(),
+                    awarded_amount=Decimal(awarded),
                     eligible_from=date(year - 1, 1, 1), eligible_to=date(year + 1, 12, 31),
                     report_due_on=date(year + 2, 1, 30), required_own_share_pct=Decimal(10),
                     admin_cost_cap_pct=Decimal(10), line_tolerance_pct=Decimal(10),
                 ),
                 actor=None,
             )
-        return self.season_grant
+        return self.grants[played]
 
-    def _seed_funding(self, project: Project, lines: dict[str, BudgetLine], venue: CostItem) -> None:
-        """Puts the season grant on the concert: it is to cover the venue and
+    def _settle_spring_grant(self) -> None:
+        """The spring grant's report is accepted once its concerts are paid. Last,
+        because a settled source refuses every later change to what it funds."""
+        grant = self.grants.get(True)
+        if grant is not None:
+            FundingService.update_source(
+                grant, FundingSourceUpdateDTO(status=FundingStatus.SETTLED), actor=None,
+            )
+
+    def _seed_funding(
+        self, project: Project, lines: dict[str, BudgetLine], venue: CostItem, *, played: bool,
+    ) -> ProjectFunding:
+        """Puts the season's grant on the concert: it is to cover the venue and
         half the singers' fees, and the venue's invoice is charged to it."""
         planned = {
             "VENUE": money(lines["VENUE"].quantity * lines["VENUE"].unit_cost),
@@ -1712,7 +2016,9 @@ class Command(BaseCommand):
         }
         funding = FundingService.add_funding(
             project,
-            ProjectFundingDTO(source=self._season_grant().pk, planned_amount=sum(planned.values(), Decimal(0))),
+            ProjectFundingDTO(
+                source=self._grant(played=played).pk, planned_amount=sum(planned.values(), Decimal(0)),
+            ),
             actor=None,
         )
         for category, amount in planned.items():
@@ -1727,6 +2033,7 @@ class Command(BaseCommand):
             AllocationSetDTO(allocations=(AllocationDTO(funding=funding.pk, amount=venue.cost_amount or Decimal(0)),)),
             actor=None,
         )
+        return funding
 
     # --- C) programme + score-book cockpit overrides -------------------- #
     def _seed_programme(self, project: Project, spec: ProjectSpec) -> None:
@@ -1767,8 +2074,13 @@ class Command(BaseCommand):
 
         for title in titles:
             piece = self.pieces[title]
+            if not piece.voicing:
+                continue  # nobody sings it; its players are cast by `_seed_player_casting`
             for index, participation in enumerate(confirmed):
-                line = random.choice(VOICE_LINES_FOR[participation.artist.voice_type])
+                # A seat in the line-up is what the board is filled from.
+                line = participation.default_voice_line or random.choice(
+                    VOICE_LINES_FOR[participation.artist.voice_type]
+                )
                 ProjectPieceCasting.objects.get_or_create(
                     participation=participation, piece=piece,
                     defaults={
@@ -1796,10 +2108,9 @@ class Command(BaseCommand):
         self,
         project: Project,
         spec: ProjectSpec,
-        participations: Sequence[Participation],
         confirmed: Sequence[Participation],
         when: datetime,
-    ) -> None:
+    ) -> list[Rehearsal]:
         if spec.status == Project.Status.COMPLETED:
             moments = [when - timedelta(days=days) for days in (21, 14, 7, 3)]
         elif spec.status == Project.Status.DRAFT:
@@ -1813,25 +2124,32 @@ class Command(BaseCommand):
                 when - timedelta(days=3),
             ]
 
+        rehearsals: list[Rehearsal] = []
         for position, raw_moment in enumerate(moments, start=1):
             moment = _at_local_time(raw_moment, REHEARSAL_HOUR, REHEARSAL_MINUTE)
             is_last = position == len(moments)
             rehearsal = Rehearsal.objects.create(
                 project=project, date_time=moment, location=self.locations["rehearsal"],
-                timezone=TZ,
+                timezone=TZ, duration_minutes=REHEARSAL_MINUTES,
                 focus=("Próba generalna w strojach" if is_last else f"Praca nad repertuarem (część {position})"),
                 # An optional extra session proves the invitation copy marks the
                 # exception rather than repeating "obligatory" on every line.
                 is_mandatory=position != 2 or len(moments) < 3,
+                # The choir rehearses alone; the players join for the last evening.
+                calls_instrumentalists=spec.showcase and is_last,
                 reminder_sent_at=(moment - timedelta(days=1)) if moment < self.now else None,
             )
-            # A sectional is called for named singers only; everything else is plenary,
-            # and a rehearsal with no named invitees reaches the whole cast.
+            # The second evening is called for six named singers; every other one
+            # names nobody, which calls the whole cast as it stands on the day.
             sectional = position == 2 and len(confirmed) > 6
-            rehearsal.invited_participations.set(list(confirmed[:6]) if sectional else list(participations))
+            called = list(confirmed[:6]) if sectional else list(confirmed)
+            if sectional:
+                rehearsal.invited_participations.set(called)
             if moment < self.now:
-                for participation in confirmed:
+                for participation in called:
                     self._record_attendance(rehearsal, participation)
+            rehearsals.append(rehearsal)
+        return rehearsals
 
     def _record_attendance(self, rehearsal: Rehearsal, participation: Participation) -> None:
         status = random.choices(
@@ -1846,6 +2164,160 @@ class Command(BaseCommand):
                 "minutes_late": random.randint(5, 20) if status == Attendance.Status.LATE else None,
                 "excuse_note": "Korek na trasie" if status == Attendance.Status.EXCUSED else "",
             },
+        )
+
+    # --- D') the showcase's last week ----------------------------------- #
+    def _seed_showcase_rehearsals(self, project: Project, rehearsals: Sequence[Rehearsal]) -> None:
+        """The week before the concert as the conductor runs it. The assistant
+        is appointed first — only someone holding the grant may be named to
+        lead an evening. The two evenings already held have their plans ticked
+        off and a debrief; tomorrow's plan is laid and sent; a sectional calls
+        the sopranos and altos; the dress rehearsal calls the players."""
+        assistant = self.conductors[1]
+        # Silent because the guest conductor has no account: a grant tells an
+        # assistant who can log in, and the seed tells nobody anything.
+        RehearsalDelegationService.grant(
+            project=project, granted_by=self.managers[0], artist=assistant,
+            can_see_leader_marks=True, can_take_roll_call=True, can_open_materials=True,
+            can_mark_for_choir=False,
+            note="Prowadzi próby, gdy Jan jest w trasie z drugim zespołem.",
+        )
+        opening = time(REHEARSAL_HOUR, REHEARSAL_MINUTE)
+        held = [rehearsal for rehearsal in rehearsals if rehearsal.date_time < self.now]
+        evenings: tuple[tuple[tuple[RehearsalPlanRowDTO, ...], dict[str, bool], Artist, str], ...] = (
+            (
+                (
+                    self._plan_row("Rozśpiewanie", 15, at=opening),
+                    self._plan_row("Locus iste", 30),
+                    self._plan_row("Totus Tuus", 40, note="od t. 40 do końca, pierwsze czytanie"),
+                    self._plan_row("Ave verum corpus", 25),
+                    self._plan_row("Modlitwa", 15, reserve=True),
+                ),
+                {"Locus iste": True, "Totus Tuus": True, "Ave verum corpus": True, "Modlitwa": False},
+                self.conductors[0],
+                "Locus iste i Totus Tuus przerobione do końca. Ave verum: soprany wciąż za wysoko "
+                "w t. 10–12 — następną próbę zacząć od tego miejsca. Na Modlitwę nie starczyło czasu.",
+            ),
+            (
+                (
+                    self._plan_row("Totus Tuus", 30, at=opening),
+                    self._plan_row("Ubi caritas", 30, note="wejścia altów"),
+                    self._plan_row("Modlitwa", 20),
+                ),
+                {"Totus Tuus": True, "Ubi caritas": True, "Modlitwa": True},
+                assistant,
+                "Szóstka pracowała sprawnie. Totus Tuus pewnie; w Ubi caritas alty wchodzą za późno "
+                "po pauzie — do przypomnienia na tutti. Modlitwa zaśpiewana w całości.",
+            ),
+        )
+        for rehearsal, (rows, verdicts, leader, debrief) in zip(held, evenings, strict=False):
+            if leader.pk != project.conductor_id:
+                Rehearsal.objects.filter(pk=rehearsal.pk).update(led_by=leader)
+            for item in self._lay_plan(rehearsal, rows):
+                if item.piece_id and item.title in verdicts:
+                    RehearsalOperationsService.mark_plan_item(rehearsal, item.pk, done=verdicts[item.title])
+            # As `post_debrief` stamps it; the service would also tell the managers.
+            Rehearsal.objects.filter(pk=rehearsal.pk).update(
+                debrief=debrief, debrief_by=leader,
+                debrief_at=rehearsal.date_time + timedelta(minutes=REHEARSAL_MINUTES + 40),
+            )
+
+        evening = Rehearsal.objects.create(
+            project=project, location=self.locations["rehearsal"], timezone=TZ,
+            date_time=_at_local_time(self.now + timedelta(days=1), REHEARSAL_HOUR, REHEARSAL_MINUTE),
+            duration_minutes=REHEARSAL_MINUTES, led_by=assistant,
+            focus="Totus Tuus i Ave verum — szlify przed generalną",
+        )
+        # Two blocks: the women come at 18:30 for Ubi caritas, the whole choir
+        # at 19:00. The second anchor is what gives the men their own window
+        # ("Twoja część 19:00-21:00") and the editor its block header; one
+        # block would make every window the whole evening, which is never shown.
+        tutti = (datetime.combine(date.min, opening) + timedelta(minutes=30)).time()
+        self._lay_plan(evening, (
+            self._plan_row(
+                "Ubi caritas", 30, note="same panie — wejścia altów", at=opening,
+                without=self._lines_of(project, "Ubi caritas", {"T", "B"}),
+            ),
+            self._plan_row("Rozśpiewanie", 10, at=tutti),
+            self._plan_row("Totus Tuus", 30, note="od t. 40 do końca — dynamika"),
+            self._plan_row("Ave verum corpus", 25, note="t. 10–12, soprany: intonacja"),
+            self._plan_row("Przerwa", 10, pause=True),
+            self._plan_row("Locus iste", 20),
+            self._plan_row("Modlitwa", 15, note="całość, bez zatrzymywania", reserve=True),
+        ))
+        # Sent, as `announce_plan` stamps it after the last edit. The send
+        # itself would queue a notice for the cast, and the queue is another
+        # project's to hold.
+        Rehearsal.objects.filter(pk=evening.pk).update(plan_announced_at=timezone.now())
+
+        Rehearsal.objects.create(
+            project=project, location=self.locations["rehearsal"], timezone=TZ,
+            date_time=_at_local_time(self.now + timedelta(days=2), REHEARSAL_HOUR, REHEARSAL_MINUTE),
+            duration_minutes=90, called_sections="SA",
+            focus="Soprany i alty — Ubi caritas, wejścia po pauzach",
+        )
+
+    def _plan_row(
+        self,
+        title: str,
+        minutes: int,
+        *,
+        note: str = "",
+        at: time | None = None,
+        reserve: bool = False,
+        pause: bool = False,
+        without: Sequence[str] = (),
+    ) -> RehearsalPlanRowDTO:
+        """One row as the editor sends it: a programme piece by title, anything
+        else a label."""
+        piece = None if pause else self.pieces.get(title)
+        return RehearsalPlanRowDTO(
+            piece=piece.pk if piece is not None else None,
+            label="" if piece is not None else title,
+            note=note, starts_at=at, minutes=minutes,
+            excluded_voice_lines=tuple(without), is_reserve=reserve, is_break=pause,
+        )
+
+    def _lay_plan(self, rehearsal: Rehearsal, rows: Sequence[RehearsalPlanRowDTO]) -> list[RehearsalPlanItem]:
+        """Saved whole, through the plan's own rules (the reserve closes it, a
+        break names no piece, every piece is on the programme)."""
+        plan = RehearsalPlanDTO(rows=tuple(rows))
+        return RehearsalOperationsService.replace_plan(rehearsal, plan.rows)
+
+    def _lines_of(self, project: Project, title: str, families: set[str]) -> tuple[str, ...]:
+        """Every line of ``families`` the piece has in this project — declared
+        or cast — so an exclusion takes the whole family and reads as
+        "bez T, B" rather than as a list of divisi."""
+        piece = self.pieces[title]
+        cast = ProjectPieceCasting.objects.filter(
+            participation__project=project, piece=piece,
+        ).values_list("voice_line", flat=True)
+        declared = PieceVoiceRequirement.objects.filter(piece=piece).values_list("voice_line", flat=True)
+        return tuple(sorted({line for line in (*cast, *declared) if voice_family_of(line) in families}))
+
+    # --- D'') named solos ---------------------------------------------- #
+    def _seed_named_solos(self, project: Project, participations: Sequence[Participation]) -> None:
+        """The divisi piece's named solos, saved as the solo editor saves them:
+        one position filled, one still open. The soloist is the first singer of
+        the section who has not declined, a confirmed one if there is any — the
+        editor refuses only a declined seat."""
+        piece = self.pieces.get(SOLO_PIECE)
+        if piece is None or not ProgramItem.objects.filter(project=project, piece=piece).exists():
+            return
+        rows: list[SoloAssignmentRowDTO] = []
+        for position, (label, reference, section) in enumerate(SOLO_POSITIONS):
+            candidates = sorted(
+                (seat for seat in participations
+                 if section and section in seat.section_letters and seat.status != Participation.Status.DECLINED),
+                key=lambda seat: seat.status != Participation.Status.CONFIRMED,
+            )
+            soloist = candidates[0] if candidates else None
+            rows.append(SoloAssignmentRowDTO(
+                label=label, score_reference=reference, position=position,
+                participation=soloist.pk if soloist is not None else None,
+            ))
+        CastingAndCrewService.save_solo_assignments(
+            PieceSoloAssignmentsDTO(project=project.pk, piece=piece.pk, solo_assignments=tuple(rows)),
         )
 
     # --- E) score package (the concert book) ---------------------------- #
@@ -2046,46 +2518,39 @@ class Command(BaseCommand):
     # 10. Archive — conductor markup                                    #
     # ----------------------------------------------------------------- #
     def _seed_score_markup(self) -> None:
-        """Annotation layers on a rehearsed score: what the choir sees, what only
-        the maestro sees, and one singer's private pencil marks."""
+        """Annotation layers on two rehearsed scores: what the choir sees, what
+        only the maestro sees, what is left for whoever stands in front, and one
+        singer's private pencil. Written through the annotation serializer, so
+        every payload is the sanitised shape and every colour a palette ink."""
         if not self.with_media or Annotation.objects.exists():
             return
-        self._log("10. Score markup (shared / conductor / personal annotation layers)...")
+        self._log("10. Score markup (shared / leader / conductor / personal annotation layers)...")
+
+        conductor_user = self.managers[0]
+        singer = next((artist.user for artist in self.artists if artist.user_id), None)
 
         edition = ScoreEdition.objects.filter(
             piece__title="Miserere mei, Deus", is_default=True,
         ).first()
         if edition is None:
             return
-
-        conductor_user = self.managers[0]
-        singer = next((artist.user for artist in self.artists if artist.user_id), None)
-
-        layers: tuple[tuple[str, str, dict[str, Any], str, int, User | None], ...] = (
+        self._mark(edition, (
             ("shared", AnnotationType.HIGHLIGHT,
-             {"paths": [[[0.12, 0.31], [0.62, 0.31]]], "width": 0.02}, "#C9A227AA", 2, conductor_user),
+             {"paths": [[[0.12, 0.31], [0.62, 0.31]]], "width": 0.02}, INK["gilt"], 2, conductor_user),
             ("shared", AnnotationType.COMMENT,
              {"x": 0.66, "y": 0.34, "text": "Oddech wszyscy razem — po „Deus”.",
-              "display": "pin", "scale": 1.0}, "#7A6A9BFF", 2, conductor_user),
+              "display": "pin", "scale": 1.0}, INK["cobalt"], 2, conductor_user),
             ("shared", AnnotationType.STAMP,
-             {"x": 0.48, "y": 0.62, "symbol": "breath", "scale": 1.2}, "#1B1A17FF", 3, conductor_user),
+             {"x": 0.48, "y": 0.62, "symbol": "breath", "scale": 1.2}, INK["graphite"], 3, conductor_user),
             ("conductor", AnnotationType.FREEHAND,
              {"paths": [[[0.20, 0.44], [0.28, 0.40], [0.36, 0.47], [0.44, 0.41]]], "width": 0.005},
-             "#B3261EFF", 1, conductor_user),
+             INK["crimson"], 1, conductor_user),
             ("conductor", AnnotationType.STAMP,
-             {"x": 0.82, "y": 0.18, "symbol": "fermata", "scale": 1.4}, "#1B1A17FF", 4, conductor_user),
+             {"x": 0.82, "y": 0.18, "symbol": "fermata", "scale": 1.4}, INK["graphite"], 4, conductor_user),
             ("personal", AnnotationType.COMMENT,
              {"x": 0.24, "y": 0.71, "text": "Tu zawsze spóźniam wejście.",
-              "display": "inline", "scale": 0.9}, "#8A9A7BFF", 2, singer),
-        )
-        for layer_name, annotation_type, payload, color, page, author in layers:
-            if author is None:
-                continue
-            Annotation.objects.create(
-                edition=edition, page_number=page, annotation_type=annotation_type,
-                payload=payload, color=color, layer_name=layer_name, created_by=author,
-            )
-
+              "display": "inline", "scale": 0.9}, INK["verdigris"], 2, singer),
+        ))
         # Two single-edition serves alongside the binder trail seeded with the book.
         if singer is not None:
             ScoreAccessLog.objects.create(
@@ -2095,6 +2560,69 @@ class Command(BaseCommand):
             user=conductor_user, edition=edition, copy_number=None, was_watermarked=False,
         )
 
+        # The showcase's centre piece, marked on all four layers for the scope
+        # card. The pencil belongs to a soprano in that cast.
+        showcase = next(
+            (project for project, spec in zip(self.projects, PROJECTS, strict=True) if spec.showcase), None,
+        )
+        centre = ScoreEdition.objects.filter(piece__title=SHOWCASE_PIECE, is_default=True).first()
+        seat = (
+            Participation.objects.filter(
+                project=showcase, status=Participation.Status.CONFIRMED,
+                artist__voice_type=VoiceType.SOPRANO, artist__user__isnull=False,
+            ).select_related("artist__user").order_by("artist__email").first()
+            if showcase is not None else None
+        )
+        if centre is None:
+            return
+        pencil = seat.artist.user if seat is not None else singer
+        self._mark(centre, (
+            ("shared", AnnotationType.STAMP,
+             {"x": 0.31, "y": 0.27, "symbol": "breath", "scale": 1.2}, INK["crimson"], 1, conductor_user),
+            ("shared", AnnotationType.STAMP,
+             {"x": 0.54, "y": 0.45, "symbol": "cresc", "scale": 1.0}, INK["crimson"], 1, conductor_user),
+            ("shared", AnnotationType.COMMENT,
+             {"x": 0.70, "y": 0.30, "text": "Piano subito — cały chór.", "display": "pin"},
+             INK["crimson"], 2, conductor_user),
+            ("leader", AnnotationType.COMMENT,
+             {"x": 0.18, "y": 0.62, "text": "Pokaż wejście altom — spóźniają się po pauzie.", "display": "pin"},
+             INK["cobalt"], 2, conductor_user),
+            ("leader", AnnotationType.STAMP,
+             {"x": 0.84, "y": 0.20, "symbol": "fermata", "scale": 1.3}, INK["cobalt"], 3, conductor_user),
+            ("conductor", AnnotationType.FREEHAND,
+             {"paths": [[[0.18, 0.40], [0.26, 0.36], [0.34, 0.42], [0.42, 0.37]]], "width": 0.005},
+             INK["crimson"], 1, conductor_user),
+            ("conductor", AnnotationType.COMMENT,
+             {"x": 0.40, "y": 0.74, "text": "S1 za wysoko w t. 10–12 — posłuchać bez fortepianu.",
+              "display": "inline"}, INK["crimson"], 3, conductor_user),
+            ("personal", AnnotationType.FREEHAND,
+             {"paths": [[[0.22, 0.52], [0.30, 0.50], [0.38, 0.53]]], "width": 0.004},
+             INK["graphite"], 1, pencil),
+            ("personal", AnnotationType.STAMP,
+             {"x": 0.61, "y": 0.36, "symbol": "breath"}, INK["graphite"], 2, pencil),
+            ("personal", AnnotationType.COMMENT,
+             {"x": 0.25, "y": 0.80, "text": "Oddech dopiero po „Maria”.", "display": "inline", "scale": 0.9},
+             INK["graphite"], 3, pencil),
+        ))
+
+    def _mark(
+        self,
+        edition: ScoreEdition,
+        marks: Sequence[tuple[str, str, dict[str, Any], str, int, User | None]],
+    ) -> None:
+        """(layer, type, payload, ink, page, author) — a mark without an author
+        is skipped. Who may write which layer is the viewset's gate, not the
+        serializer's; the seed keeps to it: managers write the shared, leader
+        and conductor layers, and the pencil is the singer's own."""
+        for layer_name, annotation_type, payload, color, page, author in marks:
+            if author is None:
+                continue
+            serializer = AnnotationSerializer(data={
+                "edition": edition.pk, "page_number": page, "annotation_type": annotation_type,
+                "payload": payload, "color": color, "layer_name": layer_name,
+            })
+            serializer.is_valid(raise_exception=True)
+            serializer.save(created_by=author)
     # ----------------------------------------------------------------- #
     # 11. Messaging (1:1 threads)                                       #
     # ----------------------------------------------------------------- #
@@ -2516,13 +3044,36 @@ class Command(BaseCommand):
             )
 
     # ----------------------------------------------------------------- #
+    # 14. Notebook                                                      #
+    # ----------------------------------------------------------------- #
+    def _seed_notebook(self) -> None:
+        """The admin's own jottings, through the serializer that stamps a done
+        note's `done_at`. Private by construction: no other account reads them."""
+        admin = self.managers[0]
+        if Note.objects.filter(owner=admin).exists():
+            return
+        self._log("14. Notebook (the admin's private notes)...")
+        notes: tuple[tuple[str, bool], ...] = (
+            ("Wysłać plan jutrzejszej próby.", True),
+            ("Zadzwonić do parafii: klucz do chóru organowego na próbę generalną.", False),
+            ("Zamówić 20 teczek na nuty — obecne się rozpadają.", False),
+            ("Po Mszy: zapytać altów, czy przenieść próby sekcyjne na wtorki.", False),
+        )
+        for body, is_done in notes:
+            serializer = NoteSerializer(data={"body": body, "is_done": is_done})
+            serializer.is_valid(raise_exception=True)
+            serializer.save(owner=admin)
+
+    # ----------------------------------------------------------------- #
     # Summary                                                           #
     # ----------------------------------------------------------------- #
     def _print_summary(self) -> None:
+        budgets = {status: ProjectBudget.objects.filter(status=status).count() for status in BudgetStatus.values}
         rows: list[tuple[str, object]] = [
             ("Locations", Location.objects.count()),
             ("Users", User.objects.count()),
             ("Avatars", UserProfile.objects.exclude(avatar="").count()),
+            ("Notes", Note.objects.count()),
             ("Composers", Composer.objects.count()),
             ("Pieces", Piece.objects.count()),
             ("Movements", Movement.objects.count()),
@@ -2530,23 +3081,40 @@ class Command(BaseCommand):
             ("Recordings", Recording.objects.count()),
             ("Program notes", ProgramNote.objects.count()),
             ("Score editions", ScoreEdition.objects.count()),
-            ("Annotations", Annotation.objects.count()),
+            ("Annotations", " / ".join(
+                f"{Annotation.objects.filter(layer_name=layer).count()} {layer}"
+                for layer in ("shared", "leader", "conductor", "personal")
+            )),
             ("Provenance records", ProvenanceRecord.objects.count()),
             ("Score access logs", ScoreAccessLog.objects.count()),
-            ("Audio tracks", Track.objects.count()),
+            ("Audio tracks", f"{Track.objects.count()} "
+                             f"({Track.objects.filter(kind=TrackKind.TEMPO_GIUSTO).count()} tempo giusto)"),
             ("Documents", Document.objects.count()),
-            ("Artists (active)", Artist.objects.exclude(voice_type=VoiceType.CONDUCTOR).count()),
-            ("Artists (archived)", Artist.all_objects.filter(is_deleted=True).count()),
+            ("Singers (active)", Artist.objects.exclude(
+                voice_type__in=[VoiceType.CONDUCTOR, VoiceType.INSTRUMENTALIST],
+            ).count()),
+            ("Singers (archived)", Artist.all_objects.filter(is_deleted=True).count()),
+            ("Instrumentalists", Artist.objects.filter(voice_type=VoiceType.INSTRUMENTALIST).count()),
             ("Conductors", Artist.objects.filter(voice_type=VoiceType.CONDUCTOR).count()),
+            ("Assistant conductors", RehearsalDelegate.objects.count()),
             ("Collaborators", Collaborator.objects.count()),
             ("Projects", Project.objects.count()),
             ("Score packages", ScorePackage.objects.count()),
             ("Program items", ProgramItem.objects.count()),
             ("Participations", Participation.objects.count()),
+            ("Leaders / ranked seats", f"{Participation.objects.filter(is_section_leader=True).count()} / "
+                                       f"{Participation.objects.filter(section_rank__isnull=False).count()}"),
             ("Castings", ProjectPieceCasting.objects.count()),
+            ("Named solos", ProjectSoloAssignment.objects.count()),
             ("Readiness rows", PieceReadiness.objects.count()),
             ("Rehearsals", Rehearsal.objects.count()),
+            ("Plan rows", RehearsalPlanItem.objects.count()),
             ("Attendances", Attendance.objects.count()),
+            ("Budgets", " / ".join(f"{budgets[status]} {status.lower()}" for status in BudgetStatus.values)),
+            ("Contracts", Contract.objects.count()),
+            ("Funding sources", " / ".join(
+                f"{source.name} ({source.status.lower()})" for source in FundingSource.objects.order_by("name")
+            )),
             ("Threads / messages", f"{Thread.objects.count()} / {Message.objects.count()}"),
             ("Channels / messages", f"{ProjectChannel.objects.count()} / {ChannelMessage.objects.count()}"),
             ("Donations / leads", f"{Donation.objects.count()} / {PatronLead.objects.count()}"),
@@ -2559,5 +3127,6 @@ class Command(BaseCommand):
         for label, value in rows:
             self.stdout.write(f"   {label:<22} {value}")
         self.stdout.write(self.style.SUCCESS(
-            "\n>> Log in as:  admin / admin123   (also  manager / manager123, crew / crew123)"
+            f"\n>> Log in by e-mail:  admin@{SEED_DOMAIN} / admin123   (also  manager@ / manager123, "
+            "crew@ / crew123, singer00@ / password123)"
         ))
