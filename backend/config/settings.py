@@ -667,7 +667,7 @@ AXEPTA_SEND_CUSTOMER_LOCALE = env.bool('AXEPTA_SEND_CUSTOMER_LOCALE', default=Fa
 # --- DONATION PROGRESS (public aggregate behind the landing vault) ---
 # Campaign goal (PLN) reported by /api/payments/donations/progress/ so the
 # landing's progress rail and the backend cannot drift apart.
-DONATION_GOAL_PLN = env.int('DONATION_GOAL_PLN', default=20000)
+DONATION_GOAL_PLN = env.int('DONATION_GOAL_PLN', default=28000)
 # Conservative static rate used ONLY to fold (rare) EUR donations into the PLN
 # progress total. Display approximation, not financial reporting — accounting
 # uses the gateway settlement records, never this.

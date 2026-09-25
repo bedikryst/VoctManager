@@ -173,6 +173,10 @@ const neighbourTitle = (e: CollectionEntry<"concerts">): string =>
 const nuntius = NUNTIUS[lang];
 const hrefNotice = `${localizePath("/koncerty", lang)}#nuntius`;
 
+// The door band's gift line opens the vault in place (`data-vault-open`, scripts/vault-triggers);
+// this address is only the no-JS fallback, the landing's `?donate`, which auto-opens the same sheet.
+const hrefDonate = `${localizePath("/", lang)}?donate`;
+
 // ── The evening that has not happened yet, closing the road.
 //
 // WHY THIS PAGE OF ALL PAGES. The rail above walks evenings that have SOUNDED; every one of these
@@ -620,7 +624,13 @@ const jsonLd =
           passes the evening on — it sits with the facts because it is about THIS night, and stands
           apart from them because it is a door rather than a fact. The festival closes the band
           because it is the widest frame. Every door here is a link and never an embed (.ai/07: no
-          third-party requests). */}
+          third-party requests).
+
+          ONE SENTENCE IS THE PAGE'S OWN, and it hangs on the free door: an open door is somebody's
+          gift, and the line under it lets the reader be that somebody. It opens the vault, which
+          names the foundation, its register and the account — so nothing here needs to say who
+          receives the money, and no amount or progress is printed beside the evening. The band
+          leaves the page once the evening is sung, and the ask leaves with it. */}
     {unsung && (
       <section class="kd-band kd-ianua" id="wejscie" aria-label={ui.bands.ianua}>
         <div class="kd-wrap kd-ianua-wrap">
@@ -694,7 +704,11 @@ const jsonLd =
               {c.admission === "free" && (
                 <div class="kd-ianua-fact">
                   <dt>{ui.ianua.door}</dt>
-                  <dd>{walkUi.freeAdmission}</dd>
+                  <dd>
+                    {walkUi.freeAdmission}
+                    <span class="kd-ianua-gift">{ui.ianua.gift}</span>
+                    <a class="kd-ianua-give micro" href={hrefDonate} data-vault-open="100">{ui.ianua.give}</a>
+                  </dd>
                 </div>
               )}
             </dl>
@@ -1765,12 +1779,17 @@ const jsonLd =
   .kd-ianua-address { font-size: clamp(13.5px, 1.15vw, 14.5px); color: rgba(244,241,233,.58); }
   .kd-ianua-address a { color: inherit; border-bottom: 1px solid rgba(244,241,233,.24); padding-bottom: 1px; transition: color .3s var(--ease, ease), border-color .3s var(--ease, ease); }
   .kd-ianua-address a:hover { color: var(--candle); border-bottom-color: var(--candle); }
-  /* The two doors off this page share one voice — the mono rubric in candle, a hairline that inks
-     on hover — so a reader learns once what an off-site link looks like here. The event line is
-     pulled up towards the facts it belongs to, short of the body's own gap. */
+  /* The gift line reads as the door's own annotation, in the room line's voice. */
+  .kd-ianua-gift { color: rgba(244,241,233,.66); }
+  /* Every door in this band shares one voice — the mono rubric in candle, a hairline that inks on
+     hover — so a reader learns once what a door looks like here; the ↗ in the label is what says
+     one leaves the site. The event line is pulled up towards the facts it belongs to, short of the
+     body's own gap. The gift door sits inside a grid `dd`, where it would stretch to the column and
+     draw its hairline across the full measure, hence `justify-self`. */
   .kd-ianua-event { margin: calc(-1 * clamp(6px, .8vw, 10px)) 0 0; }
-  .kd-ianua-event-link, .kd-ianua-festival-link { display: inline-block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color .3s var(--ease, ease); }
-  .kd-ianua-event-link:hover, .kd-ianua-festival-link:hover { border-bottom-color: var(--candle); }
+  .kd-ianua-event-link, .kd-ianua-festival-link, .kd-ianua-give { display: inline-block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color .3s var(--ease, ease); }
+  .kd-ianua-event-link:hover, .kd-ianua-festival-link:hover, .kd-ianua-give:hover { border-bottom-color: var(--candle); }
+  .kd-ianua-give { justify-self: start; margin-top: 8px; }
   /* The widest frame — so it closes the band, behind a rule that says "this is somebody else's
      event" without a sentence having to. */
   .kd-ianua-festival { padding-top: clamp(20px, 2.4vw, 28px); border-top: 1px solid rgba(244,241,233,.14); }

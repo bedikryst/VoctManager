@@ -1,11 +1,12 @@
 /**
  * @file VaultModal.tsx
  * @description The donation "skarbiec" sliding sheet: one-off giving only (Axepta form,
- *  Zrzutka, bank QR, under the campaign progress rail). Recurring support is not a second
- *  intent here — the standing-order relationship has one home, `/fundacja#mecenat`, and the
- *  sheet ends on a link to it.
+ *  Zrzutka, bank QR, under the campaign line — donor count and goal, with a fill rail that
+ *  `VAULT_CONFIG.progress.showRail` switches). Recurring support is not a second intent here —
+ *  the standing-order relationship has one home, `/fundacja#mecenat`, and the sheet ends on a
+ *  link to it.
  *  Manages browser-history integration (back closes), Lenis stop/start while open, the
- *  progress rail, and the `body.vault-open` flag for chrome theming. Web/Astro port.
+ *  campaign line, and the `body.vault-open` flag for chrome theming. Web/Astro port.
  * @architecture Astro islands 2026
  * @module islands/landing/vault/VaultModal
  */
@@ -98,13 +99,15 @@ export function VaultModal(): React.JSX.Element {
 
           <div className="vault-body">
             <section className="vault-progress" aria-label={t.progressAria}>
-              <div className="vault-progress-rail">
-                <div
-                  className="vault-progress-fill"
-                  data-percent={progress ? Math.round(progress.percent) : 0}
-                  style={{ width: `${fillWidth}%` }}
-                />
-              </div>
+              {VAULT_CONFIG.progress.showRail && (
+                <div className="vault-progress-rail">
+                  <div
+                    className="vault-progress-fill"
+                    data-percent={progress ? Math.round(progress.percent) : 0}
+                    style={{ width: `${fillWidth}%` }}
+                  />
+                </div>
+              )}
               <div className="vault-progress-meta">
                 {/* Donors lead when known — the count is the social proof; an early-stage
                     bar percentage alone reads as emptiness, not momentum. */}
