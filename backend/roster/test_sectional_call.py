@@ -33,7 +33,7 @@ from core.voice_labels import (
     section_letters_of_seat,
     section_letters_of_voice_line,
     section_letters_of_voice_type,
-    voice_type_of_seat,
+    section_of_seat,
 )
 from roster.invitations import build_invitation_context, build_invitation_metadata
 from roster.models import (
@@ -84,18 +84,24 @@ class SectionLettersTests(SimpleTestCase):
         self.assertEqual(section_letters_of_seat(VoiceType.BARITONE, ""), "TB")
         self.assertEqual(section_letters_of_seat(VoiceType.INSTRUMENTALIST, ""), "")
 
-    def test_the_seat_names_the_voice_a_singer_is_listed_under(self) -> None:
-        # A baritone seated on a bass line is a bass on this concert's sheets.
-        self.assertEqual(voice_type_of_seat(VoiceType.BARITONE, "B1"), VoiceType.BASS)
-        self.assertEqual(voice_type_of_seat(VoiceType.MEZZO, "S2"), VoiceType.SOPRANO)
-        self.assertEqual(voice_type_of_seat(VoiceType.BASS, VoiceLine.BARITONE), VoiceType.BARITONE)
-        # No seat, or a seat that names no voice: the profile stands.
-        self.assertEqual(voice_type_of_seat(VoiceType.BARITONE, ""), VoiceType.BARITONE)
-        self.assertEqual(voice_type_of_seat(VoiceType.TENOR, "V1"), VoiceType.TENOR)
-        self.assertEqual(voice_type_of_seat(VoiceType.TENOR, VoiceLine.SOLO), VoiceType.TENOR)
+    def test_the_seat_names_the_section_a_singer_stands_in(self) -> None:
+        # A seat decides the section: a mezzo seated S2 stands with the sopranos.
+        self.assertEqual(section_of_seat(VoiceType.MEZZO, "S2"), VoiceType.SOPRANO)
+        self.assertEqual(section_of_seat(VoiceType.BARITONE, "T2"), VoiceType.TENOR)
+        # Baritone and countertenor lines belong to the basses and the altos.
+        self.assertEqual(section_of_seat(VoiceType.BARITONE, "B1"), VoiceType.BASS)
+        self.assertEqual(section_of_seat(VoiceType.BASS, VoiceLine.BARITONE), VoiceType.BASS)
+        self.assertEqual(section_of_seat(VoiceType.TENOR, VoiceLine.COUNTERTENOR), VoiceType.ALTO)
+        # No seat, or a seat that names no voice: the voice type's section.
+        self.assertEqual(section_of_seat(VoiceType.BARITONE, ""), VoiceType.BASS)
+        self.assertEqual(section_of_seat(VoiceType.COUNTERTENOR, ""), VoiceType.ALTO)
+        self.assertEqual(section_of_seat(VoiceType.TENOR, "V1"), VoiceType.TENOR)
+        self.assertEqual(section_of_seat(VoiceType.TENOR, VoiceLine.SOLO), VoiceType.TENOR)
+        # A mezzo belongs to two sections, so without a seat she keeps her own.
+        self.assertEqual(section_of_seat(VoiceType.MEZZO, ""), VoiceType.MEZZO)
         # The podium and the players are never re-sectioned.
-        self.assertEqual(voice_type_of_seat(VoiceType.CONDUCTOR, "B1"), VoiceType.CONDUCTOR)
-        self.assertEqual(voice_type_of_seat(VoiceType.INSTRUMENTALIST, "S1"), VoiceType.INSTRUMENTALIST)
+        self.assertEqual(section_of_seat(VoiceType.CONDUCTOR, "B1"), VoiceType.CONDUCTOR)
+        self.assertEqual(section_of_seat(VoiceType.INSTRUMENTALIST, "S1"), VoiceType.INSTRUMENTALIST)
 
     def test_canonical_spelling_and_the_validator(self) -> None:
         self.assertEqual(canonical_section_letters("AS"), "SA")

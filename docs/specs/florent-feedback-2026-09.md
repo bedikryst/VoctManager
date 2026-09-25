@@ -18,14 +18,20 @@ misreadings fixed in Stage 0; two are features (Stages 1–2); the rest needed a
   down and leaves `B1` silent, and even quantity-aware it has to pick which bass moves up. The
   basses' split belongs to their seats. A conductor (`DIR`) is never placed — before, the TUTTI
   fallback would have cast him on a unison piece.
-- **Concert sheets list a singer by the voice their seat names**:
-  `core.voice_labels.voice_type_of_seat`, the same reading as `section_letters_of_seat`. Used by
-  the day/call sheet sections (`_group_participations_by_voice`), the personal sheet's voice label
-  and section mates, and the DTP programme export. The section, not the seat itself: a baritone
-  seated `B1` prints under "Bass", never "Bass 1", because the one piece where he sings the
-  baritone part would contradict a concert-wide "Bass 1"; per-piece tables print the real line.
-  The profile, the Cast tab grouping, the divisi pool, the chorister's membership card and the
-  invitation deliberately keep the profile voice type: none of them is a concert view.
+- **The cast is read by SECTION, not by profile voice**: `core.voice_labels.section_of_seat`
+  (mirror: `sectionOf` in `frontend/src/features/projects/lib/voiceFamilies.ts`) — the seat's
+  section, else the voice type's; a baritone stands with the basses, a countertenor with the
+  altos, an unseated mezzo keeps her own section (S2 *or* A1). It is the FIRST key of the one cast
+  order (`cast_order.participation_sort_key` / `byCastOrder`), so a bass dragged above a baritone
+  stays there — sorting by voice type first would have made that drag do nothing. Read by: the Cast
+  tab groups and balance rail (profile voice printed under the name where it differs, like a
+  player's instrument), the divisi pool groups (chips keep the singer's own voice), the day/call
+  sheet sections, the personal sheet's label and section mates, the DTP export. The section, not
+  the seat: a baritone seated `B1` prints "Bass", never "Bass 1" — the one piece where he sings
+  the baritone part would contradict it; per-piece tables print the real line. Profile, membership
+  card and invitation keep the profile voice: none is a concert view.
+  Known one-off: ranks were written per voice-type section, so a merged section whose halves were
+  both arranged interleaves until the conductor drags once in it.
 - **Conductor out of the singing surfaces**: divisi pool (`useMicroCasting`), seat select
   (`CastTab`), the "Obsada wokalna" count (`ProjectPeopleCard`) and the "Zespół" tile
   (`ProjectStatusStrip`). His participation stays — it carries his fee (`finance`, `PROTECT`).
@@ -104,12 +110,4 @@ Shape:
   add the substitute only once he has agreed.
 - **A "replace X with Y" helper** that moves all castings in one step: too rare to earn an
   endpoint; the three steps above do it.
-- **Cast tab grouped by section — OPEN, recommended.** Today the tab groups by profile voice type,
-  so the conductor's baritones (seated `B1`) sit under "Baryton", apart from his bass (`B2`), and
-  the balance rail reads "Bas 1" for a section of three — his remark "baritones cannot be
-  separated from B1". Recommendation: group by section (the seat's family, else the voice type's;
-  a baritone folds into the basses, an unseated mezzo keeps her own group), print the profile voice
-  as the caption under the name the way a player's instrument is, and count the rail by section.
-  Rows move only when a seat changes family (a mezzo set to `S2`), not on B1 ⇄ B2. Waits for the
-  developer's decision — he first asked to keep the profile grouping.
 - **Icon of "Podaje ton"** (`KeyRound`): kept; the question was what the duty means, not the glyph.

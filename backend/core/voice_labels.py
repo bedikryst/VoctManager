@@ -118,32 +118,47 @@ def section_letters_of_seat(voice_type: str | None, voice_line: str | None) -> s
     return section_letters_of_voice_line(voice_line) or section_letters_of_voice_type(voice_type)
 
 
-# The voice type a line-up seat stands for, keyed by `roster.VoiceType` code
-# like the tables above.
-_VOICE_TYPE_BY_FAMILY: dict[str, str] = {'S': 'SOP', 'A': 'ALT', 'T': 'TEN', 'B': 'BAS'}
-_VOICE_TYPE_BY_STANDALONE_LINE: dict[str, str] = {
+# The section a singer stands in, named by the voice type that heads it and
+# keyed by `roster.VoiceType` code like the tables above. A baritone stands with
+# the basses and a countertenor with the altos — the homes the sectionals call
+# them to. A mezzo is the one voice with no single home (S2 *or* A1), so an
+# unseated mezzo keeps a section of her own until a seat says which.
+_SECTION_BY_VOICE_TYPE: dict[str, str] = {
+    'SOP': 'SOP',
+    'MEZ': 'MEZ',
+    'ALT': 'ALT',
+    'CT': 'ALT',
+    'TEN': 'TEN',
+    'BAR': 'BAS',
+    'BAS': 'BAS',
+}
+_SECTION_BY_FAMILY: dict[str, str] = {'S': 'SOP', 'A': 'ALT', 'T': 'TEN', 'B': 'BAS'}
+_SECTION_BY_STANDALONE_LINE: dict[str, str] = {
     VoiceLine.MEZZO: 'MEZ',
-    VoiceLine.COUNTERTENOR: 'CT',
-    VoiceLine.BARITONE: 'BAR',
+    VoiceLine.COUNTERTENOR: 'ALT',
+    VoiceLine.BARITONE: 'BAS',
 }
 
 
-def voice_type_of_seat(voice_type: str, voice_line: str | None) -> str:
-    """The voice a singer is listed under for one concert.
+def section_of_seat(voice_type: str, voice_line: str | None) -> str:
+    """The section a singer stands in for one concert, as a voice type code.
 
     The reading `section_letters_of_seat` makes: a declared seat outranks the
-    profile, so a baritone seated as `B1` is a bass on that concert's sheets,
-    while his profile — and every concert where he has no seat — keeps
-    "Baritone". A conductor or a player keeps their own type, and a seat on a
-    line that names no voice (V1, a role) changes nothing.
+    profile, and without one the voice type answers. Either way the answer is
+    the SECTION, not the part — a baritone seated as `B1` is a bass for the
+    whole concert even where one piece gives him its baritone line, which is
+    why every concert-wide list names him by this and every per-piece table by
+    the line he sings there. The profile keeps "Baritone". A conductor or a
+    player keeps their own code; a seat on a line that names no voice (V1, a
+    role) changes nothing.
     """
-    if voice_type not in _SECTIONS_BY_VOICE_TYPE:
+    if voice_type not in _SECTION_BY_VOICE_TYPE:
         return voice_type
     family = voice_family_of(voice_line or '')
     return (
-        _VOICE_TYPE_BY_FAMILY.get(family or '')
-        or _VOICE_TYPE_BY_STANDALONE_LINE.get(voice_line or '')
-        or voice_type
+        _SECTION_BY_FAMILY.get(family or '')
+        or _SECTION_BY_STANDALONE_LINE.get(voice_line or '')
+        or _SECTION_BY_VOICE_TYPE[voice_type]
     )
 
 

@@ -8,7 +8,9 @@ moves in the programme, in the songbook and on the printed sheet at once.
 
 The key, outermost first:
 
-1. voice type — sopranos, then altos, then tenors, then basses;
+1. section — sopranos, then altos, then tenors, then basses; the section the
+   line-up seat names, else the voice type's (`core.voice_labels.section_of_seat`),
+   so a baritone stands and is arranged among the basses;
 2. the conductor's arrangement of that section (``Participation.section_rank``);
 3. whoever leads it, which decides something only in a section nobody has
    arranged: a rank always wins, or dragging a singer past the marked leader
@@ -27,6 +29,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from core.constants import VoiceLine
+from core.voice_labels import section_of_seat
 from roster.models import VoiceType
 
 if TYPE_CHECKING:
@@ -69,8 +72,9 @@ def participation_sort_key(participation: Participation) -> CastSortKey:
     """Where this singer stands in the cast — see the module docstring."""
     artist = participation.artist
     rank = participation.section_rank
+    section = section_of_seat(artist.voice_type, participation.default_voice_line)
     return (
-        VOICE_TYPE_ORDER.get(artist.voice_type, _UNKNOWN_VOICE_TYPE),
+        VOICE_TYPE_ORDER.get(section, _UNKNOWN_VOICE_TYPE),
         # Two positions rather than a sentinel: an unarranged singer goes after
         # every arranged one, whatever numbers the arrangement happens to use.
         rank is None,
@@ -85,10 +89,10 @@ def participation_sort_key(participation: Participation) -> CastSortKey:
 def casting_sort_key(casting: ProjectPieceCasting) -> CastingSortKey:
     """Where this seat prints on a piece's board.
 
-    Voice type still leads inside a single line, and has to: a rank is a
-    position within one section, so the mezzo who takes S2 and the soprano
-    beside her can both be that section's third singer. Grouping by voice type
-    first is what keeps two incomparable ranks from deciding anything.
+    The section still leads inside a single line, and has to: a rank is a
+    position within one section, so the baritone the tenors borrow for T2 and
+    the tenor beside him can both be their section's third singer. Grouping by
+    section first is what keeps two incomparable ranks from deciding anything.
     """
     return (
         VOICE_LINE_ORDER.get(casting.voice_line, _UNKNOWN_VOICE_LINE),

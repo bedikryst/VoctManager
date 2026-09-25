@@ -4366,7 +4366,7 @@
       "seat": {
         "aria": "Line-up seat: {{name}}",
         "clear": "From voice type",
-        "hint": "Drag to arrange a section — the divisi board, the songbook and every printout read it the same way. The line-up seat only says which line a singer takes when a piece's divisi is filled automatically. Star whoever leads the section.",
+        "hint": "Drag to arrange a section — the divisi board, the songbook and every printout read it the same way. The line-up seat is the singer's section in this concert and the line they take when a piece's divisi is filled automatically. Star whoever leads the section.",
         "placeholder": "—"
       },
       "sections": {

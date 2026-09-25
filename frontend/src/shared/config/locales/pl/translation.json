@@ -4404,7 +4404,7 @@
       "seat": {
         "aria": "Miejsce w składzie: {{name}}",
         "clear": "Z typu głosu",
-        "hint": "Kolejność w sekcji ustawiasz przeciąganiem — tak samo czytają ją divisi, śpiewnik i wydruki. Miejsce w składzie mówi tylko, na którą linię trafi śpiewak przy automatycznym uzupełnianiu divisi. Gwiazdką oznacz osobę prowadzącą sekcję.",
+        "hint": "Kolejność w sekcji ustawiasz przeciąganiem — tak samo czytają ją divisi, śpiewnik i wydruki. Miejsce w składzie to sekcja śpiewaka w tym koncercie i linia, na którą trafi przy automatycznym uzupełnianiu divisi. Gwiazdką oznacz osobę prowadzącą sekcję.",
         "placeholder": "—"
       },
       "sections": {

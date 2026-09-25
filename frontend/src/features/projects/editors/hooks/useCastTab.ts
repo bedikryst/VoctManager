@@ -7,6 +7,9 @@
  * those rows while the header kept counting them — the same defect the divisi
  * board carried until the Divisi pass rooted it out.
  * The pool is the other half: active roster members without a participation.
+ * Both columns are grouped by SECTION (`sectionOf`), not by profile voice: a
+ * baritone stands among the basses, and a seat moves a singer to the section it
+ * names. The profile voice stays on the row, under the name.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useCastTab
  */
@@ -37,7 +40,11 @@ import {
 } from "../../api/project.queries";
 import { LINE_UP_SEATS } from "../../lib/autoCast";
 import { byCastOrder } from "../../lib/castOrder";
-import { VOICE_TYPE_ORDER, voiceTypeRank } from "../../lib/voiceFamilies";
+import {
+  VOICE_TYPE_ORDER,
+  sectionOf,
+  voiceTypeRank,
+} from "../../lib/voiceFamilies";
 import type { CastTabMobileView } from "../types";
 
 /** What both columns show about a singer, wherever the record came from. */
@@ -46,6 +53,8 @@ interface RosterFacts {
   readonly voiceType: VoiceType | null;
   /** Localised voice type ("Sopran"); empty when the roster record is gone. */
   readonly voiceLabel: string;
+  /** The section they stand in here, named by its voice type — the basses for a baritone. */
+  readonly section: VoiceType | null;
   /** What a player plays ("Organy"); null for everyone who sings. */
   readonly instrument: string | null;
   /** "A2–G4", or null when no range is recorded. */
@@ -85,7 +94,7 @@ export interface VoiceSection<TEntry> {
 }
 
 /**
- * One voice type's standing on this project. `castCount` excludes declines —
+ * One section's standing on this project. `castCount` excludes declines —
  * a singer who said no is not cover, the rule the divisi buckets already use.
  * `poolCount` is what makes a zero actionable rather than a verdict: nobody
  * cast AND candidates available is a hole; nobody cast and nobody available is
@@ -152,44 +161,51 @@ const rangeOf = (artist?: Artist): string | null => {
 };
 
 /**
- * Score order (soprano down to bass), then surname — how a roster is read.
- * The pool has nothing to arrange and no seats to read, so this is the whole
- * rule on that side; the cast is sorted by the shared `byCastOrder`.
+ * Score order (section, then the voice inside it — the baritones above the
+ * basses), then surname — how a roster is read. The pool has nothing to
+ * arrange and no seats to read, so this is the whole rule on that side; the
+ * cast is sorted by the shared `byCastOrder`.
  */
 const byVoiceThenName = <TEntry extends RosterFacts>(
   left: TEntry,
   right: TEntry,
 ): number => {
-  const rankDelta =
+  const sectionDelta =
+    voiceTypeRank(left.section) - voiceTypeRank(right.section);
+  if (sectionDelta !== 0) return sectionDelta;
+  const voiceDelta =
     voiceTypeRank(left.voiceType) - voiceTypeRank(right.voiceType);
-  if (rankDelta !== 0) return rankDelta;
+  if (voiceDelta !== 0) return voiceDelta;
   return left.displayName.localeCompare(right.displayName, "pl");
 };
 
-/** Buckets an already-ordered list into voice sections, keeping that order. */
+/** Buckets an already-ordered list into sections, keeping that order. */
 const sectionize = <TEntry extends RosterFacts>(
   entries: readonly TEntry[],
   unknownLabel: string,
+  labelOf: (section: VoiceType) => string,
 ): VoiceSection<TEntry>[] => {
   const buckets = new Map<string, TEntry[]>();
 
   for (const entry of entries) {
-    const key = entry.voiceType ?? "?";
+    const key = entry.section ?? "?";
     const bucket = buckets.get(key);
     if (bucket) bucket.push(entry);
     else buckets.set(key, [entry]);
   }
 
-  return [...buckets.entries()].map(([key, bucketEntries]) => ({
-    key,
+  return [...buckets.entries()].map(([key, bucketEntries]) => {
     // The "?" bucket is everyone the roster has no voice type for, so it takes
     // the unknown label outright — an archived participation can still carry a
-    // stale display voice, and letting the first one name the group would title
-    // the no-voice section "Sopran".
-    label:
-      key === "?" ? unknownLabel : bucketEntries[0].voiceLabel || unknownLabel,
-    entries: bucketEntries,
-  }));
+    // stale display voice, and letting the first one name the group would
+    // title the no-voice section "Sopran".
+    const section = bucketEntries[0].section;
+    return {
+      key,
+      label: section ? labelOf(section) : unknownLabel,
+      entries: bucketEntries,
+    };
+  });
 };
 
 export const useCastTab = (projectId: string): UseCastTabResult => {
@@ -245,6 +261,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
                 artist?.voice_type_display ?? voiceType,
               )
             : (participation.artist_voice_type_display ?? ""),
+          section: sectionOf(voiceType, participation.default_voice_line || null),
           instrument: artist?.instrument || null,
           rangeLabel: rangeOf(artist),
           sightReading: artist?.sight_reading_skill ?? null,
@@ -274,6 +291,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
             `dashboard.layout.roles.${artist.voice_type}`,
             artist.voice_type_display ?? artist.voice_type,
           ),
+          section: sectionOf(artist.voice_type, null),
           instrument: artist.instrument || null,
           rangeLabel: rangeOf(artist),
           sightReading: artist.sight_reading_skill ?? null,
@@ -299,34 +317,40 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
   const unknownVoiceLabel = t("projects.cast.voice_unknown", "Bez głosu");
 
   const castSections = useMemo(
-    () => sectionize(castEntries, unknownVoiceLabel),
-    [castEntries, unknownVoiceLabel],
+    () =>
+      sectionize(castEntries, unknownVoiceLabel, (section) =>
+        t(`dashboard.layout.roles.${section}`, section),
+      ),
+    [castEntries, unknownVoiceLabel, t],
   );
 
   const poolSections = useMemo(
-    () => sectionize(filteredPool, unknownVoiceLabel),
-    [filteredPool, unknownVoiceLabel],
+    () =>
+      sectionize(filteredPool, unknownVoiceLabel, (section) =>
+        t(`dashboard.layout.roles.${section}`, section),
+      ),
+    [filteredPool, unknownVoiceLabel, t],
   );
 
   const castBalance = useMemo<CastBalanceEntry[]>(() => {
     const countBy = (
       entries: readonly RosterFacts[],
-      voiceType: VoiceType,
-    ): number =>
-      entries.filter((entry) => entry.voiceType === voiceType).length;
+      section: VoiceType,
+    ): number => entries.filter((entry) => entry.section === section).length;
 
     const engaged = castEntries.filter((entry) => entry.status !== "DEC");
 
     return (
       VOICE_TYPE_ORDER
         // The rail weighs the choir: a "Dyrygent 0" or "Instrumentalista 0"
-        // would be a warning about a section nobody balances here.
+        // would be a warning about a section nobody balances here. Baritone and
+        // countertenor never head a section, so they drop out by their zeros.
         .filter(isSingingVoiceType)
-        .map((voiceType) => ({
-          voiceType,
-          label: t(`dashboard.layout.roles.${voiceType}`, voiceType),
-          castCount: countBy(engaged, voiceType),
-          poolCount: countBy(poolEntries, voiceType),
+        .map((section) => ({
+          voiceType: section,
+          label: t(`dashboard.layout.roles.${section}`, section),
+          castCount: countBy(engaged, section),
+          poolCount: countBy(poolEntries, section),
         }))
         .filter((entry) => entry.castCount > 0 || entry.poolCount > 0)
     );

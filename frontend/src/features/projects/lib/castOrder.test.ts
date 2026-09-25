@@ -92,4 +92,23 @@ describe("byCastOrder", () => {
       ),
     ).toEqual(["Antos", "Zeman"]);
   });
+
+  it("arranges a baritone among the basses, and a seat moves the section", () => {
+    // Mirrors test_a_baritone_is_arranged_among_the_basses on the server.
+    const baritone = singer("Baryton", {
+      voiceType: "BAR" as VoiceType,
+      seat: "B1" as VoiceLine,
+      sectionRank: 1,
+    });
+    const bass = singer("Zbas", {
+      voiceType: "BAS" as VoiceType,
+      seat: "B2" as VoiceLine,
+      sectionRank: 0,
+    });
+    const tenor = singer("Tenor", { voiceType: "TEN" as VoiceType });
+    expect(order(baritone, bass, tenor)).toEqual(["Tenor", "Zbas", "Baryton"]);
+
+    const borrowed = { ...baritone, seat: "T2" as VoiceLine, sectionRank: null };
+    expect(order(borrowed, bass, tenor)).toEqual(["Baryton", "Tenor", "Zbas"]);
+  });
 });
