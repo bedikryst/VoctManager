@@ -16,7 +16,7 @@ Współzałożyłem fundację, która prowadzi zespół, i jestem jedynym progra
 
 | Pulpit dyrygenta | Weryfikacja wyników AI |
 |:---:|:---:|
-| <img src="docs/assets/admin-dashboard.png" width="420" alt="Pulpit administratora z projektami, próbami i zadaniami do wykonania"/> | <img src="docs/assets/score-compiler-review.png" width="420" alt="Ekran weryfikacji z chipami pochodzenia i pewności przy każdym polu, obok źródłowego PDF-a"/> |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/admin-dashboard-dark.png"><img src="docs/assets/admin-dashboard-light.png" width="420" alt="Pulpit dyrygenta z najbliższą próbą, nadchodzącym koncertem i rozkładem głosów w obsadzie"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/score-compiler-review-dark.png"><img src="docs/assets/score-compiler-review-light.png" width="420" alt="Ekran weryfikacji: źródłowy PDF obok odczytanych pól, każde z oznaczeniem pochodzenia"></picture> |
 
 ---
 
@@ -38,6 +38,8 @@ Koncert z końca sierpnia poprowadził przez aplikację już sam, a chórzyści 
 - **Darowizny** przez Axepta BNP Paribas, z weryfikacją podpisu MAC i uzgadnianiem płatności w Celery.
 - Kalendarze iCal, jasny i ciemny motyw, cztery role (admin, manager, artysta, ekipa) sprawdzane po stronie API.
 
+<p align="center"><img src="docs/assets/annotations.gif" width="380" alt="Na pulpicie dyrygent stawia crescendo, otwiera znak i przenosi go z warstwy chóru na warstwę prowadzącego próbę"></p>
+
 ## Pipeline nut
 
 Po wrzuceniu PDF-a z nutami w ciągu kilku minut w archiwum pojawia się skatalogowany utwór: kompozytor dopasowany do MusicBrainz i Wikidanych, części, tekst śpiewany, IPA wers po wersie i tłumaczenia śpiewne. Dyrygent to przegląda i poprawia. Nota programowa powstaje dopiero potem, z poprawionych danych.
@@ -55,7 +57,7 @@ upload PDF
   → notę programową pisze Opus 5, na żądanie, ze sprawdzonych danych
 ```
 
-Każde pole, które przyszło z modelu albo z zewnętrznego API, ma zapisane pochodzenie (model, wersja promptu, źródło, pewność, data). Ekran weryfikacji pokazuje przy każdym polu chip: `AI · 95%`, `MusicBrainz` albo `Zweryfikowane`, gdy ktoś je poprawił. Kanoniczne identyfikatory pochodzą wyłącznie z MusicBrainz i Wikidanych.
+Każde pole, które przyszło z modelu albo z zewnętrznego API, ma zapisane pochodzenie (model, wersja promptu, źródło, pewność, data). Ekran weryfikacji oznacza każde pole kolorową kropką, która mówi, na ile można mu ufać: sprawdzone ręcznie, znalezione w MusicBrainz albo Wikidanych, albo odczytane przez model i jeszcze niesprawdzone. Kliknięcie kropki przy polu, które się zgadza, zatwierdza je bez przepisywania. Pewności, którą podaje sam model, nie pokazujemy, bo wychodziła około 95% niezależnie od tego, czy pole było dobre, czy złe. Kanoniczne identyfikatory pochodzą wyłącznie z MusicBrainz i Wikidanych.
 
 Ponawianie zależy od tego, czy nieudane wywołanie zostało policzone do rachunku ([`ai_client.py`](backend/archive/infrastructure/ai_client.py)):
 
@@ -67,7 +69,9 @@ Ponawianie zależy od tego, czy nieudane wywołanie zostało policzone do rachun
 
 Jeden ingest kosztuje $0.04–0.20. Partytura w całości po polsku jest na dole widełek, bo nie potrzebuje IPA ani tłumaczenia. Są trzy limity wydatków: na jeden przebieg, na wydanie przez cały jego czas życia i dzienny dla całej organizacji, który działa jak bezpiecznik. PDF, który już raz przeszedł przez pipeline, jest rozpoznawany po sumie SHA-256 i model w ogóle nie jest wywoływany. PDF idzie z prompt cachingiem, więc ponowienie po ucięciu czyta go po stawce cache.
 
-<img src="docs/assets/score-compiler-upload.png" width="620" alt="Ekran wysyłki z postępem pipeline'u przesyłanym przez Server-Sent Events"/>
+<img src="docs/assets/score-ingestion.gif" width="720" alt="Wgranie PDF-a, postęp pipeline'u na żywo i ekran weryfikacji skatalogowanego utworu">
+
+<sub>Nagranie prawdziwego przebiegu; 51 sekund pipeline'u skrócone do trzech. Nuty: Giovanni Priuli, <i>Ave dulcissima Maria</i>, skład nutowy <a href="https://www.mutopiaproject.org/">Mutopia Project</a> (CC BY-SA 3.0). Na pulpicie wyżej <i>Ave verum corpus</i> Mozarta w opracowaniu Carla Reineckego, również z Mutopii (CC BY 4.0).</sub>
 
 Szczegóły: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion-pipeline.md).
 
@@ -76,6 +80,10 @@ Szczegóły: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion
 Dyrygent układa utwory na próbę w kolejności. Każdy wiersz może mieć czas w minutach, notatkę („od t. 40, pierwsze czytanie") i linie głosów, które nie są potrzebne. Sekcyjną definiują litery głosów (S, A, T, B), więc śpiewak dopisany później do obsady jest na nią wołany automatycznie. Z planu każdy śpiewak dostaje własne okno, np. „Twoja część 19:00–20:15", żeby nikt nie czekał na utwory, których nie śpiewa. O to prosił dyrygent. Nazwał to szacunkiem dla czasu ludzi.
 
 Plan trafia do chóru dopiero wtedy, gdy dyrygent go wyśle, a nie przy każdej zmianie. Po próbie odhacza, co zostało zrobione, a siatka utworów i prób pokazuje, ile razy każdy utwór był ćwiczony. Próbę może przekazać asystentowi z konkretnymi uprawnieniami: sprawdzanie obecności, oznaczenia w nutach chóru, otwieranie materiałów.
+
+| Edycja planu | Co widzi tenor |
+|:---:|:---:|
+| <img src="docs/assets/rehearsal-plan.gif" width="560" alt="Dyrygent przesuwa utwór wyżej w planie próby i wydłuża inny, a potem otwiera tydzień z perspektywy tenora"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/rehearsal-singer-dark.png"><img src="docs/assets/rehearsal-singer-light.png" width="240" alt="Strona próby tenora na telefonie: jego część trwa 19:00–21:00, pierwszy utwór jest oznaczony jako bez jego głosu"></picture> |
 
 ## Finanse
 
@@ -86,6 +94,8 @@ Budżety, honoraria, wydatki i granty projektów w jednej księdze, którą zatw
 - Numery umów idą z licznika prowadzonego osobno dla każdego roku i rodzaju umowy, blokowanego przez `select_for_update()` w transakcji wystawienia.
 - Pieniądze z grantu przypisuje się do pozycji budżetu i do pojedynczych kosztów. Limity wkładu własnego i kosztów administracyjnych są sprawdzane w ramach każdej umowy dotacyjnej, a plan eksportuje się jako kosztorys do wniosku grantowego.
 - Śpiewacy nie widzą w aplikacji żadnych kwot, także swoich.
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/funding-grant-dark.png"><img src="docs/assets/funding-grant-light.png" width="720" alt="Strona grantu: kwota przyznana, obciążona, wpłacona i pozostała, koszty obciążone w kolejnych projektach i warunki umowy"></picture>
 
 ## Kilka decyzji
 
