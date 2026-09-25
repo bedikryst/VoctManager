@@ -5773,8 +5773,8 @@
         "title": "Ajouter à l'écran d'accueil"
       },
       "colophon": {
-        "copyright": "© {{year}} Fundacja VoctFoundation",
         "credit": "Conception et réalisation : Krystian Bugalski",
+        "dedication": "Créé pour VoctEnsemble",
         "version": "VoctManager · version {{build}}"
       },
       "in_app": {

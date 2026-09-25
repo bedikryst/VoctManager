@@ -5819,8 +5819,8 @@
         "title": "Dodaj do ekranu początkowego"
       },
       "colophon": {
-        "copyright": "© {{year}} Fundacja VoctFoundation",
         "credit": "Projekt i wykonanie: Krystian Bugalski",
+        "dedication": "Stworzone dla VoctEnsemble",
         "version": "VoctManager · wersja {{build}}"
       },
       "in_app": {
