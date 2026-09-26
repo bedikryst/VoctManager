@@ -65,6 +65,12 @@ web/src/assets/photos/kosciol-samples
 # kept out of the context so they reach no image layer while they may not be published.
 web/src/assets/photos/.held-no-consent
 
+# The press pack's SOURCES: camera originals past 40 MB apiece and the designer's print posters.
+# Only `npm run press:pack` reads them, on the host where the originals are; the build reads the
+# pack it wrote (`public/press/`) and `press-pack/manifest.yaml`, which stays in the context.
+web/press-pack/photos
+web/press-pack/posters
+
 # Video, in both its homes, and for one reason: no build step reads a frame of it.
 #  • `src/assets/videos/` holds the camera masters and the encodes made from them — a host-side
 #    step, the same shape as `npm run photos:proxy` above.
