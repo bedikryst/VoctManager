@@ -3,10 +3,28 @@
 **Status: approved 2026-09-25. Stage 0 done (photos moved out of the tracked tree, this spec,
 board-inputs). Stage 1 done 2026-09-25 (kit YAML with drafted copy, `lib/pressKit.ts`, the
 generator). Stage 2 done 2026-09-26 (the page, `press.yaml`, `press.ts`, `data/social.ts`, the
-lightbox, `lib/pressPack.ts` reading `index.json`); not yet seen in a browser. Copy not yet
-approved by Ania. Next: Stage 3, the composer.** Supersedes `web-press-pack-2026-09.md` wherever
+lightbox, `lib/pressPack.ts` reading `index.json`). Stage 3 done 2026-09-26 (the composer:
+`lib/zipStore.ts`, `scripts/press-basket.ts`, the checkboxes, the bar). Neither stage has been seen
+in a browser yet. Copy not yet approved by Ania. Next: review round R1
+(`web-press-review-2026-09.md`), then Stage 4.** Supersedes `web-press-pack-2026-09.md` wherever
 the two disagree; that file stays the record of how the pack generator and `foundation.ts` came to
 exist.
+
+Stage 3 departed from this spec in five places:
+- **Boxes carry keys, not `data-bytes`.** `lib/pressPack#basketManifest` projects `index.json`
+  into a JSON island (paths, bytes, cache-busted URLs, the bar's counted labels), and a box's
+  `data-basket-item` is its key there. `formatBytes` moved to `lib/fileSize.ts`, because the
+  script cannot import a module that reads the disk.
+- **The bar is sticky at the end of `<main>`, not fixed.** It rides the viewport's foot while the
+  sections scroll and settles above the footer at the end, so it never covers the footer. While it
+  is open the scroll-top mark yields, as it yields to the menu and the vault.
+- **Progress is a percentage of bytes**, not "file N of M": the print poster alone outweighs
+  every text in the kit. A failed fetch leaves a message in the bar until the selection changes.
+- **"Select all" is per group with two or more boxes**: the materials, each photo ratio, the
+  graphics, the logo. `logo/UZYCIE.txt` has no box and travels with any ticked logo file.
+- **All ticked serves komplet**, which also holds the three files with no box (post, hashtags,
+  invoicing sheet). `zipStore` is byte-equal to `makeZip` with every entry stored:
+  `npm run test:zip` holds the two to it.
 
 Stage 2 departed from this spec in four places:
 - **No checkboxes yet.** They arrive with the composer in Stage 3, together with the chrome labels

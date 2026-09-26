@@ -18,6 +18,7 @@
     "test:copydesk": "node --test copydesk/copydesk.test.mjs",
     "photos:proxy": "node downscale-photos.mjs",
     "press:pack": "node scripts/press-pack.mjs",
+    "test:zip": "node --test scripts/zip.test.mjs",
     "video:stamp": "node scripts/video-stamp.mjs",
     "rite:render": "node rite/render.mjs"
   },
