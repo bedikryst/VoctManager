@@ -155,8 +155,9 @@ about:
   # On the page and beside the files in the pack (logo/UZYCIE.txt).
   logoUsage: >-
     Logotypu prosimy używać w jednym kolorze, bez cienia, obrysu i przekształceń proporcji.
-    Wersja SVG jest wzorcem; pliki PNG przygotowano na jasne i na ciemne tło. Wokół znaku
-    prosimy zostawić odstęp nie mniejszy niż wysokość jego poprzeczki.
+    Wersja SVG jest wzorcem; pliki PNG przygotowano na jasne i na ciemne tło. Złoty znak służy
+    do publikacji w internecie, wyłącznie na ciemnym tle. Wokół znaku prosimy zostawić odstęp
+    nie mniejszy niż wysokość jego poprzeczki.
 
 foundation:
   eyebrow: "Fundacja"

@@ -363,9 +363,9 @@ const GRAPHIC_USE: Record<PressGraphic["format"], string> = {
 };
 const graphics = kitFiles?.graphics ?? [];
 
-/* The logotype, one tile per ground, each offering the formats made for it (by the names the
-   generator gives them). The SVG and the light PNG are the same drawing, so they share a tile
-   rather than render as two identical ones. The usage note is printed on the page, so its .txt
+/* The logotype, one tile per ground and one for the gold mark, each offering the formats made for
+   it (by the names the generator gives them). The SVG and the light PNG are the same drawing, so
+   they share a tile rather than render as two identical ones. The usage note is printed on the page, so its .txt
    copy is not offered again on its own: it travels with any logo tile ticked in the composer, as
    it does in komplet. */
 const LOGO_GROUNDS = [
@@ -378,6 +378,7 @@ const LOGO_GROUNDS = [
     ],
   },
   { ground: "dark", label: t.logoOnDark, files: [{ name: "voct-mark-na-ciemnym.png", format: "PNG" }] },
+  { ground: "gold", label: t.logoGold, files: [{ name: "voct-mark-zloty.png", format: "PNG" }] },
 ] as const;
 const logoTiles = LOGO_GROUNDS.flatMap((tile) => {
   const files = tile.files.flatMap((entry) => {
@@ -1606,13 +1607,14 @@ const jsonLd = {
 
   .press-logo { margin-top: clamp(40px, 4.6vw, 62px); padding-top: 18px; border-top: 1px solid var(--line-strong); }
   .press-logo-usage { max-width: 64ch; margin-bottom: clamp(18px, 2vw, 26px); }
-  /* Two grounds, two tiles; capped so a swatch stays a sample, not a poster. */
-  .press-logo-grid { grid-template-columns: repeat(2, minmax(0, 300px)); }
-  @media (max-width: 620px) { .press-logo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  /* One tile per ground and the gold mark; capped so a swatch stays a sample. */
+  .press-logo-grid { grid-template-columns: repeat(3, minmax(0, 260px)); }
+  @media (max-width: 620px) { .press-logo-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   /* The mark is tall (810 × 2000 in the PNGs, a bare viewBox in the SVG). Placed out of flow, it
      takes its box from the swatch and never lends its intrinsic size to the swatch or the track. */
   .press-logo-swatch { position: relative; display: block; aspect-ratio: 4 / 3; border: 1px solid var(--line); background: var(--paper); }
-  .press-logo-swatch--dark { background: var(--night); border-color: var(--night); }
+  .press-logo-swatch--dark,
+  .press-logo-swatch--gold { background: var(--night); border-color: var(--night); }
   .press-logo-swatch img { position: absolute; inset: 0; margin: auto; width: 100%; height: 62%; object-fit: contain; }
   /* A tile's formats, one line each: the figure, then its download. */
   .press-logo-files { list-style: none; margin: 0; padding-left: 0; display: grid; gap: 8px; }
