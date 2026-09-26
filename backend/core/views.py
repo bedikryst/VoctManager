@@ -25,6 +25,7 @@ from rest_framework.throttling import ScopedRateThrottle, UserRateThrottle
 
 from .avatar_service import AvatarService
 from .dtos import (
+    SeasonCalendarToggleDTO,
     UserAccountActivationDTO,
     UserAccountDeletionDTO,
     UserEmailChangeDTO,
@@ -42,6 +43,7 @@ from .exceptions import (
 )
 from .ical_service import ICalGeneratorService
 from .models import Note, UserProfile
+from .permissions import IsManager
 from .request_utils import client_payload, request_user
 from .serializers import (
     FeedbackReportSerializer,
@@ -455,6 +457,51 @@ class ResetCalendarTokenView(views.APIView):
         return Response(UserProfileSerializer(profile).data, status=status.HTTP_200_OK)
 
 
+class SeasonCalendarView(views.APIView):
+    """
+    POST /api/users/me/season-calendar/  {"enabled": bool}
+    Turns the manager's whole-season subscription on or off. Returns the
+    refreshed profile, whose `season_calendar` carries the address.
+    """
+    permission_classes = (IsAuthenticated, IsManager)
+
+    @extend_schema(responses={200: UserProfileSerializer, 400: dict})
+    def post(self, request, *args, **kwargs):
+        try:
+            dto = SeasonCalendarToggleDTO(**client_payload(request.data))
+        except ValidationError as e:
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail="The submitted data is invalid.",
+                validation_errors=format_pydantic_validation_errors(e),
+            )
+
+        profile = UserPreferencesService.set_season_calendar(request.user, dto.enabled)
+        return Response(
+            UserProfileSerializer(profile, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class ResetSeasonCalendarTokenView(views.APIView):
+    """
+    POST /api/users/me/reset-season-calendar-token/
+    Regenerates the season feed's secret token; the previous address stops
+    answering at once.
+    """
+    permission_classes = (IsAuthenticated, IsManager)
+
+    @extend_schema(responses={200: UserProfileSerializer})
+    def post(self, request, *args, **kwargs):
+        profile = UserPreferencesService.reset_season_calendar_token(request.user)
+        return Response(
+            UserProfileSerializer(profile, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
+
+
 class MarkWelcomeSeenView(views.APIView):
     """
     POST /api/users/me/seen-welcome/
@@ -597,12 +644,41 @@ class CalendarFeedView(views.APIView):
             # answered by the status code alone.
             return HttpResponse(status=404)
 
-        ics_content = ICalGeneratorService.generate_user_feed(profile.user)
+        return _ics_response(
+            ICalGeneratorService.generate_user_feed(profile.user),
+            filename="voctmanager_schedule.ics",
+        )
 
-        response = HttpResponse(ics_content, content_type='text/calendar; charset=utf-8')
-        response['Content-Disposition'] = 'attachment; filename="voctmanager_schedule.ics"'
-        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        return response
+
+class SeasonCalendarFeedView(CalendarFeedView):
+    """
+    GET /api/calendar/<season_calendar_token>/season.ics
+    The manager's whole-season feed. An unknown token is a 404, exactly like
+    the personal feed; a known one whose owner switched it off or lost the
+    manager role answers with an empty calendar, which the service decides.
+    """
+
+    @extend_schema(responses={200: str})
+    def get(self, request, token, *args, **kwargs):
+        profile = (
+            UserProfile.objects.filter(season_calendar_token=token)
+            .select_related('user')
+            .first()
+        )
+        if profile is None:
+            return HttpResponse(status=404)
+
+        return _ics_response(
+            ICalGeneratorService.generate_season_feed(profile.user),
+            filename="voctmanager_season.ics",
+        )
+
+
+def _ics_response(ics_content: str, *, filename: str) -> HttpResponse:
+    response = HttpResponse(ics_content, content_type='text/calendar; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return response
 
 
 class FeedbackReportView(generics.CreateAPIView):

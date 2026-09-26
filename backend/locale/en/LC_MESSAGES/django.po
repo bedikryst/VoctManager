@@ -3877,3 +3877,7 @@ msgstr ""
 #: roster/views.py
 msgid "This piece is not in the project programme."
 msgstr ""
+
+#: core/ical_service.py
+msgid "Season"
+msgstr ""

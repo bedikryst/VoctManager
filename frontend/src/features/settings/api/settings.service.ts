@@ -89,6 +89,26 @@ export const settingsService = {
   },
 
   /**
+   * Switches a manager's whole-season feed on or off. The first switch-on mints
+   * its address; returns the refreshed profile carrying it.
+   */
+  setSeasonCalendar: async (enabled: boolean): Promise<UserProfileDTO> => {
+    const response = await api.post<UserProfileDTO>(
+      `${BASE_URL}season-calendar/`,
+      { enabled },
+    );
+    return response.data;
+  },
+
+  /** Retires the season feed's address and mints a new one. */
+  resetSeasonCalendarToken: async (): Promise<UserProfileDTO> => {
+    const response = await api.post<UserProfileDTO>(
+      `${BASE_URL}reset-season-calendar-token/`,
+    );
+    return response.data;
+  },
+
+  /**
    * Stamps the one-time home-screen welcome as completed (server-side, set once),
    * so it greets the member exactly once per account — across every device.
    */

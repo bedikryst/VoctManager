@@ -5882,6 +5882,16 @@
       "reset_btn": "Générer un nouveau lien",
       "reset_desc": "Si vous soupçonnez un accès non autorisé à votre lien de calendrier, générez-le à nouveau. L'adresse précédente cessera de fonctionner immédiatement.",
       "reset_title": "Réinitialisez votre lien",
+      "season": {
+        "desc": "Un second abonnement, distinct : toutes les répétitions et tous les événements publiés de l'ensemble auxquels vous ne participez pas. Sur votre téléphone, il apparaît comme un calendrier à part, que vous pouvez masquer ou réafficher d'un geste.",
+        "ios_note": "Sur iPhone, ajoutez-le comme le calendrier ci-dessus : copiez cette adresse et collez-la dans Calendrier en tant qu'abonnement.",
+        "off_note": "Une fois désactivé, ce calendrier se vide à la prochaine actualisation de l'abonnement, ce qui peut prendre plusieurs heures dans Google. Pour le masquer tout de suite, décochez-le dans votre application de calendrier.",
+        "reset_desc": "L'adresse précédente du calendrier de la saison cessera de fonctionner immédiatement.",
+        "scope_note": "Les brouillons et les événements annulés n'y figurent pas. Ce à quoi vous participez reste dans votre propre calendrier ci-dessus : rien n'apparaît deux fois.",
+        "title": "Toute la saison",
+        "toggle_label": "Calendrier de toute la saison",
+        "url_label": "Adresse du calendrier de la saison"
+      },
       "subtitle": "Synchronisez votre planning de répétitions avec votre calendrier téléphonique.",
       "title": "Intégrations et calendriers"
     },

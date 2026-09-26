@@ -5,7 +5,7 @@
  * @module features/settings/types
  */
 
-import type { AppRole } from "@/shared/auth/auth.types";
+import type { AppRole, SeasonCalendar } from "@/shared/auth/auth.types";
 
 export interface UserProfileDTO {
   role?: AppRole;
@@ -22,6 +22,8 @@ export interface UserProfileDTO {
   shoe_size: string;
   height_cm: number | null;
   calendar_token: string;
+  /** The manager's whole-season feed; null for anyone it is not offered to. */
+  season_calendar?: SeasonCalendar | null;
   // Notification delivery (daily digest of routine manager alerts).
   digest_enabled?: boolean;
   digest_hour?: number;

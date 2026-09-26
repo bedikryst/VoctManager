@@ -14,7 +14,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import FeedbackReport, Note, UserProfile
-from .permissions import user_is_board
+from .permissions import user_is_board, user_is_manager
 
 User = get_user_model()
 
@@ -45,6 +45,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
     # finance acts (approve, reopen, close, revert a payment, annul a contract),
     # so the panel can say why a control is absent instead of failing with 403.
     can_approve_finance = serializers.SerializerMethodField()
+
+    # The manager's whole-season feed, or null when the account may not have
+    # one. Null rather than a flag beside the columns, so the panel offers the
+    # switch to exactly whom the feed would serve — staff included, whatever
+    # their role — and never to anyone it would answer with an empty calendar.
+    season_calendar = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
@@ -80,8 +86,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
             # Finance: the board's acts (`core.permissions.user_is_board`).
             'can_approve_finance',
 
-            # Integrations
-            'calendar_token'
+            # Integrations. Both read-only: a token is minted and reset through
+            # its own action, and the season switch has one too, because
+            # turning it on mints the address.
+            'calendar_token', 'season_calendar',
         )
         # Critical Security: Users cannot escalate their own role or spoof tokens.
         # Everything listed here is server-authoritative — clients read these but
@@ -110,6 +118,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def get_can_approve_finance(self, obj: UserProfile) -> bool:
         return user_is_board(obj.user)
+
+    def get_season_calendar(self, obj: UserProfile) -> dict[str, Any] | None:
+        """`{enabled, token}`; `token` stays null until the feed is first on."""
+        if not (obj.user.is_active and user_is_manager(obj.user)):
+            return None
+        token = obj.season_calendar_token
+        return {
+            'enabled': obj.season_calendar_enabled,
+            'token': str(token) if token else None,
+        }
 
     def get_avatar_url(self, obj: UserProfile) -> str | None:
         return self._absolute_media_url(obj.avatar)

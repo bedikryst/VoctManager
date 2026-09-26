@@ -5,7 +5,7 @@
 # ==========================================
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StrictBool, field_validator
 
 from .constants import ClothingSizeChoices
 
@@ -160,3 +160,10 @@ class UserEmailChangeDTO(EnterpriseBaseDTO):
 class UserAccountDeletionDTO(EnterpriseBaseDTO):
     """Data contract enforcing re-authentication before account erasure."""
     current_password: str = Field(..., min_length=1)
+
+
+class SeasonCalendarToggleDTO(EnterpriseBaseDTO):
+    """Turns a manager's season feed on or off. Strict: the panel's switch
+    sends a JSON boolean, and anything else is a malformed request rather than
+    a spelling of yes or no to be guessed at."""
+    enabled: StrictBool

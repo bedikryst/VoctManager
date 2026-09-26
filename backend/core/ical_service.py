@@ -2,7 +2,7 @@
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime, timedelta
 
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.utils.translation import override
@@ -17,6 +17,8 @@ from roster.models import (
     Rehearsal,
     is_instrumentalist_account,
 )
+
+from .permissions import user_is_manager
 
 # The label a member reads in their phone's calendar list, between "Work" and
 # "Birthdays" — so it is the ensemble's name, not the product's. Deliberately
@@ -80,72 +82,146 @@ class ICalGeneratorService:
         with the CRLF that RFC 5545 requires."""
         return "\r\n".join(cls._fold(line) for line in lines)
 
+    @staticmethod
+    def _language_of(user) -> str:
+        """The account's own language. Calendar clients may send no
+        `Accept-Language` at all, so the feed cannot negotiate one."""
+        profile = getattr(user, 'profile', None)
+        return getattr(profile, 'language', 'en')
+
     @classmethod
     def generate_user_feed(cls, user) -> str:
         """
         Generates the localized ICS feed for a specific user.
         """
-        if not hasattr(user, 'artist_profile'):
-            return cls._generate_empty_ics()
+        with override(cls._language_of(user)):
+            projects, rehearsals = cls._personal_events(user)
+            return cls._build_ics(projects, rehearsals)
 
-        artist = user.artist_profile
-        language = getattr(user.profile, 'language', 'en')
+    @staticmethod
+    def season_feed_is_served(user) -> bool:
+        """Whether the season address answers with the season or with nothing.
 
-        # We force the translation to the user's preferred language,
-        # because calendar clients might not send 'Accept-Language' headers.
-        with override(language):
-            # `Participation.live_seats` and nothing else for the cast. This
-            # feed used to write its own three conditions and disagreed with the
-            # panel on the third: it dropped only cancelled projects, so a DRAFT
-            # concert — invisible in the schedule, never announced to anybody —
-            # was published into the singer's subscribed calendar.
-            seats = Participation.live_seats(artist=artist)
+        Asked on every fetch, never only at opt-in: the address outlives the
+        role that earned it. A manager who is demoted, or whose account is
+        switched off, keeps the subscription on their phone, and from that
+        moment it has to empty rather than go on carrying every date the
+        ensemble has.
+        """
+        profile = getattr(user, 'profile', None)
+        return bool(
+            profile is not None
+            and profile.season_calendar_enabled
+            and user.is_active
+            and user_is_manager(user)
+        )
 
-            # A conductor holds no seat, so the query above cannot see the
-            # projects they only conduct — their subscribed calendar was empty
-            # of the dates they are the reason for.
-            #
-            # `get_artist_schedule` hands them their drafts as well, deliberately:
-            # they are the one assembling them. This file is a different room.
-            # It leaves the panel, is mirrored onto a calendar provider's servers
-            # and refreshed on that provider's cadence — hours to days — so a
-            # plan still moving daily would sit there wrong, and would sit there
-            # after being abandoned. Published only, therefore: the same gate the
-            # cast's own seats pass through.
-            conducted_ids = set(
-                Project.objects.filter(
-                    conductor__user=user, conductor__is_deleted=False
-                )
-                .exclude(status__in=Project.HIDDEN_FROM_CAST_STATUSES)
-                .values_list('id', flat=True)
+    @classmethod
+    def generate_season_feed(cls, user) -> str:
+        """Everything published that the account's own feed does not carry.
+
+        The complement rather than the whole season: a manager subscribed to
+        both addresses would otherwise see every date they sing twice, once in
+        each calendar. A date moves between the two as the account is cast or
+        released, and each feed is its own subscription, so a UID crossing over
+        is never a duplicate a client has to reconcile.
+
+        Published only, on the same ground the podium's drafts stay out of the
+        personal feed: this file is mirrored onto a provider's servers and read
+        back on the provider's schedule, so a plan still being made would sit
+        there stale, and would sit there after being abandoned. The panel's
+        season view keeps its drafts.
+
+        A switched-off feed answers with an empty calendar, not an error: a
+        client holds on to its last good copy through a failing fetch, while an
+        empty one clears the phone at the next poll.
+        """
+        with override(cls._language_of(user)):
+            name = f"{CALENDAR_NAME} · {_('Season')}"
+            if not cls.season_feed_is_served(user):
+                return cls._generate_empty_ics(name)
+
+            own_projects, own_rehearsals = cls._personal_events(user)
+
+            projects = (
+                Project.objects.exclude(status__in=Project.HIDDEN_FROM_CAST_STATUSES)
+                .exclude(id__in=own_projects.values('id'))
+                .select_related('location')
             )
-
-            projects = Project.objects.filter(
-                Q(id__in=seats.values('project_id')) | Q(id__in=conducted_ids)
-            ).select_related('location')
-
-            # The same rule the schedule reads: a sectional calls sections (or
-            # a list of names), so a soprano's calendar does not fill with the
-            # basses' rehearsals — and a deleted session leaves the calendar
-            # with it. A conductor runs every rehearsal of their own project,
-            # which is why that project's id short-circuits the call rule.
+            # Every live rehearsal of a published project, the sectionals the
+            # account is not called to included — even inside a project it
+            # sings in, those dates are not in its own feed.
             rehearsals = (
-                Rehearsal.objects.filter(project__in=projects, is_deleted=False)
-                .filter(
-                    Q(project_id__in=conducted_ids)
-                    | Rehearsal.calling_q(
-                        seats,
-                        instrumentalist=is_instrumentalist_account(user),
-                        section_letters=Participation.section_letters_of_seats(
-                            seats.select_related('artist')
-                        ),
-                    )
-                )
-                .distinct()
+                Rehearsal.objects.filter(is_deleted=False)
+                .exclude(project__status__in=Project.HIDDEN_FROM_CAST_STATUSES)
+                .exclude(id__in=own_rehearsals.values('id'))
                 .select_related('project', 'location')
             )
 
-            return cls._build_ics(projects, rehearsals)
+            return cls._build_ics(projects, rehearsals, name=name)
+
+    @staticmethod
+    def _personal_events(user) -> tuple[QuerySet[Project], QuerySet[Rehearsal]]:
+        """The dates this account is called to: its live seats with the
+        rehearsals that call it, and the published projects it conducts with
+        every rehearsal in them."""
+        if not hasattr(user, 'artist_profile'):
+            return Project.objects.none(), Rehearsal.objects.none()
+
+        artist = user.artist_profile
+
+        # `Participation.live_seats` and nothing else for the cast. This
+        # feed used to write its own three conditions and disagreed with the
+        # panel on the third: it dropped only cancelled projects, so a DRAFT
+        # concert — invisible in the schedule, never announced to anybody —
+        # was published into the singer's subscribed calendar.
+        seats = Participation.live_seats(artist=artist)
+
+        # A conductor holds no seat, so the query above cannot see the
+        # projects they only conduct — their subscribed calendar was empty
+        # of the dates they are the reason for.
+        #
+        # `get_artist_schedule` hands them their drafts as well, deliberately:
+        # they are the one assembling them. This file is a different room.
+        # It leaves the panel, is mirrored onto a calendar provider's servers
+        # and refreshed on that provider's cadence — hours to days — so a
+        # plan still moving daily would sit there wrong, and would sit there
+        # after being abandoned. Published only, therefore: the same gate the
+        # cast's own seats pass through.
+        conducted_ids = set(
+            Project.objects.filter(
+                conductor__user=user, conductor__is_deleted=False
+            )
+            .exclude(status__in=Project.HIDDEN_FROM_CAST_STATUSES)
+            .values_list('id', flat=True)
+        )
+
+        projects = Project.objects.filter(
+            Q(id__in=seats.values('project_id')) | Q(id__in=conducted_ids)
+        ).select_related('location')
+
+        # The same rule the schedule reads: a sectional calls sections (or
+        # a list of names), so a soprano's calendar does not fill with the
+        # basses' rehearsals — and a deleted session leaves the calendar
+        # with it. A conductor runs every rehearsal of their own project,
+        # which is why that project's id short-circuits the call rule.
+        rehearsals = (
+            Rehearsal.objects.filter(project__in=projects, is_deleted=False)
+            .filter(
+                Q(project_id__in=conducted_ids)
+                | Rehearsal.calling_q(
+                    seats,
+                    instrumentalist=is_instrumentalist_account(user),
+                    section_letters=Participation.section_letters_of_seats(
+                        seats.select_related('artist')
+                    ),
+                )
+            )
+            .distinct()
+            .select_related('project', 'location')
+        )
+
+        return projects, rehearsals
 
     @classmethod
     def build_single_event(
@@ -265,8 +341,8 @@ class ICalGeneratorService:
         return '\n'.join(lines)
 
     @classmethod
-    def _calendar_preamble(cls) -> list[str]:
-        """The VCALENDAR header both feeds share.
+    def _calendar_preamble(cls, name: str = CALENDAR_NAME) -> list[str]:
+        """The VCALENDAR header every subscribed feed shares.
 
         It used to be typed out twice and the copies disagreed: the empty feed
         carried no name at all, so a member with nothing scheduled yet — or an
@@ -276,9 +352,11 @@ class ICalGeneratorService:
 
         `NAME` is the RFC 7986 property; `X-WR-CALNAME` is the older X-property
         that Apple, Google and Outlook actually read. Both are emitted because
-        neither alone covers the clients members use.
+        neither alone covers the clients members use. The season feed passes a
+        name of its own, or a manager subscribed to both would find two
+        calendars called the same in their list.
         """
-        name = cls._escape_ics_text(CALENDAR_NAME)
+        name = cls._escape_ics_text(name)
         return [
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
@@ -291,8 +369,8 @@ class ICalGeneratorService:
         ]
 
     @classmethod
-    def _build_ics(cls, projects, rehearsals) -> str:
-        lines = cls._calendar_preamble()
+    def _build_ics(cls, projects, rehearsals, name: str = CALENDAR_NAME) -> str:
+        lines = cls._calendar_preamble(name)
 
         now_utc = timezone.now().strftime('%Y%m%dT%H%M%SZ')
 
@@ -362,7 +440,7 @@ class ICalGeneratorService:
         return cls._render(lines)
 
     @classmethod
-    def _generate_empty_ics(cls) -> str:
+    def _generate_empty_ics(cls, name: str = CALENDAR_NAME) -> str:
         """A calendar with no events is still a calendar the member sees named
         in their list, so it carries the same identity as a full one."""
-        return cls._render([*cls._calendar_preamble(), "END:VCALENDAR"])
+        return cls._render([*cls._calendar_preamble(name), "END:VCALENDAR"])
