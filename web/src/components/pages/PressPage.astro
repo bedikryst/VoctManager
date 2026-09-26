@@ -23,6 +23,11 @@
  *    only for a file the index lists; without an index the texts stay and every download becomes
  *    one "write to us" mailto. A stale index fails the build (lib/pressPack says why).
  *
+ *  THE COMPOSER (scripts/press-basket.ts): a checkbox on every file row and tile, a "select all"
+ *  per group, and a bar at the foot of <main> that zips the ticked files in the browser. All of it
+ *  renders hidden and the script reveals it; without script, the per-file links and the two
+ *  prebuilt ZIPs ARE the page. A box carries only its key into the manifest serialised below.
+ *
  *  THE KIT SHOWS ONLY WHILE ITS CONCERT IS AHEAD, by the build-time rule every announcement on
  *  this site follows (`upcomingStation`): the deploy after the concert takes it down.
  *
@@ -61,7 +66,8 @@ import {
   type PressGraphic,
   type PressPhoto,
 } from "../../lib/pressKit";
-import { formatBytes, readPressPack } from "../../lib/pressPack";
+import { formatBytes } from "../../lib/fileSize";
+import { basketManifest, readPressPack } from "../../lib/pressPack";
 import { FOUNDATION } from "../../data/foundation";
 import { SOCIAL, SOCIAL_SAME_AS } from "../../data/social";
 import { UI } from "../../i18n/ui";
@@ -308,7 +314,8 @@ const GRAPHIC_USE: Record<PressGraphic["format"], string> = {
 const graphics = kitFiles?.graphics ?? [];
 
 /* The logotype's files, by the names the generator gives them. The usage note is printed on the
-   page, so its .txt copy is not offered again. */
+   page, so its .txt copy is not offered again on its own: it travels with any logo file ticked in
+   the composer, as it does in komplet. */
 const LOGO_FILES = [
   { name: "voct-mark.svg", label: t.logoSvg, format: "SVG", ground: "light" },
   { name: "voct-mark-na-jasnym.png", label: t.logoOnLight, format: "PNG", ground: "light" },
@@ -318,6 +325,47 @@ const logoFiles = LOGO_FILES.flatMap((entry) => {
   const file = pack?.index.logo.find((candidate) => candidate.path === `logo/${entry.name}`);
   return file ? [{ ...entry, file }] : [];
 });
+const logoUsage = pack?.index.logo.find((file) => file.path === "logo/UZYCIE.txt");
+
+// ── The composer ──────────────────────────────────────────────────────────────────────────────
+
+/* A checkbox's key is ALL its markup carries. The files it stands for, their sizes and URLs reach
+   scripts/press-basket.ts through `basketManifest`, from the index. */
+const rowKey = (row: FileRow) => `file:${row.id}`;
+const photoKey = (photo: PressPhoto) => `photo:${photo.id}`;
+const graphicKey = (graphic: PressGraphic) => `graphic:${graphic.format}`;
+const logoKey = (name: string) => `logo:${name}`;
+
+const basketEntries: [string, readonly PressFile[]][] = [
+  ...fileRows.flatMap((row): [string, readonly PressFile[]][] =>
+    row.file ? [[rowKey(row), [row.file]]] : [],
+  ),
+  ...photoGroups.flatMap((group) =>
+    group.photos.map((photo): [string, readonly PressFile[]] => [photoKey(photo), [photo]]),
+  ),
+  ...graphics.map((graphic): [string, readonly PressFile[]] => [graphicKey(graphic), [graphic]]),
+  ...logoFiles.map((entry): [string, readonly PressFile[]] => [
+    logoKey(entry.name),
+    [entry.file, ...(logoUsage ? [logoUsage] : [])],
+  ]),
+];
+const basket =
+  pack && basketEntries.length > 0
+    ? basketManifest(pack, Object.fromEntries(basketEntries), {
+        htmlLang,
+        units: t.units,
+        counts: basketEntries.map((_, i) =>
+          fill(t.basketCount, "files", counted(i + 1, t.files, lang)),
+        ),
+        preparing: t.basketPreparing,
+        failed: t.basketFailed,
+      })
+    : undefined;
+/* Serialised into a <script>, where a `</` would end the element: escaped, though no path or
+   label holds one today. */
+const basketJson = basket ? JSON.stringify(basket).replace(/</g, "\\u003c") : undefined;
+const rowsInBasket = fileRows.filter((row) => row.file).length;
+const selectAllAria = (group: string) => fill(t.selectAllAria, "group", group);
 
 // ── Biograms and the foundation ───────────────────────────────────────────────────────────────
 
@@ -386,7 +434,7 @@ const jsonLd = {
   <a class="skip-link" href="#tresc">{UI[lang].skipToContent}</a>
   <SiteChrome current="/press" tone="dark" lang={lang} availableLocales={available} />
 
-  <main id="tresc">
+  <main id="tresc" data-basket-root>
     {/* ── HEAD · what this is, the one big download, and the way down ─────── */}
     <section class="press-head" aria-label={t.headAria}>
       <div class="press-inner press-head-inner">
@@ -523,10 +571,35 @@ const jsonLd = {
               <div class="press-rubric-row">
                 <h3 class="eyebrow press-rubric">{copy.latest.filesEyebrow}</h3>
                 <span class="press-rule" aria-hidden="true" />
+                {basket && rowsInBasket > 1 && (
+                  <label class="press-pick-all">
+                    <input
+                      type="checkbox"
+                      class="press-pick-box"
+                      data-basket-all="files"
+                      aria-label={selectAllAria(copy.latest.filesEyebrow)}
+                    />
+                    <span>{t.selectAll}</span>
+                  </label>
+                )}
               </div>
               <ul class="press-file-list">
                 {fileRows.map((row) => (
                   <li class="press-file">
+                    {/* Every row keeps the column, so a row without a file still lines up. */}
+                    {basket && row.file ? (
+                      <label class="press-pick">
+                        <input
+                          type="checkbox"
+                          class="press-pick-box"
+                          data-basket-item={rowKey(row)}
+                          data-basket-group="files"
+                          aria-label={fill(t.selectAria, "file", row.title)}
+                        />
+                      </label>
+                    ) : (
+                      <span class="press-pick" aria-hidden="true" />
+                    )}
                     <span class="press-file-icon" aria-hidden="true">
                       {row.icon === "doc" ? (
                         <svg viewBox="0 0 20 24" width="20" height="24" fill="none" stroke="currentColor" stroke-width="1.1">
@@ -640,12 +713,34 @@ const jsonLd = {
               <div class="press-group-head">
                 <h3 class="press-sub">{group.title}</h3>
                 <span class="press-sub-note">{group.use}</span>
+                {basket && group.photos.length > 1 && (
+                  <label class="press-pick-all">
+                    <input
+                      type="checkbox"
+                      class="press-pick-box"
+                      data-basket-all={group.key}
+                      aria-label={selectAllAria(group.title)}
+                    />
+                    <span>{t.selectAll}</span>
+                  </label>
+                )}
               </div>
               <ul class={`press-photo-grid press-photo-grid--${group.key}`}>
                 {group.photos.map((photo) => {
                   const credit = frameCredit({ credit: photo.credit }, lang);
                   return (
                     <li class="press-photo">
+                      {basket && (
+                        <label class="press-pick press-pick--tile">
+                          <input
+                            type="checkbox"
+                            class="press-pick-box"
+                            data-basket-item={photoKey(photo)}
+                            data-basket-group={group.key}
+                            aria-label={fill(t.selectAria, "file", photo.caption)}
+                          />
+                        </label>
+                      )}
                       <button
                         type="button"
                         class="press-photo-open shot-open"
@@ -810,12 +905,34 @@ const jsonLd = {
             <article class="press-block press-graphics-block">
               <div class="press-block-head">
                 <h3 class="press-sub">{copy.social.graphics}</h3>
+                {basket && graphics.length > 1 && (
+                  <label class="press-pick-all">
+                    <input
+                      type="checkbox"
+                      class="press-pick-box"
+                      data-basket-all="graphics"
+                      aria-label={selectAllAria(copy.social.graphics)}
+                    />
+                    <span>{t.selectAll}</span>
+                  </label>
+                )}
               </div>
               <ul class="press-graphics">
                 {graphics.map((graphic) => {
                   const label = `${graphic.format.replace("x", ":")} · ${graphic.width} × ${graphic.height}`;
                   return (
                     <li class="press-graphic">
+                      {basket && (
+                        <label class="press-pick press-pick--tile">
+                          <input
+                            type="checkbox"
+                            class="press-pick-box"
+                            data-basket-item={graphicKey(graphic)}
+                            data-basket-group="graphics"
+                            aria-label={fill(t.selectAria, "file", `${copy.social.graphics} ${label}`)}
+                          />
+                        </label>
+                      )}
                       <button
                         type="button"
                         class="press-graphic-open shot-open"
@@ -906,6 +1023,17 @@ const jsonLd = {
         <div class="press-logo">
           <div class="press-group-head">
             <h3 class="press-sub">{copy.about.logo}</h3>
+            {basket && logoFiles.length > 1 && (
+              <label class="press-pick-all">
+                <input
+                  type="checkbox"
+                  class="press-pick-box"
+                  data-basket-all="logo"
+                  aria-label={selectAllAria(copy.about.logo)}
+                />
+                <span>{t.selectAll}</span>
+              </label>
+            )}
           </div>
           <p class="press-block-sub press-logo-usage">{copy.about.logoUsage}</p>
           {
@@ -913,6 +1041,17 @@ const jsonLd = {
               <ul class="press-logo-grid">
                 {logoFiles.map((entry) => (
                   <li class="press-logo-tile">
+                    {basket && (
+                      <label class="press-pick press-pick--tile">
+                        <input
+                          type="checkbox"
+                          class="press-pick-box"
+                          data-basket-item={logoKey(entry.name)}
+                          data-basket-group="logo"
+                          aria-label={fill(t.selectAria, "file", `${copy.about.logo} — ${entry.label}`)}
+                        />
+                      </label>
+                    )}
                     <span class={`press-logo-swatch press-logo-swatch--${entry.ground}`}>
                       <img src={href(entry.file)} alt="" loading="lazy" decoding="async" />
                     </span>
@@ -1004,6 +1143,32 @@ const jsonLd = {
         </div>
       </div>
     </section>
+
+    {/* ── THE BASKET · what is ticked, and the one button that takes it ────── */}
+    {/* Last in <main> and sticky to the viewport's foot: over the sections while they scroll, at
+        rest above the footer at the end, so it never hides the footer's last lines. */}
+    {
+      basket && (
+        <>
+          <script is:inline type="application/json" id="press-basket-data" set:html={basketJson} />
+          <div class="press-basket" data-basket-bar role="region" aria-label={t.basketAria} hidden>
+            <div class="press-inner press-basket-inner">
+              <p class="press-basket-sum" aria-live="polite">
+                <span class="press-basket-count" data-basket-count />
+                <span class="press-basket-size" data-basket-size />
+              </p>
+              <button type="button" class="press-basket-get" data-basket-get>
+                <span>{t.basketDownload}</span>
+                <span class="press-basket-arrow" aria-hidden="true">↓</span>
+              </button>
+              <button type="button" class="press-basket-clear" data-basket-clear>
+                {t.basketClear}
+              </button>
+            </div>
+          </div>
+        </>
+      )
+    }
   </main>
 
   <SiteFooter lang={lang} />
@@ -1016,6 +1181,8 @@ const jsonLd = {
     // the biograms and the invoicing rows.
     import "../../scripts/copy-fields.ts";
     import "../../scripts/image-triggers.ts";
+    // The composer: the checkboxes, the bar, and the archive of the ticked files.
+    import "../../scripts/press-basket.ts";
 
     import { setupDisclosure } from "../../scripts/disclosure";
 
@@ -1138,8 +1305,12 @@ const jsonLd = {
   .press-head-title em { font-style: italic; font-size: .36em; line-height: 1.1; color: var(--candle); }
   .press-head-lede { margin: 0; max-width: 52ch; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 1.7vw, 23px); line-height: 1.5; color: rgba(244, 241, 233, 0.9); }
   .press-head .press-cta { width: min(100%, 560px); }
-  .press-jump ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 26px; }
-  .press-jump a { font-family: var(--sans); font-size: 14px; letter-spacing: .04em; color: rgba(244, 241, 233, 0.72); border-bottom: 1px solid rgba(198, 164, 91, .35); padding-bottom: 2px; transition: color .35s var(--ease), border-color .35s var(--ease); }
+  /* The index sits on a hairline as wide as the plate above it, so plate and index read as one
+     block, and speaks in the page's tool register (mono, tracked capitals) rather than as underlined
+     body links. No arrow: on this page ↓ means a download. */
+  .press-jump { width: min(100%, 560px); padding-top: 16px; border-top: 1px solid rgba(244, 241, 233, .16); }
+  .press-jump ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px 28px; }
+  .press-jump a { display: inline-block; padding-bottom: 3px; border-bottom: 1px solid transparent; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; line-height: 1.4; color: rgba(244, 241, 233, .7); transition: color .35s var(--ease), border-color .35s var(--ease); }
   .press-jump a:hover { color: var(--paper); border-color: var(--candle); }
 
   /* ── NAJNOWSZE ───────────────────────────────────────────────────── */
@@ -1245,10 +1416,12 @@ const jsonLd = {
   .press-logo { margin-top: clamp(56px, 6.5vw, 88px); padding-top: 18px; border-top: 1px solid var(--line-strong); }
   .press-logo-usage { max-width: 64ch; margin-bottom: clamp(22px, 2.4vw, 32px); }
   .press-logo-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(16px, 1.8vw, 26px); }
-  .press-logo-tile { display: grid; gap: 8px; align-content: start; font-size: 13.5px; }
-  .press-logo-swatch { display: grid; place-items: center; aspect-ratio: 4 / 3; border: 1px solid var(--line); background: var(--paper); }
+  .press-logo-tile { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; font-size: 13.5px; }
+  /* The mark is tall (810 × 2000 in the PNGs, a bare viewBox in the SVG). Placed out of flow, it
+     takes its box from the swatch and never lends its intrinsic size to the swatch or the track. */
+  .press-logo-swatch { position: relative; display: block; aspect-ratio: 4 / 3; border: 1px solid var(--line); background: var(--paper); }
   .press-logo-swatch--dark { background: var(--night); border-color: var(--night); }
-  .press-logo-swatch img { height: 46%; width: auto; }
+  .press-logo-swatch img { position: absolute; inset: 0; margin: auto; width: 100%; height: 62%; object-fit: contain; }
   @media (max-width: 620px) { .press-logo-grid { grid-template-columns: minmax(0, 1fr); } }
 
   /* ── FUNDACJA ────────────────────────────────────────────────────── */
@@ -1279,6 +1452,77 @@ const jsonLd = {
   .press-broadcast-body { margin: 0; font-size: clamp(15px, 1.1vw, 17px); line-height: 1.6; color: rgba(244, 241, 233, 0.74); }
   .press-broadcast-cta { margin-top: 6px; font-size: 15px; color: var(--candle); border-bottom: 1px solid rgba(198, 164, 91, .4); padding-bottom: 1px; transition: border-color .35s var(--ease); }
   .press-broadcast-cta:hover { border-color: var(--candle); }
+
+  /* ── THE COMPOSER ────────────────────────────────────────────────── */
+  /* Hidden until scripts/press-basket.ts adds `has-basket` to <main>: a box with no script behind
+     it would promise an archive that never comes. The rules name `main` because a bare runtime
+     class could as well sit on <html>, where this file's scope attribute never is (audit R11). */
+  .press-pick,
+  .press-pick-all { display: none; }
+  main.has-basket .press-pick { display: flex; justify-content: center; align-items: flex-start; cursor: pointer; }
+  main.has-basket .press-pick-all { display: inline-flex; }
+
+  /* Drawn, not native: a native box is the one grey system widget on a page of hairlines. The
+     tick is a data URI, so its colour is the paper's value written out (#F4F1E9 = --paper). */
+  .press-pick-box { appearance: none; flex: 0 0 auto; width: 18px; height: 18px; margin: 0; border: 1px solid var(--ink-muted); border-radius: 0; background: var(--paper) no-repeat center / 12px 12px; cursor: pointer; transition: background-color .25s var(--ease), border-color .25s var(--ease); }
+  .press-pick-box:hover { border-color: var(--candle); }
+  .press-pick-box:focus-visible { outline: 1px solid var(--candle); outline-offset: 3px; }
+  .press-pick-box:checked { background-color: var(--ink); border-color: var(--ink); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23F4F1E9' stroke-width='1.6'%3E%3Cpath d='M2 6.2l2.6 2.6L10 3.4'/%3E%3C/svg%3E"); }
+  .press-pick-box:indeterminate { background-color: var(--ink); border-color: var(--ink); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23F4F1E9' stroke-width='1.6'%3E%3Cpath d='M2.5 6h7'/%3E%3C/svg%3E"); }
+  @media (forced-colors: active) { .press-pick-box { appearance: auto; } }
+
+  /* "Select all" speaks in the register of the page's other tool labels. */
+  .press-pick-all { align-items: center; gap: 9px; cursor: pointer; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); white-space: nowrap; transition: color .35s var(--ease); }
+  .press-pick-all:hover { color: var(--ink); }
+  .press-group-head .press-pick-all,
+  .press-block-head .press-pick-all { margin-left: auto; }
+  /* On a phone the rubric and the toggle do not fit one line; the toggle takes the next. */
+  .press-files .press-rubric-row { flex-wrap: wrap; }
+
+  /* A row gains a first column; the box sits on the title's first line. */
+  main.has-basket .press-file { grid-template-columns: 18px 24px minmax(0, 1fr) 7.5rem auto; }
+  .press-file > .press-pick { padding-top: 3px; }
+
+  /* A tile's box sits on the picture's corner, on a plate of paper so it reads over any frame;
+     a ticked tile also says so on the picture itself. */
+  .press-photo,
+  .press-graphic,
+  .press-logo-tile { position: relative; }
+  .press-pick--tile { position: absolute; top: 8px; left: 8px; z-index: 1; padding: 7px; background: rgba(244, 241, 233, .92); }
+  .press-photo:has(.press-pick-box:checked) .press-photo-open :global(img),
+  .press-graphic:has(.press-pick-box:checked) .press-graphic-open :global(img),
+  .press-logo-tile:has(.press-pick-box:checked) .press-logo-swatch { outline: 2px solid var(--candle); outline-offset: 3px; }
+
+  /* The bar. Night, not gold: gold is spent once, on the head's plate. */
+  .press-basket { position: sticky; bottom: 0; z-index: 48; padding: 14px max(28px, 5vw) calc(env(safe-area-inset-bottom, 0px) + 14px); background: rgba(16, 15, 13, .96); border-top: 1px solid rgba(198, 164, 91, .4); color: var(--paper); animation: press-basket-in .45s var(--ease); }
+  .press-basket[hidden] { display: none; }
+  .press-basket-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+  .press-basket-sum { margin: 0 auto 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; }
+  .press-basket-count { font-family: var(--serif); font-size: clamp(17px, 1.4vw, 20px); line-height: 1.3; color: var(--paper); }
+  .press-basket-size { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: rgba(244, 241, 233, .62); font-variant-numeric: lining-nums; }
+  .press-basket-get { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 11px 18px; border: 1px solid var(--candle); background: transparent; color: var(--candle); font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; line-height: 1; cursor: pointer; transition: background-color .35s var(--ease), color .35s var(--ease); }
+  .press-basket-get:hover { background: rgba(198, 164, 91, .14); color: var(--paper); }
+  .press-basket-arrow { font-family: var(--serif); font-size: 16px; letter-spacing: 0; }
+  .press-basket-clear { padding: 11px 4px; border: 0; background: transparent; color: rgba(244, 241, 233, .62); font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; line-height: 1; cursor: pointer; transition: color .35s var(--ease); }
+  .press-basket-clear:hover { color: var(--paper); }
+  .press-basket button:focus-visible { outline: 1px solid var(--candle); outline-offset: 3px; }
+  .press-basket button:disabled { opacity: .5; cursor: progress; }
+  @keyframes press-basket-in { from { transform: translateY(100%); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .press-basket { animation: none; } }
+
+  /* The votive scroll-top mark (base.css) shares the bottom corner. While the bar holds that
+     edge the mark yields, as it yields to the menu and the vault. */
+  :global(body.page-press:has(.press-basket:not([hidden])) .scroll-top) { opacity: 0; pointer-events: none; }
+
+  @media (max-width: 760px) {
+    main.has-basket .press-file { grid-template-columns: 18px 22px minmax(0, 1fr); }
+    main.has-basket .press-file-meta,
+    main.has-basket .press-file-actions { grid-column: 3; }
+  }
+  @media (max-width: 560px) {
+    .press-basket-sum { flex: 1 1 100%; }
+    .press-basket-get { flex: 1 1 auto; }
+  }
 
   /* No heading press here, deliberately. This page carries no `.reveal` at all, so there is no
      trigger class for the ink register to hand a press — see styles/registers.css. Whether

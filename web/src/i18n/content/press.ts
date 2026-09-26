@@ -380,6 +380,25 @@ export interface PressChrome {
   readonly collapse: string;
   /** Size units. French writes "Mo", and the decimal separator follows the locale. */
   readonly units: { readonly kB: string; readonly MB: string };
+  /**
+   * The composer (scripts/press-basket.ts). A file's checkbox is named by `selectAria` with
+   * `{file}` its title; each group's toggle shows `selectAll` and is named by `selectAllAria` with
+   * `{group}` its heading, because five toggles reading the same two words are five identical
+   * controls to a screen reader.
+   */
+  readonly selectAll: string;
+  readonly selectAllAria: string;
+  readonly selectAria: string;
+  /** The bar's landmark name. */
+  readonly basketAria: string;
+  /** The bar's count: `{files}` is the counted noun below, "Wybrano 3 pliki". */
+  readonly basketCount: string;
+  readonly files: CountForms;
+  readonly basketDownload: string;
+  readonly basketClear: string;
+  /** While the files arrive: `{percent}` is formatted by the locale ("35%", "35 %"). */
+  readonly basketPreparing: string;
+  readonly basketFailed: string;
   /** The logotype's three files. */
   readonly logoSvg: string;
   readonly logoOnLight: string;
@@ -427,6 +446,16 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     expand: "Pokaż tekst",
     collapse: "Zwiń",
     units: { kB: "kB", MB: "MB" },
+    selectAll: "Zaznacz wszystkie",
+    selectAllAria: "Zaznacz wszystkie: {group}",
+    selectAria: "Wybierz: {file}",
+    basketAria: "Wybrane materiały",
+    basketCount: "Wybrano {files}",
+    files: { one: "plik", few: "pliki", many: "plików" },
+    basketDownload: "Pobierz wybrane",
+    basketClear: "Wyczyść",
+    basketPreparing: "Pobieranie… {percent}",
+    basketFailed: "Nie udało się pobrać plików. Spróbuj jeszcze raz.",
     logoSvg: "Wzorzec wektorowy",
     logoOnLight: "Na jasne tło",
     logoOnDark: "Na ciemne tło",
@@ -464,6 +493,16 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     expand: "Show the text",
     collapse: "Hide",
     units: { kB: "kB", MB: "MB" },
+    selectAll: "Select all",
+    selectAllAria: "Select all: {group}",
+    selectAria: "Select: {file}",
+    basketAria: "Selected materials",
+    basketCount: "{files} selected",
+    files: { one: "file", many: "files" },
+    basketDownload: "Download selected",
+    basketClear: "Clear",
+    basketPreparing: "Downloading… {percent}",
+    basketFailed: "The files could not be downloaded. Please try again.",
     logoSvg: "Vector master",
     logoOnLight: "For light backgrounds",
     logoOnDark: "For dark backgrounds",
@@ -501,6 +540,16 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     expand: "Afficher le texte",
     collapse: "Masquer",
     units: { kB: "ko", MB: "Mo" },
+    selectAll: "Tout sélectionner",
+    selectAllAria: "Tout sélectionner : {group}",
+    selectAria: "Sélectionner : {file}",
+    basketAria: "Documents sélectionnés",
+    basketCount: "Sélection : {files}",
+    files: { one: "fichier", many: "fichiers" },
+    basketDownload: "Télécharger la sélection",
+    basketClear: "Effacer",
+    basketPreparing: "Téléchargement… {percent}",
+    basketFailed: "Le téléchargement a échoué. Veuillez réessayer.",
     logoSvg: "Original vectoriel",
     logoOnLight: "Sur fond clair",
     logoOnDark: "Sur fond sombre",

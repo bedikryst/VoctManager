@@ -19,6 +19,10 @@
  *  EVERY URL CARRIES `?v=`, derived from the moment the pack was cut, so a regenerated ZIP or a
  *  re-cropped photo is never served from a cache that still holds the last one.
  *
+ *  THE COMPOSER READS THE SAME INDEX. `basketManifest` projects it into the JSON the page hands
+ *  `scripts/press-basket.ts`, so the archive a reader builds from ticked boxes takes its paths,
+ *  sizes and URLs from the file the generator wrote, exactly as the page's own links do.
+ *
  *  THE PACK IS NOT IN GIT (`web/.gitignore`): tens of megabytes of photographs, built where the
  *  originals are and uploaded to the build host by hand.
  * @architecture Astro islands 2026
@@ -108,24 +112,65 @@ function listedFiles(index: PressIndex): PressFile[] {
   ];
 }
 
+// ── The composer's manifest ───────────────────────────────────────────────────────────────────
+
+/** One file the composer can put in an archive: its path there, its size, and where to fetch it. */
+export interface BasketFile {
+  /** The path inside `public/press/`, which is also its path inside komplet. */
+  readonly path: string;
+  readonly bytes: number;
+  readonly href: string;
+}
+
+/** What the composer prints about a selection, resolved at build in the page's locale. */
+export interface BasketText {
+  readonly htmlLang: string;
+  readonly units: { readonly kB: string; readonly MB: string };
+  /** Entry `n − 1` is the bar's line for `n` ticked boxes; one entry per box on the page. */
+  readonly counts: readonly string[];
+  /**
+   * The fetch under way; `{percent}` is the share of the selection's bytes that has arrived, as
+   * the locale writes a percentage. Bytes rather than files: one print poster outweighs every
+   * text in the kit together.
+   */
+  readonly preparing: string;
+  readonly failed: string;
+}
+
 /**
- * A file size as a reader decides whether to download it on a train: kilobytes under one
- * megabyte, megabytes with one decimal below ten and none above. The number follows the locale's
- * decimal mark and the unit is the locale's own ("Mo" in French).
+ * Everything `scripts/press-basket.ts` knows, serialised into the page. A checkbox carries only
+ * its KEY into `items`: which files it stands for, how large they are and where they live come
+ * from the index, never from markup that could drift from it.
  */
-export function formatBytes(
-  bytes: number,
-  htmlLang: string,
-  units: { readonly kB: string; readonly MB: string },
-): string {
-  if (bytes < 1_000_000) {
-    return `${Math.max(1, Math.round(bytes / 1000))} ${units.kB}`;
-  }
-  const mb = bytes / 1_000_000;
-  const digits = mb < 10 ? 1 : 0;
-  const value = new Intl.NumberFormat(htmlLang, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  }).format(mb);
-  return `${value} ${units.MB}`;
+export interface BasketManifest {
+  /** When the pack was cut. Every entry of a composed archive carries it, as komplet's do. */
+  readonly cutAt: string;
+  /** In every composed archive, first: the usage terms and every credit travel with any file. */
+  readonly readme: BasketFile;
+  /** Served as it is when every box is ticked, rather than rebuilt in the browser. */
+  readonly komplet: BasketFile;
+  readonly items: Readonly<Record<string, readonly BasketFile[]>>;
+  readonly text: BasketText;
+}
+
+/** The composer's manifest for the checkboxes a page renders, keyed as the page keys them. */
+export function basketManifest(
+  pack: PressPack,
+  items: Readonly<Record<string, readonly PressFile[]>>,
+  text: BasketText,
+): BasketManifest {
+  const file = (entry: PressFile): BasketFile => ({
+    path: entry.path,
+    bytes: entry.bytes,
+    href: pack.href(entry),
+  });
+  return {
+    cutAt: pack.index.generatedAt,
+    readme: file(pack.index.readme),
+    komplet: file(pack.index.archives.komplet),
+    items: Object.fromEntries(
+      Object.entries(items).map(([key, files]) => [key, files.map(file)]),
+    ),
+    text,
+  };
 }
