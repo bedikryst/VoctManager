@@ -681,10 +681,17 @@ const jsonLd =
             )}
 
             <dl class="kd-ianua-facts reveal" data-d="2">
-              {whenLine && (
+              {(whenLine || c.facebookEvent) && (
                 <div class="kd-ianua-fact">
                   <dt>{ui.ianua.when}</dt>
-                  <dd>{whenLine}</dd>
+                  <dd>
+                    {whenLine}
+                    {c.facebookEvent && (
+                      <span class="kd-ianua-aside">
+                        <a href={c.facebookEvent} target="_blank" rel="noopener noreferrer">{walkUi.facebookEvent}</a>
+                      </span>
+                    )}
+                  </dd>
                 </div>
               )}
               <div class="kd-ianua-fact">
@@ -707,26 +714,11 @@ const jsonLd =
                   <dd>
                     {walkUi.freeAdmission}
                     <span class="kd-ianua-gift">{ui.ianua.gift}</span>
-                    <a class="kd-ianua-give micro" href={hrefDonate} data-vault-open="100">{ui.ianua.give}</a>
+                    <a class="kd-ianua-give" href={hrefDonate} data-vault-open="100">{ui.ianua.give}</a>
                   </dd>
                 </div>
               )}
             </dl>
-
-            {/* The reveal rides the wrapper, as it does on the festival block: the register owns
-                `transition` on whatever it is granted to, and the link needs its own for the rule. */}
-            {c.facebookEvent && (
-              <p class="kd-ianua-event reveal" data-d="3">
-                <a
-                  class="kd-ianua-event-link micro"
-                  href={c.facebookEvent}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {walkUi.facebookEvent}
-                </a>
-              </p>
-            )}
 
             {c.festival && (
               <div class="kd-ianua-festival reveal" data-d="3">
@@ -1776,20 +1768,24 @@ const jsonLd =
   .kd-ianua-fact dt { font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: rgba(244,241,233,.5); }
   .kd-ianua-fact dd { margin: 0; display: grid; gap: 3px; font-family: var(--sans); font-weight: 300; font-size: clamp(15px, 1.3vw, 16.5px); line-height: 1.5; color: rgba(244,241,233,.92); }
   .kd-ianua-room { color: rgba(244,241,233,.66); }
-  .kd-ianua-address { font-size: clamp(13.5px, 1.15vw, 14.5px); color: rgba(244,241,233,.58); }
-  .kd-ianua-address a { color: inherit; border-bottom: 1px solid rgba(244,241,233,.24); padding-bottom: 1px; transition: color .3s var(--ease, ease), border-color .3s var(--ease, ease); }
-  .kd-ianua-address a:hover { color: var(--candle); border-bottom-color: var(--candle); }
+  /* A fact's way out of the site — the map under the address, the Facebook event under the date —
+     is a quiet sans line under its value, so each sits with the fact it serves and none of them
+     competes with the one action this band asks for. */
+  .kd-ianua-address, .kd-ianua-aside { font-size: clamp(13.5px, 1.15vw, 14.5px); color: rgba(244,241,233,.58); }
+  .kd-ianua-address a, .kd-ianua-aside a { color: inherit; border-bottom: 1px solid rgba(244,241,233,.24); padding-bottom: 1px; transition: color .3s var(--ease, ease), border-color .3s var(--ease, ease); }
+  .kd-ianua-address a:hover, .kd-ianua-aside a:hover { color: var(--candle); border-bottom-color: var(--candle); }
   /* The gift line reads as the door's own annotation, in the room line's voice. */
   .kd-ianua-gift { color: rgba(244,241,233,.66); }
-  /* Every door in this band shares one voice — the mono rubric in candle, a hairline that inks on
-     hover — so a reader learns once what a door looks like here; the ↗ in the label is what says
-     one leaves the site. The event line is pulled up towards the facts it belongs to, short of the
-     body's own gap. The gift door sits inside a grid `dd`, where it would stretch to the column and
-     draw its hairline across the full measure, hence `justify-self`. */
-  .kd-ianua-event { margin: calc(-1 * clamp(6px, .8vw, 10px)) 0 0; }
-  .kd-ianua-event-link, .kd-ianua-festival-link, .kd-ianua-give { display: inline-block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color .3s var(--ease, ease); }
-  .kd-ianua-event-link:hover, .kd-ianua-festival-link:hover, .kd-ianua-give:hover { border-bottom-color: var(--candle); }
-  .kd-ianua-give { justify-self: start; margin-top: 8px; }
+  /* The band's one call to act, so it is the only filled shape in it: the house's gold button
+     (/koncerty and /o-nas `.btn-gold`), turned for the dark ground — on hover it empties to a
+     candle outline, since the house's ink-on-transparent state would vanish on `--night`. Mono
+     ships only 300 and 400, so the weight is pinned rather than left to a label utility's 600.
+     `justify-self` keeps it from stretching across the grid `dd`. */
+  .kd-ianua-give { justify-self: start; margin-top: 12px; padding: 14px 26px; font-family: var(--mono); font-size: 11px; font-weight: 400; line-height: 1; letter-spacing: .18em; text-transform: uppercase; color: var(--ink); background: var(--candle); border: 1px solid var(--candle); transition: background-color .4s var(--ease, ease), color .4s var(--ease, ease); }
+  .kd-ianua-give:hover { background: transparent; color: var(--candle); }
+  /* The festival's own site closes its block in the rubric voice, behind the rule below. */
+  .kd-ianua-festival-link { display: inline-block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color .3s var(--ease, ease); }
+  .kd-ianua-festival-link:hover { border-bottom-color: var(--candle); }
   /* The widest frame — so it closes the band, behind a rule that says "this is somebody else's
      event" without a sentence having to. */
   .kd-ianua-festival { padding-top: clamp(20px, 2.4vw, 28px); border-top: 1px solid rgba(244,241,233,.14); }
