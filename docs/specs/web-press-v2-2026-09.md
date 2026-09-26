@@ -277,6 +277,12 @@ How it is built:
 
 Drafted by us, approved by Ania before deploy.
 
+Narrowed 2026-09-26: Ania approves only what reaches editors under the ensemble's name (the
+release, both announcements, the post and hashtags), the photo usage terms, and the gold mark;
+Florent approves his quote. The page copy, photo captions, the short and medium biograms and the
+logo rules are ours. She gets them as ONE Word file with the questions first, built from the pack
+itself (a one-off script, not in the repo); no links into the repo.
+
 - **Kit texts for Pochwała Stworzenia:**
   - the release: ~2500–3500 characters, with a quote from Florent taken from §9 of the concert
     spec;
