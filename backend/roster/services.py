@@ -283,16 +283,22 @@ class ArtistHRService:
         """
         Provisions a new Artist entity within the Roster domain.
         Delegates core identity creation and notification to the IAM Service.
+
+        A member added `without_email` gets the same account and roster row as
+        anyone else — castable, priced, previewable — but no invitation, so no
+        send time is stamped either.
         """
+        email = dto.email or ""
+
         # Ensure domain-level uniqueness (preventing soft-delete ghost collisions)
-        if Artist.objects.filter(email__iexact=dto.email, is_deleted=False).exists():
-             raise ArtistProvisioningException(f"Active artist with email {dto.email} already exists.")
-             
+        if email and Artist.objects.filter(email__iexact=email, is_deleted=False).exists():
+             raise ArtistProvisioningException(f"Active artist with email {email} already exists.")
+
         try:
             with transaction.atomic():
                 # 1. Delegate Identity Management to Core Bounded Context
                 user = UserIdentityService.provision_user_account(
-                    email=dto.email,
+                    email=email,
                     first_name=dto.first_name,
                     last_name=dto.last_name,
                     language=getattr(dto, 'language', 'en'),
@@ -300,9 +306,11 @@ class ArtistHRService:
                     salutation=getattr(dto, 'salutation', 'N'),
                 )
 
-                # 2. Create Roster-specific entity. `provision_user_account` has
-                #    already queued the first activation invite, so stamp the send
-                #    time now — the roster can show when the singer was invited.
+                # 2. Create Roster-specific entity. With an address,
+                #    `provision_user_account` has already queued the first
+                #    activation invite, so stamp the send time now — the roster
+                #    can show when the singer was invited. Without one nothing was
+                #    sent and the stamp stays empty.
                 #    Names and e-mail are seeded from the same DTO the account was
                 #    built from; from here on they are a projection of it, and the
                 #    vocative is not copied at all — it lives on the profile.
@@ -310,22 +318,22 @@ class ArtistHRService:
                     user=user,
                     first_name=dto.first_name,
                     last_name=dto.last_name,
-                    email=dto.email,
+                    email=email,
                     voice_type=dto.voice_type,
                     instrument=dto.instrument or "",
                     phone_number=dto.phone_number or "",
                     sight_reading_skill=dto.sight_reading_skill,
                     vocal_range_bottom=dto.vocal_range_bottom or "",
                     vocal_range_top=dto.vocal_range_top or "",
-                    activation_email_sent_at=timezone.now(),
+                    activation_email_sent_at=timezone.now() if email else None,
                 )
 
-                logger.info(f"Successfully provisioned artist HR profile for: {dto.email}")
+                logger.info(f"Successfully provisioned artist HR profile for: {email or artist.pk}")
                 return artist
-                
+
         except EmailAlreadyInUseException:
             # Catch Core exception and map it to Roster Domain exception
-            raise ArtistProvisioningException(f"Account with email {dto.email} already exists.")
+            raise ArtistProvisioningException(f"Account with email {email} already exists.")
     
     @staticmethod
     def resend_activation(artist: Artist) -> None:
@@ -338,6 +346,12 @@ class ArtistHRService:
         if user is None:
             raise ActivationResendException(
                 "This artist has no linked account to activate."
+            )
+        if not user.email:
+            # Added without an address: there is no mailbox to send to. The
+            # invitation starts when a manager adds one (`_rewrite_email`).
+            raise ActivationResendException(
+                "This artist has no e-mail address to send an invitation to."
             )
         UserIdentityService.resend_activation_email(user)
         # Only stamp once the invite is actually (re)queued — the call above raises
@@ -439,7 +453,13 @@ class ArtistHRService:
 
         Only reachable before activation. The old invitation link dies on its own
         —  the signed token hashes the account's e-mail — so the correction has
-        to re-issue the invite, or the member is simply left without one.
+        to re-issue the invite, or the member is simply left without one. The
+        same path gives a member added without an address their first one, and
+        with it their first invitation.
+
+        A blank value is ignored rather than written: an address is never taken
+        away here (the serializer refuses it), so a blank can only be a member
+        who never had one, resubmitting nothing.
         """
         new_email = (raw_email or "").strip()
         if not new_email or new_email.casefold() == (artist.email or "").strip().casefold():

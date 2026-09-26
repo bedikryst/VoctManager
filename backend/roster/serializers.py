@@ -170,6 +170,16 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
             'user', 'is_active', 'activation_email_sent_at',
         )
 
+    def validate_email(self, value: str) -> str:
+        """An address can be corrected but never taken away. Being without one is
+        decided when a member is added (`ArtistCreateDTO.without_email`); letting
+        a cleared field decide it later would cut somebody off from every
+        notification because an input was left empty."""
+        value = (value or "").strip()
+        if not value and self.instance is not None and self.instance.email:
+            raise serializers.ValidationError("An e-mail address cannot be removed.")
+        return value
+
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         """The instrument rule on the PATCH path. A partial update may carry
         either field alone, so the missing one is read from the row; the create

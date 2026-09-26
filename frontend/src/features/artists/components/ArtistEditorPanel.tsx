@@ -83,8 +83,14 @@ export default function ArtistEditorPanel({
   // server refuses to move it from here. Lock the field rather than let a
   // manager type a change that can only come back rejected.
   const isEmailLocked = Boolean(artist?.id && artist.account_activated);
+  const isCreating = !artist?.id;
 
   const firstNameValue = useWatch({ control: form.control, name: "first_name" });
+  const withoutEmail = useWatch({ control: form.control, name: "without_email" });
+  // Creating with the waiver ticked: the field is emptied and closed, so the
+  // form cannot carry an address and the waiver at once. On edit the waiver is
+  // never shown — a member without an address may gain one, which invites them.
+  const isEmailWaived = isCreating && withoutEmail;
   const languageValue = useWatch({ control: form.control, name: "language" });
   const voiceValue = useWatch({ control: form.control, name: "voice_type" });
   const isPlayer = isInstrumentalist(voiceValue as VoiceType);
@@ -92,7 +98,7 @@ export default function ArtistEditorPanel({
 
   // Suggest the form of address from the voice part when creating (manager can
   // still override). Never runs on edit — that field is disabled there.
-  const { setValue } = form;
+  const { setValue, clearErrors } = form;
   useEffect(() => {
     if (!artist && voiceValue) {
       setValue("salutation", voiceToSalutation(voiceValue));
@@ -250,9 +256,21 @@ export default function ArtistEditorPanel({
                       <div>
                         <Input
                           type="email"
-                          label={t("artists.editor.email", "E-mail *")}
+                          label={
+                            withoutEmail
+                              ? t("artists.editor.email_optional", "E-mail")
+                              : t("artists.editor.email", "E-mail *")
+                          }
                           {...form.register("email")}
-                          disabled={isSubmitting || isEmailLocked}
+                          placeholder={
+                            isEmailWaived
+                              ? t(
+                                  "artists.editor.email_waived_placeholder",
+                                  "Bez adresu e-mail",
+                                )
+                              : undefined
+                          }
+                          disabled={isSubmitting || isEmailLocked || isEmailWaived}
                           error={errorText(errors.email?.message)}
                         />
                         {isEmailLocked && (
@@ -260,6 +278,14 @@ export default function ArtistEditorPanel({
                             {t(
                               "artists.editor.email_locked",
                               "Adres logowania — zmienić może go tylko właściciel konta, w swoich ustawieniach.",
+                            )}
+                          </FieldHint>
+                        )}
+                        {!isCreating && withoutEmail && (
+                          <FieldHint>
+                            {t(
+                              "artists.editor.email_add_hint",
+                              "Ta osoba została dodana bez adresu. Wpisanie go wyśle jej zaproszenie do aplikacji.",
                             )}
                           </FieldHint>
                         )}
@@ -271,6 +297,50 @@ export default function ArtistEditorPanel({
                         disabled={isSubmitting}
                       />
                     </div>
+
+                    {/* The waiver is a box of its own rather than an empty
+                        field: leaving the address blank is refused, so a member
+                        ends up outside the app only because somebody said so. */}
+                    {isCreating && (
+                      <label className="flex cursor-pointer items-start gap-4 rounded-control border border-hairline-strong bg-ethereal-alabaster/70 p-4 shadow-glass-ethereal transition-colors hover:border-ethereal-gold/40">
+                        <Controller
+                          control={form.control}
+                          name="without_email"
+                          render={({ field }) => (
+                            <Checkbox
+                              size="md"
+                              checked={Boolean(field.value)}
+                              onChange={(event) => {
+                                const waived = event.target.checked;
+                                field.onChange(waived);
+                                if (waived) {
+                                  setValue("email", "", { shouldDirty: true });
+                                  clearErrors("email");
+                                }
+                              }}
+                              onBlur={field.onBlur}
+                              name={field.name}
+                              disabled={isSubmitting}
+                              className="mt-0.5"
+                            />
+                          )}
+                        />
+                        <div>
+                          <Text size="sm" weight="bold">
+                            {t(
+                              "artists.editor.without_email_title",
+                              "Dodaj bez adresu e-mail",
+                            )}
+                          </Text>
+                          <Text as="p" size="xs" color="muted" className="mt-1">
+                            {t(
+                              "artists.editor.without_email_desc",
+                              "Tylko dla osoby, która nie chce korzystać z aplikacji. Nie dostanie zaproszenia ani powiadomień, więc plan, zmiany i nuty trzeba jej przekazywać osobiście. Adres można dopisać później, wtedy wyjdzie zaproszenie.",
+                            )}
+                          </Text>
+                        </div>
+                      </label>
+                    )}
 
                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                       <div>

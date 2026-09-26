@@ -54,6 +54,7 @@ export const useArtistForm = (
       first_name_vocative: artist?.first_name_vocative || "",
       last_name: artist?.last_name || defaultNames.last,
       email: artist?.email || "",
+      without_email: artist ? artist.email === "" : false,
       phone_number: artist?.phone_number || "",
       voice_type:
         artist?.voice_type ||
@@ -82,7 +83,8 @@ export const useArtistForm = (
         first_name: artist.first_name,
         first_name_vocative: artist.first_name_vocative || "",
         last_name: artist.last_name,
-        email: artist.email,
+        email: artist.email ?? "",
+        without_email: artist.email === "",
         phone_number: artist.phone_number || "",
         voice_type: artist.voice_type,
         instrument: artist.instrument || "",
@@ -101,6 +103,7 @@ export const useArtistForm = (
         first_name_vocative: "",
         last_name: defaultNames.last,
         email: "",
+        without_email: false,
         phone_number: "",
         voice_type: voiceTypes.length > 0 ? voiceTypes[0].value : "SOP",
         instrument: "",
@@ -127,7 +130,9 @@ export const useArtistForm = (
       first_name: data.first_name.trim(),
       first_name_vocative: data.first_name_vocative?.trim() || undefined,
       last_name: data.last_name.trim(),
-      email: data.email.trim(),
+      // Omitted rather than sent blank: the schema only lets it be empty for a
+      // member without an address, and on edit an absent field changes nothing.
+      email: data.email.trim() || undefined,
       voice_type: data.voice_type,
       // Blank for a singer rather than absent: a PATCH that stays silent on
       // the field would leave a stale instrument on a row whose voice type
@@ -172,12 +177,21 @@ export const useArtistForm = (
           { id: toastId },
         );
       } else {
-        await createMutation.mutateAsync(basePayload);
+        await createMutation.mutateAsync(
+          data.without_email
+            ? { ...basePayload, without_email: true }
+            : basePayload,
+        );
         toast.success(
-          t(
-            "artists.form.toast.create_success",
-            "Dodano artystę. Konto wygenerowane!",
-          ),
+          data.without_email
+            ? t(
+                "artists.form.toast.create_success_without_email",
+                "Dodano artystę bez adresu e-mail. Nie wysłano zaproszenia.",
+              )
+            : t(
+                "artists.form.toast.create_success",
+                "Dodano artystę. Konto wygenerowane!",
+              ),
           { id: toastId },
         );
       }

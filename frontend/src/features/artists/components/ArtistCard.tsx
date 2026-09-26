@@ -7,7 +7,9 @@
  *
  * An unanswered invitation is stated once, in the panel that also carries the
  * resend — the avatar used to wear a second mark for the same fact, and a sage
- * one for the ordinary case of an account that works.
+ * one for the ordinary case of an account that works. A member added without
+ * an address shows that fact where the address would be, in the muted voice
+ * of a missing phone: it was a decision, not something to fix.
  * @architecture Enterprise SaaS 2026
  * @module features/artists/components/ArtistCard
  */
@@ -19,6 +21,7 @@ import {
   ChevronRight,
   Mail,
   MailWarning,
+  MailX,
   MessageSquare,
   Music2,
   Phone,
@@ -44,6 +47,7 @@ import {
   Text,
 } from "@/shared/ui/primitives/typography";
 import { getSectionPresentation } from "../constants/voiceSections";
+import { isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
 import { SightReadingStars } from "./SightReadingStars";
 
 interface ArtistCardProps {
@@ -87,9 +91,8 @@ export const ArtistCard = React.memo(
     const section = getSectionPresentation(artist.voice_type);
     const isActive = artist.is_active;
     const hasAccount = Boolean(artist.user);
-    // Activation status is manager-only (undefined otherwise): treat unknown as
-    // neither state so we never raise a false "pending" flag on a partial DTO.
-    const accountPending = hasAccount && artist.account_activated === false;
+    const accountPending = isAwaitingActivation(artist);
+    const withoutEmail = isWithoutEmail(artist);
     // Past its ~3-day validity window: the last link is dead, a resend is required.
     const linkExpired = accountPending && artist.activation_link_expired === true;
     const inviteSentAt = artist.activation_email_sent_at
@@ -262,6 +265,20 @@ export const ArtistCard = React.memo(
                 {artist.email}
               </Text>
             </a>
+          )}
+          {withoutEmail && (
+            <span
+              className="inline-flex min-w-0 items-center gap-2 text-ethereal-graphite/50"
+              title={t(
+                "artists.card.no_email_title",
+                "Dodano bez adresu e-mail. Ta osoba nie ma dostępu do aplikacji i nie dostaje powiadomień, więc wszystko trzeba jej przekazywać osobiście.",
+              )}
+            >
+              <MailX size={14} className="shrink-0" aria-hidden="true" />
+              <Text size="sm" color="muted" className="italic" truncate>
+                {t("artists.card.no_email", "Bez e-maila")}
+              </Text>
+            </span>
           )}
           {artist.phone_number ? (
             <a

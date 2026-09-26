@@ -1002,6 +1002,8 @@
       "link_expired": "Link wygasł",
       "message": "Napisz",
       "message_title": "Napisz wiadomość",
+      "no_email": "Bez e-maila",
+      "no_email_title": "Dodano bez adresu e-mail. Ta osoba nie ma dostępu do aplikacji i nie dostaje powiadomień, więc wszystko trzeba jej przekazywać osobiście.",
       "no_phone": "Brak telefonu",
       "open_profile_aria": "Otwórz profil: {{name}}",
       "pending_activation": "Nie aktywowano",
@@ -1062,6 +1064,8 @@
       "link_expired_desc": "Link aktywacyjny stracił ważność. Wyślij zaproszenie ponownie, aby ten artysta mógł aktywować konto.",
       "most_sung_lines": "Najczęściej śpiewane głosy",
       "no_casting": "Brak przypisania do utworów",
+      "no_email_title": "Bez adresu e-mail",
+      "no_email_desc": "Ta osoba nie ma dostępu do aplikacji i nie dostaje żadnych powiadomień. Plan, zmiany i nuty trzeba jej przekazywać osobiście; ikona oka u góry pokazuje, co ma w planie. Wpisanie adresu w edycji profilu wyśle jej zaproszenie.",
       "pending_activation_desc": "Zaproszenie zostało wysłane, ale ten artysta nie aktywował jeszcze konta na platformie.",
       "upcoming": "Nadchodzące",
       "leadership": {
@@ -1096,6 +1100,11 @@
       "create_artist": "Utwórz Artystę",
       "email": "E-mail *",
       "email_locked": "Adres logowania — zmienić może go tylko właściciel konta, w swoich ustawieniach.",
+      "email_optional": "E-mail",
+      "email_waived_placeholder": "Bez adresu e-mail",
+      "email_add_hint": "Ta osoba została dodana bez adresu. Wpisanie go wyśle jej zaproszenie do aplikacji.",
+      "without_email_title": "Dodaj bez adresu e-mail",
+      "without_email_desc": "Tylko dla osoby, która nie chce korzystać z aplikacji. Nie dostanie zaproszenia ani powiadomień, więc plan, zmiany i nuty trzeba jej przekazywać osobiście. Adres można dopisać później, wtedy wyjdzie zaproszenie.",
       "first_name": "Imię *",
       "first_name_vocative": "Wołacz",
       "first_name_vocative_hint": "Forma używana w powitaniach, np. w mailach.",
@@ -1142,6 +1151,7 @@
     "form": {
       "toast": {
         "create_success": "Dodano artystę. Konto wygenerowane!",
+        "create_success_without_email": "Dodano artystę bez adresu e-mail. Nie wysłano zaproszenia.",
         "creating": "Tworzenie konta artysty...",
         "email_taken": "Ten adres e-mail jest już zajęty.",
         "save_error_desc": "Sprawdź poprawność danych i spróbuj ponownie.",

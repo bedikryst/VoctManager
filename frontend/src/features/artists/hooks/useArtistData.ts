@@ -25,6 +25,7 @@ import {
   sectionOrder,
   type SectionKey,
 } from "../constants/voiceSections";
+import { isAwaitingActivation } from "../lib/accountState";
 
 export type RosterSort = "name" | "section" | "skill";
 export type RosterView = "grid" | "list";
@@ -119,16 +120,10 @@ export const useArtistData = () => {
     return { ...counts, Total: activeArtists.length };
   }, [activeArtists]);
 
-  // Singers still owing an activation: they have a linked account (invited) but
-  // never set a password. The `Boolean(artist.user)` guard is what keeps this in
-  // step with every per-card render — the serializer reports `account_activated
-  // === false` for a *detached* (GDPR-erased) account too, which is the crimson
-  // "detached" state, not a pending invite, so we must exclude it here as well.
+  // Singers still owing an activation — the same predicate every card and row
+  // renders, so the count and the chips on screen always agree.
   const accountPendingCount = useMemo(
-    () =>
-      activeArtists.filter(
-        (artist) => Boolean(artist.user) && artist.account_activated === false,
-      ).length,
+    () => activeArtists.filter(isAwaitingActivation).length,
     [activeArtists],
   );
 

@@ -149,8 +149,12 @@ class Artist(EnterpriseBaseModel):
     first_name = models.CharField(max_length=150, verbose_name=_("First Name"))
     last_name = models.CharField(max_length=150, verbose_name=_("Last Name"))
 
-    # Removed standard unique=True to prevent SoftDelete ghost conflicts. Handled in Meta.
-    email = models.EmailField(verbose_name=_("Email"))
+    # Blank only for a member added deliberately without an address
+    # (`ArtistCreateDTO.without_email`): no invitation, no notification e-mail,
+    # everything passed on by people. The roster refuses to clear an address
+    # once one exists, so a blank here is always that decision, never an edit.
+    # Uniqueness lives in Meta, scoped to live rows with an address.
+    email = models.EmailField(blank=True, verbose_name=_("Email"))
     
     # Width matches core.UserProfile.phone_number: the member's own settings write
     # through to this field via the `user_pii_updated` signal, which bypasses
@@ -193,10 +197,13 @@ class Artist(EnterpriseBaseModel):
         verbose_name = _("Artist")
         verbose_name_plural = _("Artists")
         constraints = [
-            # Enterprise Solution: Ensures email is unique ONLY among non-deleted artists
+            # Unique among live rows only, so an archived ghost never blocks a
+            # re-invitation. Blank addresses are excluded: two members without
+            # one are not a collision, and the same condition is what keeps
+            # DRF's derived UniqueValidator from refusing the second of them.
             models.UniqueConstraint(
                 fields=['email'],
-                condition=models.Q(is_deleted=False),
+                condition=models.Q(is_deleted=False) & ~models.Q(email=''),
                 name='unique_active_artist_email'
             )
         ]

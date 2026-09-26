@@ -983,6 +983,8 @@
       "link_expired": "Lien expiré",
       "message": "Écrire",
       "message_title": "Écrire un message",
+      "no_email": "Sans e-mail",
+      "no_email_title": "Ajouté sans adresse e-mail. Cette personne n'a pas accès à l'application et ne reçoit aucune notification : tout doit lui être transmis en personne.",
       "no_phone": "Pas de téléphone",
       "open_profile_aria": "Ouvrir le profil : {{name}}",
       "pending_activation": "Non activé",
@@ -1043,6 +1045,8 @@
       "link_expired_desc": "Le lien d'activation a expiré. Renvoyez l'invitation pour que cet artiste puisse activer son compte.",
       "most_sung_lines": "Pupitres les plus chantés",
       "no_casting": "Aucune affectation à des pièces",
+      "no_email_title": "Sans adresse e-mail",
+      "no_email_desc": "Cette personne n'a pas accès à l'application et ne reçoit aucune notification. Le planning, les changements et les partitions doivent lui être transmis en personne ; l'icône en forme d'œil, en haut, montre ce qui figure à son planning. Saisir une adresse dans l'édition du profil lui enverra une invitation.",
       "pending_activation_desc": "L'invitation a été envoyée, mais cet artiste n'a pas encore activé son compte sur la plateforme.",
       "upcoming": "À venir",
       "leadership": {
@@ -1077,6 +1081,11 @@
       "create_artist": "Créer l'artiste",
       "email": "E-mail *",
       "email_locked": "Adresse de connexion — seul le titulaire du compte peut la modifier, dans ses paramètres.",
+      "email_optional": "E-mail",
+      "email_waived_placeholder": "Sans adresse e-mail",
+      "email_add_hint": "Cette personne a été ajoutée sans adresse. En saisir une lui enverra une invitation à l'application.",
+      "without_email_title": "Ajouter sans adresse e-mail",
+      "without_email_desc": "Uniquement pour une personne qui ne souhaite pas utiliser l'application. Elle ne recevra ni invitation ni notification : le planning, les changements et les partitions devront lui être transmis en personne. Une adresse peut être ajoutée plus tard, l'invitation partira alors.",
       "first_name": "Prénom *",
       "first_name_vocative": "Cas vocatif du prénom",
       "first_name_vocative_hint": "Forme utilisée dans les salutations, ex. dans les e-mails.",
@@ -1123,6 +1132,7 @@
     "form": {
       "toast": {
         "create_success": "Artiste ajouté. Compte généré !",
+        "create_success_without_email": "Artiste ajouté sans adresse e-mail. Aucune invitation n'a été envoyée.",
         "creating": "Création du compte artiste...",
         "email_taken": "Cette adresse e-mail est déjà utilisée.",
         "save_error_desc": "Vérifiez les données et réessayez.",

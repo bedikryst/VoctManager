@@ -1,0 +1,31 @@
+/**
+ * @file accountState.ts
+ * @description What the roster says about a member's platform account. One
+ * predicate per state, shared by the card, the row, the dossier and the
+ * pending-invitation count, so the four cannot disagree about who is still
+ * waiting on an invitation.
+ * @module features/artists/lib/accountState
+ */
+
+import type { Artist } from "@/shared/types";
+
+/**
+ * Added deliberately without an address: there is no invitation to answer,
+ * nothing the app sends reaches them, and everything they need is passed on by
+ * people. Not an alarm — the manager chose it when adding them. Strictly the
+ * empty string: an address missing from a partial DTO is unknown, not absent.
+ */
+export const isWithoutEmail = (artist: Artist): boolean =>
+  Boolean(artist.user) && artist.email === "";
+
+/**
+ * Invited and not answered yet. `account_activated` is manager-only (undefined
+ * otherwise), so unknown counts as neither state. The serializer also reports
+ * `false` for a detached (GDPR-erased) account, which is the crimson
+ * "detached" state rather than a pending invite — hence the linked-account
+ * check — and for a member without an address, who was never invited.
+ */
+export const isAwaitingActivation = (artist: Artist): boolean =>
+  Boolean(artist.user) &&
+  artist.account_activated === false &&
+  !isWithoutEmail(artist);

@@ -15,7 +15,11 @@ export const artistFormSchema = z
     first_name: z.string().min(1, "artists.validation.first_name_required"),
     first_name_vocative: z.string().optional(),
     last_name: z.string().min(1, "artists.validation.last_name_required"),
-    email: z.string().email("artists.validation.invalid_email"),
+    email: z.string(),
+    // The explicit waiver for a member who will not use the app. Ticked by the
+    // manager on create; on edit it mirrors whether the member has an address
+    // yet, and is never shown there.
+    without_email: z.boolean(),
     voice_type: z.string().min(1, "artists.validation.voice_type_required"),
     instrument: z.string().optional(),
     phone_number: z.string().optional(),
@@ -26,6 +30,19 @@ export const artistFormSchema = z
     salutation: z.enum(["F", "M", "N"]),
     is_active: z.boolean(),
   })
+  // An address is required unless the waiver is ticked; one that is typed must
+  // be valid either way. The server holds the same rule in `ArtistCreateDTO`.
+  .refine(
+    (values) => {
+      const email = values.email.trim();
+      if (!email) return values.without_email;
+      return z.string().email().safeParse(email).success;
+    },
+    {
+      message: "artists.validation.invalid_email",
+      path: ["email"],
+    },
+  )
   // The server's `validate_instrument` rule, so the form says it before a
   // round trip: a player without an instrument would print as a bare
   // "Instrumentalist" on every sheet.
@@ -56,7 +73,10 @@ export interface ArtistCreateDTO {
   first_name: string;
   first_name_vocative?: string;
   last_name: string;
-  email: string;
+  /** Absent only together with `without_email`; the server refuses either alone. */
+  email?: string;
+  /** Create only: adds the member without an address, so nothing is sent. */
+  without_email?: boolean;
   voice_type: string;
   /** Sent only for an instrumentalist; the server refuses it on anyone else. */
   instrument?: string;

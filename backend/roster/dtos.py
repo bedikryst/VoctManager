@@ -8,7 +8,15 @@ from typing import Any, Self
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 from core.constants import VoiceLine
 from core.voice_labels import SECTION_LETTERS, canonical_section_letters
@@ -140,7 +148,11 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
     first_name: str = Field(..., min_length=1, max_length=150)
     last_name: str = Field(..., min_length=1, max_length=150)
     first_name_vocative: str | None = Field(None, max_length=150)
-    email: EmailStr
+    # A member who will not use the app is added without an address, and only
+    # when the client says so explicitly: a blank field alone is a mistake to
+    # refuse, not a decision. Declared before `email`, whose validator reads it.
+    without_email: bool = False
+    email: EmailStr | None = Field(None, validate_default=True)
     voice_type: str = Field(..., min_length=2, max_length=5)
     instrument: str | None = Field(None, max_length=60)
     phone_number: str | None = Field(None, max_length=32)
@@ -162,6 +174,24 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
     @classmethod
     def normalize_optional_text(cls, value: object) -> object:
         return _blankable_optional_string(value)
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, value: object) -> object:
+        return _blankable_optional_string(value)
+
+    @field_validator("email")
+    @classmethod
+    def require_email_unless_waived(cls, value: str | None, info: ValidationInfo) -> str | None:
+        """The address and the waiver have to agree. Either one alone would let a
+        member be added without an address by accident — an empty field that
+        nobody noticed, or a stale flag riding along with a typed address."""
+        waived = bool(info.data.get("without_email", False))
+        if waived and value:
+            raise ValueError("email must be empty when without_email is set.")
+        if not waived and not value:
+            raise ValueError("email is required unless without_email is set.")
+        return value
 
     @field_validator("voice_type")
     @classmethod

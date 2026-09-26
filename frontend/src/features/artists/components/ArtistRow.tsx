@@ -8,7 +8,9 @@
  * The row states an account problem ONCE: a chip when the invitation is still
  * unanswered, plus the resend it needs. There is no "account is fine" mark —
  * that is the resting case for every singer on a healthy roster, and painting
- * it forty times is what buried the one row that needed a hand. Range and
+ * it forty times is what buried the one row that needed a hand. A member added
+ * without an address wears a neutral chip instead: not a problem to fix, but
+ * the reason nothing the app sends ever reaches them. Range and
  * a-vista are the singer's own facts, so they read as plain type and simply
  * vanish when nobody has recorded them.
  * @architecture Enterprise SaaS 2026
@@ -42,6 +44,7 @@ import { Checkbox } from "@/shared/ui/primitives/Checkbox";
 import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { getSectionPresentation } from "../constants/voiceSections";
+import { isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
 import { SightReadingStars } from "./SightReadingStars";
 
 interface ArtistRowProps {
@@ -75,8 +78,8 @@ export const ArtistRow = React.memo(
     const section = getSectionPresentation(artist.voice_type);
     const isActive = artist.is_active;
     const hasAccount = Boolean(artist.user);
-    // Manager-only flag (undefined otherwise): unknown counts as neither state.
-    const accountPending = hasAccount && artist.account_activated === false;
+    const accountPending = isAwaitingActivation(artist);
+    const withoutEmail = isWithoutEmail(artist);
     const linkExpired = accountPending && artist.activation_link_expired === true;
     const inviteSentAt = artist.activation_email_sent_at
       ? formatLocalizedDateTime(artist.activation_email_sent_at, {
@@ -179,6 +182,18 @@ export const ArtistRow = React.memo(
                 {linkExpired
                   ? t("artists.card.link_expired", "Link wygasł")
                   : t("artists.card.pending_activation", "Nie aktywowano")}
+              </Badge>
+            )}
+            {withoutEmail && (
+              <Badge
+                variant="neutral"
+                className="shrink-0"
+                title={t(
+                  "artists.card.no_email_title",
+                  "Dodano bez adresu e-mail. Ta osoba nie ma dostępu do aplikacji i nie dostaje powiadomień, więc wszystko trzeba jej przekazywać osobiście.",
+                )}
+              >
+                {t("artists.card.no_email", "Bez e-maila")}
               </Badge>
             )}
             {isActive && !hasAccount && (

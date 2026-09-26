@@ -117,6 +117,8 @@ export interface Artist extends BaseModel {
   first_name: string;
   last_name: string;
   first_name_vocative?: string;
+  // Empty string = added deliberately without an address: never invited, and
+  // nothing the app sends reaches them.
   email?: string;
   phone_number?: string;
   voice_type: VoiceType;

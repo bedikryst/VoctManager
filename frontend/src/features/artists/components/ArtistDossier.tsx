@@ -25,6 +25,7 @@ import {
   Eye,
   Layers,
   MailWarning,
+  MailX,
   MessageSquare,
   Music2,
   NotebookPen,
@@ -55,6 +56,7 @@ import { isPositiveAmount, toGrosze } from "@/features/finance/lib/money";
 import type { DecimalString } from "@/features/finance/types/finance.dto";
 import { useArtistDossier } from "../api/artist.queries";
 import { getSectionPresentation } from "../constants/voiceSections";
+import { isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
 import type {
   ArtistDossierLeadership,
   ArtistDossierStats,
@@ -508,7 +510,8 @@ export const ArtistDossier = ({
   const voiceLabel = artist?.voice_type
     ? artistRoleLabel(t, artist.voice_type, artist.instrument)
     : "";
-  const accountPending = artist?.account_activated === false;
+  const accountPending = artist ? isAwaitingActivation(artist) : false;
+  const withoutEmail = artist ? isWithoutEmail(artist) : false;
   const linkExpired = accountPending && artist?.activation_link_expired === true;
 
   return createPortal(
@@ -596,6 +599,24 @@ export const ArtistDossier = ({
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-5 md:p-6">
+              {/* Neutral, not gold: nothing here is waiting on anyone. It says
+                  what the manager has taken on by adding this member so. */}
+              {withoutEmail && (
+                <div className="mb-6 flex items-start gap-2.5 rounded-nested border border-hairline-strong bg-ethereal-alabaster/70 p-4 text-ethereal-graphite">
+                  <MailX size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+                  <div className="min-w-0">
+                    <Eyebrow color="muted">
+                      {t("artists.dossier.no_email_title", "Bez adresu e-mail")}
+                    </Eyebrow>
+                    <Caption color="muted" className="mt-0.5 block">
+                      {t(
+                        "artists.dossier.no_email_desc",
+                        "Ta osoba nie ma dostępu do aplikacji i nie dostaje żadnych powiadomień. Plan, zmiany i nuty trzeba jej przekazywać osobiście; ikona oka u góry pokazuje, co ma w planie. Wpisanie adresu w edycji profilu wyśle jej zaproszenie.",
+                      )}
+                    </Caption>
+                  </div>
+                </div>
+              )}
               {accountPending && (
                 <div
                   className={cn(

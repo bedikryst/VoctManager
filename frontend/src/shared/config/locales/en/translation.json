@@ -974,6 +974,8 @@
       "link_expired": "Link expired",
       "message": "Message",
       "message_title": "Write a message",
+      "no_email": "No e-mail",
+      "no_email_title": "Added without an e-mail address. This person has no access to the app and receives no notifications, so everything has to be passed on to them in person.",
       "no_phone": "No phone",
       "open_profile_aria": "Open profile: {{name}}",
       "pending_activation": "Not activated",
@@ -1034,6 +1036,8 @@
       "link_expired_desc": "The activation link has expired. Resend the invitation so this artist can activate their account.",
       "most_sung_lines": "Most-sung voice parts",
       "no_casting": "Not cast in any pieces",
+      "no_email_title": "No e-mail address",
+      "no_email_desc": "This person has no access to the app and receives no notifications. The schedule, changes and scores have to be passed on to them in person; the eye icon at the top shows what is on their schedule. Entering an address in the profile editor will send them an invitation.",
       "pending_activation_desc": "The invitation was sent, but this artist hasn't activated their platform account yet.",
       "upcoming": "Upcoming",
       "leadership": {
@@ -1068,6 +1072,11 @@
       "create_artist": "Create Artist",
       "email": "Email *",
       "email_locked": "Sign-in address — only the account holder can change it, in their own settings.",
+      "email_optional": "E-mail",
+      "email_waived_placeholder": "No e-mail address",
+      "email_add_hint": "This person was added without an address. Entering one will send them an invitation to the app.",
+      "without_email_title": "Add without an e-mail address",
+      "without_email_desc": "Only for someone who does not want to use the app. They will get no invitation and no notifications, so the schedule, changes and scores have to be passed on to them in person. An address can be added later, and the invitation goes out then.",
       "first_name": "First Name *",
       "first_name_vocative": "Vocative",
       "first_name_vocative_hint": "Form used in greetings, e.g. in emails.",
@@ -1114,6 +1123,7 @@
     "form": {
       "toast": {
         "create_success": "Artist added. Account generated!",
+        "create_success_without_email": "Artist added without an e-mail address. No invitation was sent.",
         "creating": "Creating artist account...",
         "email_taken": "This email address is already in use.",
         "save_error_desc": "Check the data and try again.",

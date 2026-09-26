@@ -64,8 +64,13 @@ class UserIdentityService:
         Enterprise IAM: Provisions a new core identity and profile.
         Generates a collision-free UUID username, handles activation tokens,
         and explicitly dispatches the secure onboarding email.
+
+        A blank `email` provisions a member who was added without an address:
+        the identity exists so their roster history has an account to belong
+        to, but nothing is sent, and nothing can be — the account stays
+        unactivated until an address is added, which is what invites them.
         """
-        if User.objects.filter(email__iexact=email).exists():
+        if email and User.objects.filter(email__iexact=email).exists():
             raise EmailAlreadyInUseException("email_in_use")
 
         # The invited member's chosen language drives their activation email, the
@@ -104,6 +109,10 @@ class UserIdentityService:
                 salutation=salutation if salutation in {'F', 'M', 'N'} else 'N',
                 first_name_vocative=first_name_vocative or '',
             )
+
+            if not email:
+                logger.info(f"Core IAM identity provisioned without an address, no invite sent: {user.pk}")
+                return user
 
             # Generate Activation Tokens
             payload = UserIdentityService.generate_activation_token_payload(user)
