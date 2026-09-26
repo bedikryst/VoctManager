@@ -5871,6 +5871,16 @@
       "reset_btn": "Generate New Link",
       "reset_desc": "If you suspect unauthorized access to your calendar link, generate it again. The previous address will stop working immediately.",
       "reset_title": "Reset your link",
+      "season": {
+        "desc": "A second, separate subscription: every published rehearsal and event of the ensemble that you are not taking part in. On your phone it appears as a calendar of its own, which you can hide or bring back with one tap.",
+        "ios_note": "On iPhone, add it the same way as the calendar above: copy this address and paste it into Calendar as a subscription.",
+        "off_note": "Once switched off, this calendar empties at the subscription's next refresh, which in Google can take several hours. To hide it at once, untick it in your calendar app.",
+        "reset_desc": "The previous season calendar address will stop working immediately.",
+        "scope_note": "Drafts and cancelled events are left out. What you take part in stays in your own calendar above, so nothing shows up twice.",
+        "title": "Whole season",
+        "toggle_label": "Whole-season calendar",
+        "url_label": "Season calendar address"
+      },
       "subtitle": "Synchronize the rehearsal schedule with your phone calendar.",
       "title": "Integrations and Calendars"
     },

@@ -200,7 +200,26 @@ class UserProfile(EnterpriseBaseModel):
         editable=False,
         help_text=_("Secret token for iCal feed subscription.")
     )
-    
+
+    # The whole season as a second subscription, offered to managers only. A
+    # separate address rather than a switch that widens `calendar_token`: on the
+    # phone it becomes its own calendar with its own colour and checkbox, so
+    # hiding it takes effect at once instead of at the provider's next poll, and
+    # a personal address handed out long ago never starts carrying every date of
+    # the season behind its owner's back. The token is minted on first opt-in,
+    # so an account that never asked holds no live season address at all.
+    season_calendar_enabled = models.BooleanField(
+        default=False,
+        help_text=_("Serves the whole published season at the season calendar address. "
+                    "Honoured only while the account is an active manager.")
+    )
+    season_calendar_token = models.UUIDField(
+        null=True,
+        blank=True,
+        editable=False,
+        help_text=_("Secret token for the season iCal feed. Empty until first enabled.")
+    )
+
     email_notifications_enabled = models.BooleanField(
         default=True,
         help_text=_("Determines if the user receives non-critical operational emails.")
@@ -316,7 +335,12 @@ class UserProfile(EnterpriseBaseModel):
                 fields=['calendar_token'],
                 condition=models.Q(is_deleted=False),
                 name='unique_active_calendar_token'
-            )
+            ),
+            models.UniqueConstraint(
+                fields=['season_calendar_token'],
+                condition=models.Q(is_deleted=False),
+                name='unique_active_season_calendar_token'
+            ),
         ]
 
     def __str__(self) -> str:

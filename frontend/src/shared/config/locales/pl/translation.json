@@ -5928,6 +5928,16 @@
       "reset_btn": "Wygeneruj nowy link",
       "reset_desc": "Jeśli podejrzewasz, że ktoś niepowołany uzyskał dostęp do Twojego linku kalendarza, wygeneruj go ponownie. Poprzedni adres natychmiast przestanie działać.",
       "reset_title": "Zresetuj swój link",
+      "season": {
+        "desc": "Druga, osobna subskrypcja: wszystkie opublikowane próby i wydarzenia zespołu, w których nie bierzesz udziału. W telefonie pojawi się jako osobny kalendarz, który ukryjesz albo przywrócisz jednym dotknięciem.",
+        "ios_note": "Na iPhonie dodaj go tak samo jak kalendarz powyżej: skopiuj ten adres i wklej go w Kalendarzu jako subskrypcję.",
+        "off_note": "Po wyłączeniu ten kalendarz opróżni się przy najbliższym odświeżeniu subskrypcji, co w Google może potrwać kilka godzin. Żeby schować go od razu, odznacz go w aplikacji kalendarza.",
+        "reset_desc": "Poprzedni adres kalendarza sezonu natychmiast przestanie działać.",
+        "scope_note": "Bez szkiców i wydarzeń odwołanych. To, w czym bierzesz udział, zostaje w Twoim kalendarzu powyżej, więc nic nie pojawi się dwa razy.",
+        "title": "Cały sezon",
+        "toggle_label": "Kalendarz całego sezonu",
+        "url_label": "Adres kalendarza sezonu"
+      },
       "subtitle": "Zsynchronizuj harmonogram prób ze swoim kalendarzem w telefonie.",
       "title": "Integracje i kalendarze"
     },

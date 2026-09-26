@@ -1805,3 +1805,211 @@ class CalendarFeedConductorTests(TestCase):
 
         self.assertIn("Entrance: Wejście od zakrystii", feed)
         self.assertIn("On-site contact: +48 600 000 000", feed)
+
+
+class SeasonCalendarFeedTests(TestCase):
+    """The manager's second subscription: every published date the personal
+    feed does not already carry, and nothing at all once the account stops
+    being entitled to it."""
+
+    def setUp(self) -> None:
+        from roster.models import Artist, Participation, Project, Rehearsal
+
+        self.Artist = Artist
+        self.Participation = Participation
+        self.Project = Project
+        self.Rehearsal = Rehearsal
+
+        user = get_user_model().objects.create_user(
+            username="ics-office", email="ics-office@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(
+            user=user, role=AppRole.MANAGER, language="en",
+            season_calendar_enabled=True, season_calendar_token=uuid4(),
+        )
+        self.user = user
+
+    def _project(self, title: str, status: str | None = None):
+        return self.Project.objects.create(
+            title=title,
+            date_time=timezone.now() + timedelta(days=20),
+            status=status or self.Project.Status.ACTIVE,
+            timezone="Europe/Warsaw",
+        )
+
+    def _rehearsal(self, project, focus: str):
+        return self.Rehearsal.objects.create(
+            project=project, date_time=timezone.now() + timedelta(days=5), focus=focus,
+        )
+
+    def _season(self) -> str:
+        """Unfolded — see the note on the same helper in `CalendarFeedTests`."""
+        return ICalGeneratorService.generate_season_feed(self.user).replace("\r\n ", "")
+
+    def test_a_manager_without_a_seat_gets_every_published_date(self) -> None:
+        live = self._project("Requiem")
+        self._rehearsal(live, "Tutti")
+        gone = self._rehearsal(live, "Skreślona")
+        gone.is_deleted = True
+        gone.save(update_fields=["is_deleted"])
+        draft = self._project("Plan na maj", self.Project.Status.DRAFT)
+        self._rehearsal(draft, "Czytanie")
+        cancelled = self._project("Odwołany", self.Project.Status.CANCELLED)
+        self._rehearsal(cancelled, "Nieaktualna")
+
+        feed = self._season()
+
+        self.assertIn("Requiem", feed)
+        self.assertIn("Tutti", feed)
+        for absent in ("Skreślona", "Plan na maj", "Czytanie", "Odwołany", "Nieaktualna"):
+            with self.subTest(absent=absent):
+                self.assertNotIn(absent, feed)
+
+    def test_the_season_carries_only_what_the_own_feed_does_not(self) -> None:
+        artist = self.Artist.objects.create(
+            user=self.user, first_name="Olga", last_name="Office",
+            email="ics-office@test.pl", voice_type="A",
+        )
+        sung = self._project("Requiem")
+        self.Participation.objects.create(
+            artist=artist, project=sung, status=self.Participation.Status.CONFIRMED,
+        )
+        tutti = self._rehearsal(sung, "Tutti")
+        sectional = self._rehearsal(sung, "Tylko basy")
+        sectional.invited_participations.add(
+            self.Participation.objects.create(
+                artist=self.Artist.objects.create(
+                    first_name="Bo", last_name="Bass", email="ics-bo3@test.pl", voice_type="B",
+                ),
+                project=sung,
+                status=self.Participation.Status.CONFIRMED,
+            )
+        )
+        elsewhere = self._project("Nieszpory")
+
+        own = ICalGeneratorService.generate_user_feed(self.user).replace("\r\n ", "")
+        season = self._season()
+
+        self.assertIn(f"UID:project_{sung.id}@", own)
+        self.assertIn(f"UID:rehearsal_{tutti.id}@", own)
+        self.assertNotIn(f"UID:project_{sung.id}@", season)
+        self.assertNotIn(f"UID:rehearsal_{tutti.id}@", season)
+        # The basses' sectional is not in the manager's own feed, so the season
+        # is where it has to be.
+        self.assertIn(f"UID:rehearsal_{sectional.id}@", season)
+        self.assertIn(f"UID:project_{elsewhere.id}@", season)
+
+    def test_the_season_calendar_is_named_apart_from_the_personal_one(self) -> None:
+        feed = self._season()
+
+        self.assertIn("X-WR-CALNAME:VoctEnsemble · Season", feed)
+        self.assertNotIn("X-WR-CALNAME:VoctEnsemble\r\n", feed)
+
+    def test_a_switched_off_feed_is_an_empty_calendar_and_not_an_error(self) -> None:
+        self._project("Requiem")
+        UserProfile.objects.filter(user=self.user).update(season_calendar_enabled=False)
+        self.user.refresh_from_db()
+
+        feed = self._season()
+
+        self.assertNotIn("BEGIN:VEVENT", feed)
+        self.assertIn("X-WR-CALNAME:VoctEnsemble · Season", feed)
+
+    def test_the_address_outlives_the_role_but_not_the_season(self) -> None:
+        self._project("Requiem")
+
+        with self.subTest("demoted"):
+            UserProfile.objects.filter(user=self.user).update(role=AppRole.ARTIST)
+            self.user.refresh_from_db()
+            self.assertNotIn("BEGIN:VEVENT", self._season())
+
+        with self.subTest("switched off"):
+            UserProfile.objects.filter(user=self.user).update(role=AppRole.MANAGER)
+            self.user.is_active = False
+            self.user.save(update_fields=["is_active"])
+            self.user.refresh_from_db()
+            self.assertNotIn("BEGIN:VEVENT", self._season())
+
+    def test_staff_is_served_whatever_the_role(self) -> None:
+        self._project("Requiem")
+        UserProfile.objects.filter(user=self.user).update(role=AppRole.ARTIST)
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_staff"])
+        self.user.refresh_from_db()
+
+        self.assertIn("Requiem", self._season())
+
+
+class SeasonCalendarEndpointTests(APITestCase):
+    def setUp(self) -> None:
+        # Throttle counters live in the shared cache and survive between tests.
+        cache.clear()
+        self.manager = get_user_model().objects.create_user(
+            username="season-mgr", email="season-mgr@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER, language="en")
+        self.singer = get_user_model().objects.create_user(
+            username="season-singer", email="season-singer@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.singer, role=AppRole.ARTIST, language="en")
+
+    def _toggle(self, enabled: object):
+        return self.client.post(
+            "/api/users/me/season-calendar/", {"enabled": enabled}, format="json"
+        )
+
+    def _fetch(self, token: str):
+        return self.client.get(
+            f"/api/calendar/{token}/season.ics", headers={"accept": "text/calendar"}
+        )
+
+    def test_the_switch_is_offered_to_managers_only(self) -> None:
+        self.client.force_authenticate(self.singer)
+        self.assertIsNone(self.client.get("/api/users/me/").data["profile"]["season_calendar"])
+        self.assertEqual(self._toggle(True).status_code, 403)
+
+        self.client.force_authenticate(self.manager)
+        self.assertEqual(
+            self.client.get("/api/users/me/").data["profile"]["season_calendar"],
+            {"enabled": False, "token": None},
+        )
+
+    def test_turning_it_off_keeps_the_address_and_empties_it(self) -> None:
+        self.client.force_authenticate(self.manager)
+
+        on = self._toggle(True)
+        self.assertEqual(on.status_code, 200)
+        token = on.data["season_calendar"]["token"]
+        self.assertTrue(on.data["season_calendar"]["enabled"])
+        self.assertEqual(self._fetch(token).status_code, 200)
+
+        off = self._toggle(False)
+        self.assertEqual(off.data["season_calendar"], {"enabled": False, "token": token})
+        response = self._fetch(token)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(b"BEGIN:VEVENT", response.content)
+
+        # Back on, same address: nothing on the phone has to be re-subscribed.
+        self.assertEqual(self._toggle(True).data["season_calendar"]["token"], token)
+
+    def test_a_reset_retires_the_old_address(self) -> None:
+        self.client.force_authenticate(self.manager)
+        old = self._toggle(True).data["season_calendar"]["token"]
+
+        reset = self.client.post("/api/users/me/reset-season-calendar-token/")
+
+        new = reset.data["season_calendar"]["token"]
+        self.assertNotEqual(new, old)
+        self.assertEqual(self._fetch(old).status_code, 404)
+        self.assertEqual(self._fetch(new).status_code, 200)
+
+    def test_the_personal_token_does_not_open_the_season(self) -> None:
+        self.client.force_authenticate(self.manager)
+        self._toggle(True)
+
+        self.assertEqual(self._fetch(str(self.manager.profile.calendar_token)).status_code, 404)
+
+    def test_only_a_json_boolean_flips_the_switch(self) -> None:
+        self.client.force_authenticate(self.manager)
+
+        self.assertEqual(self._toggle("true").status_code, 400)

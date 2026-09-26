@@ -143,6 +143,55 @@ export const useResetCalendarToken = () => {
 };
 
 /**
+ * The whole-season switch. Optimistic like the digest switch, so it moves on
+ * the same frame; the server's answer then settles the address, which the
+ * first switch-on is the one to mint.
+ */
+export const useSetSeasonCalendar = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (enabled: boolean) => settingsService.setSeasonCalendar(enabled),
+    onMutate: async (enabled) => {
+      await queryClient.cancelQueries({ queryKey: settingsKeys.data });
+      const previous = queryClient.getQueryData<UserMeDTO>(settingsKeys.data);
+      const season = previous?.profile?.season_calendar;
+      if (previous?.profile && season) {
+        queryClient.setQueryData<UserMeDTO>(settingsKeys.data, {
+          ...previous,
+          profile: {
+            ...previous.profile,
+            season_calendar: { ...season, enabled },
+          },
+        });
+      }
+      return { previous };
+    },
+    onError: (_err, _enabled, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(settingsKeys.data, context.previous);
+      }
+    },
+    onSuccess: (profile) => {
+      queryClient.setQueryData<UserMeDTO>(settingsKeys.data, (prev) =>
+        prev ? { ...prev, profile } : prev,
+      );
+    },
+  });
+};
+
+export const useResetSeasonCalendarToken = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => settingsService.resetSeasonCalendarToken(),
+    onSuccess: (profile) => {
+      queryClient.setQueryData<UserMeDTO>(settingsKeys.data, (prev) =>
+        prev ? { ...prev, profile } : prev,
+      );
+    },
+  });
+};
+
+/**
  * Propagates an avatar change everywhere it is shown: the settings cache, the
  * roster (cards/rows derive from the artist list) and the global auth user that
  * feeds the panel shell.

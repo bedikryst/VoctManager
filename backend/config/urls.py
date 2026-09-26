@@ -44,6 +44,9 @@ from core.views import (
     PasswordResetRequestView,
     RequestAccountDeletionView,
     ResetCalendarTokenView,
+    ResetSeasonCalendarTokenView,
+    SeasonCalendarFeedView,
+    SeasonCalendarView,
 )
 from documents.views import (
     ArtistMetricsAPIView,
@@ -153,6 +156,7 @@ urlpatterns = [
 
     # Custom endpoint for calendar feed (iCal format)
     path('api/calendar/<uuid:token>/feed.ics', CalendarFeedView.as_view(), name='calendar-feed'),
+    path('api/calendar/<uuid:token>/season.ics', SeasonCalendarFeedView.as_view(), name='calendar-season-feed'),
 
     # --- JWT Authentication Endpoints ---
     # Used by the React frontend to obtain and refresh access tokens
@@ -180,6 +184,12 @@ urlpatterns = [
     path('api/users/me/export-data/', ExportUserDataView.as_view(), name='user-export-data'),
     path('api/users/me/delete-account/', RequestAccountDeletionView.as_view(), name='user-delete-account'),
     path('api/users/me/reset-calendar-token/', ResetCalendarTokenView.as_view(), name='user-reset-calendar-token'),
+    path('api/users/me/season-calendar/', SeasonCalendarView.as_view(), name='user-season-calendar'),
+    path(
+        'api/users/me/reset-season-calendar-token/',
+        ResetSeasonCalendarTokenView.as_view(),
+        name='user-reset-season-calendar-token',
+    ),
     path('api/users/me/seen-welcome/', MarkWelcomeSeenView.as_view(), name='user-seen-welcome'),
     path(
         'api/users/me/seen-push-email-offer/',

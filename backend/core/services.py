@@ -565,6 +565,34 @@ class UserPreferencesService:
         return profile
 
     @staticmethod
+    def set_season_calendar(user: User, enabled: bool) -> UserProfile:
+        """Opts a manager in or out of the season feed.
+
+        Opting out keeps the token. The address then answers with an empty
+        calendar, which is what clears the phone at the provider's next poll,
+        and opting back in revives the same address, so nothing has to be
+        subscribed again. Only a reset retires an address for good.
+        """
+        profile = user.profile
+        profile.season_calendar_enabled = enabled
+        update_fields = ['season_calendar_enabled', 'updated_at']
+        if enabled and profile.season_calendar_token is None:
+            profile.season_calendar_token = uuid.uuid4()
+            update_fields.append('season_calendar_token')
+        profile.save(update_fields=update_fields)
+        logger.info(f"Season calendar {'enabled' if enabled else 'disabled'} for user: {user.email}")
+        return profile
+
+    @staticmethod
+    def reset_season_calendar_token(user: User) -> UserProfile:
+        """Mints a new season address; the previous one answers 404 from now on."""
+        profile = user.profile
+        profile.season_calendar_token = uuid.uuid4()
+        profile.save(update_fields=['season_calendar_token', 'updated_at'])
+        logger.info(f"Season calendar token reset for user: {user.email}")
+        return profile
+
+    @staticmethod
     def generate_gdpr_export(user: User, profile_data: dict) -> dict[str, Any]:
         """
         Compiles user data for GDPR Right to Data Portability. 

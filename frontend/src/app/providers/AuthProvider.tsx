@@ -169,6 +169,7 @@ const toUserMeDTO = (user: AuthUser): UserMeDTO => ({
         shoe_size: user.profile.shoe_size ?? "",
         height_cm: user.profile.height_cm ?? null,
         calendar_token: user.profile.calendar_token ?? "",
+        season_calendar: user.profile.season_calendar ?? null,
       }
     : null,
 });

@@ -3,7 +3,9 @@
  * @description "Kalendarz" pane: live iCal feed with one-tap subscribe links
  * (Google render intent + webcal:// for Apple/Outlook), the raw private URL
  * with copy, and the token reset escape hatch. The quick-subscribe row spares
- * choristers the "paste a URL into calendar settings" ritual entirely.
+ * choristers the "paste a URL into calendar settings" ritual entirely. Managers
+ * are also offered the whole-season feed as a second subscription
+ * (`SeasonCalendarCard`).
  *
  * On iPhone the address, not the button, is the route worth taking: `webcal://`
  * is by definition the cleartext scheme (it resolves to `http://`, and this host
@@ -17,35 +19,26 @@
  * @module features/settings/components/IntegrationsTab
  */
 
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  CalendarDays,
-  CalendarPlus,
-  CheckCircle2,
-  Copy,
-  Info,
-  RefreshCw,
-  Smartphone,
-} from "lucide-react";
+import { CalendarDays, Info, RefreshCw, Smartphone } from "lucide-react";
 
 import { GlassCard } from "@ui/composites/GlassCard";
 import { SectionHeader } from "@ui/composites/SectionHeader";
 import { Button } from "@ui/primitives/Button";
-import { Input } from "@ui/primitives/Input";
 import { Text, Eyebrow } from "@ui/primitives/typography";
 import { EtherealLoader } from "@ui/kinematics/EtherealLoader";
 import {
   useSettingsData,
   useResetCalendarToken,
 } from "../api/settings.queries";
+import { CalendarSubscribeLinks } from "./CalendarSubscribeLinks";
+import { SeasonCalendarCard } from "./SeasonCalendarCard";
 
 export const IntegrationsTab = () => {
   const { t } = useTranslation();
   const { data: user, isLoading } = useSettingsData();
   const { mutate: resetToken, isPending: isResetting } =
     useResetCalendarToken();
-  const [copied, setCopied] = useState(false);
 
   if (isLoading) {
     return (
@@ -63,25 +56,7 @@ export const IntegrationsTab = () => {
   const calendarUrl = user?.profile?.calendar_token
     ? `${backendUrl}/api/calendar/${user.profile.calendar_token}/feed.ics`
     : "";
-  // `webcal://` and nothing else. iOS registers no `webcals://` handler — Safari
-  // answers a link carrying it with "the address is invalid" and never reaches
-  // Calendar. (An earlier probe against an iCloud host appeared to prove the
-  // opposite; Apple's own domain opens Apple's own app whatever the scheme, so
-  // the probe measured the host, not the scheme.) The tap therefore still goes
-  // through the cleartext hop this scheme is defined as, which is why the iPhone
-  // route below is the address rather than this button.
-  const webcalUrl = calendarUrl.replace(/^https?:\/\//, "webcal://");
-  const googleUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcalUrl)}`;
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(calendarUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // clipboard API unavailable in insecure contexts
-    }
-  };
+  const seasonCalendar = user?.profile?.season_calendar ?? null;
 
   return (
     <GlassCard variant="light" isHoverable={false}>
@@ -117,72 +92,13 @@ export const IntegrationsTab = () => {
             </div>
           </div>
 
-          {calendarUrl && (
-            <div className="mb-6 space-y-2">
-              <Eyebrow>
-                {t(
-                  "settings.integrations.quick_title",
-                  "Subskrybuj jednym dotknięciem",
-                )}
-              </Eyebrow>
-              <div className="flex flex-col gap-2.5 sm:flex-row">
-                <Button asChild variant="secondary" className="sm:shrink-0">
-                  <a
-                    href={googleUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <CalendarPlus className="h-4 w-4" aria-hidden="true" />
-                    {t("settings.integrations.quick_google", "Google Kalendarz")}
-                  </a>
-                </Button>
-                <Button asChild variant="secondary" className="sm:shrink-0">
-                  <a href={webcalUrl}>
-                    <CalendarPlus className="h-4 w-4" aria-hidden="true" />
-                    {t(
-                      "settings.integrations.quick_apple",
-                      "Apple / Outlook",
-                    )}
-                  </a>
-                </Button>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Eyebrow>
-              {t(
-                "settings.integrations.calendar_url_label",
-                "Twój prywatny adres kalendarza",
-              )}
-            </Eyebrow>
-            <div className="flex flex-col gap-2.5 md:flex-row">
-              <Input
-                readOnly
-                value={calendarUrl}
-                aria-label={t(
-                  "settings.integrations.calendar_url_label",
-                  "Twój prywatny adres kalendarza",
-                )}
-              />
-              <Button
-                onClick={handleCopy}
-                variant="outline"
-                className="shrink-0"
-                leftIcon={
-                  copied ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )
-                }
-              >
-                {copied
-                  ? t("settings.integrations.copied", "Skopiowano!")
-                  : t("settings.integrations.copy_link", "Kopiuj link")}
-              </Button>
-            </div>
-          </div>
+          <CalendarSubscribeLinks
+            url={calendarUrl}
+            urlLabel={t(
+              "settings.integrations.calendar_url_label",
+              "Twój prywatny adres kalendarza",
+            )}
+          />
 
           {calendarUrl && (
             <div className="mt-6 flex items-start gap-3">
@@ -260,6 +176,11 @@ export const IntegrationsTab = () => {
             </Button>
           </div>
         </GlassCard>
+
+        {/* ── Whole season (managers) ───────────────────── */}
+        {seasonCalendar && (
+          <SeasonCalendarCard season={seasonCalendar} baseUrl={backendUrl} />
+        )}
       </div>
     </GlassCard>
   );

@@ -13,6 +13,16 @@ export const APP_ROLES = {
 
 export type AppRole = (typeof APP_ROLES)[keyof typeof APP_ROLES];
 
+/**
+ * A manager's whole-season calendar subscription. `token` stays null until the
+ * feed is first switched on; switching it off keeps the token, so the address
+ * survives an off/on round trip.
+ */
+export interface SeasonCalendar {
+  enabled: boolean;
+  token: string | null;
+}
+
 export interface AuthProfile {
   role?: AppRole;
   is_manager?: boolean;
@@ -28,6 +38,12 @@ export interface AuthProfile {
   shoe_size?: string;
   height_cm?: number | null;
   calendar_token?: string;
+  /**
+   * The whole-season feed, or null when the account may not have one. Sent as
+   * the EFFECTIVE answer (active manager or staff), so it alone decides whether
+   * the panel offers the switch.
+   */
+  season_calendar?: SeasonCalendar | null;
   /** Set once, server-side, when the member completes the one-time home welcome. */
   welcome_seen_at?: string | null;
   /**

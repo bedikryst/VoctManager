@@ -5262,3 +5262,7 @@ msgstr "Ta pozycja solówki jest już zajęta."
 #: roster/views.py
 msgid "This piece is not in the project programme."
 msgstr "Tego utworu nie ma w programie projektu."
+
+#: core/ical_service.py
+msgid "Season"
+msgstr "Sezon"
