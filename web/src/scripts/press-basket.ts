@@ -7,7 +7,8 @@
  *  PROGRESSIVE. The boxes, the "select all" toggles and the bar are in the markup but hidden; this
  *  script shows them (`has-basket` on `[data-basket-root]`) only once it has read the manifest in
  *  a browser that can save a Blob. Without it the page keeps what it always had: a link per file
- *  and the two prebuilt ZIPs.
+ *  and the two prebuilt ZIPs. While at least one box is ticked the root also carries
+ *  `is-picking`, which the page's CSS reads to show every tile's box at once.
  *
  *  THE BOXES CARRY KEYS, THE MANIFEST CARRIES FILES. `#press-basket-data` is the JSON
  *  `lib/pressPack#basketManifest` wrote at build from `index.json`, and a box's
@@ -92,6 +93,9 @@ function sync(b: Basket): void {
   }
 
   b.bar.hidden = ticked.length === 0;
+  // The tiles' boxes rest hidden until a hover or a focus asks for one; once anything is ticked
+  // every tile shows its box, because the reader is now choosing, not browsing.
+  b.root.classList.toggle("is-picking", ticked.length > 0);
   // While an archive is being fetched the line reports progress; the next sync after it restores
   // the count.
   if (b.busy || ticked.length === 0) return;

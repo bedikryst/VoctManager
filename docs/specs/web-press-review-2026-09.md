@@ -1,8 +1,19 @@
 # /press — review round 1: defects, media convenience, micro-design
 
-**Status: audit done 2026-09-26, nothing built. R1 needs no decisions and goes before Ania's
-preview (Stage 4 of `web-press-v2-2026-09.md`). R2 waits on the developer's four answers below.
-R3 rides with Stage 4.**
+**Status: R1 built 2026-09-26, uncommitted, first look in the browser under way. R2 waits on
+the developer's five answers below. R3 rides with Stage 4 of `web-press-v2-2026-09.md`.**
+
+R1 as built, where it goes beyond the text below:
+- A3: the desktop column count is derived from the photo count (`columnsFor` in the page: the
+  widest row up to 3 landscape / 5 portrait that leaves no tile alone), not a fixed five. Below
+  1100 px the counts are fixed; a lone last portrait on a phone is centred.
+- B2: the copied line is `caption (fot. credit)`.
+- B5: the composer keys logo tiles by ground (`logo:light` → SVG + PNG + UZYCIE.txt).
+- C1 also reaches the disclosure summaries, the invoicing file (now a boxed download) and the
+  basket bar: none of them is mono capitals any more.
+- `pressPack.ts` and `copy-fields.ts` needed no change: `generatedAt` is already on `pack.index`,
+  and the check icon is swapped by CSS on the `.is-copied` class the script already sets.
+- A7 is not code: restart `npm run dev` once.
 
 Audited on the dev server, 1440×900 and 390×844, with the composer live. Desktop page ≈ 9 700 px,
 phone ≈ 13 800 px. The base is sound: the structure follows the board, the composer works, the
@@ -105,6 +116,11 @@ buttons), and the few things an editor needs that are missing or sit at the wron
    Recommended: one disclosure, "Dane do umów i faktur", with the ledger and the .txt inside.
 4. **Biograms as one card.** Krótki · Średni · Pełny as a segmented control; the character count
    and the one Kopiuj follow the chosen length. Recommended.
+5. **A gold mark** (raised by the developer after R1). One more raster in `press-pack.mjs` beside
+   the ink and paper ones. Recommended on dark grounds only, as a third format in the dark tile:
+   candle gold on paper is about 2:1 contrast, and a hex gold prints as ochre in CMYK unless a
+   Pantone is named. `about.logoUsage` ("w jednym kolorze") must then name the allowed colours;
+   it is in `kitHash`, so the pack is cut again, and Ania approves the new wording.
 
 ## Verification
 

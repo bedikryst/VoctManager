@@ -68,7 +68,6 @@ const pressCopySchema = z
     latest: z
       .object({
         eyebrow: z.string(),
-        photosLink: z.string(),
         filesEyebrow: z.string(),
         release: z.string(),
         announce: z.string(),
@@ -191,7 +190,6 @@ const PRESS_CONTRACT: readonly CopyEntry[] = [
     label: "Najnowsze · rubryka",
     note: "Stands over the card of the soonest concert that has a press kit. The concert's facts under it come from the corpus.",
   },
-  { kind: "field", path: "latest.photosLink", label: "Najnowsze · link do zdjęć" },
   { kind: "field", path: "latest.filesEyebrow", label: "Najnowsze · rubryka materiałów" },
   {
     kind: "field",
@@ -349,6 +347,25 @@ export interface PressChrome {
   readonly foundationAria: string;
   readonly contactAria: string;
   /**
+   * The head's right column: the press address, what komplet holds and when it was cut. The list
+   * is assembled from the pack's index, one `packItems` word per kind of file present, with the
+   * photographs counted (`photos`), so it cannot promise a file the archive lacks.
+   */
+  readonly headMail: string;
+  readonly packContents: string;
+  readonly packUpdated: string;
+  readonly packItems: {
+    readonly release: string;
+    readonly programme: string;
+    readonly biograms: string;
+    readonly poster: string;
+    readonly graphics: string;
+    readonly logo: string;
+  };
+  readonly photos: CountForms;
+  /** The concert card's one link: the concert's own page on this site. */
+  readonly concertPage: string;
+  /**
    * What each biogram is FOR, printed as the measure's own name. The character count beside it is
    * measured, never written.
    */
@@ -359,17 +376,29 @@ export interface PressChrome {
   readonly characters: CountForms;
   /** An announcement's measure: `{count}` is the counted limit, "do 500 znaków". */
   readonly upTo: string;
-  /** The copy-to-clipboard affordance: resting label, and the one it flashes after a copy. */
+  /**
+   * The copy-to-clipboard affordance: resting labels, and the one it flashes after a copy. Two
+   * buttons that copy different texts never share a label: the concert card copies the facts, the
+   * release row copies the release, a photograph copies its caption with the credit.
+   */
   readonly copy: string;
   readonly copyText: string;
+  readonly copyConcert: string;
+  readonly copyCaption: string;
   readonly copied: string;
   /** Accessible name of a biogram's copy button. `{measure}` is the measure's own name above. */
   readonly copyAria: string;
   /** Accessible name of any other copy button. `{field}` is what it copies. */
   readonly copyFieldAria: string;
-  /** A file's two ways out: in the browser, and to disk. `{file}` is the file's title. */
-  readonly open: string;
-  readonly openAria: string;
+  /** Accessible name of a photograph's caption copy. `{file}` is the caption itself. */
+  readonly copyCaptionAria: string;
+  /**
+   * A file's two ways out: seen in the browser (a tab for a PDF, the lightbox for a picture), and
+   * saved to disk. `{file}` is the file's title.
+   */
+  readonly preview: string;
+  readonly previewAria: string;
+  readonly download: string;
   readonly downloadAria: string;
   /**
    * The two states of a text's disclosure. BOTH are rendered and CSS shows one, because a label
@@ -399,8 +428,7 @@ export interface PressChrome {
   /** While the files arrive: `{percent}` is formatted by the locale ("35%", "35 %"). */
   readonly basketPreparing: string;
   readonly basketFailed: string;
-  /** The logotype's three files. */
-  readonly logoSvg: string;
+  /** The logotype's two grounds; each tile offers the formats made for it. */
   readonly logoOnLight: string;
   readonly logoOnDark: string;
   /** The invoicing sheet's download, under the rows it repeats. */
@@ -430,6 +458,19 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     aboutAria: "Biogramy i logotyp",
     foundationAria: "Dane fundacji",
     contactAria: "Kontakt dla mediów",
+    headMail: "Adres dla mediów",
+    packContents: "W komplecie",
+    packUpdated: "Aktualizacja",
+    packItems: {
+      release: "informacja prasowa",
+      programme: "program",
+      biograms: "biogramy",
+      poster: "plakat",
+      graphics: "grafiki",
+      logo: "logo",
+    },
+    photos: { one: "zdjęcie", few: "zdjęcia", many: "zdjęć" },
+    concertPage: "Strona koncertu",
     bioShort: "Krótki",
     bioMedium: "Średni",
     bioLong: "Pełny",
@@ -437,11 +478,15 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     upTo: "do {count}",
     copy: "Kopiuj",
     copyText: "Kopiuj tekst",
+    copyConcert: "Kopiuj informacje o koncercie",
+    copyCaption: "Kopiuj podpis",
     copied: "Skopiowano",
     copyAria: "Skopiuj biogram — {measure}",
     copyFieldAria: "Skopiuj: {field}",
-    open: "Otwórz",
-    openAria: "Otwórz: {file}",
+    copyCaptionAria: "Skopiuj podpis zdjęcia: {file}",
+    preview: "Podgląd",
+    previewAria: "Podgląd: {file}",
+    download: "Pobierz",
     downloadAria: "Pobierz: {file}",
     expand: "Pokaż tekst",
     collapse: "Zwiń",
@@ -456,7 +501,6 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     basketClear: "Wyczyść",
     basketPreparing: "Pobieranie… {percent}",
     basketFailed: "Nie udało się pobrać plików. Spróbuj jeszcze raz.",
-    logoSvg: "Wzorzec wektorowy",
     logoOnLight: "Na jasne tło",
     logoOnDark: "Na ciemne tło",
     invoiceFile: "Dane do umowy i faktury jako plik",
@@ -477,6 +521,19 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     aboutAria: "Biographies and logo",
     foundationAria: "The foundation's details",
     contactAria: "Media contact",
+    headMail: "Press enquiries",
+    packContents: "In the full pack",
+    packUpdated: "Updated",
+    packItems: {
+      release: "press release",
+      programme: "programme",
+      biograms: "biographies",
+      poster: "poster",
+      graphics: "social media graphics",
+      logo: "logo",
+    },
+    photos: { one: "photograph", many: "photographs" },
+    concertPage: "Concert page",
     bioShort: "Short",
     bioMedium: "Medium",
     bioLong: "Full",
@@ -484,11 +541,15 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     upTo: "up to {count}",
     copy: "Copy",
     copyText: "Copy text",
+    copyConcert: "Copy the concert details",
+    copyCaption: "Copy caption",
     copied: "Copied",
     copyAria: "Copy the biography — {measure}",
     copyFieldAria: "Copy: {field}",
-    open: "Open",
-    openAria: "Open: {file}",
+    copyCaptionAria: "Copy the photograph's caption: {file}",
+    preview: "Preview",
+    previewAria: "Preview: {file}",
+    download: "Download",
     downloadAria: "Download: {file}",
     expand: "Show the text",
     collapse: "Hide",
@@ -503,7 +564,6 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     basketClear: "Clear",
     basketPreparing: "Downloading… {percent}",
     basketFailed: "The files could not be downloaded. Please try again.",
-    logoSvg: "Vector master",
     logoOnLight: "For light backgrounds",
     logoOnDark: "For dark backgrounds",
     invoiceFile: "Contract and invoicing details as a file",
@@ -524,6 +584,19 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     aboutAria: "Biographies et logo",
     foundationAria: "Coordonnées de la fondation",
     contactAria: "Contact presse",
+    headMail: "Contact presse",
+    packContents: "Dans le dossier complet",
+    packUpdated: "Mise à jour",
+    packItems: {
+      release: "communiqué de presse",
+      programme: "programme",
+      biograms: "biographies",
+      poster: "affiche",
+      graphics: "visuels pour les réseaux sociaux",
+      logo: "logo",
+    },
+    photos: { one: "photographie", many: "photographies" },
+    concertPage: "Page du concert",
     bioShort: "Courte",
     bioMedium: "Moyenne",
     bioLong: "Complète",
@@ -531,11 +604,15 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     upTo: "jusqu'à {count}",
     copy: "Copier",
     copyText: "Copier le texte",
+    copyConcert: "Copier les informations du concert",
+    copyCaption: "Copier la légende",
     copied: "Copié",
     copyAria: "Copier la biographie — {measure}",
     copyFieldAria: "Copier : {field}",
-    open: "Ouvrir",
-    openAria: "Ouvrir : {file}",
+    copyCaptionAria: "Copier la légende de la photographie : {file}",
+    preview: "Aperçu",
+    previewAria: "Aperçu : {file}",
+    download: "Télécharger",
     downloadAria: "Télécharger : {file}",
     expand: "Afficher le texte",
     collapse: "Masquer",
@@ -550,7 +627,6 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     basketClear: "Effacer",
     basketPreparing: "Téléchargement… {percent}",
     basketFailed: "Le téléchargement a échoué. Veuillez réessayer.",
-    logoSvg: "Original vectoriel",
     logoOnLight: "Sur fond clair",
     logoOnDark: "Sur fond sombre",
     invoiceFile: "Coordonnées de facturation en fichier",

@@ -47,7 +47,6 @@ head:
 
 latest:
   eyebrow: "Najnowsze"
-  photosLink: "Zdjęcia"
   filesEyebrow: "Materiały do pobrania"
   # The release's own headline is printed under this title, from the kit.
   release: "Informacja prasowa"
@@ -100,8 +99,7 @@ about:
   # The character counts are NOT written here: the page measures each text after stripping its
   # markup and prints the real number.
   lede: >-
-    Ten sam tekst w trzech miarach — do noty w programie, do zapowiedzi i do pełnego
-    biogramu. Kopiowanie nie wymaga rozwijania: przycisk bierze czysty tekst, bez formatowania.
+    Ten sam tekst w trzech miarach: do noty w programie, do zapowiedzi i do pełnego biogramu.
   # ~300 characters: who, what, and the one thing that makes the cycle a cycle.
   shortHtml: >-
     <p>VoctEnsemble to zespół wokalny pod kierownictwem Florenta de Bazelaire, poświęcony
