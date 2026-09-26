@@ -10,6 +10,9 @@
  * Both columns are grouped by SECTION (`sectionOf`), not by profile voice: a
  * baritone stands among the basses, and a seat moves a singer to the section it
  * names. The profile voice stays on the row, under the name.
+ * Each cast row also says whether the app can reach that member at all, read
+ * from the manager-only account fields of the roster dictionary — never from
+ * the project payload, which choristers see too.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useCastTab
  */
@@ -29,6 +32,10 @@ import type {
 } from "@/shared/types";
 import { isSingingVoiceType } from "@/shared/lib/voiceTypes";
 import type { SelectOption } from "@/shared/ui/primitives/Select";
+import {
+  outOfReachReason,
+  type OutOfReachReason,
+} from "@/features/artists/lib/accountState";
 import {
   useCreateParticipation,
   useDeleteParticipation,
@@ -85,6 +92,12 @@ export interface CastEntry extends RosterFacts {
   readonly sectionRank: number | null;
   /** No roster record behind this participation — identity is a fallback. */
   readonly isUnresolved: boolean;
+  /**
+   * Why nothing the app sends reaches them — no address, or an invitation never
+   * taken up — so whoever changes the plan knows who must be told in person.
+   * Null when they are reachable or when it is unknown.
+   */
+  readonly outOfReach: OutOfReachReason | null;
 }
 
 export interface VoiceSection<TEntry> {
@@ -118,6 +131,8 @@ export interface UseCastTabResult {
   poolSections: readonly VoiceSection<PoolEntry>[];
   castCount: number;
   poolCount: number;
+  /** Cast members the app cannot reach, declines excluded — they are not singing. */
+  outOfReachCount: number;
   castBalance: readonly CastBalanceEntry[];
   /** The line-up's vocabulary, in score order, for the per-singer seat picker. */
   seatOptions: readonly SelectOption[];
@@ -270,6 +285,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
           isSectionLeader: participation.is_section_leader ?? false,
           sectionRank: participation.section_rank ?? null,
           isUnresolved: !artist,
+          outOfReach: artist ? outOfReachReason(artist) : null,
         };
       })
       .sort(byCastOrder);
@@ -510,6 +526,9 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     poolSections,
     castCount: castEntries.length,
     poolCount: filteredPool.length,
+    outOfReachCount: castEntries.filter(
+      (entry) => entry.outOfReach !== null && entry.status !== "DEC",
+    ).length,
     castBalance,
     seatOptions,
     setSeat,

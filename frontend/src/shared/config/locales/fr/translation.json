@@ -4368,6 +4368,16 @@
         "remove_aria": "Retirer {{name}} de la distribution",
         "unknown": "Participant inconnu"
       },
+      "reach": {
+        "no_email": "Sans e-mail",
+        "no_email_title": "Ajouté sans adresse e-mail : ne reçoit rien de l'application. Les changements doivent être transmis en personne.",
+        "not_activated": "Non activé",
+        "not_activated_title": "Compte non activé : aucune notification tant qu'il ne l'est pas. Transmettez les changements en personne, ou renvoyez l'invitation depuis la liste de l'ensemble.",
+        "summary_one": "{{count}} membre de la distribution est hors de l'application et ne verra ni les changements ni les informations. Transmettez-les en personne.",
+        "summary_few": "{{count}} membres de la distribution sont hors de l'application et ne verront ni les changements ni les informations. Transmettez-les en personne.",
+        "summary_many": "{{count}} membres de la distribution sont hors de l'application et ne verront ni les changements ni les informations. Transmettez-les en personne.",
+        "summary_other": "{{count}} membres de la distribution sont hors de l'application et ne verront ni les changements ni les informations. Transmettez-les en personne."
+      },
       "empty": "Aucune distribution vocale.",
       "empty_assigned": "La distribution est vide",
       "empty_available": "Tout l'ensemble est distribué",

@@ -1,9 +1,9 @@
 /**
  * @file accountState.ts
  * @description What the roster says about a member's platform account. One
- * predicate per state, shared by the card, the row, the dossier and the
- * pending-invitation count, so the four cannot disagree about who is still
- * waiting on an invitation.
+ * predicate per state, shared by the roster card, row and dossier, the
+ * pending-invitation count and the project's cast, so none of them can
+ * disagree about who is waiting on an invitation or who the app cannot reach.
  * @module features/artists/lib/accountState
  */
 
@@ -29,3 +29,20 @@ export const isAwaitingActivation = (artist: Artist): boolean =>
   Boolean(artist.user) &&
   artist.account_activated === false &&
   !isWithoutEmail(artist);
+
+export type OutOfReachReason = "no_email" | "not_activated";
+
+/**
+ * Why nothing the app sends reaches this member, or null when it does (or when
+ * the manager-only fields are absent and it is unknown). An unactivated account
+ * is as far out of reach as one without an address: notification e-mail is
+ * suppressed until activation, and a member who never signed in has no push
+ * device and never opens the app. A member who activated and switched e-mail
+ * off is deliberately not here — they read the app, and their notification
+ * settings are their own business, not the manager's.
+ */
+export const outOfReachReason = (artist: Artist): OutOfReachReason | null => {
+  if (isWithoutEmail(artist)) return "no_email";
+  if (isAwaitingActivation(artist)) return "not_activated";
+  return null;
+};

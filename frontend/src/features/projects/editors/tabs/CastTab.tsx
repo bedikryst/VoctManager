@@ -9,6 +9,9 @@
  * is what every other surface reads the cast in: the divisi board, the singer's
  * songbook, the call sheet and the DTP export.
  * Every write is immediate; the shared `AutosaveStatus` pill confirms it.
+ * Members the app cannot reach — no address, or an invitation never taken up —
+ * carry a quiet chip naming why, and the toolbar counts them: whoever changes
+ * this concert's plan has to tell them in person.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/CastTab
  */
@@ -18,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import {
   GripVertical,
+  MailX,
   Search,
   Star,
   Trash2,
@@ -142,6 +146,27 @@ function CastRow({
 
   const isDeclined = entry.status === "DEC";
   const isAwaiting = showAnswerState && entry.status === "INV";
+  // The chip names the reason in two words so it reads on a phone too, where
+  // there is no hover; the title adds what it means for whoever edits the plan.
+  // A decline needs no such chip — that person is not singing.
+  const reach =
+    isDeclined || entry.outOfReach === null
+      ? null
+      : entry.outOfReach === "no_email"
+        ? {
+            label: t("projects.cast.reach.no_email", "Bez e-maila"),
+            title: t(
+              "projects.cast.reach.no_email_title",
+              "Dodano bez adresu e-mail: nie dostaje niczego z aplikacji. Zmiany trzeba przekazać osobiście.",
+            ),
+          }
+        : {
+            label: t("projects.cast.reach.not_activated", "Bez aktywacji"),
+            title: t(
+              "projects.cast.reach.not_activated_title",
+              "Konto nieaktywowane: nie dostaje powiadomień, dopóki go nie aktywuje. Zmiany trzeba przekazać osobiście albo wysłać ponownie zaproszenie z listy zespołu.",
+            ),
+          };
 
   const removeLabel = t(
     "projects.cast.card.remove_aria",
@@ -245,6 +270,16 @@ function CastRow({
             {isAwaiting && (
               <Badge variant="outline" className="shrink-0">
                 {t("projects.cast.card.pending", "Czeka")}
+              </Badge>
+            )}
+            {reach && (
+              <Badge
+                variant="neutral"
+                className="shrink-0"
+                icon={<MailX size={9} aria-hidden="true" />}
+                title={reach.title}
+              >
+                {reach.label}
               </Badge>
             )}
           </span>
@@ -374,6 +409,7 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
     poolSections,
     castCount,
     poolCount,
+    outOfReachCount,
     castBalance,
     seatOptions,
     setSeat,
@@ -457,7 +493,21 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
           action={<Badge variant="neutral">{castCount}</Badge>}
           toolbar={
             castCount > 0 ? (
-              <div className="pb-3">
+              <div className="space-y-2 pb-3">
+                {/* Above the usage hint and in ink, not muted: this one is a
+                    task — somebody has to pick up the phone — not a legend. */}
+                {outOfReachCount > 0 && (
+                  <Caption as="p" color="default" className="flex items-start gap-1.5">
+                    <MailX size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+                    <span>
+                      {t("projects.cast.reach.summary", {
+                        count: outOfReachCount,
+                        defaultValue:
+                          "{{count}} os. z obsady jest poza aplikacją i nie zobaczy zmian ani informacji. Przekaż je osobiście.",
+                      })}
+                    </span>
+                  </Caption>
+                )}
                 {/* Three quiet controls in one sentence, in the order the row
                     reads: what the drag does, what the picker is for, what the
                     star means. None of them names itself on the row. */}

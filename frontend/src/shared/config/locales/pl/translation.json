@@ -4396,6 +4396,16 @@
         "remove_aria": "Usuń {{name}} z obsady",
         "unknown": "Nieznany uczestnik"
       },
+      "reach": {
+        "no_email": "Bez e-maila",
+        "no_email_title": "Dodano bez adresu e-mail: nie dostaje niczego z aplikacji. Zmiany trzeba przekazać osobiście.",
+        "not_activated": "Bez aktywacji",
+        "not_activated_title": "Konto nieaktywowane: nie dostaje powiadomień, dopóki go nie aktywuje. Zmiany trzeba przekazać osobiście albo wysłać ponownie zaproszenie z listy zespołu.",
+        "summary_one": "{{count}} osoba z obsady jest poza aplikacją i nie zobaczy zmian ani informacji. Przekaż je osobiście.",
+        "summary_few": "{{count}} osoby z obsady są poza aplikacją i nie zobaczą zmian ani informacji. Przekaż je osobiście.",
+        "summary_many": "{{count}} osób z obsady jest poza aplikacją i nie zobaczy zmian ani informacji. Przekaż je osobiście.",
+        "summary_other": "{{count}} osób z obsady jest poza aplikacją i nie zobaczy zmian ani informacji. Przekaż je osobiście."
+      },
       "empty": "Brak obsady wokalnej.",
       "empty_assigned": "Obsada jest pusta",
       "empty_available": "Cały zespół jest w obsadzie",

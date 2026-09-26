@@ -4358,6 +4358,16 @@
         "remove_aria": "Remove {{name}} from the cast",
         "unknown": "Unknown participant"
       },
+      "reach": {
+        "no_email": "No e-mail",
+        "no_email_title": "Added without an e-mail address: receives nothing from the app. Changes have to be passed on in person.",
+        "not_activated": "Not activated",
+        "not_activated_title": "Account not activated: receives no notifications until it is. Pass changes on in person, or resend the invitation from the roster.",
+        "summary_one": "{{count}} cast member is outside the app and will not see changes or updates. Pass them on in person.",
+        "summary_few": "{{count}} cast members are outside the app and will not see changes or updates. Pass them on in person.",
+        "summary_many": "{{count}} cast members are outside the app and will not see changes or updates. Pass them on in person.",
+        "summary_other": "{{count}} cast members are outside the app and will not see changes or updates. Pass them on in person."
+      },
       "empty": "No vocal cast.",
       "empty_assigned": "The cast is empty",
       "empty_available": "The whole ensemble is cast",
