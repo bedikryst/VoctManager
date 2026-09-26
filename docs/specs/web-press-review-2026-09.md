@@ -1,7 +1,19 @@
 # /press — review round 1: defects, media convenience, micro-design
 
-**Status: R1 built 2026-09-26, uncommitted, first look in the browser under way. R2 is decided
-(below); its fifth item, the gold mark, is already built. R3 rides with Stage 4 of `web-press-v2-2026-09.md`.**
+**Status: R1 and the gold mark committed 2026-09-26. R2 built the same day, uncommitted, not yet
+seen in the browser. R3 rides with Stage 4 of `web-press-v2-2026-09.md`.**
+
+R2 as built, where it goes beyond the decisions below:
+- The kept index is its own fixed `<nav class="press-index">` in the bar's glass, shown from
+  760 px wide and 600 px tall once the head's foot passes under the bar; it takes night glass over
+  Kontakt. It marks nothing inside Fundacja, which the head's index does not list either. Its rows
+  jump through Lenis where Lenis runs (clicked mid-scroll, as the tabula's are). Every section's
+  `scroll-margin-top` clears the bar and the index (`--press-bars`).
+- The biogram measures are radios switched by `:has()`, no script; without `:has()` the three
+  texts stack. The disclosure is gone from the biograms.
+- Phone photo rows at 560 px and below: 78vw landscape, 60vw portrait tiles.
+- C5 in O zespole: on the narrow column the logo tiles lie on their side (swatch beside the files).
+  The head needed nothing more: B1 already filled its right column.
 
 R1 as built, where it goes beyond the text below:
 - A3: the desktop column count is derived from the photo count (`columnsFor` in the page: the
