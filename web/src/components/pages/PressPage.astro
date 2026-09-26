@@ -100,12 +100,45 @@ const dims = (file: PressFile) =>
   file.width && file.height ? `${file.width} × ${file.height} px` : undefined;
 const fill = (template: string, key: string, value: string) => template.replace(`{${key}}`, value);
 
+/* The page's one icon set, as path data on a 16 × 16 grid. Each use draws its own <svg> in the
+   template, where this file's scoped styles reach it: 16 px, a 1.25 stroke, `currentColor`, so an
+   icon takes its control's colour and sits on the label's line. The copy buttons draw `copy` and
+   `check` both, and CSS shows `check` while `scripts/copy-fields.ts` holds `.is-copied`. */
+const ICON = {
+  download: ["M8 2.5v7.75", "M4.75 7 8 10.25 11.25 7", "M2.75 11.25v2h10.5v-2"],
+  preview: ["M9.25 2.75h4v4", "M13.25 2.75l-5.5 5.5", "M11.25 9.5v3.75h-8.5v-8.5h3.75"],
+  copy: ["M5.75 5.75h7.5v7.5h-7.5z", "M10.25 5.75v-3h-7.5v7.5h3"],
+  check: ["M3 8.25l3.5 3.5L13 4.75"],
+} as const;
+
 // ── The pack ──────────────────────────────────────────────────────────────────────────────────
 
 /* Present only when the pack is on this host; throws when it is stale — see lib/pressPack. */
 const pack = readPressPack();
 const href = (file: PressFile) => (pack ? pack.href(file) : "");
 const requestHref = mailto(FOUNDATION.mail.press, t.mailSubjectPack);
+
+/* The head's two facts about komplet, both read off the index it was cut with: what it holds
+   (a kind is named only when the archive carries it) and the day it was cut, because an editor
+   quoting a release wants to know it is the current one. */
+const packFacts = pack
+  ? {
+      contents: [
+        ...(pack.index.concert
+          ? [t.packItems.release, t.packItems.programme, t.packItems.biograms, t.packItems.poster]
+          : []),
+        ...(pack.index.photos.length > 0 ? [counted(pack.index.photos.length, t.photos, lang)] : []),
+        ...((pack.index.concert?.graphics.length ?? 0) > 0 ? [t.packItems.graphics] : []),
+        ...(pack.index.logo.length > 0 ? [t.packItems.logo] : []),
+      ].join(", "),
+      updated: new Intl.DateTimeFormat(htmlLang, {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Europe/Warsaw",
+      }).format(new Date(pack.index.generatedAt)),
+    }
+  : undefined;
 
 // ── The concert kit ───────────────────────────────────────────────────────────────────────────
 
@@ -291,6 +324,7 @@ const PHOTO_GROUPS = [
     key: "landscape",
     title: copy.photos.landscape,
     use: copy.photos.landscapeUse,
+    maxColumns: 3,
     sizes: "(max-width: 560px) 92vw, (max-width: 900px) 46vw, 380px",
   },
   {
@@ -298,13 +332,29 @@ const PHOTO_GROUPS = [
     key: "portrait",
     title: copy.photos.portrait,
     use: copy.photos.portraitUse,
-    sizes: "(max-width: 560px) 46vw, (max-width: 900px) 31vw, 280px",
+    maxColumns: 5,
+    sizes: "(max-width: 560px) 46vw, (max-width: 1099px) 31vw, 220px",
   },
 ] as const;
-const photoGroups = PHOTO_GROUPS.map((group) => ({
-  ...group,
-  photos: (pack?.index.photos ?? []).filter((photo: PressPhoto) => photo.ratio === group.ratio),
-})).filter((group) => group.photos.length > 0);
+
+/* The desktop row count follows the number of photographs: the widest row, up to the group's
+   maximum, that leaves no tile alone on the last line. A lone portrait under a full row reads as
+   a leftover. Narrower screens take fixed counts in the CSS. */
+const columnsFor = (count: number, max: number): number => {
+  for (let columns = Math.min(count, max); columns > 1; columns--) {
+    const last = count % columns;
+    if (last === 0 || last > 1) return columns;
+  }
+  return 1;
+};
+
+const photoGroups = PHOTO_GROUPS.map((group) => {
+  const photos = (pack?.index.photos ?? []).filter((photo: PressPhoto) => photo.ratio === group.ratio);
+  return { ...group, photos, columns: columnsFor(photos.length, group.maxColumns) };
+}).filter((group) => group.photos.length > 0);
+
+/* The line an editor prints under the picture: the caption, then the credit in brackets. */
+const captionLine = (caption: string, credit: string) => `${caption} (${credit})`;
 
 const GRAPHIC_USE: Record<PressGraphic["format"], string> = {
   "4x5": copy.social.graphic4x5,
@@ -313,17 +363,30 @@ const GRAPHIC_USE: Record<PressGraphic["format"], string> = {
 };
 const graphics = kitFiles?.graphics ?? [];
 
-/* The logotype's files, by the names the generator gives them. The usage note is printed on the
-   page, so its .txt copy is not offered again on its own: it travels with any logo file ticked in
-   the composer, as it does in komplet. */
-const LOGO_FILES = [
-  { name: "voct-mark.svg", label: t.logoSvg, format: "SVG", ground: "light" },
-  { name: "voct-mark-na-jasnym.png", label: t.logoOnLight, format: "PNG", ground: "light" },
-  { name: "voct-mark-na-ciemnym.png", label: t.logoOnDark, format: "PNG", ground: "dark" },
+/* The logotype, one tile per ground, each offering the formats made for it (by the names the
+   generator gives them). The SVG and the light PNG are the same drawing, so they share a tile
+   rather than render as two identical ones. The usage note is printed on the page, so its .txt
+   copy is not offered again on its own: it travels with any logo tile ticked in the composer, as
+   it does in komplet. */
+const LOGO_GROUNDS = [
+  {
+    ground: "light",
+    label: t.logoOnLight,
+    files: [
+      { name: "voct-mark.svg", format: "SVG" },
+      { name: "voct-mark-na-jasnym.png", format: "PNG" },
+    ],
+  },
+  { ground: "dark", label: t.logoOnDark, files: [{ name: "voct-mark-na-ciemnym.png", format: "PNG" }] },
 ] as const;
-const logoFiles = LOGO_FILES.flatMap((entry) => {
-  const file = pack?.index.logo.find((candidate) => candidate.path === `logo/${entry.name}`);
-  return file ? [{ ...entry, file }] : [];
+const logoTiles = LOGO_GROUNDS.flatMap((tile) => {
+  const files = tile.files.flatMap((entry) => {
+    const file = pack?.index.logo.find((candidate) => candidate.path === `logo/${entry.name}`);
+    return file ? [{ format: entry.format, file }] : [];
+  });
+  // The swatch shows the tile's first file; a ground with no file on this host has no tile.
+  const [first] = files;
+  return first ? [{ ground: tile.ground, label: tile.label, files, swatch: first.file }] : [];
 });
 const logoUsage = pack?.index.logo.find((file) => file.path === "logo/UZYCIE.txt");
 
@@ -334,7 +397,7 @@ const logoUsage = pack?.index.logo.find((file) => file.path === "logo/UZYCIE.txt
 const rowKey = (row: FileRow) => `file:${row.id}`;
 const photoKey = (photo: PressPhoto) => `photo:${photo.id}`;
 const graphicKey = (graphic: PressGraphic) => `graphic:${graphic.format}`;
-const logoKey = (name: string) => `logo:${name}`;
+const logoKey = (ground: string) => `logo:${ground}`;
 
 const basketEntries: [string, readonly PressFile[]][] = [
   ...fileRows.flatMap((row): [string, readonly PressFile[]][] =>
@@ -344,9 +407,9 @@ const basketEntries: [string, readonly PressFile[]][] = [
     group.photos.map((photo): [string, readonly PressFile[]] => [photoKey(photo), [photo]]),
   ),
   ...graphics.map((graphic): [string, readonly PressFile[]] => [graphicKey(graphic), [graphic]]),
-  ...logoFiles.map((entry): [string, readonly PressFile[]] => [
-    logoKey(entry.name),
-    [entry.file, ...(logoUsage ? [logoUsage] : [])],
+  ...logoTiles.map((tile): [string, readonly PressFile[]] => [
+    logoKey(tile.ground),
+    [...tile.files.map((entry) => entry.file), ...(logoUsage ? [logoUsage] : [])],
   ]),
 ];
 const basket =
@@ -467,6 +530,39 @@ const jsonLd = {
             ))}
           </ul>
         </nav>
+        {/* The other two things an editor comes for: where to write, and whether the pack is
+            current. Beside the plate on a desktop, under the index on a phone. */}
+        <dl class="press-head-facts">
+          <div class="press-head-fact">
+            <dt>{t.headMail}</dt>
+            <dd class="press-head-mail">
+              <a href={mailto(FOUNDATION.mail.press, t.mailSubjectMedia)}>{FOUNDATION.mail.press}</a>
+              <button
+                type="button"
+                class="press-button"
+                data-copy={FOUNDATION.mail.press}
+                data-copied={t.copied}
+                aria-label={fill(t.copyFieldAria, "field", t.headMail)}
+              >
+                <svg class="press-icon press-icon--copy" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.copy.map((d) => <path d={d} />)}</svg>
+                <svg class="press-icon press-icon--check" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.check.map((d) => <path d={d} />)}</svg>
+                <span class="copy-label">{t.copy}</span>
+              </button>
+            </dd>
+          </div>
+          {packFacts && (
+            <>
+              <div class="press-head-fact">
+                <dt>{t.packContents}</dt>
+                <dd>{packFacts.contents}</dd>
+              </div>
+              <div class="press-head-fact">
+                <dt>{t.packUpdated}</dt>
+                <dd>{packFacts.updated}</dd>
+              </div>
+            </>
+          )}
+        </dl>
       </div>
     </section>
 
@@ -500,27 +596,13 @@ const jsonLd = {
                   </button>
                 )}
                 <p class="press-forces">{kit.forces}</p>
-                <ul class="press-concert-links">
-                  {kitFiles && (
-                    <li>
-                      <a href={href(kitFiles.release)} target="_blank" rel="noopener">
-                        {copy.latest.release} →
-                      </a>
-                    </li>
-                  )}
-                  {photoGroups.length > 0 && (
-                    <li>
-                      <a href="#zdjecia">{copy.latest.photosLink} →</a>
-                    </li>
-                  )}
-                  {pack && (
-                    <li>
-                      <a href={href(pack.index.archives.komplet)} download>
-                        {copy.head.downloadLabel} ↓
-                      </a>
-                    </li>
-                  )}
-                </ul>
+                {/* The files are the list right under this card, and komplet is the head's plate:
+                    the one link the card owes is the concert's own page. */}
+                {card.pageHref && (
+                  <a class="press-concert-page" href={card.pageHref}>
+                    {t.concertPage} →
+                  </a>
+                )}
               </div>
 
               <div class="press-concert-text">
@@ -562,7 +644,9 @@ const jsonLd = {
                   data-copied={t.copied}
                   aria-label={fill(t.copyFieldAria, "field", card.facts.title)}
                 >
-                  <span class="copy-label">{t.copyText}</span>
+                  <svg class="press-icon press-icon--copy" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.copy.map((d) => <path d={d} />)}</svg>
+                  <svg class="press-icon press-icon--check" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.check.map((d) => <path d={d} />)}</svg>
+                  <span class="copy-label">{t.copyConcert}</span>
                 </button>
               </div>
             </article>
@@ -645,6 +729,8 @@ const jsonLd = {
                       {row.format}
                       {row.file && ` · ${size(row.file)}`}
                     </span>
+                    {/* Secondary actions first, the one boxed download last, so every row's
+                        primary lands on the same right edge. */}
                     <div class="press-file-actions">
                       {row.open === "tab" && row.file && (
                         <a
@@ -652,19 +738,21 @@ const jsonLd = {
                           href={href(row.file)}
                           target="_blank"
                           rel="noopener"
-                          aria-label={fill(t.openAria, "file", row.title)}
+                          aria-label={fill(t.previewAria, "file", row.title)}
                         >
-                          {t.open}
+                          <svg class="press-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.preview.map((d) => <path d={d} />)}</svg>
+                          <span>{t.preview}</span>
                         </a>
                       )}
                       {row.open === "lightbox" && posterAttrs && (
                         <button
                           type="button"
                           class="press-button"
-                          aria-label={fill(t.openAria, "file", row.title)}
+                          aria-label={fill(t.previewAria, "file", row.title)}
                           {...posterAttrs}
                         >
-                          {t.open}
+                          <svg class="press-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.preview.map((d) => <path d={d} />)}</svg>
+                          <span>{t.preview}</span>
                         </button>
                       )}
                       {row.copy && (
@@ -675,17 +763,20 @@ const jsonLd = {
                           data-copied={t.copied}
                           aria-label={fill(t.copyFieldAria, "field", row.title)}
                         >
+                          <svg class="press-icon press-icon--copy" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.copy.map((d) => <path d={d} />)}</svg>
+                          <svg class="press-icon press-icon--check" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.check.map((d) => <path d={d} />)}</svg>
                           <span class="copy-label">{row.copy.label}</span>
                         </button>
                       )}
                       {row.file && (
                         <a
-                          class="press-button press-button--get"
+                          class="press-button press-button--primary"
                           href={href(row.file)}
                           download
                           aria-label={fill(t.downloadAria, "file", row.title)}
                         >
-                          ↓
+                          <svg class="press-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.download.map((d) => <path d={d} />)}</svg>
+                          <span>{t.download}</span>
                         </a>
                       )}
                     </div>
@@ -725,11 +816,16 @@ const jsonLd = {
                   </label>
                 )}
               </div>
-              <ul class={`press-photo-grid press-photo-grid--${group.key}`}>
+              {/* A tile is three rows of its grid (picture, caption, file), so a caption that
+                  wraps moves its whole row's files down together. */}
+              <ul
+                class={`press-tiles press-photo-grid press-photo-grid--${group.key}`}
+                style={`--columns: ${group.columns}`}
+              >
                 {group.photos.map((photo) => {
                   const credit = frameCredit({ credit: photo.credit }, lang);
                   return (
-                    <li class="press-photo">
+                    <li class="press-tile">
                       {basket && (
                         <label class="press-pick press-pick--tile">
                           <input
@@ -743,7 +839,8 @@ const jsonLd = {
                       )}
                       <button
                         type="button"
-                        class="press-photo-open shot-open"
+                        class="press-tile-frame shot-open"
+                        aria-label={fill(t.previewAria, "file", photo.caption)}
                         data-image-open
                         data-image-group={`press-${group.key}`}
                         data-image-src={href(photo.preview)}
@@ -763,23 +860,39 @@ const jsonLd = {
                           loading="lazy"
                           decoding="async"
                         />
-                      </button>
-                      <div class="press-photo-cap">
-                        <span class="press-photo-caption">{photo.caption}</span>
-                        <span class="press-photo-credit">{credit}</span>
-                        <span class="press-photo-meta">
-                          <span>
-                            {dims(photo)} · {size(photo)}
-                          </span>
-                          <a
-                            class="press-button press-button--get"
-                            href={href(photo)}
-                            download
-                            aria-label={fill(t.downloadAria, "file", photo.caption)}
-                          >
-                            ↓
-                          </a>
+                        <span class="press-veil" aria-hidden="true">
+                          <svg class="press-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.preview.map((d) => <path d={d} />)}</svg>
+                          <span>{t.preview}</span>
                         </span>
+                      </button>
+                      <div class="press-tile-cap">
+                        <span class="press-tile-caption">{photo.caption}</span>
+                        <span class="press-tile-credit">{credit}</span>
+                        <button
+                          type="button"
+                          class="press-button"
+                          data-copy={captionLine(photo.caption, credit)}
+                          data-copied={t.copied}
+                          aria-label={fill(t.copyCaptionAria, "file", photo.caption)}
+                        >
+                          <svg class="press-icon press-icon--copy" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.copy.map((d) => <path d={d} />)}</svg>
+                          <svg class="press-icon press-icon--check" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.check.map((d) => <path d={d} />)}</svg>
+                          <span class="copy-label">{t.copyCaption}</span>
+                        </button>
+                      </div>
+                      <div class="press-tile-foot">
+                        <span class="press-tile-meta">
+                          {dims(photo)} · {size(photo)}
+                        </span>
+                        <a
+                          class="press-button press-button--primary"
+                          href={href(photo)}
+                          download
+                          aria-label={fill(t.downloadAria, "file", photo.caption)}
+                        >
+                          <svg class="press-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.download.map((d) => <path d={d} />)}</svg>
+                          <span>{t.download}</span>
+                        </a>
                       </div>
                     </li>
                   );
@@ -829,6 +942,8 @@ const jsonLd = {
                     data-copied={t.copied}
                     aria-label={fill(t.copyFieldAria, "field", copy.social.post)}
                   >
+                    <svg class="press-icon press-icon--copy" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.copy.map((d) => <path d={d} />)}</svg>
+                    <svg class="press-icon press-icon--check" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.check.map((d) => <path d={d} />)}</svg>
                     <span class="copy-label">{t.copy}</span>
                   </button>
                 </div>
@@ -861,6 +976,8 @@ const jsonLd = {
                       data-copied={t.copied}
                       aria-label={fill(t.copyFieldAria, "field", copy.social.hashtags)}
                     >
+                      <svg class="press-icon press-icon--copy" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.copy.map((d) => <path d={d} />)}</svg>
+                      <svg class="press-icon press-icon--check" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.check.map((d) => <path d={d} />)}</svg>
                       <span class="copy-label">{t.copy}</span>
                     </button>
                   </div>
@@ -891,6 +1008,8 @@ const jsonLd = {
                       data-copied={t.copied}
                       aria-label={fill(t.copyFieldAria, "field", `${account.platform} ${account.handle}`)}
                     >
+                      <svg class="press-icon press-icon--copy" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.copy.map((d) => <path d={d} />)}</svg>
+                      <svg class="press-icon press-icon--check" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.check.map((d) => <path d={d} />)}</svg>
                       <span class="copy-label">{t.copy}</span>
                     </button>
                   </li>
@@ -917,11 +1036,11 @@ const jsonLd = {
                   </label>
                 )}
               </div>
-              <ul class="press-graphics">
+              <ul class="press-tiles press-graphics">
                 {graphics.map((graphic) => {
                   const label = `${graphic.format.replace("x", ":")} · ${graphic.width} × ${graphic.height}`;
                   return (
-                    <li class="press-graphic">
+                    <li class="press-tile">
                       {basket && (
                         <label class="press-pick press-pick--tile">
                           <input
@@ -935,7 +1054,8 @@ const jsonLd = {
                       )}
                       <button
                         type="button"
-                        class="press-graphic-open shot-open"
+                        class="press-tile-frame shot-open"
+                        aria-label={fill(t.previewAria, "file", `${copy.social.graphics} ${label}`)}
                         data-image-open
                         data-image-group="press-graphics"
                         data-image-src={href(graphic)}
@@ -953,21 +1073,26 @@ const jsonLd = {
                           loading="lazy"
                           decoding="async"
                         />
-                      </button>
-                      <div class="press-photo-cap">
-                        <span class="press-photo-caption">{label}</span>
-                        <span class="press-photo-credit">{GRAPHIC_USE[graphic.format]}</span>
-                        <span class="press-photo-meta">
-                          <span>JPG · {size(graphic)}</span>
-                          <a
-                            class="press-button press-button--get"
-                            href={href(graphic)}
-                            download
-                            aria-label={fill(t.downloadAria, "file", label)}
-                          >
-                            ↓
-                          </a>
+                        <span class="press-veil" aria-hidden="true">
+                          <svg class="press-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.preview.map((d) => <path d={d} />)}</svg>
+                          <span>{t.preview}</span>
                         </span>
+                      </button>
+                      <div class="press-tile-cap">
+                        <span class="press-tile-caption">{label}</span>
+                        <span class="press-tile-credit">{GRAPHIC_USE[graphic.format]}</span>
+                      </div>
+                      <div class="press-tile-foot">
+                        <span class="press-tile-meta">JPG · {size(graphic)}</span>
+                        <a
+                          class="press-button press-button--primary"
+                          href={href(graphic)}
+                          download
+                          aria-label={fill(t.downloadAria, "file", label)}
+                        >
+                          <svg class="press-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.download.map((d) => <path d={d} />)}</svg>
+                          <span>{t.download}</span>
+                        </a>
                       </div>
                     </li>
                   );
@@ -1005,6 +1130,8 @@ const jsonLd = {
                     data-copied={t.copied}
                     aria-label={fill(t.copyAria, "measure", bio.measure)}
                   >
+                    <svg class="press-icon press-icon--copy" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.copy.map((d) => <path d={d} />)}</svg>
+                    <svg class="press-icon press-icon--check" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.check.map((d) => <path d={d} />)}</svg>
                     <span class="copy-label">{t.copy}</span>
                   </button>
                 </header>
@@ -1023,7 +1150,7 @@ const jsonLd = {
         <div class="press-logo">
           <div class="press-group-head">
             <h3 class="press-sub">{copy.about.logo}</h3>
-            {basket && logoFiles.length > 1 && (
+            {basket && logoTiles.length > 1 && (
               <label class="press-pick-all">
                 <input
                   type="checkbox"
@@ -1037,39 +1164,52 @@ const jsonLd = {
           </div>
           <p class="press-block-sub press-logo-usage">{copy.about.logoUsage}</p>
           {
-            logoFiles.length > 0 && (
-              <ul class="press-logo-grid">
-                {logoFiles.map((entry) => (
-                  <li class="press-logo-tile">
+            logoTiles.length > 0 && (
+              <ul class="press-tiles press-logo-grid">
+                {logoTiles.map((tile) => (
+                  <li class="press-tile">
                     {basket && (
                       <label class="press-pick press-pick--tile">
                         <input
                           type="checkbox"
                           class="press-pick-box"
-                          data-basket-item={logoKey(entry.name)}
+                          data-basket-item={logoKey(tile.ground)}
                           data-basket-group="logo"
-                          aria-label={fill(t.selectAria, "file", `${copy.about.logo} — ${entry.label}`)}
+                          aria-label={fill(t.selectAria, "file", `${copy.about.logo} — ${tile.label}`)}
                         />
                       </label>
                     )}
-                    <span class={`press-logo-swatch press-logo-swatch--${entry.ground}`}>
-                      <img src={href(entry.file)} alt="" loading="lazy" decoding="async" />
+                    {/* Not a `.press-tile-frame`: that frame paints a paper ground under a loading
+                        photograph, which would cover a light mark on the dark swatch. */}
+                    <span class={`press-logo-swatch press-logo-swatch--${tile.ground}`}>
+                      <img src={href(tile.swatch)} alt="" loading="lazy" decoding="async" />
                     </span>
-                    <span class="press-photo-caption">{entry.label}</span>
-                    <span class="press-photo-meta">
-                      <span>
-                        {entry.format}
-                        {dims(entry.file) && ` · ${dims(entry.file)}`} · {size(entry.file)}
-                      </span>
-                      <a
-                        class="press-button press-button--get"
-                        href={href(entry.file)}
-                        download
-                        aria-label={fill(t.downloadAria, "file", `${copy.about.logo} — ${entry.label}`)}
-                      >
-                        ↓
-                      </a>
-                    </span>
+                    <div class="press-tile-cap">
+                      <span class="press-tile-caption">{tile.label}</span>
+                    </div>
+                    <ul class="press-tile-foot press-logo-files">
+                      {tile.files.map((entry) => (
+                        <li>
+                          <span class="press-tile-meta">
+                            {entry.format}
+                            {dims(entry.file) && ` · ${dims(entry.file)}`} · {size(entry.file)}
+                          </span>
+                          <a
+                            class="press-button press-button--primary"
+                            href={href(entry.file)}
+                            download
+                            aria-label={fill(
+                              t.downloadAria,
+                              "file",
+                              `${copy.about.logo} — ${tile.label}, ${entry.format}`,
+                            )}
+                          >
+                            <svg class="press-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.download.map((d) => <path d={d} />)}</svg>
+                            <span>{t.download}</span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
                   </li>
                 ))}
               </ul>
@@ -1092,15 +1232,17 @@ const jsonLd = {
             LEGAL_ROWS.map((row) => (
               <div class="press-legal-row">
                 <dt class="eyebrow">{row.label}</dt>
-                <dd class={row.mono ? "is-ledger" : undefined}>
-                  <span>{row.value}</span>
+                <dd>
+                  <span class:list={["press-legal-value", { "is-ledger": row.mono }]}>{row.value}</span>
                   <button
                     type="button"
-                    class="press-button press-button--small"
+                    class="press-button"
                     data-copy={row.value}
                     data-copied={t.copied}
                     aria-label={fill(t.copyFieldAria, "field", row.label)}
                   >
+                    <svg class="press-icon press-icon--copy" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.copy.map((d) => <path d={d} />)}</svg>
+                    <svg class="press-icon press-icon--check" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.check.map((d) => <path d={d} />)}</svg>
                     <span class="copy-label">{t.copy}</span>
                   </button>
                 </dd>
@@ -1111,8 +1253,9 @@ const jsonLd = {
         {
           pack && (
             <p class="press-invoice">
-              <a href={href(pack.index.invoice)} download>
-                {t.invoiceFile} ↓
+              <a class="press-button press-button--primary" href={href(pack.index.invoice)} download>
+                <svg class="press-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.download.map((d) => <path d={d} />)}</svg>
+                <span>{t.invoiceFile}</span>
               </a>
               <span class="press-file-meta">TXT · {size(pack.index.invoice)}</span>
             </p>
@@ -1158,8 +1301,8 @@ const jsonLd = {
                 <span class="press-basket-size" data-basket-size />
               </p>
               <button type="button" class="press-basket-get" data-basket-get>
+                <svg class="press-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.download.map((d) => <path d={d} />)}</svg>
                 <span>{t.basketDownload}</span>
-                <span class="press-basket-arrow" aria-hidden="true">↓</span>
               </button>
               <button type="button" class="press-basket-clear" data-basket-clear>
                 {t.basketClear}
@@ -1243,27 +1386,36 @@ const jsonLd = {
      would silently beat it on bundle order. `.press-rubric` is this page's own handle and carries
      only layout; the dark sections state their ground's colour, nothing else. */
   .press-inner { max-width: 1180px; margin: 0 auto; }
-  .press-section { padding: clamp(72px, 9vw, 128px) max(28px, 5vw); background: var(--paper); }
+  /* A tool's rhythm, not a landing's: the reader scrolls to a file, not through a story. */
+  .press-section { padding: clamp(52px, 6.3vw, 90px) max(28px, 5vw); background: var(--paper); }
   .press-section--soft { background: var(--paper-soft); }
 
-  .press-rubric-row { display: flex; align-items: center; gap: 12px 20px; margin: 0 0 clamp(26px, 3vw, 40px); }
+  .press-rubric-row { display: flex; align-items: center; gap: 12px 20px; margin: 0 0 clamp(20px, 2.1vw, 28px); }
   .press-rubric { margin: 0; flex: 0 0 auto; }
   .press-rule { flex: 1 1 auto; height: 1px; background: var(--line-strong); }
-  .press-lede { margin: 0 0 clamp(36px, 4.4vw, 60px); max-width: 60ch; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 1.45vw, 21px); line-height: 1.55; color: var(--ink-soft); }
+  .press-lede { margin: 0 0 clamp(26px, 3.1vw, 42px); max-width: 60ch; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 1.45vw, 21px); line-height: 1.55; color: var(--ink-soft); }
 
   .press-sub { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(22px, 2vw, 28px); line-height: 1.2; color: var(--ink); }
   .press-sub-note { font-size: 14px; line-height: 1.5; color: var(--ink-muted); }
   .press-group-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; margin: 0 0 18px; }
 
-  /* One control, four jobs — open, copy, download, and the copy button's confirmation. Mono,
-     because it is a label on a tool, and the one register this page keeps for it. */
-  .press-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; line-height: 1; color: var(--ink-muted); border: 1px solid var(--line-strong); padding: 8px 12px; background: transparent; cursor: pointer; white-space: nowrap; transition: color .35s var(--ease), border-color .35s var(--ease), background-color .35s var(--ease); }
-  .press-button:hover { color: var(--ink); border-color: var(--candle); }
+  /* ONE ACTION HIERARCHY. The download is the only boxed control: ink border, sans, a drawn icon.
+     Preview and copy are an icon and a word with no box, ink-soft until approached. Mono capitals
+     stay for figures (format, size, dimensions, counts) and "select all", never for an action. */
+  .press-icon { flex: 0 0 auto; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
+  .press-button { display: inline-flex; align-items: center; gap: 7px; padding: 6px 2px; border: 0; background: transparent; font-family: var(--sans); font-size: 13px; line-height: 1.2; letter-spacing: .01em; color: var(--ink-soft); white-space: nowrap; cursor: pointer; transition: color .35s var(--ease), border-color .35s var(--ease), background-color .35s var(--ease); }
+  .press-button > span { text-decoration: underline transparent; text-decoration-thickness: 1px; text-underline-offset: 3px; transition: text-decoration-color .35s var(--ease); }
+  .press-button:hover { color: var(--ink); }
+  .press-button:hover > span { text-decoration-color: currentColor; }
   .press-button:focus-visible { outline: 1px solid var(--candle); outline-offset: 3px; }
-  .press-button.is-copied { color: var(--ink); border-color: var(--candle); background: rgba(198, 164, 91, .14); }
-  /* The download arrow: a glyph, not a word, so it takes the serif and a square box. */
-  .press-button--get { font-family: var(--serif); font-size: 15px; letter-spacing: 0; text-transform: none; padding: 5px 10px; }
-  .press-button--small { padding: 6px 10px; font-size: 9.5px; }
+  .press-button--primary { padding: 7px 12px 7px 10px; border: 1px solid var(--ink); color: var(--ink); }
+  .press-button--primary:hover { border-color: var(--candle); background: rgba(198, 164, 91, .12); }
+  .press-button--primary:hover > span { text-decoration-color: transparent; }
+  /* A copy confirms in place: copy-fields.ts turns the word, and the icon turns into a check. */
+  .press-icon--check { display: none; }
+  .press-button.is-copied { color: var(--ink); }
+  .press-button.is-copied .press-icon--copy { display: none; }
+  .press-button.is-copied .press-icon--check { display: block; }
 
   /* A text shown as it is pasted: paragraphs, and the lines inside a paragraph kept. */
   .press-text { display: grid; gap: 12px; }
@@ -1274,7 +1426,7 @@ const jsonLd = {
   /* The disclosure. `scripts/disclosure.ts` animates the body's height and writes `open` itself,
      so the marker is removed and the summary is styled as the quiet control it is — the loud
      control is the copy button, which is never inside it. */
-  .press-d > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 9px; padding: 4px 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); transition: color .35s var(--ease); }
+  .press-d > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 4px 0; font-family: var(--sans); font-size: 13px; line-height: 1.2; color: var(--ink-soft); transition: color .35s var(--ease); }
   .press-d > summary::-webkit-details-marker { display: none; }
   .press-d > summary::after { content: "+"; font-family: var(--serif); font-size: 15px; line-height: 1; transition: transform .35s var(--ease); }
   .press-d[open] > summary::after { transform: rotate(45deg); }
@@ -1292,16 +1444,16 @@ const jsonLd = {
   .press-cta--line { background: transparent; border: 1px solid rgba(244, 241, 233, .28); color: var(--paper); }
   .press-cta--line:hover { background: rgba(198, 164, 91, .1); border-color: var(--candle); }
   .press-cta--line .press-cta-meta { color: rgba(244, 241, 233, .62); }
-  .press-cta--ink { margin-top: clamp(40px, 5vw, 64px); border-color: var(--line-strong); color: var(--ink); }
+  .press-cta--ink { margin-top: clamp(28px, 3.5vw, 44px); border-color: var(--line-strong); color: var(--ink); }
   .press-cta--ink .press-cta-meta { color: var(--ink-muted); }
 
   /* ── HEAD ────────────────────────────────────────────────────────── */
-  /* Not 100svh: the head holds a title, a line and a button, and a reader who came for a file
-     should see the first section without a scroll. */
-  .press-head { position: relative; padding: clamp(132px, 18vh, 190px) max(28px, 5vw) clamp(56px, 8vh, 88px); background: var(--night); color: var(--paper); overflow: hidden; }
+  /* Not 100svh, and short enough that at 1440 × 900 the next concert's title is on screen: a
+     reader who came for a file should see where the files begin without a scroll. */
+  .press-head { position: relative; padding: clamp(112px, 15vh, 150px) max(28px, 5vw) clamp(40px, 6vh, 64px); background: var(--night); color: var(--paper); overflow: hidden; }
   .press-head::before { content: ""; position: absolute; inset: 0; background: radial-gradient(80% 60% at 50% 0%, rgba(232, 207, 144, 0.06), transparent 65%), linear-gradient(180deg, rgba(8,8,7,0) 0%, rgba(8,8,7,0.55) 100%); pointer-events: none; }
-  .press-head-inner { position: relative; display: grid; gap: clamp(22px, 3vw, 36px); justify-items: start; }
-  .press-head-title { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(56px, 9vw, 128px); line-height: 0.94; letter-spacing: -.01em; color: var(--paper); display: grid; gap: clamp(6px, 1vw, 14px); }
+  .press-head-inner { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(18px, 2.2vw, 28px); justify-items: start; }
+  .press-head-title { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(52px, 7vw, 96px); line-height: 0.94; letter-spacing: -.01em; color: var(--paper); display: grid; gap: clamp(6px, .8vw, 12px); }
   .press-head-title em { font-style: italic; font-size: .36em; line-height: 1.1; color: var(--candle); }
   .press-head-lede { margin: 0; max-width: 52ch; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 1.7vw, 23px); line-height: 1.5; color: rgba(244, 241, 233, 0.9); }
   .press-head .press-cta { width: min(100%, 560px); }
@@ -1313,15 +1465,32 @@ const jsonLd = {
   .press-jump a { display: inline-block; padding-bottom: 3px; border-bottom: 1px solid transparent; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; line-height: 1.4; color: rgba(244, 241, 233, .7); transition: color .35s var(--ease), border-color .35s var(--ease); }
   .press-jump a:hover { color: var(--paper); border-color: var(--candle); }
 
+  /* The press address, what komplet holds, and the day it was cut. Under the index on a phone; on
+     a desktop the column the plate leaves empty, its foot level with the index. */
+  .press-head-facts { width: min(100%, 560px); margin: 0; padding-top: 16px; border-top: 1px solid rgba(244, 241, 233, .16); display: grid; gap: 14px; }
+  .press-head-fact { display: grid; gap: 3px; }
+  .press-head-fact dt { font-family: var(--sans); font-size: 12px; letter-spacing: .02em; color: rgba(244, 241, 233, .55); }
+  .press-head-fact dd { margin: 0; font-family: var(--serif); font-size: clamp(16px, 1.25vw, 18px); line-height: 1.45; color: rgba(244, 241, 233, .9); font-variant-numeric: lining-nums; }
+  .press-head-mail { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 16px; }
+  .press-head-mail a { color: var(--candle); border-bottom: 1px solid rgba(198, 164, 91, .4); word-break: break-word; transition: border-color .35s var(--ease); }
+  .press-head-mail a:hover { border-color: var(--candle); }
+  .press-head .press-button { color: rgba(244, 241, 233, .7); }
+  .press-head .press-button:hover,
+  .press-head .press-button.is-copied { color: var(--paper); }
+  @media (min-width: 1000px) {
+    .press-head-inner { grid-template-columns: minmax(0, 1fr) minmax(0, 360px); column-gap: clamp(40px, 5vw, 80px); }
+    .press-head-inner > :not(.press-head-facts) { grid-column: 1; }
+    .press-head-facts { grid-column: 2; grid-row: 1 / span 4; align-self: end; width: 100%; }
+  }
+
   /* ── NAJNOWSZE ───────────────────────────────────────────────────── */
   /* The poster's size comes from the TRACK: a `width` on `.shot-open` would lose to its reset. */
   .press-concert { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: clamp(28px, 4.5vw, 72px); align-items: start; }
   .press-concert-media { display: grid; gap: 18px; justify-items: start; }
   .press-poster :global(img) { display: block; width: 100%; height: auto; box-shadow: 0 18px 40px -24px rgba(22, 21, 20, .45); }
   .press-forces { margin: 0; padding: 5px 12px; border: 1px solid var(--line-strong); font-family: var(--sans); font-size: 13px; letter-spacing: .04em; color: var(--ink-soft); }
-  .press-concert-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-  .press-concert-links a { font-size: 15px; color: var(--ink); border-bottom: 1px solid var(--candle); padding-bottom: 1px; transition: color .35s var(--ease); }
-  .press-concert-links a:hover { color: var(--candle-ink); }
+  .press-concert-page { font-size: 15px; color: var(--ink); border-bottom: 1px solid var(--candle); padding-bottom: 1px; transition: color .35s var(--ease); }
+  .press-concert-page:hover { color: var(--candle-ink); }
 
   .press-concert-title { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(40px, 5.4vw, 72px); line-height: 1; letter-spacing: -.01em; color: var(--ink); }
   .press-concert-title a { color: inherit; transition: color .35s var(--ease); }
@@ -1334,9 +1503,11 @@ const jsonLd = {
   .press-concert-composers { margin: 16px 0 0; max-width: 64ch; font-family: var(--serif); font-style: italic; font-size: 16px; line-height: 1.6; color: var(--ink-soft); }
   .press-concert-text .press-button { margin-top: clamp(20px, 2.4vw, 30px); }
 
-  .press-files { margin-top: clamp(56px, 6.5vw, 88px); }
-  .press-file-list { list-style: none; margin: 0; padding: 0; }
-  .press-file { display: grid; grid-template-columns: 24px minmax(0, 1fr) 7.5rem auto; align-items: start; gap: 6px 20px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .press-files { margin-top: clamp(40px, 4.6vw, 62px); }
+  /* ONE grid for the whole list, every row a subgrid of it: the meta and the actions of each row
+     sit in shared columns, however many actions a row carries. */
+  .press-file-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto auto; column-gap: 20px; }
+  .press-file { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: start; row-gap: 6px; padding: 16px 0; border-bottom: 1px solid var(--line); }
   .press-file:first-child { border-top: 1px solid var(--line-strong); }
   .press-file-icon { color: var(--ink-muted); padding-top: 1px; }
   .press-file-main { display: grid; gap: 4px; justify-items: start; }
@@ -1346,39 +1517,60 @@ const jsonLd = {
   .press-file-main .press-d-body { max-width: 64ch; }
   /* Format and size — a figure a reader checks, so mono and lining. */
   .press-file-meta { padding-top: 5px; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--ink-muted); white-space: nowrap; font-variant-numeric: lining-nums; }
-  .press-file-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+  /* Pulled up by half the box's excess over the title's first line, so the download sits on it. */
+  .press-file-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; justify-content: flex-end; margin-top: -4px; }
   @media (max-width: 760px) {
     .press-concert { grid-template-columns: minmax(0, 1fr); }
     .press-concert-media { grid-template-columns: minmax(0, 220px); }
-    .press-file { grid-template-columns: 22px minmax(0, 1fr); }
+    .press-file-list { grid-template-columns: 22px minmax(0, 1fr); }
     .press-file-meta, .press-file-actions { grid-column: 2; }
     .press-file-meta { padding-top: 0; }
-    .press-file-actions { justify-content: flex-start; }
+    .press-file-actions { justify-content: flex-start; margin-top: 4px; }
   }
 
+  /* ── TILES · photographs, graphics, the logotype ────────────────── */
+  /* A tile is three rows of its list's grid (picture, caption, file) as a subgrid, so a caption
+     that wraps moves its whole row's file lines down together. The list's row gap is the gap
+     INSIDE a tile; the space between rows of tiles is the foot's padding. */
+  .press-tiles { --tile-gap: clamp(16px, 1.8vw, 26px); list-style: none; margin: 0; padding: 0; display: grid; column-gap: var(--tile-gap); row-gap: 10px; }
+  .press-tile { position: relative; grid-row: span 3; display: grid; grid-template-rows: subgrid; }
+  /* `align-self: end`, never stretch: the lightbox's gold edge is drawn on this box. */
+  .press-tile-frame { align-self: end; }
+  .press-tile-frame img { display: block; width: 100%; height: auto; background: var(--paper); }
+  .press-tile-cap { display: grid; gap: 2px; align-content: start; justify-items: start; font-size: 13.5px; line-height: 1.45; }
+  .press-tile-caption { color: var(--ink); }
+  .press-tile-credit { color: var(--ink-soft); }
+  .press-tile-cap .press-button { margin-top: 2px; }
+  .press-tile-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; align-content: start; gap: 8px 12px; padding-bottom: clamp(16px, 1.8vw, 26px); }
+  .press-tile-meta { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; color: var(--ink-muted); font-variant-numeric: lining-nums; }
+
+  /* On approach a picture takes a quiet veil with the word; on a touch screen there is no approach
+     to answer, and a tap goes straight to the lightbox. */
+  .press-veil { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(16, 15, 13, .38); color: var(--paper); font-family: var(--sans); font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .35s var(--ease); }
+  .press-tile-frame:hover .press-veil,
+  .press-tile-frame:focus-visible .press-veil { opacity: 1; }
+  @media (hover: none) { .press-veil { display: none; } }
+
   /* ── ZDJĘCIA ─────────────────────────────────────────────────────── */
-  .press-group + .press-group { margin-top: clamp(44px, 5vw, 68px); }
-  .press-photo-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(22px, 2.2vw, 32px) clamp(16px, 1.8vw, 26px); grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .press-photo-grid--portrait { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .press-photo { display: grid; gap: 10px; align-content: start; }
-  .press-photo-open :global(img),
-  .press-graphic-open :global(img) { display: block; width: 100%; height: auto; background: var(--paper); }
-  .press-photo-cap { display: grid; gap: 2px; font-size: 13.5px; line-height: 1.45; }
-  .press-photo-caption { color: var(--ink); }
-  .press-photo-credit { color: var(--ink-soft); }
-  .press-photo-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 6px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; color: var(--ink-muted); font-variant-numeric: lining-nums; }
-  @media (max-width: 900px) {
-    .press-photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .press-group + .press-group { margin-top: clamp(26px, 3vw, 40px); }
+  /* `--columns` is set per group from its count (the page's `columnsFor`); below 1100 px the counts
+     are fixed, and a lone last portrait on a phone takes the middle of its line. */
+  .press-photo-grid { grid-template-columns: repeat(var(--columns, 3), minmax(0, 1fr)); }
+  @media (max-width: 1099px) {
     .press-photo-grid--portrait { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
+  @media (max-width: 900px) {
+    .press-photo-grid--landscape { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
   @media (max-width: 560px) {
-    .press-photo-grid { grid-template-columns: minmax(0, 1fr); }
+    .press-photo-grid--landscape { grid-template-columns: minmax(0, 1fr); }
     .press-photo-grid--portrait { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .press-photo-grid--portrait > .press-tile:last-child:nth-child(odd) { grid-column: 1 / -1; justify-self: center; width: calc((100% - var(--tile-gap)) / 2); }
   }
 
   /* ── SOCIAL ──────────────────────────────────────────────────────── */
   .press-social-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(32px, 4vw, 64px); align-items: start; }
-  .press-social-side { display: grid; gap: clamp(32px, 3.6vw, 48px); }
+  .press-social-side { display: grid; gap: clamp(24px, 2.6vw, 34px); }
   .press-block { display: grid; gap: 14px; align-content: start; padding-top: 18px; border-top: 1px solid var(--line-strong); }
   .press-block-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
   .press-block-head .press-button { margin-left: auto; }
@@ -1392,19 +1584,18 @@ const jsonLd = {
   .press-tag-handle { font-family: var(--serif); font-size: 18px; color: var(--ink); word-break: break-word; transition: color .35s var(--ease); }
   .press-tag-handle:hover { color: var(--candle-ink); }
   /* Three ratios in one row at ONE height: each track's share is its image's width at height 1. */
-  .press-graphics-block { margin-top: clamp(40px, 4.5vw, 64px); }
-  .press-graphics { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: .8fr .5625fr 1.7778fr; gap: clamp(16px, 1.8vw, 26px); align-items: end; }
-  .press-graphic { display: grid; gap: 10px; }
+  .press-graphics-block { margin-top: clamp(28px, 3.2vw, 44px); }
+  .press-graphics { grid-template-columns: .8fr .5625fr 1.7778fr; }
   @media (max-width: 760px) {
     .press-social-grid { grid-template-columns: minmax(0, 1fr); }
     .press-graphics { grid-template-columns: .8fr .5625fr; }
-    .press-graphic:last-child { grid-column: 1 / -1; }
+    .press-graphics > .press-tile:last-child { grid-column: 1 / -1; }
     .press-tags li { grid-template-columns: minmax(0, 1fr) auto; }
     .press-tag-platform { grid-column: 1 / -1; }
   }
 
   /* ── O ZESPOLE ───────────────────────────────────────────────────── */
-  .press-bio-list { max-width: 820px; display: grid; gap: clamp(32px, 3.6vw, 48px); }
+  .press-bio-list { max-width: 820px; display: grid; gap: clamp(24px, 2.6vw, 34px); }
   .press-bio-card { display: grid; gap: 16px; padding-top: clamp(18px, 1.8vw, 24px); border-top: 1px solid var(--line-strong); }
   .press-bio-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
   .press-bio-measure { color: var(--ink); }
@@ -1413,33 +1604,38 @@ const jsonLd = {
   .press-bio-card-head .press-button { margin-left: auto; }
   .press-bio-card .press-text { gap: clamp(14px, 1.3vw, 20px); }
 
-  .press-logo { margin-top: clamp(56px, 6.5vw, 88px); padding-top: 18px; border-top: 1px solid var(--line-strong); }
-  .press-logo-usage { max-width: 64ch; margin-bottom: clamp(22px, 2.4vw, 32px); }
-  .press-logo-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(16px, 1.8vw, 26px); }
-  .press-logo-tile { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; font-size: 13.5px; }
+  .press-logo { margin-top: clamp(40px, 4.6vw, 62px); padding-top: 18px; border-top: 1px solid var(--line-strong); }
+  .press-logo-usage { max-width: 64ch; margin-bottom: clamp(18px, 2vw, 26px); }
+  /* Two grounds, two tiles; capped so a swatch stays a sample, not a poster. */
+  .press-logo-grid { grid-template-columns: repeat(2, minmax(0, 300px)); }
+  @media (max-width: 620px) { .press-logo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   /* The mark is tall (810 × 2000 in the PNGs, a bare viewBox in the SVG). Placed out of flow, it
      takes its box from the swatch and never lends its intrinsic size to the swatch or the track. */
   .press-logo-swatch { position: relative; display: block; aspect-ratio: 4 / 3; border: 1px solid var(--line); background: var(--paper); }
   .press-logo-swatch--dark { background: var(--night); border-color: var(--night); }
   .press-logo-swatch img { position: absolute; inset: 0; margin: auto; width: 100%; height: 62%; object-fit: contain; }
-  @media (max-width: 620px) { .press-logo-grid { grid-template-columns: minmax(0, 1fr); } }
+  /* A tile's formats, one line each: the figure, then its download. */
+  .press-logo-files { list-style: none; margin: 0; padding-left: 0; display: grid; gap: 8px; }
+  .press-logo-files li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
 
   /* ── FUNDACJA ────────────────────────────────────────────────────── */
   .press-legal-grid { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
   .press-legal-row { display: grid; gap: 8px; padding: clamp(16px, 1.8vw, 24px); background: var(--paper); }
+  /* An odd last row takes the whole line: an empty eighth cell would show the grid's hairline
+     ground as a grey slab. */
+  .press-legal-row:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .press-legal-row dd { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; font-family: var(--serif); font-size: clamp(16px, 1.2vw, 19px); color: var(--ink); }
   /* A LEDGER, not a terminal: these are strings an organiser copies into a bank or a contract
-     form and verifies character by character. That is the one job mono keeps on this site. */
-  .press-legal-row dd.is-ledger span { font-family: var(--mono); font-size: clamp(14px, 1vw, 16px); letter-spacing: .04em; font-variant-numeric: lining-nums; word-break: break-word; }
+     form and verifies character by character. That is the one job mono keeps on this site. Named
+     on the value itself, so the copy button's label beside it keeps the button's size. */
+  .press-legal-value.is-ledger { font-family: var(--mono); font-size: clamp(14px, 1vw, 16px); letter-spacing: .04em; font-variant-numeric: lining-nums; word-break: break-word; }
   .press-legal-row dd .press-button { margin-left: auto; }
-  .press-invoice { margin: clamp(20px, 2.2vw, 28px) 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; }
-  .press-invoice a { font-size: 15px; color: var(--ink); border-bottom: 1px solid var(--candle); padding-bottom: 1px; transition: color .35s var(--ease); }
-  .press-invoice a:hover { color: var(--candle-ink); }
+  .press-invoice { margin: clamp(20px, 2.2vw, 28px) 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
   .press-invoice .press-file-meta { padding-top: 0; }
   @media (max-width: 720px) { .press-legal-grid { grid-template-columns: minmax(0, 1fr); } }
 
   /* ── KONTAKT · dark closure ──────────────────────────────────────── */
-  .press-contact { position: relative; padding: clamp(80px, 10vw, 140px) max(28px, 5vw); background: linear-gradient(180deg, var(--ink) 0%, var(--night) 100%); color: rgba(244, 241, 233, 0.84); overflow: hidden; }
+  .press-contact { position: relative; padding: clamp(56px, 7vw, 98px) max(28px, 5vw); background: linear-gradient(180deg, var(--ink) 0%, var(--night) 100%); color: rgba(244, 241, 233, 0.84); overflow: hidden; }
   .press-contact .press-rubric { color: rgba(244, 241, 233, 0.58); }
   .press-contact .press-rule { background: rgba(244, 241, 233, 0.16); }
   .press-contact-lede { margin: 0; max-width: 52ch; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 1.5vw, 22px); line-height: 1.55; color: rgba(244, 241, 233, 0.78); }
@@ -1447,7 +1643,7 @@ const jsonLd = {
   .press-contact-card:hover { background: rgba(8, 8, 7, 1); border-color: var(--candle); }
   .press-contact-mail { font-family: var(--serif); font-size: clamp(20px, 2.2vw, 30px); color: var(--candle); word-break: break-word; }
   .press-contact-arrow { margin-left: auto; font-family: var(--serif); font-size: clamp(22px, 2.2vw, 28px); color: var(--candle); }
-  .press-broadcast { margin-top: clamp(44px, 5vw, 68px); padding-top: clamp(22px, 2.4vw, 30px); border-top: 1px solid rgba(244, 241, 233, 0.16); display: grid; gap: 10px; justify-items: start; max-width: 60ch; }
+  .press-broadcast { margin-top: clamp(32px, 3.5vw, 48px); padding-top: clamp(22px, 2.4vw, 30px); border-top: 1px solid rgba(244, 241, 233, 0.16); display: grid; gap: 10px; justify-items: start; max-width: 60ch; }
   .press-broadcast-title { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(22px, 2vw, 28px); line-height: 1.2; color: var(--paper); }
   .press-broadcast-body { margin: 0; font-size: clamp(15px, 1.1vw, 17px); line-height: 1.6; color: rgba(244, 241, 233, 0.74); }
   .press-broadcast-cta { margin-top: 6px; font-size: 15px; color: var(--candle); border-bottom: 1px solid rgba(198, 164, 91, .4); padding-bottom: 1px; transition: border-color .35s var(--ease); }
@@ -1479,19 +1675,22 @@ const jsonLd = {
   /* On a phone the rubric and the toggle do not fit one line; the toggle takes the next. */
   .press-files .press-rubric-row { flex-wrap: wrap; }
 
-  /* A row gains a first column; the box sits on the title's first line. */
-  main.has-basket .press-file { grid-template-columns: 18px 24px minmax(0, 1fr) 7.5rem auto; }
+  /* The list gains a first column; each box sits on its title's first line. */
+  main.has-basket .press-file-list { grid-template-columns: 18px 24px minmax(0, 1fr) auto auto; }
   .press-file > .press-pick { padding-top: 3px; }
 
-  /* A tile's box sits on the picture's corner, on a plate of paper so it reads over any frame;
-     a ticked tile also says so on the picture itself. */
-  .press-photo,
-  .press-graphic,
-  .press-logo-tile { position: relative; }
-  .press-pick--tile { position: absolute; top: 8px; left: 8px; z-index: 1; padding: 7px; background: rgba(244, 241, 233, .92); }
-  .press-photo:has(.press-pick-box:checked) .press-photo-open :global(img),
-  .press-graphic:has(.press-pick-box:checked) .press-graphic-open :global(img),
-  .press-logo-tile:has(.press-pick-box:checked) .press-logo-swatch { outline: 2px solid var(--candle); outline-offset: 3px; }
+  /* A tile's box sits on the picture's corner, on a plate of paper so it reads over any frame,
+     above the veil. It rests hidden, eleven white squares over the photographs being the one
+     thing a reader would see first, and shows on a hover or a focus, on every tile at once while
+     anything is ticked (`is-picking`, scripts/press-basket.ts), and always where nothing hovers.
+     A ticked tile also says so on the picture itself. */
+  .press-pick--tile { position: absolute; top: 8px; left: 8px; z-index: 3; padding: 7px; background: rgba(244, 241, 233, .92); opacity: 0; transition: opacity .25s var(--ease); }
+  .press-tile:hover .press-pick--tile,
+  .press-tile:focus-within .press-pick--tile,
+  main.is-picking .press-pick--tile { opacity: 1; }
+  @media (hover: none) { .press-pick--tile { opacity: 1; } }
+  .press-tile:has(.press-pick-box:checked) .shot-open img,
+  .press-tile:has(.press-pick-box:checked) .press-logo-swatch { outline: 2px solid var(--candle); outline-offset: 3px; }
 
   /* The bar. Night, not gold: gold is spent once, on the head's plate. */
   .press-basket { position: sticky; bottom: 0; z-index: 48; padding: 14px max(28px, 5vw) calc(env(safe-area-inset-bottom, 0px) + 14px); background: rgba(16, 15, 13, .96); border-top: 1px solid rgba(198, 164, 91, .4); color: var(--paper); animation: press-basket-in .45s var(--ease); }
@@ -1500,10 +1699,10 @@ const jsonLd = {
   .press-basket-sum { margin: 0 auto 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; }
   .press-basket-count { font-family: var(--serif); font-size: clamp(17px, 1.4vw, 20px); line-height: 1.3; color: var(--paper); }
   .press-basket-size { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: rgba(244, 241, 233, .62); font-variant-numeric: lining-nums; }
-  .press-basket-get { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 11px 18px; border: 1px solid var(--candle); background: transparent; color: var(--candle); font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; line-height: 1; cursor: pointer; transition: background-color .35s var(--ease), color .35s var(--ease); }
+  /* The bar keeps the page's hierarchy: its download is the one boxed control, the clear a word. */
+  .press-basket-get { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px 10px 14px; border: 1px solid var(--candle); background: transparent; color: var(--candle); font-family: var(--sans); font-size: 14px; line-height: 1.2; cursor: pointer; transition: background-color .35s var(--ease), color .35s var(--ease); }
   .press-basket-get:hover { background: rgba(198, 164, 91, .14); color: var(--paper); }
-  .press-basket-arrow { font-family: var(--serif); font-size: 16px; letter-spacing: 0; }
-  .press-basket-clear { padding: 11px 4px; border: 0; background: transparent; color: rgba(244, 241, 233, .62); font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; line-height: 1; cursor: pointer; transition: color .35s var(--ease); }
+  .press-basket-clear { padding: 10px 4px; border: 0; background: transparent; color: rgba(244, 241, 233, .62); font-family: var(--sans); font-size: 13px; line-height: 1.2; cursor: pointer; transition: color .35s var(--ease); }
   .press-basket-clear:hover { color: var(--paper); }
   .press-basket button:focus-visible { outline: 1px solid var(--candle); outline-offset: 3px; }
   .press-basket button:disabled { opacity: .5; cursor: progress; }
@@ -1515,13 +1714,30 @@ const jsonLd = {
   :global(body.page-press:has(.press-basket:not([hidden])) .scroll-top) { opacity: 0; pointer-events: none; }
 
   @media (max-width: 760px) {
-    main.has-basket .press-file { grid-template-columns: 18px 22px minmax(0, 1fr); }
+    main.has-basket .press-file-list { grid-template-columns: 18px 22px minmax(0, 1fr); }
     main.has-basket .press-file-meta,
     main.has-basket .press-file-actions { grid-column: 3; }
   }
   @media (max-width: 560px) {
     .press-basket-sum { flex: 1 1 100%; }
     .press-basket-get { flex: 1 1 auto; }
+  }
+
+  /* ── TOUCH ───────────────────────────────────────────────────────── */
+  /* Under a finger the drawn sizes stay and the hit area grows to 44 px around each control. The
+     summary takes `::before`, because its `::after` is the + that turns. A tile's box is already
+     positioned, so only a row's box needs a containing block. */
+  @media (pointer: coarse) {
+    .press-button,
+    .press-d > summary,
+    .press-pick-all,
+    .press-file > .press-pick,
+    .press-basket button { position: relative; }
+    .press-button::after,
+    .press-d > summary::before,
+    .press-pick::after,
+    .press-pick-all::after,
+    .press-basket button::after { content: ""; position: absolute; top: 50%; left: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
   }
 
   /* No heading press here, deliberately. This page carries no `.reveal` at all, so there is no
