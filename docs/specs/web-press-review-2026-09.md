@@ -1,7 +1,7 @@
 # /press — review round 1: defects, media convenience, micro-design
 
-**Status: R1 built 2026-09-26, uncommitted, first look in the browser under way. R2 waits on
-the developer's five answers below. R3 rides with Stage 4 of `web-press-v2-2026-09.md`.**
+**Status: R1 built 2026-09-26, uncommitted, first look in the browser under way. R2 is decided
+(below); its fifth item, the gold mark, is already built. R3 rides with Stage 4 of `web-press-v2-2026-09.md`.**
 
 R1 as built, where it goes beyond the text below:
 - A3: the desktop column count is derived from the photo count (`columnsFor` in the page: the
@@ -105,6 +105,13 @@ buttons), and the few things an editor needs that are missing or sit at the wron
     who does not know the ensemble. Asset from the designer.
 
 ## Decisions for the developer (R2)
+
+Settled 2026-09-26: the developer leaves layout calls like 1–4 to us. Taken as recommended — 1
+desktop and tablet only, 2 scroll-snap rows, 4 the segmented control — except 3: the ledger stays
+open. A disclosure would hide what an organiser came for behind a click to save about 300 px at
+the foot of the page. 5 built the same day: `voct-mark-zloty.png` in `--candle`, a third tile on
+the night ground, and one sentence in `about.logoUsage` keeping it to the web and dark grounds
+(no print gold is defined; a Pantone would lift that). Ania sees the wording with the rest.
 
 1. **Sticky section index.** The head's index becomes a slim bar under the site header once the
    head scrolls away, with the current section marked. Recommended on desktop and tablet only:

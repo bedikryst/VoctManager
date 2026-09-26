@@ -428,9 +428,10 @@ export interface PressChrome {
   /** While the files arrive: `{percent}` is formatted by the locale ("35%", "35 %"). */
   readonly basketPreparing: string;
   readonly basketFailed: string;
-  /** The logotype's two grounds; each tile offers the formats made for it. */
+  /** The logotype's tiles: two grounds, and the gold mark (dark grounds only, see the usage note). */
   readonly logoOnLight: string;
   readonly logoOnDark: string;
+  readonly logoGold: string;
   /** The invoicing sheet's download, under the rows it repeats. */
   readonly invoiceFile: string;
   /** Labels of the invoicing block — a definition list, and a missing term is a broken row. */
@@ -503,6 +504,7 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     basketFailed: "Nie udało się pobrać plików. Spróbuj jeszcze raz.",
     logoOnLight: "Na jasne tło",
     logoOnDark: "Na ciemne tło",
+    logoGold: "Złoty, na ciemne tło",
     invoiceFile: "Dane do umowy i faktury jako plik",
     legalName: "Nazwa",
     legalAddress: "Adres",
@@ -566,6 +568,7 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     basketFailed: "The files could not be downloaded. Please try again.",
     logoOnLight: "For light backgrounds",
     logoOnDark: "For dark backgrounds",
+    logoGold: "Gold, for dark backgrounds",
     invoiceFile: "Contract and invoicing details as a file",
     legalName: "Name",
     legalAddress: "Address",
@@ -629,6 +632,7 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     basketFailed: "Le téléchargement a échoué. Veuillez réessayer.",
     logoOnLight: "Sur fond clair",
     logoOnDark: "Sur fond sombre",
+    logoGold: "Doré, sur fond sombre",
     invoiceFile: "Coordonnées de facturation en fichier",
     legalName: "Nom",
     legalAddress: "Adresse",

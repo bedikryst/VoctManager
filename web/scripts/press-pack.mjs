@@ -406,7 +406,8 @@ if (kit && concert) {
 const markSvg = readFileSync(at("public/voct-mark.svg"), "utf8");
 /* The vector master paints with `currentColor`, which the site fills from CSS. A raster has no
    cascade to inherit from, so each export states its own ink: the dark mark for a light ground,
-   the paper mark for a dark one. Both stay transparent — a designer places them. */
+   the paper mark and the gold one (the site's `--candle`) for a dark one. All stay transparent —
+   a designer places them. The gold is a screen colour; the usage note keeps it off print. */
 const rasterise = async (hex) =>
   sharp(Buffer.from(markSvg.replace(/currentColor/g, hex)), { density: 600 })
     .resize({ height: 2000 })
@@ -419,6 +420,7 @@ for (const [name, data, store, dims] of [
     [
       ["logo/voct-mark-na-jasnym.png", "#161514"],
       ["logo/voct-mark-na-ciemnym.png", "#F4F1E9"],
+      ["logo/voct-mark-zloty.png", "#C6A45B"],
     ].map(async ([name, hex]) => {
       const png = await rasterise(hex);
       return [name, png.data, true, dimsOf(png.info)];
