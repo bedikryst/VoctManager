@@ -41,18 +41,19 @@ release:
       połowie XIII wieku, w dialekcie umbryjskim. Chwali w nich Boga przez słońce, księżyc
       i gwiazdy, wiatr, wodę, ogień i ziemię: całe stworzenie jest drogą, którą człowiek zwraca się
       ku Stwórcy. Koncert idzie tą drogą. Zaczyna od zachwytu nad światem, schodzi ku temu, co
-      w człowieku kruche — ku przemianie, cierpieniu i śmierci — i kończy się poza tym, co
+      w człowieku kruche: ku przemianie, cierpieniu i śmierci. Kończy się poza tym, co
       widzialne.
     - >-
       Wieczór otwierają Gloria II i Lumen Mariana Borkowskiego, a zaraz po nich brzmi Laudes
       creaturarum Carla Orffa z 1954 roku: cały Kantyk, w umbryjskim oryginale. Dalej program
-      przechodzi od kosmicznego obrazu stworzenia ku człowiekowi — przez Méditation z opery Thaïs
-      Julesa Masseneta, nocne niebo w Stars Ēriksa Ešenvaldsa, The Lark Ascending Ralpha Vaughana
+      przechodzi od kosmicznego obrazu stworzenia ku człowiekowi. Zabrzmią Méditation z opery
+      Thaïs Julesa Masseneta, Stars Ēriksa Ešenvaldsa, The Lark Ascending Ralpha Vaughana
       Williamsa w opracowaniu Paula Draytona na skrzypce i chór, Stoi lód na Prośnie Jacka
-      Sykulskiego i Ménétrier George’a Enescu — aż do Dona eis requiem I Borkowskiego.
+      Sykulskiego i Ménétrier George’a Enescu. Ta część kończy się na Dona eis requiem
+      I Borkowskiego.
     - >-
       Marian Borkowski (ur. 1934) ma w tym programie trzy utwory. Jego muzyka sakralna bierze
-      zwykle jedno łacińskie słowo — chwała, światło, odpoczynek — i buduje z niego całość
+      zwykle jedno łacińskie słowo (chwała, światło, odpoczynek) i buduje z niego całość
       płaszczyznami brzmienia i skrajnymi rejestrami.
     - >-
       Między grupami utworów powraca Spiegel im Spiegel Arvo Pärta, grany z galerii na organach.
@@ -62,10 +63,10 @@ release:
       Drogę domyka Stetit Angelus łotewskiego kompozytora Rihardsa Dubry. Antyfona układa słowa
       Apokalipsy o aniele, który staje przy ołtarzu ze złotą kadzielnicą, a dym kadzideł wznosi się
       z modlitwami świętych przed Bogiem. Ostatnie zdanie tej drogi pada więc w kościele, który
-      nosi dokładnie to wezwanie — Wszystkich Świętych.
+      nosi to samo wezwanie: Wszystkich Świętych.
     - >-
       Gościem zespołu jest rumuński skrzypek Radu Ropotan. Zagra Méditation Masseneta z organami,
-      Ménétrier Enescu — jedyną miniaturę z cyklu Impressions d’enfance napisaną na same skrzypce —
+      Ménétrier Enescu, jedyną miniaturę z cyklu Impressions d’enfance napisaną na same skrzypce,
       oraz The Lark Ascending, w opracowaniu, w którym słowa wiersza George’a Mereditha,
       w oryginale tylko wypisane nad nutami, naprawdę słychać.
     - >-
@@ -84,19 +85,19 @@ announce:
   # ≤ 500 characters as copied: for listings and calendars. The facts line closes it because a
   # listing is read for them.
   short: >-
-    „Pochwała Stworzenia” — VoctEnsemble pod dyrekcją Florenta de Bazelaire zamyka festiwal
-    „Fenomen człowieka”. Program wyrasta z Pieśni słonecznej św. Franciszka i prowadzi od zachwytu
+    Koncertem „Pochwała Stworzenia” VoctEnsemble pod dyrekcją Florenta de Bazelaire zamyka
+    festiwal „Fenomen człowieka”. Program wyrasta z Pieśni słonecznej św. Franciszka i prowadzi od zachwytu
     nad stworzeniem ku kruchości człowieka i nadziei wieczności. Zabrzmią m.in. Laudes creaturarum
-    Orffa, trzy utwory Mariana Borkowskiego i The Lark Ascending Vaughana Williamsa ze skrzypkiem
+    Orffa, utwory Mariana Borkowskiego i The Lark Ascending Vaughana Williamsa ze skrzypkiem
     Radu Ropotanem. Niedziela, 11 października, 13:30, kościół Wszystkich Świętych,
     pl. Grzybowski 3/5, Warszawa. Wstęp wolny.
   # ≤ 1500 characters as copied: for a column's announcement. The last block is lines, not prose.
   long:
     - >-
-      „Pochwała Stworzenia” — koncert VoctEnsemble pod dyrekcją Florenta de Bazelaire — zamyka
+      Koncertem „Pochwała Stworzenia” VoctEnsemble pod dyrekcją Florenta de Bazelaire zamyka
       trzecią edycję festiwalu „Fenomen człowieka”. Program wyrasta z Pieśni słonecznej
       św. Franciszka z Asyżu, w której całe stworzenie jest drogą do Stwórcy, i prowadzi od
-      zachwytu nad światem ku kruchości człowieka, cierpieniu i śmierci, a dalej — poza to, co
+      zachwytu nad światem ku kruchości człowieka, cierpieniu i śmierci, a dalej poza to, co
       widzialne.
     - >-
       W centrum stoi Laudes creaturarum Carla Orffa: cały Kantyk, w umbryjskim oryginale. Obok
@@ -104,8 +105,8 @@ announce:
       The Lark Ascending Vaughana Williamsa na skrzypce i chór, Stoi lód na Prośnie Sykulskiego
       i Ménétrier Enescu. Między grupami utworów powraca z galerii Spiegel im Spiegel Arvo Pärta,
       muzyczne lustro relacji stworzenia i Stwórcy. Drogę domyka Stetit Angelus Rihardsa Dubry:
-      anioł okadza ołtarz, a dym wznosi się z modlitwami świętych — w kościele, który nosi
-      wezwanie Wszystkich Świętych.
+      anioł okadza ołtarz, a dym wznosi się z modlitwami świętych. Utwór zabrzmi w kościele pod
+      wezwaniem Wszystkich Świętych.
     - "Na skrzypcach gra Radu Ropotan."
     - |-
       Niedziela, 11 października 2026, 13:30
@@ -116,16 +117,16 @@ social:
   # Written in the third person: it is pasted by other people's accounts (the festival, partners,
   # media), who tag @VoctEnsemble themselves. `postText` appends the concert's address.
   post:
-    - "„Pochwała Stworzenia” — VoctEnsemble zamyka festiwal „Fenomen człowieka”."
+    - "Koncertem „Pochwała Stworzenia” VoctEnsemble zamyka festiwal „Fenomen człowieka”."
     - >-
       Pieśń słoneczna św. Franciszka chwali Boga przez słońce, wiatr, wodę i ogień: całe
       stworzenie jest w niej drogą do Stwórcy. Program idzie tą drogą, od zachwytu nad światem
       przez to, co w człowieku kruche, aż poza to, co widzialne. Między grupami utworów wraca
-      z galerii Spiegel im Spiegel Arvo Pärta — lustro, w którym stworzenie odbija Stwórcę,
-      a człowiek jest Jego obrazem.
+      z galerii Spiegel im Spiegel Arvo Pärta, muzyczne lustro, w którym stworzenie odbija
+      Stwórcę, a człowiek jest Jego obrazem.
     - >-
       Drogę domyka Stetit Angelus Rihardsa Dubry: anioł z Apokalipsy okadza ołtarz, a dym wznosi
-      się z modlitwami wszystkich świętych — w kościele, który nosi ich wezwanie.
+      się z modlitwami wszystkich świętych. Utwór zabrzmi w kościele, który nosi ich wezwanie.
     - "Dyryguje Florent de Bazelaire, na skrzypcach gra Radu Ropotan."
     - |-
       Niedziela, 11 października, 13:30

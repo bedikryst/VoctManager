@@ -372,6 +372,8 @@ export interface PressChrome {
   readonly bioShort: string;
   readonly bioMedium: string;
   readonly bioLong: string;
+  /** The name of the one control that switches the biogram card between the three measures. */
+  readonly bioMeasureAria: string;
   /** "znak / znaki / znaków", so a measured count can be printed as a phrase. */
   readonly characters: CountForms;
   /** An announcement's measure: `{count}` is the counted limit, "do 500 znaków". */
@@ -475,6 +477,7 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     bioShort: "Krótki",
     bioMedium: "Średni",
     bioLong: "Pełny",
+    bioMeasureAria: "Długość biogramu",
     characters: { one: "znak", few: "znaki", many: "znaków" },
     upTo: "do {count}",
     copy: "Kopiuj",
@@ -539,6 +542,7 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     bioShort: "Short",
     bioMedium: "Medium",
     bioLong: "Full",
+    bioMeasureAria: "Biography length",
     characters: { one: "character", many: "characters" },
     upTo: "up to {count}",
     copy: "Copy",
@@ -603,6 +607,7 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     bioShort: "Courte",
     bioMedium: "Moyenne",
     bioLong: "Complète",
+    bioMeasureAria: "Longueur de la biographie",
     characters: { one: "caractère", many: "caractères" },
     upTo: "jusqu'à {count}",
     copy: "Copier",
