@@ -57,14 +57,20 @@ endpoint — no personal data, so no RODO sub-processor question arises.
 A second check on the account that already monitors the backup job — do **not**
 reuse the backup check, or a dead scheduler will hide behind a healthy backup.
 
-1. New check, period **1 hour**, grace **1 hour** (the task runs hourly; see
-   `CELERY_BEAT_SCHEDULE['core-ping-beat-heartbeat']`).
+1. New check, period **1 hour**, grace **1 hour**. The task pings at every
+   quarter hour on the wall clock (see
+   `CELERY_BEAT_SCHEDULE['core-ping-beat-heartbeat']`), more often than the
+   period on purpose: a deploy recreates the celery container and costs at most
+   the one tick that falls inside the restart — a 30-minute gap. Any period +
+   grace above 30 minutes keeps a routine deploy silent; 1 h + 1 h alerts after
+   two hours of silence. For faster detection, 15 min + 30 min alerts after 45
+   minutes and still tolerates a deploy.
 2. Copy its ping URL into the root `.env`:
    ```
    BEAT_HEARTBEAT_URL=https://hc-ping.com/<uuid>
    ```
 3. Redeploy so celery picks up the variable (`make deploy`), then confirm the
-   check flips green within the hour:
+   check flips green within a quarter of an hour:
    ```bash
    docker compose -f docker-compose.yml -f docker-compose.prod.yml \
      exec -T web python -c "from core.tasks import ping_beat_heartbeat; print(ping_beat_heartbeat())"

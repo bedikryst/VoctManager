@@ -13,6 +13,7 @@ from pathlib import Path
 
 import environ
 import sentry_sdk
+from celery.schedules import crontab
 
 # Base directory path
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -314,17 +315,25 @@ ANNOUNCEMENT_NUDGE_URGENT_HOURS = env.int('ANNOUNCEMENT_NUDGE_URGENT_HOURS', def
 # so dev and CI stay quiet. See docs/monitoring.md.
 BEAT_HEARTBEAT_URL = env('BEAT_HEARTBEAT_URL', default='')
 
+# Every entry is a wall-clock crontab (UTC), never a `timedelta`. Beat keeps each
+# entry's last run in a schedule file inside the celery container, and every deploy
+# recreates that container: a `timedelta` entry would count its interval from the
+# restart. A deploy would then push the heartbeat past the monitor's grace (a false
+# DOWN), let an hour pass with no digest sweep (that day's digest silently skipped),
+# and with more than one deploy a day keep the daily retention sweeps from ever
+# running. A crontab only loses the one tick that falls inside the restart itself.
 CELERY_BEAT_SCHEDULE = {
     # Proves beat → broker → worker is alive end to end. The monitor alerts on
     # the ping going MISSING, so a dead scheduler or hung worker cannot fail
-    # quietly. Period must stay well inside the monitor's configured grace.
+    # quietly. The monitor's grace must cover at least one lost tick, which is
+    # what a deploy costs — see docs/monitoring.md for the matching period.
     'core-ping-beat-heartbeat': {
         'task': 'core.ping_beat_heartbeat',
-        'schedule': timedelta(hours=1),
+        'schedule': crontab(minute='*/15'),
     },
     'payments-expire-stale-pending-donations': {
         'task': 'payments.expire_stale_pending_donations',
-        'schedule': timedelta(hours=1),
+        'schedule': crontab(minute=0),
     },
     # Daily, not hourly: both retention sweeps below are measured in months and years,
     # and each is what makes a period the privacy policy publishes (§ 7) true. An
@@ -333,47 +342,47 @@ CELERY_BEAT_SCHEDULE = {
     # at all.
     'payments-purge-failed-donations': {
         'task': 'payments.purge_failed_donations',
-        'schedule': timedelta(days=1),
+        'schedule': crontab(hour=3, minute=0),
     },
     'payments-purge-expired-patron-leads': {
         'task': 'payments.purge_expired_patron_leads',
-        'schedule': timedelta(days=1),
+        'schedule': crontab(hour=3, minute=0),
     },
     'roster-dispatch-due-reminders': {
         'task': 'roster.dispatch_due_reminders',
-        'schedule': timedelta(hours=1),
+        'schedule': crontab(minute=0),
     },
     # Hourly, but each project's own fuse and cooldown decide whether anything is
     # actually said — this is the sweep that stops the announcement queue becoming
     # the place news quietly dies.
     'roster-dispatch-announcement-nudges': {
         'task': 'roster.dispatch_announcement_nudges',
-        'schedule': timedelta(hours=1),
+        'schedule': crontab(minute=0),
     },
     # Hourly; each recipient's digest_hour gates the actual send to once a day.
     'notifications-send-digests': {
         'task': 'notifications.send_notification_digests',
-        'schedule': timedelta(hours=1),
+        'schedule': crontab(minute=0),
     },
     # Hourly, but the quiet period inside the task decides whether anything is
     # said: an editor still working keeps their whole sitting out of the sweep,
     # so a long session at the copy desk produces one digest and not four.
     'copydesk-dispatch-proposal-digests': {
         'task': 'copydesk.dispatch_copy_proposal_digests',
-        'schedule': timedelta(hours=1),
+        'schedule': crontab(minute=0),
     },
     # Daily, not hourly: both of its sweeps are measured in days and years, and it is
     # what makes the retention the privacy policy publishes for the notice list true —
     # an address nobody confirmed is dropped, a withdrawn consent's record expires.
     'outreach-purge-notice-records': {
         'task': 'outreach.purge_notice_records',
-        'schedule': timedelta(days=1),
+        'schedule': crontab(hour=3, minute=0),
     },
     # Daily: the 30-day window is what keeps the scratchpad's done section a
     # short-term undo rather than an archive that grows without bound.
     'core-purge-completed-notes': {
         'task': 'core.purge_completed_notes',
-        'schedule': timedelta(days=1),
+        'schedule': crontab(hour=3, minute=0),
     },
 }
 
