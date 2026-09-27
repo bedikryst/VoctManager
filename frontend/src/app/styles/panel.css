@@ -87,6 +87,15 @@
   --color-ink-on-inverse: #fbfaf7;
   --color-line-on-inverse: rgba(255, 255, 255, 0.1);
 
+  /* The piano's two materials. A keyboard is an object on the page, not
+     chrome: its white keys are light and its black keys dark in BOTH themes,
+     where a rung swap would turn it into a cream barcode. Ebony also writes on
+     ivory (key names, the seams between keys). On dark both step down once, so
+     the ivory does not glare off a night ground. Mirrored in
+     `shared/lib/tailwindMerge.ts`. */
+  --color-piano-ivory: #faf6ed;
+  --color-piano-ebony: #1f1b17;
+
   /* Hairlines. Every 1px rule inside an in-flow surface — card headers, list
      dividers, form section splits — comes from these two and nothing else.
      `strong` is for structural splits that must survive a busy background
@@ -366,6 +375,11 @@
     --color-surface-inverse: #2a2521;
     --color-ink-on-inverse: #f3f0ea;
     --color-line-on-inverse: rgba(255, 255, 255, 0.08);
+
+    /* The piano keeps its materials and loses one step of light: ivory dims so
+       it does not glare, ebony stays the darker of the two. */
+    --color-piano-ivory: #d9d2c4;
+    --color-piano-ebony: #15120f;
 
     /* A dark hairline is not the light one inverted at the same alpha: light
        ink on a dark ground reads weaker than dark ink on a light one, so both

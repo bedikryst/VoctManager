@@ -6493,5 +6493,68 @@
       "title": "Empty notepad",
       "description": "Jot down something you don't want to forget — a call to make, a message to send."
     }
+  },
+  "vocal_range": {
+    "eyebrow": "Vocal range",
+    "title": "What is your tessitura when you sing in the ensemble?",
+    "intro": "This is for the conductor. Other choristers will not see it. The extreme notes in brackets are optional.",
+    "voice_label": "Your voice",
+    "later": "Later",
+    "close": "Close",
+    "slots": {
+      "group_label": "Your range",
+      "empty": "not chosen",
+      "clear_extreme": "Remove the extreme note",
+      "clear": "Remove",
+      "tessitura_low": {
+        "label": "Tessitura, lower bound",
+        "caption": "from"
+      },
+      "extreme_low": {
+        "label": "Lowest extreme note (optional)",
+        "caption": "lowest"
+      },
+      "tessitura_high": {
+        "label": "Tessitura, upper bound",
+        "caption": "to"
+      },
+      "extreme_high": {
+        "label": "Highest extreme note (optional)",
+        "caption": "highest"
+      }
+    },
+    "keyboard_label": "Keyboard. The key you touch goes into: {{slot}}",
+    "note_card": {
+      "hint": "Touch a key: it sounds and fills the selected slot.",
+      "hz": "{{value}} Hz"
+    },
+    "table": {
+      "title": "Your range in each notation",
+      "international": "International",
+      "polish": "Polish",
+      "french": "French"
+    },
+    "validation": {
+      "incomplete": "Choose both bounds of the tessitura to send it.",
+      "tessitura_order": "The tessitura's lower bound must be below its upper bound.",
+      "extreme_low_order": "The lowest extreme note cannot be above the tessitura's lower bound.",
+      "extreme_high_order": "The highest extreme note cannot be below the tessitura's upper bound."
+    },
+    "comment_label": "Notes for the conductor (optional)",
+    "send": "Send to the conductor",
+    "send_error": "Sending failed. Please try again.",
+    "sent": {
+      "title": "Sent",
+      "body": "The conductor will see your range. You can change it in Settings, on the Profile tab.",
+      "done": "Back to the panel"
+    },
+    "trial": {
+      "voice_picker": "Voice for the trial",
+      "notice": "Trial mode: nothing will be saved"
+    },
+    "settings_row": {
+      "title": "My vocal range",
+      "empty": "Not given yet"
+    }
   }
 }

@@ -8,7 +8,7 @@
  * @module widgets/panel-shell/DashboardLayout
  */
 
-import React, { Suspense, useEffect } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useLocation, useOutlet } from "react-router-dom";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 
@@ -28,6 +28,9 @@ import { ProjectInvitationToasts } from "@/features/notifications/components/Pro
 import { DelegationBriefingModal } from "@/features/notifications/components/DelegationBriefingModal";
 import { CustomAdminMessageToast } from "@/features/notifications/components/CustomAdminMessageToast";
 import { FeedbackDock } from "@/features/feedback/components/FeedbackDock";
+import { useFirstRunTakeover } from "@/features/dashboard/hooks/useFirstRunTakeover";
+import { VocalRangeScreen } from "@/features/vocal-range/components/VocalRangeScreen";
+import { snoozeVocalRangePrompt } from "@/features/vocal-range/lib/vocalRangeSession";
 import { useBottomBarHeight } from "@/shared/lib/dom/useBottomBarSlot";
 import { rememberWorkspace } from "@/shared/lib/navigation/lastWorkspace";
 import { useOfflineSync } from "@/shared/offline/useOfflineSync";
@@ -84,11 +87,23 @@ export const DashboardLayout = ({
   usePushLiveRefresh();
   const canPreloadArtistRoutes = isArtist(user);
   const canPreloadManagerRoutes = isManager(user);
-  // The chorister's first-run welcome is a full-screen moment that owns the
-  // install ask while it's up, so the ambient pill stays quiet behind it. The
-  // conductor's concierge is an inline panel — the pill can sit alongside it.
-  const isFirstRun = !!user && (user.profile?.welcome_seen_at ?? null) === null;
-  const welcomeOverlayActive = isFirstRun && !canPreloadManagerRoutes;
+  // A full-screen first-run moment (the chorister's welcome, then the
+  // vocal-range prompt) owns the install ask while it is up, so the ambient
+  // pill stays quiet behind it. The conductor's concierge is an inline panel
+  // and takes nothing over, so the pill can sit alongside it.
+  const takeover = useFirstRunTakeover();
+  // The welcome hands straight to the prompt when one follows the other: the
+  // prompt then opens over the welcome's own scene, already lit, instead of
+  // fading in over the dashboard. Tracked as state adjusted during render, so
+  // the prompt's first frame already knows.
+  const [previousTakeover, setPreviousTakeover] = useState(takeover);
+  const [promptEntersLit, setPromptEntersLit] = useState(false);
+  if (takeover !== previousTakeover) {
+    setPreviousTakeover(takeover);
+    setPromptEntersLit(
+      previousTakeover === "welcome" && takeover === "vocal-range",
+    );
+  }
 
   const outlet = useOutlet();
 
@@ -238,6 +253,15 @@ export const DashboardLayout = ({
           </PanelErrorBoundary>
         </div>
       </main>
+      {/* Mounted here, not on the dashboard, because the prompt is due at any
+          route the panel opens on; the welcome that precedes it hands over
+          through `useFirstRunTakeover`. */}
+      <VocalRangeScreen
+        open={takeover === "vocal-range"}
+        mode="prompt"
+        entersLit={promptEntersLit}
+        onClose={snoozeVocalRangePrompt}
+      />
       <ProjectInvitationToasts />
       {/* Waits behind the invitation: a question that needs an answer goes
           before an instruction that needs reading. */}
@@ -263,10 +287,10 @@ export const DashboardLayout = ({
         {/* Above the install ask: this one is about the app the member is using
             right now, and it appears only in the minutes after a deploy. */}
         <AppUpdatePrompt />
-        {/* The chorister's full-screen welcome owns the install ask while it's on
+        {/* A full-screen first-run moment owns the install ask while it's on
             screen — the ambient pill stays quiet until the member has crossed the
             threshold, then resumes its own cadence. One install nudge at a time. */}
-        {!welcomeOverlayActive && <InstallAppPrompt />}
+        {takeover === null && <InstallAppPrompt />}
         {/* Last, so the transient pills rise above it rather than over it. */}
         <FeedbackDock />
       </div>

@@ -71,8 +71,9 @@ const DARK = declarations(DARK_CSS);
  * them would turn that decision into a failure the day someone honours it.
  *
  * What is listed is everything whose job is to MOVE: the six ladder rungs, the
- * two accents that cannot clear AA unchanged, the inverse trio, the hairlines,
- * the glass pair, the five shadow colours and the five aura colours.
+ * two accents that cannot clear AA unchanged, the inverse trio, the piano pair
+ * (which dims rather than inverts), the hairlines, the glass pair, the five
+ * shadow colours and the five aura colours.
  */
 const MUST_FLIP = [
   "--color-ethereal-marble",
@@ -87,6 +88,8 @@ const MUST_FLIP = [
   "--color-surface-inverse",
   "--color-ink-on-inverse",
   "--color-line-on-inverse",
+  "--color-piano-ivory",
+  "--color-piano-ebony",
   "--color-hairline",
   "--color-hairline-strong",
   "--color-glass-surface",
@@ -127,12 +130,18 @@ describe("panel.css theme parity", () => {
     expect(unchanged).toEqual([]);
   });
 
-  it("keeps the three inverse tokens in the tailwind-merge ledger", () => {
+  it("keeps the theme-holding colour tokens in the tailwind-merge ledger", () => {
     // A token missing from that ledger is read as an unknown colour and
     // silently DELETED by cn() at runtime — no error, and the class still
     // present in the built stylesheet.
     const ledger = read("src/shared/lib/tailwindMerge.ts");
-    for (const token of ["surface-inverse", "ink-on-inverse", "line-on-inverse"]) {
+    for (const token of [
+      "surface-inverse",
+      "ink-on-inverse",
+      "line-on-inverse",
+      "piano-ivory",
+      "piano-ebony",
+    ]) {
       expect(ledger).toContain(`"${token}"`);
     }
   });

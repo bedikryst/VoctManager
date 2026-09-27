@@ -1,9 +1,10 @@
 /**
  * @file GeneralTab.tsx
  * @description "Profil" pane: personal data + contact, the (read-only) login
- * e-mail with a shortcut to the security pane where it can be changed, and
- * interface preferences (language, timezone). Voice type now lives in the
- * identity card at the layout level instead of an ad-hoc metric block here.
+ * e-mail with a shortcut to the security pane where it can be changed, the
+ * singer's own vocal range (a row that exists only under its rollout flag),
+ * and interface preferences (language, timezone). Voice type lives in the
+ * identity card at the layout level.
  * @architecture Enterprise SaaS 2026
  * @module features/settings/components/GeneralTab
  */
@@ -28,6 +29,7 @@ import { Select } from "@ui/primitives/Select";
 import { Text, Caption } from "@ui/primitives/typography";
 import { EtherealLoader } from "@ui/kinematics/EtherealLoader";
 import { DURATION, EASE } from "@ui/kinematics/motion-presets";
+import { VocalRangeSettingsRow } from "@/features/vocal-range/components/VocalRangeSettingsRow";
 import { useGeneralSettings } from "../hooks/useGeneralSettings";
 import { SettingsSaveFooter } from "./SettingsSaveFooter";
 
@@ -166,6 +168,8 @@ export const GeneralTab = () => {
             </button>
           </div>
         </div>
+
+        <VocalRangeSettingsRow />
 
         <div className="pt-2">
           <SectionHeader

@@ -12,10 +12,15 @@
  * silence), never a synthesised stand-in for "how the ensemble sounds". Any
  * setup nudges (install, finish configuration) sit quietly below the ceremony —
  * offered after the warmth, never as a wall of permission asks before it.
+ *
+ * When the vocal-range prompt is owed next, the welcome does not fade out to
+ * the dashboard: it holds until the refreshed user lets the prompt open, and
+ * the prompt enters over it with the scene already lit. Fading first would
+ * flash the dashboard for the length of a round trip.
  * @module features/dashboard/components/WelcomeMoment
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { artistRoleLabel } from "@/shared/lib/voiceTypes";
@@ -27,8 +32,9 @@ import { ArrowRight, Calendar, Download, MapPin, Settings, Sparkles } from "luci
 import { cn } from "@/shared/lib/utils";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 import { EASE } from "@/shared/ui/kinematics/motion-presets";
-import { VocalClefShadow } from "@/shared/ui/kinematics/VocalClefShadow";
+import { NaveScene } from "@/shared/ui/kinematics/NaveScene";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
@@ -40,92 +46,7 @@ import { useProjectInvitationQueue } from "@/features/notifications/hooks/usePro
 import { useInstallPrompt } from "@/shared/pwa/useInstallPrompt";
 import { getSectionPresentation } from "@/features/artists/constants/voiceSections";
 import { settingsService } from "@/features/settings/api/settings.service";
-
-const STAVE_LINES = [0, 1, 2, 3, 4] as const;
-
-interface WelcomeSceneProps {
-  /** Whether the kamerton is ringing — the shaft of light answers the tone. */
-  readonly isToneRinging: boolean;
-  readonly reduceMotion: boolean;
-}
-
-/**
- * The nave in full light — the welcome's own scenography. The dashboard's
- * ambient EtherealBackground sits *under* the (opaque) overlay, so the scene is
- * restated here at ceremonial intensity: the same layers, brighter, closer.
- * Painted in a non-scrolling wrapper so a short viewport scrolls the words,
- * never the light.
- */
-const WelcomeScene = ({
-  isToneRinging,
-  reduceMotion,
-}: WelcomeSceneProps): React.JSX.Element => (
-  <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-    {/* Base — light falls from above: marble at the clerestory, parchment at
-        the floor. Fully opaque: the reveal of the dashboard is the overlay's
-        exit fade, not a haze over it. */}
-    <div className="absolute inset-0 bg-linear-to-b from-ethereal-marble via-ethereal-alabaster to-ethereal-parchment" />
-
-    {/* Shaft of light — a warm beam entering at the top centre, light at its
-        core with a golden fringe. It swells while the kamerton rings. The core
-        is `--aura-shaft` because a beam is a fraction of itself on a dark
-        ground; the fringe stays a gold literal, because an accent holds. */}
-    <motion.div
-      className="absolute inset-0 bg-[radial-gradient(ellipse_90%_65%_at_50%_-12%,var(--aura-shaft)_0%,rgba(194,168,120,0.14)_46%,transparent_72%)]"
-      initial={reduceMotion ? false : { opacity: 0 }}
-      animate={{ opacity: isToneRinging ? 1 : 0.7 }}
-      transition={{ duration: 1.4, ease: EASE.buttery }}
-    />
-
-    {/* Incense-light glows — gold pooling top-left, amethyst lower-right,
-        the EtherealBackground pair a shade warmer for the ceremony. */}
-    <div className="absolute -left-[8%] -top-[10%] h-[46vw] w-[46vw] rounded-full bg-ethereal-gold/25 opacity-30 mix-blend-multiply blur-[110px] light-ground-film" />
-    <div className="absolute -bottom-[22%] -right-[8%] h-[50vw] w-[50vw] rounded-full bg-ethereal-amethyst/20 opacity-20 mix-blend-multiply blur-[120px] light-ground-film" />
-
-    {/* The stave — the score the singer steps into, drawing itself in once. */}
-    <div className="absolute inset-0 flex items-center justify-center">
-      <motion.div
-        className="flex w-[170vw] shrink-0 -rotate-[8deg] flex-col gap-14"
-        initial={reduceMotion ? "visible" : "hidden"}
-        animate="visible"
-        variants={{
-          hidden: {},
-          visible: { transition: { staggerChildren: 0.12 } },
-        }}
-      >
-        {STAVE_LINES.map((line) => (
-          <motion.div
-            key={`welcome-stave-${line}`}
-            className="h-px w-full origin-left bg-linear-to-r from-transparent via-ethereal-incense/45 to-transparent shadow-[0_0_8px_rgba(194,168,120,0.35)]"
-            variants={{
-              hidden: { scaleX: 0, opacity: 0 },
-              visible: {
-                scaleX: 1,
-                opacity: 1,
-                transition: { duration: 2.4, ease: [0.16, 1, 0.3, 1] },
-              },
-            }}
-          />
-        ))}
-      </motion.div>
-    </div>
-
-    {/* The C-clef signature, settled at the singer's left hand. */}
-    <motion.div
-      className="absolute inset-0"
-      initial={reduceMotion ? false : { opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 2, delay: 0.4, ease: EASE.buttery }}
-    >
-      <VocalClefShadow className="left-[4%] text-ethereal-incense/25" />
-    </motion.div>
-
-    {/* Oculus vignette + film grain — the chiaroscuro of a lit interior,
-        grain held at the app-wide whisper (NOT a dirty film over the scene). */}
-    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,transparent_40%,var(--aura-vignette)_100%)]" />
-    <div className="absolute inset-0 bg-noise opacity-[0.03] mix-blend-overlay" />
-  </div>
-);
+import { isVocalRangePromptPending } from "@/features/vocal-range/hooks/useVocalRangePromptDue";
 
 interface WelcomeMomentProps {
   /** The singer's name (vocative-aware), highlighted in the greeting. */
@@ -143,6 +64,8 @@ export const WelcomeMoment = ({
   const reduceMotion = useReducedMotion() ?? false;
   const [mounted, setMounted] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMounted(true), []);
 
@@ -150,22 +73,29 @@ export const WelcomeMoment = ({
   // welcome on any device. Local `dismissed` only smooths the exit animation.
   const seenAt = user?.profile?.welcome_seen_at ?? null;
   const show = Boolean(user) && seenAt === null && !dismissed;
+  const handsOver = isVocalRangePromptPending(user);
 
   useBodyScrollLock(show);
+  useFocusTrap(dialogRef, show && mounted);
 
   const dismiss = useCallback(() => {
+    if (leaving) return;
+    setLeaving(true);
     // The component stays mounted through the exit animation, so a ringing
     // kamerton must be silenced explicitly — unmount cleanup never fires here.
     stop();
-    setDismissed(true);
+    // With the prompt to follow, the welcome stays up until the refreshed user
+    // closes it and opens the prompt in the same render; without one it fades
+    // at once.
+    if (!handsOver) setDismissed(true);
     // Stamp it once, server-side, then settle the in-memory user so a remount
     // doesn't greet again. On failure we keep the local dismissal; the flag
     // simply gets another chance next session.
     void settingsService
       .markWelcomeSeen()
       .then(() => refreshUser())
-      .catch(() => undefined);
-  }, [refreshUser, stop]);
+      .catch(() => setDismissed(true));
+  }, [handsOver, leaving, refreshUser, stop]);
 
   const voiceType = user?.voice_type ?? null;
   const voicePresentation = getSectionPresentation(voiceType);
@@ -184,16 +114,20 @@ export const WelcomeMoment = ({
       {show && (
         <motion.div
           key="welcome-moment"
+          ref={dialogRef}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6, ease: EASE.buttery }}
-          className="fixed inset-0 z-focus-trap"
+          className="fixed inset-0 z-focus-trap outline-none"
           role="dialog"
           aria-modal="true"
           aria-label={t("dashboard.artist.welcome.eyebrow", "Witamy w zespole")}
+          // Takes a click on its bare scene, so focus never drops to the page
+          // behind and out of the focus trap's reach.
+          tabIndex={-1}
         >
-          <WelcomeScene isToneRinging={isPlaying} reduceMotion={reduceMotion} />
+          <NaveScene isToneRinging={isPlaying} reduceMotion={reduceMotion} />
 
           <Button
             type="button"
@@ -435,6 +369,7 @@ export const WelcomeMoment = ({
                 variant="primary"
                 size="lg"
                 onClick={dismiss}
+                isLoading={leaving && handsOver}
                 className="mt-10"
               >
                 {t("dashboard.artist.welcome.enter", "Wejdź do swojej przestrzeni")}

@@ -7,9 +7,10 @@
  * unread, so it resurfaces on the next load (and stays reachable from the
  * notification centre / schedule). Multiple pending invitations are shown one at
  * a time as a queue. The queue/decision logic is shared with the first-run
- * WelcomeMoment via useProjectInvitationQueue; this modal stays silent while the
- * chorister's welcome ceremony owns the screen (it presents the invitation
- * itself), so the two takeovers never double-stack. The export name is kept
+ * WelcomeMoment via useProjectInvitationQueue; this modal stays silent while a
+ * first-run moment owns the screen (`useFirstRunTakeover`: the welcome, which
+ * presents the invitation itself, or the vocal-range prompt), so two takeovers
+ * never double-stack. The export name is kept
  * (`ProjectInvitationToasts`) so the DashboardLayout mount point is untouched.
  * @module features/notifications/components/ProjectInvitationToasts
  */
@@ -36,11 +37,11 @@ import {
 } from "../lib/notificationFormat";
 import { Caption, Text, Heading, Eyebrow } from "@/shared/ui/primitives/typography";
 import { Button } from "@/shared/ui/primitives/Button";
-import { useAuth } from "@/app/providers/AuthProvider";
+import { useFirstRunTakeover } from "@/features/dashboard/hooks/useFirstRunTakeover";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
 export const ProjectInvitationToasts: React.FC = () => {
-  const { user } = useAuth();
+  const takeover = useFirstRunTakeover();
   const { t, i18n } = useTranslation();
   const { current, pendingCount, accept, decline, defer } =
     useProjectInvitationQueue();
@@ -62,15 +63,11 @@ export const ProjectInvitationToasts: React.FC = () => {
 
   if (!mounted) return null;
 
-  // The chorister's first-run welcome overlay presents pending invitations itself
-  // (see welcome-invitation spec, Part A); showing this modal on top of the
-  // ceremony double-stacks two takeovers. The role check keeps manager
-  // invitations unaffected — managers reuse welcome_seen_at for the
-  // (non-blocking) SeasonSetupConcierge, never this overlay.
-  const welcomeOnStage =
-    !user?.profile?.is_manager &&
-    (user?.profile?.welcome_seen_at ?? null) === null;
-  if (welcomeOnStage) return null;
+  // A first-run moment owns the screen: the welcome presents pending
+  // invitations itself (see welcome-invitation spec, Part A), and the
+  // vocal-range prompt is followed by this modal once it is sent or snoozed.
+  // Showing it on top of either double-stacks two takeovers.
+  if (takeover !== null) return null;
 
   const metadata = current?.metadata;
   const rehearsals = metadata?.rehearsals ?? [];

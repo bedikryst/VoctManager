@@ -6504,5 +6504,68 @@
       "title": "Bloc-notes vide",
       "description": "Notez quelque chose que vous ne voulez pas oublier — un appel à passer, un message à écrire."
     }
+  },
+  "vocal_range": {
+    "eyebrow": "Tessiture",
+    "title": "Quelle est votre tessiture dans le chant d'ensemble ?",
+    "intro": "Cette information est destinée au chef de chœur. Les autres choristes ne la verront pas. Les notes extrêmes entre parenthèses sont facultatives.",
+    "voice_label": "Votre voix",
+    "later": "Plus tard",
+    "close": "Fermer",
+    "slots": {
+      "group_label": "Votre étendue",
+      "empty": "aucune note",
+      "clear_extreme": "Retirer la note extrême",
+      "clear": "Retirer",
+      "tessitura_low": {
+        "label": "Tessiture, limite inférieure",
+        "caption": "de"
+      },
+      "extreme_low": {
+        "label": "Note extrême grave (facultatif)",
+        "caption": "au plus grave"
+      },
+      "tessitura_high": {
+        "label": "Tessiture, limite supérieure",
+        "caption": "à"
+      },
+      "extreme_high": {
+        "label": "Note extrême aiguë (facultatif)",
+        "caption": "au plus aigu"
+      }
+    },
+    "keyboard_label": "Clavier. La touche choisie s'inscrit dans : {{slot}}",
+    "note_card": {
+      "hint": "Appuyez sur une touche : elle sonne et s'inscrit dans la case choisie.",
+      "hz": "{{value}} Hz"
+    },
+    "table": {
+      "title": "Votre étendue dans chaque notation",
+      "international": "Internationale",
+      "polish": "Polonaise",
+      "french": "Française"
+    },
+    "validation": {
+      "incomplete": "Choisissez les deux limites de la tessiture pour l'envoyer.",
+      "tessitura_order": "La limite inférieure de la tessiture doit être plus grave que sa limite supérieure.",
+      "extreme_low_order": "La note extrême grave ne peut pas être plus aiguë que la limite inférieure de la tessiture.",
+      "extreme_high_order": "La note extrême aiguë ne peut pas être plus grave que la limite supérieure de la tessiture."
+    },
+    "comment_label": "Remarques pour le chef de chœur (facultatif)",
+    "send": "Envoyer au chef de chœur",
+    "send_error": "L'envoi a échoué. Réessayez.",
+    "sent": {
+      "title": "Envoyé",
+      "body": "Le chef de chœur verra votre étendue. Vous pourrez la modifier dans les Paramètres, onglet Profil.",
+      "done": "Retour au panneau"
+    },
+    "trial": {
+      "voice_picker": "Voix pour l'essai",
+      "notice": "Mode d'essai : rien ne sera enregistré"
+    },
+    "settings_row": {
+      "title": "Ma tessiture",
+      "empty": "Pas encore indiquée"
+    }
   }
 }

@@ -6563,5 +6563,68 @@
       "title": "Pusty notatnik",
       "description": "Zapisz coś, o czym nie chcesz zapomnieć — telefon, wiadomość do napisania."
     }
+  },
+  "vocal_range": {
+    "eyebrow": "Skala głosu",
+    "title": "Jaka jest Twoja tessitura w śpiewie zespołowym?",
+    "intro": "To informacja dla dyrygenta. Pozostali chórzyści jej nie zobaczą. Dźwięki skrajne w nawiasach są opcjonalne.",
+    "voice_label": "Twój głos",
+    "later": "Później",
+    "close": "Zamknij",
+    "slots": {
+      "group_label": "Twój zakres",
+      "empty": "nie wybrano",
+      "clear_extreme": "Usuń skrajny dźwięk",
+      "clear": "Usuń",
+      "tessitura_low": {
+        "label": "Dolna granica tessitury",
+        "caption": "od"
+      },
+      "extreme_low": {
+        "label": "Skrajny dźwięk dolny (opcjonalnie)",
+        "caption": "najniżej"
+      },
+      "tessitura_high": {
+        "label": "Górna granica tessitury",
+        "caption": "do"
+      },
+      "extreme_high": {
+        "label": "Skrajny dźwięk górny (opcjonalnie)",
+        "caption": "najwyżej"
+      }
+    },
+    "keyboard_label": "Klawiatura. Dotknięty klawisz trafi do pola: {{slot}}",
+    "note_card": {
+      "hint": "Dotknij klawisza: zabrzmi i trafi do zaznaczonego pola.",
+      "hz": "{{value}} Hz"
+    },
+    "table": {
+      "title": "Twój zakres w każdym zapisie",
+      "international": "Międzynarodowy",
+      "polish": "Polski",
+      "french": "Francuski"
+    },
+    "validation": {
+      "incomplete": "Wybierz obie granice tessitury, żeby wysłać.",
+      "tessitura_order": "Dolna granica tessitury musi leżeć niżej niż górna.",
+      "extreme_low_order": "Skrajny dźwięk dolny nie może leżeć wyżej niż dolna granica tessitury.",
+      "extreme_high_order": "Skrajny dźwięk górny nie może leżeć niżej niż górna granica tessitury."
+    },
+    "comment_label": "Uwagi dla dyrygenta (opcjonalnie)",
+    "send": "Wyślij dyrygentowi",
+    "send_error": "Nie udało się wysłać. Spróbuj jeszcze raz.",
+    "sent": {
+      "title": "Wysłane",
+      "body": "Dyrygent zobaczy Twój zakres. Zmienisz go w Ustawieniach, w zakładce Profil.",
+      "done": "Wróć do panelu"
+    },
+    "trial": {
+      "voice_picker": "Głos do próby",
+      "notice": "Tryb próbny: nic nie zostanie zapisane"
+    },
+    "settings_row": {
+      "title": "Moja skala głosu",
+      "empty": "Jeszcze nie podano"
+    }
   }
 }

@@ -20,7 +20,11 @@ import api, { type AuthRequestConfig } from "@/shared/api/api";
 import { clearPersistedQueryCache } from "@/shared/api/queryPersistence";
 import { clearAllOffline } from "@/shared/offline/offlineClient";
 import { changeAppLanguage } from "@/shared/config/i18n";
-import type { AuthProfile, AuthUser } from "@/shared/auth/auth.types";
+import type {
+  AuthProfile,
+  AuthUser,
+  VocalRangeProposal,
+} from "@/shared/auth/auth.types";
 import { settingsKeys } from "@/features/settings/api/settings.queries";
 import type { UserMeDTO } from "@/features/settings/types/settings.dto";
 import { notificationKeys } from "@/features/notifications/api/notifications.queries";
@@ -47,7 +51,26 @@ interface ArtistSelfResponse {
   voice_type_display?: string | null;
   instrument?: string | null;
   profile?: AuthProfile | null;
+  /** The singer's own range proposal. Me and Detailed both carry it, so it is
+   *  here for a singer and for a manager with an artist profile alike. */
+  proposed_tessitura_low?: number | null;
+  proposed_tessitura_high?: number | null;
+  proposed_extreme_low?: number | null;
+  proposed_extreme_high?: number | null;
+  vocal_range_comment?: string;
+  vocal_range_proposed_at?: string | null;
 }
+
+const toVocalRangeProposal = (
+  artist: ArtistSelfResponse,
+): VocalRangeProposal => ({
+  tessitura_low: artist.proposed_tessitura_low ?? null,
+  tessitura_high: artist.proposed_tessitura_high ?? null,
+  extreme_low: artist.proposed_extreme_low ?? null,
+  extreme_high: artist.proposed_extreme_high ?? null,
+  comment: artist.vocal_range_comment ?? "",
+  proposed_at: artist.vocal_range_proposed_at ?? null,
+});
 
 export interface LoginResponse {
   success: boolean;
@@ -142,6 +165,9 @@ const buildAuthUser = async (): Promise<AuthUser> => {
       artistResponse?.voice_type_display,
     instrument: identityResponse.data.instrument ?? artistResponse?.instrument ?? null,
     profile: identityResponse.data.profile ?? artistResponse?.profile ?? null,
+    vocal_range_proposal: artistResponse
+      ? toVocalRangeProposal(artistResponse)
+      : null,
   };
 };
 

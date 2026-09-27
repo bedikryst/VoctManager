@@ -3881,3 +3881,7 @@ msgstr ""
 #: core/ical_service.py
 msgid "Season"
 msgstr ""
+
+#: roster/views.py:484
+msgid "Only a singer may submit a vocal range proposal."
+msgstr ""

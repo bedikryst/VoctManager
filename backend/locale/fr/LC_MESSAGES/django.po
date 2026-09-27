@@ -5297,3 +5297,7 @@ msgstr "Cette œuvre ne figure pas au programme du projet."
 #: core/ical_service.py
 msgid "Season"
 msgstr "Saison"
+
+#: roster/views.py:484
+msgid "Only a singer may submit a vocal range proposal."
+msgstr "Seuls les choristes peuvent proposer une tessiture."

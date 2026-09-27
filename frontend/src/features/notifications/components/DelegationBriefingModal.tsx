@@ -36,6 +36,7 @@ import {
   X,
 } from "lucide-react";
 
+import { useFirstRunTakeover } from "@/features/dashboard/hooks/useFirstRunTakeover";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
@@ -61,12 +62,14 @@ export const DelegationBriefingModal: React.FC = () => {
   // The question goes first, and this one waits its turn rather than stacking a
   // second takeover on top of it.
   const { current: invitationOnStage } = useProjectInvitationQueue();
+  // A full-screen first-run moment outranks both.
+  const takeover = useFirstRunTakeover();
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
 
   useEffect(() => setMounted(true), []);
 
-  const onStage = !!current && !invitationOnStage;
+  const onStage = !!current && !invitationOnStage && takeover === null;
   useBodyScrollLock(onStage);
 
   useEffect(() => {

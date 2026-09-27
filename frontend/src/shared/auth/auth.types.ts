@@ -47,6 +47,12 @@ export interface AuthProfile {
   /** Set once, server-side, when the member completes the one-time home welcome. */
   welcome_seen_at?: string | null;
   /**
+   * Whether the vocal-range rollout flag (`VOCAL_RANGE_PROMPT` in the server's
+   * `.env`) covers this account. It gates the singer's prompt and the Settings
+   * row only; the endpoint itself stays open.
+   */
+  vocal_range_prompt_enabled?: boolean;
+  /**
    * The copy-desk capability (`/redakcja`). A capability and NOT a fourth role:
    * the panel splits the world binarily into manager and not-manager, and an
    * editor of the public site's text is orthogonal to that split. Granted from
@@ -67,6 +73,21 @@ export interface AuthProfile {
   can_approve_finance?: boolean;
 }
 
+/**
+ * The singer's own proposal of their range, as last sent, in MIDI numbers. It is
+ * never the conductor's assessment (`vocal_range_bottom/top`), which no
+ * chorister receives.
+ */
+export interface VocalRangeProposal {
+  tessitura_low: number | null;
+  tessitura_high: number | null;
+  extreme_low: number | null;
+  extreme_high: number | null;
+  comment: string;
+  /** Null until the first submission; the prompt is due while it is. */
+  proposed_at: string | null;
+}
+
 export interface AuthUser {
   id: string | number;
   email: string;
@@ -79,4 +100,6 @@ export interface AuthUser {
   /** What a player plays; empty for everyone else. */
   instrument?: string | null;
   profile?: AuthProfile | null;
+  /** Null for an account without an artist profile. */
+  vocal_range_proposal?: VocalRangeProposal | null;
 }

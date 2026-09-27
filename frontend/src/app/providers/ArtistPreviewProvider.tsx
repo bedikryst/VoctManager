@@ -54,6 +54,13 @@ export const PREVIEW_TAB_PARAM = "tab";
 export const PREVIEW_PROJECT_PARAM = "project";
 export const PREVIEW_PIECE_PARAM = "piece";
 
+/**
+ * The preview route as a `matchPath` pattern, for code above the provider —
+ * the panel shell — which cannot read the context. It must match the route
+ * declared in `App.tsx`.
+ */
+export const ARTIST_PREVIEW_ROUTE = "/panel/artists/:artistId/preview";
+
 /** The preview's songbook — where a previewed piece goes back to. */
 export const previewSongbookPath = (artistId: string): string =>
   `/panel/artists/${artistId}/preview?${PREVIEW_TAB_PARAM}=materials`;

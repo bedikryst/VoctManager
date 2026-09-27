@@ -481,7 +481,7 @@ class ArtistViewSet(viewsets.ModelViewSet):
         artist = Artist.objects.filter(user=request.user).first()
         if artist is None or not artist.is_singer:
             return Response(
-                {"detail": "Only a singer may submit a vocal range proposal."},
+                {"detail": _("Only a singer may submit a vocal range proposal.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
 

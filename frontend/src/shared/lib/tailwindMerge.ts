@@ -38,7 +38,15 @@ export const etherealTwMerge = extendTailwindMerge({
       // always resolved correctly by accident. These are named explicitly
       // because they are the tokens whose whole point is to survive a theme
       // swap — resolving them by fallback is a property nobody declared.
-      color: ["surface-inverse", "ink-on-inverse", "line-on-inverse"],
+      // The piano's two materials hold for the same reason: a keyboard's
+      // white keys stay light on either ground.
+      color: [
+        "surface-inverse",
+        "ink-on-inverse",
+        "line-on-inverse",
+        "piano-ivory",
+        "piano-ebony",
+      ],
       // --text-* → the uppercase overline role. The one that was being deleted.
       text: ["overline", "overline-sm"],
       // --radius-* → the four-step scale.

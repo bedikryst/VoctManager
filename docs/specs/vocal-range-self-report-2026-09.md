@@ -2,7 +2,11 @@
 
 Status: **Stage 1 (backend) built, audited and committed 2026-09-27: model, service, endpoint,
 serializer exclusions, rollout flag, GDPR export and erasure, tests. Migration `roster/0065` not
-yet run on prod (`make migrate`). Next: Stage 2 (frontend shared foundations).**
+yet run on prod (`make migrate`). Stages 2 and 3 (shared foundations, the singer's screen) built
+2026-09-27 and audited the same day; every audit item fixed 2026-09-27 (see "Audit of Stages 2–3"
+under Stage 3); typecheck, lint, tests and build green; committed 2026-09-27. The developer has
+seen the first pass on dev (desktop and phone width, dark theme); the second pass is not yet seen.
+Next: the developer's look on dev, then Stage 4.**
 One stage per session. When a stage lands, update this line and say whether it is committed,
 migrated and seen in the browser.
 
@@ -121,14 +125,20 @@ Only singing voice types (`SINGING_VOICE_TYPES`) may submit.
 - `shared/lib/audio/voicedTone.ts`:
   - additive tone, harmonics 1–8 at amplitude ~1/n;
   - envelope: ~20 ms attack, ~300 ms release, ~1.4 s;
-  - `playArpeggio(midis)`;
+  - `playArpeggio(midis)` and `playVoicedTone(midi)`; both return null when nothing was
+    scheduled (no Web Audio, or no pitches), and then `onEnded` never fires;
   - runs on `toneContext`.
 - `shared/ui/instruments/VerticalKeyboard.tsx`:
-  - vertical piano (high at top), virtualised to the visible window;
-  - props `low/high`, `bands` (bright tessitura, thin extremes), `markers`, `activeKey`,
-    `liveCursor`, `onKeyPress`;
-  - every C carries its label in the reader's notation;
-  - Ethereal tokens only; motion on transform/opacity.
+  - vertical piano (high at top) that scrolls inside a height the caller gives it. Every key is
+    rendered, not windowed: the file header says why;
+  - props `low/high`, `notation`, `label` (accessible name), `bands` (tint on the keys: tessitura
+    stronger, extremes fainter), `emphasis` (keys outside it dimmed), `activeKey`, `liveCursor`,
+    `centerRequest` (`{ midi, seq }`, scrolled to the middle: instantly the first time, smoothly
+    after), `onKeyPress` (fired inside the click, so a scroll never sounds a note);
+  - every white key carries its name in the reader's notation, faint, each C stronger; a key's
+    aria-label is the spoken form (`spokenPitch`: `a razkreślne`, `C sharp 4`);
+  - keys in `piano-ivory` / `piano-ebony`, which dim on dark but never invert; motion on
+    transform/opacity.
 
 ## Stage 3 — the singer's screen (`features/vocal-range/`)
 
@@ -149,12 +159,20 @@ the screen returns at the next app open. It never blocks the panel.
 `ProjectInvitationToasts` read it instead of `welcome_seen_at`, so two takeovers never stack.
 
 **The screen — the line is the form:**
-- Head copy (draft, Polish primary):
-  > Jaka jest Twoja tessitura w śpiewie zespołowym? Podaj zakres, w którym Twój głos swobodnie i
-  > naturalnie funkcjonuje w zespole. W nawiasie możesz dodatkowo podać skrajne dźwięki, które
-  > jesteś w stanie zaśpiewać, choć tylko głośniej i z wysiłkiem.
+- Head copy (Polish primary; the conductor approves it in the dry run):
+  > Jaka jest Twoja tessitura w śpiewie zespołowym?
+  > To informacja dla dyrygenta. Pozostali chórzyści jej nie zobaczą. Dźwięki skrajne w nawiasach
+  > są opcjonalne.
+
+  The first draft explained what a tessitura is and what the parentheses hold. The developer
+  struck it: the readers are trained singers, and explaining their own craft to them reads as
+  condescending. The copy states the purpose, the privacy, and the one rule of the form.
 - Four tappable slots, set large in the reader's notation: `[a] ([g]) – [a²] ([c³])`. The
   tessitura slots are required; the extreme slots are optional.
+  Decide how the octave marks render before building the slots. `¹ ² ³` are Latin-1 and inside
+  the self-hosted font subsets. `⁴ ⁵ ₁ ₂ ♯` are not: the `unicode-range` in `index.html` stops at
+  U+206F, so they fall back to a system face, and a large `c³` beside `c⁴` shows it. Either extend
+  the subsets or set the marks as `<sup>`/`<sub>` from plain digits.
 - Tap a slot, then a key. The key sounds and fills the slot. The keyboard opens centred on the
   voice's middle:
 
@@ -162,15 +180,18 @@ the screen returns at the next app open. It never blocks the panel.
   |---|---|---|---|---|---|---|
   | a¹ | f¹ | d¹ | e¹ | a | f | d |
 
-  Its bounds are G1–C7.
-- **Note card** for the touched key, always in all three notations: `A4 · a¹ · la3 · 440 Hz`.
-- **Range in every notation**: a live three-row table under the slots, with the reader's row
-  highlighted. There is no British row, because British usage writes pitch as the international
-  or the Helmholtz row does.
+  It shows the voice's usual solo range and a fifth beyond it on each side (`keyboardWindow` in
+  `constants/voices.ts`), widened to any note already chosen, never past G1–C7.
+- **Note readout** for the touched key, on the status line under the slots, always in all three
+  notations: `A4 · a¹ · la3 · 440 Hz`.
+- **Range in every notation**: a live three-row table, with the reader's row highlighted. There
+  is no British row, because British usage writes pitch as the international or the Helmholtz
+  row does.
 - **Comment** (optional, max 500).
-- **Privacy line**, plain and just above the button: "Twój zakres zobaczy tylko dyrygent i osoby
-  prowadzące zespół. Pozostali chórzyści go nie zobaczą."
-- "Wyślij dyrygentowi" plays `playArpeggio` over the tessitura, then sends the PUT.
+- The table, the comment and the send button arrive with the first note.
+- **Privacy** is in the head copy ("Pozostali chórzyści jej nie zobaczą"). It deliberately does
+  not list who does see it; its truth rests on only managers getting `ArtistDetailedSerializer`.
+- "Wyślij dyrygentowi" plays `playArpeggio` over the chosen notes, then sends the PUT.
 
 **Re-entry:** a quiet "Moja skala głosu" row in `settings/components/GeneralTab.tsx` opens the
 same screen with the saved values and comment. The singer sees only their own proposal. The row
@@ -179,15 +200,175 @@ exists only while the flag is on for that user.
 **Dry run for non-singers:** the same Settings row appears for a user with the flag on and no
 singing artist profile, such as the developer or the conductor. It opens the screen with a voice
 picker (the seven singing types) in place of the singer's own voice. Everything works: keys,
-sound, the table, the comment and the mic. The send button is replaced by one line, "Tryb
-próbny — nic nie zostanie zapisane" (trial mode, nothing is saved). This is how the screen gets
+sound, the table, the comment and the mic. There is no send button; one line over the voice
+picker says "Tryb próbny: nic nie zostanie zapisane" (trial mode, nothing is saved). This is how the screen gets
 tested on a real iPhone on prod before any singer sees it, and how the conductor approves the
 copy.
 
 **Also in this stage:**
 - `AuthUser` maps the new Me fields.
-- Bump `QUERY_CACHE_BUSTER`.
-- i18n in pl/en/fr, with gendered forms following `salutation`.
+- i18n in pl/en/fr.
+
+**Decided while building (do not undo without a reason):**
+- **Octave marks and ♯.** The subsets carry none of `⁴ ⁵ ₁ ₂ ♯` and no `sups`/`subs` features,
+  so widening `unicode-range` would change nothing. On screen, `PitchName` sets every octave mark
+  (¹²³ included) as `<sup>`/`<sub>` of plain digits and draws ♯ as an SVG; after `f`/`F` the mark
+  stands off further, because Cormorant's f overhangs into it. `formatPitch` keeps the Unicode
+  forms for plain text; aria-labels use `spokenPitch`. All three spell through `spellPitch`.
+- **No gendered forms.** The copy is written neutrally in all three languages. `salutation` is
+  documented in Settings as used only in e-mail and notification greetings, and tying UI copy to
+  it would break that promise.
+- **No `QUERY_CACHE_BUSTER` bump.** Only `AuthProvider` reads `/api/artists/me/`, into React
+  state; no persisted query changes shape, and a bump would cost every device its offline
+  snapshot for nothing.
+- **Mounted in the panel shell**, not on the artist dashboard: the prompt is due on whatever route
+  the panel opens at, and `useFirstRunTakeover` has to describe what is really on screen. The
+  preview route is excluded by path (`ARTIST_PREVIEW_ROUTE`). `DelegationBriefingModal` yields
+  to the takeover as well.
+- **Send button** plays every chosen note, lowest first, not only the tessitura.
+- **Keyboard window per voice.** The usual solo range ± a fifth, not the whole G1–C7. The
+  developer asked for a shorter keyboard; a 10 % margin was considered and rejected, because on a
+  two-octave range it is two semitones, which cuts off exactly the extremes the conductor wants
+  and strands a voice filed a class off in the roster. The window also sizes the slots, so they
+  are narrower than a whole-piano reservation would make them.
+- **The readout lives on the status line under the slots**, not merged into the table card as S4
+  proposed: item 6 needs it there on the phone, and one place on every width beats a readout that
+  moves between breakpoints. The card holds the table alone and arrives with the first note, with
+  the comment and the send button after it. The trial notice sits over the voice picker, since
+  the trial has no footer.
+- **Dimming covers the tessitura pair too.** While a tessitura bound is selected and the other is
+  set, the keys on the wrong side of the other are dimmed, by the same rule as the extremes
+  (`slotSpan`). Dimmed keys still sound and still fill the slot.
+- **Slot sizes.** 30 px on a phone, 48 px from `sm`, 60 px on `lg`. At 36 px a Polish line of four
+  reserved slots needs ~350 px and wrapped on the developer's phone; 30 px keeps it on one line.
+  French names are the widest and still wrap on a narrow phone, always before the dash.
+- **The welcome is route-aware (item 13)**, not mounted in the shell: it greets by the vocative
+  that only the home dashboard loads. `useFirstRunTakeover` answers "welcome" only on `/panel`.
+- **The keyboard's overscroll is not contained.** At either end a swipe carries on into the page,
+  since on a phone the keyboard fills the screen below the slot strip.
+- **The snooze lasts 12 hours** and is rechecked when the page becomes visible
+  (`lib/vocalRangeSession.ts`, which also keeps the unsent draft).
+
+### Audit of Stages 2–3 (2026-09-27) — fixed 2026-09-27, not yet seen
+
+Every item below is fixed in the working tree; the entries under "Decided while building" record
+where a fix departs from the item's wording. Left for the developer's eyes: item 8 on a phone, the
+two "Look at on dev" questions, and S1's ivory/ebony values in both themes.
+
+Bugs:
+1. `vocal_range.sent.body` names the wrong tab in all three locales ("Ogólne" / "General" /
+   "Général"). The pane is `settings.sections.profile`: Profil / Profile / Profil.
+2. Keyboard centring (`VocalRangeScreen.tsx`, `VerticalKeyboard.tsx`):
+   - revisit opens on the voice centre, not on the selected slot's saved note;
+   - selecting an empty slot leaves the keyboard where it is, so the high slot opens on the low
+     register just chosen;
+   - re-selecting a slot whose note equals the current `centerKey` does nothing, because the
+     effect's deps do not change.
+
+   Make the centre a request (`{ midi, seq }`). Centre an empty slot on the voice centre, shifted
+   toward its side. Scroll smoothly after mount; stay instant on mount and under reduced motion.
+3. No focus trap. The screen is `aria-modal`, yet Tab walks into the panel behind it. Use
+   `shared/lib/dom/useFocusTrap`. `WelcomeMoment` has the same gap.
+4. The draft is lost silently. Escape anywhere closes the screen, the comment field included, and
+   in `prompt` mode it also snoozes. "Later" drops the chosen notes. Keep the draft for the session
+   in the snooze store and restore it on the next open. Ignore Escape while the comment has focus.
+5. The dark theme inverts the piano. `panel.css` `[data-theme="dark"]` swaps
+   `ethereal-alabaster` and `ethereal-ink`, so the white keys go dark and the black keys go cream.
+   The black keys must stay darker than the white keys in both themes.
+
+Phone layout (the primary device):
+6. The slots and the keyboard are never on screen together. On a ~390×750 viewport the header and
+   the slot line end near 650 px, so the keyboard starts below the fold. Every note then costs
+   tap slot → scroll down → tap key → scroll up. Below `lg`, make the slot line sticky at the top
+   of the scroll container, with a one-line note readout under it, and give the keyboard the rest
+   of the viewport (`dvh`). The table, the comment and the send button follow.
+7. The layout shifts above the keyboard, under the finger:
+   - the note card switches between a two-line hint and a one-line readout;
+   - the order message (up to three lines) and the "remove extreme" button come and go in a
+     `min-h-6` row;
+   - long French or international names wrap the slot line.
+
+   Reserve the heights so that nothing above the keys moves when a key is pressed.
+8. On a phone the keyboard scrolls inside a scrolling page: a swipe on it moves the keys, not the
+   page. Fix 6 largely removes this; confirm it on the phone.
+
+Continuity and motion:
+9. Going from the welcome to this screen flashes the dashboard. `WelcomeMoment.dismiss` fades out
+   at once, and the prompt opens only after `markWelcomeSeen` and `refreshUser` return. The prompt
+   then fades in and redraws the stave. When the prompt will follow, hold the welcome until the
+   user is refreshed. Let the prompt enter over it with the scene already lit: no backdrop fade
+   and no stave redraw.
+10. State changes jump instead of moving:
+    - a note snaps into its slot, the rail's bands jump, and the keyboard jumps on a slot change.
+      Animate the slot value (opacity plus a short y), move the bands by transform (framer
+      `layout`), and scroll smoothly (item 2);
+    - add a brief press glow on a key, separate from the selected state;
+    - while an extreme slot is selected, dim the keys on the wrong side of its tessitura bound, so
+      the order errors become rare;
+    - the rail is `w-14` for a 6 px bar, because Stage 5's markers are not used yet. Narrow it
+      until they are.
+11. The keyboard hides its scrollbar and gives no cue that it scrolls. Add a fade mask at the top
+    and bottom edges.
+
+Sound (`voicedTone.ts`):
+12. With 1/n harmonics, only partials 3–8 of E2 survive a phone speaker. That is about 18 % of the
+    tone's energy, roughly 10 dB under the pitch pipe. At the top the tone buzzes: C6 carries
+    partials up to 8 kHz. Use a spectrum that depends on the register: flatter low, steeper high,
+    with a few cached waves. Replace the linear decay with an exponential one
+    (`setTargetAtTime`). Judge it by ear on an iPhone.
+
+Smaller:
+13. `useFirstRunTakeover` answers "welcome" on every route, but `WelcomeMoment` is mounted only on
+    the artist dashboard. A new singer who opens the app elsewhere, from a push deep link for
+    example, sees no welcome. The invitation modal, the install pill and now the delegation
+    briefing all wait for it anyway. This predates the feature. Either make "welcome"
+    route-aware, or mount the welcome in the shell.
+14. The snooze lasts as long as the JavaScript page. An iOS PWA kept in memory can hide the prompt
+    for days, and a desktop tab can hide it indefinitely. Bound the snooze in time and recheck it
+    on `visibilitychange`.
+15. Accessibility:
+    - a key's `aria-label` is the Unicode `a¹`, which screen readers read inconsistently;
+    - the slots use `aria-pressed` for a single choice; that is a `radiogroup`;
+    - a filled slot is not announced.
+16. Code placement:
+    - `ALL_NOTATIONS` lives in `NoteCard.tsx`; move it to `pitchNotation.ts`;
+    - the screen reads `dashboard.layout.roles.*` directly, where the welcome uses
+      `artistRoleLabel`.
+17. Copy and messages:
+    - the trial notice uses "—" on the screen and ":" in the Settings row; pick one form;
+    - "440 Hz" needs a no-break space;
+    - the backend 403 `detail` is not wrapped in `_()`.
+
+From the developer's screenshot (desktop, dark theme). These decisions take precedence over
+items 5, 10 and 11:
+- **S1. The piano is an object, not chrome.** Item 5 comes first: in dark the keyboard reads as a
+  cream barcode. Give the keys colours that do not flip with the theme: ivory white keys and
+  near-black black keys in both themes, one step dimmer in dark. New tokens go into
+  `tailwindMerge.ts`.
+- **S2. One axis.** The header is centred on the page, while everything under it sits in a 3/5 +
+  2/5 grid, so the slot line centres about 200 px left of the title. Move the header into the left
+  column, left-aligned. The keyboard then runs the full height on the right, from the eyebrow down
+  to the button. Below `lg`, item 6 stands.
+- **S3. The slots are the hero.** At their current size they read as punctuation: short blanks
+  inside tall parentheses. Set the notes one Metric step up. Make each blank as wide as the widest
+  name it can hold, so that filling a slot never reflows the line. Set the parentheses and the dash
+  lighter than the notes.
+- **S4. No empty furniture on first open.** Today four of the five left-column blocks carry no
+  information: a hint card, a table of three "—", an empty textarea, and a disabled button with its
+  hint. Instead:
+  - the hint is one muted line under the slots, not a card;
+  - the note readout and the range table merge into one card, which appears with the first note.
+- **S5. No rail column.** Without bands it is a 56 px empty strip. Draw the range on the keys
+  themselves: the tessitura tinted, the extremes fainter. The live cursor stays for Stage 5.
+- **S6. Every white key carries its name,** faint, with the C's stronger. On a range picker the
+  singer should know where their finger is without reading the card.
+
+Before the dry run: an account whose artist has a singing `voice_type` gets the real prompt, not
+the trial, and its send writes data. Check the developer's and the conductor's accounts.
+
+Look at on dev (the code cannot settle these):
+- the `g` descender and a `C₁` subscript against the slot underline (`leading-none`, `pb-1`);
+- the 26 px black-key height under a finger.
 
 ## Stage 4 — the conductor's view
 
