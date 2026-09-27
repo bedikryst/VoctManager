@@ -10,7 +10,9 @@
  * that is the resting case for every singer on a healthy roster, and painting
  * it forty times is what buried the one row that needed a hand. A member added
  * without an address wears a neutral chip instead: not a problem to fix, but
- * the reason nothing the app sends ever reaches them. Range and
+ * the reason nothing the app sends ever reaches them. A signed-in member none of
+ * whose devices takes a push wears a quiet bell-off mark — the list of people
+ * worth asking in person — which goes the moment any device subscribes. Range and
  * a-vista are the singer's own facts, so they read as plain type and simply
  * vanish when nobody has recorded them. The conductor's range leads; under it,
  * muted, the singer's own proposal marked as theirs, or only "zgodna z
@@ -25,6 +27,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
+  BellOff,
   CheckCircle2,
   ChevronRight,
   Eye,
@@ -50,7 +53,7 @@ import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { getSectionPresentation } from "../constants/voiceSections";
 import { usePitchNotation } from "../hooks/usePitchNotation";
-import { isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
+import { isAwaitingActivation, isWithoutEmail, isWithoutPush } from "../lib/accountState";
 import { rangesOf, sameRange } from "../lib/vocalRangeProposal";
 import { SightReadingStars } from "./SightReadingStars";
 
@@ -88,6 +91,7 @@ export const ArtistRow = React.memo(
     const hasAccount = Boolean(artist.user);
     const accountPending = isAwaitingActivation(artist);
     const withoutEmail = isWithoutEmail(artist);
+    const withoutPush = isWithoutPush(artist);
     const linkExpired = accountPending && artist.activation_link_expired === true;
     const inviteSentAt = artist.activation_email_sent_at
       ? formatLocalizedDateTime(artist.activation_email_sent_at, {
@@ -209,6 +213,16 @@ export const ArtistRow = React.memo(
                 title={t("artists.card.detached_account", "Konto odłączone")}
               >
                 <UserX size={13} aria-hidden="true" />
+              </span>
+            )}
+            {isActive && withoutPush && (
+              <span
+                role="img"
+                className="shrink-0 text-ethereal-graphite/50"
+                title={t("artists.card.no_push_title")}
+                aria-label={t("artists.card.no_push_title")}
+              >
+                <BellOff size={13} aria-hidden="true" />
               </span>
             )}
           </div>

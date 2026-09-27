@@ -23,6 +23,7 @@ import { NotesPanelProvider } from "./notes/NotesPanelProvider";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { usePushDeviceSync } from "@/features/notifications/hooks/usePushDeviceSync";
+import { usePushNudgeHost } from "@/features/notifications/hooks/usePushNudgeHost";
 import { usePushLiveRefresh } from "@/features/notifications/hooks/usePushLiveRefresh";
 import { ProjectInvitationToasts } from "@/features/notifications/components/ProjectInvitationToasts";
 import { DelegationBriefingModal } from "@/features/notifications/components/DelegationBriefingModal";
@@ -85,6 +86,9 @@ export const DashboardLayout = ({
   // than in the settings tab, because a member whose device row went inactive
   // has no symptom that would send them there.
   usePushDeviceSync();
+  // Contextual "enable push here" offers are raised by features at the moment
+  // push would have helped; the shell owns the controller that answers them.
+  usePushNudgeHost();
   // A push lands before the polled queries notice: reconcile the caches it
   // speaks for, so the banner and the panel never disagree.
   usePushLiveRefresh();

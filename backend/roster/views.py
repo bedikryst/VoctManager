@@ -57,7 +57,7 @@ from core.request_utils import client_payload, request_user, truthy_flag
 from finance.exceptions import FinanceError, finance_error_response
 from finance.services.ledger import LedgerService
 from notifications.announcement_queue import AnnouncementQueue
-from notifications.models import PendingAnnouncement
+from notifications.models import PendingAnnouncement, PushDevice
 
 from .cast_order import participation_sort_key
 from .dashboard_serializers import (
@@ -369,6 +369,9 @@ class ArtistViewSet(viewsets.ModelViewSet):
                 RehearsalDelegate.objects
                 .filter(live_delegate_q(scope='any'), artist=OuterRef('pk'))
                 .exclude(project__status__in=Project.CLOSED_STATUSES)
+            ),
+            has_push=Exists(
+                PushDevice.objects.filter(user=OuterRef('user'), is_active=True)
             ),
         )
     

@@ -2710,3 +2710,220 @@ class SoloChangeRenderingTests(SimpleTestCase):
         self.assertEqual(content.title, "Solo update — The Lark Ascending")
         self.assertNotIn("not json", content.body)
         self.assertNotIn("[{", content.body)
+
+
+class PushEmailFallbackTests(TestCase):
+    """Push ON means "tell me outside the app". A type whose e-mail is off by
+    default must not fall silent for a member no device can reach, so the push
+    carries the e-mail in reserve and spends it only on zero deliveries."""
+
+    EMAIL = "notifications.router.send_notification_email_task.delay"
+    PUSH = "notifications.router.send_push_notification_task.delay"
+    DISPATCH = "notifications.push_service.PushDispatcherService.dispatch_to_user"
+    FALLBACK_EMAIL = "notifications.email_tasks.send_notification_email_task.delay"
+
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(
+            username="fallback", email="fallback@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)
+
+    def _route(self, ntype: str):
+        from notifications.router import NotificationRouter
+        with patch(self.EMAIL) as email, patch(self.PUSH) as push:
+            NotificationRouter.route(
+                recipient_id=str(self.user.id), notification_type=ntype,
+                metadata={"project_name": "Requiem"}, level=NotificationLevel.INFO,
+            )
+        return email, push
+
+    def _run_push_task(self, *, delivered: int, email_fallback: dict | None):
+        from notifications.tasks import send_push_notification_task
+        with patch(self.DISPATCH, return_value=delivered), patch(self.FALLBACK_EMAIL) as email:
+            send_push_notification_task.apply(kwargs={
+                "recipient_id": str(self.user.id),
+                "notification_type": NotificationType.REHEARSAL_REMINDER,
+                "metadata": {"project_name": "Requiem"},
+                "email_fallback": email_fallback,
+            })
+        return email
+
+    def test_push_only_type_carries_its_email_in_reserve(self) -> None:
+        email, push = self._route(NotificationType.REHEARSAL_REMINDER)
+
+        email.assert_not_called()
+        self.assertEqual(
+            push.call_args.kwargs["email_fallback"],
+            {"template_name": "transactional", "metadata": {"project_name": "Requiem"}},
+        )
+
+    def test_type_already_on_email_carries_no_reserve(self) -> None:
+        email, push = self._route(NotificationType.REHEARSAL_SCHEDULED)
+
+        email.assert_called_once()
+        self.assertIsNone(push.call_args.kwargs["email_fallback"])
+
+    def test_material_upload_carries_no_reserve(self) -> None:
+        # One event per uploaded track: a batch of MP3s must not become a batch
+        # of e-mails for every member without a device.
+        email, push = self._route(NotificationType.MATERIAL_UPLOADED)
+
+        email.assert_not_called()
+        self.assertIsNone(push.call_args.kwargs["email_fallback"])
+
+    def test_routine_team_report_carries_no_reserve_with_the_digest_off(self) -> None:
+        # The digest is the e-mail of routine reports; switching it off asks for
+        # them in real time, not for one e-mail per singer.
+        UserProfile.objects.filter(user=self.user).update(digest_enabled=False)
+
+        email, push = self._route(NotificationType.ATTENDANCE_SUBMITTED)
+
+        email.assert_not_called()
+        self.assertIsNone(push.call_args.kwargs["email_fallback"])
+
+    def test_failing_push_spends_the_reserve_only_on_its_last_attempt(self) -> None:
+        from celery.exceptions import Retry
+
+        from notifications.tasks import send_push_notification_task
+
+        kwargs = {
+            "recipient_id": str(self.user.id),
+            "notification_type": NotificationType.REHEARSAL_REMINDER,
+            "metadata": {"project_name": "Requiem"},
+            "email_fallback": {"template_name": "transactional", "metadata": {}},
+        }
+        with patch(self.DISPATCH, side_effect=RuntimeError("push service down")), \
+                patch(self.FALLBACK_EMAIL) as email:
+            with self.assertRaises(Retry):
+                send_push_notification_task.apply(kwargs=kwargs)
+            email.assert_not_called()
+
+            with self.assertRaises(RuntimeError):
+                send_push_notification_task.apply(
+                    kwargs=kwargs, retries=send_push_notification_task.max_retries,
+                )
+            email.assert_called_once()
+
+    def test_push_off_keeps_the_type_in_app_only(self) -> None:
+        NotificationPreference.objects.create(
+            user=self.user,
+            notification_type=NotificationType.REHEARSAL_REMINDER,
+            email_enabled=False,
+            push_enabled=False,
+        )
+        email, push = self._route(NotificationType.REHEARSAL_REMINDER)
+
+        email.assert_not_called()
+        push.assert_not_called()
+
+    def test_unreached_member_gets_the_reserve_email(self) -> None:
+        fallback = {"template_name": "transactional", "metadata": {"project_name": "Requiem"}}
+        email = self._run_push_task(delivered=0, email_fallback=fallback)
+
+        email.assert_called_once()
+        self.assertEqual(email.call_args.kwargs["template_name"], "transactional")
+        self.assertEqual(email.call_args.kwargs["metadata"], {"project_name": "Requiem"})
+
+    def test_reached_member_gets_no_email(self) -> None:
+        fallback = {"template_name": "transactional", "metadata": {}}
+        email = self._run_push_task(delivered=1, email_fallback=fallback)
+
+        email.assert_not_called()
+
+    def test_no_reserve_means_no_email_even_when_unreached(self) -> None:
+        email = self._run_push_task(delivered=0, email_fallback=None)
+
+        email.assert_not_called()
+
+    def test_email_switched_off_by_the_member_is_never_overruled(self) -> None:
+        # Rehearsal changes e-mail by default, so OFF here is the member's own
+        # choice — and it holds even when no device can take the push.
+        NotificationPreference.objects.create(
+            user=self.user,
+            notification_type=NotificationType.REHEARSAL_SCHEDULED,
+            email_enabled=False,
+            push_enabled=True,
+        )
+        email, push = self._route(NotificationType.REHEARSAL_SCHEDULED)
+
+        email.assert_not_called()
+        self.assertIsNone(push.call_args.kwargs["email_fallback"])
+
+    def test_briefing_never_reserves_an_email_the_member_switched_off(self) -> None:
+        from notifications.router import NotificationRouter
+
+        NotificationPreference.objects.create(
+            user=self.user,
+            notification_type=NotificationType.PIECE_CASTING_ASSIGNED,
+            email_enabled=False,
+            push_enabled=True,
+        )
+        metadata = {
+            "project_id": "8d79e557-2d1d-4c03-8454-cdc1b8da960d",
+            "project_name": "Requiem",
+            "note": "",
+            "items": [
+                {
+                    "subject_type": "REHEARSAL",
+                    "kind": "CHANGED",
+                    "notification_type": NotificationType.REHEARSAL_UPDATED,
+                    "level": NotificationLevel.WARNING,
+                    "metadata": {},
+                },
+                {
+                    "subject_type": "CASTING",
+                    "kind": "CREATED",
+                    "notification_type": NotificationType.PIECE_CASTING_ASSIGNED,
+                    "level": NotificationLevel.INFO,
+                    "metadata": {},
+                },
+            ],
+            "ics": [],
+        }
+        with patch(self.EMAIL), patch(self.PUSH) as push:
+            NotificationRouter.route(
+                recipient_id=str(self.user.id),
+                notification_type=NotificationType.PROJECT_BRIEFING,
+                metadata=metadata,
+                level=NotificationLevel.WARNING,
+            )
+
+        # Every briefing item is a commitment, whose e-mail is ON by default — so
+        # the casting line's OFF is a choice, and the rehearsal line went by e-mail.
+        self.assertIsNone(push.call_args.kwargs["email_fallback"])
+
+
+class PushDeviceSummaryTests(APITestCase):
+    """The device count lets a browser without a subscription tell its member
+    that push already works elsewhere — a count, never the endpoints."""
+
+    URL = "/api/notifications/devices/"
+
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(
+            username="devices", email="devices@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)
+        self.client.force_authenticate(self.user)
+
+    def _device(self, token: str, *, active: bool = True, user=None) -> None:
+        PushDevice.objects.create(
+            user=user or self.user,
+            registration_token=token,
+            p256dh_key="p",
+            auth_key="a",
+            is_active=active,
+        )
+
+    def test_counts_only_this_members_active_devices(self) -> None:
+        other = User.objects.create_user(
+            username="other-dev", email="other-dev@test.pl", password="pw123456"
+        )
+        self._device("https://push.example/1")
+        self._device("https://push.example/2", active=False)
+        self._device("https://push.example/3", user=other)
+
+        resp = self.client.get(self.URL)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data, {"active_devices": 1})

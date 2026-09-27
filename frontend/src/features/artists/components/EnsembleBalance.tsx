@@ -15,13 +15,17 @@
  * singers have proposed one, out of those the app asks (members outside the app
  * never see the question): the conductor's overview of who has answered, in
  * place of a notification per proposal.
+ *
+ * It also counts signed-in members none of whose devices takes a push — the
+ * people to ask in person, matching the bell-off marks on their rows. Hidden at
+ * zero, like the range figure.
  * @architecture Enterprise SaaS 2026
  * @module features/artists/components/EnsembleBalance
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Archive, AudioLines, MailWarning, Users } from "lucide-react";
+import { Archive, AudioLines, BellOff, MailWarning, Users } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -56,6 +60,8 @@ export interface RangeProposalCount {
 interface EnsembleBalanceProps {
   readonly balance: SectionBalance;
   readonly accountPending: number;
+  /** Signed-in active members none of whose devices takes a push. */
+  readonly withoutPush: number;
   readonly rangeProposals: RangeProposalCount;
   readonly archivedCount: number;
   readonly activeSection: SectionKey | "";
@@ -103,6 +109,7 @@ export const EnsembleBalance = React.memo(
   ({
     balance,
     accountPending,
+    withoutPush,
     rangeProposals,
     archivedCount,
     activeSection,
@@ -152,6 +159,14 @@ export const EnsembleBalance = React.memo(
                   "artists.dashboard.pending_activation_hint",
                   "Aktywni artyści, którzy nie aktywowali jeszcze konta na platformie.",
                 )}
+              />
+            )}
+            {withoutPush > 0 && (
+              <HeaderFact
+                icon={<BellOff size={11} />}
+                value={withoutPush}
+                label={t("artists.dashboard.without_push")}
+                title={t("artists.dashboard.without_push_hint")}
               />
             )}
             {rangeProposals.answered > 0 && (

@@ -977,6 +977,7 @@
       "no_email": "No e-mail",
       "no_email_title": "Added without an e-mail address. This person has no access to the app and receives no notifications, so everything has to be passed on to them in person.",
       "no_phone": "No phone",
+      "no_push_title": "None of this person's devices receives push notifications. For now, reminders and answers to requests reach them by email; new material only shows up in the app.",
       "open_profile_aria": "Open profile: {{name}}",
       "pending_activation": "Not activated",
       "resend_activation": "Resend invitation",
@@ -1010,6 +1011,8 @@
       "pending_activation": "not activated",
       "pending_activation_hint": "Active artists who haven't activated their platform account yet.",
       "search_placeholder": "Search by last name...",
+      "without_push": "without push",
+      "without_push_hint": "Members with an active account none of whose devices receives push notifications. Until they turn it on, reminders and answers to requests reach them by email, and new material only shows up in the app.",
       "show_all": "Show all",
       "subtitle": "Human Resources",
       "sync_warning_desc": "Failed to fetch artist data.",
@@ -4000,6 +4003,26 @@
         "test_failed": "Couldn’t send the test. Please try again.",
         "test_no_device": "This device is no longer registered for push. Turn push off and on again.",
         "test_undeliverable": "The browser’s push service rejected the message. Please try again shortly."
+      },
+      "nudge": {
+        "eyebrow": "Notifications on this device",
+        "enable": "Turn on",
+        "show_how": "Show me how",
+        "not_now": "Not now",
+        "elsewhere": "Notifications already work on another of your devices. Turn them on here too?",
+        "install": "They only work in the app added to your Home Screen.",
+        "moment": {
+          "absence": "Want to know as soon as your request is answered?",
+          "presence": "Want to know right away if this rehearsal is moved or cancelled?",
+          "participation": "Want to hear about rehearsal changes and new material right away?"
+        }
+      },
+      "inbox": {
+        "off": "Push notifications are off on this device.",
+        "elsewhere": "Notifications are on for another of your devices, not this one yet.",
+        "blocked": "Notifications are blocked in this device’s browser settings.",
+        "install": "On this device, notifications only work in the app added to your Home Screen.",
+        "how_to_unblock": "How to unblock"
       }
     },
     "delegation": {
@@ -6036,6 +6059,7 @@
         "timezone_note": "In your timezone ({{timezone}})"
       },
       "in_app_note": "Everything lands in the in-app bell, always, whatever you set here. Below you are only choosing email and push.",
+      "email_stands_in": "None of your devices receives push notifications yet, so reminders and answers to your requests are emailed to you for now. New material shows up in the app.",
       "push_email_offer": {
         "eyebrow": "Push works",
         "title": "The notification reached this device.",

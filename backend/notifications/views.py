@@ -20,7 +20,13 @@ from .dtos import (
     NotificationReadReceiptMetadata,
     WebPushSubscribeDTO,
 )
-from .models import Notification, NotificationLevel, NotificationPreference, NotificationType
+from .models import (
+    Notification,
+    NotificationLevel,
+    NotificationPreference,
+    NotificationType,
+    PushDevice,
+)
 from .push_service import PushDispatcherService
 from .serializers import (
     NotificationPreferenceBulkUpdateSerializer,
@@ -190,6 +196,18 @@ class PushDeviceViewSet(viewsets.ViewSet):
     Strictly delegates business logic to PushDispatcherService.
     """
     permission_classes = [IsAuthenticated]
+
+    def list(self, request: Request) -> Response:
+        """
+        How many devices can currently receive this member's push — a count, never
+        the endpoints. Permission is granted per browser, so a member with push on
+        their phone still has to allow it on the laptop; the count is what lets a
+        device without a subscription say "you already have this elsewhere".
+        """
+        active_devices = PushDevice.objects.filter(
+            user=request_user(request), is_active=True
+        ).count()
+        return Response({"active_devices": active_devices}, status=status.HTTP_200_OK)
 
     def create(self, request: Request) -> Response:
         """

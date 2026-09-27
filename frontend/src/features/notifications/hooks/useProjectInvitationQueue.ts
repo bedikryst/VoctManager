@@ -8,6 +8,10 @@
  * current one for this session only — it stays unread server-side and returns on
  * the next load. The success/error toasts live in the mutation callbacks, so both
  * consumers get them for free.
+ *
+ * Accepting may also raise the contextual push offer, but only where the caller
+ * opts in: the Welcome Moment is the member's first minute in the panel, and it
+ * stays free of anything that asks for a setting.
  * @module features/notifications/hooks/useProjectInvitationQueue
  */
 
@@ -22,6 +26,7 @@ import {
   useNotifications,
   useMarkNotificationRead,
 } from "../api/notifications.queries";
+import { requestPushNudge } from "../lib/pushNudge";
 import type { ProjectInvitationMetadata } from "../types/notifications.dto";
 
 export interface ProjectInvitationQueueItem {
@@ -39,7 +44,14 @@ export interface ProjectInvitationQueue {
   readonly defer: () => void; // session-only skip; stays unread server-side
 }
 
-export const useProjectInvitationQueue = (): ProjectInvitationQueue => {
+interface ProjectInvitationQueueOptions {
+  /** Offer push on this device after an acceptance (see `lib/pushNudge`). */
+  readonly offerPushOnAccept?: boolean;
+}
+
+export const useProjectInvitationQueue = ({
+  offerPushOnAccept = false,
+}: ProjectInvitationQueueOptions = {}): ProjectInvitationQueue => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const { data: notifications = [] } = useNotifications(!!user);
@@ -52,10 +64,11 @@ export const useProjectInvitationQueue = (): ProjectInvitationQueue => {
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: "CON" | "DEC" }) =>
       ProjectService.updateParticipationStatus(id, status),
-    onSuccess: () => {
+    onSuccess: (_data, { status }) => {
       toast.success(t("notifications.invitation_toast.status_updated"));
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["participations"] });
+      if (status === "CON" && offerPushOnAccept) requestPushNudge("participation");
     },
     onError: () => {
       toast.error(t("notifications.invitation_toast.status_error"));

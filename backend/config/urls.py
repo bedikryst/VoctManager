@@ -139,7 +139,7 @@ urlpatterns = [
     # --- Push Device Endpoints (Web Push / VAPID) ---
     # Order: 'test' before 'devices/' so it isn't swallowed by the catch-all <path:pk>.
     path('api/notifications/devices/test/', PushDeviceViewSet.as_view({'post': 'test_push'}), name='push-device-test'),
-    path('api/notifications/devices/', PushDeviceViewSet.as_view({'post': 'create'}), name='push-device-register'),
+    path('api/notifications/devices/', PushDeviceViewSet.as_view({'get': 'list', 'post': 'create'}), name='push-device-register'),
     path('api/notifications/devices/<path:pk>/', PushDeviceViewSet.as_view({'delete': 'destroy'}), name='push-device-unregister'),
 
     # --- Score Package Compiler: live ingestion progress (SSE) ---

@@ -32,6 +32,7 @@ import {
 import type { NotificationDTO } from "../types/notifications.dto";
 import { NotificationItem } from "./NotificationItem";
 import { NotificationItemBoundary } from "./NotificationItemBoundary";
+import { PushInboxRow } from "./PushInboxRow";
 
 import { Heading, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { Badge } from "@/shared/ui/primitives/Badge";
@@ -275,6 +276,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
   const body = (
     <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-[max(env(safe-area-inset-bottom),1rem)]">
+      <PushInboxRow onNavigate={close} />
       {isLoading ? (
         <div className="flex h-40 items-center justify-center">
           <EtherealLoader fullHeight={false} />

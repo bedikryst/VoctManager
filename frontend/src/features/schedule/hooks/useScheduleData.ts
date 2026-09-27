@@ -19,6 +19,7 @@ import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 import type { AttendanceStatus, Project } from "@/shared/types";
 import { toZonedWallClock } from "@/shared/lib/time/timezone";
+import { requestPushNudge } from "@/features/notifications/lib/pushNudge";
 import { isOpenToSelfReport } from "../lib/absenceWindow";
 import type { ScheduleSubject } from "./useScheduleSubject";
 import {
@@ -231,6 +232,9 @@ export const useScheduleData = (subject?: ScheduleSubject) => {
         t("schedule.toast.submit_success", "Zgłoszenie zostało zapisane."),
         { id: toastId },
       );
+      // An absence waits for a manager's answer; a confirmed evening can still
+      // be moved or cancelled. Either way the next word travels by push.
+      requestPushNudge(status === "ABSENT" || status === "EXCUSED" ? "absence" : "presence");
       return true;
     } catch (error) {
       toastApiError(error, t, {
@@ -342,6 +346,7 @@ export const useScheduleData = (subject?: ScheduleSubject) => {
         ),
         { id: toastId },
       );
+      requestPushNudge("absence");
       return true;
     } catch (error) {
       toastApiError(error, t, {

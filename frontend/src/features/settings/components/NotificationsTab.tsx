@@ -39,6 +39,7 @@ import {
   useUpdateDigestSettings,
 } from "@/features/settings/api/settings.queries";
 import { usePushNotifications } from "@/features/notifications/hooks/usePushNotifications";
+import { usePushDeviceSummary } from "@/features/notifications/api/devices";
 import { PushPermissionPrimer } from "@/features/notifications/components/PushPermissionPrimer";
 import type { NotificationPreferenceDTO } from "@/features/notifications/types/notifications.dto";
 import {
@@ -263,6 +264,7 @@ export const NotificationsTab: React.FC = () => {
     unsubscribe,
     sendTest,
   } = usePushNotifications();
+  const { data: pushSummary } = usePushDeviceSummary();
 
   const [primerOpen, setPrimerOpen] = useState(false);
   const [unsubConfirmOpen, setUnsubConfirmOpen] = useState(false);
@@ -419,6 +421,14 @@ export const NotificationsTab: React.FC = () => {
             isBusy={digestMutation.isPending}
             onUnmute={handleUnmuteEmail}
           />
+        )}
+
+        {/* Account-wide, not this device: the server mails push-first events
+            only while none of the member's devices takes a push. */}
+        {emailMasterEnabled && pushSummary?.active_devices === 0 && (
+          <Text size="xs" color="muted" className="mb-2 leading-relaxed">
+            {t("settings.notifications.email_stands_in")}
+          </Text>
         )}
 
         <Text size="xs" color="muted" className="mb-4 leading-relaxed">

@@ -9,7 +9,9 @@
  * resend — the avatar used to wear a second mark for the same fact, and a sage
  * one for the ordinary case of an account that works. A member added without
  * an address shows that fact where the address would be, in the muted voice
- * of a missing phone: it was a decision, not something to fix.
+ * of a missing phone: it was a decision, not something to fix. A signed-in
+ * member none of whose devices takes a push wears a quiet bell-off mark beside
+ * the badges, gone the moment any device subscribes.
  * The range cell leads with the conductor's range. Under it, muted, stands the
  * singer's own proposal marked as theirs, or only "zgodna z propozycją" when
  * the two hold the same four notes. Until the conductor writes a range, the
@@ -21,6 +23,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
+  BellOff,
   CheckCircle2,
   ChevronRight,
   Mail,
@@ -53,7 +56,7 @@ import {
 } from "@/shared/ui/primitives/typography";
 import { getSectionPresentation } from "../constants/voiceSections";
 import { usePitchNotation } from "../hooks/usePitchNotation";
-import { isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
+import { isAwaitingActivation, isWithoutEmail, isWithoutPush } from "../lib/accountState";
 import { rangesOf, sameRange } from "../lib/vocalRangeProposal";
 import { SightReadingStars } from "./SightReadingStars";
 
@@ -187,6 +190,16 @@ export const ArtistCard = React.memo(
                 <Badge variant="neutral">
                   {t("artists.card.archive_badge", "Archiwum")}
                 </Badge>
+              )}
+              {isActive && isWithoutPush(artist) && (
+                <span
+                  role="img"
+                  className="text-ethereal-graphite/50"
+                  title={t("artists.card.no_push_title")}
+                  aria-label={t("artists.card.no_push_title")}
+                >
+                  <BellOff size={13} aria-hidden="true" />
+                </span>
               )}
             </div>
           </div>

@@ -101,16 +101,20 @@ class PushDispatcherService:
         notification_type: str,
         metadata: dict[str, Any],
         level: str = NotificationLevel.INFO,
-    ) -> None:
+    ) -> int:
         """
         Composes a localized payload and fans it out to every active device the
-        recipient owns. Failures are logged and re-raised so Celery's retry
+        recipient owns, returning how many devices it actually reached — 0 when
+        the recipient has none. The caller decides what an unreached member
+        needs; the transport only counts.
+
+        Failures outside the per-device send are re-raised so Celery's retry
         machinery can apply backoff — a transient outage at the browser's push
         service should not be silently swallowed.
         """
         target = cls._resolve_target(recipient_id)
         if target is None or not target.devices:
-            return
+            return 0
 
         with translation.override(target.language):
             payload = PushPayloadBuilder.build(
@@ -120,7 +124,7 @@ class PushDispatcherService:
                 is_manager=target.is_manager,
             )
 
-        cls._deliver(target, payload)
+        return cls._deliver(target, payload)
 
     @classmethod
     def send_test_push(cls, user) -> TestPushOutcome:
@@ -218,9 +222,9 @@ class PushDispatcherService:
     @classmethod
     def _deliver(cls, target: _DispatchTarget, payload: PushPayload) -> int:
         """Send the payload, and report how many devices it actually reached.
-        Production dispatch ignores the number — a failed push is logged and
-        retried by the task, not surfaced — but `send_test_push` exists to state
-        it, so the transport has to count rather than assume."""
+        Both callers act on the number: production dispatch hands an unreached
+        member to e-mail, and `send_test_push` exists to state it — so the
+        transport has to count rather than assume."""
         return cls._send_vapid_batch(list(target.devices), payload, target.language)
 
     # ------------------------------------------------------------------ #

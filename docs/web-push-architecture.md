@@ -279,3 +279,42 @@ Gdy aplikacja trafi na iOS/Android (np. Capacitor):
 - `usePushNotifications` hook można rozszerzyć o detekcję środowiska Capacitor
 
 Backend już obsługuje oba kanały — nie wymaga zmian.
+
+---
+
+## 12. Reach: e-mail fallback, device count, adoption offers
+
+**Push is account-wide, permission is per browser.** A push goes to every active
+`PushDevice` the member owns. The OS permission behind each subscription can only
+be granted by a tap in that browser, on that device — no server call, and no grant
+on another device, can switch it on. The per-type preferences (`push_enabled`) are
+account-level and default ON; the device step is the only thing left to the member.
+
+**E-mail fallback.** `NotificationRouter` attaches an `EmailFallback` to the push
+task for push-first types: push ON, e-mail OFF, and e-mail OFF by default
+(`_needs_email_reserve`). `send_push_notification_task` sends that e-mail only when
+the push reached **zero** devices — no device registered, or every endpoint
+refused — or on the last attempt of a push whose transport kept raising. One
+working phone is enough to suppress it. A type whose e-mail is ON by default and
+reads OFF was switched off by the member and never falls back. Two push-first
+cases carry no reserve: `MATERIAL_UPLOADED`, which fans out once per uploaded
+track, and routine (INFO) manager reports, whose e-mail is the daily digest. The
+master e-mail switch and the undeliverable flag are honoured by the e-mail
+dispatcher as usual.
+
+**Device count.** `GET /api/notifications/devices/` returns `{"active_devices": n}`
+for the caller — a count, never endpoints. The settings tab uses it to say that
+e-mail is standing in (n = 0); a browser without a subscription uses it to say
+"you already have this elsewhere". Managers see the same fact per member as
+`has_push` on the roster (`ArtistDetailedSerializer`).
+
+**Adoption offers (frontend).** `requestPushNudge(moment)` raises a one-tap offer
+from the moment push would help (absence request, attendance confirmation,
+accepting an invitation outside the Welcome Moment). `usePushNudgeHost` in the
+panel shell renders it only when push is possible here, not on (read live from the
+browser at the moment, not from the shell's controller), not blocked, no offer has
+been shown yet in this page session, and the per-device pacing allows (14 days
+after a dismissal, at most three dismissals). Apple devices in a browser tab get
+the Home Screen route instead, unless another device already takes the push.
+`PushInboxRow` at the top of the notification centre states the device's push
+state permanently, without pacing. Enabling from either place fires a test push.

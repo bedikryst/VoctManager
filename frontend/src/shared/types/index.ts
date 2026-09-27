@@ -129,6 +129,10 @@ export interface Artist extends BaseModel {
   // Leads at least one open project right now (a live RehearsalDelegate
   // grant). Manager-only (detailed serializer); undefined = unknown.
   is_project_leader?: boolean;
+  // At least one of the member's devices currently holds a push subscription.
+  // Account-wide: push reaches every such device. Manager-only (detailed
+  // serializer); undefined = unknown.
+  has_push?: boolean;
   username?: string | null;
   is_manager?: boolean;
   sight_reading_skill?: number | null;

@@ -59,6 +59,12 @@ export interface UsePushNotificationsReturn {
   availability: PushAvailability;
   permission: NotificationPermission;
   isSubscribed: boolean;
+  /**
+   * The browser's subscription has been read at least once. Until then
+   * `isSubscribed` is only a starting value, so anything that asks the member to
+   * enable push must wait for this — or it flashes at members who already have it.
+   */
+  isResolved: boolean;
   isLoading: boolean;
   isSendingTest: boolean;
   subscribe: () => Promise<boolean>;
@@ -124,6 +130,8 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
     isReady ? Notification.permission : "default",
   );
   const [isSubscribed, setIsSubscribed] = useState(false);
+  // Nothing to read where push is unavailable, so that answer is known at once.
+  const [isResolved, setIsResolved] = useState(!isReady);
 
   const registerMutation = useRegisterPushDevice();
   const unregisterMutation = useUnregisterPushDevice();
@@ -146,7 +154,9 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
     if (!isReady) return;
     let cancelled = false;
     void syncPushDevice().then((existing) => {
-      if (!cancelled) setIsSubscribed(!!existing);
+      if (cancelled) return;
+      setIsSubscribed(!!existing);
+      setIsResolved(true);
     });
     return () => {
       cancelled = true;
@@ -249,8 +259,12 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
     }
   }, [isReady, unregisterMutation]);
 
+  // No `isSubscribed` guard: callers fire this straight after `subscribe()`
+  // resolves, from a closure that still holds the pre-subscribe state. The
+  // server is the authority on whether a device exists and answers
+  // `no_devices` when it does not.
   const sendTest = useCallback(async (): Promise<number> => {
-    if (!isReady || !isSubscribed) return 0;
+    if (!isReady) return 0;
     try {
       const { delivered } = await testMutation.mutateAsync();
       toast.success(tt("test_sent"));
@@ -259,12 +273,13 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
       toast.error(tt(testFailureKey(error)));
       return 0;
     }
-  }, [isReady, isSubscribed, testMutation]);
+  }, [isReady, testMutation]);
 
   return {
     availability,
     permission,
     isSubscribed,
+    isResolved,
     isLoading,
     isSendingTest: testMutation.isPending,
     subscribe,

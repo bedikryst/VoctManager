@@ -44,7 +44,7 @@ export const ProjectInvitationToasts: React.FC = () => {
   const takeover = useFirstRunTakeover();
   const { t, i18n } = useTranslation();
   const { current, pendingCount, accept, decline, defer } =
-    useProjectInvitationQueue();
+    useProjectInvitationQueue({ offerPushOnAccept: true });
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
 

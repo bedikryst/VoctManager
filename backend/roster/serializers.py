@@ -23,6 +23,7 @@ from core.permissions import user_is_manager
 from core.serializers import UserProfileSerializer
 from core.voice_labels import voice_line_label
 from logistics.models import Location
+from notifications.models import PushDevice
 from roster.domain.day_timeline import localize
 from roster.domain.liturgy import (
     ProgramItemPresentation,
@@ -153,6 +154,7 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
     account_activated = serializers.SerializerMethodField()
     activation_link_expired = serializers.SerializerMethodField()
     is_project_leader = serializers.SerializerMethodField()
+    has_push = serializers.SerializerMethodField()
     # Stored on the account's profile, edited from the roster form. Declared
     # rather than inferred, because the model side is a read-through property;
     # `ArtistHRService.update_artist` is what routes a write to its real owner.
@@ -195,6 +197,9 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
 
             # Onboarding state
             'activation_email_sent_at', 'account_activated', 'activation_link_expired',
+
+            # Reachability
+            'has_push',
         )
         read_only_fields = (
             'id', 'created_at', 'updated_at', 'is_deleted',
@@ -312,6 +317,19 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
             .exclude(project__status__in=Project.CLOSED_STATUSES)
             .exists()
         )
+
+    def get_has_push(self, obj: Artist) -> bool:
+        """At least one of the member's devices currently holds a push
+        subscription. Account-wide on purpose: push reaches every such device, and
+        the e-mail fallback fires only when none of them took it — so one working
+        phone is the whole answer. Read from the list annotation where present;
+        a member without an account has no devices."""
+        annotated = getattr(obj, 'has_push', None)
+        if annotated is not None:
+            return bool(annotated)
+        if obj.user_id is None:
+            return False
+        return PushDevice.objects.filter(user_id=obj.user_id, is_active=True).exists()
 
 
 # --- 2. PARTICIPATION SERIALIZERS ---

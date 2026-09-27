@@ -986,6 +986,7 @@
       "no_email": "Sans e-mail",
       "no_email_title": "Ajouté sans adresse e-mail. Cette personne n'a pas accès à l'application et ne reçoit aucune notification : tout doit lui être transmis en personne.",
       "no_phone": "Pas de téléphone",
+      "no_push_title": "Aucun appareil de cette personne ne reçoit les notifications push. En attendant, les rappels et les réponses à ses demandes lui arrivent par e-mail ; les nouveaux documents n’apparaissent que dans l’application.",
       "open_profile_aria": "Ouvrir le profil : {{name}}",
       "pending_activation": "Non activé",
       "resend_activation": "Renvoyer l'invitation",
@@ -1019,6 +1020,8 @@
       "pending_activation": "sans activation",
       "pending_activation_hint": "Artistes actifs qui n'ont pas encore activé leur compte sur la plateforme.",
       "search_placeholder": "Rechercher par nom...",
+      "without_push": "sans notifications push",
+      "without_push_hint": "Membres au compte actif dont aucun appareil ne reçoit les notifications push. Tant qu’ils ne les activent pas, les rappels et les réponses à leurs demandes leur arrivent par e-mail, et les nouveaux documents n’apparaissent que dans l’application.",
       "show_all": "Tout afficher",
       "subtitle": "Ressources humaines",
       "sync_warning_desc": "Impossible de récupérer les données des artistes.",
@@ -4010,6 +4013,26 @@
         "test_failed": "Impossible d’envoyer le test. Réessayez.",
         "test_no_device": "Cet appareil n’est plus enregistré pour les notifications push. Désactivez le push puis réactivez-le.",
         "test_undeliverable": "Le service push du navigateur a refusé l’envoi. Réessayez dans un instant."
+      },
+      "nudge": {
+        "eyebrow": "Notifications sur cet appareil",
+        "enable": "Activer",
+        "show_how": "Voir comment",
+        "not_now": "Plus tard",
+        "elsewhere": "Les notifications fonctionnent déjà sur un autre de vos appareils. Les activer ici aussi ?",
+        "install": "Elles ne fonctionnent que dans l’application ajoutée à l’écran d’accueil.",
+        "moment": {
+          "absence": "Recevoir la réponse à votre demande dès qu’elle arrive ?",
+          "presence": "Savoir tout de suite si cette répétition est déplacée ou annulée ?",
+          "participation": "Recevoir tout de suite les changements de répétition et les nouveaux documents ?"
+        }
+      },
+      "inbox": {
+        "off": "Les notifications push sont désactivées sur cet appareil.",
+        "elsewhere": "Les notifications sont actives sur un autre de vos appareils, pas encore sur celui-ci.",
+        "blocked": "Les notifications sont bloquées dans les réglages du navigateur de cet appareil.",
+        "install": "Sur cet appareil, les notifications ne fonctionnent que dans l’application ajoutée à l’écran d’accueil.",
+        "how_to_unblock": "Comment débloquer"
       }
     },
     "delegation": {
@@ -6047,6 +6070,7 @@
         "timezone_note": "Dans votre fuseau horaire ({{timezone}})"
       },
       "in_app_note": "Tout arrive dans la cloche de l’application, toujours, quels que soient ces réglages. Ci-dessous, vous ne choisissez que l’e-mail et les notifications push.",
+      "email_stands_in": "Aucun de vos appareils ne reçoit encore les notifications push : les rappels et les réponses à vos demandes vous sont donc envoyés par e-mail pour l’instant. Les nouveaux documents apparaissent dans l’application.",
       "push_email_offer": {
         "eyebrow": "Le push fonctionne",
         "title": "La notification est arrivée sur cet appareil.",

@@ -14,7 +14,7 @@ Standards: SaaS 2026, Scalable Fan-Out, Strict Payload Rehydration.
 
 import logging
 from datetime import timedelta
-from typing import Any
+from typing import Any, TypedDict
 from zoneinfo import ZoneInfo
 
 from celery import group, shared_task
@@ -88,6 +88,19 @@ def route_notification_task(
 
 # --- 3. PUSH TRANSPORT ---
 
+class EmailFallback(TypedDict):
+    """The e-mail a push carries in reserve, for a member it cannot reach.
+
+    Push ON is the reader saying "tell me outside the app". A member with no
+    device that accepts the push — never enabled, blocked, or a subscription the
+    browser has discarded — would otherwise hear nothing at all for the types
+    whose e-mail is off by default, so the router attaches the e-mail it would
+    have sent and this task spends it only on zero deliveries.
+    """
+    template_name: str
+    metadata: dict[str, Any]
+
+
 @shared_task(
     name="notifications.send_push_notification",
     bind=True,
@@ -102,15 +115,31 @@ def send_push_notification_task(
     notification_type: str,
     metadata: dict[str, Any],
     level: str = NotificationLevel.INFO,
+    email_fallback: EmailFallback | None = None,
 ) -> None:
     """
     Isolated transport task for Web Push (VAPID) dispatch. Delegates payload
     composition to the dispatcher service; transient transport failures are
-    retried with exponential backoff.
+    retried with exponential backoff. When the push reached no device and the
+    router supplied an `email_fallback`, that e-mail goes out instead — also on
+    the last attempt of a push that kept failing, since that member is as
+    unreached as one with no device at all.
     """
+    def spend_fallback() -> None:
+        if email_fallback is None:
+            return
+        from .email_tasks import send_notification_email_task
+        send_notification_email_task.delay(
+            recipient_id=recipient_id,
+            notification_type=notification_type,
+            template_name=email_fallback["template_name"],
+            metadata=email_fallback["metadata"],
+            level=level,
+        )
+
     try:
         from .push_service import PushDispatcherService
-        PushDispatcherService.dispatch_to_user(
+        delivered = PushDispatcherService.dispatch_to_user(
             recipient_id=recipient_id,
             notification_type=notification_type,
             metadata=metadata,
@@ -118,7 +147,12 @@ def send_push_notification_task(
         )
     except Exception as exc:
         logger.error(f"[Task] Push transport failed for UID:{recipient_id}. Retrying... Reason: {exc}")
+        if self.request.retries >= self.max_retries:
+            spend_fallback()
         raise self.retry(exc=exc)
+
+    if delivered == 0:
+        spend_fallback()
 
 # --- 4. FAN-OUT ORCHESTRATION ---
 

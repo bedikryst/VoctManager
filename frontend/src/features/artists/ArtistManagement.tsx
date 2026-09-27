@@ -64,6 +64,7 @@ export default function ArtistManagement(): React.JSX.Element {
     setViewMode,
     ensembleBalance,
     accountPendingCount,
+    withoutPushCount,
     rangeProposals,
     archivedCount,
     displayArtists,
@@ -192,6 +193,7 @@ export default function ArtistManagement(): React.JSX.Element {
             <EnsembleBalance
               balance={ensembleBalance}
               accountPending={accountPendingCount}
+              withoutPush={withoutPushCount}
               rangeProposals={rangeProposals}
               archivedCount={archivedCount}
               activeSection={voiceFilter}

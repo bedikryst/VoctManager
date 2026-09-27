@@ -30,6 +30,17 @@ export const isAwaitingActivation = (artist: Artist): boolean =>
   artist.account_activated === false &&
   !isWithoutEmail(artist);
 
+/**
+ * Signed in, and no device of theirs takes a push. Push is account-wide — one
+ * working phone is the whole answer — so this is the list of people worth asking
+ * in person; until then the server mails them reminders and answers to their
+ * requests, while new material waits in the app. Only for an activated account:
+ * a member out of reach altogether belongs to {@link outOfReachReason}.
+ * `has_push` is manager-only, so an unknown value is never marked.
+ */
+export const isWithoutPush = (artist: Artist): boolean =>
+  artist.has_push === false && artist.account_activated === true;
+
 export type OutOfReachReason = "no_email" | "not_activated";
 
 /**

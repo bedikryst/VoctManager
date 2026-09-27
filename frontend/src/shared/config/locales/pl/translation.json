@@ -1004,6 +1004,7 @@
       "message_title": "Napisz wiadomość",
       "no_email": "Bez e-maila",
       "no_email_title": "Dodano bez adresu e-mail. Ta osoba nie ma dostępu do aplikacji i nie dostaje powiadomień, więc wszystko trzeba jej przekazywać osobiście.",
+      "no_push_title": "Żadne urządzenie tej osoby nie odbiera powiadomień push. Przypomnienia i odpowiedzi na zgłoszenia dostaje na razie mailem, o nowych materiałach dowie się dopiero w aplikacji.",
       "no_phone": "Brak telefonu",
       "open_profile_aria": "Otwórz profil: {{name}}",
       "pending_activation": "Nie aktywowano",
@@ -1037,6 +1038,8 @@
       "empty_title": "Brak wyników",
       "pending_activation": "bez aktywacji",
       "pending_activation_hint": "Aktywni artyści, którzy nie aktywowali jeszcze konta na platformie.",
+      "without_push": "bez powiadomień push",
+      "without_push_hint": "Osoby z aktywnym kontem, których żadne urządzenie nie odbiera powiadomień push. Dopóki tego nie włączą, przypomnienia i odpowiedzi na zgłoszenia dostają mailem, a o nowych materiałach dowiadują się dopiero w aplikacji.",
       "search_placeholder": "Szukaj po nazwisku...",
       "show_all": "Pokaż wszystkich",
       "subtitle": "Zasoby Ludzkie",
@@ -4038,6 +4041,26 @@
         "test_failed": "Nie udało się wysłać testu. Spróbuj ponownie.",
         "test_no_device": "To urządzenie nie jest już zapisane do powiadomień. Wyłącz push i włącz go ponownie.",
         "test_undeliverable": "Usługa powiadomień przeglądarki odrzuciła wysyłkę. Spróbuj ponownie za chwilę."
+      },
+      "nudge": {
+        "eyebrow": "Powiadomienia na tym urządzeniu",
+        "enable": "Włącz",
+        "show_how": "Pokaż jak",
+        "not_now": "Nie teraz",
+        "elsewhere": "Na innym urządzeniu powiadomienia już działają. Włączyć je też tutaj?",
+        "install": "Działają tylko w aplikacji dodanej do ekranu początkowego.",
+        "moment": {
+          "absence": "Chcesz od razu wiedzieć, kiedy przyjdzie odpowiedź na zgłoszenie?",
+          "presence": "Chcesz od razu wiedzieć, gdyby tę próbę przesunięto, przeniesiono albo odwołano?",
+          "participation": "Chcesz od razu wiedzieć o zmianach prób i nowych materiałach?"
+        }
+      },
+      "inbox": {
+        "off": "Na tym urządzeniu powiadomienia push są wyłączone.",
+        "elsewhere": "Powiadomienia masz na innym urządzeniu, na tym jeszcze nie.",
+        "blocked": "Powiadomienia są zablokowane w ustawieniach przeglądarki na tym urządzeniu.",
+        "install": "Na tym urządzeniu powiadomienia działają tylko w aplikacji dodanej do ekranu początkowego.",
+        "how_to_unblock": "Jak odblokować"
       }
     },
     "delegation": {
@@ -6093,6 +6116,7 @@
         "timezone_note": "W Twojej strefie czasowej ({{timezone}})"
       },
       "in_app_note": "Wszystko trafia do dzwonka w aplikacji — zawsze i niezależnie od tych ustawień. Poniżej decydujesz tylko o e-mailu i powiadomieniach push.",
+      "email_stands_in": "Żadne Twoje urządzenie nie odbiera jeszcze powiadomień push, dlatego przypomnienia i odpowiedzi na Twoje zgłoszenia wysyłamy na razie mailem. O nowych materiałach dowiesz się w aplikacji.",
       "push_email_offer": {
         "eyebrow": "Push działa",
         "title": "Powiadomienie dotarło na to urządzenie.",

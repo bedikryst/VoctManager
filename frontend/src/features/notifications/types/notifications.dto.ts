@@ -582,6 +582,11 @@ export interface WebPushSubscribeDTO {
   auth_key: string;
 }
 
+/** `GET /api/notifications/devices/` — a count, never the endpoints. */
+export interface PushDeviceSummaryDTO {
+  active_devices: number;
+}
+
 export interface SendToArtistPayload {
   artist_id: string;
   title: string;

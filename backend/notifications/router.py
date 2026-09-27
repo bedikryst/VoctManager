@@ -16,7 +16,7 @@ from .models import (
     NotificationPreference,
     NotificationType,
 )
-from .tasks import send_push_notification_task
+from .tasks import EmailFallback, send_push_notification_task
 
 # Per-type override map. Falls back to the structured `transactional` template
 # (fed by the message_content layer) for everything else.
@@ -59,6 +59,32 @@ def _briefing_for_channel(
     return payload
 
 
+# Push-first types whose reserve e-mail would arrive as a flood rather than as
+# news. A material upload fans out once per track, so a batch of rehearsal MP3s
+# is a dozen events per singer: "timely, but not worth an inbox" holds all the
+# more for a member who never asked for push. The in-app row still carries it.
+_NO_EMAIL_RESERVE: frozenset[str] = frozenset({NotificationType.MATERIAL_UPLOADED})
+
+
+def _needs_email_reserve(notification_type: str, email_enabled: bool, level: str) -> bool:
+    """Whether a push of this type should carry its e-mail in reserve.
+
+    Only push-first types qualify — those whose e-mail is OFF by default, so a
+    member without a device would otherwise hear nothing. A type whose e-mail is
+    ON by default and reads OFF here was switched off by the member, and that
+    choice holds even when no device can take the push. The master e-mail switch
+    is honoured downstream, by the e-mail dispatcher itself.
+
+    Routine manager reports are excluded while they are routine: their e-mail is
+    the daily digest, and a manager who switched the digest off asked for them in
+    real time, not for one e-mail per singer per rehearsal. The team group's own
+    e-mail switch remains the way to get them by mail.
+    """
+    if notification_type in _NO_EMAIL_RESERVE or is_digestible(notification_type, level):
+        return False
+    return not email_enabled and not default_channel_preferences(notification_type)["email_enabled"]
+
+
 class NotificationRouter:
     """Evaluates user preferences and dispatches to isolated transport tasks."""
 
@@ -76,6 +102,10 @@ class NotificationRouter:
         recipient has the daily digest enabled; the in-app row is already persisted
         and the digest sweep collects it. Disabling the digest restores immediate
         delivery through the recipient's enabled real-time channels.
+
+        A push-first type (see ``_needs_email_reserve``) sends its push with the
+        e-mail in reserve (see ``EmailFallback``): a member no device can reach
+        gets the e-mail instead of silence. Only push OFF keeps it in-app only.
         """
         if notification_type == NotificationType.NOTIFICATION_READ_RECEIPT:
             return
@@ -108,11 +138,17 @@ class NotificationRouter:
             )
 
         if pref.push_enabled:
+            email_fallback: EmailFallback | None = (
+                {"template_name": template_name, "metadata": metadata}
+                if _needs_email_reserve(notification_type, pref.email_enabled, level)
+                else None
+            )
             send_push_notification_task.delay(
                 recipient_id=str(recipient_id),
                 notification_type=notification_type,
                 metadata=metadata,
                 level=level,
+                email_fallback=email_fallback,
             )
 
     @classmethod
@@ -171,11 +207,28 @@ class NotificationRouter:
             },
         )
         if push_payload is not None:
+            # The reserve e-mail carries only what push would and e-mail did not,
+            # so an unreached member never reads the same line twice.
+            fallback_payload = _briefing_for_channel(
+                metadata, items,
+                allowed={
+                    key for key, value in preferences.items()
+                    if value["push_enabled"]
+                    and _needs_email_reserve(key, value["email_enabled"], level)
+                },
+            )
             send_push_notification_task.delay(
                 recipient_id=str(recipient_id),
                 notification_type=NotificationType.PROJECT_BRIEFING,
                 metadata=push_payload,
                 level=level,
+                email_fallback=(
+                    None if fallback_payload is None
+                    else {
+                        "template_name": _EMAIL_TEMPLATE_MAP[NotificationType.PROJECT_BRIEFING],
+                        "metadata": fallback_payload,
+                    }
+                ),
             )
 
     @staticmethod

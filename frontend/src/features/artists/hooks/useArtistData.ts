@@ -28,7 +28,7 @@ import {
   sectionOrder,
   type SectionKey,
 } from "../constants/voiceSections";
-import { isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
+import { isAwaitingActivation, isWithoutEmail, isWithoutPush } from "../lib/accountState";
 import {
   matchesRangeFilter,
   proposalOf,
@@ -133,6 +133,13 @@ export const useArtistData = () => {
   // renders, so the count and the chips on screen always agree.
   const accountPendingCount = useMemo(
     () => activeArtists.filter(isAwaitingActivation).length,
+    [activeArtists],
+  );
+
+  // Signed-in members none of whose devices takes a push — the same predicate
+  // as the bell-off mark on their row, so the figure and the marks agree.
+  const withoutPushCount = useMemo(
+    () => activeArtists.filter(isWithoutPush).length,
     [activeArtists],
   );
 
@@ -419,6 +426,7 @@ export const useArtistData = () => {
     setViewMode,
     ensembleBalance,
     accountPendingCount,
+    withoutPushCount,
     rangeProposals,
     archivedCount,
     displayArtists,
