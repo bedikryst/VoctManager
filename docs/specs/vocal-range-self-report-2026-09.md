@@ -411,7 +411,10 @@ tessitura edge.
 - **Sing / Done** (a toggle; nothing depends on holding the button):
   1. Select a slot and tap "Zaśpiewaj". The mic stays open until "Gotowe".
   2. While the singer sings, the status line names the nearest note, live, and a cursor follows on
-     the keyboard, which scrolls to keep it in view. The privacy line stands until the first sound.
+     the keyboard, which scrolls to keep it in view. Under the note, for as long as the mic is
+     open, the privacy line: "Twój głos nie jest nagrywany ani nigdzie zapisywany. Nikt go nie
+     usłyszy." (the developer's wording). The status line is 60 px tall on every width, which is
+     that state on a phone (note plus two lines); "Usuń" steps aside while listening.
   3. A held note is ≥ 600 ms of the smoothed pitch staying within ±40 cents of the run's mean, so
      a run may span about 80 cents. It snaps to the nearest semitone and fills the slot at once,
      silently. Holding another note replaces it; a steady note is reported once.
