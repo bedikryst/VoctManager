@@ -10,9 +10,11 @@ from datetime import timedelta
 
 from celery import shared_task
 from django.conf import settings
+from django.core.cache import cache
 from django.db.models import Q
 from django.utils import timezone
 
+from archive.models import Piece
 from notifications.announcement_queue import AnnouncementQueue
 from notifications.dtos import AnnouncementPendingMetadata
 from notifications.models import NotificationLevel, NotificationType
@@ -316,3 +318,87 @@ def dispatch_due_reminders() -> dict:
             "[Reminders] Dispatched %d rehearsal + %d project reminder(s).", rehearsals, projects
         )
     return {"rehearsals": rehearsals, "projects": projects}
+
+
+# ──────────────────────────────────────────────────────────────────────────── #
+# Material notices                                                              #
+# Every uploaded track and every approved edition fires the material event, so  #
+# a batch of rehearsal MP3s would be a dozen pushes per singer — the quickest   #
+# way to teach members to switch push off. The roster listener opens a window   #
+# per piece on the first event; this task closes it with one notice.            #
+#                                                                               #
+# Two keys, because only `cache.add` may create the gate: a listener that       #
+# re-wrote it with `set` just as the task deleted it would leave a gate with no #
+# task behind it, and every upload to that piece would go unannounced until it  #
+# expired. The kinds key may be re-written freely — at worst it mislabels.      #
+# ──────────────────────────────────────────────────────────────────────────── #
+
+# The keys outlive the window by this much, so a task a busy worker picks up
+# late still finds the kinds recorded for it.
+_MATERIAL_NOTICE_KEY_MARGIN_SECONDS = 5 * 60
+
+
+def material_notice_window_seconds() -> int:
+    return int(getattr(settings, "MATERIAL_NOTICE_WINDOW_SECONDS", 10 * 60))
+
+
+def material_notice_key_timeout() -> int:
+    return material_notice_window_seconds() + _MATERIAL_NOTICE_KEY_MARGIN_SECONDS
+
+
+def material_notice_gate_key(piece_id: str) -> str:
+    return f"material-notice:{piece_id}"
+
+
+def material_notice_kinds_key(piece_id: str) -> str:
+    return f"material-notice:{piece_id}:kinds"
+
+
+@shared_task(name="roster.dispatch_material_notice")
+def dispatch_material_notice_task(piece_id: str) -> int:
+    """
+    Closes a piece's material window: one notice for everything that landed in it.
+
+    Recipients are resolved now, not when the first file arrived, so a singer cast
+    during the window hears about it and one who left does not. The kind is named
+    only when every event agreed; a mixed or unknown window sends `None`, whose
+    generic wording the composer already has.
+    """
+    # Reopen first: an upload from here on starts its own window rather than
+    # being folded into a notice that has already been composed.
+    cache.delete(material_notice_gate_key(piece_id))
+    kinds: list[str] = cache.get(material_notice_kinds_key(piece_id)) or []
+    cache.delete(material_notice_kinds_key(piece_id))
+
+    piece = Piece.objects.select_related("composer").filter(id=piece_id).first()
+    if piece is None:
+        return 0
+
+    user_ids = Participation.objects.filter(
+        project__program_items__piece=piece,
+        is_deleted=False,
+        project__is_deleted=False,
+    ).values_list("artist__user_id", flat=True).distinct()
+    recipient_ids = [str(uid) for uid in user_ids if uid]
+    if not recipient_ids:
+        return 0
+
+    distinct_kinds = set(kinds)
+    material_kind = (distinct_kinds.pop() or None) if len(distinct_kinds) == 1 else None
+
+    send_bulk_notifications_task.delay(
+        recipient_ids=recipient_ids,
+        notification_type=NotificationType.MATERIAL_UPLOADED,
+        level=NotificationLevel.INFO,
+        metadata={
+            "piece_id": str(piece.id),
+            "piece_title": piece.title,
+            "material_kind": material_kind,
+            "composer_name": str(piece.composer) if piece.composer_id else None,
+        },
+    )
+    logger.info(
+        "[MaterialNotice] One notice for %d event(s) on piece '%s' to %d user(s).",
+        len(kinds), piece.title, len(recipient_ids),
+    )
+    return len(recipient_ids)

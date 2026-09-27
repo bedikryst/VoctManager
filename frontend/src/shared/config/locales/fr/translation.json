@@ -6019,7 +6019,8 @@
         "email": "E-mail",
         "event_type": "Notifications",
         "in_app": "In-App",
-        "push": "Push"
+        "push": "Push",
+        "push_by_email": "par e-mail pour l’instant"
       },
       "title": "Notifications",
       "tooltips": {
@@ -6070,7 +6071,7 @@
         "timezone_note": "Dans votre fuseau horaire ({{timezone}})"
       },
       "in_app_note": "Tout arrive dans la cloche de l’application, toujours, quels que soient ces réglages. Ci-dessous, vous ne choisissez que l’e-mail et les notifications push.",
-      "email_stands_in": "Aucun de vos appareils ne reçoit encore les notifications push : les rappels et les réponses à vos demandes vous sont donc envoyés par e-mail pour l’instant. Les nouveaux documents apparaissent dans l’application.",
+      "email_stands_in": "Aucun de vos appareils ne reçoit encore les notifications push : les rappels et les réponses à vos demandes vous sont donc envoyés par e-mail pour l’instant. Les nouveaux documents apparaissent dans l’application. Si vous désactivez le push pour une notification, elle ne vous sera pas non plus envoyée par e-mail.",
       "push_email_offer": {
         "eyebrow": "Le push fonctionne",
         "title": "La notification est arrivée sur cet appareil.",

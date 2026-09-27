@@ -331,6 +331,15 @@ class PushDevice(EnterpriseBaseModel):
         db_index=True,
         help_text=_("Indicates whether the token is currently valid. Invalidated automatically by delivery failures.")
     )
+    last_delivered_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("When the push service last accepted a push for this device.")
+    )
+    consecutive_failures = models.PositiveSmallIntegerField(
+        default=0,
+        help_text=_("Push service refusals since the last accepted push. The device is deactivated at the limit.")
+    )
 
     class Meta:
         db_table = 'notifications_push_device'

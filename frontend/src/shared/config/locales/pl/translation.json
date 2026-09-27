@@ -6065,7 +6065,8 @@
         "email": "E-mail",
         "event_type": "Powiadomienia",
         "in_app": "In-App",
-        "push": "Push"
+        "push": "Push",
+        "push_by_email": "na razie mailem"
       },
       "title": "Powiadomienia",
       "tooltips": {
@@ -6116,7 +6117,7 @@
         "timezone_note": "W Twojej strefie czasowej ({{timezone}})"
       },
       "in_app_note": "Wszystko trafia do dzwonka w aplikacji — zawsze i niezależnie od tych ustawień. Poniżej decydujesz tylko o e-mailu i powiadomieniach push.",
-      "email_stands_in": "Żadne Twoje urządzenie nie odbiera jeszcze powiadomień push, dlatego przypomnienia i odpowiedzi na Twoje zgłoszenia wysyłamy na razie mailem. O nowych materiałach dowiesz się w aplikacji.",
+      "email_stands_in": "Żadne Twoje urządzenie nie odbiera jeszcze powiadomień push, dlatego przypomnienia i odpowiedzi na Twoje zgłoszenia wysyłamy na razie mailem. O nowych materiałach dowiesz się w aplikacji. Jeśli wyłączysz push przy którymś powiadomieniu, nie wyślemy go też mailem.",
       "push_email_offer": {
         "eyebrow": "Push działa",
         "title": "Powiadomienie dotarło na to urządzenie.",

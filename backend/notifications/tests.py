@@ -17,6 +17,7 @@ from typing import Any, ClassVar, cast
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
+import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
@@ -54,7 +55,7 @@ from .models import (
     NotificationType,
     PushDevice,
 )
-from .push_service import PushDispatcherService
+from .push_service import PushDispatcherService, PushTransportUnavailable
 
 User = get_user_model()
 
@@ -2253,6 +2254,179 @@ class TestPushHonestyTests(APITestCase):
         self.assertEqual(missing.status_code, 409)
         self.assertEqual(missing.data["reason"], "no_devices")
 
+    def test_a_network_outage_answers_undeliverable_rather_than_500(self) -> None:
+        self.client.force_authenticate(user=self.user)
+
+        with patch(
+            "notifications.push_service.webpush",
+            side_effect=requests.ConnectionError("connection reset"),
+        ):
+            resp = self.client.post("/api/notifications/devices/test/")
+
+        self.assertEqual(resp.status_code, 502)
+        self.assertEqual(resp.data["reason"], "undeliverable")
+
+
+class PushDeviceHealthTests(TestCase):
+    """`is_active` is what the device count, `has_push` and the e-mail fallback
+    read, so it has to mean "push reaches this". A refusal that never ends must
+    eventually say so; a network error, which says nothing about the
+    subscription, must neither count nor let a retry push the same notice twice."""
+
+    WEBPUSH = "notifications.push_service.webpush"
+    FALLBACK_EMAIL = "notifications.email_tasks.send_notification_email_task.delay"
+    PHONE = "https://push.example/phone"
+    LAPTOP = "https://push.example/laptop"
+
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(
+            username="push-health", email="push-health@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST, language="en")
+        for token in (self.PHONE, self.LAPTOP):
+            PushDevice.objects.create(
+                user=self.user, registration_token=token,
+                p256dh_key="key", auth_key="auth", device_type=DeviceType.WEB,
+            )
+
+    def _device(self, token: str) -> PushDevice:
+        return PushDevice.objects.get(registration_token=token)
+
+    def _dispatch(self) -> int:
+        return PushDispatcherService.dispatch_to_user(
+            recipient_id=str(self.user.id),
+            notification_type=NotificationType.REHEARSAL_REMINDER,
+            metadata={"project_name": "Requiem"},
+        )
+
+    def _run_task(self, *, retries: int = 0):
+        from notifications.tasks import send_push_notification_task
+        return send_push_notification_task.apply(
+            kwargs={
+                "recipient_id": str(self.user.id),
+                "notification_type": NotificationType.REHEARSAL_REMINDER,
+                "metadata": {"project_name": "Requiem"},
+                "email_fallback": {"template_name": "transactional", "metadata": {}},
+            },
+            retries=retries,
+        )
+
+    @staticmethod
+    def _failing_for(token: str, exc: Exception):
+        def send(*, subscription_info: dict[str, Any], **_kwargs: Any) -> None:
+            if subscription_info["endpoint"] == token:
+                raise exc
+        return send
+
+    def test_partial_network_failure_neither_raises_nor_retries(self) -> None:
+        # The phone already has the notice; a retry would push it a second time.
+        outage = self._failing_for(self.LAPTOP, requests.ConnectionError("reset"))
+        with patch(self.WEBPUSH, side_effect=outage) as send, \
+                patch(self.FALLBACK_EMAIL) as email:
+            result = self._run_task()
+
+        self.assertTrue(result.successful())
+        self.assertEqual(send.call_count, 2)
+        email.assert_not_called()
+        self.assertIsNotNone(self._device(self.PHONE).last_delivered_at)
+        laptop = self._device(self.LAPTOP)
+        self.assertEqual((laptop.consecutive_failures, laptop.is_active), (0, True))
+
+    def test_all_network_failure_raises_so_the_task_retries(self) -> None:
+        from celery.exceptions import Retry
+
+        with patch(self.WEBPUSH, side_effect=requests.ConnectionError("down")):
+            with self.assertRaises(PushTransportUnavailable):
+                self._dispatch()
+            with patch(self.FALLBACK_EMAIL) as email, self.assertRaises(Retry):
+                self._run_task()
+        email.assert_not_called()
+
+    def test_network_errors_never_count_towards_deactivation(self) -> None:
+        # One outage is retried four times; counting each attempt would switch
+        # off every device of every recipient within two notices.
+        PushDevice.objects.update(consecutive_failures=4)
+        with patch(self.WEBPUSH, side_effect=requests.Timeout("slow")), \
+                self.assertRaises(PushTransportUnavailable):
+            self._dispatch()
+
+        for token in (self.PHONE, self.LAPTOP):
+            device = self._device(token)
+            self.assertEqual((device.consecutive_failures, device.is_active), (4, True))
+
+    def test_a_local_send_error_is_a_refusal_not_an_abandoned_batch(self) -> None:
+        # A key the encryption step rejects must not escape the loop: the task
+        # would retry and push the notice to the phone again.
+        unusable_key = self._failing_for(self.LAPTOP, ValueError("bad p256dh"))
+        with patch(self.WEBPUSH, side_effect=unusable_key) as send, \
+                patch(self.FALLBACK_EMAIL) as email:
+            result = self._run_task()
+
+        self.assertTrue(result.successful())
+        self.assertEqual(send.call_count, 2)
+        email.assert_not_called()
+        self.assertEqual(self._device(self.LAPTOP).consecutive_failures, 1)
+
+    def test_five_refusals_in_a_row_deactivate_the_device(self) -> None:
+        forbidden = WebPushException("forbidden", response=SimpleNamespace(status_code=403))
+        refusing_laptop = self._failing_for(self.LAPTOP, forbidden)
+
+        with patch(self.WEBPUSH, side_effect=refusing_laptop):
+            for _ in range(4):
+                self.assertEqual(self._dispatch(), 1)
+            self.assertTrue(self._device(self.LAPTOP).is_active)
+            self._dispatch()
+
+        laptop = self._device(self.LAPTOP)
+        self.assertEqual((laptop.consecutive_failures, laptop.is_active), (5, False))
+        self.assertTrue(self._device(self.PHONE).is_active)
+
+        with patch(self.WEBPUSH, return_value=None) as send:
+            self._dispatch()
+        self.assertEqual(send.call_count, 1, "a deactivated device is not offered the push")
+
+    def test_an_accepted_push_resets_the_count(self) -> None:
+        PushDevice.objects.update(consecutive_failures=4)
+
+        with patch(self.WEBPUSH, return_value=None):
+            self.assertEqual(self._dispatch(), 2)
+
+        laptop = self._device(self.LAPTOP)
+        self.assertEqual(laptop.consecutive_failures, 0)
+        self.assertIsNotNone(laptop.last_delivered_at)
+
+    def test_resubscribing_starts_the_count_afresh(self) -> None:
+        from .dtos import WebPushSubscribeDTO
+
+        PushDevice.objects.filter(registration_token=self.LAPTOP).update(
+            consecutive_failures=5, is_active=False,
+        )
+        PushDispatcherService.register_web_push(WebPushSubscribeDTO(
+            user_id=self.user.id, endpoint=self.LAPTOP,
+            p256dh_key="p256dh-key-material", auth_key="auth-secret-value",
+        ))
+
+        laptop = self._device(self.LAPTOP)
+        self.assertEqual((laptop.consecutive_failures, laptop.is_active), (0, True))
+
+    def test_a_device_without_keys_stops_counting_as_reachable(self) -> None:
+        PushDevice.objects.filter(registration_token=self.LAPTOP).update(auth_key=None)
+
+        with patch(self.WEBPUSH, return_value=None):
+            self.assertEqual(self._dispatch(), 1)
+
+        self.assertFalse(self._device(self.LAPTOP).is_active)
+
+    def test_an_exhausted_network_retry_spends_the_reserve_once(self) -> None:
+        from notifications.tasks import send_push_notification_task
+
+        with patch(self.WEBPUSH, side_effect=requests.ConnectionError("down")), \
+                patch(self.FALLBACK_EMAIL) as email, \
+                self.assertRaises(PushTransportUnavailable):
+            self._run_task(retries=send_push_notification_task.max_retries)
+
+        email.assert_called_once()
+
 
 class PushEmailOfferStampTests(APITestCase):
     """The offer is a question asked once per account, and the mute is a separate
@@ -2764,8 +2938,9 @@ class PushEmailFallbackTests(TestCase):
         self.assertIsNone(push.call_args.kwargs["email_fallback"])
 
     def test_material_upload_carries_no_reserve(self) -> None:
-        # One event per uploaded track: a batch of MP3s must not become a batch
-        # of e-mails for every member without a device.
+        # Even folded to one notice per piece, a season's preparation touches
+        # many pieces: that must not become a stream of e-mails for every
+        # member without a device.
         email, push = self._route(NotificationType.MATERIAL_UPLOADED)
 
         email.assert_not_called()

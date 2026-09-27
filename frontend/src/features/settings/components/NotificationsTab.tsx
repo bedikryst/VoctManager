@@ -129,6 +129,9 @@ interface ChannelCellsProps {
   onToggle: (channel: PreferenceChannel, state: GroupChannelState) => void;
   emailLabel: string;
   pushLabel: string;
+  /** Set while no device takes push: the switch then governs the e-mail that
+   *  stands in for it, and the column has to say so. */
+  pushCaption?: string;
 }
 
 /**
@@ -145,6 +148,7 @@ const ChannelCells: React.FC<ChannelCellsProps> = ({
   onToggle,
   emailLabel,
   pushLabel,
+  pushCaption,
 }) => (
   <div className="flex flex-col gap-4 sm:contents px-1 sm:px-0 bg-ethereal-parchment/5 sm:bg-transparent rounded-control p-4 sm:p-0">
     <div className="flex items-center justify-between sm:justify-center w-full">
@@ -158,7 +162,16 @@ const ChannelCells: React.FC<ChannelCellsProps> = ({
 
     {showPushColumn && (
       <div className="flex items-center justify-between sm:justify-center w-full">
-        <Eyebrow className="sm:hidden">{t("settings.notifications.table.push")}</Eyebrow>
+        {/* Mobile has no column header, so this label is the only place a
+            phone reader learns what the switch governs. */}
+        <div className="sm:hidden flex items-baseline gap-1.5">
+          <Eyebrow>{t("settings.notifications.table.push")}</Eyebrow>
+          {pushCaption && (
+            <Text size="xs" color="muted">
+              {pushCaption}
+            </Text>
+          )}
+        </div>
         {canManagePush ? (
           <NotificationSwitch
             state={pushState}
@@ -281,7 +294,17 @@ export const NotificationsTab: React.FC = () => {
   const [pushProven, setPushProven] = useState(false);
 
   const pushGranted = availability.kind === "ready" && permission === "granted" && isSubscribed;
-  const canManagePushColumn = pushGranted;
+  const emailMasterEnabled = settings?.profile?.email_notifications_enabled ?? true;
+  // Per-type push is account-level, and while no device takes it the server
+  // mails push-first events instead — so the push switch is also that e-mail's:
+  // OFF on a type means neither. A member in that state keeps the lever in any
+  // browser, including one that cannot push at all, like an iPhone in Safari.
+  // With e-mail muted there is no stand-in and the switch governs nothing yet.
+  const emailStandsIn = emailMasterEnabled && pushSummary?.active_devices === 0;
+  const canManagePushColumn = pushGranted || emailStandsIn;
+  const pushCaption = emailStandsIn
+    ? t("settings.notifications.table.push_by_email")
+    : undefined;
 
   if (isLoading) {
     return (
@@ -305,14 +328,15 @@ export const NotificationsTab: React.FC = () => {
 
   // Push has two very different "off" states. When it is merely not-yet-activated
   // ("ready") we keep the column as a locked teaser. When it is fundamentally
-  // unavailable here (denied / unsupported / misconfigured) push will never fire,
-  // so the whole column + header collapses away and the hero carries the single
-  // explanation — no wall of inert grey dots.
-  const showPushColumn = heroVariant === "subscribed" || heroVariant === "ready";
+  // unavailable here (denied / unsupported / misconfigured) push will never fire
+  // from this browser, so the column collapses and the hero carries the single
+  // explanation — unless e-mail is standing in for push, when the column is the
+  // member's control over that e-mail.
+  const showPushColumn =
+    heroVariant === "subscribed" || heroVariant === "ready" || emailStandsIn;
 
   const groups = groupNotificationPreferences(matrix);
 
-  const emailMasterEnabled = settings?.profile?.email_notifications_enabled ?? true;
   const offerAnswered = Boolean(settings?.profile?.push_email_offer_seen_at);
 
   // Asked once, and only on evidence. Every condition is load-bearing: a proven
@@ -425,7 +449,7 @@ export const NotificationsTab: React.FC = () => {
 
         {/* Account-wide, not this device: the server mails push-first events
             only while none of the member's devices takes a push. */}
-        {emailMasterEnabled && pushSummary?.active_devices === 0 && (
+        {emailStandsIn && (
           <Text size="xs" color="muted" className="mb-2 leading-relaxed">
             {t("settings.notifications.email_stands_in")}
           </Text>
@@ -450,6 +474,11 @@ export const NotificationsTab: React.FC = () => {
           {showPushColumn && (
             <div className="text-center">
               <Eyebrow>{t("settings.notifications.table.push")}</Eyebrow>
+              {pushCaption && (
+                <Text size="xs" color="muted" className="leading-tight mt-0.5">
+                  {pushCaption}
+                </Text>
+              )}
             </div>
           )}
         </div>
@@ -464,6 +493,7 @@ export const NotificationsTab: React.FC = () => {
               onToggleExpanded={() => toggleExpanded(group.id)}
               showPushColumn={showPushColumn}
               canManagePush={canManagePushColumn}
+              pushCaption={pushCaption}
               onGroupToggle={(channel, state) => handleGroupToggle(group, channel, state)}
               onRowToggle={handleRowToggle}
               onRestore={() => handleRestore(group)}
@@ -506,6 +536,7 @@ interface PreferenceGroupPanelProps {
   onToggleExpanded: () => void;
   showPushColumn: boolean;
   canManagePush: boolean;
+  pushCaption?: string;
   onGroupToggle: (channel: PreferenceChannel, state: GroupChannelState) => void;
   onRowToggle: (
     pref: NotificationPreferenceDTO,
@@ -522,6 +553,7 @@ const PreferenceGroupPanel: React.FC<PreferenceGroupPanelProps> = ({
   onToggleExpanded,
   showPushColumn,
   canManagePush,
+  pushCaption,
   onGroupToggle,
   onRowToggle,
   onRestore,
@@ -596,6 +628,7 @@ const PreferenceGroupPanel: React.FC<PreferenceGroupPanelProps> = ({
           onToggle={onGroupToggle}
           emailLabel={channelLabel("email_enabled", emailState)}
           pushLabel={channelLabel("push_enabled", pushState)}
+          pushCaption={pushCaption}
         />
       </div>
 
@@ -655,6 +688,7 @@ const PreferenceGroupPanel: React.FC<PreferenceGroupPanelProps> = ({
               t={t}
               showPushColumn={showPushColumn}
               canManagePush={canManagePush}
+              pushCaption={pushCaption}
               onToggle={onRowToggle}
             />
           ))}
@@ -669,6 +703,7 @@ interface PreferenceRowProps {
   t: TFunc;
   showPushColumn: boolean;
   canManagePush: boolean;
+  pushCaption?: string;
   onToggle: (
     pref: NotificationPreferenceDTO,
     patch: { email_enabled?: boolean; push_enabled?: boolean },
@@ -680,6 +715,7 @@ const PreferenceRow: React.FC<PreferenceRowProps> = ({
   t,
   showPushColumn,
   canManagePush,
+  pushCaption,
   onToggle,
 }) => {
   const RowIcon = notificationTypeIcon(pref.notification_type);
@@ -731,6 +767,7 @@ const PreferenceRow: React.FC<PreferenceRowProps> = ({
         onToggle={(channel, state) => onToggle(pref, { [channel]: state !== "on" })}
         emailLabel={t("settings.notifications.a11y.email", { event: label })}
         pushLabel={t("settings.notifications.a11y.push", { event: label })}
+        pushCaption={pushCaption}
       />
     </div>
   );

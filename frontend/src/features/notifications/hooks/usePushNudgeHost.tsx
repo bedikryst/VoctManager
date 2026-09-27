@@ -48,13 +48,15 @@ export const usePushNudgeHost = (): void => {
       action: "enable" | "install",
       onAction: () => void,
     ): void => {
-      // Every way a toast can end without its action — the close button, a
-      // swipe, the timer — is one "not now", counted once.
+      // Every way a toast can end without its action is recorded once. The
+      // close button and a swipe are the member saying "not now" and count as a
+      // strike; the timer only starts the cooldown, since an offer that ran out
+      // may never have been read.
       let settled = false;
-      const dismissed = (): void => {
+      const dismissed = (strike: boolean): void => {
         if (settled) return;
         settled = true;
-        recordPushNudgeDismissal();
+        recordPushNudgeDismissal({ strike });
       };
 
       toast.custom(
@@ -68,12 +70,16 @@ export const usePushNudgeHost = (): void => {
               onAction();
             }}
             onClose={() => {
-              dismissed();
+              dismissed(true);
               toast.dismiss(id);
             }}
           />
         ),
-        { duration: NUDGE_DURATION_MS, onDismiss: dismissed, onAutoClose: dismissed },
+        {
+          duration: NUDGE_DURATION_MS,
+          onDismiss: () => dismissed(true),
+          onAutoClose: () => dismissed(false),
+        },
       );
     };
 

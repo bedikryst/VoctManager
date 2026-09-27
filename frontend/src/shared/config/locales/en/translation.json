@@ -6008,7 +6008,8 @@
         "email": "Email",
         "event_type": "Notifications",
         "in_app": "In-App",
-        "push": "Push"
+        "push": "Push",
+        "push_by_email": "by email for now"
       },
       "title": "Notifications",
       "tooltips": {
@@ -6059,7 +6060,7 @@
         "timezone_note": "In your timezone ({{timezone}})"
       },
       "in_app_note": "Everything lands in the in-app bell, always, whatever you set here. Below you are only choosing email and push.",
-      "email_stands_in": "None of your devices receives push notifications yet, so reminders and answers to your requests are emailed to you for now. New material shows up in the app.",
+      "email_stands_in": "None of your devices receives push notifications yet, so reminders and answers to your requests are emailed to you for now. New material shows up in the app. If you switch push off for a notification, it won't be emailed either.",
       "push_email_offer": {
         "eyebrow": "Push works",
         "title": "The notification reached this device.",

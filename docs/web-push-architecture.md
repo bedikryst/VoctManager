@@ -210,6 +210,8 @@ HTTP 404 lub 410 od usługi push
 → Przy następnym logowaniu użytkownika, hook re-subskrybuje (jeśli permission = "granted")
 ```
 
+A device is also deactivated when it has no VAPID keys, and after five refusals in a row — see **Device health** in §12.
+
 ---
 
 ## 9. Pliki systemu — mapa
@@ -297,10 +299,35 @@ the push reached **zero** devices — no device registered, or every endpoint
 refused — or on the last attempt of a push whose transport kept raising. One
 working phone is enough to suppress it. A type whose e-mail is ON by default and
 reads OFF was switched off by the member and never falls back. Two push-first
-cases carry no reserve: `MATERIAL_UPLOADED`, which fans out once per uploaded
-track, and routine (INFO) manager reports, whose e-mail is the daily digest. The
-master e-mail switch and the undeliverable flag are honoured by the e-mail
-dispatcher as usual.
+cases carry no reserve: `MATERIAL_UPLOADED` (see **Material notices** — still one
+e-mail per piece, and a season's preparation touches many pieces), and routine
+(INFO) manager reports, whose e-mail is the daily digest. The master e-mail
+switch and the undeliverable flag are honoured by the e-mail dispatcher as usual.
+
+**Device health.** `is_active` is what the device count, `has_push` and the
+fallback read, so it has to mean "push reaches this". Each send writes back to
+its devices in bulk (`_send_vapid_batch`): an accepted push stamps
+`last_delivered_at` and clears `consecutive_failures`; any other HTTP refusal
+adds one, as does an error raised before any answer (a key the encryption step
+cannot use), and the fifth in a row deactivates the device. No per-device error
+escapes the loop, so a retry never re-sends to devices already reached. 404/410 and a device
+without VAPID keys are deactivated at once. A network error (`requests`
+exception) is not a refusal — no answer came back, so nothing is learned about
+the subscription — and neither counts nor resets. When nothing was delivered and
+a network error was among the failures, `PushTransportUnavailable` makes the
+task retry; that is safe only because nothing went out. With one device reached
+it never raises, so a retry cannot push the same notice twice. The test push
+answers such an outage as `undeliverable`. Re-subscribing clears the count.
+
+**Material notices.** Every uploaded track and every approved edition fires
+`piece_material_updated_event`. `roster/listeners.py` folds them into one notice
+per piece: the first event opens a window (`cache.add` on the gate key) and
+schedules `roster.dispatch_material_notice` for its end
+(`MATERIAL_NOTICE_WINDOW_SECONDS`, default 600); every event records its kind
+under a separate key. The task reopens the gate, resolves the participants at
+send time and names the kind only when every event agreed (`None` otherwise). Only
+`cache.add` creates the gate: a `set` racing the task's delete would leave a gate
+with no task behind it and silence the piece until it expired.
 
 **Device count.** `GET /api/notifications/devices/` returns `{"active_devices": n}`
 for the caller — a count, never endpoints. The settings tab uses it to say that
@@ -308,13 +335,21 @@ e-mail is standing in (n = 0); a browser without a subscription uses it to say
 "you already have this elsewhere". Managers see the same fact per member as
 `has_push` on the roster (`ArtistDetailedSerializer`).
 
+While n = 0 and e-mail is not muted (the master switch), the settings tab shows
+the push column in every browser — also one
+that cannot push, such as an iPhone in Safari — editable and captioned "na razie
+mailem". Per-type push is account-level, and with no device it is also the
+reserve e-mail's switch: push OFF on a type means neither push nor the e-mail.
+
 **Adoption offers (frontend).** `requestPushNudge(moment)` raises a one-tap offer
 from the moment push would help (absence request, attendance confirmation,
 accepting an invitation outside the Welcome Moment). `usePushNudgeHost` in the
 panel shell renders it only when push is possible here, not on (read live from the
 browser at the moment, not from the shell's controller), not blocked, no offer has
-been shown yet in this page session, and the per-device pacing allows (14 days
-after a dismissal, at most three dismissals). Apple devices in a browser tab get
+been shown yet in this page session, and the per-device pacing allows: 14 days
+after any offer that ended unanswered, and none after three refusals. Only the
+close button and a swipe are refusals; a timeout starts the cooldown without
+counting, since the offer may never have been read. Apple devices in a browser tab get
 the Home Screen route instead, unless another device already takes the push.
 `PushInboxRow` at the top of the notification centre states the device's push
 state permanently, without pacing. Enabling from either place fires a test push.

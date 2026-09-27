@@ -13,9 +13,12 @@
  * (`usePushNudgeHost`); callers only name the moment.
  *
  * Pacing is per device because push permission is: a "not now" on the laptop
- * says nothing about the phone. Three dismissals end the contextual offer for
- * good on that device — the quiet row in the notification centre and the
- * settings tab remain, and neither of those interrupts anything.
+ * says nothing about the phone. Every offer that ends unanswered starts a 14-day
+ * cooldown, but only a refusal — the close button or a swipe — counts towards
+ * the three that end the contextual offer for good on that device. An offer
+ * that simply timed out may never have been read. The quiet row in the
+ * notification centre and the settings tab remain, and neither interrupts
+ * anything.
  * @module features/notifications/lib/pushNudge
  */
 
@@ -77,11 +80,22 @@ export const isPushNudgeDue = (now: number = Date.now()): boolean => {
   return now - record.dismissedAt >= COOLDOWN_MS;
 };
 
-export const recordPushNudgeDismissal = (now: number = Date.now()): void => {
+/**
+ * Records an offer that ended without being taken. `strike` is true for a
+ * refusal (close button, swipe) and false for a timeout: both start the
+ * cooldown, only a refusal counts towards the limit.
+ */
+export const recordPushNudgeDismissal = ({
+  strike,
+  now = Date.now(),
+}: {
+  strike: boolean;
+  now?: number;
+}): void => {
   const previous = readRecord();
   const next: NudgeRecord = {
     dismissedAt: now,
-    dismissals: (previous?.dismissals ?? 0) + 1,
+    dismissals: (previous?.dismissals ?? 0) + (strike ? 1 : 0),
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));

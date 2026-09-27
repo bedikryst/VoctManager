@@ -2,8 +2,12 @@
 @file push_service.py
 @description Web Push transport. Composes a localized, role-aware payload via
              PushPayloadBuilder and delivers it through VAPID to the browser
-             push service the subscription names. Stale subscriptions are
-             auto-invalidated on permanent failures.
+             push service the subscription names. Every send updates the
+             device's health: an accepted push stamps `last_delivered_at` and
+             clears the failure count; a refusal adds to it. A device is
+             deactivated when its subscription is gone (404/410) or after
+             `_MAX_CONSECUTIVE_FAILURES` refusals in a row, so `is_active` —
+             and everything counted from it — means "push can reach this".
 
              VAPID IS THE ONLY TRANSPORT, and that is a property of the product:
              the panel is a PWA, so every device that can hold a subscription is
@@ -21,9 +25,11 @@ from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
+import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.utils import translation
+from django.db.models import F
+from django.utils import timezone, translation
 from pywebpush import WebPushException, webpush
 
 from core.permissions import user_is_manager
@@ -55,6 +61,20 @@ _URGENT_TTL = 60 * 60 * 72   # 3 days
 
 # HTTP responses from Web Push services that mean the subscription is gone.
 _VAPID_STALE_STATUSES = frozenset({404, 410})
+
+# Any other refusal says nothing definite on its own — a 5xx may pass — but a
+# device the push service keeps refusing is unreachable whatever the status: a
+# 403 after a VAPID key change, a persistent 5xx. One accepted push resets it.
+_MAX_CONSECUTIVE_FAILURES = 5
+
+
+class PushTransportUnavailable(Exception):
+    """The batch delivered nothing and at least one device failed on the network.
+
+    Raised so the Celery task retries. It is safe only because nothing went out:
+    with even one device reached, a retry would push the same notice to it twice,
+    so a partial network failure is logged and returned as a count instead.
+    """
 
 
 @dataclass(frozen=True)
@@ -110,7 +130,8 @@ class PushDispatcherService:
 
         Failures outside the per-device send are re-raised so Celery's retry
         machinery can apply backoff — a transient outage at the browser's push
-        service should not be silently swallowed.
+        service should not be silently swallowed. So is `PushTransportUnavailable`,
+        when the network kept every device from being reached.
         """
         target = cls._resolve_target(recipient_id)
         if target is None or not target.devices:
@@ -146,7 +167,12 @@ class PushDispatcherService:
         with translation.override(target.language):
             payload = PushPayloadBuilder.build_test(is_manager=target.is_manager)
 
-        delivered = cls._deliver(target, payload)
+        try:
+            delivered = cls._deliver(target, payload)
+        except PushTransportUnavailable:
+            # Nothing to retry from a request the member is waiting on: the
+            # answer is that the push did not arrive.
+            delivered = 0
         if delivered == 0:
             # Every registered device refused it. The per-device lines above name
             # the status; this one is the signal worth alerting on, because the
@@ -178,6 +204,7 @@ class PushDispatcherService:
                 "auth_key": dto.auth_key,
                 "is_active": True,
                 "is_deleted": False,
+                "consecutive_failures": 0,
             },
         )
         logger.info("[PushService] Web Push subscription registered for UID:%s", dto.user_id)
@@ -245,14 +272,20 @@ class PushDispatcherService:
         ttl = _URGENT_TTL if payload.level == NotificationLevel.URGENT else _DEFAULT_TTL
 
         stale_ids: list[UUID] = []
-        delivered = 0
+        refused_ids: list[UUID] = []
+        delivered_ids: list[UUID] = []
+        network_failures = 0
 
         for device in devices:
             if not device.p256dh_key or not device.auth_key:
+                # Without the encryption keys no push can ever be sent to it, so
+                # it is invalidated like a gone subscription rather than skipped
+                # while still counting as a way to reach its member.
                 logger.warning(
-                    "[PushService] WEB device %s missing VAPID keys, skipping.",
+                    "[PushService] WEB device %s missing VAPID keys, invalidating.",
                     device.id,
                 )
+                stale_ids.append(device.id)
                 continue
             try:
                 webpush(
@@ -266,16 +299,78 @@ class PushDispatcherService:
                     ttl=ttl,
                     headers={"Urgency": urgency},
                 )
-                delivered += 1
+                delivered_ids.append(device.id)
             except WebPushException as exc:
                 status_code = exc.response.status_code if exc.response is not None else None
                 if status_code in _VAPID_STALE_STATUSES:
                     stale_ids.append(device.id)
                 else:
+                    refused_ids.append(device.id)
                     logger.error(
                         "[PushService] VAPID send failed for device %s (status=%s): %s",
                         device.id, status_code, exc,
                     )
+            except requests.RequestException as exc:
+                # No answer came back, so nothing is learned about the
+                # subscription: the outage is ours or the push service's. It
+                # neither counts towards deactivation nor resets the count — the
+                # retry raised below would otherwise turn one outage into four
+                # strikes on every device of every recipient.
+                network_failures += 1
+                logger.warning(
+                    "[PushService] VAPID send to device %s did not complete: %s",
+                    device.id, exc,
+                )
+            except Exception:
+                # Raised on our side of the wire, most often by a subscription
+                # key the encryption step cannot use. Escaping here would abandon
+                # the batch mid-loop, and the task's retry would push the notice
+                # again to every device already reached. It counts as a refusal,
+                # so a device that always fails this way is deactivated in time.
+                refused_ids.append(device.id)
+                logger.exception(
+                    "[PushService] VAPID send to device %s raised before any answer.",
+                    device.id,
+                )
+
+        cls._record_device_health(
+            delivered_ids=delivered_ids, refused_ids=refused_ids, stale_ids=stale_ids,
+        )
+
+        if not delivered_ids and network_failures:
+            raise PushTransportUnavailable(
+                f"{network_failures} of {len(devices)} device(s) unreachable on the network"
+            )
+        return len(delivered_ids)
+
+    @classmethod
+    def _record_device_health(
+        cls,
+        *,
+        delivered_ids: list[UUID],
+        refused_ids: list[UUID],
+        stale_ids: list[UUID],
+    ) -> None:
+        """Writes one batch's outcome back to its devices, in bulk."""
+        if delivered_ids:
+            PushDevice.objects.filter(id__in=delivered_ids).update(
+                last_delivered_at=timezone.now(), consecutive_failures=0,
+            )
+
+        if refused_ids:
+            PushDevice.objects.filter(id__in=refused_ids).update(
+                consecutive_failures=F("consecutive_failures") + 1,
+            )
+            exhausted = PushDevice.objects.filter(
+                id__in=refused_ids,
+                is_active=True,
+                consecutive_failures__gte=_MAX_CONSECUTIVE_FAILURES,
+            ).update(is_active=False)
+            if exhausted:
+                logger.warning(
+                    "[PushService] Deactivated %d device(s) after %d refusals in a row.",
+                    exhausted, _MAX_CONSECUTIVE_FAILURES,
+                )
 
         if stale_ids:
             invalidated = PushDevice.objects.filter(id__in=stale_ids).update(is_active=False)
@@ -283,5 +378,3 @@ class PushDispatcherService:
                 "[PushService] Auto-invalidated %d stale Web Push subscriptions.",
                 invalidated,
             )
-
-        return delivered

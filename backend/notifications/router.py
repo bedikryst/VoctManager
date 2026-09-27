@@ -60,9 +60,11 @@ def _briefing_for_channel(
 
 
 # Push-first types whose reserve e-mail would arrive as a flood rather than as
-# news. A material upload fans out once per track, so a batch of rehearsal MP3s
-# is a dozen events per singer: "timely, but not worth an inbox" holds all the
-# more for a member who never asked for push. The in-app row still carries it.
+# news. Material notices are folded to one per piece per window, but that is
+# still one e-mail per piece, and a season's preparation touches many pieces:
+# "timely, but not worth an inbox" holds all the more for a member who never
+# asked for push. The in-app row still carries it. Revisit only with a
+# per-recipient batch ("new material: A, B, C").
 _NO_EMAIL_RESERVE: frozenset[str] = frozenset({NotificationType.MATERIAL_UPLOADED})
 
 
