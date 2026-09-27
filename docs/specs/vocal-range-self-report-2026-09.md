@@ -6,7 +6,11 @@ yet run on prod (`make migrate`). Stages 2 and 3 (shared foundations, the singer
 2026-09-27 and audited the same day; every audit item fixed 2026-09-27 (see "Audit of Stages 2–3"
 under Stage 3); typecheck, lint, tests and build green; committed 2026-09-27. The developer has
 seen the first pass on dev (desktop and phone width, dark theme); the second pass is not yet seen.
-Next: the developer's look on dev, then Stage 4.**
+Stage 4 (the conductor's view) and Stage 5 (microphone) built 2026-09-27 in parallel, audited the
+same day ("Audit of Stages 4–5" under Stage 5). Items 1–5 (the microphone stops on every path)
+fixed 2026-09-27 and pinned by `usePitchDetection.test.tsx`; typecheck, lint, tests and build
+green; committed 2026-09-27 with both stages. Not seen, never tried on an iPhone; items 6–14 open.
+Next: the developer's look on dev and the iPhone dry run (list under the audit), then items 6–14.**
 One stage per session. When a stage lands, update this line and say whether it is committed,
 migrated and seen in the browser.
 
@@ -372,6 +376,12 @@ Look at on dev (the code cannot settle these):
 
 ## Stage 4 — the conductor's view
 
+Status: **built 2026-09-27; typecheck, lint and its test green; committed 2026-09-27, not seen.** The
+precedence rule lives in `features/artists/lib/vocalRangeProposal.ts` (`rangeShown`). On screen
+the proposal is set with `VocalRangeText`; the cast row's meta line is plain text, so it uses
+`formatVocalRange`. The editor labels the block "Propozycja chórzysty", not the bare "Propozycja",
+because it sits directly under the conductor's own range fields.
+
 - `ArtistEditorPanel`: a read-only block beside the conductor's range fields, shown only when a
   proposal exists: `Propozycja: a (g) – a² (c³) · 27.09.2026` plus the comment. Absence says
   nothing, so this stage needs no flag and can ship dark.
@@ -399,6 +409,108 @@ tessitura edge.
      catches octave errors by ear.
 - The button is hidden where `getUserMedia` is missing. A refusal gets one line and no retry loop.
 - Privacy line: nothing is recorded or sent.
+
+**Built 2026-09-27 (committed 2026-09-27, not seen):**
+- `shared/lib/audio/heldPitch.ts`: the hold rules, pure and clock-free, pinned by a vitest suite.
+  `usePitchDetection.ts`: the capture. The mic button sits on the status line under the slots,
+  icon-only on a phone; the listening text carries the privacy line.
+- `infra/nginx/security-headers.conf` sent `microphone=()`, which refuses `getUserMedia` on prod
+  before any prompt. It now sends `microphone=(self)`. The snippet is bind-mounted, so it takes
+  effect when the `frontend` container is recreated (`make prod`).
+
+**Decided while building (do not undo without a reason):**
+- **The window is the keyboard's, not centre ± 18.** The mic listens in `keyboardWindow` (the
+  voice's usual range ± a fifth, widened to the chosen notes). Centre ± 18 cut off a soprano's f³,
+  and a note the keys cannot show would fill a slot the singer cannot see.
+- **The ±40 cents apply to the pitch smoothed over 180 ms, not to raw frames.** A trained vibrato
+  swings up to a semitone five or six times a second, so raw frames of a steady note never stay
+  within ±40 cents; their average over one cycle does. A dropout under 150 ms does not break a hold.
+- **The analysis runs on the one `toneContext`**, opened in the tap, so there is no second
+  `AudioContext` on iOS.
+- **The capture ends by itself after 20 s** without a held note, with one line; a refusal or a
+  missing mic hides the button for the rest of the opening. A key press, a slot change, removing
+  an extreme, a trial voice change, sending, closing the screen and hiding the page all stop it.
+- **The playback follows the mic stop directly.** `navigator.audioSession` is not touched. Whether
+  iOS plays that note from the loudspeaker at full level, and not from the earpiece or ducked, is
+  the first thing to check in the dry run.
+
+### Audit of Stages 4–5 (2026-09-27) — items 1–5 fixed 2026-09-27, 6–14 open
+
+The invariant under audit: a microphone is never left live, on any path.
+
+Microphone:
+1. **A throw while wiring the graph leaves the mic live, with no control to stop it.** In
+   `usePitchDetection.start`, the stream enters `capture` only after `createMediaStreamSource`,
+   the analyser and the first frame are set up. If that block throws, `.catch` tears down the
+   placeholder capture, whose `stream` is null, so the tracks are never stopped. The status becomes
+   `unavailable`, which hides the button. No trigger is confirmed, and the code must not rely on
+   there being none. Store the stream in `capture` first thing in `.then`, before any graph call.
+2. **Closing the screen does not stop the mic.** `leave` stops the tone, not the capture, and
+   `AnimatePresence` keeps the stage mounted through its 0.6 s exit fade, so the hook's unmount
+   cleanup runs only after it. A hold completed in that window plays a note and changes a draft
+   that `leave` has already kept. A close the parent causes (`open` turning false) skips `leave`
+   altogether. Stop the capture when the exit begins (`useIsPresent()` in `VocalRangeStage`) and
+   in `leave`.
+3. `clearSlot` ("Usuń") does not stop listening, unlike every other control on the status line; a
+   hold then refills the slot just cleared.
+4. A track ended by the system (a phone call, Siri, a revoked permission) is not observed: the
+   screen says "listening" until the 20 s timeout. Tear down on the track's `ended`.
+5. `usePitchDetection` has no test, and it carries the invariant. Pin it with a mocked
+   `getUserMedia` and `AudioContext`: the tracks stop on a hold, a cancel, an unmount,
+   `visibilitychange: hidden`, a grant that arrives after a cancel, and a throw in the graph.
+
+**Fixed 2026-09-27 (items 1–5; committed 2026-09-27, not seen):**
+- 1: the stream enters the capture first thing after the grant, before any graph call, and
+  `teardown` stops the tracks before anything else it does.
+- 2: the stage stops the capture when its exit begins (`useIsPresent`) and in `leave`. A mic tap
+  during the exit fade does nothing.
+- 3: "Usuń" stops listening, like every other control on the status line.
+- 4: a track's `ended` ends the capture and returns it to `idle`, with no line: the button comes
+  back, and a revoked permission shows as a refusal on the next tap.
+- 5: `shared/lib/audio/usePitchDetection.test.tsx` (the `flows` project, jsdom) drives each exit
+  above, plus a track ended by the system and a refusal, against a stubbed `getUserMedia`, graph
+  and animation frames. The pitch analysis is the real `pitchy` fed a sine, so the hold test also
+  pins A3 as MIDI 57. `vitest.config.ts` names it beside the five flows.
+
+For the dry run (the code cannot settle these):
+- After a hold, with the silent switch on: the note plays, from the loudspeaker, at full level.
+  The playback runs in an animation frame, outside any gesture, right after the tracks stop.
+- After one use of the mic, a pitch pipe elsewhere in the panel is as loud as before. The
+  analysis shares the never-closed `toneContext`, so an iOS route change that outlives the capture
+  would reach every tone for the rest of the session. The fallbacks, if it does:
+  `navigator.audioSession.type = "playback"` after the stop, or a separate context for analysis.
+- The exact note, not only the octave, against a tuner or a piano. A sample-rate mismatch would
+  shift every result by a fixed interval.
+- A bass's lowest extreme (D2), not only the tessitura d. `clarity ≥ 0.9` against the phone mic's
+  low cut is the likely failure.
+- Whether the installed app asks for the mic on every tap.
+- On prod after the deploy, the `Permissions-Policy` header carries `microphone=(self)`. With the
+  old header the screen says "no access", as if the singer had refused.
+
+Smaller:
+6. The tolerance is measured against the run's mean, so a run may span about 80 cents, not ±40
+   "of each other" as Stage 5 says. Harmless for a snap to the semitone; align the wording.
+7. The keyboard does not follow the live cursor: a note sung outside the visible keys shows no
+   cursor until it is held and centred.
+8. The listening line is not in a live region; a screen reader says nothing when capture starts.
+9. `pitchy` lands in the panel-shell chunk for every user, since `DashboardLayout` imports
+   `VocalRangeScreen` statically. Import it inside `start`'s `.then`, which is already async.
+
+Conductor's view:
+10. The cast reads artists through `projectKeys.dictionaries.artists`, the same `["artists"]` key
+    as the Artists list, but with a 24 h `staleTime`. A proposal sent today reaches the cast only
+    after the Artists list has been opened, or a day later. Accept it (and open the Artists list
+    first in rollout step 4), or give the cast a shorter freshness.
+11. The cast meta line is plain text (`formatVocalRange`), so `₁`, `⁴` and `♯` fall back to a
+    system face there (a bass's `G₁`; `F♯2` in en and fr). Its separator also differs from the
+    conductor's own text: `A2–G4` beside `a – a²`.
+12. `ArtistCard`: a proposal takes two lines in the range cell, so that card stands taller than a
+    neighbour showing a conductor's range or "—". `ArtistRow` on `md`: a French range with both
+    extremes widens the right-hand block. Look at on dev.
+13. The editor's proposal block colours its text with raw `<span>`s inside `Text`.
+14. `vocal_range_comment` is free text, and a singer may write about their health in it. It rides
+    on every Artists list payload and is persisted in the query cache on every manager's device.
+    Decide whether the list carries it, or only the editor.
 
 ## Stage 6 — optional siren (only after Stage 5 holds up on an iPhone)
 

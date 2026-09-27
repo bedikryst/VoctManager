@@ -985,6 +985,8 @@
       "sight_reading_title": "Sight-reading: {{level}}/5",
       "unverified": "Not verified",
       "voice_range": "Voice Range",
+      "range_by_singer": "per the singer",
+      "range_proposal_title": "The singer's proposal",
       "preview_title": "See what this person sees",
       "preview_aria": "See what {{name}} sees"
     },
@@ -1092,6 +1094,7 @@
       "phone": "Phone",
       "range_high": "Range (High)",
       "range_high_placeholder": "e.g., C5",
+      "range_proposal": "The singer's proposal",
       "range_high_title": "Highest Note",
       "range_low": "Range (Low)",
       "range_low_placeholder": "e.g., G2",
@@ -4352,6 +4355,7 @@
       "aria_label": "Manage vocal cast",
       "card": {
         "a_vista": "sight-reading {{score}}/5",
+        "range_by_singer": "{{range}} per the singer",
         "add_aria": "Add {{name}} to the cast",
         "declined": "Declined",
         "pending": "Awaiting",
@@ -6551,6 +6555,14 @@
     "trial": {
       "voice_picker": "Voice for the trial",
       "notice": "Trial mode: nothing will be saved"
+    },
+    "mic": {
+      "start": "Sing and hold",
+      "stop": "Stop",
+      "listening": "Sing and hold the note. Nothing is recorded or sent.",
+      "denied": "No access to the microphone. Choose the note on the keyboard.",
+      "unavailable": "The microphone is unavailable. Choose the note on the keyboard.",
+      "timed_out": "No held note came through. Try again."
     },
     "settings_row": {
       "title": "My vocal range",

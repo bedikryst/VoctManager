@@ -12,7 +12,8 @@
  * without an address wears a neutral chip instead: not a problem to fix, but
  * the reason nothing the app sends ever reaches them. Range and
  * a-vista are the singer's own facts, so they read as plain type and simply
- * vanish when nobody has recorded them.
+ * vanish when nobody has recorded them. Until the conductor writes a range,
+ * the singer's own proposal stands in, muted and marked as theirs.
  * @architecture Enterprise SaaS 2026
  * @module features/artists/components/ArtistRow
  */
@@ -38,13 +39,16 @@ import { cn } from "@/shared/lib/utils";
 import { artistRoleLabel } from "@/shared/lib/voiceTypes";
 import { onActivate } from "@/shared/lib/dom/a11y";
 import { formatLocalizedDateTime } from "@/shared/lib/time/intl";
+import { notationForLanguage } from "@/shared/lib/music/pitchNotation";
 import { Avatar } from "@/shared/ui/composites/Avatar";
+import { VocalRangeText } from "@/shared/ui/instruments/PitchName";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Checkbox } from "@/shared/ui/primitives/Checkbox";
 import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { getSectionPresentation } from "../constants/voiceSections";
 import { isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
+import { rangeShown } from "../lib/vocalRangeProposal";
 import { SightReadingStars } from "./SightReadingStars";
 
 interface ArtistRowProps {
@@ -73,7 +77,7 @@ export const ArtistRow = React.memo(
     selected = false,
     onToggleSelect,
   }: ArtistRowProps) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     const section = getSectionPresentation(artist.voice_type);
     const isActive = artist.is_active;
@@ -94,10 +98,7 @@ export const ArtistRow = React.memo(
     const voiceLabel = artist.voice_type
       ? artistRoleLabel(t, artist.voice_type, artist.instrument)
       : artist.voice_type_display || "";
-    const rangeText =
-      artist.vocal_range_bottom || artist.vocal_range_top
-        ? `${artist.vocal_range_bottom || "?"} – ${artist.vocal_range_top || "?"}`
-        : null;
+    const range = rangeShown(artist);
 
     const activate = () =>
       selectionMode ? onToggleSelect?.(artist.id) : onOpen(artist);
@@ -239,12 +240,25 @@ export const ArtistRow = React.memo(
         </div>
 
         <div className="hidden shrink-0 items-center gap-4 md:flex">
-          {rangeText && (
+          {range?.source === "conductor" && (
             <Caption
               className="tabular-nums text-ethereal-graphite"
               title={t("artists.card.voice_range", "Skala Głosu")}
             >
-              {rangeText}
+              {range.text}
+            </Caption>
+          )}
+          {range?.source === "singer" && (
+            <Caption
+              color="muted"
+              title={t("artists.card.range_proposal_title", "Propozycja chórzysty")}
+            >
+              <VocalRangeText
+                range={range.range}
+                notation={notationForLanguage(i18n.language)}
+              />
+              {" · "}
+              {t("artists.card.range_by_singer", "wg chórzysty")}
             </Caption>
           )}
           {artist.sight_reading_skill ? (

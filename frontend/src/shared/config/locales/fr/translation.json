@@ -994,6 +994,8 @@
       "sight_reading_title": "Déchiffrage : {{level}}/5",
       "unverified": "Non vérifié",
       "voice_range": "Étendue vocale",
+      "range_by_singer": "selon le choriste",
+      "range_proposal_title": "Proposition du choriste",
       "preview_title": "Voir ce que voit cette personne",
       "preview_aria": "Voir ce que voit {{name}}"
     },
@@ -1101,6 +1103,7 @@
       "phone": "Téléphone",
       "range_high": "Étendue (aigu)",
       "range_high_placeholder": "ex. C5",
+      "range_proposal": "Proposition du choriste",
       "range_high_title": "Note la plus aiguë",
       "range_low": "Étendue (grave)",
       "range_low_placeholder": "ex. G2",
@@ -4362,6 +4365,7 @@
       "aria_label": "Gérer la distribution vocale",
       "card": {
         "a_vista": "déchiffrage {{score}}/5",
+        "range_by_singer": "{{range}} selon le choriste",
         "add_aria": "Ajouter {{name}} à la distribution",
         "declined": "Refusé",
         "pending": "En attente",
@@ -6562,6 +6566,14 @@
     "trial": {
       "voice_picker": "Voix pour l'essai",
       "notice": "Mode d'essai : rien ne sera enregistré"
+    },
+    "mic": {
+      "start": "Chanter et tenir",
+      "stop": "Arrêter",
+      "listening": "Chantez et tenez la note. Rien n'est enregistré ni envoyé.",
+      "denied": "Pas d'accès au micro. Choisissez la note sur le clavier.",
+      "unavailable": "Le micro est indisponible. Choisissez la note sur le clavier.",
+      "timed_out": "Aucune note tenue n'a été captée. Réessayez."
     },
     "settings_row": {
       "title": "Ma tessiture",

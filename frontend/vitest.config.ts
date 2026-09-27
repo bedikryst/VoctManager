@@ -9,18 +9,21 @@
  * component suites had to be `.test.tsx`: adding a DOM to this project would
  * have taxed six fast suites to serve the new ones.
  *
- * `flows` — jsdom, and every suite goes through `src/test/harness.tsx`.
+ * `flows` — jsdom, and every suite that renders the panel goes through
+ * `src/test/harness.tsx`.
  *
- * ON THE SIZE OF `flows`: it covers five flows only — publishing a project
- * (which mails the whole cast and cannot be recalled), a chorister's RSVP, a
- * conductor's roll-call, account activation, and the read-back that leaves a
- * singer's own markings on their device. The rest of the panel has no component
- * tests, and that is a decision, not a gap someone forgot to close. These five
- * are the ones where a regression sends mail, marks the wrong person absent,
- * burns a single-use invitation link, or hands somebody blank paper at a
- * rehearsal — the places where `tsc`, a build and a look at the screen genuinely
- * are not evidence. A pass that wants broader coverage should argue for it on
- * its own terms rather than reading this ceiling as an oversight.
+ * ON THE SIZE OF `flows`: it covers five flows and one hook only — publishing a
+ * project (which mails the whole cast and cannot be recalled), a chorister's
+ * RSVP, a conductor's roll-call, account activation, the read-back that leaves a
+ * singer's own markings on their device, and the microphone capture behind the
+ * vocal-range screen. The rest of the panel has no component tests, and that is
+ * a decision, not a gap someone forgot to close. These are the ones where a
+ * regression sends mail, marks the wrong person absent, burns a single-use
+ * invitation link, hands somebody blank paper at a rehearsal, or leaves a
+ * singer's microphone open — the places where `tsc`, a build and a look at the
+ * screen genuinely are not evidence. A pass that wants broader coverage should
+ * argue for it on its own terms rather than reading this ceiling as an
+ * oversight.
  *
  * @architecture Enterprise SaaS 2026
  * @module build/vitest

@@ -1013,6 +1013,8 @@
       "sight_reading_title": "Czytanie a vista: {{level}}/5",
       "unverified": "Brak weryfikacji",
       "voice_range": "Skala Głosu",
+      "range_by_singer": "wg chórzysty",
+      "range_proposal_title": "Propozycja chórzysty",
       "preview_title": "Zobacz, co widzi ta osoba",
       "preview_aria": "Zobacz, co widzi {{name}}"
     },
@@ -1120,6 +1122,7 @@
       "phone": "Telefon",
       "range_high": "Skala (Góra)",
       "range_high_placeholder": "np. C5",
+      "range_proposal": "Propozycja chórzysty",
       "range_high_title": "Najwyższy dźwięk",
       "range_low": "Skala (Dół)",
       "range_low_placeholder": "np. G2",
@@ -4390,6 +4393,7 @@
       "aria_label": "Zarządzaj obsadą wokalną",
       "card": {
         "a_vista": "a vista {{score}}/5",
+        "range_by_singer": "{{range}} wg chórzysty",
         "add_aria": "Dodaj {{name}} do obsady",
         "declined": "Odmowa",
         "pending": "Czeka",
@@ -6621,6 +6625,14 @@
     "trial": {
       "voice_picker": "Głos do próby",
       "notice": "Tryb próbny: nic nie zostanie zapisane"
+    },
+    "mic": {
+      "start": "Zaśpiewaj i przytrzymaj",
+      "stop": "Przerwij",
+      "listening": "Śpiewaj i trzymaj dźwięk. Nic nie jest nagrywane ani wysyłane.",
+      "denied": "Bez dostępu do mikrofonu. Wybierz dźwięk na klawiaturze.",
+      "unavailable": "Mikrofon jest niedostępny. Wybierz dźwięk na klawiaturze.",
+      "timed_out": "Nie wychwycono trzymanego dźwięku. Spróbuj jeszcze raz."
     },
     "settings_row": {
       "title": "Moja skala głosu",

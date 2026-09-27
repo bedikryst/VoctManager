@@ -31,6 +31,14 @@
  * Every sound starts synchronously inside the tap that asks for it (the iOS
  * rule; see `toneContext`). A new sound stops the one before it, so the note
  * the singer is judging is never muddied by the last.
+ *
+ * A slot can also be filled by voice: "Sing and hold" listens for one held
+ * note, inside the keyboard's window, with a cursor following the voice on the
+ * keys. The microphone stops first, then the note plays back and fills the
+ * slot, so an octave misheard is caught by ear. Listening and playing never
+ * overlap: a sound stops when listening starts, and a key pressed while
+ * listening ends it. The microphone names the note sung; the singer still
+ * decides which slot it belongs in.
  * @module features/vocal-range/components/VocalRangeScreen
  */
 
@@ -45,8 +53,13 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check } from "lucide-react";
+import {
+  AnimatePresence,
+  motion,
+  useIsPresent,
+  useReducedMotion,
+} from "framer-motion";
+import { Check, Mic, Square } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { getSectionPresentation } from "@/features/artists/constants/voiceSections";
@@ -55,6 +68,7 @@ import {
   playVoicedTone,
   type VoicedToneHandle,
 } from "@/shared/lib/audio/voicedTone";
+import { usePitchDetection } from "@/shared/lib/audio/usePitchDetection";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 import {
@@ -123,7 +137,7 @@ const arrival = (reduceMotion: boolean, order: number) => ({
 
 /** What the status line under the slots is saying; a change of kind
  *  cross-fades, a new note within the readout does not. */
-type StatusKind = "order" | "readout" | "hint";
+type StatusKind = "listening" | "order" | "mic" | "readout" | "hint";
 
 const sameDraft = (
   a: VocalRangeMidi,
@@ -226,7 +240,56 @@ const VocalRangeStage = ({
     setIsRinging(handle !== null);
   };
 
+  const slotLabel = (each: RangeSlot): string =>
+    t(`vocal_range.slots.${SLOT_KEY[each]}.label`);
+
+  const handleKeyPress = (midi: number): void => {
+    ring((onEnded) => playVoicedTone(midi, onEnded));
+    setTouched(midi);
+    // Once sent, the keys still sound but the proposal no longer changes: an
+    // edit here would look saved and not be.
+    if (sent) return;
+    setDraft((current) => ({ ...current, [slot]: midi }));
+    setAnnouncement(`${slotLabel(slot)}: ${spokenPitch(midi, notation)}`);
+  };
+
+  const requestCentre = (midi: number): void => {
+    setCenterRequest((current) => ({ midi, seq: current.seq + 1 }));
+  };
+
+  const keySpan = useMemo(
+    () => keyboardWindow(voice, rangePitches(draft)),
+    [voice, draft],
+  );
+
+  /** A refusal, a missing microphone or a timeout is said once, on the status
+   *  line, until the next key or slot. */
+  const [micNotice, setMicNotice] = useState(false);
+  // The microphone listens in the keyboard's own window: a note it could not
+  // show on the keys is taken for an octave error, not for the singer's note.
+  const pitch = usePitchDetection(keySpan, (midi) => {
+    setMicNotice(false);
+    handleKeyPress(midi);
+    requestCentre(midi);
+  });
+  const isListening =
+    pitch.status === "starting" || pitch.status === "listening";
+  const micAvailable =
+    pitch.supported &&
+    pitch.status !== "denied" &&
+    pitch.status !== "unavailable";
+  const stopListening = pitch.cancel;
+
+  // The stage stays mounted through its exit fade, so the hook's own unmount
+  // comes too late: the microphone stops the moment the exit begins, however
+  // the screen was closed. A hold must not fill a draft that has been kept.
+  const isPresent = useIsPresent();
+  useEffect(() => {
+    if (!isPresent) stopListening();
+  }, [isPresent, stopListening]);
+
   const leave = useCallback((): void => {
+    stopListening();
     tone.current?.stop();
     if (sent) {
       clearVocalRangeDraft();
@@ -237,7 +300,16 @@ const VocalRangeStage = ({
       keepVocalRangeDraft({ draft, comment });
     }
     onClose();
-  }, [baseComment, baseDraft, comment, draft, onClose, refreshUser, sent]);
+  }, [
+    baseComment,
+    baseDraft,
+    comment,
+    draft,
+    onClose,
+    refreshUser,
+    sent,
+    stopListening,
+  ]);
 
   // Escape closes from anywhere but a text field, where it belongs to the
   // field: a half-written comment must not close the screen.
@@ -257,43 +329,48 @@ const VocalRangeStage = ({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [leave]);
 
-  const slotLabel = (each: RangeSlot): string =>
-    t(`vocal_range.slots.${SLOT_KEY[each]}.label`);
-
-  const handleKeyPress = (midi: number): void => {
-    ring((onEnded) => playVoicedTone(midi, onEnded));
-    setTouched(midi);
-    // Once sent, the keys still sound but the proposal no longer changes: an
-    // edit here would look saved and not be.
-    if (sent) return;
-    setDraft((current) => ({ ...current, [slot]: midi }));
-    setAnnouncement(`${slotLabel(slot)}: ${spokenPitch(midi, notation)}`);
+  const toggleListening = (): void => {
+    if (isListening) {
+      pitch.cancel();
+      return;
+    }
+    // A tap during the exit fade must not open a microphone nothing will
+    // stop until the unmount.
+    if (!isPresent) return;
+    // The microphone must not hear the last note, and iOS ducks whatever
+    // plays while it is open.
+    tone.current?.stop();
+    setTouched(null);
+    setMicNotice(true);
+    pitch.start();
   };
 
-  const requestCentre = (midi: number): void => {
-    setCenterRequest((current) => ({ midi, seq: current.seq + 1 }));
+  const pressKey = (midi: number): void => {
+    pitch.cancel();
+    setMicNotice(false);
+    handleKeyPress(midi);
   };
 
   const selectSlot = (next: RangeSlot): void => {
+    pitch.cancel();
+    setMicNotice(false);
     setSlot(next);
     setTouched(null);
     requestCentre(slotCentre(next, draft, voiceCentreMidi(voice)));
   };
 
   const clearSlot = (): void => {
+    pitch.cancel();
+    setMicNotice(false);
     setDraft((current) => ({ ...current, [slot]: null }));
     setTouched(null);
   };
 
   const pickTrialVoice = (next: SingingVoice): void => {
+    pitch.cancel();
     setTrialVoice(next);
     requestCentre(slotCentre(slot, draft, voiceCentreMidi(next)));
   };
-
-  const keySpan = useMemo(
-    () => keyboardWindow(voice, rangePitches(draft)),
-    [voice, draft],
-  );
   const bands = useMemo(() => rangeBands(draft), [draft]);
   const emphasis = useMemo(() => slotSpan(slot, draft), [slot, draft]);
 
@@ -303,6 +380,7 @@ const VocalRangeStage = ({
 
   const handleSend = (): void => {
     if (submission === null || submit.isPending) return;
+    pitch.cancel();
     // The singer hears what the conductor will read, then it goes.
     ring((onEnded) => playArpeggio(rangePitches(draft), onEnded));
     submit.mutate(submission, {
@@ -330,12 +408,37 @@ const VocalRangeStage = ({
               "Skrajny dźwięk górny nie może leżeć niżej niż górna granica tessitury.",
             )
           : null;
+  const micMessage = !micNotice
+    ? null
+    : pitch.status === "denied"
+      ? t(
+          "vocal_range.mic.denied",
+          "Bez dostępu do mikrofonu. Wybierz dźwięk na klawiaturze.",
+        )
+      : pitch.status === "unavailable"
+        ? t(
+            "vocal_range.mic.unavailable",
+            "Mikrofon jest niedostępny. Wybierz dźwięk na klawiaturze.",
+          )
+        : pitch.status === "timedOut"
+          ? t(
+              "vocal_range.mic.timed_out",
+              "Nie wychwycono trzymanego dźwięku. Spróbuj jeszcze raz.",
+            )
+          : null;
   const readoutMidi = touched ?? draft[slot];
-  const statusKind: StatusKind = orderMessage
-    ? "order"
-    : readoutMidi !== null
-      ? "readout"
-      : "hint";
+  const statusKind: StatusKind = isListening
+    ? "listening"
+    : orderMessage
+      ? "order"
+      : micMessage
+        ? "mic"
+        : readoutMidi !== null
+          ? "readout"
+          : "hint";
+  const micButtonLabel = isListening
+    ? t("vocal_range.mic.stop", "Przerwij")
+    : t("vocal_range.mic.start", "Zaśpiewaj i przytrzymaj");
   const presentation = getSectionPresentation(voice);
   const voiceLabel = (each: SingingVoice): string =>
     artistRoleLabel(t, each, null);
@@ -472,7 +575,14 @@ const VocalRangeStage = ({
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.2, ease: "easeOut" }}
                     >
-                      {orderMessage ? (
+                      {isListening ? (
+                        <Text size="sm" color="graphite" className="line-clamp-2 leading-5">
+                          {t(
+                            "vocal_range.mic.listening",
+                            "Śpiewaj i trzymaj dźwięk. Nic nie jest nagrywane ani wysyłane.",
+                          )}
+                        </Text>
+                      ) : orderMessage ? (
                         <Text
                           size="sm"
                           color="crimson"
@@ -480,6 +590,10 @@ const VocalRangeStage = ({
                           className="line-clamp-2 leading-5"
                         >
                           {orderMessage}
+                        </Text>
+                      ) : micMessage ? (
+                        <Text size="sm" color="muted" className="line-clamp-2 leading-5">
+                          {micMessage}
                         </Text>
                       ) : readoutMidi !== null ? (
                         <NoteReadout midi={readoutMidi} notation={notation} />
@@ -494,6 +608,27 @@ const VocalRangeStage = ({
                     </motion.div>
                   </AnimatePresence>
                 </div>
+                {/* Icon only on a phone, where the readout needs the width;
+                    the name stays for assistive technology. */}
+                {micAvailable && !sent ? (
+                  <Button
+                    type="button"
+                    variant={isListening ? "primary" : "outline"}
+                    size="sm"
+                    onClick={toggleListening}
+                    aria-label={micButtonLabel}
+                    leftIcon={
+                      isListening ? (
+                        <Square className="h-3.5 w-3.5" aria-hidden="true" />
+                      ) : (
+                        <Mic className="h-3.5 w-3.5" aria-hidden="true" />
+                      )
+                    }
+                    className="shrink-0"
+                  >
+                    <span className="hidden sm:inline">{micButtonLabel}</span>
+                  </Button>
+                ) : null}
                 {isExtremeSlot(slot) && !sent ? (
                   <Button
                     type="button"
@@ -530,8 +665,9 @@ const VocalRangeStage = ({
                 bands={bands}
                 emphasis={emphasis}
                 activeKey={draft[slot]}
+                liveCursor={pitch.cursor}
                 centerRequest={centerRequest}
-                onKeyPress={handleKeyPress}
+                onKeyPress={pressKey}
                 className="h-full"
               />
             </div>

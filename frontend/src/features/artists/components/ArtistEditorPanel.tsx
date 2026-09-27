@@ -3,7 +3,8 @@
  * @description Slide-over panel for creating or editing artist profiles.
  * Uses React Hook Form for zero-lag rendering and Zod for validation, and the
  * shared Ethereal primitives (Input/Select with built-in label + error) so the
- * editor matches the rest of the 2026 surface language.
+ * editor matches the rest of the 2026 surface language. Beside the conductor's
+ * own range fields it shows the singer's proposal, read-only, once one exists.
  * @module features/artists/components/ArtistEditorPanel
  */
 
@@ -22,7 +23,11 @@ import { Select } from "@ui/primitives/Select";
 import { Eyebrow, Heading, Text } from "@ui/primitives/typography";
 import type { Artist, VoiceType, VoiceTypeOption } from "@/shared/types";
 import { isInstrumentalist, isSingingVoiceType } from "@/shared/lib/voiceTypes";
+import { notationForLanguage } from "@/shared/lib/music/pitchNotation";
+import { formatLocalizedDateTime } from "@/shared/lib/time/intl";
+import { VocalRangeText } from "@/shared/ui/instruments/PitchName";
 import { useArtistForm } from "../hooks/useArtistForm";
+import { proposalOf } from "../lib/vocalRangeProposal";
 import { voiceToSalutation } from "../types/artist.dto";
 import { NewThreadModal } from "@/features/messages/components/NewThreadModal";
 
@@ -44,6 +49,12 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   </Eyebrow>
 );
 
+const PROPOSAL_DATE_FORMAT: Intl.DateTimeFormatOptions = {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+};
+
 /** A sentence under a field. An overline would set it uppercase and tracked
  *  out, which is a label's clothing on a piece of prose. */
 const FieldHint = ({ children }: { children: React.ReactNode }) => (
@@ -59,7 +70,8 @@ export default function ArtistEditorPanel({
   voiceTypes,
   initialSearchContext = "",
 }: ArtistEditorPanelProps): React.ReactPortal | null {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const proposal = proposalOf(artist ?? undefined);
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
   const [showNotifyModal, setShowNotifyModal] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -502,6 +514,42 @@ export default function ArtistEditorPanel({
                         className="text-center font-bold text-ethereal-gold"
                       />
                     </div>
+                    )}
+
+                    {/* The singer's own proposal, read-only: the fields above
+                        are the conductor's words, and nothing here copies one
+                        into the other (free-text SPN beside MIDI would mix
+                        notations in one column). Absent until they send one. */}
+                    {isSinger && proposal && artist?.vocal_range_proposed_at && (
+                      <div className="rounded-control border border-hairline bg-ethereal-parchment/40 px-4 py-3">
+                        <Text size="sm">
+                          <span className="text-ethereal-graphite">
+                            {t("artists.editor.range_proposal", "Propozycja chórzysty")}
+                            {": "}
+                          </span>
+                          <VocalRangeText
+                            range={proposal}
+                            notation={notationForLanguage(i18n.language)}
+                            className="font-semibold"
+                          />
+                          <span className="text-ethereal-graphite tabular-nums">
+                            {" · "}
+                            {formatLocalizedDateTime(
+                              artist.vocal_range_proposed_at,
+                              PROPOSAL_DATE_FORMAT,
+                            )}
+                          </span>
+                        </Text>
+                        {artist.vocal_range_comment?.trim() && (
+                          <Text
+                            size="sm"
+                            color="muted"
+                            className="mt-1.5 whitespace-pre-line wrap-break-word"
+                          >
+                            {artist.vocal_range_comment.trim()}
+                          </Text>
+                        )}
+                      </div>
                     )}
 
                     {isSinger && (
