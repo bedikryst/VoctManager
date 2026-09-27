@@ -1046,8 +1046,8 @@
       "title_prefix": "Zarządzanie",
       "archived_members": "w archiwum",
       "archived_members_hint": "Zarchiwizowani śpiewacy nadal są na liście poniżej, na jej końcu — sekcje ich nie liczą.",
-      "range_proposals": "z {{total}} propozycji",
-      "range_proposals_hint": "Ilu aktywnych chórzystów zaproponowało własną skalę głosu. Bez instrumentalistów i archiwum."
+      "range_proposals": "z {{total}} propozycji skali",
+      "range_proposals_hint": "Ilu aktywnych chórzystów zaproponowało własną skalę głosu. Bez instrumentalistów, archiwum i osób poza aplikacją."
     },
     "dossier": {
       "acceptance": "Akceptacja zaproszeń",

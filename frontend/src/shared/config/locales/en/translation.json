@@ -1018,8 +1018,8 @@
       "title_prefix": "Team",
       "archived_members": "archived",
       "archived_members_hint": "Archived singers are still in the list below, at the end — the sections do not count them.",
-      "range_proposals": "of {{total}} proposals",
-      "range_proposals_hint": "How many active singers have proposed their own vocal range. Players and archived members are not counted."
+      "range_proposals": "of {{total}} range proposals",
+      "range_proposals_hint": "How many active singers have proposed their own vocal range. Players, archived members and people outside the app are not counted."
     },
     "dossier": {
       "acceptance": "Invitation acceptance",

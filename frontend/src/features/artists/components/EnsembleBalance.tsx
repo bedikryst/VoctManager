@@ -12,8 +12,9 @@
  * screen instead of quietly disagreeing with them.
  *
  * From the first proposed vocal range on, the header also says how many active
- * singers have proposed one, out of how many could: the conductor's overview of
- * who has answered, in place of a notification per proposal.
+ * singers have proposed one, out of those the app asks (members outside the app
+ * never see the question): the conductor's overview of who has answered, in
+ * place of a notification per proposal.
  * @architecture Enterprise SaaS 2026
  * @module features/artists/components/EnsembleBalance
  */
@@ -158,12 +159,12 @@ export const EnsembleBalance = React.memo(
                 icon={<AudioLines size={11} />}
                 value={rangeProposals.answered}
                 label={t("artists.dashboard.range_proposals", {
-                  defaultValue: "z {{total}} propozycji",
+                  defaultValue: "z {{total}} propozycji skali",
                   total: rangeProposals.total,
                 })}
                 title={t(
                   "artists.dashboard.range_proposals_hint",
-                  "Ilu aktywnych chórzystów zaproponowało własną skalę głosu. Bez instrumentalistów i archiwum.",
+                  "Ilu aktywnych chórzystów zaproponowało własną skalę głosu. Bez instrumentalistów, archiwum i osób poza aplikacją.",
                 )}
               />
             )}

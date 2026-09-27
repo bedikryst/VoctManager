@@ -1118,6 +1118,27 @@ lint and the music, artists and vocal-range vitest suites. All green.
 Not a risk: `0067` also parses lowercase letters, which would read Helmholtz with digits (`a1`)
 as SPN. The one value on prod parses as intended and no archived artist holds a range.
 
+### Audit of 8.2–8.4 (2026-09-27) — fixed, not yet seen
+
+The developer looked at the editor, a roster card and Obsada on dev (notation set to French) and
+found them sound, except for the first item. Checks rerun: typecheck, lint, the artists, music and
+projects vitest suites. All green.
+
+1. **A range broke anywhere it had a space.** On a card in French, the singer's proposal read
+   `do♯2 (do2) – ré4` with `(mi4)` alone on the next line. `VocalRangeText` now keeps each side
+   whole and breaks only before the dash, the rule the singer's line of slots already follows. It
+   serves the card, the list row and the editor's proposal box alike. The card's comment no longer
+   promises two lines: a differing proposal takes more on a narrow card.
+2. **The header count could never reach its total.** It counted members added without an address
+   and detached accounts, who never see the question. They are out of both figures now. The label
+   names what it counts ("z 38 propozycji skali"), for the reason the filter's options do.
+3. **Focus in the editor's range field.** "Gotowe" left with the keyboard and dropped focus to the
+   page, and Escape with the keyboard open closed the whole panel. Both now close the keyboard and
+   return focus to the slot.
+
+Seen and left: a save refused for a half-written assessment does not scroll to the field; its
+problem line is announced, and the conductor has just been writing there.
+
 ## Verification (once per stage)
 
 - **Backend:** ruff and mypy on `roster` and `core`; `manage.py test roster documents core

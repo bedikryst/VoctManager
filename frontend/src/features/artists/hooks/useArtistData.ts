@@ -28,7 +28,7 @@ import {
   sectionOrder,
   type SectionKey,
 } from "../constants/voiceSections";
-import { isAwaitingActivation } from "../lib/accountState";
+import { isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
 import {
   matchesRangeFilter,
   proposalOf,
@@ -136,12 +136,17 @@ export const useArtistData = () => {
     [activeArtists],
   );
 
-  // Who has proposed a range, out of the active singers: a player has no range
-  // to give, and an archived member is not asked. Zero until the first answer,
-  // which is when the header starts showing it.
+  // Who has proposed a range, out of the active singers who can be asked: a
+  // player has no range to give, and an archived member, a member added
+  // without an address and a detached account never see the screen, so
+  // counting them would keep the figure short of the total forever. Zero
+  // until the first answer, which is when the header starts showing it.
   const rangeProposals = useMemo(() => {
-    const singers = activeArtists.filter((artist) =>
-      isSingingVoiceType(artist.voice_type),
+    const singers = activeArtists.filter(
+      (artist) =>
+        isSingingVoiceType(artist.voice_type) &&
+        Boolean(artist.user) &&
+        !isWithoutEmail(artist),
     );
     return {
       answered: singers.filter((artist) => proposalOf(artist) !== null).length,

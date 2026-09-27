@@ -1027,8 +1027,8 @@
       "title_prefix": "Gestion de",
       "archived_members": "archivés",
       "archived_members_hint": "Les chanteurs archivés figurent toujours dans la liste ci-dessous, à la fin — les pupitres ne les comptent pas.",
-      "range_proposals": "sur {{total}} propositions",
-      "range_proposals_hint": "Combien de choristes actifs ont proposé leur propre étendue vocale. Sans les instrumentistes ni les membres archivés."
+      "range_proposals": "sur {{total}} propositions d'étendue",
+      "range_proposals_hint": "Combien de choristes actifs ont proposé leur propre étendue vocale. Sans les instrumentistes, les membres archivés ni les personnes hors de l'application."
     },
     "dossier": {
       "acceptance": "Acceptation des invitations",

@@ -12,7 +12,8 @@
  * be widened at either end. A key sounds and fills the slot, and the line
  * above the keys names that note in all three notations and in hertz. "Usuń"
  * empties the selected slot, which is how an assessment is cleared: all four
- * empty is a valid answer, "not assessed yet". "Gotowe" closes the keyboard.
+ * empty is a valid answer, "not assessed yet". "Gotowe" or Escape closes the
+ * keyboard and hands focus back to the slot.
  *
  * The field writes the form, never the record: nothing is saved until the
  * editor is. An order problem shows as soon as it exists, as on the singer's
@@ -102,6 +103,7 @@ export const AssessedRangeField = ({
   );
   const [announcement, setAnnouncement] = useState("");
   const tone = useRef<VoicedToneHandle | null>(null);
+  const lineRef = useRef<HTMLDivElement>(null);
   const keyboardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => () => tone.current?.stop(), []);
@@ -156,9 +158,22 @@ export const AssessedRangeField = ({
     onChange(slot, null);
   };
 
+  /** The keyboard leaves with its "Gotowe", so focus returns to the slot it
+   *  was writing rather than falling to the page. */
   const close = (): void => {
+    lineRef.current
+      ?.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]')
+      ?.focus();
     setSlot(null);
     setTouched(null);
+  };
+
+  // Escape closes the open keyboard, not the editor panel behind it: the
+  // panel leaves an Escape alone once something has handled it.
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key !== "Escape" || slot === null) return;
+    event.preventDefault();
+    close();
   };
 
   const widen = (side: keyof KeyboardReach): void => {
@@ -212,22 +227,26 @@ export const AssessedRangeField = ({
   const readoutMidi = slot === null ? null : (touched ?? value[slot]);
 
   return (
-    <div className="space-y-2">
+    // Only Escape is handled here; every other key belongs to the slots and
+    // the keyboard inside.
+    <div className="space-y-2" onKeyDown={handleKeyDown}>
       <Eyebrow as="span" color="muted" className="ml-1 block">
         {label}
       </Eyebrow>
 
-      <RangeSlots
-        draft={value}
-        selected={slot}
-        notation={notation}
-        low={keySpan.low}
-        high={keySpan.high}
-        label={label}
-        scale="field"
-        disabled={disabled}
-        onSelect={selectSlot}
-      />
+      <div ref={lineRef}>
+        <RangeSlots
+          draft={value}
+          selected={slot}
+          notation={notation}
+          low={keySpan.low}
+          high={keySpan.high}
+          label={label}
+          scale="field"
+          disabled={disabled}
+          onSelect={selectSlot}
+        />
+      </div>
 
       {problemText ? (
         <Text size="sm" color="crimson" role="alert" className="ml-1">
