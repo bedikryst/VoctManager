@@ -75,6 +75,7 @@ import { Check, Mic } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { getSectionPresentation } from "@/features/artists/constants/voiceSections";
+import { usePitchNotation } from "@/features/artists/hooks/usePitchNotation";
 import {
   playArpeggio,
   playVoicedTone,
@@ -84,7 +85,6 @@ import { usePitchDetection } from "@/shared/lib/audio/usePitchDetection";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 import {
-  notationForLanguage,
   spokenPitch,
   type VocalRangeMidi,
 } from "@/shared/lib/music/pitchNotation";
@@ -225,7 +225,7 @@ const VocalRangeStage = ({
   entrance,
   onClose,
 }: StageProps): React.JSX.Element => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { user, refreshUser } = useAuth();
   const reduceMotion = useReducedMotion() ?? false;
   // Read once: it only chooses the side the keyboard enters from.
@@ -234,7 +234,7 @@ const VocalRangeStage = ({
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const notation = notationForLanguage(i18n.language);
+  const notation = usePitchNotation();
 
   const ownVoice = singingVoiceOf(user?.voice_type);
   const isTrial = ownVoice === null;

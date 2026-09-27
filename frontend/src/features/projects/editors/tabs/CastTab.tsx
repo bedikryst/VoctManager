@@ -47,10 +47,8 @@ import { CSS } from "@dnd-kit/utilities";
 
 import type { Project, VoiceType } from "@/shared/types";
 import type { RangeShown } from "@/features/artists/lib/vocalRangeProposal";
-import {
-  notationForLanguage,
-  type PitchNotation,
-} from "@/shared/lib/music/pitchNotation";
+import { usePitchNotation } from "@/features/artists/hooks/usePitchNotation";
+import type { PitchNotation } from "@/shared/lib/music/pitchNotation";
 import { cn } from "@/shared/lib/utils";
 import { VocalRangeText } from "@/shared/ui/instruments/PitchName";
 import { isInstrumentalist } from "@/shared/lib/voiceTypes";
@@ -162,8 +160,9 @@ function CastRow({
   onToggleLeader,
   onRemove,
 }: CastRowProps): React.JSX.Element {
-  const { t, i18n } = useTranslation();
-  const meta = buildSingerMeta(entry, notationForLanguage(i18n.language), t);
+  const { t } = useTranslation();
+  const notation = usePitchNotation();
+  const meta = buildSingerMeta(entry, notation, t);
   const {
     attributes,
     listeners,
@@ -431,8 +430,8 @@ function BalanceRail({
 }
 
 export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
-  const { t, i18n } = useTranslation();
-  const notation = notationForLanguage(i18n.language);
+  const { t } = useTranslation();
+  const notation = usePitchNotation();
   const {
     isLoading,
     castSections,

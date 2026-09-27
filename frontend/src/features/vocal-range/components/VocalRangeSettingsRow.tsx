@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowRight, AudioLines } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
-import { notationForLanguage } from "@/shared/lib/music/pitchNotation";
+import { usePitchNotation } from "@/features/artists/hooks/usePitchNotation";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { VocalRangeText } from "@/shared/ui/instruments/PitchName";
 import { Text } from "@/shared/ui/primitives/typography";
@@ -25,6 +25,7 @@ export const VocalRangeSettingsRow = (): React.JSX.Element | null => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const notation = usePitchNotation();
 
   if (user?.profile?.vocal_range_prompt_enabled !== true) return null;
 
@@ -37,7 +38,7 @@ export const VocalRangeSettingsRow = (): React.JSX.Element | null => {
       <>
         <VocalRangeText
           range={draftFromProposal(proposal)}
-          notation={notationForLanguage(i18n.language)}
+          notation={notation}
         />
         {" · "}
         {formatLocalizedDate(

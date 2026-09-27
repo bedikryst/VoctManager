@@ -543,11 +543,12 @@ class UserPreferencesService:
             user.last_name = dto.last_name
             user.save(update_fields=['first_name', 'last_name'])
 
-            UserProfile.objects.update_or_create(
+            profile, _created = UserProfile.objects.update_or_create(
                 user=user,
                 defaults={
                     'phone_number': dto.phone_number or '',
                     'language': dto.language,
+                    'pitch_notation': dto.pitch_notation,
                     'timezone': dto.timezone,
                     'salutation': dto.salutation,
                     'clothing_size': dto.clothing_size,
@@ -558,6 +559,11 @@ class UserPreferencesService:
                     'email_notifications_enabled': dto.email_notifications_enabled,
                 }
             )
+            # `update_or_create` saves a fresh instance, while `user.profile` may
+            # still cache the row as the view loaded it to seed the DTO. Point it
+            # at the saved row, or the response serializes the old preferences
+            # and the panel adopts them (the language included).
+            user.profile = profile
 
             user_pii_updated.send(sender=UserPreferencesService, user=user, dto=dto)
             

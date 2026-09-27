@@ -68,7 +68,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'avatar_url', 'avatar_thumb_url',
 
             # Preferences
-            'phone_number', 'language', 'timezone', 'salutation',
+            'phone_number', 'language', 'pitch_notation', 'timezone', 'salutation',
             'clothing_size', 'shoe_size', 'height_cm',
 
             # Notification delivery. `email_notifications_enabled` is the master

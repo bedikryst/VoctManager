@@ -23,6 +23,10 @@
 
 export type PitchNotation = "international" | "polish" | "french";
 
+/** A reader's stored choice of notation: one of the three, or blank to follow
+ *  the UI language. */
+export type PitchNotationPreference = PitchNotation | "";
+
 /** Every notation, in the order the panel lists them whichever the reader
  *  uses: international first, as the one every country reads the same way. */
 export const ALL_NOTATIONS: readonly PitchNotation[] = [
@@ -212,6 +216,16 @@ export const notationForLanguage = (
   if (base === "fr") return "french";
   return "international";
 };
+
+/**
+ * The notation this reader sees: their own choice when they made one, otherwise
+ * their UI language's. A missing preference (no profile loaded yet) follows the
+ * language too.
+ */
+export const resolveNotation = (
+  preference: PitchNotationPreference | null | undefined,
+  language: string | null | undefined,
+): PitchNotation => preference || notationForLanguage(language);
 
 /** A singer's range as MIDI numbers. The extremes lie outside the tessitura:
  *  reachable, but not in the voice's comfortable span. */

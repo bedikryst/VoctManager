@@ -3,8 +3,9 @@
  * @description "Profil" pane: personal data + contact, the (read-only) login
  * e-mail with a shortcut to the security pane where it can be changed, the
  * singer's own vocal range (a row that exists only under its rollout flag),
- * and interface preferences (language, timezone). Voice type lives in the
- * identity card at the layout level.
+ * and interface preferences (language, the pitch notation a manager reads
+ * vocal ranges in, timezone, salutation). Voice type lives in the identity card
+ * at the layout level.
  * @architecture Enterprise SaaS 2026
  * @module features/settings/components/GeneralTab
  */
@@ -17,6 +18,7 @@ import {
   AtSign,
   Clock,
   Globe,
+  Music,
   Phone,
   User,
 } from "lucide-react";
@@ -29,6 +31,7 @@ import { Select } from "@ui/primitives/Select";
 import { Text, Caption } from "@ui/primitives/typography";
 import { EtherealLoader } from "@ui/kinematics/EtherealLoader";
 import { DURATION, EASE } from "@ui/kinematics/motion-presets";
+import type { PitchNotationPreference } from "@/shared/lib/music/pitchNotation";
 import { VocalRangeSettingsRow } from "@/features/vocal-range/components/VocalRangeSettingsRow";
 import { useGeneralSettings } from "../hooks/useGeneralSettings";
 import { SettingsSaveFooter } from "./SettingsSaveFooter";
@@ -39,6 +42,13 @@ const LANGUAGE_OPTIONS = [
   { value: "en", label: "English" },
   { value: "fr", label: "Français" },
 ];
+
+/**
+ * "Follow the language" is stored as "", which a select item may not carry
+ * (Radix reserves it for "nothing selected"). It rides this value in the field
+ * and turns back into "" on its way into the form.
+ */
+const FOLLOW_LANGUAGE = "language";
 
 const TIMEZONES = [
   { value: "UTC", label: "UTC (Uniwersalna)" },
@@ -56,6 +66,34 @@ export const GeneralTab = () => {
     { value: "N", label: t("common.salutation.neutral", "Neutralna") },
     { value: "F", label: t("common.salutation.feminine", "Kobieca") },
     { value: "M", label: t("common.salutation.masculine", "Męska") },
+  ];
+  // The Polish notation is the German one too (h, b, cis, a¹), so its label
+  // names both: a German reader has no other way to find it.
+  const notationOptions: readonly {
+    value: string;
+    label: string;
+    stored: PitchNotationPreference;
+  }[] = [
+    {
+      value: FOLLOW_LANGUAGE,
+      stored: "",
+      label: t("settings.general.pitch_notation.follow_language", "Według języka"),
+    },
+    {
+      value: "polish",
+      stored: "polish",
+      label: t("settings.general.pitch_notation.polish", "Polski i niemiecki (a¹)"),
+    },
+    {
+      value: "international",
+      stored: "international",
+      label: t("settings.general.pitch_notation.international", "Międzynarodowy (A4)"),
+    },
+    {
+      value: "french",
+      stored: "french",
+      label: t("settings.general.pitch_notation.french", "Francuski (la3)"),
+    },
   ];
   const navigate = useNavigate();
   const {
@@ -185,6 +223,30 @@ export const GeneralTab = () => {
               onValueChange={(value) => handleProfileChange("language", value)}
               options={LANGUAGE_OPTIONS}
             />
+
+            {/* Managers only: they read every singer's range across the
+                panel. A chorister sees their own range only on the singer's
+                screen, which also names each note in all three notations. */}
+            {user?.profile?.is_manager && (
+              <div>
+                <Select
+                  label={t("settings.general.pitch_notation.label", "Zapis wysokości dźwięków")}
+                  leftIcon={<Music className="h-4 w-4" />}
+                  value={formData.profile.pitch_notation || FOLLOW_LANGUAGE}
+                  onValueChange={(value) => {
+                    const option = notationOptions.find((each) => each.value === value);
+                    if (option) handleProfileChange("pitch_notation", option.stored);
+                  }}
+                  options={notationOptions}
+                />
+                <Text as="p" size="xs" color="muted" className="ml-1 mt-1.5">
+                  {t(
+                    "settings.general.pitch_notation.hint",
+                    "W tym zapisie zobaczysz skale głosu w całym panelu.",
+                  )}
+                </Text>
+              </div>
+            )}
 
             <Select
               label={t("settings.general.timezone", "Strefa czasowa")}

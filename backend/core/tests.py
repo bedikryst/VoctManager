@@ -723,6 +723,63 @@ class MarkWelcomeSeenViewTests(APITestCase):
         self.assertIn(response.status_code, (401, 403))
 
 
+class PitchNotationPreferenceTests(APITestCase):
+    """The reader's pitch notation rides the ordinary profile PATCH. The DTO
+    forbids extra keys, so the field has to exist there or the whole request
+    400s; and the view seeds it from the stored profile, so a PATCH about
+    anything else keeps it."""
+
+    ME_URL = "/api/users/me/"
+
+    def setUp(self):
+        self.user = User.objects.create(
+            username=str(uuid4()), email=f"{uuid4()}@example.com",
+            first_name="Anna", last_name="Nowak",
+        )
+        self.profile = UserProfile.objects.create(user=self.user, role=AppRole.MANAGER)
+        self.client.force_authenticate(self.user)
+
+    def _patch_profile(self, profile: dict):
+        return self.client.patch(self.ME_URL, {"profile": profile}, format="json")
+
+    def test_defaults_to_following_the_language(self):
+        self.assertEqual(self.profile.pitch_notation, "")
+        response = self.client.get(self.ME_URL)
+        self.assertEqual(response.data["profile"]["pitch_notation"], "")
+
+    def test_each_value_is_saved(self):
+        for value in ("polish", "international", "french", ""):
+            with self.subTest(value=value):
+                response = self._patch_profile({"pitch_notation": value})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["profile"]["pitch_notation"], value)
+                self.profile.refresh_from_db()
+                self.assertEqual(self.profile.pitch_notation, value)
+
+    def test_unknown_value_is_refused(self):
+        self.profile.pitch_notation = "french"
+        self.profile.save(update_fields=["pitch_notation"])
+        for value in ("german", "Polish", "helmholtz"):
+            with self.subTest(value=value):
+                response = self._patch_profile({"pitch_notation": value})
+                self.assertEqual(response.status_code, 400)
+                self.profile.refresh_from_db()
+                self.assertEqual(self.profile.pitch_notation, "french")
+
+    def test_patch_without_the_key_keeps_it(self):
+        self.profile.pitch_notation = "international"
+        self.profile.save(update_fields=["pitch_notation"])
+        response = self._patch_profile({"language": "fr"})
+        self.assertEqual(response.status_code, 200)
+        # The response reports the saved row, not the one the view read first:
+        # the panel adopts the language straight from it.
+        self.assertEqual(response.data["profile"]["language"], "fr")
+        self.assertEqual(response.data["profile"]["pitch_notation"], "international")
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.language, "fr")
+        self.assertEqual(self.profile.pitch_notation, "international")
+
+
 class EnterpriseExceptionHandlerTests(SimpleTestCase):
     """The API error envelope is the contract the frontend parses. Every branch
     must carry a stable, machine-readable `error_code` (so the client maps it to

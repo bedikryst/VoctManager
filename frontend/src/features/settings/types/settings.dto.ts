@@ -6,6 +6,7 @@
  */
 
 import type { AppRole, SeasonCalendar } from "@/shared/auth/auth.types";
+import type { PitchNotationPreference } from "@/shared/lib/music/pitchNotation";
 
 export interface UserProfileDTO {
   role?: AppRole;
@@ -16,6 +17,8 @@ export interface UserProfileDTO {
   avatar_thumb_url: string | null;
   phone_number: string;
   language: string;
+  /** How this person reads pitch names; blank follows `language`. */
+  pitch_notation?: PitchNotationPreference;
   timezone: string;
   salutation: string;
   clothing_size: string;
@@ -59,6 +62,8 @@ export interface UpdatePreferencesPayload {
   profile: {
     phone_number: string;
     language: string;
+    /** Optional: the server keeps the stored value when a payload omits it. */
+    pitch_notation?: PitchNotationPreference;
     timezone: string;
     salutation: string;
     clothing_size: string;

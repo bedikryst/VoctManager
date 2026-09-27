@@ -5928,6 +5928,14 @@
       "language": "Język interfejsu",
       "lastName": "Nazwisko",
       "phone": "Numer telefonu",
+      "pitch_notation": {
+        "follow_language": "Według języka",
+        "french": "Francuski (la3)",
+        "hint": "W tym zapisie zobaczysz skale głosu w całym panelu.",
+        "international": "Międzynarodowy (A4)",
+        "label": "Zapis wysokości dźwięków",
+        "polish": "Polski i niemiecki (a¹)"
+      },
       "preferencesTitle": "Preferencje",
       "subtitle": "Zarządzaj swoimi danymi i preferencjami aplikacji.",
       "timezone": "Strefa czasowa",

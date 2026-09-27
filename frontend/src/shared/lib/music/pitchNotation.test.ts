@@ -19,6 +19,7 @@ import {
   midiToPolish,
   midiToScientific,
   notationForLanguage,
+  resolveNotation,
   spellPitch,
   spokenPitch,
   vocalRangeTokens,
@@ -214,6 +215,23 @@ describe("notationForLanguage", () => {
   it("drives formatPitch", () => {
     expect(formatPitch(69, notationForLanguage("pl"))).toBe("a¹");
     expect(formatPitch(69, notationForLanguage("fr"))).toBe("la3");
+  });
+});
+
+describe("resolveNotation", () => {
+  it("follows the language when the reader has not chosen", () => {
+    expect(resolveNotation("", "pl")).toBe("polish");
+    expect(resolveNotation("", "fr")).toBe("french");
+    expect(resolveNotation(undefined, "en")).toBe("international");
+    expect(resolveNotation(null, "pl-PL")).toBe("polish");
+  });
+
+  it("puts the reader's choice above the language", () => {
+    // The German conductor in the English panel: B4 would read as B-flat.
+    expect(resolveNotation("polish", "en")).toBe("polish");
+    expect(formatPitch(71, resolveNotation("polish", "en"))).toBe("h¹");
+    expect(resolveNotation("international", "pl")).toBe("international");
+    expect(resolveNotation("french", "pl")).toBe("french");
   });
 });
 

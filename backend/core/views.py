@@ -278,6 +278,7 @@ class CurrentUserRetrieveUpdateView(generics.RetrieveUpdateAPIView):
                 "last_name": request.data.get('last_name', request.user.last_name),
                 "phone_number": getattr(profile, 'phone_number', ''),
                 "language": getattr(profile, 'language', 'en'),
+                "pitch_notation": getattr(profile, 'pitch_notation', ''),
                 "timezone": getattr(profile, 'timezone', 'Europe/Warsaw'),
                 "salutation": getattr(profile, 'salutation', 'N'),
                 "clothing_size": getattr(profile, 'clothing_size', ''),

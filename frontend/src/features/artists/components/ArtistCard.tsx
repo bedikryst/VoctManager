@@ -37,7 +37,6 @@ import { cn } from "@/shared/lib/utils";
 import { artistRoleLabel } from "@/shared/lib/voiceTypes";
 import { onActivate } from "@/shared/lib/dom/a11y";
 import { formatLocalizedDateTime } from "@/shared/lib/time/intl";
-import { notationForLanguage } from "@/shared/lib/music/pitchNotation";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { VocalRangeText } from "@/shared/ui/instruments/PitchName";
 import { Avatar } from "@/shared/ui/composites/Avatar";
@@ -51,6 +50,7 @@ import {
   Text,
 } from "@/shared/ui/primitives/typography";
 import { getSectionPresentation } from "../constants/voiceSections";
+import { usePitchNotation } from "../hooks/usePitchNotation";
 import { isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
 import { rangeShown } from "../lib/vocalRangeProposal";
 import { SightReadingStars } from "./SightReadingStars";
@@ -91,7 +91,8 @@ export const ArtistCard = React.memo(
     selected = false,
     onToggleSelect,
   }: ArtistCardProps) => {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
+    const notation = usePitchNotation();
 
     const section = getSectionPresentation(artist.voice_type);
     const isActive = artist.is_active;
@@ -251,7 +252,7 @@ export const ArtistCard = React.memo(
                 <Text size="sm" color="muted">
                   <VocalRangeText
                     range={range.range}
-                    notation={notationForLanguage(i18n.language)}
+                    notation={notation}
                   />
                 </Text>
               ) : (

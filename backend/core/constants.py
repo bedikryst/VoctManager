@@ -68,6 +68,17 @@ class ClothingSizeChoices(models.TextChoices):
     XXL = 'xxl', 'XXL'
 
 
+class PitchNotationChoices(models.TextChoices):
+    """How a reader names pitches on screen. Presentation only: every stored
+    pitch is a MIDI number, so this changes what a person reads and never what
+    anyone else sees. Blank follows the UI language."""
+    FOLLOW_LANGUAGE = '', _('Follow the language')
+    # Helmholtz with a¹ = 440 Hz; also the German system (h, b, cis).
+    POLISH = 'polish', _('Polish and German (a¹)')
+    INTERNATIONAL = 'international', _('International (A4)')
+    FRENCH = 'french', _('French (la3)')
+
+
 class AppRole(models.TextChoices):
     MANAGER = 'MANAGER', _('Manager / Conductor')
     ARTIST = 'ARTIST', _('Artist / Singer')

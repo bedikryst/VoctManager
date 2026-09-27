@@ -11,7 +11,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from .constants import AppRole, ClothingSizeChoices
+from .constants import AppRole, ClothingSizeChoices, PitchNotationChoices
 
 
 def avatar_upload_path(instance: "UserProfile", filename: str) -> str:
@@ -153,6 +153,17 @@ class UserProfile(EnterpriseBaseModel):
         help_text=_("Preferred language for the UI and for all outgoing notifications "
                     "(push, email, digest). Single source of truth — kept in sync with "
                     "the client UI language for authenticated users.")
+    )
+    # Per person rather than per artist, and on the server: a German conductor
+    # in the English panel reads `B4` as B-flat, so the choice has to hold on
+    # every surface at once and on every device they sign in from.
+    pitch_notation = models.CharField(
+        max_length=16,
+        choices=PitchNotationChoices.choices,
+        default=PitchNotationChoices.FOLLOW_LANGUAGE,
+        blank=True,
+        help_text=_("Notation this person reads pitch names in (vocal ranges and the like). "
+                    "Blank follows the UI language.")
     )
     timezone = models.CharField(
         max_length=63,

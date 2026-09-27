@@ -23,10 +23,10 @@ import { Select } from "@ui/primitives/Select";
 import { Eyebrow, Heading, Text } from "@ui/primitives/typography";
 import type { Artist, VoiceType, VoiceTypeOption } from "@/shared/types";
 import { isInstrumentalist, isSingingVoiceType } from "@/shared/lib/voiceTypes";
-import { notationForLanguage } from "@/shared/lib/music/pitchNotation";
 import { formatLocalizedDateTime } from "@/shared/lib/time/intl";
 import { VocalRangeText } from "@/shared/ui/instruments/PitchName";
 import { useArtistForm } from "../hooks/useArtistForm";
+import { usePitchNotation } from "../hooks/usePitchNotation";
 import { proposalOf } from "../lib/vocalRangeProposal";
 import { voiceToSalutation } from "../types/artist.dto";
 import { NewThreadModal } from "@/features/messages/components/NewThreadModal";
@@ -70,7 +70,8 @@ export default function ArtistEditorPanel({
   voiceTypes,
   initialSearchContext = "",
 }: ArtistEditorPanelProps): React.ReactPortal | null {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const notation = usePitchNotation();
   const proposal = proposalOf(artist ?? undefined);
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
   const [showNotifyModal, setShowNotifyModal] = useState(false);
@@ -529,7 +530,7 @@ export default function ArtistEditorPanel({
                           </Text>
                           <VocalRangeText
                             range={proposal}
-                            notation={notationForLanguage(i18n.language)}
+                            notation={notation}
                             className="font-semibold"
                           />
                           <Text

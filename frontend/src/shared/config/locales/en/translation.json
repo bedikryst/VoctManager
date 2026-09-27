@@ -5871,6 +5871,14 @@
       "language": "Interface Language",
       "lastName": "Last Name",
       "phone": "Phone Number",
+      "pitch_notation": {
+        "follow_language": "Follow the language",
+        "french": "French (la3)",
+        "hint": "You will see vocal ranges in this notation across the panel.",
+        "international": "International (A4)",
+        "label": "Pitch notation",
+        "polish": "Polish and German (a¹)"
+      },
       "preferencesTitle": "Preferences",
       "subtitle": "Manage your data and application preferences.",
       "timezone": "Time Zone",

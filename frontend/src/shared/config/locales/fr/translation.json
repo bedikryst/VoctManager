@@ -5882,6 +5882,14 @@
       "language": "Langue de l'interface",
       "lastName": "Nom",
       "phone": "Numéro de téléphone",
+      "pitch_notation": {
+        "follow_language": "Selon la langue",
+        "french": "Française (la3)",
+        "hint": "Les tessitures s'affichent dans cette notation dans tout le panneau.",
+        "international": "Internationale (A4)",
+        "label": "Notation des hauteurs",
+        "polish": "Polonaise et allemande (a¹)"
+      },
       "preferencesTitle": "Préférences",
       "subtitle": "Gérez vos données et préférences d'application.",
       "timezone": "Fuseau horaire",

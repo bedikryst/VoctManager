@@ -7,11 +7,12 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, StrictBool, field_validator
 
-from .constants import ClothingSizeChoices
+from .constants import ClothingSizeChoices, PitchNotationChoices
 
 SUPPORTED_LANGUAGE_CODES = frozenset({"en", "pl", "fr"})
 SALUTATION_VALUES = frozenset({"F", "M", "N"})
 CLOTHING_SIZE_VALUES = frozenset(ClothingSizeChoices.values)
+PITCH_NOTATION_VALUES = frozenset(PitchNotationChoices.values)
 
 
 def _require_choice(value: str, allowed_values: frozenset[str], field_name: str) -> str:
@@ -60,6 +61,9 @@ class UserPreferencesUpdateDTO(EnterpriseBaseDTO):
     last_name: str = Field(..., min_length=1, max_length=150)
     phone_number: str | None = Field(None, max_length=32)
     language: str = Field(default='en', max_length=10)
+    # Blank follows the language. Seeded from the stored profile by the view,
+    # like the notification fields below.
+    pitch_notation: str = Field(default='', max_length=16)
     timezone: str = Field(default='Europe/Warsaw', max_length=63)
     salutation: str = Field(default='N', max_length=1)
 
@@ -97,6 +101,11 @@ class UserPreferencesUpdateDTO(EnterpriseBaseDTO):
     def validate_language(cls, value: str) -> str:
         value = value.lower()
         return _require_choice(value, SUPPORTED_LANGUAGE_CODES, "language")
+
+    @field_validator("pitch_notation")
+    @classmethod
+    def validate_pitch_notation(cls, value: str) -> str:
+        return _require_choice(value, PITCH_NOTATION_VALUES, "pitch_notation")
 
     @field_validator("salutation")
     @classmethod

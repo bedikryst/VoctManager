@@ -5,6 +5,8 @@
  * @module shared/auth/types
  */
 
+import type { PitchNotationPreference } from "@/shared/lib/music/pitchNotation";
+
 export const APP_ROLES = {
   MANAGER: "MANAGER",
   ARTIST: "ARTIST",
@@ -31,6 +33,9 @@ export interface AuthProfile {
   avatar_url?: string | null;
   avatar_thumb_url?: string | null;
   language?: string;
+  /** How this person reads pitch names; blank follows `language`. Presentation
+   *  only, resolved through `resolveNotation`. */
+  pitch_notation?: PitchNotationPreference;
   timezone?: string;
   salutation?: string;
   phone_number?: string;
