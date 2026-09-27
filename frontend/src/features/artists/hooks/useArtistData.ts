@@ -146,8 +146,7 @@ export const useArtistData = () => {
   // Who has proposed a range, out of the active singers who can be asked: a
   // player has no range to give, and an archived member, a member added
   // without an address and a detached account never see the screen, so
-  // counting them would keep the figure short of the total forever. Zero
-  // until the first answer, which is when the header starts showing it.
+  // counting them would keep the figure short of the total forever.
   const rangeProposals = useMemo(() => {
     const singers = activeArtists.filter(
       (artist) =>
@@ -160,13 +159,6 @@ export const useArtistData = () => {
       total: singers.length,
     };
   }, [activeArtists]);
-
-  // Any proposal on the roster, archived rows included. Before the first one
-  // the range filter could only return everyone or nobody, so it stays hidden.
-  const hasAnyProposal = useMemo(
-    () => artists.some((artist) => proposalOf(artist) !== null),
-    [artists],
-  );
 
   const selectionStats = useMemo(() => {
     let active = 0;
@@ -419,7 +411,6 @@ export const useArtistData = () => {
     setVoiceFilter,
     rangeFilter,
     setRangeFilter,
-    hasAnyProposal,
     sortBy,
     setSortBy,
     viewMode,

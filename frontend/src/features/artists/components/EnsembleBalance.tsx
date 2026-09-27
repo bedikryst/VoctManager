@@ -11,14 +11,15 @@
  * remainder whenever there is one, and the two figures add up to the rows on
  * screen instead of quietly disagreeing with them.
  *
- * From the first proposed vocal range on, the header also says how many active
- * singers have proposed one, out of those the app asks (members outside the app
- * never see the question): the conductor's overview of who has answered, in
- * place of a notification per proposal.
+ * The header also says how many active singers have proposed a vocal range,
+ * out of those the app asks (members outside the app never see the question):
+ * the conductor's overview of who has answered, in place of a notification per
+ * proposal. It shows at zero too, since "0 z 34" is the first thing a
+ * conductor wants to know once the question goes out.
  *
  * It also counts signed-in members none of whose devices takes a push — the
  * people to ask in person, matching the bell-off marks on their rows. Hidden at
- * zero, like the range figure.
+ * zero: unlike the range question, nobody is waiting to see that figure move.
  * @architecture Enterprise SaaS 2026
  * @module features/artists/components/EnsembleBalance
  */
@@ -169,7 +170,7 @@ export const EnsembleBalance = React.memo(
                 title={t("artists.dashboard.without_push_hint")}
               />
             )}
-            {rangeProposals.answered > 0 && (
+            {rangeProposals.total > 0 && (
               <HeaderFact
                 icon={<AudioLines size={11} />}
                 value={rangeProposals.answered}

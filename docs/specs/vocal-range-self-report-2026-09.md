@@ -1065,9 +1065,11 @@ each filter) and Obsada on dev, with seed data.
   one way. The values are `all · proposed · missing · differs`; Radix refuses `""` as an item.
 - The filter keeps archived rows, as the section filter does: they sink to the end of the list.
   The count does not, since an archived member is not asked.
-- **The filter is absent until the roster holds a first proposal**, the rule the count follows:
-  before that, every choice returns everyone or nobody. A filter already set stays visible so it
-  can be cleared.
+- **The count and the filter show from the start, at zero too.** Both were first built to hide
+  until the first proposal. Reversed 2026-09-27: with the flag at `all` and nobody answered yet,
+  the developer opened Artyści, found neither, and could not tell a feature waiting for answers
+  from one that was missing. "0 z 34" and "Bez propozycji skali" (everyone still to answer) are
+  the first things the conductor needs once the question goes out.
 - **Each option names the range** ("Skala głosu: wszyscy", "Z propozycją skali", "Bez propozycji
   skali", "Propozycja inna niż ocena"). The closed field shows only the selected option, and its
   icon is hidden on a phone, so the bare "Wszyscy" of the plan would not say what it filters.

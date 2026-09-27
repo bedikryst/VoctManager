@@ -57,7 +57,6 @@ export default function ArtistManagement(): React.JSX.Element {
     setVoiceFilter,
     rangeFilter,
     setRangeFilter,
-    hasAnyProposal,
     sortBy,
     setSortBy,
     viewMode,
@@ -217,8 +216,6 @@ export default function ArtistManagement(): React.JSX.Element {
               onSearch={setSearchTerm}
               rangeFilter={rangeFilter}
               onRangeFilter={setRangeFilter}
-              // A filter already set stays reachable, so it can be cleared.
-              showRangeFilter={hasAnyProposal || rangeFilter !== "all"}
               sortBy={sortBy}
               onSort={setSortBy}
               viewMode={viewMode}

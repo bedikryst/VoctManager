@@ -5,10 +5,11 @@
  * dashboard control row so the gesture vocabulary is identical across features.
  *
  * The range filter sits beside the search, since both choose which rows show;
- * sort and density decide how they show. It is absent until the roster holds a
- * first proposal, when every choice would return everyone or nobody. Its
- * options each name the range, because the closed field shows only the option
- * and hides its icon on a phone.
+ * sort and density decide how they show. It is always there, even before the
+ * first proposal: then "Bez propozycji skali" lists every singer still to
+ * answer, which is the question the conductor asks of it. Its options each
+ * name the range, because the closed field shows only the option and hides its
+ * icon on a phone.
  * @architecture Enterprise SaaS 2026
  * @module features/artists/components/RosterToolbar
  */
@@ -45,7 +46,6 @@ interface RosterToolbarProps {
   readonly onSearch: (value: string) => void;
   readonly rangeFilter: RangeFilter;
   readonly onRangeFilter: (value: RangeFilter) => void;
-  readonly showRangeFilter: boolean;
   readonly sortBy: RosterSort;
   readonly onSort: (value: RosterSort) => void;
   readonly viewMode: RosterView;
@@ -59,7 +59,6 @@ export const RosterToolbar = ({
   onSearch,
   rangeFilter,
   onRangeFilter,
-  showRangeFilter,
   sortBy,
   onSort,
   viewMode,
@@ -88,40 +87,38 @@ export const RosterToolbar = ({
           />
         </div>
 
-        {showRangeFilter && (
-          <div className="w-full sm:w-64">
-            <Select
-              variant="solid"
-              leftIcon={<AudioLines />}
-              ariaLabel={t("artists.toolbar.range_label", "Skala głosu")}
-              value={rangeFilter}
-              onValueChange={(value) => {
-                if (isRangeFilter(value)) onRangeFilter(value);
-              }}
-              options={[
-                {
-                  value: "all",
-                  label: t("artists.toolbar.range_all", "Skala głosu: wszyscy"),
-                },
-                {
-                  value: "proposed",
-                  label: t("artists.toolbar.range_proposed", "Z propozycją skali"),
-                },
-                {
-                  value: "missing",
-                  label: t("artists.toolbar.range_missing", "Bez propozycji skali"),
-                },
-                {
-                  value: "differs",
-                  label: t(
-                    "artists.toolbar.range_differs",
-                    "Propozycja inna niż ocena",
-                  ),
-                },
-              ]}
-            />
-          </div>
-        )}
+        <div className="w-full sm:w-64">
+          <Select
+            variant="solid"
+            leftIcon={<AudioLines />}
+            ariaLabel={t("artists.toolbar.range_label", "Skala głosu")}
+            value={rangeFilter}
+            onValueChange={(value) => {
+              if (isRangeFilter(value)) onRangeFilter(value);
+            }}
+            options={[
+              {
+                value: "all",
+                label: t("artists.toolbar.range_all", "Skala głosu: wszyscy"),
+              },
+              {
+                value: "proposed",
+                label: t("artists.toolbar.range_proposed", "Z propozycją skali"),
+              },
+              {
+                value: "missing",
+                label: t("artists.toolbar.range_missing", "Bez propozycji skali"),
+              },
+              {
+                value: "differs",
+                label: t(
+                  "artists.toolbar.range_differs",
+                  "Propozycja inna niż ocena",
+                ),
+              },
+            ]}
+          />
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
