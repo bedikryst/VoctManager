@@ -242,7 +242,8 @@ picker (the seven singing types) in place of the singer's own voice. Everything 
 sound, the table, the comment and the mic. There is no send button; one line over the voice
 picker says "Tryb próbny: nic nie zostanie zapisane" (trial mode, nothing is saved). This is how the screen gets
 tested on a real iPhone on prod before any singer sees it, and how the conductor approves the
-copy.
+copy. An instrumentalist (`INS`) gets neither the prompt nor the row, the trial included: under
+`all` the dry run would otherwise reach every player as a question meant for singers.
 
 **Also in this stage:**
 - `AuthUser` maps the new Me fields.

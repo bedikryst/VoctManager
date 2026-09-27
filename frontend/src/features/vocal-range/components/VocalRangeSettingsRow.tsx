@@ -2,8 +2,11 @@
  * @file VocalRangeSettingsRow.tsx
  * @description The way back to the vocal-range screen: a quiet row in the
  * Profile pane showing the proposal as last sent and when, which reopens the
- * screen with those values. An account with no singing voice opens the trial
- * run instead. The row exists only while the rollout flag covers the account.
+ * screen with those values. An account with no singing voice, such as the
+ * developer's or the conductor's, opens the trial run instead. A player never
+ * sees the row: a voice range is not theirs to give, and a trial run would only
+ * read as a question addressed to them. The row exists only while the rollout
+ * flag covers the account.
  * @module features/vocal-range/components/VocalRangeSettingsRow
  */
 
@@ -16,6 +19,8 @@ import { singingVoiceOf } from "@/features/artists/constants/voices";
 import { usePitchNotation } from "@/features/artists/hooks/usePitchNotation";
 import { draftFromProposal } from "@/shared/lib/music/rangeDraft";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
+import { isInstrumentalist } from "@/shared/lib/voiceTypes";
+import type { VoiceType } from "@/shared/types";
 import { VocalRangeText } from "@/shared/ui/instruments/PitchName";
 import { Text } from "@/shared/ui/primitives/typography";
 
@@ -28,6 +33,7 @@ export const VocalRangeSettingsRow = (): React.JSX.Element | null => {
   const notation = usePitchNotation();
 
   if (user?.profile?.vocal_range_prompt_enabled !== true) return null;
+  if (isInstrumentalist(user.voice_type as VoiceType)) return null;
 
   const isTrial = singingVoiceOf(user.voice_type) === null;
   const proposal = isTrial ? null : user.vocal_range_proposal;
