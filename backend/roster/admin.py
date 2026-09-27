@@ -115,7 +115,9 @@ class ArtistAdmin(admin.ModelAdmin):
     fields = (
         'user', 'first_name', 'last_name', 'email', 'phone_number',
         'voice_type', 'instrument', 'is_active',
-        'sight_reading_skill', 'vocal_range_bottom', 'vocal_range_top',
+        'sight_reading_skill',
+        'assessed_tessitura_low', 'assessed_tessitura_high',
+        'assessed_extreme_low', 'assessed_extreme_high',
     )
 
     def get_queryset(self, request):

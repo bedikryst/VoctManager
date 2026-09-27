@@ -1263,22 +1263,6 @@ msgstr ""
 msgid "Sight Reading Skill (1-5)"
 msgstr ""
 
-#: roster/models.py:72
-msgid "e.g. G2"
-msgstr ""
-
-#: roster/models.py:72
-msgid "Range (Bottom)"
-msgstr ""
-
-#: roster/models.py:73
-msgid "e.g. C5"
-msgstr ""
-
-#: roster/models.py:73
-msgid "Range (Top)"
-msgstr ""
-
 #: roster/models.py:76
 msgid "First Name (Vocative)"
 msgstr ""
@@ -3884,4 +3868,20 @@ msgstr ""
 
 #: roster/views.py:484
 msgid "Only a singer may submit a vocal range proposal."
+msgstr ""
+
+#: roster/models.py:192
+msgid "Assessed Tessitura (Low)"
+msgstr ""
+
+#: roster/models.py:193
+msgid "Assessed Tessitura (High)"
+msgstr ""
+
+#: roster/models.py:194
+msgid "Assessed Extreme (Low)"
+msgstr ""
+
+#: roster/models.py:195
+msgid "Assessed Extreme (High)"
 msgstr ""

@@ -182,14 +182,22 @@ class Artist(EnterpriseBaseModel):
         choices=[(i, str(i)) for i in range(1, 6)], 
         blank=True, null=True, verbose_name=_("Sight Reading Skill (1-5)")
     )
-    vocal_range_bottom = models.CharField(max_length=5, blank=True, help_text=_("e.g. G2"), verbose_name=_("Range (Bottom)"))
-    vocal_range_top = models.CharField(max_length=5, blank=True, help_text=_("e.g. C5"), verbose_name=_("Range (Top)"))
+    # The conductor's private assessment of this voice: a tessitura and two
+    # optional extremes, the same shape as the singer's proposal below, so one
+    # can be copied onto the other slot for slot. It never reaches any
+    # chorister, this singer included. Written only through the manager's
+    # create (`ArtistCreateDTO`) and PATCH (`ArtistDetailedSerializer`), which
+    # both check `roster.domain.vocal_range.range_shape_error`. All four empty
+    # means not assessed yet.
+    assessed_tessitura_low = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=_("Assessed Tessitura (Low)"))
+    assessed_tessitura_high = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=_("Assessed Tessitura (High)"))
+    assessed_extreme_low = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=_("Assessed Extreme (Low)"))
+    assessed_extreme_high = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=_("Assessed Extreme (High)"))
 
-    # The singer's OWN proposal — separate fields, never written into
-    # `vocal_range_bottom/top` above, which stay the conductor's private
-    # free-text assessment and never reach any chorister. MIDI numbers, not
-    # SPN text: notation is a presentation concern (`pitchNotation.ts`), so a
-    # tenor's octave-displaced clef or a keyboard mislabelling middle C cannot
+    # The singer's OWN proposal — separate fields, never written into the
+    # conductor's `assessed_*` above. MIDI numbers, not SPN text, like the
+    # assessment: notation is a presentation concern (`pitchNotation.ts`), so
+    # a tenor's octave-displaced clef or a keyboard mislabelling middle C cannot
     # corrupt what is actually stored. Written only by
     # `VocalRangeService.submit_proposal`; resubmission overwrites and
     # restamps `vocal_range_proposed_at`, so there is only ever the latest.

@@ -381,12 +381,18 @@ VOICE_LINES_FOR: dict[str, list[str]] = {
     VoiceType.BARITONE: [VoiceLine.BASS_1, VoiceLine.TENOR_2],
     VoiceType.BASS: [VoiceLine.BASS_1, VoiceLine.BASS_2],
 }
-# Plausible vocal ranges (bottom, top) per fach.
-RANGE_FOR: dict[str, tuple[str, str]] = {
-    VoiceType.SOPRANO: ("C4", "C6"), VoiceType.MEZZO: ("A3", "A5"),
-    VoiceType.ALTO: ("F3", "F5"), VoiceType.COUNTERTENOR: ("G3", "E5"),
-    VoiceType.TENOR: ("C3", "B4"), VoiceType.BARITONE: ("A2", "G4"),
-    VoiceType.BASS: ("E2", "E4"),
+# The conductor's range for each voice in the ensemble, as MIDI: the tessitura
+# (low, high), then the extremes (low, high). The same figures size the
+# singer's keyboard (`voices.ts` in the frontend). The countertenor sings the
+# alto line.
+RANGE_FOR: dict[str, tuple[int, int, int, int]] = {
+    VoiceType.SOPRANO: (60, 81, 55, 84),  # c¹-a² (g-c³)
+    VoiceType.MEZZO: (57, 77, 55, 81),  # a-f² (g-a²)
+    VoiceType.ALTO: (55, 74, 52, 79),  # g-d² (e-g²)
+    VoiceType.COUNTERTENOR: (55, 74, 52, 79),
+    VoiceType.TENOR: (48, 69, 45, 72),  # c-a¹ (A-c²)
+    VoiceType.BARITONE: (45, 65, 41, 69),  # A-f¹ (F-a¹)
+    VoiceType.BASS: (40, 60, 38, 64),  # E-c¹ (D-e¹)
 }
 
 FEMALE_VOICES = [VoiceType.SOPRANO, VoiceType.SOPRANO, VoiceType.MEZZO, VoiceType.ALTO, VoiceType.ALTO]
@@ -1508,14 +1514,49 @@ class Command(BaseCommand):
         if index < 8:
             self._attach_avatar(user, f"{first[0]}{last[0]}")
 
-        bottom, top = RANGE_FOR[voice]
         return Artist.objects.create(
             user=user, first_name=first, last_name=last, email=email,
             voice_type=voice, phone_number=phone,
             sight_reading_skill=random.randint(2, 5),
-            vocal_range_bottom=bottom, vocal_range_top=top,
             activation_email_sent_at=(self.now - timedelta(days=random.randint(1, 9))) if pending else None,
+            # Only a singer who has signed in and passed the welcome has
+            # reached the vocal-range screen.
+            **self._vocal_range_fields(voice, index, can_propose=not pending and index % 9 != 2),
         )
+
+    def _vocal_range_fields(self, voice: str, index: int, *, can_propose: bool) -> dict[str, Any]:
+        """The conductor's assessment and the singer's proposal for one seeded
+        singer, cycling through every state the conductor's views tell apart:
+        the same four notes, a proposal that differs, a proposal with nothing
+        assessed, an assessment alone, and neither. The last variant offers the
+        whole reach as the tessitura, the mistake the conductor expects most."""
+        tess_low, tess_high, ext_low, ext_high = RANGE_FOR[voice]
+        state = index % 6
+        fields: dict[str, Any] = {}
+        if state in (0, 1, 3, 5):
+            fields.update(
+                assessed_tessitura_low=tess_low, assessed_tessitura_high=tess_high,
+                assessed_extreme_low=ext_low, assessed_extreme_high=ext_high,
+            )
+        proposal: tuple[int, int, int | None, int | None] | None = None
+        comment = ""
+        if state == 0:
+            proposal = (tess_low, tess_high, ext_low, ext_high)
+        elif state == 1:
+            proposal = (tess_low - 1, tess_high + 2, ext_low, ext_high + 3)
+            comment = "Góra tylko na forte."
+        elif state == 2:
+            proposal = (tess_low, tess_high, ext_low, None)
+        elif state == 5:
+            proposal = (ext_low, ext_high, None, None)
+        if proposal is not None and can_propose:
+            fields.update(
+                proposed_tessitura_low=proposal[0], proposed_tessitura_high=proposal[1],
+                proposed_extreme_low=proposal[2], proposed_extreme_high=proposal[3],
+                vocal_range_comment=comment,
+                vocal_range_proposed_at=self.now - timedelta(days=index % 7 + 1),
+            )
+        return fields
 
     def _seed_players(self) -> list[Artist]:
         """The organist and the rehearsal pianist: artists like the singers, with

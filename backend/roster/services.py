@@ -324,8 +324,10 @@ class ArtistHRService:
                     instrument=dto.instrument or "",
                     phone_number=dto.phone_number or "",
                     sight_reading_skill=dto.sight_reading_skill,
-                    vocal_range_bottom=dto.vocal_range_bottom or "",
-                    vocal_range_top=dto.vocal_range_top or "",
+                    assessed_tessitura_low=dto.assessed_tessitura_low,
+                    assessed_tessitura_high=dto.assessed_tessitura_high,
+                    assessed_extreme_low=dto.assessed_extreme_low,
+                    assessed_extreme_high=dto.assessed_extreme_high,
                     activation_email_sent_at=timezone.now() if email else None,
                 )
 
@@ -2439,9 +2441,9 @@ class VocalRangeService:
     """The singer's own tessitura/extremes self-report.
 
     First-person only, like `PieceReadinessService`: this never touches
-    `Artist.vocal_range_bottom/top`, the conductor's own private assessment in
-    a different notation. Resubmission overwrites and restamps — there is only
-    ever the latest proposal, not a history of them.
+    `Artist.assessed_*`, the conductor's own private assessment. Resubmission
+    overwrites and restamps — there is only ever the latest proposal, not a
+    history of them.
     """
 
     @staticmethod

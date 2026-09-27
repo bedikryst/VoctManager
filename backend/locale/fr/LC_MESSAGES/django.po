@@ -1328,22 +1328,6 @@ msgstr "Est actif"
 msgid "Sight Reading Skill (1-5)"
 msgstr "Compétence en lecture à vue (1-5)"
 
-#: roster/models.py:72
-msgid "e.g. G2"
-msgstr "p. ex. G2"
-
-#: roster/models.py:72
-msgid "Range (Bottom)"
-msgstr "Tessiture (Bas)"
-
-#: roster/models.py:73
-msgid "e.g. C5"
-msgstr "p. ex. C5"
-
-#: roster/models.py:73
-msgid "Range (Top)"
-msgstr "Tessiture (Haut)"
-
 #: roster/models.py:76
 msgid "First Name (Vocative)"
 msgstr "Prénom (Vocatif)"
@@ -5301,3 +5285,19 @@ msgstr "Saison"
 #: roster/views.py:484
 msgid "Only a singer may submit a vocal range proposal."
 msgstr "Seuls les choristes peuvent proposer une tessiture."
+
+#: roster/models.py:192
+msgid "Assessed Tessitura (Low)"
+msgstr "Évaluation du chef : limite inférieure de la tessiture"
+
+#: roster/models.py:193
+msgid "Assessed Tessitura (High)"
+msgstr "Évaluation du chef : limite supérieure de la tessiture"
+
+#: roster/models.py:194
+msgid "Assessed Extreme (Low)"
+msgstr "Évaluation du chef : note extrême grave"
+
+#: roster/models.py:195
+msgid "Assessed Extreme (High)"
+msgstr "Évaluation du chef : note extrême aiguë"

@@ -31,6 +31,7 @@ from roster.domain.liturgy import (
 from roster.domain.rehearsal_plan import EffectiveClock, row_done, window_payload
 from roster.domain.solo_duties import is_legacy_solo
 
+from .domain.vocal_range import VOCAL_RANGE_MIDI_MAX, VOCAL_RANGE_MIDI_MIN, range_shape_error
 from .dtos import validate_instrument
 from .models import (
     Artist,
@@ -67,6 +68,13 @@ def refuse_moving(instance: Any, attrs: dict[str, Any], fields: tuple[str, ...])
 
 # --- 1. ARTIST SERIALIZERS ---
 
+# The conductor's assessment of a voice (see `Artist.assessed_*`). Only
+# `ArtistDetailedSerializer`, the managers' view, carries it.
+ASSESSED_RANGE_FIELDS = (
+    'assessed_tessitura_low', 'assessed_tessitura_high',
+    'assessed_extreme_low', 'assessed_extreme_high',
+)
+
 class ArtistBasicSerializer(serializers.ModelSerializer):
     """
     Publicly safe Artist entity. 
@@ -82,8 +90,7 @@ class ArtistBasicSerializer(serializers.ModelSerializer):
         model = Artist
         exclude = (
             'sight_reading_skill',
-            'vocal_range_bottom',
-            'vocal_range_top',
+            *ASSESSED_RANGE_FIELDS,
             'phone_number',
             'email',
             # The singer's own proposal (see Artist model) — first-person data,
@@ -123,10 +130,11 @@ class ArtistMeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Artist
+        # The conductor's assessment is kept from the singer it describes as
+        # well: it is a verdict on them, not their data.
         exclude = (
             'sight_reading_skill',
-            'vocal_range_bottom',
-            'vocal_range_top'
+            *ASSESSED_RANGE_FIELDS,
         )
 
 class ArtistDetailedSerializer(ArtistBasicSerializer):
@@ -167,7 +175,11 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
 
             # Musical capability
             'voice_type', 'voice_type_display', 'instrument',
-            'sight_reading_skill', 'vocal_range_bottom', 'vocal_range_top',
+            'sight_reading_skill',
+
+            # The conductor's assessment, written here and checked as a whole
+            # in `validate()`.
+            *ASSESSED_RANGE_FIELDS,
 
             # The singer's own proposal — read here so the conductor can see
             # it, but never through this generic PATCH: only
@@ -191,6 +203,10 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
             'proposed_extreme_low', 'proposed_extreme_high',
             'vocal_range_comment', 'vocal_range_proposed_at',
         )
+        extra_kwargs = {
+            name: {'min_value': VOCAL_RANGE_MIDI_MIN, 'max_value': VOCAL_RANGE_MIDI_MAX}
+            for name in ASSESSED_RANGE_FIELDS
+        }
 
     def validate_email(self, value: str) -> str:
         """An address can be corrected but never taken away. Being without one is
@@ -203,10 +219,12 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
         return value
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
-        """The instrument rule on the PATCH path. A partial update may carry
-        either field alone, so the missing one is read from the row; the create
-        path applies the same rule in `ArtistCreateDTO`."""
+        """The instrument rule and the assessed-range rule on the PATCH path. A
+        partial update may carry any of their fields alone, so the missing ones
+        are read from the row; the create path applies the same rules in
+        `ArtistCreateDTO`."""
         attrs = super().validate(attrs)
+        self._validate_assessed_range(attrs)
         instance = self.instance
         voice_type = attrs.get(
             'voice_type', instance.voice_type if instance is not None else None
@@ -230,6 +248,29 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
         except ValueError as exc:
             raise serializers.ValidationError({'instrument': str(exc)}) from exc
         return attrs
+
+    def _validate_assessed_range(self, attrs: dict[str, Any]) -> None:
+        """The range rule applies to the four notes as they will be stored, not
+        to what this request happens to carry: a PATCH of one extreme is
+        checked against the stored tessitura. The error names the note that
+        breaks the rule, so the form can light that slot."""
+        if not any(name in attrs for name in ASSESSED_RANGE_FIELDS):
+            return
+        instance = self.instance
+
+        def merged(name: str) -> int | None:
+            if name in attrs:
+                value: int | None = attrs[name]
+                return value
+            return getattr(instance, name) if instance is not None else None
+
+        error = range_shape_error(
+            merged('assessed_tessitura_low'), merged('assessed_tessitura_high'),
+            merged('assessed_extreme_low'), merged('assessed_extreme_high'),
+            required=False,
+        )
+        if error is not None:
+            raise serializers.ValidationError({f'assessed_{error.slot}': error.message})
 
     def get_account_activated(self, obj: Artist) -> bool:
         """True once the invited member has set their password (finished

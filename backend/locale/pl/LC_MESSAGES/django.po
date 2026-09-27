@@ -1310,22 +1310,6 @@ msgstr "Aktywny"
 msgid "Sight Reading Skill (1-5)"
 msgstr "Umiejętność czytania nut (1-5)"
 
-#: roster/models.py:72
-msgid "e.g. G2"
-msgstr "np. G2"
-
-#: roster/models.py:72
-msgid "Range (Bottom)"
-msgstr "Skala (Dół)"
-
-#: roster/models.py:73
-msgid "e.g. C5"
-msgstr "np. C5"
-
-#: roster/models.py:73
-msgid "Range (Top)"
-msgstr "Skala (Góra)"
-
 #: roster/models.py:76
 msgid "First Name (Vocative)"
 msgstr "Imię (Wołacz)"
@@ -5270,3 +5254,19 @@ msgstr "Sezon"
 #: roster/views.py:484
 msgid "Only a singer may submit a vocal range proposal."
 msgstr "Zakres głosu może zgłosić tylko osoba śpiewająca w zespole."
+
+#: roster/models.py:192
+msgid "Assessed Tessitura (Low)"
+msgstr "Ocena dyrygenta: dolna granica tessitury"
+
+#: roster/models.py:193
+msgid "Assessed Tessitura (High)"
+msgstr "Ocena dyrygenta: górna granica tessitury"
+
+#: roster/models.py:194
+msgid "Assessed Extreme (Low)"
+msgstr "Ocena dyrygenta: skrajny dźwięk dolny"
+
+#: roster/models.py:195
+msgid "Assessed Extreme (High)"
+msgstr "Ocena dyrygenta: skrajny dźwięk górny"

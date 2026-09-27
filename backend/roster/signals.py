@@ -72,7 +72,8 @@ def handle_gdpr_artist_deletion(sender, user, **kwargs) -> None:
             # 1. GDPR Anonymization of contact channels, and of the singer's own
             # vocal-range proposal: first-person words (the comment may well
             # carry health detail) with no contract to keep them for. The
-            # conductor's own assessment is not the singer's data and stays.
+            # conductor's own assessment (`assessed_*`) is not the singer's
+            # data and stays.
             artist.email = f"archived_{artist.id}@deleted.local"
             artist.phone_number = ""
             artist.proposed_tessitura_low = None

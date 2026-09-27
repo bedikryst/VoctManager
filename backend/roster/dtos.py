@@ -22,6 +22,7 @@ from core.constants import VoiceLine
 from core.voice_labels import SECTION_LETTERS, canonical_section_letters
 
 from .domain.day_timeline import MINUTES_PER_DAY
+from .domain.vocal_range import VOCAL_RANGE_MIDI_MAX, VOCAL_RANGE_MIDI_MIN, range_shape_error
 from .models import Attendance, Participation, PieceReadiness, Project, VoiceType
 
 SUPPORTED_LANGUAGE_CODES = frozenset({"en", "pl", "fr"})
@@ -157,8 +158,12 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
     instrument: str | None = Field(None, max_length=60)
     phone_number: str | None = Field(None, max_length=32)
     sight_reading_skill: int | None = Field(None, ge=1, le=5)
-    vocal_range_bottom: str | None = Field(None, max_length=5)
-    vocal_range_top: str | None = Field(None, max_length=5)
+    # The conductor's assessment, as MIDI (see `Artist.assessed_*`). All four
+    # empty is the usual answer when adding somebody.
+    assessed_tessitura_low: int | None = Field(None, ge=VOCAL_RANGE_MIDI_MIN, le=VOCAL_RANGE_MIDI_MAX)
+    assessed_tessitura_high: int | None = Field(None, ge=VOCAL_RANGE_MIDI_MIN, le=VOCAL_RANGE_MIDI_MAX)
+    assessed_extreme_low: int | None = Field(None, ge=VOCAL_RANGE_MIDI_MIN, le=VOCAL_RANGE_MIDI_MAX)
+    assessed_extreme_high: int | None = Field(None, ge=VOCAL_RANGE_MIDI_MIN, le=VOCAL_RANGE_MIDI_MAX)
     language: str = Field(default='pl', max_length=10)
     salutation: str = Field(default='N', max_length=1)
 
@@ -168,7 +173,7 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
         return _strip_required_text(value)
 
     @field_validator(
-        "first_name_vocative", "instrument", "phone_number", "vocal_range_bottom", "vocal_range_top",
+        "first_name_vocative", "instrument", "phone_number",
         mode="before",
     )
     @classmethod
@@ -201,6 +206,17 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
     @model_validator(mode="after")
     def validate_instrument_for_voice_type(self) -> Self:
         validate_instrument(self.voice_type, self.instrument)
+        return self
+
+    @model_validator(mode="after")
+    def validate_assessed_range_shape(self) -> Self:
+        error = range_shape_error(
+            self.assessed_tessitura_low, self.assessed_tessitura_high,
+            self.assessed_extreme_low, self.assessed_extreme_high,
+            required=False,
+        )
+        if error is not None:
+            raise ValueError(f"assessed_{error.slot}: {error.message}")
         return self
 
     @field_validator("language")
@@ -372,13 +388,6 @@ class PieceReadinessUpdateDTO(EnterpriseBaseDTO):
         return _require_choice(value, PIECE_READINESS_STATUS_VALUES, "status")
 
 
-# The full 88-key piano, A0-C8. A sanity bound against garbage, not a musical
-# claim: the singer's keyboard only offers G1-C7, so a real submission never
-# comes near either end.
-VOCAL_RANGE_MIDI_MIN = 21
-VOCAL_RANGE_MIDI_MAX = 108
-
-
 class VocalRangeProposalDTO(EnterpriseBaseDTO):
     """A singer's own tessitura, written by touching sounding keys, never typed
     note names — see docs/specs/vocal-range-self-report-2026-09.md ("Thesis").
@@ -401,12 +410,12 @@ class VocalRangeProposalDTO(EnterpriseBaseDTO):
 
     @model_validator(mode="after")
     def validate_range_shape(self) -> Self:
-        if self.tessitura_low >= self.tessitura_high:
-            raise ValueError("tessitura_low must be lower than tessitura_high.")
-        if self.extreme_low is not None and self.extreme_low > self.tessitura_low:
-            raise ValueError("extreme_low must not be higher than tessitura_low.")
-        if self.extreme_high is not None and self.extreme_high < self.tessitura_high:
-            raise ValueError("extreme_high must not be lower than tessitura_high.")
+        error = range_shape_error(
+            self.tessitura_low, self.tessitura_high, self.extreme_low, self.extreme_high,
+            required=True,
+        )
+        if error is not None:
+            raise ValueError(error.message)
         return self
 
 

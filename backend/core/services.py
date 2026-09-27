@@ -649,9 +649,9 @@ class UserPreferencesService:
                 "instrument": artist.instrument,
                 "phone_number": artist.phone_number,
                 # The singer's own proposal — first-person data the account
-                # typed itself. Never `vocal_range_bottom/top`: that pair is
-                # the conductor's private assessment and is exempt for the
-                # same reason as the finance ledger below.
+                # typed itself. Never `assessed_*`: those four are the
+                # conductor's private assessment and are exempt for the same
+                # reason as the finance ledger below.
                 "vocal_range_proposal": {
                     "tessitura_low": artist.proposed_tessitura_low,
                     "tessitura_high": artist.proposed_tessitura_high,

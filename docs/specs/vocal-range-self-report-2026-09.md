@@ -14,9 +14,13 @@ green; committed 2026-09-27 with both stages. Items 6–9 and 11–13 fixed and 
 iPhone yet. The developer's look at the prompt on dev (2026-09-27, desktop, dark) asked for the
 "Polish pass" below: committed 2026-09-27 (9d7e7273) and seen on desktop. His one remark, that
 the mic button ended the capture on its own a moment after the tap, led to "Sing" / "Done"
-(under Stage 5): built 2026-09-27, typecheck, lint and tests green, not committed, not seen.
-Next: his look at the mic on the laptop, commit, then decide 10, then the iPhone dry run (list
-under the audit).**
+(under Stage 5). That and the conductor's own figures per voice, which reshaped the keyboard
+("Keyboard window per voice" and "More keys" under Stage 3) and the head copy, are committed
+(31dd7bd8 and before), not seen. Stage 7 (the reader chooses the notation) and Stage 8.1
+(backend) built, audited ("Audit of Stage 7 and 8.1" under Stage 8) and committed 2026-09-27,
+two small follow-ups open; not seen; `core/0029` and `roster/0066`–`0068` not run anywhere.
+Master cannot go to prod until 8.3 is committed. Next: 8.2 and 8.3 (frontend) in one session,
+then 8.4, then the iPhone dry run (list under the audit).**
 One stage per session. When a stage lands, update this line and say whether it is committed,
 migrated and seen in the browser.
 
@@ -49,12 +53,14 @@ tessitura or into the parentheses.
 
 ## Facts the design rests on (binding)
 
-- `Artist.vocal_range_bottom/top` (`backend/roster/models.py`) is the **conductor's own
-  assessment**: free text, max 5 characters, SPN placeholders. It is under a hard privacy rule: it
-  never reaches any chorister, whether about themselves or about anyone else. The singer's proposal
-  lives in **separate fields** and never overwrites these.
+- `Artist.assessed_*` (`backend/roster/models.py`) is the **conductor's own assessment**: four
+  MIDI notes since Stage 8.1, in the proposal's shape; until then it was the free-text SPN pair
+  `vocal_range_bottom/top`. It is under a hard privacy rule: it never reaches any chorister,
+  whether about themselves or about anyone else. The singer's proposal lives in **separate
+  fields** and never overwrites these.
 - `ArtistBasicSerializer` and `ArtistMeSerializer` are built with `exclude`, so **every new Artist
-  field reaches every chorister through Basic unless it is excluded explicitly.**
+  field reaches every chorister through Basic unless it is excluded explicitly.** Since 8.1 their
+  fields are pinned to an allowlist in `roster/test_vocal_range.py`.
 - Only `user_is_manager` gets `ArtistDetailedSerializer` (`ArtistViewSet.get_serializer_class`).
   Rehearsal delegates do not. The on-screen promise "other choristers will not see it" depends on
   this. A test must hold it.
@@ -171,12 +177,20 @@ the screen returns at the next app open. It never blocks the panel.
 **The screen — the line is the form:**
 - Head copy (Polish primary; the conductor approves it in the dry run):
   > Jaka jest Twoja tessitura w śpiewie zespołowym?
-  > To informacja dla dyrygenta. Pozostali chórzyści jej nie zobaczą. Dźwięki skrajne w nawiasach
-  > są opcjonalne.
+  > Granice tessitury wyznacza to, co śpiewasz swobodnie, także piano. Dźwięki skrajne w nawiasach
+  > są opcjonalne: te, które osiągasz już tylko w forte. To informacja dla dyrygenta. Pozostali
+  > chórzyści jej nie zobaczą.
 
   The first draft explained what a tessitura is and what the parentheses hold. The developer
   struck it: the readers are trained singers, and explaining their own craft to them reads as
-  condescending. The copy states the purpose, the privacy, and the one rule of the form.
+  condescending. The copy states the purpose, the privacy, and the rule of the form. That rule is
+  the conductor's own test (piano possible, or forte only), added after he worried that singers
+  would give their maximum as the tessitura: it says where a note goes, not what a tessitura is.
+- The comment's placeholder asks which voice part suits the singer best. Many accounts were
+  filed as plain SATB, so some basses may be baritones and some altos mezzos; the range shows it
+  to the conductor, and the placeholder invites the singer to say so. A formal voice-type
+  proposal was considered and put off: it is a backend stage, and every proposal would call for a
+  decision the singer waits on.
 - Four tappable slots, set large in the reader's notation: `[a] ([g]) – [a²] ([c³])`. The
   tessitura slots are required; the extreme slots are optional.
   Decide how the octave marks render before building the slots. `¹ ² ³` are Latin-1 and inside
@@ -188,10 +202,25 @@ the screen returns at the next app open. It never blocks the panel.
 
   | SOP | MEZ | ALT | CT | TEN | BAR | BAS |
   |---|---|---|---|---|---|---|
-  | a¹ | f¹ | d¹ | e¹ | a | f | d |
+  | a¹ | g¹ | e¹ | e¹ | a | g | d |
 
-  It shows the voice's usual solo range and a fifth beyond it on each side (`keyboardWindow` in
-  `constants/voices.ts`), widened to any note already chosen, never past G1–C7.
+  It shows the conductor's range for the voice, extremes included, and two white keys beyond it
+  on each side (`keyboardWindow` in `constants/voices.ts`), widened to any note already chosen,
+  never past G1–C7:
+
+  | | SOP | MEZ | ALT | CT | TEN | BAR | BAS |
+  |---|---|---|---|---|---|---|---|
+  | conductor | c¹–a² (g–c³) | a–f² (g–a²) | g–d² (e–g²) | as ALT | c–a¹ (A–c²) | A–f¹ (F–a¹) | E–c¹ (D–e¹) |
+  | keyboard | e–e³ | e–c³ | c–h² | c–h² | F–e² | D–c² | A₁–g¹ |
+
+  The bass goes down to A₁, not H₁, at the conductor's word: the repertoire has an optional H₁.
+  The countertenor sings the alto line, so it takes the alto's keyboard until the conductor gives
+  figures of its own.
+- **More keys.** Past the last key at each end, "Wyższe dźwięki" / "Niższe dźwięki" adds three
+  white keys and brings them into view, up to G1–C7. It lets the default stay narrow without
+  cutting anyone off: a singer who reaches further, or a baritone filed as a bass, widens it. The
+  mic listens in the widened span at once. The widening lasts for the opening; a note chosen from
+  it keeps its keys at the next one.
 - **Note readout** for the touched key, on the status line under the slots, always in all three
   notations: `A4 · a¹ · la3 · 440 Hz`.
 - **Range in the other notations**: a live table of the two notations the reader does not use;
@@ -236,11 +265,15 @@ copy.
   preview route is excluded by path (`ARTIST_PREVIEW_ROUTE`). `DelegationBriefingModal` yields
   to the takeover as well.
 - **Send button** plays every chosen note, lowest first, not only the tessitura.
-- **Keyboard window per voice.** The usual solo range ± a fifth, not the whole G1–C7. The
-  developer asked for a shorter keyboard; a 10 % margin was considered and rejected, because on a
-  two-octave range it is two semitones, which cuts off exactly the extremes the conductor wants
-  and strands a voice filed a class off in the roster. The window also sizes the slots, so they
-  are narrower than a whole-piano reservation would make them.
+- **Keyboard window per voice.** The conductor's range for the voice plus two white keys, not the
+  whole G1–C7. The first build took textbook solo ranges ± a fifth, which left 2 to 7 semitones
+  past the conductor's extremes; walking through the app, he found it a little wide, most of all
+  at the bottom, where the women's keyboards reached into the men's voices. He had asked for "2–3
+  keys" past his parentheses; two white keys meets that under either reading and, rounded to a
+  white key, is always about three semitones. Three white keys were considered and rejected: at
+  the bottom they leave the keyboard where he found it too wide, and widen the soprano's. The
+  "More keys" controls carry the outliers instead. The window also sizes the slots and bounds the
+  mic.
 - **The readout lives on the status line under the slots**, not merged into the table card as S4
   proposed: item 6 needs it there on the phone, and one place on every width beats a readout that
   moves between breakpoints. The card holds the table alone and arrives with the first note, with
@@ -673,6 +706,377 @@ outliers (fry, a squeak, an octave jump). Each extreme is the turnaround dwell: 
 highest pitch held within ±50 cents for ≥ 150 ms among the filtered frames. It is played back and
 filled for review, like the hold.
 
+## Stage 7 — the reader chooses the notation
+
+Status: **built 2026-09-27 as planned below: `UserProfile.pitch_notation` (migration
+`core/0029`), serializer, DTO, view seeding, `PitchNotationPreferenceTests`; `resolveNotation`,
+`usePitchNotation`, all seven calls moved, the Settings field, pl/en/fr. ruff, mypy and core
+tests green; typecheck, lint, tests and build green. Committed 2026-09-27, not seen; `core/0029`
+not migrated on dev or prod.** Stage 8 renders through it.
+
+Fixed on the way: the profile PATCH answered with the profile as the view had read it before the
+write (`update_or_create` saves a fresh instance; `user.profile` kept the old one), so the
+response carried the old preferences and `useUpdatePreferences` re-adopted the old language from
+it until `refreshUser` corrected it. `update_user_preferences` now points `user.profile` at the
+saved row; the test above pins it. Two traps the plan did not name: `toUserMeDTO` in
+`AuthProvider` copies the profile field by field into the settings cache (missing the field there
+would show "Według języka" and reset the choice on the next save), and a select item may not
+carry `""`, so "Według języka" rides a sentinel in `GeneralTab`.
+
+**Why.** Every surface names pitches in the notation of the UI language: Polish Helmholtz for pl,
+international for en, French for fr (`notationForLanguage`). A reader whose notation is not their
+UI language's has no way out, and the sharpest case is a misread, not an inconvenience: a German
+or Austrian conductor working in the English panel sees `B4` and reads B♭, because in the German
+system B is B♭ and H is B. That is the "A1" error this feature exists to prevent.
+
+What a singer sends is never a note name: the proposal is MIDI, so each reader sees it in their
+own notation. The setting is per person and applies to every screen that person opens; it
+changes what they read, never what is stored. Only managers see it (decided in the audit under
+Stage 8): a chorister reads only their own range, on a screen whose note card already names each
+note in all three notations.
+
+**Decided: a user setting in Settings → Profil, beside the language.** Not a switch in the artist
+editor. The notation is how the reader reads, not a property of an artist, and it has to hold on
+every surface at once (Baza Artystów row and card, the editor, Obsada, the singer's screen). A
+switch in one panel would either cover only that panel or quietly persist, which makes it a
+setting anyway, kept in the wrong place. Stored on the server, because a conductor moves between
+a phone and a laptop. The developer once dropped this stage, reading it as the singers choosing
+a notation to send in, and restored it once that was cleared up; the German misread above is the
+reason it stays.
+
+Backend (core):
+- `UserProfile.pitch_notation`: `CharField`, choices `""` (follow the language, the default),
+  `polish`, `international`, `french`. Via `makemigrations`.
+- Read: `UserProfileSerializer` (beside `language`). Write: `UserPreferencesUpdateDTO`, which
+  forbids extra keys, so a key missing there 400s the whole PATCH. The view seeds the DTO from the
+  stored profile (`core/views.py`, as it does `digest_enabled`), so a PATCH without the key keeps
+  the stored value.
+- Tests: each value is saved; an unknown value is refused; a PATCH without the key keeps it.
+
+Frontend:
+- `shared/lib/music/pitchNotation.ts`: `resolveNotation(preference, language)`, the preference
+  when set, otherwise `notationForLanguage(language)`. Pinned in `pitchNotation.test.ts`.
+- One hook, `usePitchNotation()`, reading `useAuth()` and `i18n.language`. `shared/` must not
+  import `app/`, so it lives in a feature. `features/artists/hooks/` is the home: `features/artists`
+  already holds the shared vocal-range helpers (`lib/vocalRangeProposal.ts`), and
+  `features/vocal-range` already imports from it.
+- Every `notationForLanguage(i18n.language)` call goes through the hook: `ArtistRow`,
+  `ArtistCard`, `ArtistEditorPanel`, `VocalRangeSettingsRow`, `VocalRangeScreen`, `CastTab` (two
+  calls).
+- Settings: a select in `settings/components/GeneralTab.tsx` after the language:
+  "Zapis wysokości dźwięków", with the options "Według języka", "Polski i niemiecki (a¹)",
+  "Międzynarodowy (A4)" and "Francuski (la3)", and one hint line saying that it applies to vocal
+  ranges across the panel. The `polish` notation is the German one too (h, b, cis, a¹), so the
+  label names both. Form state lives in `settings/hooks/useGeneralSettings.ts`, types in
+  `settings/types/settings.dto.ts` and `shared/auth/auth.types.ts`. Locales pl, en, fr.
+- The profile reaches the client through `AuthProvider` state, not a persisted query, so no
+  `QUERY_CACHE_BUSTER` bump (the same reasoning as Stage 3).
+
+Out of scope: the pitch pipe (`PitchPipe`, `pitchTones.ts`) keeps its own note names; it prints
+`H4` in every language, a separate inconsistency. Aligning it with `spellPitch` and this
+preference is a follow-up.
+
+Verification: ruff, mypy and tests on `core`; typecheck, lint, test and build on the frontend.
+The developer then switches the setting and looks at the Baza Artystów, the editor, Obsada and the
+singer's screen.
+
+## Stage 8 — the conductor's view, second pass
+
+Status: **8.1 (backend) built 2026-09-27: ruff and mypy on roster, core and documents,
+`makemigrations --check`, and the roster, documents and core tests green; the 0066–0068 round trip
+(forward, backward, a refused row) checked by hand on sqlite. Committed 2026-09-27; not migrated
+on dev or prod. Where the build departs from the plan: "Decided while building 8.1" below. 8.2–8.4 not
+built. Until 8.3 lands, adding an artist on dev fails with a 400 (see the plan's head).** It spans
+the backend and the frontend.
+
+**Why** (the developer's look at Stage 4 on dev, 2026-09-27):
+- In the editor, the conductor's own fields read `F3 – F5`. They are free-text SPN, with a
+  "e.g. G2" placeholder. Under them the proposal reads `cis (c) – d² (e²)`. The reader translates
+  between the two in their head, which is the "A1" error this feature exists to prevent.
+- The conductor's assessment has two bounds; the proposal has four notes. Nobody can tell whether
+  `F3 – F5` is a tessitura or a full range.
+- Wherever the conductor has written a range, Baza Artystów and Obsada hide the proposal
+  (`rangeShown`). Comparing them means opening every editor in turn. Nothing shows who has
+  answered and who has not.
+
+**Answered 2026-09-27:**
+1. Prod holds one artist with a conductor's range: both bounds set, both valid SPN. No archived
+   artist holds one (the developer, 2026-09-27).
+2. The conductor wants four notes: tessitura and extremes, his own format.
+
+**Scope for the plan:**
+- The conductor's assessment on the MIDI model: new fields on `Artist`, entered by picking notes
+  in the reader's notation (Stage 7), never by typing. The picker also names the chosen note in
+  all three notations, as the singer's readout does (`NoteReadout`). A data migration parses the existing SPN
+  text; the plan decides what happens to values it cannot parse, and whether the old text columns
+  are dropped or kept read-only for a release. The privacy rule of "Facts the design rests on"
+  applies unchanged: Basic and Me exclude the new fields, Detailed carries them, and the tests in
+  `documents/tests.py` and `roster` grow to hold it.
+- "Przyjmij propozycję" in the editor copies the singer's notes into the conductor's fields,
+  where he adjusts them. This retires the first entry of "Record, not a ban".
+- Baza Artystów and Obsada show both ranges when both exist: the conductor's first, the singer's
+  under it, muted and marked "wg chórzysty". Baza Artystów gains a count ("Skala głosu: 14 z 38
+  propozycji") and a filter for with or without a proposal. The data is already in the manager's
+  payload.
+- Audit item 10 (Obsada's 24 h freshness) is decided here, since this pass makes Obsada a place
+  where proposals are read.
+
+**Decided: no notification per proposal.** At `all` the proposals arrive by the dozen within days.
+There is no conductor role, so a notification would reach every manager, the board included. The
+conductor needs an overview of who has answered and where they differ, not a ping each time; the
+count and the filter give him that.
+
+### Execution plan (written 2026-09-27)
+
+Four sessions, one step each, committed before the next. 8.2 is independent and may run first.
+8.1 to 8.3 are the smallest set that can deploy: the backend never ships without 8.3, because the
+old frontend sends `vocal_range_bottom` when adding an artist and `ArtistCreateDTO` forbids extra
+keys. On dev, adding an artist fails with that 400 between 8.1 and 8.3; this is expected. Deploy
+before rollout step 5 (`all`): that is when proposals arrive by the dozen. Before 8.1, commit the
+work that is still uncommitted (Sing/Done, the keyboards, Stage 7), so Stage 8's diff stands alone.
+
+**Decided in this plan:**
+- **Fields.** Add four fields to `Artist`: `assessed_tessitura_low`, `assessed_tessitura_high`,
+  `assessed_extreme_low` and `assessed_extreme_high`. Each is a `PositiveSmallIntegerField(null)`
+  holding a MIDI number. The shape is the proposal's, with one difference: all four empty is valid
+  (not assessed yet). Once anything is set, the tessitura pair is required, and the proposal's
+  order rules and the 21–108 bounds apply. One shape is what lets "Przyjmij propozycję" copy one
+  to one and every range read alike. The `assessed_` prefix is part of the privacy test:
+  `documents/tests.py` searches the payload for substrings, and `assessed` catches all four.
+- **No assessment timestamp.** "Differs" is computed from the eight notes. A stamp would only pay
+  for a review queue, and a queue needs a "reviewed, my verdict stands" action, which is more than
+  this stage asks for.
+- **Migration: parse, refuse what does not parse, drop the old columns in the same release.**
+  - The two old bounds go into the tessitura pair, because the pair is the required one. Nobody
+    can tell whether they held a tessitura or a full range, so the conductor re-checks every
+    migrated singer. On prod that is one singer.
+  - A value that is not SPN, a lone bound, or `low ≥ high` stops the migration. The error lists
+    every offending row (pk and both values), and nothing is written. A silent null would lose a
+    conductor's verdict. Prod's one row is known to parse, and no archived row holds a range.
+    A refused row is fixed by hand in the admin, then
+    `make migrate` runs again.
+  - The text columns are **dropped, not kept read-only for a release**. Prod holds a single
+    value. The data migration's reverse writes the text back if the stage is rolled back. A
+    read-only column would keep a second, SPN rendering path alive in the serializer, the admin
+    and the form, for one value.
+- **"Przyjmij propozycję" fills the form, not the record.** It sets the four fields; the conductor
+  adjusts them and saves with the rest of the editor. It has no endpoint of its own.
+- **Where the two ranges are the same, the range shows once**, with "zgodna z propozycją" on its
+  second line, never printed twice.
+
+#### 8.1 — backend (roster, core, documents)
+
+- `roster/models.py`: add the four fields beside the proposal. Their comment says they are the
+  conductor's private assessment, written only through the manager's PATCH and create. Remove
+  `vocal_range_bottom/top`.
+- `roster/migrations/`:
+  - `0066` (`makemigrations`) adds the four fields.
+  - `0067` (`RunPython`, reversible) parses the old text as SPN: `C4` = 60, `#` and `b`
+    accidentals, octaves −1 to 9, uppercase or lowercase letter. The parser lives in the
+    migration file, not in app code, so a later change to the app cannot rewrite this step. It
+    walks `Artist._base_manager`, which includes archived rows. The reverse writes SPN text back
+    from the tessitura pair.
+  - `0068` (`makemigrations`) removes the two text fields.
+- `roster/domain/vocal_range.py` (new): `range_shape_error(tessitura_low, tessitura_high,
+  extreme_low, extreme_high, *, required: bool) -> str | None`, the one statement of the rule.
+  `VocalRangeProposalDTO.validate_range_shape` calls it with `required=True`.
+- `roster/dtos.py`: `ArtistCreateDTO` takes the four fields (optional, 21–108) instead of the two
+  strings and checks them with `required=False`.
+- `roster/serializers.py`:
+  - Basic and Me: take the two old names out of `exclude` and add the four.
+  - Detailed: list the four in `fields`, writable. `validate()` applies the rule to the merged
+    state: on a partial PATCH, a field that was not sent is read from `self.instance`, so a PATCH
+    of `assessed_extreme_high` alone is checked against the stored tessitura. The error is keyed
+    to the field that breaks the rule, so the form lights the slot.
+- `roster/services.py`: `provision_artist` writes the four. `update_artist` needs no change
+  (choral fields go straight through).
+- `roster/admin.py`: the four fields in place of the two.
+- `roster/management/commands/seed_db.py`: `RANGE_FOR` becomes four MIDI notes per voice, from
+  the conductor's figures (Stage 3, "Keyboard window per voice"). Seed proposals for about half the
+  singers: some equal to the assessment, some different, some on singers with no assessment. 8.4
+  then has every state to look at on dev.
+- `core/services.py` (export) and `roster/signals.py` (erasure): no code change. Their comments
+  name the assessed fields in place of `vocal_range_bottom/top`. The assessment stays out of the
+  export and survives erasure, as the old pair did.
+- `backend/locale`: the four `verbose_name`s in the `.po` files; rebuild the `.mo`.
+
+Tests, in `roster/test_vocal_range.py` unless named otherwise:
+- **Privacy, fail-closed.** Basic's and Me's output keys must equal an explicit allowlist. The
+  serializers use `exclude`, which lets every future field through, and a denylist test does too.
+  A new field then fails the test until someone decides where it belongs.
+- Me never carries the four, not even on the singer's own record.
+- A non-manager rehearsal delegate: `VocalRangeDelegateLeadSheetPrivacyTests` adds `assessed` to
+  its blob search, and the artist record stays out of reach.
+- `documents/tests.py`: the fixture sets the four instead of the two strings, and the needle list
+  gains `assessed`.
+- Manager PATCH:
+  - writes the four;
+  - each shape violation returns 400 keyed to the field;
+  - a partial PATCH is checked against the stored values;
+  - clearing all four is allowed;
+  - proposal fields sent in the same PATCH are still ignored.
+- Create accepts the four. The old names return 400.
+- The export carries no `assessed` key. Erasure keeps the assessment: rewrite
+  `test_erasure_clears_the_proposal_and_keeps_the_assessment` for the new fields.
+- `0067`: parser cases (`G3`, `a5`, `C#4`, `Bb2`, junk, a lone bound, an inverted pair) and the
+  refusal listing every bad row. Load the module with `importlib`, since its name starts with a
+  digit.
+
+Verification: ruff and mypy on `roster`, `core` and `documents`, `makemigrations --check`, and
+`manage.py test roster documents core --settings=config.test_settings_sqlite`.
+
+**Decided while building 8.1:**
+- `range_shape_error` returns a `RangeShapeError(slot, message)`, not a bare string: the PATCH
+  keys its 400 to `assessed_<slot>`, and a string would not say which slot. The slot is the
+  subject of the broken rule: `tessitura_low` for the order of the pair, the extreme itself for
+  an extreme inside the tessitura, the missing bound when the pair is incomplete. The messages
+  are plain English like the rest of the DTO errors; the client shows its own copy
+  (`rangeProblem`).
+- The bounds (21–108) now live in `roster/domain/vocal_range.py` beside the rule. The PATCH
+  declares them through `extra_kwargs`, so an out-of-range note is a field error and never
+  reaches `validate()`.
+- The create path cannot key its error to a field: a pydantic model validator has no location.
+  Its message starts with the field name (`assessed_extreme_high: …`). The form checks the shape
+  before it sends, so this is a backstop.
+- `0067` also refuses a note outside A0–C8. It parses as SPN, but the PATCH would then refuse
+  the whole range on the conductor's next save.
+- **A refused row cannot be fixed in the admin.** The deployed code no longer knows the text
+  columns, so the admin shows the four new fields only. The refusal message says so and points
+  at `manage.py dbshell`. On prod this cannot arise: the one value there parses.
+- The privacy allowlist compares the serializers' declared fields, not one row's data: a row
+  without an account drops the `user.*` keys, which would hide a field another row sends.
+  `ArtistBasicSerializer` still carries `activation_email_sent_at` to other choristers; the
+  allowlist pins it as it is, and moving it is a separate call.
+- The seed cycles singers through six states by index (same notes, a proposal that differs, a
+  proposal with nothing assessed, an assessment alone, neither, and a proposal that offers the
+  whole reach as the tessitura). Only singers who have signed in and passed the welcome carry a
+  proposal. Existing dev rows keep what `0067` makes of the old seed text; a fresh seed shows
+  every state.
+
+#### 8.2 — frontend: move the singer's pieces down (no behaviour change)
+
+The editor lives in `features/artists` and needs the singer's pieces. `features/vocal-range`
+already imports from `features/artists`, so importing the other way would make a cycle. Move:
+- `features/vocal-range/lib/rangeDraft.ts` and its test to `shared/lib/music/`, beside
+  `VocalRangeMidi`;
+- `features/vocal-range/components/NoteReadout.tsx` to `shared/ui/instruments/`;
+- `features/vocal-range/components/RangeSlots.tsx` to `shared/ui/instruments/`, taking the group's
+  accessible name as a prop (it hardcodes "Twój zakres" today);
+- `features/vocal-range/constants/voices.ts` and its test to `features/artists/constants/`, beside
+  `voiceSections.ts`.
+
+Each header states the file's new home and who uses it. Imports in `VocalRangeScreen` and the
+other callers follow.
+
+Verification: typecheck, lint, test. The singer's screen is unchanged.
+
+#### 8.3 — frontend: types, the editor, "Przyjmij propozycję"
+
+- Types:
+  - `shared/types/index.ts` (`Artist`): the four fields in, the two strings out.
+  - `features/artists/types/artist.dto.ts`: the zod schema and form types.
+  - `shared/auth/auth.types.ts`: its comment names the assessed fields.
+- Bump `QUERY_CACHE_BUSTER` (`shared/api/queryPersistence.ts`): the persisted `["artists"]`
+  snapshot has the old shape.
+- `features/artists/lib/vocalRangeProposal.ts`: add `assessmentOf(artist)` beside `proposalOf`.
+  `rangeShown` answers MIDI for both sources, and its `text` branch goes. Rewrite its test.
+- `features/artists/components/AssessedRangeField.tsx` (new):
+  - The conductor's four notes appear as `RangeSlots`, in the reader's notation
+    (`usePitchNotation`).
+  - Choosing a slot opens a `VerticalKeyboard` under the line. Its window is the voice's window
+    from the moved constants, following the form's `voice_type`; its bands come from the draft.
+    A key sounds and fills the slot, as on the singer's screen.
+  - `NoteReadout` names the selected note in all three notations and in hertz.
+  - "Usuń" clears a slot, and "Gotowe" closes the keyboard.
+  - Tones go through `toneContext`, opened in the gesture and paired with `releaseToneSession`.
+  - The problem line uses `rangeProblem` and the singer's screen's copy for it.
+- `ArtistEditorPanel.tsx`:
+  - The field replaces the two text inputs.
+  - The proposal block stays under it and gains "Przyjmij propozycję": `setValue` on the four,
+    with `shouldDirty`, so nothing is written until the conductor saves.
+  - The button hides when the four already equal the proposal.
+- `useArtistForm.ts`: defaults, reset and submit carry the four as numbers or null.
+- `ArtistRow`, `ArtistCard`, `CastTab`: the conductor's range is set with `VocalRangeText` as well.
+  They still show one range; 8.4 adds the second.
+- Locales pl, en, fr: add the field's label and the button; remove `artists.editor.range_low*`
+  and `range_high*`.
+
+Verification: typecheck, lint, test, build. The developer runs `make migrate` on dev and looks at
+the editor.
+
+#### 8.4 — Baza Artystów, Obsada, audit item 10
+
+- `vocalRangeProposal.ts`: add `rangesOf(artist)`, which returns `{ assessed, proposed }`, and
+  `sameRange(a, b)`, with tests.
+- `ArtistRow.tsx`, `ArtistCard.tsx`: the range takes two lines, and the card's cell is already two
+  lines tall.
+  - Both ranges, different: the conductor's range on the first line; the singer's on the second,
+    muted, marked "wg chórzysty".
+  - Both ranges, the same four notes: the second line holds only "zgodna z propozycją".
+  - Only a proposal: the singer's range alone, marked, as today.
+- Count: a header fact in `EnsembleBalance.tsx`, "14 z 38 propozycji". It counts active singers
+  (neither players nor archived members) and shows from the first proposal on, like the archive
+  and activation facts. `useArtistData.ts` computes it and `ArtistManagement.tsx` passes it
+  through.
+- Filter: state in `useArtistData.ts` beside `voiceFilter`. `RosterToolbar.tsx` gets a select,
+  "Skala głosu": Wszyscy · Z propozycją · Bez propozycji · Inna niż ocena. "Inna niż ocena" means
+  both ranges exist and their notes differ. Players fall outside all three filters.
+  `isFiltering` in `ArtistManagement.tsx` counts it.
+- Obsada (`useCastTab.ts`, `CastTab.tsx`) keeps one range: the conductor's, otherwise the singer's,
+  marked, as today but on the new data. `PickerRow`'s meta is one truncated line. A second range
+  would be cut off on a phone or add a line to forty rows. Comparing is Baza Artystów's job, where
+  the count and the filter are. If the developer wants both: the singer's range follows the
+  conductor's in the meta line, only when the two differ.
+- **Item 10, decided:** the cast reads the artists dictionary with `RECONCILING_REFETCH`. In
+  `project.read.queries.ts`, `useProjectArtistsDictionary` takes an options argument that only
+  `useCastTab` passes. Opening Obsada paints from the cache and refetches the roster behind it.
+  The other readers of `["artists"]` keep 24 h. After the migration, almost every singer in
+  Obsada shows a proposal, and new ones arrive daily, so a day's lag is the wrong default there.
+- Locales pl, en, fr.
+
+Verification: typecheck, lint, test, build. The developer looks at Baza Artystów (grid, list and
+each filter) and Obsada on dev, with seed data.
+
+#### Deploy (prod)
+
+1. `make prod`, then `make migrate`. This also applies whatever is still pending: roster
+   0063–0068 and core 0028–0029.
+2. Open the one migrated singer in the editor and set the four notes.
+
+#### Decided (the developer left both calls to the plan, 2026-09-27)
+
+1. **Obsada shows one range**, for the reasons under 8.4.
+2. **No bulk acceptance.** The conductor fears that singers give their maximum as their
+   tessitura. Accepting forty at once turns his verdict into a copy of theirs; one click per
+   singer, in that singer's editor, is the point. If he asks for it later, it is a step of its
+   own: `BulkActionBar` plus a bulk endpoint.
+
+### Audit of Stage 7 and 8.1 (2026-09-27)
+
+Checks rerun: ruff, mypy, `makemigrations --check`, roster, documents and core tests; typecheck,
+lint and the music, artists and vocal-range vitest suites. All green.
+
+1. **Master is not deployable from the 8.1 commit until 8.3 lands.** That holds for any
+   `make prod`, including one made for an unrelated reason: adding an artist 400s, and the
+   conductor's range disappears from every screen, because the frontend still reads and writes
+   `vocal_range_bottom/top`.
+2. **Decided: the notation setting is for managers only.** They read every singer's range; a
+   chorister reads only their own, on the singer's screen, whose note card names each note in all
+   three notations. `GeneralTab` shows the select to `is_manager` alone; a chorister's stored
+   value stays blank and follows the language.
+3. **Open, follow-up: spoken pitch names follow the notation, not the language.** `spokenPitch`
+   speaks Polish words for `polish` and English for `international`, so a manager whose notation
+   differs from the panel's language hears the other language from a screen reader (key labels,
+   slot announcements).
+4. **Open: the Stage 7 strings are missing from `backend/locale`.** The four
+   `PitchNotationChoices` labels and the field's `help_text` are wrapped in `_()` but are absent
+   from the `.po` files, so the admin shows them in English.
+5. Fixed during the audit: `update_user_preferences` unpacked `update_or_create` into `_`, which
+   shadowed `gettext` for the rest of the function.
+
+Not a risk: `0067` also parses lowercase letters, which would read Helmholtz with digits (`a1`)
+as SPN. The one value on prod parses as intended and no archived artist holds a range.
+
 ## Verification (once per stage)
 
 - **Backend:** ruff and mypy on `roster` and `core`; `manage.py test roster documents core
@@ -716,7 +1120,8 @@ These are verdicts on one moment. A later session may overturn them with reasons
 - **No "accept proposal" button for the conductor.** Those fields are free-text SPN, and the
   conductor writes Helmholtz. Copying a proposal into them would mix notations in one column,
   which is the "A1" ambiguity again. Structuring the conductor's own assessment on the same MIDI
-  model is the natural next step, once real proposals exist.
+  model is the natural next step, once real proposals exist. Reopened by Stage 8, which does
+  exactly that.
 - **The guided helper was dropped.** The conductor confirmed that the singers know their
   tessitura, and the sounding keys, the note card, the table and the mic already help anyone
   slightly unsure. Uncertainty goes in the comment. The design is kept in case proposals come in

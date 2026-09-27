@@ -86,7 +86,9 @@ class MyEnsembleTests(APITestCase):
         # Caller's own record carries private capability data that must NOT leak.
         self.me = Artist.objects.create(
             user=self.user, first_name='Jan', last_name='Tenor', email='tenor@example.com',
-            voice_type='TEN', sight_reading_skill=4, vocal_range_bottom='C3', vocal_range_top='A4',
+            voice_type='TEN', sight_reading_skill=4,
+            assessed_tessitura_low=48, assessed_tessitura_high=69,
+            assessed_extreme_low=45, assessed_extreme_high=72,
             proposed_tessitura_low=48, proposed_tessitura_high=67,
             vocal_range_comment='Prywatna notatka', vocal_range_proposed_at=timezone.now(),
         )
@@ -175,10 +177,10 @@ class MyEnsembleTests(APITestCase):
     def test_never_leaks_private_or_default_voice_data(self):
         import json
         blob = json.dumps(self._get().data).lower()
-        # 'vocal_range' also covers the singer's own proposal fields
-        # (vocal_range_comment, vocal_range_proposed_at); 'tessitura' and
-        # 'proposed_extreme' catch the two that do not share that prefix.
-        for needle in ('sight_reading', 'vocal_range', 'tessitura', 'proposed_extreme'):
+        # 'vocal_range' covers the singer's own comment and stamp; 'tessitura'
+        # and 'proposed_extreme' the proposal's notes; 'assessed' all four of
+        # the conductor's.
+        for needle in ('sight_reading', 'vocal_range', 'tessitura', 'proposed_extreme', 'assessed'):
             self.assertNotIn(needle, blob)
         # Co-singers carry only the per-piece voice line, never a default voice_type.
         member = self._get().data['concerts'][0]['pieces'][0]['sections'][0]['members'][0]
