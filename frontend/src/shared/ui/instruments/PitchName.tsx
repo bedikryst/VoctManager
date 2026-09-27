@@ -20,6 +20,7 @@ import {
   vocalRangeTokens,
   type PitchNotation,
   type VocalRangeMidi,
+  type VocalRangeToken,
 } from "@/shared/lib/music/pitchNotation";
 import { cn } from "@/shared/lib/utils";
 
@@ -84,7 +85,29 @@ export interface VocalRangeTextProps {
   readonly className?: string;
 }
 
-/** `a (g) – a² (c³)` as markup; renders nothing for an empty range. */
+const RangeToken = ({
+  token,
+  notation,
+}: {
+  readonly token: VocalRangeToken;
+  readonly notation: PitchNotation;
+}): React.JSX.Element => {
+  if (token.kind === "dash") return <>–</>;
+  return token.extreme ? (
+    <>
+      (<PitchName midi={token.midi} notation={notation} />)
+    </>
+  ) : (
+    <PitchName midi={token.midi} notation={notation} />
+  );
+};
+
+/**
+ * `a (g) – a² (c³)` as markup; renders nothing for an empty range. A narrow
+ * column may break the line only before the dash, so each side stays whole
+ * and an extreme never lands on a line apart from its bound; the dash leads
+ * the second side, as on the singer's line of slots.
+ */
 export const VocalRangeText = ({
   range,
   notation,
@@ -93,21 +116,25 @@ export const VocalRangeText = ({
   const tokens = vocalRangeTokens(range);
   if (tokens.length === 0) return null;
 
+  const dash = tokens.findIndex((token) => token.kind === "dash");
+  const sides = [tokens.slice(0, dash), tokens.slice(dash)].filter(
+    (side) => side.length > 0,
+  );
+
   return (
     <span className={className}>
-      {tokens.map((token, index) => (
+      {sides.map((side, sideIndex) => (
         // The token list is rebuilt whole from four numbers, never reordered.
-        <React.Fragment key={index}>
-          {index > 0 ? " " : null}
-          {token.kind === "dash" ? (
-            "–"
-          ) : token.extreme ? (
-            <span className="whitespace-nowrap">
-              (<PitchName midi={token.midi} notation={notation} />)
-            </span>
-          ) : (
-            <PitchName midi={token.midi} notation={notation} />
-          )}
+        <React.Fragment key={sideIndex}>
+          {sideIndex > 0 ? " " : null}
+          <span className="whitespace-nowrap">
+            {side.map((token, index) => (
+              <React.Fragment key={index}>
+                {index > 0 ? " " : null}
+                <RangeToken token={token} notation={notation} />
+              </React.Fragment>
+            ))}
+          </span>
         </React.Fragment>
       ))}
     </span>

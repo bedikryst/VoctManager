@@ -238,10 +238,12 @@ export const ArtistCard = React.memo(
             <Eyebrow color="muted">
               {t("artists.card.voice_range", "Skala Głosu")}
             </Eyebrow>
-            {/* Two lines on every card, whatever the cell holds: the second
-                says what the singer proposed, and a card beside it must not
-                stand shorter. A differing proposal and its mark are separate
-                items, so a narrow cell breaks between them first. */}
+            {/* At least two lines on every card, whatever the cell holds: the
+                second says what the singer proposed, and a card beside it must
+                not stand shorter. A proposal that differs adds lines on a
+                narrow card: it and its mark are separate items, so the cell
+                breaks between them first, and a range itself breaks only
+                before its dash (`VocalRangeText`). */}
             <div
               title={
                 !assessed && proposed
