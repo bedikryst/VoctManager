@@ -80,4 +80,15 @@ describe("createHeldPitchTracker", () => {
     const leap = (t: number): number => (t < 400 ? 60 : 67);
     expect(feed(tracker, leap, 1500).held).toBe(67);
   });
+
+  it("reports each note held in turn, and a steady one only once", () => {
+    const tracker = createHeldPitchTracker();
+    const reports: number[] = [];
+    const twoNotes = (t: number): number => (t < 1500 ? 60 : 67);
+    for (let t = 0; t < 3000; t += FRAME_MS) {
+      const { held } = tracker.push(t, twoNotes(t));
+      if (held !== null) reports.push(held);
+    }
+    expect(reports).toEqual([60, 67]);
+  });
 });

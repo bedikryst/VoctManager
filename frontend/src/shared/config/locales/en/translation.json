@@ -6556,9 +6556,9 @@
       "notice": "Trial mode: nothing will be saved"
     },
     "mic": {
-      "start": "Sing and hold",
-      "stop": "Stop",
-      "listening": "Sing and hold the note. Nothing is recorded or sent.",
+      "start": "Sing",
+      "stop": "Done",
+      "listening": "A held note goes into the slot. Nothing is recorded or sent.",
       "denied": "No access to the microphone. Choose the note on the keyboard.",
       "unavailable": "The microphone is unavailable. Choose the note on the keyboard.",
       "timed_out": "No held note came through. Try again."

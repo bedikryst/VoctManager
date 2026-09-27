@@ -38,13 +38,15 @@
  * rule; see `toneContext`). A new sound stops the one before it, so the note
  * the singer is judging is never muddied by the last.
  *
- * A slot can also be filled by voice: "Sing and hold" listens for one held
- * note, inside the keyboard's window, with a cursor following the voice on the
- * keys. The microphone stops first, then the note plays back and fills the
- * slot, so an octave misheard is caught by ear. Listening and playing never
- * overlap: a sound stops when listening starts, and a key pressed while
- * listening ends it. The microphone names the note sung; the singer still
- * decides which slot it belongs in.
+ * A slot can also be filled by voice. "Sing" opens the microphone and "Done"
+ * closes it; nothing depends on holding the button. In between, the status
+ * line names the note sung, a cursor follows the voice on the keys, and each
+ * note held for a moment fills the selected slot, silently. "Done" closes the
+ * microphone, then plays the slot's note inside that tap, so an octave
+ * misheard is caught by ear. Nothing plays while the microphone is open: a
+ * sound stops when listening starts, and a key pressed while listening ends
+ * it. The microphone names the note sung; the singer still decides which slot
+ * it belongs in.
  * @module features/vocal-range/components/VocalRangeScreen
  */
 
@@ -66,7 +68,7 @@ import {
   useReducedMotion,
   type Variants,
 } from "framer-motion";
-import { Check, Mic, Square } from "lucide-react";
+import { Check, Mic } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { getSectionPresentation } from "@/features/artists/constants/voiceSections";
@@ -326,12 +328,19 @@ const VocalRangeStage = ({
   /** A refusal, a missing microphone or a timeout is said once, on the status
    *  line, until the next key or slot. */
   const [micNotice, setMicNotice] = useState(false);
+  /** The last note the voice put in the slot during this listening; "Done"
+   *  plays it back. */
+  const sungNote = useRef<number | null>(null);
   // The microphone listens in the keyboard's own window: a note it could not
   // show on the keys is taken for an octave error, not for the singer's note.
+  // A held note fills the slot without a sound, which the open microphone
+  // would hear.
   const pitch = usePitchDetection(keySpan, (midi) => {
-    setMicNotice(false);
-    handleKeyPress(midi);
-    requestCentre(midi);
+    sungNote.current = midi;
+    setDraft((current) =>
+      current[slot] === midi ? current : { ...current, [slot]: midi },
+    );
+    setAnnouncement(`${slotLabel(slot)}: ${spokenPitch(midi, notation)}`);
   });
   const isListening =
     pitch.status === "starting" || pitch.status === "listening";
@@ -392,7 +401,15 @@ const VocalRangeStage = ({
 
   const toggleListening = (): void => {
     if (isListening) {
+      // "Done": the microphone closes first, then the slot's note plays in
+      // this tap, which is also the gesture iOS wants for the sound.
       pitch.cancel();
+      const sung = sungNote.current;
+      sungNote.current = null;
+      if (sung !== null) {
+        setTouched(sung);
+        ring((onEnded) => playVoicedTone(sung, onEnded));
+      }
       return;
     }
     // A tap during the exit fade must not open a microphone nothing will
@@ -403,6 +420,7 @@ const VocalRangeStage = ({
     tone.current?.stop();
     setTouched(null);
     setMicNotice(true);
+    sungNote.current = null;
     pitch.start();
   };
 
@@ -489,7 +507,7 @@ const VocalRangeStage = ({
           : null;
   const listeningText = t(
     "vocal_range.mic.listening",
-    "Śpiewaj i trzymaj dźwięk. Nic nie jest nagrywane ani wysyłane.",
+    "Trzymany dźwięk trafi do pola. Nic nie jest nagrywane ani wysyłane.",
   );
   // The status line cross-fades between elements, which a screen reader does
   // not follow; what the microphone is doing is said through the live region.
@@ -498,9 +516,14 @@ const VocalRangeStage = ({
   useEffect(() => {
     if (micSpoken) setAnnouncement(micSpoken);
   }, [micSpoken]);
-  const readoutMidi = touched ?? draft[slot];
+  // While listening the readout names the note sung, live; the privacy line
+  // stands until the first sound. Both are a readout, so "Done" changes only
+  // the value.
+  const readoutMidi = isListening ? pitch.note : (touched ?? draft[slot]);
   const statusKind: StatusKind = isListening
-    ? "listening"
+    ? readoutMidi !== null
+      ? "readout"
+      : "listening"
     : orderMessage
       ? "order"
       : micMessage
@@ -509,8 +532,8 @@ const VocalRangeStage = ({
           ? "readout"
           : "hint";
   const micButtonLabel = isListening
-    ? t("vocal_range.mic.stop", "Przerwij")
-    : t("vocal_range.mic.start", "Zaśpiewaj i przytrzymaj");
+    ? t("vocal_range.mic.stop", "Gotowe")
+    : t("vocal_range.mic.start", "Zaśpiewaj");
   const presentation = getSectionPresentation(voice);
   const voiceLabel = (each: SingingVoice): string =>
     artistRoleLabel(t, each, null);
@@ -667,11 +690,11 @@ const VocalRangeStage = ({
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.2, ease: "easeOut" }}
                     >
-                      {isListening ? (
+                      {statusKind === "listening" ? (
                         <Text size="sm" color="graphite" className="line-clamp-2 leading-5">
                           {listeningText}
                         </Text>
-                      ) : orderMessage ? (
+                      ) : statusKind === "order" ? (
                         <Text
                           size="sm"
                           color="crimson"
@@ -680,7 +703,7 @@ const VocalRangeStage = ({
                         >
                           {orderMessage}
                         </Text>
-                      ) : micMessage ? (
+                      ) : statusKind === "mic" ? (
                         <Text size="sm" color="muted" className="line-clamp-2 leading-5">
                           {micMessage}
                         </Text>
@@ -708,7 +731,7 @@ const VocalRangeStage = ({
                     aria-label={micButtonLabel}
                     leftIcon={
                       isListening ? (
-                        <Square className="h-3.5 w-3.5" aria-hidden="true" />
+                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
                       ) : (
                         <Mic className="h-3.5 w-3.5" aria-hidden="true" />
                       )

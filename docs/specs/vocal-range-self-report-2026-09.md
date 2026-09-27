@@ -12,9 +12,11 @@ fixed 2026-09-27 and pinned by `usePitchDetection.test.tsx`; typecheck, lint, te
 green; committed 2026-09-27 with both stages. Items 6–9 and 11–13 fixed and committed 2026-09-27
 (97889e00), not seen; 14 decided (kept as is); 10 waits on the developer. Nothing tried on an
 iPhone yet. The developer's look at the prompt on dev (2026-09-27, desktop, dark) asked for the
-"Polish pass" below: built 2026-09-27, typecheck, lint, tests and build green, not committed, not
-seen. Next: his look at the polish pass on dev, commit, then decide 10, then the iPhone dry run
-(list under the audit).**
+"Polish pass" below: committed 2026-09-27 (9d7e7273) and seen on desktop. His one remark, that
+the mic button ended the capture on its own a moment after the tap, led to "Sing" / "Done"
+(under Stage 5): built 2026-09-27, typecheck, lint and tests green, not committed, not seen.
+Next: his look at the mic on the laptop, commit, then decide 10, then the iPhone dry run (list
+under the audit).**
 One stage per session. When a stage lands, update this line and say whether it is committed,
 migrated and seen in the browser.
 
@@ -406,13 +408,14 @@ tessitura edge.
   - keep frames with clarity ≥ 0.9, inside the voice window (centre ± ~18 semitones, clamped to
     G1–C7). The window is the first defence against octave errors;
   - tracks stop on capture, cancel, unmount and `visibilitychange: hidden`.
-- **Hold:**
-  1. Select a slot and tap "Zaśpiewaj i przytrzymaj".
-  2. A held note is ≥ 600 ms of the smoothed pitch staying within ±40 cents of the run's mean, so
-     a run may span about 80 cents. A live cursor follows on the keyboard while the singer sings,
-     and the keys scroll to keep it in view.
-  3. The result snaps to the nearest semitone.
-  4. The **mic stops, then the detected note plays back** and fills the slot. Hearing it back
+- **Sing / Done** (a toggle; nothing depends on holding the button):
+  1. Select a slot and tap "Zaśpiewaj". The mic stays open until "Gotowe".
+  2. While the singer sings, the status line names the nearest note, live, and a cursor follows on
+     the keyboard, which scrolls to keep it in view. The privacy line stands until the first sound.
+  3. A held note is ≥ 600 ms of the smoothed pitch staying within ±40 cents of the run's mean, so
+     a run may span about 80 cents. It snaps to the nearest semitone and fills the slot at once,
+     silently. Holding another note replaces it; a steady note is reported once.
+  4. "Gotowe" **stops the mic, then plays the slot's note** inside that tap. Hearing it back
      catches octave errors by ear.
 - The button is hidden where `getUserMedia` is missing. A refusal gets one line and no retry loop.
 - Privacy line: nothing is recorded or sent.
@@ -434,12 +437,20 @@ tessitura edge.
   within ±40 cents; their average over one cycle does. A dropout under 150 ms does not break a hold.
 - **The analysis runs on the one `toneContext`**, opened in the tap, so there is no second
   `AudioContext` on iOS.
-- **The capture ends by itself after 20 s** without a held note, with one line; a refusal or a
+- **The capture ends by itself** after 20 s with no voice, and after 2 minutes however much is
+  sung, so a radio in the room cannot hold the mic open. If nothing was held, one line says so;
+  otherwise the slot keeps its note and nothing plays, since no tap is under way. A refusal or a
   missing mic hides the button for the rest of the opening. A key press, a slot change, removing
-  an extreme, a trial voice change, sending, closing the screen and hiding the page all stop it.
-- **The playback follows the mic stop directly.** `navigator.audioSession` is not touched. Whether
-  iOS plays that note from the loudspeaker at full level, and not from the earpiece or ducked, is
-  the first thing to check in the dry run.
+  an extreme, a trial voice change, sending, closing the screen and hiding the page all stop it;
+  of these only "Gotowe" plays the note back.
+- **Toggle, not push-to-talk** (the developer's report, 2026-09-27: on a laptop the first held
+  note ended the capture a moment after the tap, and "przytrzymaj" read as "hold the button").
+  Holding the button while singing was rejected: on a phone a touch press does not unlock audio
+  on iOS (only its release does), a long press invites the selection callout, and the first
+  permission prompt lands under a held finger.
+- **The playback follows the mic stop directly**, inside the "Gotowe" tap.
+  `navigator.audioSession` is not touched. Whether iOS plays that note from the loudspeaker at
+  full level, and not from the earpiece or ducked, is the first thing to check in the dry run.
 
 ### Audit of Stages 4–5 (2026-09-27) — all fixed or decided but 10
 
@@ -480,8 +491,8 @@ Microphone:
   pins A3 as MIDI 57. `vitest.config.ts` names it beside the five flows.
 
 For the dry run (the code cannot settle these):
-- After a hold, with the silent switch on: the note plays, from the loudspeaker, at full level.
-  The playback runs in an animation frame, outside any gesture, right after the tracks stop.
+- After "Gotowe", with the silent switch on: the note plays, from the loudspeaker, at full level.
+  The playback runs in the tap, right after the tracks stop.
 - After one use of the mic, a pitch pipe elsewhere in the panel is as loud as before. The
   analysis shares the never-closed `toneContext`, so an iOS route change that outlives the capture
   would reach every tone for the rest of the session. The fallbacks, if it does:

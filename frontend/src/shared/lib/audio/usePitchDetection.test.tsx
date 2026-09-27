@@ -30,6 +30,8 @@ vi.mock("@/shared/lib/audio/toneContext", () => ({
 const SAMPLE_RATE = 48000;
 const A3_HZ = 220;
 const A3_MIDI = 57;
+const E4_HZ = 329.63;
+const E4_MIDI = 64;
 const WINDOW = { low: 48, high: 72 };
 
 /** The frequency the stubbed analyser hears, or null for silence. */
@@ -181,24 +183,52 @@ afterEach(() => {
 });
 
 describe("usePitchDetection", () => {
-  it("stops the microphone before reporting a held note", async () => {
-    const track = makeTrack();
-    let stoppedBeforeHeld = false;
-    const onHeld = vi.fn(() => {
-      stoppedBeforeHeld = track.stop.mock.calls.length > 0;
-    });
+  it("keeps listening through each held note until it is stopped", async () => {
+    const onHeld = vi.fn();
     const rendered = renderCapture(onHeld);
-    await listen(rendered, track);
+    const track = await listen(rendered);
     expect(rendered.result.current.status).toBe("listening");
 
     singingHz = A3_HZ;
     act(() => stepFrames(1000));
 
     expect(onHeld).toHaveBeenCalledTimes(1);
-    expect(onHeld).toHaveBeenCalledWith(A3_MIDI);
-    expect(stoppedBeforeHeld).toBe(true);
+    expect(onHeld).toHaveBeenLastCalledWith(A3_MIDI);
+    expect(rendered.result.current.note).toBe(A3_MIDI);
+    expect(track.stop).not.toHaveBeenCalled();
+    expect(rendered.result.current.status).toBe("listening");
+
+    singingHz = E4_HZ;
+    act(() => stepFrames(1200));
+
+    expect(onHeld).toHaveBeenCalledTimes(2);
+    expect(onHeld).toHaveBeenLastCalledWith(E4_MIDI);
+    expect(rendered.result.current.note).toBe(E4_MIDI);
+    expect(track.stop).not.toHaveBeenCalled();
+
+    act(() => rendered.result.current.cancel());
+
+    expect(track.stop).toHaveBeenCalled();
     expect(rendered.result.current.status).toBe("idle");
     expect(rendered.result.current.cursor).toBeNull();
+    expect(rendered.result.current.note).toBeNull();
+    expect(frames.size).toBe(0);
+    expect(releaseToneSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops the microphone when the caller stops it from a held note", async () => {
+    const track = makeTrack();
+    const rendered = renderHook(() => {
+      const detection = usePitchDetection(WINDOW, () => detection.cancel());
+      return detection;
+    });
+    await listen(rendered, track);
+
+    singingHz = A3_HZ;
+    act(() => stepFrames(1000));
+
+    expect(track.stop).toHaveBeenCalled();
+    expect(rendered.result.current.status).toBe("idle");
     expect(frames.size).toBe(0);
     expect(releaseToneSession).toHaveBeenCalledTimes(1);
   });

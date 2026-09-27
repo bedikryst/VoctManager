@@ -16,8 +16,11 @@
  *  - A short dropout (a breath of noise, a consonant) does not break the run;
  *    a longer one does.
  *
- * The result is the run's mean snapped to the nearest semitone. It names the
- * note sung; it never judges whether the note was easy.
+ * The result is the run's mean snapped to the nearest semitone. A run reports
+ * when it reaches the hold time, and again only if its mean settles on another
+ * semitone; a new run reports anew, so a singer who moves on to another note
+ * is followed. It names the note sung; it never judges whether the note was
+ * easy.
  * @module shared/lib/audio/heldPitch
  */
 
@@ -35,8 +38,8 @@ export interface HeldPitchOptions {
 export interface HeldPitchStep {
   /** The smoothed pitch now, in MIDI units, or null while nothing is heard. */
   readonly cursor: number | null;
-  /** The held note as a MIDI number, reported once, on the frame that
-   *  completes the hold. */
+  /** The held note as a MIDI number, on the frame that completes the hold or
+   *  moves a held run to another semitone; otherwise null. */
   readonly held: number | null;
 }
 
@@ -65,13 +68,14 @@ export const createHeldPitchTracker = ({
   let recent: { timeMs: number; midi: number }[] = [];
   let run: Run | null = null;
   let lastHeardMs: number | null = null;
-  let reported = false;
+  /** The note the current run last reported, or null before it is held. */
+  let reported: number | null = null;
 
   const reset = (): void => {
     recent = [];
     run = null;
     lastHeardMs = null;
-    reported = false;
+    reported = null;
   };
 
   const push = (timeMs: number, midi: number | null): HeldPitchStep => {
@@ -91,15 +95,18 @@ export const createHeldPitchTracker = ({
 
     if (run === null || Math.abs(pitch - run.sum / run.count) * 100 > toleranceCents) {
       run = { startMs: timeMs, sum: pitch, count: 1 };
-      reported = false;
+      reported = null;
     } else {
       run.sum += pitch;
       run.count += 1;
     }
 
-    if (!reported && timeMs - run.startMs >= holdMs) {
-      reported = true;
-      return { cursor: pitch, held: Math.round(run.sum / run.count) };
+    if (timeMs - run.startMs >= holdMs) {
+      const note = Math.round(run.sum / run.count);
+      if (note !== reported) {
+        reported = note;
+        return { cursor: pitch, held: note };
+      }
     }
     return { cursor: pitch, held: null };
   };

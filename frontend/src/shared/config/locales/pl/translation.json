@@ -6626,9 +6626,9 @@
       "notice": "Tryb próbny: nic nie zostanie zapisane"
     },
     "mic": {
-      "start": "Zaśpiewaj i przytrzymaj",
-      "stop": "Przerwij",
-      "listening": "Śpiewaj i trzymaj dźwięk. Nic nie jest nagrywane ani wysyłane.",
+      "start": "Zaśpiewaj",
+      "stop": "Gotowe",
+      "listening": "Trzymany dźwięk trafi do pola. Nic nie jest nagrywane ani wysyłane.",
       "denied": "Bez dostępu do mikrofonu. Wybierz dźwięk na klawiaturze.",
       "unavailable": "Mikrofon jest niedostępny. Wybierz dźwięk na klawiaturze.",
       "timed_out": "Nie wychwycono trzymanego dźwięku. Spróbuj jeszcze raz."

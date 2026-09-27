@@ -6567,9 +6567,9 @@
       "notice": "Mode d'essai : rien ne sera enregistré"
     },
     "mic": {
-      "start": "Chanter et tenir",
-      "stop": "Arrêter",
-      "listening": "Chantez et tenez la note. Rien n'est enregistré ni envoyé.",
+      "start": "Chanter",
+      "stop": "Terminé",
+      "listening": "Une note tenue s'inscrit dans la case. Rien n'est enregistré ni envoyé.",
       "denied": "Pas d'accès au micro. Choisissez la note sur le clavier.",
       "unavailable": "Le micro est indisponible. Choisissez la note sur le clavier.",
       "timed_out": "Aucune note tenue n'a été captée. Réessayez."

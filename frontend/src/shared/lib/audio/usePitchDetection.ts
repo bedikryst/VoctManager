@@ -1,8 +1,9 @@
 /**
  * @file usePitchDetection.ts
- * @description Listens for one held note through the microphone and reports it
- * as a MIDI number (McLeod pitch method, via `pitchy`). Nothing is recorded or
- * sent: each 2048-sample frame is read, measured and overwritten.
+ * @description Listens to a singer through the microphone until the caller
+ * stops it, and reports every note held along the way as a MIDI number
+ * (McLeod pitch method, via `pitchy`). Nothing is recorded or sent: each
+ * 2048-sample frame is read, measured and overwritten.
  *
  *  - The capture has echo cancellation, noise suppression and automatic gain
  *    off. All three reshape a sung tone, and the singer is alone with the
@@ -11,13 +12,16 @@
  *    caller's window. The window is the first defence against octave errors: a
  *    bass's d read an octave up, or a soprano's a² an octave down, falls
  *    outside it.
- *  - `heldPitch` decides when a note is held. The microphone is then stopped
- *    before `onHeld` runs, so whatever the caller plays back is never heard
- *    through a live microphone, which on iOS ducks playback.
- *  - The capture ends on a held note, `cancel`, a timeout, unmount, a track
- *    the system ends (a call, Siri, a revoked permission), a failure while
- *    wiring the analysis, and when the page is hidden. A microphone is never
- *    left open behind the app.
+ *  - `heldPitch` decides when a note is held. A held note does not end the
+ *    capture: the singer may settle, move on and hold another, and `onHeld`
+ *    runs for each. The caller plays nothing until it has called `cancel`, so
+ *    no sound is heard through a live microphone, which on iOS ducks
+ *    playback, and none is taken for the singer's voice.
+ *  - The capture ends on `cancel`, after a stretch with no voice, at a hard
+ *    cap however much is sung (a radio in the room must not hold it open), on
+ *    unmount, on a track the system ends (a call, Siri, a revoked permission),
+ *    on a failure while wiring the analysis, and when the page is hidden. A
+ *    microphone is never left open behind the app.
  *
  * The analysis runs on the panel's one tone context (see `toneContext` for why
  * there is only one), so `start` must be called synchronously inside the tap
@@ -37,8 +41,10 @@ const FRAME_SIZE = 2048;
 const MIN_CLARITY = 0.9;
 /** Below this the frame is room noise, not a voice. */
 const MIN_VOLUME_DB = -50;
-/** A capture that hears no held note in this long ends by itself. */
-const LISTEN_TIMEOUT_MS = 20000;
+/** A capture that hears no voice for this long ends by itself. */
+const SILENCE_TIMEOUT_MS = 20000;
+/** No capture outlives this, voice or not. */
+const MAX_CAPTURE_MS = 120000;
 /** The cursor moves at most this often: the whole screen re-renders with it,
  *  and the keyboard eases its cursor over the same span. */
 const CURSOR_INTERVAL_MS = 80;
@@ -55,7 +61,7 @@ export type PitchDetectionStatus =
   | "denied"
   /** No microphone, or no Web Audio. */
   | "unavailable"
-  /** The timeout passed without a held note. */
+  /** The capture ended by itself without a single held note. */
   | "timedOut";
 
 export interface PitchDetectionWindow {
@@ -70,9 +76,13 @@ export interface PitchDetection {
   readonly status: PitchDetectionStatus;
   /** The pitch heard now, in MIDI units, while listening; otherwise null. */
   readonly cursor: number | null;
+  /** The semitone nearest the voice, while listening. It stays through a
+   *  breath and clears when listening ends; null before the first sound. */
+  readonly note: number | null;
   /** Call synchronously inside the tap. */
   readonly start: () => void;
-  /** Stop listening, returning to `idle`. Safe when not listening. */
+  /** Stop listening, returning to `idle`. Safe when not listening. Notes
+   *  already reported stay reported. */
   readonly cancel: () => void;
 }
 
@@ -97,6 +107,7 @@ export const usePitchDetection = (
 ): PitchDetection => {
   const [status, setStatus] = useState<PitchDetectionStatus>("idle");
   const [cursor, setCursor] = useState<number | null>(null);
+  const [note, setNote] = useState<number | null>(null);
   const [supported] = useState(isSupported);
 
   // Read through refs, so a caller's inline values never restart a capture.
@@ -117,6 +128,7 @@ export const usePitchDetection = (
     const current = capture.current;
     capture.current = null;
     setCursor(null);
+    setNote(null);
     if (!current) return;
     // The tracks stop first, so nothing failing below can keep the
     // microphone open.
@@ -152,6 +164,10 @@ export const usePitchDetection = (
     };
     capture.current = current;
     setStatus("starting");
+    // Read by the watch below and written by the frames: when a voice was
+    // last heard, and whether anything was held since the grant.
+    let lastVoiceAt = 0;
+    let heldAny = false;
 
     navigator.mediaDevices
       .getUserMedia({
@@ -181,11 +197,26 @@ export const usePitchDetection = (
           .getTracks()
           .forEach((track) => track.addEventListener("ended", onTrackEnded));
         // Counted from the grant, so a slow load below counts against it too.
-        current.timeout = window.setTimeout(() => {
+        // One timer, re-armed for whatever is left of the silence allowed,
+        // rather than one per heard frame.
+        const grantedAt = performance.now();
+        lastVoiceAt = grantedAt;
+        const watch = (): void => {
           if (generation.current !== mine) return;
-          teardown();
-          setStatus("timedOut");
-        }, LISTEN_TIMEOUT_MS);
+          const now = performance.now();
+          const silenceLeft = SILENCE_TIMEOUT_MS - (now - lastVoiceAt);
+          const capLeft = MAX_CAPTURE_MS - (now - grantedAt);
+          if (silenceLeft <= 0 || capLeft <= 0) {
+            teardown();
+            setStatus(heldAny ? "idle" : "timedOut");
+            return;
+          }
+          current.timeout = window.setTimeout(
+            watch,
+            Math.min(silenceLeft, capLeft),
+          );
+        };
+        current.timeout = window.setTimeout(watch, SILENCE_TIMEOUT_MS);
 
         // Loaded with the first capture, not with the panel: every account
         // loads the shell that mounts this screen, and few ever sing into it.
@@ -214,6 +245,7 @@ export const usePitchDetection = (
         const tracker = createHeldPitchTracker();
         let shownCursor: number | null = null;
         let shownAt = 0;
+        let shownNote: number | null = null;
 
         const tick = (now: number): void => {
           if (generation.current !== mine) return;
@@ -229,12 +261,21 @@ export const usePitchDetection = (
               ? midi
               : null;
           const step = tracker.push(now, heard);
+          if (heard !== null) lastVoiceAt = performance.now();
 
           if (step.held !== null) {
-            teardown();
-            setStatus("idle");
+            heldAny = true;
             onHeldRef.current(step.held);
-            return;
+            // The caller may have stopped the capture from inside `onHeld`.
+            if (generation.current !== mine) return;
+          }
+
+          if (step.cursor !== null) {
+            const nearest = Math.round(step.cursor);
+            if (nearest !== shownNote) {
+              shownNote = nearest;
+              setNote(nearest);
+            }
           }
 
           const moved =
@@ -274,5 +315,5 @@ export const usePitchDetection = (
     };
   }, [cancel, teardown]);
 
-  return { supported, status, cursor, start, cancel };
+  return { supported, status, cursor, note, start, cancel };
 };
