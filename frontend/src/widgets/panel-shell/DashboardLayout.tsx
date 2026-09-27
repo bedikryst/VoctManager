@@ -29,7 +29,10 @@ import { DelegationBriefingModal } from "@/features/notifications/components/Del
 import { CustomAdminMessageToast } from "@/features/notifications/components/CustomAdminMessageToast";
 import { FeedbackDock } from "@/features/feedback/components/FeedbackDock";
 import { useFirstRunTakeover } from "@/features/dashboard/hooks/useFirstRunTakeover";
-import { VocalRangeScreen } from "@/features/vocal-range/components/VocalRangeScreen";
+import {
+  VocalRangeScreen,
+  type VocalRangeEntrance,
+} from "@/features/vocal-range/components/VocalRangeScreen";
 import { snoozeVocalRangePrompt } from "@/features/vocal-range/lib/vocalRangeSession";
 import { useBottomBarHeight } from "@/shared/lib/dom/useBottomBarSlot";
 import { rememberWorkspace } from "@/shared/lib/navigation/lastWorkspace";
@@ -92,17 +95,28 @@ export const DashboardLayout = ({
   // pill stays quiet behind it. The conductor's concierge is an inline panel
   // and takes nothing over, so the pill can sit alongside it.
   const takeover = useFirstRunTakeover();
-  // The welcome hands straight to the prompt when one follows the other: the
-  // prompt then opens over the welcome's own scene, already lit, instead of
-  // fading in over the dashboard. Tracked as state adjusted during render, so
-  // the prompt's first frame already knows.
-  const [previousTakeover, setPreviousTakeover] = useState(takeover);
-  const [promptEntersLit, setPromptEntersLit] = useState(false);
-  if (takeover !== previousTakeover) {
-    setPreviousTakeover(takeover);
-    setPromptEntersLit(
-      previousTakeover === "welcome" && takeover === "vocal-range",
-    );
+  // How the prompt enters depends on what is on screen when it falls due. On
+  // the shell's first render with a user (login, app open, reload) it is the
+  // curtain, and the panel assembling under it is never seen. After the
+  // welcome it opens over the welcome's own scene, already lit. Later in a
+  // session (the snooze ran out) it fades in over the panel. Tracked as state
+  // adjusted during render, so the prompt's first frame already knows.
+  const hasUser = user !== null;
+  const [previous, setPrevious] = useState({ takeover, hasUser });
+  const [promptEntrance, setPromptEntrance] = useState<VocalRangeEntrance>(
+    takeover === "vocal-range" ? "curtain" : "over",
+  );
+  if (takeover !== previous.takeover || hasUser !== previous.hasUser) {
+    setPrevious({ takeover, hasUser });
+    if (takeover === "vocal-range" && previous.takeover !== "vocal-range") {
+      setPromptEntrance(
+        previous.takeover === "welcome"
+          ? "lit"
+          : previous.hasUser
+            ? "over"
+            : "curtain",
+      );
+    }
   }
 
   const outlet = useOutlet();
@@ -259,7 +273,7 @@ export const DashboardLayout = ({
       <VocalRangeScreen
         open={takeover === "vocal-range"}
         mode="prompt"
-        entersLit={promptEntersLit}
+        entrance={promptEntrance}
         onClose={snoozeVocalRangePrompt}
       />
       <ProjectInvitationToasts />

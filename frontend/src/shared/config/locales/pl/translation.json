@@ -6602,7 +6602,7 @@
       "hz": "{{value}} Hz"
     },
     "table": {
-      "title": "Twój zakres w każdym zapisie",
+      "title": "Ten sam zakres w innych zapisach",
       "international": "Międzynarodowy",
       "polish": "Polski",
       "french": "Francuski"

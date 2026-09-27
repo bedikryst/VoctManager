@@ -6543,7 +6543,7 @@
       "hz": "{{value}} Hz"
     },
     "table": {
-      "title": "Votre étendue dans chaque notation",
+      "title": "La même étendue dans les autres notations",
       "international": "Internationale",
       "polish": "Polonaise",
       "french": "Française"

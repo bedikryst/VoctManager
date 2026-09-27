@@ -8,11 +8,17 @@
  * One full-screen moment in the welcome's nave scenography, opened two ways:
  *  - `prompt` — the first-run takeover, mounted by the panel shell while
  *    `useFirstRunTakeover()` says so. "Later" snoozes it and it never blocks
- *    the panel. Following the welcome, it enters over the welcome's own scene,
- *    already lit;
+ *    the panel;
  *  - `revisit` — the Settings row, which reopens it with the saved proposal.
  * Either way an unsent draft survives a close for the session and comes back
  * at the next opening.
+ *
+ * How it enters depends on what is on screen when it opens (`entrance`): as
+ * the curtain on the panel's first frame, opaque from the start, so the panel
+ * assembling underneath is never seen; over the welcome's scene, already lit;
+ * or fading in over a panel already in use. Then the words arrive in order:
+ * the header line by line, the slot line ruling itself in, the keyboard, the
+ * status line.
  *
  * Layout, phone first. On a wide screen the header, the slots and everything
  * after them form the left column, and the keyboard stands on the right, one
@@ -58,6 +64,7 @@ import {
   motion,
   useIsPresent,
   useReducedMotion,
+  type Variants,
 } from "framer-motion";
 import { Check, Mic, Square } from "lucide-react";
 
@@ -124,16 +131,55 @@ import { RangeSlots, SLOT_KEY } from "./RangeSlots";
 /** The server's limit on the comment (`VocalRangeProposalDTO`). */
 const COMMENT_MAX_LENGTH = 500;
 
-/** The blocks that arrive with the first note rise into place one after
- *  another, or only fade in for a reader who prefers reduced motion. Their
- *  space opens below everything already on screen, so nothing above them
- *  moves while they come. */
-const arrival = (reduceMotion: boolean, order: number) => ({
+/** The blocks under the slots rise into place one after another, or only fade
+ *  in for a reader who prefers reduced motion. Present at the opening, they
+ *  follow the entrance (`lead`); brought by the first note, they come at once.
+ *  Their space opens below everything already on screen, so nothing above
+ *  them moves while they come. */
+const arrival = (reduceMotion: boolean, order: number, lead: number) => ({
   initial: { opacity: 0, y: reduceMotion ? 0 : 18 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0 },
-  transition: { duration: 0.6, delay: order * 0.09, ease: EASE.buttery },
+  transition: { duration: 0.6, delay: lead + order * 0.09, ease: EASE.buttery },
 });
+
+/** How far into the entrance the blocks under the slots may start. */
+const ENTRANCE_LEAD = 0.6;
+
+/** The entrance's order: each level hands its children a stagger. */
+const sequence = (stagger: number, delay = 0): Variants => ({
+  hidden: {},
+  shown: { transition: { staggerChildren: stagger, delayChildren: delay } },
+});
+
+const rise = (reduceMotion: boolean): Variants => ({
+  hidden: { opacity: 0, y: reduceMotion ? 0 : 14 },
+  shown: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE.buttery } },
+});
+
+/** The keyboard comes in from its own side: the right on a wide screen, from
+ *  below on a phone, where it stands under the slots. */
+const keyboardEntrance = (reduceMotion: boolean, wide: boolean): Variants => ({
+  hidden: {
+    opacity: 0,
+    x: reduceMotion || !wide ? 0 : 16,
+    y: reduceMotion || wide ? 0 : 16,
+  },
+  shown: {
+    opacity: 1,
+    x: 0,
+    y: 0,
+    transition: { duration: 0.6, ease: EASE.buttery },
+  },
+});
+
+const FADE_IN: Variants = {
+  hidden: { opacity: 0 },
+  shown: { opacity: 1, transition: { duration: 0.4, ease: "easeOut" } },
+};
+
+/** Tailwind's `lg`, where the keyboard stands beside the words. */
+const WIDE_QUERY = "(min-width: 64rem)";
 
 /** What the status line under the slots is saying; a change of kind
  *  cross-fades, a new note within the readout does not. */
@@ -150,9 +196,17 @@ const sameDraft = (
 
 export type VocalRangeScreenMode = "prompt" | "revisit";
 
+/**
+ * - `curtain`: the panel's first frame (login, app open, reload). The stage is
+ *   opaque from the start and the scene lights itself.
+ * - `lit`: over the welcome's scene, which is already on screen.
+ * - `over`: over a panel already in use; the stage fades in.
+ */
+export type VocalRangeEntrance = "curtain" | "lit" | "over";
+
 interface StageProps {
   readonly mode: VocalRangeScreenMode;
-  readonly entersLit: boolean;
+  readonly entrance: VocalRangeEntrance;
   readonly onClose: () => void;
 }
 
@@ -160,12 +214,15 @@ interface StageProps {
  *  or the draft kept at the last close. */
 const VocalRangeStage = ({
   mode,
-  entersLit,
+  entrance,
   onClose,
 }: StageProps): React.JSX.Element => {
   const { t, i18n } = useTranslation();
   const { user, refreshUser } = useAuth();
   const reduceMotion = useReducedMotion() ?? false;
+  // Read once: it only chooses the side the keyboard enters from.
+  const [wide] = useState(() => window.matchMedia(WIDE_QUERY).matches);
+  const riseIn = rise(reduceMotion);
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -191,6 +248,10 @@ const VocalRangeStage = ({
   const [comment, setComment] = useState(
     () => readVocalRangeDraft()?.comment ?? baseComment,
   );
+  // Blocks under the slots that mount during the entrance (a saved proposal,
+  // a kept draft) wait for it; blocks brought later by a note come at once.
+  const [entered, setEntered] = useState(false);
+  const blocksLead = entered ? 0 : ENTRANCE_LEAD;
   const [slot, setSlot] = useState<RangeSlot>("tessituraLow");
   const [centerRequest, setCenterRequest] = useState<KeyboardCenterRequest>(
     () => ({
@@ -457,7 +518,7 @@ const VocalRangeStage = ({
   return (
     <motion.div
       ref={dialogRef}
-      initial={entersLit ? false : { opacity: 0 }}
+      initial={entrance === "over" ? { opacity: 0 } : false}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.6, ease: EASE.buttery }}
@@ -470,7 +531,7 @@ const VocalRangeStage = ({
       <NaveScene
         isToneRinging={isRinging}
         reduceMotion={reduceMotion}
-        lit={entersLit}
+        lit={entrance === "lit"}
       />
 
       {/* A bar that never scrolls, so "Later" is always one tap away and the
@@ -489,9 +550,10 @@ const VocalRangeStage = ({
         className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] lg:pt-4"
       >
         <motion.div
-          initial={reduceMotion ? false : { opacity: 0, y: 22 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1, ease: EASE.buttery }}
+          initial="hidden"
+          animate="shown"
+          variants={sequence(0.2, 0.1)}
+          onAnimationComplete={() => setEntered(true)}
           // Top-aligned, never centred: blocks arrive under the slots with the
           // first note, and a centred column would slide up under the finger.
           // On a wide screen the last row is flexible: it takes up whatever the
@@ -499,30 +561,42 @@ const VocalRangeStage = ({
           // their own height and no gap opens between the header and the slots.
           className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-y-6 lg:grid-cols-3 lg:grid-rows-[auto_auto_auto_auto_1fr] lg:gap-x-12 lg:gap-y-0"
         >
-          <header className="flex flex-col items-start lg:col-span-2 lg:col-start-1">
-            <Eyebrow color="gold" as="p">
-              {t("vocal_range.eyebrow", "Skala głosu")}
-            </Eyebrow>
-            <Heading
-              as="h1"
-              id={titleId}
-              size="5xl"
-              className="mt-3 text-balance leading-[1.05] sm:text-5xl lg:text-6xl"
-            >
-              {t(
-                "vocal_range.title",
-                "Jaka jest Twoja tessitura w śpiewie zespołowym?",
-              )}
-            </Heading>
-            <Text size="md" color="graphite" className="mt-3 max-w-xl leading-7">
-              {t(
-                "vocal_range.intro",
-                "To informacja dla dyrygenta. Pozostali chórzyści jej nie zobaczą. Dźwięki skrajne w nawiasach są opcjonalne.",
-              )}
-            </Text>
+          <motion.header
+            variants={sequence(0.08)}
+            className="flex flex-col items-start lg:col-span-2 lg:col-start-1"
+          >
+            <motion.div variants={riseIn}>
+              <Eyebrow color="gold" as="p">
+                {t("vocal_range.eyebrow", "Skala głosu")}
+              </Eyebrow>
+            </motion.div>
+            <motion.div variants={riseIn}>
+              <Heading
+                as="h1"
+                id={titleId}
+                size="5xl"
+                className="mt-3 text-balance leading-[1.05] sm:text-5xl lg:text-6xl"
+              >
+                {t(
+                  "vocal_range.title",
+                  "Jaka jest Twoja tessitura w śpiewie zespołowym?",
+                )}
+              </Heading>
+            </motion.div>
+            <motion.div variants={riseIn}>
+              <Text size="md" color="graphite" className="mt-3 max-w-xl leading-7">
+                {t(
+                  "vocal_range.intro",
+                  "To informacja dla dyrygenta. Pozostali chórzyści jej nie zobaczą. Dźwięki skrajne w nawiasach są opcjonalne.",
+                )}
+              </Text>
+            </motion.div>
 
             {isTrial ? (
-              <div className="mt-5 flex flex-col items-start gap-2">
+              <motion.div
+                variants={riseIn}
+                className="mt-5 flex flex-col items-start gap-2"
+              >
                 <Eyebrow color="gold" as="p">
                   {t(
                     "vocal_range.trial.notice",
@@ -539,9 +613,12 @@ const VocalRangeStage = ({
                   ariaLabel={t("vocal_range.trial.voice_picker", "Głos do próby")}
                   wrap
                 />
-              </div>
+              </motion.div>
             ) : (
-              <span className="mt-4 inline-flex items-center gap-2">
+              <motion.span
+                variants={riseIn}
+                className="mt-4 inline-flex items-center gap-2"
+              >
                 <Eyebrow color="muted">
                   {t("vocal_range.voice_label", "Twój głos")}
                 </Eyebrow>
@@ -553,15 +630,16 @@ const VocalRangeStage = ({
                 >
                   {artistRoleLabel(t, voice, user?.instrument)}
                 </Badge>
-              </span>
+              </motion.span>
             )}
-          </header>
+          </motion.header>
 
           {/* The bench: on a phone, one screen holding the slot strip and the
               keyboard; on a wide screen it dissolves into the grid, the strip
               in the left column and the keyboard alone on the right. */}
           <div className="flex h-[calc(var(--vr-view,100dvh)-env(safe-area-inset-bottom))] flex-col lg:contents">
-            <div
+            <motion.div
+              variants={sequence(0.15)}
               className="sticky top-0 z-10 -mx-5 shrink-0 bg-glass-surface px-5 pb-2 pt-3 backdrop-blur-ethereal lg:static lg:col-span-2 lg:col-start-1 lg:mx-0 lg:mt-10 lg:bg-transparent lg:px-0 lg:pb-0 lg:pt-0 lg:backdrop-blur-none"
             >
               <RangeSlots
@@ -575,7 +653,10 @@ const VocalRangeStage = ({
               {/* One status line of fixed height: the note, a hint, or what is
                   out of order. The remove button keeps its place while an
                   extreme is selected, so filling that slot moves nothing. */}
-              <div className="mt-2 flex h-10 items-center gap-3">
+              <motion.div
+                variants={FADE_IN}
+                className="mt-2 flex h-10 items-center gap-3"
+              >
                 <div className="relative h-full min-w-0 flex-1">
                   <AnimatePresence initial={false}>
                     <motion.div
@@ -652,16 +733,19 @@ const VocalRangeStage = ({
                     {t("vocal_range.slots.clear", "Usuń")}
                   </Button>
                 ) : null}
-              </div>
+              </motion.div>
               <p className="sr-only" aria-live="polite">
                 {announcement}
               </p>
-            </div>
+            </motion.div>
 
             {/* On a wide screen the keyboard is one screen tall and stays in
                 view, whatever the left column holds: it never grows when the
                 blocks below the slots arrive. */}
-            <div className="min-h-48 flex-1 pb-3 lg:sticky lg:top-4 lg:col-start-3 lg:row-span-5 lg:row-start-1 lg:h-[calc(var(--vr-view,100dvh)-3.5rem-env(safe-area-inset-bottom))] lg:self-start lg:pb-0">
+            <motion.div
+              variants={keyboardEntrance(reduceMotion, wide)}
+              className="min-h-48 flex-1 pb-3 lg:sticky lg:top-4 lg:col-start-3 lg:row-span-5 lg:row-start-1 lg:h-[calc(var(--vr-view,100dvh)-3.5rem-env(safe-area-inset-bottom))] lg:self-start lg:pb-0"
+            >
               <VerticalKeyboard
                 low={keySpan.low}
                 high={keySpan.high}
@@ -678,16 +762,16 @@ const VocalRangeStage = ({
                 onKeyPress={pressKey}
                 className="h-full"
               />
-            </div>
+            </motion.div>
           </div>
 
           {/* Nothing below the slots stands empty: the table, the comment and
               the send button arrive with the first note. */}
-          <AnimatePresence initial={false}>
+          <AnimatePresence>
             {hasAnyNote ? (
               <motion.div
                 key="table"
-                {...arrival(reduceMotion, 0)}
+                {...arrival(reduceMotion, 0, blocksLead)}
                 className="lg:col-span-2 lg:col-start-1 lg:mt-8"
               >
                 <RangeNotationTable draft={draft} notation={notation} />
@@ -696,7 +780,7 @@ const VocalRangeStage = ({
             {hasAnyNote ? (
               <motion.div
                 key="comment"
-                {...arrival(reduceMotion, 1)}
+                {...arrival(reduceMotion, 1, blocksLead)}
                 className="lg:col-span-2 lg:col-start-1 lg:mt-8"
               >
                 <Textarea
@@ -723,7 +807,7 @@ const VocalRangeStage = ({
             {hasAnyNote && !isTrial ? (
               <motion.footer
                 key="footer"
-                {...arrival(reduceMotion, 2)}
+                {...arrival(reduceMotion, 2, blocksLead)}
                 className="flex flex-col items-start gap-3 lg:col-span-2 lg:col-start-1 lg:mt-8"
               >
                 {sent ? (
@@ -788,9 +872,8 @@ const VocalRangeStage = ({
 export interface VocalRangeScreenProps {
   readonly open: boolean;
   readonly mode: VocalRangeScreenMode;
-  /** Opens over a first-run moment whose scene is already on screen: no fade
-   *  of the backdrop, no redrawing of the stave. */
-  readonly entersLit?: boolean;
+  /** What is on screen when it opens; see `VocalRangeEntrance`. */
+  readonly entrance?: VocalRangeEntrance;
   /** `prompt`: snooze. `revisit`: close the screen. */
   readonly onClose: () => void;
 }
@@ -798,22 +881,21 @@ export interface VocalRangeScreenProps {
 export const VocalRangeScreen = ({
   open,
   mode,
-  entersLit = false,
+  entrance = "over",
   onClose,
-}: VocalRangeScreenProps): React.JSX.Element | null => {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+}: VocalRangeScreenProps): React.JSX.Element => {
   useBodyScrollLock(open);
 
-  if (!mounted) return null;
-
+  // Portalled in the very first commit (a client-only app has no server render
+  // to wait for): a curtain that arrived one effect later would show the
+  // panel for a frame first.
   return createPortal(
     <AnimatePresence>
       {open ? (
         <VocalRangeStage
           key="vocal-range"
           mode={mode}
-          entersLit={entersLit}
+          entrance={entrance}
           onClose={onClose}
         />
       ) : null}

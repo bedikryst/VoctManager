@@ -14,9 +14,10 @@
  * offered after the warmth, never as a wall of permission asks before it.
  *
  * When the vocal-range prompt is owed next, the welcome does not fade out to
- * the dashboard: it holds until the refreshed user lets the prompt open, and
- * the prompt enters over it with the scene already lit. Fading first would
- * flash the dashboard for the length of a round trip.
+ * the dashboard. Its words leave at once, the scene stays until the refreshed
+ * user lets the prompt open, and the prompt's words arrive over the same lit
+ * scene. Fading the whole moment first would flash the dashboard for the
+ * length of a round trip; holding the words until then would cut them.
  * @module features/dashboard/components/WelcomeMoment
  */
 
@@ -74,6 +75,7 @@ export const WelcomeMoment = ({
   const seenAt = user?.profile?.welcome_seen_at ?? null;
   const show = Boolean(user) && seenAt === null && !dismissed;
   const handsOver = isVocalRangePromptPending(user);
+  const handingOver = leaving && handsOver;
 
   useBodyScrollLock(show);
   useFocusTrap(dialogRef, show && mounted);
@@ -84,16 +86,18 @@ export const WelcomeMoment = ({
     // The component stays mounted through the exit animation, so a ringing
     // kamerton must be silenced explicitly — unmount cleanup never fires here.
     stop();
-    // With the prompt to follow, the welcome stays up until the refreshed user
-    // closes it and opens the prompt in the same render; without one it fades
-    // at once.
+    // With the prompt to follow, only the words leave now: the scene stays up
+    // until the refreshed user closes it and opens the prompt in the same
+    // render. Without one it fades at once.
     if (!handsOver) setDismissed(true);
     // Stamp it once, server-side, then settle the in-memory user so a remount
-    // doesn't greet again. On failure we keep the local dismissal; the flag
-    // simply gets another chance next session.
+    // doesn't greet again. The local dismissal closes whatever is left: an
+    // empty scene if the refresh brought no new user, the whole welcome if the
+    // stamp failed. The flag simply gets another chance next session.
     void settingsService
       .markWelcomeSeen()
       .then(() => refreshUser())
+      .then(() => setDismissed(true))
       .catch(() => setDismissed(true));
   }, [handsOver, leaving, refreshUser, stop]);
 
@@ -134,7 +138,10 @@ export const WelcomeMoment = ({
             variant="ghost"
             size="sm"
             onClick={dismiss}
-            className="absolute right-5 top-5 z-20"
+            className={cn(
+              "absolute right-5 top-5 z-20 transition-opacity duration-300",
+              handingOver && "pointer-events-none opacity-0",
+            )}
           >
             {t("dashboard.artist.welcome.overlay_skip", "Pomiń")}
           </Button>
@@ -145,9 +152,20 @@ export const WelcomeMoment = ({
           <div className="relative z-10 flex h-full overflow-y-auto px-5 py-10">
             <motion.div
               initial={reduceMotion ? false : { opacity: 0, y: 22 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={
+                handingOver
+                  ? {
+                      opacity: 0,
+                      y: reduceMotion ? 0 : -8,
+                      transition: { duration: 0.35, ease: EASE.buttery },
+                    }
+                  : { opacity: 1, y: 0 }
+              }
               transition={{ duration: 0.8, delay: 0.1, ease: EASE.buttery }}
-              className="m-auto flex w-full max-w-xl flex-col items-center text-center"
+              className={cn(
+                "m-auto flex w-full max-w-xl flex-col items-center text-center",
+                handingOver && "pointer-events-none",
+              )}
             >
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-ethereal-gold" aria-hidden="true" />
@@ -369,7 +387,6 @@ export const WelcomeMoment = ({
                 variant="primary"
                 size="lg"
                 onClick={dismiss}
-                isLoading={leaving && handsOver}
                 className="mt-10"
               >
                 {t("dashboard.artist.welcome.enter", "Wejdź do swojej przestrzeni")}

@@ -9,10 +9,12 @@ seen the first pass on dev (desktop and phone width, dark theme); the second pas
 Stage 4 (the conductor's view) and Stage 5 (microphone) built 2026-09-27 in parallel, audited the
 same day ("Audit of Stages 4–5" under Stage 5). Items 1–5 (the microphone stops on every path)
 fixed 2026-09-27 and pinned by `usePitchDetection.test.tsx`; typecheck, lint, tests and build
-green; committed 2026-09-27 with both stages. Items 6–9 and 11–13 fixed 2026-09-27, not committed,
-not seen; 14 decided (kept as is); 10 waits on the developer. Nothing tried on an iPhone yet.
-Next: decide 10, the developer's look on dev, commit, then the iPhone dry run (list under the
-audit).**
+green; committed 2026-09-27 with both stages. Items 6–9 and 11–13 fixed and committed 2026-09-27
+(97889e00), not seen; 14 decided (kept as is); 10 waits on the developer. Nothing tried on an
+iPhone yet. The developer's look at the prompt on dev (2026-09-27, desktop, dark) asked for the
+"Polish pass" below: built 2026-09-27, typecheck, lint, tests and build green, not committed, not
+seen. Next: his look at the polish pass on dev, commit, then decide 10, then the iPhone dry run
+(list under the audit).**
 One stage per session. When a stage lands, update this line and say whether it is committed,
 migrated and seen in the browser.
 
@@ -190,9 +192,9 @@ the screen returns at the next app open. It never blocks the panel.
   `constants/voices.ts`), widened to any note already chosen, never past G1–C7.
 - **Note readout** for the touched key, on the status line under the slots, always in all three
   notations: `A4 · a¹ · la3 · 440 Hz`.
-- **Range in every notation**: a live three-row table, with the reader's row highlighted. There
-  is no British row, because British usage writes pitch as the international or the Helmholtz
-  row does.
+- **Range in the other notations**: a live table of the two notations the reader does not use;
+  the reader's own is the slot line (polish pass, item 10). There is no British row, because
+  British usage writes pitch as the international or the Helmholtz row does.
 - **Comment** (optional, max 500).
 - The table, the comment and the send button arrive with the first note.
 - **Privacy** is in the head copy ("Pozostali chórzyści jej nie zobaczą"). It deliberately does
@@ -245,9 +247,11 @@ copy.
 - **Dimming covers the tessitura pair too.** While a tessitura bound is selected and the other is
   set, the keys on the wrong side of the other are dimmed, by the same rule as the extremes
   (`slotSpan`). Dimmed keys still sound and still fill the slot.
-- **Slot sizes.** 30 px on a phone, 48 px from `sm`, 60 px on `lg`. At 36 px a Polish line of four
-  reserved slots needs ~350 px and wrapped on the developer's phone; 30 px keeps it on one line.
-  French names are the widest and still wrap on a narrow phone, always before the dash.
+- **Slot sizes.** The tessitura is 36 px on a phone, 48 px from `sm`, 60 px on `lg`; the
+  extremes are 22, 30 and 36 px. With four equal slots, 36 px needed ~350 px for a Polish line
+  and wrapped on the developer's phone, so the phone size was 30 px until the polish pass set the
+  extremes smaller. French names are the widest and may still wrap on a narrow phone, always
+  before the dash.
 - **The welcome is route-aware (item 13)**, not mounted in the shell: it greets by the vocative
   that only the home dashboard loads. `useFirstRunTakeover` answers "welcome" only on `/panel`.
 - **The keyboard's overscroll is not contained.** At either end a swipe carries on into the page,
@@ -515,7 +519,7 @@ Conductor's view:
     on every Artists list payload and is persisted in the query cache on every manager's device.
     Decide whether the list carries it, or only the editor.
 
-**Fixed 2026-09-27 (items 6–9 and 11–13; not committed, not seen):**
+**Fixed 2026-09-27 (items 6–9 and 11–13; committed as 97889e00, not seen):**
 - 6: Stage 5's hold rule now says what `heldPitch` does.
 - 7: the keyboard scrolls to keep a live cursor in view. When the cursor comes within 15 % of the
   window's height of an edge, the keys bring it back to the middle. Only a voice moves the cursor,
@@ -535,6 +539,117 @@ Conductor's view:
 
 **Decided 2026-09-27:** 14 stays as it is; the Artists list keeps carrying the comment.
 10 is open, waiting on the developer.
+
+## Polish pass — entrance, motion, the line
+
+Status: **built 2026-09-27 (items 1–12); typecheck, lint, tests and build green; not committed,
+not seen.** Frontend only, no migration, no flag.
+From the developer's look on dev: the screen "jumps in with no reveal", filling it is "not smooth",
+and the range line "looks like a draft".
+
+Diagnosis (from the code):
+- **Login.** `buildAuthUser` loads the proposal with the identity, so the prompt is due on the
+  shell's first render, yet it enters as an overlay. `VocalRangeScreen` renders nothing until its
+  `mounted` effect, so the panel paints first. The stage then fades in over 0.6 s while the sidebar
+  and the dashboard assemble under it. What reads is the panel starting and being veiled. The
+  content then rises as one block, keyboard included.
+- **Welcome → prompt.** The welcome waits on `markWelcomeSeen` + `refreshUser` behind a spinner.
+  The prompt then mounts later in `body` at the same `z-focus-trap`, opaque at full opacity. The
+  welcome's words vanish in one frame, and its exit fade runs unseen underneath.
+- **Filling.** Every change is its own short fade, and some snap:
+  - a refilled slot cross-fades the old and new note in one grid cell for 180 ms, so two glyphs
+    stand on each other;
+  - the selection is four underlines swapping colour (Tailwind's 150 ms), not a mark that moves;
+  - the readout and the table change their text without motion.
+- **The line.** The four slots weigh the same: the optional extremes are as large as the
+  tessitura, and each slot has a full underline and a caption. On first open the line is
+  scaffolding: `(   ) –   (   )` over four rules and four captions. Below it the range is written
+  twice more, in the readout and in the table's own-notation row, which repeats the line verbatim.
+
+Entrance (`DashboardLayout.tsx`, `VocalRangeScreen.tsx`, `WelcomeMoment.tsx`, `NaveScene.tsx`):
+1. `entersLit` becomes `entrance: "curtain" | "over" | "lit"`:
+   - `curtain`: due on the shell's first render with a user (login, app open, reload). The stage is
+     opaque from its first frame, with no stage fade. The scene lights itself: the shaft fades in
+     and the stave draws. The panel is first seen when "Later" fades the stage out.
+   - `over`: due later in a session (the snooze ran out), or opened from Settings. The stage fades
+     in over the panel, as now.
+   - `lit`: from the welcome, as now.
+
+   The shell decides `curtain` once, on its first render that has a user. A takeover that turns
+   on later is `over`.
+2. The portal renders in the first commit. The `mounted` guard is SSR boilerplate in a Vite SPA,
+   and under a curtain it shows the panel for one frame.
+3. The content arrives in order, not as one block:
+   - the eyebrow, title, intro and voice chip rise 14 px, 0.08 s apart;
+   - the slot line rules itself in left to right: each blank scales in from the left, 0.07 s
+     apart, echoing the stave behind;
+   - the keyboard fades in and moves 16 px from the right on `lg`, or from below on a phone;
+   - the status line comes last.
+
+   Use framer variants propagated from the stage, so `RangeSlots` and the keyboard's wrapper join
+   without props. The whole sequence stays under 1.1 s. Under reduced motion, opacity only.
+4. Welcome → prompt: when the prompt follows, "Dalej" and "Pomiń" fade the welcome's words out at
+   once (0.35 s, y −8) while the request runs. The scene stays, and there is no spinner. The prompt
+   enters `lit` and runs step 3. A failed request fades the whole welcome, as now.
+
+The line (`RangeSlots.tsx`):
+5. The hierarchy follows the conductor's hand. The tessitura notes keep the hero size. The
+   extremes and their parentheses drop to Metric `2xl` with `sm:text-3xl lg:text-4xl`, in
+   graphite, with the parentheses hugging them. The line aligns on the baseline
+   (`items-baseline`), which retires the marks' `pt-1`. The dash is set regular, in graphite, at the
+   hero size.
+6. One selection mark instead of four underlines: a gold 2 px rule under the selected slot that
+   glides to the next (`layoutId`). An empty slot shows a faint short blank in incense. A filled,
+   unselected slot shows its note and nothing else.
+7. A caption shows only while it is needed: under the selected slot in gold, and under an empty
+   slot, muted. A filled, unselected slot drops its caption. The caption row keeps its height, so
+   nothing moves. The empty line reads as an instruction, the finished one as notation:
+   `f¹ (d¹) – d² (f²)`.
+8. A new note enters from the direction of the pitch change: a higher note from above, a lower one
+   from below (y ±8). The old note leaves faster (0.1 s) than the new one enters (0.24 s), so two
+   glyphs never stand on each other.
+9. Re-check the phone slot size (30 px, under "Decided while building"). The smaller extremes free
+   the width that forced it. Take 36 px if a Polish line fits 390 px. French may still wrap before
+   the dash.
+
+Below the line (`NoteReadout.tsx`, `RangeNotationTable.tsx`, `VerticalKeyboard.tsx`, locales):
+10. The table drops the reader's own row, which repeats the line. It shows the other two
+    notations, with no lit row, under a new title in pl/en/fr ("Ten sam zakres w innych
+    zapisach").
+11. The readout's and the table's values settle when they change (opacity from 0.5 over 0.2 s,
+    keyed by the value), instead of snapping.
+12. On the keys, the selected-state colour change runs 250 ms on the buttery ease, not Tailwind's
+    150 ms.
+
+Kept as is: the keyboard's native smooth scroll. An eased scroll of our own would fight iOS
+momentum and a finger on the keys. Revisit it only if the developer names the scroll as the rough
+part.
+
+**Decided while building (do not undo without a reason):**
+- **The line stays a line.** The developer offered to drop the line and parentheses for
+  something freer, such as a circle with an echo inside. `a (g) – a² (c³)` is the conductor's own
+  brief and the usual way a vocal range is written, with the extremes in parentheses. Four
+  medallions would turn the notation into buttons and make the singer translate between them and
+  what the conductor reads. The echo was kept: each note that lands in a slot sends out one gold
+  ring, as the welcome's kamerton does (scale and opacity, skipped under reduced motion).
+- **Captions hang under their slot** (absolute, centred, no wrap) in a row of fixed height. An
+  extreme's caption ("au plus grave") is wider than its note, and in flow it would push the
+  parentheses away from it.
+- **Item 12 runs 300 ms `ease-out`**, the timing of the band and veil layers on the same keys.
+  The buttery curve has no CSS token, and an arbitrary cubic-bezier is not allowed.
+- **The blocks under the slots wait for the entrance only while it runs.** Present at the
+  opening (a saved proposal, a kept draft), they start 0.6 s in; after the entrance a first note
+  brings them at once.
+- **The welcome keeps no spinner.** Its words are gone while the stamp and the refresh run, so a
+  hung request leaves the lit scene empty until it settles. A failed stamp, or a refresh that
+  brings no new user, fades the welcome out.
+
+Verification: typecheck, lint and build. The developer then looks at the three entrances on dev:
+- `lit`: reset `welcome_seen_at` and `vocal_range_proposed_at` on a seed singer;
+- `curtain`: reset the proposal only, then reload;
+- `over`: Settings → Profil → "Moja skala głosu".
+
+He also looks at the line on desktop and at phone width.
 
 ## Stage 6 — optional siren (only after Stage 5 holds up on an iPhone)
 

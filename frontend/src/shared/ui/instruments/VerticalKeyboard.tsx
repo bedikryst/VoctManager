@@ -250,7 +250,7 @@ const KeyColumn = React.memo(function KeyColumn({
         onClick={() => onPress(midi)}
         onFocus={() => onFocusKey(midi)}
         className={cn(
-          "flex touch-manipulation items-center justify-end overflow-hidden transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold",
+          "flex touch-manipulation items-center justify-end overflow-hidden transition-colors duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold",
           black
             ? "absolute left-0 top-0 z-10 h-3/5 w-3/5 -translate-y-1/2 rounded-r-chip pr-2"
             : "relative h-full w-full pr-3 focus-visible:ring-inset",

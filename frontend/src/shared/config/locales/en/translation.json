@@ -6532,7 +6532,7 @@
       "hz": "{{value}} Hz"
     },
     "table": {
-      "title": "Your range in each notation",
+      "title": "The same range in other notations",
       "international": "International",
       "polish": "Polish",
       "french": "French"
