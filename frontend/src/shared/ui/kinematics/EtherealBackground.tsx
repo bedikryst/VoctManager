@@ -2,9 +2,9 @@
  * @file EtherealBackground.tsx
  * @description Persistent ambient layer — "Nawa światła" (Nave of Light).
  * A calm sacred-interior field: warm light entering from above, soft
- * incense-light glows, a diagonal musical stave laid across the whole viewport,
- * a faint historical C-clef signature and a chiaroscuro vignette. The stave and
- * clef play a single, slow draw-in on first entry, gated by `isAuraStabilized`
+ * incense-light glows, a diagonal musical stave laid across the whole viewport
+ * and a chiaroscuro vignette. The stave plays a single, slow draw-in on first
+ * entry, gated by `isAuraStabilized`
  * so every later navigation (and the login → panel hand-off) skips straight to
  * the settled state until a full reload. The glows are held static (the old
  * infinite "breath" was an imperceptible animation that kept the compositor
@@ -16,7 +16,6 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useAppStore } from "@/app/store/useAppStore";
-import { VocalClefShadow } from "@/shared/ui/kinematics/VocalClefShadow";
 
 export const EtherealBackground = React.memo((): React.JSX.Element => {
   const isAuraStabilized = useAppStore((state) => state.isAuraStabilized);
@@ -82,22 +81,11 @@ export const EtherealBackground = React.memo((): React.JSX.Element => {
         </motion.div>
       </div>
 
-      {/* LAYER 4 — The historical C-clef signature, lifted to viewport level so
-          it actually reads on-screen (a touch warmer/brighter than its faint
-          default). Fades in once alongside the stave, then settles. */}
-      <motion.div
-        className="absolute inset-0"
-        initial={isAuraStabilized ? "visible" : "hidden"}
-        animate="visible"
-      >
-        <VocalClefShadow className="left-[3%] text-ethereal-incense/15" />
-      </motion.div>
-
-      {/* LAYER 5 — Oculus vignette: subtle darkening toward the edges for the
+      {/* LAYER 4 — Oculus vignette: subtle darkening toward the edges for the
           chiaroscuro of a sacred interior. Keeps the eye on the lit centre. */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,transparent_44%,var(--aura-vignette)_100%)]" />
 
-      {/* LAYER 6 — Film grain for atmosphere and to break up gradient banding. */}
+      {/* LAYER 5 — Film grain for atmosphere and to break up gradient banding. */}
       <div className="absolute inset-0 bg-noise opacity-[0.02] mix-blend-overlay" />
     </div>
   );

@@ -6,7 +6,7 @@
  * on a phone). Not a tutorial and not a coach-mark overlay (both die on first
  * dismissal): a single full-bleed *moment* staged as the nave in full light —
  * the app's own sacred-interior scene (shaft of light, incense glows, a stave
- * drawing itself in, the C-clef signature) at ceremonial intensity, not a dimmed
+ * drawing itself in) at ceremonial intensity, not a dimmed
  * scrim. It names the singer and their voice, and offers the kamerton at the
  * centre: the honest A every rehearsal starts from (tap to ring, tap to
  * silence), never a synthesised stand-in for "how the ensemble sounds". Any

@@ -17,7 +17,6 @@ import React from "react";
 import { motion } from "framer-motion";
 
 import { EASE } from "@/shared/ui/kinematics/motion-presets";
-import { VocalClefShadow } from "@/shared/ui/kinematics/VocalClefShadow";
 
 const STAVE_LINES = [0, 1, 2, 3, 4] as const;
 
@@ -86,16 +85,6 @@ export const NaveScene = ({
           ))}
         </motion.div>
       </div>
-
-      {/* The C-clef signature, settled at the singer's left hand. */}
-      <motion.div
-        className="absolute inset-0"
-        initial={still ? false : { opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 2, delay: 0.4, ease: EASE.buttery }}
-      >
-        <VocalClefShadow className="left-[4%] text-ethereal-incense/25" />
-      </motion.div>
 
       {/* Oculus vignette + film grain — the chiaroscuro of a lit interior,
           grain held at the app-wide whisper (NOT a dirty film over the scene). */}
