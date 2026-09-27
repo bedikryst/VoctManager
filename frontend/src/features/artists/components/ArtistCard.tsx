@@ -245,8 +245,8 @@ export const ArtistCard = React.memo(
               }
             >
               {range?.source === "conductor" ? (
-                <Text size="sm" weight="bold" className="tabular-nums">
-                  {range.text}
+                <Text size="sm" weight="bold">
+                  <VocalRangeText range={range.range} notation={notation} />
                 </Text>
               ) : range?.source === "singer" ? (
                 <Text size="sm" color="muted">

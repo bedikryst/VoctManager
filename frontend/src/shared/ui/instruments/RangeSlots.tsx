@@ -1,8 +1,11 @@
 /**
  * @file RangeSlots.tsx
- * @description The singer's range written as the conductor writes it,
+ * @description A vocal range written as the conductor writes it,
  * `a (g) – a² (c³)`, where each of the four notes is a slot: select one, then a
- * key, and the key fills it. The line is the form, and it is set as notation,
+ * key, and the key fills it. Two writers use it: the singer's screen, for their
+ * proposal, and the artist editor, for the conductor's assessment; each names
+ * the line for assistive technology (`label`), and the editor sets it at a
+ * form's size (`scale`). The line is the form, and it is set as notation,
  * not as four fields. The tessitura carries the size. The extremes are
  * optional, so they are set smaller and lighter, with their parentheses hugging
  * them, the way the conductor writes them. The whole line stands on one
@@ -22,13 +25,13 @@
  * fixes where a narrow phone wraps the line: always in the same place, before
  * the dash.
  *
- * At the screen's entrance the line fades in while its blanks rule themselves
- * in from the left, one after another. The variant labels come from the
- * screen; without them the line simply stands.
+ * At the singer's screen's entrance the line fades in while its blanks rule
+ * themselves in from the left, one after another. The variant labels come from
+ * that screen; without them the line simply stands.
  *
  * The four slots are one radio group: a single choice, one tab stop, arrows to
  * move between them.
- * @module features/vocal-range/components/RangeSlots
+ * @module shared/ui/instruments/RangeSlots
  */
 
 import React, { useId, useRef, useState } from "react";
@@ -46,12 +49,19 @@ import {
   type PitchNotation,
   type VocalRangeMidi,
 } from "@/shared/lib/music/pitchNotation";
+import {
+  isExtremeSlot,
+  RANGE_SLOTS,
+  type RangeSlot,
+} from "@/shared/lib/music/rangeDraft";
 import { cn } from "@/shared/lib/utils";
 import { PitchName } from "@/shared/ui/instruments/PitchName";
 import { EASE } from "@/shared/ui/kinematics/motion-presets";
-import { Eyebrow, Metric } from "@/shared/ui/primitives/typography";
-
-import { isExtremeSlot, RANGE_SLOTS, type RangeSlot } from "../lib/rangeDraft";
+import {
+  Eyebrow,
+  Metric,
+  type TypographyProps,
+} from "@/shared/ui/primitives/typography";
 
 /** The translation segment of each slot. */
 export const SLOT_KEY: Readonly<Record<RangeSlot, string>> = {
@@ -61,13 +71,33 @@ export const SLOT_KEY: Readonly<Record<RangeSlot, string>> = {
   extremeHigh: "extreme_high",
 };
 
-/** The tessitura: Metric `5xl` on a phone (36 px), large from `sm`. With the
- *  extremes set smaller, a Polish line of four slots fits a 390 px phone at
- *  this size. */
-const TESSITURA_SIZE = "sm:text-5xl lg:text-6xl";
-/** The extremes: Metric `2xl` on a phone, about three fifths of the tessitura
- *  at every width. */
-const EXTREME_SIZE = "sm:text-3xl lg:text-4xl";
+/**
+ * How large the line is set. `screen` is the singer's full-screen moment: the
+ * tessitura at Metric `5xl` on a phone (36 px), large from `sm`, and with the
+ * extremes set smaller a Polish line of four slots fits a 390 px phone.
+ * `field` sits among a form's inputs, whose width does not grow with the
+ * viewport, so it keeps one size at every width. At both scales the extremes
+ * stand at about three fifths of the tessitura.
+ */
+export type RangeSlotsScale = "screen" | "field";
+
+interface SlotType {
+  readonly size: TypographyProps["size"];
+  readonly className: string;
+}
+
+const SLOT_TYPE: Readonly<
+  Record<RangeSlotsScale, { readonly tessitura: SlotType; readonly extreme: SlotType }>
+> = {
+  screen: {
+    tessitura: { size: "5xl", className: "sm:text-5xl lg:text-6xl" },
+    extreme: { size: "2xl", className: "sm:text-3xl lg:text-4xl" },
+  },
+  field: {
+    tessitura: { size: "3xl", className: "" },
+    extreme: { size: "lg", className: "" },
+  },
+};
 
 /** How far a note travels as it enters or leaves, in px. */
 const NOTE_TRAVEL = 8;
@@ -77,21 +107,26 @@ const NOTE_TRAVEL = 8;
  *  light cut; the dash stands between the tessitura notes at their size. */
 const Mark = ({
   children,
+  scale,
   extreme = false,
 }: {
   readonly children: string;
+  readonly scale: RangeSlotsScale;
   readonly extreme?: boolean;
-}): React.JSX.Element => (
-  <Metric
-    size={extreme ? "2xl" : "5xl"}
-    weight={extreme ? "light" : "normal"}
-    color="muted"
-    aria-hidden="true"
-    className={cn("leading-none", extreme ? EXTREME_SIZE : TESSITURA_SIZE)}
-  >
-    {children}
-  </Metric>
-);
+}): React.JSX.Element => {
+  const type = SLOT_TYPE[scale][extreme ? "extreme" : "tessitura"];
+  return (
+    <Metric
+      size={type.size}
+      weight={extreme ? "light" : "normal"}
+      color="muted"
+      aria-hidden="true"
+      className={cn("leading-none", type.className)}
+    >
+      {children}
+    </Metric>
+  );
+};
 
 interface SlotSizerProps {
   readonly low: number;
@@ -166,9 +201,13 @@ interface SlotButtonProps {
   readonly slot: RangeSlot;
   readonly midi: number | null;
   readonly selected: boolean;
+  /** The group's one tab stop: the selected slot, or the first while none is. */
+  readonly tabStop: boolean;
   readonly notation: PitchNotation;
   readonly low: number;
   readonly high: number;
+  readonly scale: RangeSlotsScale;
+  readonly disabled: boolean;
   readonly onSelect: (slot: RangeSlot) => void;
   readonly onArrow: (slot: RangeSlot, step: 1 | -1) => void;
   readonly registerSlot: (slot: RangeSlot, node: HTMLButtonElement | null) => void;
@@ -178,9 +217,12 @@ const SlotButton = ({
   slot,
   midi,
   selected,
+  tabStop,
   notation,
   low,
   high,
+  scale,
+  disabled,
   onSelect,
   onArrow,
   registerSlot,
@@ -189,6 +231,7 @@ const SlotButton = ({
   const reduceMotion = useReducedMotion() ?? false;
   const key = SLOT_KEY[slot];
   const extreme = isExtremeSlot(slot);
+  const type = SLOT_TYPE[scale][extreme ? "extreme" : "tessitura"];
   const filled = midi !== null;
   const value = filled
     ? spokenPitch(midi, notation)
@@ -223,20 +266,21 @@ const SlotButton = ({
       role="radio"
       aria-checked={selected}
       aria-label={`${t(`vocal_range.slots.${key}.label`)}: ${value}`}
-      tabIndex={selected ? 0 : -1}
+      tabIndex={tabStop ? 0 : -1}
+      disabled={disabled}
       onClick={() => onSelect(slot)}
       onKeyDown={handleKeyDown}
       className={cn(
-        "group flex touch-manipulation flex-col items-center gap-2 rounded-control pt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+        "group flex touch-manipulation flex-col items-center gap-2 rounded-control pt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 disabled:cursor-not-allowed",
         extreme ? "px-1.5" : "px-1",
       )}
     >
       <Metric
-        size={extreme ? "2xl" : "5xl"}
+        size={type.size}
         color={extreme ? "graphite" : "default"}
         className={cn(
           "relative grid pb-1.5 text-center leading-none",
-          extreme ? EXTREME_SIZE : TESSITURA_SIZE,
+          type.className,
         )}
       >
         <SlotSizer low={low} high={high} notation={notation} />
@@ -320,11 +364,17 @@ const SlotButton = ({
 
 export interface RangeSlotsProps {
   readonly draft: VocalRangeMidi;
-  readonly selected: RangeSlot;
+  /** Null where no slot is being written, as in the editor while its
+   *  keyboard is closed: no gold mark, and the first slot is the tab stop. */
+  readonly selected: RangeSlot | null;
   readonly notation: PitchNotation;
   /** The keyboard's window: the names a slot can hold, which size it. */
   readonly low: number;
   readonly high: number;
+  /** The radio group's accessible name: whose range this line holds. */
+  readonly label: string;
+  readonly scale?: RangeSlotsScale;
+  readonly disabled?: boolean;
   readonly onSelect: (slot: RangeSlot) => void;
 }
 
@@ -334,9 +384,11 @@ export const RangeSlots = ({
   notation,
   low,
   high,
+  label,
+  scale = "screen",
+  disabled = false,
   onSelect,
 }: RangeSlotsProps): React.JSX.Element => {
-  const { t } = useTranslation();
   const groupId = useId();
   const slotNodes = useRef(new Map<RangeSlot, HTMLButtonElement>());
 
@@ -358,9 +410,12 @@ export const RangeSlots = ({
       slot={slot}
       midi={draft[slot]}
       selected={selected === slot}
+      tabStop={(selected ?? RANGE_SLOTS[0]) === slot}
       notation={notation}
       low={low}
       high={high}
+      scale={scale}
+      disabled={disabled}
       onSelect={onSelect}
       onArrow={handleArrow}
       registerSlot={registerSlot}
@@ -371,9 +426,9 @@ export const RangeSlots = ({
     <div className="flex items-baseline gap-1.5 sm:gap-2">
       {slotButton(main)}
       <div className="flex items-baseline">
-        <Mark extreme>(</Mark>
+        <Mark scale={scale} extreme>(</Mark>
         {slotButton(extreme)}
-        <Mark extreme>)</Mark>
+        <Mark scale={scale} extreme>)</Mark>
       </div>
     </div>
   );
@@ -385,13 +440,13 @@ export const RangeSlots = ({
           dash, so each side stays whole. */}
       <motion.div
         role="radiogroup"
-        aria-label={t("vocal_range.slots.group_label", "Twój zakres")}
+        aria-label={label}
         variants={LINE_ENTRANCE}
         className="flex flex-wrap items-baseline gap-x-2 gap-y-3 sm:gap-x-3"
       >
         {side("tessituraLow", "extremeLow")}
         <div className="flex items-baseline gap-2 sm:gap-3">
-          <Mark>–</Mark>
+          <Mark scale={scale}>–</Mark>
           {side("tessituraHigh", "extremeHigh")}
         </div>
       </motion.div>

@@ -4,7 +4,7 @@
  * and two white keys each side, widened three white keys at a time on the
  * singer's request, ending on white keys, never past G1–C7, and never hiding a
  * note the singer has already chosen.
- * @module features/vocal-range/constants/voices
+ * @module features/artists/constants/voices
  */
 
 import { describe, expect, it } from "vitest";

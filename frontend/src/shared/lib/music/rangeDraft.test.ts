@@ -4,7 +4,7 @@
  * rules, so the send button is never live for a range the PUT would refuse, and
  * pins what the keyboard draws, where it opens for each slot, which keys it
  * dims, and what the send button plays.
- * @module features/vocal-range/lib/rangeDraft
+ * @module shared/lib/music/rangeDraft
  */
 
 import { describe, expect, it } from "vitest";

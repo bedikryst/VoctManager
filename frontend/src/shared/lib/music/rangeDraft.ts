@@ -1,10 +1,13 @@
 /**
  * @file rangeDraft.ts
- * @description The singer's range while they write it: four slots filled by
- * touching keys, checked by the same rules the server's
- * `VocalRangeProposalDTO` applies, and turned into what the keyboard draws,
- * what the send button plays and what the PUT carries.
- * @module features/vocal-range/lib/rangeDraft
+ * @description A vocal range while it is being written: four slots filled by
+ * touching keys, checked by the rule the server states once
+ * (`roster/domain/vocal_range.py`), and turned into what the keyboard draws and
+ * where it opens for each slot. Two writers use it: the singer's screen
+ * (`features/vocal-range`), which also plays the range back and sends it as a
+ * proposal, and the conductor's assessment in the artist editor
+ * (`features/artists`).
+ * @module shared/lib/music/rangeDraft
  */
 
 import type { VocalRangeProposal } from "@/shared/auth/auth.types";

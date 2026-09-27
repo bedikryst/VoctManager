@@ -7,7 +7,11 @@
  * lands among their own notes without scrolling through another voice's. A
  * singer who reaches further widens it from either end, three white keys at a
  * time, and a note already chosen is always shown.
- * @module features/vocal-range/constants/voices
+ *
+ * It lives beside `voiceSections.ts` because two features read it: the singer's
+ * screen (`features/vocal-range`) and the conductor's assessment in the artist
+ * editor, whose keyboard follows the voice set in the form.
+ * @module features/artists/constants/voices
  */
 
 import { pitchClass } from "@/shared/lib/music/pitchNotation";

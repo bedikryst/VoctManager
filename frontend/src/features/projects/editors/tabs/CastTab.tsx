@@ -82,8 +82,9 @@ interface CastTabProps {
  * used to be two icon-prefixed pills, which put sixty glyphs on a screen whose
  * content is forty names. A player's line is their instrument alone — range
  * and sight-reading are a singer's facts and are never recorded for them.
- * A singer's own proposal stands in for a range the conductor has not written,
- * set as markup (its octave marks need the panel's face) and marked as theirs.
+ * The range is set as markup (its octave marks need the panel's face). A
+ * singer's own proposal stands in for a range the conductor has not assessed,
+ * marked as theirs.
  */
 const buildSingerMeta = (
   entry: {
@@ -102,15 +103,15 @@ const buildSingerMeta = (
     parts.push({ key: "voice", node: entry.voiceLabel });
   }
   if (entry.instrument) parts.push({ key: "instrument", node: entry.instrument });
-  if (entry.range?.source === "conductor") {
-    parts.push({ key: "range", node: entry.range.text });
-  } else if (entry.range?.source === "singer") {
+  if (entry.range) {
     parts.push({
       key: "range",
       node: (
         <>
-          <VocalRangeText range={entry.range.range} notation={notation} />{" "}
-          {t("artists.card.range_by_singer", "wg chórzysty")}
+          <VocalRangeText range={entry.range.range} notation={notation} />
+          {entry.range.source === "singer"
+            ? ` ${t("artists.card.range_by_singer", "wg chórzysty")}`
+            : null}
         </>
       ),
     });

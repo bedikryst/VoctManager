@@ -74,6 +74,16 @@ import {
 import { Check, Mic } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
+import {
+  KEYBOARD_LIMIT,
+  keyboardWindow,
+  NO_REACH,
+  SINGING_VOICES,
+  singingVoiceOf,
+  voiceCentreMidi,
+  type KeyboardReach,
+  type SingingVoice,
+} from "@/features/artists/constants/voices";
 import { getSectionPresentation } from "@/features/artists/constants/voiceSections";
 import { usePitchNotation } from "@/features/artists/hooks/usePitchNotation";
 import {
@@ -88,32 +98,6 @@ import {
   spokenPitch,
   type VocalRangeMidi,
 } from "@/shared/lib/music/pitchNotation";
-import { cn } from "@/shared/lib/utils";
-import { artistRoleLabel } from "@/shared/lib/voiceTypes";
-import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
-import {
-  VerticalKeyboard,
-  type KeyboardCenterRequest,
-} from "@/shared/ui/instruments/VerticalKeyboard";
-import { EASE } from "@/shared/ui/kinematics/motion-presets";
-import { NaveScene } from "@/shared/ui/kinematics/NaveScene";
-import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
-import { Badge } from "@/shared/ui/primitives/Badge";
-import { Button } from "@/shared/ui/primitives/Button";
-import { Textarea } from "@/shared/ui/primitives/Textarea";
-import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
-
-import {
-  KEYBOARD_LIMIT,
-  keyboardWindow,
-  NO_REACH,
-  SINGING_VOICES,
-  singingVoiceOf,
-  voiceCentreMidi,
-  type KeyboardReach,
-  type SingingVoice,
-} from "../constants/voices";
-import { useSubmitVocalRange } from "../hooks/useSubmitVocalRange";
 import {
   draftFromProposal,
   EMPTY_DRAFT,
@@ -126,15 +110,31 @@ import {
   slotSpan,
   toSubmission,
   type RangeSlot,
-} from "../lib/rangeDraft";
+} from "@/shared/lib/music/rangeDraft";
+import { cn } from "@/shared/lib/utils";
+import { artistRoleLabel } from "@/shared/lib/voiceTypes";
+import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
+import { NoteReadout } from "@/shared/ui/instruments/NoteReadout";
+import { RangeSlots, SLOT_KEY } from "@/shared/ui/instruments/RangeSlots";
+import {
+  VerticalKeyboard,
+  type KeyboardCenterRequest,
+} from "@/shared/ui/instruments/VerticalKeyboard";
+import { EASE } from "@/shared/ui/kinematics/motion-presets";
+import { NaveScene } from "@/shared/ui/kinematics/NaveScene";
+import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Textarea } from "@/shared/ui/primitives/Textarea";
+import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+
+import { useSubmitVocalRange } from "../hooks/useSubmitVocalRange";
 import {
   clearVocalRangeDraft,
   keepVocalRangeDraft,
   readVocalRangeDraft,
 } from "../lib/vocalRangeSession";
-import { NoteReadout } from "./NoteReadout";
 import { RangeNotationTable } from "./RangeNotationTable";
-import { RangeSlots, SLOT_KEY } from "./RangeSlots";
 
 /** The server's limit on the comment (`VocalRangeProposalDTO`). */
 const COMMENT_MAX_LENGTH = 500;
@@ -706,6 +706,7 @@ const VocalRangeStage = ({
                 notation={notation}
                 low={keySpan.low}
                 high={keySpan.high}
+                label={t("vocal_range.slots.group_label", "Twój zakres")}
                 onSelect={selectSlot}
               />
               {/* One status line of fixed height: the note, a hint, or what is

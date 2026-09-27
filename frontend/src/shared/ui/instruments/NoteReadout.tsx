@@ -3,11 +3,12 @@
  * @description The note in hand (the key last touched, or the note sung
  * while the microphone listens), on one line, named in all three notations
  * and in hertz: `A4 · a¹ · la3 · 440 Hz`. The reader's own notation
- * carries the weight. A singer who learned another system sees their name for
- * the note beside the conductor's, which is where a misread octave shows
- * itself. It sits under the slots, in the strip that stays above the keyboard.
- * Each new note settles in rather than snapping.
- * @module features/vocal-range/components/NoteReadout
+ * carries the weight. A reader who learned another system sees their name for
+ * the note beside the others, which is where a misread octave shows itself.
+ * It sits under a `RangeSlots` line, above the keyboard: on the singer's
+ * screen and in the conductor's assessment in the artist editor. Each new note
+ * settles in rather than snapping.
+ * @module shared/ui/instruments/NoteReadout
  */
 
 import React from "react";

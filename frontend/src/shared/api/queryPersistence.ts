@@ -78,8 +78,13 @@ const IDB_KEY = "client";
  * strings and is no longer persisted at all. A snapshot from before holds the
  * totals as numbers, which the dossier now reads as strings, and keeps a
  * person's earnings on the device.
+ *
+ * 2026-09-assessed-range: the conductor's range on an artist is four MIDI
+ * notes (`assessed_*`). A persisted `["artists"]` snapshot from before holds
+ * the free-text `vocal_range_bottom/top` instead, and every roster surface
+ * would show no assessment until the refetch.
  */
-export const QUERY_CACHE_BUSTER = "2026-09-dossier-money";
+export const QUERY_CACHE_BUSTER = "2026-09-assessed-range";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

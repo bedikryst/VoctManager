@@ -22,7 +22,16 @@ import {
   voiceToSalutation,
   type ArtistFormValues,
   type ArtistCreateDTO,
+  type AssessedRangeValues,
 } from "../types/artist.dto";
+
+/** The conductor's four notes as the form holds them; null where unset. */
+const assessedValuesOf = (artist: Artist | null): AssessedRangeValues => ({
+  assessed_tessitura_low: artist?.assessed_tessitura_low ?? null,
+  assessed_tessitura_high: artist?.assessed_tessitura_high ?? null,
+  assessed_extreme_low: artist?.assessed_extreme_low ?? null,
+  assessed_extreme_high: artist?.assessed_extreme_high ?? null,
+});
 
 export const useArtistForm = (
   artist: Artist | null,
@@ -64,8 +73,7 @@ export const useArtistForm = (
       sight_reading_skill: artist?.sight_reading_skill
         ? String(artist.sight_reading_skill)
         : "",
-      vocal_range_bottom: artist?.vocal_range_bottom || "",
-      vocal_range_top: artist?.vocal_range_top || "",
+      ...assessedValuesOf(artist),
       language: "pl",
       salutation: artist
         ? "N"
@@ -92,8 +100,7 @@ export const useArtistForm = (
         sight_reading_skill: artist.sight_reading_skill
           ? String(artist.sight_reading_skill)
           : "",
-        vocal_range_bottom: artist.vocal_range_bottom || "",
-        vocal_range_top: artist.vocal_range_top || "",
+        ...assessedValuesOf(artist),
         language: "pl",
         salutation: "N",
       });
@@ -109,8 +116,7 @@ export const useArtistForm = (
         instrument: "",
         is_active: true,
         sight_reading_skill: "",
-        vocal_range_bottom: "",
-        vocal_range_top: "",
+        ...assessedValuesOf(null),
         language: "pl",
         salutation: voiceToSalutation(
           voiceTypes.length > 0 ? voiceTypes[0].value : "SOP",
@@ -141,8 +147,12 @@ export const useArtistForm = (
         ? data.instrument?.trim() || ""
         : "",
       phone_number: data.phone_number?.trim() || undefined,
-      vocal_range_bottom: data.vocal_range_bottom?.trim() || undefined,
-      vocal_range_top: data.vocal_range_top?.trim() || undefined,
+      // All four, nulls included: a PATCH silent on a cleared note would keep
+      // the stored one.
+      assessed_tessitura_low: data.assessed_tessitura_low,
+      assessed_tessitura_high: data.assessed_tessitura_high,
+      assessed_extreme_low: data.assessed_extreme_low,
+      assessed_extreme_high: data.assessed_extreme_high,
       sight_reading_skill: data.sight_reading_skill
         ? parseInt(data.sight_reading_skill, 10)
         : null,

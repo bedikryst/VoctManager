@@ -6,8 +6,7 @@
  */
 
 import api from "@/shared/api/api";
-
-import type { VocalRangeSubmission } from "../lib/rangeDraft";
+import type { VocalRangeSubmission } from "@/shared/lib/music/rangeDraft";
 
 export const vocalRangeService = {
   /** Overwrites any earlier proposal and restamps it. */

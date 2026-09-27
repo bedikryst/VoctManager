@@ -132,9 +132,13 @@ export interface Artist extends BaseModel {
   username?: string | null;
   is_manager?: boolean;
   sight_reading_skill?: number | null;
-  // The conductor's own assessment, free text. Manager-only.
-  vocal_range_bottom?: string;
-  vocal_range_top?: string;
+  // The conductor's own assessment, in MIDI numbers, shaped like the proposal
+  // below: all four null = not assessed yet, otherwise the tessitura pair is
+  // set. Manager-only (detailed serializer), and the only writable range.
+  assessed_tessitura_low?: number | null;
+  assessed_tessitura_high?: number | null;
+  assessed_extreme_low?: number | null;
+  assessed_extreme_high?: number | null;
   // The singer's own proposal, in MIDI numbers. Manager-only (detailed
   // serializer); read-only there, so the conductor never rewrites the singer's
   // words. `vocal_range_proposed_at` null = nothing proposed yet.

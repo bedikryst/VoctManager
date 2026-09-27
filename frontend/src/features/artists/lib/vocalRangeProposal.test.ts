@@ -1,14 +1,20 @@
 /**
  * @file vocalRangeProposal.test.ts
- * @description Pins which range a roster surface shows: the conductor's text
- * whenever either bound is written, the singer's proposal otherwise.
+ * @description Pins how the two ranges are read off an artist, and which one a
+ * roster surface shows: the conductor's assessment whenever it is set, the
+ * singer's proposal otherwise.
  * @module features/artists/lib/vocalRangeProposal.test
  */
 
 import { describe, expect, it } from "vitest";
 
 import type { Artist } from "@/shared/types";
-import { proposalOf, rangeShown } from "./vocalRangeProposal";
+import {
+  assessmentOf,
+  proposalOf,
+  rangeShown,
+  sameRange,
+} from "./vocalRangeProposal";
 
 const base: Artist = {
   id: "1",
@@ -27,6 +33,14 @@ const proposed: Artist = {
   vocal_range_proposed_at: "2026-09-27T10:00:00Z",
 };
 
+const assessed: Artist = {
+  ...base,
+  assessed_tessitura_low: 60,
+  assessed_tessitura_high: 79,
+  assessed_extreme_low: null,
+  assessed_extreme_high: 84,
+};
+
 describe("proposalOf", () => {
   it("is null until the singer has sent one", () => {
     expect(proposalOf(base)).toBeNull();
@@ -43,11 +57,32 @@ describe("proposalOf", () => {
   });
 });
 
+describe("assessmentOf", () => {
+  it("is null while the conductor has not assessed", () => {
+    expect(assessmentOf(base)).toBeNull();
+    expect(assessmentOf(undefined)).toBeNull();
+  });
+
+  it("maps the MIDI fields", () => {
+    expect(assessmentOf(assessed)).toEqual({
+      tessituraLow: 60,
+      tessituraHigh: 79,
+      extremeLow: null,
+      extremeHigh: 84,
+    });
+  });
+});
+
 describe("rangeShown", () => {
-  it("prefers the conductor's text, even a single bound", () => {
-    expect(rangeShown({ ...proposed, vocal_range_top: "C6" })).toEqual({
+  it("prefers the conductor's assessment", () => {
+    expect(rangeShown({ ...proposed, ...assessed })).toEqual({
       source: "conductor",
-      text: "? – C6",
+      range: {
+        tessituraLow: 60,
+        tessituraHigh: 79,
+        extremeLow: null,
+        extremeHigh: 84,
+      },
     });
   });
 
@@ -58,5 +93,19 @@ describe("rangeShown", () => {
   it("is null when neither exists", () => {
     expect(rangeShown(base)).toBeNull();
     expect(rangeShown(undefined)).toBeNull();
+  });
+});
+
+describe("sameRange", () => {
+  const range = { tessituraLow: 57, tessituraHigh: 81, extremeLow: 55, extremeHigh: null };
+
+  it("holds for the same four notes", () => {
+    expect(sameRange(range, { ...range })).toBe(true);
+  });
+
+  it("fails on any one note, an empty extreme included", () => {
+    expect(sameRange(range, { ...range, tessituraHigh: 79 })).toBe(false);
+    expect(sameRange(range, { ...range, extremeLow: null })).toBe(false);
+    expect(sameRange(range, { ...range, extremeHigh: 84 })).toBe(false);
   });
 });

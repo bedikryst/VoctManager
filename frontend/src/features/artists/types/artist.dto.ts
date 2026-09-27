@@ -6,8 +6,67 @@
 
 import { z } from "zod";
 
+import type { VocalRangeMidi } from "@/shared/lib/music/pitchNotation";
+import {
+  rangePitches,
+  rangeProblem,
+  type RangeProblem,
+  type RangeSlot,
+} from "@/shared/lib/music/rangeDraft";
 import { isInstrumentalist } from "@/shared/lib/voiceTypes";
 import type { Artist, VoiceType } from "@/shared/types";
+
+/** A0–C8, the server's bounds for every note of a range. */
+const assessedNote = z.number().int().min(21).max(108).nullable();
+
+export interface AssessedRangeValues {
+  assessed_tessitura_low: number | null;
+  assessed_tessitura_high: number | null;
+  assessed_extreme_low: number | null;
+  assessed_extreme_high: number | null;
+}
+
+export type AssessedField = keyof AssessedRangeValues;
+
+/** The form field, and the server's key, behind each slot of the range. */
+export const ASSESSED_FIELD: Readonly<Record<RangeSlot, AssessedField>> = {
+  tessituraLow: "assessed_tessitura_low",
+  tessituraHigh: "assessed_tessitura_high",
+  extremeLow: "assessed_extreme_low",
+  extremeHigh: "assessed_extreme_high",
+};
+
+export const ASSESSED_FIELDS: readonly AssessedField[] = Object.values(ASSESSED_FIELD);
+
+export const assessedRangeOf = (values: AssessedRangeValues): VocalRangeMidi => ({
+  tessituraLow: values.assessed_tessitura_low,
+  tessituraHigh: values.assessed_tessitura_high,
+  extremeLow: values.assessed_extreme_low,
+  extremeHigh: values.assessed_extreme_high,
+});
+
+/**
+ * The server's rule for the conductor's assessment (`range_shape_error` with
+ * `required=False`): all four empty means not assessed yet; once any note is
+ * set, the singer's rules apply, tessitura pair required.
+ */
+export const assessedRangeProblem = (range: VocalRangeMidi): RangeProblem | null =>
+  rangePitches(range).length > 0 ? rangeProblem(range) : null;
+
+/** The slot a problem is keyed to, as the server keys its 400: the subject of
+ *  the broken rule, or the missing bound of an incomplete pair. */
+const problemSlot = (problem: RangeProblem, range: VocalRangeMidi): RangeSlot => {
+  switch (problem) {
+    case "tessituraOrder":
+      return "tessituraLow";
+    case "extremeLowOrder":
+      return "extremeLow";
+    case "extremeHighOrder":
+      return "extremeHigh";
+    case "incomplete":
+      return range.tessituraLow === null ? "tessituraLow" : "tessituraHigh";
+  }
+};
 
 // 1. Zod Schema defining both validation rules and the shape of the form
 export const artistFormSchema = z
@@ -24,8 +83,10 @@ export const artistFormSchema = z
     instrument: z.string().optional(),
     phone_number: z.string().optional(),
     sight_reading_skill: z.string().optional(),
-    vocal_range_bottom: z.string().optional(),
-    vocal_range_top: z.string().optional(),
+    assessed_tessitura_low: assessedNote,
+    assessed_tessitura_high: assessedNote,
+    assessed_extreme_low: assessedNote,
+    assessed_extreme_high: assessedNote,
     language: z.enum(["pl", "en", "fr"]),
     salutation: z.enum(["F", "M", "N"]),
     is_active: z.boolean(),
@@ -54,7 +115,20 @@ export const artistFormSchema = z
       message: "artists.validation.instrument_required",
       path: ["instrument"],
     },
-  );
+  )
+  // The assessment's shape, checked before the round trip; the server's 400
+  // is the backstop. The field shows its own copy for the problem, so the
+  // message only has to mark the slot.
+  .superRefine((values, context) => {
+    const range = assessedRangeOf(values);
+    const problem = assessedRangeProblem(range);
+    if (problem === null) return;
+    context.addIssue({
+      code: "custom",
+      message: problem,
+      path: [ASSESSED_FIELD[problemSlot(problem, range)]],
+    });
+  });
 
 export type ArtistFormValues = z.infer<typeof artistFormSchema>;
 
@@ -82,8 +156,11 @@ export interface ArtistCreateDTO {
   instrument?: string;
   phone_number?: string;
   sight_reading_skill?: number | null;
-  vocal_range_bottom?: string;
-  vocal_range_top?: string;
+  /** The conductor's assessment, MIDI numbers; four nulls clear it. */
+  assessed_tessitura_low?: number | null;
+  assessed_tessitura_high?: number | null;
+  assessed_extreme_low?: number | null;
+  assessed_extreme_high?: number | null;
   language?: string;
   salutation?: string;
 }

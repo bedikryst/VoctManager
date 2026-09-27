@@ -243,10 +243,10 @@ export const ArtistRow = React.memo(
         <div className="hidden shrink-0 items-center gap-4 md:flex">
           {range?.source === "conductor" && (
             <Caption
-              className="tabular-nums text-ethereal-graphite"
+              className="text-ethereal-graphite"
               title={t("artists.card.voice_range", "Skala Głosu")}
             >
-              {range.text}
+              <VocalRangeText range={range.range} notation={notation} />
             </Caption>
           )}
           {/* Whose it is goes under the range, not after it, so a French range

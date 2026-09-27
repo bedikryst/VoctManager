@@ -14,9 +14,9 @@ import { useMatch } from "react-router-dom";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { ARTIST_PREVIEW_ROUTE } from "@/app/providers/ArtistPreviewProvider";
+import { singingVoiceOf } from "@/features/artists/constants/voices";
 import type { AuthUser } from "@/shared/auth/auth.types";
 
-import { singingVoiceOf } from "../constants/voices";
 import { useVocalRangePromptSnoozed } from "../lib/vocalRangeSession";
 
 /**

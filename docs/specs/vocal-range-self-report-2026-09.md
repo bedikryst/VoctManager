@@ -785,9 +785,10 @@ singer's screen.
 Status: **8.1 (backend) built 2026-09-27: ruff and mypy on roster, core and documents,
 `makemigrations --check`, and the roster, documents and core tests green; the 0066–0068 round trip
 (forward, backward, a refused row) checked by hand on sqlite. Committed 2026-09-27; not migrated
-on dev or prod. Where the build departs from the plan: "Decided while building 8.1" below. 8.2–8.4 not
-built. Until 8.3 lands, adding an artist on dev fails with a 400 (see the plan's head).** It spans
-the backend and the frontend.
+on dev or prod. Where the build departs from the plan: "Decided while building 8.1" below. 8.2 and
+8.3 (frontend) built and committed together 2026-09-27: typecheck, lint, the music, artists and
+vocal-range vitest suites and the build green; not yet seen in a browser. Departures: "Decided while
+building 8.2–8.3" below. 8.4 not built.** It spans the backend and the frontend.
 
 **Why** (the developer's look at Stage 4 on dev, 2026-09-27):
 - In the editor, the conductor's own fields read `F3 – F5`. They are free-text SPN, with a
@@ -1004,6 +1005,21 @@ Verification: typecheck, lint, test. The singer's screen is unchanged.
 Verification: typecheck, lint, test, build. The developer runs `make migrate` on dev and looks at
 the editor.
 
+**Decided while building 8.2–8.3:**
+- `RangeSlots` takes a `scale`. `screen` is the singer's sizes, which grow with the viewport to
+  60 px; the editor panel is `max-w-xl` at every viewport, so `field` sets the line at one size
+  (tessitura `text-3xl`, extremes `text-lg`). It also takes `disabled`, and `selected` may be null
+  while the editor's keyboard is closed: no gold mark, and the first slot is the tab stop.
+- `sameRange` landed here, with its tests, because the button's hide rule needs it; 8.4 reuses it.
+- "Usuń" empties any slot, not only an extreme: four empty slots are how an assessment is cleared.
+- An order problem shows as soon as it exists, with the singer's copy. A missing tessitura bound
+  shows only after a refused save, since every assessment passes through that state while it is
+  written; its copy is the editor's own ("…albo usuń wszystkie dźwięki"). After a refused save,
+  each note change reruns the check on the four fields.
+- The field's label is "Skala głosu wg dyrygenta", the counterpart of "wg chórzysty".
+- Every save sends all four notes, nulls included, so a cleared note is cleared on the record.
+- The editor has no microphone. The conductor assesses by ear; the plan did not ask for one.
+
 #### 8.4 — Baza Artystów, Obsada, audit item 10
 
 - `vocalRangeProposal.ts`: add `rangesOf(artist)`, which returns `{ assessed, proposed }`, and
@@ -1059,7 +1075,7 @@ lint and the music, artists and vocal-range vitest suites. All green.
 1. **Master is not deployable from the 8.1 commit until 8.3 lands.** That holds for any
    `make prod`, including one made for an unrelated reason: adding an artist 400s, and the
    conductor's range disappears from every screen, because the frontend still reads and writes
-   `vocal_range_bottom/top`.
+   `vocal_range_bottom/top`. Resolved by the 8.3 commit; a deploy still needs `make migrate`.
 2. **Decided: the notation setting is for managers only.** They read every singer's range; a
    chorister reads only their own, on the singer's screen, whose note card names each note in all
    three notations. `GeneralTab` shows the select to `is_manager` alone; a chorister's stored

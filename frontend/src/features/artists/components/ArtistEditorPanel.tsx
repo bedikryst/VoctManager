@@ -3,12 +3,13 @@
  * @description Slide-over panel for creating or editing artist profiles.
  * Uses React Hook Form for zero-lag rendering and Zod for validation, and the
  * shared Ethereal primitives (Input/Select with built-in label + error) so the
- * editor matches the rest of the 2026 surface language. Beside the conductor's
- * own range fields it shows the singer's proposal, read-only, once one exists.
+ * editor matches the rest of the 2026 surface language. Under the conductor's
+ * own range (`AssessedRangeField`) it shows the singer's proposal, read-only,
+ * once one exists, with the one action that copies it into the form.
  * @module features/artists/components/ArtistEditorPanel
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -22,13 +23,21 @@ import { Input } from "@ui/primitives/Input";
 import { Select } from "@ui/primitives/Select";
 import { Eyebrow, Heading, Text } from "@ui/primitives/typography";
 import type { Artist, VoiceType, VoiceTypeOption } from "@/shared/types";
+import type { VocalRangeMidi } from "@/shared/lib/music/pitchNotation";
+import { RANGE_SLOTS } from "@/shared/lib/music/rangeDraft";
 import { isInstrumentalist, isSingingVoiceType } from "@/shared/lib/voiceTypes";
 import { formatLocalizedDateTime } from "@/shared/lib/time/intl";
 import { VocalRangeText } from "@/shared/ui/instruments/PitchName";
+import { singingVoiceOf } from "../constants/voices";
 import { useArtistForm } from "../hooks/useArtistForm";
 import { usePitchNotation } from "../hooks/usePitchNotation";
-import { proposalOf } from "../lib/vocalRangeProposal";
-import { voiceToSalutation } from "../types/artist.dto";
+import { proposalOf, sameRange } from "../lib/vocalRangeProposal";
+import {
+  ASSESSED_FIELD,
+  ASSESSED_FIELDS,
+  voiceToSalutation,
+} from "../types/artist.dto";
+import { AssessedRangeField } from "./AssessedRangeField";
 import { NewThreadModal } from "@/features/messages/components/NewThreadModal";
 
 interface ArtistEditorPanelProps {
@@ -89,7 +98,7 @@ export default function ArtistEditorPanel({
     isOpen,
   );
 
-  const { errors } = form.formState;
+  const { errors, isSubmitted } = form.formState;
   const errorText = (key?: string) => (key ? t(key) : undefined);
 
   // Past activation the address is that person's sign-in credential, and the
@@ -108,10 +117,38 @@ export default function ArtistEditorPanel({
   const voiceValue = useWatch({ control: form.control, name: "voice_type" });
   const isPlayer = isInstrumentalist(voiceValue as VoiceType);
   const isSinger = isSingingVoiceType(voiceValue as VoiceType);
+  // The assessment's keyboard opens on this voice's own window.
+  const singingVoice = singingVoiceOf(voiceValue);
+
+  const [tessituraLow, tessituraHigh, extremeLow, extremeHigh] = useWatch({
+    control: form.control,
+    name: [
+      "assessed_tessitura_low",
+      "assessed_tessitura_high",
+      "assessed_extreme_low",
+      "assessed_extreme_high",
+    ],
+  });
+  const assessed = useMemo<VocalRangeMidi>(
+    () => ({ tessituraLow, tessituraHigh, extremeLow, extremeHigh }),
+    [tessituraLow, tessituraHigh, extremeLow, extremeHigh],
+  );
+  const assessedError = ASSESSED_FIELDS.map(
+    (field) => errors[field]?.message,
+  ).find((message) => message !== undefined);
 
   // Suggest the form of address from the voice part when creating (manager can
   // still override). Never runs on edit — that field is disabled there.
-  const { setValue, clearErrors } = form;
+  const { setValue, clearErrors, trigger } = form;
+
+  /** Writes the four notes into the form, never the record. After a refused
+   *  save the check reruns, so the problem line follows the notes. */
+  const setAssessed = (range: VocalRangeMidi): void => {
+    for (const slot of RANGE_SLOTS) {
+      setValue(ASSESSED_FIELD[slot], range[slot], { shouldDirty: true });
+    }
+    if (isSubmitted) void trigger([...ASSESSED_FIELDS]);
+  };
   useEffect(() => {
     if (!artist && voiceValue) {
       setValue("salutation", voiceToSalutation(voiceValue));
@@ -482,70 +519,66 @@ export default function ArtistEditorPanel({
                       />
                     )}
 
-                    {isSinger && (
-                    <div className="grid grid-cols-2 gap-5">
-                      <Input
-                        type="text"
-                        label={t("artists.editor.range_low", "Skala (Dół)")}
-                        title={t(
-                          "artists.editor.range_low_title",
-                          "Najniższy dźwięk",
-                        )}
-                        {...form.register("vocal_range_bottom")}
-                        placeholder={t(
-                          "artists.editor.range_low_placeholder",
-                          "np. G2",
-                        )}
+                    {singingVoice && (
+                      <AssessedRangeField
+                        value={assessed}
+                        voice={singingVoice}
+                        notation={notation}
                         disabled={isSubmitting}
-                        className="text-center font-bold text-ethereal-gold"
+                        error={assessedError}
+                        onChange={(slot, midi) =>
+                          setAssessed({ ...assessed, [slot]: midi })
+                        }
                       />
-                      <Input
-                        type="text"
-                        label={t("artists.editor.range_high", "Skala (Góra)")}
-                        title={t(
-                          "artists.editor.range_high_title",
-                          "Najwyższy dźwięk",
-                        )}
-                        {...form.register("vocal_range_top")}
-                        placeholder={t(
-                          "artists.editor.range_high_placeholder",
-                          "np. C5",
-                        )}
-                        disabled={isSubmitting}
-                        className="text-center font-bold text-ethereal-gold"
-                      />
-                    </div>
                     )}
 
-                    {/* The singer's own proposal, read-only: the fields above
-                        are the conductor's words, and nothing here copies one
-                        into the other (free-text SPN beside MIDI would mix
-                        notations in one column). Absent until they send one. */}
-                    {isSinger && proposal && artist?.vocal_range_proposed_at && (
+                    {/* The singer's own proposal, read-only. "Przyjmij
+                        propozycję" copies its four notes into the field above,
+                        where the conductor adjusts them; nothing is written
+                        until the editor is saved. One singer at a time, on
+                        purpose: a bulk copy would turn the conductor's verdict
+                        into the singer's. Absent until they send one. */}
+                    {singingVoice && proposal && artist?.vocal_range_proposed_at && (
                       <div className="rounded-control border border-hairline bg-ethereal-parchment/40 px-4 py-3">
-                        <Text size="sm">
-                          <Text as="span" size="sm" color="graphite">
-                            {t("artists.editor.range_proposal", "Propozycja chórzysty")}
-                            {": "}
+                        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                          <Text size="sm">
+                            <Text as="span" size="sm" color="graphite">
+                              {t("artists.editor.range_proposal", "Propozycja chórzysty")}
+                              {": "}
+                            </Text>
+                            <VocalRangeText
+                              range={proposal}
+                              notation={notation}
+                              className="font-semibold"
+                            />
+                            <Text
+                              as="span"
+                              size="sm"
+                              color="graphite"
+                              className="tabular-nums"
+                            >
+                              {" · "}
+                              {formatLocalizedDateTime(
+                                artist.vocal_range_proposed_at,
+                                PROPOSAL_DATE_FORMAT,
+                              )}
+                            </Text>
                           </Text>
-                          <VocalRangeText
-                            range={proposal}
-                            notation={notation}
-                            className="font-semibold"
-                          />
-                          <Text
-                            as="span"
-                            size="sm"
-                            color="graphite"
-                            className="tabular-nums"
-                          >
-                            {" · "}
-                            {formatLocalizedDateTime(
-                              artist.vocal_range_proposed_at,
-                              PROPOSAL_DATE_FORMAT,
-                            )}
-                          </Text>
-                        </Text>
+                          {!sameRange(assessed, proposal) && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setAssessed(proposal)}
+                              disabled={isSubmitting}
+                            >
+                              {t(
+                                "artists.editor.assessed_range.accept_proposal",
+                                "Przyjmij propozycję",
+                              )}
+                            </Button>
+                          )}
+                        </div>
                         {artist.vocal_range_comment?.trim() && (
                           <Text
                             size="sm"

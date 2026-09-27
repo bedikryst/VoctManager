@@ -80,8 +80,8 @@ export interface AuthProfile {
 
 /**
  * The singer's own proposal of their range, as last sent, in MIDI numbers. It is
- * never the conductor's assessment (`vocal_range_bottom/top`), which no
- * chorister receives.
+ * never the conductor's assessment (the four `assessed_*` notes on the artist),
+ * which no chorister receives.
  */
 export interface VocalRangeProposal {
   tessitura_low: number | null;

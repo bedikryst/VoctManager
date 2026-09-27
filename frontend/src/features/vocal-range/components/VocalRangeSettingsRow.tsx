@@ -12,13 +12,13 @@ import { useTranslation } from "react-i18next";
 import { ArrowRight, AudioLines } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
+import { singingVoiceOf } from "@/features/artists/constants/voices";
 import { usePitchNotation } from "@/features/artists/hooks/usePitchNotation";
+import { draftFromProposal } from "@/shared/lib/music/rangeDraft";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { VocalRangeText } from "@/shared/ui/instruments/PitchName";
 import { Text } from "@/shared/ui/primitives/typography";
 
-import { singingVoiceOf } from "../constants/voices";
-import { draftFromProposal } from "../lib/rangeDraft";
 import { VocalRangeScreen } from "./VocalRangeScreen";
 
 export const VocalRangeSettingsRow = (): React.JSX.Element | null => {

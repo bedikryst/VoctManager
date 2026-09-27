@@ -8,8 +8,9 @@
 
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 
+import type { VocalRangeSubmission } from "@/shared/lib/music/rangeDraft";
+
 import { vocalRangeService } from "../api/vocalRange.service";
-import type { VocalRangeSubmission } from "../lib/rangeDraft";
 
 export const useSubmitVocalRange = (): UseMutationResult<
   void,

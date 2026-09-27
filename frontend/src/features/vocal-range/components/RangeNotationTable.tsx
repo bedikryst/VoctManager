@@ -20,11 +20,10 @@ import {
   type PitchNotation,
   type VocalRangeMidi,
 } from "@/shared/lib/music/pitchNotation";
+import { RANGE_SLOTS } from "@/shared/lib/music/rangeDraft";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { VocalRangeText } from "@/shared/ui/instruments/PitchName";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
-
-import { RANGE_SLOTS } from "../lib/rangeDraft";
 
 export interface RangeNotationTableProps {
   readonly draft: VocalRangeMidi;
