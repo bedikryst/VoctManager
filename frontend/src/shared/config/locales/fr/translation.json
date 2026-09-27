@@ -6527,7 +6527,7 @@
   "vocal_range": {
     "eyebrow": "Tessiture",
     "title": "Quelle est votre tessiture dans le chant d'ensemble ?",
-    "intro": "Votre tessiture couvre ce que vous chantez librement, piano compris. Les notes extrêmes entre parenthèses sont facultatives : celles que vous n'atteignez qu'en forte. Cette information est destinée au chef de chœur. Les autres choristes ne la verront pas.",
+    "intro": "Indiquez votre tessiture, c'est-à-dire l'étendue des notes que vous pouvez chanter librement et naturellement en ensemble, piano compris. Entre parenthèses, vous pouvez aussi indiquer les notes extrêmes de votre voix, la plus grave et la plus aiguë que vous pouvez atteindre. Cette information est destinée au chef de chœur et l'aidera à attribuer les parties. Les autres choristes ne la verront pas.",
     "voice_label": "Votre voix",
     "later": "Plus tard",
     "close": "Fermer",

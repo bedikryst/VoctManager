@@ -6516,7 +6516,7 @@
   "vocal_range": {
     "eyebrow": "Vocal range",
     "title": "What is your tessitura when you sing in the ensemble?",
-    "intro": "Your tessitura spans what you sing freely, piano included. The extreme notes in brackets are optional: those you reach only at forte. This is for the conductor. Other choristers will not see it.",
+    "intro": "Enter your tessitura: the range of notes you can sing freely and naturally in an ensemble, piano included. In brackets you may also add the extreme notes of your range, the lowest and the highest you can reach. This is for the conductor and will help in assigning parts. Other choristers will not see it.",
     "voice_label": "Your voice",
     "later": "Later",
     "close": "Close",

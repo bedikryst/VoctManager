@@ -176,17 +176,19 @@ the screen returns at the next app open. It never blocks the panel.
 `ProjectInvitationToasts` read it instead of `welcome_seen_at`, so two takeovers never stack.
 
 **The screen — the line is the form:**
-- Head copy (Polish primary; the conductor approves it in the dry run):
+- Head copy (Polish primary), the conductor's own wording (2026-09-27), with the developer's
+  privacy line kept at the end:
   > Jaka jest Twoja tessitura w śpiewie zespołowym?
-  > Granice tessitury wyznacza to, co śpiewasz swobodnie, także piano. Dźwięki skrajne w nawiasach
-  > są opcjonalne: te, które osiągasz już tylko w forte. To informacja dla dyrygenta. Pozostali
-  > chórzyści jej nie zobaczą.
+  > Podaj swoją tessiturę, czyli zakres dźwięków, które możesz swobodnie i naturalnie śpiewać w
+  > zespole, także piano. W nawiasach możesz dodatkowo podać skrajne dźwięki swojej skali,
+  > najniższy i najwyższy, które jesteś w stanie osiągnąć. To informacja dla dyrygenta i pomoże w
+  > odpowiednim doborze partii. Pozostali chórzyści jej nie zobaczą.
 
-  The first draft explained what a tessitura is and what the parentheses hold. The developer
-  struck it: the readers are trained singers, and explaining their own craft to them reads as
-  condescending. The copy states the purpose, the privacy, and the rule of the form. That rule is
-  the conductor's own test (piano possible, or forte only), added after he worried that singers
-  would give their maximum as the tessitura: it says where a note goes, not what a tessitura is.
+  The first draft explained what a tessitura is, and the developer struck it: explaining their own craft to trained singers reads as condescending coming from the app.
+  The copy that replaced it held the conductor's piano/forte test (tessitura = sung freely, piano
+  too; extremes = forte only). He then rewrote it himself. It keeps "piano too" for the
+  tessitura, and the extremes are simply the lowest and highest notes the singer can reach. A
+  definition in the conductor's own voice is his call to make.
 - The comment's placeholder asks which voice part suits the singer best. Many accounts were
   filed as plain SATB, so some basses may be baritones and some altos mezzos; the range shows it
   to the conductor, and the placeholder invites the singer to say so. A formal voice-type

@@ -645,7 +645,7 @@ const VocalRangeStage = ({
               <Text size="md" color="graphite" className="mt-3 max-w-xl leading-7">
                 {t(
                   "vocal_range.intro",
-                  "Granice tessitury wyznacza to, co śpiewasz swobodnie, także piano. Dźwięki skrajne w nawiasach są opcjonalne: te, które osiągasz już tylko w forte. To informacja dla dyrygenta. Pozostali chórzyści jej nie zobaczą.",
+                  "Podaj swoją tessiturę, czyli zakres dźwięków, które możesz swobodnie i naturalnie śpiewać w zespole, także piano. W nawiasach możesz dodatkowo podać skrajne dźwięki swojej skali, najniższy i najwyższy, które jesteś w stanie osiągnąć. To informacja dla dyrygenta i pomoże w odpowiednim doborze partii. Pozostali chórzyści jej nie zobaczą.",
                 )}
               </Text>
             </motion.div>
