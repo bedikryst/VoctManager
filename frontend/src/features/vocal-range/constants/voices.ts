@@ -1,13 +1,12 @@
 /**
  * @file voices.ts
  * @description Where the vocal-range keyboard opens for each singing voice, and
- * how far it reaches. The centre is the middle of the voice's usual span, so a
- * singer lands among their own notes. The keyboard shows the voice's usual solo
- * range and a fifth beyond it on each side, not the whole piano: a short
- * keyboard is quicker to read and to scroll. The fifth is wide on purpose. A
- * narrower margin would cut off exactly the extremes the conductor asks for
- * (a soprano's f³, a bass's C), and a voice type filed a class too high or too
- * low in the roster still reaches its own notes.
+ * how far it reaches. Both come from the conductor's own figures for each voice
+ * in the ensemble, extremes included. The keyboard shows that range and two
+ * white keys past each end, the margin the conductor asked for, so a singer
+ * lands among their own notes without scrolling through another voice's. A
+ * singer who reaches further widens it from either end, three white keys at a
+ * time, and a note already chosen is always shown.
  * @module features/vocal-range/constants/voices
  */
 
@@ -19,33 +18,49 @@ export type SingingVoice = Extract<
   "SOP" | "MEZ" | "ALT" | "CT" | "TEN" | "BAR" | "BAS"
 >;
 
-/** a¹ f¹ d¹ e¹ a f d, as MIDI numbers. */
+/** Near the middle of each voice's tessitura: a¹ g¹ e¹ e¹ a g d. */
 const VOICE_CENTRE_MIDI: Readonly<Record<SingingVoice, number>> = {
   SOP: 69,
-  MEZ: 65,
-  ALT: 62,
+  MEZ: 67,
+  ALT: 64,
   CT: 64,
   TEN: 57,
-  BAR: 53,
+  BAR: 55,
   BAS: 50,
 };
 
-/** Each voice's usual solo range, as MIDI numbers: c¹–c³, a–a², f–f², g–e²,
- *  c–c², G–g¹, E–e¹. */
-const VOICE_RANGE_MIDI: Readonly<
+/**
+ * The keys each voice's keyboard shows before the singer widens it: the
+ * conductor's range for the voice, extremes included, and two white keys past
+ * each end.
+ *
+ *         conductor         keyboard
+ *   SOP   c¹–a² (g–c³)      e–e³
+ *   MEZ   a–f² (g–a²)       e–c³
+ *   ALT   g–d² (e–g²)       c–h²
+ *   CT    as the alto       c–h²
+ *   TEN   c–a¹ (A–c²)       F–e²
+ *   BAR   A–f¹ (F–a¹)       D–c²
+ *   BAS   E–c¹ (D–e¹)       A₁–g¹
+ *
+ * The conductor gave no figures for the countertenor, who sings the alto line
+ * in the ensemble. The bass reaches down to A₁ at the conductor's word: the
+ * repertoire has an optional H₁.
+ */
+const VOICE_KEYBOARD_MIDI: Readonly<
   Record<SingingVoice, { readonly low: number; readonly high: number }>
 > = {
-  SOP: { low: 60, high: 84 },
-  MEZ: { low: 57, high: 81 },
-  ALT: { low: 53, high: 77 },
-  CT: { low: 55, high: 76 },
-  TEN: { low: 48, high: 72 },
-  BAR: { low: 43, high: 67 },
-  BAS: { low: 40, high: 64 },
+  SOP: { low: 52, high: 88 },
+  MEZ: { low: 52, high: 84 },
+  ALT: { low: 48, high: 83 },
+  CT: { low: 48, high: 83 },
+  TEN: { low: 41, high: 76 },
+  BAR: { low: 38, high: 72 },
+  BAS: { low: 33, high: 67 },
 };
 
-/** How far past the usual range the keyboard reaches: a fifth. */
-const WINDOW_MARGIN_SEMITONES = 7;
+/** How many white keys one "higher" or "lower" adds. */
+const WHITE_KEYS_PER_STEP = 3;
 
 /** Highest voice first: the order of the trial-mode voice picker. */
 export const SINGING_VOICES: readonly SingingVoice[] = [
@@ -58,10 +73,16 @@ export const SINGING_VOICES: readonly SingingVoice[] = [
   "BAS",
 ];
 
-/** G1–C7: the outer bound of any window, a bass's lowest reach and a
- *  soprano's highest with room past both. */
-const PIANO_LOW_MIDI = 31;
-const PIANO_HIGH_MIDI = 96;
+/** G1–C7: the outer bound of any window, however far it is widened. */
+export const KEYBOARD_LIMIT = { low: 31, high: 96 } as const;
+
+/** How many times the singer has widened the keyboard past each end. */
+export interface KeyboardReach {
+  readonly below: number;
+  readonly above: number;
+}
+
+export const NO_REACH: KeyboardReach = { below: 0, above: 0 };
 
 /** The voice as a singing one, or null for a conductor, a player, or none. */
 export const singingVoiceOf = (
@@ -75,25 +96,36 @@ export const voiceCentreMidi = (voice: SingingVoice): number =>
 const isBlack = (midi: number): boolean =>
   [1, 3, 6, 8, 10].includes(pitchClass(midi));
 
+/** `count` white keys up (+1) or down (−1) from a white key. */
+const walkWhiteKeys = (
+  from: number,
+  count: number,
+  direction: 1 | -1,
+): number => {
+  let midi = from;
+  for (let walked = 0; walked < count; ) {
+    midi += direction;
+    if (!isBlack(midi)) walked += 1;
+  }
+  return midi;
+};
+
 /**
- * The keys the keyboard shows for this voice: the usual range and a fifth each
- * side, widened to take in any note already chosen (a saved proposal from
- * before a voice change, a trial voice switched after picking), and ending on
- * white keys so no half-drawn key sits at either end.
+ * The keys the keyboard shows for this voice: its own span, widened by the
+ * singer's reach past either end, then to take in any note already chosen (a
+ * saved proposal from before a voice change, a trial voice switched after
+ * picking), and ending on white keys so no half-drawn key sits at either end.
  */
 export const keyboardWindow = (
   voice: SingingVoice,
   chosen: readonly number[],
+  reach: KeyboardReach = NO_REACH,
 ): { readonly low: number; readonly high: number } => {
-  const range = VOICE_RANGE_MIDI[voice];
-  let low = Math.max(
-    PIANO_LOW_MIDI,
-    Math.min(range.low - WINDOW_MARGIN_SEMITONES, ...chosen),
-  );
-  let high = Math.min(
-    PIANO_HIGH_MIDI,
-    Math.max(range.high + WINDOW_MARGIN_SEMITONES, ...chosen),
-  );
+  const own = VOICE_KEYBOARD_MIDI[voice];
+  const reachedLow = walkWhiteKeys(own.low, reach.below * WHITE_KEYS_PER_STEP, -1);
+  const reachedHigh = walkWhiteKeys(own.high, reach.above * WHITE_KEYS_PER_STEP, 1);
+  let low = Math.max(KEYBOARD_LIMIT.low, Math.min(reachedLow, ...chosen));
+  let high = Math.min(KEYBOARD_LIMIT.high, Math.max(reachedHigh, ...chosen));
   if (isBlack(low)) low -= 1;
   if (isBlack(high)) high += 1;
   return { low, high };

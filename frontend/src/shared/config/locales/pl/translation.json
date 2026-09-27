@@ -6570,7 +6570,7 @@
   "vocal_range": {
     "eyebrow": "Skala głosu",
     "title": "Jaka jest Twoja tessitura w śpiewie zespołowym?",
-    "intro": "To informacja dla dyrygenta. Pozostali chórzyści jej nie zobaczą. Dźwięki skrajne w nawiasach są opcjonalne.",
+    "intro": "Granice tessitury wyznacza to, co śpiewasz swobodnie, także piano. Dźwięki skrajne w nawiasach są opcjonalne: te, które osiągasz już tylko w forte. To informacja dla dyrygenta. Pozostali chórzyści jej nie zobaczą.",
     "voice_label": "Twój głos",
     "later": "Później",
     "close": "Zamknij",
@@ -6597,6 +6597,8 @@
       }
     },
     "keyboard_label": "Klawiatura. Dotknięty klawisz trafi do pola: {{slot}}",
+    "keyboard_more_above": "Wyższe dźwięki",
+    "keyboard_more_below": "Niższe dźwięki",
     "note_card": {
       "hint": "Dotknij klawisza: zabrzmi i trafi do zaznaczonego pola.",
       "hz": "{{value}} Hz"
@@ -6614,6 +6616,7 @@
       "extreme_high_order": "Skrajny dźwięk górny nie może leżeć niżej niż górna granica tessitury."
     },
     "comment_label": "Uwagi dla dyrygenta (opcjonalnie)",
+    "comment_placeholder": "Na przykład: w którym głosie czujesz się najlepiej.",
     "send": "Wyślij dyrygentowi",
     "send_error": "Nie udało się wysłać. Spróbuj jeszcze raz.",
     "sent": {

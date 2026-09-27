@@ -15,7 +15,11 @@
  * a key, such as a sung note, scrolling the keys to keep itself in view.
  *
  * The keyboard knows pitches and a notation, and nothing about voices: bounds,
- * bands, the emphasis and the label come from the caller. A key reports through
+ * bands, the emphasis and the label come from the caller. So does the choice to
+ * offer more keys: a caller that can widen the bounds passes a control for
+ * either end, drawn past the last key in the piano's own colours. Keys added
+ * above the view never move the keys in it; the caller brings them into view
+ * with a centre request. A key reports through
  * `onKeyPress` inside its click, the gesture iOS requires before audio can
  * start, and a finger that scrolls the keyboard produces no click, so panning
  * never sounds a note.
@@ -40,6 +44,7 @@ import React, {
   useState,
 } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 import {
   pitchClass,
@@ -71,6 +76,13 @@ export interface KeyboardCenterRequest {
   readonly seq: number;
 }
 
+/** A control past one end of the keys that asks the caller for more of them. */
+export interface KeyboardExtension {
+  /** Visible, and the control's name: "Higher notes", not a bare "Higher". */
+  readonly label: string;
+  readonly onPress: () => void;
+}
+
 export interface VerticalKeyboardProps {
   /** Lowest and highest playable key, as MIDI numbers. */
   readonly low: number;
@@ -91,6 +103,10 @@ export interface VerticalKeyboardProps {
    *  the reader prefers reduced motion. */
   readonly centerRequest?: KeyboardCenterRequest | null;
   readonly onKeyPress: (midi: number) => void;
+  /** Drawn above the highest key; omit it where the keys cannot go higher. */
+  readonly extendAbove?: KeyboardExtension | null;
+  /** Drawn below the lowest key; omit it where the keys cannot go lower. */
+  readonly extendBelow?: KeyboardExtension | null;
   readonly className?: string;
 }
 
@@ -155,6 +171,49 @@ const pitchPosition = (geometry: KeyboardGeometry, pitch: number): number => {
 };
 
 const percent = (fraction: number): string => `${fraction * 100}%`;
+
+/** How many white keys lie past `from` up to and including `to`: positive
+ *  going up, negative going down. */
+const whiteKeysBetween = (from: number, to: number): number => {
+  const lower = Math.min(from, to);
+  const upper = Math.max(from, to);
+  let count = 0;
+  for (let midi = lower + 1; midi <= upper; midi += 1) {
+    if (!isBlackKey(midi)) count += 1;
+  }
+  return to >= from ? count : -count;
+};
+
+interface ExtensionControlProps {
+  readonly extension: KeyboardExtension;
+  readonly direction: "up" | "down";
+}
+
+/** One row past the last key, in the piano's colours rather than the page's:
+ *  it sits on ivory in both themes. */
+const ExtensionControl = ({
+  extension,
+  direction,
+}: ExtensionControlProps): React.JSX.Element => {
+  const Icon = direction === "up" ? ChevronUp : ChevronDown;
+  return (
+    <button
+      type="button"
+      onClick={extension.onPress}
+      className={cn(
+        "flex h-11 w-full touch-manipulation items-center justify-center gap-1.5 text-piano-ebony/60 transition-colors duration-300 ease-out hover:bg-ethereal-gold/10 hover:text-piano-ebony focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold",
+        direction === "up"
+          ? "border-b border-piano-ebony/15"
+          : "border-t border-piano-ebony/15",
+      )}
+    >
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      <Text as="span" size="sm" weight="medium" color="inherit">
+        {extension.label}
+      </Text>
+    </button>
+  );
+};
 
 /** Arrow keys walk semitones, Page keys walk octaves; up is higher. */
 const stepForKey = (key: string): number | null => {
@@ -352,6 +411,8 @@ export const VerticalKeyboard = ({
   liveCursor = null,
   centerRequest = null,
   onKeyPress,
+  extendAbove = null,
+  extendBelow = null,
   className,
 }: VerticalKeyboardProps): React.JSX.Element => {
   const geometry = useMemo(() => buildGeometry(low, high), [low, high]);
@@ -401,6 +462,30 @@ export const VerticalKeyboard = ({
         : { top, bottom },
     );
   }, []);
+
+  // Keys added or removed above the view, and the control above them coming or
+  // going, never move the keys in view: the scroll position takes up the
+  // difference. The browser's own scroll anchoring is off (see the style
+  // below): some browsers would take it up a second time, and Safari not at
+  // all. Declared before the centring below, which runs after it in the same
+  // commit and scrolls from the anchored position.
+  const hasExtendAbove = extendAbove !== null;
+  const anchor = useRef<{ last: number; bodyTop: number } | null>(null);
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current;
+    const body = bodyRef.current;
+    if (!scroller || !body) return;
+    const previous = anchor.current;
+    anchor.current = { last: geometry.last, bodyTop: body.offsetTop };
+    if (previous === null) return;
+    const rowHeight = body.offsetHeight / geometry.whites.length;
+    const shift =
+      whiteKeysBetween(previous.last, geometry.last) * rowHeight +
+      (body.offsetTop - previous.bodyTop);
+    if (shift === 0) return;
+    scroller.scrollTop += shift;
+    updateEdges();
+  }, [geometry, hasExtendAbove, updateEdges]);
 
   useLayoutEffect(() => {
     const scroller = scrollerRef.current;
@@ -479,12 +564,15 @@ export const VerticalKeyboard = ({
       aria-label={label}
       onKeyDown={handleKeyDown}
       onScroll={updateEdges}
-      style={{ maskImage: mask, WebkitMaskImage: mask }}
+      style={{ maskImage: mask, WebkitMaskImage: mask, overflowAnchor: "none" }}
       className={cn(
         "relative select-none overflow-y-auto rounded-nested border border-hairline-strong bg-piano-ivory no-scrollbar",
         className,
       )}
     >
+      {extendAbove ? (
+        <ExtensionControl extension={extendAbove} direction="up" />
+      ) : null}
       <div ref={bodyRef} className="relative">
         <KeyColumn
           whites={geometry.whites}
@@ -524,6 +612,9 @@ export const VerticalKeyboard = ({
           </div>
         ) : null}
       </div>
+      {extendBelow ? (
+        <ExtensionControl extension={extendBelow} direction="down" />
+      ) : null}
     </div>
   );
 };

@@ -25,7 +25,9 @@
  * screen tall and held in view. On a phone the slots and the keyboard are one
  * screen together: the slot strip sticks to the top of the scroll area and the
  * keyboard takes the rest of the viewport, so a note costs a tap on a slot and
- * a tap on a key, with no scrolling between. Nothing above the keys changes
+ * a tap on a key, with no scrolling between. The keyboard opens on the voice's
+ * own span (`keyboardWindow`), and a singer who reaches further asks for more
+ * keys at either end of it. Nothing above the keys changes
  * height when a key is pressed: the slots are sized for their widest name and
  * the status line under them has a fixed height.
  *
@@ -102,10 +104,13 @@ import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 
 import {
+  KEYBOARD_LIMIT,
   keyboardWindow,
+  NO_REACH,
   SINGING_VOICES,
   singingVoiceOf,
   voiceCentreMidi,
+  type KeyboardReach,
   type SingingVoice,
 } from "../constants/voices";
 import { useSubmitVocalRange } from "../hooks/useSubmitVocalRange";
@@ -321,10 +326,37 @@ const VocalRangeStage = ({
     setCenterRequest((current) => ({ midi, seq: current.seq + 1 }));
   };
 
+  /** How far the singer has widened the keyboard past the voice's own span,
+   *  for this opening; a chosen note keeps its keys at the next one anyway. */
+  const [reach, setReach] = useState<KeyboardReach>(NO_REACH);
   const keySpan = useMemo(
-    () => keyboardWindow(voice, rangePitches(draft)),
-    [voice, draft],
+    () => keyboardWindow(voice, rangePitches(draft), reach),
+    [voice, draft, reach],
   );
+
+  /** More keys past one end, brought into view. The microphone listens in
+   *  the widened span at once, so a note sung out of reach can be caught by
+   *  widening while listening. */
+  const widen = (side: keyof KeyboardReach): void => {
+    const next = { ...reach, [side]: reach[side] + 1 };
+    setReach(next);
+    const span = keyboardWindow(voice, rangePitches(draft), next);
+    requestCentre(side === "above" ? span.high : span.low);
+  };
+  const extendAbove =
+    keySpan.high < KEYBOARD_LIMIT.high
+      ? {
+          label: t("vocal_range.keyboard_more_above", "Wyższe dźwięki"),
+          onPress: () => widen("above"),
+        }
+      : null;
+  const extendBelow =
+    keySpan.low > KEYBOARD_LIMIT.low
+      ? {
+          label: t("vocal_range.keyboard_more_below", "Niższe dźwięki"),
+          onPress: () => widen("below"),
+        }
+      : null;
 
   /** A refusal, a missing microphone or a timeout is said once, on the status
    *  line, until the next key or slot. */
@@ -449,6 +481,7 @@ const VocalRangeStage = ({
   const pickTrialVoice = (next: SingingVoice): void => {
     pitch.cancel();
     setTrialVoice(next);
+    setReach(NO_REACH);
     requestCentre(slotCentre(slot, draft, voiceCentreMidi(next)));
   };
   const bands = useMemo(() => rangeBands(draft), [draft]);
@@ -612,7 +645,7 @@ const VocalRangeStage = ({
               <Text size="md" color="graphite" className="mt-3 max-w-xl leading-7">
                 {t(
                   "vocal_range.intro",
-                  "To informacja dla dyrygenta. Pozostali chórzyści jej nie zobaczą. Dźwięki skrajne w nawiasach są opcjonalne.",
+                  "Granice tessitury wyznacza to, co śpiewasz swobodnie, także piano. Dźwięki skrajne w nawiasach są opcjonalne: te, które osiągasz już tylko w forte. To informacja dla dyrygenta. Pozostali chórzyści jej nie zobaczą.",
                 )}
               </Text>
             </motion.div>
@@ -799,6 +832,8 @@ const VocalRangeStage = ({
                 liveCursor={pitch.cursor}
                 centerRequest={centerRequest}
                 onKeyPress={pressKey}
+                extendAbove={extendAbove}
+                extendBelow={extendBelow}
                 className="h-full"
               />
             </motion.div>
@@ -826,6 +861,10 @@ const VocalRangeStage = ({
                   label={t(
                     "vocal_range.comment_label",
                     "Uwagi dla dyrygenta (opcjonalnie)",
+                  )}
+                  placeholder={t(
+                    "vocal_range.comment_placeholder",
+                    "Na przykład: w którym głosie czujesz się najlepiej.",
                   )}
                   value={comment}
                   onChange={(event) => setComment(event.target.value)}

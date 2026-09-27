@@ -6500,7 +6500,7 @@
   "vocal_range": {
     "eyebrow": "Vocal range",
     "title": "What is your tessitura when you sing in the ensemble?",
-    "intro": "This is for the conductor. Other choristers will not see it. The extreme notes in brackets are optional.",
+    "intro": "Your tessitura spans what you sing freely, piano included. The extreme notes in brackets are optional: those you reach only at forte. This is for the conductor. Other choristers will not see it.",
     "voice_label": "Your voice",
     "later": "Later",
     "close": "Close",
@@ -6527,6 +6527,8 @@
       }
     },
     "keyboard_label": "Keyboard. The key you touch goes into: {{slot}}",
+    "keyboard_more_above": "Higher notes",
+    "keyboard_more_below": "Lower notes",
     "note_card": {
       "hint": "Touch a key: it sounds and fills the selected slot.",
       "hz": "{{value}} Hz"
@@ -6544,6 +6546,7 @@
       "extreme_high_order": "The highest extreme note cannot be below the tessitura's upper bound."
     },
     "comment_label": "Notes for the conductor (optional)",
+    "comment_placeholder": "For example: which voice part suits you best.",
     "send": "Send to the conductor",
     "send_error": "Sending failed. Please try again.",
     "sent": {

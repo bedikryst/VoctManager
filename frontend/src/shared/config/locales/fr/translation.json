@@ -6511,7 +6511,7 @@
   "vocal_range": {
     "eyebrow": "Tessiture",
     "title": "Quelle est votre tessiture dans le chant d'ensemble ?",
-    "intro": "Cette information est destinée au chef de chœur. Les autres choristes ne la verront pas. Les notes extrêmes entre parenthèses sont facultatives.",
+    "intro": "Votre tessiture couvre ce que vous chantez librement, piano compris. Les notes extrêmes entre parenthèses sont facultatives : celles que vous n'atteignez qu'en forte. Cette information est destinée au chef de chœur. Les autres choristes ne la verront pas.",
     "voice_label": "Votre voix",
     "later": "Plus tard",
     "close": "Fermer",
@@ -6538,6 +6538,8 @@
       }
     },
     "keyboard_label": "Clavier. La touche choisie s'inscrit dans : {{slot}}",
+    "keyboard_more_above": "Notes plus aiguës",
+    "keyboard_more_below": "Notes plus graves",
     "note_card": {
       "hint": "Appuyez sur une touche : elle sonne et s'inscrit dans la case choisie.",
       "hz": "{{value}} Hz"
@@ -6555,6 +6557,7 @@
       "extreme_high_order": "La note extrême aiguë ne peut pas être plus grave que la limite supérieure de la tessiture."
     },
     "comment_label": "Remarques pour le chef de chœur (facultatif)",
+    "comment_placeholder": "Par exemple : le pupitre où vous vous sentez le mieux.",
     "send": "Envoyer au chef de chœur",
     "send_error": "L'envoi a échoué. Réessayez.",
     "sent": {
