@@ -184,6 +184,23 @@ class Artist(EnterpriseBaseModel):
     )
     vocal_range_bottom = models.CharField(max_length=5, blank=True, help_text=_("e.g. G2"), verbose_name=_("Range (Bottom)"))
     vocal_range_top = models.CharField(max_length=5, blank=True, help_text=_("e.g. C5"), verbose_name=_("Range (Top)"))
+
+    # The singer's OWN proposal — separate fields, never written into
+    # `vocal_range_bottom/top` above, which stay the conductor's private
+    # free-text assessment and never reach any chorister. MIDI numbers, not
+    # SPN text: notation is a presentation concern (`pitchNotation.ts`), so a
+    # tenor's octave-displaced clef or a keyboard mislabelling middle C cannot
+    # corrupt what is actually stored. Written only by
+    # `VocalRangeService.submit_proposal`; resubmission overwrites and
+    # restamps `vocal_range_proposed_at`, so there is only ever the latest.
+    proposed_tessitura_low = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=_("Proposed Tessitura (Low)"))
+    proposed_tessitura_high = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=_("Proposed Tessitura (High)"))
+    # Optional: null means the singer named nothing beyond the tessitura.
+    proposed_extreme_low = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=_("Proposed Extreme (Low)"))
+    proposed_extreme_high = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=_("Proposed Extreme (High)"))
+    vocal_range_comment = models.TextField(blank=True, verbose_name=_("Vocal Range Comment"))
+    # Null = the prompt is still pending for this singer; set on every submit.
+    vocal_range_proposed_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Vocal Range Proposed At"))
     activation_email_sent_at = models.DateTimeField(
         null=True, blank=True,
         verbose_name=_("Activation Email Sent At"),

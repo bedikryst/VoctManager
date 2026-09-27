@@ -83,6 +83,7 @@ from .dtos import (
     RehearsalCreateDTO,
     RehearsalPlanRowDTO,
     RehearsalUpdateDTO,
+    VocalRangeProposalDTO,
 )
 from .exceptions import (
     ActivatedArtistMergeException,
@@ -2432,6 +2433,31 @@ class PieceReadinessService:
             defaults={'status': dto.status},
         )
         return entry
+
+
+class VocalRangeService:
+    """The singer's own tessitura/extremes self-report.
+
+    First-person only, like `PieceReadinessService`: this never touches
+    `Artist.vocal_range_bottom/top`, the conductor's own private assessment in
+    a different notation. Resubmission overwrites and restamps — there is only
+    ever the latest proposal, not a history of them.
+    """
+
+    @staticmethod
+    def submit_proposal(artist: Artist, dto: VocalRangeProposalDTO) -> Artist:
+        artist.proposed_tessitura_low = dto.tessitura_low
+        artist.proposed_tessitura_high = dto.tessitura_high
+        artist.proposed_extreme_low = dto.extreme_low
+        artist.proposed_extreme_high = dto.extreme_high
+        artist.vocal_range_comment = dto.comment
+        artist.vocal_range_proposed_at = timezone.now()
+        artist.save(update_fields=[
+            'proposed_tessitura_low', 'proposed_tessitura_high',
+            'proposed_extreme_low', 'proposed_extreme_high',
+            'vocal_range_comment', 'vocal_range_proposed_at', 'updated_at',
+        ])
+        return artist
 
 
 class CastingAndCrewService:

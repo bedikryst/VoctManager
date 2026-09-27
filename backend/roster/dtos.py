@@ -372,6 +372,44 @@ class PieceReadinessUpdateDTO(EnterpriseBaseDTO):
         return _require_choice(value, PIECE_READINESS_STATUS_VALUES, "status")
 
 
+# The full 88-key piano, A0-C8. A sanity bound against garbage, not a musical
+# claim: the singer's keyboard only offers G1-C7, so a real submission never
+# comes near either end.
+VOCAL_RANGE_MIDI_MIN = 21
+VOCAL_RANGE_MIDI_MAX = 108
+
+
+class VocalRangeProposalDTO(EnterpriseBaseDTO):
+    """A singer's own tessitura, written by touching sounding keys, never typed
+    note names — see docs/specs/vocal-range-self-report-2026-09.md ("Thesis").
+    All values are MIDI numbers; notation is presentation only.
+
+    The tessitura is required; the extremes are optional and null means
+    "nothing beyond the tessitura", not zero.
+    """
+
+    tessitura_low: int = Field(..., ge=VOCAL_RANGE_MIDI_MIN, le=VOCAL_RANGE_MIDI_MAX)
+    tessitura_high: int = Field(..., ge=VOCAL_RANGE_MIDI_MIN, le=VOCAL_RANGE_MIDI_MAX)
+    extreme_low: int | None = Field(None, ge=VOCAL_RANGE_MIDI_MIN, le=VOCAL_RANGE_MIDI_MAX)
+    extreme_high: int | None = Field(None, ge=VOCAL_RANGE_MIDI_MIN, le=VOCAL_RANGE_MIDI_MAX)
+    comment: str = Field(default='', max_length=500)
+
+    @field_validator("comment", mode="before")
+    @classmethod
+    def normalize_comment(cls, value: object) -> object:
+        return _blankable_string(value)
+
+    @model_validator(mode="after")
+    def validate_range_shape(self) -> Self:
+        if self.tessitura_low >= self.tessitura_high:
+            raise ValueError("tessitura_low must be lower than tessitura_high.")
+        if self.extreme_low is not None and self.extreme_low > self.tessitura_low:
+            raise ValueError("extreme_low must not be higher than tessitura_low.")
+        if self.extreme_high is not None and self.extreme_high < self.tessitura_high:
+            raise ValueError("extreme_high must not be lower than tessitura_high.")
+        return self
+
+
 class PieceCastingRowDTO(EnterpriseBaseDTO):
     """One seat on the divisi board: this participant, on this voice line."""
 

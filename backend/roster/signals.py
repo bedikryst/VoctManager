@@ -69,10 +69,25 @@ def handle_gdpr_artist_deletion(sender, user, **kwargs) -> None:
         artist = Artist.objects.get(user=user, is_deleted=False)
         
         with transaction.atomic():
-            # 1. GDPR Anonymization of contact channels
+            # 1. GDPR Anonymization of contact channels, and of the singer's own
+            # vocal-range proposal: first-person words (the comment may well
+            # carry health detail) with no contract to keep them for. The
+            # conductor's own assessment is not the singer's data and stays.
             artist.email = f"archived_{artist.id}@deleted.local"
             artist.phone_number = ""
-            artist.save(update_fields=['email', 'phone_number', 'updated_at'])
+            artist.proposed_tessitura_low = None
+            artist.proposed_tessitura_high = None
+            artist.proposed_extreme_low = None
+            artist.proposed_extreme_high = None
+            artist.vocal_range_comment = ""
+            artist.vocal_range_proposed_at = None
+            artist.save(update_fields=[
+                'email', 'phone_number',
+                'proposed_tessitura_low', 'proposed_tessitura_high',
+                'proposed_extreme_low', 'proposed_extreme_high',
+                'vocal_range_comment', 'vocal_range_proposed_at',
+                'updated_at',
+            ])
             
             # 2. Soft-delete to hide from active project rosters
             artist.delete()

@@ -484,6 +484,15 @@ FEEDBACK_NOTIFICATION_EMAIL = (
 # --- BUSINESS LOGIC DEFAULTS ---
 DEFAULT_ARTIST_PASSWORD = env('DEFAULT_ARTIST_PASSWORD', default='secure_password123')
 
+# Rollout gate for the singer's own vocal-range self-report prompt: `off`
+# (default), `all`, or a comma-separated list of user IDs. Read (and parsed
+# defensively — a malformed value must never crash a request) by
+# `core.permissions.vocal_range_prompt_enabled_for`. Gates the frontend surface
+# only; the write endpoint stays open to any artist for their own row. Lives in
+# the root `.env`, which reaches this container through `env_file` — changing
+# it needs `make prod` (a plain `docker restart` does not reread `env_file`).
+VOCAL_RANGE_PROMPT = env('VOCAL_RANGE_PROMPT', default='off')
+
 # --- AI / ANTHROPIC (Score Package Compiler) ---
 # API key for Claude (Anthropic). The AI client wrapper raises if missing
 # when first instantiated. Leave blank to disable ingestion features in dev.

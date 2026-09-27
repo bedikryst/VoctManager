@@ -85,7 +85,17 @@ class ArtistBasicSerializer(serializers.ModelSerializer):
             'vocal_range_bottom',
             'vocal_range_top',
             'phone_number',
-            'email'
+            'email',
+            # The singer's own proposal (see Artist model) — first-person data,
+            # never another chorister's to read. `exclude` means every future
+            # Artist field leaks here by default, so this list is the actual
+            # privacy boundary, not the model.
+            'proposed_tessitura_low',
+            'proposed_tessitura_high',
+            'proposed_extreme_low',
+            'proposed_extreme_high',
+            'vocal_range_comment',
+            'vocal_range_proposed_at',
         )
 
     def get_avatar_thumb_url(self, obj: Artist) -> str | None:
@@ -159,6 +169,15 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
             'voice_type', 'voice_type_display', 'instrument',
             'sight_reading_skill', 'vocal_range_bottom', 'vocal_range_top',
 
+            # The singer's own proposal — read here so the conductor can see
+            # it, but never through this generic PATCH: only
+            # `VocalRangeService.submit_proposal` (the singer's own write)
+            # may set it, or a manager's edit would overwrite the singer's
+            # own words in the conductor's voice.
+            'proposed_tessitura_low', 'proposed_tessitura_high',
+            'proposed_extreme_low', 'proposed_extreme_high',
+            'vocal_range_comment', 'vocal_range_proposed_at',
+
             # Roster standing
             'is_active', 'is_project_leader',
 
@@ -168,6 +187,9 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
         read_only_fields = (
             'id', 'created_at', 'updated_at', 'is_deleted',
             'user', 'is_active', 'activation_email_sent_at',
+            'proposed_tessitura_low', 'proposed_tessitura_high',
+            'proposed_extreme_low', 'proposed_extreme_high',
+            'vocal_range_comment', 'vocal_range_proposed_at',
         )
 
     def validate_email(self, value: str) -> str:

@@ -89,6 +89,7 @@ from .dtos import (
     RehearsalPlanDTO,
     RehearsalPlanItemDoneDTO,
     RehearsalUpdateDTO,
+    VocalRangeProposalDTO,
 )
 from .duplicates import find_duplicate_groups
 from .exceptions import (
@@ -185,6 +186,7 @@ from .services import (
     ProjectPublicationService,
     RehearsalDelegationService,
     RehearsalOperationsService,
+    VocalRangeService,
 )
 
 # Chorister material-access rule now lives in roster.queries.materials_queries so
@@ -373,7 +375,7 @@ class ArtistViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if user_is_manager(self.request.user):
             return ArtistDetailedSerializer
-        if self.action == 'me':
+        if self.action in ('me', 'vocal_range'):
             return ArtistMeSerializer
         return ArtistBasicSerializer
     
@@ -462,6 +464,37 @@ class ArtistViewSet(viewsets.ModelViewSet):
         if not artist:
             return Response(None, status=status.HTTP_204_NO_CONTENT)
         return Response(self.get_serializer(artist).data)
+
+    @action(
+        detail=False, methods=['put'], url_path='me/vocal-range',
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def vocal_range(self, request) -> Response:
+        """The singer's own tessitura/extremes self-report — first-person only,
+        like the readiness self-report on `ParticipationViewSet`. The class's
+        default `IsManagerOrReadOnly` would refuse this PUT to every non-manager,
+        so it is overridden here: any authenticated artist may write their own
+        row. Answered in the shape `me` answers for the same reader, so the
+        client can take either response as the singer's own record. Only
+        singing voice types may submit — see `Artist.is_singer`.
+        """
+        artist = Artist.objects.filter(user=request.user).first()
+        if artist is None or not artist.is_singer:
+            return Response(
+                {"detail": "Only a singer may submit a vocal range proposal."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            dto = VocalRangeProposalDTO(**client_payload(request.data))
+        except ValidationError as e:
+            return Response(
+                {"validation_errors": format_pydantic_validation_errors(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        updated = VocalRangeService.submit_proposal(artist, dto)
+        return Response(self.get_serializer(updated).data)
 
     @action(detail=False, methods=['get'], permission_classes=[IsManager])
     def duplicates(self, request) -> Response:

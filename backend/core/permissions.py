@@ -3,6 +3,7 @@
 # Enterprise RBAC Permissions
 # Standard: Enterprise SaaS 2026
 # ==========================================
+from django.conf import settings
 from django.db.models import Q
 from rest_framework import permissions
 
@@ -50,6 +51,26 @@ def user_is_board(user: object) -> bool:
     if user is None or not getattr(user, 'is_authenticated', False):
         return False
     return bool(getattr(user, 'is_staff', False))
+
+
+def vocal_range_prompt_enabled_for(user: object) -> bool:
+    """Whether the `VOCAL_RANGE_PROMPT` rollout gate (root `.env`) is on for this
+    account: `off` (default), `all`, or a comma-separated allowlist of user IDs.
+
+    Gates the frontend prompt only — the write endpoint stays open to any
+    artist for their own row regardless. A malformed setting (an odd token in
+    the list, stray whitespace) is tolerated rather than allowed to 500 every
+    profile read: it simply never matches a real user ID.
+    """
+    if user is None or not getattr(user, 'is_authenticated', False):
+        return False
+    raw = str(getattr(settings, 'VOCAL_RANGE_PROMPT', 'off') or '').strip()
+    if raw.lower() == 'all':
+        return True
+    if raw.lower() in ('', 'off'):
+        return False
+    allowed_ids = {token.strip() for token in raw.split(',') if token.strip()}
+    return str(getattr(user, 'id', None)) in allowed_ids
 
 
 class BaseEnterprisePermission(permissions.BasePermission):

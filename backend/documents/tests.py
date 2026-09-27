@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, skipUnlessDBFeature
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -41,6 +41,10 @@ class DocumentCategoryTests(APITestCase):
             allowed_roles=[],
         )
 
+    # `DocumentCategoryService` filters `allowed_roles__contains`, a JSONField
+    # lookup Postgres has and SQLite does not. Under `test_settings_sqlite` this
+    # is skipped rather than erroring; it runs in CI and in the container.
+    @skipUnlessDBFeature('supports_json_field_contains')
     def test_artist_cannot_see_manager_category(self):
         self.client.force_authenticate(user=self.artist_user)
         response = self.client.get('/api/documents/categories/')
@@ -83,6 +87,8 @@ class MyEnsembleTests(APITestCase):
         self.me = Artist.objects.create(
             user=self.user, first_name='Jan', last_name='Tenor', email='tenor@example.com',
             voice_type='TEN', sight_reading_skill=4, vocal_range_bottom='C3', vocal_range_top='A4',
+            proposed_tessitura_low=48, proposed_tessitura_high=67,
+            vocal_range_comment='Prywatna notatka', vocal_range_proposed_at=timezone.now(),
         )
         a_line = Artist.objects.create(
             first_name='Adam', last_name='Linia', email='adam@example.com', voice_type='TEN',
@@ -169,7 +175,10 @@ class MyEnsembleTests(APITestCase):
     def test_never_leaks_private_or_default_voice_data(self):
         import json
         blob = json.dumps(self._get().data).lower()
-        for needle in ('sight_reading', 'vocal_range'):
+        # 'vocal_range' also covers the singer's own proposal fields
+        # (vocal_range_comment, vocal_range_proposed_at); 'tessitura' and
+        # 'proposed_extreme' catch the two that do not share that prefix.
+        for needle in ('sight_reading', 'vocal_range', 'tessitura', 'proposed_extreme'):
             self.assertNotIn(needle, blob)
         # Co-singers carry only the per-piece voice line, never a default voice_type.
         member = self._get().data['concerts'][0]['pieces'][0]['sections'][0]['members'][0]

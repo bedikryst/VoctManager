@@ -14,7 +14,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import FeedbackReport, Note, UserProfile
-from .permissions import user_is_board, user_is_manager
+from .permissions import user_is_board, user_is_manager, vocal_range_prompt_enabled_for
 
 User = get_user_model()
 
@@ -46,6 +46,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
     # so the panel can say why a control is absent instead of failing with 403.
     can_approve_finance = serializers.SerializerMethodField()
 
+    # The rollout gate for the singer's own vocal-range self-report prompt
+    # (`VOCAL_RANGE_PROMPT`, see `core.permissions.vocal_range_prompt_enabled_for`).
+    # Computed rather than a column: the flag lives in the environment, not the
+    # database, and this is what lets it flip without a migration.
+    vocal_range_prompt_enabled = serializers.SerializerMethodField()
+
     # The manager's whole-season feed, or null when the account may not have
     # one. Null rather than a flag beside the columns, so the panel offers the
     # switch to exactly whom the feed would serve — staff included, whatever
@@ -76,6 +82,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
             # Onboarding + one-time offers (read-only; stamped server-side via
             # their own actions)
             'welcome_seen_at', 'push_email_offer_seen_at',
+
+            # Rollout gate for the vocal-range self-report prompt (read-only).
+            'vocal_range_prompt_enabled',
 
             # Copy desk. Granted from the admin and never by the account itself;
             # here so the panel can decide whether to offer the way in at all.
@@ -118,6 +127,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def get_can_approve_finance(self, obj: UserProfile) -> bool:
         return user_is_board(obj.user)
+
+    def get_vocal_range_prompt_enabled(self, obj: UserProfile) -> bool:
+        return vocal_range_prompt_enabled_for(obj.user)
 
     def get_season_calendar(self, obj: UserProfile) -> dict[str, Any] | None:
         """`{enabled, token}`; `token` stays null until the feed is first on."""
