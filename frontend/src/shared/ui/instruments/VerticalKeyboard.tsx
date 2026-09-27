@@ -12,7 +12,7 @@
  * The caller's bands tint the keys they cover (a stronger tint for the main
  * span, a fainter one for the reach beyond it), keys outside an optional
  * emphasis span are dimmed, and an optional cursor follows a pitch that is not
- * a key, such as a sung note.
+ * a key, such as a sung note, scrolling the keys to keep itself in view.
  *
  * The keyboard knows pitches and a notation, and nothing about voices: bounds,
  * bands, the emphasis and the label come from the caller. A key reports through
@@ -85,7 +85,7 @@ export interface VerticalKeyboardProps {
   /** The key drawn pressed: the one last sounded or chosen. */
   readonly activeKey?: number | null;
   /** A continuous pitch in MIDI units (69.5 is a quarter tone above A4). Not
-   *  drawn outside `low`–`high`. */
+   *  drawn outside `low`–`high`; the keys scroll to keep it in view. */
   readonly liveCursor?: number | null;
   /** The first request is met instantly; later ones scroll smoothly, unless
    *  the reader prefers reduced motion. */
@@ -102,6 +102,10 @@ const NO_BANDS: readonly KeyboardBand[] = [];
 
 /** How far the edge fade reaches into the window: about half a key. */
 const EDGE_FADE = "1.5rem";
+
+/** The share of the window's height, at each end, where a live cursor is
+ *  close enough to the edge to bring back to the middle. */
+const CURSOR_EDGE_MARGIN = 0.15;
 
 const edgeMask = (top: boolean, bottom: boolean): string =>
   `linear-gradient(to bottom, ${top ? "transparent" : "black"}, black ${EDGE_FADE}, black calc(100% - ${EDGE_FADE}), ${bottom ? "transparent" : "black"})`;
@@ -443,6 +447,28 @@ export const VerticalKeyboard = ({
     liveCursor <= high
       ? pitchPosition(geometry, liveCursor)
       : null;
+
+  // The cursor keeps itself in view: once it nears an edge of the window, the
+  // keys scroll to bring it back to the middle, so a note sung off-screen is
+  // seen while it is sung. Only a voice moves the cursor, and a finger on a key
+  // ends the listening, so this never scrolls under a tap.
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    const body = bodyRef.current;
+    if (cursor === null || !scroller || !body) return;
+    const y = body.offsetTop + cursor * body.offsetHeight;
+    const margin = scroller.clientHeight * CURSOR_EDGE_MARGIN;
+    if (
+      y >= scroller.scrollTop + margin &&
+      y <= scroller.scrollTop + scroller.clientHeight - margin
+    ) {
+      return;
+    }
+    scroller.scrollTo({
+      top: y - scroller.clientHeight / 2,
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
+  }, [cursor, reduceMotion]);
 
   const mask = edgeMask(edges.top, edges.bottom);
 

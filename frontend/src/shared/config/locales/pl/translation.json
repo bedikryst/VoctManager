@@ -4393,7 +4393,6 @@
       "aria_label": "Zarządzaj obsadą wokalną",
       "card": {
         "a_vista": "a vista {{score}}/5",
-        "range_by_singer": "{{range}} wg chórzysty",
         "add_aria": "Dodaj {{name}} do obsady",
         "declined": "Odmowa",
         "pending": "Czeka",

@@ -4355,7 +4355,6 @@
       "aria_label": "Manage vocal cast",
       "card": {
         "a_vista": "sight-reading {{score}}/5",
-        "range_by_singer": "{{range}} per the singer",
         "add_aria": "Add {{name}} to the cast",
         "declined": "Declined",
         "pending": "Awaiting",

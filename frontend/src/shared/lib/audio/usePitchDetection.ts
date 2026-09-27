@@ -26,7 +26,6 @@
  */
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { PitchDetector } from "pitchy";
 
 import { createHeldPitchTracker } from "@/shared/lib/audio/heldPitch";
 import {
@@ -181,6 +180,23 @@ export const usePitchDetection = (
         stream
           .getTracks()
           .forEach((track) => track.addEventListener("ended", onTrackEnded));
+        // Counted from the grant, so a slow load below counts against it too.
+        current.timeout = window.setTimeout(() => {
+          if (generation.current !== mine) return;
+          teardown();
+          setStatus("timedOut");
+        }, LISTEN_TIMEOUT_MS);
+
+        // Loaded with the first capture, not with the panel: every account
+        // loads the shell that mounts this screen, and few ever sing into it.
+        return import("pitchy").then(({ PitchDetector }) => ({
+          stream,
+          PitchDetector,
+        }));
+      })
+      .then((granted) => {
+        if (!granted || generation.current !== mine) return;
+        const { stream, PitchDetector } = granted;
 
         const source = ctx.createMediaStreamSource(stream);
         const analyser = ctx.createAnalyser();
@@ -234,11 +250,6 @@ export const usePitchDetection = (
         };
 
         current.frame = requestAnimationFrame(tick);
-        current.timeout = window.setTimeout(() => {
-          if (generation.current !== mine) return;
-          teardown();
-          setStatus("timedOut");
-        }, LISTEN_TIMEOUT_MS);
         setStatus("listening");
       })
       .catch((error: unknown) => {

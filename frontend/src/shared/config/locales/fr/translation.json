@@ -4365,7 +4365,6 @@
       "aria_label": "Gérer la distribution vocale",
       "card": {
         "a_vista": "déchiffrage {{score}}/5",
-        "range_by_singer": "{{range}} selon le choriste",
         "add_aria": "Ajouter {{name}} à la distribution",
         "declined": "Refusé",
         "pending": "En attente",

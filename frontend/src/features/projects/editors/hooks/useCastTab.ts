@@ -19,7 +19,6 @@
 
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
 import { arrayMove } from "@dnd-kit/sortable";
 
 import { toastApiError } from "@/shared/api/errors";
@@ -32,17 +31,15 @@ import type {
   VoiceType,
 } from "@/shared/types";
 import { isSingingVoiceType } from "@/shared/lib/voiceTypes";
-import {
-  formatVocalRange,
-  notationForLanguage,
-  type PitchNotation,
-} from "@/shared/lib/music/pitchNotation";
 import type { SelectOption } from "@/shared/ui/primitives/Select";
 import {
   outOfReachReason,
   type OutOfReachReason,
 } from "@/features/artists/lib/accountState";
-import { rangeShown } from "@/features/artists/lib/vocalRangeProposal";
+import {
+  rangeShown,
+  type RangeShown,
+} from "@/features/artists/lib/vocalRangeProposal";
 import {
   useCreateParticipation,
   useDeleteParticipation,
@@ -71,9 +68,10 @@ interface RosterFacts {
   readonly section: VoiceType | null;
   /** What a player plays ("Organy"); null for everyone who sings. */
   readonly instrument: string | null;
-  /** "A2–G4"; the singer's proposal, marked as theirs, when the conductor has
-   *  written none; null when neither exists. */
-  readonly rangeLabel: string | null;
+  /** The conductor's range, else the singer's proposal (the row marks it as
+   *  theirs); null when neither exists. Kept as data, not text: a proposal is
+   *  set as markup so its octave marks stay in the panel's face. */
+  readonly range: RangeShown | null;
   readonly sightReading: number | null;
 }
 
@@ -178,21 +176,6 @@ export interface UseCastTabResult {
 const EMPTY_ARTISTS: Artist[] = [];
 const EMPTY_PARTICIPATIONS: Participation[] = [];
 
-/** The conductor's range, else the singer's proposal marked as theirs. */
-const rangeOf = (
-  artist: Artist | undefined,
-  notation: PitchNotation,
-  t: TFunction,
-): string | null => {
-  const range = rangeShown(artist, "–");
-  if (!range) return null;
-  if (range.source === "conductor") return range.text;
-  return t("projects.cast.card.range_by_singer", {
-    defaultValue: "{{range}} wg chórzysty",
-    range: formatVocalRange(range.range, notation),
-  });
-};
-
 /**
  * Score order (section, then the voice inside it — the baritones above the
  * basses), then surname — how a roster is read. The pool has nothing to
@@ -242,8 +225,7 @@ const sectionize = <TEntry extends RosterFacts>(
 };
 
 export const useCastTab = (projectId: string): UseCastTabResult => {
-  const { t, i18n } = useTranslation();
-  const notation = notationForLanguage(i18n.language);
+  const { t } = useTranslation();
 
   const artistsQuery = useProjectArtistsDictionary();
   const participationsQuery = useProjectParticipations(projectId);
@@ -297,7 +279,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
             : (participation.artist_voice_type_display ?? ""),
           section: sectionOf(voiceType, participation.default_voice_line || null),
           instrument: artist?.instrument || null,
-          rangeLabel: rangeOf(artist, notation, t),
+          range: rangeShown(artist),
           sightReading: artist?.sight_reading_skill ?? null,
           status: participation.status,
           seat: participation.default_voice_line ?? "",
@@ -308,7 +290,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
         };
       })
       .sort(byCastOrder);
-  }, [artistById, notation, participations, t]);
+  }, [artistById, participations, t]);
 
   /** Everyone castable and not yet cast — the search is scoped to this list. */
   const poolEntries = useMemo<PoolEntry[]>(
@@ -328,11 +310,11 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
           ),
           section: sectionOf(artist.voice_type, null),
           instrument: artist.instrument || null,
-          rangeLabel: rangeOf(artist, notation, t),
+          range: rangeShown(artist),
           sightReading: artist.sight_reading_skill ?? null,
         }))
         .sort(byVoiceThenName),
-    [artists, assignedIds, notation, t],
+    [artists, assignedIds, t],
   );
 
   // Searching answers "who can I add?", so it filters the pool alone. Filtering

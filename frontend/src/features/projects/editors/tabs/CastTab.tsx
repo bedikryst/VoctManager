@@ -46,7 +46,13 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import type { Project, VoiceType } from "@/shared/types";
+import type { RangeShown } from "@/features/artists/lib/vocalRangeProposal";
+import {
+  notationForLanguage,
+  type PitchNotation,
+} from "@/shared/lib/music/pitchNotation";
 import { cn } from "@/shared/lib/utils";
+import { VocalRangeText } from "@/shared/ui/instruments/PitchName";
 import { isInstrumentalist } from "@/shared/lib/voiceTypes";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { TabLoadingCard } from "./components/TabLoadingCard";
@@ -78,6 +84,8 @@ interface CastTabProps {
  * used to be two icon-prefixed pills, which put sixty glyphs on a screen whose
  * content is forty names. A player's line is their instrument alone — range
  * and sight-reading are a singer's facts and are never recorded for them.
+ * A singer's own proposal stands in for a range the conductor has not written,
+ * set as markup (its octave marks need the panel's face) and marked as theirs.
  */
 const buildSingerMeta = (
   entry: {
@@ -85,25 +93,46 @@ const buildSingerMeta = (
     voiceLabel: string;
     section: VoiceType | null;
     instrument: string | null;
-    rangeLabel: string | null;
+    range: RangeShown | null;
     sightReading: number | null;
   },
+  notation: PitchNotation,
   t: TFunction,
-): string | null => {
-  const parts = [
-    entry.voiceType && entry.voiceType !== entry.section
-      ? entry.voiceLabel
-      : null,
-    entry.instrument,
-    entry.rangeLabel,
-    entry.sightReading !== null
-      ? t("projects.cast.card.a_vista", "a vista {{score}}/5", {
-          score: entry.sightReading,
-        })
-      : null,
-  ].filter((part): part is string => Boolean(part));
+): React.ReactNode => {
+  const parts: { key: string; node: React.ReactNode }[] = [];
+  if (entry.voiceType && entry.voiceType !== entry.section && entry.voiceLabel) {
+    parts.push({ key: "voice", node: entry.voiceLabel });
+  }
+  if (entry.instrument) parts.push({ key: "instrument", node: entry.instrument });
+  if (entry.range?.source === "conductor") {
+    parts.push({ key: "range", node: entry.range.text });
+  } else if (entry.range?.source === "singer") {
+    parts.push({
+      key: "range",
+      node: (
+        <>
+          <VocalRangeText range={entry.range.range} notation={notation} />{" "}
+          {t("artists.card.range_by_singer", "wg chórzysty")}
+        </>
+      ),
+    });
+  }
+  if (entry.sightReading !== null) {
+    parts.push({
+      key: "a-vista",
+      node: t("projects.cast.card.a_vista", "a vista {{score}}/5", {
+        score: entry.sightReading,
+      }),
+    });
+  }
 
-  return parts.length > 0 ? parts.join(" · ") : null;
+  if (parts.length === 0) return null;
+  return parts.map(({ key, node }, index) => (
+    <React.Fragment key={key}>
+      {index > 0 ? " · " : null}
+      {node}
+    </React.Fragment>
+  ));
 };
 
 interface CastRowProps {
@@ -133,8 +162,8 @@ function CastRow({
   onToggleLeader,
   onRemove,
 }: CastRowProps): React.JSX.Element {
-  const { t } = useTranslation();
-  const meta = buildSingerMeta(entry, t);
+  const { t, i18n } = useTranslation();
+  const meta = buildSingerMeta(entry, notationForLanguage(i18n.language), t);
   const {
     attributes,
     listeners,
@@ -402,7 +431,8 @@ function BalanceRail({
 }
 
 export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const notation = notationForLanguage(i18n.language);
   const {
     isLoading,
     castSections,
@@ -628,7 +658,7 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
                     <PickerRow
                       key={entry.artistId}
                       title={entry.displayName}
-                      meta={buildSingerMeta(entry, t)}
+                      meta={buildSingerMeta(entry, notation, t)}
                       isBusy={processingId === entry.artistId}
                       onPick={() => void addToCast(entry.artistId)}
                       pickLabel={t(

@@ -233,29 +233,39 @@ export const ArtistCard = React.memo(
             <Eyebrow color="muted">
               {t("artists.card.voice_range", "Skala Głosu")}
             </Eyebrow>
-            {range?.source === "conductor" ? (
-              <Text size="sm" weight="bold" className="tabular-nums">
-                {range.text}
-              </Text>
-            ) : range?.source === "singer" ? (
-              <div
-                title={t("artists.card.range_proposal_title", "Propozycja chórzysty")}
-              >
+            {/* Two lines on every card, whoever's range it holds: a singer's
+                proposal needs the second to say whose it is, and a card beside
+                it must not stand shorter. */}
+            <div
+              title={
+                range?.source === "singer"
+                  ? t("artists.card.range_proposal_title", "Propozycja chórzysty")
+                  : undefined
+              }
+            >
+              {range?.source === "conductor" ? (
+                <Text size="sm" weight="bold" className="tabular-nums">
+                  {range.text}
+                </Text>
+              ) : range?.source === "singer" ? (
                 <Text size="sm" color="muted">
                   <VocalRangeText
                     range={range.range}
                     notation={notationForLanguage(i18n.language)}
                   />
                 </Text>
-                <Caption color="muted">
-                  {t("artists.card.range_by_singer", "wg chórzysty")}
-                </Caption>
-              </div>
-            ) : (
-              <Text size="sm" color="muted">
-                —
-              </Text>
-            )}
+              ) : (
+                <Text size="sm" color="muted">
+                  —
+                </Text>
+              )}
+              <Caption
+                color="muted"
+                className={cn(range?.source !== "singer" && "invisible")}
+              >
+                {t("artists.card.range_by_singer", "wg chórzysty")}
+              </Caption>
+            </div>
           </div>
           <div className="flex flex-col gap-1 bg-ethereal-alabaster/70 px-3.5 py-2.5">
             <Eyebrow color="muted">

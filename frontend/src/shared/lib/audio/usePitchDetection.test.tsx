@@ -13,7 +13,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, renderHook } from "@testing-library/react";
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 
 import {
   openToneContext,
@@ -124,16 +124,19 @@ const renderCapture = (onHeld: (midi: number) => void = () => undefined) =>
 
 type Rendered = ReturnType<typeof renderCapture>;
 
-/** Starts a capture and grants it a stream with one track. */
+/** Starts a capture, grants it a stream with one track, and waits out the
+ *  analysis loading after the grant. */
 const listen = async (
   rendered: Rendered,
   track: FakeTrack = makeTrack(),
 ): Promise<FakeTrack> => {
   act(() => rendered.result.current.start());
-  await act(async () => {
-    requests[requests.length - 1].grant(streamOf(track));
-    await settle();
-  });
+  act(() => requests[requests.length - 1].grant(streamOf(track)));
+  // The first test pays for transforming `pitchy`; the default second is tight.
+  await waitFor(
+    () => expect(rendered.result.current.status).not.toBe("starting"),
+    { timeout: 5000 },
+  );
   return track;
 };
 

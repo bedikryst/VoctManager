@@ -9,8 +9,10 @@ seen the first pass on dev (desktop and phone width, dark theme); the second pas
 Stage 4 (the conductor's view) and Stage 5 (microphone) built 2026-09-27 in parallel, audited the
 same day ("Audit of Stages 4–5" under Stage 5). Items 1–5 (the microphone stops on every path)
 fixed 2026-09-27 and pinned by `usePitchDetection.test.tsx`; typecheck, lint, tests and build
-green; committed 2026-09-27 with both stages. Not seen, never tried on an iPhone; items 6–14 open.
-Next: the developer's look on dev and the iPhone dry run (list under the audit), then items 6–14.**
+green; committed 2026-09-27 with both stages. Items 6–9 and 11–13 fixed 2026-09-27, not committed,
+not seen; 14 decided (kept as is); 10 waits on the developer. Nothing tried on an iPhone yet.
+Next: decide 10, the developer's look on dev, commit, then the iPhone dry run (list under the
+audit).**
 One stage per session. When a stage lands, update this line and say whether it is committed,
 migrated and seen in the browser.
 
@@ -402,8 +404,9 @@ tessitura edge.
   - tracks stop on capture, cancel, unmount and `visibilitychange: hidden`.
 - **Hold:**
   1. Select a slot and tap "Zaśpiewaj i przytrzymaj".
-  2. A held note is ≥ 600 ms of frames within ±40 cents of each other. A live cursor follows on
-     the keyboard while the singer sings.
+  2. A held note is ≥ 600 ms of the smoothed pitch staying within ±40 cents of the run's mean, so
+     a run may span about 80 cents. A live cursor follows on the keyboard while the singer sings,
+     and the keys scroll to keep it in view.
   3. The result snaps to the nearest semitone.
   4. The **mic stops, then the detected note plays back** and fills the slot. Hearing it back
      catches octave errors by ear.
@@ -434,7 +437,7 @@ tessitura edge.
   iOS plays that note from the loudspeaker at full level, and not from the earpiece or ducked, is
   the first thing to check in the dry run.
 
-### Audit of Stages 4–5 (2026-09-27) — items 1–5 fixed 2026-09-27, 6–14 open
+### Audit of Stages 4–5 (2026-09-27) — all fixed or decided but 10
 
 The invariant under audit: a microphone is never left live, on any path.
 
@@ -511,6 +514,27 @@ Conductor's view:
 14. `vocal_range_comment` is free text, and a singer may write about their health in it. It rides
     on every Artists list payload and is persisted in the query cache on every manager's device.
     Decide whether the list carries it, or only the editor.
+
+**Fixed 2026-09-27 (items 6–9 and 11–13; not committed, not seen):**
+- 6: Stage 5's hold rule now says what `heldPitch` does.
+- 7: the keyboard scrolls to keep a live cursor in view. When the cursor comes within 15 % of the
+  window's height of an edge, the keys bring it back to the middle. Only a voice moves the cursor,
+  and a key press ends the listening, so this never scrolls under a tap.
+- 8: what the microphone is doing (listening, refused, unavailable, timed out) is said through the
+  screen's existing live region; the status line itself cross-fades between elements, which a
+  screen reader does not follow.
+- 9: `pitchy` loads after the grant, on the first capture. The 20 s timeout starts at the grant,
+  so a slow load counts against it, and a failed load ends the capture as `unavailable`.
+- 11: the cast keeps the range as data (`RangeShown`) and sets a proposal with `VocalRangeText`,
+  marked "wg chórzysty"; the conductor's text is joined with ` – `, like the proposal's.
+  `PickerRow.meta` takes markup.
+- 12: every card's range cell is two lines tall, the second holding "wg chórzysty" for a proposal
+  and hidden otherwise: after the rollout most cards carry a proposal, so two lines is the norm,
+  not the exception. In the row the mark goes under the range, not after it.
+- 13: the editor's block uses `Text as="span"`.
+
+**Decided 2026-09-27:** 14 stays as it is; the Artists list keeps carrying the comment.
+10 is open, waiting on the developer.
 
 ## Stage 6 — optional siren (only after Stage 5 holds up on an iPhone)
 

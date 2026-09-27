@@ -523,22 +523,27 @@ export default function ArtistEditorPanel({
                     {isSinger && proposal && artist?.vocal_range_proposed_at && (
                       <div className="rounded-control border border-hairline bg-ethereal-parchment/40 px-4 py-3">
                         <Text size="sm">
-                          <span className="text-ethereal-graphite">
+                          <Text as="span" size="sm" color="graphite">
                             {t("artists.editor.range_proposal", "Propozycja chórzysty")}
                             {": "}
-                          </span>
+                          </Text>
                           <VocalRangeText
                             range={proposal}
                             notation={notationForLanguage(i18n.language)}
                             className="font-semibold"
                           />
-                          <span className="text-ethereal-graphite tabular-nums">
+                          <Text
+                            as="span"
+                            size="sm"
+                            color="graphite"
+                            className="tabular-nums"
+                          >
                             {" · "}
                             {formatLocalizedDateTime(
                               artist.vocal_range_proposed_at,
                               PROPOSAL_DATE_FORMAT,
                             )}
-                          </span>
+                          </Text>
                         </Text>
                         {artist.vocal_range_comment?.trim() && (
                           <Text

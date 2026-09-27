@@ -426,6 +426,17 @@ const VocalRangeStage = ({
               "Nie wychwycono trzymanego dźwięku. Spróbuj jeszcze raz.",
             )
           : null;
+  const listeningText = t(
+    "vocal_range.mic.listening",
+    "Śpiewaj i trzymaj dźwięk. Nic nie jest nagrywane ani wysyłane.",
+  );
+  // The status line cross-fades between elements, which a screen reader does
+  // not follow; what the microphone is doing is said through the live region.
+  const micSpoken =
+    pitch.status === "listening" ? listeningText : micMessage;
+  useEffect(() => {
+    if (micSpoken) setAnnouncement(micSpoken);
+  }, [micSpoken]);
   const readoutMidi = touched ?? draft[slot];
   const statusKind: StatusKind = isListening
     ? "listening"
@@ -577,10 +588,7 @@ const VocalRangeStage = ({
                     >
                       {isListening ? (
                         <Text size="sm" color="graphite" className="line-clamp-2 leading-5">
-                          {t(
-                            "vocal_range.mic.listening",
-                            "Śpiewaj i trzymaj dźwięk. Nic nie jest nagrywane ani wysyłane.",
-                          )}
+                          {listeningText}
                         </Text>
                       ) : orderMessage ? (
                         <Text

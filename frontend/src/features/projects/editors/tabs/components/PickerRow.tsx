@@ -22,8 +22,9 @@ import { Caption, Text } from "@/shared/ui/primitives/typography";
 
 interface PickerRowProps {
   readonly title: string;
-  /** Secondary line — composer · voicing, or range · sight-reading. */
-  readonly meta?: string | null;
+  /** Secondary line — composer · voicing, or range · sight-reading. Markup is
+   *  allowed (a range's octave marks), kept to one truncated line. */
+  readonly meta?: React.ReactNode;
   /** Right-aligned datum shown before the affordance (the duration column). */
   readonly trailing?: React.ReactNode;
   /**

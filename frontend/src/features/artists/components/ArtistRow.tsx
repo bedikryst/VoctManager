@@ -248,18 +248,24 @@ export const ArtistRow = React.memo(
               {range.text}
             </Caption>
           )}
+          {/* Whose it is goes under the range, not after it, so a French range
+              with both extremes and its mark does not widen this block and
+              squeeze the name. */}
           {range?.source === "singer" && (
-            <Caption
-              color="muted"
+            <div
+              className="flex flex-col items-end"
               title={t("artists.card.range_proposal_title", "Propozycja chórzysty")}
             >
-              <VocalRangeText
-                range={range.range}
-                notation={notationForLanguage(i18n.language)}
-              />
-              {" · "}
-              {t("artists.card.range_by_singer", "wg chórzysty")}
-            </Caption>
+              <Caption color="muted">
+                <VocalRangeText
+                  range={range.range}
+                  notation={notationForLanguage(i18n.language)}
+                />
+              </Caption>
+              <Caption color="muted">
+                {t("artists.card.range_by_singer", "wg chórzysty")}
+              </Caption>
+            </div>
           )}
           {artist.sight_reading_skill ? (
             <SightReadingStars level={artist.sight_reading_skill} size={10} />
