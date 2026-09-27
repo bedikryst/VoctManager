@@ -40,8 +40,9 @@
  *
  * A slot can also be filled by voice. "Sing" opens the microphone and "Done"
  * closes it; nothing depends on holding the button. In between, the status
- * line names the note sung, a cursor follows the voice on the keys, and each
- * note held for a moment fills the selected slot, silently. "Done" closes the
+ * line names the note sung and says that the voice is neither recorded nor
+ * heard by anyone, a cursor follows the voice on the keys, and each note held
+ * for a moment fills the selected slot, silently. "Done" closes the
  * microphone, then plays the slot's note inside that tap, so an octave
  * misheard is caught by ear. Nothing plays while the microphone is open: a
  * sound stops when listening starts, and a key pressed while listening ends
@@ -507,23 +508,24 @@ const VocalRangeStage = ({
           : null;
   const listeningText = t(
     "vocal_range.mic.listening",
-    "Trzymany dźwięk trafi do pola. Nic nie jest nagrywane ani wysyłane.",
+    "Trzymany dźwięk trafi do pola.",
+  );
+  const privacyText = t(
+    "vocal_range.mic.privacy",
+    "Twój głos nie jest nagrywany ani nigdzie zapisywany. Nikt go nie usłyszy.",
   );
   // The status line cross-fades between elements, which a screen reader does
   // not follow; what the microphone is doing is said through the live region.
   const micSpoken =
-    pitch.status === "listening" ? listeningText : micMessage;
+    pitch.status === "listening"
+      ? `${listeningText} ${privacyText}`
+      : micMessage;
   useEffect(() => {
     if (micSpoken) setAnnouncement(micSpoken);
   }, [micSpoken]);
-  // While listening the readout names the note sung, live; the privacy line
-  // stands until the first sound. Both are a readout, so "Done" changes only
-  // the value.
-  const readoutMidi = isListening ? pitch.note : (touched ?? draft[slot]);
+  const readoutMidi = touched ?? draft[slot];
   const statusKind: StatusKind = isListening
-    ? readoutMidi !== null
-      ? "readout"
-      : "listening"
+    ? "listening"
     : orderMessage
       ? "order"
       : micMessage
@@ -674,11 +676,14 @@ const VocalRangeStage = ({
                 onSelect={selectSlot}
               />
               {/* One status line of fixed height: the note, a hint, or what is
-                  out of order. The remove button keeps its place while an
-                  extreme is selected, so filling that slot moves nothing. */}
+                  out of order. Its height is the listening state on a phone:
+                  the note on one line and the privacy line on two. The remove
+                  button keeps its place while an extreme is selected, so
+                  filling that slot moves nothing; it steps aside while the
+                  microphone is open, where it would stand beside "Done". */}
               <motion.div
                 variants={FADE_IN}
-                className="mt-2 flex h-10 items-center gap-3"
+                className="mt-2 flex h-15 items-center gap-3"
               >
                 <div className="relative h-full min-w-0 flex-1">
                   <AnimatePresence initial={false}>
@@ -691,9 +696,20 @@ const VocalRangeStage = ({
                       transition={{ duration: 0.2, ease: "easeOut" }}
                     >
                       {statusKind === "listening" ? (
-                        <Text size="sm" color="graphite" className="line-clamp-2 leading-5">
-                          {listeningText}
-                        </Text>
+                        // The privacy line stands for as long as the
+                        // microphone is open; above it, the note sung, live.
+                        <div className="flex min-w-0 flex-col">
+                          {pitch.note !== null ? (
+                            <NoteReadout midi={pitch.note} notation={notation} />
+                          ) : (
+                            <Text as="p" size="md" color="graphite" className="truncate">
+                              {listeningText}
+                            </Text>
+                          )}
+                          <Text as="p" size="sm" color="muted" className="line-clamp-2 leading-4">
+                            {privacyText}
+                          </Text>
+                        </div>
                       ) : statusKind === "order" ? (
                         <Text
                           size="sm"
@@ -741,7 +757,7 @@ const VocalRangeStage = ({
                     <span className="hidden sm:inline">{micButtonLabel}</span>
                   </Button>
                 ) : null}
-                {isExtremeSlot(slot) && !sent ? (
+                {isExtremeSlot(slot) && !sent && !isListening ? (
                   <Button
                     type="button"
                     variant="ghost"

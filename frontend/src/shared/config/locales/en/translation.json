@@ -6558,7 +6558,8 @@
     "mic": {
       "start": "Sing",
       "stop": "Done",
-      "listening": "A held note goes into the slot. Nothing is recorded or sent.",
+      "listening": "A held note goes into the slot.",
+      "privacy": "Your voice is not recorded or stored anywhere. No one will hear it.",
       "denied": "No access to the microphone. Choose the note on the keyboard.",
       "unavailable": "The microphone is unavailable. Choose the note on the keyboard.",
       "timed_out": "No held note came through. Try again."

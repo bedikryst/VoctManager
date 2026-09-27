@@ -6628,7 +6628,8 @@
     "mic": {
       "start": "Zaśpiewaj",
       "stop": "Gotowe",
-      "listening": "Trzymany dźwięk trafi do pola. Nic nie jest nagrywane ani wysyłane.",
+      "listening": "Trzymany dźwięk trafi do pola.",
+      "privacy": "Twój głos nie jest nagrywany ani nigdzie zapisywany. Nikt go nie usłyszy.",
       "denied": "Bez dostępu do mikrofonu. Wybierz dźwięk na klawiaturze.",
       "unavailable": "Mikrofon jest niedostępny. Wybierz dźwięk na klawiaturze.",
       "timed_out": "Nie wychwycono trzymanego dźwięku. Spróbuj jeszcze raz."
