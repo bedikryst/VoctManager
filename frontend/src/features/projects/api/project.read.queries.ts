@@ -170,13 +170,27 @@ export const useProject = (projectId: string | undefined) => {
   });
 };
 
-export const useProjectArtistsDictionary = (enabled = true) =>
+interface ArtistsDictionaryOptions {
+  /**
+   * Paint from the cache, then refetch the roster behind it on every mount (the
+   * 24 h `staleTime` still spaces out focus refetches). For a reader where a
+   * day-old roster misleads: Obsada, where singers' range proposals arrive
+   * daily. Every other reader keeps the 24 h dictionary.
+   */
+  readonly reconcile?: boolean;
+}
+
+export const useProjectArtistsDictionary = (
+  enabled = true,
+  { reconcile = false }: ArtistsDictionaryOptions = {},
+) =>
   useSuspenseQuery({
     queryKey: projectKeys.dictionaries.artists,
     ...(enabled
       ? {
           queryFn: ProjectService.getArtistsDictionary,
           staleTime: STATIC_DICTIONARY_STALE_TIME,
+          ...(reconcile ? RECONCILING_REFETCH : {}),
         }
       : getDisabledListQueryConfig<Artist>()),
     select: selectArtistsDictionary,

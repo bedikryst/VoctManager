@@ -227,7 +227,9 @@ const sectionize = <TEntry extends RosterFacts>(
 export const useCastTab = (projectId: string): UseCastTabResult => {
   const { t } = useTranslation();
 
-  const artistsQuery = useProjectArtistsDictionary();
+  // The rows carry each singer's range proposal, and those arrive daily, so
+  // opening the tab refetches the roster behind the cached paint.
+  const artistsQuery = useProjectArtistsDictionary(true, { reconcile: true });
   const participationsQuery = useProjectParticipations(projectId);
   const voiceLinesQuery = useProjectVoiceLinesDictionary();
   const artists = artistsQuery.data ?? EMPTY_ARTISTS;

@@ -3,7 +3,9 @@
  * @description Manages UI state, client-side filtering/sorting, and ensemble
  * aggregates for the roster. Reads data exclusively from the React Query cache.
  * Section balance and the section filter share one taxonomy (voiceSections) so
- * mezzo / countertenor / baritone are always counted and filterable.
+ * mezzo / countertenor / baritone are always counted and filterable. The range
+ * count and the range filter share `vocalRangeProposal`, so the count, the
+ * filter and the lines on the cards read a proposal the same way.
  * @module hooks/useArtistData
  */
 
@@ -19,6 +21,7 @@ import {
 } from "../api/artist.queries";
 import { useVoiceTypes } from "@/shared/api/options.queries";
 import { foldDiacritics } from "@/shared/lib/text";
+import { isSingingVoiceType } from "@/shared/lib/voiceTypes";
 import type { Artist } from "@/shared/types";
 import {
   getVoiceSection,
@@ -26,6 +29,11 @@ import {
   type SectionKey,
 } from "../constants/voiceSections";
 import { isAwaitingActivation } from "../lib/accountState";
+import {
+  matchesRangeFilter,
+  proposalOf,
+  type RangeFilter,
+} from "../lib/vocalRangeProposal";
 
 export type RosterSort = "name" | "section" | "skill";
 export type RosterView = "grid" | "list";
@@ -75,6 +83,7 @@ export const useArtistData = () => {
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [voiceFilter, setVoiceFilter] = useState<SectionKey | "">("");
+  const [rangeFilter, setRangeFilter] = useState<RangeFilter>("all");
   const [sortBy, setSortBy] = useState<RosterSort>("name");
   const [viewMode, setViewModeState] = useState<RosterView>(readStoredView);
   const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
@@ -127,6 +136,26 @@ export const useArtistData = () => {
     [activeArtists],
   );
 
+  // Who has proposed a range, out of the active singers: a player has no range
+  // to give, and an archived member is not asked. Zero until the first answer,
+  // which is when the header starts showing it.
+  const rangeProposals = useMemo(() => {
+    const singers = activeArtists.filter((artist) =>
+      isSingingVoiceType(artist.voice_type),
+    );
+    return {
+      answered: singers.filter((artist) => proposalOf(artist) !== null).length,
+      total: singers.length,
+    };
+  }, [activeArtists]);
+
+  // Any proposal on the roster, archived rows included. Before the first one
+  // the range filter could only return everyone or nobody, so it stays hidden.
+  const hasAnyProposal = useMemo(
+    () => artists.some((artist) => proposalOf(artist) !== null),
+    [artists],
+  );
+
   const selectionStats = useMemo(() => {
     let active = 0;
     let archived = 0;
@@ -154,7 +183,9 @@ export const useArtistData = () => {
       const matchesVoice = voiceFilter
         ? getVoiceSection(artist.voice_type) === voiceFilter
         : true;
-      return matchesSearch && matchesVoice;
+      return (
+        matchesSearch && matchesVoice && matchesRangeFilter(artist, rangeFilter)
+      );
     });
 
     return filtered.sort((a, b) => {
@@ -174,7 +205,7 @@ export const useArtistData = () => {
         sensitivity: "base",
       });
     });
-  }, [artists, searchTerm, voiceFilter, sortBy]);
+  }, [artists, searchTerm, voiceFilter, rangeFilter, sortBy]);
 
   const openPanel = useCallback(
     (artist: Artist | null = null, initialNameContext: string = "") => {
@@ -374,12 +405,16 @@ export const useArtistData = () => {
     setSearchTerm,
     voiceFilter,
     setVoiceFilter,
+    rangeFilter,
+    setRangeFilter,
+    hasAnyProposal,
     sortBy,
     setSortBy,
     viewMode,
     setViewMode,
     ensembleBalance,
     accountPendingCount,
+    rangeProposals,
     archivedCount,
     displayArtists,
     isPanelOpen,

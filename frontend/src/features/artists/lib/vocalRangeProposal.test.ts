@@ -1,8 +1,8 @@
 /**
  * @file vocalRangeProposal.test.ts
- * @description Pins how the two ranges are read off an artist, and which one a
- * roster surface shows: the conductor's assessment whenever it is set, the
- * singer's proposal otherwise.
+ * @description Pins how the two ranges are read off an artist, which one a
+ * one-line surface shows (the conductor's assessment whenever it is set, the
+ * singer's proposal otherwise), and who each roster range filter keeps.
  * @module features/artists/lib/vocalRangeProposal.test
  */
 
@@ -11,9 +11,12 @@ import { describe, expect, it } from "vitest";
 import type { Artist } from "@/shared/types";
 import {
   assessmentOf,
+  matchesRangeFilter,
   proposalOf,
   rangeShown,
+  rangesOf,
   sameRange,
+  type RangeFilter,
 } from "./vocalRangeProposal";
 
 const base: Artist = {
@@ -93,6 +96,59 @@ describe("rangeShown", () => {
   it("is null when neither exists", () => {
     expect(rangeShown(base)).toBeNull();
     expect(rangeShown(undefined)).toBeNull();
+  });
+});
+
+describe("rangesOf", () => {
+  it("reads both ranges at once", () => {
+    expect(rangesOf({ ...proposed, ...assessed })).toEqual({
+      assessed: assessmentOf(assessed),
+      proposed: proposalOf(proposed),
+    });
+  });
+
+  it("answers null for each range that is missing", () => {
+    expect(rangesOf(base)).toEqual({ assessed: null, proposed: null });
+    expect(rangesOf(undefined)).toEqual({ assessed: null, proposed: null });
+  });
+});
+
+describe("matchesRangeFilter", () => {
+  const agreed: Artist = {
+    ...proposed,
+    assessed_tessitura_low: 57,
+    assessed_tessitura_high: 81,
+    assessed_extreme_low: 55,
+    assessed_extreme_high: null,
+  };
+  const differs: Artist = { ...proposed, ...assessed };
+  const player: Artist = { ...base, voice_type: "INS" };
+  const playerWithRanges: Artist = { ...differs, voice_type: "INS" };
+
+  const kept = (filter: RangeFilter): Artist[] =>
+    [base, proposed, assessed, agreed, differs, player].filter((artist) =>
+      matchesRangeFilter(artist, filter),
+    );
+
+  it("keeps everyone, players included, with no filter", () => {
+    expect(kept("all")).toHaveLength(6);
+  });
+
+  it("splits the singers on whether they have proposed", () => {
+    expect(kept("proposed")).toEqual([proposed, agreed, differs]);
+    expect(kept("missing")).toEqual([base, assessed]);
+  });
+
+  it("keeps only a proposal set against an assessment it differs from", () => {
+    expect(kept("differs")).toEqual([differs]);
+  });
+
+  it("never keeps a player once a filter is set", () => {
+    const filters: RangeFilter[] = ["proposed", "missing", "differs"];
+    for (const filter of filters) {
+      expect(matchesRangeFilter(player, filter)).toBe(false);
+      expect(matchesRangeFilter(playerWithRanges, filter)).toBe(false);
+    }
   });
 });
 

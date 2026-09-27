@@ -996,6 +996,7 @@
       "voice_range": "Étendue vocale",
       "range_by_singer": "selon le choriste",
       "range_proposal_title": "Proposition du choriste",
+      "range_agreed": "conforme à la proposition",
       "preview_title": "Voir ce que voit cette personne",
       "preview_aria": "Voir ce que voit {{name}}"
     },
@@ -1025,7 +1026,9 @@
       "title_highlight": "l'ensemble",
       "title_prefix": "Gestion de",
       "archived_members": "archivés",
-      "archived_members_hint": "Les chanteurs archivés figurent toujours dans la liste ci-dessous, à la fin — les pupitres ne les comptent pas."
+      "archived_members_hint": "Les chanteurs archivés figurent toujours dans la liste ci-dessous, à la fin — les pupitres ne les comptent pas.",
+      "range_proposals": "sur {{total}} propositions",
+      "range_proposals_hint": "Combien de choristes actifs ont proposé leur propre étendue vocale. Sans les instrumentistes ni les membres archivés."
     },
     "dossier": {
       "acceptance": "Acceptation des invitations",
@@ -1159,6 +1162,11 @@
       "sort_name": "Nom (A–Z)",
       "sort_section": "Pupitre (SATB)",
       "sort_skill": "Lecture à vue",
+      "range_label": "Étendue vocale",
+      "range_all": "Étendue vocale : tous",
+      "range_proposed": "Étendue proposée",
+      "range_missing": "Sans étendue proposée",
+      "range_differs": "Proposition différente de l'évaluation",
       "view_label": "Affichage"
     },
     "validation": {

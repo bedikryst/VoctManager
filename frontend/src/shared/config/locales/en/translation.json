@@ -987,6 +987,7 @@
       "voice_range": "Voice Range",
       "range_by_singer": "per the singer",
       "range_proposal_title": "The singer's proposal",
+      "range_agreed": "matches the proposal",
       "preview_title": "See what this person sees",
       "preview_aria": "See what {{name}} sees"
     },
@@ -1016,7 +1017,9 @@
       "title_highlight": "Management",
       "title_prefix": "Team",
       "archived_members": "archived",
-      "archived_members_hint": "Archived singers are still in the list below, at the end — the sections do not count them."
+      "archived_members_hint": "Archived singers are still in the list below, at the end — the sections do not count them.",
+      "range_proposals": "of {{total}} proposals",
+      "range_proposals_hint": "How many active singers have proposed their own vocal range. Players and archived members are not counted."
     },
     "dossier": {
       "acceptance": "Invitation acceptance",
@@ -1150,6 +1153,11 @@
       "sort_name": "Surname (A–Z)",
       "sort_section": "Section (SATB)",
       "sort_skill": "Sight-reading",
+      "range_label": "Vocal range",
+      "range_all": "Vocal range: everyone",
+      "range_proposed": "Range proposed",
+      "range_missing": "No range proposed",
+      "range_differs": "Proposal differs from assessment",
       "view_label": "View"
     },
     "validation": {

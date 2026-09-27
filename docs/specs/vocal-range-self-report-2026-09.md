@@ -18,9 +18,10 @@ the mic button ended the capture on its own a moment after the tap, led to "Sing
 ("Keyboard window per voice" and "More keys" under Stage 3) and the head copy, are committed
 (31dd7bd8 and before), not seen. Stage 7 (the reader chooses the notation) and Stage 8.1
 (backend) built, audited ("Audit of Stage 7 and 8.1" under Stage 8) and committed 2026-09-27,
-two small follow-ups open; not seen; `core/0029` and `roster/0066`–`0068` not run anywhere.
-Master cannot go to prod until 8.3 is committed. Next: 8.2 and 8.3 (frontend) in one session,
-then 8.4, then the iPhone dry run (list under the audit).**
+two small follow-ups open. Stages 8.2–8.4 (frontend) built and committed 2026-09-27. None of
+Stages 7–8 seen in a browser; `core/0029` and `roster/0066`–`0068` not run anywhere. Next: the
+developer runs `make migrate` on dev and looks at the editor, Baza Artystów and Obsada; then
+the iPhone dry run (list under the audit).**
 One stage per session. When a stage lands, update this line and say whether it is committed,
 migrated and seen in the browser.
 
@@ -789,7 +790,9 @@ Status: **8.1 (backend) built 2026-09-27: ruff and mypy on roster, core and docu
 on dev or prod. Where the build departs from the plan: "Decided while building 8.1" below. 8.2 and
 8.3 (frontend) built and committed together 2026-09-27: typecheck, lint, the music, artists and
 vocal-range vitest suites and the build green; not yet seen in a browser. Departures: "Decided while
-building 8.2–8.3" below. 8.4 not built.** It spans the backend and the frontend.
+building 8.2–8.3" below. 8.4 built and committed 2026-09-27: typecheck, lint, the artists and
+projects vitest suites and the build green; not yet seen. Departures: "Decided while building 8.4"
+below.** It spans the backend and the frontend.
 
 **Why** (the developer's look at Stage 4 on dev, 2026-09-27):
 - In the editor, the conductor's own fields read `F3 – F5`. They are free-text SPN, with a
@@ -1053,6 +1056,27 @@ the editor.
 
 Verification: typecheck, lint, test, build. The developer looks at Baza Artystów (grid, list and
 each filter) and Obsada on dev, with seed data.
+
+**Decided while building 8.4:**
+- The filter's predicate, `matchesRangeFilter`, lives in `vocalRangeProposal.ts` beside
+  `rangesOf`, with its tests, so the count, the filter and the lines on the cards read a proposal
+  one way. The values are `all · proposed · missing · differs`; Radix refuses `""` as an item.
+- The filter keeps archived rows, as the section filter does: they sink to the end of the list.
+  The count does not, since an archived member is not asked.
+- **The filter is absent until the roster holds a first proposal**, the rule the count follows:
+  before that, every choice returns everyone or nobody. A filter already set stays visible so it
+  can be cleared.
+- **Each option names the range** ("Skala głosu: wszyscy", "Z propozycją skali", "Bez propozycji
+  skali", "Propozycja inna niż ocena"). The closed field shows only the selected option, and its
+  icon is hidden on a phone, so the bare "Wszyscy" of the plan would not say what it filters.
+- The select sits beside the search, not with sort and density: both choose which rows show. Below
+  `sm` it takes its own full-width line.
+- A differing proposal shares its line with "wg chórzysty": three facts, two lines. In the list
+  row this widens the range block by the mark, only for that case. In the card the range and the
+  mark are separate flex items, so a narrow cell breaks between them before it breaks a range.
+- `useProjectArtistsDictionary(enabled, { reconcile })` spreads `RECONCILING_REFETCH` over the 24 h
+  `staleTime`. That refetches on every mount; focus refetches stay spaced by the 24 h, which is
+  enough for a tab opened, read and left.
 
 #### Deploy (prod)
 

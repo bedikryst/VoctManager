@@ -10,13 +10,17 @@
  * roster below them also lists the archived — so the header states the archived
  * remainder whenever there is one, and the two figures add up to the rows on
  * screen instead of quietly disagreeing with them.
+ *
+ * From the first proposed vocal range on, the header also says how many active
+ * singers have proposed one, out of how many could: the conductor's overview of
+ * who has answered, in place of a notification per proposal.
  * @architecture Enterprise SaaS 2026
  * @module features/artists/components/EnsembleBalance
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Archive, MailWarning, Users } from "lucide-react";
+import { Archive, AudioLines, MailWarning, Users } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -42,9 +46,16 @@ export interface SectionBalance {
   readonly Total: number;
 }
 
+/** Active singers who have proposed a vocal range, out of all active singers. */
+export interface RangeProposalCount {
+  readonly answered: number;
+  readonly total: number;
+}
+
 interface EnsembleBalanceProps {
   readonly balance: SectionBalance;
   readonly accountPending: number;
+  readonly rangeProposals: RangeProposalCount;
   readonly archivedCount: number;
   readonly activeSection: SectionKey | "";
   readonly onSelectSection: (section: SectionKey | "") => void;
@@ -91,6 +102,7 @@ export const EnsembleBalance = React.memo(
   ({
     balance,
     accountPending,
+    rangeProposals,
     archivedCount,
     activeSection,
     onSelectSection,
@@ -138,6 +150,20 @@ export const EnsembleBalance = React.memo(
                 title={t(
                   "artists.dashboard.pending_activation_hint",
                   "Aktywni artyści, którzy nie aktywowali jeszcze konta na platformie.",
+                )}
+              />
+            )}
+            {rangeProposals.answered > 0 && (
+              <HeaderFact
+                icon={<AudioLines size={11} />}
+                value={rangeProposals.answered}
+                label={t("artists.dashboard.range_proposals", {
+                  defaultValue: "z {{total}} propozycji",
+                  total: rangeProposals.total,
+                })}
+                title={t(
+                  "artists.dashboard.range_proposals_hint",
+                  "Ilu aktywnych chórzystów zaproponowało własną skalę głosu. Bez instrumentalistów i archiwum.",
                 )}
               />
             )}

@@ -12,8 +12,11 @@
  * without an address wears a neutral chip instead: not a problem to fix, but
  * the reason nothing the app sends ever reaches them. Range and
  * a-vista are the singer's own facts, so they read as plain type and simply
- * vanish when nobody has recorded them. Until the conductor writes a range,
- * the singer's own proposal stands in, muted and marked as theirs.
+ * vanish when nobody has recorded them. The conductor's range leads; under it,
+ * muted, the singer's own proposal marked as theirs, or only "zgodna z
+ * propozycją" when the two hold the same notes. Until the conductor writes a
+ * range, the proposal stands in on the first line and the mark takes the
+ * second.
  * @architecture Enterprise SaaS 2026
  * @module features/artists/components/ArtistRow
  */
@@ -48,7 +51,7 @@ import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { getSectionPresentation } from "../constants/voiceSections";
 import { usePitchNotation } from "../hooks/usePitchNotation";
 import { isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
-import { rangeShown } from "../lib/vocalRangeProposal";
+import { rangesOf, sameRange } from "../lib/vocalRangeProposal";
 import { SightReadingStars } from "./SightReadingStars";
 
 interface ArtistRowProps {
@@ -99,7 +102,9 @@ export const ArtistRow = React.memo(
     const voiceLabel = artist.voice_type
       ? artistRoleLabel(t, artist.voice_type, artist.instrument)
       : artist.voice_type_display || "";
-    const range = rangeShown(artist);
+    const { assessed, proposed } = rangesOf(artist);
+    const agreed =
+      assessed !== null && proposed !== null && sameRange(assessed, proposed);
 
     const activate = () =>
       selectionMode ? onToggleSelect?.(artist.id) : onOpen(artist);
@@ -241,31 +246,48 @@ export const ArtistRow = React.memo(
         </div>
 
         <div className="hidden shrink-0 items-center gap-4 md:flex">
-          {range?.source === "conductor" && (
-            <Caption
-              className="text-ethereal-graphite"
-              title={t("artists.card.voice_range", "Skala Głosu")}
-            >
-              <VocalRangeText range={range.range} notation={notation} />
-            </Caption>
-          )}
-          {/* Whose it is goes under the range, not after it, so a French range
+          {/* Whose range it is goes under it, not after it, so a French range
               with both extremes and its mark does not widen this block and
-              squeeze the name. */}
-          {range?.source === "singer" && (
-            <div
-              className="flex flex-col items-end"
-              title={t("artists.card.range_proposal_title", "Propozycja chórzysty")}
-            >
-              <Caption color="muted">
-                <VocalRangeText
-                  range={range.range}
-                  notation={notation}
-                />
-              </Caption>
-              <Caption color="muted">
-                {t("artists.card.range_by_singer", "wg chórzysty")}
-              </Caption>
+              squeeze the name. Only a proposal that differs shares its line
+              with the mark: three facts, two lines. */}
+          {(assessed || proposed) && (
+            <div className="flex flex-col items-end">
+              {assessed ? (
+                <Caption
+                  className="text-ethereal-graphite"
+                  title={t("artists.card.voice_range", "Skala Głosu")}
+                >
+                  <VocalRangeText range={assessed} notation={notation} />
+                </Caption>
+              ) : (
+                proposed && (
+                  <Caption
+                    color="muted"
+                    title={t("artists.card.range_proposal_title", "Propozycja chórzysty")}
+                  >
+                    <VocalRangeText range={proposed} notation={notation} />
+                  </Caption>
+                )
+              )}
+              {proposed && (
+                <Caption
+                  color="muted"
+                  title={
+                    agreed
+                      ? undefined
+                      : t("artists.card.range_proposal_title", "Propozycja chórzysty")
+                  }
+                >
+                  {assessed && !agreed && (
+                    <>
+                      <VocalRangeText range={proposed} notation={notation} />{" "}
+                    </>
+                  )}
+                  {agreed
+                    ? t("artists.card.range_agreed", "zgodna z propozycją")
+                    : t("artists.card.range_by_singer", "wg chórzysty")}
+                </Caption>
+              )}
             </div>
           )}
           {artist.sight_reading_skill ? (

@@ -1015,6 +1015,7 @@
       "voice_range": "Skala Głosu",
       "range_by_singer": "wg chórzysty",
       "range_proposal_title": "Propozycja chórzysty",
+      "range_agreed": "zgodna z propozycją",
       "preview_title": "Zobacz, co widzi ta osoba",
       "preview_aria": "Zobacz, co widzi {{name}}"
     },
@@ -1044,7 +1045,9 @@
       "title_highlight": "Zespołem",
       "title_prefix": "Zarządzanie",
       "archived_members": "w archiwum",
-      "archived_members_hint": "Zarchiwizowani śpiewacy nadal są na liście poniżej, na jej końcu — sekcje ich nie liczą."
+      "archived_members_hint": "Zarchiwizowani śpiewacy nadal są na liście poniżej, na jej końcu — sekcje ich nie liczą.",
+      "range_proposals": "z {{total}} propozycji",
+      "range_proposals_hint": "Ilu aktywnych chórzystów zaproponowało własną skalę głosu. Bez instrumentalistów i archiwum."
     },
     "dossier": {
       "acceptance": "Akceptacja zaproszeń",
@@ -1178,6 +1181,11 @@
       "sort_name": "Nazwisko (A–Z)",
       "sort_section": "Sekcja (SATB)",
       "sort_skill": "Czytanie a vista",
+      "range_label": "Skala głosu",
+      "range_all": "Skala głosu: wszyscy",
+      "range_proposed": "Z propozycją skali",
+      "range_missing": "Bez propozycji skali",
+      "range_differs": "Propozycja inna niż ocena",
       "view_label": "Widok"
     },
     "validation": {

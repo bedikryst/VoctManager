@@ -1,10 +1,13 @@
 /**
  * @file vocalRangeProposal.ts
  * @description The two ranges a singer can carry, as MIDI notes: the
- * conductor's assessment and the singer's own proposal. A roster surface shows
- * the assessment whenever there is one; otherwise the proposal stands in, and
- * every surface marks it as the singer's, so a proposal is never read as the
- * conductor's verdict.
+ * conductor's assessment and the singer's own proposal. Baza Artystów shows
+ * both (`rangesOf`); Obsada has one line per singer and shows the assessment
+ * whenever there is one, else the proposal (`rangeShown`). Every surface marks
+ * a proposal as the singer's, so it is never read as the conductor's verdict.
+ *
+ * The roster's range filter (`matchesRangeFilter`) lives here too, so the
+ * filter and the lines on screen answer from the same two reads.
  *
  * Both arrive only on the manager's detailed payload. Anyone else gets
  * neither, and every helper answers null.
@@ -14,6 +17,7 @@
 import type { Artist } from "@/shared/types";
 import type { VocalRangeMidi } from "@/shared/lib/music/pitchNotation";
 import { RANGE_SLOTS } from "@/shared/lib/music/rangeDraft";
+import { isSingingVoiceType } from "@/shared/lib/voiceTypes";
 
 /** The same four notes, an empty extreme matching only an empty one. */
 export const sameRange = (a: VocalRangeMidi, b: VocalRangeMidi): boolean =>
@@ -45,6 +49,30 @@ export const proposalOf = (artist: Artist | undefined): VocalRangeMidi | null =>
     extremeLow: artist.proposed_extreme_low ?? null,
     extremeHigh: artist.proposed_extreme_high ?? null,
   };
+};
+
+export interface VocalRanges {
+  readonly assessed: VocalRangeMidi | null;
+  readonly proposed: VocalRangeMidi | null;
+}
+
+/** Both ranges at once, for a surface that shows them side by side. */
+export const rangesOf = (artist: Artist | undefined): VocalRanges => ({
+  assessed: assessmentOf(artist),
+  proposed: proposalOf(artist),
+});
+
+/** `all` keeps everyone; the other three keep singers only, since a player
+ *  has no range to propose. `differs` needs both ranges and a note apart. */
+export type RangeFilter = "all" | "proposed" | "missing" | "differs";
+
+export const matchesRangeFilter = (artist: Artist, filter: RangeFilter): boolean => {
+  if (filter === "all") return true;
+  if (!isSingingVoiceType(artist.voice_type)) return false;
+  const { assessed, proposed } = rangesOf(artist);
+  if (filter === "proposed") return proposed !== null;
+  if (filter === "missing") return proposed === null;
+  return assessed !== null && proposed !== null && !sameRange(assessed, proposed);
 };
 
 export interface RangeShown {

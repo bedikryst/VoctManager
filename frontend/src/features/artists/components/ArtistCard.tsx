@@ -10,8 +10,10 @@
  * one for the ordinary case of an account that works. A member added without
  * an address shows that fact where the address would be, in the muted voice
  * of a missing phone: it was a decision, not something to fix.
- * Until the conductor writes a range, the singer's own proposal fills the
- * range cell, muted and marked as theirs.
+ * The range cell leads with the conductor's range. Under it, muted, stands the
+ * singer's own proposal marked as theirs, or only "zgodna z propozycją" when
+ * the two hold the same four notes. Until the conductor writes a range, the
+ * proposal takes the first line and the mark the second.
  * @architecture Enterprise SaaS 2026
  * @module features/artists/components/ArtistCard
  */
@@ -52,7 +54,7 @@ import {
 import { getSectionPresentation } from "../constants/voiceSections";
 import { usePitchNotation } from "../hooks/usePitchNotation";
 import { isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
-import { rangeShown } from "../lib/vocalRangeProposal";
+import { rangesOf, sameRange } from "../lib/vocalRangeProposal";
 import { SightReadingStars } from "./SightReadingStars";
 
 interface ArtistCardProps {
@@ -108,7 +110,9 @@ export const ArtistCard = React.memo(
     const voiceLabel = artist.voice_type
       ? artistRoleLabel(t, artist.voice_type, artist.instrument)
       : artist.voice_type_display || "";
-    const range = rangeShown(artist);
+    const { assessed, proposed } = rangesOf(artist);
+    const agreed =
+      assessed !== null && proposed !== null && sameRange(assessed, proposed);
 
     const activate = () =>
       selectionMode ? onToggleSelect?.(artist.id) : onOpen(artist);
@@ -234,26 +238,24 @@ export const ArtistCard = React.memo(
             <Eyebrow color="muted">
               {t("artists.card.voice_range", "Skala Głosu")}
             </Eyebrow>
-            {/* Two lines on every card, whoever's range it holds: a singer's
-                proposal needs the second to say whose it is, and a card beside
-                it must not stand shorter. */}
+            {/* Two lines on every card, whatever the cell holds: the second
+                says what the singer proposed, and a card beside it must not
+                stand shorter. A differing proposal and its mark are separate
+                items, so a narrow cell breaks between them first. */}
             <div
               title={
-                range?.source === "singer"
+                !assessed && proposed
                   ? t("artists.card.range_proposal_title", "Propozycja chórzysty")
                   : undefined
               }
             >
-              {range?.source === "conductor" ? (
+              {assessed ? (
                 <Text size="sm" weight="bold">
-                  <VocalRangeText range={range.range} notation={notation} />
+                  <VocalRangeText range={assessed} notation={notation} />
                 </Text>
-              ) : range?.source === "singer" ? (
+              ) : proposed ? (
                 <Text size="sm" color="muted">
-                  <VocalRangeText
-                    range={range.range}
-                    notation={notation}
-                  />
+                  <VocalRangeText range={proposed} notation={notation} />
                 </Text>
               ) : (
                 <Text size="sm" color="muted">
@@ -262,9 +264,21 @@ export const ArtistCard = React.memo(
               )}
               <Caption
                 color="muted"
-                className={cn(range?.source !== "singer" && "invisible")}
+                className={cn("flex flex-wrap gap-x-1", !proposed && "invisible")}
+                title={
+                  assessed && proposed && !agreed
+                    ? t("artists.card.range_proposal_title", "Propozycja chórzysty")
+                    : undefined
+                }
               >
-                {t("artists.card.range_by_singer", "wg chórzysty")}
+                {assessed && proposed && !agreed && (
+                  <VocalRangeText range={proposed} notation={notation} />
+                )}
+                <span className="whitespace-nowrap">
+                  {agreed
+                    ? t("artists.card.range_agreed", "zgodna z propozycją")
+                    : t("artists.card.range_by_singer", "wg chórzysty")}
+                </span>
               </Caption>
             </div>
           </div>

@@ -1,9 +1,9 @@
 /**
  * @file ArtistManagement.tsx
  * @description Roster command centre. Ensemble-balance strip (section read +
- * filter) → search / sort / density toolbar → grid or list of singers. Editing
- * happens in a slide-over; one-click messaging is wired at the page level so a
- * single thread composer serves every card and row.
+ * filter) → search / range filter / sort / density toolbar → grid or list of
+ * singers. Editing happens in a slide-over; one-click messaging is wired at
+ * the page level so a single thread composer serves every card and row.
  * @architecture Enterprise SaaS 2026
  * @module features/artists/ArtistManagement
  */
@@ -55,12 +55,16 @@ export default function ArtistManagement(): React.JSX.Element {
     setSearchTerm,
     voiceFilter,
     setVoiceFilter,
+    rangeFilter,
+    setRangeFilter,
+    hasAnyProposal,
     sortBy,
     setSortBy,
     viewMode,
     setViewMode,
     ensembleBalance,
     accountPendingCount,
+    rangeProposals,
     archivedCount,
     displayArtists,
     isPanelOpen,
@@ -159,7 +163,8 @@ export default function ArtistManagement(): React.JSX.Element {
     return <EtherealLoader />;
   }
 
-  const isFiltering = Boolean(searchTerm.trim()) || voiceFilter !== "";
+  const isFiltering =
+    Boolean(searchTerm.trim()) || voiceFilter !== "" || rangeFilter !== "all";
 
   return (
     <PageTransition>
@@ -187,6 +192,7 @@ export default function ArtistManagement(): React.JSX.Element {
             <EnsembleBalance
               balance={ensembleBalance}
               accountPending={accountPendingCount}
+              rangeProposals={rangeProposals}
               archivedCount={archivedCount}
               activeSection={voiceFilter}
               onSelectSection={setVoiceFilter}
@@ -207,6 +213,10 @@ export default function ArtistManagement(): React.JSX.Element {
             <RosterToolbar
               searchTerm={searchTerm}
               onSearch={setSearchTerm}
+              rangeFilter={rangeFilter}
+              onRangeFilter={setRangeFilter}
+              // A filter already set stays reachable, so it can be cleared.
+              showRangeFilter={hasAnyProposal || rangeFilter !== "all"}
               sortBy={sortBy}
               onSort={setSortBy}
               viewMode={viewMode}

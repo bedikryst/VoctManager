@@ -1,15 +1,28 @@
 /**
  * @file RosterToolbar.tsx
- * @description Roster controls: name search, sort order, and a grid/list density
- * toggle. Deliberately mirrors the project dashboard control row so the gesture
- * vocabulary is identical across features.
+ * @description Roster controls: name search, the vocal-range filter, sort
+ * order, and a grid/list density toggle. Deliberately mirrors the project
+ * dashboard control row so the gesture vocabulary is identical across features.
+ *
+ * The range filter sits beside the search, since both choose which rows show;
+ * sort and density decide how they show. It is absent until the roster holds a
+ * first proposal, when every choice would return everyone or nobody. Its
+ * options each name the range, because the closed field shows only the option
+ * and hides its icon on a phone.
  * @architecture Enterprise SaaS 2026
  * @module features/artists/components/RosterToolbar
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowDownUp, LayoutGrid, List, ListChecks, Search } from "lucide-react";
+import {
+  ArrowDownUp,
+  AudioLines,
+  LayoutGrid,
+  List,
+  ListChecks,
+  Search,
+} from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import {
@@ -20,10 +33,19 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import type { RosterSort, RosterView } from "../hooks/useArtistData";
+import type { RangeFilter } from "../lib/vocalRangeProposal";
+
+const RANGE_FILTERS: readonly RangeFilter[] = ["all", "proposed", "missing", "differs"];
+
+const isRangeFilter = (value: string): value is RangeFilter =>
+  (RANGE_FILTERS as readonly string[]).includes(value);
 
 interface RosterToolbarProps {
   readonly searchTerm: string;
   readonly onSearch: (value: string) => void;
+  readonly rangeFilter: RangeFilter;
+  readonly onRangeFilter: (value: RangeFilter) => void;
+  readonly showRangeFilter: boolean;
   readonly sortBy: RosterSort;
   readonly onSort: (value: RosterSort) => void;
   readonly viewMode: RosterView;
@@ -35,6 +57,9 @@ interface RosterToolbarProps {
 export const RosterToolbar = ({
   searchTerm,
   onSearch,
+  rangeFilter,
+  onRangeFilter,
+  showRangeFilter,
   sortBy,
   onSort,
   viewMode,
@@ -51,15 +76,52 @@ export const RosterToolbar = ({
 
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-      <div className="flex-1">
-        <Input
-          leftIcon={<Search size={16} />}
-          type="search"
-          aria-label={t("artists.dashboard.search_placeholder", "Szukaj po nazwisku...")}
-          placeholder={t("artists.dashboard.search_placeholder", "Szukaj po nazwisku...")}
-          value={searchTerm}
-          onChange={(event) => onSearch(event.target.value)}
-        />
+      <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex-1">
+          <Input
+            leftIcon={<Search size={16} />}
+            type="search"
+            aria-label={t("artists.dashboard.search_placeholder", "Szukaj po nazwisku...")}
+            placeholder={t("artists.dashboard.search_placeholder", "Szukaj po nazwisku...")}
+            value={searchTerm}
+            onChange={(event) => onSearch(event.target.value)}
+          />
+        </div>
+
+        {showRangeFilter && (
+          <div className="w-full sm:w-64">
+            <Select
+              variant="solid"
+              leftIcon={<AudioLines />}
+              ariaLabel={t("artists.toolbar.range_label", "Skala głosu")}
+              value={rangeFilter}
+              onValueChange={(value) => {
+                if (isRangeFilter(value)) onRangeFilter(value);
+              }}
+              options={[
+                {
+                  value: "all",
+                  label: t("artists.toolbar.range_all", "Skala głosu: wszyscy"),
+                },
+                {
+                  value: "proposed",
+                  label: t("artists.toolbar.range_proposed", "Z propozycją skali"),
+                },
+                {
+                  value: "missing",
+                  label: t("artists.toolbar.range_missing", "Bez propozycji skali"),
+                },
+                {
+                  value: "differs",
+                  label: t(
+                    "artists.toolbar.range_differs",
+                    "Propozycja inna niż ocena",
+                  ),
+                },
+              ]}
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-3">
