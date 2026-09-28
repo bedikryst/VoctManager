@@ -103,17 +103,17 @@ about:
     Ten sam tekst w trzech miarach: do noty w programie, do zapowiedzi i do pełnego biogramu.
   # ~300 characters: who founded it, what it draws from, what it sings.
   shortHtml: >-
-    <p>VoctEnsemble to krakowski zespół wokalny, który założył Florent de Bazelaire. Zespół
-    czerpie inspirację z XVIII-wiecznych <em>Concerts Spirituels</em>, nadając im współczesny wymiar.
-    Repertuar zespołu sięga od renesansowej polifonii po muzykę najnowszą, ze szczególnym
+    <p>VoctEnsemble, krakowski zespół wokalny, którego założycielem jest Florent de Bazelaire,
+    czerpie inspirację z XVIII-wiecznych <em>Concerts Spirituels</em>, nadając im współczesny
+    wymiar. Jego repertuar sięga od renesansowej polifonii po muzykę najnowszą, ze szczególnym
     miejscem dla muzyki sakralnej.</p>
   # ~1000 characters: the above, plus the record a programmer checks — the debut and who recorded
   # it, the engaged evenings, who builds the light and the image.
   mediumHtml: |-
-    <p><strong>VoctEnsemble</strong> to krakowski zespół wokalny, który założył
-    <strong>Florent de Bazelaire</strong>. Zespół czerpie inspirację z XVIII-wiecznych
+    <p><strong>VoctEnsemble</strong>, krakowski zespół wokalny, którego założycielem jest
+    <strong>Florent de Bazelaire</strong>, czerpie inspirację z XVIII-wiecznych
     <em>Concerts Spirituels</em>, nadając im współczesny wymiar i tworząc przestrzeń do
-    zgłębiania tajemnic rzeczywistości poprzez muzykę wokalną. Repertuar zespołu sięga od
+    zgłębiania tajemnic rzeczywistości poprzez muzykę wokalną. Jego repertuar sięga od
     renesansowej polifonii po muzykę najnowszą, ze szczególnym miejscem dla muzyki sakralnej.</p>
     <p>Zespół traktuje sztukę jako formę modlitwy i refleksji nad kondycją człowieka. Do
     najważniejszych dokonań należą inauguracyjny koncert „Kontemplacja Wcielenia”, utrwalony
@@ -127,10 +127,14 @@ about:
   # it does not carry. It is also the ensemble's entry in every concert pack's `biogramy.pdf`
   # (scripts/press-pack.mjs), so the site has one full biogram; its English is the kit's
   # `biograms.en`, since this page has none.
+  # THE ONE DECLINED „Florenta de Bazelaire’a” ON THE SITE, and on purpose: „założony przez …,
+  # który z niezwykłym zapałem redefiniuje” leaves open whether the founder or the ensemble
+  # redefines, which the text means to, and only a dependent case after „przez” can carry it.
+  # Everywhere else the name stands in the nominative.
   longHtml: |-
-    <p><strong>VoctEnsemble</strong> to krakowski zespół wokalny. Założył go
-    <strong>Florent de Bazelaire</strong>, który z niezwykłym zapałem redefiniuje pojęcie koncertu
-    duchowego. Zespół czerpie inspirację z XVIII-wiecznych <em>Concerts Spirituels</em>, nadając
+    <p><strong>VoctEnsemble</strong> to krakowski zespół wokalny założony przez
+    <strong>Florenta de Bazelaire’a</strong>, który z niezwykłym zapałem redefiniuje pojęcie
+    koncertu duchowego. Zespół czerpie inspirację z XVIII-wiecznych <em>Concerts Spirituels</em>, nadając
     im współczesny wymiar i tworząc przestrzeń do zgłębiania tajemnic rzeczywistości poprzez
     muzykę wokalną. Bogaty i zróżnicowany repertuar zespołu obejmuje ponad 60 dzieł – od
     renesansowej polifonii po muzykę najnowszą, ze szczególnym miejscem dla muzyki sakralnej.</p>
