@@ -10,6 +10,27 @@ in a browser yet. Copy not yet approved by Ania. Next: review round R1
 the two disagree; that file stays the record of how the pack generator and `foundation.ts` came to
 exist.
 
+**The board's own documents, 2026-09-28 (evening) — supersedes "Approved copy" below where they
+disagree.** Ania asked for her PDFs, byte for byte and under her file names, because editors expect
+one format from every sender. What changed:
+- **The release, both announcements and the biograms are her PDFs** (Polish and English in one
+  file each), named by the kit's `documents` and read from `web/press-pack/kits/<concert-id>/`
+  (gitignored). The generator refuses a named file that is missing or is not a PDF. The Edge PDF
+  engine (`scripts/press-pack/pdf*`) is gone, and so is `biograms` from the kit.
+- **Kopiuj stays.** `release` and `announce` in the kit are her PDFs transcribed word for word
+  (a text copied out of a PDF breaks at every line); a document's `text` names which one its row
+  shows and copies. The announcements' English half has its own "Kopiuj EN" inside the disclosure.
+  Nothing reads a PDF at build, so a replaced PDF is compared with the kit by hand.
+- **Measures are the board's approximate values** ("~500", "~1500") in the row names. Nothing is
+  counted.
+- **No programme on /press, still.** She sent one; it lists the Pärt's returns and an encore.
+- **No foundation section** and no `dane-do-faktury.txt`: registry and invoicing details are not
+  press material.
+- **Contact is one address** plus two lines: materials on request, and the press list as a
+  `mailto:` with the subject "Lista mediów". No form and no list in the database yet.
+- **The posters are unchanged**; only their rows' second line is the board's ("… · VE / Anna
+  Marcisz · …", `kit.poster`). Photo captions follow her rule (manifest header).
+
 **Approved copy, 2026-09-28 — where the shipped kit departs from the stages below.** The approved
 texts (release, both announcements in Polish and English, four biograms in both languages, the
 card's paragraph, the post and hashtags) are transcribed into

@@ -12,8 +12,8 @@
  *  - no index — a fresh checkout, or a host the pack was never uploaded to. The page renders its
  *    texts and a "write to us" mailto in place of every download. Supported, not broken.
  *  - an index cut from other sources — its `kitHash` differs from the one this checkout computes
- *    (`computeKitHash` in lib/pressKit). The page's Kopiuj texts would then disagree with the
- *    files beside them, so THE BUILD FAILS and says what to do.
+ *    (`computeKitHash` in lib/pressKit). The page's rows and Kopiuj texts would then disagree with
+ *    the files beside them, so THE BUILD FAILS and says what to do.
  *  - an index naming a file that is not there — a partial upload. The build fails as well.
  *
  *  EVERY URL CARRIES `?v=`, derived from the moment the pack was cut, so a regenerated ZIP or a
@@ -79,9 +79,12 @@ export function readPressPack(root: string = process.cwd()): PressPack | undefin
   }
 
   const version = Date.parse(index.generatedAt).toString(36);
+  // Segment by segment: the board's file names carry brackets, spaces and dashes, and a `#` or `?`
+  // in one would end the path under `encodeURI`.
+  const encodePath = (path: string) => path.split("/").map(encodeURIComponent).join("/");
   return {
     index,
-    href: (file) => `${PACK_URL_BASE}/${encodeURI(file.path)}?v=${version}`,
+    href: (file) => `${PACK_URL_BASE}/${encodePath(file.path)}?v=${version}`,
   };
 }
 
@@ -90,19 +93,13 @@ function listedFiles(index: PressIndex): PressFile[] {
   const concert = index.concert;
   return [
     index.readme,
-    index.invoice,
     index.archives.komplet,
     index.archives.zdjecia,
     ...index.photos.flatMap((photo) => [photo, photo.preview, photo.thumbs.w640, photo.thumbs.w1280]),
     ...index.logo,
     ...(concert
       ? [
-          concert.release,
-          concert.biograms,
-          concert.announceShort,
-          concert.announceLong,
-          ...(concert.announceShortEn ? [concert.announceShortEn] : []),
-          ...(concert.announceLongEn ? [concert.announceLongEn] : []),
+          ...concert.documents,
           concert.post,
           concert.hashtags,
           concert.poster,

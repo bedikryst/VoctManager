@@ -6,11 +6,11 @@
 # file be seen before it is downloaded, and hands over texts that are already checked.
 # docs/specs/web-press-v2-2026-09.md.
 #
-# FOUR SOURCES, AND ONLY ONE OF THEM IS THIS FILE. The concert kit's texts (release, announcements,
-# post, hashtags) are `src/content/press-kits/<concert>.yaml`; the concert's facts come from
-# `concerts.yaml`; the registry numbers, accounts and addresses from `src/data/foundation.ts`; the
-# social handles from `src/data/social.ts`. What is left here is the page's own voice: the head,
-# the rubrics, the section ledes, the usage terms, the biograms.
+# FOUR SOURCES, AND ONLY ONE OF THEM IS THIS FILE. The concert kit — the board's documents and
+# their rows, the post, the hashtags — is `src/content/press-kits/<concert>.yaml`; the concert's
+# facts come from `concerts.yaml`; the press address from `src/data/foundation.ts`; the social
+# handles from `src/data/social.ts`. What is left here is the page's own voice: the head, the
+# rubrics, the section ledes, the usage terms, the biograms.
 #
 # THE USAGE TERMS ARE A LEGAL STATEMENT and Ania approves them before they ship. They explicitly
 # allow cropping and scaling, because every social-media manager crops; a text that forbade any
@@ -42,25 +42,16 @@ head:
     latest: "Najnowsze"
     photos: "Zdjęcia"
     social: "Social media"
-    about: "O zespole"
+    about: "VoctEnsemble"
     contact: "Kontakt"
 
 latest:
   eyebrow: "Najnowsze"
   filesEyebrow: "Materiały do pobrania"
-  # The release's own headline is printed under this title, from the kit.
-  release: "Informacja prasowa"
-  announce: "Zapowiedź"
-  announceShortSub: "Krótka wersja do kalendarzy i serwisów"
-  announceLongSub: "Wersja dla redakcji"
-  # The same two measures in English, where the kit carries them.
-  announceEn: "Zapowiedź po angielsku"
-  # The names under this title are the biograms the PDF actually holds, never a promise.
-  biograms: "Biogramy"
-  biogramsLanguages: "po polsku i po angielsku"
+  # The documents' rows are named by the kit, file by file. The poster rows print the concert's
+  # title, the design's credit and the file's size or sheet after these.
   poster: "Plakat"
   posterPrint: "Plakat do druku"
-  posterPrintSub: "Plik od autorki projektu, w rozdzielczości do druku"
 
 photos:
   eyebrow: "Zdjęcia prasowe"
@@ -96,11 +87,10 @@ social:
   tagLede: "Oznaczenie zespołu w poście pomaga nam dotrzeć do słuchaczy."
 
 about:
-  eyebrow: "O zespole"
+  eyebrow: "VoctEnsemble"
   # The character counts are NOT written here: the page measures each text after stripping its
-  # markup and prints the real number.
-  lede: >-
-    Ten sam tekst w trzech miarach: do noty w programie, do zapowiedzi i do pełnego biogramu.
+  # markup and prints the real number. The three lengths name the tabs under it (PRESS_CHROME).
+  lede: "Bio w trzech długościach: krótkie, średnie, pełne."
   # ~300 characters: who founded it, what it draws from, what it sings.
   shortHtml: >-
     <p>VoctEnsemble, krakowski zespół wokalny, którego założycielem jest Florent de Bazelaire,
@@ -124,9 +114,8 @@ about:
   # The ensemble's own text, verbatim: the biogram of 27.09.2026, which replaced the August one.
   # It is the one legitimately brochure-voiced artifact on this site and it is not ours to
   # rewrite — the two shorter measures above are condensations OF it, and they introduce no fact
-  # it does not carry. It is also the ensemble's entry in every concert pack's `biogramy.pdf`
-  # (scripts/press-pack.mjs), so the site has one full biogram; its English is the kit's
-  # `biograms.en`, since this page has none.
+  # it does not carry. A concert's biogram PDF is the board's own document and carries this text
+  # as the board set it; an edit here does not reach that file.
   # IT IS THE FOUNDER WHO REDEFINES the spiritual concert, as the English says („who passionately
   # seeks”); the approved Polish left it open, and its author settled it (28.09.2026). The first
   # sentence carries him in the nominative, as the whole site does.
@@ -156,17 +145,14 @@ about:
     do publikacji w internecie, wyłącznie na ciemnym tle. Wokół znaku prosimy zostawić odstęp
     nie mniejszy niż wysokość jego poprzeczki.
 
-foundation:
-  eyebrow: "Fundacja"
-  lede: >-
-    Zespół prowadzi Fundacja VoctFoundation. To ona podpisuje umowy i wystawia rachunki, więc
-    to jej dane wpisuje się do umowy i na fakturę.
-
+# ONE address, and two lines under it: what is sent on request, and the press list. Both go to the
+# same mailbox, so neither gets a heading or a button of its own (the board, 28.09.2026). The
+# address is printed from `data/foundation.ts`.
 contact:
   eyebrow: "Kontakt dla mediów"
-  # The address itself is printed after this line from `data/foundation.ts`.
-  lede: "Redakcje i dziennikarze piszą na adres:"
-  broadcastTitle: "Materiały dla radia i telewizji"
-  broadcastBody: >-
-    Nagrania emisyjne, B-roll i dodatkowe materiały udostępniamy bezpośrednio redakcjom.
-  broadcastCta: "Napisz"
+  onRequest: >-
+    Materiały dla radia i telewizji, B-roll oraz dodatkowe pliki udostępniamy na prośbę.
+  # The braces mark the link: a mail to the press address, subject "Lista mediów". The list is
+  # kept by hand; no form writes to it.
+  list: >-
+    {Zostaw kontakt}, a będziemy przesyłać informacje prasowe o nowych projektach i koncertach.

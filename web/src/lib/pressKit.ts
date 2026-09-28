@@ -1,22 +1,20 @@
 /**
  * @file pressKit.ts
- * @description A concert's press kit — the texts an editor or a social-media manager pastes — and
- *  every string built from it. One module, because the page's Kopiuj buttons and the files in the
- *  pack (`scripts/press-pack.mjs`) must write the SAME characters: a limit measured on one and
- *  honoured by the other would be a limit on nothing.
+ * @description A concert's press kit — the board's documents, the texts a social-media manager
+ *  pastes, and the lines the page prints about them — and every string built from it. One module,
+ *  because the page's Kopiuj buttons and the files in the pack (`scripts/press-pack.mjs`) must
+ *  write the SAME characters.
  *
- *  THE KIT HOLDS ONLY WHAT CANNOT BE DERIVED. The release, the announcements, the post, the
- *  hashtags, the guests and the biograms are copy, one YAML per concert in `src/content/press-kits/`.
- *  The concert's facts — its title, day, hour, place, festival, door, composers and conductor — are
- *  read from `concerts.yaml` through `concertFacts` and `performers`, never retyped. The kit's own
+ *  THE KIT HOLDS ONLY WHAT CANNOT BE DERIVED, one YAML per concert in `src/content/press-kits/`.
+ *  The release, the announcements and the biograms are the board's own PDFs, which the kit NAMES
+ *  (`documents`) and the generator copies byte for byte: editors expect one format from every
+ *  sender. The release and the announcements are also TRANSCRIBED into the kit, for the page's
+ *  Kopiuj — a text copied out of a PDF breaks at every line. Nothing here can read a PDF, so the
+ *  two are held together by hand (the kit's header says how). The post, the hashtags and the
+ *  guests are copy. The concert's facts — its title, day, hour, place, festival, door, composers
+ *  and conductor — are read from `concerts.yaml` through `concertFacts`, never retyped. The kit's
  *  prose does have to name the day and the hour, so `kitProblems` checks that every dated text
  *  still names the corpus's: move the concert and the build fails until the copy follows.
- *
- *  AN ANNOUNCEMENT'S LENGTH IS MEASURED, NOT LIMITED. The approved texts run past the round
- *  measures editors' forms ask for, and they ship as approved, so the page states what each one IS:
- *  its exact count, and that count rounded to fifty as the row's name. Both are measured on the
- *  exact string Kopiuj writes — `announceText`, newlines included, counted in code points — because
- *  a form counts what was pasted, not what the YAML looked like.
  *
  *  IMPORTED BY BARE NODE as well as by Astro, so every relative import carries its `.ts` extension
  *  and type-only imports say `import type`: Node strips types, it does not resolve specifiers.
@@ -43,23 +41,19 @@ const PRESS_COPY_FILE = "src/content/pages/press.yaml";
 const MARK_FILE = "public/voct-mark.svg";
 
 /**
- * The `press.yaml` fields the pack prints: the short biogram closes a release whose kit has no
- * `release.about` (and the page's "Kopiuj tekst" of it), the long one is the ensemble's entry in
- * `biogramy.pdf`, the two usage texts are the readme and the logo's note. Add a field here the day
- * the generator starts printing it.
+ * The board's documents for a kit, on the machine that cuts the pack: `<dir>/<concert-id>/<file>`.
+ * Gitignored like the photographs — the pack is the only thing that ships them.
+ */
+export const PRESS_KIT_FILES_DIR = "press-pack/kits";
+
+/**
+ * The `press.yaml` fields the pack prints: the photo usage terms in the readme and the logo's note
+ * beside the logo files. Add a field here the day the generator starts printing it.
  */
 const PACK_COPY_FIELDS = [
-  ["about", "shortHtml"],
-  ["about", "longHtml"],
   ["about", "logoUsage"],
   ["photos", "usage"],
 ] as const;
-
-/** Code points, so "ł" and "—" count as the one character an editor's form counts them as. */
-export const charCount = (text: string): number => [...text].length;
-
-/** "ok. 550": the length in characters with spaces, to the nearest fifty. */
-export const roundedLength = (text: string): number => Math.round(charCount(text) / 50) * 50;
 
 /**
  * Paragraphs as one pasteable string: each trimmed, a blank line between them. Line breaks INSIDE a
@@ -84,10 +78,24 @@ const announcementSchema = z.object({
   long: paragraphList,
 });
 
-const biogramSchema = z.object({
-  name: z.string().min(1),
-  role: z.string().min(1),
-  body: paragraphList,
+/** Which transcription a document row's Kopiuj writes. */
+const DOCUMENT_TEXTS = ["release", "announceShort", "announceLong"] as const;
+export type DocumentText = (typeof DOCUMENT_TEXTS)[number];
+
+const documentSchema = z.object({
+  /**
+   * The name its author gave it, served and zipped under that name. One path segment: it is a URL
+   * segment on the site and an entry in komplet.
+   */
+  file: z
+    .string()
+    .regex(/^[^/\\]+\.pdf$/i, "a document is a .pdf file name, without a folder"),
+  /** The row's name on /press. */
+  title: z.string().min(1),
+  /** The row's second line. Absent, the concert's title. */
+  sub: z.string().min(1).optional(),
+  /** The kit's transcription of this file, which the row shows and copies. Absent, the file alone. */
+  text: z.enum(DOCUMENT_TEXTS).optional(),
 });
 
 const pressKitSchema = z.object({
@@ -97,8 +105,26 @@ const pressKitSchema = z.object({
   forces: z.string().min(1),
   /** The concert card's paragraph on /press. Absent, the corpus's `essence` stands in. */
   lede: z.string().min(1).optional(),
+  /** The board's PDFs, in the order /press lists them. */
+  documents: z
+    .array(documentSchema)
+    .min(1)
+    .refine(
+      (list) => new Set(list.map((entry) => entry.file)).size === list.length,
+      "a document is listed twice",
+    ),
+  /** What the poster rows print after the concert's title. */
+  poster: z
+    .object({
+      /** The design's credit in the form /press prints it. Absent, the corpus's `posterCredit`. */
+      credit: z.string().min(1).optional(),
+      /** The print file's sheet ("A3"). */
+      printSheet: z.string().min(1).optional(),
+    })
+    .default({}),
   /** Who presents the evening and within what, as the release's fact block names them. */
   frame: z.object({ organizers: z.string().min(1), within: z.string().min(1) }).optional(),
+  /** The release PDF, transcribed. */
   release: z.object({
     title: z.string().min(1),
     subtitle: z.string().min(1).optional(),
@@ -109,6 +135,7 @@ const pressKitSchema = z.object({
     /** The person an editor writes to; the address is the foundation's press mail. */
     contact: z.object({ name: z.string().min(1), role: z.string().min(1) }).optional(),
   }),
+  /** The two announcement PDFs, transcribed: the Polish half, and the English half as `en`. */
   announce: announcementSchema.extend({ en: announcementSchema.optional() }),
   social: z.object({
     post: paragraphList,
@@ -116,13 +143,6 @@ const pressKitSchema = z.object({
   }),
   /** Performers beyond the ensemble and the corpus's `credits` — the evening's instrumentalists. */
   guests: z.array(z.object({ name: z.string().min(1), role: z.string().min(1) })).default([]),
-  /**
-   * `biogramy.pdf` after the ensemble, in order. The Polish half always opens with the ensemble's
-   * full biogram from the page (`press.yaml`), so `pl` holds the evening's people only; `en`, where
-   * present, holds the ensemble too, since the page has no English. The run notes every performer
-   * without a Polish biogram.
-   */
-  biograms: z.object({ pl: z.array(biogramSchema).min(1), en: z.array(biogramSchema).optional() }).optional(),
 });
 
 export type PressKit = z.infer<typeof pressKitSchema> & {
@@ -130,6 +150,7 @@ export type PressKit = z.infer<typeof pressKitSchema> & {
   readonly id: string;
 };
 
+export type KitDocument = z.infer<typeof documentSchema>;
 export type Announcement = z.infer<typeof announcementSchema>;
 export type AnnounceMeasure = "short" | "long";
 
@@ -139,6 +160,10 @@ export type AnnounceMeasure = "short" | "long";
  */
 export const announceText = (announcement: Announcement, measure: AnnounceMeasure): string =>
   measure === "short" ? announcement.short.trim() : joinParagraphs(announcement.long);
+
+/** A document's path inside `public/press/` and inside komplet. */
+export const documentPath = (kit: PressKit, document: KitDocument): string =>
+  `${kit.concert}/${document.file}`;
 
 /** The post, ending on the concert's own address so a pasted post always links somewhere true. */
 export const postText = (kit: PressKit, concertUrl: string): string =>
@@ -234,24 +259,6 @@ export function concertFacts(concert: KitConcert): ConcertFacts {
   };
 }
 
-/** One performer of the evening, as a release's fact block and a biogram name them. */
-export interface Performer {
-  readonly name: string;
-  readonly role: string;
-}
-
-/**
- * Who performs, in the order every text names them: the ensemble, the corpus's `credits` (the
- * conductor), then the kit's guests. Roles are lower-case, as they read after a dash.
- */
-export function performers(kit: PressKit, concert: KitConcert): Performer[] {
-  return [
-    { name: FOUNDATION.ensemble, role: "zespół wokalny" },
-    ...(concert.credits ?? []).map((credit) => ({ name: credit.name, role: credit.role.toLowerCase() })),
-    ...kit.guests,
-  ];
-}
-
 /**
  * The concert card's lineup: everyone who sings and plays on one line, then each credit (the
  * conductor) on its own — "VoctEnsemble · Radu Ropotan · …" over "Florent de Bazelaire — dyrygent".
@@ -318,9 +325,9 @@ export function releaseLinks(concert: KitConcert, site: string, concertId: strin
 /**
  * The release as one pasteable text: headline and subtitle, lead, the sections, the practical
  * block (the facts, the lineup and the frame) and the links, who the ensemble is, and the press
- * contact. The PDF sets the same parts, with the facts as a table under the lead. `about` is the
- * page's short biogram, used only where the kit has no `release.about`; `mail` is the press
- * address. Both are passed in because they live in the page copy and the foundation's data.
+ * contact — the release PDF's text without its layout. `about` is the page's short biogram, used
+ * only where the kit has no `release.about`; `mail` is the press address. Both are passed in
+ * because they live in the page copy and the foundation's data.
  */
 export function releaseText(
   kit: PressKit,
@@ -356,14 +363,13 @@ export function releaseText(
 /**
  * What in the kit's prose no longer matches the corpus. Every text that names the day must name
  * THIS day and hour, in the form a sentence uses ("11 października", "13:30"); a kit whose concert
- * moved fails here rather than handing an editor last week's date.
+ * moved fails here rather than handing an editor last week's date. The board's PDFs cannot be read
+ * here, so a moved concert also means asking for new ones.
  */
 export function kitProblems(kit: PressKit, concert: KitConcert | undefined): string[] {
   if (!concert) return [`kit "${kit.id}" names concert "${kit.concert}", which is not in the corpus.`];
-  const problems: string[] = [];
   if (!concert.date || !concert.time) {
-    problems.push(`concert "${kit.concert}" has no date or time in the corpus.`);
-    return problems;
+    return [`concert "${kit.concert}" has no date or time in the corpus.`];
   }
   const day = dayMonth(concert.date, "pl");
   const dated: [string, string, string[]][] = [
@@ -372,7 +378,7 @@ export function kitProblems(kit: PressKit, concert: KitConcert | undefined): str
     ["announce.long", announceText(kit.announce, "long"), [day, concert.time]],
     ["social.post", joinParagraphs(kit.social.post), [day, concert.time]],
   ];
-  // English writes the hour its own way ("1.30 pm"), so only the day is held to the corpus.
+  // English writes the hour its own way ("1.30 p.m."), so only the day is held to the corpus.
   if (kit.announce.en) {
     const dayEn = dayMonth(concert.date, "en");
     dated.push(
@@ -380,12 +386,12 @@ export function kitProblems(kit: PressKit, concert: KitConcert | undefined): str
       ["announce.en.long", announceText(kit.announce.en, "long"), [dayEn]],
     );
   }
+  const problems: string[] = [];
   for (const [field, text, tokens] of dated) {
-    for (const token of tokens) {
-      // Non-breaking spaces are how a typeset copy of this text would carry "11 października".
-      if (!text.replace(/ /g, " ").includes(token)) {
-        problems.push(`kit "${kit.id}" ${field} does not name "${token}", the corpus's date/time.`);
-      }
+    // Non-breaking spaces are how a typeset copy of this text would carry the day.
+    const plain = text.replace(/\u00a0/g, " ");
+    for (const token of tokens.filter((entry) => !plain.includes(entry))) {
+      problems.push(`kit "${kit.id}" ${field} does not name "${token}", the corpus's date/time.`);
     }
   }
   return problems;
@@ -486,20 +492,14 @@ export interface PressIndex {
   readonly kitHash: string;
   readonly generatedAt: string;
   readonly readme: PressFile;
-  readonly invoice: PressFile;
   readonly archives: { readonly komplet: PressFile; readonly zdjecia: PressFile };
   readonly photos: readonly PressPhoto[];
   readonly logo: readonly PressFile[];
   /** Absent when no kit's concert is still ahead. */
   readonly concert?: {
     readonly id: string;
-    readonly release: PressFile;
-    readonly biograms: PressFile;
-    readonly announceShort: PressFile;
-    readonly announceLong: PressFile;
-    /** Present when the kit carries `announce.en`. */
-    readonly announceShortEn?: PressFile;
-    readonly announceLongEn?: PressFile;
+    /** The kit's `documents`, in its order, each at `documentPath`. */
+    readonly documents: readonly PressFile[];
     readonly post: PressFile;
     readonly hashtags: PressFile;
     readonly poster: PressFile;

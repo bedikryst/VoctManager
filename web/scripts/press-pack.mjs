@@ -7,32 +7,32 @@
  *  WHAT IT MAKES:
  *   · press photographs, each cut to its ratio (16:9 or 4:5) with a 2400 px preview and two
  *     thumbnails (`press-pack/photos.mjs`, rows in `press-pack/manifest.yaml`);
- *   · the kit of the soonest upcoming concert that has one: the release and biogram PDFs, the
- *     announcements (Polish, and English where the kit has them), the post and the hashtags as
- *     text files, the poster, the designer's print PDF where one is on this machine, and the
- *     poster mounted as 4:5, 9:16 and 16:9 graphics;
- *   · the logotype, `PRZECZYTAJ.txt` (usage terms, every credit, the contact) and the invoicing
- *     sheet;
+ *   · the kit of the soonest upcoming concert that has one: the board's PDFs (release,
+ *     announcements, biograms) copied byte for byte under their authors' names, the post and the
+ *     hashtags as text files, the poster, the designer's print PDF where one is on this machine,
+ *     and the poster mounted as 4:5, 9:16 and 16:9 graphics;
+ *   · the logotype and `PRZECZYTAJ.txt` (usage terms, every credit, the contact);
  *   · `voctensemble-press-komplet.zip` (all of it) and `voctensemble-press-zdjecia.zip` (the
  *     photographs and the readme).
  *
- *  ALMOST NOTHING HERE IS TYPED TWICE. The kit's texts and biograms come from
- *  `src/content/press-kits/`, the concert's facts from `concerts.yaml`, the usage terms (and the
- *  biogram of a kit that has none) from `press.yaml`, the invoicing sheet from
- *  `src/data/foundation.ts`. The one hand-kept list is the photo manifest, because which frames the
- *  ensemble released cannot be derived.
+ *  ALMOST NOTHING HERE IS TYPED TWICE. The kit's post and hashtags come from
+ *  `src/content/press-kits/`, the concert's facts from `concerts.yaml`, the usage terms from
+ *  `press.yaml`. Two things are kept by hand because nobody can derive them: the photo manifest
+ *  (which frames the ensemble released) and the board's documents, which the kit names and
+ *  `press-pack/kits/<concert-id>/` holds.
  *
  *  IT REFUSES, NAMING WHAT IS MISSING, rather than ship a gap: no kit, a kit whose concert is not
- *  in the corpus or whose texts name another day, a concert without its poster, a photo row
- *  without a credit or a source, a source held for want of its photographer's consent. It only
- *  WARNS AND SKIPS a photo whose crop is under 1080 px on its short edge — a thumbnail sent by
- *  mistake — and an archive over 50 MB.
+ *  in the corpus or whose post names another day, a document the kit names that is not on this
+ *  machine or is not a PDF, a concert without its poster, a photo row without a credit or a
+ *  source, a source held for want of its photographer's consent. It only WARNS AND SKIPS a photo
+ *  whose crop is under 1080 px on its short edge — a thumbnail sent by mistake — and an archive
+ *  over 50 MB.
  *
  *  THE OUTPUT IS NOT IN GIT. `public/press/` is gitignored and uploaded to the build host by hand,
  *  as the photographs are. `index.json` carries `kitHash` (lib/pressKit), and the site refuses to
  *  build against a pack cut from sources other than the ones it holds.
  *
- *  Run from `web/`: `npm run press:pack`. The PDFs need Microsoft Edge (see press-pack/pdf.mjs).
+ *  Run from `web/`: `npm run press:pack`.
  * @architecture Astro islands 2026
  * @module scripts/press-pack
  */
@@ -46,29 +46,19 @@ import YAML from "yaml";
 
 import { FOUNDATION } from "../src/data/foundation.ts";
 import { PRESS_PAGE } from "../src/i18n/content/press.ts";
-import { htmlToPlainText } from "../src/lib/plainText.ts";
 import {
+  PRESS_KIT_FILES_DIR,
   PRESS_MANIFEST,
-  announceText,
   computeKitHash,
-  concertFacts,
   concertUrl,
+  documentPath,
   hashtagsText,
   kitProblems,
   latestKit,
   loadPressKits,
-  performers as kitPerformers,
   postText,
-  releaseLinks,
 } from "../src/lib/pressKit.ts";
 import { posterOnGround } from "./press-pack/graphics.mjs";
-import { renderPdfs } from "./press-pack/pdf.mjs";
-import {
-  biogramHtml,
-  biogramsBody,
-  pdfDocument,
-  releaseBody,
-} from "./press-pack/pdf/templates.mjs";
 import { RATIOS, SHORT_EDGE_FLOOR, pressPhoto } from "./press-pack/photos.mjs";
 import { makeZip } from "./zip.mjs";
 
@@ -152,6 +142,28 @@ function findByStem(dir, stem) {
     return readdirSync(at(dir)).find((name) => name.slice(0, name.lastIndexOf(".")) === stem);
   } catch {
     return undefined;
+  }
+}
+
+/* The board's documents, read now so a missing or mistyped one refuses the run before anything in
+   `public/press/` is touched. A PDF is checked by its first bytes, not its extension: a file named
+   `.pdf` that is not one would open as nothing in every editor's viewer. */
+const documents = [];
+if (kit && concert) {
+  const dir = path.join(PRESS_KIT_FILES_DIR, kit.concert);
+  for (const document of kit.documents) {
+    let data;
+    try {
+      data = readFileSync(at(dir, document.file));
+    } catch {
+      fail(`document "${document.file}" is not in ${dir} on this machine.`);
+      continue;
+    }
+    if (data.subarray(0, 5).toString("latin1") !== "%PDF-") {
+      fail(`document "${document.file}" in ${dir} is not a PDF.`);
+      continue;
+    }
+    documents.push({ path: documentPath(kit, document), data });
   }
 }
 
@@ -282,26 +294,19 @@ for (const row of rows) {
 
 // ── The concert kit ───────────────────────────────────────────────────────────────────────────
 
-const shortBio = htmlToPlainText(copy.about.shortHtml);
 let concertIndex;
-let facts;
 if (kit && concert) {
   const dir = kit.concert;
   const url = concertUrl(FOUNDATION.site, concert.id);
-  facts = concertFacts(concert);
-  const performers = kitPerformers(kit, concert);
 
-  /* Named by measure, not by a character count: the approved texts run past the round numbers,
-     and a file called "500" that holds 537 characters would be the first thing an editor trusts. */
+  /* The board's documents travel byte for byte and keep their authors' names: editors take a
+     press pack in the format they know, and the names are ordered for them on purpose. */
+  const documentIndex = documents.map((document) => {
+    pack(document.path, document.data, true);
+    return emit(document.path, document.data);
+  });
+
   const texts = {
-    announceShort: ["zapowiedz-krotka.txt", announceText(kit.announce, "short")],
-    announceLong: ["zapowiedz-dluga.txt", announceText(kit.announce, "long")],
-    ...(kit.announce.en
-      ? {
-          announceShortEn: ["zapowiedz-krotka-en.txt", announceText(kit.announce.en, "short")],
-          announceLongEn: ["zapowiedz-dluga-en.txt", announceText(kit.announce.en, "long")],
-        }
-      : {}),
     post: ["post.txt", postText(kit, url)],
     hashtags: ["hashtagi.txt", hashtagsText(kit)],
   };
@@ -348,66 +353,9 @@ if (kit && concert) {
     pack(`${dir}/${name}`, jpg.data, true);
   }
 
-  /* Biograms: only the texts on record. The Polish half opens with the ensemble's full biogram
-     from the page — the site's one text of it — and goes on with the kit's; the English half is
-     the kit's alone. A performer without a Polish biogram is named in the run's notes, so the gap
-     is visible and nothing is written to fill it. */
-  const asEntries = (list) => list.map((bio) => ({ name: bio.name, role: bio.role, html: biogramHtml(bio.body) }));
-  const bioGroups = [
-    {
-      lang: "pl",
-      heading: "Biogramy",
-      entries: [
-        { name: FOUNDATION.ensemble, role: "zespół wokalny", html: copy.about.longHtml },
-        ...asEntries(kit.biograms?.pl ?? []),
-      ],
-    },
-    ...(kit.biograms?.en ? [{ lang: "en", heading: "Biographies", entries: asEntries(kit.biograms.en) }] : []),
-  ];
-  const withBiogram = new Set(bioGroups[0].entries.map((entry) => entry.name));
-  for (const performer of performers.filter((entry) => !withBiogram.has(entry.name))) {
-    notes.push(`biogramy.pdf: no biogram on record for ${performer.name} (${performer.role}).`);
-  }
-
-  const footer = `Kontakt dla mediów: ${FOUNDATION.mail.press} · ${FOUNDATION.site.replace(/^https?:\/\//, "")}/press`;
-  const pdfDoc = (title, body) =>
-    pdfDocument({
-      title,
-      body,
-      accent: concert.accent,
-      footer,
-      markSvg: readFileSync(at("public/voct-mark.svg"), "utf8"),
-    });
-  const pdfs = await renderPdfs([
-    {
-      name: "informacja-prasowa",
-      html: pdfDoc(
-        `${concert.title} — informacja prasowa`,
-        releaseBody({
-          kit,
-          facts,
-          performers,
-          about: shortBio,
-          mail: FOUNDATION.mail.press,
-          links: releaseLinks(concert, FOUNDATION.site, concert.id),
-        }),
-      ),
-    },
-    {
-      name: "biogramy",
-      html: pdfDoc(`${concert.title} — biogramy`, biogramsBody({ facts, groups: bioGroups })),
-    },
-  ]);
-  const pdfIndex = {};
-  for (const [name, data] of pdfs) {
-    pdfIndex[name] = emit(`${dir}/${name}.pdf`, data);
-    pack(`${dir}/${name}.pdf`, data, true);
-  }
-
   concertIndex = {
     id: kit.concert,
-    release: pdfIndex["informacja-prasowa"],
-    biograms: pdfIndex.biogramy,
+    documents: documentIndex,
     ...textIndex,
     poster,
     ...(posterPrint ? { posterPrint } : {}),
@@ -469,6 +417,9 @@ const readmeTxt = [
   ]),
   ...(concert
     ? [
+        heading(`Teksty — ${concert.title}`),
+        ...documents.map((document) => document.path),
+        "",
         heading(`Plakat i grafiki — ${concert.title}`),
         `${kit.concert}/plakat.jpg, ${kit.concert}/grafika-*.jpg` +
           (concertIndex?.posterPrint ? `, ${concertIndex.posterPrint.path}` : ""),
@@ -484,36 +435,10 @@ const readmeTxt = [
 const readmeData = textFile(readmeTxt);
 const readme = emit("PRZECZYTAJ.txt", readmeData);
 
-const invoiceData = textFile(
-  [
-    heading("Dane do umowy i do faktury"),
-    `Nazwa       ${FOUNDATION.name}`,
-    `Adres       ${FOUNDATION.addressLine}`,
-    `KRS         ${FOUNDATION.registry.krs}`,
-    `NIP         ${FOUNDATION.registry.nip}`,
-    `REGON       ${FOUNDATION.registry.regon}`,
-    "",
-    `Konto PLN   ${FOUNDATION.accounts.pln.display}`,
-    `Konto EUR   ${FOUNDATION.accounts.eur.display}`,
-    "",
-    `Kontakt     ${FOUNDATION.mail.booking}`,
-    `Serwis      ${site}`,
-    "",
-  ].join("\n"),
-);
-const invoice = emit("dane-do-faktury.txt", invoiceData);
-
 // ── Archives ──────────────────────────────────────────────────────────────────────────────────
 
 const cutAt = new Date();
-const komplet = makeZip(
-  [
-    { name: "PRZECZYTAJ.txt", data: readmeData },
-    { name: "dane-do-faktury.txt", data: invoiceData },
-    ...kompletEntries,
-  ],
-  cutAt,
-);
+const komplet = makeZip([{ name: "PRZECZYTAJ.txt", data: readmeData }, ...kompletEntries], cutAt);
 const zdjecia = makeZip([{ name: "PRZECZYTAJ.txt", data: readmeData }, ...photoEntries], cutAt);
 const archives = {
   komplet: emit(ARCHIVES.komplet, komplet),
@@ -533,7 +458,6 @@ const index = {
   kitHash: computeKitHash(WEB_ROOT),
   generatedAt: cutAt.toISOString(),
   readme,
-  invoice,
   archives,
   photos,
   logo,
@@ -550,7 +474,7 @@ console.log(
     `${photos.filter((p) => p.ratio === "4:5").length} × 4:5)` +
     (concertIndex ? `  ·  zestaw: ${concertIndex.id}` : "  ·  bez zestawu koncertu"),
 );
-console.log(`  ${ARCHIVES.komplet}  ${mb(archives.komplet.bytes)}  (${kompletEntries.length + 2} plików)`);
+console.log(`  ${ARCHIVES.komplet}  ${mb(archives.komplet.bytes)}  (${kompletEntries.length + 1} plików)`);
 console.log(`  ${ARCHIVES.zdjecia}  ${mb(archives.zdjecia.bytes)}  (${photoEntries.length + 1} plików)`);
 for (const warning of warnings) console.log(`  !  ${warning}`);
 for (const note of notes) console.log(`  ·  ${note}`);

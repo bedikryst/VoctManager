@@ -10,12 +10,12 @@
  *
  *  FOUR THINGS ON THIS PAGE ARE NOT COPY HERE AND MUST NOT DRIFT INTO IT:
  *
- *  - the concert kit's texts (release, announcements, post, hashtags) → `src/content/press-kits/`,
- *    read through `lib/pressKit`, because the page's Kopiuj and the pack's files must write the
- *    same characters and the limits are measured on them;
+ *  - the concert kit — the board's documents and their rows, the post, the hashtags →
+ *    `src/content/press-kits/`, read through `lib/pressKit`, because the page's Kopiuj and the
+ *    pack's files must write the same characters;
  *  - the concert's facts → `concerts.yaml`, through `concertFacts`;
- *  - the registry numbers, the accounts and the addresses → `src/data/foundation.ts`, and the
- *    social handles → `src/data/social.ts`: a number or a handle has no per-locale form;
+ *  - the press address → `src/data/foundation.ts`, and the social handles →
+ *    `src/data/social.ts`: an address or a handle has no per-locale form;
  *  - every size, count and dimension → measured at build, from the texts or from the pack's
  *    `index.json`.
  *
@@ -69,16 +69,8 @@ const pressCopySchema = z
       .object({
         eyebrow: z.string(),
         filesEyebrow: z.string(),
-        release: z.string(),
-        announce: z.string(),
-        announceShortSub: z.string(),
-        announceLongSub: z.string(),
-        announceEn: z.string(),
-        biograms: z.string(),
-        biogramsLanguages: z.string(),
         poster: z.string(),
         posterPrint: z.string(),
-        posterPrintSub: z.string(),
       })
       .strict(),
     photos: z
@@ -119,14 +111,11 @@ const pressCopySchema = z
         logoUsage: z.string(),
       })
       .strict(),
-    foundation: z.object({ eyebrow: z.string(), lede: z.string() }).strict(),
     contact: z
       .object({
         eyebrow: z.string(),
-        lede: z.string(),
-        broadcastTitle: z.string(),
-        broadcastBody: z.string(),
-        broadcastCta: z.string(),
+        onRequest: z.string(),
+        list: z.string().regex(/^[^{}]*\{[^{}]+\}[^{}]*$/, "mark the link with one pair of braces"),
       })
       .strict(),
   })
@@ -190,42 +179,24 @@ const PRESS_CONTRACT: readonly CopyEntry[] = [
     label: "Najnowsze · rubryka",
     note: "Stands over the card of the soonest concert that has a press kit. The concert's facts under it come from the corpus.",
   },
-  { kind: "field", path: "latest.filesEyebrow", label: "Najnowsze · rubryka materiałów" },
   {
     kind: "field",
-    path: "latest.release",
-    label: "Najnowsze · plik · informacja prasowa",
-    note: "The release's own headline is printed under it, from the kit.",
+    path: "latest.filesEyebrow",
+    label: "Najnowsze · rubryka materiałów",
+    note: "Over the board's documents, whose rows the concert's kit names, and the two poster rows.",
   },
   {
     kind: "field",
-    path: "latest.announce",
-    label: "Najnowsze · plik · zapowiedź",
-    note: "Named twice, once per measure; the measure (\"do 500 znaków\") and the measured length are printed beside it.",
-  },
-  { kind: "field", path: "latest.announceShortSub", label: "Najnowsze · zapowiedź krótka · opis" },
-  { kind: "field", path: "latest.announceLongSub", label: "Najnowsze · zapowiedź długa · opis" },
-  {
-    kind: "field",
-    path: "latest.announceEn",
-    label: "Najnowsze · plik · zapowiedź po angielsku",
-    note: "The English announcements' title, once per measure, beside the same length the Polish rows print.",
+    path: "latest.poster",
+    label: "Najnowsze · plik · plakat",
+    note: "The concert's title, the design's credit (from the kit) and the file's size in pixels follow it.",
   },
   {
     kind: "field",
-    path: "latest.biograms",
-    label: "Najnowsze · plik · biogramy",
-    note: "The names under it are the biograms the PDF holds, read at build.",
+    path: "latest.posterPrint",
+    label: "Najnowsze · plik · plakat do druku",
+    note: "The concert's title, the design's credit and the print sheet (from the kit) follow it.",
   },
-  {
-    kind: "field",
-    path: "latest.biogramsLanguages",
-    label: "Najnowsze · biogramy · języki",
-    note: "Printed after the names only when the PDF carries the English biograms as well.",
-  },
-  { kind: "field", path: "latest.poster", label: "Najnowsze · plik · plakat" },
-  { kind: "field", path: "latest.posterPrint", label: "Najnowsze · plik · plakat do druku" },
-  { kind: "field", path: "latest.posterPrintSub", label: "Najnowsze · plakat do druku · opis" },
 
   // ── Zdjęcia ───────────────────────────────────────────────────────────────────────────────
   { kind: "field", path: "photos.eyebrow", label: "Zdjęcia · rubryka" },
@@ -271,13 +242,13 @@ const PRESS_CONTRACT: readonly CopyEntry[] = [
     kind: "field",
     path: "about.lede",
     label: "O zespole · lede",
-    note: "Do not name a character count here: the page measures each text and prints the real number beside it.",
+    note: "Do not name a character count here: the page measures each text and prints the real number beside it. It names the three lengths as the tabs under it do.",
   },
   {
     kind: "field",
     path: "about.shortHtml",
     label: "O zespole · biogram krótki",
-    note: "Around 300 characters — a note in a programme, or a line under a poster. A condensation of the full biogram below and never a source of new facts. A press release whose kit has no closing \"O VoctEnsemble\" of its own closes on it.",
+    note: "Around 300 characters — a note in a programme, or a line under a poster. A condensation of the full biogram below and never a source of new facts.",
   },
   {
     kind: "field",
@@ -289,7 +260,7 @@ const PRESS_CONTRACT: readonly CopyEntry[] = [
     kind: "field",
     path: "about.longHtml",
     label: "O zespole · biogram pełny",
-    note: "The ensemble's own text, verbatim, and its entry in every concert pack's biogramy.pdf. It is ONE field rather than five paragraphs on purpose: a reviewer translating paragraph three and leaving two in Polish would produce a mixed-language biogram that somebody then pastes into a programme book.",
+    note: "The ensemble's own text, verbatim. A concert's biogram PDF is the board's own document: an edit here does not reach it. It is ONE field rather than five paragraphs on purpose: a reviewer translating paragraph three and leaving two in Polish would produce a mixed-language biogram that somebody then pastes into a programme book.",
   },
   { kind: "field", path: "about.logo", label: "O zespole · logotyp · tytuł" },
   {
@@ -299,26 +270,25 @@ const PRESS_CONTRACT: readonly CopyEntry[] = [
     note: "On the page under the logo files, and in the pack beside them (logo/UZYCIE.txt).",
   },
 
-  // ── Fundacja ──────────────────────────────────────────────────────────────────────────────
-  { kind: "field", path: "foundation.eyebrow", label: "Fundacja · rubryka" },
-  {
-    kind: "field",
-    path: "foundation.lede",
-    label: "Fundacja · lede",
-    note: "Stands over the registry and account rows, which come from `data/foundation.ts`.",
-  },
-
   // ── Kontakt ───────────────────────────────────────────────────────────────────────────────
-  { kind: "field", path: "contact.eyebrow", label: "Kontakt · rubryka" },
   {
     kind: "field",
-    path: "contact.lede",
-    label: "Kontakt · linia przed adresem",
-    note: "The address itself is printed after this line from `data/foundation.ts` — never write it into the copy.",
+    path: "contact.eyebrow",
+    label: "Kontakt · rubryka",
+    note: "The address itself is printed under it from `data/foundation.ts` — never write it into the copy.",
   },
-  { kind: "field", path: "contact.broadcastTitle", label: "Kontakt · radio i TV · tytuł" },
-  { kind: "field", path: "contact.broadcastBody", label: "Kontakt · radio i TV · tekst" },
-  { kind: "field", path: "contact.broadcastCta", label: "Kontakt · radio i TV · przycisk" },
+  {
+    kind: "field",
+    path: "contact.onRequest",
+    label: "Kontakt · na prośbę",
+    note: "What is sent only on request. It is asked for at the address above, so it carries no link of its own.",
+  },
+  {
+    kind: "field",
+    path: "contact.list",
+    label: "Kontakt · lista mediów",
+    note: "The words in braces are the link: a mail to the press address, subject \"Lista mediów\". Keep exactly one pair of braces around the words a reader clicks.",
+  },
 ];
 
 /** Everything else in `press.yaml`, with the reason it is not text a reader is meant to read. */
@@ -354,7 +324,6 @@ export interface PressChrome {
   readonly photosAria: string;
   readonly socialAria: string;
   readonly aboutAria: string;
-  readonly foundationAria: string;
   readonly contactAria: string;
   /**
    * The head's right column: the press address, what komplet holds and when it was cut. The list
@@ -375,8 +344,8 @@ export interface PressChrome {
   /** The concert card's one link: the concert's own page on this site. */
   readonly concertPage: string;
   /**
-   * What each biogram is FOR, printed as the measure's own name. The character count beside it is
-   * measured, never written.
+   * The three lengths of the biogram, as the tabs name them. They agree with the noun the section's
+   * lede uses (Polish "bio", neuter). The character count beside each is measured, never written.
    */
   readonly bioShort: string;
   readonly bioMedium: string;
@@ -386,17 +355,14 @@ export interface PressChrome {
   /** "znak / znaki / znaków", so a measured count can be printed as a phrase. */
   readonly characters: CountForms;
   /**
-   * An announcement's measure: `{count}` is its length rounded to fifty, "ok. 550 znaków". The
-   * exact count is printed beside it; this one only tells the two measures apart at a glance.
-   */
-  readonly approx: string;
-  /**
    * The copy-to-clipboard affordance: resting labels, and the one it flashes after a copy. Two
    * buttons that copy different texts never share a label: the concert card copies the facts, the
    * release row copies the release, a photograph copies its caption with the credit.
    */
   readonly copy: string;
   readonly copyText: string;
+  /** An announcement's English half, which its PDF carries after the Polish. */
+  readonly copyEn: string;
   readonly copyConcert: string;
   readonly copyCaption: string;
   readonly copied: string;
@@ -417,7 +383,7 @@ export interface PressChrome {
   /**
    * The two states of a text's disclosure. BOTH are rendered and CSS shows one, because a label
    * that changes with `[open]` cannot be a `content` string without leaving the locale behind.
-   * Only the TEXT is behind this control: the copy button stays beside it, always.
+   * Only the TEXT is behind this control: the row's copy button stays beside it, always.
    */
   readonly expand: string;
   readonly collapse: string;
@@ -446,13 +412,6 @@ export interface PressChrome {
   readonly logoOnLight: string;
   readonly logoOnDark: string;
   readonly logoGold: string;
-  /** The invoicing sheet's download, under the rows it repeats. */
-  readonly invoiceFile: string;
-  /** Labels of the invoicing block — a definition list, and a missing term is a broken row. */
-  readonly legalName: string;
-  readonly legalAddress: string;
-  readonly legalAccountPln: string;
-  readonly legalAccountEur: string;
   /**
    * Subject lines of the mails this page opens. They are chrome rather than copy because a
    * reader never sees them before sending: nobody reviews a `mailto:`, and one missing in French
@@ -460,7 +419,7 @@ export interface PressChrome {
    */
   readonly mailSubjectPack: string;
   readonly mailSubjectMedia: string;
-  readonly mailSubjectBroadcast: string;
+  readonly mailSubjectList: string;
 }
 
 export const PRESS_CHROME: Record<Locale, PressChrome> = {
@@ -471,7 +430,6 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     photosAria: "Zdjęcia prasowe",
     socialAria: "Materiały do mediów społecznościowych",
     aboutAria: "Biogramy i logotyp",
-    foundationAria: "Dane fundacji",
     contactAria: "Kontakt dla mediów",
     headMail: "Adres dla mediów",
     packContents: "W komplecie",
@@ -485,18 +443,18 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     },
     photos: { one: "zdjęcie", few: "zdjęcia", many: "zdjęć" },
     concertPage: "Strona koncertu",
-    bioShort: "Krótki",
-    bioMedium: "Średni",
-    bioLong: "Pełny",
+    bioShort: "Krótkie",
+    bioMedium: "Średnie",
+    bioLong: "Pełne",
     bioMeasureAria: "Długość biogramu",
     characters: { one: "znak", few: "znaki", many: "znaków" },
-    approx: "ok. {count}",
     copy: "Kopiuj",
     copyText: "Kopiuj tekst",
+    copyEn: "Kopiuj EN",
     copyConcert: "Kopiuj informacje o koncercie",
     copyCaption: "Kopiuj podpis",
     copied: "Skopiowano",
-    copyAria: "Skopiuj biogram — {measure}",
+    copyAria: "Skopiuj bio — {measure}",
     copyFieldAria: "Skopiuj: {field}",
     copyCaptionAria: "Skopiuj podpis zdjęcia: {file}",
     preview: "Podgląd",
@@ -519,14 +477,9 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     logoOnLight: "Na jasne tło",
     logoOnDark: "Na ciemne tło",
     logoGold: "Złoty, na ciemne tło",
-    invoiceFile: "Dane do umowy i faktury jako plik",
-    legalName: "Nazwa",
-    legalAddress: "Adres",
-    legalAccountPln: "Konto PLN",
-    legalAccountEur: "Konto EUR",
     mailSubjectPack: "Materiały prasowe — VoctEnsemble",
     mailSubjectMedia: "Pytanie od mediów — VoctEnsemble",
-    mailSubjectBroadcast: "Materiały dla radia i telewizji — VoctEnsemble",
+    mailSubjectList: "Lista mediów — VoctEnsemble",
   },
   en: {
     headAria: "VoctEnsemble press materials",
@@ -535,7 +488,6 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     photosAria: "Press photographs",
     socialAria: "Social media materials",
     aboutAria: "Biographies and logo",
-    foundationAria: "The foundation's details",
     contactAria: "Media contact",
     headMail: "Press enquiries",
     packContents: "In the full pack",
@@ -554,9 +506,9 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     bioLong: "Full",
     bioMeasureAria: "Biography length",
     characters: { one: "character", many: "characters" },
-    approx: "approx. {count}",
     copy: "Copy",
     copyText: "Copy text",
+    copyEn: "Copy EN",
     copyConcert: "Copy the concert details",
     copyCaption: "Copy caption",
     copied: "Copied",
@@ -583,14 +535,9 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     logoOnLight: "For light backgrounds",
     logoOnDark: "For dark backgrounds",
     logoGold: "Gold, for dark backgrounds",
-    invoiceFile: "Contract and invoicing details as a file",
-    legalName: "Name",
-    legalAddress: "Address",
-    legalAccountPln: "Account, PLN",
-    legalAccountEur: "Account, EUR",
     mailSubjectPack: "Press materials — VoctEnsemble",
     mailSubjectMedia: "Media enquiry — VoctEnsemble",
-    mailSubjectBroadcast: "Radio and television materials — VoctEnsemble",
+    mailSubjectList: "Press list — VoctEnsemble",
   },
   fr: {
     headAria: "Espace presse VoctEnsemble",
@@ -599,7 +546,6 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     photosAria: "Photographies de presse",
     socialAria: "Matériel pour les réseaux sociaux",
     aboutAria: "Biographies et logo",
-    foundationAria: "Coordonnées de la fondation",
     contactAria: "Contact presse",
     headMail: "Contact presse",
     packContents: "Dans le dossier complet",
@@ -618,9 +564,9 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     bioLong: "Complète",
     bioMeasureAria: "Longueur de la biographie",
     characters: { one: "caractère", many: "caractères" },
-    approx: "env. {count}",
     copy: "Copier",
     copyText: "Copier le texte",
+    copyEn: "Copier EN",
     copyConcert: "Copier les informations du concert",
     copyCaption: "Copier la légende",
     copied: "Copié",
@@ -647,13 +593,8 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     logoOnLight: "Sur fond clair",
     logoOnDark: "Sur fond sombre",
     logoGold: "Doré, sur fond sombre",
-    invoiceFile: "Coordonnées de facturation en fichier",
-    legalName: "Nom",
-    legalAddress: "Adresse",
-    legalAccountPln: "Compte, PLN",
-    legalAccountEur: "Compte, EUR",
     mailSubjectPack: "Dossier de presse — VoctEnsemble",
     mailSubjectMedia: "Demande presse — VoctEnsemble",
-    mailSubjectBroadcast: "Matériel radio et télévision — VoctEnsemble",
+    mailSubjectList: "Liste presse — VoctEnsemble",
   },
 };

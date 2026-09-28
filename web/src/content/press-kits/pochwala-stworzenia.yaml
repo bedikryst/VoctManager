@@ -1,5 +1,6 @@
-# The press kit for Pochwała Stworzenia (11.10.2026) — the texts /press offers to copy and the pack
-# ships as files. Schema and every string built from it: `src/lib/pressKit.ts`.
+# The press kit for Pochwała Stworzenia (11.10.2026): the board's documents /press offers, the
+# texts it offers to copy, and the lines it prints about them. Schema and every string built from
+# it: `src/lib/pressKit.ts`.
 #
 # ONLY COPY LIVES HERE. Title, day, hour, venue, address, festival, door, composers and the
 # conductor are printed from `concerts.yaml`. The prose below has to name the day and the hour
@@ -7,23 +8,23 @@
 # every dated text still names the corpus's; move the concert and the build fails until this file
 # follows.
 #
-# THESE ARE APPROVED TEXTS, delivered as PDFs on 28.09.2026 (press-pack/inbox/2026-09-28/, outside
-# git) and transcribed here word for word. The departures, which the PDFs do not carry:
-#   · the conductor's name stands in the NOMINATIVE — „…a całość poprowadzi Florent de
-#     Bazelaire”, „który Florent de Bazelaire powołał do życia” — where the
-#     PDFs put it in a dependent case, declined or not: he does not want it declined, and
-#     undeclined it reads as an error. The rewrite has to read as well as the approved sentence
-#     did. A sentence that only a dependent case can carry declines the first name alone,
-#     „Florenta de Bazelaire”; none on the site does today;
-#   · „Pieśń słoneczna” keeps a lower-case second word, as a work's title does and as the corpus
-#     writes it; the festival is „Fenomen Człowieka”, an event's name, capitalised as its
-#     organiser writes it (both settled 28.09.2026);
-#   · „utwory Masseneta, Ešenvalds, …” → „Ešenvaldsa”;
-#   · EN: „Jacek Sykułski” → „Sykulski”, „hope..” → „hope.”, „1:30 p.m” → „1.30 pm” (the form
-#     the other EN text uses), „39thedition” → „39th edition”.
+# THE RELEASE, THE ANNOUNCEMENTS AND THE BIOGRAMS ARE THE BOARD'S PDFs, served as they were sent
+# and under the names they were sent with (Ania, 28.09.2026): editors expect one predictable
+# format for every text, and the names are ordered and descriptive on purpose. The files sit in
+# `press-pack/kits/pochwala-stworzenia/` (outside git); a corrected PDF under the same name needs
+# only `npm run press:pack`, a new name needs `documents`.
 #
-# WHAT THESE TEXTS MUST NEVER SAY, from docs/specs/koncert-pochwala-stworzenia-2026-10.md — check
-# any later edit against it:
+# `release` AND `announce` ARE THOSE PDFs TRANSCRIBED, WORD FOR WORD, for the page's Kopiuj: a text
+# copied out of a PDF breaks at every line, and an editor pastes into a form. Nothing in the build
+# can read a PDF, so whoever replaces one compares its text with its block here and makes them
+# agree. Last compared 28.09.2026 against the corrected PDFs; they agree but for the layout (the
+# PDFs' headings, separators and closing metadata), which Kopiuj does not carry.
+#
+# The measures in the announcements' names (~500, ~1500) are the board's approximate values, not
+# counts: the practical lines closing the long one do not count towards it (28.09.2026).
+#
+# WHAT A TEXT HERE MUST NEVER SAY, from docs/specs/koncert-pochwala-stworzenia-2026-10.md — check
+# any later edit against it, and the board's PDFs as well:
 #   · the relation is VERTICAL — creation as the road to the Creator, the human as God's image
 #     (§9); never the human as a brother of the creatures (§12);
 #   · the encore is never named: it is the ensemble's to give, and a press text that lists it has
@@ -34,8 +35,8 @@
 #   · no Polish Canticle but our own glosses: Leopold Staff's translation is protected to the end of
 #     2027 (§11).
 #
-# NO PROGRAMME IN THE PACK. The running order is not published on /press; the concert page carries
-# it, and that is where it is kept true.
+# NO PROGRAMME ON /press. The board sent one (in the inbox); it lists the Pärt's returns and an
+# encore, and the concert page is where the running order is kept true.
 
 concert: pochwala-stworzenia
 forces: "12 głosów · skrzypce · organy"
@@ -47,6 +48,30 @@ lede: >-
   dla koncertu, jest „Pieśń słoneczna” św. Franciszka z Asyżu. Muzyka różnych epok rozwija
   przesłanie kantyku, prowadząc od zachwytu nad stworzeniem przez doświadczenie ludzkiej kruchości
   i śmierci ku modlitwie i nadziei ostatecznej.
+
+# The board's PDFs, in the order the page lists them. `sub` is the row's second line (the
+# concert's title where absent); `text` names the transcription below that the row's Kopiuj writes.
+documents:
+  - file: "[Press]_InformacjaPrasowa_Pochwala_Stworzenia_VoctEnsemble_2026.09.27.pdf"
+    title: "Informacja prasowa"
+    text: release
+  - file: "[500zzs—PL_EN]_Zapowiedz _Pochwala_Stworzenia_VoctEnsemble_2026.09.27.pdf"
+    title: "Zapowiedź PL/EN ~500 znaków"
+    text: announceShort
+  - file: "[1500zzs—PL_EN]_Zapowiedz _Pochwala_Stworzenia_VoctEnsemble_2026.09.27.pdf"
+    title: "Zapowiedź PL/EN ~1500 znaków"
+    text: announceLong
+  - file: "[Biogramy—PL_EN]_Pochwala_Stworzenia_VoctEnsemble_2026.09.27.pdf"
+    title: "Biogramy PL/EN"
+    # The people the PDF holds, in its order.
+    sub: "VoctEnsemble · Florent de Bazelaire · Sebastian Kuczyński · Radu Ropotan"
+
+# The poster rows' second line after the concert's title: the design's credit in the form the
+# board set for /press, and the print file's sheet. The concert page credits the same design from
+# `concerts.yaml` `posterCredit`, in the site's own form.
+poster:
+  credit: "VoctEnsemble / Anna Marcisz"
+  printSheet: "A3"
 
 frame:
   organizers: "VoctFoundation i VoctEnsemble"
@@ -148,7 +173,7 @@ release:
   contact: { name: "Anna Marcisz", role: "wiceprezes VoctFoundation" }
 
 announce:
-  # ≤ 500 characters as copied: for listings and calendars.
+  # The ~500 measure (the board's approximate value): for listings and calendars.
   short: >-
     „Pochwała Stworzenia” to kolejny koncert z autorskiego cyklu Koncertów Duchowych VoctEnsemble,
     inspirowanego XVIII-wieczną tradycją francuskich Concerts Spirituels. Osią, a zarazem
@@ -156,7 +181,8 @@ announce:
     rozwija przesłanie kantyku, prowadząc od zachwytu nad stworzeniem przez doświadczenie ludzkiej
     kruchości i śmierci ku modlitwie i nadziei ostatecznej. 11 października, godz. 13:30, kościół
     Wszystkich Świętych w Warszawie. 12 głosów, skrzypce i organy. Wstęp wolny.
-  # ≤ 1500 characters as copied: for a column's announcement. The last block is lines, not prose.
+  # The ~1500 measure, the closing practical lines not counted: for a column's announcement. The
+  # last block is lines, not prose.
   long:
     - >-
       „Pochwała Stworzenia” — nowy Koncert Duchowy VoctEnsemble inspirowany „Pieśnią słoneczną”
@@ -179,8 +205,8 @@ announce:
       kolejne aspekty franciszkańskiej wizji stworzenia, od kontemplacji świata po doświadczenie
       przemijania i modlitwę.
     - >-
-      Za pulpitem dyrygenckim stanie Florent de Bazelaire, a dwunastoosobowemu składowi
-      VoctEnsemble towarzyszyć będą rumuński skrzypek Radu Ropotan i organista Sebastian
+      Za pulpitem dyrygenckim stanie Florent de Bazelaire, a dwunastoosobowemu VoctEnsemble
+      towarzyszyć będą rumuński skrzypek Radu Ropotan oraz warszawski organista Sebastian
       Kuczyński.
     - "Wstęp wolny."
     - |-
@@ -190,7 +216,7 @@ announce:
       Warszawa · pl. Grzybowski 3/5
       Finał III edycji Fenomenu Człowieka
       wstęp wolny
-  # The same two measures in English, for foreign media and for patrons who ask for both.
+  # The same two measures in English: the second half of the same PDF.
   en:
     short: >-
       In Praise of Creation is the latest concert in VoctEnsemble’s original Spiritual Concerts
@@ -205,7 +231,7 @@ announce:
         “In Praise of Creation” — a new Spiritual Concert by VoctEnsemble, inspired by St Francis
         of Assisi’s Canticle of the Sun
       - >-
-        On 11 October at 1.30 pm, the Church of All Saints in Warsaw will host In Praise of
+        On 11 October at 1.30 p.m., the Church of All Saints in Warsaw will host In Praise of
         Creation, the sixth project in VoctEnsemble’s original Spiritual Concerts series, marking
         the finale of the third edition of the Fenomen Człowieka festival organised by the Mój Dom
         Hospice Foundation.
@@ -230,11 +256,12 @@ announce:
         free.
       - |-
         In Praise of Creation
-        Sunday, 11 October 2026 — 1.30 pm
+        Sunday, 11 October 2026 — 1:30 p.m.
         Church of All Saints
         Warsaw · pl. Grzybowski 3/5
         Final event of the third edition of Fenomen Człowieka
         Free admission
+
 
 social:
   # Pasted by other people's accounts (the festival, partners, media), who tag @VoctEnsemble
@@ -267,187 +294,3 @@ social:
 guests:
   - { name: "Radu Ropotan", role: "skrzypce" }
   - { name: "Sebastian Kuczyński", role: "organy" }
-
-# biogramy.pdf, in this order, Polish then English. The ensemble's Polish biogram is not here: the
-# generator opens the Polish half with the page's full biogram (`press.yaml` about.longHtml), the
-# one text the site has. Its English is here, first, because the page has none.
-biograms:
-  pl:
-    - name: "Florent de Bazelaire"
-      role: "dyrygent"
-      body:
-        - >-
-          Florent de Bazelaire jest dyrygentem, założycielem i kierownikiem artystycznym
-          VoctEnsemble, niezależnego profesjonalnego zespołu wokalnego, który powołał do życia
-          w 2024 roku. Jest absolwentem Royal Academy of Music w Londynie, gdzie studiował
-          dyrygenturę symfoniczną. Jego obecna działalność artystyczna koncentruje się wokół
-          muzyki chóralnej, ze szczególnym zainteresowaniem repertuarem sakralnym, od renesansowej
-          polifonii po muzykę współczesną.
-        - >-
-          Jego wrażliwość muzyczna wyrasta z głębokiego zakorzenienia w kulturze francuskiej oraz
-          zainteresowania językiem i literaturą. W pracy nad muzyką szczególne miejsce zajmuje dla
-          niego relacja między słowem, brzmieniem i znaczeniem. Interesuje go nie tylko to, jak
-          utwór brzmi, ale także to, co poprzez muzykę może zostać odkryte i przeżyte.
-        - >-
-          W centrum jego pracy znajduje się przekonanie, że muzyka może być nie tylko
-          doświadczeniem estetycznym, ale także przestrzenią kontemplacji, spotkania i duchowej
-          refleksji. Z VoctEnsemble tworzy autorskie Koncerty Duchowe, nawiązujące do
-          XVIII-wiecznej tradycji Concerts Spirituels. Każdy projekt budowany jest wokół
-          określonej idei, pytania lub zagadnienia duchowego. Wśród dotychczasowych projektów
-          znalazły się m.in. Kontemplacja Wcielenia, 9 Kart z Księgi Psalmów, Wołanie Gór, Hymn
-          Poległym oraz Aeternam – Epitafium dla Gazy.
-        - >-
-          Jako dyrygent szczególnie interesuje się procesem interpretacji – tym momentem wspólnej
-          pracy z muzykami, kiedy utwór zaczyna się odsłaniać, a jego kierunek staje się coraz
-          bardziej czytelny. Ważna jest dla niego również relacja między muzyką a przestrzenią.
-          W swoich projektach wykorzystuje ciszę, światło i elementy scenografii jako część
-          doświadczenia muzyki.
-        - >-
-          Jest również założycielem VoctFoundation, której celem jest wspieranie rozwoju
-          artystycznego i organizacyjnego VoctEnsemble oraz tworzenie trwałych warunków dla jego
-          działalności.
-    - name: "Sebastian Kuczyński"
-      role: "organy"
-      body:
-        - >-
-          Organista, improwizator i muzyk kościelny, absolwent Uniwersytetu Muzycznego Fryderyka
-          Chopina w Warszawie, gdzie studiował instrumentalistykę i muzykę kościelną. W ramach
-          programu Erasmus+ kształcił się w Hochschule für Musik und Theater w Hamburgu u Wolfganga
-          Zerera oraz Menno van Delfta. Ukończył również podyplomowe studia „Menedżer muzyki” na
-          UMFC.
-        - >-
-          Laureat II nagrody XII Międzynarodowego Konkursu Interpretacji Muzyki Organowej im.
-          J.P. Sweelincka w Gdańsku (2024), jako jedyny Polak zakwalifikowany do finału, oraz
-          zwycięzca konkursów organowych i improwizatorskich w Olsztynie, Krasnobrodzie, Legnicy
-          i Turku. Stypendysta programu „Młoda Polska”.
-        - >-
-          Jako solista i kameralista koncertuje w Polsce i za granicą; występował m.in. w NOSPR
-          oraz podczas międzynarodowych festiwali organowych w Gdańsku i Kamieniu Pomorskim.
-          Współpracował z Orkiestrą i Chórem Filharmonii Narodowej oraz Operą i Filharmonią
-          Podlaską. Jest głównym organistą Sanktuarium Narodowego św. Andrzeja Boboli w Warszawie
-          oraz inicjatorem i dyrektorem artystycznym Mokotowskiego Międzynarodowego Festiwalu
-          Muzyki Organowej i Kameralnej.
-    - name: "Radu Ropotan"
-      role: "skrzypce"
-      body:
-        - >-
-          Rumuński skrzypek, absolwent Royal College of Music oraz Royal Academy of Music
-          w Londynie, gdzie w 2014 roku ukończył studia magisterskie. Kształcił się m.in. pod
-          kierunkiem Yuriego Zhislina, Macieja Rakowskiego, Igora Petrushevsky’ego i Levona
-          Chilingiriana; pracował także z Thomasem Brandisem, Anną Lisą Bezrodny i Maximem
-          Vengerovem.
-        - >-
-          Laureat ponad 30 nagród i wyróżnień w konkursach krajowych i międzynarodowych, m.in.
-          Remember Enescu International Violin Competition, Andrea Postacchini International
-          Competition oraz Winifred Prize Royal Academy of Music. Koncertował w Europie i Azji,
-          występując m.in. w Southbank Centre w Londynie, Suntory Hall w Tokio oraz Ateneum
-          Rumuńskim w Bukareszcie. W Japonii występował jako gość Pacific Music Festival.
-        - >-
-          W 2021 roku uzyskał stopień doktora na Uniwersytecie Transilvania w Braszowie, na
-          podstawie pracy poświęconej stylistycznym i interpretacyjnym aspektom utworów na
-          skrzypce solo Eugène’a Ysaÿe’a. Prowadzi również kursy mistrzowskie, a jako
-          współzałożyciel Pavilionul Artiștilor angażuje się w rozwój młodych muzyków i promocję
-          muzyki klasycznej.
-  en:
-    - name: "VoctEnsemble"
-      role: "vocal ensemble"
-      body:
-        - >-
-          VoctEnsemble is a Kraków-based vocal ensemble founded by Florent de Bazelaire, who
-          passionately seeks to redefine the concept of the spiritual concert. The ensemble draws
-          inspiration from the 18th-century Concerts Spirituels, giving this tradition
-          a contemporary dimension and creating a space for exploring the mysteries of reality
-          through vocal music. Its rich and diverse repertoire comprises over 60 works, ranging
-          from Renaissance polyphony to contemporary music, with a particular emphasis on sacred
-          music.
-        - >-
-          The ensemble is distinguished by a particular sensitivity to events in the world,
-          treating art as a form of prayer and reflection on the human condition. Among its most
-          significant achievements are its inaugural concert, Kontemplacja Wcielenia
-          (Contemplation of the Incarnation), recorded by Ars Sonora Studio, and its socially
-          engaged projects Hymn Poległym (Hymn to the Fallen), marking the third anniversary of
-          the war in Ukraine, and Aeternam – Epitafium dla Gazy (Aeternam – Epitaph for Gaza).
-          VoctEnsemble regularly performs at prestigious festivals, including the 39th edition of
-          the Days of Organ and Chamber Music in Rybnik and the Organy solo i kameralnie (Organ
-          Solo and Chamber Music) series at Łódź Cathedral.
-        - >-
-          The ensemble’s distinctive identity grows from its commitment to ensemble unity and its
-          continuous work towards a cohesive sound. Performances are often enhanced by Ada
-          Bystrzycka’s contemporary lighting design or animations by Sebastian Kuźma, creating
-          a multisensory experience of music for the audience.
-    - name: "Florent de Bazelaire"
-      role: "conductor"
-      body:
-        - >-
-          Florent de Bazelaire is a conductor, founder and artistic director of VoctEnsemble, an
-          independent professional vocal ensemble he founded in 2024. He is a graduate of the
-          Royal Academy of Music in London, where he studied orchestral conducting. His artistic
-          work focuses on choral music, with a particular interest in sacred repertoire, from
-          Renaissance polyphony to contemporary music.
-        - >-
-          His musical sensibility is deeply rooted in French culture and shaped by his interest in
-          language and literature. He is particularly interested in the relationship between
-          words, sound and meaning, and in what music can reveal and open up to experience. His
-          work is concerned not only with how a piece sounds, but also with what lies beyond the
-          purely musical experience.
-        - >-
-          At the heart of his work is the conviction that music can be more than an aesthetic
-          experience: it can also create a space for contemplation, encounter and spiritual
-          reflection. With VoctEnsemble, he creates original Koncerty Duchowe (Spiritual
-          Concerts), inspired by the 18th-century tradition of the Concerts Spirituels. Each
-          project is built around a particular idea, question or spiritual theme. Previous
-          projects include Kontemplacja Wcielenia, 9 Kart z Księgi Psalmów, Wołanie Gór, Hymn
-          Poległym and Aeternam – Epitafium dla Gazy.
-        - >-
-          As a conductor, he is particularly interested in the process of interpretation: in the
-          moment when musicians work together and a piece begins to reveal itself, gradually
-          finding its direction and form. He is also interested in the relationship between music
-          and space. In his projects, silence, light and elements of scenography become part of
-          the musical experience.
-        - >-
-          He is also the founder of VoctFoundation, whose aim is to support the artistic and
-          organisational development of VoctEnsemble and to create sustainable conditions for its
-          continued work.
-    - name: "Sebastian Kuczyński"
-      role: "organ"
-      body:
-        - >-
-          Organist, improviser and church musician, Sebastian Kuczyński is a graduate of the
-          Fryderyk Chopin University of Music in Warsaw, where he studied instrumental performance
-          and church music. As part of the Erasmus+ programme, he continued his studies at the
-          Hochschule für Musik und Theater Hamburg with Wolfgang Zerer and Menno van Delft. He also
-          completed a postgraduate programme in Music Management at the Fryderyk Chopin University
-          of Music.
-        - >-
-          He was awarded Second Prize at the 12th International J. P. Sweelinck Organ
-          Interpretation Competition in Gdańsk (2024), having been the only Polish finalist, and
-          has won organ and improvisation competitions in Olsztyn, Krasnobród, Legnica and Turek.
-          He is a recipient of the Young Poland scholarship programme.
-        - >-
-          As a soloist and chamber musician, he performs in Poland and abroad, appearing at venues
-          including NOSPR and at international organ festivals in Gdańsk and Kamień Pomorski. He
-          has collaborated with the National Philharmonic Orchestra and Choir and with the Podlasie
-          Opera and Philharmonic. He is principal organist at the National Shrine of St Andrew
-          Bobola in Warsaw and the founder and artistic director of the Mokotów International
-          Festival of Organ and Chamber Music.
-    - name: "Radu Ropotan"
-      role: "violin"
-      body:
-        - >-
-          Romanian violinist Radu Mihai Ropotan is a graduate of the Royal College of Music and the
-          Royal Academy of Music in London, where he completed his Master’s degree in 2014. He
-          studied with, among others, Yuri Zhislin, Maciej Rakowski, Igor Petrushevsky and Levon
-          Chilingirian, and has also worked with Thomas Brandis, Anna-Lisa Bezrodny and Maxim
-          Vengerov.
-        - >-
-          He has received more than 30 prizes and distinctions at national and international
-          competitions, including the Remember Enescu International Violin Competition, the Andrea
-          Postacchini International Competition and the Winifred Prize at the Royal Academy of
-          Music. He has performed across Europe and Asia, including at London’s Southbank Centre,
-          Suntory Hall in Tokyo and the Romanian Athenaeum in Bucharest. In Japan, he has appeared
-          as a guest artist at the Pacific Music Festival.
-        - >-
-          In 2021, he was awarded a doctorate by Transilvania University of Brașov for research
-          into the stylistic and interpretative aspects of Eugène Ysaÿe’s works for solo violin.
-          He also gives masterclasses and, as co-founder of Pavilionul Artiștilor, is involved in
-          supporting young musicians and promoting classical music.

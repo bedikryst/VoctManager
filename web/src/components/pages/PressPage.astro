@@ -6,22 +6,28 @@
  *
  *  THE ORDER IS THE BOARD'S (Ania's sketch, docs/specs/press/), THE DESIGN IS OURS
  *  (docs/specs/web-press-v2-2026-09.md): the next concert with its kit first, then the press
- *  photographs, the social-media texts and graphics, the biograms and the logotype, the
- *  foundation's details, and the press contact. Every file can be seen before it is downloaded —
- *  PDFs open in a tab, images in the site's lightbox, texts in place.
+ *  photographs, the social-media texts and graphics, the biograms and the logotype, and the press
+ *  contact. No registry or invoicing details: this is a counter for editors, and the board keeps
+ *  it to that (28.09.2026). Every file can be seen before it is downloaded — PDFs open in a tab,
+ *  the poster and the photographs in the site's lightbox.
  *
- *  SEVEN SOURCES, AND THEY MUST NOT BE CONFUSED:
+ *  THE CONCERT'S TEXTS ARE THE BOARD'S PDFs, listed by the kit's `documents`: editors take every
+ *  text in one format. The release and the announcements also show and copy the kit's
+ *  transcription of their PDF, because a text copied out of a PDF breaks at every line; an
+ *  announcement's English half, which its PDF carries after the Polish, has its own Kopiuj.
+ *
+ *  SIX SOURCES, AND THEY MUST NOT BE CONFUSED:
  *  - the page's PROSE — `src/content/pages/press.yaml`, through `lib/pageCopy`;
  *  - its CHROME (landmarks, button labels, units, mail subjects) — `i18n/content/press.ts`;
- *  - the concert kit's TEXTS — `src/content/press-kits/`, and every string a Kopiuj button here
- *    writes is built by `lib/pressKit` (`factsText`, `releaseText`, `announceText`, `postText`,
- *    `hashtagsText`), the same functions the pack's files are written with, because the lengths
- *    the page prints are measured on them;
+ *  - the concert KIT — `src/content/press-kits/`: the documents' rows and transcriptions, the
+ *    poster's credit, the post and the hashtags. Every string a Kopiuj button here writes is built
+ *    by `lib/pressKit` (`factsText`, `releaseText`, `announceText`, `postText`, `hashtagsText`),
+ *    the same functions the pack's text files are written with;
  *  - the concert's FACTS — `concerts.yaml`, through `concertFacts` and `lineupLines`;
- *  - the registry and the accounts — `data/foundation.ts`; the handles — `data/social.ts`;
+ *  - the press address and the site — `data/foundation.ts`; the handles — `data/social.ts`;
  *  - the FILES — `public/press/index.json`, through `lib/pressPack`. The page renders a download
- *    only for a file the index lists; without an index the texts stay and every download becomes
- *    one "write to us" mailto. A stale index fails the build (lib/pressPack says why).
+ *    only for a file the index lists; without an index the copyable texts stay and every download
+ *    becomes one "write to us" mailto. A stale index fails the build (lib/pressPack says why).
  *
  *  THE COMPOSER (scripts/press-basket.ts): a checkbox on every file row and tile, a "select all"
  *  per group, and a bar at the foot of <main> that zips the ticked files in the browser. All of it
@@ -32,9 +38,9 @@
  *  this site follows (`upcomingStation`): the deploy after the concert takes it down.
  *
  *  POLISH-ONLY FOR NOW. `lang` is a real prop and the chrome exists in three locales, but there are
- *  no `/en/press` and `/fr/press` route files and `/press` is NOT in TRANSLATED_ROUTES. The kit's
- *  texts are Polish by nature: they are what a Polish editor pastes. The English announcements and
- *  biograms a kit may carry are files for foreign media, listed on this Polish page.
+ *  no `/en/press` and `/fr/press` route files and `/press` is NOT in TRANSLATED_ROUTES. The kit is
+ *  Polish by nature: it is what a Polish editor takes. Where the board's PDFs carry English beside
+ *  the Polish, their rows say so.
  * @architecture Astro islands 2026
  * @module components/pages/PressPage
  */
@@ -52,9 +58,9 @@ import { pageCopy } from "../../lib/pageCopy";
 import { htmlToPlainText, plainTextLength } from "../../lib/plainText";
 import {
   announceText,
-  charCount,
   concertFacts,
   concertUrl,
+  documentPath,
   factsText,
   hashtagsText,
   kitProblems,
@@ -64,7 +70,7 @@ import {
   postText,
   releaseLinks,
   releaseText,
-  roundedLength,
+  type DocumentText,
   type PressFile,
   type PressGraphic,
   type PressPhoto,
@@ -163,8 +169,7 @@ const concert = latest?.station;
 const kitFiles = pack && kit && pack.index.concert?.id === kit.concert ? pack.index.concert : undefined;
 
 /* A release whose kit has no `release.about` closes on the SHORT biogram in Polish, whichever
-   locale renders the page: the kit is Polish, and the PDF beside this button was written from the
-   Polish field. */
+   locale renders the page: the kit is Polish, as is the PDF beside this button. */
 const shortBioPl = htmlToPlainText(pageCopy(PRESS_PAGE, "pl").about.shortHtml);
 
 const card = concert && kit
@@ -195,10 +200,6 @@ const card = concert && kit
           lineup: pastedLineup,
           links: releaseLinks(concert.data, FOUNDATION.site, concert.id),
         }),
-        announceShort: announceText(kit.announce, "short"),
-        announceLong: announceText(kit.announce, "long"),
-        announceShortEn: kit.announce.en && announceText(kit.announce.en, "short"),
-        announceLongEn: kit.announce.en && announceText(kit.announce.en, "long"),
         post: postText(kit, url),
         hashtags: hashtagsText(kit),
       };
@@ -221,11 +222,6 @@ const posterAttrs =
       }
     : undefined;
 
-/** "ok. 550 znaków" — the row's name for a measure; `measured` is the exact count beside it. */
-const measure = (text: string) =>
-  fill(t.approx, "count", counted(roundedLength(text), t.characters, lang));
-const measured = (text: string) => counted(charCount(text), t.characters, lang);
-
 /** One row of the concert's materials. `text` is shown in place; `copy` is what Kopiuj writes. */
 interface FileRow {
   readonly id: string;
@@ -237,102 +233,61 @@ interface FileRow {
   readonly open?: "tab" | "lightbox" | undefined;
   readonly copy?: { readonly label: string; readonly value: string } | undefined;
   readonly text?: string | undefined;
-  /** The shown text's language where it is not the page's — an English announcement. */
-  readonly textLang?: string | undefined;
+  /** The English half of the same PDF, shown after the Polish with its own Kopiuj. */
+  readonly textEn?: string | undefined;
 }
 
-/** One announcement row: the Polish pair, then the English pair where the kit carries it. */
-const announceRow = (
-  id: string,
-  title: string,
-  sub: string,
-  text: string,
-  file: PressFile | undefined,
-  textLang?: string,
-): FileRow => ({
-  id,
-  icon: "doc",
-  title: `${title} · ${measure(text)}`,
-  sub: `${sub} · ${measured(text)}`,
-  format: "TXT",
-  file,
-  copy: { label: t.copy, value: text },
-  text,
-  textLang,
-});
+/** What a document row shows and copies, by the transcription its kit entry names. */
+const documentText = (
+  text: DocumentText | undefined,
+): Pick<FileRow, "copy" | "text" | "textEn"> => {
+  if (!card || !kit || !text) return {};
+  if (text === "release") return { copy: { label: t.copyText, value: card.releaseCopy } };
+  const measure = text === "announceShort" ? "short" : "long";
+  const pl = announceText(kit.announce, measure);
+  return {
+    copy: { label: t.copy, value: pl },
+    text: pl,
+    textEn: kit.announce.en && announceText(kit.announce.en, measure),
+  };
+};
+
+/* A document row renders only with its file: the row IS the file, and without the pack the
+   head's "write to us" is the honest way to it. */
+const documentRows: FileRow[] =
+  card && kit && kitFiles
+    ? kit.documents.flatMap((document, i) => {
+        const file = kitFiles.documents.find((entry) => entry.path === documentPath(kit, document));
+        return file
+          ? [
+              {
+                id: `document-${i + 1}`,
+                icon: "doc",
+                title: document.title,
+                sub: document.sub ?? card.facts.title,
+                format: "PDF",
+                file,
+                open: "tab",
+                ...documentText(document.text),
+              } satisfies FileRow,
+            ]
+          : [];
+      })
+    : [];
+
+/** "Pochwała Stworzenia · VE / Anna Marcisz" — the poster rows open on the design and its author. */
+const posterLine = card && kit ? [card.facts.title, kit.poster.credit ?? card.posterCredit] : [];
 
 const fileRows: FileRow[] = card && kit
   ? [
-      {
-        id: "release",
-        icon: "doc",
-        title: copy.latest.release,
-        sub: kit.release.title,
-        format: "PDF",
-        file: kitFiles?.release,
-        open: kitFiles ? "tab" : undefined,
-        copy: { label: t.copyText, value: card.releaseCopy },
-      },
-      announceRow(
-        "announce-short",
-        copy.latest.announce,
-        copy.latest.announceShortSub,
-        card.announceShort,
-        kitFiles?.announceShort,
-      ),
-      announceRow(
-        "announce-long",
-        copy.latest.announce,
-        copy.latest.announceLongSub,
-        card.announceLong,
-        kitFiles?.announceLong,
-      ),
-      ...(card.announceShortEn && card.announceLongEn
-        ? [
-            announceRow(
-              "announce-short-en",
-              copy.latest.announceEn,
-              copy.latest.announceShortSub,
-              card.announceShortEn,
-              kitFiles?.announceShortEn,
-              "en",
-            ),
-            announceRow(
-              "announce-long-en",
-              copy.latest.announceEn,
-              copy.latest.announceLongSub,
-              card.announceLongEn,
-              kitFiles?.announceLongEn,
-              "en",
-            ),
-          ]
-        : []),
-      ...(kitFiles
-        ? [
-            {
-              id: "biograms",
-              icon: "doc",
-              title: copy.latest.biograms,
-              // The generator's rule: the ensemble's biogram from this page, then the kit's.
-              sub: [
-                [FOUNDATION.ensemble, ...(kit.biograms?.pl.map((bio) => bio.name) ?? [])].join(" · "),
-                kit.biograms?.en ? copy.latest.biogramsLanguages : undefined,
-              ]
-                .filter(Boolean)
-                .join(" · "),
-              format: "PDF",
-              file: kitFiles.biograms,
-              open: "tab",
-            } satisfies FileRow,
-          ]
-        : []),
+      ...documentRows,
       ...(card.posterFrame || kitFiles
         ? [
             {
               id: "poster",
               icon: "image",
               title: copy.latest.poster,
-              sub: [card.posterCredit, kitFiles && dims(kitFiles.poster)].filter(Boolean).join(" · "),
+              sub: [...posterLine, kitFiles && dims(kitFiles.poster)].filter(Boolean).join(" · "),
               format: "JPG",
               file: kitFiles?.poster,
               open: posterAttrs ? "lightbox" : undefined,
@@ -345,7 +300,7 @@ const fileRows: FileRow[] = card && kit
               id: "poster-print",
               icon: "image",
               title: copy.latest.posterPrint,
-              sub: copy.latest.posterPrintSub,
+              sub: [...posterLine, kit.poster.printSheet].filter(Boolean).join(" · "),
               format: "PDF",
               file: kitFiles.posterPrint,
               open: "tab",
@@ -474,7 +429,7 @@ const basketJson = basket ? JSON.stringify(basket).replace(/</g, "\\u003c") : un
 const rowsInBasket = fileRows.filter((row) => row.file).length;
 const selectAllAria = (group: string) => fill(t.selectAllAria, "group", group);
 
-// ── Biograms and the foundation ───────────────────────────────────────────────────────────────
+// ── Biograms ──────────────────────────────────────────────────────────────────────────────────
 
 /* ONE source per measure: the marked-up field. The plain version is derived and the character
    count is measured, so neither can disagree with what is printed above it. */
@@ -488,17 +443,9 @@ const BIOS = [
   length: plainTextLength(bio.html),
 }));
 
-/* KRS, NIP and REGON are their own labels in every language — they are the names of Polish
-   registers, not words — so only the other four take chrome. */
-const LEGAL_ROWS = [
-  { id: "name", label: t.legalName, value: FOUNDATION.name, mono: false },
-  { id: "address", label: t.legalAddress, value: FOUNDATION.addressLine, mono: false },
-  { id: "krs", label: "KRS", value: FOUNDATION.registry.krs, mono: true },
-  { id: "nip", label: "NIP", value: FOUNDATION.registry.nip, mono: true },
-  { id: "regon", label: "REGON", value: FOUNDATION.registry.regon, mono: true },
-  { id: "pln", label: t.legalAccountPln, value: FOUNDATION.accounts.pln.display, mono: true },
-  { id: "eur", label: t.legalAccountEur, value: FOUNDATION.accounts.eur.display, mono: true },
-] as const;
+/* `contact.list` marks its link with braces; the schema holds it to exactly one pair. */
+const [listBefore = "", listLink = "", listAfter = ""] = copy.contact.list.split(/[{}]/);
+const contactList = { before: listBefore, link: listLink, after: listAfter };
 
 const JUMP = [
   ...(card ? [{ id: "najnowsze", label: copy.head.nav.latest }] : []),
@@ -779,7 +726,7 @@ const jsonLd = {
                             <span class="press-d-open">{t.expand}</span>
                             <span class="press-d-close">{t.collapse}</span>
                           </summary>
-                          <div class="press-d-body press-text" lang={row.textLang}>
+                          <div class="press-d-body press-text">
                             {paragraphs(row.text).map((lines) => (
                               <p>
                                 {lines.map((line, i) => (
@@ -790,6 +737,33 @@ const jsonLd = {
                                 ))}
                               </p>
                             ))}
+                            {row.textEn && (
+                              <div class="press-d-en">
+                                <button
+                                  type="button"
+                                  class="press-button"
+                                  data-copy={row.textEn}
+                                  data-copied={t.copied}
+                                  aria-label={fill(t.copyFieldAria, "field", `${row.title} (EN)`)}
+                                >
+                                  <svg class="press-icon press-icon--copy" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.copy.map((d) => <path d={d} />)}</svg>
+                                  <svg class="press-icon press-icon--check" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.check.map((d) => <path d={d} />)}</svg>
+                                  <span class="copy-label">{t.copyEn}</span>
+                                </button>
+                                <div lang="en">
+                                  {paragraphs(row.textEn).map((lines) => (
+                                    <p>
+                                      {lines.map((line, i) => (
+                                        <>
+                                          {i > 0 && <br />}
+                                          {line}
+                                        </>
+                                      ))}
+                                    </p>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </details>
                       )}
@@ -1299,75 +1273,23 @@ const jsonLd = {
       </div>
     </section>
 
-    {/* ── FUNDACJA · who signs, and the details a contract needs ───────────── */}
-    <section class="press-section tone-light" id="fundacja" aria-label={t.foundationAria}>
-      <div class="press-inner">
-        <div class="press-rubric-row">
-          <h2 class="eyebrow titulus press-rubric">{copy.foundation.eyebrow}</h2>
-          <span class="press-rule" aria-hidden="true" />
-        </div>
-        <p class="press-lede">{copy.foundation.lede}</p>
-        <dl class="press-legal-grid">
-          {
-            LEGAL_ROWS.map((row) => (
-              <div class="press-legal-row">
-                <dt class="eyebrow">{row.label}</dt>
-                <dd>
-                  <span class:list={["press-legal-value", { "is-ledger": row.mono }]}>{row.value}</span>
-                  <button
-                    type="button"
-                    class="press-button"
-                    data-copy={row.value}
-                    data-copied={t.copied}
-                    aria-label={fill(t.copyFieldAria, "field", row.label)}
-                  >
-                    <svg class="press-icon press-icon--copy" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.copy.map((d) => <path d={d} />)}</svg>
-                    <svg class="press-icon press-icon--check" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.check.map((d) => <path d={d} />)}</svg>
-                    <span class="copy-label">{t.copy}</span>
-                  </button>
-                </dd>
-              </div>
-            ))
-          }
-        </dl>
-        {
-          pack && (
-            <p class="press-invoice">
-              <a class="press-button press-button--primary" href={href(pack.index.invoice)} download>
-                <svg class="press-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.download.map((d) => <path d={d} />)}</svg>
-                <span>{t.invoiceFile}</span>
-              </a>
-              <span class="press-file-meta">TXT · {size(pack.index.invoice)}</span>
-            </p>
-          )
-        }
-      </div>
-    </section>
-
-    {/* ── KONTAKT · the press address, and what only a mail can get ────────── */}
+    {/* ── KONTAKT · one address, and the two things a mail to it can ask for ─ */}
     <section class="press-contact" id="kontakt" aria-label={t.contactAria}>
       <div class="press-inner">
         <div class="press-rubric-row">
           <h2 class="eyebrow titulus press-rubric">{copy.contact.eyebrow}</h2>
           <span class="press-rule" aria-hidden="true" />
         </div>
-        {/* The address and, beside it on a desktop, the one request only a mail can make. */}
-        <div class="press-contact-grid">
-          <div class="press-contact-main">
-            <p class="press-contact-lede">{copy.contact.lede}</p>
-            <a class="press-contact-card" href={mailto(FOUNDATION.mail.press, t.mailSubjectMedia)}>
-              <span class="press-contact-mail">{FOUNDATION.mail.press}</span>
-              <span class="press-contact-arrow" aria-hidden="true">→</span>
-            </a>
-          </div>
-          {/* A named person and a phone join this section only once the board supplies them. */}
-          <div class="press-broadcast">
-            <h3 class="press-broadcast-title">{copy.contact.broadcastTitle}</h3>
-            <p class="press-broadcast-body">{copy.contact.broadcastBody}</p>
-            <a class="press-broadcast-cta" href={mailto(FOUNDATION.mail.press, t.mailSubjectBroadcast)}>
-              {copy.contact.broadcastCta} →
-            </a>
-          </div>
+        <a class="press-contact-card" href={mailto(FOUNDATION.mail.press, t.mailSubjectMedia)}>
+          <span class="press-contact-mail">{FOUNDATION.mail.press}</span>
+          <span class="press-contact-arrow" aria-hidden="true">→</span>
+        </a>
+        {/* Both lines go to the address above, so neither gets a heading or a button of its own.
+            The press list's link only sets the subject a mail to that address carries. */}
+        <div class="press-contact-notes">
+          <p>{copy.contact.onRequest}</p>
+          {/* One line: a line break between the link and the comma after it would print a space. */}
+          <p>{contactList.before}<a href={mailto(FOUNDATION.mail.press, t.mailSubjectList)}>{contactList.link}</a>{contactList.after}</p>
         </div>
       </div>
     </section>
@@ -1405,8 +1327,8 @@ const jsonLd = {
   <ImageLightbox client:idle />
   <script>
     import "../../scripts/vault-triggers.ts";
-    // Every `[data-copy]` control on this page: the concert's facts, the kit's texts, the handles,
-    // the biograms and the invoicing rows.
+    // Every `[data-copy]` control on this page: the press address, the concert's facts, the post
+    // and hashtags, the handles and the biograms.
     import "../../scripts/copy-fields.ts";
     import "../../scripts/image-triggers.ts";
     // The composer: the checkboxes, the bar, and the archive of the ticked files.
@@ -1590,7 +1512,7 @@ const jsonLd = {
 
   /* The disclosure. `scripts/disclosure.ts` animates the body's height and writes `open` itself,
      so the marker is removed and the summary is styled as the quiet control it is — the loud
-     control is the copy button, which is never inside it. */
+     control is the copy button, which is never inside the summary. */
   .press-d > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 4px 0; font-family: var(--sans); font-size: 13px; line-height: 1.2; color: var(--ink-soft); transition: color .35s var(--ease); }
   .press-d > summary::-webkit-details-marker { display: none; }
   .press-d > summary::after { content: "+"; font-family: var(--serif); font-size: 15px; line-height: 1; transition: transform .35s var(--ease); }
@@ -1599,6 +1521,8 @@ const jsonLd = {
   .press-d[open] .press-d-open,
   .press-d:not([open]) .press-d-close { display: none; }
   .press-d-body { margin-top: 14px; }
+  /* The English half under a hairline, its Kopiuj first so it reads as the block's own control. */
+  .press-d-en { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); display: grid; gap: 12px; justify-items: start; }
 
   /* The big plate. Gold once, in the head; a hairline everywhere else. */
   .press-cta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px; padding: clamp(20px, 2.4vw, 30px) clamp(22px, 2.8vw, 36px); background: var(--candle); color: var(--ink); transition: background-color .4s var(--ease), border-color .4s var(--ease); }
@@ -1841,43 +1765,18 @@ const jsonLd = {
     .press-logo-grid .press-tile-foot { padding-bottom: 0; }
   }
 
-  /* ── FUNDACJA ────────────────────────────────────────────────────── */
-  .press-legal-grid { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
-  .press-legal-row { display: grid; gap: 8px; padding: clamp(16px, 1.8vw, 24px); background: var(--paper); }
-  /* An odd last row takes the whole line: an empty eighth cell would show the grid's hairline
-     ground as a grey slab. */
-  .press-legal-row:last-child:nth-child(odd) { grid-column: 1 / -1; }
-  .press-legal-row dd { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; font-family: var(--serif); font-size: clamp(16px, 1.2vw, 19px); color: var(--ink); }
-  /* A LEDGER, not a terminal: these are strings an organiser copies into a bank or a contract
-     form and verifies character by character. That is the one job mono keeps on this site. Named
-     on the value itself, so the copy button's label beside it keeps the button's size. */
-  .press-legal-value.is-ledger { font-family: var(--mono); font-size: clamp(14px, 1vw, 16px); letter-spacing: .04em; font-variant-numeric: lining-nums; word-break: break-word; }
-  .press-legal-row dd .press-button { margin-left: auto; }
-  .press-invoice { margin: clamp(20px, 2.2vw, 28px) 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
-  .press-invoice .press-file-meta { padding-top: 0; }
-  @media (max-width: 720px) { .press-legal-grid { grid-template-columns: minmax(0, 1fr); } }
-
   /* ── KONTAKT · dark closure ──────────────────────────────────────── */
   .press-contact { --press-pad: clamp(56px, 7vw, 98px); position: relative; padding: var(--press-pad) max(28px, 5vw); background: linear-gradient(180deg, var(--ink) 0%, var(--night) 100%); color: rgba(244, 241, 233, 0.84); overflow: hidden; scroll-margin-top: calc(var(--press-bars) + 20px - var(--press-pad)); }
   .press-contact .press-rubric { color: rgba(244, 241, 233, 0.58); }
   .press-contact .press-rule { background: rgba(244, 241, 233, 0.16); }
-  .press-contact-lede { margin: 0; max-width: 52ch; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 1.5vw, 22px); line-height: 1.55; color: rgba(244, 241, 233, 0.78); }
-  .press-contact-card { margin: clamp(20px, 2.4vw, 28px) 0 0; display: flex; align-items: baseline; gap: 18px; max-width: 760px; padding: clamp(22px, 2.6vw, 32px) clamp(24px, 3vw, 36px); border: 1px solid rgba(244, 241, 233, 0.16); background: rgba(16, 15, 13, 0.92); transition: background-color .4s var(--ease), border-color .4s var(--ease); }
+  .press-contact-card { margin: 0; display: flex; align-items: baseline; gap: 18px; max-width: 760px; padding: clamp(22px, 2.6vw, 32px) clamp(24px, 3vw, 36px); border: 1px solid rgba(244, 241, 233, 0.16); background: rgba(16, 15, 13, 0.92); transition: background-color .4s var(--ease), border-color .4s var(--ease); }
   .press-contact-card:hover { background: rgba(8, 8, 7, 1); border-color: var(--candle); }
   .press-contact-mail { font-family: var(--serif); font-size: clamp(20px, 2.2vw, 30px); color: var(--candle); word-break: break-word; }
   .press-contact-arrow { margin-left: auto; font-family: var(--serif); font-size: clamp(22px, 2.2vw, 28px); color: var(--candle); }
-  .press-broadcast { margin-top: clamp(32px, 3.5vw, 48px); padding-top: clamp(22px, 2.4vw, 30px); border-top: 1px solid rgba(244, 241, 233, 0.16); display: grid; gap: 10px; justify-items: start; max-width: 60ch; }
-  .press-broadcast-title { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(22px, 2vw, 28px); line-height: 1.2; color: var(--paper); }
-  .press-broadcast-body { margin: 0; font-size: clamp(15px, 1.1vw, 17px); line-height: 1.6; color: rgba(244, 241, 233, 0.74); }
-  .press-broadcast-cta { margin-top: 6px; font-size: 15px; color: var(--candle); border-bottom: 1px solid rgba(198, 164, 91, .4); padding-bottom: 1px; transition: border-color .35s var(--ease); }
-  .press-broadcast-cta:hover { border-color: var(--candle); }
-  /* On a desktop the broadcast request stands beside the address, on the same seven and five
-     twelfths as O zespole, its hairline turned to the left so both columns open at the lede. */
-  @media (min-width: 1000px) {
-    .press-contact-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); column-gap: clamp(40px, 5vw, 80px); align-items: start; }
-    .press-contact-grid .press-contact-card { max-width: none; }
-    .press-contact-grid .press-broadcast { align-self: stretch; margin-top: 0; padding: 0 0 0 clamp(28px, 3vw, 44px); border-top: 0; border-left: 1px solid rgba(244, 241, 233, 0.16); }
-  }
+  .press-contact-notes { margin-top: clamp(20px, 2.4vw, 28px); display: grid; gap: 8px; max-width: 64ch; }
+  .press-contact-notes p { margin: 0; font-size: clamp(15px, 1.1vw, 17px); line-height: 1.6; color: rgba(244, 241, 233, 0.74); }
+  .press-contact-notes a { color: var(--candle); border-bottom: 1px solid rgba(198, 164, 91, .4); padding-bottom: 1px; transition: border-color .35s var(--ease); }
+  .press-contact-notes a:hover { border-color: var(--candle); }
 
   /* ── THE COMPOSER ────────────────────────────────────────────────── */
   /* Hidden until scripts/press-basket.ts adds `has-basket` to <main>: a box with no script behind

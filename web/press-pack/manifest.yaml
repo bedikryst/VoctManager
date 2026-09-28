@@ -1,10 +1,10 @@
 # The press photographs — the one hand-kept list `npm run press:pack` reads.
 #
-# WHAT THE SCRIPT DOES NOT ASK YOU. Everything else in the pack is GENERATED from the site's own
-# data and is not listed here, because a second list is a second thing to keep true: the concert kit
-# (texts, poster graphics, PDFs) from `src/content/press-kits/<concert>.yaml` and `concerts.yaml`,
-# the biograms and usage terms from `src/content/pages/press.yaml`, the invoicing sheet from
-# `src/data/foundation.ts`, and the logotype from `public/voct-mark.svg`.
+# WHAT THE SCRIPT DOES NOT ASK YOU. Everything else in the pack comes from elsewhere and is not
+# listed here, because a second list is a second thing to keep true: the concert kit (the board's
+# PDFs it names, the post, the poster and its graphics) from `src/content/press-kits/<concert>.yaml`
+# and `concerts.yaml`, the usage terms from `src/content/pages/press.yaml`, and the logotype from
+# `public/voct-mark.svg`.
 #
 # WHAT IT ASKS YOU IS THE PART NOBODY CAN DERIVE: which frames the ensemble released to the press,
 # how each is cut, what it shows and whom to credit.
@@ -25,8 +25,11 @@
 # `src/assets/photos/.held-no-consent/`; it WARNS AND SKIPS a crop whose short edge is under 1080 px,
 # so a thumbnail sent by mistake never ships as a press photo and the rest of the pack still builds.
 #
-# Captions are dated from each file's own EXIF and matched against `concerts.yaml`; a frame whose
-# evening cannot be established says only what it shows.
+# CAPTIONS FOLLOW THE BOARD'S RULE (28.09.2026). A concert: who · "Koncert" and the title, the town
+# and the year — what identifies the evening; a church only where it matters to the frame. A
+# rehearsal: who · the context, nothing more, so the frame stays usable for any story. The concert's
+# title is written as `concerts.yaml` writes it. The dates were first read from each file's EXIF;
+# #03's evening (Aeternam, Niedzica) is the board's identification.
 #
 # NOT ELIGIBLE, recorded so nobody re-adds them: `kd-hymn-4` and `kd-hymn-5` are Andrzej
 # Płachetko's and are withheld from every surface until his consent is on record (concerts.yaml,
@@ -40,37 +43,37 @@ photos:
     source: VoctEnsemble_Radu-Ropotan_fot-VE_01.jpg
     ratio: "16:9"
     focus: [0.5, 0.52]
-    caption: "VoctEnsemble i Radu Ropotan · Wołanie Gór, Szczawnica, 2024"
+    caption: "VoctEnsemble i Radu Ropotan · Koncert Wołanie Gór, Szczawnica 2024"
     credit: VoctEnsemble
   - id: voctensemble-02-fot-kamila-grudzinska
     source: VoctEnsemble_koncert_fot-Kamila-Grudzinska_02.jpg
     ratio: "16:9"
     focus: [0.5, 0.55]
-    caption: "VoctEnsemble · 9 Kart z Księgi Psalmów, Bazylika NSPJ w Krakowie, 2024"
+    caption: "VoctEnsemble · Koncert 9 Kart z Księgi Psalmów, Kraków 2024"
     credit: Kamila Grudzińska
   - id: voctensemble-03-fot-voctensemble
     source: VoctEnsemble_koncert_fot-VE_03.jpg
     ratio: "16:9"
     focus: [0.5, 0.5]
-    caption: "VoctEnsemble podczas koncertu"
+    caption: "VoctEnsemble · Koncert Aeternam — Epitafium dla Gazy, Niedzica 2025"
     credit: VoctEnsemble
   - id: voctensemble-04-fot-kamila-grudzinska
     source: VoctEnsemble_koncert_fot-Kamila-Grudzinska_04.jpg
     ratio: "16:9"
     focus: [0.5, 0.42]
-    caption: "Florent de Bazelaire i VoctEnsemble · 9 Kart z Księgi Psalmów, Kraków, 2024"
+    caption: "Florent de Bazelaire i VoctEnsemble · Koncert 9 Kart z Księgi Psalmów, Kraków 2024"
     credit: Kamila Grudzińska
   - id: voctensemble-05-fot-voctensemble
     source: VoctEnsemble_Radu-Ropotan_proba_fot-VoctEnsemble_05.jpg
     ratio: "16:9"
     focus: [0.5, 0.4]
-    caption: "Radu Ropotan na próbie z VoctEnsemble, 2024"
+    caption: "Radu Ropotan · Próba VoctEnsemble"
     credit: VoctEnsemble
   - id: voctensemble-06-fot-voctensemble
     source: VoctEnsemble_proba_partytury_fot-VoctEnsemble_06.jpg
     ratio: "16:9"
     focus: [0.5, 0.5]
-    caption: "Partytury na próbie VoctEnsemble, 2024"
+    caption: "Próba VoctEnsemble"
     credit: VoctEnsemble
 
   # ── 4:5 ─────────────────────────────────────────────────────────────────────────────────────
@@ -78,19 +81,19 @@ photos:
     source: VoctEnsemble_koncert_fot-Kamila-Grudzinska_07.jpg
     ratio: "4:5"
     focus: [0.5, 0.6]
-    caption: "VoctEnsemble · 9 Kart z Księgi Psalmów, Bazylika NSPJ w Krakowie, 2024"
+    caption: "VoctEnsemble · Koncert 9 Kart z Księgi Psalmów, Bazylika NSPJ, Kraków 2024"
     credit: Kamila Grudzińska
   - id: voctensemble-08-fot-voctensemble
     source: VoctEnsemble_proba_fot-VoctEnsemble_08.jpg
     ratio: "4:5"
     focus: [0.5, 0.53]
-    caption: "Próba VoctEnsemble, 2024"
+    caption: "Próba VoctEnsemble"
     credit: VoctEnsemble
   - id: voctensemble-09-fot-voctensemble
     source: VoctEnsemble_proba_fot-VoctEnsemble_09.jpg
     ratio: "4:5"
     focus: [0.5, 0.5]
-    caption: "Próba VoctEnsemble, 2024"
+    caption: "Próba VoctEnsemble"
     credit: VoctEnsemble
   # 244 × 366: a thumbnail, not the original. The script skips it by the 1080 px rule and names it;
   # the tile appears once the original replaces this file under the same name.
@@ -98,7 +101,7 @@ photos:
     source: Florent-de-Bazelaire_dyrygent_fot-VoctEnsemble_10.jpg.jpg
     ratio: "4:5"
     focus: [0.5, 0.4]
-    caption: "Florent de Bazelaire, dyrygent"
+    caption: "Florent de Bazelaire · Próba VoctEnsemble"
     credit: VoctEnsemble
   # The colour square from the same rehearsal as 05. 1860 px square gives a 1488 × 1860 crop: right
   # for social and the web, short for print. Its black-and-white twin (IMG_0177-5) is the same
@@ -107,5 +110,5 @@ photos:
     source: 2024_05_29_21_12_IMG_01772-5.jpg
     ratio: "4:5"
     focus: [0.4, 0.5]
-    caption: "Skrzypce na próbie VoctEnsemble, 2024"
+    caption: "Radu Ropotan · Próba VoctEnsemble"
     credit: VoctEnsemble
