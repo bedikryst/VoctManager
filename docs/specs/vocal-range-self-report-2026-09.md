@@ -163,7 +163,8 @@ Only singing voice types (`SINGING_VOICE_TYPES`) may submit.
 - `profile.vocal_range_prompt_enabled` (the rollout flag);
 - singing voice type;
 - `vocal_range_proposed_at` is null;
-- `welcome_seen_at` is set;
+- `welcome_seen_at` is set, for a non-manager only: a manager never gets the chorister's welcome,
+  and for them the flag is the season concierge's, stamped only when they finish it;
 - not in preview (`?artist=`);
 - not snoozed this session.
 
