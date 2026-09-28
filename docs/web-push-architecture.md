@@ -344,12 +344,15 @@ reserve e-mail's switch: push OFF on a type means neither push nor the e-mail.
 **Adoption offers (frontend).** `requestPushNudge(moment)` raises a one-tap offer
 from the moment push would help (absence request, attendance confirmation,
 accepting an invitation outside the Welcome Moment). `usePushNudgeHost` in the
-panel shell renders it only when push is possible here, not on (read live from the
-browser at the moment, not from the shell's controller), not blocked, no offer has
-been shown yet in this page session, and the per-device pacing allows: 14 days
-after any offer that ended unanswered, and none after three refusals. Only the
-close button and a swipe are refusals; a timeout starts the cooldown without
-counting, since the offer may never have been read. Apple devices in a browser tab get
-the Home Screen route instead, unless another device already takes the push.
+panel shell presents it as a bottom sheet (`PushNudgeSheet`) that waits for an
+answer, opened 3 s after the member's last moment and never over another open
+dialog (it waits up to 60 s for one to close, then lapses without recording
+anything). It is offered only when push is possible here, not on (read live from
+the browser at the moment, not from the shell's controller), not blocked, no offer
+has been shown yet in this page session, and the per-device pacing allows: every
+way of closing the sheet without the action is a refusal, each refusal starts a
+14-day cooldown, and the third ends the offer on that device. Apple devices in a
+browser tab get the Home Screen route instead, unless another device already takes
+the push.
 `PushInboxRow` at the top of the notification centre states the device's push
 state permanently, without pacing. Enabling from either place fires a test push.

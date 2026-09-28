@@ -13,10 +13,9 @@
  * (`usePushNudgeHost`); callers only name the moment.
  *
  * Pacing is per device because push permission is: a "not now" on the laptop
- * says nothing about the phone. Every offer that ends unanswered starts a 14-day
- * cooldown, but only a refusal — the close button or a swipe — counts towards
- * the three that end the contextual offer for good on that device. An offer
- * that simply timed out may never have been read. The quiet row in the
+ * says nothing about the phone. The offer waits for an answer, so every offer
+ * that is not taken was refused: each refusal starts a 14-day cooldown, and the
+ * third ends the contextual offer for good on that device. The quiet row in the
  * notification centre and the settings tab remain, and neither interrupts
  * anything.
  * @module features/notifications/lib/pushNudge
@@ -40,7 +39,10 @@ export const subscribePushNudge = (listener: PushNudgeListener): (() => void) =>
   };
 };
 
-const STORAGE_KEY = "voct.push.nudge";
+// Versioned with the offer's form: a record counts refusals of an offer the
+// member could see and answer, and one written for a different form of the
+// offer does not speak for this one.
+const STORAGE_KEY = "voct.push.nudge.v2";
 const COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
 const MAX_DISMISSALS = 3;
 
@@ -80,22 +82,12 @@ export const isPushNudgeDue = (now: number = Date.now()): boolean => {
   return now - record.dismissedAt >= COOLDOWN_MS;
 };
 
-/**
- * Records an offer that ended without being taken. `strike` is true for a
- * refusal (close button, swipe) and false for a timeout: both start the
- * cooldown, only a refusal counts towards the limit.
- */
-export const recordPushNudgeDismissal = ({
-  strike,
-  now = Date.now(),
-}: {
-  strike: boolean;
-  now?: number;
-}): void => {
+/** Records a refusal: it starts the cooldown and counts towards the limit. */
+export const recordPushNudgeDismissal = (now: number = Date.now()): void => {
   const previous = readRecord();
   const next: NudgeRecord = {
     dismissedAt: now,
-    dismissals: (previous?.dismissals ?? 0) + (strike ? 1 : 0),
+    dismissals: (previous?.dismissals ?? 0) + 1,
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));

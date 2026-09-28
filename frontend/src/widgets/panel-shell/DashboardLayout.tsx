@@ -88,7 +88,7 @@ export const DashboardLayout = ({
   usePushDeviceSync();
   // Contextual "enable push here" offers are raised by features at the moment
   // push would have helped; the shell owns the controller that answers them.
-  usePushNudgeHost();
+  const pushNudgeSheet = usePushNudgeHost();
   // A push lands before the polled queries notice: reconcile the caches it
   // speaks for, so the banner and the panel never disagree.
   usePushLiveRefresh();
@@ -285,6 +285,7 @@ export const DashboardLayout = ({
           before an instruction that needs reading. */}
       <DelegationBriefingModal />
       <CustomAdminMessageToast />
+      {pushNudgeSheet}
       {/* The shell's ambient column — offline badge, install prompt, and the
           permanent feedback button — stacked so they can never overlap each other,
           clear of the mobile nav (safe-area aware). Lives at body level already,

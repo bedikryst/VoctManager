@@ -4007,10 +4007,12 @@
       "nudge": {
         "eyebrow": "Notifications on this device",
         "enable": "Turn on",
+        "enable_cta": "Turn on notifications",
+        "enable_body": "Your browser will ask for permission. A single test notification follows right away, so you can see it works. You can always turn them off in settings.",
         "show_how": "Show me how",
         "not_now": "Not now",
         "elsewhere": "Notifications already work on another of your devices. Turn them on here too?",
-        "install": "They only work in the app added to your Home Screen.",
+        "install": "On iPhone and iPad, notifications only work in the app added to your Home Screen. We'll show you how.",
         "moment": {
           "absence": "Want to know as soon as your request is answered?",
           "presence": "Want to know right away if this rehearsal is moved or cancelled?",

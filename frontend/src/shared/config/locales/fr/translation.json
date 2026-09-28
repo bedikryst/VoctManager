@@ -4017,10 +4017,12 @@
       "nudge": {
         "eyebrow": "Notifications sur cet appareil",
         "enable": "Activer",
+        "enable_cta": "Activer les notifications",
+        "enable_body": "Votre navigateur vous demandera l’autorisation. Une notification d’essai suit aussitôt, pour que vous voyiez qu’elle fonctionne. Vous pourrez toujours les désactiver dans les réglages.",
         "show_how": "Voir comment",
         "not_now": "Plus tard",
         "elsewhere": "Les notifications fonctionnent déjà sur un autre de vos appareils. Les activer ici aussi ?",
-        "install": "Elles ne fonctionnent que dans l’application ajoutée à l’écran d’accueil.",
+        "install": "Sur iPhone et iPad, les notifications ne fonctionnent que dans l’application ajoutée à l’écran d’accueil. Nous vous montrons comment.",
         "moment": {
           "absence": "Recevoir la réponse à votre demande dès qu’elle arrive ?",
           "presence": "Savoir tout de suite si cette répétition est déplacée ou annulée ?",

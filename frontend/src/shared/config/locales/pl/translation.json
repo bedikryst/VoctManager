@@ -4045,10 +4045,12 @@
       "nudge": {
         "eyebrow": "Powiadomienia na tym urządzeniu",
         "enable": "Włącz",
+        "enable_cta": "Włącz powiadomienia",
+        "enable_body": "Przeglądarka zapyta o zgodę. Zaraz potem przyjdzie jedno próbne powiadomienie, żeby było widać, że działa. Zawsze możesz je wyłączyć w ustawieniach.",
         "show_how": "Pokaż jak",
         "not_now": "Nie teraz",
         "elsewhere": "Na innym urządzeniu powiadomienia już działają. Włączyć je też tutaj?",
-        "install": "Działają tylko w aplikacji dodanej do ekranu początkowego.",
+        "install": "Na iPhonie i iPadzie powiadomienia działają tylko w aplikacji dodanej do ekranu początkowego. Pokażemy, jak to zrobić.",
         "moment": {
           "absence": "Chcesz od razu wiedzieć, kiedy przyjdzie odpowiedź na zgłoszenie?",
           "presence": "Chcesz od razu wiedzieć, gdyby tę próbę przesunięto, przeniesiono albo odwołano?",
