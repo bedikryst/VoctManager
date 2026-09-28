@@ -9,11 +9,12 @@
 #
 # THESE ARE APPROVED TEXTS, delivered as PDFs on 28.09.2026 (press-pack/inbox/2026-09-28/, outside
 # git) and transcribed here word for word. The departures, which the PDFs do not carry:
-#   · the conductor's name stands in the NOMINATIVE — „a dyrygować będzie Florent de Bazelaire”,
-#     „którego założycielem jest Florent de Bazelaire” — where the PDFs put it in a dependent
-#     case, declined or not: he does not want it declined, and undeclined it reads as an error.
-#     A sentence that only a dependent case can carry declines it in full, „Florenta de
-#     Bazelaire’a” (see press.yaml about.longHtml);
+#   · the conductor's name stands in the NOMINATIVE — „Florent de Bazelaire poprowadzi
+#     VoctEnsemble przez kompozycje…”, „który Florent de Bazelaire powołał do życia” — where the
+#     PDFs put it in a dependent case, declined or not: he does not want it declined, and
+#     undeclined it reads as an error. The rewrite has to read as well as the approved sentence
+#     did. A sentence that only a dependent case can carry declines the first name alone,
+#     „Florenta de Bazelaire” (see press.yaml about.longHtml);
 #   · „Pieśń słoneczna” keeps a lower-case second word, as a work's title does and as the corpus
 #     writes it; the festival is „Fenomen Człowieka”, an event's name, capitalised as its
 #     organiser writes it (both settled 28.09.2026);
@@ -95,8 +96,8 @@ release:
     - heading: "Głos, skrzypce i organy"
       body:
         - >-
-          Zmienna obsada wokalna pozwala ukazać różne oblicza brzmienia zespołu: VoctEnsemble
-          wykona kompozycje na 5, 7, 8, 9 i 12 głosów, a dyrygować będzie Florent de Bazelaire.
+          Zmienna obsada wokalna pozwala ukazać różne oblicza brzmienia zespołu: Florent
+          de Bazelaire poprowadzi VoctEnsemble przez kompozycje na 5, 7, 8, 9 i 12 głosów.
           Partie wokalne dopełnią skrzypce i organy.
         - >-
           Z zespołem wystąpią Radu Ropotan, wybitny rumuński skrzypek, absolwent Royal Academy of
@@ -121,8 +122,8 @@ release:
     - heading: "O VoctEnsemble"
       body:
         - >-
-          VoctEnsemble, niezależny zespół wokalny, którego założycielem jest Florent de
-          Bazelaire, powstał w Krakowie w 2024 roku. W centrum jego pracy znajduje się człowiek i doświadczenia, wobec których
+          VoctEnsemble to niezależny zespół wokalny, który Florent de Bazelaire powołał do
+          życia w Krakowie w 2024 roku. W centrum jego pracy znajduje się człowiek i doświadczenia, wobec których
           muzyka pozwala zatrzymać się uważniej: piękno, cierpienie, pamięć, tajemnica czy
           nadzieja. Z tej perspektywy wyrastają autorskie Koncerty Duchowe, budowane wokół jednej
           idei lub pytania i nawiązujące do XVIII-wiecznej tradycji francuskich Concerts
