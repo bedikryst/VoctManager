@@ -6112,8 +6112,10 @@
         "title": "Wyłączyć powiadomienia push?"
       },
       "digest": {
-        "title": "Dzienne podsumowanie",
-        "description": "Rutynowe aktualizacje (obecności, odpowiedzi na zaproszenia, prośby o nieobecność) zbieramy w jedną wiadomość dziennie. Pilne sprawy zawsze docierają od razu.",
+        "title": "Raz dziennie, w jednym mailu",
+        "description": "Potwierdzenia udziału, zgłoszenia obecności i prośby o nieobecność na dalsze terminy zbieramy w jeden mail o wybranej godzinie. Rezygnacje z udziału i prośby o nieobecność na próbę, która zaczyna się w ciągu 48 godzin, wysyłamy od razu.",
+        "description_off": "Każde zdarzenie z włączonym e-mailem przychodzi w osobnej wiadomości, od razu.",
+        "push_note": "Nie dotyczy to powiadomień push — te przychodzą zawsze od razu.",
         "toggle_label": "Codzienne podsumowanie e-mail",
         "hour_label": "Godzina wysyłki",
         "timezone_note": "W Twojej strefie czasowej ({{timezone}})"
@@ -6153,11 +6155,11 @@
         "PIECE_CASTING_UPDATED": "Zmiana Twojej obsady w utworze",
         "MATERIAL_UPLOADED": "Nowe nuty lub nagrania",
         "CUSTOM_ADMIN_MESSAGE": "Wiadomość od zarządu",
-        "ABSENCE_APPROVED": "Twoja prośba o nieobecność została zatwierdzona",
-        "ABSENCE_REJECTED": "Twoja prośba o nieobecność została odrzucona",
-        "PARTICIPATION_RESPONSE": "Śpiewak odpowiada na zaproszenie",
-        "ATTENDANCE_SUBMITTED": "Śpiewak aktualizuje swoją obecność",
-        "ABSENCE_REQUESTED": "Śpiewak prosi o nieobecność",
+        "ABSENCE_APPROVED": "Menedżer zatwierdza Twoją prośbę o nieobecność",
+        "ABSENCE_REJECTED": "Menedżer nie zatwierdza Twojej prośby o nieobecność",
+        "PARTICIPATION_RESPONSE": "Ktoś z zespołu potwierdza udział w projekcie albo z niego rezygnuje. Rezygnacja nie czeka na dzienne podsumowanie.",
+        "ATTENDANCE_SUBMITTED": "Ktoś z zespołu zaznacza, że będzie na próbie albo się spóźni. Kilka zgłoszeń po kolei przychodzi jako jeden push.",
+        "ABSENCE_REQUESTED": "Ktoś z zespołu prosi o zwolnienie z próby. Gdy próba zaczyna się w ciągu 48 godzin, prośba nie czeka na dzienne podsumowanie.",
         "SYSTEM_ALERT": "Konserwacja i ważne komunikaty systemowe",
         "ANNOUNCEMENT_PENDING": "Kolejka projektu czeka, a obsada wciąż o niej nie wie",
         "SITE_COPY_PROPOSED": "Ktoś z redakcji zaproponował zmiany w tekstach strony",
@@ -6182,14 +6184,14 @@
       },
       "customized_badge": "Zmienione",
       "groups_desc": {
-        "commitments": "Zaproszenia, zmiany terminów prób i koncertów oraz Twoje partie.",
-        "requests": "Decyzje w sprawie nieobecności, o które sam prosisz. Bez e-maila: wniosek składasz w aplikacji i to w niej sprawdzisz odpowiedź.",
-        "messages": "Ktoś pisze do Ciebie — odpowiedź w rozmowie albo wiadomość od zarządu.",
-        "materials": "Nowe nuty i nagrania oraz przypomnienia tuż przed próbą i koncertem.",
-        "safety_net": "Jedyne powiadomienie o tym, czego jeszcze nie zrobiono: zmiany czekają w kolejce, a obsada wciąż o nich nie wie. Dlatego trafia też na e-mail.",
-        "site_copy": "Ktoś przeszedł przez redakcję treści strony i zostawił propozycje do przejrzenia. Jedna wiadomość na jedno posiedzenie, nie na każdą zmianę — dlatego trafia też na e-mail.",
-        "debriefs": "Asystent dyrygenta spisuje po próbie, jak poszła. Powstaje raz, tylko dla wieczoru prowadzonego przez kogoś innego — dlatego przychodzi od razu, a nie w dziennym podsumowaniu, i trafia też na e-mail.",
-        "team": "Odpowiedzi na zaproszenia, zgłoszenia obecności i prośby o nieobecność. Te same zdarzenia, które zbiera dzienne podsumowanie poniżej."
+        "commitments": "Zaproszenia, nowe, przeniesione i odwołane próby, zmiany w projekcie oraz Twoje partie. Push i e-mail przychodzą od razu, a kilka zmian ogłoszonych naraz — w jednej wiadomości.",
+        "requests": "Odpowiedź na Twoją prośbę o nieobecność — zgoda albo odmowa. Push przychodzi od razu. E-mail jest domyślnie wyłączony, bo wniosek składasz w aplikacji i tam wracasz po odpowiedź; jeśli żadne Twoje urządzenie nie odbiera push, wyślemy ją mailem.",
+        "messages": "Ktoś pisze do Ciebie — odpowiedź w rozmowie albo wiadomość od zarządu. Push i e-mail przychodzą od razu.",
+        "materials": "Nowe nuty i nagrania oraz przypomnienia przed próbą i koncertem. Push przychodzi od razu, e-mail jest domyślnie wyłączony. Jeśli żadne Twoje urządzenie nie odbiera push, przypomnienia wyślemy mailem, a o nowych materiałach dowiesz się w aplikacji.",
+        "safety_net": "Zmiany czekają w kolejce, a obsada wciąż o nich nie wie. To jedyne powiadomienie o czymś, czego jeszcze nie zrobiono, dlatego oprócz push przychodzi też e-mail.",
+        "site_copy": "Ktoś przeszedł przez redakcję treści strony i zostawił propozycje do przejrzenia. Jedna wiadomość na jedno posiedzenie, nie na każdą zmianę — push i e-mail przychodzą od razu po jego zakończeniu.",
+        "debriefs": "Asystent dyrygenta spisuje po próbie, jak poszła. Powstaje raz, tylko dla wieczoru prowadzonego przez kogoś innego, dlatego push i e-mail przychodzą od razu, a nie w dziennym podsumowaniu.",
+        "team": "Odpowiedzi na zaproszenia, zgłoszenia obecności i prośby o nieobecność. Push przychodzi od razu, a kilka zgłoszeń jednej osoby wysłanych po kolei — jako jeden. Włączony e-mail przychodzi raz dziennie w podsumowaniu albo osobno — zależnie od ustawienia pod tą grupą."
       },
       "groups_email_off": {
         "commitments": "Nie dostaniesz e-maila, gdy zmieni się termin próby albo koncertu. W aplikacji nadal zobaczysz wszystko — ale tylko wtedy, gdy do niej zajrzysz.",
@@ -6201,7 +6203,51 @@
       "details_show": "Szczegóły ({{n}})",
       "details_hide": "Ukryj szczegóły",
       "partial_badge": "Częściowo",
-      "partial_hint": "Część powiadomień w tej grupie ma inne ustawienie. Przełącznik obok włączy wszystkie."
+      "partial_hint": "Część powiadomień w tej grupie ma inne ustawienie. Przełącznik obok włączy wszystkie.",
+      "preview": {
+        "open": "Co dostanę?",
+        "title": "Co dostanę?",
+        "subtitle": "Przykłady według Twoich ustawień",
+        "tabs_label": "Kanał",
+        "tab_push": "Push",
+        "tab_email": "E-mail",
+        "devices_one": "Push dociera do {{count}} Twojego urządzenia.",
+        "devices_few": "Push dociera do {{count}} Twoich urządzeń.",
+        "devices_many": "Push dociera do {{count}} Twoich urządzeń.",
+        "devices_other": "Push dociera do {{count}} Twoich urządzeń.",
+        "devices_none": "Żadne Twoje urządzenie nie odbiera teraz push. Włączysz go u góry tej strony, na urządzeniu, na którym chcesz go dostawać.",
+        "get": "Dostaniesz",
+        "get_email": "Dostaniesz od razu",
+        "get_none": "Tym kanałem nic do Ciebie nie przyjdzie.",
+        "digest": "W dziennym podsumowaniu o {{hour}}",
+        "digest_note": "Jeden mail dziennie ze wszystkimi takimi zdarzeniami.",
+        "not_get": "Nie dostaniesz",
+        "app_name": "VoctManager",
+        "now": "teraz",
+        "stand_in": "Zamiast push — żadne Twoje urządzenie go nie odbiera.",
+        "error": "Nie udało się wczytać przykładów. Spróbuj ponownie za chwilę.",
+        "cases": {
+          "accepted": "potwierdzenie udziału",
+          "declined": "rezygnacja",
+          "single": "jedno zgłoszenie",
+          "fold": "kilka zgłoszeń po kolei",
+          "soon": "próba w ciągu 48 godzin",
+          "later": "późniejsza próba"
+        },
+        "push_reason": {
+          "off": "Wyłączone w ustawieniach",
+          "no_device": "Żadne Twoje urządzenie nie odbiera push",
+          "no_device_email": "Żadne Twoje urządzenie nie odbiera push — przyjdzie mailem",
+          "never": "Tylko w aplikacji"
+        },
+        "email_reason": {
+          "off": "Wyłączone w ustawieniach",
+          "undeliverable": "Poczta na Twój adres wraca jako niedoręczona",
+          "opted_out": "Maile z powiadomieniami są wyłączone",
+          "not_activated": "Konto nie jest jeszcze aktywne",
+          "never": "Tylko w aplikacji"
+        }
+      }
     },
     "page": {
       "highlight": "konta",

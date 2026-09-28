@@ -28,6 +28,7 @@ import type {
 import { settingsKeys } from "@/features/settings/api/settings.queries";
 import type { UserMeDTO } from "@/features/settings/types/settings.dto";
 import { notificationKeys } from "@/features/notifications/api/notifications.queries";
+import { clearPushTray } from "@/features/notifications/lib/pushTray";
 import { parseApiError, type ApiErrorKind } from "@/shared/api/errors";
 
 interface UserIdentityResponse {
@@ -304,6 +305,9 @@ export const AuthProvider = ({
       // them signed in, which is the worse of the two outcomes.
       await clearPersistedQueryCache().catch(() => undefined);
       void clearAllOffline();
+      // The tray entries and the app-icon count are this user's too. Awaited so
+      // the navigation cannot cut it short; it never throws.
+      await clearPushTray();
       window.location.href = "/login";
     }
   };

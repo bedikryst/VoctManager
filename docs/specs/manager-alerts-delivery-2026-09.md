@@ -1,12 +1,54 @@
 # Manager alerts — delivery model, folded pushes, honest settings
 
-Status: **Stages 1–2 built and audited 2026-09-28, committed, not yet seen by the developer;
-Stages 3–4 not started.** Until Stage 3 ships, the settings tab shows team e-mail ON while the
-digest panel still carries its old copy.
+Status: **All four stages built, audited and committed 2026-09-28; none yet seen by the
+developer.** Stage 4 needs a real device to see (Android PWA tray, `?n=` on tap). No migration in
+Stages 3–4; prod still needs `notifications/0023`, `0024` and `core/0030`.
 Four stages, each closed by its own verification and review before the next starts. Stages 1–2
 are backend only; 3 is the settings tab; 4 is the service worker and the panel shell.
 
-Built beyond the text below, to confirm at review:
+Confirmed by the developer 2026-09-28: a decline is e-mailed at once to every manager whose team
+e-mail is on (see the last Stage 1–2 bullet below). It stays.
+
+Stage 4, built beyond the text below, to confirm at review:
+
+- Every push with an in-app row names it (`router._speaking_for`, briefings included), not only
+  the fold. `unread` rides on every dispatched push; the test push carries neither.
+- A tap posts to `POST /api/notifications/opened/`, not a generic bulk mark-read: it skips
+  `PROJECT_INVITATION`, `REHEARSAL_DELEGATED` and `CUSTOM_ADMIN_MESSAGE`. Their unread state is a
+  panel surface (invitation queue, delegation briefing, admin-message toast) that the tap is
+  meant to land on; reading them on arrival would hide it.
+- The tray is judged by the server, not the bell's loaded page: `GET unread-ids/?among=` answers
+  which of the tray's ids are unread, and every entry with none is closed. It runs when the unread
+  count moves and when the app becomes visible, so mark-all and reads on another device need no
+  path of their own. Entries without ids (channel messages, the test push) are never closed. The
+  tray is listed again after the answer and an entry closes only if every id it holds was asked
+  about: Chrome keys a tagged entry by its tag, so closing a stale object closes its successor.
+- The worker merges the ids of the entry it replaces under the same tag (at most 50), so the
+  entry left standing answers for both.
+- `?n=` is consumed by the copy-desk shell too (the site-copy push opens `/redakcja`). Logout
+  closes the tray entries and clears the badge.
+- The icon badge is `unread_count`, as written; the bell's own badge is `new_count`. After opening
+  the centre without reading, the icon keeps a number the bell no longer shows.
+
+Stage 3, built beyond the text below, to confirm at review:
+
+- The E-mail tab has three lists, not two: at once / in the daily digest at HH:00 / not at all. A
+  digest row does arrive, only not on its own, and "You will not get" was the wrong heading for it.
+- Types whose outcome depends on the level get one example per shape: a confirmation and a
+  withdrawal; an absence within 48 h and a later one (level taken from `absence_request_level`);
+  one attendance report and the fold. "Not" rows collapse to the type name when every shape
+  shares the reason.
+- Push reads `no_device_email` only when the reserve e-mail stands in; a type e-mailed anyway reads
+  plain `no_device` on the Push tab and `now` on the E-mail tab.
+- `effective_preferences`, `needs_email_reserve` and `visible_preference_groups` now live in
+  `delivery.py`; the router, the ledger GET and `preview.py` all read them.
+- The modal is `BottomSheet` (sheet on a phone, centred modal from `sm`). The digest panel hides
+  while every team type has e-mail off, and no longer checks the manager role itself — the team
+  group is the gate.
+- Sample prose is gettext under `msgctxt "notification preview sample"`; names (Anna Kowalska,
+  Ave verum corpus) are not translated.
+
+Stages 1–2, built beyond the text below, to confirm at review:
 
 - `0024` also **pins** the missing team rows (e-mail off, push on) for digest-off managers. Without
   it, a digest-off manager who never received one of the three types would start getting one

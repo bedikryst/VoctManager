@@ -25,6 +25,8 @@ import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { usePushDeviceSync } from "@/features/notifications/hooks/usePushDeviceSync";
 import { usePushNudgeHost } from "@/features/notifications/hooks/usePushNudgeHost";
 import { usePushLiveRefresh } from "@/features/notifications/hooks/usePushLiveRefresh";
+import { usePushOpened } from "@/features/notifications/hooks/usePushOpened";
+import { usePushTraySync } from "@/features/notifications/hooks/usePushTraySync";
 import { ProjectInvitationToasts } from "@/features/notifications/components/ProjectInvitationToasts";
 import { DelegationBriefingModal } from "@/features/notifications/components/DelegationBriefingModal";
 import { CustomAdminMessageToast } from "@/features/notifications/components/CustomAdminMessageToast";
@@ -92,6 +94,10 @@ export const DashboardLayout = ({
   // A push lands before the polled queries notice: reconcile the caches it
   // speaks for, so the banner and the panel never disagree.
   usePushLiveRefresh();
+  // A tapped push reads the rows it spoke for; the tray and the app-icon badge
+  // follow the bell from then on.
+  usePushOpened();
+  usePushTraySync();
   const canPreloadArtistRoutes = isArtist(user);
   const canPreloadManagerRoutes = isManager(user);
   // A full-screen first-run moment (the chorister's welcome, then the

@@ -587,6 +587,68 @@ export interface PushDeviceSummaryDTO {
   active_devices: number;
 }
 
+/** What push does with one example event for this reader. Only `now` reaches a
+ *  device; `no_device_email` means the e-mail goes in its place. */
+export type DeliveryPushStatus = "now" | "off" | "no_device" | "no_device_email" | "never";
+
+/** What e-mail does with one example event for this reader. `now` and
+ *  `stand_in` (the e-mail a push carries in reserve) reach the inbox; the
+ *  last three are account-level blocks that silence every e-mail. */
+export type DeliveryEmailStatus =
+  | "now"
+  | "stand_in"
+  | "digest"
+  | "off"
+  | "never"
+  | "undeliverable"
+  | "opted_out"
+  | "not_activated";
+
+/** The shape of a type, where one type arrives in several the router treats
+ *  differently; empty for a type with one. */
+export type DeliveryPreviewCase =
+  | ""
+  | "accepted"
+  | "declined"
+  | "single"
+  | "fold"
+  | "soon"
+  | "later";
+
+export interface DeliveryPushExampleDTO {
+  status: DeliveryPushStatus;
+  delivered: boolean;
+  title: string;
+  body: string;
+}
+
+export interface DeliveryEmailExampleDTO {
+  status: DeliveryEmailStatus;
+  delivered: boolean;
+  subject: string;
+  lead: string;
+}
+
+export interface DeliveryPreviewExampleDTO {
+  notification_type: NotificationType;
+  case: DeliveryPreviewCase;
+  push: DeliveryPushExampleDTO;
+  /** Null for the folded push, which has no e-mail of its own. */
+  email: DeliveryEmailExampleDTO | null;
+}
+
+export interface DeliveryPreviewGroupDTO {
+  id: NotificationGroupId;
+  examples: DeliveryPreviewExampleDTO[];
+}
+
+/** "What will I get?" — composed and decided on the server; rendered as is. */
+export interface DeliveryPreviewDTO {
+  devices: number;
+  digest_hour: number;
+  groups: DeliveryPreviewGroupDTO[];
+}
+
 export interface SendToArtistPayload {
   artist_id: string;
   title: string;

@@ -1,20 +1,22 @@
 """
 @file delivery.py
-@description Delivery policy shared by the notification router and the settings
-             matrix: which preference group each event type belongs to, what that
-             group's channels default to, which routine manager alerts the daily
-             digest e-mail batches, and `plan_delivery` — the one decision of what
-             each outbound channel does with an event.
+@description Delivery policy shared by the notification router, the settings
+             matrix and its delivery preview: which preference group each event
+             type belongs to and who is shown it, what that group's channels
+             default to, which routine manager alerts the daily digest e-mail
+             batches, which push carries its e-mail in reserve, and
+             `plan_delivery` — the one decision of what each outbound channel
+             does with an event.
 @architecture Enterprise SaaS 2026
 @module notifications/delivery
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 
-from .models import NotificationLevel, NotificationType
+from .models import NotificationLevel, NotificationPreference, NotificationType
 
 
 @dataclass(frozen=True)
@@ -217,6 +219,20 @@ GROUP_OF_TYPE: dict[str, str] = {
     ntype: group.id for group in PREFERENCE_GROUPS for ntype in group.types
 }
 
+
+def visible_preference_groups(*, is_manager: bool, is_staff: bool) -> tuple[PreferenceGroup, ...]:
+    """The groups a reader is shown, in render order.
+
+    Anything that speaks for a reader's settings — the ledger, the delivery
+    preview — describes these and nothing else, so neither ever shows a switch
+    over a notification its reader cannot receive. Staff is the narrower
+    audience: the copy desk's reviewer is whoever commits an accepted proposal.
+    """
+    return tuple(
+        group for group in PREFERENCE_GROUPS
+        if (is_manager or not group.manager_only) and (is_staff or not group.staff_only)
+    )
+
 MANAGER_ONLY_TYPES: frozenset[str] = frozenset(
     ntype
     for group in PREFERENCE_GROUPS
@@ -383,3 +399,53 @@ def default_channel_preferences(notification_type: str) -> dict[str, bool]:
         "email_enabled": notification_type in DEFAULT_EMAIL_ENABLED_TYPES,
         "push_enabled": notification_type not in DEFAULT_PUSH_DISABLED_TYPES,
     }
+
+
+def effective_preferences(
+    user_id: int | str, notification_types: Iterable[str]
+) -> dict[str, dict[str, bool]]:
+    """What each type resolves to for this reader — their stored row where one
+    exists, the shared default contract where it does not.
+
+    Rows are read, never created: a reader asking what they would receive, or a
+    briefing mentioning a type they have never received, must not mint one.
+    """
+    wanted = set(notification_types)
+    stored = {
+        preference.notification_type: preference
+        for preference in NotificationPreference.objects.filter(
+            user_id=user_id, notification_type__in=wanted
+        )
+    }
+    resolved: dict[str, dict[str, bool]] = {}
+    for notification_type in wanted:
+        preference = stored.get(notification_type)
+        resolved[notification_type] = (
+            {"email_enabled": preference.email_enabled, "push_enabled": preference.push_enabled}
+            if preference
+            else default_channel_preferences(notification_type)
+        )
+    return resolved
+
+
+# Push-first types whose reserve e-mail would arrive as a flood rather than as
+# news. Material notices are folded to one per piece per window, but that is
+# still one e-mail per piece, and a season's preparation touches many pieces:
+# "timely, but not worth an inbox" holds all the more for a member who never
+# asked for push. The in-app row still carries it. Revisit only with a
+# per-recipient batch ("new material: A, B, C").
+NO_EMAIL_RESERVE_TYPES: frozenset[str] = frozenset({NotificationType.MATERIAL_UPLOADED})
+
+
+def needs_email_reserve(notification_type: str, email_enabled: bool) -> bool:
+    """Whether a push of this type should carry its e-mail in reserve.
+
+    Only push-first types qualify — those whose e-mail is OFF by default, so a
+    member without a device would otherwise hear nothing. A type whose e-mail is
+    ON by default and reads OFF here was switched off by the member, and that
+    choice holds even when no device can take the push. The master e-mail switch
+    is honoured downstream, by the e-mail dispatcher itself.
+    """
+    if notification_type in NO_EMAIL_RESERVE_TYPES:
+        return False
+    return not email_enabled and not default_channel_preferences(notification_type)["email_enabled"]

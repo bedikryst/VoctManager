@@ -5307,3 +5307,61 @@ msgstr[2] "%(artist)s będzie na %(count)d próbach"
 msgctxt "event short date format"
 msgid "j M"
 msgstr "j b"
+
+#: notifications/preview.py:137
+msgctxt "notification preview sample"
+msgid "St Anne's Church"
+msgstr "Kościół św. Anny"
+
+#: notifications/preview.py:138
+msgctxt "notification preview sample"
+msgid "Philharmonic Hall"
+msgstr "Sala filharmonii"
+
+#: notifications/preview.py:139
+msgctxt "notification preview sample"
+msgid "Tuning and the Magnificat"
+msgstr "Strojenie i Magnificat"
+
+#: notifications/preview.py:180
+msgctxt "notification preview sample"
+msgid "A family matter, I'm sorry."
+msgstr "Sprawy rodzinne, przepraszam."
+
+#: notifications/preview.py:263
+msgctxt "notification preview sample"
+msgid "Thursday's rehearsal"
+msgstr "Próba w czwartek"
+
+#: notifications/preview.py:264
+msgctxt "notification preview sample"
+msgid "Thank you, see you on Thursday!"
+msgstr "Dziękuję, do zobaczenia w czwartek!"
+
+#: notifications/preview.py:268
+msgctxt "notification preview sample"
+msgid "Concert dress"
+msgstr "Strój na koncert"
+
+#: notifications/preview.py:270
+msgctxt "notification preview sample"
+msgid "Black dress for Sunday, please. The details are in the materials."
+msgstr "Na niedzielę prosimy o czarne stroje. Szczegóły są w materiałach."
+
+#: notifications/preview.py:302
+msgctxt "notification preview sample"
+msgid "Home page"
+msgstr "Strona główna"
+
+#: notifications/preview.py:312
+msgctxt "notification preview sample"
+msgid ""
+"The sopranos were secure in the Gloria; the tenors need another pass at bar "
+"40."
+msgstr ""
+"Soprany pewne w Gloria; z tenorami trzeba jeszcze raz przejść takt 40."
+
+#: notifications/preview.py:138
+msgctxt "notification preview sample"
+msgid "Advent Vespers"
+msgstr "Nieszpory adwentowe"

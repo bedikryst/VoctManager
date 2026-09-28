@@ -1,17 +1,25 @@
 /**
  * @file preferences.ts
  * @description Server state for the notification settings ledger: the grouped
- * matrix read, and the three writes over it — one type, one whole group's
- * channel, and Restore-recommended for a section. Every write is optimistic and
- * patches the same flat `preferences` list inside the envelope, so the ledger
- * never flickers through a refetch.
+ * matrix read, the three writes over it — one type, one whole group's channel,
+ * and Restore-recommended for a section — and the "What will I get?" preview
+ * those writes change. Every write is optimistic and patches the same flat
+ * `preferences` list inside the envelope, so the ledger never flickers through
+ * a refetch; the preview is composed on the server and only ever refetched.
  * @architecture Enterprise SaaS 2026
  * @module notifications/api/preferences
  */
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 
 import api from "@/shared/api/api";
+import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
 import type {
+  DeliveryPreviewDTO,
   NotificationPreferenceDTO,
   NotificationPreferenceMatrixDTO,
   NotificationPreferenceUpdateDTO,
@@ -31,6 +39,7 @@ export const preferenceKeys = {
   // array before the ledger grew groups, and a persisted snapshot of that shape
   // would rehydrate straight into code that now reads an envelope.
   all: ["notification-preferences", "matrix"] as const,
+  preview: ["notification-preferences", "preview"] as const,
 };
 
 export const useNotificationPreferences = () => {
@@ -42,6 +51,30 @@ export const useNotificationPreferences = () => {
     },
     staleTime: 1000 * 60 * 5,
   });
+};
+
+/**
+ * "What will I get?" — every example composed in the reader's language, with
+ * what each channel does with it. Nothing about it is derived here: the outcome
+ * depends on devices and account state the client does not hold, so it is
+ * refetched on every open and marked stale by every write that can change it.
+ */
+export const useDeliveryPreview = (enabled: boolean) => {
+  return useQuery({
+    queryKey: preferenceKeys.preview,
+    queryFn: async (): Promise<DeliveryPreviewDTO> => {
+      const { data } = await api.get<DeliveryPreviewDTO>(`${ENDPOINT}preview/`);
+      return data;
+    },
+    enabled,
+    ...RECONCILING_REFETCH,
+  });
+};
+
+/** Marks the preview stale. Called by every preference, digest, account e-mail,
+ *  language and device write — each changes what the preview answers. */
+export const invalidateDeliveryPreview = (queryClient: QueryClient): void => {
+  void queryClient.invalidateQueries({ queryKey: preferenceKeys.preview });
 };
 
 /**
@@ -106,6 +139,7 @@ export const useUpdatePreference = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: preferenceKeys.all });
+      invalidateDeliveryPreview(queryClient);
     },
   });
 };
@@ -153,6 +187,7 @@ export const useUpdateGroupChannel = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: preferenceKeys.all });
+      invalidateDeliveryPreview(queryClient);
     },
   });
 };
@@ -207,6 +242,7 @@ export const useRestoreRecommendedPreferences = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: preferenceKeys.all });
+      invalidateDeliveryPreview(queryClient);
     },
   });
 };

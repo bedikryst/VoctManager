@@ -56,7 +56,12 @@ from documents.views import (
 )
 from messaging.views import ProjectChannelViewSet, ThreadViewSet
 from notifications.emaillabs_webhook import EmailLabsTrackingWebhookView
-from notifications.views import NotificationPreferenceAPIView, NotificationViewSet, PushDeviceViewSet
+from notifications.views import (
+    NotificationDeliveryPreviewAPIView,
+    NotificationPreferenceAPIView,
+    NotificationViewSet,
+    PushDeviceViewSet,
+)
 from roster.views import (
     ArtistViewSet,
     AttendanceViewSet,
@@ -134,6 +139,8 @@ urlpatterns = [
     # These must be evaluated before the router to prevent 'preferences' / 'devices'
     # from being interpreted as a primary key by the NotificationViewSet detail route.
     path('api/notifications/preferences/', NotificationPreferenceAPIView.as_view(), name='notification-preferences'),
+    # Before the detail route, which would read 'preview' as a notification type.
+    path('api/notifications/preferences/preview/', NotificationDeliveryPreviewAPIView.as_view(), name='notification-preferences-preview'),
     path('api/notifications/preferences/<str:notification_type>/', NotificationPreferenceAPIView.as_view(), name='notification-preferences-detail'),
 
     # --- Push Device Endpoints (Web Push / VAPID) ---

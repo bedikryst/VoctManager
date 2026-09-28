@@ -69,6 +69,20 @@ export const NotificationService = {
     await api.post(`${NOTIFICATIONS_BASE_URL}mark-all-read/`, {});
   },
 
+  /** A tapped push spoke for these rows; the server reads the ones it may. */
+  markPushOpened: async (ids: readonly string[]): Promise<void> => {
+    await api.post(`${NOTIFICATIONS_BASE_URL}opened/`, { ids });
+  },
+
+  /** Which of `ids` are still unread for this reader. */
+  getUnreadAmong: async (ids: readonly string[]): Promise<string[]> => {
+    const response = await api.get<{ unread: string[] }>(
+      `${NOTIFICATIONS_BASE_URL}unread-ids/`,
+      { params: { among: ids.join(",") } },
+    );
+    return response.data.unread;
+  },
+
   sendToArtist: async (
     payload: SendToArtistPayload,
   ): Promise<SendToArtistResponse> => {

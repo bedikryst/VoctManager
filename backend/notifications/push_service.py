@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 from uuid import UUID
 
@@ -35,7 +35,7 @@ from pywebpush import WebPushException, webpush
 from core.permissions import user_is_manager
 
 from .dtos import WebPushSubscribeDTO
-from .models import DeviceType, NotificationLevel, PushDevice
+from .models import DeviceType, Notification, NotificationLevel, PushDevice
 from .push_payloads import PushPayload, PushPayloadBuilder
 
 logger = logging.getLogger(__name__)
@@ -151,7 +151,13 @@ class PushDispatcherService:
                 is_manager=target.is_manager,
             )
 
-        return cls._deliver(target, payload)
+        # The bell's own count (`NotificationViewSet.unread_count`), read as the
+        # push leaves: the worker sets the app-icon badge from it where the
+        # platform has one, before the panel is open to say otherwise.
+        unread = Notification.objects.filter(
+            recipient_id=int(target.user_id), is_read=False,
+        ).count()
+        return cls._deliver(target, replace(payload, unread=unread))
 
     @classmethod
     def send_test_push(cls, user) -> TestPushOutcome:

@@ -36,6 +36,7 @@ import { CopyDeskAccessRefusal } from "@/features/copydesk/components/CopyDeskAc
 import { SittingClosure } from "@/features/copydesk/components/SittingClosure";
 import { useCopyDeskSitting } from "@/features/copydesk/model/sittingStore";
 import type { CopyDeskContents } from "@/features/copydesk/types/copydesk.dto";
+import { usePushOpened } from "@/features/notifications/hooks/usePushOpened";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
@@ -56,6 +57,10 @@ export const CopyDeskShell = (): React.JSX.Element => {
   // a digest has been raised for it, and how it is being read. Leaving the desk
   // ends it — the proposals themselves are on the server either way.
   useEffect(() => resetSitting, [resetSitting]);
+
+  // The staff push about proposals opens here, not in the panel, and reads its
+  // bell row on arrival the same way.
+  usePushOpened();
 
   // `body:not(.admin-mode) *` hides the cursor outright — the rule belongs to
   // the public zone the panel app used to carry, and any full-screen route that

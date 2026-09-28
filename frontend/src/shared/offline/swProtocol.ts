@@ -164,5 +164,27 @@ export interface PushReceivedBroadcast {
 
 export type SwBroadcast = PushReceivedBroadcast;
 
+// ── a shown push, read back by the app ──────────────────────────────────────
+
+/**
+ * The query parameter a tapped push opens the app with: the in-app rows it
+ * spoke for, comma-separated. The app reads them as opened and strips it.
+ */
+export const PUSH_OPENED_PARAM = "n";
+
+/**
+ * The in-app rows a shown push speaks for, from its `Notification.data` — which
+ * the worker writes and the app reads back through
+ * `registration.getNotifications()`. Empty for a push with no row behind it (a
+ * channel message, the test push).
+ */
+export const trayNotificationIds = (data: unknown): string[] => {
+  if (typeof data !== "object" || data === null) return [];
+  const ids: unknown = (data as { notificationIds?: unknown }).notificationIds;
+  return Array.isArray(ids)
+    ? ids.filter((id): id is string => typeof id === "string" && id.length > 0)
+    : [];
+};
+
 export const cacheNameForKind = (kind: OfflineAssetKind): string =>
   kind === "audio" ? AUDIO_CACHE : SCORE_CACHE;

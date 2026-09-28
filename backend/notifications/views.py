@@ -1,5 +1,6 @@
 # notifications/views.py
 import logging
+import uuid
 
 from django.utils import timezone
 from rest_framework import status, views, viewsets
@@ -12,7 +13,7 @@ from rest_framework.response import Response
 from core.permissions import user_is_manager
 from core.request_utils import request_user
 
-from .delivery import PREFERENCE_GROUPS, default_channel_preferences
+from .delivery import default_channel_preferences, visible_preference_groups
 from .dtos import (
     CustomAdminMessageMetadata,
     NotificationCreateDTO,
@@ -27,17 +28,33 @@ from .models import (
     NotificationType,
     PushDevice,
 )
+from .preview import build_delivery_preview
 from .push_service import PushDispatcherService
 from .serializers import (
     NotificationPreferenceBulkUpdateSerializer,
     NotificationPreferenceUpdateSerializer,
     NotificationSerializer,
+    PushOpenedSerializer,
     SendToArtistSerializer,
     WebPushSubscribeSerializer,
 )
 from .services import NotificationPreferenceService
 
 logger = logging.getLogger(__name__)
+
+# Types whose unread state IS a panel surface, which marks the row read when the
+# reader acts on it: the invitation queue (answered), the delegation briefing
+# (acknowledged), the admin-message toast (dismissed). Opening their push lands
+# the reader in front of that surface, so it must not be read on arrival.
+_READ_BY_ITS_OWN_SURFACE: frozenset[str] = frozenset({
+    NotificationType.PROJECT_INVITATION,
+    NotificationType.REHEARSAL_DELEGATED,
+    NotificationType.CUSTOM_ADMIN_MESSAGE,
+})
+
+# The most ids one tray check reads. A phone's tray holds a handful of entries,
+# each speaking for a few rows; anything past this is not a tray.
+_TRAY_IDS_LIMIT = 200
 
 class NotificationCursorPagination(CursorPagination):
     """Cursor pagination for the bell feed. Keyed on ``-created_at`` so newly
@@ -78,6 +95,27 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
             {"unread_count": unread_qs.count(), "new_count": new_qs.count()},
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=False, methods=['get'], url_path='unread-ids')
+    def unread_ids(self, request: Request) -> Response:
+        """
+        Which of `?among=<comma-separated ids>` are still unread for this
+        reader. The panel asks it of the ids its device's tray entries speak
+        for, and closes every entry none of whose rows is unread — whether they
+        were read here, on another device, or by mark-all. An id that is not a
+        UUID or not this reader's is simply not unread.
+        """
+        among: list[uuid.UUID] = []
+        for raw in request.query_params.get('among', '').split(',')[:_TRAY_IDS_LIMIT]:
+            try:
+                among.append(uuid.UUID(raw.strip()))
+            except ValueError:
+                continue
+        unread = (
+            self.get_queryset().filter(id__in=among, is_read=False).values_list('id', flat=True)
+            if among else []
+        )
+        return Response({"unread": [str(nid) for nid in unread]}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='mark-seen')
     def mark_seen(self, request: Request) -> Response:
@@ -189,6 +227,25 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         )
         return Response({"status": "All notifications marked as read."}, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['post'], url_path='opened')
+    def opened(self, request: Request) -> Response:
+        """
+        The reader tapped a push; `ids` are the rows it spoke for. Reading the
+        push is reading them, except for a type whose own panel surface does
+        the reading (`_READ_BY_ITS_OWN_SURFACE`). Rows of another reader are
+        ignored rather than refused: the ids come from a URL.
+        """
+        serializer = PushOpenedSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        now = timezone.now()
+        marked = (
+            self.get_queryset()
+            .filter(id__in=serializer.validated_data['ids'], is_read=False)
+            .exclude(notification_type__in=_READ_BY_ITS_OWN_SURFACE)
+            .update(is_read=True, read_at=now, updated_at=now)
+        )
+        return Response({"marked": marked}, status=status.HTTP_200_OK)
+
 
 class PushDeviceViewSet(viewsets.ViewSet):
     """
@@ -295,17 +352,12 @@ class NotificationPreferenceAPIView(views.APIView):
         # control, so the hidden types are exactly the ungrouped ones and the
         # boot-time coherence assert refuses any overlap. Filtering here again
         # would only cast doubt on an invariant that is already enforced.
-        is_staff = bool(getattr(request.user, 'is_staff', False))
+        visible = visible_preference_groups(
+            is_manager=is_manager,
+            is_staff=bool(getattr(request.user, 'is_staff', False)),
+        )
 
-        for group in PREFERENCE_GROUPS:
-            if group.manager_only and not is_manager:
-                continue
-            # A narrower audience than manager: the copy desk's reviewer is
-            # whoever commits an accepted proposal, so every other manager would
-            # be shown a switch over a notification they cannot receive.
-            if group.staff_only and not is_staff:
-                continue
-
+        for group in visible:
             groups.append({
                 "id": group.id,
                 "manager_only": group.manager_only,
@@ -361,3 +413,15 @@ class NotificationPreferenceAPIView(views.APIView):
             items=serializer.validated_data["preferences"],
         )
         return Response(status=status.HTTP_200_OK)
+
+
+class NotificationDeliveryPreviewAPIView(views.APIView):
+    """
+    "What will I get?" — one composed example per event the reader's settings
+    govern, with what push and e-mail each do with it and why. Composed and
+    decided on the server (see notifications.preview); the client renders.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        return Response(build_delivery_preview(request_user(request)))

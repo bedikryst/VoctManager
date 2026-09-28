@@ -5,6 +5,9 @@
  * Two responsibilities:
  *  1. Web Push — renders structured payloads (title, body, level, deep-link URL,
  *     quick-actions), routes notification clicks, recovers from VAPID rotation.
+ *     Each entry keeps the in-app rows it speaks for, so a tap opens the app
+ *     with them (`?n=`) and the app can close entries it has read; the payload's
+ *     unread count sets the app-icon badge where the platform has one.
  *  2. Real offline — precaches the app shell so the PWA *boots* without network,
  *     runtime-caches practice audio (range-served), score PDFs, the markings
  *     drawn on them and the personal dashboard reads, and exposes a message
@@ -44,6 +47,8 @@ import {
   isAnnotationListPath,
   isBinderMapPath,
   isBinderPdfPath,
+  PUSH_OPENED_PARAM,
+  trayNotificationIds,
   type OfflineAsset,
   type OfflineSwRequest,
   type OfflineSwReply,
@@ -75,9 +80,17 @@ interface PushPayload {
   lang?: string;
   renotify?: boolean;
   actions?: PushAction[];
+  /** The in-app rows this push speaks for; absent when it has none. */
+  notificationIds?: string[];
+  /** The recipient's unread count as the push left the server. */
+  unread?: number;
 }
 
 const FALLBACK_URL = "/panel";
+// How many rows one tray entry answers for once replacements under its tag have
+// merged into it — enough for any real burst, short enough for the URL a tap
+// opens (a UUID is 37 characters with its comma).
+const MAX_TRAY_IDS = 50;
 const DEFAULT_TAG = "voct-push";
 const ICON = "icons/icon-192.png";
 // Monochrome, transparent badge for the Android status bar (the colour logo
@@ -392,12 +405,13 @@ self.addEventListener("push", (event) => {
     if (a.url) actionUrls[a.action] = a.url;
   }
 
-  const options: ServiceWorkerNotificationOptions = {
+  const tag = payload.tag ?? DEFAULT_TAG;
+  const options = (notificationIds: string[]): ServiceWorkerNotificationOptions => ({
     body: payload.body ?? "",
     icon: ICON,
     badge: BADGE,
     lang: payload.lang ?? "pl",
-    tag: payload.tag ?? DEFAULT_TAG,
+    tag,
     renotify: payload.renotify ?? true,
     requireInteraction: isUrgent,
     silent: false,
@@ -408,23 +422,82 @@ self.addEventListener("push", (event) => {
       actionUrls,
       type: payload.type ?? "GENERIC",
       level: payload.level ?? "INFO",
-      tag: payload.tag ?? DEFAULT_TAG,
+      tag,
+      notificationIds,
     },
-  };
+  });
 
   // Showing the banner is only half the delivery: an app already open in front
   // of the reader must reconcile now, not on its next poll tick — otherwise the
   // notification announces a message the panel still refuses to show.
   event.waitUntil(
     Promise.all([
-      self.registration.showNotification(title, options),
+      carriedIds(tag, payload.notificationIds ?? []).then((ids) =>
+        self.registration.showNotification(title, options(ids)),
+      ),
       broadcast({
         type: "VOCT_PUSH_RECEIVED",
         notificationType: payload.type ?? "GENERIC",
       }),
+      setAppBadge(payload.unread),
     ]),
   );
 });
+
+/**
+ * The rows an entry answers for once it replaces the one under its tag. The
+ * tray keeps one entry per tag, so the entry left standing speaks for what the
+ * replaced one did: a tap on it reads them all, and the app closes it only once
+ * none of them is unread.
+ *
+ * Never rejects. The banner waits on it, and a push event that ends without a
+ * banner gets the browser's generic notice on Chrome and counts against the
+ * subscription on Safari; a tray that cannot be listed costs only the merge.
+ */
+async function carriedIds(tag: string, ids: readonly string[]): Promise<string[]> {
+  const merged = new Set(ids);
+  try {
+    for (const entry of await self.registration.getNotifications({ tag })) {
+      for (const id of trayNotificationIds(entry.data)) merged.add(id);
+    }
+  } catch {
+    // Shown with its own rows only.
+  }
+  return [...merged].slice(0, MAX_TRAY_IDS);
+}
+
+/**
+ * The app-icon count, where the platform has one: an installed app on iOS 16.4+
+ * and desktop Chrome/Edge. Chrome on Android has no Badging API — its launcher
+ * dot counts this app's tray entries, which the app keeps in step instead.
+ */
+async function setAppBadge(unread: number | undefined): Promise<void> {
+  if (typeof unread !== "number" || !("setAppBadge" in self.navigator)) return;
+  try {
+    await (unread > 0 ? self.navigator.setAppBadge(unread) : self.navigator.clearAppBadge());
+  } catch {
+    // A refused badge (no notification permission on iOS) is only a missing count.
+  }
+}
+
+/**
+ * The URL a tap opens, naming the rows the push spoke for so the app reads them
+ * on arrival. Only for this origin: a destination elsewhere (a CTA link) is
+ * never handed the reader's notification ids.
+ */
+function withOpenedIds(targetUrl: string, ids: readonly string[]): string {
+  if (ids.length === 0) return targetUrl;
+  let url: URL;
+  try {
+    // Not `URL.canParse`: Safari before 17 lacks it, and iOS 16.4 is a push target.
+    url = new URL(targetUrl, self.location.origin);
+  } catch {
+    return targetUrl;
+  }
+  if (url.origin !== self.location.origin) return targetUrl;
+  url.searchParams.set(PUSH_OPENED_PARAM, ids.join(","));
+  return `${url.pathname}${url.search}${url.hash}`;
+}
 
 /** Fan a worker-side event out to every open window of this origin. */
 async function broadcast(message: SwBroadcast): Promise<void> {
@@ -457,7 +530,9 @@ self.addEventListener("notificationclick", (event) => {
         ? data.url
         : FALLBACK_URL;
 
-  event.waitUntil(focusOrOpen(targetUrl));
+  event.waitUntil(
+    focusOrOpen(withOpenedIds(targetUrl, trayNotificationIds(event.notification.data))),
+  );
 });
 
 self.addEventListener("pushsubscriptionchange", (rawEvent) => {

@@ -5,6 +5,8 @@
  * "materials and reminders") is one email/push decision; the per-event rows behind
  * it stay reachable under a details disclosure for anyone who wants that grain.
  * Turning a recommended channel off says what it costs instead of blocking it.
+ * "Co dostanę?" beside the description opens examples of what these settings
+ * actually deliver, composed by the server.
  * @architecture Enterprise SaaS 2026
  * @module settings/NotificationsTab
  */
@@ -16,6 +18,7 @@ import {
   BellRing,
   CheckCircle2,
   ChevronDown,
+  Eye,
   Inbox,
   Info,
   RotateCcw,
@@ -55,6 +58,7 @@ import {
   type NotificationGroupId,
   type NotificationPreferenceGroup,
 } from "@/features/settings/constants/notificationPreferenceGroups";
+import { DeliveryPreviewModal } from "@/features/settings/components/DeliveryPreviewModal";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
@@ -281,6 +285,7 @@ export const NotificationsTab: React.FC = () => {
 
   const [primerOpen, setPrimerOpen] = useState(false);
   const [unsubConfirmOpen, setUnsubConfirmOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   // Every group's control is visible from the start — it is the decision the page
   // exists for. The per-event rows behind it open on request, so the ledger reads
   // as three choices (five for a manager) rather than a wall of near-synonyms.
@@ -336,6 +341,13 @@ export const NotificationsTab: React.FC = () => {
     heroVariant === "subscribed" || heroVariant === "ready" || emailStandsIn;
 
   const groups = groupNotificationPreferences(matrix);
+
+  // The digest is the shape of the team group's e-mail, so it has something to
+  // shape only while at least one of those types is e-mailed. The team group is
+  // itself manager-only, which keeps the panel off every other reader's ledger.
+  const teamEmailOn =
+    groups.find((group) => group.id === "team")?.preferences.some((pref) => pref.email_enabled) ??
+    false;
 
   const offerAnswered = Boolean(settings?.profile?.push_email_offer_seen_at);
 
@@ -416,9 +428,18 @@ export const NotificationsTab: React.FC = () => {
     <Tooltip.Provider delayDuration={200}>
       <GlassCard variant="light" isHoverable={false}>
         <SectionHeader title={t("settings.notifications.title")} icon={<Bell className="w-5 h-5" />} />
-        <Text color="muted" className="mt-1 mb-6">
-          {t("settings.notifications.description")}
-        </Text>
+        <div className="mt-1 mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+          <Text color="muted">{t("settings.notifications.description")}</Text>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setPreviewOpen(true)}
+            leftIcon={<Eye className="w-3.5 h-3.5" aria-hidden="true" />}
+            className="self-start shrink-0"
+          >
+            {t("settings.notifications.preview.open")}
+          </Button>
+        </div>
 
         <PushHero
           variant={heroVariant}
@@ -500,12 +521,13 @@ export const NotificationsTab: React.FC = () => {
               isRestoring={restoreMutation.isPending && restoringGroup === group.id}
             />
           ))}
-          {/* Team operations is the last group, so the digest lands as the
-              ledger's true footer — batching exactly the routine team alerts
-              listed directly above it. */}
-          <DigestPanel />
+          {/* Team operations is the last group, so the digest lands directly
+              beneath the alerts whose e-mail it shapes. */}
+          {teamEmailOn && <DigestPanel />}
         </div>
       </GlassCard>
+
+      <DeliveryPreviewModal isOpen={previewOpen} onClose={() => setPreviewOpen(false)} />
 
       <PushPermissionPrimer
         isOpen={primerOpen}
@@ -973,17 +995,20 @@ const PushHero: React.FC<PushHeroProps> = ({
 };
 
 /**
- * Daily-digest control, bound directly beneath the team-operations group: those
- * routine INFO alerts (attendance, RSVPs, absence requests) are the very events it
- * batches into one email a day instead of a real-time flood. Manager-only — and
- * the team group is itself manager-only, so the two always appear together.
+ * The shape of the team group's e-mail, bound directly beneath that group and
+ * rendered only while one of its types is e-mailed. On, the routine reports
+ * arrive as one e-mail a day at the chosen hour; off, each one arrives on its
+ * own, at once. A withdrawal and an absence request for a rehearsal within 48
+ * hours never wait for it. Push is not governed here at all — it is always
+ * immediate — and the panel says so: a batching switch beside a push column
+ * reads as batching both.
  */
 const DigestPanel: React.FC = () => {
   const { t } = useTranslation();
   const { data: user } = useSettingsData();
   const updateDigest = useUpdateDigestSettings();
 
-  if (!user?.profile?.is_manager) return null;
+  if (!user?.profile) return null;
 
   const enabled = user.profile.digest_enabled ?? true;
   const hour = user.profile.digest_hour ?? 8;
@@ -1000,7 +1025,12 @@ const DigestPanel: React.FC = () => {
             </Text>
           </div>
           <Text size="xs" color="muted" className="mt-1 leading-relaxed">
-            {t("settings.notifications.digest.description")}
+            {enabled
+              ? t("settings.notifications.digest.description")
+              : t("settings.notifications.digest.description_off")}
+          </Text>
+          <Text size="xs" color="muted" className="mt-1 leading-relaxed">
+            {t("settings.notifications.digest.push_note")}
           </Text>
         </div>
         <NotificationSwitch

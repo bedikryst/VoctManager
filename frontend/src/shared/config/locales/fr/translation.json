@@ -6066,8 +6066,10 @@
         "title": "Désactiver les notifications push ?"
       },
       "digest": {
-        "title": "Récapitulatif quotidien",
-        "description": "Les mises à jour de routine (présences, réponses, demandes d’absence) sont regroupées en un e-mail par jour. Les éléments urgents arrivent toujours immédiatement.",
+        "title": "Une fois par jour, en un seul e-mail",
+        "description": "Les confirmations, les présences annoncées et les demandes d’absence pour des dates plus lointaines sont regroupées dans un seul e-mail, à l’heure choisie. Les désistements et les demandes d’absence pour une répétition qui commence dans les 48 heures partent immédiatement.",
+        "description_off": "Chaque événement dont l’e-mail est activé arrive dans un message séparé, immédiatement.",
+        "push_note": "Le push n’est pas concerné : il arrive toujours immédiatement.",
         "toggle_label": "Récapitulatif quotidien par e-mail",
         "hour_label": "Heure d’envoi",
         "timezone_note": "Dans votre fuseau horaire ({{timezone}})"
@@ -6107,11 +6109,11 @@
         "PIECE_CASTING_UPDATED": "Votre distribution dans une œuvre change",
         "MATERIAL_UPLOADED": "De nouvelles partitions ou audios sont ajoutées",
         "CUSTOM_ADMIN_MESSAGE": "Un message direct de la direction",
-        "ABSENCE_APPROVED": "Votre demande d'absence est acceptée",
-        "ABSENCE_REJECTED": "Votre demande d'absence est refusée",
-        "PARTICIPATION_RESPONSE": "Un choriste répond à une invitation",
-        "ATTENDANCE_SUBMITTED": "Un choriste met à jour sa présence",
-        "ABSENCE_REQUESTED": "Un choriste demande une absence",
+        "ABSENCE_APPROVED": "Un responsable accepte votre demande d'absence",
+        "ABSENCE_REJECTED": "Un responsable n'accepte pas votre demande d'absence",
+        "PARTICIPATION_RESPONSE": "Quelqu'un de l'ensemble confirme sa participation à un projet ou se désiste. Un désistement n'attend pas le récapitulatif quotidien.",
+        "ATTENDANCE_SUBMITTED": "Quelqu'un de l'ensemble indique sa présence à une répétition ou un retard. Plusieurs annonces d'affilée arrivent en un seul push.",
+        "ABSENCE_REQUESTED": "Quelqu'un de l'ensemble demande à être excusé d'une répétition. Si elle commence dans les 48 heures, la demande n'attend pas le récapitulatif quotidien.",
         "SYSTEM_ALERT": "Maintenance et avis système importants",
         "ANNOUNCEMENT_PENDING": "La file d'un projet attend et les chanteurs l'ignorent encore",
         "SITE_COPY_PROPOSED": "Un membre de la rédaction a proposé des modifications aux textes du site",
@@ -6136,14 +6138,14 @@
       },
       "customized_badge": "Modifié",
       "groups_desc": {
-        "commitments": "Invitations, changements d'horaire des répétitions et des concerts, et vos propres parties.",
-        "requests": "Les décisions sur les absences que vous demandez vous-même. Sans e-mail : vous déposez la demande dans l'application, et c'est là que vous en verrez la réponse.",
-        "messages": "Quelqu'un vous écrit — une réponse dans une conversation ou un message de la direction.",
-        "materials": "Nouvelles partitions et nouveaux enregistrements, ainsi que les rappels peu avant une répétition ou un concert.",
-        "safety_net": "La seule notification portant sur ce qui n'a pas encore été fait : des modifications attendent dans la file et les choristes l'ignorent toujours. C'est pourquoi elle part aussi par e-mail.",
-        "site_copy": "Quelqu'un est passé par la rédaction des textes du site et a laissé des propositions à relire. Un message par séance, et non par modification — c'est pourquoi il part aussi par e-mail.",
-        "debriefs": "L'assistant du chef rédige le compte rendu de la répétition. Il s'écrit une seule fois, et uniquement pour une soirée dirigée par quelqu'un d'autre — d'où son arrivée immédiate plutôt que dans le résumé quotidien, et son envoi par e-mail.",
-        "team": "Les réponses aux invitations, les mises à jour de présence et les demandes d'absence. Les mêmes événements que rassemble le résumé quotidien ci-dessous."
+        "commitments": "Invitations, répétitions nouvelles, déplacées ou annulées, changements dans un projet et vos propres parties. Le push et l'e-mail arrivent immédiatement, et plusieurs changements annoncés ensemble arrivent en un seul message.",
+        "requests": "La réponse à votre demande d'absence — accord ou refus. Le push arrive immédiatement. L'e-mail est désactivé par défaut, car vous déposez la demande dans l'application et y revenez pour la réponse ; si aucun de vos appareils ne reçoit le push, nous l'envoyons par e-mail.",
+        "messages": "Quelqu'un vous écrit — une réponse dans une conversation ou un message de la direction. Le push et l'e-mail arrivent immédiatement.",
+        "materials": "Nouvelles partitions et nouveaux enregistrements, ainsi que les rappels avant une répétition ou un concert. Le push arrive immédiatement ; l'e-mail est désactivé par défaut. Si aucun de vos appareils ne reçoit le push, les rappels partent par e-mail et les nouveaux documents apparaissent dans l'application.",
+        "safety_net": "Des modifications attendent dans la file et les choristes l'ignorent toujours. C'est la seule notification portant sur ce qui n'a pas encore été fait, c'est pourquoi elle arrive par e-mail en plus du push.",
+        "site_copy": "Quelqu'un est passé par la rédaction des textes du site et a laissé des propositions à relire. Un message par séance, et non par modification — le push et l'e-mail arrivent dès la fin de la séance.",
+        "debriefs": "L'assistant du chef rédige le compte rendu de la répétition. Il s'écrit une seule fois, et uniquement pour une soirée dirigée par quelqu'un d'autre, c'est pourquoi le push et l'e-mail arrivent immédiatement plutôt que dans le récapitulatif quotidien.",
+        "team": "Les réponses aux invitations, les présences annoncées et les demandes d'absence. Le push arrive immédiatement, et plusieurs annonces envoyées d'affilée par une même personne arrivent en un seul. L'e-mail, s'il est activé, arrive une fois par jour dans le récapitulatif ou un par un — selon le réglage sous ce groupe."
       },
       "groups_email_off": {
         "commitments": "Vous ne recevrez pas d'e-mail lorsqu'un horaire de répétition ou de concert change. L'application affiche toujours tout — mais seulement si vous l'ouvrez.",
@@ -6155,7 +6157,50 @@
       "details_show": "Détails ({{n}})",
       "details_hide": "Masquer les détails",
       "partial_badge": "Partiel",
-      "partial_hint": "Certaines notifications de ce groupe sont réglées différemment. L’interrupteur à côté les active toutes."
+      "partial_hint": "Certaines notifications de ce groupe sont réglées différemment. L’interrupteur à côté les active toutes.",
+      "preview": {
+        "open": "Que vais-je recevoir ?",
+        "title": "Que vais-je recevoir ?",
+        "subtitle": "Exemples selon vos réglages",
+        "tabs_label": "Canal",
+        "tab_push": "Push",
+        "tab_email": "E-mail",
+        "devices_one": "Le push atteint {{count}} de vos appareils.",
+        "devices_many": "Le push atteint {{count}} de vos appareils.",
+        "devices_other": "Le push atteint {{count}} de vos appareils.",
+        "devices_none": "Aucun de vos appareils ne reçoit le push pour l’instant. Activez-le en haut de cette page, sur l’appareil où vous voulez le recevoir.",
+        "get": "Vous recevrez",
+        "get_email": "Vous recevrez immédiatement",
+        "get_none": "Rien ne vous parviendra par ce canal.",
+        "digest": "Dans le récapitulatif quotidien à {{hour}}",
+        "digest_note": "Un e-mail par jour avec tous ces événements.",
+        "not_get": "Vous ne recevrez pas",
+        "app_name": "VoctManager",
+        "now": "maintenant",
+        "stand_in": "À la place du push — aucun de vos appareils ne le reçoit.",
+        "error": "Impossible de charger les exemples. Réessayez dans un instant.",
+        "cases": {
+          "accepted": "confirmation",
+          "declined": "désistement",
+          "single": "une annonce",
+          "fold": "plusieurs annonces d’affilée",
+          "soon": "répétition dans les 48 heures",
+          "later": "répétition plus lointaine"
+        },
+        "push_reason": {
+          "off": "Désactivé dans vos réglages",
+          "no_device": "Aucun de vos appareils ne reçoit le push",
+          "no_device_email": "Aucun de vos appareils ne reçoit le push — il arrivera par e-mail",
+          "never": "Dans l’application uniquement"
+        },
+        "email_reason": {
+          "off": "Désactivé dans vos réglages",
+          "undeliverable": "Le courrier vers votre adresse revient non distribué",
+          "opted_out": "Les e-mails de notification sont désactivés",
+          "not_activated": "Votre compte n’est pas encore actif",
+          "never": "Dans l’application uniquement"
+        }
+      }
     },
     "page": {
       "highlight": "du compte",

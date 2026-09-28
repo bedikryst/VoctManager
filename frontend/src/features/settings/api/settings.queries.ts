@@ -8,6 +8,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { changeAppLanguage } from "@/shared/config/i18n";
+import { invalidateDeliveryPreview } from "@/features/notifications/api/preferences";
 import { settingsService } from "./settings.service";
 import {
   UpdatePreferencesPayload,
@@ -47,6 +48,8 @@ export const useUpdatePreferences = () => {
       if (data.profile?.language) {
         changeAppLanguage(data.profile.language);
       }
+      // Examples are composed in the reader's language and dated in their zone.
+      invalidateDeliveryPreview(queryClient);
     },
   });
 };
@@ -76,6 +79,9 @@ export const useUpdateDigestSettings = () => {
     onSuccess: (data) => {
       queryClient.setQueryData(settingsKeys.data, data);
     },
+    // The digest and the account's e-mail switch both change what the
+    // delivery preview answers.
+    onSettled: () => invalidateDeliveryPreview(queryClient),
   });
 };
 

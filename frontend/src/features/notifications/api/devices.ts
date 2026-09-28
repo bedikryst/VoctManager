@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/shared/api/api";
 import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
 import type { PushDeviceSummaryDTO, WebPushSubscribeDTO } from "../types/notifications.dto";
+import { invalidateDeliveryPreview } from "./preferences";
 
 export const PUSH_DEVICE_SUMMARY_KEY = ["notifications", "push-devices"] as const;
 
@@ -46,7 +47,10 @@ export const useRegisterPushDevice = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: registerPushDevice,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: PUSH_DEVICE_SUMMARY_KEY }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: PUSH_DEVICE_SUMMARY_KEY });
+      invalidateDeliveryPreview(queryClient);
+    },
   });
 };
 
@@ -56,7 +60,10 @@ export const useUnregisterPushDevice = () => {
     mutationFn: async (endpoint: string) => {
       await api.delete(`/api/notifications/devices/${encodeURIComponent(endpoint)}/`);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: PUSH_DEVICE_SUMMARY_KEY }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: PUSH_DEVICE_SUMMARY_KEY });
+      invalidateDeliveryPreview(queryClient);
+    },
   });
 };
 

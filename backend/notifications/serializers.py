@@ -41,6 +41,13 @@ class NotificationPreferenceBulkUpdateSerializer(serializers.Serializer):
     preferences = NotificationPreferenceUpdateSerializer(many=True, allow_empty=False)
 
 
+class PushOpenedSerializer(serializers.Serializer):
+    """The in-app rows a tapped push spoke for (its `notificationIds`)."""
+    ids = serializers.ListField(
+        child=serializers.UUIDField(), allow_empty=False, max_length=100,
+    )
+
+
 class SendToArtistSerializer(serializers.Serializer):
     """Validates manager → artist direct message payload."""
     artist_id = serializers.UUIDField()

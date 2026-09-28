@@ -39,7 +39,7 @@ from outreach.models import (
 )
 from outreach.services import NoticeListService
 
-from .delivery import default_channel_preferences
+from .delivery import PREFERENCE_GROUPS, default_channel_preferences
 from .email_service import EmailDispatcherService, EmailType
 from .message_content import (
     _COMPOSERS,
@@ -3502,3 +3502,276 @@ class RouterPushFoldTests(TestCase):
         )
         hold.assert_not_called()
         push.assert_called_once()
+
+
+class DeliveryPreviewTests(APITestCase):
+    """"What will I get?" — every example the preview composes, and the outcome it
+    reports for each channel, answered by the router's own rules."""
+
+    URL = "/api/notifications/preferences/preview/"
+
+    def setUp(self) -> None:
+        self.manager = User.objects.create_user(
+            username="preview-mgr", email="preview-mgr@test.pl", password="pw123456"
+        )
+        self.profile = UserProfile.objects.create(
+            user=self.manager, role=AppRole.MANAGER, language="en", digest_enabled=True,
+        )
+        self.artist = User.objects.create_user(
+            username="preview-artist", email="preview-artist@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.artist, role=AppRole.ARTIST, language="en")
+
+    def _add_device(self, user: Any) -> None:
+        PushDevice.objects.create(
+            user=user,
+            registration_token=f"https://push.example/{user.pk}",
+            p256dh_key="key",
+            auth_key="auth",
+            device_type=DeviceType.WEB,
+        )
+
+    def _preview(self, user: Any) -> dict[str, Any]:
+        self.client.force_authenticate(user)
+        with self.assertNoLogs("notifications.message_content", level="WARNING"):
+            resp = self.client.get(self.URL)
+        self.assertEqual(resp.status_code, 200)
+        return cast(dict[str, Any], resp.data)
+
+    @staticmethod
+    def _example(preview: dict[str, Any], ntype: str, case: str = "") -> dict[str, Any]:
+        for group in preview["groups"]:
+            for example in group["examples"]:
+                if example["notification_type"] == ntype and example["case"] == case:
+                    return cast(dict[str, Any], example)
+        raise AssertionError(f"no example for {ntype}:{case}")
+
+    def test_groups_mirror_the_ledger_the_reader_is_shown(self) -> None:
+        for user in (self.manager, self.artist):
+            self.client.force_authenticate(user)
+            ledger = self.client.get("/api/notifications/preferences/").data
+            preview = self._preview(user)
+            self.assertEqual(
+                [group["id"] for group in preview["groups"]],
+                [group["id"] for group in ledger["groups"]],
+            )
+
+    def test_a_decline_is_e_mailed_at_once_while_a_confirmation_waits_for_the_digest(self) -> None:
+        self._add_device(self.manager)
+        preview = self._preview(self.manager)
+        declined = self._example(preview, NotificationType.PARTICIPATION_RESPONSE, "declined")
+        accepted = self._example(preview, NotificationType.PARTICIPATION_RESPONSE, "accepted")
+        self.assertEqual(declined["email"]["status"], "now")
+        self.assertTrue(declined["email"]["delivered"])
+        self.assertEqual(accepted["email"]["status"], "digest")
+        self.assertFalse(accepted["email"]["delivered"])
+        # The digest shapes e-mail only; both push at once.
+        self.assertEqual(declined["push"]["status"], "now")
+        self.assertEqual(accepted["push"]["status"], "now")
+
+    def test_an_absence_inside_48_hours_skips_the_digest(self) -> None:
+        preview = self._preview(self.manager)
+        self.assertEqual(
+            self._example(preview, NotificationType.ABSENCE_REQUESTED, "soon")["email"]["status"],
+            "now",
+        )
+        self.assertEqual(
+            self._example(preview, NotificationType.ABSENCE_REQUESTED, "later")["email"]["status"],
+            "digest",
+        )
+
+    def test_with_the_digest_off_every_team_e_mail_goes_at_once(self) -> None:
+        self.profile.digest_enabled = False
+        self.profile.save(update_fields=["digest_enabled"])
+        preview = self._preview(self.manager)
+        team = next(group for group in preview["groups"] if group["id"] == "team")
+        self.assertEqual(
+            {example["email"]["status"] for example in team["examples"] if example["email"]},
+            {"now"},
+        )
+
+    def test_the_folded_push_is_its_own_example_and_push_only(self) -> None:
+        self._add_device(self.manager)
+        fold = self._example(self._preview(self.manager), NotificationType.ATTENDANCE_SUBMITTED, "fold")
+        self.assertIsNone(fold["email"])
+        self.assertEqual(fold["push"]["status"], "now")
+        self.assertIn("4", fold["push"]["title"])
+
+    def test_without_a_device_a_push_first_type_is_e_mailed_instead(self) -> None:
+        preview = self._preview(self.artist)
+        approved = self._example(preview, NotificationType.ABSENCE_APPROVED)
+        self.assertEqual(approved["push"]["status"], "no_device_email")
+        self.assertEqual(approved["email"]["status"], "stand_in")
+        self.assertTrue(approved["email"]["delivered"])
+        # Material notices never carry a reserve e-mail.
+        material = self._example(preview, NotificationType.MATERIAL_UPLOADED)
+        self.assertEqual(material["push"]["status"], "no_device")
+        self.assertEqual(material["email"]["status"], "off")
+        # A type e-mailed anyway is simply unreached by push.
+        invitation = self._example(preview, NotificationType.PROJECT_INVITATION)
+        self.assertEqual(invitation["push"]["status"], "no_device")
+        self.assertEqual(invitation["email"]["status"], "now")
+        self.assertEqual(preview["devices"], 0)
+
+    def test_a_switched_off_push_says_so_even_with_a_device(self) -> None:
+        self._add_device(self.artist)
+        NotificationPreference.objects.create(
+            user=self.artist, notification_type=NotificationType.REHEARSAL_REMINDER,
+            email_enabled=False, push_enabled=False,
+        )
+        preview = self._preview(self.artist)
+        reminder = self._example(preview, NotificationType.REHEARSAL_REMINDER)
+        self.assertEqual(reminder["push"]["status"], "off")
+        self.assertEqual(reminder["email"]["status"], "off")
+        self.assertEqual(preview["devices"], 1)
+
+    def test_the_account_block_names_itself_only_where_an_e_mail_would_go(self) -> None:
+        # The instance the authenticated user carries, not a fresh read of it.
+        artist_profile = self.artist.profile
+        artist_profile.email_notifications_enabled = False
+        artist_profile.save(update_fields=["email_notifications_enabled"])
+        preview = self._preview(self.artist)
+        self.assertEqual(
+            self._example(preview, NotificationType.PROJECT_INVITATION)["email"]["status"],
+            "opted_out",
+        )
+        # No stand-in without an inbox: the push-first type is simply unreached.
+        approved = self._example(preview, NotificationType.ABSENCE_APPROVED)
+        self.assertEqual(approved["push"]["status"], "no_device")
+        self.assertEqual(approved["email"]["status"], "off")
+
+    def test_reading_the_preview_mints_no_preference_rows(self) -> None:
+        self._preview(self.manager)
+        self.assertFalse(NotificationPreference.objects.filter(user=self.manager).exists())
+
+    def test_examples_are_composed_in_the_readers_language(self) -> None:
+        self.profile.language = "pl"
+        self.profile.save(update_fields=["language"])
+        declined = self._example(
+            self._preview(self.manager), NotificationType.PARTICIPATION_RESPONSE, "declined",
+        )
+        self.assertIn("Nieszpory adwentowe", declined["email"]["subject"])
+
+    def test_every_type_a_reader_can_be_shown_has_a_composed_example(self) -> None:
+        # A staff manager is shown every group. A grouped type without a sample
+        # would fail the whole preview for everyone who sees its group.
+        self.manager.is_staff = True
+        self.manager.save(update_fields=["is_staff"])
+        preview = self._preview(self.manager)
+        shown = {
+            example["notification_type"]
+            for group in preview["groups"]
+            for example in group["examples"]
+        }
+        self.assertEqual(shown, {ntype for group in PREFERENCE_GROUPS for ntype in group.types})
+        for group in preview["groups"]:
+            for example in group["examples"]:
+                self.assertTrue(example["push"]["title"], example["notification_type"])
+
+
+class TrayAndBellTests(APITestCase):
+    """A push names the in-app rows it speaks for and the unread count it left
+    with; opening it reads those rows, unless a panel surface does the reading."""
+
+    PUSH = "notifications.router.send_push_notification_task.delay"
+    EMAIL = "notifications.router.send_notification_email_task.delay"
+    WEBPUSH = "notifications.push_service.webpush"
+    OPENED_URL = "/api/notifications/opened/"
+
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(
+            username="tray", email="tray@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST, language="en")
+
+    def _notify(self, ntype: str = NotificationType.REHEARSAL_REMINDER, **kwargs: Any) -> Notification:
+        return Notification.objects.create(
+            recipient=kwargs.pop("recipient", self.user), notification_type=ntype,
+            level=NotificationLevel.INFO, metadata={}, **kwargs,
+        )
+
+    def test_a_routed_push_names_its_row(self) -> None:
+        from notifications.router import NotificationRouter
+
+        with patch(self.PUSH) as push, patch(self.EMAIL):
+            NotificationRouter.route(
+                recipient_id=str(self.user.id),
+                notification_type=NotificationType.REHEARSAL_REMINDER,
+                metadata={"project_name": "Requiem"},
+                notification_id="n1",
+            )
+        self.assertEqual(push.call_args.kwargs["metadata"]["notification_ids"], ["n1"])
+
+    def test_the_payload_carries_ids_and_the_unread_count(self) -> None:
+        self._notify()
+        self._notify(is_read=True)
+        PushDevice.objects.create(
+            user=self.user, registration_token="https://push.example/tray",
+            p256dh_key="key", auth_key="auth", device_type=DeviceType.WEB,
+        )
+        with patch(self.WEBPUSH) as send:
+            PushDispatcherService.dispatch_to_user(
+                recipient_id=str(self.user.id),
+                notification_type=NotificationType.REHEARSAL_REMINDER,
+                metadata={"project_name": "Requiem", "notification_ids": ["n1", "n2"]},
+            )
+        payload = json.loads(send.call_args.kwargs["data"])
+        self.assertEqual(payload["notificationIds"], ["n1", "n2"])
+        self.assertEqual(payload["unread"], 1)
+
+    def test_the_test_push_leaves_the_badge_alone(self) -> None:
+        payload = PushPayload(
+            title="t", body="b", url="/panel", tag="x", notification_type="SYSTEM_TEST",
+            level=NotificationLevel.INFO,
+        ).to_dict()
+        self.assertNotIn("unread", payload)
+        self.assertNotIn("notificationIds", payload)
+
+    def test_opening_a_push_reads_the_rows_it_spoke_for(self) -> None:
+        first, second, untouched = self._notify(), self._notify(), self._notify()
+        self.client.force_authenticate(self.user)
+        resp = self.client.post(
+            self.OPENED_URL, {"ids": [str(first.id), str(second.id)]}, format="json",
+        )
+        self.assertEqual((resp.status_code, resp.data["marked"]), (200, 2))
+        first.refresh_from_db()
+        untouched.refresh_from_db()
+        self.assertTrue(first.is_read)
+        self.assertIsNotNone(first.read_at)
+        self.assertFalse(untouched.is_read)
+
+    def test_a_row_read_by_its_own_surface_stays_unread(self) -> None:
+        invitation = self._notify(NotificationType.PROJECT_INVITATION)
+        message = self._notify(NotificationType.CUSTOM_ADMIN_MESSAGE)
+        self.client.force_authenticate(self.user)
+        self.client.post(
+            self.OPENED_URL, {"ids": [str(invitation.id), str(message.id)]}, format="json",
+        )
+        self.assertFalse(Notification.objects.filter(is_read=True).exists())
+
+    def test_another_readers_rows_are_ignored(self) -> None:
+        other = User.objects.create_user(
+            username="tray-other", email="tray-other@test.pl", password="pw123456"
+        )
+        theirs = self._notify(recipient=other)
+        self.client.force_authenticate(self.user)
+        resp = self.client.post(self.OPENED_URL, {"ids": [str(theirs.id)]}, format="json")
+        self.assertEqual(resp.data["marked"], 0)
+        theirs.refresh_from_db()
+        self.assertFalse(theirs.is_read)
+
+    def test_ids_must_be_uuids(self) -> None:
+        self.client.force_authenticate(self.user)
+        resp = self.client.post(self.OPENED_URL, {"ids": ["n1"]}, format="json")
+        self.assertEqual(resp.status_code, 400)
+
+    def test_the_tray_check_names_only_this_readers_unread_rows(self) -> None:
+        unread, read = self._notify(), self._notify(is_read=True)
+        other = User.objects.create_user(
+            username="tray-check", email="tray-check@test.pl", password="pw123456"
+        )
+        theirs = self._notify(recipient=other)
+        self.client.force_authenticate(self.user)
+        among = ",".join([str(unread.id), str(read.id), str(theirs.id), "not-an-id"])
+        resp = self.client.get("/api/notifications/unread-ids/", {"among": among})
+        self.assertEqual((resp.status_code, resp.data["unread"]), (200, [str(unread.id)]))

@@ -102,6 +102,19 @@ export const useMarkAllNotificationsRead = () => {
   });
 };
 
+// 4b. Mutation: the rows a tapped push spoke for (`?n=`), read on arrival. The
+//     server skips the types a panel surface reads itself.
+export const useMarkPushOpened = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: readonly string[]) => NotificationService.markPushOpened(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    },
+  });
+};
+
 // 5. Mutation: Manager sends a direct message to an artist
 export const useSendToArtist = () =>
   useMutation({

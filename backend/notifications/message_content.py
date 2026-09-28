@@ -102,6 +102,9 @@ class PushPayload:
     # The in-app rows this push speaks for — several when push_fold folded a
     # burst into it. Delivery data, not copy: the builder sets it from metadata.
     notification_ids: tuple[str, ...] = field(default_factory=tuple)
+    # The recipient's unread count when the push left, for the app-icon badge on
+    # platforms that have one. Set by the dispatcher; None leaves the badge alone.
+    unread: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -117,6 +120,7 @@ class PushPayload:
                 for a in self.actions
             ],
             **({"notificationIds": list(self.notification_ids)} if self.notification_ids else {}),
+            **({"unread": self.unread} if self.unread is not None else {}),
         }
 
 

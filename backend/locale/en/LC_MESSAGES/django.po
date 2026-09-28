@@ -3918,3 +3918,60 @@ msgstr[1] ""
 msgctxt "event short date format"
 msgid "j M"
 msgstr ""
+
+#: notifications/preview.py:137
+msgctxt "notification preview sample"
+msgid "St Anne's Church"
+msgstr ""
+
+#: notifications/preview.py:138
+msgctxt "notification preview sample"
+msgid "Philharmonic Hall"
+msgstr ""
+
+#: notifications/preview.py:139
+msgctxt "notification preview sample"
+msgid "Tuning and the Magnificat"
+msgstr ""
+
+#: notifications/preview.py:180
+msgctxt "notification preview sample"
+msgid "A family matter, I'm sorry."
+msgstr ""
+
+#: notifications/preview.py:263
+msgctxt "notification preview sample"
+msgid "Thursday's rehearsal"
+msgstr ""
+
+#: notifications/preview.py:264
+msgctxt "notification preview sample"
+msgid "Thank you, see you on Thursday!"
+msgstr ""
+
+#: notifications/preview.py:268
+msgctxt "notification preview sample"
+msgid "Concert dress"
+msgstr ""
+
+#: notifications/preview.py:270
+msgctxt "notification preview sample"
+msgid "Black dress for Sunday, please. The details are in the materials."
+msgstr ""
+
+#: notifications/preview.py:302
+msgctxt "notification preview sample"
+msgid "Home page"
+msgstr ""
+
+#: notifications/preview.py:312
+msgctxt "notification preview sample"
+msgid ""
+"The sopranos were secure in the Gloria; the tenors need another pass at bar "
+"40."
+msgstr ""
+
+#: notifications/preview.py:138
+msgctxt "notification preview sample"
+msgid "Advent Vespers"
+msgstr ""

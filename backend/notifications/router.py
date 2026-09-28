@@ -15,9 +15,12 @@ from .delivery import (
     EmailOutcome,
     PushOutcome,
     default_channel_preferences,
+    effective_preferences,
+    needs_email_reserve,
     plan_delivery,
 )
 from .email_tasks import send_notification_email_task
+from .message_content import NOTIFICATION_IDS_KEY
 from .models import (
     AnnouncementSubject,
     NotificationLevel,
@@ -67,27 +70,13 @@ def _briefing_for_channel(
     return payload
 
 
-# Push-first types whose reserve e-mail would arrive as a flood rather than as
-# news. Material notices are folded to one per piece per window, but that is
-# still one e-mail per piece, and a season's preparation touches many pieces:
-# "timely, but not worth an inbox" holds all the more for a member who never
-# asked for push. The in-app row still carries it. Revisit only with a
-# per-recipient batch ("new material: A, B, C").
-_NO_EMAIL_RESERVE: frozenset[str] = frozenset({NotificationType.MATERIAL_UPLOADED})
-
-
-def _needs_email_reserve(notification_type: str, email_enabled: bool) -> bool:
-    """Whether a push of this type should carry its e-mail in reserve.
-
-    Only push-first types qualify — those whose e-mail is OFF by default, so a
-    member without a device would otherwise hear nothing. A type whose e-mail is
-    ON by default and reads OFF here was switched off by the member, and that
-    choice holds even when no device can take the push. The master e-mail switch
-    is honoured downstream, by the e-mail dispatcher itself.
-    """
-    if notification_type in _NO_EMAIL_RESERVE:
-        return False
-    return not email_enabled and not default_channel_preferences(notification_type)["email_enabled"]
+def _speaking_for(metadata: dict[str, Any], notification_id: str | None) -> dict[str, Any]:
+    """The push copy of `metadata`, naming the in-app row it speaks for. A tap
+    reads that row, and the open panel closes the tray entry once it is read.
+    Push only: the e-mail has no tray to keep in step."""
+    if not notification_id:
+        return metadata
+    return {**metadata, NOTIFICATION_IDS_KEY: [str(notification_id)]}
 
 
 class NotificationRouter:
@@ -109,13 +98,14 @@ class NotificationRouter:
         row is already persisted and the digest sweep collects it — while its push
         goes out regardless.
 
-        A push-first type (see ``_needs_email_reserve``) sends its push with the
+        A push-first type (see ``needs_email_reserve``) sends its push with the
         e-mail in reserve (see ``EmailFallback``): a member no device can reach
         gets the e-mail instead of silence. Only push OFF keeps it in-app only.
 
         A singer's attendance report is pushed through ``push_fold``, which folds a
         burst of them into one push. `notification_id` names the in-app row the
-        fold collects; without it the push goes out on its own.
+        fold collects; without it the push goes out on its own. Every push carries
+        the id of the row it speaks for (see ``_speaking_for``).
         """
         # plan_delivery answers NEVER on both channels for these. Returning before
         # the preference read keeps a row from being minted for a type nobody can
@@ -127,7 +117,7 @@ class NotificationRouter:
         # events, each with a preference of its own. Honouring the envelope's
         # preference would let the fold overrule every one of them.
         if notification_type == NotificationType.PROJECT_BRIEFING:
-            cls._route_briefing(recipient_id, metadata, level)
+            cls._route_briefing(recipient_id, metadata, level, notification_id)
             return
 
         pref, _ = NotificationPreference.objects.get_or_create(
@@ -164,20 +154,24 @@ class NotificationRouter:
 
             email_fallback: EmailFallback | None = (
                 {"template_name": template_name, "metadata": metadata}
-                if _needs_email_reserve(notification_type, pref.email_enabled)
+                if needs_email_reserve(notification_type, pref.email_enabled)
                 else None
             )
             send_push_notification_task.delay(
                 recipient_id=str(recipient_id),
                 notification_type=notification_type,
-                metadata=metadata,
+                metadata=_speaking_for(metadata, notification_id),
                 level=level,
                 email_fallback=email_fallback,
             )
 
     @classmethod
     def _route_briefing(
-        cls, recipient_id: str, metadata: dict[str, Any], level: str
+        cls,
+        recipient_id: str,
+        metadata: dict[str, Any],
+        level: str,
+        notification_id: str | None = None,
     ) -> None:
         """Route a composite briefing per *item*, not per envelope.
 
@@ -207,7 +201,7 @@ class NotificationRouter:
             # it; staying silent on the outbound channels is the safe reading.
             return
 
-        preferences = cls._effective_preferences(recipient_id, notification_types)
+        preferences = effective_preferences(recipient_id, notification_types)
         # The digest sweep reads rows of the digestible types themselves, never a
         # briefing's own row, so an item held for it here would be lost. No item
         # of a briefing is therefore planned as digestible.
@@ -241,13 +235,13 @@ class NotificationRouter:
                 allowed={
                     key for key, plan in plans.items()
                     if plan.push is PushOutcome.NOW
-                    and _needs_email_reserve(key, preferences[key]["email_enabled"])
+                    and needs_email_reserve(key, preferences[key]["email_enabled"])
                 },
             )
             send_push_notification_task.delay(
                 recipient_id=str(recipient_id),
                 notification_type=NotificationType.PROJECT_BRIEFING,
-                metadata=push_payload,
+                metadata=_speaking_for(push_payload, notification_id),
                 level=level,
                 email_fallback=(
                     None if fallback_payload is None
@@ -257,32 +251,6 @@ class NotificationRouter:
                     }
                 ),
             )
-
-    @staticmethod
-    def _effective_preferences(
-        recipient_id: str, notification_types: set[str]
-    ) -> dict[str, dict[str, bool]]:
-        """What each type resolves to for this reader — their stored row where one
-        exists, the shared default contract where it does not."""
-        stored = {
-            preference.notification_type: preference
-            for preference in NotificationPreference.objects.filter(
-                user_id=recipient_id, notification_type__in=notification_types
-            )
-        }
-        resolved: dict[str, dict[str, bool]] = {}
-        for notification_type in notification_types:
-            defaults = default_channel_preferences(notification_type)
-            preference = stored.get(notification_type)
-            resolved[notification_type] = {
-                "email_enabled": (
-                    preference.email_enabled if preference else defaults["email_enabled"]
-                ),
-                "push_enabled": (
-                    preference.push_enabled if preference else defaults["push_enabled"]
-                ),
-            }
-        return resolved
 
     @staticmethod
     def _digest_enabled(recipient_id: str) -> bool:

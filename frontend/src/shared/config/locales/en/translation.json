@@ -6055,8 +6055,10 @@
         "title": "Disable push notifications?"
       },
       "digest": {
-        "title": "Daily digest",
-        "description": "Routine updates (attendance, RSVPs, absence requests) are gathered into one email a day. Urgent items always arrive immediately.",
+        "title": "Once a day, in one email",
+        "description": "Confirmations, attendance updates and absence requests for later dates are gathered into one email at the hour you choose. Withdrawals and absence requests for a rehearsal starting within 48 hours are sent straight away.",
+        "description_off": "Each event whose email is on arrives as its own email, straight away.",
+        "push_note": "Push is not affected — it always arrives straight away.",
         "toggle_label": "Daily email digest",
         "hour_label": "Delivery time",
         "timezone_note": "In your timezone ({{timezone}})"
@@ -6096,11 +6098,11 @@
         "PIECE_CASTING_UPDATED": "Your casting in a piece changes",
         "MATERIAL_UPLOADED": "New sheet music or audio is added",
         "CUSTOM_ADMIN_MESSAGE": "A direct message from the management team",
-        "ABSENCE_APPROVED": "Your absence request is approved",
-        "ABSENCE_REJECTED": "Your absence request is declined",
-        "PARTICIPATION_RESPONSE": "A singer responds to an invitation",
-        "ATTENDANCE_SUBMITTED": "A singer updates their attendance",
-        "ABSENCE_REQUESTED": "A singer requests an absence",
+        "ABSENCE_APPROVED": "A manager approves your absence request",
+        "ABSENCE_REJECTED": "A manager does not approve your absence request",
+        "PARTICIPATION_RESPONSE": "Someone in the ensemble confirms their place in a project or withdraws. A withdrawal does not wait for the daily digest.",
+        "ATTENDANCE_SUBMITTED": "Someone in the ensemble says they will be at a rehearsal or will be late. Several updates in a row arrive as one push.",
+        "ABSENCE_REQUESTED": "Someone in the ensemble asks to be excused from a rehearsal. When it starts within 48 hours, the request does not wait for the daily digest.",
         "SYSTEM_ALERT": "Maintenance and important system notices",
         "ANNOUNCEMENT_PENDING": "A project's queue is waiting and the cast still doesn't know",
         "SITE_COPY_PROPOSED": "An editor has proposed changes to the site's text",
@@ -6125,14 +6127,14 @@
       },
       "customized_badge": "Edited",
       "groups_desc": {
-        "commitments": "Invitations, rehearsal and concert times changing, and your own parts.",
-        "requests": "Decisions on the absences you ask for yourself. No email: you file the request in the app, and that is where you will look for the answer.",
-        "messages": "Someone writing to you — a reply in a conversation, or a message from management.",
-        "materials": "New scores and recordings, plus reminders shortly before a rehearsal or concert.",
-        "safety_net": "The one notification about something that has not been done yet: changes are waiting in the queue and the cast still doesn't know. That is why it goes to email too.",
-        "site_copy": "Someone has been through the site's copy desk and left proposals to review. One message per sitting, not per change — which is why it also goes to email.",
-        "debriefs": "The assistant conductor writes up how a rehearsal went. Written once, and only for an evening somebody else ran — which is why it arrives straight away rather than in the daily digest, and why it also goes to email.",
-        "team": "Responses to invitations, attendance updates and absence requests. The same events the daily digest below gathers up."
+        "commitments": "Invitations, new, moved and cancelled rehearsals, project changes and your own parts. Push and email arrive straight away, and several changes announced together arrive in one message.",
+        "requests": "The answer to your absence request — yes or no. Push arrives straight away. Email is off by default, because you file the request in the app and come back there for the answer; if none of your devices takes push, we email it instead.",
+        "messages": "Someone writing to you — a reply in a conversation, or a message from management. Push and email arrive straight away.",
+        "materials": "New scores and recordings, plus reminders before a rehearsal or concert. Push arrives straight away; email is off by default. If none of your devices takes push, reminders are emailed, and new material shows up in the app.",
+        "safety_net": "Changes are waiting in the queue and the cast still doesn't know. This is the one notification about something not yet done, so it comes by email as well as push.",
+        "site_copy": "Someone has been through the site's copy desk and left proposals to review. One message per sitting, not per change — push and email arrive as soon as the sitting ends.",
+        "debriefs": "The assistant conductor writes up how a rehearsal went. Written once, and only for an evening somebody else ran, so push and email arrive straight away rather than in the daily digest.",
+        "team": "Responses to invitations, attendance updates and absence requests. Push arrives straight away, and several updates one person sends in a row arrive as one. Email, when on, comes once a day as a digest or one by one — as set below this group."
       },
       "groups_email_off": {
         "commitments": "You will not get an email when a rehearsal or concert time changes. The app still shows everything — but only once you open it.",
@@ -6144,7 +6146,49 @@
       "details_show": "Details ({{n}})",
       "details_hide": "Hide details",
       "partial_badge": "Partial",
-      "partial_hint": "Some notifications in this group are set differently. The switch beside it turns them all on."
+      "partial_hint": "Some notifications in this group are set differently. The switch beside it turns them all on.",
+      "preview": {
+        "open": "What will I get?",
+        "title": "What will I get?",
+        "subtitle": "Examples from your settings",
+        "tabs_label": "Channel",
+        "tab_push": "Push",
+        "tab_email": "Email",
+        "devices_one": "Push reaches {{count}} of your devices.",
+        "devices_other": "Push reaches {{count}} of your devices.",
+        "devices_none": "None of your devices takes push right now. Turn it on at the top of this page, on the device you want it on.",
+        "get": "You will get",
+        "get_email": "You will get straight away",
+        "get_none": "Nothing will reach you on this channel.",
+        "digest": "In the daily digest at {{hour}}",
+        "digest_note": "One email a day with all such events.",
+        "not_get": "You will not get",
+        "app_name": "VoctManager",
+        "now": "now",
+        "stand_in": "Instead of push — none of your devices takes it.",
+        "error": "The examples could not be loaded. Try again in a moment.",
+        "cases": {
+          "accepted": "confirmation",
+          "declined": "withdrawal",
+          "single": "one update",
+          "fold": "several updates in a row",
+          "soon": "rehearsal within 48 hours",
+          "later": "later rehearsal"
+        },
+        "push_reason": {
+          "off": "Switched off in your settings",
+          "no_device": "None of your devices takes push",
+          "no_device_email": "None of your devices takes push — it comes by email",
+          "never": "In the app only"
+        },
+        "email_reason": {
+          "off": "Switched off in your settings",
+          "undeliverable": "Mail to your address is bouncing",
+          "opted_out": "Notification email is switched off",
+          "not_activated": "Your account is not active yet",
+          "never": "In the app only"
+        }
+      }
     },
     "page": {
       "highlight": "account",
