@@ -410,7 +410,7 @@ export interface AboutChrome {
 export const ABOUT_CHROME: Record<Locale, AboutChrome> = {
   pl: {
     heroAria: "O nas",
-    letterAria: "List Florent de Bazelaire",
+    letterAria: "Florent de Bazelaire: list",
     ensembleAria: "Kim jesteśmy",
     plateAria: "Idea",
     doingsAria: "Co robimy",
