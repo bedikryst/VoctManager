@@ -4030,7 +4030,7 @@
         }
       },
       "inbox": {
-        "off": "Les notifications push sont désactivées sur cet appareil.",
+        "off": "Les changements de répétition et les réponses à vos demandes n’arrivent pas encore sur cet appareil.",
         "elsewhere": "Les notifications sont actives sur un autre de vos appareils, pas encore sur celui-ci.",
         "blocked": "Les notifications sont bloquées dans les réglages du navigateur de cet appareil.",
         "install": "Sur cet appareil, les notifications ne fonctionnent que dans l’application ajoutée à l’écran d’accueil.",

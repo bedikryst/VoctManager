@@ -9,7 +9,11 @@
  *
  * The sheet opens once the member has paused rather than at the first moment,
  * so confirming a run of evenings is not interrupted at the first one, and it
- * never opens over another dialog — an invitation queue, an absence form.
+ * never opens over another dialog — an invitation queue, an absence form. A
+ * moment raised inside a dialog waits for the member to finish there however
+ * long it takes: reading the next invitation in a queue is the same errand. A
+ * dialog opened after the moment is a new errand, and the offer lapses if it
+ * outlasts `MAX_WAIT_MS`.
  *
  * Enabling fires a test push straight away, so the member sees the system
  * notification land instead of trusting a sheet that says it will.
@@ -33,7 +37,7 @@ import { usePushNotifications } from "./usePushNotifications";
 
 /** Quiet time after the last moment before the offer opens. */
 const SETTLE_MS = 3_000;
-/** How long a raised offer may wait for other dialogs to close before it lapses. */
+/** How long a raised offer may wait for a dialog opened after its moment. */
 const MAX_WAIT_MS = 60_000;
 
 const isAnotherDialogOpen = (): boolean =>
@@ -62,6 +66,7 @@ export const usePushNudgeHost = (): React.ReactNode => {
     let offered = false;
     let pendingMoment: PushNudgeMoment | null = null;
     let lastMomentAt = 0;
+    let raisedInsideDialog = false;
     let timer: number | undefined;
 
     const open = (next: PushNudgeOffer): void => {
@@ -113,7 +118,7 @@ export const usePushNudgeHost = (): React.ReactNode => {
       if (isAnotherDialogOpen()) {
         // Nothing is recorded when the wait runs out: the member was never
         // asked, so the next moment may try again.
-        if (Date.now() - lastMomentAt >= MAX_WAIT_MS) {
+        if (!raisedInsideDialog && Date.now() - lastMomentAt >= MAX_WAIT_MS) {
           pendingMoment = null;
           return;
         }
@@ -130,6 +135,7 @@ export const usePushNudgeHost = (): React.ReactNode => {
       // to ask; a later confirmation in the same run does not replace it.
       if (pendingMoment !== "absence") pendingMoment = moment;
       lastMomentAt = Date.now();
+      raisedInsideDialog = isAnotherDialogOpen();
       window.clearTimeout(timer);
       timer = window.setTimeout(settle, SETTLE_MS);
     });

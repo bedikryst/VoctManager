@@ -9,6 +9,8 @@
  * Each "off" state names its own remedy, because they are fixed in different
  * places: not yet enabled is one tap here, blocked is the browser's own site
  * settings, and an Apple device in a browser tab needs the Home Screen app first.
+ * The not-yet-enabled line names what the member is missing rather than the
+ * technology: "push" means nothing to most of the choir.
  * @module features/notifications/components/PushInboxRow
  */
 import React from "react";
@@ -71,7 +73,7 @@ export const PushInboxRow = ({ onNavigate }: PushInboxRowProps): React.JSX.Eleme
   return (
     <div className="mb-2 mt-1 flex items-center gap-3 rounded-nested border border-ethereal-gold/20 bg-ethereal-gold/5 px-3 py-2.5">
       <BellOff size={16} className="shrink-0 text-ethereal-gold" aria-hidden="true" />
-      <Text size="xs" color="muted" className="min-w-0 flex-1 leading-snug">
+      <Text size="sm" className="min-w-0 flex-1 leading-snug">
         {message}
       </Text>
       {state.kind === "enable" ? (

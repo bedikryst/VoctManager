@@ -4020,7 +4020,7 @@
         }
       },
       "inbox": {
-        "off": "Push notifications are off on this device.",
+        "off": "Rehearsal changes and answers to your requests don’t reach this device yet.",
         "elsewhere": "Notifications are on for another of your devices, not this one yet.",
         "blocked": "Notifications are blocked in this device’s browser settings.",
         "install": "On this device, notifications only work in the app added to your Home Screen.",

@@ -4058,7 +4058,7 @@
         }
       },
       "inbox": {
-        "off": "Na tym urządzeniu powiadomienia push są wyłączone.",
+        "off": "Zmiany prób i odpowiedzi na zgłoszenia nie przychodzą jeszcze na to urządzenie.",
         "elsewhere": "Powiadomienia masz na innym urządzeniu, na tym jeszcze nie.",
         "blocked": "Powiadomienia są zablokowane w ustawieniach przeglądarki na tym urządzeniu.",
         "install": "Na tym urządzeniu powiadomienia działają tylko w aplikacji dodanej do ekranu początkowego.",
