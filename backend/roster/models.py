@@ -31,7 +31,12 @@ from core.voice_labels import (
     canonical_section_letters,
     section_letters_of_seat,
 )
-from roster.domain.day_timeline import MINUTES_PER_DAY
+from roster.domain.day_timeline import (
+    MAX_DAY_OFFSET,
+    MIN_DAY_OFFSET,
+    MINUTES_PER_DAY,
+    DayWindow,
+)
 from roster.domain.liturgy import SLOT_CHOICES
 from roster.domain.rehearsal_plan import evening_is_over
 
@@ -392,12 +397,26 @@ class Project(EnterpriseBaseModel):
     # so a francophone conductor's sheet printed it in Polish. These print in the
     # reader's own language, and the printed day merges them with the run sheet
     # (`roster.domain.day_timeline`) so the sheet keeps ONE axis for the day.
-    # Wall-clock times without a date: concert day is the run sheet's frame and
-    # these belong to the same frame.
+    # Wall-clock times on the day their `*_day` column names, which is an offset
+    # from concert day and not a date: moving the concert moves the whole plan.
+    # One day column per window, because on a trip the acoustic rehearsal is the
+    # evening before and the warm-up is on the morning of the concert.
     warmup_start = models.TimeField(null=True, blank=True, verbose_name=_("Warm-up (from)"))
     warmup_end = models.TimeField(null=True, blank=True, verbose_name=_("Warm-up (until)"))
+    warmup_day = models.SmallIntegerField(
+        default=0,
+        validators=[MinValueValidator(MIN_DAY_OFFSET), MaxValueValidator(MAX_DAY_OFFSET)],
+        verbose_name=_("Warm-up (day)"),
+        help_text=_("Days from concert day: -1 is the day before, 0 is concert day."),
+    )
     soundcheck_start = models.TimeField(null=True, blank=True, verbose_name=_("Sound check (from)"))
     soundcheck_end = models.TimeField(null=True, blank=True, verbose_name=_("Sound check (until)"))
+    soundcheck_day = models.SmallIntegerField(
+        default=0,
+        validators=[MinValueValidator(MIN_DAY_OFFSET), MaxValueValidator(MAX_DAY_OFFSET)],
+        verbose_name=_("Sound check (day)"),
+        help_text=_("Days from concert day: -1 is the day before, 0 is concert day."),
+    )
 
     # The number a lost or late singer calls. Typed for this concert rather than
     # harvested from someone's profile — which is precisely what makes it
@@ -439,6 +458,22 @@ class Project(EnterpriseBaseModel):
     def is_liturgical(self) -> bool:
         """Whether this project's programme is an order of service."""
         return self.event_kind in Project.LITURGICAL_EVENT_KINDS
+
+    def day_windows(self) -> dict[str, DayWindow]:
+        """The two typed windows, each read as a whole: opening hour, closing
+        hour and day. Keyed by the name every surface already gives them (the
+        change row, the calendar label), so no reader lists the columns by hand
+        and none can forget the day."""
+        return {
+            'warmup': DayWindow(
+                start=self.warmup_start, end=self.warmup_end, day=self.warmup_day
+            ),
+            'soundcheck': DayWindow(
+                start=self.soundcheck_start,
+                end=self.soundcheck_end,
+                day=self.soundcheck_day,
+            ),
+        }
 
 
 class ProgramItem(models.Model):
@@ -774,6 +809,17 @@ class Participation(EnterpriseBaseModel):
         verbose_name=_("Order in Section"),
         help_text=_("Position within this project's voice section. "
                     "Blank = this section has not been arranged."),
+    )
+    # The exception on a trip: a singer who lives in the concert city and skips
+    # the departure, the travel and the hotel, but is due at everything else.
+    # Only the run-sheet points marked travellers-only are theirs to skip, so the
+    # flag means nothing on a plan without such points, and one left behind after
+    # they are removed has no effect. Set by the manager in the cast tab; a
+    # singer cannot set it, because a seat is read-only to its holder.
+    joins_on_site = models.BooleanField(
+        default=False,
+        verbose_name=_("Joins on Site"),
+        help_text=_("Skips the points of the plan marked for the travelling party."),
     )
 
     class Meta:

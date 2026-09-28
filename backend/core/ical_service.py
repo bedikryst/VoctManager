@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.utils.translation import override
 
-from roster.domain.day_timeline import format_time_window, localize
+from roster.domain.day_timeline import format_day_window, localize
 from roster.domain.event_kind import event_moment_label
 from roster.models import (
     FALLBACK_EVENT_DURATION_MINUTES,
@@ -306,18 +306,19 @@ class ICalGeneratorService:
         rows: list[tuple[str, str]] = []
 
         event_local = localize(project.date_time, project.timezone)
-        if project.call_time and event_local is not None:
+        if project.call_time:
             # The entry opens at the call time, so this row is what the reader is
             # actually being called for — named by kind, because "Koncert 18:00"
             # inside a wedding Mass's entry is the one line they would act on.
             rows.append((event_moment_label(project.event_kind), event_local.strftime('%H:%M')))
 
+        # A window off concert day states its date: the entry sits on concert
+        # day, and a bare "19:15" inside it reads as that day's evening.
+        windows = project.day_windows()
+        concert_date = event_local.date()
         for label, value in (
-            (_('Warm-up'), format_time_window(project.warmup_start, project.warmup_end)),
-            (
-                _('Sound check'),
-                format_time_window(project.soundcheck_start, project.soundcheck_end),
-            ),
+            (_('Warm-up'), format_day_window(windows['warmup'], concert_date)),
+            (_('Sound check'), format_day_window(windows['soundcheck'], concert_date)),
             (_('Entrance'), project.entrance_note),
             (_('Parking'), project.parking_note),
             (_('Dressing room'), project.dressing_room_note),

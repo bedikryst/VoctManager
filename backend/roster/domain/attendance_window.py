@@ -43,10 +43,8 @@ def is_open_to_self_report(rehearsal: Rehearsal, *, now: datetime | None = None)
 
     A manager is never asked this question; correcting the past is their job.
     """
+    # A mistyped zone reads as UTC inside `localize` rather than raising, so it
+    # cannot be what locks a singer out.
     local = localize(rehearsal.date_time, rehearsal.timezone)
     today = localize(now or timezone.now(), rehearsal.timezone)
-    if local is None or today is None:
-        # Both arguments are non-null in every caller, so this is unreachable in
-        # practice; a mistyped zone must not be what locks a singer out.
-        return True
     return local.date() >= today.date()

@@ -1,12 +1,15 @@
 """
 @file day_timeline.py
-@description The concert day as one axis: the two anchors a producer plans
+@description The concert's plan as one axis: the two anchors a producer plans
     around — the call time and the downbeat — merged with the editable run-sheet
     points between them, plus the relation between the anchors themselves.
     Kept in one module because they are one fact: a call time is only meaningful
     *relative to* the concert, and the arithmetic has failure modes a bare
     subtraction states as truth (a call after the downbeat, or one entered on the
     wrong date, which prints as a plausible hour while sitting weeks away).
+    The plan may span several days (an out-of-town concert is a trip): every
+    point sits on a day counted from concert day, so the plan moves with the
+    concert and a stored point without a day is simply on concert day.
     Every document and read-model that shows an arrival time or a day plan reads
     this, so none of them can invent its own threshold or its own ordering.
 @architecture Enterprise SaaS 2026
@@ -18,9 +21,9 @@ from __future__ import annotations
 import zoneinfo
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, time
+from datetime import date, datetime, time, timedelta, tzinfo
 from enum import StrEnum
-from typing import Any
+from typing import Any, overload
 
 from django.utils import timezone
 
@@ -37,6 +40,18 @@ from django.utils import timezone
 MAX_PLAUSIBLE_BUFFER_MINUTES = 24 * 60
 
 MINUTES_PER_DAY = 24 * 60
+
+# The days a plan may reach, counted from concert day. A trip leaves the day
+# before and may come back the day after; three either way leaves room for a
+# longer journey without letting a mistyped value push a point into another
+# week, where it would print as a plausible date.
+MIN_DAY_OFFSET = -3
+MAX_DAY_OFFSET = 3
+
+# The one numeric date of every language-neutral value: a field change row, and
+# a window stated off concert day. One format, so the two never disagree.
+DATE_FORMAT = '%d.%m.%Y'
+
 # Run-sheet titles arrive under whichever key the editor used at the time; the
 # field has never been validated, so every shape it has shipped with still reads.
 _TITLE_KEYS = ('title', 'label', 'task', 'activity', 'name')
@@ -107,19 +122,55 @@ class RunSheetPoint:
     reads it that way. Anything finer than a venue — a room, a door — is the
     description's job; a second free-text place field only splits one thought
     across two boxes.
+
+    ``day`` is the point's day counted from concert day, within
+    ``MIN_DAY_OFFSET..MAX_DAY_OFFSET``: ``-1`` is the departure the day before.
+    It is an offset and not a date, so moving the concert moves the whole plan.
+
+    ``travellers_only`` marks a point that concerns only the singers who travel
+    with the group — the departure, the journey, the hotel, the group's meals.
+    A singer who joins on site still sees it, muted, because knowing where the
+    group is has value; one plan with a mark beats two plans that can disagree.
     """
 
     time: str
     title: str
     description: str
     location_id: str
+    day: int = 0
+    travellers_only: bool = False
+
+
+@dataclass(frozen=True)
+class DayWindow:
+    """One of the plan's two typed windows (warm-up, sound check) as stored:
+    wall-clock ends on the day ``day`` names, counted from concert day. An
+    open window has no ``end``; a window without a ``start`` is not planned."""
+
+    start: time | None
+    end: time | None
+    day: int = 0
+
+
+@dataclass(frozen=True)
+class PlanBounds:
+    """The instants a plan occupies, in the project's zone.
+
+    ``end`` is ``None`` when nothing is planned after the downbeat: the end of a
+    concert is not stored anywhere, and a caller that needs one supplies its own
+    stated fallback rather than this module inventing an hour.
+    """
+
+    start: datetime
+    end: datetime | None
 
 
 @dataclass(frozen=True)
 class TimelineEntry:
-    """A placed entry of the day. ``point`` is set only for ``POINT`` entries;
-    anchors carry their own time and, when the call sits on another calendar
-    day, the offset that says so."""
+    """A placed entry of the plan. ``point`` is set only for ``POINT`` entries.
+    ``day_offset`` is the entry's day counted from concert day: a point's own
+    ``day``, and for an anchor the distance between its date and the
+    concert's."""
 
     kind: TimelineEntryKind
     time: str
@@ -131,16 +182,26 @@ class TimelineEntry:
         return self.kind is not TimelineEntryKind.POINT
 
 
+def _resolve_zone(timezone_name: str | None) -> zoneinfo.ZoneInfo:
+    """The given IANA zone, falling back to UTC for an unknown one rather than
+    raising — a mistyped zone must not take a document down."""
+    try:
+        return zoneinfo.ZoneInfo(timezone_name or "UTC")
+    except (zoneinfo.ZoneInfoNotFoundError, ValueError):
+        return zoneinfo.ZoneInfo("UTC")
+
+
+@overload
+def localize(value: datetime, timezone_name: str | None) -> datetime: ...
+@overload
+def localize(value: None, timezone_name: str | None) -> None: ...
+@overload
+def localize(value: datetime | None, timezone_name: str | None) -> datetime | None: ...
 def localize(value: datetime | None, timezone_name: str | None) -> datetime | None:
-    """A datetime in the given IANA zone, falling back to UTC for an unknown one
-    rather than raising — a mistyped zone must not take a document down."""
+    """A datetime in the given IANA zone (UTC for an unknown one)."""
     if not value:
         return None
-    try:
-        target = zoneinfo.ZoneInfo(timezone_name or "UTC")
-    except (zoneinfo.ZoneInfoNotFoundError, ValueError):
-        target = zoneinfo.ZoneInfo("UTC")
-    return timezone.localtime(value, target)
+    return timezone.localtime(value, _resolve_zone(timezone_name))
 
 
 def resolve_call_window(
@@ -217,6 +278,22 @@ def format_time_window(start: time | None, end: time | None) -> str | None:
     return f"{start.strftime('%H:%M')}-{end.strftime('%H:%M')}"
 
 
+def format_day_window(window: DayWindow, concert_date: date) -> str | None:
+    """A typed window as one value that also says which day it is on.
+
+    On concert day it is the bare pair of hours, as every surface has always
+    read it. Off concert day the date comes first, because an hour without its
+    date reads as concert day — the acoustic rehearsal the evening before would
+    otherwise read as a Sunday appointment. Minute precision on both counts, so
+    two windows that state the same are the same.
+    """
+    hours = format_time_window(window.start, window.end)
+    if hours is None or window.day == 0:
+        return hours
+    on = concert_date + timedelta(days=window.day)
+    return f"{on.strftime(DATE_FORMAT)} {hours}"
+
+
 def clock_sort_key(value: str) -> tuple[int, int]:
     """Sort key for a run-sheet time. Unparsable entries sort last rather than
     being dropped or guessed at; their relative order is the input's, because a
@@ -225,14 +302,46 @@ def clock_sort_key(value: str) -> tuple[int, int]:
     return (1, 0) if minutes is None else (0, minutes)
 
 
+def point_sort_key(point: RunSheetPoint) -> tuple[int, int, int]:
+    """Sort key for a point of the plan: its day, then its clock. An unreadable
+    time sorts last *within its day*, not after the whole trip, because the day
+    is the one part of the row that was chosen from a list and is always
+    meaningful. The panel's editor (``dayTimeline.ts``) must order its rows by
+    this same rule, or the edited plan and the printed one disagree."""
+    return (point.day, *clock_sort_key(point.time))
+
+
+def is_day_offset(value: Any) -> bool:
+    """Whether a stored value is a day of the plan: an ``int`` within
+    ``MIN_DAY_OFFSET..MAX_DAY_OFFSET``. ``bool`` is an ``int`` subclass and is
+    refused, because a stray ``true`` must not read as the day after the
+    concert. Strings are not coerced: the editor writes numbers."""
+    return (
+        isinstance(value, int)
+        and not isinstance(value, bool)
+        and MIN_DAY_OFFSET <= value <= MAX_DAY_OFFSET
+    )
+
+
+def _read_day_offset(value: Any) -> int:
+    """A stored day offset, or concert day for anything that is not one. The
+    run sheet is JSON that writes validate but older rows never passed through,
+    so the reader never raises."""
+    return value if is_day_offset(value) else 0
+
+
 def normalize_run_sheet(run_sheet: Any) -> list[RunSheetPoint]:
-    """Read ``Project.run_sheet`` — an unvalidated ``JSONField`` — into points.
+    """Read ``Project.run_sheet`` — a ``JSONField`` of free-form rows — into
+    points. Writes check only the two keys a wrong value of which would
+    silently move a point (``day``, ``travellers_only``); every row stored
+    before that, and every other key, is read here and nowhere else.
 
     Sorting belongs here, not in :func:`build_day_timeline`: this is the
-    *stored* day, and a manager who enters points out of order still prints a
+    *stored* plan, and a manager who enters points out of order still prints a
     clean timeline. Lexically ``"9:00"`` follows ``"12:00"``, so the key is the
-    parsed minute. The live editor sorts on commit instead (a row being typed
-    must not jump), which is why the merge itself never reorders.
+    parsed minute within the point's day (:func:`point_sort_key`). The live
+    editor sorts on commit instead (a row being typed must not jump), which is
+    why the merge itself never reorders.
     """
     points: list[RunSheetPoint] = []
     for item in run_sheet or []:
@@ -256,9 +365,14 @@ def normalize_run_sheet(run_sheet: Any) -> list[RunSheetPoint]:
                 title=title,
                 description=description,
                 location_id=str(item.get('location_id') or '').strip(),
+                day=_read_day_offset(item.get('day')),
+                # Only a real ``true``: a truthy string or number is not the
+                # editor's toggle, and a point due for everyone is the safe
+                # reading of a value nothing wrote on purpose.
+                travellers_only=item.get('travellers_only') is True,
             )
         )
-    points.sort(key=lambda point: clock_sort_key(point.time))
+    points.sort(key=point_sort_key)
     return points
 
 
@@ -303,12 +417,12 @@ def build_day_timeline(
 ) -> list[TimelineEntry]:
     """Merge the anchors INTO the points without reordering the points.
 
-    The concert day is the run sheet's implicit frame: a point stores a bare
-    ``HH:MM`` and therefore cannot say "the evening before", while an anchor
-    carries a real date and is placed by the offset between them. That
-    asymmetry is deliberate — it mirrors what the field can hold — so a call the
-    night before opens the list and everything typed into the run sheet belongs
-    to concert day.
+    Concert day is the plan's frame: a point stores a bare ``HH:MM`` on the day
+    its ``day`` offset names, while an anchor carries a real date and is placed
+    by the distance between its date and the concert's. Both land on one axis
+    of minutes from the start of concert day, so a departure the day before
+    opens the list and a call the evening before sits among that evening's
+    points.
 
     The points arrive in the order the caller settled on (:func:`normalize_run_sheet`
     for stored data, the form's own commit order for the live editor), which is
@@ -319,13 +433,19 @@ def build_day_timeline(
 
     # An unset or unreadable time inherits its predecessor's position, so a row
     # mid-edit stays between the same neighbours instead of collapsing to the
-    # start of the day.
-    carried = 0
+    # start of the day. The position is clamped to the point's own day: every
+    # surface groups the plan under a heading per day, and an entry placed on a
+    # neighbouring day would split its day's group in two. The seed is the
+    # start of the earliest day, so a first point without a time opens its day.
+    carried = MIN_DAY_OFFSET * MINUTES_PER_DAY
     point_keys: list[int] = []
     for point in points:
+        day_start = point.day * MINUTES_PER_DAY
         minutes = parse_clock_minutes(point.time)
         if minutes is not None:
-            carried = minutes
+            carried = day_start + minutes
+        else:
+            carried = min(max(carried, day_start), day_start + MINUTES_PER_DAY - 1)
         point_keys.append(carried)
 
     entries: list[TimelineEntry] = []
@@ -341,7 +461,7 @@ def build_day_timeline(
             TimelineEntry(
                 kind=TimelineEntryKind.POINT,
                 time=point.time,
-                day_offset=0,
+                day_offset=point.day,
                 point=point,
             )
         )
@@ -351,12 +471,14 @@ def build_day_timeline(
 
 
 def plan_end(entries: Sequence[TimelineEntry]) -> TimelineEntry | None:
-    """The last planned moment when the day runs past the downbeat.
+    """The last planned moment when the plan runs past the downbeat.
 
     Only a run-sheet point can answer this: the end of a concert is not stored
     anywhere, and deriving it from summed piece durations would print a
     fabricated hour as a fact. When nothing is planned after the downbeat there
-    is no end to state, and the caller shows one cell fewer.
+    is no end to state, and the caller shows one cell fewer. The entry's
+    ``day_offset`` says whether that moment is on concert day, and a caller
+    that prints the hour prints the day with it when it is not.
     """
     if not entries:
         return None
@@ -366,21 +488,100 @@ def plan_end(entries: Sequence[TimelineEntry]) -> TimelineEntry | None:
     return last if parse_clock_minutes(last.time) is not None else None
 
 
+def _instant_on_day(
+    concert_date: date, day: int, clock: time, zone: tzinfo | None
+) -> datetime:
+    """A wall-clock time on the plan's ``day`` as a real instant. The offset is
+    resolved for that date, so a trip across a DST change keeps its hours."""
+    return datetime.combine(concert_date + timedelta(days=day), clock, tzinfo=zone)
+
+
+def plan_bounds(
+    points: Sequence[RunSheetPoint],
+    window: CallWindow,
+    day_windows: Sequence[DayWindow],
+    *,
+    include_travellers_only: bool,
+) -> PlanBounds | None:
+    """The first instant of the plan and its last planned instant after the
+    downbeat, for one reader.
+
+    ``include_travellers_only=False`` is a singer who joins on site: the
+    departure, the journey and the hotel are not theirs, so their plan starts
+    at the first point they are due at. The two windows and the concert count
+    for everyone — the warm-up and sound check are music. So does the call, but
+    only while :func:`resolve_call_window` can state it: a call typed on the
+    wrong date, or after the downbeat, would otherwise open the plan weeks
+    early or close it on an hour nobody planned.
+
+    Every wall-clock value is placed in the zone the downbeat was localized
+    in, so the plan cannot be counted in one zone and dated in another. A
+    point without a readable time has no instant and is skipped; it cannot
+    open or close the plan. ``None`` only when there is no downbeat to count
+    the days from.
+    """
+    concert = window.event_local
+    if concert is None:
+        return None
+    zone = concert.tzinfo
+    concert_date = concert.date()
+
+    instants: list[datetime] = [concert]
+    if window.is_stated and window.call_local is not None:
+        instants.append(window.call_local)
+    for day_window in day_windows:
+        if day_window.start is None:
+            continue
+        instants.append(
+            _instant_on_day(concert_date, day_window.day, day_window.start, zone)
+        )
+        if day_window.end is not None:
+            instants.append(
+                _instant_on_day(concert_date, day_window.day, day_window.end, zone)
+            )
+    for point in points:
+        if point.travellers_only and not include_travellers_only:
+            continue
+        minutes = parse_clock_minutes(point.time)
+        if minutes is None:
+            continue
+        clock = time(hour=minutes // 60, minute=minutes % 60)
+        instants.append(_instant_on_day(concert_date, point.day, clock, zone))
+
+    # Compared as instants: two wall-clock values in one zone compare by their
+    # face, which is wrong inside the hour a DST change repeats.
+    start = min(instants, key=datetime.timestamp)
+    last = max(instants, key=datetime.timestamp)
+    return PlanBounds(
+        start=start,
+        end=last if last.timestamp() > concert.timestamp() else None,
+    )
+
+
 __all__ = [
+    "DATE_FORMAT",
+    "MAX_DAY_OFFSET",
     "MAX_PLAUSIBLE_BUFFER_MINUTES",
     "MINUTES_PER_DAY",
+    "MIN_DAY_OFFSET",
     "CallWindow",
     "CallWindowProblem",
+    "DayWindow",
+    "PlanBounds",
     "RunSheetPoint",
     "TimelineEntry",
     "TimelineEntryKind",
     "build_day_timeline",
     "clock_sort_key",
     "format_clock",
+    "format_day_window",
     "format_time_window",
+    "is_day_offset",
     "localize",
     "normalize_run_sheet",
     "parse_clock_minutes",
+    "plan_bounds",
     "plan_end",
+    "point_sort_key",
     "resolve_call_window",
 ]

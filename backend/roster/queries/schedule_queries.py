@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
@@ -29,28 +30,66 @@ if TYPE_CHECKING:
 _WINDOW_SLACK = timedelta(days=1)
 
 
-def _schedule_seats(**artist_lookup: Any) -> tuple[list[tuple[UUID, UUID]], str]:
-    """`(participation_id, project_id)` for every seat that belongs in a
-    schedule, plus the SATB letters those seats answer a sectional by.
+@dataclass(frozen=True)
+class _ScheduleSeats:
+    """Every seat that belongs in one person's schedule, read in one query.
 
-    `Participation.live_seats` in the shape this module reads it. Materialising
-    the pairs here is what lets the dashboard and the absence range share one
-    answer: the count a singer is shown before submitting cannot disagree with
-    the rows the submission writes, because neither re-derives the rule. The
-    letters ride on the same query — `Rehearsal.calling_q` needs them beside
-    the ids, and a second round trip for them would be paid on every schedule.
+    ``seats`` pairs each participation with its project. ``section_letters``
+    are the SATB letters those seats answer a sectional by.
+    ``on_site_project_ids`` are the projects whose seat joins the trip on site.
+    """
+
+    seats: list[tuple[UUID, UUID]]
+    section_letters: str
+    on_site_project_ids: set[UUID]
+
+
+@dataclass(frozen=True)
+class ArtistSchedule:
+    """The artist schedule read-model, as :func:`get_artist_schedule` builds it.
+
+    ``projects`` is prefetched for ``ProjectSerializer``; ``rehearsals`` is
+    annotated ``absent_count`` and prefetched ``my_attendances`` (this artist
+    only). ``participation_by_project`` maps ``str(project_id)`` to
+    ``str(participation_id)``, so the view stamps the artist's seat onto each
+    event for one-tap RSVP without another query. ``on_site_project_ids`` holds
+    ``str(project_id)`` where the artist's own seat joins the trip on site; a
+    project they run without a seat is never in it — nobody marked them, and
+    the plan is theirs in full.
+    """
+
+    projects: QuerySet[Project]
+    rehearsals: QuerySet[Rehearsal]
+    participation_by_project: dict[str, str]
+    on_site_project_ids: set[str]
+
+
+def _schedule_seats(**artist_lookup: Any) -> _ScheduleSeats:
+    """`Participation.live_seats` in the shape this module reads it.
+
+    Materialising the pairs here is what lets the dashboard and the absence
+    range share one answer: the count a singer is shown before submitting
+    cannot disagree with the rows the submission writes, because neither
+    re-derives the rule. The letters and the on-site flag ride on the same
+    query — a second round trip for either would be paid on every schedule.
     """
     rows = list(
         Participation.live_seats(**artist_lookup).values_list(
-            "id", "project_id", "default_voice_line", "artist__voice_type"
+            "id", "project_id", "default_voice_line", "artist__voice_type",
+            "joins_on_site",
         )
     )
-    letters = canonical_section_letters(
-        letter
-        for _pid, _project_id, voice_line, voice_type in rows
-        for letter in section_letters_of_seat(voice_type, voice_line)
+    return _ScheduleSeats(
+        seats=[(pid, project_id) for pid, project_id, _line, _type, _on_site in rows],
+        section_letters=canonical_section_letters(
+            letter
+            for _pid, _project_id, voice_line, voice_type, _on_site in rows
+            for letter in section_letters_of_seat(voice_type, voice_line)
+        ),
+        on_site_project_ids={
+            project_id for _pid, project_id, _line, _type, joins in rows if joins
+        },
     )
-    return [(pid, project_id) for pid, project_id, _line, _type in rows], letters
 
 
 def get_artist_rehearsals_in_window(
@@ -68,7 +107,8 @@ def get_artist_rehearsals_in_window(
     Rehearsals of a project the artist merely conducts are absent by construction
     — there is no participation there, so there is no attendance row to write.
     """
-    seats, section_letters = _schedule_seats(artist_id=artist_id)
+    schedule_seats = _schedule_seats(artist_id=artist_id)
+    seats, section_letters = schedule_seats.seats, schedule_seats.section_letters
     if not seats:
         return []
 
@@ -101,17 +141,13 @@ def get_artist_rehearsals_in_window(
     matched: list[tuple[Rehearsal, UUID]] = []
     for rehearsal in rehearsals:
         local = localize(rehearsal.date_time, rehearsal.timezone)
-        if local is None:
-            continue
         if window_start <= local.replace(tzinfo=None) <= window_end:
             matched.append((rehearsal, participation_by_project[rehearsal.project_id]))
 
     return matched
 
 
-def get_artist_schedule(
-    user: User,
-) -> tuple[QuerySet[Project], QuerySet[Rehearsal], dict[str, str]]:
+def get_artist_schedule(user: User) -> ArtistSchedule:
     """
     CQRS Read Model for the Artist Schedule.
 
@@ -121,15 +157,8 @@ def get_artist_schedule(
     each pre-joined with the artist's own attendance, in a fixed
     number of SQL queries. This replaces the former client-side join, where the
     frontend pulled four full collections (rehearsals, participations, projects,
-    attendances) and re-joined them in O(n*m) `.find()` loops.
-
-    Returns:
-      projects_qs              → Project queryset (prefetched for ProjectSerializer)
-      rehearsals_qs            → Rehearsal queryset, annotated `absent_count` and
-                                 prefetched `my_attendances` (this artist only)
-      participation_by_project → {str(project_id): str(participation_id)} so the
-                                 view can stamp the artist's participation onto
-                                 each event for one-tap RSVP without another query.
+    attendances) and re-joined them in O(n*m) `.find()` loops. The fields are
+    described on :class:`ArtistSchedule`.
     """
     # Bounded scope from the artist's own active participations. Typical
     # cardinality is small, so the IN-clauses below are cheap.
@@ -139,7 +168,9 @@ def get_artist_schedule(
     # cast has not been told about must not appear in their schedule — being cast in
     # an unpublished concert is a plan the conductor is still making. The conductor's
     # own slice (`conducted_project_ids`) is untouched: they are the one planning it.
-    active_parts, section_letters = _schedule_seats(artist__user=user)
+    schedule_seats = _schedule_seats(artist__user=user)
+    active_parts = schedule_seats.seats
+    section_letters = schedule_seats.section_letters
     participation_ids = [pid for pid, _ in active_parts]
     sung_project_ids = {proj_id for _, proj_id in active_parts}
     participation_by_project = {
@@ -223,4 +254,11 @@ def get_artist_schedule(
         .order_by("date_time")
     )
 
-    return projects_qs, rehearsals_qs, participation_by_project
+    return ArtistSchedule(
+        projects=projects_qs,
+        rehearsals=rehearsals_qs,
+        participation_by_project=participation_by_project,
+        on_site_project_ids={
+            str(project_id) for project_id in schedule_seats.on_site_project_ids
+        },
+    )

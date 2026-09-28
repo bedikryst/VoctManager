@@ -1739,6 +1739,26 @@ class CalendarFeedTests(TestCase):
         self.assertIn(r"Entrance: Wejście boczne\, brama 2", feed)
         self.assertNotIn(r"\\,", feed)
 
+    def test_a_window_off_concert_day_states_its_date(self) -> None:
+        """The entry sits on concert day, so a bare "19:15" inside it reads as
+        that day's evening; the acoustic rehearsal the evening before says so."""
+        from core.ical_service import ICalGeneratorService
+        from roster.domain.day_timeline import localize
+
+        project = self._project("Requiem", self.Project.Status.ACTIVE)
+        project.warmup_start = time(11, 0)
+        project.soundcheck_start = time(19, 15)
+        project.soundcheck_end = time(22, 0)
+        project.soundcheck_day = -1
+        project.save()
+
+        concert_date = localize(project.date_time, project.timezone).date()
+        evening_before = (concert_date - timedelta(days=1)).strftime("%d.%m.%Y")
+        description = ICalGeneratorService._project_description(project)
+
+        self.assertIn(f"Próba akustyczna: {evening_before} 19:15-22:00", description)
+        self.assertIn("Rozśpiewanie: 11:00\n", description)
+
     def test_an_empty_fact_states_nothing(self) -> None:
         project = self._project("Requiem", self.Project.Status.ACTIVE)
         self._seat(project)
@@ -1830,7 +1850,8 @@ class CalendarFeedConductorTests(TestCase):
             focus="Czytanie",
         )
 
-        projects_qs, rehearsals_qs, _ = get_artist_schedule(self.user)
+        schedule = get_artist_schedule(self.user)
+        projects_qs, rehearsals_qs = schedule.projects, schedule.rehearsals
 
         # The panel keeps giving them the plan they are still making…
         self.assertIn(draft.id, {project.id for project in projects_qs})

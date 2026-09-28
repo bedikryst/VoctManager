@@ -172,6 +172,18 @@ export interface RunSheetItem {
    * and coordinates one can be built from.
    */
   location_id?: string | null;
+  /**
+   * The point's day counted from concert day, a whole number from -3 to 3:
+   * `-1` is the departure the day before. An offset rather than a date, so
+   * moving the concert moves the whole plan. Absent means concert day.
+   */
+  day?: number;
+  /**
+   * Marks a point that concerns only the singers travelling with the group —
+   * the departure, the journey, the hotel. A singer who joins on site still
+   * sees it, muted. Absent means the point is due for everyone.
+   */
+  travellers_only?: boolean;
 }
 
 /**

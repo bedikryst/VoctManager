@@ -27,6 +27,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Collection
 from typing import TYPE_CHECKING, Any
 
 from django.db import transaction
@@ -177,12 +178,14 @@ def queue_broadcast(
     notification_type: str,
     level: str = NotificationLevel.INFO,
     metadata: dict[str, Any] | None = None,
+    time_critical_fields: Collection[str] = (),
 ) -> None:
     """Hold a change addressed to the cast until the conductor publishes it.
 
     Unlike `announce_bulk` this takes no recipients: who hears a queued broadcast
     is resolved from the live cast at publish time, so someone who confirms in the
-    meantime is included rather than missed.
+    meantime is included rather than missed. `time_critical_fields` is passed
+    through to `AnnouncementQueue.enqueue`, which says what it escalates.
     """
     _assert_queueable(notification_type)
     if not is_announceable(project):
@@ -197,6 +200,7 @@ def queue_broadcast(
         notification_type=notification_type,
         level=level,
         metadata=metadata,
+        time_critical_fields=time_critical_fields,
     )
 
 

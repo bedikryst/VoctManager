@@ -31,7 +31,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterable, Sequence
+from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import partial
@@ -75,7 +75,10 @@ _LEVEL_RANK: dict[str, int] = {
 # here: the call time is the hour the cast is held to, and it does not move when
 # a window inside the day does. A singer who is told to be there at 17:00 is
 # still due at 17:00 after the sound check slides — so that news travels as news,
-# not as an alarm.
+# not as an alarm. A window off concert day is the exception, because the call
+# no longer brackets it; only the emitter knows a window's day, so it names such
+# rows itself (`time_critical_fields`) and the queue escalates them by the same
+# rule it applies here.
 _TIME_CRITICAL_FIELDS = frozenset({"date_time", "call_time"})
 
 # The diff lives in dedicated columns, so it is stripped from the stored metadata
@@ -426,6 +429,7 @@ class AnnouncementQueue:
         level: str = NotificationLevel.INFO,
         metadata: dict[str, Any] | None = None,
         recipient_id: str | None = None,
+        time_critical_fields: Collection[str] = (),
     ) -> list[PendingAnnouncement]:
         """Hold one event back for review.
 
@@ -433,7 +437,9 @@ class AnnouncementQueue:
         needs and the granularity the review sheet will offer. `level` is the
         baseline; a row about a time the cast has to keep is escalated on its own,
         so the urgency of a published announcement follows what survived rather
-        than what was originally saved.
+        than what was originally saved. `time_critical_fields` names the rows of
+        THIS diff that move such a time although their field usually does not
+        (see `_TIME_CRITICAL_FIELDS`).
 
         Writes inside the caller's transaction on purpose: a rolled-back save
         must not leave news of a change that never happened.
@@ -459,6 +465,7 @@ class AnnouncementQueue:
                 level=(
                     NotificationLevel.URGENT
                     if change["field"] in _TIME_CRITICAL_FIELDS
+                    or change["field"] in time_critical_fields
                     else level
                 ),
                 change_field=change["field"],

@@ -33,6 +33,7 @@ import {
 import { PROJECT_EVENT_KIND } from "../../constants/projectDomain";
 import {
   compareRunSheetTimes,
+  readRunSheetDay,
   suggestRunSheetTime,
   toWallClockInput,
 } from "../../lib/dayTimeline";
@@ -96,6 +97,8 @@ const toComparableRunSheet = (
       title: item.title || "",
       description: item.description || "",
       location_id: item.location_id || "",
+      day: readRunSheetDay(item.day) ?? 0,
+      travellers_only: item.travellers_only === true,
     })),
   );
 
@@ -329,12 +332,17 @@ export const useDetailsForm = (
       // Rebuilt key by key rather than spread: the row also carries a client-side
       // id the stored JSON has no use for. Anything a row is meant to keep has to
       // be listed HERE or it is dropped on save without a word.
-      const sanitizedRunSheet = sortRunSheetByTime(runSheet).map((item) => ({
-        time: item.time || "",
-        title: item.title || "",
-        description: item.description || "",
-        location_id: item.location_id || "",
-      }));
+      const sanitizedRunSheet = sortRunSheetByTime(runSheet).map((item) => {
+        const day = readRunSheetDay(item.day);
+        return {
+          time: item.time || "",
+          title: item.title || "",
+          description: item.description || "",
+          location_id: item.location_id || "",
+          ...(day !== undefined ? { day } : {}),
+          ...(item.travellers_only === true ? { travellers_only: true } : {}),
+        };
+      });
 
       const safeDateTimeStr =
         formData.date_time.length === 16

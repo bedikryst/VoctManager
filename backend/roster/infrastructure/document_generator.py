@@ -62,10 +62,10 @@ from roster.domain.day_timeline import (
     TimelineEntry,
     TimelineEntryKind,
     build_day_timeline,
-    clock_sort_key,
     localize,
     normalize_run_sheet,
     plan_end,
+    point_sort_key,
     resolve_call_window,
 )
 from roster.domain.event_kind import CONCERT, MASS, OTHER, WEDDING
@@ -762,7 +762,7 @@ class DocumentGenerator:
         run_sheet_points = normalize_run_sheet(project.run_sheet)
         day_points = sorted(
             [*run_sheet_points, *DocumentGenerator._structured_day_points(project)],
-            key=lambda point: clock_sort_key(point.time),
+            key=point_sort_key,
         )
         timeline = build_day_timeline(day_points, call_window)
 
@@ -1232,32 +1232,28 @@ class DocumentGenerator:
 
         An open window (a start with no end) is normal — the sound check ends
         when it ends — so the closing hour is a qualifier, never a second row.
+        Each window sits on its own day of the plan, and is never
+        travellers-only: a singer who joins on site is due at both.
         """
+        titles = {
+            'warmup': pgettext('call sheet', 'Warm-up'),
+            'soundcheck': pgettext('call sheet', 'Sound check'),
+        }
         moments: list[RunSheetPoint] = []
-        for start, end, title in (
-            (
-                project.warmup_start,
-                project.warmup_end,
-                pgettext('call sheet', 'Warm-up'),
-            ),
-            (
-                project.soundcheck_start,
-                project.soundcheck_end,
-                pgettext('call sheet', 'Sound check'),
-            ),
-        ):
-            if start is None:
+        for key, window in project.day_windows().items():
+            if window.start is None:
                 continue
             moments.append(
                 RunSheetPoint(
-                    time=start.strftime('%H:%M'),
-                    title=title,
+                    time=window.start.strftime('%H:%M'),
+                    title=titles[key],
                     description=(
-                        _('until %(time)s') % {'time': end.strftime('%H:%M')}
-                        if end is not None
+                        _('until %(time)s') % {'time': window.end.strftime('%H:%M')}
+                        if window.end is not None
                         else ''
                     ),
                     location_id='',
+                    day=window.day,
                 )
             )
         return moments
@@ -2011,11 +2007,7 @@ class DocumentGenerator:
                     ),
                     'venue_map_url': DocumentGenerator._build_map_url(venue),
                     'is_anchor': entry.is_anchor,
-                    'day_note': (
-                        DocumentGenerator._day_offset_note(entry.day_offset)
-                        if entry.is_anchor
-                        else ''
-                    ),
+                    'day_note': DocumentGenerator._day_offset_note(entry.day_offset),
                 }
             )
         return rows
@@ -2039,7 +2031,7 @@ class DocumentGenerator:
 
     @staticmethod
     def _day_offset_note(day_offset: int) -> str:
-        """How far from concert day an anchor sits, in words. Only the sign and
+        """How far from concert day an entry sits, in words. Only the sign and
         the magnitude matter here; the exact date is already in the masthead."""
         if day_offset == 0:
             return ''
@@ -2108,11 +2100,16 @@ class DocumentGenerator:
 
         end = plan_end(timeline)
         if end is not None and end.point is not None:
+            # A return the next morning printed as a bare hour would read as a
+            # concert-day hour earlier than the downbeat; its day goes first.
+            day_note = DocumentGenerator._day_offset_note(end.day_offset)
             facts.append(
                 {
                     'label': pgettext('call sheet', 'Plan ends'),
                     'value': end.time,
-                    'note': end.point.title,
+                    'note': (
+                        f'{day_note} · {end.point.title}' if day_note else end.point.title
+                    ),
                     'accent': False,
                 }
             )

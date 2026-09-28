@@ -160,6 +160,26 @@ export const compareRunSheetTimes = (left: string, right: string): number => {
   return leftMinutes - rightMinutes;
 };
 
+/** The days a plan may reach, counted from concert day. Mirrors
+ *  `MIN_DAY_OFFSET` / `MAX_DAY_OFFSET` in `roster/domain/day_timeline.py`. */
+export const MIN_DAY_OFFSET = -3;
+export const MAX_DAY_OFFSET = 3;
+
+/**
+ * A row's day of the plan when it is off concert day, `undefined` otherwise.
+ * The backend refuses a `day` that is not a whole number in range, so a value
+ * read out of stored JSON is kept only when it would pass that check; a
+ * missing key already means concert day, and writing `0` adds nothing.
+ */
+export const readRunSheetDay = (value: unknown): number | undefined =>
+  typeof value === "number" &&
+  Number.isInteger(value) &&
+  value !== 0 &&
+  value >= MIN_DAY_OFFSET &&
+  value <= MAX_DAY_OFFSET
+    ? value
+    : undefined;
+
 /** The `HH:mm` half of a `datetime-local` value, or null when it is incomplete. */
 export const readInputTime = (value?: string | null): string | null =>
   value && value.length >= LOCAL_INPUT_LENGTH ? value.slice(11, 16) : null;

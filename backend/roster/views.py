@@ -1685,9 +1685,8 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         """
         target = resolve_preview_target(request)
         target_user = target.user
-        projects_qs, rehearsals_qs, participation_by_project = get_artist_schedule(
-            target_user
-        )
+        schedule = get_artist_schedule(target_user)
+        participation_by_project = schedule.participation_by_project
         ctx = {'request': request}
         # Which of these evenings this person is expected to RUN — the only thing
         # that puts a roll call in a singer's hands. A separate scope from the
@@ -1710,12 +1709,17 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             {
                 'type': 'PROJECT',
                 'participation_id': participation_by_project.get(str(project['id'])),
+                # Read from this reader's own seat, so a preview shows the
+                # member's plan as the member sees it; false without a seat.
+                'joins_on_site': str(project['id']) in schedule.on_site_project_ids,
                 'project': project,
             }
-            for project in ProjectSerializer(projects_qs, many=True, context=ctx).data
+            for project in ProjectSerializer(
+                schedule.projects, many=True, context=ctx
+            ).data
         ]
 
-        rehearsal_objs = list(rehearsals_qs)
+        rehearsal_objs = list(schedule.rehearsals)
         # The plan read through this person's seat, for the whole list at
         # once: "Twoja część 19:00-21:00" sits on the collapsed card. A
         # preview reads the member's plans, drafts withheld as they are from

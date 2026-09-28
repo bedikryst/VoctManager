@@ -4,7 +4,7 @@
 # Standard: Enterprise SaaS 2026 (Pydantic V2)
 # ==========================================
 from datetime import datetime, time, timedelta
-from typing import Any, Self
+from typing import Annotated, Any, Self
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -21,9 +21,13 @@ from pydantic import (
 from core.constants import VoiceLine
 from core.voice_labels import SECTION_LETTERS, canonical_section_letters
 
-from .domain.day_timeline import MINUTES_PER_DAY
+from .domain.day_timeline import MAX_DAY_OFFSET, MIN_DAY_OFFSET, MINUTES_PER_DAY, is_day_offset
 from .domain.vocal_range import VOCAL_RANGE_MIDI_MAX, VOCAL_RANGE_MIDI_MIN, range_shape_error
 from .models import Attendance, Participation, PieceReadiness, Project, VoiceType
+
+# A window's day, counted from concert day. Strict, because ``bool`` is an
+# ``int`` subclass and lax mode would store ``true`` as the day after.
+DayOffset = Annotated[int, Field(ge=MIN_DAY_OFFSET, le=MAX_DAY_OFFSET, strict=True)]
 
 SUPPORTED_LANGUAGE_CODES = frozenset({"en", "pl", "fr"})
 SALUTATION_VALUES = frozenset({"F", "M", "N"})
@@ -128,15 +132,37 @@ def _validate_day_window(
 def _freeze_sequence(value: object) -> object:
     """Container coercion only — a DTO field must not be a mutable list shared
     with the caller. The *contents* of ``run_sheet`` are deliberately not read
-    here: the rows are unvalidated free JSON, and the one place that interprets
-    them is ``roster.domain.day_timeline.normalize_run_sheet``, which the
-    documents and the panel both read. Two normalizers over one field would be
-    two answers to "what is the day"."""
+    here: the rows are free JSON, and the one place that interprets them is
+    ``roster.domain.day_timeline.normalize_run_sheet``, which the documents and
+    the panel both read. Two normalizers over one field would be two answers to
+    "what is the day" (:func:`_check_run_sheet_rows` refuses, never rewrites)."""
     if value is None:
         return ()
     if isinstance(value, list | tuple):
         return tuple(value)
     return value
+
+
+def _check_run_sheet_rows(
+    rows: tuple[dict[str, Any], ...] | None,
+) -> tuple[dict[str, Any], ...] | None:
+    """Refuse the two row values the reader would silently misplace.
+
+    Not a second interpreter: nothing is coerced or rewritten, and a row
+    without either key is concert day and due for everyone, as always. But a
+    ``"-1"`` or a ``true`` in ``day`` reads as concert day, which prints the
+    departure the day before as a concert-day hour — so it is rejected where
+    it is written, loudly, instead of being read quietly wrong ever after.
+    """
+    for index, row in enumerate(rows or ()):
+        if "day" in row and not is_day_offset(row["day"]):
+            raise ValueError(
+                f"run_sheet[{index}].day must be a whole number from "
+                f"{MIN_DAY_OFFSET} to {MAX_DAY_OFFSET}."
+            )
+        if "travellers_only" in row and not isinstance(row["travellers_only"], bool):
+            raise ValueError(f"run_sheet[{index}].travellers_only must be true or false.")
+    return rows
 
 
 class EnterpriseBaseDTO(BaseModel):
@@ -595,8 +621,10 @@ class ProjectCreateDTO(EnterpriseBaseDTO):
     dressing_room_note: str = Field(default='', max_length=200)
     warmup_start: time | None = None
     warmup_end: time | None = None
+    warmup_day: DayOffset = 0
     soundcheck_start: time | None = None
     soundcheck_end: time | None = None
+    soundcheck_day: DayOffset = 0
     onsite_contact_name: str = Field(default='', max_length=120)
     onsite_contact_phone: str = Field(default='', max_length=32)
 
@@ -641,6 +669,14 @@ class ProjectCreateDTO(EnterpriseBaseDTO):
     def normalize_run_sheet(cls, value: object) -> object:
         return _freeze_sequence(value)
 
+    @field_validator("run_sheet")
+    @classmethod
+    def check_run_sheet_rows(
+        cls, value: tuple[dict[str, Any], ...]
+    ) -> tuple[dict[str, Any], ...]:
+        _check_run_sheet_rows(value)
+        return value
+
     @model_validator(mode="after")
     def validate_day_windows(self):
         _validate_day_window(self.warmup_start, self.warmup_end, "warmup")
@@ -668,8 +704,11 @@ class ProjectUpdateDTO(EnterpriseBaseDTO):
     dressing_room_note: str | None = Field(None, max_length=200)
     warmup_start: time | None = None
     warmup_end: time | None = None
+    # Not nullable: the column is not, and "no day" already has a value (0).
+    warmup_day: DayOffset = 0
     soundcheck_start: time | None = None
     soundcheck_end: time | None = None
+    soundcheck_day: DayOffset = 0
     onsite_contact_name: str | None = Field(None, max_length=120)
     onsite_contact_phone: str | None = Field(None, max_length=32)
 
@@ -718,6 +757,13 @@ class ProjectUpdateDTO(EnterpriseBaseDTO):
     @classmethod
     def normalize_nullable_run_sheet(cls, value: object) -> object:
         return _freeze_sequence(value)
+
+    @field_validator("run_sheet")
+    @classmethod
+    def check_run_sheet_rows(
+        cls, value: tuple[dict[str, Any], ...] | None
+    ) -> tuple[dict[str, Any], ...] | None:
+        return _check_run_sheet_rows(value)
 
     @model_validator(mode="after")
     def reject_null_for_required_fields(self):

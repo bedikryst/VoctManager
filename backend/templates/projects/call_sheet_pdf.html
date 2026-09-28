@@ -642,7 +642,7 @@
                             it is the fact the row exists for. The note and the
                             description follow on one running line, as before.
                         {% endcomment %}
-                        <td>{% if item.venue_name %}<span style="font-weight:700;">{{ item.venue_name }}</span>{% if item.venue_address %} <span class="muted">{{ item.venue_address }}</span>{% endif %}{% if item.venue_map_url %} · <a href="{{ item.venue_map_url }}">{% translate "map" context "call sheet" %}</a>{% endif %}<br>{% endif %}{% if item.day_note %}<span class="muted">{{ item.day_note }}</span>{% endif %}{% if item.description %}{{ item.description }}{% endif %}</td>
+                        <td>{% if item.venue_name %}<span style="font-weight:700;">{{ item.venue_name }}</span>{% if item.venue_address %} <span class="muted">{{ item.venue_address }}</span>{% endif %}{% if item.venue_map_url %} · <a href="{{ item.venue_map_url }}">{% translate "map" context "call sheet" %}</a>{% endif %}<br>{% endif %}{% if item.day_note %}<span class="muted">{{ item.day_note }}</span>{% if item.description %} · {% endif %}{% endif %}{% if item.description %}{{ item.description }}{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

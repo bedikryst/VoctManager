@@ -67,7 +67,7 @@ from notifications.tasks import send_bulk_notifications_task, send_notification_
 from notifications.time_metadata import build_event_time_metadata, format_event_time
 
 from .domain.attendance_window import SELF_REPORT_CLOSED_MESSAGE, is_open_to_self_report
-from .domain.day_timeline import format_time_window
+from .domain.day_timeline import DATE_FORMAT, format_day_window, localize
 from .dtos import (
     ArtistCreateDTO,
     AttendanceRangeDTO,
@@ -154,9 +154,9 @@ def _format_change_value(value: object) -> str | None:
     """Renders an audit-trail value for change logs (single source of truth).
     Returns None for empty values so the renderer can show a localized dash."""
     if isinstance(value, datetime):
-        return value.strftime('%d.%m.%Y %H:%M')
+        return value.strftime(f'{DATE_FORMAT} %H:%M')
     if isinstance(value, date):
-        return value.strftime('%d.%m.%Y')
+        return value.strftime(DATE_FORMAT)
     if isinstance(value, time):
         return value.strftime('%H:%M')
     if value is None or value == "":
@@ -169,6 +169,29 @@ def _change(field: str, old: object, new: object) -> dict[str, str | None]:
     `old`/`new` are language-neutral display values. The human label is resolved
     per language at render time (push/email composer + in-app NotificationItem)."""
     return {"field": field, "old": _format_change_value(old), "new": _format_change_value(new)}
+
+
+def _stated_day_windows(project: Project) -> dict[str, tuple[str | None, bool]]:
+    """Each typed window as (what its change row shows, whether it sits off
+    concert day), keyed like its change row.
+
+    A window is compared by exactly what the row shows. That value carries the
+    date whenever the window is off concert day, so moving the acoustic
+    rehearsal to the evening before at the same hours is a change, and so is
+    moving the concert under a window that stays the evening before — the
+    window's own date moved, and a row queued earlier must not publish the old
+    one. It is minute precision, so a save that only drops stored seconds is
+    not news. The date is resolved against the concert as it stands on the
+    side of the save being read.
+    """
+    concert_date = localize(project.date_time, project.timezone).date()
+    return {
+        key: (
+            format_day_window(window, concert_date),
+            window.start is not None and window.day != 0,
+        )
+        for key, window in project.day_windows().items()
+    }
 
 
 # One sentence for both casting paths (single assignment and the whole board), so
@@ -928,14 +951,6 @@ class ProjectManagementService:
         "onsite_contact_phone": "onsite_contact",
     }
 
-    # The two typed windows, each as (change key, opening column, closing one).
-    # Diffed as pairs rather than through the map above — see
-    # :func:`roster.domain.day_timeline.format_time_window`.
-    _DAY_WINDOWS: ClassVar[tuple[tuple[str, str, str], ...]] = (
-        ("warmup", "warmup_start", "warmup_end"),
-        ("soundcheck", "soundcheck_start", "soundcheck_end"),
-    )
-
     @staticmethod
     def update_project(project: Project, dto: ProjectUpdateDTO) -> Project:
         changes: list[dict[str, str | None]] = []
@@ -953,12 +968,10 @@ class ProjectManagementService:
         was_draft = project.status == Project.Status.DRAFT
 
         # Read before anything is written onto the instance: the loop below sets
-        # the four window columns one at a time, so the pair can only be
-        # compared as a whole from here.
-        old_windows = {
-            key: format_time_window(getattr(project, start), getattr(project, end))
-            for key, start, end in ProjectManagementService._DAY_WINDOWS
-        }
+        # the window columns one at a time, so a window can only be compared as
+        # a whole from here. The windows are diffed this way rather than through
+        # the map above — see :func:`_stated_day_windows`.
+        old_windows = _stated_day_windows(project)
         old_concert = (project.date_time, project.timezone)
 
         # Publication is one-way. Sending a live project back to DRAFT would
@@ -1013,16 +1026,22 @@ class ProjectManagementService:
                         key = ProjectManagementService._PROJECT_CHANGE_KEYS[attr]
                         changes.append(_change(key, old_value, value))
                     # Fields outside the surfaceable set (description, spotify URL,
-                    # and the window columns diffed as pairs below) persist
+                    # and the window columns diffed as whole windows below) persist
                     # silently here — a note tweak isn't worth alerting the cast.
                 setattr(project, attr, value)
 
-            for key, start, end in ProjectManagementService._DAY_WINDOWS:
-                new_window = format_time_window(
-                    getattr(project, start), getattr(project, end)
-                )
-                if new_window != old_windows[key]:
-                    changes.append(_change(key, old_windows[key], new_window))
+            # A window inside concert day is news: the call is the hour the cast
+            # is held to, and it does not move when the sound check slides. A
+            # window off concert day is not bracketed by the call — on a trip it
+            # is the first thing the cast is due at — so moving it, or moving it
+            # there, is as urgent as moving the call itself.
+            time_critical_windows: set[str] = set()
+            for key, (new_shown, new_off_day) in _stated_day_windows(project).items():
+                old_shown, old_off_day = old_windows[key]
+                if new_shown != old_shown:
+                    changes.append(_change(key, old_shown, new_shown))
+                    if old_off_day or new_off_day:
+                        time_critical_windows.add(key)
 
             project.save()
 
@@ -1093,6 +1112,7 @@ class ProjectManagementService:
                     notification_type=NotificationType.PROJECT_UPDATED,
                     level=NotificationLevel.WARNING,
                     metadata=metadata,
+                    time_critical_fields=time_critical_windows,
                 )
 
         return project
@@ -1158,11 +1178,20 @@ class ProjectManagementService:
 
             if archived_participation:
                 # 2A. RESTORE PATH
+                # Joining on site is an exception the manager grants for one
+                # stay in the cast, shown only while the plan has points for the
+                # travelling party. A seat added back reads as a fresh add, so the
+                # old exception must not ride along unseen and mute the departure
+                # for someone who is now travelling.
+                archived_participation.joins_on_site = False
                 # Update any new values passed in the request (e.g., a new status)
                 for attr, value in validated_data.items():
                     setattr(archived_participation, attr, value)
-                
-                archived_participation.restore() # Saves and sets is_deleted=False
+
+                # A full save, not `restore()`: that one writes only the deletion
+                # flag, and every value set above would be dropped with no error.
+                archived_participation.is_deleted = False
+                archived_participation.save()
                 participation = archived_participation
             else:
                 # 2B. CREATE PATH

@@ -1,8 +1,29 @@
 # Concert trip plan — a day plan that spans days, and singers who join on site
 
-Status: **Specified 2026-09-28. Nothing implemented.** Three stages; Stages 2 and 3 both depend on
-Stage 1 and not on each other. One stage per session; move this line when a stage lands and say
-whether it is committed, migrated and seen in the browser.
+Status: **Stage 1 committed 2026-09-29, after a review pass; `roster/0069` not migrated anywhere.**
+Stages 2 and 3 not started; both depend on Stage 1 and not on each other. One stage per session;
+move this line when a stage lands and say whether it is committed, migrated and seen in the browser.
+
+Stage 1 notes for the next stages:
+- `point_sort_key` is the one ordering rule (day, then clock); the call-sheet merge uses it too.
+- A point without a readable time keeps its predecessor's position but is clamped to its own day,
+  so day groups never split. The frontend (Stage 3) must mirror the clamp, not only the sort.
+- Run-sheet rows are no longer wholly unvalidated: the DTOs refuse a `day` that is not a whole
+  number in range and a `travellers_only` that is not a boolean. Readers stay lenient.
+- `Project.day_windows()` is the only way to read the two windows; `format_day_window` states one
+  with its date when it is off concert day. `plan_bounds` takes no zone (it uses the downbeat's)
+  and counts the call only when `CallWindow.is_stated`.
+- A window change off concert day is escalated to URGENT by the emitter
+  (`queue_broadcast(time_critical_fields=...)`).
+- Already in place from Stage 3's list: `RunSheetItem.day` / `travellers_only` types,
+  `readRunSheetDay`, and `useDetailsForm` keeping both keys through the dirty check and the save.
+  The editor still sorts and places every row on concert day; the shared
+  `day_timeline_cases.json` has no multi-day case yet, and Stage 3 must add them.
+- The masthead "Plan ends" note and the calendar description already state the day (Stage 2
+  items). Interim until Stage 2: every call-sheet row off concert day prints the "N days
+  earlier" note; Stage 2 replaces it with day headings.
+- The new model verbose names and help texts have no `pl`/`fr` msgids yet; add them with the
+  Stage 2 translations.
 
 ## Context
 
@@ -107,8 +128,9 @@ What the code says (survey 2026-09-28):
   - `Participation.joins_on_site`: `BooleanField(default=False)`, with a comment stating
     decision 6.
 - **DTOs** (`roster/dtos.py`): `ProjectCreateDTO` / `ProjectUpdateDTO` accept `warmup_day` and
-  `soundcheck_day` (`int`, `ge`/`le` from the constants). Run-sheet rows stay unvalidated by
-  design; `normalize_run_sheet` is their only interpreter.
+  `soundcheck_day` (`int`, `ge`/`le` from the constants). Run-sheet rows stay free JSON and
+  `normalize_run_sheet` is their only interpreter; the DTOs only refuse a bad `day` or
+  `travellers_only`, which the reader would otherwise misplace without a word.
 - **Change diff** (`roster/services.py`, `_DAY_WINDOWS` in `update_project`): a window compares
   as `(day, start, end)`. Moving the acoustic rehearsal from Sunday to Saturday at the same hours
   MUST produce a change. The value names the day when it is not concert day. Use the date
@@ -261,8 +283,8 @@ Then, for the first trip, on prod in the panel:
   lost silently or blocks the save.
 - The frontend and backend sorts must agree: day, then minute, with an unreadable time last
   within its day.
-- `location_id` and now `day` sit in unvalidated JSON. Every reader degrades a bad value to the
-  default and never errors.
+- `location_id` and `day` sit in JSON that older rows never had validated. Every reader degrades
+  a bad value to the default and never errors; only the write refuses one.
 - `Participation` is serialized with `fields = '__all__'`, so `joins_on_site` reaches every
   payload that embeds a seat. That is harmless (it is not personal data), but do not add a
   second, hand-written copy of it.

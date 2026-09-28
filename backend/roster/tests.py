@@ -1765,6 +1765,59 @@ class ScheduleDashboardTests(APITestCase):
         self.assertNotIn(str(self.project_declined.id), project_ids)
         self.assertNotIn(str(self.project_foreign.id), project_ids)
 
+    def test_joins_on_site_is_read_from_the_readers_own_seat(self) -> None:
+        """A singer who joins the trip on site reads the flag off their own
+        seat; a manager previewing them sees the same, and a manager's own
+        timeline — no seat anywhere — never claims it."""
+        self.part_live.joins_on_site = True
+        self.part_live.save(update_fields=["joins_on_site"])
+
+        def flags(data) -> dict[str, bool]:
+            return {
+                item["project"]["id"]: item["joins_on_site"]
+                for item in data
+                if item["type"] == "PROJECT"
+            }
+
+        self.assertEqual(flags(self._fetch()), {str(self.project_live.id): True})
+
+        manager = get_user_model().objects.create_user(
+            username="sch-mgr", email="sch-mgr@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=manager, role=AppRole.MANAGER)
+        self.client.force_authenticate(user=manager)
+
+        preview = self.client.get(f"{self.URL}?artist={self.singer.id}")
+        self.assertEqual(preview.status_code, 200)
+        self.assertEqual(flags(preview.data), {str(self.project_live.id): True})
+
+        own = self.client.get(self.URL)
+        self.assertEqual(own.status_code, 200)
+        own_flags = flags(own.data)
+        self.assertIn(str(self.project_live.id), own_flags)
+        self.assertFalse(any(own_flags.values()))
+
+    def test_a_seat_added_back_starts_as_a_traveller(self) -> None:
+        """Joining on site is an exception granted for one stay in the cast; a
+        seat removed and added back must not carry it unseen. The request's own
+        values land on the restored seat too."""
+        self.part_live.joins_on_site = True
+        self.part_live.status = Participation.Status.DECLINED
+        self.part_live.save(update_fields=["joins_on_site", "status"])
+        self.part_live.delete()
+
+        restored = ProjectManagementService.create_or_restore_participation({
+            "artist": self.singer,
+            "project": self.project_live,
+            "status": Participation.Status.CONFIRMED,
+        })
+
+        self.assertEqual(restored.pk, self.part_live.pk)
+        restored.refresh_from_db()
+        self.assertFalse(restored.is_deleted)
+        self.assertFalse(restored.joins_on_site)
+        self.assertEqual(restored.status, Participation.Status.CONFIRMED)
+
     def test_rehearsal_invitation_scope(self) -> None:
         data = self._fetch()
         rehearsal_ids = {
@@ -2308,6 +2361,164 @@ class ProjectUpdateNotificationEmitterTests(TestCase):
             [c for c in meta["changes"] if c["field"] == "warmup"],
             [{"field": "warmup", "old": None, "new": "18:40"}],
         )
+
+    def test_a_window_moved_to_the_day_before_is_a_change_that_names_the_date(
+        self,
+    ) -> None:
+        """Same hours, different evening: the singer who read "19:15" on concert
+        day must learn that the acoustic rehearsal is now the night before."""
+        from notifications.announcement_queue import AnnouncementQueue
+
+        from .domain.day_timeline import localize
+        from .dtos import ProjectUpdateDTO
+
+        self.project.soundcheck_start = time(19, 15)
+        self.project.soundcheck_end = time(22, 0)
+        self.project.save(update_fields=["soundcheck_start", "soundcheck_end"])
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(soundcheck_day=-1),
+            )
+            AnnouncementQueue.publish(self.project)
+
+        concert = localize(self.project.date_time, self.project.timezone)
+        assert concert is not None
+        day_before = (concert.date() - timedelta(days=1)).strftime("%d.%m.%Y")
+        meta = bulk.call_args.kwargs["metadata"]
+        self.assertEqual(
+            [c for c in meta["changes"] if c["field"] == "soundcheck"],
+            [{
+                "field": "soundcheck",
+                "old": "19:15-22:00",
+                "new": f"{day_before} 19:15-22:00",
+            }],
+        )
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.soundcheck_day, -1)
+        # Off concert day the call no longer brackets the window, so the move
+        # is an alarm, like moving the call itself.
+        self.assertEqual(bulk.call_args.kwargs["level"], NotificationLevel.URGENT)
+
+    def test_moving_the_concert_re_dates_a_window_the_day_before(self) -> None:
+        """A row queued with the window's date must not publish a date the
+        window no longer has: the concert moving a week moves the evening
+        before with it, and that is a row of its own."""
+        from notifications.announcement_queue import AnnouncementQueue
+
+        from .domain.day_timeline import localize
+        from .dtos import ProjectUpdateDTO
+
+        self.project.soundcheck_start = time(19, 15)
+        self.project.save(update_fields=["soundcheck_start"])
+        old_concert = self.project.date_time
+
+        # Two saves before one publication: the window moves to the evening
+        # before, then the concert moves a week under it.
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(soundcheck_day=-1),
+            )
+            ProjectManagementService.update_project(
+                self.project,
+                ProjectUpdateDTO(date_time=old_concert + timedelta(days=7)),
+            )
+            AnnouncementQueue.publish(self.project)
+
+        def evening_before(concert):
+            local = localize(concert, self.project.timezone)
+            return (local.date() - timedelta(days=1)).strftime("%d.%m.%Y")
+
+        meta = bulk.call_args.kwargs["metadata"]
+        self.assertEqual(
+            [c for c in meta["changes"] if c["field"] == "soundcheck"],
+            [{
+                "field": "soundcheck",
+                "old": "19:15",
+                "new": f"{evening_before(self.project.date_time)} 19:15",
+            }],
+        )
+        self.assertNotEqual(
+            evening_before(old_concert), evening_before(self.project.date_time)
+        )
+
+    def test_a_save_that_only_drops_stored_seconds_is_not_news(self) -> None:
+        from notifications.announcement_queue import AnnouncementQueue
+
+        from .dtos import ProjectUpdateDTO
+
+        self.project.soundcheck_start = time(19, 15, 30)
+        self.project.save(update_fields=["soundcheck_start"])
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(soundcheck_start=time(19, 15)),
+            )
+            AnnouncementQueue.publish(self.project)
+
+        bulk.assert_not_called()
+
+    def test_a_run_sheet_row_day_is_refused_where_it_is_written(self) -> None:
+        """The reader turns a bad ``day`` into concert day without a word, so
+        the write is where a wrong value has to fail."""
+        from pydantic import ValidationError as PydanticValidationError
+
+        from .dtos import ProjectCreateDTO, ProjectUpdateDTO
+
+        accepted = ProjectUpdateDTO(run_sheet=[
+            {"time": "14:00", "title": "Wyjazd", "day": -1, "travellers_only": True},
+            {"time": "18:00", "title": "Kolacja"},
+        ])
+        assert accepted.run_sheet is not None
+        self.assertEqual(accepted.run_sheet[0]["day"], -1)
+
+        for row in (
+            {"day": "-1"},
+            {"day": True},
+            {"day": -1.0},
+            {"day": 4},
+            {"day": None},
+            {"travellers_only": "true"},
+            {"travellers_only": 1},
+        ):
+            with self.subTest(row=row), self.assertRaises(PydanticValidationError):
+                ProjectUpdateDTO(run_sheet=[{"time": "14:00", "title": "Wyjazd", **row}])
+        with self.assertRaises(PydanticValidationError):
+            ProjectCreateDTO(
+                title="Wyjazd",
+                date_time=self.project.date_time,
+                run_sheet=[{"time": "14:00", "title": "Wyjazd", "day": "-1"}],
+            )
+
+    def test_a_day_without_a_window_is_not_news(self) -> None:
+        """A day column under an empty window plans nothing, so it moves nothing
+        a singer acts on."""
+        from notifications.announcement_queue import AnnouncementQueue
+
+        from .dtos import ProjectUpdateDTO
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(warmup_day=-1),
+            )
+            AnnouncementQueue.publish(self.project)
+
+        bulk.assert_not_called()
+
+    def test_a_window_day_is_an_integer_in_range_and_never_a_boolean(self) -> None:
+        from pydantic import ValidationError as PydanticValidationError
+
+        from .domain.day_timeline import MAX_DAY_OFFSET, MIN_DAY_OFFSET
+        from .dtos import ProjectCreateDTO, ProjectUpdateDTO
+
+        self.assertEqual(ProjectUpdateDTO(soundcheck_day=-1).soundcheck_day, -1)
+        for bad in (True, False, "-1", MIN_DAY_OFFSET - 1, MAX_DAY_OFFSET + 1, None):
+            with self.subTest(value=bad), self.assertRaises(PydanticValidationError):
+                ProjectUpdateDTO(warmup_day=bad)
+        with self.assertRaises(PydanticValidationError):
+            ProjectCreateDTO(
+                title="Wyjazd", date_time=self.project.date_time, soundcheck_day=True,
+            )
 
     def test_a_door_that_moves_is_named_by_its_own_field(self) -> None:
         from notifications.announcement_queue import AnnouncementQueue
@@ -6330,6 +6541,25 @@ class ConcertDaySheetTests(APITestCase):
         self.assertEqual(report["masthead_facts"][-1]["label"], "Miejsce")
         self.assertEqual(report["venue_line"], "")
 
+    def test_a_plan_that_ends_the_next_morning_says_which_day(self) -> None:
+        """A return at 08:00 the day after, printed as a bare hour beside a
+        20:00 downbeat, reads as a concert-day hour before the concert."""
+        self._pin_concert_day()
+        self.project.run_sheet = [
+            *self.project.run_sheet,
+            {"time": "08:00", "title": "Powrót", "day": 1},
+        ]
+        self.project.save(update_fields=["run_sheet"])
+
+        day = self._build_context(Audience.CHORISTER, self.singer_part)
+        end_cell = day["masthead_facts"][-1]
+        self.assertEqual(end_cell["label"], "Koniec planu")
+        self.assertEqual(end_cell["value"], "08:00")
+        with translation.override("pl"):
+            next_day = DocumentGenerator._day_offset_note(1)
+        self.assertTrue(next_day)
+        self.assertEqual(end_cell["note"], f"{next_day} · Powrót")
+
     def test_day_card_states_no_end_it_cannot_derive(self) -> None:
         """Nothing is planned after the downbeat, and the end of a concert is
         stored nowhere — a cell derived from summed piece durations would be a
@@ -6417,6 +6647,36 @@ class ConcertDaySheetTests(APITestCase):
         # the typed moment: when they agree the repetition costs nothing, and
         # when they disagree the repetition is the finding.
         self.assertEqual(sum(1 for row in rows if "check" in row["title"].lower()), 1)
+
+    def test_a_window_on_the_day_before_opens_the_plan(self) -> None:
+        """On a trip the acoustic rehearsal is the evening before, and a window
+        sits on the day its own day column names — never on concert day by
+        default of its hour."""
+        self._pin_concert_day()
+        self.project.warmup_start = time(18, 40)
+        self.project.soundcheck_start = time(19, 20)
+        self.project.soundcheck_day = -1
+        self.project.save(
+            update_fields=["warmup_start", "soundcheck_start", "soundcheck_day"]
+        )
+
+        rows = self._build_context(Audience.CHORISTER, self.singer_part)["day_timeline"]
+        self.assertEqual(
+            [(row["time"], row["title"]) for row in rows],
+            [
+                ("19:20", "Próba akustyczna"),
+                ("18:30", "Zbiórka"),
+                ("18:30", "Call & warm-up"),
+                ("18:40", "Rozśpiewanie"),
+                ("19:15", "Sound check"),
+                ("20:00", "Downbeat"),
+                ("20:00", "Początek koncertu"),
+            ],
+        )
+        # Until the sheet groups the plan by day, the row says it is not
+        # concert day; every concert-day row stays silent.
+        self.assertTrue(rows[0]["day_note"])
+        self.assertEqual([row["day_note"] for row in rows[1:]], [""] * 6)
 
     def test_typed_moments_alone_are_a_planned_day(self) -> None:
         """A producer who set only the two windows has planned a day; the
@@ -7028,6 +7288,7 @@ class DayTimelineContractTests(SimpleTestCase):
                         title=point["title"],
                         description="",
                         location_id="",
+                        day=point.get("day", 0),
                     )
                     for point in case["points"]
                 ]
@@ -7041,6 +7302,234 @@ class DayTimelineContractTests(SimpleTestCase):
                     ],
                     case["expected"],
                 )
+
+
+class TripPlanDomainTests(SimpleTestCase):
+    """A plan that spans days: an out-of-town concert leaves the day before.
+
+    Every point sits on a day counted from concert day, read out of
+    unvalidated JSON, and the plan's ordering, placement and bounds all follow
+    that day before the clock.
+    """
+
+    WARSAW = "Europe/Warsaw"
+
+    @classmethod
+    def _at(cls, year: int, month: int, day: int, hour: int, minute: int) -> datetime:
+        import zoneinfo
+
+        return datetime(
+            year, month, day, hour, minute, tzinfo=zoneinfo.ZoneInfo(cls.WARSAW)
+        )
+
+    def test_day_is_an_integer_in_range_and_anything_else_is_concert_day(self) -> None:
+        from .domain.day_timeline import normalize_run_sheet
+
+        points = normalize_run_sheet([
+            {"time": "10:00", "title": "in range", "day": -1},
+            {"time": "10:00", "title": "upper edge", "day": 3},
+            {"time": "10:00", "title": "boolean", "day": True},
+            {"time": "10:00", "title": "string", "day": "-1"},
+            {"time": "10:00", "title": "float", "day": -1.0},
+            {"time": "10:00", "title": "below range", "day": -4},
+            {"time": "10:00", "title": "above range", "day": 4},
+            {"time": "10:00", "title": "missing"},
+        ])
+        self.assertEqual(
+            {point.title: point.day for point in points},
+            {
+                "in range": -1,
+                "upper edge": 3,
+                "boolean": 0,
+                "string": 0,
+                "float": 0,
+                "below range": 0,
+                "above range": 0,
+                "missing": 0,
+            },
+        )
+
+    def test_travellers_only_is_read_only_from_a_real_true(self) -> None:
+        from .domain.day_timeline import normalize_run_sheet
+
+        points = normalize_run_sheet([
+            {"time": "10:00", "title": "true", "travellers_only": True},
+            {"time": "10:00", "title": "string", "travellers_only": "true"},
+            {"time": "10:00", "title": "one", "travellers_only": 1},
+            {"time": "10:00", "title": "missing"},
+        ])
+        self.assertEqual(
+            {point.title: point.travellers_only for point in points},
+            {"true": True, "string": False, "one": False, "missing": False},
+        )
+
+    def test_stored_points_order_by_day_then_clock(self) -> None:
+        """An unreadable time sorts last within its own day, not after the
+        whole trip: the day was picked from a list and is always meaningful."""
+        from .domain.day_timeline import normalize_run_sheet
+
+        points = normalize_run_sheet([
+            {"time": "09:00", "title": "Śniadanie"},
+            {"time": "po próbie", "title": "Kolacja", "day": -1},
+            {"time": "8:00", "title": "Powrót", "day": 1},
+            {"time": "20:00", "title": "Hotel", "day": -1},
+            {"time": "14:00", "title": "Wyjazd", "day": -1},
+        ])
+        self.assertEqual(
+            [point.title for point in points],
+            ["Wyjazd", "Hotel", "Kolacja", "Śniadanie", "Powrót"],
+        )
+
+    def test_a_point_the_day_before_is_placed_among_that_days_anchors(self) -> None:
+        from .domain.day_timeline import (
+            TimelineEntryKind,
+            build_day_timeline,
+            normalize_run_sheet,
+            resolve_call_window,
+        )
+
+        window = resolve_call_window(
+            self._at(2026, 10, 10, 19, 0), self._at(2026, 10, 11, 13, 30), self.WARSAW
+        )
+        points = normalize_run_sheet([
+            {"time": "14:00", "title": "Wyjazd", "day": -1},
+            {"time": "21:00", "title": "Kolacja", "day": -1},
+            {"time": "08:00", "title": "Śniadanie"},
+        ])
+        entries = build_day_timeline(points, window)
+        self.assertEqual(
+            [
+                entry.point.title if entry.point else entry.kind.value
+                for entry in entries
+            ],
+            ["Wyjazd", "call", "Kolacja", "Śniadanie", "concert"],
+        )
+        self.assertEqual(
+            [entry.day_offset for entry in entries], [-1, -1, -1, 0, 0]
+        )
+        self.assertIs(entries[1].kind, TimelineEntryKind.CALL)
+
+    def test_a_point_without_a_time_stays_on_its_own_day(self) -> None:
+        """A time mid-edit inherits its predecessor's position, but never
+        leaves its day: every surface heads the plan by day, and an entry on a
+        neighbouring day would split its day's group in two."""
+        from .domain.day_timeline import RunSheetPoint, build_day_timeline, resolve_call_window
+
+        window = resolve_call_window(
+            self._at(2026, 10, 10, 19, 0), self._at(2026, 10, 11, 13, 30), self.WARSAW
+        )
+
+        def point(title: str, time_value: str, day: int) -> RunSheetPoint:
+            return RunSheetPoint(
+                time=time_value, title=title, description="", location_id="", day=day
+            )
+
+        # The first point of the plan, on the day before, with no time yet:
+        # it opens its own day rather than sliding to concert-day midnight.
+        entries = build_day_timeline(
+            [point("Zbiórka na dworcu", "", -1), point("Śniadanie", "08:00", 0)],
+            window,
+        )
+        self.assertEqual(
+            [entry.point.title if entry.point else entry.kind.value for entry in entries],
+            ["Zbiórka na dworcu", "call", "Śniadanie", "concert"],
+        )
+
+        # The return the day after, not yet timed, follows a lunch before the
+        # downbeat: it opens the day after instead of taking the lunch's hour
+        # on concert day, which would print it before the concert.
+        entries = build_day_timeline(
+            [point("Obiad", "12:00", 0), point("Powrót", "", 1)], window
+        )
+        self.assertEqual(
+            [entry.point.title if entry.point else entry.kind.value for entry in entries],
+            ["call", "Obiad", "concert", "Powrót"],
+        )
+
+    def test_plan_bounds_follow_the_reader_across_a_dst_change(self) -> None:
+        """Departure on Saturday 24.10.2026 (CEST), concert on Sunday 25.10.2026
+        after the clocks go back (CET). Each wall-clock time takes the offset of
+        its own date; the concert's offset applied to Saturday would move the
+        departure by an hour."""
+        from datetime import UTC
+
+        from .domain.day_timeline import (
+            DayWindow,
+            normalize_run_sheet,
+            plan_bounds,
+            resolve_call_window,
+        )
+
+        window = resolve_call_window(
+            self._at(2026, 10, 25, 12, 0), self._at(2026, 10, 25, 13, 30), self.WARSAW
+        )
+        points = normalize_run_sheet([
+            {"time": "14:00", "title": "Wyjazd", "day": -1, "travellers_only": True},
+            {"time": "22:30", "title": "Kolacja", "day": -1, "travellers_only": True},
+            {"time": "", "title": "Hotel", "day": -1, "travellers_only": True},
+            {"time": "18:00", "title": "Powrót", "travellers_only": True},
+        ])
+        day_windows = [
+            DayWindow(start=time(11, 0), end=time(11, 45), day=0),
+            DayWindow(start=time(19, 15), end=time(22, 0), day=-1),
+        ]
+
+        traveller = plan_bounds(points, window, day_windows, include_travellers_only=True)
+        assert traveller is not None
+        self.assertEqual(traveller.start, datetime(2026, 10, 24, 12, 0, tzinfo=UTC))
+        self.assertEqual(traveller.start.utcoffset(), timedelta(hours=2))
+        assert traveller.end is not None
+        self.assertEqual(traveller.end, datetime(2026, 10, 25, 17, 0, tzinfo=UTC))
+        self.assertEqual(traveller.end.utcoffset(), timedelta(hours=1))
+
+        # A singer who joins on site starts at the acoustic rehearsal, and the
+        # return is not theirs, so nothing is planned for them after the
+        # downbeat and no end is invented.
+        joiner = plan_bounds(points, window, day_windows, include_travellers_only=False)
+        assert joiner is not None
+        self.assertEqual(joiner.start, datetime(2026, 10, 24, 17, 15, tzinfo=UTC))
+        self.assertIsNone(joiner.end)
+
+    def test_plan_bounds_on_a_one_day_plan(self) -> None:
+        from .domain.day_timeline import DayWindow, plan_bounds, resolve_call_window
+
+        window = resolve_call_window(
+            self._at(2026, 7, 13, 18, 30), self._at(2026, 7, 13, 20, 0), self.WARSAW
+        )
+        bounds = plan_bounds(
+            [], window, [DayWindow(start=None, end=None, day=-1)],
+            include_travellers_only=False,
+        )
+        assert bounds is not None
+        # An unplanned window counts for nothing, whatever its day column says.
+        self.assertEqual(bounds.start, self._at(2026, 7, 13, 18, 30))
+        self.assertIsNone(bounds.end)
+
+        no_concert = resolve_call_window(None, None, self.WARSAW)
+        self.assertIsNone(plan_bounds([], no_concert, [], include_travellers_only=True))
+
+    def test_a_call_that_cannot_be_stated_does_not_bound_the_plan(self) -> None:
+        """A call typed on the wrong date, or after the downbeat, is a fault the
+        sheet already refuses to state; it must not open the plan weeks early
+        or close it on an hour nobody planned."""
+        from .domain.day_timeline import (
+            CallWindowProblem,
+            plan_bounds,
+            resolve_call_window,
+        )
+
+        concert = self._at(2026, 10, 11, 13, 30)
+        for call, problem in (
+            (self._at(2026, 9, 20, 12, 0), CallWindowProblem.IMPLAUSIBLE),
+            (self._at(2026, 10, 11, 21, 0), CallWindowProblem.NOT_BEFORE),
+        ):
+            with self.subTest(problem=problem):
+                window = resolve_call_window(call, concert, self.WARSAW)
+                self.assertIs(window.problem, problem)
+                bounds = plan_bounds([], window, [], include_travellers_only=True)
+                assert bounds is not None
+                self.assertEqual(bounds.start, concert)
+                self.assertIsNone(bounds.end)
 
 
 class ArtistDuplicateMergeTests(APITestCase):
