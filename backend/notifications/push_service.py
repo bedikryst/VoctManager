@@ -28,7 +28,7 @@ from uuid import UUID
 import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db.models import F
+from django.db.models import F, QuerySet
 from django.utils import timezone, translation
 from pywebpush import WebPushException, webpush
 
@@ -89,6 +89,12 @@ class TestPushOutcome:
     """
     devices: int
     delivered: int
+
+
+def reachable_devices(user_id: int | str) -> QuerySet[PushDevice]:
+    """The devices a push to this user is offered to — the dispatcher's own
+    filter, for anything that states whether push can reach a member."""
+    return PushDevice.objects.filter(user_id=user_id, is_active=True)
 
 
 @dataclass(frozen=True)
@@ -231,7 +237,7 @@ class PushDispatcherService:
             logger.warning("[PushService] Recipient UID:%s not found.", recipient_id)
             return None
 
-        devices = tuple(PushDevice.objects.filter(user=user, is_active=True))
+        devices = tuple(reachable_devices(user.id))
         if not devices:
             return None
 

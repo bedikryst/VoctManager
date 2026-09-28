@@ -73,10 +73,13 @@ def route_notification_task(
     notification_type: str,
     metadata: dict[str, Any],
     level: str = NotificationLevel.INFO,
+    notification_id: str | None = None,
 ) -> None:
     """
     Evaluates DB preferences and dynamically spawns isolated transport tasks.
-    Invoked strictly after Notification DB transaction commits.
+    Invoked strictly after Notification DB transaction commits. `notification_id`
+    names the in-app row; a task queued before it was threaded arrives without
+    one and is routed as a single event.
     """
     from .router import NotificationRouter
     NotificationRouter.route(
@@ -84,6 +87,7 @@ def route_notification_task(
         notification_type=notification_type,
         metadata=metadata,
         level=level,
+        notification_id=notification_id,
     )
 
 # --- 3. PUSH TRANSPORT ---
@@ -154,6 +158,14 @@ def send_push_notification_task(
     if delivered == 0:
         spend_fallback()
 
+
+@shared_task(name="notifications.flush_push_fold")
+def flush_push_fold_task(recipient_id: str, artist_id: str, stamp: str) -> int:
+    """Closes one singer's attendance window for one manager, when it is due, with
+    one push for everything it gathered. See push_fold."""
+    from .push_fold import flush
+    return flush(recipient_id=recipient_id, artist_id=artist_id, stamp=stamp)
+
 # --- 4. FAN-OUT ORCHESTRATION ---
 
 @shared_task(name="notifications.send_bulk_notifications")
@@ -189,9 +201,10 @@ def send_bulk_notifications_task(
 
 
 # --- 5. DAILY DIGEST -------------------------------------------------------- #
-# Routine INFO manager alerts are held back from real-time channels by the router
-# and collected here into one human, scannable email per recipient per day — sent
-# at the recipient's chosen local hour, and only when there is something to say.
+# The e-mail of routine INFO manager alerts is held back by the router for readers
+# with the digest on (their push is not) and collected here into one human,
+# scannable email per recipient per day — sent at the recipient's chosen local
+# hour, and only when there is something to say.
 
 # Digest sections, in descending order of how much they demand the conductor's
 # attention. Titles are resolved lazily inside the language override.

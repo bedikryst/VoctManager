@@ -55,6 +55,7 @@ class NotificationService:
                         notification_type=dto.notification_type,
                         metadata=notification.metadata,
                         level=dto.level,
+                        notification_id=str(notification.id),
                     )
 
                 transaction.on_commit(dispatch_task)

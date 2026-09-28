@@ -10,11 +10,13 @@
 """
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 from django.utils.translation import gettext as _
 
 from .message_content import (
+    NOTIFICATION_IDS_KEY,
     MessageContentBuilder,
     PushAction,
     PushPayload,
@@ -46,7 +48,10 @@ class PushPayloadBuilder:
             metadata=metadata,
             is_manager=is_manager,
         )
-        return content.to_push()
+        notification_ids = tuple(
+            str(nid) for nid in (metadata or {}).get(NOTIFICATION_IDS_KEY) or ()
+        )
+        return replace(content.to_push(), notification_ids=notification_ids)
 
     @classmethod
     def build_test(cls, *, is_manager: bool) -> PushPayload:

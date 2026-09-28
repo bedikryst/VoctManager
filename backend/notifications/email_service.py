@@ -18,6 +18,7 @@ Standards: SaaS 2026, Event-Driven Architecture (EDA) compatibility.
 """
 
 import logging
+from enum import StrEnum
 from typing import Any
 
 from django.conf import settings
@@ -90,6 +91,33 @@ class EmailType:
     """
     CRITICAL_SECURITY = 'CRITICAL_SECURITY'
     OPERATIONAL = 'OPERATIONAL'
+
+
+class EmailBlock(StrEnum):
+    """Why a notification e-mail cannot reach its recipient."""
+    UNDELIVERABLE = "undeliverable"
+    OPTED_OUT = "opted_out"
+    NOT_ACTIVATED = "not_activated"
+
+
+def notification_email_block(user: Any, email_type: str = EmailType.OPERATIONAL) -> EmailBlock | None:
+    """The account-level reason a notification e-mail is suppressed, or None.
+
+    The dispatcher's own rule, kept in one place so anything that states what a
+    member will receive reads the same answer the send acts on. The per-type
+    preference is not part of it: that is `plan_delivery`'s question.
+    """
+    if getattr(user.profile, 'email_undeliverable', False):
+        return EmailBlock.UNDELIVERABLE
+    if email_type == EmailType.OPERATIONAL and not getattr(user.profile, 'email_notifications_enabled', True):
+        return EmailBlock.OPTED_OUT
+    # An invited-but-not-yet-activated account must first meet the activation
+    # email, not business notifications pointing at a panel it cannot enter.
+    # The in-app row is already persisted; the first login presents it instead
+    # (see welcome-invitation spec, Part A).
+    if not user.is_active:
+        return EmailBlock.NOT_ACTIVATED
+    return None
 
 
 class EmailDispatcherService:
@@ -167,20 +195,11 @@ class EmailDispatcherService:
             user = User.objects.select_related('profile').get(id=recipient_id)
 
             # 2. Enforce Business Rules (Strict Opt-outs + ESP suppression)
-            if getattr(user.profile, 'email_undeliverable', False):
-                logger.info(f"[EmailService] Suppressed email for UID:{recipient_id}. Address marked undeliverable.")
-                return
-            if email_type == EmailType.OPERATIONAL and not getattr(user.profile, 'email_notifications_enabled', True):
-                logger.info(f"[EmailService] Suppressed operational email for UID:{recipient_id}. User opted out.")
-                return
-            # An invited-but-not-yet-activated account must first meet the
-            # activation email, not business notifications pointing at a panel it
-            # cannot enter. The in-app row is already persisted; the first login
-            # presents it instead (see welcome-invitation spec, Part A).
-            if not user.is_active:
+            block = notification_email_block(user, email_type)
+            if block is not None:
                 logger.info(
-                    f"[EmailService] Suppressed notification email for UID:{recipient_id}. "
-                    f"Account not activated (type={notification_type})."
+                    f"[EmailService] Suppressed notification email for UID:{recipient_id} "
+                    f"({block}, type={notification_type})."
                 )
                 return
 

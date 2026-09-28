@@ -2,14 +2,17 @@
 @file delivery.py
 @description Delivery policy shared by the notification router and the settings
              matrix: which preference group each event type belongs to, what that
-             group's channels default to, and which routine manager alerts are
-             batched into the daily digest.
+             group's channels default to, which routine manager alerts the daily
+             digest e-mail batches, and `plan_delivery` — the one decision of what
+             each outbound channel does with an event.
 @architecture Enterprise SaaS 2026
 @module notifications/delivery
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
+from enum import StrEnum
 
 from .models import NotificationLevel, NotificationType
 
@@ -85,7 +88,11 @@ class PreferenceGroup:
 #     the one thing the conductor wanted to read that night rather than at
 #     breakfast. Same split, and the same reason, as `safety_net`.
 #   • team — the manager's job console: routine reports of things that already
-#     happened. Push ON, e-mail OFF; at INFO level the daily digest carries them.
+#     happened. Push ON + e-mail ON. The push is always immediate, one per
+#     singer's burst (see push_fold). The e-mail takes the shape the reader's
+#     digest switch gives it: at INFO, one daily digest, or one e-mail per event
+#     with the digest off. An absence request for a rehearsal within 48 hours is
+#     WARNING and never waits for the digest.
 PREFERENCE_GROUPS: tuple[PreferenceGroup, ...] = (
     PreferenceGroup(
         id="commitments",
@@ -168,7 +175,7 @@ PREFERENCE_GROUPS: tuple[PreferenceGroup, ...] = (
     ),
     PreferenceGroup(
         id="team",
-        email=False,
+        email=True,
         manager_only=True,
         types=(
             NotificationType.PARTICIPATION_RESPONSE,
@@ -251,13 +258,46 @@ DEFAULT_PUSH_DISABLED_TYPES: frozenset[str] = frozenset(
     + [ntype for ntype, (_email, push) in UNGROUPED_DEFAULTS.items() if not push]
 )
 
-# Routine, high-volume manager fan-out alerts. At INFO level these are collected
-# into the daily digest instead of firing an immediate email + push per event.
+# Routine, high-volume manager fan-out alerts. At INFO level, for a reader with
+# the digest on, their e-mail is collected into one daily digest instead of one
+# e-mail per event. Their push is never held back.
 DIGESTIBLE_TYPES: frozenset[str] = frozenset({
     NotificationType.ATTENDANCE_SUBMITTED,
     NotificationType.PARTICIPATION_RESPONSE,
     NotificationType.ABSENCE_REQUESTED,
 })
+
+# Types that live in the bell and nowhere else. The router returns before
+# reading a preference for them, so no row is ever minted for a type nobody
+# can control.
+IN_APP_ONLY_TYPES: frozenset[str] = frozenset({NotificationType.NOTIFICATION_READ_RECEIPT})
+
+
+class EmailOutcome(StrEnum):
+    """What the e-mail channel does with one event for one reader."""
+    NOW = "now"
+    DIGEST = "digest"
+    OFF = "off"
+    NEVER = "never"
+
+
+class PushOutcome(StrEnum):
+    """What the push channel does with one event for one reader."""
+    NOW = "now"
+    OFF = "off"
+    NEVER = "never"
+
+
+@dataclass(frozen=True)
+class ChannelPlan:
+    """The answer `plan_delivery` gives, one outcome per outbound channel.
+
+    It states intent from preferences alone. Whether a device takes the push, or
+    the account can receive e-mail at all, is known only to a read of the
+    recipient's state, and the dispatchers check it at send time.
+    """
+    email: EmailOutcome
+    push: PushOutcome
 
 
 def assert_preference_policy_is_coherent() -> None:
@@ -295,14 +335,46 @@ def assert_preference_policy_is_coherent() -> None:
 
 def is_digestible(notification_type: str, level: str) -> bool:
     """
-    True when an event is a routine informational manager alert that belongs in the
-    daily digest rather than a real-time channel. WARNING/URGENT always returns
-    False so actionable events are never deferred.
+    True when an event is a routine informational manager alert whose e-mail
+    belongs in the daily digest rather than in an e-mail of its own. WARNING and
+    URGENT always return False, so actionable events are never deferred.
     """
     return (
         notification_type in DIGESTIBLE_TYPES
         and (level or NotificationLevel.INFO) == NotificationLevel.INFO
     )
+
+
+def plan_delivery(
+    notification_type: str,
+    level: str,
+    *,
+    preference: Mapping[str, bool],
+    digest_enabled: bool,
+) -> ChannelPlan:
+    """What each outbound channel does with one event for one reader.
+
+    The router acts on this and nothing else decides. `preference` is the
+    reader's effective choice for the type, in the shape of
+    `default_channel_preferences`: their stored row where one exists, the shared
+    default where it does not.
+
+    The digest shapes e-mail only. An event held for it sends no e-mail now and
+    still pushes at once: the digest batches an inbox, and a conductor who
+    enabled push for these reports asked to hear them when they happen.
+    """
+    if notification_type in IN_APP_ONLY_TYPES:
+        return ChannelPlan(email=EmailOutcome.NEVER, push=PushOutcome.NEVER)
+
+    if not preference["email_enabled"]:
+        email = EmailOutcome.OFF
+    elif digest_enabled and is_digestible(notification_type, level):
+        email = EmailOutcome.DIGEST
+    else:
+        email = EmailOutcome.NOW
+
+    push = PushOutcome.NOW if preference["push_enabled"] else PushOutcome.OFF
+    return ChannelPlan(email=email, push=push)
 
 
 def default_channel_preferences(notification_type: str) -> dict[str, bool]:

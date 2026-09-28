@@ -253,13 +253,16 @@ class UserProfile(EnterpriseBaseModel):
         help_text=_("Set automatically on a hard bounce or spam complaint. Suppresses notification email.")
     )
 
-    # Routine, high-volume manager alerts (attendance, RSVPs, absence requests) are
-    # batched into a once-daily digest instead of a flood of individual emails/pushes.
-    # Urgent alerts (declines, cancellations) and personal notifications always break
-    # through in real time regardless of this setting.
+    # The shape of the e-mail for routine manager reports (attendance, RSVPs,
+    # absence requests): one daily digest, or one e-mail per event when off. It
+    # governs e-mail only — their push is always immediate. Declines and absences
+    # within 48 hours are not routine and are never held for the digest.
     digest_enabled = models.BooleanField(
         default=True,
-        help_text=_("Batch routine informational manager alerts into a single daily digest email.")
+        help_text=_(
+            "E-mail routine manager reports as one daily digest instead of one e-mail each."
+            " Push notifications are not affected."
+        )
     )
     digest_hour = models.PositiveSmallIntegerField(
         default=8,

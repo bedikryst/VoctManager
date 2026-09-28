@@ -1288,6 +1288,20 @@ class ManagerNotificationHelper:
                 metadata=metadata
             )
 
+# An absence the conductor learns about tomorrow morning is still in time to
+# re-plan a rehearsal two days out; one for tonight is not. Inside this horizon a
+# request is WARNING, which no digest holds back.
+ABSENCE_URGENT_WITHIN = timedelta(hours=48)
+
+
+def absence_request_level(first_rehearsal_starts_at: datetime) -> str:
+    """How urgently the managers hear about an absence request, judged by the
+    first rehearsal it concerns."""
+    if first_rehearsal_starts_at - timezone.now() <= ABSENCE_URGENT_WITHIN:
+        return NotificationLevel.WARNING
+    return NotificationLevel.INFO
+
+
 def rehearsal_ics_payload(rehearsal: Rehearsal) -> dict:
     """Lightweight calendar payload carried in notification metadata so the email
     layer can attach a localized 'add to calendar' .ics. Push ignores it.
@@ -2129,6 +2143,7 @@ class RehearsalOperationsService:
                 # the generic attendance-submitted ping.
                 if dto.status in (Attendance.Status.EXCUSED, Attendance.Status.ABSENT):
                     notif_type = NotificationType.ABSENCE_REQUESTED
+                    manager_level = absence_request_level(rehearsal.date_time)
                     metadata = ManagerActionMetadata(
                         project_name=attendance.rehearsal.project.title,
                         artist_name=artist_name,
@@ -2142,6 +2157,7 @@ class RehearsalOperationsService:
                     ).model_dump(mode="json")
                 else:
                     notif_type = NotificationType.ATTENDANCE_SUBMITTED
+                    manager_level = NotificationLevel.INFO
                     metadata = ManagerActionMetadata(
                         project_name=attendance.rehearsal.project.title,
                         artist_name=artist_name,
@@ -2155,7 +2171,8 @@ class RehearsalOperationsService:
 
                 transaction.on_commit(lambda: ManagerNotificationHelper.notify_managers(
                     notification_type=notif_type,
-                    metadata=metadata
+                    metadata=metadata,
+                    level=manager_level,
                 ))
             
             # Keyed on managership, not on the roll call: this is a VERDICT on a
@@ -2318,10 +2335,12 @@ class RehearsalOperationsService:
                 excuse_note=dto.excuse_note or None,
             ).model_dump(mode="json")
 
+            level = absence_request_level(first.date_time)
             transaction.on_commit(
                 lambda: ManagerNotificationHelper.notify_managers(
                     notification_type=NotificationType.ABSENCE_REQUESTED,
                     metadata=metadata,
+                    level=level,
                 )
             )
             return

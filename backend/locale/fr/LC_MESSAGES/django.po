@@ -5301,3 +5301,36 @@ msgstr "Évaluation du chef : note extrême grave"
 #: roster/models.py:195
 msgid "Assessed Extreme (High)"
 msgstr "Évaluation du chef : note extrême aiguë"
+
+#: notifications/message_content.py:1986
+#, python-format
+msgid "late for %(count)d of them"
+msgid_plural "late for %(count)d of them"
+msgstr[0] "en retard à %(count)d d’entre elles"
+msgstr[1] "en retard à %(count)d d’entre elles"
+
+#: notifications/message_content.py:1995
+#, python-format
+msgid "%(count)d absence request — %(artist)s"
+msgid_plural "%(count)d absence requests — %(artist)s"
+msgstr[0] "%(count)d demande d’absence — %(artist)s"
+msgstr[1] "%(count)d demandes d’absence — %(artist)s"
+
+#: notifications/message_content.py:2011
+#, python-format
+msgid "will be at %(count)d other rehearsal"
+msgid_plural "will be at %(count)d other rehearsals"
+msgstr[0] "sera à %(count)d autre répétition"
+msgstr[1] "sera à %(count)d autres répétitions"
+
+#: notifications/message_content.py:2020
+#, python-format
+msgid "%(artist)s will be at %(count)d rehearsal"
+msgid_plural "%(artist)s will be at %(count)d rehearsals"
+msgstr[0] "%(artist)s sera à %(count)d répétition"
+msgstr[1] "%(artist)s sera à %(count)d répétitions"
+
+#: notifications/time_metadata.py:176
+msgctxt "event short date format"
+msgid "j M"
+msgstr "j N"

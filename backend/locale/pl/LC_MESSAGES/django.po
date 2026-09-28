@@ -5270,3 +5270,40 @@ msgstr "Ocena dyrygenta: skrajny dźwięk dolny"
 #: roster/models.py:195
 msgid "Assessed Extreme (High)"
 msgstr "Ocena dyrygenta: skrajny dźwięk górny"
+
+#: notifications/message_content.py:1986
+#, python-format
+msgid "late for %(count)d of them"
+msgid_plural "late for %(count)d of them"
+msgstr[0] "spóźni się na %(count)d z nich"
+msgstr[1] "spóźni się na %(count)d z nich"
+msgstr[2] "spóźni się na %(count)d z nich"
+
+#: notifications/message_content.py:1995
+#, python-format
+msgid "%(count)d absence request — %(artist)s"
+msgid_plural "%(count)d absence requests — %(artist)s"
+msgstr[0] "%(count)d prośba o nieobecność — %(artist)s"
+msgstr[1] "%(count)d prośby o nieobecność — %(artist)s"
+msgstr[2] "%(count)d próśb o nieobecność — %(artist)s"
+
+#: notifications/message_content.py:2011
+#, python-format
+msgid "will be at %(count)d other rehearsal"
+msgid_plural "will be at %(count)d other rehearsals"
+msgstr[0] "będzie na %(count)d innej próbie"
+msgstr[1] "będzie na %(count)d innych próbach"
+msgstr[2] "będzie na %(count)d innych próbach"
+
+#: notifications/message_content.py:2020
+#, python-format
+msgid "%(artist)s will be at %(count)d rehearsal"
+msgid_plural "%(artist)s will be at %(count)d rehearsals"
+msgstr[0] "%(artist)s będzie na %(count)d próbie"
+msgstr[1] "%(artist)s będzie na %(count)d próbach"
+msgstr[2] "%(artist)s będzie na %(count)d próbach"
+
+#: notifications/time_metadata.py:176
+msgctxt "event short date format"
+msgid "j M"
+msgstr "j b"

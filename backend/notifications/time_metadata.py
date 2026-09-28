@@ -152,18 +152,53 @@ def humanize_event_time(value: datetime) -> str:
     }
 
 
+def _localized_moment(metadata: Mapping[str, Any], iso_key: str) -> datetime | None:
+    """The ISO moment under `iso_key`, read in the event's own timezone."""
+    parsed = _parse_iso_datetime(metadata.get(iso_key))
+    if parsed is None:
+        return None
+    timezone_name = metadata.get("timezone")
+    if timezone_name:
+        with contextlib.suppress(TypeError, ValueError, ZoneInfoNotFoundError):
+            parsed = parsed.astimezone(ZoneInfo(str(timezone_name)))
+    return parsed
+
+
+def event_start(metadata: Mapping[str, Any]) -> datetime | None:
+    """When the event begins, in its own timezone; None for a payload that carries
+    no ISO moment (a legacy row, a multi-day range)."""
+    return _localized_moment(metadata, "starts_at")
+
+
+def short_event_date(value: datetime) -> str:
+    """Day and abbreviated month ("12 paź", "12 oct.", "12 Oct"), for a line that
+    lists several dates and has no room for a weekday or an hour."""
+    return date_format(value, pgettext("event short date format", "j M"))
+
+
+_DATE_SPAN_DASH = "–"  # noqa: RUF001
+
+
+def short_date_span(first: datetime, last: datetime) -> str:
+    """The dates a run of events covers, joined by an en dash: "12 paź" for one
+    day, "3-24 paź" inside one month, "28 wrz - 5 paź" across two. Every
+    supported language writes the day before the month, which is what lets the
+    day alone open a range."""
+    if first.date() == last.date():
+        return short_event_date(first)
+    if (first.year, first.month) == (last.year, last.month):
+        return f"{first.day}{_DATE_SPAN_DASH}{short_event_date(last)}"
+    return f"{short_event_date(first)} {_DATE_SPAN_DASH} {short_event_date(last)}"
+
+
 def _display_moment(
     metadata: Mapping[str, Any],
     iso_key: str,
     display_keys: tuple[str, ...],
     legacy_keys: tuple[str, ...],
 ) -> str:
-    parsed = _parse_iso_datetime(metadata.get(iso_key))
+    parsed = _localized_moment(metadata, iso_key)
     if parsed is not None:
-        timezone_name = metadata.get("timezone")
-        if timezone_name:
-            with contextlib.suppress(TypeError, ValueError, ZoneInfoNotFoundError):
-                parsed = parsed.astimezone(ZoneInfo(str(timezone_name)))
         return humanize_event_time(parsed)
 
     for key in (*display_keys, *legacy_keys):
@@ -205,12 +240,7 @@ def display_event_end_clock(metadata: Mapping[str, Any]) -> str:
     block — where a second full moment would double the length to repeat a date
     the reader just read. Empty when nobody timed the session.
     """
-    parsed = _parse_iso_datetime(metadata.get("ends_at"))
+    parsed = _localized_moment(metadata, "ends_at")
     if parsed is None:
         return ""
-
-    timezone_name = metadata.get("timezone")
-    if timezone_name:
-        with contextlib.suppress(TypeError, ValueError, ZoneInfoNotFoundError):
-            parsed = parsed.astimezone(ZoneInfo(str(timezone_name)))
     return date_format(parsed, "H:i")

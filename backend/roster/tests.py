@@ -1633,6 +1633,20 @@ class AbsenceRequestNotificationTests(TestCase):
         notify.assert_called_once()
         self.assertEqual(notify.call_args.kwargs["notification_type"], NotificationType.ATTENDANCE_SUBMITTED)
 
+    def test_an_absence_within_48_hours_is_a_warning(self) -> None:
+        # WARNING is what no digest holds back: an absence for tomorrow cannot
+        # wait for tomorrow's 08:00 e-mail.
+        self.rehearsal.date_time = timezone.now() + timedelta(hours=20)
+        self.rehearsal.save(update_fields=["date_time"])
+        notify = self._record("EXCUSED")
+        self.assertEqual(notify.call_args.kwargs["level"], NotificationLevel.WARNING)
+
+    def test_a_distant_absence_stays_routine(self) -> None:
+        self.rehearsal.date_time = timezone.now() + timedelta(days=5)
+        self.rehearsal.save(update_fields=["date_time"])
+        notify = self._record("ABSENT")
+        self.assertEqual(notify.call_args.kwargs["level"], NotificationLevel.INFO)
+
 
 class ScheduleDashboardTests(APITestCase):
     """

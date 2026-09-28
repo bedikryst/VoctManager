@@ -1,8 +1,27 @@
 # Manager alerts — delivery model, folded pushes, honest settings
 
-Status: **planned 2026-09-28, nothing built.** Four stages, each closed by its own verification
-and review before the next starts. Stages 1–2 are backend only; 3 is the settings tab; 4 is the
-service worker and the panel shell.
+Status: **Stages 1–2 built and audited 2026-09-28, committed, not yet seen by the developer;
+Stages 3–4 not started.** Until Stage 3 ships, the settings tab shows team e-mail ON while the
+digest panel still carries its old copy.
+Four stages, each closed by its own verification and review before the next starts. Stages 1–2
+are backend only; 3 is the settings tab; 4 is the service worker and the panel shell.
+
+Built beyond the text below, to confirm at review:
+
+- `0024` also **pins** the missing team rows (e-mail off, push on) for digest-off managers. Without
+  it, a digest-off manager who never received one of the three types would start getting one
+  e-mail per event for it.
+- The fold's stamp is the notification id. A burst that deduplicates to one rehearsal is pushed as
+  that single report (today's copy and tag), carrying every folded id.
+- The folded absence push names the dates, not the project. Both shapes deep-link to
+  `/panel/rehearsals`, where absence requests are reviewed today.
+- The e-mail and device predicates Stage 3 needs are extracted: `notification_email_block`
+  (`email_service.py`) and `reachable_devices` (`push_service.py`).
+- A consequence of team e-mail ON that the text does not name: a **decline** (`PARTICIPATION_RESPONSE`
+  at WARNING) is now e-mailed at once to every manager, beside its push, as an absence inside 48 h
+  is. Before, the row minted on the first decline said "e-mail off" and it was push only.
+- Polish fold copy puts the verb first ("będzie na 4 innych próbach", "spóźni się na 1 z nich"),
+  not the inverted order of the direction in Stage 2.
 
 ## Why
 

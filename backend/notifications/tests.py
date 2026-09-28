@@ -1075,7 +1075,7 @@ class AnnouncementNudgeEmailTests(TestCase):
 
 
 class RouterDigestGatingTests(TestCase):
-    """Routine INFO manager alerts are held back; urgent/non-digestible break through."""
+    """The digest holds the e-mail of routine INFO manager alerts, never their push."""
 
     EMAIL = "notifications.router.send_notification_email_task.delay"
     PUSH = "notifications.router.send_push_notification_task.delay"
@@ -1097,28 +1097,46 @@ class RouterDigestGatingTests(TestCase):
             )
         return email, push
 
-    def test_digestible_info_is_held_back(self) -> None:
+    def test_the_digest_holds_the_email_and_never_the_push(self) -> None:
+        # The conductor who enabled push for attendance hears it when it happens;
+        # the digest only batches the inbox.
         email, push = self._route(NotificationType.ATTENDANCE_SUBMITTED, NotificationLevel.INFO)
         email.assert_not_called()
-        push.assert_not_called()
+        push.assert_called_once()
 
     def test_digestible_warning_breaks_through(self) -> None:
-        # A WARNING escalation bypasses the digest hold and delivers in real time,
-        # but still through the type's default channels only. Manager alerts default
-        # to push-on / email-off (email is reserved for the daily digest), so the
-        # break-through reaches push while email stays silent.
+        # A WARNING escalation is not routine, so its e-mail does not wait for the
+        # digest: team e-mail defaults ON and goes out at once, beside the push.
         email, push = self._route(NotificationType.PARTICIPATION_RESPONSE, NotificationLevel.WARNING)
         push.assert_called_once()
-        email.assert_not_called()
+        email.assert_called_once()
+
+    def test_an_urgent_absence_request_is_emailed_past_the_digest(self) -> None:
+        email, push = self._route(NotificationType.ABSENCE_REQUESTED, NotificationLevel.WARNING)
+        email.assert_called_once()
+        push.assert_called_once()
 
     def test_non_digestible_is_delivered_immediately(self) -> None:
         email, push = self._route(NotificationType.REHEARSAL_SCHEDULED, NotificationLevel.INFO)
         email.assert_called_once()
         push.assert_called_once()
 
-    def test_digest_disabled_restores_immediate_delivery(self) -> None:
+    def test_with_the_digest_off_each_report_is_emailed_at_once(self) -> None:
         self.profile.digest_enabled = False
         self.profile.save(update_fields=["digest_enabled"])
+        email, push = self._route(NotificationType.ATTENDANCE_SUBMITTED, NotificationLevel.INFO)
+        email.assert_called_once()
+        push.assert_called_once()
+
+    def test_a_stored_email_off_holds_with_the_digest_off(self) -> None:
+        # The row 0024 keeps for a digest-off manager: switching the digest off
+        # never meant one e-mail per singer for them.
+        self.profile.digest_enabled = False
+        self.profile.save(update_fields=["digest_enabled"])
+        NotificationPreference.objects.create(
+            user=self.user, notification_type=NotificationType.ATTENDANCE_SUBMITTED,
+            email_enabled=False, push_enabled=True,
+        )
         email, push = self._route(NotificationType.ATTENDANCE_SUBMITTED, NotificationLevel.INFO)
         email.assert_not_called()
         push.assert_called_once()
@@ -2005,9 +2023,9 @@ class PreferenceLedgerShapeTests(APITestCase):
         self.assertEqual(declared, {row["group"] for row in matrix["preferences"]})
 
     def test_every_group_states_the_recommendation_its_control_targets(self) -> None:
-        # Every group carries one, because every group has a switch. The safety net
-        # is the one that had to be split out of team ops to be able to say `True`
-        # here; team ops is what remains, and it says `False`.
+        # Every group carries one, because every group has a switch. Team ops says
+        # `True` because its e-mail does arrive — as the daily digest, or one per
+        # event with the digest off; the ledger must not show it as silent.
         groups = {g["id"]: g for g in self._matrix(self.manager)["groups"]}
         self.assertEqual(
             {gid: group["recommended_email"] for gid, group in groups.items()},
@@ -2018,7 +2036,7 @@ class PreferenceLedgerShapeTests(APITestCase):
                 "materials": False,
                 "safety_net": True,
                 "debriefs": True,
-                "team": False,
+                "team": True,
             },
         )
 
@@ -2946,14 +2964,14 @@ class PushEmailFallbackTests(TestCase):
         email.assert_not_called()
         self.assertIsNone(push.call_args.kwargs["email_fallback"])
 
-    def test_routine_team_report_carries_no_reserve_with_the_digest_off(self) -> None:
-        # The digest is the e-mail of routine reports; switching it off asks for
-        # them in real time, not for one e-mail per singer.
+    def test_routine_team_report_carries_no_reserve(self) -> None:
+        # Team e-mail is ON by default, so it is a channel of its own rather than
+        # a reserve: with the digest off it goes out at once, beside the push.
         UserProfile.objects.filter(user=self.user).update(digest_enabled=False)
 
         email, push = self._route(NotificationType.ATTENDANCE_SUBMITTED)
 
-        email.assert_not_called()
+        email.assert_called_once()
         self.assertIsNone(push.call_args.kwargs["email_fallback"])
 
     def test_failing_push_spends_the_reserve_only_on_its_last_attempt(self) -> None:
@@ -3102,3 +3120,385 @@ class PushDeviceSummaryTests(APITestCase):
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data, {"active_devices": 1})
+
+
+class PlanDeliveryTests(SimpleTestCase):
+    """`plan_delivery` is the one decision the router acts on."""
+
+    def _plan(
+        self,
+        ntype: str,
+        level: str = NotificationLevel.INFO,
+        *,
+        email: bool = True,
+        push: bool = True,
+        digest: bool = True,
+    ):
+        from .delivery import plan_delivery
+        return plan_delivery(
+            ntype, level,
+            preference={"email_enabled": email, "push_enabled": push},
+            digest_enabled=digest,
+        )
+
+    def test_the_digest_holds_the_email_and_leaves_the_push(self) -> None:
+        from .delivery import EmailOutcome, PushOutcome
+
+        plan = self._plan(NotificationType.ATTENDANCE_SUBMITTED)
+        self.assertEqual((plan.email, plan.push), (EmailOutcome.DIGEST, PushOutcome.NOW))
+
+    def test_a_warning_report_is_not_held_for_the_digest(self) -> None:
+        from .delivery import EmailOutcome
+
+        plan = self._plan(NotificationType.ABSENCE_REQUESTED, NotificationLevel.WARNING)
+        self.assertEqual(plan.email, EmailOutcome.NOW)
+
+    def test_with_the_digest_off_the_email_goes_at_once(self) -> None:
+        from .delivery import EmailOutcome
+
+        plan = self._plan(NotificationType.ATTENDANCE_SUBMITTED, digest=False)
+        self.assertEqual(plan.email, EmailOutcome.NOW)
+
+    def test_the_digest_only_touches_the_types_it_batches(self) -> None:
+        from .delivery import EmailOutcome
+
+        plan = self._plan(NotificationType.REHEARSAL_UPDATED)
+        self.assertEqual(plan.email, EmailOutcome.NOW)
+
+    def test_switched_off_channels_read_off(self) -> None:
+        from .delivery import EmailOutcome, PushOutcome
+
+        plan = self._plan(NotificationType.ATTENDANCE_SUBMITTED, email=False, push=False)
+        self.assertEqual((plan.email, plan.push), (EmailOutcome.OFF, PushOutcome.OFF))
+
+    def test_an_in_app_only_type_never_leaves_the_bell(self) -> None:
+        from .delivery import EmailOutcome, PushOutcome
+
+        plan = self._plan(NotificationType.NOTIFICATION_READ_RECEIPT)
+        self.assertEqual((plan.email, plan.push), (EmailOutcome.NEVER, PushOutcome.NEVER))
+
+    def test_two_singers_absent_from_one_evening_keep_two_tray_entries(self) -> None:
+        with translation.override("en"):
+            tags = {
+                MessageContentBuilder.build(
+                    NotificationType.ABSENCE_REQUESTED, NotificationLevel.INFO,
+                    {**_RICH_META, "artist_id": artist_id}, is_manager=True,
+                ).tag
+                for artist_id in ("a1", "a2")
+            }
+        self.assertEqual(len(tags), 2)
+
+
+class TeamEmailDefaultMigrationTests(TestCase):
+    """0024 moves the team e-mail default to ON without changing anyone's inbox."""
+
+    def setUp(self) -> None:
+        self.digest_on = User.objects.create_user(
+            username="team-on", email="team-on@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(
+            user=self.digest_on, role=AppRole.MANAGER, digest_enabled=True
+        )
+        self.digest_off = User.objects.create_user(
+            username="team-off", email="team-off@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(
+            user=self.digest_off, role=AppRole.MANAGER, digest_enabled=False
+        )
+
+    def _run(self) -> None:
+        from importlib import import_module
+
+        from django.apps import apps as global_apps
+
+        migration = import_module("notifications.migrations.0024_team_email_default_on")
+        migration.release_and_pin_team_rows(global_apps, None)
+
+    def _pref(self, user: Any, ntype: str, *, email: bool, push: bool) -> None:
+        NotificationPreference.objects.create(
+            user=user, notification_type=ntype, email_enabled=email, push_enabled=push,
+        )
+
+    def _rows(self, user: Any) -> dict[str, tuple[bool, bool]]:
+        return {
+            pref.notification_type: (pref.email_enabled, pref.push_enabled)
+            for pref in NotificationPreference.objects.filter(user=user)
+        }
+
+    def test_a_digest_on_row_at_the_old_default_is_released(self) -> None:
+        self._pref(self.digest_on, NotificationType.ATTENDANCE_SUBMITTED, email=False, push=True)
+        self._run()
+        # Released, so the type is back in the digest and not marked "customized".
+        self.assertNotIn(NotificationType.ATTENDANCE_SUBMITTED, self._rows(self.digest_on))
+
+    def test_a_digest_on_row_with_a_push_choice_survives(self) -> None:
+        self._pref(self.digest_on, NotificationType.ABSENCE_REQUESTED, email=False, push=False)
+        self._run()
+        self.assertEqual(
+            self._rows(self.digest_on)[NotificationType.ABSENCE_REQUESTED], (False, False)
+        )
+
+    def test_a_digest_off_manager_keeps_every_team_type_off_email(self) -> None:
+        self._pref(self.digest_off, NotificationType.ATTENDANCE_SUBMITTED, email=False, push=True)
+        self._run()
+        # The stored row stays, and the types they never received are pinned
+        # beside it: with the digest off, e-mail ON would be one per singer.
+        self.assertEqual(
+            self._rows(self.digest_off),
+            {
+                NotificationType.ATTENDANCE_SUBMITTED: (False, True),
+                NotificationType.PARTICIPATION_RESPONSE: (False, True),
+                NotificationType.ABSENCE_REQUESTED: (False, True),
+            },
+        )
+
+    def test_a_digest_off_artist_gets_no_rows(self) -> None:
+        artist = User.objects.create_user(
+            username="team-artist", email="team-artist@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=artist, role=AppRole.ARTIST, digest_enabled=False)
+        self._run()
+        self.assertEqual(self._rows(artist), {})
+
+
+@override_settings(ATTENDANCE_PUSH_QUIET_SECONDS=10, ATTENDANCE_PUSH_CEILING_SECONDS=60)
+class PushFoldTests(TestCase):
+    """A singer's burst of reports reaches a manager as one push."""
+
+    SCHEDULE = "notifications.push_fold.flush_push_fold_task.apply_async"
+    PUSH = "notifications.push_fold.send_push_notification_task.delay"
+    ARTIST = "artist-fold-1"
+
+    def setUp(self) -> None:
+        from django.core.cache import cache
+        cache.clear()
+        self.manager = User.objects.create_user(
+            username="fold-manager", email="fold-manager@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+        self.recipient = str(self.manager.id)
+
+    def _report(
+        self,
+        rehearsal_id: str,
+        status: str,
+        *,
+        days: int,
+        ntype: str = NotificationType.ATTENDANCE_SUBMITTED,
+        level: str = NotificationLevel.INFO,
+    ) -> Notification:
+        from . import push_fold
+
+        starts = (timezone.now() + timedelta(days=days)).replace(microsecond=0)
+        row = Notification.objects.create(
+            recipient=self.manager, notification_type=ntype, level=level,
+            metadata={
+                "artist_id": self.ARTIST, "artist_name": "Anna Kowalska",
+                "project_name": "Requiem", "rehearsal_id": rehearsal_id,
+                "status": status, "starts_at": starts.isoformat(),
+                "timezone": "Europe/Warsaw",
+            },
+        )
+        with patch(self.SCHEDULE) as schedule:
+            push_fold.hold(
+                recipient_id=self.recipient, artist_id=self.ARTIST,
+                notification_id=str(row.id),
+            )
+        self.assertEqual(schedule.call_args.kwargs["countdown"], 10)
+        return row
+
+    def _flush(self, stamp: Notification) -> tuple[int, Any]:
+        from . import push_fold
+
+        with patch(self.PUSH) as push:
+            taken = push_fold.flush(
+                recipient_id=self.recipient, artist_id=self.ARTIST, stamp=str(stamp.id),
+            )
+        return taken, push
+
+    def _compose(self, push: Any) -> MessageContent:
+        kwargs = push.call_args.kwargs
+        with translation.override("en"):
+            return MessageContentBuilder.build(
+                kwargs["notification_type"], kwargs["level"], kwargs["metadata"],
+                is_manager=True,
+            )
+
+    def test_two_reports_in_one_window_become_one_push_naming_both(self) -> None:
+        first = self._report("r1", "PRESENT", days=3)
+        second = self._report("r2", "LATE", days=5)
+
+        taken, push = self._flush(second)
+
+        self.assertEqual(taken, 2)
+        push.assert_called_once()
+        kwargs = push.call_args.kwargs
+        self.assertEqual(kwargs["notification_type"], NotificationType.ATTENDANCE_SUBMITTED)
+        self.assertEqual(
+            kwargs["metadata"]["notification_ids"], [str(first.id), str(second.id)]
+        )
+        self.assertIsNone(kwargs["email_fallback"])
+        content = self._compose(push)
+        self.assertEqual(content.title, "Anna Kowalska will be at 2 rehearsals")
+        self.assertIn("Requiem", content.body)
+        self.assertIn("late for 1", content.body)
+        self.assertEqual(content.tag, f"attendance-fold:{self.ARTIST}:{first.id}")
+
+    def test_a_flush_whose_report_is_no_longer_the_latest_does_nothing(self) -> None:
+        first = self._report("r1", "PRESENT", days=3)
+        self._report("r2", "PRESENT", days=5)
+
+        taken, push = self._flush(first)
+
+        self.assertEqual(taken, 0)
+        push.assert_not_called()
+
+    def test_the_ceiling_closes_a_window_that_never_goes_quiet(self) -> None:
+        import time
+
+        from django.core.cache import cache
+
+        from . import push_fold
+
+        first = self._report("r1", "PRESENT", days=3)
+        self._report("r2", "PRESENT", days=5)
+        cache.set(
+            push_fold._gate_key(self.recipient, self.ARTIST), time.time() - 61, timeout=300,
+        )
+
+        taken, push = self._flush(first)
+
+        self.assertEqual(taken, 2)
+        push.assert_called_once()
+
+    def test_the_same_rehearsal_changed_in_the_window_pushes_its_final_status(self) -> None:
+        first = self._report("r1", "PRESENT", days=3)
+        second = self._report("r1", "LATE", days=3)
+
+        _taken, push = self._flush(second)
+
+        kwargs = push.call_args.kwargs
+        self.assertEqual(kwargs["notification_type"], NotificationType.ATTENDANCE_SUBMITTED)
+        self.assertEqual(kwargs["metadata"]["status"], "LATE")
+        self.assertNotIn("fold", kwargs["metadata"])
+        # Both rows are answered by the push, so both can be marked read from it.
+        self.assertEqual(
+            kwargs["metadata"]["notification_ids"], [str(first.id), str(second.id)]
+        )
+
+    def test_an_absence_leads_the_push(self) -> None:
+        self._report("r1", "PRESENT", days=3)
+        self._report(
+            "r2", "EXCUSED", days=1,
+            ntype=NotificationType.ABSENCE_REQUESTED, level=NotificationLevel.WARNING,
+        )
+        last = self._report("r3", "PRESENT", days=6)
+
+        _taken, push = self._flush(last)
+
+        kwargs = push.call_args.kwargs
+        self.assertEqual(kwargs["notification_type"], NotificationType.ABSENCE_REQUESTED)
+        self.assertEqual(kwargs["level"], NotificationLevel.WARNING)
+        content = self._compose(push)
+        self.assertEqual(content.title, "Absence request — Anna Kowalska")
+        self.assertIn("will be at 2 other rehearsals", content.body)
+
+    def test_one_report_is_pushed_as_it_would_have_been_alone(self) -> None:
+        only = self._report("r1", "PRESENT", days=3)
+
+        _taken, push = self._flush(only)
+
+        kwargs = push.call_args.kwargs
+        self.assertEqual(
+            kwargs["metadata"], {**only.metadata, "notification_ids": [str(only.id)]}
+        )
+        with translation.override("en"):
+            alone = MessageContentBuilder.build(
+                only.notification_type, only.level, only.metadata, is_manager=True,
+            )
+        folded = self._compose(push)
+        self.assertEqual(
+            (folded.title, folded.body, folded.tag), (alone.title, alone.body, alone.tag)
+        )
+
+    def test_no_report_is_pushed_twice(self) -> None:
+        first = self._report("r1", "PRESENT", days=3)
+        second = self._report("r2", "PRESENT", days=5)
+
+        self.assertEqual(self._flush(second)[0], 2)
+        # A duplicate delivery of the due flush and the stale one both find their
+        # reports already claimed.
+        self.assertEqual(self._flush(second)[0], 0)
+        self.assertEqual(self._flush(first)[0], 0)
+
+        # A report after the push opens a window of its own.
+        third = self._report("r3", "PRESENT", days=7)
+        taken, push = self._flush(third)
+        self.assertEqual(taken, 1)
+        self.assertEqual(push.call_args.kwargs["metadata"]["notification_ids"], [str(third.id)])
+
+    def test_under_eager_celery_the_flush_runs_inline_once(self) -> None:
+        from . import push_fold
+
+        row = Notification.objects.create(
+            recipient=self.manager, notification_type=NotificationType.ATTENDANCE_SUBMITTED,
+            metadata={"artist_id": self.ARTIST, "artist_name": "Anna", "rehearsal_id": "r1"},
+        )
+        with patch(self.PUSH) as push:
+            push_fold.hold(
+                recipient_id=self.recipient, artist_id=self.ARTIST, notification_id=str(row.id),
+            )
+        push.assert_called_once()
+
+
+class RouterPushFoldTests(TestCase):
+    """Which pushes the router hands to the fold."""
+
+    HOLD = "notifications.push_fold.hold"
+    PUSH = "notifications.router.send_push_notification_task.delay"
+    EMAIL = "notifications.router.send_notification_email_task.delay"
+
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(
+            username="fold-router", email="fold-router@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.MANAGER)
+
+    def _route(
+        self, ntype: str, metadata: dict[str, Any], notification_id: str | None = "n1",
+    ) -> tuple[Any, Any]:
+        from notifications.router import NotificationRouter
+
+        with patch(self.HOLD) as hold, patch(self.PUSH) as push, patch(self.EMAIL):
+            NotificationRouter.route(
+                recipient_id=str(self.user.id), notification_type=ntype,
+                metadata=metadata, level=NotificationLevel.INFO,
+                notification_id=notification_id,
+            )
+        return hold, push
+
+    def test_a_singers_report_waits_in_the_fold(self) -> None:
+        hold, push = self._route(NotificationType.ATTENDANCE_SUBMITTED, {"artist_id": "a1"})
+        hold.assert_called_once_with(
+            recipient_id=str(self.user.id), artist_id="a1", notification_id="n1",
+        )
+        push.assert_not_called()
+
+    def test_an_absence_span_pushes_on_its_own(self) -> None:
+        hold, push = self._route(
+            NotificationType.ABSENCE_REQUESTED, {"artist_id": "a1", "rehearsal_count": 3},
+        )
+        hold.assert_not_called()
+        push.assert_called_once()
+
+    def test_a_participation_response_is_not_folded(self) -> None:
+        hold, push = self._route(NotificationType.PARTICIPATION_RESPONSE, {"artist_id": "a1"})
+        hold.assert_not_called()
+        push.assert_called_once()
+
+    def test_without_a_notification_id_the_push_goes_on_its_own(self) -> None:
+        hold, push = self._route(
+            NotificationType.ATTENDANCE_SUBMITTED, {"artist_id": "a1"}, notification_id=None,
+        )
+        hold.assert_not_called()
+        push.assert_called_once()

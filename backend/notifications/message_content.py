@@ -50,6 +50,9 @@ from .time_metadata import (
     display_event_end,
     display_event_end_clock,
     display_event_time,
+    event_start,
+    short_date_span,
+    short_event_date,
 )
 
 logger = logging.getLogger(__name__)
@@ -59,6 +62,17 @@ logger = logging.getLogger(__name__)
 _MAX_TITLE_LEN = 65
 _MAX_BODY_LEN = 220
 _ELLIPSIS = "…"
+
+# Metadata keys of a folded attendance push (see push_fold): the reports it
+# gathers, one per rehearsal, and the in-app rows it speaks for.
+FOLD_ITEMS_KEY = "fold"
+NOTIFICATION_IDS_KEY = "notification_ids"
+
+# The types a folded push gathers, and rides on.
+FOLD_TYPES: frozenset[str] = frozenset({
+    NotificationType.ATTENDANCE_SUBMITTED,
+    NotificationType.ABSENCE_REQUESTED,
+})
 
 
 # --------------------------------------------------------------------------- #
@@ -85,6 +99,9 @@ class PushPayload:
     notification_type: str
     level: str
     actions: tuple[PushAction, ...] = field(default_factory=tuple)
+    # The in-app rows this push speaks for — several when push_fold folded a
+    # burst into it. Delivery data, not copy: the builder sets it from metadata.
+    notification_ids: tuple[str, ...] = field(default_factory=tuple)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -99,6 +116,7 @@ class PushPayload:
                 {"action": a.action, "title": a.title, **({"url": a.url} if a.url else {})}
                 for a in self.actions
             ],
+            **({"notificationIds": list(self.notification_ids)} if self.notification_ids else {}),
         }
 
 
@@ -1807,7 +1825,9 @@ def _compose_absence_requested(ctx: MessageContext) -> MessageContent:
         title=_("Absence request — %(artist)s") % {"artist": artist},
         body=_facts(project, when) or project,
         url_path=rehearsals_url,
-        tag=f"absence-requested:{m.get('rehearsal_id') or ''}",
+        # Per singer as well as per evening: a second singer's request for the
+        # same rehearsal must not replace the first one in the tray.
+        tag=f"absence-requested:{m.get('rehearsal_id') or ''}:{m.get('artist_id') or artist}",
         actions=(_open_action(rehearsals_url),),
         subject=_("Absence request — %(artist)s") % {"artist": artist},
         eyebrow=_("Attendance"),
@@ -1940,6 +1960,97 @@ def _compose_attendance_submitted(ctx: MessageContext) -> MessageContent:
         email_lead=_("%(headline)s.") % {"headline": headline},
         details=tuple(details),
         cta_label=_("Open rehearsals"),
+    )
+
+
+def _compose_attendance_fold(ctx: MessageContext) -> MessageContent:
+    """One push for a singer's burst of attendance reports (see push_fold).
+
+    The items arrive one per rehearsal, each at its latest status, in rehearsal
+    order. An absence leads, because it is the one thing in the burst the
+    conductor may have to act on; the reports around it are counted, not listed.
+
+    The Polish copy keeps to the present and future tense ("będzie", "spóźni
+    się"): a name does not tell the grammatical gender a past tense would need.
+
+    Push only. The e-mail of these reports goes out per event, or in the digest,
+    so the e-mail fields here fall back to the push lines.
+    """
+    m = ctx.metadata
+    items = [item for item in m.get(FOLD_ITEMS_KEY) or () if isinstance(item, dict)]
+    artist = m.get("artist_name") or _("A singer")
+    absences = [
+        item for item in items
+        if item.get("notification_type") == NotificationType.ABSENCE_REQUESTED
+    ]
+    attending = [
+        item for item in items
+        if item.get("notification_type") != NotificationType.ABSENCE_REQUESTED
+    ]
+    late_count = sum(1 for item in attending if item.get("status") == "LATE")
+    late = (
+        ngettext(
+            "late for %(count)d of them", "late for %(count)d of them", late_count,
+        ) % {"count": late_count}
+        if late_count else ""
+    )
+
+    if absences:
+        title = (
+            _("Absence request — %(artist)s") % {"artist": artist}
+            if len(absences) == 1
+            else ngettext(
+                "%(count)d absence request — %(artist)s",
+                "%(count)d absence requests — %(artist)s",
+                len(absences),
+            ) % {"count": len(absences), "artist": artist}
+        )
+        when = (
+            display_event_time(absences[0], "rehearsal_date")
+            if len(absences) == 1
+            else ", ".join(
+                short_event_date(moment)
+                for moment in (event_start(item) for item in absences)
+                if moment is not None
+            )
+        )
+        others = (
+            ngettext(
+                "will be at %(count)d other rehearsal",
+                "will be at %(count)d other rehearsals",
+                len(attending),
+            ) % {"count": len(attending)}
+            if attending else ""
+        )
+        body = _facts(when, others, late)
+    else:
+        title = ngettext(
+            "%(artist)s will be at %(count)d rehearsal",
+            "%(artist)s will be at %(count)d rehearsals",
+            len(attending),
+        ) % {"artist": artist, "count": len(attending)}
+        projects = list(dict.fromkeys(
+            str(item["project_name"]) for item in items if item.get("project_name")
+        ))
+        moments = [moment for moment in (event_start(item) for item in items) if moment]
+        span = short_date_span(moments[0], moments[-1]) if moments else ""
+        body = _facts(", ".join(projects), span, late)
+
+    ids = [str(nid) for nid in m.get(NOTIFICATION_IDS_KEY) or ()]
+    rehearsals_url = _rehearsals_url(ctx)
+    return MessageContent(
+        notification_type=ctx.notification_type,
+        level=ctx.level,
+        title=title,
+        body=body,
+        # Absence requests are reviewed on the same workspace the attendance
+        # reports open, so one destination serves both shapes.
+        url_path=rehearsals_url,
+        # One tray entry per window: a later burst from the same singer is news
+        # of its own and must not silently replace this one.
+        tag=f"attendance-fold:{m.get('artist_id') or artist}:{ids[0] if ids else ''}",
+        actions=(_open_action(rehearsals_url),),
+        eyebrow=_("Attendance"),
     )
 
 
@@ -2301,7 +2412,13 @@ class MessageContentBuilder:
             metadata=metadata or {},
             is_manager=is_manager,
         )
-        composer = _COMPOSERS.get(notification_type, _compose_default)
+        # A folded attendance push rides on the type of the reports it gathers,
+        # so it is recognised by its payload rather than by a type of its own.
+        composer = (
+            _compose_attendance_fold
+            if notification_type in FOLD_TYPES and ctx.metadata.get(FOLD_ITEMS_KEY)
+            else _COMPOSERS.get(notification_type, _compose_default)
+        )
         try:
             return composer(ctx)
         except Exception as exc:

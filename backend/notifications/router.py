@@ -1,14 +1,22 @@
 """
 @file router.py
-@description Multi-channel delivery orchestrator. Reads granular per-type
-             user preferences and fans the notification out to the email and
+@description Multi-channel delivery orchestrator. Resolves the reader's
+             effective preference per type, asks `plan_delivery` what each
+             channel does with the event, and hands the answer to the email and
              push transport tasks. Pure routing — no template logic.
 @architecture Enterprise SaaS 2026
 @module notifications/router
 """
 from typing import Any
 
-from .delivery import default_channel_preferences, is_digestible
+from . import push_fold
+from .delivery import (
+    IN_APP_ONLY_TYPES,
+    EmailOutcome,
+    PushOutcome,
+    default_channel_preferences,
+    plan_delivery,
+)
 from .email_tasks import send_notification_email_task
 from .models import (
     AnnouncementSubject,
@@ -68,7 +76,7 @@ def _briefing_for_channel(
 _NO_EMAIL_RESERVE: frozenset[str] = frozenset({NotificationType.MATERIAL_UPLOADED})
 
 
-def _needs_email_reserve(notification_type: str, email_enabled: bool, level: str) -> bool:
+def _needs_email_reserve(notification_type: str, email_enabled: bool) -> bool:
     """Whether a push of this type should carry its e-mail in reserve.
 
     Only push-first types qualify — those whose e-mail is OFF by default, so a
@@ -76,13 +84,8 @@ def _needs_email_reserve(notification_type: str, email_enabled: bool, level: str
     ON by default and reads OFF here was switched off by the member, and that
     choice holds even when no device can take the push. The master e-mail switch
     is honoured downstream, by the e-mail dispatcher itself.
-
-    Routine manager reports are excluded while they are routine: their e-mail is
-    the daily digest, and a manager who switched the digest off asked for them in
-    real time, not for one e-mail per singer per rehearsal. The team group's own
-    e-mail switch remains the way to get them by mail.
     """
-    if notification_type in _NO_EMAIL_RESERVE or is_digestible(notification_type, level):
+    if notification_type in _NO_EMAIL_RESERVE:
         return False
     return not email_enabled and not default_channel_preferences(notification_type)["email_enabled"]
 
@@ -97,22 +100,27 @@ class NotificationRouter:
         notification_type: str,
         metadata: dict[str, Any],
         level: str = NotificationLevel.INFO,
+        notification_id: str | None = None,
     ) -> None:
         """
-        NOTIFICATION_READ_RECEIPT is in-app only — no email or push by design.
-        Routine INFO manager alerts are held back from real-time channels when the
-        recipient has the daily digest enabled; the in-app row is already persisted
-        and the digest sweep collects it. Disabling the digest restores immediate
-        delivery through the recipient's enabled real-time channels.
+        Each channel does what ``plan_delivery`` answers for this reader, and
+        nothing else decides. The digest shapes e-mail only: a routine INFO
+        manager report held for the daily digest sends no e-mail now — the in-app
+        row is already persisted and the digest sweep collects it — while its push
+        goes out regardless.
 
         A push-first type (see ``_needs_email_reserve``) sends its push with the
         e-mail in reserve (see ``EmailFallback``): a member no device can reach
         gets the e-mail instead of silence. Only push OFF keeps it in-app only.
-        """
-        if notification_type == NotificationType.NOTIFICATION_READ_RECEIPT:
-            return
 
-        if is_digestible(notification_type, level) and cls._digest_enabled(recipient_id):
+        A singer's attendance report is pushed through ``push_fold``, which folds a
+        burst of them into one push. `notification_id` names the in-app row the
+        fold collects; without it the push goes out on its own.
+        """
+        # plan_delivery answers NEVER on both channels for these. Returning before
+        # the preference read keeps a row from being minted for a type nobody can
+        # control.
+        if notification_type in IN_APP_ONLY_TYPES:
             return
 
         # A briefing is a delivery shape, not a category — it carries several
@@ -127,10 +135,16 @@ class NotificationRouter:
             notification_type=notification_type,
             defaults=default_channel_preferences(notification_type),
         )
+        plan = plan_delivery(
+            notification_type,
+            level,
+            preference={"email_enabled": pref.email_enabled, "push_enabled": pref.push_enabled},
+            digest_enabled=cls._digest_enabled(recipient_id),
+        )
 
         template_name = _EMAIL_TEMPLATE_MAP.get(notification_type, "transactional")
 
-        if pref.email_enabled:
+        if plan.email is EmailOutcome.NOW:
             send_notification_email_task.delay(
                 recipient_id=str(recipient_id),
                 notification_type=notification_type,
@@ -139,10 +153,18 @@ class NotificationRouter:
                 level=level,
             )
 
-        if pref.push_enabled:
+        if plan.push is PushOutcome.NOW:
+            if notification_id and push_fold.is_foldable(notification_type, metadata):
+                push_fold.hold(
+                    recipient_id=str(recipient_id),
+                    artist_id=str(metadata["artist_id"]),
+                    notification_id=str(notification_id),
+                )
+                return
+
             email_fallback: EmailFallback | None = (
                 {"template_name": template_name, "metadata": metadata}
-                if _needs_email_reserve(notification_type, pref.email_enabled, level)
+                if _needs_email_reserve(notification_type, pref.email_enabled)
                 else None
             )
             send_push_notification_task.delay(
@@ -186,12 +208,17 @@ class NotificationRouter:
             return
 
         preferences = cls._effective_preferences(recipient_id, notification_types)
+        # The digest sweep reads rows of the digestible types themselves, never a
+        # briefing's own row, so an item held for it here would be lost. No item
+        # of a briefing is therefore planned as digestible.
+        plans = {
+            key: plan_delivery(key, level, preference=value, digest_enabled=False)
+            for key, value in preferences.items()
+        }
 
         email_payload = _briefing_for_channel(
             metadata, items,
-            allowed={
-                key for key, value in preferences.items() if value["email_enabled"]
-            },
+            allowed={key for key, plan in plans.items() if plan.email is EmailOutcome.NOW},
         )
         if email_payload is not None:
             send_notification_email_task.delay(
@@ -204,9 +231,7 @@ class NotificationRouter:
 
         push_payload = _briefing_for_channel(
             metadata, items,
-            allowed={
-                key for key, value in preferences.items() if value["push_enabled"]
-            },
+            allowed={key for key, plan in plans.items() if plan.push is PushOutcome.NOW},
         )
         if push_payload is not None:
             # The reserve e-mail carries only what push would and e-mail did not,
@@ -214,9 +239,9 @@ class NotificationRouter:
             fallback_payload = _briefing_for_channel(
                 metadata, items,
                 allowed={
-                    key for key, value in preferences.items()
-                    if value["push_enabled"]
-                    and _needs_email_reserve(key, value["email_enabled"], level)
+                    key for key, plan in plans.items()
+                    if plan.push is PushOutcome.NOW
+                    and _needs_email_reserve(key, preferences[key]["email_enabled"])
                 },
             )
             send_push_notification_task.delay(
@@ -261,7 +286,7 @@ class NotificationRouter:
 
     @staticmethod
     def _digest_enabled(recipient_id: str) -> bool:
-        """Whether the recipient batches routine alerts into the daily digest."""
+        """Whether the recipient takes routine alerts' e-mail as one daily digest."""
         from core.models import UserProfile
         return UserProfile.objects.filter(
             user_id=recipient_id, digest_enabled=True

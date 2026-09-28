@@ -3885,3 +3885,36 @@ msgstr ""
 #: roster/models.py:195
 msgid "Assessed Extreme (High)"
 msgstr ""
+
+#: notifications/message_content.py:1986
+#, python-format
+msgid "late for %(count)d of them"
+msgid_plural "late for %(count)d of them"
+msgstr[0] ""
+msgstr[1] ""
+
+#: notifications/message_content.py:1995
+#, python-format
+msgid "%(count)d absence request — %(artist)s"
+msgid_plural "%(count)d absence requests — %(artist)s"
+msgstr[0] ""
+msgstr[1] ""
+
+#: notifications/message_content.py:2011
+#, python-format
+msgid "will be at %(count)d other rehearsal"
+msgid_plural "will be at %(count)d other rehearsals"
+msgstr[0] ""
+msgstr[1] ""
+
+#: notifications/message_content.py:2020
+#, python-format
+msgid "%(artist)s will be at %(count)d rehearsal"
+msgid_plural "%(artist)s will be at %(count)d rehearsals"
+msgstr[0] ""
+msgstr[1] ""
+
+#: notifications/time_metadata.py:176
+msgctxt "event short date format"
+msgid "j M"
+msgstr ""
