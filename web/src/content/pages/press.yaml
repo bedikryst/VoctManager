@@ -127,15 +127,13 @@ about:
   # it does not carry. It is also the ensemble's entry in every concert pack's `biogramy.pdf`
   # (scripts/press-pack.mjs), so the site has one full biogram; its English is the kit's
   # `biograms.en`, since this page has none.
-  # THE ONE DECLINED „Florenta de Bazelaire” ON THE SITE, and on purpose: „założony przez …,
-  # który z niezwykłym zapałem redefiniuje” leaves open whether the founder or the ensemble
-  # redefines, which the text means to, and only a dependent case after „przez” can carry it.
-  # The surname stays undeclined, as Polish press writes it. Everywhere else the name stands in
-  # the nominative.
+  # IT IS THE FOUNDER WHO REDEFINES the spiritual concert, as the English says („who passionately
+  # seeks”); the approved Polish left it open, and its author settled it (28.09.2026). The first
+  # sentence carries him in the nominative, as the whole site does.
   longHtml: |-
-    <p><strong>VoctEnsemble</strong> to krakowski zespół wokalny założony przez
-    <strong>Florenta de Bazelaire</strong>, który z niezwykłym zapałem redefiniuje pojęcie
-    koncertu duchowego. Zespół czerpie inspirację z XVIII-wiecznych <em>Concerts Spirituels</em>, nadając
+    <p><strong>VoctEnsemble</strong> to krakowski zespół wokalny, którego założyciel,
+    <strong>Florent de Bazelaire</strong>, z niezwykłym zapałem redefiniuje pojęcie koncertu
+    duchowego. Zespół czerpie inspirację z XVIII-wiecznych <em>Concerts Spirituels</em>, nadając
     im współczesny wymiar i tworząc przestrzeń do zgłębiania tajemnic rzeczywistości poprzez
     muzykę wokalną. Bogaty i zróżnicowany repertuar zespołu obejmuje ponad 60 dzieł – od
     renesansowej polifonii po muzykę najnowszą, ze szczególnym miejscem dla muzyki sakralnej.</p>
