@@ -34,7 +34,7 @@ concert.pochwala-stworzenia.essence: "Le concert naît des Laudes creaturarum de
 # paraphrase sur deux surfaces.
 concert.pochwala-stworzenia.invitation: "Le Cantique des créatures de saint François salue le soleil, le vent, l’eau et le feu comme une fratrie, et salue la mort dans les mêmes termes. Le programme suit ce chemin : de la lumière vers ce qui est fragile en l’homme, et plus loin — jusque là où la louange de la création devient la prière de tous les saints, en l’église qui porte leur nom."
 
-concert.pochwala-stworzenia.facts.0: "Festival « Fenomen człowieka »"
+concert.pochwala-stworzenia.facts.0: "Festival « Fenomen Człowieka »"
 concert.pochwala-stworzenia.facts.1: "Voix, violon, orgue"
 concert.pochwala-stworzenia.facts.2: "Le Cantique des créatures de saint François"
 # Les quatre retours s'accrochent aux œuvres 02, 05, 08 et 09 — l'ordre du chef numérote les
@@ -48,7 +48,7 @@ concert.pochwala-stworzenia.program.8.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.posterAlt: "Affiche du concert Louange de la Création"
 concert.pochwala-stworzenia.realizacja: "Violon : Radu Ropotan"
 concert.pochwala-stworzenia.about.place: "Église de Tous-les-Saints · Varsovie"
-concert.pochwala-stworzenia.about.blurb: "Un concert dans le cadre du festival varsovien « Fenomen człowieka » : le Cantique des créatures de saint François comme un chemin de l’émerveillement devant la création vers l’espérance de l’éternité."
+concert.pochwala-stworzenia.about.blurb: "Un concert dans le cadre du festival varsovien « Fenomen Człowieka » : le Cantique des créatures de saint François comme un chemin de l’émerveillement devant la création vers l’espérance de l’éternité."
 
 # ── La page du concert (2026-09). Tout ce qui suit existe parce que cette soirée a gagné sa
 #    propre page ; les clés ci-dessus ne servaient que la station et l'accueil.

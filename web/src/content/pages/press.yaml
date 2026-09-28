@@ -53,10 +53,11 @@ latest:
   announce: "Zapowiedź"
   announceShortSub: "Krótka wersja do kalendarzy i serwisów"
   announceLongSub: "Wersja dla redakcji"
-  programme: "Program koncertu"
-  programmeSub: "Utwory w kolejności wieczoru i wykonawcy"
+  # The same two measures in English, where the kit carries them.
+  announceEn: "Zapowiedź po angielsku"
   # The names under this title are the biograms the PDF actually holds, never a promise.
   biograms: "Biogramy"
+  biogramsLanguages: "po polsku i po angielsku"
   poster: "Plakat"
   posterPrint: "Plakat do druku"
   posterPrintSub: "Plik od autorki projektu, w rozdzielczości do druku"
@@ -100,57 +101,50 @@ about:
   # markup and prints the real number.
   lede: >-
     Ten sam tekst w trzech miarach: do noty w programie, do zapowiedzi i do pełnego biogramu.
-  # ~300 characters: who, what, and the one thing that makes the cycle a cycle.
+  # ~300 characters: who founded it, what it draws from, what it sings.
   shortHtml: >-
-    <p>VoctEnsemble to zespół wokalny pod kierownictwem Florenta de Bazelaire, poświęcony
-    muzyce sakralnej od renesansu po współczesność. W autorskim cyklu <em>Koncertów
-    Duchowych</em> przywraca tradycję dawnych <em>Concerts Spirituels</em>, wieczorów,
-    w których muzyka, słowo i światło prowadzą jedną narrację.</p>
-  # ~1000 characters: the above, plus the record a programmer checks — who recorded the debut,
-  # which evenings exist, who builds the light.
+    <p>VoctEnsemble to krakowski zespół wokalny założony przez Florent de Bazelaire. Czerpie
+    inspirację z XVIII-wiecznych <em>Concerts Spirituels</em>, nadając im współczesny wymiar.
+    Repertuar zespołu sięga od renesansowej polifonii po muzykę najnowszą, ze szczególnym
+    miejscem dla muzyki sakralnej.</p>
+  # ~1000 characters: the above, plus the record a programmer checks — the debut and who recorded
+  # it, the engaged evenings, who builds the light and the image.
   mediumHtml: |-
-    <p><strong>VoctEnsemble</strong> to nowoczesna formacja wokalna, która pod kierownictwem
-    <strong>Florenta de Bazelaire</strong> wnosi na polską scenę muzyczną nową jakość estetyczną
-    i duchową. W autorskim cyklu <em>Koncertów Duchowych</em> zespół przywraca tradycję dawnych
-    <em>Concerts Spirituels</em>, budując pomost między historyczną świadomością a potrzebami
-    współczesnego słuchacza.</p>
-    <p>Repertuar obejmuje siedem wieków muzyki sakralnej: dzieła mistrzów renesansu i baroku
-    spotykają się w nim z kompozycjami Arvo Pärta i Bernata Vivancosa. Debiutancki projekt
-    <em>Kontemplacja Wcielenia</em> (2024) zarejestrował Jakub Garbacz z Ars Sonora Studio;
-    kolejne wieczory — <em>Hymn Poległym</em> w Bazylice Mariackiej i <em>Aeternam — Epitafium
-    dla Gazy</em> — wzięły się z wrażliwości zespołu na los drugiego człowieka. Dzięki współpracy
-    z reżyserką świateł Adą Bystrzycką koncerty nabierają formy nowoczesnych misteriów.
-    Działalność zespołu prowadzi Fundacja VoctFoundation z siedzibą w Krakowie.</p>
-  # The team's own text, verbatim. It is the one legitimately brochure-voiced artifact on this
-  # site and it is not ours to rewrite — the two shorter measures above are condensations OF it,
-  # and they introduce no fact it does not carry.
+    <p><strong>VoctEnsemble</strong> to krakowski zespół wokalny założony przez
+    <strong>Florent de Bazelaire</strong>. Zespół czerpie inspirację z XVIII-wiecznych
+    <em>Concerts Spirituels</em>, nadając im współczesny wymiar i tworząc przestrzeń do
+    zgłębiania tajemnic rzeczywistości poprzez muzykę wokalną. Repertuar zespołu sięga od
+    renesansowej polifonii po muzykę najnowszą, ze szczególnym miejscem dla muzyki sakralnej.</p>
+    <p>Zespół traktuje sztukę jako formę modlitwy i refleksji nad kondycją człowieka. Do
+    najważniejszych dokonań należą inauguracyjny koncert „Kontemplacja Wcielenia”, utrwalony
+    przez Ars Sonora Studio, oraz projekty zaangażowane: „Hymn Poległym” (w 3. rocznicę wojny na
+    Ukrainie) i „Aeternam – Epitafium dla Gazy”. Występy, często wzbogacone reżyserią świateł Ady
+    Bystrzyckiej bądź animacjami Sebastiana Kuźmy, tworzą dla publiczności wielozmysłowe
+    doświadczenie muzyki.</p>
+  # The ensemble's own text, verbatim: the biogram of 27.09.2026, which replaced the August one.
+  # It is the one legitimately brochure-voiced artifact on this site and it is not ours to
+  # rewrite — the two shorter measures above are condensations OF it, and they introduce no fact
+  # it does not carry. It is also the ensemble's entry in every concert pack's `biogramy.pdf`
+  # (scripts/press-pack.mjs), so the site has one full biogram; its English is the kit's
+  # `biograms.en`, since this page has none.
   longHtml: |-
-    <p><strong>VoctEnsemble</strong> to nowoczesna formacja wokalna, która pod kierownictwem
-    <strong>Florenta de Bazelaire</strong> wnosi na polską scenę muzyczną nową jakość estetyczną
-    i duchową. Misją zespołu jest zgłębianie człowieczeństwa za pomocą muzyki sakralnej, przy
-    jednoczesnym zachowaniu niezwykłej czujności na współczesne tragizmy i nadzieje świata.
-    W ramach autorskiego cyklu <em>Koncertów Duchowych</em>, grupa przywraca tradycję dawnych
-    <em>Concerts Spirituels</em>, budując pomost między historyczną świadomością a potrzebami
-    współczesnego słuchacza.</p>
-    <p>Twórczość VoctEnsemble to fascynujący kalejdoskop stylów, w którym dzieła mistrzów
-    Renesansu i Baroku spotykają się z kompozycjami Arvo Pärta czy Bernata Vivancosa.
-    Ta artystyczna wymiana pozwala na odkrywanie uniwersalnych prawd ukrytych w dźwiękach,
-    czyniąc każdy koncert podróżą w głąb sacrum.</p>
-    <p>Zespół od początku istnienia stawia na interdyscyplinarną współpracę z wybitnymi twórcami.
-    Debiutancki projekt <em>Kontemplacja Wcielenia</em> (2024) został zarejestrowany przez Jakuba
-    Garbacza (Ars Sonora Studio), co otworzyło grupie drogę na ogólnopolskie festiwale — m.in.
-    do Archikatedry Łódzkiej pod auspicjami Fundacji Carpe Diem. Wrażliwość zespołu na los
-    drugiego człowieka zaowocowała takimi wydarzeniami jak <em>Hymn Poległym</em> w Bazylice
-    Mariackiej — modlitwą o pokój na Ukrainie — oraz <em>Aeternam — Epitafium dla Gazy</em>,
-    prezentowanym m.in. w krakowskich Mistrzejowicach i Niedzicy.</p>
-    <p>VoctEnsemble to także dbałość o wizualny wymiar duchowości. Dzięki współpracy z reżyserką
-    świateł Adą Bystrzycką oraz artystami takimi jak Sebastian Kuźma (ART Agencja Rzemieślników
-    Teatralnych), koncerty zespołu — m.in. <em>Wołanie Gór</em> czy <em>9 Kart z Księgi
-    Psalmów</em> — nabierają formy nowoczesnych misteriów.</p>
-    <p>Zespół konsekwentnie buduje swoją tożsamość, opierając ją na jedności artystycznej
-    i ludzkiej harmonii. VoctEnsemble to nie tylko głosy — to wspólnota artystyczna, która poprzez
-    arcy-elegancką formę i minimalistyczny przekaz dąży do autentycznego spotkania z publicznością,
-    przywracając muzyce jej pierwotną siłę dotykania serc.</p>
+    <p><strong>VoctEnsemble</strong> to krakowski zespół wokalny założony przez
+    <strong>Florent de Bazelaire</strong>, który z niezwykłym zapałem redefiniuje pojęcie koncertu
+    duchowego. Zespół czerpie inspirację z XVIII-wiecznych <em>Concerts Spirituels</em>, nadając
+    im współczesny wymiar i tworząc przestrzeń do zgłębiania tajemnic rzeczywistości poprzez
+    muzykę wokalną. Bogaty i zróżnicowany repertuar zespołu obejmuje ponad 60 dzieł – od
+    renesansowej polifonii po muzykę najnowszą, ze szczególnym miejscem dla muzyki sakralnej.</p>
+    <p>Zespół wyróżnia się wyjątkową wrażliwością na wydarzenia w świecie, traktując sztukę jako
+    formę modlitwy i refleksji nad kondycją człowieka. Do najważniejszych dokonań zespołu należą:
+    inauguracyjny koncert „Kontemplacja Wcielenia”, utrwalony przez Ars Sonora Studio, oraz
+    projekty zaangażowane: „Hymn Poległym” (w 3. rocznicę wojny na Ukrainie) oraz „Aeternam –
+    Epitafium dla Gazy”. VoctEnsemble regularnie gości na prestiżowych festiwalach, m.in. podczas
+    XXXIX Dni Muzyki Organowej i Kameralnej w Rybniku oraz w ramach cyklu „Organy solo
+    i kameralnie” w Katedrze Łódzkiej.</p>
+    <p>Dbałość o jedność wewnętrzną i świadoma praca nad wspólnym brzmieniem pozwalają zespołowi
+    budować własną tożsamość. Występy, często wzbogacone nowoczesną reżyserią świateł Ady
+    Bystrzyckiej bądź animacjami Sebastiana Kuźmy, tworzą dla publiczności wielozmysłowe
+    doświadczenie muzyki.</p>
   logo: "Logotyp"
   # On the page and beside the files in the pack (logo/UZYCIE.txt).
   logoUsage: >-

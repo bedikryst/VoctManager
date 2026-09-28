@@ -1,147 +1,448 @@
 # The press kit for Pochwała Stworzenia (11.10.2026) — the texts /press offers to copy and the pack
-# ships as files. Polish only. Schema and every string built from it: `src/lib/pressKit.ts`.
+# ships as files. Schema and every string built from it: `src/lib/pressKit.ts`.
 #
-# ONLY COPY LIVES HERE. Title, day, hour, venue, address, festival, door and composers are printed
-# from `concerts.yaml`. The prose below has to name the day and the hour anyway — an announcement
-# is pasted whole into somebody's listing — so the loader checks that every dated text still names
-# the corpus's; move the concert and the build fails until this file follows.
+# ONLY COPY LIVES HERE. Title, day, hour, venue, address, festival, door, composers and the
+# conductor are printed from `concerts.yaml`. The prose below has to name the day and the hour
+# anyway — an announcement is pasted whole into somebody's listing — so the loader checks that
+# every dated text still names the corpus's; move the concert and the build fails until this file
+# follows.
 #
-# WHAT THESE TEXTS MUST NEVER SAY, from docs/specs/koncert-pochwala-stworzenia-2026-10.md:
+# THESE ARE APPROVED TEXTS, delivered as PDFs on 28.09.2026 (press-pack/inbox/2026-09-28/, outside
+# git) and transcribed here word for word. The departures, which the PDFs do not carry:
+#   · the conductor's name is NEVER DECLINED — „pod dyrekcją Florent de Bazelaire”, „przez Florent
+#     de Bazelaire” — because he reads it as French; the PDFs mix both forms;
+#   · „Pieśń słoneczna” keeps a lower-case second word, as a work's title does and as the corpus
+#     writes it; the festival is „Fenomen Człowieka”, an event's name, capitalised as its
+#     organiser writes it (both settled 28.09.2026);
+#   · „utwory Masseneta, Ešenvalds, …” → „Ešenvaldsa”;
+#   · EN: „Jacek Sykułski” → „Sykulski”, „hope..” → „hope.”, „1:30 p.m” → „1.30 pm” (the form
+#     the other EN text uses), „39thedition” → „39th edition”.
+#
+# WHAT THESE TEXTS MUST NEVER SAY, from docs/specs/koncert-pochwala-stworzenia-2026-10.md — check
+# any later edit against it:
 #   · the relation is VERTICAL — creation as the road to the Creator, the human as God's image
-#     (§9); never the human as a brother of the creatures, which Ania's first draft said (§12);
+#     (§9); never the human as a brother of the creatures (§12);
 #   · the encore is never named: it is the ensemble's to give, and a press text that lists it has
 #     promised it;
 #   · nothing about how often the Pärt returns or where: the conductor's numbering has moved twice,
 #     and a printed listing cannot follow a third move;
-#   · the Stetit Angelus / All Saints rhyme is spent ONCE per text — it is the evening's strongest
-#     fact and a text that says it twice has spent it (.agent memory: strongest fact spent once);
+#   · the Stetit Angelus / All Saints rhyme is spent ONCE per text;
 #   · no Polish Canticle but our own glosses: Leopold Staff's translation is protected to the end of
-#     2027 (§11);
-#   · nothing about Radu Ropotan beyond what is on record — his biography waits for his own word.
+#     2027 (§11).
 #
-# THE QUOTE IS FLORENT'S PROGRAMME NOTE (§1), NOT §9. §9's account was generated rather than
-# written, he said so when he sent it, and the corpus rules that it may not carry his name
-# (concerts.yaml, `reflectionNote`). He sees the quote before it ships.
-#
-# Every text here is a draft until Ania approves it; nothing ships before that (spec stage 4).
+# NO PROGRAMME IN THE PACK. The running order is not published on /press; the concert page carries
+# it, and that is where it is kept true.
 
 concert: pochwala-stworzenia
 forces: "12 głosów · skrzypce · organy"
 
+# The concert card's paragraph on /press, and the paragraph its Kopiuj carries.
+lede: >-
+  „Pochwała Stworzenia” to kolejny koncert z autorskiego cyklu Koncertów Duchowych VoctEnsemble,
+  inspirowanego XVIII-wieczną tradycją francuskich Concerts Spirituels. Osią, a zarazem inspiracją
+  dla koncertu, jest „Pieśń słoneczna” św. Franciszka z Asyżu. Muzyka różnych epok rozwija
+  przesłanie kantyku, prowadząc od zachwytu nad stworzeniem przez doświadczenie ludzkiej kruchości
+  i śmierci ku modlitwie i nadziei ostatecznej.
+
+frame:
+  organizers: "VoctFoundation i VoctEnsemble"
+  within: "III edycji „Fenomenu Człowieka” Fundacji Hospicyjnej „Mój Dom”"
+
 release:
-  title: "„Pochwała Stworzenia”. VoctEnsemble zamyka festiwal „Fenomen człowieka”"
+  title: "Pochwała Stworzenia"
+  subtitle: >-
+    Koncert Duchowy VoctEnsemble inspirowany kantykiem Laudes creaturarum św. Franciszka z Asyżu
   lead: >-
-    W niedzielę 11 października o 13:30 VoctEnsemble pod dyrekcją Florenta de Bazelaire wystąpi
-    w warszawskim kościele Wszystkich Świętych z koncertem „Pochwała Stworzenia”. Program wyrasta
-    z Pieśni słonecznej św. Franciszka z Asyżu i zamyka trzecią edycję festiwalu „Fenomen
-    człowieka”. Wstęp wolny.
-  body:
-    - >-
-      Laudes creaturarum, znane po polsku jako Pieśń słoneczna, Franciszek ułożył w pierwszej
-      połowie XIII wieku, w dialekcie umbryjskim. Chwali w nich Boga przez słońce, księżyc
-      i gwiazdy, wiatr, wodę, ogień i ziemię: całe stworzenie jest drogą, którą człowiek zwraca się
-      ku Stwórcy. Koncert idzie tą drogą. Zaczyna od zachwytu nad światem, schodzi ku temu, co
-      w człowieku kruche: ku przemianie, cierpieniu i śmierci. Kończy się poza tym, co
-      widzialne.
-    - >-
-      Wieczór otwierają Gloria II i Lumen Mariana Borkowskiego, a zaraz po nich brzmi Laudes
-      creaturarum Carla Orffa z 1954 roku: cały Kantyk, w umbryjskim oryginale. Dalej program
-      przechodzi od kosmicznego obrazu stworzenia ku człowiekowi. Zabrzmią Méditation z opery
-      Thaïs Julesa Masseneta, Stars Ēriksa Ešenvaldsa, The Lark Ascending Ralpha Vaughana
-      Williamsa w opracowaniu Paula Draytona na skrzypce i chór, Stoi lód na Prośnie Jacka
-      Sykulskiego i Ménétrier George’a Enescu. Ta część kończy się na Dona eis requiem
-      I Borkowskiego.
-    - >-
-      Marian Borkowski (ur. 1934) ma w tym programie trzy utwory. Jego muzyka sakralna bierze
-      zwykle jedno łacińskie słowo (chwała, światło, odpoczynek) i buduje z niego całość
-      płaszczyznami brzmienia i skrajnymi rejestrami.
-    - >-
-      Między grupami utworów powraca Spiegel im Spiegel Arvo Pärta, grany z galerii na organach.
-      „Lustro w lustrze” jest tu obrazem relacji, na której stoi cały program: stworzenie odbija
-      Stwórcę, a człowiek został stworzony na Jego obraz.
-    - >-
-      Drogę domyka Stetit Angelus łotewskiego kompozytora Rihardsa Dubry. Antyfona układa słowa
-      Apokalipsy o aniele, który staje przy ołtarzu ze złotą kadzielnicą, a dym kadzideł wznosi się
-      z modlitwami świętych przed Bogiem. Ostatnie zdanie tej drogi pada więc w kościele, który
-      nosi to samo wezwanie: Wszystkich Świętych.
-    - >-
-      Gościem zespołu jest rumuński skrzypek Radu Ropotan. Zagra Méditation Masseneta z organami,
-      Ménétrier Enescu, jedyną miniaturę z cyklu Impressions d’enfance napisaną na same skrzypce,
-      oraz The Lark Ascending, w opracowaniu, w którym słowa wiersza George’a Mereditha,
-      w oryginale tylko wypisane nad nutami, naprawdę słychać.
-    - >-
-      „Fenomen człowieka” to trzy dni wystaw, warsztatów i rozmów. Festiwal prowadzi Fundacja
-      Hospicyjna „Mój Dom”, która towarzyszy chorym na SLA i ich rodzinom. Tegoroczna edycja czyta
-      człowieka przez piękno: wartości i relacji, natury i dźwięku, i to, które zostaje także
-      w bólu.
-  quote:
-    text: >-
-      To koncert o zachwycie nad światem stworzonym i o odkrywaniu w nim obecności Boga. Prowadzi
-      słuchaczy przez piękno stworzenia, jego kruchość, ludzkie cierpienie i nadzieję wieczności.
-    author: "Florent de Bazelaire"
-    role: "dyrygent i kierownik artystyczny VoctEnsemble"
+    11 października o godz. 13:30 w kościele Wszystkich Świętych w Warszawie zabrzmi „Pochwała
+    Stworzenia”, kolejny projekt autorskiego cyklu Koncertów Duchowych VoctEnsemble, nawiązującego
+    do francuskiej tradycji Concerts Spirituels. Punktem wyjścia programu jest franciszkańskie
+    Laudes creaturarum; jego perspektywę rozwijają dzieła od końca XIX wieku do dziś, ze
+    szczególnym miejscem dla muzyki współczesnych polskich kompozytorów Mariana Borkowskiego
+    i Jacka Sykulskiego.
+  sections:
+    - heading: "Jeden kantyk, cały koncert"
+      body:
+        - >-
+          Laudes creaturarum nie jest katalogiem piękna natury, lecz aktem pochwały: Franciszek
+          zwraca się ku Stwórcy poprzez stworzenie, a perspektywa kantyku rozszerza się od światła
+          i żywiołów aż po ludzkie cierpienie, śmierć i ludzką nadzieję.
+        - >-
+          „Pochwała Stworzenia” przenosi ten ruch na cały koncert. Kolejne utwory nie ilustrują
+          obrazów Franciszka, lecz odsłaniają kolejne wymiary tej samej pochwały: Boga Stwórcy,
+          stworzenia, przebaczenia i śmierci, która otwiera się ku nadziei. Centralne Laudes
+          creaturarum Carla Orffa, skomponowane do XIII-wiecznego tekstu w jego starowłoskim
+          brzmieniu, kondensuje kantyk w zwartej ośmiogłosowej formie; pozostałe dzieła rozwijają
+          jego przesłanie.
+        - >-
+          Pomiędzy kolejnymi częściami powraca Spiegel im Spiegel Arvo Pärta „Lustro w lustrze” –
+          muzyczny obraz relacji stworzenia i Stwórcy.
+    - heading: "Polska muzyka w przebiegu koncertu"
+      body:
+        - >-
+          Współczesna muzyka polska nie tworzy w programie osobnego bloku, lecz wyznacza jego
+          kluczowe momenty. Trzy utwory Mariana Borkowskiego pojawiają się na różnych etapach
+          koncertu: Gloria II i Lumen na początku, Dona eis requiem I niemal u jego końca. Pochwała,
+          światło i modlitwa za zmarłych prowadzą program od jego otwarcia ku doświadczeniu
+          śmierci. Obok nich Stoi lód na Prośnie Jacka Sykulskiego kieruje uwagę ku ziemi
+          i ludzkiemu doświadczeniu, naznaczonemu trudem i przemijaniem.
+        - >-
+          Dalszą część koncertu wypełniają utwory Masseneta, Ešenvaldsa, Vaughana Williamsa
+          i Enescu. Całość zamyka Stetit Angelus Rihardsa Dubry – muzyczny obraz modlitwy świętych
+          przed Bogiem, który w przestrzeni kościoła Wszystkich Świętych zyskuje szczególną wymowę.
+    - heading: "Głos, skrzypce i organy"
+      body:
+        - >-
+          Zmienna obsada wokalna pozwala ukazać różne oblicza brzmienia zespołu: VoctEnsemble
+          wykona kompozycje na 5, 7, 8, 9 i 12 głosów pod kierunkiem Florent de Bazelaire. Partie
+          wokalne dopełnią skrzypce i organy.
+        - >-
+          Z zespołem wystąpią Radu Ropotan, wybitny rumuński skrzypek, absolwent Royal Academy of
+          Music w Londynie, oraz Sebastian Kuczyński, organista i improwizator, absolwent
+          Uniwersytetu Muzycznego Fryderyka Chopina i dyrektor artystyczny Mokotowskiego
+          Międzynarodowego Festiwalu Muzyki Organowej i Kameralnej.
+    - heading: "Finał Fenomenu Człowieka"
+      body:
+        - >-
+          „Pochwała Stworzenia” zamknie III edycję „Fenomenu Człowieka”, poświęconą pięknu.
+          Wydarzenie organizowane przez Fundację Hospicyjną „Mój Dom” wyrasta z doświadczenia
+          towarzyszenia osobom ze stwardnieniem zanikowym bocznym. Symbolem Fenomenu jest oko.
+          W „Pochwale Stworzenia” spojrzenie otwiera na piękno świata; w doświadczeniu SLA może
+          pozostać jednym z ostatnich sposobów kontaktu z drugim człowiekiem. Ten sam gest
+          patrzenia łączy więc zachwyt z obecnością przy człowieku w jego kruchości.
+        - >-
+          Koncert rozpocznie się o godz. 13:30, po niedzielnej liturgii w kościele Wszystkich
+          Świętych. Wstęp wolny.
+  # After the practical block and the links: who the ensemble and the foundation are, and where
+  # the pictures are.
+  about:
+    - heading: "O VoctEnsemble"
+      body:
+        - >-
+          VoctEnsemble to niezależny zespół wokalny założony w Krakowie w 2024 roku przez Florent
+          de Bazelaire. W centrum jego pracy znajduje się człowiek i doświadczenia, wobec których
+          muzyka pozwala zatrzymać się uważniej: piękno, cierpienie, pamięć, tajemnica czy
+          nadzieja. Z tej perspektywy wyrastają autorskie Koncerty Duchowe, budowane wokół jednej
+          idei lub pytania i nawiązujące do XVIII-wiecznej tradycji francuskich Concerts
+          Spirituels. Repertuar zespołu rozciąga się od renesansowej polifonii po muzykę
+          współczesną, ze szczególnym miejscem dla repertuaru sakralnego, traktowanego jako żywe
+          świadectwo ludzkiego doświadczenia.
+    - heading: "O VoctFoundation"
+      body:
+        - >-
+          VoctFoundation, powołana w 2026 roku, tworzy organizacyjne, produkcyjne i finansowe
+          warunki dla projektów wyrastających z konkretnych idei artystycznych. Wokół każdej
+          realizacji łączy twórców, wykonawców, instytucje i partnerów, dobierając skalę i sposób
+          działania do potrzeb projektu. Jakość dzieła i jego spotkanie z publicznością traktuje
+          jako części tego samego procesu: projekt ma nie tylko przyjąć właściwą sobie formę, lecz
+          także stać się doświadczeniem wspólnym. VoctEnsemble jest zespołem rezydentem Fundacji,
+          a „Pochwała Stworzenia” jej pierwszą realizacją.
+    - body:
+        - >-
+          Materiały wizualne do publikacji, w tym zdjęcia VoctEnsemble i plakat koncertu „Pochwała
+          Stworzenia”, można pobrać bezpośrednio z zakładki Press.
+  # The address is printed after these from `data/foundation.ts`.
+  contact: { name: "Anna Marcisz", role: "wiceprezes VoctFoundation" }
 
 announce:
-  # ≤ 500 characters as copied: for listings and calendars. The facts line closes it because a
-  # listing is read for them.
+  # ≤ 500 characters as copied: for listings and calendars.
   short: >-
-    Koncertem „Pochwała Stworzenia” VoctEnsemble pod dyrekcją Florenta de Bazelaire zamyka
-    festiwal „Fenomen człowieka”. Program wyrasta z Pieśni słonecznej św. Franciszka i prowadzi od zachwytu
-    nad stworzeniem ku kruchości człowieka i nadziei wieczności. Zabrzmią m.in. Laudes creaturarum
-    Orffa, utwory Mariana Borkowskiego i The Lark Ascending Vaughana Williamsa ze skrzypkiem
-    Radu Ropotanem. Niedziela, 11 października, 13:30, kościół Wszystkich Świętych,
-    pl. Grzybowski 3/5, Warszawa. Wstęp wolny.
+    „Pochwała Stworzenia” to kolejny koncert z autorskiego cyklu Koncertów Duchowych VoctEnsemble,
+    inspirowanego XVIII-wieczną tradycją francuskich Concerts Spirituels. Osią, a zarazem
+    inspiracją dla koncertu, jest „Pieśń słoneczna” św. Franciszka z Asyżu. Muzyka różnych epok
+    rozwija przesłanie kantyku, prowadząc od zachwytu nad stworzeniem przez doświadczenie ludzkiej
+    kruchości i śmierci ku modlitwie i nadziei ostatecznej. 11 października, godz. 13:30, kościół
+    Wszystkich Świętych w Warszawie. 12 głosów, skrzypce i organy. Wstęp wolny.
   # ≤ 1500 characters as copied: for a column's announcement. The last block is lines, not prose.
   long:
     - >-
-      Koncertem „Pochwała Stworzenia” VoctEnsemble pod dyrekcją Florenta de Bazelaire zamyka
-      trzecią edycję festiwalu „Fenomen człowieka”. Program wyrasta z Pieśni słonecznej
-      św. Franciszka z Asyżu, w której całe stworzenie jest drogą do Stwórcy, i prowadzi od
-      zachwytu nad światem ku kruchości człowieka, cierpieniu i śmierci, a dalej poza to, co
-      widzialne.
+      „Pochwała Stworzenia” — nowy Koncert Duchowy VoctEnsemble inspirowany „Pieśnią słoneczną”
+      św. Franciszka z Asyżu
     - >-
-      W centrum stoi Laudes creaturarum Carla Orffa: cały Kantyk, w umbryjskim oryginale. Obok
-      niego trzy utwory Mariana Borkowskiego, Méditation z opery Thaïs Masseneta, Stars Ešenvaldsa,
-      The Lark Ascending Vaughana Williamsa na skrzypce i chór, Stoi lód na Prośnie Sykulskiego
-      i Ménétrier Enescu. Między grupami utworów powraca z galerii Spiegel im Spiegel Arvo Pärta,
-      muzyczne lustro relacji stworzenia i Stwórcy. Drogę domyka Stetit Angelus Rihardsa Dubry:
-      anioł okadza ołtarz, a dym wznosi się z modlitwami świętych. Utwór zabrzmi w kościele pod
-      wezwaniem Wszystkich Świętych.
-    - "Na skrzypcach gra Radu Ropotan."
+      11 października o godz. 13:30 w kościele Wszystkich Świętych w Warszawie odbędzie się
+      „Pochwała Stworzenia”, VI projekt autorskiego cyklu Koncertów Duchowych VoctEnsemble, będący
+      finałem III edycji „Fenomenu Człowieka” Fundacji Hospicyjnej „Mój Dom”.
+    - >-
+      Inspiracją dla koncertu jest „Pieśń słoneczna” (Laudes creaturarum) św. Franciszka z Asyżu,
+      w której całe stworzenie staje się drogą ku Stwórcy. Kantyk prowadzi od słońca, księżyca
+      i gwiazd, przez wiatr, wodę, ogień i ziemię, aż po przebaczenie, cierpienie i „siostrę
+      śmierć”. Program podejmuje tę drogę, prowadząc od zachwytu nad stworzeniem ku doświadczeniu
+      człowieka, jego kruchości i przemijania, aż po modlitwę i ostateczną nadzieję.
+    - >-
+      W programie znalazły się m.in. Spiegel im Spiegel Arvo Pärta, ośmiogłosowe Laudes
+      creaturarum Carla Orffa, Gloria II, Lumen i Dona eis requiem I Mariana Borkowskiego, a także
+      utwory Jacka Sykulskiego, Jules’a Masseneta, Ēriksa Ešenvaldsa, Ralpha Vaughana Williamsa,
+      George’a Enescu i Rihardsa Dubry. Zestawienie muzyki różnych epok i estetyk pozwala ukazać
+      kolejne aspekty franciszkańskiej wizji stworzenia, od kontemplacji świata po doświadczenie
+      przemijania i modlitwę.
+    - >-
+      VoctEnsemble wystąpi w dwunastoosobowym składzie pod dyrekcją Florent de Bazelaire,
+      z udziałem rumuńskiego skrzypka Radu Ropotana i organisty Sebastiana Kuczyńskiego.
+    - "Wstęp wolny."
     - |-
-      Niedziela, 11 października 2026, 13:30
-      Kościół Wszystkich Świętych (kościół górny), pl. Grzybowski 3/5, Warszawa
-      Wstęp wolny
+      Pochwała Stworzenia
+      niedziela, 11.10.2026 — 13:30
+      Kościół Wszystkich Świętych
+      Warszawa · pl. Grzybowski 3/5
+      Finał III edycji Fenomenu Człowieka
+      wstęp wolny
+  # The same two measures in English, for foreign media and for patrons who ask for both.
+  en:
+    short: >-
+      In Praise of Creation is the latest concert in VoctEnsemble’s original Spiritual Concerts
+      series, inspired by the tradition of the 18th-century French Concerts Spirituels. At its
+      heart is St Francis of Assisi’s Canticle of the Sun, which provides both the inspiration and
+      the central thread of the concert. Music from different periods unfolds the canticle’s
+      message, leading from wonder at creation through the experience of human fragility and death
+      towards prayer and ultimate hope. 11 October, 1.30 pm, Church of All Saints, Warsaw. Twelve
+      voices, violin and organ. Admission free.
+    long:
+      - >-
+        “In Praise of Creation” — a new Spiritual Concert by VoctEnsemble, inspired by St Francis
+        of Assisi’s Canticle of the Sun
+      - >-
+        On 11 October at 1.30 pm, the Church of All Saints in Warsaw will host In Praise of
+        Creation, the sixth project in VoctEnsemble’s original Spiritual Concerts series, marking
+        the finale of the third edition of the Fenomen Człowieka festival organised by the Mój Dom
+        Hospice Foundation.
+      - >-
+        The concert is inspired by St Francis of Assisi’s Canticle of the Sun (Laudes
+        creaturarum), in which all of creation becomes a path towards the Creator. The canticle
+        moves from the sun, moon and stars, through wind, water, fire and earth, to forgiveness,
+        suffering and “Sister Death”. The programme follows this journey, moving from wonder at
+        creation towards the human experience of fragility and transience, and ultimately towards
+        prayer and hope.
+      - >-
+        The programme includes, among other works, Arvo Pärt’s Spiegel im Spiegel, Carl Orff’s
+        eight-part Laudes creaturarum, and Marian Borkowski’s Gloria II, Lumen and Dona eis
+        requiem I, alongside works by Jacek Sykulski, Jules Massenet, Ēriks Ešenvalds, Ralph
+        Vaughan Williams, George Enescu and Rihards Dubra. Bringing together music from different
+        periods and aesthetic traditions, the programme explores different aspects of the
+        Franciscan vision of creation, from contemplation of the world to an awareness of
+        transience and prayer.
+      - >-
+        VoctEnsemble will perform with twelve singers under the direction of Florent de Bazelaire,
+        joined by Romanian violinist Radu Ropotan and organist Sebastian Kuczyński. Admission is
+        free.
+      - |-
+        In Praise of Creation
+        Sunday, 11 October 2026 — 1.30 pm
+        Church of All Saints
+        Warsaw · pl. Grzybowski 3/5
+        Final event of the third edition of Fenomen Człowieka
+        Free admission
 
 social:
-  # Written in the third person: it is pasted by other people's accounts (the festival, partners,
-  # media), who tag @VoctEnsemble themselves. `postText` appends the concert's address.
+  # Pasted by other people's accounts (the festival, partners, media), who tag @VoctEnsemble
+  # themselves. `postText` appends the concert's address.
   post:
-    - "Koncertem „Pochwała Stworzenia” VoctEnsemble zamyka festiwal „Fenomen człowieka”."
+    - "Jeden kantyk. Dziewięciu kompozytorów. Jedna muzyczna droga."
     - >-
-      Pieśń słoneczna św. Franciszka chwali Boga przez słońce, wiatr, wodę i ogień: całe
-      stworzenie jest w niej drogą do Stwórcy. Program idzie tą drogą, od zachwytu nad światem
-      przez to, co w człowieku kruche, aż poza to, co widzialne. Między grupami utworów wraca
-      z galerii Spiegel im Spiegel Arvo Pärta, muzyczne lustro, w którym stworzenie odbija
-      Stwórcę, a człowiek jest Jego obrazem.
+      11 października o 13:30 w kościele Wszystkich Świętych w Warszawie zabrzmi „Pochwała
+      Stworzenia”, VI projekt autorskiego cyklu Koncertów Duchowych VoctEnsemble.
     - >-
-      Drogę domyka Stetit Angelus Rihardsa Dubry: anioł z Apokalipsy okadza ołtarz, a dym wznosi
-      się z modlitwami wszystkich świętych. Utwór zabrzmi w kościele, który nosi ich wezwanie.
-    - "Dyryguje Florent de Bazelaire, na skrzypcach gra Radu Ropotan."
+      Punktem wyjścia jest Pieśń słoneczna (Laudes creaturarum) św. Franciszka z Asyżu, w której
+      całe stworzenie staje się drogą ku Stwórcy. Kantyk prowadzi od słońca, księżyca i gwiazd,
+      przez wiatr, wodę, ogień i ziemię, aż po przebaczenie, cierpienie i „siostrę śmierć”.
+    - >-
+      Tę samą perspektywę rozwija program koncertu „Pochwała Stworzenia”, w którym muzyka Pärta,
+      Orffa, Borkowskiego, Sykulskiego, Ešenvaldsa, Masseneta, Vaughana Williamsa, Enescu i Dubry
+      prowadzi od światła i pochwały, przez kruchość i przemijanie, ku modlitwie i nadziei,
+      w brzmieniu 12 głosów, skrzypiec i organów.
     - |-
-      Niedziela, 11 października, 13:30
-      Kościół Wszystkich Świętych (kościół górny), pl. Grzybowski 3/5, Warszawa
-      Wstęp wolny
-  # #FenomenCzłowieka is the festival's name, not a tag it is known to use: its site states none.
+      Finał III edycji Fenomenu Człowieka.
+      Wstęp wolny.
   hashtags:
-    - "#VoctEnsemble"
-    - "#PochwałaStworzenia"
-    - "#FenomenCzłowieka"
-    - "#KoncertDuchowy"
-    - "#MuzykaChóralna"
-    - "#ArvoPärt"
     - "#Warszawa"
+    - "#Koncert"
+    - "#PochwałaStworzenia"
+    - "#VoctEnsemble"
+    - "#Zaproszenie"
 
+# The evening's instrumentalists. The conductor is the corpus's (`credits`).
 guests:
-  # No biogram on record: the Royal Academy and the prizes in Ania's draft wait for his own word.
   - { name: "Radu Ropotan", role: "skrzypce" }
+  - { name: "Sebastian Kuczyński", role: "organy" }
+
+# biogramy.pdf, in this order, Polish then English. The ensemble's Polish biogram is not here: the
+# generator opens the Polish half with the page's full biogram (`press.yaml` about.longHtml), the
+# one text the site has. Its English is here, first, because the page has none.
+biograms:
+  pl:
+    - name: "Florent de Bazelaire"
+      role: "dyrygent"
+      body:
+        - >-
+          Florent de Bazelaire jest dyrygentem, założycielem i kierownikiem artystycznym
+          VoctEnsemble, niezależnego profesjonalnego zespołu wokalnego, który powołał do życia
+          w 2024 roku. Jest absolwentem Royal Academy of Music w Londynie, gdzie studiował
+          dyrygenturę symfoniczną. Jego obecna działalność artystyczna koncentruje się wokół
+          muzyki chóralnej, ze szczególnym zainteresowaniem repertuarem sakralnym, od renesansowej
+          polifonii po muzykę współczesną.
+        - >-
+          Jego wrażliwość muzyczna wyrasta z głębokiego zakorzenienia w kulturze francuskiej oraz
+          zainteresowania językiem i literaturą. W pracy nad muzyką szczególne miejsce zajmuje dla
+          niego relacja między słowem, brzmieniem i znaczeniem. Interesuje go nie tylko to, jak
+          utwór brzmi, ale także to, co poprzez muzykę może zostać odkryte i przeżyte.
+        - >-
+          W centrum jego pracy znajduje się przekonanie, że muzyka może być nie tylko
+          doświadczeniem estetycznym, ale także przestrzenią kontemplacji, spotkania i duchowej
+          refleksji. Z VoctEnsemble tworzy autorskie Koncerty Duchowe, nawiązujące do
+          XVIII-wiecznej tradycji Concerts Spirituels. Każdy projekt budowany jest wokół
+          określonej idei, pytania lub zagadnienia duchowego. Wśród dotychczasowych projektów
+          znalazły się m.in. Kontemplacja Wcielenia, 9 Kart z Księgi Psalmów, Wołanie Gór, Hymn
+          Poległym oraz Aeternam – Epitafium dla Gazy.
+        - >-
+          Jako dyrygent szczególnie interesuje się procesem interpretacji – tym momentem wspólnej
+          pracy z muzykami, kiedy utwór zaczyna się odsłaniać, a jego kierunek staje się coraz
+          bardziej czytelny. Ważna jest dla niego również relacja między muzyką a przestrzenią.
+          W swoich projektach wykorzystuje ciszę, światło i elementy scenografii jako część
+          doświadczenia muzyki.
+        - >-
+          Jest również założycielem VoctFoundation, której celem jest wspieranie rozwoju
+          artystycznego i organizacyjnego VoctEnsemble oraz tworzenie trwałych warunków dla jego
+          działalności.
+    - name: "Sebastian Kuczyński"
+      role: "organy"
+      body:
+        - >-
+          Organista, improwizator i muzyk kościelny, absolwent Uniwersytetu Muzycznego Fryderyka
+          Chopina w Warszawie, gdzie studiował instrumentalistykę i muzykę kościelną. W ramach
+          programu Erasmus+ kształcił się w Hochschule für Musik und Theater w Hamburgu u Wolfganga
+          Zerera oraz Menno van Delfta. Ukończył również podyplomowe studia „Menedżer muzyki” na
+          UMFC.
+        - >-
+          Laureat II nagrody XII Międzynarodowego Konkursu Interpretacji Muzyki Organowej im.
+          J.P. Sweelincka w Gdańsku (2024), jako jedyny Polak zakwalifikowany do finału, oraz
+          zwycięzca konkursów organowych i improwizatorskich w Olsztynie, Krasnobrodzie, Legnicy
+          i Turku. Stypendysta programu „Młoda Polska”.
+        - >-
+          Jako solista i kameralista koncertuje w Polsce i za granicą; występował m.in. w NOSPR
+          oraz podczas międzynarodowych festiwali organowych w Gdańsku i Kamieniu Pomorskim.
+          Współpracował z Orkiestrą i Chórem Filharmonii Narodowej oraz Operą i Filharmonią
+          Podlaską. Jest głównym organistą Sanktuarium Narodowego św. Andrzeja Boboli w Warszawie
+          oraz inicjatorem i dyrektorem artystycznym Mokotowskiego Międzynarodowego Festiwalu
+          Muzyki Organowej i Kameralnej.
+    - name: "Radu Ropotan"
+      role: "skrzypce"
+      body:
+        - >-
+          Rumuński skrzypek, absolwent Royal College of Music oraz Royal Academy of Music
+          w Londynie, gdzie w 2014 roku ukończył studia magisterskie. Kształcił się m.in. pod
+          kierunkiem Yuriego Zhislina, Macieja Rakowskiego, Igora Petrushevsky’ego i Levona
+          Chilingiriana; pracował także z Thomasem Brandisem, Anną Lisą Bezrodny i Maximem
+          Vengerovem.
+        - >-
+          Laureat ponad 30 nagród i wyróżnień w konkursach krajowych i międzynarodowych, m.in.
+          Remember Enescu International Violin Competition, Andrea Postacchini International
+          Competition oraz Winifred Prize Royal Academy of Music. Koncertował w Europie i Azji,
+          występując m.in. w Southbank Centre w Londynie, Suntory Hall w Tokio oraz Ateneum
+          Rumuńskim w Bukareszcie. W Japonii występował jako gość Pacific Music Festival.
+        - >-
+          W 2021 roku uzyskał stopień doktora na Uniwersytecie Transilvania w Braszowie, na
+          podstawie pracy poświęconej stylistycznym i interpretacyjnym aspektom utworów na
+          skrzypce solo Eugène’a Ysaÿe’a. Prowadzi również kursy mistrzowskie, a jako
+          współzałożyciel Pavilionul Artiștilor angażuje się w rozwój młodych muzyków i promocję
+          muzyki klasycznej.
+  en:
+    - name: "VoctEnsemble"
+      role: "vocal ensemble"
+      body:
+        - >-
+          VoctEnsemble is a Kraków-based vocal ensemble founded by Florent de Bazelaire, who
+          passionately seeks to redefine the concept of the spiritual concert. The ensemble draws
+          inspiration from the 18th-century Concerts Spirituels, giving this tradition
+          a contemporary dimension and creating a space for exploring the mysteries of reality
+          through vocal music. Its rich and diverse repertoire comprises over 60 works, ranging
+          from Renaissance polyphony to contemporary music, with a particular emphasis on sacred
+          music.
+        - >-
+          The ensemble is distinguished by a particular sensitivity to events in the world,
+          treating art as a form of prayer and reflection on the human condition. Among its most
+          significant achievements are its inaugural concert, Kontemplacja Wcielenia
+          (Contemplation of the Incarnation), recorded by Ars Sonora Studio, and its socially
+          engaged projects Hymn Poległym (Hymn to the Fallen), marking the third anniversary of
+          the war in Ukraine, and Aeternam – Epitafium dla Gazy (Aeternam – Epitaph for Gaza).
+          VoctEnsemble regularly performs at prestigious festivals, including the 39th edition of
+          the Days of Organ and Chamber Music in Rybnik and the Organy solo i kameralnie (Organ
+          Solo and Chamber Music) series at Łódź Cathedral.
+        - >-
+          The ensemble’s distinctive identity grows from its commitment to ensemble unity and its
+          continuous work towards a cohesive sound. Performances are often enhanced by Ada
+          Bystrzycka’s contemporary lighting design or animations by Sebastian Kuźma, creating
+          a multisensory experience of music for the audience.
+    - name: "Florent de Bazelaire"
+      role: "conductor"
+      body:
+        - >-
+          Florent de Bazelaire is a conductor, founder and artistic director of VoctEnsemble, an
+          independent professional vocal ensemble he founded in 2024. He is a graduate of the
+          Royal Academy of Music in London, where he studied orchestral conducting. His artistic
+          work focuses on choral music, with a particular interest in sacred repertoire, from
+          Renaissance polyphony to contemporary music.
+        - >-
+          His musical sensibility is deeply rooted in French culture and shaped by his interest in
+          language and literature. He is particularly interested in the relationship between
+          words, sound and meaning, and in what music can reveal and open up to experience. His
+          work is concerned not only with how a piece sounds, but also with what lies beyond the
+          purely musical experience.
+        - >-
+          At the heart of his work is the conviction that music can be more than an aesthetic
+          experience: it can also create a space for contemplation, encounter and spiritual
+          reflection. With VoctEnsemble, he creates original Koncerty Duchowe (Spiritual
+          Concerts), inspired by the 18th-century tradition of the Concerts Spirituels. Each
+          project is built around a particular idea, question or spiritual theme. Previous
+          projects include Kontemplacja Wcielenia, 9 Kart z Księgi Psalmów, Wołanie Gór, Hymn
+          Poległym and Aeternam – Epitafium dla Gazy.
+        - >-
+          As a conductor, he is particularly interested in the process of interpretation: in the
+          moment when musicians work together and a piece begins to reveal itself, gradually
+          finding its direction and form. He is also interested in the relationship between music
+          and space. In his projects, silence, light and elements of scenography become part of
+          the musical experience.
+        - >-
+          He is also the founder of VoctFoundation, whose aim is to support the artistic and
+          organisational development of VoctEnsemble and to create sustainable conditions for its
+          continued work.
+    - name: "Sebastian Kuczyński"
+      role: "organ"
+      body:
+        - >-
+          Organist, improviser and church musician, Sebastian Kuczyński is a graduate of the
+          Fryderyk Chopin University of Music in Warsaw, where he studied instrumental performance
+          and church music. As part of the Erasmus+ programme, he continued his studies at the
+          Hochschule für Musik und Theater Hamburg with Wolfgang Zerer and Menno van Delft. He also
+          completed a postgraduate programme in Music Management at the Fryderyk Chopin University
+          of Music.
+        - >-
+          He was awarded Second Prize at the 12th International J. P. Sweelinck Organ
+          Interpretation Competition in Gdańsk (2024), having been the only Polish finalist, and
+          has won organ and improvisation competitions in Olsztyn, Krasnobród, Legnica and Turek.
+          He is a recipient of the Young Poland scholarship programme.
+        - >-
+          As a soloist and chamber musician, he performs in Poland and abroad, appearing at venues
+          including NOSPR and at international organ festivals in Gdańsk and Kamień Pomorski. He
+          has collaborated with the National Philharmonic Orchestra and Choir and with the Podlasie
+          Opera and Philharmonic. He is principal organist at the National Shrine of St Andrew
+          Bobola in Warsaw and the founder and artistic director of the Mokotów International
+          Festival of Organ and Chamber Music.
+    - name: "Radu Ropotan"
+      role: "violin"
+      body:
+        - >-
+          Romanian violinist Radu Mihai Ropotan is a graduate of the Royal College of Music and the
+          Royal Academy of Music in London, where he completed his Master’s degree in 2014. He
+          studied with, among others, Yuri Zhislin, Maciej Rakowski, Igor Petrushevsky and Levon
+          Chilingirian, and has also worked with Thomas Brandis, Anna-Lisa Bezrodny and Maxim
+          Vengerov.
+        - >-
+          He has received more than 30 prizes and distinctions at national and international
+          competitions, including the Remember Enescu International Violin Competition, the Andrea
+          Postacchini International Competition and the Winifred Prize at the Royal Academy of
+          Music. He has performed across Europe and Asia, including at London’s Southbank Centre,
+          Suntory Hall in Tokyo and the Romanian Athenaeum in Bucharest. In Japan, he has appeared
+          as a guest artist at the Pacific Music Festival.
+        - >-
+          In 2021, he was awarded a doctorate by Transilvania University of Brașov for research
+          into the stylistic and interpretative aspects of Eugène Ysaÿe’s works for solo violin.
+          He also gives masterclasses and, as co-founder of Pavilionul Artiștilor, is involved in
+          supporting young musicians and promoting classical music.

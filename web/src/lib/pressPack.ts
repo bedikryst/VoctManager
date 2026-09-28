@@ -98,10 +98,11 @@ function listedFiles(index: PressIndex): PressFile[] {
     ...(concert
       ? [
           concert.release,
-          concert.programme,
           concert.biograms,
           concert.announceShort,
           concert.announceLong,
+          ...(concert.announceShortEn ? [concert.announceShortEn] : []),
+          ...(concert.announceLongEn ? [concert.announceLongEn] : []),
           concert.post,
           concert.hashtags,
           concert.poster,

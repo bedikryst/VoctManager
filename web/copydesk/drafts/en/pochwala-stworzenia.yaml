@@ -35,7 +35,7 @@ concert.pochwala-stworzenia.essence: "The concert grows out of St Francis’s La
 # English too; a translation that converges them puts one paraphrase on two surfaces.
 concert.pochwala-stworzenia.invitation: "St Francis’s Canticle of the Sun greets the sun, the wind, the water and the fire as its own kin, and at the end greets death on the same terms. The programme follows that road: from light towards what is fragile in us, and further — to where the praise of creation becomes the prayer of all the saints, in the church that bears their name."
 
-concert.pochwala-stworzenia.facts.0: "Festival “Fenomen człowieka”"
+concert.pochwala-stworzenia.facts.0: "Festival “Fenomen Człowieka”"
 concert.pochwala-stworzenia.facts.1: "Voices, violin, organ"
 concert.pochwala-stworzenia.facts.2: "St Francis’s Canticle of the Sun"
 # The four returns hang off works 02, 05, 08 and 09 — the conductor's own running order numbers the
@@ -49,7 +49,7 @@ concert.pochwala-stworzenia.program.8.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.posterAlt: "Poster for the concert In Praise of Creation"
 concert.pochwala-stworzenia.realizacja: "Violin: Radu Ropotan"
 concert.pochwala-stworzenia.about.place: "All Saints’ Church · Warsaw"
-concert.pochwala-stworzenia.about.blurb: "A concert within the Warsaw festival “Fenomen człowieka”: St Francis’s Canticle of the Sun as a road from wonder at creation towards the hope of eternity."
+concert.pochwala-stworzenia.about.blurb: "A concert within the Warsaw festival “Fenomen Człowieka”: St Francis’s Canticle of the Sun as a road from wonder at creation towards the hope of eternity."
 
 # ── The page (the concert page, 2026-09). Everything below exists because this evening earned a
 #    page of its own; the keys above served the station and the landing alone.

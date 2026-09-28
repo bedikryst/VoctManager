@@ -2596,7 +2596,7 @@
   facebookEvent: "https://fb.me/e/gwDNFHv8S"
   admission: free
   festival:
-    name: "Fenomen człowieka"
+    name: "Fenomen Człowieka"
     url: "https://fenomen-czlowieka.pl/"
   # Why the frame earns a sentence and not only a link: this edition reads the human through beauty,
   # and one of the kinds it names is the beauty that stays in pain, which is the axis this
@@ -2618,7 +2618,7 @@
     zostaje także w bólu. Ten program schodzi ku temu ostatniemu.
   about:
     place: "Kościół Wszystkich Świętych · Warszawa"
-    blurb: "Koncert w ramach warszawskiego festiwalu „Fenomen człowieka”: Pieśń słoneczna św. Franciszka jako droga od zachwytu nad stworzeniem ku nadziei wieczności."
+    blurb: "Koncert w ramach warszawskiego festiwalu „Fenomen Człowieka”: Pieśń słoneczna św. Franciszka jako droga od zachwytu nad stworzeniem ku nadziei wieczności."
     img: kd-stworzenie-hero-desktop
   # Amber rather than the base gold two evenings already wear: this one is named after the sun,
   # and candleFrom needs a hue of its own to tint the page with (lib/candle).
@@ -2643,7 +2643,7 @@
   # hour, no place and no admission: the band prints all five from the fields above.
   invitation: "Pieśń słoneczna św. Franciszka wita słońce, wiatr, wodę i ogień jak rodzeństwo, a na końcu tak samo wita śmierć. Program idzie tą drogą: od światła ku temu, co w człowieku kruche, i dalej — aż tam, gdzie pochwała stworzenia staje się modlitwą wszystkich świętych, w kościele pod tym samym wezwaniem."
   facts:
-    - Festiwal „Fenomen człowieka”
+    - Festiwal „Fenomen Człowieka”
     - Głosy, skrzypce, organy
     - Pieśń słoneczna św. Franciszka
   # All three stems say `stworzenie`, not the concert's id — the archive's own naming, which

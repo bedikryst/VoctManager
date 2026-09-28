@@ -1,15 +1,15 @@
 /**
  * @file templates.mjs
- * @description The three press PDFs as HTML documents: the release, the programme and the
- *  biograms. `pdf.mjs` prints them; `press.css` beside this file sets them.
+ * @description The two press PDFs as HTML documents: the release and the biograms. `pdf.mjs`
+ *  prints them; `press.css` beside this file sets them.
  *
  *  EVERY FACT IS PASSED IN, NONE IS WRITTEN HERE. The release's words come from the kit, the
- *  concert's facts from `concertFacts` (lib/pressKit), the programme from `concerts.yaml`, the
- *  biograms from `press.yaml` and the kit's guests. These functions only lay them out, so a PDF
- *  cannot say something the page does not.
+ *  concert's facts from `concertFacts` and `performers` (lib/pressKit), the biograms from the kit
+ *  or, where it has none, from `press.yaml`. These functions only lay them out, so a PDF cannot
+ *  say something the page does not.
  *
- *  Text is escaped; the three fields that are HTML by contract are not — a work title's one
- *  `<em>` (content.config) and the biogram HTML the page itself renders.
+ *  Text is escaped; the one field that is HTML by contract is not — the biogram HTML the page
+ *  itself renders.
  * @architecture Astro islands 2026
  * @module scripts/press-pack/pdf/templates
  */
@@ -96,82 +96,70 @@ const factRows = (rows) =>
     .map(([label, value]) => `<dt>${esc(label)}</dt><dd>${value}</dd>`)
     .join("")}</dl>`;
 
+const paragraphsHtml = (body) => body.map((paragraph) => `<p>${esc(paragraph)}</p>`).join("\n");
+
+/** A kit section: its heading, where it has one, and its paragraphs. */
+const sectionHtml = (section, tag) =>
+  `${section.heading ? `<${tag}>${esc(section.heading)}</${tag}>` : ""}\n${paragraphsHtml(section.body)}`;
+
 /**
- * The release. The quote follows the first paragraph, which is the one it speaks to — the same
- * order `releaseText` pastes.
+ * The release: headline, subtitle and lead, the facts as a table an editor scans, the kit's
+ * sections, the links, who the ensemble and the foundation are, and the press contact — the parts
+ * `releaseText` pastes. `performers` are `lib/pressKit`'s; `about` is the page's short biogram,
+ * printed only where the kit has no `release.about`.
  */
-export function releaseBody({ kit, facts, performers, about, contact, concertUrl }) {
+export function releaseBody({ kit, facts, performers, about, mail, links }) {
   const { release } = kit;
-  const [first, ...rest] = release.body;
-  const quote = release.quote
-    ? `<blockquote><p>„${esc(release.quote.text)}”</p><footer>${esc(release.quote.author)}, ${esc(release.quote.role)}</footer></blockquote>`
-    : "";
+  const contact = release.contact
+    ? `${esc(release.contact.name)}, ${esc(release.contact.role)}<br>${esc(mail)}`
+    : esc(mail);
   return `
 <p class="kicker">Informacja prasowa</p>
 <h1>${esc(release.title)}</h1>
+${release.subtitle ? `<p class="subtitle">${esc(release.subtitle)}</p>` : ""}
 <p class="lead">${esc(release.lead)}</p>
 ${factRows([
   ["Kiedy", esc(facts.dateline)],
   ["Gdzie", [facts.venue, facts.address].filter(Boolean).map(esc).join("<br>")],
-  ["Festiwal", facts.festival && esc(facts.festival.replace(/^Festiwal\s+/, ""))],
+  kit.frame
+    ? ["W ramach", esc(kit.frame.within)]
+    : ["Festiwal", facts.festival && esc(facts.festival.replace(/^Festiwal\s+/, ""))],
   ["Wstęp", facts.admission && esc(facts.admission.replace(/^Wstęp\s+/, ""))],
-  ["Wykonawcy", performers.map(esc).join("<br>")],
+  ["Organizatorzy", kit.frame && esc(kit.frame.organizers)],
+  ["Wykonawcy", performers.map((p) => `${esc(p.name)} — ${esc(p.role)}`).join("<br>")],
   ["Obsada", esc(kit.forces)],
   ["Kompozytorzy", esc(facts.composers.join(", "))],
-  ["Strona", esc(concertUrl)],
 ])}
-<p>${esc(first)}</p>
-${quote}
-${rest.map((paragraph) => `<p>${esc(paragraph)}</p>`).join("\n")}
-<h2>O zespole</h2>
-<p>${esc(about)}</p>
+${release.sections.map((section) => sectionHtml(section, "h3")).join("\n")}
+<h2>Więcej informacji</h2>
+<p class="links">${links.map(esc).join("<br>")}</p>
+${release.about ? release.about.map((section) => sectionHtml(section, "h2")).join("\n") : `<h2>O zespole</h2>\n<p>${esc(about)}</p>`}
 <h2>Kontakt dla mediów</h2>
-<p>${esc(contact)}</p>`;
+<p>${contact}</p>`;
 }
 
 /**
- * The programme: the numbered works without the encore, and the returning Pärt stated once, with
- * no count and no places — the conductor has moved both, and a printed programme cannot follow.
+ * The biograms, one language after another. `groups` are `{ lang, heading, entries }`, each entry
+ * `{ name, role, html }`: the ensemble's page biogram is HTML the page itself renders, a kit's
+ * biogram is plain paragraphs wrapped by `biogramHtml`.
  */
-export function programmeBody({ concert, facts, performers }) {
-  const works = (concert.program ?? []).filter((work) => !work.bis);
-  const mirror = concert.ritornello
-    ? `<p class="mirror"><span class="work">${esc(concert.ritornello.work)}</span>` +
-      `${concert.ritornello.year ? ` (${esc(concert.ritornello.year)})` : ""} · ` +
-      `${esc(concert.ritornello.composer)}` +
-      `${concert.ritornello.years ? ` (${esc(concert.ritornello.years)})` : ""}` +
-      `<br><span class="muted">powraca między grupami utworów</span></p>`
-    : "";
-  return `
-<p class="kicker">Program koncertu</p>
-<h1>${esc(facts.title)}</h1>
-<p class="dateline">${[facts.dateline, facts.venue].filter(Boolean).map(esc).join(" · ")}</p>
-<ul class="performers">${performers.map((line) => `<li>${esc(line)}</li>`).join("")}</ul>
-${concert.programLede ? `<h2>${esc(concert.programLede)}</h2>` : "<h2>Program</h2>"}
-<ol class="works">${works
-    .map(
-      (work) => `<li><div>
-  <div class="work">${work.work}${work.year ? ` <span class="muted">(${esc(work.year)})</span>` : ""}</div>
-  <div class="who">${esc(work.composer ?? "")}${work.years ? ` <span class="muted">(${esc(work.years)})</span>` : ""}${work.voicing ? ` <span class="muted">· ${esc(work.voicing)}</span>` : ""}</div>
-</div></li>`,
-    )
-    .join("\n")}</ol>
-${mirror}
-${concert.programArc ? `<h2>O programie</h2><p>${esc(concert.programArc)}</p>` : ""}`;
-}
-
-/**
- * The biograms on record. `entries` are `{ name, role, html }`; the ensemble's is the page's own
- * HTML and a guest's is plain text wrapped here.
- */
-export function biogramsBody({ facts, entries }) {
+export function biogramsBody({ facts, groups }) {
   return `
 <p class="kicker">${esc(facts.title)} · biogramy</p>
-<h1>Biogramy</h1>
-${entries
+${groups
+  .map(
+    (group) => `<div class="bio-group" lang="${esc(group.lang)}">
+<h1>${esc(group.heading)}</h1>
+${group.entries
   .map(
     (entry) =>
       `<section class="bio"><h3>${esc(entry.name)}</h3><p class="role">${esc(entry.role)}</p>${entry.html}</section>`,
   )
+  .join("\n")}
+</div>`,
+  )
   .join("\n")}`;
 }
+
+/** A kit biogram's paragraphs as the HTML `biogramsBody` sets. */
+export const biogramHtml = (body) => paragraphsHtml(body);

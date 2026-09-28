@@ -5,16 +5,18 @@
  *  pack (`scripts/press-pack.mjs`) must write the SAME characters: a limit measured on one and
  *  honoured by the other would be a limit on nothing.
  *
- *  THE KIT HOLDS ONLY WHAT CANNOT BE DERIVED. The release, the two announcements, the post and the
- *  hashtags are copy, one YAML per concert in `src/content/press-kits/`. The concert's facts — its
- *  title, day, hour, place, festival, door and composers — are read from `concerts.yaml` through
- *  `concertFacts`, never retyped. The kit's own prose does have to name the day and the hour, so
- *  `kitProblems` checks that every dated text still names the corpus's: move the concert and the
- *  build fails until the copy follows.
+ *  THE KIT HOLDS ONLY WHAT CANNOT BE DERIVED. The release, the announcements, the post, the
+ *  hashtags, the guests and the biograms are copy, one YAML per concert in `src/content/press-kits/`.
+ *  The concert's facts — its title, day, hour, place, festival, door, composers and conductor — are
+ *  read from `concerts.yaml` through `concertFacts` and `performers`, never retyped. The kit's own
+ *  prose does have to name the day and the hour, so `kitProblems` checks that every dated text
+ *  still names the corpus's: move the concert and the build fails until the copy follows.
  *
- *  THE CHARACTER LIMITS ARE MEASURED ON THE EXACT STRING KOPIUJ WRITES — `announceText`, newlines
- *  included, counted in code points. An editor's form that says "do 500 znaków" rejects the 501st,
- *  and it counts what was pasted, not what the YAML looked like.
+ *  AN ANNOUNCEMENT'S LENGTH IS MEASURED, NOT LIMITED. The approved texts run past the round
+ *  measures editors' forms ask for, and they ship as approved, so the page states what each one IS:
+ *  its exact count, and that count rounded to fifty as the row's name. Both are measured on the
+ *  exact string Kopiuj writes — `announceText`, newlines included, counted in code points — because
+ *  a form counts what was pasted, not what the YAML looked like.
  *
  *  IMPORTED BY BARE NODE as well as by Astro, so every relative import carries its `.ts` extension
  *  and type-only imports say `import type`: Node strips types, it does not resolve specifiers.
@@ -41,9 +43,10 @@ const PRESS_COPY_FILE = "src/content/pages/press.yaml";
 const MARK_FILE = "public/voct-mark.svg";
 
 /**
- * The `press.yaml` fields the pack prints: the short biogram closes the release (and the page's
- * "Kopiuj tekst" of it), the long one is `biogramy.pdf`, the two usage texts are the readme and
- * the logo's note. Add a field here the day the generator starts printing it.
+ * The `press.yaml` fields the pack prints: the short biogram closes a release whose kit has no
+ * `release.about` (and the page's "Kopiuj tekst" of it), the long one is the ensemble's entry in
+ * `biogramy.pdf`, the two usage texts are the readme and the logo's note. Add a field here the day
+ * the generator starts printing it.
  */
 const PACK_COPY_FIELDS = [
   ["about", "shortHtml"],
@@ -52,11 +55,11 @@ const PACK_COPY_FIELDS = [
   ["photos", "usage"],
 ] as const;
 
-/** The two announcement measures, in characters with spaces — the unit Polish editors ask in. */
-export const ANNOUNCE_LIMITS = { short: 500, long: 1500 } as const;
-
 /** Code points, so "ł" and "—" count as the one character an editor's form counts them as. */
 export const charCount = (text: string): number => [...text].length;
+
+/** "ok. 550": the length in characters with spaces, to the nearest fifty. */
+export const roundedLength = (text: string): number => Math.round(charCount(text) / 50) * 50;
 
 /**
  * Paragraphs as one pasteable string: each trimmed, a blank line between them. Line breaks INSIDE a
@@ -69,32 +72,57 @@ const hashtag = z
   .string()
   .regex(/^#[\p{L}\p{N}_]+$/u, "a hashtag is # followed by letters, digits or underscores");
 
+const paragraphList = z.array(z.string().min(1)).min(1);
+
+/** A block of prose under an optional heading. */
+const sectionSchema = z.object({ heading: z.string().min(1).optional(), body: paragraphList });
+
+const announcementSchema = z.object({
+  /** One paragraph, for listings and calendars. */
+  short: z.string().min(1),
+  /** For a column's announcement. A block may state its own lines (a dateline, an address). */
+  long: paragraphList,
+});
+
+const biogramSchema = z.object({
+  name: z.string().min(1),
+  role: z.string().min(1),
+  body: paragraphList,
+});
+
 const pressKitSchema = z.object({
   /** An `id` in `concerts.yaml`. */
   concert: z.string().min(1),
   /** "12 głosów · skrzypce · organy" — the corpus records no voice count, so the kit states it. */
   forces: z.string().min(1),
+  /** The concert card's paragraph on /press. Absent, the corpus's `essence` stands in. */
+  lede: z.string().min(1).optional(),
+  /** Who presents the evening and within what, as the release's fact block names them. */
+  frame: z.object({ organizers: z.string().min(1), within: z.string().min(1) }).optional(),
   release: z.object({
     title: z.string().min(1),
+    subtitle: z.string().min(1).optional(),
     lead: z.string().min(1),
-    body: z.array(z.string().min(1)).min(1),
-    quote: z
-      .object({ text: z.string().min(1), author: z.string().min(1), role: z.string().min(1) })
-      .optional(),
+    sections: z.array(sectionSchema).min(1),
+    /** After the practical block. Absent, the page's short biogram closes the release. */
+    about: z.array(sectionSchema).optional(),
+    /** The person an editor writes to; the address is the foundation's press mail. */
+    contact: z.object({ name: z.string().min(1), role: z.string().min(1) }).optional(),
   }),
-  announce: z.object({
-    /** One paragraph. */
-    short: z.string().min(1),
-    long: z.array(z.string().min(1)).min(1),
-  }),
+  announce: announcementSchema.extend({ en: announcementSchema.optional() }),
   social: z.object({
-    post: z.array(z.string().min(1)).min(1),
+    post: paragraphList,
     hashtags: z.array(hashtag).min(1),
   }),
-  /** Guest performers. A guest without a `bio` is named and has no biogram — none is on record. */
-  guests: z
-    .array(z.object({ name: z.string().min(1), role: z.string().min(1), bio: z.string().optional() }))
-    .default([]),
+  /** Performers beyond the ensemble and the corpus's `credits` — the evening's instrumentalists. */
+  guests: z.array(z.object({ name: z.string().min(1), role: z.string().min(1) })).default([]),
+  /**
+   * `biogramy.pdf` after the ensemble, in order. The Polish half always opens with the ensemble's
+   * full biogram from the page (`press.yaml`), so `pl` holds the evening's people only; `en`, where
+   * present, holds the ensemble too, since the page has no English. The run notes every performer
+   * without a Polish biogram.
+   */
+  biograms: z.object({ pl: z.array(biogramSchema).min(1), en: z.array(biogramSchema).optional() }).optional(),
 });
 
 export type PressKit = z.infer<typeof pressKitSchema> & {
@@ -102,9 +130,15 @@ export type PressKit = z.infer<typeof pressKitSchema> & {
   readonly id: string;
 };
 
-/** The ≤ 500 or ≤ 1500 character announcement, exactly as Kopiuj writes it. */
-export const announceText = (kit: PressKit, measure: keyof typeof ANNOUNCE_LIMITS): string =>
-  measure === "short" ? kit.announce.short.trim() : joinParagraphs(kit.announce.long);
+export type Announcement = z.infer<typeof announcementSchema>;
+export type AnnounceMeasure = "short" | "long";
+
+/**
+ * One measure of an announcement exactly as Kopiuj writes it — `kit.announce` for the Polish,
+ * `kit.announce.en` for the English.
+ */
+export const announceText = (announcement: Announcement, measure: AnnounceMeasure): string =>
+  measure === "short" ? announcement.short.trim() : joinParagraphs(announcement.long);
 
 /** The post, ending on the concert's own address so a pasted post always links somewhere true. */
 export const postText = (kit: PressKit, concertUrl: string): string =>
@@ -112,10 +146,7 @@ export const postText = (kit: PressKit, concertUrl: string): string =>
 
 export const hashtagsText = (kit: PressKit): string => kit.social.hashtags.join(" ");
 
-/**
- * Every kit in `src/content/press-kits/`, parsed and validated. Throws on the first invalid file,
- * naming it — including an announcement over its limit, measured on `announceText`.
- */
+/** Every kit in `src/content/press-kits/`, parsed and validated. Throws on the first invalid file, naming it. */
 export function loadPressKits(root: string = process.cwd()): PressKit[] {
   const dir = join(root, PRESS_KITS_DIR);
   let names: string[];
@@ -130,18 +161,7 @@ export function loadPressKits(root: string = process.cwd()): PressKit[] {
     if (!parsed.success) {
       throw new Error(`${PRESS_KITS_DIR}/${name}: ${z.prettifyError(parsed.error)}`);
     }
-    const kit: PressKit = { ...parsed.data, id };
-    for (const measure of ["short", "long"] as const) {
-      const length = charCount(announceText(kit, measure));
-      const limit = ANNOUNCE_LIMITS[measure];
-      if (length > limit) {
-        throw new Error(
-          `${PRESS_KITS_DIR}/${name}: announce.${measure} is ${length} characters as copied; ` +
-            `the limit is ${limit}.`,
-        );
-      }
-    }
-    return kit;
+    return { ...parsed.data, id };
   });
 }
 
@@ -160,6 +180,8 @@ export interface KitConcert {
   readonly address?: string | undefined;
   readonly admission?: "free" | "paid" | undefined;
   readonly festival?: { readonly name: string; readonly url?: string | undefined } | undefined;
+  readonly facebookEvent?: string | undefined;
+  readonly credits?: readonly { readonly role: string; readonly name: string }[] | undefined;
   readonly essence?: string | undefined;
   readonly invitation?: string | undefined;
   readonly posterCredit?: string | undefined;
@@ -176,7 +198,7 @@ export interface ConcertFacts {
   /** "Kościół Wszystkich Świętych, Warszawa · kościół górny". */
   readonly venue: string;
   readonly address?: string | undefined;
-  /** "Festiwal „Fenomen człowieka”". */
+  /** "Festiwal „Fenomen Człowieka”". */
   readonly festival?: string | undefined;
   /** "Wstęp wolny", or absent where the corpus states no free door. */
   readonly admission?: string | undefined;
@@ -212,15 +234,45 @@ export function concertFacts(concert: KitConcert): ConcertFacts {
   };
 }
 
+/** One performer of the evening, as a release's fact block and a biogram name them. */
+export interface Performer {
+  readonly name: string;
+  readonly role: string;
+}
+
 /**
- * The concert card's Kopiuj: the fact block as plain lines, ending on the concert's address.
- * `lede: false` drops the paragraph for a text that has already told the evening in its own words —
- * the lede spends the All Saints rhyme, and a release that carried both would say it twice.
+ * Who performs, in the order every text names them: the ensemble, the corpus's `credits` (the
+ * conductor), then the kit's guests. Roles are lower-case, as they read after a dash.
+ */
+export function performers(kit: PressKit, concert: KitConcert): Performer[] {
+  return [
+    { name: FOUNDATION.ensemble, role: "zespół wokalny" },
+    ...(concert.credits ?? []).map((credit) => ({ name: credit.name, role: credit.role.toLowerCase() })),
+    ...kit.guests,
+  ];
+}
+
+/**
+ * The concert card's lineup: everyone who sings and plays on one line, then each credit (the
+ * conductor) on its own — "VoctEnsemble · Radu Ropotan · …" over "Florent de Bazelaire — dyrygent".
+ * A pasted fact block sets `kit.forces` above it.
+ */
+export function lineupLines(kit: PressKit, concert: KitConcert): string[] {
+  return [
+    [FOUNDATION.ensemble, ...kit.guests.map((guest) => guest.name)].join(" · "),
+    ...(concert.credits ?? []).map((credit) => `${credit.name} — ${credit.role.toLowerCase()}`),
+  ];
+}
+
+/**
+ * The concert card's Kopiuj: the fact block as plain lines, ending on the concert's address where
+ * one is given. `lede: false` drops the paragraph for a text that has already told the evening in
+ * its own words; `lineup` (the forces over `lineupLines`) follows the composers.
  */
 export function factsText(
   facts: ConcertFacts,
-  concertUrl: string,
-  { lede = true }: { lede?: boolean } = {},
+  concertUrl: string | undefined,
+  { lede = true, lineup = [] }: { lede?: boolean; lineup?: readonly string[] } = {},
 ): string {
   const door = [facts.festival, facts.admission?.toLowerCase()].filter(Boolean).join(" · ");
   return [
@@ -233,41 +285,72 @@ export function factsText(
     lede ? facts.lede : undefined,
     "",
     facts.composers.length > 0 ? `Kompozytorzy: ${facts.composers.join(", ")}` : undefined,
+    "",
+    ...lineup,
+    "",
     concertUrl,
   ]
     .filter((line): line is string => line !== undefined)
     .join("\n")
-    .replace(/\n{3,}/g, "\n\n");
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** A section as pasted text: its heading on the first line of its first paragraph. */
+const sectionParagraphs = (section: z.infer<typeof sectionSchema>): string[] =>
+  section.heading
+    ? [`${section.heading}\n${section.body[0]?.trim() ?? ""}`, ...section.body.slice(1)]
+    : section.body;
+
+/**
+ * Where a reader of the release goes next: the concert's page, this press page, the festival and
+ * the event on Facebook — each only where the corpus has it.
+ */
+export function releaseLinks(concert: KitConcert, site: string, concertId: string): string[] {
+  return [
+    concertUrl(site, concertId),
+    `${site}/press`,
+    concert.festival?.url,
+    concert.facebookEvent,
+  ].filter((link): link is string => Boolean(link));
 }
 
 /**
- * The release as one pasteable text: headline, lead, the first paragraph and the quote that speaks
- * to it, the rest of the body, who the ensemble is, the facts and the press contact — the order the
- * PDF prints. `about` is the ensemble's short biogram and `contact` the press address, both passed
- * in because they live in the page copy and the foundation's data.
+ * The release as one pasteable text: headline and subtitle, lead, the sections, the practical
+ * block (the facts, the lineup and the frame) and the links, who the ensemble is, and the press
+ * contact. The PDF sets the same parts, with the facts as a table under the lead. `about` is the
+ * page's short biogram, used only where the kit has no `release.about`; `mail` is the press
+ * address. Both are passed in because they live in the page copy and the foundation's data.
  */
 export function releaseText(
   kit: PressKit,
   facts: ConcertFacts,
-  { about, contact, concertUrl }: { about: string; contact: string; concertUrl: string },
+  {
+    about,
+    mail,
+    lineup,
+    links,
+  }: { about: string; mail: string; lineup: readonly string[]; links: readonly string[] },
 ): string {
   const { release } = kit;
-  const [first, ...rest] = release.body;
-  const quote = release.quote
-    ? `„${release.quote.text}” — ${release.quote.author}, ${release.quote.role}`
-    : undefined;
-  return joinParagraphs(
-    [
-      release.title,
-      release.lead,
-      first,
-      quote,
-      ...rest,
-      `O zespole\n${about}`,
-      `Informacje praktyczne\n${factsText(facts, concertUrl, { lede: false })}`,
-      `Kontakt dla mediów: ${contact}`,
-    ].filter((paragraph): paragraph is string => Boolean(paragraph)),
-  );
+  const practical = [
+    factsText(facts, undefined, { lede: false, lineup }),
+    ...(kit.frame
+      ? [`Organizatorzy: ${kit.frame.organizers}`, `W ramach: ${kit.frame.within}`]
+      : []),
+  ].join("\n");
+  const contact = release.contact
+    ? `${release.contact.name}, ${release.contact.role}, ${mail}`
+    : mail;
+  return joinParagraphs([
+    [release.title, release.subtitle].filter(Boolean).join("\n"),
+    release.lead,
+    ...release.sections.flatMap(sectionParagraphs),
+    `Informacje praktyczne\n${practical}`,
+    `Więcej informacji\n${links.join("\n")}`,
+    ...(release.about ? release.about.flatMap(sectionParagraphs) : [`O zespole\n${about}`]),
+    `Kontakt dla mediów: ${contact}`,
+  ]);
 }
 
 /**
@@ -283,14 +366,22 @@ export function kitProblems(kit: PressKit, concert: KitConcert | undefined): str
     return problems;
   }
   const day = dayMonth(concert.date, "pl");
-  const dated: [string, string][] = [
-    ["release.lead", kit.release.lead],
-    ["announce.short", announceText(kit, "short")],
-    ["announce.long", announceText(kit, "long")],
-    ["social.post", joinParagraphs(kit.social.post)],
+  const dated: [string, string, string[]][] = [
+    ["release.lead", kit.release.lead, [day, concert.time]],
+    ["announce.short", announceText(kit.announce, "short"), [day, concert.time]],
+    ["announce.long", announceText(kit.announce, "long"), [day, concert.time]],
+    ["social.post", joinParagraphs(kit.social.post), [day, concert.time]],
   ];
-  for (const [field, text] of dated) {
-    for (const token of [day, concert.time]) {
+  // English writes the hour its own way ("1.30 pm"), so only the day is held to the corpus.
+  if (kit.announce.en) {
+    const dayEn = dayMonth(concert.date, "en");
+    dated.push(
+      ["announce.en.short", announceText(kit.announce.en, "short"), [dayEn]],
+      ["announce.en.long", announceText(kit.announce.en, "long"), [dayEn]],
+    );
+  }
+  for (const [field, text, tokens] of dated) {
+    for (const token of tokens) {
       // Non-breaking spaces are how a typeset copy of this text would carry "11 października".
       if (!text.replace(/ /g, " ").includes(token)) {
         problems.push(`kit "${kit.id}" ${field} does not name "${token}", the corpus's date/time.`);
@@ -403,10 +494,12 @@ export interface PressIndex {
   readonly concert?: {
     readonly id: string;
     readonly release: PressFile;
-    readonly programme: PressFile;
     readonly biograms: PressFile;
     readonly announceShort: PressFile;
     readonly announceLong: PressFile;
+    /** Present when the kit carries `announce.en`. */
+    readonly announceShortEn?: PressFile;
+    readonly announceLongEn?: PressFile;
     readonly post: PressFile;
     readonly hashtags: PressFile;
     readonly poster: PressFile;

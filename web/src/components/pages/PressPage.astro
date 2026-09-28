@@ -15,9 +15,9 @@
  *  - its CHROME (landmarks, button labels, units, mail subjects) — `i18n/content/press.ts`;
  *  - the concert kit's TEXTS — `src/content/press-kits/`, and every string a Kopiuj button here
  *    writes is built by `lib/pressKit` (`factsText`, `releaseText`, `announceText`, `postText`,
- *    `hashtagsText`), the same functions the pack's files are written with, because the character
- *    limits are measured on them;
- *  - the concert's FACTS — `concerts.yaml`, through `concertFacts`;
+ *    `hashtagsText`), the same functions the pack's files are written with, because the lengths
+ *    the page prints are measured on them;
+ *  - the concert's FACTS — `concerts.yaml`, through `concertFacts` and `lineupLines`;
  *  - the registry and the accounts — `data/foundation.ts`; the handles — `data/social.ts`;
  *  - the FILES — `public/press/index.json`, through `lib/pressPack`. The page renders a download
  *    only for a file the index lists; without an index the texts stay and every download becomes
@@ -33,7 +33,8 @@
  *
  *  POLISH-ONLY FOR NOW. `lang` is a real prop and the chrome exists in three locales, but there are
  *  no `/en/press` and `/fr/press` route files and `/press` is NOT in TRANSLATED_ROUTES. The kit's
- *  texts are Polish by nature: they are what a Polish editor pastes.
+ *  texts are Polish by nature: they are what a Polish editor pastes. The English announcements and
+ *  biograms a kit may carry are files for foreign media, listed on this Polish page.
  * @architecture Astro islands 2026
  * @module components/pages/PressPage
  */
@@ -50,7 +51,6 @@ import { designCredit, frameCredit } from "../../lib/photoCredit";
 import { pageCopy } from "../../lib/pageCopy";
 import { htmlToPlainText, plainTextLength } from "../../lib/plainText";
 import {
-  ANNOUNCE_LIMITS,
   announceText,
   charCount,
   concertFacts,
@@ -59,9 +59,12 @@ import {
   hashtagsText,
   kitProblems,
   latestKit,
+  lineupLines,
   loadPressKits,
   postText,
+  releaseLinks,
   releaseText,
+  roundedLength,
   type PressFile,
   type PressGraphic,
   type PressPhoto,
@@ -125,7 +128,7 @@ const packFacts = pack
   ? {
       contents: [
         ...(pack.index.concert
-          ? [t.packItems.release, t.packItems.programme, t.packItems.biograms, t.packItems.poster]
+          ? [t.packItems.release, t.packItems.biograms, t.packItems.poster]
           : []),
         ...(pack.index.photos.length > 0 ? [counted(pack.index.photos.length, t.photos, lang)] : []),
         ...((pack.index.concert?.graphics.length ?? 0) > 0 ? [t.packItems.graphics] : []),
@@ -159,13 +162,17 @@ const concert = latest?.station;
    next kit leads the page before the next pack is cut — its texts render, its files do not. */
 const kitFiles = pack && kit && pack.index.concert?.id === kit.concert ? pack.index.concert : undefined;
 
-/* The release closes on the SHORT biogram in Polish, whichever locale renders the page: the kit is
-   Polish, and the PDF beside this button was written from the Polish field. */
+/* A release whose kit has no `release.about` closes on the SHORT biogram in Polish, whichever
+   locale renders the page: the kit is Polish, and the PDF beside this button was written from the
+   Polish field. */
 const shortBioPl = htmlToPlainText(pageCopy(PRESS_PAGE, "pl").about.shortHtml);
 
 const card = concert && kit
   ? await (async () => {
-      const facts = concertFacts(concert.data);
+      // The kit's own paragraph leads the card where it has one; the corpus's `essence` otherwise.
+      const facts = { ...concertFacts(concert.data), ...(kit.lede ? { lede: kit.lede } : {}) };
+      const lineup = lineupLines(kit, concert.data);
+      const pastedLineup = [kit.forces, ...lineup];
       const url = concertUrl(FOUNDATION.site, concert.id);
       const posterImg = concert.data.poster ? photoOptional(concert.data.poster) : undefined;
       const posterCredit = concert.data.posterCredit
@@ -180,14 +187,18 @@ const card = concert && kit
         posterFrame: posterImg ? await framedShot(posterImg) : undefined,
         posterAlt: concert.data.posterAlt ?? facts.title,
         posterCredit,
-        factsCopy: factsText(facts, url),
+        lineup,
+        factsCopy: factsText(facts, url, { lineup: pastedLineup }),
         releaseCopy: releaseText(kit, facts, {
           about: shortBioPl,
-          contact: FOUNDATION.mail.press,
-          concertUrl: url,
+          mail: FOUNDATION.mail.press,
+          lineup: pastedLineup,
+          links: releaseLinks(concert.data, FOUNDATION.site, concert.id),
         }),
-        announceShort: announceText(kit, "short"),
-        announceLong: announceText(kit, "long"),
+        announceShort: announceText(kit.announce, "short"),
+        announceLong: announceText(kit.announce, "long"),
+        announceShortEn: kit.announce.en && announceText(kit.announce.en, "short"),
+        announceLongEn: kit.announce.en && announceText(kit.announce.en, "long"),
         post: postText(kit, url),
         hashtags: hashtagsText(kit),
       };
@@ -210,8 +221,9 @@ const posterAttrs =
       }
     : undefined;
 
-/** "do 500 znaków" — the measure an editor's form states. */
-const measure = (limit: number) => fill(t.upTo, "count", counted(limit, t.characters, lang));
+/** "ok. 550 znaków" — the row's name for a measure; `measured` is the exact count beside it. */
+const measure = (text: string) =>
+  fill(t.approx, "count", counted(roundedLength(text), t.characters, lang));
 const measured = (text: string) => counted(charCount(text), t.characters, lang);
 
 /** One row of the concert's materials. `text` is shown in place; `copy` is what Kopiuj writes. */
@@ -225,7 +237,29 @@ interface FileRow {
   readonly open?: "tab" | "lightbox" | undefined;
   readonly copy?: { readonly label: string; readonly value: string } | undefined;
   readonly text?: string | undefined;
+  /** The shown text's language where it is not the page's — an English announcement. */
+  readonly textLang?: string | undefined;
 }
+
+/** One announcement row: the Polish pair, then the English pair where the kit carries it. */
+const announceRow = (
+  id: string,
+  title: string,
+  sub: string,
+  text: string,
+  file: PressFile | undefined,
+  textLang?: string,
+): FileRow => ({
+  id,
+  icon: "doc",
+  title: `${title} · ${measure(text)}`,
+  sub: `${sub} · ${measured(text)}`,
+  format: "TXT",
+  file,
+  copy: { label: t.copy, value: text },
+  text,
+  textLang,
+});
 
 const fileRows: FileRow[] = card && kit
   ? [
@@ -239,50 +273,58 @@ const fileRows: FileRow[] = card && kit
         open: kitFiles ? "tab" : undefined,
         copy: { label: t.copyText, value: card.releaseCopy },
       },
-      {
-        id: "announce-short",
-        icon: "doc",
-        title: `${copy.latest.announce} · ${measure(ANNOUNCE_LIMITS.short)}`,
-        sub: `${copy.latest.announceShortSub} · ${measured(card.announceShort)}`,
-        format: "TXT",
-        file: kitFiles?.announceShort,
-        copy: { label: t.copy, value: card.announceShort },
-        text: card.announceShort,
-      },
-      {
-        id: "announce-long",
-        icon: "doc",
-        title: `${copy.latest.announce} · ${measure(ANNOUNCE_LIMITS.long)}`,
-        sub: `${copy.latest.announceLongSub} · ${measured(card.announceLong)}`,
-        format: "TXT",
-        file: kitFiles?.announceLong,
-        copy: { label: t.copy, value: card.announceLong },
-        text: card.announceLong,
-      },
+      announceRow(
+        "announce-short",
+        copy.latest.announce,
+        copy.latest.announceShortSub,
+        card.announceShort,
+        kitFiles?.announceShort,
+      ),
+      announceRow(
+        "announce-long",
+        copy.latest.announce,
+        copy.latest.announceLongSub,
+        card.announceLong,
+        kitFiles?.announceLong,
+      ),
+      ...(card.announceShortEn && card.announceLongEn
+        ? [
+            announceRow(
+              "announce-short-en",
+              copy.latest.announceEn,
+              copy.latest.announceShortSub,
+              card.announceShortEn,
+              kitFiles?.announceShortEn,
+              "en",
+            ),
+            announceRow(
+              "announce-long-en",
+              copy.latest.announceEn,
+              copy.latest.announceLongSub,
+              card.announceLongEn,
+              kitFiles?.announceLongEn,
+              "en",
+            ),
+          ]
+        : []),
       ...(kitFiles
-        ? ([
-            {
-              id: "programme",
-              icon: "doc",
-              title: copy.latest.programme,
-              sub: copy.latest.programmeSub,
-              format: "PDF",
-              file: kitFiles.programme,
-              open: "tab",
-            },
+        ? [
             {
               id: "biograms",
               icon: "doc",
               title: copy.latest.biograms,
-              // The generator's rule: the ensemble, and each guest whose biogram is on record.
-              sub: [FOUNDATION.ensemble, ...kit.guests.filter((g) => g.bio).map((g) => g.name)].join(
-                " · ",
-              ),
+              // The generator's rule: the ensemble's biogram from this page, then the kit's.
+              sub: [
+                [FOUNDATION.ensemble, ...(kit.biograms?.pl.map((bio) => bio.name) ?? [])].join(" · "),
+                kit.biograms?.en ? copy.latest.biogramsLanguages : undefined,
+              ]
+                .filter(Boolean)
+                .join(" · "),
               format: "PDF",
               file: kitFiles.biograms,
               open: "tab",
-            },
-          ] satisfies FileRow[])
+            } satisfies FileRow,
+          ]
         : []),
       ...(card.posterFrame || kitFiles
         ? [
@@ -655,6 +697,15 @@ const jsonLd = {
                 {card.facts.composers.length > 0 && (
                   <p class="press-concert-composers">{card.facts.composers.join(" · ")}</p>
                 )}
+                {/* The forces stand beside the poster; the card names who performs them. */}
+                <p class="press-concert-lineup">
+                  {card.lineup.map((line, i) => (
+                    <>
+                      {i > 0 && <br />}
+                      {line}
+                    </>
+                  ))}
+                </p>
                 <button
                   type="button"
                   class="press-button"
@@ -728,7 +779,7 @@ const jsonLd = {
                             <span class="press-d-open">{t.expand}</span>
                             <span class="press-d-close">{t.collapse}</span>
                           </summary>
-                          <div class="press-d-body press-text">
+                          <div class="press-d-body press-text" lang={row.textLang}>
                             {paragraphs(row.text).map((lines) => (
                               <p>
                                 {lines.map((line, i) => (
@@ -1637,6 +1688,7 @@ const jsonLd = {
   .press-concert-place a:hover { border-color: var(--candle); }
   .press-concert-lede { margin: clamp(20px, 2.2vw, 28px) 0 0; max-width: 58ch; font-family: var(--serif); font-weight: 300; font-size: clamp(17px, 1.35vw, 20px); line-height: 1.6; color: var(--ink); }
   .press-concert-composers { margin: 16px 0 0; max-width: 64ch; font-family: var(--serif); font-style: italic; font-size: 16px; line-height: 1.6; color: var(--ink-soft); }
+  .press-concert-lineup { margin: 16px 0 0; font-size: 15px; line-height: 1.55; color: var(--ink-soft); }
   .press-concert-text .press-button { margin-top: clamp(20px, 2.4vw, 30px); }
 
   .press-files { margin-top: clamp(40px, 4.6vw, 62px); }

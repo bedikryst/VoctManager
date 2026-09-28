@@ -25,7 +25,7 @@ const text = (body) => new TextEncoder().encode(BOM + body.replace(/\n/g, "\r\n"
 const ENTRIES = [
   { name: "PRZECZYTAJ.txt", data: text("Zdjęcia — zasady użycia\nfot. Kamila Grudzińska\n") },
   { name: "zdjecia/voctensemble-01-fot-voctensemble.jpg", data: new Uint8Array(randomBytes(200_000)) },
-  { name: "pochwala-stworzenia/zapowiedz-500.txt", data: text("Pochwała Stworzenia\n") },
+  { name: "pochwala-stworzenia/zapowiedz-krotka.txt", data: text("Pochwała Stworzenia\n") },
   { name: "logo/użycie.txt", data: text("Logotyp\n") },
   { name: "pusty.txt", data: new Uint8Array(0) },
 ];

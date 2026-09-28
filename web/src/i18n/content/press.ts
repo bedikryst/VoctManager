@@ -73,9 +73,9 @@ const pressCopySchema = z
         announce: z.string(),
         announceShortSub: z.string(),
         announceLongSub: z.string(),
-        programme: z.string(),
-        programmeSub: z.string(),
+        announceEn: z.string(),
         biograms: z.string(),
+        biogramsLanguages: z.string(),
         poster: z.string(),
         posterPrint: z.string(),
         posterPrintSub: z.string(),
@@ -205,13 +205,23 @@ const PRESS_CONTRACT: readonly CopyEntry[] = [
   },
   { kind: "field", path: "latest.announceShortSub", label: "Najnowsze · zapowiedź krótka · opis" },
   { kind: "field", path: "latest.announceLongSub", label: "Najnowsze · zapowiedź długa · opis" },
-  { kind: "field", path: "latest.programme", label: "Najnowsze · plik · program" },
-  { kind: "field", path: "latest.programmeSub", label: "Najnowsze · program · opis" },
+  {
+    kind: "field",
+    path: "latest.announceEn",
+    label: "Najnowsze · plik · zapowiedź po angielsku",
+    note: "The English announcements' title, once per measure, beside the same length the Polish rows print.",
+  },
   {
     kind: "field",
     path: "latest.biograms",
     label: "Najnowsze · plik · biogramy",
     note: "The names under it are the biograms the PDF holds, read at build.",
+  },
+  {
+    kind: "field",
+    path: "latest.biogramsLanguages",
+    label: "Najnowsze · biogramy · języki",
+    note: "Printed after the names only when the PDF carries the English biograms as well.",
   },
   { kind: "field", path: "latest.poster", label: "Najnowsze · plik · plakat" },
   { kind: "field", path: "latest.posterPrint", label: "Najnowsze · plik · plakat do druku" },
@@ -267,7 +277,7 @@ const PRESS_CONTRACT: readonly CopyEntry[] = [
     kind: "field",
     path: "about.shortHtml",
     label: "O zespole · biogram krótki",
-    note: "Around 300 characters — a note in a programme, or a line under a poster. A condensation of the full biogram below and never a source of new facts. The press release also closes on it.",
+    note: "Around 300 characters — a note in a programme, or a line under a poster. A condensation of the full biogram below and never a source of new facts. A press release whose kit has no closing \"O VoctEnsemble\" of its own closes on it.",
   },
   {
     kind: "field",
@@ -279,7 +289,7 @@ const PRESS_CONTRACT: readonly CopyEntry[] = [
     kind: "field",
     path: "about.longHtml",
     label: "O zespole · biogram pełny",
-    note: "The ensemble's own text, verbatim. It is ONE field rather than five paragraphs on purpose: a reviewer translating paragraph three and leaving two in Polish would produce a mixed-language biogram that somebody then pastes into a programme book.",
+    note: "The ensemble's own text, verbatim, and its entry in every concert pack's biogramy.pdf. It is ONE field rather than five paragraphs on purpose: a reviewer translating paragraph three and leaving two in Polish would produce a mixed-language biogram that somebody then pastes into a programme book.",
   },
   { kind: "field", path: "about.logo", label: "O zespole · logotyp · tytuł" },
   {
@@ -356,7 +366,6 @@ export interface PressChrome {
   readonly packUpdated: string;
   readonly packItems: {
     readonly release: string;
-    readonly programme: string;
     readonly biograms: string;
     readonly poster: string;
     readonly graphics: string;
@@ -376,8 +385,11 @@ export interface PressChrome {
   readonly bioMeasureAria: string;
   /** "znak / znaki / znaków", so a measured count can be printed as a phrase. */
   readonly characters: CountForms;
-  /** An announcement's measure: `{count}` is the counted limit, "do 500 znaków". */
-  readonly upTo: string;
+  /**
+   * An announcement's measure: `{count}` is its length rounded to fifty, "ok. 550 znaków". The
+   * exact count is printed beside it; this one only tells the two measures apart at a glance.
+   */
+  readonly approx: string;
   /**
    * The copy-to-clipboard affordance: resting labels, and the one it flashes after a copy. Two
    * buttons that copy different texts never share a label: the concert card copies the facts, the
@@ -466,7 +478,6 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     packUpdated: "Aktualizacja",
     packItems: {
       release: "informacja prasowa",
-      programme: "program",
       biograms: "biogramy",
       poster: "plakat",
       graphics: "grafiki",
@@ -479,7 +490,7 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     bioLong: "Pełny",
     bioMeasureAria: "Długość biogramu",
     characters: { one: "znak", few: "znaki", many: "znaków" },
-    upTo: "do {count}",
+    approx: "ok. {count}",
     copy: "Kopiuj",
     copyText: "Kopiuj tekst",
     copyConcert: "Kopiuj informacje o koncercie",
@@ -531,7 +542,6 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     packUpdated: "Updated",
     packItems: {
       release: "press release",
-      programme: "programme",
       biograms: "biographies",
       poster: "poster",
       graphics: "social media graphics",
@@ -544,7 +554,7 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     bioLong: "Full",
     bioMeasureAria: "Biography length",
     characters: { one: "character", many: "characters" },
-    upTo: "up to {count}",
+    approx: "approx. {count}",
     copy: "Copy",
     copyText: "Copy text",
     copyConcert: "Copy the concert details",
@@ -596,7 +606,6 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     packUpdated: "Mise à jour",
     packItems: {
       release: "communiqué de presse",
-      programme: "programme",
       biograms: "biographies",
       poster: "affiche",
       graphics: "visuels pour les réseaux sociaux",
@@ -609,7 +618,7 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     bioLong: "Complète",
     bioMeasureAria: "Longueur de la biographie",
     characters: { one: "caractère", many: "caractères" },
-    upTo: "jusqu'à {count}",
+    approx: "env. {count}",
     copy: "Copier",
     copyText: "Copier le texte",
     copyConcert: "Copier les informations du concert",

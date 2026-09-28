@@ -104,10 +104,20 @@ p {
   line-height: 1.5;
 }
 
-.dateline {
-  margin: 0 0 6mm;
-  font-size: 10.5pt;
+.subtitle {
+  margin: -2mm 0 5mm;
+  font: italic 400 14pt/1.3 "Cormorant Garamond", serif;
   color: var(--muted);
+}
+
+/* A section heading inside the release's prose, set like a biogram's name. A biogram's heading
+   opens its section and has nothing before it. */
+* + h3 {
+  margin-top: 6mm;
+}
+
+.links {
+  font-size: 9.5pt;
 }
 
 /* The fact block: label / value rows under a hairline, the shape a desk editor scans. */
@@ -134,81 +144,12 @@ p {
   margin: 0;
 }
 
-blockquote {
-  margin: 6mm 0;
-  padding: 0 0 0 6mm;
-  border-left: 1.2pt solid var(--accent);
-  break-inside: avoid;
-}
-
-blockquote p {
-  margin: 0 0 2mm;
-  font: italic 400 14pt/1.35 "Cormorant Garamond", serif;
-}
-
-blockquote footer {
-  font-size: 8.5pt;
-  color: var(--muted);
-}
-
-.muted {
-  color: var(--muted);
-}
-
-/* ── Programme ─────────────────────────────────────────────────────────────────────────────── */
-
-.works {
-  margin: 0 0 6mm;
-  padding: 0;
-  list-style: none;
-  counter-reset: work;
-}
-
-.works li {
-  display: grid;
-  grid-template-columns: 9mm 1fr;
-  padding: 2mm 0;
-  border-bottom: 0.4pt solid var(--rule);
-  counter-increment: work;
-  break-inside: avoid;
-}
-
-.works li::before {
-  content: counter(work, decimal-leading-zero);
-  font: 400 8pt/1.9 "IBM Plex Mono", monospace;
-  color: var(--muted);
-}
-
-/* A work title is italic, and the `<em>` a title may carry (an opera's name inside it) turns
-   upright — the convention for a title within a title. */
-.works .work,
-.mirror .work {
-  font: italic 500 13pt/1.25 "Cormorant Garamond", serif;
-}
-
-.works .work em {
-  font-style: normal;
-}
-
-.works .who {
-  font-size: 9.5pt;
-}
-
-.mirror {
-  margin: 0 0 6mm;
-  padding: 3mm 0 3mm 6mm;
-  border-left: 1.2pt solid var(--accent);
-  font-size: 9.5pt;
-  break-inside: avoid;
-}
-
-.performers {
-  margin: 0 0 2mm;
-  padding: 0;
-  list-style: none;
-}
-
 /* ── Biograms ──────────────────────────────────────────────────────────────────────────────── */
+
+/* Each language starts on its own page, so the English half can be printed or sent alone. */
+.bio-group + .bio-group {
+  break-before: page;
+}
 
 .bio {
   margin: 0 0 8mm;

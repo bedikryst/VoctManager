@@ -10,6 +10,27 @@ in a browser yet. Copy not yet approved by Ania. Next: review round R1
 the two disagree; that file stays the record of how the pack generator and `foundation.ts` came to
 exist.
 
+**Approved copy, 2026-09-28 — where the shipped kit departs from the stages below.** The approved
+texts (release, both announcements in Polish and English, four biograms in both languages, the
+card's paragraph, the post and hashtags) are transcribed into
+`src/content/press-kits/pochwala-stworzenia.yaml`; its header lists the only corrections made to
+them. What that changed:
+- **No programme on /press.** `program.pdf`, its row and `programmeBody` are gone; the concert
+  page is where the running order is kept.
+- **Lengths are measured, not limited.** The approved announcements run past 500 and 1500
+  characters and ship as approved, so the rows read "ok. 550 znaków" (rounded to fifty) beside the
+  exact count, and the files are `zapowiedz-krotka.txt` / `zapowiedz-dluga.txt`. The loader no
+  longer refuses a long text.
+- **The kit schema grew:** `lede` (the card's paragraph), `frame` (organisers, "w ramach"),
+  `release.{subtitle, sections[], about[], contact}` in place of `body[]` and `quote`,
+  `announce.en`, `guests` without `bio`, and `biograms.{pl, en}`, which `biogramy.pdf` sets one
+  language per page. The card prints the lineup under the composers.
+- **One full biogram of the ensemble.** The biogram of 27.09.2026 replaced the August text as
+  `press.yaml` `about.longHtml`; the short and medium measures are re-cut from it. The generator
+  opens the Polish half of `biogramy.pdf` with that field, so the kit's `biograms.pl` holds only the
+  evening's people; the ensemble's English lives in `biograms.en`.
+- **The release has no quote.** The approved text carries none.
+
 Stage 3 departed from this spec in five places:
 - **Boxes carry keys, not `data-bytes`.** `lib/pressPack#basketManifest` projects `index.json`
   into a JSON island (paths, bytes, cache-busted URLs, the bar's counted labels), and a box's

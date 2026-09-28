@@ -31,12 +31,12 @@ meta:
   # visible half on a second slogan buries the one fact a searcher needs (who sings what).
   description: >-
     VoctEnsemble: dwanaście głosów w kamiennej nawie, od Victorii po Pärta. Cykl Koncertów
-    Duchowych pod dyrekcją Florenta de Bazelaire.
+    Duchowych pod dyrekcją Florent de Bazelaire.
   # The MusicGroup entity's own description in the JSON-LD graph — the ensemble as an entity, not
   # this page. /o-nas points at the same `@id` and states no description of its own, so this is the
   # only one search engines see.
   ensembleDescription: >-
-    Zespół wokalny wykonujący muzykę sakralną. Cykl Koncerty Duchowe pod dyrekcją Florenta
+    Zespół wokalny wykonujący muzykę sakralną. Cykl Koncerty Duchowe pod dyrekcją Florent
     de Bazelaire. Rezydujący zespół Fundacji VoctFoundation.
 
 # ── The threshold rite (islands/landing/Preloader) ────────────────────────────────────────────

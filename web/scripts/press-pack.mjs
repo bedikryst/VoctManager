@@ -7,19 +7,20 @@
  *  WHAT IT MAKES:
  *   · press photographs, each cut to its ratio (16:9 or 4:5) with a 2400 px preview and two
  *     thumbnails (`press-pack/photos.mjs`, rows in `press-pack/manifest.yaml`);
- *   · the kit of the soonest upcoming concert that has one: the release, programme and biogram
- *     PDFs, the two announcements, the post and the hashtags as text files, the poster, the
- *     designer's print PDF where one is on this machine, and the poster mounted as 4:5, 9:16 and
- *     16:9 graphics;
+ *   · the kit of the soonest upcoming concert that has one: the release and biogram PDFs, the
+ *     announcements (Polish, and English where the kit has them), the post and the hashtags as
+ *     text files, the poster, the designer's print PDF where one is on this machine, and the
+ *     poster mounted as 4:5, 9:16 and 16:9 graphics;
  *   · the logotype, `PRZECZYTAJ.txt` (usage terms, every credit, the contact) and the invoicing
  *     sheet;
  *   · `voctensemble-press-komplet.zip` (all of it) and `voctensemble-press-zdjecia.zip` (the
  *     photographs and the readme).
  *
- *  ALMOST NOTHING HERE IS TYPED TWICE. The kit's texts come from `src/content/press-kits/`, the
- *  concert's facts and programme from `concerts.yaml`, the biograms and usage terms from
- *  `press.yaml`, the invoicing sheet from `src/data/foundation.ts`. The one hand-kept list is the
- *  photo manifest, because which frames the ensemble released cannot be derived.
+ *  ALMOST NOTHING HERE IS TYPED TWICE. The kit's texts and biograms come from
+ *  `src/content/press-kits/`, the concert's facts from `concerts.yaml`, the usage terms (and the
+ *  biogram of a kit that has none) from `press.yaml`, the invoicing sheet from
+ *  `src/data/foundation.ts`. The one hand-kept list is the photo manifest, because which frames the
+ *  ensemble released cannot be derived.
  *
  *  IT REFUSES, NAMING WHAT IS MISSING, rather than ship a gap: no kit, a kit whose concert is not
  *  in the corpus or whose texts name another day, a concert without its poster, a photo row
@@ -56,15 +57,16 @@ import {
   kitProblems,
   latestKit,
   loadPressKits,
+  performers as kitPerformers,
   postText,
+  releaseLinks,
 } from "../src/lib/pressKit.ts";
 import { posterOnGround } from "./press-pack/graphics.mjs";
 import { renderPdfs } from "./press-pack/pdf.mjs";
 import {
+  biogramHtml,
   biogramsBody,
-  esc,
   pdfDocument,
-  programmeBody,
   releaseBody,
 } from "./press-pack/pdf/templates.mjs";
 import { RATIOS, SHORT_EDGE_FLOOR, pressPhoto } from "./press-pack/photos.mjs";
@@ -287,15 +289,19 @@ if (kit && concert) {
   const dir = kit.concert;
   const url = concertUrl(FOUNDATION.site, concert.id);
   facts = concertFacts(concert);
-  const performers = [
-    FOUNDATION.ensemble,
-    ...(concert.credits ?? []).map((credit) => `${credit.name} — ${credit.role.toLowerCase()}`),
-    ...kit.guests.map((guest) => `${guest.name} — ${guest.role}`),
-  ];
+  const performers = kitPerformers(kit, concert);
 
+  /* Named by measure, not by a character count: the approved texts run past the round numbers,
+     and a file called "500" that holds 537 characters would be the first thing an editor trusts. */
   const texts = {
-    announceShort: ["zapowiedz-500.txt", announceText(kit, "short")],
-    announceLong: ["zapowiedz-1500.txt", announceText(kit, "long")],
+    announceShort: ["zapowiedz-krotka.txt", announceText(kit.announce, "short")],
+    announceLong: ["zapowiedz-dluga.txt", announceText(kit.announce, "long")],
+    ...(kit.announce.en
+      ? {
+          announceShortEn: ["zapowiedz-krotka-en.txt", announceText(kit.announce.en, "short")],
+          announceLongEn: ["zapowiedz-dluga-en.txt", announceText(kit.announce.en, "long")],
+        }
+      : {}),
     post: ["post.txt", postText(kit, url)],
     hashtags: ["hashtagi.txt", hashtagsText(kit)],
   };
@@ -342,19 +348,25 @@ if (kit && concert) {
     pack(`${dir}/${name}`, jpg.data, true);
   }
 
-  /* Biograms: only the texts on record. The conductor and a guest without a `bio` are named in
-     the run's notes, so the gap is visible and nothing is written to fill it. */
-  const bios = [
-    { name: FOUNDATION.ensemble, role: "zespół wokalny", html: copy.about.longHtml },
-    ...kit.guests
-      .filter((guest) => guest.bio)
-      .map((guest) => ({ name: guest.name, role: guest.role, html: `<p>${esc(guest.bio)}</p>` })),
+  /* Biograms: only the texts on record. The Polish half opens with the ensemble's full biogram
+     from the page — the site's one text of it — and goes on with the kit's; the English half is
+     the kit's alone. A performer without a Polish biogram is named in the run's notes, so the gap
+     is visible and nothing is written to fill it. */
+  const asEntries = (list) => list.map((bio) => ({ name: bio.name, role: bio.role, html: biogramHtml(bio.body) }));
+  const bioGroups = [
+    {
+      lang: "pl",
+      heading: "Biogramy",
+      entries: [
+        { name: FOUNDATION.ensemble, role: "zespół wokalny", html: copy.about.longHtml },
+        ...asEntries(kit.biograms?.pl ?? []),
+      ],
+    },
+    ...(kit.biograms?.en ? [{ lang: "en", heading: "Biographies", entries: asEntries(kit.biograms.en) }] : []),
   ];
-  for (const credit of concert.credits ?? []) {
-    notes.push(`biogramy.pdf: no biogram on record for ${credit.name} (${credit.role.toLowerCase()}).`);
-  }
-  for (const guest of kit.guests.filter((entry) => !entry.bio)) {
-    notes.push(`biogramy.pdf: no biogram on record for ${guest.name} (${guest.role}).`);
+  const withBiogram = new Set(bioGroups[0].entries.map((entry) => entry.name));
+  for (const performer of performers.filter((entry) => !withBiogram.has(entry.name))) {
+    notes.push(`biogramy.pdf: no biogram on record for ${performer.name} (${performer.role}).`);
   }
 
   const footer = `Kontakt dla mediów: ${FOUNDATION.mail.press} · ${FOUNDATION.site.replace(/^https?:\/\//, "")}/press`;
@@ -371,16 +383,19 @@ if (kit && concert) {
       name: "informacja-prasowa",
       html: pdfDoc(
         `${concert.title} — informacja prasowa`,
-        releaseBody({ kit, facts, performers, about: shortBio, contact: FOUNDATION.mail.press, concertUrl: url }),
+        releaseBody({
+          kit,
+          facts,
+          performers,
+          about: shortBio,
+          mail: FOUNDATION.mail.press,
+          links: releaseLinks(concert, FOUNDATION.site, concert.id),
+        }),
       ),
     },
     {
-      name: "program",
-      html: pdfDoc(`${concert.title} — program`, programmeBody({ concert, facts, performers })),
-    },
-    {
       name: "biogramy",
-      html: pdfDoc(`${concert.title} — biogramy`, biogramsBody({ facts, entries: bios })),
+      html: pdfDoc(`${concert.title} — biogramy`, biogramsBody({ facts, groups: bioGroups })),
     },
   ]);
   const pdfIndex = {};
@@ -392,7 +407,6 @@ if (kit && concert) {
   concertIndex = {
     id: kit.concert,
     release: pdfIndex["informacja-prasowa"],
-    programme: pdfIndex.program,
     biograms: pdfIndex.biogramy,
     ...textIndex,
     poster,

@@ -48,6 +48,10 @@ public/video/
 public/press/
 press-pack/photos/
 press-pack/posters/
+# What the board and the designer send for the pack, filed by the day it arrived: approved texts
+# as PDFs, working documents, correspondence with patrons. Sources to transcribe from, never
+# shipped — and not for a public repository.
+press-pack/inbox/
 
 # Local A/B clips for grading decisions (docs/… none — throwaway). Served by `astro dev` at
 # /probki/ because only public/ is served statically; kept OUT of git and out of the image,
