@@ -95,13 +95,13 @@ photos:
     focus: [0.5, 0.5]
     caption: "Próba VoctEnsemble"
     credit: VoctEnsemble
-  # 244 × 366: a thumbnail, not the original. The script skips it by the 1080 px rule and names it;
-  # the tile appears once the original replaces this file under the same name.
+  # A portrait, so its caption names the man and his role rather than a context (the board,
+  # 28.09.2026). 1200 × 1600 gives a 1200 × 1500 crop: right for social and the web, short for print.
   - id: voctensemble-10-fot-voctensemble
     source: Florent-de-Bazelaire_dyrygent_fot-VoctEnsemble_10.jpg.jpg
     ratio: "4:5"
     focus: [0.5, 0.4]
-    caption: "Florent de Bazelaire · Próba VoctEnsemble"
+    caption: "Florent de Bazelaire · dyrygent i założyciel VoctEnsemble"
     credit: VoctEnsemble
   # The colour square from the same rehearsal as 05. 1860 px square gives a 1488 × 1860 crop: right
   # for social and the web, short for print. Its black-and-white twin (IMG_0177-5) is the same
