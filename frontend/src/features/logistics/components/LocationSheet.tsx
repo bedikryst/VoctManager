@@ -99,7 +99,10 @@ export const LocationSheet = ({
           className="fixed inset-x-0 bottom-0 z-focus-trap lg:hidden"
         >
           <BodyScrollLock />
+          {/* Mounts already at the peek: the entrance is the wrapper's alone,
+              and `ENTRY_TRANSFORM` is measured from the peek. */}
           <motion.div
+            initial={false}
             role="dialog"
             aria-modal="false"
             drag="y"

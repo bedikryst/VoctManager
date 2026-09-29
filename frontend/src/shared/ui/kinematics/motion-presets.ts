@@ -77,6 +77,10 @@ export const DURATION = {
  *    in the same units. The rest pose is that template at identity, never
  *    `none` — Motion turns a `none` keyframe into the template with every number
  *    zeroed, and for a template with `scale()` that is `scale(0)`.
+ *  - That rest pose leaves a `transform` on the element, so an open overlay is a
+ *    containing block for `position: fixed` descendants and a stacking context.
+ *    Anything fixed that opens from inside one (a modal, a sheet, a popover)
+ *    portals to `document.body`, or it is positioned against the overlay.
  *  - A string inherits no per-axis defaults. Unconfigured, `y` and `scale`
  *    spring and `transform` eases over 0.3 s; a surface that relied on the
  *    defaults names them ({@link OVERLAY_POP_TRANSITION}).

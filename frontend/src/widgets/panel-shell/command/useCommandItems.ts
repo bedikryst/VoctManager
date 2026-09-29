@@ -16,7 +16,7 @@
  * @architecture Enterprise SaaS 2026
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -300,10 +300,14 @@ export const useCommandItems = (
     t,
   ]);
 
-  const isSearching = query.trim().length > 0;
+  // Armed by the first keystroke and held until the palette closes, so clearing
+  // the field and typing again does not fold the archive a second time.
+  const [searchArmed, setSearchArmed] = useState(false);
+  if (query.trim().length > 0 && !searchArmed) setSearchArmed(true);
+  if (!isOpen && searchArmed) setSearchArmed(false);
 
   const searchSources = useMemo<SearchRows>(() => {
-    if (!isSearching) return NO_SEARCH_ROWS;
+    if (!searchArmed) return NO_SEARCH_ROWS;
 
     // ---- Artists (active only) ----
     const artistItems: CommandItem[] = (artists ?? [])
@@ -375,7 +379,7 @@ export const useCommandItems = (
         );
 
     return { artistItems, pieceItems };
-  }, [artists, isManager, isSearching, location.pathname, myMaterials, pieces]);
+  }, [artists, isManager, location.pathname, myMaterials, pieces, searchArmed]);
 
   // Appearance rows — their own memo rather than a sixth source, because they
   // change with the preference and the memos above are the expensive fold over

@@ -86,8 +86,14 @@ export const BottomSheet = ({
 
   useEffect(() => setMounted(true), []);
 
+  // A swipe-dismiss leaves the drag's snap-back running. Once the sheet is
+  // really closing it is stopped, so the sheet leaves from where the finger let
+  // go instead of being pulled up against the exit; `onClose` may also refuse
+  // (unsaved changes, a pending save), and then the snap-back brings it home.
+  // Each open starts from rest.
   useLayoutEffect(() => {
     if (isOpen) dragY.set(0);
+    else dragY.stop();
   }, [isOpen, dragY]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -101,10 +107,6 @@ export const BottomSheet = ({
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.y > DISMISS_OFFSET || info.velocity.y > DISMISS_VELOCITY) {
-      // Hold the sheet where the finger let go and let the exit carry it down
-      // from there; drag's snap-back would pull it up against the exit. The
-      // next open clears the offset.
-      dragY.stop();
       onClose();
     }
   };

@@ -159,7 +159,9 @@ should be `layout="position"`: the list reflow is all it exists for.
   touch sheet and `LocationSheet` drag, so they are split like `BottomSheet`. `LocationSheet`
   starts one viewport below its peek, as before, expressed as a share of its own height.
 - **Swipe-dismiss holds the sheet where it was released.** The drag's snap-back is stopped, so it
-  does not pull the sheet up against the exit, and the next open resets the offset.
+  does not pull the sheet up against the exit, and the next open resets the offset. `BottomSheet`
+  stops it only once `isOpen` turns false: several callers' `onClose` refuses (unsaved changes, a
+  pending save), and then the snap-back has to bring the sheet home.
 - **2.4:** the lock is `<BodyScrollLock />` inside the `AnimatePresence` subtree. `LocationsManager`
   keeps a page-level lock for the desktop rail detail only, because that detail is no overlay.
 - **Dropped with their blur:** `Tooltip`'s `will-change-transform`. `NotificationCenter` has no
