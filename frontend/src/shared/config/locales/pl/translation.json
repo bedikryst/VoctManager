@@ -4903,6 +4903,12 @@
         "stale_score": "Partytura nieaktualna",
         "title": "Wymaga uwagi"
       },
+      "absences_sheet": {
+        "empty": "Na nadchodzących próbach nikt nie zgłosił nieobecności.",
+        "open_matrix": "Pokaż w macierzy frekwencji",
+        "open_rehearsal": "Otwórz próbę: {{moment}}",
+        "title": "Nieobecności na nadchodzących próbach"
+      },
       "facts": {
         "aria": "Edytuj szczegóły wydarzenia",
         "conductor": "Dyrygent",

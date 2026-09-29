@@ -2,7 +2,8 @@
  * @file RehearsalsWidget.tsx
  * @description Overview list of the next rehearsal sessions, with timezone-aware ordering
  * and absence alerts. Rehearsal *progress* (done / total) is owned by the Overview's KPI
- * strip, so it is intentionally not duplicated here.
+ * strip, so it is intentionally not duplicated here. The absence figure per session
+ * comes from `useUpcomingAbsences`, the same count the attention panel states and lists.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/RehearsalsWidget
  */
@@ -28,14 +29,11 @@ import {
   compareProjectDateAsc,
   isFutureProjectDate,
 } from "../../lib/projectPresentation";
+import { useUpcomingAbsences } from "../hooks/useUpcomingAbsences";
 
 interface RehearsalsWidgetProps {
   project: Project;
   onEdit?: () => void;
-}
-
-interface EnrichedRehearsal extends Rehearsal {
-  absent_count?: number;
 }
 
 export const RehearsalsWidget = ({
@@ -47,8 +45,20 @@ export const RehearsalsWidget = ({
   const { data: projectParticipations } = useProjectParticipations(
     String(project.id),
   );
+  const absenceGroups = useUpcomingAbsences(String(project.id));
 
-  const sortedRehearsals = useMemo<EnrichedRehearsal[]>(
+  const absencesByRehearsal = useMemo(
+    () =>
+      new Map(
+        absenceGroups.map((group) => [
+          String(group.rehearsal.id),
+          group.absences.length,
+        ]),
+      ),
+    [absenceGroups],
+  );
+
+  const sortedRehearsals = useMemo<Rehearsal[]>(
     () =>
       [...projectRehearsals].sort((left, right) =>
         compareProjectDateAsc(left.date_time, right.date_time),
@@ -56,7 +66,7 @@ export const RehearsalsWidget = ({
     [projectRehearsals],
   );
 
-  const upcomingRehearsals = useMemo<EnrichedRehearsal[]>(
+  const upcomingRehearsals = useMemo<Rehearsal[]>(
     () =>
       sortedRehearsals
         .filter((rehearsal) => isFutureProjectDate(rehearsal.date_time))
@@ -82,7 +92,7 @@ export const RehearsalsWidget = ({
                 calledSections === "" &&
                 (invitedCount === 0 ||
                   invitedCount === projectParticipations.length);
-              const absences = rehearsal.absent_count || 0;
+              const absences = absencesByRehearsal.get(String(rehearsal.id)) ?? 0;
 
               return (
                 <li

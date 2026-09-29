@@ -4865,6 +4865,12 @@
         "stale_score": "Score out of date",
         "title": "Needs attention"
       },
+      "absences_sheet": {
+        "empty": "Nobody has reported an absence for an upcoming rehearsal.",
+        "open_matrix": "Show in the attendance matrix",
+        "open_rehearsal": "Open rehearsal: {{moment}}",
+        "title": "Absences at upcoming rehearsals"
+      },
       "facts": {
         "aria": "Edit event details",
         "conductor": "Conductor",

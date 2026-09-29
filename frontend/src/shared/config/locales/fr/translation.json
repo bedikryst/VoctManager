@@ -4875,6 +4875,12 @@
         "stale_score": "Partition périmée",
         "title": "Requiert attention"
       },
+      "absences_sheet": {
+        "empty": "Personne n'a signalé d'absence aux prochaines répétitions.",
+        "open_matrix": "Voir dans la matrice de présence",
+        "open_rehearsal": "Ouvrir la répétition : {{moment}}",
+        "title": "Absences aux prochaines répétitions"
+      },
       "facts": {
         "aria": "Modifier les détails de l'événement",
         "conductor": "Chef de chœur",
