@@ -821,9 +821,21 @@ body.admin-mode {
     cursor: default;
   }
 
-  input,
+  /* The I-beam belongs to fields that take typing. A checkbox, a radio or a
+     slider is an `input` too and must not get it; a ticked control and the
+     label wrapping it take the pointer instead. */
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="button"], [type="submit"], [type="reset"], [type="image"]),
   textarea {
     cursor: text !important;
+  }
+
+  input:is([type="checkbox"], [type="radio"]),
+  label:has(input:is([type="checkbox"], [type="radio"]):not(:disabled)) {
+    cursor: pointer;
+  }
+
+  input:is([type="checkbox"], [type="radio"]):disabled {
+    cursor: not-allowed;
   }
 
   a,
