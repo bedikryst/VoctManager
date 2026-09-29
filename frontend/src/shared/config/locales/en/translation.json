@@ -1791,7 +1791,8 @@
       "allocation_not_counted": "This cost does not count (the person declined, for example), so no source is charged with it. It can only be taken off them.",
       "charge_refused": "Not every one of these costs can be charged to this source. Nothing was changed.",
       "report_source_invalid": "This source is no longer on the project, or it brings no money. Refresh the page and choose the source again.",
-      "patron_report_below_floor": "The concert's whole cost is the fees of one or two people, so a patron report would reveal them. No such report is prepared."
+      "patron_report_below_floor": "The concert's whole cost is the fees of one or two people, so a patron report would reveal them. No such report is prepared.",
+      "sign_refused": "Not every selected contract can be marked signed. Nothing was changed."
     },
     "offline": {
       "act": "You are offline. Settlements are never saved offline — reconnect to do this.",
@@ -1883,7 +1884,10 @@
       "location_placeholder": "e.g. binder 2026, a Drive link",
       "confirm": "Save signature",
       "done": "Contract marked as signed.",
-      "error": "The signature could not be saved."
+      "error": "The signature could not be saved.",
+      "title_many": "Contracts signed",
+      "subtitle_many": "Contracts: {{count}}",
+      "done_many": "Contracts marked as signed: {{count}}."
     },
     "hours": {
       "title": "Confirmed hours",
@@ -1933,11 +1937,18 @@
       "count": "Selected: {{count}}",
       "issue": "Issue contracts ({{count}})",
       "pay": "Mark paid ({{count}})",
-      "clear": "Deselect"
+      "clear": "Deselect",
+      "form": "Form ({{count}})",
+      "charge": "Charge a source ({{count}})",
+      "sign": "Mark signed ({{count}})"
     },
     "ledger": {
       "people": "{{count}} people",
-      "unpriced": "No fee set: {{count}}"
+      "unpriced": "No fee set: {{count}}",
+      "select_all": "Select all ({{count}})",
+      "deselect_all": "Deselect all",
+      "uncharged": "no source {{count}}",
+      "funding_tally": "Sources: {{list}}"
     },
     "draft": {
       "description": "Fee changes. Issuing contracts and payments wait until you save.",
@@ -2550,7 +2561,13 @@
       "nothing": "Every cost this source could take is already covered.",
       "selected": "To charge: {{amount}} {{currency}}",
       "passes_limit": "The source would then carry {{after}} {{currency}} — more than the {{limit}} {{currency}} the project counts on. Raise the expected amount or enter what has arrived.",
-      "limit": "The source would then carry {{after}} of {{limit}} {{currency}}."
+      "limit": "The source would then carry {{after}} of {{limit}} {{currency}}.",
+      "title_selection": "Charge a source",
+      "explain_selection": "The ticked fees go to the chosen source for the part nothing covers yet. A single cost's split is changed from its own menu.",
+      "source": "Source",
+      "source_placeholder": "Choose a source",
+      "source_required": "Choose a source.",
+      "partial_selection": "This source will take {{count}} of the {{total}} selected. The rest are already covered or this source does not accept them."
     }
   },
   "crew": {

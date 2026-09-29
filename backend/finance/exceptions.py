@@ -90,6 +90,11 @@ class ContractAnnulled(FinanceError):
     default_message = "The contract is annulled."
 
 
+class SignRefused(FinanceError):
+    code = "sign_refused"
+    default_message = "Some of the contracts cannot be marked signed; nothing was changed."
+
+
 class HoursNotApplicable(FinanceError):
     code = "hours_not_applicable"
     default_message = "Hours are confirmed for a contract of mandate only."

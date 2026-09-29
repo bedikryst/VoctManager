@@ -6,10 +6,13 @@
  *  - amounts and forms are DRAFTS. They preview in the rail and the rows, and
  *    the shared save bar commits them as one atomic batch, so a whole repricing
  *    can be looked at before it lands.
- *  - issuing a contract, marking a fee paid and charging it to funding sources
- *    are ACTS. They happen at once, per row (the first two on a selection
- *    too), and a row whose price is still a draft cannot take one — it would
- *    settle the old price.
+ *  - issuing a contract, marking it signed, marking a fee paid and charging it
+ *    to a funding source are ACTS. They happen at once, per row or on a
+ *    selection, and a row whose price is still a draft cannot take one — it
+ *    would settle the old price.
+ * Most of a concert's fees go through the same steps on the same day, so the
+ * selection carries every step, the form included (as a draft), and each
+ * ledger can select all its rows at once. The row menu stays for exceptions.
  * Nothing is queued offline: while the device has no network the save bar and
  * every act are disabled, and each says why.
  * @architecture Enterprise SaaS 2026
@@ -37,15 +40,21 @@ import { CostAllocationSheet } from "../components/AllocationSheet";
 import { CostSummaryCard, type CostFigure } from "../components/CostSummaryCard";
 import { toastFinanceError } from "../lib/financeErrors";
 import { allocationSummary, categoryLabel, isBudgetWritable } from "../lib/financePresentation";
-import { canAllocateRow, isValuationRow } from "../lib/funding";
-import { canIssue, canPay, isSelectable } from "../lib/ledgerActs";
+import { canAllocateRow, canChargeRow, fundingTally, isValuationRow } from "../lib/funding";
+import { canIssue, canPay, canSign, isSelectable } from "../lib/ledgerActs";
 import { isPriceEditable } from "../lib/feeDraft";
 import { formatAmount, formatGrosze, isPositiveAmount, toGrosze } from "../lib/money";
-import { isFeeCategory, type LedgerRowDTO } from "../types/finance.dto";
+import {
+  isFeeCategory,
+  type FeeForm,
+  type LedgerRowDTO,
+  type ProjectFundingDTO,
+} from "../types/finance.dto";
+import { ChargeSelectionSheet } from "./components/ChargeSheet";
 import { FeeDetailsSheet } from "./components/FeeDetailsSheet";
 import { FeeRow } from "./components/FeeRow";
 import { HoursSheet, PaySheet, ReasonSheet, SignSheet } from "./components/ActSheets";
-import { LedgerCard } from "./components/LedgerCard";
+import { LedgerCard, type LedgerSelectAll } from "./components/LedgerCard";
 import { OneOffPayeeSheet } from "./components/OneOffPayeeSheet";
 import { RowActionsMenu } from "./components/RowActionsMenu";
 import { SelectionBar } from "./components/SelectionBar";
@@ -53,14 +62,16 @@ import { StandardRateField } from "./components/StandardRateField";
 import { useFeeLedger } from "./useFeeLedger";
 
 type OpenAct =
-  | { readonly kind: "pay"; readonly rows: readonly LedgerRowDTO[] }
+  | { readonly kind: "pay" | "sign" | "charge"; readonly rows: readonly LedgerRowDTO[] }
   | {
-      readonly kind: "unpay" | "annul" | "sign" | "hours" | "details" | "funding";
+      readonly kind: "unpay" | "annul" | "hours" | "details" | "funding";
       readonly row: LedgerRowDTO;
     }
   | { readonly kind: "one_off" };
 
 const MINUTE_MS = 60_000;
+
+const NO_FUNDINGS: readonly ProjectFundingDTO[] = [];
 
 interface FeesWorkspaceProps {
   readonly projectId: string;
@@ -93,16 +104,19 @@ function FeesWorkspace({
   const concertPassed = Number.isFinite(concertAt) && concertAt <= nowMinute;
 
   const { rows, summary, isDirty } = ledger;
+  const fundings = ledger.budget?.fundings ?? NO_FUNDINGS;
 
   // A selection only holds rows that can still take a bulk act; a row that
-  // got paid or contracted under it drops out.
+  // got past every one of them under it drops out.
   useEffect(() => {
     setSelected((previous) => {
-      const reachable = new Set(rows.filter(isSelectable).map((row) => row.key));
+      const reachable = new Set(
+        rows.filter((row) => isSelectable(row, fundings)).map((row) => row.key),
+      );
       const next = new Set([...previous].filter((key) => reachable.has(key)));
       return next.size === previous.size ? previous : next;
     });
-  }, [rows]);
+  }, [rows, fundings]);
 
   // A warning names its row by key; a payable on the portfolio page knows only
   // its cost item. Either reaches the same row.
@@ -121,8 +135,34 @@ function FeesWorkspace({
     () => rows.filter((row) => selected.has(row.key)),
     [rows, selected],
   );
+  const formable = selectedRows.filter(isPriceEditable);
+  const chargeable = selectedRows.filter((row) => canChargeRow(row, fundings));
   const issuable = selectedRows.filter(canIssue);
+  const signable = selectedRows.filter(canSign);
   const payable = selectedRows.filter(canPay);
+
+  // The form the whole selection would read after the save, when it agrees.
+  const formsAfterSave = new Set(formable.map((row) => ledger.previewOf(row).next.form));
+  const commonForm: FeeForm | null =
+    formsAfterSave.size === 1 ? ([...formsAfterSave][0] ?? null) : null;
+
+  const setSelectionForm = (form: FeeForm): void => {
+    for (const row of formable) ledger.setForm(row, form);
+  };
+
+  /** Ticks every row of a ledger a bulk act can reach, or unticks them once all are. */
+  const toggleSection = (sectionRows: readonly LedgerRowDTO[]): void => {
+    const keys = sectionRows.filter((row) => isSelectable(row, fundings)).map((row) => row.key);
+    setSelected((previous) => {
+      const next = new Set(previous);
+      const all = keys.every((key) => next.has(key));
+      for (const key of keys) {
+        if (all) next.delete(key);
+        else next.add(key);
+      }
+      return next;
+    });
+  };
 
   const offlineReason = isOnline
     ? null
@@ -314,7 +354,6 @@ function FeesWorkspace({
   ];
 
   const hasPlan = ledger.budget.lines.length > 0;
-  const fundings = ledger.budget.fundings;
   // A closed budget is the record the board closed: its rows read, and every
   // write — a price, an act, a detail, a new payee — waits for it to reopen.
   const budgetOpen = isBudgetWritable(ledger.budget.budget?.status ?? "PLANNING");
@@ -341,7 +380,7 @@ function FeesWorkspace({
         }
         isFocused={row.key === focusedKey}
         selection={
-          budgetOpen && isSelectable(row)
+          budgetOpen && isSelectable(row, fundings)
             ? { selected: selected.has(row.key), onToggle: () => toggle(row.key) }
             : null
         }
@@ -374,7 +413,7 @@ function FeesWorkspace({
                   download(() => FinanceService.downloadBill(id));
                 }
               },
-              onSign: () => setOpenAct({ kind: "sign", row }),
+              onSign: () => setOpenAct({ kind: "sign", rows: [row] }),
               onHours: () => setOpenAct({ kind: "hours", row }),
               onPay: () => setOpenAct({ kind: "pay", rows: [row] }),
               onRelease: () => releaseOne(row),
@@ -389,6 +428,28 @@ function FeesWorkspace({
 
   const unpricedIn = (sectionRows: readonly LedgerRowDTO[]): number =>
     sectionRows.filter((row) => row.billable && ledger.previewOf(row).next.grosze === null).length;
+
+  const selectAllOf = (sectionRows: readonly LedgerRowDTO[]): LedgerSelectAll | undefined => {
+    if (!budgetOpen) return undefined;
+    const reachable = sectionRows.filter((row) => isSelectable(row, fundings));
+    return {
+      selected: reachable.filter((row) => selected.has(row.key)).length,
+      total: reachable.length,
+      onToggle: () => toggleSection(sectionRows),
+    };
+  };
+
+  const fundingNoteOf = (sectionRows: readonly LedgerRowDTO[]): string | undefined => {
+    const tally = fundingTally(sectionRows, fundings);
+    if (!tally) return undefined;
+    const parts = [
+      ...tally.sources.map((source) => `${source.name} ${source.count}`),
+      ...(tally.uncharged > 0
+        ? [t("finance.ledger.uncharged", "bez źródła {{count}}", { count: tally.uncharged })]
+        : []),
+    ];
+    return t("finance.ledger.funding_tally", "Źródła: {{list}}", { list: parts.join(" · ") });
+  };
 
   const closeAct = (): void => setOpenAct(null);
 
@@ -412,6 +473,8 @@ function FeesWorkspace({
           icon={<Users size={15} aria-hidden="true" />}
           rowCount={ledger.sections.cast.length}
           unpricedCount={unpricedIn(ledger.sections.cast)}
+          selectAll={selectAllOf(ledger.sections.cast)}
+          fundingNote={fundingNoteOf(ledger.sections.cast)}
           emptyTitle={t("finance.fees.cast_empty", "Brak obsady")}
           emptyDescription={t(
             "finance.fees.cast_empty_desc",
@@ -436,6 +499,8 @@ function FeesWorkspace({
           icon={<Wrench size={15} aria-hidden="true" />}
           rowCount={ledger.sections.crew.length}
           unpricedCount={unpricedIn(ledger.sections.crew)}
+          selectAll={selectAllOf(ledger.sections.crew)}
+          fundingNote={fundingNoteOf(ledger.sections.crew)}
           emptyTitle={t("finance.fees.crew_empty", "Brak ekipy")}
           emptyDescription={t(
             "finance.fees.crew_empty_desc",
@@ -460,6 +525,8 @@ function FeesWorkspace({
           icon={<UserPlus size={15} aria-hidden="true" />}
           rowCount={ledger.sections.oneOff.length}
           unpricedCount={unpricedIn(ledger.sections.oneOff)}
+          selectAll={selectAllOf(ledger.sections.oneOff)}
+          fundingNote={fundingNoteOf(ledger.sections.oneOff)}
           emptyTitle={t("finance.fees.one_off_empty", "Nikt spoza obsady")}
           emptyDescription={t(
             "finance.fees.one_off_empty_desc",
@@ -501,11 +568,16 @@ function FeesWorkspace({
       <SelectionBar
         isOpen={budgetOpen && !isDirty && selected.size > 0}
         selectedCount={selected.size}
-        issuableCount={issuable.length}
+        form={{ count: formable.length, current: commonForm, onChange: setSelectionForm }}
+        charge={{
+          count: chargeable.length,
+          onRun: () => setOpenAct({ kind: "charge", rows: chargeable }),
+        }}
+        issue={{ count: issuable.length, onRun: () => void issueSelected() }}
+        sign={{ count: signable.length, onRun: () => setOpenAct({ kind: "sign", rows: signable }) }}
         payableCount={payable.length}
         blockedReason={offlineReason}
         isWorking={isIssuing}
-        onIssue={() => void issueSelected()}
         onPay={() => setOpenAct({ kind: "pay", rows: payable })}
         onClear={() => setSelected(new Set())}
       />
@@ -539,7 +611,15 @@ function FeesWorkspace({
         />
       )}
       {openAct?.kind === "sign" && (
-        <SignSheet projectId={projectId} row={openAct.row} onClose={closeAct} />
+        <SignSheet projectId={projectId} rows={openAct.rows} onClose={closeAct} />
+      )}
+      {openAct?.kind === "charge" && (
+        <ChargeSelectionSheet
+          projectId={projectId}
+          rows={openAct.rows}
+          fundings={fundings}
+          onClose={closeAct}
+        />
       )}
       {openAct?.kind === "hours" && (
         <HoursSheet projectId={projectId} row={openAct.row} onClose={closeAct} />

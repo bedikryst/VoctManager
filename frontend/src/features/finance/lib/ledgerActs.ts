@@ -9,11 +9,14 @@
  * @module features/finance/lib/ledgerActs
  */
 
+import { isPriceEditable } from "./feeDraft";
+import { canChargeRow } from "./funding";
 import {
   BILLED_FORMS,
   CONTRACT_FORMS,
   type FeeForm,
   type LedgerRowDTO,
+  type ProjectFundingDTO,
 } from "../types/finance.dto";
 
 const isContractForm = (form: FeeForm | ""): boolean =>
@@ -62,6 +65,17 @@ export const canUnpay = (row: LedgerRowDTO): boolean =>
 
 export const canAnnul = (row: LedgerRowDTO): boolean => row.contract !== null;
 
-/** A row a bulk act can reach draws a checkbox; the rest draw none. */
-export const isSelectable = (row: LedgerRowDTO): boolean =>
-  canPay(row) || canIssue(row);
+/**
+ * A row a bulk act can reach draws a checkbox; the rest draw none. The form is
+ * one of those acts — a draft the selection sets for every row it holds — so
+ * every row still open to pricing qualifies, priced or not.
+ */
+export const isSelectable = (
+  row: LedgerRowDTO,
+  fundings: readonly ProjectFundingDTO[],
+): boolean =>
+  isPriceEditable(row) ||
+  canPay(row) ||
+  canIssue(row) ||
+  canSign(row) ||
+  canChargeRow(row, fundings);

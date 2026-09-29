@@ -49,6 +49,7 @@ from .views import (
     ProjectLedgerCsvView,
     ReleaseFeeView,
     ReportPdfView,
+    SignContractsView,
     SignContractView,
     UnpayView,
 )
@@ -114,6 +115,7 @@ urlpatterns = [
     path('contracts/<uuid:pk>/annul/', AnnulContractView.as_view(), name='contract-annul'),
     path('contracts/<uuid:pk>/pdf/', ContractPdfView.as_view(), name='contract-pdf'),
     path('contracts/<uuid:pk>/bill.pdf', ContractBillView.as_view(), name='contract-bill'),
+    path('projects/<uuid:project_id>/contracts/sign/', SignContractsView.as_view(), name='project-contracts-sign'),
     path('projects/<uuid:project_id>/contracts/zip/', ProjectContractsZipView.as_view(), name='project-contracts-zip'),
     path('contracts/zip/<uuid:task_id>/', ContractsZipStatusView.as_view(), name='contracts-zip-status'),
     path('contracts/zip/<uuid:task_id>/file/', ContractsZipFileView.as_view(), name='contracts-zip-file'),

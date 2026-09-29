@@ -6,6 +6,8 @@
  * uncovered; whatever is ticked goes to the source in full. A group ticks as
  * one, because a grant is usually meant for a whole line. The preview says
  * what the source would then carry against its limit; the server writes it.
+ * Honoraria opens the same act from the costs' side: the fees are ticked on
+ * the ledger and only the source is chosen here.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/ChargeSheet
  */
@@ -15,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { Checkbox } from "@/shared/ui/primitives/Checkbox";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { useChargeFunding } from "../../api/finance.queries";
 import { ActSheet } from "../../components/ActSheet";
@@ -22,7 +25,7 @@ import { toastFinanceError } from "../../lib/financeErrors";
 import { formLabel } from "../../lib/financePresentation";
 import { chargeableCosts } from "../../lib/funding";
 import { formatGrosze, formatLedgerAmount, toGrosze } from "../../lib/money";
-import type { ProjectBudgetDTO, ProjectFundingDTO } from "../../types/finance.dto";
+import type { LedgerRowDTO, ProjectBudgetDTO, ProjectFundingDTO } from "../../types/finance.dto";
 
 interface ChargeSheetProps {
   readonly projectId: string;
@@ -54,7 +57,6 @@ export function ChargeSheet({
 }: ChargeSheetProps): React.JSX.Element {
   const { t } = useTranslation();
   const charge = useChargeFunding(projectId);
-  const currency = t("common.currency", "PLN");
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
 
   const groups = useMemo((): Group[] => {
@@ -104,11 +106,6 @@ export function ChargeSheet({
   const selectedGrosze = all
     .filter((cost) => selected.has(cost.id))
     .reduce((total, cost) => total + (toGrosze(cost.uncovered) ?? 0), 0);
-  const afterGrosze = (toGrosze(funding.charged) ?? 0) + selectedGrosze;
-  const limitGrosze = toGrosze(funding.charge_limit) ?? 0;
-  // The foundation's own funds have no limit to pass: they are what it spends.
-  const hasLimit = funding.brings_money && funding.source.kind !== "OWN_FUNDS";
-  const passesLimit = hasLimit && selectedGrosze > 0 && afterGrosze > limitGrosze;
 
   const toggle = (ids: readonly string[], on: boolean): void =>
     setSelected((previous) => {
@@ -208,29 +205,146 @@ export function ChargeSheet({
         </div>
       )}
 
-      <div className="flex flex-col gap-1 border-t border-hairline pt-3">
-        <Text size="sm" className="tabular-nums">
-          {t("finance.charge.selected", "Do obciążenia: {{amount}} {{currency}}", {
-            amount: formatGrosze(selectedGrosze),
-            currency,
-          })}
-        </Text>
-        {hasLimit && (
-          <Caption color={passesLimit ? "gold" : "muted"} className="tabular-nums">
-            {passesLimit
-              ? t(
-                  "finance.charge.passes_limit",
-                  "Źródło poniesie wtedy {{after}} {{currency}} — więcej niż {{limit}} {{currency}}, na które liczy projekt. Zwiększ kwotę oczekiwaną albo wpisz, ile wpłynęło.",
-                  { after: formatGrosze(afterGrosze), limit: formatGrosze(limitGrosze), currency },
-                )
-              : t("finance.charge.limit", "Źródło poniesie wtedy {{after}} z {{limit}} {{currency}}.", {
-                  after: formatGrosze(afterGrosze),
-                  limit: formatGrosze(limitGrosze),
-                  currency,
-                })}
-          </Caption>
+      <ChargePreview funding={funding} selectedGrosze={selectedGrosze} />
+    </ActSheet>
+  );
+}
+
+/** What the charge adds up to, and what the source would then carry against its limit. */
+function ChargePreview({
+  funding,
+  selectedGrosze,
+}: {
+  readonly funding: ProjectFundingDTO | undefined;
+  readonly selectedGrosze: number;
+}): React.JSX.Element {
+  const { t } = useTranslation();
+  const currency = t("common.currency", "PLN");
+  const afterGrosze = (toGrosze(funding?.charged ?? null) ?? 0) + selectedGrosze;
+  const limitGrosze = toGrosze(funding?.charge_limit ?? null) ?? 0;
+  // The foundation's own funds have no limit to pass: they are what it spends.
+  const hasLimit =
+    funding !== undefined && funding.brings_money && funding.source.kind !== "OWN_FUNDS";
+  const passesLimit = hasLimit && selectedGrosze > 0 && afterGrosze > limitGrosze;
+
+  return (
+    <div className="flex flex-col gap-1 border-t border-hairline pt-3">
+      <Text size="sm" className="tabular-nums">
+        {t("finance.charge.selected", "Do obciążenia: {{amount}} {{currency}}", {
+          amount: formatGrosze(selectedGrosze),
+          currency,
+        })}
+      </Text>
+      {hasLimit && (
+        <Caption color={passesLimit ? "gold" : "muted"} className="tabular-nums">
+          {passesLimit
+            ? t(
+                "finance.charge.passes_limit",
+                "Źródło poniesie wtedy {{after}} {{currency}} — więcej niż {{limit}} {{currency}}, na które liczy projekt. Zwiększ kwotę oczekiwaną albo wpisz, ile wpłynęło.",
+                { after: formatGrosze(afterGrosze), limit: formatGrosze(limitGrosze), currency },
+              )
+            : t("finance.charge.limit", "Źródło poniesie wtedy {{after}} z {{limit}} {{currency}}.", {
+                after: formatGrosze(afterGrosze),
+                limit: formatGrosze(limitGrosze),
+                currency,
+              })}
+        </Caption>
+      )}
+    </div>
+  );
+}
+
+interface ChargeSelectionSheetProps {
+  readonly projectId: string;
+  /** The fees ticked on Honoraria; only those a chosen source can take are charged. */
+  readonly rows: readonly LedgerRowDTO[];
+  readonly fundings: readonly ProjectFundingDTO[];
+  readonly onClose: () => void;
+}
+
+/**
+ * The same act from the other side: the costs are chosen on the ledger, the
+ * source here. Each ticked fee goes to it in the part nothing covers yet; a fee
+ * the source cannot take — already covered, or volunteer work against a money
+ * source — stays as it is, and the sheet says how many that leaves out.
+ */
+export function ChargeSelectionSheet({
+  projectId,
+  rows,
+  fundings,
+  onClose,
+}: ChargeSelectionSheetProps): React.JSX.Element {
+  const { t } = useTranslation();
+  const charge = useChargeFunding(projectId);
+  const candidates = fundings.filter((funding) => chargeableCosts(funding, rows, []).fees.length > 0);
+  const [fundingId, setFundingId] = useState(candidates.length === 1 ? candidates[0].id : "");
+  const [error, setError] = useState<string | undefined>();
+
+  const funding = candidates.find((candidate) => candidate.id === fundingId);
+  const takes = funding ? chargeableCosts(funding, rows, []).fees : [];
+  const selectedGrosze = takes.reduce((total, row) => total + (toGrosze(row.unallocated) ?? 0), 0);
+
+  const handleConfirm = (): void => {
+    if (!funding) {
+      setError(t("finance.charge.source_required", "Wybierz źródło."));
+      return;
+    }
+    const ids = takes.flatMap((row) => (row.cost_item_id ? [row.cost_item_id] : []));
+    charge.mutate(
+      { fundingId: funding.id, ids },
+      {
+        onSuccess: () => {
+          toast.success(
+            t("finance.charge.done", "Obciążono źródło kosztami: {{count}}.", { count: ids.length }),
+          );
+          onClose();
+        },
+        onError: (failure) =>
+          toastFinanceError(failure, t, t("finance.charge.error", "Nie udało się obciążyć źródła.")),
+      },
+    );
+  };
+
+  return (
+    <ActSheet
+      isOpen
+      onClose={onClose}
+      title={t("finance.charge.title_selection", "Obciąż źródło")}
+      subtitle={t("finance.pay.subtitle", "Pozycje: {{count}}", { count: rows.length })}
+      confirmLabel={t("finance.charge.confirm", "Obciąż ({{count}})", { count: takes.length })}
+      onConfirm={handleConfirm}
+      isPending={charge.isPending}
+    >
+      <Text size="sm" color="graphite">
+        {t(
+          "finance.charge.explain_selection",
+          "Zaznaczone honoraria trafią na wybrane źródło w części, której nic jeszcze nie pokrywa. Podział pojedynczego kosztu zmienisz w jego menu.",
         )}
-      </div>
+      </Text>
+      <Select
+        label={t("finance.charge.source", "Źródło")}
+        placeholder={t("finance.charge.source_placeholder", "Wybierz źródło")}
+        options={candidates.map((candidate) => ({
+          value: candidate.id,
+          label: candidate.source.name,
+        }))}
+        value={fundingId}
+        onValueChange={(value) => {
+          setFundingId(value);
+          setError(undefined);
+        }}
+        error={error}
+      />
+      {funding && takes.length < rows.length && (
+        <Caption color="muted">
+          {t(
+            "finance.charge.partial_selection",
+            "To źródło przyjmie {{count}} z {{total}} zaznaczonych. Pozostałe są już pokryte albo to inny rodzaj kosztu.",
+            { count: takes.length, total: rows.length },
+          )}
+        </Caption>
+      )}
+      <ChargePreview funding={funding} selectedGrosze={selectedGrosze} />
     </ActSheet>
   );
 }

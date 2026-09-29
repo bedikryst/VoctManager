@@ -3,8 +3,9 @@
  * @description Which sources the panel offers a cost to must match what the
  * server accepts — money to a source of money, a volunteer's valuation to a
  * volunteer-work source, nothing to a gift in kind — or the charge sheet lists
- * costs the server then refuses as a whole. Also pins the signed differences a
- * source's remainder and the plan's gap print.
+ * costs the server then refuses as a whole. Also pins the Honoraria ledger's
+ * tally of the sources carrying it, and the signed differences a source's
+ * remainder and the plan's gap print.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/funding.test
  */
@@ -17,7 +18,13 @@ import type {
   LedgerRowDTO,
   ProjectFundingDTO,
 } from "../types/finance.dto";
-import { canAllocateRow, chargeableCosts, fundingsAccepting } from "./funding";
+import {
+  canAllocateRow,
+  canChargeRow,
+  chargeableCosts,
+  fundingTally,
+  fundingsAccepting,
+} from "./funding";
 import { formatDifference, formatLedgerDifference, isNegativeAmount } from "./money";
 
 const funding = (id: string, kind: FundingKind): ProjectFundingDTO => {
@@ -187,6 +194,41 @@ describe("chargeableCosts", () => {
     expect(toVolunteers.expenses).toEqual([]);
 
     expect(chargeableCosts(gift, ledger, [expense])).toEqual({ fees: [], expenses: [] });
+  });
+});
+
+describe("canChargeRow", () => {
+  it("reaches a fee only while some source could still take part of it", () => {
+    expect(canChargeRow(fee("a"), [grant])).toBe(true);
+    expect(canChargeRow(fee("covered", { unallocated: "0.00" }), [grant])).toBe(false);
+    expect(canChargeRow(volunteer, [grant])).toBe(false);
+    expect(canChargeRow(volunteer, [grant, volunteerWork])).toBe(true);
+  });
+});
+
+describe("fundingTally", () => {
+  it("counts a split fee for every source it touches, in the project's order", () => {
+    const ministry = funding("ministry", "PUBLIC_GRANT");
+    const split = fee("split", {
+      allocations: [
+        { funding_id: "ministry", amount: "100.00" },
+        { funding_id: "grant", amount: "300.00" },
+      ],
+    });
+    const granted = fee("granted", { allocations: [{ funding_id: "grant", amount: "400.00" }] });
+
+    expect(fundingTally([split, granted, fee("bare")], [grant, ministry])).toEqual({
+      sources: [
+        { name: "grant", count: 2 },
+        { name: "ministry", count: 1 },
+      ],
+      uncharged: 1,
+    });
+  });
+
+  it("says nothing without sources or without a counted cost to carry", () => {
+    expect(fundingTally([fee("a")], [])).toBeNull();
+    expect(fundingTally([fee("unpriced", { cost_item_id: null })], [grant])).toBeNull();
   });
 });
 

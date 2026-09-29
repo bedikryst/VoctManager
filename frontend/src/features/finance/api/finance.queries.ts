@@ -51,7 +51,7 @@ import type {
   ProjectBudgetDTO,
   ProjectFundingPayload,
   ProjectFundingUpdatePayload,
-  SignContractPayload,
+  SignContractsPayload,
   SourceDetailDTO,
 } from "../types/finance.dto";
 import { FinanceService } from "./finance.service";
@@ -240,11 +240,9 @@ export const useIssueContract = (projectId: string) =>
     FinanceService.issueContract(costItemId),
   );
 
-export const useSignContract = (projectId: string) =>
-  useBudgetWrite(
-    projectId,
-    ({ contractId, payload }: { contractId: string; payload: SignContractPayload }) =>
-      FinanceService.signContract(contractId, payload),
+export const useSignContracts = (projectId: string) =>
+  useBudgetWrite(projectId, (payload: SignContractsPayload) =>
+    FinanceService.signContracts(projectId, payload),
   );
 
 export const useConfirmHours = (projectId: string) =>

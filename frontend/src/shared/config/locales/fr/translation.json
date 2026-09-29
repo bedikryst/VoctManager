@@ -1800,7 +1800,8 @@
       "allocation_not_counted": "Ce coût ne compte pas (la personne s'est désistée, par exemple) : on ne l'impute à aucune source. On peut seulement l'en retirer.",
       "charge_refused": "Tous ces coûts ne peuvent pas être imputés à cette source. Rien n'a été modifié.",
       "report_source_invalid": "Cette source n'est plus sur le projet, ou elle n'apporte pas d'argent. Actualisez la page et choisissez de nouveau la source.",
-      "patron_report_below_floor": "Le coût total du concert correspond aux cachets d'une ou deux personnes : un rapport pour le mécène les révélerait. Un tel rapport n'est pas établi."
+      "patron_report_below_floor": "Le coût total du concert correspond aux cachets d'une ou deux personnes : un rapport pour le mécène les révélerait. Un tel rapport n'est pas établi.",
+      "sign_refused": "Tous les contrats sélectionnés ne peuvent pas être marqués comme signés. Rien n'a été modifié."
     },
     "offline": {
       "act": "Vous êtes hors ligne. Les règlements ne s'enregistrent jamais hors ligne — reconnectez-vous pour le faire.",
@@ -1892,7 +1893,10 @@
       "location_placeholder": "p. ex. classeur 2026, un lien Drive",
       "confirm": "Enregistrer la signature",
       "done": "Contrat marqué comme signé.",
-      "error": "La signature n'a pas pu être enregistrée."
+      "error": "La signature n'a pas pu être enregistrée.",
+      "title_many": "Contrats signés",
+      "subtitle_many": "Contrats : {{count}}",
+      "done_many": "Contrats marqués comme signés : {{count}}."
     },
     "hours": {
       "title": "Heures confirmées",
@@ -1942,11 +1946,18 @@
       "count": "Sélection : {{count}}",
       "issue": "Émettre les contrats ({{count}})",
       "pay": "Marquer payés ({{count}})",
-      "clear": "Désélectionner"
+      "clear": "Désélectionner",
+      "form": "Forme ({{count}})",
+      "charge": "Imputer à une source ({{count}})",
+      "sign": "Marquer signés ({{count}})"
     },
     "ledger": {
       "people": "{{count}} pers.",
-      "unpriced": "Sans cachet : {{count}}"
+      "unpriced": "Sans cachet : {{count}}",
+      "select_all": "Tout sélectionner ({{count}})",
+      "deselect_all": "Tout désélectionner",
+      "uncharged": "sans source {{count}}",
+      "funding_tally": "Sources : {{list}}"
     },
     "draft": {
       "description": "Modifications des cachets. L'émission des contrats et les paiements attendent l'enregistrement.",
@@ -2559,7 +2570,13 @@
       "nothing": "Tous les coûts que cette source peut prendre sont déjà couverts.",
       "selected": "À imputer : {{amount}} {{currency}}",
       "passes_limit": "La source porterait alors {{after}} {{currency}} — plus que les {{limit}} {{currency}} sur lesquels compte le projet. Augmentez le montant attendu ou indiquez ce qui est arrivé.",
-      "limit": "La source porterait alors {{after}} sur {{limit}} {{currency}}."
+      "limit": "La source porterait alors {{after}} sur {{limit}} {{currency}}.",
+      "title_selection": "Imputer à une source",
+      "explain_selection": "Les cachets cochés vont à la source choisie pour la part que rien ne couvre encore. La répartition d'un seul coût se modifie depuis son propre menu.",
+      "source": "Source",
+      "source_placeholder": "Choisir une source",
+      "source_required": "Choisissez une source.",
+      "partial_selection": "Cette source prendra {{count}} des {{total}} lignes sélectionnées. Les autres sont déjà couvertes ou cette source ne les accepte pas."
     }
   },
   "crew": {

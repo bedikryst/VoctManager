@@ -84,6 +84,46 @@ class ContractTests(APITestCase):
         contract.refresh_from_db()
         self.assertEqual((contract.status, contract.signed_copy_location), (ContractStatus.SIGNED, "segregator 2026"))
 
+    def sign_many(self, contracts: list[Contract]) -> Any:
+        return self.client.post(f"/api/finance/projects/{self.project.pk}/contracts/sign/", {
+            "ids": [str(contract.pk) for contract in contracts],
+            "signed_on": finance_today().isoformat(),
+            "signed_copy_location": "segregator 2026",
+        }, format="json")
+
+    def test_a_batch_signs_every_contract_on_one_date(self) -> None:
+        self.issue(self.priced_seat())
+        self.issue(self.priced_seat("310"))
+        contracts = list(Contract.objects.all())
+
+        response = self.sign_many(contracts)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            set(Contract.objects.values_list("status", "signed_copy_location")),
+            {(ContractStatus.SIGNED, "segregator 2026")},
+        )
+        self.assertEqual(FinanceEvent.objects.filter(action=FinanceAction.CONTRACT_SIGNED).count(), 2)
+
+    def test_a_batch_naming_an_annulled_or_foreign_contract_signs_nothing(self) -> None:
+        self.issue(self.priced_seat())
+        self.issue(self.priced_seat("310"))
+        good, annulled = Contract.objects.order_by("number")
+        Contract.objects.filter(pk=annulled.pk).update(status=ContractStatus.ANNULLED)
+        elsewhere = make_project()
+        self.issue(price(elsewhere, participation=make_seat(elsewhere, "Ewa", "Obca"), amount="200"))
+        foreign = Contract.objects.get(cost_item__budget__project=elsewhere)
+
+        response = self.sign_many([good, annulled, foreign])
+
+        self.assertEqual(response.data["error_code"], "sign_refused")
+        self.assertEqual(response.data["params"]["refused"], [
+            {"id": str(annulled.pk), "reason": "annulled"},
+            {"id": str(foreign.pk), "reason": "unknown"},
+        ])
+        good.refresh_from_db()
+        self.assertEqual(good.status, ContractStatus.ISSUED)
+
     def test_hours_are_for_a_mandate_only(self) -> None:
         self.issue(price(self.project, crew=make_crew(self.project), amount="500"))
         self.issue(self.priced_seat())

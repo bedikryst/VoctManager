@@ -66,6 +66,7 @@ from .dtos import (
     ReasonDTO,
     ReportQueryDTO,
     SignContractDTO,
+    SignContractsDTO,
     SourceQueryDTO,
 )
 from .exceptions import AttachmentMissing, FinanceError, finance_error_response
@@ -562,6 +563,18 @@ class SignContractView(FinanceAPIView):
         dto = self.parse(request, SignContractDTO)
         ContractService.sign(contract, dto, actor=request_user(request))
         return _budget_response(contract.cost_item.budget.project)
+
+
+class SignContractsView(FinanceAPIView):
+    """POST projects/{project_id}/contracts/sign/ — `{ids, signed_on,
+    signed_copy_location}`: one signed date for several contracts, all or
+    nothing."""
+
+    def post(self, request: Request, project_id: UUID) -> Response:
+        project = get_object_or_404(Project, pk=project_id)
+        dto = self.parse(request, SignContractsDTO)
+        ContractService.sign_many(project, dto, actor=request_user(request))
+        return _budget_response(project)
 
 
 class ContractHoursView(FinanceAPIView):

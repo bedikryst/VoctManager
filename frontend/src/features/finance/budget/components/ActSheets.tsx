@@ -2,7 +2,8 @@
  * @file ActSheets.tsx
  * @description The finance acts that need one answer before they happen: the
  * date a payment left, the reason a settled fact is undone, the date on a
- * signed paper, a mandate's confirmed hours. Paying and reverting a payment
+ * signed paper (one, or a batch that came back together), a mandate's
+ * confirmed hours. Paying and reverting a payment
  * serve fees and expenses alike, and the pay act's date sheet also serves the
  * finance workspace's payment across projects. Each sheet is mounted when it
  * opens, so it always starts from its defaults, and closes itself once the
@@ -24,7 +25,7 @@ import {
   useConfirmHours,
   usePayExpenses,
   usePayFees,
-  useSignContract,
+  useSignContracts,
   useUnpay,
 } from "../../api/finance.queries";
 import { ActSheet } from "../../components/ActSheet";
@@ -303,15 +304,24 @@ interface ContractSheetProps extends SheetBaseProps {
   readonly row: LedgerRowDTO;
 }
 
-export function SignSheet({ projectId, row, onClose }: ContractSheetProps): React.JSX.Element {
+interface SignSheetProps extends SheetBaseProps {
+  /** Rows with an issued contract; papers that came back together share one date. */
+  readonly rows: readonly LedgerRowDTO[];
+}
+
+export function SignSheet({ projectId, rows, onClose }: SignSheetProps): React.JSX.Element {
   const { t } = useTranslation();
-  const sign = useSignContract(projectId);
+  const sign = useSignContracts(projectId);
   const [signedOn, setSignedOn] = useState<string>(todayIsoDate);
   const [location, setLocation] = useState("");
   const [error, setError] = useState<string | undefined>();
 
+  const signed = rows.flatMap((row) => (row.contract ? [{ row, contract: row.contract }] : []));
+  const [only] = signed;
+  const isSingle = signed.length === 1;
+
   const handleConfirm = (): void => {
-    if (!row.contract) return;
+    if (signed.length === 0) return;
     if (!signedOn) {
       setError(t("finance.sign.date_required", "Podaj datę z podpisanej umowy."));
       return;
@@ -322,12 +332,19 @@ export function SignSheet({ projectId, row, onClose }: ContractSheetProps): Reac
     }
     sign.mutate(
       {
-        contractId: row.contract.id,
-        payload: { signed_on: signedOn, signed_copy_location: location.trim() },
+        ids: signed.map(({ contract }) => contract.id),
+        signed_on: signedOn,
+        signed_copy_location: location.trim(),
       },
       {
         onSuccess: () => {
-          toast.success(t("finance.sign.done", "Umowa oznaczona jako podpisana."));
+          toast.success(
+            isSingle
+              ? t("finance.sign.done", "Umowa oznaczona jako podpisana.")
+              : t("finance.sign.done_many", "Oznaczono umowy jako podpisane: {{count}}.", {
+                  count: signed.length,
+                }),
+          );
           onClose();
         },
         onError: (failure) =>
@@ -340,12 +357,25 @@ export function SignSheet({ projectId, row, onClose }: ContractSheetProps): Reac
     <ActSheet
       isOpen
       onClose={onClose}
-      title={t("finance.sign.title", "Umowa podpisana")}
-      subtitle={`${row.contract?.number ?? ""} · ${row.payee_name}`}
+      title={
+        isSingle
+          ? t("finance.sign.title", "Umowa podpisana")
+          : t("finance.sign.title_many", "Umowy podpisane")
+      }
+      subtitle={
+        isSingle && only
+          ? `${only.contract.number} · ${only.row.payee_name}`
+          : t("finance.sign.subtitle_many", "Umowy: {{count}}", { count: signed.length })
+      }
       confirmLabel={t("finance.sign.confirm", "Zapisz podpis")}
       onConfirm={handleConfirm}
       isPending={sign.isPending}
     >
+      {!isSingle && (
+        <Text size="sm" color="graphite">
+          {signed.map(({ row }) => row.payee_name).join(", ")}
+        </Text>
+      )}
       <DateTimeField
         granularity="date"
         label={t("finance.sign.date", "Data na umowie")}

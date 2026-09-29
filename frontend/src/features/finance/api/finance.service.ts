@@ -40,7 +40,7 @@ import type {
   ProjectFundingPayload,
   ProjectFundingUpdatePayload,
   ReportAudience,
-  SignContractPayload,
+  SignContractsPayload,
   SourceDetailDTO,
 } from "../types/finance.dto";
 import { filenameFromDisposition } from "../lib/contentDisposition";
@@ -202,12 +202,12 @@ export const FinanceService = {
     return response.data;
   },
 
-  signContract: async (
-    contractId: string,
-    payload: SignContractPayload,
+  signContracts: async (
+    projectId: string,
+    payload: SignContractsPayload,
   ): Promise<ProjectBudgetDTO> => {
     const response = await api.post<ProjectBudgetDTO>(
-      `${BASE}/contracts/${contractId}/sign/`,
+      `${BASE}/projects/${projectId}/contracts/sign/`,
       payload,
     );
     return response.data;

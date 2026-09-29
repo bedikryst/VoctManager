@@ -254,6 +254,20 @@ class SignContractDTO(EnterpriseBaseDTO):
         return value
 
 
+class SignContractsDTO(SignContractDTO):
+    """One signed date and copy location for several contracts of a project,
+    as when the papers come back together. All or nothing."""
+
+    ids: tuple[UUID, ...] = Field(..., min_length=1)
+
+    @field_validator("ids")
+    @classmethod
+    def unique_ids(cls, value: tuple[UUID, ...]) -> tuple[UUID, ...]:
+        if len(set(value)) != len(value):
+            raise ValueError("ids must not repeat.")
+        return value
+
+
 class ContractHoursDTO(EnterpriseBaseDTO):
     hours_confirmed: Hours
 

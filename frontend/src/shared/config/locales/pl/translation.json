@@ -1819,7 +1819,8 @@
       "allocation_not_counted": "Ten koszt się nie liczy (np. osoba odmówiła udziału), więc nie obciąża się nim źródeł. Można go tylko z nich zdjąć.",
       "charge_refused": "Nie każdy z tych kosztów można obciążyć na to źródło. Nic nie zostało zmienione.",
       "report_source_invalid": "Tego źródła nie ma już w projekcie albo nie wnosi pieniędzy. Odśwież stronę i wybierz źródło jeszcze raz.",
-      "patron_report_below_floor": "Cały koszt koncertu to honoraria jednej lub dwóch osób, więc sprawozdanie dla mecenasa ujawniłoby ich kwoty. Takiego sprawozdania się nie przygotowuje."
+      "patron_report_below_floor": "Cały koszt koncertu to honoraria jednej lub dwóch osób, więc sprawozdanie dla mecenasa ujawniłoby ich kwoty. Takiego sprawozdania się nie przygotowuje.",
+      "sign_refused": "Nie każdą z zaznaczonych umów można oznaczyć jako podpisaną. Nic nie zostało zmienione."
     },
     "offline": {
       "act": "Brak połączenia. Rozliczeń nie zapisuje się offline — wróć do sieci, aby to zrobić.",
@@ -1911,7 +1912,10 @@
       "location_placeholder": "np. segregator 2026, link do Dysku",
       "confirm": "Zapisz podpis",
       "done": "Umowa oznaczona jako podpisana.",
-      "error": "Nie udało się zapisać podpisu."
+      "error": "Nie udało się zapisać podpisu.",
+      "title_many": "Umowy podpisane",
+      "subtitle_many": "Umowy: {{count}}",
+      "done_many": "Oznaczono umowy jako podpisane: {{count}}."
     },
     "hours": {
       "title": "Potwierdzone godziny",
@@ -1961,11 +1965,18 @@
       "count": "Zaznaczono: {{count}}",
       "issue": "Wystaw umowy ({{count}})",
       "pay": "Oznacz wypłacone ({{count}})",
-      "clear": "Odznacz"
+      "clear": "Odznacz",
+      "form": "Forma ({{count}})",
+      "charge": "Obciąż źródło ({{count}})",
+      "sign": "Oznacz podpisane ({{count}})"
     },
     "ledger": {
       "people": "{{count}} os.",
-      "unpriced": "Bez stawki: {{count}}"
+      "unpriced": "Bez stawki: {{count}}",
+      "select_all": "Zaznacz wszystkich ({{count}})",
+      "deselect_all": "Odznacz wszystkich",
+      "uncharged": "bez źródła {{count}}",
+      "funding_tally": "Źródła: {{list}}"
     },
     "draft": {
       "description": "Zmiany stawek. Wystawianie umów i wypłaty poczekają na zapis.",
@@ -2578,7 +2589,13 @@
       "nothing": "Wszystkie koszty, które to źródło może przyjąć, są już pokryte.",
       "selected": "Do obciążenia: {{amount}} {{currency}}",
       "passes_limit": "Źródło poniesie wtedy {{after}} {{currency}} — więcej niż {{limit}} {{currency}}, na które liczy projekt. Zwiększ kwotę oczekiwaną albo wpisz, ile wpłynęło.",
-      "limit": "Źródło poniesie wtedy {{after}} z {{limit}} {{currency}}."
+      "limit": "Źródło poniesie wtedy {{after}} z {{limit}} {{currency}}.",
+      "title_selection": "Obciąż źródło",
+      "explain_selection": "Zaznaczone honoraria trafią na wybrane źródło w części, której nic jeszcze nie pokrywa. Podział pojedynczego kosztu zmienisz w jego menu.",
+      "source": "Źródło",
+      "source_placeholder": "Wybierz źródło",
+      "source_required": "Wybierz źródło.",
+      "partial_selection": "To źródło przyjmie {{count}} z {{total}} zaznaczonych. Pozostałe są już pokryte albo to źródło ich nie przyjmuje."
     }
   },
   "crew": {

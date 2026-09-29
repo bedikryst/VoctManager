@@ -1,7 +1,8 @@
 """
 @file contracts.py
 @description Contracts as data: issuing one (with its number taken under a row
-             lock), recording that the paper was signed and where it is kept,
+             lock), recording that the paper was signed and where it is kept
+             (one contract, or a project's batch that came back together),
              confirming a mandate's hours, and annulling. The PDF is rendered
              from the contract row by the documents layer, never from the item,
              so a document always prints its number and the frozen amount.
@@ -14,10 +15,17 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
 
-from roster.models import Participation
+from roster.models import Participation, Project
 
-from ..dtos import SignContractDTO
-from ..exceptions import ContractAnnulled, ContractExists, ContractRefused, HoursNotApplicable, SeatNotBillable
+from ..dtos import SignContractDTO, SignContractsDTO
+from ..exceptions import (
+    ContractAnnulled,
+    ContractExists,
+    ContractRefused,
+    HoursNotApplicable,
+    SeatNotBillable,
+    SignRefused,
+)
 from ..models import (
     CONTRACT_FORMS,
     Contract,
@@ -52,6 +60,30 @@ def _locked_contract(contract: Contract) -> Contract:
     if locked.status == ContractStatus.ANNULLED:
         raise ContractAnnulled()
     return locked
+
+
+def _record_signature(contract: Contract, dto: SignContractDTO, *, actor: User | None) -> Contract:
+    """Writes the signed date and copy location on a contract read under the
+    budget lock, and logs what they were before."""
+    before = {
+        "status": contract.status,
+        "signed_on": contract.signed_on,
+        "signed_copy_location": contract.signed_copy_location,
+    }
+    contract.status = ContractStatus.SIGNED
+    contract.signed_on = dto.signed_on
+    contract.signed_copy_location = dto.signed_copy_location
+    contract.save(update_fields=["status", "signed_on", "signed_copy_location", "updated_at"])
+    audit.record(
+        contract.cost_item.budget, actor=actor, subject=contract, action=FinanceAction.CONTRACT_SIGNED,
+        before=before,
+        after={
+            "status": contract.status,
+            "signed_on": contract.signed_on,
+            "signed_copy_location": contract.signed_copy_location,
+        },
+    )
+    return contract
 
 
 class ContractService:
@@ -110,26 +142,35 @@ class ContractService:
         """Records the signed paper: the date written on it and where the copy is.
         Repeating it corrects either; the event keeps the earlier values."""
         with transaction.atomic():
-            contract = _locked_contract(contract)
-            before = {
-                "status": contract.status,
-                "signed_on": contract.signed_on,
-                "signed_copy_location": contract.signed_copy_location,
+            return _record_signature(_locked_contract(contract), dto, actor=actor)
+
+    @staticmethod
+    def sign_many(project: Project, dto: SignContractsDTO, *, actor: User | None) -> list[Contract]:
+        """One signed date and copy location for several contracts of the
+        project. All or nothing: a contract of another project or an annulled
+        one refuses the whole call and names every one of them."""
+        with transaction.atomic():
+            budget = BudgetService.lock(project)
+            BudgetService.assert_writable(budget)
+            contracts = {
+                contract.pk: contract
+                for contract in Contract.objects.select_related("cost_item__budget").filter(
+                    cost_item__budget=budget, pk__in=dto.ids,
+                )
             }
-            contract.status = ContractStatus.SIGNED
-            contract.signed_on = dto.signed_on
-            contract.signed_copy_location = dto.signed_copy_location
-            contract.save(update_fields=["status", "signed_on", "signed_copy_location", "updated_at"])
-            audit.record(
-                contract.cost_item.budget, actor=actor, subject=contract, action=FinanceAction.CONTRACT_SIGNED,
-                before=before,
-                after={
-                    "status": contract.status,
-                    "signed_on": contract.signed_on,
-                    "signed_copy_location": contract.signed_copy_location,
-                },
-            )
-            return contract
+            refused: list[dict[str, str]] = []
+            for contract_id in dto.ids:
+                found = contracts.get(contract_id)
+                reason = ""
+                if found is None:
+                    reason = "unknown"
+                elif found.status == ContractStatus.ANNULLED:
+                    reason = "annulled"
+                if reason:
+                    refused.append({"id": str(contract_id), "reason": reason})
+            if refused:
+                raise SignRefused(params={"refused": refused})
+            return [_record_signature(contracts[contract_id], dto, actor=actor) for contract_id in dto.ids]
 
     @staticmethod
     def confirm_hours(contract: Contract, hours: Decimal, *, actor: User | None) -> Contract:

@@ -750,7 +750,9 @@ export interface AllocationSetPayload {
   }[];
 }
 
-export interface SignContractPayload {
+/** `POST projects/{id}/contracts/sign/` — one signed date for all named contracts, all or nothing. */
+export interface SignContractsPayload {
+  readonly ids: readonly string[];
   readonly signed_on: IsoDate;
   readonly signed_copy_location: string;
 }

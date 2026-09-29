@@ -25,6 +25,7 @@ const FINANCE_ERROR_COPY: Record<string, string> = {
   contract_refused: "Dla tej pozycji nie można wystawić umowy.",
   contract_exists: "Ta pozycja ma już wystawioną umowę.",
   contract_annulled: "Ta umowa jest unieważniona.",
+  sign_refused: "Nie każdą z zaznaczonych umów można oznaczyć jako podpisaną. Nic nie zostało zmienione.",
   hours_not_applicable: "Godziny potwierdza się tylko w umowie zlecenia.",
   bill_not_applicable: "Do porozumienia wolontariackiego nie wystawia się rachunku.",
   pdf_renderer_unavailable: "Serwer nie może teraz przygotować dokumentu. Spróbuj za chwilę.",
