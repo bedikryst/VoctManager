@@ -643,7 +643,19 @@ export const DetailsTab = ({
             <div className="flex flex-1 flex-col gap-5">
               <div className="flex flex-col gap-1.5">
                 <DateTimeField
-                  label={t("projects.details_tab.fields.call_time", "Zbiórka")}
+                  // On a trip the call is still the on-site call before the
+                  // concert, due for everyone: the departure is a point with a
+                  // place, and a call set to it would send the singers who
+                  // join on site to a car park. The label says so where the
+                  // time is typed.
+                  label={
+                    showsCallScope
+                      ? t(
+                          "projects.details_tab.fields.call_time_on_site",
+                          "Zbiórka na miejscu",
+                        )
+                      : t("projects.details_tab.fields.call_time", "Zbiórka")
+                  }
                   value={formData.call_time || ""}
                   onChange={(call_time) => setFormData({ ...formData, call_time })}
                   clearable
@@ -660,18 +672,6 @@ export const DetailsTab = ({
                     className="ml-1"
                   >
                     {callOffsetLabel.text}
-                  </Caption>
-                )}
-                {/* On a trip the call is still the on-site call before the
-                    concert, due for everyone. Setting it to the departure
-                    would print a meeting point nobody who joins on site
-                    should go to — the departure is a point with a place. */}
-                {showsCallScope && (
-                  <Caption color="muted" className="ml-1">
-                    {t(
-                      "projects.details_tab.call_time.trip_hint",
-                      "Zbiórka dotyczy wszystkich. Wyjazd wpisz jako punkt planu, z miejscem.",
-                    )}
                   </Caption>
                 )}
               </div>

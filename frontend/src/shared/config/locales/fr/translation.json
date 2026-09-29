@@ -3653,12 +3653,15 @@
       "members_many": "{{count}} participants",
       "members_other": "{{count}} participants",
       "pin": "Épingler",
+      "pin_failed": "Impossible d'épingler le message.",
       "pinned": "Épinglé",
+      "push_failed": "Impossible de modifier les notifications push de ce canal.",
       "push_off": "Push désactivé",
       "push_on": "Push activé",
       "toggle_push": "Notifications push",
       "unknown_sender": "—",
-      "unpin": "Désépingler"
+      "unpin": "Désépingler",
+      "unpin_failed": "Impossible de désépingler le message."
     },
     "compose": {
       "announce_body_placeholder": "Texte de l'annonce…",
@@ -3731,6 +3734,7 @@
     "list": {
       "empty": "Aucune conversation pour l'instant. Commencez par un nouveau message.",
       "empty_title": "La boîte est silencieuse",
+      "load_failed": "Impossible de charger la boîte de réception",
       "loading": "Chargement…",
       "management": "Direction",
       "no_match": "Aucune conversation pour ce filtre.",
@@ -3744,7 +3748,7 @@
       "threads": "Fils"
     },
     "send": "Envoyer",
-    "send_failed": "Échec de l'envoi du message.",
+    "send_failed": "Échec de l'envoi du message. Son texte est revenu dans le champ de saisie.",
     "status": {
       "archived": "Archivé",
       "resolved": "Fermé"
@@ -3762,7 +3766,8 @@
       "release": "Vers la file",
       "reopen": "Rouvrir",
       "resolve": "Fermer",
-      "resolved_hint": "Fil fermé — envoyer une réponse le rouvrira."
+      "resolved_hint": "Fil fermé — envoyer une réponse le rouvrira.",
+      "update_failed": "Impossible de modifier l'état du fil."
     },
     "time": {
       "minutes_one": "{{count}} min",
@@ -4533,6 +4538,7 @@
       },
       "fields": {
         "call_time": "Convocation",
+        "call_time_on_site": "Convocation sur place",
         "conductor": "Chef de chœur",
         "date_time": "Date et heure *",
         "description": "Description de l'événement",
@@ -4559,8 +4565,7 @@
         "offset_h": "{{hours}} h avant le début",
         "offset_hm": "{{hours}} h {{minutes}} min avant le début",
         "offset_m": "{{minutes}} min avant le début",
-        "offset_after": "La convocation n’est pas avant le début",
-        "trip_hint": "La convocation concerne tout le monde. Saisissez le départ comme un point du programme, avec son lieu."
+        "offset_after": "La convocation n’est pas avant le début"
       },
       "day_plan": {
         "untitled_count": "Sans nom : {{count}}"

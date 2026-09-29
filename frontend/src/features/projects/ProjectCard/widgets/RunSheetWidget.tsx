@@ -31,6 +31,7 @@ import {
   toWallClockInput,
   type DayTimelineEntry,
 } from "../../lib/dayTimeline";
+import { PlanDayHeading } from "../../components/PlanDayHeading";
 import { usePlanDayLabel } from "../../hooks/usePlanDayLabel";
 import {
   DAY_WINDOW_UNTIL,
@@ -212,10 +213,14 @@ export function RunSheetWidget({
           {groups.flatMap((group, groupIndex) => [
             ...(isMultiDay
               ? [
-                  <li key={`day-${groupIndex}-${group.dayOffset}`}>
-                    <Eyebrow as="h3" color={group.dayOffset === 0 ? "gold" : "muted"}>
-                      {dayLabel(group.dayOffset)}
-                    </Eyebrow>
+                  <li
+                    key={`day-${groupIndex}-${group.dayOffset}`}
+                    className={groupIndex > 0 ? "pt-2" : undefined}
+                  >
+                    <PlanDayHeading
+                      label={dayLabel(group.dayOffset, "long")}
+                      isEventDay={group.dayOffset === 0}
+                    />
                   </li>,
                 ]
               : []),

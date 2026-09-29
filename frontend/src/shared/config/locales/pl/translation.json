@@ -3672,12 +3672,15 @@
       "members_many": "{{count}} uczestników",
       "members_other": "{{count}} uczestników",
       "pin": "Przypnij",
+      "pin_failed": "Nie udało się przypiąć wiadomości.",
       "pinned": "Przypięte",
+      "push_failed": "Nie udało się zmienić powiadomień push dla tego kanału.",
       "push_off": "Push wyłączony",
       "push_on": "Push włączony",
       "toggle_push": "Powiadomienia push",
       "unknown_sender": "—",
-      "unpin": "Odepnij"
+      "unpin": "Odepnij",
+      "unpin_failed": "Nie udało się odpiąć wiadomości."
     },
     "compose": {
       "announce_body_placeholder": "Treść ogłoszenia…",
@@ -3750,6 +3753,7 @@
     "list": {
       "empty": "Nie ma jeszcze żadnych rozmów. Zacznij nową wiadomością.",
       "empty_title": "Cisza w skrzynce",
+      "load_failed": "Nie udało się wczytać skrzynki",
       "loading": "Ładowanie…",
       "management": "Zarząd",
       "no_match": "Brak rozmów dla tego filtra.",
@@ -3763,7 +3767,7 @@
       "threads": "Wątki"
     },
     "send": "Wyślij",
-    "send_failed": "Nie udało się wysłać wiadomości.",
+    "send_failed": "Nie udało się wysłać wiadomości. Jej tekst wrócił do pola pisania.",
     "status": {
       "archived": "Archiwum",
       "resolved": "Zamknięte"
@@ -3781,7 +3785,8 @@
       "release": "Do kolejki",
       "reopen": "Otwórz ponownie",
       "resolve": "Zamknij",
-      "resolved_hint": "Wątek zamknięty — wysłanie odpowiedzi otworzy go ponownie."
+      "resolved_hint": "Wątek zamknięty — wysłanie odpowiedzi otworzy go ponownie.",
+      "update_failed": "Nie udało się zmienić stanu wątku."
     },
     "time": {
       "minutes_one": "{{count}} min",
@@ -4561,6 +4566,7 @@
       },
       "fields": {
         "call_time": "Zbiórka",
+        "call_time_on_site": "Zbiórka na miejscu",
         "conductor": "Dyrygent",
         "date_time": "Data i godzina *",
         "description": "Opis wydarzenia",
@@ -4587,8 +4593,7 @@
         "offset_h": "{{hours}} godz. przed rozpoczęciem",
         "offset_hm": "{{hours}} godz. {{minutes}} min przed rozpoczęciem",
         "offset_m": "{{minutes}} min przed rozpoczęciem",
-        "offset_after": "Zbiórka nie wypada przed rozpoczęciem",
-        "trip_hint": "Zbiórka dotyczy wszystkich. Wyjazd wpisz jako punkt planu, z miejscem."
+        "offset_after": "Zbiórka nie wypada przed rozpoczęciem"
       },
       "day_plan": {
         "untitled_count": "Bez nazwy: {{count}}"

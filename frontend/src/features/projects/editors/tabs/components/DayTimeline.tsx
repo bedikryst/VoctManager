@@ -11,8 +11,8 @@
  * run-sheet widget's — one spine, gold clock, optional title — because this
  * edits what that displays.
  * A plan that reaches past concert day is a trip, and each of its days opens
- * under its date — the same headings the printed sheet and the singer's card
- * draw. An anchor off concert day therefore needs no date of its own.
+ * under its date, the same days the printed sheet and the singer's card head.
+ * An anchor off concert day therefore needs no date of its own.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/DayTimeline
  */
@@ -21,8 +21,11 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence } from "framer-motion";
 
+import { cn } from "@/shared/lib/utils";
 import type { SelectOption } from "@/shared/ui/primitives/Select";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { PlanDayHeading } from "../../../components/PlanDayHeading";
+import type { PlanDayLabelForm } from "../../../hooks/usePlanDayLabel";
 import {
   groupDayTimeline,
   isDayWindow,
@@ -35,7 +38,7 @@ import {
 } from "../../../lib/projectPresentation";
 import type { ProjectEventKind } from "../../../constants/projectDomain";
 import type { RunSheetItemUpdater } from "../../hooks/useDetailsForm";
-import { RunSheetRow } from "./RunSheetRow";
+import { RUN_SHEET_TIME_GUTTER, RunSheetRow } from "./RunSheetRow";
 
 interface DayTimelineProps {
   readonly entries: readonly DayTimelineEntry[];
@@ -46,7 +49,7 @@ interface DayTimelineProps {
   /** What a row with no day reads as — the event's own day. */
   readonly dayPlaceholder: string;
   /** Names a day of the plan for its heading. */
-  readonly dayLabel: (dayOffset: number) => string;
+  readonly dayLabel: (dayOffset: number, form?: PlanDayLabelForm) => string;
   readonly onUpdate: RunSheetItemUpdater;
   readonly onCommitOrder: () => void;
   readonly onRemove: (id: string) => void;
@@ -108,47 +111,65 @@ export const DayTimeline = ({
           className="absolute -left-[1.65rem] top-2 h-3 w-3 rounded-full bg-ethereal-gold"
           aria-hidden="true"
         />
-        <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+        {/* The hour is centred in the gutter the editable rows' time field
+            fills, and the label starts on their text's edge (`pl-4` is
+            `Input`'s own inset): one column of hours, one of names. */}
+        <div className="flex items-baseline gap-2">
           <Text
             as="span"
             size="base"
             weight="bold"
-            className="tabular-nums text-ethereal-gold"
+            className={cn(
+              RUN_SHEET_TIME_GUTTER,
+              "text-center tabular-nums text-ethereal-gold",
+            )}
           >
             {entry.time}
           </Text>
-          <Eyebrow color="graphite">{t(labelKey, fallbackLabel)}</Eyebrow>
-          {isDayWindow(entry) && entry.endTime && (
-            <Caption color="muted">
-              {t(DAY_WINDOW_UNTIL.labelKey, DAY_WINDOW_UNTIL.fallbackLabel, {
-                time: entry.endTime,
-              })}
-            </Caption>
-          )}
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-1 pl-4">
+            <Eyebrow color="graphite">{t(labelKey, fallbackLabel)}</Eyebrow>
+            {isDayWindow(entry) && entry.endTime && (
+              <Caption color="muted">
+                {t(DAY_WINDOW_UNTIL.labelKey, DAY_WINDOW_UNTIL.fallbackLabel, {
+                  time: entry.endTime,
+                })}
+              </Caption>
+            )}
+          </div>
         </div>
       </li>
     );
   };
 
   return (
-    <ul className="relative ml-1 flex flex-col gap-4 border-l border-hairline-strong pl-5">
-      <AnimatePresence initial={false}>
-        {groups.flatMap((group, index) => [
-          ...(isMultiDay
-            ? [
-                <li
-                  key={`day-${index}-${group.dayOffset}`}
-                  className={index > 0 ? "pt-2" : undefined}
-                >
-                  <Eyebrow as="h3" color={group.dayOffset === 0 ? "gold" : "muted"}>
-                    {dayLabel(group.dayOffset)}
-                  </Eyebrow>
-                </li>,
-              ]
-            : []),
-          ...group.entries.map(renderEntry),
-        ])}
-      </AnimatePresence>
-    </ul>
+    <div className="relative ml-1">
+      {/* Drawn from the first mark to the last: a border on the list would
+          run on past the final stop. `-left-px` puts it where that border
+          stood, which is what the marks' offsets centre on. */}
+      <span
+        className="absolute -left-px bottom-3.5 top-3.5 w-px bg-hairline-strong"
+        aria-hidden="true"
+      />
+      <ul className="flex flex-col gap-4 pl-5">
+        <AnimatePresence initial={false}>
+          {groups.flatMap((group, index) => [
+            ...(isMultiDay
+              ? [
+                  <li
+                    key={`day-${index}-${group.dayOffset}`}
+                    className={index > 0 ? "pb-1 pt-4" : "py-1"}
+                  >
+                    <PlanDayHeading
+                      label={dayLabel(group.dayOffset, "long")}
+                      isEventDay={group.dayOffset === 0}
+                    />
+                  </li>,
+                ]
+              : []),
+            ...group.entries.map(renderEntry),
+          ])}
+        </AnimatePresence>
+      </ul>
+    </div>
   );
 };

@@ -1,10 +1,12 @@
 /**
  * @file RunSheetRow.tsx
- * @description One editable point of the plan. Two lines, not three boxes
- * across: the clock and the name share a baseline because they are the point,
- * and the aside — the description, the day, the place and who it is for — sits
- * under them. Three equal-weight fields in a bordered strip gave a 170px column
- * to prose and made every row shout the same volume.
+ * @description One editable point of the plan. The clock fills the plan's time
+ * gutter and the name takes the rest of the line, because those two are the
+ * point; the aside sits under the name and starts where the name's text does —
+ * first the prose and who the point is for, then the day and the place. The
+ * fixed stops of the timeline centre their hour in the same gutter and start
+ * their label on the same edge, so a typed point and a derived one read as one
+ * column of hours and one of names.
  *
  * The place is a venue the choir has saved, never typed text, because the answer
  * a singer needs at a car park at 6:40 is a route — and only a stored venue
@@ -29,6 +31,12 @@ import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
 import { Caption } from "@/shared/ui/primitives/typography";
 import { readRunSheetDay } from "../../../lib/dayTimeline";
 import type { RunSheetItemUpdater } from "../../hooks/useDetailsForm";
+
+/**
+ * The plan's clock column. `w-24` is the narrowest box the two time segments
+ * fit at `px-1`; the fixed stops centre their hour in the same width.
+ */
+export const RUN_SHEET_TIME_GUTTER = "w-24 shrink-0";
 
 interface RunSheetRowProps {
   readonly item: RunSheetItem;
@@ -77,73 +85,106 @@ export const RunSheetRow = ({
         aria-hidden="true"
       />
 
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <div className="w-28 shrink-0">
-            <TimeField
-              required
-              value={item.time}
-              onChange={(time) => onUpdate(id, "time", time)}
-              onBlur={onCommitOrder}
-              ariaLabel={t("projects.details_tab.run_sheet.time", "Godzina")}
-            />
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <Input
-              type="text"
-              value={item.title}
-              onChange={(event) => onUpdate(id, "title", event.target.value)}
-              placeholder={t(
-                "projects.details_tab.run_sheet.title",
-                "Nazwa punktu",
-              )}
-              aria-label={t(
-                "projects.details_tab.run_sheet.title",
-                "Nazwa punktu",
-              )}
-            />
-          </div>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => onRemove(id)}
-            aria-label={t("common.actions.delete", "Usuń")}
-            className="shrink-0 text-ethereal-graphite/40 hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
-          >
-            <Trash2 size={16} aria-hidden="true" />
-          </Button>
+      <div className="flex items-start gap-2">
+        <div className={RUN_SHEET_TIME_GUTTER}>
+          <TimeField
+            required
+            value={item.time}
+            onChange={(time) => onUpdate(id, "time", time)}
+            onBlur={onCommitOrder}
+            ariaLabel={t("projects.details_tab.run_sheet.time", "Godzina")}
+            className="px-1"
+          />
         </div>
 
-        {/* All ghost, so the row has one field that carries weight and the
-            rest wait to be asked: nothing here is required. The prose takes
-            what the controls leave, and the controls wrap under it as one group
-            where the card is too narrow for both — a day is planned by writing
-            what happens, not by naming where. */}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <Input
-            variant="ghost"
-            type="text"
-            className="min-w-48 flex-1"
-            value={item.description || ""}
-            onChange={(event) => onUpdate(id, "description", event.target.value)}
-            placeholder={t(
-              "projects.details_tab.run_sheet.description",
-              "Opis (opcjonalny)",
-            )}
-            aria-label={t(
-              "projects.details_tab.run_sheet.description",
-              "Opis (opcjonalny)",
-            )}
-          />
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <div className="flex items-center gap-1">
+            <div className="min-w-0 flex-1">
+              <Input
+                type="text"
+                value={item.title}
+                onChange={(event) => onUpdate(id, "title", event.target.value)}
+                placeholder={t(
+                  "projects.details_tab.run_sheet.title",
+                  "Nazwa punktu",
+                )}
+                aria-label={t(
+                  "projects.details_tab.run_sheet.title",
+                  "Nazwa punktu",
+                )}
+              />
+            </div>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => onRemove(id)}
+              aria-label={t("common.actions.delete", "Usuń")}
+              className="shrink-0 text-ethereal-graphite/40 hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
+            >
+              <Trash2 size={16} aria-hidden="true" />
+            </Button>
+          </div>
+
+          {/* Everything under the name is ghost, so the row has one field
+              that carries weight and the rest wait to be asked: nothing here
+              is required. Ghost fields keep the name's text inset, which is
+              what lines their words up under it. */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <div className="min-w-48 flex-1">
+              <Input
+                variant="ghost"
+                type="text"
+                className="py-1.5"
+                value={item.description || ""}
+                onChange={(event) =>
+                  onUpdate(id, "description", event.target.value)
+                }
+                placeholder={t(
+                  "projects.details_tab.run_sheet.description",
+                  "Opis (opcjonalny)",
+                )}
+                aria-label={t(
+                  "projects.details_tab.run_sheet.description",
+                  "Opis (opcjonalny)",
+                )}
+              />
+            </div>
+
+            {/* Worded, not an icon alone: whether a singer who joins on site is
+                due here is the question the row answers, and on a phone there
+                is no hover to explain a glyph. Lit, it is also the row's label. */}
+            <button
+              type="button"
+              aria-pressed={travellersOnly}
+              onClick={() => onUpdate(id, "travellers_only", !travellersOnly)}
+              className={cn(
+                "inline-flex shrink-0 items-center gap-1.5 rounded-chip border px-2 py-1 transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+                "pointer-coarse:min-h-9",
+                travellersOnly
+                  ? "border-ethereal-gold/40 bg-ethereal-gold/10 text-ethereal-gold"
+                  : "border-transparent text-ethereal-graphite/50 hover:bg-ethereal-gold/10 hover:text-ethereal-gold",
+              )}
+            >
+              <Luggage size={13} aria-hidden="true" />
+              <Caption as="span" color="inherit" weight="medium">
+                {t(
+                  "projects.details_tab.run_sheet.travellers_only",
+                  "Tylko dla jadących",
+                )}
+              </Caption>
+            </button>
+          </div>
 
           <div className="flex flex-wrap items-center gap-1">
             {/* Unset is an answer, not a gap — hence placeholders that name the
                 default rather than report an absence. Picking a day re-sorts
-                the plan at once; it is chosen, not typed. */}
-            <div className="w-36">
+                the plan at once; it is chosen, not typed. The day takes the
+                width of its date and never truncates: it is short, and it is
+                the one value on this line that moves the row. */}
+            <div className="shrink-0">
               <Select
                 variant="ghost"
                 size="sm"
@@ -161,7 +202,7 @@ export const RunSheetRow = ({
               />
             </div>
 
-            <div className="flex w-56 items-center gap-1">
+            <div className="flex min-w-48 flex-1 items-center gap-1">
               <div className="min-w-0 flex-1">
                 <Select
                   variant="ghost"
@@ -204,31 +245,6 @@ export const RunSheetRow = ({
                 <MapPinPlus size={15} aria-hidden="true" />
               </Button>
             </div>
-
-            {/* Worded, not an icon alone: whether a singer who joins on site is
-                due here is the question the row answers, and on a phone there
-                is no hover to explain a glyph. Lit, it is also the row's label. */}
-            <button
-              type="button"
-              aria-pressed={travellersOnly}
-              onClick={() => onUpdate(id, "travellers_only", !travellersOnly)}
-              className={cn(
-                "inline-flex shrink-0 items-center gap-1.5 rounded-chip border px-2 py-1 transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-                "pointer-coarse:min-h-9",
-                travellersOnly
-                  ? "border-ethereal-gold/40 bg-ethereal-gold/10 text-ethereal-gold"
-                  : "border-transparent text-ethereal-graphite/50 hover:bg-ethereal-gold/10 hover:text-ethereal-gold",
-              )}
-            >
-              <Luggage size={13} aria-hidden="true" />
-              <Caption as="span" color="inherit" weight="medium">
-                {t(
-                  "projects.details_tab.run_sheet.travellers_only",
-                  "Tylko dla jadących",
-                )}
-              </Caption>
-            </button>
           </div>
         </div>
       </div>

@@ -3644,12 +3644,15 @@
       "members_many": "{{count}} participants",
       "members_other": "{{count}} members",
       "pin": "Pin",
+      "pin_failed": "Could not pin the message.",
       "pinned": "Pinned",
+      "push_failed": "Could not change push notifications for this channel.",
       "push_off": "Push off",
       "push_on": "Push on",
       "toggle_push": "Push notifications",
       "unknown_sender": "—",
-      "unpin": "Unpin"
+      "unpin": "Unpin",
+      "unpin_failed": "Could not unpin the message."
     },
     "compose": {
       "announce_body_placeholder": "Announcement text…",
@@ -3722,6 +3725,7 @@
     "list": {
       "empty": "No conversations yet. Start a new message.",
       "empty_title": "The inbox is quiet",
+      "load_failed": "Could not load the inbox",
       "loading": "Loading…",
       "management": "Management",
       "no_match": "No conversations for this filter.",
@@ -3735,7 +3739,7 @@
       "threads": "Threads"
     },
     "send": "Send",
-    "send_failed": "Could not send the message.",
+    "send_failed": "Could not send the message. Its text is back in the composer.",
     "status": {
       "archived": "Archived",
       "resolved": "Closed"
@@ -3753,7 +3757,8 @@
       "release": "To queue",
       "reopen": "Reopen",
       "resolve": "Close",
-      "resolved_hint": "Thread closed — sending a reply will reopen it."
+      "resolved_hint": "Thread closed — sending a reply will reopen it.",
+      "update_failed": "Could not update the thread."
     },
     "time": {
       "minutes_one": "{{count}} min",
@@ -4523,6 +4528,7 @@
       },
       "fields": {
         "call_time": "Call time",
+        "call_time_on_site": "On-site call time",
         "conductor": "Conductor",
         "date_time": "Date and time *",
         "description": "Event description",
@@ -4549,8 +4555,7 @@
         "offset_h": "{{hours}} h before the start",
         "offset_hm": "{{hours}} h {{minutes}} min before the start",
         "offset_m": "{{minutes}} min before the start",
-        "offset_after": "Call time is not before the start",
-        "trip_hint": "The call time applies to everyone. Enter the departure as a point of the plan, with its place."
+        "offset_after": "Call time is not before the start"
       },
       "day_plan": {
         "untitled_count": "Unnamed: {{count}}"
