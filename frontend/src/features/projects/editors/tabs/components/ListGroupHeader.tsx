@@ -19,6 +19,13 @@ interface ListGroupHeaderProps {
   readonly label: string;
   readonly count: number;
   /**
+   * A quieter second figure set after the count as "+N" — on the cast, the
+   * invitations still unanswered. Shown only above zero, and only together
+   * with `secondaryLabel`, which spells it out for a screen reader and a hover.
+   */
+  readonly secondaryCount?: number;
+  readonly secondaryLabel?: string;
+  /**
    * Optional glyph for the group. It carries the gold of `SectionCard`'s own
    * icon slot rather than a per-group accent: six tinted headers in one column
    * is the bucket-shouting the divisi board had to unlearn.
@@ -29,6 +36,8 @@ interface ListGroupHeaderProps {
 export function ListGroupHeader({
   label,
   count,
+  secondaryCount = 0,
+  secondaryLabel,
   icon,
 }: ListGroupHeaderProps): React.JSX.Element {
   return (
@@ -43,9 +52,22 @@ export function ListGroupHeader({
           {label}
         </Eyebrow>
       </span>
-      <Text as="span" size="xs" color="muted" className="tabular-nums">
-        {count}
-      </Text>
+      <span className="flex shrink-0 items-baseline gap-1">
+        <Text as="span" size="xs" color="muted" className="tabular-nums">
+          {count}
+        </Text>
+        {secondaryCount > 0 && secondaryLabel && (
+          <Text
+            as="span"
+            size="xs"
+            className="tabular-nums text-ethereal-graphite/40"
+            title={secondaryLabel}
+          >
+            <span aria-hidden="true">+{secondaryCount}</span>
+            <span className="sr-only">{secondaryLabel}</span>
+          </Text>
+        )}
+      </span>
     </div>
   );
 }

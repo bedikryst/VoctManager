@@ -4495,6 +4495,21 @@
         "aria": "Dołącza na miejscu: {{name}}",
         "counts": "Jedzie: {{travelling}} · dołącza na miejscu: {{onSite}}",
         "hint": "Pinezką z domem oznacz osobę, która nie jedzie z grupą i dołącza na miejscu — punkty planu tylko dla jadących zobaczy wyszarzone."
+      },
+      "status_filter": {
+        "aria": "Obsada według odpowiedzi",
+        "all": "Wszyscy",
+        "awaiting": "Czeka",
+        "declined": "Odmowa",
+        "empty_awaiting": "Wszyscy odpowiedzieli",
+        "empty_declined": "Nikt nie odmówił"
+      },
+      "balance": {
+        "awaiting_one": "{{count}} osoba czeka na odpowiedź",
+        "awaiting_few": "{{count}} osoby czekają na odpowiedź",
+        "awaiting_many": "{{count}} osób czeka na odpowiedź",
+        "awaiting_other": "{{count}} osób czeka na odpowiedź",
+        "legend": "Potwierdzeni, a po plusie: zaproszeni bez odpowiedzi."
       }
     },
     "crew": {
@@ -5030,6 +5045,7 @@
       "gaps_count_few": "{{count}} luki",
       "gaps_count_many": "{{count}} luk",
       "gaps_count_other": "{{count}} luk",
+      "soloists": "Solo: {{names}}",
       "duration_label": "Czas trwania",
       "footer": {
         "pieces_one": "{{count}} utwór",

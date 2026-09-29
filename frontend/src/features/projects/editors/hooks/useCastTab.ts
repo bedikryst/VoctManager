@@ -13,6 +13,9 @@
  * Each cast row also says whether the app can reach that member at all, read
  * from the manager-only account fields of the roster dictionary — never from
  * the project payload, which choristers see too.
+ * Once the project is published the cast can be narrowed to who has not
+ * answered or who declined. That segment, the section headers and the balance
+ * rail all count seats through `castStanding`, so no two of them can disagree.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useCastTab
  */
@@ -51,6 +54,14 @@ import {
 } from "../../api/project.queries";
 import { LINE_UP_SEATS } from "../../lib/autoCast";
 import { byCastOrder } from "../../lib/castOrder";
+import {
+  castStandingOf,
+  matchesCastStatusFilter,
+  standingFigures,
+  tallyStanding,
+  type CastStatusFilter,
+  type StandingFigures,
+} from "../../lib/castStanding";
 import {
   VOICE_TYPE_ORDER,
   sectionOf,
@@ -114,17 +125,44 @@ export interface VoiceSection<TEntry> {
   readonly entries: readonly TEntry[];
 }
 
+/** A cast row as the list draws it. */
+export interface CastListRow {
+  readonly entry: CastEntry;
+  /**
+   * Their place in the whole section, counted from the top. A narrowing
+   * segment hides rows; it does not renumber the ones it keeps.
+   */
+  readonly position: number;
+}
+
+export interface CastSection {
+  readonly key: string;
+  readonly label: string;
+  /** The rows the status segment lets through, in the section's order. */
+  readonly rows: readonly CastListRow[];
+  /**
+   * The header's figure. Under "Wszyscy" it is the section's standing, read
+   * exactly as the balance rail reads it; under a narrowing segment it is the
+   * number of rows shown.
+   */
+  readonly figures: StandingFigures;
+}
+
 /**
- * One section's standing on this project. `castCount` excludes declines —
+ * One section's standing on this project. `figures` never counts a decline —
  * a singer who said no is not cover, the rule the divisi buckets already use.
  * `poolCount` is what makes a zero actionable rather than a verdict: nobody
  * cast AND candidates available is a hole; nobody cast and nobody available is
- * simply an ensemble without that voice.
+ * simply an ensemble without that voice. "Cast" here is `engagedCount`, not
+ * the confirmed figure: a section whose singers were asked and have not yet
+ * answered is waiting, not empty.
  */
 export interface CastBalanceEntry {
   readonly voiceType: VoiceType;
   readonly label: string;
-  readonly castCount: number;
+  readonly figures: StandingFigures;
+  /** Seats not declined, confirmed or not. */
+  readonly engagedCount: number;
   readonly poolCount: number;
 }
 
@@ -135,9 +173,22 @@ export interface UseCastTabResult {
    * the concert, and a cold cache would make it before anything was known.
    */
   isLoading: boolean;
-  castSections: readonly VoiceSection<CastEntry>[];
+  castSections: readonly CastSection[];
   poolSections: readonly VoiceSection<PoolEntry>[];
   castCount: number;
+  /**
+   * The status segment in force. Always "ALL" before publication: nobody has
+   * been asked, so there is no answer to narrow by.
+   */
+  castFilter: CastStatusFilter;
+  setCastFilter: Dispatch<SetStateAction<CastStatusFilter>>;
+  /** Each segment's size, counted by the predicate that picks its rows. */
+  castFilterCounts: Readonly<Record<CastStatusFilter, number>>;
+  /**
+   * Rows can be dragged only while the whole cast is listed: arranging a
+   * section with half its rows hidden would renumber the hidden ones blind.
+   */
+  canArrange: boolean;
   poolCount: number;
   /** Cast members the app cannot reach, declines excluded — they are not singing. */
   outOfReachCount: number;
@@ -237,7 +288,14 @@ const sectionize = <TEntry extends RosterFacts>(
   });
 };
 
-export const useCastTab = (projectId: string): UseCastTabResult => {
+/**
+ * @param answersShown - The project is published, so an invitation is a
+ *   question awaiting an answer rather than a name on a draft.
+ */
+export const useCastTab = (
+  projectId: string,
+  answersShown: boolean,
+): UseCastTabResult => {
   const { t } = useTranslation();
 
   // The rows carry each singer's range proposal, and those arrive daily, so
@@ -257,6 +315,8 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
   const [processingId, setProcessingId] = useState<string | null>(null);
   // The work product first, as on desktop, where it holds the left column.
   const [mobileView, setMobileView] = useState<CastTabMobileView>("ASSIGNED");
+  const [chosenFilter, setCastFilter] = useState<CastStatusFilter>("ALL");
+  const castFilter: CastStatusFilter = answersShown ? chosenFilter : "ALL";
 
   const artistById = useMemo(
     () => new Map(artists.map((artist) => [String(artist.id), artist])),
@@ -349,13 +409,52 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
 
   const unknownVoiceLabel = t("projects.cast.voice_unknown", "Bez głosu");
 
-  const castSections = useMemo(
+  // The whole cast, sectioned — what arranging writes and what positions count.
+  const wholeCastSections = useMemo(
     () =>
       sectionize(castEntries, unknownVoiceLabel, (section) =>
         t(`dashboard.layout.roles.${section}`, section),
       ),
     [castEntries, unknownVoiceLabel, t],
   );
+
+  // What the list draws: the segment's rows, and no header for a section it
+  // leaves empty.
+  const castSections = useMemo<CastSection[]>(
+    () =>
+      wholeCastSections.flatMap((section) => {
+        const rows = section.entries
+          .map((entry, index) => ({ entry, position: index + 1 }))
+          .filter((row) =>
+            matchesCastStatusFilter(row.entry.status, castFilter),
+          );
+        if (rows.length === 0) return [];
+        return [
+          {
+            key: section.key,
+            label: section.label,
+            rows,
+            figures:
+              castFilter === "ALL"
+                ? standingFigures(tallyStanding(section.entries), answersShown)
+                : { main: rows.length, awaiting: 0 },
+          },
+        ];
+      }),
+    [wholeCastSections, castFilter, answersShown],
+  );
+
+  const castFilterCounts = useMemo<Record<CastStatusFilter, number>>(() => {
+    const countOf = (filter: CastStatusFilter): number =>
+      castEntries.filter((entry) =>
+        matchesCastStatusFilter(entry.status, filter),
+      ).length;
+    return {
+      ALL: countOf("ALL"),
+      AWAITING: countOf("AWAITING"),
+      DECLINED: countOf("DECLINED"),
+    };
+  }, [castEntries]);
 
   const poolSections = useMemo(
     () =>
@@ -365,29 +464,29 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     [filteredPool, unknownVoiceLabel, t],
   );
 
-  const castBalance = useMemo<CastBalanceEntry[]>(() => {
-    const countBy = (
-      entries: readonly RosterFacts[],
-      section: VoiceType,
-    ): number => entries.filter((entry) => entry.section === section).length;
-
-    const engaged = castEntries.filter((entry) => entry.status !== "DEC");
-
-    return (
+  const castBalance = useMemo<CastBalanceEntry[]>(
+    () =>
       VOICE_TYPE_ORDER
         // The rail weighs the choir: a "Dyrygent 0" or "Instrumentalista 0"
         // would be a warning about a section nobody balances here. Baritone and
         // countertenor never head a section, so they drop out by their zeros.
         .filter(isSingingVoiceType)
-        .map((section) => ({
-          voiceType: section,
-          label: t(`dashboard.layout.roles.${section}`, section),
-          castCount: countBy(engaged, section),
-          poolCount: countBy(poolEntries, section),
-        }))
-        .filter((entry) => entry.castCount > 0 || entry.poolCount > 0)
-    );
-  }, [castEntries, poolEntries, t]);
+        .map((section) => {
+          const tally = tallyStanding(
+            castEntries.filter((entry) => entry.section === section),
+          );
+          return {
+            voiceType: section,
+            label: t(`dashboard.layout.roles.${section}`, section),
+            figures: standingFigures(tally, answersShown),
+            engagedCount: tally.confirmed + tally.awaiting,
+            poolCount: poolEntries.filter((entry) => entry.section === section)
+              .length,
+          };
+        })
+        .filter((entry) => entry.engagedCount > 0 || entry.poolCount > 0),
+    [castEntries, poolEntries, answersShown, t],
+  );
 
   /**
    * The picker names the vocabulary a seat is chosen FROM, so its entries keep
@@ -466,7 +565,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     activeParticipationId: string,
     overParticipationId: string,
   ): Promise<void> => {
-    const section = castSections.find((candidate) =>
+    const section = wholeCastSections.find((candidate) =>
       candidate.entries.some(
         (entry) => entry.participationId === activeParticipationId,
       ),
@@ -556,7 +655,9 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     }
   };
 
-  const engagedEntries = castEntries.filter((entry) => entry.status !== "DEC");
+  const engagedEntries = castEntries.filter(
+    (entry) => castStandingOf(entry.status) !== "declined",
+  );
   const onSiteCount = engagedEntries.filter((entry) => entry.joinsOnSite).length;
 
   return {
@@ -564,6 +665,10 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     castSections,
     poolSections,
     castCount: castEntries.length,
+    castFilter,
+    setCastFilter,
+    castFilterCounts,
+    canArrange: castFilter === "ALL",
     poolCount: filteredPool.length,
     outOfReachCount: engagedEntries.filter((entry) => entry.outOfReach !== null)
       .length,

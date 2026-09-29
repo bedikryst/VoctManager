@@ -1,6 +1,7 @@
 /**
  * @file useProgramFulfillment.ts
- * @description Hook managing complex business logic for project casting fulfillment and duration.
+ * @description The overview's reading of the programme: how far each piece is
+ * from cast, who sings its named solos, and the running time.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/hooks/useProgramFulfillment
  */
@@ -18,8 +19,17 @@ import {
 import {
   choralRequirements,
   soloCoverage,
+  soloPerformerState,
   soloRowsFromServer,
 } from "../../lib/soloAssignments";
+
+/** A named solo position somebody on the cast is singing. */
+export interface ProgramSoloist {
+  readonly key: string;
+  readonly name: string;
+  /** The position's own name ("Benedictus", "Sopran I"); may be empty. */
+  readonly part: string;
+}
 
 export interface EnrichedProgramItem {
   id: string | number;
@@ -40,6 +50,12 @@ export interface EnrichedProgramItem {
    * count says what "Nieobsadzony" cannot: how far the piece is from ready.
    */
   missingCount: number;
+  /**
+   * Who sings the piece's named solos, in score order. Only filled positions:
+   * an open one, or one whose performer declined or left, is a gap and is
+   * already counted in `missingCount`.
+   */
+  soloists: readonly ProgramSoloist[];
 }
 
 export const useProgramFulfillment = (project: Project) => {
@@ -91,6 +107,9 @@ export const useProgramFulfillment = (project: Project) => {
 
   const enrichedProgram = useMemo<EnrichedProgramItem[]>(() => {
     if (!project.program) return [];
+    const statusOf = (participationId: string) =>
+      participationStatus.get(participationId);
+    const unknownName = t("projects.cast.card.unknown", "Nieznany uczestnik");
 
     return [...project.program]
       .sort((a, b) => a.order - b.order)
@@ -104,15 +123,21 @@ export const useProgramFulfillment = (project: Project) => {
         const requirements: VoiceRequirement[] = choralRequirements(
           scopedRequirements(pieceObj, item.score_edition),
         );
-        const solo = soloCoverage(
-          soloRowsFromServer(
-            solos.solo_assignments.filter(
-              (assignment) => String(assignment.piece) === pieceId,
-            ),
+        const soloRows = soloRowsFromServer(
+          solos.solo_assignments.filter(
+            (assignment) => String(assignment.piece) === pieceId,
           ),
-          0,
-          (participationId) => participationStatus.get(participationId),
         );
+        const solo = soloCoverage(soloRows, 0, statusOf);
+        const soloists = soloRows
+          .filter(
+            (row) => soloPerformerState(row.participation, statusOf) === "cast",
+          )
+          .map((row) => ({
+            key: row.key,
+            name: row.performerName?.trim() || unknownName,
+            part: row.label.trim(),
+          }));
 
         let statusVariant: "success" | "warning" | "neutral" = "neutral";
         let statusText = t("projects.program.no_reqs", "Brak wymagań");
@@ -150,6 +175,7 @@ export const useProgramFulfillment = (project: Project) => {
           statusVariant,
           statusText,
           missingCount: missingTotal,
+          soloists,
         };
       });
   }, [

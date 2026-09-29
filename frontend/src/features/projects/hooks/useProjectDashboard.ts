@@ -2,8 +2,8 @@
  * @file useProjectDashboard.ts
  * @description Controller hook for the Project Dashboard list.
  * Filters + sorts the hydrated projects and owns the list-level delete flow.
- * Deep editing now lives on dedicated `/panel/projects/:id/*` routes, so this
- * hook no longer carries any slide-over panel state.
+ * Deep editing lives on dedicated `/panel/projects/:id/*` routes, so this hook
+ * carries no slide-over panel state.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/hooks/useProjectDashboard
  */
@@ -22,7 +22,10 @@ import {
   PROJECT_FILTER,
   type ProjectFilterId,
 } from "../constants/projectDomain";
-import { compareProjectDateDesc } from "../lib/projectPresentation";
+import {
+  compareProjectDateDesc,
+  compareProjectHorizon,
+} from "../lib/projectPresentation";
 
 interface UseProjectDashboardReturn {
   filteredProjects: Project[];
@@ -58,31 +61,39 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
 
   const projects = useEnrichedProjects();
 
-  const filteredProjects = useMemo<Project[]>(
-    () =>
-      projects
-        .filter((project: Project) => {
-          const status = project.status || PROJECT_STATUS.DRAFT;
+  // A working list opens on the next concert, in the order the dashboard's
+  // pipeline reads (`compareProjectHorizon`). The archive is a record of what
+  // happened, so it reads newest first.
+  const filteredProjects = useMemo<Project[]>(() => {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const compareDates =
+      listFilter === PROJECT_FILTER.DONE
+        ? compareProjectDateDesc
+        : compareProjectHorizon(todayStart);
 
-          if (listFilter === PROJECT_FILTER.ACTIVE) {
-            return !isArchiveStatus(status);
-          }
+    return projects
+      .filter((project: Project) => {
+        const status = project.status || PROJECT_STATUS.DRAFT;
 
-          if (listFilter === PROJECT_FILTER.DRAFT) {
-            return status === PROJECT_STATUS.DRAFT;
-          }
+        if (listFilter === PROJECT_FILTER.ACTIVE) {
+          return !isArchiveStatus(status);
+        }
 
-          if (listFilter === PROJECT_FILTER.DONE) {
-            return isArchiveStatus(status);
-          }
+        if (listFilter === PROJECT_FILTER.DRAFT) {
+          return status === PROJECT_STATUS.DRAFT;
+        }
 
-          return true;
-        })
-        .sort((left: Project, right: Project) =>
-          compareProjectDateDesc(left.date_time, right.date_time),
-        ),
-    [listFilter, projects],
-  );
+        if (listFilter === PROJECT_FILTER.DONE) {
+          return isArchiveStatus(status);
+        }
+
+        return true;
+      })
+      .sort((left: Project, right: Project) =>
+        compareDates(left.date_time, right.date_time),
+      );
+  }, [listFilter, projects]);
 
   const projectStats = useMemo(() => {
     const activeCount = projects.filter(

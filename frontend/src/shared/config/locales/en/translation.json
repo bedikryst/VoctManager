@@ -4457,6 +4457,21 @@
         "aria": "Joins on site: {{name}}",
         "counts": "Travelling: {{travelling}} · joining on site: {{onSite}}",
         "hint": "Mark with the house pin anyone who does not travel with the group and joins on site — they will see the travelling party's points greyed out."
+      },
+      "status_filter": {
+        "aria": "Cast by answer",
+        "all": "Everyone",
+        "awaiting": "Awaiting",
+        "declined": "Declined",
+        "empty_awaiting": "Everyone has answered",
+        "empty_declined": "Nobody has declined"
+      },
+      "balance": {
+        "awaiting_one": "{{count}} awaiting an answer",
+        "awaiting_few": "{{count}} awaiting an answer",
+        "awaiting_many": "{{count}} awaiting an answer",
+        "awaiting_other": "{{count}} awaiting an answer",
+        "legend": "Confirmed; after the plus, invited with no answer yet."
       }
     },
     "crew": {
@@ -4992,6 +5007,7 @@
       "gaps_count_few": "{{count}} missing",
       "gaps_count_many": "{{count}} missing",
       "gaps_count_other": "{{count}} missing",
+      "soloists": "Solo: {{names}}",
       "duration_label": "Duration",
       "footer": {
         "pieces_one": "{{count}} piece",

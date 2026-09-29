@@ -4467,6 +4467,21 @@
         "aria": "Rejoint sur place : {{name}}",
         "counts": "Voyagent : {{travelling}} · rejoignent sur place : {{onSite}}",
         "hint": "Marquez avec l'épingle maison les personnes qui ne voyagent pas avec le groupe et rejoignent sur place — elles verront grisés les points réservés à ceux qui voyagent."
+      },
+      "status_filter": {
+        "aria": "Distribution par réponse",
+        "all": "Tous",
+        "awaiting": "En attente",
+        "declined": "Refusé",
+        "empty_awaiting": "Tout le monde a répondu",
+        "empty_declined": "Personne n'a refusé"
+      },
+      "balance": {
+        "awaiting_one": "{{count}} en attente de réponse",
+        "awaiting_few": "{{count}} en attente de réponse",
+        "awaiting_many": "{{count}} en attente de réponse",
+        "awaiting_other": "{{count}} en attente de réponse",
+        "legend": "Confirmés ; après le plus, invités sans réponse."
       }
     },
     "crew": {
@@ -5002,6 +5017,7 @@
       "gaps_count_few": "{{count}} à pourvoir",
       "gaps_count_many": "{{count}} à pourvoir",
       "gaps_count_other": "{{count}} à pourvoir",
+      "soloists": "Solo : {{names}}",
       "duration_label": "Durée",
       "footer": {
         "pieces_one": "{{count}} pièce",

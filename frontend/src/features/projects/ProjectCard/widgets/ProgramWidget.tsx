@@ -1,9 +1,10 @@
 /**
  * @file ProgramWidget.tsx
  * @description Overview summary of the concert programme — a compact, read-only line
- * list of every piece with its casting status, total runtime in the footer. The whole
- * programme is listed: a concert is a dozen or two rows, and a click on the card leads
- * away to the Program tab, so a truncated tail would promise an expansion it cannot give.
+ * list of every piece with its casting status and the singers of its named solos, total
+ * runtime in the footer. The whole programme is listed: a concert is a dozen or two
+ * rows, and a click on the card leads away to the Program tab, so a truncated tail
+ * would promise an expansion it cannot give.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/ProgramWidget
  */
@@ -15,7 +16,7 @@ import { Check, ListOrdered, Music } from "lucide-react";
 import type { Project } from "@/shared/types";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
-import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import {
   useProgramFulfillment,
   type EnrichedProgramItem,
@@ -125,6 +126,22 @@ export function ProgramWidget({
                   <Text as="span" size="sm" weight="medium" truncate>
                     {item.title}
                   </Text>
+                  {/* Plain type, no chip: a soloist is a fact about the piece,
+                      not an exception. It wraps rather than truncates — the
+                      names are the answer this line is here to give. */}
+                  {item.soloists.length > 0 && (
+                    <Caption as="span" color="muted">
+                      {t("projects.program.soloists", "Solo: {{names}}", {
+                        names: item.soloists
+                          .map((soloist) =>
+                            soloist.part
+                              ? `${soloist.name} (${soloist.part})`
+                              : soloist.name,
+                          )
+                          .join(", "),
+                      })}
+                    </Caption>
+                  )}
                 </div>
               </div>
               <ProgramStatus item={item} />

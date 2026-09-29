@@ -1,15 +1,23 @@
 /**
  * @file ProjectTabs.tsx
- * @description Per-project sub-navigation for the Project Hub. Replaces the
- * in-modal tablist of the old slide-over panel with real, deep-linkable routes
- * under `/panel/projects/:id/*`. Horizontally scrollable so all work areas stay
- * reachable on narrow viewports.
+ * @description Per-project sub-navigation for the Project Hub: real,
+ * deep-linkable routes under `/panel/projects/:id/*`. On a phone about four of
+ * the ten tabs fit, so the strip scrolls sideways — and since it has no
+ * scrollbar, it says so itself: the active tab is brought to the middle on
+ * every route change, and an edge fades on each side that still hides tabs.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/components/ProjectTabs
  */
 
-import React from "react";
-import { NavLink } from "react-router-dom";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
   Banknote,
@@ -40,12 +48,72 @@ interface TabDef {
   readonly end?: boolean;
 }
 
+/** How far into the strip a hiding edge fades. */
+const EDGE_FADE = "2rem";
+
+/** A sub-pixel remainder of the scroll range is not a hidden tab. */
+const EDGE_TOLERANCE_PX = 1;
+
+const edgeMask = (start: boolean, end: boolean): string =>
+  `linear-gradient(to right, ${start ? "transparent" : "black"}, black ${EDGE_FADE}, black calc(100% - ${EDGE_FADE}), ${end ? "transparent" : "black"})`;
+
 export const ProjectTabs = ({
   projectId,
   className,
 }: ProjectTabsProps): React.JSX.Element => {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
+  const reduceMotion = useReducedMotion() ?? false;
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const hasPositioned = useRef(false);
+  const [edges, setEdges] = useState({ start: false, end: false });
   const base = `/panel/projects/${projectId}`;
+
+  const updateEdges = useCallback((): void => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const start = scroller.scrollLeft > EDGE_TOLERANCE_PX;
+    const end =
+      scroller.scrollWidth - scroller.clientWidth - scroller.scrollLeft >
+      EDGE_TOLERANCE_PX;
+    setEdges((previous) =>
+      previous.start === start && previous.end === end
+        ? previous
+        : { start, end },
+    );
+  }, []);
+
+  // The active tab to the middle of the strip, so the tabs on either side of
+  // it show too. The first placement is instant: arriving on "Budżet" should
+  // not play a slide across the other nine. The page never scrolls with it.
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current;
+    const active = scroller?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (scroller && active) {
+      const strip = scroller.getBoundingClientRect();
+      const tab = active.getBoundingClientRect();
+      scroller.scrollTo({
+        left:
+          scroller.scrollLeft +
+          (tab.left - strip.left) -
+          (strip.width - tab.width) / 2,
+        behavior: hasPositioned.current && !reduceMotion ? "smooth" : "auto",
+      });
+      hasPositioned.current = true;
+    }
+    updateEdges();
+  }, [pathname, reduceMotion, updateEdges]);
+
+  // A turned phone or a translated label moves the overflow without a scroll.
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(updateEdges);
+    observer.observe(scroller);
+    return () => observer.disconnect();
+  }, [updateEdges]);
+
+  const mask = edgeMask(edges.start, edges.end);
 
   const tabs: TabDef[] = [
     {
@@ -105,42 +173,52 @@ export const ProjectTabs = ({
     <nav
       aria-label={t("projects.hub.tabs_aria", "Sekcje projektu")}
       className={cn(
-        "flex gap-1 overflow-x-auto rounded-nested border border-hairline bg-ethereal-marble/55 p-1.5 shadow-glass-solid backdrop-blur-md no-scrollbar",
+        "rounded-nested border border-hairline bg-ethereal-marble/55 shadow-glass-solid backdrop-blur-md",
         className,
       )}
     >
-      {tabs.map((tab) => (
-        <NavLink
-          key={tab.segment || "overview"}
-          to={tab.segment ? `${base}/${tab.segment}` : base}
-          end={tab.end}
-          className={({ isActive }) =>
-            cn(
-              "relative inline-flex shrink-0 items-center gap-1.5 rounded-control px-3.5 py-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-              isActive
-                ? "bg-ethereal-marble text-ethereal-ink shadow-[0_1px_3px_var(--glass-contact),0_1px_1px_rgba(194,168,120,0.14)]"
-                : "text-ethereal-graphite/65 hover:bg-ethereal-marble/60 hover:text-ethereal-ink",
-            )
-          }
-        >
-          {({ isActive }) => (
-            <>
-              <span
-                className={cn(
-                  "shrink-0 transition-colors",
-                  isActive ? "text-ethereal-gold" : "text-ethereal-graphite/50",
-                )}
-                aria-hidden="true"
-              >
-                {tab.icon}
-              </span>
-              <Eyebrow color="inherit" className="truncate">
-                {tab.label}
-              </Eyebrow>
-            </>
-          )}
-        </NavLink>
-      ))}
+      {/* The mask sits on this inner strip, not on the nav, so it fades tabs
+          and leaves the frame whole. The padding lives here too: the scroll
+          box clips, and the active pill's shadow needs the room. */}
+      <div
+        ref={scrollerRef}
+        onScroll={updateEdges}
+        className="flex gap-1 overflow-x-auto p-1.5 no-scrollbar"
+        style={{ maskImage: mask, WebkitMaskImage: mask }}
+      >
+        {tabs.map((tab) => (
+          <NavLink
+            key={tab.segment || "overview"}
+            to={tab.segment ? `${base}/${tab.segment}` : base}
+            end={tab.end}
+            className={({ isActive }) =>
+              cn(
+                "relative inline-flex shrink-0 items-center gap-1.5 rounded-control px-3.5 py-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+                isActive
+                  ? "bg-ethereal-marble text-ethereal-ink shadow-[0_1px_3px_var(--glass-contact),0_1px_1px_rgba(194,168,120,0.14)]"
+                  : "text-ethereal-graphite/65 hover:bg-ethereal-marble/60 hover:text-ethereal-ink",
+              )
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <span
+                  className={cn(
+                    "shrink-0 transition-colors",
+                    isActive ? "text-ethereal-gold" : "text-ethereal-graphite/50",
+                  )}
+                  aria-hidden="true"
+                >
+                  {tab.icon}
+                </span>
+                <Eyebrow color="inherit" className="truncate">
+                  {tab.label}
+                </Eyebrow>
+              </>
+            )}
+          </NavLink>
+        ))}
+      </div>
     </nav>
   );
 };

@@ -15,6 +15,10 @@
  * On a trip — a plan with a point only the travelling party is due at — a row
  * can also mark a singer who joins at the venue, and the toolbar counts both
  * groups.
+ * Once the project is published, a segment narrows the cast to who has not
+ * answered or who declined — the list the conductor chases and re-invites
+ * from — and each section header and the balance rail give the confirmed
+ * figure with the unanswered invitations after it as "+N".
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/CastTab
  */
@@ -67,6 +71,10 @@ import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { PROJECT_STATUS } from "../../constants/projectDomain";
 import { hasTravellersOnlyPoint } from "../../lib/dayTimeline";
+import {
+  CAST_STATUS_FILTERS,
+  type CastStatusFilter,
+} from "../../lib/castStanding";
 import {
   useCastTab,
   type CastBalanceEntry,
@@ -149,6 +157,8 @@ interface CastRowProps {
    * loudest chip the vocabulary has — and buries the one person who declined.
    */
   readonly showAnswerState: boolean;
+  /** The grip works; false while a status segment hides part of the section. */
+  readonly canArrange: boolean;
   readonly isBusy: boolean;
   readonly seatOptions: readonly SelectOption[];
   readonly onSeatChange: (seat: string) => void;
@@ -165,6 +175,7 @@ function CastRow({
   entry,
   position,
   showAnswerState,
+  canArrange,
   isBusy,
   seatOptions,
   onSeatChange,
@@ -182,7 +193,7 @@ function CastRow({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: entry.participationId });
+  } = useSortable({ id: entry.participationId, disabled: !canArrange });
 
   const isDeclined = entry.status === "DEC";
   const isAwaiting = showAnswerState && entry.status === "INV";
@@ -264,20 +275,29 @@ function CastRow({
         )}
       >
         {/* The grip is the only drag surface, so a name stays selectable and the
-            seat picker beside it still takes a click. */}
-        <span
-          {...attributes}
-          {...listeners}
-          title={dragLabel}
-          aria-label={dragLabel}
-          className={cn(
-            "-my-1 -ml-1.5 flex min-h-8 min-w-6 shrink-0 cursor-grab select-none items-center justify-center rounded-chip text-ethereal-graphite/30 transition-colors",
-            "hover:bg-ethereal-gold/10 hover:text-ethereal-gold active:cursor-grabbing",
-            "pointer-coarse:min-h-11 pointer-coarse:min-w-9",
-          )}
-        >
-          <GripVertical size={14} aria-hidden="true" />
-        </span>
+            seat picker beside it still takes a click. While a segment narrows
+            the list it keeps its room, so the numbers do not jump, but offers
+            nothing. */}
+        {canArrange ? (
+          <span
+            {...attributes}
+            {...listeners}
+            title={dragLabel}
+            aria-label={dragLabel}
+            className={cn(
+              "-my-1 -ml-1.5 flex min-h-8 min-w-6 shrink-0 cursor-grab select-none items-center justify-center rounded-chip text-ethereal-graphite/30 transition-colors",
+              "hover:bg-ethereal-gold/10 hover:text-ethereal-gold active:cursor-grabbing",
+              "pointer-coarse:min-h-11 pointer-coarse:min-w-9",
+            )}
+          >
+            <GripVertical size={14} aria-hidden="true" />
+          </span>
+        ) : (
+          <span
+            aria-hidden="true"
+            className="-my-1 -ml-1.5 min-h-8 min-w-6 shrink-0 pointer-coarse:min-h-11 pointer-coarse:min-w-9"
+          />
+        )}
 
         {/* Where they stand in this section. Quiet on purpose: forty of these
             run down the column, and the number is a position, not a name. */}
@@ -435,39 +455,72 @@ function CastRow({
 }
 
 /**
- * The question this tab could not answer: is the ensemble balanced? A voice
- * type reads gold at zero only when the roster actually holds candidates for
- * it — nobody cast with nobody available is an ensemble without that voice,
- * not a hole in the casting.
+ * The concert's balance, section by section. Once the project is published
+ * the figure is who confirmed, and the invitations still unanswered stand
+ * after it as "+N" — the same two numbers the section headers carry. A voice
+ * type reads gold only when nobody is cast in it, answered or not, and the
+ * roster holds candidates for it: nobody cast with nobody available is an
+ * ensemble without that voice, not a hole in the casting.
  */
 function BalanceRail({
   balance,
+  awaitingLabel,
 }: {
   balance: readonly CastBalanceEntry[];
+  /** Spells out "+N" for a screen reader and a hover, as the headers do. */
+  awaitingLabel: (count: number) => string;
 }): React.JSX.Element {
+  const { t } = useTranslation();
+  const hasAwaiting = balance.some((entry) => entry.figures.awaiting > 0);
+
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
-      {balance.map((entry) => {
-        const isGap = entry.castCount === 0 && entry.poolCount > 0;
-        return (
-          <span
-            key={entry.voiceType}
-            className="inline-flex items-baseline gap-1.5"
-          >
-            <Eyebrow as="span" size="overline-sm" color="muted">
-              {entry.label}
-            </Eyebrow>
-            <Text
-              as="span"
-              size="base"
-              weight="medium"
-              color={isGap ? "gold" : "graphite"}
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+        {balance.map((entry) => {
+          const isGap = entry.engagedCount === 0 && entry.poolCount > 0;
+          return (
+            <span
+              key={entry.voiceType}
+              className="inline-flex items-baseline gap-1.5"
             >
-              {entry.castCount}
-            </Text>
-          </span>
-        );
-      })}
+              <Eyebrow as="span" size="overline-sm" color="muted">
+                {entry.label}
+              </Eyebrow>
+              <Text
+                as="span"
+                size="base"
+                weight="medium"
+                color={isGap ? "gold" : "graphite"}
+              >
+                {entry.figures.main}
+              </Text>
+              {entry.figures.awaiting > 0 && (
+                <Text
+                  as="span"
+                  size="xs"
+                  color="muted"
+                  className="tabular-nums"
+                  title={awaitingLabel(entry.figures.awaiting)}
+                >
+                  <span aria-hidden="true">+{entry.figures.awaiting}</span>
+                  <span className="sr-only">
+                    {awaitingLabel(entry.figures.awaiting)}
+                  </span>
+                </Text>
+              )}
+            </span>
+          );
+        })}
+      </div>
+      {/* A phone has no hover to explain "+N", so the rail says it once. */}
+      {hasAwaiting && (
+        <Caption color="muted" className="text-center">
+          {t(
+            "projects.cast.balance.legend",
+            "Potwierdzeni, a po plusie: zaproszeni bez odpowiedzi.",
+          )}
+        </Caption>
+      )}
     </div>
   );
 }
@@ -475,11 +528,16 @@ function BalanceRail({
 export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
   const { t } = useTranslation();
   const notation = usePitchNotation();
+  const showAnswerState = project.status !== PROJECT_STATUS.DRAFT;
   const {
     isLoading,
     castSections,
     poolSections,
     castCount,
+    castFilter,
+    setCastFilter,
+    castFilterCounts,
+    canArrange,
     poolCount,
     outOfReachCount,
     travellingCount,
@@ -498,13 +556,26 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
     setMobileView,
     addToCast,
     removeFromCast,
-  } = useCastTab(String(project.id));
+  } = useCastTab(String(project.id), showAnswerState);
 
-  const showAnswerState = project.status !== PROJECT_STATUS.DRAFT;
   const isSearching = searchQuery.trim().length > 0;
   // A trip is a plan with a point only the travelling party is due at; until
   // there is one, "joins on site" has nothing to skip and is not offered.
   const isTrip = hasTravellersOnlyPoint(project.run_sheet);
+  // Before publication nobody has been asked, so there is no answer to narrow
+  // by. Where the segment stands, its "Wszyscy" figure is the cast's size and
+  // the header badge would only repeat it.
+  const showStatusFilter = showAnswerState && castCount > 0;
+  const statusFilterLabels: Record<CastStatusFilter, string> = {
+    ALL: t("projects.cast.status_filter.all", "Wszyscy"),
+    AWAITING: t("projects.cast.status_filter.awaiting", "Czeka"),
+    DECLINED: t("projects.cast.status_filter.declined", "Odmowa"),
+  };
+  const awaitingLabel = (count: number): string =>
+    t("projects.cast.balance.awaiting", {
+      count,
+      defaultValue: "{{count}} os. czeka na odpowiedź",
+    });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -568,10 +639,32 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
           bodyClassName="p-0 [scrollbar-gutter:stable]"
           icon={<UserCheck size={15} aria-hidden="true" />}
           title={t("projects.cast.sections.assigned", "Obsada projektu")}
-          action={<Badge variant="neutral">{castCount}</Badge>}
+          action={
+            showStatusFilter ? undefined : (
+              <Badge variant="neutral">{castCount}</Badge>
+            )
+          }
           toolbar={
             castCount > 0 ? (
               <div className="space-y-2 pb-3">
+                {/* Who to chase and who to replace — each segment counted by
+                    the predicate that picks its rows. */}
+                {showStatusFilter && (
+                  <SegmentedTabs
+                    compact
+                    value={castFilter}
+                    onChange={setCastFilter}
+                    ariaLabel={t(
+                      "projects.cast.status_filter.aria",
+                      "Obsada według odpowiedzi",
+                    )}
+                    items={CAST_STATUS_FILTERS.map((id) => ({
+                      id,
+                      label: statusFilterLabels[id],
+                      count: castFilterCounts[id],
+                    }))}
+                  />
+                )}
                 {/* Above the usage hint and in ink, not muted: this one is a
                     task — somebody has to pick up the phone — not a legend. */}
                 {outOfReachCount > 0 && (
@@ -620,11 +713,28 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
           }
           footer={
             castCount > 0 && castBalance.length > 0 ? (
-              <BalanceRail balance={castBalance} />
+              <BalanceRail balance={castBalance} awaitingLabel={awaitingLabel} />
             ) : undefined
           }
         >
-          {castCount > 0 ? (
+          {castCount > 0 && castSections.length === 0 ? (
+            <StatePanel
+              variant="inline"
+              className="px-5 py-10"
+              icon={<UserCheck size={26} aria-hidden="true" />}
+              title={
+                castFilter === "DECLINED"
+                  ? t(
+                      "projects.cast.status_filter.empty_declined",
+                      "Nikt nie odmówił",
+                    )
+                  : t(
+                      "projects.cast.status_filter.empty_awaiting",
+                      "Wszyscy odpowiedzieli",
+                    )
+              }
+            />
+          ) : castCount > 0 ? (
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -634,19 +744,22 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
                 <section key={section.key}>
                   <ListGroupHeader
                     label={section.label}
-                    count={section.entries.length}
+                    count={section.figures.main}
+                    secondaryCount={section.figures.awaiting}
+                    secondaryLabel={awaitingLabel(section.figures.awaiting)}
                   />
                   <SortableContext
-                    items={section.entries.map((entry) => entry.participationId)}
+                    items={section.rows.map((row) => row.entry.participationId)}
                     strategy={verticalListSortingStrategy}
                   >
                     <ul className="divide-y divide-hairline">
-                      {section.entries.map((entry, index) => (
+                      {section.rows.map(({ entry, position }) => (
                         <CastRow
                           key={entry.participationId}
                           entry={entry}
-                          position={index + 1}
+                          position={position}
                           showAnswerState={showAnswerState}
+                          canArrange={canArrange}
                           isBusy={processingId === entry.artistId}
                           seatOptions={seatOptions}
                           onSeatChange={(seat) =>
