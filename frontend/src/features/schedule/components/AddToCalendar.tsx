@@ -2,7 +2,9 @@
  * @file AddToCalendar.tsx
  * @description Per-event "add to calendar" control — a small menu offering a
  * Google Calendar template link and an Apple/Outlook .ics download for one
- * rehearsal or concert. Generated entirely client-side (see calendarLinks).
+ * rehearsal or concert. The entry is generated client-side (see
+ * calendarLinks); a project's block is the one the server resolved for this
+ * reader's plan, the same the subscribed feed reserves.
  * @module features/schedule/components/AddToCalendar
  */
 
@@ -28,6 +30,10 @@ import {
   downloadIcs,
   type CalendarEventInput,
 } from "@/shared/lib/calendar/calendarLinks";
+import { formatLocalizedDate } from "@/shared/lib/time/intl";
+import type { Project } from "@/shared/types";
+import { getEventMomentPresentation } from "@/features/projects/lib/projectPresentation";
+import { usePlanStartNote } from "../hooks/usePlanStartNote";
 import type { TimelineEvent } from "../types/schedule.dto";
 
 interface AddToCalendarProps {
@@ -49,7 +55,7 @@ export const AddToCalendar = ({
   triggerClassName,
   layout = "menu",
 }: AddToCalendarProps): React.JSX.Element => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // Inside a preview both routes would put the singer's rehearsal into the
   // MANAGER's calendar. Nothing is written server-side, but the control would
   // act on the wrong person's diary, so it stays visible and does nothing.
@@ -57,22 +63,70 @@ export const AddToCalendar = ({
 
   // The UI title drops the "Próba:" prefix (the badge carries it); the calendar
   // entry re-adds it so the event reads clearly outside the app.
+  const project = event.type === "PROJECT" ? (event.rawObj as Project) : null;
+  const planStartNote = usePlanStartNote(event.planStart, project);
+
   const calendarTitle =
     event.type === "REHEARSAL"
       ? `${t("schedule.event.rehearsal_prefix", "Próba:")} ${event.title}`
       : event.title;
+
+  // A project's entry opens where this reader's plan does: the call, or the
+  // departure the day before. An entry opening at 14:00 on Saturday says
+  // what 14:00 is, where, and when the concert itself is, as the feed's
+  // (`_project_description`) does, or the reader takes the opening hour for
+  // the downbeat and the entry's location, the concert venue, for the meeting
+  // point. Joined by a middle dot: the formatted date carries commas of its own.
+  const leadRows: string[] = [];
+  if (project) {
+    const formatMoment = (value: Date): string =>
+      formatLocalizedDate(
+        value,
+        {
+          weekday: "short",
+          day: "numeric",
+          month: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        },
+        i18n.language,
+        project.timezone,
+      );
+    if (event.planStart && planStartNote) {
+      const planStartFacts = [
+        planStartNote.title,
+        formatMoment(event.planStart.at),
+        event.planStart.place,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      leadRows.push(
+        `${t("schedule.card.plan_start", "Początek planu:")} ${planStartFacts}`,
+      );
+    }
+    if (event.calendarEntry && event.calendarEntry.start < event.date_time) {
+      const moment = getEventMomentPresentation(project.event_kind);
+      leadRows.push(
+        `${t(moment.labelKey, moment.fallbackLabel)}: ${formatMoment(event.date_time)}`,
+      );
+    }
+  }
+  const description = [...leadRows, event.focus || event.description]
+    .filter(Boolean)
+    .join("\n");
+
   const input: CalendarEventInput = {
     title: calendarTitle,
-    start: event.date_time,
+    start: event.calendarEntry?.start ?? event.date_time,
     // The conductor's own end where there is one; otherwise the block matching
     // this kind of event, so the button and the season feed reserve the same
     // evening — they used to disagree by an hour on every rehearsal.
-    end: event.ends_at ?? undefined,
+    end: event.calendarEntry?.end ?? event.ends_at ?? undefined,
     fallbackDurationMinutes:
       event.type === "REHEARSAL"
         ? FALLBACK_DURATION_MINUTES.rehearsal
         : FALLBACK_DURATION_MINUTES.event,
-    description: event.focus || event.description || undefined,
+    description: description || undefined,
     location: event.location?.name,
     uid: event.id,
   };

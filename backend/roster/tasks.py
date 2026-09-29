@@ -22,20 +22,16 @@ from notifications.services import NotificationRecipientPolicy
 from notifications.tasks import send_bulk_notifications_task
 from notifications.time_metadata import build_event_time_metadata
 
+from .domain.day_timeline import MIN_DAY_OFFSET, PlanBounds
 from .models import (
     DEFAULT_EVENT_TIMEZONE,
-    FALLBACK_EVENT_DURATION_MINUTES,
     Participation,
     Project,
     Rehearsal,
 )
+from .queries.day_plan_queries import plan_start_metadata
 
 logger = logging.getLogger(__name__)
-
-# A concert stores no end, so its calendar attachment reserves the same block
-# every other calendar surface does — see FALLBACK_EVENT_DURATION_MINUTES, which
-# is where that assumption is allowed to live.
-_CONCERT_DURATION = timedelta(minutes=FALLBACK_EVENT_DURATION_MINUTES)
 
 
 @shared_task(bind=True)
@@ -174,66 +170,120 @@ def _reminder_groups_by_window(
 
 def _dispatch_project_reminders(now) -> int:
     lead = timedelta(hours=getattr(settings, "PROJECT_REMINDER_LEAD_HOURS", 48))
-    due = Project.objects.filter(
+    # The reminder is timed from the first moment of the whole plan, not from
+    # the downbeat: a trip's departure can be days earlier, and a reminder timed
+    # from the concert would arrive after the group has left. The query can only
+    # see the downbeat, so it reaches as far ahead as a plan may start before it,
+    # and the plan itself decides.
+    candidates = Project.objects.filter(
         is_deleted=False,
         reminder_sent_at__isnull=True,
         date_time__gt=now,
-        date_time__lte=now + lead,
+        date_time__lte=now + lead + timedelta(days=-MIN_DAY_OFFSET),
         # A draft is invisible to its cast; reminding them of a concert they were
         # never told about would be the first they hear of it. Filtered before the
         # claim below so publishing later still leaves the reminder available.
         status=Project.Status.ACTIVE,
-    )
-    ids = list(due.values_list("id", flat=True))
-    if not ids:
+    ).select_related("location")
+    due: list[tuple[Project, PlanBounds]] = []
+    for proj in candidates:
+        bounds = proj.plan_bounds(include_travellers_only=True)
+        if bounds is not None and bounds.start <= now + lead:
+            due.append((proj, bounds))
+    if not due:
         return 0
 
-    Project.objects.filter(id__in=ids).update(reminder_sent_at=now)
+    # Claimed for the kept projects only: a concert whose plan has not yet
+    # entered the lead window must still be reminded by a later beat.
+    Project.objects.filter(id__in=[proj.id for proj, _ in due]).update(reminder_sent_at=now)
 
     sent = 0
-    for proj in Project.objects.filter(id__in=ids).select_related("location"):
-        participations = Participation.objects.filter(project=proj, is_deleted=False)
-        recipient_ids = NotificationRecipientPolicy.from_participations(participations)
-        if not recipient_ids:
-            continue
-
-        location_name = proj.location.name if proj.location else ""
-        start = proj.call_time or proj.date_time
-        event_time_metadata = build_event_time_metadata(
-            proj.date_time,
-            proj.timezone,
-            fallback_timezone=DEFAULT_EVENT_TIMEZONE,
-        )
-        metadata = {
-            "project_name": proj.title,
-            "project_id": str(proj.id),
-            # Language-neutral code; every surface names the kind for itself.
-            "event_kind": proj.event_kind,
-            "date_range": event_time_metadata["starts_at_display"],
-            **event_time_metadata,
-            "location": location_name,
-            "ics": {
-                "kind": "project",
-                # Carried inside the calendar payload too: the .ics attachment is
-                # built from this dict alone, and its subject is the line that
-                # ends up in the recipient's own calendar for years.
-                "event_kind": proj.event_kind,
-                "uid": f"project_{proj.id}@voctensemble.com",
-                "start": start.isoformat(),
-                "end": (proj.date_time + _CONCERT_DURATION).isoformat(),
-                "project_name": proj.title,
-                "location": location_name,
-                "focus": proj.description or "",
-            },
-        }
-        send_bulk_notifications_task.delay(
-            recipient_ids=recipient_ids,
-            notification_type=NotificationType.PROJECT_REMINDER,
-            level=NotificationLevel.INFO,
-            metadata=metadata,
-        )
-        sent += 1
+    for proj, whole_plan in due:
+        dispatched = 0
+        for recipient_ids, bounds in _reminder_groups_by_plan(proj, whole_plan):
+            # Each group is its own hand-off to the broker, as with the
+            # rehearsal reminder: `reminder_sent_at` is already claimed, so a
+            # group that fails here is not retried, but the other group and the
+            # remaining projects must still go out.
+            try:
+                send_bulk_notifications_task.delay(
+                    recipient_ids=recipient_ids,
+                    notification_type=NotificationType.PROJECT_REMINDER,
+                    level=NotificationLevel.INFO,
+                    metadata=_project_reminder_metadata(proj, bounds),
+                )
+            except Exception:
+                logger.exception(
+                    "project reminder: dispatch failed for project=%s "
+                    "recipients=%d — these recipients get no reminder",
+                    proj.id, len(recipient_ids),
+                )
+                continue
+            dispatched += 1
+        if dispatched:
+            sent += 1
     return sent
+
+
+def _reminder_groups_by_plan(
+    proj: Project, whole_plan: PlanBounds,
+) -> list[tuple[list[str], PlanBounds]]:
+    """The cast, split into one group per distinct plan.
+
+    A singer who joins on site starts where they are first due and may end
+    earlier than the travelling party, and both the reminder's "plan starts"
+    row and its calendar attachment say so. Grouped by the plan itself, not by
+    the flag: on a plan without travellers-only points both groups resolve to
+    the same bounds and one send goes out, as it always did. The recipient rule
+    is `NotificationRecipientPolicy`'s, never restated here.
+    """
+    seats = Participation.objects.filter(project=proj, is_deleted=False)
+    on_site_plan = proj.plan_bounds(include_travellers_only=False) or whole_plan
+    grouped: dict[PlanBounds, list[str]] = {}
+    for joins_on_site, bounds in ((False, whole_plan), (True, on_site_plan)):
+        recipients = NotificationRecipientPolicy.from_participations(
+            seats.filter(joins_on_site=joins_on_site)
+        )
+        if recipients:
+            grouped.setdefault(bounds, []).extend(recipients)
+    return [(recipients, bounds) for bounds, recipients in grouped.items()]
+
+
+def _project_reminder_metadata(proj: Project, bounds: PlanBounds) -> dict[str, object]:
+    """One group's reminder payload. The concert's own moment is the same for
+    everyone; the calendar attachment and the "plan starts" facts are the
+    group's. The plan's start travels only when it precedes the call, so a
+    one-day concert reads exactly as it always has."""
+    location_name = proj.location.name if proj.location else ""
+    event_time_metadata = build_event_time_metadata(
+        proj.date_time,
+        proj.timezone,
+        fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+    )
+    calendar_start, calendar_end = proj.calendar_span(bounds)
+    return {
+        "project_name": proj.title,
+        "project_id": str(proj.id),
+        # Language-neutral code; every surface names the kind for itself.
+        "event_kind": proj.event_kind,
+        "date_range": event_time_metadata["starts_at_display"],
+        **event_time_metadata,
+        "location": location_name,
+        "ics": {
+            "kind": "project",
+            # Carried inside the calendar payload too: the .ics attachment is
+            # built from this dict alone, and its subject is the line that
+            # ends up in the recipient's own calendar for years.
+            "event_kind": proj.event_kind,
+            "uid": f"project_{proj.id}@voctensemble.com",
+            "start": calendar_start.isoformat(),
+            "end": calendar_end.isoformat(),
+            "project_name": proj.title,
+            "location": location_name,
+            "focus": proj.description or "",
+        },
+        **plan_start_metadata(proj, bounds),
+    }
 
 
 # ──────────────────────────────────────────────────────────────────────────── #

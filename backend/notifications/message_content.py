@@ -50,6 +50,7 @@ from .time_metadata import (
     display_event_end,
     display_event_end_clock,
     display_event_time,
+    display_plan_start,
     event_start,
     short_date_span,
     short_event_date,
@@ -686,6 +687,44 @@ def _invitation_rehearsal_lines(entries: Any) -> list[str]:
     return lines
 
 
+def _plan_start_title(m: Mapping[str, Any]) -> str:
+    """What happens when a plan that opens before the call starts: a point's
+    own title (the manager's text), or a typed window named from its key in the
+    reader's language."""
+    if m.get("plan_start_title"):
+        return str(m["plan_start_title"])
+    if m.get("plan_start_window"):
+        return _change_field_label(str(m["plan_start_window"]))
+    return ""
+
+
+def _plan_start_glance(m: Mapping[str, Any]) -> str:
+    """The plan's start as one short fact ("Wyjazd — sob. 10.10, 14:00"), or
+    nothing when the plan opens at the call, which is every one-day concert."""
+    when = display_plan_start(m)
+    if not when:
+        return ""
+    title = _plan_start_title(m)
+    return _("%(event)s — %(when)s") % {"event": title, "when": when} if title else when
+
+
+def _plan_start_row(m: Mapping[str, Any]) -> DetailRow:
+    """The "Plan starts" detail: when, what, and where when it is not the
+    venue. Only called when `_plan_start_glance` found a moment."""
+    return _row(
+        _("Plan starts"),
+        " · ".join(
+            part
+            for part in (
+                display_plan_start(m),
+                _plan_start_title(m),
+                m.get("plan_start_place"),
+            )
+            if part
+        ),
+    )
+
+
 def _compose_project_invitation(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     project = m.get("project_name") or _("a new project")
@@ -710,9 +749,13 @@ def _compose_project_invitation(ctx: MessageContext) -> MessageContent:
         )
     )
 
+    # A trip's departure the day before is part of the price of saying yes, like
+    # the rehearsals, so it is in the glance too.
+    plan_start = _plan_start_glance(m)
+
     # Push carries the glance facts; the invitation's warmth lives in the email
     # lead, where there is room for it.
-    body = _facts(dates, venue, rehearsal_summary)
+    body = _facts(dates, venue, plan_start, rehearsal_summary)
     if m.get("inviter_name"):
         body = _("%(facts)s. Invited by %(inviter)s.") % {"facts": body, "inviter": inviter} if body \
             else _("Invited by %(inviter)s.") % {"inviter": inviter}
@@ -726,6 +769,8 @@ def _compose_project_invitation(ctx: MessageContext) -> MessageContent:
         details.append(_row(_("When"), dates))
     if venue:
         details.append(_row(_("Where"), venue))
+    if plan_start:
+        details.append(_plan_start_row(m))
     call_time = display_event_time({
         "starts_at": m.get("call_time_at"),
         "starts_at_display": m.get("call_time_display"),
@@ -1022,16 +1067,24 @@ def _compose_project_reminder(ctx: MessageContext) -> MessageContent:
         if when
         else _("Coming up: %(event)s") % {"event": moment}
     )
+    # A plan that opens before the call (a trip's departure, or the acoustic
+    # rehearsal the evening before) is the one fact a reader who knows only the
+    # concert's hour would get wrong, so it leads the details and replaces the
+    # venue on the lock screen.
+    plan_start = _plan_start_glance(m)
     details: list[DetailRow] = []
+    if plan_start:
+        details.append(_plan_start_row(m))
     if when:
         details.append(_row(_("When"), when))
     if venue:
         details.append(_row(_("Where"), venue))
+    body = _facts(plan_start, project) if plan_start else _facts(project, venue)
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
         title=title,
-        body=_facts(project, venue) or project,
+        body=body or project,
         url_path=_projects_url(ctx),
         tag=f"project-reminder:{m.get('project_id') or project}",
         actions=(_open_action(),),

@@ -4433,7 +4433,12 @@
       "title_short": "artists",
       "voice_unknown": "No voice",
       "empty_assigned_desc": "Add singers from the database to build the project cast.",
-      "empty_no_matches": "No results"
+      "empty_no_matches": "No results",
+      "on_site": {
+        "aria": "Joins on site: {{name}}",
+        "counts": "Travelling: {{travelling}} · joining on site: {{onSite}}",
+        "hint": "Mark with the house pin anyone who does not travel with the group and joins on site — they will see the travelling party's points greyed out."
+      }
     },
     "crew": {
       "aria_label": "Manage technical crew",
@@ -4535,13 +4540,17 @@
         "title": "Project title *",
         "warmup_end": "Warm-up until",
         "warmup_start": "Warm-up from",
-        "event_kind": "Event kind"
+        "event_kind": "Event kind",
+        "window_day": "Day",
+        "warmup_day": "Warm-up day",
+        "soundcheck_day": "Sound check day"
       },
       "call_time": {
         "offset_h": "{{hours}} h before the start",
         "offset_hm": "{{hours}} h {{minutes}} min before the start",
         "offset_m": "{{minutes}} min before the start",
-        "offset_after": "Call time is not before the start"
+        "offset_after": "Call time is not before the start",
+        "trip_hint": "The call time applies to everyone. Enter the departure as a point of the plan, with its place."
       },
       "day_plan": {
         "untitled_count": "Unnamed: {{count}}"
@@ -4567,13 +4576,16 @@
         "place_default": "Event venue",
         "place_new": "Add a new venue",
         "time": "Time",
-        "title": "Item name"
+        "title": "Item name",
+        "day": "Day of this point",
+        "travellers_only": "Travelling party only"
       },
       "sections": {
         "day_plan": "Day plan",
         "ensemble_info": "Information for the ensemble",
         "event": "Event",
-        "onsite": "On site"
+        "onsite": "On site",
+        "trip_plan": "Trip plan"
       },
       "markers": {},
       "event_kind": {
@@ -5074,13 +5086,15 @@
       "call": "Call",
       "warmup": "Warm-up",
       "soundcheck": "Sound check",
-      "until": "until {{time}}"
+      "until": "until {{time}}",
+      "travellers_only": "for the travelling party"
     },
     "run_sheet": {
       "aria_label": "Manage the day schedule",
       "empty": "No run sheet yet",
       "title": "Day Run Sheet",
-      "open_day_card_aria": "Open the day card (PDF)"
+      "open_day_card_aria": "Open the day card (PDF)",
+      "title_trip": "Trip plan"
     },
     "spotify": {
       "consent_note": "The embedded player connects to Spotify's servers (cookies and data). It only loads after you consent.",
@@ -5178,6 +5192,18 @@
       "mass": "Mass",
       "wedding": "Wedding Mass",
       "other": "Event"
+    },
+    "plan_day": {
+      "event_day": "Event day",
+      "event_day_option": "{{date}} · {{event}}",
+      "before_one": "The day before",
+      "before_few": "{{count}} days before",
+      "before_many": "{{count}} days before",
+      "before_other": "{{count}} days before",
+      "after_one": "The day after",
+      "after_few": "{{count}} days after",
+      "after_many": "{{count}} days after",
+      "after_other": "{{count}} days after"
     }
   },
   "pwa": {
@@ -5590,6 +5616,7 @@
     },
     "card": {
       "call_time": "Call Time:",
+      "plan_start": "Plan starts:",
       "dress_code_men": "Men:",
       "dress_code_title": "Dress Code Details",
       "dress_code_women": "Women:",
@@ -5620,7 +5647,9 @@
         "setlist": "Repertoire"
       },
       "unknown_artist": "Artist",
-      "view_score_pdf": "View PDF"
+      "view_score_pdf": "View PDF",
+      "trip_plan_title": "Trip plan",
+      "joins_on_site_banner": "You are joining on site — greyed-out points concern the travelling party only."
     },
     "dashboard": {
       "description": "Check rehearsals, report absences, and track concert plans.",

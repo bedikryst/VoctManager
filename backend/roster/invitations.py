@@ -8,7 +8,8 @@ Builds the metadata behind a PROJECT_INVITATION.
 
 Under the publication model the invitation is the only message a singer receives
 before deciding, so it has to carry the whole cost of saying yes: the concert,
-the rehearsals they are expected at, the programme, and their own voice line.
+the rehearsals they are expected at, the programme, their own voice line, and on
+a trip the departure that comes before the concert.
 An invitation naming only the concert date asks for a commitment whose price is
 hidden.
 
@@ -42,6 +43,7 @@ from .models import (
     Rehearsal,
     VoiceType,
 )
+from .queries.day_plan_queries import plan_start_metadata
 from .score_package_config import resolve_item_edition
 
 logger = logging.getLogger(__name__)
@@ -81,6 +83,9 @@ class ProjectInvitationContext:
     voice_lines_by_participation: dict[UUID, tuple[str, ...]] = field(default_factory=dict)
     # Naming scope for those codes — see `_project_voice_scope`.
     voice_scope: tuple[str, ...] = ()
+    # Where the plan starts for each of a trip's two groups, keyed by
+    # `Participation.joins_on_site` — see `_plan_start_for`.
+    plan_start_by_on_site: dict[bool, dict[str, str]] = field(default_factory=dict)
 
 
 def _rehearsal_payload(rehearsal: Rehearsal) -> InvitationRehearsalMetadata:
@@ -162,6 +167,20 @@ def build_invitation_context(project: Project) -> ProjectInvitationContext:
             key: tuple(value) for key, value in voice_lines.items()
         },
         voice_scope=_project_voice_scope(project),
+        plan_start_by_on_site={
+            joins_on_site: _plan_start_for(project, joins_on_site=joins_on_site)
+            for joins_on_site in (False, True)
+        },
+    )
+
+
+def _plan_start_for(project: Project, *, joins_on_site: bool) -> dict[str, str]:
+    """Where a reader's plan starts, when that is before the call. A trip's
+    departure the day before is part of the price of saying yes, and a reader
+    who knows only the concert's hour would not see it. A singer who joins on
+    site starts at the first point that is theirs."""
+    return plan_start_metadata(
+        project, project.plan_bounds(include_travellers_only=not joins_on_site)
     )
 
 
@@ -237,6 +256,13 @@ def build_invitation_metadata(
     program: tuple[str, ...] = ()
     voice_lines: tuple[str, ...] = ()
     scope: tuple[str, ...] = ()
+    # The plan's start is a fact of the concert itself, so it travels without a
+    # context too: a singer added to a live trip is deciding on the same night away.
+    plan_start = (
+        context.plan_start_by_on_site[participation.joins_on_site]
+        if context is not None and context.plan_start_by_on_site
+        else _plan_start_for(project, joins_on_site=participation.joins_on_site)
+    )
     if context is not None:
         program = context.program
         voice_lines = context.voice_lines_by_participation.get(participation.id, ())
@@ -282,6 +308,7 @@ def build_invitation_metadata(
         description=project.description or "",
         call_time_at=call_time_at,
         call_time_display=call_time_display,
+        **plan_start,
         # Both dress codes travel as one line: the roster records no gender, so
         # picking one for the reader would be a guess. Stating both is honest and
         # is how the call sheet already reads.

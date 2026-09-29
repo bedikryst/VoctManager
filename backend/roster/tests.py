@@ -1581,6 +1581,198 @@ class ReminderDispatchTests(TestCase):
         self.assertIsNone(draft.reminder_sent_at)
         self.assertIsNone(reh.reminder_sent_at)
 
+    # --- a trip: the reminder follows the plan, not the downbeat ---------- #
+
+    # Concert Sunday 11.10.2026 13:30 Warsaw (11:30Z); departure Saturday 14:00
+    # (12:00Z), 47.5 h before the downbeat plus the 48 h lead.
+    TRIP_CONCERT = datetime(2026, 10, 11, 11, 30, tzinfo=UTC)
+
+    def _trip(self, *, departure_travellers_only: bool = True) -> Project:
+        # The fixture's own concert would otherwise fall inside these fixed
+        # sweeps and add a send of its own.
+        Project.objects.filter(pk=self.project.pk).update(status=Project.Status.CANCELLED)
+        trip = Project.objects.create(
+            title="Pochwała Stworzenia", date_time=self.TRIP_CONCERT,
+            call_time=self.TRIP_CONCERT - timedelta(hours=1),
+            timezone="Europe/Warsaw", status=Project.Status.ACTIVE,
+            soundcheck_start=time(19, 20), soundcheck_day=-1,
+            run_sheet=[
+                {
+                    "time": "14:00", "title": "Wyjazd", "day": -1,
+                    "travellers_only": departure_travellers_only,
+                },
+            ],
+        )
+        Participation.objects.create(
+            artist=self.artist, project=trip, status=Participation.Status.CONFIRMED,
+        )
+        return trip
+
+    def _joiner_on(self, trip: Project) -> None:
+        user = get_user_model().objects.create_user(
+            username="r-joiner", email="r-joiner@test.pl", password="pw123456",
+        )
+        UserProfile.objects.create(user=user, role=AppRole.ARTIST)
+        joiner = Artist.objects.create(
+            user=user, first_name="Ola", last_name="W", email="r-joiner@test.pl",
+            voice_type=VoiceType.ALTO,
+        )
+        Participation.objects.create(
+            artist=joiner, project=trip, status=Participation.Status.CONFIRMED,
+            joins_on_site=True,
+        )
+
+    def test_a_trip_is_reminded_before_its_departure(self) -> None:
+        """Timed from the downbeat, the reminder would reach the traveller an
+        hour after the coach left. A concert whose plan has not yet entered the
+        window is not claimed, so a later beat still reminds it."""
+        from .tasks import _dispatch_project_reminders
+
+        trip = self._trip()
+        departure = datetime(2026, 10, 10, 12, 0, tzinfo=UTC)
+
+        with patch(self.BULK) as bulk:
+            self.assertEqual(
+                _dispatch_project_reminders(departure - timedelta(hours=49)), 0
+            )
+            bulk.assert_not_called()
+        trip.refresh_from_db()
+        self.assertIsNone(trip.reminder_sent_at)
+
+        with patch(self.BULK) as bulk:
+            self.assertEqual(
+                _dispatch_project_reminders(departure - timedelta(hours=47)), 1
+            )
+        metadata = bulk.call_args.kwargs["metadata"]
+        self.assertEqual(metadata["ics"]["start"], "2026-10-10T14:00:00+02:00")
+        self.assertEqual(metadata["plan_starts_at"], "2026-10-10T14:00:00+02:00")
+        self.assertEqual(metadata["plan_start_title"], "Wyjazd")
+        trip.refresh_from_db()
+        self.assertIsNotNone(trip.reminder_sent_at)
+
+    def test_a_joiner_gets_their_own_plan_in_a_second_send(self) -> None:
+        from .tasks import _dispatch_project_reminders
+
+        trip = self._trip()
+        self._joiner_on(trip)
+
+        with patch(self.BULK) as bulk:
+            _dispatch_project_reminders(datetime(2026, 10, 8, 13, 0, tzinfo=UTC))
+
+        self.assertEqual(bulk.call_count, 2)
+        by_start = {
+            call.kwargs["metadata"]["ics"]["start"]: call.kwargs for call in bulk.call_args_list
+        }
+        traveller = by_start["2026-10-10T14:00:00+02:00"]
+        joiner = by_start["2026-10-10T19:20:00+02:00"]
+        self.assertEqual(traveller["recipient_ids"], [str(self.user.id)])
+        self.assertEqual(joiner["metadata"]["plan_start_window"], "soundcheck")
+        self.assertNotIn("plan_start_title", joiner["metadata"])
+        self.assertNotIn(str(self.user.id), joiner["recipient_ids"])
+
+    def test_one_send_when_both_groups_share_the_plan(self) -> None:
+        """Nothing on the plan is for the travelling party alone, so the flag
+        changes nothing and the cast hears it once, together."""
+        from .tasks import _dispatch_project_reminders
+
+        trip = self._trip(departure_travellers_only=False)
+        self._joiner_on(trip)
+
+        with patch(self.BULK) as bulk:
+            _dispatch_project_reminders(datetime(2026, 10, 8, 13, 0, tzinfo=UTC))
+
+        bulk.assert_called_once()
+        self.assertEqual(len(bulk.call_args.kwargs["recipient_ids"]), 2)
+
+    def test_the_reminder_leads_with_where_the_plan_starts(self) -> None:
+        """The concert's hour alone is what a traveller would get wrong. A
+        window is named in the reader's language from its key."""
+        from notifications.message_content import MessageContentBuilder
+
+        metadata = {
+            "project_name": "Pochwała Stworzenia",
+            "event_kind": "CONCERT",
+            "starts_at": "2026-10-11T13:30:00+02:00",
+            "timezone": "Europe/Warsaw",
+            "location": "Filharmonia Narodowa",
+            "plan_starts_at": "2026-10-10T14:00:00+02:00",
+            "plan_start_title": "Wyjazd",
+            "plan_start_place": "Dworzec Główny",
+        }
+        with translation.override("pl"):
+            content = MessageContentBuilder.build(
+                NotificationType.PROJECT_REMINDER, NotificationLevel.INFO, metadata,
+                is_manager=False,
+            )
+            window = MessageContentBuilder.build(
+                NotificationType.PROJECT_REMINDER, NotificationLevel.INFO,
+                {
+                    **{k: v for k, v in metadata.items() if k != "plan_start_title"},
+                    "plan_start_window": "soundcheck",
+                    "plan_start_place": "",
+                },
+                is_manager=False,
+            )
+        first = content.details[0]
+        self.assertEqual(first.label, "Początek planu")
+        self.assertIn("14:00 · Wyjazd · Dworzec Główny", first.value)
+        self.assertTrue(content.body.startswith("Wyjazd — "), content.body)
+        self.assertIn("Próba akustyczna", window.details[0].value)
+
+        # A plan that opens at the call reads exactly as it always has.
+        plain = {k: v for k, v in metadata.items() if not k.startswith("plan_")}
+        with translation.override("pl"):
+            content = MessageContentBuilder.build(
+                NotificationType.PROJECT_REMINDER, NotificationLevel.INFO, plain,
+                is_manager=False,
+            )
+        self.assertNotIn("Początek planu", [row.label for row in content.details])
+
+    def test_the_invitation_states_a_trips_departure(self) -> None:
+        """The invitation is the whole decision, and a concert that means a
+        night away is a different yes from an evening one. A singer who joins
+        on site is told where they are first due instead; a one-day concert's
+        invitation reads as it always has."""
+        from notifications.message_content import MessageContentBuilder
+
+        from .invitations import build_invitation_context, build_invitation_metadata
+
+        one_day = build_invitation_metadata(self.participation)
+        self.assertEqual(one_day["plan_starts_at"], "")
+
+        trip = self._trip()
+        self._joiner_on(trip)
+        context = build_invitation_context(trip)
+        seats = {
+            seat.joins_on_site: seat
+            for seat in Participation.objects.filter(project=trip).select_related(
+                "project", "artist"
+            )
+        }
+        traveller = build_invitation_metadata(seats[False], context)
+        joiner = build_invitation_metadata(seats[True], context)
+
+        self.assertEqual(traveller["plan_starts_at"], "2026-10-10T14:00:00+02:00")
+        self.assertEqual(traveller["plan_start_title"], "Wyjazd")
+        self.assertEqual(joiner["plan_starts_at"], "2026-10-10T19:20:00+02:00")
+        self.assertEqual(joiner["plan_start_window"], "soundcheck")
+        # A seat added to a live trip is invited without a publication context
+        # and is deciding on the same night away.
+        self.assertEqual(
+            build_invitation_metadata(seats[False])["plan_starts_at"],
+            traveller["plan_starts_at"],
+        )
+
+        with translation.override("pl"):
+            content = MessageContentBuilder.build(
+                NotificationType.PROJECT_INVITATION, NotificationLevel.INFO, traveller,
+                is_manager=False,
+            )
+        labels = [row.label for row in content.details]
+        self.assertIn("Początek planu", labels)
+        self.assertLess(labels.index("Początek planu"), labels.index("Zbiórka"))
+        self.assertIn("Wyjazd — ", content.body)
+
 
 class AbsenceRequestNotificationTests(TestCase):
     """An artist self-marking EXCUSED/ABSENT pings managers as ABSENCE_REQUESTED."""
@@ -1796,6 +1988,77 @@ class ScheduleDashboardTests(APITestCase):
         own_flags = flags(own.data)
         self.assertIn(str(self.project_live.id), own_flags)
         self.assertFalse(any(own_flags.values()))
+
+    def _live_item(self) -> dict:
+        return next(
+            item for item in self._fetch()
+            if item["type"] == "PROJECT"
+            and item["project"]["id"] == str(self.project_live.id)
+        )
+
+    def test_the_card_states_where_the_readers_plan_starts(self) -> None:
+        """Concert Sunday 13:30 Warsaw, call 12:30; the sound check on Saturday
+        19:20 for everyone; the departure Saturday 14:00 and the return Monday
+        09:00 for the travelling party. The card's calendar entry is the one
+        the subscribed feed reserves for the same reader."""
+        from logistics.models import Location
+
+        self.project_live.date_time = datetime(2026, 10, 11, 11, 30, tzinfo=UTC)
+        self.project_live.call_time = datetime(2026, 10, 11, 10, 30, tzinfo=UTC)
+        self.project_live.timezone = "Europe/Warsaw"
+        self.project_live.soundcheck_start = time(19, 20)
+        self.project_live.soundcheck_day = -1
+        station = Location.objects.create(name="Dworzec Główny")
+        self.project_live.run_sheet = [
+            {"time": "14:00", "title": "Wyjazd", "day": -1, "travellers_only": True,
+             "location_id": str(station.id)},
+            {"time": "09:00", "title": "Powrót", "day": 1, "travellers_only": True},
+        ]
+        self.project_live.save()
+
+        traveller = self._live_item()
+        self.assertEqual(
+            traveller["plan_start"],
+            {"at": "2026-10-10T14:00:00+02:00", "day_offset": -1,
+             "title": "Wyjazd", "window": "", "place": "Dworzec Główny"},
+        )
+        self.assertEqual(
+            traveller["calendar_entry"],
+            {"starts_at": "2026-10-10T14:00:00+02:00",
+             "ends_at": "2026-10-12T09:00:00+02:00"},
+        )
+
+        self.part_live.joins_on_site = True
+        self.part_live.save(update_fields=["joins_on_site"])
+        joiner = self._live_item()
+        self.assertEqual(
+            joiner["plan_start"],
+            {"at": "2026-10-10T19:20:00+02:00", "day_offset": -1,
+             "title": "", "window": "soundcheck", "place": ""},
+        )
+        # The return is not theirs: the entry closes on the concert's
+        # reservation, as their feed's does.
+        start, end = self.project_live.calendar_span(
+            self.project_live.plan_bounds(include_travellers_only=False)
+        )
+        self.assertEqual(
+            joiner["calendar_entry"],
+            {"starts_at": start.isoformat(), "ends_at": end.isoformat()},
+        )
+
+    def test_a_one_day_card_states_the_call_alone(self) -> None:
+        """A plan that opens at the call adds nothing to the card, but its
+        calendar entry still opens at the call, as the feed's does."""
+        self.project_live.call_time = self.project_live.date_time - timedelta(hours=1)
+        self.project_live.save(update_fields=["call_time"])
+
+        item = self._live_item()
+
+        self.assertIsNone(item["plan_start"])
+        self.assertEqual(
+            datetime.fromisoformat(item["calendar_entry"]["starts_at"]),
+            self.project_live.call_time,
+        )
 
     def test_a_seat_added_back_starts_as_a_traveller(self) -> None:
         """Joining on site is an exception granted for one stay in the cast; a
@@ -6461,7 +6724,7 @@ class ConcertDaySheetTests(APITestCase):
 
     def _run_sheet_row(self, title: str) -> dict:
         rows = self._build_context(Audience.PRODUCTION, None)["day_timeline"]
-        return next(row for row in rows if row["title"] == title)
+        return next(row for row in rows if row.get("title") == title)
 
     def test_a_point_elsewhere_prints_its_own_venue(self) -> None:
         """The whole reason the field exists: the coach leaves from a car park
@@ -6572,14 +6835,16 @@ class ConcertDaySheetTests(APITestCase):
         )
 
     def test_call_on_another_day_is_marked_inside_the_printed_day(self) -> None:
-        """The anchor moves to where it actually falls and says how far — an
-        hour on its own reads as concert-day wherever it appears."""
+        """The anchor moves to where it actually falls, under the heading of
+        its own date — an hour on its own reads as concert-day wherever it
+        appears."""
         self._pin_concert_day()
         self._move_call_off_the_concert_day()
         rows = self._build_context(Audience.PRODUCTION, None)["day_timeline"]
 
-        self.assertEqual(rows[0]["title"], "Zbiórka")
-        self.assertEqual(rows[0]["day_note"], "20 dni wcześniej")
+        self.assertTrue(rows[0]["is_day_heading"])
+        self.assertEqual(rows[0]["date_label"], "23.06.2026")
+        self.assertEqual(rows[1]["title"], "Zbiórka")
 
     def test_report_asks_to_confirm_a_call_on_another_calendar_day(self) -> None:
         """Inside the plausible window a different day is legitimate (the tour
@@ -6660,11 +6925,17 @@ class ConcertDaySheetTests(APITestCase):
             update_fields=["warmup_start", "soundcheck_start", "soundcheck_day"]
         )
 
-        rows = self._build_context(Audience.CHORISTER, self.singer_part)["day_timeline"]
+        context = self._build_context(Audience.CHORISTER, self.singer_part)
+        rows = context["day_timeline"]
         self.assertEqual(
-            [(row["time"], row["title"]) for row in rows],
             [
+                row["date_label"] if row["is_day_heading"] else (row["time"], row["title"])
+                for row in rows
+            ],
+            [
+                "12.07.2026",
                 ("19:20", "Próba akustyczna"),
+                "13.07.2026",
                 ("18:30", "Zbiórka"),
                 ("18:30", "Call & warm-up"),
                 ("18:40", "Rozśpiewanie"),
@@ -6673,10 +6944,84 @@ class ConcertDaySheetTests(APITestCase):
                 ("20:00", "Początek koncertu"),
             ],
         )
-        # Until the sheet groups the plan by day, the row says it is not
-        # concert day; every concert-day row stays silent.
-        self.assertTrue(rows[0]["day_note"])
-        self.assertEqual([row["day_note"] for row in rows[1:]], [""] * 6)
+        # A plan that reaches past concert day is a trip, and is titled so.
+        self.assertTrue(context["is_multi_day_plan"])
+        self.assertIn("Plan wyjazdu", self._render(Audience.CHORISTER, self.singer_part))
+
+    def _plan_a_trip(self) -> None:
+        """Departure and return for the travelling party, the acoustic
+        rehearsal the evening before for everyone."""
+        self._pin_concert_day()
+        self.project.run_sheet = [
+            *self.project.run_sheet,
+            {"time": "14:00", "title": "Wyjazd", "day": -1, "travellers_only": True},
+            {"time": "09:00", "title": "Powrót", "day": 1, "travellers_only": True},
+        ]
+        self.project.soundcheck_start = time(19, 20)
+        self.project.soundcheck_day = -1
+        self.project.save(update_fields=["run_sheet", "soundcheck_start", "soundcheck_day"])
+
+    def test_a_traveller_sheet_opens_at_the_departure(self) -> None:
+        """"Zbiórka 18:30" alone lets a traveller conclude they may arrive on
+        concert day; the masthead states where their plan starts, and on which
+        day, before the call."""
+        self._plan_a_trip()
+        with translation.override("pl"):
+            day_before = DocumentGenerator._day_offset_note(-1)
+            day_after = DocumentGenerator._day_offset_note(1)
+
+        facts = self._build_context(Audience.CHORISTER, self.singer_part)["masthead_facts"]
+        self.assertEqual(
+            [fact["label"] for fact in facts],
+            ["Data", "Początek planu", "Zbiórka", "Początek koncertu", "Koniec planu"],
+        )
+        self.assertEqual((facts[1]["value"], facts[1]["note"]), ("14:00", f"{day_before} · Wyjazd"))
+        self.assertEqual((facts[-1]["value"], facts[-1]["note"]), ("09:00", f"{day_after} · Powrót"))
+
+        # The report and the maestro follow the whole plan too.
+        report = self._build_context(Audience.PRODUCTION, None)["masthead_facts"]
+        self.assertEqual(
+            [fact["label"] for fact in report],
+            ["Data", "Początek planu", "Zbiórka", "Początek koncertu", "Miejsce"],
+        )
+        conductor = self._build_context(Audience.CONDUCTOR, None)["masthead_facts"]
+        self.assertEqual(conductor[1]["value"], "14:00")
+
+    def test_a_joiner_sheet_starts_where_they_are_due_and_mutes_the_rest(self) -> None:
+        """A singer who joins on site is due at the acoustic rehearsal, not at
+        the departure, and not on the way back. The travelling party's points
+        stay on their sheet, labelled and muted: knowing where the group is
+        has value."""
+        self._plan_a_trip()
+        self.singer_part.joins_on_site = True
+        self.singer_part.save(update_fields=["joins_on_site"])
+        with translation.override("pl"):
+            day_before = DocumentGenerator._day_offset_note(-1)
+
+        context = self._build_context(Audience.CHORISTER, self.singer_part)
+        facts = context["masthead_facts"]
+        self.assertEqual(
+            [fact["label"] for fact in facts],
+            ["Data", "Początek planu", "Zbiórka", "Początek koncertu"],
+        )
+        self.assertEqual(
+            (facts[1]["value"], facts[1]["note"]),
+            ("19:20", f"{day_before} · Próba akustyczna"),
+        )
+
+        points = {
+            row["title"]: row for row in context["day_timeline"] if not row["is_day_heading"]
+        }
+        self.assertTrue(points["Wyjazd"]["travellers_only"])
+        self.assertTrue(points["Wyjazd"]["is_muted"])
+        self.assertFalse(points["Próba akustyczna"]["is_muted"])
+        self.assertIn("dla jadących", self._render(Audience.CHORISTER, self.singer_part))
+
+        # A traveller sees the same label, without the muting.
+        traveller_rows = self._build_context(Audience.PRODUCTION, None)["day_timeline"]
+        departure = next(row for row in traveller_rows if row.get("title") == "Wyjazd")
+        self.assertTrue(departure["travellers_only"])
+        self.assertFalse(departure["is_muted"])
 
     def test_typed_moments_alone_are_a_planned_day(self) -> None:
         """A producer who set only the two windows has planned a day; the
@@ -7469,10 +7814,10 @@ class TripPlanDomainTests(SimpleTestCase):
             {"time": "", "title": "Hotel", "day": -1, "travellers_only": True},
             {"time": "18:00", "title": "Powrót", "travellers_only": True},
         ])
-        day_windows = [
-            DayWindow(start=time(11, 0), end=time(11, 45), day=0),
-            DayWindow(start=time(19, 15), end=time(22, 0), day=-1),
-        ]
+        day_windows = {
+            "warmup": DayWindow(start=time(11, 0), end=time(11, 45), day=0),
+            "soundcheck": DayWindow(start=time(19, 15), end=time(22, 0), day=-1),
+        }
 
         traveller = plan_bounds(points, window, day_windows, include_travellers_only=True)
         assert traveller is not None
@@ -7481,6 +7826,14 @@ class TripPlanDomainTests(SimpleTestCase):
         assert traveller.end is not None
         self.assertEqual(traveller.end, datetime(2026, 10, 25, 17, 0, tzinfo=UTC))
         self.assertEqual(traveller.end.utcoffset(), timedelta(hours=1))
+        # The bounds say what opens and closes the plan, so a surface that
+        # states the hour can say what happens then.
+        assert traveller.first.point is not None and traveller.last is not None
+        self.assertEqual(traveller.first.point.title, "Wyjazd")
+        self.assertEqual(traveller.first.day_offset, -1)
+        self.assertTrue(traveller.opens_before_call)
+        assert traveller.last.point is not None
+        self.assertEqual(traveller.last.point.title, "Powrót")
 
         # A singer who joins on site starts at the acoustic rehearsal, and the
         # return is not theirs, so nothing is planned for them after the
@@ -7488,6 +7841,8 @@ class TripPlanDomainTests(SimpleTestCase):
         joiner = plan_bounds(points, window, day_windows, include_travellers_only=False)
         assert joiner is not None
         self.assertEqual(joiner.start, datetime(2026, 10, 24, 17, 15, tzinfo=UTC))
+        self.assertEqual(joiner.first.window, "soundcheck")
+        self.assertTrue(joiner.opens_before_call)
         self.assertIsNone(joiner.end)
 
     def test_plan_bounds_on_a_one_day_plan(self) -> None:
@@ -7497,16 +7852,38 @@ class TripPlanDomainTests(SimpleTestCase):
             self._at(2026, 7, 13, 18, 30), self._at(2026, 7, 13, 20, 0), self.WARSAW
         )
         bounds = plan_bounds(
-            [], window, [DayWindow(start=None, end=None, day=-1)],
+            [], window, {"soundcheck": DayWindow(start=None, end=None, day=-1)},
             include_travellers_only=False,
         )
         assert bounds is not None
         # An unplanned window counts for nothing, whatever its day column says.
         self.assertEqual(bounds.start, self._at(2026, 7, 13, 18, 30))
         self.assertIsNone(bounds.end)
+        # The call opens the plan, so there is nothing before it to state.
+        self.assertTrue(bounds.first.is_anchor)
+        self.assertFalse(bounds.opens_before_call)
 
         no_concert = resolve_call_window(None, None, self.WARSAW)
-        self.assertIsNone(plan_bounds([], no_concert, [], include_travellers_only=True))
+        self.assertIsNone(plan_bounds([], no_concert, {}, include_travellers_only=True))
+
+    def test_the_call_wins_a_tie_with_a_point_at_its_minute(self) -> None:
+        """A one-day run sheet often opens with a point at the call's own
+        minute ("18:30 Zbiórka i rozśpiewanie"). That is the call, not a plan
+        that opens before it."""
+        from .domain.day_timeline import normalize_run_sheet, plan_bounds, resolve_call_window
+
+        window = resolve_call_window(
+            self._at(2026, 7, 13, 18, 30), self._at(2026, 7, 13, 20, 0), self.WARSAW
+        )
+        points = normalize_run_sheet([
+            {"time": "18:30", "title": "Zbiórka i rozśpiewanie"},
+            {"time": "20:00", "title": "Wejście na scenę"},
+        ])
+        bounds = plan_bounds(points, window, {}, include_travellers_only=True)
+        assert bounds is not None
+        self.assertFalse(bounds.opens_before_call)
+        # A point at the downbeat's minute does not end the plan after it.
+        self.assertIsNone(bounds.last)
 
     def test_a_call_that_cannot_be_stated_does_not_bound_the_plan(self) -> None:
         """A call typed on the wrong date, or after the downbeat, is a fault the
@@ -7526,7 +7903,7 @@ class TripPlanDomainTests(SimpleTestCase):
             with self.subTest(problem=problem):
                 window = resolve_call_window(call, concert, self.WARSAW)
                 self.assertIs(window.problem, problem)
-                bounds = plan_bounds([], window, [], include_travellers_only=True)
+                bounds = plan_bounds([], window, {}, include_travellers_only=True)
                 assert bounds is not None
                 self.assertEqual(bounds.start, concert)
                 self.assertIsNone(bounds.end)

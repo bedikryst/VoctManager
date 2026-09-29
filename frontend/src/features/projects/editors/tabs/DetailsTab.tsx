@@ -1,7 +1,8 @@
 /**
  * @file DetailsTab.tsx
- * @description Creation and editing of base project metadata and the concert-day
- * plan. Defers API sync via dirty-state tracking surfaced through the shared
+ * @description Creation and editing of base project metadata and the plan —
+ * one concert day, or a trip whose points and windows sit on the days around
+ * it. Defers API sync via dirty-state tracking surfaced through the shared
  * `EditorActionBar`.
  * Four sections, by the job each does rather than by field type: what the
  * concert IS (identity, time, venue, conductor), what the DAY looks like (the
@@ -40,13 +41,18 @@ import {
 import { useDetailsForm } from "../hooks/useDetailsForm";
 import { useProjectArtistsDictionary } from "../../api/project.queries";
 import {
+  PLAN_DAY_OFFSETS,
   buildDayTimeline,
   getCallOffsetMinutes,
+  hasTravellersOnlyPoint,
   isDayWindow,
+  isMultiDayTimeline,
+  readDayOffset,
   readInputDate,
   readInputTime,
   shiftClockTime,
 } from "../../lib/dayTimeline";
+import { usePlanDayLabel } from "../../hooks/usePlanDayLabel";
 import { getEventMomentPresentation } from "../../lib/projectPresentation";
 import { TimezoneField } from "../../components/TimezoneField";
 import { DayTimeline } from "./components/DayTimeline";
@@ -69,6 +75,25 @@ import { Caption, Eyebrow } from "@/shared/ui/primitives/typography";
 const CONCERT_DEFAULT_TIME = "19:00";
 /** How long before the downbeat a call is usually called, when none is set. */
 const DEFAULT_CALL_OFFSET_MINUTES = -60;
+
+/** The form keys of one typed window — its two hours and its day. */
+interface WindowKeys {
+  readonly start: "warmup_start" | "soundcheck_start";
+  readonly end: "warmup_end" | "soundcheck_end";
+  readonly day: "warmup_day" | "soundcheck_day";
+}
+
+const WARMUP_KEYS: WindowKeys = {
+  start: "warmup_start",
+  end: "warmup_end",
+  day: "warmup_day",
+};
+
+const SOUNDCHECK_KEYS: WindowKeys = {
+  start: "soundcheck_start",
+  end: "soundcheck_end",
+  day: "soundcheck_day",
+};
 
 interface DetailsTabProps {
   project: Project | null;
@@ -173,8 +198,10 @@ export const DetailsTab = ({
         concertTime: formData.date_time,
         warmupStart: formData.warmup_start,
         warmupEnd: formData.warmup_end,
+        warmupDay: formData.warmup_day,
         soundcheckStart: formData.soundcheck_start,
         soundcheckEnd: formData.soundcheck_end,
+        soundcheckDay: formData.soundcheck_day,
       }),
     [
       runSheet,
@@ -182,8 +209,10 @@ export const DetailsTab = ({
       formData.date_time,
       formData.warmup_start,
       formData.warmup_end,
+      formData.warmup_day,
       formData.soundcheck_start,
       formData.soundcheck_end,
+      formData.soundcheck_day,
     ],
   );
 
@@ -193,6 +222,83 @@ export const DetailsTab = ({
   const hasDayPlan = timelineEntries.some(
     (entry) => entry.kind === "point" || isDayWindow(entry),
   );
+
+  // No switch for a trip: a plan reaching past concert day is one, the call
+  // included, and the section is titled for what it now holds.
+  const isTripPlan = isMultiDayTimeline(timelineEntries);
+  const showsCallScope = isTripPlan || hasTravellersOnlyPoint(runSheet);
+
+  const dayLabel = usePlanDayLabel(formData.date_time);
+  const eventDayLabel = t("projects.plan_day.event_day", "Dzień wydarzenia");
+
+  // Dates rather than offsets: a producer planning a trip thinks "Saturday",
+  // not "minus one". Concert day is the empty value — every row and window
+  // stored before trips existed already means it — and its option is marked
+  // with what happens that day.
+  const dayOptions = useMemo<SelectOption[]>(() => {
+    const hasConcertDate = readInputDate(formData.date_time) !== null;
+    const moment = getEventMomentPresentation(formData.event_kind);
+
+    return PLAN_DAY_OFFSETS.map((offset) => ({
+      value: String(offset),
+      label:
+        offset === 0 && hasConcertDate
+          ? t("projects.plan_day.event_day_option", "{{date}} · {{event}}", {
+              date: dayLabel(0),
+              event: t(moment.labelKey, moment.fallbackLabel),
+            })
+          : dayLabel(offset),
+    }));
+  }, [dayLabel, formData.date_time, formData.event_kind, t]);
+
+  /**
+   * One typed window: its two hours and the day they fall on. A window with
+   * no beginning is not a window, so clearing the start takes the end and the
+   * day with it rather than leaving values the API would refuse or keep for
+   * nothing.
+   */
+  const renderWindowFields = (
+    keys: WindowKeys,
+    labels: { readonly start: string; readonly end: string; readonly day: string },
+  ): React.JSX.Element => {
+    const day = formData[keys.day];
+
+    return (
+      <div className="grid grid-cols-2 gap-5 sm:grid-cols-3">
+        <TimeField
+          label={labels.start}
+          value={formData[keys.start]}
+          onChange={(start) =>
+            setFormData({
+              ...formData,
+              [keys.start]: start,
+              [keys.end]: start ? formData[keys.end] : "",
+              [keys.day]: start ? day : 0,
+            })
+          }
+        />
+        <TimeField
+          label={labels.end}
+          value={formData[keys.end]}
+          disabled={!formData[keys.start]}
+          onChange={(end) => setFormData({ ...formData, [keys.end]: end })}
+        />
+        <div className="col-span-2 sm:col-span-1">
+          <Select
+            label={t("projects.details_tab.fields.window_day", "Dzień")}
+            ariaLabel={labels.day}
+            value={day === 0 ? "" : String(day)}
+            onValueChange={(value) =>
+              setFormData({ ...formData, [keys.day]: readDayOffset(Number(value)) })
+            }
+            options={dayOptions}
+            placeholder={eventDayLabel}
+            disabled={!formData[keys.start]}
+          />
+        </div>
+      </div>
+    );
+  };
 
   const callOffsetMinutes = getCallOffsetMinutes(
     formData.call_time,
@@ -496,7 +602,11 @@ export const DetailsTab = ({
           <SectionCard
             as="h2"
             icon={<ListOrdered size={15} aria-hidden="true" />}
-            title={t("projects.details_tab.sections.day_plan", "Plan dnia")}
+            title={
+              isTripPlan
+                ? t("projects.details_tab.sections.trip_plan", "Plan wyjazdu")
+                : t("projects.details_tab.sections.day_plan", "Plan dnia")
+            }
             action={
               <Button
                 type="button"
@@ -552,18 +662,31 @@ export const DetailsTab = ({
                     {callOffsetLabel.text}
                   </Caption>
                 )}
+                {/* On a trip the call is still the on-site call before the
+                    concert, due for everyone. Setting it to the departure
+                    would print a meeting point nobody who joins on site
+                    should go to — the departure is a point with a place. */}
+                {showsCallScope && (
+                  <Caption color="muted" className="ml-1">
+                    {t(
+                      "projects.details_tab.call_time.trip_hint",
+                      "Zbiórka dotyczy wszystkich. Wyjazd wpisz jako punkt planu, z miejscem.",
+                    )}
+                  </Caption>
+                )}
               </div>
 
               {hasDayPlan ? (
                 <DayTimeline
                   entries={timelineEntries}
                   locationOptions={locationOptions}
+                  dayOptions={dayOptions}
+                  dayPlaceholder={eventDayLabel}
+                  dayLabel={dayLabel}
                   onUpdate={handleUpdateRunSheetItem}
                   onCommitOrder={handleCommitRunSheetOrder}
                   onRemove={handleRemoveRunSheetItem}
                   onCreatePlace={setPlaceDraftRowId}
-                  callDate={readInputDate(formData.call_time)}
-                  concertDate={readInputDate(formData.date_time)}
                   eventKind={formData.event_kind}
                 />
               ) : (
@@ -601,63 +724,25 @@ export const DetailsTab = ({
             title={t("projects.details_tab.sections.onsite", "Na miejscu")}
           >
             <div className="flex flex-col gap-5">
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <TimeField
-                  label={t(
-                    "projects.details_tab.fields.warmup_start",
-                    "Rozśpiewanie od",
-                  )}
-                  value={formData.warmup_start}
-                  onChange={(warmup_start) =>
-                    setFormData({
-                      ...formData,
-                      warmup_start,
-                      // A window with no beginning is not a window; clearing
-                      // the start takes its end with it rather than leaving an
-                      // hour the API would refuse on save.
-                      warmup_end: warmup_start ? formData.warmup_end : "",
-                    })
-                  }
-                />
-                <TimeField
-                  label={t(
-                    "projects.details_tab.fields.warmup_end",
-                    "Rozśpiewanie do",
-                  )}
-                  value={formData.warmup_end}
-                  disabled={!formData.warmup_start}
-                  onChange={(warmup_end) =>
-                    setFormData({ ...formData, warmup_end })
-                  }
-                />
-                <TimeField
-                  label={t(
-                    "projects.details_tab.fields.soundcheck_start",
-                    "Próba akustyczna od",
-                  )}
-                  value={formData.soundcheck_start}
-                  onChange={(soundcheck_start) =>
-                    setFormData({
-                      ...formData,
-                      soundcheck_start,
-                      soundcheck_end: soundcheck_start
-                        ? formData.soundcheck_end
-                        : "",
-                    })
-                  }
-                />
-                <TimeField
-                  label={t(
-                    "projects.details_tab.fields.soundcheck_end",
-                    "Próba akustyczna do",
-                  )}
-                  value={formData.soundcheck_end}
-                  disabled={!formData.soundcheck_start}
-                  onChange={(soundcheck_end) =>
-                    setFormData({ ...formData, soundcheck_end })
-                  }
-                />
-              </div>
+              {renderWindowFields(WARMUP_KEYS, {
+                start: t("projects.details_tab.fields.warmup_start", "Rozśpiewanie od"),
+                end: t("projects.details_tab.fields.warmup_end", "Rozśpiewanie do"),
+                day: t("projects.details_tab.fields.warmup_day", "Dzień rozśpiewania"),
+              })}
+              {renderWindowFields(SOUNDCHECK_KEYS, {
+                start: t(
+                  "projects.details_tab.fields.soundcheck_start",
+                  "Próba akustyczna od",
+                ),
+                end: t(
+                  "projects.details_tab.fields.soundcheck_end",
+                  "Próba akustyczna do",
+                ),
+                day: t(
+                  "projects.details_tab.fields.soundcheck_day",
+                  "Dzień próby akustycznej",
+                ),
+              })}
 
               <div className="flex flex-col gap-5 border-t border-hairline pt-5">
                 <Input

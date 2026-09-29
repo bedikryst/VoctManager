@@ -1,13 +1,19 @@
 /**
  * @file dayTimeline.ts
- * @description Concert-day arithmetic for the run sheet: it merges the fixed
- * moments a producer plans around — the call time, the downbeat, and the two
- * typed windows (warm-up, sound check) — with the editable points between them
- * into one chronological list.
- * The run sheet stores bare `HH:mm`, so the concert day is its implicit frame;
- * an anchor that falls on another day therefore carries a day offset and is
- * placed by it. Ordering is the only warning this needs: a point that lands
- * before the call or after the downbeat simply renders outside the anchors.
+ * @description Plan arithmetic for the run sheet: it merges the fixed moments a
+ * producer plans around — the call time, the downbeat, and the two typed
+ * windows (warm-up, sound check) — with the editable points between them into
+ * one chronological list.
+ * Concert day is the frame. A point stores a bare `HH:mm` on the day its `day`
+ * offset names, a window on the day its `*_day` column names, and an anchor
+ * carries a real date and is placed by its distance from the concert's — so a
+ * trip's departure the day before opens the list. Ordering is the only warning
+ * this needs: a point that lands before the call or after the downbeat simply
+ * renders outside the anchors.
+ * The order is `point_sort_key` and the merge is `build_day_timeline`, both in
+ * `roster/domain/day_timeline.py`; `day_timeline_cases.json` is replayed by
+ * both suites, so the panel and the printed sheet cannot order a plan
+ * differently without a red test.
  * The windows join this axis rather than opening a second list of hours,
  * because a producer who moves the sound check on top of a run-sheet point can
  * only see the collision on one axis — and the printed sheet already merges
@@ -46,15 +52,21 @@ export interface DayTimelineAnchor {
  */
 export interface DayTimelineWindow {
   readonly kind: DayWindowKind;
-  /** Wall-clock time on concert day — the run sheet's own frame. */
+  /** Wall-clock time on the window's day. */
   readonly time: string;
   /** Closing hour where one is set; an open window is the normal case. */
   readonly endTime: string | null;
+  /** Days from the concert day — the acoustic rehearsal of a trip is often
+   *  the evening before. */
+  readonly dayOffset: number;
 }
 
 export interface DayTimelinePoint {
   readonly kind: "point";
   readonly item: RunSheetItem;
+  /** The row's `day`, read the way the backend reads it: concert day for
+   *  anything that is not a whole offset in range. */
+  readonly dayOffset: number;
 }
 
 /** Anything placed on the day by a field rather than typed into the list. */
@@ -143,27 +155,16 @@ const parseClockTime = (time: string): number | null => {
   return total < 0 || total >= MINUTES_PER_DAY ? null : total;
 };
 
-/**
- * Chronological order for stored run-sheet rows, for the two places that settle
- * the day rather than display it (load and commit). Compared on the parsed
- * minute, never on the string: lexically `"9:00"` follows `"12:00"`. An
- * unreadable time sorts last, keeping its input order behind a stable sort.
- */
-export const compareRunSheetTimes = (left: string, right: string): number => {
-  const leftMinutes = parseClockTime(left);
-  const rightMinutes = parseClockTime(right);
-
-  if (leftMinutes === null || rightMinutes === null) {
-    return Number(leftMinutes === null) - Number(rightMinutes === null);
-  }
-
-  return leftMinutes - rightMinutes;
-};
-
 /** The days a plan may reach, counted from concert day. Mirrors
  *  `MIN_DAY_OFFSET` / `MAX_DAY_OFFSET` in `roster/domain/day_timeline.py`. */
 export const MIN_DAY_OFFSET = -3;
 export const MAX_DAY_OFFSET = 3;
+
+/** Every day a plan may reach, in order — the day select's options. */
+export const PLAN_DAY_OFFSETS: readonly number[] = Array.from(
+  { length: MAX_DAY_OFFSET - MIN_DAY_OFFSET + 1 },
+  (_, index) => MIN_DAY_OFFSET + index,
+);
 
 /**
  * A row's day of the plan when it is off concert day, `undefined` otherwise.
@@ -179,6 +180,47 @@ export const readRunSheetDay = (value: unknown): number | undefined =>
   value <= MAX_DAY_OFFSET
     ? value
     : undefined;
+
+/**
+ * A stored day of the plan — a row's `day` or a window's `*_day` — or concert
+ * day for anything that is not one. The same reading as `_read_day_offset`
+ * on the backend: a reader never errors on old JSON, it degrades.
+ */
+export const readDayOffset = (value: unknown): number =>
+  readRunSheetDay(value) ?? 0;
+
+/**
+ * Chronological order for run-sheet rows, for the two places that settle the
+ * plan rather than display it (load and commit): the day first, then the
+ * parsed minute — never the string, since lexically `"9:00"` follows
+ * `"12:00"`. An unreadable time sorts last within its own day, not after the
+ * whole trip, and keeps its input order behind a stable sort. This is
+ * `point_sort_key` on the backend; the edited plan and the printed one agree
+ * only while the two rules do.
+ */
+export const compareRunSheetItems = (
+  left: Pick<RunSheetItem, "day" | "time">,
+  right: Pick<RunSheetItem, "day" | "time">,
+): number => {
+  const dayDelta = readDayOffset(left.day) - readDayOffset(right.day);
+
+  if (dayDelta !== 0) {
+    return dayDelta;
+  }
+
+  const leftMinutes = parseClockTime(left.time || "");
+  const rightMinutes = parseClockTime(right.time || "");
+
+  if (leftMinutes === null || rightMinutes === null) {
+    return Number(leftMinutes === null) - Number(rightMinutes === null);
+  }
+
+  return leftMinutes - rightMinutes;
+};
+
+export const sortRunSheet = <T extends Pick<RunSheetItem, "day" | "time">>(
+  items: readonly T[],
+): T[] => [...items].sort(compareRunSheetItems);
 
 /** The `HH:mm` half of a `datetime-local` value, or null when it is incomplete. */
 export const readInputTime = (value?: string | null): string | null =>
@@ -217,43 +259,6 @@ export const getCallOffsetMinutes = (
 };
 
 /**
- * A fresh point lands after the day as planned so far, so adding several in a
- * row builds a sequence instead of a stack of identical times. With nothing
- * planned yet the two anchors seed it, in the order a day is actually built.
- */
-export const suggestRunSheetTime = ({
-  runSheet,
-  callTime,
-  concertTime,
-}: {
-  readonly runSheet: readonly RunSheetItem[];
-  readonly callTime?: string | null;
-  readonly concertTime?: string | null;
-}): string => {
-  const latest = runSheet.reduce<string>(
-    (accumulator, item) =>
-      item.time && item.time > accumulator ? item.time : accumulator,
-    "",
-  );
-
-  if (latest) {
-    return shiftClockTime(latest, 30);
-  }
-
-  const call = readInputTime(callTime);
-  if (call) {
-    return shiftClockTime(call, 15);
-  }
-
-  const concert = readInputTime(concertTime);
-  if (concert) {
-    return shiftClockTime(concert, -60);
-  }
-
-  return "12:00";
-};
-
-/**
  * Where a fixture goes when it shares a minute with a typed point. The call
  * opens the day, so it precedes one; the downbeat closes it. A window sits
  * between the two, which is what the printed sheet does — there the windows are
@@ -267,12 +272,10 @@ const FIXTURE_NUDGE: Record<DayFixtureKind, number> = {
   concert: 0.5,
 };
 
-/**
- * A window is a wall-clock time on concert day — the same frame the run sheet
- * uses — so it has no offset to carry; only an anchor can sit on another date.
- */
+/** Minutes from the start of concert day, so every day of a plan shares one
+ *  axis: the evening before is negative, the morning after past 1440. */
 const fixtureSortKey = (fixture: DayTimelineFixture): number =>
-  (isDayWindow(fixture) ? 0 : fixture.dayOffset) * MINUTES_PER_DAY +
+  fixture.dayOffset * MINUTES_PER_DAY +
   (parseClockTime(fixture.time) ?? 0) +
   FIXTURE_NUDGE[fixture.kind];
 
@@ -324,10 +327,71 @@ const buildWindow = (
   kind: DayWindowKind,
   start: string | null | undefined,
   end: string | null | undefined,
+  day: unknown,
 ): DayTimelineWindow | null => {
   const time = readWallClock(start);
 
-  return time === null ? null : { kind, time, endTime: readWallClock(end) };
+  return time === null
+    ? null
+    : { kind, time, endTime: readWallClock(end), dayOffset: readDayOffset(day) };
+};
+
+/** Where a new run-sheet point starts: a day of the plan and a clock on it. */
+export interface RunSheetMoment {
+  readonly day: number;
+  readonly time: string;
+}
+
+const clampDayOffset = (dayOffset: number): number =>
+  Math.min(Math.max(dayOffset, MIN_DAY_OFFSET), MAX_DAY_OFFSET);
+
+/**
+ * A fresh point lands after the plan as it stands, on the day of its latest
+ * point, so adding several in a row builds a sequence instead of a stack of
+ * identical times — and a trip's evening is filled in without re-picking the
+ * day on every row. With nothing planned yet the two anchors seed it, in the
+ * order a day is actually built.
+ */
+export const suggestRunSheetMoment = ({
+  runSheet,
+  callTime,
+  concertTime,
+}: {
+  readonly runSheet: readonly RunSheetItem[];
+  readonly callTime?: string | null;
+  readonly concertTime?: string | null;
+}): RunSheetMoment => {
+  const latest = runSheet.reduce<RunSheetItem | null>(
+    (accumulator, item) =>
+      parseClockTime(item.time || "") !== null &&
+      (accumulator === null || compareRunSheetItems(item, accumulator) > 0)
+        ? item
+        : accumulator,
+    null,
+  );
+
+  if (latest) {
+    return {
+      day: readDayOffset(latest.day),
+      time: shiftClockTime(latest.time, 30),
+    };
+  }
+
+  const concertDayIndex = parseLocalInput(concertTime)?.dayIndex ?? null;
+  const call = buildAnchor("call", callTime, concertDayIndex);
+  if (call) {
+    return {
+      day: clampDayOffset(call.dayOffset),
+      time: shiftClockTime(call.time, 15),
+    };
+  }
+
+  const concert = readInputTime(concertTime);
+  if (concert) {
+    return { day: 0, time: shiftClockTime(concert, -60) };
+  }
+
+  return { day: 0, time: "12:00" };
 };
 
 export interface DayTimelineInput {
@@ -336,15 +400,18 @@ export interface DayTimelineInput {
   readonly concertTime?: string | null;
   readonly warmupStart?: string | null;
   readonly warmupEnd?: string | null;
+  /** The warm-up's day counted from concert day; absent is concert day. */
+  readonly warmupDay?: number | null;
   readonly soundcheckStart?: string | null;
   readonly soundcheckEnd?: string | null;
+  readonly soundcheckDay?: number | null;
 }
 
 /**
  * Merges the fixtures INTO the run sheet without reordering it. The points
  * arrive in the order the caller settled on (see `useDetailsForm`, which sorts
  * on commit rather than on keystroke, so a half-typed time cannot yank the row
- * being edited to the top of the day; stored days are sorted by
+ * being edited to the top of the day; stored plans are sorted by
  * `buildProjectDayTimeline`).
  */
 export const buildDayTimeline = ({
@@ -353,8 +420,10 @@ export const buildDayTimeline = ({
   concertTime,
   warmupStart,
   warmupEnd,
+  warmupDay,
   soundcheckStart,
   soundcheckEnd,
+  soundcheckDay,
 }: DayTimelineInput): DayTimelineEntry[] => {
   const concertDayIndex = parseLocalInput(concertTime)?.dayIndex ?? null;
 
@@ -362,37 +431,110 @@ export const buildDayTimeline = ({
   // sort is what makes that order the tie-break.
   const fixtures = [
     buildAnchor("call", callTime, concertDayIndex),
-    buildWindow("warmup", warmupStart, warmupEnd),
-    buildWindow("soundcheck", soundcheckStart, soundcheckEnd),
+    buildWindow("warmup", warmupStart, warmupEnd, warmupDay),
+    buildWindow("soundcheck", soundcheckStart, soundcheckEnd, soundcheckDay),
     buildAnchor("concert", concertTime, concertDayIndex),
   ]
     .filter((fixture): fixture is DayTimelineFixture => fixture !== null)
     .sort((left, right) => fixtureSortKey(left) - fixtureSortKey(right));
 
-  // An unset time inherits its predecessor's position, so a row mid-edit stays
-  // between the same neighbours instead of collapsing to the start of the day.
-  let carried = 0;
-  const pointKeys = runSheet.map((item) => {
-    carried = parseClockTime(item.time) ?? carried;
-    return carried;
+  // An unset or unreadable time inherits its predecessor's position, so a row
+  // mid-edit stays between the same neighbours instead of collapsing to the
+  // start of the day. The position is clamped to the point's own day: every
+  // surface groups the plan under a heading per day, and an entry placed on a
+  // neighbouring day would split its day's group in two. The seed is the start
+  // of the earliest day, so a first point without a time opens its own day.
+  let carried = MIN_DAY_OFFSET * MINUTES_PER_DAY;
+  const points = runSheet.map((item) => {
+    const dayOffset = readDayOffset(item.day);
+    const dayStart = dayOffset * MINUTES_PER_DAY;
+    const minutes = parseClockTime(item.time || "");
+
+    carried =
+      minutes === null
+        ? Math.min(Math.max(carried, dayStart), dayStart + LAST_MINUTE_OF_DAY)
+        : dayStart + minutes;
+
+    return { item, dayOffset, key: carried };
   });
 
   const entries: DayTimelineEntry[] = [];
   let nextFixture = 0;
 
-  runSheet.forEach((item, index) => {
+  points.forEach(({ item, dayOffset, key }) => {
     while (
       nextFixture < fixtures.length &&
-      fixtureSortKey(fixtures[nextFixture]) < pointKeys[index]
+      fixtureSortKey(fixtures[nextFixture]) < key
     ) {
       entries.push(fixtures[nextFixture]);
       nextFixture += 1;
     }
 
-    entries.push({ kind: "point", item });
+    entries.push({ kind: "point", item, dayOffset });
   });
 
   return [...entries, ...fixtures.slice(nextFixture)];
+};
+
+/** One day of a plan, in order, under the heading a multi-day plan gives it. */
+export interface DayTimelineGroup {
+  readonly dayOffset: number;
+  readonly entries: readonly DayTimelineEntry[];
+}
+
+/**
+ * The merged plan cut at every change of day, for the surfaces that head each
+ * day of a trip with its date. Consecutive runs, not a bucket per offset: the
+ * merge clamps every entry to its own day, so a day's run is never split, and
+ * cutting by run keeps the list's own order as the only order.
+ */
+export const groupDayTimeline = (
+  entries: readonly DayTimelineEntry[],
+): DayTimelineGroup[] => {
+  const groups: { dayOffset: number; entries: DayTimelineEntry[] }[] = [];
+
+  entries.forEach((entry) => {
+    const current = groups[groups.length - 1];
+
+    if (current && current.dayOffset === entry.dayOffset) {
+      current.entries.push(entry);
+    } else {
+      groups.push({ dayOffset: entry.dayOffset, entries: [entry] });
+    }
+  });
+
+  return groups;
+};
+
+/**
+ * Whether the plan reaches past concert day — any entry, the call included.
+ * There is no switch for a trip: a plan with a point the evening before is
+ * one, and every surface then titles it a trip and heads each day with its
+ * date. The backend's `is_multi_day` answers the same for the printed sheet.
+ */
+export const isMultiDayTimeline = (
+  entries: readonly DayTimelineEntry[],
+): boolean => entries.some((entry) => entry.dayOffset !== 0);
+
+/** Whether any point of the plan concerns only the travelling party. */
+export const hasTravellersOnlyPoint = (
+  runSheet: readonly RunSheetItem[] | null | undefined,
+): boolean => (runSheet ?? []).some((item) => item.travellers_only === true);
+
+/**
+ * The calendar date a day of the plan falls on, as a `Date` at UTC midnight —
+ * a calendar index to format with `timeZone: "UTC"`, never an instant. Counted
+ * from the concert's own wall-clock date rather than through an instant, which
+ * a DST change or the reader's zone would shift by a day. Null while the
+ * concert has no date.
+ */
+export const planDayDate = (
+  concertTime: string | null | undefined,
+  dayOffset: number,
+): Date | null => {
+  const concert = parseLocalInput(concertTime);
+
+  return concert ? new Date((concert.dayIndex + dayOffset) * MS_PER_DAY) : null;
 };
 
 /**
@@ -422,10 +564,11 @@ export const toWallClockInput = (
 };
 
 /**
- * The stored day, for every surface that displays rather than edits it. Mirrors
- * what the printed sheet does in two steps: the run sheet is sorted here — a
- * manager who typed the day out of order still reads a clean timeline — and the
- * fixtures are merged into it afterwards without reordering anything.
+ * The stored plan, for every surface that displays rather than edits it.
+ * Mirrors what the printed sheet does in two steps: the run sheet is sorted
+ * here — a manager who typed the plan out of order still reads a clean
+ * timeline — and the fixtures are merged into it afterwards without reordering
+ * anything.
  */
 export const buildProjectDayTimeline = (
   project: Pick<
@@ -436,18 +579,20 @@ export const buildProjectDayTimeline = (
     | "timezone"
     | "warmup_start"
     | "warmup_end"
+    | "warmup_day"
     | "soundcheck_start"
     | "soundcheck_end"
+    | "soundcheck_day"
   >,
 ): DayTimelineEntry[] =>
   buildDayTimeline({
-    runSheet: [...(project.run_sheet ?? [])].sort((left, right) =>
-      compareRunSheetTimes(left.time || "", right.time || ""),
-    ),
+    runSheet: sortRunSheet(project.run_sheet ?? []),
     callTime: toWallClockInput(project.call_time, project.timezone),
     concertTime: toWallClockInput(project.date_time, project.timezone),
     warmupStart: project.warmup_start,
     warmupEnd: project.warmup_end,
+    warmupDay: project.warmup_day,
     soundcheckStart: project.soundcheck_start,
     soundcheckEnd: project.soundcheck_end,
+    soundcheckDay: project.soundcheck_day,
   });

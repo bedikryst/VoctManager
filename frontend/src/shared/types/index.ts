@@ -258,15 +258,19 @@ export interface Project extends BaseModel {
   run_sheet?: RunSheetItem[];
   // Day-of logistics. Per concert, not per venue: the same church lends a
   // different door and a different room to different events. The two windows
-  // are wall-clock `HH:MM:SS` on concert day — the same frame the run sheet
-  // uses — and the printed call sheet merges them into that one axis.
+  // are wall-clock `HH:MM:SS` on the day their `*_day` names — counted from
+  // concert day, like a run-sheet point's `day` — and the printed call sheet
+  // merges them into that one axis. The acoustic rehearsal of a trip is often
+  // the evening before, while the warm-up stays on concert day.
   entrance_note?: string | null;
   parking_note?: string | null;
   dressing_room_note?: string | null;
   warmup_start?: string | null;
   warmup_end?: string | null;
+  warmup_day?: number;
   soundcheck_start?: string | null;
   soundcheck_end?: string | null;
+  soundcheck_day?: number;
   onsite_contact_name?: string | null;
   onsite_contact_phone?: string | null;
   program?: ProjectProgramItem[];
@@ -316,6 +320,13 @@ export interface Participation extends BaseModel {
    * endpoint, which sends a whole section at once.
    */
   section_rank?: number | null;
+  /**
+   * Skips the group's travel and comes straight to the venue — a singer who
+   * lives in the concert city. The exception, set by the manager: every
+   * travellers-only point of the plan stays visible to them, muted. Has no
+   * effect while the plan has no such point.
+   */
+  joins_on_site?: boolean;
   artist_name?: string;
   project_name?: string;
   /** Raw code, for rules; the display beside it is for reading. */

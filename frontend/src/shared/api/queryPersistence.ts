@@ -83,8 +83,19 @@ const IDB_KEY = "client";
  * notes (`assessed_*`). A persisted `["artists"]` snapshot from before holds
  * the free-text `vocal_range_bottom/top` instead, and every roster surface
  * would show no assessment until the refetch.
+ *
+ * 2026-09-trip-plan: a project carries `warmup_day` / `soundcheck_day`, a
+ * schedule row carries `joins_on_site`. A snapshot from before holds neither,
+ * so a trip's evening-before sound check would read as concert day and a
+ * singer who joins on site would see the departure as their own until the
+ * refetch.
+ *
+ * 2026-09-trip-plan-start: a schedule row carries the reader's `plan_start`
+ * and `calendar_entry`. A snapshot from before holds neither, so a traveller's
+ * card would state the on-site call alone and "Add to calendar" would book the
+ * concert without the departure.
  */
-export const QUERY_CACHE_BUSTER = "2026-09-assessed-range";
+export const QUERY_CACHE_BUSTER = "2026-09-trip-plan-start";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

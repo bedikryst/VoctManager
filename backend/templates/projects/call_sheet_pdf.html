@@ -250,6 +250,19 @@
         .grid tr.anchor td { background: var(--paper-warm); border-bottom-color: var(--rule-strong); }
         .grid tr.anchor .t-time { color: var(--gold-ink); }
         .grid tr.anchor .t-title { color: var(--gold-ink); text-transform: uppercase; letter-spacing: 0.8pt; font-size: 8pt; }
+        /* A trip's plan is grouped by day; the heading carries the date every
+           row under it belongs to. */
+        .grid tr.day-head td {
+            padding: 9pt 6pt 3pt 0; font-size: 7pt; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1.2pt; color: var(--ink-2); border-bottom: 0.5pt solid var(--rule-strong);
+            font-variant-numeric: lining-nums tabular-nums;
+        }
+        .grid tr.day-head:first-child td { padding-top: 2pt; }
+        /* A point for the travelling party is labelled on every sheet; on the
+           sheet of a singer who joins on site it is also muted, never dropped. */
+        .grid .t-tag { font-size: 6.5pt; font-weight: 400; text-transform: uppercase; letter-spacing: 0.8pt; color: var(--ink-4); margin-top: 1pt; }
+        .grid tr.muted-row td, .grid tr.muted-row .t-time, .grid tr.muted-row .t-title { color: var(--ink-4); }
+        .grid tr.muted-row a { color: var(--ink-4); }
 
         /* ── Personal (singer) panel ────────────────────────────────────── */
         .hero-personal {
@@ -395,10 +408,12 @@
         {% endif %}
 
         {% comment %}
-            The band is derived from the day timeline, not from four fields
-            formatted apart from each other: the closing cell is the last point
-            the run sheet actually plans, so the masthead cannot state a day the
-            timeline below it contradicts.
+            The band is derived from the reader's plan, not from fields
+            formatted apart from each other: the "plan starts" cell (only when
+            the reader is due before the call) and the closing cell are the
+            plan's own first and last moments, the same ones the calendar entry
+            spans, so the masthead cannot state a day the timeline below it
+            contradicts.
         {% endcomment %}
         <div class="factbar">
             {% for fact in masthead_facts %}
@@ -619,22 +634,26 @@
 
     {% if section == "runsheet" %}
     <div class="section">
-        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>{% translate "The day, hour by hour" context "call sheet" %}</h2></div>
+        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>{% if is_multi_day_plan %}{% translate "Trip plan" context "call sheet" %}{% else %}{% translate "The day, hour by hour" context "call sheet" %}{% endif %}</h2></div>
         <div class="card">
             {% if has_run_sheet %}
             {% comment %}
                 One axis: the call and the downbeat are placed among the points
                 rather than printed only in the masthead, so a run sheet that
                 disagrees with the header says so on the page instead of quietly
-                contradicting it.
+                contradicting it. A plan that spans days is grouped under a
+                dated heading per day, which is where every row's day is stated.
             {% endcomment %}
             <table class="grid">
                 <thead><tr><th style="width:52pt;">{% translate "Time" context "call sheet" %}</th><th style="width:150pt;">{% translate "Moment" context "call sheet" %}</th><th>{% translate "Details" context "call sheet" %}</th></tr></thead>
                 <tbody>
                     {% for item in day_timeline %}
-                    <tr{% if item.is_anchor %} class="anchor"{% endif %}>
+                    {% if item.is_day_heading %}
+                    <tr class="day-head"><td colspan="3">{{ item.date_label }}</td></tr>
+                    {% else %}
+                    <tr class="{% if item.is_anchor %}anchor{% endif %}{% if item.is_muted %} muted-row{% endif %}">
                         <td class="t-time">{{ item.time|default:"—" }}</td>
-                        <td class="t-title">{{ item.title }}</td>
+                        <td class="t-title">{{ item.title }}{% if item.travellers_only %}<div class="t-tag">{% translate "for the travelling party" context "call sheet" %}</div>{% endif %}</td>
                         {% comment %}
                             The venue leads the cell and breaks its own line: it is
                             set only on a point that sends the reader somewhere OTHER
@@ -642,8 +661,9 @@
                             it is the fact the row exists for. The note and the
                             description follow on one running line, as before.
                         {% endcomment %}
-                        <td>{% if item.venue_name %}<span style="font-weight:700;">{{ item.venue_name }}</span>{% if item.venue_address %} <span class="muted">{{ item.venue_address }}</span>{% endif %}{% if item.venue_map_url %} · <a href="{{ item.venue_map_url }}">{% translate "map" context "call sheet" %}</a>{% endif %}<br>{% endif %}{% if item.day_note %}<span class="muted">{{ item.day_note }}</span>{% if item.description %} · {% endif %}{% endif %}{% if item.description %}{{ item.description }}{% endif %}</td>
+                        <td>{% if item.venue_name %}<span style="font-weight:700;">{{ item.venue_name }}</span>{% if item.venue_address %} <span class="muted">{{ item.venue_address }}</span>{% endif %}{% if item.venue_map_url %} · <a href="{{ item.venue_map_url }}">{% translate "map" context "call sheet" %}</a>{% endif %}<br>{% endif %}{% if item.description %}{{ item.description }}{% endif %}</td>
                     </tr>
+                    {% endif %}
                     {% endfor %}
                 </tbody>
             </table>

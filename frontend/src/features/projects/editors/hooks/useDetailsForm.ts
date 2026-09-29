@@ -32,9 +32,10 @@ import {
 } from "../../api/project.queries";
 import { PROJECT_EVENT_KIND } from "../../constants/projectDomain";
 import {
-  compareRunSheetTimes,
+  readDayOffset,
   readRunSheetDay,
-  suggestRunSheetTime,
+  sortRunSheet,
+  suggestRunSheetMoment,
   toWallClockInput,
 } from "../../lib/dayTimeline";
 import type {
@@ -54,13 +55,13 @@ export interface UseDetailsFormResult {
   isDirty: boolean;
   isSubmitting: boolean;
   handleAddRunSheetItem: () => void;
-  handleUpdateRunSheetItem: (
-    id: string,
-    field: keyof RunSheetItem,
-    value: string,
-  ) => void;
   /**
-   * Re-sorts the day. Bound to the time field's blur, never to its change: a
+   * Edits one key of one row. A change of `day` re-sorts the plan at once: it
+   * is picked from a list, so it is a commit, not a keystroke.
+   */
+  handleUpdateRunSheetItem: RunSheetItemUpdater;
+  /**
+   * Re-sorts the plan. Bound to the time field's blur, never to its change: a
    * half-typed hour is a valid time (typing 19 passes through 01), so sorting
    * per keystroke threw the row being edited across the list under the cursor.
    */
@@ -68,6 +69,13 @@ export interface UseDetailsFormResult {
   handleRemoveRunSheetItem: (id: string) => void;
   handleSubmit: (event: FormEvent) => Promise<void>;
 }
+
+/** Edits one key of one run-sheet row, with a value of that key's own type. */
+export type RunSheetItemUpdater = <K extends keyof RunSheetItem>(
+  id: string,
+  field: K,
+  value: RunSheetItem[K],
+) => void;
 
 const normalizeRunSheetItem = (
   item: RunSheetItem,
@@ -81,18 +89,17 @@ const normalizeRunSheetItem = (
   // Empty means the event's own venue, so the cleared picker stores "" rather
   // than dropping the key — the two have to look the same to the dirty check.
   location_id: typeof item.location_id === "string" ? item.location_id : "",
+  // Read as the backend reads them, so a stray stored value the API would
+  // refuse on save is corrected here rather than rejected there.
+  day: readRunSheetDay(item.day),
+  travellers_only: item.travellers_only === true,
 });
-
-const sortRunSheetByTime = (items: readonly RunSheetItem[]): RunSheetItem[] =>
-  [...items].sort((left, right) =>
-    compareRunSheetTimes(left.time || "", right.time || ""),
-  );
 
 const toComparableRunSheet = (
   items: readonly RunSheetItem[] | null | undefined,
 ): string =>
   JSON.stringify(
-    sortRunSheetByTime(items ?? []).map((item) => ({
+    sortRunSheet(items ?? []).map((item) => ({
       time: item.time || "",
       title: item.title || "",
       description: item.description || "",
@@ -107,7 +114,7 @@ const normalizeRunSheet = (
 ): RunSheetItem[] => {
   const stamp = Date.now();
 
-  return sortRunSheetByTime(
+  return sortRunSheet(
     (items ?? []).map((item, index) =>
       normalizeRunSheetItem(item, `runsheet-init-${index}-${stamp}`),
     ),
@@ -172,8 +179,10 @@ const toFormData = (source: Project | null | undefined): ProjectFormData => ({
   dressing_room_note: source?.dressing_room_note || "",
   warmup_start: toClockInput(source?.warmup_start),
   warmup_end: toClockInput(source?.warmup_end),
+  warmup_day: readDayOffset(source?.warmup_day),
   soundcheck_start: toClockInput(source?.soundcheck_start),
   soundcheck_end: toClockInput(source?.soundcheck_end),
+  soundcheck_day: readDayOffset(source?.soundcheck_day),
   onsite_contact_name: source?.onsite_contact_name || "",
   onsite_contact_phone: source?.onsite_contact_phone || "",
 });
@@ -251,37 +260,43 @@ export const useDetailsForm = (
   }, [isDirty, onDirtyStateChange]);
 
   const handleAddRunSheetItem = useCallback((): void => {
-    setRunSheet((previous) =>
-      sortRunSheetByTime([
+    setRunSheet((previous) => {
+      const { day, time } = suggestRunSheetMoment({
+        runSheet: previous,
+        callTime: formData.call_time,
+        concertTime: formData.date_time,
+      });
+
+      return sortRunSheet([
         ...previous,
         {
           id: `temp-${Date.now()}`,
-          time: suggestRunSheetTime({
-            runSheet: previous,
-            callTime: formData.call_time,
-            concertTime: formData.date_time,
-          }),
+          time,
           title: "",
           description: "",
           location_id: "",
+          day: readRunSheetDay(day),
+          travellers_only: false,
         },
-      ]),
-    );
+      ]);
+    });
   }, [formData.call_time, formData.date_time]);
 
   const handleCommitRunSheetOrder = useCallback((): void => {
-    setRunSheet((previous) => sortRunSheetByTime(previous));
+    setRunSheet((previous) => sortRunSheet(previous));
   }, []);
 
-  const handleUpdateRunSheetItem = useCallback(
-    (id: string, field: keyof RunSheetItem, value: string): void => {
-      setRunSheet((previous) =>
-        previous.map((item) =>
+  const handleUpdateRunSheetItem = useCallback<RunSheetItemUpdater>(
+    (id, field, value) => {
+      setRunSheet((previous) => {
+        const updated = previous.map((item) =>
           String(item.id) === id
             ? normalizeRunSheetItem({ ...item, [field]: value }, String(item.id))
             : item,
-        ),
-      );
+        );
+
+        return field === "day" ? sortRunSheet(updated) : updated;
+      });
     },
     [],
   );
@@ -332,7 +347,7 @@ export const useDetailsForm = (
       // Rebuilt key by key rather than spread: the row also carries a client-side
       // id the stored JSON has no use for. Anything a row is meant to keep has to
       // be listed HERE or it is dropped on save without a word.
-      const sanitizedRunSheet = sortRunSheetByTime(runSheet).map((item) => {
+      const sanitizedRunSheet = sortRunSheet(runSheet).map((item) => {
         const day = readRunSheetDay(item.day);
         return {
           time: item.time || "",
@@ -383,8 +398,10 @@ export const useDetailsForm = (
         // closing hour it cannot check against a start it was not sent.
         warmup_start: toClockPayload(formData.warmup_start),
         warmup_end: toClockPayload(formData.warmup_end),
+        warmup_day: formData.warmup_day,
         soundcheck_start: toClockPayload(formData.soundcheck_start),
         soundcheck_end: toClockPayload(formData.soundcheck_end),
+        soundcheck_day: formData.soundcheck_day,
         onsite_contact_name: formData.onsite_contact_name || "",
         onsite_contact_phone: formData.onsite_contact_phone || "",
       };

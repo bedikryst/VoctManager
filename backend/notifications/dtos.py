@@ -107,6 +107,15 @@ class ProjectInvitationMetadata(EnterpriseBaseDTO):
     # say "be there at 18:00" without overwriting when the concert itself starts.
     call_time_at: str = ""
     call_time_display: str = ""
+    # Where the reader's plan starts when that is before the call: a trip's
+    # departure the day before, or for a singer who joins on site the evening
+    # sound check. A concert that means a night away is a different yes, so the
+    # invitation states it. Empty on a one-day concert. A point travels with its
+    # title, a typed window as its key, named by the composer.
+    plan_starts_at: str = ""
+    plan_start_title: str = ""
+    plan_start_window: str = ""
+    plan_start_place: str = ""
     dress_code: str = ""
     rehearsals: tuple[InvitationRehearsalMetadata, ...] = ()
     # Programme as ordered piece titles — names, not prose, so the list renders

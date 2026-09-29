@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import zoneinfo
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, tzinfo
 from enum import StrEnum
@@ -153,16 +153,54 @@ class DayWindow:
 
 
 @dataclass(frozen=True)
-class PlanBounds:
-    """The instants a plan occupies, in the project's zone.
+class PlanMoment:
+    """One dated moment of the plan and what it is, so a surface that states
+    the moment can also say what happens then.
 
-    ``end`` is ``None`` when nothing is planned after the downbeat: the end of a
-    concert is not stored anywhere, and a caller that needs one supplies its own
-    stated fallback rather than this module inventing an hour.
+    ``point`` is set when a run-sheet point is the moment, and ``window`` names
+    a typed window by its key in ``Project.day_windows()``; each surface names
+    a window in its own words, which is why the key travels and not a title.
+    Neither set means one of the two anchors, the call or the downbeat.
     """
 
-    start: datetime
-    end: datetime | None
+    at: datetime
+    day_offset: int
+    point: RunSheetPoint | None = None
+    window: str = ''
+
+    @property
+    def is_anchor(self) -> bool:
+        return self.point is None and not self.window
+
+
+@dataclass(frozen=True)
+class PlanBounds:
+    """The first and the last moment of a plan, in the project's zone.
+
+    ``last`` is ``None`` when nothing is planned after the downbeat: the end of
+    a concert is not stored anywhere, and a caller that needs one supplies its
+    own stated fallback rather than this module inventing an hour.
+    """
+
+    first: PlanMoment
+    last: PlanMoment | None
+
+    @property
+    def start(self) -> datetime:
+        return self.first.at
+
+    @property
+    def end(self) -> datetime | None:
+        return self.last.at if self.last is not None else None
+
+    @property
+    def opens_before_call(self) -> bool:
+        """Whether the reader is due somewhere before the call: the departure
+        for a traveller, the acoustic rehearsal the evening before for a singer
+        who joins on site. An anchor wins a tie, so with a stated call this is
+        strictly earlier. A surface that shows only the call would otherwise
+        let a traveller conclude they may arrive on concert day."""
+        return not self.first.is_anchor
 
 
 @dataclass(frozen=True)
@@ -470,22 +508,11 @@ def build_day_timeline(
     return entries
 
 
-def plan_end(entries: Sequence[TimelineEntry]) -> TimelineEntry | None:
-    """The last planned moment when the plan runs past the downbeat.
-
-    Only a run-sheet point can answer this: the end of a concert is not stored
-    anywhere, and deriving it from summed piece durations would print a
-    fabricated hour as a fact. When nothing is planned after the downbeat there
-    is no end to state, and the caller shows one cell fewer. The entry's
-    ``day_offset`` says whether that moment is on concert day, and a caller
-    that prints the hour prints the day with it when it is not.
-    """
-    if not entries:
-        return None
-    last = entries[-1]
-    if last.kind is not TimelineEntryKind.POINT:
-        return None
-    return last if parse_clock_minutes(last.time) is not None else None
+def is_multi_day(entries: Sequence[TimelineEntry]) -> bool:
+    """Whether the plan reaches past concert day — any entry, the call
+    included. There is no switch for a trip: a plan with a point the evening
+    before is one, and every surface then groups it under a heading per day."""
+    return any(entry.day_offset != 0 for entry in entries)
 
 
 def _instant_on_day(
@@ -499,12 +526,12 @@ def _instant_on_day(
 def plan_bounds(
     points: Sequence[RunSheetPoint],
     window: CallWindow,
-    day_windows: Sequence[DayWindow],
+    day_windows: Mapping[str, DayWindow],
     *,
     include_travellers_only: bool,
 ) -> PlanBounds | None:
-    """The first instant of the plan and its last planned instant after the
-    downbeat, for one reader.
+    """The first moment of the plan and its last planned moment after the
+    downbeat, for one reader. ``day_windows`` is ``Project.day_windows()``.
 
     ``include_travellers_only=False`` is a singer who joins on site: the
     departure, the journey and the hotel are not theirs, so their plan starts
@@ -517,8 +544,10 @@ def plan_bounds(
     Every wall-clock value is placed in the zone the downbeat was localized
     in, so the plan cannot be counted in one zone and dated in another. A
     point without a readable time has no instant and is skipped; it cannot
-    open or close the plan. ``None`` only when there is no downbeat to count
-    the days from.
+    open or close the plan. The anchors come first among the candidates, so
+    a point sharing the call's minute leaves the call opening the plan and a
+    point at the downbeat's minute does not end it. ``None`` only when there
+    is no downbeat to count the days from.
     """
     concert = window.event_local
     if concert is None:
@@ -526,18 +555,26 @@ def plan_bounds(
     zone = concert.tzinfo
     concert_date = concert.date()
 
-    instants: list[datetime] = [concert]
+    moments: list[PlanMoment] = [PlanMoment(at=concert, day_offset=0)]
     if window.is_stated and window.call_local is not None:
-        instants.append(window.call_local)
-    for day_window in day_windows:
+        moments.append(
+            PlanMoment(
+                at=window.call_local,
+                day_offset=(window.call_local.date() - concert_date).days,
+            )
+        )
+    for key, day_window in day_windows.items():
         if day_window.start is None:
             continue
-        instants.append(
-            _instant_on_day(concert_date, day_window.day, day_window.start, zone)
-        )
-        if day_window.end is not None:
-            instants.append(
-                _instant_on_day(concert_date, day_window.day, day_window.end, zone)
+        for clock in (day_window.start, day_window.end):
+            if clock is None:
+                continue
+            moments.append(
+                PlanMoment(
+                    at=_instant_on_day(concert_date, day_window.day, clock, zone),
+                    day_offset=day_window.day,
+                    window=key,
+                )
             )
     for point in points:
         if point.travellers_only and not include_travellers_only:
@@ -546,15 +583,22 @@ def plan_bounds(
         if minutes is None:
             continue
         clock = time(hour=minutes // 60, minute=minutes % 60)
-        instants.append(_instant_on_day(concert_date, point.day, clock, zone))
+        moments.append(
+            PlanMoment(
+                at=_instant_on_day(concert_date, point.day, clock, zone),
+                day_offset=point.day,
+                point=point,
+            )
+        )
 
     # Compared as instants: two wall-clock values in one zone compare by their
-    # face, which is wrong inside the hour a DST change repeats.
-    start = min(instants, key=datetime.timestamp)
-    last = max(instants, key=datetime.timestamp)
+    # face, which is wrong inside the hour a DST change repeats. ``min`` and
+    # ``max`` keep the first of equals, which is what lets the anchors win.
+    first = min(moments, key=lambda moment: moment.at.timestamp())
+    last = max(moments, key=lambda moment: moment.at.timestamp())
     return PlanBounds(
-        start=start,
-        end=last if last.timestamp() > concert.timestamp() else None,
+        first=first,
+        last=last if last.at.timestamp() > concert.timestamp() else None,
     )
 
 
@@ -568,6 +612,7 @@ __all__ = [
     "CallWindowProblem",
     "DayWindow",
     "PlanBounds",
+    "PlanMoment",
     "RunSheetPoint",
     "TimelineEntry",
     "TimelineEntryKind",
@@ -577,11 +622,11 @@ __all__ = [
     "format_day_window",
     "format_time_window",
     "is_day_offset",
+    "is_multi_day",
     "localize",
     "normalize_run_sheet",
     "parse_clock_minutes",
     "plan_bounds",
-    "plan_end",
     "point_sort_key",
     "resolve_call_window",
 ]

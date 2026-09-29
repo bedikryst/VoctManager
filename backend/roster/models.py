@@ -31,11 +31,13 @@ from core.voice_labels import (
     canonical_section_letters,
     section_letters_of_seat,
 )
+from roster.domain import day_timeline
 from roster.domain.day_timeline import (
     MAX_DAY_OFFSET,
     MIN_DAY_OFFSET,
     MINUTES_PER_DAY,
     DayWindow,
+    PlanBounds,
 )
 from roster.domain.liturgy import SLOT_CHOICES
 from roster.domain.rehearsal_plan import evening_is_over
@@ -474,6 +476,33 @@ class Project(EnterpriseBaseModel):
                 day=self.soundcheck_day,
             ),
         }
+
+    def plan_bounds(self, *, include_travellers_only: bool) -> PlanBounds | None:
+        """The first and last moment of this project's plan for one reader,
+        in the project's own zone. ``include_travellers_only=False`` is a seat
+        with ``joins_on_site``; every other reader, the conductor and the
+        managers included, follows the whole plan. The one assembly of the
+        plan's columns for the surfaces that date the plan without printing
+        it (the calendar entry, the reminder)."""
+        return day_timeline.plan_bounds(
+            day_timeline.normalize_run_sheet(self.run_sheet),
+            day_timeline.resolve_call_window(self.call_time, self.date_time, self.timezone),
+            self.day_windows(),
+            include_travellers_only=include_travellers_only,
+        )
+
+    def calendar_span(self, bounds: PlanBounds | None) -> tuple[datetime, datetime]:
+        """The block a calendar entry for this project reserves, for the reader
+        whose plan is ``bounds`` (``self.plan_bounds(...)``): from the first
+        moment they are due at to the plan's last planned one. The end of a
+        concert is stored nowhere, so the entry never closes before the
+        calendar-only reservation after the downbeat. The subscribed feed, the
+        reminder's attachment and the schedule's "Add to calendar" all book
+        this one block, so none of them can reserve a different evening."""
+        reserved_end = self.date_time + timedelta(minutes=FALLBACK_EVENT_DURATION_MINUTES)
+        if bounds is None:
+            return self.date_time, reserved_end
+        return bounds.start, max(bounds.end or reserved_end, reserved_end)
 
 
 class ProgramItem(models.Model):

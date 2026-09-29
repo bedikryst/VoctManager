@@ -10,8 +10,9 @@ export interface CalendarEventInput {
   title: string;
   start: Date;
   /**
-   * Explicit end where the event stores one (a timed rehearsal). Without it the
-   * entry falls back to `fallbackDurationMinutes` — a reservation, not a claim.
+   * Explicit end where one is known: a timed rehearsal's own, or a project's
+   * block as the server resolved it. Without it the entry falls back to
+   * `fallbackDurationMinutes` — a reservation, not a claim.
    */
   end?: Date;
   /**

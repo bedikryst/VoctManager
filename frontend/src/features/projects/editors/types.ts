@@ -33,11 +33,14 @@ export interface ProjectFormData {
   parking_note: string;
   dressing_room_note: string;
   /** `HH:MM` as typed, empty when unset — the payload trims it to a bare hour
-   *  or to `null`; the API stores a wall-clock time on concert day. */
+   *  or to `null`; the API stores a wall-clock time on the window's day. */
   warmup_start: string;
   warmup_end: string;
+  /** The window's day counted from concert day; `0` is concert day. */
+  warmup_day: number;
   soundcheck_start: string;
   soundcheck_end: string;
+  soundcheck_day: number;
   onsite_contact_name: string;
   onsite_contact_phone: string;
 }

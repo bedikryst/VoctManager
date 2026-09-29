@@ -5365,3 +5365,42 @@ msgstr ""
 msgctxt "notification preview sample"
 msgid "Advent Vespers"
 msgstr "Nieszpory adwentowe"
+
+#: roster/models.py
+msgid "Warm-up (day)"
+msgstr "Rozśpiewanie (dzień)"
+
+#: roster/models.py
+msgid "Sound check (day)"
+msgstr "Próba akustyczna (dzień)"
+
+#: roster/models.py
+msgid "Days from concert day: -1 is the day before, 0 is concert day."
+msgstr "Dni od dnia koncertu: -1 to dzień wcześniej, 0 to dzień koncertu."
+
+#: roster/models.py
+msgid "Joins on Site"
+msgstr "Dołącza na miejscu"
+
+#: roster/models.py
+msgid "Skips the points of the plan marked for the travelling party."
+msgstr "Pomija punkty planu oznaczone jako tylko dla jadących."
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Plan starts"
+msgstr "Początek planu"
+
+#: templates/projects/call_sheet_pdf.html
+msgctxt "call sheet"
+msgid "Trip plan"
+msgstr "Plan wyjazdu"
+
+#: templates/projects/call_sheet_pdf.html
+msgctxt "call sheet"
+msgid "for the travelling party"
+msgstr "dla jadących"
+
+#: core/ical_service.py notifications/message_content.py
+msgid "Plan starts"
+msgstr "Początek planu"

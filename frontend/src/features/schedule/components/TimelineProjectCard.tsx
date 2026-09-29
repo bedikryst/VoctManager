@@ -19,7 +19,10 @@ import { BottomSheet } from "@/shared/ui/composites/BottomSheet";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { SpotifyWidget } from "../../projects/ProjectCard/widgets/SpotifyWidget";
-import { buildProjectDayTimeline } from "../../projects/lib/dayTimeline";
+import {
+  buildProjectDayTimeline,
+  toWallClockInput,
+} from "../../projects/lib/dayTimeline";
 import { getEventMomentPresentation } from "../../projects/lib/projectPresentation";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import type { Project, ProgramItem, PieceCasting } from "@/shared/types";
@@ -33,8 +36,13 @@ import { useTimelineProjectCard } from "../hooks/useTimelineProjectCard";
 import { useProjectReadiness } from "../hooks/useProjectReadiness";
 import { ReadinessRing } from "./ReadinessRing";
 import { AddToCalendar } from "./AddToCalendar";
-import { ConcertDayPlan, hasConcertDayPlan } from "./ConcertDayPlan";
+import {
+  ConcertDayPlan,
+  concertDayPlanTitle,
+  hasConcertDayPlan,
+} from "./ConcertDayPlan";
 import { OnSiteFacts, hasOnSiteFacts } from "./OnSiteFacts";
+import { PlanStartChip } from "./PlanStartChip";
 import type { TimelineEvent } from "../types/schedule.dto";
 import { cn } from "@/shared/lib/utils";
 import { onActivate } from "@/shared/lib/dom/a11y";
@@ -106,6 +114,7 @@ export const TimelineProjectCard = ({
   // live there, and a second reading of the same day is how the two diverge.
   const dayEntries = useMemo(() => buildProjectDayTimeline(proj), [proj]);
   const hasDayPlan = hasConcertDayPlan(dayEntries);
+  const dayPlanTitle = concertDayPlanTitle(dayEntries);
 
   // The card's eyebrow and its sheet's subtitle are the same claim about the
   // same evening, so they read from one table — and it is the project's own
@@ -210,6 +219,11 @@ export const TimelineProjectCard = ({
 
             {/* badges row — dress code lives in the expanded Logistics tab */}
             <div className="flex flex-wrap items-center gap-2">
+              <PlanStartChip
+                event={event}
+                project={proj}
+                className="bg-ethereal-incense/30 border-ethereal-incense/50"
+              />
               {proj.call_time && (
                 <DualTimeDisplay
                   value={proj.call_time}
@@ -399,10 +413,7 @@ export const TimelineProjectCard = ({
                     {/* run sheet */}
                     <div>
                       <Eyebrow color="ink-on-inverse" className="mb-3 block">
-                        {t(
-                          "schedule.card.run_sheet_title",
-                          "Harmonogram Dnia",
-                        )}
+                        {t(dayPlanTitle.labelKey, dayPlanTitle.fallbackLabel)}
                       </Eyebrow>
 
                       {/* Score PDF — only shown when the manager has uploaded one */}
@@ -449,6 +460,11 @@ export const TimelineProjectCard = ({
                           entries={dayEntries}
                           eventKind={proj.event_kind}
                           eventLocationId={proj.location?.id ?? null}
+                          concertTime={toWallClockInput(
+                            proj.date_time,
+                            proj.timezone,
+                          )}
+                          joinsOnSite={event.joinsOnSite}
                         />
                       ) : (
                         <Text

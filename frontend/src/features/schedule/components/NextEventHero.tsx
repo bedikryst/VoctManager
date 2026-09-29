@@ -56,8 +56,14 @@ import { PitchPipe } from "@/shared/ui/instruments/PitchPipe";
 import { cn } from "@/shared/lib/utils";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { useNow } from "@/shared/lib/dom/useNow";
-import { resolveImminence } from "@/features/logistics/constants/eventImminence";
-import { buildProjectDayTimeline } from "@/features/projects/lib/dayTimeline";
+import {
+  daysUntil,
+  resolveImminence,
+} from "@/features/logistics/constants/eventImminence";
+import {
+  buildProjectDayTimeline,
+  toWallClockInput,
+} from "@/features/projects/lib/dayTimeline";
 import { getEventMomentPresentation } from "@/features/projects/lib/projectPresentation";
 
 import type { AbsenceRangeControls, TimelineEvent } from "../types/schedule.dto";
@@ -66,8 +72,13 @@ import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
 import { useScheduleProgramItems } from "../api/schedule.queries";
 import { useProjectReadiness } from "../hooks/useProjectReadiness";
 import { AbsenceReportForm } from "./AbsenceReportForm";
-import { ConcertDayPlan, hasConcertDayPlan } from "./ConcertDayPlan";
+import {
+  ConcertDayPlan,
+  concertDayPlanTitle,
+  hasConcertDayPlan,
+} from "./ConcertDayPlan";
 import { OnSiteFacts, hasOnSiteFacts } from "./OnSiteFacts";
+import { PlanStartChip } from "./PlanStartChip";
 import { ReadinessRing } from "./ReadinessRing";
 import { AddToCalendar } from "./AddToCalendar";
 
@@ -190,6 +201,15 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
   const dayEntries = useMemo(() => buildProjectDayTimeline(proj), [proj]);
   const showOnSite = hasOnSiteFacts(proj);
   const showDayPlan = hasConcertDayPlan(dayEntries);
+  const dayPlanTitle = concertDayPlanTitle(dayEntries);
+  // A trip's plan is lived from its first day, not from concert day: the
+  // singer at the departure point on Saturday opens this card then. The
+  // badge above still says when the concert itself is.
+  const todayOffset = -daysUntil(event.date_time, now);
+  const isPlanDay =
+    isConcertDay ||
+    (dayEntries.some((entry) => entry.dayOffset <= todayOffset) &&
+      dayEntries.some((entry) => entry.dayOffset >= todayOffset));
   // Written for this reader by the server — their voice, their casting, in
   // their language. It belongs on the spotlight rather than three taps down in
   // the event sheet, because the morning of the concert is when it is opened.
@@ -255,6 +275,11 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
             primaryTimeClassName="flex items-center gap-1.5 font-medium"
             divider
           />
+          <PlanStartChip
+            event={event}
+            project={proj}
+            className="bg-ethereal-gold/20 border-ethereal-gold/40"
+          />
           {proj.call_time && (
             <DualTimeDisplay
               value={proj.call_time}
@@ -303,14 +328,14 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
         )}
       </div>
 
-      {/* ── concert day: the card opens the day it is about ──────────── */}
-      {isConcertDay && (showOnSite || showDayPlan) && (
+      {/* ── a day of the plan: the card opens the day it is about ─────── */}
+      {isPlanDay && (showOnSite || showDayPlan) && (
         <div className="grid gap-5 border-t border-ethereal-incense/15 bg-surface-inverse/20 p-4 sm:grid-cols-2 sm:p-6">
           {showOnSite && <OnSiteFacts project={proj} />}
           {showDayPlan && (
             <div className="min-w-0">
               <Eyebrow color="ink-on-inverse" className="mb-3 block">
-                {t("schedule.card.run_sheet_title", "Harmonogram Dnia")}
+                {t(dayPlanTitle.labelKey, dayPlanTitle.fallbackLabel)}
               </Eyebrow>
               {/* Capped like the rehearsal programme below: a long day must not
                   push the card's own actions off the screen it is opened on.
@@ -322,6 +347,8 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
                   entries={dayEntries}
                   eventKind={proj.event_kind}
                   eventLocationId={proj.location?.id ?? null}
+                  concertTime={toWallClockInput(proj.date_time, proj.timezone)}
+                  joinsOnSite={event.joinsOnSite}
                 />
               </div>
             </div>

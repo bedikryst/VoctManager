@@ -12,6 +12,9 @@
  * Members the app cannot reach — no address, or an invitation never taken up —
  * carry a quiet chip naming why, and the toolbar counts them: whoever changes
  * this concert's plan has to tell them in person.
+ * On a trip — a plan with a point only the travelling party is due at — a row
+ * can also mark a singer who joins at the venue, and the toolbar counts both
+ * groups.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/CastTab
  */
@@ -22,6 +25,7 @@ import type { TFunction } from "i18next";
 import {
   GripVertical,
   MailX,
+  MapPinHouse,
   Search,
   Star,
   Trash2,
@@ -62,6 +66,7 @@ import { Input } from "@/shared/ui/primitives/Input";
 import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { PROJECT_STATUS } from "../../constants/projectDomain";
+import { hasTravellersOnlyPoint } from "../../lib/dayTimeline";
 import {
   useCastTab,
   type CastBalanceEntry,
@@ -148,6 +153,11 @@ interface CastRowProps {
   readonly seatOptions: readonly SelectOption[];
   readonly onSeatChange: (seat: string) => void;
   readonly onToggleLeader: () => void;
+  /**
+   * Marks a singer who joins at the venue. Absent while the plan has no point
+   * for the travelling party only — the mark would change nothing there.
+   */
+  readonly onToggleOnSite?: () => void;
   readonly onRemove: () => void;
 }
 
@@ -159,6 +169,7 @@ function CastRow({
   seatOptions,
   onSeatChange,
   onToggleLeader,
+  onToggleOnSite,
   onRemove,
 }: CastRowProps): React.JSX.Element {
   const { t } = useTranslation();
@@ -218,6 +229,12 @@ function CastRow({
   const dragLabel = t(
     "projects.cast.order.drag_aria",
     "Przeciągnij, aby zmienić kolejność: {{name}}",
+    { name: entry.displayName },
+  );
+
+  const onSiteLabel = t(
+    "projects.cast.on_site.aria",
+    "Dołącza na miejscu: {{name}}",
     { name: entry.displayName },
   );
 
@@ -372,6 +389,31 @@ function CastRow({
           />
         </button>
 
+        {/* The star's construction for the trip's one exception: a singer who
+            lives in the concert city and meets the group at the venue. Lit, it
+            is the marker; the toolbar says what it means. A decline is not
+            travelling either way, so it cannot be marked. */}
+        {onToggleOnSite && (
+          <button
+            type="button"
+            onClick={onToggleOnSite}
+            disabled={isBusy || isDeclined}
+            aria-pressed={entry.joinsOnSite}
+            title={onSiteLabel}
+            aria-label={onSiteLabel}
+            className={cn(
+              "flex h-7 w-7 shrink-0 items-center justify-center rounded-chip transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+              "pointer-coarse:h-9 pointer-coarse:w-9",
+              entry.joinsOnSite
+                ? "bg-ethereal-gold/10 text-ethereal-gold"
+                : "text-ethereal-graphite/25 hover:bg-ethereal-gold/10 hover:text-ethereal-gold",
+            )}
+          >
+            <MapPinHouse size={14} aria-hidden="true" />
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onRemove}
@@ -440,10 +482,13 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
     castCount,
     poolCount,
     outOfReachCount,
+    travellingCount,
+    onSiteCount,
     castBalance,
     seatOptions,
     setSeat,
     setSectionLeader,
+    setJoinsOnSite,
     moveInSection,
     isSaving,
     searchQuery,
@@ -457,6 +502,9 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
 
   const showAnswerState = project.status !== PROJECT_STATUS.DRAFT;
   const isSearching = searchQuery.trim().length > 0;
+  // A trip is a plan with a point only the travelling party is due at; until
+  // there is one, "joins on site" has nothing to skip and is not offered.
+  const isTrip = hasTravellersOnlyPoint(project.run_sheet);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -538,6 +586,21 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
                     </span>
                   </Caption>
                 )}
+                {/* The two numbers a trip is arranged by — seats and hotel
+                    places, and who meets the group at the venue. In ink, like
+                    the reach line: the producer books against them. */}
+                {isTrip && (
+                  <Caption as="p" color="default" className="flex items-start gap-1.5">
+                    <MapPinHouse size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+                    <span>
+                      {t(
+                        "projects.cast.on_site.counts",
+                        "Jedzie: {{travelling}} · dołącza na miejscu: {{onSite}}",
+                        { travelling: travellingCount, onSite: onSiteCount },
+                      )}
+                    </span>
+                  </Caption>
+                )}
                 {/* Three quiet controls in one sentence, in the order the row
                     reads: what the drag does, what the picker is for, what the
                     star means. None of them names itself on the row. */}
@@ -546,6 +609,11 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
                     "projects.cast.seat.hint",
                     "Kolejność w sekcji ustawiasz przeciąganiem — tak samo czytają ją divisi, śpiewnik i wydruki. Miejsce w składzie to sekcja śpiewaka w tym koncercie i linia, na którą trafi przy automatycznym uzupełnianiu divisi. Gwiazdką oznacz osobę prowadzącą sekcję.",
                   )}
+                  {isTrip &&
+                    ` ${t(
+                      "projects.cast.on_site.hint",
+                      "Pinezką z domem oznacz osobę, która nie jedzie z grupą i dołącza na miejscu — punkty planu tylko dla jadących zobaczy wyszarzone.",
+                    )}`}
                 </Caption>
               </div>
             ) : undefined
@@ -589,6 +657,15 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
                               entry.participationId,
                               !entry.isSectionLeader,
                             )
+                          }
+                          onToggleOnSite={
+                            isTrip
+                              ? () =>
+                                  void setJoinsOnSite(
+                                    entry.participationId,
+                                    !entry.joinsOnSite,
+                                  )
+                              : undefined
                           }
                           onRemove={() =>
                             void removeFromCast(

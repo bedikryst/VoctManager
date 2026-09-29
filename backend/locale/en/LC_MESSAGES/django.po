@@ -3975,3 +3975,42 @@ msgstr ""
 msgctxt "notification preview sample"
 msgid "Advent Vespers"
 msgstr ""
+
+#: roster/models.py
+msgid "Warm-up (day)"
+msgstr ""
+
+#: roster/models.py
+msgid "Sound check (day)"
+msgstr ""
+
+#: roster/models.py
+msgid "Days from concert day: -1 is the day before, 0 is concert day."
+msgstr ""
+
+#: roster/models.py
+msgid "Joins on Site"
+msgstr ""
+
+#: roster/models.py
+msgid "Skips the points of the plan marked for the travelling party."
+msgstr ""
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Plan starts"
+msgstr ""
+
+#: templates/projects/call_sheet_pdf.html
+msgctxt "call sheet"
+msgid "Trip plan"
+msgstr ""
+
+#: templates/projects/call_sheet_pdf.html
+msgctxt "call sheet"
+msgid "for the travelling party"
+msgstr ""
+
+#: core/ical_service.py notifications/message_content.py
+msgid "Plan starts"
+msgstr ""

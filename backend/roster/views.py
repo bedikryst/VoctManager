@@ -139,6 +139,7 @@ from .queries import (
     get_led_materials_projects,
     user_has_live_access_to_piece,
 )
+from .queries.day_plan_queries import point_venue_name
 from .queries.materials_queries import (
     CLOSED_PROJECT_STATUSES,
     user_is_refused_instrumental,
@@ -312,6 +313,41 @@ def _led_by_payload(rehearsal: Rehearsal) -> dict[str, str] | None:
     return {
         'artist_id': str(rehearsal.led_by_id),
         'name': f"{artist.first_name} {artist.last_name}".strip(),
+    }
+
+
+def _reader_plan_payload(project: Project, *, joins_on_site: bool) -> dict[str, object]:
+    """A project's plan as one reader is due at it, for the schedule card.
+
+    ``plan_start`` is the moment the reader is first due somewhere when that is
+    before the call (the departure for a traveller, the evening sound check for
+    a singer who joins on site), else null: the card states the call alone, as
+    it always has. A point's title is the manager's own text; a typed window
+    travels as its key, which the client names in the reader's language.
+    ``place`` names the point's venue when it is not the event's, as the feed's
+    description does: a departure is useless without where it leaves from.
+    ``calendar_entry`` is the block the reader's subscribed feed reserves, so
+    the card's "Add to calendar" books the same one. Both come from
+    ``Project.plan_bounds``; the client derives neither.
+    """
+    bounds = project.plan_bounds(include_travellers_only=not joins_on_site)
+    calendar_start, calendar_end = project.calendar_span(bounds)
+    plan_start: dict[str, object] | None = None
+    if bounds is not None and bounds.opens_before_call:
+        first = bounds.first
+        plan_start = {
+            'at': first.at.isoformat(),
+            'day_offset': first.day_offset,
+            'title': first.point.title if first.point is not None else '',
+            'window': first.window,
+            'place': point_venue_name(first.point, project.location_id),
+        }
+    return {
+        'plan_start': plan_start,
+        'calendar_entry': {
+            'starts_at': calendar_start.isoformat(),
+            'ends_at': calendar_end.isoformat(),
+        },
     }
 
 
@@ -1705,19 +1741,23 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             .first()
         )
 
-        items: list[dict] = [
-            {
+        project_objs = list(schedule.projects)
+        items: list[dict] = []
+        for proj_obj, project in zip(
+            project_objs,
+            ProjectSerializer(project_objs, many=True, context=ctx).data,
+            strict=True,
+        ):
+            # Read from this reader's own seat, so a preview shows the member's
+            # plan as the member sees it; false without a seat.
+            joins_on_site = str(proj_obj.id) in schedule.on_site_project_ids
+            items.append({
                 'type': 'PROJECT',
-                'participation_id': participation_by_project.get(str(project['id'])),
-                # Read from this reader's own seat, so a preview shows the
-                # member's plan as the member sees it; false without a seat.
-                'joins_on_site': str(project['id']) in schedule.on_site_project_ids,
+                'participation_id': participation_by_project.get(str(proj_obj.id)),
+                'joins_on_site': joins_on_site,
+                **_reader_plan_payload(proj_obj, joins_on_site=joins_on_site),
                 'project': project,
-            }
-            for project in ProjectSerializer(
-                schedule.projects, many=True, context=ctx
-            ).data
-        ]
+            })
 
         rehearsal_objs = list(schedule.rehearsals)
         # The plan read through this person's seat, for the whole list at

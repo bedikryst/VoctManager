@@ -4471,7 +4471,12 @@
       "title_short": "artystów",
       "voice_unknown": "Bez głosu",
       "empty_assigned_desc": "Dodaj śpiewaków z bazy, aby zbudować obsadę projektu.",
-      "empty_no_matches": "Brak wyników"
+      "empty_no_matches": "Brak wyników",
+      "on_site": {
+        "aria": "Dołącza na miejscu: {{name}}",
+        "counts": "Jedzie: {{travelling}} · dołącza na miejscu: {{onSite}}",
+        "hint": "Pinezką z domem oznacz osobę, która nie jedzie z grupą i dołącza na miejscu — punkty planu tylko dla jadących zobaczy wyszarzone."
+      }
     },
     "crew": {
       "aria_label": "Zarządzaj ekipą techniczną",
@@ -4573,13 +4578,17 @@
         "title": "Tytuł projektu *",
         "warmup_end": "Rozśpiewanie do",
         "warmup_start": "Rozśpiewanie od",
-        "event_kind": "Rodzaj wydarzenia"
+        "event_kind": "Rodzaj wydarzenia",
+        "window_day": "Dzień",
+        "warmup_day": "Dzień rozśpiewania",
+        "soundcheck_day": "Dzień próby akustycznej"
       },
       "call_time": {
         "offset_h": "{{hours}} godz. przed rozpoczęciem",
         "offset_hm": "{{hours}} godz. {{minutes}} min przed rozpoczęciem",
         "offset_m": "{{minutes}} min przed rozpoczęciem",
-        "offset_after": "Zbiórka nie wypada przed rozpoczęciem"
+        "offset_after": "Zbiórka nie wypada przed rozpoczęciem",
+        "trip_hint": "Zbiórka dotyczy wszystkich. Wyjazd wpisz jako punkt planu, z miejscem."
       },
       "day_plan": {
         "untitled_count": "Bez nazwy: {{count}}"
@@ -4605,13 +4614,16 @@
         "place_default": "Miejsce wydarzenia",
         "place_new": "Dodaj nowe miejsce",
         "time": "Godzina",
-        "title": "Nazwa punktu"
+        "title": "Nazwa punktu",
+        "day": "Dzień tego punktu",
+        "travellers_only": "Tylko dla jadących"
       },
       "sections": {
         "day_plan": "Plan dnia",
         "ensemble_info": "Informacje dla zespołu",
         "event": "Wydarzenie",
-        "onsite": "Na miejscu"
+        "onsite": "Na miejscu",
+        "trip_plan": "Plan wyjazdu"
       },
       "markers": {},
       "event_kind": {
@@ -5112,13 +5124,15 @@
       "call": "Zbiórka",
       "warmup": "Rozśpiewanie",
       "soundcheck": "Próba akustyczna",
-      "until": "do {{time}}"
+      "until": "do {{time}}",
+      "travellers_only": "dla jadących"
     },
     "run_sheet": {
       "aria_label": "Zarządzaj harmonogramem dnia",
       "empty": "Brak harmonogramu dnia",
       "title": "Harmonogram dnia",
-      "open_day_card_aria": "Otwórz kartę dnia (PDF)"
+      "open_day_card_aria": "Otwórz kartę dnia (PDF)",
+      "title_trip": "Plan wyjazdu"
     },
     "spotify": {
       "consent_note": "Wbudowany odtwarzacz łączy się z serwerami Spotify (pliki cookie i dane). Załaduje się dopiero po Twojej zgodzie.",
@@ -5225,6 +5239,18 @@
       "mass": "Msza",
       "wedding": "Msza ślubna",
       "other": "Wydarzenie"
+    },
+    "plan_day": {
+      "event_day": "Dzień wydarzenia",
+      "event_day_option": "{{date}} · {{event}}",
+      "before_one": "Dzień wcześniej",
+      "before_few": "{{count}} dni wcześniej",
+      "before_many": "{{count}} dni wcześniej",
+      "before_other": "{{count}} dnia wcześniej",
+      "after_one": "Dzień później",
+      "after_few": "{{count}} dni później",
+      "after_many": "{{count}} dni później",
+      "after_other": "{{count}} dnia później"
     }
   },
   "pwa": {
@@ -5643,6 +5669,7 @@
     },
     "card": {
       "call_time": "Zbiórka:",
+      "plan_start": "Początek planu:",
       "dress_code_men": "Panowie:",
       "dress_code_title": "Szczegóły ubioru",
       "dress_code_women": "Panie:",
@@ -5673,7 +5700,9 @@
         "setlist": "Repertuar"
       },
       "unknown_artist": "Artysta",
-      "view_score_pdf": "Podgląd PDF"
+      "view_score_pdf": "Podgląd PDF",
+      "trip_plan_title": "Plan wyjazdu",
+      "joins_on_site_banner": "Dołączasz na miejscu — wyszarzone punkty dotyczą tylko jadących."
     },
     "dashboard": {
       "description": "Sprawdzaj próby, zgłaszaj nieobecności i śledź plany koncertowe.",

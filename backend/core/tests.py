@@ -1759,6 +1759,69 @@ class CalendarFeedTests(TestCase):
         self.assertIn(f"Próba akustyczna: {evening_before} 19:15-22:00", description)
         self.assertIn("Rozśpiewanie: 11:00\n", description)
 
+    def _trip(self):
+        """Concert Sunday 11.10.2026 13:30 Warsaw with the call at 12:30; the
+        acoustic rehearsal on Saturday at 19:20 for everyone; the departure on
+        Saturday at 14:00 and the return on Monday at 09:00 for the travelling
+        party only."""
+        from datetime import UTC, datetime
+
+        return self.Project.objects.create(
+            title="Pochwała Stworzenia",
+            date_time=datetime(2026, 10, 11, 11, 30, tzinfo=UTC),
+            call_time=datetime(2026, 10, 11, 10, 30, tzinfo=UTC),
+            status=self.Project.Status.ACTIVE,
+            timezone="Europe/Warsaw",
+            soundcheck_start=time(19, 20),
+            soundcheck_day=-1,
+            run_sheet=[
+                {"time": "14:00", "title": "Wyjazd", "day": -1, "travellers_only": True},
+                {"time": "09:00", "title": "Powrót", "day": 1, "travellers_only": True},
+            ],
+        )
+
+    def test_a_traveller_entry_spans_the_trip(self) -> None:
+        """An entry that opened at the on-site call would put the traveller in
+        Warsaw on Sunday while the coach leaves Kraków on Saturday."""
+        self._seat(self._trip())
+
+        feed = self._feed()
+
+        self.assertIn("DTSTART:20261010T120000Z", feed)
+        self.assertIn("DTEND:20261012T070000Z", feed)
+        # The entry says what 14:00 on Saturday is, and dates the downbeat,
+        # which would otherwise read as that first day's hour.
+        self.assertIn(r"DESCRIPTION:Plan starts: Wyjazd\, 10.10.2026 14:00\n", feed)
+        self.assertIn(r"Concert: 11.10.2026 13:30", feed)
+
+    def test_a_joiner_entry_opens_where_they_are_due(self) -> None:
+        from roster.models import FALLBACK_EVENT_DURATION_MINUTES
+
+        trip = self._trip()
+        seat = self._seat(trip)
+        seat.joins_on_site = True
+        seat.save(update_fields=["joins_on_site"])
+
+        feed = self._feed()
+
+        self.assertIn("DTSTART:20261010T172000Z", feed)
+        # The return is not theirs: the entry closes on the concert's reserved
+        # block, not on Monday morning.
+        reserved_end = trip.date_time + timedelta(minutes=FALLBACK_EVENT_DURATION_MINUTES)
+        self.assertIn(f"DTEND:{reserved_end.strftime('%Y%m%dT%H%M%SZ')}", feed)
+        self.assertIn(r"DESCRIPTION:Plan starts: Sound check\, 10.10.2026 19:20\n", feed)
+
+    def test_a_one_day_entry_still_opens_at_the_call(self) -> None:
+        project = self._project("Requiem", self.Project.Status.ACTIVE)
+        project.call_time = project.date_time - timedelta(hours=2)
+        project.save(update_fields=["call_time"])
+        self._seat(project)
+
+        feed = self._feed()
+
+        self.assertIn(f"DTSTART:{project.call_time.strftime('%Y%m%dT%H%M%SZ')}", feed)
+        self.assertNotIn("Plan starts", feed)
+
     def test_an_empty_fact_states_nothing(self) -> None:
         project = self._project("Requiem", self.Project.Status.ACTIVE)
         self._seat(project)
@@ -1942,6 +2005,23 @@ class SeasonCalendarFeedTests(TestCase):
         for absent in ("Skreślona", "Plan na maj", "Czytanie", "Odwołany", "Nieaktualna"):
             with self.subTest(absent=absent):
                 self.assertNotIn(absent, feed)
+
+    def test_a_season_entry_spans_the_whole_trip(self) -> None:
+        """No seat stands behind a season date, so it opens at the travelling
+        party's departure, whoever else joins on site."""
+        from datetime import UTC, datetime
+
+        self.Project.objects.create(
+            title="Pochwała Stworzenia",
+            date_time=datetime(2026, 10, 11, 11, 30, tzinfo=UTC),
+            status=self.Project.Status.ACTIVE,
+            timezone="Europe/Warsaw",
+            run_sheet=[
+                {"time": "14:00", "title": "Wyjazd", "day": -1, "travellers_only": True},
+            ],
+        )
+
+        self.assertIn("DTSTART:20261010T120000Z", self._season())
 
     def test_the_season_carries_only_what_the_own_feed_does_not(self) -> None:
         artist = self.Artist.objects.create(

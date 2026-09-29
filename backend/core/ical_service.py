@@ -1,22 +1,29 @@
 # core/ical_service.py
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 from django.db.models import Q, QuerySet
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.utils.translation import override
 
-from roster.domain.day_timeline import format_day_window, localize
+from roster.domain.day_timeline import (
+    DATE_FORMAT,
+    PlanBounds,
+    PlanMoment,
+    format_day_window,
+    localize,
+)
 from roster.domain.event_kind import event_moment_label
 from roster.models import (
-    FALLBACK_EVENT_DURATION_MINUTES,
     FALLBACK_REHEARSAL_DURATION_MINUTES,
     Participation,
     Project,
     Rehearsal,
     is_instrumentalist_account,
 )
+from roster.queries.day_plan_queries import point_venue_name
 
 from .permissions import user_is_manager
 
@@ -25,6 +32,33 @@ from .permissions import user_is_manager
 # untranslated: a proper noun, and a member reading the panel in French still
 # sings in this choir.
 CALENDAR_NAME = "VoctEnsemble"
+
+
+def _window_label(key: str) -> str:
+    """A typed window named for the calendar, by its key in
+    ``Project.day_windows()``."""
+    return {'warmup': _('Warm-up'), 'soundcheck': _('Sound check')}[key]
+
+
+def _plan_moment_line(project: Project, moment: PlanMoment) -> str:
+    """A moment of the plan as one line: what, when (always dated, since it
+    opens an entry that may span days) and where, when that is not the venue
+    the entry's own location already names."""
+    if moment.point is not None:
+        title = moment.point.title
+    elif moment.window:
+        title = _window_label(moment.window)
+    else:
+        title = ''
+    return ', '.join(
+        part
+        for part in (
+            title,
+            moment.at.strftime(f'{DATE_FORMAT} %H:%M'),
+            point_venue_name(moment.point, project.location_id),
+        )
+        if part
+    )
 
 
 class ICalGeneratorService:
@@ -95,8 +129,10 @@ class ICalGeneratorService:
         Generates the localized ICS feed for a specific user.
         """
         with override(cls._language_of(user)):
-            projects, rehearsals = cls._personal_events(user)
-            return cls._build_ics(projects, rehearsals)
+            projects, rehearsals, on_site_project_ids = cls._personal_events(user)
+            return cls._build_ics(
+                projects, rehearsals, on_site_project_ids=on_site_project_ids
+            )
 
     @staticmethod
     def season_feed_is_served(user) -> bool:
@@ -141,7 +177,7 @@ class ICalGeneratorService:
             if not cls.season_feed_is_served(user):
                 return cls._generate_empty_ics(name)
 
-            own_projects, own_rehearsals = cls._personal_events(user)
+            own_projects, own_rehearsals, _on_site = cls._personal_events(user)
 
             projects = (
                 Project.objects.exclude(status__in=Project.HIDDEN_FROM_CAST_STATUSES)
@@ -158,15 +194,23 @@ class ICalGeneratorService:
                 .select_related('project', 'location')
             )
 
-            return cls._build_ics(projects, rehearsals, name=name)
+            # Nobody's seat stands behind these dates, so each entry spans the
+            # whole plan, the travelling party's points included.
+            return cls._build_ics(
+                projects, rehearsals, on_site_project_ids=frozenset(), name=name
+            )
 
     @staticmethod
-    def _personal_events(user) -> tuple[QuerySet[Project], QuerySet[Rehearsal]]:
+    def _personal_events(
+        user,
+    ) -> tuple[QuerySet[Project], QuerySet[Rehearsal], frozenset[UUID]]:
         """The dates this account is called to: its live seats with the
         rehearsals that call it, and the published projects it conducts with
-        every rehearsal in them."""
+        every rehearsal in them. The third value is the projects where the
+        account's seat joins on site, whose entries open where that singer is
+        first due instead of at the group's departure."""
         if not hasattr(user, 'artist_profile'):
-            return Project.objects.none(), Rehearsal.objects.none()
+            return Project.objects.none(), Rehearsal.objects.none(), frozenset()
 
         artist = user.artist_profile
 
@@ -221,7 +265,11 @@ class ICalGeneratorService:
             .select_related('project', 'location')
         )
 
-        return projects, rehearsals
+        on_site_project_ids = frozenset(
+            seats.filter(joins_on_site=True).values_list('project_id', flat=True)
+        )
+
+        return projects, rehearsals, on_site_project_ids
 
     @classmethod
     def build_single_event(
@@ -290,7 +338,7 @@ class ICalGeneratorService:
         return cls._render(lines)
 
     @staticmethod
-    def _project_description(project: Project) -> str:
+    def _project_description(project: Project, bounds: PlanBounds | None = None) -> str:
         """What the singer needs on the day, in the calendar entry itself.
 
         A subscribed calendar is where a chorister looks on the morning of a
@@ -300,25 +348,40 @@ class ICalGeneratorService:
         answers nothing and pushes the fact that does answer something off a
         phone screen.
 
-        The entry opens at the call time, so the downbeat is stated here rather
-        than left for the reader to infer from an event that has already begun.
+        ``bounds`` is the reader's plan, the whole plan when not given. The
+        entry opens where it opens. When that is before the call — the
+        departure, or for a singer who joins on site the acoustic rehearsal the
+        evening before — the first row names what happens then, so an entry
+        that opens at 14:00 on Saturday says what 14:00 is. The downbeat is
+        stated whenever the entry opens before it, rather than left for the
+        reader to infer from an event that has already begun.
         """
+        if bounds is None:
+            bounds = project.plan_bounds(include_travellers_only=True)
         rows: list[tuple[str, str]] = []
 
         event_local = localize(project.date_time, project.timezone)
-        if project.call_time:
-            # The entry opens at the call time, so this row is what the reader is
-            # actually being called for — named by kind, because "Koncert 18:00"
-            # inside a wedding Mass's entry is the one line they would act on.
-            rows.append((event_moment_label(project.event_kind), event_local.strftime('%H:%M')))
-
-        # A window off concert day states its date: the entry sits on concert
-        # day, and a bare "19:15" inside it reads as that day's evening.
-        windows = project.day_windows()
         concert_date = event_local.date()
+        if bounds is not None and bounds.opens_before_call:
+            rows.append((_('Plan starts'), _plan_moment_line(project, bounds.first)))
+        if bounds is not None and bounds.start < project.date_time:
+            # Named by kind, because "Koncert 18:00" inside a wedding Mass's
+            # entry is the one line the reader would act on. Dated when the
+            # entry opens on another day: a bare hour reads as that first day's.
+            downbeat = event_local.strftime('%H:%M')
+            if bounds.start.date() != concert_date:
+                downbeat = f"{concert_date.strftime(DATE_FORMAT)} {downbeat}"
+            rows.append((event_moment_label(project.event_kind), downbeat))
+
+        # A window off concert day states its date: a bare "19:15" inside an
+        # entry reads as concert day's evening.
+        windows = project.day_windows()
         for label, value in (
-            (_('Warm-up'), format_day_window(windows['warmup'], concert_date)),
-            (_('Sound check'), format_day_window(windows['soundcheck'], concert_date)),
+            (_window_label('warmup'), format_day_window(windows['warmup'], concert_date)),
+            (
+                _window_label('soundcheck'),
+                format_day_window(windows['soundcheck'], concert_date),
+            ),
             (_('Entrance'), project.entrance_note),
             (_('Parking'), project.parking_note),
             (_('Dressing room'), project.dressing_room_note),
@@ -370,7 +433,18 @@ class ICalGeneratorService:
         ]
 
     @classmethod
-    def _build_ics(cls, projects, rehearsals, name: str = CALENDAR_NAME) -> str:
+    def _build_ics(
+        cls,
+        projects,
+        rehearsals,
+        *,
+        on_site_project_ids: Collection[UUID] = frozenset(),
+        name: str = CALENDAR_NAME,
+    ) -> str:
+        """The feed itself. A project whose id is in ``on_site_project_ids`` is
+        read by a singer who joins on site, so its entry skips the travelling
+        party's points: it opens where that singer is first due and ends at
+        their last planned moment."""
         lines = cls._calendar_preamble(name)
 
         now_utc = timezone.now().strftime('%Y%m%dT%H%M%SZ')
@@ -413,24 +487,27 @@ class ICalGeneratorService:
             ])
 
         for proj in projects:
-            start_time = proj.call_time if proj.call_time else proj.date_time
-            # A concert's end is nowhere stored — not even the run sheet has to
-            # reach past the downbeat — so this block is the same calendar-only
-            # reservation the rehearsals get, from the same table of constants.
-            end_time = proj.date_time + timedelta(minutes=FALLBACK_EVENT_DURATION_MINUTES)
+            # The entry spans the reader's own plan: from the first moment they
+            # are due at (the departure, for a traveller) to its last planned
+            # moment, never shorter than the concert's reservation.
+            bounds = proj.plan_bounds(
+                include_travellers_only=proj.id not in on_site_project_ids
+            )
+            start_time, end_time = proj.calendar_span(bounds)
 
             title = cls._escape_ics_text(
                 f"[{event_moment_label(proj.event_kind)}] {proj.title}"
             )
             location = cls._escape_ics_text(proj.location.name if proj.location else "")
-            description = cls._escape_ics_text(cls._project_description(proj))
+            description = cls._escape_ics_text(cls._project_description(proj, bounds))
 
             lines.extend([
                 "BEGIN:VEVENT",
                 f"UID:project_{proj.id}@voctensemble.com",
                 f"DTSTAMP:{now_utc}",
-                f"DTSTART:{start_time.strftime('%Y%m%dT%H%M%SZ')}",
-                f"DTEND:{end_time.strftime('%Y%m%dT%H%M%SZ')}",
+                # The plan's moments are in the project's zone; the feed is UTC.
+                f"DTSTART:{start_time.astimezone(UTC).strftime('%Y%m%dT%H%M%SZ')}",
+                f"DTEND:{end_time.astimezone(UTC).strftime('%Y%m%dT%H%M%SZ')}",
                 f"SUMMARY:{title}",
                 f"LOCATION:{location}",
                 f"DESCRIPTION:{description}",

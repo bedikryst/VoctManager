@@ -27,9 +27,9 @@ template can only concatenate the two.
 
 from __future__ import annotations
 
-import uuid
 from collections import defaultdict
 from collections.abc import Iterator, Mapping, Sequence
+from datetime import date, timedelta
 from enum import StrEnum
 from typing import Any
 from urllib.parse import quote_plus, urljoin
@@ -48,7 +48,6 @@ from core.constants import VoiceLine
 from core.greetings import apply_vocative_rule
 from core.voice_labels import collapse_voice_labels, section_of_seat, sectional_call_label
 from logistics.address import address_parts
-from logistics.models import Location
 from roster.cast_order import (
     VOICE_LINE_ORDER,
     VOICE_TYPE_ORDER,
@@ -58,13 +57,16 @@ from roster.cast_order import (
 from roster.domain.day_timeline import (
     CallWindow,
     CallWindowProblem,
+    PlanBounds,
+    PlanMoment,
     RunSheetPoint,
     TimelineEntry,
     TimelineEntryKind,
     build_day_timeline,
+    is_multi_day,
     localize,
     normalize_run_sheet,
-    plan_end,
+    plan_bounds,
     point_sort_key,
     resolve_call_window,
 )
@@ -89,6 +91,7 @@ from roster.models import (
     VoiceType,
     castings_are_instrumental,
 )
+from roster.queries.day_plan_queries import resolve_point_venues
 from roster.score_package_config import resolve_item_edition
 
 
@@ -765,6 +768,18 @@ class DocumentGenerator:
             key=point_sort_key,
         )
         timeline = build_day_timeline(day_points, call_window)
+        # The plan is the same on every sheet; only where it starts and ends
+        # is the reader's. A singer who joins on site is not due at the
+        # departure, so their masthead opens where they are due. The
+        # conductor's and the production sheets follow the whole plan.
+        joins_on_site = is_chorister and recipient is not None and recipient.joins_on_site
+        bounds = plan_bounds(
+            run_sheet_points,
+            call_window,
+            project.day_windows(),
+            include_travellers_only=not joins_on_site,
+        )
+        multi_day_plan = is_multi_day(timeline)
 
         # Polish is the only supported language with a distinct vocative, and
         # the rule that knows it lives in one place. Printing the stored form
@@ -819,7 +834,7 @@ class DocumentGenerator:
             # hour on its own reads as concert-day, and a singer acting on it
             # arrives on the wrong date.
             'masthead_facts': DocumentGenerator._build_masthead_facts(
-                call_window, timeline, project, is_report
+                call_window, bounds, project, is_report
             ),
             'venue_line': (
                 '' if is_report else DocumentGenerator._venue_line(venue, venue_address)
@@ -846,7 +861,18 @@ class DocumentGenerator:
             ),
             'dress_code_entries': dress_code_entries,
             'preparation_assets': preparation_assets,
-            'day_timeline': DocumentGenerator._build_timeline_rows(timeline, project),
+            'day_timeline': DocumentGenerator._build_timeline_rows(
+                timeline,
+                project,
+                concert_date=(
+                    call_window.event_local.date()
+                    if call_window.event_local is not None
+                    else None
+                ),
+                mute_travellers_only=joins_on_site,
+            ),
+            # A plan that reaches past concert day is a trip and is titled so.
+            'is_multi_day_plan': multi_day_plan,
             # With no points of its own the merged axis is just the two anchors,
             # which the masthead already states — the section says so in words
             # instead of restating them as a two-row table.
@@ -1235,10 +1261,6 @@ class DocumentGenerator:
         Each window sits on its own day of the plan, and is never
         travellers-only: a singer who joins on site is due at both.
         """
-        titles = {
-            'warmup': pgettext('call sheet', 'Warm-up'),
-            'soundcheck': pgettext('call sheet', 'Sound check'),
-        }
         moments: list[RunSheetPoint] = []
         for key, window in project.day_windows().items():
             if window.start is None:
@@ -1246,7 +1268,7 @@ class DocumentGenerator:
             moments.append(
                 RunSheetPoint(
                     time=window.start.strftime('%H:%M'),
-                    title=titles[key],
+                    title=DocumentGenerator._window_title(key),
                     description=(
                         _('until %(time)s') % {'time': window.end.strftime('%H:%M')}
                         if window.end is not None
@@ -1257,6 +1279,15 @@ class DocumentGenerator:
                 )
             )
         return moments
+
+    @staticmethod
+    def _window_title(key: str) -> str:
+        """A typed window named for the printed sheet, by its key in
+        ``Project.day_windows()``."""
+        return {
+            'warmup': pgettext('call sheet', 'Warm-up'),
+            'soundcheck': pgettext('call sheet', 'Sound check'),
+        }[key]
 
     @staticmethod
     def _build_onsite_facts(project: Project) -> list[dict[str, str]]:
@@ -1935,61 +1966,61 @@ class DocumentGenerator:
         return mapping
 
     @staticmethod
-    def _resolve_point_venues(
-        timeline: Sequence[TimelineEntry],
-    ) -> dict[str, Location]:
-        """The venues the day's points send the reader to, in one query.
-
-        ``location_id`` lives inside an unvalidated JSON field, so it carries no
-        referential integrity: an id that is not a UUID, or one whose venue has
-        since been deleted, simply resolves to nothing and the row prints without
-        a place. A dangling reference must never take a call sheet down.
-        """
-        ids: list[uuid.UUID] = []
-        for entry in timeline:
-            raw = entry.point.location_id if entry.point is not None else ''
-            if not raw:
-                continue
-            try:
-                ids.append(uuid.UUID(raw))
-            except ValueError:
-                continue
-        if not ids:
-            return {}
-        return {
-            str(pk): location
-            for pk, location in Location.objects.in_bulk(ids).items()
-        }
-
-    @staticmethod
     def _build_timeline_rows(
-        timeline: list[TimelineEntry], project: Project
+        timeline: list[TimelineEntry],
+        project: Project,
+        *,
+        concert_date: date | None = None,
+        mute_travellers_only: bool = False,
     ) -> list[dict[str, Any]]:
-        """The merged day, flattened for the template.
+        """The merged plan, flattened for the template.
 
-        Anchors print in the heavier voice and carry their date when they fall
-        on another calendar day — an anchor hour on its own reads as concert-day
-        wherever it appears, the run sheet included.
+        A plan that reaches past concert day is grouped under a heading per
+        day, carrying the full date, before the first entry of that day. The
+        heading is the only place a row's day is stated: an hour under it
+        cannot be read as belonging to concert day. A single-day plan has no
+        headings, because every row is on the date the masthead states.
 
         A point's own venue prints only when it is somewhere OTHER than the
         event's: a run-sheet point has always meant the event's venue by default,
         so naming it on every row would repeat the same church twenty times and
         bury the one row — the coach departure, the lunch stop — that sends the
         reader somewhere else.
+
+        A travellers-only point is labelled on every sheet, because a joiner
+        must be able to tell which points are not theirs and a traveller which
+        are. On a joiner's own sheet (``mute_travellers_only``) the row is also
+        muted, not dropped: knowing where the group is has value.
         """
-        venues = DocumentGenerator._resolve_point_venues(timeline)
+        venues = resolve_point_venues(
+            entry.point for entry in timeline if entry.point is not None
+        )
         event_venue_id = str(project.location_id) if project.location_id else ''
+        headings_from = concert_date if is_multi_day(timeline) else None
 
         rows: list[dict[str, Any]] = []
+        heading_day: int | None = None
         for entry in timeline:
+            if headings_from is not None and entry.day_offset != heading_day:
+                heading_day = entry.day_offset
+                rows.append(
+                    {
+                        'is_day_heading': True,
+                        'date_label': DocumentGenerator._format_date(
+                            headings_from + timedelta(days=entry.day_offset)
+                        ),
+                    }
+                )
             point = entry.point
             venue = (
                 venues.get(point.location_id)
                 if point is not None and point.location_id != event_venue_id
                 else None
             )
+            travellers_only = point is not None and point.travellers_only
             rows.append(
                 {
+                    'is_day_heading': False,
                     'time': entry.time,
                     'title': (
                         point.title
@@ -2007,7 +2038,8 @@ class DocumentGenerator:
                     ),
                     'venue_map_url': DocumentGenerator._build_map_url(venue),
                     'is_anchor': entry.is_anchor,
-                    'day_note': DocumentGenerator._day_offset_note(entry.day_offset),
+                    'travellers_only': travellers_only,
+                    'is_muted': travellers_only and mute_travellers_only,
                 }
             )
         return rows
@@ -2045,19 +2077,44 @@ class DocumentGenerator:
         ) % {'count': days}
 
     @staticmethod
+    def _moment_note(moment: PlanMoment) -> str:
+        """What a masthead moment is, and on which day when it is not concert
+        day: an hour printed bare reads as a concert-day hour. The masthead
+        states only moments that are not anchors (the call and the downbeat
+        have cells of their own), so the title is a point's or a window's."""
+        if moment.point is not None:
+            title = moment.point.title
+        elif moment.window:
+            title = DocumentGenerator._window_title(moment.window)
+        else:
+            title = ''
+        return ' · '.join(
+            part
+            for part in (DocumentGenerator._day_offset_note(moment.day_offset), title)
+            if part
+        )
+
+    @staticmethod
     def _build_masthead_facts(
         call_window: CallWindow,
-        timeline: list[TimelineEntry],
+        bounds: PlanBounds | None,
         project: Project,
         is_report: bool,
     ) -> list[dict[str, Any]]:
         """The band of facts under the title.
 
-        On the day card the fourth cell closes the day rather than repeating the
+        ``bounds`` is the reader's own plan: a singer who joins on site starts
+        later and may end earlier than the travelling party. When the reader is
+        due somewhere before the call, a "Plan starts" cell precedes the call
+        cell — a traveller reading only "Call 12:30" could reasonably conclude
+        they may arrive on concert day.
+
+        On the day card the last cell closes the plan rather than repeating the
         venue (which prints in full directly below): the last planned moment,
-        taken from the merged timeline so it cannot disagree with it. There is
-        no cell when nothing is planned after the downbeat — an end derived from
-        summed piece durations would be a fabricated hour stated as a fact.
+        taken from the same bounds as the calendar entry so the two cannot
+        disagree. There is no cell when nothing is planned after the downbeat —
+        an end derived from summed piece durations would be a fabricated hour
+        stated as a fact.
         """
         facts: list[dict[str, Any]] = [
             {
@@ -2066,6 +2123,17 @@ class DocumentGenerator:
                 'note': '',
                 'accent': False,
             },
+        ]
+        if bounds is not None and bounds.opens_before_call:
+            facts.append(
+                {
+                    'label': pgettext('call sheet', 'Plan starts'),
+                    'value': bounds.first.at.strftime('%H:%M'),
+                    'note': DocumentGenerator._moment_note(bounds.first),
+                    'accent': False,
+                }
+            )
+        facts.extend([
             {
                 'label': pgettext('call sheet', 'Call time'),
                 'value': DocumentGenerator._format_call_time(call_window),
@@ -2082,7 +2150,7 @@ class DocumentGenerator:
                 'note': '',
                 'accent': False,
             },
-        ]
+        ])
         if is_report:
             facts.append(
                 {
@@ -2098,18 +2166,14 @@ class DocumentGenerator:
             )
             return facts
 
-        end = plan_end(timeline)
-        if end is not None and end.point is not None:
+        if bounds is not None and bounds.last is not None:
             # A return the next morning printed as a bare hour would read as a
             # concert-day hour earlier than the downbeat; its day goes first.
-            day_note = DocumentGenerator._day_offset_note(end.day_offset)
             facts.append(
                 {
                     'label': pgettext('call sheet', 'Plan ends'),
-                    'value': end.time,
-                    'note': (
-                        f'{day_note} · {end.point.title}' if day_note else end.point.title
-                    ),
+                    'value': bounds.last.at.strftime('%H:%M'),
+                    'note': DocumentGenerator._moment_note(bounds.last),
                     'accent': False,
                 }
             )

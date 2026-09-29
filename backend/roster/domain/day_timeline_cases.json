@@ -13,7 +13,12 @@
     "before merging, which is a normalisation concern, not a merge one.",
     "",
     "'expected' lists one token per merged entry, in order: 'call', 'concert',",
-    "or the point's title."
+    "or the point's title.",
+    "",
+    "A point's optional 'day' is its offset from concert day (-3..3); absent",
+    "means concert day. The multi-day cases pin the clamp: a point without a",
+    "readable time keeps its predecessor's position but never leaves its own",
+    "day, so the per-day headings every surface draws are never split."
   ],
   "cases": [
     {
@@ -92,6 +97,59 @@
       "callTime": "2026-07-13T18:30",
       "points": [],
       "expected": ["call", "concert"]
+    },
+    {
+      "name": "a trip: the day before opens the list, the day after closes it",
+      "concertTime": "2026-10-11T13:30",
+      "callTime": "2026-10-11T12:30",
+      "points": [
+        { "time": "14:00", "title": "Wyjazd", "day": -1 },
+        { "time": "22:00", "title": "Zakwaterowanie", "day": -1 },
+        { "time": "09:00", "title": "Śniadanie" },
+        { "time": "16:00", "title": "Powrót" },
+        { "time": "10:00", "title": "Wolny poranek", "day": 1 }
+      ],
+      "expected": [
+        "Wyjazd",
+        "Zakwaterowanie",
+        "Śniadanie",
+        "call",
+        "concert",
+        "Powrót",
+        "Wolny poranek"
+      ]
+    },
+    {
+      "name": "a call the evening before sits among that evening's points",
+      "concertTime": "2026-10-11T13:30",
+      "callTime": "2026-10-10T19:00",
+      "points": [
+        { "time": "14:00", "title": "Wyjazd", "day": -1 },
+        { "time": "20:00", "title": "Kolacja", "day": -1 },
+        { "time": "09:00", "title": "Śniadanie" }
+      ],
+      "expected": ["Wyjazd", "call", "Kolacja", "Śniadanie", "concert"]
+    },
+    {
+      "name": "an empty time is clamped to the start of its own day",
+      "concertTime": "2026-10-11T13:30",
+      "callTime": "2026-10-10T21:00",
+      "points": [
+        { "time": "20:00", "title": "Kolacja", "day": -1 },
+        { "time": "", "title": "Bez godziny" },
+        { "time": "10:00", "title": "Śniadanie" }
+      ],
+      "expected": ["Kolacja", "call", "Bez godziny", "Śniadanie", "concert"]
+    },
+    {
+      "name": "a leading empty time opens its own day, not concert day",
+      "concertTime": "2026-10-11T13:30",
+      "callTime": "2026-10-10T19:00",
+      "points": [
+        { "time": "", "title": "Bez godziny", "day": -1 },
+        { "time": "20:00", "title": "Kolacja", "day": -1 }
+      ],
+      "expected": ["Bez godziny", "call", "Kolacja", "concert"]
     }
   ]
 }

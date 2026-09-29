@@ -6,6 +6,7 @@ import type {
   RehearsalPlanItem,
   RehearsalPlanWindow,
 } from "@/shared/types";
+import type { DayWindowKind } from "@/features/projects/lib/dayTimeline";
 
 export type ScheduleViewMode = "UPCOMING" | "PAST";
 
@@ -54,6 +55,22 @@ export interface TimelineEvent {
   description?: string | null;
   /** The artist's own participation for this event's project (RSVP target). */
   participationId?: string | number;
+  /**
+   * The reader comes straight to the venue of this project, so its plan's
+   * travellers-only points are the group's, not theirs. Project events only.
+   */
+  joinsOnSite?: boolean;
+  /**
+   * Where this reader's plan starts, when that is before the call. Project
+   * events only; null means the call opens the plan and the card states it
+   * alone.
+   */
+  planStart?: SchedulePlanStart | null;
+  /**
+   * The block this reader's subscribed feed reserves for the project, so the
+   * card's "Add to calendar" books the same one. Project events only.
+   */
+  calendarEntry?: { start: Date; end: Date };
   /** The artist's existing attendance row id, when they've already marked it. */
   attendanceId?: string;
   /**
@@ -78,6 +95,31 @@ export interface TimelineEvent {
   iStandInFront?: boolean;
 }
 
+/**
+ * The first moment a reader is due somewhere, as the server resolves it from
+ * the project's plan for their seat: the departure for a traveller, the sound
+ * check the evening before for a singer who joins on site.
+ */
+export interface SchedulePlanStartDTO {
+  at: string;
+  /** The moment's day, counted from concert day. */
+  day_offset: number;
+  /** A point's own title; empty when a window opens the plan. */
+  title: string;
+  /** The typed window that opens the plan, named on the client. */
+  window: DayWindowKind | "";
+  /** The point's venue when it is not the event's own; empty otherwise. */
+  place: string;
+}
+
+export interface SchedulePlanStart {
+  at: Date;
+  dayOffset: number;
+  title: string;
+  window: DayWindowKind | "";
+  place: string;
+}
+
 /** `Rehearsal.led_by` as the server states it: id and name, nothing else. */
 export interface ScheduleLedBy {
   artist_id: string;
@@ -94,6 +136,17 @@ export interface ScheduleAttendanceSnapshot {
 export interface ScheduleDashboardProjectItem {
   type: "PROJECT";
   participation_id: string | null;
+  /**
+   * The reader's own seat comes straight to the venue, so the plan's
+   * travellers-only points concern the others. False where the reader has no
+   * seat (conductor, manager); the `?artist=` preview carries the previewed
+   * singer's.
+   */
+  joins_on_site: boolean;
+  /** Null when the call opens this reader's plan. */
+  plan_start: SchedulePlanStartDTO | null;
+  /** The reader's calendar block, the one their subscribed feed reserves. */
+  calendar_entry: { starts_at: string; ends_at: string };
   project: Project;
 }
 

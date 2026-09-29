@@ -223,6 +223,13 @@ def display_event_time(metadata: Mapping[str, Any], *legacy_keys: str) -> str:
     )
 
 
+def display_plan_start(metadata: Mapping[str, Any]) -> str:
+    """When a plan that opens before the call begins (a trip's departure),
+    resolved the same way as the event's own moment. Empty on a payload whose
+    plan opens at the call, which is every one-day concert."""
+    return _display_moment(metadata, "plan_starts_at", (), ())
+
+
 def display_event_end(metadata: Mapping[str, Any]) -> str:
     """
     The closing moment of a span, resolved the same way as its opening one.

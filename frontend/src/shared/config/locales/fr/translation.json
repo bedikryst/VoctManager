@@ -4443,7 +4443,12 @@
       "title_short": "artistes",
       "voice_unknown": "Sans voix",
       "empty_assigned_desc": "Ajoutez des chanteurs depuis la base pour constituer la distribution.",
-      "empty_no_matches": "Aucun résultat"
+      "empty_no_matches": "Aucun résultat",
+      "on_site": {
+        "aria": "Rejoint sur place : {{name}}",
+        "counts": "Voyagent : {{travelling}} · rejoignent sur place : {{onSite}}",
+        "hint": "Marquez avec l'épingle maison les personnes qui ne voyagent pas avec le groupe et rejoignent sur place — elles verront grisés les points réservés à ceux qui voyagent."
+      }
     },
     "crew": {
       "aria_label": "Gérer l'équipe technique",
@@ -4545,13 +4550,17 @@
         "title": "Titre du projet *",
         "warmup_end": "Échauffement à",
         "warmup_start": "Échauffement de",
-        "event_kind": "Type d'événement"
+        "event_kind": "Type d'événement",
+        "window_day": "Jour",
+        "warmup_day": "Jour de l'échauffement",
+        "soundcheck_day": "Jour de la balance"
       },
       "call_time": {
         "offset_h": "{{hours}} h avant le début",
         "offset_hm": "{{hours}} h {{minutes}} min avant le début",
         "offset_m": "{{minutes}} min avant le début",
-        "offset_after": "La convocation n’est pas avant le début"
+        "offset_after": "La convocation n’est pas avant le début",
+        "trip_hint": "La convocation concerne tout le monde. Saisissez le départ comme un point du programme, avec son lieu."
       },
       "day_plan": {
         "untitled_count": "Sans nom : {{count}}"
@@ -4577,13 +4586,16 @@
         "place_default": "Lieu de l'événement",
         "place_new": "Ajouter un nouveau lieu",
         "time": "Heure",
-        "title": "Nom de l'étape"
+        "title": "Nom de l'étape",
+        "day": "Jour de ce point",
+        "travellers_only": "Seulement pour ceux qui voyagent"
       },
       "sections": {
         "day_plan": "Déroulé du jour",
         "ensemble_info": "Informations pour l'ensemble",
         "event": "Événement",
-        "onsite": "Sur place"
+        "onsite": "Sur place",
+        "trip_plan": "Programme du voyage"
       },
       "markers": {},
       "event_kind": {
@@ -5084,13 +5096,15 @@
       "call": "Convocation",
       "warmup": "Échauffement",
       "soundcheck": "Balance",
-      "until": "jusqu'à {{time}}"
+      "until": "jusqu'à {{time}}",
+      "travellers_only": "pour ceux qui voyagent"
     },
     "run_sheet": {
       "aria_label": "Gérer le déroulé de la journée",
       "empty": "Aucune feuille de route",
       "title": "Feuille de route du jour",
-      "open_day_card_aria": "Ouvrir la feuille de jour (PDF)"
+      "open_day_card_aria": "Ouvrir la feuille de jour (PDF)",
+      "title_trip": "Programme du voyage"
     },
     "spotify": {
       "consent_note": "Le lecteur intégré se connecte aux serveurs de Spotify (cookies et données). Il ne se charge qu'après votre consentement.",
@@ -5188,6 +5202,18 @@
       "mass": "Messe",
       "wedding": "Messe de mariage",
       "other": "Événement"
+    },
+    "plan_day": {
+      "event_day": "Jour de l'événement",
+      "event_day_option": "{{date}} · {{event}}",
+      "before_one": "La veille",
+      "before_few": "{{count}} jours avant",
+      "before_many": "{{count}} jours avant",
+      "before_other": "{{count}} jours avant",
+      "after_one": "Le lendemain",
+      "after_few": "{{count}} jours après",
+      "after_many": "{{count}} jours après",
+      "after_other": "{{count}} jours après"
     }
   },
   "pwa": {
@@ -5601,6 +5627,7 @@
     },
     "card": {
       "call_time": "Convocation :",
+      "plan_start": "Début du plan :",
       "dress_code_men": "Hommes :",
       "dress_code_title": "Détails de la tenue",
       "dress_code_women": "Femmes :",
@@ -5631,7 +5658,9 @@
         "setlist": "Répertoire"
       },
       "unknown_artist": "Artiste",
-      "view_score_pdf": "Voir le PDF"
+      "view_score_pdf": "Voir le PDF",
+      "trip_plan_title": "Programme du voyage",
+      "joins_on_site_banner": "Vous nous rejoignez sur place — les points grisés concernent uniquement ceux qui voyagent."
     },
     "dashboard": {
       "description": "Consultez les répétitions, signalez vos absences et suivez les plans de concert.",

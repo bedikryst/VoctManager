@@ -1,8 +1,84 @@
 # Concert trip plan — a day plan that spans days, and singers who join on site
 
-Status: **Stage 1 committed 2026-09-29, after a review pass; `roster/0069` not migrated anywhere.**
-Stages 2 and 3 not started; both depend on Stage 1 and not on each other. One stage per session;
-move this line when a stage lands and say whether it is committed, migrated and seen in the browser.
+Status: **All three stages implemented and committed 2026-09-29 (Stage 1 separately, Stages 2
+and 3 with the two Stage 3 gaps and the audit fixes together). `roster/0069` not migrated
+anywhere. Nothing seen by the developer: no PDF, no calendar entry, no editor, no singer card.**
+Next: the developer's look in the browser and at a printed sheet, then `make deploy` +
+`make migrate` on prod before the 2026-10-10 trip, then the Rollout steps. Move this line when
+that happens.
+
+Audit notes (2026-09-29, after Stage 3):
+- The invitation now states where the reader's plan starts (`plan_starts_at` and the three
+  `plan_start_*` keys on `ProjectInvitationMetadata`), per seat, in the details before the call
+  and in the push glance. A concert that means a night away is a different yes, and the
+  invitation is the only message before the decision. Resolved once per publication for each
+  of the two groups (`ProjectInvitationContext.plan_start_by_on_site`), and without a context
+  for a seat added to a live trip.
+- `roster/queries/day_plan_queries.py` → `plan_start_metadata` is the one assembly of those keys;
+  the reminder and the invitation both use it, and `message_content.py` composes both from
+  `_plan_start_glance` / `_plan_start_row`.
+- The schedule payload's `plan_start` carries `place` (the point's venue when not the event's).
+  "Add to calendar" puts it in the description's first row, as the feed does: the entry's
+  LOCATION is the concert venue, so without it a Saturday 14:00 entry points to Warsaw.
+- Checked and left as they are: the change messages (a `run_sheet` edit is the generic "Day
+  schedule" change), the artist merge (a folded seat keeps the survivor's flags, as it does for
+  `is_section_leader`), and `ProjectSerializer` (`fields = '__all__'`, so the day columns travel).
+
+Stage 3 notes (where it departs from the list below):
+- `compareRunSheetTimes` is `compareRunSheetItems` (plus `sortRunSheet`); `suggestRunSheetTime`
+  is `suggestRunSheetMoment`. `readDayOffset` is the frontend `_read_day_offset`; `planDayDate`
+  dates a day on the calendar; `hasTravellersOnlyPoint` decides whether the cast offers the mark.
+  The label helper is a hook, `features/projects/hooks/usePlanDayLabel.ts`, because its fallback
+  (no concert date yet, a project being created) is translated copy.
+- `day_timeline_cases.json` has four multi-day cases; two of them fail without the clamp.
+- The day select's empty value is concert day, placeholder "Dzień wydarzenia" (not "Dzień
+  koncertu": Masses and weddings use the same editor, and it pairs with "Miejsce wydarzenia").
+- The "Tylko dla jadących" toggle sits on the row's second line with the day and the place, which
+  wrap under the description as one group; the first line has no width for a worded toggle on a
+  phone. Lit, it is the row's label, so the editor adds no second one.
+- The editor drops the per-anchor date caption: an anchor off concert day makes the plan
+  multi-day, and the day heading then carries the date (as the PDF did in Stage 2).
+- The cast tab's mark is an icon toggle (`MapPinHouse`) beside the section-leader star, explained
+  by the toolbar sentence, with the two counts above it. Counts exclude declines, conductor and
+  players included: they are seats and hotel places.
+- Found outside the list: the singer's spotlight (`NextEventHero`) opened the plan only when the
+  concert was today. It now opens on any day the plan spans.
+- Gaps closed after Stage 3: "Add to calendar" booked a project from the downbeat, and the
+  singer's card stated "Zbiórka 12:30" with no plan start. The schedule payload's `PROJECT` item
+  now carries, per reader (`include_travellers_only = not joins_on_site`), `plan_start`
+  (`at`, `day_offset`, `title`, `window`, `place`; null unless the plan opens before the call) and
+  `calendar_entry` (`starts_at`, `ends_at`). The client derives neither.
+  - `Project.calendar_span(bounds)` is the one rule for a project's calendar block; the feed, the
+    reminder's attachment and the payload all use it.
+  - `PlanStartChip` sits before the call on the timeline card and the spotlight: label, hour, and
+    a note with the day (off concert day only) and the point's title or the window's name
+    (`usePlanStartNote`).
+  - The button's entry now opens at the call on a one-day concert, as the feed's does. Its
+    description gains the feed's first two rows (plan start with its place; the downbeat,
+    whenever the entry opens before it), composed on the client from the same facts. A change
+    to `_project_description` in `core/ical_service.py` must be mirrored in `AddToCalendar.tsx`.
+  - Readers of the concert time on singer surfaces left as they are: the spotlight's countdown
+    and `GoalConcertCard` count to the concert, which is what they name.
+
+Stage 2 notes (where it departs from the list below):
+- `PlanBounds` carries `first` and `last` as `PlanMoment`s (a run-sheet point, a window key, or
+  an anchor), plus `opens_before_call`; `start`/`end` are properties. `plan_bounds` takes the
+  windows as the `Project.day_windows()` mapping, so a window opening the plan is known by key.
+- `plan_end` is gone. The masthead "Plan ends" cell reads `bounds.last`, the same per-reader value
+  the calendar entry ends on, so a joiner's sheet no longer ends on the group's return.
+- `Project.plan_bounds(include_travellers_only=...)` is the one assembly for the calendar and
+  the reminder. The call sheet calls the domain with its own call window.
+- `roster/queries/day_plan_queries.py` resolves point venues for the sheet, the calendar and the
+  reminder alike.
+- The reminder carries `plan_start_window` (a window key) beside `plan_start_title`, because a
+  window is named in the reader's language at render time. Sends are grouped by the whole
+  per-reader bounds, not by start alone. The push body leads with the plan start when there is
+  one.
+- Behaviour change on one-day plans: a non-travellers-only point before the call now opens the
+  plan everywhere (masthead cell, calendar DTSTART, reminder row). A crew-only point before the
+  call ("Otwarcie kościoła") therefore reads as due for singers. Not addressed; see Deferred.
+- The invitation (`roster/invitations.py`) was not in any stage's list; the audit added it (see
+  Audit notes).
 
 Stage 1 notes for the next stages:
 - `point_sort_key` is the one ordering rule (day, then clock); the call-sheet merge uses it too.
@@ -19,11 +95,8 @@ Stage 1 notes for the next stages:
   `readRunSheetDay`, and `useDetailsForm` keeping both keys through the dirty check and the save.
   The editor still sorts and places every row on concert day; the shared
   `day_timeline_cases.json` has no multi-day case yet, and Stage 3 must add them.
-- The masthead "Plan ends" note and the calendar description already state the day (Stage 2
-  items). Interim until Stage 2: every call-sheet row off concert day prints the "N days
-  earlier" note; Stage 2 replaces it with day headings.
-- The new model verbose names and help texts have no `pl`/`fr` msgids yet; add them with the
-  Stage 2 translations.
+- The masthead "Plan ends" note and the calendar description already state the day. The
+  call sheet groups a multi-day plan under dated headings (Stage 2).
 
 ## Context
 
@@ -114,6 +187,7 @@ What the code says (survey 2026-09-28):
   With `include_travellers_only=False` the travellers-only points are skipped. The call, the
   windows and the concert always count.
 - `plan_end` keeps its meaning. Its entry now carries a `day_offset`, which callers print.
+  (Removed in Stage 2 in favour of `PlanBounds.last`; see the Stage 2 notes.)
 
 `roster/infrastructure/document_generator.py` — `_structured_day_points` passes
 `day=project.warmup_day` / `project.soundcheck_day`.
@@ -273,6 +347,8 @@ Then, for the first trip, on prod in the panel:
 ## Deferred
 
 - A per-day calendar entry for joiners, so the VEVENT does not span a night at home.
+- A way to mark a point before the call as not due for singers (crew, production), so a one-day
+  plan's early crew point stops opening the singers' plan.
 - Telling a singer when the manager toggles `joins_on_site` for them. Today only the plan's banner
   says it. The risk is a traveller marked by mistake, who then sees the departure muted.
 - Rooming lists, per-person trip costs, and more than one concert per trip.

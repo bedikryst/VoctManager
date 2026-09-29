@@ -35,12 +35,16 @@ export interface ProjectCreateDTO {
   entrance_note?: string | null;
   parking_note?: string | null;
   dressing_room_note?: string | null;
-  /** `HH:MM` wall-clock on concert day; `null` clears the window. The backend
-   *  rejects an end without a start, so both halves always travel together. */
+  /** `HH:MM` wall-clock on the window's day; `null` clears the window. The
+   *  backend rejects an end without a start, so both halves always travel
+   *  together. */
   warmup_start?: string | null;
   warmup_end?: string | null;
+  /** The window's day counted from concert day, `-3..3`. */
+  warmup_day?: number;
   soundcheck_start?: string | null;
   soundcheck_end?: string | null;
+  soundcheck_day?: number;
   onsite_contact_name?: string | null;
   onsite_contact_phone?: string | null;
 }
@@ -57,6 +61,8 @@ export interface ParticipationCreateDTO {
   default_voice_line?: VoiceLine | "";
   /** Leads their voice section here, which heads them in every cast listing. */
   is_section_leader?: boolean;
+  /** Comes straight to the venue instead of travelling with the group. */
+  joins_on_site?: boolean;
 }
 
 export type ParticipationUpdateDTO = Partial<ParticipationCreateDTO>;

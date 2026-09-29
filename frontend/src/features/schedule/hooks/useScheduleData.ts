@@ -81,6 +81,22 @@ export const useScheduleData = (subject?: ScheduleSubject) => {
           status: null,
           project_id: proj.id,
           participationId: item.participation_id ?? undefined,
+          joinsOnSite: item.joins_on_site === true,
+          planStart: item.plan_start
+            ? {
+                at: new Date(item.plan_start.at),
+                dayOffset: item.plan_start.day_offset,
+                title: item.plan_start.title,
+                window: item.plan_start.window,
+                place: item.plan_start.place,
+              }
+            : null,
+          calendarEntry: item.calendar_entry
+            ? {
+                start: new Date(item.calendar_entry.starts_at),
+                end: new Date(item.calendar_entry.ends_at),
+              }
+            : undefined,
         });
       } else {
         const reh = item.rehearsal;

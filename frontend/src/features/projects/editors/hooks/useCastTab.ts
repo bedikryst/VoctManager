@@ -96,6 +96,8 @@ export interface CastEntry extends RosterFacts {
    * in the list IS the number — but it is what the list sorts by.
    */
   readonly sectionRank: number | null;
+  /** Comes straight to the venue instead of travelling with the group. */
+  readonly joinsOnSite: boolean;
   /** No roster record behind this participation — identity is a fallback. */
   readonly isUnresolved: boolean;
   /**
@@ -139,6 +141,12 @@ export interface UseCastTabResult {
   poolCount: number;
   /** Cast members the app cannot reach, declines excluded — they are not singing. */
   outOfReachCount: number;
+  /**
+   * A trip's two groups, declines excluded: the seats and hotel places the
+   * producer arranges, and the people who meet the group at the venue.
+   */
+  travellingCount: number;
+  onSiteCount: number;
   castBalance: readonly CastBalanceEntry[];
   /** The line-up's vocabulary, in score order, for the per-singer seat picker. */
   seatOptions: readonly SelectOption[];
@@ -151,6 +159,11 @@ export interface UseCastTabResult {
   setSectionLeader: (
     participationId: string,
     isSectionLeader: boolean,
+  ) => Promise<void>;
+  /** Marks a singer who skips the group's travel and joins at the venue. */
+  setJoinsOnSite: (
+    participationId: string,
+    joinsOnSite: boolean,
   ) => Promise<void>;
   /**
    * Moves one singer within their own voice section and writes the whole
@@ -287,6 +300,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
           seat: participation.default_voice_line ?? "",
           isSectionLeader: participation.is_section_leader ?? false,
           sectionRank: participation.section_rank ?? null,
+          joinsOnSite: participation.joins_on_site === true,
           isUnresolved: !artist,
           outOfReach: artist ? outOfReachReason(artist) : null,
         };
@@ -429,6 +443,25 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     }
   };
 
+  const setJoinsOnSite = async (
+    participationId: string,
+    joinsOnSite: boolean,
+  ): Promise<void> => {
+    try {
+      await updateParticipationMutation.mutateAsync({
+        id: participationId,
+        data: { joins_on_site: joinsOnSite },
+      });
+    } catch (error) {
+      toastApiError(error, t, {
+        fallbackDescription: t(
+          "common.errors.database_error",
+          "Wystąpił problem z połączeniem z bazą danych.",
+        ),
+      });
+    }
+  };
+
   const moveInSection = async (
     activeParticipationId: string,
     overParticipationId: string,
@@ -523,19 +556,24 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     }
   };
 
+  const engagedEntries = castEntries.filter((entry) => entry.status !== "DEC");
+  const onSiteCount = engagedEntries.filter((entry) => entry.joinsOnSite).length;
+
   return {
     isLoading: artistsQuery.isLoading || participationsQuery.isLoading,
     castSections,
     poolSections,
     castCount: castEntries.length,
     poolCount: filteredPool.length,
-    outOfReachCount: castEntries.filter(
-      (entry) => entry.outOfReach !== null && entry.status !== "DEC",
-    ).length,
+    outOfReachCount: engagedEntries.filter((entry) => entry.outOfReach !== null)
+      .length,
+    travellingCount: engagedEntries.length - onSiteCount,
+    onSiteCount,
     castBalance,
     seatOptions,
     setSeat,
     setSectionLeader,
+    setJoinsOnSite,
     moveInSection,
     isSaving:
       processingId !== null ||

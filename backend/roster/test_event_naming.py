@@ -23,6 +23,7 @@ from notifications.models import NotificationLevel, NotificationType
 from roster.domain.day_timeline import (
     TimelineEntry,
     TimelineEntryKind,
+    plan_bounds,
     resolve_call_window,
 )
 from roster.domain.event_kind import event_moment_label
@@ -89,9 +90,10 @@ class DayCardNamingTests(SimpleTestCase):
             datetime(2026, 9, 12, 16, 0, tzinfo=UTC),
             "Europe/Warsaw",
         )
+        bounds = plan_bounds([], window, {}, include_travellers_only=True)
         with translation.override("pl"):
             facts = DocumentGenerator._build_masthead_facts(
-                window, self._timeline(), project, is_report=False
+                window, bounds, project, is_report=False
             )
             rows = DocumentGenerator._build_timeline_rows(self._timeline(), project)
         self.assertEqual(facts[2]["label"], "Początek Mszy")
