@@ -33,3 +33,22 @@ describe("FinanceService.getHistory", () => {
     });
   });
 });
+
+describe("FinanceService.getPayables", () => {
+  beforeEach(() => {
+    get.mockReset();
+  });
+
+  it("keeps the page envelope the payables list reads its count and sum from", async () => {
+    const page = { count: 1, limit: 50, offset: 0, total_amount: "0.00", results: [] };
+    const query = { status: "unpaid", limit: 50, offset: 0 } as const;
+    get.mockResolvedValue({ data: page });
+
+    await expect(FinanceService.getPayables(query)).resolves.toEqual(page);
+
+    expect(get).toHaveBeenCalledWith("/api/finance/payables/", {
+      params: query,
+      skipUnwrap: true,
+    });
+  });
+});

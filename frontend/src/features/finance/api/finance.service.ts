@@ -122,7 +122,11 @@ export const FinanceService = {
   },
 
   getPayables: async (query: PayablesQuery): Promise<PayablesPageDTO> => {
-    const response = await api.get<PayablesPageDTO>(`${BASE}/payables/`, { params: query });
+    const response = await api.get<PayablesPageDTO>(`${BASE}/payables/`, {
+      params: query,
+      // The page's `results` sits beside its count and sum; the list needs all of it.
+      skipUnwrap: true,
+    } as AuthRequestConfig);
     return response.data;
   },
 

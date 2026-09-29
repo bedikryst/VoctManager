@@ -91,13 +91,18 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response: AxiosResponse) => {
     // Automatically unwrap Django REST Framework paginated responses, unless the
-    // caller opted out to read pagination metadata (next/previous/count).
+    // caller opted out to read pagination metadata (next/previous/count). Only
+    // DRF's own envelope is unwrapped — every DRF paginator sends `next` and
+    // `previous` — so a hand-built page (`{count, offset, results}`) reaches
+    // its caller whole.
     const config = response.config as CustomAxiosRequestConfig;
     if (
       !config?.skipUnwrap &&
       response.data &&
       typeof response.data === "object" &&
       "results" in response.data &&
+      "next" in response.data &&
+      "previous" in response.data &&
       Array.isArray(response.data.results)
     ) {
       response.data = response.data.results;
