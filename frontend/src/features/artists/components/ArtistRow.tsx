@@ -53,7 +53,12 @@ import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { getSectionPresentation } from "../constants/voiceSections";
 import { usePitchNotation } from "../hooks/usePitchNotation";
-import { isAwaitingActivation, isWithoutEmail, isWithoutPush } from "../lib/accountState";
+import {
+  canReceiveMessages,
+  isAwaitingActivation,
+  isWithoutEmail,
+  isWithoutPush,
+} from "../lib/accountState";
 import { rangesOf, sameRange } from "../lib/vocalRangeProposal";
 import { SightReadingStars } from "./SightReadingStars";
 
@@ -354,18 +359,20 @@ export const ArtistRow = React.memo(
                 <Send size={14} aria-hidden="true" />
               </button>
             )}
-            <button
-              type="button"
-              onClick={(event) => {
-                stop(event);
-                onMessage(artist);
-              }}
-              title={t("artists.card.message_title", "Napisz wiadomość")}
-              aria-label={t("artists.card.message_title", "Napisz wiadomość")}
-              className="flex h-8 w-8 items-center justify-center rounded-chip text-ethereal-graphite/60 transition-colors hover:bg-ethereal-amethyst/10 hover:text-ethereal-amethyst"
-            >
-              <MessageSquare size={14} aria-hidden="true" />
-            </button>
+            {canReceiveMessages(artist) && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  stop(event);
+                  onMessage(artist);
+                }}
+                title={t("artists.card.message_title", "Napisz wiadomość")}
+                aria-label={t("artists.card.message_title", "Napisz wiadomość")}
+                className="flex h-8 w-8 items-center justify-center rounded-chip text-ethereal-graphite/60 transition-colors hover:bg-ethereal-amethyst/10 hover:text-ethereal-amethyst"
+              >
+                <MessageSquare size={14} aria-hidden="true" />
+              </button>
+            )}
             <button
               type="button"
               onClick={(event) => {

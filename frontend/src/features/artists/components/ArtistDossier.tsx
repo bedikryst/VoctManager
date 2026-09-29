@@ -56,7 +56,7 @@ import { isPositiveAmount, toGrosze } from "@/features/finance/lib/money";
 import type { DecimalString } from "@/features/finance/types/finance.dto";
 import { useArtistDossier } from "../api/artist.queries";
 import { getSectionPresentation } from "../constants/voiceSections";
-import { isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
+import { canReceiveMessages, isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
 import type {
   ArtistDossierLeadership,
   ArtistDossierStats,
@@ -741,14 +741,16 @@ export const ArtistDossier = ({
 
             {/* Footer actions */}
             <div className="flex shrink-0 items-center gap-3 border-t border-hairline-strong bg-ethereal-alabaster/85 p-4 backdrop-blur-xl md:px-6">
-              <Button
-                variant="secondary"
-                onClick={() => onMessage(artist)}
-                leftIcon={<MessageSquare size={15} aria-hidden="true" />}
-                className="flex-1"
-              >
-                {t("artists.card.message_title", "Napisz wiadomość")}
-              </Button>
+              {canReceiveMessages(artist) && (
+                <Button
+                  variant="secondary"
+                  onClick={() => onMessage(artist)}
+                  leftIcon={<MessageSquare size={15} aria-hidden="true" />}
+                  className="flex-1"
+                >
+                  {t("artists.card.message_title", "Napisz wiadomość")}
+                </Button>
+              )}
               <Button
                 variant="primary"
                 onClick={() => onEdit(artist)}

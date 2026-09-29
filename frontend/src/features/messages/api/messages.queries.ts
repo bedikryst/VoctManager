@@ -3,7 +3,8 @@
  * @description TanStack Query hooks for the messaging domain. The inbox polls at
  * 30s like the notifications inbox; an OPEN conversation polls faster and never
  * treats its cache as fresh (see CONVERSATION_POLLING_INTERVAL). The reply
- * mutation applies an optimistic message bubble, rolling back on error.
+ * mutation applies an optimistic message bubble; on error it withdraws the
+ * bubble and hands the text back to the composer (see ReplyDelivery).
  *
  * A conversation's history is WINDOWED by the API, so the cache — not the last
  * response — is what holds the conversation: the poll asks only for what arrived
@@ -166,7 +167,30 @@ interface OptimisticContext {
   optimisticId: string;
 }
 
-export const usePostMessage = (threadId: string, me: UserBrief) => {
+/**
+ * The composer clears on send, so once the optimistic bubble is withdrawn the
+ * text would exist nowhere; `onUndelivered` hands it back to whoever holds the
+ * draft. It runs from the mutation's own `onError`, never a per-call one:
+ * TanStack reports only the LATEST `mutate` call to per-call callbacks, so a
+ * first reply failing while a second was in flight would vanish silently.
+ */
+interface ReplyDelivery {
+  onUndelivered: (body: string) => void;
+}
+
+const toastUndelivered = (error: unknown) =>
+  toastApiError(error, undefined, {
+    fallbackDescription: i18n.t(
+      "messages.send_failed",
+      "Nie udało się wysłać wiadomości. Jej tekst wrócił do pola pisania.",
+    ),
+  });
+
+export const usePostMessage = (
+  threadId: string,
+  me: UserBrief,
+  { onUndelivered }: ReplyDelivery,
+) => {
   const queryClient = useQueryClient();
   return useMutation<MessageDTO, unknown, string, OptimisticContext>({
     mutationFn: (body: string) =>
@@ -206,7 +230,7 @@ export const usePostMessage = (threadId: string, me: UserBrief) => {
           : held,
       );
     },
-    onError: (error, _body, context) => {
+    onError: (error, body, context) => {
       if (context) {
         queryClient.setQueryData<ThreadDetail>(messagingKeys.thread(threadId), (held) =>
           held
@@ -214,12 +238,8 @@ export const usePostMessage = (threadId: string, me: UserBrief) => {
             : held,
         );
       }
-      toastApiError(error, undefined, {
-        fallbackDescription: i18n.t(
-          "messages.send_failed",
-          "Nie udało się wysłać wiadomości.",
-        ),
-      });
+      onUndelivered(body);
+      toastUndelivered(error);
     },
     onSettled: () => {
       queryClient.invalidateQueries({
@@ -252,6 +272,14 @@ export const useUpdateThread = (threadId: string) => {
         mergeConversation(held, thread, false),
       );
       queryClient.invalidateQueries({ queryKey: messagingKeys.threads() });
+    },
+    onError: (error) => {
+      toastApiError(error, undefined, {
+        fallbackDescription: i18n.t(
+          "messages.thread.update_failed",
+          "Nie udało się zmienić stanu wątku.",
+        ),
+      });
     },
   });
 };
@@ -318,7 +346,11 @@ export const useOlderChannelMessages = (channelId: string) => {
   });
 };
 
-export const usePostChannelMessage = (channelId: string, me: UserBrief) => {
+export const usePostChannelMessage = (
+  channelId: string,
+  me: UserBrief,
+  { onUndelivered }: ReplyDelivery,
+) => {
   const queryClient = useQueryClient();
   return useMutation<ChannelMessageDTO, unknown, string, OptimisticContext>({
     mutationFn: (body: string) => ChannelService.postMessage(channelId, body),
@@ -358,7 +390,7 @@ export const usePostChannelMessage = (channelId: string, me: UserBrief) => {
           : held,
       );
     },
-    onError: (error, _body, context) => {
+    onError: (error, body, context) => {
       if (context) {
         queryClient.setQueryData<ChannelDetail>(channelKeys.detail(channelId), (held) =>
           held
@@ -366,12 +398,8 @@ export const usePostChannelMessage = (channelId: string, me: UserBrief) => {
             : held,
         );
       }
-      toastApiError(error, undefined, {
-        fallbackDescription: i18n.t(
-          "messages.send_failed",
-          "Nie udało się wysłać wiadomości.",
-        ),
-      });
+      onUndelivered(body);
+      toastUndelivered(error);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: channelKeys.detail(channelId) });
@@ -381,13 +409,14 @@ export const usePostChannelMessage = (channelId: string, me: UserBrief) => {
 };
 
 /**
- * Manager broadcast: post a message to a project channel and (optionally) pin it as
- * an announcement. Two sequential calls — post returns the new message id, then pin.
+ * Manager broadcast: post a message to a project channel, optionally pinned as an
+ * announcement. One request, so it either published or it did not — a separate
+ * pin call could fail after the post landed, and a retry would publish twice.
  */
 export const usePostChannelAnnouncement = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       channelId,
       body,
       pin,
@@ -395,13 +424,7 @@ export const usePostChannelAnnouncement = () => {
       channelId: string;
       body: string;
       pin: boolean;
-    }) => {
-      const message = await ChannelService.postMessage(channelId, body);
-      if (pin) {
-        await ChannelService.pin(channelId, message.id, true);
-      }
-      return message;
-    },
+    }) => ChannelService.postMessage(channelId, body, { pinned: pin }),
     onSuccess: (_message, { channelId }) => {
       queryClient.invalidateQueries({ queryKey: channelKeys.detail(channelId) });
       queryClient.invalidateQueries({ queryKey: messagingKeys.all });
@@ -426,6 +449,14 @@ export const useSetChannelPush = (channelId: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: channelKeys.detail(channelId) });
     },
+    onError: (error) => {
+      toastApiError(error, undefined, {
+        fallbackDescription: i18n.t(
+          "messages.channel.push_failed",
+          "Nie udało się zmienić powiadomień push dla tego kanału.",
+        ),
+      });
+    },
   });
 };
 
@@ -449,6 +480,13 @@ export const usePinChannelMessage = (channelId: string) => {
             }
           : held,
       );
+    },
+    onError: (error, { pinned }) => {
+      toastApiError(error, undefined, {
+        fallbackDescription: pinned
+          ? i18n.t("messages.channel.pin_failed", "Nie udało się przypiąć wiadomości.")
+          : i18n.t("messages.channel.unpin_failed", "Nie udało się odpiąć wiadomości."),
+      });
     },
   });
 };

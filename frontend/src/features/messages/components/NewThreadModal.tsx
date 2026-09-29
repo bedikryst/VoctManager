@@ -24,6 +24,8 @@ import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { useArtists } from "@/features/artists/api/artist.queries";
+import { canReceiveMessages } from "@/features/artists/lib/accountState";
+import { toastApiError } from "@/shared/api/errors";
 import {
   useChannels,
   useCreateThread,
@@ -52,13 +54,14 @@ const ManagerArtistField: React.FC<{
 }> = ({ value, onChange }) => {
   const { t } = useTranslation();
   const { data: artists = [] } = useArtists();
+  const reachable = useMemo(() => artists.filter(canReceiveMessages), [artists]);
   return (
     <Select
       label={t("messages.compose.artist", "Adresat (artysta)")}
       value={value}
       onValueChange={onChange}
       placeholder={t("messages.compose.artist_placeholder", "Wybierz artystę")}
-      options={artists.map((artist) => ({
+      options={reachable.map((artist) => ({
         value: String(artist.id),
         label: `${artist.first_name} ${artist.last_name}`,
       }))}
@@ -181,6 +184,14 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
     [t],
   );
 
+  // The form keeps everything on failure, so the reader can retry as it stands.
+  // The server's reason is worth showing: a refused recipient or a closed
+  // channel is not something "try again" fixes.
+  const reportFailure = (error: unknown) =>
+    toastApiError(error, t, {
+      fallbackDescription: t("messages.compose.error", "Nie udało się wysłać."),
+    });
+
   const submitAnnouncement = () => {
     postAnnouncement(
       { channelId, body: body.trim(), pin },
@@ -192,7 +203,7 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
           onAnnounced?.(target);
           onClose();
         },
-        onError: () => toast.error(t("messages.compose.error", "Nie udało się wysłać.")),
+        onError: reportFailure,
       },
     );
   };
@@ -216,7 +227,7 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
         onCreated?.(thread.id);
         onClose();
       },
-      onError: () => toast.error(t("messages.compose.error", "Nie udało się wysłać.")),
+      onError: reportFailure,
     });
   };
 

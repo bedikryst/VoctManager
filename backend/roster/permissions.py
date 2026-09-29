@@ -14,7 +14,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
-from django.db.models import Q, QuerySet
+from django.db.models import OuterRef, Q, QuerySet
 from django.utils import timezone
 
 from roster.models import ProgramItem, Project
@@ -79,7 +79,9 @@ def live_delegate_q(*, scope: LeadScope, rel: str = '') -> Q:
     )
 
 
-def led_projects_q(user: User | None, *, scope: LeadScope, prefix: str = '') -> Q:
+def led_projects_q(
+    user: User | OuterRef | None, *, scope: LeadScope, prefix: str = '',
+) -> Q:
     """Projects ``user`` runs, as a filter against a relation reaching Project.
 
     ``prefix`` is the lookup path from the queryset's model to Project — ``''``
@@ -109,8 +111,15 @@ def led_projects_q(user: User | None, *, scope: LeadScope, prefix: str = '') -> 
     otherwise arrive twice.
 
     An anonymous or absent user matches nothing rather than everything.
+
+    ``user`` may also be an ``OuterRef`` to a user column, which asks the same
+    question once per row of an outer query from inside an ``Exists`` — how
+    `messaging.selectors.current_memberships` checks every leader's seat at
+    once instead of one user at a time.
     """
-    if user is None or not getattr(user, 'is_authenticated', False):
+    if not isinstance(user, OuterRef) and (
+        user is None or not getattr(user, 'is_authenticated', False)
+    ):
         return Q(pk__in=[])
 
     p = prefix

@@ -2,14 +2,19 @@
 @file tests.py
 @description API-level tests for the messaging domain: thread initiation by both
              parties, the hybrid ping-routing rule (directed assignee vs. management
-             pool), queryset isolation, unread accounting, and manager-only triage.
+             pool), thread reuse that keeps to the chosen recipient, queryset
+             isolation, unread accounting, manager-only triage, channel seats that
+             close with their source (grant expiry, demotion), and erasure reaching
+             the copies in other people's notifications.
              Notification emission is asserted by mocking NotificationService where
              it is *looked up* (messaging.services), keeping the suite decoupled from
              the email/push transport.
 @architecture Enterprise SaaS 2026
 @module messaging/tests
 """
+import json
 from datetime import timedelta
+from typing import Any
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -19,7 +24,7 @@ from rest_framework.test import APITestCase
 from core.constants import AppRole
 from core.models import UserProfile
 from core.signals import account_soft_deleted
-from notifications.models import NotificationType
+from notifications.models import Notification, NotificationType
 from roster.models import Artist, Participation, Project, RehearsalDelegate, VoiceType
 
 from .models import (
@@ -32,11 +37,14 @@ from .models import (
     ThreadStatus,
 )
 from .selectors import MESSAGE_PAGE_SIZE
+from .services import ERASED_BODY, ChannelService
 
 User = get_user_model()
 
 # Patched where it is *looked up* (the service module), not where it is defined.
 EMIT = "messaging.services.NotificationService.create_notification"
+# The transport behind a real notification row, for tests that need the row itself.
+ROUTE = "notifications.tasks.route_notification_task.delay"
 
 THREADS = "/api/messaging/threads/"
 
@@ -281,6 +289,103 @@ class MessagingFlowTests(APITestCase):
             Thread.objects.filter(artist=self.artist, context_type="PROJECT").count(), 2
         )
 
+    # ------------------------------------------------------------------ #
+    # Reuse keeps to the chosen recipient                                #
+    # ------------------------------------------------------------------ #
+
+    def test_undirected_question_never_lands_in_a_claimed_thread(self) -> None:
+        self.client.force_authenticate(user=self.artist_user)
+        first = self.client.post(THREADS, {"subject": "Q1", "body": "a"}, format="json")
+        self.client.force_authenticate(user=self.manager)
+        self.client.post(f"{THREADS}{first.json()['id']}/messages/", {"body": "biorę"}, format="json")
+
+        self.client.force_authenticate(user=self.artist_user)
+        with patch(EMIT) as emit, self.captureOnCommitCallbacks(execute=True):
+            second = self.client.post(THREADS, {"subject": "Q2", "body": "b"}, format="json")
+
+        self.assertEqual(second.status_code, 201)
+        self.assertIsNone(Thread.objects.get(id=second.json()["id"]).assignee_id)
+        recipients = {c.args[0].recipient_id for c in emit.call_args_list}
+        self.assertEqual(recipients, {str(self.manager.id), str(self.manager2.id)})
+
+    def test_undirected_question_never_lands_in_a_directed_thread(self) -> None:
+        self.client.force_authenticate(user=self.artist_user)
+        directed = self.client.post(
+            THREADS, {"subject": "Q1", "body": "a", "assignee_id": self.manager.id}, format="json"
+        )
+        undirected = self.client.post(THREADS, {"subject": "Q2", "body": "b"}, format="json")
+        self.assertEqual(undirected.status_code, 201)
+        self.assertNotEqual(undirected.json()["id"], directed.json()["id"])
+        self.assertIsNone(Thread.objects.get(id=undirected.json()["id"]).assignee_id)
+
+    def test_artist_project_thread_reuse_follows_the_chosen_manager(self) -> None:
+        project = Project.objects.create(title="Lux Aeterna")
+        base = {"subject": "Strój", "context_type": "PROJECT", "context_id": str(project.id)}
+        self.client.force_authenticate(user=self.artist_user)
+        to_first = self.client.post(
+            THREADS, {**base, "body": "a", "assignee_id": self.manager.id}, format="json"
+        )
+
+        with patch(EMIT) as emit, self.captureOnCommitCallbacks(execute=True):
+            to_second = self.client.post(
+                THREADS, {**base, "body": "b", "assignee_id": self.manager2.id}, format="json"
+            )
+        self.assertEqual(to_second.status_code, 201)
+        self.assertEqual(Thread.objects.get(id=to_second.json()["id"]).assignee_id, self.manager2.id)
+        self.assertEqual({c.args[0].recipient_id for c in emit.call_args_list}, {str(self.manager2.id)})
+
+        again = self.client.post(
+            THREADS, {**base, "body": "c", "assignee_id": self.manager.id}, format="json"
+        )
+        self.assertEqual(again.status_code, 200)
+        self.assertEqual(again.json()["id"], to_first.json()["id"])
+
+    def test_manager_addressing_a_colleague_never_writes_into_their_thread(self) -> None:
+        project = Project.objects.create(title="Lux Aeterna")
+        payload = {
+            "subject": "Solo", "body": "tylko m2", "artist_id": str(self.artist.id),
+            "context_type": "PROJECT", "context_id": str(project.id),
+        }
+        self.client.force_authenticate(user=self.manager2)
+        private = self.client.post(THREADS, payload, format="json").json()["id"]
+
+        self.client.force_authenticate(user=self.manager)
+        handed = self.client.post(
+            THREADS, {**payload, "body": "od m1", "assignee_id": self.manager2.id}, format="json"
+        )
+
+        self.assertEqual(handed.status_code, 201)
+        self.assertNotEqual(handed.json()["id"], private)
+        self.assertNotIn("tylko m2", [m["body"] for m in handed.json()["messages"]])
+        self.assertEqual(Message.objects.filter(thread_id=private).count(), 1)
+        self.assertEqual(Thread.objects.get(id=handed.json()["id"]).assignee_id, self.manager2.id)
+
+    # ------------------------------------------------------------------ #
+    # A named recipient is a manager, whoever names them                  #
+    # ------------------------------------------------------------------ #
+
+    def test_manager_cannot_hand_a_thread_to_a_non_manager(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post(
+            THREADS,
+            {"subject": "X", "body": "y", "artist_id": str(self.artist.id),
+             "assignee_id": self.other_user.id},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertFalse(Thread.objects.exists())
+
+    def test_manager_can_hand_a_new_thread_to_a_colleague(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post(
+            THREADS,
+            {"subject": "X", "body": "y", "artist_id": str(self.artist.id),
+             "assignee_id": self.manager2.id},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(Thread.objects.get(id=resp.json()["id"]).assignee_id, self.manager2.id)
+
     def test_reply_reopens_resolved_thread(self) -> None:
         self.client.force_authenticate(user=self.artist_user)
         opened = self.client.post(
@@ -312,6 +417,73 @@ class MessagingFlowTests(APITestCase):
         )
         self.assertFalse(Thread.objects.filter(id=thread_id).exists())  # soft-deleted
         self.assertTrue(Thread.all_objects.filter(id=thread_id).exists())
+
+    def test_gdpr_erasure_blanks_the_copy_in_the_recipient_s_notifications(self) -> None:
+        self.client.force_authenticate(user=self.artist_user)
+        with patch(ROUTE), self.captureOnCommitCallbacks(execute=True):
+            self.client.post(
+                THREADS,
+                {"subject": "Zwolnienie", "body": "sekret", "assignee_id": self.manager.id},
+                format="json",
+            )
+        copy = Notification.objects.get(recipient=self.manager)
+        self.assertEqual(copy.metadata["message"], "sekret")
+
+        account_soft_deleted.send(sender=self.__class__, user=self.artist_user)
+
+        copy.refresh_from_db()
+        kept = json.dumps(copy.metadata, ensure_ascii=False)
+        for trace in ("sekret", "Zwolnienie", "Lewandowska"):
+            self.assertNotIn(trace, kept)
+        self.assertEqual(copy.metadata["thread_id"], str(Thread.all_objects.get().id))
+
+    def test_gdpr_erasure_finds_copies_written_before_they_named_their_sender(self) -> None:
+        own = Thread.objects.create(artist=self.artist, subject="Stare", assignee=self.manager)
+        Message.objects.create(thread=own, sender=self.artist_user, body="stary sekret")
+        other = Thread.objects.create(artist=self.other_artist, subject="Cudze", assignee=self.manager)
+
+        def legacy_copy(recipient: Any, thread: Thread, body: str) -> Notification:
+            return Notification.objects.create(
+                recipient=recipient,
+                notification_type=NotificationType.MESSAGE_RECEIVED,
+                metadata={"thread_id": str(thread.id), "title": thread.subject,
+                          "sender_name": "someone", "message": body, "snippet": body},
+            )
+
+        to_manager = legacy_copy(self.manager, own, "stary sekret")
+        to_artist = legacy_copy(self.artist_user, own, "odpowiedź")
+        unrelated = legacy_copy(self.manager, other, "cudze")
+
+        account_soft_deleted.send(sender=self.__class__, user=self.artist_user)
+
+        for row in (to_manager, to_artist, unrelated):
+            row.refresh_from_db()
+        self.assertEqual(to_manager.metadata["message"], ERASED_BODY)
+        self.assertEqual(to_manager.metadata["snippet"], ERASED_BODY)
+        self.assertEqual(to_manager.metadata["sender_name"], "")
+        self.assertEqual(to_manager.metadata["title"], ERASED_BODY)
+        self.assertEqual(to_artist.metadata["message"], "odpowiedź")  # their own inbox
+        self.assertEqual(unrelated.metadata["message"], "cudze")
+
+    def test_gdpr_erasure_of_a_manager_keeps_the_artist_s_subject(self) -> None:
+        self.client.force_authenticate(user=self.artist_user)
+        opened = self.client.post(
+            THREADS, {"subject": "Nuty", "body": "pytanie", "assignee_id": self.manager.id}, format="json"
+        )
+        self.client.force_authenticate(user=self.manager)
+        with patch(ROUTE), self.captureOnCommitCallbacks(execute=True):
+            self.client.post(
+                f"{THREADS}{opened.json()['id']}/messages/", {"body": "poufna odpowiedź"}, format="json"
+            )
+        copy = Notification.objects.get(recipient=self.artist_user)
+
+        account_soft_deleted.send(sender=self.__class__, user=self.manager)
+
+        copy.refresh_from_db()
+        self.assertEqual(copy.metadata["message"], ERASED_BODY)
+        self.assertEqual(copy.metadata["snippet"], ERASED_BODY)
+        self.assertEqual(copy.metadata["sender_name"], "")
+        self.assertEqual(copy.metadata["title"], "Nuty")
 
 
 class ConversationWindowTests(APITestCase):
@@ -528,12 +700,100 @@ class ProjectChannelTests(APITestCase):
         resp = self.client.post(f"{CHANNELS}{channel.id}/messages/", {"body": "x"}, format="json")
         self.assertEqual(resp.status_code, 404)
 
+    def test_a_grant_that_ran_out_takes_no_push_and_counts_nothing_unread(self) -> None:
+        self._grant(expires_at=timezone.now() + timedelta(days=1))
+        self._confirm(self.other_artist)
+        channel = ProjectChannel.objects.get(project=self.project)
+        ChannelMembership.objects.filter(channel=channel, user=self.artist_user).update(push_enabled=True)
+
+        def post_as_cast() -> set[str]:
+            self.client.force_authenticate(user=self.other_user)
+            with patch(PUSH) as push, self.captureOnCommitCallbacks(execute=True):
+                resp = self.client.post(f"{CHANNELS}{channel.id}/messages/", {"body": "próba"}, format="json")
+            self.assertEqual(resp.status_code, 201)
+            return {c.kwargs["recipient_id"] for c in push.call_args_list}
+
+        def leader_unread() -> int:
+            self.client.force_authenticate(user=self.artist_user)
+            return self.client.get(f"{THREADS}unread-count/").json()["unread_count"]
+
+        self.assertEqual(post_as_cast(), {str(self.artist_user.id)})
+        self.assertEqual(leader_unread(), 1)
+
+        RehearsalDelegate.objects.update(expires_at=timezone.now() - timedelta(hours=1))
+
+        self.assertEqual(post_as_cast(), set())
+        self.assertEqual(leader_unread(), 0)
+
     def test_a_leader_posts_to_the_cast(self) -> None:
         self._grant()
         channel = ProjectChannel.objects.get(project=self.project)
         self.client.force_authenticate(user=self.artist_user)
         resp = self.client.post(f"{CHANNELS}{channel.id}/messages/", {"body": "Jutro Kyrie"}, format="json")
         self.assertEqual(resp.status_code, 201, resp.content)
+
+    # -- manager seat follows the account's role --------------------------- #
+
+    def _open_as_manager(self) -> ProjectChannel:
+        self.client.force_authenticate(user=self.manager)
+        self.assertEqual(self.client.get(f"{CHANNELS}by-project/{self.project.id}/").status_code, 200)
+        return ProjectChannel.objects.get(project=self.project)
+
+    def _demote(self) -> Any:
+        profile = UserProfile.objects.get(user=self.manager)
+        profile.role = AppRole.ARTIST
+        profile.save()
+        return User.objects.get(pk=self.manager.pk)
+
+    def test_a_demoted_manager_loses_the_channels_they_opened(self) -> None:
+        channel = self._open_as_manager()
+        self.assertEqual(self._role_of(self.manager), ChannelRole.MANAGER)
+
+        demoted = self._demote()
+        self.client.force_authenticate(user=demoted)
+        self.assertEqual(self.client.get(CHANNELS).json(), [])
+        self.assertEqual(self.client.get(f"{CHANNELS}{channel.id}/").status_code, 404)
+        resp = self.client.post(f"{CHANNELS}{channel.id}/messages/", {"body": "x"}, format="json")
+        self.assertEqual(resp.status_code, 404)
+        self.assertIsNone(self._role_of(self.manager))
+
+    def test_a_demoted_manager_keeps_the_channel_of_the_cast_they_sing_in(self) -> None:
+        self._open_as_manager()
+        singer = Artist.objects.create(
+            user=self.manager, first_name="Cez", last_name="Dyr",
+            email="cm-singer@test.pl", voice_type=VoiceType.BASS,
+        )
+        self._confirm(singer)
+        self.assertEqual(self._role_of(self.manager), ChannelRole.MANAGER)
+
+        demoted = self._demote()
+        self.assertEqual(self._role_of(self.manager), ChannelRole.MEMBER)
+        self.client.force_authenticate(user=demoted)
+        self.assertEqual({c["project_id"] for c in self.client.get(CHANNELS).json()}, {str(self.project.id)})
+
+    def test_a_manager_seat_closes_even_when_the_demotion_raises_no_signal(self) -> None:
+        self._confirm(self.artist)
+        channel = self._open_as_manager()
+        self.client.patch(f"{CHANNELS}{channel.id}/membership/", {"push_enabled": True}, format="json")
+
+        def post_as_cast() -> set[str]:
+            self.client.force_authenticate(user=self.artist_user)
+            with patch(PUSH) as push, self.captureOnCommitCallbacks(execute=True):
+                self.client.post(f"{CHANNELS}{channel.id}/messages/", {"body": "cześć"}, format="json")
+            return {c.kwargs["recipient_id"] for c in push.call_args_list}
+
+        self.assertEqual(post_as_cast(), {str(self.manager.id)})
+
+        # A queryset update raises no signal, so the MANAGER row stays as it was.
+        UserProfile.objects.filter(user=self.manager).update(role=AppRole.ARTIST)
+        demoted = User.objects.get(pk=self.manager.pk)
+        self.assertEqual(self._role_of(self.manager), ChannelRole.MANAGER)
+
+        self.assertEqual(post_as_cast(), set())
+        self.client.force_authenticate(user=demoted)
+        self.assertEqual(self.client.get(CHANNELS).json(), [])
+        self.assertEqual(self.client.get(f"{CHANNELS}{channel.id}/").status_code, 404)
+        self.assertEqual(self.client.get(f"{THREADS}unread-count/").json()["unread_count"], 0)
 
     # -- access / listing -------------------------------------------------- #
 
@@ -587,6 +847,33 @@ class ProjectChannelTests(APITestCase):
         ok = self.client.post(f"{CHANNELS}{channel.id}/messages/{message_id}/pin/", {"pinned": True}, format="json")
         self.assertEqual(ok.status_code, 200)
         self.assertTrue(ChannelMessage.objects.get(id=message_id).is_pinned)
+
+    def test_an_announcement_is_posted_and_pinned_in_one_request(self) -> None:
+        channel = ChannelService.get_or_create_for_project(self.project)
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post(
+            f"{CHANNELS}{channel.id}/messages/", {"body": "Próba odwołana", "pinned": True}, format="json"
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertTrue(resp.json()["is_pinned"])
+        self.assertTrue(ChannelMessage.objects.get(id=resp.json()["id"]).is_pinned)
+
+    def test_a_plain_post_stays_unpinned(self) -> None:
+        channel = ChannelService.get_or_create_for_project(self.project)
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post(f"{CHANNELS}{channel.id}/messages/", {"body": "Dzień dobry"}, format="json")
+        self.assertEqual(resp.status_code, 201)
+        self.assertFalse(resp.json()["is_pinned"])
+
+    def test_a_member_cannot_publish_a_pinned_post(self) -> None:
+        self._confirm(self.artist)
+        channel = ProjectChannel.objects.get(project=self.project)
+        self.client.force_authenticate(user=self.artist_user)
+        resp = self.client.post(
+            f"{CHANNELS}{channel.id}/messages/", {"body": "Ważne!", "pinned": True}, format="json"
+        )
+        self.assertEqual(resp.status_code, 403)
+        self.assertFalse(ChannelMessage.objects.filter(channel=channel).exists())
 
     def test_push_toggle(self) -> None:
         self._confirm(self.artist)

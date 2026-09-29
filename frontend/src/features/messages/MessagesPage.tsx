@@ -17,7 +17,18 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Check, Inbox, MailOpen, Plus, Search, SearchX, User, UserPlus } from "lucide-react";
+import {
+  Check,
+  CircleAlert,
+  Inbox,
+  MailOpen,
+  Plus,
+  RotateCw,
+  Search,
+  SearchX,
+  User,
+  UserPlus,
+} from "lucide-react";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
@@ -69,8 +80,10 @@ const MessagesPage: React.FC = () => {
 
   const isManager = resolveIsManager(user);
   const isTwoPane = useMediaQuery(TWO_PANE_QUERY);
-  const { data: threads = [], isLoading: threadsLoading } = useThreads();
-  const { data: channels = [], isLoading: channelsLoading } = useChannels();
+  const threadsQuery = useThreads();
+  const channelsQuery = useChannels();
+  const { data: threads = [], isLoading: threadsLoading } = threadsQuery;
+  const { data: channels = [], isLoading: channelsLoading } = channelsQuery;
   const [isComposerOpen, setComposerOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<TriageFilter>("all");
@@ -90,6 +103,17 @@ const MessagesPage: React.FC = () => {
   /** The conversation owns the whole screen: a phone with one open. */
   const isImmersive = hasSelection && !isTwoPane;
   const isLoading = threadsLoading || channelsLoading;
+  // Only a list that never arrived is a failure. A poll failing over an inbox
+  // already on screen keeps it — the interval retries on its own. Either half
+  // missing counts: an inbox without its channels would read as complete.
+  const inboxFailed =
+    (threadsQuery.isError && !threadsQuery.data) ||
+    (channelsQuery.isError && !channelsQuery.data);
+  const isRetryingInbox = threadsQuery.isFetching || channelsQuery.isFetching;
+  const retryInbox = () => {
+    if (!threadsQuery.data) void threadsQuery.refetch();
+    if (!channelsQuery.data) void channelsQuery.refetch();
+  };
   const isNarrowed = query.trim().length > 0 || filter !== "all";
 
   const q = foldDiacritics(query.trim());
@@ -260,7 +284,31 @@ const MessagesPage: React.FC = () => {
             />
           </div>
 
-          {isLoading ? (
+          {inboxFailed ? (
+            <StatePanel
+              variant="inline"
+              tone="danger"
+              icon={<CircleAlert size={24} strokeWidth={1.5} />}
+              title={t("messages.list.load_failed", "Nie udało się wczytać skrzynki")}
+              description={t(
+                "messages.conversation.load_failed_desc",
+                "Sprawdź połączenie i spróbuj ponownie.",
+              )}
+              actions={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={retryInbox}
+                  isLoading={isRetryingInbox}
+                  leftIcon={<RotateCw size={14} />}
+                >
+                  {t("messages.conversation.retry", "Spróbuj ponownie")}
+                </Button>
+              }
+              className="px-6"
+            />
+          ) : isLoading ? (
             <EtherealLoader fullHeight={false} message={t("messages.list.loading", "Ładowanie…")} />
           ) : nothingToShow ? (
             isNarrowed ? (
@@ -322,8 +370,15 @@ const MessagesPage: React.FC = () => {
             "h-full min-w-0 flex-1 overflow-hidden",
             hasSelection ? "flex" : "hidden md:flex",
           )}
+          // The card is a ROW, so its content wrapper is a flex item sized by
+          // its min-content: a truncated snippet or subject still reports its
+          // full single-line width there, and the rows ran past the card edge.
+          contentClassName="min-w-0"
         >
-          {isImmersive ? null : (conversation ??
+          {/* A failed inbox leaves the pane empty: the briefing would read the
+              missing lists as "all clear", and the inbox beside it already
+              carries the error and the retry. */}
+          {isImmersive || inboxFailed ? null : (conversation ??
             (isLoading ? (
               <EtherealLoader fullHeight={false} />
             ) : (

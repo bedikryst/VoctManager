@@ -248,8 +248,10 @@ class ChannelDetailSerializer(_ChannelBaseSerializer):
 
 
 class ChannelMessageCreateSerializer(serializers.Serializer):
-    """Inbound payload for posting a channel message."""
+    """Inbound payload for posting a channel message. ``pinned`` is a manager's
+    announcement; the view refuses it from anyone else."""
     body = serializers.CharField(max_length=4000)
+    pinned = serializers.BooleanField(required=False, default=False)
 
 
 class ChannelPushPrefSerializer(serializers.Serializer):

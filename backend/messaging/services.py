@@ -4,21 +4,25 @@
              — critically — translates each new message into a delivery signal by
              reusing the notifications pipeline (MESSAGE_RECEIVED). No transport
              logic lives here: NotificationService fans out to in-app/email/push.
+             Also erases the copies of an author's words that delivery left in
+             other people's inboxes, since it is what wrote them there.
 @architecture Enterprise SaaS 2026
 @module messaging/services
 """
 import logging
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from core.permissions import MANAGER_QUERY_FILTER
 from notifications.dtos import NotificationCreateDTO
-from notifications.models import NotificationLevel, NotificationType
+from notifications.models import Notification, NotificationLevel, NotificationType
 from notifications.services import NotificationService
 from notifications.tasks import send_push_notification_task
 
@@ -33,12 +37,16 @@ from .models import (
     ThreadReadState,
     ThreadStatus,
 )
-from .selectors import user_display_name
+from .selectors import current_memberships, user_display_name
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
 _SNIPPET_LEN = 200
+
+#: What an erased author's words are replaced with, in the conversation and in
+#: every notification that carried a copy of them.
+ERASED_BODY = "[treść usunięta]"
 
 
 class MessagingService:
@@ -133,7 +141,7 @@ class MessagingService:
         if not recipient_ids:
             return
 
-        metadata = cls._build_metadata(thread, message)
+        metadata = cls._build_metadata(thread, message, sender_id)
         for uid in recipient_ids:
             dto = NotificationCreateDTO(
                 recipient_id=str(uid),
@@ -167,19 +175,68 @@ class MessagingService:
         return [uid for uid in ids if uid and uid != sender_id]
 
     @staticmethod
-    def _build_metadata(thread: Thread, message: Message) -> dict[str, str]:
+    def _build_metadata(thread: Thread, message: Message, sender_id: int) -> dict[str, str]:
         """JSON-safe payload for the notification (and email template) — no localized
-        strings baked in; the email template renders its own translated CTA label."""
+        strings baked in; the email template renders its own translated CTA label.
+
+        It copies the author's words and name into the recipient's inbox, so
+        ``sender_id`` travels with them: erasure finds the copies by it
+        (`erase_notification_copies`)."""
         site_url = getattr(settings, 'SITE_URL', 'https://voctensemble.com/panel').rstrip('/')
         body = message.body or ''
         return {
             'thread_id': str(thread.id),
             'title': thread.subject,
+            'sender_id': str(sender_id),
             'sender_name': user_display_name(message.sender),
             'message': body,
             'snippet': body[:_SNIPPET_LEN],
             'cta_url': f"{site_url}/messages/{thread.id}",
         }
+
+    @staticmethod
+    def erase_notification_copies(user: Any) -> int:
+        """Blanks the copies of ``user``'s messages held in other people's inboxes.
+
+        Rows written with ``sender_id`` are matched on it. Rows written before it
+        existed carry no sender, so they are matched by the threads the user wrote
+        in. Under `_resolve_recipients`, a row in the artist's own thread that is
+        addressed to anyone else came from the artist; in a thread the user wrote
+        in as a manager, the row may carry another manager's words, and blanking
+        that copy too is the safe side of not knowing — the message itself stays
+        in the conversation. A thread the user is the artist of is erased whole,
+        so its subject goes as well. The user's own inbox is not touched.
+        """
+        own_threads = {
+            str(thread_id)
+            for thread_id in Thread.all_objects.filter(artist__user=user).values_list('id', flat=True)
+        }
+        written_in = {
+            str(thread_id)
+            for thread_id in Message.all_objects.filter(sender=user).values_list('thread_id', flat=True)
+        }
+        copies = (
+            Notification.all_objects
+            .filter(notification_type=NotificationType.MESSAGE_RECEIVED)
+            .exclude(recipient=user)
+            .filter(
+                Q(metadata__sender_id=str(user.pk))
+                | Q(
+                    metadata__sender_id__isnull=True,
+                    metadata__thread_id__in=sorted(own_threads | written_in),
+                )
+            )
+        )
+        erased = 0
+        for notification in copies.only('id', 'metadata'):
+            metadata = dict(notification.metadata)
+            metadata.update(message=ERASED_BODY, snippet=ERASED_BODY, sender_name='')
+            if metadata.get('thread_id') in own_threads:
+                metadata['title'] = ERASED_BODY
+            notification.metadata = metadata
+            notification.save(update_fields=['metadata', 'updated_at'])
+            erased += 1
+        return erased
 
 
 class ChannelService:
@@ -203,9 +260,20 @@ class ChannelService:
         )
 
     @classmethod
-    def post_message(cls, *, channel: ProjectChannel, sender_id: int, body: str) -> ChannelMessage:
+    def post_message(
+        cls, *, channel: ProjectChannel, sender_id: int, body: str, pinned: bool = False
+    ) -> ChannelMessage:
+        """Appends to the stream and pushes to the members who opted in.
+
+        ``pinned`` publishes an announcement in the same write: a post followed by
+        a separate pin could succeed halfway, and a retry of the half that looked
+        failed would publish the announcement twice. Who may pin is the view's
+        decision.
+        """
         with transaction.atomic():
-            message = ChannelMessage.objects.create(channel=channel, sender_id=sender_id, body=body)
+            message = ChannelMessage.objects.create(
+                channel=channel, sender_id=sender_id, body=body, is_pinned=pinned
+            )
             channel.last_message_at = message.created_at
             channel.save(update_fields=['last_message_at', 'updated_at'])
             cls._touch_read(channel.id, sender_id, when=message.created_at)
@@ -234,7 +302,9 @@ class ChannelService:
 
     @classmethod
     def _dispatch_push(cls, message_id: UUID, sender_id: int) -> None:
-        """Push only to members who opted in for this channel (excluding the sender)."""
+        """Push only to current members who opted in for this channel (excluding
+        the sender). A seat that outlived its source reaches nobody, the same as
+        it opens nothing (`current_memberships`)."""
         try:
             message = ChannelMessage.objects.select_related(
                 'channel', 'channel__project', 'sender'
@@ -244,7 +314,8 @@ class ChannelService:
 
         channel = message.channel
         recipient_ids = list(
-            ChannelMembership.objects.filter(channel=channel, push_enabled=True)
+            current_memberships()
+            .filter(channel=channel, push_enabled=True)
             .exclude(user_id=sender_id)
             .values_list('user_id', flat=True)
         )

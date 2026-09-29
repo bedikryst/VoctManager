@@ -1,8 +1,10 @@
 """
 @file selectors.py
-@description Pure read helpers shared by serializers and views. No write logic,
-             no notification side-effects — keeps the serializer layer free of any
-             dependency on the service/notifications stack.
+@description Pure read helpers shared by serializers, views and the service:
+             identity payloads, conversation windows, and which channel seats
+             still stand. No write logic, no notification side-effects — keeps
+             the serializer layer free of any dependency on the
+             service/notifications stack.
 @architecture Enterprise SaaS 2026
 @module messaging/selectors
 """
@@ -14,7 +16,13 @@ from uuid import UUID
 
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models import QuerySet
+from django.db.models import Exists, OuterRef, Q, QuerySet
+
+from core.permissions import MANAGER_QUERY_FILTER, user_is_manager
+from roster.models import Project
+from roster.permissions import led_projects_q
+
+from .models import ChannelMembership, ChannelRole, ProjectChannel
 
 User = get_user_model()
 
@@ -53,6 +61,48 @@ def user_brief(user: Any | None, request: Any | None = None) -> dict[str, Any] |
         'name': user_display_name(user),
         'avatar_url': avatar_thumb_url(user, request),
     }
+
+
+def current_memberships() -> QuerySet[ChannelMembership]:
+    """
+    Channel seats whose source still stands — the one answer to "is this person
+    in this channel" for access, the unread badge and the push fan-out alike.
+
+    The syncs in `messaging.signals` keep the rows, but not every end of a
+    source raises a signal: a leader's grant runs out by the clock, a project
+    closes, an account stops being a manager. A row that outlived its source
+    stays in the table, so every reader asks here, and such a row opens nothing
+    and reaches nobody.
+
+    - A manager's seat stands whatever its role: management opens every channel.
+    - A MEMBER seat is trusted as stored: every change to the participation that
+      owns it raises a signal.
+    - A LEADER seat stands while the person still runs the project, by the same
+      predicate every other leader surface asks (`led_projects_q`).
+    - A MANAGER seat of someone who is no longer a manager stands on nothing.
+    """
+    is_manager = User.objects.filter(
+        MANAGER_QUERY_FILTER, pk=OuterRef('user_id'), is_active=True,
+    )
+    leads_project = Project.objects.filter(
+        led_projects_q(OuterRef('user_id'), scope='any'),
+        pk=OuterRef('channel__project_id'),
+    )
+    return ChannelMembership.objects.filter(
+        Q(Exists(is_manager))
+        | Q(role=ChannelRole.MEMBER)
+        | Q(Exists(leads_project), role=ChannelRole.LEADER)
+    )
+
+
+def accessible_channels(user: Any) -> QuerySet[ProjectChannel]:
+    """Channels ``user`` may open: all of them for a manager (the seat is made
+    lazily on first open), otherwise those behind a current seat."""
+    if user_is_manager(user):
+        return ProjectChannel.objects.all()
+    return ProjectChannel.objects.filter(
+        pk__in=current_memberships().filter(user_id=user.id).values('channel_id')
+    )
 
 
 def viewer_last_read(context: Mapping[str, Any], thread_id: UUID) -> datetime | None:

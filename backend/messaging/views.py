@@ -31,13 +31,11 @@ from rest_framework.response import Response
 from core.permissions import MANAGER_QUERY_FILTER, user_is_manager
 from core.request_utils import request_user
 from roster.models import Artist, Project
-from roster.permissions import led_projects_q, user_leads_project
 
 from .dtos import ThreadCreateDTO
 from .models import (
     ChannelMembership,
     ChannelMessage,
-    ChannelRole,
     Message,
     ProjectChannel,
     Thread,
@@ -45,7 +43,12 @@ from .models import (
     ThreadReadState,
     ThreadStatus,
 )
-from .selectors import paginate_messages, user_brief
+from .selectors import (
+    accessible_channels,
+    current_memberships,
+    paginate_messages,
+    user_brief,
+)
 from .serializers import (
     ChannelDetailSerializer,
     ChannelListSerializer,
@@ -195,38 +198,51 @@ class ThreadViewSet(viewsets.GenericViewSet):
     @staticmethod
     def _find_reusable_thread(
         *, artist: Artist, context_type: str, context_id: UUID | None,
-        assignee_id: int | None, is_manager: bool,
+        sender_id: int, assignee_id: int | None, is_manager: bool,
     ) -> Thread | None:
         """An OPEN conversation to continue instead of spawning a duplicate.
 
-        - PROJECT-scoped: one thread per (artist, project) while open — keeps a person's
-          private project matters in a single, resolvable place (and tagged to the project).
-          For a manager, reuse is restricted to a thread they may see (their own or the
-          shared queue) so a new message never lands in a peer's private thread.
-        - GENERAL + undirected: the artist's standing general thread.
+        - PROJECT-scoped: one thread per (artist, project, recipient) while open —
+          keeps a person's private project matters in a single, resolvable place
+          (and tagged to the project).
+        - GENERAL + undirected: the artist's standing thread with the shared queue.
         Directed general threads (an explicit assignee) always open fresh.
+
+        A continued thread must reach exactly who the sender chose: the chosen
+        manager, or the shared queue when nobody was chosen — never a thread a
+        manager has claimed since. A manager continues only a thread they may see
+        (their own, or the queue, which their reply then claims), so a manager
+        addressing a colleague always opens a fresh thread: the colleague's
+        private thread is not theirs to write into, and the queue's would be
+        claimed by the sender rather than the colleague.
         """
+        if is_manager:
+            if assignee_id != sender_id:
+                return None
+            reaches_choice = Q(assignee_id=sender_id) | Q(assignee__isnull=True)
+        elif assignee_id is None:
+            reaches_choice = Q(assignee__isnull=True)
+        else:
+            reaches_choice = Q(assignee_id=assignee_id)
+
         if context_type == ThreadContextType.PROJECT and context_id:
             qs = Thread.objects.filter(
+                reaches_choice,
                 artist=artist,
                 context_type=ThreadContextType.PROJECT,
                 context_id=context_id,
                 status=ThreadStatus.OPEN,
             )
-            if is_manager:
-                qs = qs.filter(Q(assignee_id=assignee_id) | Q(assignee__isnull=True))
-            return qs.order_by('-last_message_at').first()
-        if context_type == ThreadContextType.GENERAL and not context_id and not assignee_id:
-            return (
-                Thread.objects.filter(
-                    artist=artist,
-                    context_type=ThreadContextType.GENERAL,
-                    status=ThreadStatus.OPEN,
-                )
-                .order_by('-last_message_at')
-                .first()
+        elif context_type == ThreadContextType.GENERAL and not context_id and assignee_id is None:
+            qs = Thread.objects.filter(
+                reaches_choice,
+                artist=artist,
+                context_type=ThreadContextType.GENERAL,
+                status=ThreadStatus.OPEN,
             )
-        return None
+        else:
+            return None
+        return qs.order_by('-last_message_at').first()
 
     def create(self, request: Request) -> Response:
         user = request_user(request)
@@ -244,25 +260,30 @@ class ThreadViewSet(viewsets.GenericViewSet):
                 return Response({"detail": "Artist not found."}, status=status.HTTP_404_NOT_FOUND)
             if not artist.user_id:
                 return Response({"detail": "Artist has no linked user account."}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-            assignee_id = data.get('assignee_id') or user.id
         else:
             artist = Artist.objects.filter(user_id=user.id, is_deleted=False).first()
             if artist is None:
                 return Response({"detail": "No artist profile linked to this account."}, status=status.HTTP_403_FORBIDDEN)
-            assignee_id = data.get('assignee_id')
-            if assignee_id is not None and not self._is_manager_user_id(assignee_id):
-                return Response({"detail": "Chosen recipient is not a manager."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Whoever writes, a named recipient must be a manager: the assignee is who
+        # the thread is private to, and a thread assigned to anyone else would sit
+        # outside every manager's inbox.
+        requested_assignee = data.get('assignee_id')
+        if requested_assignee is not None and not self._is_manager_user_id(requested_assignee):
+            return Response({"detail": "Chosen recipient is not a manager."}, status=status.HTTP_400_BAD_REQUEST)
+        assignee_id = (requested_assignee or user.id) if is_manager else requested_assignee
 
         context_type = data.get('context_type', ThreadContextType.GENERAL)
         context_id = data.get('context_id')
 
         # Continue an existing OPEN conversation instead of duplicating it: one thread
-        # per (artist, project) for project matters, and the artist's standing general
-        # thread for undirected questions (see _find_reusable_thread).
+        # per (artist, project, recipient) for project matters, and the artist's
+        # standing queue thread for undirected questions (see _find_reusable_thread).
         existing = self._find_reusable_thread(
             artist=artist,
             context_type=context_type,
             context_id=context_id,
+            sender_id=user.id,
             assignee_id=assignee_id,
             is_manager=is_manager,
         )
@@ -363,15 +384,11 @@ class ThreadViewSet(viewsets.GenericViewSet):
             if read_map.get(tid) is None or last_message_at > read_map[tid]
         )
 
-        # Project channels count toward the same "unread conversations" badge.
+        # Project channels count toward the same "unread conversations" badge —
+        # exactly the channels the list shows, so a seat that opens nothing counts
+        # for nothing.
         user = request_user(request)
-        if self._is_manager(user):
-            channels = ProjectChannel.objects.all()
-        else:
-            channels = ProjectChannel.objects.filter(
-                memberships__user=user, memberships__is_deleted=False
-            ).distinct()
-        channel_rows = list(channels.values_list('id', 'last_message_at'))
+        channel_rows = list(accessible_channels(user).values_list('id', 'last_message_at'))
         channel_read = dict(
             ChannelMembership.objects.filter(
                 user=user, channel_id__in=[cid for cid, _ in channel_rows]
@@ -402,8 +419,9 @@ class ThreadViewSet(viewsets.GenericViewSet):
 class ProjectChannelViewSet(viewsets.GenericViewSet):
     """
     Project group channels. Managers see all channels; artists see channels where they
-    hold an active membership (synced from confirmed participation, or from a live
-    project leadership — see `messaging.signals`). Delivery is in-app +
+    hold a current seat (synced from confirmed participation, or from a live
+    project leadership — see `messaging.signals` and
+    `selectors.current_memberships`). Delivery is in-app +
     opt-in push only — handled in ChannelService, not the notifications router.
     Router auto-generates: /channels/, /channels/{pk}/, /channels/{pk}/messages/,
     /channels/{pk}/read/, /channels/{pk}/membership/, /channels/{pk}/messages/{mid}/pin/,
@@ -417,24 +435,10 @@ class ProjectChannelViewSet(viewsets.GenericViewSet):
         return user_is_manager(user)
 
     def get_queryset(self) -> QuerySet[ProjectChannel]:
-        user = request_user(self.request)
-        qs = ProjectChannel.objects.select_related('project')
-        if self._is_manager(user):
-            return qs
-        # A LEADER seat is only as good as the grant behind it. The grant sync
-        # takes the seat back on revoke, but a grant that ran out by the clock
-        # or a project that closed raises no signal, so the seat is re-asked
-        # here against the same predicate every other leader surface uses.
-        # Spelled positively (`role__in`) so the role and the user bind to ONE
-        # membership row — a negated lookup on a multi-valued relation would
-        # not.
-        return qs.filter(
-            Q(memberships__user=user, memberships__is_deleted=False)
-            & (
-                Q(memberships__role__in=[ChannelRole.MEMBER, ChannelRole.MANAGER])
-                | led_projects_q(user, scope='any', prefix='project__')
-            )
-        ).distinct()
+        # A seat is only as good as the source behind it: a grant that ran out
+        # by the clock, a project that closed or a manager who no longer is one
+        # raises no signal, so `accessible_channels` asks again on every read.
+        return accessible_channels(request_user(self.request)).select_related('project')
 
     def _read_map(self, request: Request, channel_ids: list) -> dict:
         states = ChannelMembership.objects.filter(
@@ -449,14 +453,8 @@ class ProjectChannelViewSet(viewsets.GenericViewSet):
         if self._is_manager(user):
             ChannelService.ensure_manager_membership(channel=channel, user=user)
             return channel
-        membership = ChannelMembership.objects.filter(channel=channel, user_id=user.id).first()
-        if membership is None:
-            return None
-        # Same guard as `get_queryset`: a leader's seat outliving its grant
-        # (expiry by the clock, a closed project) opens nothing.
-        if membership.role == ChannelRole.LEADER and not user_leads_project(
-            user, channel.project_id, scope='any',
-        ):
+        # Same answer as `get_queryset`: a seat outliving its source opens nothing.
+        if not current_memberships().filter(channel=channel, user_id=user.id).exists():
             return None
         return channel
 
@@ -535,8 +533,16 @@ class ProjectChannelViewSet(viewsets.GenericViewSet):
 
         serializer = ChannelMessageCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        user = request_user(request)
+        pinned = serializer.validated_data['pinned']
+        # Same rule as the pin action: only a manager decides what stays on top.
+        if pinned and not self._is_manager(user):
+            return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
         message = ChannelService.post_message(
-            channel=channel, sender_id=request_user(request).id, body=serializer.validated_data['body']
+            channel=channel,
+            sender_id=user.id,
+            body=serializer.validated_data['body'],
+            pinned=pinned,
         )
         return Response(ChannelMessageSerializer(message, context={'request': request}).data, status=status.HTTP_201_CREATED)
 

@@ -37,6 +37,7 @@ import {
   ASSESSED_FIELDS,
   voiceToSalutation,
 } from "../types/artist.dto";
+import { canReceiveMessages } from "../lib/accountState";
 import { AssessedRangeField } from "./AssessedRangeField";
 import { NewThreadModal } from "@/features/messages/components/NewThreadModal";
 
@@ -217,7 +218,7 @@ export default function ArtistEditorPanel({
                   : t("artists.editor.title_new", "Nowy Artysta")}
               </Heading>
               <div className="flex items-center gap-2">
-                {artist?.id && (
+                {artist?.id && canReceiveMessages(artist) && (
                   <Button
                     variant="outline"
                     size="sm"

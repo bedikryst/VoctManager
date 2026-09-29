@@ -41,6 +41,13 @@ export const isAwaitingActivation = (artist: Artist): boolean =>
 export const isWithoutPush = (artist: Artist): boolean =>
   artist.has_push === false && artist.account_activated === true;
 
+/**
+ * A thread is addressed to the member's linked account. Without one — a
+ * detached (GDPR-erased) account — there is nowhere to deliver it and the
+ * server refuses the thread, so no "write" action is offered for them.
+ */
+export const canReceiveMessages = (artist: Artist): boolean => Boolean(artist.user);
+
 export type OutOfReachReason = "no_email" | "not_activated";
 
 /**

@@ -118,8 +118,16 @@ export const ChannelService = {
     return response.data;
   },
 
-  postMessage: async (id: string, body: string): Promise<ChannelMessageDTO> => {
-    const response = await api.post<ChannelMessageDTO>(`${CHANNELS_URL}${id}/messages/`, { body });
+  /** `pinned` publishes a manager's announcement in the same request as the post. */
+  postMessage: async (
+    id: string,
+    body: string,
+    options?: { pinned?: boolean },
+  ): Promise<ChannelMessageDTO> => {
+    const response = await api.post<ChannelMessageDTO>(`${CHANNELS_URL}${id}/messages/`, {
+      body,
+      pinned: options?.pinned ?? false,
+    });
     return response.data;
   },
 

@@ -56,7 +56,12 @@ import {
 } from "@/shared/ui/primitives/typography";
 import { getSectionPresentation } from "../constants/voiceSections";
 import { usePitchNotation } from "../hooks/usePitchNotation";
-import { isAwaitingActivation, isWithoutEmail, isWithoutPush } from "../lib/accountState";
+import {
+  canReceiveMessages,
+  isAwaitingActivation,
+  isWithoutEmail,
+  isWithoutPush,
+} from "../lib/accountState";
 import { rangesOf, sameRange } from "../lib/vocalRangeProposal";
 import { SightReadingStars } from "./SightReadingStars";
 
@@ -432,19 +437,21 @@ export const ArtistCard = React.memo(
 
         {!selectionMode && (
           <div className="mt-auto flex items-center justify-between gap-2 border-t border-hairline px-5 py-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(event) => {
-                stop(event);
-                onMessage(artist);
-              }}
-              leftIcon={<MessageSquare size={13} aria-hidden="true" />}
-              className="text-ethereal-amethyst hover:text-ethereal-amethyst"
-            >
-              {t("artists.card.message", "Napisz")}
-            </Button>
-            <span className="inline-flex items-center gap-1 pr-1 text-ethereal-graphite/55 transition-colors group-hover:text-ethereal-gold">
+            {canReceiveMessages(artist) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(event) => {
+                  stop(event);
+                  onMessage(artist);
+                }}
+                leftIcon={<MessageSquare size={13} aria-hidden="true" />}
+                className="text-ethereal-amethyst hover:text-ethereal-amethyst"
+              >
+                {t("artists.card.message", "Napisz")}
+              </Button>
+            )}
+            <span className="ml-auto inline-flex items-center gap-1 pr-1 text-ethereal-graphite/55 transition-colors group-hover:text-ethereal-gold">
               <Eyebrow color="inherit">
                 {t("artists.card.details", "Dossier")}
               </Eyebrow>

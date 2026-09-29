@@ -47,6 +47,7 @@ import { useProjectsLite } from "../api/projects.lite";
 import { hasSeveralCounterparts, startsSenderRun } from "../lib/messageRuns";
 import { useMessageTextStep, useMessageTextStyle } from "../lib/messageTextScale";
 import { dayLabel, groupMessagesByDay } from "../lib/time";
+import { useConversationDraft } from "../lib/useConversationDraft";
 import { useStickyScroll } from "../lib/useStickyScroll";
 import type { UserBrief } from "../types/messages.dto";
 import { ConversationGate } from "./ConversationGate";
@@ -73,11 +74,15 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   const { data: thread, isError, refetch } = useThread(threadId);
   const markRead = useMarkThreadRead();
   const updateThread = useUpdateThread(threadId);
-  const postMessage = usePostMessage(threadId, me);
+  const {
+    draft: body,
+    setDraft: setBody,
+    restoreUndelivered,
+  } = useConversationDraft();
+  const postMessage = usePostMessage(threadId, me, { onUndelivered: restoreUndelivered });
   const olderMessages = useOlderThreadMessages(threadId);
   const { data: projects = [] } = useProjectsLite(thread?.context_type === "PROJECT");
 
-  const [body, setBody] = React.useState("");
   const textStep = useMessageTextStep();
   const textStyle = useMessageTextStyle();
   const stream = useStickyScroll(thread?.messages.length ?? 0, textStep);

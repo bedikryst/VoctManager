@@ -38,6 +38,7 @@ import {
 import { startsSenderRun } from "../lib/messageRuns";
 import { useMessageTextStep, useMessageTextStyle } from "../lib/messageTextScale";
 import { dayLabel, groupMessagesByDay, isOptimisticId } from "../lib/time";
+import { useConversationDraft } from "../lib/useConversationDraft";
 import { useStickyScroll } from "../lib/useStickyScroll";
 import type { ChannelMessageDTO, UserBrief } from "../types/messages.dto";
 import { ConversationGate } from "./ConversationGate";
@@ -66,12 +67,18 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
   const { t } = useTranslation();
   const { data: channel, isError, refetch } = useChannel(channelId);
   const markRead = useMarkChannelRead();
-  const postMessage = usePostChannelMessage(channelId, me);
+  const {
+    draft: body,
+    setDraft: setBody,
+    restoreUndelivered,
+  } = useConversationDraft();
+  const postMessage = usePostChannelMessage(channelId, me, {
+    onUndelivered: restoreUndelivered,
+  });
   const setPush = useSetChannelPush(channelId);
   const pinMessage = usePinChannelMessage(channelId);
   const olderMessages = useOlderChannelMessages(channelId);
 
-  const [body, setBody] = React.useState("");
   const textStep = useMessageTextStep();
   const textStyle = useMessageTextStyle();
   const stream = useStickyScroll(channel?.messages.length ?? 0, textStep);
