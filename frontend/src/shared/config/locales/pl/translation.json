@@ -3655,8 +3655,8 @@
   "messages": {
     "alert": {
       "aria": "Otwórz wiadomości",
-      "count_one": "Masz {{count}} nieprzeczytanych rozmów",
-      "count_few": "Masz {{count}} nieprzeczytanych rozmów",
+      "count_one": "Masz {{count}} nieprzeczytaną rozmowę",
+      "count_few": "Masz {{count}} nieprzeczytane rozmowy",
       "count_many": "Masz {{count}} nieprzeczytanych rozmów",
       "count_other": "Masz {{count}} nieprzeczytanych rozmów",
       "title": "Nieprzeczytane wiadomości"
@@ -3674,6 +3674,8 @@
       "pin": "Przypnij",
       "pin_failed": "Nie udało się przypiąć wiadomości.",
       "pinned": "Przypięte",
+      "pinned_collapse": "Zwiń",
+      "pinned_expand": "Rozwiń",
       "push_failed": "Nie udało się zmienić powiadomień push dla tego kanału.",
       "push_off": "Push wyłączony",
       "push_on": "Push włączony",
@@ -3725,17 +3727,15 @@
       "retry": "Spróbuj ponownie"
     },
     "deck": {
-      "channels": "Kanały projektów",
-      "channels_census": "{{visible}} z {{total}}",
+      "clear_hint": "Tu pojawią się nowe wiadomości i zgłoszenia bez przydziału.",
+      "clear_hint_artist": "Tu pojawią się nowe wiadomości.",
       "empty": "Nie ma jeszcze żadnych rozmów. Zacznij nową wiadomością.",
       "empty_title": "Cisza w skrzynce",
       "eyebrow": "Skrzynka dyrygenta",
       "eyebrow_artist": "Twoja skrzynka",
-      "in_my_care": "Pod Twoją opieką",
       "lead_assign": "Zgłoszenia czekają na przydział.",
       "lead_unread": "Są nowe wiadomości.",
       "lead_unread_artist": "Masz nowe wiadomości.",
-      "my_threads": "Twoje rozmowy",
       "needs_assignment": "Wymaga przydziału",
       "needs_attention": "Wymaga uwagi",
       "summary_clear": "Wszystko ogarnięte.",
@@ -3746,11 +3746,12 @@
       "all": "Wszystkie",
       "aria": "Filtruj rozmowy",
       "mine": "Moje",
-      "resolved": "Zamknięte",
       "unassigned": "Bez opieki",
       "unread": "Nowe"
     },
     "list": {
+      "back_to_inbox": "Wróć do skrzynki",
+      "closed_entry": "Zamknięte rozmowy",
       "empty": "Nie ma jeszcze żadnych rozmów. Zacznij nową wiadomością.",
       "empty_title": "Cisza w skrzynce",
       "load_failed": "Nie udało się wczytać skrzynki",

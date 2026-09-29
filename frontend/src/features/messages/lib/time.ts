@@ -2,8 +2,13 @@
  * @file time.ts
  * @description Conversation time formatting — calm, chat-native stamps. Inbox rows
  * get a compact relative stamp (teraz / 12 min / 14:30 / wczoraj / 12 cze); the
- * stream is sliced into day groups with a human divider label. Locale follows the
- * browser (mirrors the rest of the feature's `toLocaleString(undefined, …)` idiom).
+ * stream is sliced into day groups with a human divider label.
+ *
+ * Dates are written in the language the app is set to, not the browser's: a
+ * French conductor on a Polish-configured laptop reads "12 juin" beside French
+ * copy. The locale is read through the caller's `t` (`common.locale`), which is
+ * already bound to the active language, so this module stays free of the i18n
+ * instance and runs in the node test project.
  * @architecture Enterprise SaaS 2026
  * @module features/messages/lib/time
  */
@@ -20,8 +25,12 @@ const startOfDay = (d: Date): number =>
 const daysApart = (from: Date, to: Date): number =>
   Math.round((startOfDay(to) - startOfDay(from)) / 86_400_000);
 
-const timeOnly = (d: Date): string =>
-  d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+/** The BCP 47 tag of the app's active language, e.g. `pl-PL`. */
+const localeOf = (t: TFunction): string =>
+  t("common.locale", { defaultValue: "pl-PL" });
+
+const timeOnly = (d: Date, t: TFunction): string =>
+  d.toLocaleTimeString(localeOf(t), { hour: "2-digit", minute: "2-digit" });
 
 /**
  * Compact stamp for inbox rows: relative for the recent past, clock time for the
@@ -39,30 +48,21 @@ export const relativeStamp = (iso: string, t: TFunction): string => {
     });
 
   const days = daysApart(then, now);
-  if (days === 0) return timeOnly(then);
+  if (days === 0) return timeOnly(then, t);
   if (days === 1) return t("messages.time.yesterday", "wczoraj");
   if (days < 7)
-    return then.toLocaleDateString(undefined, { weekday: "short" });
+    return then.toLocaleDateString(localeOf(t), { weekday: "short" });
 
   const sameYear = then.getFullYear() === now.getFullYear();
-  return then.toLocaleDateString(undefined, {
+  return then.toLocaleDateString(localeOf(t), {
     day: "numeric",
     month: "short",
     ...(sameYear ? {} : { year: "numeric" }),
   });
 };
 
-/** Full timestamp for inside a message bubble (title / hover detail). */
-export const fullStamp = (iso: string): string =>
-  new Date(iso).toLocaleString(undefined, {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
 /** Clock-only stamp shown on a bubble within its day group. */
-export const clockStamp = (iso: string): string => timeOnly(new Date(iso));
+export const clockStamp = (iso: string, t: TFunction): string => timeOnly(new Date(iso), t);
 
 /** Human divider label for a day group: Dziś / Wczoraj / 12 czerwca [2025]. */
 export const dayLabel = (iso: string, t: TFunction): string => {
@@ -74,7 +74,7 @@ export const dayLabel = (iso: string, t: TFunction): string => {
   if (days === 1) return t("messages.time.yesterday_full", "Wczoraj");
 
   const sameYear = then.getFullYear() === now.getFullYear();
-  return then.toLocaleDateString(undefined, {
+  return then.toLocaleDateString(localeOf(t), {
     day: "numeric",
     month: "long",
     ...(sameYear ? {} : { year: "numeric" }),

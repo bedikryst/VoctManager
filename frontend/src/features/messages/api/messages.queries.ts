@@ -21,9 +21,10 @@ import { toastApiError } from "@/shared/api/errors";
 import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
 
 import {
+  absorbOlderWindow,
   mergeConversation,
   mergeMessages,
-  pollCursor,
+  pollConversation,
   withoutMessage,
 } from "../lib/conversationWindow";
 import { ChannelService, MessagingService } from "./messages.service";
@@ -85,12 +86,12 @@ export const useThread = (id: string | undefined) => {
   const queryClient = useQueryClient();
   return useQuery({
     queryKey: messagingKeys.thread(id ?? "none"),
-    queryFn: async () => {
+    queryFn: () => {
       const key = messagingKeys.thread(id as string);
-      const held = queryClient.getQueryData<ThreadDetail>(key);
-      const since = pollCursor(held?.messages);
-      const fresh = await MessagingService.get(id as string, since ? { since } : undefined);
-      return mergeConversation(held, fresh, !!since);
+      return pollConversation<MessageDTO, ThreadDetail>(
+        () => queryClient.getQueryData<ThreadDetail>(key),
+        (since) => MessagingService.get(id as string, since ? { since } : undefined),
+      );
     },
     enabled: !!id,
     ...CONVERSATION_FRESHNESS,
@@ -108,13 +109,7 @@ export const useOlderThreadMessages = (threadId: string) => {
     mutationFn: (before: string) => MessagingService.messageWindow(threadId, { before }),
     onSuccess: (window) => {
       queryClient.setQueryData<ThreadDetail>(messagingKeys.thread(threadId), (held) =>
-        held
-          ? {
-              ...held,
-              messages: mergeMessages(held.messages, window.messages, false),
-              messages_page: window.messages_page,
-            }
-          : held,
+        absorbOlderWindow(held, window),
       );
     },
     onError: (error) => {
@@ -308,12 +303,12 @@ export const useChannel = (id: string | undefined) => {
   const queryClient = useQueryClient();
   return useQuery({
     queryKey: channelKeys.detail(id ?? "none"),
-    queryFn: async () => {
+    queryFn: () => {
       const key = channelKeys.detail(id as string);
-      const held = queryClient.getQueryData<ChannelDetail>(key);
-      const since = pollCursor(held?.messages);
-      const fresh = await ChannelService.get(id as string, since ? { since } : undefined);
-      return mergeConversation(held, fresh, !!since);
+      return pollConversation<ChannelMessageDTO, ChannelDetail>(
+        () => queryClient.getQueryData<ChannelDetail>(key),
+        (since) => ChannelService.get(id as string, since ? { since } : undefined),
+      );
     },
     enabled: !!id,
     ...CONVERSATION_FRESHNESS,
@@ -326,13 +321,7 @@ export const useOlderChannelMessages = (channelId: string) => {
     mutationFn: (before: string) => ChannelService.messageWindow(channelId, { before }),
     onSuccess: (window) => {
       queryClient.setQueryData<ChannelDetail>(channelKeys.detail(channelId), (held) =>
-        held
-          ? {
-              ...held,
-              messages: mergeMessages(held.messages, window.messages, false),
-              messages_page: window.messages_page,
-            }
-          : held,
+        absorbOlderWindow(held, window),
       );
     },
     onError: (error) => {
@@ -468,12 +457,15 @@ export const usePinChannelMessage = (channelId: string) => {
     // Patched in place, not invalidated: the poll answers with a DELTA, and the
     // message just pinned is by definition older than its cursor — a refetch
     // would leave both the bubble and the banner showing the previous state.
+    // The stream copy is replaced only where it is held: an announcement unpinned
+    // from the banner may predate the window, and inserting it would put March
+    // into September's stream and move the "earlier messages" cursor past the gap.
     onSuccess: (message) => {
       queryClient.setQueryData<ChannelDetail>(channelKeys.detail(channelId), (held) =>
         held
           ? {
               ...held,
-              messages: mergeMessages(held.messages, [message], false),
+              messages: held.messages.map((item) => (item.id === message.id ? message : item)),
               pinned_messages: message.is_pinned
                 ? mergeMessages(held.pinned_messages, [message], false)
                 : withoutMessage(held.pinned_messages, message.id),

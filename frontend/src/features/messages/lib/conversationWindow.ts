@@ -13,7 +13,7 @@
  */
 
 import { isOptimisticId } from "./time";
-import type { MessageWindowMeta } from "../types/messages.dto";
+import type { MessageWindow, MessageWindowMeta } from "../types/messages.dto";
 
 interface Held {
   id: string;
@@ -108,4 +108,45 @@ export const mergeConversation = <
     ),
     messages_page: mergeWindowMeta(held.messages_page, incoming.messages_page, askedForDelta),
   } as T;
+};
+
+/**
+ * Folds one page walked back from the oldest held message into the conversation.
+ * The page answers the question the "earlier messages" button asked, so its
+ * `has_older` is the word on what lies above.
+ */
+export const absorbOlderWindow = <
+  M extends Held,
+  T extends { messages: M[]; messages_page: MessageWindowMeta },
+>(
+  held: T | undefined,
+  window: MessageWindow<M>,
+): T | undefined =>
+  held
+    ? {
+        ...held,
+        messages: mergeMessages<M>(held.messages, window.messages, false),
+        messages_page: window.messages_page,
+      }
+    : held;
+
+/**
+ * One poll of an open conversation: ask for what arrived since the newest
+ * confirmed message held, and fold the answer in.
+ *
+ * The cache is read twice on purpose. The cursor comes from what was held when
+ * the request left; the answer is folded into what is held when it returns. An
+ * "earlier messages" page can land in between, and the poll's result replaces
+ * the cached value whole, so merging into the first snapshot would erase it.
+ */
+export const pollConversation = async <
+  M extends Held,
+  T extends { messages: M[]; messages_page: MessageWindowMeta },
+>(
+  readHeld: () => T | undefined,
+  fetchWindow: (since: string | undefined) => Promise<T>,
+): Promise<T> => {
+  const since = pollCursor(readHeld()?.messages);
+  const fresh = await fetchWindow(since);
+  return mergeConversation<M, T>(readHeld(), fresh, !!since);
 };

@@ -3,13 +3,19 @@
  * @description Mobile-first detail surface. On touch it rises from the bottom
  * edge as a draggable sheet (swipe-down to dismiss); from `sm:` up it presents
  * as a centred modal. Built on the codebase's portal + framer + scroll-lock
- * idiom (matching ConfirmModal) rather than a new dependency, with focus-trap
- * via inert background scroll lock, ESC, and an overlay tap to close.
+ * idiom (matching ConfirmModal) rather than a new dependency: focus is trapped
+ * inside while open and handed back to the opener on close, and ESC or an
+ * overlay tap closes it.
+ *
+ * ESC is answered by the sheet itself, not by a window listener, and marked
+ * handled. A sheet opens over panels that listen for ESC on the window (the
+ * artist editor, for one), and those registered first, so a window listener
+ * here would run after theirs and the one keypress would close both.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/BottomSheet
  */
 
-import React, { useCallback, useEffect, useId, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   AnimatePresence,
@@ -23,6 +29,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import { Eyebrow, Heading } from "@/shared/ui/primitives/typography";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 
 export interface BottomSheetProps {
   isOpen: boolean;
@@ -63,29 +70,23 @@ export const BottomSheet = ({
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
   const isDark = tone === "dark";
 
   useBodyScrollLock(isOpen);
+  useFocusTrap(dialogRef, isOpen && mounted);
 
   useEffect(() => setMounted(true), []);
 
-  const handleEscape = useCallback(
-    (event: KeyboardEvent) => {
-      // A popover opened from inside the sheet (a select, a menu, a calendar)
-      // dismisses itself on Escape and marks the event handled. The sheet must
-      // not ride that same keypress out from under it.
-      if (event.defaultPrevented) return;
-      if (event.key === "Escape") onClose();
-    },
-    [onClose],
-  );
-
-  useEffect(() => {
-    if (!isOpen) return;
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [handleEscape, isOpen]);
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    // A popover opened from inside the sheet (a select, a menu, a calendar)
+    // dismisses itself on Escape and marks the event handled. The sheet must
+    // not ride that same keypress out from under it.
+    if (event.key !== "Escape" || event.defaultPrevented) return;
+    event.preventDefault();
+    onClose();
+  };
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.y > DISMISS_OFFSET || info.velocity.y > DISMISS_VELOCITY) {
@@ -113,9 +114,12 @@ export const BottomSheet = ({
           />
 
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
+            tabIndex={-1}
+            onKeyDown={handleKeyDown}
             drag="y"
             dragListener={false}
             dragControls={dragControls}
@@ -127,7 +131,7 @@ export const BottomSheet = ({
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 320, damping: 34 }}
             className={cn(
-              "relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl border shadow-glass-solid",
+              "relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl border shadow-glass-solid outline-none",
               "sm:max-h-[85vh] sm:max-w-2xl sm:rounded-surface",
               isDark
                 ? "border-ethereal-gold/35 bg-surface-inverse/95 text-ink-on-inverse backdrop-blur-ethereal"

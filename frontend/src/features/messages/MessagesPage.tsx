@@ -1,7 +1,8 @@
 /**
  * @file MessagesPage.tsx
  * @description Two-pane messaging console. Left inbox: search + triage filter over two
- * sections — project channels (group) and 1:1 threads; right pane shows the selected
+ * sections — project channels (group) and 1:1 threads — with a manager's closed
+ * threads behind an archive entry under the list; right pane shows the selected
  * conversation, or the conductor's briefing deck (Skrzynka dyrygenta) when idle.
  * Entry point for both roles.
  *
@@ -18,16 +19,15 @@ import React, { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  Check,
+  Archive,
+  ArrowLeft,
+  ChevronRight,
   CircleAlert,
   Inbox,
-  MailOpen,
   Plus,
   RotateCw,
   Search,
   SearchX,
-  User,
-  UserPlus,
 } from "lucide-react";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -37,7 +37,7 @@ import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Eyebrow } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Label } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 import { foldDiacritics } from "@/shared/lib/text";
 import { useMediaQuery } from "@/shared/lib/dom/useMediaQuery";
@@ -52,25 +52,20 @@ import { ChannelView } from "./components/ChannelView";
 import { ConductorDeck } from "./components/ConductorDeck";
 import { ConversationSurface } from "./components/ConversationSurface";
 import { NewThreadModal } from "./components/NewThreadModal";
+import { SectionLabel } from "./components/SectionLabel";
 import type { ChannelSummary, ThreadSummary, UserBrief } from "./types/messages.dto";
 
-type TriageFilter = "all" | "unread" | "unassigned" | "mine" | "resolved";
+type TriageFilter = "all" | "unread" | "unassigned" | "mine";
 
 /** The width at which the two panes fit side by side — the `md:` classes below. */
 const TWO_PANE_QUERY = "(min-width: 768px)";
 
 /**
  * Filters whose size is WORK the reader has to do, so the figure earns its place on
- * the control. "Wszystkie" is the resting default and "Zamknięte" is an archive —
- * neither is a backlog, and a number on both would put a chip on every segment.
+ * the control. "Wszystkie" is the resting default, not a backlog, and a number on it
+ * would put a chip on every segment.
  */
 const COUNTED_FILTERS: ReadonlySet<TriageFilter> = new Set(["unread", "unassigned", "mine"]);
-
-const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <Eyebrow color="muted" className="px-2">
-    {children}
-  </Eyebrow>
-);
 
 const MessagesPage: React.FC = () => {
   const { t } = useTranslation();
@@ -87,6 +82,9 @@ const MessagesPage: React.FC = () => {
   const [isComposerOpen, setComposerOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<TriageFilter>("all");
+  // Closed threads are an archive the manager visits, not a queue beside the
+  // others, so they are reached from an entry under the list rather than a filter.
+  const [showClosed, setShowClosed] = useState(false);
 
   const me = useMemo<UserBrief>(
     () => ({
@@ -114,7 +112,7 @@ const MessagesPage: React.FC = () => {
     if (!threadsQuery.data) void threadsQuery.refetch();
     if (!channelsQuery.data) void channelsQuery.refetch();
   };
-  const isNarrowed = query.trim().length > 0 || filter !== "all";
+  const isNarrowed = query.trim().length > 0 || filter !== "all" || showClosed;
 
   const q = foldDiacritics(query.trim());
 
@@ -136,8 +134,6 @@ const MessagesPage: React.FC = () => {
           return !th.assignee && th.status === "OPEN";
         case "mine":
           return th.assignee?.id === me.id && th.status !== "ARCHIVED";
-        case "resolved":
-          return th.status === "RESOLVED";
       }
     };
     const threadMatchesQuery = (th: ThreadSummary): boolean =>
@@ -159,24 +155,33 @@ const MessagesPage: React.FC = () => {
         showsChannels(f)
           ? channels.filter((ch) => (f !== "unread" || ch.unread) && channelMatchesQuery(ch))
           : [],
+      closed: () => threads.filter((th) => th.status === "RESOLVED" && threadMatchesQuery(th)),
     };
   }, [threads, channels, q, me.id]);
 
-  const visibleThreads = useMemo(() => select.threads(filter), [select, filter]);
-  const visibleChannels = useMemo(() => select.channels(filter), [select, filter]);
+  const closedThreads = useMemo(() => select.closed(), [select]);
+  const visibleThreads = useMemo(
+    () => (showClosed ? closedThreads : select.threads(filter)),
+    [select, filter, showClosed, closedThreads],
+  );
+  const visibleChannels = useMemo(
+    () => (showClosed ? [] : select.channels(filter)),
+    [select, filter, showClosed],
+  );
 
+  // No icons: four segments and their figures have to hold one row of the
+  // 340px column, and the words are what tell the filters apart.
   const filterItems = useMemo<SegmentedTabItem<TriageFilter>[]>(() => {
-    const defs: Array<{ id: TriageFilter; label: string; Icon: typeof Inbox }> = isManager
+    const defs: Array<{ id: TriageFilter; label: string }> = isManager
       ? [
-          { id: "all", label: t("messages.filter.all", "Wszystkie"), Icon: Inbox },
-          { id: "unread", label: t("messages.filter.unread", "Nowe"), Icon: MailOpen },
-          { id: "unassigned", label: t("messages.filter.unassigned", "Bez opieki"), Icon: UserPlus },
-          { id: "mine", label: t("messages.filter.mine", "Moje"), Icon: User },
-          { id: "resolved", label: t("messages.filter.resolved", "Zamknięte"), Icon: Check },
+          { id: "all", label: t("messages.filter.all", "Wszystkie") },
+          { id: "unread", label: t("messages.filter.unread", "Nowe") },
+          { id: "unassigned", label: t("messages.filter.unassigned", "Bez opieki") },
+          { id: "mine", label: t("messages.filter.mine", "Moje") },
         ]
       : [
-          { id: "all", label: t("messages.filter.all", "Wszystkie"), Icon: Inbox },
-          { id: "unread", label: t("messages.filter.unread", "Nowe"), Icon: MailOpen },
+          { id: "all", label: t("messages.filter.all", "Wszystkie") },
+          { id: "unread", label: t("messages.filter.unread", "Nowe") },
         ];
 
     return defs.map((def) => {
@@ -201,6 +206,7 @@ const MessagesPage: React.FC = () => {
   const resetView = () => {
     setQuery("");
     setFilter("all");
+    setShowClosed(false);
   };
 
   const nothingToShow = !showChannels && visibleThreads.length === 0;
@@ -270,18 +276,29 @@ const MessagesPage: React.FC = () => {
               placeholder={t("messages.search", "Szukaj rozmowy…")}
               aria-label={t("messages.search", "Szukaj rozmowy…")}
             />
-            {/* Wrapping belongs to the desktop's fixed 340px column, which is what
-                it was added for. On a phone the manager's five segments became
-                three rows — ~118px of a card that has to hold the whole inbox —
-                and one thumb-scrollable row is the standard there anyway. */}
-            <SegmentedTabs
-              items={filterItems}
-              value={filter}
-              onChange={setFilter}
-              ariaLabel={t("messages.filter.aria", "Filtruj rozmowy")}
-              className="text-xs"
-              wrap={isTwoPane}
-            />
+            {showClosed ? (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="icon"
+                  size="icon"
+                  type="button"
+                  onClick={() => setShowClosed(false)}
+                  aria-label={t("messages.list.back_to_inbox", "Wróć do skrzynki")}
+                  className="-ml-1 shrink-0"
+                >
+                  <ArrowLeft size={16} />
+                </Button>
+                <Eyebrow color="muted">{t("messages.list.closed_entry", "Zamknięte rozmowy")}</Eyebrow>
+              </div>
+            ) : (
+              <SegmentedTabs
+                items={filterItems}
+                value={filter}
+                onChange={setFilter}
+                ariaLabel={t("messages.filter.aria", "Filtruj rozmowy")}
+                compact
+              />
+            )}
           </div>
 
           {inboxFailed ? (
@@ -354,6 +371,22 @@ const MessagesPage: React.FC = () => {
                   />
                 </div>
               )}
+              {isManager && !showClosed && closedThreads.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowClosed(true)}
+                  className="flex w-full items-center gap-2 rounded-nested px-3 py-2.5 text-left text-ethereal-graphite transition-colors outline-none hover:bg-ethereal-ink/4 focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+                >
+                  <Archive size={14} aria-hidden="true" className="shrink-0 opacity-60" />
+                  <Label size="sm" color="inherit">
+                    {t("messages.list.closed_entry", "Zamknięte rozmowy")}
+                  </Label>
+                  <Caption color="muted" className="tabular-nums">
+                    {closedThreads.length}
+                  </Caption>
+                  <ChevronRight size={14} aria-hidden="true" className="ml-auto shrink-0 opacity-40" />
+                </button>
+              )}
             </div>
           )}
         </GlassCard>
@@ -386,7 +419,6 @@ const MessagesPage: React.FC = () => {
                 threads={threads}
                 channels={channels}
                 isManager={isManager}
-                me={me}
                 onSelectThread={selectThread}
                 onSelectChannel={selectChannel}
               />

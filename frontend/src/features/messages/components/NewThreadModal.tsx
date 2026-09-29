@@ -4,25 +4,29 @@
  * picker + optional project context) and a project-channel **announcement** (channel
  * picker + optional pin). Artists may direct a thread to a chosen manager (else it
  * reaches the whole pool).
+ *
+ * Presented as a `BottomSheet`: a sheet under the thumb on a phone, a centred
+ * dialog from `sm:` up, with its focus, ESC and height handling. The gestures that
+ * happen by accident (ESC, a tap on the scrim, a swipe down, the close button)
+ * only put the composer away, and the draft is there on the next opening. Cancel
+ * discards it, and so does a successful send.
  * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 
 import React, { useMemo, useState } from "react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Megaphone, MessageSquare, Send, X } from "lucide-react";
+import { Megaphone, MessageSquare, Send } from "lucide-react";
 
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { BottomSheet } from "@/shared/ui/composites/BottomSheet";
 import { SegmentedTabs, type SegmentedTabItem } from "@/shared/ui/composites/SegmentedTabs";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Checkbox } from "@/shared/ui/primitives/Checkbox";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Select } from "@/shared/ui/primitives/Select";
-import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { useArtists } from "@/features/artists/api/artist.queries";
 import { canReceiveMessages } from "@/features/artists/lib/accountState";
 import { toastApiError } from "@/shared/api/errors";
@@ -163,7 +167,15 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
     setPin(true);
   };
 
-  const handleClose = () => {
+  // A kept draft never follows a different preset recipient: the artist views
+  // keep one composer mounted while the reader moves from artist to artist.
+  const [draftFor, setDraftFor] = useState(presetArtistId);
+  if (draftFor !== presetArtistId) {
+    setDraftFor(presetArtistId);
+    reset();
+  }
+
+  const handleDiscard = () => {
     reset();
     onClose();
   };
@@ -237,169 +249,131 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
     else submitThread();
   };
 
-  if (typeof document === "undefined") return null;
+  const footer = (
+    <div className="flex items-center justify-end gap-3">
+      <Button variant="ghost" type="button" onClick={handleDiscard}>
+        {t("common.cancel", "Anuluj")}
+      </Button>
+      <Button
+        type="button"
+        onClick={handleSubmit}
+        disabled={!canSubmit || isPending}
+        leftIcon={isAnnounce ? <Megaphone size={14} /> : <Send size={14} />}
+      >
+        {isPending
+          ? t("messages.compose.sending", "Wysyłanie…")
+          : isAnnounce
+            ? t("messages.compose.mode_announce", "Ogłoszenie")
+            : t("messages.compose.send", "Wyślij")}
+      </Button>
+    </div>
+  );
 
-  return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            key="backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-focus-trap bg-black/40 backdrop-blur-sm"
-            onClick={handleClose}
+  return (
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        isAnnounce
+          ? t("messages.compose.heading_announce", "Nowe ogłoszenie")
+          : t("messages.compose.heading", "Nowa wiadomość")
+      }
+      footer={footer}
+      className="sm:max-w-lg"
+    >
+      <div className="flex flex-col gap-4 pt-1">
+        {canAnnounce && (
+          <SegmentedTabs
+            items={modeItems}
+            value={mode}
+            onChange={setMode}
+            ariaLabel={t("messages.compose.mode_message", "Wiadomość")}
           />
-          <motion.div
-            key="modal"
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 12 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="pointer-events-none fixed inset-0 z-focus-trap flex items-center justify-center p-4"
-          >
-            <GlassCard
-              variant="solid"
-              isHoverable={false}
-              className="pointer-events-auto w-full max-w-lg"
-            >
-              <div className="flex items-start justify-between p-6 pb-0">
-                <Heading as="h4" size="xl" color="graphite">
-                  {isAnnounce
-                    ? t("messages.compose.heading_announce", "Nowe ogłoszenie")
-                    : t("messages.compose.heading", "Nowa wiadomość")}
-                </Heading>
-                <Button
-                  variant="icon"
-                  size="icon"
-                  type="button"
-                  onClick={handleClose}
-                  aria-label={t("common.close", "Zamknij")}
-                  className="-mr-2 -mt-2 shrink-0"
-                >
-                  <X size={18} />
-                </Button>
-              </div>
+        )}
 
-              <div className="flex flex-col gap-4 p-6">
-                {canAnnounce && (
-                  <SegmentedTabs
-                    items={modeItems}
-                    value={mode}
-                    onChange={setMode}
-                    ariaLabel={t("messages.compose.mode_message", "Wiadomość")}
-                  />
+        {isAnnounce ? (
+          channels.length === 0 ? (
+            <Text size="sm" color="muted" className="py-2">
+              {t("messages.compose.no_channels", "Nie masz jeszcze żadnych kanałów projektów.")}
+            </Text>
+          ) : (
+            <>
+              <Select
+                label={t("messages.compose.channel", "Kanał projektu")}
+                value={channelId}
+                onValueChange={setChannelId}
+                placeholder={t(
+                  "messages.compose.channel_placeholder",
+                  "Wybierz projekt",
                 )}
-
-                {isAnnounce ? (
-                  channels.length === 0 ? (
-                    <Text size="sm" color="muted" className="py-2">
-                      {t("messages.compose.no_channels", "Nie masz jeszcze żadnych kanałów projektów.")}
-                    </Text>
-                  ) : (
-                    <>
-                      <Select
-                        label={t("messages.compose.channel", "Kanał projektu")}
-                        value={channelId}
-                        onValueChange={setChannelId}
-                        placeholder={t(
-                          "messages.compose.channel_placeholder",
-                          "Wybierz projekt",
-                        )}
-                        options={channels.map((channel) => ({
-                          value: String(channel.id),
-                          label: channel.project_name,
-                        }))}
-                      />
-                      <Textarea
-                        value={body}
-                        onChange={(e) => setBody(e.target.value)}
-                        rows={5}
-                        label={t("messages.compose.message", "Wiadomość")}
-                        placeholder={t("messages.compose.announce_body_placeholder", "Treść ogłoszenia…")}
-                      />
-                      <label className="flex cursor-pointer items-start gap-2.5">
-                        <Checkbox checked={pin} onChange={(e) => setPin(e.target.checked)} className="mt-0.5" />
-                        <span>
-                          <Text size="sm" color="graphite" weight="medium">
-                            {t("messages.compose.pin", "Przypnij jako ogłoszenie")}
-                          </Text>
-                          <Text size="xs" color="muted">
-                            {t(
-                              "messages.compose.pin_hint",
-                              "Przypięte ogłoszenia są widoczne na górze kanału.",
-                            )}
-                          </Text>
-                        </span>
-                      </label>
-                    </>
-                  )
-                ) : (
-                  <>
-                    {isManager ? (
-                      presetArtistId ? (
-                        <div className="rounded-control border border-hairline bg-ethereal-alabaster/40 px-4 py-3">
-                          <Eyebrow color="muted">
-                            {t("messages.compose.recipient_to", "Do")}
-                          </Eyebrow>
-                          <Text size="sm" color="graphite" weight="medium">
-                            {presetArtistName}
-                          </Text>
-                        </div>
-                      ) : (
-                        <ManagerArtistField value={artistId} onChange={setArtistId} />
-                      )
-                    ) : (
-                      <RecipientField value={assigneeId} onChange={setAssigneeId} />
+                options={channels.map((channel) => ({
+                  value: String(channel.id),
+                  label: channel.project_name,
+                }))}
+              />
+              <Textarea
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                rows={5}
+                label={t("messages.compose.message", "Wiadomość")}
+                placeholder={t("messages.compose.announce_body_placeholder", "Treść ogłoszenia…")}
+              />
+              <label className="flex cursor-pointer items-start gap-2.5">
+                <Checkbox checked={pin} onChange={(e) => setPin(e.target.checked)} className="mt-0.5" />
+                <span>
+                  <Text size="sm" color="graphite" weight="medium">
+                    {t("messages.compose.pin", "Przypnij jako ogłoszenie")}
+                  </Text>
+                  <Text size="xs" color="muted">
+                    {t(
+                      "messages.compose.pin_hint",
+                      "Przypięte ogłoszenia są widoczne na górze kanału.",
                     )}
+                  </Text>
+                </span>
+              </label>
+            </>
+          )
+        ) : (
+          <>
+            {isManager ? (
+              presetArtistId ? (
+                <div className="rounded-control border border-hairline bg-ethereal-alabaster/40 px-4 py-3">
+                  <Eyebrow color="muted">
+                    {t("messages.compose.recipient_to", "Do")}
+                  </Eyebrow>
+                  <Text size="sm" color="graphite" weight="medium">
+                    {presetArtistName}
+                  </Text>
+                </div>
+              ) : (
+                <ManagerArtistField value={artistId} onChange={setArtistId} />
+              )
+            ) : (
+              <RecipientField value={assigneeId} onChange={setAssigneeId} />
+            )}
 
-                    {isManager && (
-                      <ProjectContextField value={projectId} onChange={setProjectId} />
-                    )}
+            {isManager && (
+              <ProjectContextField value={projectId} onChange={setProjectId} />
+            )}
 
-                    <Input
-                      value={subject}
-                      onChange={(e) => setSubject(e.target.value)}
-                      label={t("messages.compose.subject", "Temat")}
-                      placeholder={t("messages.compose.subject_placeholder", "Czego dotyczy rozmowa?")}
-                      maxLength={160}
-                    />
-                    <Textarea
-                      value={body}
-                      onChange={(e) => setBody(e.target.value)}
-                      rows={5}
-                      label={t("messages.compose.message", "Wiadomość")}
-                      placeholder={t("messages.compose.message_placeholder", "Napisz treść…")}
-                    />
-                  </>
-                )}
-              </div>
-
-              <div className="flex items-center justify-end gap-3 px-6 pb-6">
-                <Button variant="ghost" type="button" onClick={handleClose}>
-                  {t("common.cancel", "Anuluj")}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={!canSubmit || isPending}
-                  className="flex items-center gap-2"
-                  leftIcon={isAnnounce ? <Megaphone size={14} /> : <Send size={14} />}
-                >
-                  {isPending
-                    ? t("messages.compose.sending", "Wysyłanie…")
-                    : isAnnounce
-                      ? t("messages.compose.mode_announce", "Ogłoszenie")
-                      : t("messages.compose.send", "Wyślij")}
-                </Button>
-              </div>
-            </GlassCard>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>,
-    document.body,
+            <Input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              label={t("messages.compose.subject", "Temat")}
+              placeholder={t("messages.compose.subject_placeholder", "Czego dotyczy rozmowa?")}
+              maxLength={160}
+            />
+            <Textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={5}
+              label={t("messages.compose.message", "Wiadomość")}
+              placeholder={t("messages.compose.message_placeholder", "Napisz treść…")}
+            />
+          </>
+        )}
+      </div>
+    </BottomSheet>
   );
 };

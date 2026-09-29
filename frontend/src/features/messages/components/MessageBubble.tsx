@@ -90,7 +90,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         >
           {isPinned && <Pin size={10} className="text-ethereal-gold" aria-hidden="true" />}
           {pending && <Clock size={10} className="animate-pulse" aria-hidden="true" />}
-          {pending ? t("messages.bubble.sending", "wysyłanie…") : clockStamp(message.created_at)}
+          {pending ? t("messages.bubble.sending", "wysyłanie…") : clockStamp(message.created_at, t)}
         </Label>
       </Text>
     </div>

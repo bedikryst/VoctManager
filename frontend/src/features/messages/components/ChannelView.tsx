@@ -1,7 +1,7 @@
 /**
  * @file ChannelView.tsx
  * @description Active project-channel pane: header (project, member count, per-user push
- * toggle, overflow menu), pinned-announcements banner, day-grouped group message stream,
+ * toggle, overflow menu), pinned-announcements band, day-grouped group message stream,
  * and a composer everyone can post to. Marks read on open. Async by design — no
  * presence/typing.
  *
@@ -24,7 +24,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/shared/ui/composites/DropdownMenu";
-import { Heading, Text, Label } from "@/shared/ui/primitives/typography";
+import { Heading, Label } from "@/shared/ui/primitives/typography";
 import { Button } from "@/shared/ui/primitives/Button";
 import { cn } from "@/shared/lib/utils";
 import {
@@ -46,6 +46,7 @@ import { EarlierMessages } from "./EarlierMessages";
 import { MessageBubble } from "./MessageBubble";
 import { MessageComposer } from "./MessageComposer";
 import { MessageTextSizeControl } from "./MessageTextSizeControl";
+import { PinnedAnnouncements } from "./PinnedAnnouncements";
 import { DayDivider } from "@/shared/ui/composites/DayDivider";
 
 /**
@@ -78,6 +79,9 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
   const setPush = useSetChannelPush(channelId);
   const pinMessage = usePinChannelMessage(channelId);
   const olderMessages = useOlderChannelMessages(channelId);
+  // Keyed by channel, so moving to another channel folds the band again
+  // without an effect to reset it.
+  const [pinsOpenFor, setPinsOpenFor] = React.useState<string | null>(null);
 
   const textStep = useMessageTextStep();
   const textStyle = useMessageTextStyle();
@@ -234,24 +238,17 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
         </DropdownMenu>
       </div>
 
-      {/* Pinned banner */}
-      {pinned.length > 0 && (
-        <div className="shrink-0 border-b border-ethereal-gold/20 bg-ethereal-gold/6 px-3 py-2.5 sm:px-5 sm:py-3">
-          <div className="mb-1 flex items-center gap-1.5">
-            <Pin size={12} className="text-ethereal-gold" aria-hidden="true" />
-            <Label size="xs" color="muted" weight="semibold">
-              {t("messages.channel.pinned", "Przypięte")}
-            </Label>
-          </div>
-          <div className="flex flex-col gap-1">
-            {pinned.map((m) => (
-              <Text key={m.id} size="xs" color="graphite" className="truncate opacity-80">
-                <span className="font-semibold">{m.sender?.name ?? "—"}:</span> {m.body}
-              </Text>
-            ))}
-          </div>
-        </div>
-      )}
+      <PinnedAnnouncements
+        pinned={pinned}
+        isOpen={pinsOpenFor === channelId}
+        onToggle={() => setPinsOpenFor(pinsOpenFor === channelId ? null : channelId)}
+        onUnpin={
+          isManager
+            ? (messageId) => pinMessage.mutate({ messageId, pinned: false })
+            : undefined
+        }
+        isUnpinning={pinMessage.isPending}
+      />
 
       {/* Stream */}
       <div

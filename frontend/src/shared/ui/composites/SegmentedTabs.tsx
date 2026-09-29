@@ -37,6 +37,13 @@ interface SegmentedTabsProps<TId extends string> {
   /** Wrap segments onto a second row in narrow containers instead of h-scrolling. */
   wrap?: boolean;
   /**
+   * Tighter, content-sized segments with a smaller label, so four filters and
+   * their figures hold one row of a fixed narrow column (the 340px inbox). They
+   * still wrap rather than hide when a long translation leaves no other way.
+   * Where each segment should keep its full size, use `wrap`.
+   */
+  compact?: boolean;
+  /**
    * Square 36px segments carrying the icon alone; `label` becomes the accessible
    * name and the tooltip. Reserved for a two-or-three-state *density* toggle
    * (grid ↔ list) sitting inside a toolbar row, where a spelled-out label would
@@ -64,6 +71,7 @@ export function SegmentedTabs<TId extends string>({
   ariaLabel,
   className,
   wrap = false,
+  compact = false,
   iconOnly = false,
   tone = "light",
 }: SegmentedTabsProps<TId>): React.JSX.Element {
@@ -79,7 +87,7 @@ export function SegmentedTabs<TId extends string>({
           : "border-hairline-strong bg-ethereal-alabaster/70",
         iconOnly
           ? "inline-flex w-auto"
-          : wrap
+          : wrap || compact
             ? "flex-wrap"
             : "overflow-x-auto no-scrollbar sm:inline-flex sm:w-max",
         className,
@@ -100,10 +108,12 @@ export function SegmentedTabs<TId extends string>({
               "inline-flex items-center justify-center gap-2 rounded-chip transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
               iconOnly
                 ? "h-9 w-9 shrink-0 p-0"
-                : cn(
-                    "px-3.5 py-2",
-                    wrap ? "grow basis-24" : "flex-1 shrink-0 sm:flex-none",
-                  ),
+                : compact
+                  ? "grow gap-1.5 px-2 py-1.5"
+                  : cn(
+                      "px-3.5 py-2",
+                      wrap ? "grow basis-24" : "flex-1 shrink-0 sm:flex-none",
+                    ),
               isActive
                 ? "bg-ethereal-gold text-surface-inverse shadow-sm"
                 : isDark
@@ -113,7 +123,7 @@ export function SegmentedTabs<TId extends string>({
           >
             {Icon && <Icon size={iconOnly ? 16 : 14} aria-hidden="true" />}
             {!iconOnly && (
-              <Label size="sm" weight="semibold" color="inherit">
+              <Label size={compact ? "xs" : "sm"} weight="semibold" color="inherit">
                 {label}
               </Label>
             )}

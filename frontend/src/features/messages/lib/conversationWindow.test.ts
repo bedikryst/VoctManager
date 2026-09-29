@@ -12,11 +12,14 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { QueryClient } from "@tanstack/react-query";
 
 import {
+  absorbOlderWindow,
   mergeConversation,
   mergeMessages,
   mergeWindowMeta,
+  pollConversation,
   pollCursor,
   withoutMessage,
 } from "./conversationWindow";
@@ -171,5 +174,59 @@ describe("mergeConversation", () => {
   it("adopts a first window whole", () => {
     const incoming = thread([message("a", AT.first)]);
     expect(mergeConversation(undefined, incoming, false)).toBe(incoming);
+  });
+});
+
+describe("pollConversation", () => {
+  const thread = (messages: MessageDTO[], has_older: boolean): ThreadDetail =>
+    ({
+      id: "t1",
+      subject: "Nuty",
+      context_type: "GENERAL",
+      context_id: null,
+      status: "OPEN",
+      last_message_at: AT.third,
+      created_at: AT.first,
+      artist: { id: "a1", name: "Ada", voice_type: "SOPRANO" },
+      assignee: null,
+      unread: false,
+      messages,
+      messages_page: { has_older, reset: false },
+    }) as ThreadDetail;
+
+  // Run through a real QueryClient, because the race lives in how a query's
+  // result replaces whatever was written to its key while the request was out.
+  it("keeps an earlier page that landed while the poll was in flight", async () => {
+    const client = new QueryClient();
+    const key = ["messaging", "thread", "t1"];
+    client.setQueryData(key, thread([message("c", AT.third)], true));
+
+    let answerPoll: (window: ThreadDetail) => void = () => undefined;
+    const pollAnswer = new Promise<ThreadDetail>((resolve) => {
+      answerPoll = resolve;
+    });
+    const poll = client.fetchQuery({
+      queryKey: key,
+      queryFn: () =>
+        pollConversation<MessageDTO, ThreadDetail>(
+          () => client.getQueryData<ThreadDetail>(key),
+          () => pollAnswer,
+        ),
+    });
+
+    // The reader taps "earlier messages" and that page arrives first.
+    client.setQueryData<ThreadDetail>(key, (held) =>
+      absorbOlderWindow(held, {
+        messages: [message("a", AT.first), message("b", AT.second)],
+        messages_page: { has_older: false, reset: false },
+      }),
+    );
+
+    answerPoll(thread([message("d", "2026-08-20T12:00:00Z")], false));
+    await poll;
+
+    const held = client.getQueryData<ThreadDetail>(key);
+    expect(held?.messages.map((m) => m.id)).toEqual(["a", "b", "c", "d"]);
+    expect(held?.messages_page.has_older).toBe(false);
   });
 });
