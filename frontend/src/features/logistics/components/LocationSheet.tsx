@@ -19,6 +19,8 @@ import {
   type PanInfo,
 } from "framer-motion";
 
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+
 interface LocationSheetProps {
   isOpen: boolean;
   onClose: () => void;
@@ -27,6 +29,14 @@ interface LocationSheetProps {
 
 const SHEET_HEIGHT_RATIO = 0.88;
 const PEEK_RATIO = 0.42;
+
+// The entrance starts one viewport below the peek: that distance, as a share of
+// the sheet's own height, because a `transform` percentage resolves against it.
+const ENTRY_TRANSFORM = `translateY(${(
+  ((1 - SHEET_HEIGHT_RATIO + PEEK_RATIO) / SHEET_HEIGHT_RATIO) *
+  100
+).toFixed(2)}%)`;
+const SHEET_SPRING = { type: "spring", damping: 32, stiffness: 320 } as const;
 const FLING_VELOCITY = 600;
 const DRAG_THRESHOLD = 120;
 
@@ -74,37 +84,48 @@ export const LocationSheet = ({
   if (typeof document === "undefined") return null;
 
   return createPortal(
-    <AnimatePresence>
+    // A sheet closed while expanded would otherwise reopen expanded for a frame.
+    <AnimatePresence onExitComplete={() => setExpanded(false)}>
       {isOpen && (
+        // Entrance and exit ride this wrapper as a `transform` string, on the
+        // compositor; the sheet inside keeps `y` for the peek/expand snap and
+        // the drag, which an animated `transform` on it would override.
         <motion.div
           key="location-sheet"
-          role="dialog"
-          aria-modal="false"
-          drag="y"
-          dragListener={false}
-          dragControls={dragControls}
-          dragConstraints={{ top: 0, bottom: offscreenY }}
-          dragElastic={0.04}
-          initial={{ y: offscreenY }}
-          animate={{ y: expanded ? 0 : peekY }}
-          exit={{ y: offscreenY }}
-          transition={{ type: "spring", damping: 32, stiffness: 320 }}
-          onDragEnd={handleDragEnd}
-          style={{ height: `${SHEET_HEIGHT_RATIO * 100}dvh` }}
-          className="fixed inset-x-0 bottom-0 z-focus-trap flex flex-col rounded-t-3xl border border-ethereal-incense/20 bg-ethereal-alabaster shadow-[0_-18px_48px_var(--glass-shade-lifted)] lg:hidden"
+          initial={{ transform: ENTRY_TRANSFORM }}
+          animate={{ transform: "translateY(0%)" }}
+          exit={{ transform: "translateY(100%)" }}
+          transition={SHEET_SPRING}
+          className="fixed inset-x-0 bottom-0 z-focus-trap lg:hidden"
         >
-          {/* Grab handle — the only drag-initiating zone, so the body scrolls. */}
-          <div
-            onPointerDown={(event) => dragControls.start(event)}
-            className="flex shrink-0 cursor-grab touch-none items-center justify-center pb-1 pt-3 active:cursor-grabbing"
+          <BodyScrollLock />
+          <motion.div
+            role="dialog"
+            aria-modal="false"
+            drag="y"
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={{ top: 0, bottom: offscreenY }}
+            dragElastic={0.04}
+            animate={{ y: expanded ? 0 : peekY }}
+            transition={SHEET_SPRING}
+            onDragEnd={handleDragEnd}
+            style={{ height: `${SHEET_HEIGHT_RATIO * 100}dvh` }}
+            className="flex flex-col rounded-t-3xl border border-ethereal-incense/20 bg-ethereal-alabaster shadow-[0_-18px_48px_var(--glass-shade-lifted)]"
           >
-            <span
-              aria-hidden="true"
-              className="h-1.5 w-11 rounded-full bg-ethereal-ink/15"
-            />
-          </div>
+            {/* Grab handle — the only drag-initiating zone, so the body scrolls. */}
+            <div
+              onPointerDown={(event) => dragControls.start(event)}
+              className="flex shrink-0 cursor-grab touch-none items-center justify-center pb-1 pt-3 active:cursor-grabbing"
+            >
+              <span
+                aria-hidden="true"
+                className="h-1.5 w-11 rounded-full bg-ethereal-ink/15"
+              />
+            </div>
 
-          <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+            <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>,

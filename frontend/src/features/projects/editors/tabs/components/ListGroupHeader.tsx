@@ -41,7 +41,7 @@ export function ListGroupHeader({
   icon,
 }: ListGroupHeaderProps): React.JSX.Element {
   return (
-    <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-hairline bg-ethereal-alabaster/92 px-5 py-1.5 backdrop-blur-sm">
+    <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-hairline bg-ethereal-alabaster/92 px-5 py-1.5">
       <span className="flex min-w-0 items-center gap-1.5">
         {icon && (
           <span className="shrink-0 text-ethereal-gold/70" aria-hidden="true">

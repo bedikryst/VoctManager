@@ -107,6 +107,14 @@ export interface CommandItemsResult {
   readonly flatItems: readonly CommandItem[];
 }
 
+/** Rows that only a typed query can show. */
+interface SearchRows {
+  readonly artistItems: readonly CommandItem[];
+  readonly pieceItems: readonly CommandItem[];
+}
+
+const NO_SEARCH_ROWS: SearchRows = { artistItems: [], pieceItems: [] };
+
 const DATA_STALE_TIME = 1000 * 60 * 5;
 const SEARCH_RESULT_CAP = 6;
 const RECENT_DISPLAY_CAP = 5;
@@ -176,13 +184,19 @@ export const useCommandItems = (
     staleTime: DATA_STALE_TIME,
   });
 
-  // Sources → rows. Deliberately independent of `query`: folding diacritics over
-  // every project, every artist and the entire piece archive is the expensive
-  // half of this hook, and it produces the same rows no matter what is typed.
-  // Folded once here, the query pass below is string matching and nothing else.
+  // Sources → rows, in two memos, neither keyed on the text typed: folding
+  // diacritics is the expensive half of this hook and yields the same rows
+  // whatever the query, so the query pass below is string matching only.
+  //
+  // The resting list (actions, pinned, recent, navigation) needs only this
+  // first memo; pinned and recent resolve through `projectById`, so projects
+  // stay here. Artists and the repertoire — every artist and the whole piece
+  // archive — are rows the resting list never shows, so `searchSources` folds
+  // them on the first keystroke instead of in the frames that open the mobile
+  // sheet. Their queries still fetch on open: that is what makes the first
+  // keystroke instant.
   const sources = useMemo(() => {
     const projectList = projects ?? [];
-    const artistList = artists ?? [];
 
     const dateFormatter = new Intl.DateTimeFormat(i18n.language || "pl", {
       day: "numeric",
@@ -270,8 +284,29 @@ export const useCommandItems = (
       projectItems.map((item) => [item.projectId as string, item]),
     );
 
+    return {
+      actionItems,
+      navItems,
+      projectItems,
+      projectById,
+    };
+  }, [
+    aura.navGroups,
+    i18n.language,
+    isCopyEditor,
+    isManager,
+    location.pathname,
+    projects,
+    t,
+  ]);
+
+  const isSearching = query.trim().length > 0;
+
+  const searchSources = useMemo<SearchRows>(() => {
+    if (!isSearching) return NO_SEARCH_ROWS;
+
     // ---- Artists (active only) ----
-    const artistItems: CommandItem[] = artistList
+    const artistItems: CommandItem[] = (artists ?? [])
       .filter((artist) => artist.is_active)
       .map((artist) => {
         const label = `${artist.first_name} ${artist.last_name}`.trim();
@@ -339,29 +374,11 @@ export const useCommandItems = (
           }),
         );
 
-    return {
-      actionItems,
-      navItems,
-      projectItems,
-      projectById,
-      artistItems,
-      pieceItems,
-    };
-  }, [
-    aura.navGroups,
-    artists,
-    i18n.language,
-    isCopyEditor,
-    isManager,
-    location.pathname,
-    myMaterials,
-    pieces,
-    projects,
-    t,
-  ]);
+    return { artistItems, pieceItems };
+  }, [artists, isManager, isSearching, location.pathname, myMaterials, pieces]);
 
   // Appearance rows — their own memo rather than a sixth source, because they
-  // change with the preference and `sources` above is the expensive fold over
+  // change with the preference and the memos above are the expensive fold over
   // every project, artist and piece. Folding the whole archive again because
   // somebody switched to dark would be a real cost for no new rows.
   //
@@ -410,14 +427,8 @@ export const useCommandItems = (
 
   // Rows → sections. The only query-dependent work in the hook.
   return useMemo<CommandItemsResult>(() => {
-    const {
-      actionItems,
-      navItems,
-      projectItems,
-      projectById,
-      artistItems,
-      pieceItems,
-    } = sources;
+    const { actionItems, navItems, projectItems, projectById } = sources;
+    const { artistItems, pieceItems } = searchSources;
 
     const tokens = foldSearchText(query).split(/\s+/).filter(Boolean);
     const sections: CommandSection[] = [];
@@ -519,5 +530,5 @@ export const useCommandItems = (
 
     const flatItems = sections.flatMap((section) => [...section.items]);
     return { sections, flatItems };
-  }, [favorites, noteItems, query, recents, sources, themeItems]);
+  }, [favorites, noteItems, query, recents, searchSources, sources, themeItems]);
 };

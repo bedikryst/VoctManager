@@ -18,7 +18,8 @@ import { ImageUp, RotateCcw, Trash2, ZoomIn } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Heading, Text, Caption } from "@/shared/ui/primitives/typography";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { OVERLAY_POP_TRANSITION } from "@/shared/ui/kinematics/motion-presets";
 import { useUploadAvatar, useDeleteAvatar } from "../api/settings.queries";
 
 const VIEWPORT = 288; // px — circular crop stage edge
@@ -62,7 +63,6 @@ export const AvatarEditorModal = ({
     null,
   );
 
-  useBodyScrollLock(isOpen);
   useEffect(() => setMounted(true), []);
 
   const revokeUrl = useCallback(() => {
@@ -265,10 +265,12 @@ export const AvatarEditorModal = ({
             onClick={!busy ? onClose : undefined}
             aria-hidden="true"
           />
+          <BodyScrollLock />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, transform: "translateY(20px) scale(0.95)" }}
+            animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+            exit={{ opacity: 0, transform: "translateY(20px) scale(0.95)" }}
+            transition={OVERLAY_POP_TRANSITION}
             className="relative flex w-full max-w-md flex-col overflow-hidden rounded-surface border border-ethereal-incense/20 bg-ethereal-marble shadow-glass-solid"
             role="dialog"
             aria-modal="true"

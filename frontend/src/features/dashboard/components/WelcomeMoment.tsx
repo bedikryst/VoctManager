@@ -32,7 +32,7 @@ import { ArrowRight, Calendar, Download, MapPin, Settings, Sparkles } from "luci
 
 import { cn } from "@/shared/lib/utils";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 import { EASE } from "@/shared/ui/kinematics/motion-presets";
 import { NaveScene } from "@/shared/ui/kinematics/NaveScene";
@@ -77,7 +77,6 @@ export const WelcomeMoment = ({
   const handsOver = isVocalRangePromptPending(user);
   const handingOver = leaving && handsOver;
 
-  useBodyScrollLock(show);
   useFocusTrap(dialogRef, show && mounted);
 
   const dismiss = useCallback(() => {
@@ -131,6 +130,7 @@ export const WelcomeMoment = ({
           // behind and out of the focus trap's reach.
           tabIndex={-1}
         >
+          <BodyScrollLock />
           <NaveScene isToneRinging={isPlaying} reduceMotion={reduceMotion} />
 
           <Button

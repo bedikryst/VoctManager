@@ -38,7 +38,7 @@ import {
 import { Caption, Text, Heading, Eyebrow } from "@/shared/ui/primitives/typography";
 import { Button } from "@/shared/ui/primitives/Button";
 import { useFirstRunTakeover } from "@/features/dashboard/hooks/useFirstRunTakeover";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
 export const ProjectInvitationToasts: React.FC = () => {
   const takeover = useFirstRunTakeover();
@@ -49,8 +49,6 @@ export const ProjectInvitationToasts: React.FC = () => {
   const titleId = useId();
 
   useEffect(() => setMounted(true), []);
-
-  useBodyScrollLock(!!current);
 
   useEffect(() => {
     if (!current) return;
@@ -102,6 +100,7 @@ export const ProjectInvitationToasts: React.FC = () => {
           already had open rather than render invisibly behind it. */}
       {current && metadata && (
         <div className="fixed inset-0 z-toast flex items-center justify-center p-4">
+          <BodyScrollLock />
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -113,9 +112,9 @@ export const ProjectInvitationToasts: React.FC = () => {
 
           <motion.div
             key={current.notificationId}
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 12 }}
+            initial={{ opacity: 0, transform: "translateY(20px) scale(0.95)" }}
+            animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+            exit={{ opacity: 0, transform: "translateY(12px) scale(0.96)" }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
             className="relative flex w-full max-w-md flex-col overflow-hidden rounded-surface border border-ethereal-gold/30 bg-ethereal-marble shadow-glass-solid"
             role="dialog"

@@ -27,7 +27,7 @@ import type { AuthUser } from "@/shared/auth/auth.types";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { Caption, Eyebrow, Label } from "@/shared/ui/primitives/typography";
 import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useCloseWatcher } from "@/shared/lib/dom/useCloseWatcher";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 import { hapticsService } from "@/shared/lib/hardware/hapticsService";
@@ -72,7 +72,6 @@ export const CommandPalette = ({
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
 
-  useBodyScrollLock(isOpen);
   useFocusTrap(containerRef, isOpen);
   useCloseWatcher(isOpen, onClose);
 
@@ -291,6 +290,7 @@ export const CommandPalette = ({
           className="fixed inset-0 z-focus-trap flex justify-center px-4 pt-[14vh]"
           role="presentation"
         >
+          <BodyScrollLock />
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -306,14 +306,14 @@ export const CommandPalette = ({
             role="dialog"
             aria-modal="true"
             aria-label={t("dashboard.layout.command.title", "Szybkie przejście")}
-            initial={{ opacity: 0, y: -14, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            initial={{ opacity: 0, transform: "translateY(-14px) scale(0.97)" }}
+            animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+            exit={{ opacity: 0, transform: "translateY(-10px) scale(0.98)" }}
             transition={PANEL_SPRING}
             onKeyDown={handleKeyDown}
             className={cn(
               "relative z-10 flex max-h-[68vh] w-full max-w-[620px] flex-col overflow-hidden",
-              "rounded-[22px] border border-glass-border bg-ethereal-alabaster/96 backdrop-blur-ethereal",
+              "rounded-[22px] border border-glass-border bg-ethereal-alabaster/96",
               "shadow-[0_32px_80px_-24px_var(--glass-shade-strong),0_0_0_1px_rgba(194,168,120,0.18)]",
             )}
           >

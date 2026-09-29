@@ -23,7 +23,6 @@ import { useArtistData } from "./hooks/useArtistData";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Button } from "@/shared/ui/primitives/Button";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import ArtistEditorPanel from "./components/ArtistEditorPanel";
 import { ArtistCard } from "./components/ArtistCard";
 import { ArtistRow } from "./components/ArtistRow";
@@ -151,13 +150,6 @@ export default function ArtistManagement(): React.JSX.Element {
     openPanel,
     setSearchParams,
   ]);
-
-  useBodyScrollLock(
-    isPanelOpen ||
-      isDossierOpen ||
-      artistToToggle !== null ||
-      pendingBulk !== null,
-  );
 
   if (isLoading && displayArtists.length === 0) {
     return <EtherealLoader />;

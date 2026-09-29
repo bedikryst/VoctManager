@@ -13,6 +13,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, X } from "lucide-react";
 
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import type { Collaborator } from "@/shared/types";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { Divider } from "@/shared/ui/primitives/Divider";
@@ -109,15 +110,16 @@ export function CrewEditorPanel({
 
           <motion.div
             key="crew-panel"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
+            initial={{ transform: "translateX(100%)" }}
+            animate={{ transform: "translateX(0%)" }}
+            exit={{ transform: "translateX(100%)" }}
             transition={{ type: "spring", damping: 26, stiffness: 220 }}
-            className="fixed inset-y-0 right-0 z-focus-trap flex w-full max-w-md flex-col border-l border-ethereal-incense/20 bg-ethereal-alabaster/95 shadow-glass-solid backdrop-blur-xl"
+            className="fixed inset-y-0 right-0 z-focus-trap flex w-full max-w-md flex-col border-l border-ethereal-incense/20 bg-ethereal-alabaster/95 shadow-glass-solid"
             role="dialog"
             aria-modal="true"
           >
-            <header className="flex flex-shrink-0 items-center justify-between gap-4 border-b border-ethereal-incense/15 bg-ethereal-marble/60 px-6 py-5 backdrop-blur-xl md:px-8">
+            <BodyScrollLock />
+            <header className="flex flex-shrink-0 items-center justify-between gap-4 border-b border-ethereal-incense/15 bg-ethereal-marble/60 px-6 py-5 md:px-8">
               <div className="min-w-0 space-y-1.5">
                 <Eyebrow color="muted">
                   {t("crew.editor.eyebrow", "Profil współpracownika")}
@@ -141,7 +143,7 @@ export function CrewEditorPanel({
             <div className="relative flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-8">
               <form
                 onSubmit={handleSubmit}
-                className="flex min-h-full flex-col gap-7 rounded-surface border border-ethereal-incense/15 bg-ethereal-marble/65 p-6 shadow-[inset_0_1px_0_var(--glass-highlight)] backdrop-blur-xl md:p-8"
+                className="flex min-h-full flex-col gap-7 rounded-surface border border-ethereal-incense/15 bg-ethereal-marble/65 p-6 shadow-[inset_0_1px_0_var(--glass-highlight)] md:p-8"
               >
                 <section className="space-y-5">
                   <div className="flex items-center gap-3">

@@ -101,9 +101,10 @@ export const LocationsManager = (): React.JSX.Element => {
   const mobileFocus = isVenueFocused && !isDesktop;
   const showRailDetail = isVenueFocused && isDesktop;
 
-  useBodyScrollLock(
-    isPanelOpen || locationToArchive !== null || activeLocation !== null,
-  );
+  // The overlays (editor, archive confirm, the mobile venue sheet) hold their
+  // own locks for as long as they are on screen; the desktop rail detail is no
+  // overlay, so the page locks for it.
+  useBodyScrollLock(showRailDetail);
 
   useEffect(() => {
     if (!isError) return;

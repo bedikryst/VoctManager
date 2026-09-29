@@ -23,6 +23,7 @@ import { Input } from "@ui/primitives/Input";
 import { Select } from "@ui/primitives/Select";
 import { Eyebrow, Heading, Text } from "@ui/primitives/typography";
 import type { Artist, VoiceType, VoiceTypeOption } from "@/shared/types";
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import type { VocalRangeMidi } from "@/shared/lib/music/pitchNotation";
 import { RANGE_SLOTS } from "@/shared/lib/music/rangeDraft";
 import { isInstrumentalist, isSingingVoiceType } from "@/shared/lib/voiceTypes";
@@ -203,15 +204,16 @@ export default function ArtistEditorPanel({
 
           <motion.div
             key="artist-panel"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
+            initial={{ transform: "translateX(100%)" }}
+            animate={{ transform: "translateX(0%)" }}
+            exit={{ transform: "translateX(100%)" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className="fixed inset-y-0 right-0 z-focus-trap flex w-full max-w-xl flex-col border-l border-ethereal-incense/20 bg-ethereal-parchment shadow-2xl"
             role="dialog"
             aria-modal="true"
           >
-            <div className="z-20 flex shrink-0 items-center justify-between border-b border-hairline-strong bg-ethereal-alabaster/80 p-6 backdrop-blur-xl md:p-8">
+            <BodyScrollLock />
+            <div className="z-20 flex shrink-0 items-center justify-between border-b border-hairline-strong bg-ethereal-alabaster/80 p-6 md:p-8">
               <Heading as="h3" size="2xl" weight="bold">
                 {artist?.id
                   ? t("artists.editor.title_edit", "Edycja Profilu")
@@ -243,7 +245,7 @@ export default function ArtistEditorPanel({
             <div className="relative flex-1 overflow-y-auto p-6 md:p-8">
               <form
                 onSubmit={onSubmit}
-                className="flex min-h-full flex-col space-y-8 rounded-surface border border-hairline bg-ethereal-alabaster/60 p-6 shadow-glass-ethereal backdrop-blur-xl md:p-8"
+                className="flex min-h-full flex-col space-y-8 rounded-surface border border-hairline bg-ethereal-alabaster/60 p-6 shadow-glass-ethereal md:p-8"
               >
                 <div className="flex-1 space-y-8">
                   <div className="space-y-5">

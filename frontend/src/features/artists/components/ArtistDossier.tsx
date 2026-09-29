@@ -36,6 +36,7 @@ import {
   X,
 } from "lucide-react";
 
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { cn } from "@/shared/lib/utils";
 import { artistRoleLabel } from "@/shared/lib/voiceTypes";
 import type { Artist } from "@/shared/types";
@@ -530,16 +531,17 @@ export const ArtistDossier = ({
 
           <motion.div
             key="dossier-panel"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
+            initial={{ transform: "translateX(100%)" }}
+            animate={{ transform: "translateX(0%)" }}
+            exit={{ transform: "translateX(100%)" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className="fixed inset-y-0 right-0 z-focus-trap flex w-full max-w-xl flex-col border-l border-ethereal-incense/20 bg-ethereal-parchment shadow-2xl"
             role="dialog"
             aria-modal="true"
           >
+            <BodyScrollLock />
             {/* Header */}
-            <div className="z-20 flex shrink-0 items-center justify-between gap-3 border-b border-hairline-strong bg-ethereal-alabaster/80 p-5 backdrop-blur-xl md:p-6">
+            <div className="z-20 flex shrink-0 items-center justify-between gap-3 border-b border-hairline-strong bg-ethereal-alabaster/80 p-5 md:p-6">
               <div className="flex min-w-0 items-center gap-3.5">
                 <Avatar
                   src={artist.avatar_thumb_url}

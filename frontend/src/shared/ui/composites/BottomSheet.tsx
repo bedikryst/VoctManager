@@ -15,12 +15,19 @@
  * @module shared/ui/composites/BottomSheet
  */
 
-import React, { useEffect, useId, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import {
   AnimatePresence,
   motion,
   useDragControls,
+  useMotionValue,
   type PanInfo,
 } from "framer-motion";
 import { X } from "lucide-react";
@@ -28,7 +35,7 @@ import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
 import { Eyebrow, Heading } from "@/shared/ui/primitives/typography";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 
 export interface BottomSheetProps {
@@ -72,12 +79,16 @@ export const BottomSheet = ({
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
+  const dragY = useMotionValue(0);
   const isDark = tone === "dark";
 
-  useBodyScrollLock(isOpen);
   useFocusTrap(dialogRef, isOpen && mounted);
 
   useEffect(() => setMounted(true), []);
+
+  useLayoutEffect(() => {
+    if (isOpen) dragY.set(0);
+  }, [isOpen, dragY]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     // A popover opened from inside the sheet (a select, a menu, a calendar)
@@ -90,6 +101,10 @@ export const BottomSheet = ({
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.y > DISMISS_OFFSET || info.velocity.y > DISMISS_VELOCITY) {
+      // Hold the sheet where the finger let go and let the exit carry it down
+      // from there; drag's snap-back would pull it up against the exit. The
+      // next open clears the offset.
+      dragY.stop();
       onClose();
     }
   };
@@ -100,6 +115,7 @@ export const BottomSheet = ({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-focus-trap flex items-end justify-center sm:items-center sm:p-4">
+          <BodyScrollLock />
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -113,109 +129,118 @@ export const BottomSheet = ({
             aria-hidden="true"
           />
 
+          {/* Entrance and exit ride this wrapper as a `transform` string, on
+              the compositor. The sheet inside keeps `y` for the drag, which an
+              animated `transform` on the same element would override. The
+              wrapper spans the row, so it lets taps through to the scrim. */}
           <motion.div
-            ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            tabIndex={-1}
-            onKeyDown={handleKeyDown}
-            drag="y"
-            dragListener={false}
-            dragControls={dragControls}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.3 }}
-            onDragEnd={handleDragEnd}
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
+            initial={{ transform: "translateY(100%)" }}
+            animate={{ transform: "translateY(0%)" }}
+            exit={{ transform: "translateY(100%)" }}
             transition={{ type: "spring", stiffness: 320, damping: 34 }}
-            className={cn(
-              "relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl border shadow-glass-solid outline-none",
-              "sm:max-h-[85vh] sm:max-w-2xl sm:rounded-surface",
-              isDark
-                ? "border-ethereal-gold/35 bg-surface-inverse/95 text-ink-on-inverse backdrop-blur-ethereal"
-                : "border-ethereal-incense/15 bg-ethereal-alabaster text-ethereal-ink",
-              className,
-            )}
+            className="pointer-events-none relative flex w-full justify-center"
           >
-            {/* drag region — the handle + header start the swipe-to-dismiss */}
-            <div
-              onPointerDown={(e) => dragControls.start(e)}
-              className="shrink-0 cursor-grab touch-none select-none active:cursor-grabbing"
-            >
-              <div className="flex justify-center pt-3 sm:hidden">
-                <span
-                  className={cn(
-                    "h-1.5 w-11 rounded-full",
-                    isDark ? "bg-ink-on-inverse/25" : "bg-ethereal-graphite/20",
-                  )}
-                  aria-hidden="true"
-                />
-              </div>
-
-              <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-3 sm:px-6 sm:pt-5">
-                <div className="min-w-0 flex-1">
-                  {subtitle && (
-                    <Eyebrow color={isDark ? "ink-on-inverse-muted" : "muted"} className="mb-1 block truncate">
-                      {subtitle}
-                    </Eyebrow>
-                  )}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Heading
-                      as="h2"
-                      id={titleId}
-                      size="xl"
-                      weight="bold"
-                      color={isDark ? "ink-on-inverse" : "default"}
-                      className="min-w-0 leading-tight"
-                    >
-                      {title}
-                    </Heading>
-                    {headerBadge}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={onClose}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  aria-label={t("common.actions.close", "Zamknij")}
-                  className={cn(
-                    "flex size-9 shrink-0 items-center justify-center rounded-full border transition-colors",
-                    isDark
-                      ? "border-ethereal-incense/25 text-ink-on-inverse/70 hover:bg-ethereal-incense/15 hover:text-ink-on-inverse"
-                      : "border-ethereal-incense/20 text-ethereal-graphite/70 hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink",
-                  )}
-                >
-                  <X size={16} aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-
-            {/* scrollable body */}
-            <div
+            <motion.div
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              tabIndex={-1}
+              onKeyDown={handleKeyDown}
+              drag="y"
+              dragListener={false}
+              dragControls={dragControls}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.3 }}
+              onDragEnd={handleDragEnd}
+              style={{ y: dragY }}
               className={cn(
-                "min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-6 sm:px-6",
-                !footer && "pb-[max(env(safe-area-inset-bottom),1.5rem)]",
+                "pointer-events-auto relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl border shadow-glass-solid outline-none",
+                "sm:max-h-[85vh] sm:max-w-2xl sm:rounded-surface",
+                isDark
+                  ? "border-ethereal-gold/35 bg-surface-inverse/95 text-ink-on-inverse"
+                  : "border-ethereal-incense/15 bg-ethereal-alabaster text-ethereal-ink",
+                className,
               )}
             >
-              {children}
-            </div>
+              {/* drag region — the handle + header start the swipe-to-dismiss */}
+              <div
+                onPointerDown={(e) => dragControls.start(e)}
+                className="shrink-0 cursor-grab touch-none select-none active:cursor-grabbing"
+              >
+                <div className="flex justify-center pt-3 sm:hidden">
+                  <span
+                    className={cn(
+                      "h-1.5 w-11 rounded-full",
+                      isDark ? "bg-ink-on-inverse/25" : "bg-ethereal-graphite/20",
+                    )}
+                    aria-hidden="true"
+                  />
+                </div>
 
-            {footer && (
+                <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-3 sm:px-6 sm:pt-5">
+                  <div className="min-w-0 flex-1">
+                    {subtitle && (
+                      <Eyebrow color={isDark ? "ink-on-inverse-muted" : "muted"} className="mb-1 block truncate">
+                        {subtitle}
+                      </Eyebrow>
+                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Heading
+                        as="h2"
+                        id={titleId}
+                        size="xl"
+                        weight="bold"
+                        color={isDark ? "ink-on-inverse" : "default"}
+                        className="min-w-0 leading-tight"
+                      >
+                        {title}
+                      </Heading>
+                      {headerBadge}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    aria-label={t("common.actions.close", "Zamknij")}
+                    className={cn(
+                      "flex size-9 shrink-0 items-center justify-center rounded-full border transition-colors",
+                      isDark
+                        ? "border-ethereal-incense/25 text-ink-on-inverse/70 hover:bg-ethereal-incense/15 hover:text-ink-on-inverse"
+                        : "border-ethereal-incense/20 text-ethereal-graphite/70 hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink",
+                    )}
+                  >
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+
+              {/* scrollable body */}
               <div
                 className={cn(
-                  "shrink-0 border-t px-5 pt-3 sm:px-6",
-                  "pb-[max(env(safe-area-inset-bottom),0.85rem)]",
-                  isDark
-                    ? "border-ethereal-incense/15 bg-surface-inverse/60"
-                    : "border-ethereal-incense/10 bg-ethereal-alabaster/80",
+                  "min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-6 sm:px-6",
+                  !footer && "pb-[max(env(safe-area-inset-bottom),1.5rem)]",
                 )}
               >
-                {footer}
+                {children}
               </div>
-            )}
+
+              {footer && (
+                <div
+                  className={cn(
+                    "shrink-0 border-t px-5 pt-3 sm:px-6",
+                    "pb-[max(env(safe-area-inset-bottom),0.85rem)]",
+                    isDark
+                      ? "border-ethereal-incense/15 bg-surface-inverse/60"
+                      : "border-ethereal-incense/10 bg-ethereal-alabaster/80",
+                  )}
+                >
+                  {footer}
+                </div>
+              )}
+            </motion.div>
           </motion.div>
         </div>
       )}

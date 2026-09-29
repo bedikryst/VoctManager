@@ -19,7 +19,7 @@ import { AlertTriangle, MailWarning, Send, Users, X } from "lucide-react";
 
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Button } from "@/shared/ui/primitives/Button";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { Caption, Eyebrow, Heading, Metric, Text } from "@/shared/ui/primitives/typography";
 
 import {
@@ -78,7 +78,6 @@ export const PublishProjectModal = ({
   const publish = usePublishProject(projectId);
 
   useEffect(() => setMounted(true), []);
-  useBodyScrollLock(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -105,6 +104,7 @@ export const PublishProjectModal = ({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-focus-trap flex items-center justify-center p-4">
+          <BodyScrollLock />
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -115,9 +115,9 @@ export const PublishProjectModal = ({
           />
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: 10 }}
+            initial={{ opacity: 0, transform: "translateY(16px) scale(0.96)" }}
+            animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+            exit={{ opacity: 0, transform: "translateY(10px) scale(0.97)" }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
             className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-surface border border-ethereal-gold/30 bg-ethereal-marble shadow-glass-solid"
             role="dialog"

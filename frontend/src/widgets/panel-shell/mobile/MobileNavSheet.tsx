@@ -4,8 +4,9 @@
  * command surface. Leads with identity (account header → settings), then search,
  * then a rich command list shared with the desktop palette via `useCommandItems`
  * (quick-actions · pinned/recent projects · navigation · project & artist
- * search), and a clear log-out. Solid alabaster surface that animates only `y`;
- * the scrim owns the blur so backdrop-filter is never re-rasterised mid-drag.
+ * search), and a clear log-out. Solid alabaster surface: it enters and leaves on
+ * a compositor-driven `transform` and drags on `y`; the scrim owns the blur so
+ * backdrop-filter is never re-rasterised mid-drag.
  *
  * Architectural contract:
  *   - No `backdrop-filter` on the moving subtree.
@@ -117,6 +118,9 @@ export const MobileNavSheet = ({
       info.offset.y > SWIPE_OFFSET_THRESHOLD ||
       info.velocity.y > SWIPE_VELOCITY_THRESHOLD
     ) {
+      // Hold the sheet where the finger let go and let the exit carry it down
+      // from there; drag's snap-back would pull it up against the exit.
+      y.stop();
       onClose();
     }
   };
@@ -240,243 +244,251 @@ export const MobileNavSheet = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={SCRIM_TRANSITION}
-        // A veil, not a frosted pane. `backdrop-filter` here would be re-applied
-        // to the ENTIRE viewport on every frame of this opacity fade — and the
-        // backdrop is the ambient field, whose two 110/120px-blurred blobs and
-        // noise overlay all have to be flattened first. Behind an ink veil this
-        // dense the blur was never legible; the density carries the separation.
-        className="fixed inset-0 z-nav-sheet bg-black/55 fine-pointer:hidden"
+        // Frosted like every other scrim in the panel. It is the one blurred
+        // layer under the sheet, and the sheet slides on the compositor, so the
+        // blur costs one pass per frame of this fade. Keep it the only one:
+        // nothing inside the sheet carries a `backdrop-filter`.
+        className="fixed inset-0 z-nav-sheet bg-black/45 backdrop-blur-xs fine-pointer:hidden"
         onClick={onClose}
         aria-hidden="true"
       />
 
+      {/* Entrance and exit ride this wrapper as a `transform` string, on the
+          compositor; the sheet inside keeps `y` for the drag, which an
+          animated `transform` on the same element would override. */}
       <motion.div
-        ref={containerRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={aura.t(
-          "nav.sheet.accessibility_label",
-          "Expanded mobile navigation",
-        )}
-        className={cn(
-          "fixed inset-x-0 bottom-0 z-nav-sheet flex max-h-[88dvh] flex-col",
-          "overflow-hidden rounded-t-[26px] border-t border-glass-border",
-          "bg-ethereal-alabaster outline-none",
-          "shadow-[0_-12px_40px_-8px_var(--glass-shade-lifted)]",
-          "fine-pointer:hidden",
-        )}
-        style={{ y, contain: "paint" }}
-        drag="y"
-        dragControls={dragControls}
-        dragListener={false}
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={DRAG_ELASTICITY}
-        onDragEnd={handleDragEnd}
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%", transition: { duration: 0.22, ease: "circIn" } }}
+        className="fixed inset-x-0 bottom-0 z-nav-sheet fine-pointer:hidden"
+        initial={{ transform: "translateY(100%)" }}
+        animate={{ transform: "translateY(0%)" }}
+        exit={{
+          transform: "translateY(100%)",
+          transition: { duration: 0.22, ease: "circIn" },
+        }}
         transition={SHEET_SPRING}
       >
-        <div
-          className="flex w-full shrink-0 cursor-grab justify-center pt-3 pb-1.5 touch-none active:cursor-grabbing"
-          onPointerDown={(event) => dragControls.start(event)}
-          aria-hidden="true"
-        >
-          <span className="block h-[3px] w-9 rounded-full bg-ethereal-graphite/15" />
-        </div>
-
-        {/* Account header — identity leads, taps through to settings. */}
-        <header className="flex shrink-0 items-center gap-2 px-4 pb-3">
-          <NavLink
-            to="/panel/settings"
-            onClick={onClose}
-            className="group/id flex min-w-0 flex-1 items-center gap-3 rounded-2xl p-1.5 outline-none transition-colors hover:bg-ethereal-graphite/[0.04] focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
-          >
-            {aura.avatarUrl ? (
-              <Avatar
-                src={aura.avatarUrl}
-                name={aura.userFullName}
-                shape="rounded"
-                className="h-11 w-11 rounded-2xl border border-ethereal-gold/30"
-              />
-            ) : (
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-ethereal-gold/30 bg-gradient-to-br from-ethereal-gold/25 to-ethereal-gold/5">
-                <Label color="gold" size="base" weight="semibold">
-                  {aura.initials}
-                </Label>
-              </div>
-            )}
-            <div className="flex min-w-0 flex-col">
-              <Label
-                size="base"
-                weight="semibold"
-                truncate
-                className="block leading-tight text-ethereal-ink"
-              >
-                {aura.userFullName}
-              </Label>
-              <Eyebrow
-                color="incense"
-                weight="medium"
-                truncate
-                className="mt-0.5 block leading-tight opacity-80"
-              >
-                {aura.roleLabel}
-              </Eyebrow>
-            </div>
-            <Settings
-              size={17}
-              strokeWidth={1.75}
-              aria-hidden="true"
-              className="ml-auto shrink-0 text-ethereal-graphite/35 transition-colors group-hover/id:text-ethereal-graphite/70"
-            />
-          </NavLink>
-
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={aura.t("common.actions.close", "Close navigation")}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-ethereal-graphite/[0.04] text-ethereal-graphite/70 outline-none transition-[background-color,color,transform] duration-200 hover:bg-ethereal-graphite/[0.08] hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/60 active:scale-[0.96]"
-          >
-            <X size={18} strokeWidth={2} aria-hidden="true" />
-          </button>
-        </header>
-
-        {/* Search */}
-        <div className="shrink-0 px-4 pb-3">
-          <div className="flex h-12 items-center gap-2.5 rounded-2xl border border-ethereal-graphite/12 bg-ethereal-graphite/[0.03] px-4 transition-colors focus-within:border-ethereal-gold/45 focus-within:bg-ethereal-marble/60">
-            <Search
-              size={18}
-              strokeWidth={1.75}
-              className="shrink-0 text-ethereal-incense"
-              aria-hidden="true"
-            />
-            <input
-              type="text"
-              inputMode="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={aura.t(
-                "dashboard.layout.command.placeholder",
-                "Szukaj lub przejdź do…",
-              )}
-              aria-label={aura.t(
-                "dashboard.layout.command.placeholder",
-                "Szukaj lub przejdź do…",
-              )}
-              className={cn(
-                "min-w-0 flex-1 bg-transparent text-ethereal-ink outline-none placeholder:text-ethereal-incense/80",
-                FIELD_TEXT_SCALE.search,
-              )}
-            />
-            {isSearching && (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                aria-label={aura.t("common.actions.clear", "Wyczyść")}
-                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-ethereal-graphite/55 transition-colors active:scale-95 hover:bg-ethereal-graphite/[0.06] hover:text-ethereal-ink"
-              >
-                <X size={15} strokeWidth={2} aria-hidden="true" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        <nav
-          data-scroll-lock-ignore="true"
+        <motion.div
+          ref={containerRef}
+          role="dialog"
+          aria-modal="true"
           aria-label={aura.t(
-            "dashboard.layout.nav.main_menu",
-            "Primary navigation",
+            "nav.sheet.accessibility_label",
+            "Expanded mobile navigation",
           )}
-          className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-2"
-          style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
+          className={cn(
+            "flex max-h-[88dvh] flex-col",
+            "overflow-hidden rounded-t-[26px] border-t border-glass-border",
+            "bg-ethereal-alabaster outline-none",
+            "shadow-[0_-12px_40px_-8px_var(--glass-shade-lifted)]",
+          )}
+          style={{ y, contain: "paint" }}
+          drag="y"
+          dragControls={dragControls}
+          dragListener={false}
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={DRAG_ELASTICITY}
+          onDragEnd={handleDragEnd}
         >
-          {flatItems.length === 0 ? (
-            <div className="flex flex-col items-center gap-1 px-4 py-14 text-center">
-              <Label size="sm" weight="medium" color="graphite">
-                {aura.t("dashboard.layout.command.no_results", "Brak wyników")}
-              </Label>
-              <Eyebrow color="muted">
-                {aura.t(
-                  "dashboard.layout.command.no_results_hint",
-                  "Spróbuj innej frazy",
-                )}
-              </Eyebrow>
-            </div>
-          ) : (
-            sections.map((section) => (
-              <div key={section.id} className="mb-1 last:mb-0">
-                <Eyebrow
-                  color="muted"
-                  weight="medium"
-                  className="block px-3 pb-1 pt-3"
-                >
-                  {aura.t(section.titleKey)}
-                </Eyebrow>
-                <div className="flex flex-col">
-                  {section.items.map((item) => renderRow(item))}
-                </div>
-              </div>
-            ))
-          )}
-        </nav>
-
-        <div className="shrink-0 border-t border-ethereal-graphite/10 px-2 pt-1.5 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
-          {/* The theme lives canonically in Settings → Aplikacja, with the
-              subtitle that explains it is per-device. It is repeated here
-              because this sheet is the phone's command surface and dark mode
-              is wanted on the phone — in a dim rehearsal room, mid-rehearsal,
-              three taps from where the member already is. Deliberately NOT in
-              the nav dock: that is a once-per-device preference and the dock's
-              slots are daily navigation. */}
-          <div className="mb-1.5 flex flex-col gap-1.5 px-1">
-            <Eyebrow color="muted">
-              {aura.t("settings.app.theme.title", "Wygląd")}
-            </Eyebrow>
-            <SegmentedTabs
-              items={themeOptions}
-              value={preference}
-              onChange={setPreference}
-              ariaLabel={aura.t("settings.app.theme.title", "Wygląd")}
-            />
+          <div
+            className="flex w-full shrink-0 cursor-grab justify-center pt-3 pb-1.5 touch-none active:cursor-grabbing"
+            onPointerDown={(event) => dragControls.start(event)}
+            aria-hidden="true"
+          >
+            <span className="block h-[3px] w-9 rounded-full bg-ethereal-graphite/15" />
           </div>
 
-          {/* Same doorway as the desktop rail's footer, and here for the same
-              reason: `/redakcja` replaces the shell, so it belongs with what
-              leaves the panel rather than in the command list above. Gold
-              rather than the list's neutral rows — it is not one more place
-              inside the panel. */}
-          {canEditSiteCopy(user) && (
+          {/* Account header — identity leads, taps through to settings. */}
+          <header className="flex shrink-0 items-center gap-2 px-4 pb-3">
             <NavLink
-              to="/redakcja"
+              to="/panel/settings"
               onClick={onClose}
-              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-ethereal-gold outline-none transition-colors hover:bg-ethereal-gold/10 focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.99]"
+              className="group/id flex min-w-0 flex-1 items-center gap-3 rounded-2xl p-1.5 outline-none transition-colors hover:bg-ethereal-graphite/[0.04] focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
             >
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-ethereal-gold/25 bg-ethereal-gold/10">
-                <PenLine size={18} strokeWidth={2} aria-hidden="true" />
+              {aura.avatarUrl ? (
+                <Avatar
+                  src={aura.avatarUrl}
+                  name={aura.userFullName}
+                  shape="rounded"
+                  className="h-11 w-11 rounded-2xl border border-ethereal-gold/30"
+                />
+              ) : (
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-ethereal-gold/30 bg-gradient-to-br from-ethereal-gold/25 to-ethereal-gold/5">
+                  <Label color="gold" size="base" weight="semibold">
+                    {aura.initials}
+                  </Label>
+                </div>
+              )}
+              <div className="flex min-w-0 flex-col">
+                <Label
+                  size="base"
+                  weight="semibold"
+                  truncate
+                  className="block leading-tight text-ethereal-ink"
+                >
+                  {aura.userFullName}
+                </Label>
+                <Eyebrow
+                  color="incense"
+                  weight="medium"
+                  truncate
+                  className="mt-0.5 block leading-tight opacity-80"
+                >
+                  {aura.roleLabel}
+                </Eyebrow>
+              </div>
+              <Settings
+                size={17}
+                strokeWidth={1.75}
+                aria-hidden="true"
+                className="ml-auto shrink-0 text-ethereal-graphite/35 transition-colors group-hover/id:text-ethereal-graphite/70"
+              />
+            </NavLink>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={aura.t("common.actions.close", "Close navigation")}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-ethereal-graphite/[0.04] text-ethereal-graphite/70 outline-none transition-[background-color,color,transform] duration-200 hover:bg-ethereal-graphite/[0.08] hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/60 active:scale-[0.96]"
+            >
+              <X size={18} strokeWidth={2} aria-hidden="true" />
+            </button>
+          </header>
+
+          {/* Search */}
+          <div className="shrink-0 px-4 pb-3">
+            <div className="flex h-12 items-center gap-2.5 rounded-2xl border border-ethereal-graphite/12 bg-ethereal-graphite/[0.03] px-4 transition-colors focus-within:border-ethereal-gold/45 focus-within:bg-ethereal-marble/60">
+              <Search
+                size={18}
+                strokeWidth={1.75}
+                className="shrink-0 text-ethereal-incense"
+                aria-hidden="true"
+              />
+              <input
+                type="text"
+                inputMode="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={aura.t(
+                  "dashboard.layout.command.placeholder",
+                  "Szukaj lub przejdź do…",
+                )}
+                aria-label={aura.t(
+                  "dashboard.layout.command.placeholder",
+                  "Szukaj lub przejdź do…",
+                )}
+                className={cn(
+                  "min-w-0 flex-1 bg-transparent text-ethereal-ink outline-none placeholder:text-ethereal-incense/80",
+                  FIELD_TEXT_SCALE.search,
+                )}
+              />
+              {isSearching && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  aria-label={aura.t("common.actions.clear", "Wyczyść")}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-ethereal-graphite/55 transition-colors active:scale-95 hover:bg-ethereal-graphite/[0.06] hover:text-ethereal-ink"
+                >
+                  <X size={15} strokeWidth={2} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <nav
+            data-scroll-lock-ignore="true"
+            aria-label={aura.t(
+              "dashboard.layout.nav.main_menu",
+              "Primary navigation",
+            )}
+            className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-2"
+            style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
+          >
+            {flatItems.length === 0 ? (
+              <div className="flex flex-col items-center gap-1 px-4 py-14 text-center">
+                <Label size="sm" weight="medium" color="graphite">
+                  {aura.t("dashboard.layout.command.no_results", "Brak wyników")}
+                </Label>
+                <Eyebrow color="muted">
+                  {aura.t(
+                    "dashboard.layout.command.no_results_hint",
+                    "Spróbuj innej frazy",
+                  )}
+                </Eyebrow>
+              </div>
+            ) : (
+              sections.map((section) => (
+                <div key={section.id} className="mb-1 last:mb-0">
+                  <Eyebrow
+                    color="muted"
+                    weight="medium"
+                    className="block px-3 pb-1 pt-3"
+                  >
+                    {aura.t(section.titleKey)}
+                  </Eyebrow>
+                  <div className="flex flex-col">
+                    {section.items.map((item) => renderRow(item))}
+                  </div>
+                </div>
+              ))
+            )}
+          </nav>
+
+          <div className="shrink-0 border-t border-ethereal-graphite/10 px-2 pt-1.5 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
+            {/* The theme lives canonically in Settings → Aplikacja, with the
+                subtitle that explains it is per-device. It is repeated here
+                because this sheet is the phone's command surface and dark mode
+                is wanted on the phone — in a dim rehearsal room, mid-rehearsal,
+                three taps from where the member already is. Deliberately NOT in
+                the nav dock: that is a once-per-device preference and the dock's
+                slots are daily navigation. */}
+            <div className="mb-1.5 flex flex-col gap-1.5 px-1">
+              <Eyebrow color="muted">
+                {aura.t("settings.app.theme.title", "Wygląd")}
+              </Eyebrow>
+              <SegmentedTabs
+                items={themeOptions}
+                value={preference}
+                onChange={setPreference}
+                ariaLabel={aura.t("settings.app.theme.title", "Wygląd")}
+              />
+            </div>
+
+            {/* Same doorway as the desktop rail's footer, and here for the same
+                reason: `/redakcja` replaces the shell, so it belongs with what
+                leaves the panel rather than in the command list above. Gold
+                rather than the list's neutral rows — it is not one more place
+                inside the panel. */}
+            {canEditSiteCopy(user) && (
+              <NavLink
+                to="/redakcja"
+                onClick={onClose}
+                className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-ethereal-gold outline-none transition-colors hover:bg-ethereal-gold/10 focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.99]"
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-ethereal-gold/25 bg-ethereal-gold/10">
+                  <PenLine size={18} strokeWidth={2} aria-hidden="true" />
+                </span>
+                <Label size="base" weight="medium" color="inherit">
+                  {aura.t(
+                    "dashboard.layout.actions.copy_desk",
+                    "Redakcja tekstów serwisu",
+                  )}
+                </Label>
+              </NavLink>
+            )}
+
+            <button
+              type="button"
+              onClick={logout}
+              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-ethereal-crimson/85 outline-none transition-colors hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson focus-visible:ring-2 focus-visible:ring-ethereal-crimson/40 active:scale-[0.99]"
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-ethereal-crimson/10">
+                <LogOut size={18} strokeWidth={2} aria-hidden="true" />
               </span>
               <Label size="base" weight="medium" color="inherit">
-                {aura.t(
-                  "dashboard.layout.actions.copy_desk",
-                  "Redakcja tekstów serwisu",
-                )}
+                {aura.t("dashboard.layout.actions.logout", "Wyloguj")}
               </Label>
-            </NavLink>
-          )}
-
-          <button
-            type="button"
-            onClick={logout}
-            className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-ethereal-crimson/85 outline-none transition-colors hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson focus-visible:ring-2 focus-visible:ring-ethereal-crimson/40 active:scale-[0.99]"
-          >
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-ethereal-crimson/10">
-              <LogOut size={18} strokeWidth={2} aria-hidden="true" />
-            </span>
-            <Label size="base" weight="medium" color="inherit">
-              {aura.t("dashboard.layout.actions.logout", "Wyloguj")}
-            </Label>
-          </button>
-        </div>
+            </button>
+          </div>
+        </motion.div>
       </motion.div>
     </>
   );

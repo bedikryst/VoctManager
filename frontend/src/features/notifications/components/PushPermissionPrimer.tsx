@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/shared/ui/primitives/Button";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
 export interface PushPermissionPrimerProps {
   isOpen: boolean;
@@ -61,8 +61,6 @@ export const PushPermissionPrimer: React.FC<PushPermissionPrimerProps> = ({
     },
   ];
 
-  useBodyScrollLock(isOpen);
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -84,6 +82,7 @@ export const PushPermissionPrimer: React.FC<PushPermissionPrimerProps> = ({
           the current task and must sit above anything already open. */}
       {isOpen && (
         <div className="fixed inset-0 z-toast flex items-center justify-center p-4">
+          <BodyScrollLock />
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -94,9 +93,9 @@ export const PushPermissionPrimer: React.FC<PushPermissionPrimerProps> = ({
           />
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+            initial={{ opacity: 0, transform: "translateY(16px) scale(0.96)" }}
+            animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+            exit={{ opacity: 0, transform: "translateY(16px) scale(0.96)" }}
             transition={{ type: "spring", stiffness: 360, damping: 32 }}
             role="dialog"
             aria-modal="true"

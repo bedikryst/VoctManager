@@ -14,7 +14,8 @@ import { useTranslation } from "react-i18next";
 import { cva } from "class-variance-authority";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { OVERLAY_POP_TRANSITION } from "@/shared/ui/kinematics/motion-presets";
 
 const iconContainerVariants = cva(
   "p-3 rounded-full flex-shrink-0 transition-colors duration-300",
@@ -63,8 +64,6 @@ export const ConfirmModal = ({
   const titleId = useId();
   const descriptionId = useId();
 
-  useBodyScrollLock(isOpen);
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -108,10 +107,12 @@ export const ConfirmModal = ({
             onClick={!isLoading ? onCancel : undefined}
             aria-hidden="true"
           />
+          <BodyScrollLock />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, transform: "translateY(20px) scale(0.95)" }}
+            animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+            exit={{ opacity: 0, transform: "translateY(20px) scale(0.95)" }}
+            transition={OVERLAY_POP_TRANSITION}
             className="relative w-full max-w-md bg-ethereal-marble rounded-nested shadow-glass-solid overflow-hidden border border-ethereal-incense/20 flex flex-col"
             role="dialog"
             aria-modal="true"

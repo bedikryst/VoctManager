@@ -5,7 +5,7 @@
  * @module shared/ui/kinematics/motion-presets
  */
 
-import type { Variants } from "framer-motion";
+import type { Transition, Variants } from "framer-motion";
 
 // --- Mathematical Curves (Bezier) ---
 export const EASE = {
@@ -61,6 +61,38 @@ export const INK = {
 export const DURATION = {
   fast: 0.4,
 } as const;
+
+/**
+ * OVERLAY MOTION RUNS ON THE COMPOSITOR. framer-motion hands only `opacity`,
+ * `filter`, `clipPath` and `transform` — the whole string — to the Web
+ * Animations API. `x`, `y` and `scale` are springs computed in JavaScript and
+ * written to `style.transform` every frame, on the same main thread that is
+ * mounting the overlay's content, so their first frames are the ones dropped.
+ * Sheets, drawers and modals therefore enter and leave on a `transform` string —
+ * `"translateY(20px) scale(0.95)"` → `"translateY(0px) scale(1)"` — and Motion
+ * runs the same spring as a `linear()` easing off the main thread.
+ *
+ * Constraints that come with the string:
+ *  - Every keyframe shares one template: the same functions, in the same order,
+ *    in the same units. The rest pose is that template at identity, never
+ *    `none` — Motion turns a `none` keyframe into the template with every number
+ *    zeroed, and for a template with `scale()` that is `scale(0)`.
+ *  - A string inherits no per-axis defaults. Unconfigured, `y` and `scale`
+ *    spring and `transform` eases over 0.3 s; a surface that relied on the
+ *    defaults names them ({@link OVERLAY_POP_TRANSITION}).
+ *  - Drag writes `y` (or `x`), and an animated `transform` overrides it. A
+ *    draggable sheet enters on a wrapper and drags on the element inside —
+ *    gesture motion has to follow the finger on the main thread anyway.
+ */
+
+/**
+ * framer-motion's own defaults for a `y` and an `opacity`, written out for a
+ * modal that pops in on a `transform` string (which would otherwise ease).
+ */
+export const OVERLAY_POP_TRANSITION: Transition = {
+  transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 },
+  opacity: { duration: 0.3, ease: [0.25, 0.1, 0.35, 1] },
+};
 
 /**
  * The container orchestrates and NOTHING ELSE — deliberately no opacity of its

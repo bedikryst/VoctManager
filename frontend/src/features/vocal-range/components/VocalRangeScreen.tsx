@@ -225,6 +225,9 @@ const VocalRangeStage = ({
   entrance,
   onClose,
 }: StageProps): React.JSX.Element => {
+  // Held for the stage's whole presence, exit included: AnimatePresence keeps
+  // it mounted until the curtain has lifted.
+  useBodyScrollLock(true);
   const { t } = useTranslation();
   const { user, refreshUser } = useAuth();
   const reduceMotion = useReducedMotion() ?? false;
@@ -963,8 +966,6 @@ export const VocalRangeScreen = ({
   entrance = "over",
   onClose,
 }: VocalRangeScreenProps): React.JSX.Element => {
-  useBodyScrollLock(open);
-
   // Portalled in the very first commit (a client-only app has no server render
   // to wait for): a curtain that arrived one effect later would show the
   // panel for a frame first.

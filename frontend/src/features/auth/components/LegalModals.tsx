@@ -17,7 +17,7 @@ import { X, Printer } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Heading, Eyebrow } from "@/shared/ui/primitives/typography";
 import { Button } from "@/shared/ui/primitives/Button";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import {
   PrivacyContent,
   TermsContent,
@@ -36,7 +36,6 @@ export const LegalModal: React.FC<LegalModalProps> = ({
   type,
 }) => {
   const { t } = useTranslation();
-  useBodyScrollLock(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -59,6 +58,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-focus-trap flex items-center justify-center p-4 sm:p-6">
+          <BodyScrollLock />
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -74,9 +74,9 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             <GlassCard
               as={motion.div}
               animationEngine="framer"
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, transform: "translateY(20px) scale(0.95)" }}
+              animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+              exit={{ opacity: 0, transform: "translateY(20px) scale(0.95)" }}
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
               variant="solid"
               padding="none"

@@ -208,9 +208,9 @@ export const PdfViewerModal = ({
               {/* Full-bleed: no margins, no rounding, no top bar — the viewer owns
                   the whole viewport and the chrome floats on top of it. */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.99 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.99 }}
+                initial={{ opacity: 0, transform: "scale(0.99)" }}
+                animate={{ opacity: 1, transform: "scale(1)" }}
+                exit={{ opacity: 0, transform: "scale(0.99)" }}
                 transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                 className="fixed inset-0 z-focus-trap flex h-[100dvh] w-[100dvw] flex-col overflow-hidden bg-surface-inverse outline-none"
               >

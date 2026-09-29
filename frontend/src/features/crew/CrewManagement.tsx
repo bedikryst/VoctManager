@@ -14,7 +14,6 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { Plus, RotateCcw, UsersRound } from "lucide-react";
 
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { FilterTokens } from "@/shared/ui/composites/FilterTokens";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
@@ -81,8 +80,6 @@ export default function CrewManagement(): React.JSX.Element {
   const normalizedSearchTerm = searchTerm.trim();
   const emailCoverage = formatCoverage(metrics.withEmail, metrics.totalPeople);
   const phoneCoverage = formatCoverage(metrics.withPhone, metrics.totalPeople);
-
-  useBodyScrollLock(isPanelOpen || personToDelete !== null);
 
   useEffect(() => {
     if (!isError) return;

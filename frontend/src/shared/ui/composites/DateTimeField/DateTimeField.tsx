@@ -324,7 +324,7 @@ export const DateTimeField = ({
                     )
                     ?.focus();
                 }}
-                className="z-popover w-auto rounded-nested border border-ethereal-incense/15 bg-ethereal-alabaster/95 p-3 shadow-glass-ethereal backdrop-blur-ethereal"
+                className="z-popover w-auto rounded-nested border border-ethereal-incense/15 bg-ethereal-alabaster/95 p-3 shadow-glass-ethereal"
               >
                 <motion.div
                   initial={{ opacity: 0, y: -4 }}

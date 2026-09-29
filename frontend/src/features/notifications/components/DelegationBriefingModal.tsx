@@ -39,7 +39,7 @@ import {
 import { useFirstRunTakeover } from "@/features/dashboard/hooks/useFirstRunTakeover";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
 import { useDelegationBriefingQueue } from "../hooks/useDelegationBriefingQueue";
 import { useProjectInvitationQueue } from "../hooks/useProjectInvitationQueue";
@@ -70,7 +70,6 @@ export const DelegationBriefingModal: React.FC = () => {
   useEffect(() => setMounted(true), []);
 
   const onStage = !!current && !invitationOnStage && takeover === null;
-  useBodyScrollLock(onStage);
 
   useEffect(() => {
     if (!onStage) return;
@@ -150,6 +149,7 @@ export const DelegationBriefingModal: React.FC = () => {
     <AnimatePresence>
       {onStage && metadata && (
         <div className="fixed inset-0 z-toast flex items-center justify-center p-4">
+          <BodyScrollLock />
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -161,9 +161,9 @@ export const DelegationBriefingModal: React.FC = () => {
 
           <motion.div
             key={current.notificationId}
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 12 }}
+            initial={{ opacity: 0, transform: "translateY(20px) scale(0.95)" }}
+            animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+            exit={{ opacity: 0, transform: "translateY(12px) scale(0.96)" }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
             className="relative flex w-full max-w-md flex-col overflow-hidden rounded-surface border border-ethereal-amethyst/30 bg-ethereal-marble shadow-glass-solid"
             role="dialog"

@@ -16,7 +16,7 @@ import { X } from "lucide-react";
 
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
 import { EditionUploadZone } from "./EditionUploadZone";
 
@@ -30,7 +30,6 @@ export const EditionUploadDrawer = ({
   onClose,
 }: EditionUploadDrawerProps): React.ReactPortal | null => {
   const { t } = useTranslation();
-  useBodyScrollLock(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -58,9 +57,9 @@ export const EditionUploadDrawer = ({
           {/* Focus-trap layer, not the toast layer: a drawer sitting on z-toast
               puts every toast its uploads raise behind itself. */}
           <motion.div
-            initial={{ right: "-100%" }}
-            animate={{ right: 0 }}
-            exit={{ right: "-100%" }}
+            initial={{ transform: "translateX(100%)" }}
+            animate={{ transform: "translateX(0%)" }}
+            exit={{ transform: "translateX(100%)" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className="fixed inset-y-0 right-0 z-focus-trap flex w-full flex-col border-l border-hairline-strong bg-ethereal-parchment shadow-glass-solid md:w-140"
             role="dialog"
@@ -70,6 +69,7 @@ export const EditionUploadDrawer = ({
               "Wgraj partyturę PDF",
             )}
           >
+            <BodyScrollLock />
             <header className="flex items-start justify-between gap-4 px-6 pt-6 pb-4 md:px-8 md:pt-8">
               <div className="min-w-0">
                 <Heading as="h2" size="2xl" weight="medium" className="font-serif">

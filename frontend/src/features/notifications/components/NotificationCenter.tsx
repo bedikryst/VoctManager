@@ -10,7 +10,14 @@
  * @architecture Enterprise SaaS 2026
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import {
   AnimatePresence,
@@ -42,7 +49,7 @@ import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { cn } from "@/shared/lib/utils";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useIsFinePointer } from "@/shared/lib/dom/useMediaQuery";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useCloseWatcher } from "@/shared/lib/dom/useCloseWatcher";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 
@@ -170,9 +177,14 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
   const close = useCallback(() => setIsOpen(false), []);
 
-  useBodyScrollLock(isOpen);
   useCloseWatcher(isOpen, close);
   useFocusTrap(panelRef, isOpen);
+
+  // The drag offset survives a swipe-dismiss (see `handleDragEnd`); each open
+  // starts the sheet from rest.
+  useLayoutEffect(() => {
+    if (isOpen) y.set(0);
+  }, [isOpen, y]);
 
   // Opening the centre "sees" everything currently new — clears the bell badge
   // without marking anything read (per-item unread state is untouched).
@@ -199,6 +211,9 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
       info.offset.y > SWIPE_OFFSET_THRESHOLD ||
       info.velocity.y > SWIPE_VELOCITY_THRESHOLD
     ) {
+      // Hold the sheet where the finger let go and let the exit carry it down
+      // from there; drag's snap-back would pull it up against the exit.
+      y.stop();
       close();
     }
   };
@@ -414,47 +429,59 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                   role="dialog"
                   aria-modal="true"
                   aria-label={t("notifications.title")}
-                  initial={{ opacity: 0, x: -16, scale: 0.98 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: -16, scale: 0.98 }}
+                  initial={{ opacity: 0, transform: "translateX(-16px) scale(0.98)" }}
+                  animate={{ opacity: 1, transform: "translateX(0px) scale(1)" }}
+                  exit={{ opacity: 0, transform: "translateX(-16px) scale(0.98)" }}
                   transition={DRAWER_SPRING}
                   style={{ originX: 0, originY: 0.5 }}
                   className="fixed bottom-4 left-4 top-4 z-focus-trap flex w-[384px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-surface border border-ethereal-gold/20 bg-ethereal-alabaster shadow-[0_28px_70px_-20px_var(--glass-shade-strong)] outline-none"
                 >
+                  <BodyScrollLock />
                   {header}
                   <div className="mx-3 h-px shrink-0 bg-hairline-strong" />
                   {body}
                 </motion.div>
               ) : (
+                // Entrance and exit ride this wrapper as a `transform` string,
+                // on the compositor; the sheet inside keeps `y` for the drag,
+                // which an animated `transform` on it would override.
                 <motion.div
                   key="notif-sheet"
-                  ref={panelRef}
-                  role="dialog"
-                  aria-modal="true"
-                  aria-label={t("notifications.title")}
-                  initial={{ y: "100%" }}
-                  animate={{ y: 0 }}
-                  exit={{ y: "100%", transition: { duration: 0.2, ease: "circIn" } }}
+                  initial={{ transform: "translateY(100%)" }}
+                  animate={{ transform: "translateY(0%)" }}
+                  exit={{
+                    transform: "translateY(100%)",
+                    transition: { duration: 0.2, ease: "circIn" },
+                  }}
                   transition={SHEET_SPRING}
-                  style={{ y, contain: "paint" }}
-                  drag="y"
-                  dragControls={dragControls}
-                  dragListener={false}
-                  dragConstraints={{ top: 0, bottom: 0 }}
-                  dragElastic={0.05}
-                  onDragEnd={handleDragEnd}
-                  className="fixed inset-x-0 bottom-0 z-focus-trap flex max-h-[85dvh] flex-col overflow-hidden rounded-t-surface border-t border-glass-border bg-ethereal-alabaster shadow-[0_-12px_40px_-8px_var(--glass-shade-lifted)] outline-none"
+                  className="fixed inset-x-0 bottom-0 z-focus-trap"
                 >
-                  <div
-                    className="flex w-full shrink-0 cursor-grab justify-center py-3 touch-none active:cursor-grabbing"
-                    onPointerDown={(event) => dragControls.start(event)}
-                    aria-hidden="true"
+                  <BodyScrollLock />
+                  <motion.div
+                    ref={panelRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={t("notifications.title")}
+                    style={{ y, contain: "paint" }}
+                    drag="y"
+                    dragControls={dragControls}
+                    dragListener={false}
+                    dragConstraints={{ top: 0, bottom: 0 }}
+                    dragElastic={0.05}
+                    onDragEnd={handleDragEnd}
+                    className="flex max-h-[85dvh] flex-col overflow-hidden rounded-t-surface border-t border-glass-border bg-ethereal-alabaster shadow-[0_-12px_40px_-8px_var(--glass-shade-lifted)] outline-none"
                   >
-                    <span className="block h-[3px] w-9 rounded-full bg-ethereal-graphite/15" />
-                  </div>
-                  {header}
-                  <div className="mx-3 h-px shrink-0 bg-hairline-strong" />
-                  {body}
+                    <div
+                      className="flex w-full shrink-0 cursor-grab justify-center py-3 touch-none active:cursor-grabbing"
+                      onPointerDown={(event) => dragControls.start(event)}
+                      aria-hidden="true"
+                    >
+                      <span className="block h-[3px] w-9 rounded-full bg-ethereal-graphite/15" />
+                    </div>
+                    {header}
+                    <div className="mx-3 h-px shrink-0 bg-hairline-strong" />
+                    {body}
+                  </motion.div>
                 </motion.div>
               ))}
           </AnimatePresence>,

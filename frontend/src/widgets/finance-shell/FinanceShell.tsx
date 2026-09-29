@@ -133,10 +133,11 @@ export const FinanceShell = (): React.JSX.Element => {
     <div className="relative flex min-h-screen w-full flex-col bg-transparent font-sans text-ethereal-ink antialiased lg:flex-row">
       <EtherealBackground />
 
-      {/* Below `lg`: the way back and the sections, pinned to the top. Blurred
-          rather than solid, like the copy desk's rail, so the ambient wash
-          passes through instead of printing a lid across the page. */}
-      <header className="sticky top-0 z-20 flex shrink-0 flex-col gap-2.5 border-b border-hairline bg-ethereal-canvas/92 px-4 pb-2.5 pt-[calc(env(safe-area-inset-top)+0.625rem)] backdrop-blur-md sm:px-6 lg:hidden">
+      {/* Below `lg`: the way back and the sections, pinned to the top.
+          Translucent rather than solid, like the copy desk's rail, so the
+          ambient wash passes through instead of printing a lid across the
+          page. No blur: a 92 % fill leaves it nothing to show. */}
+      <header className="sticky top-0 z-20 flex shrink-0 flex-col gap-2.5 border-b border-hairline bg-ethereal-canvas/92 px-4 pb-2.5 pt-[calc(env(safe-area-inset-top)+0.625rem)] sm:px-6 lg:hidden">
         <div className="flex items-center justify-between gap-3">
           {backToVoct}
           <Eyebrow as="h1" color="muted">
@@ -149,7 +150,7 @@ export const FinanceShell = (): React.JSX.Element => {
       {/* From `lg`: the workspace's own column, sticky for the length of the
           page, with the account at its foot — the only door to settings and
           logout a takeover leaves. */}
-      <aside className="sticky top-0 z-20 hidden h-dvh w-72 shrink-0 flex-col gap-8 border-r border-hairline bg-ethereal-canvas/92 px-5 pb-6 pt-6 backdrop-blur-md lg:flex">
+      <aside className="sticky top-0 z-20 hidden h-dvh w-72 shrink-0 flex-col gap-8 border-r border-hairline bg-ethereal-canvas/92 px-5 pb-6 pt-6 lg:flex">
         <div className="self-start">{backToVoct}</div>
         <div className="flex flex-col gap-1 px-1">
           <Eyebrow color="muted">{t("finance.portfolio.role", "Fundacja")}</Eyebrow>
