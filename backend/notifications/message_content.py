@@ -289,6 +289,19 @@ def _rehearsal_page_url(ctx: MessageContext) -> str:
     return f"/panel/schedule/rehearsal/{rehearsal_id}"
 
 
+def _attendance_report_url(ctx: MessageContext) -> str:
+    """Where a singer's report about ONE evening lands for the reader.
+
+    The workspace (or, for a reader without it, the schedule) opened on that
+    evening: the report names a rehearsal, and both surfaces spend
+    `?rehearsal=` on arrival. A span is opened on its first evening. Kept out of
+    `_rehearsals_url`, which other notices reach for as a bare address.
+    """
+    rehearsal_id = ctx.metadata.get("rehearsal_id")
+    base = _rehearsals_url(ctx)
+    return f"{base}?rehearsal={rehearsal_id}" if rehearsal_id else base
+
+
 def _schedule_card_url(ctx: MessageContext) -> str:
     """Where a notice about WHEN an evening happens lands for its reader.
 
@@ -1871,7 +1884,7 @@ def _compose_absence_requested(ctx: MessageContext) -> MessageContent:
     project = m.get("project_name") or _("a project")
     when = display_event_time(m, "rehearsal_date")
     note = m.get("excuse_note")
-    rehearsals_url = _rehearsals_url(ctx)
+    rehearsals_url = _attendance_report_url(ctx)
     details: list[DetailRow] = [_row(_("Singer"), artist), _row(_("Project"), project)]
     details.extend(_span_rows(m, when))
     if note:
@@ -2000,7 +2013,7 @@ def _compose_attendance_submitted(ctx: MessageContext) -> MessageContent:
     if m.get("status") == "LATE" and minutes:
         phrase = _("will be about %(minutes)d min late") % {"minutes": int(minutes)}
     headline = _("%(artist)s %(phrase)s") % {"artist": artist, "phrase": phrase}
-    rehearsals_url = _rehearsals_url(ctx)
+    rehearsals_url = _attendance_report_url(ctx)
     details: list[DetailRow] = [_row(_("Singer"), artist), _row(_("Project"), project)]
     if when:
         details.append(_row(_("Rehearsal"), when))

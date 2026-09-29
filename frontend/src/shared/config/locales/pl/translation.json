@@ -2770,7 +2770,9 @@
       "inv_col_person": "Osoba",
       "inv_col_phone": "Telefon",
       "inv_confirmed": "Potwierdzeni",
+      "inv_confirmed_short": "tak",
       "inv_declined": "Odrzucili",
+      "inv_declined_short": "nie",
       "inv_details_link": "Szczegóły",
       "inv_empty": "Brak uczestników do wyświetlenia",
       "inv_loading": "Ładowanie listy...",
@@ -2781,6 +2783,7 @@
       "inv_modal_title": "Status Zaproszeń",
       "inv_open_details_aria": "Otwórz szczegółową listę zaproszeń",
       "inv_pending": "Oczekujący",
+      "inv_pending_short": "czeka",
       "kpi_active_projects": "Aktywne Dyrektywy",
       "kpi_invitations": "Status Zaproszeń",
       "kpi_pieces": "Repertuar Sakralny",
@@ -2797,6 +2800,10 @@
       "next_rehearsal_badge": "Najbliższa Próba",
       "rehearsal_today_badge": "Próba dziś",
       "absences": "Nieobecni: {{count}}",
+      "absences_open_aria": "Pokaż, kto nie przyjdzie na próbę: {{count}}",
+      "absences_sheet_title": "Nieobecni na próbie",
+      "open_plan": "Plan",
+      "open_plan_aria": "Przeczytaj plan próby",
       "pipeline": {
         "empty": "Brak aktywnych produkcji. Czas zaplanować kolejny koncert.",
         "no_score": "Bez partytury",
@@ -2845,6 +2852,7 @@
         "subtitle": "Status zaproszeń"
       },
       "satb_distribution": "Dystrybucja Głosów SATB",
+      "satb_scope": "Wszyscy aktywni śpiewacy w bazie",
       "satb_total_aria": "Łączna liczba głosów w zespole",
       "setup": {
         "eyebrow": "Pierwszy sezon",
@@ -2879,6 +2887,9 @@
       },
       "spotlight": {
         "cast": "Obsada",
+        "confirmed": "Potwierdzeni",
+        "pending": "{{count}} czeka",
+        "pending_aria": "Pokaż, kto jeszcze nie odpowiedział: {{count}}",
         "empty_cta": "Zaplanuj koncert",
         "empty_desc": "Nie masz zaplanowanego żadnego nadchodzącego koncertu. To dobry moment, by przygotować kolejny występ.",
         "empty_eyebrow": "Brak nadchodzących koncertów",
@@ -2888,6 +2899,7 @@
         "status_active": "W Produkcji",
         "status_prep": "W Przygotowaniu",
         "unit_cast": "głosów",
+        "unit_confirmed": "z {{total}}",
         "unit_program": "partytur",
         "unit_remaining": "prób"
       },
@@ -2999,6 +3011,7 @@
       "command": {
         "actions": {
           "mark_attendance": "Oznacz obecność",
+          "next_rehearsal": "Najbliższa próba",
           "new_artist": "Nowy artysta",
           "new_note": "Nowa notatka",
           "new_project": "Nowy projekt",

@@ -23,8 +23,7 @@ import {
   UserX,
 } from "lucide-react";
 
-import { ProjectInvitationsSheet } from "./ProjectInvitationsSheet";
-
+import { ProjectInvitationsSheet } from "@/features/projects/components/ProjectInvitationsSheet";
 import type { ProjectStatus } from "@/features/projects/constants/projectDomain";
 import { PROJECT_STATUS } from "@/features/projects/constants/projectDomain";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -64,15 +63,21 @@ interface ProductionPipelineProps {
   projects: PipelineProjectDto[];
 }
 
+/**
+ * A phone gets the short word rather than no word: the tooltip that used to
+ * carry the label there is a hover, and a phone never hovers.
+ */
 const AggregateChip = ({
   Icon,
   value,
   label,
+  shortLabel,
   tone,
 }: {
   Icon: typeof UserCheck;
   value: number;
   label: string;
+  shortLabel: string;
   tone: "sage" | "gold" | "graphite";
 }): React.JSX.Element => {
   const toneClass =
@@ -90,6 +95,9 @@ const AggregateChip = ({
       <span className="text-sm font-bold tabular-nums text-ethereal-ink">
         {value}
       </span>
+      <Eyebrow color="muted" className="sm:hidden">
+        {shortLabel}
+      </Eyebrow>
       <Eyebrow color="muted" className="hidden sm:inline">
         {label}
       </Eyebrow>
@@ -114,6 +122,33 @@ const PipelineRow = ({
     project.status === PROJECT_STATUS.ACTIVE
       ? t("dashboard.admin.pipeline.status_active", "W produkcji")
       : t("dashboard.admin.pipeline.status_prep", "Przygotowanie");
+
+  // Only what is outstanding wears a chip. The sage "komplet" that used to sit
+  // opposite the pending count put a badge on every healthy production — the
+  // ring already reads full when the cast is. Each chip keeps its word at every
+  // width: below `md` the chips move under the title, where the line can wrap,
+  // instead of shrinking to icons whose meaning lived in a hover.
+  const hasOutstanding = project.scoreMissing || hasPending;
+  const outstanding = (
+    <>
+      {project.scoreMissing && (
+        <Badge
+          variant="warning"
+          icon={<FileWarning size={11} aria-hidden="true" />}
+        >
+          {t("dashboard.admin.pipeline.no_score", "Bez partytury")}
+        </Badge>
+      )}
+      {hasPending && (
+        <Badge variant="warning" icon={<Clock size={11} aria-hidden="true" />}>
+          <span className="tabular-nums">{project.castPending}</span>
+          <span className="ml-1">
+            {t("dashboard.admin.pipeline.pending_short", "czeka")}
+          </span>
+        </Badge>
+      )}
+    </>
+  );
 
   return (
     <button
@@ -162,30 +197,16 @@ const PipelineRow = ({
           </Caption>
           <Caption color="muted">{statusLabel}</Caption>
         </div>
+        {hasOutstanding && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 md:hidden">
+            {outstanding}
+          </div>
+        )}
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        {/* Only what is outstanding wears a chip. The sage "komplet" that used
-            to sit opposite the pending count put a badge on every healthy
-            production — the ring already reads full when the cast is. */}
-        {project.scoreMissing && (
-          <Badge
-            variant="warning"
-            title={t("dashboard.admin.pipeline.no_score", "Bez partytury")}
-            icon={<FileWarning size={11} aria-hidden="true" />}
-          >
-            <span className="hidden md:inline">
-              {t("dashboard.admin.pipeline.no_score", "Bez partytury")}
-            </span>
-          </Badge>
-        )}
-        {hasPending && (
-          <Badge variant="warning" icon={<Clock size={11} aria-hidden="true" />}>
-            <span className="tabular-nums">{project.castPending}</span>
-            <span className="ml-1 hidden md:inline">
-              {t("dashboard.admin.pipeline.pending_short", "czeka")}
-            </span>
-          </Badge>
+        {hasOutstanding && (
+          <div className="hidden items-center gap-2 md:flex">{outstanding}</div>
         )}
         <ChevronRight
           size={16}
@@ -219,18 +240,21 @@ export const ProductionPipeline = ({
             Icon={UserCheck}
             value={stats.confirmed}
             label={t("dashboard.admin.inv_confirmed", "Potwierdzeni")}
+            shortLabel={t("dashboard.admin.inv_confirmed_short", "tak")}
             tone="sage"
           />
           <AggregateChip
             Icon={Clock}
             value={stats.pending}
             label={t("dashboard.admin.inv_pending", "Oczekujący")}
+            shortLabel={t("dashboard.admin.inv_pending_short", "czeka")}
             tone="gold"
           />
           <AggregateChip
             Icon={UserX}
             value={stats.declined}
             label={t("dashboard.admin.inv_declined", "Odrzucili")}
+            shortLabel={t("dashboard.admin.inv_declined_short", "nie")}
             tone="graphite"
           />
         </div>

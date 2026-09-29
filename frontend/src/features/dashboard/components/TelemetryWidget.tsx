@@ -1,7 +1,12 @@
 /**
  * @file TelemetryWidget.tsx
- * @description Ensemble Resonance and SATB Cohesion visualisation.
- * Refactored using Ethereal UI Primitives & Composites.
+ * @description The ensemble card: archive size, live productions, and the SATB
+ * balance of every active singer in the roster.
+ *
+ * The balance is the whole ensemble, not the next concert's cast, and the card
+ * says so in its own words: it shares a row with the next-concert card, and
+ * unlabelled it reads as that concert's balance. A concert's balance is read on
+ * that project's cast tab.
  * @architecture Enterprise SaaS 2026
  */
 
@@ -12,7 +17,7 @@ import { AudioLines } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
-import { Eyebrow, Text, Unit } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Text, Unit } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { ResonancePillar } from "@/shared/ui/kinematics/ResonancePillar";
 import {
@@ -20,16 +25,14 @@ import {
   type SectionKey,
 } from "@/features/artists/constants/voiceSections";
 
-export interface VoiceStatsDto {
-  S: number;
-  MEZ: number;
-  A: number;
-  CT: number;
-  T: number;
-  BAR: number;
-  B: number;
-  Total: number;
-}
+/**
+ * Singers per SATB section, each counted once, by the shared voice → section
+ * map (`getVoiceSection`: mezzo and countertenor with the altos, baritone with
+ * the basses). `Total` is the sum of the four, so the figure beside the pillars
+ * is the pillars' own total; the conductor and the players have no section and
+ * are in neither.
+ */
+export type VoiceStatsDto = Record<SectionKey, number> & { Total: number };
 
 export interface AdminTelemetryStatsDto {
   /**
@@ -46,18 +49,6 @@ export interface TelemetryWidgetProps {
   adminStats?: AdminTelemetryStatsDto;
 }
 
-/**
- * The SATB spine the roster sorts by — mezzo sings the alto line, baritone
- * sings with the basses. The accent beside each count comes from the same
- * taxonomy, so a voice is one colour here and on the roster.
- */
-const SECTION_TALLY: Record<SectionKey, (satb: VoiceStatsDto) => number> = {
-  S: (satb) => satb.S + satb.MEZ,
-  A: (satb) => satb.A + satb.CT,
-  T: (satb) => satb.T,
-  B: (satb) => satb.B + satb.BAR,
-};
-
 export function TelemetryWidget({
   adminStats,
 }: TelemetryWidgetProps): React.JSX.Element {
@@ -66,14 +57,16 @@ export function TelemetryWidget({
   const stats = adminStats ?? {
     totalPieces: null,
     activeProjects: 0,
-    satb: { S: 0, MEZ: 0, A: 0, CT: 0, T: 0, BAR: 0, B: 0, Total: 0 },
+    satb: { S: 0, A: 0, T: 0, B: 0, Total: 0 },
   };
 
+  // The accent beside each count comes from the section taxonomy, so a voice
+  // is one colour here and on the roster.
   const voices = useMemo(
     () =>
       VOICE_SECTIONS.map((section) => ({
         label: section.key,
-        val: SECTION_TALLY[section.key](stats.satb),
+        val: stats.satb[section.key],
         accent: section.accent,
       })),
     [stats.satb],
@@ -130,9 +123,17 @@ export function TelemetryWidget({
             className="opacity-50"
           />
 
-          <Eyebrow color="muted">
-            {t("dashboard.admin.kpi_readiness", "Spójność Harmoniczna")}
-          </Eyebrow>
+          <div className="flex flex-col gap-1">
+            <Eyebrow color="muted">
+              {t("dashboard.admin.kpi_readiness", "Spójność Harmoniczna")}
+            </Eyebrow>
+            <Caption color="muted">
+              {t(
+                "dashboard.admin.satb_scope",
+                "Wszyscy aktywni śpiewacy w bazie",
+              )}
+            </Caption>
+          </div>
 
           <div
             className="flex items-baseline gap-1"

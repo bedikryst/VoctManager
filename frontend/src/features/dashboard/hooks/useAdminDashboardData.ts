@@ -14,6 +14,9 @@ import { projectKeys } from "@/features/projects/api/project.queries";
 import { artistKeys } from "@/features/artists/api/artist.queries";
 import { archiveKeys } from "@/features/archive/api/archive.queries";
 import { PROJECT_STATUS } from "@/features/projects/constants/projectDomain";
+import { compareProjectHorizon } from "@/features/projects/lib/projectPresentation";
+import { getVoiceSection } from "@/features/artists/constants/voiceSections";
+import { isRehearsalLive } from "@/features/rehearsals/lib/attendanceStats";
 import { ArtistService } from "@/features/artists/api/artist.service";
 import { ArchiveService } from "@/features/archive/api/archive.service";
 import { ProjectService } from "@/features/projects/api/project.service";
@@ -27,12 +30,16 @@ import type {
 } from "@/shared/types";
 
 // UI DTOs imports
-import type { AdminTelemetryStatsDto } from "../components/TelemetryWidget";
+import type {
+  AdminTelemetryStatsDto,
+  VoiceStatsDto,
+} from "../components/TelemetryWidget";
 import type { ProjectStatsDto } from "../components/SpotlightProjectCard";
 import type {
   InvitationStatsDto,
   PipelineProjectDto,
 } from "../components/ProductionPipeline";
+import type { AdminNextRehearsalDto } from "../components/NextRehearsalAlert";
 import { parseConductorName } from "../utils/conductorParser";
 
 // The pipeline is a focused triage list, not the full project archive — cap it
@@ -40,7 +47,7 @@ import { parseConductorName } from "../utils/conductorParser";
 const PIPELINE_LIMIT = 6;
 
 const EMPTY_PROJECTS: Project[] = [];
-const EMPTY_REHEARSALS: EnrichedRehearsal[] = [];
+const EMPTY_REHEARSALS: Rehearsal[] = [];
 const EMPTY_ARTISTS: Artist[] = [];
 const EMPTY_PIECES: Piece[] = [];
 const WORKSPACE_STALE_TIME = 1000 * 60 * 5;
@@ -51,10 +58,9 @@ const isLocationSnippet = (
   return typeof loc === "object" && loc !== null && "id" in loc;
 };
 
-export interface EnrichedRehearsal extends Rehearsal {
-  absent_count?: number;
-  projectTitle?: string;
-}
+const isClosedProject = (project: Project | undefined): boolean =>
+  project?.status === PROJECT_STATUS.DONE ||
+  project?.status === PROJECT_STATUS.CANCELLED;
 
 export const useAdminDashboardData = () => {
   const { t } = useTranslation();
@@ -132,34 +138,18 @@ export const useAdminDashboardData = () => {
     ).length;
 
     const totalPieces = isArchivePending ? null : pieces.length;
-    const activeArtistsList = artists.filter((a) => a.is_active);
 
-    const S = activeArtistsList.filter((a) =>
-      a.voice_type?.startsWith("S"),
-    ).length;
-    const MEZ = activeArtistsList.filter((a) => a.voice_type === "MEZ").length;
-    const A = activeArtistsList.filter((a) =>
-      a.voice_type?.startsWith("A"),
-    ).length;
-    const CT = activeArtistsList.filter((a) => a.voice_type === "CT").length;
-    const T = activeArtistsList.filter((a) =>
-      a.voice_type?.startsWith("T"),
-    ).length;
-    const BAR = activeArtistsList.filter((a) => a.voice_type === "BAR").length;
-    const B = activeArtistsList.filter((a) =>
-      a.voice_type?.startsWith("B"),
-    ).length;
-
-    const satb = {
-      S,
-      MEZ,
-      A,
-      CT,
-      T,
-      BAR,
-      B,
-      Total: activeArtistsList.length,
-    };
+    // One pass through the shared voice → section map: each singer lands in
+    // exactly one section, and a voice with no section (conductor, player)
+    // lands in none — so the total is the pillars' own sum.
+    const satb: VoiceStatsDto = { S: 0, A: 0, T: 0, B: 0, Total: 0 };
+    artists.forEach((artist) => {
+      if (!artist.is_active) return;
+      const section = getVoiceSection(artist.voice_type);
+      if (!section) return;
+      satb[section] += 1;
+      satb.Total += 1;
+    });
 
     return { activeProjects, totalPieces, satb };
   }, [projects, pieces, artists, isArchivePending]);
@@ -190,27 +180,23 @@ export const useAdminDashboardData = () => {
     };
   }, [projects]);
 
-  // 2b. PRODUCTION PIPELINE — the next few live/upcoming productions with their
-  // readiness, sorted by date. Powers the per-project triage that replaced the
-  // aggregate invitations tile. Same non-archived set as the totals above, but
-  // CAPPED — so the strip has to say when it is showing fewer than it counts,
-  // or the header's census reads as the count of what is on screen.
+  // 2b. PRODUCTION PIPELINE — the next few open productions with their
+  // readiness. Same non-archived set as the totals above, but CAPPED — so the
+  // strip has to say when it is showing fewer than it counts, or the header's
+  // census reads as the count of what is on screen. Ordered by the horizon, so
+  // the next concert leads and a past one nobody has closed yet queues behind
+  // everything still ahead instead of sitting on top of it.
   const pipelineProjects: PipelineProjectDto[] = useMemo(() => {
     const now = Date.now();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const byHorizon = compareProjectHorizon(todayStart);
     // Only flag a missing score book once the concert is on the horizon — an
     // assembled book weeks early would be noise; a missing one days out is action.
     const IMMINENT_MS = 14 * 24 * 60 * 60 * 1000;
     return projects
-      .filter(
-        (p) =>
-          p.status !== PROJECT_STATUS.DONE &&
-          p.status !== PROJECT_STATUS.CANCELLED,
-      )
-      .sort((a, b) => {
-        const ta = a.date_time ? new Date(a.date_time).getTime() : Infinity;
-        const tb = b.date_time ? new Date(b.date_time).getTime() : Infinity;
-        return ta - tb;
-      })
+      .filter((p) => !isClosedProject(p))
+      .sort((a, b) => byHorizon(a.date_time, b.date_time))
       .slice(0, PIPELINE_LIMIT)
       .map((p) => {
         const dt = p.date_time ? new Date(p.date_time).getTime() : Infinity;
@@ -282,46 +268,43 @@ export const useAdminDashboardData = () => {
 
     return {
       rehearsalsRemaining: rawNextProject.rehearsals_upcoming ?? 0,
-      castCount: rawNextProject.cast_total ?? 0,
+      castConfirmed: rawNextProject.cast_confirmed ?? 0,
+      castPending: rawNextProject.cast_pending ?? 0,
+      castTotal: rawNextProject.cast_total ?? 0,
       piecesCount: rawNextProject.pieces_total ?? 0,
     };
   }, [rawNextProject]);
 
-  // 5. NEXT REHEARSAL ALERT
-  const nextRehearsal = useMemo(() => {
-    const now = new Date();
-    // Rehearsal stays active up to 2 hours past its start time
-    const threshold = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+  // 5. NEXT REHEARSAL ALERT — the evening the rehearsals workspace would open
+  // on, by the workspace's own rule: an open project's rehearsal that is live
+  // (from 2 h before its start to 3 h after) or still ahead, the earliest
+  // first. A closed or cancelled project's leftover dates are not "next".
+  const nextRehearsal: AdminNextRehearsalDto | null = useMemo(() => {
+    const now = Date.now();
+    const projectById = new Map(projects.map((p) => [String(p.id), p]));
 
-    const futureRehearsals = rehearsals
+    const next = rehearsals
       .filter((r) => {
-        if (!r.date_time) return false;
-        const date = new Date(r.date_time);
-        return !isNaN(date.getTime()) && date >= threshold;
+        const project = projectById.get(String(r.project));
+        if (!project || isClosedProject(project)) return false;
+        const start = new Date(r.date_time).getTime();
+        if (Number.isNaN(start)) return false;
+        return start >= now || isRehearsalLive(r.date_time, now);
       })
       .sort(
         (a, b) =>
-          new Date(a.date_time!).getTime() - new Date(b.date_time!).getTime(),
-      );
+          new Date(a.date_time).getTime() - new Date(b.date_time).getTime(),
+      )[0];
 
-    if (futureRehearsals.length > 0) {
-      const next = futureRehearsals[0];
-      const project = projects.find(
-        (p) => String(p.id) === String(next.project),
-      );
-      const location = isLocationSnippet(next.location)
-        ? next.location
-        : null;
-
-      return {
-        ...next,
-        location,
-        projectTitle:
-          project?.title ||
-          t("dashboard.admin.unknown_project", "Nieznany projekt"),
-      };
-    }
-    return null;
+    if (!next) return null;
+    const project = projectById.get(String(next.project));
+    return {
+      ...next,
+      location: isLocationSnippet(next.location) ? next.location : null,
+      projectTitle:
+        project?.title ||
+        t("dashboard.admin.unknown_project", "Nieznany projekt"),
+    };
   }, [rehearsals, projects, t]);
 
   const greeting = useMemo(() => {

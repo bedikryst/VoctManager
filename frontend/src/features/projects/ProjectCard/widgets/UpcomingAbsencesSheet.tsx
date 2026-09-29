@@ -8,8 +8,10 @@
  * from it is per evening — whether a sectional still stands without two of its
  * tenors. Each absence shows its record (absence or excused absence) and the
  * singer's own note. A rehearsal's header opens that evening in Centrum
- * Obecności; the footer opens the project's full attendance matrix, which also
- * holds the past sessions this list leaves out.
+ * Obecności. On the Overview the footer opens the project's full attendance
+ * matrix, which also holds the past sessions this list leaves out; a caller
+ * that passes no `onOpenMatrix` gets no footer — the dashboard banner opens the
+ * sheet for one evening, and the matrix is an entry tool, not a reading list.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/UpcomingAbsencesSheet
  */
@@ -33,7 +35,9 @@ interface UpcomingAbsencesSheetProps {
   readonly projectTitle: string;
   readonly groups: readonly RehearsalAbsences[];
   readonly onOpenRehearsal: (rehearsalId: string) => void;
-  readonly onOpenMatrix: () => void;
+  readonly onOpenMatrix?: () => void;
+  /** Overrides the "upcoming rehearsals" heading for a sheet scoped to one evening. */
+  readonly title?: string;
 }
 
 /** The venue's wall clock: a rehearsal is booked in the timezone of its room. */
@@ -52,6 +56,7 @@ export const UpcomingAbsencesSheet = ({
   groups,
   onOpenRehearsal,
   onOpenMatrix,
+  title,
 }: UpcomingAbsencesSheetProps): React.JSX.Element => {
   const { t } = useTranslation();
 
@@ -59,24 +64,29 @@ export const UpcomingAbsencesSheet = ({
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title={t(
-        "projects.overview.absences_sheet.title",
-        "Nieobecności na nadchodzących próbach",
-      )}
+      title={
+        title ??
+        t(
+          "projects.overview.absences_sheet.title",
+          "Nieobecności na nadchodzących próbach",
+        )
+      }
       subtitle={projectTitle}
       footer={
-        <Button
-          variant="outline"
-          size="sm"
-          fullWidth
-          leftIcon={<Grid size={15} aria-hidden="true" />}
-          onClick={onOpenMatrix}
-        >
-          {t(
-            "projects.overview.absences_sheet.open_matrix",
-            "Pokaż w macierzy frekwencji",
-          )}
-        </Button>
+        onOpenMatrix ? (
+          <Button
+            variant="outline"
+            size="sm"
+            fullWidth
+            leftIcon={<Grid size={15} aria-hidden="true" />}
+            onClick={onOpenMatrix}
+          >
+            {t(
+              "projects.overview.absences_sheet.open_matrix",
+              "Pokaż w macierzy frekwencji",
+            )}
+          </Button>
+        ) : undefined
       }
     >
       {groups.length === 0 ? (

@@ -1,17 +1,19 @@
 /**
  * @file useProjectInvitations.ts
- * @description Lazily resolves one project's invitation roster for the pipeline
- * drill-down sheet: participations for the project, grouped by status and joined
+ * @description Lazily resolves one project's invitation roster for the
+ * invitations sheet: participations for the project, grouped by status and joined
  * against the (already-cached) artists dictionary for voice + contact details.
- * Fetches only when the sheet is open.
- * @module panel/dashboard/hooks/useProjectInvitations
+ * Fetches only when the sheet is open. The conductor's own seat is left out, as
+ * the server's `cast_*` figures leave it out, so the count that opens the sheet
+ * is the count of names in it.
+ * @module features/projects/hooks/useProjectInvitations
  */
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { ProjectService } from "@/features/projects/api/project.service";
-import { projectKeys } from "@/features/projects/api/project.queries";
+import { ProjectService } from "../api/project.service";
+import { projectKeys } from "../api/project.queries";
 import { artistKeys } from "@/features/artists/api/artist.queries";
 import { ArtistService } from "@/features/artists/api/artist.service";
 import type { Artist, ParticipationStatus } from "@/shared/types";
@@ -33,6 +35,7 @@ export interface InvitationRoster {
 }
 
 const FIVE_MINUTES = 1000 * 60 * 5;
+const CONDUCTOR_VOICE_TYPE = "DIR";
 
 export const useProjectInvitations = (
   projectId: string | null,
@@ -57,7 +60,10 @@ export const useProjectInvitations = (
       artists.map((a) => [String(a.id), a]),
     );
 
-    const rows = participations.map((p): InvitationRosterRow => {
+    const cast = participations.filter(
+      (p) => p.artist_voice_type !== CONDUCTOR_VOICE_TYPE,
+    );
+    const rows = cast.map((p): InvitationRosterRow => {
       const artist = artistMap.get(String(p.artist));
       const joinedName = `${artist?.first_name ?? ""} ${artist?.last_name ?? ""}`.trim();
       return {

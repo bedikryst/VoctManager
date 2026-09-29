@@ -227,6 +227,36 @@ class MessageContentCompositionTests(SimpleTestCase):
                 [row.value for row in c.details if row.label == "Debrief"],
             )
 
+    def test_a_singers_report_opens_the_evening_it_names(self) -> None:
+        """An absence request and an attendance report carry the rehearsal to
+        the workspace, while a notice without a rehearsal keeps the bare list."""
+        meta = {
+            "rehearsal_id": "3f8f6f2a-0000-4000-8000-000000000009",
+            "project_name": "Adwent",
+            "artist_name": "Kasia Nowak",
+            "status": "ABSENT",
+            "rehearsal_date": "2026-10-03T18:00:00+02:00",
+            "timezone": "Europe/Warsaw",
+        }
+        evening = "/panel/rehearsals?rehearsal=3f8f6f2a-0000-4000-8000-000000000009"
+        for notification_type in (
+            NotificationType.ABSENCE_REQUESTED,
+            NotificationType.ATTENDANCE_SUBMITTED,
+        ):
+            with self.subTest(notification_type=notification_type):
+                c = MessageContentBuilder.build(
+                    notification_type, NotificationLevel.INFO, meta, is_manager=True,
+                )
+                self.assertEqual(c.url_path, evening)
+                self.assertEqual([action.url for action in c.actions if action.url], [evening])
+
+        bare = MessageContentBuilder.build(
+            NotificationType.ABSENCE_REQUESTED, NotificationLevel.INFO,
+            {key: value for key, value in meta.items() if key != "rehearsal_id"},
+            is_manager=True,
+        )
+        self.assertEqual(bare.url_path, "/panel/rehearsals")
+
     def test_push_projection_is_faithful(self) -> None:
         """to_push() must mirror the canonical content (push UX unchanged)."""
         with translation.override("en"):

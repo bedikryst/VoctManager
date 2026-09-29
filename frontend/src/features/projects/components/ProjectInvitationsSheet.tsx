@@ -3,8 +3,9 @@
  * @description Drill-down for one production's invitation roster: who has
  * confirmed, who is still pending and who declined — with one-tap mail/phone to
  * chase the stragglers — plus a link straight into the project hub. Opened from a
- * ProductionPipeline row, in the same bottom-sheet language as the rest of the app.
- * @module panel/dashboard/components/ProjectInvitationsSheet
+ * dashboard pipeline row and from the Spotlight card's "N czeka", in the same
+ * bottom-sheet language as the rest of the app.
+ * @module features/projects/components/ProjectInvitationsSheet
  */
 
 import React from "react";

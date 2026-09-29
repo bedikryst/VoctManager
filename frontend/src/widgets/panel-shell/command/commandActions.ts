@@ -10,6 +10,7 @@
 
 import {
   CalendarCheck,
+  CalendarClock,
   CalendarOff,
   PenLine,
   Plus,
@@ -54,6 +55,17 @@ export const COMMAND_ACTIONS: readonly CommandActionDef[] = [
     icon: CalendarCheck,
     to: "/panel/rehearsals",
     scope: "manager",
+  },
+  // The evening's read-only page, resolved through the stable address the
+  // home-screen shortcut uses. Offered to everyone: the conductor reading
+  // tonight's plan and the singer checking their part want the same page.
+  {
+    id: "next_rehearsal",
+    labelKey: "dashboard.layout.command.actions.next_rehearsal",
+    defaultLabel: "Najbliższa próba",
+    icon: CalendarClock,
+    to: "/panel/schedule/next",
+    scope: "all",
   },
   {
     id: "new_artist",

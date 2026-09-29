@@ -624,7 +624,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
         user = request_user(self.request)
         now = timezone.now()
         
-        _active_parts = Q(participations__is_deleted=False)
+        # The podium is `Project.conductor`, never a seat in the cast: a
+        # conductor who also holds a Participation is not a singer awaiting an
+        # answer (the same rule as the hub's ensemble tile and the report).
+        _active_parts = Q(participations__is_deleted=False) & ~Q(
+            participations__artist__voice_type=VoiceType.CONDUCTOR
+        )
         base_qs = Project.objects.select_related('conductor', 'location').prefetch_related(
             'participations__artist',
             'program_items__piece',

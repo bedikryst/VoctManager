@@ -3287,6 +3287,19 @@ class DraftInvisibleToCastTests(APITestCase):
         self.assertEqual(len(self.client.get("/api/projects/").data), 1)
         self.assertEqual(len(self.client.get("/api/rehearsals/").data), 1)
 
+    def test_the_conductors_own_seat_is_not_counted_in_the_cast(self) -> None:
+        # A podium that also holds a Participation is not a singer awaiting an
+        # answer, so the list's cast figures leave it out, as the hub does.
+        Participation.objects.create(
+            artist=self.maestro, project=self.draft,
+            status=Participation.Status.INVITED,
+        )
+        self.client.force_authenticate(user=self.maestro_user)
+        (row,) = self.client.get("/api/projects/").data
+        self.assertEqual(row["cast_total"], 1)
+        self.assertEqual(row["cast_confirmed"], 1)
+        self.assertEqual(row["cast_pending"], 0)
+
     def test_publishing_reveals_the_project_to_the_singer(self) -> None:
         self.draft.status = Project.Status.ACTIVE
         self.draft.save(update_fields=["status"])

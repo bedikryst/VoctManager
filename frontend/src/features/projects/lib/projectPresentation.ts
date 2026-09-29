@@ -137,6 +137,28 @@ export const isPastProjectDate = (
   return parsedDate ? isBefore(parsedDate, referenceDate) : false;
 };
 
+/**
+ * The order of "what comes next" for a list of open projects: dated from
+ * `todayStart` on, soonest first; then the undated; then the past ones nobody
+ * has closed yet, most recent first. A concert stays ahead for the whole of its
+ * day. The caller passes one start of day so a whole sort reads one clock.
+ */
+export const compareProjectHorizon =
+  (todayStart: Date) =>
+  (left?: string | null, right?: string | null): number => {
+    const band = (value?: string | null): number => {
+      const parsedDate = parseProjectDate(value);
+      if (!parsedDate) return 1;
+      return isBefore(parsedDate, todayStart) ? 2 : 0;
+    };
+    const leftBand = band(left);
+    const rightBand = band(right);
+    if (leftBand !== rightBand) return leftBand - rightBand;
+    if (leftBand === 0) return compareProjectDateAsc(left, right);
+    if (leftBand === 2) return compareProjectDateDesc(left, right);
+    return 0;
+  };
+
 const isLocationSnippet = (
   location: ProjectLocationReference,
 ): location is LocationSnippet =>

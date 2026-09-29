@@ -16,6 +16,7 @@ import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { Heading } from "@/shared/ui/primitives/typography";
 import { EASE } from "@/shared/ui/kinematics/motion-presets";
+import { cn } from "@/shared/lib/utils";
 
 /**
  * The reveal for this card's slotted content. The card owns the hidden/visible
@@ -56,6 +57,12 @@ export interface ArtifactCardProps {
   subtitleSlot?: React.ReactNode;
   metrics: ArtifactMetric[];
   isLoading?: boolean;
+  /**
+   * Sizing belongs to the caller: the card takes its content's height, and a
+   * caller that wants a floor sets it here, at the widths where the floor is
+   * not empty space above whatever follows the card.
+   */
+  className?: string;
 }
 
 export function ArtifactCard({
@@ -67,11 +74,15 @@ export function ArtifactCard({
   subtitleSlot,
   metrics,
   isLoading = false,
+  className,
 }: ArtifactCardProps): React.JSX.Element {
   if (isLoading) {
     return (
       <div
-        className="h-full min-h-[400px] w-full rounded-surface bg-ethereal-incense/5 animate-pulse"
+        className={cn(
+          "h-full w-full rounded-surface bg-ethereal-incense/5 animate-pulse",
+          className,
+        )}
         aria-busy="true"
       />
     );
@@ -82,7 +93,10 @@ export function ArtifactCard({
       variant="light"
       padding="none"
       isHoverable={false}
-      className="group flex h-full min-h-[400px] w-full flex-col hover:border-ethereal-gold/30 hover:shadow-glass-ethereal-hover"
+      className={cn(
+        "group flex h-full w-full flex-col hover:border-ethereal-gold/30 hover:shadow-glass-ethereal-hover",
+        className,
+      )}
       backgroundElement={
         /* The bloom is painted as a radial gradient, not as a hard shape put
            through `blur()`. A 160px kernel over an 800px box is one of the most

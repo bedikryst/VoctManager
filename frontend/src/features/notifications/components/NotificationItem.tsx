@@ -720,8 +720,13 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     if (type === "MATERIAL_UPLOADED") {
       return navigate(isAdmin ? "/panel/archive-management" : "/panel/materials");
     }
-    if (type === "ATTENDANCE_SUBMITTED") {
-      return navigate(isAdmin ? "/panel/rehearsals" : "/panel/schedule");
+    if (type === "ATTENDANCE_SUBMITTED" || type === "ABSENCE_REQUESTED") {
+      // A singer's report names one evening, so it opens on that evening —
+      // both surfaces spend `?rehearsal=` on arrival. Mirrors the push and the
+      // e-mail. Ahead of the substring chain, which would drop the id.
+      const rehearsalId = notification.metadata.rehearsal_id;
+      const base = isAdmin ? "/panel/rehearsals" : "/panel/schedule";
+      return navigate(rehearsalId ? `${base}?rehearsal=${rehearsalId}` : base);
     }
     if (type === "PARTICIPATION_RESPONSE") {
       return navigate(isAdmin ? "/panel/projects" : "/panel/schedule");

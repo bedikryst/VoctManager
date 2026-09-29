@@ -2751,7 +2751,9 @@
       "inv_col_person": "Personne",
       "inv_col_phone": "Téléphone",
       "inv_confirmed": "Confirmés",
+      "inv_confirmed_short": "oui",
       "inv_declined": "Déclinés",
+      "inv_declined_short": "non",
       "inv_details_link": "Détails",
       "inv_empty": "Aucun participant à afficher",
       "inv_loading": "Chargement de la liste...",
@@ -2762,6 +2764,7 @@
       "inv_modal_title": "Statut des Invitations",
       "inv_open_details_aria": "Ouvrir la liste détaillée des invitations",
       "inv_pending": "En attente",
+      "inv_pending_short": "en attente",
       "kpi_active_projects": "Directives actives",
       "kpi_invitations": "Statut des Invitations",
       "kpi_pieces": "Répertoire sacré",
@@ -2778,6 +2781,10 @@
       "next_rehearsal_badge": "Prochaine répétition",
       "rehearsal_today_badge": "Répétition aujourd’hui",
       "absences": "Absences : {{count}}",
+      "absences_open_aria": "Voir qui ne viendra pas à la répétition : {{count}}",
+      "absences_sheet_title": "Absents à la répétition",
+      "open_plan": "Plan",
+      "open_plan_aria": "Lire le plan de la répétition",
       "pipeline": {
         "empty": "Aucune production active. Il est temps de planifier le prochain concert.",
         "no_score": "Sans partition",
@@ -2826,6 +2833,7 @@
         "subtitle": "Statut des invitations"
       },
       "satb_distribution": "Distribution vocale SATB",
+      "satb_scope": "Tous les chanteurs actifs de l'effectif",
       "satb_total_aria": "Nombre total de voix dans l'ensemble",
       "setup": {
         "eyebrow": "Première saison",
@@ -2860,6 +2868,9 @@
       },
       "spotlight": {
         "cast": "Distribution",
+        "confirmed": "Confirmés",
+        "pending": "{{count}} en attente",
+        "pending_aria": "Voir qui n'a pas encore répondu : {{count}}",
         "empty_cta": "Planifier un concert",
         "empty_desc": "Vous n'avez aucun concert programmé. C'est le bon moment pour préparer la prochaine représentation.",
         "empty_eyebrow": "Aucun concert à venir",
@@ -2869,6 +2880,7 @@
         "status_active": "En production",
         "status_prep": "En préparation",
         "unit_cast": "voix",
+        "unit_confirmed": "sur {{total}}",
         "unit_program": "partitions",
         "unit_remaining": "répétitions"
       },
@@ -2980,6 +2992,7 @@
       "command": {
         "actions": {
           "mark_attendance": "Marquer la présence",
+          "next_rehearsal": "Prochaine répétition",
           "new_artist": "Nouvel artiste",
           "new_note": "Nouvelle note",
           "new_project": "Nouveau projet",

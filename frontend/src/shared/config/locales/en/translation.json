@@ -2742,7 +2742,9 @@
       "inv_col_person": "Person",
       "inv_col_phone": "Phone",
       "inv_confirmed": "Confirmed",
+      "inv_confirmed_short": "yes",
       "inv_declined": "Declined",
+      "inv_declined_short": "no",
       "inv_details_link": "Details",
       "inv_empty": "No participants to display",
       "inv_loading": "Loading list...",
@@ -2753,6 +2755,7 @@
       "inv_modal_title": "Invitation Status",
       "inv_open_details_aria": "Open detailed invitation list",
       "inv_pending": "Pending",
+      "inv_pending_short": "waiting",
       "kpi_active_projects": "Active Directives",
       "kpi_invitations": "Invitation Status",
       "kpi_pieces": "Sacral Repertoire",
@@ -2769,6 +2772,10 @@
       "next_rehearsal_badge": "Next Rehearsal",
       "rehearsal_today_badge": "Rehearsal today",
       "absences": "Absences: {{count}}",
+      "absences_open_aria": "Show who won't come to the rehearsal: {{count}}",
+      "absences_sheet_title": "Absent from the rehearsal",
+      "open_plan": "Plan",
+      "open_plan_aria": "Read the rehearsal plan",
       "pipeline": {
         "empty": "No active productions. Time to plan the next concert.",
         "no_score": "No score",
@@ -2817,6 +2824,7 @@
         "subtitle": "Invitation status"
       },
       "satb_distribution": "SATB Voice Distribution",
+      "satb_scope": "Every active singer in the roster",
       "satb_total_aria": "Total number of voices in the ensemble",
       "setup": {
         "eyebrow": "First season",
@@ -2851,6 +2859,9 @@
       },
       "spotlight": {
         "cast": "Cast",
+        "confirmed": "Confirmed",
+        "pending": "{{count}} waiting",
+        "pending_aria": "Show who hasn't answered yet: {{count}}",
         "empty_cta": "Plan a concert",
         "empty_desc": "You have no upcoming concert scheduled. A good moment to start preparing the next performance.",
         "empty_eyebrow": "No upcoming concerts",
@@ -2860,6 +2871,7 @@
         "status_active": "In Production",
         "status_prep": "In Preparation",
         "unit_cast": "voices",
+        "unit_confirmed": "of {{total}}",
         "unit_program": "scores",
         "unit_remaining": "rehearsals"
       },
@@ -2971,6 +2983,7 @@
       "command": {
         "actions": {
           "mark_attendance": "Mark attendance",
+          "next_rehearsal": "Next rehearsal",
           "new_artist": "New artist",
           "new_note": "New note",
           "new_project": "New project",
