@@ -6337,8 +6337,8 @@
         "unsupported": "Ta przeglądarka nie obsługuje powiadomień push."
       },
       "types": {
-        "ABSENCE_APPROVED": "Nieobecność usprawiedliwiona",
-        "ABSENCE_REJECTED": "Nieobecność odrzucona",
+        "ABSENCE_APPROVED": "Zwolnienie z próby",
+        "ABSENCE_REJECTED": "Odmowa zwolnienia z próby",
         "ABSENCE_REQUESTED": "Prośba o nieobecność",
         "ATTENDANCE_SUBMITTED": "Informacja o frekwencji",
         "CONTRACT_ISSUED": "Umowa gotowa do wglądu",
@@ -6415,8 +6415,8 @@
         "PIECE_CASTING_UPDATED": "Zmiana Twojej obsady w utworze",
         "MATERIAL_UPLOADED": "Nowe nuty lub nagrania",
         "CUSTOM_ADMIN_MESSAGE": "Wiadomość od zarządu",
-        "ABSENCE_APPROVED": "Menedżer zatwierdza Twoją prośbę o nieobecność",
-        "ABSENCE_REJECTED": "Menedżer nie zatwierdza Twojej prośby o nieobecność",
+        "ABSENCE_APPROVED": "Dostajesz zwolnienie z próby, na której zgłaszasz nieobecność",
+        "ABSENCE_REJECTED": "Nie dostajesz zwolnienia z próby, na której zgłaszasz nieobecność",
         "PARTICIPATION_RESPONSE": "Ktoś z zespołu potwierdza udział w projekcie albo z niego rezygnuje. Rezygnacja nie czeka na dzienne podsumowanie.",
         "ATTENDANCE_SUBMITTED": "Ktoś z zespołu zaznacza, że będzie na próbie albo się spóźni. Kilka zgłoszeń po kolei przychodzi jako jeden push.",
         "ABSENCE_REQUESTED": "Ktoś z zespołu prosi o zwolnienie z próby. Gdy próba zaczyna się w ciągu 48 godzin, prośba nie czeka na dzienne podsumowanie.",

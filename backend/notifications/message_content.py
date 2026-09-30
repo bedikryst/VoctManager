@@ -1915,6 +1915,33 @@ def _is_span(metadata: Mapping[str, Any]) -> bool:
     return isinstance(count, int) and count > 1
 
 
+def _excusal_verdict(metadata: Mapping[str, Any], project: Any, *, granted: bool) -> str:
+    """The manager's answer to "I won't be there", as the push title and the
+    subject alike.
+
+    One verb for both answers, the bell's: the singer is excused from the
+    rehearsal, or cannot be. The singer reported an absence rather than asking,
+    so "approved" answers a request nobody made, and "unexcused" would judge an
+    absence that has not happened and that the answer is asking them to avoid.
+    Polish names the rehearsal in the title because "zwolnić" alone reads as
+    dismissal.
+    """
+    span = _is_span(metadata)
+    if granted:
+        template = (
+            _("You're excused from the rehearsals — %(project)s")
+            if span
+            else _("You're excused from the rehearsal — %(project)s")
+        )
+    else:
+        template = (
+            _("We can't excuse you from the rehearsals — %(project)s")
+            if span
+            else _("We can't excuse you from the rehearsal — %(project)s")
+        )
+    return template % {"project": project}
+
+
 def _compose_absence_requested(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     artist = m.get("artist_name") or _("A singer")
@@ -1964,7 +1991,7 @@ def _compose_absence_approved(ctx: MessageContext) -> MessageContent:
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("You're excused — %(project)s") % {"project": project},
+        title=_excusal_verdict(m, project, granted=True),
         body=(
             _("Rehearsal %(when)s — you're not expected.") % {"when": when}
             if when and not _is_span(m)
@@ -1975,8 +2002,7 @@ def _compose_absence_approved(ctx: MessageContext) -> MessageContent:
         url_path=_rehearsals_url(ctx),
         tag=f"absence-approved:{m.get('rehearsal_id') or ''}",
         actions=(_open_action(),),
-        # The push title's own words: the inbox must not name the verdict differently.
-        subject=_("You're excused — %(project)s") % {"project": project},
+        subject=_excusal_verdict(m, project, granted=True),
         eyebrow=_("Attendance"),
         email_lead=_(
             "Your absence is recorded and there is nothing else you need to do."
@@ -1997,7 +2023,7 @@ def _compose_absence_rejected(ctx: MessageContext) -> MessageContent:
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level or NotificationLevel.WARNING,
-        title=_("Absence not approved — %(project)s") % {"project": project},
+        title=_excusal_verdict(m, project, granted=False),
         body=(
             _("We're counting on you at the rehearsal %(when)s.") % {"when": when}
             if when and not _is_span(m)
@@ -2008,7 +2034,7 @@ def _compose_absence_rejected(ctx: MessageContext) -> MessageContent:
         url_path=_rehearsals_url(ctx),
         tag=f"absence-rejected:{m.get('rehearsal_id') or ''}",
         actions=(_open_action(),),
-        subject=_("Absence not approved — %(project)s") % {"project": project},
+        subject=_excusal_verdict(m, project, granted=False),
         eyebrow=_("Attendance"),
         email_lead=_(
             "We weren't able to excuse you this time, so you are still expected at"

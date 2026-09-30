@@ -4072,3 +4072,23 @@ msgid ""
 "What the role opened for you on %(project)s has closed again; your own "
 "markings on the music are untouched."
 msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "You're excused from the rehearsal — %(project)s"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "You're excused from the rehearsals — %(project)s"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "We can't excuse you from the rehearsal — %(project)s"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "We can't excuse you from the rehearsals — %(project)s"
+msgstr ""

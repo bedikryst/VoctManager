@@ -531,14 +531,27 @@ class StructuredMetadataTests(SimpleTestCase):
         self.assertTrue(rsvp.body.startswith("Mass — Friday"), rsvp.body)
         self.assertTrue(absence.body.endswith("· “Concert in Kraków”"), absence.body)
 
-    def test_an_excused_absence_is_named_with_one_word(self) -> None:
+    def test_both_absence_verdicts_speak_the_bells_verb(self) -> None:
+        """Excused from the rehearsal, or not: the push, the inbox and the bell
+        answer "I won't be there" with one verb, and Polish always names the
+        rehearsal, since "zwolnić" alone reads as dismissal."""
+        one = {"project_name": "Requiem"}
+        span = {**one, "rehearsal_count": 3}
         with translation.override("pl"):
-            c = MessageContentBuilder.build(
-                NotificationType.ABSENCE_APPROVED, "INFO",
-                {"project_name": "Requiem"}, is_manager=False,
+            granted = MessageContentBuilder.build(
+                NotificationType.ABSENCE_APPROVED, "INFO", one, is_manager=False,
             )
-        self.assertEqual(c.subject, c.title)
-        self.assertIn("usprawiedliwiona", c.title)
+            refused = MessageContentBuilder.build(
+                NotificationType.ABSENCE_REJECTED, "INFO", one, is_manager=False,
+            )
+            refused_span = MessageContentBuilder.build(
+                NotificationType.ABSENCE_REJECTED, "INFO", span, is_manager=False,
+            )
+        self.assertEqual(granted.title, "Masz zwolnienie z próby — Requiem")
+        self.assertEqual(refused.title, "Nie możemy Cię zwolnić z próby — Requiem")
+        self.assertEqual(refused_span.title, "Nie możemy Cię zwolnić z prób — Requiem")
+        for content in (granted, refused, refused_span):
+            self.assertEqual(content.subject, content.title)
 
     def test_project_removed_event_distinct_from_update(self) -> None:
         with translation.override("en"):

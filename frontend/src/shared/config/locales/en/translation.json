@@ -6243,8 +6243,8 @@
         "unsupported": "This browser does not support push notifications."
       },
       "types": {
-        "ABSENCE_APPROVED": "Absence excused",
-        "ABSENCE_REJECTED": "Absence declined",
+        "ABSENCE_APPROVED": "Excused from a rehearsal",
+        "ABSENCE_REJECTED": "Not excused from a rehearsal",
         "ABSENCE_REQUESTED": "Absence request",
         "ATTENDANCE_SUBMITTED": "Attendance update",
         "CONTRACT_ISSUED": "Contract ready to review",
@@ -6321,8 +6321,8 @@
         "PIECE_CASTING_UPDATED": "Your casting in a piece changes",
         "MATERIAL_UPLOADED": "New sheet music or audio is added",
         "CUSTOM_ADMIN_MESSAGE": "A direct message from the management team",
-        "ABSENCE_APPROVED": "A manager approves your absence request",
-        "ABSENCE_REJECTED": "A manager does not approve your absence request",
+        "ABSENCE_APPROVED": "You are excused from a rehearsal you said you would miss",
+        "ABSENCE_REJECTED": "You are not excused from a rehearsal you said you would miss",
         "PARTICIPATION_RESPONSE": "Someone in the ensemble confirms their place in a project or withdraws. A withdrawal does not wait for the daily digest.",
         "ATTENDANCE_SUBMITTED": "Someone in the ensemble says they will be at a rehearsal or will be late. Several updates in a row arrive as one push.",
         "ABSENCE_REQUESTED": "Someone in the ensemble asks to be excused from a rehearsal. When it starts within 48 hours, the request does not wait for the daily digest.",

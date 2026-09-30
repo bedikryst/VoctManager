@@ -1,7 +1,7 @@
 # Notification copy audit — the bell speaks in sentences
 
 Status: **Stages 1–4 implemented 2026-09-30** (records under each). Left: the developer's look at
-the bell and the pushes, a native read of the FR copy, and the two open points in Stage 4's record.
+the bell and the pushes, and a native read of the FR copy.
 
 Written 2026-09-30 from a manager's bell full of rows like `Piotr Jewuła / Pochwała Stworzenia ·
 środa, 7 października o 18:14 / się spóźni`. Scope: every in-app surface that speaks for a
@@ -370,14 +370,25 @@ surfaces above.
 - PARTICIPATION_RESPONSE body: `Msza — sobota, 10 października o 19:00 · X`. A legacy row
   without the moment keeps the bare project. ANNOUNCEMENT_PENDING with no count (legacy) keeps
   `Zmiany czekają na ogłoszenie — X` as its title.
-- ABSENCE_APPROVED is `usprawiedliwiona` in the push, the subject and the PL settings label.
-  Settings: PL `Odpowiedź artysty` → `Odpowiedź na zaproszenie` as well.
+- Both absence verdicts take the bell's verb in the push title, the subject, the rejected e-mail
+  lead and the settings: `Masz zwolnienie z próby — X` / `Nie możemy Cię zwolnić z próby — X`
+  (`z prób` for a span), settings `Zwolnienie z próby` / `Odmowa zwolnienia z próby`. EN `You're
+  excused…` / `We can't excuse you…`, FR `Dispense accordée` / `Dispense refusée`. The singer
+  pressed "Nie będę obecny" and asked for nothing, so `zatwierdzona` / `odrzucona` answered a
+  request nobody made. `Nieobecność nieusprawiedliwiona` was also ruled out: it would judge an
+  absence that has not happened, in the one message meant to prevent it. Polish keeps `z próby`
+  in the title because `Nie możemy Cię zwolnić` alone reads as dismissal. The settings
+  descriptions lost `Menedżer … prośbę` for the same reason.
+- Settings: PL `Odpowiedź artysty` → `Odpowiedź na zaproszenie` as well.
 - Found on the way: the copy-desk nudge named French in English (`French` existed only under
   `msgctxt "sung language"`). Dead msgids (the old `push_payloads.py` set, replaced titles) stay
   in the catalogs for `makemessages`.
-- Open: ABSENCE_REJECTED names one verdict three ways: push and subject `Nieobecność
-  niezatwierdzona`, settings `Nieobecność odrzucona`, bell `Nie możemy Cię zwolnić…`. Not
-  changed without a decision. Also still open from Stage 3: the 30-minute fold window.
+- Settled here: the bell's attendance fold window stays at 30 minutes (Stage 3). A singer
+  reports in one sitting with the schedule, minutes long with a pause to check a calendar, and
+  separate sittings lie hours apart. The bell holds nothing back, so a generous window delays
+  nothing. The one risk, two decisions within half an hour sharing a row, loses nothing either,
+  because each rehearsal keeps its latest report. That is exactly what a conductor wants when a
+  singer corrects `spóźni się` to `będzie`.
 
 ## Verification
 

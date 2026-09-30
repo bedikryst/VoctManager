@@ -3078,8 +3078,8 @@ msgid ""
 "We weren't able to excuse you this time, so you are still expected at the "
 "rehearsal below. If that is genuinely impossible, write to us."
 msgstr ""
-"Tym razem nie mogliśmy usprawiedliwić Twojej nieobecności, więc czekamy na "
-"Ciebie na próbie poniżej. Jeśli to naprawdę niemożliwe — napisz do nas."
+"Tym razem nie możemy Cię zwolnić, więc czekamy na Ciebie na próbie poniżej. "
+"Jeśli to naprawdę niemożliwe — napisz do nas."
 
 msgid "%(artist)s %(phrase)s"
 msgstr "%(artist)s %(phrase)s"
@@ -5462,3 +5462,23 @@ msgid ""
 msgstr ""
 "To, co otwierała Ci ta rola w projekcie „%(project)s”, jest znów zamknięte; "
 "Twoje własne oznaczenia na nutach zostają nietknięte."
+
+#: notifications/message_content.py
+#, python-format
+msgid "You're excused from the rehearsal — %(project)s"
+msgstr "Masz zwolnienie z próby — %(project)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid "You're excused from the rehearsals — %(project)s"
+msgstr "Masz zwolnienie z prób — %(project)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid "We can't excuse you from the rehearsal — %(project)s"
+msgstr "Nie możemy Cię zwolnić z próby — %(project)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid "We can't excuse you from the rehearsals — %(project)s"
+msgstr "Nie możemy Cię zwolnić z prób — %(project)s"

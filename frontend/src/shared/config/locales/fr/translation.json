@@ -6253,8 +6253,8 @@
         "unsupported": "Ce navigateur ne prend pas en charge les notifications push."
       },
       "types": {
-        "ABSENCE_APPROVED": "Absence excusée",
-        "ABSENCE_REJECTED": "Absence refusée",
+        "ABSENCE_APPROVED": "Dispense accordée",
+        "ABSENCE_REJECTED": "Dispense refusée",
         "ABSENCE_REQUESTED": "Demande d'absence",
         "ATTENDANCE_SUBMITTED": "Présence annoncée",
         "CONTRACT_ISSUED": "Contrat prêt à relire",
@@ -6331,8 +6331,8 @@
         "PIECE_CASTING_UPDATED": "Votre distribution dans une œuvre change",
         "MATERIAL_UPLOADED": "De nouvelles partitions ou audios sont ajoutées",
         "CUSTOM_ADMIN_MESSAGE": "Un message direct de la direction",
-        "ABSENCE_APPROVED": "Un responsable accepte votre demande d'absence",
-        "ABSENCE_REJECTED": "Un responsable n'accepte pas votre demande d'absence",
+        "ABSENCE_APPROVED": "Une dispense vous est accordée pour une répétition où vous avez signalé votre absence",
+        "ABSENCE_REJECTED": "La dispense vous est refusée pour une répétition où vous avez signalé votre absence",
         "PARTICIPATION_RESPONSE": "Quelqu'un de l'ensemble confirme sa participation à un projet ou se désiste. Un désistement n'attend pas le récapitulatif quotidien.",
         "ATTENDANCE_SUBMITTED": "Quelqu'un de l'ensemble indique sa présence à une répétition ou un retard. Plusieurs annonces d'affilée arrivent en un seul push.",
         "ABSENCE_REQUESTED": "Quelqu'un de l'ensemble demande à être excusé d'une répétition. Si elle commence dans les 48 heures, la demande n'attend pas le récapitulatif quotidien.",

@@ -3117,9 +3117,9 @@ msgid ""
 "We weren't able to excuse you this time, so you are still expected at the "
 "rehearsal below. If that is genuinely impossible, write to us."
 msgstr ""
-"Nous n’avons pas pu accepter votre absence cette fois ; nous comptons donc "
-"toujours sur vous pour la répétition ci-dessous. Si c’est vraiment "
-"impossible, écrivez-nous."
+"Nous ne pouvons pas vous dispenser cette fois ; nous comptons donc toujours "
+"sur vous pour la répétition ci-dessous. Si c’est vraiment impossible, "
+"écrivez-nous."
 
 msgid "%(artist)s %(phrase)s"
 msgstr "%(artist)s %(phrase)s"
@@ -5493,3 +5493,23 @@ msgid ""
 msgstr ""
 "Ce que ce rôle vous ouvrait sur « %(project)s » est de nouveau fermé ; vos "
 "propres annotations sur la musique restent intactes."
+
+#: notifications/message_content.py
+#, python-format
+msgid "You're excused from the rehearsal — %(project)s"
+msgstr "Dispense accordée — %(project)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid "You're excused from the rehearsals — %(project)s"
+msgstr "Dispense accordée — %(project)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid "We can't excuse you from the rehearsal — %(project)s"
+msgstr "Dispense refusée — %(project)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid "We can't excuse you from the rehearsals — %(project)s"
+msgstr "Dispense refusée — %(project)s"
