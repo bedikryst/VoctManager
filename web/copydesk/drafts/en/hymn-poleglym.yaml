@@ -149,8 +149,10 @@ concert.hymn-poleglym.gallery.kd-hymn-0.alt: "VoctEnsemble during the concert Hy
 concert.hymn-poleglym.gallery.kd-hymn-1.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
 concert.hymn-poleglym.gallery.kd-hymn-2.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
 concert.hymn-poleglym.gallery.kd-hymn-3.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
-concert.hymn-poleglym.gallery.kd-hymn-4.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
-concert.hymn-poleglym.gallery.kd-hymn-5.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
+# kd-hymn-4 and kd-hymn-5 are withheld until the photographer's consent is on record, and are
+# commented out of concerts.yaml; their alts wait here for the day the frames return.
+# concert.hymn-poleglym.gallery.kd-hymn-4.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
+# concert.hymn-poleglym.gallery.kd-hymn-5.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
 
 concert.hymn-poleglym.posterAlt: "Poster for the concert Hymn to the Fallen"
 concert.hymn-poleglym.realizacja: "Organ: Michał Piechnik · Krzysztof Michałek"

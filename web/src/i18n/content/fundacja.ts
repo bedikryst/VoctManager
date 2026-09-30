@@ -279,7 +279,12 @@ const FOUNDATION_CONTRACT: readonly CopyEntry[] = [
   { kind: "field", path: "mission.body", label: "Misja · akapit" },
   { kind: "field", path: "mission.boardLabel", label: "Zarząd · etykieta" },
   { kind: "field", path: "mission.president", label: "Zarząd · prezes", note: "The KRS function, lower case." },
-  { kind: "field", path: "mission.vicePresident", label: "Zarząd · wiceprezes" },
+  {
+    kind: "field",
+    path: "mission.vicePresident",
+    label: "Zarząd · wiceprezes",
+    note: "One word printed under a woman's and a man's name alike. Where the language genders the person, name the office instead (FR « vice-présidence du conseil »).",
+  },
   { kind: "field", path: "mission.aboutLink", label: "Zarząd · odnośnik do /o-nas", note: ARROW },
 
   // ── Wsparcie ──────────────────────────────────────────────────────────────────────────────

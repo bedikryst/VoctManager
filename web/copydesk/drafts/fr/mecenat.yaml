@@ -1,0 +1,33 @@
+# page.mecenat — FR draft. Same flat shape as the overlay it will become.
+# Keys carry the `page.` namespace. The page addresses the reader with « vous » throughout.
+# French punctuation spacing is applied by `lib/typo.ts` at build — write it plainly here.
+# `{amount}`, `{date}` and `{function}` are filled by the page — keep them.
+# Not the overlay: `make copy-draft` carries these in as proposals; `make copy-apply` writes them.
+
+page.mecenat.meta.title: "Mécénat | Fondation VoctFoundation"
+page.mecenat.meta.description: "Le mécénat de la fondation VoctFoundation : prendre part à la naissance des concerts, avant leur rencontre avec le public. Le projet en cours, son budget et la personne à qui parler."
+page.mecenat.eyebrow: "Mécénat · VoctFoundation"
+page.mecenat.h1: "Le mécénat commence plus tôt, avant que l'œuvre ne rencontre son public."
+page.mecenat.idea: "C'est l'une des plus anciennes manières d'être présent auprès de l'art : décider qu'une idée mérite de voir le jour, et laisser sa forme artistique aux créateurs."
+
+page.mecenat.realisation.rubricAhead: "En cours de réalisation"
+page.mecenat.realisation.rubricPast: "Dernière réalisation"
+page.mecenat.realisation.lead: "Un Concert Spirituel inspiré des Laudes creaturarum de saint François d'Assise."
+page.mecenat.realisation.areas.honoraria.text: "cachets des interprètes"
+page.mecenat.realisation.areas.rejestracja.text: "enregistrement du concert"
+page.mecenat.realisation.areas.transport.text: "transport et hébergement"
+
+page.mecenat.about.h2: "La réalisation"
+page.mecenat.about.body: "Le budget de production s'élève à environ {amount} PLN (au {date}). C'est l'ordre de grandeur des moyens nécessaires pour réaliser le concert dans sa forme prévue. Une partie du travail de conception et d'organisation est l'apport propre de la fondation VoctFoundation. Le mécénat peut porter sur l'ensemble du projet ou sur un domaine choisi :"
+
+page.mecenat.presence.h2: "Être présent auprès du projet"
+page.mecenat.presence.body: "Certains veulent être proches : découvrir l'idée et la manière dont le projet se construit, assister à la répétition générale. D'autres préfèrent ne rencontrer que l'œuvre achevée. Le mécénat peut rester privé ou entrer dans l'histoire publique du projet. Après le concert, nous remettons à nos mécènes son bilan financier."
+page.mecenat.presence.photoCaption: "Répétition de VoctEnsemble"
+
+page.mecenat.coda: "Ce qui devient ensuite l'expérience commune des auditeurs commence plus tôt, entre les personnes grâce auxquelles le concert peut prendre forme."
+
+page.mecenat.contact.lead: "Si ce projet vous tient à cœur, ou si vous souhaitez le découvrir de plus près, commençons par une conversation."
+page.mecenat.contact.role: "{function}, fondation VoctFoundation"
+page.mecenat.contact.mailSubject: "Mécénat de la fondation VoctFoundation"
+
+page.mecenat.proof: "La fondation : équipe, documents, réalisations →"

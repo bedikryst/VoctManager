@@ -1,0 +1,32 @@
+# page.mecenat — EN draft. Same flat shape as the overlay it will become.
+# Keys carry the `page.` namespace. The page addresses the reader formally throughout.
+# `{amount}`, `{date}` and `{function}` are filled by the page — keep them.
+# Not the overlay: `make copy-draft` carries these in as proposals; `make copy-apply` writes them.
+
+page.mecenat.meta.title: "Patronage | The VoctFoundation"
+page.mecenat.meta.description: "Patronage at the VoctFoundation: a part in how concerts come into being, before they meet their audience. The current project, its budget and the person to talk to."
+page.mecenat.eyebrow: "Patronage · VoctFoundation"
+page.mecenat.h1: "Patronage begins earlier, before a work meets its audience."
+page.mecenat.idea: "It is one of the oldest ways of being present in the arts: the decision that an idea deserves to come into being, with its artistic shape left to the artists."
+
+page.mecenat.realisation.rubricAhead: "In production"
+page.mecenat.realisation.rubricPast: "Latest production"
+page.mecenat.realisation.lead: "A Spiritual Concert inspired by the Laudes creaturarum of St Francis of Assisi."
+page.mecenat.realisation.areas.honoraria.text: "performers' fees"
+page.mecenat.realisation.areas.rejestracja.text: "recording of the concert"
+page.mecenat.realisation.areas.transport.text: "travel and accommodation"
+
+page.mecenat.about.h2: "About the production"
+page.mecenat.about.body: "The production budget is approx. PLN {amount} (as of {date}). That is the scale of funding the concert needs in its planned form. Part of the conceptual and organisational work is the VoctFoundation's own contribution. Patronage can cover the whole project or a chosen area:"
+
+page.mecenat.presence.h2: "Being present"
+page.mecenat.presence.body: "Some patrons want to be close: to learn the idea and how the project is made, and to come to the dress rehearsal. Others prefer to meet only the finished work. Patronage can remain private or become part of the project's public story. After the concert we give our patrons an account of its costs and funding."
+page.mecenat.presence.photoCaption: "VoctEnsemble rehearsal"
+
+page.mecenat.coda: "What later becomes the listeners' shared experience begins earlier, between the people who make it possible for the concert to take its form."
+
+page.mecenat.contact.lead: "If this project is close to your heart, or you would like to know it better, let us begin with a conversation."
+page.mecenat.contact.role: "{function}, VoctFoundation"
+page.mecenat.contact.mailSubject: "Patronage at the VoctFoundation"
+
+page.mecenat.proof: "About the foundation: people, documents, productions →"
