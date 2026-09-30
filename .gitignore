@@ -97,6 +97,12 @@ docs/specs/welcome-invitation-and-email-gating-spec.md
 docs/about/
 docs/specs/press/
 docs/umowy/
+# Local only while the repository is public: the contract specs carry questions
+# for counsel and the accounting office, and the messaging audit describes access
+# gaps until its fixes are deployed.
+docs/specs/project-finance-contract-drafts-2026-09.md
+docs/specs/contract-parts-annex-2026-09.md
+docs/specs/messaging-audit-2026-09.md
 # Brand identity lab: study scripts and their renders, local only. What a
 # settled direction produces for the app (vector masters, icons) goes under
 # frontend/public/ and ships in git.
