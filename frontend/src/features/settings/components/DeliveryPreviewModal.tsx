@@ -31,7 +31,7 @@ import { cn } from "@/shared/lib/utils";
 type TFunc = ReturnType<typeof useTranslation>["t"];
 type Channel = "push" | "email";
 
-/** The icon the service worker shows beside every push. */
+/** The installed app's icon, which the system draws beside every push. */
 const APP_ICON = "/icons/icon-192.png";
 
 const clock = (hour: number) => `${String(hour).padStart(2, "0")}:00`;
