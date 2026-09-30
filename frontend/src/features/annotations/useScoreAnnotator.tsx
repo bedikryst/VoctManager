@@ -115,7 +115,7 @@ export interface ScoreAnnotatorBindings {
 }
 
 /** Tools that need a stylus/precision surface — coerced away on phones. */
-const PRECISION_TOOLS = new Set(["pen", "highlighter"]);
+const PRECISION_TOOLS = new Set(["pen", "highlighter", "shape"]);
 
 /** A mark that arrived from someone else, and the page it is waiting on. */
 interface IncomingMarks {
@@ -423,6 +423,7 @@ export const useScoreAnnotator = ({
     size,
     textScale,
     stampScale,
+    shape,
     noteDisplay,
     stamp,
     layer,
@@ -475,6 +476,7 @@ export const useScoreAnnotator = ({
           size={size}
           textScale={textScale}
           stampScale={stampScale}
+          shape={shape}
           noteDisplay={noteDisplay}
           stamp={stamp}
           layer={layer}
@@ -517,6 +519,7 @@ export const useScoreAnnotator = ({
       size,
       textScale,
       stampScale,
+      shape,
       noteDisplay,
       stamp,
       layer,

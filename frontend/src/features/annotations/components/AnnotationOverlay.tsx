@@ -2,8 +2,10 @@
  * @file AnnotationOverlay.tsx
  * @description The drawing surface stacked over a single rendered PDF page.
  * Renders highlighter + ink strokes, musical stamps, inline text and pinned
- * notes and — when editing is allowed — captures pen / highlighter / note /
- * stamp / eraser input and inline note editing. All coordinates are normalized
+ * notes and — when editing is allowed — captures pen / highlighter / shape /
+ * note / stamp / eraser input and inline note editing. A shape is a drag from
+ * corner to corner that lands as ordinary ink (see `lib/shapes`), so from the
+ * moment it is placed it is a stroke like any other. All coordinates are normalized
  * (0..1) to the page box so a marking holds its musical position across zoom
  * and devices. Input routing follows `fingerDraw`: on a stylus device the
  * finger PANS the score (manual scroll of the viewer viewport) and only
@@ -61,6 +63,7 @@ import { isPrivateLayer, layerOf, type WriteLayer } from "../lib/layers";
 import type { AnnotationInk } from "../lib/palette";
 import { getStampDef, StampGlyph } from "../lib/stamps";
 import { buildSmoothPath } from "../lib/smoothing";
+import { buildShapePaths, type ShapeKind } from "../lib/shapes";
 import { pickRecentPhrases, QUICK_PHRASES } from "../lib/quickPhrases";
 
 interface AnnotationOverlayProps {
@@ -74,6 +77,8 @@ interface AnnotationOverlayProps {
   textScale: number;
   /** Size multiplier applied to newly placed musical stamps. */
   stampScale: number;
+  /** What the shape tool draws; its weight is the pen's `size`. */
+  shape: ShapeKind;
   noteDisplay: NoteDisplay;
   stamp: string;
   layer: AnnotationLayer;
@@ -149,6 +154,7 @@ export const AnnotationOverlay = ({
   size,
   textScale,
   stampScale,
+  shape,
   noteDisplay,
   stamp,
   layer,
@@ -218,7 +224,11 @@ export const AnnotationOverlay = ({
     ];
   }, []);
 
-  const drawing = canEdit && (tool === "pen" || tool === "highlighter");
+  const drawing =
+    canEdit && (tool === "pen" || tool === "highlighter" || tool === "shape");
+  // A shape's "stroke" holds two points only — where the drag began and where
+  // it is now — and the figure is rebuilt from them on every move.
+  const shaping = tool === "shape";
   const placing = canEdit && tool === "note";
   const stamping = canEdit && tool === "stamp";
   const erasing = canEdit && tool === "eraser";
@@ -356,12 +366,16 @@ export const AnnotationOverlay = ({
       if (!drawing || !stroke) return;
       if (strokePointerRef.current !== event.pointerId) return;
       const next = toNorm(event.clientX, event.clientY);
+      if (shaping) {
+        setStroke([stroke[0], next]);
+        return;
+      }
       const last = stroke[stroke.length - 1];
       // Skip sub-threshold jitter to keep payloads lean.
       if (Math.hypot(next[0] - last[0], next[1] - last[1]) < 0.0025) return;
       setStroke([...stroke, next]);
     },
-    [drawing, stroke, toNorm],
+    [drawing, shaping, stroke, toNorm],
   );
 
   const handlePointerUp = useCallback(
@@ -420,7 +434,21 @@ export const AnnotationOverlay = ({
       if (!drawing || !stroke) return;
       if (strokePointerRef.current !== event.pointerId) return;
       strokePointerRef.current = null;
-      if (stroke.length > 1) {
+      if (shaping) {
+        const paths =
+          stroke.length > 1
+            ? buildShapePaths(shape, stroke[0], stroke[stroke.length - 1], width, height)
+            : [];
+        if (paths.length > 0) {
+          onCreate({
+            page_number: pageNumber,
+            annotation_type: "FH",
+            payload: { paths, width: strokeFraction("pen", size) },
+            color,
+            layer_name: layer,
+          });
+        }
+      } else if (stroke.length > 1) {
         const isHl = tool === "highlighter";
         onCreate({
           page_number: pageNumber,
@@ -435,7 +463,7 @@ export const AnnotationOverlay = ({
       }
       setStroke(null);
     },
-    [drawing, stroke, tool, size, stamping, placing, pendingNote, selectedId, stamp, stampScale, onCreate, onSelect, onTurnPage, pageNumber, color, layer, toNorm],
+    [drawing, shaping, shape, width, height, stroke, tool, size, stamping, placing, pendingNote, selectedId, stamp, stampScale, onCreate, onSelect, onTurnPage, pageNumber, color, layer, toNorm],
   );
 
   const handlePointerCancel = useCallback(() => {
@@ -552,6 +580,16 @@ export const AnnotationOverlay = ({
   const livePreviewWidth = drawing
     ? strokeFraction(tool === "highlighter" ? "highlighter" : "pen", size) * width
     : 0;
+  // The shape preview is the figure that will be stored, snapping included, so
+  // what lifts off the page is exactly what was on it a moment before.
+  const livePreviewPath =
+    !stroke || stroke.length < 2
+      ? ""
+      : shaping
+        ? buildShapePaths(shape, stroke[0], stroke[stroke.length - 1], width, height)
+            .map((path) => buildSmoothPath(path, width, height))
+            .join(" ")
+        : buildSmoothPath(stroke, width, height);
 
   /** A tap on any existing mark: rub it out, or open the card about it. */
   const handleMarkActivate = (a: ScoreAnnotation) => {
@@ -703,9 +741,9 @@ export const AnnotationOverlay = ({
             .filter(isStrokeMark)
             .map(renderSelectionHalo)}
 
-        {stroke && stroke.length > 1 && (
+        {livePreviewPath && (
           <path
-            d={buildSmoothPath(stroke, width, height)}
+            d={livePreviewPath}
             fill="none"
             stroke={color}
             strokeWidth={Math.max(tool === "highlighter" ? 4 : 1.5, livePreviewWidth)}

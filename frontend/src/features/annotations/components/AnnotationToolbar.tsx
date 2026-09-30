@@ -1,8 +1,9 @@
 /**
  * @file AnnotationToolbar.tsx
  * @description Markup toolbar, injected into the PDF viewer's floating control
- * pill: undo/redo, the tool set (pen · highlighter · note · stamp · eraser),
- * contextual stroke weight + ink colour, what draws (stylus or finger), the note
+ * pill: undo/redo, the tool set (pen · highlighter · shapes · note · stamp ·
+ * eraser), the shape in hand, contextual stroke weight + ink colour, what draws
+ * (stylus or finger), the note
  * display mode, the musical stamp palette (one group at a time — the catalogue
  * outgrew a flat grid), the write layer, and the "how does this work" panel. In
  * conductor mode the layer cycles choir → leader → private; in leader mode it
@@ -26,6 +27,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Check,
   ChevronLeft,
+  Circle,
   CloudOff,
   Eraser,
   Hand,
@@ -33,9 +35,13 @@ import {
   HelpCircle,
   Lock,
   MousePointer2,
+  MoveUpRight,
   PenLine,
   PenTool,
+  RectangleHorizontal,
   Redo2,
+  Shapes,
+  Slash,
   SquarePen,
   Stamp,
   Trash2,
@@ -61,6 +67,7 @@ import {
 } from "../lib/useAnnotationTools";
 import { asWriteLayer, NEXT_WRITE_LAYER, writeLayerCopy } from "../lib/layers";
 import { groupOfStamp, STAMP_GROUPS, stampsInGroup, StampGlyph } from "../lib/stamps";
+import { SHAPE_KINDS, type ShapeKind } from "../lib/shapes";
 import type { ScoreAnnotatorMode } from "../useScoreAnnotator";
 
 interface AnnotationToolbarProps extends AnnotationToolState {
@@ -99,11 +106,21 @@ const TOOLS: ReadonlyArray<ToolDef> = [
   { id: "pointer", icon: MousePointer2, labelKey: "annotations.tools.pointer", fallback: "Browse", drawOnly: false },
   { id: "pen", icon: PenLine, labelKey: "annotations.tools.pen", fallback: "Pen", drawOnly: true },
   { id: "highlighter", icon: Highlighter, labelKey: "annotations.tools.highlighter", fallback: "Highlighter", drawOnly: true },
+  { id: "shape", icon: Shapes, labelKey: "annotations.tools.shape", fallback: "Shapes", drawOnly: true },
   // A speech bubble says "comment thread". This tool writes a WORD on paper.
   { id: "note", icon: Type, labelKey: "annotations.tools.note", fallback: "Note", drawOnly: false },
   { id: "stamp", icon: Stamp, labelKey: "annotations.tools.stamp", fallback: "Symbol", drawOnly: false },
   { id: "eraser", icon: Eraser, labelKey: "annotations.tools.eraser", fallback: "Erase", drawOnly: false },
 ];
+
+/** The line is drawn slanted: it rules itself level or plumb only near those
+ *  angles, and a free diagonal is how a note gets crossed out. */
+const SHAPE_ICONS: Record<ShapeKind, typeof PenLine> = {
+  ellipse: Circle,
+  rect: RectangleHorizontal,
+  line: Slash,
+  arrow: MoveUpRight,
+};
 
 const SIZES: ReadonlyArray<{ id: StrokeSize; dot: number; labelKey: string; fallback: string }> = [
   { id: "fine", dot: 5, labelKey: "annotations.size.fine", fallback: "Fine" },
@@ -190,6 +207,8 @@ export const AnnotationToolbar = ({
   setTextScale,
   stampScale,
   setStampScale,
+  shape,
+  setShape,
   noteDisplay,
   setNoteDisplay,
   stamp,
@@ -209,8 +228,13 @@ export const AnnotationToolbar = ({
 }: AnnotationToolbarProps): React.JSX.Element => {
   const { t } = useTranslation();
   const showInk =
-    tool === "pen" || tool === "highlighter" || tool === "note" || tool === "stamp";
-  const showSize = tool === "pen" || tool === "highlighter";
+    tool === "pen" ||
+    tool === "highlighter" ||
+    tool === "shape" ||
+    tool === "note" ||
+    tool === "stamp";
+  const showSize = tool === "pen" || tool === "highlighter" || tool === "shape";
+  const showShapes = tool === "shape";
   const showNoteMode = tool === "note";
   const showStamps = tool === "stamp";
   // Text size only matters for on-score (inline) notes — mirror the note card.
@@ -501,6 +525,37 @@ export const AnnotationToolbar = ({
             "no-scrollbar flex max-w-[calc(100vw-9rem)] flex-col gap-3 overflow-x-auto sm:max-w-[calc(100vw-13rem)]",
           )}
         >
+          {/* Which figure the next drag draws — the choice the tool exists for,
+              so it heads the panel. Circle and square are not separate
+              buttons: an oval or a box dragged nearly square snaps to one. */}
+          {showShapes && (
+            <div
+              className="flex items-center gap-1"
+              role="group"
+              aria-label={t("annotations.shapes.label", "Kształt")}
+            >
+              {SHAPE_KINDS.map(({ kind, labelKey, fallback }) => {
+                const Icon = SHAPE_ICONS[kind];
+                return (
+                  <button
+                    key={kind}
+                    type="button"
+                    onClick={() => setShape(kind)}
+                    aria-label={t(labelKey, fallback)}
+                    aria-pressed={shape === kind}
+                    title={t(labelKey, fallback)}
+                    className={cn(
+                      pillButton,
+                      shape === kind ? "bg-ink-on-inverse/20" : "hover:bg-ink-on-inverse/10",
+                    )}
+                  >
+                    <Icon size={16} aria-hidden="true" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* What draws. Auto-set from the device (a stylus turns palm rejection
               on by itself), but always overridable — a reader whose "stylus"
               is a rubber-tipped stick reports as a finger and would otherwise

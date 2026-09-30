@@ -263,7 +263,7 @@ export const STAMPS: ReadonlyArray<StampDef> = [
   word("rit", "rit.", "Ritardando"),
   word("accel", "accel.", "Accelerando"),
   word("atempo", "a tempo", "A tempo"),
-  word("subito", "subito", "Subito"),
+  word("subito", "sub.", "Subito"),
 
   // --- Cues: what the conductor asks for without stopping --------------------
   {

@@ -150,7 +150,7 @@ STAMPS: tuple[StampDef, ...] = (
     _word("rit", "rit."),
     _word("accel", "accel."),
     _word("atempo", "a tempo"),
-    _word("subito", "subito"),
+    _word("subito", "sub."),
     # Cues.
     StampDef(
         id="watch", size_fraction=0.045,

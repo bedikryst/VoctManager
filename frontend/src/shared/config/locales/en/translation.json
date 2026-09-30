@@ -162,7 +162,15 @@
       "note": "Note",
       "pen": "Pen",
       "pointer": "Browse",
+      "shape": "Shapes",
       "stamp": "Symbol"
+    },
+    "shapes": {
+      "arrow": "Arrow",
+      "ellipse": "Oval or circle",
+      "label": "Shape",
+      "line": "Line",
+      "rect": "Rectangle or square"
     },
     "mark": {
       "audience": "Who sees this",

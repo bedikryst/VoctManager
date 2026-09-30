@@ -162,7 +162,15 @@
       "note": "Note",
       "pen": "Stylo",
       "pointer": "Parcourir",
+      "shape": "Formes",
       "stamp": "Symbole"
+    },
+    "shapes": {
+      "arrow": "Flèche",
+      "ellipse": "Ovale ou cercle",
+      "label": "Forme",
+      "line": "Ligne",
+      "rect": "Rectangle ou carré"
     },
     "mark": {
       "audience": "Qui le voit",

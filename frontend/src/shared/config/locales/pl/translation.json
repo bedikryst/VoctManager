@@ -162,7 +162,15 @@
       "note": "Notatka",
       "pen": "Pióro",
       "pointer": "Przeglądaj",
+      "shape": "Kształty",
       "stamp": "Symbol"
+    },
+    "shapes": {
+      "arrow": "Strzałka",
+      "ellipse": "Owal lub koło",
+      "label": "Kształt",
+      "line": "Linia",
+      "rect": "Prostokąt lub kwadrat"
     },
     "mark": {
       "audience": "Kto to widzi",

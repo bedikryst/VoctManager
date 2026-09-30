@@ -1,8 +1,8 @@
 /**
  * @file useAnnotationTools.ts
  * @description Local editor state for the annotation tools — held tool, ink
- * colour, stroke weight, note display mode, the selected musical stamp, the
- * target layer and which layers are visible. Deliberately component-local React
+ * colour, stroke weight, the shape in hand, note display mode, the selected
+ * musical stamp, the target layer and which layers are visible. Deliberately component-local React
  * state (not a global store): it is ephemeral UI, scoped to one open score, and
  * dies with the viewer.
  *
@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { AnnotationLayer, NoteDisplay } from "../types/annotations.dto";
 import { DEFAULT_STAMP } from "./stamps";
+import { DEFAULT_SHAPE, isShapeKind, type ShapeKind } from "./shapes";
 import { defaultInk, inksFor, type AnnotationInk } from "./palette";
 import { useStylusPresence, readStylusSeen } from "./useStylusPresence";
 
@@ -23,6 +24,7 @@ export type AnnotationTool =
   | "pointer"
   | "pen"
   | "highlighter"
+  | "shape"
   | "note"
   | "stamp"
   | "eraser";
@@ -31,12 +33,14 @@ export type AnnotationTool =
 export const DRAWING_TOOLS: ReadonlySet<AnnotationTool> = new Set<AnnotationTool>([
   "pen",
   "highlighter",
+  "shape",
 ]);
 
 const TOOL_STORAGE_KEY = "voct.annotations.tool";
 const FINGER_DRAW_STORAGE_KEY = "voct.annotations.finger_draw";
 const TEXT_SCALE_STORAGE_KEY = "voct.annotations.text_scale";
 const STAMP_SCALE_STORAGE_KEY = "voct.annotations.stamp_scale";
+const SHAPE_STORAGE_KEY = "voct.annotations.shape";
 
 const readStored = (key: string): string | null => {
   if (typeof window === "undefined") return null;
@@ -60,6 +64,7 @@ const isAnnotationTool = (value: string | null): value is AnnotationTool =>
   value === "pointer" ||
   value === "pen" ||
   value === "highlighter" ||
+  value === "shape" ||
   value === "note" ||
   value === "stamp" ||
   value === "eraser";
@@ -69,9 +74,11 @@ const isAnnotationTool = (value: string | null): value is AnnotationTool =>
  * Continuous rather than stepped: how big a word sits over a stave is a matter
  * of the hand writing it and the eyes reading it from a stand, and four fixed
  * steps left every mark slightly wrong. The range sits inside the server's own
- * clamp (0.4 – 4.0), which also accepts every legacy stepped value.
+ * clamp (0.4 – 4.0), which also accepts every legacy stepped value. The floor
+ * sets a note below the size of the engraved lyrics, so a word fits between
+ * two staves without covering either.
  */
-export const MARK_SCALE_MIN = 0.7;
+export const MARK_SCALE_MIN = 0.5;
 export const MARK_SCALE_MAX = 2.4;
 export const MARK_SCALE_STEP = 0.05;
 export const DEFAULT_MARK_SCALE = 1;
@@ -156,6 +163,9 @@ export interface AnnotationToolState {
   /** Size multiplier applied to the NEXT musical stamp placed. */
   stampScale: number;
   setStampScale: (scale: number) => void;
+  /** Which shape the shape tool draws. Its line weight is the pen's `size`. */
+  shape: ShapeKind;
+  setShape: (shape: ShapeKind) => void;
   noteDisplay: NoteDisplay;
   setNoteDisplay: (display: NoteDisplay) => void;
   stamp: string;
@@ -211,6 +221,16 @@ export const useAnnotationTools = (
   // stand and should not have to find it again on the next score.
   const [textScale, setTextScale] = usePersistedScale(TEXT_SCALE_STORAGE_KEY);
   const [stampScale, setStampScale] = usePersistedScale(STAMP_SCALE_STORAGE_KEY);
+  // Remembered with the tool itself: a restored shape tool that forgot WHICH
+  // shape would draw an oval where the writer last ruled lines.
+  const [shape, setShapeState] = useState<ShapeKind>(() => {
+    const stored = readStored(SHAPE_STORAGE_KEY);
+    return isShapeKind(stored) ? stored : DEFAULT_SHAPE;
+  });
+  const setShape = useCallback((next: ShapeKind) => {
+    setShapeState(next);
+    writeStored(SHAPE_STORAGE_KEY, next);
+  }, []);
   const [noteDisplay, setNoteDisplay] = useState<NoteDisplay>("inline");
   const [stamp, setStamp] = useState<string>(DEFAULT_STAMP);
   const [layer, setLayer] = useState<AnnotationLayer>(initialLayer);
@@ -243,6 +263,8 @@ export const useAnnotationTools = (
     setTextScale,
     stampScale,
     setStampScale,
+    shape,
+    setShape,
     noteDisplay,
     setNoteDisplay,
     stamp,
