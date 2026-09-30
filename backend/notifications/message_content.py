@@ -1183,7 +1183,7 @@ def _compose_rehearsal_scheduled(ctx: MessageContext) -> MessageContent:
 
 def _is_plan_announcement(changes: Any) -> bool:
     """A diff that says only "plan" is the conductor sending the plan, not
-    the evening moving — the copy must not say it is not where it was."""
+    the evening moving — the copy must not announce a changed rehearsal."""
     return (
         isinstance(changes, (list, tuple))
         and len(changes) == 1
@@ -1257,14 +1257,23 @@ def _compose_rehearsal_updated(ctx: MessageContext) -> MessageContent:
     details.extend(
         _rehearsal_detail_rows(project, when, venue, focus, display_event_end(m))
     )
+    # "Moved" only when the hour moved, as the bell reads it: a new topic or a
+    # longer evening is a change to the rehearsal, not a move.
+    changes = m.get("changes")
+    moved = isinstance(changes, (list, tuple)) and any(
+        isinstance(change, dict) and change.get("field") == "date_time"
+        for change in changes
+    )
+    if when:
+        title = (
+            _("Rehearsal moved — %(when)s") if moved else _("Rehearsal changed — %(when)s")
+        ) % {"when": when}
+    else:
+        title = _("A rehearsal has changed")
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level or NotificationLevel.WARNING,
-        title=(
-            _("Rehearsal moved — %(when)s") % {"when": when}
-            if when
-            else _("A rehearsal has changed")
-        ),
+        title=title,
         body=body or project,
         url_path=_schedule_card_url(ctx),
         tag=f"rehearsal-updated:{m.get('rehearsal_id') or ''}",
@@ -1272,7 +1281,7 @@ def _compose_rehearsal_updated(ctx: MessageContext) -> MessageContent:
         subject=_("Rehearsal changed — %(project)s") % {"project": project},
         eyebrow=_("Rehearsal change"),
         email_lead=_(
-            "A rehearsal for %(project)s is not where it was. Check that the new"
+            "A rehearsal for %(project)s has changed. Check that the new"
             " arrangement still works for you."
         ) % {"project": project},
         details=tuple(details),
@@ -1473,18 +1482,21 @@ def _compose_rehearsal_delegated(ctx: MessageContext) -> MessageContent:
     if m.get("note"):
         details.append(_row(_("Note"), m["note"]))
 
-    body = (
+    sentence = (
         _("%(who)s has made you the assistant conductor on %(project)s.")
         % {"who": granted_by, "project": project}
         if granted_by
         else _("You are now the assistant conductor on %(project)s.")
         % {"project": project}
     )
+    # The push carries the note after the sentence: it is what the conductor
+    # wrote to this reader. The e-mail keeps it as a detail row.
+    note = _quoted(m.get("note"))
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
         title=_("You assist the conductor — %(project)s") % {"project": project},
-        body=body,
+        body=f"{sentence} {note}" if note else sentence,
         url_path=_rehearsals_url(ctx),
         tag=f"rehearsal-delegated:{m.get('project_id') or ''}",
         actions=(_open_action(),),
@@ -1494,7 +1506,7 @@ def _compose_rehearsal_delegated(ctx: MessageContext) -> MessageContent:
             "%(body)s Here is what that opens for you — and what it does not: you"
             " are not a manager of this project, so the cast and the excusal"
             " requests stay with them."
-        ) % {"body": body},
+        ) % {"body": sentence},
         details=tuple(details),
         cta_label=_("Open the schedule"),
     )
@@ -1528,10 +1540,11 @@ def _compose_rehearsal_delegation_ended(ctx: MessageContext) -> MessageContent:
         actions=(_open_action(),),
         subject=_("Your appointment on %(project)s has ended") % {"project": project},
         eyebrow=_("Assistant conductor"),
+        # A revocation, not a handover: nobody else need be assisting, and the
+        # role may have opened only some of its doors.
         email_lead=_(
-            "Somebody else assists on %(project)s from now on. The conductor's cues"
-            " and the attendance sheet have closed again; your own markings on"
-            " the music are untouched."
+            "What the role opened for you on %(project)s has closed again; your"
+            " own markings on the music are untouched."
         ) % {"project": project},
         details=tuple(details),
         cta_label=_("Open the schedule"),
@@ -1549,22 +1562,19 @@ def _compose_rehearsal_lead_assigned(ctx: MessageContext) -> MessageContent:
 
     The date is the message: the reader already assists on the project and was
     told what that opens when they were appointed, so nothing about scopes is
-    repeated here. For a sectional the sections are said in the title —
-    "Poprowadzisz próbę 3 października (soprany, alty)" — because that is the
-    one fact that changes what they prepare.
+    repeated here. For a sectional the sections open the body — "Sekcyjna:
+    soprany, alty" — because that is the one fact that changes what they
+    prepare; in the title they would be the part a lock screen cuts off.
     """
     m = ctx.metadata
     project = m.get("project_name") or _("a project")
     when = display_event_time(m, "starts_at")
     venue = m.get("location")
     focus = m.get("focus")
-    sections = _section_list(m.get("sections") or ())
+    codes = [str(code) for code in m.get("sections") or ()]
+    sections = _section_list(codes)
 
-    if when and sections:
-        title = _("You lead the rehearsal on %(when)s (%(sections)s)") % {
-            "when": when, "sections": sections,
-        }
-    elif when:
+    if when:
         title = _("You lead the rehearsal on %(when)s") % {"when": when}
     else:
         title = _("A rehearsal has been handed to you")
@@ -1578,7 +1588,7 @@ def _compose_rehearsal_lead_assigned(ctx: MessageContext) -> MessageContent:
         notification_type=ctx.notification_type,
         level=ctx.level,
         title=title,
-        body=_facts(project, venue) or project,
+        body=_facts(sectional_call_label(codes) if codes else "", project, venue) or project,
         url_path=(
             f"/panel/schedule/lead/{rehearsal_id}" if rehearsal_id else "/panel/schedule"
         ),
@@ -1920,7 +1930,8 @@ def _compose_absence_requested(ctx: MessageContext) -> MessageContent:
         notification_type=ctx.notification_type,
         level=ctx.level,
         title=_("Absence request — %(artist)s") % {"artist": artist},
-        body=_facts(project, when) or project,
+        # The singer's own note closes the line: it is what the manager decides on.
+        body=_facts(project, when, _quoted(note)) or project,
         url_path=rehearsals_url,
         # Per singer as well as per evening: a second singer's request for the
         # same rehearsal must not replace the first one in the tray.
@@ -1964,7 +1975,8 @@ def _compose_absence_approved(ctx: MessageContext) -> MessageContent:
         url_path=_rehearsals_url(ctx),
         tag=f"absence-approved:{m.get('rehearsal_id') or ''}",
         actions=(_open_action(),),
-        subject=_("Absence approved — %(project)s") % {"project": project},
+        # The push title's own words: the inbox must not name the verdict differently.
+        subject=_("You're excused — %(project)s") % {"project": project},
         eyebrow=_("Attendance"),
         email_lead=_(
             "Your absence is recorded and there is nothing else you need to do."
@@ -2012,13 +2024,20 @@ def _compose_participation_response(ctx: MessageContext) -> MessageContent:
     artist = m.get("artist_name") or _("A singer")
     project = m.get("project_name") or _("a project")
     phrase = _participation_phrase(m.get("status"), m.get("previous_status"))
-    # The person and their answer are the scanning line; the project is the body.
+    when = display_event_time(m)
+    # The person and their answer are the scanning line; the body says which
+    # event it is about: its kind and date first, then the project.
     headline = _("%(artist)s %(phrase)s") % {"artist": artist, "phrase": phrase}
+    event = (
+        _("%(event)s — %(when)s") % {"event": _event_moment_label(m.get("event_kind")), "when": when}
+        if when
+        else ""
+    )
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
         title=headline,
-        body=str(project),
+        body=_facts(event, project) or str(project),
         url_path=_projects_url(ctx),
         tag=f"participation:{m.get('project_id') or ''}:{m.get('artist_id') or artist}",
         actions=(_open_action(),),
@@ -2044,7 +2063,9 @@ def _compose_attendance_submitted(ctx: MessageContext) -> MessageContent:
         notification_type=ctx.notification_type,
         level=ctx.level,
         title=headline,
-        body=_facts(project, when) or project,
+        # Named as the rehearsal it is, so the date does not read as the project's.
+        body=_facts(_("Rehearsal — %(when)s") % {"when": when} if when else "", project)
+        or project,
         url_path=rehearsals_url,
         tag=f"attendance:{m.get('rehearsal_id') or ''}:{m.get('artist_id') or artist}",
         actions=(_open_action(rehearsals_url),),
@@ -2195,14 +2216,24 @@ def _compose_announcement_pending(ctx: MessageContext) -> MessageContent:
             % {"count": listeners},
         ))
 
+    # The situation leads, the project follows: a manager scanning a lock screen
+    # needs to know it is the queue speaking before they read which concert it
+    # is about. The count is the subject, so the body's "them" has something to
+    # point at.
+    title = (
+        ngettext(
+            "%(count)d change waiting to be sent — %(project)s",
+            "%(count)d changes waiting to be sent — %(project)s",
+            changes,
+        ) % {"count": changes, "project": project}
+        if changes
+        else _("Changes waiting to be announced — %(project)s") % {"project": project}
+    )
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        # The situation leads, the project follows: a manager scanning a lock
-        # screen needs to know it is the queue speaking before they read which
-        # concert it is about.
-        title=_("The cast hasn't been told — %(project)s") % {"project": project},
-        body=_facts(changes_phrase, waiting),
+        title=title,
+        body=_facts(_("The cast doesn't know about them yet"), waiting),
         url_path=review_url,
         # Per project, so a second nudge about the same queue replaces the first
         # rather than stacking beside it.
@@ -2318,15 +2349,15 @@ def _compose_site_copy_proposed(ctx: MessageContext) -> MessageContent:
 
 
 def _compose_custom_admin_message(ctx: MessageContext) -> MessageContent:
-    """Direct manager → singer message. The sender names the title; the push body
-    carries only the subject (lock-screen safe), while the full message is kept to
-    the email lead and the in-app row."""
+    """Direct manager → singer message. The title names the sender and the
+    subject; the push body is the message itself. What a lock screen shows is
+    the reader's own system setting, not this composer's call."""
     m = ctx.metadata
     sender = m.get("sender_name") or _("the management team")
     subject = m.get("title") or _("A message for you")
     message = m.get("message") or ""
 
-    body = str(subject) if subject else _("Open VoctManager to read the message.")
+    body = str(message or subject)
     # A broadcast with no link of its own belongs on the dashboard — sending the
     # reader to their notification preferences answers a question nobody asked.
     cta_url = m.get("cta_url") or "/panel"
@@ -2338,7 +2369,7 @@ def _compose_custom_admin_message(ctx: MessageContext) -> MessageContent:
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level or m.get("level") or NotificationLevel.INFO,
-        title=_("Message from %(sender)s") % {"sender": sender},
+        title=_("%(sender)s — %(subject)s") % {"sender": sender, "subject": subject},
         body=body,
         url_path=cta_url,
         tag=f"admin-message:{m.get('sender_id') or sender}",
@@ -2351,9 +2382,10 @@ def _compose_custom_admin_message(ctx: MessageContext) -> MessageContent:
 
 
 def _compose_message_received(ctx: MessageContext) -> MessageContent:
-    """New message in a conversation thread. The sender names the title; the push
-    body names only the subject (lock-screen safe), with the snippet kept to the
-    email lead and the in-app row."""
+    """New message in a conversation thread. The title names the sender and the
+    thread; the push body is the message text (the snippet), falling back to the
+    subject for a message without text. What a lock screen shows is the reader's
+    own system setting, not this composer's call."""
     m = ctx.metadata
     sender = m.get("sender_name") or _("the management team")
     subject = m.get("title") or _("New message")
@@ -2361,15 +2393,11 @@ def _compose_message_received(ctx: MessageContext) -> MessageContent:
     thread_id = m.get("thread_id") or ""
     thread_url = f"/panel/messages/{thread_id}" if thread_id else "/panel/messages"
 
-    # The title already says a message arrived — the body spends its room on what
-    # it is about, and stops short of the content itself (lock-screen safe).
-    body = str(subject)
-
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("Message from %(sender)s") % {"sender": sender},
-        body=body,
+        title=_("%(sender)s — %(subject)s") % {"sender": sender, "subject": subject},
+        body=str(snippet) or str(subject),
         url_path=thread_url,
         tag=f"message:{thread_id}",
         actions=(PushAction(action="reply", title=_("Reply"), url=thread_url),),
@@ -2381,14 +2409,21 @@ def _compose_message_received(ctx: MessageContext) -> MessageContent:
 
 
 def _compose_channel_message(ctx: MessageContext) -> MessageContent:
-    """New message in a project group channel. Push stays lock-screen safe."""
+    """New message in a project group channel. The title is the channel (its
+    project); the body is the post as a chat line, "{sender}: {text}", or only
+    who posted when the post has no text."""
     m = ctx.metadata
     project = m.get("project_name") or _("your project")
     sender = m.get("sender_name") or _("someone")
+    snippet = str(m.get("snippet") or "").strip()
     channel_id = m.get("channel_id") or ""
     channel_url = f"/panel/messages/channel/{channel_id}" if channel_id else "/panel/messages"
 
-    body = _("%(sender)s posted in the channel.") % {"sender": sender}
+    body = (
+        _("%(sender)s: %(snippet)s") % {"sender": sender, "snippet": snippet}
+        if snippet
+        else _("%(sender)s posted in the channel.") % {"sender": sender}
+    )
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,

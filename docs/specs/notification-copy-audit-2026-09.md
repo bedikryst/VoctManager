@@ -1,6 +1,7 @@
 # Notification copy audit — the bell speaks in sentences
 
-Status: **Stages 1–3 implemented 2026-09-30** (records under each). Stage 4 open.
+Status: **Stages 1–4 implemented 2026-09-30** (records under each). Left: the developer's look at
+the bell and the pushes, a native read of the FR copy, and the two open points in Stage 4's record.
 
 Written 2026-09-30 from a manager's bell full of rows like `Piotr Jewuła / Pochwała Stworzenia ·
 środa, 7 października o 18:14 / się spóźni`. Scope: every in-app surface that speaks for a
@@ -350,6 +351,33 @@ surfaces above.
 - The push shapes in the **Messages** table: message, admin message and channel pushes carry the
   text people wrote; the absence and delegation pushes carry their notes. This replaces the
   `Wiadomość od: %(sender)s` title.
+
+*Done 2026-09-30, and where it differs from the text above:*
+- `(a)` and reader-gendering: `powierza Ci rolę asystenta dyrygenta`, `Od teraz masz rolę…`,
+  subject `Asystujesz dyrygentowi w projekcie „X”`, `przesyła podsumowanie`; labels `Nominacja
+  od`, `Od` (debrief author), `Decyzja` (who revoked a delegation: `Zmiana od` did not read), and
+  the admin field labels `Autor podsumowania` / `Nominacja od`. Also `nawet jeśli sam w nim nie
+  śpiewasz` (lost `sam`), `nie jesteś menedżerem` → `nie zarządzasz tym projektem`, and FR
+  `nommé(e)` / `Vous êtes (désormais, plus) assistant du chef`, rewritten around `le rôle`.
+- Quotes on every live `w projekcie`, `projektu`, `w utworze` slot. FR got « » only in strings
+  touched anyway.
+- REHEARSAL_UPDATED: the push title said `Próba przeniesiona` for a topic-only change too. It
+  now says `przeniesiona` only when `date_time` changed (the bell's rule), else `Zmiana próby —
+  {when}`. The PL lead's `nowy termin` had the EN lead's fault and was rewritten with it.
+- REHEARSAL_DELEGATION_ENDED: the e-mail lead said `Od teraz … asystuje kto inny`, but the
+  emitter is a plain revoke. It now says that what the role opened has closed again.
+- REHEARSAL_LEAD_ASSIGNED body opens with `Sekcyjna: soprany, alty` (`sectional_call_label`).
+- PARTICIPATION_RESPONSE body: `Msza — sobota, 10 października o 19:00 · X`. A legacy row
+  without the moment keeps the bare project. ANNOUNCEMENT_PENDING with no count (legacy) keeps
+  `Zmiany czekają na ogłoszenie — X` as its title.
+- ABSENCE_APPROVED is `usprawiedliwiona` in the push, the subject and the PL settings label.
+  Settings: PL `Odpowiedź artysty` → `Odpowiedź na zaproszenie` as well.
+- Found on the way: the copy-desk nudge named French in English (`French` existed only under
+  `msgctxt "sung language"`). Dead msgids (the old `push_payloads.py` set, replaced titles) stay
+  in the catalogs for `makemessages`.
+- Open: ABSENCE_REJECTED names one verdict three ways: push and subject `Nieobecność
+  niezatwierdzona`, settings `Nieobecność odrzucona`, bell `Nie możemy Cię zwolnić…`. Not
+  changed without a decision. Also still open from Stage 3: the 30-minute fold window.
 
 ## Verification
 

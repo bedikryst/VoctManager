@@ -2126,7 +2126,7 @@ msgid "%(sender)s sent a message."
 msgstr "%(sender)s a envoyé un message."
 
 msgid "%(sender)s: %(snippet)s"
-msgstr "%(sender)s : %(snippet)s"
+msgstr "%(sender)s : %(snippet)s"
 
 msgid "A new rehearsal has been added to %(project)s."
 msgstr "Une nouvelle répétition a été ajoutée à %(project)s."
@@ -4659,12 +4659,12 @@ msgstr "Ce que vous écrivez sur le calque du chœur, chaque choriste le voit"
 #: notifications/message_content.py:1123
 #, python-format
 msgid "%(who)s has made you the assistant conductor on %(project)s."
-msgstr "%(who)s vous a nommé(e) assistant du chef sur %(project)s."
+msgstr "%(who)s vous confie le rôle d’assistant du chef pour « %(project)s »."
 
 #: notifications/message_content.py:1126
 #, python-format
 msgid "You are now the assistant conductor on %(project)s."
-msgstr "Vous êtes désormais assistant du chef sur %(project)s."
+msgstr "Vous avez désormais le rôle d’assistant du chef pour « %(project)s »."
 
 #: notifications/message_content.py:1132
 #, python-format
@@ -4674,7 +4674,7 @@ msgstr "Vous assistez le chef — %(project)s"
 #: notifications/message_content.py:1137
 #, python-format
 msgid "You are the assistant conductor on %(project)s"
-msgstr "Vous êtes assistant du chef sur %(project)s"
+msgstr "Vous assistez le chef pour « %(project)s »"
 
 #: notifications/message_content.py:1138 notifications/message_content.py:1176
 #: notifications/message_content.py:1255
@@ -4683,7 +4683,7 @@ msgstr "Assistant du chef"
 
 #: notifications/message_content.py:1113
 msgid "Appointed by"
-msgstr "Nommé(e) par"
+msgstr "Nomination par"
 
 #: notifications/message_content.py:1117
 msgid "the project closes"
@@ -4711,13 +4711,13 @@ msgid ""
 "You are no longer the assistant conductor on %(project)s. Your own pencil "
 "marks stay where they are."
 msgstr ""
-"Vous n'êtes plus assistant du chef sur %(project)s. Vos propres annotations "
-"restent en place."
+"Votre rôle d’assistant du chef pour « %(project)s » a pris fin. Vos propres "
+"annotations restent en place."
 
 #: notifications/message_content.py:1175
 #, python-format
 msgid "Your appointment on %(project)s has ended"
-msgstr "Votre nomination sur %(project)s a pris fin"
+msgstr "Votre nomination pour « %(project)s » a pris fin"
 
 #: notifications/message_content.py:1177
 #, python-format
@@ -4726,9 +4726,9 @@ msgid ""
 "the attendance sheet have closed again; your own markings on the music are "
 "untouched."
 msgstr ""
-"Quelqu'un d'autre assiste désormais sur %(project)s. Les indications du chef"
-" et la feuille de présence se sont refermées ; vos propres annotations sur "
-"la musique restent intactes."
+"Quelqu'un d'autre assiste désormais pour « %(project)s ». Les indications du"
+" chef et la feuille de présence se sont refermées ; vos propres annotations "
+"sur la musique restent intactes."
 
 #: notifications/message_content.py:1191
 msgid "sopranos"
@@ -4781,7 +4781,7 @@ msgid ""
 "%(project)s. The roll call and everything your appointment on the project "
 "opens are on the evening's card."
 msgstr ""
-"Le chef vous met devant le chœur pour cette répétition de %(project)s. "
+"Le chef vous met devant le chœur pour cette répétition de « %(project)s ». "
 "L'appel et tout ce qu'ouvre votre nomination sont sur la fiche de la soirée."
 
 #: notifications/message_content.py:1262 notifications/message_content.py:1314
@@ -4932,7 +4932,7 @@ msgstr ""
 
 #: roster/models.py:1059
 msgid "Appointed By"
-msgstr "Nommé(e) par"
+msgstr "Nomination par"
 
 #: roster/models.py:1064
 msgid ""
@@ -5450,3 +5450,46 @@ msgstr "participera finalement"
 msgctxt "quotation"
 msgid "“%(text)s”"
 msgstr "« %(text)s »"
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal changed — %(when)s"
+msgstr "Répétition modifiée — %(when)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"A rehearsal for %(project)s has changed. Check that the new arrangement "
+"still works for you."
+msgstr ""
+"Une répétition de « %(project)s » a changé. Vérifiez que la nouvelle "
+"organisation vous convient toujours."
+
+#: notifications/message_content.py
+msgid "The cast doesn't know about them yet"
+msgstr "La distribution n’est pas encore au courant"
+
+#: notifications/message_content.py
+#, python-format
+msgid "%(sender)s — %(subject)s"
+msgstr "%(sender)s — %(subject)s"
+
+#: notifications/message_content.py
+msgid "French"
+msgstr "Français"
+
+#: notifications/message_content.py
+#, python-format
+msgid "%(count)d change waiting to be sent — %(project)s"
+msgid_plural "%(count)d changes waiting to be sent — %(project)s"
+msgstr[0] "%(count)d modification en attente d’envoi — %(project)s"
+msgstr[1] "%(count)d modifications en attente d’envoi — %(project)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"What the role opened for you on %(project)s has closed again; your own "
+"markings on the music are untouched."
+msgstr ""
+"Ce que ce rôle vous ouvrait sur « %(project)s » est de nouveau fermé ; vos "
+"propres annotations sur la musique restent intactes."

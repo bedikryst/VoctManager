@@ -4635,12 +4635,13 @@ msgstr "To, co napiszesz na warstwie chóru, zobaczy każdy śpiewak"
 #: notifications/message_content.py:1123
 #, python-format
 msgid "%(who)s has made you the assistant conductor on %(project)s."
-msgstr "%(who)s mianował(a) Cię asystentem dyrygenta w projekcie %(project)s."
+msgstr ""
+"%(who)s powierza Ci rolę asystenta dyrygenta w projekcie „%(project)s”."
 
 #: notifications/message_content.py:1126
 #, python-format
 msgid "You are now the assistant conductor on %(project)s."
-msgstr "Od teraz jesteś asystentem dyrygenta w projekcie %(project)s."
+msgstr "Od teraz masz rolę asystenta dyrygenta w projekcie „%(project)s”."
 
 #: notifications/message_content.py:1132
 #, python-format
@@ -4650,7 +4651,7 @@ msgstr "Asystujesz dyrygentowi — %(project)s"
 #: notifications/message_content.py:1137
 #, python-format
 msgid "You are the assistant conductor on %(project)s"
-msgstr "Jesteś asystentem dyrygenta w projekcie %(project)s"
+msgstr "Asystujesz dyrygentowi w projekcie „%(project)s”"
 
 #: notifications/message_content.py:1138 notifications/message_content.py:1176
 #: notifications/message_content.py:1255
@@ -4659,7 +4660,7 @@ msgstr "Asystent dyrygenta"
 
 #: notifications/message_content.py:1113
 msgid "Appointed by"
-msgstr "Mianował(a)"
+msgstr "Nominacja od"
 
 #: notifications/message_content.py:1117
 msgid "the project closes"
@@ -4672,9 +4673,8 @@ msgid ""
 " a manager of this project, so the cast and the excusal requests stay with "
 "them."
 msgstr ""
-"%(body)s Oto, co to dla Ciebie otwiera — i czego nie: nie jesteś menedżerem "
-"tego projektu, więc obsada i wnioski o usprawiedliwienie zostają u "
-"menedżerów."
+"%(body)s Oto, co to dla Ciebie otwiera — i czego nie: nie zarządzasz tym "
+"projektem, więc obsada i wnioski o usprawiedliwienie zostają u menedżerów."
 
 #: notifications/message_content.py:1167
 #, python-format
@@ -4687,13 +4687,13 @@ msgid ""
 "You are no longer the assistant conductor on %(project)s. Your own pencil "
 "marks stay where they are."
 msgstr ""
-"Nie jesteś już asystentem dyrygenta w projekcie %(project)s. Twoje własne "
-"notatki zostają na miejscu."
+"Twoja rola asystenta dyrygenta w projekcie „%(project)s” dobiegła końca. "
+"Własne notatki zostają na miejscu."
 
 #: notifications/message_content.py:1175
 #, python-format
 msgid "Your appointment on %(project)s has ended"
-msgstr "Twoja nominacja w projekcie %(project)s dobiegła końca"
+msgstr "Twoja nominacja w projekcie „%(project)s” dobiegła końca"
 
 #: notifications/message_content.py:1177
 #, python-format
@@ -4702,7 +4702,7 @@ msgid ""
 "the attendance sheet have closed again; your own markings on the music are "
 "untouched."
 msgstr ""
-"Od teraz w projekcie %(project)s asystuje kto inny. Wskazówki dyrygenta i "
+"Od teraz w projekcie „%(project)s” asystuje kto inny. Wskazówki dyrygenta i "
 "lista obecności znów są zamknięte; Twoje własne oznaczenia na nutach zostają"
 " nietknięte."
 
@@ -4757,8 +4757,8 @@ msgid ""
 "%(project)s. The roll call and everything your appointment on the project "
 "opens are on the evening's card."
 msgstr ""
-"Dyrygent postawił Cię przed chórem na tę próbę projektu %(project)s. Lista "
-"obecności i wszystko, co otwiera Twoja nominacja, są na karcie wieczoru."
+"Dyrygent postawił Cię przed chórem na tę próbę projektu „%(project)s”. Lista"
+" obecności i wszystko, co otwiera Twoja nominacja, są na karcie wieczoru."
 
 #: notifications/message_content.py:1262 notifications/message_content.py:1314
 msgid "Open the evening"
@@ -4775,7 +4775,7 @@ msgstr "Podsumowanie próby — %(author)s"
 
 #: notifications/message_content.py:1286
 msgid "Written by"
-msgstr "Napisał(a)"
+msgstr "Od"
 
 #: notifications/message_content.py:1288 roster/models.py:896
 msgid "Debrief"
@@ -4791,7 +4791,7 @@ msgid ""
 "%(author)s has written up the rehearsal of %(project)s. The whole text is on"
 " the evening's card."
 msgstr ""
-"%(author)s napisał(a) podsumowanie próby w projekcie „%(project)s”. Całość "
+"%(author)s przesyła podsumowanie próby w projekcie „%(project)s”. Całość "
 "czeka na karcie wieczoru."
 
 #: notifications/message_content.py:1304
@@ -4830,7 +4830,7 @@ msgstr ""
 
 #: roster/models.py:903
 msgid "Debrief By"
-msgstr "Podsumowanie napisał(a)"
+msgstr "Autor podsumowania"
 
 #: roster/models.py:905
 msgid "Debrief At"
@@ -4906,7 +4906,7 @@ msgstr ""
 
 #: roster/models.py:1059
 msgid "Appointed By"
-msgstr "Mianował(a)"
+msgstr "Nominacja od"
 
 #: roster/models.py:1064
 msgid ""
@@ -4925,7 +4925,7 @@ msgstr ""
 
 #: notifications/message_content.py:1087
 msgid "The scores and programme, even if you are not singing in it"
-msgstr "Nuty i program projektu, nawet jeśli sam w nim nie śpiewasz"
+msgstr "Nuty i program projektu, nawet jeśli w nim nie śpiewasz"
 
 #: notifications/message_content.py:1145 notifications/message_content.py:1183
 msgid "Open the schedule"
@@ -4933,7 +4933,7 @@ msgstr "Zobacz harmonogram"
 
 #: notifications/message_content.py:1162
 msgid "Changed by"
-msgstr "Zmienił(a)"
+msgstr "Decyzja"
 
 #: roster/models.py:886
 msgid "Led By"
@@ -5197,7 +5197,7 @@ msgid ""
 "The solos you sing in %(piece)s have changed. Open the score and find the "
 "passages before the next rehearsal."
 msgstr ""
-"Zmieniły się solówki, które śpiewasz w utworze %(piece)s. Otwórz nuty i "
+"Zmieniły się solówki, które śpiewasz w utworze „%(piece)s”. Otwórz nuty i "
 "odszukaj te fragmenty przed najbliższą próbą."
 
 #: notifications/message_content.py
@@ -5206,8 +5206,8 @@ msgid ""
 "You no longer have a solo in %(piece)s. Anything else you sing in it stays "
 "as it was."
 msgstr ""
-"Nie masz już solówki w utworze %(piece)s. Wszystko inne, co w nim śpiewasz, "
-"zostaje bez zmian."
+"Nie masz już solówki w utworze „%(piece)s”. Wszystko inne, co w nim "
+"śpiewasz, zostaje bez zmian."
 
 #: templates/projects/call_sheet_pdf.html
 msgctxt "call sheet"
@@ -5418,3 +5418,47 @@ msgstr "jednak weźmie udział"
 msgctxt "quotation"
 msgid "“%(text)s”"
 msgstr "„%(text)s”"
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal changed — %(when)s"
+msgstr "Zmiana próby — %(when)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"A rehearsal for %(project)s has changed. Check that the new arrangement "
+"still works for you."
+msgstr ""
+"Zmieniła się próba w projekcie „%(project)s”. Sprawdź, czy nowe ustalenia "
+"nadal Ci pasują."
+
+#: notifications/message_content.py
+msgid "The cast doesn't know about them yet"
+msgstr "Obsada jeszcze o nich nie wie"
+
+#: notifications/message_content.py
+#, python-format
+msgid "%(sender)s — %(subject)s"
+msgstr "%(sender)s — %(subject)s"
+
+#: notifications/message_content.py
+msgid "French"
+msgstr "Francuski"
+
+#: notifications/message_content.py
+#, python-format
+msgid "%(count)d change waiting to be sent — %(project)s"
+msgid_plural "%(count)d changes waiting to be sent — %(project)s"
+msgstr[0] "%(count)d zmiana czeka na wysłanie — %(project)s"
+msgstr[1] "%(count)d zmiany czekają na wysłanie — %(project)s"
+msgstr[2] "%(count)d zmian czeka na wysłanie — %(project)s"
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"What the role opened for you on %(project)s has closed again; your own "
+"markings on the music are untouched."
+msgstr ""
+"To, co otwierała Ci ta rola w projekcie „%(project)s”, jest znów zamknięte; "
+"Twoje własne oznaczenia na nutach zostają nietknięte."

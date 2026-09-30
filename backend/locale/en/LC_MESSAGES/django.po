@@ -4028,3 +4028,47 @@ msgstr ""
 msgctxt "quotation"
 msgid "“%(text)s”"
 msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "Rehearsal changed — %(when)s"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"A rehearsal for %(project)s has changed. Check that the new arrangement "
+"still works for you."
+msgstr ""
+
+#: notifications/message_content.py
+msgid "The cast doesn't know about them yet"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "%(sender)s — %(subject)s"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "%(sender)s: %(snippet)s"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "French"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "%(count)d change waiting to be sent — %(project)s"
+msgid_plural "%(count)d changes waiting to be sent — %(project)s"
+msgstr[0] ""
+msgstr[1] ""
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"What the role opened for you on %(project)s has closed again; your own "
+"markings on the music are untouched."
+msgstr ""

@@ -171,8 +171,9 @@ class MessageContentCompositionTests(SimpleTestCase):
             )
 
     def test_an_evening_handed_over_names_its_sections_and_lands_on_its_card(self) -> None:
-        """The date is the message; a sectional says which sections in the
-        title, and the one action opens THAT evening's register."""
+        """The date is the message; a sectional says which sections at the head
+        of the body (in the title a lock screen cuts them off), and the one
+        action opens THAT evening's register."""
         meta = {
             "rehearsal_id": "3f8f6f2a-0000-4000-8000-000000000009",
             "project_id": "3f8f6f2a-0000-4000-8000-000000000001",
@@ -186,7 +187,8 @@ class MessageContentCompositionTests(SimpleTestCase):
                 NotificationType.REHEARSAL_LEAD_ASSIGNED, NotificationLevel.INFO,
                 meta, is_manager=False,
             )
-            self.assertIn("sopranos, altos", c.title)
+            self.assertNotIn("sopranos", c.title)
+            self.assertTrue(c.body.startswith("Sectional: sopranos, altos"), c.body)
             self.assertIn("Adwent", c.body)
             self.assertEqual(
                 c.url_path, "/panel/schedule/lead/3f8f6f2a-0000-4000-8000-000000000009",
@@ -442,21 +444,101 @@ class StructuredMetadataTests(SimpleTestCase):
             self.assertNotIn("2020-06-19T17:00:00", c.title)
             self.assertNotIn("2020-06-19T17:00:00", c.body)
 
-    def test_message_push_body_does_not_expose_full_message(self) -> None:
+    def test_message_push_carries_the_text_the_sender_wrote(self) -> None:
+        """The reader's system decides what a lock screen shows; the push says
+        who wrote, in which thread, and what."""
+        meta = {
+            "thread_id": "t1",
+            "title": "Rehearsal logistics",
+            "sender_name": "Ada",
+            "message": "Travel details",
+            "snippet": "Travel details",
+        }
         with translation.override("en"):
             c = MessageContentBuilder.build(
+                NotificationType.MESSAGE_RECEIVED, "INFO", meta, is_manager=False,
+            )
+            bare = MessageContentBuilder.build(
                 NotificationType.MESSAGE_RECEIVED, "INFO",
-                {
-                    "thread_id": "t1",
-                    "title": "Rehearsal logistics",
-                    "sender_name": "Ada",
-                    "message": "Private travel details",
-                    "snippet": "Private travel details",
-                },
+                {**meta, "message": "", "snippet": ""}, is_manager=False,
+            )
+        self.assertEqual(c.title, "Ada — Rehearsal logistics")
+        self.assertEqual(c.body, "Travel details")
+        # A message without text (an attachment) still says what it is about.
+        self.assertEqual(bare.body, "Rehearsal logistics")
+
+    def test_channel_push_reads_as_a_chat_line(self) -> None:
+        meta = {"project_name": "Requiem", "sender_name": "Ada", "channel_id": "c1"}
+        with translation.override("en"):
+            post = MessageContentBuilder.build(
+                NotificationType.CHANNEL_MESSAGE, "INFO",
+                {**meta, "snippet": "Who has the Gloria?"}, is_manager=False,
+            )
+            empty = MessageContentBuilder.build(
+                NotificationType.CHANNEL_MESSAGE, "INFO", meta, is_manager=False,
+            )
+        self.assertEqual((post.title, post.body), ("Requiem", "Ada: Who has the Gloria?"))
+        self.assertEqual(empty.body, "Ada posted in the channel.")
+
+    def test_a_rehearsal_is_moved_only_when_its_hour_moved(self) -> None:
+        """A new topic changes the rehearsal; it does not move it."""
+        meta = {
+            "project_name": "Requiem",
+            "rehearsal_id": "r1",
+            "starts_at": "2026-06-19T17:00:00+00:00",
+            "timezone": "Europe/Warsaw",
+        }
+        with translation.override("en"):
+            focus = MessageContentBuilder.build(
+                NotificationType.REHEARSAL_UPDATED, "INFO",
+                {**meta, "changes": [{"field": "focus", "old": "Kyrie", "new": "Gloria"}]},
                 is_manager=False,
             )
-            self.assertNotIn("Private travel details", c.body)
-            self.assertIn("Rehearsal logistics", c.body)
+            moved = MessageContentBuilder.build(
+                NotificationType.REHEARSAL_UPDATED, "INFO",
+                {**meta, "changes": [{"field": "date_time", "old": "a", "new": "b"}]},
+                is_manager=False,
+            )
+        self.assertTrue(focus.title.startswith("Rehearsal changed — "), focus.title)
+        self.assertTrue(moved.title.startswith("Rehearsal moved — "), moved.title)
+        self.assertNotIn("not where it was", focus.email_lead)
+
+    def test_manager_pushes_name_the_event_their_answer_is_about(self) -> None:
+        base = {
+            "project_name": "Requiem",
+            "artist_name": "Ada Nowak",
+            "starts_at": "2026-06-19T17:00:00+00:00",
+            "timezone": "Europe/Warsaw",
+        }
+        with translation.override("en"):
+            attendance = MessageContentBuilder.build(
+                NotificationType.ATTENDANCE_SUBMITTED, "INFO",
+                {**base, "status": "PRESENT"}, is_manager=True,
+            )
+            rsvp = MessageContentBuilder.build(
+                NotificationType.PARTICIPATION_RESPONSE, "INFO",
+                {**base, "status": "DEC", "previous_status": "CON", "event_kind": "MASS"},
+                is_manager=True,
+            )
+            absence = MessageContentBuilder.build(
+                NotificationType.ABSENCE_REQUESTED, "INFO",
+                {**base, "status": "ABSENT", "excuse_note": "Concert in Kraków"},
+                is_manager=True,
+            )
+        self.assertTrue(attendance.body.startswith("Rehearsal — Friday"), attendance.body)
+        self.assertTrue(attendance.body.endswith("· Requiem"), attendance.body)
+        self.assertEqual(rsvp.title, "Ada Nowak is withdrawing")
+        self.assertTrue(rsvp.body.startswith("Mass — Friday"), rsvp.body)
+        self.assertTrue(absence.body.endswith("· “Concert in Kraków”"), absence.body)
+
+    def test_an_excused_absence_is_named_with_one_word(self) -> None:
+        with translation.override("pl"):
+            c = MessageContentBuilder.build(
+                NotificationType.ABSENCE_APPROVED, "INFO",
+                {"project_name": "Requiem"}, is_manager=False,
+            )
+        self.assertEqual(c.subject, c.title)
+        self.assertIn("usprawiedliwiona", c.title)
 
     def test_project_removed_event_distinct_from_update(self) -> None:
         with translation.override("en"):
@@ -2244,13 +2326,14 @@ class AnnouncementNudgeCopyTests(SimpleTestCase):
             self.assertIn("1 hour", self._build(waiting_hours=0).body)
 
     def test_polish_gets_all_three_plural_forms(self) -> None:
+        """The count is the title's subject, so the verb agrees with it too."""
         with translation.override("pl"):
-            one = self._build(change_count=1).body
-            few = self._build(change_count=3).body
-            many = self._build(change_count=5).body
-        self.assertIn("1 zmiana", one)
-        self.assertIn("3 zmiany", few)
-        self.assertIn("5 zmian", many)
+            one = self._build(change_count=1).title
+            few = self._build(change_count=3).title
+            many = self._build(change_count=5).title
+        self.assertIn("1 zmiana czeka", one)
+        self.assertIn("3 zmiany czekają", few)
+        self.assertIn("5 zmian czeka", many)
 
     def test_the_project_is_named_on_every_surface(self) -> None:
         with translation.override("en"):
@@ -2957,7 +3040,7 @@ class SoloChangeRenderingTests(SimpleTestCase):
 
         self.assertEqual(content.title, "Zmiana solówek — The Lark Ascending")
         self.assertIn("odwołana: Sopran solo (lit. 7)", content.body)
-        self.assertIn("Nie masz już solówki w utworze The Lark Ascending.", content.email_lead)
+        self.assertIn("Nie masz już solówki w utworze „The Lark Ascending”.", content.email_lead)
         self.assertIn(("Twoje solówki", "brak"), {(r.label, r.value) for r in content.details})
 
     def test_a_malformed_side_renders_a_label_rather_than_raw_text(self) -> None:

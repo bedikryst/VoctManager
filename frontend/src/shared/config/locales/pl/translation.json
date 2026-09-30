@@ -6337,7 +6337,7 @@
         "unsupported": "Ta przeglądarka nie obsługuje powiadomień push."
       },
       "types": {
-        "ABSENCE_APPROVED": "Nieobecność zatwierdzona",
+        "ABSENCE_APPROVED": "Nieobecność usprawiedliwiona",
         "ABSENCE_REJECTED": "Nieobecność odrzucona",
         "ABSENCE_REQUESTED": "Prośba o nieobecność",
         "ATTENDANCE_SUBMITTED": "Informacja o frekwencji",
@@ -6347,7 +6347,7 @@
         "MESSAGE_RECEIVED": "Nowa wiadomość",
         "CHANNEL_MESSAGE": "Nowa wiadomość w kanale projektu",
         "NOTIFICATION_READ_RECEIPT": "Wiadomość odczytana",
-        "PARTICIPATION_RESPONSE": "Odpowiedź artysty",
+        "PARTICIPATION_RESPONSE": "Odpowiedź na zaproszenie",
         "PIECE_CASTING_ASSIGNED": "Przypisanie do utworu",
         "PIECE_CASTING_UPDATED": "Zmiana obsady utworu",
         "PROJECT_BRIEFING": "Zbiorcze zmiany w projekcie",
