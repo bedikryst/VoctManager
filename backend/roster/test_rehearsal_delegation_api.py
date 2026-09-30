@@ -130,6 +130,74 @@ class RehearsalDelegationApiTests(APITestCase):
         # The `artist` in the body was ignored, not honoured.
         self.assertEqual(row.artist_id, self.deputy.pk)
 
+    def test_planning_the_evenings_they_lead_is_off_unless_switched_on(self) -> None:
+        self.client.force_authenticate(self.manager)
+        self.assertFalse(self._grant().json()["can_manage_led_rehearsals"])
+        granted = self._grant(artist=self.other, can_manage_led_rehearsals=True)
+        self.assertTrue(granted.json()["can_manage_led_rehearsals"])
+        self.assertTrue(
+            RehearsalDelegate.objects.get(artist=self.other).can_manage_led_rehearsals,
+        )
+
+    def test_taking_the_roll_call_back_takes_planning_with_it(self) -> None:
+        """Without the roll call they cannot be named to lead, and the evenings
+        ahead are released — the planning switch goes too, or it would keep a
+        power over the past evenings that still carry their name."""
+        self.client.force_authenticate(self.manager)
+        granted = self._grant(can_manage_led_rehearsals=True).json()
+        response = self.client.patch(
+            f"{self.endpoint}{granted['id']}/",
+            {"can_take_roll_call": False},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertFalse(response.json()["can_manage_led_rehearsals"])
+        self.assertFalse(
+            RehearsalDelegate.objects.get(pk=granted["id"]).can_manage_led_rehearsals,
+        )
+        # Nor can a grant be created in that shape.
+        refused = self._grant(
+            artist=self.other, can_take_roll_call=False, can_manage_led_rehearsals=True,
+        )
+        self.assertFalse(refused.json()["can_manage_led_rehearsals"])
+
+    def test_a_regrant_that_keeps_the_roll_call_off_keeps_planning_off(self) -> None:
+        """The grant is an upsert: a POST that does not mention the roll call
+        leaves the row's own switch as it was, and planning rides on it."""
+        self.client.force_authenticate(self.manager)
+        granted = self._grant(can_take_roll_call=False).json()
+        again = self._grant(can_manage_led_rehearsals=True)
+        self.assertEqual(again.status_code, 201, again.content)
+        self.assertFalse(again.json()["can_manage_led_rehearsals"])
+        self.assertFalse(
+            RehearsalDelegate.objects.get(pk=granted["id"]).can_manage_led_rehearsals,
+        )
+
+    def test_the_appointment_tells_them_they_plan_their_evenings(self) -> None:
+        from django.utils import translation
+
+        from notifications.message_content import MessageContentBuilder
+        from notifications.models import NotificationLevel
+
+        self.client.force_authenticate(self.manager)
+        with patch(TASK) as task, self.captureOnCommitCallbacks(execute=True):
+            self._grant(can_manage_led_rehearsals=True)
+        metadata = task.delay.call_args.kwargs["metadata"]
+        self.assertTrue(metadata["can_manage_led_rehearsals"])
+
+        with translation.override("pl"):
+            content = MessageContentBuilder.build(
+                notification_type=NotificationType.REHEARSAL_DELEGATED,
+                level=NotificationLevel.INFO,
+                metadata=metadata,
+                is_manager=False,
+            )
+        self.assertIn(
+            "Układasz plan prób, które prowadzisz, i wysyłasz go chórzystom. "
+            "W edytorze planu widzisz program projektu.",
+            [row.value for row in content.details],
+        )
+
     def test_the_suggestion_is_the_last_leader_who_does_not_lead_this_yet(self) -> None:
         """The add form pre-selects the most recently appointed leader anywhere.
         A suggestion, not a grant: nothing is written by asking. Somebody who

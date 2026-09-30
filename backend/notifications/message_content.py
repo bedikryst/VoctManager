@@ -1454,6 +1454,12 @@ def _delegation_scope_rows(m: Mapping[str, Any]) -> list[DetailRow]:
             _("Markings for the choir"),
             _("What you write on the choir's layer, every singer sees"),
         ))
+    if m.get("can_manage_led_rehearsals"):
+        rows.append(_row(
+            _("Rehearsal plan"),
+            _("You plan the rehearsals you lead and send the plan to the singers. "
+              "The plan editor shows you the project's programme."),
+        ))
     return rows
 
 

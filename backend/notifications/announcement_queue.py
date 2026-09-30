@@ -547,8 +547,12 @@ class AnnouncementQueue:
         rows: Sequence[PendingAnnouncement],
         *,
         has_note: bool = False,
+        sender_id: str | None = None,
     ) -> PublicationPlan:
         """Work out what each recipient would actually receive.
+
+        ``sender_id`` is taken out of every audience: whoever publishes is not
+        told what they have just sent.
 
         A recipient with one piece of news gets that event's own message: "Rehearsal
         moved — Friday at 19:00" names the thing that happened far better than a
@@ -562,7 +566,11 @@ class AnnouncementQueue:
         """
         announcements = AnnouncementQueue.collapse(rows)
         audiences = [
-            AnnouncementQueue.recipients_for(project, announcement)
+            [
+                recipient_id
+                for recipient_id in AnnouncementQueue.recipients_for(project, announcement)
+                if recipient_id != sender_id
+            ]
             for announcement in announcements
         ]
 
@@ -760,14 +768,33 @@ class AnnouncementQueue:
         *,
         note: str = "",
         exclude: Iterable[str] = (),
+        only: Iterable[str] | None = None,
+        sender_id: str | None = None,
     ) -> dict[str, int]:
         """Send the queue and consume it.
 
         Every row this publication takes is stamped, including the ones collapsing
         silenced — they were resolved by it, they simply had nothing to say. Held
         rows are left untouched and pending, so the next review shows them again.
+
+        ``only`` narrows the publication to those row ids and holds everything
+        else, without the caller reading the queue to spell out the complement —
+        a row enqueued in between is held, not swept along. The creation rule of
+        `_partition` still applies: a row about something whose creation is
+        still pending stays pending with it. A narrowed publication is not a
+        review of the queue, so the managers' "changes are waiting" reminder
+        stays up while anything is left in it.
+
+        ``sender_id`` is the user publishing, left out of every audience
+        (`plan`).
         """
         rows = AnnouncementQueue.pending_for(project)
+        if only is not None:
+            wanted = {str(value) for value in only}
+            exclude = [
+                *(str(value) for value in exclude),
+                *(str(row.id) for row in rows if str(row.id) not in wanted),
+            ]
         taken, held = _partition(rows, exclude)
         if not taken:
             return {
@@ -776,7 +803,9 @@ class AnnouncementQueue:
             }
 
         with transaction.atomic():
-            plan = AnnouncementQueue.plan(project, taken, has_note=bool(note))
+            plan = AnnouncementQueue.plan(
+                project, taken, has_note=bool(note), sender_id=sender_id,
+            )
 
             for index in plan.standalone:
                 _dispatch(plan.announcements[index], plan.audiences[index])
@@ -796,7 +825,8 @@ class AnnouncementQueue:
             PendingAnnouncement.objects.filter(
                 id__in=[row.id for row in taken]
             ).update(published_at=now, updated_at=now)
-            _resolve_nudges(project)
+            if only is None or not held:
+                _resolve_nudges(project)
 
         logger.info(
             "[AnnouncementQueue] Published %d row(s) on project %s as %d message(s) "
@@ -972,6 +1002,26 @@ class AnnouncementQueue:
             kind=AnnouncementKind.CHANGED,
             change_field=field,
         ).exists()
+
+    @staticmethod
+    def pending_change_ids(
+        project: Project, subject_type: str, subject_id: str,
+    ) -> list[str]:
+        """The rows still waiting to say that this subject changed, whatever
+        the field — what a publication about that one subject takes with
+        ``only``. Its creation is not among them: publishing a change never
+        announces a subject the conductor is still holding back, and holding
+        the creation holds its changes too (`_partition`)."""
+        return [
+            str(row_id)
+            for row_id in PendingAnnouncement.objects.filter(
+                project=project,
+                published_at__isnull=True,
+                subject_type=subject_type,
+                subject_id=str(subject_id),
+                kind=AnnouncementKind.CHANGED,
+            ).values_list("id", flat=True)
+        ]
 
 
 def _is_divisible(announcement: ResolvedAnnouncement) -> bool:

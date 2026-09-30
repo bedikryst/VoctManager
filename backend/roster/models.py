@@ -1451,8 +1451,9 @@ class RehearsalDelegate(EnterpriseBaseModel):
     materials open a programme the assistant may not be singing in. A grant that
     bundled them would be easy to give and impossible to reason about afterwards.
     The fourth, writing the choir's official markings, is the one power that
-    speaks to the whole choir in the conductor's voice, so it alone is off
-    unless he switches it on.
+    speaks to the whole choir in the conductor's voice, so it is off unless he
+    switches it on. So is the fifth, writing and sending the plan of the
+    evenings they lead: it tells the called singers what to prepare.
 
     A live grant also seats the assistant in the project's channel (a LEADER
     membership, created on grant and dropped on revoke by `messaging.signals`),
@@ -1496,6 +1497,17 @@ class RehearsalDelegate(EnterpriseBaseModel):
                     "music — the choir's official markings, which every singer "
                     "sees. Off unless the conductor lends his voice on purpose."),
     )
+    # Which evenings stays `Rehearsal.led_by`: the switch opens the plan of a
+    # rehearsal whose `led_by` is this artist, never any other. Meaningful only
+    # with the roll call on — without it they cannot be named to lead — so
+    # `save` clears it whenever the roll call is off.
+    can_manage_led_rehearsals = models.BooleanField(
+        default=False,
+        verbose_name=_("Plans the Rehearsals They Lead"),
+        help_text=_("Writes and sends the plan of every rehearsal of this "
+                    "project that they lead, and sees the programme to do so. "
+                    "Never creates or deletes a rehearsal."),
+    )
     # Null is "until the project closes", not "forever": every branch of the
     # predicate drops a project that is completed or cancelled, so an open-ended
     # grant still ends on its own. A date is for ending it sooner than that.
@@ -1535,6 +1547,18 @@ class RehearsalDelegate(EnterpriseBaseModel):
 
     def __str__(self) -> str:
         return f"{self.artist.last_name} leads {self.project.title}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Planning rides on the roll call (`roster.permissions`): a row that
+        takes the roll call away takes planning with it, whichever door wrote
+        it — the grant's upsert revives a row whose unsent switches keep their
+        old values, and a PATCH names only what it changes."""
+        if self.can_manage_led_rehearsals and not self.can_take_roll_call:
+            self.can_manage_led_rehearsals = False
+            update_fields = kwargs.get('update_fields')
+            if update_fields is not None:
+                kwargs['update_fields'] = {*update_fields, 'can_manage_led_rehearsals'}
+        super().save(*args, **kwargs)
 
 
 class Attendance(models.Model):

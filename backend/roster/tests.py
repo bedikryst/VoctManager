@@ -547,7 +547,10 @@ class ArtistDossierQueryTests(TestCase):
         self.assertFalse(by_title["Closed"]["is_live"])
         self.assertEqual(
             by_title["Sung and led"]["scopes"],
-            {"marks": True, "roll_call": True, "materials": False, "choir_marks": False},
+            {
+                "marks": True, "roll_call": True, "materials": False,
+                "choir_marks": False, "manage_rehearsals": False,
+            },
         )
 
         history = {row["title"]: row for row in dossier["projects"]}

@@ -4092,3 +4092,31 @@ msgstr ""
 #, python-format
 msgid "We can't excuse you from the rehearsals — %(project)s"
 msgstr ""
+
+#: roster/models.py
+msgid "Plans the Rehearsals They Lead"
+msgstr ""
+
+#: roster/models.py
+msgid ""
+"Writes and sends the plan of every rehearsal of this project that they lead,"
+" and sees the programme to do so. Never creates or deletes a rehearsal."
+msgstr ""
+
+#: notifications/message_content.py
+msgid ""
+"You plan the rehearsals you lead and send the plan to the singers. The plan "
+"editor shows you the project's programme."
+msgstr ""
+
+#: roster/views.py
+msgid ""
+"Only the conductor or the assistant conductor leading this rehearsal may "
+"write its plan."
+msgstr ""
+
+#: roster/views.py
+msgid ""
+"Only the conductor or the assistant conductor leading this rehearsal may "
+"send its plan."
+msgstr ""

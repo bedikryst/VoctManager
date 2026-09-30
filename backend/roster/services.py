@@ -1490,7 +1490,8 @@ class RehearsalDelegationService:
     def _log(event: str, delegate: RehearsalDelegate, actor: "User | None") -> None:
         logger.info(
             "rehearsal_delegation:%s actor=%s artist=%s project=%s "
-            "marks=%s roll_call=%s materials=%s choir_marks=%s expires=%s",
+            "marks=%s roll_call=%s materials=%s choir_marks=%s "
+            "manage_rehearsals=%s expires=%s",
             event,
             getattr(actor, 'pk', None),
             delegate.artist_id,
@@ -1499,6 +1500,7 @@ class RehearsalDelegationService:
             delegate.can_take_roll_call,
             delegate.can_open_materials,
             delegate.can_mark_for_choir,
+            delegate.can_manage_led_rehearsals,
             delegate.expires_at.isoformat() if delegate.expires_at else '',
         )
 
@@ -1620,7 +1622,7 @@ class RehearsalDelegationService:
     ) -> None:
         """Tell the stand-in what they have been handed, and what it opens.
 
-        Every scope flag travels: a delegation is three permissions that leak
+        Every scope flag travels: a delegation is several permissions that leak
         differently, so "you are running rehearsals" on its own would leave the
         reader guessing whether the conductor's cues are among them.
         """
@@ -1655,6 +1657,7 @@ class RehearsalDelegationService:
             can_take_roll_call=delegate.can_take_roll_call,
             can_open_materials=delegate.can_open_materials,
             can_mark_for_choir=delegate.can_mark_for_choir,
+            can_manage_led_rehearsals=delegate.can_manage_led_rehearsals,
             expires_at=expires.isoformat() if expires else None,
             expires_at_display=(
                 format_event_time(expires, DEFAULT_EVENT_TIMEZONE, DEFAULT_EVENT_TIMEZONE)
@@ -2073,13 +2076,27 @@ class RehearsalOperationsService:
         return item
 
     @staticmethod
-    def announce_plan(rehearsal: Rehearsal) -> Rehearsal:
+    def announce_plan(
+        rehearsal: Rehearsal, *, published_by: "User | None" = None,
+    ) -> Rehearsal:
         """The conductor sends the plan: stamp the send, queue one notice for
         the cast. Through the announcement queue like every other rehearsal
         change (a DRAFT project stays silent), with the change key `plan` so
         the copy says the plan is up rather than that the evening moved. The
         push cannot personalise, so the reader's own window is not in it —
         the page it opens is exact, and the reminder carries the window.
+
+        ``published_by`` is a send by somebody with no queue of their own to
+        review — the assistant conductor. The notice goes out at once through
+        the queue's own publisher (the same message, window fan-out and link)
+        and never back to its sender. It takes every change still waiting
+        about THIS evening, not only the plan: the notice carries the
+        evening's current date, place and calendar entry, so a move the
+        conductor has not published yet would otherwise reach the cast's
+        calendars without the notice that says it moved — and be lost for
+        good if he moved it back before publishing. His rows about anything
+        else stay his; an evening whose creation is still pending keeps
+        everything pending with it (`AnnouncementQueue.publish`).
 
         The first send publishes the plan (`Rehearsal.plan_is_public`); every
         later one is a revision, refused unless the plan changed since the
@@ -2090,20 +2107,34 @@ class RehearsalOperationsService:
 
         The mirror of `mark_plan_item`'s gate: a plan is something to arrive
         with, so it cannot be sent once the evening is under way — the notice
-        would reach phones that are already in the room."""
-        if not rehearsal.plan_items.exists():
-            raise ValueError(_("There is no plan to send yet."))
-        if timezone.now() >= rehearsal.date_time:
-            raise ValueError(_("The plan can no longer be sent once the rehearsal has started."))
-        sent_before = rehearsal.plan_announced_at
-        if sent_before is not None and (
-            rehearsal.plan_changed_at is None or rehearsal.plan_changed_at <= sent_before
-        ):
-            raise ValueError(_("The plan has not changed since it was sent."))
-        revised = sent_before is not None and not AnnouncementQueue.has_pending_change(
-            rehearsal.project, AnnouncementSubject.REHEARSAL, str(rehearsal.id), "plan",
-        )
+        would reach phones that are already in the room.
+
+        The guards read the row under a lock, fetched again rather than taken
+        from the caller: two sends racing (a double tap, a retried request)
+        would otherwise both pass "unchanged since sent", and an immediate
+        send has no queue fold to absorb the second."""
         with transaction.atomic():
+            rehearsal = (
+                Rehearsal.objects
+                .select_for_update(of=('self',))
+                .select_related('project')
+                .get(pk=rehearsal.pk)
+            )
+            if not rehearsal.plan_items.exists():
+                raise ValueError(_("There is no plan to send yet."))
+            if timezone.now() >= rehearsal.date_time:
+                raise ValueError(
+                    _("The plan can no longer be sent once the rehearsal has started."),
+                )
+            sent_before = rehearsal.plan_announced_at
+            if sent_before is not None and (
+                rehearsal.plan_changed_at is None or rehearsal.plan_changed_at <= sent_before
+            ):
+                raise ValueError(_("The plan has not changed since it was sent."))
+            revised = sent_before is not None and not AnnouncementQueue.has_pending_change(
+                rehearsal.project, AnnouncementSubject.REHEARSAL, str(rehearsal.id), "plan",
+            )
+
             rehearsal.plan_announced_at = timezone.now()
             rehearsal.save(update_fields=['plan_announced_at', 'updated_at'])
 
@@ -2125,6 +2156,14 @@ class RehearsalOperationsService:
                 level=NotificationLevel.WARNING,
                 metadata=metadata,
             )
+            if published_by is not None:
+                AnnouncementQueue.publish(
+                    rehearsal.project,
+                    only=AnnouncementQueue.pending_change_ids(
+                        rehearsal.project, AnnouncementSubject.REHEARSAL, str(rehearsal.id),
+                    ),
+                    sender_id=str(published_by.pk),
+                )
         return rehearsal
 
     @staticmethod

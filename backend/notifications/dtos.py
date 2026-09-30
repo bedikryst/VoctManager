@@ -299,7 +299,7 @@ class RehearsalDelegationMetadata(EnterpriseBaseDTO):
     """Somebody has been asked to stand in front of the choir.
 
     The scope flags travel because they ARE the message: a delegation is not one
-    permission but four that leak differently, and a reader told only "you are
+    permission but five that leak differently, and a reader told only "you are
     running rehearsals" would not know whether the conductor's cues are open to
     them. `expires_at_display` travels for the same reason the grant
     announces itself and the expiry does not — the end is stated once, here,
@@ -314,6 +314,7 @@ class RehearsalDelegationMetadata(EnterpriseBaseDTO):
     can_take_roll_call: bool = False
     can_open_materials: bool = False
     can_mark_for_choir: bool = False
+    can_manage_led_rehearsals: bool = False
     expires_at: str | None = None
     expires_at_display: str = ""
     timezone: str = ""

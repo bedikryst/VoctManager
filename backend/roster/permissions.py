@@ -17,30 +17,53 @@ from uuid import UUID
 from django.db.models import OuterRef, Q, QuerySet
 from django.utils import timezone
 
-from roster.models import ProgramItem, Project
+from core.permissions import user_is_manager
+from roster.models import ProgramItem, Project, Rehearsal
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
 
-#: What a delegation opens. Four switches rather than one because they leak
+#: What a delegation opens. Five switches rather than one because they leak
 #: differently: marks expose the conductor's thinking, the roll call writes other
 #: people's records, materials open a programme the stand-in may not be singing
-#: in, and choir marks put words on every singer's page in the conductor's voice
-#: (the only switch that is off by default).
+#: in, choir marks put words on every singer's page in the conductor's voice, and
+#: managing rehearsals writes and sends the plan of the evenings they lead
+#: (`Rehearsal.led_by` picks which) and shows them the programme and the cast's
+#: voices the plan is written against. The last two are off by default.
 #:
 #: ``any`` is a question and not a switch: "does this project exist for this
 #: person at all". Every capability needs a project to hang off — a timeline
 #: entry, a URL that resolves — and asking `materials` for that made one of the
 #: switches a silent prerequisite for the others, so a grant of the roll call
 #: alone opened nothing anywhere.
-LeadScope = Literal['marks', 'roll_call', 'materials', 'choir_marks', 'any']
+LeadScope = Literal[
+    'marks', 'roll_call', 'materials', 'choir_marks', 'manage_rehearsals', 'any',
+]
 
 _SCOPE_FIELD: dict[str, str] = {
     'marks': 'can_see_leader_marks',
     'roll_call': 'can_take_roll_call',
     'materials': 'can_open_materials',
     'choir_marks': 'can_mark_for_choir',
+    'manage_rehearsals': 'can_manage_led_rehearsals',
 }
+
+#: Switches that open nothing on their own. Planning rides on the roll call:
+#: without it nobody can name them to lead an evening, and taking it back
+#: releases the evenings ahead. Enforced here, in the predicate every reader
+#: shares, as well as on save (`RehearsalDelegate.save`), so a row written past
+#: the model — a queryset update, a fixture — cannot open the plan either.
+_SCOPE_PREREQUISITES: dict[str, tuple[str, ...]] = {
+    'manage_rehearsals': ('roll_call',),
+}
+
+
+def _opens_scope(scope: str, rel: str) -> Q:
+    """The delegate row's switch for ``scope``, and its prerequisites."""
+    opens = Q(**{f'{rel}{_SCOPE_FIELD[scope]}': True})
+    for prerequisite in _SCOPE_PREREQUISITES.get(scope, ()):
+        opens &= Q(**{f'{rel}{_SCOPE_FIELD[prerequisite]}': True})
+    return opens
 
 
 def live_delegate_q(*, scope: LeadScope, rel: str = '') -> Q:
@@ -58,10 +81,10 @@ def live_delegate_q(*, scope: LeadScope, rel: str = '') -> Q:
     """
     if scope == 'any':
         opens_something = Q()
-        for scope_field in _SCOPE_FIELD.values():
-            opens_something |= Q(**{f'{rel}{scope_field}': True})
+        for each in _SCOPE_FIELD:
+            opens_something |= _opens_scope(each, rel)
     else:
-        opens_something = Q(**{f'{rel}{_SCOPE_FIELD[scope]}': True})
+        opens_something = _opens_scope(scope, rel)
 
     return (
         Q(**{
@@ -169,6 +192,35 @@ def user_leads_project(
         .filter(led_projects_q(user, scope=scope), pk=project_id)
         .exists()
     )
+
+
+def user_may_plan(user: User | None, rehearsal: Rehearsal) -> bool:
+    """Whether ``user`` writes and sends this rehearsal's plan.
+
+    A manager always. The project's conductor (the podium branch of
+    `led_projects_q`) for every evening of the programme, the ones he handed
+    to an assistant included, since he is the one who handed them. Anybody
+    else only for the evening announced for them (`Rehearsal.led_by`), and only
+    while their grant on its project carries `manage_rehearsals`: the switch is
+    the power, `led_by` only says which evenings. Past evenings included — a
+    plan save is silent, and the send refuses a started rehearsal on its own.
+
+    Reads ``rehearsal.project.conductor`` and ``rehearsal.led_by``: select
+    them with the rehearsal.
+    """
+    if user_is_manager(user):
+        return True
+    if user is None:
+        return False
+    conductor = rehearsal.project.conductor
+    on_podium = (
+        conductor is not None and not conductor.is_deleted and conductor.user_id == user.pk
+    )
+    led_by = rehearsal.led_by
+    announced = led_by is not None and led_by.user_id == user.pk
+    if not (on_podium or announced):
+        return False
+    return user_leads_project(user, rehearsal.project_id, scope='manage_rehearsals')
 
 
 def led_piece_ids(user: User | None, *, scope: LeadScope) -> QuerySet[ProgramItem, UUID]:

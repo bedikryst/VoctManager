@@ -1273,3 +1273,311 @@ class RehearsalPlanApiTests(APITestCase):
         )
         self.assertEqual(pending.count(), 2)
         self.assertFalse(any(row.metadata.get("plan_revised") for row in pending))
+
+    # --- the assistant conductor plans the evenings she leads ---------------
+
+    def _let_the_leader_plan(self, *, leads: Artist | None = None) -> None:
+        """The fifth switch on her grant, and this evening announced for
+        ``leads`` — her, unless a test names somebody else."""
+        RehearsalDelegate.objects.filter(artist=self.leader).update(
+            can_manage_led_rehearsals=True,
+        )
+        Rehearsal.objects.filter(pk=self.rehearsal.pk).update(led_by=leads or self.leader)
+        self.rehearsal.refresh_from_db()
+
+    def _as_leader(self, method: str, url: str, body: dict | None = None):
+        self.client.force_authenticate(user=self.leader_user)
+        return getattr(self.client, method)(url, body or {}, format="json")
+
+    def _pending_row(self, subject_id: str, kind: str, field: str = "") -> Any:
+        """A row the conductor left in his queue, written straight to it."""
+        from notifications.models import (
+            AnnouncementSubject,
+            NotificationType,
+            PendingAnnouncement,
+        )
+
+        return PendingAnnouncement.objects.create(
+            project=self.project,
+            subject_type=AnnouncementSubject.REHEARSAL,
+            subject_id=subject_id,
+            kind=kind,
+            notification_type=NotificationType.REHEARSAL_UPDATED,
+            change_field=field,
+        )
+
+    def _her_send(self) -> tuple[Any, set[str]]:
+        """Her "Wyślij plan", with every delivery the publication commits
+        caught: the response and the user ids it reached."""
+        with (
+            patch("notifications.announcement_queue.send_bulk_notifications_task.delay") as bulk,
+            patch("notifications.announcement_queue.send_notification_task.delay") as solo,
+            self.captureOnCommitCallbacks(execute=True),
+        ):
+            response = self._as_leader("post", f"{self.plan_url}announce/")
+        reached = {
+            str(recipient)
+            for call in bulk.call_args_list
+            for recipient in call.kwargs["recipient_ids"]
+        } | {str(call.kwargs["recipient_id"]) for call in solo.call_args_list}
+        return response, reached
+
+    def test_without_the_switch_the_evening_she_leads_stays_the_conductors(self) -> None:
+        Rehearsal.objects.filter(pk=self.rehearsal.pk).update(led_by=self.leader)
+        self.assertEqual(
+            self._as_leader("put", self.plan_url, {"rows": self._evening()}).status_code, 403,
+        )
+        self._put(self._evening())
+        self.assertEqual(
+            self._as_leader("post", f"{self.plan_url}announce/").status_code, 403,
+        )
+
+    def test_the_switch_opens_the_plan_of_the_evening_she_leads(self) -> None:
+        self._let_the_leader_plan()
+        response = self._as_leader("put", self.plan_url, {"rows": self._evening()})
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(
+            [row["title"] for row in response.data["rows"]], ["Orff", "Bach", "Lumen"],
+        )
+
+    def test_the_switch_does_not_open_an_evening_somebody_else_leads(self) -> None:
+        self._let_the_leader_plan(leads=self.seats["alt"].artist)
+        self.assertEqual(
+            self._as_leader("put", self.plan_url, {"rows": self._evening()}).status_code, 403,
+        )
+        # Nor the conductor's own evening, which names nobody.
+        Rehearsal.objects.filter(pk=self.rehearsal.pk).update(led_by=None)
+        self.assertEqual(
+            self._as_leader("put", self.plan_url, {"rows": self._evening()}).status_code, 403,
+        )
+        self._put(self._evening())
+        self.assertEqual(
+            self._as_leader("post", f"{self.plan_url}announce/").status_code, 403,
+        )
+
+    def test_her_send_goes_out_at_once_with_what_waits_about_this_evening(self) -> None:
+        """Her notice carries the evening's current date and calendar entry,
+        so the conductor's unpublished move of THIS evening goes out with it —
+        or the cast's calendars would move without a notice saying so. His
+        rows about anything else stay his."""
+        from notifications.models import AnnouncementKind, PendingAnnouncement
+
+        self._let_the_leader_plan()
+        other_evening = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=9),
+        )
+        his_other_evening = self._pending_row(
+            str(other_evening.id), AnnouncementKind.CHANGED, "focus",
+        )
+        his_move_of_this_one = self._pending_row(
+            str(self.rehearsal.id), AnnouncementKind.CHANGED, "date_time",
+        )
+        self._as_leader("put", self.plan_url, {"rows": self._evening()})
+
+        response, reached = self._her_send()
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["delivery"], "sent")
+        self.assertIsNotNone(response.data["plan_announced_at"])
+        self.assertIn(self._user_id("alt"), reached)
+        self.assertIn(self._user_id("organista"), reached)
+        self.assertNotIn(str(self.stranger_user.pk), reached)
+
+        this_evening = PendingAnnouncement.objects.filter(subject_id=str(self.rehearsal.id))
+        self.assertTrue(this_evening.filter(change_field="plan").exists())
+        self.assertFalse(this_evening.filter(published_at__isnull=True).exists())
+        his_move_of_this_one.refresh_from_db()
+        self.assertIsNotNone(his_move_of_this_one.published_at)
+        his_other_evening.refresh_from_db()
+        self.assertIsNone(his_other_evening.published_at)
+        self.assertFalse(his_other_evening.is_deleted)
+
+    def test_her_send_does_not_come_back_to_her(self) -> None:
+        """An assistant who also sings in the project is called to the tutti
+        she leads; the plan she has just sent is not news to her."""
+        Participation.objects.create(
+            artist=self.leader, project=self.project, status=Participation.Status.CONFIRMED,
+        )
+        self._let_the_leader_plan()
+        self._as_leader("put", self.plan_url, {"rows": self._evening()})
+
+        response, reached = self._her_send()
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertIn(self._user_id("alt"), reached)
+        self.assertNotIn(str(self.leader_user.pk), reached)
+
+    def test_her_send_leaves_the_managers_reminder_while_his_queue_waits(self) -> None:
+        """Her publication takes one evening's rows and reviews nothing else:
+        the "changes are waiting" nudge stays up while his rows do."""
+        from notifications.models import AnnouncementKind, Notification, NotificationType
+
+        self._let_the_leader_plan()
+        other_evening = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=9),
+        )
+        self._pending_row(str(other_evening.id), AnnouncementKind.CHANGED, "focus")
+        nudge = Notification.objects.create(
+            recipient=self.manager,
+            notification_type=NotificationType.ANNOUNCEMENT_PENDING,
+            metadata={"project_id": str(self.project.id), "change_count": 1},
+        )
+        self._as_leader("put", self.plan_url, {"rows": self._evening()})
+
+        response, _reached = self._her_send()
+        self.assertEqual(response.status_code, 200, response.data)
+        nudge.refresh_from_db()
+        self.assertFalse(nudge.is_read)
+
+    def test_a_send_on_a_draft_project_says_nobody_was_told(self) -> None:
+        Project.objects.filter(pk=self.project.pk).update(status=Project.Status.DRAFT)
+        self._let_the_leader_plan()
+        self._as_leader("put", self.plan_url, {"rows": self._evening()})
+
+        response, reached = self._her_send()
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["delivery"], "withheld")
+        self.assertEqual(reached, set())
+
+    def test_the_projects_conductor_plans_every_evening_without_a_manager_role(self) -> None:
+        conductor_user, conductor = self._person("dyrygent", VoiceType.BASS)
+        Project.objects.filter(pk=self.project.pk).update(conductor=conductor)
+        self.client.force_authenticate(user=conductor_user)
+        response = self.client.put(self.plan_url, {"rows": self._evening()}, format="json")
+        self.assertEqual(response.status_code, 200, response.data)
+        # The evening he handed to his assistant as well.
+        Rehearsal.objects.filter(pk=self.rehearsal.pk).update(led_by=self.leader)
+        response = self.client.put(self.plan_url, {"rows": self._evening()[:1]}, format="json")
+        self.assertEqual(response.status_code, 200, response.data)
+
+    def test_planning_opens_nothing_without_the_roll_call(self) -> None:
+        """A row written past the model — a queryset update — with planning on
+        and the roll call off opens no plan: the predicate asks for both. She
+        sings here, so the evening itself stays hers to read."""
+        Participation.objects.create(
+            artist=self.leader, project=self.project, status=Participation.Status.CONFIRMED,
+        )
+        self._let_the_leader_plan()
+        RehearsalDelegate.objects.filter(artist=self.leader).update(can_take_roll_call=False)
+        self.assertEqual(
+            self._as_leader("put", self.plan_url, {"rows": self._evening()}).status_code, 403,
+        )
+
+    def test_her_send_waits_while_the_evening_itself_is_unannounced(self) -> None:
+        """The queue never tells the cast about a plan for an evening it has
+        not been told exists: her send is held with the creation."""
+        from notifications.models import AnnouncementKind
+
+        self._let_the_leader_plan()
+        self._pending_row(str(self.rehearsal.id), AnnouncementKind.CREATED)
+        self._as_leader("put", self.plan_url, {"rows": self._evening()})
+
+        response, reached = self._her_send()
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["delivery"], "queued")
+        self.assertEqual(reached, set())
+
+    def test_a_managers_send_still_only_queues(self) -> None:
+        from notifications.models import PendingAnnouncement
+
+        self._put(self._evening())
+        self.client.force_authenticate(user=self.manager)
+        with (
+            patch("notifications.announcement_queue.send_bulk_notifications_task.delay") as bulk,
+            self.captureOnCommitCallbacks(execute=True),
+        ):
+            response = self.client.post(f"{self.plan_url}announce/", format="json")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["delivery"], "queued")
+        bulk.assert_not_called()
+        self.assertTrue(
+            PendingAnnouncement.objects.filter(
+                subject_id=str(self.rehearsal.id), change_field="plan",
+                published_at__isnull=True,
+            ).exists()
+        )
+
+    def test_her_send_keeps_the_guards(self) -> None:
+        self._let_the_leader_plan()
+        self.assertEqual(
+            self._as_leader("post", f"{self.plan_url}announce/").status_code, 400,
+        )
+        self._as_leader("put", self.plan_url, {"rows": self._evening()})
+        self._start_the_evening()
+        self.assertEqual(
+            self._as_leader("post", f"{self.plan_url}announce/").status_code, 400,
+        )
+
+    def test_the_lead_sheet_says_who_may_plan(self) -> None:
+        lead_sheet = f"{self.url}lead-sheet/"
+        self.assertFalse(self._as_leader("get", lead_sheet).data["may_plan"])
+        self._let_the_leader_plan()
+        self.assertTrue(self._as_leader("get", lead_sheet).data["may_plan"])
+        self.client.force_authenticate(user=self.manager)
+        self.assertTrue(self.client.get(lead_sheet).data["may_plan"])
+
+    def test_the_plan_editor_reads_her_project_through_the_evening_she_plans(self) -> None:
+        """What `usePlanEditorData` needs, for an assistant who holds no seat,
+        in one read model behind the evening's own gate: nothing without the
+        switch; with it, the programme, the declared lines, the cast's voices,
+        the board and the project's evenings — draft plans included, names and
+        debriefs not. The generic list endpoints stay as they were."""
+        editor = f"{self.plan_url}editor/"
+        other_evening = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=9),
+        )
+        self.client.force_authenticate(user=self.manager)
+        self.client.put(
+            f"/api/rehearsals/{other_evening.id}/plan/",
+            {"rows": [{"piece": str(self.pieces["bach"].id)}]},
+            format="json",
+        )
+        self.assertEqual(self._as_leader("get", editor).status_code, 404)
+
+        self._let_the_leader_plan()
+        response = self._as_leader("get", editor)
+        self.assertEqual(response.status_code, 200, response.data)
+        data = response.data
+        self.assertEqual(
+            [item["piece"] for item in data["program"]],
+            [str(self.pieces[key].id) for key in _PIECES],
+        )
+        orff = next(
+            piece for piece in data["pieces"] if piece["id"] == str(self.pieces["orff"].id)
+        )
+        self.assertEqual(
+            sorted(row["voice_line"] for row in orff["voice_requirements_read"]),
+            sorted(_PIECES["orff"]),
+        )
+        self.assertEqual(len(data["pieces"]), len(_PIECES))
+        self.assertEqual(len(data["participations"]), len(_CAST))
+        self.assertEqual(
+            set(data["participations"][0]),
+            {"id", "status", "artist_voice_type", "default_voice_line"},
+        )
+        self.assertEqual(len(data["castings"]), ProjectPieceCasting.objects.count())
+
+        evenings = {row["id"]: row for row in data["rehearsals"]}
+        self.assertEqual(set(evenings), {str(self.rehearsal.id), str(other_evening.id)})
+        self.assertEqual(
+            [row["title"] for row in evenings[str(other_evening.id)]["plan"]], ["Bach"],
+        )
+        self.assertNotIn("debrief", evenings[str(other_evening.id)])
+        # The editor orders these against its own rehearsal's string.
+        self.assertEqual(
+            evenings[str(self.rehearsal.id)]["date_time"],
+            self._as_leader("get", f"{self.url}lead-sheet/").data["rehearsal"]["date_time"],
+        )
+
+        # Another evening of the project, led by somebody else, is no door.
+        Rehearsal.objects.filter(pk=self.rehearsal.pk).update(led_by=self.seats["alt"].artist)
+        self.assertEqual(self._as_leader("get", editor).status_code, 404)
+
+        project = str(self.project.id)
+        for url in (
+            f"/api/participations/?project={project}",
+            f"/api/program-items/?project={project}",
+            f"/api/piece-castings/?participation__project={project}",
+            f"/api/rehearsals/?project={project}",
+        ):
+            with self.subTest(list_endpoint=url):
+                self.assertEqual(self._as_leader("get", url).data, [])
+        self.assertEqual(self._as_leader("get", "/api/pieces/").status_code, 403)

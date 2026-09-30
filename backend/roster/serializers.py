@@ -1181,7 +1181,7 @@ class RehearsalDelegateSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'artist', 'artist_name', 'artist_voice_display',
             'can_see_leader_marks', 'can_take_roll_call', 'can_open_materials',
-            'can_mark_for_choir',
+            'can_mark_for_choir', 'can_manage_led_rehearsals',
             'expires_at', 'note', 'granted_by_name', 'created_at',
         )
         read_only_fields = ('id', 'created_at')

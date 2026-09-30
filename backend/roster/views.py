@@ -57,7 +57,8 @@ from core.request_utils import client_payload, request_user, truthy_flag
 from finance.exceptions import FinanceError, finance_error_response
 from finance.services.ledger import LedgerService
 from notifications.announcement_queue import AnnouncementQueue
-from notifications.models import PendingAnnouncement, PushDevice
+from notifications.announcements import is_announceable
+from notifications.models import AnnouncementSubject, PendingAnnouncement, PushDevice
 
 from .cast_order import participation_sort_key
 from .dashboard_serializers import (
@@ -131,6 +132,7 @@ from .permissions import (
     led_projects_q,
     live_delegate_q,
     user_leads_project,
+    user_may_plan,
 )
 from .queries import (
     get_artist_dossier,
@@ -144,6 +146,7 @@ from .queries.materials_queries import (
     CLOSED_PROJECT_STATUSES,
     user_is_refused_instrumental,
 )
+from .queries.plan_editor_queries import plan_editor_payload
 from .queries.plan_queries import plan_readings_for_user, plan_row_context
 from .score_package_config import (
     book_binds_instrumental_item,
@@ -1091,7 +1094,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         GET  — the live delegations, newest first.
         POST — grant one: `{artist, can_see_leader_marks?, can_take_roll_call?,
-               can_open_materials?, can_mark_for_choir?, expires_at?, note?}`.
+               can_open_materials?, can_mark_for_choir?,
+               can_manage_led_rehearsals?, expires_at?, note?}`.
                Re-granting to the same
                artist revives and overwrites the existing row rather than
                colliding with the uniqueness constraint — the manager's gesture
@@ -2160,9 +2164,14 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         manager or a project leader with the roll call (the lead sheet's own
         gate) is — they read drafts and write the debrief; a member the
         rehearsal calls is not. ``None`` for anyone else — the evening is
-        not theirs to know about."""
+        not theirs to know about. Selected with what `user_may_plan` reads."""
         try:
-            rehearsal = Rehearsal.objects.select_related('project').filter(pk=pk).first()
+            rehearsal = (
+                Rehearsal.objects
+                .select_related('project__conductor', 'led_by')
+                .filter(pk=pk)
+                .first()
+            )
         except (DjangoValidationError, ValueError):
             rehearsal = None
         if rehearsal is None:
@@ -2184,11 +2193,13 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         """The plan, whole.
 
         GET for anyone the rehearsal concerns — a member reads `rows: []`
-        while the plan is a draft (`Rehearsal.plan_is_public`); PUT for a
-        manager only, taking the complete list (pattern:
+        while the plan is a draft (`Rehearsal.plan_is_public`); PUT for
+        whoever `user_may_plan` admits — a manager, the project's conductor,
+        or the assistant conductor announced for this evening under a
+        `manage_rehearsals` grant — taking the complete list (pattern:
         `piece-castings/boards/`) and answering with what was persisted and
         `plan_changed_at`, so the editor re-baselines on both. Saving is
-        silent — see `announce`.
+        silent — see `announce`. The last write wins between two writers.
         """
         access = self._plan_access(request, pk)
         if access is None:
@@ -2196,9 +2207,10 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         rehearsal, runs_evening = access
 
         if request.method == 'PUT':
-            if not user_is_manager(request.user):
+            if not user_may_plan(request_user(request), rehearsal):
                 return Response(
-                    {"detail": "Only a manager may write the plan."},
+                    {"detail": _("Only the conductor or the assistant conductor "
+                                 "leading this rehearsal may write its plan.")},
                     status=status.HTTP_403_FORBIDDEN,
                 )
             try:
@@ -2237,6 +2249,26 @@ class RehearsalViewSet(viewsets.ModelViewSet):
             'plan_changed_at': rehearsal.plan_changed_at,
             'rows': rows,
         })
+
+    @action(
+        detail=True, methods=['get'], url_path='plan/editor',
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def plan_editor(self, request, pk=None) -> Response:
+        """What the plan editor needs of the project beyond the plan, for
+        whoever may write this evening's plan (`plan_editor_payload`).
+
+        One read model behind one gate rather than five list endpoints widened
+        for the assistant conductor: those serialize every field of their
+        models, and each would have carried its own copy of the rule. The
+        gate is this evening, not the project — a planner reads the programme
+        and the cast's voices of a project only through an evening they may
+        plan. 404 for anyone else, as `plan` answers a stranger.
+        """
+        access = self._plan_access(request, pk)
+        if access is None or not user_may_plan(request_user(request), access[0]):
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(plan_editor_payload(access[0]))
 
     @action(
         detail=True, methods=['patch'],
@@ -2280,13 +2312,39 @@ class RehearsalViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=True, methods=['post'], url_path='plan/announce',
-        permission_classes=[IsManager],
+        permission_classes=[permissions.IsAuthenticated],
     )
     def plan_announce(self, request, pk=None) -> Response:
-        """"Wyślij plan": the one moment the cast hears about the plan."""
-        rehearsal = self.get_object()
+        """"Wyślij plan": the one moment the cast hears about the plan.
+
+        A manager's send goes through the announcement queue he publishes;
+        anyone else `user_may_plan` admits has no queue to review, so theirs
+        goes out at once (`announce_plan(published_by=...)`). Resolved like
+        `plan`, never through `get_queryset`, which answers "which evenings
+        call me as a singer" and would 404 an assistant who is not cast.
+
+        `delivery` says what became of the notice, because "sent" is not the
+        only answer: `queued` — waiting in the queue (a manager's send, or
+        any send while the evening's own creation is unannounced); `withheld`
+        — the project is a draft, so nobody is told now and the plan reaches
+        the cast with the project; `sent` — on its way to the called seats.
+        """
+        access = self._plan_access(request, pk)
+        if access is None:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        rehearsal = access[0]
+        user = request_user(request)
+        if not user_may_plan(user, rehearsal):
+            return Response(
+                {"detail": _("Only the conductor or the assistant conductor "
+                             "leading this rehearsal may send its plan.")},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         try:
-            rehearsal = RehearsalOperationsService.announce_plan(rehearsal=rehearsal)
+            rehearsal = RehearsalOperationsService.announce_plan(
+                rehearsal=rehearsal,
+                published_by=None if user_is_manager(user) else user,
+            )
         except ValueError as exc:
             return make_error_response(
                 request,
@@ -2295,9 +2353,18 @@ class RehearsalViewSet(viewsets.ModelViewSet):
                 detail=str(exc),
                 validation_errors={"plan": [str(exc)]},
             )
+        if not is_announceable(rehearsal.project):
+            delivery = 'withheld'
+        elif AnnouncementQueue.has_pending_change(
+            rehearsal.project, AnnouncementSubject.REHEARSAL, str(rehearsal.id), "plan",
+        ):
+            delivery = 'queued'
+        else:
+            delivery = 'sent'
         return Response({
             'rehearsal': str(rehearsal.id),
             'plan_announced_at': rehearsal.plan_announced_at,
+            'delivery': delivery,
         })
 
     @action(
@@ -2327,7 +2394,10 @@ class RehearsalViewSet(viewsets.ModelViewSet):
 
         The programme is deliberately absent. Knowing who to call over is the
         roll call's business; what the choir is singing belongs to the materials
-        scope, which a grant can withhold, and which has its own surface.
+        scope, which a grant can withhold, and which has its own surface. The
+        one other door to it is the plan editor (`plan/editor`), for a reader
+        `may_plan` admits: a plan is written against the programme, and the
+        planning switch says so on the grant.
 
         Resolved outside `get_queryset` on purpose: that one answers "which
         rehearsals are MINE as a singer", and a stand-in is usually not cast in
@@ -2337,7 +2407,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         try:
             rehearsal = (
                 Rehearsal.objects
-                .select_related('project', 'location', 'led_by', 'debrief_by')
+                .select_related('project__conductor', 'location', 'led_by', 'debrief_by')
                 .prefetch_related('invited_participations', 'plan_items__piece')
                 .filter(pk=pk)
                 .first()
@@ -2409,6 +2479,9 @@ class RehearsalViewSet(viewsets.ModelViewSet):
             # delegate, and the client must not infer the authority from the
             # mere fact that the read succeeded.
             'is_manager': user_is_manager(request.user),
+            # Whether this reader writes and sends the plan — the same
+            # predicate `plan` PUT and `plan/announce` ask.
+            'may_plan': user_may_plan(request_user(request), rehearsal),
             # Who was announced for this evening, explicit only — null is the
             # conductor. The page compares it with the reader to say "you run
             # this one" against "X runs this one, you may still take the roll".

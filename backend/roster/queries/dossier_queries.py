@@ -209,6 +209,7 @@ def get_artist_dossier(artist: Artist) -> dict[str, Any]:
                 "roll_call": delegation.can_take_roll_call,
                 "materials": delegation.can_open_materials,
                 "choir_marks": delegation.can_mark_for_choir,
+                "manage_rehearsals": delegation.can_manage_led_rehearsals,
             },
         }
         for delegation in led_by_project.values()

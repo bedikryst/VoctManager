@@ -5513,3 +5513,39 @@ msgstr "Dispense refusée — %(project)s"
 #, python-format
 msgid "We can't excuse you from the rehearsals — %(project)s"
 msgstr "Dispense refusée — %(project)s"
+
+#: roster/models.py
+msgid "Plans the Rehearsals They Lead"
+msgstr "Établit le plan de ses répétitions"
+
+#: roster/models.py
+msgid ""
+"Writes and sends the plan of every rehearsal of this project that they lead,"
+" and sees the programme to do so. Never creates or deletes a rehearsal."
+msgstr ""
+"Établit et envoie le plan de chaque répétition de ce projet qu’il dirige, et"
+" voit le programme pour cela. Ne crée ni ne supprime aucune répétition."
+
+#: notifications/message_content.py
+msgid ""
+"You plan the rehearsals you lead and send the plan to the singers. The plan "
+"editor shows you the project's programme."
+msgstr ""
+"Vous établissez le plan des répétitions que vous dirigez et l’envoyez aux "
+"choristes. L’éditeur du plan vous montre le programme du projet."
+
+#: roster/views.py
+msgid ""
+"Only the conductor or the assistant conductor leading this rehearsal may "
+"write its plan."
+msgstr ""
+"Seul le chef ou le chef assistant qui dirige cette répétition peut en "
+"établir le plan."
+
+#: roster/views.py
+msgid ""
+"Only the conductor or the assistant conductor leading this rehearsal may "
+"send its plan."
+msgstr ""
+"Seul le chef ou le chef assistant qui dirige cette répétition peut en "
+"envoyer le plan."

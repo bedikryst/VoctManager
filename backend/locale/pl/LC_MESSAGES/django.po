@@ -5482,3 +5482,39 @@ msgstr "Nie możemy Cię zwolnić z próby — %(project)s"
 #, python-format
 msgid "We can't excuse you from the rehearsals — %(project)s"
 msgstr "Nie możemy Cię zwolnić z prób — %(project)s"
+
+#: roster/models.py
+msgid "Plans the Rehearsals They Lead"
+msgstr "Układa plan swoich prób"
+
+#: roster/models.py
+msgid ""
+"Writes and sends the plan of every rehearsal of this project that they lead,"
+" and sees the programme to do so. Never creates or deletes a rehearsal."
+msgstr ""
+"Układa i wysyła plan każdej próby tego projektu, którą prowadzi, i widzi w "
+"tym celu program. Nie tworzy ani nie usuwa prób."
+
+#: notifications/message_content.py
+msgid ""
+"You plan the rehearsals you lead and send the plan to the singers. The plan "
+"editor shows you the project's programme."
+msgstr ""
+"Układasz plan prób, które prowadzisz, i wysyłasz go chórzystom. W edytorze "
+"planu widzisz program projektu."
+
+#: roster/views.py
+msgid ""
+"Only the conductor or the assistant conductor leading this rehearsal may "
+"write its plan."
+msgstr ""
+"Plan tej próby może ułożyć tylko dyrygent albo asystent dyrygenta, który ją "
+"prowadzi."
+
+#: roster/views.py
+msgid ""
+"Only the conductor or the assistant conductor leading this rehearsal may "
+"send its plan."
+msgstr ""
+"Plan tej próby może wysłać tylko dyrygent albo asystent dyrygenta, który ją "
+"prowadzi."
