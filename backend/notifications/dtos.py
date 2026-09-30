@@ -93,6 +93,9 @@ class ProjectInvitationMetadata(EnterpriseBaseDTO):
     project_id: UUID
     project_name: str
     participation_id: UUID
+    # The Project.EventKind CODE, so the bell asks the singer to a concert or
+    # to a Mass rather than to a "project". Empty on legacy rows.
+    event_kind: str = ""
     # Optional context — composers fall back to localized neutral copy when blank.
     inviter_name: str = ""
     # Canonical event moment, so the invitation states when the concert is in the
@@ -227,18 +230,24 @@ class SiteCopyProposedMetadata(EnterpriseBaseDTO):
     locales: tuple[str, ...] = ()
 
 
-class ProjectCancelledMetadata(EnterpriseBaseDTO):
+class ProjectCancelledMetadata(EventMomentMetadata):
     """A cancellation is an alarm in its own right, not a status field in a diff —
     it carries no `changes`, so the cast reads "cancelled" rather than a status
-    transition they have to decode."""
+    transition they have to decode. The event moment says which date to free."""
     project_id: UUID | None = None
     project_name: str
+    # The Project.EventKind CODE: "the concert is off" and "the Mass is off" are
+    # the sentence a singer reads. Empty on legacy rows.
+    event_kind: str = ""
     message: str | None = None
 
 
 class ProjectUpdatedMetadata(EnterpriseBaseDTO):
     project_id: UUID | None = None
     project_name: str
+    # The Project.EventKind CODE, after the save — a change of the kind itself
+    # is one of the `changes`. Empty on legacy rows.
+    event_kind: str = ""
     # Distinguishes the three artist-facing project events that share this type so
     # each is rendered with its own localized copy instead of an English message.
     event: str = "updated"  # "updated" | "removed"
@@ -298,6 +307,8 @@ class RehearsalDelegationMetadata(EnterpriseBaseDTO):
     """
     project_id: UUID
     project_name: str
+    # The Project.EventKind CODE the grant is for. Empty on legacy rows.
+    event_kind: str = ""
     granted_by_name: str = ""
     can_see_leader_marks: bool = False
     can_take_roll_call: bool = False
@@ -314,6 +325,8 @@ class RehearsalDelegationEndedMetadata(EnterpriseBaseDTO):
     """The delegation has been taken back. Nothing to explain, only to withdraw."""
     project_id: UUID
     project_name: str
+    # The Project.EventKind CODE. Empty on legacy rows.
+    event_kind: str = ""
     revoked_by_name: str = ""
 
 
@@ -512,6 +525,8 @@ class ContractIssuedMetadata(EnterpriseBaseDTO):
     contract_id: UUID | None = None
     project_id: UUID | None = None
     project_name: str
+    # The Project.EventKind CODE the contract pays for. Empty on legacy rows.
+    event_kind: str = ""
     message: str | None = None
 
 

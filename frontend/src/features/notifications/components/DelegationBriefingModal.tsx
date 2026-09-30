@@ -43,7 +43,7 @@ import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
 import { useDelegationBriefingQueue } from "../hooks/useDelegationBriefingQueue";
 import { useProjectInvitationQueue } from "../hooks/useProjectInvitationQueue";
-import { formatEventMoment } from "../lib/notificationFormat";
+import { eventKindContext, formatEventMoment } from "../lib/notificationFormat";
 
 /** One granted scope, as the briefing states it. */
 interface ScopeRow {
@@ -191,7 +191,7 @@ export const DelegationBriefingModal: React.FC = () => {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <Eyebrow color="amethyst">
-                      {t("notifications.delegation.eyebrow", "Jesteś asystentem dyrygenta")}
+                      {t("notifications.delegation.eyebrow", "Asystent dyrygenta")}
                     </Eyebrow>
                     {pendingCount > 1 && (
                       <Caption color="muted" className="tabular-nums">
@@ -212,13 +212,11 @@ export const DelegationBriefingModal: React.FC = () => {
                     {metadata.granted_by_name
                       ? t("notifications.delegation.asked_by_lede", {
                           name: metadata.granted_by_name,
-                          defaultValue:
-                            "{{name}} mianował(a) Cię asystentem dyrygenta w tym projekcie.",
+                          context: eventKindContext(metadata.event_kind),
                         })
-                      : t(
-                          "notifications.delegation.asked_lede",
-                          "Od teraz jesteś asystentem dyrygenta w tym projekcie.",
-                        )}
+                      : t("notifications.delegation.asked_lede", {
+                          context: eventKindContext(metadata.event_kind),
+                        })}
                   </Text>
                 </div>
               </div>

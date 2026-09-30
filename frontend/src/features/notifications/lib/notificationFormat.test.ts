@@ -4,7 +4,8 @@
  * o 18:15"). A bare weekday is only safe while it can name one date, so the
  * cases pin where it stops: the sixth day ahead, the seventh, anything already
  * past. The weekday is read from the event's own calendar day, never from the
- * UTC one, and the preposition inflects with it ("we wtorek").
+ * UTC one, and the preposition inflects with it ("we wtorek"). The change chips
+ * name stored codes (a status, an event kind, a minute count) in words.
  * @architecture Enterprise SaaS 2026
  * @module features/notifications/lib/notificationFormat.test
  */
@@ -16,7 +17,12 @@ import en from "@/shared/config/locales/en/translation.json";
 import fr from "@/shared/config/locales/fr/translation.json";
 import pl from "@/shared/config/locales/pl/translation.json";
 
-import { formatEventPhrase, formatEventSpan, type TFunc } from "./notificationFormat";
+import {
+  formatEventPhrase,
+  formatEventSpan,
+  renderChange,
+  type TFunc,
+} from "./notificationFormat";
 
 const i18n = i18next.createInstance();
 void i18n.init({
@@ -101,5 +107,24 @@ describe("formatEventSpan", () => {
     expect(
       formatEventSpan({ starts_at: "2026-10-07T16:15:00Z", timezone: WARSAW }, "pl", NOW),
     ).toBeUndefined();
+  });
+});
+
+describe("renderChange", () => {
+  const chip = (field: string, old: string, next: string, lang = "pl"): string =>
+    renderChange(tIn(lang), { field, old, new: next });
+
+  it("names a status and an event kind as the rest of the app does", () => {
+    expect(chip("status", "ACTIVE", "DONE")).toBe("Status: W przygotowaniu → Zrealizowano");
+    expect(chip("event_kind", "CONCERT", "MASS")).toBe("Rodzaj wydarzenia: Koncert → Msza");
+  });
+
+  it("spells a rehearsal length out, dropping a zero part", () => {
+    expect(chip("duration", "90", "120")).toBe("Czas trwania: 1 h 30 min → 2 h");
+    expect(chip("duration", "45", "150", "en")).toBe("Duration: 45 min → 2 h 30 min");
+  });
+
+  it("passes a code it does not know through unchanged", () => {
+    expect(chip("status", "ARCHIVED", "DONE")).toBe("Status: ARCHIVED → Zrealizowano");
   });
 });

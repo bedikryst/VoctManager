@@ -13,6 +13,12 @@
 
 import type { useTranslation } from "react-i18next";
 
+import {
+  PROJECT_EVENT_KIND,
+  PROJECT_STATUS,
+  type ProjectStatus,
+} from "@/features/projects/constants/projectDomain";
+import { getProjectStatusPresentation } from "@/features/projects/lib/projectPresentation";
 import { collapseVoiceLabels } from "@/shared/lib/voiceLabels";
 
 import type {
@@ -252,6 +258,53 @@ export const formatEventSpan = (
 export const changeLabel = (t: TFunc, fieldKey: string): string =>
   t(`notifications.changes.${fieldKey}`, fieldKey.replace(/_/g, " "));
 
+const STATUS_CODES: ReadonlySet<string> = new Set(Object.values(PROJECT_STATUS));
+const EVENT_KIND_CODES: ReadonlySet<string> = new Set(Object.values(PROJECT_EVENT_KIND));
+
+/**
+ * A change value stored as a code, named the way the rest of the app names it:
+ * a project status as its badge does, an event kind as the details picker does
+ * (the chip answers the picker's own question, "which kind is this now?"), a
+ * rehearsal length as "2 h 30 min". Mirrors the server's `_change_value`.
+ * Anything else, and any code this client does not know, passes through as is.
+ */
+const changeValue = (
+  t: TFunc,
+  fieldKey: string,
+  raw: string,
+  scope: readonly string[],
+): string => {
+  switch (fieldKey) {
+    case "voice_line":
+      return voiceLineLabel(t, raw, scope);
+    case "gives_pitch":
+      return t(`notifications.changes.boolean.${raw.toLowerCase()}`, raw);
+    case "status": {
+      if (!STATUS_CODES.has(raw)) return raw;
+      const { labelKey, fallbackLabel } = getProjectStatusPresentation(raw as ProjectStatus);
+      return t(labelKey, fallbackLabel);
+    }
+    case "event_kind":
+      return EVENT_KIND_CODES.has(raw)
+        ? t(`projects.details_tab.event_kind.${raw.toLowerCase()}`, raw)
+        : raw;
+    case "duration": {
+      const minutes = Number.parseInt(raw, 10);
+      if (!Number.isFinite(minutes)) return raw;
+      const hours = Math.floor(minutes / 60);
+      const rest = minutes % 60;
+      if (hours && rest) {
+        return t("notifications.changes.duration_value.hours_minutes", { hours, minutes: rest });
+      }
+      return hours
+        ? t("notifications.changes.duration_value.hours", { hours })
+        : t("notifications.changes.duration_value.minutes", { minutes: rest });
+    }
+    default:
+      return raw;
+  }
+};
+
 /** The change field a solo save records; its values are JSON duty lists. */
 export const SOLO_CHANGE_FIELD = "solo_assignments";
 
@@ -362,17 +415,10 @@ export const renderChange = (
   };
   const fieldKey = typeof field === "string" ? field : "";
   const label = fieldKey ? changeLabel(t, fieldKey) : "";
-  // Voice lines and flags are stored language-neutrally (a code, or Python's
-  // "True"/"False") — localize the values too, not just the field label.
-  const value = (raw: unknown): string => {
-    if (raw == null) return "";
-    const rawText = String(raw);
-    if (fieldKey === "voice_line") return voiceLineLabel(t, rawText, scope);
-    if (fieldKey === "gives_pitch") {
-      return t(`notifications.changes.boolean.${rawText.toLowerCase()}`, rawText);
-    }
-    return rawText;
-  };
+  // Codes, flags (Python's "True"/"False") and minute counts are stored
+  // language-neutrally — localize the values too, not just the field label.
+  const value = (raw: unknown): string =>
+    raw == null ? "" : changeValue(t, fieldKey, String(raw), scope);
   const from = value(old);
   const to = value(next);
 

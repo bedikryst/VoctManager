@@ -31,6 +31,7 @@ import {
 
 import { useProjectInvitationQueue } from "../hooks/useProjectInvitationQueue";
 import {
+  eventKindContext,
   formatEventMoment,
   voiceLineLabel,
   voiceScopeOf,
@@ -143,7 +144,9 @@ export const ProjectInvitationToasts: React.FC = () => {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <Eyebrow color="gold">
-                      {t("notifications.invitation_toast.title")}
+                      {t("notifications.invitation_toast.title", {
+                        context: eventKindContext(metadata.event_kind),
+                      })}
                     </Eyebrow>
                     {pendingCount > 1 && (
                       <span className="rounded-full bg-ethereal-ink/[0.06] px-2 py-0.5 text-[11px] font-semibold leading-none text-ethereal-graphite/70">

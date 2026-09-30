@@ -150,10 +150,15 @@ def resolve_location_and_timezone(location_id: UUID | None, fallback_timezone: s
         return None, fallback_timezone
 
 
-def _format_change_value(value: object) -> str | None:
+def _format_change_value(value: object, timezone_name: str | None = None) -> str | None:
     """Renders an audit-trail value for change logs (single source of truth).
-    Returns None for empty values so the renderer can show a localized dash."""
+    Returns None for empty values so the renderer can show a localized dash.
+
+    A datetime is stated on the event's own clock: the database and the panel
+    both hand it over in UTC, and the hour the cast keeps is the local one."""
     if isinstance(value, datetime):
+        if timezone_name and timezone.is_aware(value):
+            value = localize(value, timezone_name)
         return value.strftime(f'{DATE_FORMAT} %H:%M')
     if isinstance(value, date):
         return value.strftime(DATE_FORMAT)
@@ -164,11 +169,25 @@ def _format_change_value(value: object) -> str | None:
     return str(value)
 
 
-def _change(field: str, old: object, new: object) -> dict[str, str | None]:
+def _change(
+    field: str,
+    old: object,
+    new: object,
+    *,
+    old_zone: str | None = None,
+    new_zone: str | None = None,
+) -> dict[str, str | None]:
     """Builds one structured field change. `field` is a stable, localizable key;
     `old`/`new` are language-neutral display values. The human label is resolved
-    per language at render time (push/email composer + in-app NotificationItem)."""
-    return {"field": field, "old": _format_change_value(old), "new": _format_change_value(new)}
+    per language at render time (push/email composer + in-app NotificationItem).
+
+    The zones are the event's before and after the save: a move to another venue
+    can change the clock in the same edit that changes the hour."""
+    return {
+        "field": field,
+        "old": _format_change_value(old, old_zone),
+        "new": _format_change_value(new, new_zone),
+    }
 
 
 def _stated_day_windows(project: Project) -> dict[str, tuple[str | None, bool]]:
@@ -1024,7 +1043,10 @@ class ProjectManagementService:
                         changes.append(_change("run_sheet", None, None))
                     elif attr in ProjectManagementService._PROJECT_CHANGE_KEYS:
                         key = ProjectManagementService._PROJECT_CHANGE_KEYS[attr]
-                        changes.append(_change(key, old_value, value))
+                        changes.append(_change(
+                            key, old_value, value,
+                            old_zone=old_concert[1], new_zone=project.timezone,
+                        ))
                     # Fields outside the surfaceable set (description, spotify URL,
                     # and the window columns diffed as whole windows below) persist
                     # silently here — a note tweak isn't worth alerting the cast.
@@ -1076,6 +1098,11 @@ class ProjectManagementService:
                     cancelled_metadata = ProjectCancelledMetadata(
                         project_id=project.id,
                         project_name=project.title,
+                        event_kind=project.event_kind,
+                        **build_event_time_metadata(
+                            project.date_time, project.timezone,
+                            fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+                        ),
                     ).model_dump(mode="json")
                     announce_bulk(
                         project=project,
@@ -1098,6 +1125,7 @@ class ProjectManagementService:
                 metadata = ProjectUpdatedMetadata(
                     project_id=project.id,
                     project_name=project.title,
+                    event_kind=project.event_kind,
                     changes=unique_changes,
                 ).model_dump(mode="json")
 
@@ -1136,6 +1164,7 @@ class ProjectManagementService:
 
                 metadata = ProjectUpdatedMetadata(
                     project_name=project_name,
+                    event_kind=project.event_kind,
                     event="removed",
                 ).model_dump(mode="json")
 
@@ -1620,6 +1649,7 @@ class RehearsalDelegationService:
         metadata = RehearsalDelegationMetadata(
             project_id=delegate.project_id,
             project_name=delegate.project.title,
+            event_kind=delegate.project.event_kind,
             granted_by_name=_actor_name(granted_by),
             can_see_leader_marks=delegate.can_see_leader_marks,
             can_take_roll_call=delegate.can_take_roll_call,
@@ -1656,6 +1686,7 @@ class RehearsalDelegationService:
         metadata = RehearsalDelegationEndedMetadata(
             project_id=delegate.project_id,
             project_name=delegate.project.title,
+            event_kind=delegate.project.event_kind,
             revoked_by_name=_actor_name(revoked_by),
         ).model_dump(mode="json")
         transaction.on_commit(
@@ -1724,6 +1755,7 @@ class RehearsalOperationsService:
     def update_rehearsal(rehearsal: Rehearsal, dto: RehearsalUpdateDTO, invited_participations: list[Participation] | None = None) -> Rehearsal:
         changes: list[dict[str, str | None]] = []
         update_data = dto.model_dump(exclude={'location_id'}, exclude_unset=True)
+        old_zone = rehearsal.timezone
 
         with transaction.atomic():
             if 'location_id' in dto.model_fields_set:
@@ -1731,13 +1763,20 @@ class RehearsalOperationsService:
                     dto.location_id,
                     dto.timezone or rehearsal.timezone
                 )
-                update_data['location'] = location
-                update_data['timezone'] = resolved_timezone
 
                 if rehearsal.location_id != (location.id if location else None):
                     old_loc = rehearsal.location.name if rehearsal.location else None
                     new_loc = location.name if location else None
                     changes.append(_change("location", old_loc, new_loc))
+
+                # The apply loop below skips 'location'/'timezone', so the
+                # resolved venue and its clock are persisted here — the cast is
+                # told about a move that has to be the one on the schedule.
+                rehearsal.location = location
+                rehearsal.timezone = resolved_timezone
+                update_data.pop('timezone', None)
+            elif 'timezone' in update_data:
+                rehearsal.timezone = update_data['timezone']
 
             lead_changed = False
             for attr, value in update_data.items():
@@ -1760,7 +1799,10 @@ class RehearsalOperationsService:
                         changes.append(_change("now_mandatory" if value else "now_optional", None, None))
                     else:
                         key = RehearsalOperationsService._REHEARSAL_CHANGE_KEYS.get(attr, attr)
-                        changes.append(_change(key, old_value, value))
+                        changes.append(_change(
+                            key, old_value, value,
+                            old_zone=old_zone, new_zone=rehearsal.timezone,
+                        ))
                 setattr(rehearsal, attr, value)
 
             rehearsal.save()

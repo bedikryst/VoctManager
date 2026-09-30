@@ -2793,6 +2793,7 @@ class Command(BaseCommand):
         return {
             "project_id": str(project.id),
             "project_name": project.title,
+            "event_kind": project.event_kind,
             "location": project.location.name if project.location else "",
             **build_event_time_metadata(
                 project.date_time, project.timezone, fallback_timezone=DEFAULT_EVENT_TIMEZONE,

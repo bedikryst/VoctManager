@@ -41,6 +41,7 @@ import {
   briefingItemSummary,
   compactMetaLine,
   eventKindContext,
+  firstText,
   formatEventDate,
   formatEventMoment,
   formatEventPhrase,
@@ -69,12 +70,12 @@ interface NotificationItemProps {
   onClosePanel: () => void;
 }
 
-/** Localized label for a material kind ("score" | "recording"). Unknown/blank
- *  kinds yield no pill. */
-const materialKindLabel = (t: TFunc, kind?: string): string =>
-  kind === "score" || kind === "recording"
-    ? t(`notifications.materialKinds.${kind}`)
-    : "";
+/** A rehearsal's topic as the conductor wrote it, labelled the way the push
+ *  labels it; undefined when blank. */
+const focusQuote = (t: TFunc, focus: unknown): string | undefined => {
+  const text = firstText(focus);
+  return text ? t("notifications.row.focus", { text }) : undefined;
+};
 
 /** The plural section name for an S/A/T/B code, as the sectional form spells
  *  it; an unknown code renders as itself rather than as a hole. */
@@ -160,17 +161,17 @@ interface RowContent {
    * the name and starts lowercase; without one it stands alone in semibold.
    */
   sentence?: string;
-  /** Line 1 on a row not yet written as a sentence — the subject (bold, ink). */
+  /** Line 1 on a row not written as a sentence — the subject (bold, ink). Only
+   *  the channel post and the system alert, which the bell never words. */
   title?: string;
-  /** An accent pill rendered beside the title (e.g. the voice part). */
-  pill?: string;
   /** Line 2 — muted context: what the sentence did not say (project, place,
    *  the event's own date). */
   context?: string;
   /** Where the reader's plan starts when that precedes the call — a trip's
    *  departure — so the row never names only the concert hour. */
   planStart?: string;
-  /** Tertiary detail (focus, snippet, a count, removed copy). */
+  /** Tertiary detail, up to three lines (the reader's part of the evening, a
+   *  count, a whole admin message). */
   detail?: string;
   /** Text a person wrote — an excuse note, an excerpt — already in the
    *  locale's quotation marks. */
@@ -193,93 +194,137 @@ const describe = (
   lang: string,
 ): RowContent => {
   switch (notification.notification_type) {
-    case "PROJECT_INVITATION":
+    case "PROJECT_INVITATION": {
       // Who is asking is half of what an invitation means, and the push and the
-      // email both say it — the bell was the only surface that dropped it.
+      // email both say it. The event is named by its kind, never as a "project".
+      const m = notification.metadata;
+      const values = { project: m.project_name, context: eventKindContext(m.event_kind) };
       return {
-        title: notification.metadata.project_name,
-        context: compactMetaLine(
-          formatEventMoment(notification.metadata, lang, t, notification.metadata.date_range),
-          notification.metadata.location,
-        ),
-        planStart: formatPlanStart(notification.metadata, lang, t),
-        detail: notification.metadata.inviter_name
-          ? t("notifications.inapp.invited_by", {
-              name: notification.metadata.inviter_name,
-            })
-          : undefined,
+        actor: m.inviter_name || undefined,
+        sentence: m.inviter_name
+          ? t("notifications.row.invitation", values)
+          : t("notifications.row.invitation_anonymous", values),
+        context: compactMetaLine(formatEventMoment(m, lang, t, m.date_range), m.location),
+        planStart: formatPlanStart(m, lang, t),
       };
-    case "PROJECT_UPDATED":
-      if (notification.metadata.event === "removed") {
-        return {
-          title: notification.metadata.project_name,
-          detail: t("notifications.inapp.project_removed"),
-        };
+    }
+    case "PROJECT_UPDATED": {
+      const m = notification.metadata;
+      const values = { project: m.project_name, context: eventKindContext(m.event_kind) };
+      if (m.event === "removed") {
+        return { sentence: t("notifications.row.project_removed", values) };
       }
       return {
-        title: notification.metadata.project_name,
-        changeChips: renderChanges(t, notification.metadata.changes),
+        sentence: t("notifications.row.project_updated", values),
+        changeChips: renderChanges(t, m.changes),
       };
+    }
     case "PROJECT_BRIEFING": {
       // Everything one singer has not been told about one project. The row lists
-      // the items rather than counting them: "3 changes" tells nobody whether one
-      // of them is their own part.
-      const items = notification.metadata.items ?? [];
+      // the items rather than only counting them: "3 changes" tells nobody
+      // whether one of them is their own part.
+      const m = notification.metadata;
+      const items = m.items ?? [];
       return {
-        title: notification.metadata.project_name,
-        context: t("notifications.briefing.count", { count: items.length }),
+        sentence: t("notifications.row.briefing", {
+          count: items.length,
+          project: m.project_name,
+          context: eventKindContext(m.event_kind),
+        }),
         // The conductor's own words, if they wrote any — authored text, verbatim.
-        detail: notification.metadata.note || undefined,
+        quote: quoted(t, m.note),
         bullets: briefingBullets(t, lang, items),
       };
     }
-    case "PROJECT_CANCELLED":
-      // The type eyebrow already reads "Project cancelled" — don't echo it in the
-      // body. The project name under that eyebrow is unambiguous on its own.
-      return { title: notification.metadata.project_name as string | undefined };
-    case "REHEARSAL_SCHEDULED":
+    case "PROJECT_CANCELLED": {
+      // The date under the sentence is the one to free.
+      const m = notification.metadata;
       return {
-        title: notification.metadata.project_name,
-        context: compactMetaLine(
-          formatEventMoment(notification.metadata, lang, t),
-          notification.metadata.location,
-        ),
-        detail: notification.metadata.focus || undefined,
+        sentence: t("notifications.row.project_cancelled", {
+          project: m.project_name,
+          context: eventKindContext(m.event_kind),
+        }),
+        context: formatEventMoment(m, lang, t),
       };
-    case "REHEARSAL_UPDATED":
+    }
+    case "REHEARSAL_SCHEDULED": {
+      const m = notification.metadata;
+      const when = formatEventPhrase(m, lang, t);
       return {
-        title: notification.metadata.project_name,
+        sentence: withMoment(t, "notifications.row.rehearsal_scheduled", when),
         context: compactMetaLine(
-          formatEventMoment(notification.metadata, lang, t),
-          notification.metadata.location,
+          m.project_name,
+          when ? undefined : formatEventMoment(m, lang, t),
+          m.location,
         ),
-        detail: notification.metadata.focus || undefined,
+        quote: focusQuote(t, m.focus),
+      };
+    }
+    case "REHEARSAL_UPDATED": {
+      // Three different pieces of news share this type: the evening moved, its
+      // plan went out, or something else about it changed. Each is its own
+      // sentence, and the chips say what exactly.
+      const m = notification.metadata;
+      const when = formatEventPhrase(m, lang, t);
+      const fields = (m.changes ?? []).map((change) => change.field);
+      const planOnly = fields.length === 1 && fields[0] === "plan";
+      const context = compactMetaLine(
+        m.project_name,
+        when ? undefined : formatEventMoment(m, lang, t),
+        planOnly ? undefined : m.location,
+      );
+      if (planOnly) {
+        // The sentence names the plan, so it carries no chip repeating it.
+        return {
+          sentence: withMoment(
+            t,
+            m.plan_revised
+              ? "notifications.row.rehearsal_plan_revised"
+              : "notifications.row.rehearsal_plan",
+            when,
+          ),
+          context,
+        };
+      }
+      return {
+        sentence: !fields.includes("date_time")
+          ? withMoment(t, "notifications.row.rehearsal_updated", when)
+          : when
+            ? t("notifications.row.rehearsal_moved", { when })
+            : t("notifications.row.rehearsal_moved_undated"),
+        context,
+        // A changed topic is already a chip; the quote states the one standing.
+        quote: fields.includes("focus") ? undefined : focusQuote(t, m.focus),
         // A resend of the plan names itself as a change, not as the plan
         // arriving again.
         changeChips: renderChanges(
           t,
-          notification.metadata.plan_revised
-            ? notification.metadata.changes.map((change) =>
+          m.plan_revised
+            ? m.changes.map((change) =>
                 change.field === "plan" ? { ...change, field: "plan_revised" } : change,
               )
-            : notification.metadata.changes,
+            : m.changes,
         ),
       };
-    case "REHEARSAL_CANCELLED":
-      // "Rehearsal cancelled" is already the eyebrow — show only the project.
+    }
+    case "REHEARSAL_CANCELLED": {
+      // Where it would have been no longer matters; which evening is now free does.
+      const m = notification.metadata;
+      const when = formatEventPhrase(m, lang, t);
       return {
-        title: notification.metadata.project_name,
+        sentence: withMoment(t, "notifications.row.rehearsal_cancelled", when),
         context: compactMetaLine(
-          formatEventMoment(notification.metadata, lang, t),
-          notification.metadata.location,
+          m.project_name,
+          when ? undefined : formatEventMoment(m, lang, t),
         ),
-        detail: notification.metadata.focus || undefined,
       };
+    }
     case "REHEARSAL_REMINDER": {
       // The reader's own part of the evening, beside the evening's own hours:
       // the reminder is the one message that knows it, and this row is where
       // most people read the reminder.
-      const window = notification.metadata.my_window;
+      const m = notification.metadata;
+      const window = m.my_window;
       const windowLabel = planWindowLabel(window, t);
       const part = !windowLabel
         ? undefined
@@ -288,14 +333,18 @@ const describe = (
           : t("schedule.rehearsal.plan.my_part_inline", "Twoja część {{window}}", {
               window: windowLabel,
             });
+      const when = formatEventPhrase(m, lang, t);
       return {
-        title: notification.metadata.project_name as string | undefined,
+        sentence: when
+          ? t("notifications.row.rehearsal_reminder", { when })
+          : t("notifications.row.rehearsal_reminder_undated"),
         context: compactMetaLine(
-          formatEventMoment(notification.metadata, lang, t, notification.metadata.rehearsal_date),
-          notification.metadata.location,
-          part,
+          m.project_name,
+          when ? undefined : formatEventMoment(m, lang, t, m.rehearsal_date),
+          m.location,
         ),
-        detail: notification.metadata.focus || undefined,
+        detail: part,
+        quote: focusQuote(t, m.focus),
       };
     }
     case "REHEARSAL_DELEGATED": {
@@ -316,35 +365,38 @@ const describe = (
           ? t("notifications.delegation.scope_choir_marks", "Uwagi dla chóru")
           : null,
       ].filter((scope): scope is string => scope !== null);
+      const m = notification.metadata;
+      const values = { project: m.project_name, context: eventKindContext(m.event_kind) };
       return {
-        title: notification.metadata.project_name,
-        context: notification.metadata.granted_by_name
-          ? t("notifications.delegation.asked_by", {
-              name: notification.metadata.granted_by_name,
-              defaultValue: "Mianował(a) {{name}}",
-            })
-          : undefined,
-        detail: notification.metadata.note || undefined,
+        actor: m.granted_by_name || undefined,
+        sentence: m.granted_by_name
+          ? t("notifications.row.delegated", values)
+          : t("notifications.row.delegated_anonymous", values),
+        quote: quoted(t, m.note),
         changeChips: scopes,
       };
     }
     case "REHEARSAL_DELEGATION_ENDED":
-      // "Leadership ended" is already the eyebrow — the project name under it
-      // says everything that is left to say.
-      return { title: notification.metadata.project_name };
+      return {
+        sentence: t("notifications.row.delegation_ended", {
+          project: notification.metadata.project_name,
+          context: eventKindContext(notification.metadata.event_kind),
+        }),
+      };
     case "REHEARSAL_LEAD_ASSIGNED": {
       // The date is the message. A sectional names its sections as chips —
       // the one fact that changes what the reader prepares; a tutti has none.
-      const sections = (notification.metadata.sections ?? []).map((code) =>
-        sectionName(t, code),
-      );
+      const m = notification.metadata;
+      const sections = (m.sections ?? []).map((code) => sectionName(t, code));
+      const when = formatEventPhrase(m, lang, t);
       return {
-        title: notification.metadata.project_name,
+        sentence: withMoment(t, "notifications.row.lead_assigned", when),
         context: compactMetaLine(
-          formatEventMoment(notification.metadata, lang, t),
-          notification.metadata.location,
+          m.project_name,
+          when ? undefined : formatEventMoment(m, lang, t),
+          m.location,
         ),
-        detail: notification.metadata.focus || undefined,
+        quote: focusQuote(t, m.focus),
         changeChips: sections.length > 0 ? sections : undefined,
       };
     }
@@ -364,92 +416,98 @@ const describe = (
         quote: quoted(t, notification.metadata.excerpt),
       };
     }
-    case "PROJECT_REMINDER":
+    case "PROJECT_REMINDER": {
       // A trip reminder names the departure too: the concert hour alone would
-      // send a traveller to the venue a day late.
+      // send a traveller to the venue a day late. No "już" before the moment —
+      // the row is re-read after the evening, and "already yesterday" is wrong.
+      const m = notification.metadata;
+      const when = formatEventPhrase(m, lang, t);
+      const values = { project: m.project_name, context: eventKindContext(m.event_kind) };
       return {
-        title: notification.metadata.project_name as string | undefined,
+        sentence: when
+          ? t("notifications.row.project_reminder", { ...values, when })
+          : t("notifications.row.project_reminder_undated", values),
         context: compactMetaLine(
-          formatEventMoment(notification.metadata, lang, t, notification.metadata.date_range),
-          notification.metadata.location,
+          when ? undefined : formatEventMoment(m, lang, t, m.date_range),
+          m.location,
         ),
-        planStart: formatPlanStart(notification.metadata, lang, t),
+        planStart: formatPlanStart(m, lang, t),
       };
-    case "PIECE_CASTING_ASSIGNED":
-      // The premium casting row: the piece as the title, the voice part as an
-      // accent pill, and the concert (name · date) as the muted context line so
-      // the singer sees exactly which programme this part is for.
+    }
+    case "PIECE_CASTING_ASSIGNED": {
+      // The part is stated after a colon rather than after "you sing": a player
+      // is cast too, and "Akompaniament" is not something anyone sings. The
+      // concert (name · date) says which programme the part is for.
+      const m = notification.metadata;
+      const voice = voiceLineLabel(t, m.voice_line, voiceScopeOf(m));
       return {
-        title: notification.metadata.piece_title,
-        pill: voiceLineLabel(
-          t,
-          notification.metadata.voice_line,
-          voiceScopeOf(notification.metadata),
-        ),
-        context: compactMetaLine(
-          notification.metadata.project_name,
-          formatEventMoment(notification.metadata, lang, t),
-        ),
+        sentence: voice
+          ? t("notifications.row.casting_assigned", { piece: m.piece_title, voice })
+          : t("notifications.row.casting_assigned_plain", { piece: m.piece_title }),
+        context: compactMetaLine(m.project_name, formatEventMoment(m, lang, t)),
       };
-    case "PIECE_CASTING_UPDATED":
-      if (notification.metadata.event === "removed") {
+    }
+    case "PIECE_CASTING_UPDATED": {
+      const m = notification.metadata;
+      if (m.event === "removed") {
         return {
-          title: notification.metadata.piece_title,
-          context: notification.metadata.project_name,
-          detail: t("notifications.inapp.casting_removed"),
+          sentence: t("notifications.row.casting_removed", { piece: m.piece_title }),
+          context: m.project_name,
         };
       }
-      // A solo notice carries no voice line: the pill says "Solos" so the news
-      // cannot read as a move of the reader's choir part, and the chips name
-      // each passage that was given, renamed or taken away.
-      if (isSoloChange(notification.metadata.changes)) {
+      // A solo notice carries no voice line, and its sentence says "solos" so
+      // the news cannot read as a move of the reader's choir part; the chips
+      // name each passage that was given, renamed or taken away.
+      if (isSoloChange(m.changes)) {
         return {
-          title: notification.metadata.piece_title,
-          pill: t("notifications.changes.solo_assignments", "Solówki"),
-          context: notification.metadata.project_name,
-          changeChips: renderChanges(t, notification.metadata.changes),
+          sentence: t("notifications.row.casting_solos", { piece: m.piece_title }),
+          context: m.project_name,
+          changeChips: renderChanges(t, m.changes),
         };
       }
       return {
-        title: notification.metadata.piece_title,
-        pill: voiceLineLabel(
-          t,
-          notification.metadata.voice_line,
-          voiceScopeOf(notification.metadata),
-        ),
-        context: notification.metadata.project_name,
-        changeChips: renderChanges(
-          t,
-          notification.metadata.changes,
-          voiceScopeOf(notification.metadata),
-        ),
+        sentence: t("notifications.row.casting_updated", { piece: m.piece_title }),
+        context: m.project_name,
+        changeChips: renderChanges(t, m.changes, voiceScopeOf(m)),
       };
-    case "MATERIAL_UPLOADED":
-      // Piece-scoped (fans out across every concert programming it), so there's no
-      // single project — the kind (score/recording) is the pill, the composer the
-      // context.
+    }
+    case "MATERIAL_UPLOADED": {
+      // Piece-scoped (fans out across every concert programming it), so there's
+      // no single project — the composer is the context.
+      const m = notification.metadata;
+      const kind =
+        m.material_kind === "score" || m.material_kind === "recording"
+          ? m.material_kind
+          : "other";
       return {
-        title: notification.metadata.piece_title,
-        pill: materialKindLabel(t, notification.metadata.material_kind),
-        context: notification.metadata.composer_name || undefined,
+        sentence: m.piece_title
+          ? t(`notifications.row.material_${kind}`, { piece: m.piece_title })
+          : t("notifications.row.material_untitled"),
+        context: m.composer_name || undefined,
       };
+    }
     case "ABSENCE_APPROVED":
+    case "ABSENCE_REJECTED": {
+      // The verdict is the sentence, so the eyebrow is only the category. The
+      // singer pressed "I won't be there" rather than asking, so a refusal says
+      // "we can't excuse you", never "your request was declined".
+      const m = notification.metadata;
+      const verdict = notification.notification_type === "ABSENCE_APPROVED" ? "approved" : "rejected";
+      const range = (m.rehearsal_count ?? 0) > 1 ? formatEventSpan(m, lang) : undefined;
+      const when = range ? undefined : formatEventPhrase(m, lang, t);
       return {
-        title: notification.metadata.project_name,
-        context: formatEventMoment(
-          notification.metadata, lang, t, notification.metadata.rehearsal_date,
-        ),
-        detail: t("notifications.inapp.absence_approved"),
-      };
-    case "ABSENCE_REJECTED":
-      // Eyebrow carries "Absence not approved"; the project + rehearsal date say
-      // which one. Echoing "not approved" in the body added nothing.
-      return {
-        title: notification.metadata.project_name,
-        context: formatEventMoment(
-          notification.metadata, lang, t, notification.metadata.rehearsal_date,
+        sentence: range
+          ? t(`notifications.row.absence_${verdict}_span`, {
+              count: m.rehearsal_count ?? 0,
+              range,
+            })
+          : withMoment(t, `notifications.row.absence_${verdict}`, when),
+        context: compactMetaLine(
+          m.project_name,
+          range || when ? undefined : formatEventMoment(m, lang, t, m.rehearsal_date),
         ),
       };
+    }
     case "ABSENCE_REQUESTED": {
       // Worded as the button the singer pressed: "Nie będę obecny" is a
       // statement, not a request, and only a legacy row carries EXCUSED. A span
@@ -550,24 +608,35 @@ const describe = (
         detail: named.length > 1 ? named.slice(0, 2).join(" · ") : undefined,
       };
     }
-    case "MESSAGE_RECEIVED":
+    case "MESSAGE_RECEIVED": {
       // Subject + snippet are user-authored content — passed through verbatim.
+      const m = notification.metadata;
       return {
-        title: notification.metadata.title,
-        context: notification.metadata.sender_name,
-        detail: notification.metadata.snippet,
+        actor: m.sender_name || undefined,
+        sentence: m.title
+          ? t("notifications.row.message_received", { subject: m.title })
+          : t("notifications.row.message_received_untitled"),
+        quote: quoted(t, m.snippet),
       };
+    }
     case "CHANNEL_MESSAGE":
       return {
         title: notification.metadata.project_name,
         context: notification.metadata.sender_name,
         detail: notification.metadata.snippet || undefined,
       };
-    case "CUSTOM_ADMIN_MESSAGE":
+    case "CUSTOM_ADMIN_MESSAGE": {
+      const m = notification.metadata;
       return {
-        title: notification.metadata.title,
-        detail: notification.metadata.message,
+        actor: m.sender_name || undefined,
+        sentence: m.sender_name
+          ? t("notifications.row.admin_message", { title: m.title })
+          : t("notifications.row.admin_message_anonymous", { title: m.title }),
+        // The message is the whole point of the row, so it takes the detail
+        // line's third line rather than the quote's two.
+        detail: quoted(t, m.message),
       };
+    }
     case "NOTIFICATION_READ_RECEIPT":
       return {
         actor: notification.metadata.artist_name,
@@ -576,10 +645,11 @@ const describe = (
         }),
       };
     case "CONTRACT_ISSUED":
-      // The eyebrow says "Contract"; only the row can say it needs signing.
       return {
-        title: notification.metadata.project_name as string | undefined,
-        detail: t("notifications.inapp.contract_issued"),
+        sentence: t("notifications.row.contract_issued", {
+          project: notification.metadata.project_name,
+          context: eventKindContext(notification.metadata.event_kind),
+        }),
       };
     case "SYSTEM_ALERT":
       return {
@@ -839,7 +909,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   };
 
   const {
-    actor, sentence, title, pill, context, planStart, detail, quote, changeChips, bullets,
+    actor, sentence, title, context, planStart, detail, quote, changeChips, bullets,
   } = describe(notification, t, i18n.language);
   // A sentence written to continue a name opens lowercase; should the name be
   // missing, it has to stand as a sentence of its own.
@@ -911,26 +981,18 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         </div>
 
         {(standalone || title) && (
-          <div className="mt-1.5 flex items-start justify-between gap-2">
+          <div className="mt-1.5">
             {standalone && actor ? (
-              <Text size="sm" className="min-w-0 leading-snug">
+              <Text size="sm" className="leading-snug">
                 <Text as="span" size="sm" weight="semibold" className="leading-snug">
                   {actor}
                 </Text>{" "}
                 {standalone}
               </Text>
             ) : (
-              <Text as="span" size="sm" weight="semibold" className="min-w-0 leading-snug">
+              <Text size="sm" weight="semibold" className="leading-snug">
                 {standalone || title}
               </Text>
-            )}
-            {pill && (
-              <Badge
-                variant="outline"
-                className={cn("mt-0.5 shrink-0 border-transparent", accentStyle.tile)}
-              >
-                {pill}
-              </Badge>
             )}
           </div>
         )}

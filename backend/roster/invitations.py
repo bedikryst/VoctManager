@@ -301,6 +301,7 @@ def build_invitation_metadata(
         project_id=participation.project_id,
         project_name=project.title,
         participation_id=participation.id,
+        event_kind=project.event_kind,
         inviter_name=inviter_name,
         **event_time_metadata,
         date_range=event_time_metadata["starts_at_display"],

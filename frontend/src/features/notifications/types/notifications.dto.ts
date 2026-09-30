@@ -99,6 +99,8 @@ export interface ProjectInvitationMetadata
   project_id: string;
   project_name: string;
   participation_id: string;
+  /** Project.EventKind CODE; empty on legacy rows, which read as a concert. */
+  event_kind?: string;
   inviter_name?: string;
   /** Legacy display fallback for rows emitted before the canonical event moment. */
   date_range?: string;
@@ -120,8 +122,26 @@ export interface ProjectInvitationMetadata
 export interface ProjectUpdatedMetadata {
   project_id?: string;
   project_name: string;
+  /** Project.EventKind CODE after the save; empty on legacy rows. */
+  event_kind?: string;
   event?: ProjectChangeEvent;
   changes?: FieldChange[];
+}
+
+/** A cancellation names the event and the date it no longer holds. */
+export interface ProjectCancelledMetadata extends EventMomentMetadata {
+  project_id?: string;
+  project_name: string;
+  /** Project.EventKind CODE; empty on legacy rows. */
+  event_kind?: string;
+}
+
+export interface ContractIssuedMetadata {
+  contract_id?: string;
+  project_id?: string;
+  project_name: string;
+  /** Project.EventKind CODE the contract pays for; empty on legacy rows. */
+  event_kind?: string;
 }
 
 /** What a briefing item is about, and which lifecycle step it records. Mirrors
@@ -151,6 +171,8 @@ export interface BriefingItemMetadata {
 export interface ProjectBriefingMetadata {
   project_id?: string;
   project_name: string;
+  /** Project.EventKind CODE; empty on legacy rows. */
+  event_kind?: string;
   /** The conductor's own words, written when publishing the queue. */
   note?: string;
   items?: BriefingItemMetadata[];
@@ -237,6 +259,8 @@ export interface DelegatedRehearsalMetadata extends EventMomentMetadata {
 export interface RehearsalDelegationMetadata {
   project_id: string;
   project_name: string;
+  /** Project.EventKind CODE; empty on legacy rows. */
+  event_kind?: string;
   granted_by_name?: string;
   can_see_leader_marks?: boolean;
   can_take_roll_call?: boolean;
@@ -253,6 +277,8 @@ export interface RehearsalDelegationMetadata {
 export interface RehearsalDelegationEndedMetadata {
   project_id: string;
   project_name: string;
+  /** Project.EventKind CODE; empty on legacy rows. */
+  event_kind?: string;
   revoked_by_name?: string;
 }
 
@@ -377,6 +403,9 @@ export interface AbsenceStatusMetadata extends EventMomentMetadata {
   project_name?: string;
   /** Legacy display fallback for rows emitted before the canonical event moment. */
   rehearsal_date?: string;
+  /** A decision over a span: how many rehearsals it reached (`ends_at` closes
+   *  it). Absent on a single evening. */
+  rehearsal_count?: number | null;
 }
 
 export interface ManagerActionMetadata extends EventMomentMetadata {
@@ -515,12 +544,14 @@ export type NotificationDTO = BaseNotification &
         metadata: SiteCopyProposedMetadata;
       }
     | {
-        notification_type:
-          | "PROJECT_CANCELLED"
-          | "CONTRACT_ISSUED"
-          | "SYSTEM_ALERT";
-        metadata: DefaultMetadata;
+        notification_type: "PROJECT_CANCELLED";
+        metadata: ProjectCancelledMetadata;
       }
+    | {
+        notification_type: "CONTRACT_ISSUED";
+        metadata: ContractIssuedMetadata;
+      }
+    | { notification_type: "SYSTEM_ALERT"; metadata: DefaultMetadata }
     | { notification_type: "PROJECT_REMINDER"; metadata: ProjectReminderMetadata }
     | {
         notification_type: "CUSTOM_ADMIN_MESSAGE";

@@ -2226,6 +2226,26 @@ class RehearsalNotificationEmitterTests(TestCase):
         self.assertEqual(meta["starts_at_display"], "19.06.2026, 19:00")
         self.assertEqual(meta["focus"], "Lacrimosa")
 
+    def test_a_moved_rehearsal_reads_on_the_clock_of_its_venue(self) -> None:
+        from .dtos import RehearsalUpdateDTO
+
+        rehearsal = Rehearsal.objects.create(
+            project=self.project, date_time=self.WHEN, timezone="Europe/Warsaw",
+        )
+        rehearsal.refresh_from_db()
+        venue = self._location()
+        kwargs = self._emit_queued(lambda: RehearsalOperationsService.update_rehearsal(
+            rehearsal,
+            RehearsalUpdateDTO(date_time=self.WHEN + timedelta(hours=1), location_id=venue.id),
+        ))
+        changes = {c["field"]: c for c in kwargs["metadata"]["changes"]}
+        self.assertEqual(
+            changes["date_time"],
+            {"field": "date_time", "old": "19.06.2026 19:00", "new": "19.06.2026 20:00"},
+        )
+        rehearsal.refresh_from_db()
+        self.assertEqual(rehearsal.location_id, venue.id)
+
     def test_cancel_emits_identity_and_event_facts_after_soft_delete(self) -> None:
         rehearsal = Rehearsal.objects.create(
             project=self.project, date_time=self.WHEN, timezone="Europe/Warsaw",
@@ -2573,6 +2593,43 @@ class ProjectUpdateNotificationEmitterTests(TestCase):
         # The edit still persists.
         self.project.refresh_from_db()
         self.assertEqual(self.project.run_sheet, [{"time": "18:00", "label": "Zbiórka"}])
+
+    def test_a_moved_concert_reads_on_the_clock_of_its_venue(self) -> None:
+        """The database hands a datetime back in UTC, and the panel sends one in
+        UTC too; the diff states both ends on the concert's own clock, since that
+        is the hour on the poster."""
+        import zoneinfo
+
+        from notifications.announcement_queue import AnnouncementQueue
+
+        from .dtos import ProjectUpdateDTO
+
+        warsaw = zoneinfo.ZoneInfo("Europe/Warsaw")
+        self.project.date_time = datetime(2026, 10, 7, 19, 0, tzinfo=warsaw)
+        self.project.call_time = datetime(2026, 10, 7, 18, 0, tzinfo=warsaw)
+        self.project.timezone = "Europe/Warsaw"
+        self.project.save(update_fields=["date_time", "call_time", "timezone"])
+        self.project.refresh_from_db()
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project,
+                ProjectUpdateDTO(
+                    date_time=datetime(2026, 10, 7, 18, 0, tzinfo=UTC),
+                    call_time=datetime(2026, 10, 7, 17, 15, tzinfo=UTC),
+                ),
+            )
+            AnnouncementQueue.publish(self.project)
+
+        changes = {c["field"]: c for c in bulk.call_args.kwargs["metadata"]["changes"]}
+        self.assertEqual(
+            changes["date_time"],
+            {"field": "date_time", "old": "07.10.2026 19:00", "new": "07.10.2026 20:00"},
+        )
+        self.assertEqual(
+            changes["call_time"],
+            {"field": "call_time", "old": "07.10.2026 18:00", "new": "07.10.2026 19:15"},
+        )
 
     def test_a_moved_window_reaches_the_cast_as_one_row_with_both_ends(self) -> None:
         """The four window columns are two facts, and the diff says which moved.

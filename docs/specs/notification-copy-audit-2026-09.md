@@ -1,6 +1,6 @@
 # Notification copy audit — the bell speaks in sentences
 
-Status: **Stage 1 implemented 2026-09-30** (record under Stage 1). Stages 2–4 open, in order.
+Status: **Stages 1 and 2 implemented 2026-09-30** (records under each). Stages 3–4 open, in order.
 
 Written 2026-09-30 from a manager's bell full of rows like `Piotr Jewuła / Pochwała Stworzenia ·
 środa, 7 października o 18:14 / się spóźni`. Scope: every in-app surface that speaks for a
@@ -270,6 +270,32 @@ invitation, project updated/removed, project cancelled, contract issued, delegat
 ended (grep each emitter; `ProjectBriefingMetadata` and the reminder already carry it). Then the
 singer table, the message rows, the change chips (the UTC test first) and the other in-app
 surfaces above.
+
+*Done 2026-09-30, and where it differs from the text above:*
+- The UTC test failed as feared: a concert moved 19:00 → 20:00 in Warsaw diffed as
+  `17:00 → 18:00` in push, e-mail and bell. `_change` now takes the event's zone before and after
+  the save (`old_zone` / `new_zone`), for projects and rehearsals alike. The rehearsal test also
+  showed that `update_rehearsal` never saved a new venue or zone (the apply loop skipped both
+  before `setattr`) while announcing the move; fixed in the same place.
+- `CONTRACT_ISSUED` has no production emitter (only `seed_db`), so its `event_kind` is carried by
+  the DTO and the seed. `PROJECT_CANCELLED` also gained the event moment, so its context line can
+  name the date to free; the push does not read it.
+- Worded for players too, since instrumentalists are cast: `zaprasza Cię do udziału w…` (not
+  `do śpiewania`), `Nie jesteś już w obsadzie koncertu „X”.`, `Twoja partia w utworze „X”:
+  Sopran 1.` (not `Śpiewasz partię…`: nobody sings `Akompaniament`), `Nie masz już partii w
+  utworze „X”.` The toast title follows: `Zaproszenie do udziału w koncercie`.
+- No future-tense or `już` in rows that outlive their evening: the reminder reads `Koncert „X”
+  jutro o 19:00.` and a moved rehearsal `Nowy termin próby: {when}.` (`teraz jutro`, `odbędzie
+  się wczoraj` and `już wczoraj` are what a re-rendered old row would have said).
+- ABSENCE_REJECTED says `Nie możemy Cię zwolnić z próby {when} — liczymy na Ciebie.`, matching the
+  e-mail: the singer pressed "Nie będę obecny", so there was no request to decline.
+- The assistant modal names the event by kind (`w tym koncercie`, `w tej mszy`), not `w tym
+  projekcie`. REHEARSAL_LEAD_ASSIGNED keeps the topic as a `Temat:` quote, like the other
+  rehearsal rows.
+- The pill is gone from every row (voice, solos and material kind are in the sentences).
+- Deleted: `inapp.project_removed`, `inapp.absence_approved`, `inapp.invited_by`,
+  `inapp.contract_issued`, `delegation.asked_by`, `materialKinds.*`, `briefing.count_*`. Fixed on
+  the way: `briefing.more` interpolated `{{n}}` but was given `count`, so it printed `{{n}}`.
 
 **Stage 3 — rows that stop lying.**
 - A new `ANNOUNCEMENT_PENDING` for a project marks the older unread ones for that project read;
