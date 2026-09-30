@@ -92,17 +92,16 @@ gemini.md
 CLAUDE.md
 AGENTS.md
 AGENTS.override.md
-docs/specs/welcome-invitation-and-email-gating-spec.md
 
+# Private working documents. The repository is public, so specs, finished specs,
+# legal drafts, contracts and board material stay on the maintainer's machine,
+# whole folders at a time; tools/backup-private.ps1 is their off-machine copy.
+# Only the durable reference at the docs/ root ships.
+docs/specs/
+docs/archive/
+docs/legal/
 docs/about/
-docs/specs/press/
 docs/umowy/
-# Local only while the repository is public: the contract specs carry questions
-# for counsel and the accounting office, and the messaging audit describes access
-# gaps until its fixes are deployed.
-docs/specs/project-finance-contract-drafts-2026-09.md
-docs/specs/contract-parts-annex-2026-09.md
-docs/specs/messaging-audit-2026-09.md
 # Brand identity lab: study scripts and their renders, local only. What a
 # settled direction produces for the app (vector masters, icons) goes under
 # frontend/public/ and ships in git.

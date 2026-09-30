@@ -8,6 +8,11 @@ Three shelves. Which shelf a file sits on is the claim about whether it still bi
 | `docs/specs/` | Work with something left to do. Each file opens with a `Status:` line or a `Still open` section. | Read the status before acting. A stage marked shipped is history; the rest is the plan. |
 | `docs/archive/` | Finished work — closed, complete or superseded. | Read it to learn **why** an existing shape is the way it is. Never read it as a plan. |
 
+Only the root shelf is in git. `docs/specs/`, `docs/archive/` and `docs/legal/` are working
+documents kept on the maintainer's machine and backed up by `tools/backup-private.ps1`, because
+they carry the foundation's internal matters — board decisions, contracts, legal drafts — and this
+repository is public. Paths into them that appear in code comments resolve only on that machine.
+
 A file moves from `specs/` to `archive/` when its last stage ships, or when a newer spec supersedes
 it. Nothing is deleted for being old: the reasoning is the point, and re-deriving it costs more than
 storing it.
