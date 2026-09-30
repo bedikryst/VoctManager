@@ -10,15 +10,20 @@
 #
 # THE RELEASE, THE ANNOUNCEMENTS AND THE BIOGRAMS ARE THE BOARD'S PDFs, served as they were sent
 # and under the names they were sent with (Ania, 28.09.2026): editors expect one predictable
-# format for every text, and the names are ordered and descriptive on purpose. The files sit in
-# `press-pack/kits/pochwala-stworzenia/` (outside git); a corrected PDF under the same name needs
-# only `npm run press:pack`, a new name needs `documents`.
+# format for every text, and the names are ordered and descriptive on purpose. The release and the
+# two announcements also come as Word (`docx`, Ania, 29.09.2026): the Polish cultural press wants a
+# file it can edit in the layout it sees, so those rows download the DOCX and preview the PDF. The
+# files sit in `press-pack/kits/pochwala-stworzenia/` (outside git); a corrected file under the
+# same name needs only `npm run press:pack`, a new name needs `documents`. The board's names carry
+# a date, so a new version usually arrives under a new name.
 #
 # `release` AND `announce` ARE THOSE PDFs TRANSCRIBED, WORD FOR WORD, for the page's Kopiuj: a text
 # copied out of a PDF breaks at every line, and an editor pastes into a form. Nothing in the build
-# can read a PDF, so whoever replaces one compares its text with its block here and makes them
-# agree. Last compared 28.09.2026 against the corrected PDFs; they agree but for the layout (the
-# PDFs' headings, separators and closing metadata), which Kopiuj does not carry.
+# reads a PDF or a DOCX, so whoever replaces one compares its text with its twin and with its
+# block here and makes the three agree. Last compared 30.09.2026: the 29.09 release, and the
+# announcements of 27.09 with their DOCX; they agree but for the layout (the PDFs' headings,
+# separators, closing metadata, and the press page's address after the closing line), which
+# Kopiuj does not carry.
 #
 # The measures in the announcements' names (~500, ~1500) are the board's approximate values, not
 # counts: the practical lines closing the long one do not count towards it (28.09.2026).
@@ -52,13 +57,16 @@ lede: >-
 # The board's PDFs, in the order the page lists them. `sub` is the row's second line (the
 # concert's title where absent); `text` names the transcription below that the row's Kopiuj writes.
 documents:
-  - file: "[Press]_InformacjaPrasowa_Pochwala_Stworzenia_VoctEnsemble_2026.09.27.pdf"
+  - file: "[Press]_InformacjaPrasowa_Pochwala_Stworzenia_VoctEnsemble_2026.09.29.pdf"
+    docx: "[Press]_InformacjaPrasowa_Pochwala_Stworzenia_VoctEnsemble_2026.09.29.docx"
     title: "Informacja prasowa"
     text: release
   - file: "[500zzs—PL_EN]_Zapowiedz _Pochwala_Stworzenia_VoctEnsemble_2026.09.27.pdf"
+    docx: "[500zzs—PL_EN]_Zapowiedz _Pochwala_Stworzenia_VoctEnsemble_2026.09.27.docx"
     title: "Zapowiedź PL/EN ~500 znaków"
     text: announceShort
   - file: "[1500zzs—PL_EN]_Zapowiedz _Pochwala_Stworzenia_VoctEnsemble_2026.09.27.pdf"
+    docx: "[1500zzs—PL_EN]_Zapowiedz _Pochwala_Stworzenia_VoctEnsemble_2026.09.27.docx"
     title: "Zapowiedź PL/EN ~1500 znaków"
     text: announceLong
   - file: "[Biogramy—PL_EN]_Pochwala_Stworzenia_VoctEnsemble_2026.09.27.pdf"
@@ -89,6 +97,11 @@ release:
     szczególnym miejscem dla muzyki współczesnych polskich kompozytorów Mariana Borkowskiego
     i Jacka Sykulskiego.
   sections:
+    # The conductor's words as the board's release carries them, attribution on its own line.
+    - body:
+        - |-
+          „To koncert o zachwycie nad światem stworzonym i o odkrywaniu w nim obecności Boga. Prowadzi od piękna stworzenia przez ludzką kruchość i cierpienie ku nadziei wieczności.”
+          — Florent de Bazelaire, dyrygent i kierownik artystyczny VoctEnsemble
     - heading: "Jeden kantyk, cały koncert"
       body:
         - >-
@@ -148,27 +161,22 @@ release:
       body:
         - >-
           VoctEnsemble to niezależny zespół wokalny, który Florent de Bazelaire powołał do
-          życia w Krakowie w 2024 roku. W centrum jego pracy znajduje się człowiek i doświadczenia, wobec których
-          muzyka pozwala zatrzymać się uważniej: piękno, cierpienie, pamięć, tajemnica czy
-          nadzieja. Z tej perspektywy wyrastają autorskie Koncerty Duchowe, budowane wokół jednej
-          idei lub pytania i nawiązujące do XVIII-wiecznej tradycji francuskich Concerts
-          Spirituels. Repertuar zespołu rozciąga się od renesansowej polifonii po muzykę
-          współczesną, ze szczególnym miejscem dla repertuaru sakralnego, traktowanego jako żywe
-          świadectwo ludzkiego doświadczenia.
+          życia w Krakowie w 2024 roku. Tworzy autorskie Koncerty Duchowe, budowane wokół jednej
+          idei lub pytania i nawiązujące do tradycji francuskich Concerts Spirituels. Repertuar
+          zespołu obejmuje muzykę od renesansowej polifonii po współczesność, ze szczególnym
+          miejscem dla repertuaru sakralnego.
     - heading: "O VoctFoundation"
       body:
         - >-
           VoctFoundation, powołana w 2026 roku, tworzy organizacyjne, produkcyjne i finansowe
-          warunki dla projektów wyrastających z konkretnych idei artystycznych. Wokół każdej
-          realizacji łączy twórców, wykonawców, instytucje i partnerów, dobierając skalę i sposób
-          działania do potrzeb projektu. Jakość dzieła i jego spotkanie z publicznością traktuje
-          jako części tego samego procesu: projekt ma nie tylko przyjąć właściwą sobie formę, lecz
-          także stać się doświadczeniem wspólnym. VoctEnsemble jest zespołem rezydentem Fundacji,
+          warunki dla projektów wyrastających z konkretnych idei artystycznych. Łączy wokół nich
+          twórców, wykonawców, instytucje i partnerów, dbając zarówno o jakość dzieła, jak i o jego
+          realne spotkanie z publicznością. VoctEnsemble jest zespołem rezydentem Fundacji,
           a „Pochwała Stworzenia” jej pierwszą realizacją.
     - body:
         - >-
-          Materiały wizualne do publikacji, w tym zdjęcia VoctEnsemble i plakat koncertu „Pochwała
-          Stworzenia”, można pobrać bezpośrednio z zakładki Press.
+          W zakładce Press dostępne są gotowe zapowiedzi o długości ok. 500 i 1500 zzs, tekst do
+          publikacji w social mediach, zdjęcia i plakat koncertu.
   # The address is printed after these from `data/foundation.ts`.
   contact: { name: "Anna Marcisz", role: "wiceprezes VoctFoundation" }
 

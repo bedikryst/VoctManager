@@ -380,6 +380,8 @@ export interface PressChrome {
   readonly previewAria: string;
   readonly download: string;
   readonly downloadAria: string;
+  /** The download of a document the board also sent as Word: the row previews the PDF, saves this. */
+  readonly downloadDocx: string;
   /**
    * The two states of a text's disclosure. BOTH are rendered and CSS shows one, because a label
    * that changes with `[open]` cannot be a `content` string without leaving the locale behind.
@@ -461,6 +463,7 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     previewAria: "Podgląd: {file}",
     download: "Pobierz",
     downloadAria: "Pobierz: {file}",
+    downloadDocx: "Pobierz DOCX",
     expand: "Pokaż tekst",
     collapse: "Zwiń",
     units: { kB: "kB", MB: "MB" },
@@ -519,6 +522,7 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     previewAria: "Preview: {file}",
     download: "Download",
     downloadAria: "Download: {file}",
+    downloadDocx: "Download DOCX",
     expand: "Show the text",
     collapse: "Hide",
     units: { kB: "kB", MB: "MB" },
@@ -577,6 +581,7 @@ export const PRESS_CHROME: Record<Locale, PressChrome> = {
     previewAria: "Aperçu : {file}",
     download: "Télécharger",
     downloadAria: "Télécharger : {file}",
+    downloadDocx: "Télécharger DOCX",
     expand: "Afficher le texte",
     collapse: "Masquer",
     units: { kB: "ko", MB: "Mo" },

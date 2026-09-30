@@ -8,9 +8,12 @@
  *  THE KIT HOLDS ONLY WHAT CANNOT BE DERIVED, one YAML per concert in `src/content/press-kits/`.
  *  The release, the announcements and the biograms are the board's own PDFs, which the kit NAMES
  *  (`documents`) and the generator copies byte for byte: editors expect one format from every
- *  sender. The release and the announcements are also TRANSCRIBED into the kit, for the page's
- *  Kopiuj — a text copied out of a PDF breaks at every line. Nothing here can read a PDF, so the
- *  two are held together by hand (the kit's header says how). The post, the hashtags and the
+ *  sender. Where the board also sent a document as Word (`docx`), that file travels beside the PDF
+ *  and is what the row downloads: Polish cultural editors rework a text in the layout they
+ *  received, and a PDF does not let them. The release and the announcements are also TRANSCRIBED
+ *  into the kit, for the page's Kopiuj — a text copied out of a PDF breaks at every line. Nothing
+ *  here reads either file, so the PDF, its Word twin and the transcription are held together by
+ *  hand (the kit's header says how). The post, the hashtags and the
  *  guests are copy. The concert's facts — its title, day, hour, place, festival, door, composers
  *  and conductor — are read from `concerts.yaml` through `concertFacts`, never retyped. The kit's
  *  prose does have to name the day and the hour, so `kitProblems` checks that every dated text
@@ -90,6 +93,14 @@ const documentSchema = z.object({
   file: z
     .string()
     .regex(/^[^/\\]+\.pdf$/i, "a document is a .pdf file name, without a folder"),
+  /**
+   * The same document as the board's editable Word file, beside the PDF in the kit's folder. The
+   * row then previews the PDF and downloads this; komplet carries both.
+   */
+  docx: z
+    .string()
+    .regex(/^[^/\\]+\.docx$/i, "an editable document is a .docx file name, without a folder")
+    .optional(),
   /** The row's name on /press. */
   title: z.string().min(1),
   /** The row's second line. Absent, the concert's title. */
@@ -164,6 +175,10 @@ export const announceText = (announcement: Announcement, measure: AnnounceMeasur
 /** A document's path inside `public/press/` and inside komplet. */
 export const documentPath = (kit: PressKit, document: KitDocument): string =>
   `${kit.concert}/${document.file}`;
+
+/** The path of a document's Word file, beside its PDF; `undefined` where the board sent none. */
+export const docxPath = (kit: PressKit, document: KitDocument): string | undefined =>
+  document.docx && `${kit.concert}/${document.docx}`;
 
 /** The post, ending on the concert's own address so a pasted post always links somewhere true. */
 export const postText = (kit: PressKit, concertUrl: string): string =>
@@ -486,6 +501,11 @@ export interface PressPhoto extends PressFile {
   readonly thumbs: { readonly w640: PressFile; readonly w1280: PressFile };
 }
 
+/** One of the board's PDFs, with its Word file where the kit names one. */
+export interface PressDocument extends PressFile {
+  readonly docx?: PressFile;
+}
+
 export interface PressGraphic extends PressFile {
   readonly format: "4x5" | "9x16" | "16x9";
   readonly thumb: PressFile;
@@ -503,7 +523,7 @@ export interface PressIndex {
   readonly concert?: {
     readonly id: string;
     /** The kit's `documents`, in its order, each at `documentPath`. */
-    readonly documents: readonly PressFile[];
+    readonly documents: readonly PressDocument[];
     readonly post: PressFile;
     readonly hashtags: PressFile;
     readonly poster: PressFile;

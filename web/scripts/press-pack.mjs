@@ -8,7 +8,8 @@
  *   · press photographs, each cut to its ratio (16:9 or 4:5) with a 2400 px preview and two
  *     thumbnails (`press-pack/photos.mjs`, rows in `press-pack/manifest.yaml`);
  *   · the kit of the soonest upcoming concert that has one: the board's PDFs (release,
- *     announcements, biograms) copied byte for byte under their authors' names, the post and the
+ *     announcements, biograms) and the Word files it sent beside them, copied byte for byte under
+ *     their authors' names, the post and the
  *     hashtags as text files, the poster, the designer's print PDF where one is on this machine,
  *     and the poster mounted as 4:5, 9:16 and 16:9 graphics;
  *   · the logotype and `PRZECZYTAJ.txt` (usage terms, every credit, the contact);
@@ -23,7 +24,7 @@
  *
  *  IT REFUSES, NAMING WHAT IS MISSING, rather than ship a gap: no kit, a kit whose concert is not
  *  in the corpus or whose post names another day, a document the kit names that is not on this
- *  machine or is not a PDF, a concert without its poster, a photo row without a credit or a
+ *  machine or is not the PDF or DOCX it claims to be, a concert without its poster, a photo row without a credit or a
  *  source, a source held for want of its photographer's consent. It only WARNS AND SKIPS a photo
  *  whose crop is under 1080 px on its short edge — a thumbnail sent by mistake — and an archive
  *  over 50 MB.
@@ -52,6 +53,7 @@ import {
   computeKitHash,
   concertUrl,
   documentPath,
+  docxPath,
   hashtagsText,
   kitProblems,
   latestKit,
@@ -146,24 +148,36 @@ function findByStem(dir, stem) {
 }
 
 /* The board's documents, read now so a missing or mistyped one refuses the run before anything in
-   `public/press/` is touched. A PDF is checked by its first bytes, not its extension: a file named
-   `.pdf` that is not one would open as nothing in every editor's viewer. */
+   `public/press/` is touched. Each file is checked by its first bytes, not its extension: the board
+   has sent Word files saved without one and PDFs named `.jpg`, and a file that is not what its
+   name says opens as nothing on an editor's machine. A .docx is a ZIP, so it starts `PK`. */
+const MAGIC = { pdf: "%PDF-", docx: "PK\u0003\u0004" };
+const readDocument = (dir, name, kind) => {
+  let data;
+  try {
+    data = readFileSync(at(dir, name));
+  } catch {
+    fail(`document "${name}" is not in ${dir} on this machine.`);
+    return undefined;
+  }
+  if (data.subarray(0, MAGIC[kind].length).toString("latin1") !== MAGIC[kind]) {
+    fail(`document "${name}" in ${dir} is not a ${kind.toUpperCase()}.`);
+    return undefined;
+  }
+  return data;
+};
 const documents = [];
 if (kit && concert) {
   const dir = path.join(PRESS_KIT_FILES_DIR, kit.concert);
   for (const document of kit.documents) {
-    let data;
-    try {
-      data = readFileSync(at(dir, document.file));
-    } catch {
-      fail(`document "${document.file}" is not in ${dir} on this machine.`);
-      continue;
-    }
-    if (data.subarray(0, 5).toString("latin1") !== "%PDF-") {
-      fail(`document "${document.file}" in ${dir} is not a PDF.`);
-      continue;
-    }
-    documents.push({ path: documentPath(kit, document), data });
+    const data = readDocument(dir, document.file, "pdf");
+    const docxData = document.docx && readDocument(dir, document.docx, "docx");
+    if (!data || (document.docx && !docxData)) continue;
+    documents.push({
+      path: documentPath(kit, document),
+      data,
+      ...(docxData ? { docx: { path: docxPath(kit, document), data: docxData } } : {}),
+    });
   }
 }
 
@@ -300,10 +314,15 @@ if (kit && concert) {
   const url = concertUrl(FOUNDATION.site, concert.id);
 
   /* The board's documents travel byte for byte and keep their authors' names: editors take a
-     press pack in the format they know, and the names are ordered for them on purpose. */
+     press pack in the format they know, and the names are ordered for them on purpose. A Word
+     file is already a ZIP, so it is stored like the PDFs rather than compressed again. */
   const documentIndex = documents.map((document) => {
     pack(document.path, document.data, true);
-    return emit(document.path, document.data);
+    if (document.docx) pack(document.docx.path, document.docx.data, true);
+    return {
+      ...emit(document.path, document.data),
+      ...(document.docx ? { docx: emit(document.docx.path, document.docx.data) } : {}),
+    };
   });
 
   const texts = {
@@ -418,7 +437,9 @@ const readmeTxt = [
   ...(concert
     ? [
         heading(`Teksty — ${concert.title}`),
-        ...documents.map((document) => document.path),
+        ...documents.flatMap((document) =>
+          document.docx ? [document.path, document.docx.path] : [document.path],
+        ),
         "",
         heading(`Plakat i grafiki — ${concert.title}`),
         `${kit.concert}/plakat.jpg, ${kit.concert}/grafika-*.jpg` +

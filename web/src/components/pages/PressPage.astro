@@ -12,7 +12,9 @@
  *  the poster and the photographs in the site's lightbox.
  *
  *  THE CONCERT'S TEXTS ARE THE BOARD'S PDFs, listed by the kit's `documents`: editors take every
- *  text in one format. The release and the announcements also show and copy the kit's
+ *  text in one format. Where the board also sent a document as Word, Podgląd still opens the PDF
+ *  and the row's download saves the DOCX, which an editor can rework in the same layout; the
+ *  basket takes both. The release and the announcements also show and copy the kit's
  *  transcription of their PDF, because a text copied out of a PDF breaks at every line; an
  *  announcement's English half, which its PDF carries after the Polish, has its own Kopiuj.
  *
@@ -230,6 +232,8 @@ interface FileRow {
   readonly sub?: string | undefined;
   readonly format: string;
   readonly file?: PressFile | undefined;
+  /** The document as Word: where present, Podgląd opens `file` and the download saves this. */
+  readonly docx?: PressFile | undefined;
   readonly open?: "tab" | "lightbox" | undefined;
   readonly copy?: { readonly label: string; readonly value: string } | undefined;
   readonly text?: string | undefined;
@@ -265,8 +269,10 @@ const documentRows: FileRow[] =
                 icon: "doc",
                 title: document.title,
                 sub: document.sub ?? card.facts.title,
-                format: "PDF",
+                // The meta line describes what the download saves.
+                format: file.docx ? "DOCX" : "PDF",
                 file,
+                docx: file.docx,
                 open: "tab",
                 ...documentText(document.text),
               } satisfies FileRow,
@@ -400,7 +406,7 @@ const logoKey = (ground: string) => `logo:${ground}`;
 
 const basketEntries: [string, readonly PressFile[]][] = [
   ...fileRows.flatMap((row): [string, readonly PressFile[]][] =>
-    row.file ? [[rowKey(row), [row.file]]] : [],
+    row.file ? [[rowKey(row), row.docx ? [row.file, row.docx] : [row.file]]] : [],
   ),
   ...photoGroups.flatMap((group) =>
     group.photos.map((photo): [string, readonly PressFile[]] => [photoKey(photo), [photo]]),
@@ -770,7 +776,7 @@ const jsonLd = {
                     </div>
                     <span class="press-file-meta">
                       {row.format}
-                      {row.file && ` · ${size(row.file)}`}
+                      {row.file && ` · ${size(row.docx ?? row.file)}`}
                     </span>
                     {/* Secondary actions first, the one boxed download last, so every row's
                         primary lands on the same right edge. */}
@@ -814,12 +820,12 @@ const jsonLd = {
                       {row.file && (
                         <a
                           class="press-button press-button--primary"
-                          href={href(row.file)}
+                          href={href(row.docx ?? row.file)}
                           download
-                          aria-label={fill(t.downloadAria, "file", row.title)}
+                          aria-label={fill(t.downloadAria, "file", row.docx ? `${row.title} (DOCX)` : row.title)}
                         >
                           <svg class="press-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">{ICON.download.map((d) => <path d={d} />)}</svg>
-                          <span>{t.download}</span>
+                          <span>{row.docx ? t.downloadDocx : t.download}</span>
                         </a>
                       )}
                     </div>

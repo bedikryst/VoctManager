@@ -99,7 +99,9 @@ function listedFiles(index: PressIndex): PressFile[] {
     ...index.logo,
     ...(concert
       ? [
-          ...concert.documents,
+          ...concert.documents.flatMap((document) =>
+            document.docx ? [document, document.docx] : [document],
+          ),
           concert.post,
           concert.hashtags,
           concert.poster,
