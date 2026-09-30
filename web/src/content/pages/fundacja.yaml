@@ -1,19 +1,21 @@
 # The editorial text of /fundacja — Polish, and Polish only.
 #
-# The page explains what allows VoctEnsemble's music to continue and gives a person or an
-# organisation a practical way to help. It is the foundation's home on the ensemble's site, and it
-# reads as the practical pages of a concert programme: a human opening, an account of preparation,
-# then particulars a reader can act on. Brief: docs/specs/web-foundation-brief-2026-09.md.
+# The foundation's institutional page: what VoctFoundation is, what it has made, who answers for
+# it, and how to support it. Written for someone checking the foundation first — a patron after a
+# conversation, a festival, a grant body, a journalist — and for someone who came to give, whom the
+# hero sends straight to `#wsparcie`. Spec: docs/specs/web-foundation-rebuild-2026-09.md §4.
 #
-# WHAT IS NOT HERE. The recipient, the accounts and the registry numbers come from
-# `data/foundation.ts`; the transfer title from the vault's config; the featured concert and the
-# two record programmes from the concert corpus (`data/foundationSupport.ts` only points at them);
-# the board's role lines from /o-nas's copy (one home, no drift); the foundation's mission
-# sentence from /kontakt's. This file holds only what this page says in its own voice.
+# Tone: restraint and precision, names and numbers, nothing that sounds like an offer. Impersonal
+# or "my"; plain imperative for instructions.
 #
-# NO NUMBERS THAT ARE NOT APPROVED. The cost band names categories and what each enables. It
-# carries no totals, percentages, secured sums or a goal — the board has approved none, and an
-# empty cell would be a claim. The standing-order amounts are examples and say so.
+# WHAT IS NOT HERE. Every number is data: budgets and accounts from `data/foundationSupport.ts`,
+# the record's counts from the concert corpus, registry facts and board functions from
+# `data/foundation.ts`. A `{slot}` in a sentence is where the page puts one. The realisation's
+# title, date, place, performers and composers come from `concerts.yaml`; the board's domains and
+# the statutory goals from /o-nas's copy, their one home.
+#
+# THE REALISATION SHEET IS SHARED. `realisation.*` labels the module /mecenat prints too; /mecenat
+# reads them from here rather than keeping a second copy.
 #
 # TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under `page.fundacja.` +
 # the dotted path below, written by the copy desk. Drafts sit in `copydesk/drafts/{en,fr}/fundacja.yaml`.
@@ -22,206 +24,204 @@
 # binding those rules do not make.
 
 meta:
-  title: "Fundacja i wsparcie — VoctEnsemble | Fundacja VoctFoundation"
+  title: "Fundacja VoctFoundation | VoctEnsemble"
   description: >-
-    Fundacja VoctFoundation tworzy zaplecze organizacyjne i finansowe VoctEnsemble. Zobacz,
-    z czego powstaje koncert, i pomóż przygotować kolejne programy cyklu Concerts Spirituels —
-    regularnie, jednorazowo albo jako firma lub instytucja.
+    VoctFoundation to krakowska fundacja kultury, zaplecze projektów artystycznych zespołu
+    VoctEnsemble. Realizacje, ludzie, dokumenty i formy wsparcia: darowizna, mecenat, partnerstwo.
 
 hero:
-  # The opening's plain identifier, the whole line: the foundation's hero sets no Latin rubric
-  # (`Fundatio` stays the foundation's rubric on /kontakt and /kolofon, not here).
   eyebrow: "Fundacja VoctFoundation"
   # Two lines; the break is compositional. A translation decides its own split.
   title1: "Żeby muzyka"
   title2Html: "miała <em>ciąg dalszy.</em>"
-  lede: >-
-    VoctFoundation tworzy zaplecze organizacyjne i finansowe VoctEnsemble. Pomagamy przygotowywać
-    kolejne koncerty cyklu Concerts Spirituels — od pracy nad programem i prób po spotkanie
-    z publicznością.
-  primary: "Chcę wesprzeć"
-  secondary: "Dla firm i instytucji"
-  indexLabel: "Na tej stronie"
-  # The anchors are structural and identical in every locale: /mecenat redirects to
-  # `/fundacja#mecenat`, and other pages link to these ids. Only the labels are copy.
-  index:
-    - id: "koszty"
-      anchor: "na-co-ida-srodki"
-      label: "Na co idą środki"
-    - id: "mecenat"
-      anchor: "mecenat"
-      label: "Mecenat"
-    - id: "partnerstwo"
-      anchor: "partnerstwo"
-      label: "Partnerstwo"
+  lead: >-
+    VoctFoundation jest zapleczem dla projektów, które wykraczają poza możliwości jednego zespołu.
+    Łączy twórców, kompetencje i finansowanie wokół konkretnej idei artystycznej. Zależy nam na
+    jakości dzieła i na tym, żeby publiczność mogła się z nim naprawdę spotkać.
+  supportLink: "Wsparcie"
+  mecenatLink: "Mecenat"
+
+# The page's index — the rail on desktop, the hero's contents on a phone, and each section's own
+# label. The anchors are structural and shared by every locale and by other pages' links; only the
+# labels are copy.
+index:
+  label: "Na tej stronie"
+  items:
+    - id: "realizacje"
+      anchor: "realizacja"
+      label: "Realizacje"
+    - id: "dorobek"
+      anchor: "dorobek"
+      label: "Doświadczenie VoctEnsemble"
+    - id: "misja"
+      anchor: "misja"
+      label: "Misja i ludzie"
+    - id: "wsparcie"
+      anchor: "wsparcie"
+      label: "Wsparcie"
     - id: "dokumenty"
       anchor: "fundacja-i-dokumenty"
-      label: "Fundacja i dokumenty"
+      label: "Dane i dokumenty"
 
-costs:
-  # Gloss of `Impensae`.
-  eyebrow: "Na co idą środki"
-  h2: "Z czego powstaje koncert"
-  intro: >-
-    Publiczność słyszy gotowy program. Wsparcie idzie na to, czego nie słychać: na przygotowanie
-    i na ludzi, którzy je wykonują.
-  body: >-
-    Zanim spotkamy się na koncercie, trzeba ułożyć program, zdobyć partytury i przepracować go
-    na próbach. Potem dochodzą dojazdy oraz — tam, gdzie wymaga tego wnętrze — realizacja dźwięku
-    i światła. Wsparcie pomaga pokryć tę pracę, przede wszystkim honoraria śpiewaków.
-  itemsLabel: "Z czego składa się koszt"
-  # Ordered by weight, as the landing already states it: fees first, then scores, rehearsals,
-  # travel, production. Categories and what each enables — no amounts, no shares.
-  items:
-    - id: "honoraria"
-      term: "Honoraria śpiewaków"
-      what: >-
-        Największy koszt każdego koncertu. Zespół tworzą zawodowi śpiewacy — próby i wieczór
-        koncertowy to ich praca.
-    - id: "partytury"
-      term: "Partytury i program"
-      what: "Zakup nut, opracowanie programu i materiały dla śpiewaków."
-    - id: "proby"
-      term: "Próby"
-      what: "Sala i cykl prób, w których program nabiera kształtu, zanim usłyszy go publiczność."
-    - id: "dojazdy"
-      term: "Dojazdy"
-      what: "Podróż zespołu na próby i na koncerty poza Krakowem."
-    - id: "realizacja"
-      term: "Dźwięk i światło"
-      what: "Realizacja tam, gdzie wymaga jej wnętrze i program. Nie każdy koncert jej potrzebuje."
-  current:
-    # Two complete states over the same concert, decided at build: ahead → the first label; sung →
-    # the second. The page never picks a newer concert on its own (data/foundationSupport.ts).
-    labelAhead: "Nad czym teraz pracujemy"
-    labelPast: "Ostatni przygotowany program"
-    programLink: "Zobacz program →"
-    note: >-
-      To przykład bieżącej pracy zespołu, nie osobna zbiórka. Darowizny wspierają działalność
-      statutową fundacji, w tym ten i kolejne koncerty.
+# The realisation module, as both /fundacja and /mecenat print it.
+realisation:
+  # One lead per realisation, keyed by its id in data/foundationSupport.ts. The page fails the
+  # build when a realisation has no lead here.
+  leads:
+    - id: "pochwala-stworzenia"
+      text: >-
+        Koncert wyrastający z Laudes creaturarum św. Franciszka z Asyżu. Muzyka prowadzi od
+        zachwytu nad stworzeniem ku doświadczeniu człowieka: jego kruchości, przemijaniu i nadziei.
+  sheet:
+    when: "Kiedy"
+    where: "Gdzie"
+    performers: "Wykonawcy"
+    programme: "Program"
+    within: "W ramach"
+    admission: "Wstęp"
+    budget: "Budżet"
+  # `{name}` is the festival's name as the corpus writes it.
+  festival: "festiwal {name}"
+  admissionFree: "wolny"
+  admissionPaid: "biletowany"
+  # The budget cell: the amount as a figure beside "wolny", the date under it. `{amount}` is the
+  # budget in the locale's grouping, `{date}` the day the board confirmed it.
+  budgetAmount: "ok. {amount} zł"
+  budgetAsOf: "stan na {date}"
+  budgetNote: >-
+    Tyle kosztuje koncert w przyjętym kształcie: honoraria wykonawców, rejestracja, transport
+    i pobyt. Część pracy koncepcyjnej i organizacyjnej to wkład własny fundacji.
+  # Printed while the concert is ahead, then — until its account is entered — the past form.
+  whoPaysAhead: "Koszt pokrywają mecenasi, darczyńcy i fundacja. Dzięki temu wstęp jest wolny."
+  whoPaysPast: >-
+    Koncert odbył się dzięki mecenasom, darczyńcom i fundacji. Jego rozliczenie opublikujemy tutaj.
+  account:
+    heading: "Rozliczenie"
+    total: "Koszt koncertu"
+    patrons: "Mecenasi"
+    donors: "Darczyńcy"
+    partners: "Partnerzy"
+    grants: "Granty"
+    own: "Wkład własny fundacji"
+    note: "Kwoty brutto, stan na {date}."
+  concertLink: "Strona koncertu →"
+  # Opens the vault; printed only while the concert is ahead.
+  supportLink: "Wesprzyj ten koncert"
 
 record:
-  # Gloss of `Opera`.
-  eyebrow: "Dorobek"
-  h2: "Muzyka, która już wybrzmiała"
-  intro: >-
-    Każdy z tych programów został ułożony od początku: repertuar, dramaturgia wieczoru i wnętrze,
-    w którym miał zabrzmieć. To dorobek VoctEnsemble — i miara tego, na co idzie wsparcie.
-  allLink: "Poznaj pozostałe koncerty →"
+  h2: "VoctFoundation wyrasta z doświadczeń VoctEnsemble."
+  body: >-
+    Od stycznia 2024 roku VoctEnsemble przygotowuje autorskie Koncerty Duchowe, nawiązujące do
+    francuskiej tradycji Concerts Spirituels. Każdy program powstaje od początku, dla konkretnego
+    miejsca, we współpracy z artystami, realizatorami i instytucjami. Fundacja, ustanowiona
+    w kwietniu 2026 roku, daje tej pracy stałe zaplecze: pozwala zapraszać kolejnych twórców
+    i budować bardziej złożone produkcje.
+  # The three figures are counted from the corpus: the cycle's evenings before the foundation.
+  # Each label follows its number; the build fails if a number ever needs another Polish form.
+  statProgrammes: "programów"
+  statConcerts: "koncertów"
+  statFree: "z wolnym wstępem"
+  # A rehearsal: who · the context, nothing more (the press pack's caption rule).
+  photoCaption: "Florent de Bazelaire · próba VoctEnsemble"
+  allLink: "Wszystkie koncerty →"
+
+mission:
+  motto: "Muzyka jest naszym językiem. Człowiek — właściwym tematem."
+  body: >-
+    Wspieramy twórczość, która wyrasta z doświadczeń istotnych dla człowieka, i tworzymy warunki,
+    żeby mogła stać się doświadczeniem wspólnym.
+  boardLabel: "Zarząd"
+  # The KRS functions, in the register's words; who holds which is data/foundation.ts.
+  president: "prezes zarządu"
+  vicePresident: "wiceprezes zarządu"
+  aboutLink: "O zespole →"
 
 support:
-  # Gloss of `Auxilium`.
-  eyebrow: "Wsparcie"
-  h2: "Pomóż przygotować kolejne koncerty"
-  intro: "Dwie proste drogi. Regularna pierwsza, bo to ona pozwala planować."
-  monthly:
-    label: "Wspieraj co miesiąc"
+  h2: "Kto umożliwia nasze projekty"
+  donation:
+    label: "Darowizna"
+    quote: "„Chcę, żebyście mogli robić dalej to, co robicie.”"
     body: >-
-      Regularne wsparcie pomaga planować próby i kolejne programy z wyprzedzeniem. Zlecenie stałe
-      ustawiasz w swoim banku; tam też zmieniasz kwotę lub je odwołujesz — bez kontaktu z nami.
-    # `{amounts}` is replaced with the examples from data/foundationSupport.ts, listed per locale
-    # ("50, 100 lub 200"). The unit stays in the sentence, where a translation can place it.
-    amounts: "Na przykład {amounts} zł miesięcznie. To przykłady, nie progi — każda kwota jest mile widziana."
-    transferLink: "Dane do przelewu"
-  once:
-    label: "Wesprzyj jednorazowo"
-    body: "Wpłać online przez bramkę płatności albo zrób zwykły przelew na konto fundacji."
+      Jednorazowo albo co miesiąc, w dowolnej kwocie. Zlecenie stałe ustawiasz w swoim banku i tam
+      też je zmieniasz albo odwołujesz.
+    # Printed only while the featured realisation is ahead. `{people}` is its budget divided by a
+    # year of `{monthly}` a month, rounded up; the build fails if the count needs another form.
+    scale: >-
+      Budżet jednego koncertu to tyle, ile w ciągu roku przekazują {people} osoby, wpłacając po
+      {monthly} zł miesięcznie.
+    promise: "Po każdym koncercie publikujemy, ile kosztował i kto go sfinansował."
     vaultAction: "Wpłać online"
-    transferLink: "Wolę zwykły przelew"
+    transferLink: "Dane do przelewu"
+  mecenat:
+    label: "Mecenat"
+    quote: "„Chcę być przy powstawaniu określonych rzeczy.”"
+    body: >-
+      Mecenat zaczyna się, zanim projekt przybierze ostateczną formę. Może objąć cały koncert albo
+      jego część, pozostać prywatny albo stać się częścią historii projektu. Zaczyna się od rozmowy.
+    link: "Mecenat →"
+  partnership:
+    label: "Partnerstwo"
+    quote: "„Chcemy wesprzeć konkretny projekt tym, co mamy.”"
+    body: >-
+      Firmy i instytucje wspierają nas darowizną albo tym, czego potrzebuje projekt: przestrzenią
+      na próby, transportem, drukiem, realizacją dźwięku. Z festiwalami, parafiami i instytucjami
+      kultury współorganizujemy koncerty. Zakres ustalamy w rozmowie.
+    mailLink: "Napisz w sprawie współpracy"
+    # Prefilled into the reader's mail client — copy, so a French reader's message arrives with a
+    # French subject.
+    mailSubject: "Współpraca z VoctFoundation"
+    pressLink: "Materiały dla mediów"
+    bookingLink: "Zaproszenie zespołu na koncert"
+    bookingSubject: "Zaproszenie VoctEnsemble"
 
 transfer:
   h3: "Dane do przelewu"
   recipientLabel: "Odbiorca"
   accountLabel: "Numer konta"
-  eurLabel: "Konto w euro"
-  eurNote: "Dla przelewów spoza Polski."
+  eurLabel: "Konto w euro (dla przelewów z zagranicy)"
   titleLabel: "Tytuł przelewu"
-  standingOrderHint: "Zlecenie stałe: te same dane, w Twoim banku, z wybraną częstotliwością."
-  scope: >-
-    Darowizny wspierają działalność statutową VoctFoundation, w tym przygotowanie koncertów
-    VoctEnsemble.
+  standingOrderHint: "Zlecenie stałe: te same dane, w Twoim banku."
+  scope: "Darowizny wspierają działalność statutową fundacji, w tym koncerty VoctEnsemble."
+  # Printed only once the accountant has confirmed it in writing (TAX_LINE_CONFIRMED).
+  tax: >-
+    Darowiznę można odliczyć od dochodu: w PIT do 6%, w CIT do 10%. Wystarczy potwierdzenie
+    przelewu.
 
 join:
-  h3: "Daj nam znać, że dołączasz"
-  body: >-
-    Jeśli ustawiasz zlecenie stałe, zostaw nam kontakt — podziękujemy osobiście i damy znać, co
-    powstało z Twojego wsparcia. Formularz jest dobrowolny: nie przekazuje pieniędzy i nie
-    uruchamia zlecenia.
-  # The lawful basis for keeping a patron's contact details (art. 6(1)(a) RODO). The three data
+  summary: "Masz zlecenie stałe? Daj nam znać."
+  note: >-
+    Zostaw kontakt, a podziękujemy osobiście. Formularz nie przekazuje pieniędzy i nie uruchamia
+    zlecenia.
+  # The lawful basis for keeping a supporter's contact details (art. 6(1)(a) RODO). The three data
   # points are named on purpose — a consent that does not say what it covers covers nothing.
-  consentHtml: >-
+  supportConsentHtml: >-
     Wyrażam zgodę na przetwarzanie moich danych (imię, nazwisko, e-mail) w celu kontaktu w sprawie
-    mecenatu, zgodnie z <a href="/polityka-prywatnosci">Polityką prywatności</a>.
-  successTitle: "Dziękujemy za zgłoszenie."
-  successBody: >-
-    Przekazaliśmy je fundacji. Jeśli chcesz wspierać nas regularnie, ustaw zlecenie stałe w swoim
-    banku.
-  # Followed by the patronage address as a link, so the sentence has to end pointing at it.
-  contactLead: "Pytania o wsparcie:"
+    wsparcia fundacji, zgodnie z <a href="/polityka-prywatnosci">Polityką prywatności</a>.
+  successTitle: "Dziękujemy."
+  successBody: "Zgłoszenie trafiło do fundacji."
 
-partnership:
-  # Gloss of `Societas`.
-  eyebrow: "Partnerstwo"
-  h2: "Współtwórz z nami koncert"
-  intro: >-
-    Firma, instytucja, parafia, festiwal — są trzy rzeczy, o których możemy porozmawiać.
-  rows:
-    - id: "produkcja"
-      term: "Wsparcie konkretnej produkcji"
-      what: >-
-        Udział w kosztach uzgodnionego koncertu albo jednej, nazwanej pozycji — na przykład
-        honorariów lub partytur.
-    - id: "ciaglosc"
-      term: "Wsparcie ciągłości"
-      what: >-
-        Współpraca na określony czas wokół działalności koncertowej zespołu — sezon albo cykl
-        programów.
-    - id: "zasoby"
-      term: "Zasoby zamiast pieniędzy"
-      what: >-
-        Przestrzeń na próby lub koncert, transport, druk, realizacja — tam, gdzie odpowiada to
-        realnej potrzebie. To możliwości do omówienia, nie lista braków.
-  next: >-
-    Napisz, jaki projekt lub rodzaj współpracy Cię interesuje. Ustalimy zakres wsparcia, sposób
-    podziękowania i podsumowanie realizacji.
-  thanks: >-
-    Podziękowanie ustalamy razem: wzmianka lub logo w programie i na stronie koncertu — tam, gdzie
-    pozwala na to miejsce i organizator.
-  mailLabel: "Napisz w sprawie współpracy"
-  # Prefilled mail subject — copy, so a French reader's message arrives with a French subject.
-  mailSubject: "Współpraca z VoctFoundation"
-  bookingLead: "Chcesz zaprosić zespół na koncert?"
-  bookingLink: "Napisz na adres koncertowy →"
-  bookingSubject: "Zaproszenie VoctEnsemble"
-
-who:
-  # Gloss of `Fundatio`, again — this is the section /kontakt and /o-nas send a reader to.
-  eyebrow: "Fundacja i dokumenty"
-  h2: "Kto za tym stoi"
+registry:
+  h2: "Dane i dokumenty"
+  name: "Nazwa"
+  seat: "Siedziba"
+  founded: "Ustanowiona"
+  supervisionLabel: "Nadzór"
+  supervision: "minister właściwy do spraw kultury"
+  representationLabel: "Reprezentacja"
+  representation: "prezes lub wiceprezes zarządu, samodzielnie (statut, § 13)"
   relation: >-
-    VoctEnsemble jest zespołem-rezydentem Fundacji VoctFoundation: zespół śpiewa, fundacja
-    organizuje, rozlicza i odpowiada za dane. Wpłaty przyjmuje fundacja.
-  boardLabel: "Zarząd fundacji"
-  boardNote: "Odpowiadamy wspólnie. Pytania o wsparcie kieruj na adres patronatu — trafią do całej trójki."
-  identityLabel: "Dane fundacji"
+    VoctEnsemble jest zespołem-rezydentem fundacji (statut, § 6). Darowizny przyjmuje i umowy
+    zawiera fundacja.
+  goalsLabel: "Cele statutowe"
   documentsLabel: "Dokumenty"
   statuteLink: "Statut fundacji (PDF)"
   privacyLink: "Polityka prywatności"
   # The donation terms exist inside the vault only, so this opens the vault where they are read.
-  termsLink: "Regulamin darowizn — przy wpłacie online"
-  help:
-    label: "Krótko"
-    items:
-      - id: "zlecenie"
-        q: "Czy mogę zmienić albo odwołać zlecenie stałe?"
-        a: "Tak, w każdej chwili — w swoim banku, bez kontaktu z nami."
-      - id: "formularz"
-        q: "Czy muszę wypełnić formularz, żeby wpłacić?"
-        a: "Nie. Formularz jest dobrowolny; do przelewu wystarczą dane konta."
-      - id: "kontakt"
-        q: "Do kogo napisać w sprawie wsparcia?"
-        a: "Na adres patronatu poniżej — czyta go zarząd fundacji."
-      - id: "dokumenty"
-        q: "Gdzie są dokumenty fundacji?"
-        a: "Statut, polityka prywatności i regulamin darowizn są obok. Wpis w KRS można sprawdzić po numerze powyżej."
-  contactLabel: "Kontakt w sprawie wsparcia"
+  termsLink: "Regulamin darowizn"
+  pressLink: "Materiały dla mediów"
+  # `{year}` is the foundation's first financial year, `{approvalYear}` the year after it.
+  reports: >-
+    Pierwsze sprawozdanie, za rok {year}, opublikujemy tutaj po jego zatwierdzeniu
+    w {approvalYear} roku.
+  socialLead: "Fundacja w mediach społecznościowych:"
+  contactLead: "Kontakt z fundacją:"

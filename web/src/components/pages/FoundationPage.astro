@@ -1,34 +1,33 @@
 ---
 /**
  * @file FoundationPage.astro
- * @description Locale-agnostic body of /fundacja — the foundation's home on the ensemble's site.
- *  It explains what allows VoctEnsemble's music to continue and gives a person or an organisation
- *  a practical way to help. The three route files (/fundacja, /en/fundacja, /fr/fundacja) differ
- *  only in `lang`. Brief: docs/specs/web-foundation-brief-2026-09.md.
+ * @description Locale-agnostic body of /fundacja — the foundation's institutional page: what
+ *  VoctFoundation is, what it has made, where it comes from, who answers for it, how to support
+ *  it, and its registry. The three route files differ only in `lang`.
+ *  Spec: docs/specs/web-foundation-rebuild-2026-09.md.
  *
- *  THE SAME PAPER, CLOSER TO THE WORK. The opening is the foundation's own voice, not the
- *  ensemble's: a poster-scale sans-serif headline across the whole measure with one cobalt
- *  accent, then a row that parts the lead and its two acts from a rehearsal photograph, then a
- *  numbered index of the page — static, with no reveal or ink press, so it reads the same with
- *  motion off (spec: docs/specs/web-foundation-hero-2026-09.md). Below it the composition is the practical pages of
- *  a concert programme: a paper-soft band where the current undertaking stands beside its
- *  material needs, the record, the two plain ways to give with the transfer block both share,
- *  the companies' route, and a second quiet administrative band that ends on the patronage
- *  address. No coda: the page closes on who answers, not on a manifesto.
+ *  THE FOUNDATION SPEAKS IN THE GRID. Twelve columns in the 1240 measure; from 1024px the first
+ *  three are a sticky rail carrying the page's numbered index, and everything else reads in the
+ *  other nine. Below 1024px the rail becomes the hero's contents and each section prints its own
+ *  numbered label. IBM Plex Sans is the institution's display voice, Plex Mono its data; Cormorant
+ *  italic is kept for people's words only — the motto and the three supporters' sentences. The
+ *  page is monochrome except inside a realisation, which is the one place a project's own colour
+ *  enters (RealisationModule). It closes on an ink band with the registry and a full-measure
+ *  wordmark, then the site's footer.
  *
- *  WHAT IS A FACT AND WHERE IT COMES FROM. The recipient, accounts and registry numbers are
- *  `data/foundation.ts`; the transfer title is the vault's; the featured concert and the two
- *  record programmes are read from the corpus by the ids `data/foundationSupport.ts` chooses;
- *  the board's role lines are /o-nas's copy and the mission sentence is /kontakt's, so neither
- *  has a second home here. This page's own words come from `content/pages/fundacja.yaml` through
- *  `lib/pageCopy`; its chrome from `i18n/content/fundacja.ts`.
+ *  WHAT IS A FACT AND WHERE IT COMES FROM. Registry, board functions, accounts and addresses are
+ *  `data/foundation.ts`; realisations, budgets and the switches that wait on a person are
+ *  `data/foundationSupport.ts`; concerts and the record's counts are the corpus, resolved in
+ *  `lib/realisations`; the board's domains and the statutory goals are /o-nas's copy, their one
+ *  home. This page's own words come from `content/pages/fundacja.yaml`; its chrome from
+ *  `i18n/content/fundacja.ts`.
  *
- *  NO NUMBERS THAT ARE NOT APPROVED. The costs band names what a concert is made of and what each
- *  line enables — no totals, no goal, no progress. That is the complete launch state the brief
- *  defines, not a placeholder for one.
+ *  STATIC FIRST. Every section reads complete with scripts and motion off; nothing waits on a
+ *  reveal. The rail's current-section mark and the page's entrances are a later stage.
  *
  *  ONE-OFF GIVING IS THE VAULT'S. "Wpłać online" opens the existing donation vault in place
- *  (`data-vault-open`, with `/?donate` as the no-JS fallback); this page builds no checkout.
+ *  (`data-vault-open`, with this locale's `/?donate` as the no-JS road); this page builds no
+ *  checkout.
  * @architecture Astro islands 2026
  * @module components/pages/FoundationPage
  */
@@ -38,22 +37,30 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
 import VaultMount from "../VaultMount.astro";
+import RealisationModule from "../foundation/RealisationModule.astro";
 import { PatronInterestForm } from "../../islands/landing/PatronInterestForm";
-import { bleedPair, photo, photoOptional } from "../../lib/photos";
+import { bleedPair, photoOptional } from "../../lib/photos";
 import { frameCredit } from "../../lib/photoCredit";
 import { pageCopy } from "../../lib/pageCopy";
-import { concertKey, overlayValue } from "../../lib/copyOverlay";
 import { chromeHtmlForIsland } from "../../lib/islandCopy";
-import { longDate, viaMoment } from "../../lib/dates";
-import { upcomingStation } from "../../lib/cycle";
+import { longDate } from "../../lib/dates";
+import { assertPolishForm, formatPln, realisationViews, recordBeforeFoundation } from "../../lib/realisations";
 import { FOUNDATION } from "../../data/foundation";
-import { FOUNDATION_PAGE_LINKED, FOUNDATION_SUPPORT } from "../../data/foundationSupport";
+import {
+  FEATURED_REALISATION,
+  FOUNDATION_CONTACT,
+  FOUNDATION_PAGE_LINKED,
+  MECENAT_CONTACT,
+  REALISATIONS,
+  SCALE_MONTHLY_PLN,
+  STATUTE_PATH,
+  TAX_LINE_CONFIRMED,
+} from "../../data/foundationSupport";
 import { VAULT_CONFIG } from "../../islands/landing/constants/vaultConfig";
 import { FOUNDATION_CHROME, FUNDACJA_PAGE } from "../../i18n/content/fundacja";
 import { ABOUT_PAGE } from "../../i18n/content/o-nas";
-import { KONTAKT_PAGE } from "../../i18n/content/kontakt";
 import { UI } from "../../i18n/ui";
-import { localizePath, pageI18n, pickLocale, SITE, type Locale } from "../../i18n/config";
+import { localizePath, pageI18n, SITE, type Locale } from "../../i18n/config";
 import { GOALS, goalClass } from "../../lib/plausible";
 import "../../styles/vault.css";
 
@@ -66,102 +73,113 @@ const { lang } = Astro.props;
 const copy = pageCopy(FUNDACJA_PAGE, lang);
 const t = FOUNDATION_CHROME[lang];
 const { path, alternates, available } = pageI18n("/fundacja", lang);
-const hrefConcerts = localizePath("/koncerty", lang);
-// The vault opens in place; the href is the no-JS road to the landing that auto-opens it, and
-// has to be THIS locale’s landing or a reader with scripts off lands in Polish.
+// The vault opens in place; the href is the no-JS road to the landing that auto-opens it, and has
+// to be THIS locale's landing or a reader with scripts off lands in Polish.
 const hrefDonate = `${localizePath("/", lang)}?donate`;
+const hrefConcerts = localizePath("/koncerty", lang);
+const hrefMecenat = localizePath("/mecenat", lang);
+const hrefAbout = localizePath("/o-nas", lang);
 const hrefPrivacy = localizePath("/polityka-prywatnosci", lang);
+const hrefPress = localizePath("/press", lang);
 
-// Two sentences this page prints but does not own: the mission as /kontakt states it, and the
-// board's remits as /o-nas states them. Read from their pages rather than copied.
-const mission = pageCopy(KONTAKT_PAGE, lang).locus.mission;
-const aboutRoles = pageCopy(ABOUT_PAGE, lang).governance.roles;
-const boardMembers = [
-  { id: "florent", name: "Florent de Bazelaire" },
-  { id: "ania", name: "Anna Marcisz" },
-  { id: "krystian", name: "Krystian Bugalski" },
-] as const;
-const board = boardMembers.map((member) => {
-  const role = aboutRoles.find((r) => r.id === member.id);
-  if (!role) throw new Error(`[fundacja] no governance role on /o-nas for board member "${member.id}".`);
-  return { ...member, role: role.role };
-});
+const fill = (template: string, slots: Record<string, string>): string =>
+  template.replace(/\{(\w+)\}/g, (match, name: string) => slots[name] ?? match);
 
-// ── Concerts, by the ids the support record chooses ──────────────────────────────────────────
+// ── The index: the rail on a desktop, the hero's contents on a phone, each section's label ────
+const indexItems = copy.index.items.map((item, i) => ({ ...item, number: String(i + 1).padStart(2, "0") }));
+const indexById = (id: string) => {
+  const item = indexItems.find((entry) => entry.id === id);
+  if (!item) throw new Error(`[fundacja] the page index has no entry "${id}".`);
+  return item;
+};
+const sections = {
+  realisations: indexById("realizacje"),
+  record: indexById("dorobek"),
+  mission: indexById("misja"),
+  support: indexById("wsparcie"),
+  registry: indexById("dokumenty"),
+};
+
+// ── 01 · Realisations ─────────────────────────────────────────────────────────────────────────
 const concerts = await getCollection("concerts");
-const concertById = (id: string) => {
-  const entry = concerts.find((c) => c.id === id);
-  if (!entry) throw new Error(`[fundacja] data/foundationSupport.ts names concert "${id}", which is not in the corpus.`);
-  return entry;
-};
-const concertView = (id: string) => {
-  const entry = concertById(id);
-  const translated = (field: string) => overlayValue(concertKey(entry.id, field), lang);
-  const a = entry.data.about;
+const eras = await getCollection("repertoire");
+const realisations = realisationViews(concerts, eras, lang).map((view) => {
+  const lead = copy.realisation.leads.find((l) => l.id === view.id);
+  if (!lead) throw new Error(`[fundacja] realisation "${view.id}" has no lead in fundacja.yaml (realisation.leads).`);
+  return { view, lead: lead.text, rubric: `${sections.realisations.label} / ${view.number} · ${view.year}` };
+});
+const featured = realisations[0]?.view;
+
+// ── 02 · The ensemble's record before the foundation ─────────────────────────────────────────
+const record = recordBeforeFoundation(concerts, lang);
+assertPolishForm(record.programmes, "many", "record.statProgrammes");
+assertPolishForm(record.concerts, "many", "record.statConcerts");
+const recordSpan = record.from === record.to ? record.from : `${record.from}–${record.to}`;
+const rehearsalPhoto = photoOptional("fundacja-proba-florent");
+const rehearsalCredit = frameCredit({}, lang);
+
+// ── 03 · Mission and people ───────────────────────────────────────────────────────────────────
+// The function is the register's (data), its words are copy; the domain is /o-nas's line, read
+// by id so an editor reordering either list cannot slide one person's remit under another name.
+const about = pageCopy(ABOUT_PAGE, lang);
+const board = FOUNDATION.board.map((member) => {
+  const role = about.governance.roles.find((r) => r.id === member.id);
+  if (!role) throw new Error(`[fundacja] no governance role on /o-nas for board member "${member.id}".`);
   return {
-    id: entry.id,
-    title: translated("title") ?? entry.data.title,
-    essence: translated("essence") ?? entry.data.essence,
-    place: translated("about.place") ?? a?.place ?? entry.data.venue ?? pickLocale(entry.data.metaPlace, lang),
-    moment: viaMoment(entry.data, lang),
-    date: entry.data.date,
-    time: entry.data.time,
-    admission: entry.data.admission,
-    img: a?.img ? photoOptional(a.img) : undefined,
-    // Every concert with a page is in TRANSLATED_ROUTES (i18n/config), so the localised
-    // /koncerty prefix plus the id is that concert's page in this locale.
-    href: entry.data.hasPage ? `${hrefConcerts}/${entry.id}` : undefined,
+    ...member,
+    functionLabel: member.function === "president" ? copy.mission.president : copy.mission.vicePresident,
+    domain: role.role,
+    portrait: photoOptional(`fundacja-zarzad-${member.id}`),
   };
-};
+});
+// All or none: one drawn face beside two blank cells reads worse than three names.
+const boardPortraits = board.every((b) => b.portrait);
+const mecenatPerson = FOUNDATION.board.find((b) => b.id === MECENAT_CONTACT);
+if (!mecenatPerson) throw new Error(`[fundacja] MECENAT_CONTACT "${MECENAT_CONTACT}" is not on the board.`);
 
-// The current work: a chosen concert, in the present tense only while it is still ahead — read at
-// build, the same standing obligation lib/cycle documents. After the evening the page keeps the
-// same concert in the past tense; it never slides to the next one on its own.
-const featured = concertView(FOUNDATION_SUPPORT.featuredConcertId);
-const featuredAhead = upcomingStation(concerts)?.id === featured.id;
-const featuredDate = featured.date ? longDate(featured.date, lang) : featured.moment;
-const record = FOUNDATION_SUPPORT.recordConcertIds.map(concertView);
+// ── 04 · Support ──────────────────────────────────────────────────────────────────────────────
+// The scale sentence belongs to a budget that is still being raised, so it prints only while the
+// featured realisation is ahead — and only in the grammatical form its sentence was written in.
+const featuredBudget = REALISATIONS.find((r) => r.id === FEATURED_REALISATION)?.budget.amountPln;
+const scalePeople = featured?.ahead && featuredBudget ? Math.ceil(featuredBudget / (SCALE_MONTHLY_PLN * 12)) : undefined;
+if (scalePeople !== undefined) assertPolishForm(scalePeople, "few", "support.donation.scale");
+const scaleLine =
+  scalePeople !== undefined
+    ? fill(copy.support.donation.scale, { people: String(scalePeople), monthly: formatPln(SCALE_MONTHLY_PLN, lang) })
+    : undefined;
 
-// ── Giving ────────────────────────────────────────────────────────────────────────────────────
-const amounts = new Intl.ListFormat(lang, { type: "disjunction" }).format(
-  FOUNDATION_SUPPORT.monthlyExamples.map((n) => String(n)),
-);
-const monthlyAmounts = copy.support.monthly.amounts.replace("{amounts}", amounts);
 const transferTitle = VAULT_CONFIG.recipient.title;
-const patronMail = FOUNDATION.mail.patronage;
-const partnershipHref = `mailto:${patronMail}?subject=${encodeURIComponent(copy.partnership.mailSubject)}`;
-const bookingHref = `mailto:${FOUNDATION.mail.booking}?subject=${encodeURIComponent(copy.partnership.bookingSubject)}`;
+const foundationMail = FOUNDATION_CONTACT.foundation;
+const partnershipHref = `mailto:${foundationMail}?subject=${encodeURIComponent(copy.support.partnership.mailSubject)}`;
+const bookingHref = `mailto:${FOUNDATION.mail.booking}?subject=${encodeURIComponent(copy.support.partnership.bookingSubject)}`;
 
 const formProps = {
   chrome: t.form,
   copy: {
-    consentHtml: chromeHtmlForIsland(copy.join.consentHtml, lang),
+    consentHtml: chromeHtmlForIsland(copy.join.supportConsentHtml, lang),
     successTitle: copy.join.successTitle,
     successBody: copy.join.successBody,
   },
-  contactEmail: patronMail,
+  contactEmail: foundationMail,
 } as const;
 
-// ── Images ────────────────────────────────────────────────────────────────────────────────────
-// The opening's photograph is a rehearsal, not a concert: the foundation makes the preparation
-// visible, the ensemble's pages show the result. The frame is one of the `wcielenie` gallery's,
-// found by image identity so its translated alt (keyed by the image's name, never by position)
-// and its credit come with it. The rehearsal's date and place are not on record, so the caption
-// says only what the frame shows — it inherits nothing from the concert's own dateline.
-const rehearsalConcertId = "wcielenie";
-const rehearsalImgName = "kd-wcielenie-1";
-const rehearsalFrame = concertById(rehearsalConcertId).data.gallery.find((g) => g.img === rehearsalImgName);
-if (!rehearsalFrame) {
-  throw new Error(`[fundacja] concert "${rehearsalConcertId}" has no gallery frame "${rehearsalImgName}".`);
-}
-const rehearsalPhoto = photo(rehearsalImgName);
-const rehearsalCaption =
-  overlayValue(concertKey(rehearsalConcertId, `gallery.${rehearsalImgName}.alt`), lang) ?? rehearsalFrame.alt ?? "";
-const rehearsalCredit = frameCredit(rehearsalFrame, lang);
+// ── 05 · Registry ─────────────────────────────────────────────────────────────────────────────
+const firstYear = Number(FOUNDATION.foundedOn.slice(0, 4));
+const reportsLine = fill(copy.registry.reports, { year: String(firstYear), approvalYear: String(firstYear + 1) });
+const registryRows = [
+  { term: copy.registry.name, value: FOUNDATION.name },
+  { term: copy.registry.seat, value: FOUNDATION.addressLine },
+  { term: "KRS", value: FOUNDATION.registry.krs },
+  { term: "NIP", value: FOUNDATION.registry.nip },
+  { term: "REGON", value: FOUNDATION.registry.regon },
+  { term: copy.registry.founded, value: longDate(FOUNDATION.foundedOn, lang) },
+  { term: copy.registry.supervisionLabel, value: copy.registry.supervision },
+  { term: copy.registry.representationLabel, value: copy.registry.representation },
+];
+const SOCIAL_NAMES = { facebook: "Facebook", instagram: "Instagram" } as const;
 
-// The social card keeps the nave plate the landing's ensemble section shows: a 1200-wide
-// landscape of the ensemble singing reads as "the music" on a feed, which is what a shared link
-// to the foundation is for. The page's own photograph is the hero's.
+// The social card keeps the nave plate the landing's ensemble section shows: a 1200-wide landscape
+// of the ensemble singing reads as "the music" on a feed.
 const ogImage = (await getImage({ src: bleedPair("chor-nawa").desktop, width: 1200, format: "webp" })).src;
 
 // The foundation as the subject, the ensemble as its music group — two objects, never one as the
@@ -176,7 +194,8 @@ const jsonLd = {
     "@type": "Organization",
     name: FOUNDATION.name,
     url: SITE,
-    email: patronMail,
+    email: foundationMail,
+    foundingDate: FOUNDATION.foundedOn,
     identifier: [
       { "@type": "PropertyValue", propertyID: "KRS", value: FOUNDATION.registry.krs },
       { "@type": "PropertyValue", propertyID: "NIP", value: FOUNDATION.registry.nip },
@@ -192,6 +211,8 @@ const jsonLd = {
     subOrganization: { "@type": "MusicGroup", name: FOUNDATION.ensemble, url: SITE },
   },
 };
+
+const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2 8h11M9 3.5 13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 ---
 
 <BaseLayout
@@ -215,335 +236,292 @@ const jsonLd = {
   <a class="skip-link" href="#tresc">{UI[lang].skipToContent}</a>
   <SiteChrome current="/fundacja" lang={lang} availableLocales={available} />
 
-  <main id="tresc">
-    {/* ── Opening — the institution, the work it makes possible, the ways to act ──
-          A poster: the headline runs the full measure, and under it one row parts the lead
-          with its two acts (left, the narrow column) from the rehearsal frame (right, the
-          wide one); the numbered index closes the opening across the whole measure. Below
-          960px the row stacks in DOM order, actions before the photograph, so helping never
-          means scrolling past a large image. Nothing here waits for motion: no `reveal`, no
-          `ink-press` (its axis would override the headline's weight), no gate — a reader with
-          JavaScript or motion off sees the same opening. */}
-    <section class="foundation-hero" aria-label={t.heroAria}>
-      <p class="foundation-hero-identity">{copy.hero.eyebrow}</p>
-      <h1 class="foundation-hero-title">
-        <span class="foundation-hero-line">{copy.hero.title1}</span>
-        <span class="foundation-hero-line" set:html={copy.hero.title2Html} />
-      </h1>
-      <div class="foundation-hero-row">
-        <div class="foundation-hero-text">
-          <p class="foundation-hero-lead">{copy.hero.lede}</p>
-          {/* The arrows are decoration on a link that already reads as one — hidden from
-              assistive technology, drawn in the text's own colour. */}
-          <div class="foundation-hero-actions">
-            <a class="foundation-hero-primary" href="#wsparcie">
-              {copy.hero.primary}
-              <svg class="foundation-hero-arrow" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2 8h11M9 3.5 13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
-            </a>
-            <a class="foundation-hero-secondary" href="#partnerstwo">
-              {copy.hero.secondary}
-              <svg class="foundation-hero-arrow" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2 8h11M9 3.5 13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
-            </a>
-          </div>
-        </div>
-        {/* The complete landscape frame, straight-edged, no card and nothing over it. The
-            visible caption is the frame's own alt, so the image's alt is empty rather than
-            saying the same sentence twice; the figure stays in the accessibility tree.
-            `width` = top of the ladder, which keeps the fallback the same file as the widest
-            candidate (lib/photos.ts). `sizes` follows the row: 7/12 of the measure from 960px,
-            the full measure below. */}
-        <figure class="foundation-hero-figure">
-          <Picture
-            src={rehearsalPhoto}
-            formats={["avif", "webp"]}
-            widths={[480, 768, 1024, 1536, 1920]}
-            width={1920}
-            sizes="(min-width: 960px) min(52vw, 690px), calc(100vw - 2 * max(28px, 5vw))"
-            alt=""
-            loading="eager"
-            fetchpriority="high"
-            decoding="async"
-          />
-          <figcaption class="foundation-hero-caption">
-            {rehearsalCaption}<span class="foundation-hero-credit"> · {rehearsalCredit}</span>
-          </figcaption>
-        </figure>
-      </div>
-      {/* The page's table of contents, numbered by CSS (the counter idiom of PrivacyPage's
-          `.toc-list`); each cell is the link, so the whole row under the hand is the target. */}
-      <nav class="foundation-hero-index" aria-label={t.indexAria}>
-        <span class="foundation-hero-index-label">{copy.hero.indexLabel}</span>
-        <ol class="foundation-hero-index-list">
-          {copy.hero.index.map((entry) => (
-            <li><a href={`#${entry.anchor}`}>{entry.label}</a></li>
-          ))}
-        </ol>
-      </nav>
-    </section>
-
-    {/* ── What a concert is made of ─────────────────────────────────────────────────
-          Desktop: the current undertaking on the left, its material needs on the right,
-          parted by the site's rule. Categories and what each enables — no amounts. */}
-    <section class="costs" id="na-co-ida-srodki" aria-label={t.costsAria}>
-      <div class="wrap">
-        <div class="col-head reveal">
-          <span class="eyebrow"><span class="lat">Impensae</span>  ·  {copy.costs.eyebrow}</span>
-          <h2 class="ink-press">{copy.costs.h2}</h2>
-        </div>
-        <p class="intro reveal" data-d="1">{copy.costs.intro}</p>
-        <p class="body reveal" data-d="2">{copy.costs.body}</p>
-
-        <div class="costs-grid">
-          <article class="current reveal" data-d="1">
-            <h3 class="rubric">{featuredAhead ? copy.costs.current.labelAhead : copy.costs.current.labelPast}</h3>
-            <p class="current-title">{featured.title}</p>
-            <p class="current-facts">
-              {featured.date ? <time datetime={featured.date}>{featuredDate}</time> : featuredDate}
-              {featured.time && featuredAhead && <>{" · "}{featured.time}</>}
-              {" · "}{featured.place}
-              {featured.admission && <>{" · "}{featured.admission === "free" ? t.admissionFree : t.admissionPaid}</>}
-            </p>
-            <p class="current-essence">{featured.essence}</p>
-            {featured.href && (
-              <p class="more"><a class="quiet-link" href={featured.href}>{copy.costs.current.programLink}</a></p>
-            )}
-            <p class="current-note">{copy.costs.current.note}</p>
-          </article>
-
-          <div class="cost-lines reveal" data-d="2">
-            <h3 class="rubric">{copy.costs.itemsLabel}</h3>
-            <dl class="rows">
-              {copy.costs.items.map((item) => (
-                <div class="row">
-                  <dt>{item.term}</dt>
-                  <dd>{item.what}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    {/* ── The record — the ensemble's, not the donors' ───────────────────────────── */}
-    <section class="record" id="dorobek" aria-label={t.recordAria}>
-      <div class="wrap">
-        <div class="col-head reveal">
-          <span class="eyebrow"><span class="lat">Opera</span>  ·  {copy.record.eyebrow}</span>
-          <h2 class="ink-press">{copy.record.h2}</h2>
-        </div>
-        <p class="intro reveal" data-d="1">{copy.record.intro}</p>
-        <ol class="record-list">
-          {record.map((c, i) => (
-            <li class="record-item reveal" data-d={String((i % 3) + 1)}>
-              {c.img && (
-                <div class="record-figure">
-                  {/* `width` caps the fallback rendition — see lib/photos.ts. */}
-                  <Picture
-                    src={c.img}
-                    formats={["avif", "webp"]}
-                    widths={[320, 480, 640, 840]}
-                    width={840}
-                    sizes="(max-width: 700px) min(92vw, 420px), clamp(200px, 22vw, 300px)"
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-              )}
-              <div class="record-body">
-                <p class="record-meta"><span>{c.moment}</span><span class="dot" aria-hidden="true"> · </span><span>{c.place}</span></p>
-                <h3 class="record-title">{c.href ? <a href={c.href}>{c.title}</a> : c.title}</h3>
-                <p class="record-essence">{c.essence}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-        <p class="more reveal"><a class="quiet-link" href={hrefConcerts}>{copy.record.allLink}</a></p>
-      </div>
-    </section>
-
-    {/* ── Individual support — regular first, because it answers the continuity argument.
-          One transfer block serves both, statically: selectable numbers on the same phone
-          the reader banks on, copy as a convenience. Then the optional "let us know". ── */}
-    <section class="support" id="wsparcie" aria-label={t.supportAria}>
-      <div class="wrap">
-        <div class="col-head reveal">
-          <span class="eyebrow"><span class="lat">Auxilium</span>  ·  {copy.support.eyebrow}</span>
-          <h2 class="ink-press">{copy.support.h2}</h2>
-        </div>
-        <p class="intro reveal" data-d="1">{copy.support.intro}</p>
-
-        <div class="ways">
-          <article class="way reveal" id="mecenat" data-d="1">
-            <h3 class="way-label">{copy.support.monthly.label}</h3>
-            <p class="way-body">{copy.support.monthly.body}</p>
-            <p class="way-amounts">{monthlyAmounts}</p>
-            <p class="way-act"><a class="capsule" href="#przelew">{copy.support.monthly.transferLink}</a></p>
-          </article>
-          <article class="way reveal" data-d="2">
-            <h3 class="way-label">{copy.support.once.label}</h3>
-            <p class="way-body">{copy.support.once.body}</p>
-            <p class="way-act">
-              <a class="capsule" href={hrefDonate} data-vault-open="100">{copy.support.once.vaultAction}</a>
-              <a class="quiet-link" href="#przelew">{copy.support.once.transferLink}</a>
-            </p>
-          </article>
-        </div>
-
-        <div class="transfer reveal reveal-rule" id="przelew" aria-label={t.transferAria}>
-          <h3 class="rubric">{copy.transfer.h3}</h3>
-          <dl class="transfer-rows">
-            <div class="transfer-row">
-              <dt>{copy.transfer.recipientLabel}</dt>
-              <dd>
-                <span class="transfer-value">{FOUNDATION.name}</span>
-                <button type="button" class="copy-btn" data-copy={FOUNDATION.name} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", copy.transfer.recipientLabel)}>
-                  <span class="copy-label">{t.copy}</span>
-                </button>
-              </dd>
-            </div>
-            <div class="transfer-row">
-              <dt>{copy.transfer.accountLabel} <span class="currency">PLN</span></dt>
-              <dd>
-                <span class="transfer-value transfer-iban">{FOUNDATION.accounts.pln.display}</span>
-                <button type="button" class={`copy-btn ${goalClass(GOALS.accountCopied)}`} data-copy={FOUNDATION.accounts.pln.iban} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", `${copy.transfer.accountLabel} PLN`)}>
-                  <span class="copy-label">{t.copy}</span>
-                </button>
-              </dd>
-            </div>
-            <div class="transfer-row">
-              <dt>{copy.transfer.eurLabel} <span class="currency">EUR</span></dt>
-              <dd>
-                <span class="transfer-value transfer-iban">{FOUNDATION.accounts.eur.display}</span>
-                <button type="button" class={`copy-btn ${goalClass(GOALS.accountCopied)}`} data-copy={FOUNDATION.accounts.eur.iban} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", `${copy.transfer.eurLabel} EUR`)}>
-                  <span class="copy-label">{t.copy}</span>
-                </button>
-                <span class="transfer-note">{copy.transfer.eurNote}</span>
-              </dd>
-            </div>
-            <div class="transfer-row">
-              <dt>{copy.transfer.titleLabel}</dt>
-              <dd>
-                <span class="transfer-value" lang="pl">{transferTitle}</span>
-                <button type="button" class="copy-btn" data-copy={transferTitle} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", copy.transfer.titleLabel)}>
-                  <span class="copy-label">{t.copy}</span>
-                </button>
-              </dd>
-            </div>
-          </dl>
-          <p class="transfer-hint">{copy.transfer.standingOrderHint}</p>
-          <p class="transfer-scope">{copy.transfer.scope}</p>
-        </div>
-
-        <div class="join reveal reveal-rule" id="zglos">
-          <h3 class="rubric">{copy.join.h3}</h3>
-          <p class="join-body">{copy.join.body}</p>
-          <PatronInterestForm client:visible {...formProps} />
-          <noscript>
-            <p class="join-noscript">{t.form.noscript}</p>
-          </noscript>
-          <p class="join-contact">
-            {copy.join.contactLead}{" "}
-            <a href={`mailto:${patronMail}`}>{patronMail}</a>
+  <main id="tresc" class="vf">
+    <div class="vf-frame">
+      <div class="vf-grid">
+        {/* ── Hero — type only; the LCP is the headline ─────────────────────────────────── */}
+        <header class="vf-hero">
+          <p class="vf-eyebrow">{copy.hero.eyebrow}</p>
+          <h1 class="vf-title">
+            <span class="vf-title-line">{copy.hero.title1}</span>
+            <span class="vf-title-line" set:html={copy.hero.title2Html} />
+          </h1>
+          <p class="vf-lead">{copy.hero.lead}</p>
+          <p class="vf-hero-links">
+            <a class="vf-act vf-act-primary" href="#wsparcie">{copy.hero.supportLink}<Fragment set:html={arrow} /></a>
+            <a class="vf-act" href={hrefMecenat}>{copy.hero.mecenatLink}<Fragment set:html={arrow} /></a>
           </p>
-        </div>
-      </div>
-    </section>
+        </header>
 
-    {/* ── Companies and institutions — three things to discuss, one address, no packages ── */}
-    <section class="partnership" id="partnerstwo" aria-label={t.partnershipAria}>
-      <div class="wrap">
-        <div class="col-head reveal">
-          <span class="eyebrow"><span class="lat">Societas</span>  ·  {copy.partnership.eyebrow}</span>
-          <h2 class="ink-press">{copy.partnership.h2}</h2>
-        </div>
-        <p class="intro reveal" data-d="1">{copy.partnership.intro}</p>
-        <dl class="rows partner-rows">
-          {copy.partnership.rows.map((row, i) => (
-            <div class="row reveal" data-d={String((i % 3) + 1)}>
-              <dt>{row.term}</dt>
-              <dd>{row.what}</dd>
-            </div>
-          ))}
-        </dl>
-        <div class="partner-next reveal">
-          <p class="body">{copy.partnership.next}</p>
-          <p class="partner-thanks">{copy.partnership.thanks}</p>
-          <p class="mail-line">
-            <span class="rubric">{copy.partnership.mailLabel}</span>
-            <a class={`mail ${goalClass(GOALS.mailPatronage)}`} href={partnershipHref}>{patronMail}</a>
-            <button type="button" class="copy-btn" data-copy={patronMail} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", patronMail)}>
-              <span class="copy-label">{t.copy}</span>
-            </button>
-          </p>
-          <p class="partner-booking">
-            {copy.partnership.bookingLead}{" "}
-            <a class="quiet-link" href={bookingHref}>{copy.partnership.bookingLink}</a>
-          </p>
-        </div>
-      </div>
-    </section>
-
-    {/* ── Who answers — the second quiet band. Ends on the patronage address. ─────── */}
-    <section class="who" id="fundacja-i-dokumenty" aria-label={t.whoAria}>
-      <div class="wrap">
-        <div class="col-head reveal">
-          <span class="eyebrow"><span class="lat">Fundatio</span>  ·  {copy.who.eyebrow}</span>
-          <h2 class="ink-press">{copy.who.h2}</h2>
-        </div>
-        <p class="intro reveal" data-d="1">{copy.who.relation}</p>
-        <p class="body reveal" data-d="2">{mission}</p>
-
-        <div class="who-grid">
-          <div class="who-block reveal" data-d="1">
-            <h3 class="rubric">{copy.who.boardLabel}</h3>
-            <ul class="board">
-              {board.map((b) => (
+        {/* ── The rail — the page's numbered index. Sticky beside the sections from 1024px;
+              on a phone it follows the hero as its contents. ──────────────────────────── */}
+        <nav class="vf-rail" aria-label={t.indexAria}>
+          <div class="vf-rail-inner">
+            <p class="vf-rail-label">{copy.index.label}</p>
+            <ol class="vf-rail-list">
+              {indexItems.map((item) => (
                 <li>
-                  <span class="board-name">{b.name}</span>
-                  <span class="board-role">{b.role}</span>
+                  <a href={`#${item.anchor}`}><span class="vf-num">{item.number}</span><span>{item.label}</span></a>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </nav>
+
+        {/* ── 01 · Realisations ────────────────────────────────────────────────────────── */}
+        <section class="vf-section" id="realizacja" aria-label={t.realisationsAria}>
+          <p class="vf-label"><span class="vf-num">{sections.realisations.number}</span>{sections.realisations.label}</p>
+          {realisations.map((r) => (
+            <RealisationModule
+              view={r.view}
+              rubric={r.rubric}
+              lead={r.lead}
+              labels={copy.realisation}
+              withNotes={true}
+              donateHref={hrefDonate}
+            />
+          ))}
+        </section>
+
+        {/* ── 02 · Where the foundation comes from ─────────────────────────────────────── */}
+        <section class="vf-section" id="dorobek" aria-label={t.recordAria}>
+          <p class="vf-label"><span class="vf-num">{sections.record.number}</span>{sections.record.label}</p>
+          <div class={rehearsalPhoto ? "vf-record vf-record-with-photo" : "vf-record"}>
+            <div class="vf-record-text">
+              <h2 class="vf-h2">{copy.record.h2}</h2>
+              <p class="vf-body">{copy.record.body}</p>
+              <p class="vf-span">{recordSpan}</p>
+              <dl class="vf-stats">
+                <div><dt class="vf-stat-figure">{record.programmes}</dt><dd>{copy.record.statProgrammes}</dd></div>
+                <div><dt class="vf-stat-figure">{record.concerts}</dt><dd>{copy.record.statConcerts}</dd></div>
+                <div><dt class="vf-stat-figure">{record.free}</dt><dd>{copy.record.statFree}</dd></div>
+              </dl>
+              <dl class="vf-timeline">
+                {record.years.map((year) => (
+                  <div class="vf-timeline-year">
+                    <dt>{year.year}</dt>
+                    <dd>
+                      <ul>
+                        {year.items.map((item) => (
+                          <li>{item.href ? <a href={item.href}>{item.title}</a> : item.title}</li>
+                        ))}
+                      </ul>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <p class="vf-more"><a class="vf-link" href={hrefConcerts}>{copy.record.allLink}</a></p>
+            </div>
+            {rehearsalPhoto && (
+              <figure class="vf-record-photo">
+                {/* The visible caption says what the frame shows, so the image's alt is empty
+                    rather than the same sentence twice. `width` = top of the ladder. */}
+                <Picture
+                  src={rehearsalPhoto}
+                  formats={["avif", "webp"]}
+                  widths={[400, 640, 900, 1200]}
+                  width={Math.min(rehearsalPhoto.width, 1200)}
+                  sizes="(min-width: 1024px) 30vw, 100vw"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+                <figcaption>{copy.record.photoCaption} · {rehearsalCredit}</figcaption>
+              </figure>
+            )}
+          </div>
+        </section>
+
+        {/* ── 03 · Mission and people ───────────────────────────────────────────────────── */}
+        <section class="vf-section" id="misja" aria-label={t.missionAria}>
+          <p class="vf-label"><span class="vf-num">{sections.mission.number}</span>{sections.mission.label}</p>
+          <h2 class="vf-motto">{copy.mission.motto}</h2>
+          <p class="vf-body">{copy.mission.body}</p>
+          <div class="vf-board" id="ludzie">
+            <h3 class="vf-rubric">{copy.mission.boardLabel}</h3>
+            <ul class="vf-board-list">
+              {board.map((member) => (
+                <li class="vf-member">
+                  {boardPortraits && member.portrait && (
+                    <figure class="vf-portrait">
+                      {/* A drawing beside the name it illustrates: decorative, empty alt. */}
+                      <Picture
+                        src={member.portrait}
+                        formats={["avif", "webp"]}
+                        widths={[320, 480, 720]}
+                        width={Math.min(member.portrait.width, 720)}
+                        sizes="(min-width: 1024px) 22vw, (min-width: 640px) 30vw, 70vw"
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </figure>
+                  )}
+                  <p class="vf-member-name">{member.name}</p>
+                  <p class="vf-member-function">{member.functionLabel}</p>
+                  <p class="vf-member-domain">{member.domain}</p>
                 </li>
               ))}
             </ul>
-            <p class="who-note">{copy.who.boardNote}</p>
+            <p class="vf-more"><a class="vf-link" href={hrefAbout}>{copy.mission.aboutLink}</a></p>
           </div>
-          <div class="who-block reveal" data-d="2">
-            <h3 class="rubric">{copy.who.identityLabel}</h3>
-            <p class="identity">
-              {FOUNDATION.name}<br />
-              {FOUNDATION.addressLine}<br />
-              KRS {FOUNDATION.registry.krs}<br />
-              NIP {FOUNDATION.registry.nip}<br />
-              REGON {FOUNDATION.registry.regon}
+        </section>
+
+        {/* ── 04 · Support — three forms, one transfer panel, one optional form ─────────── */}
+        <section class="vf-section" id="wsparcie" aria-label={t.supportAria}>
+          <p class="vf-label"><span class="vf-num">{sections.support.number}</span>{sections.support.label}</p>
+          <h2 class="vf-h2">{copy.support.h2}</h2>
+          <div class="vf-ways">
+            <article class="vf-way" id="darowizna">
+              <h3 class="vf-way-label">{copy.support.donation.label}</h3>
+              <p class="vf-quote">{copy.support.donation.quote}</p>
+              <p class="vf-way-body">{copy.support.donation.body}</p>
+              {scaleLine && <p class="vf-way-note">{scaleLine}</p>}
+              <p class="vf-way-note">{copy.support.donation.promise}</p>
+              <p class="vf-way-acts">
+                <a class="vf-act vf-act-primary" href={hrefDonate} data-vault-open="100">{copy.support.donation.vaultAction}</a>
+                <a class="vf-link" href="#przelew">{copy.support.donation.transferLink}</a>
+              </p>
+            </article>
+            <article class="vf-way" id="mecenat">
+              <h3 class="vf-way-label">{copy.support.mecenat.label}</h3>
+              <p class="vf-quote">{copy.support.mecenat.quote}</p>
+              <p class="vf-way-body">{copy.support.mecenat.body}</p>
+              <p class="vf-way-person">{mecenatPerson.name}</p>
+              <p class="vf-way-acts"><a class="vf-link" href={hrefMecenat}>{copy.support.mecenat.link}</a></p>
+            </article>
+            <article class="vf-way" id="partnerstwo">
+              <h3 class="vf-way-label">{copy.support.partnership.label}</h3>
+              <p class="vf-quote">{copy.support.partnership.quote}</p>
+              <p class="vf-way-body">{copy.support.partnership.body}</p>
+              <ul class="vf-way-links">
+                <li><a class={`vf-link ${goalClass(GOALS.mailPatronage)}`} href={partnershipHref}>{copy.support.partnership.mailLink}</a></li>
+                <li><a class="vf-link" href={hrefPress}>{copy.support.partnership.pressLink}</a></li>
+                <li><a class={`vf-link ${goalClass(GOALS.mailBooking)}`} href={bookingHref}>{copy.support.partnership.bookingLink}</a></li>
+              </ul>
+            </article>
+          </div>
+
+          {/* One transfer panel serves every way of giving, statically: selectable numbers on the
+              same phone the reader banks on, copy as a convenience. */}
+          <div class="vf-transfer" id="przelew" aria-label={t.transferAria}>
+            <h3 class="vf-rubric">{copy.transfer.h3}</h3>
+            <dl class="vf-transfer-rows">
+              <div class="vf-transfer-row">
+                <dt>{copy.transfer.recipientLabel}</dt>
+                <dd>
+                  <span class="vf-transfer-value">{FOUNDATION.name}</span>
+                  <button type="button" class="copy-btn" data-copy={FOUNDATION.name} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", copy.transfer.recipientLabel)}>
+                    <span class="copy-label">{t.copy}</span>
+                  </button>
+                </dd>
+              </div>
+              <div class="vf-transfer-row">
+                <dt>{copy.transfer.accountLabel} <span class="vf-currency">PLN</span></dt>
+                <dd>
+                  <span class="vf-transfer-value">{FOUNDATION.accounts.pln.display}</span>
+                  <button type="button" class={`copy-btn ${goalClass(GOALS.accountCopied)}`} data-copy={FOUNDATION.accounts.pln.iban} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", `${copy.transfer.accountLabel} PLN`)}>
+                    <span class="copy-label">{t.copy}</span>
+                  </button>
+                </dd>
+              </div>
+              <div class="vf-transfer-row">
+                <dt>{copy.transfer.eurLabel} <span class="vf-currency">EUR</span></dt>
+                <dd>
+                  <span class="vf-transfer-value">{FOUNDATION.accounts.eur.display}</span>
+                  <button type="button" class={`copy-btn ${goalClass(GOALS.accountCopied)}`} data-copy={FOUNDATION.accounts.eur.iban} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", `${copy.transfer.eurLabel} EUR`)}>
+                    <span class="copy-label">{t.copy}</span>
+                  </button>
+                </dd>
+              </div>
+              <div class="vf-transfer-row">
+                <dt>{copy.transfer.titleLabel}</dt>
+                <dd>
+                  <span class="vf-transfer-value" lang="pl">{transferTitle}</span>
+                  <button type="button" class="copy-btn" data-copy={transferTitle} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", copy.transfer.titleLabel)}>
+                    <span class="copy-label">{t.copy}</span>
+                  </button>
+                </dd>
+              </div>
+            </dl>
+            <p class="vf-transfer-note">{copy.transfer.standingOrderHint}</p>
+            <p class="vf-transfer-note">{copy.transfer.scope}</p>
+            {TAX_LINE_CONFIRMED && <p class="vf-transfer-note">{copy.transfer.tax}</p>}
+          </div>
+
+          {/* Optional, and collapsed: most givers never need it. The island hydrates when the
+              reader opens it (`client:visible` inside a closed <details> is never visible). */}
+          <details class="vf-join" id="zglos">
+            <summary>{copy.join.summary}</summary>
+            <div class="vf-join-body">
+              <p class="vf-join-note">{copy.join.note}</p>
+              <PatronInterestForm client:visible {...formProps} />
+              <noscript>
+                <p class="vf-join-note">{t.form.noscript} <a href={`mailto:${foundationMail}`}>{foundationMail}</a></p>
+              </noscript>
+            </div>
+          </details>
+        </section>
+      </div>
+    </div>
+
+    {/* ── 05 · Registry — the closing ink band, then the wordmark ───────────────────────── */}
+    <section class="vf-registry" id="fundacja-i-dokumenty" aria-label={t.registryAria}>
+      <div class="vf-frame">
+        <div class="vf-grid vf-registry-grid">
+          <div class="vf-registry-head">
+            <p class="vf-registry-num"><span class="vf-num">{sections.registry.number}</span></p>
+            <h2 class="vf-registry-h2">{copy.registry.h2}</h2>
+          </div>
+          <div class="vf-registry-body">
+            <dl class="vf-registry-rows">
+              {registryRows.map((row) => (
+                <div class="vf-registry-row">
+                  <dt>{row.term}</dt>
+                  <dd>{row.value}</dd>
+                </div>
+              ))}
+            </dl>
+            <p class="vf-registry-text">{copy.registry.relation}</p>
+
+            <h3 class="vf-registry-label">{copy.registry.goalsLabel}</h3>
+            <ol class="vf-goals">
+              {about.foundation.goals.map((goal) => <li>{goal.text}</li>)}
+            </ol>
+            <p class="vf-registry-text vf-registry-muted">{about.foundation.legalNote}</p>
+
+            <h3 class="vf-registry-label">{copy.registry.documentsLabel}</h3>
+            <ul class="vf-documents">
+              <li><a href={STATUTE_PATH}>{copy.registry.statuteLink}</a></li>
+              <li><a href={hrefPrivacy}>{copy.registry.privacyLink}</a></li>
+              <li><a href={hrefDonate} data-vault-open="100">{copy.registry.termsLink}</a></li>
+              <li><a href={hrefPress}>{copy.registry.pressLink}</a></li>
+            </ul>
+            <p class="vf-registry-text vf-registry-muted">{reportsLine}</p>
+
+            {FOUNDATION.socials.length > 0 && (
+              <p class="vf-registry-text">
+                {copy.registry.socialLead}{" "}
+                {FOUNDATION.socials.map((profile, i) => (
+                  <>{i > 0 && " · "}<a href={profile.url} rel="me noopener">{SOCIAL_NAMES[profile.network]}</a></>
+                ))}
+              </p>
+            )}
+            <p class="vf-registry-contact">
+              <span class="vf-registry-label">{copy.registry.contactLead}</span>
+              <a class="vf-registry-mail" href={`mailto:${foundationMail}`}>{foundationMail}</a>
+              <button type="button" class="copy-btn" data-copy={foundationMail} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", foundationMail)}>
+                <span class="copy-label">{t.copy}</span>
+              </button>
             </p>
           </div>
-          <div class="who-block reveal" data-d="3">
-            <h3 class="rubric">{copy.who.documentsLabel}</h3>
-            <ul class="documents">
-              <li><a href={FOUNDATION_SUPPORT.statutePath}>{copy.who.statuteLink}</a></li>
-              <li><a href={hrefPrivacy}>{copy.who.privacyLink}</a></li>
-              <li><a href={hrefDonate} data-vault-open="100">{copy.who.termsLink}</a></li>
-            </ul>
-          </div>
+          {/* The wordmark, fitted to the measure by the SVG itself — `textLength` holds the
+              word to the viewBox at every width, with no script. The name is already in the
+              band's rows, so the drawing is hidden from assistive technology. */}
+          <svg class="vf-wordmark" viewBox="0 0 700 74" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+            <text x="0" y="72" textLength="700" lengthAdjust="spacing">{FOUNDATION.nameShort}</text>
+          </svg>
         </div>
-
-        <div class="help reveal reveal-rule">
-          <h3 class="rubric">{copy.who.help.label}</h3>
-          <dl class="help-list">
-            {copy.who.help.items.map((item) => (
-              <div class="help-item">
-                <dt>{item.q}</dt>
-                <dd>{item.a}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-
-        <p class="who-contact reveal">
-          <span class="rubric">{copy.who.contactLabel}</span>
-          <a class="mail" href={`mailto:${patronMail}`}>{patronMail}</a>
-        </p>
       </div>
     </section>
   </main>
@@ -558,242 +536,226 @@ const jsonLd = {
 </BaseLayout>
 
 <style>
-  /* ── Shared measure and heads ─────────────────────────────────────────────────────────────
-     The reading measure of /kontakt (920px), the same section head, and the rubric tier at
-     `--ink-soft` for the reason ContactPage records: muted is nearly invisible at 10px here. */
-  .wrap { max-width: 920px; margin: 0 auto; }
-  .col-head { margin: 0; }
-  .col-head .eyebrow { display: block; margin-bottom: 16px; color: var(--ink-soft); }
-  .col-head h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(30px, 3.6vw, 48px); line-height: 1.05; color: var(--ink); margin: 0; letter-spacing: -.01em; }
-  .intro { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(19px, 2vw, 25px); line-height: 1.5; color: var(--ink-soft); max-width: 40ch; margin: 18px 0 0; }
-  .body { margin: 18px 0 0; max-width: 62ch; font-size: clamp(15px, 1.15vw, 16.5px); line-height: 1.72; color: var(--ink-soft); }
-  .rubric { font-family: var(--capitalis); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 14px; font-weight: 400; }
-  .more { margin: 18px 0 0; }
-  .quiet-link { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); border-bottom: 1px solid var(--line-strong); padding-bottom: 3px; transition: color .3s var(--ease), border-color .3s var(--ease); }
-  .quiet-link:hover { color: var(--candle-blue); border-color: var(--candle-blue); }
-  /* Rows of term + explanation, the ledger's shape: a hairline over each, the term as a rubric. */
-  .rows { margin: 0; }
-  .row { display: grid; gap: 8px; padding: clamp(18px, 2.4vw, 26px) 0; border-top: 1px solid var(--line); }
-  .row:last-of-type { border-bottom: 1px solid var(--line); }
-  .row dt { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--candle-ink); margin: 0; }
-  .row dd { margin: 0; max-width: 56ch; font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.7; color: var(--ink-soft); }
-  /* The real border stays for no-JS and reduced motion; under the motion gate the drawn rule
-     takes over (`--rule-ink` defaults to `var(--line)`). Same call as ContactPage's `.voices`. */
-  :global(html.voct-motion) .reveal-rule { border-top-color: transparent; }
-  /* Copy capsule — ContactPage's `.channel-copy`, the site's one shape for "copy this". */
-  .copy-btn { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; font-family: var(--capitalis); font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-muted); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; transition: color .3s var(--ease), border-color .3s var(--ease); }
-  .copy-btn:hover { color: var(--ink); border-color: var(--line-strong); }
-  .copy-btn.is-copied { color: var(--sage); border-color: var(--sage); }
-  .mail { font-family: var(--serif); font-size: clamp(20px, 2.6vw, 30px); color: var(--ink); border-bottom: 1px solid transparent; transition: border-color .3s var(--ease); overflow-wrap: anywhere; }
-  .mail:hover { border-bottom-color: var(--candle); }
-
-  /* The capsule: outlined at rest, filled under the hand — the shape the contact door's act
-     uses, for the giving band's two acts further down the page. */
-  .capsule { display: inline-flex; align-items: center; padding: 12px 22px; border: 1px solid color-mix(in srgb, var(--candle-ink) 62%, transparent); border-radius: 999px; color: var(--candle-ink); font-family: var(--capitalis); font-size: 10.5px; font-weight: 600; letter-spacing: .16em; line-height: 1.2; text-transform: uppercase; white-space: nowrap; transition: color .3s var(--ease), border-color .3s var(--ease), background-color .3s var(--ease); }
-  .capsule:hover, .capsule:focus-visible { background: var(--candle-ink); border-color: var(--candle-ink); color: var(--paper); }
-  .capsule:focus-visible { outline: 2px solid var(--candle-ink); outline-offset: 4px; }
-
-  /* ── Opening — the foundation's own voice ───────────────────────────────────────────────────
-     A poster, not a two-column landing: the headline takes the whole 1240px measure at a
-     display size, and only under it does the measure part 5:7 into the lead with its acts and
-     the rehearsal frame. The frame is the wide column so the gesture in it (the conductor's
-     hand, the singers at the table) reads at the size the headline sets. Nothing is centred
-     vertically: both columns hang from the same top edge, the way a programme page does. The
-     opening is still static — the developer weighed an entrance against the site's own doctrine
-     (registers.css: no offset, no blur, nothing from zero) and kept it to hover.
-
-     One cobalt accent, this page's, defined here and never on :root: the ensemble's pages keep
-     the candle. Contrast: #2446cf measures ~6.5:1 on --paper and >7:1 under white text; change
-     the colour only with the ratio re-checked. The index numerals rest in muted ink and take
-     the cobalt only under the hand, so the accent stays where the spec puts it: the emphasis,
-     the primary act, the focus ring, the hover.
-
-     The headline carries no `.ink-press`. That mechanism drives the weight axis through
-     `font-variation-settings`, an INHERITED property that overrides `font-weight` outright, so
-     a press on the heading — or on any ancestor — would render this 600 as the site's resting
-     300. `font-variation-settings: normal` is stated on the title for the same reason: it cuts
-     the inheritance should a press ever be placed above it. Plex Sans is self-hosted 100–700
-     in the upright only, which is why the emphasis resets to upright instead of asking for an
-     italic that does not exist (base.css). */
-  .foundation-hero {
-    --foundation-accent: #2446cf;
-    --foundation-accent-hover: #1b35a5;
-    padding: clamp(96px, 9vw, 128px) var(--gutter) clamp(40px, 4vw, 56px);
+  /* ── The page scope ─────────────────────────────────────────────────────────────────────────
+     One accent, this page's, defined here and never on :root: the ensemble's pages keep the
+     candle. Cobalt until the colour of the foundation's own social profiles is settled; #2446cf
+     measures ~6.5:1 on --paper and >7:1 under white text — re-check both ratios on a change.
+     `--vf-bleed` is the distance from the grid's right edge to the viewport's, which the
+     realisation's visual crosses. */
+  .vf {
+    --vf-accent: #2446cf;
+    --vf-accent-hover: #1b35a5;
+    --vf-rule: color-mix(in oklab, var(--ink) 16%, transparent);
+    --vf-bleed: max(var(--gutter), calc((100vw - 1240px) / 2));
   }
-  .foundation-hero > * { max-width: 1240px; margin-inline: auto; }
-  .foundation-hero-identity { font-family: var(--sans); font-weight: 500; font-size: 14px; line-height: 1.4; letter-spacing: .02em; color: var(--ink-soft); margin-block: 0; }
-  /* The measure is the limit, not a column: line 2 ("miała ciąg dalszy.", ~7.3em with the
-     tracking) holds on one line from 390px up and the French first line (~8.5em) fits inside
-     1240px at the cap. Above 960px the size climbs to poster scale (82px at 960, ~124 at 1440). */
-  .foundation-hero-title { font-family: var(--sans); font-weight: 600; font-style: normal; font-variation-settings: normal; font-size: clamp(40px, 9vw, 80px); line-height: 1; letter-spacing: -.045em; margin-block: 18px 0; color: var(--ink); text-wrap: balance; }
-  /* Each line is a block, not a masked `.line`: the split is the copy's (a translation decides
-     its own), and a long translated line wraps inside its block instead of being clipped. */
-  .foundation-hero-line { display: block; }
-  /* `:global(em)`: the second line arrives through `set:html` and carries no scope attribute.
-     Global `em` is Cormorant italic; the emphasis here is the same face, upright, in cobalt.
-     The emphasised phrase stays on one line — it is the point of the sentence and reads as one
-     unit — while the rest of the line wraps freely; at 320px that turns "miała ciąg / dalszy."
-     into "miała / ciąg dalszy.". The phrase is at most ~4.5em in every locale, so it fits. */
-  .foundation-hero-title :global(em) { font-family: inherit; font-style: normal; font-weight: inherit; color: var(--foundation-accent); white-space: nowrap; }
-  .foundation-hero-row { margin-block: clamp(32px, 4vw, 56px) 0; }
-  .foundation-hero-lead { font-family: var(--sans); font-weight: 400; font-style: normal; font-size: 17px; line-height: 1.55; max-width: 40ch; margin: 0; color: var(--ink-soft); }
-  .foundation-hero-actions { margin: 28px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; }
-  .foundation-hero-primary { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 26px; border-radius: 2px; background: var(--foundation-accent); color: #fff; font-family: var(--sans); font-weight: 500; font-size: 16px; line-height: 1.2; transition: background-color .25s var(--ease); }
-  .foundation-hero-primary:hover, .foundation-hero-primary:focus-visible { background: var(--foundation-accent-hover); }
-  .foundation-hero-secondary { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-family: var(--sans); font-weight: 500; font-size: 16px; line-height: 1.2; color: var(--ink); text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 1px; text-underline-offset: .22em; transition: text-decoration-color .25s var(--ease), color .25s var(--ease); }
-  .foundation-hero-secondary:hover, .foundation-hero-secondary:focus-visible { color: var(--foundation-accent); text-decoration-color: currentColor; }
-  /* The arrow is the only thing that moves in the opening: a 3px nudge along the reading
-     direction, transform only, so the hover says "onward" without a colour change on the glyph. */
-  .foundation-hero-arrow { flex: none; transition: transform .25s var(--ease); }
-  .foundation-hero-primary:hover .foundation-hero-arrow, .foundation-hero-primary:focus-visible .foundation-hero-arrow,
-  .foundation-hero-secondary:hover .foundation-hero-arrow, .foundation-hero-secondary:focus-visible .foundation-hero-arrow { transform: translateX(3px); }
-  /* Cobalt ring for every act in the opening — above the zero-specificity candle floor base.css lays. */
-  .foundation-hero a:focus-visible { outline: 2px solid var(--foundation-accent); outline-offset: 3px; }
-  .foundation-hero-figure { margin: clamp(36px, 6vw, 48px) 0 0; }
-  .foundation-hero-figure :global(img) { width: 100%; height: auto; }
-  .foundation-hero-caption { font-family: var(--sans); font-weight: 400; font-size: 13px; line-height: 1.45; color: var(--ink-soft); margin: 10px 0 0; }
-  .foundation-hero-credit { color: var(--ink-muted); }
-  /* The index — the page's own table of contents. Rows ruled top and bottom, a two-digit mono
-     numeral before each label, and the whole cell is the link, so the hit area is the row. */
-  .foundation-hero-index { margin-block: clamp(40px, 5vw, 64px) 0; }
-  .foundation-hero-index-label { display: block; font-family: var(--sans); font-weight: 500; font-size: 14px; line-height: 1.4; letter-spacing: .02em; color: var(--ink-soft); margin: 0 0 12px; }
-  .foundation-hero-index-list { list-style: none; margin: 0; padding: 0; counter-reset: idx; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
-  .foundation-hero-index-list li { counter-increment: idx; }
-  .foundation-hero-index-list a { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: baseline; min-height: 56px; padding: 16px 0; border-bottom: 1px solid var(--line); font-family: var(--sans); font-weight: 500; font-size: 16px; line-height: 1.3; color: var(--ink); text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 1px; text-underline-offset: .22em; overflow-wrap: anywhere; transition: text-decoration-color .25s var(--ease), color .25s var(--ease); }
-  .foundation-hero-index-list a::before { content: counter(idx, decimal-leading-zero); font-family: var(--mono); font-weight: 500; font-size: 12px; line-height: 1; letter-spacing: .06em; font-variant-numeric: tabular-nums; color: var(--ink-muted); transition: color .25s var(--ease); }
-  .foundation-hero-index-list a:hover, .foundation-hero-index-list a:focus-visible { color: var(--foundation-accent); text-decoration-color: currentColor; }
-  .foundation-hero-index-list a:hover::before, .foundation-hero-index-list a:focus-visible::before { color: var(--foundation-accent); }
-  @media (min-width: 960px) {
-    .foundation-hero-title { font-size: clamp(80px, 8.6vw, 132px); }
-    .foundation-hero-row { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(40px, 4vw, 64px); align-items: start; }
-    .foundation-hero-lead { font-size: clamp(18px, 1.45vw, 21px); line-height: 1.5; }
-    .foundation-hero-figure { margin: 0; }
-    .foundation-hero-index-list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 32px; }
+  .vf a:focus-visible, .vf summary:focus-visible { outline: 2px solid var(--vf-accent); outline-offset: 3px; }
+  .vf-frame { padding-inline: var(--gutter); }
+  .vf > .vf-frame:first-child { padding-top: clamp(96px, 9vw, 132px); }
+  .vf-grid { max-width: 1240px; margin-inline: auto; display: grid; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 1024px) {
+    .vf-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(20px, 2vw, 32px); }
+    .vf-grid > * { grid-column: 4 / -1; }
+    .vf-grid > .vf-rail { grid-column: 1 / 4; grid-row: 1 / span 5; }
   }
-  @media (max-width: 760px) {
-    .foundation-hero-primary { width: 100%; }
-  }
-  @media (max-width: 420px) {
-    .foundation-hero-index-list { grid-template-columns: 1fr; }
+  .vf-num { font-family: var(--mono); font-weight: 500; font-size: 12px; letter-spacing: .06em; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+
+  /* ── Hero ───────────────────────────────────────────────────────────────────────────────────
+     No `.ink-press` on the headline: that mechanism drives the weight axis through the INHERITED
+     `font-variation-settings`, which would override the 600 here; `normal` is stated to cut any
+     press above it. Plex Sans ships upright only, so the emphasis is colour, not italic. */
+  .vf-eyebrow { margin: 0; font-family: var(--sans); font-weight: 500; font-size: 14px; line-height: 1.4; letter-spacing: .02em; color: var(--ink-soft); }
+  .vf-title { margin: 18px 0 0; font-family: var(--sans); font-weight: 600; font-style: normal; font-variation-settings: normal; font-size: clamp(40px, 11vw, 64px); line-height: 1; letter-spacing: -.045em; color: var(--ink); text-wrap: balance; }
+  .vf-title-line { display: block; }
+  /* `:global(em)`: the second line arrives through `set:html` and carries no scope attribute. */
+  .vf-title :global(em) { font-family: inherit; font-style: normal; font-weight: inherit; color: var(--vf-accent); white-space: nowrap; }
+  .vf-lead { margin: clamp(24px, 3vw, 36px) 0 0; max-width: 58ch; font-family: var(--sans); font-size: clamp(17px, 1.45vw, 20px); line-height: 1.55; color: var(--ink-soft); }
+  .vf-hero-links { margin: 28px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
+  @media (min-width: 1024px) {
+    .vf-title { font-size: clamp(64px, 7.2vw, 104px); }
   }
 
-  /* ── Costs — paper-soft; the undertaking beside its needs ───────────────────────────────── */
-  .costs { background: var(--paper-soft); padding: clamp(72px, 11vw, 150px) var(--gutter); --lat-ink: var(--candle-ink); }
-  .costs-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(36px, 6vw, 88px); align-items: start; margin-top: clamp(40px, 5vw, 64px); }
-  @media (max-width: 720px) { .costs-grid { grid-template-columns: 1fr; gap: 44px; } }
-  .current { margin: 0; }
-  .current-title { font-family: var(--serif); font-weight: 300; font-size: clamp(26px, 3vw, 36px); line-height: 1.1; letter-spacing: -.01em; color: var(--ink); margin: 0; }
-  .current-facts { margin: 10px 0 0; font-family: var(--mono); font-size: 11px; letter-spacing: .04em; line-height: 1.8; color: var(--ink-muted); font-variant-numeric: lining-nums; }
-  .current-essence { margin: 16px 0 0; max-width: 46ch; font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.72; color: var(--ink-soft); }
-  .current-note { margin: 18px 0 0; max-width: 42ch; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); }
-  .cost-lines { margin: 0; }
+  /* Acts: the primary is a filled cobalt block, the rest are underlined words. The arrow is the
+     only thing that moves under the hand. */
+  .vf-act { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; font-family: var(--sans); font-weight: 500; font-size: 16px; line-height: 1.2; color: var(--ink); text-decoration: underline; text-decoration-color: transparent; text-underline-offset: .22em; text-decoration-thickness: 1px; transition: text-decoration-color .25s var(--ease), color .25s var(--ease), background-color .25s var(--ease); }
+  .vf-act:hover, .vf-act:focus-visible { color: var(--vf-accent); text-decoration-color: currentColor; }
+  .vf-act-primary { padding: 0 24px; border-radius: 2px; background: var(--vf-accent); color: #fff; text-decoration: none; }
+  .vf-act-primary:hover, .vf-act-primary:focus-visible { background: var(--vf-accent-hover); color: #fff; }
+  .vf-act :global(svg) { flex: none; transition: transform .25s var(--ease); }
+  .vf-act:hover :global(svg), .vf-act:focus-visible :global(svg) { transform: translateX(3px); }
+  .vf-link { font-family: var(--sans); font-weight: 500; font-size: 15px; color: var(--ink); text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--ink) 30%, transparent); text-underline-offset: .22em; text-decoration-thickness: 1px; transition: text-decoration-color .25s var(--ease), color .25s var(--ease); }
+  .vf-link:hover, .vf-link:focus-visible { color: var(--vf-accent); text-decoration-color: currentColor; }
 
-  /* ── Record ─────────────────────────────────────────────────────────────────────────────── */
-  .record { padding: clamp(72px, 11vw, 150px) var(--gutter); --lat-ink: var(--candle-ink); }
-  .record-list { list-style: none; margin: clamp(36px, 5vw, 56px) 0 0; padding: 0; }
-  .record-item { display: grid; grid-template-columns: clamp(200px, 22vw, 300px) minmax(0, 1fr); gap: clamp(22px, 3.4vw, 44px); align-items: start; padding: clamp(26px, 3.6vw, 40px) 0; border-top: 1px solid var(--line); }
-  .record-item:last-of-type { border-bottom: 1px solid var(--line); }
-  @media (max-width: 700px) { .record-item { grid-template-columns: 1fr; gap: 18px; } }
-  .record-figure { margin: 0; aspect-ratio: 4 / 3; overflow: hidden; background: var(--paper-soft); }
-  .record-figure :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; }
-  .record-meta { margin: 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-muted); font-variant-numeric: lining-nums; }
-  .record-meta .dot { color: var(--candle-ink); }
-  .record-title { font-family: var(--serif); font-weight: 300; font-size: clamp(24px, 2.8vw, 34px); line-height: 1.1; letter-spacing: -.01em; color: var(--ink); margin: 10px 0 0; }
-  .record-title a { border-bottom: 1px solid transparent; transition: border-color .3s var(--ease); }
-  .record-title a:hover { border-bottom-color: var(--candle); }
-  .record-essence { margin: 14px 0 0; max-width: 56ch; font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.72; color: var(--ink-soft); }
+  /* ── The rail ──────────────────────────────────────────────────────────────────────────────── */
+  .vf-rail { margin: clamp(36px, 6vw, 56px) 0 0; }
+  .vf-rail-label { margin: 0 0 10px; font-family: var(--sans); font-weight: 500; font-size: 14px; color: var(--ink-soft); }
+  .vf-rail-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--vf-rule); }
+  .vf-rail-list a { display: grid; grid-template-columns: 2.4em 1fr; align-items: baseline; min-height: 48px; padding: 13px 0; border-bottom: 1px solid var(--vf-rule); font-family: var(--sans); font-weight: 500; font-size: 15px; line-height: 1.3; color: var(--ink); text-decoration: none; transition: color .25s var(--ease); }
+  .vf-rail-list a:hover, .vf-rail-list a:focus-visible { color: var(--vf-accent); }
+  .vf-rail-list a:hover .vf-num, .vf-rail-list a:focus-visible .vf-num { color: var(--vf-accent); }
+  @media (min-width: 1024px) {
+    .vf-rail { margin: 0; }
+    .vf-rail-inner { position: sticky; top: clamp(96px, 12vh, 128px); }
+    .vf-rail-label { display: none; }
+    .vf-rail-list { border-top: 0; }
+    .vf-rail-list a { min-height: 0; padding: 7px 0; border-bottom: 0; font-size: 14px; color: var(--ink-soft); }
+  }
 
-  /* ── Support ────────────────────────────────────────────────────────────────────────────── */
-  .support { padding: clamp(72px, 11vw, 150px) var(--gutter); --lat-ink: var(--candle-ink); }
-  .ways { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(30px, 5vw, 64px); margin-top: clamp(40px, 5vw, 64px); }
-  @media (max-width: 680px) { .ways { grid-template-columns: 1fr; gap: 40px; } }
-  .way { margin: 0; padding-top: clamp(20px, 2.6vw, 28px); border-top: 1px solid var(--line); }
-  .way-label { font-family: var(--serif); font-weight: 300; font-size: clamp(24px, 2.8vw, 32px); line-height: 1.1; letter-spacing: -.01em; color: var(--ink); margin: 0; }
-  .way-body { margin: 14px 0 0; max-width: 44ch; font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.72; color: var(--ink-soft); }
-  .way-amounts { margin: 12px 0 0; max-width: 44ch; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); font-variant-numeric: lining-nums; }
-  .way-act { margin: 22px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
+  /* ── Sections ──────────────────────────────────────────────────────────────────────────────── */
+  /* A phone ruled by each section's own label; a desktop by the section's top edge, the rail
+     naming it. */
+  .vf-section { padding-top: clamp(64px, 9vw, 120px); }
+  .vf-section:last-child { padding-bottom: clamp(72px, 10vw, 136px); }
+  .vf-label { display: flex; gap: 12px; align-items: baseline; margin: 0 0 clamp(20px, 3vw, 28px); padding-top: 12px; border-top: 1px solid var(--ink); font-family: var(--sans); font-weight: 500; font-size: 14px; color: var(--ink); }
+  @media (min-width: 1024px) {
+    .vf-label { display: none; }
+    .vf-section { margin-top: clamp(72px, 8vw, 120px); padding-top: 22px; border-top: 1px solid var(--ink); }
+  }
+  .vf-h2 { margin: 0; max-width: 22ch; font-family: var(--sans); font-weight: 600; font-size: clamp(28px, 3.4vw, 44px); line-height: 1.08; letter-spacing: -.03em; color: var(--ink); text-wrap: balance; }
+  .vf-body { margin: 20px 0 0; max-width: 64ch; font-family: var(--sans); font-size: clamp(16px, 1.2vw, 17px); line-height: 1.65; color: var(--ink-soft); }
+  .vf-rubric { margin: 0 0 14px; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); }
+  .vf-more { margin: 24px 0 0; }
 
-  /* The transfer block: one row per field, the value in mono (an IBAN is checked digit by
-     digit), the capsule at the line's end; the values wrap at phone width rather than scroll. */
-  .transfer { margin-top: clamp(48px, 6vw, 80px); padding-top: clamp(28px, 3.6vw, 40px); border-top: 1px solid var(--line); }
-  .transfer-rows { margin: 0; display: grid; gap: 18px; }
-  .transfer-row { display: grid; grid-template-columns: minmax(120px, 160px) minmax(0, 1fr); gap: 6px 24px; align-items: baseline; }
-  @media (max-width: 560px) { .transfer-row { grid-template-columns: 1fr; gap: 4px; } }
-  .transfer-row dt { font-family: var(--capitalis); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-soft); }
-  .transfer-row dt .currency { color: var(--candle-ink); }
-  .transfer-row dd { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
-  .transfer-value { font-family: var(--mono); font-size: clamp(14px, 1.3vw, 17px); letter-spacing: .04em; color: var(--ink); user-select: all; overflow-wrap: anywhere; font-variant-numeric: lining-nums; }
-  .transfer-iban { letter-spacing: .06em; }
-  .transfer-note { flex-basis: 100%; font-size: 13px; line-height: 1.6; color: var(--ink-muted); }
-  .transfer-hint { margin: 24px 0 0; max-width: 56ch; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); }
-  .transfer-scope { margin: 10px 0 0; max-width: 62ch; font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.7; color: var(--ink-soft); }
+  /* ── 02 · Record ───────────────────────────────────────────────────────────────────────────── */
+  .vf-record-with-photo { display: grid; gap: clamp(32px, 4vw, 48px); }
+  @media (min-width: 1024px) {
+    .vf-record-with-photo { grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); align-items: start; }
+  }
+  .vf-span { margin: clamp(28px, 3.4vw, 40px) 0 0; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .vf-stats { margin: 8px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; border-top: 1px solid var(--vf-rule); padding-top: 14px; }
+  .vf-stats div { display: flex; flex-direction: column; }
+  .vf-stat-figure { font-family: var(--sans); font-weight: 300; font-size: clamp(44px, 6vw, 72px); line-height: 1; letter-spacing: -.03em; color: var(--ink); font-variant-numeric: lining-nums tabular-nums; }
+  .vf-stats dd { margin: 8px 0 0; font-family: var(--sans); font-size: 14px; line-height: 1.35; color: var(--ink-soft); }
+  .vf-timeline { margin: clamp(28px, 3.4vw, 40px) 0 0; }
+  .vf-timeline-year { display: grid; grid-template-columns: 4.5em minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--vf-rule); }
+  .vf-timeline-year:last-child { border-bottom: 1px solid var(--vf-rule); }
+  .vf-timeline dt { font-family: var(--mono); font-size: 13px; color: var(--ink-muted); font-variant-numeric: tabular-nums; padding-top: 2px; }
+  .vf-timeline dd { margin: 0; }
+  .vf-timeline ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .vf-timeline li { font-family: var(--sans); font-size: 16px; line-height: 1.45; color: var(--ink); }
+  .vf-timeline a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--ink) 25%, transparent); text-underline-offset: .2em; text-decoration-thickness: 1px; transition: color .25s var(--ease), text-decoration-color .25s var(--ease); }
+  .vf-timeline a:hover, .vf-timeline a:focus-visible { color: var(--vf-accent); text-decoration-color: currentColor; }
+  .vf-record-photo { margin: 0; }
+  .vf-record-photo :global(img) { display: block; width: 100%; height: auto; }
+  .vf-record-photo figcaption { margin: 10px 0 0; font-family: var(--mono); font-size: 12px; line-height: 1.5; color: var(--ink-muted); }
 
-  /* The optional "let us know": the island's markup is React's and carries no scope attribute,
-     so every inner selector is `:global()`. Writing lines, not boxes — the doors' grammar. */
-  .join { margin-top: clamp(48px, 6vw, 80px); padding-top: clamp(28px, 3.6vw, 40px); border-top: 1px solid var(--line); }
-  .join-body { margin: 0 0 24px; max-width: 56ch; font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.72; color: var(--ink-soft); }
-  .join :global(.patron-form) { display: grid; gap: 22px; max-width: 640px; }
-  .join :global(.patron-fields) { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; }
-  @media (max-width: 560px) { .join :global(.patron-fields) { grid-template-columns: 1fr; } }
-  .join :global(.patron-field) { display: grid; gap: 6px; min-width: 0; }
-  .join :global(.patron-field-wide) { grid-column: 1 / -1; }
-  .join :global(.patron-label) { font-family: var(--capitalis); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--candle-ink); }
-  .join :global(.patron-input) { display: block; width: 100%; padding: 6px 0; border: 0; border-bottom: 1px solid var(--line-strong); background: none; color: var(--ink); caret-color: var(--ink); font-family: var(--serif); font-size: clamp(19px, 2vw, 24px); font-weight: 300; line-height: 1.3; border-radius: 0; transition: border-color .3s var(--ease); }
-  .join :global(.patron-input:focus) { outline: none; border-bottom-color: var(--candle); }
-  .join :global(.patron-input[aria-invalid="true"]) { border-bottom-color: #9b4f38; }
-  .join :global(.patron-input:disabled) { opacity: .6; }
-  .join :global(.patron-consent) { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 12px; align-items: start; cursor: pointer; }
-  .join :global(.patron-consent-input) { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .join :global(.patron-consent-box) { display: block; width: 18px; height: 18px; margin-top: 2px; border: 1px solid var(--line-strong); background: transparent; transition: background-color .3s var(--ease), border-color .3s var(--ease); }
-  .join :global(.patron-consent-input:checked + .patron-consent-box) { background: var(--candle-ink); border-color: var(--candle-ink); }
-  .join :global(.patron-consent-input:focus-visible + .patron-consent-box) { outline: 2px solid var(--candle-ink); outline-offset: 3px; }
-  .join :global(.patron-consent-input[aria-invalid="true"] + .patron-consent-box) { border-color: #9b4f38; }
-  .join :global(.patron-consent-text) { font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); text-wrap: pretty; }
-  .join :global(.patron-consent-text a) { color: var(--ink-soft); border-bottom: 1px solid var(--line-strong); transition: color .3s var(--ease), border-color .3s var(--ease); }
-  .join :global(.patron-consent-text a:hover) { color: var(--candle-blue); border-color: var(--candle-blue); }
-  .join :global(.patron-error) { margin: -6px 0 0; color: #9b4f38; font-size: 13.5px; line-height: 1.5; }
-  .join :global(.patron-error a) { border-bottom: 1px solid currentColor; }
-  .join :global(.patron-submit) { justify-self: start; display: inline-flex; align-items: center; padding: 12px 22px; border: 1px solid color-mix(in srgb, var(--candle-ink) 62%, transparent); border-radius: 999px; background: transparent; color: var(--candle-ink); cursor: pointer; font-family: var(--capitalis); font-size: 10.5px; font-weight: 600; letter-spacing: .16em; line-height: 1.2; text-transform: uppercase; transition: color .3s var(--ease), border-color .3s var(--ease), background-color .3s var(--ease), opacity .3s var(--ease); }
-  .join :global(.patron-submit:hover:not(:disabled)), .join :global(.patron-submit:focus-visible) { background: var(--candle-ink); border-color: var(--candle-ink); color: var(--paper); }
-  .join :global(.patron-submit:focus-visible) { outline: 2px solid var(--candle-ink); outline-offset: 4px; }
-  .join :global(.patron-submit:disabled) { cursor: progress; opacity: .55; }
-  .join :global(.patron-done) { max-width: 56ch; }
-  .join :global(.patron-done-title) { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(22px, 2.6vw, 30px); line-height: 1.2; color: var(--ink); }
-  .join :global(.patron-done-body) { margin: 10px 0 0; font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.72; color: var(--ink-soft); }
-  .join-noscript { margin: 0; max-width: 56ch; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); }
-  .join-contact { margin: 24px 0 0; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); }
-  .join-contact a { color: var(--ink-soft); border-bottom: 1px solid var(--line-strong); transition: color .3s var(--ease), border-color .3s var(--ease); }
-  .join-contact a:hover { color: var(--candle-blue); border-color: var(--candle-blue); }
+  /* ── 03 · Mission and people ───────────────────────────────────────────────────────────────── */
+  .vf-motto { margin: 0; max-width: 20ch; font-family: var(--serif); font-style: italic; font-weight: 400; font-size: clamp(34px, 4.6vw, 60px); line-height: 1.08; letter-spacing: -.01em; color: var(--ink); text-wrap: balance; }
+  .vf-board { margin: clamp(40px, 5vw, 64px) 0 0; }
+  .vf-board-list { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(28px, 3vw, 40px) clamp(20px, 2.4vw, 32px); grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 640px) { .vf-board-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .vf-member { border-top: 1px solid var(--vf-rule); padding-top: 14px; }
+  /* The drawings are ink on a transparent ground, so they sit on the paper like print. */
+  .vf-portrait { margin: 0 0 14px; aspect-ratio: 1; max-width: 320px; }
+  .vf-portrait :global(img) { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .vf-member-name { margin: 0; font-family: var(--sans); font-weight: 600; font-size: 18px; line-height: 1.3; color: var(--ink); }
+  .vf-member-function { margin: 4px 0 0; font-family: var(--mono); font-size: 12px; letter-spacing: .04em; color: var(--ink-muted); }
+  .vf-member-domain { margin: 8px 0 0; font-family: var(--sans); font-size: 15px; line-height: 1.5; color: var(--ink-soft); }
 
-  /* ── Partnership ────────────────────────────────────────────────────────────────────────── */
-  .partnership { padding: clamp(72px, 11vw, 150px) var(--gutter); --lat-ink: var(--candle-ink); }
-  .partner-rows { margin-top: clamp(36px, 5vw, 56px); }
-  .partner-next { margin-top: clamp(30px, 4vw, 48px); }
-  .partner-next .body { margin-top: 0; }
-  .partner-thanks { margin: 14px 0 0; max-width: 62ch; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); }
-  .mail-line { margin: 28px 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 18px; }
-  .mail-line .rubric { flex-basis: 100%; margin: 0; }
-  .partner-booking { margin: 24px 0 0; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); }
+  /* ── 04 · Support ──────────────────────────────────────────────────────────────────────────── */
+  .vf-ways { margin: clamp(32px, 4vw, 48px) 0 0; display: grid; gap: clamp(36px, 4vw, 48px) clamp(20px, 2.4vw, 32px); grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 1024px) { .vf-ways { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .vf-way { display: flex; flex-direction: column; border-top: 1px solid var(--vf-rule); padding-top: 14px; }
+  .vf-way-label { margin: 0; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); }
+  .vf-quote { margin: 16px 0 0; font-family: var(--serif); font-style: italic; font-weight: 400; font-size: clamp(24px, 2.2vw, 30px); line-height: 1.2; color: var(--ink); text-wrap: balance; }
+  .vf-way-body { margin: 16px 0 0; font-family: var(--sans); font-size: 15.5px; line-height: 1.6; color: var(--ink-soft); }
+  .vf-way-note { margin: 12px 0 0; font-family: var(--sans); font-size: 14px; line-height: 1.55; color: var(--ink-muted); }
+  .vf-way-person { margin: 16px 0 0; font-family: var(--sans); font-weight: 600; font-size: 15.5px; color: var(--ink); }
+  .vf-way-acts { margin: 20px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; }
+  .vf-way-links { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 10px; }
 
-  /* ── Who — paper-soft again; closes on the address ──────────────────────────────────────── */
-  .who { background: var(--paper-soft); padding: clamp(72px, 11vw, 150px) var(--gutter) clamp(84px, 12vw, 150px); --lat-ink: var(--candle-ink); }
-  .who-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(30px, 5vw, 64px); align-items: start; margin-top: clamp(40px, 5vw, 64px); }
-  @media (max-width: 760px) { .who-grid { grid-template-columns: 1fr; gap: 40px; } }
-  .who-block { margin: 0; }
-  .board { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-  .board li { display: grid; gap: 2px; }
-  .board-name { font-family: var(--serif); font-weight: 300; font-size: clamp(19px, 2vw, 23px); line-height: 1.3; color: var(--ink); }
-  .board-role { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); }
-  .who-note { margin: 16px 0 0; max-width: 34ch; font-size: 13.5px; line-height: 1.65; color: var(--ink-muted); }
-  .identity { margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.9; letter-spacing: .02em; color: var(--ink-soft); user-select: all; font-variant-numeric: lining-nums; }
-  .documents { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-  .documents a { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); border-bottom: 1px solid var(--line-strong); padding-bottom: 3px; transition: color .3s var(--ease), border-color .3s var(--ease); }
-  .documents a:hover { color: var(--candle-blue); border-color: var(--candle-blue); }
-  .help { margin-top: clamp(40px, 5vw, 64px); padding-top: clamp(26px, 3.2vw, 36px); border-top: 1px solid var(--line); }
-  .help-list { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 22px clamp(30px, 5vw, 64px); }
-  @media (max-width: 680px) { .help-list { grid-template-columns: 1fr; } }
-  .help-item dt { font-family: var(--serif); font-weight: 400; font-size: clamp(17px, 1.6vw, 19px); line-height: 1.35; color: var(--ink); margin: 0; }
-  .help-item dd { margin: 6px 0 0; max-width: 40ch; font-size: 14px; line-height: 1.65; color: var(--ink-soft); }
-  .who-contact { margin: clamp(40px, 5vw, 64px) 0 0; display: grid; gap: 6px; }
-  .who-contact .rubric { margin: 0; }
+  .vf-transfer { margin: clamp(48px, 6vw, 72px) 0 0; padding-top: 14px; border-top: 1px solid var(--ink); }
+  .vf-transfer-rows { margin: 0; display: grid; }
+  .vf-transfer-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 12px 0; border-bottom: 1px solid var(--vf-rule); }
+  @media (min-width: 720px) { .vf-transfer-row { grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr); gap: 24px; align-items: baseline; } }
+  .vf-transfer-row dt { font-family: var(--sans); font-size: 14px; line-height: 1.4; color: var(--ink-soft); }
+  .vf-currency { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-muted); }
+  .vf-transfer-row dd { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  .vf-transfer-value { font-family: var(--mono); font-size: clamp(15px, 1.3vw, 17px); letter-spacing: .03em; color: var(--ink); user-select: all; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  .vf-transfer-note { margin: 12px 0 0; max-width: 64ch; font-family: var(--sans); font-size: 14px; line-height: 1.55; color: var(--ink-soft); }
+  .vf-transfer-note + .vf-transfer-note { margin-top: 6px; }
+
+  /* The copy capsule — the site's one shape for "copy this", in this page's type. */
+  .vf :global(.copy-btn) { display: inline-flex; align-items: center; min-height: 32px; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); background: transparent; border: 1px solid var(--vf-rule); border-radius: 2px; padding: 0 10px; cursor: pointer; transition: color .25s var(--ease), border-color .25s var(--ease); }
+  .vf :global(.copy-btn:hover) { color: var(--ink); border-color: var(--ink); }
+  .vf :global(.copy-btn.is-copied) { color: var(--sage); border-color: var(--sage); }
+
+  /* The optional form, collapsed behind a line. The island's markup is React's and carries no
+     scope attribute, so every inner selector is `:global()`. */
+  .vf-join { margin: clamp(32px, 4vw, 48px) 0 0; border-top: 1px solid var(--vf-rule); border-bottom: 1px solid var(--vf-rule); }
+  .vf-join summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; cursor: pointer; list-style: none; font-family: var(--sans); font-weight: 500; font-size: 16px; color: var(--ink); }
+  .vf-join summary::-webkit-details-marker { display: none; }
+  .vf-join summary::after { content: "+"; font-family: var(--mono); font-size: 18px; color: var(--ink-muted); }
+  .vf-join[open] summary::after { content: "−"; }
+  .vf-join-body { padding: 4px 0 28px; }
+  .vf-join-note { margin: 0 0 22px; max-width: 60ch; font-family: var(--sans); font-size: 14.5px; line-height: 1.6; color: var(--ink-soft); }
+  .vf-join-note a { color: inherit; }
+  .vf-join :global(.patron-form) { display: grid; gap: 22px; max-width: 640px; }
+  .vf-join :global(.patron-fields) { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; }
+  @media (max-width: 560px) { .vf-join :global(.patron-fields) { grid-template-columns: 1fr; } }
+  .vf-join :global(.patron-field) { display: grid; gap: 6px; min-width: 0; }
+  .vf-join :global(.patron-field-wide) { grid-column: 1 / -1; }
+  .vf-join :global(.patron-label) { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); }
+  .vf-join :global(.patron-input) { display: block; width: 100%; padding: 6px 0; border: 0; border-bottom: 1px solid var(--line-strong); background: none; color: var(--ink); caret-color: var(--ink); font-family: var(--sans); font-size: 18px; line-height: 1.4; border-radius: 0; transition: border-color .25s var(--ease); }
+  .vf-join :global(.patron-input:focus) { outline: none; border-bottom-color: var(--vf-accent); }
+  .vf-join :global(.patron-input[aria-invalid="true"]) { border-bottom-color: #9b4f38; }
+  .vf-join :global(.patron-input:disabled) { opacity: .6; }
+  .vf-join :global(.patron-consent) { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 12px; align-items: start; cursor: pointer; }
+  .vf-join :global(.patron-consent-input) { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .vf-join :global(.patron-consent-box) { display: block; width: 18px; height: 18px; margin-top: 2px; border: 1px solid var(--line-strong); background: transparent; transition: background-color .25s var(--ease), border-color .25s var(--ease); }
+  .vf-join :global(.patron-consent-input:checked + .patron-consent-box) { background: var(--ink); border-color: var(--ink); }
+  .vf-join :global(.patron-consent-input:focus-visible + .patron-consent-box) { outline: 2px solid var(--vf-accent); outline-offset: 3px; }
+  .vf-join :global(.patron-consent-input[aria-invalid="true"] + .patron-consent-box) { border-color: #9b4f38; }
+  .vf-join :global(.patron-consent-text) { font-family: var(--sans); font-size: 13.5px; line-height: 1.6; color: var(--ink-soft); text-wrap: pretty; }
+  .vf-join :global(.patron-consent-text a) { color: var(--ink); text-decoration: underline; text-underline-offset: .2em; }
+  .vf-join :global(.patron-error) { margin: -6px 0 0; color: #9b4f38; font-family: var(--sans); font-size: 13.5px; line-height: 1.5; }
+  .vf-join :global(.patron-error a) { color: inherit; text-decoration: underline; }
+  .vf-join :global(.patron-submit) { justify-self: start; display: inline-flex; align-items: center; min-height: 48px; padding: 0 24px; border: 1px solid var(--ink); border-radius: 2px; background: transparent; color: var(--ink); cursor: pointer; font-family: var(--sans); font-weight: 500; font-size: 15px; transition: color .25s var(--ease), background-color .25s var(--ease), opacity .25s var(--ease); }
+  .vf-join :global(.patron-submit:hover:not(:disabled)), .vf-join :global(.patron-submit:focus-visible) { background: var(--ink); color: var(--paper); }
+  .vf-join :global(.patron-submit:focus-visible) { outline: 2px solid var(--vf-accent); outline-offset: 3px; }
+  .vf-join :global(.patron-submit:disabled) { cursor: progress; opacity: .55; }
+  .vf-join :global(.patron-done) { max-width: 56ch; }
+  .vf-join :global(.patron-done-title) { margin: 0; font-family: var(--sans); font-weight: 600; font-size: 20px; line-height: 1.3; color: var(--ink); }
+  .vf-join :global(.patron-done-body) { margin: 8px 0 0; font-family: var(--sans); font-size: 15px; line-height: 1.6; color: var(--ink-soft); }
+
+  /* ── 05 · Registry — ink band ──────────────────────────────────────────────────────────────
+     The page's paper inverted. Muted text is paper mixed toward ink, not an opacity, so the
+     ratios hold (paper at 64 % over --ink stays above 7:1). */
+  .vf-registry {
+    --reg-ink: var(--paper);
+    --reg-muted: color-mix(in oklab, var(--paper) 64%, var(--ink));
+    --reg-rule: color-mix(in oklab, var(--paper) 18%, transparent);
+    background: var(--ink);
+    color: var(--reg-ink);
+    padding: clamp(64px, 9vw, 120px) 0 clamp(28px, 3vw, 40px);
+  }
+  .vf-registry a { color: var(--reg-ink); text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--paper) 35%, transparent); text-underline-offset: .22em; text-decoration-thickness: 1px; transition: text-decoration-color .25s var(--ease); }
+  .vf-registry a:hover, .vf-registry a:focus-visible { text-decoration-color: currentColor; }
+  .vf-registry a:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
+  .vf-registry .vf-num { color: var(--reg-muted); }
+  .vf-registry-head { margin-bottom: clamp(28px, 4vw, 40px); }
+  .vf-registry-num { margin: 0 0 10px; }
+  .vf-registry-h2 { margin: 0; font-family: var(--sans); font-weight: 600; font-size: clamp(26px, 2.6vw, 34px); line-height: 1.1; letter-spacing: -.02em; color: var(--reg-ink); }
+  @media (min-width: 1024px) {
+    .vf-registry-grid > .vf-registry-head { grid-column: 1 / 4; }
+    .vf-registry-grid > .vf-registry-body { grid-column: 4 / -1; }
+    .vf-registry-grid > .vf-wordmark { grid-column: 1 / -1; }
+  }
+  .vf-registry-rows { margin: 0; border-top: 1px solid var(--reg-rule); }
+  .vf-registry-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 10px 0; border-bottom: 1px solid var(--reg-rule); }
+  @media (min-width: 720px) { .vf-registry-row { grid-template-columns: minmax(9rem, 13rem) minmax(0, 1fr); gap: 24px; align-items: baseline; } }
+  .vf-registry-row dt { font-family: var(--mono); font-size: 12px; letter-spacing: .04em; color: var(--reg-muted); }
+  .vf-registry-row dd { margin: 0; font-family: var(--sans); font-size: 15.5px; line-height: 1.5; color: var(--reg-ink); font-variant-numeric: tabular-nums; }
+  .vf-registry-text { margin: 20px 0 0; max-width: 66ch; font-family: var(--sans); font-size: 15.5px; line-height: 1.6; color: var(--reg-ink); }
+  .vf-registry-muted { color: var(--reg-muted); font-size: 14.5px; }
+  .vf-registry-label { display: block; margin: clamp(32px, 4vw, 44px) 0 12px; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--reg-muted); }
+  .vf-goals { margin: 0; padding: 0 0 0 1.6em; display: grid; gap: 8px; max-width: 66ch; font-family: var(--sans); font-size: 15.5px; line-height: 1.55; color: var(--reg-ink); }
+  .vf-goals li::marker { font-family: var(--mono); font-size: 12px; color: var(--reg-muted); }
+  .vf-documents { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 28px; font-family: var(--sans); font-size: 15.5px; }
+  .vf-registry-contact { margin: clamp(32px, 4vw, 44px) 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px; }
+  .vf-registry-contact .vf-registry-label { flex-basis: 100%; margin: 0; }
+  .vf-registry-mail { font-family: var(--sans); font-weight: 500; font-size: clamp(20px, 2.4vw, 28px); overflow-wrap: anywhere; }
+  .vf-registry :global(.copy-btn) { color: var(--reg-muted); border-color: var(--reg-rule); }
+  .vf-registry :global(.copy-btn:hover) { color: var(--reg-ink); border-color: var(--reg-ink); }
+  .vf-wordmark { display: block; width: 100%; height: auto; margin: clamp(56px, 8vw, 104px) 0 0; overflow: visible; }
+  .vf-wordmark text { font-family: var(--sans); font-weight: 600; font-size: 100px; fill: var(--reg-ink); }
 </style>

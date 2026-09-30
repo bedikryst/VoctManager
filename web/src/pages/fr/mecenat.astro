@@ -1,0 +1,14 @@
+---
+/**
+ * @file fr/mecenat.astro
+ * @description French patronage route (/fr/mecenat). Structure lives in the shared MecenatPage
+ *  component; this route only selects the locale. The chrome is translated in
+ *  i18n/content/mecenat.ts, and the prose falls back per field to the Polish in
+ *  src/content/pages/mecenat.yaml until the copy desk's French lands in content/pages.fr.yaml.
+ * @architecture Astro islands 2026
+ * @module pages/fr/mecenat
+ */
+import MecenatPage from "../../components/pages/MecenatPage.astro";
+---
+
+<MecenatPage lang="fr" />

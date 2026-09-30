@@ -1,0 +1,76 @@
+# The editorial text of /mecenat — Polish, and Polish only.
+#
+# A letter page for a patron who arrives by a personal link: one idea, one project, one number, one
+# person to talk to, and the foundation's page as the proof. Off the menu, indexable once the
+# foundation's pages are announced. Built from Anna Marcisz's own text; "Państwo" is used here and
+# nowhere else on the site. Spec: docs/specs/web-foundation-rebuild-2026-09.md §4.
+#
+# WHAT IS NOT HERE. The realisation's facts and the sheet's labels are /fundacja's (the module is
+# shared, and so are its words); the budget comes from `data/foundationSupport.ts` through the
+# `{amount}` and `{date}` slots; the contact's name and address from `data/foundation.ts`.
+#
+# TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under `page.mecenat.` +
+# the dotted path below, written by the copy desk.
+#
+# NO TYPOGRAPHY. `lib/typo.ts` pins orphans and bindings at build.
+
+meta:
+  title: "Mecenat | Fundacja VoctFoundation"
+  description: >-
+    Mecenat VoctFoundation: udział w powstawaniu koncertów, zanim spotkają się z publicznością.
+    Bieżący projekt, jego budżet i osoba do rozmowy.
+
+eyebrow: "Mecenat · VoctFoundation"
+h1: "Mecenat zaczyna się wcześniej, zanim dzieło spotka się z publicznością."
+idea: >-
+  To jedna z najstarszych form obecności przy sztuce: decyzja, że pewnej idei warto umożliwić
+  powstanie, a jej kształt artystyczny zostawić twórcom.
+
+realisation:
+  # Printed above the module: the first while the concert is ahead, the second after it.
+  rubricAhead: "W realizacji"
+  rubricPast: "Ostatnia realizacja"
+  # The page presents the featured realisation only, and this copy is written for it — the build
+  # fails when FEATURED_REALISATION names a different one, so the lead and the areas cannot
+  # silently describe the wrong concert.
+  id: "pochwala-stworzenia"
+  lead: "Koncert Duchowy inspirowany Laudes creaturarum św. Franciszka z Asyżu."
+  areas:
+    - id: "honoraria"
+      text: "honoraria wykonawców"
+    - id: "rejestracja"
+      text: "rejestracja koncertu"
+    - id: "transport"
+      text: "transport i pobyt"
+
+about:
+  h2: "O realizacji"
+  # `{amount}` is the budget in the locale's grouping, `{date}` the day the board confirmed it.
+  # The areas follow the last sentence as a list.
+  body: >-
+    Budżet produkcji wynosi ok. {amount} zł (stan na {date}). To skala środków potrzebnych do
+    realizacji koncertu w przyjętym kształcie. Część pracy koncepcyjnej i organizacyjnej stanowi
+    wkład własny VoctFoundation. Mecenat może objąć cały projekt albo wybrany obszar:
+
+presence:
+  h2: "Obecność przy projekcie"
+  body: >-
+    Jedni chcą być blisko: poznać ideę i sposób powstawania projektu, przyjść na próbę generalną.
+    Inni wolą spotkać się dopiero z gotową formą. Mecenat może pozostać prywatny albo stać się
+    częścią publicznej historii projektu. Po koncercie przekazujemy mecenasom jego rozliczenie.
+  # A rehearsal: the context, nothing more (the press pack's caption rule).
+  photoCaption: "Próba VoctEnsemble"
+
+coda: >-
+  To, co później staje się wspólnym doświadczeniem słuchaczy, wcześniej zaczyna się między ludźmi,
+  dzięki którym koncert może przyjąć swoją formę.
+
+contact:
+  lead: >-
+    Jeśli projekt jest Państwu bliski albo chcieliby Państwo poznać go bliżej, zacznijmy od rozmowy.
+  # `{function}` is the contact's KRS function as /fundacja words it.
+  role: "{function} VoctFoundation"
+  # Prefilled into the reader's mail client.
+  mailSubject: "Mecenat VoctFoundation"
+
+proof: "O fundacji: ludzie, dokumenty, realizacje →"

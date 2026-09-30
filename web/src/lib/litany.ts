@@ -3,7 +3,8 @@
  * @description The landing plate's names, derived from the `repertoire` collection: each era
  *  reduced to SURNAMES alone, each surname carrying the evenings it sounded at. The catalogue
  *  itself — forenames, life dates, every work — is /koncerty#repertuar; this is its index, so the
- *  plate carries the one field an inscription carries and links to the book for the rest.
+ *  plate carries the one field an inscription carries and links to the book for the rest. The
+ *  same join reduces one programme to its surnames for the foundation's realisation sheet.
  *
  *  DERIVED, never a second list. A composer reaches the landing by being catalogued, which is
  *  the only way the plate can stay true as concerts are added: a hand-kept copy would drift
@@ -126,6 +127,39 @@ function sungAt(surnames: readonly string[], evenings: readonly LitanyEvening[])
     }
   }
   return sung;
+}
+
+/**
+ * One programme's composers as the surnames a fact sheet prints — each once, in the order given.
+ * The catalogue decides wherever it holds the name, by the same longest-suffix join
+ * the plate uses ("Ralph Vaughan Williams" → "Vaughan Williams", never "Williams"). A composer not
+ * catalogued yet falls back to the printed name's last word, which is right for every one-word
+ * surname; a two-word surname that comes out wrong is the signal to catalogue it.
+ */
+export function programmeSurnames(
+  composers: readonly string[],
+  eras: CollectionEntry<"repertoire">[],
+): string[] {
+  const catalogue = new Map<string, string>();
+  for (const era of eras) {
+    for (const entry of era.data.entries) {
+      if (ANONYMOUS.test(entry.composer)) continue;
+      const name = surname(entry.composer);
+      catalogue.set(key(name), name);
+    }
+  }
+  const out: string[] = [];
+  for (const composer of composers) {
+    if (ANONYMOUS.test(composer)) continue;
+    const tokens = composer.trim().split(/\s+/);
+    let hit: string | undefined;
+    for (let start = 0; start < tokens.length && !hit; start += 1) {
+      hit = catalogue.get(key(tokens.slice(start).join(" ")));
+    }
+    const name = hit ?? tokens[tokens.length - 1];
+    if (name && !out.includes(name)) out.push(name);
+  }
+  return out;
 }
 
 /**

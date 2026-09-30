@@ -246,8 +246,9 @@ governance:
     Kierunek artystyczny wyznacza jedna osoba, decyzje fundacji zapadają większością głosów — tak
     stanowi statut. Ci sami ludzie stoją potem za kulisami w dniu koncertu.
   # A DOMAIN, NOT A JOB DESCRIPTION: a three-person board reads as an improvised org chart the
-  # moment its cards start listing duties. Two words each, and the middot is the site's own
-  # separator rather than punctuation to translate.
+  # moment its cards start listing duties. A few words each, and the middot is the site's own
+  # separator rather than punctuation to translate. /fundacja prints the same lines beside each
+  # member's KRS function, so this is their one home.
   #
   # `id` matches the portrait the component holds for each member, so the role and the face cannot
   # drift apart the way a positional pairing would.
@@ -255,9 +256,9 @@ governance:
     - id: "florent"
       role: "Kierownictwo artystyczne · dyrygent"
     - id: "ania"
-      role: "Organizacja · komunikacja"
+      role: "Produkcja · komunikacja · kierunek wizualny"
     - id: "krystian"
-      role: "Technologia · narzędzia"
+      role: "Technologia · design cyfrowy"
 
 cta:
   h2: "Zaproście nas do przestrzeni, która potrzebuje głosu."

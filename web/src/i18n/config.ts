@@ -134,6 +134,9 @@ export const TRANSLATED_ROUTES: ReadonlySet<string> = new Set<string>([
   // site point, so an English reader must land on the English chrome. Its prose falls back per
   // field until the desk's translations land.
   "/fundacja",
+  // The patron's letter page. Reached by a personal link and from /fundacja, never from the nav;
+  // in the set so a French patron's link and the foundation page's door both land in French.
+  "/mecenat",
   "/koncerty/wcielenie",
   "/koncerty/wolanie-gor",
   "/koncerty/9-kart",

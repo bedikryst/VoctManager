@@ -422,7 +422,7 @@ export const concertUrl = (site: string, concertId: string): string =>
 /**
  * A fingerprint of everything in git that the built pack prints: every kit file, the photo
  * manifest, the corpus rows of the concerts those kits name, the page-copy fields the pack
- * carries (`PACK_COPY_FIELDS`), the foundation's data and the mark. The generator writes it into
+ * carries (`PACK_COPY_FIELDS`), the foundation facts it prints and the mark. The generator writes it into
  * `index.json`; the page recomputes it and refuses to build against a pack cut from other sources.
  *
  * The corpus and the page copy are hashed per field, not as files, so an edit to another evening
@@ -457,7 +457,11 @@ export function computeKitHash(root: string = process.cwd()): string {
   for (const [section, field] of PACK_COPY_FIELDS) {
     hash.update(`copy:${section}.${field}\n${JSON.stringify(pageCopy[section]?.[field] ?? null)}\n`);
   }
-  hash.update(`foundation\n${JSON.stringify(FOUNDATION)}\n`);
+  // The pack prints three of the foundation's facts — the site its links point at, the ensemble's
+  // name and the press address — so only those are hashed; the board or a new profile in
+  // `data/foundation.ts` cannot have changed a pack.
+  const printed = { site: FOUNDATION.site, ensemble: FOUNDATION.ensemble, press: FOUNDATION.mail.press };
+  hash.update(`foundation\n${JSON.stringify(printed)}\n`);
   hash.update(`mark\n${readFileSync(join(root, MARK_FILE), "utf8").replace(/\r\n/g, "\n")}`);
   return hash.digest("hex").slice(0, 16);
 }

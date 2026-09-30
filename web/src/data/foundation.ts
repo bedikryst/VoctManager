@@ -1,8 +1,9 @@
 /**
  * @file foundation.ts
  * @description Who the foundation is, as data: the registered name, the seat, the three registry
- *  numbers and the two accounts. The facts an organiser needs to sign a contract or issue a
- *  transfer, in one place.
+ *  numbers, the founding date, the board and its KRS functions, the foundation's own social
+ *  profiles, the two accounts and the addresses. The facts an organiser needs to sign a contract
+ *  or issue a transfer, in one place.
  *
  *  IT EXISTS BECAUSE A NUMBER IS NOT PROSE. KRS, NIP and REGON are printed on nine surfaces of
  *  this site and were typed out on every one of them; `docs/specs/web-colophon-remediation.md` records
@@ -38,6 +39,22 @@ export interface BankAccount {
   readonly nrb: string;
 }
 
+/** A board seat as the KRS register carries it. The words for it are copy, per locale. */
+export type BoardFunction = "president" | "vicePresident";
+
+export interface BoardMember {
+  /** Stable key shared with /o-nas's role lines and portraits. */
+  readonly id: "florent" | "ania" | "krystian";
+  readonly name: string;
+  readonly function: BoardFunction;
+}
+
+export interface SocialProfile {
+  readonly network: "facebook" | "instagram";
+  /** The canonical profile URL — never a share or redirect link. */
+  readonly url: string;
+}
+
 export interface Foundation {
   /** As the register carries it — the name that goes on a contract. */
   readonly name: string;
@@ -58,6 +75,14 @@ export interface Foundation {
     readonly nip: string;
     readonly regon: string;
   };
+  /** ISO date the foundation was established — the line /fundacja draws between the ensemble's
+      own record and the foundation's realisations. */
+  readonly foundedOn: string;
+  /** The management board in the register's order: the president, then the vice-presidents. */
+  readonly board: readonly BoardMember[];
+  /** The foundation's own profiles, not the ensemble's (`data/social.ts`). Only accounts that
+      exist; a surface prints nothing for an empty list. */
+  readonly socials: readonly SocialProfile[];
   readonly accounts: {
     readonly pln: BankAccount;
     /** A second account in EUR. It exists for a foreign organiser and for nothing else. */
@@ -67,6 +92,10 @@ export interface Foundation {
     readonly booking: string;
     readonly general: string;
     readonly patronage: string;
+    /** Everything /fundacja asks a reader to write about — the foundation's own domain. */
+    readonly foundation: string;
+    /** /mecenat only: the address its contact person reads. */
+    readonly mecenat: string;
     /** Journalists. The foundation's own domain, as printed on its press releases. */
     readonly press: string;
     readonly director: string;
@@ -98,6 +127,13 @@ export const FOUNDATION: Foundation = {
     nip: "6762718992",
     regon: "544621525",
   },
+  foundedOn: "2026-04-15",
+  board: [
+    { id: "florent", name: "Florent de Bazelaire", function: "president" },
+    { id: "ania", name: "Anna Marcisz", function: "vicePresident" },
+    { id: "krystian", name: "Krystian Bugalski", function: "vicePresident" },
+  ],
+  socials: [{ network: "facebook", url: "https://www.facebook.com/profile.php?id=61590395972435" }],
   accounts: {
     pln: {
       iban: "PL26160010131724418410000001",
@@ -114,6 +150,8 @@ export const FOUNDATION: Foundation = {
     booking: "booking@voctensemble.com",
     general: "kontakt@voctensemble.com",
     patronage: "patronat@voctensemble.com",
+    foundation: "fundacja@voctfoundation.com",
+    mecenat: "mecenat@voctfoundation.com",
     press: "press@voctfoundation.com",
     director: "florent.de.bazelaire@voctensemble.com",
   },

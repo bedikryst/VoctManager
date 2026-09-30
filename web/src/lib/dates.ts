@@ -22,7 +22,9 @@
 // lib/pressKit → lib/cycle), which resolves no extensionless specifier.
 import { pickLocale, type Locale, type LocalizedText } from "../i18n/config.ts";
 
-const INTL_LOCALE: Record<Locale, string> = { pl: "pl-PL", en: "en-GB", fr: "fr-FR" };
+/** The ICU locale each site locale formats with — exported so an amount formats in the same
+    regional register as the date beside it. */
+export const INTL_LOCALE: Record<Locale, string> = { pl: "pl-PL", en: "en-GB", fr: "fr-FR" };
 
 /** Weekday-free long date from an ISO `YYYY-MM-DD` string. */
 export const longDate = (iso: string, locale: Locale): string =>

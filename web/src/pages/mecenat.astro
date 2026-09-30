@@ -1,0 +1,13 @@
+---
+/**
+ * @file mecenat.astro
+ * @description Polish patronage route (/mecenat) — the canonical, un-prefixed page. Structure and
+ *  styles live in the shared MecenatPage component; this route only selects the locale. See
+ *  src/content/pages/mecenat.yaml for the prose and i18n/content/mecenat.ts for the chrome.
+ * @architecture Astro islands 2026
+ * @module pages/mecenat
+ */
+import MecenatPage from "../components/pages/MecenatPage.astro";
+---
+
+<MecenatPage lang="pl" />
