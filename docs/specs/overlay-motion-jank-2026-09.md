@@ -1,9 +1,10 @@
 # Overlay motion on a phone — why every sheet, drawer and menu stutters (2026-09)
 
-Status: **open** — stages 1–3 implemented 2026-09-29, not yet checked on the phone. Stage 0
-(the developer's, on the phone) has no recorded result; stages 4–5 wait for it and for the
-phone check of 1–3. See **Implementation notes** at the end for where the build departs from
-the text.
+Status: **open** — stages 1–3 implemented 2026-09-29 and smooth on the developer's phone
+(2026-09-30), with the `MobileNavSheet` scrim blur restored as the 1.1 control. Blur was not the
+cost, so **stage 4 is dropped**. Expanding and collapsing cards still drop frames on the phone:
+**stage 5 is next**, with the recommended variant. Stage 0 was never run and is no longer needed.
+See **Implementation notes** at the end for where the build departs from the text.
 
 Successor to `frontend-performance-remediation-2026-08.md`. Its conclusion (paint/composite-bound,
 not re-render-bound) still holds; this file is about what its method could not see.

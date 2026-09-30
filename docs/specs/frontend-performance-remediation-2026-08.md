@@ -495,9 +495,11 @@ should read as quick rather than stately.
 
 - **Preserve the look.** Every fix here removes cost that is invisible or near-invisible at rest.
   If a change is visible, it is called out as such and is the developer's call, not the agent's.
-- **Static blur stays.** Blur is only a problem when it is *animated* or when it is a
-  `backdrop-filter` on a surface that is permanently mounted over scrolling content. Decorative
-  static blur and transient floating overlays keep theirs (settled 2026-06, unchanged).
+- **Static decorative blur stays.** A `filter: blur` on a decorative layer rasterises once.
+  `backdrop-filter` is a different cost — recomputed every frame its region is damaged, so an
+  overlay that fades or slides pays for every blur beneath it. Its rule now lives in
+  `overlay-motion-jank-2026-09.md` (Decisions): blur that shows stays, blur under a near-opaque
+  fill goes.
 - **The scroll lock stays.** It is load-bearing: the shell root is `min-h-screen`, so `<html>` is
   the document scroller and locking `<body>` alone leaves tall pages scrollable behind overlays.
   Stage 2 changes *when* it releases, not whether.
