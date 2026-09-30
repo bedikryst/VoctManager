@@ -17,6 +17,9 @@
  *  the page's own locale, so one script serves all three. Same reason the accessible name is an
  *  `aria-label` on the button rather than a string in this file.
  *
+ *  A COPY THAT LANDED is announced as a bubbling `voct:copied` on the button, for a page that
+ *  counts it (scripts/press-goals). A click the clipboard refused announces nothing.
+ *
  *  WHY A BUTTON EXISTS AT ALL. On /kontakt a bare `mailto:` is a real desktop failure when no
  *  mail client is configured, and this is the escape hatch. On /press the strings are longer than
  *  anybody retypes correctly — an IBAN, a 2000-character biogram — and a mis-typed account number
@@ -51,6 +54,7 @@ if (!(window as unknown as CopyGuard).__voctCopy) {
     navigator.clipboard
       .writeText(value)
       .then(() => {
+        button.dispatchEvent(new CustomEvent("voct:copied", { bubbles: true }));
         const previous = label.textContent;
         button.classList.add("is-copied");
         label.textContent = done;

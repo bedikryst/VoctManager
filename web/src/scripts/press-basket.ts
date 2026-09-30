@@ -30,6 +30,7 @@
  * @module scripts/press-basket
  */
 import { formatBytes } from "../lib/fileSize";
+import { GOALS, track } from "../lib/plausible";
 import type { BasketFile, BasketManifest } from "../lib/pressPack";
 import { zipStore, type ZipStoreEntry } from "../lib/zipStore";
 
@@ -156,6 +157,7 @@ async function download(b: Basket): Promise<void> {
 
   if (ticked.length === all.length) {
     save(b.manifest.komplet.href, b.manifest.komplet.path.split("/").pop() ?? ARCHIVE_NAME);
+    track(GOALS.pressDownload);
     return;
   }
 
@@ -195,6 +197,7 @@ async function download(b: Basket): Promise<void> {
       });
       const url = URL.createObjectURL(archive);
       save(url, ARCHIVE_NAME);
+      track(GOALS.pressDownload);
       window.setTimeout(() => URL.revokeObjectURL(url), REVOKE_MS);
     }
   } catch {

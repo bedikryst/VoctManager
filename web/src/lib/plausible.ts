@@ -13,7 +13,13 @@
  *     the source the visitor came from and the visitor count it is a fraction of — so the goal is
  *     the numerator that makes a UTM on a poster or a bio link answer "did it bring anyone";
  *   - a moment on the money path the backend never sees — the vault opened, an outbound method
- *     chosen, the account number copied, a `mailto:` clicked.
+ *     chosen, the account number copied, a `mailto:` clicked;
+ *   - /press put to use: a file saved from it, or a text copied. The page serves a handful of
+ *     editors per concert, so the question is whether a mailing to the media brought anyone at
+ *     all, and from where. Two goals, not one per button: which file an editor took is in the
+ *     host's access log, and at this traffic a per-button split says nothing. Copy and download
+ *     stay apart because the Kopiuj texts are a transcription kept in step by hand with the
+ *     board's files, and only this count says whether that work is used.
  *  A moment the backend already records at the same instant (the Axepta submit creates the Donation
  *  row) is not a goal: the ledger is the backend, Plausible adds nothing there.
  *  Where a goal fires on more than one page, the page path in the goal's own breakdown tells them
@@ -41,6 +47,9 @@ export const GOALS = {
   vaultOpened: "skarbiec+otwarty",
   zrzutkaOpened: "zrzutka+otworz",
   accountCopied: "przelew+copy+konto",
+  /* /press in use (scripts/press-goals.ts, and the composer's own archive). */
+  pressDownload: "press+pobranie",
+  pressCopy: "press+kopiuj",
 } as const;
 
 export type Goal = (typeof GOALS)[keyof typeof GOALS];
