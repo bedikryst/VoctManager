@@ -5,7 +5,8 @@
              (one contract, or a project's batch that came back together),
              confirming a mandate's hours, and annulling. The PDF is rendered
              from the contract row by the documents layer, never from the item,
-             so a document always prints its number and the frozen amount.
+             so a document always prints its number and the frozen amount. The
+             first recorded signature freezes the whole document as printed.
 @architecture Enterprise SaaS 2026
 @module finance/services/contracts
 """
@@ -26,17 +27,19 @@ from ..exceptions import (
     SeatNotBillable,
     SignRefused,
 )
+from ..infrastructure.documents import snapshot_html
 from ..models import (
     CONTRACT_FORMS,
     Contract,
     ContractSequence,
+    ContractSnapshot,
     ContractStatus,
     CostItem,
     CostKind,
     FeeForm,
     FinanceAction,
 )
-from ..rules import contract_number, finance_today
+from ..rules import contract_number, finance_today, is_artistic_payee
 from . import audit
 from .budget import BudgetService
 from .ledger import has_live_contract, refresh_item
@@ -62,9 +65,23 @@ def _locked_contract(contract: Contract) -> Contract:
     return locked
 
 
+def _take_snapshot(contract: Contract) -> None:
+    """Freezes the document on the first recorded signature; a later call only
+    corrects the date or the copy's location, never the text. A legacy row the
+    template refuses has no paper of ours to freeze."""
+    if ContractSnapshot.objects.filter(contract=contract).exists():
+        return
+    try:
+        html = snapshot_html(contract)
+    except ContractRefused:
+        return
+    ContractSnapshot.objects.create(contract=contract, html=html)
+
+
 def _record_signature(contract: Contract, dto: SignContractDTO, *, actor: User | None) -> Contract:
     """Writes the signed date and copy location on a contract read under the
-    budget lock, and logs what they were before."""
+    budget lock, freezes its document, and logs what they were before."""
+    _take_snapshot(contract)
     before = {
         "status": contract.status,
         "signed_on": contract.signed_on,
@@ -101,6 +118,8 @@ class ContractService:
                 raise ContractRefused(params={"reason": "form", "form": item.form})
             if item.contract_amount is None:
                 raise ContractRefused(params={"reason": "unpriced"})
+            if item.form == FeeForm.DZIELO and not is_artistic_payee(item.participation, item.crew_assignment):
+                raise ContractRefused(params={"reason": "artistic_template"})
             if has_live_contract(item):
                 raise ContractExists()
             seat = item.participation

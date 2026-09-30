@@ -1,8 +1,9 @@
 """
 @file vocabulary.py
 @description The Polish words of every paper and export the panel hands out —
-             the office's ledger, the grantor's kosztorys, the reports and the
-             document notes. Those readers read Polish whatever language the
+             the office's ledger, the grantor's kosztorys, the reports, the
+             document notes, and the parts and hours the contracts print.
+             Those readers read Polish whatever language the
              manager uses, so these are fixed strings and deliberately not
              gettext'd, like the contracts. The panel's own labels live in the
              client's locales; the two are kept saying the same thing.
@@ -96,6 +97,12 @@ FUNDING_STATUS_LABELS: dict[str, str] = {
     FundingStatus.REJECTED: "Odrzucone",
     FundingStatus.SETTLED: "Rozliczone",
 }
+
+# The head of an hours record names its month in the nominative.
+MONTH_NAMES: tuple[str, ...] = (
+    "styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
+    "lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień",
+)
 
 BUDGET_STATUS_LABELS: dict[str, str] = {
     BudgetStatus.PLANNING: "Planowanie",

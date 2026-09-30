@@ -648,7 +648,10 @@ class ContractsZipStatusView(FinanceAPIView):
     def get(self, request: Request, task_id: UUID) -> Response:
         state, data = _zip_result(task_id)
         if state == "SUCCESS" and data.get("error_code"):
-            return Response({"state": "FAILURE", "error_code": data["error_code"]})
+            failure = {"state": "FAILURE", "error_code": data["error_code"]}
+            if data.get("contract_number"):
+                failure["contract_number"] = data["contract_number"]
+            return Response(failure)
         if state == "SUCCESS":
             return Response({
                 "state": state,

@@ -1,0 +1,29 @@
+{% comment %}
+    The hours record of an umowa zlecenia, one page per month, in the layout of
+    the accounting office's form: the day of the month, the hours, and the two
+    signature columns, which always stay blank. It follows the contract without
+    being an annex of it. `hours_sheets` comes from
+    `finance.infrastructure.documents.hours_record`, which decides the rows; a
+    sheet with `full_month` lists every day of the month, as the office's own
+    form does, for a contractor the app has no days for.
+{% endcomment %}
+{% for sheet in hours_sheets %}
+    <section class="annex hours-sheet">
+        <div class="eyebrow">Do umowy zlecenia nr {{ number }}</div>
+        <div class="annex-title">Ewidencja czasu wykonywania umowy zlecenia</div>
+        <p>Imię i nazwisko Zleceniobiorcy: <strong>{{ payee_name }}</strong></p>
+        <p>Miesiąc: <strong>{{ sheet.month }}</strong> &emsp; Rok: <strong>{{ sheet.year }}</strong></p>
+        <table class="grid hours{% if sheet.full_month %} hours--month{% endif %}">
+            <thead>
+                <tr><th>Dzień</th><th>Liczba godzin<br>(godz:min)</th><th>Podpis Zleceniobiorcy</th><th>Podpis Zleceniodawcy</th></tr>
+            </thead>
+            <tbody>
+                {% for row in sheet.rows %}
+                    <tr><td class="figure">{{ row.day.day }}</td><td class="figure">{{ row.hours }}</td><td></td><td></td></tr>
+                {% endfor %}
+                <tr class="total"><td>Suma</td><td class="figure">{{ sheet.total }}</td><td></td><td></td></tr>
+            </tbody>
+        </table>
+        <p class="smallprint">Wydruk należy uzupełnić lub skorygować zgodnie z faktycznym czasem wszystkich czynności objętych Zleceniem. Godziny zapisano jako godziny:minuty, np. 2:30. Brakujące dni i czynności należy dopisać na kolejnym arkuszu.</p>
+    </section>
+{% endfor %}

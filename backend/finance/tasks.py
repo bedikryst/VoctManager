@@ -21,6 +21,7 @@ from django.core.files.storage import default_storage
 from django.db.models import QuerySet
 from django.utils import timezone
 
+from .exceptions import ContractRefused
 from .infrastructure.documents import contract_filename, render_contract_pdf
 from .models import Contract, ContractStatus
 
@@ -80,7 +81,11 @@ def generate_contracts_zip_task(self, project_id: str) -> dict[str, Any]:
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
         for contract in contracts:
-            archive.writestr(contract_filename(contract), render_contract_pdf(contract))
+            try:
+                pdf = render_contract_pdf(contract)
+            except ContractRefused as exc:
+                return {"project_id": project_id, "error_code": exc.code, "contract_number": contract.number}
+            archive.writestr(contract_filename(contract), pdf)
 
     _clear_stale_exports(project_id)
     default_storage.save(export_path(project_id, self.request.id), ContentFile(buffer.getvalue()))

@@ -1785,6 +1785,7 @@
       "bill_not_applicable": "Do porozumienia wolontariackiego nie wystawia się rachunku.",
       "pdf_renderer_unavailable": "Serwer nie może teraz przygotować dokumentu. Spróbuj za chwilę.",
       "no_contracts": "Projekt nie ma jeszcze żadnej wystawionej umowy.",
+      "zip_contract_refused": "Nie można przygotować umowy {{number}}. Sprawdź jej formę i wykonawcę.",
       "zip_failed": "Nie udało się spakować umów. Spróbuj ponownie.",
       "zip_timeout": "Pakowanie umów trwa zbyt długo. Spróbuj ponownie za kilka minut.",
       "item_paid_not_removable": "Pozycja jest zapłacona. Usunąć ją można dopiero po cofnięciu zapłaty.",

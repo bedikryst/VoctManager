@@ -1,0 +1,20 @@
+{% comment %}
+    @file _programme_annex.html
+    @description The programme shared by artistic-performance contracts without individual parts.
+{% endcomment %}
+<section class="annex">
+    {% include "finance/_annex_head.html" with n=1 of=of title="Program Koncertu" %}
+    <p>Koncert „{{ concert.title }}”, {{ concert.day|date:"d.m.Y" }} r. Utwory w kolejności wykonania:</p>
+    {% if programme %}
+        <ol class="programme">
+            {% for entry in programme %}
+                <li>{% if entry.composer %}<span class="programme-composer">{{ entry.composer }}</span> — {% endif %}{{ entry.title }}{% if entry.is_encore %} <span class="programme-note">(bis)</span>{% endif %}</li>
+            {% endfor %}
+        </ol>
+    {% else %}
+        {% comment %}No programme in the app yet: numbered lines to write it in, since the annex is what individualises the work.{% endcomment %}
+        <ol class="programme programme-blank">
+            <li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li>
+        </ol>
+    {% endif %}
+</section>

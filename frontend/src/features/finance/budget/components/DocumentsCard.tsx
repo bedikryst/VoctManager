@@ -58,7 +58,9 @@ export function DocumentsCard({
       if (error instanceof ZipExportError) {
         toast.error(t("finance.zip.failed", "Nie udało się przygotować paczki"), {
           id: toastId,
-          description: financeErrorCopy(t, error.code) ?? undefined,
+          description: error.contractNumber
+            ? t("finance.errors.zip_contract_refused", { number: error.contractNumber })
+            : financeErrorCopy(t, error.code) ?? undefined,
         });
         return;
       }

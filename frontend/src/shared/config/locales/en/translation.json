@@ -1757,6 +1757,7 @@
       "bill_not_applicable": "A volunteer agreement has no bill.",
       "pdf_renderer_unavailable": "The server cannot prepare the document right now. Try again shortly.",
       "no_contracts": "The project has no issued contract yet.",
+      "zip_contract_refused": "Contract {{number}} cannot be prepared. Check its form and payee.",
       "zip_failed": "The contracts could not be packed. Try again.",
       "zip_timeout": "Packing the contracts is taking too long. Try again in a few minutes.",
       "item_paid_not_removable": "The item is paid. It can be removed only after the payment is reverted.",

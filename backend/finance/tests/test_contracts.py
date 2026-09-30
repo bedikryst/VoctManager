@@ -1,12 +1,24 @@
 """
-Contracts as data: issuing with a number per (form, year), one live contract
-per item, signing, a mandate's hours, and the board's annulment.
+@file test_contracts.py
+@description Contract eligibility and numbering, one live contract per item,
+             signatures, mandate hours and annulment.
 """
 from typing import Any
 
 from rest_framework.test import APITestCase
 
-from ..models import Contract, ContractSequence, ContractStatus, CostItem, FeeForm, FinanceAction, FinanceEvent
+from roster.models import Collaborator
+
+from ..models import (
+    Contract,
+    ContractSequence,
+    ContractSnapshot,
+    ContractStatus,
+    CostItem,
+    FeeForm,
+    FinanceAction,
+    FinanceEvent,
+)
 from ..rules import finance_today
 from .factories import make_crew, make_project, make_seat, make_user, price
 
@@ -48,6 +60,20 @@ class ContractTests(APITestCase):
         self.issue(self.priced_seat())
 
         self.assertTrue(Contract.objects.filter(number=f"UoD/42/{self.year}").exists())
+
+    def test_non_artistic_deed_is_refused_before_allocating_a_number(self) -> None:
+        item = price(self.project, crew=make_crew(self.project), amount="600", form="DZIELO")
+        response = self.issue(item)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["params"]["reason"], "artistic_template")
+        self.assertFalse(Contract.objects.exists())
+        self.assertFalse(ContractSequence.objects.exists())
+        self.issue(self.priced_seat())
+        self.assertEqual(Contract.objects.get().number, f"UoD/1/{self.year}")
+
+    def test_outside_cast_instrumentalist_can_receive_a_deed(self) -> None:
+        crew = make_crew(self.project, specialty=Collaborator.Specialty.INSTRUMENT)
+        self.assertEqual(self.issue(price(self.project, crew=crew, amount="600", form="DZIELO")).status_code, 201)
 
     def test_the_contract_freezes_amount_and_payee(self) -> None:
         item = self.priced_seat("450")
@@ -104,6 +130,18 @@ class ContractTests(APITestCase):
             {(ContractStatus.SIGNED, "segregator 2026")},
         )
         self.assertEqual(FinanceEvent.objects.filter(action=FinanceAction.CONTRACT_SIGNED).count(), 2)
+        self.assertEqual(ContractSnapshot.objects.filter(contract__in=contracts).count(), 2)
+
+    def test_signing_a_legacy_row_the_template_refuses_freezes_nothing(self) -> None:
+        item = price(self.project, crew=make_crew(self.project), amount="600", form="ZLECENIE")
+        self.issue(item)
+        contract = Contract.objects.get()
+        Contract.objects.filter(pk=contract.pk).update(form=FeeForm.DZIELO)
+
+        response = self.post(f"contracts/{contract.pk}/sign/", {"signed_on": finance_today().isoformat()})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(ContractSnapshot.objects.exists())
 
     def test_a_batch_naming_an_annulled_or_foreign_contract_signs_nothing(self) -> None:
         self.issue(self.priced_seat())

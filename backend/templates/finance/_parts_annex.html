@@ -1,0 +1,30 @@
+{% comment %}
+    Annex "Partie" of a cast performer's contract: the programme works this
+    person performs in, in concert order, with their voice line and named
+    solos in each — the result the contract fixes per person. Included with
+    `n`, `of` and `title` as `_annex_head.html` takes them, `who` and
+    `who_dative` (the performer as the contract calls them) and `by` (the
+    foundation's name after "przez"). A part the casting does not know yet is a
+    cell to write in; no programme at all leaves numbered rows to fill.
+{% endcomment %}
+<section class="annex">
+    {% include "finance/_annex_head.html" %}
+    <p>Koncert „{{ concert.title }}”, {{ concert.day|date:"d.m.Y" }} r. Utwory, w których {{ who }} wykonuje partie, w kolejności wykonania:</p>
+    <table class="grid parts">
+        <thead>
+            <tr><th class="parts-n">Lp.</th><th>Utwór</th><th class="parts-part">Partia</th></tr>
+        </thead>
+        <tbody>
+            {% for part in parts %}
+                <tr>
+                    <td class="figure">{{ forloop.counter }}</td>
+                    <td>{% if part.composer %}<span class="programme-composer">{{ part.composer }}</span> — {% endif %}{{ part.title }}{% if part.is_encore %} <span class="programme-note">(bis)</span>{% endif %}</td>
+                    <td>{{ part.line }}{% for solo in part.solos %}<div class="parts-solo">{{ solo.label }}{% if solo.score_reference %} ({{ solo.score_reference }}){% endif %}</div>{% endfor %}</td>
+                </tr>
+            {% empty %}
+                {% for row in "12345678" %}<tr class="blank-row"><td class="figure">{{ forloop.counter }}</td><td></td><td></td></tr>{% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+    <p>Partie określa zapis nutowy utworów w materiale nutowym udostępnionym {{ who_dative }} przez {{ by }}.</p>
+</section>

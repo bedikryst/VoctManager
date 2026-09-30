@@ -4,12 +4,18 @@
     <meta charset="UTF-8">
     <title>Umowa zlecenia nr {{ number }} — {{ payee_name }}</title>
     {% comment %}
-        Umowa zlecenia: a service performed with due care for a concert —
-        sound, light, logistics. Built from document 2 of
+        Umowa zlecenia: a service performed with due care. A cast performer
+        (`performer`) prepares and performs the parts the casting gives them,
+        listed in Annex 1, rehearsals included, and transfers the rights to the
+        performance. Conductors and outside-cast concert players transfer
+        performance rights with a programme annex. Crew (sound, light, logistics, accompanying rehearsals) receive
+        the clause about work products. Built from document 2 of
         docs/specs/project-finance-contract-drafts-2026-09.md — a correction
-        lands there first. Annexes: 1 the contractor's declaration for ZUS and
-        PIT, 2 the hours confirmation the minimum hourly rate is checked
-        against, 3 the GDPR clause.
+        lands there first. The accounting office's own forms carry the
+        contractor's ZUS declaration; the hours record follows the contract in
+        the layout of the office's form and is not an annex. A clause printed
+        in one variant only is never cited by number, because the list
+        renumbers around it.
     {% endcomment %}
     <style>{% include "finance/_styles.html" with footer_label="Umowa zlecenia" %}</style>
 </head>
@@ -23,79 +29,76 @@
 
     <h2>§ 1. Przedmiot umowy</h2>
     <ol>
-        <li>Zleceniodawca zleca, a Zleceniobiorca przyjmuje do wykonania czynności: <strong>{% if subject.role %}{{ subject.role }}{% else %}<span class="blank"></span>{% endif %}</strong> (dalej: „Zlecenie”), w związku z koncertem „{{ concert.title }}”, który odbędzie się w dniu {{ concert.day|date:"d.m.Y" }} r. w miejscu: {% if concert.place %}{{ concert.place }}{% else %}<span class="blank blank--l"></span>{% endif %} (dalej: „Koncert”).</li>
-        <li>Zlecenie obejmuje czynności przygotowawcze, obsługę prób technicznych i Koncertu oraz czynności po jego zakończeniu, w terminach uzgodnionych przez Strony.</li>
+        {% if artistic %}
+            <li>Zleceniodawca zleca, a Zleceniobiorca przyjmuje do wykonania czynności polegające na {% if conductor %}przygotowaniu i dyrygowaniu artystycznym wykonaniem utworów wskazanych w programie Koncertu stanowiącym Załącznik nr 1{% elif not performer %}przygotowaniu i artystycznym wykonaniu partii instrumentalnych (instrument: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}) w utworach wskazanych w programie Koncertu stanowiącym Załącznik nr 1{% else %}przygotowaniu i artystycznym wykonaniu {% if subject.kind == "vocal" %}partii wokalnych (głos: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}){% else %}partii instrumentalnych (instrument: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}){% endif %} wskazanych w Załączniku nr 1 (dalej: „Partie Zleceniobiorcy”){% endif %}, w tym na udziale w próbach zespołowych i w koncercie „{{ concert.title }}”, który odbędzie się w dniu {{ concert.day|date:"d.m.Y" }} r. w miejscu: {% if concert.place %}{{ concert.place }}{% else %}<span class="blank blank--l"></span>{% endif %} (dalej: „Koncert”), zwane dalej „Zleceniem”.</li>
+            <li>Zlecenie będzie wykonywane w okresie od {% if period.start %}{{ period.start|date:"d.m.Y" }}{% else %}<span class="blank blank--s"></span>{% endif %} r. do {{ period.end|date:"d.m.Y" }} r., w terminach prób i Koncertu określonych w harmonogramie przekazanym przez Zleceniodawcę. Datę zawarcia umowy wpisuje się zgodnie z rzeczywistym dniem jej zawarcia.</li>
+        {% else %}
+            <li>Zleceniodawca zleca, a Zleceniobiorca przyjmuje do wykonania czynności: <strong>{% if subject.role %}{{ subject.role }}{% else %}<span class="blank"></span>{% endif %}</strong> (dalej: „Zlecenie”), w związku z koncertem „{{ concert.title }}”, który odbędzie się w dniu {{ concert.day|date:"d.m.Y" }} r. w miejscu: {% if concert.place %}{{ concert.place }}{% else %}<span class="blank blank--l"></span>{% endif %} (dalej: „Koncert”).</li>
+            <li>Zlecenie obejmuje czynności przygotowawcze, obsługę prób technicznych i Koncertu oraz czynności po jego zakończeniu, w terminach uzgodnionych przez Strony.</li>
+        {% endif %}
         <li>Zleceniobiorca wykona Zlecenie z należytą starannością i osobiście. Powierzenie wykonania osobie trzeciej wymaga zgody Zleceniodawcy, wyrażonej co najmniej w formie dokumentowej.</li>
-        <li>Zleceniodawca przekaże Zleceniobiorcy informacje niezbędne do wykonania Zlecenia, w tym harmonogram dnia Koncertu.</li>
+        <li>Zleceniodawca przekaże Zleceniobiorcy informacje niezbędne do wykonania Zlecenia, w tym {% if artistic %}harmonogram prób i Koncertu oraz materiał nutowy {% if not performer %}utworów wskazanych w programie Koncertu{% else %}Partii Zleceniobiorcy{% endif %}{% else %}harmonogram dnia Koncertu{% endif %}.</li>
     </ol>
 
     <h2>§ 2. Wynagrodzenie</h2>
     <ol>
-        <li>Za wykonanie Zlecenia Zleceniobiorcy przysługuje wynagrodzenie w łącznej kwocie <strong>{{ amount }} zł brutto</strong> (słownie: {{ amount_words }}).</li>
-        <li>Strony oświadczają, że wynagrodzenie, przy przewidywanej liczbie godzin wykonywania Zlecenia, nie jest niższe od minimalnej stawki godzinowej ustalonej na podstawie ustawy z dnia 10 października 2002 r. o minimalnym wynagrodzeniu za pracę.</li>
-        <li>Zleceniobiorca potwierdza liczbę godzin wykonywania Zlecenia w formie pisemnej lub dokumentowej, według wzoru stanowiącego Załącznik nr 2, najpóźniej w dniu przedstawienia rachunku.</li>
-        <li>Wynagrodzenie zostanie wypłacone przelewem na rachunek bankowy Zleceniobiorcy wskazany w umowie, w terminie 14 dni od dnia wykonania Zlecenia, na podstawie rachunku oraz potwierdzenia liczby godzin.</li>
-        <li>Zleceniodawca, jako płatnik, pobierze od wynagrodzenia zaliczkę na podatek dochodowy oraz obliczy i odprowadzi składki, jeżeli obowiązek ich opłacania powstanie. Podstawą jest oświadczenie Zleceniobiorcy stanowiące Załącznik nr 1.</li>
+        <li>Za wykonanie Zlecenia {% if artistic %}i przeniesienie praw, o których mowa w § 3, {% endif %}Zleceniobiorcy przysługuje wynagrodzenie w łącznej kwocie <strong>{{ amount }} zł brutto</strong> (słownie: {{ amount_words }}).</li>
+        {% if artistic %}
+            <li>Strony ustalają, że całość wynagrodzenia stanowi wynagrodzenie z tytułu rozporządzenia przez Zleceniobiorcę prawami do artystycznego wykonania, o którym mowa w § 3 ust. 1. Udział w próbach służy przygotowaniu tego wykonania.</li>
+        {% endif %}
+        <li>Wynagrodzenie za każdą godzinę faktycznego wykonywania Zlecenia nie może być niższe od minimalnej stawki godzinowej ustalonej na podstawie ustawy z dnia 10 października 2002 r. o minimalnym wynagrodzeniu za pracę. Jeżeli kwota określona w umowie nie pokrywa tego minimum, Zleceniodawca dopłaci różnicę.</li>
+        <li>Zleceniobiorca prowadzi na bieżąco ewidencję faktycznego czasu wszystkich czynności objętych Zleceniem, za każdy miesiąc na formularzu Zleceniodawcy. Uzupełnia i koryguje dane wpisane z harmonogramu lub listy obecności. Przy umowie zawartej na okres dłuższy niż miesiąc przekazuje ewidencję przed wypłatą części miesięcznej, najpóźniej w ostatnim dniu wykonywania Zlecenia w danym miesiącu; w pozostałych przypadkach najpóźniej w dniu przedstawienia rachunku.</li>
+        <li>Wynagrodzenie zostanie wypłacone przelewem na rachunek bankowy Zleceniobiorcy wskazany w umowie, w terminie 14 dni od dnia wykonania Zlecenia, na podstawie rachunku oraz ewidencji czasu wykonywania umowy zlecenia.</li>
+        <li>Jeżeli umowa została zawarta na okres dłuższy niż miesiąc, Zleceniodawca wypłaca część wynagrodzenia odpowiadającą co najmniej minimalnej stawce godzinowej za faktyczne godziny wykonywania Zlecenia w danym miesiącu, do ostatniego dnia tego miesiąca. Części miesięczne zalicza się na poczet łącznego wynagrodzenia. Pozostałą część oraz należne wyrównanie wypłaca się w terminie rozliczenia końcowego. Korektę ewidencji rozlicza się niezwłocznie po jej otrzymaniu.</li>
+        <li>Zleceniodawca wykona obowiązki płatnika podatku dochodowego zgodnie z obowiązującymi przepisami, w tym pobierze zaliczkę albo zryczałtowany podatek, jeżeli obowiązek poboru powstanie, oraz obliczy i odprowadzi należne składki. Zleceniobiorca składa oświadczenie do celów ubezpieczeń na formularzu biura rachunkowego i niezwłocznie zawiadamia o zmianach danych mających wpływ na rozliczenie.</li>
     </ol>
 
-    <h2>§ 3. Rezultaty i wizerunek</h2>
-    <ol>
-        <li>Materiały i utrwalenia powstałe przy wykonywaniu Zlecenia, w szczególności nagrania i zapisy konfiguracji, przysługują Zleceniodawcy. W zakresie, w jakim powstanie utwór lub przedmiot praw pokrewnych, Zleceniobiorca przenosi na Zleceniodawcę, w ramach wynagrodzenia określonego w § 2, prawa do nich na polach eksploatacji obejmujących utrwalanie, zwielokrotnianie każdą techniką, wprowadzanie do obrotu, nadawanie, publiczne odtwarzanie oraz publiczne udostępnianie w sieci.</li>
-        <li>Zleceniobiorca zezwala Zleceniodawcy na nieodpłatne rozpowszechnianie swojego wizerunku, utrwalonego w związku z Koncertem, w materiałach dokumentujących i promujących działalność statutową Zleceniodawcy.</li>
-    </ol>
+    {% if artistic %}
+        <h2>§ 3. Prawa do artystycznego wykonania i wizerunek</h2>
+        <ol>
+            <li>Z chwilą artystycznego wykonania {% if not performer %}utworów wskazanych w programie Koncertu{% else %}Partii Zleceniobiorcy{% endif %} podczas Koncertu Zleceniobiorca przenosi na Zleceniodawcę, w ramach wynagrodzenia określonego w § 2, majątkowe prawa do artystycznego wykonania, o których mowa w art. 86 ust. 1 pkt 2 ustawy z dnia 4 lutego 1994 r. o prawie autorskim i prawach pokrewnych, a w zakresie, w jakim wykonanie stanowiłoby utwór — autorskie prawa majątkowe, na następujących polach eksploatacji:
+                {% include "finance/_exploitation_fields.html" %}
+            </li>
+            <li>Ust. 1 stosuje się odpowiednio do wykonań utrwalonych podczas prób zespołowych.</li>
+            <li>Przeniesienie praw następuje bez ograniczeń terytorialnych, na cały okres ochrony tych praw. Nie obejmuje praw osobistych ani ustawowych praw do wynagrodzenia, które nie podlegają zbyciu lub zrzeczeniu się.</li>
+            <li>Zleceniobiorca zezwala Zleceniodawcy na montaż i skróty utrwaleń wykonania, na łączenie ich z innymi materiałami oraz na oznaczanie wykonania nazwą zespołu, z wymienieniem imienia i nazwiska Zleceniobiorcy w sposób przyjęty dla wykonań zespołowych, z poszanowaniem dóbr osobistych Zleceniobiorcy, w szczególności jego dobrego imienia.</li>
+            <li><span class="box"></span>Zleceniobiorca, zaznaczając pole, wyraża zgodę na przetwarzanie i nieodpłatne rozpowszechnianie przez Fundację swojego wizerunku, utrwalonego w związku z Koncertem i próbami, wraz z imieniem i nazwiskiem, w materiałach dokumentujących i promujących działalność statutową Fundacji, w tym na jej stronie internetowej i w jej mediach społecznościowych. Zgoda jest dobrowolna; odmowa nie wpływa na zawarcie ani wykonanie umowy lub porozumienia. Zgodę można wycofać w dowolnym momencie przez kontakt wskazany w klauzuli informacyjnej, bez wpływu na zgodność z prawem wcześniejszego przetwarzania.</li>
+        </ol>
+    {% else %}
+        <h2>§ 3. Rezultaty i wizerunek</h2>
+        <ol>
+            <li>Materiały i utrwalenia powstałe przy wykonywaniu Zlecenia, w szczególności nagrania i zapisy konfiguracji, przysługują Zleceniodawcy. W zakresie, w jakim powstanie utwór lub przedmiot praw pokrewnych, Zleceniobiorca przenosi na Zleceniodawcę, w ramach wynagrodzenia określonego w § 2, majątkowe prawa do nich na polach eksploatacji obejmujących utrwalanie, zwielokrotnianie każdą techniką, wprowadzanie do obrotu, nadawanie, publiczne odtwarzanie oraz publiczne udostępnianie w sieci.</li>
+            <li><span class="box"></span>Zleceniobiorca, zaznaczając pole, wyraża zgodę na przetwarzanie i nieodpłatne rozpowszechnianie przez Fundację swojego wizerunku, utrwalonego w związku z Koncertem, w materiałach dokumentujących i promujących działalność statutową Fundacji, w tym na jej stronie internetowej i w jej mediach społecznościowych. Zgoda jest dobrowolna; odmowa nie wpływa na zawarcie ani wykonanie umowy lub porozumienia. Zgodę można wycofać w dowolnym momencie przez kontakt wskazany w klauzuli informacyjnej, bez wpływu na zgodność z prawem wcześniejszego przetwarzania.</li>
+        </ol>
+    {% endif %}
 
     <h2>§ 4. Rozwiązanie umowy</h2>
     <p>Każda ze Stron może wypowiedzieć umowę na zasadach określonych w art. 746 Kodeksu cywilnego.</p>
 
     <h2>§ 5. Dane osobowe</h2>
-    <p>Zasady przetwarzania danych osobowych Zleceniobiorcy określa klauzula informacyjna stanowiąca Załącznik nr 3.</p>
+    <p>Zasady przetwarzania danych osobowych Zleceniobiorcy określa klauzula informacyjna stanowiąca Załącznik nr {% if artistic %}2{% else %}1{% endif %}.</p>
 
     <h2>§ 6. Postanowienia końcowe</h2>
     <ol>
         <li>Zmiany umowy wymagają formy pisemnej pod rygorem nieważności.</li>
-        <li>W sprawach nieuregulowanych stosuje się przepisy Kodeksu cywilnego.</li>
+        <li>W sprawach nieuregulowanych stosuje się przepisy Kodeksu cywilnego{% if artistic %} oraz ustawy o prawie autorskim i prawach pokrewnych{% endif %}.</li>
         <li>Spory wynikające z umowy rozstrzyga sąd właściwy dla siedziby Zleceniodawcy.</li>
         <li>Umowę sporządzono w dwóch jednobrzmiących egzemplarzach, po jednym dla każdej ze Stron.</li>
     </ol>
 
     {% include "finance/_signatures.html" with left="Zleceniodawca" right="Zleceniobiorca" %}
 
-    <section class="annex">
-        {% include "finance/_annex_head.html" with n=1 of="do umowy zlecenia" title="Oświadczenie Zleceniobiorcy do celów ubezpieczeń i podatku" %}
-        <p>Zleceniobiorca: <strong>{{ payee_name }}</strong></p>
-        <ol>
-            <li>Oświadczam, że <em>(zaznaczyć właściwe)</em>:
-                <ul class="ticks">
-                    <li><span class="box"></span>jestem uczniem szkoły ponadpodstawowej lub studentem i nie ukończyłem/-am 26 lat (szkoła/uczelnia: <span class="blank"></span>, nr legitymacji: <span class="blank blank--s"></span>);</li>
-                    <li><span class="box"></span>jestem zatrudniony/-a na podstawie umowy o pracę u innego pracodawcy, a moje wynagrodzenie w miesiącu wykonywania Zlecenia wynosi co najmniej minimalne wynagrodzenie za pracę;</li>
-                    <li><span class="box"></span>prowadzę pozarolniczą działalność gospodarczą i opłacam z tego tytułu składki na ubezpieczenia społeczne;</li>
-                    <li><span class="box"></span>wykonuję inną umowę zlecenia, zawartą wcześniej, z której podstawa wymiaru składek wynosi co najmniej minimalne wynagrodzenie za pracę;</li>
-                    <li><span class="box"></span>mam ustalone prawo do emerytury lub renty (nr decyzji: <span class="blank"></span>);</li>
-                    <li><span class="box"></span>żadna z powyższych sytuacji mnie nie dotyczy.</li>
-                </ul>
-            </li>
-            <li><span class="box"></span>Wnoszę o objęcie mnie dobrowolnym ubezpieczeniem chorobowym.</li>
-            <li><span class="box"></span>Nie ukończyłem/-am 26 lat i korzystam ze zwolnienia z podatku dochodowego przewidzianego dla osób do 26. roku życia.</li>
-            <li>Zobowiązuję się niezwłocznie poinformować Zleceniodawcę o każdej zmianie danych zawartych w oświadczeniu.</li>
-        </ol>
-        <p class="signed-line">Data: <span class="blank blank--s"></span> &emsp; Podpis Zleceniobiorcy: <span class="blank"></span></p>
-    </section>
+    {% if artistic %}
+        {% if performer %}
+            {% include "finance/_parts_annex.html" with n=1 of="do umowy zlecenia" title="Partie Zleceniobiorcy" who="Zleceniobiorca" who_dative="Zleceniobiorcy" by="Zleceniodawcę" %}
+        {% else %}
+            {% include "finance/_programme_annex.html" with of="do umowy zlecenia" %}
+        {% endif %}
+        {% include "finance/_gdpr_clause.html" with n=2 of="do umowy zlecenia" %}
+    {% else %}
+        {% include "finance/_gdpr_clause.html" with n=1 of="do umowy zlecenia" %}
+    {% endif %}
 
-    <section class="annex">
-        {% include "finance/_annex_head.html" with n=2 of="do umowy zlecenia" title="Potwierdzenie liczby godzin wykonywania Zlecenia" %}
-        <p>Zleceniobiorca: <strong>{{ payee_name }}</strong>. Koncert „{{ concert.title }}”, {{ concert.day|date:"d.m.Y" }} r.</p>
-        <table class="grid">
-            <thead>
-                <tr><th style="width: 22%">Data</th><th style="width: 18%">Liczba godzin</th><th>Czynności</th></tr>
-            </thead>
-            <tbody>
-                {% for row in "0123456789" %}<tr><td></td><td></td><td></td></tr>{% endfor %}
-                <tr class="total"><td>Łącznie</td><td></td><td></td></tr>
-            </tbody>
-        </table>
-        <p class="signed-line">Data: <span class="blank blank--s"></span> &emsp; Podpis Zleceniobiorcy: <span class="blank"></span></p>
-    </section>
-
-    {% include "finance/_gdpr_clause.html" with n=3 of="do umowy zlecenia" %}
+    {% include "finance/_hours_record.html" %}
 </body>
 </html>

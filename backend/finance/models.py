@@ -572,6 +572,33 @@ class Contract(EnterpriseBaseModel):
         return self.status != ContractStatus.ANNULLED
 
 
+class ContractSnapshot(EnterpriseBaseModel):
+    """The contract's document as it stood when its signature was first recorded.
+
+    The annexes read the concert live — the cast, the solos, the rehearsal
+    register — and the wording follows the templates, so without this a signed
+    contract reprinted after a casting change or a legal correction would differ
+    from the paper. A row of its own rather than a column on `Contract`, which
+    every budget read loads. The text is kept without its `@font-face` rules:
+    they name this host's file paths, and the printer puts them back.
+
+    A change made between printing the paper and recording the signature still
+    reaches the snapshot, so the signature is recorded when the paper comes back.
+    """
+
+    contract = models.OneToOneField(
+        Contract, on_delete=models.PROTECT, related_name='snapshot', verbose_name=_("Contract"),
+    )
+    html = models.TextField(verbose_name=_("Document"))
+
+    class Meta:
+        verbose_name = _("Contract snapshot")
+        verbose_name_plural = _("Contract snapshots")
+
+    def __str__(self) -> str:
+        return self.contract.number
+
+
 class ContractSequence(models.Model):
     """The last number spent per (year, form), read with `select_for_update()`
     inside the issuing transaction.

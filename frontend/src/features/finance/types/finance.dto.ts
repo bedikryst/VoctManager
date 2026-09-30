@@ -762,4 +762,5 @@ export interface ContractsZipStatusDTO {
   readonly count?: number;
   readonly file_url?: string;
   readonly error_code?: string;
+  readonly contract_number?: string | null;
 }

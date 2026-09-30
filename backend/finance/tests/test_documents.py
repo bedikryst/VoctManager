@@ -1,7 +1,8 @@
 """
 The foundation's documents: the amount in words, who signs for the
 foundation, each template rendered from its contract row, the programme annex,
-the PDF and bill endpoints, and the contracts ZIP.
+a performer's parts and hours record, the PDF and bill endpoints, and the
+contracts ZIP.
 
 WeasyPrint's native libraries are absent from the host, so nothing here renders
 a PDF: the assertions run on the HTML handed to the renderer.
@@ -12,7 +13,7 @@ import shutil
 import tempfile
 import zipfile
 from dataclasses import replace
-from datetime import timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -20,21 +21,39 @@ from unittest.mock import MagicMock, patch
 from django.core.files.storage import default_storage
 from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase, override_settings
-from django.utils import timezone
+from django.utils import timezone, translation
 from rest_framework.test import APITestCase
 
-from archive.models import Composer, Piece
+from archive.models import Composer, Piece, PieceVoiceRequirement, ScoreEdition
 from core.constants import AppRole
 from logistics.models import Location, LocationCategory
 from roster.infrastructure.document_generator import DocumentRenderDependencyError
-from roster.models import Collaborator, ProgramItem, Project, Rehearsal, VoiceType
+from roster.models import (
+    Attendance,
+    Collaborator,
+    Participation,
+    ProgramItem,
+    Project,
+    ProjectPieceCasting,
+    ProjectSoloAssignment,
+    Rehearsal,
+    VoiceType,
+)
 
-from ..dtos import AllocationSetDTO, FundingSourceDTO, ProjectFundingDTO
-from ..exceptions import BillNotApplicable, ContractAnnulled
+from ..dtos import AllocationSetDTO, FundingSourceDTO, ProjectFundingDTO, SignContractDTO
+from ..exceptions import BillNotApplicable, ContractAnnulled, ContractRefused
 from ..foundation import FOUNDATION, FoundationIdentityError, Representative, foundation_context, signatory_for
 from ..infrastructure.amount_words import amount_to_words_pl, format_amount_pl, number_to_words_pl
-from ..infrastructure.documents import render_bill_html, render_contract_html
-from ..models import Contract, ContractSequence, CostItem, FundingSource
+from ..infrastructure.documents import (
+    Period,
+    Solo,
+    hours_record,
+    performer_parts,
+    render_bill_html,
+    render_contract_html,
+)
+from ..models import Contract, ContractSequence, CostItem, FeeForm, FundingSource
+from ..rules import finance_today
 from ..services.contracts import ContractService
 from ..services.funding import FundingService
 from ..tasks import EXPORT_TTL, NO_CONTRACTS, export_path, generate_contracts_zip_task
@@ -195,11 +214,14 @@ class DocumentRenderTests(TestCase):
         self.assertIn(f"1{NBSP}500,00 zł brutto", html)
         self.assertIn("(słownie: tysiąc pięćset złotych zero groszy)", html)
         self.assertIn(f"reprezentowana przez: Florentyn de Bazelaire de Boucheporn {EN_DASH} Prezes Zarządu", html)
-        self.assertIn("partii wokalnej (głos: ", html)
-        self.assertIn("Program Koncertu", html)
+        self.assertIn("partii wokalnych (głos: ", html)
+        self.assertIn('<div class="annex-title">Partie Wykonawcy</div>', html)
+        self.assertIn('<div class="annex-title">Protokół odbioru Dzieła</div>', html)
+        self.assertIn("Załącznik nr 3 do umowy o dzieło", html)
         self.assertIn("Klauzula informacyjna", html)
+        self.assertNotIn("Program Koncertu", html)
 
-    def test_umowa_zlecenia_renders_with_its_three_annexes(self) -> None:
+    def test_a_crew_mandate_keeps_its_clause_and_leaves_the_declaration_to_the_office(self) -> None:
         crew = make_crew(self.project, "Jan", "Dźwiękowiec", specialty=Collaborator.Specialty.SOUND)
         crew.role_description = "Realizacja dźwięku"
         crew.save()
@@ -211,9 +233,15 @@ class DocumentRenderTests(TestCase):
         self.assertIn(f"UMOWA ZLECENIA <span class=\"title-number\">nr {contract.number}</span>", html)
         self.assertIn("czynności: <strong>Realizacja dźwięku</strong>", html)
         self.assertIn("(słownie: osiemset złotych zero groszy)", html)
-        self.assertIn("Oświadczenie Zleceniobiorcy do celów ubezpieczeń i podatku", html)
-        self.assertIn("Potwierdzenie liczby godzin wykonywania Zlecenia", html)
-        self.assertIn("Załącznik nr 3 do umowy zlecenia", html)
+        self.assertIn("Rezultaty i wizerunek", html)
+        self.assertNotIn("art. 85 i 86", html)
+        self.assertNotIn("Partie Zleceniobiorcy", html)
+        self.assertIn("oświadczenie do celów ubezpieczeń na formularzu biura rachunkowego", html)
+        self.assertNotIn("Oświadczenie Zleceniobiorcy do celów ubezpieczeń i podatku", html)
+        self.assertIn("Załącznik nr 1 do umowy zlecenia", html)
+        self.assertNotIn("Załącznik nr 2 do umowy zlecenia", html)
+        self.assertIn("Ewidencja czasu wykonywania umowy zlecenia", html)
+        self.assertIn('class="grid hours hours--month"', html)
 
     def test_volunteer_agreement_has_no_payment_lines(self) -> None:
         contract = self.issue(price(self.project, participation=make_seat(self.project), amount="0"))
@@ -308,7 +336,8 @@ class DocumentRenderTests(TestCase):
         ProgramItem.objects.create(project=self.project, piece=encore, order=4, is_encore=True)
         ProgramItem.objects.create(project=self.project, piece=pieces[1], order=2)
 
-        html = render_contract_html(self.dzielo())
+        seat = make_seat(self.project, "Florent", "de Bazelaire", voice_type=VoiceType.CONDUCTOR)
+        html = render_contract_html(self.issue(price(self.project, participation=seat, amount="2000")))
         annex = html.split("Program Koncertu", 1)[1]
 
         positions = [annex.index(title) for title in ("Kyrie", "Gloria", "Credo", "Ave verum")]
@@ -317,8 +346,10 @@ class DocumentRenderTests(TestCase):
         self.assertIn("Ave verum <span class=\"programme-note\">(bis)</span>", annex)
 
     def test_an_empty_programme_leaves_lines_to_write_it_in(self) -> None:
-        html = render_contract_html(self.dzielo())
-        self.assertIn("programme-blank", html)
+        self.assertIn('class="blank-row"', render_contract_html(self.dzielo()))
+        seat = make_seat(self.project, "Florent", "de Bazelaire", voice_type=VoiceType.CONDUCTOR)
+        conductor = render_contract_html(self.issue(price(self.project, participation=seat, amount="2000")))
+        self.assertIn("programme-blank", conductor)
 
     def test_a_player_contracts_an_instrumental_part(self) -> None:
         seat = make_seat(self.project, "Jan", "Organista", voice_type=VoiceType.INSTRUMENTALIST)
@@ -326,8 +357,8 @@ class DocumentRenderTests(TestCase):
         seat.artist.save()
         html = render_contract_html(self.issue(price(self.project, participation=seat, amount="900")))
 
-        self.assertIn("partii instrumentalnej (instrument: Organy)", html)
-        self.assertNotIn("partii wokalnej", html)
+        self.assertIn("partii instrumentalnych (instrument: Organy)", html)
+        self.assertNotIn("partii wokalnych", html)
 
     def test_the_conductor_is_paid_under_the_signature_of_another_board_member(self) -> None:
         seat = make_seat(self.project, "Florent", "de Bazelaire", voice_type=VoiceType.CONDUCTOR)
@@ -336,6 +367,8 @@ class DocumentRenderTests(TestCase):
         self.assertIn(f"reprezentowana przez: Anna Marcisz {EN_DASH} Wiceprezes Zarządu", html)
         self.assertNotIn("reprezentowana przez: Florentyn", html)
         self.assertIn("artystycznego wykonania (rola: ", html)
+        self.assertIn("Program Koncertu", html)
+        self.assertNotIn("Partie Wykonawcy", html)
 
     def test_the_place_is_printed_after_a_colon(self) -> None:
         venue = Location.objects.create(
@@ -370,6 +403,362 @@ class DocumentRenderTests(TestCase):
         )
         html = render_contract_html(self.issue(item))
         self.assertIn("wartość świadczeń Wolontariusza na 35,00 zł za godzinę", html)
+
+
+
+class PerformerContractTests(TestCase):
+    """A cast performer's contract names their parts piece by piece, and an
+    umowa zlecenia carries the rehearsal days they attended."""
+
+    def setUp(self) -> None:
+        self.manager = make_user()
+        # Sunday 11 October 2026, 13:30 in Warsaw.
+        self.project = Project.objects.create(
+            title="Pochwała Stworzenia", date_time=datetime(2026, 10, 11, 11, 30, tzinfo=UTC),
+            status=Project.Status.ACTIVE,
+        )
+        composer = Composer.objects.create(first_name="Marian", last_name="Borkowski")
+        titles = ("Gloria II", "Lumen", "Méditation", "Stars", "What a Wonderful World")
+        self.pieces = {title: Piece.objects.create(title=title, composer=composer) for title in titles}
+        # Created out of order: the annex follows `order`, not insertion.
+        for order, title in reversed(list(enumerate(titles, start=1))):
+            ProgramItem.objects.create(
+                project=self.project, piece=self.pieces[title], order=order, is_encore=order == len(titles),
+            )
+        self.seat = make_seat(self.project, "Maria", "Kowalska")
+        self.second_soprano = make_seat(self.project, "Ewa", "Nowak")
+        self.alto = make_seat(self.project, "Ola", "Alt", voice_type=VoiceType.ALTO)
+        self.organist = make_seat(self.project, "Jan", "Organista", voice_type=VoiceType.INSTRUMENTALIST)
+
+    def cast(self, seat: Participation, title: str, line: str) -> None:
+        ProjectPieceCasting.objects.create(participation=seat, piece=self.pieces[title], voice_line=line)
+
+    def cast_the_choir(self) -> None:
+        self.cast(self.seat, "Gloria II", "S1")
+        self.cast(self.second_soprano, "Gloria II", "S2")
+        self.cast(self.alto, "Gloria II", "A1")
+        self.cast(self.seat, "Lumen", "S1")
+        self.cast(self.alto, "Lumen", "A1")
+        self.cast(self.organist, "Méditation", "ACC")
+        self.cast(self.seat, "Stars", "S2")
+        self.cast(self.second_soprano, "Stars", "S1")
+        self.cast(self.seat, "What a Wonderful World", "S1")
+
+    def issue(self, item: CostItem) -> Contract:
+        return ContractService.issue(item, actor=self.manager)
+
+    def rehearsal(self, day: int, month: int = 9, minutes: int | None = 150, **extra: Any) -> Rehearsal:
+        return Rehearsal.objects.create(
+            project=self.project, date_time=datetime(2026, month, day, 16, 30, tzinfo=UTC),
+            timezone="Europe/Warsaw", duration_minutes=minutes, **extra,
+        )
+
+    def attend(self, rehearsal: Rehearsal, status: str, minutes_late: int | None = None) -> None:
+        Attendance.objects.create(
+            rehearsal=rehearsal, participation=self.seat, status=status, minutes_late=minutes_late,
+        )
+
+    def test_parts_follow_the_concert_order_and_skip_the_works_the_person_is_not_in(self) -> None:
+        self.cast_the_choir()
+        parts = performer_parts(self.project, self.seat)
+        self.assertEqual(
+            [(part.title, part.line, part.is_encore) for part in parts],
+            [
+                ("Gloria II", "Sopran 1", False),
+                # One soprano line in this piece: the plain name, as the app shows it.
+                ("Lumen", "Sopran", False),
+                ("Stars", "Sopran 2", False),
+                ("What a Wonderful World", "Sopran", True),
+            ],
+        )
+        self.assertEqual(parts[0].composer, "Marian Borkowski")
+
+    def test_a_named_solo_prints_with_its_score_reference(self) -> None:
+        self.cast_the_choir()
+        ProjectSoloAssignment.objects.create(
+            project=self.project, piece=self.pieces["Stars"], position=1, participation=self.seat,
+            label="Sopran solo", score_reference="t. 46-52,\n nad chórem",
+        )
+        # A solo in a work the person has no line in still puts that work on the list.
+        ProjectSoloAssignment.objects.create(
+            project=self.project, piece=self.pieces["Méditation"], position=1, participation=self.seat,
+            label="Wokaliza",
+        )
+        ProjectSoloAssignment.objects.create(
+            project=self.project, piece=self.pieces["Stars"], position=2, participation=self.second_soprano,
+            label="Sopran solo II",
+        )
+        parts = {part.title: part for part in performer_parts(self.project, self.seat)}
+
+        self.assertEqual(parts["Stars"].solos, (Solo(label="Sopran solo", score_reference="t. 46-52, nad chórem"),))
+        self.assertEqual((parts["Méditation"].line, parts["Méditation"].solos), ("", (Solo("Wokaliza", ""),)))
+
+        html = render_contract_html(self.issue(price(self.project, participation=self.seat, amount="1400")))
+        self.assertIn('<div class="parts-solo">Sopran solo (t. 46-52, nad chórem)</div>', html)
+        self.assertNotIn("Sopran solo II", html)
+
+    def test_somebody_not_cast_yet_gets_the_whole_programme_to_fill_in(self) -> None:
+        parts = performer_parts(self.project, self.seat)
+        self.assertEqual(len(parts), 5)
+        self.assertTrue(all(part.line == "" and part.solos == () for part in parts))
+
+    def test_the_dzielo_names_the_parts_and_is_accepted_on_a_record(self) -> None:
+        self.cast_the_choir()
+        html = render_contract_html(self.issue(price(self.project, participation=self.seat, amount="1400")))
+        annex = html.split('<div class="annex-title">Partie Wykonawcy</div>', 1)[1]
+
+        self.assertIn("wskazanych w Załączniku nr 1 (dalej: „Partie Wykonawcy”) podczas koncertu", html)
+        self.assertIn("nie zależy od liczby prób", html)
+        self.assertLess(annex.index("Gloria II"), annex.index("Stars"))
+        self.assertNotIn("Méditation", annex)
+        self.assertIn('What a Wonderful World <span class="programme-note">(bis)</span>', annex)
+        self.assertIn("Protokół odbioru Dzieła", annex)
+
+    def test_a_performers_mandate_transfers_the_rights_and_lists_the_parts(self) -> None:
+        self.cast_the_choir()
+        self.rehearsal(18)
+        html = render_contract_html(
+            self.issue(price(self.project, participation=self.seat, amount="1500", form="ZLECENIE")),
+        )
+
+        self.assertIn("w tym na udziale w próbach zespołowych", html)
+        self.assertIn("w okresie od 18.09.2026 r. do 11.10.2026 r.", html)
+        self.assertIn("art. 86 ust. 1 pkt 2", html)
+        self.assertNotIn("Rezultaty i wizerunek", html)
+        self.assertIn('<div class="annex-title">Partie Zleceniobiorcy</div>', html)
+        self.assertIn("Załącznik nr 2 do umowy zlecenia", html)
+        self.assertIn("Ewidencja czasu wykonywania umowy zlecenia", html)
+        self.assertNotIn('class="grid hours hours--month"', html)
+
+    def test_a_player_outside_the_cast_keeps_the_programme(self) -> None:
+        crew = make_crew(self.project, "Piotr", "Organista", specialty=Collaborator.Specialty.INSTRUMENT)
+        html = render_contract_html(self.issue(price(self.project, crew=crew, amount="600", form="DZIELO")))
+        self.assertIn('<div class="annex-title">Program Koncertu</div>', html)
+        self.assertNotIn("Partie Wykonawcy", html)
+
+    def test_the_hours_record_lists_attended_days_and_leaves_out_absences(self) -> None:
+        self.attend(self.rehearsal(18), Attendance.Status.PRESENT)
+        self.rehearsal(20, is_mandatory=False)
+        self.attend(self.rehearsal(23), Attendance.Status.ABSENT)
+        self.attend(self.rehearsal(24), Attendance.Status.EXCUSED)
+        self.attend(self.rehearsal(26, minutes=165), Attendance.Status.LATE, minutes_late=15)
+        # A sectional of the men does not call a soprano.
+        self.rehearsal(27, minutes=90, called_sections="TB")
+        # Ahead, or nobody took the register: a row for the pen.
+        self.rehearsal(1, month=10)
+
+        sheets = hours_record(self.project, self.seat, Period(date(2026, 9, 1), date(2026, 10, 11)))
+
+        self.assertEqual([(sheet.month, sheet.year) for sheet in sheets], [("wrzesień", 2026), ("październik", 2026)])
+        september, october = sheets
+        self.assertEqual([(row.day.day, row.hours) for row in september.rows], [(18, "2:30"), (26, "2:30")])
+        self.assertEqual(september.total, "5:00")
+        # The concert day is always there with its hours left to the pen, so the sum is too.
+        self.assertEqual([(row.day.day, row.hours) for row in october.rows], [(1, ""), (11, "")])
+        self.assertEqual(october.total, "")
+
+    def test_the_hours_record_keeps_to_the_contracts_period(self) -> None:
+        self.attend(self.rehearsal(18), Attendance.Status.PRESENT)
+        self.attend(self.rehearsal(30, minutes=165), Attendance.Status.PRESENT)
+
+        sheets = hours_record(self.project, self.seat, Period(date(2026, 9, 25), date(2026, 10, 11)))
+
+        self.assertEqual([(row.day.day, row.hours) for row in sheets[0].rows], [(30, "2:45")])
+
+    def test_crew_get_the_concerts_whole_month(self) -> None:
+        (sheet,) = hours_record(self.project, None, None)
+        self.assertEqual((sheet.month, len(sheet.rows), sheet.full_month), ("październik", 31, True))
+        self.assertTrue(all(row.hours == "" for row in sheet.rows))
+
+    def test_declared_divisi_keeps_the_number_when_the_other_line_is_vacant(self) -> None:
+        self.cast(self.seat, "Gloria II", "S1")
+        for code in ("S1", "S2"):
+            PieceVoiceRequirement.objects.create(piece=self.pieces["Gloria II"], voice_line=code, quantity=1)
+        self.assertEqual(performer_parts(self.project, self.seat)[0].line, "Sopran 1")
+
+    def test_repeated_work_uses_each_programme_items_edition(self) -> None:
+        piece = self.pieces["Gloria II"]
+        self.cast(self.seat, "Gloria II", "S1")
+        unison = ScoreEdition.objects.create(
+            piece=piece, original_filename="unison.pdf", pdf_file="score_editions/unison.pdf", sha256="a" * 64,
+        )
+        divided = ScoreEdition.objects.create(
+            piece=piece, original_filename="divided.pdf", pdf_file="score_editions/divided.pdf", sha256="b" * 64,
+        )
+        for edition, codes in ((unison, ("S1",)), (divided, ("S1", "S2"))):
+            for code in codes:
+                PieceVoiceRequirement.objects.create(piece=piece, edition=edition, voice_line=code, quantity=1)
+        ProgramItem.objects.filter(project=self.project, piece=piece).update(score_edition=unison)
+        ProgramItem.objects.create(project=self.project, piece=piece, score_edition=divided, order=6, is_encore=True)
+        self.assertEqual(
+            [(part.line, part.is_encore) for part in performer_parts(self.project, self.seat)],
+            [("Sopran", False), ("Sopran 1", True)],
+        )
+
+    def test_deleted_casting_does_not_widen_the_part_label(self) -> None:
+        self.cast(self.seat, "Gloria II", "S1")
+        self.cast(self.second_soprano, "Gloria II", "S2")
+        Participation.objects.filter(pk=self.second_soprano.pk).update(is_deleted=True)
+        self.assertEqual(performer_parts(self.project, self.seat)[0].line, "Sopran")
+
+    def test_deleted_seat_does_not_retain_a_solo(self) -> None:
+        ProjectSoloAssignment.objects.create(
+            project=self.project, piece=self.pieces["Stars"], position=1, participation=self.seat, label="Solo",
+        )
+        Participation.objects.filter(pk=self.seat.pk).update(is_deleted=True)
+        parts = performer_parts(self.project, self.seat)
+        self.assertTrue(all(part.line == "" and part.solos == () for part in parts))
+
+    def test_unknown_lateness_or_duration_leaves_hours_and_total_blank(self) -> None:
+        self.attend(self.rehearsal(18), Attendance.Status.LATE)
+        self.attend(self.rehearsal(19, minutes=None), Attendance.Status.PRESENT)
+        sheet = hours_record(self.project, self.seat, None)[0]
+        self.assertEqual([(row.day.day, row.hours) for row in sheet.rows], [(18, ""), (19, "")])
+        self.assertEqual(sheet.total, "")
+
+    def test_lateness_cannot_produce_negative_hours(self) -> None:
+        self.attend(self.rehearsal(18, minutes=30), Attendance.Status.LATE, minutes_late=45)
+        sheet = hours_record(self.project, self.seat, None)[0]
+        self.assertEqual((sheet.rows[0].hours, sheet.total), ("0:00", "0:00"))
+
+    def test_minutes_sum_exactly_across_days_and_rehearsals(self) -> None:
+        for day in (18, 18, 19):
+            self.attend(self.rehearsal(day, minutes=20), Attendance.Status.PRESENT)
+        sheet = hours_record(self.project, self.seat, None)[0]
+        self.assertEqual([(row.day.day, row.hours) for row in sheet.rows], [(18, "0:40"), (19, "0:20")])
+        self.assertEqual(sheet.total, "1:00")
+
+    def test_a_rehearsal_on_concert_day_does_not_claim_the_whole_days_hours(self) -> None:
+        self.attend(self.rehearsal(11, month=10, minutes=90), Attendance.Status.PRESENT)
+        (sheet,) = hours_record(self.project, self.seat, None)
+        self.assertEqual([(row.day.day, row.hours) for row in sheet.rows], [(11, "")])
+        self.assertEqual(sheet.total, "")
+
+    def test_explicit_invites_override_sections_and_instrumentalist_flag(self) -> None:
+        invited = self.rehearsal(18, called_sections="TB")
+        invited.invited_participations.add(self.seat, self.organist)
+        excluded = self.rehearsal(19)
+        excluded.invited_participations.add(self.second_soprano)
+        for seat in (self.seat, self.organist):
+            with self.subTest(seat=seat.pk):
+                sheet = hours_record(self.project, seat, None)[0]
+                self.assertEqual([(row.day.day, row.hours) for row in sheet.rows], [(18, "")])
+
+    def test_instrumentalist_only_gets_called_rehearsals_or_recorded_attendance(self) -> None:
+        self.rehearsal(18)
+        self.rehearsal(19, calls_instrumentalists=True)
+        attended = self.rehearsal(20, is_mandatory=False)
+        Attendance.objects.create(rehearsal=attended, participation=self.organist, status=Attendance.Status.PRESENT)
+        sheet = hours_record(self.project, self.organist, None)[0]
+        self.assertEqual([(row.day.day, row.hours) for row in sheet.rows], [(19, ""), (20, "2:30")])
+
+    def test_period_keeps_a_first_rehearsal_in_its_own_local_date(self) -> None:
+        rehearsal = Rehearsal.objects.create(
+            project=self.project, date_time=datetime(2026, 9, 19, 3, 30, tzinfo=UTC),
+            timezone="America/New_York", duration_minutes=90,
+        )
+        self.attend(rehearsal, Attendance.Status.PRESENT)
+        html = render_contract_html(self.issue(price(self.project, participation=self.seat, amount="500", form="ZLECENIE")))
+        self.assertIn("w okresie od 18.09.2026 r. do 11.10.2026 r.", html)
+        self.assertIn('>18</td><td class="figure">1:30</td>', html)
+
+    def test_the_period_opens_on_the_persons_own_first_rehearsal(self) -> None:
+        # The choir starts in September; the organist is called to the dress rehearsal alone.
+        self.rehearsal(18)
+        self.rehearsal(8, month=10, calls_instrumentalists=True)
+        html = render_contract_html(
+            self.issue(price(self.project, participation=self.organist, amount="600", form="ZLECENIE")),
+        )
+        self.assertIn("w okresie od 08.10.2026 r. do 11.10.2026 r.", html)
+        self.assertNotIn(">18</td>", html)
+
+    def test_a_signed_contract_reprints_the_paper_not_the_changed_cast(self) -> None:
+        self.cast_the_choir()
+        contract = self.issue(price(self.project, participation=self.seat, amount="1400"))
+        signed_on = finance_today()
+        ContractService.sign(contract, SignContractDTO(signed_on=signed_on - timedelta(days=1)), actor=self.manager)
+        signed = render_contract_html(contract)
+
+        ProjectPieceCasting.objects.filter(participation=self.seat, piece=self.pieces["Stars"]).delete()
+        self.cast(self.seat, "Méditation", "S1")
+        # A later correction of the date or the copy's place keeps the frozen text.
+        ContractService.sign(contract, SignContractDTO(signed_on=signed_on), actor=self.manager)
+        reprint = render_contract_html(contract)
+
+        self.assertEqual(reprint, signed)
+        annex = reprint.split('<div class="annex-title">Partie Wykonawcy</div>', 1)[1]
+        self.assertIn("Stars", annex)
+        self.assertNotIn("Méditation", annex)
+        # The snapshot keeps the text; the font rules are this host's and come back at print.
+        self.assertEqual(reprint.count("@font-face"), _BUNDLED_FACES)
+
+    def test_an_unsigned_contract_follows_the_cast(self) -> None:
+        self.cast_the_choir()
+        contract = self.issue(price(self.project, participation=self.seat, amount="1400"))
+        self.cast(self.seat, "Méditation", "S1")
+        annex = render_contract_html(contract).split('<div class="annex-title">Partie Wykonawcy</div>', 1)[1]
+        self.assertIn("Méditation", annex)
+
+    def test_hours_sheets_keep_the_year_when_the_period_crosses_new_year(self) -> None:
+        self.project.date_time = datetime(2027, 1, 2, 12, tzinfo=UTC)
+        self.project.save(update_fields=["date_time"])
+        self.attend(self.rehearsal(31, month=12, minutes=60), Attendance.Status.PRESENT)
+        sheets = hours_record(self.project, self.seat, Period(date(2026, 12, 31), date(2027, 1, 2)))
+        self.assertEqual([(sheet.month, sheet.year) for sheet in sheets], [("grudzień", 2026), ("styczeń", 2027)])
+
+    def test_conductor_mandate_has_programme_and_performance_rights(self) -> None:
+        conductor = make_seat(self.project, "Adam", "Dyrygent", voice_type=VoiceType.CONDUCTOR)
+        html = render_contract_html(self.issue(price(self.project, participation=conductor, amount="500", form="ZLECENIE")))
+        self.assertIn("dyrygowaniu artystycznym wykonaniem", html)
+        self.assertIn('<div class="annex-title">Program Koncertu</div>', html)
+        self.assertIn("Załącznik nr 2 do umowy zlecenia", html)
+        self.assertIn("art. 86 ust. 1 pkt 2", html)
+        self.assertNotIn("Partie Zleceniobiorcy", html)
+        self.assertNotIn("Rezultaty i wizerunek", html)
+
+    def test_non_performing_crew_cannot_print_an_artistic_deed_but_can_print_its_bill(self) -> None:
+        crew = make_crew(self.project, "Piotr", "Fotograf", specialty=Collaborator.Specialty.VISUALS)
+        contract = self.issue(price(self.project, crew=crew, amount="600", form="ZLECENIE"))
+        # A legacy row issued before template eligibility was enforced.
+        Contract.objects.filter(pk=contract.pk).update(form=FeeForm.DZIELO)
+        with self.assertRaises(ContractRefused):
+            render_contract_html(contract)
+        self.assertIn(contract.number, render_bill_html(contract))
+
+    def test_outside_cast_instrumentalist_gets_artistic_mandate_and_blank_hours(self) -> None:
+        crew = make_crew(self.project, "Jan", "Organista", specialty=Collaborator.Specialty.INSTRUMENT)
+        html = render_contract_html(self.issue(price(self.project, crew=crew, amount="600", form="ZLECENIE")))
+        self.assertIn("artystycznym wykonaniu partii instrumentalnych", html)
+        self.assertIn("art. 86 ust. 1 pkt 2", html)
+        self.assertIn('<div class="annex-title">Program Koncertu</div>', html)
+        self.assertIn("Załącznik nr 2 do umowy zlecenia", html)
+        self.assertIn("godz:min", html)
+        # The app knows none of this player's days, so the period's start is the pen's.
+        self.assertIn('w okresie od <span class="blank blank--s"></span> r. do 11.10.2026 r.', html)
+        self.assertTrue(all(row.hours == "" for row in hours_record(self.project, None, None)[0].rows))
+        self.assertNotIn("Partie Zleceniobiorcy", html)
+        self.assertNotIn("Rezultaty i wizerunek", html)
+
+    def test_missing_leader_hours_follow_delegation_not_singer_invitations(self) -> None:
+        conductor = make_seat(self.project, "Adam", "Dyrygent", voice_type=VoiceType.CONDUCTOR)
+        self.project.conductor = conductor.artist
+        self.project.save(update_fields=["conductor"])
+        sectional = self.rehearsal(18, called_sections="TB", is_mandatory=False)
+        sectional.invited_participations.add(self.alto)
+        self.rehearsal(19, led_by=self.alto.artist)
+        absent = self.rehearsal(20)
+        Attendance.objects.create(rehearsal=absent, participation=conductor, status=Attendance.Status.ABSENT)
+        attended = self.rehearsal(21, called_sections="SA", is_mandatory=False, led_by=self.alto.artist)
+        Attendance.objects.create(rehearsal=attended, participation=conductor, status=Attendance.Status.PRESENT)
+        sheet = hours_record(self.project, conductor, None)[0]
+        self.assertEqual([(row.day.day, row.hours) for row in sheet.rows], [(18, ""), (21, "2:30")])
+        self.assertEqual(sheet.total, "")
+
+    def test_part_labels_stay_polish_under_a_foreign_ui_language(self) -> None:
+        self.cast(self.seat, "Gloria II", "VP")
+        with translation.override("fr"):
+            parts = performer_parts(self.project, self.seat)
+        self.assertEqual(parts[0].line, "Perkusja wokalna / Beatbox")
 
 
 def _streamed(response: Any) -> bytes:
@@ -487,6 +876,20 @@ class ContractsZipTests(APITestCase):
         result = self.run_task()
         self.assertEqual(result.result, {"project_id": str(self.project.pk), "error_code": NO_CONTRACTS})
 
+    def test_an_inapplicable_template_refuses_the_zip_without_publishing_a_partial_file(self) -> None:
+        self.contract("500", "Alfa")
+        crew = make_crew(self.project, "Piotr", "Fotograf", specialty=Collaborator.Specialty.VISUALS)
+        contract = ContractService.issue(price(self.project, crew=crew, amount="600", form="ZLECENIE"), actor=None)
+        Contract.objects.filter(pk=contract.pk).update(form=FeeForm.DZIELO)
+        result = self.run_task()
+        self.assertEqual(result.result, {
+            "project_id": str(self.project.pk), "error_code": "contract_refused", "contract_number": contract.number,
+        })
+        with patch("finance.views._zip_result", return_value=("SUCCESS", result.result)):
+            response = self.client.get(f"/api/finance/contracts/zip/{result.id}/")
+        self.assertEqual(response.data["contract_number"], contract.number)
+        self.assertFalse(default_storage.exists(export_path(str(self.project.pk), result.id)))
+
     def test_a_new_archive_clears_stale_ones_and_leaves_one_being_downloaded(self) -> None:
         self.contract("1500", "Alfa")
         stale = self.run_task()
@@ -556,15 +959,23 @@ class SampleDocumentsCommandTests(TestCase):
             override_settings(MEDIA_ROOT=media),
             patch("finance.infrastructure.documents._render_pdf", side_effect=_html_as_pdf),
             patch("finance.infrastructure.reports._render_pdf", side_effect=_html_as_pdf),
+            patch("django.utils.timezone.now", return_value=datetime(2030, 11, 2, 12, tzinfo=UTC)),
         ):
             call_command("finance_sample_documents", stdout=io.StringIO())
 
         folder = f"{media}/finance/samples"
         names = sorted(os.listdir(folder))
-        self.assertEqual(len(names), 10)
+        self.assertEqual(len(names), 12)
+        with open(f"{folder}/1-umowa-o-dzielo.pdf", encoding="utf-8") as handle:
+            html = handle.read()
+            self.assertIn("Sopran solo (t. 1-8)", html)
+            self.assertIn("wystawiono 02.11.2030", html)
+            self.assertIn("23.11.2030", html)
         with open(f"{folder}/2-umowa-o-dzielo-dyrygent.pdf", encoding="utf-8") as handle:
             self.assertIn(f"reprezentowana przez: Anna Marcisz {EN_DASH} Wiceprezes Zarządu", handle.read())
-        with open(f"{folder}/8-sprawozdanie-dla-sponsora.pdf", encoding="utf-8") as handle:
+        with open(f"{folder}/3-umowa-zlecenia-wykonawca.pdf", encoding="utf-8") as handle:
+            self.assertIn("Ewidencja czasu wykonywania umowy zlecenia", handle.read())
+        with open(f"{folder}/9-sprawozdanie-dla-sponsora.pdf", encoding="utf-8") as handle:
             self.assertIn("Środki: Kancelaria Przykładowa", handle.read())
         self.assertFalse(Project.objects.exists())
         self.assertFalse(Contract.all_objects.exists())

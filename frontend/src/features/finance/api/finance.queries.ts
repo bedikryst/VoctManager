@@ -423,10 +423,12 @@ const ZIP_MAX_POLLS = 60;
 
 export class ZipExportError extends Error {
   readonly code: string;
+  readonly contractNumber?: string;
 
-  constructor(code: string) {
+  constructor(code: string, contractNumber?: string) {
     super(code);
     this.code = code;
+    this.contractNumber = contractNumber;
   }
 }
 
@@ -461,7 +463,7 @@ export const useContractsZip = (projectId: string) => {
           return status.count ?? 0;
         }
         if (status.state === "FAILURE") {
-          throw new ZipExportError(status.error_code ?? "zip_failed");
+          throw new ZipExportError(status.error_code ?? "zip_failed", status.contract_number ?? undefined);
         }
       }
       throw new ZipExportError("zip_timeout");

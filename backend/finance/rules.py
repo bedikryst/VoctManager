@@ -29,6 +29,11 @@ CENT = Decimal('0.01')
 ZERO = Decimal('0.00')
 HUNDRED = Decimal('100')
 
+
+def is_artistic_payee(seat: Participation | None, crew: CrewAssignment | None) -> bool:
+    """The musical contract covers cast members and outside-cast concert players."""
+    return seat is not None or (crew is not None and crew.collaborator.specialty == Collaborator.Specialty.INSTRUMENT)
+
 # Where "today" is decided: the foundation's office, not the server's UTC clock.
 # A payment made on the evening of the 31st belongs to that month in the books.
 FINANCE_TIMEZONE = ZoneInfo(DEFAULT_EVENT_TIMEZONE)

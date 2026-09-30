@@ -1766,6 +1766,7 @@
       "bill_not_applicable": "Une convention de bénévolat n'a pas de note d'honoraires.",
       "pdf_renderer_unavailable": "Le serveur ne peut pas préparer le document pour l'instant. Réessayez dans un moment.",
       "no_contracts": "Le projet n'a encore aucun contrat émis.",
+      "zip_contract_refused": "Le contrat {{number}} ne peut pas être préparé. Vérifiez sa forme et son bénéficiaire.",
       "zip_failed": "Les contrats n'ont pas pu être regroupés. Réessayez.",
       "zip_timeout": "Le regroupement des contrats prend trop de temps. Réessayez dans quelques minutes.",
       "item_paid_not_removable": "La ligne est payée. Elle ne peut être supprimée qu'après l'annulation du paiement.",

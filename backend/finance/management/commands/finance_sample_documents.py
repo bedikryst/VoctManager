@@ -1,8 +1,9 @@
 """
 @file finance_sample_documents.py
 @description Renders one of each finance document from a throwaway concert, for
-    the printed check a template change needs before it ships: the contracts and
-    bills, and the reports — the patron report plain and for one source, the
+    the printed check a template change needs before it ships: the contracts
+    (a cast singer's parts with a named solo, a cast singer's umowa zlecenia
+    with the rehearsal they attended) and bills, and the reports — the patron report plain and for one source, the
     board report, the document notes. Everything the run creates — venue,
     programme, people, fees, contracts and their numbers, the plan, expenses and
     funding — lives in a transaction that is rolled back, so no row and no
@@ -25,11 +26,14 @@ from archive.models import Composer, Piece
 from logistics.models import Location, LocationCategory
 from roster.models import (
     Artist,
+    Attendance,
     Collaborator,
     CrewAssignment,
     Participation,
     ProgramItem,
     Project,
+    ProjectPieceCasting,
+    ProjectSoloAssignment,
     Rehearsal,
     VoiceType,
 )
@@ -90,7 +94,7 @@ def _sample_plan(project: Project) -> dict[str, BudgetLine]:
             "category": category, "name": name, "unit": unit, "quantity": quantity, "unit_cost": unit_cost,
         }), actor=None)
         for category, name, unit, quantity, unit_cost in (
-            ("PERSONNEL_ARTISTIC", "Honoraria artystów", "PERSON", "3", "1600"),
+            ("PERSONNEL_ARTISTIC", "Honoraria artystów", "PERSON", "4", "1600"),
             ("PERSONNEL_TECHNICAL", "Realizacja dźwięku", "SERVICE", "1", "800"),
             ("VENUE", "Wynajem kościoła", "SERVICE", "1", "1500"),
             ("PROMOTION", "Druk programów", "PIECE", "200", "3"),
@@ -142,22 +146,45 @@ def _sample_concert() -> list[tuple[str, bytes]]:
         formatted_address="ul. Augustiańska 7, 31-064 Kraków, Polska",
     )
     project = Project.objects.create(
-        title="Lux Aeterna", date_time=timezone.now() + timedelta(days=30),
+        title="Lux Aeterna", date_time=timezone.now() + timedelta(days=21),
         status=Project.Status.ACTIVE, location=venue,
     )
     # A first rehearsal two weeks before the concert: a short engagement, so the
     # volunteer agreement prints its insurance clause.
-    Rehearsal.objects.create(project=project, date_time=project.date_time - timedelta(days=14))
+    rehearsal = Rehearsal.objects.create(
+        project=project, date_time=project.date_time - timedelta(days=14), duration_minutes=150,
+    )
     composer = Composer.objects.create(first_name="Tomás Luis", last_name="de Victoria")
-    for order, title in enumerate(("Officium defunctorum: Introitus", "Kyrie", "Versa est in luctum"), start=1):
-        ProgramItem.objects.create(project=project, piece=Piece.objects.create(title=title, composer=composer),
-                                   order=order)
-    ProgramItem.objects.create(project=project, piece=Piece.objects.create(title="Ave verum corpus"),
-                               order=4, is_encore=True)
+    introitus, kyrie, versa = (
+        Piece.objects.create(title=title, composer=composer)
+        for title in ("Officium defunctorum: Introitus", "Kyrie", "Versa est in luctum")
+    )
+    encore = Piece.objects.create(title="Ave verum corpus")
+    for order, piece in enumerate((introitus, kyrie, versa, encore), start=1):
+        ProgramItem.objects.create(project=project, piece=piece, order=order, is_encore=piece == encore)
 
     singer = Participation.objects.create(artist=_artist("Zofia", "Przykładowa", VoiceType.SOPRANO), project=project)
+    second_soprano = Participation.objects.create(
+        artist=_artist("Ewa", "Przykładowa", VoiceType.SOPRANO), project=project,
+    )
+    tenor = Participation.objects.create(artist=_artist("Tomasz", "Przykładowy", VoiceType.TENOR), project=project)
+    # The singer's annex: undivided in the Introitus, first soprano in the
+    # divided Kyrie, out of the motet, and the encore's solo.
+    for seat, piece, line in (
+        (singer, introitus, "S1"), (singer, kyrie, "S1"), (second_soprano, kyrie, "S2"),
+        (second_soprano, versa, "S1"), (singer, encore, "S1"), (tenor, introitus, "T1"), (tenor, kyrie, "T1"),
+    ):
+        ProjectPieceCasting.objects.create(participation=seat, piece=piece, voice_line=line)
+    ProjectSoloAssignment.objects.create(
+        project=project, piece=encore, position=1, participation=singer, label="Sopran solo",
+        score_reference="t. 1-8",
+    )
+    Attendance.objects.create(rehearsal=rehearsal, participation=tenor, status=Attendance.Status.PRESENT)
     conductor = Participation.objects.create(
         artist=_artist("Florent", "de Bazelaire", VoiceType.CONDUCTOR), project=project,
+    )
+    guest_conductor = Participation.objects.create(
+        artist=_artist("Adam", "Przykładowy", VoiceType.CONDUCTOR), project=project,
     )
     volunteer = Participation.objects.create(artist=_artist("Jan", "Organista", VoiceType.INSTRUMENTALIST, "Organy"),
                                              project=project)
@@ -169,6 +196,8 @@ def _sample_concert() -> list[tuple[str, bytes]]:
     lines = _sample_plan(project)
     dzielo = _issue(project, singer, "1500.50")
     conductor_dzielo = _issue(project, conductor, "3000")
+    performer_zlecenie = _issue(project, tenor, "1500", form="ZLECENIE")
+    conductor_zlecenie = _issue(project, guest_conductor, "1000", form="ZLECENIE")
     zlecenie = _issue(project, crew, "800")
     agreement = _issue(project, volunteer, "0", in_kind_hours="12", in_kind_hourly_rate="45")
     sponsor = _sample_money(project, lines, dzielo.cost_item)
@@ -177,14 +206,16 @@ def _sample_concert() -> list[tuple[str, bytes]]:
     return [
         ("1-umowa-o-dzielo.pdf", render_contract_pdf(dzielo)),
         ("2-umowa-o-dzielo-dyrygent.pdf", render_contract_pdf(conductor_dzielo)),
-        ("3-umowa-zlecenia.pdf", render_contract_pdf(zlecenie)),
-        ("4-porozumienie-wolontariackie.pdf", render_contract_pdf(agreement)),
-        ("5-rachunek-do-umowy-o-dzielo.pdf", render_bill_pdf(dzielo)),
-        ("6-rachunek-do-umowy-zlecenia.pdf", render_bill_pdf(zlecenie)),
-        ("7-sprawozdanie-dla-mecenasa.pdf", render_patron_report_pdf(money)),
-        ("8-sprawozdanie-dla-sponsora.pdf", render_patron_report_pdf(money, source_id=sponsor.source_id)),
-        ("9-raport-dla-zarzadu.pdf", render_board_report_pdf(money)),
-        ("10-opisy-dokumentow.pdf", render_document_notes_pdf(money)),
+        ("3-umowa-zlecenia-wykonawca.pdf", render_contract_pdf(performer_zlecenie)),
+        ("4-umowa-zlecenia-ekipa.pdf", render_contract_pdf(zlecenie)),
+        ("5-porozumienie-wolontariackie.pdf", render_contract_pdf(agreement)),
+        ("6-rachunek-do-umowy-o-dzielo.pdf", render_bill_pdf(dzielo)),
+        ("7-rachunek-do-umowy-zlecenia.pdf", render_bill_pdf(zlecenie)),
+        ("8-sprawozdanie-dla-mecenasa.pdf", render_patron_report_pdf(money)),
+        ("9-sprawozdanie-dla-sponsora.pdf", render_patron_report_pdf(money, source_id=sponsor.source_id)),
+        ("10-raport-dla-zarzadu.pdf", render_board_report_pdf(money)),
+        ("11-opisy-dokumentow.pdf", render_document_notes_pdf(money)),
+        ("12-umowa-zlecenia-dyrygent.pdf", render_contract_pdf(conductor_zlecenie)),
     ]
 
 

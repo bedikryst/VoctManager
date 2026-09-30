@@ -117,7 +117,7 @@ h2 {
 }
 
 ol { margin: 0 0 7px 0; padding-left: 1.5em; }
-ol > li { margin-bottom: 4px; padding-left: 0.2em; }
+ol > li { margin-bottom: 4px; padding-left: 0.2em; break-inside: avoid; }
 ul { margin: 3px 0 7px 0; padding-left: 1.4em; }
 ul > li { margin-bottom: 2px; }
 
@@ -215,6 +215,23 @@ table.grid td {
 }
 table.grid td.figure { font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.grid tr.total td { border-top: 0.5pt solid var(--ink-3); border-bottom: none; font-weight: 600; color: var(--ink-1); }
+
+/* A performer's parts: a row grows with its solos, so it has no pen height of
+   its own; only the blank rows of a programme not yet in the app keep one. */
+table.grid.parts td { height: auto; vertical-align: top; padding-top: 5px; padding-bottom: 5px; }
+table.grid.parts tr.blank-row td { height: 8.5mm; }
+table.grid.parts .parts-n { width: 8%; }
+table.grid.parts .parts-part { width: 34%; }
+.parts-solo { color: var(--ink-3); }
+
+/* The hours record copies the office's form: centred figures, and a whole
+   month of rows on one page when the sheet lists every day. */
+table.grid.hours th, table.grid.hours td { text-align: center; width: 25%; }
+table.grid.hours--month td { height: 5.8mm; padding-top: 0; padding-bottom: 0; }
+
+/* Unnumbered lines to write on. */
+ul.write-lines { list-style: none; padding-left: 0; }
+ul.write-lines > li { height: 7mm; border-bottom: 0.5pt dotted var(--ink-3); margin-bottom: 2mm; }
 
 .smallprint { font-size: 8.5pt; }
 .office {
