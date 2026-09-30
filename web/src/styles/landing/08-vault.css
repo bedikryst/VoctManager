@@ -1493,6 +1493,23 @@
     text-transform: uppercase;
   }
 
+  /* The terms' own page, on its own line under the version stamp, a grade brighter than it. */
+  .regulamin-foot-page {
+    display: block;
+    width: fit-content;
+    margin-top: 4px;
+    color: rgba(244, 241, 233, 0.66);
+    text-decoration: underline;
+    text-decoration-color: rgba(244, 241, 233, 0.24);
+    text-underline-offset: 0.3em;
+    transition: color 0.3s var(--ease), text-decoration-color 0.3s var(--ease);
+  }
+  .regulamin-foot-page:hover,
+  .regulamin-foot-page:focus-visible {
+    color: var(--paper);
+    text-decoration-color: currentColor;
+  }
+
   .regulamin-accept {
     display: inline-flex;
     align-items: center;

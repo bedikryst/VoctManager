@@ -38,7 +38,7 @@ const foundationCopySchema = z
         title2Html: z.string(),
         lead: z.string(),
         supportLink: z.string(),
-        mecenatLink: z.string(),
+        registryLink: z.string(),
       })
       .strict(),
     index: z
@@ -47,11 +47,13 @@ const foundationCopySchema = z
         items: z
           .array(z.object({ id: z.string(), anchor: z.string(), label: z.string() }).strict())
           .length(5),
+        firstRealisation: z.string(),
       })
       .strict(),
     realisation: z
       .object({
-        leads: z.array(z.object({ id: z.string(), text: z.string() }).strict()).min(1),
+        leads: z.array(z.object({ id: z.string(), textHtml: z.string() }).strict()).min(1),
+        formCycle: z.string(),
         sheet: z
           .object({
             when: z.string(),
@@ -64,6 +66,7 @@ const foundationCopySchema = z
           })
           .strict(),
         festival: z.string(),
+        festivalFinale: z.string(),
         admissionFree: z.string(),
         admissionPaid: z.string(),
         budgetAmount: z.string(),
@@ -90,7 +93,7 @@ const foundationCopySchema = z
     record: z
       .object({
         h2: z.string(),
-        body: z.string(),
+        bodyHtml: z.string(),
         statProgrammes: z.string(),
         statConcerts: z.string(),
         statFree: z.string(),
@@ -100,7 +103,8 @@ const foundationCopySchema = z
       .strict(),
     mission: z
       .object({
-        motto: z.string(),
+        motto1: z.string(),
+        motto2Html: z.string(),
         body: z.string(),
         boardLabel: z.string(),
         president: z.string(),
@@ -140,8 +144,9 @@ const foundationCopySchema = z
         accountLabel: z.string(),
         eurLabel: z.string(),
         titleLabel: z.string(),
-        standingOrderHint: z.string(),
         scope: z.string(),
+        namesRule: z.string(),
+        surplusRule: z.string(),
         tax: z.string(),
       })
       .strict(),
@@ -183,7 +188,9 @@ export type FoundationCopy = z.infer<typeof foundationCopySchema>;
 
 // ── The desk contract ─────────────────────────────────────────────────────────────────────────
 
-const ARROW = "Keep the trailing arrow.";
+const ARROW = "The page draws an arrow after this link; the text carries none.";
+const SUPPORTER =
+  "A supporter's reason, set in italic without quotation marks: nobody is being quoted, so no marks.";
 
 /** DECLARATION ORDER IS READING ORDER — the desk renders the page hero to coda from this list. */
 const FOUNDATION_CONTRACT: readonly CopyEntry[] = [
@@ -204,10 +211,20 @@ const FOUNDATION_CONTRACT: readonly CopyEntry[] = [
     label: "Hero · tytuł, wers 1",
     note: "Two lines, and the break is compositional: split where the target language wants it.",
   },
-  { kind: "field", path: "hero.title2Html", label: "Hero · tytuł, wers 2", note: "The `<em>` phrase is set in the page accent." },
-  { kind: "field", path: "hero.lead", label: "Hero · lead" },
+  {
+    kind: "field",
+    path: "hero.title2Html",
+    label: "Hero · tytuł, wers 2",
+    note: "The `<em>` phrase is set in a light weight against the bold first line — emphasis by weight, not colour or italic.",
+  },
+  {
+    kind: "field",
+    path: "hero.lead",
+    label: "Hero · lead",
+    note: "The paragraph search results and assistants quote: what the foundation is, where, since when, with which ensemble.",
+  },
   { kind: "field", path: "hero.supportLink", label: "Hero · odnośnik do wsparcia" },
-  { kind: "field", path: "hero.mecenatLink", label: "Hero · odnośnik do mecenatu" },
+  { kind: "field", path: "hero.registryLink", label: "Hero · odnośnik do danych i dokumentów" },
 
   // ── Spis ──────────────────────────────────────────────────────────────────────────────────
   { kind: "field", path: "index.label", label: "Spis · etykieta" },
@@ -219,6 +236,12 @@ const FOUNDATION_CONTRACT: readonly CopyEntry[] = [
     note: "Printed in the page index and as each section's own label on a phone.",
     fields: [{ path: "label", label: "nazwa" }],
   },
+  {
+    kind: "field",
+    path: "index.firstRealisation",
+    label: "Spis · pierwsza realizacja",
+    note: "Replaces the realisations section's name while the foundation has exactly one realisation.",
+  },
 
   // ── Realizacje ────────────────────────────────────────────────────────────────────────────
   {
@@ -226,8 +249,14 @@ const FOUNDATION_CONTRACT: readonly CopyEntry[] = [
     path: "realisation.leads",
     keyBy: "id",
     label: "Realizacja · lead",
-    note: "Two sentences about the concert as the foundation's work. Title, date and place are printed from the corpus.",
-    fields: [{ path: "text", label: "lead" }],
+    note: "Two sentences about the concert as the foundation's work. Title, date and place are printed from the corpus. A work's title goes in `<em>`.",
+    fields: [{ path: "textHtml", label: "lead" }],
+  },
+  {
+    kind: "field",
+    path: "realisation.formCycle",
+    label: "Realizacja · forma",
+    note: "The concert's form, printed before the year in the rubric above the title (\"Koncert Duchowy · 2026\").",
   },
   { kind: "field", path: "realisation.sheet.when", label: "Metryka · kiedy" },
   { kind: "field", path: "realisation.sheet.where", label: "Metryka · gdzie" },
@@ -237,6 +266,12 @@ const FOUNDATION_CONTRACT: readonly CopyEntry[] = [
   { kind: "field", path: "realisation.sheet.admission", label: "Metryka · wstęp" },
   { kind: "field", path: "realisation.sheet.budget", label: "Metryka · budżet" },
   { kind: "field", path: "realisation.festival", label: "Metryka · festiwal", note: "`{name}` is the festival's own name. Keep the slot." },
+  {
+    kind: "field",
+    path: "realisation.festivalFinale",
+    label: "Metryka · festiwal (koncert zamykający)",
+    note: "Printed instead of the line above when the concert closes the festival. `{name}` is the festival's own name.",
+  },
   { kind: "field", path: "realisation.admissionFree", label: "Metryka · wstęp wolny", note: "The value beside the label, not a sentence." },
   { kind: "field", path: "realisation.admissionPaid", label: "Metryka · wstęp płatny" },
   {
@@ -260,22 +295,38 @@ const FOUNDATION_CONTRACT: readonly CopyEntry[] = [
   { kind: "field", path: "realisation.concertLink", label: "Realizacja · odnośnik do koncertu", note: ARROW },
   { kind: "field", path: "realisation.supportLink", label: "Realizacja · wsparcie koncertu" },
 
-  // ── Doświadczenie ─────────────────────────────────────────────────────────────────────────
-  { kind: "field", path: "record.h2", label: "Doświadczenie · nagłówek" },
-  { kind: "field", path: "record.body", label: "Doświadczenie · akapit" },
+  // ── Dorobek ───────────────────────────────────────────────────────────────────────────────
+  { kind: "field", path: "record.h2", label: "Dorobek · nagłówek" },
+  {
+    kind: "field",
+    path: "record.bodyHtml",
+    label: "Dorobek · akapit",
+    note: "The French tradition's name, Concerts Spirituels, is a foreign term and goes in `<em>`.",
+  },
   {
     kind: "field",
     path: "record.statProgrammes",
-    label: "Doświadczenie · liczba programów",
+    label: "Dorobek · liczba programów",
     note: "Follows a number counted from the corpus (5). Match the noun to it.",
   },
-  { kind: "field", path: "record.statConcerts", label: "Doświadczenie · liczba koncertów", note: "Follows a number (8)." },
-  { kind: "field", path: "record.statFree", label: "Doświadczenie · z wolnym wstępem", note: "Follows a number (7)." },
-  { kind: "field", path: "record.photoCaption", label: "Doświadczenie · podpis zdjęcia" },
-  { kind: "field", path: "record.allLink", label: "Doświadczenie · odnośnik do koncertów", note: ARROW },
+  { kind: "field", path: "record.statConcerts", label: "Dorobek · liczba koncertów", note: "Follows a number (8)." },
+  { kind: "field", path: "record.statFree", label: "Dorobek · z wolnym wstępem", note: "Follows a number (7)." },
+  { kind: "field", path: "record.photoCaption", label: "Dorobek · podpis zdjęcia" },
+  { kind: "field", path: "record.allLink", label: "Dorobek · odnośnik do koncertów", note: ARROW },
 
   // ── Misja i ludzie ────────────────────────────────────────────────────────────────────────
-  { kind: "field", path: "mission.motto", label: "Misja · motto" },
+  {
+    kind: "field",
+    path: "mission.motto1",
+    label: "Misja · motto, zdanie 1",
+    note: "Anna Marcisz's motto, one sentence per line. Set roman.",
+  },
+  {
+    kind: "field",
+    path: "mission.motto2Html",
+    label: "Misja · motto, zdanie 2",
+    note: "Only the word for the human being is in `<em>` (italic); the rest of the line is roman.",
+  },
   { kind: "field", path: "mission.body", label: "Misja · akapit" },
   { kind: "field", path: "mission.boardLabel", label: "Zarząd · etykieta" },
   { kind: "field", path: "mission.president", label: "Zarząd · prezes", note: "The KRS function, lower case." },
@@ -290,7 +341,7 @@ const FOUNDATION_CONTRACT: readonly CopyEntry[] = [
   // ── Wsparcie ──────────────────────────────────────────────────────────────────────────────
   { kind: "field", path: "support.h2", label: "Wsparcie · nagłówek" },
   { kind: "field", path: "support.donation.label", label: "Darowizna · nazwa" },
-  { kind: "field", path: "support.donation.quote", label: "Darowizna · cytat", note: "A supporter's own words, with the locale's quotation marks." },
+  { kind: "field", path: "support.donation.quote", label: "Darowizna · powód", note: SUPPORTER },
   { kind: "field", path: "support.donation.body", label: "Darowizna · akapit" },
   {
     kind: "field",
@@ -302,11 +353,16 @@ const FOUNDATION_CONTRACT: readonly CopyEntry[] = [
   { kind: "field", path: "support.donation.vaultAction", label: "Darowizna · wpłata online" },
   { kind: "field", path: "support.donation.transferLink", label: "Darowizna · dane do przelewu" },
   { kind: "field", path: "support.mecenat.label", label: "Mecenat · nazwa" },
-  { kind: "field", path: "support.mecenat.quote", label: "Mecenat · cytat" },
-  { kind: "field", path: "support.mecenat.body", label: "Mecenat · akapit" },
+  { kind: "field", path: "support.mecenat.quote", label: "Mecenat · powód", note: SUPPORTER },
+  {
+    kind: "field",
+    path: "support.mecenat.body",
+    label: "Mecenat · akapit",
+    note: "Names the person a patron talks to, declined as the sentence needs. The name is written here, not filled in.",
+  },
   { kind: "field", path: "support.mecenat.link", label: "Mecenat · odnośnik", note: ARROW },
   { kind: "field", path: "support.partnership.label", label: "Partnerstwo · nazwa" },
-  { kind: "field", path: "support.partnership.quote", label: "Partnerstwo · cytat" },
+  { kind: "field", path: "support.partnership.quote", label: "Partnerstwo · powód", note: SUPPORTER },
   { kind: "field", path: "support.partnership.body", label: "Partnerstwo · akapit" },
   { kind: "field", path: "support.partnership.mailLink", label: "Partnerstwo · napisz" },
   {
@@ -330,8 +386,19 @@ const FOUNDATION_CONTRACT: readonly CopyEntry[] = [
     label: "Przelew · etykieta tytułu",
     note: "The label only. The transfer title itself stays Polish in every locale — it is what the foundation books the money under.",
   },
-  { kind: "field", path: "transfer.standingOrderHint", label: "Przelew · zlecenie stałe" },
   { kind: "field", path: "transfer.scope", label: "Przelew · przeznaczenie darowizn" },
+  {
+    kind: "field",
+    path: "transfer.namesRule",
+    label: "Przelew · zasada: nazwiska",
+    note: "A standing rule of the foundation, stated plainly: donors' names are never published; the account gives sums by source.",
+  },
+  {
+    kind: "field",
+    path: "transfer.surplusRule",
+    label: "Przelew · zasada: nadwyżka",
+    note: "A standing rule: money beyond a concert's cost goes to the next realisations. It is what lets a gift be made to one concert.",
+  },
   {
     kind: "field",
     path: "transfer.tax",
@@ -427,7 +494,7 @@ export const FOUNDATION_CHROME: Record<Locale, FoundationChrome> = {
   pl: {
     indexAria: "Sekcje strony",
     realisationsAria: "Realizacje fundacji",
-    recordAria: "Doświadczenie VoctEnsemble",
+    recordAria: "Dorobek VoctEnsemble",
     missionAria: "Misja i zarząd",
     supportAria: "Wsparcie",
     transferAria: "Dane do przelewu",

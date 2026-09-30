@@ -1,0 +1,17 @@
+---
+/**
+ * @file ActArrow.astro
+ * @description The one arrow /fundacja and /mecenat put after a link that leads somewhere: drawn in
+ *  markup, never typed into copy, so every locale gets the same glyph at the same weight and the
+ *  desk never has to be told to keep it. Decorative — the link's words carry its name. It takes the
+ *  link's colour, and a host that wants it to move under the hand styles `svg` inside its link.
+ * @architecture Astro islands 2026
+ * @module components/foundation/ActArrow
+ */
+---
+
+<svg class="act-arrow" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2 8h11M9 3.5 13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+
+<style>
+  .act-arrow { flex: none; display: inline-block; vertical-align: -0.1em; margin-left: 0.45em; }
+</style>

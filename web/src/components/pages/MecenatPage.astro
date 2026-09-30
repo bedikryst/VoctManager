@@ -9,12 +9,15 @@
  *
  *  ONE PROJECT, ONE NUMBER, ONE PERSON. No giving amounts, no vault, no form: a patron does not
  *  read beside 50 zł examples, and the conversation is the whole mechanism. The contact is named
- *  and addressed; the budget is the one the board confirmed, with its date.
+ *  and written to at the contact's own address; the budget is the one the board confirmed, with its date,
+ *  printed once in the sheet. An area's own amount prints beside it only once it is entered.
+ *  The letter closes on the foundation's letterhead — name, seat, KRS, NIP — and a quiet way to
+ *  the transfer details, which is what a patron's office asks for next.
  *
  *  WHAT IS A FACT AND WHERE IT COMES FROM. The realisation is `lib/realisations` over the corpus
  *  and `data/foundationSupport.ts`; the sheet's labels are /fundacja's copy; the contact's name,
- *  function and address are `data/foundation.ts` through `FOUNDATION_CONTACT`. This page's own
- *  words come from `content/pages/mecenat.yaml`; its chrome from `i18n/content/mecenat.ts`.
+ *  function and address and the letterhead are `data/foundation.ts`. This page's own words come
+ *  from `content/pages/mecenat.yaml`; its chrome from `i18n/content/mecenat.ts`.
  *
  *  STATIC FIRST. Complete with scripts and motion off.
  * @architecture Astro islands 2026
@@ -25,18 +28,14 @@ import { getImage, Picture } from "astro:assets";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
+import ActArrow from "../foundation/ActArrow.astro";
 import RealisationModule from "../foundation/RealisationModule.astro";
 import { bleedPair, photoOptional } from "../../lib/photos";
 import { frameCredit } from "../../lib/photoCredit";
 import { pageCopy } from "../../lib/pageCopy";
 import { featuredRealisationView } from "../../lib/realisations";
 import { FOUNDATION } from "../../data/foundation";
-import {
-  FEATURED_REALISATION,
-  FOUNDATION_CONTACT,
-  FOUNDATION_PAGE_LINKED,
-  MECENAT_CONTACT,
-} from "../../data/foundationSupport";
+import { FEATURED_REALISATION, FOUNDATION_PAGE_LINKED, MECENAT_CONTACT } from "../../data/foundationSupport";
 import { FUNDACJA_PAGE } from "../../i18n/content/fundacja";
 import { MECENAT_CHROME, MECENAT_PAGE } from "../../i18n/content/mecenat";
 import { UI } from "../../i18n/ui";
@@ -69,15 +68,36 @@ if (copy.realisation.id !== FEATURED_REALISATION) {
 const concerts = await getCollection("concerts");
 const eras = await getCollection("repertoire");
 const view = featuredRealisationView(concerts, eras, lang);
-const aboutBody = fill(copy.about.body, { amount: view.budget.amount, date: view.budget.asOf });
+
+// An area's amount prints only once entered (`budget.areasPln`); an amount keyed to an area this
+// copy does not list would be a number printed under nobody's name, so it fails the build.
+const areaIds = new Set(copy.realisation.areas.map((area) => area.id));
+const strayArea = Object.keys(view.budget.areas).find((id) => !areaIds.has(id));
+if (strayArea) {
+  throw new Error(`[mecenat] budget.areasPln has "${strayArea}", which mecenat.yaml (realisation.areas) does not list.`);
+}
+const areas = copy.realisation.areas.map((area) => {
+  const amount = view.budget.areas[area.id];
+  return { text: area.text, amount: amount ? fill(foundationCopy.realisation.budgetAmount, { amount }) : undefined };
+});
 
 const person = FOUNDATION.board.find((b) => b.id === MECENAT_CONTACT);
 if (!person) throw new Error(`[mecenat] MECENAT_CONTACT "${MECENAT_CONTACT}" is not on the board.`);
+if (!person.mail) throw new Error(`[mecenat] MECENAT_CONTACT "${MECENAT_CONTACT}" has no \`mail\` in data/foundation.ts.`);
 const personRole = fill(copy.contact.role, {
   function: person.function === "president" ? foundationCopy.mission.president : foundationCopy.mission.vicePresident,
 });
-const mail = FOUNDATION_CONTACT.mecenat;
+const mail = person.mail;
 const mailHref = `mailto:${mail}?subject=${encodeURIComponent(copy.contact.mailSubject)}`;
+// The office's own one-line letterhead. The register acronyms are the Polish registers' own and
+// are the same in every locale.
+const letterhead = [
+  FOUNDATION.name,
+  FOUNDATION.addressLine,
+  `KRS ${FOUNDATION.registry.krs}`,
+  `NIP ${FOUNDATION.registry.nip}`,
+];
+const hrefTransfer = `${hrefFoundation}#przelew`;
 
 const rehearsalPhoto = photoOptional("mecenat-proba-partytury");
 const rehearsalCredit = frameCredit({}, lang);
@@ -108,7 +128,7 @@ const ogImage = (await getImage({ src: ogSource, width: 1200, format: "webp" }))
   </Fragment>
 
   <a class="skip-link" href="#tresc">{UI[lang].skipToContent}</a>
-  <SiteChrome current="/mecenat" lang={lang} availableLocales={available} />
+  <SiteChrome current="/mecenat" ground="paper" lang={lang} availableLocales={available} />
 
   <main id="tresc" class="mc">
     <div class="mc-wrap">
@@ -122,7 +142,7 @@ const ogImage = (await getImage({ src: ogSource, width: 1200, format: "webp" }))
         <RealisationModule
           view={view}
           rubric={view.ahead ? copy.realisation.rubricAhead : copy.realisation.rubricPast}
-          lead={copy.realisation.lead}
+          leadHtml={copy.realisation.leadHtml}
           labels={foundationCopy.realisation}
           withNotes={false}
           donateHref={`${localizePath("/", lang)}?donate`}
@@ -131,9 +151,14 @@ const ogImage = (await getImage({ src: ogSource, width: 1200, format: "webp" }))
 
       <section class="mc-block">
         <h2 class="mc-h2">{copy.about.h2}</h2>
-        <p class="mc-body">{aboutBody}</p>
+        <p class="mc-body">{copy.about.body}</p>
         <ul class="mc-areas">
-          {copy.realisation.areas.map((area) => <li>{area.text}</li>)}
+          {areas.map((area) => (
+            <li>
+              <span>{area.text}</span>
+              {area.amount && <span class="mc-area-amount">{area.amount}</span>}
+            </li>
+          ))}
         </ul>
       </section>
 
@@ -172,9 +197,13 @@ const ogImage = (await getImage({ src: ogSource, width: 1200, format: "webp" }))
             <span class="copy-label">{t.copy}</span>
           </button>
         </p>
+        <p class="mc-letterhead">
+          {letterhead.map((part, i) => <>{i > 0 && <span class="mc-sep" aria-hidden="true"> · </span>}<span class="mc-nowrap">{part}</span></>)}
+        </p>
+        <p class="mc-transfer"><a href={hrefTransfer}>{copy.contact.transferLink}</a></p>
       </section>
 
-      <p class="mc-proof"><a href={hrefFoundation}>{copy.proof}</a></p>
+      <p class="mc-proof"><a href={hrefFoundation}>{copy.proof}<ActArrow /></a></p>
     </div>
   </main>
 
@@ -192,8 +221,10 @@ const ogImage = (await getImage({ src: ogSource, width: 1200, format: "webp" }))
   .mc a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
   .mc-wrap { max-width: 880px; margin: 0 auto; padding: clamp(96px, 9vw, 132px) var(--gutter) clamp(72px, 10vw, 136px); box-sizing: content-box; }
 
-  .mc-eyebrow { margin: 0; font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: .06em; color: var(--ink-muted); }
-  .mc-title { margin: 18px 0 0; max-width: 18ch; font-family: var(--sans); font-weight: 600; font-variation-settings: normal; font-size: clamp(34px, 5.2vw, 64px); line-height: 1.04; letter-spacing: -.04em; color: var(--ink); text-wrap: balance; }
+  /* A letter, not a poster: the headline sits at /fundacja's H2 scale, and the eyebrow and the
+     contact's role speak /fundacja's 14px sans rather than a mono rubric. */
+  .mc-eyebrow { margin: 0; font-family: var(--sans); font-size: 14px; font-weight: 500; line-height: 1.4; letter-spacing: .02em; color: var(--ink-soft); }
+  .mc-title { margin: 18px 0 0; max-width: 22ch; font-family: var(--sans); font-weight: 600; font-variation-settings: normal; font-size: clamp(28px, 3.4vw, 44px); line-height: 1.08; letter-spacing: -.03em; color: var(--ink); text-wrap: balance; }
   .mc-idea { margin: clamp(22px, 3vw, 32px) 0 0; max-width: 56ch; font-family: var(--sans); font-size: clamp(17px, 1.5vw, 20px); line-height: 1.55; color: var(--ink-soft); }
 
   .mc-realisation { margin: clamp(56px, 8vw, 96px) 0 0; }
@@ -202,7 +233,8 @@ const ogImage = (await getImage({ src: ogSource, width: 1200, format: "webp" }))
   .mc-h2 { margin: 0; font-family: var(--sans); font-weight: 600; font-size: clamp(22px, 2.2vw, 28px); line-height: 1.15; letter-spacing: -.02em; color: var(--ink); }
   .mc-body { margin: 14px 0 0; max-width: 64ch; font-family: var(--sans); font-size: clamp(16px, 1.2vw, 17px); line-height: 1.65; color: var(--ink-soft); }
   .mc-areas { list-style: none; margin: 14px 0 0; padding: 0; border-top: 1px solid var(--mc-rule); max-width: 34rem; }
-  .mc-areas li { padding: 10px 0; border-bottom: 1px solid var(--mc-rule); font-family: var(--sans); font-size: 16px; line-height: 1.45; color: var(--ink); }
+  .mc-areas li { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--mc-rule); font-family: var(--sans); font-size: 16px; line-height: 1.45; color: var(--ink); }
+  .mc-area-amount { font-family: var(--mono); font-size: 14px; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
 
   .mc-presence-with-photo { display: grid; gap: clamp(24px, 3vw, 40px); }
   @media (min-width: 960px) { .mc-presence-with-photo { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; } }
@@ -216,15 +248,24 @@ const ogImage = (await getImage({ src: ogSource, width: 1200, format: "webp" }))
   .mc-contact { margin: clamp(48px, 6vw, 72px) 0 0; padding-top: 18px; border-top: 1px solid var(--ink); }
   .mc-contact-lead { margin-top: 0; }
   .mc-person { margin: 24px 0 0; font-family: var(--sans); font-weight: 600; font-size: 20px; line-height: 1.3; color: var(--ink); }
-  .mc-role { margin: 4px 0 0; font-family: var(--mono); font-size: 12px; letter-spacing: .04em; color: var(--ink-muted); }
+  .mc-role { margin: 4px 0 0; font-family: var(--sans); font-size: 14px; line-height: 1.4; color: var(--ink-soft); }
   .mc-mail-line { margin: 18px 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px; }
   .mc-mail { font-family: var(--sans); font-weight: 500; font-size: clamp(20px, 2.4vw, 28px); color: var(--ink); text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--ink) 30%, transparent); text-underline-offset: .2em; text-decoration-thickness: 1px; overflow-wrap: anywhere; transition: text-decoration-color .25s var(--ease); }
   .mc-mail:hover { text-decoration-color: currentColor; }
   .mc :global(.copy-btn) { display: inline-flex; align-items: center; min-height: 32px; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); background: transparent; border: 1px solid var(--mc-rule); border-radius: 2px; padding: 0 10px; cursor: pointer; transition: color .25s var(--ease), border-color .25s var(--ease); }
   .mc :global(.copy-btn:hover) { color: var(--ink); border-color: var(--ink); }
-  .mc :global(.copy-btn.is-copied) { color: var(--sage); border-color: var(--sage); }
+  .mc :global(.copy-btn.is-copied) { color: var(--ink); border-color: var(--ink); }
+
+  /* The letterhead: quiet, and each part kept whole so a line never breaks inside a number. */
+  .mc-letterhead { margin: 28px 0 0; max-width: 64ch; font-family: var(--mono); font-size: 12px; line-height: 1.8; letter-spacing: .02em; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .mc-nowrap { white-space: nowrap; }
+  .mc-transfer { margin: 6px 0 0; }
+  .mc-transfer a { font-family: var(--sans); font-size: 14px; color: var(--ink-soft); text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--ink) 25%, transparent); text-underline-offset: .2em; text-decoration-thickness: 1px; transition: text-decoration-color .25s var(--ease), color .25s var(--ease); }
+  .mc-transfer a:hover { color: var(--ink); text-decoration-color: currentColor; }
 
   .mc-proof { margin: clamp(48px, 6vw, 72px) 0 0; }
-  .mc-proof a { font-family: var(--sans); font-weight: 500; font-size: 16px; color: var(--ink); text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--ink) 30%, transparent); text-underline-offset: .22em; text-decoration-thickness: 1px; transition: text-decoration-color .25s var(--ease); }
+  .mc-proof a { display: inline-flex; align-items: center; font-family: var(--sans); font-weight: 500; font-size: 16px; color: var(--ink); text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--ink) 30%, transparent); text-underline-offset: .22em; text-decoration-thickness: 1px; transition: text-decoration-color .25s var(--ease); }
   .mc-proof a:hover { text-decoration-color: currentColor; }
+  .mc-proof :global(svg) { transition: transform .25s var(--ease); }
+  .mc-proof a:hover :global(svg), .mc-proof a:focus-visible :global(svg) { transform: translateX(3px); }
 </style>

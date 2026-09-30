@@ -31,6 +31,8 @@ import { VAULT_CHROME, type VaultChrome } from "../../../i18n/content/skarbiecCh
 export interface VaultCopyBundle {
   readonly vault: VaultCopy;
   readonly terms: TermsCopy;
+  /** The terms' own page in this locale, localized at build (the island does not route). */
+  readonly termsHref: string;
 }
 
 interface VaultCopyValue extends VaultCopyBundle {
@@ -51,7 +53,7 @@ export function VaultCopyProvider({
   readonly children: ReactNode;
 }): React.JSX.Element {
   const value = useMemo<VaultCopyValue>(
-    () => ({ lang, vault: copy.vault, terms: copy.terms, t: VAULT_CHROME[lang] }),
+    () => ({ lang, vault: copy.vault, terms: copy.terms, termsHref: copy.termsHref, t: VAULT_CHROME[lang] }),
     [lang, copy],
   );
   return <VaultCopyContext.Provider value={value}>{children}</VaultCopyContext.Provider>;

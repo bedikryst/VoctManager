@@ -61,8 +61,16 @@ interface Props {
       prints this, because a reader who reached the foot of the page has left that band behind.
       With the stanza off the grid closes to three columns (`data-stanzas`). */
   notice?: boolean;
+  /** Whether to print the `Fundatio` stanza. `false` only where the page directly above the footer
+      closes on the foundation's full registry (/fundacja's closing band): the same name, seat, three
+      numbers and statute a second time, a hand's breadth lower, read as a stutter. The remaining
+      stanzas share the measure equally (`data-fundatio`). */
+  registry?: boolean;
 }
-const { lang = DEFAULT_LOCALE, notice = true } = Astro.props;
+const { lang = DEFAULT_LOCALE, notice = true, registry = true } = Astro.props;
+// The cadence is handed out in reading order and closes up over whatever is withheld.
+const stanzaCount = (registry ? 1 : 0) + 1 + (notice ? 1 : 0) + 1;
+const cadence = { index: registry ? 2 : 1, nuntius: registry ? 3 : 2, vox: stanzaCount };
 const t = UI[lang].footer;
 const nuntius = NUNTIUS[lang];
 const year = new Date().getFullYear();
@@ -77,7 +85,8 @@ const tempusGloss = tempus.gloss[lang];
       because one onset cannot cover a 220px block and still be one utterance. The cadence is
       handed out in reading order and CLOSES UP when Nuntius is absent — a hole in a stagger
       reads as a stall, not as an omission. */}
-  <div class="foot-grid" data-stanzas={notice ? "4" : "3"}>
+  <div class="foot-grid" data-stanzas={String(stanzaCount)} data-fundatio={registry ? undefined : "off"}>
+    {registry && (
     <div class="foot-col reveal" data-d="1">
       {/* The two-voice rubric this site's registers speak: Latin in the inscriptional capital,
           the gloss in mono minuscule. The split is not decorative — Cinzel has no lowercase, so
@@ -116,8 +125,9 @@ const tempusGloss = tempus.gloss[lang];
         </a>
       </p>
     </div>
+    )}
 
-    <div class="foot-col reveal" data-d="2">
+    <div class="foot-col reveal" data-d={String(cadence.index)}>
       <h3>
         <span class="dot" aria-hidden="true">·</span>
         <span class="lat" lang="la">Index</span>
@@ -149,7 +159,7 @@ const tempusGloss = tempus.gloss[lang];
         would land two screens below that page's head. */}
     {
       notice && (
-        <div class="foot-col foot-col-nuntius reveal" data-d="3">
+        <div class="foot-col foot-col-nuntius reveal" data-d={String(cadence.nuntius)}>
           <h3>
             <span class="dot" aria-hidden="true">·</span>
             <span class="lat" lang="la">Nuntius</span>
@@ -169,7 +179,7 @@ const tempusGloss = tempus.gloss[lang];
       )
     }
 
-    <div class="foot-col reveal" data-d={notice ? "4" : "3"}>
+    <div class="foot-col reveal" data-d={String(cadence.vox)}>
       <h3>
         <span class="dot" aria-hidden="true">·</span>
         <span class="lat" lang="la">Vox</span>
@@ -217,7 +227,7 @@ const tempusGloss = tempus.gloss[lang];
       It shares the last stanza's `data-d` rather than taking a fifth step: the cadence stops at
       four (styles/registers.css), and the season arriving with the register's final column is
       the right reading anyway — it is the register's own dateline, not a fifth entry. */}
-  <p class="foot-incipit reveal" data-d="4" aria-label={`${tempus.incipit} — ${tempusGloss}`}>
+  <p class="foot-incipit reveal" data-d={String(cadence.vox)} aria-label={`${tempus.incipit} — ${tempusGloss}`}>
     <em>{tempus.incipit}</em>
     <span class="foot-incipit-dot" aria-hidden="true">·</span>
     <span class="foot-incipit-gloss">{tempusGloss}</span>
@@ -251,6 +261,12 @@ const tempusGloss = tempus.gloss[lang];
      confidentialité`. The three-stanza template is the same grid with the ask withheld. */
   .foot-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: clamp(28px, 3.6vw, 48px); }
   .foot-grid[data-stanzas="3"] { grid-template-columns: 1.4fr 1fr 1fr; gap: clamp(32px, 5vw, 64px); }
+  /* Without Fundatio no stanza is the wide one, so the rest share the measure evenly. Desktop only:
+     the phone's single column below must not be out-specified by these. */
+  @media (min-width: 760.02px) {
+    .foot-grid[data-fundatio="off"][data-stanzas="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .foot-grid[data-fundatio="off"][data-stanzas="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
   /* Selector follows the tag: these are `h3` because every page opens its sections at `h2` and
      an `h4` here skipped a level in the outline. Styled by tag, so the two must move together.
      Two voices on one baseline — stone and speech, the same rubric the landing's register

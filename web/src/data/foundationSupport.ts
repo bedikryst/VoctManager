@@ -3,7 +3,7 @@
  * @description The editorial selections /fundacja and /mecenat make over facts that live
  *  elsewhere: which concerts are the foundation's realisations and which of them leads, what each
  *  cost and — once it is known — who paid for it, the documents the foundation actually has, and
- *  the switches that wait on a person (the page's announcement, the new addresses, the tax line).
+ *  the switches that wait on a person (the page's announcement, the tax line).
  *  Every fact about a concert is read from the corpus by id; every fact about the foundation from
  *  `data/foundation.ts`. Spec: docs/specs/web-foundation-rebuild-2026-09.md.
  *
@@ -24,7 +24,7 @@
  * @module data/foundationSupport
  */
 
-import { FOUNDATION, type BoardMember } from "./foundation";
+import type { BoardMember } from "./foundation";
 
 /** What a realisation was budgeted at, as the board confirmed it. */
 export interface RealisationBudget {
@@ -32,6 +32,12 @@ export interface RealisationBudget {
   readonly amountPln: number;
   /** ISO date the amount was confirmed on — printed beside it, so a later change is visible. */
   readonly asOf: string;
+  /**
+   * What each area a patron may take on costs, keyed by the area's id in `mecenat.yaml`
+   * (`realisation.areas[].id`). Entered only once the line breakdown is confirmed; an area with
+   * no amount prints its name alone, so a partial breakdown is honest as far as it goes.
+   */
+  readonly areasPln?: Readonly<Record<string, number>>;
 }
 
 /** Who paid for a realisation, in whole złoty, gross. Every source is printed, zeros included. */
@@ -73,24 +79,15 @@ export const FEATURED_REALISATION: Realisation["id"] = "pochwala-stworzenia";
  */
 export const SCALE_MONTHLY_PLN = 100;
 
-/** The board member who answers about patronage, by id — named on /fundacja and /mecenat. */
+/**
+ * The board member who answers about patronage, by id — named on /fundacja and /mecenat, and
+ * addressed on /mecenat at their own `mail`. The /fundacja sentence that names them is declined
+ * Polish copy (`support.mecenat.body`), so changing this id means rewriting that sentence too.
+ */
 export const MECENAT_CONTACT: BoardMember["id"] = "ania";
 
 /** The statute, as a public path under `web/public`. */
 export const STATUTE_PATH = "/docs/Statut-VoctFoundation.pdf";
-
-/**
- * Whether `fundacja@` and `mecenat@voctfoundation.com` deliver yet. Until the aliases exist every
- * address these pages print is the working `patronage` one, and a reader's mail never bounces.
- * Flip it once both aliases reach the board's inbox (spec §7, stage 4).
- */
-export const FOUNDATION_ALIASES_LIVE = false;
-
-/** The addresses these pages print, resolved through the switch above. */
-export const FOUNDATION_CONTACT = {
-  foundation: FOUNDATION_ALIASES_LIVE ? FOUNDATION.mail.foundation : FOUNDATION.mail.patronage,
-  mecenat: FOUNDATION_ALIASES_LIVE ? FOUNDATION.mail.mecenat : FOUNDATION.mail.patronage,
-} as const;
 
 /**
  * Whether the accountant has confirmed in writing that the page may say donations are deductible

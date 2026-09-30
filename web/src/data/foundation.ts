@@ -47,6 +47,8 @@ export interface BoardMember {
   readonly id: "florent" | "ania" | "krystian";
   readonly name: string;
   readonly function: BoardFunction;
+  /** The person's own address, where a page names them as the one to write to (/mecenat). */
+  readonly mail?: string;
 }
 
 export interface SocialProfile {
@@ -84,6 +86,10 @@ export interface Foundation {
       exist; a surface prints nothing for an empty list. */
   readonly socials: readonly SocialProfile[];
   readonly accounts: {
+    /** The bank that holds both accounts, as its statement names it. */
+    readonly bank: string;
+    /** The bank's BIC (SWIFT) — what a transfer from outside SEPA, and many foreign forms, ask for. */
+    readonly bic: string;
     readonly pln: BankAccount;
     /** A second account in EUR. It exists for a foreign organiser and for nothing else. */
     readonly eur: BankAccount;
@@ -91,11 +97,11 @@ export interface Foundation {
   readonly mail: {
     readonly booking: string;
     readonly general: string;
+    /** The patronage group's primary address; `mecenat@` and the ensemble-domain `patronat@` are
+        its aliases and reach the same inbox. */
     readonly patronage: string;
     /** Everything /fundacja asks a reader to write about — the foundation's own domain. */
     readonly foundation: string;
-    /** /mecenat only: the address its contact person reads. */
-    readonly mecenat: string;
     /** Journalists. The foundation's own domain, as printed on its press releases. */
     readonly press: string;
     readonly director: string;
@@ -107,9 +113,9 @@ export interface Foundation {
  * The foundation's own identity. Every string here is verifiable in the KRS register or on a bank
  * statement — nothing is derived and nothing is approximate.
  *
- * NO BANK NAME. The repository has never carried one, and the number is what a transfer needs;
- * writing a bank's name from the IBAN prefix would be a guess printed as a fact on a document an
- * organiser pays against.
+ * THE BANK AND ITS BIC ARE STATED, NEVER INFERRED. Both were confirmed by the board on 2026-09-30
+ * (the online gateway is the same bank's Axepta). Neither is ever read off the IBAN's bank prefix:
+ * a guess printed as a fact on a document an organiser pays against is worse than a blank.
  */
 export const FOUNDATION: Foundation = {
   name: "Fundacja VoctFoundation",
@@ -130,11 +136,13 @@ export const FOUNDATION: Foundation = {
   foundedOn: "2026-04-15",
   board: [
     { id: "florent", name: "Florent de Bazelaire", function: "president" },
-    { id: "ania", name: "Anna Marcisz", function: "vicePresident" },
+    { id: "ania", name: "Anna Marcisz", function: "vicePresident", mail: "anna.marcisz@voctfoundation.com" },
     { id: "krystian", name: "Krystian Bugalski", function: "vicePresident" },
   ],
   socials: [{ network: "facebook", url: "https://www.facebook.com/profile.php?id=61590395972435" }],
   accounts: {
+    bank: "BNP Paribas Bank Polska S.A.",
+    bic: "PPABPLPK",
     pln: {
       iban: "PL26160010131724418410000001",
       display: "PL26 1600 1013 1724 4184 1000 0001",
@@ -149,9 +157,8 @@ export const FOUNDATION: Foundation = {
   mail: {
     booking: "booking@voctensemble.com",
     general: "kontakt@voctensemble.com",
-    patronage: "patronat@voctensemble.com",
+    patronage: "patronat@voctfoundation.com",
     foundation: "fundacja@voctfoundation.com",
-    mecenat: "mecenat@voctfoundation.com",
     press: "press@voctfoundation.com",
     director: "florent.de.bazelaire@voctensemble.com",
   },

@@ -33,7 +33,7 @@
  * @module lib/vaultCopy
  */
 
-import type { Locale } from "../i18n/config";
+import { localizePath, type Locale } from "../i18n/config";
 import { REGULAMIN_PAGE, type TermsCopy } from "../i18n/content/regulaminDarowizn";
 import { SKARBIEC_PAGE, type VaultCopy } from "../i18n/content/skarbiec";
 import { externalizeLinks } from "./islandCopy";
@@ -44,6 +44,8 @@ import { typographyHtml } from "./typoHtml";
 export interface VaultCopyBundle {
   readonly vault: VaultCopy;
   readonly terms: TermsCopy;
+  /** The terms' own page (/regulamin-darowizn) in this locale — the overlay links it. */
+  readonly termsHref: string;
 }
 
 const htmlPass = (html: string, locale: Locale): string =>
@@ -54,5 +56,6 @@ export function vaultCopy(locale: Locale): VaultCopyBundle {
   return {
     vault: pageCopy(SKARBIEC_PAGE, locale, htmlPass),
     terms: pageCopy(REGULAMIN_PAGE, locale, htmlPass),
+    termsHref: localizePath("/regulamin-darowizn", locale),
   };
 }

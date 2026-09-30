@@ -89,6 +89,10 @@ const concerts = defineCollection({
     cycle: z.boolean().default(true),
     latin: z.string(),
     title: z.string(),
+    /** What the programme was about, as the foundation lists it beside the title in the ensemble's
+        record on /fundacja ("Hymn Poległym — Modlitwa o pokój na Ukrainie"). Only for a title that
+        does not already carry it (Aeternam's does); the concert's own page does not print it. */
+    subtitle: localized.optional(),
     /** The place half of the presentational dateline ("Bazylika NSPJ, Kraków"), per locale. The
         date half is NOT stored: it is formatted from `date` (or, where the day is vague, from
         `dateLabel`) so that translating the line cannot carry a Polish date into English, and
@@ -157,8 +161,15 @@ const concerts = defineCollection({
      *  event on facts that are not ours (see lib/eventSchema).
      *
      *  It does not replace the evening's own `facts` chip: the chip states that the evening
-     *  belongs to a festival, this states WHICH one and where it lives. */
-    festival: z.object({ name: z.string(), url: z.string().url() }).strict().optional(),
+     *  belongs to a festival, this states WHICH one and where it lives.
+     *
+     *  `role` is set only where the evening's place in the festival is confirmed: "finale" when
+     *  it closes the festival (the foundation's realisation sheet says so in words). An edition
+     *  number is not a role and is never inferred from one. */
+    festival: z
+      .object({ name: z.string(), url: z.string().url(), role: z.enum(["finale"]).optional() })
+      .strict()
+      .optional(),
     /** What the festival's own edition is about, in a sentence or two, where the frame is worth
         more to a reader than the bare name. Copy, so it is translated; and somebody else's event,
         so it states what the frame is and how it rhymes with this programme, then stops. No appeal
@@ -312,6 +323,11 @@ const concerts = defineCollection({
     /** Named "obsada" credits for the detail page — role → person (conductor, the Jesuit
         who gives the opening word, light direction…). Rendered as a quiet colophon block. */
     credits: z.array(z.object({ role: z.string(), name: z.string() })).default([]),
+    /** The evening's forces as a count and instruments, no names ("12 głosów · skrzypce ·
+        organy"), where the cast is confirmed. Printed on the foundation's realisation sheet under
+        the named performers; the names themselves stay in `credits` and `realizacja`, so a
+        musician this line counts is not thereby named. */
+    forces: localized.optional(),
     /** The voices of THIS evening — the singers as they stood that night, grouped by voice
         part. CONSENT SCOPE: names are cleared for concert pages ONLY — never reuse them on
         /o-nas, the landing or press materials. Line-ups are per-evening (guests, later

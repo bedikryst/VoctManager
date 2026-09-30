@@ -2,14 +2,19 @@
 /**
  * @file RealisationModule.astro
  * @description One realisation of the foundation, as /fundacja and /mecenat print it: the rubric,
- *  the concert's title and a lead, the project's key visual, and a fact sheet — when, where, who,
- *  what, within what, admission, budget. /fundacja adds what the budget covers, who pays for it and
- *  a way to support the concert; /mecenat says those things in its own prose and asks for the
- *  sheet alone. The account, once entered, prints on both.
+ *  the concert's title and a lead, a fact sheet — when, where, who, what, within what, admission,
+ *  budget — and the project's key visual closing it. /fundacja adds what the budget covers, who
+ *  pays for it and a way to support the concert; /mecenat says those things in its own prose and
+ *  asks for the sheet alone. The account, once entered, prints on both.
+ *
+ *  FACTS BEFORE THE POSTER. The sheet sits directly under the lead, because "wolny" beside the
+ *  budget is the module's argument and a reader checking the foundation should meet it on the
+ *  first screen. The poster comes last and closes the card: it runs to the card's bottom edge and,
+ *  from 1024px, past the grid to the viewport's right edge, so no tinted margin frames it.
  *
  *  THE ONE COLOUR FIELD. The foundation's pages are monochrome; a realisation is where a project's
- *  own identity enters — its accent from the corpus tints the ground, its poster art bleeds to the
- *  right edge of the viewport. Each project keeps its own look inside the foundation's neutral
+ *  own identity enters — its accent from the corpus tints the ground and draws the top rule, and
+ *  its poster art bleeds out. Each project keeps its own look inside the foundation's neutral
  *  frame, which is the rule the ensemble's pages follow for each evening.
  *
  *  THE SHEET SAYS WHAT A SENTENCE WOULD HAVE TO. "Wstęp: wolny" and the budget sit in neighbouring
@@ -23,14 +28,16 @@
  */
 import { Picture } from "astro:assets";
 
+import ActArrow from "./ActArrow.astro";
 import type { FoundationCopy } from "../../i18n/content/fundacja";
 import type { RealisationView } from "../../lib/realisations";
 
 interface Props {
   view: RealisationView;
-  /** The line above the title — "Realizacje / 01 · 2026" on /fundacja, "W realizacji" on /mecenat. */
+  /** The line above the title — the form and year on /fundacja, "W realizacji" on /mecenat. */
   rubric: string;
-  lead: string;
+  /** The lead, as markup: a work's title in it is set in `<em>`. */
+  leadHtml: string;
   /** /fundacja's realisation copy — the sheet's labels and notes, shared by both pages. */
   labels: FoundationCopy["realisation"];
   /** Print what the budget covers, who pays, and the vault link. /fundacja only. */
@@ -39,7 +46,7 @@ interface Props {
   donateHref: string;
 }
 
-const { view, rubric, lead, labels, withNotes, donateHref } = Astro.props;
+const { view, rubric, leadHtml, labels, withNotes, donateHref } = Astro.props;
 
 const fill = (template: string, slots: Record<string, string>): string =>
   template.replace(/\{(\w+)\}/g, (match, name: string) => slots[name] ?? match);
@@ -47,6 +54,9 @@ const fill = (template: string, slots: Record<string, string>): string =>
 const admission =
   view.admission === "free" ? labels.admissionFree : view.admission === "paid" ? labels.admissionPaid : undefined;
 const whoPays = view.ahead ? labels.whoPaysAhead : view.account ? undefined : labels.whoPaysPast;
+const festivalLine = view.festival
+  ? fill(view.festival.finale ? labels.festivalFinale : labels.festival, { name: view.festival.name })
+  : undefined;
 const accountLabel: Record<string, string> = {
   total: labels.account.total,
   patrons: labels.account.patrons,
@@ -62,25 +72,8 @@ const titleId = `realizacja-${view.id}`;
   <header class="rm-head">
     <p class="rm-rubric">{rubric}</p>
     <h2 class="rm-title" id={titleId}>{view.title}</h2>
-    <p class="rm-lead">{lead}</p>
+    <p class="rm-lead" set:html={leadHtml} />
   </header>
-
-  {view.visual && (
-    <figure class="rm-visual">
-      {/* The poster art, whole. Decorative beside a title that already names the concert.
-          `width` = top of the ladder (lib/photos.ts). */}
-      <Picture
-        src={view.visual.desktop}
-        formats={["avif", "webp"]}
-        widths={[640, 960, 1280, 1920, 2560]}
-        width={Math.min(view.visual.desktop.width, 2560)}
-        sizes="(min-width: 1024px) 78vw, 100vw"
-        alt=""
-        loading="lazy"
-        decoding="async"
-      />
-    </figure>
-  )}
 
   <dl class="rm-sheet">
     <div class="rm-cell">
@@ -97,16 +90,17 @@ const titleId = `realizacja-${view.id}`;
         <ul class="rm-lines">
           {view.performers.map((p) => <li>{p}</li>)}
         </ul>
+        {view.forces && <p class="rm-forces">{view.forces}</p>}
       </dd>
     </div>
     <div class="rm-cell rm-cell-wide">
       <dt>{labels.sheet.programme}</dt>
       <dd>{view.programme}</dd>
     </div>
-    {view.festival && (
+    {view.festival && festivalLine && (
       <div class="rm-cell rm-cell-wide">
         <dt>{labels.sheet.within}</dt>
-        <dd><a href={view.festival.url} rel="noopener">{fill(labels.festival, { name: view.festival.name })}</a></dd>
+        <dd><a href={view.festival.url} rel="noopener">{festivalLine}</a></dd>
       </div>
     )}
     {admission && (
@@ -148,55 +142,67 @@ const titleId = `realizacja-${view.id}`;
 
   {(view.href || (withNotes && view.ahead)) && (
     <p class="rm-links">
-      {view.href && <a class="rm-link" href={view.href}>{labels.concertLink}</a>}
       {withNotes && view.ahead && (
-        <a class="rm-link rm-link-act" href={donateHref} data-vault-open="100">{labels.supportLink}</a>
+        <a class="rm-act" href={donateHref} data-vault-open="100">{labels.supportLink}</a>
       )}
+      {view.href && <a class="rm-link" href={view.href}>{labels.concertLink}<ActArrow /></a>}
     </p>
+  )}
+
+  {view.visual && (
+    <figure class="rm-visual">
+      {/* The poster art, whole. Decorative beside a title that already names the concert.
+          `width` = top of the ladder (lib/photos.ts). */}
+      <Picture
+        src={view.visual.desktop}
+        formats={["avif", "webp"]}
+        widths={[640, 960, 1280, 1920, 2560]}
+        width={Math.min(view.visual.desktop.width, 2560)}
+        sizes="(min-width: 1024px) 78vw, 100vw"
+        alt=""
+        loading="lazy"
+        decoding="async"
+      />
+    </figure>
   )}
 </article>
 
 <style>
-  /* The module owns its ground: the project's accent, a tenth of it over the paper. Text stays in
-     ink — the accent is the ground, the rules and the rubric's numeral, never body copy, so the
-     contrast is the paper's whatever colour a project brings. */
+  /* The module owns its ground: the project's accent, a tenth of it over the paper. The accent is
+     the ground and the top rule, never text. Text inside the card is ink and ink-soft only: the
+     site's muted ink measures about 4.1:1 on a tinted ground this light, under AA for the sheet's
+     11px labels, so it is not used in here. */
   .rm {
+    --rm-pad-x: clamp(20px, 3vw, 40px);
+    --rm-pad-b: clamp(28px, 3.4vw, 44px);
     --rm-ground: color-mix(in oklab, var(--rm-accent) 11%, var(--paper));
     --rm-rule: color-mix(in oklab, var(--rm-accent) 55%, var(--ink));
     position: relative;
     background: var(--rm-ground);
     border-top: 2px solid var(--rm-accent);
-    padding: clamp(24px, 3vw, 40px) clamp(20px, 3vw, 40px) clamp(28px, 3.4vw, 44px);
+    padding: clamp(24px, 3vw, 40px) var(--rm-pad-x) var(--rm-pad-b);
   }
   .rm + :global(.rm) { margin-top: clamp(40px, 5vw, 64px); }
   .rm-rubric { margin: 0; font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: .06em; line-height: 1.4; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .rm-title { margin: 14px 0 0; font-family: var(--sans); font-weight: 600; font-size: clamp(32px, 4.6vw, 60px); line-height: 1.02; letter-spacing: -.035em; color: var(--ink); text-wrap: balance; }
   .rm-lead { margin: 18px 0 0; max-width: 60ch; font-family: var(--sans); font-size: clamp(16px, 1.3vw, 18px); line-height: 1.6; color: var(--ink-soft); }
-
-  /* The visual leaves the module on the right and runs to the viewport's edge (`--vf-bleed`,
-     set by the page); on a phone it takes the whole width. */
-  .rm-visual { margin: clamp(28px, 3.4vw, 44px) calc(-1 * clamp(20px, 3vw, 40px)) 0; overflow: hidden; background: var(--rm-accent); }
-  .rm-visual :global(img) { display: block; width: 100%; height: auto; }
-  @media (max-width: 1023.98px) {
-    .rm { margin-inline: calc(-1 * var(--gutter)); }
-    .rm-visual { margin-inline: calc(-1 * clamp(20px, 3vw, 40px)); }
-  }
-  @media (min-width: 1024px) {
-    .rm-visual { margin-inline-end: calc(-1 * clamp(20px, 3vw, 40px) - var(--vf-bleed, 0px)); }
-  }
+  /* A work's title in the lead. Plex Sans ships no italic, so this is the browser's slanted roman —
+     `:global` because the lead arrives through `set:html` and carries no scope attribute. */
+  .rm-lead :global(em) { font-style: italic; }
 
   /* The sheet — cells under hairlines, label in mono, value in Plex. Four columns on a desktop,
      two on a phone; admission and budget close it side by side as figures. */
   .rm-sheet { margin: clamp(28px, 3.4vw, 44px) 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(16px, 2.4vw, 32px); }
   .rm-cell { padding: 14px 0 16px; border-top: 1px solid color-mix(in oklab, var(--rm-rule) 40%, transparent); min-width: 0; }
   .rm-cell-wide { grid-column: 1 / -1; }
-  .rm-cell dt { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); }
+  .rm-cell dt { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
   .rm-cell dd { margin: 6px 0 0; font-family: var(--sans); font-size: 16px; line-height: 1.5; color: var(--ink); overflow-wrap: anywhere; }
   .rm-cell a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--ink) 30%, transparent); text-underline-offset: .2em; text-decoration-thickness: 1px; transition: text-decoration-color .25s var(--ease); }
   .rm-cell a:hover { text-decoration-color: currentColor; }
   .rm-lines { list-style: none; margin: 0; padding: 0; }
+  .rm-forces { margin: 6px 0 0; font-family: var(--sans); font-size: 15px; line-height: 1.5; color: var(--ink-soft); }
   .rm-figure { display: block; font-family: var(--sans); font-weight: 300; font-size: clamp(28px, 3.6vw, 44px); line-height: 1.1; letter-spacing: -.02em; color: var(--ink); font-variant-numeric: lining-nums; }
-  .rm-asof { display: block; margin-top: 6px; font-family: var(--mono); font-size: 12px; letter-spacing: .02em; color: var(--ink-muted); }
+  .rm-asof { display: block; margin-top: 6px; font-family: var(--mono); font-size: 12px; letter-spacing: .02em; color: var(--ink-soft); }
   @media (min-width: 720px) {
     .rm-sheet { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .rm-cell-wide { grid-column: span 2; }
@@ -208,18 +214,34 @@ const titleId = `realizacja-${view.id}`;
   .rm-notes p + p { margin-top: 10px; }
 
   .rm-account { margin: clamp(24px, 3vw, 36px) 0 0; padding-top: 16px; border-top: 1px solid var(--rm-rule); max-width: 34rem; }
-  .rm-account-head { margin: 0 0 10px; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); }
+  .rm-account-head { margin: 0 0 10px; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
   .rm-account-rows { margin: 0; }
   .rm-account-row { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; border-bottom: 1px solid color-mix(in oklab, var(--rm-rule) 25%, transparent); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
   .rm-account-row dt { color: var(--ink-soft); }
   .rm-account-row dd { margin: 0; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
   .rm-account-total { font-weight: 600; }
-  .rm-account-note { margin: 10px 0 0; font-family: var(--mono); font-size: 12px; color: var(--ink-muted); }
+  .rm-account-note { margin: 10px 0 0; font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
 
+  /* The vault is opened the same way everywhere on these pages: a filled ink block (the host's
+     `.vf-act-primary` is the same shape). The concert link is a word with the arrow. */
   .rm-links { margin: clamp(22px, 2.6vw, 30px) 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
   .rm-link { display: inline-flex; align-items: center; min-height: 44px; font-family: var(--sans); font-weight: 500; font-size: 16px; color: var(--ink); text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--ink) 30%, transparent); text-underline-offset: .22em; text-decoration-thickness: 1px; transition: text-decoration-color .25s var(--ease); }
   .rm-link:hover, .rm-link:focus-visible { text-decoration-color: currentColor; }
-  .rm-link-act { padding: 0 22px; border: 1px solid var(--ink); border-radius: 2px; text-decoration: none; transition: background-color .25s var(--ease), color .25s var(--ease); }
-  .rm-link-act:hover, .rm-link-act:focus-visible { background: var(--ink); color: var(--paper); }
+  .rm-link :global(svg) { transition: transform .25s var(--ease); }
+  .rm-link:hover :global(svg), .rm-link:focus-visible :global(svg) { transform: translateX(3px); }
+  .rm-act { display: inline-flex; align-items: center; min-height: 48px; padding: 0 24px; border-radius: 2px; background: var(--ink); color: var(--paper); font-family: var(--sans); font-weight: 500; font-size: 16px; line-height: 1.2; text-decoration: none; transition: background-color .25s var(--ease); }
+  .rm-act:hover, .rm-act:focus-visible { background: var(--ink-soft); }
   .rm a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+  /* The poster closes the card: the card's side and bottom padding are cancelled, so the image
+     meets both edges; from 1024px it also leaves the card on the right and runs to the viewport's
+     edge (`--vf-bleed`, set by the page). */
+  .rm-visual { margin: clamp(32px, 4vw, 48px) calc(-1 * var(--rm-pad-x)) calc(-1 * var(--rm-pad-b)); overflow: hidden; }
+  .rm-visual :global(img) { display: block; width: 100%; height: auto; }
+  @media (max-width: 1023.98px) {
+    .rm { margin-inline: calc(-1 * var(--gutter)); }
+  }
+  @media (min-width: 1024px) {
+    .rm-visual { margin-inline-end: calc(-1 * var(--rm-pad-x) - var(--vf-bleed, 0px)); }
+  }
 </style>

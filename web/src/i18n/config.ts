@@ -124,6 +124,10 @@ export const TRANSLATED_ROUTES: ReadonlySet<string> = new Set<string>([
   // and from inside the vault's terms. A noindex leaf nothing links to belongs outside; one that
   // thirty pages point at belongs in, or an English reader's footer sends them to Polish.
   "/polityka-prywatnosci",
+  // The donation terms' own page — noindex, and in for the privacy policy's reason: /fundacja's
+  // registry band and the vault's terms overlay link it, and a French donor's link must land on the
+  // French text (informational; § 5 ust. 3 says the Polish binds).
+  "/regulamin-darowizn",
   // The notice list's sign-up. In for the privacy policy's reason and not the /404 leaf's: the
   // footer of every page on the site points at it, so an English reader's footer would otherwise
   // hand them the Polish page. Being in this set localizes LINKS — it adds nothing to the nav bar,

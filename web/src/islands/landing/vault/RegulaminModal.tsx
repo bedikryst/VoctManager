@@ -25,7 +25,7 @@ type Paragraph = { readonly text: string } | { readonly html: string };
 
 export function RegulaminModal(): React.JSX.Element {
   const { isRegulaminOpen, closeRegulamin, acceptRegulamin } = useVault();
-  const { lang, terms, t } = useVaultCopy();
+  const { lang, terms, termsHref, t } = useVaultCopy();
   const panelRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [atEnd, setAtEnd] = useState(false);
@@ -178,6 +178,11 @@ export function RegulaminModal(): React.JSX.Element {
           <footer className="regulamin-foot">
             <p className="regulamin-foot-note">
               {`${t.versionLabel} ${terms.version} · ${t.effectiveLabel} ${longDate(terms.effectiveFrom, lang)}`}
+              {/* The document's permanent address, to keep or print. A new tab, so the form
+                  underneath keeps what the donor typed. */}
+              <a className="regulamin-foot-page" href={termsHref} target="_blank" rel="noopener">
+                {t.termsPage}
+              </a>
             </p>
             <button type="button" className="regulamin-accept" onClick={acceptRegulamin}>
               <span>{t.termsAccept}</span>

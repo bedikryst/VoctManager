@@ -83,6 +83,14 @@ export const CONCERT_CONTRACT = [
     // NSPJ · Kraków") and `metaPlace` ("Bazylika NSPJ, Kraków") are different lines for different
     // surfaces, and `about.blurb` is a shorter register than `essence`.
   },
+  {
+    kind: "field",
+    path: "subtitle.pl",
+    key: "subtitle",
+    label: "Podtytuł (dorobek na /fundacja)",
+    shape: "map",
+    note: "What the programme was about, printed after the title and a dash in the foundation's record.",
+  },
   { kind: "field", path: "metaPlace.pl", key: "metaPlace", label: "Nagłówek · miejsce", shape: "map" },
   {
     kind: "field",
@@ -255,6 +263,14 @@ export const CONCERT_CONTRACT = [
     label: "Obsada",
     fields: [{ path: "role", key: "role", label: "rola" }],
   },
+  {
+    kind: "field",
+    path: "forces.pl",
+    key: "forces",
+    label: "Obsada · liczebnie (metryka na /fundacja)",
+    shape: "map",
+    note: "A count and the instruments, no names (\"12 głosów · skrzypce · organy\"). Keep the figure and the order.",
+  },
 
   // ── Cytat ───────────────────────────────────────────────────────────────────────────────────
   { kind: "field", path: "pullQuote.text", label: "Cytat · treść" },
@@ -346,6 +362,7 @@ export const NOT_COPY = {
     " itself carries none and is not on the desk.",
   "festival.name": "a proper name — the festival is somebody else's entity and keeps its own name",
   "festival.url": "URL",
+  "festival.role": "enum — the evening's confirmed place in the festival; its wording is /fundacja's copy",
   "ritornello.composer": "a person's name",
   "ritornello.work": "the work's title — content, printed unchanged in every locale",
   "ritornello.years": "life dates",

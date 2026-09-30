@@ -24,6 +24,11 @@ interface Props {
   current?: string;
   /** "dark" pages (koncerty) get a night solid header + an is-light state over paper sections. */
   tone?: "light" | "dark";
+  /** What the bar stands on at scroll 0. "photo" (the default) is a hero photograph, so the resting
+      bar is paper text over a dark scrim until the reader scrolls. "paper" is a page that opens on
+      type over the paper (/fundacja, /mecenat): the bar is solid from the first paint and stays
+      so, because a scrim over paper only smudges the top of the page. Light tone only. */
+  ground?: "photo" | "paper";
   /** Page locale — selects the vernacular nav labels and localizes the site links (Latin rubrics
       stay put). Defaults to Polish, so every un-migrated caller renders byte-identical to before. */
   lang?: Locale;
@@ -39,6 +44,7 @@ interface Props {
 const {
   current,
   tone = "light",
+  ground = "photo",
   lang = DEFAULT_LOCALE,
   availableLocales = [DEFAULT_LOCALE],
   index = [],
@@ -115,7 +121,13 @@ const langOptions = showLang
   : [];
 ---
 
-<header class="chrome" id="chrome" data-tone={tone} aria-label={t.nav.ariaHeader}>
+<header
+  class:list={["chrome", ground === "paper" && "is-solid"]}
+  id="chrome"
+  data-tone={tone}
+  data-ground={ground}
+  aria-label={t.nav.ariaHeader}
+>
   {/* The brand is part of the page root snapshot — it fades through the dark threshold with
       everything else (transitions.css) rather than morphing as a shared element. A shared
       element only ever showed artifacts here (position slip vs. is-solid padding, ink↔candle
@@ -684,9 +696,10 @@ const langOptions = showLang
     const toggle = () => document.getElementById("navToggle");
     const nave = () => document.getElementById("navMenu");
 
+    // A paper-ground bar is rendered solid and stays solid; only a photo ground changes with scroll.
     const syncSolid = () => {
       const c = chrome();
-      if (c) c.classList.toggle("is-solid", window.scrollY > window.innerHeight * 0.5);
+      if (c) c.classList.toggle("is-solid", c.dataset.ground === "paper" || window.scrollY > window.innerHeight * 0.5);
     };
     // The overlay fades shut over ~0.24s (nave-menu.css) — one quiet breath, no reverse wipe.
     // `menu-closing` keeps it painted through the fade; the timer then drops both classes → hidden.

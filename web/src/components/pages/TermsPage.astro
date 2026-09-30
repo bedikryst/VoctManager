@@ -1,0 +1,116 @@
+---
+/**
+ * @file TermsPage.astro
+ * @description Locale-agnostic body of /regulamin-darowizn — the donation terms as a page of their
+ *  own. The three route files differ only in `lang`.
+ *
+ *  THE SAME DOCUMENT THE VAULT SHOWS, from the same file. The terms live in
+ *  `content/pages/regulamin-darowizn.yaml` (its desk scope and translations included); the vault's
+ *  overlay reads them to be accepted above a half-filled form, and this page reads them so a
+ *  document link opens a document — /fundacja's registry band, and the overlay's own footer, link
+ *  here. One text, two frames, never two texts.
+ *
+ *  A LEGAL LEAF, on LegalDocShell like the privacy policy: no site chrome, zero JavaScript,
+ *  noindex. The § numerals are markup, locale-neutral, because the text's own cross-references
+ *  (§ 3 ust. 4 → "ust. 2") point at them; the paragraphs are an ordered list, so each "ust." is
+ *  numbered by position inside its section, as the document numbers them. The way back and the
+ *  version stamp are the privacy policy's chrome — one register, one set of labels.
+ * @architecture Astro islands 2026
+ * @module components/pages/TermsPage
+ */
+import LegalDocShell from "../LegalDocShell.astro";
+import { FOUNDATION } from "../../data/foundation";
+import { DEFAULT_LOCALE, pageI18n, type Locale } from "../../i18n/config";
+import { PRIVACY_CHROME } from "../../i18n/content/politykaPrywatnosci";
+import { REGULAMIN_PAGE } from "../../i18n/content/regulaminDarowizn";
+import { longDate } from "../../lib/dates";
+import { pageCopy } from "../../lib/pageCopy";
+
+interface Props {
+  lang?: Locale;
+}
+const { lang = DEFAULT_LOCALE } = Astro.props;
+
+const terms = pageCopy(REGULAMIN_PAGE, lang);
+const t = PRIVACY_CHROME[lang];
+const { path, alternates } = pageI18n("/regulamin-darowizn", lang);
+
+/** One paragraph: plain text, or desk markup that has to be injected. */
+type Paragraph = { readonly text: string } | { readonly html: string };
+
+/* The five sections in the document's order. Paragraphs are NAMED fields rather than a list in the
+   content file, because § 3 ust. 4 refers back to "ust. 2" and a reorderable list could break it. */
+const sections: readonly { readonly num: string; readonly title: string; readonly items: readonly Paragraph[] }[] = [
+  {
+    num: "§ 1",
+    title: terms.s1.title,
+    items: [{ html: terms.s1.p1Html }, { html: terms.s1.p2Html }, { text: terms.s1.p3 }, { text: terms.s1.p4 }],
+  },
+  {
+    num: "§ 2",
+    title: terms.s2.title,
+    items: [
+      { text: terms.s2.p1 },
+      { text: terms.s2.p2 },
+      { text: terms.s2.p3 },
+      { text: terms.s2.p4 },
+      { text: terms.s2.p5 },
+      { text: terms.s2.p6 },
+    ],
+  },
+  {
+    num: "§ 3",
+    title: terms.s3.title,
+    items: [
+      { text: terms.s3.p1 },
+      { html: terms.s3.p2Html },
+      { text: terms.s3.p3 },
+      { text: terms.s3.p4 },
+      { text: terms.s3.p5 },
+    ],
+  },
+  { num: "§ 4", title: terms.s4.title, items: [{ text: terms.s4.p1 }, { html: terms.s4.p2Html }] },
+  {
+    num: "§ 5",
+    title: terms.s5.title,
+    items: [{ text: terms.s5.p1 }, { text: terms.s5.p2 }, { text: terms.s5.p3 }],
+  },
+];
+---
+
+<LegalDocShell
+  lang={lang}
+  title={`${terms.head.title} — ${FOUNDATION.name}`}
+  description={terms.head.lede}
+  path={path}
+  alternates={alternates}
+>
+  <p class="doc-eyebrow">{terms.head.kicker}</p>
+  <h1 class="doc-title">{terms.head.title}</h1>
+  <p class="doc-meta">{t.stamp(terms.version, longDate(terms.effectiveFrom, lang))}</p>
+
+  <p class="doc-lede">{terms.head.lede}</p>
+
+  {sections.map((section) => (
+    <section>
+      <h2 data-num={section.num}>{section.title}</h2>
+      <ol>
+        {section.items.map((item) => ("html" in item ? <li set:html={item.html} /> : <li>{item.text}</li>))}
+      </ol>
+    </section>
+  ))}
+
+  <details class="changelog">
+    <summary>
+      <span>{terms.history.label}</span>
+      <span class="changelog-icon" aria-hidden="true"></span>
+    </summary>
+    <ul class="changelog-list">
+      {terms.history.entries.map((e) => (
+        <li>
+          <strong>{`${e.version} · ${longDate(e.date, lang)}`}</strong>{" — "}{e.note}
+        </li>
+      ))}
+    </ul>
+  </details>
+</LegalDocShell>

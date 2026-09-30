@@ -38,9 +38,10 @@ export type AccountRowKey = "total" | "patrons" | "donors" | "partners" | "grant
 
 export interface RealisationView {
   readonly id: string;
-  /** Position among the realisations, oldest first, two digits — "01". */
-  readonly number: string;
   readonly year: string;
+  /** Whether the concert is one of the numbered Koncerty Duchowe (lib/cycle) — the form the
+      rubric names. */
+  readonly cycle: boolean;
   readonly title: string;
   /** The concert's own accent — the only colour a foundation page carries. */
   readonly accent: string;
@@ -50,11 +51,19 @@ export interface RealisationView {
   readonly where: string;
   /** The ensemble first, then each named performer as "name, role". */
   readonly performers: readonly string[];
-  /** Composer surnames, `·`-joined, the returning piece last. */
+  /** The evening's forces counted, no names ("12 głosów · skrzypce · organy"), where confirmed. */
+  readonly forces?: string;
+  /** Composer surnames, `·`-joined, the returning piece last. A surname of several words is bound
+      with no-break spaces, so "Vaughan Williams" never splits across a line. */
   readonly programme: string;
-  readonly festival?: { readonly name: string; readonly url: string };
+  readonly festival?: { readonly name: string; readonly url: string; readonly finale: boolean };
   readonly admission?: "free" | "paid";
-  readonly budget: { readonly amount: string; readonly asOf: string };
+  readonly budget: {
+    readonly amount: string;
+    readonly asOf: string;
+    /** Formatted amounts by area id, only for the areas whose amount has been entered. */
+    readonly areas: Readonly<Record<string, string>>;
+  };
   readonly account?: {
     readonly asOf: string;
     readonly rows: readonly { readonly key: AccountRowKey; readonly amount: string }[];
@@ -101,16 +110,18 @@ function viewOf(
   if (!c.date) {
     throw new Error(`[realisations] concert "${entry.id}" has no single \`date\`; a realisation is one dated evening.`);
   }
-  const position = REALISATIONS.findIndex((r) => r.id === realisation.id) + 1;
   const composers = [
     ...c.program.filter((p) => !p.bis).map((p) => p.composer),
     ...(c.ritornello ? [c.ritornello.composer] : []),
   ];
   const account = realisation.account;
+  const areas = Object.fromEntries(
+    Object.entries(realisation.budget.areasPln ?? {}).map(([id, pln]) => [id, formatPln(pln, lang)]),
+  );
   return {
     id: realisation.id,
-    number: String(position).padStart(2, "0"),
     year: c.date.slice(0, 4),
+    cycle: c.cycle,
     title: overlayValue(concertKey(entry.id, "title"), lang) ?? c.title,
     accent: c.accent,
     ahead: isAhead(c.date, now),
@@ -118,12 +129,18 @@ function viewOf(
     when: c.time ? `${longDate(c.date, lang)}, ${c.time}` : longDate(c.date, lang),
     where: c.venue ?? pickLocale(c.metaPlace, lang),
     performers: performersOf(entry, lang),
-    programme: programmeSurnames(composers, eras).join(" · "),
-    ...(c.festival ? { festival: c.festival } : {}),
+    ...(c.forces ? { forces: overlayValue(concertKey(entry.id, "forces"), lang) ?? c.forces.pl } : {}),
+    programme: programmeSurnames(composers, eras)
+      .map((surname) => surname.replace(/ /g, " "))
+      .join(" · "),
+    ...(c.festival
+      ? { festival: { name: c.festival.name, url: c.festival.url, finale: c.festival.role === "finale" } }
+      : {}),
     ...(c.admission ? { admission: c.admission } : {}),
     budget: {
       amount: formatPln(realisation.budget.amountPln, lang),
       asOf: longDate(realisation.budget.asOf, lang),
+      areas,
     },
     ...(account
       ? {
@@ -227,10 +244,16 @@ export function recordBeforeFoundation(concerts: readonly Concert[], lang: Local
       year,
       items: programmes
         .filter((p) => p.evenings[0]?.date.startsWith(year))
-        .map(({ entry }) => ({
-          title: overlayValue(concertKey(entry.id, "title"), lang) ?? entry.data.title,
-          ...(entry.data.hasPage ? { href: `${hrefConcerts}/${entry.id}` } : {}),
-        })),
+        .map(({ entry }) => {
+          const title = overlayValue(concertKey(entry.id, "title"), lang) ?? entry.data.title;
+          const subtitle = entry.data.subtitle
+            ? (overlayValue(concertKey(entry.id, "subtitle"), lang) ?? entry.data.subtitle.pl)
+            : undefined;
+          return {
+            title: subtitle ? `${title} — ${subtitle}` : title,
+            ...(entry.data.hasPage ? { href: `${hrefConcerts}/${entry.id}` } : {}),
+          };
+        }),
     })),
   };
 }

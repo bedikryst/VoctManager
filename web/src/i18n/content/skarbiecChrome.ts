@@ -80,6 +80,9 @@ export interface VaultChrome {
   /** The terms overlay. */
   readonly termsClose: string;
   readonly termsAccept: string;
+  /** The overlay's quiet link to the terms' own page, which opens in a new tab so the half-filled
+      form underneath survives; `↗` is this site's mark for exactly that. */
+  readonly termsPage: string;
   readonly versionLabel: string;
   readonly effectiveLabel: string;
   /** The two overlays a donor meets on the way back from the gateway. */
@@ -141,6 +144,7 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     recurringLink: "Wolisz wspierać regularnie? Mecenat →",
     termsClose: "Zamknij regulamin",
     termsAccept: "Akceptuję regulamin",
+    termsPage: "Regulamin na osobnej stronie ↗",
     versionLabel: "Wersja",
     effectiveLabel: "obowiązuje od",
     gratitudeClose: "Wróć do strony",
@@ -186,6 +190,7 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     recurringLink: "Would you rather support us regularly? Patronage →",
     termsClose: "Close the terms",
     termsAccept: "I accept the terms",
+    termsPage: "The terms on their own page ↗",
     versionLabel: "Version",
     effectiveLabel: "in force since",
     gratitudeClose: "Back to the site",
@@ -231,6 +236,7 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     recurringLink: "Vous préférez nous soutenir régulièrement ? Mécénat →",
     termsClose: "Fermer le règlement",
     termsAccept: "J'accepte le règlement",
+    termsPage: "Le règlement sur une page à part ↗",
     versionLabel: "Version",
     effectiveLabel: "en vigueur depuis le",
     gratitudeClose: "Retour au site",

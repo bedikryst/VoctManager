@@ -29,14 +29,16 @@ const mecenatCopySchema = z
         rubricAhead: z.string(),
         rubricPast: z.string(),
         id: z.string(),
-        lead: z.string(),
+        leadHtml: z.string(),
         areas: z.array(z.object({ id: z.string(), text: z.string() }).strict()).min(1),
       })
       .strict(),
     about: z.object({ h2: z.string(), body: z.string() }).strict(),
     presence: z.object({ h2: z.string(), body: z.string(), photoCaption: z.string() }).strict(),
     coda: z.string(),
-    contact: z.object({ lead: z.string(), role: z.string(), mailSubject: z.string() }).strict(),
+    contact: z
+      .object({ lead: z.string(), role: z.string(), mailSubject: z.string(), transferLink: z.string() })
+      .strict(),
     proof: z.string(),
   })
   .strict();
@@ -59,13 +61,13 @@ const MECENAT_CONTRACT: readonly CopyEntry[] = [
   { kind: "field", path: "idea", label: "Idea" },
   { kind: "field", path: "realisation.rubricAhead", label: "Realizacja · rubryka (przed koncertem)" },
   { kind: "field", path: "realisation.rubricPast", label: "Realizacja · rubryka (po koncercie)" },
-  { kind: "field", path: "realisation.lead", label: "Realizacja · lead" },
+  { kind: "field", path: "realisation.leadHtml", label: "Realizacja · lead", note: "A work's title goes in `<em>`." },
   {
     kind: "list",
     path: "realisation.areas",
     keyBy: "id",
     label: "Obszar mecenatu",
-    note: "Lower case: the list continues the sentence before it.",
+    note: "Lower case: the list continues the sentence before it. An area's amount, once entered, is printed beside it from data.",
     fields: [{ path: "text", label: "obszar" }],
   },
   { kind: "field", path: "about.h2", label: "O realizacji · nagłówek" },
@@ -73,7 +75,7 @@ const MECENAT_CONTRACT: readonly CopyEntry[] = [
     kind: "field",
     path: "about.body",
     label: "O realizacji · akapit",
-    note: "`{amount}` and `{date}` are computed. It ends on a colon: the areas follow as a list.",
+    note: "Refers to the budget printed in the sheet directly above, without repeating the figure. It ends on a colon: the areas follow as a list.",
   },
   { kind: "field", path: "presence.h2", label: "Obecność · nagłówek" },
   { kind: "field", path: "presence.body", label: "Obecność · akapit" },
@@ -82,7 +84,13 @@ const MECENAT_CONTRACT: readonly CopyEntry[] = [
   { kind: "field", path: "contact.lead", label: "Kontakt · zaproszenie" },
   { kind: "field", path: "contact.role", label: "Kontakt · funkcja", note: "`{function}` is the KRS function as /fundacja words it." },
   { kind: "field", path: "contact.mailSubject", label: "Kontakt · temat wiadomości" },
-  { kind: "field", path: "proof", label: "Odnośnik do strony fundacji", note: "Keep the trailing arrow." },
+  {
+    kind: "field",
+    path: "contact.transferLink",
+    label: "Kontakt · dane do przelewu",
+    note: "A quiet link under the foundation's letterhead, to the transfer details on /fundacja.",
+  },
+  { kind: "field", path: "proof", label: "Odnośnik do strony fundacji", note: "The page draws an arrow after this link; the text carries none." },
 ];
 
 const MECENAT_NOT_COPY: Readonly<Record<string, string>> = {

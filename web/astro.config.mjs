@@ -67,6 +67,8 @@ export default defineConfig({
         page !== "https://voctensemble.com/press" &&
         page !== "https://voctensemble.com/404" &&
         !/\/polityka-prywatnosci$/.test(new URL(page).pathname) &&
+        // The donation terms, the other legal leaf on LegalDocShell: `noindex,follow` in three locales.
+        !/\/regulamin-darowizn$/.test(new URL(page).pathname) &&
         // /nuntius is the concert notice list's receipt page, in three locales. It is
         // `noindex,follow` and its only inbound link is one we mail to one reader.
         !/\/nuntius$/.test(new URL(page).pathname) &&

@@ -1,0 +1,107 @@
+---
+/**
+ * @file LegalDocShell.astro
+ * @description The document shell of the site's legal leaves — the privacy policy and the donation
+ *  terms: <html> to </html>, the head with its fonts, icon, canonical and hreflang, a bar with the
+ *  brand and the way back, the page's <main> from the slot, and a one-line footer.
+ *
+ *  IT IS NOT BaseLayout, deliberately. A legal leaf is read, not navigated: no ClientRouter, no
+ *  smooth scroll, no cursor, no islands, zero JavaScript. See PrivacyPage.astro for the history.
+ *  Styling is `styles/legal-doc.css`, imported here so every leaf that uses the shell gets it.
+ *
+ *  NOINDEX, like every legal leaf here, and the sitemap filter in astro.config.mjs agrees: a page
+ *  added on this shell needs its path in that filter in the same commit.
+ * @architecture Astro islands 2026
+ * @module components/LegalDocShell
+ */
+import { LOCALE_META, SITE, localizePath, type Locale } from "../i18n/config";
+import { PRIVACY_CHROME } from "../i18n/content/politykaPrywatnosci";
+import { UI } from "../i18n/ui";
+import "../styles/legal-doc.css";
+
+interface Props {
+  lang: Locale;
+  /** The full <title>. */
+  title: string;
+  description: string;
+  /** This locale's path, for the canonical link. */
+  path: string;
+  alternates: readonly { hreflang: string; href: string }[];
+}
+const { lang, title, description, path, alternates } = Astro.props;
+const ui = UI[lang];
+const canonical = new URL(path, SITE).href;
+---
+
+<!doctype html>
+<html class="legal-doc-root" lang={LOCALE_META[lang].htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#f4f1e9" />
+    <meta name="color-scheme" content="light" />
+    {/* A public legal text that could be indexed and is not; the sitemap's filter in astro.config
+        agrees with this tag in both directions. Dropping the noindex means editing that filter in
+        the same commit. */}
+    <meta name="robots" content="noindex,follow" />
+    <link rel="canonical" href={canonical} />
+    {alternates.map((alt) => <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />)}
+
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 56' fill='none' stroke='%23c6a45b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3V47'/%3E%3Cpath d='M3.2 12.5L12 36.5'/%3E%3Cpath d='M20.8 12.5L12 36.5'/%3E%3Cpath d='M0.5 12.5H5.5'/%3E%3Cpath d='M18.5 12.5H23.5'/%3E%3Ccircle cx='12' cy='52' r='2' fill='%23c6a45b' stroke='none'/%3E%3C/svg%3E"
+    />
+
+    <!-- Self-hosted variable fonts (woff2, OFL) — the same declarations the site's base sheet
+         makes, repeated in legal-doc.css because these documents do not load that sheet. -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/CormorantGaramond-Variable.latin.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/IBMPlexSans-Variable.latin.woff2"
+      crossorigin
+    />
+  </head>
+  <body class="legal-doc">
+    <header class="chrome">
+      <a class="chrome-brand" href={localizePath("/", lang)} aria-label={ui.nav.brandAria}>
+        <svg
+          viewBox="0 0 24 56"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.3"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 3 V47"></path>
+          <path d="M3.2 12.5 L12 36.5"></path>
+          <path d="M20.8 12.5 L12 36.5"></path>
+          <path d="M0.5 12.5 L5.5 12.5"></path>
+          <path d="M18.5 12.5 L23.5 12.5"></path>
+          <circle cx="12" cy="52" r="1.6" fill="currentColor" stroke="none"></circle>
+        </svg>
+        <span>VoctEnsemble</span>
+      </a>
+      <a class="chrome-back" href={localizePath("/", lang)}>{PRIVACY_CHROME[lang].back}</a>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer>
+      <a href={localizePath("/", lang)}>← voctensemble.com</a>
+    </footer>
+  </body>
+</html>

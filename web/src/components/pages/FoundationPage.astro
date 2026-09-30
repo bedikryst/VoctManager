@@ -10,10 +10,13 @@
  *  three are a sticky rail carrying the page's numbered index, and everything else reads in the
  *  other nine. Below 1024px the rail becomes the hero's contents and each section prints its own
  *  numbered label. IBM Plex Sans is the institution's display voice, Plex Mono its data; Cormorant
- *  italic is kept for people's words only — the motto and the three supporters' sentences. The
- *  page is monochrome except inside a realisation, which is the one place a project's own colour
- *  enters (RealisationModule). It closes on an ink band with the registry and a full-measure
- *  wordmark, then the site's footer.
+ *  is kept for people's words only — the motto and the three supporters' sentences.
+ *
+ *  NO ACCENT COLOUR. The foundation is ink, paper and black-and-white photography; emphasis is
+ *  weight (the headline's second line at 300 against 600), filled actions are ink. The only colour
+ *  on the page is a realisation's own (RealisationModule). The foundation's social profiles take
+ *  their look from here, not the other way round. It closes on a night band with the registry and
+ *  a full-measure wordmark, on the same ground as the site's footer below it.
  *
  *  WHAT IS A FACT AND WHERE IT COMES FROM. Registry, board functions, accounts and addresses are
  *  `data/foundation.ts`; realisations, budgets and the switches that wait on a person are
@@ -37,6 +40,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
 import VaultMount from "../VaultMount.astro";
+import ActArrow from "../foundation/ActArrow.astro";
 import RealisationModule from "../foundation/RealisationModule.astro";
 import { PatronInterestForm } from "../../islands/landing/PatronInterestForm";
 import { bleedPair, photoOptional } from "../../lib/photos";
@@ -48,9 +52,7 @@ import { assertPolishForm, formatPln, realisationViews, recordBeforeFoundation }
 import { FOUNDATION } from "../../data/foundation";
 import {
   FEATURED_REALISATION,
-  FOUNDATION_CONTACT,
   FOUNDATION_PAGE_LINKED,
-  MECENAT_CONTACT,
   REALISATIONS,
   SCALE_MONTHLY_PLN,
   STATUTE_PATH,
@@ -80,13 +82,20 @@ const hrefConcerts = localizePath("/koncerty", lang);
 const hrefMecenat = localizePath("/mecenat", lang);
 const hrefAbout = localizePath("/o-nas", lang);
 const hrefPrivacy = localizePath("/polityka-prywatnosci", lang);
+const hrefTerms = localizePath("/regulamin-darowizn", lang);
 const hrefPress = localizePath("/press", lang);
 
 const fill = (template: string, slots: Record<string, string>): string =>
   template.replace(/\{(\w+)\}/g, (match, name: string) => slots[name] ?? match);
 
 // ── The index: the rail on a desktop, the hero's contents on a phone, each section's label ────
-const indexItems = copy.index.items.map((item, i) => ({ ...item, number: String(i + 1).padStart(2, "0") }));
+// One concert that has not happened yet is not "Realizacje": the entry says "Pierwsza realizacja"
+// until a second realisation exists.
+const indexItems = copy.index.items.map((item, i) => ({
+  ...item,
+  label: item.id === "realizacje" && REALISATIONS.length === 1 ? copy.index.firstRealisation : item.label,
+  number: String(i + 1).padStart(2, "0"),
+}));
 const indexById = (id: string) => {
   const item = indexItems.find((entry) => entry.id === id);
   if (!item) throw new Error(`[fundacja] the page index has no entry "${id}".`);
@@ -103,10 +112,15 @@ const sections = {
 // ── 01 · Realisations ─────────────────────────────────────────────────────────────────────────
 const concerts = await getCollection("concerts");
 const eras = await getCollection("repertoire");
+// The rubric names the form and the year only: the section's label already says what the module is.
 const realisations = realisationViews(concerts, eras, lang).map((view) => {
   const lead = copy.realisation.leads.find((l) => l.id === view.id);
   if (!lead) throw new Error(`[fundacja] realisation "${view.id}" has no lead in fundacja.yaml (realisation.leads).`);
-  return { view, lead: lead.text, rubric: `${sections.realisations.label} / ${view.number} · ${view.year}` };
+  return {
+    view,
+    leadHtml: lead.textHtml,
+    rubric: view.cycle ? `${copy.realisation.formCycle} · ${view.year}` : view.year,
+  };
 });
 const featured = realisations[0]?.view;
 
@@ -132,10 +146,10 @@ const board = FOUNDATION.board.map((member) => {
     portrait: photoOptional(`fundacja-zarzad-${member.id}`),
   };
 });
-// All or none: one drawn face beside two blank cells reads worse than three names.
+// All or none: one face beside two blank cells reads worse than three names. The portraits are
+// real black-and-white photographs made to one brief (4:5, same head size, same light); none is
+// drawn or generated, because a made-up face costs a trust page more than no face.
 const boardPortraits = board.every((b) => b.portrait);
-const mecenatPerson = FOUNDATION.board.find((b) => b.id === MECENAT_CONTACT);
-if (!mecenatPerson) throw new Error(`[fundacja] MECENAT_CONTACT "${MECENAT_CONTACT}" is not on the board.`);
 
 // ── 04 · Support ──────────────────────────────────────────────────────────────────────────────
 // The scale sentence belongs to a budget that is still being raised, so it prints only while the
@@ -149,7 +163,7 @@ const scaleLine =
     : undefined;
 
 const transferTitle = VAULT_CONFIG.recipient.title;
-const foundationMail = FOUNDATION_CONTACT.foundation;
+const foundationMail = FOUNDATION.mail.foundation;
 const partnershipHref = `mailto:${foundationMail}?subject=${encodeURIComponent(copy.support.partnership.mailSubject)}`;
 const bookingHref = `mailto:${FOUNDATION.mail.booking}?subject=${encodeURIComponent(copy.support.partnership.bookingSubject)}`;
 
@@ -211,8 +225,6 @@ const jsonLd = {
     subOrganization: { "@type": "MusicGroup", name: FOUNDATION.ensemble, url: SITE },
   },
 };
-
-const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2 8h11M9 3.5 13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 ---
 
 <BaseLayout
@@ -234,12 +246,14 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
   </Fragment>
 
   <a class="skip-link" href="#tresc">{UI[lang].skipToContent}</a>
-  <SiteChrome current="/fundacja" lang={lang} availableLocales={available} />
+  <SiteChrome current="/fundacja" ground="paper" lang={lang} availableLocales={available} />
 
   <main id="tresc" class="vf">
     <div class="vf-frame">
       <div class="vf-grid">
-        {/* ── Hero — type only; the LCP is the headline ─────────────────────────────────── */}
+        {/* ── Hero — type only; the LCP is the headline. Its two doors serve the page's two
+              readers: the one who came to give, and the one checking the foundation. /mecenat
+              stays one click away in the support section, never at the hero's weight. ───── */}
         <header class="vf-hero">
           <p class="vf-eyebrow">{copy.hero.eyebrow}</p>
           <h1 class="vf-title">
@@ -248,8 +262,8 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
           </h1>
           <p class="vf-lead">{copy.hero.lead}</p>
           <p class="vf-hero-links">
-            <a class="vf-act vf-act-primary" href="#wsparcie">{copy.hero.supportLink}<Fragment set:html={arrow} /></a>
-            <a class="vf-act" href={hrefMecenat}>{copy.hero.mecenatLink}<Fragment set:html={arrow} /></a>
+            <a class="vf-act vf-act-primary" href="#wsparcie">{copy.hero.supportLink}<ActArrow /></a>
+            <a class="vf-act" href="#fundacja-i-dokumenty">{copy.hero.registryLink}<ActArrow /></a>
           </p>
         </header>
 
@@ -268,14 +282,15 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
           </div>
         </nav>
 
-        {/* ── 01 · Realisations ────────────────────────────────────────────────────────── */}
-        <section class="vf-section" id="realizacja" aria-label={t.realisationsAria}>
+        {/* ── 01 · Realisations — the section opens on the module, whose own accent rule is
+              the section's top edge (`vf-section-module`), so the page draws no second rule. ── */}
+        <section class="vf-section vf-section-module" id="realizacja" aria-label={t.realisationsAria}>
           <p class="vf-label"><span class="vf-num">{sections.realisations.number}</span>{sections.realisations.label}</p>
           {realisations.map((r) => (
             <RealisationModule
               view={r.view}
               rubric={r.rubric}
-              lead={r.lead}
+              leadHtml={r.leadHtml}
               labels={copy.realisation}
               withNotes={true}
               donateHref={hrefDonate}
@@ -289,7 +304,7 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
           <div class={rehearsalPhoto ? "vf-record vf-record-with-photo" : "vf-record"}>
             <div class="vf-record-text">
               <h2 class="vf-h2">{copy.record.h2}</h2>
-              <p class="vf-body">{copy.record.body}</p>
+              <p class="vf-body" set:html={copy.record.bodyHtml} />
               <p class="vf-span">{recordSpan}</p>
               <dl class="vf-stats">
                 <div><dt class="vf-stat-figure">{record.programmes}</dt><dd>{copy.record.statProgrammes}</dd></div>
@@ -310,7 +325,7 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
                   </div>
                 ))}
               </dl>
-              <p class="vf-more"><a class="vf-link" href={hrefConcerts}>{copy.record.allLink}</a></p>
+              <p class="vf-more"><a class="vf-link" href={hrefConcerts}>{copy.record.allLink}<ActArrow /></a></p>
             </div>
             {rehearsalPhoto && (
               <figure class="vf-record-photo">
@@ -335,7 +350,12 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
         {/* ── 03 · Mission and people ───────────────────────────────────────────────────── */}
         <section class="vf-section" id="misja" aria-label={t.missionAria}>
           <p class="vf-label"><span class="vf-num">{sections.mission.number}</span>{sections.mission.label}</p>
-          <h2 class="vf-motto">{copy.mission.motto}</h2>
+          {/* One sentence per line, as the hero sets its two; only the word for the human being is
+              italic, as Anna Marcisz set the motto. */}
+          <h2 class="vf-motto">
+            <span class="vf-motto-line">{copy.mission.motto1}</span>
+            <span class="vf-motto-line" set:html={copy.mission.motto2Html} />
+          </h2>
           <p class="vf-body">{copy.mission.body}</p>
           <div class="vf-board" id="ludzie">
             <h3 class="vf-rubric">{copy.mission.boardLabel}</h3>
@@ -344,7 +364,7 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
                 <li class="vf-member">
                   {boardPortraits && member.portrait && (
                     <figure class="vf-portrait">
-                      {/* A drawing beside the name it illustrates: decorative, empty alt. */}
+                      {/* A face beside the name it belongs to: decorative, empty alt. */}
                       <Picture
                         src={member.portrait}
                         formats={["avif", "webp"]}
@@ -363,7 +383,7 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
                 </li>
               ))}
             </ul>
-            <p class="vf-more"><a class="vf-link" href={hrefAbout}>{copy.mission.aboutLink}</a></p>
+            <p class="vf-more"><a class="vf-link" href={hrefAbout}>{copy.mission.aboutLink}<ActArrow /></a></p>
           </div>
         </section>
 
@@ -387,8 +407,7 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
               <h3 class="vf-way-label">{copy.support.mecenat.label}</h3>
               <p class="vf-quote">{copy.support.mecenat.quote}</p>
               <p class="vf-way-body">{copy.support.mecenat.body}</p>
-              <p class="vf-way-person">{mecenatPerson.name}</p>
-              <p class="vf-way-acts"><a class="vf-link" href={hrefMecenat}>{copy.support.mecenat.link}</a></p>
+              <p class="vf-way-acts"><a class="vf-link" href={hrefMecenat}>{copy.support.mecenat.link}<ActArrow /></a></p>
             </article>
             <article class="vf-way" id="partnerstwo">
               <h3 class="vf-way-label">{copy.support.partnership.label}</h3>
@@ -425,6 +444,8 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
                   </button>
                 </dd>
               </div>
+              {/* A transfer from abroad needs the BIC as well as the IBAN — outside SEPA always,
+                  and in many banks' forms inside it — so it stands on this row, copyable too. */}
               <div class="vf-transfer-row">
                 <dt>{copy.transfer.eurLabel} <span class="vf-currency">EUR</span></dt>
                 <dd>
@@ -432,6 +453,13 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
                   <button type="button" class={`copy-btn ${goalClass(GOALS.accountCopied)}`} data-copy={FOUNDATION.accounts.eur.iban} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", `${copy.transfer.eurLabel} EUR`)}>
                     <span class="copy-label">{t.copy}</span>
                   </button>
+                  <span class="vf-transfer-sub">
+                    <span class="vf-currency">BIC</span>
+                    <span class="vf-transfer-value">{FOUNDATION.accounts.bic}</span>
+                    <button type="button" class="copy-btn" data-copy={FOUNDATION.accounts.bic} data-copied={t.copied} aria-label={t.copyAria.replace("{what}", "BIC")}>
+                      <span class="copy-label">{t.copy}</span>
+                    </button>
+                  </span>
                 </dd>
               </div>
               <div class="vf-transfer-row">
@@ -444,8 +472,9 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
                 </dd>
               </div>
             </dl>
-            <p class="vf-transfer-note">{copy.transfer.standingOrderHint}</p>
             <p class="vf-transfer-note">{copy.transfer.scope}</p>
+            <p class="vf-transfer-note">{copy.transfer.namesRule}</p>
+            <p class="vf-transfer-note">{copy.transfer.surplusRule}</p>
             {TAX_LINE_CONFIRMED && <p class="vf-transfer-note">{copy.transfer.tax}</p>}
           </div>
 
@@ -465,7 +494,7 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
       </div>
     </div>
 
-    {/* ── 05 · Registry — the closing ink band, then the wordmark ───────────────────────── */}
+    {/* ── 05 · Registry — the closing night band, then the wordmark ─────────────────────── */}
     <section class="vf-registry" id="fundacja-i-dokumenty" aria-label={t.registryAria}>
       <div class="vf-frame">
         <div class="vf-grid vf-registry-grid">
@@ -494,7 +523,7 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
             <ul class="vf-documents">
               <li><a href={STATUTE_PATH}>{copy.registry.statuteLink}</a></li>
               <li><a href={hrefPrivacy}>{copy.registry.privacyLink}</a></li>
-              <li><a href={hrefDonate} data-vault-open="100">{copy.registry.termsLink}</a></li>
+              <li><a href={hrefTerms}>{copy.registry.termsLink}</a></li>
               <li><a href={hrefPress}>{copy.registry.pressLink}</a></li>
             </ul>
             <p class="vf-registry-text vf-registry-muted">{reportsLine}</p>
@@ -518,15 +547,19 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
           {/* The wordmark, fitted to the measure by the SVG itself — `textLength` holds the
               word to the viewBox at every width, with no script. The name is already in the
               band's rows, so the drawing is hidden from assistive technology. */}
-          <svg class="vf-wordmark" viewBox="0 0 700 74" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
-            <text x="0" y="72" textLength="700" lengthAdjust="spacing">{FOUNDATION.nameShort}</text>
+          {/* 730 is the word's natural advance in Plex Sans 600 at 100px (measured 729.6), so
+              `textLength` fits it without pulling the letters together. */}
+          <svg class="vf-wordmark" viewBox="0 0 730 74" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+            <text x="0" y="72" textLength="730" lengthAdjust="spacing">{FOUNDATION.nameShort}</text>
           </svg>
         </div>
       </div>
     </section>
   </main>
 
-  <SiteFooter lang={lang} />
+  {/* The band above already prints the foundation's full registry; the footer's Fundatio stanza
+      would repeat it a hand's breadth lower. */}
+  <SiteFooter lang={lang} registry={false} />
 
   <VaultMount lang={lang} />
   <script>
@@ -537,18 +570,13 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
 
 <style>
   /* ── The page scope ─────────────────────────────────────────────────────────────────────────
-     One accent, this page's, defined here and never on :root: the ensemble's pages keep the
-     candle. Cobalt until the colour of the foundation's own social profiles is settled; #2446cf
-     measures ~6.5:1 on --paper and >7:1 under white text — re-check both ratios on a change.
-     `--vf-bleed` is the distance from the grid's right edge to the viewport's, which the
-     realisation's visual crosses. */
+     Ink on paper, no accent (see the header). `--vf-bleed` is the distance from the grid's right
+     edge to the viewport's, which the realisation's visual crosses. */
   .vf {
-    --vf-accent: #2446cf;
-    --vf-accent-hover: #1b35a5;
     --vf-rule: color-mix(in oklab, var(--ink) 16%, transparent);
     --vf-bleed: max(var(--gutter), calc((100vw - 1240px) / 2));
   }
-  .vf a:focus-visible, .vf summary:focus-visible { outline: 2px solid var(--vf-accent); outline-offset: 3px; }
+  .vf a:focus-visible, .vf summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
   .vf-frame { padding-inline: var(--gutter); }
   .vf > .vf-frame:first-child { padding-top: clamp(96px, 9vw, 132px); }
   .vf-grid { max-width: 1240px; margin-inline: auto; display: grid; grid-template-columns: minmax(0, 1fr); }
@@ -562,36 +590,40 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
   /* ── Hero ───────────────────────────────────────────────────────────────────────────────────
      No `.ink-press` on the headline: that mechanism drives the weight axis through the INHERITED
      `font-variation-settings`, which would override the 600 here; `normal` is stated to cut any
-     press above it. Plex Sans ships upright only, so the emphasis is colour, not italic. */
+     press above it. The emphasis is weight — the `<em>` line at 300 against 600 — because the page
+     carries no accent colour and Plex Sans ships no italic. */
   .vf-eyebrow { margin: 0; font-family: var(--sans); font-weight: 500; font-size: 14px; line-height: 1.4; letter-spacing: .02em; color: var(--ink-soft); }
   .vf-title { margin: 18px 0 0; font-family: var(--sans); font-weight: 600; font-style: normal; font-variation-settings: normal; font-size: clamp(40px, 11vw, 64px); line-height: 1; letter-spacing: -.045em; color: var(--ink); text-wrap: balance; }
   .vf-title-line { display: block; }
   /* `:global(em)`: the second line arrives through `set:html` and carries no scope attribute. */
-  .vf-title :global(em) { font-family: inherit; font-style: normal; font-weight: inherit; color: var(--vf-accent); white-space: nowrap; }
+  .vf-title :global(em) { font-family: inherit; font-style: normal; font-weight: 300; color: var(--ink); white-space: nowrap; }
   .vf-lead { margin: clamp(24px, 3vw, 36px) 0 0; max-width: 58ch; font-family: var(--sans); font-size: clamp(17px, 1.45vw, 20px); line-height: 1.55; color: var(--ink-soft); }
   .vf-hero-links { margin: 28px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
   @media (min-width: 1024px) {
     .vf-title { font-size: clamp(64px, 7.2vw, 104px); }
   }
 
-  /* Acts: the primary is a filled cobalt block, the rest are underlined words. The arrow is the
-     only thing that moves under the hand. */
-  .vf-act { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; font-family: var(--sans); font-weight: 500; font-size: 16px; line-height: 1.2; color: var(--ink); text-decoration: underline; text-decoration-color: transparent; text-underline-offset: .22em; text-decoration-thickness: 1px; transition: text-decoration-color .25s var(--ease), color .25s var(--ease), background-color .25s var(--ease); }
-  .vf-act:hover, .vf-act:focus-visible { color: var(--vf-accent); text-decoration-color: currentColor; }
-  .vf-act-primary { padding: 0 24px; border-radius: 2px; background: var(--vf-accent); color: #fff; text-decoration: none; }
-  .vf-act-primary:hover, .vf-act-primary:focus-visible { background: var(--vf-accent-hover); color: #fff; }
-  .vf-act :global(svg) { flex: none; transition: transform .25s var(--ease); }
+  /* Acts: the primary is a filled ink block — the same block the realisation uses to open the
+     vault — and the rest are underlined words. The arrow (ActArrow) is the only thing that moves
+     under the hand. */
+  .vf-act { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; font-family: var(--sans); font-weight: 500; font-size: 16px; line-height: 1.2; color: var(--ink); text-decoration: underline; text-decoration-color: transparent; text-underline-offset: .22em; text-decoration-thickness: 1px; transition: text-decoration-color .25s var(--ease), background-color .25s var(--ease); }
+  .vf-act:hover, .vf-act:focus-visible { text-decoration-color: currentColor; }
+  .vf-act-primary { padding: 0 24px; border-radius: 2px; background: var(--ink); color: var(--paper); text-decoration: none; }
+  .vf-act-primary:hover, .vf-act-primary:focus-visible { background: var(--ink-soft); color: var(--paper); }
+  .vf-act :global(svg) { margin-left: 0; transition: transform .25s var(--ease); }
   .vf-act:hover :global(svg), .vf-act:focus-visible :global(svg) { transform: translateX(3px); }
-  .vf-link { font-family: var(--sans); font-weight: 500; font-size: 15px; color: var(--ink); text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--ink) 30%, transparent); text-underline-offset: .22em; text-decoration-thickness: 1px; transition: text-decoration-color .25s var(--ease), color .25s var(--ease); }
-  .vf-link:hover, .vf-link:focus-visible { color: var(--vf-accent); text-decoration-color: currentColor; }
+  .vf-link { font-family: var(--sans); font-weight: 500; font-size: 15px; color: var(--ink); text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--ink) 30%, transparent); text-underline-offset: .22em; text-decoration-thickness: 1px; transition: text-decoration-color .25s var(--ease); }
+  .vf-link:hover, .vf-link:focus-visible { text-decoration-color: currentColor; }
+  .vf-link :global(svg) { transition: transform .25s var(--ease); }
+  .vf-link:hover :global(svg), .vf-link:focus-visible :global(svg) { transform: translateX(3px); }
 
   /* ── The rail ──────────────────────────────────────────────────────────────────────────────── */
   .vf-rail { margin: clamp(36px, 6vw, 56px) 0 0; }
   .vf-rail-label { margin: 0 0 10px; font-family: var(--sans); font-weight: 500; font-size: 14px; color: var(--ink-soft); }
   .vf-rail-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--vf-rule); }
   .vf-rail-list a { display: grid; grid-template-columns: 2.4em 1fr; align-items: baseline; min-height: 48px; padding: 13px 0; border-bottom: 1px solid var(--vf-rule); font-family: var(--sans); font-weight: 500; font-size: 15px; line-height: 1.3; color: var(--ink); text-decoration: none; transition: color .25s var(--ease); }
-  .vf-rail-list a:hover, .vf-rail-list a:focus-visible { color: var(--vf-accent); }
-  .vf-rail-list a:hover .vf-num, .vf-rail-list a:focus-visible .vf-num { color: var(--vf-accent); }
+  .vf-rail-list a:hover, .vf-rail-list a:focus-visible { color: var(--ink); }
+  .vf-rail-list a:hover .vf-num, .vf-rail-list a:focus-visible .vf-num { color: var(--ink); }
   @media (min-width: 1024px) {
     .vf-rail { margin: 0; }
     .vf-rail-inner { position: sticky; top: clamp(96px, 12vh, 128px); }
@@ -610,8 +642,17 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
     .vf-label { display: none; }
     .vf-section { margin-top: clamp(72px, 8vw, 120px); padding-top: 22px; border-top: 1px solid var(--ink); }
   }
+  /* A section that opens on a realisation module has the module's accent rule for its top edge:
+     no section rule on a desktop, no label rule on a phone — one rule, not two 23px apart. */
+  .vf-section-module .vf-label { padding-top: 0; border-top: 0; }
+  @media (min-width: 1024px) {
+    .vf-section-module { padding-top: 0; border-top: 0; }
+  }
   .vf-h2 { margin: 0; max-width: 22ch; font-family: var(--sans); font-weight: 600; font-size: clamp(28px, 3.4vw, 44px); line-height: 1.08; letter-spacing: -.03em; color: var(--ink); text-wrap: balance; }
   .vf-body { margin: 20px 0 0; max-width: 64ch; font-family: var(--sans); font-size: clamp(16px, 1.2vw, 17px); line-height: 1.65; color: var(--ink-soft); }
+  /* A title or foreign term in body copy (set:html, so `:global`). Plex Sans ships no italic;
+     this is the browser's slanted roman. */
+  .vf-body :global(em) { font-style: italic; }
   .vf-rubric { margin: 0 0 14px; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); }
   .vf-more { margin: 24px 0 0; }
 
@@ -633,20 +674,23 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
   .vf-timeline ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
   .vf-timeline li { font-family: var(--sans); font-size: 16px; line-height: 1.45; color: var(--ink); }
   .vf-timeline a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--ink) 25%, transparent); text-underline-offset: .2em; text-decoration-thickness: 1px; transition: color .25s var(--ease), text-decoration-color .25s var(--ease); }
-  .vf-timeline a:hover, .vf-timeline a:focus-visible { color: var(--vf-accent); text-decoration-color: currentColor; }
+  .vf-timeline a:hover, .vf-timeline a:focus-visible { text-decoration-color: currentColor; }
   .vf-record-photo { margin: 0; }
   .vf-record-photo :global(img) { display: block; width: 100%; height: auto; }
   .vf-record-photo figcaption { margin: 10px 0 0; font-family: var(--mono); font-size: 12px; line-height: 1.5; color: var(--ink-muted); }
 
   /* ── 03 · Mission and people ───────────────────────────────────────────────────────────────── */
-  .vf-motto { margin: 0; max-width: 20ch; font-family: var(--serif); font-style: italic; font-weight: 400; font-size: clamp(34px, 4.6vw, 60px); line-height: 1.08; letter-spacing: -.01em; color: var(--ink); text-wrap: balance; }
+  .vf-motto { margin: 0; font-family: var(--serif); font-style: normal; font-weight: 400; font-size: clamp(34px, 4.6vw, 60px); line-height: 1.08; letter-spacing: -.01em; color: var(--ink); }
+  .vf-motto-line { display: block; text-wrap: balance; }
+  .vf-motto :global(em) { font-style: italic; }
   .vf-board { margin: clamp(40px, 5vw, 64px) 0 0; }
   .vf-board-list { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(28px, 3vw, 40px) clamp(20px, 2.4vw, 32px); grid-template-columns: minmax(0, 1fr); }
   @media (min-width: 640px) { .vf-board-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   .vf-member { border-top: 1px solid var(--vf-rule); padding-top: 14px; }
-  /* The drawings are ink on a transparent ground, so they sit on the paper like print. */
-  .vf-portrait { margin: 0 0 14px; aspect-ratio: 1; max-width: 320px; }
-  .vf-portrait :global(img) { display: block; width: 100%; height: 100%; object-fit: contain; }
+  /* Black-and-white photographs at 4:5, head and shoulders; `cover` holds all three to one frame
+     even if an original arrives a few pixels off the ratio. */
+  .vf-portrait { margin: 0 0 14px; aspect-ratio: 4 / 5; max-width: 320px; overflow: hidden; }
+  .vf-portrait :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; }
   .vf-member-name { margin: 0; font-family: var(--sans); font-weight: 600; font-size: 18px; line-height: 1.3; color: var(--ink); }
   .vf-member-function { margin: 4px 0 0; font-family: var(--mono); font-size: 12px; letter-spacing: .04em; color: var(--ink-muted); }
   .vf-member-domain { margin: 8px 0 0; font-family: var(--sans); font-size: 15px; line-height: 1.5; color: var(--ink-soft); }
@@ -659,7 +703,6 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
   .vf-quote { margin: 16px 0 0; font-family: var(--serif); font-style: italic; font-weight: 400; font-size: clamp(24px, 2.2vw, 30px); line-height: 1.2; color: var(--ink); text-wrap: balance; }
   .vf-way-body { margin: 16px 0 0; font-family: var(--sans); font-size: 15.5px; line-height: 1.6; color: var(--ink-soft); }
   .vf-way-note { margin: 12px 0 0; font-family: var(--sans); font-size: 14px; line-height: 1.55; color: var(--ink-muted); }
-  .vf-way-person { margin: 16px 0 0; font-family: var(--sans); font-weight: 600; font-size: 15.5px; color: var(--ink); }
   .vf-way-acts { margin: 20px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; }
   .vf-way-links { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 10px; }
 
@@ -671,13 +714,15 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
   .vf-currency { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-muted); }
   .vf-transfer-row dd { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
   .vf-transfer-value { font-family: var(--mono); font-size: clamp(15px, 1.3vw, 17px); letter-spacing: .03em; color: var(--ink); user-select: all; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  /* A second value on the same row (the EUR account's BIC), on its own line under the IBAN. */
+  .vf-transfer-sub { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; }
   .vf-transfer-note { margin: 12px 0 0; max-width: 64ch; font-family: var(--sans); font-size: 14px; line-height: 1.55; color: var(--ink-soft); }
   .vf-transfer-note + .vf-transfer-note { margin-top: 6px; }
 
   /* The copy capsule — the site's one shape for "copy this", in this page's type. */
   .vf :global(.copy-btn) { display: inline-flex; align-items: center; min-height: 32px; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); background: transparent; border: 1px solid var(--vf-rule); border-radius: 2px; padding: 0 10px; cursor: pointer; transition: color .25s var(--ease), border-color .25s var(--ease); }
   .vf :global(.copy-btn:hover) { color: var(--ink); border-color: var(--ink); }
-  .vf :global(.copy-btn.is-copied) { color: var(--sage); border-color: var(--sage); }
+  .vf :global(.copy-btn.is-copied) { color: var(--ink); border-color: var(--ink); }
 
   /* The optional form, collapsed behind a line. The island's markup is React's and carries no
      scope attribute, so every inner selector is `:global()`. */
@@ -696,14 +741,14 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
   .vf-join :global(.patron-field-wide) { grid-column: 1 / -1; }
   .vf-join :global(.patron-label) { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); }
   .vf-join :global(.patron-input) { display: block; width: 100%; padding: 6px 0; border: 0; border-bottom: 1px solid var(--line-strong); background: none; color: var(--ink); caret-color: var(--ink); font-family: var(--sans); font-size: 18px; line-height: 1.4; border-radius: 0; transition: border-color .25s var(--ease); }
-  .vf-join :global(.patron-input:focus) { outline: none; border-bottom-color: var(--vf-accent); }
+  .vf-join :global(.patron-input:focus) { outline: none; border-bottom-color: var(--ink); }
   .vf-join :global(.patron-input[aria-invalid="true"]) { border-bottom-color: #9b4f38; }
   .vf-join :global(.patron-input:disabled) { opacity: .6; }
   .vf-join :global(.patron-consent) { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 12px; align-items: start; cursor: pointer; }
   .vf-join :global(.patron-consent-input) { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .vf-join :global(.patron-consent-box) { display: block; width: 18px; height: 18px; margin-top: 2px; border: 1px solid var(--line-strong); background: transparent; transition: background-color .25s var(--ease), border-color .25s var(--ease); }
   .vf-join :global(.patron-consent-input:checked + .patron-consent-box) { background: var(--ink); border-color: var(--ink); }
-  .vf-join :global(.patron-consent-input:focus-visible + .patron-consent-box) { outline: 2px solid var(--vf-accent); outline-offset: 3px; }
+  .vf-join :global(.patron-consent-input:focus-visible + .patron-consent-box) { outline: 2px solid var(--ink); outline-offset: 3px; }
   .vf-join :global(.patron-consent-input[aria-invalid="true"] + .patron-consent-box) { border-color: #9b4f38; }
   .vf-join :global(.patron-consent-text) { font-family: var(--sans); font-size: 13.5px; line-height: 1.6; color: var(--ink-soft); text-wrap: pretty; }
   .vf-join :global(.patron-consent-text a) { color: var(--ink); text-decoration: underline; text-underline-offset: .2em; }
@@ -711,20 +756,21 @@ const arrow = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
   .vf-join :global(.patron-error a) { color: inherit; text-decoration: underline; }
   .vf-join :global(.patron-submit) { justify-self: start; display: inline-flex; align-items: center; min-height: 48px; padding: 0 24px; border: 1px solid var(--ink); border-radius: 2px; background: transparent; color: var(--ink); cursor: pointer; font-family: var(--sans); font-weight: 500; font-size: 15px; transition: color .25s var(--ease), background-color .25s var(--ease), opacity .25s var(--ease); }
   .vf-join :global(.patron-submit:hover:not(:disabled)), .vf-join :global(.patron-submit:focus-visible) { background: var(--ink); color: var(--paper); }
-  .vf-join :global(.patron-submit:focus-visible) { outline: 2px solid var(--vf-accent); outline-offset: 3px; }
+  .vf-join :global(.patron-submit:focus-visible) { outline: 2px solid var(--ink); outline-offset: 3px; }
   .vf-join :global(.patron-submit:disabled) { cursor: progress; opacity: .55; }
   .vf-join :global(.patron-done) { max-width: 56ch; }
   .vf-join :global(.patron-done-title) { margin: 0; font-family: var(--sans); font-weight: 600; font-size: 20px; line-height: 1.3; color: var(--ink); }
   .vf-join :global(.patron-done-body) { margin: 8px 0 0; font-family: var(--sans); font-size: 15px; line-height: 1.6; color: var(--ink-soft); }
 
-  /* ── 05 · Registry — ink band ──────────────────────────────────────────────────────────────
-     The page's paper inverted. Muted text is paper mixed toward ink, not an opacity, so the
-     ratios hold (paper at 64 % over --ink stays above 7:1). */
+  /* ── 05 · Registry — night band ────────────────────────────────────────────────────────────
+     The page's paper inverted, on the site footer's own ground so the band and the footer below
+     meet without a seam. Muted text is paper mixed toward that ground, not an opacity, so the
+     ratios hold (paper at 64 % over --night stays above 7:1). */
   .vf-registry {
     --reg-ink: var(--paper);
-    --reg-muted: color-mix(in oklab, var(--paper) 64%, var(--ink));
+    --reg-muted: color-mix(in oklab, var(--paper) 64%, var(--night));
     --reg-rule: color-mix(in oklab, var(--paper) 18%, transparent);
-    background: var(--ink);
+    background: var(--night);
     color: var(--reg-ink);
     padding: clamp(64px, 9vw, 120px) 0 clamp(28px, 3vw, 40px);
   }

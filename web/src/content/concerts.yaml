@@ -1607,6 +1607,7 @@
   order: 4
   latin: Memoria
   title: Hymn Poległym
+  subtitle: { pl: "Modlitwa o pokój na Ukrainie" }
   metaPlace: { pl: "Bazylika Mariacka, Kraków" }
   venue: "Bazylika Mariacka, Kraków"
   date: "2025-02-22"
@@ -2598,6 +2599,8 @@
   festival:
     name: "Fenomen Człowieka"
     url: "https://fenomen-czlowieka.pl/"
+    # Confirmed by the note below ("ten koncert je zamyka"). The edition number is not.
+    role: finale
   # Why the frame earns a sentence and not only a link: this edition reads the human through beauty,
   # and one of the kinds it names is the beauty that stays in pain, which is the axis this
   # programme's own descent runs. It states that rhyme and stops. `schodzi` is deliberate — it is the
@@ -2696,6 +2699,9 @@
     to wezwanie — Wszystkich Świętych.
   credits:
     - { role: "Dyrygent", name: "Florent de Bazelaire" }
+  # The cast the panel confirms (2026-09-30): twelve singers, violin, organ. Counted, not named —
+  # the organist is not named on the foundation's pages.
+  forces: { pl: "12 głosów · skrzypce · organy" }
   programLede: "Dziesięć utworów i jedno lustro"
   # The conductor's own edit of this paragraph, returned 14.09.2026 — so the arc is his reading in
   # his words, which is the one thing the page had been missing since the generated reflection came
