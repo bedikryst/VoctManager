@@ -53,6 +53,8 @@ export interface FieldChange {
 export interface EventMomentMetadata {
   starts_at?: string | null;
   starts_at_display?: string | null;
+  /** The closing moment of a span; absent on a single event. */
+  ends_at?: string | null;
   timezone?: string | null;
 }
 
@@ -61,6 +63,20 @@ export type CastingChangeEvent = "updated" | "removed";
 
 /** Attendance status (PRESENT/LATE/EXCUSED/ABSENT) or participation RSVP (INV/CON/DEC). */
 export type RosterStatusCode = string;
+
+/**
+ * Where the reader's plan starts when that is before the call: a trip's
+ * departure the day before, or a joiner's sound check. Absent on a one-day
+ * concert. A point travels with its title (the manager's text); a typed window
+ * travels as its key, named in the reader's language. Mirrors
+ * `plan_start_metadata` in `roster/queries/day_plan_queries.py`.
+ */
+export interface PlanStartMetadata {
+  plan_starts_at?: string | null;
+  plan_start_title?: string | null;
+  plan_start_window?: string | null;
+  plan_start_place?: string | null;
+}
 
 /** One rehearsal inside an invitation's schedule block. */
 export interface InvitationRehearsalMetadata extends EventMomentMetadata {
@@ -77,7 +93,9 @@ export interface InvitationRehearsalMetadata extends EventMomentMetadata {
  * invitations to an artist joining a live project without a schedule — simply
  * omit them, so every consumer must tolerate their absence.
  */
-export interface ProjectInvitationMetadata extends EventMomentMetadata {
+export interface ProjectInvitationMetadata
+  extends EventMomentMetadata,
+    PlanStartMetadata {
   project_id: string;
   project_name: string;
   participation_id: string;
@@ -151,6 +169,8 @@ export interface ProjectBriefingMetadata {
 export interface AnnouncementPendingMetadata {
   project_id: string;
   project_name: string;
+  /** Project.EventKind CODE; empty on legacy rows, which read as a concert. */
+  event_kind?: string;
   change_count?: number;
   recipient_count?: number;
   /** A count, not a rendered duration — the viewer's language decides whether it
@@ -182,9 +202,13 @@ export interface SiteCopyProposedMetadata {
   locales?: string[];
 }
 
-export interface ProjectReminderMetadata extends EventMomentMetadata {
+export interface ProjectReminderMetadata
+  extends EventMomentMetadata,
+    PlanStartMetadata {
   project_id?: string;
   project_name: string;
+  /** Project.EventKind CODE; empty on legacy rows. */
+  event_kind?: string;
   date_range?: string | null;
   location?: string | null;
 }
@@ -364,9 +388,16 @@ export interface ManagerActionMetadata extends EventMomentMetadata {
   /** Legacy display fallback for rows emitted before the canonical event moment. */
   rehearsal_date?: string;
   status?: RosterStatusCode;
+  /** The RSVP this one replaces: CON→DEC is a withdrawal, INV→DEC a decline. */
   previous_status?: RosterStatusCode;
+  /** RSVP only: Project.EventKind CODE; the event moment is the project's own.
+   *  Empty on attendance rows and legacy RSVP rows. */
+  event_kind?: string;
   minutes_late?: number | null;
   excuse_note?: string | null;
+  /** An absence over a span: how many rehearsals it reached (`ends_at` closes
+   *  it). Absent on a single evening. */
+  rehearsal_count?: number | null;
 }
 
 export interface CustomAdminMessageMetadata {

@@ -550,8 +550,18 @@ class LocalizedRenderTests(SimpleTestCase):
                 {"artist_name": "Ada", "project_name": "Requiem", "status": "DEC"},
                 is_manager=True,
             )
-            self.assertIn("rezygnuje", c.title)
+            self.assertIn("nie weźmie udziału", c.title)
             self.assertNotIn("declined", c.title.lower())
+
+    def test_polish_withdrawal_after_confirming_is_not_a_first_decline(self) -> None:
+        with translation.override("pl"):
+            c = MessageContentBuilder.build(
+                NotificationType.PARTICIPATION_RESPONSE, "INFO",
+                {"artist_name": "Ada", "project_name": "Requiem",
+                 "status": "DEC", "previous_status": "CON"},
+                is_manager=True,
+            )
+            self.assertEqual(c.title, "Ada wycofuje się z udziału")
 
 
 class TemplateCommentSyntaxTests(SimpleTestCase):
@@ -1383,6 +1393,30 @@ class DigestSweepTests(TestCase):
 
         self.profile.refresh_from_db()
         self.assertIsNotNone(self.profile.last_digest_sent_at)
+
+    def test_a_row_reads_as_the_push_headline_with_the_evening_and_the_note(self) -> None:
+        moment = {"starts_at": "2031-06-19T18:15:00+02:00", "timezone": "Europe/Warsaw"}
+        self._notif(NotificationType.ATTENDANCE_SUBMITTED, {
+            "artist_name": "Ada Nowak", "project_name": "Requiem",
+            "status": "LATE", "minutes_late": 15, **moment,
+        })
+        self._notif(NotificationType.ABSENCE_REQUESTED, {
+            "artist_name": "Bo Lis", "project_name": "Requiem",
+            "status": "ABSENT", "excuse_note": "Flu", **moment,
+        })
+        self._notif(NotificationType.PARTICIPATION_RESPONSE, {
+            "artist_name": "Cy Wolf", "project_name": "Requiem",
+            "status": "DEC", "previous_status": "CON", "event_kind": "MASS", **moment,
+        })
+
+        self._sweep()
+        text = str(cast(EmailMultiAlternatives, mail.outbox[0]).body)
+        self.assertIn("Ada Nowak will be about 15 min late", text)
+        self.assertIn("Rehearsal — Thursday, 19 June 2031 at 18:15", text)
+        # The note sits beside the evening rather than replacing it.
+        self.assertIn("Rehearsal — Thursday, 19 June 2031 at 18:15 · “Flu”", text)
+        self.assertIn("Cy Wolf is withdrawing", text)
+        self.assertIn("Mass — Thursday, 19 June 2031 at 18:15", text)
 
     def test_no_items_sends_nothing(self) -> None:
         self.assertEqual(self._sweep()["sent"], 0)

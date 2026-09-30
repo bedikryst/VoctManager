@@ -170,6 +170,12 @@ def event_start(metadata: Mapping[str, Any]) -> datetime | None:
     return _localized_moment(metadata, "starts_at")
 
 
+def event_end(metadata: Mapping[str, Any]) -> datetime | None:
+    """When a span of events closes, in its own timezone; None for a payload
+    that covers one event."""
+    return _localized_moment(metadata, "ends_at")
+
+
 def short_event_date(value: datetime) -> str:
     """Day and abbreviated month ("12 paź", "12 oct.", "12 Oct"), for a line that
     lists several dates and has no room for a weekday or an hour."""

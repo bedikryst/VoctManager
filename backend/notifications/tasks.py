@@ -225,23 +225,57 @@ def _digest_section_title(notification_type: str) -> str:
     return titles.get(notification_type, _("Updates"))
 
 
-def _digest_detail(notification) -> str:
-    """A localized one-line detail for a digest row, rendered from structured
-    metadata (status codes) — never from stored prose."""
+def _digest_item(notification) -> dict[str, str]:
+    """One digest row in the push headline's words: the singer and their answer,
+    then the project, then the evening it is about beside what the singer wrote.
+    Rendered from structured metadata in the reader's language, never from
+    stored prose."""
+    from django.utils.translation import gettext as _
+    from django.utils.translation import ngettext
+
     from .message_content import (
-        _attendance_status_phrase,
-        _participation_status_phrase,
+        _attendance_phrase,
+        _event_moment_label,
+        _facts,
+        _participation_phrase,
+        _quoted,
     )
+    from .time_metadata import display_event_time, event_end, event_start, short_date_span
 
     m = notification.metadata or {}
     ntype = notification.notification_type
+    artist = m.get("artist_name") or ""
+
     if ntype == NotificationType.PARTICIPATION_RESPONSE:
-        return _participation_status_phrase(m.get("status"))
-    if ntype == NotificationType.ATTENDANCE_SUBMITTED:
-        return _attendance_status_phrase(m.get("status"))
-    if ntype == NotificationType.ABSENCE_REQUESTED:
-        return m.get("rehearsal_date") or m.get("excuse_note") or ""
-    return m.get("rehearsal_date") or ""
+        phrase = _participation_phrase(m.get("status"), m.get("previous_status"))
+        when = display_event_time(m)
+        moment = (
+            _("%(event)s — %(when)s")
+            % {"event": _event_moment_label(m.get("event_kind")), "when": when}
+            if when
+            else ""
+        )
+        detail = _facts(moment)
+    else:
+        phrase = _attendance_phrase(m)
+        start, end = event_start(m), event_end(m)
+        count = m.get("rehearsal_count")
+        if isinstance(count, int) and count > 1 and start and end:
+            # A span is its edges and how many rehearsals fell between them.
+            moment = _facts(
+                short_date_span(start, end),
+                ngettext("%(count)d rehearsal", "%(count)d rehearsals", count) % {"count": count},
+            )
+        else:
+            when = display_event_time(m, "rehearsal_date")
+            moment = _("%(event)s — %(when)s") % {"event": _("Rehearsal"), "when": when} if when else ""
+        detail = _facts(moment, _quoted(m.get("excuse_note")))
+
+    return {
+        "primary": _("%(artist)s %(phrase)s") % {"artist": artist, "phrase": phrase} if artist else phrase,
+        "secondary": m.get("project_name") or "",
+        "detail": detail,
+    }
 
 
 def _dispatch_digest(profile, notifications: list) -> None:
@@ -256,15 +290,7 @@ def _dispatch_digest(profile, notifications: list) -> None:
     with translation.override(lang):
         groups: list[dict[str, Any]] = []
         for ntype in _DIGEST_SECTIONS:
-            items = [
-                {
-                    "primary": (n.metadata or {}).get("artist_name") or "",
-                    "secondary": (n.metadata or {}).get("project_name") or "",
-                    "detail": _digest_detail(n),
-                }
-                for n in notifications
-                if n.notification_type == ntype
-            ]
+            items = [_digest_item(n) for n in notifications if n.notification_type == ntype]
             if items:
                 groups.append({"title": _digest_section_title(ntype), "count": len(items), "items": items})
 

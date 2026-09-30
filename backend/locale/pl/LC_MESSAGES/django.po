@@ -2678,7 +2678,7 @@ msgid "confirmed their place"
 msgstr "potwierdza udział"
 
 msgid "declined the invitation"
-msgstr "rezygnuje z udziału"
+msgstr "nie weźmie udziału"
 
 msgid "was invited"
 msgstr "ma zaproszenie"
@@ -5404,3 +5404,17 @@ msgstr "dla jadących"
 #: core/ical_service.py notifications/message_content.py
 msgid "Plan starts"
 msgstr "Początek planu"
+
+#: notifications/message_content.py
+msgid "is withdrawing"
+msgstr "wycofuje się z udziału"
+
+#: notifications/message_content.py
+msgid "will take part after all"
+msgstr "jednak weźmie udział"
+
+#: notifications/message_content.py
+#, python-format
+msgctxt "quotation"
+msgid "“%(text)s”"
+msgstr "„%(text)s”"

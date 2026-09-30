@@ -2444,12 +2444,21 @@ class ParticipationService:
             old_status = participation.status
             participation.status = new_status
             participation.save(update_fields=['status', 'updated_at'])
-            
+
+            project = participation.project
+            # The concert's own moment and kind: the manager reads the answer
+            # against which evening it is about, not only which title.
             metadata = ManagerActionMetadata(
-                project_name=participation.project.title,
+                project_name=project.title,
                 artist_name=f"{participation.artist.first_name} {participation.artist.last_name}",
                 artist_id=str(participation.artist_id),
                 project_id=str(participation.project_id),
+                **build_event_time_metadata(
+                    project.date_time,
+                    project.timezone,
+                    fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+                ),
+                event_kind=project.event_kind,
                 status=new_status,
                 previous_status=old_status,
             ).model_dump(mode="json")

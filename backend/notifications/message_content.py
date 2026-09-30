@@ -349,6 +349,33 @@ def _participation_status_phrase(status: str | None) -> str:
     }.get(status or "", _("responded to the invitation"))
 
 
+def _participation_phrase(status: str | None, previous: str | None) -> str:
+    """An RSVP read against the answer it replaces. A withdrawal after
+    confirming means recasting a seat and a first decline does not, so the two
+    never share a phrase; neither does a return after declining."""
+    if status == "DEC" and previous == "CON":
+        return _("is withdrawing")
+    if status == "CON" and previous == "DEC":
+        return _("will take part after all")
+    return _participation_status_phrase(status)
+
+
+def _attendance_phrase(m: Mapping[str, Any]) -> str:
+    """A singer's attendance answer, with the minutes when a lateness came with
+    them: the minutes are what the conductor plans the first piece around."""
+    minutes = m.get("minutes_late")
+    if m.get("status") == "LATE" and minutes:
+        return _("will be about %(minutes)d min late") % {"minutes": int(minutes)}
+    return _attendance_status_phrase(m.get("status"))
+
+
+def _quoted(text: Any) -> str:
+    """Text a person wrote, in the reader's own quotation marks; nothing for
+    blank text."""
+    value = str(text or "").strip()
+    return pgettext("quotation", "“%(text)s”") % {"text": value} if value else ""
+
+
 def _project_status_label(code: str | None) -> str:
     """
     Localized label for a Project.Status CODE. Deliberately the same msgids as the
@@ -1984,7 +2011,7 @@ def _compose_participation_response(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     artist = m.get("artist_name") or _("A singer")
     project = m.get("project_name") or _("a project")
-    phrase = _participation_status_phrase(m.get("status"))
+    phrase = _participation_phrase(m.get("status"), m.get("previous_status"))
     # The person and their answer are the scanning line; the project is the body.
     headline = _("%(artist)s %(phrase)s") % {"artist": artist, "phrase": phrase}
     return MessageContent(
@@ -2008,11 +2035,7 @@ def _compose_attendance_submitted(ctx: MessageContext) -> MessageContent:
     artist = m.get("artist_name") or _("A singer")
     project = m.get("project_name") or _("a project")
     when = display_event_time(m, "rehearsal_date")
-    phrase = _attendance_status_phrase(m.get("status"))
-    minutes = m.get("minutes_late")
-    if m.get("status") == "LATE" and minutes:
-        phrase = _("will be about %(minutes)d min late") % {"minutes": int(minutes)}
-    headline = _("%(artist)s %(phrase)s") % {"artist": artist, "phrase": phrase}
+    headline = _("%(artist)s %(phrase)s") % {"artist": artist, "phrase": _attendance_phrase(m)}
     rehearsals_url = _attendance_report_url(ctx)
     details: list[DetailRow] = [_row(_("Singer"), artist), _row(_("Project"), project)]
     if when:

@@ -5436,3 +5436,17 @@ msgstr "pour ceux qui voyagent"
 #: core/ical_service.py notifications/message_content.py
 msgid "Plan starts"
 msgstr "Début du plan"
+
+#: notifications/message_content.py
+msgid "is withdrawing"
+msgstr "se retire"
+
+#: notifications/message_content.py
+msgid "will take part after all"
+msgstr "participera finalement"
+
+#: notifications/message_content.py
+#, python-format
+msgctxt "quotation"
+msgid "“%(text)s”"
+msgstr "« %(text)s »"

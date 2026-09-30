@@ -187,6 +187,9 @@ class AnnouncementPendingMetadata(EnterpriseBaseDTO):
     """
     project_id: UUID
     project_name: str
+    # The Project.EventKind CODE, so the row names the concert or the Mass
+    # whose news is waiting. Empty on legacy rows.
+    event_kind: str = ""
     change_count: int = 0
     recipient_count: int = 0
     waiting_hours: int = 0
@@ -434,8 +437,13 @@ class ManagerActionMetadata(EnterpriseBaseDTO):
     status: str | None = None
     minutes_late: int | None = None
     excuse_note: str | None = None  # user-authored free text — passed through verbatim
-    # Participation RSVP: new + previous status codes.
+    # Participation RSVP: new + previous status codes. The previous one is what
+    # tells a withdrawal after confirming (CON→DEC) from a first decline.
     previous_status: str | None = None
+    # Participation RSVP: the Project.EventKind CODE, so the sentence names the
+    # concert or the Mass the answer is about. The event moment above is the
+    # project's own. Empty on attendance rows and on legacy RSVP rows.
+    event_kind: str = ""
     # An absence stated over a span of days rather than one evening: the closing
     # moment and how many rehearsals it actually reached. Absent on a single one.
     ends_at: str = ""

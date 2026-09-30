@@ -1,7 +1,9 @@
 /**
  * @file NotificationItem.tsx
- * @description A single notification row in the Ethereal language. Accent is
- * driven by type (gold=project, sage=schedule/positive, amethyst=content,
+ * @description A single notification row in the Ethereal language. The row
+ * reads as one sentence — the actor in semibold, the rest of the sentence in
+ * regular weight — under a category eyebrow, then what the sentence did not
+ * say and any text a person wrote, quoted. Accent is driven by type (gold=project, sage=schedule/positive, amethyst=content,
  * incense=message) and escalated to crimson only for genuine alarms
  * (URGENT level, cancellations, rejections) — crimson stays alarm-only.
  * @module features/notifications/components
@@ -38,8 +40,14 @@ import { useMarkNotificationRead } from "../api/notifications.queries";
 import {
   briefingItemSummary,
   compactMetaLine,
+  eventKindContext,
+  formatEventDate,
   formatEventMoment,
+  formatEventPhrase,
+  formatEventSpan,
+  formatPlanStart,
   isSoloChange,
+  quoted,
   renderChanges,
   voiceLineLabel,
   voiceScopeOf,
@@ -79,12 +87,47 @@ const SECTION_KEYS: Record<string, string> = {
 const sectionName = (t: TFunc, code: string): string =>
   SECTION_KEYS[code] ? t(SECTION_KEYS[code], code) : code;
 
-/** Verb phrase for a roster status code (attendance or RSVP). */
-const statusPhrase = (
+/**
+ * A sentence carrying the event's moment in `{{when}}`. A legacy row without an
+ * ISO moment renders the same sentence without it, the context line then stating
+ * the stored date, so the space the empty slot leaves before the full stop is
+ * closed here.
+ */
+const withMoment = (
   t: TFunc,
-  kind: "attendance" | "participation",
-  code?: string,
-): string => (code ? t(`notifications.status.${kind}.${code}`, code) : "");
+  key: string,
+  when: string | undefined,
+  options: { count?: number } = {},
+): string => {
+  const text = t(key, { ...options, when: when ?? "" });
+  return when
+    ? text
+    : text.replace(/\s+(?=[.,:;!?])/g, "").replace(/\s{2,}/g, " ").trim();
+};
+
+/** An RSVP read against the answer it replaces. A withdrawal after confirming
+ *  means recasting a seat and a first decline does not, so they never share a
+ *  sentence. Mirrors the server's `_participation_phrase`. */
+const rsvpAnswer = (
+  status?: string,
+  previous?: string,
+): "confirmed" | "declined" | "withdrew" | "returned" | "changed" => {
+  if (status === "CON") return previous === "DEC" ? "returned" : "confirmed";
+  if (status === "DEC") return previous === "CON" ? "withdrew" : "declined";
+  return "changed";
+};
+
+/** How long an announcement queue has been waiting, counted from now: the hours
+ *  stored on the nudge were true only when it went out. Hours under 48, then
+ *  days — the server's `_waiting_phrase` rule. */
+const queueWaiting = (t: TFunc, createdAt: string, storedHours: number): string => {
+  const since = Date.parse(createdAt) - storedHours * 3_600_000;
+  const live = Math.floor((Date.now() - since) / 3_600_000);
+  const hours = Math.max(1, Number.isFinite(live) ? live : storedHours);
+  return hours < 48
+    ? t("notifications.row.waiting_hours", { count: hours })
+    : t("notifications.row.waiting_days", { count: Math.floor(hours / 24) });
+};
 
 /** How many briefing items the bell row lists before the rest becomes a count.
  *  The full account is in the email; this row exists to be scanned. */
@@ -110,14 +153,28 @@ const briefingBullets = (
 };
 
 interface RowContent {
-  /** Line 1 — the subject (bold, ink). */
+  /** Who acted. Leads the sentence in semibold; the key's text continues it. */
+  actor?: string;
+  /**
+   * Line 1 — one full sentence with its full stop. After an actor it continues
+   * the name and starts lowercase; without one it stands alone in semibold.
+   */
+  sentence?: string;
+  /** Line 1 on a row not yet written as a sentence — the subject (bold, ink). */
   title?: string;
   /** An accent pill rendered beside the title (e.g. the voice part). */
   pill?: string;
-  /** Line 2 — muted secondary context (concert · date · venue, sender…). */
+  /** Line 2 — muted context: what the sentence did not say (project, place,
+   *  the event's own date). */
   context?: string;
-  /** Line 3 — tertiary detail (focus, snippet, status phrase, removed copy). */
+  /** Where the reader's plan starts when that precedes the call — a trip's
+   *  departure — so the row never names only the concert hour. */
+  planStart?: string;
+  /** Tertiary detail (focus, snippet, a count, removed copy). */
   detail?: string;
+  /** Text a person wrote — an excuse note, an excerpt — already in the
+   *  locale's quotation marks. */
+  quote?: string;
   /** Structured field-change chips. */
   changeChips?: string[];
   /** A briefing's items, one scannable line each. */
@@ -145,6 +202,7 @@ const describe = (
           formatEventMoment(notification.metadata, lang, t, notification.metadata.date_range),
           notification.metadata.location,
         ),
+        planStart: formatPlanStart(notification.metadata, lang, t),
         detail: notification.metadata.inviter_name
           ? t("notifications.inapp.invited_by", {
               name: notification.metadata.inviter_name,
@@ -290,25 +348,32 @@ const describe = (
         changeChips: sections.length > 0 ? sections : undefined,
       };
     }
-    case "REHEARSAL_DEBRIEF_POSTED":
-      // The author is the title — whose account of the evening this is — and
-      // the excerpt is the detail: enough to decide whether to open the card,
-      // where the whole text lives.
+    case "REHEARSAL_DEBRIEF_POSTED": {
+      // Whose account of which evening, then the excerpt: enough to decide
+      // whether to open the card, where the whole text lives.
+      const date = formatEventDate(notification.metadata, lang);
       return {
-        title: notification.metadata.author_name || notification.metadata.project_name,
+        actor: notification.metadata.author_name || undefined,
+        sentence: date
+          ? t("notifications.row.debrief_posted", { date })
+          : t("notifications.row.debrief_posted_undated"),
         context: compactMetaLine(
           notification.metadata.project_name,
-          formatEventMoment(notification.metadata, lang, t),
+          date ? undefined : formatEventMoment(notification.metadata, lang, t),
         ),
-        detail: notification.metadata.excerpt || undefined,
+        quote: quoted(t, notification.metadata.excerpt),
       };
+    }
     case "PROJECT_REMINDER":
+      // A trip reminder names the departure too: the concert hour alone would
+      // send a traveller to the venue a day late.
       return {
         title: notification.metadata.project_name as string | undefined,
         context: compactMetaLine(
           formatEventMoment(notification.metadata, lang, t, notification.metadata.date_range),
           notification.metadata.location,
         ),
+        planStart: formatPlanStart(notification.metadata, lang, t),
       };
     case "PIECE_CASTING_ASSIGNED":
       // The premium casting row: the piece as the title, the voice part as an
@@ -385,71 +450,95 @@ const describe = (
           notification.metadata, lang, t, notification.metadata.rehearsal_date,
         ),
       };
-    case "ABSENCE_REQUESTED":
+    case "ABSENCE_REQUESTED": {
+      // Worded as the button the singer pressed: "Nie będę obecny" is a
+      // statement, not a request, and only a legacy row carries EXCUSED. A span
+      // names its edges and how many rehearsals it reaches, the number the
+      // manager decides on. The note is what they decide it by.
+      const m = notification.metadata;
+      const answer = m.status === "EXCUSED" ? "excused" : "absent";
+      const range = (m.rehearsal_count ?? 0) > 1 ? formatEventSpan(m, lang) : undefined;
+      const when = range ? undefined : formatEventPhrase(m, lang, t);
       return {
-        title: notification.metadata.artist_name,
+        actor: m.artist_name,
+        sentence: range
+          ? t(`notifications.row.absence_${answer}_span`, {
+              count: m.rehearsal_count ?? 0,
+              range,
+            })
+          : withMoment(t, `notifications.row.absence_${answer}`, when),
         context: compactMetaLine(
-          notification.metadata.project_name,
-          formatEventMoment(
-            notification.metadata, lang, t, notification.metadata.rehearsal_date,
+          m.project_name,
+          range || when ? undefined : formatEventMoment(m, lang, t, m.rehearsal_date),
+        ),
+        quote: quoted(t, m.excuse_note),
+      };
+    }
+    case "PARTICIPATION_RESPONSE": {
+      // The answer names the event by its kind; the date under it says which
+      // evening, since a manager holds several productions at once.
+      const m = notification.metadata;
+      return {
+        actor: m.artist_name,
+        sentence: t(`notifications.row.rsvp_${rsvpAnswer(m.status, m.previous_status)}`, {
+          project: m.project_name,
+          context: eventKindContext(m.event_kind),
+        }),
+        context: formatEventMoment(m, lang, t),
+      };
+    }
+    case "ATTENDANCE_SUBMITTED": {
+      // Which rehearsal, and by how much: a manager triaging the bell plans
+      // tonight's first piece around fifteen minutes, not around "late".
+      const m = notification.metadata;
+      const when = formatEventPhrase(m, lang, t);
+      const minutes = m.status === "LATE" && m.minutes_late ? m.minutes_late : undefined;
+      const key =
+        m.status === "PRESENT"
+          ? "notifications.row.attendance_present"
+          : m.status !== "LATE"
+            ? "notifications.row.attendance_updated"
+            : minutes
+              ? "notifications.row.attendance_late_minutes"
+              : "notifications.row.attendance_late";
+      return {
+        actor: m.artist_name,
+        sentence: withMoment(t, key, when, minutes ? { count: minutes } : {}),
+        context: compactMetaLine(
+          m.project_name,
+          when ? undefined : formatEventMoment(m, lang, t, m.rehearsal_date),
+        ),
+      };
+    }
+    case "ANNOUNCEMENT_PENDING":
+      // The queue's safety net: what is waiting, where, and for how long. The
+      // people still in the dark are the reason to bother.
+      return {
+        sentence: t("notifications.row.announcement_pending", {
+          count: notification.metadata.change_count ?? 0,
+          project: notification.metadata.project_name,
+          duration: queueWaiting(
+            t,
+            notification.created_at,
+            notification.metadata.waiting_hours ?? 0,
           ),
-        ),
-        detail: t("notifications.inapp.absence_requested"),
-      };
-    case "PARTICIPATION_RESPONSE":
-      return {
-        title: notification.metadata.artist_name,
-        context: notification.metadata.project_name,
-        detail: statusPhrase(t, "participation", notification.metadata.status),
-      };
-    case "ATTENDANCE_SUBMITTED":
-      // Which rehearsal matters here: a manager triaging the bell needs to know
-      // whether this absence lands tonight or in three weeks.
-      return {
-        title: notification.metadata.artist_name,
-        context: compactMetaLine(
-          notification.metadata.project_name,
-          formatEventMoment(
-            notification.metadata, lang, t, notification.metadata.rehearsal_date,
-          ),
-        ),
-        detail: statusPhrase(t, "attendance", notification.metadata.status),
-      };
-    case "ANNOUNCEMENT_PENDING": {
-      // The queue's safety net. The project is the title because it is what the
-      // manager has to act on; the counts sit under it as the reason to bother.
-      const waiting = notification.metadata.waiting_hours ?? 0;
-      return {
-        title: notification.metadata.project_name,
-        context: compactMetaLine(
-          t("notifications.inapp.announcement_pending_changes", {
-            count: notification.metadata.change_count ?? 0,
-          }),
-          waiting >= 48
-            ? t("notifications.inapp.announcement_pending_days", {
-                count: Math.floor(waiting / 24),
-              })
-            : t("notifications.inapp.announcement_pending_hours", {
-                count: Math.max(waiting, 1),
-              }),
-        ),
+          context: eventKindContext(notification.metadata.event_kind),
+        }),
         detail: notification.metadata.recipient_count
-          ? t("notifications.inapp.announcement_pending_unaware", {
+          ? t("notifications.row.announcement_unaware", {
               count: notification.metadata.recipient_count,
             })
           : undefined,
       };
-    }
     case "SITE_COPY_PROPOSED": {
-      // The editor is the title: what the reader decides on opening this is
-      // whose judgement they are about to read, and how much of it.
+      // Whose judgement the reader is about to read, and how much of it.
       const scopes = notification.metadata.scopes ?? [];
       const named = scopes
         .map((entry) => entry.label || entry.scope)
         .filter(Boolean);
       return {
-        title: notification.metadata.author_name,
-        pill: t("notifications.inapp.site_copy_changes", {
+        actor: notification.metadata.author_name,
+        sentence: t("notifications.row.site_copy_proposed", {
           count: notification.metadata.proposal_count ?? 0,
         }),
         context:
@@ -481,9 +570,10 @@ const describe = (
       };
     case "NOTIFICATION_READ_RECEIPT":
       return {
-        title: notification.metadata.artist_name,
-        context: notification.metadata.original_title,
-        detail: t("notifications.inapp.read_receipt"),
+        actor: notification.metadata.artist_name,
+        sentence: t("notifications.row.read_receipt", {
+          title: notification.metadata.original_title,
+        }),
       };
     case "CONTRACT_ISSUED":
       // The eyebrow says "Contract"; only the row can say it needs signing.
@@ -748,9 +838,13 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     onClosePanel();
   };
 
-  const { title, pill, context, detail, changeChips, bullets } = describe(
-    notification, t, i18n.language,
-  );
+  const {
+    actor, sentence, title, pill, context, planStart, detail, quote, changeChips, bullets,
+  } = describe(notification, t, i18n.language);
+  // A sentence written to continue a name opens lowercase; should the name be
+  // missing, it has to stand as a sentence of its own.
+  const standalone =
+    sentence && !actor ? sentence.charAt(0).toUpperCase() + sentence.slice(1) : sentence;
   // The fallback covers a type the client doesn't know yet (a backend deploy
   // ahead of the app); it has to be localized like everything else.
   const typeLabel = t(`notifications.types.${notification.notification_type}`, {
@@ -816,11 +910,20 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           </time>
         </div>
 
-        {title && (
+        {(standalone || title) && (
           <div className="mt-1.5 flex items-start justify-between gap-2">
-            <Text as="span" size="sm" weight="semibold" className="min-w-0 leading-snug">
-              {title}
-            </Text>
+            {standalone && actor ? (
+              <Text size="sm" className="min-w-0 leading-snug">
+                <Text as="span" size="sm" weight="semibold" className="leading-snug">
+                  {actor}
+                </Text>{" "}
+                {standalone}
+              </Text>
+            ) : (
+              <Text as="span" size="sm" weight="semibold" className="min-w-0 leading-snug">
+                {standalone || title}
+              </Text>
+            )}
             {pill && (
               <Badge
                 variant="outline"
@@ -838,9 +941,21 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           </Caption>
         )}
 
+        {planStart && (
+          <Caption color="graphite" className="mt-1 line-clamp-2 leading-snug">
+            {planStart}
+          </Caption>
+        )}
+
         {detail && (
           <Caption color="graphite" className="mt-1 line-clamp-3 leading-snug">
             {detail}
+          </Caption>
+        )}
+
+        {quote && (
+          <Caption color="graphite" className="mt-1 line-clamp-2 leading-snug">
+            {quote}
           </Caption>
         )}
 

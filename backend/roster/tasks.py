@@ -336,6 +336,7 @@ def dispatch_announcement_nudges() -> dict:
         metadata = AnnouncementPendingMetadata(
             project_id=item.project.id,
             project_name=item.project.title,
+            event_kind=item.project.event_kind,
             change_count=item.change_count,
             recipient_count=item.recipient_count,
             waiting_hours=int((now - item.waiting_since).total_seconds() // 3600),
