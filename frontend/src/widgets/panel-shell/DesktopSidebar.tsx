@@ -15,6 +15,7 @@ import { useNotesPanel } from "@/features/notes/hooks/useNotesPanel";
 import type { AuthUser } from "@/shared/auth/auth.types";
 import { canEditSiteCopy } from "@/shared/auth/rbac";
 import { cn } from "@/shared/lib/utils";
+import { useTheme } from "@/shared/theme/useTheme";
 import { useSidebarKinematics } from "@/shared/ui/kinematics/hooks/useSidebarKinematics";
 
 import { Heading, Eyebrow, Label } from "@/shared/ui/primitives/typography";
@@ -98,6 +99,11 @@ export const DesktopSidebar = ({
     handleMouseLeave,
   } = useSidebarKinematics();
   const { isPinned, togglePin } = useSidebarPin();
+  // The house mark is a raster, so it cannot take a CSS colour: gold on the dark
+  // marble, the panel ink on the light one (gold there sits under 3 : 1 and loses
+  // its hairlines). The ink file is the same raster recoloured by
+  // scripts/generate-pwa-icons.mjs.
+  const { resolved: theme } = useTheme();
   const { open: openCommandPalette } = useCommandPalette();
   // Opens with the caret already in the composer. This button only exists under
   // `fine-pointer`, so there is no on-screen keyboard to summon.
@@ -161,7 +167,8 @@ export const DesktopSidebar = ({
           {/* ---- Brand + pin ---- */}
           <div className="relative mb-3 flex h-14 w-full shrink-0 items-center overflow-hidden">
             <motion.img
-              src="/logo_gold.png"
+              src={theme === "dark" ? "/logo_gold.png" : "/logo_ink.png"}
+              alt=""
               initial={false}
               animate={{
                 opacity: isExpanded ? 0 : 1,

@@ -4,9 +4,10 @@
  * not this hook — owns the `data-theme` attribute and the OS listener
  * ({@link module:shared/theme/themeController}), so the theme is applied whether
  * or not any component is mounted. This hook only projects the live snapshot
- * and hands back the setter, for the two consumers that need to READ the theme
- * in React: the settings control and any third-party surface that paints its
- * own skin (the toast portal).
+ * and hands back the setter, for the consumers that need to READ the theme in
+ * React: the settings control, any third-party surface that paints its own skin
+ * (the toast portal), and rasters that cannot take a CSS colour (the desktop
+ * sidebar's house mark).
  * @architecture Enterprise SaaS 2026
  * @module shared/theme/useTheme
  */

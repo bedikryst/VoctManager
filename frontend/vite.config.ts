@@ -83,7 +83,9 @@ export default defineConfig(({ mode }) => {
           "assets/**/*.{js,mjs,css,wasm}",
           "fonts/*.woff2",
           "icons/*.png",
-          "logo_gold.png",
+          "logo_{gold,ink}.png",
+          // Only the favicon; the other brand/ files are masters for scripts/generate-pwa-icons.mjs.
+          "brand/favicon.svg",
         ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
