@@ -19,7 +19,12 @@
  *     all, and from where. Two goals, not one per button: which file an editor took is in the
  *     host's access log, and at this traffic a per-button split says nothing. Copy and download
  *     stay apart because the Kopiuj texts are a transcription kept in step by hand with the
- *     board's files, and only this count says whether that work is used.
+ *     board's files, and only this count says whether that work is used;
+ *   - the landing threshold's answer: entered with the ensemble playing, or in silence. Unlike a
+ *     split between buttons, every visitor who meets the question answers it, so the two goals
+ *     are a ratio over the landing's whole audience, and it says whether the audio path that
+ *     shapes the landing's first seconds is taken at all. A saved choice skips the question for
+ *     three hours (useAudioChoice), so a goal counts a choice made, not a visit.
  *  A moment the backend already records at the same instant (the Axepta submit creates the Donation
  *  row) is not a goal: the ledger is the backend, Plausible adds nothing there.
  *  Where a goal fires on more than one page, the page path in the goal's own breakdown tells them
@@ -50,6 +55,9 @@ export const GOALS = {
   /* /press in use (scripts/press-goals.ts, and the composer's own archive). */
   pressDownload: "press+pobranie",
   pressCopy: "press+kopiuj",
+  /* The landing threshold (islands/landing/Preloader.tsx). Escape answers "silence". */
+  enteredWithSound: "wejscie+dzwiek",
+  enteredInSilence: "wejscie+cisza",
 } as const;
 
 export type Goal = (typeof GOALS)[keyof typeof GOALS];

@@ -55,7 +55,8 @@
  *   - rite already seen this session (e.g. TTL expired mid-session) → the question
  *     immediately, without the ceremony.
  *
- *  The chosen option is written here and broadcast as `voct:audio-choice`; the
+ *  The chosen option is written here, reported to Plausible (`wejscie+dzwiek` /
+ *  `wejscie+cisza`, lib/plausible) and broadcast as `voct:audio-choice`; the
  *  always-mounted AudioController starts the ambient inside the same click call stack
  *  (autoplay-policy compliant). Scroll lock: `preload-open` during the rite,
  *  `threshold-open` during the choice — GratitudeModal polls exactly these two classes.
@@ -67,6 +68,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Locale } from "../../i18n/config";
 import type { LandingChrome, LandingCopy } from "../../i18n/content/landing";
+import { GOALS, track } from "../../lib/plausible";
 import { BrandGlyph } from "./BrandGlyph";
 import { useAudioChoice, type AudioChoice } from "./hooks/useAudioChoice";
 import { useBodyClass } from "./hooks/useBodyClass";
@@ -356,6 +358,7 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
       // AudioController (always mounted) starts the ambient synchronously inside this
       // same click call stack — the user gesture WebAudio needs.
       window.dispatchEvent(new CustomEvent("voct:audio-choice", { detail: { choice } }));
+      track(choice === "voice" ? GOALS.enteredWithSound : GOALS.enteredInSilence);
       setPhase("hiding");
     },
     [write],
