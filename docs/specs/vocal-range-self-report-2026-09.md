@@ -10,13 +10,13 @@ Stage 4 (the conductor's view) and Stage 5 (microphone) built 2026-09-27 in para
 same day ("Audit of Stages 4–5" under Stage 5). Items 1–5 (the microphone stops on every path)
 fixed 2026-09-27 and pinned by `usePitchDetection.test.tsx`; typecheck, lint, tests and build
 green; committed 2026-09-27 with both stages. Items 6–9 and 11–13 fixed and committed 2026-09-27
-(97889e00), not seen; 14 decided (kept as is); 10 waits on the developer. Nothing tried on an
+(80676489), not seen; 14 decided (kept as is); 10 waits on the developer. Nothing tried on an
 iPhone yet. The developer's look at the prompt on dev (2026-09-27, desktop, dark) asked for the
-"Polish pass" below: committed 2026-09-27 (9d7e7273) and seen on desktop. His one remark, that
+"Polish pass" below: committed 2026-09-27 (96098e82) and seen on desktop. His one remark, that
 the mic button ended the capture on its own a moment after the tap, led to "Sing" / "Done"
 (under Stage 5). That and the conductor's own figures per voice, which reshaped the keyboard
 ("Keyboard window per voice" and "More keys" under Stage 3) and the head copy, are committed
-(31dd7bd8 and before), not seen. Stage 7 (the reader chooses the notation) and Stage 8.1
+(c8d3cd19 and before), not seen. Stage 7 (the reader chooses the notation) and Stage 8.1
 (backend) built, audited ("Audit of Stage 7 and 8.1" under Stage 8) and committed 2026-09-27,
 two small follow-ups open. Stages 8.2–8.4 (frontend) built and committed 2026-09-27. None of
 Stages 7–8 seen in a browser; `core/0029` and `roster/0066`–`0068` not run anywhere. Next: the
@@ -571,7 +571,7 @@ Conductor's view:
     on every Artists list payload and is persisted in the query cache on every manager's device.
     Decide whether the list carries it, or only the editor.
 
-**Fixed 2026-09-27 (items 6–9 and 11–13; committed as 97889e00, not seen):**
+**Fixed 2026-09-27 (items 6–9 and 11–13; committed as 80676489, not seen):**
 - 6: Stage 5's hold rule now says what `heldPitch` does.
 - 7: the keyboard scrolls to keep a live cursor in view. When the cursor comes within 15 % of the
   window's height of an edge, the keys bring it back to the middle. Only a voice moves the cursor,

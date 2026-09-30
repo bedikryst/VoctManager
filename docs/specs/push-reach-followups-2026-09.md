@@ -2,7 +2,7 @@
 
 Status: **all three stages built and audited 2026-09-27, committed, not viewed in the browser.**
 Left: view Stage 3, prod `make deploy` (applies notifications/0023). How it works
-now is in `docs/web-push-architecture.md` §12. Builds on a91fb73a. Where the build departs from
+now is in `docs/web-push-architecture.md` §12. Builds on 8af983a6. Where the build departs from
 the plan below:
 
 - Stage 1: a network error does **not** count towards `consecutive_failures` (nor reset it). An

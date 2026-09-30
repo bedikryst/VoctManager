@@ -4,17 +4,17 @@ Status: **P0 and P1 fixed 2026-09-24. Q1–Q7 answered (§4). P2 and P3 fixed 20
 the decisions they needed; L4 needs no code). What is left is the prod deploy of `finance`, whose
 runbook is §6.**
 
-Scope: `f20507d4..9fa587c6`, the implementation of `project-finance-2026-09.md` (the "spec" below).
+Scope: `f20507d4..280f0752`, the implementation of `project-finance-2026-09.md` (the "spec" below).
 The commit messages in that range do not describe their content:
 
 | commit | message says | holds |
 |---|---|---|
-| `60a59c19` | score stand concert plan | Stages 1 + 1b (ledger backend, documents) |
-| `2cefe8dc` | user_email for representatives | board account e-mails in `finance/foundation.py` |
-| `3facfbbc` | dashboard nav | Stages 2 + 3 (ledger frontend, global page, legacy removal) |
-| `79ec3d58` | translations + nginx | Stage 4 (plan, expenses, budget states) |
-| `b1258867` | funding translations | Stage 5 (funding) |
-| `9fa587c6` | patron summary | Stage 6 (reports and exports) |
+| `7cc6baa8` | score stand concert plan | Stages 1 + 1b (ledger backend, documents) |
+| `1b0a6b46` | user_email for representatives | board account e-mails in `finance/foundation.py` |
+| `60c81adc` | dashboard nav | Stages 2 + 3 (ledger frontend, global page, legacy removal) |
+| `8b9fd406` | translations + nginx | Stage 4 (plan, expenses, budget states) |
+| `7dbac713` | funding translations | Stage 5 (funding) |
+| `280f0752` | patron summary | Stage 6 (reports and exports) |
 
 Method: tools once, then five read-only reviewers, each covering one kind of risk across the whole
 range (money rules, access and privacy, the frontend/backend contract, legacy removal and data copy,
@@ -228,7 +228,7 @@ Legacy leftovers:
   now redirects to a manager-only page. Nothing emits it today.
 - **L3** `data_copy.py:50-52`: `paid_on` is taken in the project's timezone, not from `paid_at.date()`
   (spec 542), and `paid_marked_at` stays NULL.
-- **L4** Dev database only: fee edits made between `60a59c19` and `3facfbbc` were dropped by 0062.
+- **L4** Dev database only: fee edits made between `7cc6baa8` and `60c81adc` were dropped by 0062.
 
 ## 3. Test gaps worth closing with the fixes
 
