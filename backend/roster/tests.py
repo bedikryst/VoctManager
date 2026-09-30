@@ -9028,6 +9028,58 @@ class AnnouncementNudgeTests(TestCase):
         result, _ = self._sweep()
         self.assertEqual(result["nudged"], 0)
 
+    # -- the rows it leaves behind ------------------------------------------------
+
+    def _nudge_row(self, project: Project | None = None):
+        """A nudge already sitting unread in the manager's bell."""
+        from notifications.models import Notification
+
+        return Notification.objects.create(
+            recipient=self.manager_user,
+            notification_type=NotificationType.ANNOUNCEMENT_PENDING,
+            metadata={"project_id": str((project or self.project).id), "change_count": 1},
+        )
+
+    def test_a_new_nudge_reads_the_one_it_restates(self) -> None:
+        """Yesterday's row quoted yesterday's numbers; beside today's it would
+        make two claims about one queue. Another project's nudge is left alone."""
+        other = Project.objects.create(
+            title="Magnificat", date_time=timezone.now() + timedelta(days=40),
+            status=Project.Status.ACTIVE,
+        )
+        stale_row, unrelated = self._nudge_row(), self._nudge_row(other)
+        self._queue()
+        self._age(25)
+
+        result, _ = self._sweep()
+
+        self.assertEqual(result["nudged"], 1)
+        stale_row.refresh_from_db()
+        unrelated.refresh_from_db()
+        self.assertTrue(stale_row.is_read)
+        self.assertFalse(unrelated.is_read)
+
+    def test_publishing_reads_the_nudges(self) -> None:
+        from notifications.announcement_queue import AnnouncementQueue
+
+        row = self._nudge_row()
+        self._queue()
+        with patch("notifications.announcement_queue.send_bulk_notifications_task.delay"):
+            AnnouncementQueue.publish(self.project)
+
+        row.refresh_from_db()
+        self.assertTrue(row.is_read)
+
+    def test_discarding_reads_the_nudges(self) -> None:
+        from notifications.announcement_queue import AnnouncementQueue
+
+        row = self._nudge_row()
+        self._queue()
+        AnnouncementQueue.discard(self.project)
+
+        row.refresh_from_db()
+        self.assertTrue(row.is_read)
+
     # -- what the sweep deliberately ignores ------------------------------------
 
     def test_a_concert_that_has_already_happened_is_not_raised(self) -> None:

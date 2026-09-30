@@ -12,7 +12,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import { PUSH_OPENED_PARAM } from "@/shared/offline/swProtocol";
 
-import { useMarkPushOpened } from "../api/notifications.queries";
+import { useMarkNotificationsOpened } from "../api/notifications.queries";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // The server's ceiling for one opened push.
@@ -21,7 +21,7 @@ const MAX_OPENED_IDS = 100;
 export const usePushOpened = (): void => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { mutate: markOpened } = useMarkPushOpened();
+  const { mutate: markOpened } = useMarkNotificationsOpened();
   const consumed = useRef<string | null>(null);
   const raw = new URLSearchParams(location.search).get(PUSH_OPENED_PARAM);
 

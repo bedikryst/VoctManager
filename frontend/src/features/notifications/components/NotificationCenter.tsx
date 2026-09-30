@@ -3,7 +3,8 @@
  * @description Bell trigger + a responsive notification surface in the Ethereal
  * language. On a fine pointer it slides out as a left drawer beside the sidebar;
  * on touch it rises as a draggable bottom-sheet. Both share one body (header +
- * unread/earlier sections + empty/loading states). Real enter/exit animations:
+ * unread/earlier sections + empty/loading states); each section folds a burst
+ * or a thread into one row (lib/notificationFold). Real enter/exit animations:
  * the scrim and panel are direct `AnimatePresence` children (motion elements),
  * not wrapped in a static div, so closing animates instead of snapping.
  * @module features/notifications/components
@@ -36,6 +37,7 @@ import {
   useMarkAllNotificationsRead,
   useMarkNotificationsSeen,
 } from "../api/notifications.queries";
+import { foldNotifications, type BellEntry } from "../lib/notificationFold";
 import type { NotificationDTO } from "../types/notifications.dto";
 import { NotificationItem } from "./NotificationItem";
 import { NotificationItemBoundary } from "./NotificationItemBoundary";
@@ -112,15 +114,15 @@ const bucketFor = (iso: string, todayStart: number): DayBucketKey => {
   return "older";
 };
 
-/** Buckets read notifications into ordered day groups, preserving newest-first
- *  order within each group and dropping any empty bucket. */
+/** Buckets read entries into ordered day groups by their newest row, preserving
+ *  newest-first order within each group and dropping any empty bucket. */
 const groupByDay = (
-  items: readonly NotificationDTO[],
-): { key: DayBucketKey; items: NotificationDTO[] }[] => {
+  items: readonly BellEntry[],
+): { key: DayBucketKey; items: BellEntry[] }[] => {
   const todayStart = startOfDayMs(new Date());
-  const map = new Map<DayBucketKey, NotificationDTO[]>();
+  const map = new Map<DayBucketKey, BellEntry[]>();
   for (const item of items) {
-    const key = bucketFor(item.created_at, todayStart);
+    const key = bucketFor(item.lead.created_at, todayStart);
     const bucket = map.get(key);
     if (bucket) bucket.push(item);
     else map.set(key, [item]);
@@ -192,13 +194,15 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     if (isOpen && newCount > 0) markSeen();
   }, [isOpen, newCount, markSeen]);
 
+  // Folded within each read state: the new section holds only what is new, and
+  // a thread's read history does not climb back above it.
   const { unread, read } = useMemo(() => {
     const unreadList: NotificationDTO[] = [];
     const readList: NotificationDTO[] = [];
     for (const item of notifications) {
       (item.is_read ? readList : unreadList).push(item);
     }
-    return { unread: unreadList, read: readList };
+    return { unread: foldNotifications(unreadList), read: foldNotifications(readList) };
   }, [notifications]);
 
   const readGroups = useMemo(() => groupByDay(read), [read]);
@@ -218,9 +222,11 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     }
   };
 
+  // The count is of notifications, not rows — the unit of the header and the
+  // bell badge — and a folded row states how many it holds.
   const renderSection = (
     label: string,
-    items: readonly NotificationDTO[],
+    items: readonly BellEntry[],
     withCount: boolean,
   ): React.JSX.Element => (
     <div className="mb-1.5 last:mb-0">
@@ -233,14 +239,18 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
         </Eyebrow>
         {withCount && (
           <Badge variant="warning" casing="natural" className="tabular-nums">
-            {items.length}
+            {items.reduce((total, entry) => total + entry.members.length, 0)}
           </Badge>
         )}
       </div>
       <div className="flex flex-col gap-0.5">
-        {items.map((item) => (
-          <NotificationItemBoundary key={item.id} fallback={<FallbackRow />}>
-            <NotificationItem notification={item} onClosePanel={close} />
+        {items.map((entry) => (
+          <NotificationItemBoundary key={entry.lead.id} fallback={<FallbackRow />}>
+            <NotificationItem
+              notification={entry.lead}
+              members={entry.members}
+              onClosePanel={close}
+            />
           </NotificationItemBoundary>
         ))}
       </div>

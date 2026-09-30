@@ -49,7 +49,7 @@ from .models import (
     NotificationType,
     PendingAnnouncement,
 )
-from .services import NotificationRecipientPolicy
+from .services import NotificationRecipientPolicy, NotificationService
 from .tasks import send_bulk_notifications_task, send_notification_task
 
 if TYPE_CHECKING:
@@ -796,6 +796,7 @@ class AnnouncementQueue:
             PendingAnnouncement.objects.filter(
                 id__in=[row.id for row in taken]
             ).update(published_at=now, updated_at=now)
+            _resolve_nudges(project)
 
         logger.info(
             "[AnnouncementQueue] Published %d row(s) on project %s as %d message(s) "
@@ -821,7 +822,9 @@ class AnnouncementQueue:
         )
         if ids is not None:
             queryset = queryset.filter(id__in=list(ids))
-        return queryset.update(is_deleted=True, updated_at=timezone.now())
+        discarded = queryset.update(is_deleted=True, updated_at=timezone.now())
+        _resolve_nudges(project)
+        return discarded
 
     @staticmethod
     def discard_subject(project: Project, subject_type: str, subject_id: str) -> int:
@@ -1167,3 +1170,12 @@ def _dispatch(announcement: ResolvedAnnouncement, recipient_ids: list[str]) -> N
         level=announcement.level,
         metadata=announcement.metadata,
     ))
+
+
+def _resolve_nudges(project: Project) -> None:
+    """Mark this project's "N changes are waiting" rows read, for every manager.
+    The queue they count has been sent or dropped, and the nudge went to all
+    managers, so one manager acting on it answers it for all of them."""
+    NotificationService.mark_resolved(
+        NotificationType.ANNOUNCEMENT_PENDING, project_id=str(project.id)
+    )

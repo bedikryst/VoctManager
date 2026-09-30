@@ -3,7 +3,9 @@
  * @description A single notification row in the Ethereal language. The row
  * reads as one sentence — the actor in semibold, the rest of the sentence in
  * regular weight — under a category eyebrow, then what the sentence did not
- * say and any text a person wrote, quoted. Accent is driven by type (gold=project, sage=schedule/positive, amethyst=content,
+ * say and any text a person wrote, quoted. A folded entry (a singer's burst of
+ * attendance reports, a thread's messages) renders as one row over all its
+ * members and is read whole. Accent is driven by type (gold=project, sage=schedule/positive, amethyst=content,
  * incense=message) and escalated to crimson only for genuine alarms
  * (URGENT level, cancellations, rejections) — crimson stays alarm-only.
  * @module features/notifications/components
@@ -34,9 +36,13 @@ import {
 
 import type {
   BriefingItemMetadata,
+  ManagerActionMetadata,
   NotificationDTO,
 } from "../types/notifications.dto";
-import { useMarkNotificationRead } from "../api/notifications.queries";
+import {
+  useMarkNotificationRead,
+  useMarkNotificationsOpened,
+} from "../api/notifications.queries";
 import {
   briefingItemSummary,
   compactMetaLine,
@@ -66,9 +72,16 @@ import { Badge } from "@/shared/ui/primitives/Badge";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 interface NotificationItemProps {
+  /** The row rendered; for a folded entry, its newest member. */
   notification: NotificationDTO;
+  /** Every row the entry speaks for, newest first, `notification` included.
+   *  Absent for a row standing alone. See `lib/notificationFold`. */
+  members?: readonly NotificationDTO[];
   onClosePanel: () => void;
 }
+
+/** The server's ceiling on the rows one opened entry may read. */
+const MAX_OPENED_IDS = 100;
 
 /** A rehearsal's topic as the conductor wrote it, labelled the way the push
  *  labels it; undefined when blank. */
@@ -118,39 +131,113 @@ const rsvpAnswer = (
   return "changed";
 };
 
-/** How long an announcement queue has been waiting, counted from now: the hours
- *  stored on the nudge were true only when it went out. Hours under 48, then
- *  days — the server's `_waiting_phrase` rule. */
-const queueWaiting = (t: TFunc, createdAt: string, storedHours: number): string => {
+/** How long an announcement queue has been waiting: the hours stored on the
+ *  nudge were true only when it went out, so they are counted on to now — or,
+ *  once the row is read, to that moment. A read nudge is answered (the queue
+ *  sent, dropped or nudged about again), and its wait must not keep growing in
+ *  the history. Hours under 48, then days — the server's `_waiting_phrase` rule. */
+const queueWaiting = (
+  t: TFunc,
+  createdAt: string,
+  storedHours: number,
+  readAt: string | null,
+): string => {
   const since = Date.parse(createdAt) - storedHours * 3_600_000;
-  const live = Math.floor((Date.now() - since) / 3_600_000);
+  const until = readAt ? Date.parse(readAt) : Date.now();
+  const live = Math.floor((until - since) / 3_600_000);
   const hours = Math.max(1, Number.isFinite(live) ? live : storedHours);
   return hours < 48
     ? t("notifications.row.waiting_hours", { count: hours })
     : t("notifications.row.waiting_days", { count: Math.floor(hours / 24) });
 };
 
-/** How many briefing items the bell row lists before the rest becomes a count.
- *  The full account is in the email; this row exists to be scanned. */
-const BRIEFING_BULLET_LIMIT = 5;
+/** How many bullets a bell row lists before the rest becomes a count. The full
+ *  account is elsewhere (the email, the rehearsal page); this row exists to be
+ *  scanned. */
+const BULLET_LIMIT = 5;
 
-/** The briefing's items as bullet lines, capped so one busy publication can't
- *  turn a bell row into a page. */
+/** Bullet lines, capped so one busy publication or one long burst can't turn a
+ *  bell row into a page. */
+const cappedBullets = (t: TFunc, lines: readonly (string | undefined)[]): string[] => {
+  const present = lines.filter((line): line is string => Boolean(line));
+  if (present.length <= BULLET_LIMIT) return present;
+  return [
+    ...present.slice(0, BULLET_LIMIT),
+    t("notifications.briefing.more", { count: present.length - BULLET_LIMIT }),
+  ];
+};
+
+/** The briefing's items as bullet lines. */
 const briefingBullets = (
   t: TFunc,
   lang: string,
   items: readonly BriefingItemMetadata[],
-): string[] => {
-  const lines = items
-    .map((item) => briefingItemSummary(t, lang, item))
-    .filter(Boolean);
-  if (lines.length <= BRIEFING_BULLET_LIMIT) return lines;
-  return [
-    ...lines.slice(0, BRIEFING_BULLET_LIMIT),
-    t("notifications.briefing.more", {
-      count: lines.length - BRIEFING_BULLET_LIMIT,
-    }),
-  ];
+): string[] => cappedBullets(t, items.map((item) => briefingItemSummary(t, lang, item)));
+
+/**
+ * A folded burst's reports, one per rehearsal — the latest word on an evening
+ * wins, as in the push fold, since "present" then "late" said one thing — in
+ * the order the evenings fall.
+ */
+const latestPerRehearsal = (
+  members: readonly NotificationDTO[],
+): ManagerActionMetadata[] => {
+  const latest = new Map<string, ManagerActionMetadata>();
+  // Members arrive newest first, so the first report seen per evening is its last.
+  for (const member of members) {
+    if (member.notification_type !== "ATTENDANCE_SUBMITTED") continue;
+    const key = member.metadata.rehearsal_id || member.id;
+    if (!latest.has(key)) latest.set(key, member.metadata);
+  }
+  const starts = (m: ManagerActionMetadata): number => {
+    const value = Date.parse(m.starts_at ?? "");
+    return Number.isFinite(value) ? value : Number.POSITIVE_INFINITY;
+  };
+  return [...latest.values()].sort((a, b) => starts(a) - starts(b) || 0);
+};
+
+/**
+ * One row for a singer's burst of attendance reports: how many evenings, how
+ * many of them late, then one bullet per evening with its lateness. Only
+ * PRESENT and LATE reach this type (an absence is its own), so anything else
+ * is a legacy row and the sentence falls back to "updates".
+ */
+const describeAttendanceBurst = (
+  t: TFunc,
+  lang: string,
+  artistName: string,
+  reports: readonly ManagerActionMetadata[],
+): RowContent => {
+  const count = reports.length;
+  const late = reports.filter((m) => m.status === "LATE").length;
+  const known = reports.every((m) => m.status === "PRESENT" || m.status === "LATE");
+  const key = !known
+    ? "attendance_fold_updated"
+    : late === 0
+      ? "attendance_fold_present"
+      : late === count
+        ? "attendance_fold_late"
+        : "attendance_fold_mixed";
+  return {
+    actor: artistName,
+    sentence: t(`notifications.row.${key}`, { count, late }),
+    context: compactMetaLine(...new Set(reports.map((m) => m.project_name))),
+    bullets: cappedBullets(
+      t,
+      reports.map((m) =>
+        compactMetaLine(
+          formatEventMoment(m, lang, t, m.rehearsal_date),
+          m.status !== "LATE"
+            ? undefined
+            : m.minutes_late
+              ? t("notifications.row.attendance_fold_item_late_minutes", {
+                  minutes: m.minutes_late,
+                })
+              : t("notifications.row.attendance_fold_item_late"),
+        ),
+      ),
+    ),
+  };
 };
 
 interface RowContent {
@@ -176,6 +263,9 @@ interface RowContent {
   /** Text a person wrote — an excuse note, an excerpt — already in the
    *  locale's quotation marks. */
   quote?: string;
+  /** Under the quote, what a folded thread holds beyond it ("i jeszcze
+   *  2 wiadomości"). */
+  more?: string;
   /** Structured field-change chips. */
   changeChips?: string[];
   /** A briefing's items, one scannable line each. */
@@ -190,6 +280,7 @@ interface RowContent {
  */
 const describe = (
   notification: NotificationDTO,
+  members: readonly NotificationDTO[],
   t: TFunc,
   lang: string,
 ): RowContent => {
@@ -547,8 +638,13 @@ const describe = (
     }
     case "ATTENDANCE_SUBMITTED": {
       // Which rehearsal, and by how much: a manager triaging the bell plans
-      // tonight's first piece around fifteen minutes, not around "late".
+      // tonight's first piece around fifteen minutes, not around "late". A
+      // burst over several evenings is one piece of news, and one row.
       const m = notification.metadata;
+      const reports = latestPerRehearsal(members);
+      if (reports.length > 1) {
+        return describeAttendanceBurst(t, lang, m.artist_name, reports);
+      }
       const when = formatEventPhrase(m, lang, t);
       const minutes = m.status === "LATE" && m.minutes_late ? m.minutes_late : undefined;
       const key =
@@ -579,6 +675,7 @@ const describe = (
             t,
             notification.created_at,
             notification.metadata.waiting_hours ?? 0,
+            notification.read_at,
           ),
           context: eventKindContext(notification.metadata.event_kind),
         }),
@@ -610,6 +707,7 @@ const describe = (
     }
     case "MESSAGE_RECEIVED": {
       // Subject + snippet are user-authored content — passed through verbatim.
+      // A thread is one row: its newest message speaks, the rest are counted.
       const m = notification.metadata;
       return {
         actor: m.sender_name || undefined,
@@ -617,6 +715,10 @@ const describe = (
           ? t("notifications.row.message_received", { subject: m.title })
           : t("notifications.row.message_received_untitled"),
         quote: quoted(t, m.snippet),
+        more:
+          members.length > 1
+            ? t("notifications.row.message_more", { count: members.length - 1 })
+            : undefined,
       };
     }
     case "CHANNEL_MESSAGE":
@@ -772,12 +874,15 @@ const resolveVisual = (
 
 export const NotificationItem: React.FC<NotificationItemProps> = ({
   notification,
+  members: foldedMembers,
   onClosePanel,
 }) => {
   const { i18n, t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { mutate: markAsRead } = useMarkNotificationRead();
+  const { mutate: markOpened } = useMarkNotificationsOpened();
+  const members = foldedMembers ?? [notification];
 
   const isAdmin = isManager(user);
   const isRead = notification.is_read;
@@ -883,8 +988,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     if (type === "ATTENDANCE_SUBMITTED" || type === "ABSENCE_REQUESTED") {
       // A singer's report names one evening, so it opens on that evening —
       // both surfaces spend `?rehearsal=` on arrival. Mirrors the push and the
-      // e-mail. Ahead of the substring chain, which would drop the id.
-      const rehearsalId = notification.metadata.rehearsal_id;
+      // e-mail. Ahead of the substring chain, which would drop the id. A burst
+      // opens on its first evening, the one its list starts with.
+      const rehearsalId =
+        latestPerRehearsal(members)[0]?.rehearsal_id ?? notification.metadata.rehearsal_id;
       const base = isAdmin ? "/panel/rehearsals" : "/panel/schedule";
       return navigate(rehearsalId ? `${base}?rehearsal=${rehearsalId}` : base);
     }
@@ -901,7 +1008,12 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   };
 
   const handleClick = () => {
-    if (!notification.is_read) {
+    // A folded row is read whole: it spoke for every member, and a member left
+    // unread would resurface as a row of its own.
+    const unreadIds = members.filter((member) => !member.is_read).map((member) => member.id);
+    if (members.length > 1) {
+      if (unreadIds.length > 0) markOpened(unreadIds.slice(0, MAX_OPENED_IDS));
+    } else if (!notification.is_read) {
       markAsRead(notification.id);
     }
     navigateToContext();
@@ -909,8 +1021,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   };
 
   const {
-    actor, sentence, title, context, planStart, detail, quote, changeChips, bullets,
-  } = describe(notification, t, i18n.language);
+    actor, sentence, title, context, planStart, detail, quote, more, changeChips, bullets,
+  } = describe(notification, members, t, i18n.language);
   // A sentence written to continue a name opens lowercase; should the name be
   // missing, it has to stand as a sentence of its own.
   const standalone =
@@ -1018,6 +1130,12 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         {quote && (
           <Caption color="graphite" className="mt-1 line-clamp-2 leading-snug">
             {quote}
+          </Caption>
+        )}
+
+        {more && (
+          <Caption color="muted" className="mt-0.5 leading-snug">
+            {more}
           </Caption>
         )}
 

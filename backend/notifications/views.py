@@ -230,10 +230,11 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['post'], url_path='opened')
     def opened(self, request: Request) -> Response:
         """
-        The reader tapped a push; `ids` are the rows it spoke for. Reading the
-        push is reading them, except for a type whose own panel surface does
-        the reading (`_READ_BY_ITS_OWN_SURFACE`). Rows of another reader are
-        ignored rather than refused: the ids come from a URL.
+        The reader opened an entry that spoke for several rows — a tapped push,
+        or a bell row folding a burst or a thread; `ids` are those rows. Opening
+        it is reading them, except for a type whose own panel surface does the
+        reading (`_READ_BY_ITS_OWN_SURFACE`). Rows of another reader are ignored
+        rather than refused: the ids come from a URL.
         """
         serializer = PushOpenedSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

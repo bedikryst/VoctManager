@@ -69,8 +69,9 @@ export const NotificationService = {
     await api.post(`${NOTIFICATIONS_BASE_URL}mark-all-read/`, {});
   },
 
-  /** A tapped push spoke for these rows; the server reads the ones it may. */
-  markPushOpened: async (ids: readonly string[]): Promise<void> => {
+  /** An opened entry — a tapped push, a folded bell row — spoke for these rows;
+   *  the server reads the ones it may. */
+  markOpened: async (ids: readonly string[]): Promise<void> => {
     await api.post(`${NOTIFICATIONS_BASE_URL}opened/`, { ids });
   },
 

@@ -42,7 +42,8 @@ class NotificationPreferenceBulkUpdateSerializer(serializers.Serializer):
 
 
 class PushOpenedSerializer(serializers.Serializer):
-    """The in-app rows a tapped push spoke for (its `notificationIds`)."""
+    """The in-app rows an opened entry spoke for: a tapped push's
+    `notificationIds`, or the members of a folded bell row."""
     ids = serializers.ListField(
         child=serializers.UUIDField(), allow_empty=False, max_length=100,
     )

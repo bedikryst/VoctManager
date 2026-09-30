@@ -16,6 +16,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { notificationKeys } from "@/features/notifications/api/notifications.queries";
 import i18n from "@/shared/config/i18n";
 import { toastApiError } from "@/shared/api/errors";
 import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
@@ -245,12 +246,15 @@ export const usePostMessage = (
   });
 };
 
+// Reading a thread also reads its bell rows on the server, so the bell is
+// refetched with the inbox rather than on its next poll.
 export const useMarkThreadRead = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => MessagingService.markRead(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: messagingKeys.all });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
   });
 };

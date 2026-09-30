@@ -102,13 +102,14 @@ export const useMarkAllNotificationsRead = () => {
   });
 };
 
-// 4b. Mutation: the rows a tapped push spoke for (`?n=`), read on arrival. The
-//     server skips the types a panel surface reads itself.
-export const useMarkPushOpened = () => {
+// 4b. Mutation: the rows an opened entry spoke for — a tapped push (`?n=`), read
+//     on arrival, or a bell row folding a burst or a thread. The server skips
+//     the types a panel surface reads itself.
+export const useMarkNotificationsOpened = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (ids: readonly string[]) => NotificationService.markPushOpened(ids),
+    mutationFn: (ids: readonly string[]) => NotificationService.markOpened(ids),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },

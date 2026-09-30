@@ -3,7 +3,8 @@
 @description API-level tests for the messaging domain: thread initiation by both
              parties, the hybrid ping-routing rule (directed assignee vs. management
              pool), thread reuse that keeps to the chosen recipient, queryset
-             isolation, unread accounting, manager-only triage, channel seats that
+             isolation, unread accounting (bell rows read with their thread),
+             manager-only triage, channel seats that
              close with their source (grant expiry, demotion), and erasure reaching
              the copies in other people's notifications.
              Notification emission is asserted by mocking NotificationService where
@@ -144,6 +145,56 @@ class MessagingFlowTests(APITestCase):
 
         self.assertEqual(self.client.post(f"{THREADS}{thread_id}/read/").status_code, 204)
         self.assertEqual(self.client.get(f"{THREADS}unread-count/").json()["unread_count"], 0)
+
+    def test_reading_a_thread_reads_its_bell_rows(self) -> None:
+        """One conversation is counted once: opening it reads the bell rows its
+        messages wrote to this reader, and nobody else's, and no other thread's."""
+        thread = Thread.objects.create(artist=self.artist, subject="Nuty", assignee=self.manager)
+        other = Thread.objects.create(artist=self.other_artist, subject="Inne", assignee=self.manager)
+
+        def row(recipient: Any, about: Thread) -> Notification:
+            return Notification.objects.create(
+                recipient=recipient,
+                notification_type=NotificationType.MESSAGE_RECEIVED,
+                metadata={"thread_id": str(about.id), "title": about.subject},
+            )
+
+        first, second = row(self.manager, thread), row(self.manager, thread)
+        elsewhere = row(self.manager, other)
+        someone_else = row(self.manager2, thread)
+
+        self.client.force_authenticate(user=self.manager)
+        self.assertEqual(self.client.post(f"{THREADS}{thread.id}/read/").status_code, 204)
+
+        for notification in (first, second, elsewhere, someone_else):
+            notification.refresh_from_db()
+        self.assertTrue(first.is_read)
+        self.assertTrue(second.is_read)
+        self.assertFalse(elsewhere.is_read)
+        self.assertFalse(someone_else.is_read)
+
+    def test_replying_reads_the_rows_it_answers(self) -> None:
+        """Answering is reading. A row written after the reply is still news."""
+        thread = Thread.objects.create(artist=self.artist, subject="Nuty", assignee=self.manager)
+        earlier = Notification.objects.create(
+            recipient=self.manager,
+            notification_type=NotificationType.MESSAGE_RECEIVED,
+            metadata={"thread_id": str(thread.id)},
+        )
+
+        self.client.force_authenticate(user=self.manager)
+        with patch(EMIT):
+            self.client.post(f"{THREADS}{thread.id}/messages/", {"body": "Już patrzę"}, format="json")
+        later = Notification.objects.create(
+            recipient=self.manager,
+            notification_type=NotificationType.MESSAGE_RECEIVED,
+            metadata={"thread_id": str(thread.id)},
+        )
+
+        earlier.refresh_from_db()
+        later.refresh_from_db()
+        self.assertTrue(earlier.is_read)
+        self.assertFalse(later.is_read)
 
     def test_triage_patch_is_manager_only(self) -> None:
         self.client.force_authenticate(user=self.manager)

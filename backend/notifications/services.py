@@ -15,8 +15,10 @@ Standards: SaaS 2026, ACID Compliant, Zero-State Leakage, Celery Safe-Serializat
 """
 
 import logging
+from datetime import datetime
 
 from django.db import transaction
+from django.utils import timezone
 
 from .delivery import default_channel_preferences
 from .dtos import NotificationCreateDTO, NotificationPreferenceUpdateDTO
@@ -67,7 +69,36 @@ class NotificationService:
             # Catch-all for database integrity errors or serialization failures
             logger.error(f"[NotificationService] Provisioning failed for UID:{dto.recipient_id}. Reason: {e}", exc_info=True)
             return None
-        
+
+    @staticmethod
+    def mark_resolved(
+        notification_type: str,
+        *,
+        recipient_id: int | None = None,
+        created_before: datetime | None = None,
+        **metadata: str,
+    ) -> int:
+        """Mark read the unread rows of one type that are no longer news.
+
+        For the rows a later event answers: a nudge about a queue that has since
+        been sent, a message in a thread its reader has since opened. Left
+        unread, the bell keeps asserting something the reader already dealt
+        with. `metadata` narrows by payload keys (`project_id=…`, `thread_id=…`);
+        without `recipient_id` it reaches every reader. Returns how many rows it
+        marked.
+        """
+        rows = Notification.objects.filter(
+            notification_type=notification_type,
+            is_read=False,
+            **{f"metadata__{key}": value for key, value in metadata.items()},
+        )
+        if recipient_id is not None:
+            rows = rows.filter(recipient_id=recipient_id)
+        if created_before is not None:
+            rows = rows.filter(created_at__lte=created_before)
+        now = timezone.now()
+        return rows.update(is_read=True, read_at=now, updated_at=now)
+
 class NotificationRecipientPolicy:
     """
     Resolves who a project notification is addressed to.

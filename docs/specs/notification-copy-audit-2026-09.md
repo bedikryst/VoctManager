@@ -1,6 +1,6 @@
 # Notification copy audit — the bell speaks in sentences
 
-Status: **Stages 1 and 2 implemented 2026-09-30** (records under each). Stages 3–4 open, in order.
+Status: **Stages 1–3 implemented 2026-09-30** (records under each). Stage 4 open.
 
 Written 2026-09-30 from a manager's bell full of rows like `Piotr Jewuła / Pochwała Stworzenia ·
 środa, 7 października o 18:14 / się spóźni`. Scope: every in-app surface that speaks for a
@@ -309,6 +309,27 @@ surfaces above.
   folds the older unread ones under it (`i jeszcze 2 wiadomości`). Reading the thread marks that
   reader's rows for it read: hook it where reading is recorded (`_touch_read_state` in
   `messaging/services.py`), so the bell and the messages badge stop counting one conversation twice.
+
+*Done 2026-09-30, and where it differs from the text above:*
+- The push fold's window is not 30 minutes: it is 10 s of quiet with a 60 s ceiling
+  (`push_fold.py`), because it holds a push back while it waits. The bell holds nothing back, so it
+  keeps the 30 minutes, measured from the burst's newest report (`lib/notificationFold.ts`).
+- Folding runs within each read state, and read history folds too: one row per thread in the
+  history as well, not only among unread rows. A burst keeps the latest report per rehearsal (as
+  the push fold does), lists the evenings in date order, capped at five like the briefing, and
+  opens on the first evening. The "Nowe" badge counts notifications, not rows, to match the header
+  and the bell badge.
+- Opening a folded row reads every member through the push's `opened` endpoint; the FE hook is now
+  `useMarkNotificationsOpened`.
+- Supersede lives in `NotificationService.mark_resolved`. Any publish that takes rows and any
+  discard (whole, partial, or the one a project cancellation runs) reads the project's nudges for
+  every manager. `discard_subject` / `discard_recipient` do not.
+- Found on the way: a read nudge counted its wait on to now, so `od 13 godzin` kept growing in the
+  history after the queue was sent. The wait now stops at `read_at`.
+- Thread rows are read only up to the moment of the read, and replying reads them too. Rows written
+  before this deploy for threads already read stay unread until clicked or "mark all read".
+- Not done, and in no stage: when a manager claims an unassigned thread, the other managers' rows
+  for it stay unread and point at a thread they can no longer open (Diagnosis 7).
 
 **Stage 4 — push and e-mail defects** (`message_content.py`, `backend/locale/*/django.po` + `.mo`).
 - Replace every `…(a)` form in sentences with narrative present (`powierza Ci`, `przesyła

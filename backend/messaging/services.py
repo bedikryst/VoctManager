@@ -115,10 +115,22 @@ class MessagingService:
 
     @staticmethod
     def _touch_read_state(thread_id: UUID, user_id: int, *, when: datetime) -> None:
+        """Advances the reader's pointer, and reads the bell rows it covers.
+
+        Reading or answering a conversation is reading its messages, so the bell
+        must not count them again. Only rows written up to `when`: a message
+        that arrives while the thread is open is still news until the next read.
+        """
         ThreadReadState.objects.update_or_create(
             thread_id=thread_id,
             user_id=user_id,
             defaults={'last_read_at': when, 'is_deleted': False},
+        )
+        NotificationService.mark_resolved(
+            NotificationType.MESSAGE_RECEIVED,
+            recipient_id=user_id,
+            created_before=when,
+            thread_id=str(thread_id),
         )
 
     # ------------------------------------------------------------------ #

@@ -18,7 +18,7 @@ from archive.models import Piece
 from notifications.announcement_queue import AnnouncementQueue
 from notifications.dtos import AnnouncementPendingMetadata
 from notifications.models import NotificationLevel, NotificationType
-from notifications.services import NotificationRecipientPolicy
+from notifications.services import NotificationRecipientPolicy, NotificationService
 from notifications.tasks import send_bulk_notifications_task
 from notifications.time_metadata import build_event_time_metadata
 
@@ -342,6 +342,11 @@ def dispatch_announcement_nudges() -> dict:
             waiting_hours=int((now - item.waiting_since).total_seconds() // 3600),
         ).model_dump(mode="json")
 
+        # The new nudge restates the queue with today's numbers; an older one
+        # left unread would keep quoting yesterday's beside it.
+        NotificationService.mark_resolved(
+            NotificationType.ANNOUNCEMENT_PENDING, project_id=str(item.project.id)
+        )
         ManagerNotificationHelper.notify_managers(
             notification_type=NotificationType.ANNOUNCEMENT_PENDING,
             metadata=metadata,
