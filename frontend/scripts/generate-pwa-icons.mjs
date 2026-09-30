@@ -21,6 +21,11 @@
  * size it was corrected for, never above it. The maskable icon shrinks the mark so the ring sits
  * well inside Android's circular crop, not against it.
  *
+ * Rasters that change under an unchanged name are addressed with a `?v=N` query in
+ * public/manifest.webmanifest, index.html (apple-touch-icon) and src/sw.ts (notification icon and
+ * badge): the OS and browser fetch them outside the service worker, through an HTTP cache that
+ * nginx lets hold png for 30 days. Bump N in all three whenever these outputs change.
+ *
  * EDGE below must stay in sync with public/manifest.webmanifest `background_color` so the icon
  * edge, splash and status bar read as one surface. An installed app keeps its old icon until it
  * is removed and re-added (iOS never refreshes a home-screen icon).
