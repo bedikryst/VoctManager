@@ -59,7 +59,16 @@ DOCUMENT_TYPE_LABELS: dict[str, str] = {
     ExpenseDocumentType.BILL: "Rachunek",
     ExpenseDocumentType.RECEIPT: "Paragon",
     ExpenseDocumentType.OTHER: "Inny dokument",
+    ExpenseDocumentType.NONE: "Brak dokumentu",
 }
+
+
+def expense_document_label(document_type: str, receipt_has_buyer_nip: bool) -> str:
+    """A receipt that names the foundation as buyer is booked differently from
+    one that does not, so the office reads which of the two it is."""
+    if document_type == ExpenseDocumentType.RECEIPT and receipt_has_buyer_nip:
+        return "Paragon z NIP fundacji"
+    return DOCUMENT_TYPE_LABELS.get(document_type, document_type)
 
 # A live contract is issued or signed; an annulled one is never on a row.
 CONTRACT_STATUS_LABELS: dict[str, str] = {
@@ -153,6 +162,7 @@ WARNING_TITLES: dict[str, str] = {
     "BELOW_MINIMUM_HOURLY_RATE": "Poniżej minimalnej stawki godzinowej",
     "SOURCE_OVERALLOCATED": "Źródło obciążone ponad swoją kwotę",
     "OUTSIDE_ELIGIBILITY": "Koszt poza okresem kwalifikowalności",
+    "UNDOCUMENTED_GRANT_COST": "Dotacja obciążona wydatkiem bez dokumentu",
     "OWN_SHARE_BELOW": "Za mały wkład własny",
     "ADMIN_CAP_EXCEEDED": "Za dużo kosztów administracyjnych",
     "UNPRICED": "Bez stawki",

@@ -1728,6 +1728,10 @@
         "title": "Cost outside the eligibility period",
         "hint": "The cost arose outside the period the source covers. The grantor will not accept it — move it to another source."
       },
+      "UNDOCUMENTED_GRANT_COST": {
+        "title": "Grant charged with an undocumented expense",
+        "hint": "A grant is settled with documents issued to the foundation, and this expense has no document or a receipt without the foundation's NIP. Get an invoice or move the expense to own funds."
+      },
       "OWN_SHARE_BELOW": {
         "title": "Own contribution too small",
         "hint": "The source requires part of the task to be covered by other money or by a non-financial contribution. Reduce the source's share or add an own contribution."
@@ -1746,6 +1750,7 @@
       "unknown_fee_reference": "This item is no longer in the project. Refresh the page.",
       "seat_not_billable": "This person is not in the cast or has declined, so they cannot be priced.",
       "item_paid": "The item is paid. Its amount and form cannot change without reverting the payment.",
+      "expense_description_required": "Without a document, say what the foundation paid for.",
       "item_contracted": "A contract has been issued. The amount and form are frozen until it is annulled.",
       "invalid_item_change": "This field cannot be changed on this item.",
       "payment_refused": "Not every selected item can be marked paid. Nothing was changed.",
@@ -2209,6 +2214,11 @@
       "sheet": {
         "vendor_required": "Enter whom the foundation pays.",
         "amount_invalid": "Enter the gross amount from the document.",
+        "amount_invalid_undocumented": "Enter the amount the foundation paid.",
+        "description_required": "Without a document, say what the foundation paid for.",
+        "receipt_buyer_nip": "Receipt bears the foundation's NIP",
+        "receipt_over_limit": "Above 450 zł a receipt with a NIP does not stand for an invoice. Ask the seller for an invoice to the foundation.",
+        "undocumented_hint": "Without a document, the office usually books the expense from a description signed by the person who paid (a substitute proof). That is why \"What for\" is required. The cost date is the concert day.",
         "saved": "Expense saved.",
         "added": "Expense added: {{vendor}}.",
         "error": "The expense could not be saved.",
@@ -2389,7 +2399,9 @@
       "INVOICE": "Invoice",
       "BILL": "Bill",
       "RECEIPT": "Receipt",
-      "OTHER": "Other document"
+      "RECEIPT_WITH_NIP": "Receipt with the foundation's NIP",
+      "OTHER": "Other document",
+      "NONE": "No document"
     },
     "funding": {
       "cost": "Project cost",

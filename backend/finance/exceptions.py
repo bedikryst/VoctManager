@@ -55,6 +55,11 @@ class ItemPaid(FinanceError):
     default_message = "A paid item cannot change its amount, form or payee; revert the payment first."
 
 
+class ExpenseDescriptionRequired(FinanceError):
+    code = "expense_description_required"
+    default_message = "An expense without a document must say what it paid for."
+
+
 class ItemContracted(FinanceError):
     code = "item_contracted"
     default_message = "An issued contract freezes the amount, form and payee; annul it first."

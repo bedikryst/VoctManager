@@ -73,6 +73,7 @@ from .vocabulary import (
     PATRON_PERSONNEL_MERGED_LABEL,
     PATRON_REMAINDER_LABEL,
     WARNING_TITLES,
+    expense_document_label,
 )
 
 _PATRON_TEMPLATE = "finance/report_patron.html"
@@ -229,7 +230,7 @@ def _fee_line(row: LedgerRow, names: dict[UUID, str]) -> dict[str, str]:
 
 
 def _expense_line(expense: ExpenseRow, names: dict[UUID, str], lines: dict[UUID, str]) -> dict[str, str]:
-    kind = DOCUMENT_TYPE_LABELS.get(expense.document_type, expense.document_type)
+    kind = expense_document_label(expense.document_type, expense.receipt_has_buyer_nip)
     return {
         "date": expense.incurred_on.strftime("%d.%m.%Y"),
         "vendor": expense.vendor_name,

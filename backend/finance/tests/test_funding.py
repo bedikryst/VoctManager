@@ -431,6 +431,19 @@ class FundingWarningTests(TestCase):
         ExpenseService.update(expense, _expense_update(document_date=str(today + timedelta(days=5))), actor=None)
         self.assertNotIn("OUTSIDE_ELIGIBILITY", _warnings(self.project))
 
+    def test_a_grant_charged_with_a_cost_that_names_no_buyer(self) -> None:
+        grant = _fund(self.project, _source(), planned="1000")
+        own = _fund(self.project, _source("Środki własne", kind="OWN_FUNDS"))
+        lodging = _expense(self.project, category="ACCOMMODATION", document_type="NONE", description="Nocleg chóru")
+        receipt = _expense(self.project, document_type="RECEIPT")
+        _charge(lodging, (own, "500"))
+        _charge(receipt, (grant, "500"))
+
+        self.assertEqual(_warnings(self.project)["UNDOCUMENTED_GRANT_COST"].subject_ids, [receipt.pk])
+
+        ExpenseService.update(receipt, ExpenseUpdateDTO.model_validate({"receipt_has_buyer_nip": True}), actor=None)
+        self.assertNotIn("UNDOCUMENTED_GRANT_COST", _warnings(self.project))
+
     def test_an_expense_booked_before_its_invoice_is_judged_on_the_invoice(self) -> None:
         today = finance_today()
         funding = _fund(self.project, _source(eligible_from=str(today), eligible_to=str(today + timedelta(days=25))),

@@ -1756,6 +1756,10 @@
         "title": "Koszt poza okresem kwalifikowalności",
         "hint": "Koszt powstał poza okresem, w którym źródło go pokrywa. Takiego wydatku grantodawca nie uzna — przenieś go na inne źródło."
       },
+      "UNDOCUMENTED_GRANT_COST": {
+        "title": "Dotacja obciążona wydatkiem bez dokumentu",
+        "hint": "Dotację rozlicza się dokumentami wystawionymi na fundację, a ten wydatek nie ma dokumentu albo ma paragon bez NIP fundacji. Zdobądź fakturę albo przenieś wydatek na środki własne."
+      },
       "OWN_SHARE_BELOW": {
         "title": "Za mały wkład własny",
         "hint": "Źródło wymaga, by część zadania pokryć z innych pieniędzy albo wkładem niefinansowym. Zmniejsz udział źródła albo dołóż wkład własny."
@@ -1774,6 +1778,7 @@
       "unknown_fee_reference": "Tej pozycji nie ma już w projekcie. Odśwież stronę.",
       "seat_not_billable": "Tej osoby nie ma w obsadzie albo odmówiła udziału, więc nie można jej wycenić.",
       "item_paid": "Pozycja jest wypłacona. Kwoty ani formy nie można zmienić bez cofnięcia płatności.",
+      "expense_description_required": "Bez dokumentu napisz, za co fundacja zapłaciła.",
       "item_contracted": "Umowa jest wystawiona. Kwota i forma są zamrożone do jej unieważnienia.",
       "invalid_item_change": "Tego pola nie można zmienić w tej pozycji.",
       "payment_refused": "Nie wszystkie zaznaczone pozycje można oznaczyć jako wypłacone. Nic nie zostało zmienione.",
@@ -2237,6 +2242,11 @@
       "sheet": {
         "vendor_required": "Podaj, komu fundacja płaci.",
         "amount_invalid": "Podaj kwotę brutto z dokumentu.",
+        "amount_invalid_undocumented": "Podaj kwotę, którą fundacja zapłaciła.",
+        "description_required": "Bez dokumentu napisz, za co fundacja zapłaciła.",
+        "receipt_buyer_nip": "Paragon z NIP fundacji",
+        "receipt_over_limit": "Powyżej 450 zł paragon z NIP nie zastępuje faktury. Poproś sprzedawcę o fakturę na fundację.",
+        "undocumented_hint": "Bez dokumentu biuro zwykle księguje wydatek na podstawie opisu podpisanego przez osobę, która płaciła (dowód zastępczy). Dlatego „Za co” jest obowiązkowe. Datą kosztu jest dzień koncertu.",
         "saved": "Zapisano wydatek.",
         "added": "Dodano wydatek: {{vendor}}.",
         "error": "Nie udało się zapisać wydatku.",
@@ -2417,7 +2427,9 @@
       "INVOICE": "Faktura",
       "BILL": "Rachunek",
       "RECEIPT": "Paragon",
-      "OTHER": "Inny dokument"
+      "RECEIPT_WITH_NIP": "Paragon z NIP fundacji",
+      "OTHER": "Inny dokument",
+      "NONE": "Brak dokumentu"
     },
     "funding": {
       "cost": "Koszt projektu",

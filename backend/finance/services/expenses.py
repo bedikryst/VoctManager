@@ -3,7 +3,9 @@
 @description The write side of expenses — every cost that is not a person's
              fee: the venue, travel, printing, rights. An expense is booked from
              the vendor's document, and its cost is that document's gross,
-             entered directly: the foundation recovers no VAT. The rules match
+             entered directly: the foundation recovers no VAT. A vendor who
+             gives no document leaves only what the payer says the money was
+             for, so such an expense must say it. The rules match
              the fee ledger's: a closed budget takes nothing, a paid expense
              keeps its amount and vendor until the board reverts the payment,
              and every change is logged. Paying and reverting a payment go
@@ -11,6 +13,7 @@
 @architecture Enterprise SaaS 2026
 @module finance/services/expenses
 """
+from datetime import date
 from typing import Any
 
 from django.contrib.auth.models import User
@@ -19,8 +22,8 @@ from django.db import transaction
 from roster.models import Project
 
 from ..dtos import ExpenseDTO, ExpenseUpdateDTO
-from ..exceptions import ItemPaid, PaidItemNotRemovable
-from ..models import CostItem, CostKind, FinanceAction
+from ..exceptions import ExpenseDescriptionRequired, ItemPaid, PaidItemNotRemovable
+from ..models import CostItem, CostKind, ExpenseDocumentType, FinanceAction
 from ..rules import money
 from . import audit
 from .budget import BudgetService, reconcile_line_change
@@ -39,8 +42,26 @@ def _snapshot(item: CostItem) -> dict[str, Any]:
         "category": item.category,
         "document_type": item.document_type,
         "document_number": item.document_number,
+        "receipt_has_buyer_nip": item.receipt_has_buyer_nip,
         "cost_amount": item.cost_amount,
         "budget_line": item.budget_line_id,
+    }
+
+
+def _document_details(
+    document_type: str, *, number: str, issued_on: date | None, buyer_nip: bool, description: str,
+) -> dict[str, Any]:
+    """What the document type leaves of the document's details. Only a receipt
+    bears the buyer's NIP. With no document there is no number or date, and
+    the description of what was paid for is the whole record, so it is required."""
+    if document_type == ExpenseDocumentType.NONE:
+        if not description.strip():
+            raise ExpenseDescriptionRequired()
+        number, issued_on = "", None
+    return {
+        "document_number": number,
+        "document_date": issued_on,
+        "receipt_has_buyer_nip": buyer_nip and document_type == ExpenseDocumentType.RECEIPT,
     }
 
 
@@ -51,21 +72,24 @@ class ExpenseService:
             budget = BudgetService.lock(project)
             BudgetService.assert_writable(budget)
             line = BudgetService.resolve_line(budget, dto.budget_line, dto.category)
+            document = _document_details(
+                dto.document_type, number=dto.document_number, issued_on=dto.document_date,
+                buyer_nip=dto.receipt_has_buyer_nip, description=dto.description,
+            )
             item = CostItem(
                 budget=budget,
                 kind=CostKind.EXPENSE,
                 category=dto.category,
                 budget_line=line,
                 cost_amount=money(dto.cost_amount),
-                incurred_on=expense_incurred_on(dto.document_date, project),
+                incurred_on=expense_incurred_on(document["document_date"], project),
                 due_on=dto.due_on,
                 note=dto.note,
                 vendor_name=dto.vendor_name,
                 vendor_nip=dto.vendor_nip,
                 document_type=dto.document_type,
-                document_number=dto.document_number,
-                document_date=dto.document_date,
                 description=dto.description,
+                **document,
             )
             item.save()
             audit.record(budget, actor=actor, subject=item, action=FinanceAction.CREATED, after=_snapshot(item))
@@ -93,8 +117,14 @@ class ExpenseService:
                 elif name == "cost_amount" and value is not None:
                     value = money(value)
                 requested[name] = value
-            document_date = requested.get("document_date", item.document_date)
-            requested["incurred_on"] = expense_incurred_on(document_date, project)
+            requested.update(_document_details(
+                requested.get("document_type", item.document_type),
+                number=requested.get("document_number", item.document_number),
+                issued_on=requested.get("document_date", item.document_date),
+                buyer_nip=requested.get("receipt_has_buyer_nip", item.receipt_has_buyer_nip),
+                description=requested.get("description", item.description),
+            ))
+            requested["incurred_on"] = expense_incurred_on(requested["document_date"], project)
             changed = {name: value for name, value in requested.items() if getattr(item, name) != value}
             if not changed:
                 return item

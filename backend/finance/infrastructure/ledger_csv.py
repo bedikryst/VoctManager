@@ -20,7 +20,7 @@ from roster.models import Project
 from ..services.budget import AllocationView, ExpenseRow, LedgerRow, ProjectMoney
 from .csv_format import amount_cell, code_cell, date_cell, encode_csv, text_cell
 from .documents import file_segment
-from .vocabulary import CATEGORY_LABELS, CONTRACT_STATUS_LABELS, DOCUMENT_TYPE_LABELS, FORM_LABELS
+from .vocabulary import CATEGORY_LABELS, CONTRACT_STATUS_LABELS, FORM_LABELS, expense_document_label
 
 HEADER: tuple[str, ...] = (
     "Projekt",
@@ -92,7 +92,7 @@ def _expense_cells(project: Project, expense: ExpenseRow, line: str, names: dict
         text_cell(expense.vendor_name),
         text_cell(expense.description),
         CATEGORY_LABELS.get(expense.category, expense.category),
-        DOCUMENT_TYPE_LABELS.get(expense.document_type, expense.document_type),
+        expense_document_label(expense.document_type, expense.receipt_has_buyer_nip),
         code_cell(expense.document_number),
         date_cell(expense.document_date),
         "",

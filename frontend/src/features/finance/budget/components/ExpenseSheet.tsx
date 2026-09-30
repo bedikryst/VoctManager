@@ -10,6 +10,10 @@
  * The date the cost is incurred on — which grant eligibility is judged by — is
  * never typed: the server takes the document's date, or the concert day until
  * there is one, and the sheet says which.
+ * A vendor who gives no document (lodging at a religious house) is booked as
+ * "no document": the number and date fields leave, and what was paid for
+ * becomes required, since the office books it from the payer's description.
+ * A receipt says whether it bears the foundation's NIP.
  * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/ExpenseSheet
  */
@@ -19,10 +23,11 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { DateTimeField } from "@/shared/ui/composites/DateTimeField";
+import { Checkbox } from "@/shared/ui/primitives/Checkbox";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
-import { Caption } from "@/shared/ui/primitives/typography";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { useCreateExpense, useUpdateExpense } from "../../api/finance.queries";
 import { ActSheet } from "../../components/ActSheet";
 import { PlanLineSelect } from "../../components/PlanLineSelect";
@@ -49,7 +54,10 @@ interface ExpenseSheetProps {
   readonly onClose: () => void;
 }
 
-type FieldErrors = Partial<Record<"vendor" | "nip" | "amount", string>>;
+type FieldErrors = Partial<Record<"vendor" | "description" | "nip" | "amount", string>>;
+
+/** A receipt with the buyer's NIP stands for an invoice only up to this gross (VAT act, simplified invoice). */
+const SIMPLIFIED_INVOICE_LIMIT_GROSZE = 45_000;
 
 /** The line a new cost of this category goes to: the plan's only one of it. */
 const soleLineOf = (lines: readonly PlanLineDTO[], category: CostCategory): string => {
@@ -78,6 +86,7 @@ export function ExpenseSheet({
   const [documentType, setDocumentType] = useState<ExpenseDocumentType>(
     expense?.document_type || "INVOICE",
   );
+  const [buyerNip, setBuyerNip] = useState(expense?.receipt_has_buyer_nip ?? false);
   const [documentNumber, setDocumentNumber] = useState(expense?.document_number ?? "");
   const [documentDate, setDocumentDate] = useState(expense?.document_date ?? "");
   const [description, setDescription] = useState(expense?.description ?? "");
@@ -87,6 +96,11 @@ export function ExpenseSheet({
   const [errors, setErrors] = useState<FieldErrors>({});
 
   const categoryLines = lines.filter((line) => line.category === category);
+  const isUndocumented = documentType === "NONE";
+  const isReceipt = documentType === "RECEIPT";
+  const typedGrosze = toGrosze(amount);
+  const receiptOverInvoiceLimit =
+    isReceipt && buyerNip && typedGrosze !== null && typedGrosze > SIMPLIFIED_INVOICE_LIMIT_GROSZE;
 
   const changeCategory = (next: CostCategory): void => {
     setCategory(next);
@@ -99,25 +113,36 @@ export function ExpenseSheet({
     if (!vendor.trim()) {
       nextErrors.vendor = t("finance.expenses.sheet.vendor_required", "Podaj, komu fundacja płaci.");
     }
+    if (isUndocumented && !description.trim()) {
+      nextErrors.description = t(
+        "finance.expenses.sheet.description_required",
+        "Bez dokumentu napisz, za co fundacja zapłaciła.",
+      );
+    }
     const normalizedNip = normalizeNip(nip);
     if (normalizedNip && !isValidNip(normalizedNip)) {
       nextErrors.nip = t("finance.details.nip_invalid", "To nie jest poprawny NIP.");
     }
     const grosze = toGrosze(amount);
     if (grosze === null || grosze <= 0) {
-      nextErrors.amount = t("finance.expenses.sheet.amount_invalid", "Podaj kwotę brutto z dokumentu.");
+      nextErrors.amount = isUndocumented
+        ? t("finance.expenses.sheet.amount_invalid_undocumented", "Podaj kwotę, którą fundacja zapłaciła.")
+        : t("finance.expenses.sheet.amount_invalid", "Podaj kwotę brutto z dokumentu.");
     }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0 || grosze === null) return;
 
+    // No document sends no number or date. What was typed stays in state, so
+    // switching the type back restores it.
     const payload: ExpensePayload = {
       category,
       budget_line: lineId || null,
       vendor_name: vendor.trim(),
       vendor_nip: normalizedNip,
       document_type: documentType,
-      document_number: documentNumber.trim(),
-      document_date: documentDate || null,
+      receipt_has_buyer_nip: isReceipt && buyerNip,
+      document_number: isUndocumented ? "" : documentNumber.trim(),
+      document_date: isUndocumented ? null : documentDate || null,
       description: description.trim(),
       cost_amount: fromGrosze(grosze),
       due_on: dueOn || null,
@@ -152,6 +177,9 @@ export function ExpenseSheet({
     if (payload.vendor_name !== expense.vendor_name) changes.vendor_name = payload.vendor_name;
     if (payload.vendor_nip !== expense.vendor_nip) changes.vendor_nip = payload.vendor_nip;
     if (payload.document_type !== expense.document_type) changes.document_type = payload.document_type;
+    if (payload.receipt_has_buyer_nip !== expense.receipt_has_buyer_nip) {
+      changes.receipt_has_buyer_nip = payload.receipt_has_buyer_nip;
+    }
     if (payload.document_number !== expense.document_number) {
       changes.document_number = payload.document_number;
     }
@@ -218,32 +246,43 @@ export function ExpenseSheet({
         label={t("finance.expenses.sheet.description", "Za co")}
         placeholder={t("finance.expenses.sheet.description_placeholder", "np. wynajem kościoła na koncert")}
         value={description}
-        onChange={(event) => setDescription(event.target.value)}
+        onChange={(event) => {
+          setDescription(event.target.value);
+          setErrors((previous) => ({ ...previous, description: undefined }));
+        }}
+        error={errors.description}
         maxLength={300}
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Select
           label={t("finance.expenses.sheet.document_type", "Dokument")}
           value={documentType}
-          onValueChange={(value) => setDocumentType(value as ExpenseDocumentType)}
+          onValueChange={(value) => {
+            setDocumentType(value as ExpenseDocumentType);
+            setErrors((previous) => ({ ...previous, description: undefined }));
+          }}
           options={EXPENSE_DOCUMENT_TYPES.map((type) => ({
             value: type,
             label: documentTypeLabel(t, type),
           }))}
         />
-        <Input
-          label={t("finance.expenses.sheet.document_number", "Numer dokumentu")}
-          value={documentNumber}
-          onChange={(event) => setDocumentNumber(event.target.value)}
-          maxLength={100}
-        />
-        <DateTimeField
-          granularity="date"
-          clearable
-          label={t("finance.expenses.sheet.document_date", "Data dokumentu")}
-          value={documentDate}
-          onChange={setDocumentDate}
-        />
+        {!isUndocumented && (
+          <>
+            <Input
+              label={t("finance.expenses.sheet.document_number", "Numer dokumentu")}
+              value={documentNumber}
+              onChange={(event) => setDocumentNumber(event.target.value)}
+              maxLength={100}
+            />
+            <DateTimeField
+              granularity="date"
+              clearable
+              label={t("finance.expenses.sheet.document_date", "Data dokumentu")}
+              value={documentDate}
+              onChange={setDocumentDate}
+            />
+          </>
+        )}
         <Input
           label={t("finance.details.vendor_nip", "NIP wystawcy")}
           value={nip}
@@ -255,8 +294,29 @@ export function ExpenseSheet({
           maxLength={20}
         />
       </div>
+      {isReceipt && (
+        <label className="flex cursor-pointer items-center gap-2.5">
+          <Checkbox checked={buyerNip} onChange={() => setBuyerNip((previous) => !previous)} />
+          <Text as="span" size="sm">
+            {t("finance.expenses.sheet.receipt_buyer_nip", "Paragon z NIP fundacji")}
+          </Text>
+        </label>
+      )}
+      {receiptOverInvoiceLimit && (
+        <Caption color="gold">
+          {t(
+            "finance.expenses.sheet.receipt_over_limit",
+            "Powyżej 450 zł paragon z NIP nie zastępuje faktury. Poproś sprzedawcę o fakturę na fundację.",
+          )}
+        </Caption>
+      )}
       <Caption color="muted">
-        {documentDate
+        {isUndocumented
+          ? t(
+              "finance.expenses.sheet.undocumented_hint",
+              "Bez dokumentu biuro zwykle księguje wydatek na podstawie opisu podpisanego przez osobę, która płaciła (dowód zastępczy). Dlatego „Za co” jest obowiązkowe. Datą kosztu jest dzień koncertu.",
+            )
+          : documentDate
           ? t(
               "finance.expenses.sheet.incurred_document",
               "Data kosztu: {{date}}, data dokumentu. Według niej ocenia się kwalifikowalność w dotacji.",

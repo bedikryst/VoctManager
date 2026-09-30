@@ -135,6 +135,7 @@ const expense: ExpenseRowDTO = {
   vendor_name: "Parafia",
   vendor_nip: "",
   document_type: "INVOICE",
+  receipt_has_buyer_nip: false,
   document_number: "",
   document_date: null,
   description: "",

@@ -344,6 +344,7 @@ class ExpenseDTO(EnterpriseBaseDTO):
     vendor_name: Text = Field(..., min_length=1, max_length=200)
     vendor_nip: Nip = ""
     document_type: str
+    receipt_has_buyer_nip: bool = False
     document_number: Text = Field(default="", max_length=100)
     document_date: date | None = None
     description: Text = Field(default="", max_length=300)
@@ -371,6 +372,7 @@ class ExpenseUpdateDTO(EnterpriseBaseDTO):
     vendor_name: Text | None = Field(default=None, min_length=1, max_length=200)
     vendor_nip: Nip | None = None
     document_type: str | None = None
+    receipt_has_buyer_nip: bool | None = None
     document_number: Text | None = Field(default=None, max_length=100)
     document_date: date | None = None
     description: Text | None = Field(default=None, max_length=300)
@@ -391,7 +393,7 @@ class ExpenseUpdateDTO(EnterpriseBaseDTO):
 
     @model_validator(mode="after")
     def required_stay_set(self) -> Self:
-        required = {"category", "vendor_name", "document_type", "cost_amount"}
+        required = {"category", "vendor_name", "document_type", "receipt_has_buyer_nip", "cost_amount"}
         cleared = [name for name in self.model_fields_set & required if getattr(self, name) is None]
         if cleared:
             raise ValueError(f"{', '.join(sorted(cleared))} cannot be cleared.")

@@ -16,7 +16,7 @@ import { cn } from "@/shared/lib/utils";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import {
   categoryLabel,
-  documentTypeLabel,
+  expenseDocumentLabel,
   formatFinanceDate,
   todayIsoDate,
 } from "../../lib/financePresentation";
@@ -58,7 +58,10 @@ export function ExpenseRow({
   }
   facts.push({ key: "category", text: categoryLabel(t, expense.category), tone: "muted" });
   if (expense.document_type) {
-    const document = [documentTypeLabel(t, expense.document_type), expense.document_number]
+    const document = [
+      expenseDocumentLabel(t, expense.document_type, expense.receipt_has_buyer_nip),
+      expense.document_number,
+    ]
       .filter(Boolean)
       .join(" ");
     facts.push({ key: "document", text: document, tone: "muted" });

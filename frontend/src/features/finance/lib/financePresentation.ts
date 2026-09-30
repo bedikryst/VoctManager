@@ -172,10 +172,21 @@ const DOCUMENT_TYPE_LABELS: Record<ExpenseDocumentType, string> = {
   BILL: "Rachunek",
   RECEIPT: "Paragon",
   OTHER: "Inny dokument",
+  NONE: "Brak dokumentu",
 };
 
 export const documentTypeLabel = (t: TFunction, type: ExpenseDocumentType): string =>
   t(`finance.document_types.${type}`, DOCUMENT_TYPE_LABELS[type]);
+
+/** The document as a row names it: a receipt says whether it bears the foundation's NIP. */
+export const expenseDocumentLabel = (
+  t: TFunction,
+  type: ExpenseDocumentType,
+  receiptHasBuyerNip: boolean,
+): string =>
+  type === "RECEIPT" && receiptHasBuyerNip
+    ? t("finance.document_types.RECEIPT_WITH_NIP", "Paragon z NIP fundacji")
+    : documentTypeLabel(t, type);
 
 // ── Funding ───────────────────────────────────────────────────────────────
 
@@ -345,6 +356,10 @@ const WARNING_COPY: Record<string, WarningCopy> = {
   OUTSIDE_ELIGIBILITY: {
     title: "Koszt poza okresem kwalifikowalności",
     hint: "Koszt powstał poza okresem, w którym źródło go pokrywa. Takiego wydatku grantodawca nie uzna — przenieś go na inne źródło.",
+  },
+  UNDOCUMENTED_GRANT_COST: {
+    title: "Dotacja obciążona wydatkiem bez dokumentu",
+    hint: "Dotację rozlicza się dokumentami wystawionymi na fundację, a ten wydatek nie ma dokumentu albo ma paragon bez NIP fundacji. Zdobądź fakturę albo przenieś wydatek na środki własne.",
   },
   OWN_SHARE_BELOW: {
     title: "Za mały wkład własny",

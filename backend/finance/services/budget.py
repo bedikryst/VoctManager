@@ -36,6 +36,7 @@ from ..models import (
     CostAllocation,
     CostItem,
     CostKind,
+    ExpenseDocumentType,
     FeeForm,
     FinanceAttachment,
     FundingKind,
@@ -190,6 +191,7 @@ class ExpenseRow:
     vendor_name: str
     vendor_nip: str
     document_type: str
+    receipt_has_buyer_nip: bool
     document_number: str
     document_date: date | None
     description: str
@@ -842,6 +844,7 @@ def _expense_rows(sources: _ProjectSources) -> list[ExpenseRow]:
             vendor_name=item.vendor_name,
             vendor_nip=item.vendor_nip,
             document_type=item.document_type,
+            receipt_has_buyer_nip=item.receipt_has_buyer_nip,
             document_number=item.document_number,
             document_date=item.document_date,
             description=item.description,
@@ -1112,11 +1115,20 @@ def _warnings(
             flag("VOLUNTEER_INSURANCE", row.key)
             params["VOLUNTEER_INSURANCE"] = {"period_days": volunteer_days}
 
+    by_funding = {funding.id: funding.source.source for funding in fundings}
     for expense in expenses:
         if not expense.is_paid and expense.due_on is not None and expense.due_on < today:
             flag("PAYMENT_OVERDUE", expense.id)
         if has_plan and expense.budget_line_id is None:
             flag("COST_OUTSIDE_PLAN", expense.id)
+        # A grant is settled from documents that name the foundation as buyer.
+        names_no_buyer = expense.document_type == ExpenseDocumentType.NONE or (
+            expense.document_type == ExpenseDocumentType.RECEIPT and not expense.receipt_has_buyer_nip
+        )
+        if names_no_buyer and any(
+            source.kind in GRANT_FUNDING_KINDS for source in _allocated_sources(expense.allocations, by_funding)
+        ):
+            flag("UNDOCUMENTED_GRANT_COST", expense.id)
 
     # A line with no source stating a tolerance is over as soon as its actual
     # passes the planned amount.
@@ -1124,7 +1136,6 @@ def _warnings(
         if line.over_tolerance:
             flag("LINE_OVER_PLAN", line.id)
 
-    by_funding = {funding.id: funding.source.source for funding in fundings}
     charged_costs = [(row.key, row.incurred_on, row.allocations) for row in rows if row.counted]
     charged_costs += [(expense.id, expense.incurred_on, expense.allocations) for expense in expenses]
     for subject, incurred_on, allocations in charged_costs:
@@ -1177,6 +1188,7 @@ WARNING_ORDER: tuple[tuple[str, str], ...] = (
     ("BELOW_MINIMUM_HOURLY_RATE", SEVERITY_PROBLEM),
     ("SOURCE_OVERALLOCATED", SEVERITY_PROBLEM),
     ("OUTSIDE_ELIGIBILITY", SEVERITY_PROBLEM),
+    ("UNDOCUMENTED_GRANT_COST", SEVERITY_PROBLEM),
     ("OWN_SHARE_BELOW", SEVERITY_PROBLEM),
     ("ADMIN_CAP_EXCEEDED", SEVERITY_PROBLEM),
     ("UNPRICED", SEVERITY_WORK),

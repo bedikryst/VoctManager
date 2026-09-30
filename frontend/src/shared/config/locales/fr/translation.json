@@ -1737,6 +1737,10 @@
         "title": "Coût hors période d'éligibilité",
         "hint": "Le coût est né en dehors de la période que couvre la source. Le financeur ne le retiendra pas — imputez-le à une autre source."
       },
+      "UNDOCUMENTED_GRANT_COST": {
+        "title": "Subvention imputée d'une dépense sans pièce",
+        "hint": "Une subvention se justifie par des pièces établies au nom de la fondation, et cette dépense n'a pas de pièce ou n'a qu'un ticket de caisse sans le NIP de la fondation. Obtenez une facture ou imputez la dépense aux fonds propres."
+      },
       "OWN_SHARE_BELOW": {
         "title": "Apport propre insuffisant",
         "hint": "La source exige qu'une part de l'action soit couverte par d'autres fonds ou par un apport non financier. Réduisez la part de la source ou ajoutez un apport propre."
@@ -1755,6 +1759,7 @@
       "unknown_fee_reference": "Cette ligne n'appartient plus au projet. Actualisez la page.",
       "seat_not_billable": "Cette personne n'est pas dans la distribution ou a refusé : impossible de fixer son cachet.",
       "item_paid": "La ligne est payée. Son montant et sa forme ne peuvent changer sans annuler le paiement.",
+      "expense_description_required": "Sans pièce, indiquez ce que la fondation a payé.",
       "item_contracted": "Un contrat a été émis. Le montant et la forme sont figés jusqu'à son annulation.",
       "invalid_item_change": "Ce champ ne peut pas être modifié sur cette ligne.",
       "payment_refused": "Toutes les lignes sélectionnées ne peuvent pas être marquées comme payées. Rien n'a été modifié.",
@@ -2218,6 +2223,11 @@
       "sheet": {
         "vendor_required": "Indiquez à qui la fondation paie.",
         "amount_invalid": "Indiquez le montant TTC de la pièce.",
+        "amount_invalid_undocumented": "Indiquez le montant que la fondation a payé.",
+        "description_required": "Sans pièce, indiquez ce que la fondation a payé.",
+        "receipt_buyer_nip": "Ticket de caisse avec le NIP de la fondation",
+        "receipt_over_limit": "Au-delà de 450 zł, un ticket avec NIP ne vaut pas facture. Demandez au vendeur une facture au nom de la fondation.",
+        "undocumented_hint": "Sans pièce, le cabinet comptable enregistre généralement la dépense sur la base d'une description signée par la personne qui a payé (pièce de substitution). C'est pourquoi « Objet » est obligatoire. La date du coût est le jour du concert.",
         "saved": "Dépense enregistrée.",
         "added": "Dépense ajoutée : {{vendor}}.",
         "error": "La dépense n'a pas pu être enregistrée.",
@@ -2398,7 +2408,9 @@
       "INVOICE": "Facture",
       "BILL": "Note d'honoraires",
       "RECEIPT": "Ticket de caisse",
-      "OTHER": "Autre pièce"
+      "RECEIPT_WITH_NIP": "Ticket de caisse avec le NIP de la fondation",
+      "OTHER": "Autre pièce",
+      "NONE": "Sans pièce"
     },
     "funding": {
       "cost": "Coût du projet",

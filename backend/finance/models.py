@@ -82,12 +82,16 @@ class PlanUnit(models.TextChoices):
 
 
 class ExpenseDocumentType(models.TextChoices):
-    """The vendor's document an expense is booked from."""
+    """The vendor's document an expense is booked from. `NONE` is a payment the
+    vendor gives no document for — lodging at a religious house, a tip — which
+    the office books from a substitute proof the payer signs, so it carries no
+    number or date and must say what it paid for."""
 
     INVOICE = 'INVOICE', _('Invoice')
     BILL = 'BILL', _('Bill')
     RECEIPT = 'RECEIPT', _('Receipt')
     OTHER = 'OTHER', _('Other document')
+    NONE = 'NONE', _('No document')
 
 
 class FeeForm(models.TextChoices):
@@ -351,6 +355,10 @@ class CostItem(EnterpriseBaseModel):
     document_type = models.CharField(
         max_length=8, choices=ExpenseDocumentType.choices, blank=True, verbose_name=_("Document type"),
     )
+    # A receipt printed with the foundation's NIP names the buyer (up to 450 zł
+    # it is a simplified invoice); one without it does not, and a grantor or
+    # the office may ask what it was for.
+    receipt_has_buyer_nip = models.BooleanField(default=False, verbose_name=_("Receipt bears the foundation's NIP"))
     description = models.CharField(max_length=300, blank=True, verbose_name=_("Description"))
 
     class Meta:
@@ -404,6 +412,20 @@ class CostItem(EnterpriseBaseModel):
                 ),
                 name='finance_item_in_kind_volunteer_only',
                 violation_error_message=_("Volunteer hours apply to volunteer work only."),
+            ),
+            models.CheckConstraint(
+                condition=models.Q(receipt_has_buyer_nip=False) | models.Q(document_type=ExpenseDocumentType.RECEIPT),
+                name='finance_item_buyer_nip_receipt_only',
+                violation_error_message=_("Only a receipt is marked as bearing the foundation's NIP."),
+            ),
+            # No document means no number and no date to book it by.
+            models.CheckConstraint(
+                condition=(
+                    ~models.Q(document_type=ExpenseDocumentType.NONE)
+                    | models.Q(document_number='', document_date__isnull=True)
+                ),
+                name='finance_item_no_document_is_bare',
+                violation_error_message=_("An expense without a document has no document number or date."),
             ),
             # Paid means priced and not volunteer: 0 zł cannot be paid out.
             models.CheckConstraint(

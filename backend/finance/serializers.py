@@ -99,6 +99,7 @@ class ExpenseRowSerializer(serializers.Serializer):
     vendor_name = serializers.CharField()
     vendor_nip = serializers.CharField(allow_blank=True)
     document_type = serializers.CharField(allow_blank=True)
+    receipt_has_buyer_nip = serializers.BooleanField()
     document_number = serializers.CharField(allow_blank=True)
     document_date = serializers.DateField(allow_null=True)
     description = serializers.CharField(allow_blank=True)

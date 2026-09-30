@@ -18,6 +18,7 @@ const FINANCE_ERROR_COPY: Record<string, string> = {
   unknown_fee_reference: "Tej pozycji nie ma już w projekcie. Odśwież stronę.",
   seat_not_billable: "Tej osoby nie ma w obsadzie albo odmówiła udziału, więc nie można jej wycenić.",
   item_paid: "Pozycja jest wypłacona. Kwoty ani formy nie można zmienić bez cofnięcia płatności.",
+  expense_description_required: "Bez dokumentu napisz, za co fundacja zapłaciła.",
   item_contracted: "Umowa jest wystawiona. Kwota i forma są zamrożone do jej unieważnienia.",
   invalid_item_change: "Tego pola nie można zmienić w tej pozycji.",
   payment_refused: "Nie wszystkie zaznaczone pozycje można oznaczyć jako wypłacone. Nic nie zostało zmienione.",

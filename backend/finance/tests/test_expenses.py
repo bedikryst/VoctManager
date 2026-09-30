@@ -54,6 +54,33 @@ class ExpenseTests(APITestCase):
         body = self.create(document_date="2026-05-04")
         self.assertEqual(body["expenses"][0]["incurred_on"], "2026-05-04")
 
+    def test_an_expense_without_a_document_says_what_it_paid_for(self) -> None:
+        response = self.client.post(f"{self.base}/expenses/", {
+            "category": "ACCOMMODATION", "vendor_name": "Dom rekolekcyjny", "document_type": "NONE",
+            "cost_amount": "600",
+        }, format="json")
+        self.assertEqual(response.json()["error_code"], "expense_description_required")
+
+        expense = self.create(
+            category="ACCOMMODATION", document_type="NONE", description="Nocleg chóru", document_date="2026-05-04",
+        )["expenses"][0]
+        # No document leaves no number or date; the cost falls on the concert day.
+        self.assertEqual((expense["document_number"], expense["document_date"]), ("", None))
+        self.assertNotEqual(expense["incurred_on"], "2026-05-04")
+
+        response = self.client.patch(f"{self.base}/expenses/{expense['id']}/", {"description": None}, format="json")
+        self.assertEqual(response.json()["error_code"], "expense_description_required")
+
+    def test_only_a_receipt_bears_the_foundations_nip(self) -> None:
+        expense = self.create(document_type="RECEIPT", receipt_has_buyer_nip=True)["expenses"][0]
+        self.assertTrue(expense["receipt_has_buyer_nip"])
+
+        response = self.client.patch(f"{self.base}/expenses/{expense['id']}/", {"document_type": "INVOICE"},
+                                     format="json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(CostItem.objects.get(pk=expense["id"]).receipt_has_buyer_nip)
+
     def test_a_person_is_never_an_expense(self) -> None:
         response = self.client.post(f"{self.base}/expenses/", {
             "category": "PERSONNEL_TECHNICAL", "vendor_name": "Studio", "document_type": "INVOICE",

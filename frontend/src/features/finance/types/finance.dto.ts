@@ -105,13 +105,16 @@ export const PLAN_UNITS: readonly PlanUnit[] = [
   "LUMP_SUM",
 ];
 
-export type ExpenseDocumentType = "INVOICE" | "BILL" | "RECEIPT" | "OTHER";
+/** `NONE`: the vendor gives no document; the expense carries no number or
+ * date and must say what it paid for. */
+export type ExpenseDocumentType = "INVOICE" | "BILL" | "RECEIPT" | "OTHER" | "NONE";
 
 export const EXPENSE_DOCUMENT_TYPES: readonly ExpenseDocumentType[] = [
   "INVOICE",
   "BILL",
   "RECEIPT",
   "OTHER",
+  "NONE",
 ];
 
 /** "I" — koszty realizacji działań; "II" — koszty administracyjne. */
@@ -254,6 +257,8 @@ export interface ExpenseRowDTO {
   readonly vendor_name: string;
   readonly vendor_nip: string;
   readonly document_type: ExpenseDocumentType | "";
+  /** A receipt printed with the foundation's NIP; false for any other document. */
+  readonly receipt_has_buyer_nip: boolean;
   readonly document_number: string;
   readonly document_date: IsoDate | null;
   readonly description: string;
@@ -699,6 +704,7 @@ export interface ExpensePayload {
   readonly vendor_name: string;
   readonly vendor_nip: string;
   readonly document_type: ExpenseDocumentType;
+  readonly receipt_has_buyer_nip: boolean;
   readonly document_number: string;
   readonly document_date: IsoDate | null;
   readonly description: string;
