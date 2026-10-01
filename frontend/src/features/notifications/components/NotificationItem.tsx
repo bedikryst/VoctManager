@@ -669,7 +669,8 @@ const describe = (
     }
     case "ANNOUNCEMENT_PENDING":
       // The queue's safety net: what is waiting, where, and for how long. The
-      // people still in the dark are the reason to bother.
+      // people not yet notified are the reason to bother; the changes themselves
+      // are already in their app.
       return {
         sentence: t("notifications.row.announcement_pending", {
           count: notification.metadata.change_count ?? 0,

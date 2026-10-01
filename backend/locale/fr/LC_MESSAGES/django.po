@@ -3244,7 +3244,7 @@ msgid "Waiting to be sent"
 msgstr "En attente d'envoi"
 
 #: notifications/message_content.py:0
-msgid "Not yet told"
+msgid "Not yet notified"
 msgstr "Pas encore prévenus"
 
 #: notifications/message_content.py:0
@@ -3253,16 +3253,19 @@ msgstr "Passer en revue"
 
 #: notifications/message_content.py:0
 msgid ""
-"%(project)s is holding changes the cast has not been told about. Nothing "
-"goes out until you send it — review what is waiting, add a word of your own "
-"if it helps, and press send. If it is no longer worth announcing, discard it"
-" and this will stop."
+"%(project)s has changes the cast can already see in the app but has not been"
+" notified about. Nothing goes out until you send it — review what is "
+"waiting, add a word of your own if it helps, and press send. If it is not "
+"worth announcing, discard it: the changes stay in the app, only the "
+"notification is dropped, and these reminders stop."
 msgstr ""
-"Le projet « %(project)s » contient des modifications dont les chanteurs "
-"n'ont pas encore été informés. Rien ne part tant que vous ne l'envoyez pas —"
-" passez en revue ce qui attend, ajoutez un mot de votre part si cela aide, "
-"puis envoyez. Si cela ne vaut plus la peine d'être annoncé, écartez la file "
-"et ces rappels cesseront."
+"Le projet « %(project)s » contient des modifications que les choristes "
+"voient déjà dans l'application, mais dont ils n'ont pas été prévenus. Rien "
+"ne part tant que vous ne l'envoyez pas — passez en revue ce qui attend, "
+"ajoutez un mot de votre part si cela aide, puis envoyez. Si cela ne vaut pas"
+" la peine d'être annoncé, écartez la file : les modifications restent dans "
+"l'application, seule la notification est abandonnée, et ces rappels "
+"cesseront."
 
 #: notifications/message_content.py:0
 msgid "Unannounced Changes Waiting"
@@ -5466,8 +5469,8 @@ msgstr ""
 "organisation vous convient toujours."
 
 #: notifications/message_content.py
-msgid "The cast doesn't know about them yet"
-msgstr "La distribution n’est pas encore au courant"
+msgid "The cast hasn't been notified yet"
+msgstr "Les choristes n'ont pas encore été prévenus"
 
 #: notifications/message_content.py
 #, python-format

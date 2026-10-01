@@ -2359,7 +2359,17 @@ class AnnouncementNudgeCopyTests(SimpleTestCase):
     def test_a_cast_of_nobody_leaves_the_row_out_rather_than_saying_zero(self) -> None:
         with translation.override("en"):
             labels = [row.label for row in self._build(recipient_count=0).details]
-        self.assertNotIn("Not yet told", labels)
+        self.assertNotIn("Not yet notified", labels)
+
+    def test_what_waits_is_the_notification_not_the_change(self) -> None:
+        """The changes are already in the app; only the message about them waits.
+        Saying the cast "doesn't know" turns a pending notification into an
+        emergency, and makes discarding it sound like hiding the change."""
+        with translation.override("pl"):
+            content = self._build()
+        self.assertIn("Obsada nie dostała jeszcze powiadomienia", content.body)
+        self.assertIn("widzi już w aplikacji", content.email_lead)
+        self.assertIn("zmiany zostaną w aplikacji", content.email_lead)
 
 
 class TestPushHonestyTests(APITestCase):

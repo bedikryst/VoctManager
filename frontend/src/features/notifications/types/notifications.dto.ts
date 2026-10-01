@@ -184,7 +184,7 @@ export interface ProjectBriefingMetadata {
  * a manager may publish.
  *
  * `change_count` is the same number the project hub's pill shows and
- * `recipient_count` is how many people are still in the dark. How many messages
+ * `recipient_count` is how many people have not been notified. How many messages
  * publication would actually send belongs to the review sheet's confirm button —
  * a third number here would only be one more thing to reconcile.
  */

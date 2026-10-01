@@ -2218,7 +2218,12 @@ def _waiting_phrase(hours: int) -> str:
 
 
 def _compose_announcement_pending(ctx: MessageContext) -> MessageContent:
-    """The announcement queue has been sitting; the cast still does not know.
+    """The announcement queue has been sitting; the cast has not been notified.
+
+    The changes themselves are already live: on an active project a write reaches
+    the app at once, and only the message about it waits. The copy says exactly
+    that and never that the cast "doesn't know": that reads as an emergency,
+    and makes discarding the queue sound like hiding the change.
 
     Addressed to the managers, and the only project notification raised by the
     clock rather than by an edit. Its whole job is to be answerable in one tap, so
@@ -2243,7 +2248,7 @@ def _compose_announcement_pending(ctx: MessageContext) -> MessageContent:
     ]
     if listeners:
         details.append(_row(
-            _("Not yet told"),  # paired with a count: "Not yet told: 12 people"
+            _("Not yet notified"),  # paired with a count: "Not yet notified: 12 people"
             ngettext("%(count)d person", "%(count)d people", listeners)
             % {"count": listeners},
         ))
@@ -2265,7 +2270,7 @@ def _compose_announcement_pending(ctx: MessageContext) -> MessageContent:
         notification_type=ctx.notification_type,
         level=ctx.level,
         title=title,
-        body=_facts(_("The cast doesn't know about them yet"), waiting),
+        body=_facts(_("The cast hasn't been notified yet"), waiting),
         url_path=review_url,
         # Per project, so a second nudge about the same queue replaces the first
         # rather than stacking beside it.
@@ -2274,10 +2279,11 @@ def _compose_announcement_pending(ctx: MessageContext) -> MessageContent:
         subject=_("Changes waiting to be announced — %(project)s") % {"project": project},
         eyebrow=_("Announcement queue"),
         email_lead=_(
-            "%(project)s is holding changes the cast has not been told about."
-            " Nothing goes out until you send it — review what is waiting, add a"
-            " word of your own if it helps, and press send. If it is no longer"
-            " worth announcing, discard it and this will stop."
+            "%(project)s has changes the cast can already see in the app but has"
+            " not been notified about. Nothing goes out until you send it — review"
+            " what is waiting, add a word of your own if it helps, and press send."
+            " If it is not worth announcing, discard it: the changes stay in the"
+            " app, only the notification is dropped, and these reminders stop."
         ) % {"project": project},
         details=tuple(details),
         cta_label=_("Review what's waiting"),

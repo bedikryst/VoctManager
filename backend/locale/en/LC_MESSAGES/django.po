@@ -2082,7 +2082,7 @@ msgid "Waiting to be sent"
 msgstr ""
 
 #: notifications/message_content.py:0
-msgid "Not yet told"
+msgid "Not yet notified"
 msgstr ""
 
 #: notifications/message_content.py:0
@@ -2091,10 +2091,11 @@ msgstr ""
 
 #: notifications/message_content.py:0
 msgid ""
-"%(project)s is holding changes the cast has not been told about. Nothing "
-"goes out until you send it — review what is waiting, add a word of your own "
-"if it helps, and press send. If it is no longer worth announcing, discard it"
-" and this will stop."
+"%(project)s has changes the cast can already see in the app but has not been"
+" notified about. Nothing goes out until you send it — review what is "
+"waiting, add a word of your own if it helps, and press send. If it is not "
+"worth announcing, discard it: the changes stay in the app, only the "
+"notification is dropped, and these reminders stop."
 msgstr ""
 
 #: notifications/message_content.py:0
@@ -4042,7 +4043,7 @@ msgid ""
 msgstr ""
 
 #: notifications/message_content.py
-msgid "The cast doesn't know about them yet"
+msgid "The cast hasn't been notified yet"
 msgstr ""
 
 #: notifications/message_content.py

@@ -3207,7 +3207,7 @@ msgid "Waiting to be sent"
 msgstr "Czeka na wysłanie"
 
 #: notifications/message_content.py:0
-msgid "Not yet told"
+msgid "Not yet notified"
 msgstr "Nie powiadomiono"
 
 #: notifications/message_content.py:0
@@ -3216,15 +3216,17 @@ msgstr "Przejrzyj i wyślij"
 
 #: notifications/message_content.py:0
 msgid ""
-"%(project)s is holding changes the cast has not been told about. Nothing "
-"goes out until you send it — review what is waiting, add a word of your own "
-"if it helps, and press send. If it is no longer worth announcing, discard it"
-" and this will stop."
+"%(project)s has changes the cast can already see in the app but has not been"
+" notified about. Nothing goes out until you send it — review what is "
+"waiting, add a word of your own if it helps, and press send. If it is not "
+"worth announcing, discard it: the changes stay in the app, only the "
+"notification is dropped, and these reminders stop."
 msgstr ""
-"W projekcie „%(project)s” czekają zmiany, o których obsada jeszcze nie wie. "
-"Nic nie wyjdzie, dopóki tego nie wyślesz — przejrzyj, co czeka, dopisz słowo"
-" od siebie, jeśli to pomoże, i naciśnij wyślij. Jeśli nie warto już tego "
-"ogłaszać, odrzuć kolejkę, a przypomnienia ustaną."
+"W projekcie „%(project)s” są zmiany, które obsada widzi już w aplikacji, ale"
+" nie dostała o nich powiadomienia. Nic nie wyjdzie, dopóki tego nie wyślesz "
+"— przejrzyj, co czeka, dopisz słowo od siebie, jeśli to pomoże, i naciśnij "
+"wyślij. Jeśli nie warto tego ogłaszać, odrzuć kolejkę: zmiany zostaną w "
+"aplikacji, przepadnie tylko powiadomienie, a przypomnienia ustaną."
 
 #: notifications/message_content.py:0
 msgid "Unannounced Changes Waiting"
@@ -5434,8 +5436,8 @@ msgstr ""
 "nadal Ci pasują."
 
 #: notifications/message_content.py
-msgid "The cast doesn't know about them yet"
-msgstr "Obsada jeszcze o nich nie wie"
+msgid "The cast hasn't been notified yet"
+msgstr "Obsada nie dostała jeszcze powiadomienia"
 
 #: notifications/message_content.py
 #, python-format

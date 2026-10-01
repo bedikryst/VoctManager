@@ -775,7 +775,7 @@ export default function ProjectHubLayout(): React.JSX.Element {
       <ConfirmModal
         isOpen={isQueuePrompt}
         isDestructive={false}
-        title={t("projects.announce.leave_title", "Obsada jeszcze o tym nie wie")}
+        title={t("projects.announce.leave_title", "Obsada nie dostała jeszcze powiadomienia")}
         description={t("projects.announce.leave_desc", {
           count: pendingChangeCount,
           defaultValue:
