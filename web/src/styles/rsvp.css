@@ -26,7 +26,8 @@
  *   - the light rises once on load and then breathes, slowly enough to be felt rather than seen;
  *   - the clouds gather into the foot corners when the controller cues them (`.reveal-cue`), then
  *     keep billowing from those corners, each on its own slow period;
- *   - in the form: the writing line inks outward from its centre on focus, the seat count turns
+ *   - in the form: the name's dotted blank is drawn from its centre once the card has inked in,
+ *     the writing line inks outward from its centre on focus, the seat count turns
  *     like a counter wheel (WAAPI, in the island), the act shows a light passing while it sends,
  *     and the receipt arrives line by line under a pressed seal.
  *
@@ -192,14 +193,16 @@ body.page-rsvp .chrome.is-solid::after {
 }
 
 /* The press settles at this page's heading weight, not the site's 300: the card's title is a
-   regular capital, and 300 capitals on rose paper are the spindly title this page had. */
+   regular capital, and 300 capitals on rose paper are the spindly title this page had. The weight
+   reads the token rather than restating it, so the resting weight and the one a visitor without
+   motion sees cannot part (registers.css, constraint 1; the build's register audit, R6). */
 .rsvp-title {
   --wght-rest: 460;
   margin: 14px 0 0;
   padding-left: 0.075em;
   color: var(--rsvp-ink-deep);
   font-size: clamp(36px, 5.2vw, 68px);
-  font-weight: 460;
+  font-weight: var(--wght-rest);
   letter-spacing: 0.075em;
   line-height: 1.06;
   text-transform: uppercase;
@@ -474,6 +477,18 @@ html.voct-motion .rsvp-rubric:not(.is-in)::after {
 
 .rsvp-line::after {
   background: var(--rsvp-line-strong);
+}
+
+/* THE UNWRITTEN LINE IS DOTTED, as a reply card prints its blanks and as the landing dots its own
+   (`notice-blank-line`): among the card's border, its inner frame and the head's hairlines, a
+   solid rule under an empty field read as one more ornament. The dots are the resting rule masked,
+   in full ink so the pattern carries. The first letter turns them solid, which nobody sees: the
+   field has focus by then, and the ink rule above covers the whole line. Only the name is dotted —
+   the seat count is never blank. */
+.rsvp-line:has([data-blank])::after {
+  background: var(--rsvp-ink);
+  -webkit-mask: repeating-linear-gradient(90deg, #000 0 2px, transparent 2px 5px);
+  mask: repeating-linear-gradient(90deg, #000 0 2px, transparent 2px 5px);
 }
 
 .rsvp-line::before {
@@ -942,6 +957,16 @@ html.voct-motion .rsvp-cloud-left.is-in {
 
 html.voct-motion .rsvp-cloud-right.is-in {
   animation: rsvp-billow 26s ease-in-out -9s infinite alternate;
+}
+
+/* The blank is drawn once the reply card has inked in, from its centre outward like every rule on
+   this sheet. A form that comes back from the receipt is mounted already drawn. */
+html.voct-motion .rsvp-line::after {
+  transition: transform var(--rule-in) var(--ease-rule) 0.45s;
+}
+
+html.voct-motion .rsvp-slot:not(.is-in) .rsvp-line::after {
+  transform: scaleX(0);
 }
 
 /* The receipt is written onto the card in order: seal, thanks, the two lines, the farewell. */

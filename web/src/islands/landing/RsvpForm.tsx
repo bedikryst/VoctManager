@@ -260,6 +260,9 @@ export function RsvpForm({
               autoCapitalize="words"
               spellCheck={false}
               maxLength={120}
+              /* Marks the unwritten line for the stylesheet, which dots it; autofill reaches
+                 `onChange`, so the mark goes with it too. */
+              data-blank={fullName === "" ? "" : undefined}
               aria-invalid={nameInvalid || undefined}
               aria-describedby={nameInvalid ? errorId : undefined}
               value={fullName}
