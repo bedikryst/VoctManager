@@ -4234,6 +4234,8 @@
       "scope_materials_body": "You can open the scores and the programme, even if you are not singing in it.",
       "scope_choir_marks": "Markings for the choir",
       "scope_choir_marks_body": "What you write on the “Visible to the choir” layer, every singer in this project sees — just like the conductor's markings.",
+      "scope_planning": "Rehearsal plan",
+      "scope_planning_body": "You'll plan the rehearsals you lead and send the plan to the singers. You'll see the project's programme while you do.",
       "next": "Next rehearsal: {{when}}",
       "until": "Until {{when}}",
       "until_close": "Until the project closes",
@@ -4366,6 +4368,9 @@
         "choir_marks": "Writes markings for the choir",
         "choir_marks_hint": "Writes on the “Visible to the choir” layer — the official markings every singer sees. Off by default.",
         "choir_marks_granted": "Writes markings for the choir",
+        "planning": "Plans the rehearsals they lead",
+        "planning_hint": "Writes the plan of the rehearsals they lead and sends it to the singers. Sees the project's programme to do so. Off by default.",
+        "planning_granted": "Plans the rehearsals they lead",
         "without_marks": "no notes",
         "without_roll_call": "no attendance",
         "without_materials": "no materials",
@@ -5449,10 +5454,17 @@
       "title": "Rehearsal plan",
       "publish": "Publish plan",
       "send_changes": "Send changes",
+      "send_now": "Send the plan to the singers now",
+      "send_changes_now": "Send the changes to the singers now",
+      "edit": "Edit plan",
       "draft": "Draft — the choir cannot see it",
       "announced_at": "Published · sent {{when}}",
       "announced_changed": "Published · sent {{when}} · changed since",
       "loading": "Opening the plan…",
+      "load_error": {
+        "title": "The plan could not be opened",
+        "desc": "The project's programme and cast did not load, so the plan cannot be laid out right now."
+      },
       "empty": {
         "title": "No plan yet",
         "desc": "Lay the pieces out in rehearsal order; minutes, times and exclusions are optional."
@@ -5485,6 +5497,11 @@
         "save_error": "The plan could not be saved.",
         "published": "Plan published and sent to everyone called.",
         "changes_sent": "Changes sent to everyone called.",
+        "queued": "Plan published. The notice is waiting in the announcement queue.",
+        "changes_queued": "The changes are waiting in the announcement queue.",
+        "queued_with_rehearsal": "Plan published. The notice will go out with this rehearsal's announcement.",
+        "changes_queued_with_rehearsal": "The changes will go out with this rehearsal's announcement.",
+        "withheld": "The project is still a draft, so nobody was notified. The choir will see the plan along with the project.",
         "announce_error": "The plan could not be sent.",
         "untitled": "Give every point without a piece a name.",
         "done_error": "The point could not be ticked."

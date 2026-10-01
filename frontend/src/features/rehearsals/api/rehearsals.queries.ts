@@ -48,6 +48,15 @@ export const rehearsalKeys = {
      */
     plan: (rehearsalId: string | number) =>
       ["rehearsal-plan", String(rehearsalId)] as const,
+    /**
+     * A planner's read of the project through one evening (`plan/editor/`).
+     * Its own root for the same reason: a roll-call tap on the lead sheet
+     * invalidates `["rehearsals"]`, and this is the programme and the cast,
+     * not the register.
+     */
+    planEditorAll: ["rehearsal-plan-editor"] as const,
+    planEditor: (rehearsalId: string | number) =>
+      ["rehearsal-plan-editor", String(rehearsalId)] as const,
   },
   attendances: {
     all: ["attendances"] as const,

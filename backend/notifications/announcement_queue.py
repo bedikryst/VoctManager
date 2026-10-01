@@ -1006,12 +1006,14 @@ class AnnouncementQueue:
     @staticmethod
     def pending_change_ids(
         project: Project, subject_type: str, subject_id: str,
+        *, except_fields: Iterable[str] = (),
     ) -> list[str]:
         """The rows still waiting to say that this subject changed, whatever
-        the field — what a publication about that one subject takes with
-        ``only``. Its creation is not among them: publishing a change never
-        announces a subject the conductor is still holding back, and holding
-        the creation holds its changes too (`_partition`)."""
+        the field (bar ``except_fields``) — what a publication about that one
+        subject takes with ``only``. Its creation is not among them:
+        publishing a change never announces a subject the conductor is still
+        holding back, and holding the creation holds its changes too
+        (`_partition`)."""
         return [
             str(row_id)
             for row_id in PendingAnnouncement.objects.filter(
@@ -1020,7 +1022,7 @@ class AnnouncementQueue:
                 subject_type=subject_type,
                 subject_id=str(subject_id),
                 kind=AnnouncementKind.CHANGED,
-            ).values_list("id", flat=True)
+            ).exclude(change_field__in=list(except_fields)).values_list("id", flat=True)
         ]
 
 

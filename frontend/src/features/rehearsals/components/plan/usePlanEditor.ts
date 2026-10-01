@@ -24,13 +24,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
 import { formatInTimeZone } from "date-fns-tz";
 
-import type {
-  Piece,
-  ProgramItem,
-  Rehearsal,
-  RehearsalPlanItem,
-  VoiceLine,
-} from "@/shared/types";
+import type { Rehearsal, RehearsalPlanItem, VoiceLine } from "@/shared/types";
 import { scopedToEdition } from "@/features/archive/constants/divisiScope";
 import { voiceFamilyOf, type VoiceFamilyId } from "@/features/projects/lib/voiceFamilies";
 import { resolveInvited } from "../../lib/attendanceStats";
@@ -44,7 +38,12 @@ import {
   type EffectiveClock,
   type PlanRuleRow,
 } from "../../lib/rehearsalPlan";
-import type { RehearsalPlanRead, RehearsalPlanRowDTO } from "../../types/rehearsalPlan.dto";
+import type {
+  PlanEditorPiece,
+  PlanEditorProgramItem,
+  RehearsalPlanRead,
+  RehearsalPlanRowDTO,
+} from "../../types/rehearsalPlan.dto";
 import type { PlanEditorData } from "./usePlanEditorData";
 
 /** The sortable id of the reserve divider — never a row's key (those are UUIDs). */
@@ -356,12 +355,12 @@ export const usePlanEditor = (
     [data.program],
   );
   const programByPiece = useMemo(() => {
-    const map = new Map<string, ProgramItem>();
+    const map = new Map<string, PlanEditorProgramItem>();
     for (const item of program) map.set(String(item.piece), item);
     return map;
   }, [program]);
   const pieceById = useMemo(() => {
-    const map = new Map<string, Piece>();
+    const map = new Map<string, PlanEditorPiece>();
     for (const piece of data.pieces) map.set(String(piece.id), piece);
     return map;
   }, [data.pieces]);
@@ -385,16 +384,29 @@ export const usePlanEditor = (
     [pieceById, programByPiece],
   );
 
+  // A piece taken off the programme after it was planned is in neither list
+  // above for a planner, whose dictionary is the programme's; the saved rows
+  // (this evening's, and the ones a fill copies from) still carry its title.
+  const plannedTitles = useMemo(() => {
+    const map = new Map<string, string>();
+    const saved = [...serverRows, ...data.rehearsals.flatMap((other) => other.plan ?? [])];
+    for (const item of saved) {
+      if (item.piece !== null && item.piece_title) map.set(item.piece, item.piece_title);
+    }
+    return map;
+  }, [serverRows, data.rehearsals]);
+
   const titleOf = useCallback(
     (row: PlanDraftRow): string => {
       if (row.piece === null) return row.label;
       return (
         programByPiece.get(row.piece)?.piece_title ??
         pieceById.get(row.piece)?.title ??
+        plannedTitles.get(row.piece) ??
         ""
       );
     },
-    [programByPiece, pieceById],
+    [programByPiece, pieceById, plannedTitles],
   );
 
   const programOptions = useMemo(

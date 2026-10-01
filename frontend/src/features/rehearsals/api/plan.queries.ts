@@ -1,19 +1,22 @@
 /**
  * @file plan.queries.ts
  * @description React Query hooks for one rehearsal's plan: the editor's read,
- * the whole-list save (bound to one rehearsal, or naming it per call for the
- * project grid), the per-row done tick and the announcement. Saving is
- * silent on the server and stays silent here — no toast says "the cast was
- * told", because it was not; `useAnnouncePlan` is the one act that tells them.
- * Every write settles by invalidating the rehearsal lists, the lead sheet and
- * the schedule dashboard, since all three embed the plan.
+ * a planner's read of the project through the evening, the whole-list save
+ * (bound to one rehearsal, or naming it per call for the project grid), the
+ * per-row done tick and the announcement. Saving is silent on the server and
+ * stays silent here — no toast says "the cast was told", because it was not;
+ * `useAnnouncePlan` is the one act that tells them. Every write settles by
+ * invalidating the rehearsal lists, the lead sheet, the planner's reads of the
+ * other evenings and the schedule dashboard, since all of them embed the plan.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/api/plan.queries
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
 
-import { PERSONAL_READMODEL_KEYS } from "@/shared/api/queryPolicy";
+import { PERSONAL_READMODEL_KEYS, RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
+import { FAST_CHANGING_STALE_TIME } from "@/features/projects/api/project.query-utils";
 import type { RehearsalPlanItem } from "@/shared/types";
 import { leadSheetKeys } from "./leadSheet.queries";
 import { rehearsalKeys } from "./rehearsals.queries";
@@ -30,15 +33,41 @@ export const useRehearsalPlan = (rehearsalId: string | undefined) =>
     staleTime: PLAN_STALE_TIME,
   });
 
+/**
+ * The programme, the cast's voices, the casting board and the project's
+ * evenings, for a planner who is not a manager — one read gated on this
+ * evening. The same freshness as the hub's programme and board it stands in
+ * for. A 404 is final (the grant was withdrawn, or the evening is not theirs
+ * to plan), so it is not retried; any other failure is, like every read.
+ */
+export const usePlanEditorRead = (rehearsalId: string, enabled: boolean) =>
+  useQuery({
+    queryKey: rehearsalKeys.rehearsals.planEditor(rehearsalId),
+    queryFn: () => RehearsalsService.getPlanEditor(rehearsalId),
+    enabled: enabled && Boolean(rehearsalId),
+    retry: (failureCount, error) =>
+      !(isAxiosError(error) && error.response?.status === 404) && failureCount < 2,
+    ...RECONCILING_REFETCH,
+    staleTime: FAST_CHANGING_STALE_TIME,
+  });
+
 /** The surfaces that embed the plan and must re-read after any plan write. */
 const settlePlanReaders = async (
   queryClient: ReturnType<typeof useQueryClient>,
   rehearsalId: string,
 ): Promise<void> => {
+  const ownRead = rehearsalKeys.rehearsals.planEditor(rehearsalId);
   // `["rehearsals"]` is the root of the project hub's per-project lists too.
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: rehearsalKeys.rehearsals.all }),
     queryClient.invalidateQueries({ queryKey: leadSheetKeys.byRehearsal(rehearsalId) }),
+    // Every evening's plan rides in a planner's read of the OTHER evenings —
+    // the fills copy from them. The written evening's own read is spared: its
+    // editor never reads its own entry there, and a debrief ticks row by row.
+    queryClient.invalidateQueries({
+      queryKey: rehearsalKeys.rehearsals.planEditorAll,
+      predicate: (query) => query.queryKey[1] !== ownRead[1],
+    }),
     queryClient.invalidateQueries({ queryKey: PERSONAL_READMODEL_KEYS.scheduleDashboard }),
   ]);
 };

@@ -18,6 +18,7 @@ import type {
   AttendanceUpsertDTO,
 } from "../types/rehearsals.dto";
 import type {
+  PlanEditorRead,
   RehearsalPlanAnnounced,
   RehearsalPlanDTO,
   RehearsalPlanRead,
@@ -142,6 +143,15 @@ export const RehearsalsService = {
     const response = await api.put<RehearsalPlanRead>(
       `/api/rehearsals/${rehearsalId}/plan/`,
       data,
+    );
+    return response.data;
+  },
+
+  /** The project as the plan editor needs it, read through one evening the
+   *  reader may plan — the planner's door; a manager reads the hub's lists. */
+  getPlanEditor: async (rehearsalId: string): Promise<PlanEditorRead> => {
+    const response = await api.get<PlanEditorRead>(
+      `/api/rehearsals/${rehearsalId}/plan/editor/`,
     );
     return response.data;
   },

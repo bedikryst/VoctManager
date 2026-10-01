@@ -455,6 +455,9 @@ const describe = (
         notification.metadata.can_mark_for_choir
           ? t("notifications.delegation.scope_choir_marks", "Uwagi dla chóru")
           : null,
+        notification.metadata.can_manage_led_rehearsals
+          ? t("notifications.delegation.scope_planning", "Plan prób")
+          : null,
       ].filter((scope): scope is string => scope !== null);
       const m = notification.metadata;
       const values = { project: m.project_name, context: eventKindContext(m.event_kind) };

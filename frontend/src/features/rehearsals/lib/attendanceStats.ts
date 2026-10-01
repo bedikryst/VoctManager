@@ -69,15 +69,18 @@ export const EMPTY_TALLY: AttendanceTally = {
  * empty rule means tutti: everyone still on the project. A player has no
  * section for that rule to name, so the flag alone speaks for them, sectional
  * or not — the rehearsal pianist at a sectional. Callers pass
- * `projectParticipations` already pruned of declined singers.
+ * `projectParticipations` already pruned of declined singers; a seat needs only
+ * its id and voice, so the plan editor's nameless seats pass as they are.
  */
-export const resolveInvited = (
+export const resolveInvited = <
+  P extends Pick<Participation, "id" | "artist_voice_type" | "default_voice_line">,
+>(
   rehearsal: Pick<
     Rehearsal,
     "invited_participations" | "calls_instrumentalists" | "called_sections"
   >,
-  projectParticipations: Participation[],
-): Participation[] => {
+  projectParticipations: readonly P[],
+): P[] => {
   const invitedIds = rehearsal.invited_participations ?? [];
   if (invitedIds.length === 0) {
     const calledSections = rehearsal.called_sections ?? "";

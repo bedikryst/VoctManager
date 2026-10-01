@@ -4309,6 +4309,8 @@
       "scope_materials_body": "Otworzysz nuty i program projektu, nawet jeśli sam w nim nie śpiewasz.",
       "scope_choir_marks": "Uwagi dla chóru",
       "scope_choir_marks_body": "To, co napiszesz na warstwie „Widoczne dla chóru”, zobaczy każdy śpiewak tego projektu — tak jak uwagi dyrygenta.",
+      "scope_planning": "Plan prób",
+      "scope_planning_body": "Ułożysz plan prób, które prowadzisz, i wyślesz go chórzystom. Zobaczysz przy tym program projektu.",
       "next": "Najbliższa próba: {{when}}",
       "until": "Do {{when}}",
       "until_close": "Do zakończenia projektu",
@@ -4441,6 +4443,9 @@
         "choir_marks": "Nanosi uwagi dla chóru",
         "choir_marks_hint": "Pisze na warstwie „Widoczne dla chóru” — oficjalnych uwagach, które widzi każdy śpiewak. Domyślnie wyłączone.",
         "choir_marks_granted": "Nanosi uwagi dla chóru",
+        "planning": "Układa plan swoich prób",
+        "planning_hint": "Pisze i wysyła chórzystom plan prób, które prowadzi. Widzi przy tym program projektu. Domyślnie wyłączone.",
+        "planning_granted": "Układa plan swoich prób",
         "without_marks": "bez notatek",
         "without_roll_call": "bez obecności",
         "without_materials": "bez materiałów",
@@ -5533,10 +5538,17 @@
       "title": "Plan próby",
       "publish": "Opublikuj plan",
       "send_changes": "Wyślij zmiany",
+      "send_now": "Wyślij plan chórzystom teraz",
+      "send_changes_now": "Wyślij zmiany chórzystom teraz",
+      "edit": "Edytuj plan",
       "draft": "Szkic — chór go nie widzi",
       "announced_at": "Opublikowany · wysłano {{when}}",
       "announced_changed": "Opublikowany · wysłano {{when}} · zmieniony po wysłaniu",
       "loading": "Otwieram plan…",
+      "load_error": {
+        "title": "Nie udało się otworzyć planu",
+        "desc": "Nie wczytały się program ani obsada projektu, więc nie da się teraz układać planu."
+      },
       "empty": {
         "title": "Bez planu",
         "desc": "Ułóż utwory w kolejności ćwiczenia; minuty, godziny i wykluczenia są opcjonalne."
@@ -5571,6 +5583,11 @@
         "save_error": "Nie udało się zapisać planu.",
         "published": "Plan opublikowany i wysłany do wezwanych.",
         "changes_sent": "Zmiany wysłane do wezwanych.",
+        "queued": "Plan opublikowany. Powiadomienie czeka w kolejce ogłoszeń.",
+        "changes_queued": "Zmiany czekają w kolejce ogłoszeń.",
+        "queued_with_rehearsal": "Plan opublikowany. Powiadomienie wyjdzie razem z ogłoszeniem tej próby.",
+        "changes_queued_with_rehearsal": "Zmiany wyjdą razem z ogłoszeniem tej próby.",
+        "withheld": "Projekt jest jeszcze szkicem, więc nikt nie dostał powiadomienia. Chór zobaczy plan razem z projektem.",
         "announce_error": "Nie udało się wysłać planu.",
         "untitled": "Nadaj nazwę każdemu punktowi bez utworu.",
         "done_error": "Nie udało się odhaczyć punktu."

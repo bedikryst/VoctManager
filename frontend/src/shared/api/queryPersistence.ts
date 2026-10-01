@@ -94,8 +94,14 @@ const IDB_KEY = "client";
  * and `calendar_entry`. A snapshot from before holds neither, so a traveller's
  * card would state the on-site call alone and "Add to calendar" would book the
  * concert without the departure.
+ *
+ * 2026-10-assistant-plans: a lead sheet carries `may_plan`, a delegate row
+ * `can_manage_led_rehearsals`. A snapshot from before holds neither, so the
+ * assistant conductor would open their evening to a read-only plan, and the
+ * manager's card would show a planning grant as absent — and "Zmień" on that
+ * row would save it away before the refetch lands.
  */
-export const QUERY_CACHE_BUSTER = "2026-09-trip-plan-start";
+export const QUERY_CACHE_BUSTER = "2026-10-assistant-plans";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

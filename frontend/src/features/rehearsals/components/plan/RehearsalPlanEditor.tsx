@@ -13,9 +13,14 @@
  * visible but silent, and "Wyślij zmiany" is the conductor's own act, enabled
  * only when the rows changed since the last send. The conductor edits a dozen
  * times the day before, and each save queuing a notice would teach the choir
- * to ignore them.
+ * to ignore them. A manager's send joins the announcement queue he publishes;
+ * a planner who is not a manager has no queue, so theirs goes out at once and
+ * the button says so. The toast reports what the server says became of the
+ * notice (`delivery`), never "sent" for a notice that is waiting.
  *
- * Mounted twice: as a band in the manager's `RehearsalInspector`, where the
+ * Mounted as a band in `RehearsalInspector` — the manager's workspace, and the
+ * lead sheet of a planner the server admits (`access="planner"`, which reads
+ * the project through the evening rather than the hub's lists) — where the
  * save bar docks over the page, and in a `BottomSheet` from the project's
  * Rehearsals tab, where the docked bar would sit under the sheet's scrim —
  * so the sheet asks for `actions="inline"` and the buttons sit at the foot of
@@ -65,14 +70,21 @@ import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import type { Rehearsal } from "@/shared/types";
 import { useAnnouncePlan, useRehearsalPlan, useSaveRehearsalPlan } from "../../api/plan.queries";
+import type { PlanDelivery } from "../../types/rehearsalPlan.dto";
 import { PlanAttendanceStrip } from "./PlanAttendanceStrip";
 import { PlanBlockHeader } from "./PlanBlockHeader";
 import { RehearsalPlanRow } from "./RehearsalPlanRow";
 import { RESERVE_DIVIDER_KEY, usePlanEditor, type PlanDraftRow } from "./usePlanEditor";
-import { usePlanEditorData } from "./usePlanEditorData";
+import { usePlanEditorData, type PlanEditorAccess } from "./usePlanEditorData";
 
 interface RehearsalPlanEditorProps {
   readonly rehearsal: Rehearsal;
+  /**
+   * Who is laying the evening out. `manager` (the default) reads the hub's
+   * lists and sends through the announcement queue; `planner` reads the
+   * evening's own projection and sends at once.
+   */
+  readonly access?: PlanEditorAccess;
   /**
    * Where the save controls live. `dock` is the shared `EditorActionBar`
    * over the page; `inline` puts the same two buttons at the editor's foot,
@@ -161,6 +173,7 @@ const EndOfRehearsalLine = ({ clock }: { clock: string }): React.JSX.Element => 
 
 export const RehearsalPlanEditor = ({
   rehearsal,
+  access = "manager",
   actions = "dock",
   onDirtyChange,
   className,
@@ -168,7 +181,7 @@ export const RehearsalPlanEditor = ({
   const { t, i18n } = useTranslation();
   const rehearsalId = String(rehearsal.id);
   const planQuery = useRehearsalPlan(rehearsalId);
-  const data = usePlanEditorData(String(rehearsal.project));
+  const data = usePlanEditorData(rehearsal, access);
   const editor = usePlanEditor(rehearsal, planQuery.data, data);
   const save = useSaveRehearsalPlan(rehearsalId);
   const announce = useAnnouncePlan(rehearsalId);
@@ -238,14 +251,46 @@ export const RehearsalPlanEditor = ({
     }
   };
 
-  const handleAnnounce = async (): Promise<void> => {
-    try {
-      await announce.mutateAsync();
-      toast.success(
-        isPublished
-          ? t("rehearsals.plan.toast.changes_sent", "Zmiany wysłane do wezwanych.")
-          : t("rehearsals.plan.toast.published", "Plan opublikowany i wysłany do wezwanych."),
+  // What the toast may claim is what the server says became of the notice.
+  // A waiting notice is never called sent: for a manager it waits in his own
+  // queue; for a planner only behind the evening's own unannounced creation,
+  // which a manager publishes.
+  const deliveryMessage = (delivery: PlanDelivery, wasPublished: boolean): string => {
+    if (delivery === "withheld") {
+      return t(
+        "rehearsals.plan.toast.withheld",
+        "Projekt jest jeszcze szkicem, więc nikt nie dostał powiadomienia. Chór zobaczy plan razem z projektem.",
       );
+    }
+    if (delivery === "queued") {
+      if (access === "planner") {
+        return wasPublished
+          ? t(
+              "rehearsals.plan.toast.changes_queued_with_rehearsal",
+              "Zmiany wyjdą razem z ogłoszeniem tej próby.",
+            )
+          : t(
+              "rehearsals.plan.toast.queued_with_rehearsal",
+              "Plan opublikowany. Powiadomienie wyjdzie razem z ogłoszeniem tej próby.",
+            );
+      }
+      return wasPublished
+        ? t("rehearsals.plan.toast.changes_queued", "Zmiany czekają w kolejce ogłoszeń.")
+        : t(
+            "rehearsals.plan.toast.queued",
+            "Plan opublikowany. Powiadomienie czeka w kolejce ogłoszeń.",
+          );
+    }
+    return wasPublished
+      ? t("rehearsals.plan.toast.changes_sent", "Zmiany wysłane do wezwanych.")
+      : t("rehearsals.plan.toast.published", "Plan opublikowany i wysłany do wezwanych.");
+  };
+
+  const handleAnnounce = async (): Promise<void> => {
+    const wasPublished = isPublished;
+    try {
+      const announced = await announce.mutateAsync();
+      toast.success(deliveryMessage(announced.delivery, wasPublished));
     } catch (error) {
       toastApiError(error, t, {
         fallbackDescription: t("rehearsals.plan.toast.announce_error", "Nie udało się wysłać planu."),
@@ -289,8 +334,11 @@ export const RehearsalPlanEditor = ({
   const isBusy = save.isPending || announce.isPending;
   // The rows arrive as a draft the conductor may still be laying out; until
   // the server's plan is in hand, every way of adding to it is shut, or a row
-  // added first would be the only row the draft has.
+  // added first would be the only row the draft has. A project read that
+  // failed shuts them too: an empty programme it would show is not the
+  // project's.
   const isOpening = planQuery.isLoading || data.isLoading;
+  const isShut = isOpening || data.isLoadError;
   const canAnnounce =
     savedRows.length > 0 &&
     !editor.isDirty &&
@@ -320,7 +368,7 @@ export const RehearsalPlanEditor = ({
               <Button
                 variant="ghost"
                 size="sm"
-                disabled={isOpening}
+                disabled={isShut}
                 leftIcon={<ListPlus size={14} aria-hidden="true" />}
               >
                 {t("rehearsals.plan.fill.menu", "Wypełnij")}
@@ -382,9 +430,13 @@ export const RehearsalPlanEditor = ({
             isLoading={announce.isPending}
             leftIcon={!announce.isPending ? <Send size={14} aria-hidden="true" /> : undefined}
           >
-            {isPublished
-              ? t("rehearsals.plan.send_changes", "Wyślij zmiany")
-              : t("rehearsals.plan.publish", "Opublikuj plan")}
+            {access === "planner"
+              ? isPublished
+                ? t("rehearsals.plan.send_changes_now", "Wyślij zmiany chórzystom teraz")
+                : t("rehearsals.plan.send_now", "Wyślij plan chórzystom teraz")
+              : isPublished
+                ? t("rehearsals.plan.send_changes", "Wyślij zmiany")
+                : t("rehearsals.plan.publish", "Opublikuj plan")}
           </Button>
         </div>
       </div>
@@ -415,7 +467,7 @@ export const RehearsalPlanEditor = ({
         )
       )}
 
-      {!isOpening && data.attendances && (
+      {!isShut && data.attendances && (
         <PlanAttendanceStrip
           rehearsal={rehearsal}
           participations={data.participations}
@@ -429,6 +481,23 @@ export const RehearsalPlanEditor = ({
           fullHeight={false}
           className="py-8"
           message={t("rehearsals.plan.loading", "Otwieram plan…")}
+        />
+      ) : data.isLoadError ? (
+        <StatePanel
+          variant="inline"
+          tone="warning"
+          className="px-5 py-8"
+          icon={<ListMusic size={22} aria-hidden="true" />}
+          title={t("rehearsals.plan.load_error.title", "Nie udało się otworzyć planu")}
+          description={t(
+            "rehearsals.plan.load_error.desc",
+            "Nie wczytały się program ani obsada projektu, więc nie da się teraz układać planu.",
+          )}
+          actions={
+            <Button variant="outline" size="sm" onClick={data.retry}>
+              {t("common.actions.retry", "Spróbuj ponownie")}
+            </Button>
+          }
         />
       ) : editor.rows.length === 0 ? (
         <StatePanel
@@ -510,7 +579,7 @@ export const RehearsalPlanEditor = ({
               if (pieceId) editor.addPieceRow(pieceId);
             }}
             options={addOptions}
-            disabled={isOpening || addOptions.length === 0}
+            disabled={isShut || addOptions.length === 0}
             leftIcon={<Plus size={14} aria-hidden="true" />}
             placeholder={
               addOptions.length === 0
@@ -525,7 +594,7 @@ export const RehearsalPlanEditor = ({
             variant="ghost"
             size="sm"
             onClick={editor.addFreeRow}
-            disabled={isOpening}
+            disabled={isShut}
             leftIcon={<Plus size={14} aria-hidden="true" />}
           >
             {t("rehearsals.plan.add.free", "Punkt bez utworu")}
@@ -534,7 +603,7 @@ export const RehearsalPlanEditor = ({
             variant="ghost"
             size="sm"
             onClick={() => editor.addBreakRow(t("rehearsals.plan.row.break_label", "Przerwa"))}
-            disabled={isOpening}
+            disabled={isShut}
             leftIcon={<Coffee size={14} aria-hidden="true" />}
           >
             {t("rehearsals.plan.add.break", "Dodaj przerwę")}

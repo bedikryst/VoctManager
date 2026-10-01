@@ -338,11 +338,16 @@ const LedProjectItem = ({ project }: { project: DossierLedProject }) => {
               })}
             </Caption>
           )}
-          {/* The fourth scope is off by default, so granted is the exception
-              worth a line. */}
+          {/* The last two scopes are off by default, so granted is the
+              exception worth a line. */}
           {project.scopes.choir_marks && (
             <Caption color="gold">
               {t("projects.delegates.scope.choir_marks_granted", "Nanosi uwagi dla chóru")}
+            </Caption>
+          )}
+          {project.scopes.manage_rehearsals && (
+            <Caption color="gold">
+              {t("projects.delegates.scope.planning_granted", "Układa plan swoich prób")}
             </Caption>
           )}
         </div>

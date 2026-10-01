@@ -1405,6 +1405,27 @@ class RehearsalPlanApiTests(APITestCase):
         self.assertIn(self._user_id("alt"), reached)
         self.assertNotIn(str(self.leader_user.pk), reached)
 
+    def test_her_send_reaches_her_when_it_carries_his_move(self) -> None:
+        """The conductor's unpublished move of the evening rides out with her
+        plan; she did not write the move, so the notice is news to her too.
+        Her own topic line alongside the plan is not."""
+        from notifications.models import AnnouncementKind
+
+        Participation.objects.create(
+            artist=self.leader, project=self.project, status=Participation.Status.CONFIRMED,
+        )
+        self._let_the_leader_plan()
+        self._pending_row(str(self.rehearsal.id), AnnouncementKind.CHANGED, "focus")
+        self._as_leader("put", self.plan_url, {"rows": self._evening()})
+        _response, reached = self._her_send()
+        self.assertNotIn(str(self.leader_user.pk), reached)
+
+        self._as_leader("put", self.plan_url, {"rows": self._evening()[:1]})
+        self._pending_row(str(self.rehearsal.id), AnnouncementKind.CHANGED, "date_time")
+        response, reached = self._her_send()
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertIn(str(self.leader_user.pk), reached)
+
     def test_her_send_leaves_the_managers_reminder_while_his_queue_waits(self) -> None:
         """Her publication takes one evening's rows and reviews nothing else:
         the "changes are waiting" nudge stays up while his rows do."""
@@ -1551,7 +1572,7 @@ class RehearsalPlanApiTests(APITestCase):
         self.assertEqual(len(data["participations"]), len(_CAST))
         self.assertEqual(
             set(data["participations"][0]),
-            {"id", "status", "artist_voice_type", "default_voice_line"},
+            {"id", "artist_voice_type", "default_voice_line"},
         )
         self.assertEqual(len(data["castings"]), ProjectPieceCasting.objects.count())
 

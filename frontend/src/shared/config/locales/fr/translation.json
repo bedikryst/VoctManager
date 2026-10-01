@@ -4243,6 +4243,8 @@
       "scope_materials_body": "Vous pourrez ouvrir les partitions et le programme, même si vous n’y chantez pas.",
       "scope_choir_marks": "Annotations pour le chœur",
       "scope_choir_marks_body": "Ce que vous écrivez sur le calque « Visible par le chœur », chaque choriste du projet le verra — comme les annotations du chef.",
+      "scope_planning": "Plan de répétition",
+      "scope_planning_body": "Vous établirez le plan des répétitions que vous dirigez et l'enverrez aux choristes. Vous verrez pour cela le programme du projet.",
       "next": "Prochaine répétition : {{when}}",
       "until": "Jusqu’au {{when}}",
       "until_close": "Jusqu’à la clôture du projet",
@@ -4375,6 +4377,9 @@
         "choir_marks": "Annote pour le chœur",
         "choir_marks_hint": "Écrit sur le calque « Visible par le chœur » — les annotations officielles que chaque choriste voit. Désactivé par défaut.",
         "choir_marks_granted": "Annote pour le chœur",
+        "planning": "Établit le plan de ses répétitions",
+        "planning_hint": "Rédige le plan des répétitions qui lui sont confiées et l'envoie aux choristes. Voit pour cela le programme du projet. Désactivé par défaut.",
+        "planning_granted": "Établit le plan de ses répétitions",
         "without_marks": "sans les notes",
         "without_roll_call": "sans l'appel",
         "without_materials": "sans le matériel",
@@ -5458,10 +5463,17 @@
       "title": "Plan de répétition",
       "publish": "Publier le plan",
       "send_changes": "Envoyer les modifications",
+      "send_now": "Envoyer le plan aux choristes maintenant",
+      "send_changes_now": "Envoyer les modifications aux choristes maintenant",
+      "edit": "Modifier le plan",
       "draft": "Brouillon — le chœur ne le voit pas",
       "announced_at": "Publié · envoyé {{when}}",
       "announced_changed": "Publié · envoyé {{when}} · modifié depuis",
       "loading": "Ouverture du plan…",
+      "load_error": {
+        "title": "Impossible d'ouvrir le plan",
+        "desc": "Le programme et la distribution du projet n'ont pas pu être chargés, le plan ne peut donc pas être établi pour l'instant."
+      },
       "empty": {
         "title": "Pas encore de plan",
         "desc": "Disposez les œuvres dans l'ordre de travail ; les minutes, les heures et les exclusions sont facultatives."
@@ -5495,6 +5507,11 @@
         "save_error": "Impossible d'enregistrer le plan.",
         "published": "Plan publié et envoyé aux personnes convoquées.",
         "changes_sent": "Modifications envoyées aux personnes convoquées.",
+        "queued": "Plan publié. La notification attend dans la file d'annonces.",
+        "changes_queued": "Les modifications attendent dans la file d'annonces.",
+        "queued_with_rehearsal": "Plan publié. La notification partira avec l'annonce de cette répétition.",
+        "changes_queued_with_rehearsal": "Les modifications partiront avec l'annonce de cette répétition.",
+        "withheld": "Le projet est encore un brouillon, personne n'a donc été prévenu. Le chœur verra le plan avec le projet.",
         "announce_error": "Impossible d'envoyer le plan.",
         "untitled": "Donnez un nom à chaque point sans œuvre.",
         "done_error": "Impossible de cocher ce point."

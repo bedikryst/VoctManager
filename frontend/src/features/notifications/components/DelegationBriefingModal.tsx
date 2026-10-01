@@ -30,6 +30,7 @@ import {
   FileMusic,
   Hourglass,
   Info,
+  ListMusic,
   PencilLine,
   UserCheck,
   Users,
@@ -119,6 +120,19 @@ export const DelegationBriefingModal: React.FC = () => {
       body: t(
         "notifications.delegation.scope_roll_call_body",
         "Odhaczysz obecność na próbach tego projektu — także za innych śpiewaków.",
+      ),
+    });
+  }
+  // Said with what it shows: planning opens the programme even when the
+  // materials were withheld, and the grant is where the reader learns that.
+  if (metadata?.can_manage_led_rehearsals) {
+    scopes.push({
+      key: "planning",
+      Icon: ListMusic,
+      title: t("notifications.delegation.scope_planning", "Plan prób"),
+      body: t(
+        "notifications.delegation.scope_planning_body",
+        "Ułożysz plan prób, które prowadzisz, i wyślesz go chórzystom. Zobaczysz przy tym program projektu.",
       ),
     });
   }

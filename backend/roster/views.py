@@ -2345,6 +2345,9 @@ class RehearsalViewSet(viewsets.ModelViewSet):
                 rehearsal=rehearsal,
                 published_by=None if user_is_manager(user) else user,
             )
+        except Rehearsal.DoesNotExist:
+            # Deleted between the gate above and the send's own locked read.
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         except ValueError as exc:
             return make_error_response(
                 request,

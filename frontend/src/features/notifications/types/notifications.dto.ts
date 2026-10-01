@@ -253,7 +253,7 @@ export interface DelegatedRehearsalMetadata extends EventMomentMetadata {
 /**
  * Somebody has been asked to run a project's rehearsals in the conductor's
  * place. The scope flags travel because they ARE the message: a delegation is
- * four permissions that leak differently, and "you are running rehearsals" on
+ * five permissions that leak differently, and "you are running rehearsals" on
  * its own leaves the reader guessing which doors opened.
  */
 export interface RehearsalDelegationMetadata {
@@ -266,6 +266,7 @@ export interface RehearsalDelegationMetadata {
   can_take_roll_call?: boolean;
   can_open_materials?: boolean;
   can_mark_for_choir?: boolean;
+  can_manage_led_rehearsals?: boolean;
   expires_at?: string | null;
   expires_at_display?: string;
   timezone?: string;

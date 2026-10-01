@@ -1753,6 +1753,9 @@ class RehearsalOperationsService:
         # number is the language-neutral form and the composer spells it out.
         "duration_minutes": "duration",
     }
+    # The change keys a leader writes on an evening (the lead sheet's topic
+    # line, the plan); every other one comes from a manager.
+    _LEADER_WRITTEN_FIELDS: ClassVar[tuple[str, ...]] = ("focus", "plan")
 
     @staticmethod
     def update_rehearsal(rehearsal: Rehearsal, dto: RehearsalUpdateDTO, invited_participations: list[Participation] | None = None) -> Rehearsal:
@@ -2089,7 +2092,8 @@ class RehearsalOperationsService:
         ``published_by`` is a send by somebody with no queue of their own to
         review — the assistant conductor. The notice goes out at once through
         the queue's own publisher (the same message, window fan-out and link)
-        and never back to its sender. It takes every change still waiting
+        and not back to its sender, unless it carries a change they did not
+        write themselves. It takes every change still waiting
         about THIS evening, not only the plan: the notice carries the
         evening's current date, place and calendar entry, so a move the
         conductor has not published yet would otherwise reach the cast's
@@ -2157,12 +2161,19 @@ class RehearsalOperationsService:
                 metadata=metadata,
             )
             if published_by is not None:
+                subject = (rehearsal.project, AnnouncementSubject.REHEARSAL, str(rehearsal.id))
+                # A queued row names no author, so the sender is read off the
+                # fields: the plan and the topic line are the two a leader
+                # writes on an evening. Anything else waiting about it (a move,
+                # a new place) a manager queued — as much news to the sender as
+                # to the rest of the cast, and they are told it with them.
+                news_to_sender = AnnouncementQueue.pending_change_ids(
+                    *subject, except_fields=RehearsalOperationsService._LEADER_WRITTEN_FIELDS,
+                )
                 AnnouncementQueue.publish(
                     rehearsal.project,
-                    only=AnnouncementQueue.pending_change_ids(
-                        rehearsal.project, AnnouncementSubject.REHEARSAL, str(rehearsal.id),
-                    ),
-                    sender_id=str(published_by.pk),
+                    only=AnnouncementQueue.pending_change_ids(*subject),
+                    sender_id=None if news_to_sender else str(published_by.pk),
                 )
         return rehearsal
 

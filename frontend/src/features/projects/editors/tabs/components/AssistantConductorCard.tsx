@@ -17,14 +17,19 @@
  * The scopes are separate switches because they leak differently, and the copy
  * says what each opens instead of naming an internal layer: a conductor
  * deciding this is deciding who reads his hand, not choosing a permission. They
- * sit behind a collapsed "advanced" toggle, the first three on and the fourth
- * (writing the choir's own markings) off: the ordinary appointment is a name,
- * and a row only says anything about scope when it departs from that — one of
- * the three withheld, or the fourth granted.
+ * sit behind a collapsed "advanced" toggle, the first three on and the last two
+ * (writing the choir's own markings; planning the evenings they lead) off: the
+ * ordinary appointment is a name, and a row only says anything about scope when
+ * it departs from that — one of the three withheld, or one of the two granted.
+ * Planning sits under the roll call and shows only while that is ticked: it
+ * reaches the evenings the assistant is announced to lead, and without the roll
+ * call nobody can announce them — the server clears it too. Its hint says what
+ * it discloses: the plan is written against the programme, so planning shows
+ * the programme even with materials withheld.
  *
- * One form serves both the appointment and a later change of mind — the fourth
- * scope in particular is one a conductor lends after watching somebody run a few
- * evenings. Editing opens it on the row it belongs to, with the switches already
+ * One form serves both the appointment and a later change of mind — the last
+ * two scopes in particular are ones a conductor lends after watching somebody
+ * run a few evenings. Editing opens it on the row it belongs to, with the switches already
  * unfolded and the person locked: who a grant is about is its identity, not its
  * content, and the server refuses to re-point one for the same reason.
  * The server keeps the model's name (`RehearsalDelegate`, URL `/delegates/`).
@@ -39,6 +44,7 @@ import {
   ChevronUp,
   ClipboardCheck,
   FolderOpen,
+  ListMusic,
   PenLine,
   SlidersHorizontal,
   UserPlus,
@@ -133,6 +139,12 @@ interface DraftState {
   materials: boolean;
   /** The choir's own layer — off unless the conductor lends his voice. */
   choirMarks: boolean;
+  /**
+   * Plans the evenings they lead. Only ever true while `rollCall` is: the
+   * server clears it on a row without the roll call, and unticking the roll
+   * call here clears it in the draft — the one place the client keeps the rule.
+   */
+  planning: boolean;
   /** Wall-clock string from DateTimeField, or "" for "until the project closes". */
   expiresAt: string;
   note: string;
@@ -144,6 +156,7 @@ const EMPTY_DRAFT: DraftState = {
   rollCall: true,
   materials: true,
   choirMarks: false,
+  planning: false,
   expiresAt: "",
   note: "",
 };
@@ -167,6 +180,7 @@ const draftFromDelegate = (row: RehearsalDelegate): DraftState => ({
   rollCall: row.can_take_roll_call,
   materials: row.can_open_materials,
   choirMarks: row.can_mark_for_choir,
+  planning: row.can_manage_led_rehearsals,
   expiresAt: row.expires_at ? toZonedWallClock(new Date(row.expires_at)) : "",
   note: row.note,
 });
@@ -232,6 +246,7 @@ export const AssistantConductorCard = ({
       can_take_roll_call: draft.rollCall,
       can_open_materials: draft.materials,
       can_mark_for_choir: draft.choirMarks,
+      can_manage_led_rehearsals: draft.planning,
       // The field speaks wall clock; the server reads the instant. Empty is
       // not "now", it is "no end of its own" — see the model.
       expires_at: draft.expiresAt ? new Date(draft.expiresAt).toISOString() : null,
@@ -268,11 +283,15 @@ export const AssistantConductorCard = ({
       missing: missing.join(", "),
     });
 
-  // The fourth scope reads the other way round: granted is the exception, so
-  // the caption names it only when it is on.
+  // The last two scopes read the other way round: granted is the exception,
+  // so the caption names each only when it is on.
   const choirMarksCaption = t(
     "projects.delegates.scope.choir_marks_granted",
     "Nanosi uwagi dla chóru",
+  );
+  const planningCaption = t(
+    "projects.delegates.scope.planning_granted",
+    "Układa plan swoich prób",
   );
 
   const draftWithheld = withheldScopes(draft);
@@ -374,6 +393,9 @@ export const AssistantConductorCard = ({
                       {row.can_mark_for_choir && (
                         <Caption color="gold">{choirMarksCaption}</Caption>
                       )}
+                      {row.can_manage_led_rehearsals && (
+                        <Caption color="gold">{planningCaption}</Caption>
+                      )}
                     </div>
                     {row.note && (
                       <Caption as="p" color="graphite" className="mt-1 truncate">
@@ -474,6 +496,11 @@ export const AssistantConductorCard = ({
                   {choirMarksCaption}
                 </Caption>
               )}
+              {!scopesOpen && draft.planning && (
+                <Caption as="p" color="gold">
+                  {planningCaption}
+                </Caption>
+              )}
               {scopesOpen && (
                 <div className="flex flex-col gap-2.5">
                   <ScopeRow
@@ -492,7 +519,11 @@ export const AssistantConductorCard = ({
                   <ScopeRow
                     icon={<ClipboardCheck size={14} aria-hidden="true" />}
                     checked={draft.rollCall}
-                    onChange={(next) => setDraft({ ...draft, rollCall: next })}
+                    // Planning hangs off the roll call: unticking it takes
+                    // planning with it, as the server would.
+                    onChange={(next) =>
+                      setDraft({ ...draft, rollCall: next, planning: next && draft.planning })
+                    }
                     label={t(
                       "projects.delegates.scope.roll_call",
                       "Sprawdza obecność na próbie",
@@ -502,6 +533,22 @@ export const AssistantConductorCard = ({
                       "Może odhaczyć cały chór, nie tylko siebie.",
                     )}
                   />
+                  {draft.rollCall && (
+                    <ScopeRow
+                      nested
+                      icon={<ListMusic size={14} aria-hidden="true" />}
+                      checked={draft.planning}
+                      onChange={(next) => setDraft({ ...draft, planning: next })}
+                      label={t(
+                        "projects.delegates.scope.planning",
+                        "Układa plan swoich prób",
+                      )}
+                      hint={t(
+                        "projects.delegates.scope.planning_hint",
+                        "Pisze i wysyła chórzystom plan prób, które prowadzi. Widzi przy tym program projektu. Domyślnie wyłączone.",
+                      )}
+                    />
+                  )}
                   <ScopeRow
                     icon={<FolderOpen size={14} aria-hidden="true" />}
                     checked={draft.materials}
@@ -621,14 +668,22 @@ const ScopeRow = ({
   onChange,
   label,
   hint,
+  nested = false,
 }: {
   icon: React.ReactNode;
   checked: boolean;
   onChange: (next: boolean) => void;
   label: string;
   hint: string;
+  /** Indented under the scope it depends on. */
+  nested?: boolean;
 }): React.JSX.Element => (
-  <label className="flex cursor-pointer items-start gap-3 rounded-control p-2 transition-colors hover:bg-ethereal-ink/3">
+  <label
+    className={cn(
+      "flex cursor-pointer items-start gap-3 rounded-control p-2 transition-colors hover:bg-ethereal-ink/3",
+      nested && "ml-7",
+    )}
+  >
     <Checkbox
       checked={checked}
       onChange={(event) => onChange(event.target.checked)}

@@ -35,6 +35,13 @@ export interface LeadSheet {
    */
   is_manager: boolean;
   /**
+   * Whether the reader writes and sends this evening's plan — the predicate
+   * the plan's PUT and announce ask (a manager; the project's conductor; the
+   * assistant conductor announced for this evening under a planning grant).
+   * Stated by the server for the same reason as `is_manager`.
+   */
+  may_plan: boolean;
+  /**
    * Who was announced for this evening (`Rehearsal.led_by`), explicit only —
    * null is the conductor. The page compares it with the reader: their own
    * evening reads "Prowadzisz", somebody else's reads as the register they

@@ -94,7 +94,6 @@ def plan_editor_payload(rehearsal: Rehearsal) -> dict[str, Any]:
             {
                 'id': str(piece.id),
                 'title': str(piece.title),
-                'voicing': piece.voicing,
                 'voice_requirements_read': [
                     {
                         'edition': _optional_id(requirement.edition_id),
@@ -108,7 +107,6 @@ def plan_editor_payload(rehearsal: Rehearsal) -> dict[str, Any]:
         'participations': [
             {
                 'id': str(seat.id),
-                'status': seat.status,
                 'artist_voice_type': seat.artist.voice_type,
                 'default_voice_line': seat.default_voice_line,
             }

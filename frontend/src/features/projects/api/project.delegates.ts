@@ -36,6 +36,12 @@ export interface RehearsalDelegate {
   can_open_materials: boolean;
   /** Writes the choir's own layer on this project's music. Off by default. */
   can_mark_for_choir: boolean;
+  /**
+   * Writes and sends the plan of the rehearsals they are announced to lead,
+   * and sees the programme to do so. Off by default; the server clears it
+   * whenever roll call is off, since without roll call nobody names them.
+   */
+  can_manage_led_rehearsals: boolean;
   /** ISO instant, or null for "until the project closes". */
   expires_at: string | null;
   note: string;
@@ -49,6 +55,7 @@ export interface DelegateGrantInput {
   can_take_roll_call: boolean;
   can_open_materials: boolean;
   can_mark_for_choir: boolean;
+  can_manage_led_rehearsals: boolean;
   expires_at: string | null;
   note: string;
 }
@@ -60,6 +67,7 @@ export type DelegateScopePatch = Partial<
     | "can_take_roll_call"
     | "can_open_materials"
     | "can_mark_for_choir"
+    | "can_manage_led_rehearsals"
     | "expires_at"
     | "note"
   >

@@ -26,14 +26,15 @@ import {
   sectionLettersOfSeat,
   type SectionLetter,
 } from "@/features/projects/lib/voiceFamilies";
-import type { Attendance, Participation, Rehearsal } from "@/shared/types";
+import type { Attendance, Rehearsal } from "@/shared/types";
 import { resolveInvited } from "../../lib/attendanceStats";
 import { sectionNamesLabel } from "../../lib/sectionLabels";
+import type { PlanEditorSeat } from "../../types/rehearsalPlan.dto";
 
 interface PlanAttendanceStripProps {
   readonly rehearsal: Rehearsal;
   /** The project's seats still in play — declined pruned. */
-  readonly participations: readonly Participation[];
+  readonly participations: readonly PlanEditorSeat[];
   readonly attendances: readonly Attendance[];
 }
 
@@ -66,7 +67,7 @@ export const PlanAttendanceStrip = ({
 
     const byLetter = new Map<SectionLetter, { expected: number; called: number }>();
     const players = { expected: 0, called: 0 };
-    for (const seat of resolveInvited(rehearsal, [...participations])) {
+    for (const seat of resolveInvited(rehearsal, participations)) {
       const coming = !notComing.has(String(seat.id));
       if (isInstrumentalist(seat.artist_voice_type)) {
         players.called += 1;

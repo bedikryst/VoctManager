@@ -33,8 +33,10 @@ export interface DossierLeadershipScopes {
   marks: boolean;
   roll_call: boolean;
   materials: boolean;
-  /** The one scope that is off by default: writing the choir's own layer. */
+  /** Off by default: writing the choir's own layer. */
   choir_marks: boolean;
+  /** Off by default: writing and sending the plan of the evenings they lead. */
+  manage_rehearsals: boolean;
 }
 
 /**

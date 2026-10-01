@@ -9,8 +9,10 @@
  * Two callers: the manager's workspace, and a stand-in's `LeadSheet` route.
  * They get the SAME roll call — `allowManagerActions` withholds only the two
  * things a delegation does not carry (see the prop). Between the header and
- * the roll call sits the evening's plan: the manager's editor (`canEditPlan`)
- * or, for a stand-in, the plan as read at stand size. `onSaveFocus` and
+ * the roll call sits the evening's plan: the manager's editor for whoever may
+ * plan the evening (`canEditPlan`) or, for a stand-in who may not, the plan as
+ * read at stand size — which the lead sheet (`planAtStand`) gives a planner
+ * too once the evening is under way. `onSaveFocus` and
  * `onSaveDebrief` are what a leader gets that the manager's copy does not
  * need here: the topic line is edited where it is read, because the leader
  * has no rehearsal form, and the debrief is written under the register it
@@ -31,6 +33,7 @@ import {
   LayoutGrid,
   List,
   ListMusic,
+  PenLine,
   Radio,
   UserCheck,
   UserPlus,
@@ -115,12 +118,24 @@ interface RehearsalInspectorProps {
    */
   onSaveDebrief?: (debrief: string) => Promise<unknown>;
   /**
-   * Whether the reader may lay the evening's plan out — a manager. True mounts
-   * the plan editor as a band under the header; false mounts the plan as it
-   * is read, at stand size, which is what a stand-in at the music stand needs
-   * (nobody drags rows there). Nothing when false and the plan is empty.
+   * Whether the reader may lay the evening's plan out — a manager, or whoever
+   * the lead sheet's `may_plan` admits. True mounts the plan editor as a band
+   * under the header, empty plan included (that empty state is where a
+   * planner starts); a reader without `allowManagerActions` gets it as a
+   * planner — the project read through the evening, a send that goes out at
+   * once. False mounts the plan as it is read, at stand size, which is what a
+   * stand-in at the music stand needs (nobody drags rows there). Nothing when
+   * false and the plan is empty.
    */
   canEditPlan?: boolean;
+  /**
+   * For a card used at the music stand (the lead sheet): once the evening
+   * has started, a reader who may plan gets the plan as read at stand size
+   * too, the editor one tap away ("Edytuj plan") for a correction afterwards.
+   * Before the downbeat, or with no plan yet, the editor opens at once — that
+   * is when an evening is laid out. Absent → the editor always.
+   */
+  planAtStand?: boolean;
   /**
    * Ticks one plan row off after the fact — the debrief's first step, same
    * gate as the debrief itself. Absent → the ticks are read, not written.
@@ -183,10 +198,19 @@ export const RehearsalInspector = ({
   onSaveFocus,
   onSaveDebrief,
   canEditPlan = false,
+  planAtStand = false,
   onMarkPlanItem,
 }: RehearsalInspectorProps): React.JSX.Element => {
   const { t } = useTranslation();
   const [isPitchPipeOpen, setIsPitchPipeOpen] = useState(false);
+  // Decided once, when the card mounts: the downbeat passing under an open
+  // editor must not unmount it and take an unsaved draft with it.
+  const [isPlanEditorOpen, setIsPlanEditorOpen] = useState(
+    () =>
+      !planAtStand ||
+      (rehearsal.plan?.length ?? 0) === 0 ||
+      new Date(rehearsal.date_time).getTime() > Date.now(),
+  );
   /* One sheet for the whole roster, named by whoever opened it. The setter is
      what the rows receive, so the callback stays stable across re-renders and
      the memoized rows keep their optimistic state through a roll call. */
@@ -396,18 +420,35 @@ export const RehearsalInspector = ({
 
       {/* ── The plan ──────────────────────────────────────────────────── */}
       {/* Between the header and the roll call: what the evening works on
-          comes before who turned up to it. The manager edits it here; a
-          stand-in reads it at stand size. */}
-      {canEditPlan ? (
-        <RehearsalPlanEditor rehearsal={rehearsal} className="border-b border-hairline" />
+          comes before who turned up to it. Whoever may plan the evening
+          edits it here; a stand-in who may not reads it at stand size, and
+          so does a planner at the stand once the evening is under way. */}
+      {canEditPlan && isPlanEditorOpen ? (
+        <RehearsalPlanEditor
+          rehearsal={rehearsal}
+          access={allowManagerActions ? "manager" : "planner"}
+          className="border-b border-hairline"
+        />
       ) : (
         (rehearsal.plan?.length ?? 0) > 0 && (
           <div className="border-b border-hairline p-5 md:p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <ListMusic size={12} className="text-ethereal-gold/70" aria-hidden="true" />
-              <Eyebrow as="h3" color="graphite">
-                {t("rehearsals.plan.title", "Plan próby")}
-              </Eyebrow>
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <ListMusic size={12} className="text-ethereal-gold/70" aria-hidden="true" />
+                <Eyebrow as="h3" color="graphite">
+                  {t("rehearsals.plan.title", "Plan próby")}
+                </Eyebrow>
+              </div>
+              {canEditPlan && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsPlanEditorOpen(true)}
+                  leftIcon={<PenLine size={14} aria-hidden="true" />}
+                >
+                  {t("rehearsals.plan.edit", "Edytuj plan")}
+                </Button>
+              )}
             </div>
             <RehearsalPlanTimeline rows={rehearsal.plan ?? []} size="stand" />
           </div>

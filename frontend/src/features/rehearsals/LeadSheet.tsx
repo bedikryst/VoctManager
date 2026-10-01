@@ -17,8 +17,14 @@
  * evening is about is edited in place, under the date, where the cast will
  * read it — and the debrief, written once the evening has started, which is
  * how the leader hands it back to the conductor: the plan's rows ticked off
- * first, then the words. The plan itself is read here at stand size, never
- * edited — laying it out is the conductor's, on the manager's workspace.
+ * first, then the words. The plan is read here at stand size, unless the
+ * server says this reader may plan the evening (`may_plan`: the assistant
+ * conductor announced for it under a planning grant, the project's conductor,
+ * a manager) — then, until the downbeat or while there is no plan, it is the
+ * manager's own editor, and a non-manager's send goes to the called singers at
+ * once. From the downbeat it is read at stand size again, the editor one tap
+ * away: at the music stand nobody should be one stray drag from reordering
+ * the evening.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals
  */
@@ -222,6 +228,8 @@ export default function LeadSheet(): React.JSX.Element {
                   isMarkingAll={markMissing.isPending}
                   onMarkAllPresent={handleMarkAllPresent}
                   allowManagerActions={leadSheet.is_manager}
+                  canEditPlan={leadSheet.may_plan}
+                  planAtStand
                   onSaveFocus={saveFocus}
                   onSaveDebrief={saveDebrief}
                   onMarkPlanItem={markPlan}
