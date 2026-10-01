@@ -9,6 +9,7 @@
  */
 import { ClientRouter } from "astro:transitions";
 import DocumentGates from "../components/DocumentGates.astro";
+import SiteIcons from "../components/SiteIcons.astro";
 import { LOCALE_META, LOCALES, SITE, type Locale } from "../i18n/config";
 import { breadcrumbList, type Crumb } from "../lib/breadcrumb";
 import "../styles/tokens.css";
@@ -134,8 +135,7 @@ const breadcrumbLd = breadcrumb ? breadcrumbList(breadcrumb, lang) : undefined;
         The band that opens above the bar as a result is handled via the canvas — see
         `--edge-band` in tokens.css. */}
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <link rel="icon" type="image/png" href="/logo_icon.png" />
-    <link rel="apple-touch-icon" href="/logo_icon.png" />
+    <SiteIcons />
     <meta name="theme-color" content={themeColor} />
 
     <title>{title}</title>
