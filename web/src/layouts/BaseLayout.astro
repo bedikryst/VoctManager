@@ -258,6 +258,10 @@ const breadcrumbLd = breadcrumb ? breadcrumbList(breadcrumb, lang) : undefined;
         without `reveal-ready`, so this layout leaves its reveals alone). See DocumentGates. */}
     <DocumentGates />
 
+    {/* A copy control is a script's (scripts/copy-fields) and does nothing without one; with
+        scripts off the value beside it is still selectable, so the dead button goes. */}
+    <noscript><style is:inline>[data-copy] { display: none !important; }</style></noscript>
+
     {/* Where this page sits in the site, for the search result only — nothing renders. Emitted
         as its own JSON-LD block rather than folded into the page's graph: every page below the
         landing owns a different node type (MusicEvent, AboutPage, ImageGallery…), and Google

@@ -187,9 +187,10 @@ const titleId = `realizacja-${view.id}`;
   .rm-rubric { margin: 0; font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: .06em; line-height: 1.4; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .rm-title { margin: 14px 0 0; font-family: var(--sans); font-weight: 600; font-size: clamp(32px, 4.6vw, 60px); line-height: 1.02; letter-spacing: -.035em; color: var(--ink); text-wrap: balance; }
   .rm-lead { margin: 18px 0 0; max-width: 60ch; font-family: var(--sans); font-size: clamp(16px, 1.3vw, 18px); line-height: 1.6; color: var(--ink-soft); }
-  /* A work's title in the lead. Plex Sans ships no italic, so this is the browser's slanted roman —
-     `:global` because the lead arrives through `set:html` and carries no scope attribute. */
-  .rm-lead :global(em) { font-style: italic; }
+  /* A work's title in the lead. Plex Sans ships no italic, so this is the browser's slanted roman;
+     the family is restated because the site's `em` is Cormorant. `:global` because the lead
+     arrives through `set:html` and carries no scope attribute. */
+  .rm-lead :global(em) { font-family: inherit; font-style: italic; }
 
   /* The sheet — cells under hairlines, label in mono, value in Plex. Four columns on a desktop,
      two on a phone; admission and budget close it side by side as figures. */

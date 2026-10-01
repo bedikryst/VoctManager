@@ -1843,12 +1843,38 @@
     border-color: var(--candle);
   }
 
+  /* The vault and its two overlays stay mounted and hidden on every page that carries them, so
+     their ambient loops hold still while hidden rather than tick for nobody all visit long.
+     Paused, not removed: a closing fade keeps the frame it had instead of jumping to the
+     unanimated one. */
+  .vault:not(.is-open) :is(.vault-mark-halo, .method-tag-dot),
+  .gratitude:not(.is-visible) :is(.gratitude-mark .brand-glyph-shape, .gratitude-mark-halo),
+  .gratitude:not(.is-visible)::before,
+  .gratitude:not(.is-visible)::after,
+  .failure:not(.is-visible) .failure-mark-halo {
+    animation-play-state: paused;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .vault-mark-halo,
     .gratitude-mark .brand-glyph-shape,
     .gratitude-mark-halo,
+    .gratitude::before,
+    .gratitude::after,
+    .failure-mark-halo,
     .method[data-elevated="true"] .method-tag-dot {
       animation: none;
+    }
+
+    /* The rings and the halo still, at their loops' midpoints — neither the brightest frame nor
+       the faintest. */
+    .gratitude::before,
+    .gratitude::after {
+      opacity: 0.28;
+    }
+
+    .failure-mark-halo {
+      opacity: 0.6;
     }
   }
 

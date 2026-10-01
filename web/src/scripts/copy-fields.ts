@@ -21,6 +21,11 @@
  *  A COPY THAT LANDED is announced as a bubbling `voct:copied` on the button, for a page that
  *  counts it (scripts/press-goals). A click the clipboard refused announces nothing.
  *
+ *  THE CONFIRMATION IS ALSO SPOKEN. The button's accessible name is its `aria-label`, so the word
+ *  printed on it is never read out; one visually hidden status region per document says it
+ *  instead. It is created on the first click, before the clipboard answers, so it is already in
+ *  the tree when its text changes — a region born with its text is often not announced.
+ *
  *  WHY A BUTTON EXISTS AT ALL. On /kontakt a bare `mailto:` is a real desktop failure when no
  *  mail client is configured, and this is the escape hatch. On /press the strings are longer than
  *  anybody retypes correctly — an IBAN, a 2000-character biogram — and a mis-typed account number
@@ -34,6 +39,20 @@ const CONFIRM_MS = 1800;
 
 interface CopyGuard {
   __voctCopy?: boolean;
+}
+
+const STATUS_ID = "voct-copy-status";
+
+/** The document's status region; ClientRouter swaps the body, so it is looked up, not kept. */
+function statusRegion(): HTMLElement {
+  const existing = document.getElementById(STATUS_ID);
+  if (existing) return existing;
+  const region = document.createElement("p");
+  region.id = STATUS_ID;
+  region.className = "sr-only";
+  region.setAttribute("role", "status");
+  document.body.append(region);
+  return region;
 }
 
 if (!(window as unknown as CopyGuard).__voctCopy) {
@@ -52,6 +71,8 @@ if (!(window as unknown as CopyGuard).__voctCopy) {
     // than flashing a confirmation for something that did not happen.
     if (!value || !done || !label || !navigator.clipboard) return;
 
+    const status = statusRegion();
+    status.textContent = "";
     navigator.clipboard
       .writeText(value)
       .then(() => {
@@ -59,6 +80,7 @@ if (!(window as unknown as CopyGuard).__voctCopy) {
         const previous = label.textContent;
         button.classList.add("is-copied");
         label.textContent = done;
+        status.textContent = done;
         window.setTimeout(() => {
           button.classList.remove("is-copied");
           label.textContent = previous;
