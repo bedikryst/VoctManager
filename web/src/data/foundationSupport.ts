@@ -101,7 +101,8 @@ export const TAX_LINE_CONFIRMED = false;
  * reachable through the doors the developer keeps open on purpose (the vault's closing line, the
  * footers, a link sent to a patron), and everything that would announce them stays silent: the
  * nav bar and the mobile card's fine print (SiteChrome, StickyHeader), the second button on
- * /o-nas's foundation band and that band's NGO `url`, /kontakt's locus link (which falls back to
+ * /o-nas's foundation band, the foundation's JSON-LD `url` (lib/foundationSchema, which points at
+ * /o-nas#fundacja until then), /kontakt's locus link (which falls back to
  * /o-nas#fundacja), the landing's third door in FinalSupportSection. Flip it once the pages have
  * passed their review — and drop the matching `/(fundacja|mecenat)$` clause from the sitemap
  * filter in `astro.config.mjs`, which is JS and cannot read this flag.

@@ -101,10 +101,10 @@ qr:
     Otwórz aplikację banku, wybierz <strong>„Przelew QR”</strong> i zeskanuj. Kwotę wpiszesz
     w aplikacji.
   recurringLabel: "Wsparcie co miesiąc · zlecenie stałe"
-  # One practical sentence about THESE details, no link and no question: the sheet's closing line
-  # (skarbiecChrome `recurringLink`) is the one road to /fundacja#mecenat and it asks the question
-  # itself, right under this card. The offer — amounts, what patronage means, how to tell us — has
-  # one home there and this note must not grow back into a second copy of it.
+  # One practical sentence about THESE details, no link: the sheet's closing line (skarbiecChrome
+  # `recurringLink`) is the one road to /fundacja#wsparcie, right under this card. The offer —
+  # amounts, what patronage means, how to tell us — has one home there and this note must not grow
+  # back into a second copy of it.
   # "Zlecenie stałe" is the banking term — use the reader's own.
   recurringNoteHtml: >-
     Te same dane ustawisz w swojej bankowości jako <strong>zlecenie stałe</strong> — kod QR

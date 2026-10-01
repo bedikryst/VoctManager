@@ -93,8 +93,8 @@ export interface UIStrings {
     /** /fundacja as a footer entry — the fuller name than the bar's `nav.foundation`, since here
         it does not stand next to the vault's "support" word. */
     readonly foundationPage: string;
-    /** /fundacja#mecenat — the standing-order relationship, printed beside the patronage
-        address so the address is not the only door. */
+    /** /mecenat — the page that explains patronage, printed beside the patronage address so the
+        address is not the only door. */
     readonly patronage: string;
     /** The foundation's founding document, linked as a PDF beside the registry numbers. */
     readonly statute: string;

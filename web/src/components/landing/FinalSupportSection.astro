@@ -27,10 +27,11 @@ interface Props {
 }
 const { copy, chrome, lang } = Astro.props;
 
-// The third door: regular support and the companies' route live on the foundation's page, not in
-// this section — the tiers above are the vault's, and the vault is for one-off giving. Drawn only
-// once FOUNDATION_PAGE_LINKED (data/foundationSupport).
-const hrefMecenat = `${localizePath("/fundacja", lang)}#mecenat`;
+// The third door: regular support, patronage and the companies' route live on the foundation's
+// page, not in this section — the tiers above are the vault's, and the vault is for one-off
+// giving. It opens on the page's support section, which is what its label names, rather than on
+// the page's hero. Drawn only once FOUNDATION_PAGE_LINKED (data/foundationSupport).
+const hrefFoundation = `${localizePath("/fundacja", lang)}#wsparcie`;
 
 const bg = bleedPair("swiatlo-krzyz");
 
@@ -188,7 +189,7 @@ const tiers = copy.tiers.map((tier) => {
           {copy.writeCta}
         </a>
         {FOUNDATION_PAGE_LINKED && (
-          <a class="secondary-link" href={hrefMecenat}>
+          <a class="secondary-link" href={hrefFoundation}>
             {chrome.foundationLink}
           </a>
         )}

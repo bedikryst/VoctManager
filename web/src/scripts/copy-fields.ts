@@ -1,8 +1,9 @@
 /**
  * @file copy-fields.ts
  * @description Copy-to-clipboard for any `[data-copy]` control on the page. Imported for its
- *  side effect by the pages that have such controls — /kontakt (addresses) and /press (biograms,
- *  the registry numbers, the accounts).
+ *  side effect by the pages that have such controls — /kontakt (addresses), /press (biograms,
+ *  the registry numbers, the accounts), /fundacja (the transfer details, the address) and
+ *  /mecenat (the patron's contact).
  *
  *  IT WAS ALWAYS ONE THING, WRITTEN TWICE. The guard below is a flag on `window`, which is a
  *  statement that the listener is global and must be installed once per document; two pages each

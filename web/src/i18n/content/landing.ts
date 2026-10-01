@@ -611,8 +611,8 @@ export interface LandingChrome {
   /** The IBAN copy control, before and after the click. */
   readonly copy: string;
   readonly copied: string;
-  /** The closing section’s third, quiet door: /fundacja#mecenat, where recurring support and the
-      companies’ route are set out. A nav word rather than a copy field, like the footer’s; the
+  /** The closing section’s third, quiet door: /fundacja#wsparcie, where recurring support,
+      patronage and the companies’ route are set out. A nav word rather than a copy field, like the footer’s; the
       arrow is the link style’s own (`.secondary-link::after`), so the word carries none. */
   readonly foundationLink: string;
 

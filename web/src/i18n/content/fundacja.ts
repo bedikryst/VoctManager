@@ -171,6 +171,8 @@ const foundationCopySchema = z
         representation: z.string(),
         relation: z.string(),
         goalsLabel: z.string(),
+        goals: z.array(z.object({ id: z.string(), text: z.string() }).strict()).min(1),
+        legalNote: z.string(),
         documentsLabel: z.string(),
         statuteLink: z.string(),
         privacyLink: z.string(),
@@ -429,6 +431,20 @@ const FOUNDATION_CONTRACT: readonly CopyEntry[] = [
   { kind: "field", path: "registry.representation", label: "Dane · reprezentacja", note: "Cites the statute; keep the paragraph number." },
   { kind: "field", path: "registry.relation", label: "Dane · zespół i fundacja" },
   { kind: "field", path: "registry.goalsLabel", label: "Dane · cele statutowe" },
+  {
+    kind: "list",
+    path: "registry.goals",
+    keyBy: "id",
+    label: "Cel statutowy",
+    note: "Category, colon, then what the foundation may do inside it — a shape the statute itself uses and a rendering should keep. The page numbers them.",
+    fields: [{ path: "text", label: "treść" }],
+  },
+  {
+    kind: "field",
+    path: "registry.legalNote",
+    label: "Dane · nota prawna",
+    note: "The non-distribution clause, in the statute's own terms. /kontakt states the same fact in one clause; this is the full form.",
+  },
   { kind: "field", path: "registry.documentsLabel", label: "Dokumenty · etykieta" },
   { kind: "field", path: "registry.statuteLink", label: "Dokumenty · statut" },
   { kind: "field", path: "registry.privacyLink", label: "Dokumenty · polityka prywatności" },
@@ -444,6 +460,7 @@ const FOUNDATION_NOT_COPY: Readonly<Record<string, string>> = {
   "index.items[].id": "identity — the desk's key part for this entry",
   "index.items[].anchor": "a fragment id, shared by every locale and by other pages' links",
   "realisation.leads[].id": "identity — the realisation's id in data/foundationSupport.ts",
+  "registry.goals[].id": "identity — it is this goal's key part",
 };
 
 /** What `lib/pageCopy` needs to read this page, and the extractor to key it. */

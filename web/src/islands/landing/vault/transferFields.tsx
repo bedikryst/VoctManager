@@ -2,7 +2,7 @@
  * @file transferFields.tsx
  * @description Shared copy-to-clipboard transfer-field button, and the one-off transfer form
  *  built from it for the QR panel. The standing order's fields are not here: recurring support
- *  has one home, /fundacja#mecenat, which prints its own transfer block.
+ *  has one home, /fundacja#wsparcie, which prints its own transfer block.
  *
  *  THE ACCOUNT DATA ITSELF IS `src/data/foundation.ts`. It was declared here too, in local
  *  constants under a header claiming this was its only home — while `constants/vaultConfig.ts`

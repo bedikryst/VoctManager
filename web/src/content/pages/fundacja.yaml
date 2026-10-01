@@ -239,6 +239,33 @@ registry:
     VoctEnsemble jest zespołem-rezydentem fundacji (statut, § 6 ust. 3). Darowizny przyjmuje
     i umowy zawiera fundacja.
   goalsLabel: "Cele statutowe"
+  # The statutory purposes, numbered by the list. Each is a category, then a colon, then what the
+  # foundation may do inside it — a shape the statute itself uses and a rendering should keep.
+  # `id` is what the desk keys a goal by, so reordering them re-keys nothing.
+  goals:
+    - id: "tworczosc"
+      text: >-
+        Twórczość muzyczna: produkcja, koprodukcja, organizacja i prezentacja projektów w kraju
+        i za granicą.
+    - id: "dziedzictwo"
+      text: >-
+        Dziedzictwo: dokumentowanie, archiwizowanie i udostępnianie muzyki oraz praktyk
+        wykonawczych.
+    - id: "edukacja"
+      text: "Edukacja i dostępność: popularyzowanie kultury oraz wspieranie uczestnictwa w niej."
+    - id: "mlodzi"
+      text: "Młodzi artyści: rozwój, promocja, mentoring, rezydencje i projekty wykonawcze."
+    - id: "wspolpraca"
+      text: >-
+        Współpraca: praca z artystami, instytucjami kultury, uczelniami, mediami i organizacjami
+        społecznymi.
+  # The non-distribution clause, in the statute's own terms. /kontakt states the same fact in one
+  # clause ("Dochód przeznaczamy w całości na cele statutowe"); this is the full form, and the two
+  # may read differently but may never say different things.
+  legalNote: >-
+    Dochody fundacji przeznaczane są w całości na realizację celów statutowych. Nie podlegają
+    podziałowi między fundatora, członków organów ani osoby związane z fundacją; działalność
+    gospodarcza, jeżeli jest prowadzona, pozostaje pomocnicza wobec misji statutowej.
   documentsLabel: "Dokumenty"
   statuteLink: "Statut fundacji (PDF)"
   privacyLink: "Polityka prywatności"

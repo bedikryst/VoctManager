@@ -82,6 +82,8 @@ export interface Foundation {
   readonly foundedOn: string;
   /** The management board in the register's order: the president, then the vice-presidents. */
   readonly board: readonly BoardMember[];
+  /** The founder (fundator) named in the founding act — a board member, so referenced by id. */
+  readonly founder: BoardMember["id"];
   /** The foundation's own profiles, not the ensemble's (`data/social.ts`). Only accounts that
       exist; a surface prints nothing for an empty list. */
   readonly socials: readonly SocialProfile[];
@@ -139,6 +141,7 @@ export const FOUNDATION: Foundation = {
     { id: "ania", name: "Anna Marcisz", function: "vicePresident", mail: "anna.marcisz@voctfoundation.com" },
     { id: "krystian", name: "Krystian Bugalski", function: "vicePresident" },
   ],
+  founder: "florent",
   socials: [{ network: "facebook", url: "https://www.facebook.com/profile.php?id=61590395972435" }],
   accounts: {
     bank: "BNP Paribas Bank Polska S.A.",

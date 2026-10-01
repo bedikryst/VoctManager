@@ -21,12 +21,17 @@
  *  WHAT IS A FACT AND WHERE IT COMES FROM. Registry, board functions, accounts and addresses are
  *  `data/foundation.ts`; realisations, budgets and the switches that wait on a person are
  *  `data/foundationSupport.ts`; concerts and the record's counts are the corpus, resolved in
- *  `lib/realisations`; the board's domains and the statutory goals are /o-nas's copy, their one
- *  home. This page's own words come from `content/pages/fundacja.yaml`; its chrome from
- *  `i18n/content/fundacja.ts`.
+ *  `lib/realisations`; the board's domains are /o-nas's copy, their one home. This page's own
+ *  words — the statutory goals and the non-distribution clause among them — come from
+ *  `content/pages/fundacja.yaml`; its chrome from `i18n/content/fundacja.ts`.
  *
- *  STATIC FIRST. Every section reads complete with scripts and motion off; nothing waits on a
- *  reveal. The rail's current-section mark and the page's entrances are a later stage.
+ *  STATIC FIRST, THEN CUTS. Every section reads complete with scripts and motion off. What moves
+ *  is opacity, transform and the weight axis, and nothing moves after it has arrived: the
+ *  headline's words rise in weight one after another and the lead and links cut in (CSS only,
+ *  on a full load — a ClientRouter arrival lands composed, see BaseLayout's `data-entrance`);
+ *  the hairlines that open a module are ruled left to right once, by the site's lead register
+ *  (`.reveal-rule`); the realisation's poster wipes in once (RealisationModule). The rail marks
+ *  the section being read (scripts/foundation-rail). Reduced motion: everything at rest.
  *
  *  ONE-OFF GIVING IS THE VAULT'S. "Wpłać online" opens the existing donation vault in place
  *  (`data-vault-open`, with this locale's `/?donate` as the no-JS road); this page builds no
@@ -49,6 +54,7 @@ import { pageCopy } from "../../lib/pageCopy";
 import { chromeHtmlForIsland } from "../../lib/islandCopy";
 import { longDate } from "../../lib/dates";
 import { assertPolishForm, formatPln, realisationViews, recordBeforeFoundation } from "../../lib/realisations";
+import { FOUNDATION_ID, foundationNode } from "../../lib/foundationSchema";
 import { FOUNDATION } from "../../data/foundation";
 import {
   FEATURED_REALISATION,
@@ -87,6 +93,31 @@ const hrefPress = localizePath("/press", lang);
 
 const fill = (template: string, slots: Record<string, string>): string =>
   template.replace(/\{(\w+)\}/g, (match, name: string) => slots[name] ?? match);
+
+// ── The headline, word by word ────────────────────────────────────────────────────────────────
+// Each word is its own span so the weight can rise one word after another (`--i` is its place in
+// the sentence). The spaces stay text between the spans, so the heading's accessible name and its
+// copied text are the sentence itself, with no aria-label standing in for it. `data-w` lets the
+// span reserve the width the word has at rest, so a word still light cannot pull the next one
+// onto its line. The second line is markup whose only tag may be `<em>`; anything else is a copy
+// change this sequence was not built for, and fails the build. Only ASCII whitespace splits, so a
+// deliberate no-break space keeps its two words in one span.
+const escapeHtml = (text: string): string =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+let wordIndex = 0;
+const weighWords = (html: string): string =>
+  html.replace(/[^ \t\r\n]+/g, (word) => `<span class="vf-w" style="--i:${wordIndex++}" data-w="${word.replace(/"/g, "&quot;")}">${word}</span>`);
+const weighLine = (html: string): string => {
+  if (!/^(?:[^<]|<em>[^<]*<\/em>)*$/.test(html)) {
+    throw new Error(`[fundacja] hero.title2Html may carry <em> and no other tag: "${html}".`);
+  }
+  return html
+    .split(/(<em>[^<]*<\/em>)/)
+    .map((part) => (part.startsWith("<em>") ? `<em>${weighWords(part.slice(4, -5))}</em>` : weighWords(part)))
+    .join("");
+};
+const titleLine1 = weighWords(escapeHtml(copy.hero.title1));
+const titleLine2 = weighLine(copy.hero.title2Html);
 
 // ── The index: the rail on a desktop, the hero's contents on a phone, each section's label ────
 // One concert that has not happened yet is not "Realizacje": the entry says "Pierwsza realizacja"
@@ -196,34 +227,23 @@ const SOCIAL_NAMES = { facebook: "Facebook", instagram: "Instagram" } as const;
 // of the ensemble singing reads as "the music" on a feed.
 const ogImage = (await getImage({ src: bleedPair("chor-nawa").desktop, width: 1200, format: "webp" })).src;
 
-// The foundation as the subject, the ensemble as its music group — two objects, never one as the
-// other's alternate name.
+// The page is about the foundation, and the foundation node is the site's one description of it
+// (lib/foundationSchema) — the same `@id` /o-nas and every concert's organiser point at. Only the
+// page node is per locale.
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "WebPage",
-  name: copy.meta.title,
-  url: `${SITE}${path}`,
-  inLanguage: lang,
-  about: {
-    "@type": "Organization",
-    name: FOUNDATION.name,
-    url: SITE,
-    email: foundationMail,
-    foundingDate: FOUNDATION.foundedOn,
-    identifier: [
-      { "@type": "PropertyValue", propertyID: "KRS", value: FOUNDATION.registry.krs },
-      { "@type": "PropertyValue", propertyID: "NIP", value: FOUNDATION.registry.nip },
-      { "@type": "PropertyValue", propertyID: "REGON", value: FOUNDATION.registry.regon },
-    ],
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: FOUNDATION.seat.street,
-      postalCode: FOUNDATION.seat.postalCode,
-      addressLocality: FOUNDATION.seat.city,
-      addressCountry: FOUNDATION.seat.countryCode,
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": `${SITE}${path}`,
+      url: `${SITE}${path}`,
+      name: copy.meta.title,
+      description: copy.meta.description,
+      inLanguage: lang,
+      about: { "@id": FOUNDATION_ID },
     },
-    subOrganization: { "@type": "MusicGroup", name: FOUNDATION.ensemble, url: SITE },
-  },
+    foundationNode(),
+  ],
 };
 ---
 
@@ -254,11 +274,11 @@ const jsonLd = {
         {/* ── Hero — type only; the LCP is the headline. Its two doors serve the page's two
               readers: the one who came to give, and the one checking the foundation. /mecenat
               stays one click away in the support section, never at the hero's weight. ───── */}
-        <header class="vf-hero">
+        <header class="vf-hero" data-entrance="play">
           <p class="vf-eyebrow">{copy.hero.eyebrow}</p>
           <h1 class="vf-title">
-            <span class="vf-title-line">{copy.hero.title1}</span>
-            <span class="vf-title-line" set:html={copy.hero.title2Html} />
+            <span class="vf-title-line" set:html={titleLine1} />
+            <span class="vf-title-line" set:html={titleLine2} />
           </h1>
           <p class="vf-lead">{copy.hero.lead}</p>
           <p class="vf-hero-links">
@@ -269,7 +289,7 @@ const jsonLd = {
 
         {/* ── The rail — the page's numbered index. Sticky beside the sections from 1024px;
               on a phone it follows the hero as its contents. ──────────────────────────── */}
-        <nav class="vf-rail" aria-label={t.indexAria}>
+        <nav class="vf-rail" aria-label={t.indexAria} data-rail>
           <div class="vf-rail-inner">
             <p class="vf-rail-label">{copy.index.label}</p>
             <ol class="vf-rail-list">
@@ -299,8 +319,8 @@ const jsonLd = {
         </section>
 
         {/* ── 02 · Where the foundation comes from ─────────────────────────────────────── */}
-        <section class="vf-section" id="dorobek" aria-label={t.recordAria}>
-          <p class="vf-label"><span class="vf-num">{sections.record.number}</span>{sections.record.label}</p>
+        <section class="vf-section reveal-rule" id="dorobek" aria-label={t.recordAria}>
+          <p class="vf-label reveal-rule"><span class="vf-num">{sections.record.number}</span>{sections.record.label}</p>
           <div class={rehearsalPhoto ? "vf-record vf-record-with-photo" : "vf-record"}>
             <div class="vf-record-text">
               <h2 class="vf-h2">{copy.record.h2}</h2>
@@ -348,8 +368,8 @@ const jsonLd = {
         </section>
 
         {/* ── 03 · Mission and people ───────────────────────────────────────────────────── */}
-        <section class="vf-section" id="misja" aria-label={t.missionAria}>
-          <p class="vf-label"><span class="vf-num">{sections.mission.number}</span>{sections.mission.label}</p>
+        <section class="vf-section reveal-rule" id="misja" aria-label={t.missionAria}>
+          <p class="vf-label reveal-rule"><span class="vf-num">{sections.mission.number}</span>{sections.mission.label}</p>
           {/* One sentence per line, as the hero sets its two; only the word for the human being is
               italic, as Anna Marcisz set the motto. */}
           <h2 class="vf-motto">
@@ -361,7 +381,7 @@ const jsonLd = {
             <h3 class="vf-rubric">{copy.mission.boardLabel}</h3>
             <ul class="vf-board-list">
               {board.map((member) => (
-                <li class="vf-member">
+                <li class="vf-member reveal-rule">
                   {boardPortraits && member.portrait && (
                     <figure class="vf-portrait">
                       {/* A face beside the name it belongs to: decorative, empty alt. */}
@@ -388,11 +408,11 @@ const jsonLd = {
         </section>
 
         {/* ── 04 · Support — three forms, one transfer panel, one optional form ─────────── */}
-        <section class="vf-section" id="wsparcie" aria-label={t.supportAria}>
-          <p class="vf-label"><span class="vf-num">{sections.support.number}</span>{sections.support.label}</p>
+        <section class="vf-section reveal-rule" id="wsparcie" aria-label={t.supportAria}>
+          <p class="vf-label reveal-rule"><span class="vf-num">{sections.support.number}</span>{sections.support.label}</p>
           <h2 class="vf-h2">{copy.support.h2}</h2>
           <div class="vf-ways">
-            <article class="vf-way" id="darowizna">
+            <article class="vf-way reveal-rule" id="darowizna">
               <h3 class="vf-way-label">{copy.support.donation.label}</h3>
               <p class="vf-quote">{copy.support.donation.quote}</p>
               <p class="vf-way-body">{copy.support.donation.body}</p>
@@ -403,13 +423,13 @@ const jsonLd = {
                 <a class="vf-link" href="#przelew">{copy.support.donation.transferLink}</a>
               </p>
             </article>
-            <article class="vf-way" id="mecenat">
+            <article class="vf-way reveal-rule" id="mecenat">
               <h3 class="vf-way-label">{copy.support.mecenat.label}</h3>
               <p class="vf-quote">{copy.support.mecenat.quote}</p>
               <p class="vf-way-body">{copy.support.mecenat.body}</p>
               <p class="vf-way-acts"><a class="vf-link" href={hrefMecenat}>{copy.support.mecenat.link}<ActArrow /></a></p>
             </article>
-            <article class="vf-way" id="partnerstwo">
+            <article class="vf-way reveal-rule" id="partnerstwo">
               <h3 class="vf-way-label">{copy.support.partnership.label}</h3>
               <p class="vf-quote">{copy.support.partnership.quote}</p>
               <p class="vf-way-body">{copy.support.partnership.body}</p>
@@ -423,7 +443,7 @@ const jsonLd = {
 
           {/* One transfer panel serves every way of giving, statically: selectable numbers on the
               same phone the reader banks on, copy as a convenience. */}
-          <div class="vf-transfer" id="przelew" aria-label={t.transferAria}>
+          <div class="vf-transfer reveal-rule" id="przelew" aria-label={t.transferAria}>
             <h3 class="vf-rubric">{copy.transfer.h3}</h3>
             <dl class="vf-transfer-rows">
               <div class="vf-transfer-row">
@@ -515,9 +535,9 @@ const jsonLd = {
 
             <h3 class="vf-registry-label">{copy.registry.goalsLabel}</h3>
             <ol class="vf-goals">
-              {about.foundation.goals.map((goal) => <li>{goal.text}</li>)}
+              {copy.registry.goals.map((goal) => <li>{goal.text}</li>)}
             </ol>
-            <p class="vf-registry-text vf-registry-muted">{about.foundation.legalNote}</p>
+            <p class="vf-registry-text vf-registry-muted">{copy.registry.legalNote}</p>
 
             <h3 class="vf-registry-label">{copy.registry.documentsLabel}</h3>
             <ul class="vf-documents">
@@ -565,6 +585,7 @@ const jsonLd = {
   <script>
     import "../../scripts/vault-triggers.ts";
     import "../../scripts/copy-fields.ts";
+    import "../../scripts/foundation-rail.ts";
   </script>
 </BaseLayout>
 
@@ -597,6 +618,22 @@ const jsonLd = {
   .vf-title-line { display: block; }
   /* `:global(em)`: the second line arrives through `set:html` and carries no scope attribute. */
   .vf-title :global(em) { font-family: inherit; font-style: normal; font-weight: 300; color: var(--ink); white-space: nowrap; }
+  /* Each word (`.vf-w`, built in the frontmatter) reserves the width it has at rest in a
+     zero-height first line, so the lines break where they will finally fall from the first frame
+     of the sequence. `/ ""` keeps that copy out of the accessibility tree; a browser that cannot
+     read it drops the declaration and reserves nothing. */
+  .vf-title :global(.vf-w) { display: inline-block; }
+  .vf-title :global(.vf-w)::before { content: attr(data-w) / ""; display: block; height: 0; overflow: hidden; visibility: hidden; font-weight: 600; }
+  .vf-title :global(em .vf-w)::before { font-weight: 300; }
+  /* The title sequence, on a full load only (`data-entrance`, see the header): each word rises from
+     200 to its resting weight, 70 ms after the one before it, on the landing's pen curve; the lead
+     and the links cut in at 900 ms in one frame, with no travel. The eyebrow is set from the start. */
+  @media (prefers-reduced-motion: no-preference) {
+    .vf-hero[data-entrance="play"] :global(.vf-w) { animation: vf-weigh 900ms cubic-bezier(.62, .02, .34, 1) calc(200ms + var(--i) * 70ms) backwards; }
+    .vf-hero[data-entrance="play"] :is(.vf-lead, .vf-hero-links) { animation: vf-cut 900ms steps(1, end); }
+  }
+  @keyframes vf-weigh { from { font-weight: 200; } }
+  @keyframes vf-cut { from { opacity: 0; } }
   .vf-lead { margin: clamp(24px, 3vw, 36px) 0 0; max-width: 58ch; font-family: var(--sans); font-size: clamp(17px, 1.45vw, 20px); line-height: 1.55; color: var(--ink-soft); }
   .vf-hero-links { margin: 28px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
   @media (min-width: 1024px) {
@@ -621,7 +658,7 @@ const jsonLd = {
   .vf-rail { margin: clamp(36px, 6vw, 56px) 0 0; }
   .vf-rail-label { margin: 0 0 10px; font-family: var(--sans); font-weight: 500; font-size: 14px; color: var(--ink-soft); }
   .vf-rail-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--vf-rule); }
-  .vf-rail-list a { display: grid; grid-template-columns: 2.4em 1fr; align-items: baseline; min-height: 48px; padding: 13px 0; border-bottom: 1px solid var(--vf-rule); font-family: var(--sans); font-weight: 500; font-size: 15px; line-height: 1.3; color: var(--ink); text-decoration: none; transition: color .25s var(--ease); }
+  .vf-rail-list a { display: grid; grid-template-columns: 2.4em 1fr; align-items: baseline; min-height: 48px; padding: 13px 0; border-bottom: 1px solid var(--vf-rule); font-family: var(--sans); font-weight: 500; font-size: 15px; line-height: 1.3; color: var(--ink); text-decoration: none; transition: color .25s var(--ease), border-color .25s var(--ease); }
   .vf-rail-list a:hover, .vf-rail-list a:focus-visible { color: var(--ink); }
   .vf-rail-list a:hover .vf-num, .vf-rail-list a:focus-visible .vf-num { color: var(--ink); }
   @media (min-width: 1024px) {
@@ -629,7 +666,11 @@ const jsonLd = {
     .vf-rail-inner { position: sticky; top: clamp(96px, 12vh, 128px); }
     .vf-rail-label { display: none; }
     .vf-rail-list { border-top: 0; }
-    .vf-rail-list a { min-height: 0; padding: 7px 0; border-bottom: 0; font-size: 14px; color: var(--ink-soft); }
+    /* A hairline track down the index; the section being read (`aria-current`, set by
+       scripts/foundation-rail) takes it in ink. Only colours change, so the rail never reflows. */
+    .vf-rail-list a { min-height: 0; padding: 7px 0 7px 14px; border-bottom: 0; border-left: 1px solid var(--vf-rule); font-size: 14px; color: var(--ink-soft); }
+    .vf-rail-list a[aria-current] { color: var(--ink); border-left-color: var(--ink); }
+    .vf-rail-list a[aria-current] .vf-num { color: var(--ink); }
   }
 
   /* ── Sections ──────────────────────────────────────────────────────────────────────────────── */
@@ -648,6 +689,17 @@ const jsonLd = {
   @media (min-width: 1024px) {
     .vf-section-module { padding-top: 0; border-top: 0; }
   }
+  /* The rules that open a module are ruled left to right once as they arrive — the site's lead
+     register (registers.css), which draws a pseudo-rule only under `html.voct-motion` and leaves
+     the real border to everyone else. Here the border hands over: its colour goes to `--rule-ink`,
+     the border itself turns transparent but keeps its pixel, and the drawn rule sits on that pixel
+     (`--rule-inset`). A section's own rule exists only from 1024px; on a phone its label carries it. */
+  .reveal-rule:is(.vf-section, .vf-label, .vf-way, .vf-member, .vf-transfer) { --rule-inset: -1px 0 auto 0; }
+  .vf-label.reveal-rule, .vf-transfer.reveal-rule { --rule-ink: var(--ink); }
+  .vf-way.reveal-rule, .vf-member.reveal-rule { --rule-ink: var(--vf-rule); }
+  .vf-section.reveal-rule { --rule-ink: transparent; }
+  @media (min-width: 1024px) { .vf-section.reveal-rule { --rule-ink: var(--ink); } }
+  :global(html.voct-motion) .reveal-rule:is(.vf-section, .vf-label, .vf-way, .vf-member, .vf-transfer) { border-top-color: transparent; }
   .vf-h2 { margin: 0; max-width: 22ch; font-family: var(--sans); font-weight: 600; font-size: clamp(28px, 3.4vw, 44px); line-height: 1.08; letter-spacing: -.03em; color: var(--ink); text-wrap: balance; }
   .vf-body { margin: 20px 0 0; max-width: 64ch; font-family: var(--sans); font-size: clamp(16px, 1.2vw, 17px); line-height: 1.65; color: var(--ink-soft); }
   /* A title or foreign term in body copy (set:html, so `:global`). Plex Sans ships no italic;

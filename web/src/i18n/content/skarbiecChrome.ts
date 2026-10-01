@@ -75,7 +75,8 @@ export interface VaultChrome {
   readonly fieldRecipient: string;
   readonly fieldAddress: string;
   readonly fieldTransferTitle: string;
-  /** The sheet's one road out: recurring support lives on /fundacja#mecenat, not in a tab here. */
+  /** The sheet's one road out: every other way of giving — a standing order, patronage, a
+      partnership — lives on /fundacja#wsparcie, not in a tab here. */
   readonly recurringLink: string;
   /** The terms overlay. */
   readonly termsClose: string;
@@ -141,7 +142,7 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     fieldRecipient: "Odbiorca",
     fieldAddress: "Adres fundacji",
     fieldTransferTitle: "Tytuł przelewu",
-    recurringLink: "Wolisz wspierać regularnie? Mecenat →",
+    recurringLink: "Inne formy wsparcia →",
     termsClose: "Zamknij regulamin",
     termsAccept: "Akceptuję regulamin",
     termsPage: "Regulamin na osobnej stronie ↗",
@@ -187,7 +188,7 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     fieldRecipient: "Recipient",
     fieldAddress: "Foundation address",
     fieldTransferTitle: "Transfer title",
-    recurringLink: "Would you rather support us regularly? Patronage →",
+    recurringLink: "Other ways to support us →",
     termsClose: "Close the terms",
     termsAccept: "I accept the terms",
     termsPage: "The terms on their own page ↗",
@@ -233,7 +234,7 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     fieldRecipient: "Bénéficiaire",
     fieldAddress: "Adresse de la fondation",
     fieldTransferTitle: "Intitulé du virement",
-    recurringLink: "Vous préférez nous soutenir régulièrement ? Mécénat →",
+    recurringLink: "Autres formes de soutien →",
     termsClose: "Fermer le règlement",
     termsAccept: "J'accepte le règlement",
     termsPage: "Le règlement sur une page à part ↗",

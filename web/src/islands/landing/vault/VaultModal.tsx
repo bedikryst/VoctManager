@@ -3,8 +3,8 @@
  * @description The donation "skarbiec" sliding sheet: one-off giving only (Axepta form,
  *  Zrzutka, bank QR, under the campaign line — donor count and goal, with a fill rail that
  *  `VAULT_CONFIG.progress.showRail` switches). Recurring support is not a second intent here —
- *  the standing-order relationship has one home, `/fundacja#mecenat`, and the sheet ends on a
- *  link to it.
+ *  every other way of giving (a standing order, patronage, a partnership) has one home,
+ *  `/fundacja#wsparcie`, and the sheet ends on a link to it.
  *  Manages browser-history integration (back closes), Lenis stop/start while open, the
  *  campaign line, and the `body.vault-open` flag for chrome theming. Web/Astro port.
  * @architecture Astro islands 2026
@@ -44,7 +44,7 @@ export function VaultModal(): React.JSX.Element {
     dismissOverlayEntry("vaultOpen", close);
   }, [close]);
 
-  const hrefMecenat = `${localizePath("/fundacja", lang)}#mecenat`;
+  const hrefSupport = `${localizePath("/fundacja", lang)}#wsparcie`;
   const leaveVault = useLeaveVault();
 
   useBodyClass(isOpen ? "vault-open" : null);
@@ -153,13 +153,13 @@ export function VaultModal(): React.JSX.Element {
               </div>
             </section>
 
-            {/* Regular support is not a method here — it is a relationship, and it has one home.
+            {/* The other ways of giving are not methods here — they are relationships, with one home.
                 A real link (it reads as a page; long-press, middle-click and a modified click
                 still get the URL in a new tab), committed through the vault's own exit
                 (useLeaveVault) so the back button returns to the page the visitor came from. */}
             <a
               className="vault-recurring"
-              href={hrefMecenat}
+              href={hrefSupport}
               onClick={(event) => leaveVaultOnInternalLink(event, leaveVault)}
             >
               {t.recurringLink}

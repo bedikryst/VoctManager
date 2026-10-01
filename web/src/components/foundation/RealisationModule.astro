@@ -21,8 +21,9 @@
  *  cells at the same size, so the page never states the juxtaposition. Both pages share one host
  *  ground (the site's paper and its three families), which is why one skin serves both.
  *
- *  Static by contract: every part reads complete with scripts and motion off. The visual's entrance
- *  and the rules' drawing are the page's motion stage, not this component's.
+ *  Static by contract: every part reads complete with scripts and motion off. The one motion is
+ *  the poster's entrance — a wipe from the left, once, when the reveal controller reaches it
+ *  (`.reveal-cue`); the hidden state exists only under `html.voct-motion`.
  * @architecture Astro islands 2026
  * @module components/foundation/RealisationModule
  */
@@ -150,7 +151,7 @@ const titleId = `realizacja-${view.id}`;
   )}
 
   {view.visual && (
-    <figure class="rm-visual">
+    <figure class="rm-visual reveal-cue">
       {/* The poster art, whole. Decorative beside a title that already names the concert.
           `width` = top of the ladder (lib/photos.ts). */}
       <Picture
@@ -244,4 +245,8 @@ const titleId = `realizacja-${view.id}`;
   @media (min-width: 1024px) {
     .rm-visual { margin-inline-end: calc(-1 * var(--rm-pad-x) - var(--vf-bleed, 0px)); }
   }
+  /* The wipe keeps the lead register's clock and curve (`--rule-in`, `--ease-rule`): the poster is
+     uncovered left to right the way the page's hairlines are ruled. */
+  :global(html.voct-motion) .rm-visual.reveal-cue { transition: clip-path var(--rule-in) var(--ease-rule); }
+  :global(html.voct-motion) .rm-visual.reveal-cue:not(.is-in) { clip-path: inset(0 100% 0 0); }
 </style>

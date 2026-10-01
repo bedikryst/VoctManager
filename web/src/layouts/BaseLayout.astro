@@ -456,6 +456,10 @@ const breadcrumbLd = breadcrumb ? breadcrumbList(breadcrumb, lang) : undefined;
       // the global reveal system and owns its own entrance, so there is nothing to do there.
       document.addEventListener("astro:after-swap", () => {
         const root = document.documentElement;
+        // A page's own CSS entrance (keyed on `data-entrance="play"`, e.g. /fundacja's title
+        // sequence) plays on a full load only. Flipped here, before the new body's first style
+        // pass, its animations never start — flipped any later, they would start then and replay.
+        for (const el of document.querySelectorAll<HTMLElement>("[data-entrance]")) el.dataset.entrance = "composed";
         if (!root.classList.contains("reveal-ready")) return;
         // Measure before touching any class, so one settle cannot shift the next measurement.
         // The hidden state is opacity-only (the ink register — base.css), so these rects are

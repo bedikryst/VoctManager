@@ -114,9 +114,6 @@ const aboutCopySchema = z
         eyebrow: z.string(),
         h2: z.string(),
         lead: z.string(),
-        p2Html: z.string(),
-        goals: z.array(z.object({ id: z.string(), text: z.string() }).strict()).min(1),
-        legalNote: z.string(),
         statuteLabel: z.string(),
       })
       .strict(),
@@ -309,26 +306,6 @@ const ABOUT_CONTRACT: readonly CopyEntry[] = [
   },
   {
     kind: "field",
-    path: "foundation.p2Html",
-    label: "Fundacja · zakres statutowy",
-    note: "The emphasised span is the statute's own field of activity, quoted from the founding document. Render it in the terms the jurisdiction uses, not word for word.",
-  },
-  {
-    kind: "list",
-    path: "foundation.goals",
-    keyBy: "id",
-    label: "Cel statutowy",
-    note: "Category, colon, then what the Foundation may do inside it — a shape the statute itself uses and a rendering should keep. The component numbers them.",
-    fields: [{ path: "text", label: "treść" }],
-  },
-  {
-    kind: "field",
-    path: "foundation.legalNote",
-    label: "Fundacja · nota prawna",
-    note: "The non-distribution clause, in the statute's own terms. /kontakt states the same fact in one clause; this is the full form.",
-  },
-  {
-    kind: "field",
     path: "foundation.statuteLabel",
     label: "Fundacja · statut",
     note: "Names the same PDF the footer and /kolofon name; the three may read differently, they may not name two documents. The trailing arrow is part of the label.",
@@ -369,7 +346,6 @@ const ABOUT_CONTRACT: readonly CopyEntry[] = [
 const ABOUT_NOT_COPY: Readonly<Record<string, string>> = {
   "letter.stanzas[].num": "a Roman numeral — the stanza's number, the same in every language, and its key part",
   "doings.cards[].id": "identity — it is this card's key part",
-  "foundation.goals[].id": "identity — it is this goal's key part",
   "governance.roles[].id":
     "identity — it is this role's key part, and the component pairs the portrait to it",
 };
@@ -401,10 +377,6 @@ export interface AboutChrome {
   readonly foundationLink: string;
   readonly governanceAria: string;
   readonly ctaAria: string;
-  /** The statutory-purposes list, which sits INSIDE the foundation section and needs a name of its
-      own: sharing the section's would give a screen reader two things called the same thing on one
-      screen, with no way to tell which one was just entered. */
-  readonly goalsAria: string;
 }
 
 export const ABOUT_CHROME: Record<Locale, AboutChrome> = {
@@ -420,7 +392,6 @@ export const ABOUT_CHROME: Record<Locale, AboutChrome> = {
     foundationLink: "Fundacja i wsparcie →",
     governanceAria: "Zarząd fundacji",
     ctaAria: "Zaproszenie do kontaktu",
-    goalsAria: "Cele statutowe",
   },
   en: {
     heroAria: "About us",
@@ -434,7 +405,6 @@ export const ABOUT_CHROME: Record<Locale, AboutChrome> = {
     foundationLink: "Foundation & support →",
     governanceAria: "The foundation's board",
     ctaAria: "An invitation to get in touch",
-    goalsAria: "Statutory purposes",
   },
   fr: {
     heroAria: "À propos",
@@ -448,6 +418,5 @@ export const ABOUT_CHROME: Record<Locale, AboutChrome> = {
     foundationLink: "Fondation et soutien →",
     governanceAria: "Le conseil de la fondation",
     ctaAria: "Une invitation à nous contacter",
-    goalsAria: "Buts statutaires",
   },
 };

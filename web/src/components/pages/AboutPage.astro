@@ -32,6 +32,7 @@ import { UI } from "../../i18n/ui";
 import { localizePath, pageI18n, pickLocale, SITE, type Locale } from "../../i18n/config";
 import { FOUNDATION_PAGE_LINKED } from "../../data/foundationSupport";
 import { SOCIAL_SAME_AS } from "../../data/social";
+import { FOUNDATION_ID, foundationNode } from "../../lib/foundationSchema";
 import "../../styles/vault.css";
 
 interface Props {
@@ -46,10 +47,8 @@ const t = ABOUT_CHROME[lang];
 const { path, alternates, available } = pageI18n("/o-nas", lang);
 const hrefConcerts = localizePath("/koncerty", lang);
 const hrefContact = localizePath("/kontakt", lang);
-// The foundation's own page: the band below keeps its summary, the page holds the rest. Until
-// FOUNDATION_PAGE_LINKED, the band is the foundation's public home and its NGO `url` says so.
+// The foundation's own page: the band below keeps its summary, the page holds the rest.
 const hrefFoundation = localizePath("/fundacja", lang);
-const foundationUrl = FOUNDATION_PAGE_LINKED ? `${SITE}/fundacja` : `${SITE}/o-nas#fundacja`;
 
 const hero = bleedPair("o-nas-hero");
 const plate = bleedPair("swiatlo-krzyz");
@@ -100,8 +99,9 @@ const boardPortraitsComplete = board.every((b) => b.img);
 
 // One graph, three nodes: the AboutPage points at the SAME MusicGroup entity the landing declares
 // (shared @id — no per-locale duplicate ensemble), and the foundation is its parentOrganization,
-// carrying the legal identity (KRS/NIP/REGON). Only the AboutPage node localizes (per-locale url +
-// inLanguage + translated name/description); the entity nodes stay canonical across languages.
+// described once for the whole site (lib/foundationSchema). Only the AboutPage node localizes
+// (per-locale url + inLanguage + translated name/description); the entity nodes stay canonical
+// across languages.
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
@@ -123,28 +123,10 @@ const jsonLd = {
       foundingDate: "2024",
       foundingLocation: { "@type": "Place", name: "Kraków, Polska" },
       founder: { "@type": "Person", name: "Florent de Bazelaire" },
-      parentOrganization: { "@id": `${SITE}/#foundation` },
+      parentOrganization: { "@id": FOUNDATION_ID },
       sameAs: SOCIAL_SAME_AS,
     },
-    {
-      "@type": "NGO",
-      "@id": `${SITE}/#foundation`,
-      name: "Fundacja VoctFoundation",
-      url: foundationUrl,
-      identifier: [
-        { "@type": "PropertyValue", propertyID: "KRS", value: "0001237252" },
-        { "@type": "PropertyValue", propertyID: "NIP", value: "6762718992" },
-        { "@type": "PropertyValue", propertyID: "REGON", value: "544621525" },
-      ],
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: "Św. Filipa 23/3",
-        postalCode: "31-150",
-        addressLocality: "Kraków",
-        addressCountry: "PL",
-      },
-      member: board.map((b) => ({ "@type": "Person", name: b.name, jobTitle: b.role })),
-    },
+    foundationNode(),
   ],
 };
 
@@ -401,42 +383,19 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
         </div>
         <div class="prose measure reveal" data-d="1">
           <p class="lead">{c.foundation.lead}</p>
-          <p set:html={c.foundation.p2Html}></p>
         </div>
-        {/* Its own name, not the section's: the list sits INSIDE that section, and giving both the
-            same one leaves a screen reader with two things called "Fundacja VoctFoundation" on one
-            screen and no way to tell which was just entered. */}
-        <ol class="goals reveal" data-d="2" aria-label={t.goalsAria}>
-          {
-            c.foundation.goals.map((g, i) => (
-              <li>
-                <span class="g-num">{String(i + 1).padStart(2, "0")}</span>
-                <span>{g.text}</span>
-              </li>
-            ))
-          }
-        </ol>
-        <div class="legal-card reveal" data-d="3">
-          <div class="legal-grid">
-            <div><span class="k">KRS</span><span class="v">0001237252</span></div>
-            <div><span class="k">NIP</span><span class="v">6762718992</span></div>
-            <div><span class="k">REGON</span><span class="v">544621525</span></div>
-          </div>
-          <p class="legal-note">{c.foundation.legalNote}</p>
-          <div class="legal-foot">
-            <span>Fundacja VoctFoundation · ul. Św. Filipa 23/3, 31-150 Kraków</span>
-            {/* Two doors of one rank: the founding document, and the page where the foundation
-                sets out what it does with support. The page's label is chrome, not copy — a
-                nav word, the same one the footer prints. The second door waits on
-                FOUNDATION_PAGE_LINKED (data/foundationSupport). */}
-            <span class="legal-doors">
-              <a class="btn" href="/docs/Statut-VoctFoundation.pdf" target="_blank" rel="noopener">
-                {c.foundation.statuteLabel}
-              </a>
-              {FOUNDATION_PAGE_LINKED && <a class="btn" href={hrefFoundation}>{t.foundationLink}</a>}
-            </span>
-          </div>
-        </div>
+        {/* The band is the ensemble's account of its foundation, not the foundation's record: the
+            statutory goals, the non-distribution clause and the registry live on /fundacja, which
+            is where an institution checks the foundation, and in the footer's Fundatio stanza.
+            Two doors of one rank: the founding document, and that page. The page's label is
+            chrome, not copy — a nav word, the same one the footer prints. The second door waits
+            on FOUNDATION_PAGE_LINKED (data/foundationSupport). */}
+        <p class="foundation-doors reveal" data-d="2">
+          <a class="btn" href="/docs/Statut-VoctFoundation.pdf" target="_blank" rel="noopener">
+            {c.foundation.statuteLabel}
+          </a>
+          {FOUNDATION_PAGE_LINKED && <a class="btn" href={hrefFoundation}>{t.foundationLink}</a>}
+        </p>
       </div>
     </section>
 
@@ -623,19 +582,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   }
 
   /* Foundation */
-  .goals { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 2px; }
-  .goals li { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: baseline; padding: 16px 0; border-top: 1px solid var(--line); font-size: clamp(15px, 1.2vw, 17px); color: var(--ink-soft); }
-  .goals li:last-child { border-bottom: 1px solid var(--line); }
-  .goals .g-num { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: var(--candle-ink); }
-  .legal-card { margin-top: clamp(36px, 5vw, 56px); background: var(--paper); border: 1px solid var(--line); padding: clamp(26px, 3.4vw, 40px); display: grid; gap: 22px; }
-  .legal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .legal-grid div { display: grid; gap: 4px; }
-  .legal-grid .k { font-family: var(--capitalis); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-muted); }
-  .legal-grid .v { font-family: var(--mono); font-size: 15px; color: var(--ink); letter-spacing: .02em; }
-  .legal-foot { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 22px; font-family: var(--mono); font-size: 12px; color: var(--ink-muted); letter-spacing: .03em; }
-  .legal-doors { display: flex; flex-wrap: wrap; gap: 12px; }
-  .legal-note { margin: 0; max-width: 78ch; color: var(--ink-muted); font-size: 16px; line-height: 1.75; }
-  @media (max-width: 620px) { .legal-grid { grid-template-columns: 1fr; gap: 14px; } }
+  .foundation-doors { margin: clamp(28px, 4vw, 44px) 0 0; display: flex; flex-wrap: wrap; gap: 12px; }
 
   /* Governance */
   .board-intro { max-width: 720px; margin: calc(clamp(40px, 6vw, 80px) * -0.45) 0 clamp(38px, 5vw, 64px); color: var(--ink-soft); font-size: clamp(16px, 1.25vw, 18px); }

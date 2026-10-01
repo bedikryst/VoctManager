@@ -42,8 +42,8 @@
 
 # The version this document is at, and the day it started to apply. Both are read by the line under
 # the title and by the newest entry of the history at the foot.
-version: "1.5"
-effectiveFrom: "2026-09-15"
+version: "1.6"
+effectiveFrom: "2026-10-01"
 
 meta:
   # Read in a browser tab and by a crawler, never on the page. The document is `noindex,follow` —
@@ -176,17 +176,21 @@ s3:
       zlecenie pozostaje pod Twoją wyłączną kontrolą.
 
   patronage:
-    # „Mecenat” is the name of the vault's own section; whatever the reader's language calls it
-    # there is what this sentence has to call it here.
-    title: "Zgłoszenie mecenatu (formularz wsparcia regularnego)"
+    # The form is the optional one under /fundacja's transfer details. „Wsparcie” is the name of
+    # that page's section; whatever the reader's language calls it there is what this sentence has
+    # to call it here. The purpose is the one the form's own consent states
+    # (`page.fundacja.join.supportConsentHtml`) — the two may read differently, never say different
+    # things.
+    title: "Zgłoszenie wsparcia"
     p1Html: >-
-      Jeśli zdecydujesz się dołączyć do grona mecenasów i wypełnisz formularz w sekcji „Mecenat”,
-      przetwarzamy podane przez Ciebie <strong>imię, nazwisko oraz adres e-mail</strong>.
-      Zapisujemy je wyłącznie po to, aby skontaktować się z Tobą w sprawie regularnego wsparcia.
-      Formularz <strong>nie zbiera żadnych danych płatniczych</strong> — samo wsparcie odbywa się
-      przelewem (zleceniem stałym), który ustanawiasz i kontrolujesz w swojej bankowości. Twoje
-      dane przechowujemy na naszych serwerach w Unii Europejskiej; wewnętrzne powiadomienie o nowym
-      zgłoszeniu, które wysyłamy do siebie, <strong>nie zawiera Twoich danych osobowych</strong>.
+      Jeśli wspierasz Fundację przelewem i wypełnisz formularz zgłoszenia w sekcji „Wsparcie” na
+      stronie Fundacji, przetwarzamy podane przez Ciebie <strong>imię, nazwisko oraz adres
+      e-mail</strong>. Zapisujemy je wyłącznie po to, aby skontaktować się z Tobą w sprawie
+      wsparcia Fundacji. Formularz <strong>nie zbiera żadnych danych płatniczych</strong> — samo
+      wsparcie odbywa się przelewem, jednorazowym lub stałym, który zlecasz i kontrolujesz w swojej
+      bankowości. Twoje dane przechowujemy na naszych serwerach w Unii Europejskiej; wewnętrzne
+      powiadomienie o nowym zgłoszeniu, które wysyłamy do siebie, <strong>nie zawiera Twoich danych
+      osobowych</strong>.
 
   notices:
     title: "Lista zaproszeń na koncerty"
@@ -263,7 +267,7 @@ s4:
         wykonanie obowiązków wynikających z przepisów podatkowych.
     - id: patronage
       textHtml: >-
-        <strong>Kontakt w sprawie mecenatu</strong> — art. 6 ust. 1 lit. a RODO (Twoja zgoda
+        <strong>Kontakt w sprawie wsparcia</strong> — art. 6 ust. 1 lit. a RODO (Twoja zgoda
         wyrażona w formularzu). Zgodę możesz wycofać w każdej chwili, pisząc na
         <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>; wycofanie nie wpływa na
         zgodność z prawem przetwarzania, którego dokonano przed wycofaniem.
@@ -405,7 +409,7 @@ s7:
         ewentualnych roszczeń, jeśli korespondencja stanowi dowód w sprawie.
     - id: patronage
       textHtml: >-
-        <strong>Zgłoszenia mecenatu</strong> — do czasu zakończenia kontaktu w sprawie mecenatu lub
+        <strong>Zgłoszenia wsparcia</strong> — do czasu zakończenia kontaktu w sprawie wsparcia lub
         wycofania zgody. Jeśli nawiążemy stałą współpracę, dane przechodzą w reżim przechowywania
         dla darczyńców (dokumentacja księgowa, 5 lat). W przeciwnym razie usuwamy je trwale po
         12 miesiącach od zamknięcia sprawy, a zgłoszenie, którego nikt formalnie nie zamknął —
@@ -609,6 +613,15 @@ history:
   # inside a key part.
   label: "Historia zmian"
   entries:
+    - id: "v1-6"
+      version: "1.6"
+      date: "2026-10-01"
+      note: >-
+        Formularz zgłoszenia wsparcia przeniesiono na stronę Fundacji, do sekcji „Wsparcie”, i
+        otwarto dla każdego, kto wspiera Fundację przelewem, jednorazowym lub stałym. Zgodnie z
+        tym w § 3, § 4 i § 7 „zgłoszenie mecenatu” nazywa się teraz zgłoszeniem wsparcia, a cel
+        to kontakt w sprawie wsparcia Fundacji. Zakres danych (imię, nazwisko, adres e-mail),
+        podstawa przetwarzania (zgoda) i okresy przechowywania pozostają bez zmian.
     - id: "v1-5"
       version: "1.5"
       date: "2026-09-15"

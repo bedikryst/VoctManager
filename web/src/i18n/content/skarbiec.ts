@@ -158,7 +158,7 @@ const VAULT_CONTRACT: readonly CopyEntry[] = [
     kind: "field",
     path: "qr.recurringNoteHtml",
     label: "Przelew · wsparcie cykliczne (opis)",
-    note: "\"Zlecenie stałe\" is the banking term for a standing order — use the reader's own term, and the one their bank's menu actually shows. One practical sentence about these details, no link and no question: the sheet's closing line (chrome, outside the desk) is the road to /fundacja#mecenat and asks the question itself.",
+    note: "\"Zlecenie stałe\" is the banking term for a standing order — use the reader's own term, and the one their bank's menu actually shows. One practical sentence about these details, no link: the sheet's closing line (chrome, outside the desk) is the road to /fundacja#wsparcie, where the offer is set out.",
   },
   {
     kind: "field",

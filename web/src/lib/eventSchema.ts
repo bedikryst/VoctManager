@@ -24,6 +24,7 @@
  */
 
 import { SITE } from "../i18n/config";
+import { FOUNDATION_REF } from "./foundationSchema";
 
 /** What the door cost, where the ensemble actually recorded it. */
 export type Admission = "free" | "paid";
@@ -36,13 +37,9 @@ const PERFORMER = {
   name: "VoctEnsemble",
 } as const;
 
-/** Likewise the foundation that puts the cycle on — `@id` shared with the landing's `funder`. */
-const ORGANIZER = {
-  "@type": "NGO",
-  "@id": `${SITE}/#foundation`,
-  name: "VoctFoundation",
-  url: SITE,
-} as const;
+/** Likewise the foundation that puts the cycle on — the site's one foundation entity
+    (lib/foundationSchema), whose `url` is its own page, never the ensemble's `SITE`. */
+const ORGANIZER = FOUNDATION_REF;
 
 export interface EventSeed {
   /** Concert title as it is printed. */
