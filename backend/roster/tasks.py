@@ -151,9 +151,12 @@ def _reminder_groups_by_window(
 
     The recipient rule itself is never restated here: every seat goes through
     `NotificationRecipientPolicy`, one at a time, so who hears about an evening
-    is decided in exactly one place.
+    is decided in exactly one place. A leader without a seat
+    (`seatless_leader_user_ids`) has no seat to read a window through and is
+    reminded of the whole evening, with the seats the plan calls throughout.
     """
     from roster.domain.rehearsal_plan import window_payload
+    from roster.permissions import seatless_leader_user_ids
     from roster.queries.plan_queries import plan_windows_for_seats
 
     windows = plan_windows_for_seats(reh, called) if plan_public else {}
@@ -165,6 +168,9 @@ def _reminder_groups_by_window(
         window = window_payload(windows.get(seat.id))
         key = json.dumps(window, sort_keys=True)
         grouped.setdefault(key, (window, []))[1].extend(recipients)
+    leaders = seatless_leader_user_ids(reh.project, rehearsal=reh)
+    if leaders:
+        grouped.setdefault(json.dumps(None), (None, []))[1].extend(leaders)
     return list(grouped.values())
 
 

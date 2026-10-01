@@ -514,8 +514,12 @@ class AnnouncementQueue:
         conversation; sending them the voice line they turned down would read as
         the app not having heard them. A *removal* still goes out — the person has
         no live participation left at all, so nothing here filters it.
+
+        A broadcast also reaches whoever leads the project without a seat in it,
+        for the evenings that call them (`seatless_leader_user_ids`).
         """
         from roster.models import Participation, Rehearsal
+        from roster.permissions import seatless_leader_user_ids
 
         if announcement.recipient_id:
             declined = Participation.objects.filter(
@@ -527,6 +531,7 @@ class AnnouncementQueue:
             return [] if declined else [announcement.recipient_id]
 
         cast = Participation.objects.filter(project=project, is_deleted=False)
+        rehearsal: Rehearsal | None = None
         if announcement.subject_type == AnnouncementSubject.REHEARSAL:
             rehearsal = Rehearsal.objects.filter(id=announcement.subject_id).first()
             if rehearsal is None:
@@ -539,7 +544,10 @@ class AnnouncementQueue:
                 return []
             cast = rehearsal.called_participations()
 
-        return NotificationRecipientPolicy.in_conversation(cast)
+        return list(dict.fromkeys([
+            *NotificationRecipientPolicy.in_conversation(cast),
+            *seatless_leader_user_ids(project, rehearsal=rehearsal),
+        ]))
 
     @staticmethod
     def plan(

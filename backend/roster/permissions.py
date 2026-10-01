@@ -4,7 +4,8 @@
              the conductor. A delegation is a tie to ONE programme, not a rank:
              the predicate for a user and the filter for asking the database the
              same question, so a stand-in cannot be privileged on one screen and
-             a stranger on the next.
+             a stranger on the next. Also which evenings call a stand-in who
+             holds no seat, for every audience built from the cast.
 @architecture Enterprise SaaS 2026
 @module roster/permissions
 """
@@ -18,7 +19,13 @@ from django.db.models import OuterRef, Q, QuerySet
 from django.utils import timezone
 
 from core.permissions import user_is_manager
-from roster.models import ProgramItem, Project, Rehearsal
+from roster.models import (
+    Participation,
+    ProgramItem,
+    Project,
+    Rehearsal,
+    RehearsalDelegate,
+)
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -221,6 +228,106 @@ def user_may_plan(user: User | None, rehearsal: Rehearsal) -> bool:
     if not (on_podium or announced):
         return False
     return user_leads_project(user, rehearsal.project_id, scope='manage_rehearsals')
+
+
+# ── The leader without a seat ──────────────────────────────────────────────── #
+# An assistant may run a programme they do not sing in. They are told what the
+# cast is told about the evenings that call them, without becoming a seat: a
+# Participation would put them in the roll call, the casting board, the plan's
+# seat chips, the fees and the contracts. Every audience built from the cast —
+# the announcement queue, a rehearsal's and a project's cancellation, the
+# day-before reminder, the subscribed calendar — adds them through the readers
+# below, so the rule is written once.
+#
+# The evenings that call them are the ones announced for them (`Rehearsal.led_by`)
+# and every whole-cast evening. A sectional somebody else leads stays on their
+# timeline as something to browse, never as a call: their own voice type does
+# not seat them in a section of a programme they do not sing.
+
+
+def _calls_whole_cast(rehearsal: Rehearsal) -> bool:
+    """No named list and no section rule — read as `called_participations`
+    reads it, since every audience this joins starts from that set."""
+    return (
+        not rehearsal.called_sections
+        and not rehearsal.invited_participations.filter(is_deleted=False).exists()
+    )
+
+
+def seatless_leader_user_ids(
+    project: Project,
+    *,
+    rehearsal: Rehearsal | None = None,
+    closed_too: bool = False,
+) -> list[str]:
+    """Who leads ``project`` without a seat in it, as the user ids the
+    notification layer addresses; with ``rehearsal``, only those that evening
+    calls.
+
+    A leader is a live grant of any scope (`live_delegate_q`). A seat of their
+    own, declined excepted, takes them out: the seat already reaches them by
+    the cast's rule, and a second path would tell them everything twice. The
+    project's conductor is not a grant and is not asked here.
+
+    A closed project has ended every grant (`led_projects_q`) and reaches
+    nobody, unless ``closed_too`` — for the one message sent the moment it
+    closes, its cancellation. Drafts are the caller's to withhold, as they are
+    for the cast.
+    """
+    if project.status in Project.CLOSED_STATUSES and not closed_too:
+        return []
+    seated = (
+        Participation.objects
+        .filter(project=project, is_deleted=False)
+        .exclude(status=Participation.Status.DECLINED)
+        .values('artist_id')
+    )
+    grants = (
+        RehearsalDelegate.objects
+        .filter(live_delegate_q(scope='any'), project=project, artist__user__isnull=False)
+        .exclude(artist_id__in=seated)
+    )
+    if rehearsal is not None and not _calls_whole_cast(rehearsal):
+        if rehearsal.led_by_id is None:
+            return []
+        grants = grants.filter(artist_id=rehearsal.led_by_id)
+    return sorted({str(user_id) for user_id in grants.values_list('artist__user_id', flat=True)})
+
+
+def seatless_led_project_ids(user: User | None) -> QuerySet[Project, UUID]:
+    """Ids of the projects ``user`` leads without a seat — the projects
+    `seatless_leader_user_ids` names them in. Drafts included, as in
+    `led_projects_q`; closed projects not."""
+    if user is None or not getattr(user, 'is_authenticated', False):
+        return Project.objects.none().values_list('id', flat=True)
+    seated = (
+        Participation.objects
+        .filter(artist__user=user, is_deleted=False)
+        .exclude(status=Participation.Status.DECLINED)
+        .values('project_id')
+    )
+    return (
+        Project.objects
+        .filter(
+            Q(rehearsal_delegates__artist__user=user)
+            & live_delegate_q(scope='any', rel='rehearsal_delegates__')
+        )
+        .exclude(status__in=Project.CLOSED_STATUSES)
+        .exclude(id__in=seated)
+        .values_list('id', flat=True)
+        .distinct()
+    )
+
+
+def seatless_leader_calling_q(user: User | None) -> Q:
+    """The `Rehearsal` rows that call ``user`` as a leader without a seat —
+    `seatless_leader_user_ids` asked from the leader's side, for the calendar
+    feed. The whole-cast half mirrors `Rehearsal.calling_q`'s tutti branch.
+    Traverses ``invited_participations``: the queryset needs ``.distinct()``."""
+    return Q(project_id__in=seatless_led_project_ids(user)) & (
+        Q(led_by__user=user)
+        | Q(invited_participations__isnull=True, called_sections='')
+    )
 
 
 def led_piece_ids(user: User | None, *, scope: LeadScope) -> QuerySet[ProgramItem, UUID]:

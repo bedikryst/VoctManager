@@ -23,6 +23,7 @@ from roster.models import (
     Rehearsal,
     is_instrumentalist_account,
 )
+from roster.permissions import seatless_leader_calling_q, seatless_led_project_ids
 from roster.queries.day_plan_queries import point_venue_name
 
 from .permissions import user_is_manager
@@ -205,10 +206,12 @@ class ICalGeneratorService:
         user,
     ) -> tuple[QuerySet[Project], QuerySet[Rehearsal], frozenset[UUID]]:
         """The dates this account is called to: its live seats with the
-        rehearsals that call it, and the published projects it conducts with
-        every rehearsal in them. The third value is the projects where the
-        account's seat joins on site, whose entries open where that singer is
-        first due instead of at the group's departure."""
+        rehearsals that call it, the published projects it conducts with
+        every rehearsal in them, and the published projects it leads by grant
+        without a seat with the evenings that call a leader
+        (`seatless_leader_calling_q`). The third value is the projects where
+        the account's seat joins on site, whose entries open where that singer
+        is first due instead of at the group's departure."""
         if not hasattr(user, 'artist_profile'):
             return Project.objects.none(), Rehearsal.objects.none(), frozenset()
 
@@ -240,26 +243,43 @@ class ICalGeneratorService:
             .values_list('id', flat=True)
         )
 
+        # An assistant running a programme they do not sing in holds neither
+        # a seat nor the podium. Published only, for the reason above.
+        led_ids = (
+            Project.objects.filter(id__in=seatless_led_project_ids(user))
+            .exclude(status__in=Project.HIDDEN_FROM_CAST_STATUSES)
+            .values('id')
+        )
+
         projects = Project.objects.filter(
-            Q(id__in=seats.values('project_id')) | Q(id__in=conducted_ids)
+            Q(id__in=seats.values('project_id'))
+            | Q(id__in=conducted_ids)
+            | Q(id__in=led_ids)
         ).select_related('location')
 
         # The same rule the schedule reads: a sectional calls sections (or
         # a list of names), so a soprano's calendar does not fill with the
         # basses' rehearsals — and a deleted session leaves the calendar
-        # with it. A conductor runs every rehearsal of their own project,
-        # which is why that project's id short-circuits the call rule.
+        # with it. The seat's rule is held to the seat's projects: its tutti
+        # branch names no project, and a led project must not call the
+        # leader by a voice they sing elsewhere. A conductor runs every
+        # rehearsal of their own project, which is why that project's id
+        # short-circuits the call rule.
         rehearsals = (
             Rehearsal.objects.filter(project__in=projects, is_deleted=False)
             .filter(
                 Q(project_id__in=conducted_ids)
-                | Rehearsal.calling_q(
-                    seats,
-                    instrumentalist=is_instrumentalist_account(user),
-                    section_letters=Participation.section_letters_of_seats(
-                        seats.select_related('artist')
-                    ),
+                | (
+                    Q(project_id__in=seats.values('project_id'))
+                    & Rehearsal.calling_q(
+                        seats,
+                        instrumentalist=is_instrumentalist_account(user),
+                        section_letters=Participation.section_letters_of_seats(
+                            seats.select_related('artist')
+                        ),
+                    )
                 )
+                | seatless_leader_calling_q(user)
             )
             .distinct()
             .select_related('project', 'location')

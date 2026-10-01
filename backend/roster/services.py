@@ -117,7 +117,7 @@ from .models import (
     RehearsalPlanItem,
     VoiceType,
 )
-from .permissions import live_delegate_q
+from .permissions import live_delegate_q, seatless_leader_user_ids
 from .queries.schedule_queries import get_artist_rehearsals_in_window
 from .score_package_config import resolve_item_edition
 
@@ -1109,10 +1109,14 @@ class ProjectManagementService:
                         # Everyone still in the conversation, not only the
                         # confirmed: right after publication the whole cast is
                         # INVITED, and they are precisely the people whose pending
-                        # decision this cancellation answers.
-                        recipient_ids=NotificationRecipientPolicy.in_conversation(
-                            Participation.objects.filter(project=project, is_deleted=False)
-                        ),
+                        # decision this cancellation answers. Its leaders without
+                        # a seat too — the cancellation is what ends their grant.
+                        recipient_ids=list(dict.fromkeys([
+                            *NotificationRecipientPolicy.in_conversation(
+                                Participation.objects.filter(project=project, is_deleted=False)
+                            ),
+                            *seatless_leader_user_ids(project, closed_too=True),
+                        ])),
                         notification_type=NotificationType.PROJECT_CANCELLED,
                         level=NotificationLevel.URGENT,
                         metadata=cancelled_metadata,
@@ -2185,8 +2189,11 @@ class RehearsalOperationsService:
         # creation or move (AnnouncementQueue.recipients_for): telling only the
         # confirmed that it is off would leave everyone still deciding holding a
         # date that no longer exists.
-        recipient_ids = NotificationRecipientPolicy.in_conversation(qs)
         project = rehearsal.project
+        recipient_ids = list(dict.fromkeys([
+            *NotificationRecipientPolicy.in_conversation(qs),
+            *seatless_leader_user_ids(project, rehearsal=rehearsal),
+        ]))
         project_name = project.title
         metadata_context = rehearsal_notification_context(rehearsal)
 

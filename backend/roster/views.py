@@ -2121,7 +2121,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         # listing. The sectional check reads the same seats, so an invitation
         # addressed to a seat since given up does not resurrect the rehearsal.
         seats = Participation.live_seats(artist__user=user)
-        return qs.filter(project_id__in=seats.values('project_id')).filter(
+        called = Rehearsal.objects.filter(project_id__in=seats.values('project_id')).filter(
             Rehearsal.calling_q(
                 seats,
                 instrumentalist=is_instrumentalist_account(user),
@@ -2129,14 +2129,24 @@ class RehearsalViewSet(viewsets.ModelViewSet):
                     seats.select_related('artist')
                 ),
             )
-        ).distinct()
+        )
+        visible = Q(id__in=called.values('id'))
+        # One evening opens for whoever runs its project, seat or none: the
+        # timeline lists every evening of a led project and its card links
+        # here. The list stays the seat's — `?project=` is the cast's view of
+        # a programme, and a leader without a seat is not in it. A leader
+        # holds no seat to read a window through, so the page carries none.
+        if self.action == 'retrieve':
+            visible |= Q(project_id__in=led_project_ids(user, scope='any'))
+        return qs.filter(visible)
 
     def retrieve(self, request, *args, **kwargs) -> Response:
         """One rehearsal, read through the reader's own seat: the plan rows
         say whether they call this reader and `my_plan_window` says which
         part of the evening is theirs. Past rehearsals included — the
-        queryset narrows to evenings that call the reader, not to future
-        ones — because "co przerobiliście w środę?" is read after the fact.
+        queryset narrows to evenings that call the reader, or belong to a
+        project the reader runs, not to future ones — because "co
+        przerobiliście w środę?" is read after the fact.
 
         A manager may read it as a member with ``?artist=<id>`` — the same
         seat the schedule dashboard answers through, so the window on the
