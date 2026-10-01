@@ -989,6 +989,14 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     if (type === "MATERIAL_UPLOADED") {
       return navigate(isAdmin ? "/panel/archive-management" : "/panel/materials");
     }
+    if (notification.notification_type === "ABSENCE_REQUESTED" && isAdmin) {
+      // Whether one more absence matters is read against the others on the same
+      // evenings, so a manager lands on the project's list of them — `?absences=1`
+      // is the overview's contract for opening it. Mirrors the push and the
+      // e-mail. Without a project the evening below still answers.
+      const projectId = notification.metadata.project_id;
+      if (projectId) return navigate(`/panel/projects/${projectId}?absences=1`);
+    }
     if (type === "ATTENDANCE_SUBMITTED" || type === "ABSENCE_REQUESTED") {
       // A singer's report names one evening, so it opens on that evening —
       // both surfaces spend `?rehearsal=` on arrival. Mirrors the push and the

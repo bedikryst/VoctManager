@@ -34,11 +34,7 @@ from .models import Notification, NotificationLevel, NotificationType
 from .tasks import flush_push_fold_task, send_push_notification_task
 from .time_metadata import event_start
 
-# How far back a flush looks for the rows its member keys name. A window lasts
-# at most the ceiling; the rest is room for a flush a busy worker picks up late.
-_ROW_LOOKBACK = timedelta(minutes=10)
-
-# The keys outlive the ceiling by this much, for the same late flush.
+# Room past the window's own length for a flush a busy worker picks up late.
 _KEY_MARGIN_SECONDS = 5 * 60
 
 _LEVEL_RANK: dict[str, int] = {
@@ -49,15 +45,21 @@ _LEVEL_RANK: dict[str, int] = {
 
 
 def quiet_seconds() -> int:
-    return int(getattr(settings, "ATTENDANCE_PUSH_QUIET_SECONDS", 10))
+    """Long enough for the gap between two reports with a typed excuse: a singer
+    writing "why" for each evening spends most of a minute per row, and a window
+    shorter than that splits one sitting into a push per evening."""
+    return int(getattr(settings, "ATTENDANCE_PUSH_QUIET_SECONDS", 120))
 
 
 def ceiling_seconds() -> int:
-    return int(getattr(settings, "ATTENDANCE_PUSH_CEILING_SECONDS", 60))
+    """The longest a report's push may wait, however long the sitting runs."""
+    return int(getattr(settings, "ATTENDANCE_PUSH_CEILING_SECONDS", 300))
 
 
 def _key_timeout() -> int:
-    return ceiling_seconds() + _KEY_MARGIN_SECONDS
+    """A window's last flush runs up to a quiet period past the ceiling, and the
+    keys and rows it reads must still be there when it does."""
+    return ceiling_seconds() + quiet_seconds() + _KEY_MARGIN_SECONDS
 
 
 def _member_key(recipient_id: str, artist_id: str, notification_id: Any) -> str:
@@ -128,7 +130,7 @@ def flush(*, recipient_id: str, artist_id: str, stamp: str) -> int:
         recipient_id=int(recipient_id),
         notification_type__in=FOLD_TYPES,
         metadata__artist_id=artist_id,
-        created_at__gte=timezone.now() - _ROW_LOOKBACK,
+        created_at__gte=timezone.now() - timedelta(seconds=_key_timeout()),
     ).order_by("created_at")
     # Deleting a member key is the claim: of two flushes reaching one report,
     # only one deletes its key.

@@ -1,8 +1,9 @@
 /**
  * @file UpcomingAbsencesSheet.tsx
  * @description Who is missing from which upcoming rehearsal, on one screen. The
- * Overview's "reported absences" row opens it because the answer is otherwise
- * spread across every rehearsal of the project, one evening per click.
+ * Overview's "reported absences" row opens it, and so does a singer's absence
+ * request in the notifications, because the answer is otherwise spread across
+ * every rehearsal of the project, one evening per click.
  *
  * Grouped by rehearsal, soonest first, because the decision a conductor makes
  * from it is per evening — whether a sectional still stands without two of its

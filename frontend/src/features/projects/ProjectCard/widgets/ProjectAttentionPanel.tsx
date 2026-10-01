@@ -7,13 +7,14 @@
  * When nothing is outstanding it resolves to a calm "all clear" state instead of an
  * empty card. Each row deep-links to the work area that resolves it — unless no
  * single screen there answers "which ones?". Reported absences are that case:
- * they sit one rehearsal at a time, so their row opens them as one list instead.
+ * they sit one rehearsal at a time, so their row opens them as one list instead,
+ * and an absence request's notification opens the same list through `?absences=1`.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/ProjectAttentionPanel
  */
 
-import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
@@ -85,6 +86,25 @@ export const ProjectAttentionPanel = ({
   const { enrichedProgram } = useProgramFulfillment(project);
   const absenceGroups = useUpcomingAbsences(String(project.id));
   const [isAbsencesOpen, setAbsencesOpen] = useState<boolean>(false);
+
+  // `?absences=1` opens the absence list on arrival — the contract an absence
+  // request's notification deep-links to. Consumed at once: it describes how the
+  // reader got here, and left in place it would reopen the sheet on every back
+  // navigation.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const wantsAbsences = searchParams.get("absences") === "1";
+  useEffect(() => {
+    if (!wantsAbsences) return;
+    setAbsencesOpen(true);
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        next.delete("absences");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [wantsAbsences, setSearchParams]);
 
   const items = useMemo<AttentionItem[]>(() => {
     const next: AttentionItem[] = [];

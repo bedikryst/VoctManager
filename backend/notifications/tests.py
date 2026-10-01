@@ -230,8 +230,9 @@ class MessageContentCompositionTests(SimpleTestCase):
             )
 
     def test_a_singers_report_opens_the_evening_it_names(self) -> None:
-        """An absence request and an attendance report carry the rehearsal to
-        the workspace, while a notice without a rehearsal keeps the bare list."""
+        """An attendance report carries the rehearsal to the workspace, and so
+        does an absence request with no project to open; a notice without a
+        rehearsal keeps the bare list."""
         meta = {
             "rehearsal_id": "3f8f6f2a-0000-4000-8000-000000000009",
             "project_name": "Adwent",
@@ -258,6 +259,39 @@ class MessageContentCompositionTests(SimpleTestCase):
             is_manager=True,
         )
         self.assertEqual(bare.url_path, "/panel/rehearsals")
+
+    def test_an_absence_request_opens_its_projects_absence_list(self) -> None:
+        """A manager lands on the project's absences on upcoming rehearsals;
+        a reader without the project hub keeps the schedule."""
+        meta = {
+            "rehearsal_id": "3f8f6f2a-0000-4000-8000-000000000009",
+            "project_id": "3f8f6f2a-0000-4000-8000-000000000001",
+            "project_name": "Adwent",
+            "artist_name": "Kasia Nowak",
+            "status": "ABSENT",
+            "rehearsal_date": "2026-10-03T18:00:00+02:00",
+            "timezone": "Europe/Warsaw",
+        }
+        sheet = "/panel/projects/3f8f6f2a-0000-4000-8000-000000000001?absences=1"
+        manager = MessageContentBuilder.build(
+            NotificationType.ABSENCE_REQUESTED, NotificationLevel.INFO, meta, is_manager=True,
+        )
+        self.assertEqual(manager.url_path, sheet)
+        self.assertEqual([action.url for action in manager.actions if action.url], [sheet])
+
+        member = MessageContentBuilder.build(
+            NotificationType.ABSENCE_REQUESTED, NotificationLevel.INFO, meta, is_manager=False,
+        )
+        self.assertEqual(
+            member.url_path, "/panel/schedule?rehearsal=3f8f6f2a-0000-4000-8000-000000000009",
+        )
+
+        report = MessageContentBuilder.build(
+            NotificationType.ATTENDANCE_SUBMITTED, NotificationLevel.INFO, meta, is_manager=True,
+        )
+        self.assertEqual(
+            report.url_path, "/panel/rehearsals?rehearsal=3f8f6f2a-0000-4000-8000-000000000009",
+        )
 
     def test_push_projection_is_faithful(self) -> None:
         """to_push() must mirror the canonical content (push UX unchanged)."""

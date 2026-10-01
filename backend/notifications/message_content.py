@@ -302,6 +302,20 @@ def _attendance_report_url(ctx: MessageContext) -> str:
     return f"{base}?rehearsal={rehearsal_id}" if rehearsal_id else base
 
 
+def _absence_request_url(ctx: MessageContext, project_id: object) -> str:
+    """Where a singer's absence request lands for a manager.
+
+    The project's list of absences on its upcoming rehearsals, which the hub
+    opens on `?absences=1`: whether one more absence matters is read against the
+    others on the same evenings, and each evening there opens the workspace in
+    one tap. A reader without the project hub, or a request carrying no project,
+    keeps the evening it names.
+    """
+    if ctx.is_manager and project_id:
+        return f"/panel/projects/{project_id}?absences=1"
+    return _attendance_report_url(ctx)
+
+
 def _schedule_card_url(ctx: MessageContext) -> str:
     """Where a notice about WHEN an evening happens lands for its reader.
 
@@ -1954,7 +1968,7 @@ def _compose_absence_requested(ctx: MessageContext) -> MessageContent:
     project = m.get("project_name") or _("a project")
     when = display_event_time(m, "rehearsal_date")
     note = m.get("excuse_note")
-    rehearsals_url = _attendance_report_url(ctx)
+    absences_url = _absence_request_url(ctx, m.get("project_id"))
     details: list[DetailRow] = [_row(_("Singer"), artist), _row(_("Project"), project)]
     details.extend(_span_rows(m, when))
     if note:
@@ -1965,11 +1979,11 @@ def _compose_absence_requested(ctx: MessageContext) -> MessageContent:
         title=_("Absence request — %(artist)s") % {"artist": artist},
         # The singer's own note closes the line: it is what the manager decides on.
         body=_facts(project, when, _quoted(note)) or project,
-        url_path=rehearsals_url,
+        url_path=absences_url,
         # Per singer as well as per evening: a second singer's request for the
         # same rehearsal must not replace the first one in the tray.
         tag=f"absence-requested:{m.get('rehearsal_id') or ''}:{m.get('artist_id') or artist}",
-        actions=(_open_action(rehearsals_url),),
+        actions=(_open_action(absences_url),),
         subject=_("Absence request — %(artist)s") % {"artist": artist},
         eyebrow=_("Attendance"),
         email_lead=(
@@ -2183,19 +2197,23 @@ def _compose_attendance_fold(ctx: MessageContext) -> MessageContent:
         body = _facts(", ".join(projects), span, late)
 
     ids = [str(nid) for nid in m.get(NOTIFICATION_IDS_KEY) or ()]
-    rehearsals_url = _rehearsals_url(ctx)
+    # A burst holding an absence lands where a lone absence request does, on its
+    # first absence's project; a burst of attendance alone keeps the workspace.
+    target_url = (
+        _absence_request_url(ctx, absences[0].get("project_id"))
+        if absences
+        else _rehearsals_url(ctx)
+    )
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
         title=title,
         body=body,
-        # Absence requests are reviewed on the same workspace the attendance
-        # reports open, so one destination serves both shapes.
-        url_path=rehearsals_url,
+        url_path=target_url,
         # One tray entry per window: a later burst from the same singer is news
         # of its own and must not silently replace this one.
         tag=f"attendance-fold:{m.get('artist_id') or artist}:{ids[0] if ids else ''}",
-        actions=(_open_action(rehearsals_url),),
+        actions=(_open_action(target_url),),
         eyebrow=_("Attendance"),
     )
 

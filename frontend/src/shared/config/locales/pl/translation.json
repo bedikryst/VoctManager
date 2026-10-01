@@ -5469,7 +5469,7 @@
       "published_few": "Wysłano {{count}} wiadomości.",
       "published_many": "Wysłano {{count}} wiadomości.",
       "publish_error": "Nie udało się wysłać kolejki.",
-      "discard": "Nie ogłaszaj",
+      "discard": "Nie powiadamiaj",
       "discarding": "Zamykanie kolejki…",
       "discarded": "Zmiany zostają w aplikacji. Powiadomienie nie poszło.",
       "discard_error": "Nie udało się zamknąć kolejki.",
