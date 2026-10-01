@@ -1893,19 +1893,54 @@ class AbsenceVerdictTests(TestCase):
             for rehearsal in self.rehearsals
         ]
 
-    def _excuse_from_sheet(self) -> Any:
+    def _manager_writes(self, rehearsal: Rehearsal, status: str) -> Any:
         dto = AttendanceRecordDTO(
             requesting_user_id=self.manager.id,
             can_take_roll_call=True,
             is_manager=True,
             participation_id=self.participation.id,
-            rehearsal_id=self.rehearsals[0].id,
-            status="EXCUSED",
+            rehearsal_id=rehearsal.id,
+            status=status,
             excuse_note="Wyjazd",
         )
         with patch(self.VERDICT) as verdict, self.captureOnCommitCallbacks(execute=True):
             RehearsalOperationsService.record_attendance(dto)
         return verdict
+
+    def _excuse_from_sheet(self) -> Any:
+        return self._manager_writes(self.rehearsals[0], "EXCUSED")
+
+    def test_absent_over_a_reported_absence_refuses_nothing(self) -> None:
+        self.assertFalse(self._manager_writes(self.rehearsals[0], "ABSENT").called)
+
+    def test_a_roll_call_marking_an_unreported_singer_absent_sends_nothing(self) -> None:
+        from .models import Attendance
+
+        Attendance.objects.filter(pk=self.rows[0].pk).delete()
+        self.assertFalse(self._manager_writes(self.rehearsals[0], "ABSENT").called)
+
+    def test_withdrawing_an_excuse_tells_the_singer(self) -> None:
+        self._excuse_from_sheet()
+        verdict = self._manager_writes(self.rehearsals[0], "ABSENT")
+        verdict.assert_called_once()
+        self.assertEqual(
+            verdict.call_args.kwargs["notification_type"], NotificationType.ABSENCE_REJECTED
+        )
+
+    def test_an_evening_already_held_gets_no_verdict(self) -> None:
+        held = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() - timedelta(hours=3)
+        )
+        self.assertFalse(self._manager_writes(held, "EXCUSED").called)
+
+    def test_a_cancelled_rehearsal_is_not_accepted(self) -> None:
+        from .exceptions import AttendanceValidationException
+
+        self.rehearsals[0].is_deleted = True
+        self.rehearsals[0].save(update_fields=["is_deleted"])
+        with patch(self.VERDICT) as verdict, self.assertRaises(AttendanceValidationException):
+            RehearsalOperationsService.accept_absences([str(self.rows[0].id)])
+        verdict.assert_not_called()
 
     def test_a_second_manager_accepting_the_same_absence_sends_nothing(self) -> None:
         first = self._excuse_from_sheet()

@@ -10,6 +10,7 @@ from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 
 from core.exceptions import make_error_response
 from core.permissions import user_is_manager
@@ -34,6 +35,7 @@ from .models import (
 from .preview import build_delivery_preview
 from .push_service import PushDispatcherService
 from .serializers import (
+    AbsenceAcceptSerializer,
     NotificationPreferenceBulkUpdateSerializer,
     NotificationPreferenceUpdateSerializer,
     NotificationSerializer,
@@ -434,29 +436,33 @@ class NotificationDeliveryPreviewAPIView(views.APIView):
 
 class AbsenceAcceptAPIView(views.APIView):
     """
-    POST /api/notifications/absence-accept/  {"token": "..."}
+    POST /api/notifications/absence-accept/
+         {"token": "...", "notification_ids": ["..."]}
     "Accept" tapped on the push of an absence request. Authorised by the token
     the push carried and never by a session, since the service worker posting
     it holds none (see notifications.absence_accept).
 
-    200 with how many evenings this call excused — 0 when the token was already
-    spent or another manager got there first, which the worker reports as done
-    all the same. 403 for a token that does not hold, or a reader who is no
-    longer a manager. 409 when the singer has withdrawn the absence: the worker
-    then opens the absence list, so the manager sees the answer as it is now.
+    200 with how many evenings this call excused — 0 when this token already
+    excused its request or another manager got there first, both of which the
+    worker reports as done — and the reader's unread count for the app badge.
+    Accepting answers the request, so its row and the rows the entry spoke for
+    are read. 403 for a token that does not hold, or a reader who is no longer
+    a manager. 409 when nothing is left to excuse: the singer withdrew the
+    absence, the rehearsal was called off, or the request's row is gone. The
+    worker then opens the absence list, so the manager sees the answer as it is
+    now. Only a tap that excused spends the token.
     """
     permission_classes = (AllowAny,)
     authentication_classes = ()
+    # Not the shared anonymous budget: a whole choir on one venue's Wi-Fi is one
+    # IP, and a signed token leaves nothing to guess.
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "absence_accept"
 
     def post(self, request: Request) -> Response:
-        token = request.data.get("token") if isinstance(request.data, dict) else None
-        if not isinstance(token, str) or not token:
-            return make_error_response(
-                request,
-                status_code=status.HTTP_400_BAD_REQUEST,
-                error_code="missing_token",
-                detail="A token is required.",
-            )
+        serializer = AbsenceAcceptSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        token: str = serializer.validated_data["token"]
         try:
             grant = absence_accept.read(token)
         except absence_accept.InvalidAcceptToken:
@@ -476,22 +482,47 @@ class AbsenceAcceptAPIView(views.APIView):
                 detail="Only a manager can accept an absence.",
             )
 
-        if not absence_accept.spend(token, grant):
-            return Response({"accepted": 0}, status=status.HTTP_200_OK)
+        accepted = 0
+        if not absence_accept.is_spent(token):
+            from roster.exceptions import AttendanceValidationException
+            from roster.services import RehearsalOperationsService
 
-        from roster.exceptions import AttendanceValidationException
-        from roster.services import RehearsalOperationsService
-
-        try:
-            accepted = RehearsalOperationsService.accept_absences(grant.attendance_ids)
-        except AttendanceValidationException:
-            return make_error_response(
-                request,
-                status_code=status.HTTP_409_CONFLICT,
-                error_code="absence_withdrawn",
-                detail="The absence is no longer reported.",
+            request_row = Notification.objects.filter(
+                pk=grant.notification_id,
+                recipient_id=manager.pk,
+                notification_type=NotificationType.ABSENCE_REQUESTED,
+            ).first()
+            metadata = (request_row.metadata or {}) if request_row else {}
+            attendance_ids = [str(value) for value in metadata.get("attendance_ids") or () if value]
+            if not attendance_ids:
+                return _nothing_to_accept(request)
+            try:
+                accepted = RehearsalOperationsService.accept_absences(attendance_ids)
+            except AttendanceValidationException:
+                return _nothing_to_accept(request)
+            absence_accept.spend(token, grant)
+            logger.info(
+                "[AbsenceAccept] UID:%s excused %d evening(s) from a push.",
+                manager.pk, accepted,
             )
-        logger.info(
-            "[AbsenceAccept] UID:%s excused %d evening(s) from a push.", manager.pk, accepted,
+
+        now = timezone.now()
+        read_ids = {grant.notification_id, *map(str, serializer.validated_data["notification_ids"])}
+        (
+            Notification.objects.filter(recipient_id=manager.pk, id__in=read_ids, is_read=False)
+            .exclude(notification_type__in=_READ_BY_ITS_OWN_SURFACE)
+            .update(is_read=True, read_at=now, updated_at=now)
         )
-        return Response({"accepted": accepted}, status=status.HTTP_200_OK)
+        unread = Notification.objects.filter(recipient_id=manager.pk, is_read=False).count()
+        return Response({"accepted": accepted, "unread": unread}, status=status.HTTP_200_OK)
+
+
+def _nothing_to_accept(request: Request) -> Response:
+    """The request no longer holds an absence to excuse — withdrawn, called off,
+    or its row deleted — so the manager has to see the list as it is now."""
+    return make_error_response(
+        request,
+        status_code=status.HTTP_409_CONFLICT,
+        error_code="absence_withdrawn",
+        detail="The absence is no longer reported.",
+    )

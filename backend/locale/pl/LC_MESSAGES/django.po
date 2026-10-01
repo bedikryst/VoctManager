@@ -2392,9 +2392,6 @@ msgstr "Zobacz zaproszenie"
 msgid "Review the contract"
 msgstr "Sprawdź umowę"
 
-msgid "Review the request"
-msgstr "Rozpatrz prośbę"
-
 msgid "Review the roster"
 msgstr "Zobacz skład"
 
@@ -3047,13 +3044,6 @@ msgid ""
 msgstr ""
 "Twoja umowa do projektu „%(project)s” jest gotowa. Przeczytaj ją i podpisz w"
 " panelu — Twoje miejsce jest potwierdzone po podpisaniu."
-
-msgid ""
-"%(artist)s is asking to be excused from a rehearsal. The request is below — "
-"approve or decline it in the panel."
-msgstr ""
-"%(artist)s prosi o zwolnienie z próby. Szczegóły poniżej — decyzję "
-"podejmiesz w panelu."
 
 msgid "Rehearsal %(when)s — you're not expected."
 msgstr "Nie musisz przychodzić na próbę — %(when)s."
@@ -4271,13 +4261,6 @@ msgid "Leads their voice section in this project. Listed first within it."
 msgstr ""
 "Prowadzi swoją sekcję głosową w tym projekcie. Na liście sekcji pojawia się "
 "na pierwszym miejscu."
-
-msgid ""
-"%(artist)s is asking to be excused from a run of rehearsals. The dates are "
-"below — approve or decline them in the panel."
-msgstr ""
-"%(artist)s prosi o zwolnienie z serii prób. Terminy poniżej — decyzję "
-"podejmiesz w panelu."
 
 msgid "You're not expected at these rehearsals."
 msgstr "Na tych próbach nie musisz być."
@@ -5580,3 +5563,38 @@ msgstr[1] ""
 msgstr[2] ""
 "%(artist)s prosi o zwolnienie z %(count)d prób. Zgłoszenia są poniżej; każde"
 " przyjmiesz na liście nieobecności."
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"%(artist)s is asking to be excused from a run of rehearsals. The dates are "
+"below; you can accept the request on the absence list."
+msgstr ""
+"%(artist)s prosi o zwolnienie z serii prób. Terminy są poniżej; prośbę "
+"przyjmiesz na liście nieobecności."
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"%(artist)s is asking to be excused from a rehearsal. The request is below; "
+"you can accept it on the absence list."
+msgstr ""
+"%(artist)s prosi o zwolnienie z próby. Zgłoszenie jest poniżej; przyjmiesz "
+"je na liście nieobecności."
+
+#~ msgid "Review the request"
+#~ msgstr "Rozpatrz prośbę"
+
+#~ msgid ""
+#~ "%(artist)s is asking to be excused from a rehearsal. The request is below — "
+#~ "approve or decline it in the panel."
+#~ msgstr ""
+#~ "%(artist)s prosi o zwolnienie z próby. Szczegóły poniżej — decyzję "
+#~ "podejmiesz w panelu."
+
+#~ msgid ""
+#~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
+#~ "below — approve or decline them in the panel."
+#~ msgstr ""
+#~ "%(artist)s prosi o zwolnienie z serii prób. Terminy poniżej — decyzję "
+#~ "podejmiesz w panelu."

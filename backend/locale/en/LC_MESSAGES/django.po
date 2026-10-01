@@ -3101,11 +3101,6 @@ msgstr ""
 msgid "Leads their voice section in this project. Listed first within it."
 msgstr ""
 
-msgid ""
-"%(artist)s is asking to be excused from a run of rehearsals. The dates are "
-"below — approve or decline them in the panel."
-msgstr ""
-
 msgid "You're not expected at these rehearsals."
 msgstr ""
 
@@ -4174,3 +4169,22 @@ msgid_plural ""
 "are below; you can accept each on the absence list."
 msgstr[0] ""
 msgstr[1] ""
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"%(artist)s is asking to be excused from a run of rehearsals. The dates are "
+"below; you can accept the request on the absence list."
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"%(artist)s is asking to be excused from a rehearsal. The request is below; "
+"you can accept it on the absence list."
+msgstr ""
+
+#~ msgid ""
+#~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
+#~ "below — approve or decline them in the panel."
+#~ msgstr ""

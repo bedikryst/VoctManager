@@ -49,6 +49,15 @@ class PushOpenedSerializer(serializers.Serializer):
     )
 
 
+class AbsenceAcceptSerializer(serializers.Serializer):
+    """An "Accept" tapped on an absence request's push: the token the push
+    carried, and the in-app rows its entry spoke for, which the tap has read."""
+    token = serializers.CharField(max_length=1024)
+    notification_ids = serializers.ListField(
+        child=serializers.UUIDField(), required=False, default=list, max_length=100,
+    )
+
+
 class SendToArtistSerializer(serializers.Serializer):
     """Validates manager → artist direct message payload."""
     artist_id = serializers.UUIDField()

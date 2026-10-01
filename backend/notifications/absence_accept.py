@@ -8,10 +8,11 @@
              within minutes and is refreshed by the app, and cookie auth demands
              a CSRF token the worker does not hold. So the push carries its own
              authority: a token signed for this one purpose, naming the manager
-             and the attendance rows of one request, expiring when the request's
-             last evening starts. The push payload is encrypted end to end to the
-             device, the same trust as an e-mail one-click link. A token is spent
-             on its first use.
+             and the in-app row of the request, expiring when the request's last
+             evening starts. The row holds the attendance rows to excuse, so the
+             token stays the same size however many evenings a span reaches. The
+             push payload is encrypted end to end to the device, the same trust
+             as an e-mail one-click link. A token is spent once it has excused.
 
              The button goes only on a push about ONE request — a single evening,
              or a span, which is one request over several evenings. A burst
@@ -24,6 +25,7 @@ from __future__ import annotations
 
 import hashlib
 import time
+import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from typing import Any
@@ -34,18 +36,19 @@ from django.utils.translation import gettext as _
 
 from .message_content import (
     FOLD_ITEMS_KEY,
+    ITEM_ID_KEY,
+    NOTIFICATION_IDS_KEY,
     AcceptOffer,
     PushAction,
     PushPayload,
     _is_span,
 )
 from .models import NotificationType
-from .time_metadata import _parse_iso_datetime
+from .time_metadata import event_end, event_start
 
 ACCEPT_URL = "/api/notifications/absence-accept/"
 
 _SALT = "notifications.absence-accept"
-_EXCUSED = "EXCUSED"
 _SPENT_KEY_PREFIX = "absence-accept:spent:"
 
 
@@ -55,9 +58,10 @@ class InvalidAcceptToken(Exception):
 
 @dataclass(frozen=True)
 class AcceptGrant:
-    """What a verified token authorises: one manager excusing these rows."""
+    """What a verified token authorises: one manager excusing one request, the
+    absence request row of theirs that names it."""
     manager_id: int
-    attendance_ids: list[str]
+    notification_id: str
     expires_at: int
 
 
@@ -77,6 +81,16 @@ def _single_request(notification_type: str, metadata: Mapping[str, Any]) -> Mapp
     return absences[0] if len(absences) == 1 else None
 
 
+def _request_row(request: Mapping[str, Any], metadata: Mapping[str, Any]) -> str | None:
+    """The in-app row a request was read from: named on it when the fold sent it,
+    or the one row a push sent on its own speaks for."""
+    own = request.get(ITEM_ID_KEY)
+    if own:
+        return str(own)
+    ids = list(metadata.get(NOTIFICATION_IDS_KEY) or ())
+    return str(ids[0]) if len(ids) == 1 else None
+
+
 def offer(
     payload: PushPayload,
     *,
@@ -90,28 +104,25 @@ def offer(
     otherwise.
 
     Waiting means reported as ABSENT, the record a singer writes: an EXCUSED one
-    has nothing left to accept. A request whose last evening has started gets no
-    button, because its token would be born expired.
+    has nothing left to accept. A request filed before requests named their
+    attendance rows has nothing to excuse by. A request whose last evening has
+    started gets no button, because its token would be born expired.
     """
     if not is_manager:
         return payload
     request = _single_request(notification_type, metadata)
-    if request is None or request.get("status") != "ABSENT":
+    if request is None or request.get("status") != "ABSENT" or not request.get("attendance_ids"):
         return payload
-    attendance_ids = [str(value) for value in request.get("attendance_ids") or () if value]
-    last_evening = _parse_iso_datetime(
-        request.get("ends_at") if _is_span(request) else request.get("starts_at")
-    )
-    if not attendance_ids or last_evening is None:
+    notification_id = _request_row(request, metadata)
+    last_evening = event_end(request) if _is_span(request) else event_start(request)
+    if notification_id is None or last_evening is None:
         return payload
     expires_at = int(last_evening.timestamp())
     if expires_at <= time.time():
         return payload
 
     token = signing.dumps(
-        {"m": int(recipient_id), "a": attendance_ids, "s": _EXCUSED, "e": expires_at},
-        salt=_SALT,
-        compress=True,
+        {"m": int(recipient_id), "n": notification_id, "e": expires_at}, salt=_SALT,
     )
     artist = request.get("artist_name") or metadata.get("artist_name") or _("A singer")
     done = (
@@ -132,29 +143,44 @@ def read(token: str) -> AcceptGrant:
         data = signing.loads(token, salt=_SALT)
     except signing.BadSignature as exc:
         raise InvalidAcceptToken from exc
-    if not isinstance(data, dict) or data.get("s") != _EXCUSED:
+    if not isinstance(data, dict):
         raise InvalidAcceptToken
-    manager_id, attendance_ids, expires_at = data.get("m"), data.get("a"), data.get("e")
+    manager_id, notification_id, expires_at = data.get("m"), data.get("n"), data.get("e")
     if (
         not isinstance(manager_id, int)
+        or not isinstance(notification_id, str)
         or not isinstance(expires_at, int)
-        or not isinstance(attendance_ids, list)
-        or not attendance_ids
-        or not all(isinstance(value, str) for value in attendance_ids)
     ):
         raise InvalidAcceptToken
+    try:
+        uuid.UUID(notification_id)
+    except ValueError as exc:
+        raise InvalidAcceptToken from exc
     if expires_at <= time.time():
         raise InvalidAcceptToken
-    return AcceptGrant(manager_id=manager_id, attendance_ids=attendance_ids, expires_at=expires_at)
+    return AcceptGrant(
+        manager_id=manager_id, notification_id=notification_id, expires_at=expires_at,
+    )
 
 
-def spend(token: str, grant: AcceptGrant) -> bool:
-    """Mark the token used, for as long as it would stay valid. False when it
-    already was: a second tap, or a replay, does nothing a second time.
+def _spent_key(token: str) -> str:
+    return _SPENT_KEY_PREFIX + hashlib.sha256(token.encode()).hexdigest()
 
-    Spent before the write rather than after it, so two requests racing with
-    one token cannot both pass; a write that then fails leaves the manager the
-    absence list, which the worker opens on any failure.
+
+def is_spent(token: str) -> bool:
+    """Whether this token has already excused its request. A second tap — the
+    same push on the manager's other device — then reports the request as
+    accepted, which it is, rather than excusing anything a second time."""
+    return bool(cache.get(_spent_key(token)))
+
+
+def spend(token: str, grant: AcceptGrant) -> None:
+    """Mark the token used, once its write has committed, for as long as it
+    would stay valid.
+
+    Never before the write: a tap refused because the singer withdrew the
+    absence, or one that failed, must not leave a later tap reporting success.
+    Two taps racing past `is_spent` are safe without it, since the service
+    excuses a row only while it still reads ABSENT, under a row lock.
     """
-    key = _SPENT_KEY_PREFIX + hashlib.sha256(token.encode()).hexdigest()
-    return bool(cache.add(key, True, timeout=max(grant.expires_at - int(time.time()), 1)))
+    cache.set(_spent_key(token), True, timeout=max(grant.expires_at - int(time.time()), 1))

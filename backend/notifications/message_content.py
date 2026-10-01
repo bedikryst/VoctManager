@@ -65,9 +65,11 @@ _MAX_BODY_LEN = 220
 _ELLIPSIS = "…"
 
 # Metadata keys of a folded attendance push (see push_fold): the reports it
-# gathers, one per rehearsal, and the in-app rows it speaks for.
+# gathers, one per rehearsal, the in-app rows it speaks for, and the one row each
+# report was read from (on every item, and on a lone report the fold sends).
 FOLD_ITEMS_KEY = "fold"
 NOTIFICATION_IDS_KEY = "notification_ids"
+ITEM_ID_KEY = "notification_id"
 
 # The types a folded push gathers, and rides on.
 FOLD_TYPES: frozenset[str] = frozenset({
@@ -2026,19 +2028,23 @@ def _compose_absence_requested(ctx: MessageContext) -> MessageContent:
         actions=(_absences_action(absences_url),),
         subject=_("Absence request — %(artist)s") % {"artist": artist},
         eyebrow=_("Attendance"),
+        # Worded as the fold's e-mail is: an absence is accepted on the list, and
+        # there is nothing to decline it with.
         email_lead=(
             _(
                 "%(artist)s is asking to be excused from a run of rehearsals. The"
-                " dates are below — approve or decline them in the panel."
+                " dates are below; you can accept the request on the absence list."
             )
             if _is_span(m)
             else _(
                 "%(artist)s is asking to be excused from a rehearsal. The request is"
-                " below — approve or decline it in the panel."
+                " below; you can accept it on the absence list."
             )
         ) % {"artist": artist},
         details=tuple(details),
-        cta_label=_("Review the request"),
+        cta_label=(
+            _("See absences") if _opens_absence_list(absences_url) else _("Open rehearsals")
+        ),
     )
 
 

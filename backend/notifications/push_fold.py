@@ -34,7 +34,13 @@ from django.core.cache import cache
 from django.utils import timezone
 
 from .email_tasks import send_notification_email_task
-from .message_content import FOLD_ITEMS_KEY, FOLD_TYPES, NOTIFICATION_IDS_KEY, _is_span
+from .message_content import (
+    FOLD_ITEMS_KEY,
+    FOLD_TYPES,
+    ITEM_ID_KEY,
+    NOTIFICATION_IDS_KEY,
+    _is_span,
+)
 from .models import Notification, NotificationLevel, NotificationType
 from .tasks import flush_push_fold_task, send_push_notification_task
 from .time_metadata import event_start
@@ -218,13 +224,16 @@ def _composed(
 ) -> tuple[str, str, dict[str, Any]]:
     """Type, level and metadata of one message over the items of a window.
 
-    A single item travels exactly as it would have alone. Several are composed
-    together, riding on the absence type when any of them is an absence, at the
-    level of the most urgent one.
+    A single item travels as it would have alone. Several are composed together,
+    riding on the absence type when any of them is an absence, at the level of
+    the most urgent one. Either way each report names the in-app row it was read
+    from, which an absence's "Accept" is minted for (see absence_accept).
     """
     if len(items) == 1:
         (row,) = items
-        return row.notification_type, row.level, dict(row.metadata or {})
+        return row.notification_type, row.level, {
+            **(row.metadata or {}), ITEM_ID_KEY: str(row.id),
+        }
 
     notification_type = (
         NotificationType.ABSENCE_REQUESTED
@@ -240,7 +249,11 @@ def _composed(
         "artist_id": artist_id,
         "artist_name": artist_name,
         FOLD_ITEMS_KEY: [
-            {**(row.metadata or {}), "notification_type": row.notification_type}
+            {
+                **(row.metadata or {}),
+                "notification_type": row.notification_type,
+                ITEM_ID_KEY: str(row.id),
+            }
             for row in items
         ],
     }

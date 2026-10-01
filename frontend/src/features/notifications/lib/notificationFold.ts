@@ -1,15 +1,18 @@
 /**
  * @file notificationFold.ts
  * @description Which bell rows speak as one. A singer's sitting with the
- * schedule (one artist, within half an hour) and the messages of one thread each
- * render as a single row over all of them; every other row stands alone. The
- * sitting holds attendance reports and single-evening absence requests alike,
- * because to the conductor it is one piece of news. A span stands alone: it is
- * already one request over many evenings. The decision on an absence lives on
- * the absence list the row opens, never on the row, so grouping the requests
- * takes no decision away. The caller folds each read state separately, so the
- * unread section holds only what is new and a thread's history does not climb
- * back above it.
+ * schedule (one artist and one project, within half an hour) and the messages
+ * of one thread each render as a single row over all of them; every other row
+ * stands alone. The sitting holds attendance reports and single-evening absence
+ * requests alike, because to the conductor it is one piece of news. A span
+ * stands alone: it is already one request over many evenings. The decision on
+ * an absence lives on the absence list the row opens, never on the row, so
+ * grouping the requests takes no decision away. That list is a project's, so a
+ * sitting stops at the project: one row over two would open only the first
+ * project's list and mark the other's absence read. A report written before
+ * reports named their project folds with those that name none. The caller
+ * folds each read state separately, so the unread section holds only what is
+ * new and a thread's history does not climb back above it.
  * @module features/notifications/lib
  */
 
@@ -48,8 +51,8 @@ const foldKey = (notification: NotificationDTO): string | undefined => {
     return threadId ? `thread:${threadId}` : undefined;
   }
   if (isSittingReport(notification)) {
-    const artistId = notification.metadata.artist_id;
-    return artistId ? `attendance:${artistId}` : undefined;
+    const { artist_id: artistId, project_id: projectId } = notification.metadata;
+    return artistId ? `attendance:${artistId}:${projectId ?? ""}` : undefined;
   }
   return undefined;
 };

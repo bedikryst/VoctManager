@@ -10,6 +10,7 @@
 """
 import json
 import re
+import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
@@ -43,6 +44,7 @@ from .delivery import PREFERENCE_GROUPS, default_channel_preferences
 from .email_service import EmailDispatcherService, EmailType
 from .message_content import (
     _COMPOSERS,
+    NOTIFICATION_IDS_KEY,
     MessageContent,
     MessageContentBuilder,
     PushPayload,
@@ -3622,7 +3624,12 @@ class PushFoldTests(TestCase):
 
         kwargs = push.call_args.kwargs
         self.assertEqual(
-            kwargs["metadata"], {**only.metadata, "notification_ids": [str(only.id)]}
+            kwargs["metadata"],
+            {
+                **only.metadata,
+                "notification_id": str(only.id),
+                "notification_ids": [str(only.id)],
+            },
         )
         with translation.override("en"):
             alone = MessageContentBuilder.build(
@@ -3703,7 +3710,7 @@ class PushFoldTests(TestCase):
         self._flush(only)
 
         kwargs = self.email.call_args.kwargs
-        self.assertEqual(kwargs["metadata"], only.metadata)
+        self.assertEqual(kwargs["metadata"], {**only.metadata, "notification_id": str(only.id)})
         self.assertEqual(kwargs["notification_type"], NotificationType.ABSENCE_REQUESTED)
 
     def test_reports_waiting_for_the_digest_are_never_emailed_by_the_fold(self) -> None:
@@ -3727,7 +3734,10 @@ class PushFoldTests(TestCase):
         _taken, push = self._flush(last)
 
         self.assertEqual(len(push.call_args.kwargs["metadata"]["fold"]), 3)
-        self.assertEqual(self.email.call_args.kwargs["metadata"], absence.metadata)
+        self.assertEqual(
+            self.email.call_args.kwargs["metadata"],
+            {**absence.metadata, "notification_id": str(absence.id)},
+        )
 
     def test_with_push_off_the_email_still_folds(self) -> None:
         self._report("r1", "PRESENT", days=3, push=False, email=True)
@@ -3893,10 +3903,20 @@ class AbsenceAcceptTests(APITestCase):
             artist=artist, project=project, status=Participation.Status.CONFIRMED,
         )
         self.starts = (timezone.now() + timedelta(days=2)).replace(microsecond=0)
-        rehearsal = Rehearsal.objects.create(project=project, date_time=self.starts)
+        self.rehearsal = Rehearsal.objects.create(project=project, date_time=self.starts)
         self.row = Attendance.objects.create(
-            rehearsal=rehearsal, participation=participation,
+            rehearsal=self.rehearsal, participation=participation,
             status=Attendance.Status.ABSENT, excuse_note="Chora",
+        )
+        self.request_row = self._request_row_for(self.manager)
+
+    def _request_row_for(self, reader: Any) -> Notification:
+        """The reader's in-app row of the request, which names what to excuse."""
+        return Notification.objects.create(
+            recipient=reader,
+            notification_type=NotificationType.ABSENCE_REQUESTED,
+            level=NotificationLevel.WARNING,
+            metadata={"artist_name": "Anna Kowalska", "attendance_ids": [str(self.row.id)]},
         )
 
     def _request(self, **overrides: Any) -> dict[str, Any]:
@@ -3906,6 +3926,7 @@ class AbsenceAcceptTests(APITestCase):
             "rehearsal_id": "r1", "status": "ABSENT",
             "starts_at": self.starts.isoformat(), "timezone": "Europe/Warsaw",
             "attendance_ids": [str(self.row.id)],
+            "notification_id": str(self.request_row.id),
             **overrides,
         }
 
@@ -3926,13 +3947,18 @@ class AbsenceAcceptTests(APITestCase):
             )
 
     def _token(self, reader: Any = None) -> str:
-        payload = self._offer(self._request(), reader=reader)
+        row = self._request_row_for(reader) if reader else self.request_row
+        payload = self._offer(self._request(notification_id=str(row.id)), reader=reader)
         assert payload.accept is not None
         return payload.accept.token
 
-    def _post(self, token: str) -> Any:
+    def _post(self, token: str, notification_ids: tuple[str, ...] = ()) -> Any:
         with patch(self.VERDICT) as verdict, self.captureOnCommitCallbacks(execute=True):
-            response = self.client.post(self.URL, {"token": token}, format="json")
+            response = self.client.post(
+                self.URL,
+                {"token": token, "notification_ids": list(notification_ids)},
+                format="json",
+            )
         self.verdict = verdict
         return response
 
@@ -3977,6 +4003,23 @@ class AbsenceAcceptTests(APITestCase):
         }
         self.assertIsNotNone(self._offer(folded).accept)
 
+    def test_a_lone_push_is_minted_for_the_one_row_it_speaks_for(self) -> None:
+        lone = {**self._request(), NOTIFICATION_IDS_KEY: [str(self.request_row.id)]}
+        del lone["notification_id"]
+        self.assertIsNotNone(self._offer(lone).accept)
+
+        lone[NOTIFICATION_IDS_KEY] = [str(self.request_row.id), str(uuid.uuid4())]
+        self.assertIsNone(self._offer(lone).accept)
+
+    def test_the_token_does_not_grow_with_the_span(self) -> None:
+        one = self._offer(self._request()).accept
+        span = self._offer(self._request(
+            attendance_ids=[str(uuid.uuid4()) for _ in range(80)],
+            rehearsal_count=80, ends_at=self.starts.isoformat(),
+        )).accept
+        assert one is not None and span is not None
+        self.assertEqual(len(one.token), len(span.token))
+
     def test_nothing_is_offered_without_a_decision_to_make(self) -> None:
         past = (timezone.now() - timedelta(hours=1)).isoformat()
         self.assertIsNone(self._offer(self._request(status="EXCUSED")).accept)
@@ -3991,7 +4034,7 @@ class AbsenceAcceptTests(APITestCase):
 
         response = self._post(token)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, {"accepted": 1})
+        self.assertEqual(response.data["accepted"], 1)
         self.row.refresh_from_db()
         self.assertEqual(
             (self.row.status, self.row.excuse_note), (Attendance.Status.EXCUSED, "Chora")
@@ -4000,8 +4043,48 @@ class AbsenceAcceptTests(APITestCase):
 
         replay = self._post(token)
         self.assertEqual(replay.status_code, 200)
-        self.assertEqual(replay.data, {"accepted": 0})
+        self.assertEqual(replay.data["accepted"], 0)
         self.verdict.assert_not_called()
+
+    def test_accepting_reads_the_request_and_the_rows_its_entry_spoke_for(self) -> None:
+        sitting = Notification.objects.create(
+            recipient=self.manager, notification_type=NotificationType.ATTENDANCE_SUBMITTED,
+            level=NotificationLevel.INFO, metadata={},
+        )
+        unrelated = Notification.objects.create(
+            recipient=self.manager, notification_type=NotificationType.REHEARSAL_REMINDER,
+            level=NotificationLevel.INFO, metadata={},
+        )
+
+        response = self._post(self._token(), notification_ids=(str(sitting.id),))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["unread"], 1)
+        self.assertEqual(
+            set(Notification.objects.filter(is_read=True).values_list("id", flat=True)),
+            {self.request_row.id, sitting.id},
+        )
+        unrelated.refresh_from_db()
+        self.assertFalse(unrelated.is_read)
+
+    def test_a_refused_tap_never_turns_into_success_on_the_next(self) -> None:
+        from roster.models import Attendance
+
+        token = self._token()
+        Attendance.objects.filter(pk=self.row.pk).update(status=Attendance.Status.PRESENT)
+
+        self.assertEqual(self._post(token).status_code, 409)
+        self.assertEqual(self._post(token).status_code, 409)
+
+    def test_a_cancelled_rehearsal_is_not_excused(self) -> None:
+        token = self._token()
+        self.rehearsal.is_deleted = True
+        self.rehearsal.save(update_fields=["is_deleted"])
+
+        self.assertEqual(self._post(token).status_code, 409)
+        self.verdict.assert_not_called()
+        self.row.refresh_from_db()
+        self.assertEqual(self.row.status, "ABSENT")
 
     def test_a_second_managers_token_after_the_first_is_a_no_op(self) -> None:
         other = User.objects.create_user(
@@ -4013,7 +4096,7 @@ class AbsenceAcceptTests(APITestCase):
         response = self._post(self._token(other))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, {"accepted": 0})
+        self.assertEqual(response.data["accepted"], 0)
         self.verdict.assert_not_called()
 
     def test_an_altered_token_is_refused(self) -> None:
@@ -4024,9 +4107,9 @@ class AbsenceAcceptTests(APITestCase):
         from django.core import signing
 
         token = signing.dumps(
-            {"m": self.manager.id, "a": [str(self.row.id)], "s": "EXCUSED",
+            {"m": self.manager.id, "n": str(self.request_row.id),
              "e": int(timezone.now().timestamp()) - 1},
-            salt="notifications.absence-accept", compress=True,
+            salt="notifications.absence-accept",
         )
         self.assertEqual(self._post(token).status_code, 403)
 

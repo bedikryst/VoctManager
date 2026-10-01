@@ -248,6 +248,10 @@ REST_FRAMEWORK = {
         # Following a link from one's own mailbox. Loose enough for a reader who
         # clicks, goes back, and clicks again.
         'notice_manage': '60/hour',
+        # "Accept" on an absence request's push. Anonymous to DRF (the signed
+        # token is the authority), so per IP — and a manager may be on the
+        # venue's Wi-Fi with the whole choir. Only managers ever hold a token.
+        'absence_accept': '120/hour',
     }
 }
 

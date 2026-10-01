@@ -379,13 +379,28 @@ class DelegateRollCallTests(APITestCase):
         self.assertTrue(body["is_manager"])
         self.assertEqual(len(body["cast"]), 2)
 
-    def test_a_manager_marking_absent_does_answer_the_singer(self) -> None:
-        # The other half of the same distinction: a manager's ABSENT IS a verdict
-        # and still reaches the singer. Only the stand-in's is silent.
+    def test_a_manager_withdrawing_an_excuse_does_answer_the_singer(self) -> None:
+        # The other half of the same distinction: a manager's ABSENT over an
+        # excuse IS a verdict and still reaches the singer. Only the stand-in's
+        # is silent.
+        Attendance.objects.create(
+            rehearsal=self.rehearsal, participation=self.singer_seat, status="EXCUSED",
+        )
         self.client.force_authenticate(self.manager)
         self._record_on_commit(
             rehearsal=self.rehearsal, participation=self.singer_seat, status="ABSENT",
         )
         self.assertTrue(
+            Notification.objects.filter(recipient=self.singer_user).exists(),
+        )
+
+    def test_a_manager_marking_an_unreported_singer_absent_tells_them_nothing(self) -> None:
+        # No request, no verdict: "we're counting on you" would answer a
+        # question nobody asked.
+        self.client.force_authenticate(self.manager)
+        self._record_on_commit(
+            rehearsal=self.rehearsal, participation=self.singer_seat, status="ABSENT",
+        )
+        self.assertFalse(
             Notification.objects.filter(recipient=self.singer_user).exists(),
         )

@@ -594,10 +594,13 @@ self.addEventListener("notificationclick", (event) => {
       } satisfies EntryData,
     };
     event.waitUntil(
-      acceptFromPush(accept).then((accepted) =>
+      acceptFromPush(accept, openedIds).then((accepted) =>
         accepted
-          ? self.registration.showNotification(accept.title, done)
-          : // Anything short of a confirmed accept — a spent or expired token, a
+          ? Promise.all([
+              self.registration.showNotification(accept.title, done),
+              setAppBadge(accepted.unread),
+            ]).then(() => undefined)
+          : // Anything short of a confirmed accept — an expired token, a
             // withdrawn absence, no network — leaves the decision to the absence
             // list, which shows the record as it is now.
             focusOrOpen(withOpenedIds(destination("view"), openedIds)),
@@ -609,16 +612,26 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(focusOrOpen(withOpenedIds(destination(event.action), openedIds)));
 });
 
+/** A confirmed accept: the reader's unread count once the tap has read the rows. */
+interface AcceptDone {
+  unread?: number;
+}
+
 /**
  * Posts an `accept` token to the API, which may live on another origin than
- * this worker. No credentials: the token is the authority, and a cookie riding
- * along would only invite the CSRF check the endpoint exists to avoid.
- * Never rejects; false means the manager has to finish in the panel.
+ * this worker, with the rows the entry spoke for: accepting answers them, so
+ * the bell must not keep them unread. No credentials: the token is the
+ * authority, and a cookie riding along would only invite the CSRF check the
+ * endpoint exists to avoid. Never rejects; null means the manager has to
+ * finish in the panel.
  *
  * Bounded in time: a browser lets a worker open a window only shortly after the
  * click, and the fallback to the absence list must still land inside that.
  */
-async function acceptFromPush(accept: PushAccept): Promise<boolean> {
+async function acceptFromPush(
+  accept: PushAccept,
+  notificationIds: readonly string[],
+): Promise<AcceptDone | null> {
   const apiBase = (import.meta.env.VITE_API_URL as string | undefined) || self.location.origin;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ACCEPT_TIMEOUT_MS);
@@ -627,12 +640,18 @@ async function acceptFromPush(accept: PushAccept): Promise<boolean> {
       method: "POST",
       credentials: "omit",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ token: accept.token }),
+      body: JSON.stringify({ token: accept.token, notification_ids: notificationIds }),
       signal: controller.signal,
     });
-    return response.ok;
+    if (!response.ok) return null;
+    // The excuse is written whatever the body says; a body that does not parse
+    // costs only the badge.
+    const body: unknown = await response.json().catch(() => null);
+    const unread =
+      body !== null && typeof body === "object" && "unread" in body ? body.unread : undefined;
+    return { unread: typeof unread === "number" ? unread : undefined };
   } catch {
-    return false;
+    return null;
   } finally {
     clearTimeout(timer);
   }

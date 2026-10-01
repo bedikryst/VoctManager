@@ -1,9 +1,9 @@
 /**
  * @file notificationFold.test.ts
- * @description Which bell rows fold into one. A singer's reports — attendance
- * and single-evening absences alike — fold while they stay within half an hour
- * of the newest one, whoever else writes in between; a span stands alone; a
- * thread folds whole.
+ * @description Which bell rows fold into one. A singer's reports about one
+ * project — attendance and single-evening absences alike — fold while they stay
+ * within half an hour of the newest one, whoever else writes in between; a span
+ * stands alone; a thread folds whole.
  * @architecture Enterprise SaaS 2026
  * @module features/notifications/lib/notificationFold.test
  */
@@ -31,11 +31,13 @@ const report = (
   artistId: string,
   type: "ATTENDANCE_SUBMITTED" | "ABSENCE_REQUESTED" = "ATTENDANCE_SUBMITTED",
   rehearsalCount?: number,
+  projectId = "requiem",
 ): NotificationDTO => ({
   ...base(id, minutes),
   notification_type: type,
   metadata: {
     project_name: "Requiem",
+    project_id: projectId,
     artist_name: "Ada Nowak",
     artist_id: artistId,
     ...(rehearsalCount ? { rehearsal_count: rehearsalCount } : {}),
@@ -71,6 +73,16 @@ describe("foldNotifications", () => {
         report("b1", 3, "bo", "ABSENCE_REQUESTED"),
       ]),
     ).toEqual([["x2", "a1", "x1"], ["b1"]]);
+  });
+
+  it("keeps a sitting to one project, whose absence list the row opens", () => {
+    expect(
+      shape([
+        report("x2", 0, "ada", "ABSENCE_REQUESTED", undefined, "messiah"),
+        report("a1", 1, "ada"),
+        report("x1", 2, "ada", "ABSENCE_REQUESTED"),
+      ]),
+    ).toEqual([["x2"], ["a1", "x1"]]);
   });
 
   it("keeps an absence span on its own", () => {

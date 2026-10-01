@@ -47,12 +47,8 @@ interface ReasonRow {
   reason: string;
 }
 
-/** The examples a channel speaks for: a shape only the push takes has no e-mail. */
-const onChannel = (examples: readonly DeliveryPreviewExampleDTO[], channel: Channel) =>
-  channel === "push" ? [...examples] : examples.filter((example) => example.email !== null);
-
 const statusOf = (example: DeliveryPreviewExampleDTO, channel: Channel): string =>
-  channel === "push" ? example.push.status : (example.email?.status ?? "never");
+  channel === "push" ? example.push.status : example.email.status;
 
 const typeLabel = (t: TFunc, example: DeliveryPreviewExampleDTO) =>
   t(`settings.notifications.types.${example.notification_type}`);
@@ -66,11 +62,10 @@ const exampleLabel = (t: TFunc, example: DeliveryPreviewExampleDTO) =>
 /** Keeps the groups in ledger order and drops those left with nothing. */
 const sectionsWhere = (
   preview: DeliveryPreviewDTO,
-  channel: Channel,
   keep: (example: DeliveryPreviewExampleDTO) => boolean,
 ): GroupSection[] =>
   preview.groups
-    .map((group) => ({ id: group.id, examples: onChannel(group.examples, channel).filter(keep) }))
+    .map((group) => ({ id: group.id, examples: group.examples.filter(keep) }))
     .filter((section) => section.examples.length > 0);
 
 /**
@@ -176,9 +171,9 @@ interface TabProps {
 }
 
 const PushTab: React.FC<TabProps> = ({ t, preview }) => {
-  const all = preview.groups.flatMap((group) => onChannel(group.examples, "push"));
-  const delivered = sectionsWhere(preview, "push", (example) => example.push.delivered);
-  const missed = sectionsWhere(preview, "push", (example) => !example.push.delivered);
+  const all = preview.groups.flatMap((group) => group.examples);
+  const delivered = sectionsWhere(preview, (example) => example.push.delivered);
+  const missed = sectionsWhere(preview, (example) => !example.push.delivered);
 
   return (
     <div className="flex flex-col gap-6">
@@ -243,13 +238,12 @@ const PushTab: React.FC<TabProps> = ({ t, preview }) => {
 };
 
 const EmailTab: React.FC<TabProps> = ({ t, preview }) => {
-  const all = preview.groups.flatMap((group) => onChannel(group.examples, "email"));
-  const delivered = sectionsWhere(preview, "email", (example) => Boolean(example.email?.delivered));
-  const digest = sectionsWhere(preview, "email", (example) => example.email?.status === "digest");
+  const all = preview.groups.flatMap((group) => group.examples);
+  const delivered = sectionsWhere(preview, (example) => example.email.delivered);
+  const digest = sectionsWhere(preview, (example) => example.email.status === "digest");
   const missed = sectionsWhere(
     preview,
-    "email",
-    (example) => !example.email?.delivered && example.email?.status !== "digest",
+    (example) => !example.email.delivered && example.email.status !== "digest",
   );
 
   return (
@@ -262,28 +256,26 @@ const EmailTab: React.FC<TabProps> = ({ t, preview }) => {
         ) : (
           delivered.map((section) => (
             <GroupBlock key={section.id} t={t} id={section.id}>
-              {section.examples.map((example) =>
-                example.email ? (
-                  <li key={`${example.notification_type}:${example.case}`}>
-                    <Text size="xs" color="muted" className="mb-1 block">
-                      {exampleLabel(t, example)}
+              {section.examples.map((example) => (
+                <li key={`${example.notification_type}:${example.case}`}>
+                  <Text size="xs" color="muted" className="mb-1 block">
+                    {exampleLabel(t, example)}
+                  </Text>
+                  <div className="rounded-nested border border-hairline bg-ethereal-marble px-3.5 py-3 shadow-glass-solid">
+                    <Text size="sm" weight="semibold" className="block leading-snug">
+                      {example.email.subject}
                     </Text>
-                    <div className="rounded-nested border border-hairline bg-ethereal-marble px-3.5 py-3 shadow-glass-solid">
-                      <Text size="sm" weight="semibold" className="block leading-snug">
-                        {example.email.subject}
+                    <Text size="sm" color="muted" className="mt-1 block line-clamp-2 leading-snug">
+                      {example.email.lead}
+                    </Text>
+                    {example.email.status === "stand_in" && (
+                      <Text size="xs" color="gold" className="mt-2 block leading-snug">
+                        {t("settings.notifications.preview.stand_in")}
                       </Text>
-                      <Text size="sm" color="muted" className="mt-1 block line-clamp-2 leading-snug">
-                        {example.email.lead}
-                      </Text>
-                      {example.email.status === "stand_in" && (
-                        <Text size="xs" color="gold" className="mt-2 block leading-snug">
-                          {t("settings.notifications.preview.stand_in")}
-                        </Text>
-                      )}
-                    </div>
-                  </li>
-                ) : null,
-              )}
+                    )}
+                  </div>
+                </li>
+              ))}
             </GroupBlock>
           ))
         )}

@@ -898,13 +898,14 @@ const getAbsoluteTime = (dateString: string, lang: string): string => {
 };
 
 const resolveVisual = (
-  notification: NotificationDTO,
+  type: NotificationDTO["notification_type"],
+  level: NotificationDTO["level"],
 ): { icon: LucideIcon; accent: Accent } => {
-  if (String(notification.level || "INFO").toUpperCase() === "URGENT") {
+  if (String(level || "INFO").toUpperCase() === "URGENT") {
     return { icon: AlertTriangle, accent: "crimson" };
   }
 
-  switch (notification.notification_type) {
+  switch (type) {
     case "PROJECT_INVITATION":
     case "PROJECT_UPDATED":
     case "PROJECT_BRIEFING":
@@ -985,7 +986,14 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   const isAdmin = isManager(user);
   const isRead = notification.is_read;
 
-  const { icon: Icon, accent } = resolveVisual(notification);
+  // A sitting that holds an absence wears the absence's look whichever report
+  // came last: its sentence leads with the absence, and the attendance tick
+  // would read as all clear.
+  const leadsWithAbsence = latestPerRehearsal(members).some((report) => report.absence);
+  const { icon: Icon, accent } = resolveVisual(
+    leadsWithAbsence ? "ABSENCE_REQUESTED" : notification.notification_type,
+    notification.level,
+  );
   const accentStyle = ACCENT[accent];
   const timeAgo = formatRelativeTime(notification.created_at, i18n.language);
   const absoluteTime = getAbsoluteTime(notification.created_at, i18n.language);

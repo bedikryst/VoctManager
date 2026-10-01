@@ -2299,6 +2299,9 @@ class RehearsalOperationsService:
                         project_name=attendance.rehearsal.project.title,
                         artist_name=artist_name,
                         artist_id=str(attendance.participation.artist_id),
+                        # The bell folds a singer's sitting per project, so a
+                        # report must name its project as an absence does.
+                        project_id=str(attendance.rehearsal.project_id),
                         rehearsal_id=str(rehearsal.id),
                         **event_time_metadata,
                         rehearsal_date=rehearsal_date,
@@ -2315,15 +2318,26 @@ class RehearsalOperationsService:
             # Keyed on managership, not on the roll call: this is a VERDICT on a
             # singer's request and it reaches them as one. A stand-in ticking
             # boxes in front of the choir is recording who came, and must not
-            # tell somebody their excuse was refused. An excuse is told once:
-            # every manager receives the request, and a second one accepting it
-            # must not excuse the singer again.
-            excused_again = dto.status == 'EXCUSED' and previous_status == 'EXCUSED'
+            # tell somebody their excuse was refused.
+            #
+            # A verdict is news only when it changes the record, and only about
+            # an evening still ahead — both messages speak of coming or not. So
+            # an excuse is told once, though every manager receives the request
+            # and a second may accept it too. And ABSENT refuses only an excuse
+            # that stood: written over a reported absence it changes nothing, and
+            # written by a roll call over a singer who never reported, there was
+            # no request to refuse.
+            excused = dto.status == Attendance.Status.EXCUSED
+            excuse_withdrawn = (
+                dto.status == Attendance.Status.ABSENT
+                and previous_status == Attendance.Status.EXCUSED
+            )
             if (
                 dto.is_manager
-                and dto.status in ['EXCUSED', 'ABSENT']
+                and (excused or excuse_withdrawn)
+                and previous_status != dto.status
+                and rehearsal.date_time > timezone.now()
                 and participation.artist.user_id
-                and not excused_again
             ):
                 RehearsalOperationsService._tell_singer_the_verdict(
                     participation.artist.user_id,
@@ -2398,14 +2412,19 @@ class RehearsalOperationsService:
         many rows this call excused; 0 when another manager already had.
 
         Raises AttendanceValidationException when no row holds an absence any
-        more: the singer has changed their answer, and the manager has to see
-        what it is now rather than excuse what was withdrawn.
+        more: the singer has changed their answer, or the rehearsal was called
+        off, or the singer left the cast. The manager has to see what it is now
+        rather than excuse what no longer stands.
         """
         with transaction.atomic():
             rows = list(
                 Attendance.objects.select_for_update(of=('self',))
                 .select_related('rehearsal__project', 'participation__artist')
-                .filter(id__in=attendance_ids)
+                .filter(
+                    id__in=attendance_ids,
+                    rehearsal__is_deleted=False,
+                    participation__is_deleted=False,
+                )
                 .order_by('rehearsal__date_time')
             )
             absent = [row for row in rows if row.status == Attendance.Status.ABSENT]

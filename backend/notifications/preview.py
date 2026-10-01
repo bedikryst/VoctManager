@@ -69,8 +69,7 @@ class PreviewExample(TypedDict):
     # "accepted"/"declined", "soon"/"later", "single"/"fold". Empty otherwise.
     case: str
     push: PushExample
-    # None for a sample that is a shape of push alone (`_Sample.push_only`).
-    email: EmailExample | None
+    email: EmailExample
 
 
 class PreviewGroup(TypedDict):
@@ -92,9 +91,6 @@ class _Sample:
     metadata: dict[str, Any]
     level: str = NotificationLevel.INFO
     case: str = ""
-    # A shape only the push takes, with no e-mail of its own to preview. The
-    # folded burst is not one: the fold sends its e-mail as one message too.
-    push_only: bool = False
 
 
 # Stable identifiers for the sample payloads. Composers put them in deep links
@@ -438,10 +434,10 @@ def build_delivery_preview(user: Any) -> DeliveryPreview:
                     )
                     # The router's own condition for the e-mail a push carries in
                     # reserve, spent only when no device takes the push. The fold
-                    # never carries one.
+                    # carries none, and needs no case here: neither type it folds
+                    # is push-first.
                     email_stands_in = (
-                        not sample.push_only
-                        and plan.push is PushOutcome.NOW
+                        plan.push is PushOutcome.NOW
                         and devices == 0
                         and block is None
                         and needs_email_reserve(ntype, preference["email_enabled"])
@@ -453,17 +449,15 @@ def build_delivery_preview(user: Any) -> DeliveryPreview:
                     push_status = _push_status(
                         plan, devices=devices, email_stands_in=email_stands_in,
                     )
-                    email: EmailExample | None = None
-                    if not sample.push_only:
-                        email_status = _email_status(
-                            plan, email_stands_in=email_stands_in, block=block,
-                        )
-                        email = {
-                            "status": email_status,
-                            "delivered": email_status in ("now", "stand_in"),
-                            "subject": content.subject or content.title,
-                            "lead": content.email_lead or content.body,
-                        }
+                    email_status = _email_status(
+                        plan, email_stands_in=email_stands_in, block=block,
+                    )
+                    email: EmailExample = {
+                        "status": email_status,
+                        "delivered": email_status in ("now", "stand_in"),
+                        "subject": content.subject or content.title,
+                        "lead": content.email_lead or content.body,
+                    }
                     examples.append({
                         "notification_type": ntype,
                         "case": sample.case,

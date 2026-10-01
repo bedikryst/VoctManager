@@ -696,8 +696,7 @@ export interface DeliveryPreviewExampleDTO {
   notification_type: NotificationType;
   case: DeliveryPreviewCase;
   push: DeliveryPushExampleDTO;
-  /** Null for a shape only the push takes, with no e-mail of its own. */
-  email: DeliveryEmailExampleDTO | null;
+  email: DeliveryEmailExampleDTO;
 }
 
 export interface DeliveryPreviewGroupDTO {
