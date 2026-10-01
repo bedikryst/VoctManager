@@ -6,6 +6,8 @@
  *     near-black edge) → icon-192, icon-512, icon-maskable-512, apple-touch-icon;
  *   - voctmanager-mark-compact.svg (the ringless drawing for small sizes) as a white silhouette on
  *     transparency → badge.png, which Android tints and shows as the notification's status-bar glyph;
+ *   - nothing at all → notification-blank.png, a fully transparent raster that keeps an Android
+ *     notification's large-icon slot empty (see ICON in src/sw.ts);
  *   - favicon.svg and favicon-48.svg (ringless drawings on a rounded dark tile) → icon-32, icon-48,
  *     the small "any" icons desktop OSes use for shortcuts, taskbar and window icons, and icon-32
  *     doubles as the PNG favicon. Without them those surfaces downsample the ringed 192, where the
@@ -88,6 +90,18 @@ async function renderBadge({ size = 72, file = "badge.png" } = {}) {
   console.log(`  ✓ ${file} (${size}×${size}, white silhouette)`);
 }
 
+/**
+ * Fully transparent notification `icon` for Android, where Chrome fills an icon-less push's
+ * large-icon slot with a letter disc of its own (see ICON in src/sw.ts). 64 px is the slot's
+ * 64-dp size at 1×; with nothing drawn, its scale never shows.
+ */
+async function renderBlank({ size = 64, file = "notification-blank.png" } = {}) {
+  await sharp({ create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+    .png()
+    .toFile(resolve(OUT_DIR, file));
+  console.log(`  ✓ ${file} (${size}×${size}, transparent)`);
+}
+
 /** Small tile icon: the master already carries its rounded tile; the corners stay transparent. */
 async function renderTile({ size, master }) {
   const file = `icon-${size}.png`;
@@ -128,6 +142,8 @@ await renderTile({ size: 48, master: "favicon-48.svg" });
 // Monochrome status-bar badge (referenced by sw.ts). Lives under icons/ so the .gitignore
 // negation tracks & ships it.
 await renderBadge();
+// Transparent notification icon (referenced by sw.ts on Android only).
+await renderBlank();
 
 await renderInkLogo();
 

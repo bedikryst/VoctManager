@@ -97,12 +97,17 @@ const DEFAULT_TAG = "voct-push";
 // into public/icons/ so the .gitignore negation tracks & ships it. The platform
 // fetches it itself, past this worker's precache and through the HTTP cache
 // (nginx keeps png for 30 days), so `?v=` carries the icon version.
-//
-// No `icon`: Android, iOS and macOS already draw the installed app's own icon
-// beside every notification, and `icon` is the content image on the other side
-// (a sender's face, a photo). The app logo there only repeats the one the system
-// shows.
 const BADGE = "/icons/badge.png?v=2";
+// `icon` is the content image opposite the app's own icon (a sender's face, a
+// photo); this app has no such content, and its logo there would only repeat
+// the one the system already draws. iOS and desktop leave the slot empty when
+// `icon` is absent, but Chrome on Android never does: it fills it with a grey
+// disc carrying the origin's first letter. A fully transparent raster is the
+// only way to keep that slot visually empty, and it stays Android-only because
+// a desktop notification would draw it as an empty tile.
+const ICON = /Android/u.test(self.navigator.userAgent)
+  ? "/icons/notification-blank.png"
+  : undefined;
 
 // ── precache + offline routing ───────────────────────────────────────────────
 
@@ -414,6 +419,7 @@ self.addEventListener("push", (event) => {
   const tag = payload.tag ?? DEFAULT_TAG;
   const options = (notificationIds: string[]): ServiceWorkerNotificationOptions => ({
     body: payload.body ?? "",
+    icon: ICON,
     badge: BADGE,
     lang: payload.lang ?? "pl",
     tag,
