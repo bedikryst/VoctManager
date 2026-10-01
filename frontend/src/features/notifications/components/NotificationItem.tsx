@@ -3,9 +3,10 @@
  * @description A single notification row in the Ethereal language. The row
  * reads as one sentence — the actor in semibold, the rest of the sentence in
  * regular weight — under a category eyebrow, then what the sentence did not
- * say and any text a person wrote, quoted. A folded entry (a singer's burst of
- * attendance reports, a thread's messages) renders as one row over all its
- * members and is read whole. Accent is driven by type (gold=project, sage=schedule/positive, amethyst=content,
+ * say and any text a person wrote, quoted. A folded entry (a singer's sitting of
+ * attendance reports and absence requests, a thread's messages) renders as one
+ * row over all its members and is read whole. A row decides nothing: an absence
+ * is accepted on the list the row opens. Accent is driven by type (gold=project, sage=schedule/positive, amethyst=content,
  * incense=message) and escalated to crimson only for genuine alarms
  * (URGENT level, cancellations, rejections) — crimson stays alarm-only.
  * @module features/notifications/components
@@ -60,6 +61,7 @@ import {
   voiceScopeOf,
   type TFunc,
 } from "../lib/notificationFormat";
+import { isSittingReport } from "../lib/notificationFold";
 import { useAuth } from "@/app/providers/AuthProvider";
 // The one phrasing of "which part of the evening is mine": the bell reads the
 // window the push and the page read, so one evening cannot be worded three ways.
@@ -174,26 +176,113 @@ const briefingBullets = (
   items: readonly BriefingItemMetadata[],
 ): string[] => cappedBullets(t, items.map((item) => briefingItemSummary(t, lang, item)));
 
+/** What a singer said about one evening of their sitting. */
+interface EveningReport {
+  /** An absence request rather than an attendance report. */
+  readonly absence: boolean;
+  readonly metadata: ManagerActionMetadata;
+}
+
 /**
- * A folded burst's reports, one per rehearsal — the latest word on an evening
- * wins, as in the push fold, since "present" then "late" said one thing — in
- * the order the evenings fall.
+ * A folded sitting's reports, one per rehearsal — the latest word on an evening
+ * wins, as in the push fold, since "present" then "late" said one thing, and
+ * "absent" then "present" withdrew the absence — in the order the evenings fall.
+ * Empty for an entry that is not a sitting (a span stands alone).
  */
 const latestPerRehearsal = (
   members: readonly NotificationDTO[],
-): ManagerActionMetadata[] => {
-  const latest = new Map<string, ManagerActionMetadata>();
+): EveningReport[] => {
+  const latest = new Map<string, EveningReport>();
   // Members arrive newest first, so the first report seen per evening is its last.
   for (const member of members) {
-    if (member.notification_type !== "ATTENDANCE_SUBMITTED") continue;
+    if (!isSittingReport(member)) continue;
     const key = member.metadata.rehearsal_id || member.id;
-    if (!latest.has(key)) latest.set(key, member.metadata);
+    if (!latest.has(key)) {
+      latest.set(key, {
+        absence: member.notification_type === "ABSENCE_REQUESTED",
+        metadata: member.metadata,
+      });
+    }
   }
-  const starts = (m: ManagerActionMetadata): number => {
-    const value = Date.parse(m.starts_at ?? "");
+  const starts = ({ metadata }: EveningReport): number => {
+    const value = Date.parse(metadata.starts_at ?? "");
     return Number.isFinite(value) ? value : Number.POSITIVE_INFINITY;
   };
   return [...latest.values()].sort((a, b) => starts(a) - starts(b) || 0);
+};
+
+/**
+ * One row for a singer's sitting that holds an absence. The absence leads, as
+ * in the push and the e-mail: it is the one thing in the sitting the conductor
+ * may have to act on. One absence reads as a lone request does, its note
+ * quoted; several are listed one bullet each, with their notes. The evenings
+ * the singer will attend are counted under it. Present and future tense only:
+ * a name does not tell the grammatical gender a past tense would need.
+ */
+const describeSittingWithAbsences = (
+  t: TFunc,
+  lang: string,
+  artistName: string,
+  absences: readonly ManagerActionMetadata[],
+  attending: readonly ManagerActionMetadata[],
+): RowContent => {
+  const late = attending.filter((m) => m.status === "LATE").length;
+  const others =
+    attending.length > 0
+      ? compactMetaLine(
+          t("notifications.row.attendance_fold_others", { count: attending.length }),
+          late > 0
+            ? t("notifications.row.attendance_fold_others_late", { late })
+            : undefined,
+        )
+      : undefined;
+  const projects = compactMetaLine(
+    ...new Set([...absences, ...attending].map((m) => m.project_name)),
+  );
+
+  if (absences.length === 1) {
+    const [m] = absences;
+    const when = formatEventPhrase(m, lang, t);
+    return {
+      actor: artistName,
+      sentence: withMoment(t, "notifications.row.absence_absent", when),
+      context: compactMetaLine(
+        projects,
+        when ? undefined : formatEventMoment(m, lang, t, m.rehearsal_date),
+      ),
+      detail: others,
+      quote: quoted(t, m.excuse_note),
+    };
+  }
+  return {
+    actor: artistName,
+    sentence: t("notifications.row.attendance_fold_absent", { count: absences.length }),
+    context: projects,
+    detail: others,
+    bullets: cappedBullets(
+      t,
+      absences.map((m) =>
+        compactMetaLine(
+          formatEventMoment(m, lang, t, m.rehearsal_date),
+          quoted(t, m.excuse_note),
+        ),
+      ),
+    ),
+  };
+};
+
+/** One row for a singer's folded sitting, absences leading when it has any. */
+const describeSitting = (
+  t: TFunc,
+  lang: string,
+  artistName: string,
+  reports: readonly EveningReport[],
+): RowContent => {
+  const absences = reports.filter((r) => r.absence).map((r) => r.metadata);
+  const attending = reports.filter((r) => !r.absence).map((r) => r.metadata);
+  return absences.length > 0
+    ? describeSittingWithAbsences(t, lang, artistName, absences, attending)
+    : describeAttendanceBurst(t, lang, artistName, attending);
 };
 
 /**
@@ -606,8 +695,13 @@ const describe = (
       // Worded as the button the singer pressed: "Nie będę obecny" is a
       // statement, not a request, and only a legacy row carries EXCUSED. A span
       // names its edges and how many rehearsals it reaches, the number the
-      // manager decides on. The note is what they decide it by.
+      // manager decides on. The note is what they decide it by. A request
+      // folded into the singer's sitting reads as part of it.
       const m = notification.metadata;
+      const reports = latestPerRehearsal(members);
+      if (reports.length > 1) {
+        return describeSitting(t, lang, m.artist_name, reports);
+      }
       const answer = m.status === "EXCUSED" ? "excused" : "absent";
       const range = (m.rehearsal_count ?? 0) > 1 ? formatEventSpan(m, lang) : undefined;
       const when = range ? undefined : formatEventPhrase(m, lang, t);
@@ -646,7 +740,7 @@ const describe = (
       const m = notification.metadata;
       const reports = latestPerRehearsal(members);
       if (reports.length > 1) {
-        return describeAttendanceBurst(t, lang, m.artist_name, reports);
+        return describeSitting(t, lang, m.artist_name, reports);
       }
       const when = formatEventPhrase(m, lang, t);
       const minutes = m.status === "LATE" && m.minutes_late ? m.minutes_late : undefined;
@@ -989,12 +1083,23 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     if (type === "MATERIAL_UPLOADED") {
       return navigate(isAdmin ? "/panel/archive-management" : "/panel/materials");
     }
-    if (notification.notification_type === "ABSENCE_REQUESTED" && isAdmin) {
+    if (
+      isAdmin &&
+      (notification.notification_type === "ABSENCE_REQUESTED" ||
+        notification.notification_type === "ATTENDANCE_SUBMITTED")
+    ) {
       // Whether one more absence matters is read against the others on the same
       // evenings, so a manager lands on the project's list of them — `?absences=1`
-      // is the overview's contract for opening it. Mirrors the push and the
-      // e-mail. Without a project the evening below still answers.
-      const projectId = notification.metadata.project_id;
+      // is the overview's contract for opening it, and the absence is accepted
+      // there. A sitting holding an absence lands there too, on its first
+      // absence's project. Mirrors the push and the e-mail. Without a project the
+      // evening below still answers.
+      const absence =
+        latestPerRehearsal(members).find((report) => report.absence)?.metadata ??
+        (notification.notification_type === "ABSENCE_REQUESTED"
+          ? notification.metadata
+          : undefined);
+      const projectId = absence?.project_id;
       if (projectId) return navigate(`/panel/projects/${projectId}?absences=1`);
     }
     if (type === "ATTENDANCE_SUBMITTED" || type === "ABSENCE_REQUESTED") {
@@ -1003,7 +1108,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       // e-mail. Ahead of the substring chain, which would drop the id. A burst
       // opens on its first evening, the one its list starts with.
       const rehearsalId =
-        latestPerRehearsal(members)[0]?.rehearsal_id ?? notification.metadata.rehearsal_id;
+        latestPerRehearsal(members)[0]?.metadata.rehearsal_id ??
+        notification.metadata.rehearsal_id;
       const base = isAdmin ? "/panel/rehearsals" : "/panel/schedule";
       return navigate(rehearsalId ? `${base}?rehearsal=${rehearsalId}` : base);
     }

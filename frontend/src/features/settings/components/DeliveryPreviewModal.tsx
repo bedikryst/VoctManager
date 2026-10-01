@@ -47,7 +47,7 @@ interface ReasonRow {
   reason: string;
 }
 
-/** The examples a channel speaks for: the folded push has no e-mail. */
+/** The examples a channel speaks for: a shape only the push takes has no e-mail. */
 const onChannel = (examples: readonly DeliveryPreviewExampleDTO[], channel: Channel) =>
   channel === "push" ? [...examples] : examples.filter((example) => example.email !== null);
 

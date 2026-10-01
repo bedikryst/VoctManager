@@ -1,20 +1,27 @@
 /**
  * @file notificationFold.ts
- * @description Which bell rows speak as one. A singer's burst of attendance
- * reports (one artist, within half an hour) and the messages of one thread each
- * render as a single row over all of them; every other row stands alone.
- * `ABSENCE_REQUESTED` never folds: each one waits for its own decision. The
- * caller folds each read state separately, so the unread section holds only
- * what is new and a thread's history does not climb back above it.
+ * @description Which bell rows speak as one. A singer's sitting with the
+ * schedule (one artist, within half an hour) and the messages of one thread each
+ * render as a single row over all of them; every other row stands alone. The
+ * sitting holds attendance reports and single-evening absence requests alike,
+ * because to the conductor it is one piece of news. A span stands alone: it is
+ * already one request over many evenings. The decision on an absence lives on
+ * the absence list the row opens, never on the row, so grouping the requests
+ * takes no decision away. The caller folds each read state separately, so the
+ * unread section holds only what is new and a thread's history does not climb
+ * back above it.
  * @module features/notifications/lib
  */
 
-import type { NotificationDTO } from "../types/notifications.dto";
+import type {
+  ManagerActionMetadata,
+  NotificationDTO,
+} from "../types/notifications.dto";
 
-/** How far a singer's attendance report may lie from the newest one in its
- *  burst and still belong to it: one sitting with the schedule, with a pause to
- *  check a calendar. The push folds on a much shorter window because it holds a
- *  push back while it waits; the bell holds nothing back. */
+/** How far a singer's report may lie from the newest one in its sitting and
+ *  still belong to it: one sitting with the schedule, with a pause to check a
+ *  calendar. The push folds on a much shorter window because it holds a push
+ *  back while it waits; the bell holds nothing back. */
 export const ATTENDANCE_FOLD_WINDOW_MS = 30 * 60_000;
 
 export interface BellEntry {
@@ -24,21 +31,32 @@ export interface BellEntry {
   members: NotificationDTO[];
 }
 
+type SittingReport = NotificationDTO & { metadata: ManagerActionMetadata };
+
+/** A report about one evening: attendance, or an absence that is not a span. */
+export const isSittingReport = (
+  notification: NotificationDTO,
+): notification is SittingReport => {
+  if (notification.notification_type === "ATTENDANCE_SUBMITTED") return true;
+  if (notification.notification_type !== "ABSENCE_REQUESTED") return false;
+  return (notification.metadata.rehearsal_count ?? 1) <= 1;
+};
+
 const foldKey = (notification: NotificationDTO): string | undefined => {
   if (notification.notification_type === "MESSAGE_RECEIVED") {
     const threadId = notification.metadata.thread_id;
     return threadId ? `thread:${threadId}` : undefined;
   }
-  if (notification.notification_type === "ATTENDANCE_SUBMITTED") {
+  if (isSittingReport(notification)) {
     const artistId = notification.metadata.artist_id;
     return artistId ? `attendance:${artistId}` : undefined;
   }
   return undefined;
 };
 
-/** A thread holds all its rows; a burst only the reports close to its newest. */
+/** A thread holds all its rows; a sitting only the reports close to its newest. */
 const belongs = (entry: BellEntry, candidate: NotificationDTO): boolean =>
-  candidate.notification_type !== "ATTENDANCE_SUBMITTED" ||
+  candidate.notification_type === "MESSAGE_RECEIVED" ||
   Date.parse(entry.lead.created_at) - Date.parse(candidate.created_at) <=
     ATTENDANCE_FOLD_WINDOW_MS;
 

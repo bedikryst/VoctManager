@@ -2251,6 +2251,14 @@ class RehearsalOperationsService:
             raise SelfReportWindowClosedException(str(SELF_REPORT_CLOSED_MESSAGE))
 
         with transaction.atomic():
+            # Read under lock: of two managers excusing one absence at once, the
+            # second must find the first one's verdict already written.
+            previous_status = (
+                Attendance.objects.select_for_update()
+                .filter(rehearsal=rehearsal, participation=participation)
+                .values_list('status', flat=True)
+                .first()
+            )
             attendance, _created = Attendance.objects.update_or_create(
                 rehearsal=rehearsal,
                 participation=participation,
@@ -2282,6 +2290,7 @@ class RehearsalOperationsService:
                         rehearsal_date=rehearsal_date,
                         status=dto.status,
                         excuse_note=dto.excuse_note or None,
+                        attendance_ids=[str(attendance.id)],
                     ).model_dump(mode="json")
                 else:
                     notif_type = NotificationType.ATTENDANCE_SUBMITTED
@@ -2306,34 +2315,118 @@ class RehearsalOperationsService:
             # Keyed on managership, not on the roll call: this is a VERDICT on a
             # singer's request and it reaches them as one. A stand-in ticking
             # boxes in front of the choir is recording who came, and must not
-            # tell somebody their excuse was refused.
-            if dto.is_manager and dto.status in ['EXCUSED', 'ABSENT'] and participation.artist.user_id:
-                is_approved = dto.status == 'EXCUSED'
-                notif_type = NotificationType.ABSENCE_APPROVED if is_approved else NotificationType.ABSENCE_REJECTED
-                # A rejected absence reinstates a commitment ("you're expected after
-                # all"), so it carries WARNING weight; an approval is a positive FYI
-                # at INFO. Mirrors the composer's intended level for each.
-                level = NotificationLevel.INFO if is_approved else NotificationLevel.WARNING
-                decision_time_metadata = build_event_time_metadata(
-                    rehearsal.date_time,
-                    rehearsal.timezone,
-                    fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+            # tell somebody their excuse was refused. An excuse is told once:
+            # every manager receives the request, and a second one accepting it
+            # must not excuse the singer again.
+            excused_again = dto.status == 'EXCUSED' and previous_status == 'EXCUSED'
+            if (
+                dto.is_manager
+                and dto.status in ['EXCUSED', 'ABSENT']
+                and participation.artist.user_id
+                and not excused_again
+            ):
+                RehearsalOperationsService._tell_singer_the_verdict(
+                    participation.artist.user_id,
+                    [rehearsal],
+                    approved=dto.status == 'EXCUSED',
                 )
-                metadata = AbsenceStatusMetadata(
-                    rehearsal_id=rehearsal.id,
-                    project_name=rehearsal.project.title,
-                    **decision_time_metadata,
-                    rehearsal_date=decision_time_metadata["starts_at_display"],
-                ).model_dump(mode="json")
 
-                transaction.on_commit(lambda: send_notification_task.delay(
-                    recipient_id=str(participation.artist.user_id),
-                    notification_type=notif_type,
-                    level=level,
-                    metadata=metadata
-                ))
-                
         return attendance
+
+    @staticmethod
+    def _tell_singer_the_verdict(
+        user_id: int, rehearsals: list[Rehearsal], *, approved: bool
+    ) -> None:
+        """One message to a singer about the absence they reported: excused, or
+        expected after all. Sent once the write commits.
+
+        One evening is named as itself. Several are one decision over a span,
+        named by its edges and the number of rehearsals it reached; `rehearsals`
+        arrives in start order, so its ends are the span's real edges.
+        """
+        first, last = rehearsals[0], rehearsals[-1]
+        opening = build_event_time_metadata(
+            first.date_time, first.timezone, fallback_timezone=DEFAULT_EVENT_TIMEZONE
+        )
+        if len(rehearsals) == 1:
+            decision = AbsenceStatusMetadata(
+                rehearsal_id=first.id,
+                project_name=first.project.title,
+                **opening,
+                rehearsal_date=opening["starts_at_display"],
+            )
+        else:
+            closing = build_event_time_metadata(
+                last.date_time, last.timezone, fallback_timezone=DEFAULT_EVENT_TIMEZONE
+            )
+            decision = AbsenceStatusMetadata(
+                rehearsal_id=first.id,
+                project_name=first.project.title,
+                starts_at=opening["starts_at"],
+                starts_at_display=opening["starts_at_display"],
+                timezone=opening["timezone"],
+                ends_at=closing["starts_at"],
+                ends_at_display=closing["starts_at_display"],
+                rehearsal_count=len(rehearsals),
+                rehearsal_date=opening["starts_at_display"],
+            )
+        notif_type = (
+            NotificationType.ABSENCE_APPROVED if approved else NotificationType.ABSENCE_REJECTED
+        )
+        # A refusal reinstates a commitment ("you're expected after all"), so it
+        # carries WARNING weight; an excuse is a positive FYI at INFO. Mirrors the
+        # composer's intended level for each.
+        level = NotificationLevel.INFO if approved else NotificationLevel.WARNING
+        metadata = decision.model_dump(mode="json")
+        recipient_id = str(user_id)
+
+        transaction.on_commit(lambda: send_notification_task.delay(
+            recipient_id=recipient_id,
+            notification_type=notif_type,
+            level=level,
+            metadata=metadata,
+        ))
+
+    @staticmethod
+    def accept_absences(attendance_ids: list[str]) -> int:
+        """Excuse the evenings of one absence request from its notification, where
+        a manager answers it without opening the panel: one evening, or every
+        evening of one span.
+
+        Only rows still reporting an absence are written, each keeping the note
+        the singer wrote, and the singer is told once per request. Returns how
+        many rows this call excused; 0 when another manager already had.
+
+        Raises AttendanceValidationException when no row holds an absence any
+        more: the singer has changed their answer, and the manager has to see
+        what it is now rather than excuse what was withdrawn.
+        """
+        with transaction.atomic():
+            rows = list(
+                Attendance.objects.select_for_update(of=('self',))
+                .select_related('rehearsal__project', 'participation__artist')
+                .filter(id__in=attendance_ids)
+                .order_by('rehearsal__date_time')
+            )
+            absent = [row for row in rows if row.status == Attendance.Status.ABSENT]
+            if not absent:
+                if any(row.status == Attendance.Status.EXCUSED for row in rows):
+                    return 0
+                raise AttendanceValidationException("The absence is no longer reported.")
+
+            excused_by_singer: dict[int, list[Rehearsal]] = {}
+            for row in absent:
+                row.status = Attendance.Status.EXCUSED
+                row.save(update_fields=['status'])
+                user_id = row.participation.artist.user_id
+                if user_id:
+                    excused_by_singer.setdefault(user_id, []).append(row.rehearsal)
+
+            for user_id, rehearsals in excused_by_singer.items():
+                RehearsalOperationsService._tell_singer_the_verdict(
+                    user_id, rehearsals, approved=True
+                )
+        return len(absent)
 
     @staticmethod
     def _artist_spoken_for(dto: AttendanceRangeWindowDTO) -> Artist:
@@ -2401,7 +2494,7 @@ class RehearsalOperationsService:
         if not matched:
             return []
 
-        by_project: dict[UUID, list[Rehearsal]] = {}
+        by_project: dict[UUID, list[tuple[Rehearsal, Attendance]]] = {}
         written: list[Attendance] = []
 
         with transaction.atomic():
@@ -2417,18 +2510,18 @@ class RehearsalOperationsService:
                     },
                 )
                 written.append(attendance)
-                by_project.setdefault(rehearsal.project_id, []).append(rehearsal)
+                by_project.setdefault(rehearsal.project_id, []).append((rehearsal, attendance))
 
-            for rehearsals in by_project.values():
-                RehearsalOperationsService._announce_attendance_span(
-                    dto, artist, rehearsals
-                )
+            for slice_ in by_project.values():
+                RehearsalOperationsService._announce_attendance_span(dto, artist, slice_)
 
         return written
 
     @staticmethod
     def _announce_attendance_span(
-        dto: AttendanceRangeDTO, artist: Artist, rehearsals: list[Rehearsal]
+        dto: AttendanceRangeDTO,
+        artist: Artist,
+        slice_: list[tuple[Rehearsal, Attendance]],
     ) -> None:
         """One message for one production's slice of a range.
 
@@ -2436,16 +2529,16 @@ class RehearsalOperationsService:
         a project's slice are its real edges — which is what the reader is told,
         rather than the dates the singer happened to type.
         """
-        first, last = rehearsals[0], rehearsals[-1]
-        opening = build_event_time_metadata(
-            first.date_time, first.timezone, fallback_timezone=DEFAULT_EVENT_TIMEZONE
-        )
-        closing = build_event_time_metadata(
-            last.date_time, last.timezone, fallback_timezone=DEFAULT_EVENT_TIMEZONE
-        )
-        count = len(rehearsals)
+        rehearsals = [rehearsal for rehearsal, _attendance in slice_]
 
         if not dto.is_manager:
+            first, last = rehearsals[0], rehearsals[-1]
+            opening = build_event_time_metadata(
+                first.date_time, first.timezone, fallback_timezone=DEFAULT_EVENT_TIMEZONE
+            )
+            closing = build_event_time_metadata(
+                last.date_time, last.timezone, fallback_timezone=DEFAULT_EVENT_TIMEZONE
+            )
             metadata = ManagerActionMetadata(
                 project_name=first.project.title,
                 artist_name=f"{artist.first_name} {artist.last_name}",
@@ -2457,10 +2550,11 @@ class RehearsalOperationsService:
                 timezone=opening["timezone"],
                 ends_at=closing["starts_at"],
                 ends_at_display=closing["starts_at_display"],
-                rehearsal_count=count,
+                rehearsal_count=len(rehearsals),
                 rehearsal_date=opening["starts_at_display"],
                 status=dto.status,
                 excuse_note=dto.excuse_note or None,
+                attendance_ids=[str(attendance.id) for _rehearsal, attendance in slice_],
             ).model_dump(mode="json")
 
             level = absence_request_level(first.date_time)
@@ -2476,32 +2570,8 @@ class RehearsalOperationsService:
         if not artist.user_id:
             return
 
-        is_approved = dto.status == Attendance.Status.EXCUSED
-        notif_type = (
-            NotificationType.ABSENCE_APPROVED if is_approved
-            else NotificationType.ABSENCE_REJECTED
-        )
-        level = NotificationLevel.INFO if is_approved else NotificationLevel.WARNING
-        decision = AbsenceStatusMetadata(
-            rehearsal_id=first.id,
-            project_name=first.project.title,
-            starts_at=opening["starts_at"],
-            starts_at_display=opening["starts_at_display"],
-            timezone=opening["timezone"],
-            ends_at=closing["starts_at"],
-            ends_at_display=closing["starts_at_display"],
-            rehearsal_count=count,
-            rehearsal_date=opening["starts_at_display"],
-        ).model_dump(mode="json")
-        recipient_id = str(artist.user_id)
-
-        transaction.on_commit(
-            lambda: send_notification_task.delay(
-                recipient_id=recipient_id,
-                notification_type=notif_type,
-                level=level,
-                metadata=decision,
-            )
+        RehearsalOperationsService._tell_singer_the_verdict(
+            artist.user_id, rehearsals, approved=dto.status == Attendance.Status.EXCUSED
         )
 
 

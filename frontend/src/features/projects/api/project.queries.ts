@@ -12,6 +12,7 @@ export * from "./project.project.mutations";
 export * from "./project.participation.mutations";
 export * from "./project.crew.mutations";
 export * from "./project.rehearsal.mutations";
+export * from "./project.attendance.mutations";
 export * from "./project.program.mutations";
 export * from "./project.piece-casting.mutations";
 export * from "./project.score-pdf.mutations";

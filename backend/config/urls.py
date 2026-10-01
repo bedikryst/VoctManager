@@ -57,6 +57,7 @@ from documents.views import (
 from messaging.views import ProjectChannelViewSet, ThreadViewSet
 from notifications.emaillabs_webhook import EmailLabsTrackingWebhookView
 from notifications.views import (
+    AbsenceAcceptAPIView,
     NotificationDeliveryPreviewAPIView,
     NotificationPreferenceAPIView,
     NotificationViewSet,
@@ -148,6 +149,10 @@ urlpatterns = [
     path('api/notifications/devices/test/', PushDeviceViewSet.as_view({'post': 'test_push'}), name='push-device-test'),
     path('api/notifications/devices/', PushDeviceViewSet.as_view({'get': 'list', 'post': 'create'}), name='push-device-register'),
     path('api/notifications/devices/<path:pk>/', PushDeviceViewSet.as_view({'delete': 'destroy'}), name='push-device-unregister'),
+
+    # "Accept" on an absence request's push — token-authorised, posted by the
+    # service worker. Before the router, which would read it as a notification id.
+    path('api/notifications/absence-accept/', AbsenceAcceptAPIView.as_view(), name='notification-absence-accept'),
 
     # --- Score Package Compiler: live ingestion progress (SSE) ---
     # Registered BEFORE the router so the streaming endpoint is not shadowed by

@@ -2,17 +2,20 @@
 import logging
 import uuid
 
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import status, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import CursorPagination
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from core.exceptions import make_error_response
 from core.permissions import user_is_manager
 from core.request_utils import request_user
 
+from . import absence_accept
 from .delivery import default_channel_preferences, visible_preference_groups
 from .dtos import (
     CustomAdminMessageMetadata,
@@ -41,6 +44,7 @@ from .serializers import (
 from .services import NotificationPreferenceService
 
 logger = logging.getLogger(__name__)
+User = get_user_model()
 
 # Types whose unread state IS a panel surface, which marks the row read when the
 # reader acts on it: the invitation queue (answered), the delegation briefing
@@ -426,3 +430,68 @@ class NotificationDeliveryPreviewAPIView(views.APIView):
 
     def get(self, request: Request) -> Response:
         return Response(build_delivery_preview(request_user(request)))
+
+
+class AbsenceAcceptAPIView(views.APIView):
+    """
+    POST /api/notifications/absence-accept/  {"token": "..."}
+    "Accept" tapped on the push of an absence request. Authorised by the token
+    the push carried and never by a session, since the service worker posting
+    it holds none (see notifications.absence_accept).
+
+    200 with how many evenings this call excused — 0 when the token was already
+    spent or another manager got there first, which the worker reports as done
+    all the same. 403 for a token that does not hold, or a reader who is no
+    longer a manager. 409 when the singer has withdrawn the absence: the worker
+    then opens the absence list, so the manager sees the answer as it is now.
+    """
+    permission_classes = (AllowAny,)
+    authentication_classes = ()
+
+    def post(self, request: Request) -> Response:
+        token = request.data.get("token") if isinstance(request.data, dict) else None
+        if not isinstance(token, str) or not token:
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="missing_token",
+                detail="A token is required.",
+            )
+        try:
+            grant = absence_accept.read(token)
+        except absence_accept.InvalidAcceptToken:
+            return make_error_response(
+                request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                error_code="invalid_accept_token",
+                detail="This link is invalid or expired.",
+            )
+
+        manager = User.objects.filter(pk=grant.manager_id, is_active=True).first()
+        if manager is None or not user_is_manager(manager):
+            return make_error_response(
+                request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                error_code="not_a_manager",
+                detail="Only a manager can accept an absence.",
+            )
+
+        if not absence_accept.spend(token, grant):
+            return Response({"accepted": 0}, status=status.HTTP_200_OK)
+
+        from roster.exceptions import AttendanceValidationException
+        from roster.services import RehearsalOperationsService
+
+        try:
+            accepted = RehearsalOperationsService.accept_absences(grant.attendance_ids)
+        except AttendanceValidationException:
+            return make_error_response(
+                request,
+                status_code=status.HTTP_409_CONFLICT,
+                error_code="absence_withdrawn",
+                detail="The absence is no longer reported.",
+            )
+        logger.info(
+            "[AbsenceAccept] UID:%s excused %d evening(s) from a push.", manager.pk, accepted,
+        )
+        return Response({"accepted": accepted}, status=status.HTTP_200_OK)

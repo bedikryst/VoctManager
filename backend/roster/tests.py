@@ -2,6 +2,7 @@ import json
 import tempfile
 import uuid
 from datetime import UTC, datetime, time, timedelta
+from typing import Any
 from unittest.mock import patch
 
 from django.conf import settings
@@ -1841,6 +1842,116 @@ class AbsenceRequestNotificationTests(TestCase):
         self.rehearsal.save(update_fields=["date_time"])
         notify = self._record("ABSENT")
         self.assertEqual(notify.call_args.kwargs["level"], NotificationLevel.INFO)
+
+    def test_an_absence_request_names_its_attendance_row(self) -> None:
+        from .models import Attendance
+
+        notify = self._record("ABSENT")
+        row = Attendance.objects.get(rehearsal=self.rehearsal, participation=self.participation)
+        self.assertEqual(notify.call_args.kwargs["metadata"]["attendance_ids"], [str(row.id)])
+
+
+class AbsenceVerdictTests(TestCase):
+    """A manager's excuse reaches the singer once, from the sheet or the push."""
+
+    VERDICT = "roster.services.send_notification_task.delay"
+
+    def setUp(self) -> None:
+        from .models import Attendance
+
+        User = get_user_model()
+        self.singer = User.objects.create_user(
+            username="verdict-singer", email="verdict-singer@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.singer, role=AppRole.ARTIST)
+        self.manager = User.objects.create_user(
+            username="verdict-mgr", email="verdict-mgr@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+        artist = Artist.objects.create(
+            user=self.singer, first_name="Ola", last_name="K", email="verdict-singer@test.pl",
+            voice_type=VoiceType.ALTO,
+        )
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=20),
+            status=Project.Status.ACTIVE,
+        )
+        self.participation = Participation.objects.create(
+            artist=artist, project=self.project, status=Participation.Status.CONFIRMED,
+        )
+        self.rehearsals = [
+            Rehearsal.objects.create(
+                project=self.project, date_time=timezone.now() + timedelta(days=days)
+            )
+            for days in (3, 5, 7)
+        ]
+        self.rows = [
+            Attendance.objects.create(
+                rehearsal=rehearsal, participation=self.participation,
+                status=Attendance.Status.ABSENT, excuse_note="Wyjazd",
+            )
+            for rehearsal in self.rehearsals
+        ]
+
+    def _excuse_from_sheet(self) -> Any:
+        dto = AttendanceRecordDTO(
+            requesting_user_id=self.manager.id,
+            can_take_roll_call=True,
+            is_manager=True,
+            participation_id=self.participation.id,
+            rehearsal_id=self.rehearsals[0].id,
+            status="EXCUSED",
+            excuse_note="Wyjazd",
+        )
+        with patch(self.VERDICT) as verdict, self.captureOnCommitCallbacks(execute=True):
+            RehearsalOperationsService.record_attendance(dto)
+        return verdict
+
+    def test_a_second_manager_accepting_the_same_absence_sends_nothing(self) -> None:
+        first = self._excuse_from_sheet()
+        first.assert_called_once()
+        self.assertEqual(
+            first.call_args.kwargs["notification_type"], NotificationType.ABSENCE_APPROVED
+        )
+
+        self.assertFalse(self._excuse_from_sheet().called)
+
+    def test_accepting_a_span_excuses_every_evening_with_one_message(self) -> None:
+        from .models import Attendance
+
+        with patch(self.VERDICT) as verdict, self.captureOnCommitCallbacks(execute=True):
+            accepted = RehearsalOperationsService.accept_absences(
+                [str(row.id) for row in self.rows]
+            )
+
+        self.assertEqual(accepted, 3)
+        self.assertEqual(
+            set(Attendance.objects.values_list("status", "excuse_note")),
+            {("EXCUSED", "Wyjazd")},
+        )
+        verdict.assert_called_once()
+        metadata = verdict.call_args.kwargs["metadata"]
+        self.assertEqual(metadata["rehearsal_count"], 3)
+        self.assertEqual(verdict.call_args.kwargs["recipient_id"], str(self.singer.id))
+
+    def test_accepting_an_absence_already_excused_is_a_no_op(self) -> None:
+        self._excuse_from_sheet()
+        with patch(self.VERDICT) as verdict, self.captureOnCommitCallbacks(execute=True):
+            accepted = RehearsalOperationsService.accept_absences([str(self.rows[0].id)])
+        self.assertEqual(accepted, 0)
+        verdict.assert_not_called()
+
+    def test_a_withdrawn_absence_is_not_accepted(self) -> None:
+        from .exceptions import AttendanceValidationException
+        from .models import Attendance
+
+        Attendance.objects.filter(pk=self.rows[0].pk).update(status=Attendance.Status.PRESENT)
+        with patch(self.VERDICT) as verdict, self.assertRaises(AttendanceValidationException):
+            RehearsalOperationsService.accept_absences([str(self.rows[0].id)])
+        verdict.assert_not_called()
+        self.assertEqual(
+            Attendance.objects.get(pk=self.rows[0].pk).status, Attendance.Status.PRESENT
+        )
 
 
 class ScheduleDashboardTests(APITestCase):

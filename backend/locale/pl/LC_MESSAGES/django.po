@@ -5520,3 +5520,63 @@ msgid ""
 msgstr ""
 "Plan tej próby może wysłać tylko dyrygent albo asystent dyrygenta, który ją "
 "prowadzi."
+
+#: notifications/message_content.py
+#, python-format
+msgctxt "attendance report"
+msgid "Late by about %(minutes)d min"
+msgstr "Spóźnienie ok. %(minutes)d min"
+
+#: notifications/message_content.py
+msgctxt "attendance report"
+msgid "Late"
+msgstr "Spóźnienie"
+
+#: notifications/message_content.py
+msgctxt "attendance report"
+msgid "Attending"
+msgstr "Obecność"
+
+#: notifications/message_content.py
+msgid "Each evening is listed below with the answer given for it."
+msgstr "Poniżej wszystkie terminy, każdy z odpowiedzią."
+
+#: notifications/message_content.py
+msgid "See absences"
+msgstr "Zobacz nieobecności"
+
+#: notifications/absence_accept.py
+#, python-format
+msgid "Excused from the rehearsal: %(artist)s"
+msgstr "Wysłano zwolnienie z próby: %(artist)s"
+
+#: notifications/absence_accept.py
+#, python-format
+msgid "Excused from the rehearsals: %(artist)s"
+msgstr "Wysłano zwolnienie z prób: %(artist)s"
+
+#: notifications/absence_accept.py
+msgid "Accept"
+msgstr "Przyjmij"
+
+#: notifications/absence_accept.py
+msgid "Accepted"
+msgstr "Przyjęto"
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"%(artist)s is asking to be excused from %(count)d rehearsal. The report is "
+"below; you can accept it on the absence list."
+msgid_plural ""
+"%(artist)s is asking to be excused from %(count)d rehearsals. The reports "
+"are below; you can accept each on the absence list."
+msgstr[0] ""
+"%(artist)s prosi o zwolnienie z %(count)d próby. Zgłoszenie jest poniżej; "
+"przyjmiesz je na liście nieobecności."
+msgstr[1] ""
+"%(artist)s prosi o zwolnienie z %(count)d prób. Zgłoszenia są poniżej; każde"
+" przyjmiesz na liście nieobecności."
+msgstr[2] ""
+"%(artist)s prosi o zwolnienie z %(count)d prób. Zgłoszenia są poniżej; każde"
+" przyjmiesz na liście nieobecności."

@@ -4121,3 +4121,56 @@ msgid ""
 "Only the conductor or the assistant conductor leading this rehearsal may "
 "send its plan."
 msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgctxt "attendance report"
+msgid "Late by about %(minutes)d min"
+msgstr ""
+
+#: notifications/message_content.py
+msgctxt "attendance report"
+msgid "Late"
+msgstr ""
+
+#: notifications/message_content.py
+msgctxt "attendance report"
+msgid "Attending"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "Each evening is listed below with the answer given for it."
+msgstr ""
+
+#: notifications/message_content.py
+msgid "See absences"
+msgstr ""
+
+#: notifications/absence_accept.py
+#, python-format
+msgid "Excused from the rehearsal: %(artist)s"
+msgstr ""
+
+#: notifications/absence_accept.py
+#, python-format
+msgid "Excused from the rehearsals: %(artist)s"
+msgstr ""
+
+#: notifications/absence_accept.py
+msgid "Accept"
+msgstr ""
+
+#: notifications/absence_accept.py
+msgid "Accepted"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"%(artist)s is asking to be excused from %(count)d rehearsal. The report is "
+"below; you can accept it on the absence list."
+msgid_plural ""
+"%(artist)s is asking to be excused from %(count)d rehearsals. The reports "
+"are below; you can accept each on the absence list."
+msgstr[0] ""
+msgstr[1] ""

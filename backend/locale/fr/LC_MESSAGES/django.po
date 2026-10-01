@@ -5552,3 +5552,60 @@ msgid ""
 msgstr ""
 "Seul le chef ou le chef assistant qui dirige cette répétition peut en "
 "envoyer le plan."
+
+#: notifications/message_content.py
+#, python-format
+msgctxt "attendance report"
+msgid "Late by about %(minutes)d min"
+msgstr "Retard d’environ %(minutes)d min"
+
+#: notifications/message_content.py
+msgctxt "attendance report"
+msgid "Late"
+msgstr "Retard"
+
+#: notifications/message_content.py
+msgctxt "attendance report"
+msgid "Attending"
+msgstr "Présence"
+
+#: notifications/message_content.py
+msgid "Each evening is listed below with the answer given for it."
+msgstr "Chaque date figure ci-dessous avec la réponse donnée."
+
+#: notifications/message_content.py
+msgid "See absences"
+msgstr "Voir les absences"
+
+#: notifications/absence_accept.py
+#, python-format
+msgid "Excused from the rehearsal: %(artist)s"
+msgstr "Dispense de répétition envoyée : %(artist)s"
+
+#: notifications/absence_accept.py
+#, python-format
+msgid "Excused from the rehearsals: %(artist)s"
+msgstr "Dispense des répétitions envoyée : %(artist)s"
+
+#: notifications/absence_accept.py
+msgid "Accept"
+msgstr "Accepter"
+
+#: notifications/absence_accept.py
+msgid "Accepted"
+msgstr "Absence acceptée"
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"%(artist)s is asking to be excused from %(count)d rehearsal. The report is "
+"below; you can accept it on the absence list."
+msgid_plural ""
+"%(artist)s is asking to be excused from %(count)d rehearsals. The reports "
+"are below; you can accept each on the absence list."
+msgstr[0] ""
+"%(artist)s demande une absence pour %(count)d répétition. La demande est ci-"
+"dessous ; vous pouvez l’accepter dans la liste des absences."
+msgstr[1] ""
+"%(artist)s demande une absence pour %(count)d répétitions. Les demandes sont"
+" ci-dessous ; vous pouvez accepter chacune dans la liste des absences."

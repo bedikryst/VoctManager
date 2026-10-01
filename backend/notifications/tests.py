@@ -3467,10 +3467,11 @@ class TeamEmailDefaultMigrationTests(TestCase):
 
 @override_settings(ATTENDANCE_PUSH_QUIET_SECONDS=10, ATTENDANCE_PUSH_CEILING_SECONDS=60)
 class PushFoldTests(TestCase):
-    """A singer's burst of reports reaches a manager as one push."""
+    """A singer's burst of reports reaches a manager as one push and one e-mail."""
 
     SCHEDULE = "notifications.push_fold.flush_push_fold_task.apply_async"
     PUSH = "notifications.push_fold.send_push_notification_task.delay"
+    EMAIL = "notifications.push_fold.send_notification_email_task.delay"
     ARTIST = "artist-fold-1"
 
     def setUp(self) -> None:
@@ -3490,6 +3491,9 @@ class PushFoldTests(TestCase):
         days: int,
         ntype: str = NotificationType.ATTENDANCE_SUBMITTED,
         level: str = NotificationLevel.INFO,
+        push: bool = True,
+        email: bool = False,
+        note: str = "",
     ) -> Notification:
         from . import push_fold
 
@@ -3498,26 +3502,30 @@ class PushFoldTests(TestCase):
             recipient=self.manager, notification_type=ntype, level=level,
             metadata={
                 "artist_id": self.ARTIST, "artist_name": "Anna Kowalska",
-                "project_name": "Requiem", "rehearsal_id": rehearsal_id,
-                "status": status, "starts_at": starts.isoformat(),
-                "timezone": "Europe/Warsaw",
+                "project_name": "Requiem", "project_id": "project-1",
+                "rehearsal_id": rehearsal_id, "status": status,
+                "starts_at": starts.isoformat(), "timezone": "Europe/Warsaw",
+                **({"excuse_note": note} if note else {}),
             },
         )
         with patch(self.SCHEDULE) as schedule:
             push_fold.hold(
                 recipient_id=self.recipient, artist_id=self.ARTIST,
-                notification_id=str(row.id),
+                notification_id=str(row.id), push=push, email=email,
             )
         self.assertEqual(schedule.call_args.kwargs["countdown"], 10)
         return row
 
     def _flush(self, stamp: Notification) -> tuple[int, Any]:
+        """Flushes the window; the push mock is returned, the e-mail one kept on
+        `self.email`."""
         from . import push_fold
 
-        with patch(self.PUSH) as push:
+        with patch(self.PUSH) as push, patch(self.EMAIL) as email:
             taken = push_fold.flush(
                 recipient_id=self.recipient, artist_id=self.ARTIST, stamp=str(stamp.id),
             )
+        self.email = email
         return taken, push
 
     def _compose(self, push: Any) -> MessageContent:
@@ -3651,8 +3659,102 @@ class PushFoldTests(TestCase):
         with patch(self.PUSH) as push:
             push_fold.hold(
                 recipient_id=self.recipient, artist_id=self.ARTIST, notification_id=str(row.id),
+                push=True, email=False,
             )
         push.assert_called_once()
+
+    def test_two_urgent_absences_in_one_window_are_one_push_and_one_email(self) -> None:
+        self._report(
+            "r1", "ABSENT", days=1, ntype=NotificationType.ABSENCE_REQUESTED,
+            level=NotificationLevel.WARNING, email=True, note="Chora",
+        )
+        last = self._report(
+            "r2", "ABSENT", days=2, ntype=NotificationType.ABSENCE_REQUESTED,
+            level=NotificationLevel.WARNING, email=True,
+        )
+
+        taken, push = self._flush(last)
+
+        self.assertEqual(taken, 2)
+        push.assert_called_once()
+        self.email.assert_called_once()
+        kwargs = self.email.call_args.kwargs
+        self.assertEqual(kwargs["notification_type"], NotificationType.ABSENCE_REQUESTED)
+        self.assertEqual(kwargs["level"], NotificationLevel.WARNING)
+        self.assertEqual(kwargs["template_name"], "transactional")
+        with translation.override("en"):
+            content = MessageContentBuilder.build(
+                kwargs["notification_type"], kwargs["level"], kwargs["metadata"],
+                is_manager=True,
+            )
+        self.assertEqual(content.subject, "2 absence requests — Anna Kowalska")
+        self.assertIn("excused from 2 rehearsals", content.email_lead)
+        values = [row.value for row in content.details]
+        self.assertIn("Absence request · “Chora”", values)
+        self.assertEqual(content.url_path, "/panel/projects/project-1?absences=1")
+        self.assertEqual(content.cta_label, "See absences")
+
+    def test_one_report_owing_email_is_emailed_as_it_would_have_been_alone(self) -> None:
+        only = self._report(
+            "r1", "ABSENT", days=1, ntype=NotificationType.ABSENCE_REQUESTED,
+            level=NotificationLevel.WARNING, email=True,
+        )
+
+        self._flush(only)
+
+        kwargs = self.email.call_args.kwargs
+        self.assertEqual(kwargs["metadata"], only.metadata)
+        self.assertEqual(kwargs["notification_type"], NotificationType.ABSENCE_REQUESTED)
+
+    def test_reports_waiting_for_the_digest_are_never_emailed_by_the_fold(self) -> None:
+        self._report("r1", "PRESENT", days=3)
+        last = self._report("r2", "LATE", days=5)
+
+        taken, push = self._flush(last)
+
+        self.assertEqual(taken, 2)
+        push.assert_called_once()
+        self.email.assert_not_called()
+
+    def test_an_urgent_absence_beside_digest_reports_emails_only_the_absence(self) -> None:
+        self._report("r1", "PRESENT", days=3)
+        absence = self._report(
+            "r2", "ABSENT", days=1, ntype=NotificationType.ABSENCE_REQUESTED,
+            level=NotificationLevel.WARNING, email=True,
+        )
+        last = self._report("r3", "PRESENT", days=6)
+
+        _taken, push = self._flush(last)
+
+        self.assertEqual(len(push.call_args.kwargs["metadata"]["fold"]), 3)
+        self.assertEqual(self.email.call_args.kwargs["metadata"], absence.metadata)
+
+    def test_with_push_off_the_email_still_folds(self) -> None:
+        self._report("r1", "PRESENT", days=3, push=False, email=True)
+        last = self._report("r2", "PRESENT", days=5, push=False, email=True)
+
+        taken, push = self._flush(last)
+
+        self.assertEqual(taken, 2)
+        push.assert_not_called()
+        self.email.assert_called_once()
+        self.assertEqual(len(self.email.call_args.kwargs["metadata"]["fold"]), 2)
+
+    def test_an_absence_withdrawn_in_the_window_is_not_emailed(self) -> None:
+        # The absence owed an e-mail; the evening's last word is "present", which
+        # the digest carries. Nothing urgent is left to send.
+        self._report(
+            "r1", "ABSENT", days=1, ntype=NotificationType.ABSENCE_REQUESTED,
+            level=NotificationLevel.WARNING, email=True,
+        )
+        last = self._report("r1", "PRESENT", days=1)
+
+        _taken, push = self._flush(last)
+
+        self.email.assert_not_called()
+        self.assertEqual(
+            push.call_args.kwargs["notification_type"], NotificationType.ATTENDANCE_SUBMITTED
+        )
 
 
 class RouterPushFoldTests(TestCase):
@@ -3669,24 +3771,65 @@ class RouterPushFoldTests(TestCase):
         UserProfile.objects.create(user=self.user, role=AppRole.MANAGER)
 
     def _route(
-        self, ntype: str, metadata: dict[str, Any], notification_id: str | None = "n1",
+        self,
+        ntype: str,
+        metadata: dict[str, Any],
+        notification_id: str | None = "n1",
+        level: str = NotificationLevel.INFO,
     ) -> tuple[Any, Any]:
+        """Routes one report; returns the hold and push mocks and keeps the
+        e-mail one on `self.email`."""
         from notifications.router import NotificationRouter
 
-        with patch(self.HOLD) as hold, patch(self.PUSH) as push, patch(self.EMAIL):
+        with patch(self.HOLD) as hold, patch(self.PUSH) as push, patch(self.EMAIL) as email:
             NotificationRouter.route(
                 recipient_id=str(self.user.id), notification_type=ntype,
-                metadata=metadata, level=NotificationLevel.INFO,
+                metadata=metadata, level=level,
                 notification_id=notification_id,
             )
+        self.email = email
         return hold, push
 
     def test_a_singers_report_waits_in_the_fold(self) -> None:
         hold, push = self._route(NotificationType.ATTENDANCE_SUBMITTED, {"artist_id": "a1"})
+        # Digest on by default: the routine report owes the fold its push alone.
         hold.assert_called_once_with(
             recipient_id=str(self.user.id), artist_id="a1", notification_id="n1",
+            push=True, email=False,
         )
         push.assert_not_called()
+        self.email.assert_not_called()
+
+    def test_an_urgent_absence_waits_in_the_fold_with_its_email(self) -> None:
+        hold, push = self._route(
+            NotificationType.ABSENCE_REQUESTED, {"artist_id": "a1"},
+            level=NotificationLevel.WARNING,
+        )
+        self.assertEqual(hold.call_args.kwargs["push"], True)
+        self.assertEqual(hold.call_args.kwargs["email"], True)
+        push.assert_not_called()
+        self.email.assert_not_called()
+
+    def test_with_push_off_the_email_still_waits_in_the_fold(self) -> None:
+        UserProfile.objects.filter(user=self.user).update(digest_enabled=False)
+        NotificationPreference.objects.create(
+            user=self.user, notification_type=NotificationType.ATTENDANCE_SUBMITTED,
+            email_enabled=True, push_enabled=False,
+        )
+        hold, _push = self._route(NotificationType.ATTENDANCE_SUBMITTED, {"artist_id": "a1"})
+        self.assertEqual(hold.call_args.kwargs["push"], False)
+        self.assertEqual(hold.call_args.kwargs["email"], True)
+        self.email.assert_not_called()
+
+    def test_with_both_channels_off_nothing_is_held(self) -> None:
+        NotificationPreference.objects.create(
+            user=self.user, notification_type=NotificationType.ATTENDANCE_SUBMITTED,
+            email_enabled=False, push_enabled=False,
+        )
+        hold, push = self._route(NotificationType.ATTENDANCE_SUBMITTED, {"artist_id": "a1"})
+        hold.assert_not_called()
+        push.assert_not_called()
+        self.email.assert_not_called()
 
     def test_an_absence_span_pushes_on_its_own(self) -> None:
         hold, push = self._route(
@@ -3706,6 +3849,206 @@ class RouterPushFoldTests(TestCase):
         )
         hold.assert_not_called()
         push.assert_called_once()
+
+
+class AbsenceAcceptTests(APITestCase):
+    """"Accept" on an absence request's push: offered for one request only, and
+    honoured by token alone, once."""
+
+    URL = "/api/notifications/absence-accept/"
+    VERDICT = "roster.services.send_notification_task.delay"
+
+    def setUp(self) -> None:
+        from django.core.cache import cache
+
+        from roster.models import (
+            Artist,
+            Attendance,
+            Participation,
+            Project,
+            Rehearsal,
+            VoiceType,
+        )
+
+        cache.clear()
+        self.manager = User.objects.create_user(
+            username="accept-mgr", email="accept-mgr@test.pl", password="pw123456"
+        )
+        self.manager_profile = UserProfile.objects.create(
+            user=self.manager, role=AppRole.MANAGER
+        )
+        singer = User.objects.create_user(
+            username="accept-singer", email="accept-singer@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=singer, role=AppRole.ARTIST)
+        artist = Artist.objects.create(
+            user=singer, first_name="Anna", last_name="Kowalska",
+            email="accept-singer@test.pl", voice_type=VoiceType.SOPRANO,
+        )
+        project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=20),
+            status=Project.Status.ACTIVE,
+        )
+        participation = Participation.objects.create(
+            artist=artist, project=project, status=Participation.Status.CONFIRMED,
+        )
+        self.starts = (timezone.now() + timedelta(days=2)).replace(microsecond=0)
+        rehearsal = Rehearsal.objects.create(project=project, date_time=self.starts)
+        self.row = Attendance.objects.create(
+            rehearsal=rehearsal, participation=participation,
+            status=Attendance.Status.ABSENT, excuse_note="Chora",
+        )
+
+    def _request(self, **overrides: Any) -> dict[str, Any]:
+        return {
+            "artist_id": "artist-1", "artist_name": "Anna Kowalska",
+            "project_id": "project-1", "project_name": "Requiem",
+            "rehearsal_id": "r1", "status": "ABSENT",
+            "starts_at": self.starts.isoformat(), "timezone": "Europe/Warsaw",
+            "attendance_ids": [str(self.row.id)],
+            **overrides,
+        }
+
+    def _offer(
+        self, metadata: dict[str, Any], *, is_manager: bool = True, reader: Any = None,
+    ) -> PushPayload:
+        from .absence_accept import offer
+
+        with translation.override("pl"):
+            payload = MessageContentBuilder.build(
+                NotificationType.ABSENCE_REQUESTED, NotificationLevel.WARNING, metadata,
+                is_manager=is_manager,
+            ).to_push()
+            return offer(
+                payload, recipient_id=str((reader or self.manager).id),
+                notification_type=NotificationType.ABSENCE_REQUESTED,
+                metadata=metadata, is_manager=is_manager,
+            )
+
+    def _token(self, reader: Any = None) -> str:
+        payload = self._offer(self._request(), reader=reader)
+        assert payload.accept is not None
+        return payload.accept.token
+
+    def _post(self, token: str) -> Any:
+        with patch(self.VERDICT) as verdict, self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(self.URL, {"token": token}, format="json")
+        self.verdict = verdict
+        return response
+
+    def test_a_single_request_offers_accept_before_its_list(self) -> None:
+        payload = self._offer(self._request())
+
+        self.assertEqual(
+            [(action.action, action.title) for action in payload.actions],
+            [("accept", "Przyjmij"), ("view", "Zobacz nieobecności")],
+        )
+        assert payload.accept is not None
+        self.assertEqual(payload.accept.title, "Przyjęto")
+        self.assertEqual(payload.accept.body, "Wysłano zwolnienie z próby: Anna Kowalska")
+        self.assertIn("accept", payload.to_dict())
+
+    def test_a_burst_holding_two_absences_keeps_only_its_list(self) -> None:
+        folded = {
+            "artist_id": "artist-1", "artist_name": "Anna Kowalska",
+            "fold": [
+                {**self._request(), "notification_type": NotificationType.ABSENCE_REQUESTED},
+                {
+                    **self._request(rehearsal_id="r2"),
+                    "notification_type": NotificationType.ABSENCE_REQUESTED,
+                },
+            ],
+        }
+        payload = self._offer(folded)
+
+        self.assertIsNone(payload.accept)
+        self.assertEqual([action.action for action in payload.actions], ["view"])
+
+    def test_one_absence_among_attendance_reports_is_offered(self) -> None:
+        folded = {
+            "artist_id": "artist-1", "artist_name": "Anna Kowalska",
+            "fold": [
+                {**self._request(), "notification_type": NotificationType.ABSENCE_REQUESTED},
+                {
+                    **self._request(rehearsal_id="r2", status="PRESENT"),
+                    "notification_type": NotificationType.ATTENDANCE_SUBMITTED,
+                },
+            ],
+        }
+        self.assertIsNotNone(self._offer(folded).accept)
+
+    def test_nothing_is_offered_without_a_decision_to_make(self) -> None:
+        past = (timezone.now() - timedelta(hours=1)).isoformat()
+        self.assertIsNone(self._offer(self._request(status="EXCUSED")).accept)
+        self.assertIsNone(self._offer(self._request(starts_at=past)).accept)
+        self.assertIsNone(self._offer(self._request(attendance_ids=None)).accept)
+        self.assertIsNone(self._offer(self._request(), is_manager=False).accept)
+
+    def test_the_token_excuses_the_absence_and_tells_the_singer_once(self) -> None:
+        from roster.models import Attendance
+
+        token = self._token()
+
+        response = self._post(token)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, {"accepted": 1})
+        self.row.refresh_from_db()
+        self.assertEqual(
+            (self.row.status, self.row.excuse_note), (Attendance.Status.EXCUSED, "Chora")
+        )
+        self.verdict.assert_called_once()
+
+        replay = self._post(token)
+        self.assertEqual(replay.status_code, 200)
+        self.assertEqual(replay.data, {"accepted": 0})
+        self.verdict.assert_not_called()
+
+    def test_a_second_managers_token_after_the_first_is_a_no_op(self) -> None:
+        other = User.objects.create_user(
+            username="accept-mgr-2", email="accept-mgr-2@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=other, role=AppRole.MANAGER)
+
+        self._post(self._token())
+        response = self._post(self._token(other))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, {"accepted": 0})
+        self.verdict.assert_not_called()
+
+    def test_an_altered_token_is_refused(self) -> None:
+        response = self._post(self._token()[:-2] + "xx")
+        self.assertEqual(response.status_code, 403)
+
+    def test_an_expired_token_is_refused(self) -> None:
+        from django.core import signing
+
+        token = signing.dumps(
+            {"m": self.manager.id, "a": [str(self.row.id)], "s": "EXCUSED",
+             "e": int(timezone.now().timestamp()) - 1},
+            salt="notifications.absence-accept", compress=True,
+        )
+        self.assertEqual(self._post(token).status_code, 403)
+
+    def test_a_reader_who_is_no_longer_a_manager_is_refused(self) -> None:
+        token = self._token()
+        self.manager_profile.role = AppRole.ARTIST
+        self.manager_profile.save(update_fields=["role"])
+
+        self.assertEqual(self._post(token).status_code, 403)
+        self.row.refresh_from_db()
+        self.assertEqual(self.row.status, "ABSENT")
+
+    def test_a_withdrawn_absence_sends_the_manager_to_the_list(self) -> None:
+        from roster.models import Attendance
+
+        token = self._token()
+        Attendance.objects.filter(pk=self.row.pk).update(status=Attendance.Status.PRESENT)
+
+        response = self._post(token)
+
+        self.assertEqual(response.status_code, 409)
+        self.verdict.assert_not_called()
 
 
 class DeliveryPreviewTests(APITestCase):
@@ -3794,12 +4137,19 @@ class DeliveryPreviewTests(APITestCase):
             {"now"},
         )
 
-    def test_the_folded_push_is_its_own_example_and_push_only(self) -> None:
+    def test_the_folded_burst_is_its_own_example_on_both_channels(self) -> None:
         self._add_device(self.manager)
         fold = self._example(self._preview(self.manager), NotificationType.ATTENDANCE_SUBMITTED, "fold")
-        self.assertIsNone(fold["email"])
         self.assertEqual(fold["push"]["status"], "now")
         self.assertIn("4", fold["push"]["title"])
+        # Routine reports wait for this manager's digest, folded or not.
+        self.assertEqual(fold["email"]["status"], "digest")
+
+        self.profile.digest_enabled = False
+        self.profile.save(update_fields=["digest_enabled"])
+        fold = self._example(self._preview(self.manager), NotificationType.ATTENDANCE_SUBMITTED, "fold")
+        self.assertEqual(fold["email"]["status"], "now")
+        self.assertIn("4", fold["email"]["subject"])
 
     def test_without_a_device_a_push_first_type_is_e_mailed_instead(self) -> None:
         preview = self._preview(self.artist)

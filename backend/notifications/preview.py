@@ -69,7 +69,7 @@ class PreviewExample(TypedDict):
     # "accepted"/"declined", "soon"/"later", "single"/"fold". Empty otherwise.
     case: str
     push: PushExample
-    # None for the folded push, which is a shape of push alone.
+    # None for a sample that is a shape of push alone (`_Sample.push_only`).
     email: EmailExample | None
 
 
@@ -92,6 +92,8 @@ class _Sample:
     metadata: dict[str, Any]
     level: str = NotificationLevel.INFO
     case: str = ""
+    # A shape only the push takes, with no e-mail of its own to preview. The
+    # folded burst is not one: the fold sends its e-mail as one message too.
     push_only: bool = False
 
 
@@ -345,7 +347,6 @@ def _samples(*, is_manager: bool, zone_name: str) -> dict[str, tuple[_Sample, ..
                     FOLD_ITEMS_KEY: fold_items,
                 },
                 case="fold",
-                push_only=True,
             ),
         ),
         NotificationType.ABSENCE_REQUESTED: (

@@ -463,6 +463,9 @@ class ManagerActionMetadata(EnterpriseBaseDTO):
     ends_at: str = ""
     ends_at_display: str = ""
     rehearsal_count: int | None = None
+    # Absence request: the attendance rows it reports, one per evening, which a
+    # one-tap "Accept" on the push excuses together. Absent on every other signal.
+    attendance_ids: list[str] | None = None
 
 
 class CustomAdminMessageMetadata(EnterpriseBaseDTO):

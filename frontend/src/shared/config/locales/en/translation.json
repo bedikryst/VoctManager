@@ -3952,6 +3952,11 @@
       "attendance_fold_updated_other": "has updated their attendance for {{count}} rehearsals.",
       "attendance_fold_item_late": "late",
       "attendance_fold_item_late_minutes": "about {{minutes}} min late",
+      "attendance_fold_absent_one": "won’t come to {{count}} rehearsal.",
+      "attendance_fold_absent_other": "won’t come to {{count}} rehearsals.",
+      "attendance_fold_others_one": "Will be at {{count}} other rehearsal",
+      "attendance_fold_others_other": "Will be at {{count}} other rehearsals",
+      "attendance_fold_others_late": "late for {{late}} of them",
       "absence_absent": "won’t come to the rehearsal {{when}}.",
       "absence_absent_span_one": "won’t come to {{count}} rehearsal: {{range}}.",
       "absence_absent_span_other": "won’t come to {{count}} rehearsals: {{range}}.",
@@ -5074,6 +5079,9 @@
       },
       "absences_sheet": {
         "empty": "Nobody has reported an absence for an upcoming rehearsal.",
+        "accept": "Accept",
+        "accept_label": "Accept the absence: {{name}}, {{moment}}",
+        "accepted": "Excused from the rehearsal: {{name}}",
         "open_matrix": "Show in the attendance matrix",
         "open_rehearsal": "Open rehearsal: {{moment}}",
         "title": "Absences at upcoming rehearsals"

@@ -1,21 +1,25 @@
 """
 @file push_fold.py
-@description One push per singer's burst of attendance reports. A singer ticking
-             five rehearsals in a row is one piece of news for the conductor, so
-             the push of each report waits in a sliding window per (manager,
+@description One message per singer's burst of attendance reports. A singer
+             ticking five rehearsals in a row is one piece of news for the
+             conductor, so each report waits in a sliding window per (manager,
              singer). The window closes after `ATTENDANCE_PUSH_QUIET_SECONDS`
              without a new report, or `ATTENDANCE_PUSH_CEILING_SECONDS` after it
-             opened, and one push then names everything that arrived in it.
+             opened, and one push and one e-mail then name everything that
+             arrived in it.
 
-             Only push folds. The in-app row stays one per event — the bell is
-             the record — and the router answers e-mail and the digest per event.
+             Push and the e-mail sent now both fold. Each report owes the
+             channels the router planned for it, and the window pays each channel
+             only with the reports that owe it. A report held for the daily
+             digest owes no e-mail here: the digest collects it on its own. The
+             in-app row stays one per event — the bell is the record.
 
              The cache holds three kinds of key per pair, none of them a list to
-             append to: one member key per report, set in one write; the gate,
-             holding when the window opened, which only `cache.add` creates; and
-             the stamp of the latest report. Each report schedules its own flush,
-             and a flush never schedules another: under eager Celery a
-             re-scheduled task runs inline and recurses.
+             append to: one member key per report, set in one write, holding the
+             channels it owes; the gate, holding when the window opened, which
+             only `cache.add` creates; and the stamp of the latest report. Each
+             report schedules its own flush, and a flush never schedules another:
+             under eager Celery a re-scheduled task runs inline and recurses.
 @architecture Enterprise SaaS 2026
 @module notifications/push_fold
 """
@@ -23,12 +27,13 @@ from __future__ import annotations
 
 import time
 from datetime import timedelta
-from typing import Any
+from typing import Any, TypedDict
 
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
+from .email_tasks import send_notification_email_task
 from .message_content import FOLD_ITEMS_KEY, FOLD_TYPES, NOTIFICATION_IDS_KEY, _is_span
 from .models import Notification, NotificationLevel, NotificationType
 from .tasks import flush_push_fold_task, send_push_notification_task
@@ -37,6 +42,9 @@ from .time_metadata import event_start
 # Room past the window's own length for a flush a busy worker picks up late.
 _KEY_MARGIN_SECONDS = 5 * 60
 
+# The e-mail layout of both report types, the router's own default.
+_EMAIL_TEMPLATE = "transactional"
+
 _LEVEL_RANK: dict[str, int] = {
     NotificationLevel.INFO: 0,
     NotificationLevel.WARNING: 1,
@@ -44,11 +52,17 @@ _LEVEL_RANK: dict[str, int] = {
 }
 
 
+class Owed(TypedDict):
+    """The channels one held report is still to be delivered on."""
+    push: bool
+    email: bool
+
+
 def quiet_seconds() -> int:
-    """Long enough for the gap between two reports with a typed excuse: a singer
-    writing "why" for each evening spends most of a minute per row, and a window
-    shorter than that splits one sitting into a push per evening."""
-    return int(getattr(settings, "ATTENDANCE_PUSH_QUIET_SECONDS", 120))
+    """The gap between two reports of one sitting: a singer writing "why" for
+    each evening spends most of a minute per row. A longer wait would hold the
+    news of a single report back for no burst to join."""
+    return int(getattr(settings, "ATTENDANCE_PUSH_QUIET_SECONDS", 60))
 
 
 def ceiling_seconds() -> int:
@@ -85,17 +99,21 @@ def is_foldable(notification_type: str, metadata: dict[str, Any]) -> bool:
     )
 
 
-def hold(*, recipient_id: str, artist_id: str, notification_id: str) -> None:
-    """Put one report's push into its singer's window, and schedule a flush for
-    the moment the window would close if no other report followed it.
+def hold(
+    *, recipient_id: str, artist_id: str, notification_id: str, push: bool, email: bool,
+) -> None:
+    """Put one report into its singer's window, owing the channels named, and
+    schedule a flush for the moment the window would close if no other report
+    followed it.
 
     The notification id doubles as the stamp: it is unique per report, and a
     flush only needs to know whether its report is still the latest one.
     """
     timeout = _key_timeout()
+    owed: Owed = {"push": push, "email": email}
     # The member goes in first, so a flush that runs the instant it is scheduled
     # (eager mode, an idle worker) already finds it.
-    cache.set(_member_key(recipient_id, artist_id, notification_id), True, timeout=timeout)
+    cache.set(_member_key(recipient_id, artist_id, notification_id), owed, timeout=timeout)
     cache.add(_gate_key(recipient_id, artist_id), time.time(), timeout=timeout)
     cache.set(_last_key(recipient_id, artist_id), notification_id, timeout=timeout)
     flush_push_fold_task.apply_async(
@@ -104,15 +122,19 @@ def hold(*, recipient_id: str, artist_id: str, notification_id: str) -> None:
 
 
 def flush(*, recipient_id: str, artist_id: str, stamp: str) -> int:
-    """Close the window if this flush is the one due, and push what it gathered.
+    """Close the window if this flush is the one due, and deliver what it gathered.
 
     Due means no report followed the one that scheduled this flush, or the window
     has stayed open for the ceiling. Otherwise a later flush is on its way and
-    this one returns. Returns how many reports the push carried.
+    this one returns. Returns how many reports the window held.
 
     A report racing the flush is either taken by it — its member key then gone,
     so its own flush finds nothing and returns — or left for a window of its own.
-    Nothing is lost and nothing is pushed twice.
+    Nothing is lost and nothing is delivered twice.
+
+    Each channel carries the latest report per rehearsal, and only where that
+    report owes it. An evening marked absent and then present is not an absence
+    to e-mail about, even though the absence was the report that owed the e-mail.
     """
     gate_key = _gate_key(recipient_id, artist_id)
     opened_at = cache.get(gate_key)
@@ -123,26 +145,55 @@ def flush(*, recipient_id: str, artist_id: str, stamp: str) -> int:
         return 0
 
     # Reopen first: a report from here on starts a window of its own rather than
-    # joining a push that is already being composed.
+    # joining a message that is already being composed.
     cache.delete(gate_key)
 
-    rows = Notification.objects.filter(
-        recipient_id=int(recipient_id),
-        notification_type__in=FOLD_TYPES,
-        metadata__artist_id=artist_id,
-        created_at__gte=timezone.now() - timedelta(seconds=_key_timeout()),
-    ).order_by("created_at")
+    rows = list(
+        Notification.objects.filter(
+            recipient_id=int(recipient_id),
+            notification_type__in=FOLD_TYPES,
+            metadata__artist_id=artist_id,
+            created_at__gte=timezone.now() - timedelta(seconds=_key_timeout()),
+        ).order_by("created_at")
+    )
     # Deleting a member key is the claim: of two flushes reaching one report,
     # only one deletes its key.
-    taken = [
-        row for row in rows
-        if cache.delete(_member_key(recipient_id, artist_id, row.id))
-    ]
-    if not taken:
+    owed: dict[str, Owed] = {}
+    for row in rows:
+        key = _member_key(recipient_id, artist_id, row.id)
+        channels = cache.get(key)
+        if cache.delete(key):
+            owed[str(row.id)] = _owed(channels)
+    if not owed:
         return 0
 
-    _push(recipient_id, artist_id, taken)
-    return len(taken)
+    # Over every row of the singer, not only the claimed ones: a later report
+    # that owes nothing (its e-mail waits for the digest, its push is off) still
+    # says what the evening now is.
+    current = [row for row in _latest_per_rehearsal(rows) if str(row.id) in owed]
+
+    push_items = [row for row in current if owed[str(row.id)]["push"]]
+    if push_items:
+        _push(
+            recipient_id, artist_id, push_items,
+            notification_ids=[
+                str(row.id) for row in rows
+                if str(row.id) in owed and owed[str(row.id)]["push"]
+            ],
+        )
+
+    email_items = [row for row in current if owed[str(row.id)]["email"]]
+    if email_items:
+        _email(recipient_id, artist_id, email_items)
+    return len(owed)
+
+
+def _owed(channels: object) -> Owed:
+    """The channels a member key holds. A bare `True`, as a worker still on the
+    previous release writes it during a deploy, owes push alone."""
+    if isinstance(channels, dict):
+        return {"push": bool(channels.get("push")), "email": bool(channels.get("email"))}
+    return {"push": True, "email": False}
 
 
 def _latest_per_rehearsal(rows: list[Notification]) -> list[Notification]:
@@ -162,29 +213,18 @@ def _latest_per_rehearsal(rows: list[Notification]) -> list[Notification]:
     return sorted(latest.values(), key=starts)
 
 
-def _push(recipient_id: str, artist_id: str, rows: list[Notification]) -> None:
-    """One push for the rows a window gathered.
+def _composed(
+    artist_id: str, items: list[Notification],
+) -> tuple[str, str, dict[str, Any]]:
+    """Type, level and metadata of one message over the items of a window.
 
-    A single report after deduplication is pushed exactly as it would have been
-    alone. Several are composed together, riding on the absence type when any of
-    them is an absence, at the level of the most urgent one.
-
-    No e-mail travels in reserve: the router has already answered e-mail per
-    event, and no team type is push-first.
+    A single item travels exactly as it would have alone. Several are composed
+    together, riding on the absence type when any of them is an absence, at the
+    level of the most urgent one.
     """
-    notification_ids = [str(row.id) for row in rows]
-    items = _latest_per_rehearsal(rows)
-
     if len(items) == 1:
         (row,) = items
-        send_push_notification_task.delay(
-            recipient_id=recipient_id,
-            notification_type=row.notification_type,
-            metadata={**(row.metadata or {}), NOTIFICATION_IDS_KEY: notification_ids},
-            level=row.level,
-            email_fallback=None,
-        )
-        return
+        return row.notification_type, row.level, dict(row.metadata or {})
 
     notification_type = (
         NotificationType.ABSENCE_REQUESTED
@@ -196,18 +236,46 @@ def _push(recipient_id: str, artist_id: str, rows: list[Notification]) -> None:
         (row.metadata["artist_name"] for row in items if (row.metadata or {}).get("artist_name")),
         "",
     )
+    return notification_type, level, {
+        "artist_id": artist_id,
+        "artist_name": artist_name,
+        FOLD_ITEMS_KEY: [
+            {**(row.metadata or {}), "notification_type": row.notification_type}
+            for row in items
+        ],
+    }
+
+
+def _push(
+    recipient_id: str,
+    artist_id: str,
+    items: list[Notification],
+    *,
+    notification_ids: list[str],
+) -> None:
+    """One push for the items a window owes push, naming every in-app row it
+    answers for — superseded reports of the same evening included.
+
+    No e-mail travels in reserve: no team type is push-first, and the window
+    pays the e-mail it owes itself.
+    """
+    notification_type, level, metadata = _composed(artist_id, items)
     send_push_notification_task.delay(
         recipient_id=recipient_id,
         notification_type=notification_type,
-        metadata={
-            "artist_id": artist_id,
-            "artist_name": artist_name,
-            NOTIFICATION_IDS_KEY: notification_ids,
-            FOLD_ITEMS_KEY: [
-                {**(row.metadata or {}), "notification_type": row.notification_type}
-                for row in items
-            ],
-        },
+        metadata={**metadata, NOTIFICATION_IDS_KEY: notification_ids},
         level=level,
         email_fallback=None,
+    )
+
+
+def _email(recipient_id: str, artist_id: str, items: list[Notification]) -> None:
+    """One e-mail for the items a window owes e-mail, composed as the push is."""
+    notification_type, level, metadata = _composed(artist_id, items)
+    send_notification_email_task.delay(
+        recipient_id=recipient_id,
+        notification_type=notification_type,
+        template_name=_EMAIL_TEMPLATE,
+        metadata=metadata,
+        level=level,
     )

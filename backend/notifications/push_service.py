@@ -34,6 +34,7 @@ from pywebpush import WebPushException, webpush
 
 from core.permissions import user_is_manager
 
+from . import absence_accept
 from .dtos import WebPushSubscribeDTO
 from .models import DeviceType, Notification, NotificationLevel, PushDevice
 from .push_payloads import PushPayload, PushPayloadBuilder
@@ -147,6 +148,15 @@ class PushDispatcherService:
             payload = PushPayloadBuilder.build(
                 notification_type=notification_type,
                 level=level,
+                metadata=metadata,
+                is_manager=target.is_manager,
+            )
+            # Minted here rather than by the composer: the token names its
+            # reader, and only the dispatcher knows who that is.
+            payload = absence_accept.offer(
+                payload,
+                recipient_id=target.user_id,
+                notification_type=notification_type,
                 metadata=metadata,
                 is_manager=target.is_manager,
             )

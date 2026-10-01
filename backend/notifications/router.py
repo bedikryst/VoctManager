@@ -102,10 +102,12 @@ class NotificationRouter:
         e-mail in reserve (see ``EmailFallback``): a member no device can reach
         gets the e-mail instead of silence. Only push OFF keeps it in-app only.
 
-        A singer's attendance report is pushed through ``push_fold``, which folds a
-        burst of them into one push. `notification_id` names the in-app row the
-        fold collects; without it the push goes out on its own. Every push carries
-        the id of the row it speaks for (see ``_speaking_for``).
+        A singer's attendance report goes through ``push_fold`` on both channels,
+        which folds a burst of them into one push and one e-mail. It owes the fold
+        only what is planned NOW: an e-mail held for the digest stays the digest's.
+        `notification_id` names the in-app row the fold collects; without it the
+        report goes out on its own. Every push carries the id of the row it speaks
+        for (see ``_speaking_for``).
         """
         # plan_delivery answers NEVER on both channels for these. Returning before
         # the preference read keeps a row from being minted for a type nobody can
@@ -134,7 +136,23 @@ class NotificationRouter:
 
         template_name = _EMAIL_TEMPLATE_MAP.get(notification_type, "transactional")
 
-        if plan.email is EmailOutcome.NOW:
+        email_now = plan.email is EmailOutcome.NOW
+        push_now = plan.push is PushOutcome.NOW
+        if (
+            (email_now or push_now)
+            and notification_id
+            and push_fold.is_foldable(notification_type, metadata)
+        ):
+            push_fold.hold(
+                recipient_id=str(recipient_id),
+                artist_id=str(metadata["artist_id"]),
+                notification_id=str(notification_id),
+                push=push_now,
+                email=email_now,
+            )
+            return
+
+        if email_now:
             send_notification_email_task.delay(
                 recipient_id=str(recipient_id),
                 notification_type=notification_type,
@@ -143,15 +161,7 @@ class NotificationRouter:
                 level=level,
             )
 
-        if plan.push is PushOutcome.NOW:
-            if notification_id and push_fold.is_foldable(notification_type, metadata):
-                push_fold.hold(
-                    recipient_id=str(recipient_id),
-                    artist_id=str(metadata["artist_id"]),
-                    notification_id=str(notification_id),
-                )
-                return
-
+        if push_now:
             email_fallback: EmailFallback | None = (
                 {"template_name": template_name, "metadata": metadata}
                 if needs_email_reserve(notification_type, pref.email_enabled)

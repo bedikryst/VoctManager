@@ -1,9 +1,9 @@
 /**
  * @file notificationFold.test.ts
- * @description Which bell rows fold into one. A singer's reports fold while they
- * stay within half an hour of the newest one, whoever else writes in between; a
- * thread folds whole; an absence never folds, since each one waits for its own
- * decision.
+ * @description Which bell rows fold into one. A singer's reports — attendance
+ * and single-evening absences alike — fold while they stay within half an hour
+ * of the newest one, whoever else writes in between; a span stands alone; a
+ * thread folds whole.
  * @architecture Enterprise SaaS 2026
  * @module features/notifications/lib/notificationFold.test
  */
@@ -30,10 +30,16 @@ const report = (
   minutes: number,
   artistId: string,
   type: "ATTENDANCE_SUBMITTED" | "ABSENCE_REQUESTED" = "ATTENDANCE_SUBMITTED",
+  rehearsalCount?: number,
 ): NotificationDTO => ({
   ...base(id, minutes),
   notification_type: type,
-  metadata: { project_name: "Requiem", artist_name: "Ada Nowak", artist_id: artistId },
+  metadata: {
+    project_name: "Requiem",
+    artist_name: "Ada Nowak",
+    artist_id: artistId,
+    ...(rehearsalCount ? { rehearsal_count: rehearsalCount } : {}),
+  },
 });
 
 const message = (id: string, minutes: number, threadId: string): NotificationDTO => ({
@@ -56,9 +62,30 @@ describe("foldNotifications", () => {
     expect(shape([report("a2", 0, "ada"), report("a1", 31, "ada")])).toEqual([["a2"], ["a1"]]);
   });
 
-  it("never folds an absence", () => {
+  it("folds a singer's single-evening absences into their sitting", () => {
     expect(
-      shape([report("x2", 0, "ada", "ABSENCE_REQUESTED"), report("x1", 1, "ada", "ABSENCE_REQUESTED")]),
+      shape([
+        report("x2", 0, "ada", "ABSENCE_REQUESTED"),
+        report("a1", 1, "ada"),
+        report("x1", 2, "ada", "ABSENCE_REQUESTED"),
+        report("b1", 3, "bo", "ABSENCE_REQUESTED"),
+      ]),
+    ).toEqual([["x2", "a1", "x1"], ["b1"]]);
+  });
+
+  it("keeps an absence span on its own", () => {
+    expect(
+      shape([
+        report("a2", 0, "ada"),
+        report("s1", 1, "ada", "ABSENCE_REQUESTED", 4),
+        report("a1", 2, "ada"),
+      ]),
+    ).toEqual([["a2", "a1"], ["s1"]]);
+  });
+
+  it("starts a new sitting past half an hour, absences included", () => {
+    expect(
+      shape([report("x2", 0, "ada", "ABSENCE_REQUESTED"), report("x1", 31, "ada", "ABSENCE_REQUESTED")]),
     ).toEqual([["x2"], ["x1"]]);
   });
 

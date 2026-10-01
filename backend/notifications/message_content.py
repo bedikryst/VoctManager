@@ -91,6 +91,17 @@ class PushAction:
 
 
 @dataclass(frozen=True)
+class AcceptOffer:
+    """What the `accept` button of a push does without opening a window: POST the
+    token to the URL, then replace the entry with the title and body that say it
+    is done. See absence_accept."""
+    token: str
+    url: str
+    title: str
+    body: str
+
+
+@dataclass(frozen=True)
 class PushPayload:
     """Structured, fully-localized payload consumed by the Service Worker."""
     title: str
@@ -106,6 +117,8 @@ class PushPayload:
     # The recipient's unread count when the push left, for the app-icon badge on
     # platforms that have one. Set by the dispatcher; None leaves the badge alone.
     unread: int | None = None
+    # Set by the dispatcher alongside an `accept` action; minted per recipient.
+    accept: AcceptOffer | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -122,6 +135,18 @@ class PushPayload:
             ],
             **({"notificationIds": list(self.notification_ids)} if self.notification_ids else {}),
             **({"unread": self.unread} if self.unread is not None else {}),
+            **(
+                {
+                    "accept": {
+                        "token": self.accept.token,
+                        "url": self.accept.url,
+                        "title": self.accept.title,
+                        "body": self.accept.body,
+                    }
+                }
+                if self.accept is not None
+                else {}
+            ),
         }
 
 
@@ -302,18 +327,33 @@ def _attendance_report_url(ctx: MessageContext) -> str:
     return f"{base}?rehearsal={rehearsal_id}" if rehearsal_id else base
 
 
+_ABSENCE_LIST_QUERY = "?absences=1"
+
+
 def _absence_request_url(ctx: MessageContext, project_id: object) -> str:
     """Where a singer's absence request lands for a manager.
 
     The project's list of absences on its upcoming rehearsals, which the hub
     opens on `?absences=1`: whether one more absence matters is read against the
-    others on the same evenings, and each evening there opens the workspace in
-    one tap. A reader without the project hub, or a request carrying no project,
-    keeps the evening it names.
+    others on the same evenings, each evening there opens the workspace in one
+    tap, and an absence is accepted there. A reader without the project hub, or
+    a request carrying no project, keeps the evening it names.
     """
     if ctx.is_manager and project_id:
-        return f"/panel/projects/{project_id}?absences=1"
+        return f"/panel/projects/{project_id}{_ABSENCE_LIST_QUERY}"
     return _attendance_report_url(ctx)
+
+
+def _opens_absence_list(url: str) -> bool:
+    return url.endswith(_ABSENCE_LIST_QUERY)
+
+
+def _absences_action(url: str) -> PushAction:
+    """The push button of an absence request: named for the list it opens, or
+    the plain "Open" where the reader lands on an evening instead."""
+    if _opens_absence_list(url):
+        return PushAction(action="view", title=_("See absences"), url=url)
+    return _open_action(url)
 
 
 def _schedule_card_url(ctx: MessageContext) -> str:
@@ -1983,7 +2023,7 @@ def _compose_absence_requested(ctx: MessageContext) -> MessageContent:
         # Per singer as well as per evening: a second singer's request for the
         # same rehearsal must not replace the first one in the tray.
         tag=f"absence-requested:{m.get('rehearsal_id') or ''}:{m.get('artist_id') or artist}",
-        actions=(_open_action(absences_url),),
+        actions=(_absences_action(absences_url),),
         subject=_("Absence request — %(artist)s") % {"artist": artist},
         eyebrow=_("Attendance"),
         email_lead=(
@@ -2123,18 +2163,43 @@ def _compose_attendance_submitted(ctx: MessageContext) -> MessageContent:
     )
 
 
+def _fold_evening_row(item: Mapping[str, Any], *, with_project: bool) -> DetailRow:
+    """One evening of a folded report in the e-mail: its moment as the label, then
+    what the singer said about it and the note they wrote.
+
+    Nouns, not the push's verb phrases: a row stands without the name in front of
+    it, and a Polish noun carries no grammatical gender either.
+    """
+    if item.get("notification_type") == NotificationType.ABSENCE_REQUESTED:
+        status = _("Absence request")
+    elif item.get("status") == "LATE":
+        minutes = item.get("minutes_late")
+        status = (
+            pgettext("attendance report", "Late by about %(minutes)d min")
+            % {"minutes": int(minutes)}
+            if minutes
+            else pgettext("attendance report", "Late")
+        )
+    else:
+        status = pgettext("attendance report", "Attending")
+    project = item.get("project_name") if with_project else ""
+    return _row(
+        display_event_time(item, "rehearsal_date") or _("Rehearsal"),
+        _facts(status, project, _quoted(item.get("excuse_note"))),
+    )
+
+
 def _compose_attendance_fold(ctx: MessageContext) -> MessageContent:
-    """One push for a singer's burst of attendance reports (see push_fold).
+    """One push and one e-mail for a singer's burst of attendance reports (see
+    push_fold).
 
     The items arrive one per rehearsal, each at its latest status, in rehearsal
     order. An absence leads, because it is the one thing in the burst the
-    conductor may have to act on; the reports around it are counted, not listed.
+    conductor may have to act on. The push counts the reports around it; the
+    e-mail lists every evening, since it is read at a desk rather than glanced at.
 
     The Polish copy keeps to the present and future tense ("będzie", "spóźni
     się"): a name does not tell the grammatical gender a past tense would need.
-
-    Push only. The e-mail of these reports goes out per event, or in the digest,
-    so the e-mail fields here fall back to the push lines.
     """
     m = ctx.metadata
     items = [item for item in m.get(FOLD_ITEMS_KEY) or () if isinstance(item, dict)]
@@ -2154,6 +2219,9 @@ def _compose_attendance_fold(ctx: MessageContext) -> MessageContent:
         ) % {"count": late_count}
         if late_count else ""
     )
+    projects = list(dict.fromkeys(
+        str(item["project_name"]) for item in items if item.get("project_name")
+    ))
 
     if absences:
         title = (
@@ -2189,10 +2257,7 @@ def _compose_attendance_fold(ctx: MessageContext) -> MessageContent:
             "%(artist)s will be at %(count)d rehearsals",
             len(attending),
         ) % {"artist": artist, "count": len(attending)}
-        projects = list(dict.fromkeys(
-            str(item["project_name"]) for item in items if item.get("project_name")
-        ))
-        moments = [moment for moment in (event_start(item) for item in items) if moment]
+        moments =[moment for moment in (event_start(item) for item in items) if moment]
         span = short_date_span(moments[0], moments[-1]) if moments else ""
         body = _facts(", ".join(projects), span, late)
 
@@ -2204,6 +2269,29 @@ def _compose_attendance_fold(ctx: MessageContext) -> MessageContent:
         if absences
         else _rehearsals_url(ctx)
     )
+
+    details: list[DetailRow] = [_row(_("Singer"), artist)]
+    if len(projects) == 1:
+        details.append(_row(_("Project"), projects[0]))
+    details.extend(_fold_evening_row(item, with_project=len(projects) > 1) for item in items)
+
+    if absences:
+        subject = title
+        lead = ngettext(
+            "%(artist)s is asking to be excused from %(count)d rehearsal. The"
+            " report is below; you can accept it on the absence list.",
+            "%(artist)s is asking to be excused from %(count)d rehearsals. The"
+            " reports are below; you can accept each on the absence list.",
+            len(absences),
+        ) % {"artist": artist, "count": len(absences)}
+    else:
+        subject = (
+            _("%(headline)s — %(project)s") % {"headline": title, "project": projects[0]}
+            if len(projects) == 1
+            else title
+        )
+        lead = _("Each evening is listed below with the answer given for it.")
+
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
@@ -2213,8 +2301,14 @@ def _compose_attendance_fold(ctx: MessageContext) -> MessageContent:
         # One tray entry per window: a later burst from the same singer is news
         # of its own and must not silently replace this one.
         tag=f"attendance-fold:{m.get('artist_id') or artist}:{ids[0] if ids else ''}",
-        actions=(_open_action(target_url),),
+        actions=(_absences_action(target_url) if absences else _open_action(target_url),),
+        subject=subject,
         eyebrow=_("Attendance"),
+        email_lead=lead,
+        details=tuple(details),
+        cta_label=(
+            _("See absences") if _opens_absence_list(target_url) else _("Open rehearsals")
+        ),
     )
 
 

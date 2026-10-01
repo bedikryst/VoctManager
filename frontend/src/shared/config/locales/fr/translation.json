@@ -3961,6 +3961,11 @@
       "attendance_fold_updated_other": "a mis à jour sa présence à {{count}} répétitions.",
       "attendance_fold_item_late": "en retard",
       "attendance_fold_item_late_minutes": "environ {{minutes}} min de retard",
+      "attendance_fold_absent_one": "ne viendra pas à {{count}} répétition.",
+      "attendance_fold_absent_other": "ne viendra pas à {{count}} répétitions.",
+      "attendance_fold_others_one": "Sera à {{count}} autre répétition",
+      "attendance_fold_others_other": "Sera à {{count}} autres répétitions",
+      "attendance_fold_others_late": "en retard à {{late}} d’entre elles",
       "absence_absent": "ne viendra pas à la répétition {{when}}.",
       "absence_absent_span_one": "ne viendra pas à {{count}} répétition : {{range}}.",
       "absence_absent_span_other": "ne viendra pas à {{count}} répétitions : {{range}}.",
@@ -5083,6 +5088,9 @@
       },
       "absences_sheet": {
         "empty": "Personne n'a signalé d'absence aux prochaines répétitions.",
+        "accept": "Accepter",
+        "accept_label": "Accepter l’absence : {{name}}, {{moment}}",
+        "accepted": "Dispense de répétition envoyée : {{name}}",
         "open_matrix": "Voir dans la matrice de présence",
         "open_rehearsal": "Ouvrir la répétition : {{moment}}",
         "title": "Absences aux prochaines répétitions"

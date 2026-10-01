@@ -8,17 +8,21 @@
  * Grouped by rehearsal, soonest first, because the decision a conductor makes
  * from it is per evening — whether a sectional still stands without two of its
  * tenors. Each absence shows its record (absence or excused absence) and the
- * singer's own note. A rehearsal's header opens that evening in Centrum
- * Obecności. On the Overview the footer opens the project's full attendance
- * matrix, which also holds the past sessions this list leaves out; a caller
- * that passes no `onOpenMatrix` gets no footer — the dashboard banner opens the
- * sheet for one evening, and the matrix is an entry tool, not a reading list.
+ * singer's own note. A reported absence carries one verdict, "Przyjmij", which
+ * excuses the singer and tells them so; an excused one carries none. There is
+ * no refusal: no record says "refused", and a refused excuse is a conversation,
+ * not a status. A rehearsal's header opens that evening in Centrum Obecności.
+ * On the Overview the footer opens the project's full attendance matrix, which
+ * also holds the past sessions this list leaves out; a caller that passes no
+ * `onOpenMatrix` gets no footer — the dashboard banner opens the sheet for one
+ * evening, and the matrix is an entry tool, not a reading list.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/UpcomingAbsencesSheet
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { CalendarCheck, ChevronRight, Grid } from "lucide-react";
 
 import { ATTENDANCE_STATUS_META } from "@/features/rehearsals/constants/attendanceMeta";
@@ -28,6 +32,8 @@ import { BottomSheet } from "@/shared/ui/composites/BottomSheet";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
+import type { Attendance } from "@/shared/types";
+import { useAcceptAbsence } from "../../api/project.attendance.mutations";
 import type { RehearsalAbsences } from "../../lib/upcomingAbsences";
 
 interface UpcomingAbsencesSheetProps {
@@ -60,6 +66,24 @@ export const UpcomingAbsencesSheet = ({
   title,
 }: UpcomingAbsencesSheetProps): React.JSX.Element => {
   const { t } = useTranslation();
+  const acceptAbsence = useAcceptAbsence();
+
+  // The toast names what the tap set off — a message to the singer — because
+  // "Przyjmij" also reads as "noted", which would send nothing.
+  const accept = (projectId: string, attendance: Attendance, name: string) =>
+    acceptAbsence.mutate(
+      { projectId, attendance },
+      {
+        onSuccess: () =>
+          toast.success(
+            t(
+              "projects.overview.absences_sheet.accepted",
+              "Wysłano zwolnienie z próby: {{name}}",
+              { name },
+            ),
+          ),
+      },
+    );
 
   return (
     <BottomSheet
@@ -143,6 +167,9 @@ export const UpcomingAbsencesSheet = ({
                   {absences.map(({ attendance, participation }) => {
                     const meta = ATTENDANCE_STATUS_META[attendance.status];
                     const note = attendance.excuse_note?.trim();
+                    const name =
+                      participation.artist_name?.trim() ||
+                      t("projects.matrix.unknown_member", "Nieznany członek");
                     return (
                       <li key={attendance.id} className="flex items-start gap-3 px-3 py-2.5">
                         <span
@@ -152,8 +179,7 @@ export const UpcomingAbsencesSheet = ({
                         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                           <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                             <Text as="span" size="sm" weight="medium">
-                              {participation.artist_name?.trim() ||
-                                t("projects.matrix.unknown_member", "Nieznany członek")}
+                              {name}
                             </Text>
                             {participation.artist_voice_type_display && (
                               <Caption color="muted">
@@ -170,6 +196,23 @@ export const UpcomingAbsencesSheet = ({
                             </Text>
                           )}
                         </span>
+                        {attendance.status === "ABSENT" && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="shrink-0 self-center"
+                            onClick={() =>
+                              accept(String(rehearsal.project), attendance, name)
+                            }
+                            aria-label={t(
+                              "projects.overview.absences_sheet.accept_label",
+                              "Przyjmij nieobecność: {{name}}, {{moment}}",
+                              { name, moment },
+                            )}
+                          >
+                            {t("projects.overview.absences_sheet.accept", "Przyjmij")}
+                          </Button>
+                        )}
                       </li>
                     );
                   })}
