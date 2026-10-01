@@ -1,6 +1,6 @@
 # outreach/tasks.py
 # ==========================================
-# Outreach — retention sweeps for the concert notice list
+# Outreach — retention sweeps for the notice list and guests' reservations
 # Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
@@ -12,7 +12,9 @@ from django.utils import timezone
 from .models import (
     CONFIRM_TOKEN_TTL,
     EVIDENCE_RETENTION,
+    RESERVATION_RETENTION,
     ConcertNoticeSubscription,
+    ConcertReservation,
     NoticeStatus,
 )
 
@@ -109,3 +111,18 @@ def purge_notice_records() -> dict[str, int]:
             unconfirmed_purged, evidence_purged,
         )
     return {'unconfirmed': unconfirmed_purged, 'evidence': evidence_purged}
+
+
+@shared_task(name='outreach.purge_reservations')
+def purge_reservations() -> int:
+    """
+    Removes every guest list whose concert ended more than `RESERVATION_RETENTION` ago — the
+    period the /rsvp form promises beside its fields. It reads the start time stored on each
+    row, so a concert that has since left `RESERVABLE_CONCERTS` is swept all the same.
+    """
+    deleted, _ = ConcertReservation.objects.filter(
+        concert_starts_at__lt=timezone.now() - RESERVATION_RETENTION,
+    ).delete()
+    if deleted:
+        logger.info("Reservation purge: %d guest reply(ies) past retention.", deleted)
+    return deleted

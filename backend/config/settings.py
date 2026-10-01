@@ -248,6 +248,10 @@ REST_FRAMEWORK = {
         # Following a link from one's own mailbox. Loose enough for a reader who
         # clicks, goes back, and clicks again.
         'notice_manage': '60/hour',
+        # A guest's reply on /rsvp writes one row and mails nobody, so the abuse surface
+        # is the guest list itself. A household answering for several invitations from
+        # one connection stays far under it.
+        'concert_reservation': '30/hour',
         # "Accept" on an absence request's push. Anonymous to DRF (the signed
         # token is the authority), so per IP — and a manager may be on the
         # venue's Wi-Fi with the whole choir. Only managers ever hold a token.
@@ -381,6 +385,12 @@ CELERY_BEAT_SCHEDULE = {
     'outreach-purge-notice-records': {
         'task': 'outreach.purge_notice_records',
         'schedule': crontab(hour=3, minute=0),
+    },
+    # Daily: a guest list outlives its concert by a month and no longer (the /rsvp
+    # form says so beside its fields).
+    'outreach-purge-reservations': {
+        'task': 'outreach.purge_reservations',
+        'schedule': crontab(hour=3, minute=10),
     },
     # Daily: the 30-day window is what keeps the scratchpad's done section a
     # short-term undo rather than an archive that grows without bound.

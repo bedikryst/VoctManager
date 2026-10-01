@@ -11,10 +11,12 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from .reservations import ReservationService, ReserveOutcome
 from .serializers import (
     NoticePreferencesSerializer,
     NoticeSubscribeSerializer,
     NoticeTokenSerializer,
+    ReservationSerializer,
 )
 from .services import NoticeListService, unsubscribe_page_url
 
@@ -126,6 +128,30 @@ class NoticePreferencesView(_PublicOutreachView):
             serializer.validated_data['name'],
         )
         return Response({'status': outcome.value.lower(), 'name': name})
+
+
+class ReservationView(_PublicOutreachView):
+    """
+    Takes a guest's reply from /rsvp.
+
+    201 FOR EVERY REPLY ACCEPTED, with nothing in the body that says whether the name had
+    written before — the form must not answer "is this person coming?". 410 once the concert
+    has begun: the reply is well formed, there is just no seat left to hold, and the page has
+    a sentence for exactly that.
+    """
+    throttle_scope = 'concert_reservation'
+
+    def post(self, request: Request) -> Response:
+        serializer = ReservationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        outcome = ReservationService.reserve(
+            concert=serializer.validated_data['concert'],
+            full_name=serializer.validated_data['full_name'],
+            seats=serializer.validated_data['seats'],
+        )
+        if outcome is ReserveOutcome.CLOSED:
+            return Response({'status': 'closed'}, status=status.HTTP_410_GONE)
+        return Response({'status': 'received'}, status=status.HTTP_201_CREATED)
 
 
 class NoticeOneClickUnsubscribeView(_PublicOutreachView):

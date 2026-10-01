@@ -6,9 +6,19 @@
 from typing import Any
 
 from django.contrib import admin
-from django.http import HttpRequest
+from django.db.models import QuerySet
+from django.http import HttpRequest, HttpResponse
+from django.utils import timezone
+from django.utils.translation import gettext, pgettext_lazy
+from django.utils.translation import gettext_lazy as _
 
-from .models import ConcertNoticeSubscription, NoticeConsentEvent, NoticeStatus
+from .models import (
+    ConcertNoticeSubscription,
+    ConcertReservation,
+    NoticeConsentEvent,
+    NoticeStatus,
+)
+from .reservations import WARSAW, ReservationService
 
 
 class NoticeConsentEventInline(admin.TabularInline):
@@ -86,3 +96,61 @@ class ConcertNoticeSubscriptionAdmin(admin.ModelAdmin):
         if obj is None:
             return True
         return bool(obj.status != NoticeStatus.UNSUBSCRIBED)
+
+
+@admin.register(ConcertReservation)
+class ConcertReservationAdmin(admin.ModelAdmin):
+    """
+    The guest list as the office reads it: alphabetical, with the evening's totals in the
+    heading, counted over whatever the filters and search currently show.
+
+    A guest who replied twice appears twice, and only the newer row counts — the older one is
+    marked so that nobody adds it up by hand. Correcting a name or a seat count here is fine
+    (a guest who rang the office: 0 seats turns a reservation into a decline); there is no add
+    form, because a reply that arrives by phone or mail goes through /rsvp like any other and so
+    lands under the same rules.
+
+    THE MOMENT A REPLY ARRIVED IS SHOWN IN WARSAW TIME. The project runs on `TIME_ZONE = 'UTC'`
+    and nothing activates a local zone for the admin, so the stock `created_at` column would read
+    two hours early in October.
+    """
+    list_display = ('full_name', 'reply', 'seats', 'is_current', 'received_at')
+    list_filter = ('concert',)
+    search_fields = ('full_name',)
+    fields = ('concert', 'full_name', 'seats', 'received_at')
+    readonly_fields = ('concert', 'received_at')
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[ConcertReservation]:
+        return ReservationService.with_superseded(super().get_queryset(request))
+
+    @admin.display(description=pgettext_lazy("guest list", "Reply"), ordering='seats')
+    def reply(self, obj: ConcertReservation) -> str:
+        return gettext("Coming") if obj.seats else gettext("Not coming")
+
+    @admin.display(boolean=True, description=_("Current reply"), ordering='superseded')
+    def is_current(self, obj: ConcertReservation) -> bool:
+        return not getattr(obj, 'superseded', False)
+
+    @admin.display(description=_("Received at"), ordering='created_at')
+    def received_at(self, obj: ConcertReservation) -> str:
+        return f"{timezone.localtime(obj.created_at, WARSAW):%Y-%m-%d %H:%M:%S}"
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def changelist_view(
+        self, request: HttpRequest, extra_context: dict[str, Any] | None = None,
+    ) -> HttpResponse:
+        response = super().changelist_view(request, extra_context)
+        # A redirect (an action, a bad filter) carries no context, and there is nothing to total.
+        context = getattr(response, 'context_data', None)
+        if context is not None and 'cl' in context:
+            totals = ReservationService.totals(context['cl'].queryset)
+            context['title'] = gettext(
+                "Coming: %(coming)s · seats: %(seats)s · not coming: %(declined)s"
+            ) % {
+                'coming': totals.coming,
+                'seats': totals.seats,
+                'declined': totals.declined,
+            }
+        return response

@@ -5582,6 +5582,52 @@ msgstr ""
 "%(artist)s prosi o zwolnienie z próby. Zgłoszenie jest poniżej; przyjmiesz "
 "je na liście nieobecności."
 
+#: outreach/models.py:295
+msgid "Full name"
+msgstr "Imię i nazwisko"
+
+#: outreach/models.py:297
+msgid "Seats"
+msgstr "Liczba miejsc"
+
+#: outreach/models.py:301
+msgid "Received at"
+msgstr "Otrzymano"
+
+#: outreach/models.py:306
+msgid "Concert reservation"
+msgstr "Rezerwacja miejsc"
+
+#: outreach/models.py:307
+msgid "Concert reservations"
+msgstr "Rezerwacje miejsc (RSVP)"
+
+#: outreach/admin.py:120
+msgid "Current reply"
+msgstr "Aktualna"
+
+#: outreach/admin.py
+msgid "Coming"
+msgstr "Przyjdzie"
+
+#: outreach/admin.py
+msgid "Not coming"
+msgstr "Nie przyjdzie"
+
+#: outreach/models.py
+msgid "0 means the guest will not come."
+msgstr "0 oznacza, że gość nie przyjdzie."
+
+#: outreach/admin.py
+#, python-format
+msgid "Coming: %(coming)s · seats: %(seats)s · not coming: %(declined)s"
+msgstr "Przyjdą: %(coming)s · miejsca: %(seats)s · nie przyjdą: %(declined)s"
+
+#: outreach/admin.py
+msgctxt "guest list"
+msgid "Reply"
+msgstr "Odpowiedź"
+
 #~ msgid "Review the request"
 #~ msgstr "Rozpatrz prośbę"
 

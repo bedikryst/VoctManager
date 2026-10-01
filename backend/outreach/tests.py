@@ -3,10 +3,11 @@
 # Outreach — concert notice list, endpoint + state-machine tests
 # Standard: Enterprise SaaS 2026
 # ==========================================
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
@@ -20,14 +21,22 @@ from .consent import NOTICE_CLAUSE_VERSION
 from .models import (
     CONFIRM_TOKEN_TTL,
     EVIDENCE_RETENTION,
+    RESERVATION_RETENTION,
     ConcertNoticeSubscription,
+    ConcertReservation,
     NoticeConsentEvent,
     NoticeConsentEventKind,
     NoticeStatus,
 )
+from .reservations import (
+    MAX_SEATS_PER_REPLY,
+    RESERVABLE_CONCERTS,
+    GuestListTotals,
+    ReservationService,
+)
 from .serializers import NOTICE_SURFACES
 from .services import ConfirmOutcome, NoticeListService, SubscribeOutcome
-from .tasks import purge_notice_records
+from .tasks import purge_notice_records, purge_reservations
 
 
 @override_settings(PUBLIC_SITE_URL='https://voctensemble.com')
@@ -770,3 +779,126 @@ class NoticePreferencesTests(NoticeListTestCase):
             format='json',
         )
         self.assertEqual(resp.data['name'], 'Anna')
+
+
+class ReservationTests(APITestCase):
+    """The /rsvp reply: one row per answer, the newest per name counting, closed at the downbeat."""
+
+    url = reverse('outreach:reservation-create')
+    concert = 'pochwala-stworzenia'
+
+    def setUp(self):
+        cache.clear()
+        self.starts_at = RESERVABLE_CONCERTS[self.concert].starts_at
+
+    def _reply(self, at: timedelta, **payload):
+        """Posts a reply `at` before the concert begins (negative: after it)."""
+        body = {'concert': self.concert, 'full_name': 'Anna Kowalska', 'seats': 2, **payload}
+        with patch('django.utils.timezone.now', return_value=self.starts_at - at):
+            return self.client.post(self.url, body, format='json')
+
+    def test_a_reply_is_recorded_and_answered_without_detail(self):
+        resp = self._reply(timedelta(days=5))
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(resp.data, {'status': 'received'})
+        row = ConcertReservation.objects.get()
+        self.assertEqual((row.full_name, row.seats, row.name_key), ('Anna Kowalska', 2, 'anna kowalska'))
+        self.assertEqual(row.concert_starts_at, self.starts_at)
+
+    def test_a_second_reply_under_one_name_reads_the_same_and_replaces_the_first(self):
+        """The form must not tell "new" from "again", and the guest list must not count both."""
+        first = self._reply(timedelta(days=5))
+        second = self._reply(timedelta(days=4), full_name='  anna   KOWALSKA ', seats=3)
+        self.assertEqual(first.data, second.data)
+        self.assertEqual(ConcertReservation.objects.count(), 2)
+        self.assertEqual(
+            ReservationService.totals(ConcertReservation.objects.all()),
+            GuestListTotals(coming=1, seats=3, declined=0),
+        )
+
+    def test_two_guests_are_both_counted(self):
+        self._reply(timedelta(days=5))
+        self._reply(timedelta(days=4), full_name='Jan Nowak', seats=1)
+        self.assertEqual(
+            ReservationService.totals(ConcertReservation.objects.all()),
+            GuestListTotals(coming=2, seats=3, declined=0),
+        )
+
+    def test_a_decline_is_a_reply_with_no_seats_and_answers_alike(self):
+        accepted = self._reply(timedelta(days=5), full_name='Jan Nowak')
+        declined = self._reply(timedelta(days=5), seats=0)
+        self.assertEqual(declined.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(accepted.data, declined.data)
+        self.assertEqual(
+            ReservationService.totals(ConcertReservation.objects.all()),
+            GuestListTotals(coming=1, seats=2, declined=1),
+        )
+
+    def test_a_guest_who_declined_can_change_their_mind_and_back(self):
+        self._reply(timedelta(days=5), seats=0)
+        self._reply(timedelta(days=4), seats=2)
+        self.assertEqual(
+            ReservationService.totals(ConcertReservation.objects.all()),
+            GuestListTotals(coming=1, seats=2, declined=0),
+        )
+        self._reply(timedelta(days=3), seats=0)
+        self.assertEqual(
+            ReservationService.totals(ConcertReservation.objects.all()),
+            GuestListTotals(coming=0, seats=0, declined=1),
+        )
+
+    def test_the_form_closes_when_the_concert_begins(self):
+        resp = self._reply(timedelta(0))
+        self.assertEqual(resp.status_code, status.HTTP_410_GONE)
+        self.assertEqual(resp.data, {'status': 'closed'})
+        self.assertFalse(ConcertReservation.objects.exists())
+
+    def test_seats_outside_the_bounds_are_refused(self):
+        for seats in (-1, MAX_SEATS_PER_REPLY + 1):
+            with self.subTest(seats=seats):
+                resp = self._reply(timedelta(days=5), seats=seats)
+                self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(ConcertReservation.objects.exists())
+
+    def test_a_blank_name_and_an_unknown_concert_are_refused(self):
+        for payload in ({'full_name': '   '}, {'concert': 'wcielenie'}):
+            with self.subTest(**payload):
+                resp = self._reply(timedelta(days=5), **payload)
+                self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(ConcertReservation.objects.exists())
+
+    def test_purge_takes_a_guest_list_a_month_after_its_concert(self):
+        self._reply(timedelta(days=5))
+        ConcertReservation.objects.create(
+            concert='wcielenie', full_name='Old Guest', seats=1,
+            concert_starts_at=self.starts_at - RESERVATION_RETENTION - timedelta(days=1),
+        )
+        with patch('django.utils.timezone.now', return_value=self.starts_at + timedelta(days=1)):
+            self.assertEqual(purge_reservations(), 1)
+        self.assertEqual(ConcertReservation.objects.get().full_name, 'Anna Kowalska')
+        with patch(
+            'django.utils.timezone.now',
+            return_value=self.starts_at + RESERVATION_RETENTION + timedelta(minutes=1),
+        ):
+            self.assertEqual(purge_reservations(), 1)
+        self.assertFalse(ConcertReservation.objects.exists())
+
+    def test_the_admin_list_opens_with_its_totals_and_warsaw_time(self):
+        received = datetime(2026, 10, 5, 18, 22, tzinfo=UTC)
+        with patch('django.utils.timezone.now', return_value=received):
+            self.client.post(
+                self.url,
+                {'concert': self.concert, 'full_name': 'Anna Kowalska', 'seats': 2},
+                format='json',
+            )
+        admin_user = get_user_model().objects.create_superuser(
+            username='office', email='office@example.com', password='x-secret-x',
+        )
+        self.client.force_login(admin_user)
+        resp = self.client.get(
+            reverse('admin:outreach_concertreservation_changelist'), HTTP_ACCEPT_LANGUAGE='pl',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.context['title'], 'Przyjdą: 1 · miejsca: 2 · nie przyjdą: 0')
+        # 18:22 UTC is 20:22 in Warsaw in October (CEST).
+        self.assertContains(resp, '2026-10-05 20:22:00')

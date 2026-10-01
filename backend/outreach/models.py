@@ -1,11 +1,12 @@
 # outreach/models.py
 # ==========================================
-# Outreach — people who are NOT members and asked to hear from us
+# Outreach — people who are NOT members: the notice list, and guests' reservations
 # Standard: Enterprise SaaS 2026
 # ==========================================
 import secrets
 import uuid
 from datetime import timedelta
+from typing import Any
 
 from django.db import models
 from django.utils import timezone
@@ -250,3 +251,74 @@ class NoticeConsentEvent(models.Model):
 
     def __str__(self) -> str:
         return f"{self.kind} @ {self.at:%Y-%m-%d %H:%M}"
+
+
+# How long a guest's reservation outlives the concert it was for. The purpose ends when the
+# doors close; the month after it is room for the office to answer a question about the
+# evening, and it is the figure the form's own clause promises (`web/src/i18n/content/rsvp.ts`),
+# so the two move together.
+RESERVATION_RETENTION = timedelta(days=30)
+
+
+def reservation_name_key(full_name: str) -> str:
+    """
+    The form of a name two replies are compared by: case-folded, whitespace collapsed. It is
+    what makes "Anna  Kowalska" and "anna kowalska" one guest writing twice rather than two
+    guests, and nothing more clever than that — diacritics stay, because "Łukasz" and "Lukasz"
+    may well be two people.
+    """
+    return ' '.join(full_name.casefold().split())[:255]
+
+
+class ConcertReservation(models.Model):
+    """
+    A guest's answer to a printed invitation: a name and how many seats to hold.
+
+    A DECLINE IS THE SAME ANSWER WITH NO SEATS. "I can't come" answers the question the
+    invitation asked, so it is a row here with `seats == 0` rather than a model of its own —
+    which is what lets a guest who declined and then found the evening free (or the reverse)
+    simply answer again under the newest-reply rule below. Zero seats rather than a separate
+    flag so the office corrects a phoned-in change in one field, and nothing can say "not
+    coming" and "three seats" at once.
+
+    APPEND-ONLY, AND THE NEWEST ANSWER PER NAME IS THE ONE THAT COUNTS. A guest who writes
+    again — one more person after all, or a second tap — leaves the earlier row standing, and
+    the register reads the latest (`ConcertReservationAdmin`). The two alternatives were each
+    worse on a public form: overwriting would let anyone who knows a guest's name change that
+    guest's reservation, and answering "updated" rather than "received" would let the form say
+    who is coming. The endpoint answers every accepted reply the same way.
+
+    No address and no phone, on purpose. The invitation is named and the office sent it, so it
+    already knows how to reach every guest; the reservation needs nothing it would then have to
+    guard. A plain model rather than `EnterpriseBaseModel` for the reason the consent log above
+    gives: a soft-deleted guest list is a guest list still held, and the retention sweep has to
+    actually remove it.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    #: The corpus id of the evening (`web/src/content/concerts.yaml`), validated against
+    #: `outreach.reservations.RESERVABLE_CONCERTS` at the door rather than by `choices`, so a
+    #: concert entering or leaving that registry is not a migration.
+    concert = models.CharField(max_length=64, db_index=True, verbose_name=_("Concert"))
+    full_name = models.CharField(max_length=120, verbose_name=_("Full name"))
+    name_key = models.CharField(max_length=255, editable=False)
+    seats = models.PositiveSmallIntegerField(
+        verbose_name=_("Seats"),
+        help_text=_("0 means the guest will not come."),
+    )
+    #: Copied from the registry when the row is written, so the retention sweep can read it
+    #: off the row long after the concert has left the registry.
+    concert_starts_at = models.DateTimeField(editable=False)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name=_("Received at"))
+
+    class Meta:
+        # Alphabetical, because the list is read at the door with a name in front of it.
+        ordering = ['name_key', '-created_at']
+        verbose_name = _('Concert reservation')
+        verbose_name_plural = _('Concert reservations')
+
+    def __str__(self) -> str:
+        return f"{self.full_name} ({self.seats})"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.name_key = reservation_name_key(self.full_name)
+        super().save(*args, **kwargs)

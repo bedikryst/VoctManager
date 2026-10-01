@@ -4184,6 +4184,52 @@ msgid ""
 "you can accept it on the absence list."
 msgstr ""
 
+#: outreach/models.py:295
+msgid "Full name"
+msgstr ""
+
+#: outreach/models.py:297
+msgid "Seats"
+msgstr ""
+
+#: outreach/models.py:301
+msgid "Received at"
+msgstr ""
+
+#: outreach/models.py:306
+msgid "Concert reservation"
+msgstr ""
+
+#: outreach/models.py:307
+msgid "Concert reservations"
+msgstr ""
+
+#: outreach/admin.py:120
+msgid "Current reply"
+msgstr ""
+
+#: outreach/admin.py
+msgid "Coming"
+msgstr ""
+
+#: outreach/admin.py
+msgid "Not coming"
+msgstr ""
+
+#: outreach/models.py
+msgid "0 means the guest will not come."
+msgstr ""
+
+#: outreach/admin.py
+#, python-format
+msgid "Coming: %(coming)s · seats: %(seats)s · not coming: %(declined)s"
+msgstr ""
+
+#: outreach/admin.py
+msgctxt "guest list"
+msgid "Reply"
+msgstr ""
+
 #~ msgid ""
 #~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 #~ "below — approve or decline them in the panel."

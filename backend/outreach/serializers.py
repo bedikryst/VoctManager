@@ -6,6 +6,7 @@
 from rest_framework import serializers
 
 from .models import NoticeLocale
+from .reservations import MAX_SEATS_PER_REPLY, RESERVABLE_CONCERTS
 
 #: Surfaces a sign-up may claim to come from. An allowlist rather than free text: the
 #: endpoint is public, the value is written straight into the record, and a record of
@@ -81,6 +82,17 @@ class NoticePreferencesSerializer(serializers.Serializer):
     """
     token = serializers.CharField(max_length=64, trim_whitespace=True)
     name = serializers.CharField(max_length=80, allow_blank=True, trim_whitespace=True)
+
+
+class ReservationSerializer(serializers.Serializer):
+    """
+    A guest's reply on /rsvp; `seats == 0` is "I can't come" (see `ConcertReservation`). Nothing
+    here carries its own message: every refusal is one of DRF's stock (and translated) ones, and
+    the page words its own refusals anyway — it validates the same bounds before it sends.
+    """
+    concert = serializers.ChoiceField(choices=sorted(RESERVABLE_CONCERTS))
+    full_name = serializers.CharField(min_length=2, max_length=120, trim_whitespace=True)
+    seats = serializers.IntegerField(min_value=0, max_value=MAX_SEATS_PER_REPLY)
 
 
 class NoticeTokenSerializer(serializers.Serializer):

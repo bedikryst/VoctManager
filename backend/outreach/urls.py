@@ -11,6 +11,7 @@ from .views import (
     NoticePreferencesView,
     NoticeSubscribeView,
     NoticeUnsubscribeView,
+    ReservationView,
 )
 
 app_name = 'outreach'
@@ -28,4 +29,5 @@ urlpatterns = [
         NoticeOneClickUnsubscribeView.as_view(),
         name='notice-unsubscribe-one-click',
     ),
+    path('reservations/', ReservationView.as_view(), name='reservation-create'),
 ]
