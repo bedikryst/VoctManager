@@ -415,6 +415,14 @@ button { font: inherit; }
    order there. Scope anything added here the same way. */
 html:not(.voct-motion) .reveal { opacity: 1; }
 
+/* A copy control is a script's (scripts/copy-fields) and does nothing without one; with scripts
+   off the value beside it is still selectable, so the dead button goes. A media query and not a
+   `<noscript>` in BaseLayout's head: the Astro compiler closes `</head>` at that element and
+   spills everything after it — the head slot, the breadcrumb JSON-LD — into the body as text. */
+@media (scripting: none) {
+  [data-copy] { display: none !important; }
+}
+
 /* Page-transition choreography lives entirely in transitions.css now. The former blur/drift
    block here was dead code — transitions.css is imported after base.css and overrode every one
    of its ::view-transition rules — so it was removed to keep a single source of truth. */
