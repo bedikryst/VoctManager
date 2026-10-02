@@ -42,8 +42,8 @@
 
 # The version this document is at, and the day it started to apply. Both are read by the line under
 # the title and by the newest entry of the history at the foot.
-version: "1.6"
-effectiveFrom: "2026-10-01"
+version: "1.7"
+effectiveFrom: "2026-10-02"
 
 meta:
   # Read in a browser tab and by a crawler, never on the page. The document is `noindex,follow` —
@@ -226,6 +226,31 @@ s3:
       — osobną wiadomością, z możliwością wypisania się przed przekazaniem. Bez takiej
       informacji i bez możliwości sprzeciwu przekazanie nie nastąpi.
 
+  reservations:
+    # The reply form printed invitations link to (/rsvp). The short clause the form itself shows is
+    # `privacyHtml` in `i18n/content/rsvp.ts`; this is the full account of the same processing, and
+    # the two may read differently but never say different things. The page's address is left out
+    # on purpose: the form lives for one concert at a time and comes down after it.
+    #
+    # THE PARAGRAPH IS WRITTEN AGAINST THE CODE, sentence by sentence: the row holds a name, a seat
+    # count (zero for a decline), the concert and the moment it arrived — no address, no phone, no
+    # IP (`backend/outreach/models.py`, `ConcertReservation`). A second reply under the same name
+    # adds a row rather than overwriting one, which is why the earlier answers are disclosed. No
+    # mail is sent about a reply. If the guest list is ever handed to anyone outside the Foundation
+    # — the venue, a festival's organiser — they are a recipient, and § 5 must name them.
+    title: "Potwierdzenie obecności na koncercie"
+    p1Html: >-
+      Jeśli odpowiadasz na imienne zaproszenie na koncert przez formularz potwierdzenia obecności
+      na naszej stronie, przetwarzamy podane przez Ciebie <strong>imię i nazwisko oraz
+      odpowiedź</strong>: liczbę miejsc do zarezerwowania albo informację, że nie przyjdziesz,
+      a także datę i godzinę jej wysłania. Nie prosimy o adres e-mail ani numer telefonu, nie
+      pytamy o nazwiska osób towarzyszących i nie zapisujemy przy odpowiedzi adresu IP. Jeśli
+      odpowiesz ponownie, liczy się najnowsza odpowiedź; wcześniejsze przechowujemy razem z nią
+      do czasu usunięcia całej listy gości. Odpowiedź nie zapisuje Cię na opisaną wyżej listę
+      zaproszeń na koncerty. Dane przechowujemy na naszych serwerach w Unii Europejskiej
+      i korzystamy z nich wyłącznie po to, by przygotować miejsca i przyjąć gości na koncercie;
+      nie wysyłamy ich w żadnej wiadomości e-mail.
+
   email:
     title: "Korespondencja e-mail"
     p1: >-
@@ -246,10 +271,11 @@ s3:
 s4:
   title: "Cele i podstawy prawne"
   p1: "Twoje dane przetwarzamy w następujących celach i na następujących podstawach prawnych RODO:"
-  # Six purposes, each opening with the purpose in bold and closing with the article that licenses
-  # it. Every `art. 6 ust. 1 lit. …` is an address inside the GDPR: name the regulation in the
+  # Each purpose opens with the purpose in bold and closes with the article that licenses it.
+  # Every `art. 6 ust. 1 lit. …` is an address inside the GDPR: name the regulation in the
   # reader's language, never renumber the citation, and never change which letter a purpose rests
-  # on — the letter IS the legal basis.
+  # on — the letter IS the legal basis. `reservations` rests on lit. f because the /rsvp form's own
+  # clause says so; moving it to another letter moves that clause with it.
   items:
     - id: hosting
       textHtml: >-
@@ -279,6 +305,11 @@ s4:
         wiadomości albo pisząc na <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>;
         wycofanie nie wpływa na zgodność z prawem przetwarzania, którego dokonano przed
         wycofaniem.
+    - id: reservations
+      textHtml: >-
+        <strong>Przygotowanie miejsc dla gości zaproszonych na koncert</strong> — art. 6 ust. 1
+        lit. f RODO, prawnie uzasadniony interes Fundacji w przygotowaniu miejsc i przyjęciu
+        gości, których zaprosiła na koncert.
     - id: claims
       textHtml: >-
         <strong>Ustalenie, dochodzenie lub obrona roszczeń</strong> — art. 6 ust. 1 lit. f RODO,
@@ -373,12 +404,13 @@ s6:
 
 s7:
   title: "Czas przechowywania"
-  # Seven periods. Every number is a duration somebody may one day be held to — 12 months, 5 years,
-  # 3 years, 24 months, 7 days, 3 hours — and `art. 74 ustawy o rachunkowości` is an address inside
+  # Every number is a duration somebody may one day be held to — 12 months, 5 years, 3 years,
+  # 24 months, 7 days, 30 days, 3 hours — and `art. 74 ustawy o rachunkowości` is an address inside
   # the Polish Accounting Act. Name the act in the reader's language; leave the article and the
-  # periods alone. Four of them are enforced by a Celery task rather than by hand, and those four
-  # (`attempts`, `patronage`, and both halves of `notices`) may not be edited here alone: the
-  # figures are duplicated in `payments/tasks.py`, `outreach/models.py` and RoPA § 10/§ 11.
+  # periods alone. The periods a Celery task enforces rather than a person (`attempts`,
+  # `patronage`, both halves of `notices`, and `reservations`) may not be edited here alone: the
+  # figures are duplicated in `payments/tasks.py`, `outreach/models.py`, the /rsvp form's clause
+  # (`i18n/content/rsvp.ts`) and, for all but `reservations`, RoPA § 10/§ 11.
   items:
     - id: logs
       textHtml: >-
@@ -421,6 +453,15 @@ s7:
         linku, czyli po 7 dniach. Po wypisaniu się nie wysyłamy już nic, a zachowujemy wyłącznie
         dowód udzielonej wcześniej zgody — adres, datę potwierdzenia i wersję klauzuli — przez
         okres przedawnienia ewentualnych roszczeń, nie dłużej niż 3 lata.
+    # `RESERVATION_RETENTION` in `backend/outreach/models.py`, swept nightly by
+    # `outreach.purge_reservations` — which is why the sentence says "po czym" rather than naming
+    # an hour. The month is room to answer a question about the evening and nothing else.
+    - id: reservations
+      textHtml: >-
+        <strong>Potwierdzenia obecności na koncercie</strong> — przez 30 dni od koncertu, którego
+        dotyczą, po czym całą listę gości tego koncertu, razem z wcześniejszymi odpowiedziami,
+        trwale usuwamy. Ten okres zostawiamy wyłącznie na odpowiedź na ewentualne pytania
+        dotyczące koncertu.
     - id: audio
       textHtml: >-
         <strong>Preferencja audio</strong> w localStorage — 3 godziny od zapisu lub do czasu
@@ -613,6 +654,16 @@ history:
   # inside a key part.
   label: "Historia zmian"
   entries:
+    - id: "v1-7"
+      version: "1.7"
+      date: "2026-10-02"
+      note: >-
+        Dodaliśmy opis formularza, w którym goście zaproszeni imiennie na koncert potwierdzają
+        obecność albo informują, że nie przyjdą: w § 3 zakres danych (imię i nazwisko oraz
+        odpowiedź, czyli liczba miejsc albo informacja o nieobecności, wraz z datą jej wysłania),
+        w § 4 cel i podstawę przetwarzania (prawnie uzasadniony interes Fundacji), w § 7 okres
+        przechowywania (30 dni od koncertu). Formularz nie zbiera adresu e-mail ani numeru
+        telefonu i nie zapisuje na listę zaproszeń na koncerty.
     - id: "v1-6"
       version: "1.6"
       date: "2026-10-01"

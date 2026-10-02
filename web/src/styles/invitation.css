@@ -1,0 +1,533 @@
+/**
+ * @file invitation.css
+ * @description The printed invitation's material, shared by the two pages cut from it: `/zaproszenie`
+ *  (the invitation itself, opened on a screen) and `/rsvp` (its reply card alone). The rose paper and
+ *  its grain, the plum ink, the cloud banks of the card's corners, the burst of light from its
+ *  cover, the reply card lying on the sheet, the rubric between two hairlines, the writing line and
+ *  the act. What each page composes from it lives in `styles/zaproszenie.css` and `styles/rsvp.css`,
+ *  which each page imports after this one.
+ *
+ *  ONE FACE, SET HEAVIER THAN THE SITE SETS IT. The card is a serif object, so every word on the
+ *  sheet is Cormorant; only the legal clauses stay in the reading sans, where small print belongs.
+ *  Cormorant has no optical sizes, so the smaller a string is the more weight it gets (the rule in
+ *  tokens.css): body lines at 400–500 and 19px and up, small capitals at 600+, nothing at 300.
+ *
+ *  THE PAPER IS A NOTCH DEEPER THAN THE CARD'S. Printed stock under room light reads darker than
+ *  the same colour lit from behind; the screen version of the card's paper read as a white page.
+ *  The sheet is therefore a rose grey, and the reply card is the one lighter object on it, lifted
+ *  by a shadow.
+ *
+ *  THE ARTWORK is the invitation's own, cut from the layers of its PDF and kept outside git with
+ *  every photograph (`src/assets/photos/zaproszenie-*`): the two cloud corners, cropped from its
+ *  inside page and toned so the paper around them lands on `--inv-paper` (that value and the files
+ *  move together), the burst of light from its cover, and the cover's two hands. Each is optional
+ *  and both pages read without them.
+ *
+ *  THE ISLANDS ARE DRESSED HERE TOO. Both reply cards hold a React form (`RsvpForm`, `NoticeForm`)
+ *  whose classes are their own; the writing line, the caption, the act and the small print are one
+ *  material on both cards, so the shared rules name both islands' classes side by side.
+ *
+ *  COLOUR IS A LEDGER ON `body.page-invitation`, stated once and read by every rule below — on the
+ *  body rather than on `main` because the site's bar reads it too. The site's own tokens (--serif,
+ *  --sans, --gutter, --blank-*, --ease*) come from the globally imported tokens.css.
+ *
+ *  MOTION here is the material's own, all of it transform and opacity under `html.voct-motion`:
+ *  the light breathes, the clouds gather into their corners when the controller cues them
+ *  (`.reveal-cue`) and keep billowing, the rubric's hairlines run outward from the word, the
+ *  writing line inks from its centre on focus, and the act shows a light passing while it sends.
+ * @architecture Astro islands 2026
+ * @module styles/invitation
+ */
+
+body.page-invitation {
+  --inv-paper: #eee3e0;
+  --inv-paper-rgb: 238 227 224;
+  --inv-card: #fbf7f5;
+  --inv-ink: #452f3b;
+  --inv-ink-deep: #33222c;
+  --inv-ink-soft: #6a5560;
+  --inv-text: #3e3238;
+  --inv-muted: #6c5d65;
+  --inv-line: rgb(69 47 59 / 0.16);
+  --inv-line-strong: rgb(69 47 59 / 0.46);
+  --inv-refusal: #8f2f3a;
+  --inv-shadow: 69 47 59;
+}
+
+/* The site's bar is parchment glass everywhere; over this sheet that glass read as a cream strip
+   laid across rose paper, so here it takes the sheet's own tone. */
+body.page-invitation .chrome.is-solid::after {
+  background-color: rgb(var(--inv-paper-rgb) / 0.84);
+}
+
+.inv-sheet {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  background: var(--inv-paper);
+  color: var(--inv-text);
+  font-family: var(--serif);
+  font-variant-numeric: lining-nums;
+}
+
+.inv-sheet a:focus-visible,
+.inv-sheet button:focus-visible {
+  outline: 2px solid var(--inv-ink);
+  outline-offset: 3px;
+}
+
+/* ── The sky ───────────────────────────────────────────────────────────────────
+   Paper grain over the whole sheet and the card's clouds in its foot corners. Where the light
+   falls is each page's to say (`.rsvp .inv-sky`, `.zap-cover::before`). */
+.inv-sky {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Grain: the same fractal noise the newsletter sheet wears, in the ink's dark. */
+.inv-sky::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.27  0 0 0 0 0.18  0 0 0 0 0.23  0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 240px 240px;
+}
+
+/* The card's cloud banks, at the foot of the sheet as on its RSVP page. Only the foot: turned over
+   to hang from the top edge, these clouds are lit from below and read as smoke. */
+.inv-cloud {
+  position: absolute;
+  bottom: 0;
+  display: block;
+  width: clamp(250px, 40vw, 720px);
+  height: auto;
+  max-width: none;
+  user-select: none;
+}
+
+/* Each bank is pinned by its outer foot corner, the only opaque edge of the cut: every transform
+   below grows from there, so the corner never lifts off the sheet's edge. */
+.inv-cloud-left {
+  left: 0;
+  transform-origin: left bottom;
+}
+
+.inv-cloud-right {
+  right: 0;
+  transform-origin: right bottom;
+}
+
+html.voct-motion .inv-cloud {
+  transition:
+    opacity 2.4s var(--ease-slow),
+    transform 2.8s var(--ease-slow);
+}
+
+html.voct-motion .inv-cloud-left:not(.is-in) {
+  opacity: 0;
+  transform: translate(-7%, 4%);
+}
+
+html.voct-motion .inv-cloud-right:not(.is-in) {
+  opacity: 0;
+  transform: translate(7%, 4%);
+}
+
+/* Once gathered, the banks billow: wider, then taller, and back, from their pinned corners. It runs
+   on `scale`, not `transform`, so it composes with the gathering transition rather than replacing
+   it. Never below 1, or the opaque corner would lift off the edge; two periods that do not divide,
+   so the banks never swell together like a pulse. */
+html.voct-motion .inv-cloud-left.is-in {
+  animation: inv-billow 19s ease-in-out infinite alternate;
+}
+
+html.voct-motion .inv-cloud-right.is-in {
+  animation: inv-billow 26s ease-in-out -9s infinite alternate;
+}
+
+/* ── The light ─────────────────────────────────────────────────────────────────
+   The burst from the card's cover. It fills whatever box a page sets it in and breathes there; the
+   box's own arrival (a dawn on the cover, a sunrise over the reply card) is the page's, on the
+   wrapper, so the two motions never contend for one property. Its own radial glow is the fallback
+   for a host without the artwork and the halo around the burst on one that has it. */
+.inv-light {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(closest-side, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0.16) 55%, transparent);
+  pointer-events: none;
+}
+
+.inv-light img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+html.voct-motion .inv-light {
+  animation: inv-breathe 12s ease-in-out infinite alternate;
+}
+
+/* ── The reply card ────────────────────────────────────────────────────────────
+   A lighter card lying on the sheet: a hairline border, a printer's inner frame, and a long soft
+   shadow under it. Whatever the island inside it says — the blanks, the receipt, the closed
+   sentence — is written on the same card. */
+.inv-card {
+  position: relative;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: clamp(36px, 5vw, 50px) clamp(24px, 6vw, 56px) clamp(32px, 5vw, 44px);
+  border: 1px solid var(--inv-line);
+  background: var(--inv-card);
+  box-shadow:
+    0 1px 2px rgb(var(--inv-shadow) / 0.06),
+    0 28px 56px -30px rgb(var(--inv-shadow) / 0.4);
+  text-align: center;
+}
+
+.inv-card::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid var(--inv-line);
+  pointer-events: none;
+}
+
+/* ── The rubric ────────────────────────────────────────────────────────────────
+   A word in the card's spaced capitals between two hairlines, which run outward from it when the
+   rubric is inked. The last letter's tracking would push the word off the axis; the right
+   hairline's margin pays it back. */
+.inv-rubric {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  margin: 0;
+  color: var(--inv-ink);
+  font-size: clamp(21px, 2.1vw, 25px);
+  font-weight: 650;
+  letter-spacing: 0.34em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.inv-rubric::before,
+.inv-rubric::after {
+  content: "";
+  flex-shrink: 0;
+  width: clamp(40px, 7vw, 72px);
+  height: 1px;
+  background: var(--inv-line-strong);
+}
+
+.inv-rubric::before {
+  transform-origin: right center;
+}
+
+.inv-rubric::after {
+  margin-left: -0.34em;
+  transform-origin: left center;
+}
+
+html.voct-motion .inv-rubric::before,
+html.voct-motion .inv-rubric::after {
+  transition: transform var(--rule-in) var(--ease-rule);
+}
+
+html.voct-motion .inv-rubric:not(.is-in)::before,
+html.voct-motion .inv-rubric:not(.is-in)::after {
+  transform: scaleX(0);
+}
+
+/* Minutes raised over the hour and set smaller, as the card prints 13³⁰. */
+.inv-minutes {
+  margin-left: 0.04em;
+  font-size: 0.6em;
+  line-height: 0;
+  vertical-align: 0.68em;
+}
+
+/* ── The blank ─────────────────────────────────────────────────────────────────
+   A line to write on with its caption UNDER it, the way a reply card prints "imię i nazwisko"
+   beneath the rule. A resting rule, and an ink rule over it that runs out from the centre while
+   the field has focus (and in the refusal's colour when the field is refused). */
+.rsvp-caption,
+.inv-card .notice-blank-label {
+  display: block;
+  margin-top: 9px;
+  color: var(--inv-muted);
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.rsvp-line,
+.inv-card .notice-blank-line {
+  position: relative;
+  display: block;
+}
+
+.rsvp-line::before,
+.rsvp-line::after,
+.inv-card .notice-blank-line::before,
+.inv-card .notice-blank-line::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+}
+
+.rsvp-line::after,
+.inv-card .notice-blank-line::after {
+  background: var(--inv-line-strong);
+}
+
+/* THE UNWRITTEN LINE IS DOTTED, as a reply card prints its blanks and as the landing dots its own
+   (`notice-blank-line`): among the card's border, its inner frame and the rubric's hairlines, a
+   solid rule under an empty field read as one more ornament. The dots are the resting rule masked,
+   in full ink so the pattern carries. The first letter turns them solid, which nobody sees: the
+   field has focus by then, and the ink rule above covers the whole line. Both islands mark the
+   empty field with `data-blank`. */
+.rsvp-line:has([data-blank])::after,
+.inv-card .notice-blank-line:has([data-blank])::after {
+  background: var(--inv-ink);
+  -webkit-mask: repeating-linear-gradient(90deg, #000 0 2px, transparent 2px 5px);
+  mask: repeating-linear-gradient(90deg, #000 0 2px, transparent 2px 5px);
+}
+
+.rsvp-line::before,
+.inv-card .notice-blank-line::before {
+  z-index: 1;
+  background: var(--inv-ink);
+  transform: scaleX(0);
+  transition: transform 0.7s var(--ease);
+}
+
+.rsvp-line:focus-within::before,
+.inv-card .notice-blank-line:focus-within::before {
+  transform: scaleX(1);
+}
+
+.rsvp-line:has([aria-invalid="true"])::before,
+.inv-card .notice-blank-line:has([aria-invalid="true"])::before {
+  background: var(--inv-refusal);
+  transform: scaleX(1);
+}
+
+.rsvp-error,
+.inv-card .notice-error {
+  margin: 18px auto 0;
+  max-width: 26em;
+  color: var(--inv-refusal);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+/* ── The act ───────────────────────────────────────────────────────────────────
+   A bar of the invitation's ink with the card's inner frame drawn on it, lettered in the card's
+   capitals. While the reply is on its way a band of light passes across it. */
+.rsvp-act,
+.inv-card .notice-act {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 58px;
+  margin: 36px 0 0;
+  padding: 12px 24px;
+  overflow: hidden;
+  border: 0;
+  background: var(--inv-ink);
+  color: var(--inv-card);
+  font-family: var(--serif);
+  font-size: 16.5px;
+  font-weight: 650;
+  letter-spacing: 0.24em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  text-wrap: balance;
+  cursor: pointer;
+  transition: background-color 0.35s var(--ease);
+}
+
+.rsvp-act::before,
+.inv-card .notice-act::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgb(251 247 245 / 0.22);
+  pointer-events: none;
+  transition: border-color 0.35s var(--ease);
+}
+
+/* The label is pulled back onto the axis by its own trailing tracking. */
+.rsvp-act > span,
+.inv-card .notice-act > span {
+  position: relative;
+  padding-left: 0.24em;
+}
+
+.rsvp-act:hover:not(:disabled),
+.inv-card .notice-act:hover:not(:disabled) {
+  background: var(--inv-ink-deep);
+}
+
+.rsvp-act:hover:not(:disabled)::before,
+.inv-card .notice-act:hover:not(:disabled)::before {
+  border-color: rgb(251 247 245 / 0.5);
+}
+
+.rsvp-act:disabled,
+.inv-card .notice-act:disabled {
+  cursor: progress;
+}
+
+html.voct-motion .rsvp-act:disabled::after,
+html.voct-motion .inv-card .notice-act:disabled::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.16) 50%, transparent 70%);
+  animation: inv-sweep 1.5s var(--ease) infinite;
+  pointer-events: none;
+}
+
+/* The small print under the act, in the reading sans. */
+.rsvp-fine,
+.inv-card .notice-consent-text {
+  margin: 22px auto 0;
+  max-width: 34em;
+  color: var(--inv-muted);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.rsvp-hint a,
+.rsvp-error a,
+.rsvp-fine a,
+.inv-card .notice-error a,
+.inv-card .notice-consent-text a,
+.inv-noscript a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--inv-line-strong);
+  text-underline-offset: 2px;
+}
+
+.inv-noscript {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 500;
+}
+
+/* ── Doors ─────────────────────────────────────────────────────────────────────
+   A link out of the card, lettered small in its capitals. */
+.inv-door {
+  display: inline-block;
+  padding: 6px 0 6px 0.22em;
+  color: var(--inv-ink-soft);
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: 0.22em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 0.25s var(--ease);
+}
+
+.inv-door:hover {
+  color: var(--inv-ink);
+}
+
+/* An underlined link in running copy on the sheet. */
+.inv-link {
+  color: var(--inv-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--inv-line-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  transition: text-decoration-color 0.25s var(--ease);
+}
+
+.inv-link:hover {
+  text-decoration-color: var(--inv-ink);
+}
+
+.inv-out {
+  margin-left: 0.3em;
+  color: var(--inv-muted);
+  font-size: 0.85em;
+}
+
+@keyframes inv-breathe {
+  from {
+    opacity: 1;
+    rotate: 0deg;
+    scale: 1;
+  }
+  to {
+    opacity: 0.8;
+    rotate: 2deg;
+    scale: 1.04;
+  }
+}
+
+@keyframes inv-billow {
+  from {
+    scale: 1;
+  }
+  45% {
+    scale: 1.04 1.015;
+  }
+  to {
+    scale: 1.015 1.05;
+  }
+}
+
+@keyframes inv-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes inv-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 599px) {
+  .inv-card {
+    padding: 34px 22px 30px;
+  }
+
+  .inv-card::before {
+    inset: 5px;
+  }
+
+  /* The act's words must hold at 320px: tighter capitals, and a second line if they still cannot. */
+  .rsvp-act,
+  .inv-card .notice-act {
+    padding: 12px 12px;
+    font-size: 15px;
+    letter-spacing: 0.15em;
+  }
+
+  .rsvp-act > span,
+  .inv-card .notice-act > span {
+    padding-left: 0.15em;
+  }
+}

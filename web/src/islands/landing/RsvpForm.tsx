@@ -6,7 +6,10 @@
  *
  *  WHAT THE ISLAND DECIDES AND WHAT IT IS HANDED. Validation, the request and the four states
  *  (idle, sending, sent, closed) are its own; every word is a prop (`i18n/content/rsvp.ts`), and
- *  every look is `styles/rsvp.css`.
+ *  every look is the page's (`styles/invitation.css`, `styles/rsvp.css`). The card it is written
+ *  on is the page's markup, not the island's: what the island renders is only what changes on it.
+ *  The receipt names the answer it records (`data-answer`), which is what the page's light rises
+ *  or sinks on.
  *
  *  A DECLINE IS THE SAME CARD WITH THE SEATS PUT AWAY. The quiet switch under the act turns the
  *  card into "I can't come": the name line stays, the stepper goes, the act says so, and the reply
@@ -202,6 +205,7 @@ export function RsvpForm({
         <div
           ref={receiptRef}
           className="rsvp-receipt"
+          data-answer={answer}
           role="status"
           aria-live="polite"
           tabIndex={-1}

@@ -1,23 +1,29 @@
 /**
  * @file rsvp.ts
- * @description Every word of `/rsvp` — the reply card printed invitations point at — and the two
+ * @description Every word of `/rsvp` — the reply card sent with the invitations — and the two
  *  facts it shares with the backend: which evening it answers for and how many seats one reply
  *  may ask for.
  *
- *  POLISH ONLY AND OFF THE COPY DESK, on purpose. The invitations it answers are printed in Polish
- *  and named, the page lives for ten days before one concert, and nobody reaches it except by the
- *  link on the card. The evening's own facts (title, day, hour, map) are not restated here: the
- *  page reads them from the corpus entry `concertId` names, so the card and the concert page
+ *  POLISH ONLY AND OFF THE COPY DESK, on purpose. The invitations it answers are Polish and named,
+ *  the page lives for ten days before one concert, and nobody reaches it except by the link sent
+ *  with the invitation. The evening's own facts (title, day, hour, map) are not restated here: the
+ *  page reads them from the corpus entry `RSVP_CONCERT_ID` names, so the card and the concert page
  *  cannot disagree about when to come.
  *
- *  THE PRINTED INVITATION IS THE SOURCE OF THE WORDING. The greeting, the line under the title and
- *  the reply paragraph are the card's own sentences (docs/specs — the invitation PDF), so a guest
- *  who has just read the card reads the same words again. Change them together with the card.
+ *  WRITTEN TO THE GUEST WHO HAS JUST READ THE INVITATION. The rubric is the card's own word; the
+ *  sentence under it is not the card's, because the card's ("Wstęp na koncert jest wolny…
+ *  zaproszonych gości… do 9 października") was written for everyone the PDF goes to, and repeated
+ *  here it told one guest, who had just read it, what they already knew, about guests in the third
+ *  person. So it speaks to them, says why the name is asked, and leaves the admission and the
+ *  deadline to the invitation. Gratitude waits for the receipt: before the act the guest may still
+ *  decline. The invitation's own sentences belong to `/zaproszenie` (`i18n/content/zaproszenie.ts`).
  *
- *  THE CLAUSE STANDS IN FOR THE POLICY. The privacy policy predates this form and does not
- *  describe it, so `privacyHtml` carries the whole notice a guest is owed at the point of
- *  collection: what is kept, why, on what basis, for how long, and where to ask. Its "a month
- *  after" is `RESERVATION_RETENTION` in `backend/outreach/models.py`.
+ *  THE CLAUSE IS THE SHORT FORM OF THE POLICY'S ACCOUNT. The privacy policy describes this form in
+ *  full (`content/pages/polityka-prywatnosci.yaml`: `s3.reservations`, and the `reservations` items
+ *  of § 4 and § 7); `privacyHtml` still carries on its own the core a guest is owed at the point of
+ *  collection — what is kept, why, on what basis, for how long, and where to ask — and links to the
+ *  rest. Its "30 days after" is `RESERVATION_RETENTION` in `backend/outreach/models.py`, and the
+ *  three move together.
  * @architecture Astro islands 2026
  * @module i18n/content/rsvp
  */
@@ -68,26 +74,22 @@ export const RSVP = {
     description:
       "Potwierdzenie obecności i rezerwacja miejsc dla zaproszonych gości: Pochwała Stworzenia, 11 października 2026, Kościół Wszystkich Świętych w Warszawie.",
   },
-  host: "VoctEnsemble",
-  invites: "serdecznie zaprasza na",
-  kicker: "Koncert Duchowy",
-  subtitleHtml: "inspirowany kantykiem <em>Laudes&nbsp;creaturarum</em> św. Franciszka z Asyżu",
   /** "godz." before the hour, as the printed invitation sets it. */
   hourPrefix: "godz.",
-  admission: "wstęp wolny",
   place: {
     church: "Kościół Wszystkich Świętych",
     address: "pl. Grzybowski 3/5, Warszawa",
     /** The building has two churches; the festival's schedule puts this hour upstairs. */
     room: "kościół górny",
-    festivalHtml: "finał III edycji <em>Fenomenu Człowieka</em>",
   },
   rubric: "RSVP",
-  invitation: "Z przyjemnością zarezerwujemy miejsca dla zaproszonych gości.",
-  deadline: "Prosimy o potwierdzenie obecności do piątku, 9 października 2026 r.",
+  welcome: "Będzie nam bardzo miło gościć Państwa na koncercie.",
+  /** What the name is for, said as the reservation it becomes. */
+  purpose: "Miejsca zarezerwujemy na Państwa nazwisko.",
+  /** The rubric's meaning, for the page's heading as assistive technology reads it. */
   formAria: "Potwierdzenie obecności",
   /** `{date}` and `{time}` are filled from the corpus. */
-  farewell: "Do zobaczenia {date} o {time}.",
+  farewell: "Cieszymy się, że będą Państwo z nami. Do zobaczenia {date} o {time}.",
   form: {
     nameLabel: "imię i nazwisko",
     seatsLabel: "liczba miejsc",
@@ -111,7 +113,7 @@ export const RSVP = {
     declinedChange: "Zmień odpowiedź",
     closed: "Przyjmowanie potwierdzeń na ten koncert jest już zamknięte.",
     privacyHtml:
-      'Imię i nazwisko oraz odpowiedź zapisujemy wyłącznie po to, by przygotować miejsca na koncert (art. 6 ust. 1 lit. f RODO), i usuwamy je miesiąc po nim. Prawo dostępu, sprostowania i usunięcia danych: <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>. Więcej w <a href="/polityka-prywatnosci">polityce prywatności</a>.',
+      'Imię i nazwisko oraz odpowiedź zapisujemy wyłącznie po to, by przygotować miejsca na koncert (art. 6 ust. 1 lit. f RODO), i usuwamy je 30 dni po nim. Prawo dostępu, sprostowania i usunięcia danych: <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>. Więcej w <a href="/polityka-prywatnosci">polityce prywatności</a>.',
   },
   /** Without JavaScript the form cannot send, so the address takes the reply instead. */
   noscript: "Potwierdzenie prosimy przesłać na adres",

@@ -95,6 +95,7 @@ const privacyCopySchema = z
         notices: z
           .object({ title: z.string(), p1Html: z.string(), p2Html: z.string() })
           .strict(),
+        reservations: z.object({ title: z.string(), p1Html: z.string() }).strict(),
         email: z.object({ title: z.string(), p1: z.string() }).strict(),
         audio: z.object({ title: z.string(), p1Html: z.string() }).strict(),
       })
@@ -324,6 +325,19 @@ const PRIVACY_CONTRACT: readonly CopyEntry[] = [
     note: "The continuity clause: one controller, with a named successor if the foundation ever winds up. It is a promise to warn the reader BEFORE any transfer and to let them leave first — both halves must survive translation, because the promise is what makes the transfer lawful.",
   },
 
+  {
+    kind: "field",
+    path: "s3.reservations.title",
+    label: "03 · potwierdzenie obecności · tytuł",
+    note: "Names the reply form printed invitations link to — the page's own title is „Potwierdzenie obecności”, and this heading follows whatever that phrase is in this language.",
+  },
+  {
+    kind: "field",
+    path: "s3.reservations.p1Html",
+    label: "03 · potwierdzenie obecności · akapit",
+    note: "Every negative is an assurance someone may rely on — no e-mail, no phone, no companions' names, no IP, no mail sent, no sign-up to the invitation list above — and each must survive. „Zaproszenie imienne” is a printed invitation addressed to a named guest; keep it distinct from the e-mailed invitation list described just above.",
+  },
+
   { kind: "field", path: "s3.email.title", label: "03 · korespondencja · tytuł" },
   { kind: "field", path: "s3.email.p1", label: "03 · korespondencja · akapit" },
 
@@ -348,7 +362,7 @@ const PRIVACY_CONTRACT: readonly CopyEntry[] = [
     keyBy: "id",
     label: "04 · podstawa",
     fields: [{ path: "textHtml", label: "pozycja" }],
-    note: "Six purposes, each opening with the purpose in bold and closing with the article that licenses it. Every `art. 6 ust. 1 lit. …` is an address inside the GDPR: name the regulation in the reader's language, never renumber a citation, and never move a purpose onto a different letter — the letter IS the legal basis.",
+    note: "Each purpose opens with the purpose in bold and closes with the article that licenses it. Every `art. 6 ust. 1 lit. …` is an address inside the GDPR: name the regulation in the reader's language, never renumber a citation, and never move a purpose onto a different letter — the letter IS the legal basis.",
   },
 
   { kind: "field", path: "s5.title", label: "05 · tytuł" },
@@ -397,7 +411,7 @@ const PRIVACY_CONTRACT: readonly CopyEntry[] = [
     keyBy: "id",
     label: "07 · okres",
     fields: [{ path: "textHtml", label: "pozycja" }],
-    note: "Five retention periods. Every number is a duration this foundation may be held to — 12 months, 5 years, 3 years, 3 hours — and `art. 74 ustawy o rachunkowości` is an address inside the Polish Accounting Act. Name the act in the reader's language; leave the article and the periods alone.",
+    note: "Every number is a duration this foundation may be held to — 12 months, 5 years, 3 years, 24 months, 7 days, 30 days, 3 hours — and `art. 74 ustawy o rachunkowości` is an address inside the Polish Accounting Act. Name the act in the reader's language; leave the article and the periods alone.",
   },
 
   { kind: "field", path: "s8.title", label: "08 · tytuł" },

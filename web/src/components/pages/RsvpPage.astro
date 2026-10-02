@@ -1,28 +1,29 @@
 ---
 /**
  * @file RsvpPage.astro
- * @description `/rsvp` — the reply card for the printed invitations to one concert. A guest arrives
- *  from the link on the card, reads the evening's facts again, writes a name and a seat count, and
- *  leaves with a receipt; the office reads the result in the Django admin (outreach → Concert
- *  reservations).
+ * @description `/rsvp` — the reply card for the invitations to one concert. A guest arrives from the
+ *  link sent with the invitation, writes a name and a seat count on the card, and leaves with a
+ *  receipt; the office reads the result in the Django admin (outreach → Concert reservations).
  *
- *  IT IS SET AS THE INVITATION ITSELF, not as a page of the site. The head repeats the card's
- *  inside page in the card's order (host, kind of evening, title, the line on the Canticle, the
- *  moment, the place), then the card's RSVP paragraph and the reply card under it. The ground is
- *  the card's own material: its rose paper, the cloud banks from its corners and the burst of light
- *  from its cover, all three cut from the invitation's artwork (`styles/rsvp.css` says how they
- *  sit). The site's bar and footer stay around it as they are everywhere else.
+ *  IT IS THE REPLY CARD, NOT THE INVITATION AGAIN. The invitation reaches the guest in the message
+ *  the link arrives in, and as a page of its own at `/zaproszenie`; this page says nothing of it a
+ *  second time. It is the card's fourth page made into an object: one card lying on the rose paper,
+ *  with the evening it answers for as its running head (title, day, hour — enough for a guest who
+ *  opens the link again, or is forwarded it, to know what it is), the card's rubric, a sentence
+ *  addressed to the guest, and the blanks. Where the evening is stands under the card on the sheet, for the day itself.
+ *  The cover's light waits behind the card's top edge and rises over it when the guest says yes
+ *  (`styles/rsvp.css` says how).
  *
- *  THE ARTWORK IS OPTIONAL TO THE BUILD. The three images live in `src/assets/photos/` (outside
- *  git, like every photograph — they come from the invitation's design, not from us) and are read
- *  with `photoOptional`, so a host without them builds the page on its gradients alone.
+ *  THE ARTWORK IS OPTIONAL TO THE BUILD. The images live in `src/assets/photos/` (outside git, like
+ *  every photograph — they come from the invitation's design, not from us) and are read with
+ *  `photoOptional`, so a host without them builds the page on its gradients alone.
  *
  *  THE FACTS OF THE EVENING ARE READ, NOT WRITTEN: title, day, hour and map come from the corpus
  *  entry `RSVP_CONCERT_ID` names, and so does the moment the form closes. What the card says
  *  around them is this page's own copy (`i18n/content/rsvp.ts`).
  *
  *  `noindex`, out of the sitemap and out of `TRANSLATED_ROUTES`: nobody searches for it, and the
- *  only way in is the card.
+ *  only way in is the link sent with the invitation.
  * @architecture Astro islands 2026
  * @module components/pages/RsvpPage
  */
@@ -35,9 +36,10 @@ import SiteFooter from "../SiteFooter.astro";
 import { RsvpForm } from "../../islands/landing/RsvpForm";
 import { RSVP, RSVP_CONCERT_ID, RSVP_MAX_SEATS } from "../../i18n/content/rsvp";
 import { UI } from "../../i18n/ui";
-import { dayMonth, longDate, weekdayName } from "../../lib/dates";
+import { dayMonth, weekdayName } from "../../lib/dates";
 import { chromeHtmlForIsland } from "../../lib/islandCopy";
 import { bleedPair, photoOptional } from "../../lib/photos";
+import "../../styles/invitation.css";
 import "../../styles/rsvp.css";
 
 const lang = "pl";
@@ -51,7 +53,9 @@ if (!date || !time) {
   throw new Error(`[rsvp] "${RSVP_CONCERT_ID}" needs a date and an hour to take reservations.`);
 }
 
-const day = `${weekdayName(date, lang)}, ${longDate(date, lang)}`;
+/* The running head names the day without its year: the deadline under it prints the year, and the
+   head has to hold two short lines on a phone. */
+const day = `${weekdayName(date, lang)}, ${dayMonth(date, lang)}`;
 /* The card sets the hour the Polish way, minutes raised over the hour: 13³⁰. */
 const [hours, minutes] = time.split(":");
 const formCopy = {
@@ -72,9 +76,9 @@ const art = async (name: string, width: number) => {
   return src ? getImage({ src, width: Math.min(width, src.width), format: "webp" }) : undefined;
 };
 const [light, cloudLeft, cloudRight] = await Promise.all([
-  art("rsvp-light", 1200),
-  art("rsvp-cloud-left", 860),
-  art("rsvp-cloud-right", 920),
+  art("zaproszenie-light", 1200),
+  art("zaproszenie-cloud-left", 860),
+  art("zaproszenie-cloud-right", 920),
 ]);
 ---
 
@@ -83,7 +87,7 @@ const [light, cloudLeft, cloudRight] = await Promise.all([
   description={RSVP.meta.description}
   path="/rsvp"
   image={ogImage}
-  bodyClass="page-rsvp"
+  bodyClass="page-invitation page-rsvp"
   lang={lang}
 >
   <Fragment slot="head">
@@ -96,75 +100,51 @@ const [light, cloudLeft, cloudRight] = await Promise.all([
   <a class="skip-link" href="#tresc">{ui.skipToContent}</a>
   <SiteChrome current="/rsvp" ground="paper" lang={lang} />
 
-  <main id="tresc" class="rsvp">
-    {/* The card's cloud banks, at the foot of the sheet as on its RSVP page, gathering when the
-        controller cues them. Only the foot: turned over to hang from the top edge, these clouds
-        are lit from below and read as smoke. Decoration only. */}
-    <div class="rsvp-sky" aria-hidden="true">
+  <main id="tresc" class="inv-sheet rsvp">
+    {/* The card's cloud banks, gathering into the foot corners when the controller cues them.
+        Decoration only. */}
+    <div class="inv-sky" aria-hidden="true">
       {cloudLeft && (
-        <img class="rsvp-cloud rsvp-cloud-left reveal-cue" src={cloudLeft.src} alt="" loading="lazy" decoding="async" />
+        <img class="inv-cloud inv-cloud-left reveal-cue" src={cloudLeft.src} alt="" loading="lazy" decoding="async" />
       )}
       {cloudRight && (
-        <img class="rsvp-cloud rsvp-cloud-right reveal-cue" src={cloudRight.src} alt="" loading="lazy" decoding="async" />
+        <img class="inv-cloud inv-cloud-right reveal-cue" src={cloudRight.src} alt="" loading="lazy" decoding="async" />
       )}
     </div>
 
-    <article class="rsvp-card" aria-labelledby="rsvp-title">
-      <header class="rsvp-head">
-        <p class="rsvp-host reveal">
-          <span class="rsvp-host-name">{RSVP.host}</span>
-          <span class="rsvp-host-line">{RSVP.invites}</span>
-        </p>
+    <div class="rsvp-stage">
+      {/* The cover's light, low behind the card's top edge until the guest answers. */}
+      <span class="rsvp-sun" aria-hidden="true">
+        <span class="inv-light">
+          {light && <img src={light.src} alt="" decoding="async" />}
+        </span>
+      </span>
 
-        <div class="rsvp-crown">
-          {/* The light between the hands on the card's cover, standing behind the title. */}
-          <span class="rsvp-light" aria-hidden="true">
-            {light && <img src={light.src} alt="" decoding="async" fetchpriority="high" />}
-          </span>
-          <p class="rsvp-kicker reveal" data-d="1">{RSVP.kicker}</p>
-          <h1 id="rsvp-title" class="rsvp-title reveal ink-press" data-d="1">{concert.title}</h1>
-          <p class="rsvp-subtitle reveal" data-d="2" set:html={RSVP.subtitleHtml} />
-        </div>
+      <article class="inv-card rsvp-card" aria-labelledby="rsvp-title">
+        <header class="rsvp-head">
+          <p class="rsvp-evening reveal">
+            <span class="rsvp-evening-title">{concert.title}</span>
+            <time class="rsvp-evening-moment" datetime={`${date}T${time}`}>
+              <span>{day}</span>
+              <span aria-hidden="true">·</span>
+              <span>
+                {RSVP.hourPrefix}&nbsp;<span class="sr-only">{time}</span><span aria-hidden="true">{hours}<sup class="inv-minutes">{minutes}</sup></span>
+              </span>
+            </time>
+          </p>
 
-        <span class="rsvp-rule reveal-rule" data-d="2" aria-hidden="true"></span>
+          <h1 id="rsvp-title" class="inv-rubric rsvp-rubric reveal" data-d="1">
+            <span aria-hidden="true">{RSVP.rubric}</span>
+            <span class="sr-only">{RSVP.formAria}</span>
+          </h1>
 
-        <p class="rsvp-moment reveal" data-d="3">
-          <time datetime={`${date}T${time}`}>
-            <span class="rsvp-day">{day}</span>
-            <span class="rsvp-sep rsvp-sep-day" aria-hidden="true">—</span>
-            <span class="rsvp-at">
-              {RSVP.hourPrefix}&nbsp;<span class="sr-only">{time}</span><span aria-hidden="true">{hours}<sup class="rsvp-minutes">{minutes}</sup></span>
-            </span>
-          </time>
-          <span class="rsvp-sep" aria-hidden="true">—</span>
-          <span class="rsvp-free">{RSVP.admission}</span>
-        </p>
+          <p class="rsvp-ask reveal" data-d="2">
+            <span class="rsvp-welcome">{RSVP.welcome}</span>
+            <span class="rsvp-purpose">{RSVP.purpose}</span>
+          </p>
+        </header>
 
-        <address class="rsvp-place reveal" data-d="4">
-          <span class="rsvp-church">{RSVP.place.church}</span>
-          {concert.mapUrl ? (
-            <a class="rsvp-address" href={concert.mapUrl} target="_blank" rel="noopener noreferrer">
-              {RSVP.place.address}<span class="rsvp-out" aria-hidden="true">↗</span>
-            </a>
-          ) : (
-            <span class="rsvp-address">{RSVP.place.address}</span>
-          )}
-          <span class="rsvp-room">
-            <span class="rsvp-room-floor">{RSVP.place.room}</span>
-            <span class="rsvp-room-dot" aria-hidden="true">·</span>
-            <span set:html={RSVP.place.festivalHtml} />
-          </span>
-        </address>
-      </header>
-
-      <section class="rsvp-reply" aria-label={RSVP.formAria}>
-        <h2 class="rsvp-rubric reveal">{RSVP.rubric}</h2>
-        <p class="rsvp-ask reveal" data-d="1">
-          <span class="rsvp-invitation">{RSVP.invitation}</span>
-          <span class="rsvp-deadline">{RSVP.deadline}</span>
-        </p>
-
-        <div class="rsvp-slot reveal" data-d="2">
+        <div class="rsvp-slot reveal" data-d="3">
           <RsvpForm
             client:load
             copy={formCopy}
@@ -174,22 +154,35 @@ const [light, cloudLeft, cloudRight] = await Promise.all([
             contactEmail={RSVP.contact.email}
           />
           <noscript>
-            <p class="rsvp-noscript">
+            <p class="inv-noscript">
               {RSVP.noscript}{" "}
               <a href={`mailto:${RSVP.contact.email}`}>{RSVP.contact.email}</a>
             </p>
           </noscript>
         </div>
-      </section>
+      </article>
+    </div>
 
-      <footer class="rsvp-contact reveal">
-        <p class="rsvp-contact-line">{RSVP.contact.line}</p>
-        <a class="rsvp-contact-mail" href={`mailto:${RSVP.contact.email}`}>{RSVP.contact.email}</a>
-        {concert.hasPage && (
-          <a class="rsvp-door" href={`/koncerty/${RSVP_CONCERT_ID}`}>{RSVP.programme} →</a>
+    <footer class="rsvp-where reveal">
+      <address class="rsvp-place">
+        <span class="rsvp-church">{RSVP.place.church}</span>
+        {concert.mapUrl ? (
+          <a class="rsvp-address inv-link" href={concert.mapUrl} target="_blank" rel="noopener noreferrer">
+            {RSVP.place.address}<span class="inv-out" aria-hidden="true">↗</span>
+          </a>
+        ) : (
+          <span class="rsvp-address">{RSVP.place.address}</span>
         )}
-      </footer>
-    </article>
+        <span class="rsvp-room">{RSVP.place.room}</span>
+      </address>
+      <p class="rsvp-contact">
+        {RSVP.contact.line}{" "}
+        <a class="inv-link" href={`mailto:${RSVP.contact.email}`}>{RSVP.contact.email}</a>
+      </p>
+      {concert.hasPage && (
+        <a class="inv-door" href={`/koncerty/${RSVP_CONCERT_ID}`}>{RSVP.programme} →</a>
+      )}
+    </footer>
   </main>
 
   <SiteFooter lang={lang} />

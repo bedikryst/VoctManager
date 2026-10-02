@@ -255,8 +255,9 @@ class NoticeConsentEvent(models.Model):
 
 # How long a guest's reservation outlives the concert it was for. The purpose ends when the
 # doors close; the month after it is room for the office to answer a question about the
-# evening, and it is the figure the form's own clause promises (`web/src/i18n/content/rsvp.ts`),
-# so the two move together.
+# evening. It is the figure the form's own clause promises (`web/src/i18n/content/rsvp.ts`) and
+# the privacy policy publishes (§ 7, `web/src/content/pages/polityka-prywatnosci.yaml`), so the
+# three move together.
 RESERVATION_RETENTION = timedelta(days=30)
 
 

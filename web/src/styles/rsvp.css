@@ -1,510 +1,166 @@
 /**
  * @file rsvp.css
- * @description The reply card (/rsvp), dressed as the printed invitation: its rose paper, its cloud
- *  banks and its burst of light, plum ink, and Cormorant throughout. Imported by `RsvpPage.astro`
- *  and by nothing else; it dresses the island (`RsvpForm.tsx`) as well, because the island is the
- *  card's lower half.
+ * @description `/rsvp`, the reply card alone: what the page composes from the invitation's material
+ *  (`styles/invitation.css`, imported first), and the dress of its island (`RsvpForm.tsx`) beyond
+ *  the blank and the act that card shares with the invitation's own.
  *
- *  ONE FACE, SET HEAVIER THAN THE SITE SETS IT. The card is a serif object, so every word on the
- *  sheet is Cormorant; only the legal clause stays in the reading sans, where small print belongs.
- *  Cormorant has no optical sizes, so the smaller a string is the more weight it gets (the rule in
- *  tokens.css): body lines at 400–500 and 19px and up, small capitals at 600+, nothing at 300.
+ *  THE PAGE IS ONE OBJECT: the reply card from the envelope, lying on the rose paper with the
+ *  clouds at the foot of the sheet. Everything it asks is written ON the card — the evening it
+ *  answers for as a running head, the rubric, a sentence to the guest and the blanks — and the sheet
+ *  around it carries only where the evening is, for the day itself. Nothing of the invitation is
+ *  said again; the guest arrives with it already read.
  *
- *  THE PAPER IS A NOTCH DEEPER THAN THE CARD'S. Printed stock under room light reads darker than
- *  the same colour lit from behind; the screen version of the card's paper read as a white page.
- *  The sheet is therefore a rose grey, lit at its centre by the cover's light and by a broad glow
- *  behind the head, and the reply card is the one lighter object on it, lifted by a shadow.
+ *  THE LIGHT IS THE ANSWER. The cover's burst stands low behind the card's top edge, mostly hidden,
+ *  like a sun under the horizon. When the guest says they will come, it rises over the card and
+ *  breathes there — the Canticle the evening is made of opens on the sun. A decline lets it sink a
+ *  little further. The rise is a transition on the wrapper's `translate`, `scale` and `opacity`;
+ *  the breathing is the material's own animation on the burst inside it, so the two never contend.
  *
- *  THE ARTWORK. Three images cut from the invitation's own artwork (`src/assets/photos/rsvp-*`):
- *  the two cloud corners were cropped from its inside page and toned so the paper around them
- *  lands on `--rsvp-paper`, which is why that value and the files move together; the light is the
- *  cover's burst. Each is optional and the sheet reads without them.
- *
- *  MOTION, all of it transform and opacity, all of it under `html.voct-motion`:
- *   - the site's own registers for the copy: ink on every block, the ink press on the title, the
- *     lead on the hairline under the head (`styles/registers.css`);
- *   - the light rises once on load and then breathes, slowly enough to be felt rather than seen;
- *   - the clouds gather into the foot corners when the controller cues them (`.reveal-cue`), then
- *     keep billowing from those corners, each on its own slow period;
- *   - in the form: the name's dotted blank is drawn from its centre once the card has inked in,
- *     the writing line inks outward from its centre on focus, the seat count turns
- *     like a counter wheel (WAAPI, in the island), the act shows a light passing while it sends,
- *     and the receipt arrives line by line under a pressed seal.
- *
- *  COLOUR IS A LEDGER ON `body.page-rsvp`, stated once and read by every rule below — on the body
- *  rather than on `main` because the site's bar reads it too. The site's own tokens (--serif,
- *  --sans, --gutter, --blank-*, --ease*) come from the globally imported tokens.css.
+ *  MOTION beyond the material, all of it transform and opacity under `html.voct-motion`: the site's
+ *  ink on every block of the card; the name's dotted blank drawn from its centre once the card has
+ *  inked in; the seat count turning like a counter wheel (WAAPI, in the island); the receipt
+ *  arriving line by line under a pressed seal.
  * @architecture Astro islands 2026
  * @module styles/rsvp
  */
 
-body.page-rsvp {
-  --rsvp-paper: #eee3e0;
-  --rsvp-paper-rgb: 238 227 224;
-  --rsvp-card: #fbf7f5;
-  --rsvp-ink: #452f3b;
-  --rsvp-ink-deep: #33222c;
-  --rsvp-ink-soft: #6a5560;
-  --rsvp-text: #3e3238;
-  --rsvp-muted: #6c5d65;
-  --rsvp-line: rgb(69 47 59 / 0.16);
-  --rsvp-line-strong: rgb(69 47 59 / 0.46);
-  --rsvp-refusal: #8f2f3a;
-  --rsvp-shadow: 69 47 59;
-}
-
-/* The site's bar is parchment glass everywhere; over this sheet that glass read as a cream strip
-   laid across rose paper, so here it takes the sheet's own tone. */
-body.page-rsvp .chrome.is-solid::after {
-  background-color: rgb(var(--rsvp-paper-rgb) / 0.84);
-}
-
 .rsvp {
+  padding: clamp(116px, 12vw, 164px) var(--gutter) clamp(150px, 17vw, 240px);
+}
+
+/* A little shade at the sheet's edges and no light of its own: the only light on this sheet is the
+   sun behind the card, so that its rising is the one change of light the guest sees. */
+.rsvp .inv-sky {
+  background: radial-gradient(130% 80% at 50% 38%, transparent 58%, rgb(var(--inv-shadow) / 0.1) 100%);
+}
+
+/* ── The stage: the card, and the sun behind its top edge ────────────────────── */
+.rsvp-stage {
   position: relative;
   isolation: isolate;
-  overflow: clip;
-  padding: clamp(112px, 12vw, 168px) var(--gutter) clamp(120px, 14vw, 200px);
-  background: var(--rsvp-paper);
-  color: var(--rsvp-text);
-  font-family: var(--serif);
-  font-variant-numeric: lining-nums;
-}
-
-.rsvp a:focus-visible,
-.rsvp button:focus-visible {
-  outline: 2px solid var(--rsvp-ink);
-  outline-offset: 3px;
-}
-
-/* ── The sky ───────────────────────────────────────────────────────────────────
-   Light at the centre, a little shade at the edges, paper grain over all of it, and the card's
-   clouds in the corners. The gradients carry the sheet on their own when the artwork is absent. */
-.rsvp-sky {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(56% 30% at 50% 16%, rgb(255 255 255 / 0.62), transparent 72%),
-    radial-gradient(130% 80% at 50% 38%, transparent 58%, rgb(var(--rsvp-shadow) / 0.1) 100%);
-}
-
-/* Grain: the same fractal noise the newsletter sheet wears, in the ink's dark. */
-.rsvp-sky::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0.07;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.27  0 0 0 0 0.18  0 0 0 0 0.23  0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-  background-size: 240px 240px;
-}
-
-.rsvp-cloud {
-  position: absolute;
-  bottom: 0;
-  display: block;
-  width: clamp(250px, 40vw, 720px);
-  height: auto;
-  max-width: none;
-  user-select: none;
-}
-
-/* Each bank is pinned by its outer foot corner, the only opaque edge of the cut: every transform
-   below grows from there, so the corner never lifts off the sheet's edge. */
-.rsvp-cloud-left {
-  left: 0;
-  transform-origin: left bottom;
-}
-
-.rsvp-cloud-right {
-  right: 0;
-  transform-origin: right bottom;
-}
-
-/* ── The column ────────────────────────────────────────────────────────────── */
-.rsvp-card {
-  max-width: 1000px;
+  max-width: 560px;
   margin: 0 auto;
-  text-align: center;
 }
 
-/* ── The head: the card's inside page ──────────────────────────────────────────
-   Tracked capitals carry their last letter's tracking as trailing space, so each is pulled back
-   onto the axis by the same amount (`padding-left` = `letter-spacing`). */
-.rsvp-host {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  margin: 0;
-}
-
-.rsvp-host-name {
-  color: var(--rsvp-ink-soft);
-  font-size: clamp(25px, 2.5vw, 31px);
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  line-height: 1.15;
-}
-
-.rsvp-host-line {
-  color: var(--rsvp-muted);
-  font-size: clamp(18px, 1.7vw, 20px);
-  font-style: italic;
-  font-weight: 500;
-  line-height: 1.3;
-}
-
-.rsvp-crown {
-  position: relative;
-  margin-top: clamp(40px, 5.5vw, 64px);
-}
-
-/* The cover's light, centred on the title. Its own radial glow is the fallback for a host without
-   the artwork and the halo around the burst on one that has it. */
-.rsvp-light {
+/* Centred on the card's top edge by `left`/`top` and its own translate, so its resting and risen
+   places are both stated in the burst's own size and hold at every width. */
+.rsvp-sun {
   position: absolute;
-  top: 50%;
+  top: 0;
   left: 50%;
   z-index: -1;
-  width: clamp(560px, 82vw, 1180px);
+  width: clamp(440px, 108vw, 900px);
   aspect-ratio: 1;
-  background: radial-gradient(closest-side, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0.16) 55%, transparent);
-  opacity: 0.92;
-  transform: translate(-50%, -50%);
+  opacity: 0.46;
+  translate: -50% -34%;
+  scale: 0.64;
   pointer-events: none;
 }
 
-.rsvp-light img {
-  display: block;
-  width: 100%;
-  height: 100%;
+.rsvp-stage:has(.rsvp-receipt[data-answer="attend"]) .rsvp-sun {
+  opacity: 1;
+  translate: -50% -63%;
+  scale: 1;
 }
 
-.rsvp-kicker {
-  margin: 0;
-  padding-left: 0.28em;
-  color: var(--rsvp-ink);
-  font-size: clamp(14.5px, 1.3vw, 16px);
-  font-weight: 650;
-  letter-spacing: 0.28em;
-  line-height: 1.2;
-  text-transform: uppercase;
+.rsvp-stage:has(.rsvp-receipt[data-answer="decline"]) .rsvp-sun {
+  opacity: 0.24;
+  translate: -50% -28%;
 }
 
-/* The press settles at this page's heading weight, not the site's 300: the card's title is a
-   regular capital, and 300 capitals on rose paper are the spindly title this page had. The weight
-   reads the token rather than restating it, so the resting weight and the one a visitor without
-   motion sees cannot part (registers.css, constraint 1; the build's register audit, R6). */
-.rsvp-title {
-  --wght-rest: 460;
-  margin: 14px 0 0;
-  padding-left: 0.075em;
-  color: var(--rsvp-ink-deep);
-  font-size: clamp(36px, 5.2vw, 68px);
-  font-weight: var(--wght-rest);
-  letter-spacing: 0.075em;
-  line-height: 1.06;
-  text-transform: uppercase;
-  text-wrap: balance;
+html.voct-motion .rsvp-sun {
+  transition:
+    translate 3s var(--ease-slow),
+    scale 3s var(--ease-slow),
+    opacity 2.4s var(--ease-slow);
 }
 
-.rsvp-subtitle {
-  margin: 14px auto 0;
-  max-width: 34em;
-  color: var(--rsvp-ink-soft);
-  font-size: clamp(18.5px, 1.8vw, 21px);
-  font-weight: 500;
-  line-height: 1.45;
-  text-wrap: balance;
-}
-
-.rsvp-subtitle em {
-  font-weight: 500;
-}
-
-/* The lead register draws this hairline from its centre outward (registers.css). */
-.rsvp-rule {
-  --rule-ink: var(--rsvp-line-strong);
-  --rule-from: center;
-  display: block;
-  width: 64px;
-  height: 1px;
-  margin: clamp(30px, 4vw, 42px) auto;
-  background: var(--rsvp-line-strong);
-}
-
-html.voct-motion .rsvp-rule {
-  background: none;
-}
-
-.rsvp-moment {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  column-gap: 0.45em;
-  margin: 0;
-  color: var(--rsvp-ink);
-  font-size: clamp(19.5px, 2vw, 23px);
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  line-height: 1.5;
-}
-
-.rsvp-moment time {
-  display: contents;
-}
-
-.rsvp-day,
-.rsvp-at,
-.rsvp-free {
-  white-space: nowrap;
-}
-
-.rsvp-sep {
-  color: var(--rsvp-muted);
-  font-weight: 400;
-}
-
-/* Minutes raised over the hour and set smaller, as the card prints 13³⁰. */
-.rsvp-minutes {
-  margin-left: 0.04em;
-  font-size: 0.6em;
-  line-height: 0;
-  vertical-align: 0.68em;
-}
-
-.rsvp-place {
+/* ── On the card: the evening, the rubric, the ask ───────────────────────────── */
+.rsvp-evening {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  margin-top: 18px;
-  font-style: normal;
+  gap: 6px;
+  margin: 0;
 }
 
-.rsvp-church {
-  color: var(--rsvp-ink);
-  font-size: clamp(21px, 2.1vw, 24px);
-  font-weight: 600;
-  line-height: 1.3;
+/* Tracked capitals carry their last letter's tracking as trailing space, so the title is pulled
+   back onto the axis by the same amount (`padding-left` = `letter-spacing`). */
+.rsvp-evening-title {
+  padding-left: 0.26em;
+  color: var(--inv-ink);
+  font-size: clamp(14.5px, 1.3vw, 16px);
+  font-weight: 650;
+  letter-spacing: 0.26em;
+  line-height: 1.35;
+  text-transform: uppercase;
 }
 
-.rsvp-address {
-  color: var(--rsvp-text);
-  font-size: clamp(18.5px, 1.8vw, 20px);
-  font-weight: 500;
-  line-height: 1.45;
-}
-
-a.rsvp-address {
-  text-decoration: underline;
-  text-decoration-color: var(--rsvp-line-strong);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-  transition: text-decoration-color 0.25s var(--ease);
-}
-
-a.rsvp-address:hover {
-  text-decoration-color: var(--rsvp-ink);
-}
-
-.rsvp-out {
-  margin-left: 0.3em;
-  color: var(--rsvp-muted);
-  font-size: 0.85em;
-}
-
-/* Two phrases that break whole: on a phone the room takes its own line and the dot goes. */
-.rsvp-room {
+.rsvp-evening-moment {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   column-gap: 0.4em;
-  color: var(--rsvp-muted);
+  color: var(--inv-muted);
   font-size: clamp(17.5px, 1.7vw, 19px);
   font-style: italic;
   font-weight: 500;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
-.rsvp-room > span {
+.rsvp-evening-moment > span {
   white-space: nowrap;
 }
 
-/* A title inside an italic line is set upright, the usual inversion. */
-.rsvp-room em {
-  font-style: normal;
-}
-
-/* ── The reply ─────────────────────────────────────────────────────────────────
-   The card's fourth page: the rubric between two hairlines, its paragraph, then the reply card.
-   The hairlines run outward from the word when the rubric is inked. */
-.rsvp-reply {
-  margin-top: clamp(76px, 10vw, 128px);
-}
-
+/* The card's own word, at the size a reply card engraves it. */
 .rsvp-rubric {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 22px;
-  margin: 0;
-  color: var(--rsvp-ink);
-  font-size: clamp(21px, 2.1vw, 25px);
-  font-weight: 650;
-  letter-spacing: 0.34em;
-  line-height: 1;
-}
-
-/* The last letter's tracking would push the word off the axis; the right hairline's margin pays it
-   back. */
-.rsvp-rubric::before,
-.rsvp-rubric::after {
-  content: "";
-  width: clamp(40px, 7vw, 72px);
-  height: 1px;
-  background: var(--rsvp-line-strong);
-}
-
-.rsvp-rubric::before {
-  transform-origin: right center;
-}
-
-.rsvp-rubric::after {
-  margin-left: -0.34em;
-  transform-origin: left center;
-}
-
-html.voct-motion .rsvp-rubric::before,
-html.voct-motion .rsvp-rubric::after {
-  transition: transform var(--rule-in) var(--ease-rule);
-}
-
-html.voct-motion .rsvp-rubric:not(.is-in)::before,
-html.voct-motion .rsvp-rubric:not(.is-in)::after {
-  transform: scaleX(0);
+  margin-top: clamp(26px, 3.4vw, 34px);
+  color: var(--inv-ink-deep);
+  font-size: clamp(30px, 3.6vw, 40px);
+  font-weight: 600;
 }
 
 .rsvp-ask {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  max-width: 36em;
-  margin: clamp(24px, 3vw, 32px) auto 0;
+  gap: 8px;
+  max-width: 25em;
+  margin: clamp(22px, 3vw, 28px) auto 0;
   line-height: 1.45;
   text-wrap: balance;
 }
 
-.rsvp-invitation {
-  color: var(--rsvp-text);
-  font-size: clamp(19px, 1.9vw, 22px);
+.rsvp-welcome {
+  color: var(--inv-text);
+  font-size: clamp(19px, 1.9vw, 21px);
   font-weight: 500;
 }
 
-.rsvp-deadline {
-  color: var(--rsvp-ink);
-  font-size: clamp(19px, 1.9vw, 22px);
+.rsvp-purpose {
+  color: var(--inv-ink);
+  font-size: clamp(19px, 1.9vw, 21px);
   font-style: italic;
   font-weight: 500;
+}
+
+/* Once answered (or closed) the ask is spent: the card keeps its head and the receipt takes the
+   rest. */
+.rsvp-card:has(.rsvp-receipt, .rsvp-closed) .rsvp-ask {
+  display: none;
 }
 
 .rsvp-slot {
-  margin-top: clamp(40px, 5vw, 56px);
+  margin-top: clamp(18px, 2.4vw, 24px);
 }
 
-/* ── The reply card ────────────────────────────────────────────────────────────
-   A lighter card lying on the sheet: a hairline border, a printer's inner frame, and a long soft
-   shadow under it. The form, the receipt and the closed sentence all wear it, so swapping one for
-   another changes what is written on the card, never the card. */
-.rsvp-form,
-.rsvp-receipt,
-.rsvp-closed {
-  position: relative;
-  max-width: 540px;
-  margin: 0 auto;
-  padding: clamp(30px, 4.5vw, 42px) clamp(24px, 6vw, 56px) clamp(32px, 5vw, 44px);
-  border: 1px solid var(--rsvp-line);
-  background: var(--rsvp-card);
-  box-shadow:
-    0 1px 2px rgb(var(--rsvp-shadow) / 0.06),
-    0 28px 56px -30px rgb(var(--rsvp-shadow) / 0.4);
-  text-align: center;
+.rsvp-card:has(.rsvp-receipt) .rsvp-slot {
+  margin-top: clamp(30px, 4vw, 40px);
 }
 
-.rsvp-form::before,
-.rsvp-receipt::before,
-.rsvp-closed::before {
-  content: "";
-  position: absolute;
-  inset: 7px;
-  border: 1px solid var(--rsvp-line);
-  pointer-events: none;
-}
-
-/* A blank: the line, and its caption under it. */
+/* ── The blanks ────────────────────────────────────────────────────────────── */
 .rsvp-field + .rsvp-field {
   margin-top: 30px;
-}
-
-.rsvp-caption {
-  display: block;
-  margin-top: 9px;
-  color: var(--rsvp-muted);
-  font-size: 17px;
-  font-style: italic;
-  font-weight: 500;
-  line-height: 1.3;
-}
-
-/* The writing line: a resting rule, and an ink rule over it that runs out from the centre while
-   the field has focus (and in the refusal's colour when the name is missing). */
-.rsvp-line {
-  position: relative;
-  display: block;
-}
-
-.rsvp-line::before,
-.rsvp-line::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 1px;
-}
-
-.rsvp-line::after {
-  background: var(--rsvp-line-strong);
-}
-
-/* THE UNWRITTEN LINE IS DOTTED, as a reply card prints its blanks and as the landing dots its own
-   (`notice-blank-line`): among the card's border, its inner frame and the head's hairlines, a
-   solid rule under an empty field read as one more ornament. The dots are the resting rule masked,
-   in full ink so the pattern carries. The first letter turns them solid, which nobody sees: the
-   field has focus by then, and the ink rule above covers the whole line. Only the name is dotted —
-   the seat count is never blank. */
-.rsvp-line:has([data-blank])::after {
-  background: var(--rsvp-ink);
-  -webkit-mask: repeating-linear-gradient(90deg, #000 0 2px, transparent 2px 5px);
-  mask: repeating-linear-gradient(90deg, #000 0 2px, transparent 2px 5px);
-}
-
-.rsvp-line::before {
-  z-index: 1;
-  background: var(--rsvp-ink);
-  transform: scaleX(0);
-  transition: transform 0.7s var(--ease);
-}
-
-.rsvp-line:focus-within::before {
-  transform: scaleX(1);
-}
-
-.rsvp-line:has([aria-invalid="true"])::before {
-  background: var(--rsvp-refusal);
-  transform: scaleX(1);
 }
 
 /* 16px is the floor below which iOS zooms the page on focus; this field writes well above it.
@@ -517,8 +173,8 @@ html.voct-motion .rsvp-rubric:not(.is-in)::after {
   border: 0;
   border-radius: 0;
   background: none;
-  color: var(--rsvp-ink);
-  caret-color: var(--rsvp-ink);
+  color: var(--inv-ink);
+  caret-color: var(--inv-ink);
   font-family: var(--serif);
   font-size: clamp(25px, 2.8vw, 30px);
   font-style: italic;
@@ -533,13 +189,14 @@ html.voct-motion .rsvp-rubric:not(.is-in)::after {
 
 .rsvp-name:-webkit-autofill,
 .rsvp-name:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--rsvp-ink);
-  box-shadow: 0 0 0 1000px var(--rsvp-card) inset;
+  -webkit-text-fill-color: var(--inv-ink);
+  box-shadow: 0 0 0 1000px var(--inv-card) inset;
   transition: background-color 9999s ease-out;
 }
 
 /* The seat count: the numeral in a well with its own short line, between two drawn signs. The
-   well clips, so the numeral the island turns in rises from under the line. */
+   well clips, so the numeral the island turns in rises from under the line. Never dotted — the
+   count is never blank. */
 .rsvp-stepper {
   display: inline-flex;
   align-items: center;
@@ -551,7 +208,7 @@ html.voct-motion .rsvp-rubric:not(.is-in)::after {
   width: 44px;
   height: 44px;
   padding: 0;
-  border: 1px solid var(--rsvp-line-strong);
+  border: 1px solid var(--inv-line-strong);
   border-radius: 50%;
   background: transparent;
   cursor: pointer;
@@ -570,7 +227,7 @@ html.voct-motion .rsvp-rubric:not(.is-in)::after {
   width: 13px;
   height: 1.5px;
   margin: -0.75px 0 0 -6.5px;
-  background: var(--rsvp-ink);
+  background: var(--inv-ink);
   transition: background-color 0.25s var(--ease);
 }
 
@@ -579,8 +236,8 @@ html.voct-motion .rsvp-rubric:not(.is-in)::after {
 }
 
 .rsvp-step:hover:not(:disabled) {
-  border-color: var(--rsvp-ink);
-  background: rgb(var(--rsvp-shadow) / 0.05);
+  border-color: var(--inv-ink);
+  background: rgb(var(--inv-shadow) / 0.05);
 }
 
 .rsvp-step:active:not(:disabled) {
@@ -588,13 +245,13 @@ html.voct-motion .rsvp-rubric:not(.is-in)::after {
 }
 
 .rsvp-step:disabled {
-  border-color: var(--rsvp-line);
+  border-color: var(--inv-line);
   cursor: default;
 }
 
 .rsvp-step:disabled::before,
 .rsvp-step:disabled::after {
-  background: var(--rsvp-line-strong);
+  background: var(--inv-line-strong);
 }
 
 .rsvp-well {
@@ -611,16 +268,16 @@ html.voct-motion .rsvp-rubric:not(.is-in)::after {
   bottom: 0;
   left: 10px;
   height: 1px;
-  background: var(--rsvp-line-strong);
+  background: var(--inv-line-strong);
   transition: background-color 0.3s var(--ease);
 }
 
 .rsvp-well:focus-within::after {
-  background: var(--rsvp-ink);
+  background: var(--inv-ink);
 }
 
 .rsvp-well:has([aria-invalid="true"])::after {
-  background: var(--rsvp-refusal);
+  background: var(--inv-refusal);
 }
 
 .rsvp-seats {
@@ -630,7 +287,7 @@ html.voct-motion .rsvp-rubric:not(.is-in)::after {
   border: 0;
   border-radius: 0;
   background: none;
-  color: var(--rsvp-ink);
+  color: var(--inv-ink);
   font-family: var(--serif);
   font-size: 40px;
   font-variant-numeric: lining-nums;
@@ -651,98 +308,14 @@ html.voct-motion .rsvp-rubric:not(.is-in)::after {
   outline: none;
 }
 
-.rsvp-hint,
-.rsvp-error {
+.rsvp-hint {
   margin: 18px auto 0;
   max-width: 26em;
+  color: var(--inv-muted);
   font-size: 17px;
+  font-style: italic;
   font-weight: 500;
   line-height: 1.45;
-}
-
-.rsvp-hint {
-  color: var(--rsvp-muted);
-  font-style: italic;
-}
-
-.rsvp-error {
-  color: var(--rsvp-refusal);
-}
-
-.rsvp-hint a,
-.rsvp-error a,
-.rsvp-fine a,
-.rsvp-noscript a {
-  color: inherit;
-  text-decoration: underline;
-  text-decoration-color: var(--rsvp-line-strong);
-  text-underline-offset: 2px;
-}
-
-/* The act: a bar of the invitation's ink with the card's inner frame drawn on it, lettered in the
-   card's capitals. While the reply is on its way a band of light passes across it. */
-.rsvp-act {
-  position: relative;
-  display: block;
-  width: 100%;
-  min-height: 58px;
-  margin: 36px 0 0;
-  padding: 0 24px;
-  overflow: hidden;
-  border: 0;
-  background: var(--rsvp-ink);
-  color: var(--rsvp-card);
-  font-family: var(--serif);
-  font-size: 16.5px;
-  font-weight: 650;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background-color 0.35s var(--ease);
-}
-
-.rsvp-act::before {
-  content: "";
-  position: absolute;
-  inset: 4px;
-  border: 1px solid rgb(251 247 245 / 0.22);
-  pointer-events: none;
-  transition: border-color 0.35s var(--ease);
-}
-
-.rsvp-act-label {
-  position: relative;
-  padding-left: 0.24em;
-}
-
-.rsvp-act:hover:not(:disabled) {
-  background: var(--rsvp-ink-deep);
-}
-
-.rsvp-act:hover:not(:disabled)::before {
-  border-color: rgb(251 247 245 / 0.5);
-}
-
-.rsvp-act:disabled {
-  cursor: progress;
-}
-
-html.voct-motion .rsvp-act:disabled::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.16) 50%, transparent 70%);
-  animation: rsvp-sweep 1.5s var(--ease) infinite;
-  pointer-events: none;
-}
-
-.rsvp-fine {
-  margin: 22px auto 0;
-  max-width: 34em;
-  color: var(--rsvp-muted);
-  font-family: var(--sans);
-  font-size: 12.5px;
-  line-height: 1.6;
 }
 
 /* ── The receipt and the closed card ─────────────────────────────────────────── */
@@ -756,14 +329,14 @@ html.voct-motion .rsvp-act:disabled::after {
   width: 21px;
   height: 50px;
   margin: 0 auto 18px;
-  background: var(--rsvp-ink);
+  background: var(--inv-ink);
   -webkit-mask: url(/logo-mark.png) center / contain no-repeat;
   mask: url(/logo-mark.png) center / contain no-repeat;
 }
 
 .rsvp-receipt-title,
 .rsvp-closed {
-  color: var(--rsvp-ink);
+  color: var(--inv-ink);
   font-size: clamp(26px, 3vw, 32px);
   font-style: italic;
   font-weight: 500;
@@ -775,7 +348,8 @@ html.voct-motion .rsvp-act:disabled::after {
 }
 
 .rsvp-closed {
-  margin: 0 auto;
+  margin: clamp(26px, 3.4vw, 34px) auto 0;
+  text-wrap: balance;
 }
 
 .rsvp-receipt-lines {
@@ -801,12 +375,12 @@ html.voct-motion .rsvp-act:disabled::after {
   bottom: 0;
   left: 0;
   height: 1px;
-  background: var(--rsvp-line);
+  background: var(--inv-line);
 }
 
 .rsvp-receipt-line dt {
   flex-shrink: 0;
-  color: var(--rsvp-muted);
+  color: var(--inv-muted);
   font-size: 17px;
   font-style: italic;
   font-weight: 500;
@@ -815,7 +389,7 @@ html.voct-motion .rsvp-act:disabled::after {
 .rsvp-receipt-line dd {
   min-width: 0;
   margin: 0;
-  color: var(--rsvp-ink);
+  color: var(--inv-ink);
   font-size: 22px;
   font-weight: 500;
   overflow-wrap: anywhere;
@@ -824,10 +398,11 @@ html.voct-motion .rsvp-act:disabled::after {
 
 .rsvp-receipt-farewell {
   margin: 26px 0 0;
-  color: var(--rsvp-text);
+  color: var(--inv-text);
   font-size: 20px;
   font-weight: 500;
   line-height: 1.45;
+  text-wrap: balance;
 }
 
 /* The two quiet acts: "change" on the receipt, and the switch under the act that turns the card
@@ -838,13 +413,13 @@ html.voct-motion .rsvp-act:disabled::after {
   padding: 6px 2px;
   border: 0;
   background: none;
-  color: var(--rsvp-ink-soft);
+  color: var(--inv-ink-soft);
   font-family: var(--serif);
   font-size: 17.5px;
   font-style: italic;
   font-weight: 500;
   text-decoration: underline;
-  text-decoration-color: var(--rsvp-line-strong);
+  text-decoration-color: var(--inv-line-strong);
   text-underline-offset: 4px;
   cursor: pointer;
   transition:
@@ -854,8 +429,8 @@ html.voct-motion .rsvp-act:disabled::after {
 
 .rsvp-change:hover,
 .rsvp-switch:hover:not(:disabled) {
-  color: var(--rsvp-ink);
-  text-decoration-color: var(--rsvp-ink);
+  color: var(--inv-ink);
+  text-decoration-color: var(--inv-ink);
 }
 
 .rsvp-switch {
@@ -866,101 +441,69 @@ html.voct-motion .rsvp-act:disabled::after {
   cursor: default;
 }
 
-.rsvp-noscript {
-  margin: 0;
-  font-size: 19px;
-  font-weight: 500;
-}
-
-/* ── Contact ───────────────────────────────────────────────────────────────── */
-.rsvp-contact {
+/* ── Where: on the sheet, under the card ─────────────────────────────────────── */
+.rsvp-where {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  margin-top: clamp(64px, 8vw, 96px);
+  max-width: 560px;
+  margin: clamp(56px, 7vw, 84px) auto 0;
+  text-align: center;
 }
 
-.rsvp-contact-line {
-  margin: 0;
-  color: var(--rsvp-text);
+.rsvp-place {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-style: normal;
+}
+
+.rsvp-church {
+  color: var(--inv-ink);
+  font-size: clamp(20px, 2vw, 23px);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.rsvp-address {
   font-size: clamp(18.5px, 1.8vw, 20px);
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+/* The building has two churches; the room is the last thing a guest at the door still needs. */
+.rsvp-room {
+  color: var(--inv-muted);
+  font-size: clamp(17.5px, 1.7vw, 19px);
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.rsvp-contact {
+  margin: clamp(28px, 3.6vw, 36px) 0 0;
+  color: var(--inv-text);
+  font-size: clamp(18px, 1.8vw, 19.5px);
   font-weight: 500;
   line-height: 1.5;
   text-wrap: balance;
 }
 
-.rsvp-contact-mail {
-  color: var(--rsvp-ink);
-  font-size: clamp(21px, 2.1vw, 24px);
-  font-weight: 500;
-  line-height: 1.4;
-  text-decoration: underline;
-  text-decoration-color: var(--rsvp-line-strong);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 5px;
-  transition: text-decoration-color 0.25s var(--ease);
+.rsvp-contact .inv-link {
+  white-space: nowrap;
 }
 
-.rsvp-contact-mail:hover {
-  text-decoration-color: var(--rsvp-ink);
-}
-
-.rsvp-door {
-  margin-top: 34px;
-  padding-left: 0.22em;
-  color: var(--rsvp-ink-soft);
-  font-size: 14px;
-  font-weight: 650;
-  letter-spacing: 0.22em;
-  text-decoration: none;
-  text-transform: uppercase;
-  transition: color 0.25s var(--ease);
-}
-
-.rsvp-door:hover {
-  color: var(--rsvp-ink);
+.rsvp-where .inv-door {
+  margin-top: 26px;
 }
 
 /* ── Motion ────────────────────────────────────────────────────────────────────
    Gated on `html.voct-motion` (JS live, motion allowed), so a reduced-motion or no-JS visitor
    gets the composed sheet with nothing waiting to arrive. */
-html.voct-motion .rsvp-light {
-  animation:
-    rsvp-dawn 2.8s var(--ease-slow) both,
-    rsvp-breathe 12s ease-in-out 2.8s infinite alternate;
-}
 
-html.voct-motion .rsvp-cloud {
-  transition:
-    opacity 2.4s var(--ease-slow),
-    transform 2.8s var(--ease-slow);
-}
-
-html.voct-motion .rsvp-cloud-left:not(.is-in) {
-  opacity: 0;
-  transform: translate(-7%, 4%);
-}
-
-html.voct-motion .rsvp-cloud-right:not(.is-in) {
-  opacity: 0;
-  transform: translate(7%, 4%);
-}
-
-/* Once gathered, the banks billow: wider, then taller, and back, from their pinned corners. It runs
-   on `scale`, not `transform`, so it composes with the gathering transition rather than replacing
-   it. Never below 1, or the opaque corner would lift off the edge; two periods that do not divide,
-   so the banks never swell together like a pulse. */
-html.voct-motion .rsvp-cloud-left.is-in {
-  animation: rsvp-billow 19s ease-in-out infinite alternate;
-}
-
-html.voct-motion .rsvp-cloud-right.is-in {
-  animation: rsvp-billow 26s ease-in-out -9s infinite alternate;
-}
-
-/* The blank is drawn once the reply card has inked in, from its centre outward like every rule on
-   this sheet. A form that comes back from the receipt is mounted already drawn. */
+/* The blank is drawn once the card has inked in, from its centre outward like every rule on this
+   sheet. A form that comes back from the receipt is mounted already drawn. */
 html.voct-motion .rsvp-line::after {
   transition: transform var(--rule-in) var(--ease-rule) 0.45s;
 }
@@ -971,7 +514,7 @@ html.voct-motion .rsvp-slot:not(.is-in) .rsvp-line::after {
 
 /* The receipt is written onto the card in order: seal, thanks, the two lines, the farewell. */
 html.voct-motion .rsvp-receipt > * {
-  animation: rsvp-arrive 0.9s var(--ease) both;
+  animation: inv-arrive 0.9s var(--ease) both;
 }
 
 html.voct-motion .rsvp-receipt > .rsvp-seal {
@@ -993,52 +536,7 @@ html.voct-motion .rsvp-receipt-line + .rsvp-receipt-line::after {
 }
 
 html.voct-motion .rsvp-closed {
-  animation: rsvp-arrive 0.9s var(--ease) both;
-}
-
-@keyframes rsvp-dawn {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.7) rotate(-8deg);
-  }
-  to {
-    opacity: 0.92;
-    transform: translate(-50%, -50%) scale(1) rotate(0deg);
-  }
-}
-
-@keyframes rsvp-breathe {
-  from {
-    opacity: 0.92;
-    transform: translate(-50%, -50%) scale(1) rotate(0deg);
-  }
-  to {
-    opacity: 0.72;
-    transform: translate(-50%, -50%) scale(1.04) rotate(2deg);
-  }
-}
-
-@keyframes rsvp-billow {
-  from {
-    scale: 1;
-  }
-  45% {
-    scale: 1.04 1.015;
-  }
-  to {
-    scale: 1.015 1.05;
-  }
-}
-
-@keyframes rsvp-arrive {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  animation: inv-arrive 0.9s var(--ease) both;
 }
 
 @keyframes rsvp-seal {
@@ -1064,57 +562,11 @@ html.voct-motion .rsvp-closed {
   }
 }
 
-@keyframes rsvp-sweep {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(100%);
-  }
-}
-
 /* ── A phone ───────────────────────────────────────────────────────────────────
-   The moment breaks after the day, so the hour and the admission share the second line and no
-   dash is left hanging at a line's end. */
+   The card stands close under the bar, so its blanks are on the first screen. */
 @media (max-width: 599px) {
   .rsvp {
-    padding-top: 132px;
-  }
-
-  .rsvp-day {
-    flex-basis: 100%;
-  }
-
-  .rsvp-sep-day,
-  .rsvp-room-dot {
-    display: none;
-  }
-
-  .rsvp-room-floor {
-    flex-basis: 100%;
-  }
-
-  .rsvp-form,
-  .rsvp-receipt,
-  .rsvp-closed {
-    padding: 36px 22px 30px;
-  }
-
-  .rsvp-form::before,
-  .rsvp-receipt::before,
-  .rsvp-closed::before {
-    inset: 5px;
-  }
-
-  /* The act's two words must hold one line at 320px. */
-  .rsvp-act {
-    padding: 0 10px;
-    font-size: 15px;
-    letter-spacing: 0.16em;
-  }
-
-  .rsvp-act-label {
-    padding-left: 0.16em;
+    padding-top: 108px;
   }
 
   .rsvp-receipt-line {
