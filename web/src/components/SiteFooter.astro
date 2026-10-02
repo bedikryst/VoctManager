@@ -3,7 +3,8 @@
  * @file SiteFooter.astro
  * @description Shared marketing footer for every page EXCEPT the landing (Fundatio identity ·
  *  the leaves the bar does not name · the notice list · contact/socials), on the site-wide
- *  night ground.
+ *  night ground. The explicit invitation variant closes a personal letter on its own paper with
+ *  sender identity, contact, profiles, privacy and the full website.
  *
  *  IT IS NOT THE LANDING'S FOOTER AND MUST NOT BE REPLACED BY IT, which has been asked twice.
  *  The landing's plate numbers itself `IV · INSCRIPTIO FINALIS` and closes the sequence
@@ -66,8 +67,10 @@ interface Props {
       numbers and statute a second time, a hand's breadth lower, read as a stutter. The remaining
       stanzas share the measure equally (`data-fundatio`). */
   registry?: boolean;
+  /** The invitation closes as a letter rather than as the site's full register. */
+  variant?: "standard" | "invitation";
 }
-const { lang = DEFAULT_LOCALE, notice = true, registry = true } = Astro.props;
+const { lang = DEFAULT_LOCALE, notice = true, registry = true, variant = "standard" } = Astro.props;
 // The cadence is handed out in reading order and closes up over whatever is withheld.
 const stanzaCount = (registry ? 1 : 0) + 1 + (notice ? 1 : 0) + 1;
 const cadence = { index: registry ? 2 : 1, nuntius: registry ? 3 : 2, vox: stanzaCount };
@@ -78,6 +81,24 @@ const tempus = tempusForDate(new Date());
 const tempusGloss = tempus.gloss[lang];
 ---
 
+{variant === "invitation" ? (
+  <footer class="site-foot invitation-foot">
+    <div class="invitation-foot-inner">
+      <p class="invitation-foot-sender">VoctEnsemble · VoctFoundation</p>
+      <nav class="invitation-foot-links" aria-label={t.contactMedia}>
+        <a href="mailto:kontakt@voctensemble.com">kontakt@voctensemble.com</a>
+        {Object.values(SOCIAL).map((account) => (
+          <a href={account.url} data-invitation-goal="social" target="_blank" rel="noopener noreferrer">{account.platform}<span aria-hidden="true"> ↗</span></a>
+        ))}
+      </nav>
+      <nav class="invitation-foot-base" aria-label={t.site}>
+        <small>© {year} Fundacja VoctFoundation</small>
+        <a href={localizePath("/polityka-prywatnosci", lang)}>{t.privacy}</a>
+        <a href={localizePath("/", lang)}>voctensemble.com<span aria-hidden="true"> →</span></a>
+      </nav>
+    </div>
+  </footer>
+) : (
 <footer class="site-foot">
   {/* Four stanzas of one rank, all hanging from one line across the measure, written left to
       right: `data-d` sets the offset for a whole SUBTREE, so the stanza carries the cadence and
@@ -249,8 +270,34 @@ const tempusGloss = tempus.gloss[lang];
     <a class="foot-base-home" href={localizePath("/", lang)}>voctensemble.com</a>
   </div>
 </footer>
+)}
 
 <style>
+  .site-foot.invitation-foot {
+    padding: 36px max(28px, 5vw, env(safe-area-inset-right, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)) max(28px, 5vw, env(safe-area-inset-left, 0px));
+    background: var(--inv-paper);
+    color: var(--inv-ink-soft);
+    font-family: var(--serif);
+    text-align: center;
+  }
+  .invitation-foot-inner { max-width: 840px; margin: 0 auto; border-top: 1px solid var(--inv-line); padding-top: 28px; }
+  .invitation-foot-sender { margin: 0 0 12px; color: var(--inv-ink); font-size: 21px; font-weight: 600; }
+  .invitation-foot-links, .invitation-foot-base { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 24px; }
+  .invitation-foot-links a { display: inline-flex; align-items: center; min-height: 44px; font-size: 18px; font-weight: 500; }
+  .invitation-foot-links a span { margin-left: 0.2em; }
+  .invitation-foot-base { margin-top: 12px; font-family: var(--sans); font-size: 12px; line-height: 1.5; }
+  .invitation-foot-base small { font: inherit; }
+  .invitation-foot-base a { display: inline-flex; align-items: center; min-height: 44px; }
+  .invitation-foot a { color: inherit; text-decoration: underline; text-decoration-color: var(--inv-line-strong); text-underline-offset: 3px; }
+  .invitation-foot a:hover { color: var(--inv-ink-deep); }
+  .invitation-foot a:focus-visible { outline: 2px solid var(--inv-ink); outline-offset: 3px; }
+
+  @media (max-width: 599px) {
+    .invitation-foot-links { gap: 4px 18px; }
+    .invitation-foot-links a:first-child { flex-basis: 100%; justify-content: center; }
+    .invitation-foot-base small { flex-basis: 100%; }
+  }
+
   /* The foot is the page's last band, so under `viewport-fit=cover` (BaseLayout) it owns the strip
      behind the home indicator — its bottom padding absorbs that inset rather than printing the
      colophon under the bar. Sides take the landscape notch the same way. */

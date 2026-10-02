@@ -28,10 +28,11 @@
  *  A moment the backend already records at the same instant (the Axepta submit creates the Donation
  *  row) is not a goal: the ledger is the backend, Plausible adds nothing there.
  *  Where a goal fires on more than one page, the page path in the goal's own breakdown tells them
- *  apart; the name does not. A click that navigates to a page of this site is never a goal — the
- *  pageview already records it. Neither are UI toggles, legal links, social links or a
- *  "which-of-these-buttons" question: at this site's traffic those split into single digits and say
- *  nothing. Scroll depth and time on page come with the script itself and need no event.
+ *  apart; the name does not. Internal navigation, UI toggles, legal and social links ordinarily
+ *  use pageviews rather than custom goals. The public invitation explicitly measures its declared
+ *  intent and practical next steps: accept, share, calendar, programme, Facebook event and profiles.
+ *  These are aggregate interests, never named attendance records. Sharing measures the launch of
+ *  the native sheet or email draft, not delivery. Scroll depth and time on page need no event.
  *
  *  Names are Polish with `+` for space (the form the `plausible-event-name=` class needs), and they
  *  are stable identifiers, not copy — renaming one orphans its history in the dashboard.
@@ -58,6 +59,13 @@ export const GOALS = {
   /* The landing threshold (islands/landing/Preloader.tsx). Escape answers "silence". */
   enteredWithSound: "wejscie+dzwiek",
   enteredInSilence: "wejscie+cisza",
+  /* Public invitation: anonymous intent and practical next steps, without custom properties. */
+  invitationAccepted: "zaproszenie+przyjecie",
+  invitationShare: "zaproszenie+udostepnienie",
+  invitationCalendar: "zaproszenie+kalendarz",
+  invitationProgramme: "zaproszenie+program",
+  invitationFacebook: "zaproszenie+facebook",
+  invitationSocial: "zaproszenie+social",
 } as const;
 
 export type Goal = (typeof GOALS)[keyof typeof GOALS];

@@ -72,9 +72,9 @@ export default defineConfig({
         // /nuntius is the concert notice list's receipt page, in three locales. It is
         // `noindex,follow` and its only inbound link is one we mail to one reader.
         !/\/nuntius$/.test(new URL(page).pathname) &&
-        // /rsvp is the reply card printed invitations link to: `noindex,follow`, reached only
-        // from the card.
-        !/\/rsvp$/.test(new URL(page).pathname) &&
+        // /rsvp is the reply card sent with the invitations and /zaproszenie the invitation itself:
+        // both `noindex,follow`, reached only by the links sent with it.
+        !/\/(rsvp|zaproszenie)$/.test(new URL(page).pathname) &&
         // /fundacja and /mecenat are deployed but not announced: `noindex` while
         // FOUNDATION_PAGE_LINKED is false in src/data/foundationSupport.ts. Drop this clause
         // together with that flag.

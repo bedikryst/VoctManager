@@ -29,6 +29,9 @@ NOTICE_SURFACES: list[str] = [
     #: The strip that opens the landing page's footer. Distinct from every other surface in
     #: one way worth recording: it is the only one a reader meets without having gone looking.
     'web:landing',
+    #: The invitation to one concert opened on a screen (`/zaproszenie`), where the printed card
+    #: asks for an RSVP. Its sentence is in the invitation's voice; the clause is the same one.
+    'web:zaproszenie',
 ]
 
 

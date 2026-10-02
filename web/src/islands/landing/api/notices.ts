@@ -43,7 +43,9 @@ export type NoticeSurface =
   | "web:koncert"
   /** The strip that opens the landing page's footer — the only placement a reader meets
       without having gone looking for the list. */
-  | "web:landing";
+  | "web:landing"
+  /** The invitation to one concert opened on a screen, where the card prints its RSVP. */
+  | "web:zaproszenie";
 
 /** The site's three locales, as the backend spells them. */
 export type NoticeLocale = "pl" | "en" | "fr";

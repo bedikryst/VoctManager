@@ -1,0 +1,294 @@
+---
+/**
+ * @file ZaproszeniePage.astro
+ * @description `/zaproszenie` — the printed invitation to one concert, opened on a screen: a page a
+ *  phone reads more easily than the PDF, and one that can be sent on its own. Its last ask is the
+ *  concert invitation list. Sharing and Facebook links connect the reader with other guests
+ *  and the organiser's event; this page does not collect attendance declarations.
+ *
+ *  THE COVER OPENS AN EDITORIAL SPREAD. The hands reach towards the light beneath the title.
+ *  The spread pairs the invitation's host, moment, venue and signature with the concert's prose,
+ *  composers and performers. Each column reads down its own axis; on a phone the invitation
+ *  precedes the concert. The programme link introduces its composers, followed by performer
+ *  credits. The spread enters as one composition. One response strip follows both, before the
+ *  future-invitation list and the foundation's close. The title stands once, on the cover; the
+ *  invitation reads on from it as one sentence ("VoctEnsemble serdecznie zaprasza na Koncert Duchowy…").
+ *
+ *  THE ARTWORK IS THE CARD'S OWN LAYERS (`styles/invitation.css` says which), optional to the build
+ *  and outside git; without it the cover is its light alone and the sheet its gradients.
+ *
+ *  THE ASK IS THE LIST'S ISLAND IN THIS PAGE'S DRESS. `NoticeForm` is mounted here directly rather
+ *  through `NoticeSignup`, whose rubric, Latin and headline are /koncerty's: here the rubric is the
+ *  card's, the sentence is in the card's voice, and the blank and the act are the reply card's
+ *  (`styles/zaproszenie.css`). What a consent record depends on is the same as on every other
+ *  placement: the clause and the act come from `nuntius.ts`, prepared by `chromeHtmlForIsland`,
+ *  the promise and the receipt's hint from /koncerty's `notice.*`, and the screen is recorded as
+ *  `web:zaproszenie`.
+ *
+ *  `noindex`, out of the sitemap and out of `TRANSLATED_ROUTES`: the concert's own page is the one
+ *  search should find, and this one goes out of date with the evening.
+ * @architecture Astro islands 2026
+ * @module components/pages/ZaproszeniePage
+ */
+import { getImage } from "astro:assets";
+import { getEntry } from "astro:content";
+
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SiteChrome from "../SiteChrome.astro";
+import SiteFooter from "../SiteFooter.astro";
+import { NoticeForm } from "../../islands/landing/NoticeForm";
+import { KONCERTY_PAGE } from "../../i18n/content/koncerty";
+import { NUNTIUS } from "../../i18n/content/nuntius";
+import { INVITATION_CONCERT_ID, ZAPROSZENIE } from "../../i18n/content/zaproszenie";
+import { UI } from "../../i18n/ui";
+import { SITE } from "../../i18n/config";
+import { longDate, weekdayName } from "../../lib/dates";
+import { chromeHtmlForIsland } from "../../lib/islandCopy";
+import { pageCopy } from "../../lib/pageCopy";
+import { bleedPair, photoOptional } from "../../lib/photos";
+import "../../styles/invitation.css";
+import "../../styles/zaproszenie.css";
+
+const lang = "pl";
+const ui = UI[lang];
+const copy = ZAPROSZENIE;
+const inside = copy.inside;
+
+const entry = await getEntry("concerts", INVITATION_CONCERT_ID);
+if (!entry) throw new Error(`[zaproszenie] No concert "${INVITATION_CONCERT_ID}" in the corpus.`);
+const concert = entry.data;
+const { date, time } = concert;
+if (!date || !time) {
+  throw new Error(`[zaproszenie] "${INVITATION_CONCERT_ID}" needs a date and an hour to be invited to.`);
+}
+
+const day = `${weekdayName(date, lang)}, ${longDate(date, lang)}`;
+const city = concert.venue?.split(",").at(-1)?.trim();
+const invitationUrl = `${SITE}/zaproszenie`;
+const shareText = `${inside.host} ${inside.invites} ${inside.kind} „${concert.title}”. ${day}, ${time}. ${inside.place.church}, ${inside.place.address}. ${inside.admission}.`;
+const shareEmail = `mailto:?subject=${encodeURIComponent(copy.meta.title)}&body=${encodeURIComponent(shareText + "\n\n" + invitationUrl)}`;
+/* The card sets the hour the Polish way, minutes raised over the hour: 13³⁰. */
+const [hours, minutes] = time.split(":");
+
+/* The list's shared voice: the promise a reader consents under and the receipt's hint. */
+const notice = pageCopy(KONCERTY_PAGE, lang).notice;
+const nuntius = NUNTIUS[lang];
+const noticeChrome = {
+  ...nuntius.form,
+  errorEmail: copy.ask.errorEmail,
+  errorSend: copy.ask.errorSend,
+  consentHtml: chromeHtmlForIsland(nuntius.form.consentHtml, lang),
+};
+const noticeCopy = {
+  sentTitle: copy.ask.sentTitle,
+  sentBody: copy.ask.sentBody,
+  sentHint: notice.sentHint,
+};
+
+/* A link pasted into a message shows the evening's poster, the same frame its own page shares. */
+const shareImg = concert.share ? photoOptional(concert.share) : undefined;
+const ogImage = (
+  await getImage({ src: shareImg ?? bleedPair("koncerty-hero").desktop, width: 1200, format: "webp" })
+).src;
+
+/* The invitation's artwork. Each is optional; see the header. */
+const art = async (name: string, width: number) => {
+  const src = photoOptional(name);
+  return src ? getImage({ src, width: Math.min(width, src.width), format: "webp" }) : undefined;
+};
+const [light, handLeft, handRight, cloudLeft, cloudRight] = await Promise.all([
+  art("zaproszenie-light", 1200),
+  art("zaproszenie-hand-left", 1200),
+  art("zaproszenie-hand-right", 1200),
+  art("zaproszenie-cloud-left", 860),
+  art("zaproszenie-cloud-right", 920),
+]);
+const hasHands = Boolean(handLeft && handRight);
+---
+
+<BaseLayout
+  title={copy.meta.title}
+  description={copy.meta.description}
+  path="/zaproszenie"
+  image={ogImage}
+  bodyClass="page-invitation page-zaproszenie"
+  lang={lang}
+>
+  <Fragment slot="head">
+    <meta name="robots" content="noindex,follow" />
+    {/* Without JavaScript the island's server-rendered form cannot send; the address replaces it. */}
+    <noscript><style is:inline>.zap-card .notice-form { display: none; }</style></noscript>
+  </Fragment>
+
+  <a class="skip-link" href="#tresc">{ui.skipToContent}</a>
+  <SiteChrome current="/zaproszenie" ground="paper" lang={lang} />
+
+  <main id="tresc" class="inv-sheet zap">
+    <div class="inv-sky" aria-hidden="true">
+      {cloudLeft && (
+        <img class="inv-cloud inv-cloud-left reveal-cue" src={cloudLeft.src} width={cloudLeft.attributes.width} height={cloudLeft.attributes.height} alt="" loading="lazy" decoding="async" />
+      )}
+      {cloudRight && (
+        <img class="inv-cloud inv-cloud-right reveal-cue" src={cloudRight.src} width={cloudRight.attributes.width} height={cloudRight.attributes.height} alt="" loading="lazy" decoding="async" />
+      )}
+    </div>
+
+    {/* ── The cover ── */}
+    <header class="zap-cover" data-entrance="waiting">
+      <div class="zap-touch" role={hasHands ? "img" : undefined} aria-label={hasHands ? copy.cover.hands : undefined} aria-hidden={hasHands ? undefined : "true"}>
+        <span class="zap-glow" aria-hidden="true">
+          <span class="inv-light">
+            {light && <img src={light.src} width={light.attributes.width} height={light.attributes.height} alt="" decoding="async" fetchpriority="high" />}
+          </span>
+        </span>
+        {hasHands && handLeft && (
+          <img class="zap-hand zap-hand-left" src={handLeft.src} width={handLeft.attributes.width} height={handLeft.attributes.height} alt="" decoding="async" fetchpriority="high" />
+        )}
+        {hasHands && handRight && (
+          <img class="zap-hand zap-hand-right" src={handRight.src} width={handRight.attributes.width} height={handRight.attributes.height} alt="" decoding="async" fetchpriority="high" />
+        )}
+      </div>
+      <h1 class="zap-title">{concert.title}</h1>
+      <p class="zap-cover-line">{copy.cover.line}</p>
+      <p class="zap-cover-moment">
+        <time datetime={date}>{longDate(date, lang)}</time>
+        {city && <><span aria-hidden="true"> · </span><span>{city}</span></>}
+      </p>
+    </header>
+
+    <div class="zap-content">
+      <div class="zap-spread reveal">
+        {/* ── The invitation ── */}
+        <section class="zap-inside" aria-label={inside.aria}>
+          <p class="zap-host">
+            <span class="zap-host-name">{inside.host}</span>
+            <span class="zap-host-line">{inside.invites}</span>
+          </p>
+          <p class="zap-kind">{inside.kind}</p>
+          <p class="zap-subtitle" set:html={inside.subtitleHtml} />
+
+          <span class="zap-rule" aria-hidden="true"></span>
+
+          <p class="zap-moment">
+            <time datetime={`${date}T${time}`}>
+              <span class="zap-day">{day}</span>
+              <span class="zap-sep zap-sep-day" aria-hidden="true">—</span>
+              <span class="zap-at">
+                {inside.hourPrefix}&nbsp;<span class="sr-only">{time}</span><span aria-hidden="true">{hours}<sup class="inv-minutes">{minutes}</sup></span>
+              </span>
+            </time>
+            <span class="zap-sep" aria-hidden="true">—</span>
+            <span class="zap-free">{inside.admission}</span>
+          </p>
+
+          <address class="zap-place">
+            <span class="zap-church">{inside.place.church}</span>
+            {concert.mapUrl ? (
+              <a class="zap-address inv-link" href={concert.mapUrl} target="_blank" rel="noopener noreferrer">
+                {inside.place.address}<span class="inv-out" aria-hidden="true">↗</span>
+              </a>
+            ) : (
+              <span class="zap-address">{inside.place.address}</span>
+            )}
+            <span class="zap-room">
+              <span class="zap-room-floor">{inside.place.room}</span>
+              <span class="zap-room-dot" aria-hidden="true">·</span>
+              <span set:html={inside.place.festivalHtml} />
+            </span>
+          </address>
+
+          <p class="zap-sign">
+            <span class="zap-sign-name">{inside.signature.name}</span>
+            <span class="zap-sign-role">{inside.signature.role}</span>
+          </p>
+        </section>
+
+        {/* ── The concert ── */}
+        <section class="zap-about" aria-labelledby="zap-about-heading">
+          <h2 id="zap-about-heading" class="zap-about-heading">{copy.about.heading}</h2>
+          <p class="zap-about-text" set:html={copy.about.textHtml} />
+          <div class="zap-programme">
+            {concert.hasPage && (
+              <p class="zap-door">
+                <a class="inv-door" href={`/koncerty/${INVITATION_CONCERT_ID}#program`} data-invitation-goal="programme">{copy.about.programme}<span class="zap-door-arrow" aria-hidden="true">→</span></a>
+              </p>
+            )}
+            <ul class="zap-works" role="list">
+              {copy.about.composers.map((name) => <><li class="zap-name">{name}</li>{" "}</>)}
+            </ul>
+          </div>
+          <div class="zap-cast">
+            {copy.about.cast.map((line, row) => (
+              <p class={row === 0 ? "zap-cast-lead" : undefined}>{line.map((item, index, all) => <><span class="zap-name">{item}</span>{index < all.length - 1 && " "}</>)}</p>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <div class="zap-response">
+        <button class="zap-accept" type="button" hidden data-invitation-accept data-accept-key={INVITATION_CONCERT_ID} data-accepted-label={copy.actions.accepted} aria-live="polite">
+          {copy.actions.accept}
+        </button>
+        <nav class="zap-actions" aria-label={copy.actions.aria}>
+          <div class="zap-utilities">
+            <a class="inv-door" href="/zaproszenie.ics" data-invitation-goal="calendar" download="pochwala-stworzenia.ics" data-astro-reload>{copy.actions.calendar}<span class="inv-out" aria-hidden="true">↓</span></a>
+            <a class="inv-door" href={shareEmail} data-invitation-goal="share" data-invitation-share data-share-title={copy.meta.title} data-share-text={shareText} data-share-url={invitationUrl}>{copy.actions.share}<span class="zap-door-arrow" aria-hidden="true">→</span></a>
+          </div>
+          {concert.facebookEvent && (
+            <a class="inv-door zap-facebook" href={concert.facebookEvent} data-invitation-goal="facebook" target="_blank" rel="noopener noreferrer">{copy.actions.facebook}<span class="inv-out" aria-hidden="true">↗</span></a>
+          )}
+        </nav>
+      </div>
+    </div>
+
+    {/* ── The ask, where the card prints its RSVP ── */}
+    <section class="zap-ask" aria-labelledby="zap-ask-heading">
+      <h2 id="zap-ask-heading" class="inv-rubric zap-rubric reveal">{copy.ask.rubric}</h2>
+      <p class="zap-say reveal" data-d="1">
+        <span class="zap-say-invitation">{copy.ask.invitation}</span>
+        <span class="zap-say-promise">{notice.lede}</span>
+      </p>
+      <div class="zap-slot reveal" data-d="2">
+        <div class="inv-card zap-card notice-inner">
+          <NoticeForm
+            client:visible
+            lang={lang}
+            chrome={noticeChrome}
+            copy={noticeCopy}
+            surface="web:zaproszenie"
+            placement="band"
+            showAddressCorrection
+          />
+          <noscript>
+            <p class="inv-noscript">
+              {copy.ask.noscript}{" "}
+              <a href={`mailto:${copy.ask.contactEmail}`}>{copy.ask.contactEmail}</a>
+            </p>
+          </noscript>
+        </div>
+      </div>
+    </section>
+
+    {/* ── The foundation, as the card's last page closes ── */}
+    <section class="zap-foundation reveal" aria-labelledby="zap-foundation-heading">
+      <h2 id="zap-foundation-heading" class="zap-foundation-name">{copy.foundation.name}</h2>
+      <p class="zap-foundation-text">{copy.foundation.text}</p>
+    </section>
+  </main>
+
+  <SiteFooter lang={lang} variant="invitation" />
+</BaseLayout>
+
+<script>
+  import { setupInvitation } from "../../scripts/invitation";
+
+  let dispose: (() => void) | undefined;
+  document.addEventListener("astro:page-load", () => {
+    dispose?.();
+    dispose = setupInvitation();
+  });
+  document.addEventListener("astro:before-swap", () => {
+    dispose?.();
+    dispose = undefined;
+  });
+</script>

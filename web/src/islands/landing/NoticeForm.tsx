@@ -10,14 +10,15 @@
  *  there the blank wears NOTHING OF ITS OWN: the page it stands on dresses it from its own
  *  materials (the station title's line and the pill on /koncerty, the register's ruled lines on
  *  the landing, the door's fact row on a concert page, the doors' serif line and capsule on
- *  /kontakt), because an object carried from
+ *  /kontakt, the invitation's reply card on /zaproszenie), because an object carried from
  *  one page onto another is a patch on every page but its own. Hence the neutral class names, and
  *  hence the two things this markup does decide by placement — the letter's arrow and the
  *  letter's `Na adres` label are the letter's gestures, and a band prints the plain field name.
  *  Beyond that the placements differ in what surrounds the exchange, not in the exchange: the
  *  letter mirrors the address onto the sheet beside it and its receipt carries the apparatus of a
  *  page that stands alone (the address as sent, the way back to it, the resend); a band inside a
- *  longer page freezes its own block and shows the short receipt.
+ *  longer page freezes its own block and shows the short receipt. A host may explicitly include
+ *  the submitted address and its correction link without taking the letter's recovery panel.
  *
  *  NO NAME FIELD, AND THAT IS A PLACEMENT, NOT A REMOVAL. The greeting still wants a name; the page
  *  that asks for it is the receipt (/nuntius `preferences`), where the reader has already confirmed
@@ -91,6 +92,8 @@ interface NoticeFormProps {
   readonly surface: NoticeSurface;
   /** What stands around the exchange. See the header. */
   readonly placement?: "band" | "letter";
+  /** A host may show the submitted address and correction without the letter's resend panel. */
+  readonly showAddressCorrection?: boolean;
 }
 
 /**
@@ -124,8 +127,10 @@ export function NoticeForm({
   copy,
   surface,
   placement = "band",
+  showAddressCorrection = false,
 }: NoticeFormProps): React.JSX.Element {
   const [email, setEmail] = useState("");
+  const [submittedEmail, setSubmittedEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [emailInvalid, setEmailInvalid] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -155,9 +160,9 @@ export function NoticeForm({
   /** Whether focus has already been handed to the receipt for this exchange. */
   const greeted = useRef(false);
 
-  /** The letter stands alone, so its receipt carries the apparatus of a page: the address as it
-      was sent, the way back to it, and the recovery row. A band inside a longer page does not. */
+  /** The standalone letter carries recovery; a host can opt into address correction alone. */
   const isLetter = placement === "letter";
+  const showAddress = isLetter || showAddressCorrection;
 
   /* The letter is addressed as the reader types — character for character, with no easing: it is
      their writing, not an animation. Announced rather than written, because the sheet is the
@@ -264,6 +269,7 @@ export function NoticeForm({
         });
         // This submission WAS the request the cooldown counts from, so the resend opens a full
         // cooldown from here rather than from the first press of the button inside the receipt.
+        setSubmittedEmail(address);
         setResendAt(Date.now() + NOTICE_RESEND_COOLDOWN_MS);
         // Counted on the accepted POST, not on the confirmed consent: the click in the mail
         // happens off-site and the goal's job is to say which page the address came from — the
@@ -300,13 +306,16 @@ export function NoticeForm({
       delete band.dataset.settling;
       band.style.minHeight = "";
     }
+    setEmail(submittedEmail);
+    setError(null);
+    setEmailInvalid(false);
     setLoading(false);
     setResent(false);
     setRecoveryOpen(false);
     refocusEmail.current = true;
     setPhase("open");
-    mirror(email.trim(), "writing");
-  }, [email, mirror]);
+    mirror(submittedEmail, "writing");
+  }, [submittedEmail, mirror]);
 
   const waiting = Math.max(0, resendAt - now);
 
@@ -317,7 +326,7 @@ export function NoticeForm({
     setError(null);
     try {
       await subscribeToNotices({
-        email: email.trim(),
+        email: submittedEmail,
         name: "",
         locale: lang,
         surface,
@@ -331,7 +340,7 @@ export function NoticeForm({
     } finally {
       setResending(false);
     }
-  }, [resending, resendAt, email, lang, surface, chrome]);
+  }, [resending, resendAt, submittedEmail, lang, surface, chrome]);
 
   // The countdown runs only while the reader is looking at it. It is read from the clock on every
   // tick rather than counted down, so a tab that slept through the cooldown opens accurate.
@@ -434,6 +443,7 @@ export function NoticeForm({
          because the field is controlled and autofill reaches `onChange`. */
       data-blank={email === "" ? "" : undefined}
       aria-invalid={emailInvalid || undefined}
+      readOnly={loading}
       value={email}
       onChange={(event) => {
         setEmail(event.target.value);
@@ -508,10 +518,16 @@ export function NoticeForm({
         </span>
         <p className="notice-done-title">{copy.sentTitle}</p>
         <p className="notice-done-body">{copy.sentBody}</p>
-        {isLetter ? (
+        {showAddress ? (
           <p className="notice-done-address">
-            <span className="notice-done-address-label eyebrow">{chrome.pendingAddressLabel}</span>
-            <span className="notice-done-address-value">{email.trim()}</span>
+            <span
+              className={
+                isLetter ? "notice-done-address-label eyebrow" : "notice-done-address-label"
+              }
+            >
+              {chrome.pendingAddressLabel}
+            </span>
+            <span className="notice-done-address-value">{submittedEmail}</span>
             <button type="button" className="notice-textlink" onClick={onEditAddress}>
               {chrome.editAddress}
             </button>
