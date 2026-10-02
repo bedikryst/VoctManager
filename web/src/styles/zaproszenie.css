@@ -189,21 +189,22 @@ body.page-zaproszenie {
 /* One entrance preserves the relationships between the letter, programme and credits.
    The resting ink remains legible while the composition settles onto the paper. */
 html.voct-motion .zap-spread.reveal {
-  opacity: 0.88;
+  --half-ink: 0.88;
   transform: translateY(14px);
-  transition:
-    opacity 720ms cubic-bezier(0.22, 0.61, 0.36, 1),
-    transform 720ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition-property: opacity, transform;
+  transition-duration: 720ms;
+  transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition-delay: 0s;
 }
 
 html.voct-motion .zap-spread.reveal.is-in {
-  opacity: 1;
   transform: none;
 }
 
 html.voct-motion .zap-spread.reveal.is-settled,
 html.voct-motion.vt-nav .zap-spread.reveal.is-in {
-  transition: none;
+  transition-duration: 0s;
+  transition-delay: 0s;
 }
 
 .zap-inside {
@@ -1018,7 +1019,13 @@ html.voct-motion .zap[data-motion-paused] .inv-cloud {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html.voct-motion .zap-spread.reveal,
+  html.voct-motion .zap-spread.reveal {
+    --half-ink: 1;
+    transform: none;
+    transition-duration: 0s;
+    transition-delay: 0s;
+  }
+
   html.voct-motion .zap .zap-door-arrow,
   html.voct-motion .zap .inv-door:is(:hover, :focus-visible) .zap-door-arrow {
     opacity: 1;
