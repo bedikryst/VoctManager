@@ -2,25 +2,34 @@
  * @file practicePlayerEngine.ts
  * @description Framework-agnostic multitrack practice engine for the Songbook.
  *
- * Plays every voice track of a piece simultaneously through a pool of streaming
+ * Plays the voice tracks of a piece together through a pool of streaming
  * HTMLAudioElements (NOT decoded Web Audio buffers) so that:
  *  - audio streams instead of waiting for full downloads (mobile data),
  *  - playbackRate keeps pitch (preservesPitch) — slow practice stays in tune.
  *
+ * Only the voices the chorister can hear run. A muted voice, or one silenced
+ * by a solo, is paused and rejoins at the transport position when it sounds
+ * again. The blend over a tutti take and solo-mine therefore run exactly one
+ * element: the everyday practice modes need no synchronisation at all, which
+ * is the part phones get wrong.
+ *
  * Mixing runs through a single shared AudioContext: each element feeds a
  * MediaElementAudioSourceNode → per-voice GainNode → master → destination.
- * This is deliberate, not decoration:
  *  - iOS Safari refuses to play several independent <audio> elements from one
  *    gesture; unifying them into ONE AudioContext output (resumed on the tap)
- *    is what makes the choir sound on iPhone at all;
- *  - mute/solo/volume set gain, never element.volume, so a "silenced" voice
- *    keeps decoding at full level and never drifts — killing the force-seek
- *    stutter mobile Chrome hit when muted elements were throttled then yanked
- *    back into sync.
+ *    is what makes the choir sound on iPhone at all. iOS parks that context in
+ *    "interrupted", not "suspended", after a call, Siri or another app's audio,
+ *    so play() wakes it from any state short of running;
+ *  - volume is gain, never element.volume, which iOS ignores outright.
  * Where Web Audio is unavailable the engine degrades to element.volume mixing.
  *
- * The first track acts as the transport master clock; a 250 ms tick is a rare
- * safety net for residual drift and enforces the A–B practice loop.
+ * The first sounding voice is the transport clock. When several voices sound,
+ * a 250 ms tick watches their drift and realigns them by resync: hold every
+ * voice, seek them all to one position, start them together in one task once
+ * each can play. Seeking one voice to the clock's current time while the rest
+ * play on cannot converge where a seek outlasts the tolerance (iOS) — the voice
+ * lands late by its own seek latency, is seeked again, and stutters and drops
+ * out indefinitely. The tick also enforces the A–B practice loop.
  * Consumed by React via useSyncExternalStore (subscribe/getSnapshot).
  */
 
@@ -100,13 +109,24 @@ const EMPTY_SNAPSHOT: PracticePlayerSnapshot = {
   activePreset: null,
 };
 
-// With gain-based mixing every voice keeps decoding in sync, so drift is tiny
-// and this safety net rarely fires; a slightly looser bound avoids an audible
-// micro-seek when a phone does briefly slip.
+// Voices started together stay within a few milliseconds of each other; this
+// is the slip at which two of them begin to sound like a flam.
 const DRIFT_TOLERANCE_S = 0.12;
 const TICK_INTERVAL_MS = 250;
 // Short gain ramp on mute/volume changes — a hard jump clicks ("zipper noise").
 const GAIN_RAMP_S = 0.015;
+// A voice this close to where it should be is left alone: a seek flushes the
+// decoder, and on iOS it is slow.
+const POSITION_EPSILON_S = 0.05;
+// How long a resync waits for its slowest voice before starting anyway — one
+// stuck stream must not hold the whole choir.
+const RESYNC_SETTLE_MAX_MS = 1500;
+// Spacing of drift resyncs. Each one the tick triggers doubles the wait before
+// the next, so a phone that keeps slipping a voice ends up with a mix slightly
+// apart, never one chopped every few seconds; a quiet half-minute or any tap
+// that moves the transport starts over from the base.
+const RESYNC_COOLDOWN_MS = 2000;
+const RESYNC_BACKOFF_RESET_MS = 30000;
 const PREF_KEY_PREFIX = "voct.practice.pref.";
 
 type AudioContextCtor = typeof AudioContext;
@@ -121,6 +141,35 @@ const resolveAudioContextCtor = (): AudioContextCtor | null => {
     null
   );
 };
+
+/** Done seeking and holding enough data to play on — the only state in which
+ *  an element's currentTime is where it will actually sound. */
+const isSettled = (el: HTMLAudioElement): boolean =>
+  !el.seeking && el.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA;
+
+/** Resolves once every element is settled, or after RESYNC_SETTLE_MAX_MS. */
+const settle = (elements: HTMLAudioElement[]): Promise<void> =>
+  new Promise((resolve) => {
+    if (elements.every(isSettled)) {
+      resolve();
+      return;
+    }
+    const watch = new AbortController();
+    const timer = window.setTimeout(() => {
+      watch.abort();
+      resolve();
+    }, RESYNC_SETTLE_MAX_MS);
+    const check = (): void => {
+      if (!elements.every(isSettled)) return;
+      window.clearTimeout(timer);
+      watch.abort();
+      resolve();
+    };
+    elements.forEach((el) => {
+      el.addEventListener("seeked", check, { signal: watch.signal });
+      el.addEventListener("canplay", check, { signal: watch.signal });
+    });
+  });
 
 interface PersistedPref {
   rate?: number;
@@ -168,10 +217,18 @@ type Listener = () => void;
 
 export class PracticePlayerEngine {
   private elements = new Map<string, HTMLAudioElement>();
-  private masterId: string | null = null;
   private tickHandle: number | null = null;
   private listeners = new Set<Listener>();
   private snapshot: PracticePlayerSnapshot = EMPTY_SNAPSHOT;
+
+  /** Detaches every media-event listener of the loaded piece at once. */
+  private elementEvents: AbortController | null = null;
+  /** Bumped by anything that supersedes a pending start — pause, a newer
+   *  resync, another piece — so a late-settling resync never starts voices. */
+  private syncToken = 0;
+  private resyncing = false;
+  private lastResyncAt = Number.NEGATIVE_INFINITY;
+  private resyncBackoffMs = RESYNC_COOLDOWN_MS;
 
   // Web Audio mixing graph — one shared context reused across every load()
   // (browsers cap live AudioContexts, and iOS counts each as an audio channel).
@@ -222,6 +279,10 @@ export class PracticePlayerEngine {
       ? mutedForPreset(tracks, activePreset)
       : {};
 
+    const events = new AbortController();
+    this.elementEvents = events;
+    const { signal } = events;
+
     tracks.forEach((track) => {
       const el = new Audio();
       // MediaElementSource silences cross-origin media without CORS; anonymous
@@ -232,24 +293,19 @@ export class PracticePlayerEngine {
       // Pitch-preserving tempo change is the whole point of slow practice.
       el.preservesPitch = true;
       el.playbackRate = rate;
-      // Element level stays at full so muted voices keep decoding in sync;
-      // silence is applied downstream on the GainNode (see applyMix).
+      // Element level stays at full; the mix is applied on the GainNode.
       el.volume = 1;
+      el.addEventListener("loadedmetadata", this.handleMetadata, { signal });
+      el.addEventListener("ended", () => this.handleEnded(el), { signal });
+      el.addEventListener("waiting", () => this.handleWaiting(el), { signal });
+      el.addEventListener("playing", () => this.handlePlaying(el), { signal });
+      el.addEventListener("play", () => this.handlePlay(el), { signal });
+      el.addEventListener("pause", () => this.handlePause(el), { signal });
       this.elements.set(track.id, el);
       this.connectToGraph(track.id, el);
       volumes[track.id] = 1;
       muted[track.id] ??= false;
     });
-
-    this.masterId = tracks[0]?.id ?? null;
-    const master = this.master();
-
-    if (master) {
-      master.addEventListener("loadedmetadata", this.handleMetadata);
-      master.addEventListener("ended", this.handleEnded);
-      master.addEventListener("waiting", this.handleWaiting);
-      master.addEventListener("playing", this.handlePlaying);
-    }
 
     this.commit({
       ...EMPTY_SNAPSHOT,
@@ -269,34 +325,47 @@ export class PracticePlayerEngine {
   }
 
   async play(): Promise<void> {
-    const master = this.master();
-    if (!master || !this.snapshot.piece) return;
+    if (!this.snapshot.piece || this.elements.size === 0) return;
 
-    // A context created while suspended emits no sound; resume it on the same
-    // gesture that reached play() so the graph is live before the elements are.
-    if (this.audioCtx?.state === "suspended") {
-      void this.audioCtx.resume();
+    // On the same gesture that reached play(): every voice runs through the
+    // graph, so a context that is not rendering turns them all into silence.
+    this.wakeContext();
+
+    if (this.snapshot.isPlaying) {
+      this.reconcile();
+      return;
     }
 
-    const startAt = master.currentTime;
-    const plays: Promise<void>[] = [];
-    this.elements.forEach((el) => {
-      el.currentTime = startAt;
-      plays.push(el.play().catch(() => undefined));
-    });
-    await Promise.all(plays);
-
-    this.startTick();
+    this.cancelResync();
+    this.allowImmediateResync();
+    const token = this.syncToken;
+    const position = this.snapshot.position;
     this.commit({ ...this.snapshot, isPlaying: true });
+    this.startTick();
+
+    // Every voice starts here, inside the gesture: iOS lets an element play
+    // later without one only once it has played inside one. Voices that come
+    // up at different moments are aligned by the tick's first resync.
+    const started = await Promise.all(
+      this.participants().map((el) => this.startVoice(el, position)),
+    );
+    if (token === this.syncToken && this.snapshot.isPlaying && !started.some(Boolean)) {
+      // Nothing would play — show a stopped transport, not a silent running one.
+      this.stopTick();
+      this.commit({ ...this.snapshot, isPlaying: false, isBuffering: false });
+    }
   }
 
   pause(): void {
+    const position = this.transportPosition();
+    this.cancelResync();
     this.elements.forEach((el) => el.pause());
     this.stopTick();
     this.commit({
       ...this.snapshot,
       isPlaying: false,
-      position: this.master()?.currentTime ?? this.snapshot.position,
+      isBuffering: false,
+      position,
     });
   }
 
@@ -313,7 +382,12 @@ export class PracticePlayerEngine {
       0,
       Math.min(seconds, this.snapshot.duration || seconds),
     );
-    this.elements.forEach((el) => {
+    if (this.snapshot.isPlaying) {
+      this.resync(clamped);
+      return;
+    }
+    // Parked voices move now, so they are buffered there by the next play().
+    this.participants().forEach((el) => {
       el.currentTime = clamped;
     });
     this.commit({ ...this.snapshot, position: clamped });
@@ -380,7 +454,7 @@ export class PracticePlayerEngine {
   }
 
   setLoopPointA(): void {
-    const position = this.master()?.currentTime ?? this.snapshot.position;
+    const position = this.transportPosition();
     const b = this.snapshot.loop.b;
     this.commit({
       ...this.snapshot,
@@ -389,7 +463,7 @@ export class PracticePlayerEngine {
   }
 
   setLoopPointB(): void {
-    const position = this.master()?.currentTime ?? this.snapshot.position;
+    const position = this.transportPosition();
     const a = this.snapshot.loop.a;
     if (a === null || position <= a) return;
     this.commit({ ...this.snapshot, loop: { a, b: position } });
@@ -418,8 +492,165 @@ export class PracticePlayerEngine {
 
   // ── internals ────────────────────────────────────────────────────────────
 
-  private master(): HTMLAudioElement | null {
-    return this.masterId ? (this.elements.get(this.masterId) ?? null) : null;
+  /**
+   * The voices that sound under the current mix — unmuted and not silenced by
+   * a solo — in track order. With every voice silenced the first one still
+   * runs, inaudibly, so the transport keeps a clock.
+   */
+  private participantIds(): string[] {
+    const { tracks, muted, soloTrackId } = this.snapshot;
+    const sounding = tracks
+      .filter(
+        (track) =>
+          !muted[track.id] && (soloTrackId === null || soloTrackId === track.id),
+      )
+      .map((track) => track.id);
+    if (sounding.length > 0) return sounding;
+    const first = tracks[0];
+    return first ? [first.id] : [];
+  }
+
+  private participants(): HTMLAudioElement[] {
+    return this.participantIds().flatMap((id) => {
+      const el = this.elements.get(id);
+      return el ? [el] : [];
+    });
+  }
+
+  /** The transport clock: the first sounding voice. Never a silent one — a
+   *  muted voice that stalls must not drag the voices someone hears. */
+  private clock(): HTMLAudioElement | null {
+    return this.participants()[0] ?? null;
+  }
+
+  /** Where the transport is now: the clock while it runs, else any running
+   *  voice, else the last committed position (paused, or held by a resync). */
+  private transportPosition(): number {
+    const clock = this.clock();
+    if (clock && !clock.paused) return clock.currentTime;
+    for (const el of this.elements.values()) {
+      if (!el.paused) return el.currentTime;
+    }
+    return this.snapshot.position;
+  }
+
+  /** Resumes the mixing context from "suspended" and from iOS's "interrupted"
+   *  alike. Gesture-gated on iOS, so callers run it inside the tap. */
+  private wakeContext(): void {
+    const ctx = this.audioCtx;
+    if (!ctx || ctx.state === "running" || ctx.state === "closed") return;
+    void ctx.resume().catch(() => undefined);
+  }
+
+  /** Moves a voice to `position` unless it is already there. */
+  private placeAt(el: HTMLAudioElement, position: number): void {
+    if (Math.abs(el.currentTime - position) > POSITION_EPSILON_S) {
+      el.currentTime = position;
+    }
+  }
+
+  /** Starts one voice at `position`; resolves whether it is playing. */
+  private startVoice(el: HTMLAudioElement, position: number): Promise<boolean> {
+    this.placeAt(el, position);
+    return el.play().then(
+      () => true,
+      () => false,
+    );
+  }
+
+  /**
+   * While playing, makes the running elements exactly the sounding voices: a
+   * voice that fell silent is paused, one that became audible starts at the
+   * transport position. Runs inside the tap that changed the mix, so a voice
+   * that never played may still start (iOS gesture rule); the tick's resync
+   * then aligns it with the rest.
+   */
+  private reconcile(): void {
+    if (!this.snapshot.isPlaying) return;
+    const position = this.transportPosition();
+    const sounding = new Set(this.participantIds());
+    let joined = false;
+    this.elements.forEach((el, id) => {
+      if (!sounding.has(id)) {
+        if (!el.paused) el.pause();
+        return;
+      }
+      if (!el.paused) return;
+      if (this.resyncing) {
+        // The pending resync starts every sounding voice when it releases.
+        this.placeAt(el, position);
+        return;
+      }
+      joined = true;
+      void this.startVoice(el, position);
+    });
+    // A voice the chorister just brought in is aligned at once, not after the
+    // wait that paces automatic resyncs.
+    if (joined) this.allowImmediateResync();
+  }
+
+  private allowImmediateResync(): void {
+    this.lastResyncAt = Number.NEGATIVE_INFINITY;
+    this.resyncBackoffMs = RESYNC_COOLDOWN_MS;
+  }
+
+  /**
+   * Realigns every sounding voice on `position`: hold them all, seek them all,
+   * then start them in the same task once each is settled — so they leave the
+   * line together however long each seek took. A single voice has nothing to
+   * align with and simply seeks.
+   */
+  private resync(position: number): void {
+    this.cancelResync();
+    const voices = this.participants();
+    if (voices.length <= 1) {
+      const [voice] = voices;
+      if (voice) {
+        voice.currentTime = position;
+        if (voice.paused) void voice.play().catch(() => undefined);
+      }
+      this.commit({ ...this.snapshot, position });
+      return;
+    }
+
+    const token = this.syncToken;
+    this.resyncing = true;
+    this.lastResyncAt = performance.now();
+    voices.forEach((el) => el.pause());
+    voices.forEach((el) => {
+      el.currentTime = position;
+    });
+    this.commit({ ...this.snapshot, position, isBuffering: true });
+
+    void settle(voices).then(() => {
+      if (token !== this.syncToken) return;
+      this.resyncing = false;
+      if (!this.snapshot.isPlaying) return;
+      // Re-read: the mix may have changed while the voices were held.
+      this.participants().forEach((el) => {
+        this.placeAt(el, position);
+        void el.play().catch(() => undefined);
+      });
+      this.commit({ ...this.snapshot, isBuffering: false });
+    });
+  }
+
+  private cancelResync(): void {
+    this.syncToken += 1;
+    this.resyncing = false;
+  }
+
+  /** Whether a running, settled voice has slipped off the clock. Voices still
+   *  seeking or buffering are left alone: their time is not where they sound. */
+  private hasDrifted(clock: HTMLAudioElement, position: number): boolean {
+    if (clock.paused || !isSettled(clock)) return false;
+    return this.participants().some(
+      (el) =>
+        el !== clock &&
+        !el.paused &&
+        isSettled(el) &&
+        Math.abs(el.currentTime - position) > DRIFT_TOLERANCE_S,
+    );
   }
 
   /** Lazily builds the shared context + master gain (once per engine life). */
@@ -485,34 +716,72 @@ export class PracticePlayerEngine {
     }
   }
 
+  /** The clock's length once known; until then the longest known voice. iOS
+   *  loads only the voices that play, so a silent one may never report. */
   private handleMetadata = (): void => {
-    this.commit({ ...this.snapshot, duration: this.master()?.duration ?? 0 });
+    const clock = this.clock();
+    let duration = clock && Number.isFinite(clock.duration) ? clock.duration : 0;
+    if (duration === 0) {
+      this.elements.forEach((el) => {
+        if (Number.isFinite(el.duration)) duration = Math.max(duration, el.duration);
+      });
+    }
+    if (duration !== this.snapshot.duration) {
+      this.commit({ ...this.snapshot, duration });
+    }
   };
 
-  private handleEnded = (): void => {
+  private handleEnded(el: HTMLAudioElement): void {
+    if (el !== this.clock() || !this.snapshot.isPlaying) return;
     const { loop } = this.snapshot;
     if (loop.a !== null && loop.b !== null) {
-      this.seek(loop.a);
-      void this.play();
+      this.resync(loop.a);
       return;
     }
+    this.cancelResync();
     this.stopTick();
-    this.elements.forEach((el) => el.pause());
-    this.commit({ ...this.snapshot, isPlaying: false, position: 0 });
-    this.elements.forEach((el) => {
-      el.currentTime = 0;
+    this.elements.forEach((voice) => voice.pause());
+    this.commit({
+      ...this.snapshot,
+      isPlaying: false,
+      isBuffering: false,
+      position: 0,
     });
-  };
+    this.participants().forEach((voice) => {
+      voice.currentTime = 0;
+    });
+  }
 
-  private handleWaiting = (): void => {
-    this.commit({ ...this.snapshot, isBuffering: true });
-  };
+  private handleWaiting(el: HTMLAudioElement): void {
+    if (el === this.clock() && !this.snapshot.isBuffering) {
+      this.commit({ ...this.snapshot, isBuffering: true });
+    }
+  }
 
-  private handlePlaying = (): void => {
-    if (this.snapshot.isBuffering) {
+  private handlePlaying(el: HTMLAudioElement): void {
+    if (el === this.clock() && this.snapshot.isBuffering && !this.resyncing) {
       this.commit({ ...this.snapshot, isBuffering: false });
     }
-  };
+  }
+
+  /** The engine alone decides what plays: an element iOS restarted by itself
+   *  after an interruption, while the transport is stopped or for a voice that
+   *  is not sounding, is put back. */
+  private handlePlay(el: HTMLAudioElement): void {
+    if (this.snapshot.isPlaying && this.participants().includes(el)) return;
+    el.pause();
+  }
+
+  /**
+   * iOS pauses every media element of the page when an interruption begins —
+   * a call, Siri, another app taking the audio. Follow it, so the transport
+   * stops rather than claim to play into silence. Pauses the engine made
+   * itself are already reflected in its state and fall through.
+   */
+  private handlePause(el: HTMLAudioElement): void {
+    if (!this.snapshot.isPlaying || this.resyncing || el.ended) return;
+    if (this.participants().every((voice) => voice.paused)) this.pause();
+  }
 
   private startTick(): void {
     this.stopTick();
@@ -527,25 +796,27 @@ export class PracticePlayerEngine {
   }
 
   private tick = (): void => {
-    const master = this.master();
-    if (!master) return;
+    if (this.resyncing) return;
+    const clock = this.clock();
+    if (!clock) return;
 
-    const position = master.currentTime;
+    const position = clock.currentTime;
     const { loop } = this.snapshot;
 
     if (loop.a !== null && loop.b !== null && position >= loop.b) {
-      this.seek(loop.a);
-      this.commit({ ...this.snapshot, position: loop.a });
+      this.resync(loop.a);
       return;
     }
 
-    // Re-align slaves that drifted away from the master clock.
-    this.elements.forEach((el, id) => {
-      if (id === this.masterId || el.paused) return;
-      if (Math.abs(el.currentTime - position) > DRIFT_TOLERANCE_S) {
-        el.currentTime = position;
-      }
-    });
+    const sinceResync = performance.now() - this.lastResyncAt;
+    if (sinceResync > RESYNC_BACKOFF_RESET_MS) {
+      this.resyncBackoffMs = RESYNC_COOLDOWN_MS;
+    }
+    if (sinceResync >= this.resyncBackoffMs && this.hasDrifted(clock, position)) {
+      this.resyncBackoffMs *= 2;
+      this.resync(position);
+      return;
+    }
 
     this.commit({ ...this.snapshot, position });
   };
@@ -558,23 +829,19 @@ export class PracticePlayerEngine {
       const level = soloSilenced || muted[id] ? 0 : (volumes[id] ?? 1);
       const gain = this.gains.get(id);
       if (gain && this.audioCtx) {
-        // Ramp on the graph; element stays at full volume so it never throttles.
         gain.gain.setTargetAtTime(level, now, GAIN_RAMP_S);
       } else {
         el.volume = level; // Fallback: no Web Audio graph for this track.
       }
     });
+    this.reconcile();
   }
 
   private disposeElements(): void {
+    this.cancelResync();
     this.stopTick();
-    const master = this.master();
-    if (master) {
-      master.removeEventListener("loadedmetadata", this.handleMetadata);
-      master.removeEventListener("ended", this.handleEnded);
-      master.removeEventListener("waiting", this.handleWaiting);
-      master.removeEventListener("playing", this.handlePlaying);
-    }
+    this.elementEvents?.abort();
+    this.elementEvents = null;
     // Tear the graph down before the elements so no source dangles on destination.
     this.gains.forEach((gain) => {
       try {
@@ -598,7 +865,6 @@ export class PracticePlayerEngine {
       el.load();
     });
     this.elements.clear();
-    this.masterId = null;
   }
 
   private commit(next: PracticePlayerSnapshot): void {
