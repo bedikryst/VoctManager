@@ -312,6 +312,26 @@ class DelegateRollCallTests(APITestCase):
         # has no use for the voice that person sings when they are not there.
         self.assertEqual(theirs["led_by"]["name"], "Kasia Nowak")
 
+    def test_the_schedule_says_which_evenings_she_plans(self) -> None:
+        # `i_plan` mirrors `user_may_plan`: the planning grant opens the editor
+        # only on the evenings announced for her, never on the roll call alone.
+        grant = self._grant()
+        self.rehearsal.led_by = self.deputy
+        self.rehearsal.save()
+        self.client.force_authenticate(self.deputy_user)
+
+        self.assertFalse(self._timeline_row(self.rehearsal)["i_plan"])
+
+        grant.can_manage_led_rehearsals = True
+        grant.save()
+        self.assertTrue(self._timeline_row(self.rehearsal)["i_plan"])
+        kept = self._timeline_row(self.held_rehearsal)
+        self.assertTrue(kept["i_lead"])
+        self.assertFalse(kept["i_plan"])
+
+        self.client.force_authenticate(self.singer_user)
+        self.assertFalse(self._timeline_row(self.rehearsal)["i_plan"])
+
     # --- the sheet itself -----------------------------------------------------
 
     def _sheet(self, rehearsal=None):

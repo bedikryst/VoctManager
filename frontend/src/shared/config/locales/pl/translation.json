@@ -6122,6 +6122,7 @@
         "title": "Formularz nieobecności dla Inspektora"
       },
       "lead_action": "Sprawdź obecność",
+      "lead_action_plan": "Plan próby i obecność",
       "leading_badge": "Prowadzisz",
       "led_by": "Prowadzi: {{name}}",
       "no_location": "Brak",

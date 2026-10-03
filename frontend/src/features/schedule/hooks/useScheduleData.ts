@@ -124,6 +124,7 @@ export const useScheduleData = (subject?: ScheduleSubject) => {
           iLead: item.i_lead,
           ledBy: item.led_by,
           iStandInFront: item.i_stand_in_front,
+          iPlan: item.i_plan,
         });
       }
     }

@@ -6036,6 +6036,7 @@
         "title": "Formulaire d'absence pour l'inspecteur"
       },
       "lead_action": "Faire l'appel",
+      "lead_action_plan": "Plan de répétition et appel",
       "leading_badge": "Vous dirigez",
       "led_by": "Dirigée par {{name}}",
       "no_location": "Aucun",

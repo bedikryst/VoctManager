@@ -100,8 +100,12 @@ const IDB_KEY = "client";
  * assistant conductor would open their evening to a read-only plan, and the
  * manager's card would show a planning grant as absent — and "Zmień" on that
  * row would save it away before the refetch lands.
+ *
+ * 2026-10-assistant-plans-door: a schedule row carries `i_plan`. A snapshot
+ * from before holds none, so the planner's card would offer only the roll call
+ * until the refetch.
  */
-export const QUERY_CACHE_BUSTER = "2026-10-assistant-plans";
+export const QUERY_CACHE_BUSTER = "2026-10-assistant-plans-door";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

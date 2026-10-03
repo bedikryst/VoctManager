@@ -6026,6 +6026,7 @@
         "title": "Absence Form for the Inspector"
       },
       "lead_action": "Take the roll call",
+      "lead_action_plan": "Rehearsal plan and roll call",
       "leading_badge": "You run this",
       "led_by": "Led by {{name}}",
       "no_location": "None",

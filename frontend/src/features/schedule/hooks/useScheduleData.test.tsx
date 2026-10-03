@@ -46,6 +46,7 @@ const dashboard = (
     i_lead: false,
     led_by: null,
     i_stand_in_front: false,
+    i_plan: false,
     my_attendance: myAttendance,
     rehearsal: {
       id: REHEARSAL_ID,
@@ -74,6 +75,7 @@ const rehearsal = (
   i_lead: false,
   led_by: null,
   i_stand_in_front: false,
+  i_plan: false,
   my_attendance: null,
   rehearsal: {
     id,

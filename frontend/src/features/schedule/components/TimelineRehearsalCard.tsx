@@ -175,6 +175,11 @@ export const TimelineRehearsalCard = ({
   // seat, would land on "Nie znaleziono utworu". Otherwise the shelf.
   const firstPieceOpens = firstPiece !== undefined && firstPiece.piece_open !== false;
   const rehearsalHref = `/panel/schedule/rehearsal/${String((event.rawObj as { id: string }).id)}`;
+  // The lead sheet is the planner's only door to the plan editor, so the
+  // button names the plan whenever the server says it is there.
+  const leadActionLabel = event.iPlan
+    ? t("schedule.rehearsal.lead_action_plan", "Plan próby i obecność")
+    : t("schedule.rehearsal.lead_action", "Sprawdź obecność");
   // A conductor sees the rehearsal but isn't cast in it — no participation to
   // RSVP against, so the self-attendance controls are withheld.
   const canRsvp = !!event.participationId;
@@ -393,7 +398,7 @@ export const TimelineRehearsalCard = ({
                 className={cn("w-full sm:w-auto", INERT_SURFACE)}
               >
                 <ClipboardCheck size={14} aria-hidden="true" />
-                {t("schedule.rehearsal.lead_action", "Sprawdź obecność")}
+                {leadActionLabel}
               </Button>
             ) : (
               <Button variant="secondary" size="touch" asChild className="w-full sm:w-auto">
@@ -402,7 +407,7 @@ export const TimelineRehearsalCard = ({
                   className="inline-flex items-center justify-center gap-2"
                 >
                   <ClipboardCheck size={14} aria-hidden="true" />
-                  {t("schedule.rehearsal.lead_action", "Sprawdź obecność")}
+                  {leadActionLabel}
                 </Link>
               </Button>
             )}

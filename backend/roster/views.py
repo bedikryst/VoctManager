@@ -1740,6 +1740,13 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         roll_call_project_ids = {
             str(pid) for pid in led_project_ids(target_user, scope='roll_call')
         }
+        # `user_may_plan` for the whole list in two set lookups: the card's one
+        # door to the lead sheet must say when the plan editor is behind it,
+        # or an assistant with the planning grant reads "check attendance" and
+        # never opens it.
+        plan_project_ids = {
+            str(pid) for pid in led_project_ids(target_user, scope='manage_rehearsals')
+        }
         # Who this reader IS on the roster, for "who stands in front" — a
         # different question from `i_lead` above: a leader of the project may
         # take the roll of an evening the conductor announced for himself, and
@@ -1796,6 +1803,11 @@ class ParticipationViewSet(viewsets.ModelViewSet):
                 'led_by': _led_by_payload(reh_obj),
                 'i_stand_in_front': (
                     my_artist_id is not None and standing_in_front_id == my_artist_id
+                ),
+                'i_plan': (
+                    str(reh_obj.project_id) in plan_project_ids
+                    and my_artist_id is not None
+                    and my_artist_id in (reh_obj.led_by_id, reh_obj.project.conductor_id)
                 ),
                 'my_attendance': (
                     {

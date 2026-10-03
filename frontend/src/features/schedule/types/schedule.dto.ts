@@ -93,6 +93,8 @@ export interface TimelineEvent {
    * conductor's own timeline must not badge one handed to somebody else.
    */
   iStandInFront?: boolean;
+  /** The lead sheet opens this evening's plan editor for this reader. */
+  iPlan?: boolean;
 }
 
 /**
@@ -165,6 +167,11 @@ export interface ScheduleDashboardRehearsalItem {
   led_by: ScheduleLedBy | null;
   /** `led_by` is this reader, or nobody is named and they conduct the project. */
   i_stand_in_front: boolean;
+  /**
+   * The server's `user_may_plan` for this reader: a planning grant and this
+   * evening announced for them, or the project's conductor.
+   */
+  i_plan: boolean;
   my_attendance: ScheduleAttendanceSnapshot | null;
   rehearsal: EnrichedRehearsal;
 }
