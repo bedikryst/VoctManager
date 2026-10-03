@@ -57,6 +57,12 @@ export interface SocialProfile {
   readonly url: string;
 }
 
+/** A network's name as a link prints it. A brand, so the same in every locale. */
+export const SOCIAL_NETWORK_NAMES: Readonly<Record<SocialProfile["network"], string>> = {
+  facebook: "Facebook",
+  instagram: "Instagram",
+};
+
 export interface Foundation {
   /** As the register carries it — the name that goes on a contract. */
   readonly name: string;
@@ -142,7 +148,10 @@ export const FOUNDATION: Foundation = {
     { id: "krystian", name: "Krystian Bugalski", function: "vicePresident" },
   ],
   founder: "florent",
-  socials: [{ network: "facebook", url: "https://www.facebook.com/profile.php?id=61590395972435" }],
+  socials: [
+    { network: "facebook", url: "https://www.facebook.com/VoctFoundation" },
+    { network: "instagram", url: "https://www.instagram.com/voctfoundation/" },
+  ],
   accounts: {
     bank: "BNP Paribas Bank Polska S.A.",
     bic: "PPABPLPK",

@@ -55,7 +55,7 @@ import { chromeHtmlForIsland } from "../../lib/islandCopy";
 import { longDate } from "../../lib/dates";
 import { assertPolishForm, formatPln, realisationViews, recordBeforeFoundation } from "../../lib/realisations";
 import { FOUNDATION_ID, foundationNode } from "../../lib/foundationSchema";
-import { FOUNDATION } from "../../data/foundation";
+import { FOUNDATION, SOCIAL_NETWORK_NAMES } from "../../data/foundation";
 import {
   FEATURED_REALISATION,
   FOUNDATION_PAGE_LINKED,
@@ -221,7 +221,6 @@ const registryRows = [
   { term: copy.registry.supervisionLabel, value: copy.registry.supervision },
   { term: copy.registry.representationLabel, value: copy.registry.representation },
 ];
-const SOCIAL_NAMES = { facebook: "Facebook", instagram: "Instagram" } as const;
 
 // The social card keeps the nave plate the landing's ensemble section shows: a 1200-wide landscape
 // of the ensemble singing reads as "the music" on a feed.
@@ -552,7 +551,7 @@ const jsonLd = {
               <p class="vf-registry-text">
                 {copy.registry.socialLead}{" "}
                 {FOUNDATION.socials.map((profile, i) => (
-                  <>{i > 0 && " · "}<a href={profile.url} rel="me noopener">{SOCIAL_NAMES[profile.network]}</a></>
+                  <>{i > 0 && " · "}<a href={profile.url} rel="me noopener">{SOCIAL_NETWORK_NAMES[profile.network]}</a></>
                 ))}
               </p>
             )}

@@ -13,7 +13,8 @@
  *  the card's own sentences. The departures are deliberate: the paragraph about the concert is the
  *  card's as edited for this page; the Canticle's Polish name is spelled as the site spells it
  *  („Pieśń słoneczna”); the festival line under the place names the festival without an edition
- *  number, which the corpus has never confirmed; and the ensemble is billed above its soloists.
+ *  number, which the corpus has never confirmed; the ensemble is billed above its soloists; and
+ *  the line about donors under the foundation's paragraph is not on the card at all.
  *  Change the rest together with the card.
  *
  *  THE ASK IS THE LIST'S, IN THE CARD'S VOICE. Where the card prints its RSVP the page invites the
@@ -120,5 +121,9 @@ export const ZAPROSZENIE = {
       "Fundacja wspiera rozwój VoctEnsemble i jego projektów artystycznych, tworząc warunki do ich " +
       "realizacji i spotkania z publicznością. „Pochwała Stworzenia” jest pierwszym projektem " +
       "realizowanym przez Fundację.",
+    /** The page's last, smallest line: free admission is paid for by donors, and the link leads
+        to the foundation's ways of giving. Impersonal, so it holds the card's "Państwo". */
+    donors: "Realizacja koncertu jest możliwa dzięki wsparciu darczyńców.",
+    support: "Zapraszamy do współtworzenia koncertu, który pozostaje otwarty dla wszystkich.",
   },
 } as const;

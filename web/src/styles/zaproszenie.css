@@ -871,6 +871,30 @@ html.voct-motion.vt-nav .zap-spread.reveal.is-in {
   text-wrap: pretty;
 }
 
+.zap-foundation-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 28px;
+  margin: 10px 0 0;
+}
+
+/* The sheet's smallest line, a credit rather than an ask: set below reading size and a grade
+   quieter, so it closes the page without competing with the list above it. */
+.zap-donors {
+  max-width: 30em;
+  margin: clamp(40px, 5vw, 56px) auto 0;
+  color: var(--inv-muted);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+
+.zap-donors .inv-link {
+  color: var(--inv-ink-soft);
+}
+
 /* ── Motion ────────────────────────────────────────────────────────────────────
    Gated on `html.voct-motion` (JS live, motion allowed), so a reduced-motion or no-JS visitor
    gets the cover composed, the hands at rest with the light between them. */

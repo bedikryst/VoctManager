@@ -11,7 +11,9 @@
  *  composers and performers. Each column reads down its own axis; on a phone the invitation
  *  precedes the concert. The programme link introduces its composers, followed by performer
  *  credits. The spread enters as one composition. One response strip follows both, before the
- *  future-invitation list and the foundation's close. The title stands once, on the cover; the
+ *  future-invitation list and the foundation's close: its paragraph, its own profiles (not the
+ *  ensemble's, which the footer carries) and, smallest and last, the donors' line leading to
+ *  /fundacja#wsparcie. The title stands once, on the cover; the
  *  invitation reads on from it as one sentence ("VoctEnsemble serdecznie zaprasza na Koncert Duchowy…").
  *
  *  THE ARTWORK IS THE CARD'S OWN LAYERS (`styles/invitation.css` says which), optional to the build
@@ -36,6 +38,7 @@ import { getEntry } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
+import { FOUNDATION, SOCIAL_NETWORK_NAMES } from "../../data/foundation";
 import { NoticeForm } from "../../islands/landing/NoticeForm";
 import { KONCERTY_PAGE } from "../../i18n/content/koncerty";
 import { NUNTIUS } from "../../i18n/content/nuntius";
@@ -273,6 +276,17 @@ const hasHands = Boolean(handLeft && handRight);
     <section class="zap-foundation reveal" aria-labelledby="zap-foundation-heading">
       <h2 id="zap-foundation-heading" class="zap-foundation-name">{copy.foundation.name}</h2>
       <p class="zap-foundation-text">{copy.foundation.text}</p>
+      {FOUNDATION.socials.length > 0 && (
+        <p class="zap-foundation-links">
+          {FOUNDATION.socials.map((profile) => (
+            <a class="inv-door" href={profile.url} data-invitation-goal="social" target="_blank" rel="noopener noreferrer">{SOCIAL_NETWORK_NAMES[profile.network]}<span class="inv-out" aria-hidden="true">↗</span></a>
+          ))}
+        </p>
+      )}
+      <p class="zap-donors">
+        {copy.foundation.donors}{" "}
+        <a class="inv-link" href="/fundacja#wsparcie">{copy.foundation.support}</a>
+      </p>
     </section>
   </main>
 
