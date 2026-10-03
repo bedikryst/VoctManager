@@ -2,7 +2,8 @@
  * @file RehearsalDock.tsx
  * @description The rehearsal instrument inside the open score (mounted through
  * PdfViewer.overlaySlot): a bottom-left pill that expands into a dark glass
- * panel with two sections. PITCHES — the piece's starting pitches as playable
+ * panel with two sections. Where the page reaches into the left margin the
+ * pill folds to its icon, so the label never lies across the music. PITCHES — the piece's starting pitches as playable
  * voice chips plus "Podaj dźwięki", which arpeggiates them top-voice-first the
  * way a conductor reads a pitch pipe (managers edit the list inline; it saves
  * to the piece). TRANSPORT — a compact remote for the multitrack practice
@@ -36,6 +37,7 @@ import { Text } from "@/shared/ui/primitives/typography";
 import { Select } from "@/shared/ui/primitives/Select";
 import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
 import { PITCH_NOTES, parseMusicalKeyTonic } from "@/shared/ui/instruments/PitchPipe";
+import { usePdfCompactTriggers } from "@/shared/ui/composites/PdfViewer";
 
 import { SectionLabel } from "../components/SectionLabel";
 import { useUpdateStartingPitches } from "../api/materials.queries";
@@ -107,6 +109,7 @@ export const RehearsalDock = ({
   const { t } = useTranslation();
   const { engine, snapshot } = usePracticePlayer();
   const updatePitches = useUpdateStartingPitches();
+  const compact = usePdfCompactTriggers();
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -172,19 +175,26 @@ export const RehearsalDock = ({
   const hasMine = piece.my_casting !== null;
 
   if (!open) {
+    const triggerLabel = t("materials.rehearsal_dock.pitch_pipe", "Kamerton");
     return (
       <div className="pointer-events-none absolute bottom-20 left-3 z-10 sm:bottom-24 sm:left-6">
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label={t("materials.rehearsal_dock.open_aria", "Otwórz instrumenty próby")}
-          className="pointer-events-auto flex h-11 items-center gap-1.5 rounded-full border border-line-on-inverse bg-surface-inverse/70 px-3.5 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-colors hover:bg-surface-inverse/85"
+          title={compact ? triggerLabel : undefined}
+          className={cn(
+            "pointer-events-auto flex h-11 items-center rounded-full border border-line-on-inverse bg-surface-inverse/70 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-colors hover:bg-surface-inverse/85",
+            compact ? "w-11 justify-center" : "gap-1.5 px-3.5",
+          )}
         >
           <Music4 size={17} aria-hidden="true" />
-          <span className="text-sm font-medium">
-            {t("materials.rehearsal_dock.pitch_pipe", "Kamerton")}
-          </span>
-          {hasTracks && <Headphones size={14} className="opacity-70" aria-hidden="true" />}
+          {!compact && (
+            <>
+              <span className="text-sm font-medium">{triggerLabel}</span>
+              {hasTracks && <Headphones size={14} className="opacity-70" aria-hidden="true" />}
+            </>
+          )}
         </button>
       </div>
     );

@@ -129,6 +129,21 @@ const RESYNC_COOLDOWN_MS = 2000;
 const RESYNC_BACKOFF_RESET_MS = 30000;
 const PREF_KEY_PREFIX = "voct.practice.pref.";
 
+/**
+ * The practice tempos the mixer offers. A choir practises just under tempo —
+ * 90 % and 95 % are the steps a rehearsal actually uses — and below ~85 %
+ * pitch-preserving time-stretch audibly smears the voices.
+ */
+export const PRACTICE_RATES = [0.85, 0.9, 0.95, 1] as const;
+
+/** The offered tempo closest to `rate` — a remembered tempo from an older
+ *  set of steps must still land on a step the mixer can show as active. */
+const nearestPracticeRate = (rate: number): number =>
+  PRACTICE_RATES.reduce<number>(
+    (best, step) => (Math.abs(step - rate) < Math.abs(best - rate) ? step : best),
+    1,
+  );
+
 type AudioContextCtor = typeof AudioContext;
 
 /** Resolves the (possibly webkit-prefixed) AudioContext constructor, or null. */
@@ -263,7 +278,9 @@ export class PracticePlayerEngine {
 
     const isPractice = piece.take === "practice";
     const pref = isPractice ? this.readPref(piece.pieceId) : null;
-    const rate = isPractice ? (pref?.rate ?? this.snapshot.rate) : 1;
+    const rate = isPractice
+      ? nearestPracticeRate(pref?.rate ?? this.snapshot.rate)
+      : 1;
 
     const hasMine = tracks.some((track) => track.isMine);
     // A solo/minus preset is meaningless without the chorister's own track.

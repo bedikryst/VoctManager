@@ -27,11 +27,13 @@ import {
   buildPracticeSources,
   practiceTracksOf,
 } from "./PracticePlayerProvider";
-import { holdsTake, type PracticePreset } from "./practicePlayerEngine";
+import {
+  PRACTICE_RATES,
+  holdsTake,
+  type PracticePreset,
+} from "./practicePlayerEngine";
 import { PlayerTransport, formatPlayerTime } from "./PlayerTransport";
 import type { MaterialsPiece } from "../types/materials.dto";
-
-const PLAYBACK_RATES = [0.5, 0.75, 1] as const;
 
 const PRESETS: readonly {
   id: PracticePreset;
@@ -77,8 +79,10 @@ export const VoiceMixerPanel = ({
   piece,
   projectId,
 }: VoiceMixerPanelProps): React.JSX.Element | null => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { engine, snapshot } = usePracticePlayer();
+  // Percent of tempo, as a conductor says it; the locale owns the spacing.
+  const ratePercent = new Intl.NumberFormat(i18n.language, { style: "percent" });
 
   if (practiceTracksOf(piece).length === 0) return null;
 
@@ -165,8 +169,15 @@ export const VoiceMixerPanel = ({
 
         {/* tempo + loop */}
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-1 rounded-lg border border-ethereal-marble bg-ethereal-alabaster px-1 py-1 shadow-glass-solid">
-            {PLAYBACK_RATES.map((rate) => (
+          <div
+            role="group"
+            aria-label={t("materials.player.tempo", "Tempo")}
+            className="flex items-center gap-1 rounded-lg border border-ethereal-marble bg-ethereal-alabaster px-1 py-1 shadow-glass-solid"
+          >
+            <Eyebrow color="muted" aria-hidden="true" className="pl-1.5 pr-0.5">
+              {t("materials.player.tempo", "Tempo")}
+            </Eyebrow>
+            {PRACTICE_RATES.map((rate) => (
               <button
                 key={rate}
                 type="button"
@@ -180,7 +191,7 @@ export const VoiceMixerPanel = ({
                 )}
               >
                 <Eyebrow color={snapshot.rate === rate ? "default" : "muted"}>
-                  {rate}x
+                  {ratePercent.format(rate)}
                 </Eyebrow>
               </button>
             ))}
