@@ -122,7 +122,7 @@ export const ZAPROSZENIE = {
       "realizacji i spotkania z publicznością. „Pochwała Stworzenia” jest pierwszym projektem " +
       "realizowanym przez Fundację.",
     /** The page's last, smallest line: free admission is paid for by donors, and the link leads
-        to the foundation's ways of giving. Impersonal, so it holds the card's "Państwo". */
+        to the landing's donation section. Impersonal, so it holds the card's "Państwo". */
     donors: "Realizacja koncertu jest możliwa dzięki wsparciu darczyńców.",
     support: "Zapraszamy do współtworzenia koncertu, który pozostaje otwarty dla wszystkich.",
   },

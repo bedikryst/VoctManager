@@ -12,8 +12,9 @@
  *  precedes the concert. The programme link introduces its composers, followed by performer
  *  credits. The spread enters as one composition. One response strip follows both, before the
  *  future-invitation list and the foundation's close: its paragraph, its own profiles (not the
- *  ensemble's, which the footer carries) and, smallest and last, the donors' line leading to
- *  /fundacja#wsparcie. The title stands once, on the cover; the
+ *  ensemble's, which the footer carries) and, smallest and last, the donors' line leading to the
+ *  landing's donation section (`/#wesprzyj`, a deep link that skips the rite). The title stands
+ *  once, on the cover; the
  *  invitation reads on from it as one sentence ("VoctEnsemble serdecznie zaprasza na Koncert Duchowy…").
  *
  *  THE ARTWORK IS THE CARD'S OWN LAYERS (`styles/invitation.css` says which), optional to the build
@@ -285,7 +286,7 @@ const hasHands = Boolean(handLeft && handRight);
       )}
       <p class="zap-donors">
         {copy.foundation.donors}{" "}
-        <a class="inv-link" href="/fundacja#wsparcie">{copy.foundation.support}</a>
+        <a class="inv-link" href="/#wesprzyj">{copy.foundation.support}</a>
       </p>
     </section>
   </main>
