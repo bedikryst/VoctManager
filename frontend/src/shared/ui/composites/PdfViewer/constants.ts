@@ -46,6 +46,14 @@ export const FIT_VERTICAL_RESERVE_DESKTOP = -50;
  * reading a postage stamp inside a black frame.
  */
 export const FIT_VERTICAL_RESERVE_IMMERSIVE = 0;
+/**
+ * Free margin left of the page that a labelled floating trigger needs: its
+ * 24 px inset, the widest label it carries (an armed tool's name with a mark
+ * count and the offline badge, about 200 px) and some air. Narrower than this,
+ * triggers fold to 44 px icons, which at most graze the paper's own white
+ * margin wherever an unzoomed fit leaves the page.
+ */
+export const LABELED_TRIGGER_GUTTER_PX = 240;
 
 // Gesture tuning — instrument-grade ergonomics for a score on a music stand.
 /**

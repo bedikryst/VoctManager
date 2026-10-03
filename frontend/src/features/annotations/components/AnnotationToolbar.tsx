@@ -19,7 +19,9 @@
  *
  * Collapsed, the bar is a trigger that NAMES the tool in hand — a rehearsal is
  * no place to discover that the pencil was armed all along. Whether it opens
- * collapsed is remembered per device, for the same reason.
+ * collapsed is remembered per device, for the same reason. Where the page
+ * reaches into the left margin, the trigger folds further to the tool's icon
+ * so the name never lies across the start of a system.
  * @module features/annotations/components
  */
 
@@ -55,7 +57,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import { Caption, Eyebrow } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
-import { usePdfImmersive } from "@/shared/ui/composites/PdfViewer";
+import { usePdfCompactTriggers, usePdfImmersive } from "@/shared/ui/composites/PdfViewer";
 
 import {
   MARK_SCALE_MAX,
@@ -253,6 +255,7 @@ export const AnnotationToolbar = ({
   const activeLayerCopy = layerCopy[writeLayer];
 
   const isImmersive = usePdfImmersive();
+  const compactTrigger = usePdfCompactTriggers();
 
   // Opens as a single clean trigger — the score is the star; markup is one tap
   // away. A reader who works with the bar open gets it back open next time:
@@ -305,6 +308,50 @@ export const AnnotationToolbar = ({
     // difference between reaching for the stylus and hunting for an icon.
     const armed = visibleTools.find(({ id }) => id === tool && id !== "pointer");
     const TriggerIcon = armed?.icon ?? SquarePen;
+    const triggerLabel = armed
+      ? t(armed.labelKey, armed.fallback)
+      : t("annotations.markup", "Adnotacje");
+
+    if (compactTrigger) {
+      // Folded beside a page that leaves no margin: the icon and the gold ring
+      // still say which tool is armed, the label moves to the tooltip, and one
+      // corner badge keeps the more urgent signal — marks waiting to sync
+      // outrank the mark count.
+      return (
+        <button
+          type="button"
+          onClick={() => changeExpanded(true)}
+          aria-label={t("annotations.open_tools", "Narzędzia adnotacji")}
+          title={triggerLabel}
+          className={cn(
+            barChrome,
+            "relative h-11 w-11 justify-center text-ink-on-inverse transition-colors hover:bg-surface-inverse/85",
+            armed && "ring-1 ring-ethereal-gold/60",
+          )}
+        >
+          <TriggerIcon size={17} aria-hidden="true" />
+          {pendingCount > 0 ? (
+            <span
+              title={t(
+                "annotations.pending_hint",
+                "Zapisane na tym urządzeniu. Wyślą się same, gdy wróci internet.",
+              )}
+              className="absolute -right-1 -top-1 flex items-center gap-0.5 rounded-full bg-surface-inverse px-1.5 py-0.5 text-[10px] font-semibold text-ethereal-gold ring-1 ring-ethereal-gold/40"
+            >
+              <CloudOff size={10} aria-hidden="true" />
+              {pendingCount}
+            </span>
+          ) : (
+            annotationCount > 0 && (
+              <span className="absolute -right-1 -top-1 rounded-full bg-ethereal-gold/90 px-1.5 text-[10px] font-semibold text-surface-inverse">
+                {annotationCount}
+              </span>
+            )
+          )}
+        </button>
+      );
+    }
+
     return (
       <button
         type="button"
@@ -317,11 +364,7 @@ export const AnnotationToolbar = ({
         )}
       >
         <TriggerIcon size={17} aria-hidden="true" />
-        <span className="text-sm font-medium">
-          {armed
-            ? t(armed.labelKey, armed.fallback)
-            : t("annotations.markup", "Adnotacje")}
-        </span>
+        <span className="text-sm font-medium">{triggerLabel}</span>
         {annotationCount > 0 && (
           <span className="ml-0.5 rounded-full bg-ethereal-gold/90 px-1.5 text-[10px] font-semibold text-surface-inverse">
             {annotationCount}

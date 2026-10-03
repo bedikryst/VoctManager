@@ -3658,7 +3658,8 @@
       "solo_for": "Solo: {{voice}}",
       "volume_for": "Głośność: {{voice}}",
       "your_voice_short": "Twój głos",
-      "tempo_giusto": "Tempo giusto"
+      "tempo_giusto": "Tempo giusto",
+      "tempo": "Tempo"
     },
     "project": {
       "archived_badge": "Archiwum",

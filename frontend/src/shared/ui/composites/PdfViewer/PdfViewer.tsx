@@ -37,6 +37,7 @@ import {
   SWIPE_EDGE_TOLERANCE_PX,
   PREFETCH_MAX_ZOOM,
   SCROLL_EDGE_TOLERANCE_PX,
+  LABELED_TRIGGER_GUTTER_PX,
 } from "./constants";
 import { planScrollTurn, readableScrollRange } from "./scrollTurn";
 import { clampValue, buildPdfFileName, classifyLoadError, createDownloadAnchor } from "./utils";
@@ -49,7 +50,7 @@ import { usePdfOutline, type OutlineCapableDocument } from "./hooks/usePdfOutlin
 import { usePrefetchedPages } from "./hooks/usePrefetchedPages";
 import { useImmersiveMode } from "./hooks/useImmersiveMode";
 import { useViewerGestures } from "./hooks/useViewerGestures";
-import { PdfImmersiveProvider } from "./context";
+import { PdfCompactTriggersProvider, PdfImmersiveProvider } from "./context";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -604,8 +605,37 @@ export const PdfViewer = ({
     return () => observer.disconnect();
   }, [renderPageOverlay, blobUrl, stablePage, renderedPageWidth, zoom]);
 
+  // Free margin between the viewer's left edge and the page, where the floating
+  // triggers sit. The fit, zoom and the window all move it, so it is read off
+  // the layout instead of derived from any one of them. Divided by the root's
+  // own scale so the modal's entrance transform cannot skew the reading.
+  const [pageGutter, setPageGutter] = useState<number | null>(null);
+  useEffect(() => {
+    const root = rootRef.current;
+    const viewport = viewportRef.current;
+    const page = pageBoxRef.current;
+    if (!root || !viewport || !page || typeof ResizeObserver === "undefined") return;
+    const measure = (): void => {
+      const rootRect = root.getBoundingClientRect();
+      const scale = root.offsetWidth > 0 ? rootRect.width / root.offsetWidth : 1;
+      const offset = (page.getBoundingClientRect().left - rootRect.left) / (scale || 1);
+      const next = Math.max(0, Math.round(offset));
+      setPageGutter((current) => (current === next ? current : next));
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(viewport);
+    observer.observe(page);
+    return () => observer.disconnect();
+  }, [viewportRef, numPages, blobUrl, stablePage, renderedPageWidth, zoom]);
+
+  // A phone keeps its labels: there the page letterboxes vertically and the
+  // triggers sit above and below the music rather than beside it.
+  const compactTriggers =
+    !isCompactViewport && pageGutter !== null && pageGutter < LABELED_TRIGGER_GUTTER_PX;
+
   return (
     <PdfImmersiveProvider value={isImmersive}>
+    <PdfCompactTriggersProvider value={compactTriggers}>
     <div
       ref={rootRef}
       className={cn("relative flex min-h-0 h-full w-full flex-1 flex-col overflow-hidden bg-surface-inverse text-ink-on-inverse", className)}
@@ -828,6 +858,7 @@ export const PdfViewer = ({
         )}
       </AnimatePresence>
     </div>
+    </PdfCompactTriggersProvider>
     </PdfImmersiveProvider>
   );
 };
