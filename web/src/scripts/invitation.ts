@@ -136,17 +136,17 @@ export function setupInvitation(): (() => void) | undefined {
     );
   };
 
-  const light = cover.querySelector<HTMLElement>(".inv-light");
+  // The cover carries its own state for everything that breathes inside it (light and hands);
+  // each cloud carries its own, since the banks sit at the far end of the sheet.
   const clouds = Array.from(sheet.querySelectorAll<HTMLElement>(".inv-cloud"));
   const observer = new IntersectionObserver((entries) => {
     for (const entry of entries) {
-      const target = entry.target === cover ? light : (entry.target as HTMLElement);
-      if (target)
-        target.setAttribute("data-atmosphere", entry.isIntersecting ? "running" : "paused");
-      if (entry.target === cover && !entry.isIntersecting) compose();
+      const target = entry.target as HTMLElement;
+      target.dataset.atmosphere = entry.isIntersecting ? "running" : "paused";
+      if (target === cover && !entry.isIntersecting) compose();
     }
   });
-  if (light) light.dataset.atmosphere = "paused";
+  cover.dataset.atmosphere = "paused";
   observer.observe(cover);
   clouds.forEach((cloud) => {
     cloud.dataset.atmosphere = "paused";

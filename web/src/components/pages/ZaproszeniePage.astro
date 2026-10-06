@@ -10,10 +10,11 @@
  *  The spread pairs the invitation's host, moment, venue and signature with the concert's prose,
  *  composers and performers. Each column reads down its own axis; on a phone the invitation
  *  precedes the concert. The programme link introduces its composers, followed by performer
- *  credits. The spread enters as one composition. One response strip follows both, before the
+ *  credits. The spread enters paragraph by paragraph, as it is read. One response strip follows both, before the
  *  future-invitation list and the foundation's close: its paragraph, its own profiles (not the
- *  ensemble's, which the footer carries) and, smallest and last, the donors' line leading to the
- *  landing's donation section (`/#wesprzyj`, a deep link that skips the rite). The title stands
+ *  ensemble's, which the footer carries) and, smallest and last, the donors' line. It opens the
+ *  donation vault in place, as the menu's "Wesprzyj" does; its href, the landing's donation
+ *  section (`/#wesprzyj`, a deep link that skips the rite), is the road without JS. The title stands
  *  once, on the cover; the
  *  invitation reads on from it as one sentence ("VoctEnsemble serdecznie zaprasza na Koncert Duchowy…").
  *
@@ -39,6 +40,7 @@ import { getEntry } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
+import VaultMount from "../VaultMount.astro";
 import { FOUNDATION, SOCIAL_NETWORK_NAMES } from "../../data/foundation";
 import { NoticeForm } from "../../islands/landing/NoticeForm";
 import { KONCERTY_PAGE } from "../../i18n/content/koncerty";
@@ -52,6 +54,7 @@ import { pageCopy } from "../../lib/pageCopy";
 import { bleedPair, photoOptional } from "../../lib/photos";
 import "../../styles/invitation.css";
 import "../../styles/zaproszenie.css";
+import "../../styles/vault.css";
 
 const lang = "pl";
 const ui = UI[lang];
@@ -161,19 +164,23 @@ const hasHands = Boolean(handLeft && handRight);
     </header>
 
     <div class="zap-content">
-      <div class="zap-spread reveal">
+      {/* Each paragraph of the spread enters on its own trigger. A single node for the whole
+          spread would be crossed while a phone still shows the cover, and would ink a column
+          several screens tall at once. `data-d` staggers what one frame crosses together; the
+          second column trails the first by one step. */}
+      <div class="zap-spread">
         {/* ── The invitation ── */}
         <section class="zap-inside" aria-label={inside.aria}>
-          <p class="zap-host">
+          <p class="zap-host reveal">
             <span class="zap-host-name">{inside.host}</span>
             <span class="zap-host-line">{inside.invites}</span>
           </p>
-          <p class="zap-kind">{inside.kind}</p>
-          <p class="zap-subtitle" set:html={inside.subtitleHtml} />
+          <p class="zap-kind reveal" data-d="1">{inside.kind}</p>
+          <p class="zap-subtitle reveal" data-d="2" set:html={inside.subtitleHtml} />
 
           <span class="zap-rule" aria-hidden="true"></span>
 
-          <p class="zap-moment">
+          <p class="zap-moment reveal">
             <time datetime={`${date}T${time}`}>
               <span class="zap-day">{day}</span>
               <span class="zap-sep zap-sep-day" aria-hidden="true">—</span>
@@ -185,7 +192,7 @@ const hasHands = Boolean(handLeft && handRight);
             <span class="zap-free">{inside.admission}</span>
           </p>
 
-          <address class="zap-place">
+          <address class="zap-place reveal" data-d="1">
             <span class="zap-church">{inside.place.church}</span>
             {concert.mapUrl ? (
               <a class="zap-address inv-link" href={concert.mapUrl} target="_blank" rel="noopener noreferrer">
@@ -201,17 +208,17 @@ const hasHands = Boolean(handLeft && handRight);
             </span>
           </address>
 
-          <p class="zap-sign">
+          <p class="zap-sign reveal">
             <span class="zap-sign-name">{inside.signature.name}</span>
             <span class="zap-sign-role">{inside.signature.role}</span>
           </p>
         </section>
 
         {/* ── The concert ── */}
-        <section class="zap-about" aria-labelledby="zap-about-heading">
-          <h2 id="zap-about-heading" class="zap-about-heading">{copy.about.heading}</h2>
-          <p class="zap-about-text" set:html={copy.about.textHtml} />
-          <div class="zap-programme">
+        <section class="zap-about" aria-labelledby="zap-about-heading" data-d="1">
+          <h2 id="zap-about-heading" class="zap-about-heading reveal">{copy.about.heading}</h2>
+          <p class="zap-about-text reveal" data-d="2" set:html={copy.about.textHtml} />
+          <div class="zap-programme reveal">
             {concert.hasPage && (
               <p class="zap-door">
                 <a class="inv-door" href={`/koncerty/${INVITATION_CONCERT_ID}#program`} data-invitation-goal="programme">{copy.about.programme}<span class="zap-door-arrow" aria-hidden="true">→</span></a>
@@ -223,7 +230,7 @@ const hasHands = Boolean(handLeft && handRight);
           </div>
           <div class="zap-cast">
             {copy.about.cast.map((line, row) => (
-              <p class={row === 0 ? "zap-cast-lead" : undefined}>{line.map((item, index, all) => <><span class="zap-name">{item}</span>{index < all.length - 1 && " "}</>)}</p>
+              <p class={row === 0 ? "zap-cast-lead reveal" : "reveal"}>{line.map((item, index, all) => <><span class="zap-name">{item}</span>{index < all.length - 1 && " "}</>)}</p>
             ))}
           </div>
         </section>
@@ -274,27 +281,30 @@ const hasHands = Boolean(handLeft && handRight);
     </section>
 
     {/* ── The foundation, as the card's last page closes ── */}
-    <section class="zap-foundation reveal" aria-labelledby="zap-foundation-heading">
-      <h2 id="zap-foundation-heading" class="zap-foundation-name">{copy.foundation.name}</h2>
-      <p class="zap-foundation-text">{copy.foundation.text}</p>
+    <section class="zap-foundation" aria-labelledby="zap-foundation-heading">
+      <h2 id="zap-foundation-heading" class="zap-foundation-name reveal">{copy.foundation.name}</h2>
+      <p class="zap-foundation-text reveal" data-d="1">{copy.foundation.text}</p>
       {FOUNDATION.socials.length > 0 && (
-        <p class="zap-foundation-links">
+        <p class="zap-foundation-links reveal" data-d="2">
           {FOUNDATION.socials.map((profile) => (
             <a class="inv-door" href={profile.url} data-invitation-goal="social" target="_blank" rel="noopener noreferrer">{SOCIAL_NETWORK_NAMES[profile.network]}<span class="inv-out" aria-hidden="true">↗</span></a>
           ))}
         </p>
       )}
-      <p class="zap-donors">
+      <p class="zap-donors reveal">
         {copy.foundation.donors}{" "}
-        <a class="inv-link" href="/#wesprzyj">{copy.foundation.support}</a>
+        <a class="inv-link" href="/#wesprzyj" data-vault-open="100">{copy.foundation.support}</a>
       </p>
     </section>
   </main>
 
   <SiteFooter lang={lang} variant="invitation" />
+
+  <VaultMount lang={lang} />
 </BaseLayout>
 
 <script>
+  import "../../scripts/vault-triggers.ts";
   import { setupInvitation } from "../../scripts/invitation";
 
   let dispose: (() => void) | undefined;

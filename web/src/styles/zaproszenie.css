@@ -14,11 +14,14 @@
  *  width, is the variable, so the two layers — one a few pixels wider than the other — keep the
  *  artwork's one scale.
  *
- *  THE COVER'S MOTION IS THE GESTURE, ONCE. The hands come in from a little further out and stop
- *  short of each other; the burst opens between them as they settle, and then only breathes. They
- *  never touch. The cover's data-entrance cue gives the hands a short readiness window, runs once
- *  and stays composed after it leaves view. The radial light stays visible while the artwork
- *  loads; only the burst image dawns. The title is readable at full opacity throughout.
+ *  THE COVER'S GESTURE RUNS ONCE, THEN THE COVER BREATHES. The hands come in from a little further
+ *  out and stop short of each other; the burst opens between them as they settle. Afterwards the
+ *  light breathes on the material's own clock (`inv-breathe`), visibly, and each hand swells by a
+ *  hair from its fingertips on a period of its own, so the gap never changes. They never touch. The
+ *  cover's data-entrance cue gives the hands a short readiness window, runs once and stays
+ *  composed after it leaves view. The radial light stays visible while the artwork loads; only the
+ *  burst image dawns. The clouds billow on the material's clock too. The title is readable at full
+ *  opacity throughout.
  *
  *  THE ASK IS A POSTSCRIPT, WITH ONE BLANK. The lighter single frame and modest act keep the
  *  invitation ahead of the list. The label captions the dotted line from below; a submitted
@@ -186,23 +189,23 @@ body.page-zaproszenie {
   gap: var(--spread-gap);
 }
 
-/* One entrance preserves the relationships between the letter, programme and credits.
-   The resting ink remains legible while the composition settles onto the paper. */
-html.voct-motion .zap-spread.reveal {
+/* The spread's paragraphs settle onto the paper one by one, each on its own trigger. The resting
+   ink stays near full because the date and venue are among them and must read at any moment. */
+html.voct-motion .zap-spread .reveal {
   --half-ink: 0.88;
   transform: translateY(14px);
   transition-property: opacity, transform;
   transition-duration: 720ms;
   transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
-  transition-delay: 0s;
+  transition-delay: var(--reveal-delay, 0s);
 }
 
-html.voct-motion .zap-spread.reveal.is-in {
+html.voct-motion .zap-spread .reveal.is-in {
   transform: none;
 }
 
-html.voct-motion .zap-spread.reveal.is-settled,
-html.voct-motion.vt-nav .zap-spread.reveal.is-in {
+html.voct-motion .zap-spread .reveal.is-settled,
+html.voct-motion.vt-nav .zap-spread .reveal.is-in {
   transition-duration: 0s;
   transition-delay: 0s;
 }
@@ -882,7 +885,7 @@ html.voct-motion.vt-nav .zap-spread.reveal.is-in {
 /* The sheet's smallest line, a credit rather than an ask: set below reading size and a grade
    quieter, so it closes the page without competing with the list above it. */
 .zap-donors {
-  max-width: 30em;
+  max-width: 34em;
   margin: clamp(40px, 5vw, 56px) auto 0;
   color: var(--inv-muted);
   font-size: 16px;
@@ -891,7 +894,13 @@ html.voct-motion.vt-nav .zap-spread.reveal.is-in {
   text-wrap: balance;
 }
 
+/* The invitation to give starts its own line, and the measure above is wide enough to keep it
+   whole on a desktop; a phone breaks it in two balanced lines. Shrink-wrapped, so the link's hit
+   area is its words, not the sheet's width. */
 .zap-donors .inv-link {
+  display: block;
+  width: fit-content;
+  margin-inline: auto;
   color: var(--inv-ink-soft);
 }
 
@@ -910,40 +919,44 @@ html.voct-motion .zap-cover[data-entrance="play"] .zap-hand {
   animation: zap-reach 1.8s cubic-bezier(0.3, 0.1, 0.3, 1) both;
 }
 
+/* Each hand is anchored at its fingertips, which the artwork's cut puts at 49 % of its height. */
 .zap-hand-left {
   --reach-from: -6%;
+  transform-origin: 100% 49%;
 }
 .zap-hand-right {
   --reach-from: 6%;
+  transform-origin: 0% 49%;
 }
 
 html.voct-motion .zap-cover[data-entrance="play"] .zap-glow img {
   animation: zap-dawn 1.8s cubic-bezier(0.3, 0.1, 0.3, 1) both;
 }
 
-html.voct-motion .zap .inv-light {
-  animation: zap-breathe 12s ease-in-out infinite alternate;
+/* Once composed, each hand breathes by a hair: it swells from its fingertips, so the gap never
+   narrows, and only the arm moves (2–5 px at its far end, off-screen on a phone). The periods do
+   not divide each other or the light's 12 s, so the hands never move together or with the light.
+   The right hand starts late rather than mid-cycle, which would jump on the switch from the
+   entrance. Meant to go unseen until someone keeps looking: past ~1.02 it reads as motion. */
+html.voct-motion .zap-cover[data-entrance="composed"] .zap-hand {
+  animation: zap-hand-breathe 9s ease-in-out infinite alternate;
 }
 
-/* The banks gather with the shared transform, then settle back onto their pinned corners. */
-html.voct-motion .zap .inv-cloud-left.is-in {
-  animation: zap-billow 19s ease-in-out both;
-}
-
-html.voct-motion .zap .inv-cloud-right.is-in {
-  animation: zap-billow 26s ease-in-out both;
+html.voct-motion .zap-cover[data-entrance="composed"] .zap-hand-right {
+  animation-duration: 13s;
+  animation-delay: 2.5s;
 }
 
 html.voct-motion .zap-card .notice-done > * {
   animation: inv-arrive 0.32s var(--ease) both;
 }
 
-html.voct-motion .zap .inv-light[data-atmosphere="paused"],
+/* Must stay after every rule that sets an `animation` shorthand on these nodes: the shorthand
+   resets the play state, and the hands' rule above ties with these on specificity. */
+html.voct-motion .zap-cover[data-atmosphere="paused"] :is(.inv-light, .zap-hand),
 html.voct-motion .zap .inv-cloud[data-atmosphere="paused"],
-html.voct-motion .zap[data-writing] .inv-light,
-html.voct-motion .zap[data-writing] .inv-cloud,
-html.voct-motion .zap[data-motion-paused] .inv-light,
-html.voct-motion .zap[data-motion-paused] .inv-cloud {
+html.voct-motion .zap[data-writing] :is(.inv-light, .inv-cloud, .zap-hand),
+html.voct-motion .zap[data-motion-paused] :is(.inv-light, .inv-cloud, .zap-hand) {
   animation-play-state: paused;
 }
 
@@ -969,22 +982,12 @@ html.voct-motion .zap[data-motion-paused] .inv-cloud {
   }
 }
 
-@keyframes zap-breathe {
+@keyframes zap-hand-breathe {
   from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0.94;
-  }
-}
-
-@keyframes zap-billow {
-  from,
-  to {
     scale: 1;
   }
-  50% {
-    scale: 1.02 1.015;
+  to {
+    scale: 1.015;
   }
 }
 
@@ -1043,7 +1046,7 @@ html.voct-motion .zap[data-motion-paused] .inv-cloud {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html.voct-motion .zap-spread.reveal {
+  html.voct-motion .zap-spread .reveal {
     --half-ink: 1;
     transform: none;
     transition-duration: 0s;
