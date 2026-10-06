@@ -133,8 +133,17 @@ const pressKitSchema = z.object({
       printSheet: z.string().min(1).optional(),
     })
     .default({}),
-  /** Who presents the evening and within what, as the release's fact block names them. */
-  frame: z.object({ organizers: z.string().min(1), within: z.string().min(1) }).optional(),
+  /**
+   * Who presents the evening, within what, and who carries it to the media, as the release's fact
+   * block names them.
+   */
+  frame: z
+    .object({
+      organizers: z.string().min(1),
+      within: z.string().min(1),
+      mediaPatron: z.string().min(1).optional(),
+    })
+    .optional(),
   /** The release PDF, transcribed. */
   release: z.object({
     title: z.string().min(1),
@@ -358,7 +367,11 @@ export function releaseText(
   const practical = [
     factsText(facts, undefined, { lede: false, lineup }),
     ...(kit.frame
-      ? [`Organizatorzy: ${kit.frame.organizers}`, `W ramach: ${kit.frame.within}`]
+      ? [
+          `Organizatorzy: ${kit.frame.organizers}`,
+          `W ramach: ${kit.frame.within}`,
+          ...(kit.frame.mediaPatron ? [`Patron medialny: ${kit.frame.mediaPatron}`] : []),
+        ]
       : []),
   ].join("\n");
   const contact = release.contact

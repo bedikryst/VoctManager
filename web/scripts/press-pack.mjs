@@ -10,8 +10,9 @@
  *   · the kit of the soonest upcoming concert that has one: the board's PDFs (release,
  *     announcements, biograms) and the Word files it sent beside them, copied byte for byte under
  *     their authors' names, the post and the
- *     hashtags as text files, the poster, the designer's print PDF where one is on this machine,
- *     and the poster mounted as 4:5, 9:16 and 16:9 graphics;
+ *     hashtags as text files, the poster (the designer's own raster where one sits beside the
+ *     print PDF, else the site's sheet), the designer's print PDF where one is on this machine,
+ *     and the site's sheet mounted as 4:5, 9:16 and 16:9 graphics;
  *   · the logotype and `PRZECZYTAJ.txt` (usage terms, every credit, the contact);
  *   · `voctensemble-press-komplet.zip` (all of it) and `voctensemble-press-zdjecia.zip` (the
  *     photographs and the readme).
@@ -70,7 +71,10 @@ const at = (...parts) => path.join(WEB_ROOT, ...parts);
 const PHOTO_DIR = "press-pack/photos";
 const HELD_DIR = "src/assets/photos/.held-no-consent";
 const POSTER_DIR = "src/assets/photos";
-/** `<concert-id>.pdf`, the designer's print-ready poster. Gitignored like the photographs. */
+/**
+ * `<concert-id>.pdf`, the designer's print-ready poster, and `<concert-id>.{jpg,png}` where the
+ * downloadable sheet is not the one the site shows. Gitignored like the photographs.
+ */
 const POSTER_PRINT_DIR = "press-pack/posters";
 const OUT_DIR = "public/press";
 const ARCHIVES = {
@@ -139,9 +143,11 @@ if (kits.length > 0 && !kit) {
 }
 
 /** `<stem>.<anything>` in a directory, or undefined. */
-function findByStem(dir, stem) {
+function findByStem(dir, stem, accept = /./) {
   try {
-    return readdirSync(at(dir)).find((name) => name.slice(0, name.lastIndexOf(".")) === stem);
+    return readdirSync(at(dir)).find(
+      (name) => accept.test(name) && name.slice(0, name.lastIndexOf(".")) === stem,
+    );
   } catch {
     return undefined;
   }
@@ -193,6 +199,11 @@ if (concert) {
     posterFile = at(POSTER_DIR, name);
   }
 }
+/* The sheet a reader downloads may be the designer's latest, carrying what the site chose not to
+   show on screen — Pochwała Stworzenia's footer has the festival's eye logo, which on a page pulls
+   the look away from the title. The graphics are screen media and stay on the site's sheet. */
+const posterDownloadName = kit && findByStem(POSTER_PRINT_DIR, kit.concert, /\.(jpe?g|png|webp)$/i);
+const posterDownloadFile = posterDownloadName ? at(POSTER_PRINT_DIR, posterDownloadName) : posterFile;
 
 // ── Photo rows ────────────────────────────────────────────────────────────────────────────────
 
@@ -336,7 +347,7 @@ if (kit && concert) {
     pack(`${dir}/${name}`, data, false);
   }
 
-  const posterJpg = await sharp(posterFile)
+  const posterJpg = await sharp(posterDownloadFile)
     .flatten({ background: "#ffffff" })
     .jpeg({ quality: 92, mozjpeg: true })
     .toBuffer({ resolveWithObject: true });
