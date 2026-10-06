@@ -70,7 +70,7 @@ Ponawianie zależy od tego, czy nieudane wywołanie zostało policzone do rachun
 | Ucięcie na `max_tokens` | tak | Podwojenie budżetu wyjścia i ponowienie, najwyżej dwa razy. Przy tym samym budżecie odpowiedź urwałaby się w tym samym miejscu. |
 | 400, autoryzacja, uprawnienia | nie | Łańcuch się zatrzymuje. Ponowienie nic nie da. |
 
-Jeden ingest kosztuje $0.04–0.20. Partytura w całości po polsku jest na dole widełek, bo nie potrzebuje IPA ani tłumaczenia. Są trzy limity wydatków: na jeden przebieg, na wydanie przez cały jego czas życia i dzienny dla całej organizacji, który działa jak bezpiecznik. PDF, który już raz przeszedł przez pipeline, jest rozpoznawany po sumie SHA-256 i model w ogóle nie jest wywoływany. PDF idzie z prompt cachingiem, więc ponowienie po ucięciu czyta go po stawce cache.
+Jeden ingest kosztuje $0.04–0.20. Partytura w całości po polsku jest na dole widełek, bo nie potrzebuje IPA ani tłumaczenia. Są trzy limity wydatków: na jeden przebieg, na wydanie przez cały jego czas życia i dzienny dla całej organizacji, który działa jak bezpiecznik. PDF, który już raz przeszedł przez pipeline, jest rozpoznawany po sumie SHA-256 i model w ogóle nie jest wywoływany. Prompt systemowy jest w cache, PDF celowo nie. Każdy PDF jest czytany raz, więc zapis do cache dodawałby 25% do największego kosztu wejścia i prawie nigdy nie zostałby odczytany.
 
 <img src="docs/assets/score-ingestion.gif" width="720" alt="Wgranie PDF-a, postęp pipeline'u na żywo i ekran weryfikacji skatalogowanego utworu">
 
@@ -106,7 +106,7 @@ Budżety, honoraria, wydatki i granty projektów w jednej księdze, którą zatw
 
 **Nota programowa powstaje po weryfikacji.** Wcześniej generowała się na końcu pipeline'u z niesprawdzonych danych, więc zły kompozytor albo epoka mogły trafić do drukowanego programu koncertu. Teraz to osobne zadanie, uruchamiane z ekranu weryfikacji albo przy zatwierdzeniu.
 
-**Sonnet 5 czyta, Opus 5 pisze noty.** Nota programowa to jedyny tekst, który publiczność czyta słowo w słowo, więc dostaje mocniejszy model, za około centa więcej na notę. Przejście na nową generację nie sprowadziło się do zmiany stałej: na Sonnecie 5 brak klucza `thinking` oznacza włączone myślenie adaptacyjne, więc zwykła podmiana włączyłaby je z powrotem w jedynym wywołaniu, które je wyłącza.
+**Sonnet 5 czyta, Opus 5 pisze noty.** Nota programowa to jedyny tekst, który publiczność czyta słowo w słowo, więc dostaje mocniejszy model, za około centa więcej na notę. Przejście na nową generację nie sprowadziło się do zmiany stałej: na Sonnecie 5 brak klucza `thinking` oznacza włączone myślenie adaptacyjne, a nie wyłączone, więc wywołanie, które polegało na pominięciu tego klucza, zaczęłoby myśleć. Klient ustawia `thinking` jawnie w każdym wywołaniu.
 
 **Adnotacje odświeżają się przez odpytywanie.** Otwarty pulpit co 20 sekund pyta mały endpoint o odcisk stanu i pobiera znaki tylko wtedy, gdy się zmienił. Przy Server-Sent Events przez całą próbę byłoby otwartych około trzydziestu połączeń, żeby zyskać sekundę czy dwie.
 
@@ -180,7 +180,7 @@ graph TD
     Celery -->|EmailLabs · VAPID| Notify[E-mail · web push]
 
     Celery -->|natywne wejście PDF| Claude[Claude Sonnet 5]
-    Claude -->|wywołania narzędzi| Ext[MusicBrainz · Wikidane<br/>Spotify · YouTube]
+    Celery -->|zapytania po ekstrakcji| Ext[MusicBrainz · Wikidane<br/>Spotify · YouTube]
     Ext -.->|cache| Redis
     Claude -->|pola z pochodzeniem| DB
 

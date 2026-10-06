@@ -72,7 +72,7 @@ Retries depend on whether the failed call was billed ([`ai_client.py`](backend/a
 | Truncated at `max_tokens` | yes | Double the output budget and retry, at most twice. The same budget would truncate in the same place. |
 | 400, auth, permission | no | Stop the chain. Retrying can't help. |
 
-An ingest costs $0.04–0.20. A score sung entirely in Polish is at the low end, since it needs no IPA or translation. There are three spend caps: per run, per edition over its lifetime, and a daily budget for the whole organisation that trips a circuit breaker. A PDF that has already been processed is recognised by its SHA-256 and never reaches the model. The PDF is sent with prompt caching, so a retry after a truncation reads it at the cache rate.
+An ingest costs $0.04–0.20. A score sung entirely in Polish is at the low end, since it needs no IPA or translation. There are three spend caps: per run, per edition over its lifetime, and a daily budget for the whole organisation that trips a circuit breaker. A PDF that has already been processed is recognised by its SHA-256 and never reaches the model. The system prompt is cached; the PDF deliberately isn't. Each PDF is read once, so a cache write would add 25% to the largest input cost and almost never be read back.
 
 <img src="docs/assets/score-ingestion.gif" width="720" alt="A PDF is uploaded, the pipeline reports its progress live, and the review screen opens on the catalogued piece">
 
@@ -108,7 +108,7 @@ Budgets, fees, expenses and grants for each project, in one ledger approved by t
 
 **Programme notes come after review.** They used to be generated at the end of the pipeline from unreviewed metadata, so a wrong composer or period could end up in a printed concert programme. Now the note is a separate task, started from the review screen or on approval.
 
-**Sonnet 5 reads, Opus 5 writes the notes.** The programme note is the only text the audience reads word for word, so it gets the stronger model, for about a cent more per note. Moving to the new generation took more than changing a constant: on Sonnet 5 a missing `thinking` key means adaptive thinking is on, so a plain swap would have turned it back on in the one call that disables it.
+**Sonnet 5 reads, Opus 5 writes the notes.** The programme note is the only text the audience reads word for word, so it gets the stronger model, for about a cent more per note. Moving to the new generation took more than changing a constant: on Sonnet 5 a missing `thinking` key means adaptive thinking is on, not off, so a call that relied on leaving it out would have started thinking. The client sets `thinking` explicitly on every call.
 
 **Annotations refresh by polling.** An open music stand checks a small fingerprint endpoint every 20 seconds and refetches the marks only when it changes. Server-Sent Events would have kept around thirty connections open for a whole rehearsal to save a second or two.
 
@@ -182,7 +182,7 @@ graph TD
     Celery -->|EmailLabs · VAPID| Notify[Email · web push]
 
     Celery -->|native-PDF vision| Claude[Claude Sonnet 5]
-    Claude -->|tool-orchestrated lookups| Ext[MusicBrainz · Wikidata<br/>Spotify · YouTube]
+    Celery -->|lookups after extraction| Ext[MusicBrainz · Wikidata<br/>Spotify · YouTube]
     Ext -.->|cached| Redis
     Claude -->|provenance-stamped| DB
 
