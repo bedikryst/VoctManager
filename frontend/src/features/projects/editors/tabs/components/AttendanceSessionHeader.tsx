@@ -15,6 +15,7 @@ import { CheckCheck } from "lucide-react";
 import type { MarkTally, MatrixSession } from "../../../lib/attendanceMatrix";
 import { cn } from "@/shared/lib/utils";
 import { formatLocalizedDate, formatLocalizedTime } from "@/shared/lib/time/intl";
+import { formatShortWeekday } from "@/shared/lib/time/weekday";
 import { Caption, Eyebrow, Metric } from "@/shared/ui/primitives/typography";
 
 interface AttendanceSessionHeaderProps {
@@ -30,6 +31,7 @@ export const AttendanceSessionHeader = ({
 }: AttendanceSessionHeaderProps): React.JSX.Element => {
   const { t } = useTranslation();
 
+  const weekday = formatShortWeekday(session.at, session.timezone);
   const dayNumber = formatLocalizedDate(
     session.at,
     { day: "numeric" },
@@ -81,6 +83,13 @@ export const AttendanceSessionHeader = ({
       )}
     >
       <span className="flex flex-col items-center gap-0.5">
+        <Eyebrow
+          as="span"
+          size="overline-sm"
+          color={session.isLive ? "gold" : "muted"}
+        >
+          {weekday}
+        </Eyebrow>
         <Metric
           as="span"
           size="lg"

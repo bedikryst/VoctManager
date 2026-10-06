@@ -46,6 +46,7 @@ import { PlanStartChip } from "./PlanStartChip";
 import type { TimelineEvent } from "../types/schedule.dto";
 import { cn } from "@/shared/lib/utils";
 import { onActivate } from "@/shared/lib/dom/a11y";
+import { castRowsByFamily } from "@/shared/lib/voiceFamilies";
 
 interface TimelineProjectCardProps {
   event: TimelineEvent;
@@ -98,6 +99,23 @@ export const TimelineProjectCard = ({
   } = useTimelineProjectCard(proj.id, isExpanded);
 
   const populatedCastings = castings as PopulatedPieceCasting[];
+  // One row per voice family, its lines side by side in a two-column grid —
+  // the first line of each family opens a new grid row. The label stays the
+  // server's, which knows whether the family is divided in this piece.
+  const castCells = useMemo(
+    () =>
+      castRowsByFamily(
+        populatedCastings,
+        (c) => c.voice_line,
+        (c) =>
+          c.voice_line_display ||
+          c.voice_line ||
+          t("schedule.card.other_voice", "Inne"),
+      ).flatMap((row) =>
+        row.lines.map((line, index) => ({ line, opensRow: index === 0 })),
+      ),
+    [populatedCastings, t],
+  );
   // Documents on this card are fetched as the caller — the day sheet is written
   // per audience and the score carries the caller's watermark — so inside a
   // preview they stay visible and refuse to open.
@@ -645,36 +663,24 @@ export const TimelineProjectCard = ({
                                         {isCastingsLoading ? (
                                           <EtherealLoader fullHeight={false} />
                                         ) : populatedCastings.length > 0 ? (
-                                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-                                            {Object.entries(
-                                              populatedCastings.reduce<
-                                                Record<
-                                                  string,
-                                                  PopulatedPieceCasting[]
-                                                >
-                                              >((acc, c) => {
-                                                const vl =
-                                                  c.voice_line_display ||
-                                                  c.voice_line ||
-                                                  "Inne";
-                                                if (!acc[vl]) acc[vl] = [];
-                                                acc[vl].push(c);
-                                                return acc;
-                                              }, {}),
-                                            ).map(([vl, groupCastings]) => (
+                                          <div className="grid grid-cols-2 gap-5">
+                                            {castCells.map(({ line, opensRow }) => (
                                               <div
-                                                key={vl}
-                                                className="space-y-2"
+                                                key={line.code}
+                                                className={cn(
+                                                  "min-w-0 space-y-2",
+                                                  opensRow && "col-start-1",
+                                                )}
                                               >
                                                 <Eyebrow
                                                   as="h5"
                                                   color="sage"
                                                   className="border-b border-ethereal-sage/30 pb-1.5 mb-2 text-ethereal-sage"
                                                 >
-                                                  {vl}
+                                                  {line.label}
                                                 </Eyebrow>
                                                 <ul className="space-y-1.5">
-                                                  {groupCastings.map(
+                                                  {line.members.map(
                                                     (
                                                       c: PopulatedPieceCasting,
                                                     ) => {
@@ -730,7 +736,7 @@ export const TimelineProjectCard = ({
                                                               as="span"
                                                               size="xs"
                                                               color="gold"
-                                                              className="italic bg-ethereal-gold/10 px-1.5 py-0.5 rounded w-max border border-ethereal-gold/20"
+                                                              className="italic bg-ethereal-gold/10 px-1.5 py-0.5 rounded self-start max-w-full border border-ethereal-gold/20"
                                                             >
                                                               {t(
                                                                 "schedule.card.note_label",

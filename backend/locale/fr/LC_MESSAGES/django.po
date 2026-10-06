@@ -5659,6 +5659,59 @@ msgctxt "guest list"
 msgid "Reply"
 msgstr "Réponse"
 
+#: archive/models.py
+msgid "German (Central European)"
+msgstr "allemande (d'Europe centrale)"
+
+#: archive/models.py
+msgid "Italianate (Roman)"
+msgstr "italienne (romaine)"
+
+#: archive/models.py
+msgid "Classical (restored)"
+msgstr "classique (restituta)"
+
+#: archive/models.py
+msgid "Latin pronunciation the IPA guide is written in"
+msgstr "Prononciation du latin dans laquelle la transcription API est écrite"
+
+#: archive/models.py
+msgid "IPA pronunciation system"
+msgstr "Système de prononciation API"
+
+#: archive/services/ingestion.py
+msgid "Unknown pronunciation system."
+msgstr "Système de prononciation inconnu."
+
+#: archive/services/ingestion.py
+msgid "Pronunciation can be recomputed only for a piece sung in Latin."
+msgstr ""
+"La prononciation ne peut être recalculée que pour une œuvre chantée en "
+"latin."
+
+#: archive/services/ingestion.py
+msgid "This piece has no sung text to transcribe."
+msgstr "Cette œuvre n'a pas de texte chanté à transcrire."
+
+#: archive/services/ingestion.py
+msgid "The AI service is not configured."
+msgstr "Le service d'IA n'est pas configuré."
+
+#: archive/services/ingestion.py
+msgid "The pronunciation is already being recomputed."
+msgstr "La prononciation est déjà en cours de recalcul."
+
+#: archive/services/ingestion.py
+msgid ""
+"The current pronunciation was corrected by hand. Confirm to replace it."
+msgstr ""
+"La prononciation actuelle a été corrigée à la main. Confirmez pour la "
+"remplacer."
+
+#: archive/services/ingestion.py
+msgid "Today's AI budget is spent. Try again tomorrow."
+msgstr "Le budget IA du jour est épuisé. Réessayez demain."
+
 #~ msgid "Review the request"
 #~ msgstr "Examiner la demande"
 

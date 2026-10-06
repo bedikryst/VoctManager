@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Caption, Eyebrow } from "@/shared/ui/primitives/typography";
-import type { VoiceFamilyId } from "@/features/projects/lib/voiceFamilies";
+import type { VoiceFamilyId } from "@/shared/lib/voiceFamilies";
 import { useFamilyLabels } from "./VoiceExclusionChips";
 import type { BlockCallState, PlanBlockReading, PlanEditor } from "./usePlanEditor";
 

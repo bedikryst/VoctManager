@@ -55,7 +55,7 @@ import {
   voiceFamilyOf,
   voiceFamilyRank,
   type VoiceFamilyId,
-} from "../../lib/voiceFamilies";
+} from "@/shared/lib/voiceFamilies";
 import { foldDiacritics } from "@/shared/lib/text";
 import { getPrimaryReferenceRecording } from "@/features/archive/constants/referenceRecordings";
 import { CastMemberChip } from "./components/CastMemberChip";

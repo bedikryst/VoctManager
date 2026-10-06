@@ -21,7 +21,7 @@ import { Users, X } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Caption } from "@/shared/ui/primitives/typography";
-import type { VoiceFamilyId } from "@/features/projects/lib/voiceFamilies";
+import type { VoiceFamilyId } from "@/shared/lib/voiceFamilies";
 import type { VoiceLine } from "@/shared/types";
 import type { PlanRowReading } from "./usePlanEditor";
 

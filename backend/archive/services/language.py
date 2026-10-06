@@ -108,3 +108,11 @@ def normalize_language(raw: str | None) -> str:
         if code and code not in seen:
             seen.append(code)
     return '+'.join(seen)
+
+
+def is_latin(raw: str | None) -> bool:
+    """True when Latin is among a piece's sung languages, however the value was
+    written: 'la', 'Latin', 'łacina', or a bilingual 'pl+la'. Hand-edited
+    pieces bypass `normalize_language` on write, so the column can still hold
+    any of these."""
+    return 'la' in normalize_language(raw).split('+')

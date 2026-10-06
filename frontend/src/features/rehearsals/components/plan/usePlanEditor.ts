@@ -1,9 +1,9 @@
 /**
  * @file usePlanEditor.ts
  * @description The brain of the plan editor: a draft of the rows baselined on
- * the server's plan, the edits a conductor makes to it (add, reorder, retime,
- * exclude, remove), the three fills that spare him laying the evening out
- * from zero (the whole programme; what the previous rehearsal left undone; a
+ * the server's plan, the edits a conductor makes to it (add, reorder, retime —
+ * a committed clock takes its row to its place in time — exclude, remove), the
+ * three fills that spare him laying the evening out from zero (the whole programme; what the previous rehearsal left undone; a
  * copy of any other rehearsal's plan), and — for every row and every chip —
  * the number of people the exclusion actually removes, computed by the same
  * rule the server calls with (`lib/rehearsalPlan`), every row's effective
@@ -25,8 +25,12 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { formatInTimeZone } from "date-fns-tz";
 
 import type { Rehearsal, RehearsalPlanItem, VoiceLine } from "@/shared/types";
+import {
+  VOICE_FAMILY_ORDER,
+  voiceFamilyOf,
+  type VoiceFamilyId,
+} from "@/shared/lib/voiceFamilies";
 import { scopedToEdition } from "@/features/archive/constants/divisiScope";
-import { voiceFamilyOf, type VoiceFamilyId } from "@/features/projects/lib/voiceFamilies";
 import { resolveInvited } from "../../lib/attendanceStats";
 import {
   clockMinutes,
@@ -37,6 +41,7 @@ import {
   planSeatOf,
   type EffectiveClock,
   type PlanRuleRow,
+  type TimedRow,
 } from "../../lib/rehearsalPlan";
 import type {
   PlanEditorPiece,
@@ -185,6 +190,12 @@ export interface PlanEditor {
   ) => void;
   /** Turns a row's derived clock into an anchor at the same time. */
   readonly anchorRow: (key: string) => void;
+  /**
+   * Moves a main row whose anchor was just committed to its place in time.
+   * Returns whether it moved; a reserve row, a row without an anchor and one
+   * already in order stay put.
+   */
+  readonly placeByClock: (key: string) => boolean;
   readonly toggleLine: (key: string, line: VoiceLine) => void;
   readonly toggleFamily: (key: string, family: VoiceFamilyId) => void;
   /**
@@ -311,7 +322,8 @@ const mapRows = (
   map: (row: PlanDraftRow) => PlanDraftRow,
 ): PlanDraft => ({ ...draft, rows: draft.rows.map(map) });
 
-const FAMILY_ORDER: readonly VoiceFamilyId[] = ["S", "MS", "A", "CT", "T", "BAR", "B", "V", "ROLE"];
+const timedRowsOf = (rows: readonly PlanDraftRow[]): TimedRow[] =>
+  rows.map((row) => ({ startsAt: row.starts_at || null, minutes: row.minutes }));
 
 export const usePlanEditor = (
   rehearsal: Rehearsal,
@@ -492,7 +504,7 @@ export const usePlanEditor = (
         if (bucket) bucket.push(entry);
         else byFamily.set(family, [entry]);
       }
-      const families: ExclusionFamily[] = FAMILY_ORDER.flatMap((family) => {
+      const families: ExclusionFamily[] = VOICE_FAMILY_ORDER.flatMap((family) => {
         const lines = byFamily.get(family);
         if (!lines) return [];
         const allExcluded = lines.every((line) => line.excluded);
@@ -547,10 +559,7 @@ export const usePlanEditor = (
   );
 
   const clocks = useMemo(() => {
-    const entries = effectiveClocks(
-      rows.map((row) => ({ startsAt: row.starts_at || null, minutes: row.minutes })),
-      startClock,
-    );
+    const entries = effectiveClocks(timedRowsOf(rows), startClock);
     const map = new Map<string, EffectiveClock>();
     rows.forEach((row, index) => {
       const entry = entries[index];
@@ -595,10 +604,7 @@ export const usePlanEditor = (
   // the block's time but calls nobody.
   const blockHeaders = useMemo(() => {
     const map = new Map<string, PlanBlockReading>();
-    const blocks = planBlocks(
-      rows.map((row) => ({ startsAt: row.starts_at || null, minutes: row.minutes })),
-      startClock,
-    );
+    const blocks = planBlocks(timedRowsOf(rows), startClock);
     if (blocks.length < 2) return map;
     const end = endClock === null ? null : onEvening(endClock);
 
@@ -628,7 +634,7 @@ export const usePlanEditor = (
       // One calling row is its own header: its chips already say it.
       const offersChips = callReadings.length >= 2;
       const families = offersChips
-        ? FAMILY_ORDER.flatMap((family): PlanBlockFamily[] => {
+        ? VOICE_FAMILY_ORDER.flatMap((family): PlanBlockFamily[] => {
             const offered = callReadings.flatMap((reading) =>
               reading.families.filter((entry) => entry.family === family),
             );
@@ -759,6 +765,55 @@ export const usePlanEditor = (
       if (clock) updateRow(key, { starts_at: clock });
     },
     [clocks, updateRow],
+  );
+
+  // A committed anchor takes its row to where the clock belongs: before the
+  // first other main row whose effective clock is later, those clocks derived
+  // with the row taken out. A slot that already keeps the order — nothing above
+  // it later, no anchor below it earlier — is left alone, so clocks typed
+  // top-down never reshuffle. The rows that flowed under it stay where they
+  // were: the plan is one flat list, not slots holding rows. The reserve is
+  // not kept in time order, so its rows never move. Read from the draft as the
+  // last render left it — the commit is a blur, after the edit has rendered.
+  const placeByClock = useCallback(
+    (key: string): boolean => {
+      const current = draftRef.current;
+      const index = current.rows.findIndex((row) => row.key === key);
+      const row = current.rows[index];
+      if (!row?.starts_at || index >= current.reserveStart) return false;
+
+      const anchor = onEvening(row.starts_at);
+      const isLater = (clock: string | null): boolean =>
+        clock !== null && onEvening(clock) > anchor;
+      const isEarlier = (clock: string | null): boolean =>
+        clock !== null && onEvening(clock) < anchor;
+
+      const main = current.rows.slice(0, current.reserveStart);
+      const inPlace = effectiveClocks(timedRowsOf(main), startClock);
+      const keepsOrder =
+        inPlace.slice(0, index).every((entry) => !isLater(entry.clock)) &&
+        main.slice(index + 1).every((other) => !isEarlier(other.starts_at || null));
+      if (keepsOrder) return false;
+
+      const others = main.filter((other) => other.key !== key);
+      const firstLater = effectiveClocks(timedRowsOf(others), startClock).findIndex(
+        (entry) => isLater(entry.clock),
+      );
+      const target = firstLater === -1 ? others.length : firstLater;
+      if (target === index) return false;
+
+      setDraft({
+        rows: [
+          ...others.slice(0, target),
+          row,
+          ...others.slice(target),
+          ...current.rows.slice(current.reserveStart),
+        ],
+        reserveStart: current.reserveStart,
+      });
+      return true;
+    },
+    [onEvening, startClock],
   );
 
   const toggleLine = useCallback((key: string, line: VoiceLine) => {
@@ -910,6 +965,7 @@ export const usePlanEditor = (
     addBreakRow,
     updateRow,
     anchorRow,
+    placeByClock,
     toggleLine,
     toggleFamily,
     setFamilyOnRows,

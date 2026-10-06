@@ -20,6 +20,7 @@ import {
 } from "./archive.service";
 import {
   isIngestionInProgress,
+  type LatinPronunciationCode,
   type Movement,
   type Piece,
   type ProgramNote,
@@ -83,7 +84,8 @@ export const usePieces = () =>
 /**
  * Single-piece fetch for the dedicated review route. Polls when any edition
  * of this piece is still mid-pipeline so the conductor sees AI status flip
- * to AWAITING the moment it's ready to verify.
+ * to AWAITING the moment it's ready to verify — and while a pronunciation
+ * recompute runs, so the new guide lands in the card the moment it is written.
  */
 export const usePiece = (id: string | null) =>
   useQuery({
@@ -100,7 +102,8 @@ export const usePiece = (id: string | null) =>
           e.ingestion_status === "ENRI" ||
           e.ingestion_status === "GENR",
       );
-      return anyInProgress ? POLL_IN_PROGRESS_MS : false;
+      const ipaRunning = data?.lyrics_ipa_job?.state === "running";
+      return anyInProgress || ipaRunning ? POLL_IN_PROGRESS_MS : false;
     },
   });
 
@@ -666,6 +669,26 @@ export const useVerifyPieceField = () => {
     onSuccess: (piece, { pieceId }) => {
       qc.setQueryData(archiveKeys.pieces.details(pieceId), piece);
       qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+    },
+  });
+};
+
+/**
+ * Dispatch a pronunciation recompute. The server answers with the piece whose
+ * job is already running; priming it into the detail cache is what starts
+ * `usePiece` polling until the job clears.
+ */
+export const useRecomputeIpa = () => {
+  const qc = useQueryClient();
+  return useMutation<
+    Piece,
+    Error,
+    { pieceId: string; system: LatinPronunciationCode; replaceManual: boolean }
+  >({
+    mutationFn: ({ pieceId, system, replaceManual }) =>
+      ArchiveService.recomputeIpa(pieceId, { system, replaceManual }),
+    onSuccess: (piece, { pieceId }) => {
+      qc.setQueryData(archiveKeys.pieces.details(pieceId), piece);
     },
   });
 };

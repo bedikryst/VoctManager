@@ -79,6 +79,15 @@ export const PREFETCH_MAX_ZOOM = 1.5;
 export const WHEEL_ZOOM_SENSITIVITY = 0.0022;
 /** Trailing quiet period after which a ctrl/⌘+wheel zoom preview commits. */
 export const WHEEL_COMMIT_DELAY_MS = 160;
+/**
+ * Shift+wheel distance that turns a page. Below one mouse notch (100 px in
+ * Chromium, 3 lines in Firefox), above the trickle a trackpad starts with.
+ */
+export const WHEEL_TURN_THRESHOLD_PX = 40;
+/** Wheel silence that ends a shift+wheel gesture; until then it turns at most once. */
+export const WHEEL_TURN_IDLE_MS = 250;
+/** A line of `deltaMode === 1` (Firefox's mouse wheel) in pixels. */
+export const WHEEL_LINE_PX = 16;
 /** Ignore the stray single-finger tail of a pinch as a tap for this long. */
 export const PINCH_TAP_SUPPRESS_MS = 350;
 /** Preview scale drift below this is treated as "no zoom" and not committed. */

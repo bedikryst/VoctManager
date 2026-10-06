@@ -644,6 +644,21 @@
         "text_source": "Źródło tekstu",
         "voicing": "Obsada"
       },
+      "ipa": {
+        "system_pick": "Wymowa łaciny",
+        "recompute": "Przelicz wymowę",
+        "recomputing": "Przeliczam…",
+        "save_first": "Najpierw zapisz zmiany: wymowa powstaje z zapisanego tekstu.",
+        "done": "Wymowa przeliczona.",
+        "failed": "Nie udało się przeliczyć wymowy. Dotychczasowa transkrypcja została bez zmian.",
+        "failed_overloaded": "Usługa AI była przeciążona. Spróbuj ponownie za kilka minut.",
+        "failed_budget": "Dzienny budżet AI się wyczerpał. Spróbuj jutro.",
+        "already_running": "Wymowa jest już przeliczana.",
+        "dispatch_failed": "Nie udało się uruchomić przeliczania wymowy.",
+        "confirm_title": "Zastąpić poprawioną wymowę?",
+        "confirm_body": "Tę transkrypcję ktoś poprawiał albo zatwierdzał ręcznie. Przeliczenie zastąpi ją w całości. Wymowa łaciny: {{system}}.",
+        "confirm_replace": "Zastąp"
+      },
       "form_panel_aria": "Dane utworu",
       "group": {
         "identity": "Tożsamość",
@@ -954,6 +969,11 @@
       "cs": "czeski",
       "uk": "ukraiński",
       "ru": "rosyjski"
+    },
+    "ipa_system": {
+      "germanic": "niemiecka",
+      "italianate": "włoska (kościelna)",
+      "classical": "klasyczna (restituta)"
     },
     "provenance": {
       "verified": "Zweryfikowane",
@@ -5608,6 +5628,7 @@
       "row": {
         "drag": "Przeciągnij: {{title}}",
         "untitled": "punkt bez nazwy",
+        "placed": "Ustawiono według godziny {{clock}}: {{title}}",
         "time": "Godzina (opcjonalna)",
         "piece": "Utwór z programu",
         "label": "Nazwa punktu",
@@ -5964,6 +5985,7 @@
       "no_run_sheet": "Harmonogram dnia nie został jeszcze opublikowany przez menedżera.",
       "no_spotify": "Brak playlisty referencyjnej.",
       "note_label": "Notatka:",
+      "other_voice": "Inne",
       "open_detail": "Otwórz szczegóły: {{title}}",
       "run_sheet_title": "Harmonogram Dnia",
       "run_sheet_untitled": "Punkt harmonogramu",

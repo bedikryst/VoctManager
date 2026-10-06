@@ -632,6 +632,21 @@
         "text_source": "Text source",
         "voicing": "Voicing"
       },
+      "ipa": {
+        "system_pick": "Latin pronunciation",
+        "recompute": "Recompute pronunciation",
+        "recomputing": "Recomputing…",
+        "save_first": "Save your changes first. The pronunciation is computed from the saved text.",
+        "done": "Pronunciation recomputed.",
+        "failed": "The pronunciation could not be recomputed. The current transcription is unchanged.",
+        "failed_overloaded": "The AI service was overloaded. Try again in a few minutes.",
+        "failed_budget": "Today's AI budget is used up. Try again tomorrow.",
+        "already_running": "The pronunciation is already being recomputed.",
+        "dispatch_failed": "The pronunciation recompute could not be started.",
+        "confirm_title": "Replace the corrected pronunciation?",
+        "confirm_body": "Someone corrected or approved this transcription by hand. Recomputing replaces all of it. Latin pronunciation: {{system}}.",
+        "confirm_replace": "Replace"
+      },
       "form_panel_aria": "Piece data",
       "group": {
         "identity": "Identity",
@@ -926,6 +941,11 @@
       "cs": "Czech",
       "uk": "Ukrainian",
       "ru": "Russian"
+    },
+    "ipa_system": {
+      "germanic": "German",
+      "italianate": "Italianate (Roman)",
+      "classical": "Classical (restored)"
     },
     "provenance": {
       "verified": "Verified",
@@ -5518,6 +5538,7 @@
       "row": {
         "drag": "Drag: {{title}}",
         "untitled": "untitled point",
+        "placed": "Moved into time order at {{clock}}: {{title}}",
         "time": "Time (optional)",
         "piece": "Piece from the programme",
         "label": "Point name",
@@ -5870,6 +5891,7 @@
       "no_run_sheet": "The run sheet has not been published by the manager yet.",
       "no_spotify": "No reference playlist.",
       "note_label": "Note:",
+      "other_voice": "Other",
       "open_detail": "Open details: {{title}}",
       "run_sheet_title": "Run Sheet",
       "run_sheet_untitled": "Schedule item",

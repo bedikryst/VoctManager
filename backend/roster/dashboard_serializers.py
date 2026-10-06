@@ -346,6 +346,7 @@ class PieceMaterialsSerializer(serializers.Serializer):
             'starting_pitches': piece.starting_pitches,
             'text_source': piece.text_source,
             'lyrics_ipa': piece.lyrics_ipa,
+            'lyrics_ipa_system': piece.lyrics_ipa_system,
             'mbid_work': str(piece.mbid_work) if piece.mbid_work else None,
             'translations': TranslationSnippetSerializer(
                 getattr(piece, 'prefetched_translations', []),

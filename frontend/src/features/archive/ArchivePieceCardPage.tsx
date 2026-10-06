@@ -98,6 +98,7 @@ import {
   pieceReviewBreakdown,
 } from "./components/ProvenanceChip";
 import { CockpitSection } from "./components/CockpitSection";
+import { LyricsIpaField } from "./components/LyricsIpaField";
 import { ReviewMeter } from "./components/ReviewMeter";
 import {
   PieceMetadataForm,
@@ -849,6 +850,13 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                     onSubmit={onSubmit}
                     fieldChip={fieldChip}
                     isReviewing={Boolean(awaitingEdition)}
+                    lyricsIpaField={
+                      <LyricsIpaField
+                        piece={piece}
+                        form={form}
+                        chip={fieldChip("lyrics_ipa")}
+                      />
+                    }
                   />
                 </CockpitSection>
 

@@ -21,7 +21,9 @@ Description:
 
     `generate_program_note` (Claude — Opus, text-only) is NOT in the chain: it
     runs on demand from the review cockpit once the conductor has verified the
-    identity — see `build_ingestion_chain`.
+    identity — see `build_ingestion_chain`. Neither is `recompute_ipa`
+    (Claude — Sonnet, text-only), which re-derives a Latin piece's IPA guide in
+    the pronunciation system the manager picks.
 
     Why the rewrite (vs the old 4-call text-only chain):
       * One vision call over the real document — handles scans, full pages,
@@ -52,6 +54,7 @@ import random
 import re
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any, BinaryIO, cast
 from uuid import UUID
 
@@ -66,6 +69,7 @@ from django.utils import timezone
 from archive.dtos import (
     ExtractedWorkIdentity,
     GeneratedProgramNote,
+    IpaTranscriptionResult,
     ScoreAnalysisResult,
 )
 from archive.infrastructure.ai_client import (
@@ -88,6 +92,8 @@ from archive.infrastructure.pdf_extractor import (
 from archive.infrastructure.prompts import (
     ANALYZE_SCORE,
     GENERATE_PROGRAM_NOTE,
+    LATIN_SYSTEM_HEADINGS,
+    TRANSCRIBE_IPA,
 )
 from archive.infrastructure.spotify_client import SpotifyClient
 from archive.infrastructure.wikidata_client import WikidataClient
@@ -104,6 +110,13 @@ from archive.models import (
     Translation,
 )
 from archive.services import provenance
+from archive.services.ipa import (
+    IpaRecomputeRefused,
+    clear_ipa_job,
+    ipa_system_for,
+    mark_ipa_job_failed,
+    recompute_refusal,
+)
 from archive.services.language import normalize_language
 from archive.services.resolvers import (
     resolve_or_create_composer,
@@ -127,6 +140,10 @@ MAX_PDF_PAGES: int = 100
 # for the same text. Stays under the ceiling so one escalation remains possible.
 ANALYZE_MAX_TOKENS: int = 49152
 PROGRAM_NOTE_MAX_TOKENS: int = 8192
+# IPA tokenizes poorly (one symbol is often a token of its own), so a whole Mass
+# runs to several thousand output tokens; the client escalates past this on a
+# truncation rather than failing.
+IPA_MAX_TOKENS: int = 16384
 
 # The canonical programme note is generated eagerly in the ensemble's language.
 # Polish is the platform's primary language; the cockpit can request others.
@@ -143,6 +160,9 @@ OVERLOAD_MAX_DELAY: float = 600.0
 TRANSIENT_MAX_RETRIES: int = 3     # 5,10,20s
 TRANSIENT_BASE_DELAY: float = 5.0
 TRANSIENT_MAX_DELAY: float = 120.0
+# A recompute is watched live from the piece card, so it waits out an overload
+# for minutes, not the ingestion chain's half hour: 30, 60, 120 s.
+IPA_OVERLOAD_MAX_RETRIES: int = 3
 
 
 # ===========================================================================
@@ -180,6 +200,17 @@ def build_ingestion_chain(edition_id: UUID) -> Any:
 def _backoff(retries: int, base: float, cap: float) -> float:
     """Exponential backoff with full jitter."""
     return min(cap, base * (2 ** retries)) * (0.5 + random.random() / 2)
+
+
+def _retries_spent(raised: BaseException, exc: BaseException) -> bool:
+    """Whether `self.retry(exc=exc, ...)` raised because no retry is left.
+
+    Celery raises `MaxRetriesExceededError` only when no `exc` is passed; given
+    one, it raises that `exc` itself — both once the budget is spent and when
+    the task was called directly rather than by a worker. Anything else (above
+    all `Retry`, the reschedule) is not a terminal state and must propagate.
+    """
+    return raised is exc or isinstance(raised, MaxRetriesExceededError)
 
 
 def cancel_cache_key(edition_id: str) -> str:
@@ -297,8 +328,9 @@ def _retry_or_fail(
     Schedule a patient retry of the current task, or — once the budget is
     exhausted — mark the edition FAILED with `reason` and abort the chain.
 
-    Raising `self.retry(...)` either reschedules (propagates `Retry`) or raises
-    `MaxRetriesExceededError`, which we convert into a graceful terminal state.
+    Raising `self.retry(...)` either reschedules (propagates `Retry`) or, with
+    the budget spent, raises again — see `_retries_spent` — which we convert
+    into a graceful terminal state.
     """
     edition_id = payload['edition_id']
     if progress:
@@ -310,7 +342,9 @@ def _retry_or_fail(
     )
     try:
         raise self.retry(exc=exc, countdown=countdown, max_retries=max_retries)
-    except MaxRetriesExceededError:
+    except Exception as raised:
+        if not _retries_spent(raised, exc):
+            raise
         edition = _load_edition(edition_id)
         return _fail(edition, reason, payload)
 
@@ -659,6 +693,15 @@ def persist_analysis(self, payload: dict) -> dict:
 
         # Sung text / IPA / language (fill only blanks).
         update_fields: list[str] = ['updated_at']
+        # Language is a SUNG-TEXT property, so `persist_analysis` is its sole
+        # writer — the resolver no longer touches `piece.language`. Both AI
+        # fields (ISO `sung_text_language` and the word-form `language`) funnel
+        # through `normalize_language`, so the stored value is always a canonical
+        # ISO 639-1 code ('pl', 'la', or 'pl+la' for a bilingual score) instead
+        # of the "Polish / polski / pol / Polish+Latin" free-text mess.
+        normalized_language = normalize_language(
+            analysis.sung_text_language or analysis.language
+        )
         if not piece.lyrics_original and analysis.sung_text:
             piece.lyrics_original = analysis.sung_text
             update_fields.append('lyrics_original')
@@ -669,21 +712,15 @@ def persist_analysis(self, payload: dict) -> dict:
             )
         if not piece.lyrics_ipa and analysis.ipa_transcription:
             piece.lyrics_ipa = analysis.ipa_transcription
-            update_fields.append('lyrics_ipa')
+            # ANALYZE_SCORE writes Latin in the German system; a guide for a
+            # piece in any other language has no system to record.
+            piece.lyrics_ipa_system = ipa_system_for(piece.language or normalized_language)
+            update_fields.extend(['lyrics_ipa', 'lyrics_ipa_system'])
             provenance.record_ai(
                 target=piece, field_name='lyrics_ipa',
                 model_id=AIModel.SONNET, prompt_version=version,
                 confidence=analysis.confidence,
             )
-        # Language is a SUNG-TEXT property, so `persist_analysis` is its sole
-        # writer — the resolver no longer touches `piece.language`. Both AI
-        # fields (ISO `sung_text_language` and the word-form `language`) funnel
-        # through `normalize_language`, so the stored value is always a canonical
-        # ISO 639-1 code ('pl', 'la', or 'pl+la' for a bilingual score) instead
-        # of the "Polish / polski / pol / Polish+Latin" free-text mess.
-        normalized_language = normalize_language(
-            analysis.sung_text_language or analysis.language
-        )
         if not piece.language and normalized_language:
             piece.language = normalized_language
             update_fields.append('language')
@@ -844,6 +881,152 @@ def generate_program_note(self, payload: dict) -> dict:
             prompt_version=GENERATE_PROGRAM_NOTE.version,
         )
     return payload
+
+
+@dataclass(frozen=True)
+class IpaRecomputeOutcome:
+    system: str
+    cost_cents: int
+    sung_lines: int
+    ipa_lines: int
+
+    @property
+    def aligned(self) -> bool:
+        return self.sung_lines == self.ipa_lines
+
+
+def recompute_piece_ipa(
+    piece: Piece, system: str, *, client: AIClient | None = None,
+) -> IpaRecomputeOutcome:
+    """Re-derive `piece.lyrics_ipa` from its stored sung text in one Latin
+    pronunciation system, and record which system and which call produced it.
+
+    Text-only: the PDF is not re-read, so this is cheap, quick, and works for a
+    piece entered by hand with no score attached. Replaces whatever guide is
+    there — deciding whether a hand-edited guide may be replaced is the caller's
+    job (the card asks first, the bulk command skips it).
+
+    The charge goes to the org-wide daily budget, and to the piece's default
+    edition when it has one, because that is where the archive reads what a
+    work has cost. Raises `IpaRecomputeRefused`, `CostCeilingExceeded`, or the
+    client's `AIClientError` family.
+    """
+    if system not in LATIN_SYSTEM_HEADINGS:
+        raise ValueError(f"Unknown Latin pronunciation system {system!r}.")
+    refusal = recompute_refusal(piece)
+    if refusal is not None:
+        raise IpaRecomputeRefused(refusal)
+    ensure_daily_budget()
+
+    sung_text = piece.lyrics_original.strip('\n')
+    sung_lines = sung_text.count('\n') + 1
+    user_content = (
+        f"Latin pronunciation system: {LATIN_SYSTEM_HEADINGS[system]}\n"
+        f"Sung language(s): {piece.language}\n\n"
+        f"Sung text ({sung_lines} lines):\n{sung_text}"
+    )
+    edition = (
+        piece.editions.filter(is_deleted=False)
+        .order_by('-is_default', '-created_at')
+        .first()
+    )
+
+    def bill(cents: int) -> None:
+        if edition is not None:
+            _bill_edition(edition, cents)
+        else:
+            _record_daily_spend(cents)
+
+    # Sonnet is the tier that writes every other guide in the archive. Effort
+    # stays low: the rules are spelled out in the prompt, and the output is
+    # long, so deliberation only adds latency to a call someone is waiting on.
+    try:
+        result, cost = (client or AIClient()).parse(
+            model=AIModel.SONNET,
+            prompt=TRANSCRIBE_IPA,
+            user_content=user_content,
+            output_schema=IpaTranscriptionResult,
+            max_tokens=IPA_MAX_TOKENS,
+            effort="low",
+            enable_thinking=True,
+        )
+    except AIClientError as exc:
+        if exc.cost is not None:
+            bill(exc.cost.total_cents)
+        raise
+    bill(cost.total_cents)
+
+    ipa = result.ipa_transcription.strip('\n')
+    if not ipa.strip():
+        # Already billed above; an empty answer must not wipe the current guide.
+        raise AIClientError("Claude returned an empty pronunciation guide.")
+    ipa_lines = ipa.count('\n') + 1
+    with transaction.atomic():
+        piece.lyrics_ipa = ipa
+        piece.lyrics_ipa_system = system
+        piece.save(update_fields=['lyrics_ipa', 'lyrics_ipa_system', 'updated_at'])
+        provenance.record_ai(
+            target=piece, field_name='lyrics_ipa',
+            model_id=AIModel.SONNET, prompt_version=TRANSCRIBE_IPA.version,
+        )
+
+    if ipa_lines != sung_lines:
+        # Kept, not discarded: the card's line-count warning flags it, and a
+        # guide off by one line is still worth more than none.
+        logger.warning(
+            "ipa.recompute_misaligned piece=%s system=%s sung_lines=%d ipa_lines=%d",
+            piece.pk, system, sung_lines, ipa_lines,
+        )
+    logger.info(
+        "ipa.recomputed piece=%s system=%s cost_cents=%d",
+        piece.pk, system, cost.total_cents,
+    )
+    return IpaRecomputeOutcome(
+        system=system,
+        cost_cents=cost.total_cents,
+        sung_lines=sung_lines,
+        ipa_lines=ipa_lines,
+    )
+
+
+@shared_task(name='archive.recompute_ipa', bind=True, max_retries=IPA_OVERLOAD_MAX_RETRIES)
+def recompute_ipa(self, piece_id: str, system: str) -> None:
+    """The piece card's "Przelicz wymowę", run off the request.
+
+    Not `_guarded`: that contract fails an edition, and a pronunciation guide is
+    no part of any edition's ingestion. Every exit either clears the card's job
+    entry or marks it failed, so the card never waits on a task that is gone.
+    """
+    piece = Piece.objects.filter(pk=piece_id).first()
+    if piece is None:
+        clear_ipa_job(piece_id)
+        return
+    try:
+        recompute_piece_ipa(piece, system)
+    except AIClientOverloadedError as exc:
+        # Unbilled, and capacity blips clear in minutes: wait, then retry.
+        try:
+            raise self.retry(
+                exc=exc,
+                countdown=_backoff(self.request.retries, OVERLOAD_BASE_DELAY, OVERLOAD_MAX_DELAY),
+            )
+        except Exception as raised:
+            if not _retries_spent(raised, exc):
+                raise
+            mark_ipa_job_failed(piece_id, system, 'overloaded')
+            return
+    except CostCeilingExceeded:
+        mark_ipa_job_failed(piece_id, system, 'budget')
+        return
+    except (AIClientError, IpaRecomputeRefused, ValueError) as exc:
+        logger.error("ipa.recompute_failed piece=%s system=%s err=%s", piece_id, system, exc)
+        mark_ipa_job_failed(piece_id, system, 'failed')
+        return
+    except Exception:
+        logger.exception("ipa.recompute_crashed piece=%s system=%s", piece_id, system)
+        mark_ipa_job_failed(piece_id, system, 'failed')
+        return
+    clear_ipa_job(piece_id)
 
 
 @shared_task(name='archive.lookup_spotify', **_TASK_KW)
@@ -1041,6 +1224,7 @@ def _fail(edition: ScoreEdition, reason: str, payload: dict) -> dict:
 
 
 __all__ = [
+    'IpaRecomputeOutcome',
     'analyze_score',
     'build_ingestion_chain',
     'ensure_daily_budget',
@@ -1050,5 +1234,7 @@ __all__ = [
     'lookup_youtube',
     'persist_analysis',
     'prepare_document',
+    'recompute_ipa',
+    'recompute_piece_ipa',
     'resolve_composer_and_piece',
 ]

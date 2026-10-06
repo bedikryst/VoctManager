@@ -24,6 +24,7 @@ import { Caption, Eyebrow, Metric, Text } from "@/shared/ui/primitives/typograph
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { sectionNamesLabel } from "@/features/rehearsals/lib/sectionLabels";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
+import { formatShortWeekday } from "@/shared/lib/time/weekday";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 
 interface RehearsalTimelineRowProps {
@@ -60,6 +61,7 @@ export const RehearsalTimelineRow = ({
   const { rehearsal } = entry;
   const isConcert = rehearsal === null;
 
+  const weekday = formatShortWeekday(entry.at, entry.timezone);
   const dayNumber = formatLocalizedDate(
     entry.at,
     { day: "numeric" },
@@ -120,6 +122,14 @@ export const RehearsalTimelineRow = ({
                 : "border-hairline-strong bg-ethereal-marble",
         )}
       >
+        <Eyebrow
+          as="span"
+          size="overline-sm"
+          color={isConcert ? "gold" : "muted"}
+          className="mb-1"
+        >
+          {weekday}
+        </Eyebrow>
         <Metric as="span" size="xl" className="leading-none">
           {dayNumber}
         </Metric>

@@ -165,6 +165,9 @@ export interface MaterialsPiece {
   starting_pitches: MaterialsStartingPitch[];
   text_source: string;
   lyrics_ipa: string;
+  /** Latin pronunciation of the guide; "" when unknown. Optional: a snapshot
+   *  persisted before the field existed still reads cleanly. */
+  lyrics_ipa_system?: string;
   mbid_work: string | null;
   translations: MaterialsTranslation[];
   recordings: MaterialsRecording[];

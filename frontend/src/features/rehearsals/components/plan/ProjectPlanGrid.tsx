@@ -37,6 +37,7 @@ import {
 import type { Rehearsal } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
 import { formatLocalizedDate, formatLocalizedTime } from "@/shared/lib/time/intl";
+import { formatShortWeekday } from "@/shared/lib/time/weekday";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
@@ -137,6 +138,7 @@ export const ProjectPlanGrid = ({
           return [
             String(rehearsal.id),
             {
+              weekday: formatShortWeekday(rehearsal.date_time, rehearsal.timezone),
               day: formatLocalizedDate(
                 rehearsal.date_time,
                 { day: "numeric" },
@@ -228,6 +230,9 @@ export const ProjectPlanGrid = ({
           })}
           className="flex w-full flex-col items-center gap-0.5 px-1 pb-2 pt-3 transition-colors hover:bg-ethereal-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold/45"
         >
+          <Eyebrow as="span" size="overline-sm" color="muted">
+            {dates?.weekday}
+          </Eyebrow>
           <Metric as="span" size="lg" className="leading-none">
             {dates?.day}
           </Metric>

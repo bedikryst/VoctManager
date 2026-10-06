@@ -26,14 +26,23 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from archive.infrastructure.ai_client import CostCeilingExceeded
-from archive.models import IngestionStatus, Piece, ScoreEdition
+from archive.models import IngestionStatus, LatinPronunciation, Piece, ScoreEdition
+from archive.services.ipa import (
+    clear_ipa_job,
+    ipa_is_hand_edited,
+    ipa_job,
+    mark_ipa_job_running,
+    recompute_refusal,
+)
 from archive.tasks import (
     build_ingestion_chain,
     cancel_cache_key,
     ensure_daily_budget,
     generate_program_note,
+    recompute_ipa,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,6 +50,20 @@ logger = logging.getLogger(__name__)
 
 class IngestionPreconditionError(Exception):
     """Caller asked to ingest an edition that isn't in an ingestible state."""
+
+
+class IpaDispatchError(Exception):
+    """A pronunciation recompute was refused before anything was queued.
+
+    `code` is what the card branches on (it words the message in the reader's
+    language); `status` is the HTTP status the view answers with.
+    """
+
+    def __init__(self, code: str, message: str, *, status: int = 400) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.status = status
 
 
 def ingestion_is_available() -> bool:
@@ -150,6 +173,67 @@ def dispatch_program_note(
     logger.info(
         "ingest.program_note_dispatched piece=%s edition=%s task=%s force=%s lang=%s",
         piece.id, edition.id, async_result.id, force, language or 'default',
+    )
+    return async_result.id
+
+
+def dispatch_ipa_recompute(
+    piece: Piece, *, system: str, replace_manual: bool = False,
+) -> str:
+    """
+    Queue a re-derivation of a Latin piece's IPA guide in `system` and mark the
+    piece's job as running, so the card shows progress from the next read on.
+
+    A guide whose latest provenance is a human's is replaced only with
+    `replace_manual=True` — a correction is never overwritten as a side effect
+    of a button. Raises `IpaDispatchError` (with a code the card branches on)
+    for anything refused. Returns the Celery task id.
+    """
+    if system not in LatinPronunciation.values:
+        raise IpaDispatchError(
+            'invalid_system', _("Unknown pronunciation system."),
+        )
+    refusal = recompute_refusal(piece)
+    if refusal == 'not_latin':
+        raise IpaDispatchError(
+            refusal, _("Pronunciation can be recomputed only for a piece sung in Latin."),
+        )
+    if refusal == 'no_text':
+        raise IpaDispatchError(
+            refusal, _("This piece has no sung text to transcribe."),
+        )
+    if not ingestion_is_available():
+        raise IpaDispatchError(
+            'unavailable', _("The AI service is not configured."), status=503,
+        )
+    current = ipa_job(piece.pk)
+    if current is not None and current['state'] == 'running':
+        raise IpaDispatchError(
+            'running', _("The pronunciation is already being recomputed."), status=409,
+        )
+    if not replace_manual and ipa_is_hand_edited(piece):
+        raise IpaDispatchError(
+            'hand_edited',
+            _("The current pronunciation was corrected by hand. Confirm to replace it."),
+            status=409,
+        )
+    try:
+        ensure_daily_budget()
+    except CostCeilingExceeded as exc:
+        raise IpaDispatchError(
+            'budget', _("Today's AI budget is spent. Try again tomorrow."), status=429,
+        ) from exc
+
+    mark_ipa_job_running(piece.pk, system)
+    try:
+        async_result = recompute_ipa.delay(str(piece.pk), system)
+    except Exception:
+        # Nothing was queued, so nothing will ever clear the running state.
+        clear_ipa_job(piece.pk)
+        raise
+    logger.info(
+        "ipa.recompute_dispatched piece=%s system=%s task=%s replace_manual=%s",
+        piece.pk, system, async_result.id, replace_manual,
     )
     return async_result.id
 

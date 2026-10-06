@@ -54,6 +54,7 @@ from .models import (
 )
 from .score_protection import can_export as edition_can_export
 from .score_protection import user_is_manager
+from .services.ipa import IpaJob, ipa_job, recompute_refusal
 from .services.voice_scope import tracks_for_edition, voice_scope
 
 
@@ -765,6 +766,11 @@ class PieceSerializer(serializers.ModelSerializer):
     # Only populated on the piece-detail endpoint (review cockpit) — see
     # `PieceViewSet.get_serializer_context` — so the list stays a single query.
     provenance = serializers.SerializerMethodField()
+    # Whether the card offers "Przelicz wymowę": decided here, from the saved
+    # record the recompute will read, so the card never re-implements the rule.
+    lyrics_ipa_recomputable = serializers.SerializerMethodField()
+    # The running or just-failed recompute the card polls; detail endpoint only.
+    lyrics_ipa_job = serializers.SerializerMethodField()
 
     class Meta:
         model = Piece
@@ -779,6 +785,9 @@ class PieceSerializer(serializers.ModelSerializer):
             'description',
             'lyrics_original',
             'lyrics_ipa',
+            'lyrics_ipa_system',
+            'lyrics_ipa_recomputable',
+            'lyrics_ipa_job',
             'composition_year',
             'epoch', 'epoch_display',
             'opus_catalog',
@@ -802,10 +811,20 @@ class PieceSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at',
         ]
         read_only_fields = [
-            'id', 'mbid_work', 'created_at', 'updated_at',
+            'id', 'mbid_work', 'lyrics_ipa_system', 'created_at', 'updated_at',
         ]
 
     # ---- Derived fields ----------------------------------------------------
+
+    def get_lyrics_ipa_recomputable(self, obj: Piece) -> bool:
+        return recompute_refusal(obj) is None
+
+    def get_lyrics_ipa_job(self, obj: Piece) -> IpaJob | None:
+        # Same gate as provenance: one cache read per piece is fine on the card,
+        # not across the whole archive list.
+        if not self.context.get('include_provenance'):
+            return None
+        return ipa_job(obj.pk)
 
     def get_ingestion_status(self, obj: Piece) -> str:
         return _aggregate_ingestion_status(obj)

@@ -17,6 +17,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { AlignLeft, Languages, ScrollText } from "lucide-react";
 
+import { getLatinPronunciationLabel } from "@/features/archive/constants/latinPronunciation";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { SectionLabel } from "./SectionLabel";
@@ -29,6 +30,8 @@ interface PieceLyricsViewerProps {
   originalLyrics?: string | null;
   /** AI-extracted IPA transcription. */
   lyricsIpa?: string | null;
+  /** Latin pronunciation the guide follows, named beside its label. */
+  lyricsIpaSystem?: string | null;
   /** Multilingual translations from the AI pipeline (en, pl, fr, …). */
   translations?: MaterialsTranslation[];
   /** Audience-facing program notes. */
@@ -38,10 +41,12 @@ interface PieceLyricsViewerProps {
 export const PieceLyricsViewer = ({
   originalLyrics,
   lyricsIpa,
+  lyricsIpaSystem,
   translations,
   programNotes,
 }: PieceLyricsViewerProps): React.JSX.Element | null => {
   const { t } = useTranslation();
+  const ipaSystemLabel = getLatinPronunciationLabel(lyricsIpaSystem, t);
 
   const cleanedTranslations = (translations ?? []).filter((tr) =>
     Boolean(tr.text?.trim()),
@@ -91,6 +96,7 @@ export const PieceLyricsViewer = ({
                   <div className="border-b border-ethereal-marble pb-2 mb-3 flex items-center gap-2">
                     <Eyebrow color="muted">
                       {t("materials.piece.lyrics_ipa", "Wymowa (IPA)")}
+                      {ipaSystemLabel ? ` · ${ipaSystemLabel}` : null}
                     </Eyebrow>
                   </div>
                   <pre className="whitespace-pre-wrap leading-relaxed font-serif text-[13px] text-ethereal-ink">

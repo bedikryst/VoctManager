@@ -32,10 +32,9 @@
  * @module features/projects/lib/autoCast
  */
 
+import { voiceFamilyOf, type VoiceFamilyId } from "@/shared/lib/voiceFamilies";
 import { isInstrumentalist } from "@/shared/lib/voiceTypes";
 import type { ParticipationStatus, VoiceLine, VoiceType } from "@/shared/types";
-
-import { voiceFamilyOf, type VoiceFamilyId } from "./voiceFamilies";
 
 /**
  * The seats a line-up can hand out: the twelve choral lines, the three

@@ -12,6 +12,7 @@ import type {
   Composer,
   IngestionProgressCode,
   IngestionStatusCode,
+  LatinPronunciationCode,
   LiveAnalysisPreview,
   Movement,
   Piece,
@@ -181,6 +182,22 @@ export const ArchiveService = {
     const qs = params.toString();
     const url = `${PIECES_URL}${pieceId}/generate_program_note/${qs ? `?${qs}` : ""}`;
     const response = await api.post<{ celery_task_id: string; status: string }>(url);
+    return response.data;
+  },
+
+  /**
+   * Re-derive a Latin piece's IPA guide in one pronunciation system. Answers
+   * with the piece, its `lyrics_ipa_job` running. A hand-edited guide is
+   * refused with 409 `hand_edited` unless `replaceManual` is set.
+   */
+  recomputeIpa: async (
+    pieceId: string,
+    payload: { system: LatinPronunciationCode; replaceManual: boolean },
+  ): Promise<Piece> => {
+    const response = await api.post<Piece>(`${PIECES_URL}${pieceId}/recompute_ipa/`, {
+      system: payload.system,
+      replace_manual: payload.replaceManual,
+    });
     return response.data;
   },
 

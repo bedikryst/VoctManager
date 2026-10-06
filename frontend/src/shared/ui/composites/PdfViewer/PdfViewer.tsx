@@ -2,7 +2,7 @@
  * @file PdfViewer.tsx
  * @description Headless, gated PDF reading instrument. Renders a prefetched
  * page window (current ± neighbours) so page turns swap two ready canvases
- * instead of flashing a loader; adds edge-tap/swipe/pedal-key navigation,
+ * instead of flashing a loader; adds edge-tap/swipe/shift+wheel/pedal-key navigation,
  * pinch and ctrl+wheel zoom with a live CSS preview, a screen wake lock and an
  * immersive performance mode (fullscreen, chrome hidden, page filling the
  * screen edge to edge). Annotation features mount through the toolbarSlot /

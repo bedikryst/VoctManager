@@ -243,7 +243,7 @@ Lokalizacja: [backend/archive/infrastructure/ai_client.py](../backend/archive/in
 | Model | Stała | Zastosowanie | Cena ($/1M tokens) |
 |---|---|---|---|
 | Haiku 4.5 | `AIModel.HAIKU` | Klasyfikacja, dedup, prosta ekstrakcja. **Obecnie nieużywany w pipeline** — konsolidacja v2 zlikwidowała zadania jego poziomu | $1 in / $5 out |
-| Sonnet 5 | `AIModel.SONNET` | **Odczyt dokumentu** — `analyze_score`, czyli całość ekstrakcji | $3 in / $15 out |
+| Sonnet 5 | `AIModel.SONNET` | **Odczyt dokumentu** — `analyze_score`, czyli całość ekstrakcji; `recompute_piece_ipa` (IPA od nowa z zapisanego tekstu) | $3 in / $15 out |
 | Opus 5 | `AIModel.OPUS` | `generate_program_note` — jedyny tekst, który publiczność czyta dosłownie | $5 in / $25 out |
 
 `LEGACY_SONNET` / `LEGACY_OPUS` (`claude-sonnet-4-6`, `claude-opus-4-8`) istnieją **wyłącznie** po to,
@@ -315,6 +315,18 @@ Aktualne ustawienia call site'ów:
 |---|---|---|---|---|
 | `analyze_score` | Sonnet 5 | `medium` | adaptive | `ANALYZE_MAX_TOKENS` = 49152 |
 | `generate_program_note` | Opus 5 | `low` | adaptive | `PROGRAM_NOTE_MAX_TOKENS` = 8192 |
+| `recompute_piece_ipa` | Sonnet 5 | `low` | adaptive | `IPA_MAX_TOKENS` = 16384 |
+
+**Wymowa łaciny jest wyborem, nie faktem.** `ANALYZE_SCORE` pisze łacinę w wymowie niemieckiej
+(środkowoeuropejskiej), a `Piece.lyrics_ipa_system` zapamiętuje, w jakim systemie jest bieżąca IPA
+(puste = nieznany: IPA sprzed tego pola, wpisana ręcznie albo nie po łacinie). `TRANSCRIBE_IPA`
+przelicza IPA z zapisanego `lyrics_original`, bez ponownego czytania PDF, w jednym z trzech systemów
+(`germanic` / `italianate` / `classical`). Reguły liter każdego systemu siedzą w `prompts.py` jako
+jedno źródło dla obu promptów — bez nich model wraca do wymowy rzymskiej, cokolwiek mu kazano.
+Wywołują je: przycisk „Przelicz wymowę” w karcie utworu (Celery `archive.recompute_ipa`, stan zadania
+w cache, karta odpytuje utwór) i `manage.py recompute_ipa --system germanic [--dry-run] [--limit N]`.
+IPA, której ostatnie provenance jest ręczne (poprawka albo „zweryfikowane”), karta zastępuje dopiero
+po potwierdzeniu, a komenda pomija ją zawsze.
 
 **Pułapka, która kosztowała najwięcej przy migracji: brak klucza `thinking` zmienił znaczenie
 między generacjami.** Na Sonnecie 4.6 nieobecny `thinking` znaczył „wyłączone". Na Sonnecie 5 znaczy
@@ -609,11 +621,11 @@ backend/archive/
 ├── views.py                           # ScoreEditionViewSet, PieceViewSet, AnnotationViewSet
 ├── sse_views.py                       # GET /editions/<id>/events/ — text/event-stream (ASGI)
 ├── score_protection.py                # status prawnoautorski + watermark per odbiorca
-├── tasks.py                           # 7 tasków chain + generate_program_note (poza chainem)
+├── tasks.py                           # 7 tasków chain + generate_program_note i recompute_ipa (poza chainem)
 ├── infrastructure/
 │   ├── _http.py                       # Shared HTTP (cache + retry)
 │   ├── ai_client.py                   # AIClient, taksonomia błędów, eskalacja, cost tracking
-│   ├── prompts.py                     # Versioned prompts: ANALYZE_SCORE + GENERATE_PROGRAM_NOTE
+│   ├── prompts.py                     # Versioned prompts: ANALYZE_SCORE + GENERATE_PROGRAM_NOTE + TRANSCRIBE_IPA
 │   ├── pdf_extractor.py               # pypdf wrapper (sha256 + page count)
 │   ├── musicbrainz_client.py
 │   ├── wikidata_client.py
@@ -621,9 +633,11 @@ backend/archive/
 │   └── youtube_client.py
 ├── management/commands/
 │   ├── evaluate_ingestion.py          # harness golden-set (§5.7) — realne, płatne wywołania
-│   └── normalize_piece_languages.py
+│   ├── normalize_piece_languages.py
+│   └── recompute_ipa.py               # hurtowe przeliczenie IPA łaciny (§5.5) — płatne
 └── services/
-    ├── ingestion.py                   # start_ingestion / dispatch_program_note / cancel_ingestion
+    ├── ingestion.py                   # start_ingestion / dispatch_program_note / dispatch_ipa_recompute / cancel_ingestion
+    ├── ipa.py                         # kiedy wolno przeliczyć IPA, ręczna poprawka, stan zadania
     ├── provenance.py                  # record_ai / record_external / record_manual + mapa modeli
     ├── resolvers.py                   # composer + piece dedup/create
     ├── enrichment.py

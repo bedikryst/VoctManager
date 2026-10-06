@@ -2,7 +2,8 @@
  * @file RehearsalPlanEditor.tsx
  * @description The conductor's plan for one saved rehearsal: sortable rows
  * (piece, free label or break; minutes, a clock that follows from them or an
- * anchor, note, exclusions), a sortable "Jeśli starczy czasu" divider with the
+ * anchor, note, exclusions — a typed anchor takes its row into time order, and
+ * the list follows it there), a sortable "Jeśli starczy czasu" divider with the
  * reserve under it, an "end of rehearsal" line where the minutes run past a
  * timed evening's end, a header on each time block once there are two (its
  * span, and calls set across its rows at once), a strip of who is actually
@@ -29,10 +30,11 @@
  * @module features/rehearsals/components/plan/RehearsalPlanEditor
  */
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { formatInTimeZone } from "date-fns-tz";
+import { useReducedMotion } from "framer-motion";
 import {
   closestCenter,
   DndContext,
@@ -154,6 +156,9 @@ const ReserveDivider = ({ hasReserve }: { hasReserve: boolean }): React.JSX.Elem
   );
 };
 
+/** How long a row moved into time order glows. */
+const PLACED_GLOW_MS = 1600;
+
 /**
  * Where the running time passes the rehearsal's end: the rows under it are
  * what the evening cannot fit. Not sortable and not a warning in words —
@@ -199,6 +204,37 @@ export const RehearsalPlanEditor = ({
     const { active, over } = event;
     if (over && active.id !== over.id) editor.moveRow(String(active.id), String(over.id));
   };
+
+  /* ── A row moved into time order ─────────────────────────────────────── */
+  // The row leaves the place the conductor was looking at, so the list
+  // follows it: scrolled into view, a short glow, and the move said aloud
+  // for a screen reader.
+  const listRef = useRef<HTMLUListElement>(null);
+  const reduceMotion = useReducedMotion() ?? false;
+  const [placed, setPlaced] = useState<{ key: string; message: string } | null>(null);
+
+  const handleClockCommit = (key: string): void => {
+    const row = editor.rows.find((candidate) => candidate.key === key);
+    if (!row?.starts_at || !editor.placeByClock(key)) return;
+    const title =
+      editor.readings.get(key)?.title || t("rehearsals.plan.row.untitled", "punkt bez nazwy");
+    setPlaced({
+      key,
+      message: t("rehearsals.plan.row.placed", "Ustawiono według godziny {{clock}}: {{title}}", {
+        clock: row.starts_at,
+        title,
+      }),
+    });
+  };
+
+  useEffect(() => {
+    if (!placed) return;
+    listRef.current
+      ?.querySelector<HTMLElement>(`[data-plan-row="${placed.key}"]`)
+      ?.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
+    const timer = window.setTimeout(() => setPlaced(null), PLACED_GLOW_MS);
+    return () => window.clearTimeout(timer);
+  }, [placed, reduceMotion]);
 
   /* ── The publication's state ─────────────────────────────────────────── */
   const announcedAt = planQuery.data?.plan_announced_at ?? null;
@@ -476,6 +512,9 @@ export const RehearsalPlanEditor = ({
       )}
 
       {/* ── Rows ────────────────────────────────────────────────────────── */}
+      <p className="sr-only" aria-live="polite">
+        {placed?.message ?? ""}
+      </p>
       {isOpening ? (
         <EtherealLoader
           fullHeight={false}
@@ -524,7 +563,7 @@ export const RehearsalPlanEditor = ({
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={sortableKeys} strategy={verticalListSortingStrategy}>
-            <ul className="divide-y divide-hairline border-y border-hairline">
+            <ul ref={listRef} className="divide-y divide-hairline border-y border-hairline">
               {sortableKeys.map((key) => {
                 if (key === RESERVE_DIVIDER_KEY) {
                   return <ReserveDivider key={key} hasReserve={hasReserve} />;
@@ -546,6 +585,8 @@ export const RehearsalPlanEditor = ({
                       fallbackClock={fallbackClock}
                       clock={editor.clocks.get(key)}
                       onAnchor={editor.anchorRow}
+                      onClockCommit={handleClockCommit}
+                      isPlaced={placed?.key === key}
                       onUpdate={editor.updateRow}
                       onToggleLine={editor.toggleLine}
                       onToggleFamily={editor.toggleFamily}

@@ -804,6 +804,20 @@ export interface StartingPitch {
   octave: number;
 }
 
+/** Mirrors `archive.models.LatinPronunciation`. */
+export type LatinPronunciationCode = "germanic" | "italianate" | "classical";
+
+/**
+ * The piece card's view of a pronunciation recompute running in Celery
+ * (`archive.services.ipa.IpaJob`). Cleared on success; a failure lingers a few
+ * minutes with its `reason`.
+ */
+export interface IpaRecomputeJob {
+  state: "running" | "failed";
+  system: LatinPronunciationCode;
+  reason: "" | "overloaded" | "budget" | "failed";
+}
+
 export interface Piece extends BaseModel {
   title: string;
   // Read shape: nested composer object. Write payloads use `composer_id`
@@ -832,6 +846,12 @@ export interface Piece extends BaseModel {
   starting_pitches?: StartingPitch[];
   text_source?: string;
   lyrics_ipa?: string;
+  /** Latin pronunciation the guide is written in; "" when unknown or not Latin. */
+  lyrics_ipa_system?: LatinPronunciationCode | "";
+  /** The server's verdict on offering "recompute pronunciation" for the saved record. */
+  lyrics_ipa_recomputable?: boolean;
+  /** A running or just-failed recompute; detail endpoint only, null when idle. */
+  lyrics_ipa_job?: IpaRecomputeJob | null;
   mbid_work?: string | null;
 
   // Derived from editions[] by the backend serializer — never stored on Piece.

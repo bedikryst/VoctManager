@@ -13,6 +13,8 @@
 
 import { addMonths, format, startOfMonth, startOfWeek, type Locale } from "date-fns";
 
+import { SHORT_WEEKDAY_PATTERN } from "@/shared/lib/time/weekday";
+
 /** Length of the `yyyy-MM-ddTHH:mm` value a date-and-time field holds. */
 const LOCAL_INPUT_LENGTH = 16;
 const DAYS_IN_GRID = 42;
@@ -156,14 +158,17 @@ export const buildMonthGrid = (
   });
 };
 
-/** The localised two-or-three letter column heads, in the locale's week order. */
+/**
+ * The localised two-or-three letter column heads, in the locale's week order —
+ * the same short form every date stamp in the app prints (`formatShortWeekday`).
+ */
 export const buildWeekdayLabels = (locale: Locale): string[] => {
   const firstDay = startOfWeek(new Date(), { locale });
 
   return Array.from({ length: 7 }, (_, index) => {
     const day = new Date(firstDay);
     day.setDate(firstDay.getDate() + index);
-    return format(day, "EEEEEE", { locale });
+    return format(day, SHORT_WEEKDAY_PATTERN, { locale });
   });
 };
 

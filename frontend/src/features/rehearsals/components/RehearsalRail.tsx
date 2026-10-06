@@ -28,6 +28,7 @@ import {
   formatLocalizedDate,
   formatLocalizedTime,
 } from "@/shared/lib/time/intl";
+import { formatShortWeekday } from "@/shared/lib/time/weekday";
 
 import type { Project, Rehearsal } from "@/shared/types";
 import type { ProjectTabType } from "../types/rehearsals.dto";
@@ -114,6 +115,9 @@ const RehearsalRow = ({
       )}
     >
       <div className="flex w-11 shrink-0 flex-col items-center">
+        <Eyebrow as="span" size="overline-sm" color="muted" className="mb-0.5">
+          {formatShortWeekday(rehearsal.date_time, rehearsal.timezone)}
+        </Eyebrow>
         <Text as="span" size="lg" weight="bold" className="leading-none tabular-nums">
           {formatLocalizedDate(
             rehearsal.date_time,

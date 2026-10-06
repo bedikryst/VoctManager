@@ -307,6 +307,16 @@ class GeneratedProgramNote(BaseModel):
     actual_word_count: int = Field(ge=1)
 
 
+class IpaTranscriptionResult(BaseModel):
+    """A pronunciation guide re-derived from a piece's stored sung text."""
+    model_config = ConfigDict(extra='forbid')
+
+    ipa_transcription: str = Field(
+        description="IPA guide with exactly one line per line of the sung text, "
+                    "in the same order; an empty sung line stays an empty line."
+    )
+
+
 class TranslationPayload(BaseModel):
     """A single language's translation of the sung text."""
     model_config = ConfigDict(extra='ignore')

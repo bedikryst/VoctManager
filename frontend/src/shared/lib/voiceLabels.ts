@@ -19,20 +19,19 @@
 
 import type { TFunction } from "i18next";
 
-/** Sx/Ax/Tx/Bx plus the untyped Vx a canon divides into. */
-const DIVISI_CODE = /^([SATBV])([1-9])$/;
+import { voiceFamilyOf } from "./voiceFamilies";
 
+/**
+ * The families whose single line is named plainly: S/A/T/B plus the untyped V
+ * a canon divides into. An intermediate part (MS, CT, BAR) or a role is one
+ * line by nature and keeps its own name.
+ */
 const FAMILY_KEYS: Record<string, { key: string; fallback: string }> = {
   S: { key: "common.voice_family.S", fallback: "Sopran" },
   A: { key: "common.voice_family.A", fallback: "Alt" },
   T: { key: "common.voice_family.T", fallback: "Tenor" },
   B: { key: "common.voice_family.B", fallback: "Bas" },
   V: { key: "common.voice_family.V", fallback: "Głos" },
-};
-
-export const voiceFamilyOf = (code: string): string | null => {
-  const match = DIVISI_CODE.exec(code.toUpperCase());
-  return match ? match[1] : null;
 };
 
 /**
@@ -61,7 +60,6 @@ export const collapseVoiceLabels = (
   const families = new Map<string, string[]>();
   for (const code of codes) {
     const family = voiceFamilyOf(code);
-    if (!family) continue;
     families.set(family, [...(families.get(family) ?? []), code]);
   }
 

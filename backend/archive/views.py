@@ -73,11 +73,14 @@ from .serializers import (
 from .services import enrichment, provenance
 from .services.ingestion import (
     IngestionPreconditionError,
+    IpaDispatchError,
     cancel_ingestion,
+    dispatch_ipa_recompute,
     dispatch_program_note,
     ingestion_is_available,
     start_ingestion,
 )
+from .services.ipa import DEFAULT_LATIN_SYSTEM
 from .signals import piece_material_updated_event
 from .tasks import live_preview_cache_key
 
@@ -259,6 +262,7 @@ class PieceViewSet(viewsets.ModelViewSet):
         # surfaces (detail / write responses) need it, never the list.
         ctx['include_provenance'] = self.action in (
             'retrieve', 'create', 'update', 'partial_update', 'verify_field',
+            'recompute_ipa',
         )
         return ctx
 
@@ -369,6 +373,31 @@ class PieceViewSet(viewsets.ModelViewSet):
             )
         piece.refresh_from_db()
         return Response(self.get_serializer(piece).data)
+
+    @action(detail=True, methods=['post'], url_path='recompute_ipa')
+    def recompute_ipa(self, request, pk=None):
+        """Re-derive a Latin piece's IPA guide in a chosen pronunciation system
+        — the card's "Przelicz wymowę". Runs in Celery; answers 202 with the
+        piece, whose `lyrics_ipa_job` the card polls until it clears.
+
+        Body: ``{"system": "germanic"|"italianate"|"classical",
+        "replace_manual": bool}``. A hand-edited guide answers 409
+        (``error_code: hand_edited``) until the request repeats with
+        ``replace_manual``. Every refusal carries an ``error_code`` the card
+        words itself.
+        """
+        piece = self.get_object()
+        data = request.data if hasattr(request.data, 'get') else {}
+        system = str(data.get('system') or DEFAULT_LATIN_SYSTEM)
+        try:
+            dispatch_ipa_recompute(
+                piece, system=system, replace_manual=_truthy(data.get('replace_manual')),
+            )
+        except IpaDispatchError as exc:
+            return make_error_response(
+                request, status_code=exc.status, error_code=exc.code, detail=exc.message,
+            )
+        return Response(self.get_serializer(piece).data, status=status.HTTP_202_ACCEPTED)
 
 
 class TrackViewSet(viewsets.ModelViewSet):

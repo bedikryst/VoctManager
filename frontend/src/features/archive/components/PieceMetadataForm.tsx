@@ -17,6 +17,8 @@
  * The page keeps the form STATE (it also drives the title, composer, divisi and
  * duration controls outside this block) and passes it in, so this component
  * stays a rendering of one `useForm` instance rather than a second owner of it.
+ * The IPA guide arrives as a rendered slot for the same reason: it reads the
+ * saved piece as well as the form, which this component never sees.
  * @architecture Enterprise SaaS 2026
  * @module features/archive/components/PieceMetadataForm
  */
@@ -87,6 +89,12 @@ interface PieceMetadataFormProps {
   readonly fieldChip: (field: string) => React.ReactNode;
   /** An edition is awaiting approval — the page is a review, not a plain edit. */
   readonly isReviewing: boolean;
+  /**
+   * The IPA guide, rendered by the page (`LyricsIpaField`): unlike the fields
+   * here it needs the saved piece — its system, its recompute job — not only
+   * the form.
+   */
+  readonly lyricsIpaField: React.ReactNode;
 }
 
 export const PieceMetadataForm = ({
@@ -94,6 +102,7 @@ export const PieceMetadataForm = ({
   onSubmit,
   fieldChip,
   isReviewing,
+  lyricsIpaField,
 }: PieceMetadataFormProps): React.JSX.Element => {
   const { t } = useTranslation();
   const {
@@ -325,20 +334,7 @@ export const PieceMetadataForm = ({
               {...register("lyrics_original")}
             />
           </LabeledField>
-          <LabeledField
-            label={t("archive.piece_card.fields.lyrics_ipa", "Transkrypcja IPA")}
-            chip={fieldChip("lyrics_ipa")}
-          >
-            <Textarea
-              aria-label={t(
-                "archive.piece_card.fields.lyrics_ipa",
-                "Transkrypcja IPA",
-              )}
-              rows={3}
-              error={errors.lyrics_ipa?.message}
-              {...register("lyrics_ipa")}
-            />
-          </LabeledField>
+          {lyricsIpaField}
         </FieldGroup>
       </form>
     </>

@@ -53,6 +53,20 @@ class EpochChoices(models.TextChoices):
     OTHER = 'OTH', _('Other')
 
 
+class LatinPronunciation(models.TextChoices):
+    """The Latin pronunciation an IPA guide is written in.
+
+    Latin is the one sung language whose pronunciation is the conductor's choice
+    rather than a fact of the text: the same word is sung differently in the
+    Central-European, the Roman and the restored classical tradition. German
+    Bühnendeutsch and Parisian French have one stage standard each and carry no
+    such choice.
+    """
+    GERMANIC = 'germanic', _('German (Central European)')
+    ITALIANATE = 'italianate', _('Italianate (Roman)')
+    CLASSICAL = 'classical', _('Classical (restored)')
+
+
 class IngestionStatus(models.TextChoices):
     PENDING    = 'PEND', _('Pending')
     EXTRACTING = 'EXTR', _('Extracting metadata')
@@ -189,6 +203,15 @@ class Piece(EnterpriseBaseModel):
         blank=True,
         help_text=_("IPA pronunciation guide for the sung text"),
         verbose_name=_("Lyrics (IPA)"),
+    )
+    # Blank means unknown: a guide written before the system was recorded, a
+    # hand-typed one, or one for a piece that is not sung in Latin.
+    lyrics_ipa_system = models.CharField(
+        max_length=12,
+        choices=LatinPronunciation.choices,
+        blank=True,
+        help_text=_("Latin pronunciation the IPA guide is written in"),
+        verbose_name=_("IPA pronunciation system"),
     )
 
     class Meta:

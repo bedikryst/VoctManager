@@ -59,8 +59,56 @@ class Prompt:
 #      text, the requested target language, etc.) flows in via the user
 #      message.
 
+# Latin pronunciation is the conductor's choice, so each system is spelled out
+# as the letter rules that tell it apart from the other two. Without them the
+# model falls back on its strongest prior, the Roman one, whatever it was asked
+# for. The German block is shared with ANALYZE_SCORE, which writes it by default.
+_GERMAN_LATIN_RULES = (
+    "  GERMAN (Central-European, the Austro-German church tradition):\n"
+    "    * c before e, i, y, ae, oe = [ts]; otherwise [k]. sc before e, i = "
+    "[sts].\n"
+    "    * g is always hard [g]; gn = [gn], never [ɲ].\n"
+    "    * ti before a vowel = [tsi] (gratia, natio), except after s, t, x.\n"
+    "    * qu = [kv]; ngu before a vowel = [ŋgv]; z = [ts]; x = [ks]; h is "
+    "sounded [h].\n"
+    "    * s before a vowel is voiced [z] at the start of a word and after a "
+    "vowel, l, m, n or r; elsewhere [s].\n"
+    "    * ae = [ɛ], oe = [ø], y = [y]; vowels long and closed or short and "
+    "open as in German, never reduced to [ə].\n"
+)
+
+_ITALIANATE_LATIN_RULES = (
+    "  ITALIANATE (Roman ecclesiastical, as in the Liber Usualis):\n"
+    "    * c before e, i, y, ae, oe = [tʃ]; otherwise [k]. sc before e, i = "
+    "[ʃ]; xc before e, i = [kʃ].\n"
+    "    * g before e, i, y, ae, oe = [dʒ]; otherwise [g]; gn = [ɲ].\n"
+    "    * ti before a vowel = [tsi], except after s, t, x.\n"
+    "    * qu = [kw]; ngu before a vowel = [ŋgw]; z = [dz]; x = [ks]; h is "
+    "silent, except mihi and nihil, where it is [k].\n"
+    "    * s is always [s]; ae, oe = [ɛ]; y = [i]; pure Italian vowels, no "
+    "diphthongs, never reduced.\n"
+)
+
+_CLASSICAL_LATIN_RULES = (
+    "  CLASSICAL (restored, the pronunciation of Cicero's time):\n"
+    "    * c and g are always hard [k] [g]; gn = [ŋn]; ti stays [ti] before "
+    "any vowel.\n"
+    "    * ae, oe and au are diphthongs [ae] [oe] [au]; consonantal v or u = "
+    "[w]; qu = [kw]; x = [ks]; z = [dz].\n"
+    "    * s is always [s]; h is sounded [h]; vowel length follows the "
+    "classical quantities.\n"
+)
+
+# The user message names a system by these headings; the keys are the values of
+# `archive.models.LatinPronunciation`.
+LATIN_SYSTEM_HEADINGS: dict[str, str] = {
+    'germanic': 'GERMAN',
+    'italianate': 'ITALIANATE',
+    'classical': 'CLASSICAL',
+}
+
 ANALYZE_SCORE = Prompt(
-    name="analyze_score_v3",
+    name="analyze_score_v4",
     system=(
         "You are an expert music librarian and répétiteur. You are given the "
         "COMPLETE PDF of a choral or vocal score (you can see every page — "
@@ -150,8 +198,10 @@ ANALYZE_SCORE = Prompt(
         "  - sung_text_language: ISO 639-1 code ('la', 'de', 'pl').\n\n"
 
         "== IPA ==\n"
-        "  - Conventional ecclesiastical/operatic pronunciation: Italianate "
-        "    Latin, German Bühnendeutsch, Parisian French.\n"
+        "  - Conventional sung pronunciation: German (Central-European) "
+        "    Latin, German Bühnendeutsch, Parisian French. Latin follows these "
+        "    rules:\n"
+        + _GERMAN_LATIN_RULES +
         "  - One IPA line per sung_text line, alignment exact.\n"
         # The glyph below IS the IPA primary stress mark the model must emit verbatim.
         "  - Mark stressed syllables with the IPA primary stress mark (ˈ).\n"  # noqa: RUF001
@@ -232,5 +282,37 @@ GENERATE_PROGRAM_NOTE = Prompt(
         "  - Treat the requested word count as a target — within ±15% is fine, "
         "    do not pad to hit it exactly.\n"
         "  - Report your actual word count truthfully."
+    ),
+)
+
+
+TRANSCRIBE_IPA = Prompt(
+    name="transcribe_ipa_v1",
+    system=(
+        "You are a répétiteur preparing a pronunciation guide for a choir. The "
+        "task message gives the sung text of one piece, exactly as the score "
+        "prints it, and names the Latin pronunciation system the conductor has "
+        "chosen. Return the IPA transcription of that text.\n\n"
+
+        "== ALIGNMENT ==\n"
+        "  - Exactly one IPA line per line of the sung text, in the same "
+        "    order. An empty line stays empty. Never merge, split, drop or "
+        "    reorder lines: singers read the two side by side.\n"
+        "  - Transcribe every line, repeats included, and the words as given: "
+        "    do not correct, modernise or complete them.\n"
+        # The glyph below IS the IPA primary stress mark the model must emit verbatim.
+        "  - Mark stressed syllables with the IPA primary stress mark (ˈ).\n"  # noqa: RUF001
+        "  - IPA only: no slashes or brackets around a line, no notes.\n\n"
+
+        "== LATIN ==\n"
+        "Apply ONLY the system the task message names, consistently across "
+        "the whole text:\n"
+        + _GERMAN_LATIN_RULES
+        + _ITALIANATE_LATIN_RULES
+        + _CLASSICAL_LATIN_RULES +
+        "\n== OTHER LANGUAGES ==\n"
+        "  - A line in another language (a vernacular verse in a bilingual "
+        "    piece) follows that language's stage standard: German "
+        "    Bühnendeutsch, Parisian French, standard Polish."
     ),
 )

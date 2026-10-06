@@ -535,6 +535,7 @@ export default function PiecePage({
                   <PieceLyricsViewer
                     originalLyrics={piece.lyrics_original}
                     lyricsIpa={piece.lyrics_ipa}
+                    lyricsIpaSystem={piece.lyrics_ipa_system}
                     translations={piece.translations}
                     programNotes={piece.program_notes}
                   />

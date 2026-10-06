@@ -2,8 +2,11 @@
  * @file useViewerGestures.ts
  * @description Touch-first gesture engine for the score viewer: edge-tap and
  * horizontal-swipe page turns, two-finger pinch zoom (live CSS-transform
- * preview committed as a real pdf.js re-render on release) and ctrl/⌘+wheel
- * zoom for desktop trackpads. Listens on the scroll viewport with raw DOM
+ * preview committed as a real pdf.js re-render on release), ctrl/⌘+wheel
+ * zoom for desktop trackpads, and shift+wheel page turns — one page per
+ * gesture, so a trackpad's stream of events and its inertia turn once and a
+ * mouse notch turns exactly one page; the cost is that shift+wheel does not pan
+ * a zoomed page sideways with a mouse. Listens on the scroll viewport with raw DOM
  * listeners (non-passive where the browser must be pre-empted) and reads all
  * mutable state through a latest-args ref so handlers bind once per mount.
  * Anything interactive opts out via `data-pdf-gesture-exempt` (or by being a
@@ -25,11 +28,14 @@ import {
   SWIPE_EDGE_TOLERANCE_PX,
   WHEEL_ZOOM_SENSITIVITY,
   WHEEL_COMMIT_DELAY_MS,
+  WHEEL_TURN_THRESHOLD_PX,
+  WHEEL_TURN_IDLE_MS,
+  WHEEL_LINE_PX,
   PINCH_TAP_SUPPRESS_MS,
   MIN_COMMIT_SCALE_DELTA,
 } from "../constants";
 
-export type PageTurnMethod = "tap" | "swipe";
+export type PageTurnMethod = "tap" | "swipe" | "wheel";
 
 interface UseViewerGesturesArgs {
   /** Scrollable viewport that owns all gesture listeners. */
@@ -69,6 +75,13 @@ interface WheelSession {
   startZoom: number;
   scale: number;
   focal: { x: number; y: number };
+  timer: number;
+}
+
+/** One shift+wheel gesture: the distance so far, and whether it has turned yet. */
+interface WheelTurnSession {
+  distance: number;
+  turned: boolean;
   timer: number;
 }
 
@@ -114,6 +127,7 @@ export const useViewerGestures = (args: UseViewerGesturesArgs): void => {
     let tap: TapCandidate | null = null;
     let pinch: PinchSession | null = null;
     let wheel: WheelSession | null = null;
+    let wheelTurn: WheelTurnSession | null = null;
     let suppressTapUntil = 0;
 
     const previewTarget = (): HTMLDivElement | null =>
@@ -284,8 +298,34 @@ export const useViewerGestures = (args: UseViewerGesturesArgs): void => {
       }
     };
 
+    // Chromium and Safari hand shift+wheel over as `deltaX`, Firefox keeps
+    // `deltaY`: whichever moved more is the gesture. Every event of the
+    // gesture is swallowed, the ones after the turn included — otherwise the
+    // tail of a trackpad's inertia would scroll the page sideways.
+    const handleShiftWheel = (event: WheelEvent): void => {
+      event.preventDefault();
+      const unit =
+        event.deltaMode === 1 ? WHEEL_LINE_PX : event.deltaMode === 2 ? viewport.clientHeight : 1;
+      const delta =
+        (Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY) * unit;
+      if (!wheelTurn) wheelTurn = { distance: 0, turned: false, timer: 0 };
+      const session = wheelTurn;
+      window.clearTimeout(session.timer);
+      session.timer = window.setTimeout(() => {
+        wheelTurn = null;
+      }, WHEEL_TURN_IDLE_MS);
+      if (session.turned) return;
+      session.distance += delta;
+      if (Math.abs(session.distance) < WHEEL_TURN_THRESHOLD_PX) return;
+      session.turned = true;
+      argsRef.current.onPageDelta(session.distance > 0 ? 1 : -1, "wheel");
+    };
+
     const handleWheel = (event: WheelEvent): void => {
-      if (!event.ctrlKey && !event.metaKey) return;
+      if (!event.ctrlKey && !event.metaKey) {
+        if (event.shiftKey) handleShiftWheel(event);
+        return;
+      }
       event.preventDefault();
       const deltaY = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY;
       if (!wheel) {
@@ -340,6 +380,7 @@ export const useViewerGestures = (args: UseViewerGesturesArgs): void => {
       viewport.removeEventListener("wheel", handleWheel);
       viewport.removeEventListener("gesturestart", preventNativeGesture);
       if (wheel) window.clearTimeout(wheel.timer);
+      if (wheelTurn) window.clearTimeout(wheelTurn.timer);
       clearPreview();
     };
   }, [enabled]);

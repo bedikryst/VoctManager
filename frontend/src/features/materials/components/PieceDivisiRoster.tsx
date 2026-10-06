@@ -5,14 +5,21 @@
  * duty added to a singer, not a line of the choir — the same person can stand
  * on Tenor 1 above and hold two solos below. An open solo position is listed
  * too: which passages are still unassigned is part of the casting.
+ *
+ * The lines read as a score does: one row per voice family, the family's
+ * lines side by side in two columns (a third wraps under them), an undivided
+ * family in the left cell alone — so Tenor never shares a row with Bas I.
+ * Two columns on a phone as well: side by side is the point.
  * @architecture Enterprise SaaS 2026
  * @module features/materials/components/PieceDivisiRoster
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Users } from "lucide-react";
 
+import { cn } from "@/shared/lib/utils";
+import { castRowsByFamily } from "@/shared/lib/voiceFamilies";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { GlossaryTerm } from "@/shared/ui/composites/glossary/GlossaryTerm";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
@@ -36,20 +43,20 @@ export const PieceDivisiRoster = ({
 }: PieceDivisiRosterProps): React.JSX.Element => {
   const { t } = useTranslation();
 
-  const divisiGroups = castings.reduce<Record<string, MaterialsCasting[]>>(
-    (acc, c) => {
-      // The server names the line inside this piece's arrangement — an
-      // undivided family drops its index there. Nothing on the client may
-      // re-derive it from the code: the code always carries the number.
-      const label =
-        c.voice_line_display ||
-        c.voice_line ||
-        t("materials.piece.other_voice", "Inne");
-      if (!acc[label]) acc[label] = [];
-      acc[label].push(c);
-      return acc;
-    },
-    {},
+  const familyRows = useMemo(
+    () =>
+      castRowsByFamily(
+        castings,
+        (c) => c.voice_line,
+        // The server names the line inside this piece's arrangement — an
+        // undivided family drops its index there. Nothing on the client may
+        // re-derive it from the code: the code always carries the number.
+        (c) =>
+          c.voice_line_display ||
+          c.voice_line ||
+          t("materials.piece.other_voice", "Inne"),
+      ),
+    [castings, t],
   );
 
   return (
@@ -68,27 +75,33 @@ export const PieceDivisiRoster = ({
       </div>
 
       {castings.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
-          {Object.entries(divisiGroups).map(([label, groupCastings]) => (
-            <div key={label} className="space-y-1.5">
-              <Eyebrow color="muted">{label}</Eyebrow>
-              <ul className="space-y-1">
-                {groupCastings.map((c) => (
-                  <li key={c.artist_id} className="flex items-center gap-1.5">
-                    {c.is_me && <MeMarker />}
-                    <Text
-                      size="sm"
-                      color={c.is_me ? "default" : "graphite"}
-                      weight={c.is_me ? "semibold" : "normal"}
-                    >
-                      {c.artist_name ||
-                        t("materials.piece.unknown_artist", "Artysta")}
-                    </Text>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+          {familyRows.flatMap((row) =>
+            row.lines.map((line, index) => (
+              <div
+                key={line.code}
+                // A family opens a new grid row, whatever column the last one ended in.
+                className={cn("min-w-0 space-y-1.5", index === 0 && "col-start-1")}
+              >
+                <Eyebrow color="muted">{line.label}</Eyebrow>
+                <ul className="space-y-1">
+                  {line.members.map((c) => (
+                    <li key={c.artist_id} className="flex items-center gap-1.5">
+                      {c.is_me && <MeMarker />}
+                      <Text
+                        size="sm"
+                        color={c.is_me ? "default" : "graphite"}
+                        weight={c.is_me ? "semibold" : "normal"}
+                      >
+                        {c.artist_name ||
+                          t("materials.piece.unknown_artist", "Artysta")}
+                      </Text>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )),
+          )}
         </div>
       ) : (
         <Text size="sm" color="graphite" className="italic opacity-70">

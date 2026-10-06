@@ -637,6 +637,21 @@
         "text_source": "Source du texte",
         "voicing": "Distribution"
       },
+      "ipa": {
+        "system_pick": "Prononciation du latin",
+        "recompute": "Recalculer la prononciation",
+        "recomputing": "Recalcul en cours…",
+        "save_first": "Enregistrez d'abord vos modifications. La prononciation est calculée à partir du texte enregistré.",
+        "done": "Prononciation recalculée.",
+        "failed": "Impossible de recalculer la prononciation. La transcription actuelle reste inchangée.",
+        "failed_overloaded": "Le service d'IA était surchargé. Réessayez dans quelques minutes.",
+        "failed_budget": "Le budget IA du jour est épuisé. Réessayez demain.",
+        "already_running": "La prononciation est déjà en cours de recalcul.",
+        "dispatch_failed": "Impossible de lancer le recalcul de la prononciation.",
+        "confirm_title": "Remplacer la prononciation corrigée ?",
+        "confirm_body": "Quelqu'un a corrigé ou validé cette transcription à la main. Le recalcul la remplacera entièrement. Prononciation du latin : {{system}}.",
+        "confirm_replace": "Remplacer"
+      },
       "form_panel_aria": "Données de la pièce",
       "group": {
         "identity": "Identité",
@@ -935,6 +950,11 @@
       "cs": "Tchèque",
       "uk": "Ukrainien",
       "ru": "Russe"
+    },
+    "ipa_system": {
+      "germanic": "allemande",
+      "italianate": "italienne (romaine)",
+      "classical": "classique (restituta)"
     },
     "provenance": {
       "verified": "Vérifié",
@@ -5528,6 +5548,7 @@
       "row": {
         "drag": "Déplacer : {{title}}",
         "untitled": "point sans titre",
+        "placed": "Replacé dans l'ordre horaire à {{clock}} : {{title}}",
         "time": "Heure (facultative)",
         "piece": "Œuvre du programme",
         "label": "Nom du point",
@@ -5880,6 +5901,7 @@
       "no_run_sheet": "La feuille de route n'a pas encore été publiée par le manager.",
       "no_spotify": "Aucune playlist de référence.",
       "note_label": "Note :",
+      "other_voice": "Autre",
       "open_detail": "Ouvrir les détails : {{title}}",
       "run_sheet_title": "Feuille de route",
       "run_sheet_untitled": "Élément du programme",

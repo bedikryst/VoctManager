@@ -4230,6 +4230,55 @@ msgctxt "guest list"
 msgid "Reply"
 msgstr ""
 
+#: archive/models.py
+msgid "German (Central European)"
+msgstr ""
+
+#: archive/models.py
+msgid "Italianate (Roman)"
+msgstr ""
+
+#: archive/models.py
+msgid "Classical (restored)"
+msgstr ""
+
+#: archive/models.py
+msgid "Latin pronunciation the IPA guide is written in"
+msgstr ""
+
+#: archive/models.py
+msgid "IPA pronunciation system"
+msgstr ""
+
+#: archive/services/ingestion.py
+msgid "Unknown pronunciation system."
+msgstr ""
+
+#: archive/services/ingestion.py
+msgid "Pronunciation can be recomputed only for a piece sung in Latin."
+msgstr ""
+
+#: archive/services/ingestion.py
+msgid "This piece has no sung text to transcribe."
+msgstr ""
+
+#: archive/services/ingestion.py
+msgid "The AI service is not configured."
+msgstr ""
+
+#: archive/services/ingestion.py
+msgid "The pronunciation is already being recomputed."
+msgstr ""
+
+#: archive/services/ingestion.py
+msgid ""
+"The current pronunciation was corrected by hand. Confirm to replace it."
+msgstr ""
+
+#: archive/services/ingestion.py
+msgid "Today's AI budget is spent. Try again tomorrow."
+msgstr ""
+
 #~ msgid ""
 #~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 #~ "below — approve or decline them in the panel."

@@ -14,11 +14,14 @@
  * row, muted and without exclusions: it calls nobody, so there is nobody to
  * leave out — its clock is where the people before it are released. A row
  * that opens a time block carries the block's header above its own line.
+ * A clock typed into the slot is committed when the field loses focus with a
+ * different time than it had on entry — never per keystroke — and the editor
+ * may then move the row into time order; the moved row glows briefly.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/RehearsalPlanRow
  */
 
-import React, { useEffect, useId, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Coffee, GripVertical, Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
@@ -31,7 +34,7 @@ import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
 import { TimeField } from "@/shared/ui/composites/DateTimeField";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import type { VoiceLine } from "@/shared/types";
-import type { VoiceFamilyId } from "@/features/projects/lib/voiceFamilies";
+import type { VoiceFamilyId } from "@/shared/lib/voiceFamilies";
 import type { EffectiveClock } from "../../lib/rehearsalPlan";
 import { VoiceExclusionChips } from "./VoiceExclusionChips";
 import type { PlanDraftRow, PlanEditor, PlanRowReading } from "./usePlanEditor";
@@ -49,6 +52,10 @@ interface RehearsalPlanRowProps {
   /** The row's effective clock, as the draft stands. */
   readonly clock: EffectiveClock | undefined;
   readonly onAnchor: (key: string) => void;
+  /** The clock field was left with a different time than it was entered with. */
+  readonly onClockCommit: (key: string) => void;
+  /** The row was just moved into time order: it glows so the eye can follow. */
+  readonly isPlaced?: boolean;
   readonly onUpdate: PlanEditor["updateRow"];
   readonly onToggleLine: (key: string, line: VoiceLine) => void;
   readonly onToggleFamily: (key: string, family: VoiceFamilyId) => void;
@@ -65,6 +72,8 @@ export const RehearsalPlanRow = ({
   fallbackClock,
   clock,
   onAnchor,
+  onClockCommit,
+  isPlaced = false,
   onUpdate,
   onToggleLine,
   onToggleFamily,
@@ -85,6 +94,22 @@ export const RehearsalPlanRow = ({
     if (clockOpen) document.getElementById(clockId)?.focus();
   }, [clockOpen, clockId]);
 
+  // The time the field held when focus came in from outside it. Hopping from
+  // hours to minutes is not an entry, or a half-typed hour would become the
+  // baseline. A tapped derived clock is anchored before the field mounts and
+  // takes focus, so it enters with the time it already had and never moves.
+  const clockOnEntry = useRef("");
+  const handleClockFocus = (event: React.FocusEvent<HTMLDivElement>): void => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      clockOnEntry.current = row.starts_at ?? "";
+    }
+    setClockOpen(true);
+  };
+  const handleClockBlur = (): void => {
+    setClockOpen(false);
+    if ((row.starts_at ?? "") !== clockOnEntry.current) onClockCommit(row.key);
+  };
+
   const setMinutes = (raw: string): void => {
     const parsed = Number.parseInt(raw, 10);
     onUpdate(row.key, { minutes: Number.isFinite(parsed) && parsed > 0 ? parsed : null });
@@ -93,9 +118,17 @@ export const RehearsalPlanRow = ({
   return (
     <li
       ref={setNodeRef}
+      data-plan-row={row.key}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn("relative", isDragging && "z-10")}
     >
+      <span
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute inset-0 bg-ethereal-gold/12 transition-opacity duration-700",
+          isPlaced ? "opacity-100" : "opacity-0",
+        )}
+      />
       <div
         className={cn(
           "flex flex-col gap-2 px-4 py-3 transition-colors",
@@ -126,13 +159,13 @@ export const RehearsalPlanRow = ({
 
           {/* The slot keeps its width whatever it shows: the note's indent and
               the column of clocks down the list depend on it. */}
-          <div className="w-28 shrink-0" onFocus={() => setClockOpen(true)}>
+          <div className="w-28 shrink-0" onFocus={handleClockFocus}>
             {anchored || clockOpen ? (
               <TimeField
                 id={clockId}
                 value={row.starts_at ?? ""}
                 onChange={(time) => onUpdate(row.key, { starts_at: time || null })}
-                onBlur={() => setClockOpen(false)}
+                onBlur={handleClockBlur}
                 fallback={derivedClock ?? fallbackClock}
                 ariaLabel={t("rehearsals.plan.row.time", "Godzina (opcjonalna)")}
               />
