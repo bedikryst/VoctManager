@@ -5677,6 +5677,34 @@ msgstr "Obecną wymowę poprawiono ręcznie. Potwierdź, aby ją zastąpić."
 msgid "Today's AI budget is spent. Try again tomorrow."
 msgstr "Dzienny budżet AI się wyczerpał. Spróbuj jutro."
 
+#: archive/services/ingestion.py
+msgid "Unsupported language."
+msgstr "Nieobsługiwany język."
+
+#: archive/services/ingestion.py
+msgid "Unknown tone."
+msgstr "Nieznany ton."
+
+#: archive/services/ingestion.py
+msgid "This piece has no sung text to translate."
+msgstr "Ten utwór nie ma tekstu śpiewanego do przetłumaczenia."
+
+#: archive/services/ingestion.py
+msgid "The sung text is already in this language."
+msgstr "Tekst śpiewany jest już w tym języku."
+
+#: archive/services/ingestion.py
+msgid "This piece already has a translation in this language."
+msgstr "Ten utwór ma już tłumaczenie w tym języku."
+
+#: archive/services/ingestion.py
+msgid "A programme note is already being written."
+msgstr "Notka programowa jest już w przygotowaniu."
+
+#: archive/services/ingestion.py
+msgid "A translation is already being written."
+msgstr "Tłumaczenie jest już w przygotowaniu."
+
 #~ msgid "Review the request"
 #~ msgstr "Rozpatrz prośbę"
 

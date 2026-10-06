@@ -25,7 +25,9 @@ Description:
         DB (the review cockpit shows a blank field the conductor can fill).
 
     UI display (ISO → localised label) is a frontend concern; this module is
-    purely the write-side canonicaliser.
+    the write-side canonicaliser, plus the two read-side rules every writer of
+    audience material shares: which languages that material is written in, and
+    whether a translation into one of them tells a reader anything.
 
 Standards: SaaS 2026, one-way normalisation, never store junk.
 ===============================================================================
@@ -116,3 +118,23 @@ def is_latin(raw: str | None) -> bool:
     pieces bypass `normalize_language` on write, so the column can still hold
     any of these."""
     return 'la' in normalize_language(raw).split('+')
+
+
+# The languages the archive writes audience material in: programme notes and
+# prose translations. They are the score book's card languages, so a note or a
+# translation in any other language would have no page to be printed on. The
+# frontend mirrors this as `AUDIENCE_LANGUAGES` in `shared/types`.
+AUDIENCE_LANGUAGES: tuple[str, ...] = ('pl', 'en', 'fr')
+
+
+def translation_adds_meaning(raw: str | None, target: str) -> bool:
+    """Whether a translation into `target` tells a reader anything: only when
+    the sung text is at least partly in another language. A Polish piece needs
+    no Polish translation; a 'pl+la' one does, for its Latin lines. A blank or
+    unrecognised sung language keeps the translation applicable — warn, never
+    hide."""
+    normalized = normalize_language(raw)
+    if not normalized:
+        return True
+    target_code = (target or '').strip().lower()
+    return any(code != target_code for code in normalized.split('+'))

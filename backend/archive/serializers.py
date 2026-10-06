@@ -40,6 +40,7 @@ from .models import (
     AnnotationType,
     Composer,
     IngestionStatus,
+    LatinPronunciation,
     Movement,
     Piece,
     PieceVoiceRequirement,
@@ -54,6 +55,7 @@ from .models import (
 )
 from .score_protection import can_export as edition_can_export
 from .score_protection import user_is_manager
+from .services.audience_jobs import AudienceJob, audience_job
 from .services.ipa import IpaJob, ipa_job, recompute_refusal
 from .services.voice_scope import tracks_for_edition, voice_scope
 
@@ -692,6 +694,12 @@ class ScoreEditionUploadSerializer(serializers.Serializer):
     # (no PDFs yet) get this from the manual-create flow; AI-discovered
     # Pieces get it from the resolver. Either way the FK is set explicitly.
     piece_id = serializers.UUIDField(required=False, allow_null=True)
+    # The Latin pronunciation the uploader wants this score's guide in. Only a
+    # Latin piece whose guide this upload writes is affected; blank keeps the
+    # German one the analysis writes.
+    latin_system = serializers.ChoiceField(
+        choices=LatinPronunciation.choices, required=False, allow_blank=True,
+    )
 
 
 # ===========================================================================
@@ -771,6 +779,9 @@ class PieceSerializer(serializers.ModelSerializer):
     lyrics_ipa_recomputable = serializers.SerializerMethodField()
     # The running or just-failed recompute the card polls; detail endpoint only.
     lyrics_ipa_job = serializers.SerializerMethodField()
+    # The same for a programme note and a translation the cockpit asked for.
+    program_note_job = serializers.SerializerMethodField()
+    translation_job = serializers.SerializerMethodField()
 
     class Meta:
         model = Piece
@@ -804,8 +815,10 @@ class PieceSerializer(serializers.ModelSerializer):
             'voice_requirements_read',     # read-only mirror
             'movements',
             'translations',
+            'translation_job',
             'recordings',
             'program_notes',
+            'program_note_job',
             'editions',
             # Audit
             'created_at', 'updated_at',
@@ -825,6 +838,16 @@ class PieceSerializer(serializers.ModelSerializer):
         if not self.context.get('include_provenance'):
             return None
         return ipa_job(obj.pk)
+
+    def get_program_note_job(self, obj: Piece) -> AudienceJob | None:
+        if not self.context.get('include_provenance'):
+            return None
+        return audience_job('program_note', obj.pk)
+
+    def get_translation_job(self, obj: Piece) -> AudienceJob | None:
+        if not self.context.get('include_provenance'):
+            return None
+        return audience_job('translation', obj.pk)
 
     def get_ingestion_status(self, obj: Piece) -> str:
         return _aggregate_ingestion_status(obj)

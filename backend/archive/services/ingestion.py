@@ -29,7 +29,18 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from archive.infrastructure.ai_client import CostCeilingExceeded
-from archive.models import IngestionStatus, LatinPronunciation, Piece, ScoreEdition
+from archive.models import (
+    IngestionStatus,
+    LatinPronunciation,
+    Piece,
+    ProgramNoteTone,
+    ScoreEdition,
+)
+from archive.services.audience_jobs import (
+    audience_job_running,
+    clear_audience_job,
+    mark_audience_job_running,
+)
 from archive.services.ipa import (
     clear_ipa_job,
     ipa_is_hand_edited,
@@ -37,11 +48,14 @@ from archive.services.ipa import (
     mark_ipa_job_running,
     recompute_refusal,
 )
+from archive.services.language import AUDIENCE_LANGUAGES, translation_adds_meaning
 from archive.tasks import (
+    DEFAULT_PROGRAM_NOTE_LANGUAGE,
     build_ingestion_chain,
     cancel_cache_key,
     ensure_daily_budget,
     generate_program_note,
+    generate_translation,
     recompute_ipa,
 )
 
@@ -52,8 +66,8 @@ class IngestionPreconditionError(Exception):
     """Caller asked to ingest an edition that isn't in an ingestible state."""
 
 
-class IpaDispatchError(Exception):
-    """A pronunciation recompute was refused before anything was queued.
+class DispatchRefused(Exception):
+    """An on-demand AI job on a piece was refused before anything was queued.
 
     `code` is what the card branches on (it words the message in the reader's
     language); `status` is the HTTP status the view answers with.
@@ -81,10 +95,15 @@ class IngestionTicket:
     celery_task_id: str
 
 
-def start_ingestion(edition: ScoreEdition, *, force: bool = False) -> IngestionTicket:
+def start_ingestion(
+    edition: ScoreEdition, *, force: bool = False, latin_system: str = '',
+) -> IngestionTicket:
     """
     Validate preconditions, transition the edition into PENDING, and dispatch
     the Celery chain. Returns a ticket the caller can persist for tracking.
+
+    `latin_system` is the upload's pronunciation choice for a Latin piece; blank
+    keeps the German guide the analysis writes.
 
     Raises `IngestionPreconditionError` for any caller-fixable issue
     (wrong status, missing file, missing API key). Celery-side failures
@@ -96,6 +115,8 @@ def start_ingestion(edition: ScoreEdition, *, force: bool = False) -> IngestionT
     dispatch safe — the same Movement rows / lyrics / etc. won't be
     re-created, but Anthropic calls WILL re-bill, so use deliberately.
     """
+    if latin_system and latin_system not in LatinPronunciation.values:
+        raise IngestionPreconditionError(_("Unknown pronunciation system."))
     _check_api_key()
     _check_file(edition)
     _check_daily_budget()
@@ -123,7 +144,7 @@ def start_ingestion(edition: ScoreEdition, *, force: bool = False) -> IngestionT
     # previously-cancelled edition is not immediately short-circuited.
     cache.delete(cancel_cache_key(str(edition.id)))
 
-    chain_signature = build_ingestion_chain(edition.id)
+    chain_signature = build_ingestion_chain(edition.id, latin_system=latin_system)
     async_result = chain_signature.apply_async()
 
     logger.info(
@@ -137,20 +158,32 @@ def start_ingestion(edition: ScoreEdition, *, force: bool = False) -> IngestionT
 
 
 def dispatch_program_note(
-    piece: Piece, *, force: bool = False, language: str | None = None,
+    piece: Piece,
+    *,
+    force: bool = False,
+    language: str | None = None,
+    tone: str | None = None,
 ) -> str:
     """
     Dispatch programme-note generation for a piece on demand — the primary path,
     now that the note is no longer generated eagerly in the ingestion chain. Used
     to create the canonical note after identity review, regenerate it, or produce
-    another language. The AI cost is billed against the piece's default /
+    another language or tone. The AI cost is billed against the piece's default /
     most-recent score edition. `force=True` regenerates over an existing note in
-    that language.
+    that language. The piece's note job is marked running, so the cockpit shows
+    progress — and later a failure — from its next read.
 
-    Raises `IngestionPreconditionError` for caller-fixable issues (missing API
-    key, no edition to bill against, daily budget exhausted). Returns the Celery
-    task id.
+    Raises `IngestionPreconditionError` for caller-fixable issues (a language or
+    tone the note cannot be written in, a note already being written, missing
+    API key, no edition to bill against, daily budget exhausted). Returns the
+    Celery task id.
     """
+    if language and language not in AUDIENCE_LANGUAGES:
+        raise IngestionPreconditionError(_("Unsupported language."))
+    if tone and tone not in ProgramNoteTone.values:
+        raise IngestionPreconditionError(_("Unknown tone."))
+    if audience_job_running('program_note', piece.pk):
+        raise IngestionPreconditionError(_("A programme note is already being written."))
     _check_api_key()
     _check_daily_budget()
     edition = (
@@ -169,10 +202,70 @@ def dispatch_program_note(
         payload['force_program_note'] = True
     if language:
         payload['program_note_language'] = language
-    async_result = generate_program_note.delay(payload)
+    if tone:
+        payload['program_note_tone'] = tone
+    mark_audience_job_running('program_note', piece.pk, language or DEFAULT_PROGRAM_NOTE_LANGUAGE)
+    try:
+        async_result = generate_program_note.delay(payload)
+    except Exception:
+        # Nothing was queued, so nothing will ever clear the running state.
+        clear_audience_job('program_note', piece.pk)
+        raise
     logger.info(
-        "ingest.program_note_dispatched piece=%s edition=%s task=%s force=%s lang=%s",
-        piece.id, edition.id, async_result.id, force, language or 'default',
+        "ingest.program_note_dispatched piece=%s edition=%s task=%s force=%s lang=%s tone=%s",
+        piece.id, edition.id, async_result.id, force, language or 'default', tone or 'default',
+    )
+    return async_result.id
+
+
+def dispatch_translation(piece: Piece, *, language: str) -> str:
+    """
+    Queue a piece-level prose translation of the stored sung text into one of
+    the audience languages — the cockpit's "Przetłumacz". Adds a language and
+    never replaces one: an existing translation may be printed or corrected,
+    and the cockpit edits it in place. The piece's translation job is marked
+    running, so the cockpit shows progress — and later a failure — from its
+    next read.
+
+    Raises `DispatchRefused` (with a code the cockpit branches on) for anything
+    refused. Returns the Celery task id.
+    """
+    if language not in AUDIENCE_LANGUAGES:
+        raise DispatchRefused('invalid_language', _("Unsupported language."))
+    if audience_job_running('translation', piece.pk):
+        raise DispatchRefused(
+            'running', _("A translation is already being written."), status=409,
+        )
+    if not piece.lyrics_original.strip():
+        raise DispatchRefused('no_text', _("This piece has no sung text to translate."))
+    if not translation_adds_meaning(piece.language, language):
+        raise DispatchRefused(
+            'same_language', _("The sung text is already in this language."),
+        )
+    if piece.translations.filter(movement__isnull=True, target_language=language).exists():
+        raise DispatchRefused(
+            'exists', _("This piece already has a translation in this language."), status=409,
+        )
+    if not ingestion_is_available():
+        raise DispatchRefused(
+            'unavailable', _("The AI service is not configured."), status=503,
+        )
+    try:
+        ensure_daily_budget()
+    except CostCeilingExceeded as exc:
+        raise DispatchRefused(
+            'budget', _("Today's AI budget is spent. Try again tomorrow."), status=429,
+        ) from exc
+
+    mark_audience_job_running('translation', piece.pk, language)
+    try:
+        async_result = generate_translation.delay(str(piece.pk), language)
+    except Exception:
+        clear_audience_job('translation', piece.pk)
+        raise
+    logger.info(
+        "translation.dispatched piece=%s language=%s task=%s",
+        piece.pk, language, async_result.id,
     )
     return async_result.id
 
@@ -186,33 +279,33 @@ def dispatch_ipa_recompute(
 
     A guide whose latest provenance is a human's is replaced only with
     `replace_manual=True` — a correction is never overwritten as a side effect
-    of a button. Raises `IpaDispatchError` (with a code the card branches on)
+    of a button. Raises `DispatchRefused` (with a code the card branches on)
     for anything refused. Returns the Celery task id.
     """
     if system not in LatinPronunciation.values:
-        raise IpaDispatchError(
+        raise DispatchRefused(
             'invalid_system', _("Unknown pronunciation system."),
         )
     refusal = recompute_refusal(piece)
     if refusal == 'not_latin':
-        raise IpaDispatchError(
+        raise DispatchRefused(
             refusal, _("Pronunciation can be recomputed only for a piece sung in Latin."),
         )
     if refusal == 'no_text':
-        raise IpaDispatchError(
+        raise DispatchRefused(
             refusal, _("This piece has no sung text to transcribe."),
         )
     if not ingestion_is_available():
-        raise IpaDispatchError(
+        raise DispatchRefused(
             'unavailable', _("The AI service is not configured."), status=503,
         )
     current = ipa_job(piece.pk)
     if current is not None and current['state'] == 'running':
-        raise IpaDispatchError(
+        raise DispatchRefused(
             'running', _("The pronunciation is already being recomputed."), status=409,
         )
     if not replace_manual and ipa_is_hand_edited(piece):
-        raise IpaDispatchError(
+        raise DispatchRefused(
             'hand_edited',
             _("The current pronunciation was corrected by hand. Confirm to replace it."),
             status=409,
@@ -220,7 +313,7 @@ def dispatch_ipa_recompute(
     try:
         ensure_daily_budget()
     except CostCeilingExceeded as exc:
-        raise IpaDispatchError(
+        raise DispatchRefused(
             'budget', _("Today's AI budget is spent. Try again tomorrow."), status=429,
         ) from exc
 

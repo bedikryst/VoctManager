@@ -67,6 +67,16 @@ class LatinPronunciation(models.TextChoices):
     CLASSICAL = 'classical', _('Classical (restored)')
 
 
+class ProgramNoteTone(models.TextChoices):
+    """The register a programme note is written in, as `GENERATE_PROGRAM_NOTE`
+    defines each one. Chosen per note, because it follows the concert: a church
+    programme reads differently from a concert-hall one. Labels are the panel's
+    to word; these are the values the prompt understands."""
+    ACCESSIBLE = 'accessible'
+    SCHOLARLY = 'scholarly'
+    DEVOTIONAL = 'devotional'
+
+
 class IngestionStatus(models.TextChoices):
     PENDING    = 'PEND', _('Pending')
     EXTRACTING = 'EXTR', _('Extracting metadata')

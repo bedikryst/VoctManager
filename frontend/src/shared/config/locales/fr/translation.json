@@ -730,7 +730,6 @@
       "note_generating": "Génération…",
       "note_ready": "Note de programme prête.",
       "note_saved": "Note enregistrée.",
-      "note_slow": "Cela prend plus de temps que d'habitude — actualisez la page dans un instant.",
       "note_words": "Mots",
       "go_to_page": "Afficher la page {{page}} dans la partition",
       "open_recording": "Ouvrir l'enregistrement",
@@ -748,7 +747,25 @@
       "translator_ph": "Traducteur (imprimé sous le texte)",
       "unfeature": "Retirer des recommandations",
       "unknown_performer": "Interprète inconnu",
-      "verify_failed": "Impossible de marquer le champ."
+      "verify_failed": "Impossible de marquer le champ.",
+      "note_language": "Langue de la note",
+      "note_tone": "Ton",
+      "translate_language": "Nouvelle traduction",
+      "translate": "Traduire (IA)",
+      "translating": "Traduction…",
+      "translation_ready": "Traduction prête.",
+      "translation_failed": "La traduction du texte a échoué. Réessayez.",
+      "note_generation_failed": "La note de programme n'a pas pu être rédigée. Réessayez.",
+      "ai_overloaded": "Le service IA était surchargé. Réessayez dans quelques minutes.",
+      "ai_budget": "Le budget IA du jour est épuisé. Réessayez demain.",
+      "translate_error": {
+        "exists": "Cette œuvre a déjà une traduction dans cette langue.",
+        "same_language": "Le texte est déjà dans cette langue.",
+        "no_text": "Complétez et enregistrez d'abord le texte chanté.",
+        "running": "Une traduction est déjà en cours.",
+        "unavailable": "Le service IA n'est pas configuré.",
+        "generic": "Impossible de lancer la traduction."
+      }
     },
     "row": {
       "audio_count_tooltip_one": "{{count}} piste audio",
@@ -921,7 +938,9 @@
       "row_awaiting_short": "L’IA a terminé",
       "row_review_cta": "Vérifier et valider",
       "row_ready": "Validé",
-      "row_ingest_failed": "Le traitement a échoué"
+      "row_ingest_failed": "Le traitement a échoué",
+      "latin_system": "Prononciation du latin",
+      "latin_system_hint": "Ne concerne que les œuvres en latin. Toute prononciation autre qu'allemande coûte un recalcul IA supplémentaire."
     },
     "upload_drawer": {
       "aria": "Importer un PDF de partition",
@@ -955,6 +974,18 @@
       "germanic": "allemande",
       "italianate": "italienne (romaine)",
       "classical": "classique (restituta)"
+    },
+    "audience": {
+      "language": {
+        "pl": "polonais",
+        "en": "anglais",
+        "fr": "français"
+      },
+      "tone": {
+        "accessible": "accessible",
+        "scholarly": "érudit",
+        "devotional": "recueilli"
+      }
     },
     "provenance": {
       "verified": "Vérifié",

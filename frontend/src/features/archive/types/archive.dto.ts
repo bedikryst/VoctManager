@@ -8,6 +8,7 @@
 
 import type {
   Epoch,
+  LatinPronunciationCode,
   Piece,
   ScoreLicenseType,
   StartingPitch,
@@ -144,6 +145,9 @@ export interface ScoreEditionUploadDTO {
   /** If set, the resolver step is skipped — the upload attaches as another
    *  edition of this existing piece. */
   piece_id?: string;
+  /** Latin pronunciation for a guide this upload writes. Omit for German, the
+   *  one the analysis writes; another system costs one extra recompute. */
+  latin_system?: LatinPronunciationCode;
 }
 
 export interface ScoreEditionPatchDTO {

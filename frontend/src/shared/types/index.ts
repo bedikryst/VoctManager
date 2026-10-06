@@ -644,10 +644,34 @@ export interface Recording {
   is_featured: boolean;
 }
 
+/**
+ * The languages audience material is written and printed in: the score book's
+ * card languages, and the only ones the archive writes programme notes and
+ * prose translations in (backend `archive.services.language.AUDIENCE_LANGUAGES`).
+ */
+export const AUDIENCE_LANGUAGES = ["pl", "en", "fr"] as const;
+
+export type AudienceLanguage = (typeof AUDIENCE_LANGUAGES)[number];
+
+/** The register a programme note is written in — backend `ProgramNoteTone`. */
+export type ProgramNoteToneCode = "accessible" | "scholarly" | "devotional";
+
+/**
+ * The review cockpit's view of a programme note or translation running in
+ * Celery (`archive.services.audience_jobs.AudienceJob`). Cleared on success; a
+ * failure lingers a few minutes with its `reason`.
+ */
+export interface AudienceMaterialJob {
+  state: "running" | "failed";
+  language: string;
+  reason: "" | "overloaded" | "budget" | "failed";
+}
+
 export interface ProgramNote {
   id: string;
   project?: string | null;
   language: string;
+  /** A `ProgramNoteToneCode` for every AI note; free text on a legacy row. */
   target_tone: string;
   word_count_target: number;
   content: string;
@@ -852,6 +876,9 @@ export interface Piece extends BaseModel {
   lyrics_ipa_recomputable?: boolean;
   /** A running or just-failed recompute; detail endpoint only, null when idle. */
   lyrics_ipa_job?: IpaRecomputeJob | null;
+  /** The same for a programme note and a translation the cockpit asked for. */
+  program_note_job?: AudienceMaterialJob | null;
+  translation_job?: AudienceMaterialJob | null;
   mbid_work?: string | null;
 
   // Derived from editions[] by the backend serializer — never stored on Piece.

@@ -1003,11 +1003,13 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                   </CockpitSection>
                 )}
 
-                {translations.length > 0 && (
+                {/* With sung text and no translation yet, the section still
+                    shows: it is where a translation is asked for. */}
+                {(translations.length > 0 || Boolean(piece.lyrics_original?.trim())) && (
                   <CockpitSection
                     label={t("archive.piece_card.translations_section", "Tłumaczenia")}
                     icon={<Languages size={14} aria-hidden="true" />}
-                    count={translations.length}
+                    count={translations.length > 0 ? translations.length : undefined}
                     pending={awaitingEdition ? review.translations.pending : 0}
                     dirty={countDirty(dirtyRows, "translation") > 0}
                     defaultOpen={

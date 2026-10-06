@@ -5712,6 +5712,34 @@ msgstr ""
 msgid "Today's AI budget is spent. Try again tomorrow."
 msgstr "Le budget IA du jour est épuisé. Réessayez demain."
 
+#: archive/services/ingestion.py
+msgid "Unsupported language."
+msgstr "Langue non prise en charge."
+
+#: archive/services/ingestion.py
+msgid "Unknown tone."
+msgstr "Ton inconnu."
+
+#: archive/services/ingestion.py
+msgid "This piece has no sung text to translate."
+msgstr "Cette œuvre n'a pas de texte chanté à traduire."
+
+#: archive/services/ingestion.py
+msgid "The sung text is already in this language."
+msgstr "Le texte chanté est déjà dans cette langue."
+
+#: archive/services/ingestion.py
+msgid "This piece already has a translation in this language."
+msgstr "Cette œuvre a déjà une traduction dans cette langue."
+
+#: archive/services/ingestion.py
+msgid "A programme note is already being written."
+msgstr "Une note de programme est déjà en cours de rédaction."
+
+#: archive/services/ingestion.py
+msgid "A translation is already being written."
+msgstr "Une traduction est déjà en cours de rédaction."
+
 #~ msgid "Review the request"
 #~ msgstr "Examiner la demande"
 

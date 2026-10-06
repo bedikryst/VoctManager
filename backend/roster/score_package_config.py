@@ -19,7 +19,7 @@ from uuid import UUID
 from django.db.models import Prefetch, QuerySet
 
 from archive.models import Piece, ProgramNote, ScoreEdition, Translation
-from archive.services.language import normalize_language
+from archive.services.language import translation_adds_meaning
 from core.constants import VoiceLine
 from roster.domain.solo_duties import solo_credit_line, solo_duties
 from roster.models import (
@@ -319,11 +319,7 @@ def translation_applicable(piece: Piece, language: str) -> bool:
     "missing". ``Piece.language`` may be a normalized ISO 639-1 code, a legacy
     free-text value ("Latin"), or a '+'-joined bilingual set ('pl+la'); an
     unknown/blank language keeps the translation applicable (warn, never hide)."""
-    normalized = normalize_language(piece.language)
-    if not normalized:
-        return True
-    target = (language or "").strip().lower()
-    return any(code != target for code in normalized.split("+"))
+    return translation_adds_meaning(piece.language, language)
 
 
 def select_translation(piece: Piece, language: str) -> Translation | None:

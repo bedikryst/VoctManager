@@ -72,11 +72,12 @@ from .serializers import (
 )
 from .services import enrichment, provenance
 from .services.ingestion import (
+    DispatchRefused,
     IngestionPreconditionError,
-    IpaDispatchError,
     cancel_ingestion,
     dispatch_ipa_recompute,
     dispatch_program_note,
+    dispatch_translation,
     ingestion_is_available,
     start_ingestion,
 )
@@ -262,7 +263,7 @@ class PieceViewSet(viewsets.ModelViewSet):
         # surfaces (detail / write responses) need it, never the list.
         ctx['include_provenance'] = self.action in (
             'retrieve', 'create', 'update', 'partial_update', 'verify_field',
-            'recompute_ipa',
+            'recompute_ipa', 'generate_program_note', 'generate_translation',
         )
         return ctx
 
@@ -323,25 +324,43 @@ class PieceViewSet(viewsets.ModelViewSet):
     def generate_program_note(self, request, pk=None):
         """
         Generate (or, with `?force=true`, regenerate) the AI programme note for
-        this piece on demand. Program notes are no longer produced eagerly at
-        ingest — the conductor asks for one from the review cockpit when wanted.
-        Returns 202 with the Celery task id; the note appears on a later refetch.
+        this piece on demand, optionally in a `language` (pl / en / fr) and a
+        `tone` (accessible / scholarly / devotional). Program notes are no longer
+        produced eagerly at ingest — the conductor asks for one from the review
+        cockpit when wanted. Answers 202 with the piece, whose
+        `program_note_job` the cockpit polls until it clears.
         """
         piece = self.get_object()
-        force = _truthy(request.query_params.get('force')) or _truthy(
-            request.data.get('force') if hasattr(request.data, 'get') else None
-        )
-        language = request.query_params.get('language') or (
-            request.data.get('language') if hasattr(request.data, 'get') else None
-        )
+        data = request.data if hasattr(request.data, 'get') else {}
+        force = _truthy(request.query_params.get('force')) or _truthy(data.get('force'))
+        language = request.query_params.get('language') or data.get('language')
+        tone = request.query_params.get('tone') or data.get('tone')
         try:
-            task_id = dispatch_program_note(piece, force=force, language=language or None)
+            dispatch_program_note(
+                piece, force=force, language=language or None, tone=tone or None,
+            )
         except IngestionPreconditionError as exc:
             return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(
-            {'celery_task_id': task_id, 'status': 'dispatched'},
-            status=status.HTTP_202_ACCEPTED,
-        )
+        return Response(self.get_serializer(piece).data, status=status.HTTP_202_ACCEPTED)
+
+    @action(detail=True, methods=['post'], url_path='generate_translation')
+    def generate_translation(self, request, pk=None):
+        """Add an AI prose translation of the sung text in one audience
+        language — the cockpit's "Przetłumacz". Body: ``{"language": "pl"|"en"|"fr"}``.
+        Answers 202 with the piece, whose `translation_job` the cockpit polls
+        until it clears. Every refusal carries an ``error_code`` the cockpit
+        words itself.
+        """
+        piece = self.get_object()
+        data = request.data if hasattr(request.data, 'get') else {}
+        language = str(data.get('language') or '').strip().lower()
+        try:
+            dispatch_translation(piece, language=language)
+        except DispatchRefused as exc:
+            return make_error_response(
+                request, status_code=exc.status, error_code=exc.code, detail=exc.message,
+            )
+        return Response(self.get_serializer(piece).data, status=status.HTTP_202_ACCEPTED)
 
     @action(detail=True, methods=['post'], url_path='verify_field')
     def verify_field(self, request, pk=None):
@@ -393,7 +412,7 @@ class PieceViewSet(viewsets.ModelViewSet):
             dispatch_ipa_recompute(
                 piece, system=system, replace_manual=_truthy(data.get('replace_manual')),
             )
-        except IpaDispatchError as exc:
+        except DispatchRefused as exc:
             return make_error_response(
                 request, status_code=exc.status, error_code=exc.code, detail=exc.message,
             )
@@ -675,7 +694,7 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
         )
 
         try:
-            ticket = start_ingestion(edition)
+            ticket = start_ingestion(edition, latin_system=vd.get('latin_system') or '')
         except IngestionPreconditionError as exc:
             logger.warning("ingestion_dispatch_failed edition=%s err=%s", edition.id, exc)
             # Never leave an un-processable orphan behind.

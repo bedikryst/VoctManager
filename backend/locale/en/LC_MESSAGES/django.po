@@ -4279,6 +4279,34 @@ msgstr ""
 msgid "Today's AI budget is spent. Try again tomorrow."
 msgstr ""
 
+#: archive/services/ingestion.py
+msgid "Unsupported language."
+msgstr ""
+
+#: archive/services/ingestion.py
+msgid "Unknown tone."
+msgstr ""
+
+#: archive/services/ingestion.py
+msgid "This piece has no sung text to translate."
+msgstr ""
+
+#: archive/services/ingestion.py
+msgid "The sung text is already in this language."
+msgstr ""
+
+#: archive/services/ingestion.py
+msgid "This piece already has a translation in this language."
+msgstr ""
+
+#: archive/services/ingestion.py
+msgid "A programme note is already being written."
+msgstr ""
+
+#: archive/services/ingestion.py
+msgid "A translation is already being written."
+msgstr ""
+
 #~ msgid ""
 #~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 #~ "below — approve or decline them in the panel."

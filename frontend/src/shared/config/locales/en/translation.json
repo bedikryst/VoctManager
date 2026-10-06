@@ -725,7 +725,6 @@
       "note_generating": "Generating…",
       "note_ready": "Programme note ready.",
       "note_saved": "Note saved.",
-      "note_slow": "This is taking longer than usual — refresh the page in a moment.",
       "note_words": "Words",
       "go_to_page": "Show page {{page}} in the score",
       "open_recording": "Open recording",
@@ -743,7 +742,25 @@
       "translator_ph": "Translator (printed below the text)",
       "unfeature": "Unpin featured",
       "unknown_performer": "Unknown performer",
-      "verify_failed": "Couldn't mark the field."
+      "verify_failed": "Couldn't mark the field.",
+      "note_language": "Note language",
+      "note_tone": "Tone",
+      "translate_language": "New translation",
+      "translate": "Translate (AI)",
+      "translating": "Translating…",
+      "translation_ready": "Translation ready.",
+      "translation_failed": "The text couldn't be translated. Try again.",
+      "note_generation_failed": "The programme note couldn't be written. Try again.",
+      "ai_overloaded": "The AI service was overloaded. Try again in a few minutes.",
+      "ai_budget": "Today's AI budget is spent. Try again tomorrow.",
+      "translate_error": {
+        "exists": "This piece already has a translation in this language.",
+        "same_language": "The text is already in this language.",
+        "no_text": "Fill in and save the sung text first.",
+        "running": "A translation is already under way.",
+        "unavailable": "The AI service is not configured.",
+        "generic": "Could not start the translation."
+      }
     },
     "row": {
       "audio_count_tooltip_one": "{{count}} audio track",
@@ -912,7 +929,9 @@
       "row_awaiting_short": "AI has finished",
       "row_review_cta": "Review and approve",
       "row_ready": "Approved",
-      "row_ingest_failed": "Processing failed"
+      "row_ingest_failed": "Processing failed",
+      "latin_system": "Latin pronunciation",
+      "latin_system_hint": "Applies to pieces in Latin only. Any pronunciation other than German costs one extra AI recompute."
     },
     "upload_drawer": {
       "aria": "Upload a score PDF",
@@ -946,6 +965,18 @@
       "germanic": "German",
       "italianate": "Italianate (Roman)",
       "classical": "Classical (restored)"
+    },
+    "audience": {
+      "language": {
+        "pl": "Polish",
+        "en": "English",
+        "fr": "French"
+      },
+      "tone": {
+        "accessible": "accessible",
+        "scholarly": "scholarly",
+        "devotional": "devotional"
+      }
     },
     "provenance": {
       "verified": "Verified",

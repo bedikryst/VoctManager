@@ -20,10 +20,14 @@ Description:
           → finalize_edition
 
     `generate_program_note` (Claude — Opus, text-only) is NOT in the chain: it
-    runs on demand from the review cockpit once the conductor has verified the
-    identity — see `build_ingestion_chain`. Neither is `recompute_ipa`
+    runs on approval and on demand from the review cockpit, once the conductor
+    has verified the identity — see `build_ingestion_chain`. Neither is `recompute_ipa`
     (Claude — Sonnet, text-only), which re-derives a Latin piece's IPA guide in
-    the pronunciation system the manager picks.
+    the pronunciation system the manager picks — from the card, or queued by
+    `persist_analysis` when the upload asked for a system other than the
+    German one ANALYZE_SCORE writes. Nor is `generate_translation` (Claude —
+    Sonnet, text-only), which adds a prose translation in one more audience
+    language from the stored sung text.
 
     Why the rewrite (vs the old 4-call text-only chain):
       * One vision call over the real document — handles scans, full pages,
@@ -69,6 +73,7 @@ from django.utils import timezone
 from archive.dtos import (
     ExtractedWorkIdentity,
     GeneratedProgramNote,
+    GeneratedTranslation,
     IpaTranscriptionResult,
     ScoreAnalysisResult,
 )
@@ -94,6 +99,7 @@ from archive.infrastructure.prompts import (
     GENERATE_PROGRAM_NOTE,
     LATIN_SYSTEM_HEADINGS,
     TRANSCRIBE_IPA,
+    TRANSLATE_SUNG_TEXT,
 )
 from archive.infrastructure.spotify_client import SpotifyClient
 from archive.infrastructure.wikidata_client import WikidataClient
@@ -104,17 +110,20 @@ from archive.models import (
     Movement,
     Piece,
     ProgramNote,
+    ProgramNoteTone,
     Recording,
     RecordingSource,
     ScoreEdition,
     Translation,
 )
 from archive.services import provenance
+from archive.services.audience_jobs import clear_audience_job, mark_audience_job_failed
 from archive.services.ipa import (
     IpaRecomputeRefused,
     clear_ipa_job,
     ipa_system_for,
     mark_ipa_job_failed,
+    mark_ipa_job_running,
     recompute_refusal,
 )
 from archive.services.language import normalize_language
@@ -144,11 +153,13 @@ PROGRAM_NOTE_MAX_TOKENS: int = 8192
 # runs to several thousand output tokens; the client escalates past this on a
 # truncation rather than failing.
 IPA_MAX_TOKENS: int = 16384
+# A prose translation runs close to its source's length; a long Mass still fits.
+TRANSLATION_MAX_TOKENS: int = 8192
 
-# The canonical programme note is generated eagerly in the ensemble's language.
-# Polish is the platform's primary language; the cockpit can request others.
+# The note written on approval is in the ensemble's language and the warm,
+# general-audience register. The cockpit asks for any other language or tone.
 DEFAULT_PROGRAM_NOTE_LANGUAGE: str = 'pl'
-DEFAULT_PROGRAM_NOTE_TONE: str = 'accessible'
+DEFAULT_PROGRAM_NOTE_TONE: str = ProgramNoteTone.ACCESSIBLE
 
 # Two-tier retry policy. Overload (529) is patient — Anthropic-wide capacity
 # blips clear in seconds to minutes, and failing the edition just makes the
@@ -169,12 +180,19 @@ IPA_OVERLOAD_MAX_RETRIES: int = 3
 # Public chain builder — called from the service façade
 # ===========================================================================
 
-def build_ingestion_chain(edition_id: UUID) -> Any:
+def build_ingestion_chain(edition_id: UUID, *, latin_system: str = '') -> Any:
     """
     Build (but do not apply) the full ingestion chain for one ScoreEdition.
     Caller (`services.ingestion.start_ingestion`) applies it.
+
+    `latin_system` is the pronunciation the upload asked for. ANALYZE_SCORE
+    always writes German Latin; a different choice is honoured afterwards by
+    `persist_analysis`, so the analysis prompt stays one cached, evaluated text.
     """
     eid = str(edition_id)
+    initial: dict = {'edition_id': eid}
+    if latin_system:
+        initial['latin_system'] = latin_system
     # The programme note is deliberately NOT in this chain. It used to run
     # eagerly, but that generated prose from the AI's *un-reviewed* identity —
     # baking a wrong composer/epoch/title straight into the audience note. It is
@@ -183,7 +201,7 @@ def build_ingestion_chain(edition_id: UUID) -> Any:
     # sung text as context — see `generate_program_note` /
     # `services.ingestion.dispatch_program_note`.
     return chain(
-        prepare_document.s({'edition_id': eid}),
+        prepare_document.s(initial),
         analyze_score.s(),
         resolve_composer_and_piece.s(),
         persist_analysis.s(),
@@ -702,6 +720,7 @@ def persist_analysis(self, payload: dict) -> dict:
         normalized_language = normalize_language(
             analysis.sung_text_language or analysis.language
         )
+        wrote_ipa = False
         if not piece.lyrics_original and analysis.sung_text:
             piece.lyrics_original = analysis.sung_text
             update_fields.append('lyrics_original')
@@ -716,6 +735,7 @@ def persist_analysis(self, payload: dict) -> dict:
             # piece in any other language has no system to record.
             piece.lyrics_ipa_system = ipa_system_for(piece.language or normalized_language)
             update_fields.extend(['lyrics_ipa', 'lyrics_ipa_system'])
+            wrote_ipa = True
             provenance.record_ai(
                 target=piece, field_name='lyrics_ipa',
                 model_id=AIModel.SONNET, prompt_version=version,
@@ -770,6 +790,16 @@ def persist_analysis(self, payload: dict) -> dict:
                 confidence=analysis.confidence,
             )
 
+    # The upload's pronunciation choice applies only to a guide this run wrote:
+    # a guide the piece already had may carry a conductor's corrections, and the
+    # card's own recompute is the way to replace that one. The German guide
+    # stays in place until the recompute lands, so a failed call loses nothing.
+    requested_system = payload.pop('latin_system', '')
+    if wrote_ipa and piece.lyrics_ipa_system and requested_system not in (
+        '', piece.lyrics_ipa_system,
+    ):
+        _queue_ipa_recompute(piece, requested_system)
+
     # The full analysis (sung text + line-aligned IPA + translations) is now
     # persisted. Drop it from the Celery payload so the four remaining tasks
     # don't drag a multi-KB blob through the result backend on every hop — and
@@ -779,16 +809,72 @@ def persist_analysis(self, payload: dict) -> dict:
     return payload
 
 
-@shared_task(name='archive.generate_program_note', **_TASK_KW)
-@_guarded
-def generate_program_note(self, payload: dict) -> dict:
+def _queue_ipa_recompute(piece: Piece, system: str) -> None:
+    """Hand the upload's Latin system to `recompute_ipa`, marking the piece's
+    job running first so the card shows progress from its next read. A failed
+    enqueue leaves the German guide and logs; it never fails the ingestion."""
+    if system not in LATIN_SYSTEM_HEADINGS:
+        logger.warning("ipa.upload_system_unknown piece=%s system=%r", piece.pk, system)
+        return
+    mark_ipa_job_running(piece.pk, system)
+    try:
+        recompute_ipa.delay(str(piece.pk), system)
+    except Exception:
+        clear_ipa_job(piece.pk)
+        logger.exception("ipa.upload_recompute_enqueue_failed piece=%s system=%s", piece.pk, system)
+        return
+    logger.info("ipa.upload_recompute_queued piece=%s system=%s", piece.pk, system)
+
+
+@shared_task(
+    name='archive.generate_program_note', bind=True, max_retries=IPA_OVERLOAD_MAX_RETRIES,
+)
+def generate_program_note(self, payload: dict) -> None:
     """Claude writes a ~250-word audience programme note (text-only).
 
-    Generated on demand from the review cockpit AFTER the conductor has verified
-    the identity (via `services.ingestion.dispatch_program_note`), in the
-    ensemble's language (`DEFAULT_PROGRAM_NOTE_LANGUAGE`) by default. Pass
-    `program_note_language` and `force_program_note=True` in the payload to
-    produce another language or regenerate.
+    Generated on demand AFTER the conductor has verified the identity — on
+    approval, or from the review cockpit (both via
+    `services.ingestion.dispatch_program_note`) — in the ensemble's language and
+    the accessible tone by default. The payload's `program_note_language` and
+    `program_note_tone` ask for others; `force_program_note=True` regenerates
+    over the note in that language.
+
+    Not `_guarded`: that contract fails an edition, and a note is no part of an
+    edition's ingestion — a failed note must not turn an approved score red.
+    Every exit either clears the cockpit's job entry or marks it failed.
+    """
+    piece_id = payload['piece_id']
+    language = payload.get('program_note_language') or DEFAULT_PROGRAM_NOTE_LANGUAGE
+    try:
+        _write_program_note(payload, language)
+    except AIClientOverloadedError as exc:
+        # Unbilled, and capacity blips clear in minutes: wait, then retry.
+        try:
+            raise self.retry(
+                exc=exc,
+                countdown=_backoff(self.request.retries, OVERLOAD_BASE_DELAY, OVERLOAD_MAX_DELAY),
+            )
+        except Exception as raised:
+            if not _retries_spent(raised, exc):
+                raise
+            mark_audience_job_failed('program_note', piece_id, language, 'overloaded')
+            return
+    except CostCeilingExceeded:
+        mark_audience_job_failed('program_note', piece_id, language, 'budget')
+        return
+    except AIClientError as exc:
+        logger.error("program_note.failed piece=%s language=%s err=%s", piece_id, language, exc)
+        mark_audience_job_failed('program_note', piece_id, language, 'failed')
+        return
+    except Exception:
+        logger.exception("program_note.crashed piece=%s language=%s", piece_id, language)
+        mark_audience_job_failed('program_note', piece_id, language, 'failed')
+        return
+    clear_audience_job('program_note', piece_id)
+
+
+def _write_program_note(payload: dict, language: str) -> None:
+    """The billed call behind `generate_program_note`.
 
     The call is fed the piece's actual musical context (text source, key,
     voicing, epoch) AND an excerpt of the printed sung text, so the note can be
@@ -799,14 +885,13 @@ def generate_program_note(self, payload: dict) -> dict:
     _ensure_budget(edition)
     piece = Piece.objects.get(id=payload['piece_id'])
 
-    language = payload.get('program_note_language') or DEFAULT_PROGRAM_NOTE_LANGUAGE
     tone = payload.get('program_note_tone') or DEFAULT_PROGRAM_NOTE_TONE
 
     existing = ProgramNote.objects.filter(
         piece=piece, project__isnull=True, language=language,
     )
     if existing.exists() and not payload.get('force_program_note'):
-        return payload
+        return
     # NB: on a forced regenerate the stale note is NOT deleted here — only
     # after the new one has been generated (see the atomic swap below).
     # Deleting up front left the piece with no note at all whenever the AI
@@ -850,15 +935,21 @@ def generate_program_note(self, payload: dict) -> dict:
     # bug) — no longer applies at this budget: the note is ~850 output tokens
     # against 8192, and a genuine truncation would raise rather than persist a
     # stub. Measured: adaptive/low costs the same as disabled/medium.
-    result, cost = client.parse(
-        model=AIModel.OPUS,
-        prompt=GENERATE_PROGRAM_NOTE,
-        user_content=user_content,
-        output_schema=GeneratedProgramNote,
-        max_tokens=PROGRAM_NOTE_MAX_TOKENS,
-        effort="low",
-        enable_thinking=True,
-    )
+    try:
+        result, cost = client.parse(
+            model=AIModel.OPUS,
+            prompt=GENERATE_PROGRAM_NOTE,
+            user_content=user_content,
+            output_schema=GeneratedProgramNote,
+            max_tokens=PROGRAM_NOTE_MAX_TOKENS,
+            effort="low",
+            enable_thinking=True,
+        )
+    except AIClientError as exc:
+        # A truncated or malformed answer was still generated, and is paid for.
+        if exc.cost is not None:
+            _bill_edition(edition, exc.cost.total_cents)
+        raise
     _bill_edition(edition, cost.total_cents)
 
     with transaction.atomic():
@@ -880,7 +971,6 @@ def generate_program_note(self, payload: dict) -> dict:
             model_id=AIModel.OPUS,
             prompt_version=GENERATE_PROGRAM_NOTE.version,
         )
-    return payload
 
 
 @dataclass(frozen=True)
@@ -906,10 +996,8 @@ def recompute_piece_ipa(
     there — deciding whether a hand-edited guide may be replaced is the caller's
     job (the card asks first, the bulk command skips it).
 
-    The charge goes to the org-wide daily budget, and to the piece's default
-    edition when it has one, because that is where the archive reads what a
-    work has cost. Raises `IpaRecomputeRefused`, `CostCeilingExceeded`, or the
-    client's `AIClientError` family.
+    Billed through `_piece_biller`. Raises `IpaRecomputeRefused`,
+    `CostCeilingExceeded`, or the client's `AIClientError` family.
     """
     if system not in LATIN_SYSTEM_HEADINGS:
         raise ValueError(f"Unknown Latin pronunciation system {system!r}.")
@@ -925,17 +1013,7 @@ def recompute_piece_ipa(
         f"Sung language(s): {piece.language}\n\n"
         f"Sung text ({sung_lines} lines):\n{sung_text}"
     )
-    edition = (
-        piece.editions.filter(is_deleted=False)
-        .order_by('-is_default', '-created_at')
-        .first()
-    )
-
-    def bill(cents: int) -> None:
-        if edition is not None:
-            _bill_edition(edition, cents)
-        else:
-            _record_daily_spend(cents)
+    bill = _piece_biller(piece)
 
     # Sonnet is the tier that writes every other guide in the archive. Effort
     # stays low: the rules are spelled out in the prompt, and the output is
@@ -1027,6 +1105,135 @@ def recompute_ipa(self, piece_id: str, system: str) -> None:
         mark_ipa_job_failed(piece_id, system, 'failed')
         return
     clear_ipa_job(piece_id)
+
+
+def _piece_biller(piece: Piece) -> Callable[[int], None]:
+    """Where a text-only call on a piece is charged: the org-wide daily budget,
+    and the piece's default edition when it has one, because that is where the
+    archive reads what a work has cost."""
+    edition = (
+        piece.editions.filter(is_deleted=False)
+        .order_by('-is_default', '-created_at')
+        .first()
+    )
+
+    def bill(cents: int) -> None:
+        if edition is not None:
+            _bill_edition(edition, cents)
+        else:
+            _record_daily_spend(cents)
+
+    return bill
+
+
+def _piece_translation_exists(piece: Piece, language: str) -> bool:
+    return piece.translations.filter(
+        movement__isnull=True, target_language=language,
+    ).exists()
+
+
+def translate_piece_text(
+    piece: Piece, language: str, *, client: AIClient | None = None,
+) -> int:
+    """Add a piece-level prose translation of the stored sung text in
+    `language`, and return what it cost in cents.
+
+    Text-only, like `recompute_piece_ipa`: the PDF is not re-read. An existing
+    piece-level translation in that language is never replaced — it may be a
+    printed one, or a conductor's — so a second dispatch of the same request
+    costs nothing, and one that races the first is discarded after the call.
+    The dispatcher refuses pieces with nothing to translate; this checks again
+    because the text can change while the task waits in the queue.
+    """
+    if _piece_translation_exists(piece, language):
+        return 0
+    sung_text = piece.lyrics_original.strip('\n')
+    if not sung_text.strip():
+        return 0
+    ensure_daily_budget()
+
+    sung_lines = sung_text.count('\n') + 1
+    user_content = (
+        f"Target language: {language}\n"
+        f"Sung language(s): {piece.language or 'unknown'}\n"
+        f"Work title: {piece.title}\n\n"
+        f"Sung text ({sung_lines} lines):\n{sung_text}"
+    )
+    bill = _piece_biller(piece)
+    try:
+        result, cost = (client or AIClient()).parse(
+            model=AIModel.SONNET,
+            prompt=TRANSLATE_SUNG_TEXT,
+            user_content=user_content,
+            output_schema=GeneratedTranslation,
+            max_tokens=TRANSLATION_MAX_TOKENS,
+            effort="low",
+            enable_thinking=True,
+        )
+    except AIClientError as exc:
+        if exc.cost is not None:
+            bill(exc.cost.total_cents)
+        raise
+    bill(cost.total_cents)
+
+    text = result.text.strip('\n')
+    if not text.strip():
+        raise AIClientError("Claude returned an empty translation.")
+    with transaction.atomic():
+        if _piece_translation_exists(piece, language):
+            return cost.total_cents
+        translation = Translation.objects.create(
+            piece=piece,
+            target_language=language,
+            text=text,
+            is_singable=False,
+        )
+        provenance.record_ai(
+            target=translation, field_name='text',
+            model_id=AIModel.SONNET, prompt_version=TRANSLATE_SUNG_TEXT.version,
+        )
+    logger.info(
+        "translation.generated piece=%s language=%s cost_cents=%d",
+        piece.pk, language, cost.total_cents,
+    )
+    return cost.total_cents
+
+
+@shared_task(name='archive.generate_translation', bind=True, max_retries=IPA_OVERLOAD_MAX_RETRIES)
+def generate_translation(self, piece_id: str, language: str) -> None:
+    """The cockpit's "Przetłumacz", run off the request. Every exit either
+    clears the cockpit's job entry or marks it failed, so the cockpit never
+    waits on a task that is gone."""
+    piece = Piece.objects.filter(pk=piece_id).first()
+    if piece is None:
+        clear_audience_job('translation', piece_id)
+        return
+    try:
+        translate_piece_text(piece, language)
+    except AIClientOverloadedError as exc:
+        # Unbilled, and capacity blips clear in minutes: wait, then retry.
+        try:
+            raise self.retry(
+                exc=exc,
+                countdown=_backoff(self.request.retries, OVERLOAD_BASE_DELAY, OVERLOAD_MAX_DELAY),
+            )
+        except Exception as raised:
+            if not _retries_spent(raised, exc):
+                raise
+            mark_audience_job_failed('translation', piece_id, language, 'overloaded')
+            return
+    except CostCeilingExceeded:
+        mark_audience_job_failed('translation', piece_id, language, 'budget')
+        return
+    except AIClientError as exc:
+        logger.error("translation.failed piece=%s language=%s err=%s", piece_id, language, exc)
+        mark_audience_job_failed('translation', piece_id, language, 'failed')
+        return
+    except Exception:
+        logger.exception("translation.crashed piece=%s language=%s", piece_id, language)
+        mark_audience_job_failed('translation', piece_id, language, 'failed')
+        return
+    clear_audience_job('translation', piece_id)
 
 
 @shared_task(name='archive.lookup_spotify', **_TASK_KW)
@@ -1230,6 +1437,7 @@ __all__ = [
     'ensure_daily_budget',
     'finalize_edition',
     'generate_program_note',
+    'generate_translation',
     'lookup_spotify',
     'lookup_youtube',
     'persist_analysis',
@@ -1237,4 +1445,5 @@ __all__ = [
     'recompute_ipa',
     'recompute_piece_ipa',
     'resolve_composer_and_piece',
+    'translate_piece_text',
 ]

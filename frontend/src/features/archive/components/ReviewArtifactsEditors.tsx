@@ -1,58 +1,127 @@
 /**
  * @file ReviewArtifactsEditors.tsx
- * @description Inline editors for the AI's three most error-prone outputs —
- * movements, translations and reference recordings — used in the AI Review
- * cockpit. Previously these were read-only with nowhere to fix a hallucinated
- * movement, a wrong translation line, or an irrelevant Spotify hit; now the
- * conductor can correct or delete each in place. Editing a movement/translation
- * stamps MANUAL provenance server-side, so its chip flips from "AI" to
- * "Zweryfikowane".
+ * @description Inline editors for the AI's most error-prone outputs —
+ * movements, translations, reference recordings and the programme note — used
+ * in the AI Review cockpit, where the conductor corrects or deletes each in
+ * place. Editing a movement/translation stamps MANUAL provenance server-side,
+ * so its chip flips from "AI" to "Zweryfikowane".
+ *
+ * Two of them also ask the AI for more: a translation into another audience
+ * language, and a programme note in a chosen language and tone. Both run in
+ * Celery; the piece reports each job until it lands or fails, and the cockpit
+ * says which.
  * @architecture Enterprise SaaS 2026
  * @module features/archive/components/ReviewArtifactsEditors
  */
 
 import React, { useEffect, useRef, useState } from "react";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BookOpen, ExternalLink, Sparkles, Star, Trash2 } from "lucide-react";
+import { BookOpen, ExternalLink, Languages, Sparkles, Star, Trash2 } from "lucide-react";
 
+import { parseApiError } from "@/shared/api/errors";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
-import type {
-  Movement,
-  Piece,
-  ProgramNote,
-  Recording,
-  Translation,
+import {
+  AUDIENCE_LANGUAGES,
+  type AudienceLanguage,
+  type AudienceMaterialJob,
+  type Movement,
+  type Piece,
+  type ProgramNote,
+  type ProgramNoteToneCode,
+  type Recording,
+  type Translation,
 } from "@/shared/types";
 
 import {
-  archiveKeys,
   useDeleteMovement,
   useDeleteProgramNote,
   useDeleteRecording,
   useDeleteTranslation,
   useGenerateProgramNote,
+  useGenerateTranslation,
   useUpdateMovement,
   useUpdateProgramNote,
   useUpdateRecording,
   useUpdateTranslation,
   useVerifyPieceField,
 } from "../api/archive.queries";
+import {
+  DEFAULT_AUDIENCE_LANGUAGE,
+  DEFAULT_PROGRAM_NOTE_TONE,
+  PROGRAM_NOTE_TONES,
+  getAudienceLanguageLabel,
+  getProgramNoteToneLabel,
+  isAudienceLanguage,
+  isProgramNoteTone,
+  translationAddsMeaning,
+} from "../constants/audienceMaterial";
 import { InlineConfirmAction } from "./InlineConfirmAction";
 import { ProvenanceChip, childFieldProvenance } from "./ProvenanceChip";
 import { dirtyKey, useRegisterDirty } from "../hooks/usePieceDirty";
 
-/** The canonical (project-less) AI program note, if generated. Language-agnostic:
- *  the eager note is generated in the ensemble's language (Polish), and the
- *  conductor can regenerate it or add another language on demand. */
-const canonicalNote = (piece: Piece) =>
-  (piece.program_notes ?? []).find((n) => !n.project);
+/** The canonical (project-less) programme note in one language — the one the
+ *  cockpit generates and regenerates. A piece holds at most one per language. */
+const canonicalNoteIn = (piece: Piece, language: string): ProgramNote | undefined =>
+  (piece.program_notes ?? []).find((n) => !n.project && n.language === language);
+
+/** The piece-level translation in one language, if any. */
+const pieceTranslationIn = (piece: Piece, language: string): Translation | undefined =>
+  (piece.translations ?? []).find((tr) => !tr.movement && tr.target_language === language);
+
+// ---------------------------------------------------------------------------
+// A note or translation the cockpit asked for runs in Celery and reports
+// through the piece's `program_note_job` / `translation_job`; `usePiece` polls
+// while one runs. The outcome is read off the transition out of "running", not
+// off the state: a failure lingers on the server for minutes and must not
+// re-toast on every refetch.
+// ---------------------------------------------------------------------------
+
+const useAudienceJobOutcome = (
+  job: AudienceMaterialJob | null,
+  messages: { readonly done: string; readonly failed: string },
+): void => {
+  const { t } = useTranslation();
+  const { done, failed } = messages;
+  const previousState = useRef<AudienceMaterialJob["state"] | null>(job?.state ?? null);
+  useEffect(() => {
+    const before = previousState.current;
+    const now = job?.state ?? null;
+    previousState.current = now;
+    if (before !== "running" || now === "running") return;
+    if (job === null) toast.success(done);
+    else toast.error(jobFailureMessage(job.reason, failed, t));
+  }, [job, done, failed, t]);
+};
+
+/** Why a note or translation failed once it ran; `failed` is the job's own line. */
+const jobFailureMessage = (
+  reason: AudienceMaterialJob["reason"],
+  failed: string,
+  t: TFunction,
+): string => {
+  if (reason === "overloaded") {
+    return t(
+      "archive.review.ai_overloaded",
+      "Usługa AI była przeciążona. Spróbuj ponownie za kilka minut.",
+    );
+  }
+  if (reason === "budget") {
+    return t("archive.review.ai_budget", "Dzienny budżet AI się wyczerpał. Spróbuj jutro.");
+  }
+  return failed;
+};
+
+/** The language a running job writes in, when it is one the cockpit offers. */
+const runningLanguage = (job: AudienceMaterialJob | null): AudienceLanguage | null =>
+  job?.state === "running" && isAudienceLanguage(job.language) ? job.language : null;
 
 // ---------------------------------------------------------------------------
 // A two-click delete affordance — no separate modal, no accidental wipes. The
@@ -255,15 +324,132 @@ export const TranslationsEditor = ({
   piece,
 }: {
   readonly piece: Piece;
-}): React.JSX.Element | null => {
+}): React.JSX.Element => {
   const translations = piece.translations ?? [];
-  if (translations.length === 0) return null;
   return (
-    <ul role="list" className="space-y-3">
-      {translations.map((tr) => (
-        <TranslationRow key={tr.id} piece={piece} translation={tr} />
-      ))}
-    </ul>
+    <div className="space-y-3">
+      {translations.length > 0 ? (
+        <ul role="list" className="space-y-3">
+          {translations.map((tr) => (
+            <TranslationRow key={tr.id} piece={piece} translation={tr} />
+          ))}
+        </ul>
+      ) : null}
+      <TranslationGenerator piece={piece} />
+    </div>
+  );
+};
+
+const translationDispatchMessage = (code: string | null, t: TFunction): string => {
+  switch (code) {
+    case "exists":
+      return t(
+        "archive.review.translate_error.exists",
+        "Ten utwór ma już tłumaczenie w tym języku.",
+      );
+    case "same_language":
+      return t(
+        "archive.review.translate_error.same_language",
+        "Tekst jest już w tym języku.",
+      );
+    case "no_text":
+      return t(
+        "archive.review.translate_error.no_text",
+        "Najpierw uzupełnij i zapisz tekst śpiewany.",
+      );
+    case "running":
+      return t("archive.review.translate_error.running", "Tłumaczenie już trwa.");
+    case "budget":
+      return t("archive.review.ai_budget", "Dzienny budżet AI się wyczerpał. Spróbuj jutro.");
+    case "unavailable":
+      return t(
+        "archive.review.translate_error.unavailable",
+        "Usługa AI nie jest skonfigurowana.",
+      );
+    default:
+      return t(
+        "archive.review.translate_error.generic",
+        "Nie udało się uruchomić tłumaczenia.",
+      );
+  }
+};
+
+// ---------------------------------------------------------------------------
+// One more audience language for the printed book, translated from the stored
+// sung text. Offers only languages the piece lacks and the text is not already
+// in; an existing translation is edited above, never regenerated here.
+// ---------------------------------------------------------------------------
+
+const TranslationGenerator = ({
+  piece,
+}: {
+  readonly piece: Piece;
+}): React.JSX.Element | null => {
+  const { t } = useTranslation();
+  const generate = useGenerateTranslation();
+  const pieceId = String(piece.id);
+
+  const job = piece.translation_job ?? null;
+  useAudienceJobOutcome(job, {
+    done: t("archive.review.translation_ready", "Tłumaczenie gotowe."),
+    failed: t(
+      "archive.review.translation_failed",
+      "Nie udało się przetłumaczyć tekstu. Spróbuj ponownie.",
+    ),
+  });
+
+  const missing = AUDIENCE_LANGUAGES.filter(
+    (lang) =>
+      !pieceTranslationIn(piece, lang) && translationAddsMeaning(piece.language, lang),
+  );
+  const [picked, setPicked] = useState<AudienceLanguage | null>(null);
+  const language =
+    runningLanguage(job) ?? (picked && missing.includes(picked) ? picked : missing[0]);
+
+  const hasText = Boolean(piece.lyrics_original?.trim());
+  if (!hasText || language === undefined) return null;
+
+  const busy = generate.isPending || job?.state === "running";
+  const run = (): void => {
+    generate.mutate(
+      { pieceId, language },
+      {
+        onError: (error) =>
+          toast.error(translationDispatchMessage(parseApiError(error).code, t)),
+      },
+    );
+  };
+
+  return (
+    <div className="flex flex-wrap items-end gap-2">
+      <div className="w-40">
+        <Select
+          size="sm"
+          label={t("archive.review.translate_language", "Nowe tłumaczenie")}
+          value={language}
+          onValueChange={(value) => {
+            if (isAudienceLanguage(value)) setPicked(value);
+          }}
+          options={missing.map((lang) => ({
+            value: lang,
+            label: getAudienceLanguageLabel(lang, t),
+          }))}
+          disabled={busy}
+        />
+      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        leftIcon={<Languages size={14} aria-hidden="true" />}
+        isLoading={busy}
+        disabled={busy}
+        onClick={run}
+      >
+        {busy
+          ? t("archive.review.translating", "Tłumaczę…")
+          : t("archive.review.translate", "Przetłumacz (AI)")}
+      </Button>
+    </div>
   );
 };
 
@@ -493,12 +679,9 @@ const RecordingRow = ({
 // ===========================================================================
 // Program note (on-demand)
 // ===========================================================================
-// The note is no longer produced eagerly at ingest — the conductor generates it
-// here when wanted. Generation is async (~30s), so after dispatch we poll the
-// piece until the canonical note appears (or its id changes, on a regenerate).
-
-const POLL_MS = 4000;
-const MAX_POLLS = 20; // ~80s ceiling
+// Approval writes a Polish note in the accessible tone; the conductor asks here
+// for another language or tone, or regenerates one. Generation is async (~30s)
+// and reported through the piece's `program_note_job`.
 
 const wordCount = (text: string): number => {
   const trimmed = text.trim();
@@ -552,7 +735,7 @@ const ProgramNoteEditor = ({
           {note.language}
         </Badge>
         {note.target_tone ? (
-          <Caption color="muted">{note.target_tone}</Caption>
+          <Caption color="muted">{getProgramNoteToneLabel(note.target_tone, t)}</Caption>
         ) : null}
         {note.is_approved ? (
           <Caption color="muted">
@@ -612,54 +795,36 @@ export const ProgramNoteSection = ({
   readonly piece: Piece;
 }): React.JSX.Element => {
   const { t } = useTranslation();
-  const qc = useQueryClient();
   const generate = useGenerateProgramNote();
   const pieceId = String(piece.id);
 
   const notes = piece.program_notes ?? [];
-  const note = canonicalNote(piece);
-  const noteId = note?.id ?? null;
 
-  const [isGenerating, setIsGenerating] = useState(false);
-  const startedFromId = useRef<string | null>(null);
+  // A regenerate keeps the tone the note was written in unless it is changed.
+  const toneOf = (note: ProgramNote | undefined): ProgramNoteToneCode =>
+    note && isProgramNoteTone(note.target_tone) ? note.target_tone : DEFAULT_PROGRAM_NOTE_TONE;
+  const [pickedLanguage, setLanguage] = useState<AudienceLanguage>(DEFAULT_AUDIENCE_LANGUAGE);
+  const [tone, setTone] = useState<ProgramNoteToneCode>(() =>
+    toneOf(canonicalNoteIn(piece, DEFAULT_AUDIENCE_LANGUAGE)),
+  );
 
-  useEffect(() => {
-    if (!isGenerating) return;
-    // Done when a canonical note exists and is a different row than we started
-    // from (covers both first-generation and regenerate). The brief delete→create
-    // window inside a regenerate leaves noteId null, which this guard ignores.
-    if (noteId && noteId !== startedFromId.current) {
-      setIsGenerating(false);
-      toast.success(t("archive.review.note_ready", "Notka programowa gotowa."));
-      return;
-    }
-    let ticks = 0;
-    const handle = window.setInterval(() => {
-      ticks += 1;
-      if (ticks > MAX_POLLS) {
-        window.clearInterval(handle);
-        setIsGenerating(false);
-        toast.message(
-          t(
-            "archive.review.note_slow",
-            "Generowanie trwa dłużej niż zwykle — odśwież stronę za chwilę.",
-          ),
-        );
-        return;
-      }
-      qc.invalidateQueries({ queryKey: archiveKeys.pieces.details(pieceId) });
-    }, POLL_MS);
-    return () => window.clearInterval(handle);
-  }, [isGenerating, noteId, pieceId, qc, t]);
+  // The note job also runs without this section asking — approval writes the
+  // Polish note — so progress and outcome come from the piece, not the click.
+  const job = piece.program_note_job ?? null;
+  useAudienceJobOutcome(job, {
+    done: t("archive.review.note_ready", "Notka programowa gotowa."),
+    failed: t(
+      "archive.review.note_generation_failed",
+      "Nie udało się napisać notki programowej. Spróbuj ponownie.",
+    ),
+  });
+  const language = runningLanguage(job) ?? pickedLanguage;
+  const note = canonicalNoteIn(piece, language);
 
-  const run = (force: boolean): void => {
-    startedFromId.current = noteId;
+  const run = (): void => {
     generate.mutate(
-      // Regenerate the existing note in its own language; otherwise let the
-      // backend default to the ensemble language.
-      { pieceId, force, language: force ? note?.language : undefined },
+      { pieceId, force: Boolean(note), language, tone },
       {
-        onSuccess: () => setIsGenerating(true),
         onError: () =>
           toast.error(
             t("archive.review.note_failed", "Nie udało się uruchomić generowania."),
@@ -668,7 +833,7 @@ export const ProgramNoteSection = ({
     );
   };
 
-  const busy = generate.isPending || isGenerating;
+  const busy = generate.isPending || job?.state === "running";
 
   return (
     <div className="space-y-3">
@@ -686,20 +851,54 @@ export const ProgramNoteSection = ({
           )}
         </Text>
       )}
-      <Button
-        variant={note ? "outline" : "primary"}
-        size="sm"
-        leftIcon={<Sparkles size={14} aria-hidden="true" />}
-        isLoading={busy}
-        disabled={busy}
-        onClick={() => run(Boolean(note))}
-      >
-        {busy
-          ? t("archive.review.note_generating", "Generuję…")
-          : note
-            ? t("archive.review.regenerate_note", "Regeneruj notkę")
-            : t("archive.review.generate_note", "Generuj notkę programową")}
-      </Button>
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="w-40">
+          <Select
+            size="sm"
+            label={t("archive.review.note_language", "Język notki")}
+            value={language}
+            onValueChange={(value) => {
+              if (!isAudienceLanguage(value)) return;
+              setLanguage(value);
+              setTone(toneOf(canonicalNoteIn(piece, value)));
+            }}
+            options={AUDIENCE_LANGUAGES.map((lang) => ({
+              value: lang,
+              label: getAudienceLanguageLabel(lang, t),
+            }))}
+            disabled={busy}
+          />
+        </div>
+        <div className="w-40">
+          <Select
+            size="sm"
+            label={t("archive.review.note_tone", "Ton")}
+            value={tone}
+            onValueChange={(value) => {
+              if (isProgramNoteTone(value)) setTone(value);
+            }}
+            options={PROGRAM_NOTE_TONES.map((code) => ({
+              value: code,
+              label: getProgramNoteToneLabel(code, t),
+            }))}
+            disabled={busy}
+          />
+        </div>
+        <Button
+          variant={note ? "outline" : "primary"}
+          size="sm"
+          leftIcon={<Sparkles size={14} aria-hidden="true" />}
+          isLoading={busy}
+          disabled={busy}
+          onClick={run}
+        >
+          {busy
+            ? t("archive.review.note_generating", "Generuję…")
+            : note
+              ? t("archive.review.regenerate_note", "Regeneruj notkę")
+              : t("archive.review.generate_note", "Generuj notkę programową")}
+        </Button>
+      </div>
     </div>
   );
 };

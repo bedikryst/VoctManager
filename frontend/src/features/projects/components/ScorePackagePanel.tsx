@@ -29,6 +29,7 @@ import {
 
 import { toastApiError } from "@/shared/api/errors";
 import { cn } from "@/shared/lib/utils";
+import { AUDIENCE_LANGUAGES, type AudienceLanguage } from "@/shared/types";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { GlossaryTerm } from "@/shared/ui/composites/glossary/GlossaryTerm";
@@ -69,11 +70,8 @@ interface ScorePackagePanelProps {
 }
 
 type DensityId = ScorePackageConfig["density_mode"];
-type LangId = (typeof TRANSLATION_LANGUAGES)[number];
 type StatusTone = "sage" | "gold" | "graphite" | "crimson";
 type FigureTone = "default" | "gold";
-
-const TRANSLATION_LANGUAGES = ["pl", "en", "fr"] as const;
 
 interface Figure {
   key: string;
@@ -235,8 +233,8 @@ export function ScorePackagePanel({
     { id: "CONCERT", label: t("projects.score_package.density.concert", "Koncert") },
     { id: "MASS", label: t("projects.score_package.density.mass", "Msza") },
   ];
-  const languageItems: ReadonlyArray<SegmentedTabItem<LangId>> =
-    TRANSLATION_LANGUAGES.map((lang) => ({ id: lang, label: lang.toUpperCase() }));
+  const languageItems: ReadonlyArray<SegmentedTabItem<AudienceLanguage>> =
+    AUDIENCE_LANGUAGES.map((lang) => ({ id: lang, label: lang.toUpperCase() }));
 
   const previewFetcher =
     preview === null
@@ -588,9 +586,9 @@ export function ScorePackagePanel({
                       <Eyebrow as="span" color="muted" className="ml-1">
                         {t("projects.score_package.language.label", "Język tłumaczeń")}
                       </Eyebrow>
-                      <SegmentedTabs<LangId>
+                      <SegmentedTabs<AudienceLanguage>
                         items={languageItems}
-                        value={config.translation_language as LangId}
+                        value={config.translation_language as AudienceLanguage}
                         onChange={(id) => setField("translation_language", id)}
                         ariaLabel={t("projects.score_package.language.label", "Język tłumaczeń")}
                       />

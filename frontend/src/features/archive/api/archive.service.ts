@@ -9,6 +9,7 @@
 
 import api from "@/shared/api/api";
 import type {
+  AudienceLanguage,
   Composer,
   IngestionProgressCode,
   IngestionStatusCode,
@@ -17,6 +18,7 @@ import type {
   Movement,
   Piece,
   ProgramNote,
+  ProgramNoteToneCode,
   Recording,
   ScoreEditionSummary,
   Track,
@@ -168,20 +170,33 @@ export const ArchiveService = {
 
   /**
    * Dispatch on-demand AI program-note generation for a piece (no longer eager
-   * at ingest). Returns immediately with a task id; the note appears on a later
-   * refetch. `force` regenerates over an existing note.
+   * at ingest). Answers with the piece, its `program_note_job` running.
+   * `force` regenerates over the note in that language; omitted language and
+   * tone fall back to Polish and the accessible register.
    */
   generateProgramNote: async (
     pieceId: string,
-    force = false,
-    language?: string,
-  ): Promise<{ celery_task_id: string; status: string }> => {
+    options: { force?: boolean; language?: AudienceLanguage; tone?: ProgramNoteToneCode } = {},
+  ): Promise<Piece> => {
     const params = new URLSearchParams();
-    if (force) params.set("force", "true");
-    if (language) params.set("language", language);
+    if (options.force) params.set("force", "true");
+    if (options.language) params.set("language", options.language);
+    if (options.tone) params.set("tone", options.tone);
     const qs = params.toString();
     const url = `${PIECES_URL}${pieceId}/generate_program_note/${qs ? `?${qs}` : ""}`;
-    const response = await api.post<{ celery_task_id: string; status: string }>(url);
+    const response = await api.post<Piece>(url);
+    return response.data;
+  },
+
+  /**
+   * Dispatch an AI prose translation of the piece's sung text into one more
+   * audience language. Adds, never replaces. Answers with the piece, its
+   * `translation_job` running; refusals carry an `error_code` the cockpit words.
+   */
+  generateTranslation: async (pieceId: string, language: AudienceLanguage): Promise<Piece> => {
+    const response = await api.post<Piece>(`${PIECES_URL}${pieceId}/generate_translation/`, {
+      language,
+    });
     return response.data;
   },
 
@@ -303,6 +318,7 @@ export const ArchiveService = {
     if (dto.editor_name) form.append("editor_name", dto.editor_name);
     if (dto.is_default != null) form.append("is_default", String(dto.is_default));
     if (dto.piece_id) form.append("piece_id", dto.piece_id);
+    if (dto.latin_system) form.append("latin_system", dto.latin_system);
 
     const response = await api.post<ScoreEditionDetail>(EDITIONS_URL, form, {
       headers: { "Content-Type": "multipart/form-data" },

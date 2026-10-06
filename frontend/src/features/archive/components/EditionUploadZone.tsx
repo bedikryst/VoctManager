@@ -9,6 +9,11 @@
  * Server-side the ingestion Celery chain runs per upload. Once an upload
  * completes the row appears in the Archive list (or its editions sub-list
  * inside the editor) via the auto-polling pieces query.
+ *
+ * The Latin pronunciation picked above the zone travels with every file
+ * dropped after the pick. The analysis always writes German Latin, so any
+ * other choice costs one extra recompute, and only for a Latin piece whose
+ * guide this upload writes; the piece card's recompute covers the rest.
  * @architecture Enterprise SaaS 2026
  * @module features/archive/components/EditionUploadZone
  */
@@ -37,12 +42,19 @@ import { parseApiError, resolveErrorCopy } from "@/shared/api/errors";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Button } from "@/shared/ui/primitives/Button";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
-import { INGESTION_STATUS } from "@/shared/types";
+import { INGESTION_STATUS, type LatinPronunciationCode } from "@/shared/types";
 
 import { useLiveIngestion, useUploadEdition } from "../api/archive.queries";
 import { formatIngestionCost } from "../constants/ingestionCost";
+import {
+  DEFAULT_LATIN_PRONUNCIATION,
+  LATIN_SAMPLE_WORDS,
+  getLatinPronunciationOptions,
+  isLatinPronunciationCode,
+} from "../constants/latinPronunciation";
 import {
   isOverloadWait,
   liveAnalysisDetail,
@@ -86,7 +98,12 @@ export const EditionUploadZone = ({
 }: EditionUploadZoneProps): React.JSX.Element => {
   const { t } = useTranslation();
   const [uploads, setUploads] = useState<readonly PendingUpload[]>([]);
+  const [latinSystem, setLatinSystem] = useState<LatinPronunciationCode>(
+    DEFAULT_LATIN_PRONUNCIATION,
+  );
   const { mutateAsync: uploadEdition } = useUploadEdition();
+  const latinOptions = getLatinPronunciationOptions(t);
+  const latinSample = latinOptions.find((option) => option.value === latinSystem)?.sample;
 
   const updateUpload = useCallback(
     (localId: string, patch: Partial<PendingUpload>): void => {
@@ -106,6 +123,8 @@ export const EditionUploadZone = ({
             pdf_file: entry.file,
             original_filename: entry.file.name,
             piece_id: pieceId,
+            latin_system:
+              latinSystem === DEFAULT_LATIN_PRONUNCIATION ? undefined : latinSystem,
           },
           onProgress: (loaded, total) => {
             updateUpload(entry.localId, {
@@ -139,7 +158,7 @@ export const EditionUploadZone = ({
         toast.error(`${entry.file.name} — ${detail}`);
       }
     },
-    [pieceId, uploadEdition, updateUpload, t],
+    [pieceId, latinSystem, uploadEdition, updateUpload, t],
   );
 
   const onDrop = useCallback(
@@ -209,6 +228,32 @@ export const EditionUploadZone = ({
 
   const dropzone = (
     <>
+      <div className="mb-4 space-y-1">
+        <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+          <div className="w-56">
+            <Select
+              size="sm"
+              label={t("archive.upload.latin_system", "Wymowa łaciny")}
+              value={latinSystem}
+              onValueChange={(value) => {
+                if (isLatinPronunciationCode(value)) setLatinSystem(value);
+              }}
+              options={latinOptions.map(({ value, label }) => ({ value, label }))}
+            />
+          </div>
+          {latinSample ? (
+            <Caption color="muted" className="pb-2">
+              {`${LATIN_SAMPLE_WORDS} [${latinSample}]`}
+            </Caption>
+          ) : null}
+        </div>
+        <Caption color="muted" className="ml-1 block">
+          {t(
+            "archive.upload.latin_system_hint",
+            "Dotyczy tylko utworów po łacinie. Wymowa inna niż niemiecka to jedno dodatkowe przeliczenie AI.",
+          )}
+        </Caption>
+      </div>
       <div
         {...getRootProps({
           className: cn(

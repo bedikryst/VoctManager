@@ -159,7 +159,31 @@ Façada [services/ingestion.py](../backend/archive/services/ingestion.py) walidu
 
 **Poza łańcuchem:** `generate_program_note` (**Opus 5**, `effort=low`, thinking ON) — ~250-słowna notka
 audience-facing. Dispatch przez `services.ingestion.dispatch_program_note()`, z kokpitu weryfikacji
-albo przy zatwierdzeniu. Pomija istniejącą notkę, chyba że `force=True`.
+albo przy zatwierdzeniu. Zatwierdzenie pisze notkę po polsku w tonie `accessible`; kokpit wybiera
+język (`AUDIENCE_LANGUAGES` = pl / en / fr, języki kart śpiewnika) i ton (`ProgramNoteTone`:
+`accessible` / `scholarly` / `devotional`). Jedna notka bez projektu na język; istniejącą pomija,
+chyba że `force=True`. Każdy dodatkowy język to osobne płatne wywołanie Opusa na utwór.
+
+Notka i tłumaczenie (niżej) **nie są `_guarded`**: ten kontrakt oblewa edycję, a nieudana notka nie
+może zmienić zatwierdzonej partytury w `FAILED`. Zamiast tego meldują się przez stan zadania w cache
+(`services/audience_jobs.py`, ten sam kontrakt co `lyrics_ipa_job` w `services/ipa.py`): dyspozytor ustawia `running`
+przed kolejką i odmawia drugiego zadania tego rodzaju, zadanie przy każdym wyjściu czyści wpis albo
+ustawia `failed` z powodem (`overloaded` / `budget` / `failed`). Serializer wystawia
+`program_note_job` / `translation_job` na detalu utworu, `usePiece` odpytuje, póki któryś biegnie,
+a kokpit mówi na przejściu stanu, czy się udało i dlaczego nie.
+
+**Poza łańcuchem:** `generate_translation` (**Sonnet 5**, `effort=low`, prompt `TRANSLATE_SUNG_TEXT`) —
+prozatorskie tłumaczenie zapisanego `lyrics_original` na jeden z `AUDIENCE_LANGUAGES`, bez ponownego
+czytania PDF. Dispatch przez `dispatch_translation()` z kokpitu („Przetłumacz (AI)”). Tylko dodaje:
+istniejącego tłumaczenia w danym języku nie zastępuje (może być drukowane albo poprawione), a język,
+w którym tekst już jest, odrzuca (`translation_adds_meaning`, ta sama reguła co kolumna tłumaczenia
+w śpiewniku). Po to, by śpiewnik na koncert za granicą miał tłumaczenie bez zmiany env i ponownej
+analizy.
+
+**Wymowa łaciny przy wgrywaniu:** pole `latin_system` w uploadzie idzie payloadem łańcucha do
+`persist_analysis`. Analiza i tak pisze łacinę po niemiecku (prompt zostaje jednym, cache'owanym
+i zmierzonym tekstem); inny wybór kolejkuje `recompute_ipa` — tylko gdy ten przebieg sam zapisał IPA
+utworu łacińskiego, bo istniejąca IPA mogła być poprawiana ręcznie.
 
 **Dlaczego jedno wywołanie zamiast łańcucha małych?** Pierwotny pipeline dzielił pracę na `identify_work` /
 `detect_movements` / `extract_lyrics` — każde wywołanie widziało tylko swój wycinek dokumentu, więc model
@@ -316,6 +340,7 @@ Aktualne ustawienia call site'ów:
 | `analyze_score` | Sonnet 5 | `medium` | adaptive | `ANALYZE_MAX_TOKENS` = 49152 |
 | `generate_program_note` | Opus 5 | `low` | adaptive | `PROGRAM_NOTE_MAX_TOKENS` = 8192 |
 | `recompute_piece_ipa` | Sonnet 5 | `low` | adaptive | `IPA_MAX_TOKENS` = 16384 |
+| `translate_piece_text` | Sonnet 5 | `low` | adaptive | `TRANSLATION_MAX_TOKENS` = 8192 |
 
 **Wymowa łaciny jest wyborem, nie faktem.** `ANALYZE_SCORE` pisze łacinę w wymowie niemieckiej
 (środkowoeuropejskiej), a `Piece.lyrics_ipa_system` zapamiętuje, w jakim systemie jest bieżąca IPA
@@ -324,7 +349,8 @@ przelicza IPA z zapisanego `lyrics_original`, bez ponownego czytania PDF, w jedn
 (`germanic` / `italianate` / `classical`). Reguły liter każdego systemu siedzą w `prompts.py` jako
 jedno źródło dla obu promptów — bez nich model wraca do wymowy rzymskiej, cokolwiek mu kazano.
 Wywołują je: przycisk „Przelicz wymowę” w karcie utworu (Celery `archive.recompute_ipa`, stan zadania
-w cache, karta odpytuje utwór) i `manage.py recompute_ipa --system germanic [--dry-run] [--limit N]`.
+w cache, karta odpytuje utwór), wybór wymowy w strefie wgrywania (§4.2) i
+`manage.py recompute_ipa --system germanic [--dry-run] [--limit N]`.
 IPA, której ostatnie provenance jest ręczne (poprawka albo „zweryfikowane”), karta zastępuje dopiero
 po potwierdzeniu, a komenda pomija ją zawsze.
 
@@ -519,7 +545,8 @@ CACHE_URL=redis://redis:6379/1
 
 1. Dodaj `Prompt(name='nazwa_v1', system='...')` w [prompts.py](../backend/archive/infrastructure/prompts.py).
 2. Dodaj odpowiednią Pydantic schema do [dtos.py](../backend/archive/dtos.py).
-3. Dodaj nowe Celery task w [tasks.py](../backend/archive/tasks.py), wzorując się na `generate_program_note`.
+3. Dodaj nowe Celery task w [tasks.py](../backend/archive/tasks.py): w łańcuchu — z `_guarded`, jak
+   `persist_analysis`; poza nim — jak `generate_translation` (stan zadania zamiast `_fail`, §4.2).
 4. Wstaw do `build_ingestion_chain()` w odpowiednim miejscu chain — **albo świadomie zostaw poza nim**,
    jeśli output ma powstawać po weryfikacji przez człowieka (patrz: notka programowa, §4.2).
 
@@ -559,6 +586,12 @@ INGESTION_TRANSLATION_LANGUAGES=pl,en,fr    # ← dodaj nowy ISO 639-1 code
 
 Claude wygeneruje dodatkowe tłumaczenie w tym samym wywołaniu, co resztę analizy. Pamiętaj, że reguły
 ECONOMY i tak pominą język, w którym tekst już jest.
+
+To ustawienie dotyczy każdego przyszłego uploadu. Tłumaczenie jednego utworu na pl / en / fr (np. pod
+śpiewnik wyjazdowy) robi się z kokpitu — `generate_translation`, §4.2. Nowy język odbiorców w ogóle
+(kokpit, notki, tłumaczenia na żądanie) to `AUDIENCE_LANGUAGES` w `services/language.py` i jego
+lustro we froncie, `features/archive/constants/audienceMaterial.ts` — razem z językami kart
+śpiewnika (`ScorePackagePanel`).
 
 ---
 
@@ -621,11 +654,11 @@ backend/archive/
 ├── views.py                           # ScoreEditionViewSet, PieceViewSet, AnnotationViewSet
 ├── sse_views.py                       # GET /editions/<id>/events/ — text/event-stream (ASGI)
 ├── score_protection.py                # status prawnoautorski + watermark per odbiorca
-├── tasks.py                           # 7 tasków chain + generate_program_note i recompute_ipa (poza chainem)
+├── tasks.py                           # 7 tasków chain + generate_program_note, recompute_ipa, generate_translation (poza chainem)
 ├── infrastructure/
 │   ├── _http.py                       # Shared HTTP (cache + retry)
 │   ├── ai_client.py                   # AIClient, taksonomia błędów, eskalacja, cost tracking
-│   ├── prompts.py                     # Versioned prompts: ANALYZE_SCORE + GENERATE_PROGRAM_NOTE + TRANSCRIBE_IPA
+│   ├── prompts.py                     # Versioned prompts: ANALYZE_SCORE + GENERATE_PROGRAM_NOTE + TRANSCRIBE_IPA + TRANSLATE_SUNG_TEXT
 │   ├── pdf_extractor.py               # pypdf wrapper (sha256 + page count)
 │   ├── musicbrainz_client.py
 │   ├── wikidata_client.py
@@ -636,7 +669,7 @@ backend/archive/
 │   ├── normalize_piece_languages.py
 │   └── recompute_ipa.py               # hurtowe przeliczenie IPA łaciny (§5.5) — płatne
 └── services/
-    ├── ingestion.py                   # start_ingestion / dispatch_program_note / dispatch_ipa_recompute / cancel_ingestion
+    ├── ingestion.py                   # start_ingestion / dispatch_program_note / dispatch_ipa_recompute / dispatch_translation / cancel_ingestion
     ├── ipa.py                         # kiedy wolno przeliczyć IPA, ręczna poprawka, stan zadania
     ├── provenance.py                  # record_ai / record_external / record_manual + mapa modeli
     ├── resolvers.py                   # composer + piece dedup/create
@@ -668,7 +701,7 @@ i `/review`).
 Jeśli jesteś modelem (Claude, Cursor, Copilot, Codex) modyfikującym ten codebase:
 
 1. **Nie modyfikuj `prompts.py` tekstów inline** — zmiana invaliduje prompt cache i version. Jeśli chcesz porównać warianty: dodaj nowy `Prompt('foo_v2', ...)` obok starego.
-2. **Nigdy nie usuwaj `_guarded` decoratora z taska** — bez niego `CostCeilingExceeded` zostanie podniesione do Celery retry, który trzy razy spróbuje wykonać kosztowny task i wyczyści konto Anthropic.
+2. **Nigdy nie usuwaj `_guarded` decoratora z taska łańcucha** — bez niego `CostCeilingExceeded` zostanie podniesione do Celery retry, który trzy razy spróbuje wykonać kosztowny task i wyczyści konto Anthropic. Taski poza łańcuchem (`generate_program_note`, `generate_translation`, `recompute_ipa`) nie są `_guarded`, bo nie mają edycji do oblania — same łapią `CostCeilingExceeded` i każdy inny wyjątek i zapisują porażkę w stanie zadania.
 3. **Zawsze stosuj `_bill_edition(edition, cost.total_cents)` PO każdym AI call** — pominięcie psuje rachunkowość i hard cap nie zadziała.
 4. **Dla każdego nowego AI-generated pola wpisuj `provenance.record_ai(...)`** — bez tego pole „pojawia się znikąd” i nie da się zregenerować.
 5. **Nie wprowadzaj `temperature` / `top_p` / `top_k` do `AIClient.parse`** — poziom Opus zwraca 400 przy tych parametrach.

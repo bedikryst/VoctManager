@@ -743,7 +743,6 @@
       "note_generating": "Generuję…",
       "note_ready": "Notka programowa gotowa.",
       "note_saved": "Zapisano notkę.",
-      "note_slow": "Generowanie trwa dłużej niż zwykle — odśwież stronę za chwilę.",
       "note_words": "Słowa",
       "go_to_page": "Pokaż stronę {{page}} w partyturze",
       "open_recording": "Otwórz nagranie",
@@ -761,7 +760,25 @@
       "translator_ph": "Tłumacz (drukowany pod tekstem)",
       "unfeature": "Odepnij polecane",
       "unknown_performer": "Nieznany wykonawca",
-      "verify_failed": "Nie udało się oznaczyć pola."
+      "verify_failed": "Nie udało się oznaczyć pola.",
+      "note_language": "Język notki",
+      "note_tone": "Ton",
+      "translate_language": "Nowe tłumaczenie",
+      "translate": "Przetłumacz (AI)",
+      "translating": "Tłumaczę…",
+      "translation_ready": "Tłumaczenie gotowe.",
+      "translation_failed": "Nie udało się przetłumaczyć tekstu. Spróbuj ponownie.",
+      "note_generation_failed": "Nie udało się napisać notki programowej. Spróbuj ponownie.",
+      "ai_overloaded": "Usługa AI była przeciążona. Spróbuj ponownie za kilka minut.",
+      "ai_budget": "Dzienny budżet AI się wyczerpał. Spróbuj jutro.",
+      "translate_error": {
+        "exists": "Ten utwór ma już tłumaczenie w tym języku.",
+        "same_language": "Tekst jest już w tym języku.",
+        "no_text": "Najpierw uzupełnij i zapisz tekst śpiewany.",
+        "running": "Tłumaczenie już trwa.",
+        "unavailable": "Usługa AI nie jest skonfigurowana.",
+        "generic": "Nie udało się uruchomić tłumaczenia."
+      }
     },
     "row": {
       "audio_count_tooltip_one": "{{count}} ścieżek audio",
@@ -940,7 +957,9 @@
       "title": "Przeciągnij PDF-y partytur",
       "title_existing": "Dodaj kolejne wydanie tego utworu",
       "toast_failed": "Upload nieudany",
-      "toast_success": "{{name}} — pipeline uruchomiony"
+      "toast_success": "{{name}} — pipeline uruchomiony",
+      "latin_system": "Wymowa łaciny",
+      "latin_system_hint": "Dotyczy tylko utworów po łacinie. Wymowa inna niż niemiecka to jedno dodatkowe przeliczenie AI."
     },
     "upload_drawer": {
       "aria": "Wgraj partyturę PDF",
@@ -974,6 +993,18 @@
       "germanic": "niemiecka",
       "italianate": "włoska (kościelna)",
       "classical": "klasyczna (restituta)"
+    },
+    "audience": {
+      "language": {
+        "pl": "polski",
+        "en": "angielski",
+        "fr": "francuski"
+      },
+      "tone": {
+        "accessible": "przystępny",
+        "scholarly": "fachowy",
+        "devotional": "modlitewny"
+      }
     },
     "provenance": {
       "verified": "Zweryfikowane",

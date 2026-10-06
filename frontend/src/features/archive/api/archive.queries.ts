@@ -21,9 +21,11 @@ import {
 import {
   isIngestionInProgress,
   type LatinPronunciationCode,
+  type AudienceLanguage,
   type Movement,
   type Piece,
   type ProgramNote,
+  type ProgramNoteToneCode,
   type Recording,
   type Translation,
 } from "@/shared/types";
@@ -102,8 +104,12 @@ export const usePiece = (id: string | null) =>
           e.ingestion_status === "ENRI" ||
           e.ingestion_status === "GENR",
       );
-      const ipaRunning = data?.lyrics_ipa_job?.state === "running";
-      return anyInProgress || ipaRunning ? POLL_IN_PROGRESS_MS : false;
+      const aiJobRunning = [
+        data?.lyrics_ipa_job,
+        data?.program_note_job,
+        data?.translation_job,
+      ].some((job) => job?.state === "running");
+      return anyInProgress || aiJobRunning ? POLL_IN_PROGRESS_MS : false;
     },
   });
 
@@ -781,12 +787,30 @@ export const useDeleteProgramNote = () => {
 export const useGenerateProgramNote = () => {
   const qc = useQueryClient();
   return useMutation<
-    { celery_task_id: string; status: string },
+    Piece,
     Error,
-    { pieceId: string; force?: boolean; language?: string }
+    { pieceId: string; force?: boolean; language?: AudienceLanguage; tone?: ProgramNoteToneCode }
   >({
-    mutationFn: ({ pieceId, force = false, language }) =>
-      ArchiveService.generateProgramNote(pieceId, force, language),
-    onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
+    mutationFn: ({ pieceId, ...options }) =>
+      ArchiveService.generateProgramNote(pieceId, options),
+    // The answer carries the running job, so `usePiece` starts polling at once.
+    onSuccess: (piece, { pieceId }) => {
+      qc.setQueryData(archiveKeys.pieces.details(pieceId), piece);
+    },
+  });
+};
+
+/**
+ * Dispatch an AI translation into one more audience language. Async like the
+ * note: `usePiece` polls while the piece's `translation_job` runs.
+ */
+export const useGenerateTranslation = () => {
+  const qc = useQueryClient();
+  return useMutation<Piece, Error, { pieceId: string; language: AudienceLanguage }>({
+    mutationFn: ({ pieceId, language }) =>
+      ArchiveService.generateTranslation(pieceId, language),
+    onSuccess: (piece, { pieceId }) => {
+      qc.setQueryData(archiveKeys.pieces.details(pieceId), piece);
+    },
   });
 };

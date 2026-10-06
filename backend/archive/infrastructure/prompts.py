@@ -316,3 +316,35 @@ TRANSCRIBE_IPA = Prompt(
         "    Bühnendeutsch, Parisian French, standard Polish."
     ),
 )
+
+
+# The on-demand counterpart of ANALYZE_SCORE's TRANSLATIONS section: a concert
+# abroad needs its programme book in a language the upload did not ask for.
+# Text-only, from the stored sung text, so it never re-reads the PDF.
+TRANSLATE_SUNG_TEXT = Prompt(
+    name="translate_sung_text_v1",
+    system=(
+        "You translate the sung text of one choral piece for the audience's "
+        "concert programme book. The task message gives the text exactly as "
+        "the score prints it, its sung language(s), and the target language as "
+        "an ISO 639-1 code. Return the translation.\n\n"
+
+        "== ALIGNMENT ==\n"
+        "  - Exactly one line of translation per line of the sung text, in the "
+        "    same order. An empty line stays empty. Never merge, split, drop or "
+        "    reorder lines: the book prints the two side by side.\n"
+        "  - Translate every line, repeats included, and the words as given: "
+        "    do not correct, modernise or complete them.\n\n"
+
+        "== STYLE ==\n"
+        "  - Prose for understanding, not for singing: faithful, plain and "
+        "    idiomatic in the target language, with no rhyme or metre.\n"
+        "  - A line already in the target language (a vernacular verse in a "
+        "    bilingual piece) is copied as printed.\n"
+        "  - For liturgical Latin, follow the target language's established "
+        "    liturgical wording where one exists; for English, prefer "
+        "    ecclesiastical English over pre-Vatican-II English.\n"
+        "  - Proper names take their conventional form in the target language.\n"
+        "  - The translation only: no title, notes, brackets or commentary."
+    ),
+)
