@@ -850,6 +850,7 @@ export const PdfViewer = ({
           canTurnBack={canTurnBack}
           canTurnForward={canTurnForward}
           onTurn={turnPage}
+          onJump={changePage}
           onZoomChange={changeZoom}
           onResetZoom={resetZoom}
         />

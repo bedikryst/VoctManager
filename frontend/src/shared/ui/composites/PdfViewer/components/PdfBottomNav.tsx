@@ -4,6 +4,8 @@
  * to the screen. The fit lives here, next to zoom, because it is the same
  * question asked once instead of pinched at every turn — and it is spelled out
  * in words in its own panel rather than hidden behind another unlabelled glyph.
+ * The page counter opens the jump panel, so "from page 25" is one gesture
+ * rather than twenty-four turns.
  * @module shared/ui/composites/PdfViewer
  * @architecture Enterprise SaaS 2026
  */
@@ -27,6 +29,7 @@ import { Divider } from "@/shared/ui/primitives/Divider";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import type { FitMode, ResolvedFitMode } from "../types";
+import { PdfPageJumpPanel } from "./PdfPageJumpPanel";
 
 interface PdfBottomNavProps {
   currentPage: number;
@@ -49,6 +52,8 @@ interface PdfBottomNavProps {
    * would step over the half nobody has read yet.
    */
   onTurn: (delta: 1 | -1) => void;
+  /** Straight to a page, landing at its top. */
+  onJump: (page: number) => void;
   onZoomChange: (delta: number) => void;
   onResetZoom: () => void;
 }
@@ -94,32 +99,38 @@ export const PdfBottomNav = ({
   canTurnBack,
   canTurnForward,
   onTurn,
+  onJump,
   onZoomChange,
   onResetZoom,
 }: PdfBottomNavProps) => {
   const { t } = useTranslation();
   const zoomPercentage = Math.round(zoom * 100);
-  const [isFitPanelOpen, setIsFitPanelOpen] = useState(false);
-  const fitAnchorRef = useRef<HTMLDivElement | null>(null);
+  // One panel at a time: both rise from the pill and would stack on each other.
+  const [openPanel, setOpenPanel] = useState<"page" | "fit" | null>(null);
+  const pillRef = useRef<HTMLDivElement | null>(null);
   const FitIcon = FIT_ICONS[resolvedFit];
+  const canJump = numPages !== null && numPages > 1;
+  const togglePanel = (panel: "page" | "fit"): void =>
+    setOpenPanel((open) => (open === panel ? null : panel));
 
   // Dismissal is a document-level listener rather than a full-bleed backdrop
   // element: the pill carries `backdrop-blur`, and a backdrop-filter makes its
   // element a containing block for `position: fixed`, so a "cover the screen"
   // curtain nested inside it covers only the pill. Capture phase, so the panel
   // closes even where the viewer's own gesture layer swallows the event on its
-  // way down.
+  // way down. A press on the pill itself keeps the panel: the arrows beside an
+  // open jump panel are how a near miss on the slider is corrected.
   useEffect(() => {
-    if (!isFitPanelOpen) return;
+    if (!openPanel) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       event.stopPropagation();
-      setIsFitPanelOpen(false);
+      setOpenPanel(null);
     };
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node | null;
-      if (target && fitAnchorRef.current?.contains(target)) return;
-      setIsFitPanelOpen(false);
+      if (target && pillRef.current?.contains(target)) return;
+      setOpenPanel(null);
     };
     window.addEventListener("keydown", onKeyDown, true);
     window.addEventListener("pointerdown", onPointerDown, true);
@@ -127,14 +138,29 @@ export const PdfBottomNav = ({
       window.removeEventListener("keydown", onKeyDown, true);
       window.removeEventListener("pointerdown", onPointerDown, true);
     };
-  }, [isFitPanelOpen]);
+  }, [openPanel]);
 
   return (
     <div className="pointer-events-none absolute bottom-6 left-0 right-0 z-20 flex justify-center pb-[env(safe-area-inset-bottom)] sm:bottom-8">
       <div
-        className="pointer-events-auto flex items-center gap-1 rounded-full bg-surface-inverse/90 p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md border border-line-on-inverse"
+        ref={pillRef}
+        className="pointer-events-auto relative flex items-center gap-1 rounded-full bg-surface-inverse/90 p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md border border-line-on-inverse"
         data-pdf-gesture-exempt
       >
+        {/* Centred on the pill rather than on its trigger: on a phone the
+            counter sits near the pill's left end, and a panel wide enough to
+            drag through forty pages would hang off the screen there. */}
+        <AnimatePresence>
+          {openPanel === "page" && numPages !== null && (
+            <PdfPageJumpPanel
+              currentPage={currentPage}
+              numPages={numPages}
+              onJump={onJump}
+              onClose={() => setOpenPanel(null)}
+            />
+          )}
+        </AnimatePresence>
+
         <Button
           variant="ghost"
           size="icon"
@@ -146,15 +172,30 @@ export const PdfBottomNav = ({
           <ChevronLeft size={18} aria-hidden="true" />
         </Button>
 
-        <div className="flex min-w-[4rem] items-center justify-center px-1">
+        {/* A faint fill marks the counter as a control: a bare "3 / 40" reads
+            as a label, and the jump behind it would never be found. */}
+        <button
+          type="button"
+          onClick={() => togglePanel("page")}
+          disabled={!canJump}
+          aria-expanded={openPanel === "page"}
+          aria-label={t("pdf_viewer.jump_to_page", "Przejdź do strony")}
+          title={t("pdf_viewer.jump_to_page", "Przejdź do strony")}
+          className={cn(
+            "flex h-8 min-w-16 items-center justify-center rounded-full px-2.5 transition-colors",
+            canJump && "bg-ink-on-inverse/10 hover:bg-ink-on-inverse/15",
+            openPanel === "page" && "bg-ink-on-inverse/20",
+          )}
+        >
           <Text
+            as="span"
             color="ink-on-inverse"
             className="text-xs font-medium tabular-nums tracking-wider"
           >
             {currentPage}{" "}
             <span className="text-ink-on-inverse/40">/ {numPages ?? "?"}</span>
           </Text>
-        </div>
+        </button>
 
         <Button
           variant="ghost"
@@ -206,24 +247,24 @@ export const PdfBottomNav = ({
 
         <Divider variant="solid-dark" orientation="vertical" className="mx-1 h-5" />
 
-        <div className="relative" ref={fitAnchorRef}>
+        <div className="relative">
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsFitPanelOpen((open) => !open)}
+            onClick={() => togglePanel("fit")}
             aria-label={t("pdf_viewer.fit_label", "Dopasowanie strony")}
-            aria-expanded={isFitPanelOpen}
+            aria-expanded={openPanel === "fit"}
             title={t("pdf_viewer.fit_label", "Dopasowanie strony")}
             className={cn(
               "h-10 w-10 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10",
-              isFitPanelOpen && "bg-ink-on-inverse/15",
+              openPanel === "fit" && "bg-ink-on-inverse/15",
             )}
           >
             <FitIcon size={18} aria-hidden="true" />
           </Button>
 
           <AnimatePresence>
-            {isFitPanelOpen && (
+            {openPanel === "fit" && (
               <motion.div
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -245,7 +286,7 @@ export const PdfBottomNav = ({
                           type="button"
                           onClick={() => {
                             onFitModeChange(mode);
-                            setIsFitPanelOpen(false);
+                            setOpenPanel(null);
                           }}
                           aria-pressed={isActive}
                           className={cn(
