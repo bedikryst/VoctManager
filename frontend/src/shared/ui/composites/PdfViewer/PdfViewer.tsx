@@ -18,7 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
-import { FileWarning } from "lucide-react";
+import { FileWarning, WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
@@ -148,6 +148,7 @@ export const PdfViewer = ({
   const {
     data: documentBlob,
     isPending: isFetchingBlob,
+    fetchStatus: blobFetchStatus,
     isError: isFetchError,
     error: fetchError,
     refetch: retryFetch,
@@ -356,7 +357,12 @@ export const PdfViewer = ({
   }, []);
 
   const isIdle = !fetchBlob;
-  const showLoadingState = (isIdle && !blobUrl) || (!isIdle && isFetchingBlob && !blobUrl);
+  // The one attempt made without signal found nothing in the device's store,
+  // and the retries are parked until the network returns. Not a failure: the
+  // query resumes by itself on reconnect and the document opens where it is.
+  const isWaitingForNetwork = !isIdle && isFetchingBlob && blobFetchStatus === "paused";
+  const showLoadingState =
+    (isIdle && !blobUrl) || (!isIdle && isFetchingBlob && !isWaitingForNetwork && !blobUrl);
   const showPdfChrome = !!blobUrl && numPages !== null && !isFetchError;
   const errorReason = isFetchError ? classifyLoadError(fetchError) : null;
   const errorMessage = errorReason ? resolveViewerErrorMessage(errorReason) : null;
@@ -693,6 +699,19 @@ export const PdfViewer = ({
           <div className="mx-auto flex min-h-full w-full items-center justify-center">
             {showLoadingState ? (
               <div className="flex min-h-full w-full items-center justify-center py-16"><EtherealLoader /></div>
+            ) : isWaitingForNetwork ? (
+              <div className="flex min-h-full w-full items-center justify-center px-6 py-12 sm:px-10">
+                <StatePanel
+                  tone="warning"
+                  icon={<WifiOff size={28} className="text-ethereal-gold" aria-hidden="true" />}
+                  title={t("pdf_viewer.offline_title", "No internet connection")}
+                  description={t(
+                    "pdf_viewer.offline_description",
+                    "This document isn't stored on this device. It will open on its own once you're back online.",
+                  )}
+                  className="w-full max-w-md shadow-glass-ethereal"
+                />
+              </div>
             ) : isFetchError ? (
               <div className="flex min-h-full w-full items-center justify-center px-6 py-12 sm:px-10">
                 <StatePanel

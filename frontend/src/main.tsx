@@ -43,6 +43,13 @@ const queryClient = new QueryClient({
       gcTime: QUERY_CACHE_MAX_AGE_MS,
       staleTime: 1000 * 60 * 5,
       retry: 2,
+      // The service worker answers reads with no signal (downloaded scores, the
+      // binder map, markings, the dashboards), but only reads that reach it.
+      // The default "online" mode never calls the queryFn once the browser has
+      // reported `offline`, so a downloaded score sat behind a loader forever.
+      // offlineFirst makes one attempt, which the worker can answer from cache;
+      // only the RETRIES wait for the network.
+      networkMode: "offlineFirst",
     },
   },
 });

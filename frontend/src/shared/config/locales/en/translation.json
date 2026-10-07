@@ -4383,6 +4383,8 @@
     "immersive_enter": "Performance mode",
     "jump_to_page": "Jump to page",
     "next_page": "Next page",
+    "offline_description": "This document isn't stored on this device. It will open on its own once you're back online.",
+    "offline_title": "No internet connection",
     "open_browser": "Open",
     "open_full_view": "Open full view",
     "open_full_view_short": "Full view",

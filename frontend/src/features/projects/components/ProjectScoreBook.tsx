@@ -64,7 +64,7 @@ export const ProjectScoreBook = ({
 }: ProjectScoreBookProps): React.JSX.Element => {
   const { t } = useTranslation();
 
-  const { data, isPending } = useQuery({
+  const { data, isPending, fetchStatus } = useQuery({
     queryKey: projectKeys.scorePackage.map(projectId),
     queryFn: () => ProjectService.getScoreMap(projectId),
     // Only while the book is on screen: a songbook listing four concerts must
@@ -90,7 +90,10 @@ export const ProjectScoreBook = ({
   // ordering whim: the map carries the stamp that names the build, and a phone
   // with no signal can only find its stored copy of the book by that name. The
   // wait ends whether the map arrives or fails — an error just means an
-  // unstamped request, which is the behaviour that existed before.
+  // unstamped request, which is the behaviour that existed before. A map whose
+  // retries are parked for the network has failed for this purpose too:
+  // without it the viewer would never be handed anything to ask for.
+  const isAwaitingMap = isPending && fetchStatus !== "paused";
   const fetchBlob = useCallback(
     // The clean binder, never the server-composed one: the marks are drawn live
     // on top of it here, and asking for a copy with them baked in would print
@@ -103,7 +106,7 @@ export const ProjectScoreBook = ({
     <ScoreBookModal
       isOpen={isOpen}
       book={book}
-      fetchBlob={isPending ? null : fetchBlob}
+      fetchBlob={isAwaitingMap ? null : fetchBlob}
       docKey={`score-book-${projectId}-${stamp || version}`}
       title={title}
       subtitle={projectTitle}

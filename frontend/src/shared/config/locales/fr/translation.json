@@ -4392,6 +4392,8 @@
     "immersive_enter": "Mode concert",
     "jump_to_page": "Aller à la page",
     "next_page": "Page suivante",
+    "offline_description": "Ce document n'est pas enregistré sur cet appareil. Il s'ouvrira de lui-même dès le retour de la connexion.",
+    "offline_title": "Pas de connexion internet",
     "open_browser": "Ouvrir",
     "open_full_view": "Vue plein écran",
     "open_full_view_short": "Plein écran",

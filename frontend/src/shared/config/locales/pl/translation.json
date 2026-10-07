@@ -4462,6 +4462,8 @@
     "immersive_enter": "Tryb występu",
     "jump_to_page": "Przejdź do strony",
     "next_page": "Następna strona",
+    "offline_description": "Tego dokumentu nie ma w pamięci urządzenia. Otworzy się sam, gdy wróci połączenie.",
+    "offline_title": "Brak połączenia z internetem",
     "open_browser": "Otwórz",
     "open_full_view": "Otwórz pełny widok",
     "open_full_view_short": "Pełny widok",

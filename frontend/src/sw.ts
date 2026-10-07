@@ -292,14 +292,24 @@ registerRoute(
   }),
 );
 
-// Personal dashboard reads — NetworkFirst so fresh data wins online but the last
-// good snapshot answers offline. (React Query already persists the JSON; this is
-// belt-and-suspenders that also survives a localStorage wipe.)
+// Personal reads — NetworkFirst so fresh data wins online but the last good
+// snapshot answers offline. For the dashboards this is belt-and-suspenders over
+// the React Query snapshot, which also survives a localStorage wipe.
+//
+// The two identity probes are not optional. They are the only requests that
+// establish a session on a cold start, and the app treats a failed probe as
+// "signed out": a phone that relaunches the app with no signal would land on the
+// login screen, and every downloaded concert behind it would be out of reach.
+// Only a 200 is kept, so an expired session still reaches the app as the
+// server's 401 whenever the network answers; the copy is wiped at logout with
+// the rest of this cache.
 const OFFLINE_API_READS = new Set([
   "/api/participations/schedule-dashboard/",
   "/api/participations/materials-dashboard/",
+  "/api/users/me/",
+  "/api/artists/me/",
 ]);
-// `?artist=` on those two paths is a manager reading SOMEBODY ELSE'S view
+// `?artist=` on the dashboard paths is a manager reading SOMEBODY ELSE'S view
 // (`core/preview.py`). Two reasons it must never enter this cache: it is another
 // person's timeline sitting on the manager's device for thirty days, and — since
 // Workbox keys entries by full URL — a handful of previews would evict the
