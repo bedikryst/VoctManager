@@ -82,7 +82,7 @@ export interface InlineEditableProps {
    * size of 17px of sans — a step above the `title` variant's 16px, not three.
    * Any smaller and the name reads smaller than the metadata beneath it.
    *
-   * `subtitle` is the serif italic a rehearsal's work plan is set in under its
+   * `subtitle` is the serif italic a rehearsal's topic line is set in under its
    * date (`RehearsalInspector`): normal weight, the `md` step the static line
    * uses for the same x-height reason, in the graphite of a subordinate line.
    */

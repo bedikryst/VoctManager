@@ -5,6 +5,8 @@
  * canonical, motion-aware composite. Supports two confirm modes:
  *  - Imperative: pass `onConfirm` (default).
  *  - Form-bound: pass `formId` to make the confirm button submit a foreign form.
+ * A surface whose save can be carried one step further ("Zapisz i wyślij")
+ * adds it as `secondaryAction`, an outline button before the primary one.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/EditorActionBar
  */
@@ -20,6 +22,14 @@ import { useBottomBarSlot } from "@/shared/lib/dom/useBottomBarSlot";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+
+export interface EditorActionBarSecondaryAction {
+  label: string;
+  icon?: React.ReactNode;
+  onClick: () => void;
+  /** This action is the one in flight: the spinner sits on its button, not on confirm. */
+  isLoading?: boolean;
+}
 
 export interface EditorActionBarProps {
   /** Visibility flag — typically wired to a dirty-state boolean. */
@@ -50,6 +60,8 @@ export interface EditorActionBarProps {
    * disabled save that does not name its reason is a dead end.
    */
   isConfirmDisabled?: boolean;
+  /** A second confirm beside the primary one; `isLoading` disables it too. */
+  secondaryAction?: EditorActionBarSecondaryAction;
   /** Optional extra class for the bar wrapper. */
   className?: string;
 }
@@ -69,10 +81,12 @@ export const EditorActionBar = ({
   formId,
   isLoading = false,
   isConfirmDisabled = false,
+  secondaryAction,
   className,
 }: EditorActionBarProps): React.JSX.Element => {
   const { t } = useTranslation();
   const slotRef = useBottomBarSlot();
+  const isConfirmLoading = isLoading && !secondaryAction?.isLoading;
 
   const resolvedEyebrow =
     eyebrow ?? t("common.editor_action_bar.unsaved", "Niezapisane zmiany");
@@ -122,7 +136,7 @@ export const EditorActionBar = ({
               </Text>
             </div>
 
-            <div className="flex shrink-0 items-center justify-end gap-2">
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
               {onCancel && (
                 <Button
                   type="button"
@@ -134,6 +148,19 @@ export const EditorActionBar = ({
                   {resolvedCancel}
                 </Button>
               )}
+              {secondaryAction && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={secondaryAction.onClick}
+                  disabled={isLoading}
+                  isLoading={secondaryAction.isLoading}
+                  leftIcon={secondaryAction.isLoading ? undefined : secondaryAction.icon}
+                >
+                  {secondaryAction.label}
+                </Button>
+              )}
               <Button
                 type={formId ? "submit" : "button"}
                 form={formId}
@@ -141,9 +168,9 @@ export const EditorActionBar = ({
                 size="sm"
                 onClick={formId ? undefined : onConfirm}
                 disabled={isLoading || isConfirmDisabled}
-                isLoading={isLoading}
+                isLoading={isConfirmLoading}
                 leftIcon={
-                  isLoading
+                  isConfirmLoading
                     ? undefined
                     : (confirmIcon ?? <Save size={14} aria-hidden="true" />)
                 }
