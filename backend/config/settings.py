@@ -270,16 +270,26 @@ SPECTACULAR_SETTINGS = {
 }
 
 # --- JWT SETTINGS ---
+# The refresh token slides: every refresh issues a new one with a full lifetime,
+# so a member is signed out only after REFRESH_TOKEN_LIFETIME of not using the
+# app at all — never at a fixed moment counted from the last login, which could
+# land mid-concert with a score open and no signal to sign back in.
+#
+# BLACKLIST_AFTER_ROTATION stays off on purpose. A refresh whose answer is lost
+# on a weak signal would leave the phone holding a token the server had already
+# blacklisted, and the next refresh would end the session. Logout still
+# blacklists the current token (LogoutView).
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': False,
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_COOKIE': 'access_token',
     'AUTH_COOKIE_REFRESH': 'refresh_token',
     'AUTH_COOKIE_SECURE': not DEBUG,
     'AUTH_COOKIE_HTTP_ONLY': True,
     'AUTH_COOKIE_SAMESITE': 'Lax',
-    'BLACKLIST_AFTER_ROTATION': True,
 }
 
 # --- CORS & CSRF ---

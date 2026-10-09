@@ -38,7 +38,16 @@ export const useArtistDashboardData = () => {
 
   // Same query key → React Query dedupes this; it only surfaces error/refetch
   // for the page shell (useScheduleData swallows both).
-  const { isError, refetch: refetchSchedule } = useScheduleDashboard(subject?.key);
+  const {
+    data: scheduleDashboard,
+    isError: isScheduleError,
+    refetch: refetchSchedule,
+  } = useScheduleDashboard(subject?.key);
+  // The page shell's error state is for "nothing to show". A background refetch
+  // that fails (focus after a locked screen, no signal in the hall) keeps the
+  // last good answer, and swapping the page for an error then would unmount
+  // whatever the member had open from it — the score book opened from the hero.
+  const isError = isScheduleError && scheduleDashboard === undefined;
 
   const { data: artistProfile, refetch: refetchProfile } = useQuery({
     queryKey: artistKeys.artists.details(artistId ?? ANONYMOUS_ARTIST_QUERY_ID),
