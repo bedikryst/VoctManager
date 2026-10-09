@@ -7,30 +7,39 @@
  * reserve under it, an "end of rehearsal" line where the minutes run past a
  * timed evening's end, a header on each time block once there are two (its
  * span, and calls set across its rows at once), a strip of who is actually
- * coming, three fills so the evening is never laid out from zero (the whole
- * programme; what the previous rehearsal left undone; a copy of any other
- * plan), an explicit save, and — separately — publishing. A saved plan is a draft the choir does not see
- * until "Opublikuj plan" (or until the evening starts); after that, saves are
- * visible but silent, and "Wyślij zmiany" is the conductor's own act, enabled
- * only when the rows changed since the last send. The conductor edits a dozen
- * times the day before, and each save queuing a notice would teach the choir
- * to ignore them. A manager's send joins the announcement queue he publishes;
- * a planner who is not a manager has no queue, so theirs goes out at once and
- * the button says so. The toast reports what the server says became of the
- * notice (`delivery`), never "sent" for a notice that is waiting.
+ * coming, the planned minutes against the evening's length (lengths the
+ * clocks imply included), three fills so the evening is never laid out from
+ * zero (the whole programme; what the previous rehearsal left undone; a copy
+ * of any other plan), and an explicit save. Writing costs what text costs:
+ * the add tray holds a chip per programme piece not yet planned (one tap
+ * appends it above the reserve), a free point, a break, and "Wpisz listą" —
+ * the plan typed as lines and read into rows (`PlanTextEntry`), offered
+ * filled from the rehearsal's topic when the topic is really a list, which
+ * is where plans were written before. A saved plan is a draft the choir does not see until it is sent (or
+ * until the evening starts); after that, saves are visible but silent. The
+ * conductor edits a dozen times the day before, and each save sending a
+ * notice would teach the choir to ignore them — so sending is its own act,
+ * and one act: an unsaved draft offers "Zapisz" and "Zapisz i wyślij" side by
+ * side, and the header's "Wyślij" appears only for a saved plan whose rows
+ * the cast has not been sent yet (`usePlanPublication`, shared with the read
+ * view).
  *
  * Mounted as a band in `RehearsalInspector` — the manager's workspace, and the
  * lead sheet of a planner the server admits (`access="planner"`, which reads
  * the project through the evening rather than the hub's lists) — where the
- * save bar docks over the page, and in a `BottomSheet` from the project's
- * Rehearsals tab, where the docked bar would sit under the sheet's scrim —
- * so the sheet asks for `actions="inline"` and the buttons sit at the foot of
- * the editor. No done checkbox here: ticking is the debrief's first step.
+ * save bar docks over the page and the band is the edit face of the plan's
+ * read view (`onClose`): a successful save or send, and the bar's "Anuluj",
+ * hand the band back to it, and "Zamknij" asks first while the draft is
+ * dirty. And in a `BottomSheet` from the project's Rehearsals tab, where the
+ * docked bar would sit under the sheet's scrim — so the sheet asks for
+ * `actions="inline"` and hands over its own footer for the buttons. No done
+ * checkbox here: ticking is the debrief's step, taken on the read view.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/RehearsalPlanEditor
  */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { formatInTimeZone } from "date-fns-tz";
@@ -42,7 +51,9 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  type Announcements,
   type DragEndEvent,
+  type UniqueIdentifier,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -51,14 +62,25 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Coffee, GripVertical, Hourglass, ListMusic, ListPlus, Plus, Send } from "lucide-react";
+import {
+  Coffee,
+  GripVertical,
+  Hourglass,
+  ListMusic,
+  ListOrdered,
+  ListPlus,
+  Plus,
+  Send,
+  X,
+} from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { toastApiError } from "@/shared/api/errors";
-import { formatLocalizedDate, formatLocalizedDateTime } from "@/shared/lib/time/intl";
+import { formatLocalizedDate } from "@/shared/lib/time/intl";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Select } from "@/shared/ui/primitives/Select";
 import { Caption, Eyebrow } from "@/shared/ui/primitives/typography";
+import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,34 +93,53 @@ import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import type { Rehearsal } from "@/shared/types";
-import { useAnnouncePlan, useRehearsalPlan, useSaveRehearsalPlan } from "../../api/plan.queries";
-import type { PlanDelivery } from "../../types/rehearsalPlan.dto";
+import { useRehearsalPlan, useSaveRehearsalPlan } from "../../api/plan.queries";
+import { planTextOfFocus, type PlanTextPiece, type PlanTextRow } from "../../lib/planText";
 import { PlanAttendanceStrip } from "./PlanAttendanceStrip";
 import { PlanBlockHeader } from "./PlanBlockHeader";
+import { PlanBudget } from "./PlanBudget";
+import { PlanTextEntry } from "./PlanTextEntry";
 import { RehearsalPlanRow } from "./RehearsalPlanRow";
 import { RESERVE_DIVIDER_KEY, usePlanEditor, type PlanDraftRow } from "./usePlanEditor";
 import { usePlanEditorData, type PlanEditorAccess } from "./usePlanEditorData";
+import { usePlanPublication } from "./usePlanPublication";
 
 interface RehearsalPlanEditorProps {
   readonly rehearsal: Rehearsal;
   /**
    * Who is laying the evening out. `manager` (the default) reads the hub's
-   * lists and sends through the announcement queue; `planner` reads the
-   * evening's own projection and sends at once.
+   * lists; `planner` reads the evening's own projection.
    */
   readonly access?: PlanEditorAccess;
   /**
    * Where the save controls live. `dock` is the shared `EditorActionBar`
-   * over the page; `inline` puts the same two buttons at the editor's foot,
-   * for a host that is itself a modal surface.
+   * over the page; `inline` renders the same buttons into `actionsSlot`, for
+   * a host that is itself a modal surface.
    */
   readonly actions?: "dock" | "inline";
+  /** The host's own footer for `actions="inline"`; nothing renders until it mounts. */
+  readonly actionsSlot?: HTMLElement | null;
   /**
-   * Whether the draft holds unsaved rows, for a host that can close the
-   * editor — a sheet asks before a close would throw the draft away.
+   * Whether the draft holds unsaved rows, for a host that can take the
+   * editor away — a sheet asks before a close, the workspace before another
+   * evening — and that shows the inline actions only while there is
+   * something to save. Reports false when the editor unmounts.
    */
   readonly onDirtyChange?: (isDirty: boolean) => void;
+  /**
+   * Hands the band back to the plan's read view. Present → the header offers
+   * "Zamknij" (asking first while the draft is dirty), and a successful save
+   * or send, or "Anuluj" in the save bar, closes the editor too.
+   */
+  readonly onClose?: () => void;
   readonly className?: string;
+}
+
+/** Where a row of a sortable sequence stands, for the "⋯" menu's moves. */
+interface RowPlace {
+  readonly isReserve: boolean;
+  readonly upTo: string | null;
+  readonly downTo: string | null;
 }
 
 /**
@@ -128,7 +169,7 @@ const ReserveDivider = ({ hasReserve }: { hasReserve: boolean }): React.JSX.Elem
           {...attributes}
           {...listeners}
           className={cn(
-            "-ml-1.5 flex min-h-8 min-w-6 shrink-0 cursor-grab select-none items-center justify-center rounded-chip text-ethereal-graphite/30 transition-colors",
+            "-ml-1.5 flex min-h-8 min-w-6 shrink-0 cursor-grab touch-none select-none items-center justify-center rounded-chip text-ethereal-graphite/30 transition-colors",
             "hover:bg-ethereal-gold/10 hover:text-ethereal-gold active:cursor-grabbing",
             "pointer-coarse:min-h-11 pointer-coarse:min-w-9",
           )}
@@ -159,6 +200,12 @@ const ReserveDivider = ({ hasReserve }: { hasReserve: boolean }): React.JSX.Elem
 /** How long a row moved into time order glows. */
 const PLACED_GLOW_MS = 1600;
 
+/** A bare button around a `Badge`, which draws the chip. */
+const CHIP_BUTTON = cn(
+  "flex items-center rounded-chip pointer-coarse:min-h-11",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+);
+
 /**
  * Where the running time passes the rehearsal's end: the rows under it are
  * what the evening cannot fit. Not sortable and not a warning in words —
@@ -180,20 +227,24 @@ export const RehearsalPlanEditor = ({
   rehearsal,
   access = "manager",
   actions = "dock",
+  actionsSlot = null,
   onDirtyChange,
+  onClose,
   className,
 }: RehearsalPlanEditorProps): React.JSX.Element => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const rehearsalId = String(rehearsal.id);
   const planQuery = useRehearsalPlan(rehearsalId);
   const data = usePlanEditorData(rehearsal, access);
   const editor = usePlanEditor(rehearsal, planQuery.data, data);
   const save = useSaveRehearsalPlan(rehearsalId);
-  const announce = useAnnouncePlan(rehearsalId);
+  const publication = usePlanPublication(rehearsal, planQuery.data);
 
   useEffect(() => {
     onDirtyChange?.(editor.isDirty);
   }, [editor.isDirty, onDirtyChange]);
+  // A draft that leaves with the editor is nothing the host still guards.
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -236,102 +287,74 @@ export const RehearsalPlanEditor = ({
     return () => window.clearTimeout(timer);
   }, [placed, reduceMotion]);
 
-  /* ── The publication's state ─────────────────────────────────────────── */
-  const announcedAt = planQuery.data?.plan_announced_at ?? null;
-  const changedAt = planQuery.data?.plan_changed_at ?? null;
-  const savedRows = planQuery.data?.rows ?? [];
-  const isPublished = announcedAt !== null;
-  // Any row created, edited, moved or deleted after the send — a deletion
-  // leaves no surviving row to carry a newer stamp, so the rehearsal does.
-  const changedSinceSend =
-    isPublished &&
-    changedAt !== null &&
-    new Date(changedAt).getTime() > new Date(announcedAt).getTime();
-  // A plan announced after the downbeat reaches phones already in the room —
-  // the server refuses it, and so does the button. From the downbeat on the
-  // plan is public anyway: it is the evening's record.
-  const hasStarted = new Date(rehearsal.date_time).getTime() <= Date.now();
-  const isPublic = isPublished || hasStarted;
-  const announcedLabel = announcedAt
-    ? formatLocalizedDateTime(
-        announcedAt,
-        { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" },
-        i18n.language,
-        rehearsal.timezone,
-      )
-    : null;
-
-  const handleSave = async (): Promise<void> => {
+  /** Writes the draft; false when it was not written (the refusal is already said). */
+  const persist = async (): Promise<boolean> => {
     // The server refuses the whole list for one nameless free row; catching it
     // here keeps the refusal in the conductor's language and next to the row.
     if (editor.rows.some((row) => row.piece === null && row.label.trim() === "")) {
       toast.warning(
         t("rehearsals.plan.toast.untitled", "Nadaj nazwę każdemu punktowi bez utworu."),
       );
-      return;
+      return false;
     }
     try {
       await save.mutateAsync({ rows: editor.toDTO() });
-      toast.success(
-        isPublic
-          ? t(
-              "rehearsals.plan.toast.saved_public",
-              "Zapisano. Chór widzi zmiany, ale nie dostał o nich znać.",
-            )
-          : t("rehearsals.plan.toast.saved_draft", "Szkic zapisany. Chór go nie widzi."),
-      );
+      return true;
     } catch (error) {
       toastApiError(error, t, {
         fallbackDescription: t("rehearsals.plan.toast.save_error", "Nie udało się zapisać planu."),
       });
+      return false;
     }
   };
 
-  // What the toast may claim is what the server says became of the notice.
-  // A waiting notice is never called sent: for a manager it waits in his own
-  // queue; for a planner only behind the evening's own unannounced creation,
-  // which a manager publishes.
-  const deliveryMessage = (delivery: PlanDelivery, wasPublished: boolean): string => {
-    if (delivery === "withheld") {
-      return t(
-        "rehearsals.plan.toast.withheld",
-        "Projekt jest jeszcze szkicem, więc nikt nie dostał powiadomienia. Chór zobaczy plan razem z projektem.",
-      );
-    }
-    if (delivery === "queued") {
-      if (access === "planner") {
-        return wasPublished
-          ? t(
-              "rehearsals.plan.toast.changes_queued_with_rehearsal",
-              "Zmiany wyjdą razem z ogłoszeniem tej próby.",
-            )
-          : t(
-              "rehearsals.plan.toast.queued_with_rehearsal",
-              "Plan opublikowany. Powiadomienie wyjdzie razem z ogłoszeniem tej próby.",
-            );
-      }
-      return wasPublished
-        ? t("rehearsals.plan.toast.changes_queued", "Zmiany czekają w kolejce ogłoszeń.")
-        : t(
-            "rehearsals.plan.toast.queued",
-            "Plan opublikowany. Powiadomienie czeka w kolejce ogłoszeń.",
-          );
-    }
-    return wasPublished
-      ? t("rehearsals.plan.toast.changes_sent", "Zmiany wysłane do wezwanych.")
-      : t("rehearsals.plan.toast.published", "Plan opublikowany i wysłany do wezwanych.");
+  // A save that landed hands the band back to the read view, which shows it.
+  const handleSave = async (): Promise<void> => {
+    if (!(await persist())) return;
+    toast.success(
+      publication.isPublic
+        ? t(
+            "rehearsals.plan.toast.saved_public",
+            "Zapisano. Chór widzi zmiany, ale nie dostał o nich znać.",
+          )
+        : t("rehearsals.plan.toast.saved_draft", "Szkic zapisany. Chór go nie widzi."),
+    );
+    onClose?.();
   };
 
   const handleAnnounce = async (): Promise<void> => {
-    const wasPublished = isPublished;
+    if (await publication.send()) onClose?.();
+  };
+
+  // One act: the save, then the send of what was saved. A refused save sends
+  // nothing and stays in the editor; a refused send leaves the save standing,
+  // its toast says so, and the read view offers the send again.
+  const [isSavingToSend, setIsSavingToSend] = useState(false);
+  const handleSaveAndSend = async (): Promise<void> => {
+    const wasPublished = publication.isPublished;
+    setIsSavingToSend(true);
+    let saved = false;
     try {
-      const announced = await announce.mutateAsync();
-      toast.success(deliveryMessage(announced.delivery, wasPublished));
-    } catch (error) {
-      toastApiError(error, t, {
-        fallbackDescription: t("rehearsals.plan.toast.announce_error", "Nie udało się wysłać planu."),
-      });
+      saved = await persist();
+      if (saved) await publication.send(wasPublished);
+    } finally {
+      setIsSavingToSend(false);
     }
+    if (saved) onClose?.();
+  };
+
+  // "Anuluj" drops the draft; in the workspace it also ends the edit.
+  const handleCancel = (): void => {
+    editor.reset();
+    onClose?.();
+  };
+
+  // Leaving with unsaved rows asks through the same words as every other
+  // way out of a dirty draft; a clean one just goes.
+  const [isClosePromptOpen, setIsClosePromptOpen] = useState(false);
+  const handleClose = (): void => {
+    if (editor.isDirty) setIsClosePromptOpen(true);
+    else onClose?.();
   };
 
   const fallbackClock = useMemo(
@@ -349,6 +372,19 @@ export const RehearsalPlanEditor = ({
     [editor.programOptions, presentPieces],
   );
 
+  /* ── The plan typed as lines ─────────────────────────────────────────── */
+  const textProgram = useMemo<PlanTextPiece[]>(
+    () => editor.programOptions.map((option) => ({ id: option.value, title: option.label })),
+    [editor.programOptions],
+  );
+  const focusText = useMemo(() => planTextOfFocus(rehearsal.focus ?? ""), [rehearsal.focus]);
+  // Null while closed; else the text the entry opens with.
+  const [textEntry, setTextEntry] = useState<string | null>(null);
+  const handleTextInsert = (parsed: readonly PlanTextRow[]): void => {
+    editor.addTextRows(parsed);
+    setTextEntry(null);
+  };
+
   /* ── The sortable sequence: the rows with the divider in its place ────── */
   const sortableKeys = useMemo(() => {
     const keys = editor.rows.map((row) => row.key);
@@ -361,13 +397,77 @@ export const RehearsalPlanEditor = ({
     return map;
   }, [editor.rows]);
   const hasReserve = editor.reserveStart < editor.rows.length;
+  // "Wyżej" / "Niżej" trade places on the row's own side of the divider;
+  // crossing it is the menu's reserve move, never a side effect of "Niżej".
+  const rowPlaces = useMemo(() => {
+    const map = new Map<string, RowPlace>();
+    editor.rows.forEach((row, index) => {
+      const isReserve = index >= editor.reserveStart;
+      const first = isReserve ? editor.reserveStart : 0;
+      const last = isReserve ? editor.rows.length - 1 : editor.reserveStart - 1;
+      map.set(row.key, {
+        isReserve,
+        upTo: index > first ? (editor.rows[index - 1]?.key ?? null) : null,
+        downTo: index < last ? (editor.rows[index + 1]?.key ?? null) : null,
+      });
+    });
+    return map;
+  }, [editor.rows, editor.reserveStart]);
+
+  // The row whose empty note and minutes show. Moves with focus or a press,
+  // and stays put when the conductor clicks away from the list.
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+
+  /* ── What a screen reader hears while a row is dragged ───────────────── */
+  const sortableTitle = (id: UniqueIdentifier): string =>
+    id === RESERVE_DIVIDER_KEY
+      ? t("rehearsals.plan.dnd.divider", "granica „Jeśli starczy czasu”")
+      : editor.readings.get(String(id))?.title ||
+        t("rehearsals.plan.row.untitled", "punkt bez nazwy");
+  const sortablePlace = (id: UniqueIdentifier): { position: number; total: number } => ({
+    position: sortableKeys.indexOf(String(id)) + 1,
+    total: sortableKeys.length,
+  });
+  const announcements: Announcements = {
+    onDragStart: ({ active }) =>
+      t("rehearsals.plan.dnd.picked", "Podniesiono: {{title}}. Pozycja {{position}} z {{total}}.", {
+        title: sortableTitle(active.id),
+        ...sortablePlace(active.id),
+      }),
+    onDragOver: ({ active, over }) =>
+      over
+        ? t("rehearsals.plan.dnd.over", "{{title}}: pozycja {{position}} z {{total}}.", {
+            title: sortableTitle(active.id),
+            ...sortablePlace(over.id),
+          })
+        : undefined,
+    onDragEnd: ({ active, over }) =>
+      over
+        ? t("rehearsals.plan.dnd.dropped", "Odłożono: {{title}}, pozycja {{position}} z {{total}}.", {
+            title: sortableTitle(active.id),
+            ...sortablePlace(over.id),
+          })
+        : t("rehearsals.plan.dnd.cancelled", "Anulowano przenoszenie: {{title}} wraca na miejsce.", {
+            title: sortableTitle(active.id),
+          }),
+    onDragCancel: ({ active }) =>
+      t("rehearsals.plan.dnd.cancelled", "Anulowano przenoszenie: {{title}} wraca na miejsce.", {
+        title: sortableTitle(active.id),
+      }),
+  };
+  const screenReaderInstructions = {
+    draggable: t(
+      "rehearsals.plan.dnd.instructions",
+      "Aby podnieść punkt, naciśnij spację albo Enter. Strzałki w górę i w dół przesuwają go po liście. Spacja albo Enter odkłada go w nowym miejscu, Escape anuluje.",
+    ),
+  };
 
   const sourceLabel = (dateTime: string, timezone: string, focus: string): string => {
     const day = formatLocalizedDate(dateTime, { day: "numeric", month: "short" }, undefined, timezone);
     return focus ? `${day} · ${focus}` : day;
   };
 
-  const isBusy = save.isPending || announce.isPending;
+  const isBusy = save.isPending || publication.isSending || isSavingToSend;
   // The rows arrive as a draft the conductor may still be laying out; until
   // the server's plan is in hand, every way of adding to it is shut, or a row
   // added first would be the only row the draft has. A project read that
@@ -375,12 +475,18 @@ export const RehearsalPlanEditor = ({
   // project's.
   const isOpening = planQuery.isLoading || data.isLoading;
   const isShut = isOpening || data.isLoadError;
-  const canAnnounce =
-    savedRows.length > 0 &&
-    !editor.isDirty &&
-    !isBusy &&
-    !hasStarted &&
-    (!isPublished || changedSinceSend);
+  // The header's send is for a saved plan the cast has not been sent as it
+  // stands — and absent, not greyed out, otherwise: an unsaved draft sends
+  // from its save bar, and a disabled button that cannot say why is the
+  // dead end this replaces. It stays away during "Zapisz i wyślij" too,
+  // whose save would otherwise flash it up for the length of the send.
+  const showSend = publication.canSend && !editor.isDirty && !isSavingToSend;
+  // The send that "Zapisz i wyślij" would follow its save with: something to
+  // send, before the downbeat.
+  const canSaveAndSend = editor.rows.length > 0 && !publication.hasStarted;
+  const saveAndSendLabel = publication.isPublished
+    ? t("rehearsals.plan.save_and_send_changes", "Zapisz i wyślij zmiany")
+    : t("rehearsals.plan.save_and_send", "Zapisz i wyślij");
 
   return (
     <section className={cn("flex flex-col", className)}>
@@ -396,6 +502,7 @@ export const RehearsalPlanEditor = ({
               {editor.rows.length}
             </Caption>
           )}
+          <PlanBudget planned={editor.planned} length={rehearsal.duration_minutes ?? null} />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -458,49 +565,40 @@ export const RehearsalPlanEditor = ({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAnnounce}
-            disabled={!canAnnounce}
-            isLoading={announce.isPending}
-            leftIcon={!announce.isPending ? <Send size={14} aria-hidden="true" /> : undefined}
-          >
-            {access === "planner"
-              ? isPublished
-                ? t("rehearsals.plan.send_changes_now", "Wyślij zmiany chórzystom teraz")
-                : t("rehearsals.plan.send_now", "Wyślij plan chórzystom teraz")
-              : isPublished
-                ? t("rehearsals.plan.send_changes", "Wyślij zmiany")
-                : t("rehearsals.plan.publish", "Opublikuj plan")}
-          </Button>
+          {showSend && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAnnounce}
+              disabled={isBusy}
+              isLoading={publication.isSending}
+              leftIcon={
+                !publication.isSending ? <Send size={14} aria-hidden="true" /> : undefined
+              }
+            >
+              {publication.sendLabel}
+            </Button>
+          )}
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClose}
+              disabled={isBusy}
+              leftIcon={<X size={14} aria-hidden="true" />}
+            >
+              {t("common.actions.close", "Zamknij")}
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Who can see it, and whether the rows moved since the last send. A
-          caption, never a prompt: the decision to send again is the
-          conductor's. */}
-      {announcedLabel ? (
+      {publication.caption && (
         <div className="px-5 pb-2">
-          <Caption color={changedSinceSend ? "gold" : "muted"}>
-            {changedSinceSend
-              ? t("rehearsals.plan.announced_changed", "Opublikowany · wysłano {{when}} · zmieniony po wysłaniu", {
-                  when: announcedLabel,
-                })
-              : t("rehearsals.plan.announced_at", "Opublikowany · wysłano {{when}}", {
-                  when: announcedLabel,
-                })}
+          <Caption color={publication.caption.attention ? "gold" : "muted"}>
+            {publication.caption.text}
           </Caption>
         </div>
-      ) : (
-        savedRows.length > 0 &&
-        !hasStarted && (
-          <div className="px-5 pb-2">
-            <Caption color="muted">
-              {t("rehearsals.plan.draft", "Szkic — chór go nie widzi")}
-            </Caption>
-          </div>
-        )
       )}
 
       {!isShut && data.attendances && (
@@ -539,29 +637,55 @@ export const RehearsalPlanEditor = ({
           }
         />
       ) : editor.rows.length === 0 ? (
-        <StatePanel
-          variant="inline"
-          className="px-5 py-8"
-          icon={<ListMusic size={22} aria-hidden="true" />}
-          title={t("rehearsals.plan.empty.title", "Bez planu")}
-          description={t(
-            "rehearsals.plan.empty.desc",
-            "Ułóż utwory w kolejności ćwiczenia; minuty, godziny i wykluczenia są opcjonalne.",
-          )}
-          actions={
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={editor.fillProgram}
-              disabled={addOptions.length === 0}
-              leftIcon={<ListPlus size={14} aria-hidden="true" />}
-            >
-              {t("rehearsals.plan.fill.program", "Dodaj cały program")}
-            </Button>
-          }
-        />
+        textEntry === null && (
+          <StatePanel
+            variant="inline"
+            className="px-5 py-8"
+            icon={<ListMusic size={22} aria-hidden="true" />}
+            title={t("rehearsals.plan.empty.title", "Bez planu")}
+            description={
+              focusText !== null
+                ? t(
+                    "rehearsals.plan.empty.desc_focus",
+                    "W temacie próby jest już lista. Można z niej ułożyć plan i poprawić to, czego nie rozpozna.",
+                  )
+                : t(
+                    "rehearsals.plan.empty.desc",
+                    "Ułóż utwory w kolejności ćwiczenia; minuty, godziny i wykluczenia są opcjonalne.",
+                  )
+            }
+            actions={
+              <>
+                {focusText !== null && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setTextEntry(focusText)}
+                    leftIcon={<ListOrdered size={14} aria-hidden="true" />}
+                  >
+                    {t("rehearsals.plan.text.from_focus", "Ułóż plan z tematu próby")}
+                  </Button>
+                )}
+                <Button
+                  variant={focusText !== null ? "ghost" : "outline"}
+                  size="sm"
+                  onClick={editor.fillProgram}
+                  disabled={addOptions.length === 0}
+                  leftIcon={<ListPlus size={14} aria-hidden="true" />}
+                >
+                  {t("rehearsals.plan.fill.program", "Dodaj cały program")}
+                </Button>
+              </>
+            }
+          />
+        )
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          accessibility={{ announcements, screenReaderInstructions }}
+        >
           <SortableContext items={sortableKeys} strategy={verticalListSortingStrategy}>
             <ul ref={listRef} className="divide-y divide-hairline border-y border-hairline">
               {sortableKeys.map((key) => {
@@ -570,8 +694,10 @@ export const RehearsalPlanEditor = ({
                 }
                 const row = rowsByKey.get(key);
                 const reading = editor.readings.get(key);
-                if (!row || !reading) return null;
+                const place = rowPlaces.get(key);
+                if (!row || !reading || !place) return null;
                 const block = editor.blockHeaders.get(key);
+                const length = editor.lengths.get(key);
                 return (
                   <React.Fragment key={key}>
                     {key === editor.endLineBefore && editor.endClock && (
@@ -584,6 +710,13 @@ export const RehearsalPlanEditor = ({
                       programOptions={editor.programOptions}
                       fallbackClock={fallbackClock}
                       clock={editor.clocks.get(key)}
+                      impliedMinutes={length?.implied ? length.minutes : null}
+                      isActive={activeKey === key}
+                      onActivate={setActiveKey}
+                      isReserve={place.isReserve}
+                      upTo={place.upTo}
+                      downTo={place.downTo}
+                      onMove={editor.moveRow}
                       onAnchor={editor.anchorRow}
                       onClockCommit={handleClockCommit}
                       isPlaced={placed?.key === key}
@@ -610,74 +743,141 @@ export const RehearsalPlanEditor = ({
       )}
 
       {/* ── Add ─────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center">
-        <div className="min-w-0 flex-1 sm:max-w-xs">
-          <Select
-            variant="ghost"
-            size="sm"
-            value=""
-            onValueChange={(pieceId) => {
-              if (pieceId) editor.addPieceRow(pieceId);
-            }}
-            options={addOptions}
-            disabled={isShut || addOptions.length === 0}
-            leftIcon={<Plus size={14} aria-hidden="true" />}
-            placeholder={
-              addOptions.length === 0
-                ? t("rehearsals.plan.add.piece_all", "Cały program już w planie")
-                : t("rehearsals.plan.add.piece", "Dodaj utwór z programu…")
-            }
-            ariaLabel={t("rehearsals.plan.add.piece", "Dodaj utwór z programu…")}
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={editor.addFreeRow}
-            disabled={isShut}
-            leftIcon={<Plus size={14} aria-hidden="true" />}
-          >
-            {t("rehearsals.plan.add.free", "Punkt bez utworu")}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.addBreakRow(t("rehearsals.plan.row.break_label", "Przerwa"))}
-            disabled={isShut}
-            leftIcon={<Coffee size={14} aria-hidden="true" />}
-          >
-            {t("rehearsals.plan.add.break", "Dodaj przerwę")}
-          </Button>
-        </div>
-      </div>
+      {textEntry !== null ? (
+        <PlanTextEntry
+          initialText={textEntry}
+          program={textProgram}
+          onInsert={handleTextInsert}
+          onCancel={() => setTextEntry(null)}
+        />
+      ) : (
+        !isShut && (
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 px-5 py-3">
+            {addOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => editor.addPieceRow(option.value)}
+                aria-label={t("rehearsals.plan.add.piece_named", "Dodaj do planu: {{title}}", {
+                  title: option.label,
+                })}
+                className={CHIP_BUTTON}
+              >
+                <Badge
+                  variant="neutral"
+                  casing="natural"
+                  icon={<Plus size={11} aria-hidden="true" />}
+                  className="max-w-64 cursor-pointer hover:border-ethereal-gold/40"
+                >
+                  <span className="truncate">{option.label}</span>
+                </Badge>
+              </button>
+            ))}
+            {addOptions.length === 0 && editor.programOptions.length > 0 && (
+              <Caption color="muted" className="mr-1.5">
+                {t("rehearsals.plan.add.piece_all", "Cały program już w planie")}
+              </Caption>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={editor.addFreeRow}
+              leftIcon={<Plus size={14} aria-hidden="true" />}
+            >
+              {t("rehearsals.plan.add.free", "Punkt")}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.addBreakRow(t("rehearsals.plan.row.break_label", "Przerwa"))}
+              leftIcon={<Coffee size={14} aria-hidden="true" />}
+            >
+              {t("rehearsals.plan.add.break", "Przerwa")}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTextEntry("")}
+              leftIcon={<ListOrdered size={14} aria-hidden="true" />}
+            >
+              {t("rehearsals.plan.add.text", "Wpisz listą")}
+            </Button>
+          </div>
+        )
+      )}
 
       {/* ── Save ────────────────────────────────────────────────────────── */}
+      {/* Saving stays the primary act — it is silent and done a dozen times;
+          sending is the considered one beside it. */}
       {actions === "dock" ? (
         <EditorActionBar
           isOpen={editor.isDirty}
           description={t("rehearsals.plan.save.description", "Zmieniono plan próby.")}
-          onCancel={editor.reset}
+          onCancel={handleCancel}
           onConfirm={handleSave}
-          isLoading={save.isPending}
+          isLoading={isBusy}
+          secondaryAction={
+            canSaveAndSend
+              ? {
+                  label: saveAndSendLabel,
+                  icon: <Send size={14} aria-hidden="true" />,
+                  onClick: handleSaveAndSend,
+                  isLoading: isSavingToSend,
+                }
+              : undefined
+          }
         />
       ) : (
-        editor.isDirty && (
-          <div className="flex items-center justify-end gap-2 border-t border-hairline px-5 py-3">
-            <Button variant="ghost" size="sm" onClick={editor.reset} disabled={save.isPending}>
+        editor.isDirty &&
+        actionsSlot &&
+        createPortal(
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={handleCancel} disabled={isBusy}>
               {t("common.actions.cancel", "Anuluj")}
             </Button>
+            {canSaveAndSend && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSaveAndSend}
+                isLoading={isSavingToSend}
+                disabled={isBusy}
+                leftIcon={!isSavingToSend ? <Send size={14} aria-hidden="true" /> : undefined}
+              >
+                {saveAndSendLabel}
+              </Button>
+            )}
             <Button
               variant="primary"
               size="sm"
               onClick={handleSave}
-              isLoading={save.isPending}
-              disabled={save.isPending}
+              isLoading={save.isPending && !isSavingToSend}
+              disabled={isBusy}
             >
               {t("common.actions.save", "Zapisz")}
             </Button>
-          </div>
+          </div>,
+          actionsSlot,
         )
+      )}
+
+      {onClose && (
+        <ConfirmModal
+          isOpen={isClosePromptOpen}
+          title={t("rehearsals.plan.discard.title", "Zamknąć bez zapisywania?")}
+          description={t(
+            "rehearsals.plan.discard.desc",
+            "Zmiany w planie tej próby nie zostały zapisane i przepadną.",
+          )}
+          confirmText={t("rehearsals.plan.discard.confirm", "Odrzuć zmiany")}
+          cancelText={t("rehearsals.plan.discard.keep", "Wróć do planu")}
+          isDestructive={true}
+          onConfirm={() => {
+            setIsClosePromptOpen(false);
+            onClose();
+          }}
+          onCancel={() => setIsClosePromptOpen(false)}
+        />
       )}
     </section>
   );

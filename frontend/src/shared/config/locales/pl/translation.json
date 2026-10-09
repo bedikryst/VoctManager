@@ -3142,7 +3142,7 @@
         "archive": "Archiwum Nut",
         "artist_dashboard": "Pulpit Artysty",
         "artists": "Baza Artystów",
-        "attendance": "Próby i Obecności",
+        "attendance": "Próby i obecność",
         "finance": "Finanse",
         "crew": "Ekipa Techniczna",
         "locations": "Lokalizacje",
@@ -3154,7 +3154,7 @@
       },
       "mobile_tabs": {
         "alerts": "Alerty",
-        "attendance": "Obecności",
+        "attendance": "Próby",
         "dashboard": "Pulpit",
         "materials": "Materiały",
         "messages": "Czat",
@@ -5365,7 +5365,8 @@
         "date_time": "Data i godzina *",
         "end_time": "Koniec próby",
         "focus": "Temat próby",
-        "focus_placeholder": "np. Requiem cz. 1–3, pierwsze czytanie",
+        "focus_placeholder": "np. Antegenerale, Lark z Radu",
+        "focus_plan_hint": "To wygląda na plan próby. Utwory ułożysz w planie, a tu zostaw jedną linijkę tematu.",
         "length_h": "{{hours}} godz.",
         "length_hm": "{{hours}} godz. {{minutes}} min",
         "length_m": "{{minutes}} min",
@@ -5603,14 +5604,24 @@
   "rehearsals": {
     "plan": {
       "title": "Plan próby",
-      "publish": "Opublikuj plan",
+      "send": "Wyślij plan",
       "send_changes": "Wyślij zmiany",
-      "send_now": "Wyślij plan chórzystom teraz",
-      "send_changes_now": "Wyślij zmiany chórzystom teraz",
+      "save_and_send": "Zapisz i wyślij",
+      "save_and_send_changes": "Zapisz i wyślij zmiany",
       "edit": "Edytuj plan",
+      "compose": "Ułóż plan",
+      "budget": {
+        "of": "{{planned}} / {{length}} min",
+        "label": "Zaplanowano {{planned}} z {{length}} min"
+      },
       "draft": "Szkic — chór go nie widzi",
-      "announced_at": "Opublikowany · wysłano {{when}}",
-      "announced_changed": "Opublikowany · wysłano {{when}} · zmieniony po wysłaniu",
+      "delivery": {
+        "sent": "Opublikowany · wysłano {{when}}",
+        "queued": "Opublikowany {{when}} · powiadomienie czeka na ogłoszenie tej próby",
+        "withheld": "Opublikowany {{when}} · projekt jest szkicem, więc nikt nie dostał powiadomienia",
+        "discarded": "Opublikowany {{when}} · powiadomienie odrzucono w kolejce ogłoszeń"
+      },
+      "changed_since_send": "{{state}} · zmieniony po wysłaniu",
       "loading": "Otwieram plan…",
       "load_error": {
         "title": "Nie udało się otworzyć planu",
@@ -5618,7 +5629,8 @@
       },
       "empty": {
         "title": "Bez planu",
-        "desc": "Ułóż utwory w kolejności ćwiczenia; minuty, godziny i wykluczenia są opcjonalne."
+        "desc": "Ułóż utwory w kolejności ćwiczenia; minuty, godziny i wykluczenia są opcjonalne.",
+        "desc_focus": "W temacie próby jest już lista. Plan można ułożyć prosto z niej; przed dodaniem widać, co zostało rozpoznane."
       },
       "fill": {
         "menu": "Wypełnij",
@@ -5632,10 +5644,25 @@
         "rows_other": "{{count}} punktów"
       },
       "add": {
-        "piece": "Dodaj utwór z programu…",
+        "piece_named": "Dodaj do planu: {{title}}",
         "piece_all": "Cały program już w planie",
-        "free": "Punkt bez utworu",
-        "break": "Dodaj przerwę"
+        "free": "Punkt",
+        "break": "Przerwa",
+        "text": "Wpisz listą"
+      },
+      "text": {
+        "title": "Wpisz plan listą",
+        "hint": "Jeden punkt w wierszu. Godzina (18:30) i minuty (10') są opcjonalne; notatkę dopisz w nawiasie albo po myślniku.",
+        "placeholder": "1. Rozśpiewanie 15'\n2. 18:30 Requiem, Kyrie (od t. 40)\n3. Ave verum – pierwsze czytanie\n4. Przerwa 10'",
+        "preview": "Tak to trafi do planu",
+        "skipped": "pominięty: brak nazwy",
+        "matched": "z programu",
+        "free": "nowy punkt",
+        "insert_one": "Dodaj {{count}} punkt",
+        "insert_few": "Dodaj {{count}} punkty",
+        "insert_many": "Dodaj {{count}} punktów",
+        "insert_other": "Dodaj {{count}} punktów",
+        "from_focus": "Ułóż plan z tematu próby"
       },
       "reserve": {
         "title": "Jeśli starczy czasu",
@@ -5650,8 +5677,6 @@
         "save_error": "Nie udało się zapisać planu.",
         "published": "Plan opublikowany i wysłany do wezwanych.",
         "changes_sent": "Zmiany wysłane do wezwanych.",
-        "queued": "Plan opublikowany. Powiadomienie czeka w kolejce ogłoszeń.",
-        "changes_queued": "Zmiany czekają w kolejce ogłoszeń.",
         "queued_with_rehearsal": "Plan opublikowany. Powiadomienie wyjdzie razem z ogłoszeniem tej próby.",
         "changes_queued_with_rehearsal": "Zmiany wyjdą razem z ogłoszeniem tej próby.",
         "withheld": "Projekt jest jeszcze szkicem, więc nikt nie dostał powiadomienia. Chór zobaczy plan razem z projektem.",
@@ -5671,11 +5696,25 @@
         "note_placeholder": "Notatka: od t. 40, pierwsze czytanie…",
         "calls": "woła {{called}} z {{total}}",
         "break_label": "Przerwa",
-        "break_hint": "Przerwa — nikogo nie woła",
         "anchor": "Ustal godzinę {{clock}}",
+        "clear_time": "Usuń stałą godzinę {{clock}}",
         "add_time": "+ godz.",
         "minutes": "Minuty",
-        "minutes_unit": "min"
+        "minutes_unit": "min",
+        "minutes_implied": "{{minutes}} min wynika z godzin",
+        "menu": "Więcej: {{title}}",
+        "to_reserve": "Do rezerwy",
+        "from_reserve": "Z powrotem do planu",
+        "move_up": "Wyżej",
+        "move_down": "Niżej"
+      },
+      "dnd": {
+        "instructions": "Aby podnieść punkt, naciśnij spację albo Enter. Strzałki w górę i w dół przesuwają go po liście. Spacja albo Enter odkłada go w nowym miejscu, Escape anuluje.",
+        "picked": "Podniesiono: {{title}}. Pozycja {{position}} z {{total}}.",
+        "over": "{{title}}: pozycja {{position}} z {{total}}.",
+        "dropped": "Odłożono: {{title}}, pozycja {{position}} z {{total}}.",
+        "cancelled": "Anulowano przenoszenie: {{title}} wraca na miejsce.",
+        "divider": "granica „Jeśli starczy czasu”"
       },
       "end_line": "Koniec próby · {{clock}}",
       "exclude": {
@@ -5695,7 +5734,6 @@
         },
         "without_instrumentalists": "bez instrumentalistów",
         "people": "{{count}} os.",
-        "everyone": "Wszyscy",
         "edit": "Zmień",
         "prompt": "Kogo ten punkt nie potrzebuje",
         "toggle_family": "Wyklucz sekcję: {{label}}",
@@ -5706,8 +5744,7 @@
         "not_you": "bez Twojego głosu"
       },
       "debrief": {
-        "prompt": "Odznacz, czego nie zrobiliście",
-        "done_label": "Przerobione"
+        "prompt": "Odznacz, czego nie zrobiliście"
       },
       "block": {
         "span": "{{start}}–{{end}}",
@@ -5777,9 +5814,8 @@
       "optional": "Opcjonalna",
       "project_context": "Kontekst Projektu",
       "sectional_only": "Tylko: {{sections}}",
-      "subtitle": "Moduł Inspektora",
-      "title": "Dziennik",
-      "title_highlight": "Obecności"
+      "title": "Próby",
+      "title_highlight": "i obecność"
     },
     "empty": {
       "pick_project_desc": "Wybierz projekt z listy po lewej, aby zobaczyć jego próby.",
@@ -5804,7 +5840,10 @@
       "only_unmarked": "Tylko nieoznaczeni",
       "open_cast": "Otwórz obsadę",
       "pitch_pipe": "Kamerton",
-      "recorded": "Oznaczono"
+      "recorded": "Oznaczono",
+      "panes": "Plan albo obecność",
+      "pane_plan": "Plan",
+      "pane_attendance": "Obecność"
     },
     "lead": {
       "back": "Harmonogram",
@@ -5813,7 +5852,7 @@
       "title_highlight": "próbę.",
       "covering_title": "Prowadzi",
       "focus_label": "Temat próby",
-      "focus_placeholder": "Nad czym pracujecie",
+      "focus_placeholder": "np. Antegenerale, Lark z Radu",
       "focus_empty": "Dodaj temat próby",
       "debrief": {
         "title": "Po próbie",
@@ -5852,11 +5891,21 @@
     },
     "rail": {
       "live": "Teraz",
+      "plan": {
+        "changed": "zmieniony",
+        "draft": "szkic",
+        "none": "bez planu",
+        "sent": "wysłany"
+      },
       "no_rehearsals_desc": "Ten projekt nie ma jeszcze zaplanowanych prób. Dodasz je w karcie projektu → Harmonogram.",
       "no_rehearsals_title": "Brak prób",
       "project_label": "Projekt",
       "schedule_cta": "Zaplanuj próbę",
-      "title": "Próby"
+      "title": "Próby",
+      "ring": {
+        "replies": "odpowiedzi",
+        "attendance": "obecność"
+      }
     },
     "reliability": {
       "by_section": "Frekwencja sekcji",
@@ -5918,7 +5967,7 @@
     "views": {
       "label": "Widok",
       "reliability": "Frekwencja",
-      "roll_call": "Lista obecności"
+      "roll_call": "Próba"
     },
     "voices": {
       "altos": "Alty",
@@ -5955,6 +6004,12 @@
       "success_many": "Zapisano dla {{count}} prób.",
       "success_other": "Zapisano dla {{count}} prób.",
       "error": "Nie udało się zapisać nieobecności w tym zakresie."
+    },
+    "picker": {
+      "previous": "Poprzednia próba",
+      "next": "Następna próba",
+      "all": "Wszystkie próby ({{total}})",
+      "collapse": "Zwiń listę"
     }
   },
   "repertoire": {
@@ -6125,7 +6180,6 @@
       },
       "badge": "Próba",
       "details": {
-        "focus_title": "Plan Pracy",
         "materials_button": "Materiały",
         "materials_desc": "Pobierz nuty PDF i przećwicz swoje partie z odtwarzaczem.",
         "materials_first_piece": "Zaczynacie od: {{title}}",

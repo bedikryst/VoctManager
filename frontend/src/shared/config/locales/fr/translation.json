@@ -3123,7 +3123,7 @@
         "archive": "Archives Musicales",
         "artist_dashboard": "Tableau de bord Artiste",
         "artists": "Base des Artistes",
-        "attendance": "Répétitions et Présences",
+        "attendance": "Répétitions et présence",
         "finance": "Finances",
         "crew": "Équipe Technique",
         "locations": "Lieux",
@@ -3135,7 +3135,7 @@
       },
       "mobile_tabs": {
         "alerts": "Alertes",
-        "attendance": "Présences",
+        "attendance": "Répétitions",
         "dashboard": "Accueil",
         "materials": "Matériel",
         "messages": "Chat",
@@ -5295,7 +5295,8 @@
         "date_time": "Date et heure *",
         "end_time": "Fin de la répétition",
         "focus": "Thème de la répétition",
-        "focus_placeholder": "ex. Requiem, mvts 1–3",
+        "focus_placeholder": "ex. Pré-générale, Lark avec Radu",
+        "focus_plan_hint": "Cela ressemble à un plan de répétition. Disposez les pièces dans le plan et gardez ici une seule ligne de thème.",
         "length_h": "{{hours}} h",
         "length_hm": "{{hours}} h {{minutes}} min",
         "length_m": "{{minutes}} min",
@@ -5524,14 +5525,24 @@
   "rehearsals": {
     "plan": {
       "title": "Plan de répétition",
-      "publish": "Publier le plan",
+      "send": "Envoyer le plan",
       "send_changes": "Envoyer les modifications",
-      "send_now": "Envoyer le plan aux choristes maintenant",
-      "send_changes_now": "Envoyer les modifications aux choristes maintenant",
+      "save_and_send": "Enregistrer et envoyer",
+      "save_and_send_changes": "Enregistrer et envoyer les modifications",
       "edit": "Modifier le plan",
+      "compose": "Établir le plan",
+      "budget": {
+        "of": "{{planned}} / {{length}} min",
+        "label": "{{planned}} min prévues sur {{length}}"
+      },
       "draft": "Brouillon — le chœur ne le voit pas",
-      "announced_at": "Publié · envoyé {{when}}",
-      "announced_changed": "Publié · envoyé {{when}} · modifié depuis",
+      "delivery": {
+        "sent": "Publié · envoyé {{when}}",
+        "queued": "Publié {{when}} · la notification attend l'annonce de cette répétition",
+        "withheld": "Publié {{when}} · le projet est un brouillon, personne n'a donc été notifié",
+        "discarded": "Publié {{when}} · la notification a été écartée de la file d'annonces"
+      },
+      "changed_since_send": "{{state}} · modifié depuis",
       "loading": "Ouverture du plan…",
       "load_error": {
         "title": "Impossible d'ouvrir le plan",
@@ -5539,7 +5550,8 @@
       },
       "empty": {
         "title": "Pas encore de plan",
-        "desc": "Disposez les œuvres dans l'ordre de travail ; les minutes, les heures et les exclusions sont facultatives."
+        "desc": "Disposez les œuvres dans l'ordre de travail ; les minutes, les heures et les exclusions sont facultatives.",
+        "desc_focus": "Le thème de la répétition contient déjà une liste. Le plan peut en être tiré directement ; ce qui a été reconnu s'affiche avant l'ajout."
       },
       "fill": {
         "menu": "Remplir",
@@ -5552,10 +5564,24 @@
         "rows_other": "{{count}} points"
       },
       "add": {
-        "piece": "Ajouter une œuvre du programme…",
+        "piece_named": "Ajouter au plan : {{title}}",
         "piece_all": "Tout le programme est déjà dans le plan",
-        "free": "Point sans œuvre",
-        "break": "Ajouter une pause"
+        "free": "Point",
+        "break": "Pause",
+        "text": "Saisir en liste"
+      },
+      "text": {
+        "title": "Saisir le plan en liste",
+        "hint": "Un point par ligne. L'heure (18:30) et les minutes (10') sont facultatives ; ajoutez une note entre parenthèses ou après un tiret.",
+        "placeholder": "1. Échauffement 15'\n2. 18:30 Requiem, Kyrie (à partir de la m. 40)\n3. Ave verum – première lecture\n4. Pause 10'",
+        "preview": "Voici ce qui entrera dans le plan",
+        "skipped": "ignoré : pas de nom",
+        "matched": "du programme",
+        "free": "nouveau point",
+        "insert_one": "Ajouter {{count}} point",
+        "insert_many": "Ajouter {{count}} points",
+        "insert_other": "Ajouter {{count}} points",
+        "from_focus": "Tirer le plan du thème"
       },
       "reserve": {
         "title": "Si le temps le permet",
@@ -5570,8 +5596,6 @@
         "save_error": "Impossible d'enregistrer le plan.",
         "published": "Plan publié et envoyé aux personnes convoquées.",
         "changes_sent": "Modifications envoyées aux personnes convoquées.",
-        "queued": "Plan publié. La notification attend dans la file d'annonces.",
-        "changes_queued": "Les modifications attendent dans la file d'annonces.",
         "queued_with_rehearsal": "Plan publié. La notification partira avec l'annonce de cette répétition.",
         "changes_queued_with_rehearsal": "Les modifications partiront avec l'annonce de cette répétition.",
         "withheld": "Le projet est encore un brouillon, personne n'a donc été prévenu. Le chœur verra le plan avec le projet.",
@@ -5591,11 +5615,25 @@
         "note_placeholder": "Note : à partir de la mesure 40, première lecture…",
         "calls": "convoque {{called}} sur {{total}}",
         "break_label": "Pause",
-        "break_hint": "Pause — ne convoque personne",
         "anchor": "Fixer l'heure à {{clock}}",
+        "clear_time": "Retirer l'heure fixée {{clock}}",
         "add_time": "+ heure",
         "minutes": "Minutes",
-        "minutes_unit": "min"
+        "minutes_unit": "min",
+        "minutes_implied": "{{minutes}} min, d'après les heures",
+        "menu": "Plus : {{title}}",
+        "to_reserve": "Mettre en réserve",
+        "from_reserve": "Remettre dans le plan",
+        "move_up": "Monter",
+        "move_down": "Descendre"
+      },
+      "dnd": {
+        "instructions": "Pour saisir un point, appuyez sur Espace ou Entrée. Les flèches haut et bas le déplacent dans la liste. Espace ou Entrée le dépose à sa nouvelle place, Échap annule.",
+        "picked": "Point saisi : {{title}}. Position {{position}} sur {{total}}.",
+        "over": "{{title}} : position {{position}} sur {{total}}.",
+        "dropped": "Point déposé : {{title}}, position {{position}} sur {{total}}.",
+        "cancelled": "Déplacement annulé : {{title}} reprend sa place.",
+        "divider": "la limite « Si le temps le permet »"
       },
       "end_line": "Fin de la répétition · {{clock}}",
       "exclude": {
@@ -5615,7 +5653,6 @@
         },
         "without_instrumentalists": "sans instrumentistes",
         "people": "{{count}} pers.",
-        "everyone": "Tout le monde",
         "edit": "Modifier",
         "prompt": "De qui ce point n'a pas besoin",
         "toggle_family": "Exclure le pupitre : {{label}}",
@@ -5626,8 +5663,7 @@
         "not_you": "sans votre voix"
       },
       "debrief": {
-        "prompt": "Décochez ce que vous n'avez pas fait",
-        "done_label": "Travaillé"
+        "prompt": "Décochez ce que vous n'avez pas fait"
       },
       "block": {
         "span": "{{start}}–{{end}}",
@@ -5697,9 +5733,8 @@
       "optional": "Facultative",
       "project_context": "Contexte du projet",
       "sectional_only": "Uniquement : {{sections}}",
-      "subtitle": "Module inspecteur",
-      "title": "Journal des",
-      "title_highlight": "présences"
+      "title": "Répétitions",
+      "title_highlight": "et présence"
     },
     "empty": {
       "pick_project_desc": "Choisissez un projet dans la liste à gauche pour voir ses répétitions.",
@@ -5724,7 +5759,10 @@
       "only_unmarked": "Non marqués uniquement",
       "open_cast": "Ouvrir la distribution",
       "pitch_pipe": "Diapason",
-      "recorded": "Marqués"
+      "recorded": "Marqués",
+      "panes": "Plan ou présence",
+      "pane_plan": "Plan",
+      "pane_attendance": "Présence"
     },
     "lead": {
       "back": "Agenda",
@@ -5733,7 +5771,7 @@
       "title_highlight": "cette répétition.",
       "covering_title": "Dirigée par",
       "focus_label": "Thème de la répétition",
-      "focus_placeholder": "Sur quoi vous travaillez",
+      "focus_placeholder": "ex. Pré-générale, Lark avec Radu",
       "focus_empty": "Ajouter un thème",
       "debrief": {
         "title": "Après la répétition",
@@ -5772,11 +5810,21 @@
     },
     "rail": {
       "live": "Maintenant",
+      "plan": {
+        "changed": "modifié",
+        "draft": "brouillon",
+        "none": "sans plan",
+        "sent": "envoyé"
+      },
       "no_rehearsals_desc": "Ce projet n'a pas encore de répétitions programmées. Ajoutez-les dans la fiche du projet → Calendrier.",
       "no_rehearsals_title": "Aucune répétition",
       "project_label": "Projet",
       "schedule_cta": "Planifier une répétition",
-      "title": "Répétitions"
+      "title": "Répétitions",
+      "ring": {
+        "replies": "réponses",
+        "attendance": "présence"
+      }
     },
     "reliability": {
       "by_section": "Présence par pupitre",
@@ -5837,8 +5885,8 @@
     },
     "views": {
       "label": "Affichage",
-      "reliability": "Présence",
-      "roll_call": "Appel"
+      "reliability": "Assiduité",
+      "roll_call": "Répétition"
     },
     "voices": {
       "altos": "Altos",
@@ -5871,6 +5919,12 @@
       "success_one": "Enregistré pour une répétition.",
       "success_other": "Enregistré pour {{count}} répétitions.",
       "error": "L'absence sur cette période n'a pas pu être enregistrée."
+    },
+    "picker": {
+      "previous": "Répétition précédente",
+      "next": "Répétition suivante",
+      "all": "Toutes les répétitions ({{total}})",
+      "collapse": "Replier la liste"
     }
   },
   "repertoire": {
@@ -6041,7 +6095,6 @@
       },
       "badge": "Répétition",
       "details": {
-        "focus_title": "Plan de travail",
         "materials_button": "Supports",
         "materials_desc": "Téléchargez les partitions PDF et travaillez vos parties avec le lecteur.",
         "materials_first_piece": "Vous commencez par : {{title}}",

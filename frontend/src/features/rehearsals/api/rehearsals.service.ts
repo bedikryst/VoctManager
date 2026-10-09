@@ -58,6 +58,12 @@ export const RehearsalsService = {
     return response.data;
   },
 
+  /** The evening's topic line, through the manager's own rehearsal endpoint. */
+  updateFocus: async (rehearsalId: string, focus: string): Promise<Rehearsal> => {
+    const response = await api.patch<Rehearsal>(`/api/rehearsals/${rehearsalId}/`, { focus });
+    return response.data;
+  },
+
   getParticipations: async (): Promise<Participation[]> => {
     const response = await api.get("/api/participations/");
     return response.data.results ?? response.data ?? [];

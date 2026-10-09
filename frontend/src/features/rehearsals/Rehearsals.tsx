@@ -1,10 +1,13 @@
 /**
  * @file Rehearsals.tsx
- * @description Centrum Obecności — the conductor's rehearsal command centre.
- * Composes the cross-project pulse, a context navigator (project + rehearsals),
- * and a switchable workspace: "Lista obecności" for taking/reading attendance and
- * "Frekwencja" for reliability analytics. Scheduling/CRUD lives in the project
- * hub; this surface is purely operational + analytical.
+ * @description "Próby i obecność" — one name across the nav, the title and
+ * the page, whose eyebrow names the project in view instead of a third name.
+ * The conductor's rehearsal command centre: the cross-project pulse, a context
+ * navigator (project + rehearsals; a compact evening picker on a phone), and a
+ * switchable workspace — "Próba", the evening's card with its own
+ * "Plan · Obecność" switch, and "Frekwencja" for reliability analytics.
+ * Scheduling/CRUD lives in the project hub; this surface is purely
+ * operational + analytical.
  * @architecture Enterprise SaaS 2026
  */
 
@@ -12,7 +15,7 @@ import React, { useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
-  ListChecks,
+  CalendarClock,
   MousePointerClick,
   TrendingUp,
   WifiOff,
@@ -21,6 +24,7 @@ import {
 import { useLocationResolver } from "@/features/logistics/hooks/useLocationResolver";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
 import {
   SegmentedTabs,
@@ -33,6 +37,7 @@ import {
 } from "@/shared/ui/kinematics/StaggeredBentoGrid";
 
 import { useMarkPlanItem } from "./api/plan.queries";
+import { useUpdateRehearsalFocus } from "./api/rehearsals.queries";
 import { useRehearsalsData, type RehearsalView } from "./hooks/useRehearsalsData";
 import { useRehearsalAnalytics } from "./hooks/useRehearsalAnalytics";
 import { RehearsalPulseBar } from "./components/RehearsalPulseBar";
@@ -61,8 +66,12 @@ export default function Rehearsals(): React.JSX.Element {
     projectRehearsals,
     rehearsalTallies,
     activeRehearsalId,
-    setActiveRehearsalId,
+    openRehearsal,
     activeRehearsal,
+    setIsPlanDirty,
+    isLeavePromptOpen,
+    discardPlanAndMove,
+    keepPlan,
     invitedParticipations,
     voiceGroups,
     projectParticipations,
@@ -83,11 +92,10 @@ export default function Rehearsals(): React.JSX.Element {
   const markPlan = (itemId: string, done: boolean): Promise<unknown> =>
     markPlanItem.mutateAsync({ itemId, done });
 
-  // Selecting a rehearsal anywhere (rail row, trend bar) lands in roll-call.
-  const openRehearsal = (rehearsalId: string): void => {
-    setActiveRehearsalId(rehearsalId);
-    setView("ROLL_CALL");
-  };
+  // The topic line is a headline, written where it is read; the form keeps
+  // it too, for the evening's other facts.
+  const updateFocus = useUpdateRehearsalFocus(activeRehearsalId ?? "");
+  const saveFocus = (focus: string): Promise<unknown> => updateFocus.mutateAsync(focus);
 
   const analytics = useRehearsalAnalytics(
     projectRehearsals,
@@ -131,10 +139,12 @@ export default function Rehearsals(): React.JSX.Element {
   }
 
   const VIEWS: SegmentedTabItem<RehearsalView>[] = [
+    // The evening's card holds the plan as well as the roll call, so the view
+    // is named for the evening.
     {
       id: "ROLL_CALL",
-      label: t("rehearsals.views.roll_call", "Lista obecności"),
-      Icon: ListChecks,
+      label: t("rehearsals.views.roll_call", "Próba"),
+      Icon: CalendarClock,
     },
     {
       id: "RELIABILITY",
@@ -159,9 +169,9 @@ export default function Rehearsals(): React.JSX.Element {
           <StaggeredBentoItem>
             <PageHeader
               size="standard"
-              roleText={t("rehearsals.dashboard.subtitle", "Moduł Dyrygenta")}
-              title={t("rehearsals.dashboard.title", "Dziennik")}
-              titleHighlight={t("rehearsals.dashboard.title_highlight", "Obecności")}
+              roleText={selectedProject?.title}
+              title={t("rehearsals.dashboard.title", "Próby")}
+              titleHighlight={t("rehearsals.dashboard.title_highlight", "i obecność")}
               rightContent={viewSwitch}
             />
           </StaggeredBentoItem>
@@ -199,7 +209,11 @@ export default function Rehearsals(): React.JSX.Element {
                     onOpenRehearsal={openRehearsal}
                   />
                 ) : activeRehearsal ? (
+                  // Keyed by the evening: nothing the card holds — a plan
+                  // draft, the open pitch pipe, the pane — carries over to the
+                  // next one, and the next one picks its pane by its moment.
                   <RehearsalInspector
+                    key={String(activeRehearsal.id)}
                     rehearsal={activeRehearsal}
                     voiceGroups={voiceGroups}
                     invitedCount={invitedParticipations.length}
@@ -212,8 +226,10 @@ export default function Rehearsals(): React.JSX.Element {
                     onToggleOnlyUnmarked={() => setShowOnlyUnmarked(!showOnlyUnmarked)}
                     isMarkingAll={isMarkingAll}
                     onMarkAllPresent={handleMarkAllPresent}
+                    onSaveFocus={saveFocus}
                     canEditPlan
                     onMarkPlanItem={markPlan}
+                    onPlanDirtyChange={setIsPlanDirty}
                   />
                 ) : (
                   <StatePanel
@@ -241,6 +257,20 @@ export default function Rehearsals(): React.JSX.Element {
           </StaggeredBentoItem>
         </StaggeredBentoContainer>
       </div>
+
+      <ConfirmModal
+        isOpen={isLeavePromptOpen}
+        title={t("rehearsals.plan.discard.title", "Zamknąć bez zapisywania?")}
+        description={t(
+          "rehearsals.plan.discard.desc",
+          "Zmiany w planie tej próby nie zostały zapisane i przepadną.",
+        )}
+        confirmText={t("rehearsals.plan.discard.confirm", "Odrzuć zmiany")}
+        cancelText={t("rehearsals.plan.discard.keep", "Wróć do planu")}
+        isDestructive={true}
+        onConfirm={discardPlanAndMove}
+        onCancel={keepPlan}
+      />
     </PageTransition>
   );
 }

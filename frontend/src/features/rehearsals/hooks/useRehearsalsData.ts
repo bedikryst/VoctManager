@@ -4,15 +4,18 @@
  * navigation state, per-rehearsal tallies and the cross-project "pulse" that
  * surfaces the next/live rehearsal and the conductor's outstanding roll-calls.
  * All maths is delegated to ../lib/attendanceStats so every surface agrees.
+ * Every way of changing the evening on screen goes through one guard that
+ * holds the move while the plan editor has an unsaved draft.
  * @architecture Enterprise SaaS 2026
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useBlocker, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 import { useNow } from "@/shared/lib/dom/useNow";
+import { useUnsavedChangesWarning } from "@/shared/lib/dom/useUnsavedChangesWarning";
 import type {
   Artist,
   Attendance,
@@ -92,6 +95,70 @@ export const useRehearsalsData = () => {
   );
   const [isRollCall, setIsRollCall] = useState(false);
   const [showOnlyUnmarked, setShowOnlyUnmarked] = useState(false);
+
+  /* ── An unsaved plan never travels to another evening ────────────────
+     The plan editor reports its draft through `setIsPlanDirty`. While it
+     holds one, every move that would put another evening — or none — under
+     the card waits behind one question: a rail tap, the project select,
+     Aktywne/Archiwum, the view switch, a `?rehearsal=` link, and leaving the
+     route (soft through the router's blocker, hard through the native
+     prompt). Discarding carries the move out; the editor is keyed by the
+     evening, so the next one opens on its own plan. */
+  const [isPlanDirty, setIsPlanDirty] = useState(false);
+  const [pendingMove, setPendingMove] = useState<(() => void) | null>(null);
+  const guard = useCallback(
+    (move: () => void) => {
+      if (isPlanDirty) setPendingMove(() => move);
+      else move();
+    },
+    [isPlanDirty],
+  );
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isPlanDirty && currentLocation.pathname !== nextLocation.pathname,
+  );
+  useUnsavedChangesWarning(isPlanDirty);
+
+  const discardPlanAndMove = (): void => {
+    setIsPlanDirty(false);
+    setPendingMove(null);
+    if (blocker.state === "blocked") blocker.proceed();
+    else pendingMove?.();
+  };
+  const keepPlan = (): void => {
+    setPendingMove(null);
+    if (blocker.state === "blocked") blocker.reset();
+  };
+
+  const selectView = useCallback(
+    (next: RehearsalView) => {
+      if (next !== view) guard(() => setView(next));
+    },
+    [guard, view],
+  );
+  const selectProjectTab = useCallback(
+    (next: ProjectTabType) => {
+      if (next !== projectTab) guard(() => setProjectTab(next));
+    },
+    [guard, projectTab],
+  );
+  const selectProject = useCallback(
+    (projectId: string) => {
+      if (projectId !== selectedProjectId) guard(() => setSelectedProjectId(projectId));
+    },
+    [guard, selectedProjectId],
+  );
+  /** A rehearsal picked anywhere (rail row, trend bar) lands in roll-call. */
+  const openRehearsal = useCallback(
+    (rehearsalId: string) => {
+      if (rehearsalId === activeRehearsalId && view === "ROLL_CALL") return;
+      guard(() => {
+        setActiveRehearsalId(rehearsalId);
+        setView("ROLL_CALL");
+      });
+    },
+    [guard, activeRehearsalId, view],
+  );
 
   const {
     projects = [],
@@ -348,13 +415,15 @@ export const useRehearsalsData = () => {
         project && (project.status === "DONE" || project.status === "CANC")
           ? "ARCHIVE"
           : "ACTIVE";
-      setProjectTab(tab);
-      setSelectedProjectId(String(projectId));
-      setActiveRehearsalId(String(rehearsalId));
-      setView("ROLL_CALL");
-      setShowOnlyUnmarked(false);
+      guard(() => {
+        setProjectTab(tab);
+        setSelectedProjectId(String(projectId));
+        setActiveRehearsalId(String(rehearsalId));
+        setView("ROLL_CALL");
+        setShowOnlyUnmarked(false);
+      });
     },
-    [projectMap],
+    [projectMap, guard],
   );
 
   /* ── Deep link: `?rehearsal=<id>` opens that evening ──────────────────
@@ -435,24 +504,29 @@ export const useRehearsalsData = () => {
     nowMs,
     // view
     view,
-    setView,
+    setView: selectView,
     isRollCall,
     setIsRollCall,
     showOnlyUnmarked,
     setShowOnlyUnmarked,
     // project context
     projectTab,
-    setProjectTab,
+    setProjectTab: selectProjectTab,
     displayProjects,
     selectedProjectId,
-    setSelectedProjectId,
+    setSelectedProjectId: selectProject,
     selectedProject,
     // rehearsal context
     projectRehearsals,
     rehearsalTallies,
     activeRehearsalId,
-    setActiveRehearsalId,
+    openRehearsal,
     activeRehearsal,
+    // the unsaved plan's guard
+    setIsPlanDirty,
+    isLeavePromptOpen: pendingMove !== null || blocker.state === "blocked",
+    discardPlanAndMove,
+    keepPlan,
     // roster
     invitedParticipations,
     voiceGroups,

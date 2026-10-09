@@ -1,23 +1,31 @@
 /**
  * @file RehearsalInspector.tsx
- * @description The protagonist surface: everything whoever is in front of the
- * choir needs to take and read attendance for one rehearsal. A
- * composition-aware progress header, a roll-call toolbar (density ·
- * only-unmarked filter · fill gaps · pitch pipe) and a voice-grouped roster
- * that swaps between a scanning list and large tap targets.
+ * @description The protagonist surface: one evening, for whoever stands in
+ * front of the choir. Under the header (date, topic line, time, room, who
+ * leads) a "Plan · Obecność" switch splits the card into its two jobs, which
+ * happen at two different times: the plan while the evening is prepared, the
+ * roll call from the hour the register opens — which is also the pane the
+ * card opens on.
+ *
+ * Plan: whoever may plan the evening (`canEditPlan`) reads it with "Edytuj
+ * plan" one tap away, and the editor opens by itself only on an empty plan
+ * for an evening still ahead; a stand-in who may not reads it at stand size.
+ * Once the evening has started the plan carries its ticks — the debrief's
+ * first step, through `onMarkPlanItem` — so a past evening shows its plan
+ * once. The pitch pipe lives here, with the music.
+ *
+ * Obecność: the composition-aware progress summary, the roll-call toolbar
+ * (density · only-unmarked filter · fill gaps) and a voice-grouped roster
+ * that swaps between a scanning list and large tap targets. The roster flows
+ * with the page; its voice headers stick to the window.
  *
  * Two callers: the manager's workspace, and a stand-in's `LeadSheet` route.
- * They get the SAME roll call — `allowManagerActions` withholds only the two
- * things a delegation does not carry (see the prop). Between the header and
- * the roll call sits the evening's plan: the manager's editor for whoever may
- * plan the evening (`canEditPlan`) or, for a stand-in who may not, the plan as
- * read at stand size — which the lead sheet (`planAtStand`) gives a planner
- * too once the evening is under way. `onSaveFocus` and
- * `onSaveDebrief` are what a leader gets that the manager's copy does not
- * need here: the topic line is edited where it is read, because the leader
- * has no rehearsal form, and the debrief is written under the register it
- * reports on. The manager reads the same debrief block at the foot of the
- * card; both tick the plan's rows there through `onMarkPlanItem`.
+ * They get the SAME card — `allowManagerActions` withholds only the two
+ * things a delegation does not carry (see the prop). `onSaveFocus` makes the
+ * topic line — one line, a headline; the order of pieces lives in the plan —
+ * editable where it is read, for the manager and the leader alike.
+ * `onSaveDebrief` is the leader's: the debrief is written at the foot of the
+ * card, under both panes, and the manager reads the same block there.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/RehearsalInspector
  */
@@ -32,8 +40,8 @@ import {
   Filter,
   LayoutGrid,
   List,
+  ListChecks,
   ListMusic,
-  PenLine,
   Radio,
   UserCheck,
   UserPlus,
@@ -74,6 +82,7 @@ import { ArtistRow } from "./ArtistRow";
 import { AbsenceSpanSheet } from "./AbsenceSpanSheet";
 import { RehearsalDebrief } from "./RehearsalDebrief";
 import { RehearsalPlanEditor } from "./plan/RehearsalPlanEditor";
+import { RehearsalPlanReadView } from "./plan/RehearsalPlanReadView";
 import { RehearsalPlanTimeline } from "./plan/RehearsalPlanTimeline";
 
 interface RehearsalInspectorProps {
@@ -103,11 +112,10 @@ interface RehearsalInspectorProps {
    */
   allowManagerActions?: boolean;
   /**
-   * Saves a new work plan for the evening. Present → the plan under the date
-   * becomes editable in place (empty included, so a plan can be added where
-   * there was none). Absent → the plan is the static line the manager reads;
-   * the manager's own edit lives in the rehearsal form, and a second pencil
-   * here would be a second, disagreeing way to say the same thing.
+   * Saves the evening's topic line. Present → the line under the date is
+   * editable in place, empty included, so a topic can be added where there
+   * was none. Absent → it is read only. A topic that already holds several
+   * lines is read only either way (see the header).
    */
   onSaveFocus?: (focus: string) => Promise<unknown>;
   /**
@@ -119,32 +127,38 @@ interface RehearsalInspectorProps {
   onSaveDebrief?: (debrief: string) => Promise<unknown>;
   /**
    * Whether the reader may lay the evening's plan out — a manager, or whoever
-   * the lead sheet's `may_plan` admits. True mounts the plan editor as a band
-   * under the header, empty plan included (that empty state is where a
-   * planner starts); a reader without `allowManagerActions` gets it as a
-   * planner — the project read through the evening, a send that goes out at
-   * once. False mounts the plan as it is read, at stand size, which is what a
-   * stand-in at the music stand needs (nobody drags rows there). Nothing when
-   * false and the plan is empty.
+   * the lead sheet's `may_plan` admits. True mounts the plan's read view with
+   * its publication and "Edytuj plan" as a band under the header, empty plan
+   * included; the editor takes the band's place on that tap, and opens by
+   * itself only for an empty plan on an evening still ahead — that empty
+   * state is where a planner starts. A reader without `allowManagerActions`
+   * edits as a planner — the project read through the evening rather than
+   * the hub's lists. False mounts the plan as it is read, at stand size,
+   * which is what a stand-in at the music stand needs (nobody drags rows
+   * there). Nothing when false and the plan is empty.
    */
   canEditPlan?: boolean;
   /**
-   * For a card used at the music stand (the lead sheet): once the evening
-   * has started, a reader who may plan gets the plan as read at stand size
-   * too, the editor one tap away ("Edytuj plan") for a correction afterwards.
-   * Before the downbeat, or with no plan yet, the editor opens at once — that
-   * is when an evening is laid out. Absent → the editor always.
+   * For a card used at the music stand (the lead sheet): a reader who may
+   * plan reads the plan at stand size too. Absent → the panel's size.
    */
   planAtStand?: boolean;
   /**
    * Ticks one plan row off after the fact — the debrief's first step, same
-   * gate as the debrief itself. Absent → the ticks are read, not written.
+   * gate as the debrief itself, taken on the plan once the evening has
+   * started. Absent → the ticks are read, not written.
    */
   onMarkPlanItem?: (itemId: string, done: boolean) => Promise<unknown>;
+  /**
+   * Whether the plan editor holds an unsaved draft, for a host that can put
+   * another evening under the card — it asks before it does.
+   */
+  onPlanDirtyChange?: (isDirty: boolean) => void;
 }
 
 const SEGMENTS = ["PRESENT", "LATE", "EXCUSED", "ABSENT"] as const;
 type DensityId = "LIST" | "ROLL_CALL";
+type PaneId = "PLAN" | "ATTENDANCE";
 
 /**
  * The label comes from the shared meta, not from the call site: this strip was
@@ -200,17 +214,38 @@ export const RehearsalInspector = ({
   canEditPlan = false,
   planAtStand = false,
   onMarkPlanItem,
+  onPlanDirtyChange,
 }: RehearsalInspectorProps): React.JSX.Element => {
   const { t } = useTranslation();
   const [isPitchPipeOpen, setIsPitchPipeOpen] = useState(false);
+  // The moment picks the pane: the plan until the register opens, the roll
+  // call from then on. Decided once, at mount — the register opening under a
+  // reader must not move the card away from what they are reading — and the
+  // hosts key the card by the evening, so each evening decides afresh.
+  const [pane, setPane] = useState<PaneId>(() =>
+    isRegisterOpen(rehearsal.date_time) ? "ATTENDANCE" : "PLAN",
+  );
+  const selectPane = useCallback((next: PaneId) => {
+    setPane(next);
+    // The pitch pipe belongs to the plan's pane. Leaving the pane closes it,
+    // so no tone keeps sounding behind a panel nobody can see.
+    if (next !== "PLAN") setIsPitchPipeOpen(false);
+  }, []);
   // Decided once, when the card mounts: the downbeat passing under an open
-  // editor must not unmount it and take an unsaved draft with it.
+  // editor must not unmount it and take an unsaved draft with it. Afterwards
+  // only the band itself moves it — "Edytuj plan" one way; a save, a send,
+  // "Anuluj" or "Zamknij" the other.
   const [isPlanEditorOpen, setIsPlanEditorOpen] = useState(
     () =>
-      !planAtStand ||
-      (rehearsal.plan?.length ?? 0) === 0 ||
+      (rehearsal.plan?.length ?? 0) === 0 &&
       new Date(rehearsal.date_time).getTime() > Date.now(),
   );
+  const openPlanEditor = useCallback(() => setIsPlanEditorOpen(true), []);
+  const closePlanEditor = useCallback(() => setIsPlanEditorOpen(false), []);
+  // The ticks are written after the downbeat only: before it there is
+  // nothing to tick, and the plan reads as the promise it still is.
+  const hasStarted = new Date(rehearsal.date_time).getTime() <= Date.now();
+  const markPlanItem = hasStarted ? onMarkPlanItem : undefined;
   /* One sheet for the whole roster, named by whoever opened it. The setter is
      what the rows receive, so the callback stays stable across re-renders and
      the memoized rows keep their optimistic state through a roll call. */
@@ -252,6 +287,11 @@ export const RehearsalInspector = ({
   }, [voiceGroups, showOnlyUnmarked, attendanceMap]);
 
   const focus = rehearsal.focus?.trim();
+  // Topics written before the topic became one line can hold a whole plan,
+  // line by line. A single-line field drops the line breaks on its first
+  // keystroke, so such a topic is only read here; the rehearsal form, which
+  // keeps it in a multi-line field, is where it is rewritten.
+  const focusHasLines = focus !== undefined && /\r?\n/u.test(focus);
   const dateLabel = formatLocalizedDate(
     rehearsal.date_time,
     { weekday: "long", day: "numeric", month: "long" },
@@ -282,8 +322,26 @@ export const RehearsalInspector = ({
     },
   ];
 
+  const PANES: SegmentedTabItem<PaneId>[] = [
+    { id: "PLAN", label: t("rehearsals.inspector.pane_plan", "Plan"), Icon: ListMusic },
+    {
+      id: "ATTENDANCE",
+      label: t("rehearsals.inspector.pane_attendance", "Obecność"),
+      Icon: ListChecks,
+    },
+  ];
+  const hasPlan = (rehearsal.plan?.length ?? 0) > 0;
+
   return (
-    <GlassCard variant="solid" padding="none" isHoverable={false} className="flex flex-col">
+    // `overflow-clip`, not the card's own `overflow-hidden`: it trims the same
+    // corners without making the card a scroll container, so the roster's
+    // voice headers below stick to the window rather than to nothing.
+    <GlassCard
+      variant="solid"
+      padding="none"
+      isHoverable={false}
+      className="flex flex-col overflow-clip"
+    >
       {/* ── Header ────────────────────────────────────────────────────── */}
       <div className="border-b border-hairline p-5 md:p-6">
         {/* Tutti is the resting case and says nothing; a sectional call is the
@@ -314,20 +372,24 @@ export const RehearsalInspector = ({
             it: Cormorant's x-height is ~0.39em against the sans's ~0.55, so a
             subtitle set at the body step comes out reading smaller than the
             metadata below it. */}
-        {onSaveFocus ? (
+        {onSaveFocus && !focusHasLines ? (
           <div className="mt-1">
             <InlineEditable
               variant="subtitle"
               value={focus ?? ""}
               onSave={onSaveFocus}
               ariaLabel={t("rehearsals.lead.focus_label", "Temat próby")}
-              placeholder={t("rehearsals.lead.focus_placeholder", "Nad czym pracujecie")}
+              placeholder={t("rehearsals.lead.focus_placeholder", "np. Antegenerale, Lark z Radu")}
               emptyDisplay={t("rehearsals.lead.focus_empty", "Dodaj temat próby")}
             />
           </div>
         ) : (
           focus && (
-            <Text size="md" color="graphite" className="mt-1 block font-serif italic">
+            <Text
+              size="md"
+              color="graphite"
+              className="mt-1 block whitespace-pre-line font-serif italic"
+            >
               {focus}
             </Text>
           )
@@ -362,10 +424,103 @@ export const RehearsalInspector = ({
             </span>
           )}
         </div>
+      </div>
 
+      {/* ── Plan · Obecność ───────────────────────────────────────────── */}
+      {/* The pitch pipe sits beside the switch while the plan is shown: it
+          serves the music, and the pane it opens into is the plan's. */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline px-4 py-3">
+        <SegmentedTabs
+          items={PANES}
+          value={pane}
+          onChange={selectPane}
+          ariaLabel={t("rehearsals.inspector.panes", "Plan albo obecność")}
+        />
+        {pane === "PLAN" && (
+          <Button
+            variant={isPitchPipeOpen ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setIsPitchPipeOpen((prev) => !prev)}
+            aria-expanded={isPitchPipeOpen}
+            leftIcon={<Radio size={14} aria-hidden="true" />}
+          >
+            {t("rehearsals.inspector.pitch_pipe", "Kamerton")}
+          </Button>
+        )}
+      </div>
+
+      <AnimatePresence initial={false}>
+        {pane === "PLAN" && isPitchPipeOpen && (
+          <motion.div
+            key="pitch-pipe"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden border-b border-hairline bg-ethereal-parchment/30"
+          >
+            <div className="p-4">
+              <PitchPipe />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── The plan ──────────────────────────────────────────────────── */}
+      {/* Hidden, never unmounted, while the roll call is shown: an open
+          editor may hold an unsaved draft, and the switch is not a way to
+          lose it. Whoever may plan the evening reads it here and edits it in
+          place; a stand-in who may not reads it at stand size. The editor is
+          keyed by the evening: a draft belongs to the evening it was written
+          on and never outlives it — and it guards its own way back to the
+          read view, as the host guards every way to another evening. */}
+      <div hidden={pane !== "PLAN"}>
+        {canEditPlan ? (
+          isPlanEditorOpen ? (
+            <RehearsalPlanEditor
+              key={String(rehearsal.id)}
+              rehearsal={rehearsal}
+              access={allowManagerActions ? "manager" : "planner"}
+              onDirtyChange={onPlanDirtyChange}
+              onClose={closePlanEditor}
+            />
+          ) : (
+            <RehearsalPlanReadView
+              key={String(rehearsal.id)}
+              rehearsal={rehearsal}
+              size={planAtStand ? "stand" : "default"}
+              onEdit={openPlanEditor}
+              onMarkItem={markPlanItem}
+            />
+          )
+        ) : (
+          <div className="p-5 md:p-6">
+            <div className="flex items-center gap-2">
+              <ListMusic size={12} className="text-ethereal-gold/70" aria-hidden="true" />
+              <Eyebrow as="h3" color="graphite">
+                {t("rehearsals.plan.title", "Plan próby")}
+              </Eyebrow>
+              {!hasPlan && (
+                <Caption color="muted">{t("rehearsals.plan.empty.title", "Bez planu")}</Caption>
+              )}
+            </div>
+            {hasPlan && (
+              <RehearsalPlanTimeline
+                rows={rehearsal.plan ?? []}
+                size="stand"
+                onMark={markPlanItem}
+                className="mt-4"
+              />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── The roll call ─────────────────────────────────────────────── */}
+      <div hidden={pane !== "ATTENDANCE"}>
         {/* Progress + composition */}
         {invitedCount > 0 && (
-          <div className="mt-5">
+          <div className="border-b border-hairline p-5 md:p-6">
             {/* Both halves are a label over a figure, and `Eyebrow`, `Text` and
                 `Metric` all render inline spans — so the column is what puts the
                 label ABOVE its figure. Without it they set on one line and the
@@ -416,217 +571,158 @@ export const RehearsalInspector = ({
             </div>
           </div>
         )}
-      </div>
 
-      {/* ── The plan ──────────────────────────────────────────────────── */}
-      {/* Between the header and the roll call: what the evening works on
-          comes before who turned up to it. Whoever may plan the evening
-          edits it here; a stand-in who may not reads it at stand size, and
-          so does a planner at the stand once the evening is under way. */}
-      {canEditPlan && isPlanEditorOpen ? (
-        <RehearsalPlanEditor
-          rehearsal={rehearsal}
-          access={allowManagerActions ? "manager" : "planner"}
-          className="border-b border-hairline"
-        />
-      ) : (
-        (rehearsal.plan?.length ?? 0) > 0 && (
-          <div className="border-b border-hairline p-5 md:p-6">
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <ListMusic size={12} className="text-ethereal-gold/70" aria-hidden="true" />
-                <Eyebrow as="h3" color="graphite">
-                  {t("rehearsals.plan.title", "Plan próby")}
-                </Eyebrow>
-              </div>
-              {canEditPlan && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsPlanEditorOpen(true)}
-                  leftIcon={<PenLine size={14} aria-hidden="true" />}
-                >
-                  {t("rehearsals.plan.edit", "Edytuj plan")}
-                </Button>
-              )}
+        {/* ── Toolbar ─────────────────────────────────────────────────── */}
+        {invitedCount > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline bg-ethereal-marble/30 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <SegmentedTabs
+                iconOnly
+                items={DENSITIES}
+                value={isRollCall ? "ROLL_CALL" : "LIST"}
+                onChange={(id) => {
+                  if ((id === "ROLL_CALL") !== isRollCall) onToggleRollCall();
+                }}
+                ariaLabel={t("rehearsals.inspector.density", "Widok listy")}
+              />
+              <Button
+                variant={showOnlyUnmarked ? "secondary" : "ghost"}
+                size="sm"
+                onClick={onToggleOnlyUnmarked}
+                leftIcon={<Filter size={14} aria-hidden="true" />}
+                disabled={stats.none === 0 && !showOnlyUnmarked}
+              >
+                {t("rehearsals.inspector.only_unmarked", "Tylko nieoznaczeni")}
+                {stats.none > 0 && (
+                  <span className="ml-1.5 tabular-nums opacity-60">{stats.none}</span>
+                )}
+              </Button>
             </div>
-            <RehearsalPlanTimeline rows={rehearsal.plan ?? []} size="stand" />
-          </div>
-        )
-      )}
 
-      {/* ── Toolbar ───────────────────────────────────────────────────── */}
-      {invitedCount > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline bg-ethereal-marble/30 px-4 py-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <SegmentedTabs
-              iconOnly
-              items={DENSITIES}
-              value={isRollCall ? "ROLL_CALL" : "LIST"}
-              onChange={(id) => {
-                if ((id === "ROLL_CALL") !== isRollCall) onToggleRollCall();
-              }}
-              ariaLabel={t("rehearsals.inspector.density", "Widok listy")}
+            {/* Absent, not disabled, once nothing is blank: "fill 0 gaps" is
+                no action at all. */}
+            {stats.none > 0 && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={onMarkAllPresent}
+                disabled={isMarkingAll || !registerOpen}
+                title={
+                  registerOpen
+                    ? undefined
+                    : t(
+                        "rehearsals.dashboard.bulk_fill_not_yet",
+                        "Dostępne od {{hours}} godz. przed próbą",
+                        { hours: LIVE_BEFORE_HOURS },
+                      )
+                }
+                isLoading={isMarkingAll}
+                leftIcon={!isMarkingAll ? <CheckCircle2 size={14} /> : undefined}
+              >
+                {t("rehearsals.dashboard.bulk_fill", "Uzupełnij luki", { count: stats.none })}
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* ── Roster ──────────────────────────────────────────────────── */}
+        {/* No scroll box of its own: the roster flows with the page at every
+            width, so the voice headers stick to the window. That holds only
+            while no ancestor is a scroll container — clip, never hidden. */}
+        <div className="overflow-x-clip">
+          {invitedCount === 0 ? (
+            <StatePanel
+              variant="inline"
+              className="py-12"
+              icon={<Users size={22} aria-hidden="true" />}
+              title={t("rehearsals.inspector.no_invited_title", "Nikogo nie wezwano")}
+              description={t(
+                "rehearsals.inspector.no_invited_desc",
+                "Na tej próbie nie ma ani jednego śpiewaka. Sprawdź obsadę projektu.",
+              )}
+              // The cast editor is a manager route; offering it to a stand-in
+              // would send them into a redirect. Nothing replaces it: an evening
+              // with nobody called is a thing to report, not to fix from here.
+              actions={
+                allowManagerActions ? (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to={`/panel/projects/${String(rehearsal.project)}/cast`}>
+                      <UserPlus size={14} aria-hidden="true" />
+                      {t("rehearsals.inspector.open_cast", "Otwórz obsadę")}
+                    </Link>
+                  </Button>
+                ) : undefined
+              }
             />
-            <Button
-              variant={showOnlyUnmarked ? "secondary" : "ghost"}
-              size="sm"
-              onClick={onToggleOnlyUnmarked}
-              leftIcon={<Filter size={14} aria-hidden="true" />}
-              disabled={stats.none === 0 && !showOnlyUnmarked}
-            >
-              {t("rehearsals.inspector.only_unmarked", "Tylko nieoznaczeni")}
-              {stats.none > 0 && (
-                <span className="ml-1.5 tabular-nums opacity-60">{stats.none}</span>
+          ) : displayGroups.length === 0 ? (
+            <StatePanel
+              variant="inline"
+              className="py-12"
+              icon={<CheckCircle2 size={22} aria-hidden="true" />}
+              title={t("rehearsals.inspector.all_marked_title", "Wszyscy oznaczeni")}
+              description={t(
+                "rehearsals.inspector.all_marked_desc",
+                "Nikt z wezwanych nie czeka już na wpis.",
               )}
-            </Button>
-            <Button
-              variant={isPitchPipeOpen ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setIsPitchPipeOpen((prev) => !prev)}
-              leftIcon={<Radio size={14} aria-hidden="true" />}
-            >
-              {t("rehearsals.inspector.pitch_pipe", "Kamerton")}
-            </Button>
-          </div>
+            />
+          ) : (
+            displayGroups.map((group) => (
+              <div key={group.key}>
+                {/* No backdrop blur: under a 95 % fill it cannot show, and a
+                    header riding the page's whole scroll would pay for it on
+                    every frame. */}
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-hairline bg-ethereal-alabaster/95 px-5 py-2.5">
+                  <Eyebrow color="gold">{t(voiceSectionLabelKey(group.key), group.key)}</Eyebrow>
+                  <Caption color="muted" className="tabular-nums">
+                    {group.participations.length}
+                  </Caption>
+                </div>
 
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={onMarkAllPresent}
-            disabled={isMarkingAll || stats.none === 0 || !registerOpen}
-            title={
-              registerOpen
-                ? undefined
-                : t(
-                    "rehearsals.dashboard.bulk_fill_not_yet",
-                    "Dostępne od {{hours}} godz. przed próbą",
-                    { hours: LIVE_BEFORE_HOURS },
-                  )
-            }
-            isLoading={isMarkingAll}
-            leftIcon={!isMarkingAll ? <CheckCircle2 size={14} /> : undefined}
-          >
-            {t("rehearsals.dashboard.bulk_fill", "Uzupełnij luki", { count: stats.none })}
-          </Button>
-        </div>
-      )}
-
-      <AnimatePresence initial={false}>
-        {isPitchPipeOpen && (
-          <motion.div
-            key="pitch-pipe"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="overflow-hidden border-b border-hairline bg-ethereal-parchment/30"
-          >
-            <div className="p-4">
-              <PitchPipe />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Roster ────────────────────────────────────────────────────── */}
-      {/* On phones/tablets the roster flows with the page (natural scroll);
-          only once the rail + inspector sit side by side (lg) does it become a
-          height-capped panel so the two columns stay aligned. */}
-      <div className="overflow-x-hidden lg:max-h-[64vh] lg:overflow-y-auto">
-        {invitedCount === 0 ? (
-          <StatePanel
-            variant="inline"
-            className="py-12"
-            icon={<Users size={22} aria-hidden="true" />}
-            title={t("rehearsals.inspector.no_invited_title", "Nikogo nie wezwano")}
-            description={t(
-              "rehearsals.inspector.no_invited_desc",
-              "Na tej próbie nie ma ani jednego śpiewaka. Sprawdź obsadę projektu.",
-            )}
-            // The cast editor is a manager route; offering it to a stand-in
-            // would send them into a redirect. Nothing replaces it: an evening
-            // with nobody called is a thing to report, not to fix from here.
-            actions={
-              allowManagerActions ? (
-                <Button variant="outline" size="sm" asChild>
-                  <Link to={`/panel/projects/${String(rehearsal.project)}/cast`}>
-                    <UserPlus size={14} aria-hidden="true" />
-                    {t("rehearsals.inspector.open_cast", "Otwórz obsadę")}
-                  </Link>
-                </Button>
-              ) : undefined
-            }
-          />
-        ) : displayGroups.length === 0 ? (
-          <StatePanel
-            variant="inline"
-            className="py-12"
-            icon={<CheckCircle2 size={22} aria-hidden="true" />}
-            title={t("rehearsals.inspector.all_marked_title", "Wszyscy oznaczeni")}
-            description={t(
-              "rehearsals.inspector.all_marked_desc",
-              "Nikt z wezwanych nie czeka już na wpis.",
-            )}
-          />
-        ) : (
-          displayGroups.map((group) => (
-            <div key={group.key}>
-              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-hairline bg-ethereal-alabaster/95 px-5 py-2.5 backdrop-blur-sm">
-                <Eyebrow color="gold">{t(voiceSectionLabelKey(group.key), group.key)}</Eyebrow>
-                <Caption color="muted" className="tabular-nums">
-                  {group.participations.length}
-                </Caption>
+                {isRollCall ? (
+                  <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {group.participations.map((part: Participation) => {
+                      const artist = artistMap.get(String(part.artist));
+                      if (!artist) return null;
+                      return (
+                        <ArtistRow
+                          key={part.id}
+                          part={part}
+                          artist={artist}
+                          existingRecord={attendanceMap.get(String(part.id))}
+                          rehearsalId={String(rehearsal.id)}
+                          density="rollcall"
+                          onOpenSpan={rowSpanHandler}
+                        />
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col">
+                    {group.participations.map((part: Participation) => {
+                      const artist = artistMap.get(String(part.artist));
+                      if (!artist) return null;
+                      return (
+                        <ArtistRow
+                          key={part.id}
+                          part={part}
+                          artist={artist}
+                          existingRecord={attendanceMap.get(String(part.id))}
+                          rehearsalId={String(rehearsal.id)}
+                          density="compact"
+                          onOpenSpan={rowSpanHandler}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-
-              {isRollCall ? (
-                <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {group.participations.map((part: Participation) => {
-                    const artist = artistMap.get(String(part.artist));
-                    if (!artist) return null;
-                    return (
-                      <ArtistRow
-                        key={part.id}
-                        part={part}
-                        artist={artist}
-                        existingRecord={attendanceMap.get(String(part.id))}
-                        rehearsalId={String(rehearsal.id)}
-                        density="rollcall"
-                        onOpenSpan={rowSpanHandler}
-                      />
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col">
-                  {group.participations.map((part: Participation) => {
-                    const artist = artistMap.get(String(part.artist));
-                    if (!artist) return null;
-                    return (
-                      <ArtistRow
-                        key={part.id}
-                        part={part}
-                        artist={artist}
-                        existingRecord={attendanceMap.get(String(part.id))}
-                        rehearsalId={String(rehearsal.id)}
-                        density="compact"
-                        onOpenSpan={rowSpanHandler}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          ))
-        )}
+            ))
+          )}
+        </div>
       </div>
 
       {/* ── After the rehearsal ───────────────────────────────────────── */}
-      <RehearsalDebrief
-        rehearsal={rehearsal}
-        onSave={onSaveDebrief}
-        onMarkPlanItem={onMarkPlanItem}
-      />
+      <RehearsalDebrief rehearsal={rehearsal} onSave={onSaveDebrief} />
 
       {/* Mounted, not conditional: the sheet animates out, and unmounting it on
           close would cut that short. The id going null is what shuts it. The

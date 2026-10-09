@@ -36,6 +36,7 @@ import { RehearsalTimelineRow } from "./components/RehearsalTimelineRow";
 import { TabLoadingCard } from "./components/TabLoadingCard";
 import { ProjectPlanGrid } from "@/features/rehearsals/components/plan/ProjectPlanGrid";
 import { RehearsalPlanEditor } from "@/features/rehearsals/components/plan/RehearsalPlanEditor";
+import { planTextOfFocus } from "@/features/rehearsals/lib/planText";
 import type { Rehearsal } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
 import { artistRoleLabel, isInstrumentalist } from "@/shared/lib/voiceTypes";
@@ -54,6 +55,7 @@ import {
   TimeField,
   type CalendarMarker,
 } from "@/shared/ui/composites/DateTimeField";
+import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Badge } from "@/shared/ui/primitives/Badge";
@@ -71,6 +73,8 @@ const DEFAULT_TIMEZONE = "Europe/Warsaw";
 const MINUTES_PER_DAY = 24 * 60;
 /** The "Prowadzi" select's value for the resting case (`led_by` null). */
 const CONDUCTOR_LEADS = "__conductor__";
+/** The column's length (`Rehearsal.focus`); the server stores no more. */
+const FOCUS_MAX_LENGTH = 200;
 
 type RehearsalsView = "timeline" | "pieces";
 
@@ -114,6 +118,8 @@ export const RehearsalsTab = ({
   } = useRehearsalsTab(projectId);
 
   const isEditing = editingRehearsal !== null;
+  const focusHoldsLines = /\r?\n/u.test(editingRehearsal?.focus?.trim() ?? "");
+  const focusIsPlan = useMemo(() => planTextOfFocus(formData.focus) !== null, [formData.focus]);
 
   const [view, setView] = useState<RehearsalsView>("timeline");
   const viewOptions: readonly SegmentedTabItem<RehearsalsView>[] = [
@@ -135,6 +141,10 @@ export const RehearsalsTab = ({
   const [planRehearsal, setPlanRehearsal] = useState<Rehearsal | null>(null);
   const [isPlanDirty, setIsPlanDirty] = useState(false);
   const [isDiscardingPlan, setIsDiscardingPlan] = useState(false);
+  // The sheet's sticky footer, where the editor renders Anuluj / Zapisz /
+  // Zapisz i wyślij, so they stay in reach however long the plan runs.
+  // Mounted only while there is something to save.
+  const [planActionsSlot, setPlanActionsSlot] = useState<HTMLDivElement | null>(null);
 
   // Every way out of the sheet (scrim, Escape, drag, the close button) comes
   // through here, and an unsaved draft waits for the conductor's word. Escape
@@ -556,19 +566,48 @@ export const RehearsalsTab = ({
                 disabled={isSubmitting}
               />
 
-              <Textarea
-                label={t("projects.rehearsals.form.focus", "Temat próby")}
-                rows={3}
-                value={formData.focus}
-                placeholder={t(
-                  "projects.rehearsals.form.focus_placeholder",
-                  "np. Requiem cz. 1–3, pierwsze czytanie",
+              {/* The topic is one line, a headline; the order of pieces is the
+                  plan's. A topic stored before that may hold a whole plan on
+                  several lines, and a single-line field would drop its breaks
+                  on the first keystroke — so it keeps a multi-line field,
+                  chosen from the stored value so the field never swaps under
+                  the cursor. A list typed here is pointed at the plan, where
+                  "Ułóż plan z tematu próby" picks it up. */}
+              <div className="space-y-1.5">
+                {focusHoldsLines ? (
+                  <Textarea
+                    label={t("projects.rehearsals.form.focus", "Temat próby")}
+                    rows={3}
+                    value={formData.focus}
+                    onChange={(event) =>
+                      setFormData({ ...formData, focus: event.target.value })
+                    }
+                    disabled={isSubmitting}
+                  />
+                ) : (
+                  <Input
+                    label={t("projects.rehearsals.form.focus", "Temat próby")}
+                    value={formData.focus}
+                    maxLength={FOCUS_MAX_LENGTH}
+                    placeholder={t(
+                      "projects.rehearsals.form.focus_placeholder",
+                      "np. Antegenerale, Lark z Radu",
+                    )}
+                    onChange={(event) =>
+                      setFormData({ ...formData, focus: event.target.value })
+                    }
+                    disabled={isSubmitting}
+                  />
                 )}
-                onChange={(event) =>
-                  setFormData({ ...formData, focus: event.target.value })
-                }
-                disabled={isSubmitting}
-              />
+                {focusIsPlan && (
+                  <Caption color="muted" className="block">
+                    {t(
+                      "projects.rehearsals.form.focus_plan_hint",
+                      "To wygląda na plan próby. Utwory ułożysz w planie, a tu zostaw jedną linijkę tematu.",
+                    )}
+                  </Caption>
+                )}
+              </div>
 
               {/* Who stands in front. Asked only when the answer can vary — a
                   project with no leader has one possible value, and a field
@@ -851,14 +890,17 @@ export const RehearsalsTab = ({
               )
             : undefined
         }
+        footer={isPlanDirty ? <div ref={setPlanActionsSlot} /> : undefined}
       >
         {planRehearsal && (
           <RehearsalPlanEditor
+            key={String(planRehearsal.id)}
             rehearsal={
               projectRehearsals.find((row) => String(row.id) === String(planRehearsal.id)) ??
               planRehearsal
             }
             actions="inline"
+            actionsSlot={planActionsSlot}
             onDirtyChange={setIsPlanDirty}
             className="-mx-5 sm:-mx-6"
           />

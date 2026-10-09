@@ -2,7 +2,9 @@
  * @file VoiceExclusionChips.tsx
  * @description Who a plan row does without. Resting state says nothing — a
  * row that calls everyone is the default and "never state the resting
- * default" — so the closed face is one ghost "Wszyscy" that opens the chips.
+ * default" — so a closed row without exclusions renders nothing at all, and
+ * the row's "⋯" menu is what opens the chips (`isOpen` is the row's). Closed
+ * with exclusions, it shows them, each removable, and a "Zmień" that reopens.
  * Open, the chips are the row's own lines grouped by voice, with a family
  * toggle in front of each group ("Alty" = every A-line at once, so "B2 i
  * alty" is two taps), plus "bez instrumentalistów" when the rehearsal calls a
@@ -14,7 +16,7 @@
  * @module features/rehearsals/components/plan/VoiceExclusionChips
  */
 
-import React, { useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { Users, X } from "lucide-react";
 
@@ -28,6 +30,8 @@ import type { PlanRowReading } from "./usePlanEditor";
 interface VoiceExclusionChipsProps {
   readonly reading: PlanRowReading;
   readonly excludesInstrumentalists: boolean;
+  readonly isOpen: boolean;
+  readonly onOpenChange: (isOpen: boolean) => void;
   readonly onToggleLine: (line: VoiceLine) => void;
   readonly onToggleFamily: (family: VoiceFamilyId) => void;
   readonly onToggleInstrumentalists: () => void;
@@ -115,17 +119,18 @@ const ToggleChip = ({
 export const VoiceExclusionChips = ({
   reading,
   excludesInstrumentalists,
+  isOpen,
+  onOpenChange,
   onToggleLine,
   onToggleFamily,
   onToggleInstrumentalists,
-}: VoiceExclusionChipsProps): React.JSX.Element => {
+}: VoiceExclusionChipsProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const familyLabels = useFamilyLabels();
   const withoutFamilyLabels = useWithoutFamilyLabels();
-  const [isOpen, setIsOpen] = useState(false);
 
-  // Closed and clean: the one ghost affordance. Closed with exclusions: the
-  // exclusions themselves, each removable, and the same affordance to reopen.
+  // Closed and clean: nothing. Closed with exclusions: the exclusions
+  // themselves, each removable, and an affordance to reopen.
   if (!isOpen) {
     const excludedLines = reading.families.flatMap((family) =>
       family.excluded
@@ -157,6 +162,7 @@ export const VoiceExclusionChips = ({
         clear: onToggleInstrumentalists,
       });
     }
+    if (excludedLines.length === 0) return null;
     return (
       <div className="flex flex-wrap items-center gap-1.5">
         {excludedLines.map((entry) => (
@@ -180,18 +186,14 @@ export const VoiceExclusionChips = ({
         ))}
         <button
           type="button"
-          onClick={() => setIsOpen(true)}
+          onClick={() => onOpenChange(true)}
           className={cn(
             CHIP_BUTTON,
             "inline-flex items-center gap-1 px-1 py-0.5 text-ethereal-graphite/60 transition-colors hover:text-ethereal-gold",
           )}
         >
           <Users size={11} aria-hidden="true" />
-          <Caption color="inherit">
-            {excludedLines.length === 0
-              ? t("rehearsals.plan.exclude.everyone", "Wszyscy")
-              : t("rehearsals.plan.exclude.edit", "Zmień")}
-          </Caption>
+          <Caption color="inherit">{t("rehearsals.plan.exclude.edit", "Zmień")}</Caption>
         </button>
       </div>
     );
@@ -205,7 +207,7 @@ export const VoiceExclusionChips = ({
         </Caption>
         <button
           type="button"
-          onClick={() => setIsOpen(false)}
+          onClick={() => onOpenChange(false)}
           aria-label={t("common.actions.close", "Zamknij")}
           className={cn(CHIP_BUTTON, "p-0.5 text-ethereal-graphite/50 hover:text-ethereal-ink")}
         >

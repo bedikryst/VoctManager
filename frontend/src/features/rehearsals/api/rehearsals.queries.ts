@@ -11,7 +11,7 @@ import {
 } from "@tanstack/react-query";
 import { RehearsalsService } from "./rehearsals.service";
 import type { AbsenceSpanDTO, AttendanceUpsertDTO } from "../types/rehearsals.dto";
-import type { Attendance } from "@/shared/types";
+import type { Attendance, Rehearsal } from "@/shared/types";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { projectKeys } from "@/features/projects/api/project.queries";
 import { artistKeys } from "@/features/artists/api/artist.queries";
@@ -182,6 +182,29 @@ export const useRehearsal = (rehearsalId: string | undefined) => {
     retry: false,
     ...RECONCILING_REFETCH,
     ...(previewId ? PREVIEW_QUERY_OPTIONS : {}),
+  });
+};
+
+/**
+ * The manager's topic line, edited where the inspector reads it. No toast:
+ * the inline editor says a refusal in place, so the mutation only rejects.
+ * The workspace's list takes the new line at once, so the field does not
+ * flash the old one while the refetch runs; the schedule's cards and the
+ * project hub read the same field and are invalidated with it.
+ */
+export const useUpdateRehearsalFocus = (rehearsalId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (focus: string) => RehearsalsService.updateFocus(rehearsalId, focus),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<Rehearsal[]>(rehearsalKeys.rehearsals.all, (current) =>
+        current?.map((rehearsal) =>
+          String(rehearsal.id) === rehearsalId ? { ...rehearsal, focus: updated.focus } : rehearsal,
+        ),
+      );
+      void queryClient.invalidateQueries({ queryKey: rehearsalKeys.rehearsals.all });
+      void queryClient.invalidateQueries({ queryKey: PERSONAL_READMODEL_KEYS.scheduleDashboard });
+    },
   });
 };
 

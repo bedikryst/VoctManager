@@ -5,7 +5,8 @@
  * (bound to one rehearsal, or naming it per call for the project grid), the
  * per-row done tick and the announcement. Saving is silent on the server and
  * stays silent here — no toast says "the cast was told", because it was not;
- * `useAnnouncePlan` is the one act that tells them. Every write settles by
+ * `useAnnouncePlan` is the one act that tells them, and what became of that
+ * notice (`delivery`) rides on the plan read itself. Every write settles by
  * invalidating the rehearsal lists, the lead sheet, the planner's reads of the
  * other evenings and the schedule dashboard, since all of them embed the plan.
  * @architecture Enterprise SaaS 2026
@@ -162,7 +163,13 @@ export const useAnnouncePlan = (rehearsalId: string) => {
       queryClient.setQueryData<RehearsalPlanRead>(
         rehearsalKeys.rehearsals.plan(rehearsalId),
         (current) =>
-          current ? { ...current, plan_announced_at: announced.plan_announced_at } : current,
+          current
+            ? {
+                ...current,
+                plan_announced_at: announced.plan_announced_at,
+                delivery: announced.delivery,
+              }
+            : current,
       );
     },
     onSettled: () => settlePlanReaders(queryClient, rehearsalId),

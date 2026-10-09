@@ -486,18 +486,27 @@ export const TimelineRehearsalCard = ({
               </div>
 
               <div className="p-4 sm:p-6 space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6">
-                {/* focus / work plan */}
+                {/* The plan, under its topic line. The topic is named as the
+                    topic — it is the evening's headline, not its order — and
+                    the empty line speaks only when there is neither. */}
                 <div className="flex flex-col gap-2">
                   <Eyebrow as="h4" color="muted" className="flex items-center gap-1.5">
-                    <AlignLeft size={13} aria-hidden="true" />
-                    {t("schedule.rehearsal.details.focus_title", "Plan Pracy")}
+                    <ListMusic size={13} aria-hidden="true" />
+                    {t("schedule.rehearsal.plan.title", "Plan próby")}
                   </Eyebrow>
                   <GlassCard variant="light" padding="sm" isHoverable={false} className="flex-1 rounded-2xl">
-                    {event.focus ? (
-                      <Text size="base" color="default" className="italic font-serif whitespace-pre-wrap leading-relaxed">
-                        {event.focus}
-                      </Text>
-                    ) : (
+                    {event.focus && (
+                      <>
+                        <Eyebrow as="span" color="muted" className="mb-1 flex items-center gap-1.5">
+                          <AlignLeft size={12} aria-hidden="true" />
+                          {t("schedule.rehearsal.focus_title", "Temat próby")}
+                        </Eyebrow>
+                        <Text size="base" color="default" className="italic font-serif whitespace-pre-wrap leading-relaxed">
+                          {event.focus}
+                        </Text>
+                      </>
+                    )}
+                    {!event.focus && planRows.length === 0 && (
                       <Text size="sm" color="muted" className="italic">
                         {t("schedule.rehearsal.details.no_focus", "Brak szczegółowego planu dla tej próby.")}
                       </Text>
@@ -508,7 +517,7 @@ export const TimelineRehearsalCard = ({
                         plan, with the notes and the exclusions, is one tap
                         further on — this is the trailer, not the reel. */}
                     {planRows.length > 0 && (
-                      <div className="mt-3 border-t border-ethereal-incense/15 pt-3">
+                      <div className={cn(event.focus && "mt-3 border-t border-ethereal-incense/15 pt-3")}>
                         <RehearsalPlanTimeline rows={planRows.slice(0, PLAN_PREVIEW_ROWS)} />
                         {planRows.length > PLAN_PREVIEW_ROWS && (
                           <Caption color="muted" className="mt-2 block">

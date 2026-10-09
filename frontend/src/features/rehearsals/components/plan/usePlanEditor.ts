@@ -3,11 +3,14 @@
  * @description The brain of the plan editor: a draft of the rows baselined on
  * the server's plan, the edits a conductor makes to it (add, reorder, retime —
  * a committed clock takes its row to its place in time — exclude, remove), the
- * three fills that spare him laying the evening out from zero (the whole programme; what the previous rehearsal left undone; a
- * copy of any other rehearsal's plan), and — for every row and every chip —
- * the number of people the exclusion actually removes, computed by the same
- * rule the server calls with (`lib/rehearsalPlan`), every row's effective
- * clock from its anchor and the minutes above it, and the time blocks those
+ * three fills that spare him laying the evening out from zero (the whole
+ * programme; what the previous rehearsal left undone; a copy of any other
+ * rehearsal's plan), rows read off lines he typed (`lib/planText`), and — for
+ * every row and every chip — the number of people the exclusion actually
+ * removes, computed by the same rule the server calls with
+ * (`lib/rehearsalPlan`), every row's effective clock from its anchor and the
+ * minutes above it, every main row's length (its minutes, else the gap its
+ * clock leaves to the next anchor), and the time blocks those
  * clocks cut the evening into — each with its span and a call a header can
  * set across the block's rows at once. Nothing here talks to the network
  * beyond the one whole-list save; the draft is local until then.
@@ -22,7 +25,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
-import { formatInTimeZone } from "date-fns-tz";
 
 import type { Rehearsal, RehearsalPlanItem, VoiceLine } from "@/shared/types";
 import {
@@ -32,15 +34,20 @@ import {
 } from "@/shared/lib/voiceFamilies";
 import { scopedToEdition } from "@/features/archive/constants/divisiScope";
 import { resolveInvited } from "../../lib/attendanceStats";
+import type { PlanTextRow } from "../../lib/planText";
 import {
-  clockMinutes,
   effectiveClocks,
+  eveningAxis,
+  eveningClocksOf,
   itemCallsSeat,
   planBlocks,
+  plannedMinutes,
   planRowOf,
   planSeatOf,
+  rowLengths,
   type EffectiveClock,
   type PlanRuleRow,
+  type RowLength,
   type TimedRow,
 } from "../../lib/rehearsalPlan";
 import type {
@@ -136,7 +143,7 @@ export interface PlanBlockReading {
   readonly endsAt: string | null;
   /** The span in minutes; null when open-ended or starting past the end. */
   readonly length: number | null;
-  /** The rows' own minutes added up; null when no row of the block has any. */
+  /** The rows' lengths added up, implied ones included; null when no row has one. */
   readonly planned: number | null;
   /** Family chips; empty unless two rows or more of the block call anyone. */
   readonly families: readonly PlanBlockFamily[];
@@ -167,6 +174,14 @@ export interface PlanEditor {
   /** The rehearsal's end as a wall clock; null when it was never timed. */
   readonly endClock: string | null;
   /**
+   * Each main row's length, by row key: its minutes, else the gap its clock
+   * leaves to the next anchor or the evening's end (`rowLengths`). The
+   * reserve's rows are not in it.
+   */
+  readonly lengths: ReadonlyMap<string, RowLength>;
+  /** The main part's minutes, implied ones included — the header's budget. */
+  readonly planned: number | null;
+  /**
    * Block headers, by the key of the row each one stands on. Empty while the
    * plan is one block; a one-row block whose minutes fill its span exactly
    * has none — the row's own clock and minutes already say it.
@@ -184,6 +199,8 @@ export interface PlanEditor {
   readonly addFreeRow: () => void;
   /** Adds a break above the divider, labelled with the caller's localized word. */
   readonly addBreakRow: (label: string) => void;
+  /** Appends rows read off typed lines (`parsePlanText`) above the divider, in order. */
+  readonly addTextRows: (rows: readonly PlanTextRow[]) => void;
   readonly updateRow: (
     key: string,
     patch: Partial<Omit<PlanDraftRow, "key" | "id" | "is_break">>,
@@ -544,18 +561,9 @@ export const usePlanEditor = (
 
   /* ── Clocks ──────────────────────────────────────────────────────────── */
 
-  // The rehearsal's start and end as the wall clock its zone keeps — the
-  // same "HH:MM" the rows' anchors are written in.
-  const startClock = useMemo(
-    () => formatInTimeZone(rehearsal.date_time, rehearsal.timezone, "HH:mm"),
-    [rehearsal.date_time, rehearsal.timezone],
-  );
-  const endClock = useMemo(
-    () =>
-      rehearsal.duration_minutes && rehearsal.end_date_time
-        ? formatInTimeZone(rehearsal.end_date_time, rehearsal.timezone, "HH:mm")
-        : null,
-    [rehearsal.duration_minutes, rehearsal.end_date_time, rehearsal.timezone],
+  const { start: startClock, end: endClock } = useMemo(
+    () => eveningClocksOf(rehearsal),
+    [rehearsal],
   );
 
   const clocks = useMemo(() => {
@@ -568,17 +576,19 @@ export const usePlanEditor = (
     return map;
   }, [rows, startClock]);
 
-  // A clock as minutes on the evening's own axis. An evening that crosses
-  // midnight reads its small-hour clocks as the next day; one that does not
-  // reads an anchor before the start as simply early.
-  const onEvening = useMemo(() => {
-    const startMinutes = clockMinutes(startClock);
-    const crossesMidnight = endClock !== null && clockMinutes(endClock) < startMinutes;
-    return (clock: string): number => {
-      const minutes = clockMinutes(clock);
-      return crossesMidnight && minutes < startMinutes ? minutes + 24 * 60 : minutes;
-    };
-  }, [startClock, endClock]);
+  const lengths = useMemo(() => {
+    const main = rows.slice(0, reserveStart);
+    const entries = rowLengths(timedRowsOf(main), startClock, endClock);
+    const map = new Map<string, RowLength>();
+    main.forEach((row, index) => {
+      const entry = entries[index];
+      if (entry) map.set(row.key, entry);
+    });
+    return map;
+  }, [rows, reserveStart, startClock, endClock]);
+  const planned = useMemo(() => plannedMinutes([...lengths.values()]), [lengths]);
+
+  const onEvening = useMemo(() => eveningAxis(startClock, endClock), [startClock, endClock]);
 
   // The first row that does not fit whole: it starts at or after the end, or
   // its minutes run past it. Ordering carries the warning — no copy, no
@@ -621,9 +631,11 @@ export const usePlanEditor = (
       const pastEnd = end !== null && start >= end;
       const endsAt = next !== null && !pastEnd && onEvening(next) > start ? next : null;
       const length = endsAt === null ? null : onEvening(endsAt) - start;
-      const timed = blockRows.filter((row) => row.minutes !== null && row.minutes > 0);
-      const planned =
-        timed.length > 0 ? timed.reduce((sum, row) => sum + (row.minutes ?? 0), 0) : null;
+      // A row written with clocks alone fills its block by definition, so its
+      // header would only repeat the clock the row already shows.
+      const planned = plannedMinutes(
+        blockRows.map((row) => lengths.get(row.key) ?? { minutes: row.minutes }),
+      );
       if (blockRows.length === 1 && planned !== null && planned === length) return;
 
       const calling = blockRows.filter((row) => !row.is_break);
@@ -672,7 +684,7 @@ export const usePlanEditor = (
       });
     });
     return map;
-  }, [rows, startClock, endClock, onEvening, readings, offersInstrumentalists]);
+  }, [rows, startClock, endClock, onEvening, lengths, readings, offersInstrumentalists]);
 
   /* ── Sources for the fills ───────────────────────────────────────────── */
 
@@ -739,6 +751,22 @@ export const usePlanEditor = (
 
   const addBreakRow = useCallback((label: string) => {
     setDraft((current) => insertMain(current, [blankRow({ label, is_break: true })]));
+  }, []);
+
+  // The order the conductor typed is the order he meant: a typed clock is an
+  // anchor on its row, and nothing is moved into time order on the way in.
+  const addTextRows = useCallback((parsed: readonly PlanTextRow[]) => {
+    const added = parsed.map((row) =>
+      blankRow({
+        piece: row.piece,
+        label: row.piece === null ? row.label : "",
+        note: row.note,
+        starts_at: row.startsAt,
+        minutes: row.minutes,
+        is_break: row.isBreak,
+      }),
+    );
+    setDraft((current) => insertMain(current, added));
   }, []);
 
   const updateRow = useCallback<PlanEditor["updateRow"]>((key, patch) => {
@@ -953,6 +981,8 @@ export const usePlanEditor = (
     clocks,
     endLineBefore,
     endClock,
+    lengths,
+    planned,
     blockHeaders,
     readings,
     calledTotal: seats.length,
@@ -963,6 +993,7 @@ export const usePlanEditor = (
     addPieceRow,
     addFreeRow,
     addBreakRow,
+    addTextRows,
     updateRow,
     anchorRow,
     placeByClock,

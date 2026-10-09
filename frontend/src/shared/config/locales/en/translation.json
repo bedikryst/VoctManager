@@ -3114,7 +3114,7 @@
         "archive": "Music Archive",
         "artist_dashboard": "Artist Dashboard",
         "artists": "Artists Roster",
-        "attendance": "Rehearsals",
+        "attendance": "Rehearsals & attendance",
         "finance": "Finance",
         "crew": "Technical Crew",
         "locations": "Locations",
@@ -3126,7 +3126,7 @@
       },
       "mobile_tabs": {
         "alerts": "Alerts",
-        "attendance": "Attendance",
+        "attendance": "Rehearsals",
         "dashboard": "Home",
         "materials": "Materials",
         "messages": "Chat",
@@ -5286,7 +5286,8 @@
         "date_time": "Date and time *",
         "end_time": "Rehearsal ends",
         "focus": "Rehearsal topic",
-        "focus_placeholder": "e.g. Requiem, mvts 1–3",
+        "focus_placeholder": "e.g. Pre-dress rehearsal, Lark with Radu",
+        "focus_plan_hint": "This looks like a rehearsal plan. Lay the pieces out in the plan and keep one line of topic here.",
         "length_h": "{{hours}} h",
         "length_hm": "{{hours}} h {{minutes}} min",
         "length_m": "{{minutes}} min",
@@ -5515,14 +5516,24 @@
   "rehearsals": {
     "plan": {
       "title": "Rehearsal plan",
-      "publish": "Publish plan",
+      "send": "Send plan",
       "send_changes": "Send changes",
-      "send_now": "Send the plan to the singers now",
-      "send_changes_now": "Send the changes to the singers now",
+      "save_and_send": "Save and send",
+      "save_and_send_changes": "Save and send changes",
       "edit": "Edit plan",
+      "compose": "Lay out the plan",
+      "budget": {
+        "of": "{{planned}} / {{length}} min",
+        "label": "{{planned}} of {{length}} min planned"
+      },
       "draft": "Draft — the choir cannot see it",
-      "announced_at": "Published · sent {{when}}",
-      "announced_changed": "Published · sent {{when}} · changed since",
+      "delivery": {
+        "sent": "Published · sent {{when}}",
+        "queued": "Published {{when}} · the notice waits for this rehearsal's announcement",
+        "withheld": "Published {{when}} · the project is a draft, so nobody was notified",
+        "discarded": "Published {{when}} · the notice was discarded in the announcement queue"
+      },
+      "changed_since_send": "{{state}} · changed since",
       "loading": "Opening the plan…",
       "load_error": {
         "title": "The plan could not be opened",
@@ -5530,7 +5541,8 @@
       },
       "empty": {
         "title": "No plan yet",
-        "desc": "Lay the pieces out in rehearsal order; minutes, times and exclusions are optional."
+        "desc": "Lay the pieces out in rehearsal order; minutes, times and exclusions are optional.",
+        "desc_focus": "The rehearsal topic already holds a list. The plan can be built straight from it; you see what was recognised before anything is added."
       },
       "fill": {
         "menu": "Fill",
@@ -5542,10 +5554,23 @@
         "rows_other": "{{count}} points"
       },
       "add": {
-        "piece": "Add a piece from the programme…",
+        "piece_named": "Add to the plan: {{title}}",
         "piece_all": "The whole programme is in the plan",
-        "free": "Point without a piece",
-        "break": "Add a break"
+        "free": "Point",
+        "break": "Break",
+        "text": "Type as a list"
+      },
+      "text": {
+        "title": "Type the plan as a list",
+        "hint": "One point per line. A time (18:30) and minutes (10') are optional; add a note in brackets or after a dash.",
+        "placeholder": "1. Warm-up 15'\n2. 18:30 Requiem, Kyrie (from b. 40)\n3. Ave verum – first read-through\n4. Break 10'",
+        "preview": "This is what goes into the plan",
+        "skipped": "skipped: no name",
+        "matched": "from the programme",
+        "free": "new point",
+        "insert_one": "Add {{count}} point",
+        "insert_other": "Add {{count}} points",
+        "from_focus": "Build the plan from the topic"
       },
       "reserve": {
         "title": "If time allows",
@@ -5560,8 +5585,6 @@
         "save_error": "The plan could not be saved.",
         "published": "Plan published and sent to everyone called.",
         "changes_sent": "Changes sent to everyone called.",
-        "queued": "Plan published. The notice is waiting in the announcement queue.",
-        "changes_queued": "The changes are waiting in the announcement queue.",
         "queued_with_rehearsal": "Plan published. The notice will go out with this rehearsal's announcement.",
         "changes_queued_with_rehearsal": "The changes will go out with this rehearsal's announcement.",
         "withheld": "The project is still a draft, so nobody was notified. The choir will see the plan along with the project.",
@@ -5581,11 +5604,25 @@
         "note_placeholder": "Note: from bar 40, first reading…",
         "calls": "calls {{called}} of {{total}}",
         "break_label": "Break",
-        "break_hint": "Break — calls nobody",
         "anchor": "Fix the time at {{clock}}",
+        "clear_time": "Remove the fixed time {{clock}}",
         "add_time": "+ time",
         "minutes": "Minutes",
-        "minutes_unit": "min"
+        "minutes_unit": "min",
+        "minutes_implied": "{{minutes}} min, from the times",
+        "menu": "More: {{title}}",
+        "to_reserve": "Move to the reserve",
+        "from_reserve": "Back into the plan",
+        "move_up": "Move up",
+        "move_down": "Move down"
+      },
+      "dnd": {
+        "instructions": "To pick up a point, press Space or Enter. The up and down arrow keys move it through the list. Space or Enter drops it in its new place; Escape cancels.",
+        "picked": "Picked up: {{title}}. Position {{position}} of {{total}}.",
+        "over": "{{title}}: position {{position}} of {{total}}.",
+        "dropped": "Dropped: {{title}}, position {{position}} of {{total}}.",
+        "cancelled": "Move cancelled: {{title}} is back in its place.",
+        "divider": "the “If time allows” line"
       },
       "end_line": "End of rehearsal · {{clock}}",
       "exclude": {
@@ -5605,7 +5642,6 @@
         },
         "without_instrumentalists": "without instrumentalists",
         "people": "{{count}} ppl",
-        "everyone": "Everyone",
         "edit": "Change",
         "prompt": "Who this point does not need",
         "toggle_family": "Exclude section: {{label}}",
@@ -5616,8 +5652,7 @@
         "not_you": "not your voice"
       },
       "debrief": {
-        "prompt": "Untick what you did not get to",
-        "done_label": "Covered"
+        "prompt": "Untick what you did not get to"
       },
       "block": {
         "span": "{{start}}–{{end}}",
@@ -5687,9 +5722,8 @@
       "optional": "Optional",
       "project_context": "Project Context",
       "sectional_only": "Only: {{sections}}",
-      "subtitle": "Inspector Module",
-      "title": "Attendance",
-      "title_highlight": "Logbook"
+      "title": "Rehearsals",
+      "title_highlight": "& attendance"
     },
     "empty": {
       "pick_project_desc": "Pick a project from the list on the left to see its rehearsals.",
@@ -5714,7 +5748,10 @@
       "only_unmarked": "Unmarked only",
       "open_cast": "Open the cast",
       "pitch_pipe": "Pitch pipe",
-      "recorded": "Marked"
+      "recorded": "Marked",
+      "panes": "Plan or attendance",
+      "pane_plan": "Plan",
+      "pane_attendance": "Attendance"
     },
     "lead": {
       "back": "Schedule",
@@ -5723,7 +5760,7 @@
       "title_highlight": "this rehearsal.",
       "covering_title": "Run by",
       "focus_label": "Rehearsal focus",
-      "focus_placeholder": "What you are working on",
+      "focus_placeholder": "e.g. Pre-dress rehearsal, Lark with Radu",
       "focus_empty": "Add a focus",
       "debrief": {
         "title": "After the rehearsal",
@@ -5762,11 +5799,21 @@
     },
     "rail": {
       "live": "Now",
+      "plan": {
+        "changed": "changed",
+        "draft": "draft",
+        "none": "no plan",
+        "sent": "sent"
+      },
       "no_rehearsals_desc": "This project has no rehearsals scheduled yet. Add them in the project card → Schedule.",
       "no_rehearsals_title": "No rehearsals",
       "project_label": "Project",
       "schedule_cta": "Schedule a rehearsal",
-      "title": "Rehearsals"
+      "title": "Rehearsals",
+      "ring": {
+        "replies": "replies",
+        "attendance": "attendance"
+      }
     },
     "reliability": {
       "by_section": "Section attendance",
@@ -5827,8 +5874,8 @@
     },
     "views": {
       "label": "View",
-      "reliability": "Attendance",
-      "roll_call": "Roll call"
+      "reliability": "Turnout",
+      "roll_call": "Rehearsal"
     },
     "voices": {
       "altos": "Altos",
@@ -5861,6 +5908,12 @@
       "success_one": "Saved for one rehearsal.",
       "success_other": "Saved for {{count}} rehearsals.",
       "error": "The absence for that range could not be saved."
+    },
+    "picker": {
+      "previous": "Previous rehearsal",
+      "next": "Next rehearsal",
+      "all": "All rehearsals ({{total}})",
+      "collapse": "Collapse the list"
     }
   },
   "repertoire": {
@@ -6031,7 +6084,6 @@
       },
       "badge": "Rehearsal",
       "details": {
-        "focus_title": "Rehearsal Focus",
         "materials_button": "Materials",
         "materials_desc": "Download PDF scores and practice your parts with the player.",
         "materials_first_piece": "You start with: {{title}}",

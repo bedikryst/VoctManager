@@ -9,28 +9,28 @@
  * `/panel/schedule/` because that is where the person was standing when they
  * were asked — a stand-in has no manager workspace to come from.
  *
- * The roster below is `RehearsalInspector`, the conductor's own surface,
- * unchanged. The only thing withheld is what a delegation does not carry: a span
+ * The card below is `RehearsalInspector`, the conductor's own surface,
+ * unchanged — its "Plan · Obecność" switch, its default by the moment and the
+ * pitch pipe on the plan included. The only thing withheld is what a delegation does not carry: a span
  * excusal and the cast editor, both of which are decisions about a singer's
  * standing in the choir rather than a record of who turned up. Two things are
  * added: the topic line — the leader has no rehearsal form, so what the
  * evening is about is edited in place, under the date, where the cast will
  * read it — and the debrief, written once the evening has started, which is
  * how the leader hands it back to the conductor: the plan's rows ticked off
- * first, then the words. The plan is read here at stand size, unless the
- * server says this reader may plan the evening (`may_plan`: the assistant
- * conductor announced for it under a planning grant, the project's conductor,
- * a manager) — then, until the downbeat or while there is no plan, it is the
- * manager's own editor, and a non-manager's send goes to the called singers at
- * once. From the downbeat it is read at stand size again, the editor one tap
- * away: at the music stand nobody should be one stray drag from reordering
- * the evening.
+ * on the plan itself, then the words. The plan is read here at stand size.
+ * When the server says this reader may plan the evening (`may_plan`: the
+ * assistant conductor announced for it under a planning grant, the project's
+ * conductor, a manager), the manager's own editor is one tap away ("Edytuj
+ * plan") and opens by itself only on an empty plan for an evening still
+ * ahead; a non-manager's send goes to the called singers at once. At the
+ * music stand nobody should be one stray drag from reordering the evening.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals
  */
 
 import React, { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useBlocker, useParams } from "react-router-dom";
 import { MotionConfig } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -38,8 +38,10 @@ import { ArrowLeft, CalendarOff } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { toastApiError } from "@/shared/api/errors";
+import { useUnsavedChangesWarning } from "@/shared/lib/dom/useUnsavedChangesWarning";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
+import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -77,6 +79,16 @@ export default function LeadSheet(): React.JSX.Element {
   const updateSheet = useUpdateLeadSheet(rehearsalId);
   const markPlanItem = useMarkPlanItem(rehearsalId ?? "");
   const { user } = useAuth();
+
+  // A planner's unsaved draft never leaves with the page: the back link, a
+  // link to another evening's sheet (another path) and closing the tab all
+  // ask first, in the words the workspace asks with.
+  const [isPlanDirty, setIsPlanDirty] = useState(false);
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isPlanDirty && currentLocation.pathname !== nextLocation.pathname,
+  );
+  useUnsavedChangesWarning(isPlanDirty);
 
   // The debrief's first step: which rows of the plan were done. Same gate as
   // the debrief on the server, so a reader let in to run the evening may tick.
@@ -212,7 +224,11 @@ export default function LeadSheet(): React.JSX.Element {
               </StaggeredBentoItem>
             ) : (
               <StaggeredBentoItem>
+                {/* Keyed by the evening, as in the manager's workspace: a link
+                    to another evening re-decides the pane and closes the
+                    pitch pipe rather than carrying them over. */}
                 <RehearsalInspector
+                  key={String(leadSheet.rehearsal.id)}
                   rehearsal={leadSheet.rehearsal}
                   voiceGroups={voiceGroups}
                   invitedCount={cast.length}
@@ -233,12 +249,32 @@ export default function LeadSheet(): React.JSX.Element {
                   onSaveFocus={saveFocus}
                   onSaveDebrief={saveDebrief}
                   onMarkPlanItem={markPlan}
+                  onPlanDirtyChange={setIsPlanDirty}
                 />
               </StaggeredBentoItem>
             )}
           </StaggeredBentoContainer>
         </div>
       </PageTransition>
+
+      <ConfirmModal
+        isOpen={blocker.state === "blocked"}
+        title={t("rehearsals.plan.discard.title", "Zamknąć bez zapisywania?")}
+        description={t(
+          "rehearsals.plan.discard.desc",
+          "Zmiany w planie tej próby nie zostały zapisane i przepadną.",
+        )}
+        confirmText={t("rehearsals.plan.discard.confirm", "Odrzuć zmiany")}
+        cancelText={t("rehearsals.plan.discard.keep", "Wróć do planu")}
+        isDestructive={true}
+        onConfirm={() => {
+          setIsPlanDirty(false);
+          if (blocker.state === "blocked") blocker.proceed();
+        }}
+        onCancel={() => {
+          if (blocker.state === "blocked") blocker.reset();
+        }}
+      />
     </MotionConfig>
   );
 }

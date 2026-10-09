@@ -53,23 +53,26 @@ export interface RehearsalPlanRead {
   plan_announced_at: string | null;
   /** When the rows last changed; later than `plan_announced_at` = changes unsent. */
   plan_changed_at: string | null;
+  /** What became of the last send; null while the plan was never sent. */
+  delivery: PlanDelivery | null;
   rows: RehearsalPlanItem[];
 }
 
 /**
  * What became of the notice a send asked for. `sent` — on its way to the
- * called seats now (a planner who is not a manager). `queued` — waiting in the
- * announcement queue: a manager's send always, anyone's while the evening's own
- * creation is still unannounced. `withheld` — the project is a draft, so nobody
- * is told now and the plan reaches the cast with the project.
+ * called seats. `queued` — held in the announcement queue with the evening's
+ * own creation, still unannounced. `withheld` — the project is a draft, so
+ * nobody is told now and the plan reaches the cast with the project.
+ * `discarded` — a manager dropped the held notice from the queue: the plan is
+ * public, but nobody was told; only a later read can find this.
  */
-export type PlanDelivery = "sent" | "queued" | "withheld";
+export type PlanDelivery = "sent" | "queued" | "withheld" | "discarded";
 
 /** `POST rehearsals/<id>/plan/announce/`. */
 export interface RehearsalPlanAnnounced {
   rehearsal: string;
   plan_announced_at: string | null;
-  delivery: PlanDelivery;
+  delivery: Exclude<PlanDelivery, "discarded">;
 }
 
 /*

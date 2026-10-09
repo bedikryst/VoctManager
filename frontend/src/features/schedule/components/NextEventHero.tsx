@@ -615,18 +615,26 @@ const RehearsalHero = ({
         )}
 
         {(event.focus || planRows.length > 0) && (
+          // Two things under two names: the topic is the evening's headline,
+          // the plan is its order, and neither is passed off as the other.
           <div className="mt-4 rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/60 p-3.5">
-            <Eyebrow color="muted" className="mb-1.5 flex items-center gap-1.5">
-              <AlignLeft size={12} aria-hidden="true" />
-              {t("schedule.rehearsal.details.focus_title", "Plan Pracy")}
-            </Eyebrow>
             {event.focus && (
-              <Text size="md" className="whitespace-pre-wrap font-serif italic leading-relaxed">
-                {event.focus}
-              </Text>
+              <>
+                <Eyebrow color="muted" className="mb-1.5 flex items-center gap-1.5">
+                  <AlignLeft size={12} aria-hidden="true" />
+                  {t("schedule.rehearsal.focus_title", "Temat próby")}
+                </Eyebrow>
+                <Text size="md" className="whitespace-pre-wrap font-serif italic leading-relaxed">
+                  {event.focus}
+                </Text>
+              </>
             )}
             {planRows.length > 0 && (
               <div className={cn(event.focus && "mt-3 border-t border-ethereal-incense/15 pt-3")}>
+                <Eyebrow color="muted" className="mb-1.5 flex items-center gap-1.5">
+                  <ListMusic size={12} aria-hidden="true" />
+                  {t("schedule.rehearsal.plan.title", "Plan próby")}
+                </Eyebrow>
                 <RehearsalPlanTimeline rows={planRows.slice(0, HERO_PLAN_ROWS)} />
                 {planRows.length > HERO_PLAN_ROWS && (
                   <Caption color="muted" className="mt-2 block">
