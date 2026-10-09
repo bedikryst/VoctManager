@@ -4,7 +4,8 @@
  * (`backend/roster/domain/rehearsal_plan_cases.json`) through the client
  * mirror. The fixture is read from the backend tree on purpose: one file, two
  * suites, so the count on an exclusion chip and the seats the server stops
- * calling cannot drift apart without one of the two suites failing.
+ * calling cannot drift apart without one of the two suites failing. The
+ * lengths a row's clocks imply are client-only and tested here alone.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/lib/rehearsalPlan.test
  */
@@ -17,10 +18,13 @@ import { describe, expect, it } from "vitest";
 import {
   effectiveClocks,
   itemCallsSeat,
+  plannedMinutes,
   planWindowForSeat,
+  rowLengths,
   rowLines,
   type PlanRuleRow,
   type PlanRuleSeat,
+  type TimedRow,
 } from "./rehearsalPlan";
 
 interface FixtureSeat {
@@ -133,4 +137,54 @@ describe("rehearsal plan rule — golden cases shared with the server", () => {
       }
     },
   );
+});
+
+const timed = (startsAt: string | null, minutes: number | null = null): TimedRow => ({
+  startsAt,
+  minutes,
+});
+
+describe("rowLengths — a length the clocks imply", () => {
+  it("fills the gap a row leaves to the next anchor, and the last row's to the end", () => {
+    // 5.10 as it was meant: an odd start, a warm-up up to the first round clock.
+    const lengths = rowLengths(
+      [timed(null), timed("18:30", 20), timed(null)],
+      "18:14",
+      "20:00",
+    );
+    expect(lengths).toEqual([
+      { minutes: 16, implied: true },
+      { minutes: 20, implied: false },
+      { minutes: 70, implied: true },
+    ]);
+  });
+
+  it("makes a complete plan of clocks alone", () => {
+    const rows = [timed("18:00"), timed("18:40"), timed("19:30")];
+    const lengths = rowLengths(rows, "18:00", "20:00");
+    expect(lengths.map((entry) => entry.minutes)).toEqual([40, 50, 30]);
+    expect(plannedMinutes(lengths)).toBe(120);
+  });
+
+  it("implies nothing where no fixed clock follows", () => {
+    expect(rowLengths([timed(null), timed(null), timed("19:00")], "18:00", null)).toEqual([
+      { minutes: null, implied: false },
+      { minutes: null, implied: false },
+      { minutes: null, implied: false },
+    ]);
+  });
+
+  it("implies nothing from a clock that runs backwards", () => {
+    expect(rowLengths([timed("18:30"), timed("18:10", 10)], "18:00", "20:00")[0]).toEqual({
+      minutes: null,
+      implied: false,
+    });
+  });
+
+  it("reads an evening that crosses midnight on its own axis", () => {
+    expect(rowLengths([timed("23:30"), timed("00:15")], "23:00", "01:00")).toEqual([
+      { minutes: 45, implied: true },
+      { minutes: 45, implied: true },
+    ]);
+  });
 });

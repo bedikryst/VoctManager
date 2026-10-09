@@ -2,7 +2,9 @@
  * @file rehearsalPlan.ts
  * @description The rehearsal plan as a rule, mirrored from the server's
  * `roster/domain/rehearsal_plan.py`: which rows call a given seat, how rows
- * fall into time blocks, and the window one reader is needed for. The editor
+ * fall into time blocks, and the window one reader is needed for — plus, on
+ * the client only, the length a row's clocks imply when it carries no
+ * minutes (`rowLengths`), which no rule reads. The editor
  * reads it to put a count on every exclusion chip ("bez B2 · 3 osoby") and a
  * "woła 14 z 22" under every row — both replay the same golden cases the
  * server does (`rehearsal_plan_cases.json`), so the number the conductor sees
@@ -16,7 +18,9 @@
  * @module features/rehearsals/lib/rehearsalPlan
  */
 
-import type { Participation, PieceCasting } from "@/shared/types";
+import { formatInTimeZone } from "date-fns-tz";
+
+import type { Participation, PieceCasting, Rehearsal } from "@/shared/types";
 import { isInstrumentalist } from "@/shared/lib/voiceTypes";
 import {
   sectionLettersOfSeat,
@@ -125,6 +129,42 @@ export const plusMinutes = (clock: string, minutes: number): string => {
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 };
 
+/**
+ * A clock as minutes on one evening's own axis. An evening that crosses
+ * midnight reads its small-hour clocks as the next day; one that does not
+ * reads a clock before the start as simply early.
+ */
+export const eveningAxis = (start: string, end: string | null): ((clock: string) => number) => {
+  const startMinutes = clockMinutes(start);
+  const crossesMidnight = end !== null && clockMinutes(end) < startMinutes;
+  return (clock: string): number => {
+    const minutes = clockMinutes(clock);
+    return crossesMidnight && minutes < startMinutes ? minutes + MINUTES_PER_DAY : minutes;
+  };
+};
+
+/**
+ * The minutes a plan's main part claims, breaks included: the budget set
+ * against the evening's length. Callers pass the main rows only — the reserve
+ * is what the evening does if time is left, so it never counts against it —
+ * read through `rowLengths`, so a plan written in clocks alone states its
+ * budget too. Null when no row carries a length: a plan without minutes or
+ * clocks states no budget rather than a zero.
+ */
+export const plannedMinutes = (
+  rows: readonly { readonly minutes: number | null }[],
+): number | null => {
+  let total = 0;
+  let estimated = false;
+  for (const row of rows) {
+    if (row.minutes && row.minutes > 0) {
+      total += row.minutes;
+      estimated = true;
+    }
+  }
+  return estimated ? total : null;
+};
+
 /** What the clocks are computed from: a row's anchor and its minutes, nothing else. */
 export type TimedRow = Pick<PlanRuleRow, "startsAt" | "minutes">;
 
@@ -153,6 +193,43 @@ export const effectiveClocks = (
       entry.clock !== null && row.minutes ? plusMinutes(entry.clock, row.minutes) : null;
   }
   return clocks;
+};
+
+/**
+ * How long one row runs as the plan states it. `implied` is true when the
+ * length is not the row's own minutes but the gap its clock leaves to the
+ * next fixed clock.
+ */
+export interface RowLength {
+  readonly minutes: number | null;
+  readonly implied: boolean;
+}
+
+/**
+ * Every row's length, in plan order: its own minutes, else — when the row
+ * has a clock and the next row is anchored — the gap between the two. The
+ * last row reads the gap to `end`, the evening's end (null = never timed).
+ * A conductor who writes clocks alone has then written a complete plan, and
+ * never has to type the same length twice. Display and budget only: an
+ * implied length is never a minute the clocks are derived from, so no clock
+ * moves and nothing is saved. A gap that runs backwards or is zero implies
+ * nothing. Callers pass the main rows; the reserve has no end to run to.
+ */
+export const rowLengths = (
+  rows: readonly TimedRow[],
+  start: string,
+  end: string | null,
+): RowLength[] => {
+  const onEvening = eveningAxis(start, end);
+  const clocks = effectiveClocks(rows, start);
+  return rows.map((row, index) => {
+    if (row.minutes && row.minutes > 0) return { minutes: row.minutes, implied: false };
+    const clock = clocks[index]?.clock ?? null;
+    const next = index + 1 < rows.length ? (rows[index + 1]?.startsAt ?? null) : end;
+    if (clock === null || next === null) return { minutes: null, implied: false };
+    const gap = onEvening(next) - onEvening(clock);
+    return gap > 0 ? { minutes: gap, implied: true } : { minutes: null, implied: false };
+  });
 };
 
 /**
@@ -257,6 +334,21 @@ export const shownClocks = (
 };
 
 /* ── From the panel's own payloads to the rule's shapes ──────────────────── */
+
+/**
+ * A rehearsal's start and end as the wall clock its zone keeps — the same
+ * "HH:MM" the rows' anchors are written in. `end` is null for an evening
+ * whose length was never set.
+ */
+export const eveningClocksOf = (
+  rehearsal: Pick<Rehearsal, "date_time" | "timezone" | "duration_minutes" | "end_date_time">,
+): { readonly start: string; readonly end: string | null } => ({
+  start: formatInTimeZone(rehearsal.date_time, rehearsal.timezone, "HH:mm"),
+  end:
+    rehearsal.duration_minutes && rehearsal.end_date_time
+      ? formatInTimeZone(rehearsal.end_date_time, rehearsal.timezone, "HH:mm")
+      : null,
+});
 
 /**
  * A seat from a participation and the project's casting board. `castings`
