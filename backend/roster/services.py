@@ -61,6 +61,7 @@ from notifications.models import (
     AnnouncementSubject,
     NotificationLevel,
     NotificationType,
+    PendingAnnouncement,
 )
 from notifications.services import NotificationRecipientPolicy
 from notifications.tasks import send_bulk_notifications_task, send_notification_task
@@ -2086,25 +2087,29 @@ class RehearsalOperationsService:
     def announce_plan(
         rehearsal: Rehearsal, *, published_by: "User | None" = None,
     ) -> Rehearsal:
-        """The conductor sends the plan: stamp the send, queue one notice for
+        """The conductor sends the plan: stamp the send, write one notice for
         the cast. Through the announcement queue like every other rehearsal
         change (a DRAFT project stays silent), with the change key `plan` so
         the copy says the plan is up rather than that the evening moved. The
         push cannot personalise, so the reader's own window is not in it —
         the page it opens is exact, and the reminder carries the window.
 
-        ``published_by`` is a send by somebody with no queue of their own to
-        review — the assistant conductor. The notice goes out at once through
-        the queue's own publisher (the same message, window fan-out and link)
-        and not back to its sender, unless it carries a change they did not
-        write themselves. It takes every change still waiting
-        about THIS evening, not only the plan: the notice carries the
-        evening's current date, place and calendar entry, so a move the
-        conductor has not published yet would otherwise reach the cast's
-        calendars without the notice that says it moved — and be lost for
-        good if he moved it back before publishing. His rows about anything
-        else stay his; an evening whose creation is still pending keeps
-        everything pending with it (`AnnouncementQueue.publish`).
+        ``published_by`` is the sender, and with it the notice goes out at
+        once through the queue's own publisher (the same message, window
+        fan-out and link). "Wyślij" is already the considered act the queue
+        exists to produce, for a manager as for the assistant conductor;
+        holding it for a second review would hide a step behind a button that
+        says "sent". Without ``published_by`` the notice only waits in the
+        queue. The notice does not come back to its sender, unless it carries
+        a change they did not write themselves. It takes every change still
+        waiting about THIS evening, not only the plan: the notice carries the
+        evening's current date, place and calendar entry, so a move nobody has
+        published yet would otherwise reach the cast's calendars without the
+        notice that says it moved — and be lost for good if it were moved back
+        before publishing. Rows about anything else stay in the queue; an
+        evening whose creation is still pending keeps everything pending with
+        it (`AnnouncementQueue.publish`), and `plan_delivery` reads which of
+        these became of the send.
 
         The first send publishes the plan (`Rehearsal.plan_is_public`); every
         later one is a revision, refused unless the plan changed since the
@@ -2169,8 +2174,9 @@ class RehearsalOperationsService:
                 # A queued row names no author, so the sender is read off the
                 # fields: the plan and the topic line are the two a leader
                 # writes on an evening. Anything else waiting about it (a move,
-                # a new place) a manager queued — as much news to the sender as
-                # to the rest of the cast, and they are told it with them.
+                # a new place) came through the rehearsal form, and the rows
+                # cannot say whose hand it was — so a sender who sings that
+                # evening is told it with the rest of the cast.
                 news_to_sender = AnnouncementQueue.pending_change_ids(
                     *subject, except_fields=RehearsalOperationsService._LEADER_WRITTEN_FIELDS,
                 )
@@ -2180,6 +2186,40 @@ class RehearsalOperationsService:
                     sender_id=None if news_to_sender else str(published_by.pk),
                 )
         return rehearsal
+
+    @staticmethod
+    def plan_delivery(rehearsal: Rehearsal) -> str | None:
+        """What became of the plan's last send, read from the queue rather
+        than remembered, so the editor's caption holds after a reload.
+
+        ``None`` — never sent. ``withheld`` — the project is a draft: nobody
+        was told, and the plan reaches the cast with the project. ``queued``
+        — the notice still waits in the announcement queue, held with the
+        evening's own unannounced creation. ``discarded`` — a manager dropped
+        it from the queue: the plan is public, but nobody was told.
+        ``sent`` — published to the called seats, or carried by the project's
+        own announcement when the send came while the project was a draft
+        and wrote no row of its own."""
+        if rehearsal.plan_announced_at is None:
+            return None
+        if not is_announceable(rehearsal.project):
+            return 'withheld'
+        notice = (
+            PendingAnnouncement.all_objects
+            .filter(
+                project=rehearsal.project,
+                subject_type=AnnouncementSubject.REHEARSAL,
+                subject_id=str(rehearsal.id),
+                kind=AnnouncementKind.CHANGED,
+                change_field='plan',
+            )
+            .order_by('-created_at')
+            .only('published_at', 'is_deleted')
+            .first()
+        )
+        if notice is None or notice.published_at is not None:
+            return 'sent'
+        return 'discarded' if notice.is_deleted else 'queued'
 
     @staticmethod
     def delete_rehearsal(rehearsal: Rehearsal) -> None:

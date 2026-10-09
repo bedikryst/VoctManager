@@ -1257,12 +1257,13 @@ class RehearsalPlanApiTests(APITestCase):
         self.assertEqual(content.url_path, f"/panel/schedule/rehearsal/{self.rehearsal.id}")
 
     def test_a_resend_the_cast_has_not_heard_before_is_still_the_plan(self) -> None:
-        """The queue holds a send until the conductor publishes it. While the
-        first one still waits, the cast has heard nothing, so the one message
-        they will get must not say the plan changed."""
-        from notifications.models import PendingAnnouncement
+        """A send is held while the evening's own creation is unannounced.
+        While the first one still waits, the cast has heard nothing, so the
+        one message they will get must not say the plan changed."""
+        from notifications.models import AnnouncementKind, PendingAnnouncement
 
         announce = f"{self.plan_url}announce/"
+        self._pending_row(str(self.rehearsal.id), AnnouncementKind.CREATED)
         self._put(self._evening())
         self.client.force_authenticate(user=self.manager)
         self.assertEqual(self.client.post(announce, format="json").status_code, 200)
@@ -1496,25 +1497,103 @@ class RehearsalPlanApiTests(APITestCase):
         self.assertEqual(response.data["delivery"], "queued")
         self.assertEqual(reached, set())
 
-    def test_a_managers_send_still_only_queues(self) -> None:
-        from notifications.models import PendingAnnouncement
-
-        self._put(self._evening())
+    def _managers_send(self) -> tuple[Any, set[str]]:
+        """The manager's "Wyślij plan", caught the way `_her_send` catches hers."""
         self.client.force_authenticate(user=self.manager)
         with (
             patch("notifications.announcement_queue.send_bulk_notifications_task.delay") as bulk,
+            patch("notifications.announcement_queue.send_notification_task.delay") as solo,
             self.captureOnCommitCallbacks(execute=True),
         ):
             response = self.client.post(f"{self.plan_url}announce/", format="json")
+        reached = {
+            str(recipient)
+            for call in bulk.call_args_list
+            for recipient in call.kwargs["recipient_ids"]
+        } | {str(call.kwargs["recipient_id"]) for call in solo.call_args_list}
+        return response, reached
+
+    def test_a_managers_send_goes_out_at_once(self) -> None:
+        """"Wyślij" is the considered act; a second review in the queue would
+        leave the caption saying "wysłano" over a notice that waits."""
+        from notifications.models import PendingAnnouncement
+
+        self._put(self._evening())
+        response, reached = self._managers_send()
         self.assertEqual(response.status_code, 200, response.data)
-        self.assertEqual(response.data["delivery"], "queued")
-        bulk.assert_not_called()
-        self.assertTrue(
+        self.assertEqual(response.data["delivery"], "sent")
+        self.assertIn(self._user_id("alt"), reached)
+        self.assertNotIn(str(self.stranger_user.pk), reached)
+        self.assertFalse(
             PendingAnnouncement.objects.filter(
-                subject_id=str(self.rehearsal.id), change_field="plan",
-                published_at__isnull=True,
+                subject_id=str(self.rehearsal.id), published_at__isnull=True,
             ).exists()
         )
+
+    def test_a_managers_send_takes_his_unpublished_move_of_this_evening_only(self) -> None:
+        """The notice carries the evening's current date, so his own waiting
+        move of THIS evening rides out with it; his rows about other evenings
+        stay in the queue for his review."""
+        from notifications.models import AnnouncementKind
+
+        other_evening = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=9),
+        )
+        other_row = self._pending_row(str(other_evening.id), AnnouncementKind.CHANGED, "focus")
+        move = self._pending_row(str(self.rehearsal.id), AnnouncementKind.CHANGED, "date_time")
+        self._put(self._evening())
+
+        response, _reached = self._managers_send()
+        self.assertEqual(response.status_code, 200, response.data)
+        move.refresh_from_db()
+        self.assertIsNotNone(move.published_at)
+        other_row.refresh_from_db()
+        self.assertIsNone(other_row.published_at)
+
+    def test_a_managers_send_on_a_draft_project_is_withheld(self) -> None:
+        Project.objects.filter(pk=self.project.pk).update(status=Project.Status.DRAFT)
+        self._put(self._evening())
+        response, reached = self._managers_send()
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["delivery"], "withheld")
+        self.assertEqual(reached, set())
+
+    def test_a_managers_send_waits_while_the_evening_itself_is_unannounced(self) -> None:
+        from notifications.models import AnnouncementKind
+
+        self._pending_row(str(self.rehearsal.id), AnnouncementKind.CREATED)
+        self._put(self._evening())
+        response, reached = self._managers_send()
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["delivery"], "queued")
+        self.assertEqual(reached, set())
+
+    def test_the_plan_read_says_what_became_of_the_last_send(self) -> None:
+        """The editor's caption is read after a reload too, so the plan's own
+        read carries the delivery: nothing before a send, "queued" while the
+        notice is held, "discarded" once a manager drops it from the queue,
+        and "sent" once a send goes out."""
+        from notifications.announcement_queue import AnnouncementQueue
+        from notifications.models import AnnouncementKind
+
+        self._put(self._evening())
+        self.assertIsNone(self.client.get(self.plan_url).data["delivery"])
+
+        creation = self._pending_row(str(self.rehearsal.id), AnnouncementKind.CREATED)
+        self._managers_send()
+        self.assertEqual(self.client.get(self.plan_url).data["delivery"], "queued")
+
+        AnnouncementQueue.discard(self.project)
+        self.assertEqual(self.client.get(self.plan_url).data["delivery"], "discarded")
+
+        creation.refresh_from_db()
+        self.assertTrue(creation.is_deleted)
+        self._put(self._evening()[:2])
+        self._managers_send()
+        self.assertEqual(self.client.get(self.plan_url).data["delivery"], "sent")
+
+        Project.objects.filter(pk=self.project.pk).update(status=Project.Status.DRAFT)
+        self.assertEqual(self.client.get(self.plan_url).data["delivery"], "withheld")
 
     def test_her_send_keeps_the_guards(self) -> None:
         self._let_the_leader_plan()

@@ -57,8 +57,7 @@ from core.request_utils import client_payload, request_user, truthy_flag
 from finance.exceptions import FinanceError, finance_error_response
 from finance.services.ledger import LedgerService
 from notifications.announcement_queue import AnnouncementQueue
-from notifications.announcements import is_announceable
-from notifications.models import AnnouncementSubject, PendingAnnouncement, PushDevice
+from notifications.models import PendingAnnouncement, PushDevice
 
 from .cast_order import participation_sort_key
 from .dashboard_serializers import (
@@ -2222,6 +2221,8 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         `piece-castings/boards/`) and answering with what was persisted and
         `plan_changed_at`, so the editor re-baselines on both. Saving is
         silent — see `announce`. The last write wins between two writers.
+        `delivery` is what became of the last send (`plan_delivery`), so the
+        editor never calls a waiting or dropped notice "sent".
         """
         access = self._plan_access(request, pk)
         if access is None:
@@ -2269,6 +2270,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
             'rehearsal': str(rehearsal.id),
             'plan_announced_at': rehearsal.plan_announced_at,
             'plan_changed_at': rehearsal.plan_changed_at,
+            'delivery': RehearsalOperationsService.plan_delivery(rehearsal),
             'rows': rows,
         })
 
@@ -2339,17 +2341,18 @@ class RehearsalViewSet(viewsets.ModelViewSet):
     def plan_announce(self, request, pk=None) -> Response:
         """"Wyślij plan": the one moment the cast hears about the plan.
 
-        A manager's send goes through the announcement queue he publishes;
-        anyone else `user_may_plan` admits has no queue to review, so theirs
-        goes out at once (`announce_plan(published_by=...)`). Resolved like
-        `plan`, never through `get_queryset`, which answers "which evenings
-        call me as a singer" and would 404 an assistant who is not cast.
+        Whoever `user_may_plan` admits — a manager included — sends at once
+        (`announce_plan(published_by=...)`): the button is the considered
+        act, and a second review in the queue would leave it saying "sent"
+        over a notice that waits. Resolved like `plan`, never through
+        `get_queryset`, which answers "which evenings call me as a singer"
+        and would 404 an assistant who is not cast.
 
         `delivery` says what became of the notice, because "sent" is not the
-        only answer: `queued` — waiting in the queue (a manager's send, or
-        any send while the evening's own creation is unannounced); `withheld`
-        — the project is a draft, so nobody is told now and the plan reaches
-        the cast with the project; `sent` — on its way to the called seats.
+        only answer (`plan_delivery`): `queued` — held with the evening's own
+        creation, still unannounced; `withheld` — the project is a draft, so
+        nobody is told now and the plan reaches the cast with the project;
+        `sent` — on its way to the called seats.
         """
         access = self._plan_access(request, pk)
         if access is None:
@@ -2364,8 +2367,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
             )
         try:
             rehearsal = RehearsalOperationsService.announce_plan(
-                rehearsal=rehearsal,
-                published_by=None if user_is_manager(user) else user,
+                rehearsal=rehearsal, published_by=user,
             )
         except Rehearsal.DoesNotExist:
             # Deleted between the gate above and the send's own locked read.
@@ -2378,18 +2380,10 @@ class RehearsalViewSet(viewsets.ModelViewSet):
                 detail=str(exc),
                 validation_errors={"plan": [str(exc)]},
             )
-        if not is_announceable(rehearsal.project):
-            delivery = 'withheld'
-        elif AnnouncementQueue.has_pending_change(
-            rehearsal.project, AnnouncementSubject.REHEARSAL, str(rehearsal.id), "plan",
-        ):
-            delivery = 'queued'
-        else:
-            delivery = 'sent'
         return Response({
             'rehearsal': str(rehearsal.id),
             'plan_announced_at': rehearsal.plan_announced_at,
-            'delivery': delivery,
+            'delivery': RehearsalOperationsService.plan_delivery(rehearsal),
         })
 
     @action(
