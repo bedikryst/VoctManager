@@ -802,7 +802,9 @@ class RehearsalCreateDTO(EnterpriseBaseDTO):
     duration_minutes: int | None = Field(None, ge=5, le=MINUTES_PER_DAY)
     timezone: str = 'Europe/Warsaw'
     location_id: UUID | None = None
-    focus: str = Field(default='', max_length=255)
+    # The column's length (`Rehearsal.focus`): a longer topic past this
+    # contract would reach the database and fail there, not here.
+    focus: str = Field(default='', max_length=200)
     is_mandatory: bool = True
     calls_instrumentalists: bool = False
     # The sections a sectional calls, as canonical SATB letters ("SA"); '' is
@@ -836,7 +838,7 @@ class RehearsalUpdateDTO(EnterpriseBaseDTO):
     duration_minutes: int | None = Field(None, ge=5, le=MINUTES_PER_DAY)
     timezone: str | None = None
     location_id: UUID | None = None
-    focus: str | None = Field(None, max_length=255)
+    focus: str | None = Field(None, max_length=200)
     is_mandatory: bool | None = None
     calls_instrumentalists: bool | None = None
     called_sections: str | None = None
@@ -882,7 +884,7 @@ class LeadSheetUpdateDTO(EnterpriseBaseDTO):
     debrief is a report to the managers — so the view reads `model_fields_set`
     and routes each one; a patch naming neither is refused.
     """
-    focus: str = Field("", max_length=255)
+    focus: str = Field("", max_length=200)
     debrief: str = Field("", max_length=4000)
 
     @field_validator("focus", "debrief", mode="before")

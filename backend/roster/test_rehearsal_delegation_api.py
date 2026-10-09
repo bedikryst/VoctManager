@@ -518,6 +518,16 @@ class LeadSheetFocusTests(APITestCase):
         self.rehearsal.refresh_from_db()
         self.assertEqual(self.rehearsal.focus, "")
 
+    def test_a_topic_longer_than_its_column_is_refused_here(self) -> None:
+        """No serializer stands before this contract, so the DTO is the only
+        check between a long topic and the database, where Postgres would
+        fail the write rather than refuse it."""
+        self.client.force_authenticate(self.leader_user)
+        response = self.client.patch(self.url, {"focus": "x" * 201}, format="json")
+        self.assertEqual(response.status_code, 400, response.content)
+        self.rehearsal.refresh_from_db()
+        self.assertEqual(self.rehearsal.focus, "Kyrie")
+
     def test_a_grant_without_the_roll_call_cannot_write_it(self) -> None:
         self.grant.can_take_roll_call = False
         self.grant.save()
