@@ -60,22 +60,13 @@ const ui = UI[lang];
    every page on the site, so it belongs in `TRANSLATED_ROUTES` and gets a real hreflang graph. */
 const { path, alternates, available } = pageI18n("/newsletter", lang);
 
-/* THE BUILD'S OWN DAY, IN WARSAW — the same clock `/nuntius` dates its candidates against, and for
-   the same reason: an ISO day compared as a string needs no timezone arithmetic, and a build
-   machine an hour behind must not retire an evening that is still ahead here. Unlike the receipt
-   page this one may settle the question at build time: it is read from a link on the site rather
-   than from a mail weeks old, so a deploy is never far behind the reader. */
-const today = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Europe/Warsaw",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-}).format(new Date());
-
+/* Unlike the receipt page this one may settle "which evening is ahead" at build time: it is read
+   from a link on the site rather than from a mail weeks old, so a deploy is never far behind the
+   reader. */
 const register = noticeRegister(
   await getCollection("concerts"),
   lang,
-  today,
+  new Date(),
   localizePath("/koncerty", lang),
 );
 

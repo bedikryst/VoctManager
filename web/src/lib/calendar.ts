@@ -1,7 +1,12 @@
 /**
  * @file calendar.ts
- * @description A downloadable concert event with Warsaw civil time resolved to UTC. Calendar
- *  text is escaped and folded by UTF-8 bytes so long Polish names cannot corrupt an import.
+ * @description Warsaw civil time resolved to an instant, and the two things the site asks of it:
+ *  a downloadable concert event (text escaped and folded by UTF-8 bytes so long Polish names
+ *  cannot corrupt an import), and the moment an evening stops being "ahead".
+ *
+ *  THE ZONE IS NAMED, NEVER INHERITED. The production build runs in a UTC container, so a bare
+ *  `new Date("2026-10-11T23:59:59")` there is two hours into the next Polish day. Every clock
+ *  comparison against a corpus date goes through `warsawInstant`.
  * @module lib/calendar
  */
 
@@ -20,7 +25,7 @@ export interface CalendarEvent {
 const utcStamp = (date: Date): string => date.toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
 
 /** Resolve the corpus's local date and hour using the zone's actual daylight-saving rules. */
-export function warsawCalendarDate(date: string, time: string): string {
+export function warsawInstant(date: string, time: string): Date {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) {
     throw new Error("[calendar] Expected an ISO date and HH:MM time.");
   }
@@ -54,8 +59,31 @@ export function warsawCalendarDate(date: string, time: string): string {
   if (formatter.format(new Date(instant)) !== date + " " + time + ":00") {
     throw new Error("[calendar] Concert time is not a valid Warsaw civil time.");
   }
-  return utcStamp(new Date(instant));
+  return new Date(instant);
 }
+
+export const warsawCalendarDate = (date: string, time: string): string =>
+  utcStamp(warsawInstant(date, time));
+
+/** The slice of an evening the "still ahead" rule reads — a corpus entry's data or a tour date. */
+export interface EveningClock {
+  readonly date: string;
+  readonly time?: string | undefined;
+  readonly endTime?: string | undefined;
+}
+
+/**
+ * Whether an evening is still ahead of `now`: until the end of the organiser's slot where one is
+ * published, else until the downbeat, else until the last minute of its day — all on Warsaw's
+ * clock. `endTime` counts only beside a `time`, the rule `lib/eventSchema` folds it by.
+ *
+ * Read at build time by every surface that announces "the next concert", so a deploy after the
+ * slot closes is what takes the announcement down — the same evening, not the next day.
+ */
+export const isEveningAhead = (evening: EveningClock, now: Date): boolean => {
+  const closesAt = evening.time ? (evening.endTime ?? evening.time) : "23:59";
+  return warsawInstant(evening.date, closesAt).getTime() >= now.getTime();
+};
 
 const escapeText = (value: string): string =>
   value

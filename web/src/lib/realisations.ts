@@ -9,9 +9,9 @@
  *  `data/foundationSupport.ts`, the dates, places, performers and composers from `concerts.yaml`,
  *  the record's counts from the corpus against `FOUNDATION.foundedOn`. Nothing here holds a figure.
  *
- *  THE TENSE IS BUILD-TIME. A realisation is `ahead` until the end of its concert's own day at the
- *  moment of the build — the rule `lib/cycle.upcomingStation` applies — so a deploy after the date
- *  is what turns both pages to the past tense.
+ *  THE TENSE IS BUILD-TIME. A realisation is `ahead` until its concert's slot closes at the moment
+ *  of the build — `lib/calendar`'s `isEveningAhead`, the rule `lib/cycle.upcomingStation` applies —
+ *  so a deploy after the evening is what turns both pages to the past tense.
  * @architecture Astro islands 2026
  * @module lib/realisations
  */
@@ -21,6 +21,7 @@ import type { CollectionEntry } from "astro:content";
 import { FOUNDATION } from "../data/foundation";
 import { FEATURED_REALISATION, REALISATIONS, type Realisation } from "../data/foundationSupport";
 import { localizePath, pickLocale, type Locale } from "../i18n/config";
+import { isEveningAhead } from "./calendar";
 import { concertKey, overlayValue } from "./copyOverlay";
 import { cycleStations } from "./cycle";
 import { INTL_LOCALE, longDate } from "./dates";
@@ -73,10 +74,6 @@ export interface RealisationView {
   readonly href?: string;
 }
 
-/** End of the concert's own day, so an evening happening today is still ahead all day. */
-const isAhead = (iso: string, now: Date): boolean =>
-  new Date(`${iso}T23:59:59`).getTime() >= now.getTime();
-
 /**
  * The named hands of the evening. Credits carry a role and a name; `realizacja` is a free line
  * that is a performer only when it opens on an instrument ("Skrzypce: Radu Ropotan") and a
@@ -124,7 +121,7 @@ function viewOf(
     cycle: c.cycle,
     title: overlayValue(concertKey(entry.id, "title"), lang) ?? c.title,
     accent: c.accent,
-    ahead: isAhead(c.date, now),
+    ahead: isEveningAhead({ date: c.date, time: c.time, endTime: c.endTime }, now),
     dateIso: c.date,
     when: c.time ? `${longDate(c.date, lang)}, ${c.time}` : longDate(c.date, lang),
     where: c.venue ?? pickLocale(c.metaPlace, lang),

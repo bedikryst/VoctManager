@@ -23,11 +23,12 @@
  *  AN EVENING WITHOUT A `date` IS PAST, NOT MISSING. Two of them state a vague moment instead
  *  ("jesień 2025", "2024"), which is copy and lives in the overlay; they cannot be compared against
  *  a clock, and every one of them has already happened. So the test for "ahead" is a dated evening
- *  dated today or later, and everything else falls to the record — where the vague moment is
- *  exactly what the column wants to print.
+ *  whose slot has not closed (`lib/calendar`'s `isEveningAhead`), and everything else falls to the
+ *  record — where the vague moment is exactly what the column wants to print.
  * @architecture Astro islands 2026
  * @module lib/noticeRegister
  */
+import { isEveningAhead } from "./calendar";
 import { concertKey, withOverlay } from "./copyOverlay";
 import { cycleNumerals, cycleStations } from "./cycle";
 import { longMoment, viaMoment } from "./dates";
@@ -105,7 +106,7 @@ export interface NoticeRegisterData {
 }
 
 /**
- * The register, in `locale`, against `today` (an ISO `YYYY-MM-DD` in the site's own timezone).
+ * The register, in `locale`, against `now`.
  *
  * `concertsHref` is the caller's already-localized `/koncerty` path, on the rule `lib/registrum`
  * sets: only the caller knows which concerts are translated, so the localizing stays there and
@@ -115,7 +116,7 @@ export interface NoticeRegisterData {
 export const noticeRegister = (
   concerts: readonly RegisterStation[],
   locale: Locale,
-  today: string,
+  now: Date,
   concertsHref: string,
 ): NoticeRegisterData => {
   // Resolved over the WHOLE corpus before anything is filtered out, so an evening this page does
@@ -164,11 +165,12 @@ export const noticeRegister = (
     };
   });
 
-  // The soonest station dated today or later. `order` is the chronology, so the FIRST match in
-  // this ordering is that evening; a dateless one states a vague moment and has already happened.
-  const aheadAt = stations.findIndex(
-    (entry) => entry.data.date !== undefined && entry.data.date >= today,
-  );
+  // The soonest station still ahead. `order` is the chronology, so the FIRST match in this
+  // ordering is that evening; a dateless one states a vague moment and has already happened.
+  const aheadAt = stations.findIndex((entry) => {
+    const { date, time, endTime } = entry.data;
+    return date !== undefined && isEveningAhead({ date, time, endTime }, now);
+  });
 
   return {
     ahead: aheadAt === -1 ? undefined : evenings[aheadAt],

@@ -21,6 +21,7 @@
  */
 // Explicit extension: `lib/pressKit` imports this module, and the press-pack generator loads that
 // under bare Node, which resolves no extensionless specifier.
+import { isEveningAhead } from "./calendar.ts";
 import { romanNumeral } from "./dates.ts";
 
 /** The slice of a `concerts` entry this module reads — structural, like lib/registrum's. */
@@ -30,6 +31,8 @@ export interface CycleStation {
     readonly order: number;
     readonly cycle: boolean;
     readonly date?: string | undefined;
+    readonly time?: string | undefined;
+    readonly endTime?: string | undefined;
   };
 }
 
@@ -53,13 +56,15 @@ export const cycleNumerals = (entries: readonly CycleStation[]): ReadonlyMap<str
   new Map(cycleStations(entries).map((entry, i) => [entry.id, romanNumeral(i + 1)]));
 
 /**
- * The evening that has not happened yet — the soonest station dated today or later, or
- * `undefined`, which is the resting state this site was in for its whole life until 2026.
+ * The evening that has not happened yet — the soonest station still ahead (`lib/calendar`'s
+ * `isEveningAhead`), or `undefined`, which is the resting state this site was in for its whole
+ * life until 2026.
  *
  * Read at BUILD time, so the announcement it drives (the hero's pill, the landing's Proximum band,
  * the station's own marker) survives its own concert until the next deploy. That is the direction
  * that costs least — the same trade `lib/eventSchema` documents for `eventStatus` — but it IS a
- * standing obligation: a deploy after the date is what takes the announcement down.
+ * standing obligation: a deploy after the evening's slot closes is what takes the announcement
+ * down.
  *
  * Stations only. A wedding or a liturgy in the corpus is not what "the next concert" means, and
  * the pill that names it would be inviting strangers to somebody's wedding.
@@ -70,10 +75,8 @@ export const upcomingStation = <T extends CycleStation>(
 ): T | undefined =>
   cycleStations(entries)
     .filter((entry) => {
-      if (!entry.data.date) return false;
-      // End of the concert's own day, so an evening happening tonight is still ahead all day.
-      const closes = new Date(`${entry.data.date}T23:59:59`);
-      return !Number.isNaN(closes.getTime()) && closes.getTime() >= now.getTime();
+      const { date, time, endTime } = entry.data;
+      return date !== undefined && isEveningAhead({ date, time, endTime }, now);
     })
     .sort(
       (a, b) => new Date(`${a.data.date}`).getTime() - new Date(`${b.data.date}`).getTime(),

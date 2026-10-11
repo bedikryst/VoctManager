@@ -24,6 +24,7 @@
  */
 
 import { SITE } from "../i18n/config";
+import { isEveningAhead } from "./calendar";
 import { FOUNDATION_REF } from "./foundationSchema";
 
 /** What the door cost, where the ensemble actually recorded it. */
@@ -79,16 +80,14 @@ export type MusicEventNode = Record<string, unknown>;
  * markup would finally be worth something. An undated entry gets no status at all: with no day
  * to compare against, either value is a guess.
  *
- * Resolved at BUILD time, so an upcoming concert keeps saying `EventScheduled` until the first
- * deploy after its date. That drift is the harmless direction (a day-stale "scheduled" costs
- * nothing), whereas the reverse would suppress the result outright.
+ * The evening closes on `lib/calendar`'s `isEveningAhead`, the rule every "next concert" surface
+ * reads. Resolved at BUILD time, so an upcoming concert keeps saying `EventScheduled` until the
+ * first deploy after it. That drift is the harmless direction (a stale "scheduled" costs nothing),
+ * whereas the reverse would suppress the result outright.
  */
-const eventStatusFor = (date: string | undefined, now: Date): string | undefined => {
-  if (!date) return undefined;
-  // End-of-day, so a concert happening tonight still reads as scheduled all day.
-  const closes = new Date(`${date}T23:59:59`);
-  if (Number.isNaN(closes.getTime())) return undefined;
-  return closes.getTime() >= now.getTime()
+const eventStatusFor = (seed: EventSeed, now: Date): string | undefined => {
+  if (!seed.date) return undefined;
+  return isEveningAhead({ date: seed.date, time: seed.time, endTime: seed.endTime }, now)
     ? "https://schema.org/EventScheduled"
     : "https://schema.org/EventCompleted";
 };
@@ -123,7 +122,7 @@ const offersFor = (
 
 /** Build one `MusicEvent` node. `now` is injectable so the status rule stays testable. */
 export const musicEvent = (seed: EventSeed, now: Date = new Date()): MusicEventNode => {
-  const status = eventStatusFor(seed.date, now);
+  const status = eventStatusFor(seed, now);
   return {
     "@type": "MusicEvent",
     name: seed.name,
