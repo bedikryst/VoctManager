@@ -1,0 +1,53 @@
+{% comment %}
+    Annex 1 of a cast performer's umowa o dzieło, in the board's wording: the
+    concert, then the works this person performs in, in concert order, each
+    with its setting and the part entrusted, which is the line with Roman
+    divisi ("Sopran I") and any named solo with its bars. A part the casting
+    does not know yet is a cell to write in; no programme at all leaves
+    numbered rows to fill. Point 2 is the record § 4 ust. 3 and § 5 ust. 1 of
+    the contract point to, written in by hand. Reads `parts`, `subject`,
+    `concert`, `payee_name` and `number` from the contract's context.
+{% endcomment %}
+<section class="annex">
+    {% if subject.kind == "instrumental" %}
+        {% include "finance/_annex_head.html" with n=1 of="do umowy" title="Repertuar i powierzone partie instrumentalne" %}
+    {% else %}
+        {% include "finance/_annex_head.html" with n=1 of="do umowy" title="Repertuar i powierzone partie wokalne" %}
+    {% endif %}
+    <p>Artysta: <strong>{{ payee_name }}</strong></p>
+    <p>Koncert: „{{ concert.title }}”<br>
+        Termin i miejsce: {{ concert.day_written }} r., godz. {{ concert.starts_at }}, {% if concert.place %}{{ concert.place }}{% else %}<span class="blank blank--l"></span>{% endif %}.</p>
+    <ol>
+        <li>Zakres Dzieła obejmuje artystyczne wykonanie podczas Koncertu partii {% if subject.kind == "instrumental" %}instrumentalnych{% else %}wokalnych{% endif %} wskazanych w poniższym zestawieniu, zgodnie z przekazanym Artyście materiałem nutowym.</li>
+    </ol>
+    {% comment %}Outside the numbered point: a list item is kept whole on a page, and a long table must be free to break between rows.{% endcomment %}
+    <table class="grid parts repertoire">
+        <thead>
+            <tr>
+                <th class="parts-n">Lp.</th>
+                <th>Tytuł utworu</th>
+                <th>Kompozytor / opracowanie</th>
+                <th class="repertoire-voicing">Układ głosów</th>
+                <th class="parts-part">Powierzona partia, w tym fragmenty solowe</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for part in parts %}
+                <tr>
+                    <td class="figure">{{ forloop.counter }}.</td>
+                    <td>{{ part.title }}{% if part.is_encore %} (bis){% endif %}</td>
+                    <td>{{ part.authorship }}</td>
+                    <td>{{ part.voicing }}</td>
+                    <td>{{ part.held }}</td>
+                </tr>
+            {% empty %}
+                {% for row in "12345678" %}<tr class="blank-row"><td class="figure">{{ forloop.counter }}.</td><td></td><td></td><td></td><td></td></tr>{% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+    <ol class="continues-at-2">
+        <li>Wcześniejsze wykonania utrwalone podczas prób oraz materiały z wcześniejszych prób, o których mowa w § 4 ust. 3 i § 5 ust. 1 Umowy:
+            <ul class="write-lines"><li></li><li></li><li></li></ul>
+        </li>
+    </ol>
+</section>

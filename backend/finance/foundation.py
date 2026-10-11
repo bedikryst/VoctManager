@@ -41,6 +41,9 @@ class Representative:
 @dataclass(frozen=True)
 class Foundation:
     legal_name: str
+    # "zawarta pomiędzy: Fundacją …": the work contract's parties stand in the
+    # instrumental, stored as such for the same reason as the seat below.
+    legal_name_instrumental: str
     # "z siedzibą w Krakowie", "zawarta w Krakowie": the seat in the locative,
     # stored as such because a template can only concatenate.
     seat_locative: str
@@ -62,8 +65,11 @@ class Foundation:
 # Checked against the KRS on 2026-09-23 (board in office since 2026-04-27). The
 # full KRS names carry middle names and a capitalised particle; the printed form
 # omits the middle names, and the matching below finds the payee either way.
+# Anna Marcisz comes first because she is the board member who signs the
+# foundation's contracts.
 FOUNDATION = Foundation(
     legal_name="Fundacja VoctFoundation",
+    legal_name_instrumental="Fundacją VoctFoundation",
     seat_locative="Krakowie",
     street="ul. Św. Filipa 23/3",
     postal_code="31-150",
@@ -73,15 +79,15 @@ FOUNDATION = Foundation(
     regon="544621525",
     representatives=(
         Representative(
+            name="Anna Marcisz",
+            function="Wiceprezes Zarządu",
+            user_email="anna.kaczka92@gmail.com",
+        ),
+        Representative(
             name="Florentyn de Bazelaire de Boucheporn",
             function="Prezes Zarządu",
             aliases=("Florent de Bazelaire",),
             user_email="florentyn.de.bazelaire@gmail.com",
-        ),
-        Representative(
-            name="Anna Marcisz",
-            function="Wiceprezes Zarządu",
-            user_email="anna.kaczka92@gmail.com",
         ),
         Representative(
             name="Krystian Bugalski",

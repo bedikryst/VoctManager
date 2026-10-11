@@ -14,13 +14,17 @@
              Polish only and deliberately not gettext'd: this is Polish legal
              text under Polish law, intended for legal review rather
              than translation, and a word resolved through the request's
-             language would drop French into a Polish contract. The wording's
-             source is `docs/specs/project-finance-contract-drafts-2026-09.md`;
-             a correction lands there first, then in the template.
+             language would drop French into a Polish contract. A cast
+             performer's umowa o dzieło is the board's own wording (2026-10),
+             transcribed in `docs/umowy/generator/umowa_dzielo.py`; every other
+             document's source is
+             `docs/specs/project-finance-contract-drafts-2026-09.md`. A
+             correction lands in its source first, then in the template.
 @architecture Enterprise SaaS 2026
 @module finance/infrastructure/documents
 """
 import calendar
+import re
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -62,11 +66,12 @@ from ..rules import (
     VOLUNTEER_INSURANCE_MAX_DAYS,
     is_artistic_payee,
     local_date,
+    local_moment,
 )
 from ..services.budget import BudgetService, volunteer_period_days
-from .amount_words import amount_to_words_pl, format_amount_pl
+from .amount_words import amount_to_words_fraction_pl, amount_to_words_pl, format_amount_pl
 from .document_notes import bill_notes
-from .vocabulary import MONTH_NAMES
+from .vocabulary import MONTH_NAMES, MONTH_NAMES_GENITIVE
 
 _CONTRACT_TEMPLATES: dict[str, str] = {
     FeeForm.DZIELO: "finance/contract_dzielo.html",
@@ -95,6 +100,10 @@ class Subject:
 class Concert:
     title: str
     day: date
+    # The day written out for a sentence, "11 października 2026".
+    day_written: str
+    # The local start, "13:30".
+    starts_at: str
     # Venue name and address, or "" when the project has no venue yet — the
     # paper then carries a line to write it in.
     place: str
@@ -114,6 +123,16 @@ class Solo:
     score_reference: str
 
 
+_DIVISI_NUMBER = re.compile(r" ([1-4])(?=, |$)")
+_ROMAN = {"1": "I", "2": "II", "3": "III", "4": "IV"}
+
+
+def roman_divisi(line: str) -> str:
+    """"Sopran 1, Alt 2" as the board's work contract writes divisi: "Sopran I,
+    Alt II". A contract-only spelling; the app's labels keep their figures."""
+    return _DIVISI_NUMBER.sub(lambda match: " " + _ROMAN[match.group(1)], line)
+
+
 @dataclass(frozen=True)
 class PerformerPart:
     """One row of a performer's "Partie" annex: a programme work and what this
@@ -121,10 +140,36 @@ class PerformerPart:
     when they hold only a solo there or have no casting yet."""
 
     composer: str
+    # The arranger as the archive records them, or "".
+    arranger: str
     title: str
     is_encore: bool
+    # The piece's setting as the archive records it ("SSAATTBB"), or "".
+    voicing: str
     line: str
     solos: tuple[Solo, ...]
+
+    @property
+    def authorship(self) -> str:
+        """The work contract's "Kompozytor / opracowanie" cell: the composer,
+        then the arranger marked "(arr.)"."""
+        if not self.arranger:
+            return self.composer
+        arranged = f"{self.arranger} (arr.)"
+        return f"{self.composer}; {arranged}" if self.composer else arranged
+
+    @property
+    def held(self) -> str:
+        """The work contract's "Powierzona partia" cell: the line with Roman
+        divisi, then the named solos with their bars. "" leaves the cell to
+        the pen."""
+        line = roman_divisi(self.line)
+        solos = "; ".join(
+            f"{solo.label} ({solo.score_reference})" if solo.score_reference else solo.label for solo in self.solos
+        )
+        if not solos:
+            return line
+        return f"{line} oraz solo: {solos}" if line else f"solo: {solos}"
 
 
 @dataclass(frozen=True)
@@ -208,9 +253,13 @@ def _place(project: Project) -> str:
 
 
 def concert_facts(project: Project) -> Concert:
+    start = local_moment(project.date_time, project.timezone)
+    day = start.date()
     return Concert(
         title=project.title,
-        day=local_date(project.date_time, project.timezone),
+        day=day,
+        day_written=f"{day.day} {MONTH_NAMES_GENITIVE[day.month - 1]} {day.year}",
+        starts_at=f"{start:%H:%M}",
         place=_place(project),
     )
 
@@ -293,8 +342,10 @@ def performer_parts(project: Project, seat: Participation) -> list[PerformerPart
         )
         parts.append(PerformerPart(
             composer=str(item.piece.composer) if item.piece.composer is not None else "",
+            arranger=_one_line(item.piece.arranger),
             title=item.piece.title,
             is_encore=item.is_encore,
+            voicing=_one_line(item.piece.voicing),
             line=", ".join(
                 _line_label(code, scope)
                 for code in sorted(mine, key=lambda code: _LINE_ORDER.get(code, len(_LINE_ORDER)))
@@ -475,6 +526,7 @@ def _document_context(contract: Contract) -> dict[str, Any]:
         "signed_on": contract.signed_on,
         "amount": format_amount_pl(contract.amount),
         "amount_words": amount_to_words_pl(contract.amount),
+        "amount_words_fraction": amount_to_words_fraction_pl(contract.amount),
         "subject": _subject(item),
         "concert": concert_facts(item.budget.project),
     }
@@ -560,7 +612,7 @@ def render_bill_pdf(contract: Contract) -> bytes:
 
 def file_segment(value: str) -> str:
     """A filename fragment: no spaces and no path separators. A contract number
-    carries slashes ("UoD/3/2026")."""
+    carries slashes ("VF—UMD/26/03")."""
     return value.strip().replace(" ", "_").replace("/", "-").replace("\\", "-")
 
 

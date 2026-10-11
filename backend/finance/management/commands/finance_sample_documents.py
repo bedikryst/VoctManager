@@ -156,10 +156,13 @@ def _sample_concert() -> list[tuple[str, bytes]]:
     )
     composer = Composer.objects.create(first_name="Tomás Luis", last_name="de Victoria")
     introitus, kyrie, versa = (
-        Piece.objects.create(title=title, composer=composer)
-        for title in ("Officium defunctorum: Introitus", "Kyrie", "Versa est in luctum")
+        Piece.objects.create(title=title, composer=composer, voicing=voicing)
+        for title, voicing in (
+            ("Officium defunctorum: Introitus", "SATB"), ("Kyrie", "SSATB"), ("Versa est in luctum", "SSATB"),
+        )
     )
-    encore = Piece.objects.create(title="Ave verum corpus")
+    # No composer and an arranger: the annex's authorship cell from its other side.
+    encore = Piece.objects.create(title="Ave verum corpus", arranger="Jan Przykładowy", voicing="SATB")
     for order, piece in enumerate((introitus, kyrie, versa, encore), start=1):
         ProgramItem.objects.create(project=project, piece=piece, order=order, is_encore=piece == encore)
 

@@ -2,7 +2,8 @@
 @file amount_words.py
 @description An amount as a Polish document prints it: in figures ("1 500,00")
              and in words for the "słownie" line of a contract or a bill ("tysiąc
-             pięćset złotych zero groszy"). Pure functions; Polish only, like the
+             pięćset złotych zero groszy", or "… złotych 00/100" where the
+             board's wording has it). Pure functions; Polish only, like the
              documents that use them.
 @architecture Enterprise SaaS 2026
 @module finance/infrastructure/amount_words
@@ -104,6 +105,16 @@ def amount_to_words_pl(amount: Decimal) -> str:
         f"{number_to_words_pl(zlote)} {plural_form(zlote, _ZLOTY)} "
         f"{number_to_words_pl(grosze)} {plural_form(grosze, _GROSZE)}"
     )
+
+
+def amount_to_words_fraction_pl(amount: Decimal) -> str:
+    """1500.50 reads "tysiąc pięćset złotych 50/100": the board's work contract
+    spells the złote and writes the grosze as a fraction, which closes the line
+    just as firmly."""
+    value = _to_grosz(amount)
+    zlote = int(value)
+    grosze = int((value - zlote) * 100)
+    return f"{number_to_words_pl(zlote)} {plural_form(zlote, _ZLOTY)} {grosze:02d}/100"
 
 
 def format_amount_pl(amount: Decimal) -> str:

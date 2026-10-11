@@ -91,6 +91,15 @@ strong { color: var(--ink-1); font-weight: 600; }
     margin: 0 0 4px 0;
 }
 .title-number { white-space: nowrap; }
+/* The work contract's full name continues under its title, in the same voice. */
+.title-sub {
+    font-family: {{ font_serif }};
+    font-size: 11.5pt;
+    line-height: 1.3;
+    text-align: center;
+    color: var(--ink-2);
+    margin: 0 0 6px 0;
+}
 .concluded {
     text-align: center;
     color: var(--ink-3);
@@ -129,6 +138,18 @@ ol.letters > li::before {
     position: absolute;
     left: -1.5em;
 }
+/* The board's privacy notice letters its points "a.", and cites them so. It
+   is set a step smaller so that it stays one page to sign and file. */
+ol.alpha { list-style-type: lower-alpha; margin-top: 3px; }
+.notice { font-size: 8pt; line-height: 1.45; }
+.notice ol > li { margin-bottom: 3px; }
+
+/* A list split around a table goes on counting. The renderer ignores
+   `<ol start>`, so the counter is set here. */
+ol.continues-at-2 { counter-reset: list-item 1; }
+
+/* The fee stated on a line of its own under the clause that names it. */
+.fee { margin: 4px 0 2px 0; }
 
 .blank {
     display: inline-block;
@@ -223,6 +244,8 @@ table.grid.parts tr.blank-row td { height: 8.5mm; }
 table.grid.parts .parts-n { width: 8%; }
 table.grid.parts .parts-part { width: 34%; }
 .parts-solo { color: var(--ink-3); }
+table.grid.repertoire .parts-n { width: 6%; }
+table.grid.repertoire .repertoire-voicing { width: 11%; }
 
 /* The hours record copies the office's form: centred figures, and a whole
    month of rows on one page when the sheet lists every day. */

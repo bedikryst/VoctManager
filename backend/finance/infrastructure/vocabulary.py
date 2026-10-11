@@ -113,6 +113,12 @@ MONTH_NAMES: tuple[str, ...] = (
     "lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień",
 )
 
+# A date written out in a sentence ("11 października 2026 r.") takes the genitive.
+MONTH_NAMES_GENITIVE: tuple[str, ...] = (
+    "stycznia", "lutego", "marca", "kwietnia", "maja", "czerwca",
+    "lipca", "sierpnia", "września", "października", "listopada", "grudnia",
+)
+
 BUDGET_STATUS_LABELS: dict[str, str] = {
     BudgetStatus.PLANNING: "Planowanie",
     BudgetStatus.APPROVED: "Zatwierdzony",

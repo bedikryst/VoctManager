@@ -40,8 +40,11 @@ FINANCE_TIMEZONE = ZoneInfo(DEFAULT_EVENT_TIMEZONE)
 
 # The one place contract numbers are shaped. The accounting office may have a
 # scheme of its own; adopting it is a change to this table and nothing else.
+# Placeholders: `n` the sequence number, `yy` the year's last two digits,
+# `yyyy` the full year. The work contract follows the board's scheme, em dash
+# included, as the signed paper prints it.
 CONTRACT_NUMBER_FORMATS: dict[str, str] = {
-    FeeForm.DZIELO: 'UoD/{n}/{yyyy}',
+    FeeForm.DZIELO: 'VF—UMD/{yy}/{n:02d}',
     FeeForm.ZLECENIE: 'UZ/{n}/{yyyy}',
     FeeForm.VOLUNTEER: 'W/{n}/{yyyy}',
 }
@@ -79,14 +82,18 @@ def finance_today() -> date:
     return timezone.localdate(timezone=FINANCE_TIMEZONE)
 
 
-def local_date(moment: datetime, tz_name: str) -> date:
-    """The calendar date of ``moment`` where it happened. A concert at 20:00 in
-    Warsaw is on that day, whatever the server's clock says in UTC."""
+def local_moment(moment: datetime, tz_name: str) -> datetime:
+    """``moment`` on the clock where it happened. A concert at 20:00 in Warsaw
+    starts at 20:00 and on that day, whatever the server's clock says in UTC."""
     try:
         zone = ZoneInfo(tz_name)
     except (ZoneInfoNotFoundError, ValueError):
         zone = FINANCE_TIMEZONE
-    return timezone.localtime(moment, zone).date()
+    return timezone.localtime(moment, zone)
+
+
+def local_date(moment: datetime, tz_name: str) -> date:
+    return local_moment(moment, tz_name).date()
 
 
 # --------------------------------------------------------------------------- #
@@ -404,7 +411,7 @@ def minimum_hourly_rate(year: int) -> Decimal | None:
 
 
 def contract_number(form: str, sequence_number: int, year: int) -> str:
-    return CONTRACT_NUMBER_FORMATS[form].format(n=sequence_number, yyyy=year)
+    return CONTRACT_NUMBER_FORMATS[form].format(n=sequence_number, yy=f'{year % 100:02d}', yyyy=year)
 
 
 def is_valid_nip(digits: str) -> bool:

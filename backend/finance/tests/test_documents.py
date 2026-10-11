@@ -17,6 +17,7 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 from unittest.mock import MagicMock, patch
+from urllib.parse import quote
 
 from django.core.files.storage import default_storage
 from django.core.management import call_command
@@ -43,14 +44,21 @@ from roster.models import (
 from ..dtos import AllocationSetDTO, FundingSourceDTO, ProjectFundingDTO, SignContractDTO
 from ..exceptions import BillNotApplicable, ContractAnnulled, ContractRefused
 from ..foundation import FOUNDATION, FoundationIdentityError, Representative, foundation_context, signatory_for
-from ..infrastructure.amount_words import amount_to_words_pl, format_amount_pl, number_to_words_pl
+from ..infrastructure.amount_words import (
+    amount_to_words_fraction_pl,
+    amount_to_words_pl,
+    format_amount_pl,
+    number_to_words_pl,
+)
 from ..infrastructure.documents import (
     Period,
     Solo,
+    file_segment,
     hours_record,
     performer_parts,
     render_bill_html,
     render_contract_html,
+    roman_divisi,
 )
 from ..models import Contract, ContractSequence, CostItem, FeeForm, FundingSource
 from ..rules import finance_today
@@ -63,6 +71,8 @@ NBSP = chr(0x00A0)
 # The representation line's dash, as the document prints it.
 EN_DASH = chr(0x2013)
 _BUNDLED_FACES = 6
+# The head of a cast singer's Annex 1 in the work contract.
+VOCAL_ANNEX = '<div class="annex-title">Repertuar i powierzone partie wokalne</div>'
 
 
 class AmountWordsTests(SimpleTestCase):
@@ -128,37 +138,54 @@ class AmountWordsTests(SimpleTestCase):
         self.assertEqual(format_amount_pl(Decimal("1500.5")), f"1{NBSP}500,50")
         self.assertEqual(format_amount_pl(Decimal("1234567.89")), f"1{NBSP}234{NBSP}567,89")
 
+    def test_the_work_contract_writes_the_grosze_as_a_fraction(self) -> None:
+        self.assertEqual(amount_to_words_fraction_pl(Decimal("1200")), "tysiąc dwieście złotych 00/100")
+        self.assertEqual(amount_to_words_fraction_pl(Decimal("1500.5")), "tysiąc pięćset złotych 50/100")
+        self.assertEqual(amount_to_words_fraction_pl(Decimal("2.07")), "dwa złote 07/100")
+
+
+class RomanDivisiTests(SimpleTestCase):
+    def test_divisi_numbers_turn_roman_and_nothing_else_does(self) -> None:
+        self.assertEqual(roman_divisi("Sopran 1"), "Sopran I")
+        self.assertEqual(roman_divisi("Sopran 2, Alt 3"), "Sopran II, Alt III")
+        self.assertEqual(roman_divisi("Głos 4"), "Głos IV")
+        self.assertEqual(roman_divisi("Sopran"), "Sopran")
+        self.assertEqual(roman_divisi("Perkusja wokalna / Beatbox"), "Perkusja wokalna / Beatbox")
+
 
 class SignatoryTests(SimpleTestCase):
     """A document prints the first board member who is not its own payee."""
 
-    def test_the_president_signs_by_default(self) -> None:
-        self.assertEqual(signatory_for("Anna Nowak").name, "Florentyn de Bazelaire de Boucheporn")
+    def test_the_board_member_who_signs_contracts_comes_first(self) -> None:
+        self.assertEqual(signatory_for("Anna Nowak").name, "Anna Marcisz")
 
-    def test_the_president_stands_aside_from_his_own_contract(self) -> None:
-        for payee in (
-            "Florentyn de Bazelaire de Boucheporn",
-            "FLORENTYN DE BAZELAIRE DE BOUCHEPORN",
-            "Florentyn Józef Maria Eliasz De Bazelaire De Boucheporn",
-            "Florent de Bazelaire",
-        ):
+    def test_she_stands_aside_from_her_own_contract(self) -> None:
+        for payee in ("Anna Marcisz", "ANNA MARCISZ", "Anna Elżbieta Marcisz", "anna marcisz"):
             with self.subTest(payee=payee):
-                self.assertEqual(signatory_for(payee).name, "Anna Marcisz")
+                self.assertEqual(signatory_for(payee).name, "Florentyn de Bazelaire de Boucheporn")
 
-    def test_a_middle_name_and_diacritics_do_not_hide_the_payee(self) -> None:
+    def test_middle_names_a_particle_and_a_stage_name_do_not_hide_the_payee(self) -> None:
         board = replace(FOUNDATION, representatives=FOUNDATION.representatives[1:])
         with patch("finance.foundation.FOUNDATION", board):
-            self.assertEqual(signatory_for("Anna Elżbieta Marcisz").name, "Krystian Bugalski")
-            self.assertEqual(signatory_for("anna marcisz").name, "Krystian Bugalski")
+            for payee in (
+                "Florentyn de Bazelaire de Boucheporn",
+                "FLORENTYN DE BAZELAIRE DE BOUCHEPORN",
+                "Florentyn Józef Maria Eliasz De Bazelaire De Boucheporn",
+                "Florent de Bazelaire",
+            ):
+                with self.subTest(payee=payee):
+                    self.assertEqual(signatory_for(payee).name, "Krystian Bugalski")
 
     def test_an_account_email_is_enough(self) -> None:
-        first = replace(FOUNDATION.representatives[0], user_email="Prezes@Example.org")
+        first = replace(FOUNDATION.representatives[0], user_email="Signs@Example.org")
         board = replace(FOUNDATION, representatives=(first, *FOUNDATION.representatives[1:]))
         with patch("finance.foundation.FOUNDATION", board):
-            self.assertEqual(signatory_for("Stage Name", "prezes@example.org").name, "Anna Marcisz")
+            self.assertEqual(
+                signatory_for("Stage Name", "signs@example.org").name, "Florentyn de Bazelaire de Boucheporn",
+            )
 
     def test_a_lone_first_name_is_nobody_in_particular(self) -> None:
-        self.assertEqual(signatory_for("Florentyn").name, "Florentyn de Bazelaire de Boucheporn")
+        self.assertEqual(signatory_for("Anna").name, "Anna Marcisz")
 
     def test_a_board_made_only_of_the_payee_refuses(self) -> None:
         board = replace(FOUNDATION, representatives=(Representative(name="Anna Marcisz", function="Prezes"),))
@@ -210,16 +237,30 @@ class DocumentRenderTests(TestCase):
         self.assert_typography_is_intact(html)
         self.assert_parties_are_real(html)
         self.assertIn(f"UMOWA O DZIEŁO <span class=\"title-number\">nr {contract.number}</span>", html)
-        self.assertIn("Zażółć Gęślą", html)
-        self.assertIn(f"1{NBSP}500,00 zł brutto", html)
-        self.assertIn("(słownie: tysiąc pięćset złotych zero groszy)", html)
-        self.assertIn(f"reprezentowana przez: Florentyn de Bazelaire de Boucheporn {EN_DASH} Prezes Zarządu", html)
-        self.assertIn("partii wokalnych (głos: ", html)
-        self.assertIn('<div class="annex-title">Partie Wykonawcy</div>', html)
-        self.assertIn('<div class="annex-title">Protokół odbioru Dzieła</div>', html)
-        self.assertIn("Załącznik nr 3 do umowy o dzieło", html)
-        self.assertIn("Klauzula informacyjna", html)
+        self.assertIn("z przeniesieniem majątkowych praw do artystycznego wykonania", html)
+        self.assertIn("Imię (imiona) i nazwisko: <strong>Zażółć Gęślą</strong>", html)
+        self.assertIn(f"Kwota brutto: <strong>1{NBSP}500,00 zł</strong>, słownie: tysiąc pięćset złotych 00/100", html)
+        self.assertIn(f"reprezentowaną przez: Anna Marcisz {EN_DASH} Wiceprezes Zarządu", html)
+        self.assertIn("zwanym/zwaną dalej „Artystą”", html)
+        self.assertIn("powierzonych partii wokalnych podczas koncertu „Lux Aeterna”", html)
+        self.assertIn("umiejętności wokalne, właściwości głosu", html)
+        self.assertIn(VOCAL_ANNEX, html)
+        self.assertIn(f"Załącznik nr 1 do umowy nr {contract.number}", html)
+        self.assertIn('<div class="annex-title">Informacja o przetwarzaniu danych osobowych</div>', html)
+        self.assertIn("pkt 3 lit. c", html)
+        self.assertNotIn("Protokół odbioru Dzieła", html)
+        self.assertNotIn("Klauzula informacyjna", html)
+        self.assertNotIn("Wykonawc", html)
         self.assertNotIn("Program Koncertu", html)
+
+    def test_the_signing_date_prints_once_recorded_and_the_place_is_the_pens(self) -> None:
+        contract = self.dzielo()
+        blank = '<span class="blank blank--s"></span>'
+        self.assertIn(f"zawarta w {blank} dnia {blank} r. pomiędzy:", render_contract_html(contract))
+
+        # A row signed before snapshots existed renders live, with its date.
+        Contract.objects.filter(pk=contract.pk).update(signed_on=date(2026, 10, 11))
+        self.assertIn(f"zawarta w {blank} dnia 11.10.2026 r. pomiędzy:", render_contract_html(contract))
 
     def test_a_crew_mandate_keeps_its_clause_and_leaves_the_declaration_to_the_office(self) -> None:
         crew = make_crew(self.project, "Jan", "Dźwiękowiec", specialty=Collaborator.Specialty.SOUND)
@@ -262,7 +303,7 @@ class DocumentRenderTests(TestCase):
 
         html = render_contract_html(contract)
 
-        self.assertIn(f"1{NBSP}500,00 zł brutto", html)
+        self.assertIn(f"Kwota brutto: <strong>1{NBSP}500,00 zł</strong>", html)
         self.assertNotIn("2750", html)
         self.assertNotIn(f"2{NBSP}750", html)
 
@@ -357,8 +398,11 @@ class DocumentRenderTests(TestCase):
         seat.artist.save()
         html = render_contract_html(self.issue(price(self.project, participation=seat, amount="900")))
 
-        self.assertIn("partii instrumentalnych (instrument: Organy)", html)
-        self.assertNotIn("partii wokalnych", html)
+        self.assertIn("powierzonych partii instrumentalnych podczas koncertu", html)
+        self.assertIn("umiejętności instrumentalne oraz dopasowanie", html)
+        self.assertIn('<div class="annex-title">Repertuar i powierzone partie instrumentalne</div>', html)
+        self.assertNotIn("wokaln", html)
+        self.assertNotIn("właściwości głosu", html)
 
     def test_the_conductor_is_paid_under_the_signature_of_another_board_member(self) -> None:
         seat = make_seat(self.project, "Florent", "de Bazelaire", voice_type=VoiceType.CONDUCTOR)
@@ -368,7 +412,9 @@ class DocumentRenderTests(TestCase):
         self.assertNotIn("reprezentowana przez: Florentyn", html)
         self.assertIn("artystycznego wykonania (rola: ", html)
         self.assertIn("Program Koncertu", html)
-        self.assertNotIn("Partie Wykonawcy", html)
+        self.assertIn('<div class="annex-title">Protokół odbioru Dzieła</div>', html)
+        self.assertIn("Załącznik nr 3 do umowy o dzieło", html)
+        self.assertNotIn("Repertuar i powierzone partie", html)
 
     def test_the_place_is_printed_after_a_colon(self) -> None:
         venue = Location.objects.create(
@@ -376,10 +422,13 @@ class DocumentRenderTests(TestCase):
             formatted_address="plac Mariacki 5, 31-042 Kraków, Polska",
         )
         Project.objects.filter(pk=self.project.pk).update(location=venue)
+        conductor = make_seat(self.project, "Adam", "Dyrygent", voice_type=VoiceType.CONDUCTOR)
 
-        html = render_contract_html(self.dzielo())
+        performer = render_contract_html(self.dzielo())
+        other = render_contract_html(self.issue(price(self.project, participation=conductor, amount="2000")))
 
-        self.assertIn("w miejscu: Bazylika Mariacka, plac Mariacki 5, 31-042 Kraków (dalej: „Koncert”)", html)
+        self.assertIn("w miejscu: Bazylika Mariacka, plac Mariacki 5, 31-042 Kraków.</li>", performer)
+        self.assertIn("w miejscu: Bazylika Mariacka, plac Mariacki 5, 31-042 Kraków (dalej: „Koncert”)", other)
 
     def test_a_short_engagement_carries_the_insurance_duty(self) -> None:
         contract = self.issue(price(self.project, participation=make_seat(self.project), amount="0"))
@@ -494,25 +543,49 @@ class PerformerContractTests(TestCase):
         self.assertEqual((parts["Méditation"].line, parts["Méditation"].solos), ("", (Solo("Wokaliza", ""),)))
 
         html = render_contract_html(self.issue(price(self.project, participation=self.seat, amount="1400")))
-        self.assertIn('<div class="parts-solo">Sopran solo (t. 46-52, nad chórem)</div>', html)
+        self.assertIn("<td>Sopran II oraz solo: Sopran solo (t. 46-52, nad chórem)</td>", html)
+        self.assertIn("<td>solo: Wokaliza</td>", html)
         self.assertNotIn("Sopran solo II", html)
 
     def test_somebody_not_cast_yet_gets_the_whole_programme_to_fill_in(self) -> None:
         parts = performer_parts(self.project, self.seat)
         self.assertEqual(len(parts), 5)
-        self.assertTrue(all(part.line == "" and part.solos == () for part in parts))
+        self.assertTrue(all(part.line == "" and part.solos == () and part.held == "" for part in parts))
 
-    def test_the_dzielo_names_the_parts_and_is_accepted_on_a_record(self) -> None:
+    def test_the_dzielo_names_the_parts_in_the_boards_annex(self) -> None:
         self.cast_the_choir()
         html = render_contract_html(self.issue(price(self.project, participation=self.seat, amount="1400")))
-        annex = html.split('<div class="annex-title">Partie Wykonawcy</div>', 1)[1]
+        annex = html.split(VOCAL_ANNEX, 1)[1]
 
-        self.assertIn("wskazanych w Załączniku nr 1 (dalej: „Partie Wykonawcy”) podczas koncertu", html)
-        self.assertIn("nie zależy od liczby prób", html)
+        self.assertIn("powierzonych partii wokalnych podczas koncertu „Pochwała Stworzenia”", html)
+        self.assertIn("Koncert odbędzie się 11 października 2026 r. o godz. 13:30 w miejscu:", html)
+        self.assertIn("Termin i miejsce: 11 października 2026 r., godz. 13:30,", annex)
         self.assertLess(annex.index("Gloria II"), annex.index("Stars"))
         self.assertNotIn("Méditation", annex)
-        self.assertIn('What a Wonderful World <span class="programme-note">(bis)</span>', annex)
-        self.assertIn("Protokół odbioru Dzieła", annex)
+        self.assertIn("<td>What a Wonderful World (bis)</td>", annex)
+        # Divided sopranos in Gloria II and Stars; one soprano line in Lumen.
+        gloria, lumen, stars = (annex.split(f"<td>{title}</td>", 1)[1].split("</tr>", 1)[0]
+                                for title in ("Gloria II", "Lumen", "Stars"))
+        self.assertIn("<td>Sopran I</td>", gloria)
+        self.assertIn("<td>Sopran</td>", lumen)
+        self.assertIn("<td>Sopran II</td>", stars)
+        self.assertIn("o których mowa w § 4 ust. 3 i § 5 ust. 1 Umowy", annex)
+        self.assertNotIn("Protokół odbioru Dzieła", html)
+
+    def test_the_annex_names_the_arranger_and_the_setting(self) -> None:
+        self.cast_the_choir()
+        Piece.objects.filter(pk=self.pieces["Stars"].pk).update(arranger="Paul Drayton", voicing="SSAATTBB")
+        Piece.objects.filter(pk=self.pieces["Lumen"].pk).update(composer=None, arranger="Jan Nowak")
+        parts = {part.title: part for part in performer_parts(self.project, self.seat)}
+
+        self.assertEqual(parts["Gloria II"].authorship, "Marian Borkowski")
+        self.assertEqual(parts["Stars"].authorship, "Marian Borkowski; Paul Drayton (arr.)")
+        self.assertEqual(parts["Lumen"].authorship, "Jan Nowak (arr.)")
+
+        html = render_contract_html(self.issue(price(self.project, participation=self.seat, amount="1400")))
+        stars = html.split("<td>Stars</td>", 1)[1].split("</tr>", 1)[0]
+        self.assertIn("<td>Marian Borkowski; Paul Drayton (arr.)</td>", stars)
+        self.assertIn("<td>SSAATTBB</td>", stars)
 
     def test_a_performers_mandate_transfers_the_rights_and_lists_the_parts(self) -> None:
         self.cast_the_choir()
@@ -534,7 +607,8 @@ class PerformerContractTests(TestCase):
         crew = make_crew(self.project, "Piotr", "Organista", specialty=Collaborator.Specialty.INSTRUMENT)
         html = render_contract_html(self.issue(price(self.project, crew=crew, amount="600", form="DZIELO")))
         self.assertIn('<div class="annex-title">Program Koncertu</div>', html)
-        self.assertNotIn("Partie Wykonawcy", html)
+        self.assertIn("partii instrumentalnej (instrument: ", html)
+        self.assertNotIn("Repertuar i powierzone partie", html)
 
     def test_the_hours_record_lists_attended_days_and_leaves_out_absences(self) -> None:
         self.attend(self.rehearsal(18), Attendance.Status.PRESENT)
@@ -686,7 +760,7 @@ class PerformerContractTests(TestCase):
         reprint = render_contract_html(contract)
 
         self.assertEqual(reprint, signed)
-        annex = reprint.split('<div class="annex-title">Partie Wykonawcy</div>', 1)[1]
+        annex = reprint.split(VOCAL_ANNEX, 1)[1]
         self.assertIn("Stars", annex)
         self.assertNotIn("Méditation", annex)
         # The snapshot keeps the text; the font rules are this host's and come back at print.
@@ -696,7 +770,7 @@ class PerformerContractTests(TestCase):
         self.cast_the_choir()
         contract = self.issue(price(self.project, participation=self.seat, amount="1400"))
         self.cast(self.seat, "Méditation", "S1")
-        annex = render_contract_html(contract).split('<div class="annex-title">Partie Wykonawcy</div>', 1)[1]
+        annex = render_contract_html(contract).split(VOCAL_ANNEX, 1)[1]
         self.assertIn("Méditation", annex)
 
     def test_hours_sheets_keep_the_year_when_the_period_crosses_new_year(self) -> None:
@@ -789,14 +863,14 @@ class DocumentEndpointTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/pdf")
         self.assertIn("attachment", response["Content-Disposition"])
-        self.assertIn("Umowa-UoD-1-", response["Content-Disposition"])
+        self.assertIn(quote(f"Umowa-{file_segment(self.contract.number)}-"), response["Content-Disposition"])
         self.assertEqual(_streamed(response), b"%PDF-contract")
 
     @patch("finance.infrastructure.documents._render_pdf", return_value=b"%PDF-bill")
     def test_the_bill_downloads(self, _render: MagicMock) -> None:
         response = self.get(f"contracts/{self.contract.pk}/bill.pdf")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Rachunek-UoD-1-", response["Content-Disposition"])
+        self.assertIn(quote(f"Rachunek-{file_segment(self.contract.number)}-"), response["Content-Disposition"])
 
     def test_a_volunteer_bill_is_refused(self) -> None:
         volunteer = ContractService.issue(
@@ -869,7 +943,7 @@ class ContractsZipTests(APITestCase):
         self.assertIn(kept.number, contents)
         self.assertIn(signed.number, contents)
         self.assertNotIn(annulled.number, contents)
-        self.assertIn(f"1{NBSP}500,00 zł brutto", contents)
+        self.assertIn(f"Kwota brutto: <strong>1{NBSP}500,00 zł</strong>", contents)
         self.assertNotIn(f"4{NBSP}321", contents)
 
     def test_a_project_without_contracts_reports_so(self) -> None:
@@ -968,9 +1042,10 @@ class SampleDocumentsCommandTests(TestCase):
         self.assertEqual(len(names), 12)
         with open(f"{folder}/1-umowa-o-dzielo.pdf", encoding="utf-8") as handle:
             html = handle.read()
-            self.assertIn("Sopran solo (t. 1-8)", html)
+            self.assertIn("Sopran oraz solo: Sopran solo (t. 1-8)", html)
+            self.assertIn("<td>Jan Przykładowy (arr.)</td>", html)
             self.assertIn("wystawiono 02.11.2030", html)
-            self.assertIn("23.11.2030", html)
+            self.assertIn("23 listopada 2030 r.", html)
         with open(f"{folder}/2-umowa-o-dzielo-dyrygent.pdf", encoding="utf-8") as handle:
             self.assertIn(f"reprezentowana przez: Anna Marcisz {EN_DASH} Wiceprezes Zarządu", handle.read())
         with open(f"{folder}/3-umowa-zlecenia-wykonawca.pdf", encoding="utf-8") as handle:

@@ -118,7 +118,8 @@ class ConstantsTests(SimpleTestCase):
         self.assertIsNone(minimum_hourly_rate(2019))
 
     def test_contract_numbers(self) -> None:
-        self.assertEqual(contract_number(FeeForm.DZIELO, 7, 2026), "UoD/7/2026")
+        self.assertEqual(contract_number(FeeForm.DZIELO, 7, 2026), "VF—UMD/26/07")
+        self.assertEqual(contract_number(FeeForm.DZIELO, 112, 2105), "VF—UMD/05/112")
         self.assertEqual(contract_number(FeeForm.ZLECENIE, 1, 2026), "UZ/1/2026")
         self.assertEqual(contract_number(FeeForm.VOLUNTEER, 12, 2027), "W/12/2027")
 

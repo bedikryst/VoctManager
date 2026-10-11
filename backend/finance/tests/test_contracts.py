@@ -31,6 +31,9 @@ class ContractTests(APITestCase):
         self.year = finance_today().year
         self.client.force_authenticate(self.manager)
 
+    def dzielo_number(self, n: int) -> str:
+        return f"VF—UMD/{self.year % 100:02d}/{n:02d}"
+
     def issue(self, item: CostItem) -> Any:
         return self.client.post(f"/api/finance/cost-items/{item.pk}/contract/", format="json")
 
@@ -51,7 +54,7 @@ class ContractTests(APITestCase):
             self.assertEqual(self.issue(item).status_code, 201)
 
         self.assertEqual(set(Contract.objects.values_list("number", flat=True)), {
-            f"UoD/1/{self.year}", f"UoD/2/{self.year}", f"W/1/{self.year}", f"UZ/1/{self.year}",
+            self.dzielo_number(1), self.dzielo_number(2), f"W/1/{self.year}", f"UZ/1/{self.year}",
         })
 
     def test_numbering_continues_from_the_sequence_row(self) -> None:
@@ -59,7 +62,7 @@ class ContractTests(APITestCase):
 
         self.issue(self.priced_seat())
 
-        self.assertTrue(Contract.objects.filter(number=f"UoD/42/{self.year}").exists())
+        self.assertTrue(Contract.objects.filter(number=self.dzielo_number(42)).exists())
 
     def test_non_artistic_deed_is_refused_before_allocating_a_number(self) -> None:
         item = price(self.project, crew=make_crew(self.project), amount="600", form="DZIELO")
@@ -69,7 +72,7 @@ class ContractTests(APITestCase):
         self.assertFalse(Contract.objects.exists())
         self.assertFalse(ContractSequence.objects.exists())
         self.issue(self.priced_seat())
-        self.assertEqual(Contract.objects.get().number, f"UoD/1/{self.year}")
+        self.assertEqual(Contract.objects.get().number, self.dzielo_number(1))
 
     def test_outside_cast_instrumentalist_can_receive_a_deed(self) -> None:
         crew = make_crew(self.project, specialty=Collaborator.Specialty.INSTRUMENT)
@@ -83,7 +86,7 @@ class ContractTests(APITestCase):
         contract = Contract.objects.get()
         self.assertEqual((contract.amount, contract.payee_name), (item.contract_amount, item.payee_name))
         [row] = [row for row in response.data["ledger"] if row["contract"]]
-        self.assertEqual(row["contract"]["number"], f"UoD/1/{self.year}")
+        self.assertEqual(row["contract"]["number"], self.dzielo_number(1))
         self.assertTrue(
             FinanceEvent.objects.filter(subject_id=contract.pk, action=FinanceAction.CONTRACT_ISSUED).exists()
         )
@@ -192,6 +195,6 @@ class ContractTests(APITestCase):
         # The amount is editable again, and the new contract takes the next number.
         self.issue(price(self.project, item=item, amount="320"))
         self.assertEqual(
-            set(Contract.objects.values_list("number", flat=True)), {f"UoD/1/{self.year}", f"UoD/2/{self.year}"},
+            set(Contract.objects.values_list("number", flat=True)), {self.dzielo_number(1), self.dzielo_number(2)},
         )
         self.assertEqual(self.post(annul, {"reason": "again"}).data["error_code"], "contract_annulled")

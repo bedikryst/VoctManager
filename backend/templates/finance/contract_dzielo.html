@@ -5,17 +5,25 @@
     <title>Umowa o dzieło nr {{ number }} — {{ payee_name }}</title>
     {% comment %}
         Umowa o dzieło: one artistic performance at one concert, with the
-        related rights transferred. A cast performer (`performer`) contracts
-        the parts the casting gives them, listed in Annex 1. A conductor or
-        player outside the cast receives the programme. Non-performing crew
-        require a separately specified result and cannot use this template.
-        Rehearsals are the means and the fee pays for the result, never for
-        attendance. Legal classification also depends on actual performance
-        of the agreement. Built from document 1 of
-        docs/specs/project-finance-contract-drafts-2026-09.md — a correction
-        lands there first. Annexes: 1 the parts or the programme, 2 the
-        acceptance record, 3 the GDPR clause. A clause printed in one variant
-        only is never cited by number, because the list renumbers around it.
+        related rights transferred. Two texts.
+
+        A cast performer (`performer`) signs the board's own wording (2026-10,
+        transcribed in docs/umowy/generator/umowa_dzielo.py): the "Artysta"
+        contracts the parts the casting gives them, listed in Annex 1, with the
+        board's art. 13 notice as Annex 2. A cast player reads the same text in
+        instrumental terms. The signing place is left to the pen, and the date
+        prints once the signature is recorded.
+
+        A conductor or a player outside the cast keeps document 1 of
+        docs/specs/project-finance-contract-drafts-2026-09.md until the board
+        words one: the programme, the acceptance record and the GDPR clause as
+        Annexes 1 to 3. Rehearsals are the means and the fee pays for the
+        result, never for attendance.
+
+        Non-performing crew require a separately specified result and cannot
+        use this template. Legal classification also depends on actual
+        performance of the agreement. A correction lands in the text's source
+        first.
     {% endcomment %}
     <style>{% include "finance/_styles.html" with footer_label="Umowa o dzieło" %}</style>
 </head>
@@ -23,28 +31,122 @@
     {% include "finance/_masthead.html" %}
 
     <div class="title">UMOWA O DZIEŁO <span class="title-number">nr {{ number }}</span></div>
+{% if performer %}
+    <p class="title-sub">z przeniesieniem majątkowych praw do artystycznego wykonania</p>
+    <p class="concluded">zawarta w <span class="blank blank--s"></span> dnia {% if signed_on %}{{ signed_on|date:"d.m.Y" }}{% else %}<span class="blank blank--s"></span>{% endif %} r. pomiędzy:</p>
+
+    {% comment %}
+        The payee's name, PESEL, address and account follow a label and a
+        colon, as on the board's form, so none sits in the instrumental slot
+        "pomiędzy … a …" would inflect. The representative stands in the
+        nominative after a colon, as on every finance document.
+    {% endcomment %}
+    <div class="parties">
+        <p><strong>{{ foundation.legal_name_instrumental }}</strong> z siedzibą w {{ foundation.seat_locative }}, {{ foundation.address }}, wpisaną do Krajowego Rejestru Sądowego pod numerem KRS {{ foundation.krs }}, NIP {{ foundation.nip }}, REGON {{ foundation.regon }}, reprezentowaną przez: {{ representative.name }} – {{ representative.function }}, zwaną dalej „Zamawiającym” lub „Fundacją”,</p>
+        <p class="parties-and">a</p>
+        <p>Imię (imiona) i nazwisko: <strong>{{ payee_name }}</strong><br>
+            PESEL: <span class="blank"></span><br>
+            Adres zamieszkania: <span class="blank blank--l"></span><br>
+            Nr rachunku bankowego: <span class="blank blank--l"></span></p>
+        <p>zwanym/zwaną dalej „Artystą”,<br>zwanymi łącznie „Stronami”.</p>
+    </div>
+
+    <h2>§ 1 Przedmiot umowy</h2>
+    <ol>
+        <li>Zamawiający zamawia, a Artysta zobowiązuje się wykonać dzieło w postaci jednorazowego artystycznego wykonania powierzonych partii {% if subject.kind == "instrumental" %}instrumentalnych{% else %}wokalnych{% endif %} podczas koncertu „{{ concert.title }}”, zwanego dalej „Koncertem”. Wykonanie to jest dalej zwane „Dziełem”.</li>
+        <li>Zakres Dzieła, obejmujący repertuar i powierzone partie {% if subject.kind == "instrumental" %}instrumentalne{% else %}wokalne{% endif %}, z wyodrębnieniem fragmentów solowych, określa Załącznik nr 1 stanowiący integralną część Umowy.</li>
+        <li>Koncert odbędzie się {{ concert.day_written }} r. o godz. {{ concert.starts_at }} w miejscu: {% if concert.place %}{{ concert.place }}{% else %}<span class="blank blank--l"></span>{% endif %}.</li>
+        <li>Artysta został indywidualnie dobrany do wykonania Dzieła ze względu na kwalifikacje, umiejętności {% if subject.kind == "instrumental" %}instrumentalne{% else %}wokalne, właściwości głosu{% endif %} oraz dopasowanie do powierzonych partii i obsady Koncertu.</li>
+    </ol>
+
+    <h2>§ 2 Przygotowanie i wykonanie Dzieła</h2>
+    <ol>
+        <li>Artysta oświadcza, że posiada kwalifikacje i umiejętności niezbędne do wykonania Dzieła, oraz zobowiązuje się samodzielnie przygotować powierzone partie {% if subject.kind == "instrumental" %}instrumentalne{% else %}wokalne{% endif %}.</li>
+        <li>Artysta wykonuje Dzieło osobiście i zobowiązuje się wykonać Umowę z należytą starannością.</li>
+        <li>Artysta uczestniczy w uzgodnionych próbach służących przygotowaniu Dzieła, w szczególności zgraniu uprzednio samodzielnie przygotowanych partii oraz wypracowaniu wspólnego kierunku artystycznego wykonania.</li>
+        <li>Artysta niezwłocznie informuje Zamawiającego o okolicznościach mogących uniemożliwić wykonanie Dzieła.</li>
+    </ol>
+
+    <h2>§ 3 Wynagrodzenie</h2>
+    <ol>
+        <li>Strony ustalają łączne wynagrodzenie brutto w wysokości wskazanej poniżej za przygotowanie i wykonanie Dzieła oraz przeniesienie na Zamawiającego majątkowych praw do artystycznych wykonań na wszystkich polach eksploatacji wymienionych w § 4 i udzielenie przewidzianych w nim upoważnień i zezwoleń:
+            <p class="fee">Kwota brutto: <strong>{{ amount }} zł</strong>, słownie: {{ amount_words_fraction }}</p>
+        </li>
+        <li>Wynagrodzenie wskazane w ust. 1 będzie płatne przelewem, na rachunek bankowy Artysty, na podstawie rachunku wystawionego przez Artystę po zrealizowaniu i przyjęciu Dzieła przez Zamawiającego, w terminie do 14 dni od dnia doręczenia prawidłowo wystawionego rachunku.</li>
+    </ol>
+
+    <h2>§ 4 Prawa do artystycznego wykonania</h2>
+    <ol>
+        <li>Artysta zezwala Zamawiającemu oraz podmiotom działającym na jego zlecenie na utrwalanie w postaci nagrań dźwiękowych i audiowizualnych oraz transmitowanie na żywo, w tym przez Internet, swoich artystycznych wykonań podczas Koncertu i prób związanych z jego przygotowaniem.</li>
+        <li>Artysta przenosi na Zamawiającego majątkowe prawa do swoich artystycznych wykonań partii określonych w Załączniku nr 1, dokonanych podczas Koncertu oraz utrwalonych podczas prób związanych z jego przygotowaniem, bez ograniczeń terytorialnych, na cały okres ochrony tych praw, na następujących polach eksploatacji:
+            <ol class="letters">
+                <li>utrwalanie i zwielokrotnianie techniką zapisu magnetycznego oraz techniką cyfrową, w postaci nagrań dźwiękowych i audiowizualnych;</li>
+                <li>nadawanie, reemitowanie i odtwarzanie, w zakresie wymagającym zezwolenia Artysty;</li>
+                <li>publiczne udostępnianie utrwalenia artystycznego wykonania w taki sposób, aby każdy mógł mieć do niego dostęp w miejscu i czasie przez siebie wybranym.</li>
+            </ol>
+        </li>
+        <li>Prawa określone w ust. 2 przechodzą na Zamawiającego z chwilą dokonania wykonania podczas Koncertu, a w przypadku wykonań podczas prób – z chwilą ich utrwalenia, jednak nie wcześniej niż z chwilą zawarcia Umowy w formie pisemnej. Prawa do wcześniejszych wykonań utrwalonych podczas prób, wskazanych w Załączniku nr 1, przechodzą z chwilą zawarcia Umowy w tej formie.</li>
+        <li>Zamawiający może korzystać z wykonań objętych niniejszym paragrafem odpłatnie lub nieodpłatnie, w celach dokumentacyjnych, archiwalnych, informacyjnych, edukacyjnych i promocyjnych oraz w ramach działalności artystycznej Fundacji i jej zespołu rezydenta VoctEnsemble.</li>
+        <li>Artysta zezwala na korzystanie z utrwaleń wykonań w całości lub we fragmentach oraz na ich montaż, skracanie, miks, mastering, korekcję dźwięku i obrazu oraz łączenie z innymi materiałami, z poszanowaniem jego osobistych praw do artystycznego wykonania. Zezwolenie obejmuje również podmioty upoważnione przez Zamawiającego do korzystania z wykonań i podmioty działające na ich zlecenie, w granicach Umowy.</li>
+        <li>Zamawiający może udzielać osobom trzecim licencji na korzystanie z wykonań wyłącznie w zakresie nabytych praw i celów określonych w ust. 4.</li>
+        <li>Przeniesienie praw nie obejmuje osobistych praw Artysty do artystycznego wykonania ani praw do wykonywanych utworów, ich opracowań, wykonań innych osób lub nagrań przysługujących innym podmiotom.</li>
+        <li>Wynagrodzenie określone w § 3 ust. 1 obejmuje przeniesienie praw i udzielenie zezwoleń przewidzianych w niniejszym paragrafie. Nie wyłącza to ustawowych praw Artysty do wynagrodzenia ani innych uprawnień, których nie można skutecznie wyłączyć lub się zrzec.</li>
+        <li>Niewykonanie Dzieła w całości lub części, odwołanie Koncertu oraz rozwiązanie Umowy lub odstąpienie od niej w części dotyczącej przygotowania i wykonania Dzieła nie naruszają postanowień dotyczących praw i zezwoleń do już utrwalonych wykonań. Postanowienia te pozostają w mocy wraz z obowiązkiem zapłaty należnego za nie wynagrodzenia. Nie wyłącza to ustawowych uprawnień Artysty związanych z niewykonaniem obowiązku zapłaty przez Zamawiającego.</li>
+    </ol>
+
+    <h2>§ 5 Wizerunek</h2>
+    <ol>
+        <li>Artysta zezwala Zamawiającemu oraz podmiotom działającym na jego zlecenie na utrwalanie jego wizerunku i głosu podczas Koncertu i prób związanych z jego przygotowaniem, a Zamawiającemu również na ich wykorzystywanie i rozpowszechnianie w zdjęciach, nagraniach i transmisjach, w całości lub we fragmentach. Zezwolenie na wykorzystywanie i rozpowszechnianie obejmuje także materiały z wcześniejszych prób wskazane w Załączniku nr 1.</li>
+        <li>Zezwolenie obejmuje dokumentowanie, archiwizowanie i promowanie Koncertu oraz prezentowanie i promowanie działalności artystycznej Fundacji i jej zespołu rezydenta VoctEnsemble, w tym w materiałach informacyjnych, edukacyjnych i sprawozdawczych oraz płatnych kampaniach promocyjnych.</li>
+        <li>Zezwolenie jest udzielane na czas nieoznaczony, bez ograniczeń terytorialnych. Obejmuje publikację w druku, na stronach internetowych, w mediach społecznościowych, serwisach udostępniających nagrania, prasie, radiu i telewizji oraz publiczne pokazy i transmisje, w tym internetowe na żywo.</li>
+        <li>Zezwolenie obejmuje również korzystanie z materiałów udostępnionych przez Zamawiającego przez redakcje mediów, organizatorów i partnerów Koncertu oraz osoby prowadzące oficjalne kanały komunikacji VoctEnsemble, wyłącznie w celach i zakresie określonych w niniejszym paragrafie.</li>
+        <li>Materiały mogą być kadrowane, poddawane korekcji obrazu i dźwięku, montowane, skracane i łączone z tekstem, grafiką lub innymi materiałami, z poszanowaniem dóbr osobistych Artysty. Nie mogą zniekształcać sensu jego wypowiedzi ani sugerować poparcia dla produktów, usług lub poglądów osób trzecich.</li>
+        <li>Zezwolenia określone w niniejszym paragrafie są udzielane nieodpłatnie. Korzystanie z materiałów w ich granicach nie wymaga odrębnej akceptacji poszczególnych publikacji. Nieodpłatność nie obejmuje praw i zezwoleń do artystycznych wykonań określonych w § 4.</li>
+        <li>Niewykonanie Dzieła, odwołanie Koncertu, rozwiązanie Umowy lub odstąpienie od niej nie powodują same przez się wygaśnięcia zezwoleń dotyczących materiałów już utrwalonych. Postanowienie to nie wyłącza możliwości cofnięcia zezwolenia na rozpowszechnianie wizerunku ani ochrony dóbr osobistych Artysty na zasadach wynikających z przepisów prawa.</li>
+        <li>Zezwolenia określone w niniejszym paragrafie nie zastępują podstawy przetwarzania danych osobowych. Informację o przetwarzaniu danych i prawach Artysty zawiera Załącznik nr 2.</li>
+    </ol>
+
+    <h2>§ 6 Poufność</h2>
+    <ol>
+        <li>Strony zachowują w poufności warunki finansowe Umowy oraz niepubliczne informacje oznaczone przez przekazującą Stronę jako poufne.</li>
+        <li>Informacje te można wykorzystywać i ujawniać wyłącznie w zakresie niezbędnym do wykonania i rozliczenia Umowy, obsługi prawnej i księgowej, kontroli finansowania lub ochrony praw, a także za zgodą drugiej Strony lub gdy wymagają tego przepisy prawa albo uprawniony organ. Osoby działające na rzecz Strony należy zobowiązać do poufności.</li>
+        <li>Obowiązek trwa także po zakończeniu Umowy, w tym odstąpieniu od niej. Nie obejmuje informacji publicznie dostępnych, chyba że ujawniono je z naruszeniem Umowy.</li>
+    </ol>
+
+    <h2>§ 7 Dane osobowe</h2>
+    <ol>
+        <li>Administratorem danych osobowych Artysty przetwarzanych w związku z zawarciem i wykonywaniem Umowy jest Zamawiający.</li>
+        <li>Informacja o przetwarzaniu danych osobowych Artysty, o której mowa w art. 13 RODO, stanowi Załącznik nr 2 do Umowy.</li>
+    </ol>
+
+    <h2>§ 8 Postanowienia końcowe</h2>
+    <ol>
+        <li>Zmiany Umowy wymagają formy pisemnej pod rygorem nieważności, chyba że Umowa stanowi inaczej.</li>
+        <li>W sprawach nieuregulowanych Umową stosuje się przepisy Kodeksu cywilnego oraz ustawy o prawie autorskim i prawach pokrewnych.</li>
+        <li>Strony będą dążyć do polubownego rozwiązania sporów wynikających z Umowy, co nie ogranicza prawa każdej ze Stron do wystąpienia na drogę sądową.</li>
+        <li>Spory wynikające z Umowy rozstrzyga sąd właściwy zgodnie z przepisami Kodeksu postępowania cywilnego.</li>
+        <li>Umowę sporządzono w dwóch jednobrzmiących egzemplarzach, po jednym dla każdej ze Stron.</li>
+    </ol>
+
+    {% include "finance/_signatures.html" with left="Zamawiający" right="Artysta" %}
+
+    {% include "finance/_repertoire_annex.html" %}
+    {% include "finance/_performer_privacy_notice.html" %}
+{% else %}
     <p class="concluded">zawarta w {{ foundation.seat_locative }} w dniu <span class="blank"></span> r.</p>
 
     {% include "finance/_parties.html" with foundation_role="Zamawiającym" payee_role="Wykonawcą" with_payment=True %}
 
     <h2>§ 1. Przedmiot umowy</h2>
     <ol>
-        {% if performer %}
-            <li>Zamawiający zamawia, a Wykonawca zobowiązuje się wykonać dzieło (dalej: „Dzieło”) w postaci artystycznego wykonania {% if subject.kind == "vocal" %}partii wokalnych (głos: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}){% else %}partii instrumentalnych (instrument: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}){% endif %} wskazanych w Załączniku nr 1 (dalej: „Partie Wykonawcy”) podczas koncertu „{{ concert.title }}”, który odbędzie się w dniu {{ concert.day|date:"d.m.Y" }} r. w miejscu: {% if concert.place %}{{ concert.place }}{% else %}<span class="blank blank--l"></span>{% endif %} (dalej: „Koncert”).</li>
-        {% else %}
-            <li>Zamawiający zamawia, a Wykonawca zobowiązuje się wykonać dzieło (dalej: „Dzieło”) w postaci artystycznego wykonania {% if subject.kind == "instrumental" %}partii instrumentalnej (instrument: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}){% else %}(rola: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}){% endif %} utworów tworzących program koncertu „{{ concert.title }}”, który odbędzie się w dniu {{ concert.day|date:"d.m.Y" }} r. w miejscu: {% if concert.place %}{{ concert.place }}{% else %}<span class="blank blank--l"></span>{% endif %} (dalej: „Koncert”). Utwory objęte Dziełem określa program Koncertu, stanowiący Załącznik nr 1.</li>
-        {% endif %}
-        <li>Rezultatem Dzieła jest jednorazowe artystyczne wykonanie, w rozumieniu art. 85 ustawy z dnia 4 lutego 1994 r. o prawie autorskim i prawach pokrewnych, {% if performer %}Partii Wykonawcy{% else %}utworów wskazanych w Załączniku nr 1{% endif %} podczas Koncertu, zgodne z zapisem nutowym i z koncepcją artystyczną Koncertu.</li>
+        <li>Zamawiający zamawia, a Wykonawca zobowiązuje się wykonać dzieło (dalej: „Dzieło”) w postaci artystycznego wykonania {% if subject.kind == "instrumental" %}partii instrumentalnej (instrument: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}){% else %}(rola: {% if subject.role %}{{ subject.role }}{% else %}<span class="blank blank--s"></span>{% endif %}){% endif %} utworów tworzących program koncertu „{{ concert.title }}”, który odbędzie się w dniu {{ concert.day|date:"d.m.Y" }} r. w miejscu: {% if concert.place %}{{ concert.place }}{% else %}<span class="blank blank--l"></span>{% endif %} (dalej: „Koncert”). Utwory objęte Dziełem określa program Koncertu, stanowiący Załącznik nr 1.</li>
+        <li>Rezultatem Dzieła jest jednorazowe artystyczne wykonanie, w rozumieniu art. 85 ustawy z dnia 4 lutego 1994 r. o prawie autorskim i prawach pokrewnych, utworów wskazanych w Załączniku nr 1 podczas Koncertu, zgodne z zapisem nutowym i z koncepcją artystyczną Koncertu.</li>
         <li>Przygotowanie Dzieła, w tym udział w próbach zespołowych służących zgraniu wykonania z pozostałymi wykonawcami, jest środkiem do wykonania Dzieła i nie stanowi samodzielnego przedmiotu umowy. Terminy prób zespołowych Strony uzgadniają.</li>
     </ol>
 
     <h2>§ 2. Sposób wykonania Dzieła</h2>
     <ol>
         <li>Wykonawca wykona Dzieło samodzielnie, z wykorzystaniem własnych umiejętności i doświadczenia artystycznego, i ponosi odpowiedzialność za jego rezultat. Sposób i czas indywidualnego przygotowania Dzieła Wykonawca określa sam.</li>
-        {% if performer %}
-            <li>Koncepcję artystyczną Koncertu, w szczególności tempa, dynamikę i brzmienie całości, ustala dyrygent Koncertu. W jej granicach Wykonawca kształtuje artystyczny wyraz Partii Wykonawcy.</li>
-            <li>Zamawiający udostępni Wykonawcy materiał nutowy Partii Wykonawcy w terminie umożliwiającym ich przygotowanie. Wykonawca wykorzysta ten materiał wyłącznie w celu wykonania Dzieła.</li>
-        {% endif %}
         <li>Wykonawca wykona Dzieło osobiście. Powierzenie wykonania innej osobie wymaga uprzedniej zgody Zamawiającego, wyrażonej co najmniej w formie dokumentowej.</li>
         <li>Wykonawca niezwłocznie zawiadomi Zamawiającego o każdej okoliczności, która może uniemożliwić lub utrudnić wykonanie Dzieła, w szczególności o chorobie.</li>
         <li>Jeżeli Wykonawca przygotowuje lub wykonuje Dzieło w sposób wadliwy albo sprzeczny z umową, Zamawiający może wezwać go do zmiany sposobu wykonania i wyznaczyć mu w tym celu odpowiedni termin, a po jego bezskutecznym upływie odstąpić od umowy (art. 636 § 1 Kodeksu cywilnego).</li>
@@ -95,11 +197,7 @@
 
     {% include "finance/_signatures.html" with left="Zamawiający" right="Wykonawca" %}
 
-    {% if performer %}
-        {% include "finance/_parts_annex.html" with n=1 of="do umowy o dzieło" title="Partie Wykonawcy" who="Wykonawca" who_dative="Wykonawcy" by="Zamawiającego" %}
-    {% else %}
-        {% include "finance/_programme_annex.html" with of="do umowy o dzieło" %}
-    {% endif %}
+    {% include "finance/_programme_annex.html" with of="do umowy o dzieło" %}
 
     <section class="annex">
         {% include "finance/_annex_head.html" with n=2 of="do umowy o dzieło" title="Protokół odbioru Dzieła" %}
@@ -117,5 +215,6 @@
     </section>
 
     {% include "finance/_gdpr_clause.html" with n=3 of="do umowy o dzieło" %}
+{% endif %}
 </body>
 </html>
