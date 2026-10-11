@@ -54,6 +54,10 @@ press-pack/kits/
 # as PDFs, working documents, correspondence with patrons. Sources to transcribe from, never
 # shipped — and not for a public repository.
 press-pack/inbox/
+# Printed concert programmes: the ensemble's past ones (archive/) and the source, sources and
+# print files of each new booklet (<concert-id>/). A booklet names every singer of the evening,
+# and the site publishes a cast only with consent, so none of it belongs in a public repository.
+press-pack/programmes/
 
 # Local A/B clips for grading decisions (docs/… none — throwaway). Served by `astro dev` at
 # /probki/ because only public/ is served statically; kept OUT of git and out of the image,

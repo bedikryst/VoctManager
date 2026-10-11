@@ -108,3 +108,6 @@ docs/umowy/
 # settled direction produces for the app (vector masters, icons) goes under
 # frontend/public/ and ships in git.
 brand-lab/
+# Inbox for files the team hands over (videos, contact lists, correspondence). It holds
+# third-party contact data and large media, so it never enters git.
+/tmp/

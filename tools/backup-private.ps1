@@ -37,7 +37,8 @@ $folders = @(
     '.agent',
     '.ai',
     '.claude',
-    'brand-lab'
+    'brand-lab',
+    'web\press-pack\programmes'
 )
 $rootFiles = @('AGENTS.md', 'AGENTS.override.md', 'CLAUDE.md')
 
