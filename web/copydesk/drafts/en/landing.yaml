@@ -178,6 +178,13 @@ page.landing.register.entries.aeternam.note: "An evening for the people of Gaza.
 page.landing.register.entries.aeternam.credit: "Partners: Łapsze Niżne Commune · Łapsze Niżne Cultural Centre · ZEW Niedzica · Dunajec Castle · ACN — Aid to the Church in Need. Media patrons: Gość Niedzielny · Radio Alex · Tygodnik Podhalański."
 page.landing.register.entries.aeternam.videoNote: "C. Shaw — and the swallow (Psalm 84) · recorded from the nave · live sound"
 
+page.landing.register.entries.pochwala-stworzenia.tag: "Finale of the “Fenomen Człowieka” festival"
+page.landing.register.entries.pochwala-stworzenia.place: "All Saints' Church in Warsaw"
+# "Brother Sun" and "Sister Death" are the Canticle's own names in English, capitalised as the
+# standard translations print them; the concert's overlay already calls the text the Canticle of
+# the Sun.
+page.landing.register.entries.pochwala-stworzenia.note: "St Francis's Canticle of the Sun, from Brother Sun to Sister Death. Borkowski, Orff, Dubra, and between them Pärt's Spiegel im Spiegel."
+
 page.landing.register.next.tag: "awaiting an invitation"
 page.landing.register.next.title: "An evening with no date."
 page.landing.register.next.place: "Place and date still open"

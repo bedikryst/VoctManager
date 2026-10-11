@@ -2664,11 +2664,6 @@
   poster: poster-stworzenie
   posterAlt: Plakat koncertu Pochwała Stworzenia
   posterCredit: "Anna Marcisz · VoctEnsemble"
-  # The frame a pasted link previews with, and the one surface where the poster beats the
-  # photograph: a reader who has not decided to come needs the day, the hour and the door, and
-  # the sheet prints all three. Built by web/poster-art.cjs; drop it once the evening is sung and
-  # the hero becomes the honest preview again.
-  share: share-stworzenie
   realizacja: "Skrzypce: Radu Ropotan"
   hasPage: true
   # The scene, and nothing the door band states in fields: the day, the hour, the festival and the

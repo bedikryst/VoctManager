@@ -206,6 +206,14 @@ register:
         Partnerzy: Gmina Łapsze Niżne · GOK Łapsze Niżne · ZEW Niedzica · Zamek Dunajec · ACN —
         Pomoc Kościołowi w Potrzebie. Patroni medialni: Gość Niedzielny · Radio Alex · Tygodnik
         Podhalański.
+    # The Canticle's own two ends, which are also the programme's: it opens on light and descends
+    # towards death. The All Saints rhyme is not spent here; the concert page spends it once.
+    - id: pochwala-stworzenia
+      tag: "Finał festiwalu „Fenomen Człowieka”"
+      place: "Kościół Wszystkich Świętych w Warszawie"
+      note: >-
+        Pieśń słoneczna św. Franciszka, od brata słońca po siostrę śmierć. Borkowski, Orff, Dubra,
+        a między nimi Spiegel im Spiegel Pärta.
   # The register's open card — the numeral continues the sequence and the card states the two real
   # preconditions for the next evening. When a date is agreed this card becomes its announcement.
   next:

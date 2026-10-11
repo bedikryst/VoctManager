@@ -142,7 +142,7 @@ export interface Path {
 
 /** The register's numbering, by position. Shared with the Imagines band so the band's numerals
  *  and the register's are one sequence rather than two lists that happen to agree — the band
- *  states the same five evenings the register states directly below it. */
+ *  states the evenings the register states directly below it, each one that has a photograph. */
 export const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"] as const;
 
 export const PATHS: readonly Path[] = [
@@ -316,5 +316,15 @@ export const PATHS: readonly Path[] = [
       srcAv1: videoAssetAv1("landing-aeternam"),
       portrait: true,
     },
+  },
+  {
+    slug: "pochwala-stworzenia",
+    concertId: "pochwala-stworzenia",
+    year: "MMXXVI",
+    poster: "poster-stworzenie",
+    // NO FRAME: the evening's `gallery` is empty, so the Imagines band leaves VI out of the line
+    // until its photographs are in the corpus. Name `frame` then, and grade it against the five
+    // above at the panel's crop before setting `frameLift` / `frameSaturation`.
+    frameMonth: "2026-10",
   },
 ];
