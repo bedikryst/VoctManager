@@ -318,12 +318,17 @@ class DocumentRenderTests(TestCase):
         self.assertIn("(słownie: trzysta złotych zero groszy)", html)
         self.assertIn("Wypełnia Zamawiający / biuro rachunkowe", html)
         self.assertIn(f"NIP {FOUNDATION.nip}", html)
+        self.assertIn("Dzieło zostało wykonane zgodnie z umową i przyjęte.", html)
+        self.assertIn("artystyczne wykonanie w rozumieniu art. 85 ust. 1", html)
+        self.assertIn("Sprawdzono pod względem merytorycznym: data odbioru", html)
 
     def test_a_mandate_bill_speaks_of_a_mandate(self) -> None:
         contract = self.issue(price(self.project, crew=make_crew(self.project), amount="800"))
         html = render_bill_html(contract)
         self.assertIn("Za wykonanie zlecenia", html)
         self.assertIn("Wypełnia Zleceniodawca / biuro rachunkowe", html)
+        self.assertNotIn("przyjęte", html)
+        self.assertNotIn("data odbioru", html)
 
     def test_the_bill_names_the_source_paying_it(self) -> None:
         contract = self.dzielo("300")
@@ -750,8 +755,11 @@ class PerformerContractTests(TestCase):
         self.cast_the_choir()
         contract = self.issue(price(self.project, participation=self.seat, amount="1400"))
         signed_on = finance_today()
-        ContractService.sign(contract, SignContractDTO(signed_on=signed_on - timedelta(days=1)), actor=self.manager)
+        first_date = signed_on - timedelta(days=1)
+        ContractService.sign(contract, SignContractDTO(signed_on=first_date), actor=self.manager)
         signed = render_contract_html(contract)
+        # The frozen text carries the date the signature was recorded with.
+        self.assertIn(f"dnia {first_date:%d.%m.%Y} r. pomiędzy:", signed)
 
         ProjectPieceCasting.objects.filter(participation=self.seat, piece=self.pieces["Stars"]).delete()
         self.cast(self.seat, "Méditation", "S1")
@@ -797,7 +805,10 @@ class PerformerContractTests(TestCase):
         Contract.objects.filter(pk=contract.pk).update(form=FeeForm.DZIELO)
         with self.assertRaises(ContractRefused):
             render_contract_html(contract)
-        self.assertIn(contract.number, render_bill_html(contract))
+        bill = render_bill_html(contract)
+        self.assertIn(contract.number, bill)
+        self.assertIn("Dzieło zostało wykonane zgodnie z umową i przyjęte.", bill)
+        self.assertNotIn("art. 85", bill)
 
     def test_outside_cast_instrumentalist_gets_artistic_mandate_and_blank_hours(self) -> None:
         crew = make_crew(self.project, "Jan", "Organista", specialty=Collaborator.Specialty.INSTRUMENT)

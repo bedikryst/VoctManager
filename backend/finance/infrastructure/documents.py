@@ -592,12 +592,16 @@ def render_bill_html(contract: Contract) -> str:
     """The bill the payee signs to be paid against the contract. The tax rows
     are the office's to fill: the panel never computes PIT or ZUS. The source
     line carries the note of every source the fee is charged to when the bill
-    is printed; without one it stays a line to fill by hand."""
+    is printed; without one it stays a line to fill by hand. Under an umowa o
+    dzieło the foundation states on it that it accepted the work, and for an
+    artistic payee that the result is an artistic performance, which the
+    office reads when it sets the costs of earning the income."""
     contract = _load(contract)
     _assert_printable(contract)
     if contract.form not in PAYABLE_CONTRACT_FORMS:
         raise BillNotApplicable()
     context = _document_context(contract)
+    context["artistic"] = is_artistic_payee(contract.cost_item.participation, contract.cost_item.crew_assignment)
     context["source_notes"] = bill_notes(BudgetService.build(contract.cost_item.budget.project), contract.cost_item_id)
     return render_to_string(_BILL_TEMPLATE, context)
 

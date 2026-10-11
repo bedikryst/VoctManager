@@ -9,7 +9,10 @@
         docs/specs/project-finance-contract-drafts-2026-09.md — a correction
         lands there first. It is the payee's document, not the foundation's, so
         it carries no foundation masthead. It prints the gross and leaves the
-        tax rows to the office: the panel never computes PIT or ZUS.
+        tax rows to the office: the panel never computes PIT or ZUS. Under an
+        umowa o dzieło the foundation's merits check is also its acceptance of
+        the work, dated on the day of acceptance; a cast performer's contract
+        has no separate acceptance record.
     {% endcomment %}
     <style>{% include "finance/_styles.html" with footer_label="Rachunek do umowy" %}</style>
 </head>
@@ -43,8 +46,11 @@
                 <tr><td class="figure">{{ amount }}</td><td></td><td></td><td></td><td></td><td></td></tr>
             </tbody>
         </table>
+        {% if form == "DZIELO" %}
+            <p class="smallprint">Dzieło zostało wykonane zgodnie z umową i przyjęte.{% if artistic %} Rezultatem umowy jest artystyczne wykonanie w rozumieniu art. 85 ust. 1 ustawy z dnia 4 lutego 1994 r. o prawie autorskim i prawach pokrewnych.{% endif %}</p>
+        {% endif %}
         <p class="signed-line smallprint">
-            Sprawdzono pod względem merytorycznym: data <span class="blank blank--s"></span> podpis <span class="blank"></span><br>
+            Sprawdzono pod względem merytorycznym: {% if form == "DZIELO" %}data odbioru{% else %}data{% endif %} <span class="blank blank--s"></span> podpis <span class="blank"></span><br>
             Sprawdzono pod względem formalnym i rachunkowym: data <span class="blank blank--s"></span> podpis <span class="blank"></span><br>
             Zatwierdzono do wypłaty: data <span class="blank blank--s"></span> podpisy <span class="blank blank--l"></span><br>
             Źródło finansowania (opis dokumentu):{% if not source_notes %} <span class="blank blank--l"></span>{% endif %}

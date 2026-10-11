@@ -66,9 +66,10 @@ def _locked_contract(contract: Contract) -> Contract:
 
 
 def _take_snapshot(contract: Contract) -> None:
-    """Freezes the document on the first recorded signature; a later call only
-    corrects the date or the copy's location, never the text. A legacy row the
-    template refuses has no paper of ours to freeze."""
+    """Freezes the document on the first recorded signature, with the signing
+    date that signature wrote, as the paper carries it. A later call only
+    corrects the record's date or the copy's location, never the text. A legacy
+    row the template refuses has no paper of ours to freeze."""
     if ContractSnapshot.objects.filter(contract=contract).exists():
         return
     try:
@@ -80,8 +81,10 @@ def _take_snapshot(contract: Contract) -> None:
 
 def _record_signature(contract: Contract, dto: SignContractDTO, *, actor: User | None) -> Contract:
     """Writes the signed date and copy location on a contract read under the
-    budget lock, freezes its document, and logs what they were before."""
-    _take_snapshot(contract)
+    budget lock, freezes its document, and logs what they were before. The
+    snapshot is composed after the save because it reads the row afresh, and
+    the text prints the date only once the row holds it; the caller's
+    transaction undoes the save if the snapshot fails."""
     before = {
         "status": contract.status,
         "signed_on": contract.signed_on,
@@ -91,6 +94,7 @@ def _record_signature(contract: Contract, dto: SignContractDTO, *, actor: User |
     contract.signed_on = dto.signed_on
     contract.signed_copy_location = dto.signed_copy_location
     contract.save(update_fields=["status", "signed_on", "signed_copy_location", "updated_at"])
+    _take_snapshot(contract)
     audit.record(
         contract.cost_item.budget, actor=actor, subject=contract, action=FinanceAction.CONTRACT_SIGNED,
         before=before,
