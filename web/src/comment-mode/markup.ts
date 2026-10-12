@@ -11,11 +11,17 @@
  *  whole value with `\n` as a character, so `\n` and `\n\n` come back as they went in.
  *
  *  LOAD AND SAVE ARE OURS, NOT THE BROWSER'S. The parser reads exactly the form the sanitizer
- *  writes: text escaping `& < >` and nothing else, the four tags with double-quoted attributes in
- *  the whitelist's order, no nesting of a tag in itself. The serializer writes the same form, which
- *  `innerHTML` does not (it turns U+00A0 into `&nbsp;` and does not run in node). `loadValue` keeps a
- *  document only if serializing it gives the value back, so the editor never rewrites what nobody
- *  touched; a value it refuses opens in the textarea.
+ *  writes: text escaping `& < >` and nothing else, the four tags with double-quoted attributes, no
+ *  nesting of a tag in itself. The serializer writes the same form, which `innerHTML` does not (it
+ *  turns U+00A0 into `&nbsp;` and does not run in node). `loadValue` keeps a document only if
+ *  serializing it gives the value back, so the editor never rewrites what nobody touched; a value it
+ *  refuses opens in the textarea. The sanitizer keeps attributes in the order they came, and the
+ *  serializer writes `href` before `lang` as the corpus has them, so a typed `<a lang href>` is one
+ *  of those.
+ *
+ *  THE BRACES LINK COVERS WORDS ONLY. Written as braces, it cannot hold a slot or a brace: `{Zostaw
+ *  {date}}` reads back as text around a slot. `braceLinkOverWords` takes the mark off both whatever
+ *  put it there, and `insertSlot` puts a slot after a link it is asked to go inside.
  *
  *  NESTING IS THE SERIALIZER'S CHOICE. A document records which marks each run carries, not how
  *  tags nest. Links rank outermost, so a link with an emphasized word stays one `<a>`; a mark the
@@ -27,8 +33,17 @@
  * @module comment-mode/markup
  */
 
-import { Fragment, Mark, Schema, Slice, type Attrs, type MarkType, type Node as ProseNode } from "prosemirror-model";
-import type { Command, EditorState } from "prosemirror-state";
+import {
+  Fragment,
+  Mark,
+  Schema,
+  Slice,
+  type Attrs,
+  type MarkType,
+  type Node as ProseNode,
+  type ResolvedPos,
+} from "prosemirror-model";
+import { Plugin, type Command, type EditorState, type Transaction } from "prosemirror-state";
 
 import { BRACE_PAIR, type FieldMarkup } from "./checklist.ts";
 
@@ -339,12 +354,21 @@ export function linkMarkType(state: EditorState): MarkType {
   return state.doc.firstChild?.type === schema.nodes.text_field ? schema.marks.braces : schema.marks.a;
 }
 
+interface MarkRun {
+  readonly from: number;
+  readonly to: number;
+  readonly mark: Mark;
+}
+
 /**
  * The whole run carrying a mark of `type` that the caret touches, or `null`. The text after the
  * caret wins over the text before it, as a click lands in the word it is on.
  */
-export function markRun(state: EditorState, type: MarkType): { readonly from: number; readonly to: number; readonly mark: Mark } | null {
-  const { $from } = state.selection;
+export function markRun(state: EditorState, type: MarkType): MarkRun | null {
+  return runAt(state.selection.$from, type);
+}
+
+function runAt($from: ResolvedPos, type: MarkType): MarkRun | null {
   const mark = type.isInSet($from.nodeAfter?.marks ?? []) ?? type.isInSet($from.nodeBefore?.marks ?? []);
   if (!mark) return null;
   const parent = $from.parent;
@@ -392,6 +416,50 @@ export const removeLink: Command = (state, dispatch) => {
   dispatch?.(state.tr.removeMark(range.from, range.to, type).scrollIntoView());
   return true;
 };
+
+/**
+ * A slot of the Polish (`{name}`) in place of the selection, with the marks typing there would
+ * get. A caret inside the braces link puts it after the link.
+ */
+export function insertSlot(name: string): Command {
+  return (state, dispatch) => {
+    const tr = state.tr.deleteSelection();
+    const { $from } = tr.selection;
+    const run = runAt($from, schema.marks.braces);
+    const at = run && run.from < $from.pos && $from.pos < run.to ? run.to : $from.pos;
+    const marks = tr.doc
+      .resolve(at)
+      .marks()
+      .filter((mark) => mark.type !== schema.marks.braces);
+    dispatch?.(tr.insert(at, schema.nodes.slot.create({ name }, null, marks)).scrollIntoView());
+    return true;
+  };
+}
+
+const BRACE = /[{}]/gu;
+
+/**
+ * The braces link off every slot and every brace it covers, after any change: the link control
+ * over a selection holding a chip, a brace typed or pasted inside a link. A link around a brace
+ * splits in two, which the checklist then counts.
+ */
+export const braceLinkOverWords = new Plugin({
+  appendTransaction(transactions, _before, state) {
+    if (!transactions.some((transaction) => transaction.docChanged)) return null;
+    const braces = schema.marks.braces;
+    let fix: Transaction | null = null;
+    state.doc.descendants((node, pos) => {
+      if (!node.isInline) return true;
+      if (!braces.isInSet(node.marks)) return false;
+      if (!node.isText) fix = (fix ?? state.tr).removeMark(pos, pos + node.nodeSize, braces);
+      for (const match of (node.text ?? "").matchAll(BRACE)) {
+        fix = (fix ?? state.tr).removeMark(pos + match.index, pos + match.index + 1, braces);
+      }
+      return false;
+    });
+    return fix;
+  },
+});
 
 /**
  * What a paste or a drop may put into the field, as flat inline content: the marks the field

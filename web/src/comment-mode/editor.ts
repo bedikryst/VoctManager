@@ -20,8 +20,10 @@
  *  THE FIELD IS A TEXTAREA OR THE MARKUP EDITOR (`fieldInput.ts`), and everything here reads its
  *  value as the string it saves. The markup editor opens where `opensMarkupEditor` says, once the
  *  sheet has the decided Polish (`readPolish`) and the editor's chunk is in; until then a box holds
- *  the field's place, so the tags never flash in a textarea first. A value the markup editor
- *  refuses, a chunk that does not load and a history that does not arrive leave the textarea.
+ *  the field's place, so the tags never flash in a textarea first. The box cannot be typed in, so it
+ *  waits `PENDING_LIMIT_MS` at most: then the textarea takes over, and gives way to the markup
+ *  editor later only if nobody has typed in it. A value the markup editor refuses, a chunk that
+ *  does not load and a history that does not arrive leave the textarea.
  *
  *  THE CHECKLIST UNDER THE FIELD reads the string the field saves against the decided Polish
  *  (`checklist.ts`), so the textarea has it as much as the markup editor: what the server checks
@@ -100,6 +102,9 @@ interface Draft {
 }
 
 const DRAFT_PREFIX = "voct:comment-draft:";
+
+/** How long the box keeps the field's place on a slow history or chunk before the textarea does. */
+const PENDING_LIMIT_MS = 4000;
 
 function readDraft(id: string): Draft | null {
   try {
@@ -282,10 +287,19 @@ export class FieldEditor {
 
     this.valueLabel = el("label", "field-label", s.textLabel);
     this.valueLabel.id = `comment-mode-value-label-${locale}`;
+    // `for` reaches a form control only: a click on the label hands the markup editor the focus.
+    this.valueLabel.addEventListener("click", () => {
+      if (this.input.kind === "rich") this.input.focus();
+    });
     // Until the decided Polish is in, the Polish the page prints in the field's place stands for it.
     this.input = opensMarkupEditor({ kind: row.kind, value: start.value, polish: polish ?? row.fallback_value })
       ? pendingInput(start.value, row.kind, locale, this.valueLabel.id)
       : this.textarea(start.value);
+    if (this.input.kind === "pending") {
+      window.setTimeout(() => {
+        if (!this.released) this.leavePending();
+      }, PENDING_LIMIT_MS);
+    }
 
     this.comment = el("textarea", "");
     this.comment.value = start.comment;

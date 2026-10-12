@@ -35,6 +35,8 @@ import {
 } from "../src/comment-mode/checklist.ts";
 import { decodeEntities } from "../src/comment-mode/match.ts";
 import {
+  braceLinkOverWords,
+  insertSlot,
   loadValue,
   parseValue,
   pastedSlice,
@@ -80,11 +82,12 @@ function slotCount(doc) {
  *
  * @param {string} value
  * @param {FieldMarkup} markup
+ * @param {import("prosemirror-state").Plugin[]} [plugins]
  */
-function editorOn(value, markup) {
+function editorOn(value, markup, plugins = []) {
   const doc = loadValue(value, markup);
   assert.ok(doc, `refused: ${JSON.stringify(value)}`);
-  return EditorState.create({ doc });
+  return EditorState.create({ doc, plugins });
 }
 
 /**
@@ -567,6 +570,33 @@ test("the braces link goes on and comes off through the same control", () => {
   assert.equal(holdReason({ value: linked, polish: marker, kind: "TEXT" }), null);
   state = apply(caretAt(state, "your"), removeLink);
   assert.equal(saved(state, markup), "Leave your details and we will write.");
+});
+
+test("the braces link never covers a slot or a brace", () => {
+  const polish = "{Zostaw kontakt} przed {date}";
+  const markup = fieldMarkup("TEXT", polish);
+  assert.ok(markup.braceLink && markup.slots.has("{date}"));
+  const linked = "{Leave your details} today";
+
+  // A slot put back with the caret inside the link goes in after the link.
+  let state = apply(caretAt(editorOn(linked, markup, [braceLinkOverWords]), "your"), insertSlot("date"));
+  const putBack = saved(state, markup);
+  assert.equal(putBack, "{Leave your details}{date} today");
+  assert.equal(holdReason({ value: putBack, polish, kind: "TEXT" }), null);
+
+  // The link control over a selection holding a chip links the words only.
+  state = editorOn("Leave your details {date} today", markup, [braceLinkOverWords]);
+  state = onSelection(state, "details {date}", setLink(""));
+  const around = saved(state, markup);
+  assert.equal(around, "Leave your {details }{date} today");
+  assert.equal(holdReason({ value: around, polish, kind: "TEXT" }), null);
+
+  // A brace typed inside the link splits it, and the checklist counts two.
+  state = caretAt(editorOn(linked, markup, [braceLinkOverWords]), "your");
+  state = state.apply(state.tr.insertText("{"));
+  const split = saved(state, markup);
+  assert.equal(split, "{Leave }{{your details} today");
+  assert.equal(holdReason({ value: split, polish, kind: "TEXT" }), "slots");
 });
 
 test("a paste keeps the Polish's targets, the field's marks and its slots, and nothing else", () => {

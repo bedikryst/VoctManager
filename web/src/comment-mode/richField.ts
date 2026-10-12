@@ -11,8 +11,9 @@
  *
  *  ONE TEXTBLOCK. Enter types `\n`, and the field saves what the serializer writes, so the value
  *  goes back to the server in the form the sanitizer itself writes. Pasted text keeps its line
- *  breaks, where ProseMirror would split it into blocks the field does not have. A paste from
- *  outside the field arrives as its plain text: a pasted page's paragraphs would run together.
+ *  breaks, where ProseMirror would split it into blocks the field does not have. A paste or a drop
+ *  from outside the fields arrives as its plain text: a pasted page's paragraphs would run together.
+ *  That includes another ProseMirror editor's HTML, which only the field's own block tells apart.
  *
  *  LINKS ONLY FROM THE POLISH. The link control offers the targets it is given (`linkChoices`), each
  *  with the Polish words it sits on, and there is no field to type an address into. A paste or a
@@ -30,14 +31,23 @@ import { baseKeymap, toggleMark } from "prosemirror-commands";
 import { history, redo, undo } from "prosemirror-history";
 import { keymap } from "prosemirror-keymap";
 import { Fragment, Slice, type MarkType } from "prosemirror-model";
-import { EditorState, type Command, type Plugin } from "prosemirror-state";
+import { EditorState, TextSelection, type Command, type Plugin } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 
 import type { Locale } from "../i18n/config";
 import type { FieldMarkup, LinkChoice } from "./checklist";
 import { button, el, fill } from "./dom";
 import type { ValueInput } from "./fieldInput";
-import { loadValue, pastedSlice, removeLink, schema, serializeValue, setLink } from "./markup";
+import {
+  braceLinkOverWords,
+  insertSlot,
+  loadValue,
+  pastedSlice,
+  removeLink,
+  schema,
+  serializeValue,
+  setLink,
+} from "./markup";
 import type { Strings } from "./strings";
 
 export interface RichFieldOptions {
@@ -74,6 +84,7 @@ function plugins(markup: FieldMarkup): Plugin[] {
       ...(markup.html ? { "Mod-i": italic, "Mod-b": bold } : {}),
     }),
     keymap(baseKeymap),
+    ...(markup.html ? [] : [braceLinkOverWords]),
   ];
 }
 
@@ -102,11 +113,22 @@ function tool(label: string, className: string, onPress: () => void): HTMLButton
   return control;
 }
 
-/** ProseMirror's clipboard marker: the HTML was copied out of a field. */
-const FROM_A_FIELD = "data-pm-slice";
+/** A field's block (`toDOM` in `markup.ts`), which ProseMirror puts on the clipboard around a copy. */
+const FIELD_BLOCK = /data-field="(?:html|text)"/u;
 
 function lines(text: string): string {
   return text.replace(/\r\n?/gu, "\n");
+}
+
+/**
+ * The plain text of a paste or a drop from outside the fields, or `null` where ProseMirror reads it
+ * itself: one out of a field, or one with no HTML.
+ */
+function outsideText(data: DataTransfer | null): string | null {
+  const html = data?.getData("text/html") ?? "";
+  if (html === "" || (html.includes("data-pm-slice") && FIELD_BLOCK.test(html))) return null;
+  const text = lines(data?.getData("text/plain") ?? "");
+  return text === "" ? null : text;
 }
 
 /**
@@ -237,11 +259,20 @@ export function richField({
         return pastedSlice(slice, markup, hrefs);
       },
       handlePaste(target, event) {
-        const html = event.clipboardData?.getData("text/html") ?? "";
-        if (html === "" || html.includes(FROM_A_FIELD)) return false;
-        const text = lines(event.clipboardData?.getData("text/plain") ?? "");
-        if (text === "") return false;
+        const text = outsideText(event.clipboardData);
+        if (text === null) return false;
         target.dispatch(target.state.tr.insertText(text).scrollIntoView());
+        return true;
+      },
+      handleDrop(target, event) {
+        const text = outsideText(event.dataTransfer);
+        const dropped = text === null ? null : target.posAtCoords({ left: event.clientX, top: event.clientY });
+        if (text === null || !dropped) return false;
+        // Inside the field's one textblock, whatever edge the pointer was nearest.
+        const at = Math.min(Math.max(dropped.pos, 1), target.state.doc.content.size - 1);
+        const tr = target.state.tr.insertText(text, at);
+        target.dispatch(tr.setSelection(TextSelection.create(tr.doc, at, at + text.length)).scrollIntoView());
+        target.focus();
         return true;
       },
       handleDOMEvents: {
@@ -277,8 +308,7 @@ export function richField({
     insertSlot:
       markup.slots.size > 0
         ? (slot) => {
-            const name = slot.slice(1, -1);
-            view.dispatch(view.state.tr.replaceSelectionWith(schema.nodes.slot.create({ name })).scrollIntoView());
+            insertSlot(slot.slice(1, -1))(view.state, view.dispatch);
           }
         : null,
     focus() {
