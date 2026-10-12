@@ -7034,6 +7034,7 @@
       "accepted_toast": "Przyjęte — czeka w paczce do wpisania.",
       "rejected_toast": "Odrzucone.",
       "verdict_failed": "Nie udało się zapisać decyzji. Spróbuj jeszcze raz.",
+      "empty_acceptance": "Pusta wartość usunęłaby pole z pliku zamiast je zmienić, więc nie da się jej przyjąć. Odrzuć propozycję.",
       "polish_note": "Przyjęcie polskiego unieważnia tłumaczenia tego pola — wrócą tu jako nieaktualne, kiedy paczka trafi do repozytorium.",
       "patch_title": "Paczka do wpisania",
       "patch_rows_one": "zmiana",

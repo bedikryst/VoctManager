@@ -57,6 +57,7 @@ import { bleedPair, photoOptional } from "../../lib/photos";
 import { framedShot } from "../../lib/galleryFrame";
 import { designCredit, frameCredit } from "../../lib/photoCredit";
 import { pageCopy } from "../../lib/pageCopy";
+import { paragraphsToHtml } from "../../lib/paragraphs";
 import { htmlToPlainText, plainTextLength } from "../../lib/plainText";
 import {
   announceText,
@@ -172,7 +173,7 @@ const kitFiles = pack && kit && pack.index.concert?.id === kit.concert ? pack.in
 
 /* A release whose kit has no `release.about` closes on the SHORT biogram in Polish, whichever
    locale renders the page: the kit is Polish, as is the PDF beside this button. */
-const shortBioPl = htmlToPlainText(pageCopy(PRESS_PAGE, "pl").about.shortHtml);
+const shortBioPl = htmlToPlainText(paragraphsToHtml(pageCopy(PRESS_PAGE, "pl").about.shortHtml));
 
 const card = concert && kit
   ? await (async () => {
@@ -440,14 +441,13 @@ const selectAllAria = (group: string) => fill(t.selectAllAria, "group", group);
 /* ONE source per measure: the marked-up field. The plain version is derived and the character
    count is measured, so neither can disagree with what is printed above it. */
 const BIOS = [
-  { id: "short", measure: t.bioShort, html: copy.about.shortHtml },
-  { id: "medium", measure: t.bioMedium, html: copy.about.mediumHtml },
-  { id: "long", measure: t.bioLong, html: copy.about.longHtml },
-].map((bio) => ({
-  ...bio,
-  text: htmlToPlainText(bio.html),
-  length: plainTextLength(bio.html),
-}));
+  { id: "short", measure: t.bioShort, source: copy.about.shortHtml },
+  { id: "medium", measure: t.bioMedium, source: copy.about.mediumHtml },
+  { id: "long", measure: t.bioLong, source: copy.about.longHtml },
+].map(({ source, ...bio }) => {
+  const html = paragraphsToHtml(source);
+  return { ...bio, html, text: htmlToPlainText(html), length: plainTextLength(html) };
+});
 
 /* `contact.list` marks its link with braces; the schema holds it to exactly one pair. */
 const [listBefore = "", listLink = "", listAfter = ""] = copy.contact.list.split(/[{}]/);

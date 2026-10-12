@@ -15,7 +15,7 @@ from datetime import datetime
 from uuid import UUID
 
 from django.contrib.auth.models import User
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
 from django.utils import timezone
 
@@ -97,6 +97,14 @@ class ProposalNotFoundError(Exception):
 
 class ProposalClosedError(Exception):
     """A settled proposal cannot be edited — a further change is a new proposal."""
+
+
+class EmptyAcceptanceError(Exception):
+    """An empty value cannot be accepted: `copy:apply` would refuse to write it.
+
+    Proposing an empty value is allowed (clearing a field is an editorial decision),
+    but writing one into the YAML would delete the field rather than change it.
+    """
 
 
 class UnknownProposalsError(Exception):
@@ -684,34 +692,52 @@ class CopyDeskService:
             else cls.effective_source_hashes([segment.key]).get(segment.key, "")
         )
 
-        with transaction.atomic():
-            proposal = (
+        def open_proposal() -> CopyProposal | None:
+            return (
                 CopyProposal.objects.select_for_update()
                 .filter(segment=segment, author=author, status__in=OPEN_STATUSES)
                 .first()
             )
-            if proposal is None:
-                proposal = CopyProposal.objects.create(
-                    segment=segment,
-                    author=author,
-                    value=value,
-                    comment=dto.comment,
-                    status=dto.status,
-                    source_hash=stamped_hash,
-                )
+
+        def revise(existing: CopyProposal) -> CopyProposal:
+            value_changed = existing.value != value
+            existing.value = value
+            existing.comment = dto.comment
+            existing.status = dto.status
+            existing.source_hash = stamped_hash
+            if value_changed:
+                # A revised proposal is news a second time: the digest that
+                # already went out described wording that no longer stands.
+                existing.notified_at = None
+            existing.save(update_fields=[
+                "value", "comment", "status", "source_hash", "notified_at", "updated_at",
+            ])
+            return existing
+
+        with transaction.atomic():
+            proposal = open_proposal()
+            if proposal is not None:
+                proposal = revise(proposal)
             else:
-                value_changed = proposal.value != value
-                proposal.value = value
-                proposal.comment = dto.comment
-                proposal.status = dto.status
-                proposal.source_hash = stamped_hash
-                if value_changed:
-                    # A revised proposal is news a second time: the digest that
-                    # already went out described wording that no longer stands.
-                    proposal.notified_at = None
-                proposal.save(update_fields=[
-                    "value", "comment", "status", "source_hash", "notified_at", "updated_at",
-                ])
+                try:
+                    # A savepoint of its own: two tabs saving a field for the first
+                    # time at once both find nothing to revise, and the loser's
+                    # insert fails on `unique_open_proposal_per_author`. Rolling
+                    # back to here keeps the outer transaction usable.
+                    with transaction.atomic():
+                        proposal = CopyProposal.objects.create(
+                            segment=segment,
+                            author=author,
+                            value=value,
+                            comment=dto.comment,
+                            status=dto.status,
+                            source_hash=stamped_hash,
+                        )
+                except IntegrityError:
+                    winner = open_proposal()
+                    if winner is None:
+                        raise
+                    proposal = revise(winner)
 
         logger.info(
             "[CopyDesk] %s proposal on %s [%s] by UID:%s",
@@ -752,9 +778,17 @@ class CopyDeskService:
         if not proposal.is_open:
             raise ProposalClosedError(str(proposal_id))
 
+        value = (
+            proposal.value
+            if dto.value is None
+            else sanitize_for_kind(dto.value, proposal.segment.kind)
+        )
+        if dto.status == ProposalStatus.ACCEPTED and not value:
+            raise EmptyAcceptanceError(str(proposal_id))
+
         fields = ["status", "reviewed_by", "reviewed_at", "updated_at"]
         if dto.value is not None:
-            proposal.value = sanitize_for_kind(dto.value, proposal.segment.kind)
+            proposal.value = value
             fields.append("value")
         if dto.comment is not None:
             proposal.comment = dto.comment

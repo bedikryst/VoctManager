@@ -116,7 +116,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
  * Identity probes must stay silent (no hard redirect to /login — the router
  * decides what an unauthenticated visitor sees) but they must NOT opt out of the
  * token refresh. This is the only request that establishes the session on a cold
- * start, and the access cookie lives 15 minutes against a 7-day refresh cookie:
+ * start, and the access cookie lives 15 minutes against a 30-day refresh cookie:
  * skipping the refresh here would sign out every member whose app was closed
  * longer than the access window, with a valid refresh token still in the jar.
  */

@@ -6933,6 +6933,7 @@
       "accepted_toast": "Accepté — en attente dans le lot.",
       "rejected_toast": "Refusé.",
       "verdict_failed": "Cette décision n'a pas pu être enregistrée. Réessayez.",
+      "empty_acceptance": "Une valeur vide supprimerait le champ du fichier au lieu de le modifier : elle ne peut pas être acceptée. Refusez plutôt la proposition.",
       "polish_note": "Accepter le polonais rend obsolètes les traductions de ce champ — elles reviendront ici comme telles dès que le lot atteindra le dépôt.",
       "patch_title": "Lot à écrire",
       "patch_rows_one": "modification",

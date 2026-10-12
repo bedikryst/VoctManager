@@ -6921,6 +6921,7 @@
       "accepted_toast": "Accepted — it is waiting in the patch.",
       "rejected_toast": "Rejected.",
       "verdict_failed": "That verdict could not be saved. Try once more.",
+      "empty_acceptance": "An empty value would delete the field from the file rather than change it, so it cannot be accepted. Reject the proposal instead.",
       "polish_note": "Accepting a Polish change makes the translations of that field out of date — they come back here as stale once the patch reaches the repository.",
       "patch_title": "Patch waiting to be written",
       "patch_rows_one": "change",

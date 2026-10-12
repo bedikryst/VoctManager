@@ -38,6 +38,7 @@ from .serializers import (
 )
 from .services import (
     CopyDeskService,
+    EmptyAcceptanceError,
     ProposalClosedError,
     ProposalNotFoundError,
     SegmentNotFoundError,
@@ -172,6 +173,17 @@ class CopyDeskReviewView(views.APIView):
             return Response(
                 {"detail": "This proposal has already been settled."},
                 status=status.HTTP_409_CONFLICT,
+            )
+        except EmptyAcceptanceError:
+            return Response(
+                {
+                    "detail": (
+                        "An empty value would delete the field rather than change it. "
+                        "Reject the proposal instead."
+                    ),
+                    "error_code": "empty_acceptance",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
         return Response({"id": str(proposal.id), "status": proposal.status})
 

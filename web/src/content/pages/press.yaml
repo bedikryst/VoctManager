@@ -90,27 +90,30 @@ about:
   eyebrow: "VoctEnsemble"
   # The character counts are NOT written here: the page measures each text after stripping its
   # markup and prints the real number. The three lengths name the tabs under it (PRESS_CHROME).
+  # The bios carry NO block tags: a blank line separates paragraphs and the page wraps each one in
+  # <p> (lib/paragraphs.ts), because the copy desk's sanitizer flattens <p> to a line break.
   lede: "Bio w trzech długościach: krótkie, średnie, pełne."
   # ~300 characters: who founded it, what it draws from, what it sings.
   shortHtml: >-
-    <p>VoctEnsemble, krakowski zespół wokalny, którego założycielem jest Florent de Bazelaire,
+    VoctEnsemble, krakowski zespół wokalny, którego założycielem jest Florent de Bazelaire,
     czerpie inspirację z XVIII-wiecznych <em>Concerts Spirituels</em>, nadając im współczesny
     wymiar. Jego repertuar sięga od renesansowej polifonii po muzykę najnowszą, ze szczególnym
-    miejscem dla muzyki sakralnej.</p>
+    miejscem dla muzyki sakralnej.
   # ~1000 characters: the above, plus the record a programmer checks — the debut and who recorded
   # it, the engaged evenings, who builds the light and the image.
   mediumHtml: |-
-    <p><strong>VoctEnsemble</strong>, krakowski zespół wokalny, którego założycielem jest
+    <strong>VoctEnsemble</strong>, krakowski zespół wokalny, którego założycielem jest
     <strong>Florent de Bazelaire</strong>, czerpie inspirację z XVIII-wiecznych
     <em>Concerts Spirituels</em>, nadając im współczesny wymiar i tworząc przestrzeń do
     zgłębiania tajemnic rzeczywistości poprzez muzykę wokalną. Jego repertuar sięga od
-    renesansowej polifonii po muzykę najnowszą, ze szczególnym miejscem dla muzyki sakralnej.</p>
-    <p>Zespół traktuje sztukę jako formę modlitwy i refleksji nad kondycją człowieka. Do
+    renesansowej polifonii po muzykę najnowszą, ze szczególnym miejscem dla muzyki sakralnej.
+
+    Zespół traktuje sztukę jako formę modlitwy i refleksji nad kondycją człowieka. Do
     najważniejszych dokonań należą inauguracyjny koncert „Kontemplacja Wcielenia”, utrwalony
     przez Ars Sonora Studio, oraz projekty zaangażowane: „Hymn Poległym” (w 3. rocznicę wojny na
     Ukrainie) i „Aeternam – Epitafium dla Gazy”. Występy, często wzbogacone reżyserią świateł Ady
     Bystrzyckiej bądź animacjami Sebastiana Kuźmy, tworzą dla publiczności wielozmysłowe
-    doświadczenie muzyki.</p>
+    doświadczenie muzyki.
   # The ensemble's own text, verbatim: the biogram of 27.09.2026, which replaced the August one.
   # It is the one legitimately brochure-voiced artifact on this site and it is not ours to
   # rewrite — the two shorter measures above are condensations OF it, and they introduce no fact
@@ -120,23 +123,25 @@ about:
   # seeks”); the approved Polish left it open, and its author settled it (28.09.2026). The first
   # sentence carries him in the nominative, as the whole site does.
   longHtml: |-
-    <p><strong>VoctEnsemble</strong> to krakowski zespół wokalny, którego założyciel,
+    <strong>VoctEnsemble</strong> to krakowski zespół wokalny, którego założyciel,
     <strong>Florent de Bazelaire</strong>, z niezwykłym zapałem redefiniuje pojęcie koncertu
     duchowego. Zespół czerpie inspirację z XVIII-wiecznych <em>Concerts Spirituels</em>, nadając
     im współczesny wymiar i tworząc przestrzeń do zgłębiania tajemnic rzeczywistości poprzez
     muzykę wokalną. Bogaty i zróżnicowany repertuar zespołu obejmuje ponad 60 dzieł – od
-    renesansowej polifonii po muzykę najnowszą, ze szczególnym miejscem dla muzyki sakralnej.</p>
-    <p>Zespół wyróżnia się wyjątkową wrażliwością na wydarzenia w świecie, traktując sztukę jako
+    renesansowej polifonii po muzykę najnowszą, ze szczególnym miejscem dla muzyki sakralnej.
+
+    Zespół wyróżnia się wyjątkową wrażliwością na wydarzenia w świecie, traktując sztukę jako
     formę modlitwy i refleksji nad kondycją człowieka. Do najważniejszych dokonań zespołu należą:
     inauguracyjny koncert „Kontemplacja Wcielenia”, utrwalony przez Ars Sonora Studio, oraz
     projekty zaangażowane: „Hymn Poległym” (w 3. rocznicę wojny na Ukrainie) oraz „Aeternam –
     Epitafium dla Gazy”. VoctEnsemble regularnie gości na prestiżowych festiwalach, m.in. podczas
     XXXIX Dni Muzyki Organowej i Kameralnej w Rybniku oraz w ramach cyklu „Organy solo
-    i kameralnie” w Katedrze Łódzkiej.</p>
-    <p>Dbałość o jedność wewnętrzną i świadoma praca nad wspólnym brzmieniem pozwalają zespołowi
+    i kameralnie” w Katedrze Łódzkiej.
+
+    Dbałość o jedność wewnętrzną i świadoma praca nad wspólnym brzmieniem pozwalają zespołowi
     budować własną tożsamość. Występy, często wzbogacone nowoczesną reżyserią świateł Ady
     Bystrzyckiej bądź animacjami Sebastiana Kuźmy, tworzą dla publiczności wielozmysłowe
-    doświadczenie muzyki.</p>
+    doświadczenie muzyki.
   logo: "Logotyp"
   # On the page and beside the files in the pack (logo/UZYCIE.txt).
   logoUsage: >-

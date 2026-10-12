@@ -74,12 +74,12 @@ const VIEW_LABELS: Readonly<Record<LocaleViewId, string>> = {
 
 /**
  * In French, to a French typist, whatever language the desk's chrome is in.
- * `lib/typo.ts` inserts the narrow no-break spaces before `? ! : ;` at build
- * time, so a hand-typed one doubles up — and the doubling is invisible here and
- * visible on the site.
+ * `lib/typo.ts` only upgrades a space that is already typed before `? ! : ;` to
+ * a no-break one and never inserts it (an inserting rule breaks HTML entities),
+ * so a missing space is published as typed: "Pourquoi?".
  */
 const FRENCH_SPACING_NOTE =
-  "N'ajoutez pas d'espace avant « ? ! : ; » : le site les compose lui-même.";
+  "Mettez une espace avant « ? ! : ; » : le site la rend insécable.";
 
 export default function CopyDeskScopePage(): React.JSX.Element {
   const { t, i18n } = useTranslation();

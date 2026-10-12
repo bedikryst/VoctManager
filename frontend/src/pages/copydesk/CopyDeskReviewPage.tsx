@@ -44,6 +44,7 @@ import {
   scopeFamily,
 } from "@/features/copydesk/lib/scopeGroups";
 import type { CopyDeskOutletContext } from "@/widgets/copy-desk-shell/CopyDeskShell";
+import { parseApiError } from "@/shared/api/errors/parseApiError";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
@@ -82,12 +83,17 @@ export default function CopyDeskReviewPage(): React.JSX.Element {
                   )
                 : t("copy_desk.queue.rejected_toast", "Odrzucone."),
             ),
-          onError: () =>
+          onError: (error) =>
             toast.error(
-              t(
-                "copy_desk.queue.verdict_failed",
-                "Nie udało się zapisać decyzji. Spróbuj jeszcze raz.",
-              ),
+              parseApiError(error).code === "empty_acceptance"
+                ? t(
+                    "copy_desk.queue.empty_acceptance",
+                    "Pusta wartość usunęłaby pole z pliku zamiast je zmienić, więc nie da się jej przyjąć. Odrzuć propozycję.",
+                  )
+                : t(
+                    "copy_desk.queue.verdict_failed",
+                    "Nie udało się zapisać decyzji. Spróbuj jeszcze raz.",
+                  ),
             ),
         },
       );

@@ -354,6 +354,7 @@ if (import.meta.env.PROD) {
         /^\/panel/,
         /^\/redakcja/,
         /^\/login/,
+        /^\/legal/,
         /^\/activate/,
         /^\/reset-password/,
         /^\/documents\//,

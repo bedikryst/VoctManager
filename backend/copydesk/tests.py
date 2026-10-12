@@ -44,7 +44,12 @@ from .models import (
 )
 from .permissions import user_can_edit_site_copy, user_is_copy_reviewer
 from .sanitizers import sanitize_html, sanitize_text
-from .services import CopyDeskService, ProposalClosedError, UnknownProposalsError
+from .services import (
+    CopyDeskService,
+    EmptyAcceptanceError,
+    ProposalClosedError,
+    UnknownProposalsError,
+)
 from .tasks import QUIET_PERIOD, dispatch_copy_proposal_digests
 
 User = get_user_model()
@@ -269,6 +274,11 @@ class SanitizerTests(TestCase):
             "Z tej ciszy — <em>głos.</em>",
             "Każdy program układa wokół jednej intencji. <em>Kontemplacja Wcielenia</em> na "
             "debiut (2024).",
+            # press.yaml — the three bios. Paragraphs are separated by a blank line and carry no
+            # `<p>`, because the sanitizer flattens a block tag to one line break and would merge
+            # them; the page wraps each paragraph at render time.
+            "<strong>VoctEnsemble</strong>, krakowski zespół wokalny, czerpie z "
+            "<em>Concerts Spirituels</em>.\n\nZespół traktuje sztukę jako formę modlitwy.",
         ):
             with self.subTest(value=value):
                 self.assertEqual(sanitize_html(value), value)
@@ -513,6 +523,80 @@ class ProposalLifecycleTests(TestCase):
         proposal.refresh_from_db()
         self.assertEqual(proposal.value, "Nowe i poprawione")
         self.assertEqual(proposal.reviewed_by, self.reviewer)
+
+    def test_an_empty_proposal_may_be_saved_and_rejected_but_not_accepted(self):
+        # Clearing a field is a legitimate thing to propose, yet `copy:apply` refuses to write
+        # an empty value, so accepting one would strand it in the patch.
+        proposal = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.segment.id, value=""),
+            author=self.editor,
+        )
+        with self.assertRaises(EmptyAcceptanceError):
+            CopyDeskService.review_proposal(
+                proposal_id=proposal.id,
+                dto=ProposalReviewDTO(status=ProposalStatus.ACCEPTED),
+                reviewer=self.reviewer,
+            )
+        proposal.refresh_from_db()
+        self.assertTrue(proposal.is_open)
+
+        CopyDeskService.review_proposal(
+            proposal_id=proposal.id,
+            dto=ProposalReviewDTO(status=ProposalStatus.REJECTED),
+            reviewer=self.reviewer,
+        )
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.status, ProposalStatus.REJECTED)
+
+    def test_a_reviewer_s_correction_can_fill_an_empty_proposal_but_not_empty_a_full_one(self):
+        empty = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.segment.id, value=""),
+            author=self.editor,
+        )
+        CopyDeskService.review_proposal(
+            proposal_id=empty.id,
+            dto=ProposalReviewDTO(status=ProposalStatus.ACCEPTED, value="Zapraszamy serdecznie"),
+            reviewer=self.reviewer,
+        )
+        empty.refresh_from_db()
+        self.assertEqual(empty.status, ProposalStatus.ACCEPTED)
+
+        full = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.segment.id, value="Nowe"),
+            author=self.other,
+        )
+        with self.assertRaises(EmptyAcceptanceError):
+            CopyDeskService.review_proposal(
+                proposal_id=full.id,
+                dto=ProposalReviewDTO(status=ProposalStatus.ACCEPTED, value="   "),
+                reviewer=self.reviewer,
+            )
+
+    def test_the_first_save_that_loses_a_race_revises_the_winner_instead_of_failing(self):
+        # Two tabs saving one field for the first time both find nothing to revise; the
+        # second insert meets `unique_open_proposal_per_author`. The winner's row is already
+        # committed and the loser's first lookup is made to miss it, which is what the loser
+        # sees when the winner commits between its lookup and its insert.
+        CopyProposal.objects.create(
+            segment=self.segment, author=self.editor, value="Zwycięzca",
+            status=ProposalStatus.PROPOSED,
+        )
+        real_lookup = CopyProposal.objects.select_for_update
+        misses = [CopyProposal.objects.none()]
+
+        def stale_first_lookup():
+            return misses.pop() if misses else real_lookup()
+
+        with patch.object(CopyProposal.objects, "select_for_update", side_effect=stale_first_lookup):
+            proposal = CopyDeskService.save_proposal(
+                dto=ProposalWriteDTO(segment_id=self.segment.id, value="Przegrany"),
+                author=self.editor,
+            )
+
+        proposals = CopyProposal.objects.filter(segment=self.segment, author=self.editor)
+        self.assertEqual(proposals.count(), 1)
+        self.assertEqual(proposals.get().id, proposal.id)
+        self.assertEqual(proposal.value, "Przegrany")
 
 
 def upsert_row(key: str, value: str = "Treść", locale: str = SiteLocale.POLISH) -> SegmentUpsertDTO:
@@ -1119,6 +1203,20 @@ class ApiTests(TestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_accepting_an_empty_value_is_a_400_with_a_code_the_queue_can_localise(self):
+        proposal = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.segment.id, value=""),
+            author=self.editor,
+        )
+        self.api.force_authenticate(user=self.reviewer)
+        response = self.api.post(
+            reverse("copydesk-proposal-review", args=[proposal.id]),
+            {"status": ProposalStatus.ACCEPTED},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_code"], "empty_acceptance")
 
     def test_an_editor_cannot_name_the_outcome_they_would_like(self):
         self.api.force_authenticate(user=self.editor)
